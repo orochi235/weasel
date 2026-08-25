@@ -160,3 +160,89 @@ describe('SceneCanvas camera handle', () => {
     expect(ref.current!.getView().scale.x).toBeCloseTo(2, 6);
   });
 });
+
+const fireKey = (key: string, opts: { metaKey?: boolean } = {}) => {
+  window.dispatchEvent(new KeyboardEvent('keydown', {
+    bubbles: true, cancelable: true, key, metaKey: opts.metaKey ?? false,
+  }));
+};
+
+const PLAIN = {} as const;
+
+describe('viewport.animatedZoom at the keyboard (mac branch)', () => {
+  it('Cmd+= jumps when animatedZoom is off', async () => {
+    const ref = { current: null as SceneCanvasApi | null };
+    render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} viewport={PLAIN} />);
+    await act(async () => { await frame(); });
+
+    act(() => { fireKey('=', { metaKey: true }); });
+    expect(ref.current!.getView().scale.x).toBeCloseTo(1.25, 10);
+  });
+
+  it('Cmd+= glides when animatedZoom is on, and lands on the same scale', async () => {
+    const ref = { current: null as SceneCanvasApi | null };
+    render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} viewport={ANIMATED} />);
+    await act(async () => { await frame(); });
+
+    act(() => { fireKey('=', { metaKey: true }); });
+    // The defining difference: unanimated, this is already 1.25.
+    expect(ref.current!.getView().scale.x).toBe(1);
+    expect(ref.current!.isViewAnimating()).toBe(true);
+
+    await waitFor(() => { expect(ref.current!.isViewAnimating()).toBe(false); });
+    expect(ref.current!.getView().scale.x).toBeCloseTo(1.25, 6);
+  });
+
+  it('three fast presses compound to 1.25 cubed', async () => {
+    const ref = { current: null as SceneCanvasApi | null };
+    render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} viewport={ANIMATED} />);
+    await act(async () => { await frame(); });
+
+    act(() => { fireKey('=', { metaKey: true }); fireKey('=', { metaKey: true }); fireKey('=', { metaKey: true }); });
+    await waitFor(() => { expect(ref.current!.isViewAnimating()).toBe(false); });
+
+    expect(ref.current!.getView().scale.x).toBeCloseTo(Math.pow(1.25, 3), 6);
+  });
+
+  it('Cmd+0 glides back to identity', async () => {
+    const ref = { current: null as SceneCanvasApi | null };
+    render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} viewport={ANIMATED} />);
+    await act(async () => { await frame(); });
+
+    act(() => { ref.current!.setView({ x: 40, y: 40, scale: { x: 3, y: 3 } }); });
+    act(() => { fireKey('0', { metaKey: true }); });
+    expect(ref.current!.getView().scale.x).toBe(3);
+
+    await waitFor(() => { expect(ref.current!.isViewAnimating()).toBe(false); });
+    const home = ref.current!.getView();
+    expect(home.x).toBeCloseTo(0, 6);
+    expect(home.y).toBeCloseTo(0, 6);
+    expect(home.scale.x).toBeCloseTo(1, 6);
+    expect(home.scale.y).toBeCloseTo(1, 6);
+  });
+
+  it('keeps the host center under the same world point for the whole glide', async () => {
+    const ref = { current: null as SceneCanvasApi | null };
+    render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} viewport={ANIMATED} />);
+    await act(async () => { await frame(); });
+
+    // The host center, from the clientWidth/clientHeight stubbed in `beforeAll`.
+    // The origin would not do: a zoom anchored there leaves x and y untouched,
+    // so this assertion would hold even against a linear translation lerp.
+    const anchor = { x: 200, y: 100 };
+    const worldAt = (v: View) => ({ x: anchor.x / v.scale.x + v.x, y: anchor.y / v.scale.y + v.y });
+    const before = worldAt(ref.current!.getView());
+
+    act(() => { fireKey('=', { metaKey: true }); });
+    const samples: View[] = [];
+    const stop = ref.current!.subscribeView((v) => { samples.push(v); });
+    await waitFor(() => { expect(ref.current!.isViewAnimating()).toBe(false); });
+    stop();
+
+    expect(samples.length).toBeGreaterThanOrEqual(1);
+    for (const s of samples) {
+      expect(worldAt(s).x).toBeCloseTo(before.x, 8);
+      expect(worldAt(s).y).toBeCloseTo(before.y, 8);
+    }
+  });
+});
