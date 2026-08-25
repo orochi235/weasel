@@ -38,17 +38,15 @@
     display: flex;
     flex-direction: column;
     overflow: auto;
-    padding: var(--wzl-space-md);
 
     > * {
       flex: 1 1 auto;
       min-height: 0;
     }
 
-    // A canvas draws to its own edges; padding would inset the drawing
-    // surface rather than the content inside it.
+    // An instrument owns its own interior; the frame contributes chrome, not
+    // inset. `--flush` is now only about scrolling.
     &--flush {
-      padding: 0;
       overflow: hidden;
     }
   }

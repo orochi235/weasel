@@ -16,6 +16,10 @@
 
 // Resets and global element defaults.
 .lk-root {
+  // labkit's own vocabulary over the theme's raw scale — named for the thing
+  // rather than the step, so "the workspace is too tight" has one place to go.
+  --lk-workspace-pad: var(--wzl-space-sm);
+
   font-family: var(--wzl-font-ui);
   font-size: var(--wzl-font-size);
   font-weight: var(--wzl-font-weight-light);
