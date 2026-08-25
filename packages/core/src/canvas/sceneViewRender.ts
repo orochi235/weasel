@@ -121,7 +121,7 @@ function sceneAsHierarchy<TData, TLayer extends string, TPose>(
       const node = scene.get(parentId as NodeId);
       return node && node.kind === 'container' ? (node.children as readonly string[]) : [];
     },
-    getPose: (id) => scene.get(id as NodeId)!.pose,
+    getPose: (id) => scene.overrides.get(id as NodeId)?.pose ?? scene.get(id as NodeId)!.pose,
   } as HierarchicalAdapter<Node<TData, TLayer, TPose>, TPose>;
 }
 
@@ -159,8 +159,17 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
     node: Node<TData, TLayer, TPose>,
     pose: TPose,
     v: View,
-  ): DrawCommand[] =>
-    wrapNodeOutput(drawOne(node, pose, v), pose, alphaFor ? alphaFor(node.id) : 1);
+  ): DrawCommand[] => {
+    // The scene is in scope here, so this is where the override's alpha is
+    // applied on the headless path; `SceneCanvas` does the same for the live
+    // one. `Canvas` itself never sees a scene, so it can't and doesn't.
+    const overrideAlpha = scene.overrides.get(node.id as NodeId)?.alpha ?? 1;
+    return wrapNodeOutput(
+      drawOne(node, pose, v),
+      pose,
+      (alphaFor ? alphaFor(node.id) : 1) * overrideAlpha,
+    );
+  };
 
   const children: DrawCommand[] = buildSceneTree(
     sceneAsHierarchy(scene) as Parameters<typeof buildSceneTree>[0],
