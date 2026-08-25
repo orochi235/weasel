@@ -164,6 +164,32 @@ rect-flavored math (resize, area-select, snap origin) still works.
 parent. Rendering and hit-testing use world coords; the kit composes via
 `composeWorldPose`.
 
+## Pose override
+
+A node's **pose** is document state: undoable, serialized, the answer to "where
+is this". A pose **override** is the same value for one frame — `scene.overrides`
+holds a per-node `{ pose?, alpha? }` that the render and hit-test paths read
+through, and that history and `toJSON()` never see. A 60 Hz camera, a drag
+preview, a physics settle and an animation tween all want this: motion that is
+not an edit.
+
+```ts
+const entry = { pose: { x: 0, y: 0, width: 16, height: 16 } };
+scene.overrides.set(id, entry);   // once
+
+// per frame
+entry.pose.x = simulation.x;      // mutate in place — no allocation
+scene.overrides.commit();         // publish
+```
+
+`commit()` is not bookkeeping. The painter memo keys on pose *reference*, so an
+in-place mutation without a commit paints the previous frame and reports no
+error. `commit()` drops the pose-keyed memo slots of every overridden node.
+
+To promote a frame to document state — dropping a drag, baking a settle — write
+it once through `setPose` and `clearAll()`. That is the one step that belongs in
+the undo stack.
+
 ## Descriptor
 
 `PoseDescriptor<TPose>` projects an arbitrary `TPose` onto the kit's
