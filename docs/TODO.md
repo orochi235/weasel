@@ -412,6 +412,23 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
+- **(P2) `createParallaxLayer` bypasses `drawOneLayer`, so a source layer's
+  `space` is silently ignored.** `packages/core/src/features/parallax/createParallaxLayer.ts:36`
+  calls `layer.draw(...)` directly where `viewportLayer.ts` calls `drawOneLayer(...)`.
+  ParallaxDemo's four layers therefore declare `space: 'world'` while their bodies
+  pre-project — harmless today because nothing applies the transform, but the
+  labels are lies, and changing that one line to `drawOneLayer` converts all four
+  into a double-applied view transform (the bug fixed in `6eec0d88`).
+  `apps/draw/src/useLoupe.ts:49` has the same shape. Fix the bypass and the
+  demos together, or neither.
+
+- **(P3) A comment in `SceneCanvas` contradicts the line beneath it.**
+  `packages/core/src/canvas/SceneCanvas.tsx:1199-1200` says "SceneCanvas's default
+  is pan+zoom enabled even when the consumer omits the viewport prop (undefined
+  !== false)" directly above `const viewportRegistered = !!viewport;` — and
+  `!!undefined` is `false`. Browser behavior agrees with the code, not the
+  comment. Either the default is wrong or the comment is; decide which.
+
 - **(P1) `curve-lab` renders in an infinite loop.** 62 x `Maximum update depth
   exceeded` at load. `usePublishSelection`'s effect
   (`packages/core/src/canvas/SelectionContext.tsx:117`) has deps `[ctx, serialized]`,

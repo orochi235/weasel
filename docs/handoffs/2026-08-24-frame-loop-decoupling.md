@@ -188,3 +188,23 @@ Worth reading before trusting a green suite here again:
   run-to-run spread. The conclusion is structural and stands; the number is gone.
 - **Two more false-green tests**, bringing the arc's total to six. One passed only because `paint`
   bails on a null canvas ref rather than because the flag under test worked.
+
+
+## Demo sweep result (all 52 demos, headed browser)
+
+**No demo renders blank; the branch introduced no rendering regression.** Selection chrome tracks the
+camera at zoom, and Cmd+0 returns to exact reference pixels everywhere — no drift, no double-applied
+zoom (a clean 1.26x per notch).
+
+Six defects found, **all pre-existing**, now filed under "Rendering & paint" in `docs/TODO.md`:
+curve-lab's infinite render loop, sibling SceneCanvases unregistering each other's viewport actions,
+the text overlay ignoring zoom, and the parallax/`SceneCanvas`-comment items. The one that looked
+like it might be ours — `#viewport-layer`'s empty picture-in-picture — bisected to a demo bug and is
+**fixed** in `6eec0d88`: four demos pre-applied the view transform inside a `space: 'world'` layer,
+so `drawOneLayer` applied it twice and content landed at size squared. The minimap had it too and
+merely looked plausible: 12 nodes drawn at 2-4 px instead of 11-22 px, a ~40x content deficit that
+reads as "a minimap with tiny dots".
+
+Note for whoever reads the Aug 15 screenshots in `.playwright-mcp/`: commit `f3b146c1` diagnosed this
+symptom as an ill-aimed inner view and concluded "The kit's `createViewportLayer` was correct
+throughout." That was true — the bug was in the demo's source layer, which that session never opened.
