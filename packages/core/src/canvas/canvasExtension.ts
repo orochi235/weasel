@@ -40,9 +40,11 @@ export interface CanvasExtensionApi {
    * Set the view without a React render: the ref updates now and the next
    * frame paints with it.
    *
-   * Ignored, with a console warning, when the canvas is controlled by a `view`
-   * prop — there the prop is the authority and this would only desynchronize
-   * pixels from props. `onViewChange` still fires either way.
+   * Not applied locally when the canvas is controlled by a `view` prop — there
+   * the prop is the authority and a local write would only desynchronize
+   * pixels from props. The value still goes out through `onViewChange`, so a
+   * controlled owner can honor it; without an `onViewChange` it is dropped.
+   * Either way the canvas warns once per mount.
    */
   setView(next: View | ((current: View) => View)): void;
   /** Called after each view change, for chrome that mirrors the camera — a

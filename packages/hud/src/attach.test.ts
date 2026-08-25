@@ -14,17 +14,20 @@ import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 const IDENTITY_VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 function makeApi(): CanvasExtensionApi & { _layer?: RenderLayer<unknown> } {
-  const api = {
+  const api: CanvasExtensionApi & { _layer?: RenderLayer<unknown> } = {
     element: null,
     requestRedraw: vi.fn(),
     subscribeFrame: vi.fn(() => () => {}),
     hitTestExtras: vi.fn(() => null),
-    registerLayer: vi.fn((layer) => {
-      (api as { _layer?: unknown })._layer = layer;
-      return () => { (api as { _layer?: unknown })._layer = undefined; };
+    registerLayer: vi.fn((layer: RenderLayer<unknown>) => {
+      api._layer = layer;
+      return () => { api._layer = undefined; };
     }),
+    getView: vi.fn(() => IDENTITY_VIEW),
+    setView: vi.fn(),
+    subscribeView: vi.fn(() => () => {}),
   };
-  return api as never;
+  return api;
 }
 
 describe('attachHud', () => {

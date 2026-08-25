@@ -182,6 +182,81 @@ describe('imperative view', () => {
     warn.mockRestore();
   });
 
+  it('drops view subscribers on unmount', async () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const { unmount } = render(
+      <Canvas ref={apiRef} width={100} height={80} layers={{}} defaultView={IDENTITY} />,
+    );
+    await frame();
+    const seen = vi.fn();
+    // The handle outlives the component, so an unmount is the only thing that
+    // can release a subscriber whose owner never unsubscribed.
+    const api = apiRef.current!;
+    api.subscribeView(seen);
+    unmount();
+    api.setView({ x: 1, y: 0, scale: { x: 1, y: 1 } });
+
+    expect(seen).not.toHaveBeenCalled();
+  });
+
+  it('warns once per mount, not once per controlled write', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    render(
+      <Canvas
+        ref={apiRef}
+        width={100}
+        height={80}
+        layers={{}}
+        view={IDENTITY}
+        onViewChange={vi.fn()}
+      />,
+    );
+    await frame();
+
+    // A pinch drives this at frame rate; a warning per call would bury the
+    // console under a message about a write `onViewChange` is honoring.
+    for (let i = 0; i < 5; i++) {
+      apiRef.current!.setView({ x: i, y: 0, scale: { x: 1, y: 1 } });
+    }
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+
+  it('says the write was forwarded when controlled with an onViewChange', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    render(
+      <Canvas
+        ref={apiRef}
+        width={100}
+        height={80}
+        layers={{}}
+        view={IDENTITY}
+        onViewChange={vi.fn()}
+      />,
+    );
+    await frame();
+    apiRef.current!.setView({ x: 4, y: 0, scale: { x: 1, y: 1 } });
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('forwarded to `onViewChange`'));
+    expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('ignored'));
+    warn.mockRestore();
+  });
+
+  it('says the write was ignored when controlled with nowhere to forward it', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    render(<Canvas ref={apiRef} width={100} height={80} layers={{}} view={IDENTITY} />);
+    await frame();
+    apiRef.current!.setView({ x: 4, y: 0, scale: { x: 1, y: 1 } });
+
+    expect(apiRef.current!.getView()).toEqual(IDENTITY);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('ignored'));
+    warn.mockRestore();
+  });
+
   it('tracks the view prop while controlled', async () => {
     const apiRef = { current: null as CanvasExtensionApi | null };
     const { rerender } = render(
@@ -203,9 +278,11 @@ describe('imperative view', () => {
   it('repaints with the prop view a controlled consumer hands down', async () => {
     const apiRef = { current: null as CanvasExtensionApi | null };
     const draw = vi.fn();
-    const layer = probeLayer(draw);
+    // Hoisted whole: a fresh `layers` literal per render fires the paint
+    // tripwire on its own, and the view dep this guards would go untested.
+    const layers = { probe: { layer: probeLayer(draw) } };
     const { rerender } = render(
-      <Canvas ref={apiRef} width={100} height={80} layers={{ probe: { layer } }} view={IDENTITY} />,
+      <Canvas ref={apiRef} width={100} height={80} layers={layers} view={IDENTITY} />,
     );
     await frame();
     expect(draw).toHaveBeenCalledTimes(1);
@@ -215,7 +292,7 @@ describe('imperative view', () => {
         ref={apiRef}
         width={100}
         height={80}
-        layers={{ probe: { layer } }}
+        layers={layers}
         view={{ x: 12, y: 0, scale: { x: 1, y: 1 } }}
       />,
     );

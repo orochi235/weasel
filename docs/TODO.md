@@ -412,6 +412,19 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
+- **(P2) The canvas's repaint tripwire has a blind spot: `helpersForLayersRef`.**
+  `Canvas` marks itself dirty from a `useEffect` whose dep array is meant to
+  name every input the paint reads. `helpersForLayersRef` — selection, preview
+  poses, chrome state, `getIsVisible` — is written during render and appears in
+  neither that array nor an imperative redraw of its own. It works today only
+  because `SceneCanvas` calls `requestRedraw()` by hand at six sites
+  (`SceneCanvas.tsx:936, 946, 952, 1082, 1087, 1622`), which means the primitive
+  is trusting its wrapper to remember. A bare `<Canvas>` consumer changing
+  selection gets no repaint, and the comment above the dep array claims the
+  opposite ("every input the paint reads must appear here"). Either fold the
+  helpers into the tripwire or make the comment tell the truth about who owns
+  the redraw.
+
 - **(P2) A throwing layer takes down the whole frame, as an uncaught error.**
   Since the paint moved onto the frame loop, a `draw` that throws surfaces as an
   uncaught `requestAnimationFrame` error on the window; before, it ran inside a

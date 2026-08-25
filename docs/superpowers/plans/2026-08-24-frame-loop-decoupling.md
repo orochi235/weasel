@@ -426,7 +426,12 @@ In `Canvas.tsx`, replace `:845-860`:
     if (isControlledRef.current) {
       // The prop is the authority; writing the ref would put pixels and props
       // out of step with nothing to reconcile them.
-      console.warn('[weasel] setView ignored: this canvas is controlled by its `view` prop. Update that prop, or drop it to take the imperative path.');
+      if (!warnedControlledRef.current) {
+        warnedControlledRef.current = true;
+        console.warn(onViewChangeRef.current
+          ? '[weasel] setView: this canvas is controlled by its `view` prop, so the value was forwarded to `onViewChange` rather than applied locally.'
+          : '[weasel] setView ignored: this canvas is controlled by its `view` prop and has no `onViewChange`, so the value went nowhere. Update the prop, or drop it to take the imperative path.');
+      }
       onViewChangeRef.current?.(clamped);
       return;
     }
@@ -450,6 +455,13 @@ In `Canvas.tsx`, replace `:845-860`:
 - `usePinchZoomTool(canvasRef, effectiveView, setView, …)` at `:888-893` — Task 3.
 
 Grep for the identifier before moving on: `grep -n effectiveView packages/core/src/canvas/Canvas.tsx` must come back empty.
+
+**Warn once per mount, and only say "ignored" when it is true.** `Canvas` is not exported and
+`SceneCanvas` renders it controlled unconditionally, so every canvas in existence takes this branch,
+and `usePinchZoomTool` reaches it on every pointermove — ~60 warnings a second. When `onViewChange`
+is present the write is *forwarded*, not ignored; claiming otherwise sends a consumer hunting a bug
+that isn't there while their camera moves correctly. Cover both strings, and the once-per-mount
+behavior, with tests.
 
 - [ ] **Step 4: Put the new members on the handle**
 

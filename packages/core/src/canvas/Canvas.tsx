@@ -834,11 +834,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     helpersForLayersRef.current,
   ), [hitTestExtrasIn]);
 
-  // Viewport state: hybrid uncontrolled/controlled. Controlled (`view` prop
-  // supplied) is unchanged — the consumer owns the value and every write goes
-  // out through `onViewChange`. Uncontrolled state lives in a ref rather than
-  // `useState`, so a camera moving at 60 Hz costs no React render; whatever
-  // renders the view as DOM subscribes instead.
+  // The uncontrolled view lives in a ref, not `useState`, so a camera moving
+  // at 60 Hz costs no React render; DOM that mirrors it subscribes instead.
   const viewRef = useRef<View>(viewProp ?? defaultView ?? { x: 0, y: 0, scale: { x: 1, y: 1 } });
   const isControlled = viewProp !== undefined;
   if (isControlled) viewRef.current = viewProp;
@@ -849,18 +846,23 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   viewBoundsRef.current = viewBounds;
   const isControlledRef = useRef(isControlled);
   isControlledRef.current = isControlled;
-  const dimsForClampRef = useRef({ width, height });
-  dimsForClampRef.current = { width, height };
+  const controlledWarnedRef = useRef(false);
 
   const setView = useCallback((next: View | ((current: View) => View)) => {
     const resolved = typeof next === 'function' ? next(viewRef.current) : next;
     const bounds = viewBoundsRef.current;
-    const clamped = bounds ? clampView(resolved, bounds, dimsForClampRef.current) : resolved;
+    const clamped = bounds ? clampView(resolved, bounds, dimsRef.current) : resolved;
     if (isControlledRef.current) {
       // The prop is the authority; writing the ref would put pixels and props
       // out of step with nothing to reconcile them.
-      console.warn('[weasel] setView ignored: this canvas is controlled by its `view` prop. Update that prop, or drop it to take the imperative path.');
-      onViewChangeRef.current?.(clamped);
+      const forward = onViewChangeRef.current;
+      if (!controlledWarnedRef.current) {
+        controlledWarnedRef.current = true;
+        console.warn(forward
+          ? '[weasel] setView not applied locally: this canvas is controlled by its `view` prop. The value was forwarded to `onViewChange` — update the prop from there, or drop it to take the imperative path.'
+          : '[weasel] setView ignored: this canvas is controlled by its `view` prop and has no `onViewChange`, so the value has nowhere to go. Update the prop, or drop it to take the imperative path.');
+      }
+      forward?.(clamped);
       return;
     }
     viewRef.current = clamped;
@@ -1349,11 +1351,16 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // The GL context and everything it owns (programs, texture caches, VBOs)
   // outlive React state, so unmount has to free them explicitly or a
   // remounting host walks into the browser's live-context cap.
-  useEffect(() => () => {
-    glRendererRef.current?.dispose();
-    glRendererRef.current = null;
-    layerCacheRef.current.clear();
-    lastResizeRef.current = null;
+  useEffect(() => {
+    const layerCache = layerCacheRef.current;
+    const viewSubs = viewSubsRef.current;
+    return () => {
+      glRendererRef.current?.dispose();
+      glRendererRef.current = null;
+      layerCache.clear();
+      lastResizeRef.current = null;
+      viewSubs.clear();
+    };
   }, []);
 
   useEffect(() => {

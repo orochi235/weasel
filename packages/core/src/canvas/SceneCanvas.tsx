@@ -955,9 +955,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // SceneCanvas owns the view state so writes from immediate-timing actions
   // (viewport.pan / viewport.zoom via the dep registry's `view.set`) drive a
   // re-render of the underlying Canvas. We always render Canvas in controlled
-  // mode (`view={effectiveView}`); Canvas's own internal useState is unused
-  // along this path. When `viewProp` is supplied by the consumer we defer to
-  // it (true external control).
+  // mode (`view={effectiveView}`), so Canvas's own imperative view path is
+  // unreachable along here. When `viewProp` is supplied by the consumer we
+  // defer to it (true external control).
   const [internalView, setInternalView] = useState<View>(
     viewProp ?? defaultView ?? { x: 0, y: 0, scale: { x: 1, y: 1 } },
   );
