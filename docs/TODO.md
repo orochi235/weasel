@@ -300,6 +300,16 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
 
 ## Viewport
 
+- **(P3) `useViewAnimation` builds an animator it never uses.** The hook calls
+  `useAnimator()` unconditionally so it can fall back to its own animator when
+  the caller passes none — hooks cannot be conditional — so `<SceneCanvas>`,
+  which always passes `cameraAnimator`, constructs a second idle `Animator` per
+  canvas. It registers nothing and its rAF loop never starts, so the cost is one
+  object plus a no-op unmount effect, but it is dead weight and it makes
+  "SceneCanvas runs the camera on its own animator" untestable by swapping the
+  argument: `useViewAnimation(channel, undefined)` behaves identically. Fixing
+  it wants either a positional-animator variant or a `useAnimatorOrNull` seam.
+
 - **(P2) Viewports as a first-class canvas concept.** `createViewportLayer`
   re-projects on request (`layer.reproject(outer, dims, screen)`, `viewportsAt`
   for the topmost of several, shipped 2026-08-15), but the dispatcher knows

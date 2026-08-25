@@ -30,6 +30,8 @@ export function useViewportActions(args: {
 
   // Serialize the zoom config so the effect re-runs when its fields change
   // (object identity isn't stable across renders for inline literals).
+  // JSON.stringify drops function-valued fields, so changing only
+  // `animate.easing` does not re-register — pass a stable easing.
   const zoomKey = typeof zoom === 'object' ? JSON.stringify(zoom) : String(zoom);
 
   useEffect(() => {

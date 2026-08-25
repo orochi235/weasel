@@ -2,6 +2,7 @@ import type { LayerHit } from '../affordances/types';
 import type { Dims, RenderLayer } from '../core/layers/render';
 import type { View } from '../core/viewport/view';
 import type { IngestItem } from '../features/ingestion/ingestItems';
+import type { ViewAnimationOptions } from '../core/viewport/useViewAnimation';
 
 /**
  * The **base imperative ref handle** shared by the canvas components. For
@@ -106,4 +107,14 @@ export interface CanvasExtensionApi {
  */
 export interface SceneCanvasApi extends CanvasExtensionApi {
   ingest(input: File[] | IngestItem[], point?: { x: number; y: number }): void;
+  /**
+   * Glide the camera to `to` rather than jumping there — a fit-to-selection, a
+   * recenter, a scripted tour. A thunk receives the pending target when an
+   * animation is already in flight, so steps compound. Any other view write
+   * cancels it.
+   */
+  animateView(to: View | ((base: View) => View), opts?: ViewAnimationOptions): void;
+  /** Cancel a camera animation. The view stays where it is. */
+  stopViewAnimation(): void;
+  isViewAnimating(): boolean;
 }

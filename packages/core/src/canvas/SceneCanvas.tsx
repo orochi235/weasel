@@ -32,7 +32,10 @@ import type { FillStyle } from 'core/paint-types';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap, CanvasSelectionMode, SelectionOverlaySlotConfig } from './Canvas';
 import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';
-import type { Animator } from '../animation/types';
+import type { Animator, EasingFn } from '../animation/types';
+import { useAnimator } from '../animation/useAnimator';
+import { useViewAnimation } from 'core/viewport/useViewAnimation';
+import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
 import type { SceneToAdapterOptions } from './sceneAdapter';
 import type { PanBounds } from 'core/viewport/useDecayLoop';
 import type { View } from 'core/viewport/view';
@@ -598,7 +601,10 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     viewport?: {
       inertia?: boolean | { friction?: number; minSpeed?: number; boundary?: 'stop' | 'bounce' | 'spring'; bounds?: PanBounds };
       pinchZoom?: boolean | { min?: number; max?: number };
-      animatedZoom?: boolean | { duration?: number; resetDuration?: number; easing?: (t: number) => number };
+      /** Glide Cmd+=/-/0 instead of jumping. `true` uses the kit defaults
+       *  (250 ms, ease-out-cubic); an object tunes them. Wheel and pinch are
+       *  unaffected — their input already samples every frame. */
+      animatedZoom?: boolean | { ms?: number; resetMs?: number; easing?: EasingFn };
       pan?: boolean;
       /** Wheel/keyboard zoom. `true`/omitted = default Cmd+wheel zoom with the
        *  kit's 0.1–8 clamp; `false` disables. Pass a {@link ViewportZoomOptions}
@@ -984,6 +990,37 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const notifyViewChange = useCallback((v: View) => {
     onViewChangeProp?.(v);
   }, [onViewChangeProp]);
+
+  // The camera runs on its own animator, never the `animator` prop's: that prop
+  // is the consumer's scene animator, and their `cancelAll()` or `pause()` must
+  // not strand a zoom half-finished or freeze the camera.
+  const cameraAnimator = useAnimator();
+  const viewChannel = useMemo(
+    () => ({ get: () => currentViewRef.current, set: handleViewChange }),
+    [handleViewChange],
+  );
+  const viewAnimation = useViewAnimation(viewChannel, cameraAnimator);
+
+  // Any view write the runner did not make cancels it. `subscribeView` covers
+  // the uncontrolled path — hand tool, pinch, wheel, `handle.setView` — and the
+  // `view` dep's `set` covers a controlled canvas, whose writes go out through
+  // `onViewChange` and never reach a subscriber here.
+  useEffect(() => {
+    const api = canvasApiRef.current;
+    if (!api) return;
+    return api.subscribeView(() => viewAnimation.stopIfExternal());
+  }, [canvasReady, viewAnimation]);
+
+  // `animatedZoom` is the SceneCanvas-level spelling of the zoom action's
+  // `animate` option, the way `pinchZoom` is of the pinch tool's clamp.
+  const animatedZoom = viewport?.animatedZoom;
+  const viewportZoomProp = viewport?.zoom ?? true;
+  const resolvedViewportZoom = useMemo<boolean | ViewportZoomOptions>(() => {
+    if (viewportZoomProp === false) return false;
+    const base = typeof viewportZoomProp === 'object' ? viewportZoomProp : {};
+    if (!animatedZoom) return base;
+    return { ...base, animate: animatedZoom === true ? {} : animatedZoom };
+  }, [viewportZoomProp, animatedZoom]);
 
   // Selection: caller-supplied wins; otherwise build from selectionOptions.
   // Hooks always run unconditionally — when a caller supplies `selection`,
@@ -1837,14 +1874,20 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     (node: CanvasExtensionApi | null) => {
       internalCanvasRef.current = node?.element ?? null;
       const extended: SceneCanvasApi | null = node
-        ? { ...node, ingest: ingestImpl }
+        ? {
+            ...node,
+            ingest: ingestImpl,
+            animateView: viewAnimation.animate,
+            stopViewAnimation: viewAnimation.stop,
+            isViewAnimating: viewAnimation.isAnimating,
+          }
         : null;
       canvasApiRef.current = extended;
       setCanvasReady(extended !== null);
       if (typeof ref === 'function') ref(extended);
       else if (ref) (ref as React.MutableRefObject<SceneCanvasApi | null>).current = extended;
     },
-    [ref, ingestImpl],
+    [ref, ingestImpl, viewAnimation],
   );
 
   // What a view needs to build its own overlay-aware state. `geometry` is the
@@ -1946,8 +1989,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 getActionRef={getActionRef}
                 pickEvery={internalPickEvery}
                 viewportPanEnabled={viewport?.pan !== false}
-                viewportZoom={viewport?.zoom ?? true}
+                viewportZoom={resolvedViewportZoom}
                 viewportRecenter={viewport?.recenter}
+                viewAnimation={viewAnimation}
                 editAnchorsExternalState={editAnchorsExternalState}
                 anchorEditingAllowed={anchorEditingAllowed}
                 layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
@@ -2301,6 +2345,7 @@ function StandardActionsRegistrar({
   viewportPanEnabled,
   viewportZoom,
   viewportRecenter,
+  viewAnimation,
   editAnchorsExternalState,
   anchorEditingAllowed,
   layouts,
@@ -2348,6 +2393,9 @@ function StandardActionsRegistrar({
    *  snapping to identity. A returned `View` is a target the kit may
    *  animate to; `void` means the callback dispatched it itself. */
   viewportRecenter?: () => View | void;
+  /** The canvas's camera runner, published on the `view` dep so
+   *  `viewport.zoom`'s discrete branches can animate. */
+  viewAnimation: ViewAnimationApi;
   /** Lifted edit-mode state so the `pathEditingOverlay` chrome (rendered
    *  outside this subtree) can read the same `editingId` the dep does. */
   editAnchorsExternalState: import('./deps/editAnchors').EditAnchorsStateRef;
@@ -2422,10 +2470,16 @@ function StandardActionsRegistrar({
   // useStandardActions (which publishes the `view` dep along with selection,
   // scene, history, pointer, activeTool). `hostSize` reads the live canvas
   // element so keyboard zoom (Cmd+=/-) can anchor at the visible center.
-  const view = useViewDepSource(currentViewRef, onViewChange, viewportRecenter, () => {
-    const el = canvasRef.current;
-    return el ? { width: el.clientWidth, height: el.clientHeight } : null;
-  });
+  const view = useViewDepSource(
+    currentViewRef,
+    onViewChange,
+    viewportRecenter,
+    () => {
+      const el = canvasRef.current;
+      return el ? { width: el.clientWidth, height: el.clientHeight } : null;
+    },
+    viewAnimation,
+  );
   // Scene owns its own undo/redo stacks via `useScene`. `undoAction` /
   // `redoAction` only call `history.undo()` / `history.redo()`, so the scene
   // satisfies the runtime contract — cast through `unknown` since `Scene`'s
