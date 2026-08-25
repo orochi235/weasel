@@ -804,6 +804,9 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         const n = requireNode(nid);
         return n.kind === 'container' ? { ...n, children: [...n.children] } : { ...n };
       });
+      // Ephemeral, and ids are reusable: an override left behind would
+      // reattach itself to whatever is added under this id next.
+      for (const nid of ids) overrides.clear(nid);
       executeAndLog('kit:remove', {
         rootId: id, parent: node.parent, index, nodes: snapshot,
       }, 'remove');
