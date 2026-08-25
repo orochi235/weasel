@@ -310,45 +310,15 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
   argument: `useViewAnimation(channel, undefined)` behaves identically. Fixing
   it wants either a positional-animator variant or a `useAnimatorOrNull` seam.
 
-- **(P3) Camera-animation loose ends (from the 2026-08-25 review).** None is
-  load-bearing for what shipped; all four are real.
-
-  - **`onDone` can fire on a cancel.** `Animator.tween`'s tick calls `onTick`
-    and then `onDone` in the same pass once `t >= 1`
-    (`animation/useAnimator.ts:306`), so a write that cancels the tween from
-    inside that last `onTick` still gets the completion callback. It is the
-    animator's contract rather than `useViewAnimation`'s, so the fix belongs
-    there and touches every tween.
-
-  - **`ViewportZoomAnimateOptions` declares `onDone` and the action drops it.**
-    `makeViewportZoomAction` rebuilds the tween options field by field as
-    `{ ms, easing, interpolator }`
-    (`interactions/actions/defaults/viewportZoom.ts:110`), so an `onDone`
-    passed through `viewport.zoom`'s `animate` is silently ignored.
-
-  - **`viewport.animatedZoom` is spelled narrower than the option it feeds.**
-    `SceneCanvas.tsx:604` restates the shape as `{ ms, resetMs, easing }` while
-    `ViewportZoomAnimateOptions` extends `ViewAnimationOptions`, so
-    `interpolator` cannot be reached from the `<SceneCanvas>` prop at all.
-    Reference the interface instead of restating it.
-
-  - **`useViewDepSource`'s presence-set rebuild is untested, on a reason that
-    does not hold.** `canvas/deps/view.ts:41` says the optional members must be
-    absent rather than undefined-valued because `viewportZoomAction` branches on
-    `view.recenter` being truthy — but a truthy check cannot tell the two apart,
-    and nothing in the tree does an `in` or `hasOwnProperty` check on a
-    `ViewApi`. Spreading every member unconditionally leaves the suite green.
-    Find the real constraint and pin it with a test, or drop the `shape` string.
-
-  - **A controlled consumer's own `setState` cannot interrupt a glide.** Every
-    view write that goes through the canvas cancels the camera runner, via the
-    `onViewChange` it fires on both branches. A consumer who owns `view` in
-    state and writes it directly does not go through the canvas: the prop change
-    arrives asynchronously, after the runner has lowered the flag that
-    distinguishes its own frames, so it is indistinguishable from one. Comparing
-    the incoming prop against the last value written would work only for
-    consumers who store the view by reference — one who normalizes or clamps it
-    would have every frame of their own glide cancelled. Wants a real design.
+- **(P3) A controlled consumer's own `setState` cannot interrupt a glide.**
+  Every view write that goes through the canvas cancels the camera runner, via
+  the `onViewChange` it fires on both branches. A consumer who owns `view` in
+  state and writes it directly does not go through the canvas: the prop change
+  arrives asynchronously, after the runner has lowered the flag that
+  distinguishes its own frames, so it is indistinguishable from one. Comparing
+  the incoming prop against the last value written would work only for
+  consumers who store the view by reference — one who normalizes or clamps it
+  would have every frame of their own glide cancelled. Wants a real design.
 
 - **(P2) Viewports as a first-class canvas concept.** `createViewportLayer`
   re-projects on request (`layer.reproject(outer, dims, screen)`, `viewportsAt`
