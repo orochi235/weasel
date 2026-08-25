@@ -1,4 +1,6 @@
 export { FpsMeter } from './FpsMeter';
+export type { LegendEntry, LegendMark, LegendProps } from './Legend';
+export { Legend } from './Legend';
 export type { ScaleIndicatorProps } from './ScaleIndicator';
 export { ScaleIndicator } from './ScaleIndicator';
 export type { SidebarProps } from './Sidebar';
