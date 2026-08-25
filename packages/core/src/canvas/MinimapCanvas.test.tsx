@@ -10,7 +10,7 @@
  * PointerEvent constructor drops `clientX` / `clientY` from the init dict.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createEvent, fireEvent, render } from '@testing-library/react';
+import { act, createEvent, fireEvent, render } from '@testing-library/react';
 import { createRef } from 'react';
 import { createScene } from 'core/scene/scene';
 import type { Node, Scene } from 'core/scene/types';
@@ -330,5 +330,79 @@ describe('<MinimapCanvas>', () => {
     expect(indicator.stroke?.paint).toEqual({ fill: 'solid', color: '#ff00aa' });
     expect(indicator.stroke?.width).toBe(3);
     expect(indicator.stroke?.dash).toEqual([5, 2]);
+  });
+});
+
+/** Resolves after the next animation frame — where the frame loop's paint lands. */
+const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
+
+/** The rect x-coordinates painted in the most recent dispatch. */
+function paintedXs(): number[] {
+  const call = renderMock.mock.calls.at(-1);
+  if (!call) return [];
+  const out: number[] = [];
+  const walk = (cmd: DrawCommand): void => {
+    const c = cmd as { kind: string; path?: { kind: string; x?: number }; children?: DrawCommand[] };
+    if (c.kind === 'path' && c.path?.kind === 'rect' && typeof c.path.x === 'number') out.push(c.path.x);
+    for (const child of c.children ?? []) walk(child);
+  };
+  for (const cmd of call[0]) walk(cmd);
+  return out;
+}
+
+describe('<MinimapCanvas> — pose overrides', () => {
+  const mainView: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+
+  function renderMinimap(scene: Scene<D, L, P>) {
+    return render(
+      <MinimapCanvas
+        scene={scene}
+        mainView={mainView}
+        mainViewDims={{ width: 200, height: 200 }}
+        onMainViewChange={() => {}}
+        width={100}
+        height={100}
+        drawOne={drawOne}
+        fit="scene"
+      />,
+    );
+  }
+
+  it('paints the override pose, so it agrees with the main canvas', async () => {
+    const scene = makeScene();
+    const first = scene.roots[0];
+    renderMinimap(scene);
+    expect(paintedXs()).toContain(0); // document pose
+    renderMock.mockClear();
+
+    await act(async () => {
+      scene.overrides.set(first, { pose: { x: 750, y: 0, width: 100, height: 100 } });
+      scene.overrides.commit();
+      await frame();
+    });
+
+    expect(paintedXs()).toContain(750);
+  });
+
+  it('leaves the fit view on document poses, so framing does not thrash', async () => {
+    const scene = makeScene();
+    const first = scene.roots[0];
+    renderMinimap(scene);
+    const fitBefore = computeFitView(
+      scene, { width: 100, height: 100 }, 'scene',
+      (p: P) => ({ x: p.x, y: p.y, width: p.width, height: p.height }) as Bounds,
+    );
+
+    await act(async () => {
+      scene.overrides.set(first, { pose: { x: 5000, y: 0, width: 100, height: 100 } });
+      scene.overrides.commit();
+      await frame();
+    });
+
+    const fitAfter = computeFitView(
+      scene, { width: 100, height: 100 }, 'scene',
+      (p: P) => ({ x: p.x, y: p.y, width: p.width, height: p.height }) as Bounds,
+    );
+    expect(fitAfter).toEqual(fitBefore);
   });
 });

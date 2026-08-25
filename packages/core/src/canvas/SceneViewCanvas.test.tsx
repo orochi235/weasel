@@ -74,6 +74,10 @@ const drawOne = (node: Node<D, L, P>, pose: P, _view: View): DrawCommand[] => [{
 
 const identityView: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
+/** Resolves after the next animation frame — where the frame loop's paint
+ *  lands. Only the mount paint is synchronous. */
+const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -102,7 +106,7 @@ describe('<SceneViewCanvas>', () => {
     expect((root.children[0] as GroupDrawCommand).children).toHaveLength(2);
   });
 
-  it('re-renders when the scene is mutated', () => {
+  it('re-renders when the scene is mutated', async () => {
     const scene = makeScene();
 
     render(
@@ -117,7 +121,7 @@ describe('<SceneViewCanvas>', () => {
 
     const initialCalls = renderMock.mock.calls.length;
 
-    act(() => {
+    await act(async () => {
       scene.batch('add-one', () => {
         scene.add({
           kind: 'leaf',
@@ -126,6 +130,7 @@ describe('<SceneViewCanvas>', () => {
           pose: { x: 1, y: 1, width: 2, height: 2 },
         });
       });
+      await frame();
     });
 
     expect(renderMock.mock.calls.length).toBeGreaterThan(initialCalls);
@@ -134,7 +139,7 @@ describe('<SceneViewCanvas>', () => {
     expect((root.children[0] as GroupDrawCommand).children).toHaveLength(3);
   });
 
-  it('re-renders when the view prop changes', () => {
+  it('re-renders when the view prop changes', async () => {
     const scene = makeScene();
     const { rerender } = render(
       <SceneViewCanvas
@@ -158,11 +163,12 @@ describe('<SceneViewCanvas>', () => {
         drawOne={drawOne}
       />,
     );
+    await act(async () => { await frame(); });
 
     expect(renderMock.mock.calls.length).toBeGreaterThan(before);
   });
 
-  it('re-renders when extraCommands changes', () => {
+  it('re-renders when extraCommands changes', async () => {
     const scene = makeScene();
     const extraA: DrawCommand[] = [{
       kind: 'path',
@@ -200,6 +206,7 @@ describe('<SceneViewCanvas>', () => {
         extraCommands={extraB}
       />,
     );
+    await act(async () => { await frame(); });
 
     expect(renderMock.mock.calls.length).toBeGreaterThan(before);
     const lastAfter = renderMock.mock.calls[renderMock.mock.calls.length - 1][0][0] as GroupDrawCommand;
@@ -304,5 +311,109 @@ describe('<SceneViewCanvas>', () => {
     }
     const { container } = render(<Consumer />);
     expect(container.querySelector('canvas')).not.toBeNull();
+  });
+});
+
+/** The rect x-coordinates `drawOne` painted, in the most recent dispatch. */
+function paintedXs(): number[] {
+  const call = renderMock.mock.calls.at(-1);
+  if (!call) return [];
+  const out: number[] = [];
+  const walk = (cmd: DrawCommand): void => {
+    const c = cmd as { kind: string; path?: { x: number }; children?: DrawCommand[] };
+    if (c.kind === 'path' && c.path) out.push(c.path.x);
+    for (const child of c.children ?? []) walk(child);
+  };
+  for (const cmd of call[0]) walk(cmd);
+  return out;
+}
+
+describe('<SceneViewCanvas> — pose overrides', () => {
+  it('repaints with the override pose when one is committed', async () => {
+    const scene = makeScene();
+    const first = scene.roots[0];
+
+    render(
+      <SceneViewCanvas scene={scene} view={identityView} width={100} height={80} drawOne={drawOne} />,
+    );
+    expect(paintedXs()).toContain(10); // the document pose
+    renderMock.mockClear();
+
+    await act(async () => {
+      scene.overrides.set(first, { pose: { x: 500, y: 20, width: 30, height: 40 } });
+      scene.overrides.commit();
+      await frame();
+    });
+
+    expect(renderMock).toHaveBeenCalled();
+    expect(paintedXs()).toContain(500);
+    expect(paintedXs()).not.toContain(10);
+  });
+
+  it('repaints without re-rendering the React component', async () => {
+    const scene = makeScene();
+    const first = scene.roots[0];
+    let renders = 0;
+
+    function Counted() {
+      renders++;
+      return (
+        <SceneViewCanvas scene={scene} view={identityView} width={100} height={80} drawOne={drawOne} />
+      );
+    }
+    render(<Counted />);
+    const before = renders;
+    renderMock.mockClear();
+
+    await act(async () => {
+      scene.overrides.set(first, { pose: { x: 500, y: 20, width: 30, height: 40 } });
+      scene.overrides.commit();
+      await frame();
+    });
+
+    expect(renderMock).toHaveBeenCalled(); // pixels changed
+    expect(renders).toBe(before);          // React did not
+  });
+
+  it('coalesces many commits in one frame into a single paint', async () => {
+    const scene = makeScene();
+    const first = scene.roots[0];
+    const buffer = { x: 0, y: 20, width: 30, height: 40 };
+
+    render(
+      <SceneViewCanvas scene={scene} view={identityView} width={100} height={80} drawOne={drawOne} />,
+    );
+    scene.overrides.set(first, { pose: buffer });
+    renderMock.mockClear();
+
+    await act(async () => {
+      for (let i = 0; i < 10; i++) {
+        buffer.x = i;
+        scene.overrides.commit();
+      }
+      await frame();
+    });
+
+    expect(renderMock).toHaveBeenCalledTimes(1);
+    expect(paintedXs()).toContain(9); // the last committed value
+  });
+
+  it('stops repainting once unmounted', async () => {
+    const scene = makeScene();
+    const first = scene.roots[0];
+
+    const { unmount } = render(
+      <SceneViewCanvas scene={scene} view={identityView} width={100} height={80} drawOne={drawOne} />,
+    );
+    unmount();
+    renderMock.mockClear();
+
+    await act(async () => {
+      scene.overrides.set(first, { pose: { x: 500, y: 20, width: 30, height: 40 } });
+      scene.overrides.commit();
+      await frame();
+    });
+
+    expect(renderMock).not.toHaveBeenCalled();
   });
 });
