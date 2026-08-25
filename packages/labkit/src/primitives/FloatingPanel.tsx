@@ -68,6 +68,15 @@ export function FloatingPanel({
     () => readStored(storageKey) ?? { x: 0, y: 0, anchor },
   );
 
+  useEffect(() => {
+    if (!storageKey) return;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(place));
+    } catch {
+      // A full or disabled store is not worth failing a lab over.
+    }
+  }, [place, storageKey]);
+
   const item = useMemo(
     () => ({
       id: ITEM_ID,

@@ -179,3 +179,35 @@ describe('FloatingPanel dragging', () => {
     expect(onDown).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('FloatingPanel persistence', () => {
+  it('writes its placement under the given key once dragged', () => {
+    const { panel } = renderPanel(<FloatingPanel storageKey="k">x</FloatingPanel>);
+    fireEvent.pointerDown(panel, { clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(panel, { clientX: 140, clientY: 160 });
+    fireEvent.pointerUp(panel);
+    const stored = JSON.parse(localStorage.getItem('k') ?? 'null');
+    expect(stored).toMatchObject({ x: expect.any(Number), y: expect.any(Number) });
+    expect(stored).toHaveProperty('anchor');
+  });
+
+  it('restores what it stored on a later mount', () => {
+    localStorage.setItem('k', JSON.stringify({ x: 140, y: 90, anchor: null }));
+    const { panel } = renderPanel(<FloatingPanel storageKey="k">x</FloatingPanel>);
+    expect(panel.style.left).toBe('140px');
+    expect(panel.style.top).toBe('90px');
+  });
+
+  it('writes nothing when no key is given', () => {
+    const { panel } = renderPanel(<FloatingPanel>x</FloatingPanel>);
+    fireEvent.pointerDown(panel, { clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(panel, { clientX: 140, clientY: 160 });
+    fireEvent.pointerUp(panel);
+    expect(localStorage.length).toBe(0);
+  });
+
+  it('survives a corrupt stored value rather than throwing', () => {
+    localStorage.setItem('k', '{{{');
+    expect(() => renderPanel(<FloatingPanel storageKey="k">x</FloatingPanel>)).not.toThrow();
+  });
+});
