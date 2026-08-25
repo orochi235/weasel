@@ -1,43 +1,117 @@
-import { useCallback } from 'react';
-import { useViewTween } from './useViewTween';
+import { useMemo, useRef } from 'react';
+import { useAnimator } from '../../animation/useAnimator';
+import { easeOutCubic } from '../../animation/easings';
+import type { Animator, EasingFn, InterpolatorFactory } from '../../animation/types';
+import { interpolateView } from './interpolateView';
 import { fitViewToBounds } from './fitViewToBounds';
 import type { Bounds, FitViewToBoundsOptions, ViewportDims } from './fitViewToBounds';
 import type { View } from './view';
 
-/** Options accepted by {@link useViewAnimation}'s `animateToBounds`. */
-export interface AnimateToBoundsOptions extends FitViewToBoundsOptions {
-  /** Tween duration in ms (forwarded to `animateTo`). */
-  duration?: number;
-  /** Tween easing (forwarded to `animateTo`). */
-  easing?: (t: number) => number;
+/** Cancel-key every camera animation registers under: one per animator. */
+export const VIEW_ANIMATION_KEY = 'view';
+
+const DEFAULT_MS = 250;
+
+/** How the camera should move. */
+export interface ViewAnimationOptions {
+  /** Duration in ms. Default 250. */
+  ms?: number;
+  /** Easing curve. Default `easeOutCubic`. */
+  easing?: EasingFn;
+  /** Replace the kit's log-scale / fixed-anchor curve. */
+  interpolator?: InterpolatorFactory<View>;
+  /** Fires when the target is reached. Not called on cancel. */
+  onDone?: () => void;
+}
+
+/** Options accepted by {@link ViewAnimationApi.animateToBounds}. */
+export interface AnimateToBoundsOptions extends FitViewToBoundsOptions, ViewAnimationOptions {}
+
+/** What the runner reads and writes. On `<SceneCanvas>` this is the same
+ *  channel `view.set` uses, so a camera animation on an uncontrolled canvas
+ *  costs no React render. */
+export interface ViewChannel {
+  get(): View;
+  set(v: View): void;
+}
+
+/** The camera animation surface. One animation at a time. */
+export interface ViewAnimationApi {
+  /** Glide from the live view to `to`. A thunk receives the pending target when
+   *  one is in flight, so successive discrete steps compound. */
+  animate(to: View | ((base: View) => View), opts?: ViewAnimationOptions): void;
+  /** `fitViewToBounds` composed with `animate`. */
+  animateToBounds(bounds: Bounds, dims: ViewportDims, opts?: AnimateToBoundsOptions): void;
+  /** Cancel. The view stays where it is — no jump to the target. */
+  stop(): void;
+  isAnimating(): boolean;
+  /** Where the in-flight animation is heading, or null when none is. */
+  target(): View | null;
+  /** Cancel unless the write that prompted this came from the runner's own
+   *  per-frame write. Feed it from every channel that can move the camera. */
+  stopIfExternal(): void;
 }
 
 /**
- * Tween the viewport `View` between values. Wraps `useViewTween`'s `animateTo`
- * + `cancel`, and adds an `animateToBounds` convenience that composes
- * `fitViewToBounds` with the existing tween so consumers can say "zoom to this
- * bounds with animation" in one call.
+ * Animate the viewport `View`. Runs on the kit's {@link Animator} — pass one to
+ * share a canvas's animator, or omit it and the hook makes its own.
  *
- * `animateToBounds` needs the current `View` and the current viewport
- * dimensions to compute the target — both are passed as arguments so this
- * hook stays a leaf (no canvas-size subscription, no `View` storage).
+ * Every animation registers under {@link VIEW_ANIMATION_KEY}, so starting one
+ * cancels whatever was in flight, and each starts from the *live* view rather
+ * than a captured value — an interrupted camera never jumps.
  */
-export function useViewAnimation(setView: (v: View) => void) {
-  const { animateTo, cancel } = useViewTween(setView);
+export function useViewAnimation(view: ViewChannel, animator?: Animator): ViewAnimationApi {
+  const own = useAnimator();
+  const viewRef = useRef(view);
+  viewRef.current = view;
+  const animatorRef = useRef<Animator>(animator ?? own);
+  animatorRef.current = animator ?? own;
+  const targetRef = useRef<View | null>(null);
+  const writingRef = useRef(false);
 
-  const animateToBounds = useCallback(
-    (
-      bounds: Bounds,
-      currentView: View,
-      viewportDims: ViewportDims,
-      opts?: AnimateToBoundsOptions,
-    ) => {
-      const target = fitViewToBounds(bounds, viewportDims, currentView, opts);
-      if (target === currentView) return; // helper bailed (zero-area bounds/viewport)
-      animateTo(currentView, target, { duration: opts?.duration, easing: opts?.easing });
-    },
-    [animateTo],
-  );
+  return useMemo<ViewAnimationApi>(() => {
+    const isAnimating = () => animatorRef.current.isActive(VIEW_ANIMATION_KEY);
+    const target = () => (isAnimating() ? targetRef.current : null);
+    const stop = () => {
+      animatorRef.current.cancelKey(VIEW_ANIMATION_KEY);
+      targetRef.current = null;
+    };
 
-  return { animateTo, animateToBounds, cancel };
+    const animate: ViewAnimationApi['animate'] = (to, opts = {}) => {
+      const from = viewRef.current.get();
+      const resolved = typeof to === 'function' ? to(target() ?? from) : to;
+      stop();
+      targetRef.current = resolved;
+      animatorRef.current.tween<View>({
+        from,
+        to: resolved,
+        ms: opts.ms ?? DEFAULT_MS,
+        easing: opts.easing ?? easeOutCubic,
+        interpolator: opts.interpolator ?? interpolateView,
+        cancelKey: VIEW_ANIMATION_KEY,
+        onTick: (v) => {
+          writingRef.current = true;
+          try { viewRef.current.set(v); } finally { writingRef.current = false; }
+        },
+        onDone: () => {
+          targetRef.current = null;
+          opts.onDone?.();
+        },
+      });
+    };
+
+    return {
+      animate,
+      animateToBounds: (bounds, dims, opts = {}) => {
+        const current = viewRef.current.get();
+        const fitted = fitViewToBounds(bounds, dims, current, opts);
+        if (fitted === current) return; // helper bailed (zero-area bounds/viewport)
+        animate(fitted, opts);
+      },
+      stop,
+      isAnimating,
+      target,
+      stopIfExternal: () => { if (!writingRef.current) stop(); },
+    };
+  }, []);
 }
