@@ -10,7 +10,7 @@
 
 import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
-import { Profiler } from 'react';
+import { Profiler, StrictMode } from 'react';
 import type React from 'react';
 import { Canvas } from './Canvas';
 import type { CanvasExtensionApi } from './canvasExtension';
@@ -73,6 +73,23 @@ describe('Canvas frame loop', () => {
     expect(painted).toHaveBeenCalledTimes(1);
   });
 
+  it('paints under StrictMode, whose simulated remount runs cleanup once', async () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const draw = vi.fn();
+    render(
+      <StrictMode>
+        <Host apiRef={apiRef} layer={probeLayer(draw)} />
+      </StrictMode>,
+    );
+    await frame();
+    expect(draw).toHaveBeenCalledTimes(1);
+
+    act(() => { apiRef.current!.requestRedraw(); });
+    await frame();
+    await frame();
+    expect(draw).toHaveBeenCalledTimes(2);
+  });
+
   it('hands out a requestRedraw whose identity survives re-renders', async () => {
     const apiRef = { current: null as CanvasExtensionApi | null };
     const layer = probeLayer(vi.fn());
@@ -86,6 +103,28 @@ describe('Canvas frame loop', () => {
     // `@weasel-js/hud` and the gesture dispatcher capture this once and call
     // it for the life of the surface.
     expect(apiRef.current!.requestRedraw).toBe(captured);
+  });
+
+  it('schedules one more frame for a redraw issued from inside a draw', async () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const draw = vi.fn(() => {
+      // Exactly one re-entrant request: a layer that redraws unconditionally
+      // would spin the loop forever.
+      if (draw.mock.calls.length === 2) apiRef.current!.requestRedraw();
+    });
+    render(<Host apiRef={apiRef} layer={probeLayer(draw)} />);
+    await frame();
+    expect(draw).toHaveBeenCalledTimes(1);
+
+    act(() => { apiRef.current!.requestRedraw(); });
+    await frame();
+    await frame();
+    // The request made mid-draw survives the frame that was already running.
+    expect(draw).toHaveBeenCalledTimes(3);
+
+    await frame();
+    await frame();
+    expect(draw).toHaveBeenCalledTimes(3);
   });
 
   it('does not re-render to paint', async () => {

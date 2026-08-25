@@ -31,10 +31,10 @@ export function useFrameLoop(paint: () => boolean): FrameLoop {
   const scheduleFrame = useCallback(() => {
     if (rafRef.current !== 0 || !aliveRef.current) return;
     rafRef.current = requestAnimationFrame(() => {
+      // Released before the paint, so a `requestRedraw` issued from inside a
+      // layer's draw schedules the next frame instead of being swallowed.
       rafRef.current = 0;
       if (!aliveRef.current) return;
-      // Cleared before the paint: a `requestRedraw` issued from inside a
-      // layer's draw schedules the next frame instead of being swallowed.
       dirtyRef.current = false;
       if (!paintRef.current()) {
         dirtyRef.current = true;
@@ -56,11 +56,16 @@ export function useFrameLoop(paint: () => boolean): FrameLoop {
 
   // `requestRedraw` outlives the component: `@weasel-js/hud` calls it from a
   // `.then()`, and `viewRegistry.attachSurface` hands it to the consumer.
-  useEffect(() => () => {
-    aliveRef.current = false;
-    if (rafRef.current !== 0) cancelAnimationFrame(rafRef.current);
-    rafRef.current = 0;
-    subsRef.current.clear();
+  // Re-armed in setup because refs survive StrictMode's simulated remount.
+  useEffect(() => {
+    aliveRef.current = true;
+    const subs = subsRef.current;
+    return () => {
+      aliveRef.current = false;
+      if (rafRef.current !== 0) cancelAnimationFrame(rafRef.current);
+      rafRef.current = 0;
+      subs.clear();
+    };
   }, []);
 
   return { requestRedraw, subscribeFrame };
