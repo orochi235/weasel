@@ -1,15 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Icon } from './Icon';
 import { ICON_PATHS, type IconName } from './paths';
+import s from './icons.stories.module.css';
 
 const meta: Meta = { title: 'weasel-ui/icons/Gallery' };
 export default meta;
 
 const NAMES = Object.keys(ICON_PATHS) as IconName[];
 
-function Sheet({ size }: { size: number }) {
+function Sheet({ size, proof }: { size: number; proof?: boolean }) {
   return (
-    <div className="wzl-icon-sheet">
+    <div className={proof ? `${s.sheet} ${s.proof}` : s.sheet}>
       {NAMES.map((n) => (
         <figure key={n}>
           <Icon name={n} size={size} label={n} />
@@ -25,4 +26,4 @@ export const AtChromeSize: StoryObj = { render: () => <Sheet size={20} /> };
 
 /** CLAUDE.md ("Drawing icons") requires proofing at this size before shipping
  *  a change; a misplaced arrowhead is invisible at 20px. */
-export const AtProofSize: StoryObj = { render: () => <Sheet size={160} /> };
+export const AtProofSize: StoryObj = { render: () => <Sheet size={160} proof /> };
