@@ -694,7 +694,9 @@ Expected: FAIL on the first case — the host re-renders, because `handleViewCha
   // land on the canvas imperatively. Controlled consumers get the callback and
   // nothing else — the same contract Canvas enforces.
   const handleViewChange = useCallback((v: View) => {
-    if (viewProp === undefined) canvasApiRef.current?.setView(v);
+    // Early return, not a fall-through: the canvas fires `onViewChange` from
+    // inside `setView`, so reporting here too double-fires every dep write.
+    if (viewProp === undefined) { canvasApiRef.current?.setView(v); return; }
     onViewChangeProp?.(v);
   }, [viewProp, onViewChangeProp]);
 ```
