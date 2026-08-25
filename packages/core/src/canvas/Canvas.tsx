@@ -924,7 +924,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   usePinchZoomTool(
     canvasRef,
-    viewRef.current,
+    getView,
     setView,
     { ...(pinchConfig ?? {}), enabled: pinchConfig !== null, resolveTarget: resolvePinchTarget },
   );
