@@ -5,5 +5,7 @@ export type { SidebarProps } from './Sidebar';
 export { Sidebar } from './Sidebar';
 export type { StatusBarProps } from './StatusBar';
 export { StatusBar } from './StatusBar';
-export type { ToolbarProps } from './Toolbar';
+export type { ToolbarButtonProps, ToolbarGroupProps, ToolbarProps } from './Toolbar';
 export { Toolbar } from './Toolbar';
+export type { ZoomControlProps } from './ZoomControl';
+export { ZoomControl } from './ZoomControl';

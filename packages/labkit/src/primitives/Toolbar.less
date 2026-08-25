@@ -18,7 +18,35 @@
   flex: 1;
 }
 
+.lk-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+
+  // The rule belongs between groups, so it rides on the group rather than
+  // being a separate node the caller has to remember to interleave.
+  & + & {
+    padding-left: var(--wzl-space-sm);
+    border-left: 1px solid var(--wzl-line-subtle);
+  }
+
+  &--end {
+    margin-left: auto;
+  }
+
+  // A group pushed to the end already reads as separated by the gap.
+  &--end + &,
+  & + &--end {
+    border-left: none;
+    padding-left: 0;
+  }
+}
+
 .lk-toolbar-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-xs);
   height: var(--wzl-control-h);
   padding: 0 var(--wzl-space-sm);
   font-size: var(--wzl-font-size);
@@ -27,15 +55,29 @@
   border: 1px solid transparent;
   border-radius: var(--wzl-radius-md);
   cursor: pointer;
+  white-space: nowrap;
+
+  &--icon {
+    padding: 0;
+    width: var(--wzl-control-h);
+    justify-content: center;
+  }
 
   &:hover:not(:disabled) {
     background: var(--wzl-surface);
     border-color: var(--wzl-border);
   }
+
+  &--danger:hover:not(:disabled) {
+    color: var(--wzl-danger);
+    border-color: var(--wzl-danger);
+  }
+
   &:focus-visible {
     outline: 2px solid var(--wzl-focus-ring);
     outline-offset: 1px;
   }
+
   &:disabled {
     color: var(--wzl-fg-subtle);
     cursor: not-allowed;

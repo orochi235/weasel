@@ -27,7 +27,10 @@
     box-sizing: border-box;
   }
 
-  button {
+  // Element defaults sit in :where() so they carry no specificity —
+  // otherwise `.lk-root button` (0,1,1) beats every component class and
+  // a toolbar cannot paint its own buttons.
+  :where(button) {
     font: inherit;
     color: inherit;
     background: var(--wzl-surface-raised);
@@ -55,7 +58,7 @@
     }
   }
 
-  input[type="range"] {
+  :where(input[type="range"]) {
     accent-color: var(--wzl-accent);
   }
 }

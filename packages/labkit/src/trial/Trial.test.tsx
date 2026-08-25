@@ -70,7 +70,9 @@ describe('<DefaultToolbar>', () => {
     render(<DefaultToolbar ctx={makeCtx({ hasCanvas: true, zoom: 1.5 })} />);
     expect(screen.getByTitle('Zoom in')).toBeInTheDocument();
     expect(screen.getByTitle('Zoom out')).toBeInTheDocument();
-    expect(screen.getByText('150%')).toBeInTheDocument();
+    // Zoom is an editable field now, not a readout.
+    expect(screen.getByRole('textbox', { name: /zoom/i })).toHaveValue('150%');
+    expect(screen.getByRole('slider', { name: /zoom/i })).toBeInTheDocument();
   });
 
   it('shows load select when snapshots exist', () => {
@@ -88,7 +90,7 @@ describe('<DefaultToolbar>', () => {
       ],
     });
     render(<DefaultToolbar ctx={ctx} />);
-    expect(screen.getByRole('combobox', { name: /load snapshot/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /load snapshot/i })).toBeInTheDocument();
   });
 });
 

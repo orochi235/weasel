@@ -1,0 +1,19 @@
+.lk-zoom {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-sm);
+  min-width: 0;
+
+  &__slider {
+    // Narrow enough to sit in a trial toolbar, wide enough for the octave
+    // detents to be separately hittable.
+    width: 108px;
+    flex: 0 1 108px;
+    min-width: 64px;
+  }
+
+  &__field {
+    flex: 0 0 auto;
+    width: 62px;
+  }
+}

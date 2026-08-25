@@ -160,7 +160,8 @@ export function Lab({
       },
       savedSnapshots,
       saveSnapshot: (trialId, name) => {
-        store.getState().saveSnapshot(trialId, name ?? `Save ${new Date().toLocaleString()}`);
+        const taken = store.getState().savedSnapshots.filter((s) => s.trialId === trialId).length;
+        store.getState().saveSnapshot(trialId, name ?? `Snapshot ${taken + 1}`);
       },
       loadSnapshot: (trialId, snapshotId) => {
         store.getState().loadSnapshot(snapshotId, trialId);

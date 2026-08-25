@@ -144,6 +144,7 @@ export function TrialChrome({
     <section
       className="lk-trial"
       aria-label={`Trial ${record.instrumentName}`}
+      tabIndex={-1}
       onKeyDown={handleKeyDown}
     >
       <div className="lk-trial__toolbar">
@@ -154,7 +155,11 @@ export function TrialChrome({
           {sidebar ? sidebar(sidebarCtx) : <DefaultSidebar ctx={sidebarCtx} />}
           {sidebarExtras}
         </div>
-        <div className="lk-trial__content">{children}</div>
+        <div
+          className={`lk-trial__content${instrument.canvas ? ' lk-trial__content--flush' : ''}`}
+        >
+          {children}
+        </div>
       </div>
       <div className="lk-trial__status">
         {job ? (
