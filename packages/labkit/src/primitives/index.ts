@@ -1,4 +1,6 @@
 export { FpsMeter } from './FpsMeter';
+export type { JobProgressProps } from './JobProgress';
+export { JobProgress } from './JobProgress';
 export type { ScaleIndicatorProps } from './ScaleIndicator';
 export { ScaleIndicator } from './ScaleIndicator';
 export type { SidebarProps } from './Sidebar';

@@ -7,6 +7,7 @@ import { LabStoreContext } from '../state/context';
 import type { TrialRecord } from '../state/types';
 import { as2DView } from '../state/view';
 import { DefaultSidebar } from './DefaultSidebar';
+import { JobProgress } from '../primitives/JobProgress';
 import { DefaultStatusBar } from './DefaultStatusBar';
 import { DefaultToolbar } from './DefaultToolbar';
 import { TrialTitleBar } from './TrialTitleBar';
@@ -164,23 +165,7 @@ export function TrialChrome({
         </div>
       </div>
       <div className="lk-trial__status">
-        {job ? (
-          <div className="lk-trial__job">
-            <span className="lk-trial__job-count">
-              {job.done}
-              {job.total === null ? '' : ` / ${job.total}`}
-            </span>
-            {job.failures.length > 0 ? (
-              <span className="lk-trial__job-failures">{job.failures.length} failed</span>
-            ) : null}
-            {job.error ? <span className="lk-trial__job-error">{job.error}</span> : null}
-            {job.status === 'running' ? (
-              <button type="button" className="lk-trial__job-cancel" onClick={job.cancel}>
-                Cancel
-              </button>
-            ) : null}
-          </div>
-        ) : null}
+        {job ? <JobProgress job={job} /> : null}
         {statusBar ? statusBar(statusCtx) : <DefaultStatusBar ctx={statusCtx} />}
       </div>
     </section>

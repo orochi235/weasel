@@ -1,4 +1,4 @@
-import { render, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
@@ -37,25 +37,23 @@ describe('a trial whose instrument declares a job', () => {
   it('shows progress in the trial chrome', async () => {
     const fast = makeInstrument('fast', 3, 1);
     render(<Lab instruments={[fast]} defaultInstrument="fast" storage={null} />);
+    const bar = await waitFor(() => screen.getByRole('progressbar', { name: /job progress/i }));
     await waitFor(() => {
-      expect(document.querySelector('.lk-trial__job')).toBeInTheDocument();
+      // A job that reported a total drives a determinate bar, so the count and
+      // the accessible value have to agree.
+      expect(bar).toHaveAttribute('aria-valuemax', '3');
+      expect(bar).toHaveAttribute('aria-valuenow', '3');
     });
-    await waitFor(() => {
-      expect(document.querySelector('.lk-trial__job-count')?.textContent).toMatch(/3\s*\/\s*3/);
-    });
+    expect(document.querySelector('.lk-job__count')?.textContent).toMatch(/3\s*\/\s*3/);
   });
 
   it('offers a cancel control while running, and drops it once cancelled', async () => {
     const slow = makeInstrument('slow', 40, 20);
     render(<Lab instruments={[slow]} defaultInstrument="slow" storage={null} />);
-    const cancel = await waitFor(() => {
-      const el = document.querySelector('.lk-trial__job-cancel');
-      expect(el).toBeInTheDocument();
-      return el as HTMLElement;
-    });
+    const cancel = await waitFor(() => screen.getByRole('button', { name: /cancel/i }));
     await userEvent.click(cancel);
     await waitFor(() => {
-      expect(document.querySelector('.lk-trial__job-cancel')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /cancel/i })).not.toBeInTheDocument();
     });
   });
 
