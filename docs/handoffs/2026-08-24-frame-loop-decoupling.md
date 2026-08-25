@@ -73,9 +73,12 @@ Task 3 (pinch zoom reads a view getter). Two things to fold in when it or Task 4
 
 ## Two adjacent arcs this work spawned
 
-**`mac-pinch-zoom` branch** (worktree `.claude/worktrees/mac-pinch-zoom`, off `main`) — three
-pre-existing bugs, unrelated to the frame loop, found because the user reported the viewport demo's
-pinch not working:
+**`mac-pinch-zoom` branch** (worktree `.claude/worktrees/mac-pinch-zoom`, off `main` at `7b0f20b8`)
+— created and branched, **no work done in it yet**. Every agent spawned from a worktree-pinned
+session inherits that pin, so nothing can write there until a session switches into it
+(`EnterWorktree` with its path). Needs `npm install` first. Three pre-existing bugs, unrelated to the
+frame loop, found because the user reported the viewport demo's pinch not working — all three
+confirmed read-only against `main`:
 
 1. A Mac trackpad pinch (`wheel { ctrlKey: true }`) matches no binding. `matchModifiers`
    (`packages/gestures/src/ui/match.ts:71-101`) treats `mods: { mod: true }` as platform-*exclusive* —
@@ -98,3 +101,15 @@ rAF loop (its own `lerp`, its own private `easeOutCubic` while `animation/easing
 view per tick is only free once `setView` costs no render. The false blurb claims in
 `apps/site/registry.ts:343` and `ViewportDemo.tsx:100` are being removed now and should be restored
 when this ships.
+
+Two more things found while confirming those:
+
+- `packages/core/src/canvas/Canvas.viewport.test.tsx:58` is `it('mounts without error when
+  viewport.pinchZoom=true')` — the smoke-test shape that has hidden three separate breaks on this
+  arc, and the reason the double-apply went unnoticed.
+- No Safari `gesturestart`/`gesturechange` handling exists anywhere in the repo; that is the other
+  trackpad-pinch channel.
+
+**The main checkout is not on `main`.** `/Users/mike/src/weasel` sits on
+`feat/labkit-presentation-pass` at `b2c403b5` (a concurrent session). Do not assume that tree is on
+trunk, and do not switch it.
