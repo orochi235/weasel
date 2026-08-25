@@ -823,7 +823,39 @@ milliseconds are inflated by the tracing, the ratios are the signal):
 
 Unloaded, both peg the 120 Hz display and neither drops a frame. The costs only
 separate under load — which is the honest read: the retained tree is affordable
-here, and it is not free.
+here, and it is not free. That load was never written down, so the table below
+is a different, recorded measurement rather than a fifth column here.
+
+Re-measured after the frame-loop arc, same machine and browser: both demos with
+the run started and no player input, ten-second windows, DevTools tracing on.
+"main" is the tree before the arc, "frame loop" after. Busy is the sum of
+renderer-main `RunTask`; the scene twin's frame count is its own readout, the
+immediate twin's a `requestAnimationFrame` counter. The scene-graph "frame loop"
+column shows two runs, which is the run-to-run spread.
+
+| | immediate, main | immediate, frame loop | scene graph, main | scene graph, frame loop |
+|---|---|---|---|---|
+| frames / s | 120 | 120 | 120 | 120 |
+| main-thread busy / s | 0.19× | **0.11×** | 0.47× | **0.35–0.38×** |
+| busy / committed frame | 1.58 ms | **0.89 ms** | 3.94 ms | **2.88–3.21 ms** |
+| major GC over 10 s | 0 ms | 2 ms | 10 ms | 4–10 ms |
+| React commits / s | 118 | **0** | 120 | 100–110 |
+
+Both twins hold 120 Hz at this load, so the frame rate says nothing and busy per
+frame is the number that moves. The immediate twin drops 44%, all of it the
+render-per-paint the frame loop removed. The scene twin drops 18%, and nearly
+all of that is the demo's own switch to `setView` on the handle: with the camera
+left in `useState`, the frame loop alone measured 3.86 ms/frame against main's
+3.94. Decoupling paint from render buys a consumer nothing while that consumer
+still calls `setState` every frame.
+
+The scene twin still commits once per frame, and it is no longer the camera:
+`SceneCanvas` tracks the scene with `useSyncExternalStore`, so every
+`scene.batch` commits. `useScene({ subscribe: false })` stops the demo component
+re-rendering but not the canvas.
+
+Major GC did not move, as expected — per-frame pose allocation belongs to the
+ephemeral-pose-overrides arc.
 
 What it surfaced:
 
