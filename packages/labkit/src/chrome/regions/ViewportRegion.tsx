@@ -13,7 +13,7 @@ export interface ViewportRegionProps {
 export function ViewportRegion({ contributions, ctx }: ViewportRegionProps) {
   if (contributions.length === 0) return null;
   return (
-    <div className="lk-viewport-controls" role="group" aria-label="View">
+    <div className="lk-viewport-controls" role="toolbar" aria-label="View">
       {contributions.map((c) => {
         if (c.render) return <span key={c.id}>{c.render(ctx)}</span>;
         if (c.region !== 'viewport' || !c.item) return null;

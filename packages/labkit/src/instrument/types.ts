@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { TrialContribution } from '../chrome/types';
 import type { ConfigField } from '../controls/types';
 import type { JobCapability, JobHandle } from '../job/types';
 import type { ToolCapability } from '../tools/types';
@@ -113,6 +114,8 @@ export interface Instrument<TS = unknown, TC = unknown> {
   /** Tools this instrument offers. Declaring them gives the trial a palette
    *  region and its own tool slot. */
   tools?: ToolCapability;
+  /** Chrome this instrument contributes beyond what its capabilities imply. */
+  chrome?: TrialContribution[];
   /** Work too slow to do during a render. The runtime starts it, aborts it on
    *  unmount and on a `key` change, and renders progress into the trial. */
   job?: JobCapability<TS, TC, never>;

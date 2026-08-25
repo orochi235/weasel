@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { TrialChromeContext, TrialContribution } from '../types';
 import { SidebarRegion } from './SidebarRegion';
 import { StatusRegion } from './StatusRegion';
 import { ViewportRegion } from './ViewportRegion';
-import type { TrialChromeContext, TrialContribution } from '../types';
 
 const Glyph = () => <svg />;
 const ctx = { trialId: 't1' } as unknown as TrialChromeContext;

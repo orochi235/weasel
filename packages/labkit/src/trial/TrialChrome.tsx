@@ -1,24 +1,20 @@
 import { type KeyboardEvent, type ReactNode, useContext, useMemo } from 'react';
 import { useStore } from 'zustand/react';
+import { builtinContributions } from '../chrome/builtins';
+import { mergeContributions, suppressContributions } from '../chrome/merge';
+import { SidebarRegion } from '../chrome/regions/SidebarRegion';
+import { StatusRegion } from '../chrome/regions/StatusRegion';
+import { ToolbarRegion } from '../chrome/regions/ToolbarRegion';
+import { ViewportRegion } from '../chrome/regions/ViewportRegion';
+import type { TrialChromeContext, TrialContribution, TrialRegion } from '../chrome/types';
 import type { Instrument } from '../instrument/types';
 import type { JobHandle } from '../job/types';
 import { useLabContext } from '../lab/LabContext';
+import { JobProgress } from '../primitives/JobProgress';
 import { LabStoreContext } from '../state/context';
 import type { TrialRecord } from '../state/types';
 import { as2DView } from '../state/view';
-import { DefaultSidebar } from './DefaultSidebar';
-import { JobProgress } from '../primitives/JobProgress';
-import { DefaultStatusBar } from './DefaultStatusBar';
-import { DefaultToolbar } from './DefaultToolbar';
 import { TrialTitleBar } from './TrialTitleBar';
-import type {
-  SidebarSlot,
-  StatusBarSlot,
-  ToolbarSlot,
-  TrialSidebarContext,
-  TrialStatusBarContext,
-  TrialToolbarContext,
-} from './slotTypes';
 
 export interface UndoBindings {
   canUndo: boolean;
@@ -33,30 +29,40 @@ export interface TrialChromeProps {
   record: TrialRecord;
   instrument: Instrument;
   isLastTrial: boolean;
-  toolbar?: ToolbarSlot;
-  sidebar?: SidebarSlot;
-  statusBar?: StatusBarSlot;
   undoBindings?: UndoBindings;
   /** Supplied when the instrument declares a `job`. */
   job?: JobHandle;
-  sidebarExtras?: ReactNode;
+  /** Contributions the trial runtime itself adds — the drag palette and the
+   *  layer list, which depend on runtime state the instrument cannot reach. */
+  trialChrome?: readonly TrialContribution[];
+  /** Contributions from the lab, merged last. */
+  chrome?: readonly TrialContribution[];
+  /** Built-in contribution ids to drop. Throws on an id that is not there. */
+  suppress?: readonly string[];
+  /** The trial's resolved tool slot, and the setter that writes whichever
+   *  slot it resolved to. `Trial` owns the resolution. */
+  activeToolId?: string | null;
+  setActiveTool?: (id: string) => void;
   children: ReactNode;
 }
 
-/** The frame around a running instrument — toolbar, sidebar, status bar —
- *  each replaceable by a slot. Assembles the slot contexts and wires the undo
- *  keyboard shortcuts. */
+const NO_OP = (): void => {};
+
+/** The frame around a running instrument. Builds one chrome context, assembles
+ *  the contributions the instrument, the runtime and the lab declare, and hands
+ *  each region its slice. */
 export function TrialChrome({
   trialId,
   record,
   instrument,
   isLastTrial,
-  toolbar,
-  sidebar,
-  statusBar,
   undoBindings,
   job,
-  sidebarExtras,
+  trialChrome,
+  chrome,
+  suppress,
+  activeToolId = null,
+  setActiveTool = NO_OP,
   children,
 }: TrialChromeProps) {
   const lab = useLabContext();
@@ -70,7 +76,7 @@ export function TrialChrome({
   // and goes inert when the trial holds something else — an orbit, say.
   const view2d = as2DView(record.view);
 
-  const toolbarCtx = useMemo<TrialToolbarContext>(() => {
+  const ctx = useMemo<TrialChromeContext>(() => {
     const setZoom = (z: number): void => {
       if (!view2d) return;
       updateTrialView(trialId, { ...view2d, zoom: z });
@@ -78,31 +84,13 @@ export function TrialChrome({
     return {
       trialId,
       instrumentName: record.instrumentName,
-      hasUndo: instrument.undo != null,
+      isLastTrial,
+      zoom: view2d ? view2d.zoom : null,
+      setZoom,
       canUndo: undoBindings?.canUndo ?? false,
       canRedo: undoBindings?.canRedo ?? false,
-      undo: undoBindings?.undo ?? (() => {}),
-      redo: undoBindings?.redo ?? (() => {}),
-      zoom: view2d?.zoom ?? 1,
-      setZoom,
-      zoomIn: () => setZoom((view2d?.zoom ?? 1) * 1.25),
-      zoomOut: () => setZoom((view2d?.zoom ?? 1) * 0.8),
-      resetZoom: () => setZoom(1),
-      hasCanvas: instrument.canvas != null,
-      savedSnapshots: lab.savedSnapshots.filter((s) => s.trialId === trialId),
-      saveSnapshot: (name) => lab.saveSnapshot(trialId, name),
-      loadSnapshot: (snapshotId) => lab.loadSnapshot(trialId, snapshotId),
-      clone: () => lab.cloneTrial(trialId),
-      reset: () => lab.resetTrial(trialId),
-      close: () => lab.closeTrial(trialId),
-      isLastTrial,
-    };
-  }, [trialId, record, instrument, lab, isLastTrial, updateTrialView, undoBindings, view2d]);
-
-  const sidebarCtx = useMemo<TrialSidebarContext>(
-    () => ({
-      trialId,
-      instrumentName: record.instrumentName,
+      undo: undoBindings?.undo ?? NO_OP,
+      redo: undoBindings?.redo ?? NO_OP,
       configFields: instrument.configSchema?.() ?? [],
       config: record.config,
       setConfig: (key, value) => {
@@ -119,26 +107,57 @@ export function TrialChrome({
           updateTrialState(trialId, nextState as never);
         }
       },
-    }),
-    [trialId, record, instrument, updateTrialConfig, updateTrialState],
+      savedSnapshots: lab.savedSnapshots.filter((s) => s.trialId === trialId),
+      saveSnapshot: (name) => lab.saveSnapshot(trialId, name),
+      loadSnapshot: (snapshotId) => lab.loadSnapshot(trialId, snapshotId),
+      clone: () => lab.cloneTrial(trialId),
+      reset: () => lab.resetTrial(trialId),
+      close: () => lab.closeTrial(trialId),
+      activeToolId,
+      setActiveTool,
+    };
+  }, [
+    trialId,
+    record,
+    instrument,
+    lab,
+    isLastTrial,
+    updateTrialView,
+    updateTrialConfig,
+    updateTrialState,
+    undoBindings,
+    view2d,
+    activeToolId,
+    setActiveTool,
+  ]);
+
+  const contributions = useMemo(
+    () =>
+      suppressContributions(
+        mergeContributions(
+          builtinContributions(instrument, ctx),
+          [...(instrument.chrome ?? [])],
+          [...(trialChrome ?? [])],
+          [...(chrome ?? [])],
+        ),
+        suppress ?? [],
+      ),
+    [instrument, ctx, trialChrome, chrome, suppress],
   );
 
-  const statusCtx: TrialStatusBarContext = {
-    trialId,
-    instrumentName: record.instrumentName,
-    zoom: view2d ? view2d.zoom : null,
-  };
+  const inRegion = (region: TrialRegion): TrialContribution[] =>
+    contributions.filter((c) => c.region === region);
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>): void => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLElement>): void => {
     const mod = e.metaKey || e.ctrlKey;
     if (!mod) return;
     if (e.key === 'z' || e.key === 'Z') {
       e.preventDefault();
-      if (e.shiftKey) toolbarCtx.redo();
-      else toolbarCtx.undo();
+      if (e.shiftKey) ctx.redo();
+      else ctx.undo();
     } else if (e.key === 's' || e.key === 'S') {
       e.preventDefault();
-      toolbarCtx.saveSnapshot();
+      ctx.saveSnapshot();
     }
   };
 
@@ -151,22 +170,20 @@ export function TrialChrome({
     >
       <TrialTitleBar title={record.instrumentName} />
       <div className="lk-trial__toolbar">
-        {toolbar ? toolbar(toolbarCtx) : <DefaultToolbar ctx={toolbarCtx} />}
+        <ToolbarRegion contributions={inRegion('toolbar')} ctx={ctx} />
       </div>
       <div className="lk-trial__body">
         <div className="lk-trial__sidebar">
-          {sidebar ? sidebar(sidebarCtx) : <DefaultSidebar ctx={sidebarCtx} />}
-          {sidebarExtras}
+          <SidebarRegion contributions={inRegion('sidebar')} ctx={ctx} />
         </div>
-        <div
-          className={`lk-trial__content${instrument.canvas ? ' lk-trial__content--flush' : ''}`}
-        >
+        <div className={`lk-trial__content${instrument.canvas ? ' lk-trial__content--flush' : ''}`}>
           {children}
+          <ViewportRegion contributions={inRegion('viewport')} ctx={ctx} />
         </div>
       </div>
       <div className="lk-trial__status">
         {job ? <JobProgress job={job} /> : null}
-        {statusBar ? statusBar(statusCtx) : <DefaultStatusBar ctx={statusCtx} />}
+        <StatusRegion contributions={inRegion('status')} ctx={ctx} />
       </div>
     </section>
   );

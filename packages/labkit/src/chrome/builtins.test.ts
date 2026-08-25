@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import type { Instrument } from '../instrument/types';
 import { builtinContributions } from './builtins';
 import type { TrialChromeContext } from './types';
-import type { Instrument } from '../instrument/types';
 
 const ctx: TrialChromeContext = {
   trialId: 't1',

@@ -2,6 +2,7 @@ import { type ReactNode, useContext, useMemo, useRef, useState } from 'react';
 import { useStore } from 'zustand/react';
 import { CanvasStack } from '../canvas/CanvasStack';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
+import type { TrialContribution } from '../chrome/types';
 import { DragOverlay, useDragDrop } from '../dragdrop/DragDropRuntime';
 import { Palette } from '../dragdrop/Palette';
 import type { Instrument, LayerDescriptor, PaletteItem, RenderContext } from '../instrument/types';
@@ -62,6 +63,8 @@ function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) 
   const updateTrialView = useStore(store, (s) => s.updateTrialView);
   const updateTrialUndoStack = useStore(store, (s) => s.updateTrialUndoStack);
   const labToolId = useStore(store, (s) => s.activeToolId);
+  const setLabTool = useStore(store, (s) => s.setLabTool);
+  const setTrialTool = useStore(store, (s) => s.setTrialTool);
 
   const busRef = useRef<EventBus | null>(null);
   if (busRef.current === null) busRef.current = createEventBus();
@@ -90,6 +93,10 @@ function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) 
   const resolvedToolId = declaresTools
     ? (record.activeToolId ?? instrument.tools?.initial ?? instrument.tools?.tools[0]?.id ?? null)
     : labToolId;
+  const setActiveTool = (id: string): void => {
+    if (declaresTools) setTrialTool(record.id, id);
+    else setLabTool(id);
+  };
 
   // `CanvasStack` and the zoom controls are 2D; a trial holding another view shape
   // gets the default here and simply never renders them.
@@ -268,6 +275,25 @@ function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) 
       />
     ) : null;
 
+  const extraChrome = useMemo<TrialContribution[]>(() => {
+    const out: TrialContribution[] = [];
+    if (paletteNode) {
+      out.push({
+        id: 'dragdrop-palette',
+        region: 'sidebar',
+        item: { title: 'Parts', body: paletteNode },
+      });
+    }
+    if (layerListNode) {
+      out.push({
+        id: 'layer-list',
+        region: 'sidebar',
+        item: { title: 'Layers', body: layerListNode },
+      });
+    }
+    return out;
+  }, [paletteNode, layerListNode]);
+
   return (
     <TrialChrome
       job={jobCap ? job : undefined}
@@ -276,12 +302,9 @@ function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) 
       instrument={instrument}
       isLastTrial={isLast}
       undoBindings={undoBindings}
-      sidebarExtras={
-        <>
-          {paletteNode}
-          {layerListNode}
-        </>
-      }
+      trialChrome={extraChrome}
+      activeToolId={resolvedToolId}
+      setActiveTool={setActiveTool}
     >
       {body}
     </TrialChrome>

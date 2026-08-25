@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { ToolbarRegion } from './ToolbarRegion';
 import type { TrialChromeContext, TrialContribution } from '../types';
+import { ToolbarRegion } from './ToolbarRegion';
 
 const Glyph = () => <svg data-testid="glyph" />;
 

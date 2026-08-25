@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { useState } from 'react';
 import type { TrialChromeContext, TrialContribution } from '../types';
 
 /** Props for `<SidebarRegion>`. */

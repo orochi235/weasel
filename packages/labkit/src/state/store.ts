@@ -117,9 +117,7 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
 
     updateTrialView: (id, view) => {
       set((s) => ({
-        trials: s.trials.map((w) =>
-          w.id === id && !Object.is(view, w.view) ? { ...w, view } : w,
-        ),
+        trials: s.trials.map((w) => (w.id === id && !Object.is(view, w.view) ? { ...w, view } : w)),
       }));
       scheduleFlush();
     },
