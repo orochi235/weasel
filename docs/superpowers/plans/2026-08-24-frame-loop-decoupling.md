@@ -1000,6 +1000,12 @@ and add the resume plus the teardown:
   }, [scheduleFrame]);
 ```
 
+**Task 1 already added a `cancelAnimationFrame` to the existing unmount dispose effect**, to stop a
+post-unmount subscriber fire it introduced. Keep exactly one cancel — either fold this effect's
+cleanup into that one or drop the duplicate — and note that this task's "cancels its pending frame on
+unmount" test therefore passes before you write a line. A green test here is not evidence the rest of
+the task is done; the hidden-document case is the part that isn't built yet.
+
 StrictMode's double-mount is covered by this teardown: the first mount's pending frame is cancelled on its cleanup, and `dirtyRef` starts `true` on the second, so the surface repaints. Nothing else in the loop is shared across mounts — `glRendererRef` already has its own dispose effect (`Canvas.tsx:1290-1295`).
 
 - [ ] **Step 4: Run the tests, then the full canvas suite**
@@ -1285,6 +1291,9 @@ longer holds it in React state, so a camera moving at 60 Hz costs no renders.
 Consumers passing a `view` prop stay controlled and are unaffected.
 
 Canvas pixels may now be one frame ahead of DOM rendered from the same data.
+Anything reading the GL buffer back outside a paint — the hud loupe's pixel mode
+is the one in-tree case — can likewise see a buffer one frame older; subscribe
+with `subscribeFrame` to read immediately after pixels land.
 Position world-anchored DOM from `subscribeView`; compare `getPaintedVersion()`
 when chrome must be in lockstep; set `syncPaint` to paint at commit time as
 before. Do not render scene-derived DOM inside `startTransition` — React defers
