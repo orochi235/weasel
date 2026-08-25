@@ -1257,11 +1257,11 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // render; the loop reads whatever the last commit left behind.
   const paintInputsRef = useRef({
     layers: layersWithDebug, width, height, debugSink,
-    dpr: dprProp, layerVisibility, layerOrder,
+    dpr: dprProp, layerVisibility, layerOrder, shaders,
   });
   paintInputsRef.current = {
     layers: layersWithDebug, width, height, debugSink,
-    dpr: dprProp, layerVisibility, layerOrder,
+    dpr: dprProp, layerVisibility, layerOrder, shaders,
   };
 
   const paint = useCallback(() => {
@@ -1270,6 +1270,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     const {
       layers: paintLayers, width: w, height: h, debugSink: sink,
       dpr: dprIn, layerVisibility: vis, layerOrder: order,
+      shaders: paintShaders,
     } = paintInputsRef.current;
 
     // Clear sink at the top of every paint so per-frame records don't leak.
@@ -1305,8 +1306,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       }
       glRendererRef.current = renderer;
       lastResizeRef.current = { w, h, dpr };
-      // Shader registration is handled entirely by the shaderIdKey effect below;
-      // do not call registerShadersOnRenderer here to avoid double compilation.
+      // The renderer is born on a frame, after every effect on the mounting
+      // commit, so the shaderIdKey effect below found nothing to register on.
+      registerShadersOnRenderer(renderer, paintShaders);
     } else {
       const dpr = dprIn ?? (window.devicePixelRatio || 1);
       const last = lastResizeRef.current;
