@@ -61,7 +61,9 @@ function stylusOf(e: PointerEvent): {
 const IS_MAC =
   typeof navigator !== 'undefined' &&
   /mac/i.test(
-    (navigator as { platform?: string }).platform ?? navigator.userAgent,
+    // `||`, not `??`: jsdom (and some embedders) report an empty-string
+    // platform, which is not nullish and would swallow the UA fallback.
+    (navigator as { platform?: string }).platform || navigator.userAgent,
   );
 
 // ---------------------------------------------------------------------------

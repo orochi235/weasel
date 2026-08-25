@@ -43,11 +43,12 @@ describe('viewportZoomAction descriptor', () => {
     expect(viewportZoomAction.enabled!()).toBe(true);
   });
 
-  it('has 4 gesture bindings: wheel+mod, key =, key -, key 0', () => {
+  it('has 5 gesture bindings: wheel+mod, ctrl+wheel, key =, key -, key 0', () => {
     const bindings = viewportZoomAction.defaultBinding as Array<{ spec: unknown; opts: { params: { kind: string } } }>;
-    expect(bindings).toHaveLength(4);
+    expect(bindings).toHaveLength(5);
     const specs = bindings.map((b) => b.spec);
     expect(specs).toContainEqual({ kind: 'wheel', mods: { mod: true } });
+    expect(specs).toContainEqual({ kind: 'wheel', mods: { ctrl: true } });
     expect(specs).toContainEqual({ kind: 'key', key: '=', mods: { mod: true, shift: 'optional' } });
     expect(specs).toContainEqual({ kind: 'key', key: '-', mods: { mod: true } });
     expect(specs).toContainEqual({ kind: 'key', key: '0', mods: { mod: true } });
@@ -195,6 +196,15 @@ describe('makeViewportZoomAction', () => {
     const action = makeViewportZoomAction();
     const specs = (action.defaultBinding as Array<{ spec: unknown }>).map((b) => b.spec);
     expect(specs).toContainEqual({ kind: 'wheel', mods: { mod: true } });
+  });
+
+  it('binds bare ctrl+wheel in both wheel modes — a mac trackpad pinch arrives that way', () => {
+    for (const opts of [{}, { wheel: 'plain' as const }]) {
+      const specs = (makeViewportZoomAction(opts).defaultBinding as Array<{ spec: unknown; opts: { params: { kind: string } } }>);
+      const trackpad = specs.find((b) => JSON.stringify(b.spec) === JSON.stringify({ kind: 'wheel', mods: { ctrl: true } }));
+      expect(trackpad).toBeDefined();
+      expect(trackpad!.opts.params.kind).toBe('wheel');
+    }
   });
 
   it('clamps the resulting scale to [min, max] on wheel zoom', () => {
