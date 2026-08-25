@@ -301,3 +301,97 @@ describe('imperative view', () => {
     expect(draw).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('painted content version', () => {
+  it('reports the scene version the pixels were painted from', async () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    let version = 3;
+    render(
+      <Canvas
+        ref={apiRef}
+        width={100}
+        height={80}
+        layers={{}}
+        defaultView={IDENTITY}
+        contentVersion={() => version}
+      />,
+    );
+    await frame();
+    expect(apiRef.current!.getPaintedVersion()).toBe(3);
+
+    // Nothing repainted, so the report cannot move: the pixels still show 3.
+    version = 4;
+    expect(apiRef.current!.getPaintedVersion()).toBe(3);
+
+    apiRef.current!.requestRedraw();
+    await frame();
+    await frame();
+    expect(apiRef.current!.getPaintedVersion()).toBe(4);
+  });
+
+  it('does not advance the painted version when a paint bails', async () => {
+    const proto = HTMLCanvasElement.prototype as unknown as {
+      getContext: (...args: unknown[]) => unknown;
+    };
+    const withGL = proto.getContext;
+    proto.getContext = () => null;
+
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const layers = {};
+    try {
+      render(
+        <Canvas
+          ref={apiRef}
+          width={100}
+          height={80}
+          layers={layers}
+          defaultView={IDENTITY}
+          contentVersion={() => 7}
+        />,
+      );
+      await frame();
+      // No pixels landed. Reporting 7 here would tell chrome that defers on
+      // this that the canvas already shows content it has never drawn.
+      expect(apiRef.current!.getPaintedVersion()).toBe(0);
+    } finally {
+      proto.getContext = withGL;
+    }
+
+    apiRef.current!.requestRedraw();
+    await frame();
+    await frame();
+    expect(apiRef.current!.getPaintedVersion()).toBe(7);
+  });
+
+  it('reads the contentVersion the latest render passed', async () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const layers = {};
+    const { rerender } = render(
+      <Canvas
+        ref={apiRef}
+        width={100}
+        height={80}
+        layers={layers}
+        defaultView={IDENTITY}
+        contentVersion={() => 1}
+      />,
+    );
+    await frame();
+    expect(apiRef.current!.getPaintedVersion()).toBe(1);
+
+    rerender(
+      <Canvas
+        ref={apiRef}
+        width={100}
+        height={80}
+        layers={layers}
+        defaultView={IDENTITY}
+        contentVersion={() => 2}
+      />,
+    );
+    apiRef.current!.requestRedraw();
+    await frame();
+    await frame();
+    expect(apiRef.current!.getPaintedVersion()).toBe(2);
+  });
+});

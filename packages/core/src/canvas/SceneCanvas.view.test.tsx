@@ -184,4 +184,32 @@ describe('SceneCanvas view', () => {
 
     expect(depsRef.current!.get('view')!.get()).toEqual({ x: 99, y: -3, scale: { x: 1, y: 1 } });
   });
+
+  it('reports the scene version its pixels were painted from', async () => {
+    const scene = newScene();
+    const addRect = () => {
+      scene.batch('seed', () => {
+        scene.add({
+          kind: 'leaf',
+          data: { kind: 'rect' },
+          layer: 'main' as L,
+          pose: { x: 10, y: 10, width: 20, height: 20 } as P,
+        });
+      });
+    };
+    addRect();
+    const seeded = scene.getVersion();
+    expect(seeded).toBeGreaterThan(0);
+
+    const apiRef = { current: null as SceneCanvasApi | null };
+    render(<SceneCanvas<D, L, P> ref={apiRef} scene={scene} width={200} height={150} />);
+    await frame();
+    expect(apiRef.current!.getPaintedVersion()).toBe(seeded);
+
+    act(() => { addRect(); });
+    await frame();
+    await frame();
+    expect(scene.getVersion()).toBeGreaterThan(seeded);
+    expect(apiRef.current!.getPaintedVersion()).toBe(scene.getVersion());
+  });
 });

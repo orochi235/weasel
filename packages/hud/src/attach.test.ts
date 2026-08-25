@@ -26,6 +26,7 @@ function makeApi(): CanvasExtensionApi & { _layer?: RenderLayer<unknown> } {
     getView: vi.fn(() => IDENTITY_VIEW),
     setView: vi.fn(),
     subscribeView: vi.fn(() => () => {}),
+    getPaintedVersion: vi.fn(() => 0),
   };
   return api;
 }
@@ -133,6 +134,7 @@ describe('attachHud', () => {
         getView: vi.fn(() => IDENTITY_VIEW),
         setView: vi.fn(),
         subscribeView: vi.fn(() => () => {}),
+        getPaintedVersion: vi.fn(() => 0),
       };
       const theme = { ...resolveTheme(weaselTheme, 'dark'), '--wzl-surface-raised': '#123456' };
       attachHud(api, hud, { theme });

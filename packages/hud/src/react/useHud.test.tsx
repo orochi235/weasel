@@ -17,6 +17,7 @@ function makeApi(): CanvasExtensionApi {
     getView: vi.fn(() => IDENTITY_VIEW),
     setView: vi.fn(),
     subscribeView: vi.fn(() => () => {}),
+    getPaintedVersion: vi.fn(() => 0),
   };
 }
 

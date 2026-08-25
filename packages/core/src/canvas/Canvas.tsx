@@ -225,6 +225,12 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    *  path never reads ambient density at all). */
   dpr?: number;
 
+  /** The version of whatever content this canvas draws, sampled at paint time
+   *  and reported by {@link CanvasExtensionApi.getPaintedVersion}.
+   *  `<SceneCanvas>` wires this to `scene.getVersion`. Chrome that must not
+   *  show DOM ahead of pixels compares the two and defers a frame. */
+  contentVersion?: () => number;
+
   /**
    * Combined adapter for scene-slot rendering, bounds computation, and
    * move/resize/rotate gesture math. Optional — bare-Canvas consumers that
@@ -711,6 +717,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     width,
     height,
     dpr: dprProp,
+    contentVersion,
     adapter: adapterProp,
     layers: layersMap,
     selection,
@@ -783,6 +790,11 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const { requestRedraw, subscribeFrame } = useFrameLoop(
     useCallback(() => paintRef.current(), []),
   );
+
+  const contentVersionRef = useRef(contentVersion);
+  contentVersionRef.current = contentVersion;
+  const paintedVersionRef = useRef(0);
+  const getPaintedVersion = useCallback(() => paintedVersionRef.current, []);
 
   // The `layersWithDebug` memo reads `extrasRef.current`, so registration has
   // to bump state to re-run it. Rare (a HUD attaching, a loupe mounting).
@@ -888,8 +900,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     getView,
     setView,
     subscribeView,
+    getPaintedVersion,
   }), [canvasRef, requestRedraw, subscribeFrame, registerLayer, hitTestExtras,
-       getView, setView, subscribeView]);
+       getView, setView, subscribeView, getPaintedVersion]);
 
   // GL renderer (lazy-instantiated on first paint).
   const glRendererRef = useRef<WeaselRenderer | null>(null);
@@ -1337,6 +1350,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       layerCacheRef.current,
     );
     renderer.render(commands, viewToMat3(view));
+    paintedVersionRef.current = contentVersionRef.current?.() ?? 0;
     return true;
   }, []);
   paintRef.current = paint;

@@ -51,6 +51,11 @@ export interface CanvasExtensionApi {
    *  zoom readout, a minimap, DOM pinned to world coordinates. Returns an
    *  unsubscribe. */
   subscribeView(fn: (view: View) => void): () => void;
+  /** The `contentVersion` the current pixels were painted from — on
+   *  `<SceneCanvas>`, the scene version. Chrome in lockstep with canvas
+   *  content compares this against the version it is about to render and
+   *  defers a frame when they differ. `0` until the first paint lands. */
+  getPaintedVersion(): number;
   /** Register an externally-owned RenderLayer. The layer participates in the
    *  draw stack and, if it implements `hitTest`, in {@link hitTestExtras}. */
   registerLayer(layer: RenderLayer<unknown>): () => void;

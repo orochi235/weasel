@@ -1881,6 +1881,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       pickHud={pickHud}
       modalityHud={modalityHud}
       pickBest={internalPickBest}
+      contentVersion={scene.getVersion}
       {...(viewProp !== undefined ? { view: viewProp } : { defaultView })}
       onViewChange={notifyViewChange}
       shaders={shaders}
