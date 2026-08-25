@@ -44,6 +44,10 @@ Every glyph obeys all four:
 - **Terminus geometry is computed, not placed by eye.** An arc `M x y A rx ry rot laf sf dx dy`
   ends at `(x+dx, y+dy)` and an arrowhead capping it puts its vertex exactly there. A handle
   meeting a rim solves for the point on the circle.
+- **Match optical mass, not bounding box.** A plus drawn to the full live area dwarfs a circle
+  drawn to the same extent. Cross-shaped glyphs pull in to roughly ±5.2; discs and squares run
+  to the r=8 keyline; open bracket frames may reach 3.2–16.8 because they read smaller than
+  they measure. Proof a batch together and correct against its neighbors, never alone.
 
 Arrowheads are open Vs whose barbs are `2·L·sin(spread)` apart. Below roughly
 `stroke + 1.6` that gap closes under the round joins and the V renders as a solid triangle —
