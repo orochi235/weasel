@@ -23,11 +23,17 @@ captured value any more. `CanvasExtensionApi` gained five required members —
 so external code hand-implementing that interface stops typechecking; code that
 only calls through the ref is unaffected.
 
-Canvas pixels may now be one frame ahead of DOM rendered from the same data.
+Pixels and DOM can now be a frame apart, in whichever direction the change came
+from. A view change leads with pixels: `setView` paints without rendering, so
+DOM built from the view is stale until something re-renders it — position
+world-anchored DOM from `subscribeView`. A scene change leads with DOM:
+`SceneCanvas` still subscribes to the scene, so a `batch` commits now and the
+pixels land next frame — compare `getPaintedVersion()` against the version you
+are about to render when chrome must be in lockstep. Do not render scene-derived
+DOM inside `startTransition`: React defers it and nothing forces it to catch up.
+
 Anything reading the drawing buffer back outside a paint — the hud loupe's pixel
 mode is the one in-tree case — can likewise see a buffer one frame older;
-`subscribeFrame` runs on the frame that painted and removes the lag. Position
-world-anchored DOM from `subscribeView`, and compare `getPaintedVersion()`
-against the version you are about to render when chrome must be in lockstep. Do
-not render scene-derived DOM inside `startTransition` — React defers it and
-nothing forces it to catch up.
+`subscribeFrame` runs on the frame that painted and removes the lag. Nothing
+paints while `document.hidden` is true, `syncPaint` included, so a readback from
+a background tab returns the frame from before the tab was hidden.
