@@ -13,8 +13,9 @@ The plans carry the detail; this file only says where things stand.
 
 ## Status
 
-Tasks 1 (rAF paint loop) and 2 (imperative view) are committed and reviewed. Task 3 in progress.
-Tasks 4–11 not started. Baseline at branch point was 7372 tests; currently 7393, tsc and lint clean.
+Tasks 1-4 are committed and reviewed (rAF paint loop, imperative view, pinch getter, SceneCanvas
+uncontrolled). Task 5 in progress; running autonomously overnight 2026-08-24/25.
+Tasks 6-11 not started. Baseline at branch point was 7372 tests; currently 7401, tsc and lint clean.
 
 **Task 3 must land before Task 4.** `usePinchZoomTool` mirrors its `view` argument into a ref per
 render, and `usePinchGesture`'s `scaleFactor` is a per-frame delta, not cumulative — so once
@@ -68,3 +69,32 @@ Task 3 (pinch zoom reads a view getter). Two things to fold in when it or Task 4
 - The controlled-mode `setView` warning fires per pinch-move and says "ignored" when `onViewChange`
   still honors the write. Task 4 removes the controlled path for `SceneCanvas`, but a bare
   controlled `<Canvas>` with pinch keeps it. Warn once per mount, or reword.
+
+
+## Two adjacent arcs this work spawned
+
+**`mac-pinch-zoom` branch** (worktree `.claude/worktrees/mac-pinch-zoom`, off `main`) — three
+pre-existing bugs, unrelated to the frame loop, found because the user reported the viewport demo's
+pinch not working:
+
+1. A Mac trackpad pinch (`wheel { ctrlKey: true }`) matches no binding. `matchModifiers`
+   (`packages/gestures/src/ui/match.ts:71-101`) treats `mods: { mod: true }` as platform-*exclusive* —
+   on Mac it requires `meta` and leaves `ctrl` forbidden. Unmatched means no `preventDefault`, so the
+   browser's native ctrl+wheel page zoom runs instead. `viewportZoom.ts:5-6` claims the opposite.
+   Fix is a dedicated `mods: { ctrl: true }` binding, **not** relaxing `mod` — Ctrl+click is the
+   macOS context menu and must not become Cmd+click kit-wide.
+2. `IS_MAC` (`useGestureDispatcher.tsx:61-65`) uses `navigator.platform ?? navigator.userAgent`;
+   jsdom's `platform` is `''`, which is not nullish, so **the whole suite runs as non-Mac** and
+   never exercised bug 1. `??` should be `||`.
+3. `viewport.pinchZoom: true` double-applies: `pinchZoomAction` is already unconditional in
+   `useStandardActions.ts:161`, and the flag additionally mounts the legacy hook at
+   `Canvas.tsx:925`. Measured `[2]` vs `[2, 4]` — the demo's own opt-in breaks the default path.
+
+**`animatedZoom` — decided, not started.** The prop is declared (`SceneCanvas.tsx:600`), documented,
+and read by nothing; Cmd+= is a bare `view.set`. The user chose to **implement it on the animation
+system** rather than drop it: the zoom action tweens through `Animator`, and `useViewTween`'s bespoke
+rAF loop (its own `lerp`, its own private `easeOutCubic` while `animation/easings` exports that plus
+~40 more) folds into it or is deleted. This lands **after** the frame-loop arc merges — driving the
+view per tick is only free once `setView` costs no render. The false blurb claims in
+`apps/site/registry.ts:343` and `ViewportDemo.tsx:100` are being removed now and should be restored
+when this ships.
