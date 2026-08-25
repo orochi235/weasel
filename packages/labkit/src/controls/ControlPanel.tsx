@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import type {
-  CheckboxField,
-  ColorField,
-  ConfigField,
-  NumberField,
-  SelectField,
-  SliderField,
-  TextField,
-} from './types';
+import {
+  CheckboxRow,
+  ColorRow,
+  NumberRow,
+  PropertyList,
+  SelectRow,
+  SliderRow,
+  TextRow,
+} from '../ui/properties/PropertyPanel';
+import type { ConfigField, TextField } from './types';
 
 export interface ControlPanelProps<TC extends Record<string, unknown>> {
   fields: ConfigField[];
@@ -17,7 +18,8 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> {
 }
 
 /** Render an instrument's config schema as a stack of controls, each writing
- *  back through `setConfig`. */
+ *  back through `setConfig`. Built on the property rows, so a lab's controls
+ *  are the same aligned, themed rows the rest of the kit uses. */
 export function ControlPanel<TC extends Record<string, unknown>>({
   fields,
   config,
@@ -25,11 +27,11 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   className,
 }: ControlPanelProps<TC>) {
   return (
-    <div className={className ? `lk-control-panel ${className}` : 'lk-control-panel'}>
+    <PropertyList className={className ? `lk-control-panel ${className}` : 'lk-control-panel'}>
       {fields.map((field) => (
         <ControlRow key={field.key} field={field} config={config} setConfig={setConfig} />
       ))}
-    </div>
+    </PropertyList>
   );
 }
 
@@ -44,208 +46,99 @@ function ControlRow<TC extends Record<string, unknown>>({
   config,
   setConfig,
 }: ControlRowProps<TC>) {
+  const write = (value: unknown): void => setConfig(field.key as keyof TC, value);
+  const read = <T,>(fallback: T): T => (config[field.key] as T | undefined) ?? fallback;
+
   switch (field.type) {
     case 'slider':
-      return <SliderRow field={field} config={config} setConfig={setConfig} />;
+      return (
+        <SliderRow
+          label={field.label}
+          value={read(field.default)}
+          min={field.min}
+          max={field.max}
+          step={field.step}
+          onChange={write}
+        />
+      );
     case 'checkbox':
-      return <CheckboxRow field={field} config={config} setConfig={setConfig} />;
+      return <CheckboxRow label={field.label} value={read(field.default)} onChange={write} />;
     case 'select':
-      return <SelectRow field={field} config={config} setConfig={setConfig} />;
-    case 'number':
-      return <NumberRow field={field} config={config} setConfig={setConfig} />;
+      return (
+        <SelectRow
+          label={field.label}
+          value={read(field.default)}
+          options={field.options}
+          onChange={write}
+        />
+      );
+    case 'number': {
+      // NumberRow commits every keystroke and does not clamp, so the bounds a
+      // schema declares are enforced here — an instrument should never be
+      // handed a config value outside the range it asked for.
+      const lo = field.min ?? Number.NEGATIVE_INFINITY;
+      const hi = field.max ?? Number.POSITIVE_INFINITY;
+      return (
+        <NumberRow
+          label={field.label}
+          value={read(field.default)}
+          min={field.min}
+          max={field.max}
+          step={field.step}
+          onChange={(n) => write(Math.min(hi, Math.max(lo, n)))}
+        />
+      );
+    }
     case 'text':
-      return <TextRow field={field} config={config} setConfig={setConfig} />;
+      return <DebouncedTextRow field={field} config={config} setConfig={setConfig} />;
     case 'color':
-      return <ColorRow field={field} config={config} setConfig={setConfig} />;
+      return <ColorRow label={field.label} value={read(field.default)} onChange={write} />;
     default:
+      // A schema can arrive from outside TypeScript, so an unknown type is
+      // skipped rather than thrown — one bad field must not blank the panel.
       return null;
   }
 }
 
-type RowProps<F extends ConfigField, TC extends Record<string, unknown>> = {
-  field: F;
-  config: TC;
-  setConfig: (key: keyof TC, value: unknown) => void;
-};
-
-function SliderRow<TC extends Record<string, unknown>>({
+/** Text writes are debounced so typing does not re-run the instrument on every
+ *  keystroke, which means the row is locally controlled between commits and has
+ *  to notice when the config changes underneath it. */
+function DebouncedTextRow<TC extends Record<string, unknown>>({
   field,
   config,
   setConfig,
-}: RowProps<SliderField, TC>) {
-  const value = (config[field.key] as number | undefined) ?? field.default;
-  return (
-    <div className="lk-control-row">
-      <label className="lk-control-label" htmlFor={`lk-ctrl-${field.key}`}>
-        {field.label}
-      </label>
-      <div className="lk-control-slider-row">
-        <input
-          id={`lk-ctrl-${field.key}`}
-          className="lk-control-input lk-control-input--range"
-          type="range"
-          min={field.min}
-          max={field.max}
-          step={field.step ?? 1}
-          value={value}
-          onChange={(e) => setConfig(field.key as keyof TC, Number(e.target.value))}
-        />
-        <span className="lk-control-slider-value">{value}</span>
-      </div>
-    </div>
-  );
-}
-
-function CheckboxRow<TC extends Record<string, unknown>>({
-  field,
-  config,
-  setConfig,
-}: RowProps<CheckboxField, TC>) {
-  const value = (config[field.key] as boolean | undefined) ?? field.default;
-  return (
-    <div className="lk-control-row lk-control-row--inline">
-      <input
-        id={`lk-ctrl-${field.key}`}
-        className="lk-control-input lk-control-input--checkbox"
-        type="checkbox"
-        checked={value}
-        onChange={(e) => setConfig(field.key as keyof TC, e.target.checked)}
-      />
-      <label className="lk-control-label" htmlFor={`lk-ctrl-${field.key}`}>
-        {field.label}
-      </label>
-    </div>
-  );
-}
-
-function SelectRow<TC extends Record<string, unknown>>({
-  field,
-  config,
-  setConfig,
-}: RowProps<SelectField, TC>) {
-  const value = (config[field.key] as string | undefined) ?? field.default;
-  return (
-    <div className="lk-control-row">
-      <label className="lk-control-label" htmlFor={`lk-ctrl-${field.key}`}>
-        {field.label}
-      </label>
-      <select
-        id={`lk-ctrl-${field.key}`}
-        className="lk-control-input"
-        value={value}
-        onChange={(e) => setConfig(field.key as keyof TC, e.target.value)}
-      >
-        {field.options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-function NumberRow<TC extends Record<string, unknown>>({
-  field,
-  config,
-  setConfig,
-}: RowProps<NumberField, TC>) {
-  const value = (config[field.key] as number | undefined) ?? field.default;
-  return (
-    <div className="lk-control-row">
-      <label className="lk-control-label" htmlFor={`lk-ctrl-${field.key}`}>
-        {field.label}
-      </label>
-      <input
-        id={`lk-ctrl-${field.key}`}
-        className="lk-control-input"
-        type="number"
-        value={value}
-        min={field.min}
-        max={field.max}
-        step={field.step}
-        onChange={(e) => setConfig(field.key as keyof TC, Number(e.target.value))}
-        onBlur={(e) => {
-          const n = Number(e.target.value);
-          if (!Number.isFinite(n)) return;
-          let clamped = n;
-          if (field.min !== undefined && clamped < field.min) clamped = field.min;
-          if (field.max !== undefined && clamped > field.max) clamped = field.max;
-          if (clamped !== n) setConfig(field.key as keyof TC, clamped);
-        }}
-      />
-    </div>
-  );
-}
-
-function TextRow<TC extends Record<string, unknown>>({
-  field,
-  config,
-  setConfig,
-}: RowProps<TextField, TC>) {
+}: { field: TextField } & Omit<ControlRowProps<TC>, 'field'>) {
   const debounceMs = field.debounceMs ?? 150;
-  const initial = (config[field.key] as string | undefined) ?? field.default;
-  const [local, setLocal] = useState(initial);
+  const external = (config[field.key] as string | undefined) ?? field.default;
+  const [local, setLocal] = useState(external);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastExternal = useRef(initial);
+  const lastExternal = useRef(external);
 
   useEffect(() => {
-    const ext = (config[field.key] as string | undefined) ?? field.default;
-    if (ext !== lastExternal.current) {
-      lastExternal.current = ext;
-      setLocal(ext);
+    if (external !== lastExternal.current) {
+      lastExternal.current = external;
+      setLocal(external);
     }
-  }, [config, field.key, field.default]);
+  }, [external]);
+
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
   return (
-    <div className="lk-control-row">
-      <label className="lk-control-label" htmlFor={`lk-ctrl-${field.key}`}>
-        {field.label}
-      </label>
-      <input
-        id={`lk-ctrl-${field.key}`}
-        className="lk-control-input"
-        type="text"
-        value={local}
-        placeholder={field.placeholder}
-        maxLength={field.maxLength}
-        onChange={(e) => {
-          const next = e.target.value;
-          setLocal(next);
-          if (timer.current) clearTimeout(timer.current);
-          if (debounceMs === 0) {
-            lastExternal.current = next;
-            setConfig(field.key as keyof TC, next);
-          } else {
-            timer.current = setTimeout(() => {
-              lastExternal.current = next;
-              setConfig(field.key as keyof TC, next);
-            }, debounceMs);
-          }
-        }}
-      />
-    </div>
-  );
-}
-
-function ColorRow<TC extends Record<string, unknown>>({
-  field,
-  config,
-  setConfig,
-}: RowProps<ColorField, TC>) {
-  const value = (config[field.key] as string | undefined) ?? field.default;
-  return (
-    <div className="lk-control-row lk-control-row--inline">
-      <label className="lk-control-label" htmlFor={`lk-ctrl-${field.key}`}>
-        {field.label}
-      </label>
-      <input
-        id={`lk-ctrl-${field.key}`}
-        className="lk-control-input lk-control-input--color"
-        type="color"
-        value={value}
-        onChange={(e) => setConfig(field.key as keyof TC, e.target.value)}
-      />
-    </div>
+    <TextRow
+      label={field.label}
+      value={local}
+      placeholder={field.placeholder}
+      maxLength={field.maxLength}
+      onChange={(next) => {
+        setLocal(next);
+        if (timer.current) clearTimeout(timer.current);
+        const commit = () => {
+          lastExternal.current = next;
+          setConfig(field.key as keyof TC, next);
+        };
+        if (debounceMs === 0) commit();
+        else timer.current = setTimeout(commit, debounceMs);
+      }}
+    />
   );
 }

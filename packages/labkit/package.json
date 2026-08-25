@@ -101,6 +101,7 @@
     "react-dom": "^19.0.0"
   },
   "dependencies": {
+    "@weasel-js/core": "*",
     "@weasel-js/theme": "*",
     "@weasel-js/ui": "*",
     "earcut": "2.2.4",

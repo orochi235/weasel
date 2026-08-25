@@ -5,9 +5,13 @@
   outline: none;
   flex-direction: column;
   height: 100%;
-  background: var(--wzl-surface);
+  // The lab paints --wzl-surface, so a trial on the same token was separated
+  // from its own workspace by nothing but a hairline. Raised reads as a panel,
+  // and in dark it is translucent, so the backdrop still shows through.
+  background: var(--wzl-surface-raised);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-md);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--wzl-fg) 10%, transparent);
   overflow: hidden;
 
   &__body {
@@ -90,17 +94,6 @@
   font-size: var(--wzl-font-size-sm);
 }
 
-.lk-trial__job {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  font-size: 0.75rem;
-}
-
-.lk-trial__job-failures,
-.lk-trial__job-error {
-  color: var(--wzl-danger);
-}
 
 .lk-trial__titlebar {
   display: flex;

@@ -9,12 +9,13 @@ describe('<ControlPanel> slider', () => {
       { key: 'freq', label: 'Frequency', type: 'slider', min: 0, max: 10, step: 0.5, default: 2 },
     ];
     render(<ControlPanel fields={fields} config={{ freq: 2 }} setConfig={vi.fn()} />);
-    const input = screen.getByLabelText('Frequency') as HTMLInputElement;
-    expect(input.type).toBe('range');
+    // The row holds two controls -- the range and an editable readout -- inside
+    // one wrapping label, so query the slider by role rather than by label text.
+    const input = screen.getByRole('slider') as HTMLInputElement;
     expect(input.min).toBe('0');
     expect(input.max).toBe('10');
     expect(input.step).toBe('0.5');
-    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('2')).toBeInTheDocument();
   });
 
   it('calls setConfig with numeric value on change', () => {
@@ -23,7 +24,7 @@ describe('<ControlPanel> slider', () => {
       { key: 'freq', label: 'Frequency', type: 'slider', min: 0, max: 10, default: 2 },
     ];
     render(<ControlPanel fields={fields} config={{ freq: 2 }} setConfig={setConfig} />);
-    fireEvent.change(screen.getByLabelText('Frequency'), { target: { value: '5' } });
+    fireEvent.change(screen.getByRole('slider'), { target: { value: '5' } });
     expect(setConfig).toHaveBeenCalledWith('freq', 5);
   });
 });
@@ -86,8 +87,9 @@ describe('<ControlPanel> number', () => {
       { key: 'n', label: 'N', type: 'number', default: 0, min: 0, max: 100 },
     ];
     render(<ControlPanel fields={fields} config={{ n: 50 }} setConfig={setConfig} />);
-    const input = screen.getByLabelText('N');
-    fireEvent.blur(input, { target: { value: '999' } });
+    // The number row commits as you type, so the clamp applies on change
+    // rather than waiting for blur.
+    fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '999' } });
     expect(setConfig).toHaveBeenCalledWith('n', 100);
   });
 });
@@ -144,6 +146,6 @@ describe('<ControlPanel> defensive', () => {
       <ControlPanel fields={fields} config={{ mystery: 1 }} setConfig={vi.fn()} />,
     );
     expect(container.querySelector('.lk-control-panel')).not.toBeNull();
-    expect(container.querySelector('.lk-control-row')).toBeNull();
+    expect(container.querySelector('.lk-property-row')).toBeNull();
   });
 });

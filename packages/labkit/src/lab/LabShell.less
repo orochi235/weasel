@@ -43,3 +43,28 @@
   color: var(--wzl-fg-muted);
   font-size: var(--wzl-font-size-sm);
 }
+
+.lk-lab-header__add {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-xs);
+}
+
+// The mode toggle is a preference, not a primary action: it sits quiet until
+// the pointer is on it.
+.lk-lab-header__mode {
+  opacity: 0.75;
+
+  // labkit's `:where(button)` default sets an explicit height, and because
+  // :where() carries no specificity it also wins over any @weasel-js/ui
+  // component that sizes its own buttons from padding — here it forced 28px
+  // segments into a 17px track, which the track then clipped.
+  button {
+    height: auto;
+  }
+
+  &:hover,
+  &:focus-within {
+    opacity: 1;
+  }
+}

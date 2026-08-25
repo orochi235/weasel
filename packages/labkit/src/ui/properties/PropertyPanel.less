@@ -126,10 +126,10 @@
   -moz-appearance: textfield;
 }
 .lk-property-row__readout-input:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, currentColor 8%, transparent);
 }
 .lk-property-row__readout-input:focus {
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--wzl-surface-sunken);
   border-color: var(--wzl-accent);
 }
 .lk-property-row__readout-input::-webkit-inner-spin-button,
@@ -225,7 +225,7 @@
 
 .lk-property-row input[type='text']:not(.lk-property-row__readout-input),
 .lk-property-row input[type='number'] {
-  background: rgba(0, 0, 0, 0.35);
+  background: var(--wzl-surface-sunken);
   color: var(--wzl-fg);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);

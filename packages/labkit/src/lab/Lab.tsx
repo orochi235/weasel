@@ -16,6 +16,7 @@ import {
   resetTrial as resetTrialOp,
 } from '../trial/trialOps';
 import { LabContext, type LabContextValue } from './LabContext';
+import { LabHeader } from './LabHeader';
 import { LabShell } from './LabShell';
 import { useResolvedMode } from './useSystemMode';
 import { type TrialLayout, Workspace } from './Workspace';
@@ -192,7 +193,16 @@ export function Lab({
           className="lk-lab"
           style={backdropStyle}
         >
-          <LabShell title={title ?? 'Labkit'} mode={modeValue} header={children}>
+          <LabShell
+            title={title ?? 'Labkit'}
+            mode={modeValue}
+            header={
+              <>
+                <LabHeader />
+                {children}
+              </>
+            }
+          >
             <Workspace
               ids={trials.map((w) => w.id)}
               resizable

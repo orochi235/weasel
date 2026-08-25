@@ -1,0 +1,69 @@
+.lk-job {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-sm);
+  min-width: 0;
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+
+  &__track {
+    flex: 0 1 120px;
+    height: 3px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: color-mix(in srgb, currentColor 18%, transparent);
+  }
+
+  &__fill {
+    height: 100%;
+    background: var(--wzl-accent);
+    transform-origin: left center;
+    transition: transform 120ms linear;
+  }
+
+  // A job that never reports a total sweeps instead of filling, so the bar
+  // says "working" without implying a position.
+  &__track--indeterminate &__fill,
+  &__track--indeterminate > .lk-job__fill {
+    animation: lk-job-sweep 1.1s ease-in-out infinite;
+    transform-origin: center;
+  }
+
+  &__count {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  &__failures,
+  &__error {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__failures { color: var(--wzl-warning); }
+  &__error { color: var(--wzl-danger); }
+
+  &__cancel {
+    height: 20px;
+    padding: 0 var(--wzl-space-sm);
+    font-size: var(--wzl-font-size-sm);
+  }
+
+  &--error &__fill { background: var(--wzl-danger); }
+  &--done &__fill { background: color-mix(in srgb, var(--wzl-accent) 55%, transparent); }
+}
+
+@keyframes lk-job-sweep {
+  0%   { transform: scaleX(0.15) translateX(-260%); }
+  50%  { transform: scaleX(0.5) translateX(0); }
+  100% { transform: scaleX(0.15) translateX(260%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lk-job__track--indeterminate > .lk-job__fill { animation: none; transform: scaleX(0.35); }
+}
