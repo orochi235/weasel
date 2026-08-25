@@ -776,16 +776,46 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const layerVisibilityRef = useRef(layerVisibility);
   layerVisibilityRef.current = layerVisibility;
 
-  const [redrawNonce, setRedrawNonce] = useState(0);
-  const requestRedraw = useCallback(() => setRedrawNonce(n => n + 1), []);
+  // The paint is driven by a frame loop, not by React. `requestRedraw` marks
+  // the surface dirty; the loop paints once per frame at most, whatever asked.
+  const dirtyRef = useRef(true);
+  const rafRef = useRef(0);
+  const paintRef = useRef<() => void>(() => {});
+  const frameSubsRef = useRef<Set<() => void>>(new Set());
 
+  const scheduleFrame = useCallback(() => {
+    if (rafRef.current !== 0) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = 0;
+      if (!dirtyRef.current) return;
+      dirtyRef.current = false;
+      paintRef.current();
+      for (const fn of frameSubsRef.current) fn();
+    });
+  }, []);
+
+  const requestRedraw = useCallback(() => {
+    dirtyRef.current = true;
+    scheduleFrame();
+  }, [scheduleFrame]);
+
+  const subscribeFrame = useCallback((fn: () => void) => {
+    frameSubsRef.current.add(fn);
+    return () => { frameSubsRef.current.delete(fn); };
+  }, []);
+
+  // Registration of an external layer is rare (a HUD attaching, a loupe
+  // mounting) and must re-run the `layersWithDebug` memo, which reads
+  // `extrasRef.current`. That one keeps a React state bump; the per-frame
+  // path no longer does.
+  const [extrasVersion, setExtrasVersion] = useState(0);
   const extrasRef = useRef<Set<RenderLayer<unknown>>>(new Set());
   const registerLayer = useCallback((layer: RenderLayer<unknown>) => {
     extrasRef.current.add(layer);
-    setRedrawNonce(n => n + 1);
+    setExtrasVersion(n => n + 1);
     return () => {
       extrasRef.current.delete(layer);
-      setRedrawNonce(n => n + 1);
+      setExtrasVersion(n => n + 1);
     };
   }, []);
 
@@ -829,9 +859,10 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   useImperativeHandle(ref, () => ({
     element: canvasRef.current,
     requestRedraw,
+    subscribeFrame,
     registerLayer,
     hitTestExtras,
-  }), [canvasRef, requestRedraw, registerLayer, hitTestExtras]);
+  }), [canvasRef, requestRedraw, subscribeFrame, registerLayer, hitTestExtras]);
 
   // GL renderer (lazy-instantiated on first paint).
   const glRendererRef = useRef<WeaselRenderer | null>(null);
@@ -1217,29 +1248,43 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       ? [...withViews, createDebugOverlayLayer({ sink: debugSink, config: resolvedDebugConfig })]
       : withViews;
     return [...base, ...extrasRef.current];
-    // redrawNonce drives re-reads of extrasRef when layers are registered/detached;
+    // extrasVersion drives re-reads of extrasRef when layers are registered/detached;
     // viewRegistryVersion does the same for registered views.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layers, debugSink, resolvedDebugConfig, redrawNonce, viewRegistry, viewRegistryVersion]);
+  }, [layers, debugSink, resolvedDebugConfig, extrasVersion, viewRegistry, viewRegistryVersion]);
 
-  useEffect(() => {
+  // Everything the paint reads that a React render owns. Written during
+  // render; the loop reads whatever the last commit left behind.
+  const paintInputsRef = useRef({
+    layers: layersWithDebug, width, height, debugSink,
+    dpr: dprProp, layerVisibility, layerOrder,
+  });
+  paintInputsRef.current = {
+    layers: layersWithDebug, width, height, debugSink,
+    dpr: dprProp, layerVisibility, layerOrder,
+  };
+
+  const paint = useCallback(() => {
     const c = canvasRef.current;
     if (!c) return;
+    const {
+      layers: paintLayers, width: w, height: h, debugSink: sink,
+      dpr: dprIn, layerVisibility: vis, layerOrder: order,
+    } = paintInputsRef.current;
 
     // Clear sink at the top of every paint so per-frame records don't leak.
-    debugSink?.beginFrame();
-    if (debugSink) {
-      const arr = layersWithDebug;
-      for (let i = 0; i < arr.length; i++) {
-        const layer = arr[i];
+    sink?.beginFrame();
+    if (sink) {
+      for (let i = 0; i < paintLayers.length; i++) {
+        const layer = paintLayers[i];
         if (layer.id === 'debug-overlay') continue;
-        debugSink.recordLayer(layer.id, layer.label, layer.space ?? 'world', i);
+        sink.recordLayer(layer.id, layer.label, layer.space ?? 'world', i);
       }
     }
 
     let renderer = glRendererRef.current;
     if (!renderer) {
-      const dpr = dprProp ?? (window.devicePixelRatio || 1);
+      const dpr = dprIn ?? (window.devicePixelRatio || 1);
       const gl = c.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true });
       if (!gl || typeof (gl as Partial<WebGL2RenderingContext>).enable !== 'function') {
         // jsdom or unsupported environment — bail silently (test envs hit
@@ -1250,8 +1295,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
         renderer = new WeaselRenderer({
           gl: gl as WebGL2RenderingContext,
           canvas: c,
-          width,
-          height,
+          width: w,
+          height: h,
           dpr,
         });
       } catch {
@@ -1259,35 +1304,45 @@ function CanvasInner<TNode extends { id: string }, TPose>(
         return;
       }
       glRendererRef.current = renderer;
-      lastResizeRef.current = { w: width, h: height, dpr };
+      lastResizeRef.current = { w, h, dpr };
       // Shader registration is handled entirely by the shaderIdKey effect below;
       // do not call registerShadersOnRenderer here to avoid double compilation.
     } else {
-      const dpr = dprProp ?? (window.devicePixelRatio || 1);
+      const dpr = dprIn ?? (window.devicePixelRatio || 1);
       const last = lastResizeRef.current;
-      if (!last || last.w !== width || last.h !== height || last.dpr !== dpr) {
-        renderer.resize({ width, height, dpr });
-        lastResizeRef.current = { w: width, h: height, dpr };
+      if (!last || last.w !== w || last.h !== h || last.dpr !== dpr) {
+        renderer.resize({ width: w, height: h, dpr });
+        lastResizeRef.current = { w, h, dpr };
       }
     }
 
+    const view = viewRef.current;
     const commands = drawLayers(
-      layersWithDebug,
+      paintLayers,
       helpersForLayersRef.current,
-      layerVisibility ?? NO_LAYER_VISIBILITY,
-      layerOrder,
-      effectiveView,
-      { width, height },
+      vis ?? NO_LAYER_VISIBILITY,
+      order,
+      view,
+      { width: w, height: h },
       layerCacheRef.current,
     );
-    renderer.render(commands, viewToMat3(effectiveView));
-  }, [layersWithDebug, width, height, effectiveView, debugSink, redrawNonce, dprProp,
-      layerVisibility, layerOrder]);
+    renderer.render(commands, viewToMat3(view));
+  }, []);
+  paintRef.current = paint;
+
+  // React-owned inputs changed — the mirror above already holds them, so the
+  // commit only has to mark the surface dirty.
+  useEffect(() => {
+    requestRedraw();
+  }, [layersWithDebug, width, height, effectiveView, debugSink, dprProp,
+      layerVisibility, layerOrder, requestRedraw]);
 
   // The GL context and everything it owns (programs, texture caches, VBOs)
   // outlive React state, so unmount has to free them explicitly or a
   // remounting host walks into the browser's live-context cap.
   useEffect(() => () => {
+    if (rafRef.current !== 0) cancelAnimationFrame(rafRef.current);
+    rafRef.current = 0;
     glRendererRef.current?.dispose();
     glRendererRef.current = null;
     layerCacheRef.current.clear();

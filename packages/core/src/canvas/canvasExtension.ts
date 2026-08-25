@@ -27,6 +27,12 @@ export interface CanvasExtensionApi {
    *  (Replaces the pre-A2 pattern where `ref.current` directly *was* the element.) */
   readonly element: HTMLCanvasElement | null;
   requestRedraw(): void;
+  /**
+   * Run `fn` after every paint, on the frame that painted — for chrome that
+   * must observe landed pixels (a loupe readback, a frame counter). Returns
+   * an unsubscribe.
+   */
+  subscribeFrame?(fn: () => void): () => void;
   /** Register an externally-owned RenderLayer. The layer participates in the
    *  draw stack and, if it implements `hitTest`, in {@link hitTestExtras}. */
   registerLayer(layer: RenderLayer<unknown>): () => void;
