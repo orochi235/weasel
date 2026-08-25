@@ -43,7 +43,8 @@ rather than "before the browser paints the DOM", and passive arming makes the St
 paint nothing. (b) `document.hidden` suppresses the *sync* paint too, so a background tab does no GPU
 work per commit; the cost is that a synchronous readback taken from a hidden tab sees the pre-hide
 frame until it becomes visible.
-The plan's tasks are all committed. Baseline at branch point was 7372 tests; currently 7425, tsc and lint clean.
+The plan's tasks are all committed. Baseline at branch point was 7372 tests; currently 7429, tsc and lint clean; visual baselines pass locally (36 passed, 3 skipped);
+`check:bumps` OK with a single `patch` changeset.
 
 **Task 3 must land before Task 4.** `usePinchZoomTool` mirrors its `view` argument into a ref per
 render, and `usePinchGesture`'s `scaleFactor` is a per-frame delta, not cumulative — so once
@@ -169,3 +170,21 @@ test could not assert anything real over a broken path. No test in the repo caug
   local pass does not imply CI passes for hairline strokes in this repo; check the CI run.
 - **Run `npm run prepublishOnly`-equivalent gates** (`tsc --noEmit && vitest run && tsup build`)
   before any push; `vitest` alone does not typecheck production code.
+
+
+## What the review caught after the arc "finished"
+
+Worth reading before trusting a green suite here again:
+
+- **`syncPaint` + `subscribeFrame` recursed without bound.** `useFrameLoop` released its re-entrancy
+  guard before notifying subscribers, so a subscriber calling `requestRedraw` re-entered the paint
+  synchronously — 21 paints from one request, capped only by the probe. The comment two lines below
+  claimed the case was handled. The changeset prescribes `subscribeFrame` as the fix for the loupe's
+  stale readback, so the documented remedy would have hung a `syncPaint` tab.
+- **The skew was documented backwards** — and the correction is not a flip: a *view* change leads
+  with pixels (no render happens), a *scene* change leads with DOM (`SceneCanvas` commits, pixels
+  land next frame). That is why `getPaintedVersion()` exists.
+- **The "~2%" figure was below the instrument's resolution** — a 0.08 ms delta inside an 11%
+  run-to-run spread. The conclusion is structural and stands; the number is gone.
+- **Two more false-green tests**, bringing the arc's total to six. One passed only because `paint`
+  bails on a null canvas ref rather than because the flag under test worked.
