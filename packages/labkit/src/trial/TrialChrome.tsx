@@ -9,6 +9,7 @@ import { as2DView } from '../state/view';
 import { DefaultSidebar } from './DefaultSidebar';
 import { DefaultStatusBar } from './DefaultStatusBar';
 import { DefaultToolbar } from './DefaultToolbar';
+import { TrialTitleBar } from './TrialTitleBar';
 import type {
   SidebarSlot,
   StatusBarSlot,
@@ -147,6 +148,7 @@ export function TrialChrome({
       tabIndex={-1}
       onKeyDown={handleKeyDown}
     >
+      <TrialTitleBar title={record.instrumentName} />
       <div className="lk-trial__toolbar">
         {toolbar ? toolbar(toolbarCtx) : <DefaultToolbar ctx={toolbarCtx} />}
       </div>
