@@ -412,6 +412,35 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
+- **(P1) `curve-lab` renders in an infinite loop.** 62 x `Maximum update depth
+  exceeded` at load. `usePublishSelection`'s effect
+  (`packages/core/src/canvas/SelectionContext.tsx:117`) has deps `[ctx, serialized]`,
+  and `ctx` takes a new identity on every `setState` — so N canvases holding
+  *different* selections in one provider thrash forever. curve-lab's four panels
+  each call `useSelection({ initial: [nodeId], lock: true })` with a different id.
+  The panels still paint correctly; this is a console and CPU defect, not a
+  visual one. Predates the frame-loop arc, which touched neither file.
+
+- **(P1) A second `<SceneCanvas>` under one `ActionsProvider` unregisters the
+  first's viewport actions.** In `vertex-widths` and `boolean-ops` — and
+  `curve-lab` and `rotated-resize-math` — wheel pan and Cmd+wheel/Cmd+-/Cmd+0 do
+  nothing at all; the canvas is pixel-identical after six zoom notches, with no
+  `view` or `viewport` prop set, where the documented default is that they stay
+  wired. `useViewportActions.ts` registers `viewport.pan` / `viewport.zoom` by
+  **action id** into the shared registry and unregisters them on cleanup, so
+  sibling canvases collide on those ids and one instance's teardown takes the
+  registration out from under the others. Predates the frame-loop arc.
+
+- **(P2) The text-edit overlay does not scale with the canvas.** `#text` at ~2x
+  renders the DOM overlay at 1x font size in a 240x80 box while the selection
+  frame around it is correctly zoomed — the text sits detached from the glyphs it
+  is editing (`fontSize: 16px, transform: none` at both 1x and 2x). The demo
+  (`apps/site/demos/TextDemo.tsx:38`) calls `useSceneTextEdit(scene, container)`
+  with no `options.view`, so `getScreenPose` resolves `zoom = 1`. Documented hook
+  behavior, so this is a demo gap — but the demo enables Cmd+wheel zoom by
+  default, putting the broken state one gesture away. The live-view thunk added in
+  `99e2f969` is the surface that fixes it: pass the canvas handle's `getView`.
+
 - **(P2) The canvas's repaint tripwire has a blind spot: `helpersForLayersRef`.**
   `Canvas` marks itself dirty from a `useEffect` whose dep array is meant to
   name every input the paint reads. `helpersForLayersRef` — selection, preview
