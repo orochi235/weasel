@@ -2,6 +2,7 @@ import { createHistory, type HistorySelection, type Journal, type SerializedHist
 import type { Op } from 'core/ops/types';
 import { rebuildOp as rebuildGlobalOp } from 'core/ops/registry';
 import { dwarn } from 'debug/flag';
+import { createPoseOverrides } from './poseOverrides';
 import {
   asNodeId,
   type AddNodeSpec,
@@ -141,6 +142,11 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
    *  selection is not document content and never reaches `toJSON`. It is
    *  handed to the history engine so entries can restore it. */
   let selection: readonly NodeId[] = [];
+
+  /** Ephemeral per-node overrides. Deliberately not part of `state`, for the
+   *  same reason `selection` isn't: not document content, never reaches
+   *  `toJSON`, and never touches history. */
+  const overrides = createPoseOverrides<TPose>((id) => state.nodes.get(id));
 
   // wrappers close over their payloads). Eviction (branch-edit redo-clears
   // + historyLimit overflow) drives pendingClipPatches pruning via onEvict.
@@ -1019,6 +1025,8 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         }
       }
     },
+
+    overrides,
 
     getSelection: () => selection,
 
