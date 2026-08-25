@@ -968,6 +968,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     canvasApiRef.current?.requestRedraw?.();
   }), []);
 
+  // Override writes deliberately don't bump the scene version — that fanout is
+  // what a frame loop is trying to avoid — so the repaint has to come from
+  // here instead.
+  useEffect(() => scene.overrides.subscribe(() => {
+    canvasApiRef.current?.requestRedraw?.();
+  }), [scene]);
+
   // The mirror every HUD, pick and pinch path reads synchronously. Seeded here
   // because those reads start before the canvas's subscription lands.
   const currentViewRef = useRef<View>(
@@ -1789,20 +1796,28 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     });
   }, [mergedLayers.selectionOverlay, getSuppressedSelectionIds]);
 
-  // When alphaFor is supplied, patch it into the scene slot config so
-  // buildSceneLayer (called inside Canvas) wraps per-node commands with the
-  // returned alpha multiplier. Only non-custom, non-null slots are patched.
+  // When alphaFor is supplied — or any node carries an override alpha — patch
+  // a composed multiplier into the scene slot config so buildSceneLayer
+  // (called inside Canvas) wraps per-node commands with it. Canvas has no
+  // scene, so the override half has to be folded in here.
+  const overrideAlphaFor = useCallback(
+    (id: string) => scene.overrides.get(id as never)?.alpha ?? 1,
+    [scene],
+  );
   const sceneSlotWithAlpha = useMemo(() => {
-    if (!alphaFor) return mergedLayers.scene;
     const slot = mergedLayers.scene;
     if (!slot || 'layer' in slot) return slot; // null or CustomLayerEntry — leave alone
-    return { ...slot, alphaFor };
-  }, [mergedLayers.scene, alphaFor]);
+    const composed = alphaFor
+      ? (id: string) => alphaFor(id) * overrideAlphaFor(id)
+      : overrideAlphaFor;
+    return { ...slot, alphaFor: composed };
+  }, [mergedLayers.scene, alphaFor, overrideAlphaFor]);
 
   const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => ({
     ...mergedLayers,
-    // Inject alphaFor into the scene slot when supplied (scoping-dim).
-    ...(alphaFor != null ? { scene: sceneSlotWithAlpha } : {}),
+    // Inject the composed alphaFor into the scene slot (scoping-dim, plus any
+    // per-node override alpha).
+    ...(sceneSlotWithAlpha ? { scene: sceneSlotWithAlpha } : {}),
     // Pass the pre-built selection overlay layer so Canvas receives a
     // CustomLayerEntry and skips its own factory construction for this slot.
     selectionOverlay: selectionOverlayLayer
@@ -1813,7 +1828,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ...(penPreviewLayer ? { penPreview: { layer: penPreviewLayer, after: 'dispatcherOverlay' } } : {}),
     pathEditingOverlay: { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
     ...(debug?.slops ? { slopsDebug: { layer: slopsLayer, after: 'pathEditingOverlay' } } : {}),
-  }), [mergedLayers, sceneSlotWithAlpha, alphaFor, selectionOverlayLayer, previewLayer, dispatcherOverlay, penPreviewLayer, pathEditingOverlayLayer, debug?.slops, slopsLayer]);
+  }), [mergedLayers, sceneSlotWithAlpha, selectionOverlayLayer, previewLayer, dispatcherOverlay, penPreviewLayer, pathEditingOverlayLayer, debug?.slops, slopsLayer]);
 
   // Standard-action deps: closures over the live scene / selection / adapter
   // so the resolved actions always read current state. `useStandardActions`
