@@ -5,8 +5,12 @@ handoff with the detail; this file is the map.
 
 | branch | worktree | state |
 |---|---|---|
-| `worktree-frame-loop-decoupling` | `.claude/worktrees/frame-loop-decoupling` | two arcs complete, reviewed |
+| `worktree-frame-loop-decoupling` | `.claude/worktrees/frame-loop-decoupling` | two arcs complete, each independently reviewed, review findings fixed |
 | `mac-pinch-zoom` | `.claude/worktrees/mac-pinch-zoom` | complete |
+
+Final gates on the frame-loop branch: **7469 passing, 2 skipped**, `tsc` clean, `lint` clean,
+`check:bumps` OK (3 changesets, all `patch`), visual baselines 36 passed / 3 skipped locally.
+`mac-pinch-zoom`: 7383 passing, clean.
 
 ## What was asked, and what happened
 
@@ -29,6 +33,18 @@ and the browser's native page zoom ran. Fixed on its own branch along with two o
 **the entire test suite was running as non-Mac** — jsdom's `navigator.platform` is `''`, which is not
 nullish, so a `??` fallback to the user agent never fired. Every Mac-specific binding in this repo
 was untested.
+
+## Both arcs were reviewed after they "finished", and both reviews found a Critical
+
+The frame-loop arc: `syncPaint` + `subscribeFrame` recursed without bound — 21 paints from one
+request, capped only by the probe. The changeset itself prescribed `subscribeFrame` as the remedy for
+the loupe's stale readback, so the documented fix would have hung a `syncPaint` tab.
+
+The camera arc: on a *controlled* canvas nothing could interrupt a glide, and the glide silently
+overwrote the consumer's own camera — demonstrated by writing a pan mid-glide and watching it revert.
+Three code comments and the spec asserted the opposite.
+
+Neither was reachable by the test suite as written. Both are fixed.
 
 ## The part worth your attention
 
