@@ -29,6 +29,18 @@
 - `packages/core/src/canvas/Canvas.frameLoop.test.tsx` — the loop's own contract: coalescing, no-render-per-paint, lifecycle.
 - `packages/core/src/canvas/Canvas.imperativeView.test.tsx` — `setView` / `getView` / `subscribeView`, controlled-mode refusal.
 
+## How to test "costs no render"
+
+Several tasks assert that something no longer costs a React render. **Count commits with
+`<Profiler>` wrapped around the component under test, not renders of an outer wrapper** — a
+`setState` inside `Canvas` (or `SceneCanvas`, or a demo) never re-renders its parent, so a
+wrapper-render counter passes against the unfixed code and proves nothing. `Canvas.frameLoop.test.tsx`
+(Task 1) is the worked example.
+
+A canvas test only paints if `getContext('webgl2')` returns something: `vitest.setup.ts` stubs it to
+`null`, so install the GL recorder in `beforeAll` the way `Canvas.frameLoop.test.tsx` does. Without it
+the paint bails early and every assertion about painting is vacuous.
+
 **Deliberately not created:** a dev-mode warning for scene-derived DOM inside `startTransition`. The spec asks for one "if that is detectable" — React exposes no way to ask whether the current render is a transition, so this ships as a documented rule (Task 11) rather than a check that would give false confidence.
 
 ---
@@ -64,7 +76,7 @@ function Host({ apiRef }: { apiRef: React.MutableRefObject<CanvasExtensionApi | 
       ref={apiRef as never}
       width={100}
       height={80}
-      layers={[]}
+      layers={{}}
       debug
       debugSinkRef={sinkRef}
     />
@@ -297,6 +309,7 @@ Create `packages/core/src/canvas/Canvas.imperativeView.test.tsx`:
 ```tsx
 import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
+import { Profiler } from 'react';
 import { Canvas } from './Canvas';
 import type { CanvasExtensionApi } from './canvasExtension';
 import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
@@ -308,31 +321,31 @@ const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
 const IDENTITY = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 describe('imperative view', () => {
-  it('setView updates getView and paints without a host render', async () => {
+  it('setView updates getView and paints without a render', async () => {
     const apiRef = { current: null as CanvasExtensionApi | null };
-    let renders = 0;
-    function Host() {
-      renders++;
-      return <Canvas ref={apiRef as never} width={100} height={80} layers={[]} defaultView={IDENTITY} />;
-    }
-    render(<Host />);
+    let commits = 0;
+    render(
+      <Profiler id="canvas" onRender={() => { commits++; }}>
+        <Canvas ref={apiRef} width={100} height={80} layers={{}} defaultView={IDENTITY} />
+      </Profiler>,
+    );
     await frame();
-    const before = renders;
+    const before = commits;
 
     const painted = vi.fn();
-    apiRef.current!.subscribeFrame!(painted);
-    apiRef.current!.setView!({ x: 40, y: 0, scale: { x: 2, y: 2 } });
+    apiRef.current!.subscribeFrame(painted);
+    apiRef.current!.setView({ x: 40, y: 0, scale: { x: 2, y: 2 } });
 
-    expect(apiRef.current!.getView!()).toEqual({ x: 40, y: 0, scale: { x: 2, y: 2 } });
+    expect(apiRef.current!.getView()).toEqual({ x: 40, y: 0, scale: { x: 2, y: 2 } });
     await frame();
     await frame();
     expect(painted).toHaveBeenCalledTimes(1);
-    expect(renders).toBe(before);
+    expect(commits).toBe(before);
   });
 
   it('setView accepts an updater and notifies subscribeView', async () => {
     const apiRef = { current: null as CanvasExtensionApi | null };
-    render(<Canvas ref={apiRef as never} width={100} height={80} layers={[]} defaultView={IDENTITY} />);
+    render(<Canvas ref={apiRef as never} width={100} height={80} layers={{}} defaultView={IDENTITY} />);
     await frame();
 
     const seen: number[] = [];
@@ -350,7 +363,7 @@ describe('imperative view', () => {
     const onViewChange = vi.fn();
     const apiRef = { current: null as CanvasExtensionApi | null };
     render(
-      <Canvas ref={apiRef as never} width={100} height={80} layers={[]}
+      <Canvas ref={apiRef as never} width={100} height={80} layers={{}}
               defaultView={IDENTITY} onViewChange={onViewChange} />,
     );
     await frame();
@@ -361,7 +374,7 @@ describe('imperative view', () => {
   it('refuses setView while controlled, and says why', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const apiRef = { current: null as CanvasExtensionApi | null };
-    render(<Canvas ref={apiRef as never} width={100} height={80} layers={[]} view={IDENTITY} />);
+    render(<Canvas ref={apiRef as never} width={100} height={80} layers={{}} view={IDENTITY} />);
     await frame();
 
     apiRef.current!.setView!({ x: 99, y: 0, scale: { x: 1, y: 1 } });
@@ -592,6 +605,7 @@ Create `packages/core/src/canvas/SceneCanvas.view.test.tsx`:
 ```tsx
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
+import { Profiler } from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { SceneCanvasApi } from './canvasExtension';
@@ -606,20 +620,20 @@ describe('SceneCanvas view', () => {
   it('pans through the handle without re-rendering the host', async () => {
     const scene = createScene<{ fill: string }, string, { x: number; y: number; width: number; height: number }>({ nodes: [] });
     const apiRef = { current: null as SceneCanvasApi | null };
-    let renders = 0;
-    function Host() {
-      renders++;
-      return <SceneCanvas ref={apiRef as never} scene={scene} width={200} height={150} />;
-    }
-    render(<Host />);
+    let commits = 0;
+    render(
+      <Profiler id="scene-canvas" onRender={() => { commits++; }}>
+        <SceneCanvas ref={apiRef as never} scene={scene} width={200} height={150} />
+      </Profiler>,
+    );
     await frame();
-    const before = renders;
+    const before = commits;
 
     act(() => { apiRef.current!.setView({ x: 25, y: 0, scale: { x: 1, y: 1 } }); });
     await frame();
 
     expect(apiRef.current!.getView().x).toBe(25);
-    expect(renders).toBe(before);
+    expect(commits).toBe(before);
   });
 
   it('still honors a controlled view prop', async () => {
@@ -735,7 +749,7 @@ it('reports the scene version the pixels were painted from', async () => {
   const apiRef = { current: null as CanvasExtensionApi | null };
   let version = 3;
   render(
-    <Canvas ref={apiRef as never} width={100} height={80} layers={[]}
+    <Canvas ref={apiRef as never} width={100} height={80} layers={{}}
             defaultView={IDENTITY} contentVersion={() => version} />,
   );
   await frame();
@@ -824,12 +838,12 @@ Append to `Canvas.frameLoop.test.tsx`:
 it('paints during the commit when syncPaint is set', async () => {
   const sinkRef = { current: null as DebugSink | null };
   const { rerender } = render(
-    <Canvas width={100} height={80} layers={[]} debug debugSinkRef={sinkRef} syncPaint />,
+    <Canvas width={100} height={80} layers={{}} debug debugSinkRef={sinkRef} syncPaint />,
   );
   await frame();
   const spy = vi.spyOn(sinkRef.current!, 'beginFrame');
 
-  act(() => { rerender(<Canvas width={120} height={80} layers={[]} debug debugSinkRef={sinkRef} syncPaint />); });
+  act(() => { rerender(<Canvas width={120} height={80} layers={{}} debug debugSinkRef={sinkRef} syncPaint />); });
 
   // No frame awaited: the paint already happened inside the commit.
   expect(spy).toHaveBeenCalled();
@@ -1171,18 +1185,21 @@ Add to `apps/site/demos/__tests__/SceneScrollerDemo.test.tsx`:
 
 ```tsx
 it('advances the camera without re-rendering the demo', async () => {
-  let renders = 0;
-  function Counting() { renders++; return <SceneScrollerDemo />; }
-  render(<Counting />);
+  let commits = 0;
+  render(
+    <Profiler id="scroller" onRender={() => { commits++; }}>
+      <SceneScrollerDemo />
+    </Profiler>,
+  );
   await new Promise<void>((r) => requestAnimationFrame(() => r()));
-  const before = renders;
+  const before = commits;
 
   // Six simulated frames.
   for (let i = 0; i < 6; i++) {
     await new Promise<void>((r) => requestAnimationFrame(() => r()));
   }
 
-  expect(renders).toBe(before);
+  expect(commits).toBe(before);
 });
 ```
 
