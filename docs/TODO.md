@@ -37,6 +37,7 @@ Priority tags:
 - Layout strategies: multi-select drag into a layout container → [Scene, adapters & layout](#scene-adapters--layout)
 
 **Selection, actions & UI panels**
+- labkit `FloatingPanel` — draggable corner-snapping overlay; plan verified, blocked on `windease@1.3.0` → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit `registerSerializers` has no callers; instrument serializers never run → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 **Lint**
@@ -1006,6 +1007,25 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   notion of sections, ordering, or which panels an instrument's capabilities
   imply. Both should be engine surface — a trial declares what it has and the
   chrome lays it out — not something each lab rebuilds.
+
+- **(P2) labkit: `FloatingPanel`, a draggable corner-snapping overlay.** Plan:
+  `docs/superpowers/plans/2026-08-23-labkit-floating-legend.md`. It floats over
+  its offset parent, snaps to the corners it is allowed, and remembers where it
+  was left under a `storageKey`. Rather than mounting a windease `<Container>`,
+  it calls that library's `floatingStrategy` `layout()` / `reduce()` as pure
+  functions — a lab overlay has one item and no zone tree, so the node model
+  would be all cost.
+
+  `Legend` (Task 1) shipped. The rest is blocked only on `windease@1.3.0`
+  publishing: `floatingStrategy` is committed in `~/src/windease` but unreleased,
+  and labkit's floor is still `^1.2.1`. The plan was diffed against that real
+  surface on 2026-08-25 and every predicted export holds, so there is no API risk
+  left in it — two behavioral fixes are written into Tasks 3 and 5b and the
+  release is the whole remaining gate.
+
+  This is also the primitive the viewport-controls question above is reaching
+  for: "an overlay anchored inside the canvas" is a `FloatingPanel` parented to
+  `.lk-canvas-stack__overlay`.
 
 - **(P1) labkit: generate an instrument's controls from a schema or its config type.** An instrument declares its config twice. `defaultConfig(): TC` gives the values and, through `TC`, their types; `configSchema(): ConfigField[]` (`packages/labkit/src/controls/types.ts`) hand-repeats every key as a `slider` / `select` / `color` field with a label, bounds and a second default. Nothing holds the two to one answer — rename a key in `TC` and the panel keeps editing a field the instrument no longer reads, which `validateConfigSchema` cannot catch because it only ever sees the schema. An instance of the P1 above.
 
