@@ -1,3 +1,5 @@
+export type { FloatingPanelProps } from './FloatingPanel';
+export { FloatingPanel } from './FloatingPanel';
 export { FpsMeter } from './FpsMeter';
 export type { LegendEntry, LegendMark, LegendProps } from './Legend';
 export { Legend } from './Legend';

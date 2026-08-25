@@ -83,6 +83,33 @@ describe('FloatingPanel', () => {
     expect(panel.getAttribute('data-placed')).toBeNull();
   });
 
+  it('measures its border box, so padding does not push it past a corner', () => {
+    // Same content box, but 8px padding and a 1px border on every side.
+    const realObserve = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = class {
+      #cb: ResizeObserverCallback;
+      constructor(cb: ResizeObserverCallback) {
+        this.#cb = cb;
+      }
+      observe(target: Element) {
+        const isPanel = target.classList.contains('lk-floating-panel');
+        const { w, h } = isPanel ? sizes.panel : sizes.host;
+        const contentRect = { width: w, height: h, x: 0, y: 0, top: 0, left: 0 };
+        const entry = {
+          target,
+          contentRect,
+          ...(isPanel ? { borderBoxSize: [{ inlineSize: w + 18, blockSize: h + 18 }] } : {}),
+        };
+        this.#cb([entry as unknown as ResizeObserverEntry], this);
+      }
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof ResizeObserver;
+    const { panel } = renderPanel(<FloatingPanel anchor="top-right">x</FloatingPanel>);
+    globalThis.ResizeObserver = realObserve;
+    expect(panel.style.left).toBe('270px'); // 400 - (100 + 18) - 12
+  });
+
   it('marks itself placed once it has a rect', () => {
     const { panel } = renderPanel(<FloatingPanel>x</FloatingPanel>);
     expect(panel.dataset.placed).toBe('true');

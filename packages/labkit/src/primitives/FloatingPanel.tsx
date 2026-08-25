@@ -26,6 +26,17 @@ export interface FloatingPanelProps {
   className?: string;
 }
 
+/**
+ * The panel's footprint is its border box — `contentRect` excludes padding and
+ * border, which would place a panel that then overflows its corner by exactly
+ * that much.
+ */
+function borderBoxOf(entry: ResizeObserverEntry): { w: number; h: number } {
+  const box = entry.borderBoxSize?.[0];
+  if (box) return { w: box.inlineSize, h: box.blockSize };
+  return { w: entry.contentRect.width, h: entry.contentRect.height };
+}
+
 /** A pointerdown on one of these is the child's, not a drag. */
 function isInteractive(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
@@ -94,9 +105,11 @@ export function FloatingPanel({
     // clientWidth/offsetWidth, and an unmeasured item is withheld from layout.
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const next = { w: entry.contentRect.width, h: entry.contentRect.height };
-        if (entry.target === parent) setContainer(next);
-        else setSize(next);
+        if (entry.target === parent) {
+          setContainer({ w: entry.contentRect.width, h: entry.contentRect.height });
+        } else {
+          setSize(borderBoxOf(entry));
+        }
       }
     });
     observer.observe(parent);
@@ -104,12 +117,14 @@ export function FloatingPanel({
     return () => observer.disconnect();
   }, []);
 
-  const rect = strategy.layout({
-    items: [item],
-    container,
-    state: { at: { [ITEM_ID]: place }, inner: undefined },
-    options,
-  }).placements.get(ITEM_ID);
+  const rect = strategy
+    .layout({
+      items: [item],
+      container,
+      state: { at: { [ITEM_ID]: place }, inner: undefined },
+      options,
+    })
+    .placements.get(ITEM_ID);
 
   const dragging = useRef<{ x: number; y: number } | null>(null);
   const [isDragging, setDragging] = useState(false);
