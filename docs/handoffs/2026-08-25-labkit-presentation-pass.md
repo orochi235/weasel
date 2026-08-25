@@ -8,8 +8,9 @@ Two branches, **committed, neither pushed nor merged**:
 | `feat/labkit-arc2` | `/Users/mike/src/weasel-arc2` | rest of arc 2, branched from the above |
 
 Design: `docs/superpowers/specs/2026-08-24-labkit-presentation-design.md` — read it
-first; this file only carries what the spec can't. A storybook for the worktree is
-on **:6011** (the main checkout's is on :6010).
+first; this file only carries what the spec can't. To see any of this, run a
+storybook from the worktree on its own port — `npx storybook dev -p 6011
+--no-open` — so it does not collide with the main checkout's on :6010.
 
 ## Landed
 
