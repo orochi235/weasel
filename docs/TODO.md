@@ -434,6 +434,16 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
+- **(P2) Detached views never repaint on a pose override.** `<SceneViewCanvas>`
+  and `<MinimapCanvas>` re-render off `scene.getVersion()`, and an override
+  deliberately does not bump it, so they keep painting document poses while the
+  main canvas shows the overridden ones — a minimap that disagrees with the
+  scene beside it, with nothing logged. `<SceneCanvas>` avoids this by
+  subscribing to `scene.overrides` directly
+  (`packages/core/src/canvas/SceneCanvas.tsx`); the same subscription here would
+  cost these views a React render per frame, which is the cost the arc exists to
+  remove. Wants the frame-loop treatment first, or an opt-in prop.
+
 - **(P2) `createParallaxLayer` bypasses `drawOneLayer`, so a source layer's
   `space` is silently ignored.** `packages/core/src/features/parallax/createParallaxLayer.ts:36`
   calls `layer.draw(...)` directly where `viewportLayer.ts` calls `drawOneLayer(...)`.
