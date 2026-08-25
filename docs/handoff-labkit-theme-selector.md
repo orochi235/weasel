@@ -4,6 +4,8 @@
 
 **Dev server:** `cd packages/labkit && npm run dev` (was on :5174; :5173 taken).
 
+**Storybook:** labkit stories are wired into the *root* Storybook, not a labkit-local one — `.storybook/main.ts:25` globs `packages/labkit/src/**/*.stories.tsx`, titled `labkit/…`. Run `npm run dev:storybook` from the worktree root (port 6010). Existing: `Lab.stories.tsx`, `Trial.stories.tsx`, `LabShell.stories.tsx`, `Workspace.stories.tsx`, plus the `ui/properties/*` set.
+
 ## What this is
 
 Four complaints about labkit chrome. Three are fixed; the icons are not started.
@@ -13,6 +15,7 @@ Four complaints about labkit chrome. Three are fixed; the icons are not started.
 - **Mode toggle height.** It was 17px beside a 28px "Add trial" button. Cause was not styling — `LabHeader` passed `size="sm"` to `ToggleBar`, and `ToggleBar.module.css:154` hard-codes `.size_sm { height: 17px }` while the default is `var(--wzl-tb-height, 28px)`. Dropping the prop lands it on 28px, the same `--wzl-control-h` the button uses. Verified in-browser: both 28.
 - **Workspace padding** 12px → 8px, via a new `--lk-workspace-pad` on `.lk-root` (`theme/base.less`), consumed by `.lk-shell-body`.
 - **Trial content padding** removed. `Trial.less` `&__content` no longer sets `padding`; the `--flush` modifier that used to zero it now carries only `overflow: hidden`.
+- **Lab title** 16px → 20px, via `--lk-title-size` (`a6a9308a`). The theme ships only body sizes (`--wzl-font-size: 13px`, `--wzl-font-size-sm: 11px`) and nothing for headings, so a title picks its own number either way; the token just gives it one named home. There is no heading scale to align to — don't go looking for one.
 
 labkit tests green (52 files / 415 tests) after these.
 
