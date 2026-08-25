@@ -113,3 +113,19 @@ Two more things found while confirming those:
 **The main checkout is not on `main`.** `/Users/mike/src/weasel` sits on
 `feat/labkit-presentation-pass` at `b2c403b5` (a concurrent session). Do not assume that tree is on
 trunk, and do not switch it.
+
+## Before merging
+
+- **Two commits share the subject "give the canvas view an imperative setter, getter and
+  subscription"** (`f0822a01`, then `feed266d` with the review fixes). The second was meant to be an
+  amend, but an unrelated commit had landed in between. Content is correct and linear; reword or
+  squash when merging.
+- **Drive the demos.** Task 4 moved ~39 of ~52 SceneCanvas demos from the controlled path to the
+  uncontrolled one. Only `#viewport` and `#pan-zoom` have been driven by hand. The suite does not
+  cover this: it has been green through a blank canvas, uncompiled shaders, and a doubled zoom
+  factor.
+- **Run the visual baselines** (`npm run test:visual`). They have not run since the paint moved a
+  frame later. `tests/visual/diff.ts:81-86` already waits two rAFs plus 150 ms, so this should hold —
+  but a local pass does not imply CI passes for hairline strokes in this repo.
+- **Run `npm run prepublishOnly`-equivalent gates** (`tsc --noEmit && vitest run && tsup build`)
+  before any push; `vitest` alone does not typecheck production code.
