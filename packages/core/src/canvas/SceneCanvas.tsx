@@ -607,10 +607,11 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
       zoom?: boolean | ViewportZoomOptions;
       /** Callback invoked by Cmd-0 (`viewport.zoom` action's `reset` branch).
        *  When supplied, replaces the default reset-to-identity behavior —
-       *  consumers typically refit the document page into the workspace
-       *  via `fitViewToBounds`. The callback owns its own bounds + host
-       *  dims and dispatches the resulting view via `onViewChange`. */
-      recenter?: () => void;
+       *  consumers typically refit the document page into the workspace via
+       *  `fitViewToBounds`. Return the target `View` to let the kit animate
+       *  there when `animatedZoom` is on; return nothing to dispatch it
+       *  yourself, which is what a controlled canvas does. */
+      recenter?: () => View | void;
     };
 
     /**
@@ -2344,8 +2345,9 @@ function StandardActionsRegistrar({
   viewportZoom: boolean | ViewportZoomOptions;
   /** Optional recenter callback. When supplied, wires through to the
    *  `view` dep so `viewport.zoom` reset (Cmd-0) calls it instead of
-   *  snapping to identity. */
-  viewportRecenter?: () => void;
+   *  snapping to identity. A returned `View` is a target the kit may
+   *  animate to; `void` means the callback dispatched it itself. */
+  viewportRecenter?: () => View | void;
   /** Lifted edit-mode state so the `pathEditingOverlay` chrome (rendered
    *  outside this subtree) can read the same `editingId` the dep does. */
   editAnchorsExternalState: import('./deps/editAnchors').EditAnchorsStateRef;
