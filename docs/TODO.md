@@ -433,15 +433,13 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
-- **(P2) Detached views never repaint on a pose override.** `<SceneViewCanvas>`
-  and `<MinimapCanvas>` re-render off `scene.getVersion()`, and an override
-  deliberately does not bump it, so they keep painting document poses while the
-  main canvas shows the overridden ones — a minimap that disagrees with the
-  scene beside it, with nothing logged. `<SceneCanvas>` avoids this by
-  subscribing to `scene.overrides` directly
-  (`packages/core/src/canvas/SceneCanvas.tsx`); the same subscription here would
-  cost these views a React render per frame, which is the cost the arc exists to
-  remove. Wants the frame-loop treatment first, or an opt-in prop.
+- **(P3) A minimap's framing ignores pose overrides.** `<SceneViewCanvas>` and
+  `<MinimapCanvas>` paint override poses as of 2026-08-25, but `computeFitView`
+  still derives framing from document poses, so a node overridden outside the
+  document bounds paints outside the fitted frame. Deliberate — recomputing the
+  fit per frame would rescale the whole minimap through a drag or a settle, and
+  costs an O(nodes) bounds sweep every frame. Revisit only if a consumer wants
+  framing that tracks a simulation.
 
 - **(P2) `createParallaxLayer` bypasses `drawOneLayer`, so a source layer's
   `space` is silently ignored.** `packages/core/src/features/parallax/createParallaxLayer.ts:36`
@@ -1502,6 +1500,9 @@ Deferred, with the rationale in `eslint.config.js` next to each:
   The fix is to stop racing wall-clock: drive the glide with fake timers and a
   controllable rAF so completion is deterministic. Raising the `waitFor` timeout
   only widens the window the machine has to beat.
+
+  A third run, on an unrelated branch, hit the same 9 and then passed clean on
+  re-run — so it is the harness, not any one change.
 
 - **(P2) `test:kit` covers `packages/core` only, and its name says otherwise.**
   The `kit` vitest project globs `packages/core` plus `apps/site`; `svg`,

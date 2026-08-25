@@ -7,9 +7,14 @@
  *   - mounts its own `<canvas>`,
  *   - subscribes to the scene via `useSyncExternalStore(scene.subscribe,
  *     scene.getVersion)` so any scene mutation triggers a re-render,
- *   - dispatches to `renderSceneToCanvas` in a layout effect on every render
- *     so prop changes (`view`, `width`, `height`, `drawOne`, `extraCommands`)
- *     all repaint,
+ *   - subscribes to `scene.overrides` as well, since override writes never
+ *     bump the scene version — without this the view would paint document
+ *     poses while `<SceneCanvas>` paints overridden ones,
+ *   - paints through `useFrameLoop` rather than from React, so both a render
+ *     (prop change or version bump) and an override commit just mark the
+ *     surface dirty and one `requestAnimationFrame` coalesces them. The mount
+ *     paint is synchronous so the first frame the user sees is the scene, not
+ *     a blank canvas,
  *   - attaches **no** event listeners (consumers attach their own via
  *     `canvasRef`).
  *
@@ -21,11 +26,14 @@
  * prop; no inline styles are emitted (per project rules).
  */
 import {
+  useCallback,
+  useEffect,
   useLayoutEffect,
   useRef,
   useSyncExternalStore,
 } from 'react';
 import type { Ref } from 'react';
+import { useFrameLoop } from './useFrameLoop';
 import { renderSceneToCanvas } from './sceneViewRender';
 import type { SceneViewDrawOne } from './sceneViewRender';
 import type { DrawCommand } from '../renderer/DrawCommand';
@@ -90,12 +98,13 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
     }
   };
 
-  // Render after every commit. `useLayoutEffect` runs synchronously after
-  // DOM mutations but before paint, so the first frame the user sees is the
-  // scene, not a blank canvas.
-  useLayoutEffect(() => {
+  // The frame loop paints, not React — so an override commit can repaint
+  // without a render. The thunk defers to `paintRef`, rewritten every render
+  // so the loop always reads this render's props.
+  const paintRef = useRef<() => boolean>(() => false);
+  paintRef.current = () => {
     const canvas = localRef.current;
-    if (!canvas) return;
+    if (!canvas) return false;
     renderSceneToCanvas({
       canvas,
       scene,
@@ -106,7 +115,26 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
       extraCommands: extraCommands as DrawCommand[] | undefined,
       alphaFor,
     });
+    return true;
+  };
+
+  const { requestRedraw } = useFrameLoop(useCallback(() => paintRef.current(), []));
+
+  // Every render — a prop change or a scene-version bump — marks the surface
+  // dirty. No dependency array: the paint reads all of them.
+  //
+  // The mount paint is the exception: it runs here, in the caller's stack, so
+  // the first frame the user sees is the scene rather than a blank canvas.
+  const paintedRef = useRef(false);
+  useLayoutEffect(() => {
+    if (paintedRef.current) { requestRedraw(); return; }
+    paintedRef.current = paintRef.current();
+    if (!paintedRef.current) requestRedraw();
   });
+
+  // Override writes never bump the scene version, so the version subscription
+  // above cannot see them.
+  useEffect(() => scene.overrides.subscribe(requestRedraw), [scene, requestRedraw]);
 
   return (
     <canvas
