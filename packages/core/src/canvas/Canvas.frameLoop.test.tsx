@@ -200,6 +200,79 @@ describe('Canvas frame loop', () => {
     expect(draw).toHaveBeenCalledTimes(1);
     expect(painted).toHaveBeenCalledTimes(1);
   });
+
+  it('cancels its pending frame on unmount', async () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const draw = vi.fn();
+    const { unmount } = render(<Host apiRef={apiRef} layer={probeLayer(draw)} />);
+    await frame();
+    expect(draw).toHaveBeenCalledTimes(1);
+
+    const raf = vi.spyOn(window, 'requestAnimationFrame');
+    const cancel = vi.spyOn(window, 'cancelAnimationFrame');
+    act(() => { apiRef.current!.requestRedraw(); });
+    const pending = raf.mock.results[0]!.value as number;
+    unmount();
+    expect(cancel).toHaveBeenCalledWith(pending);
+    raf.mockRestore();
+    cancel.mockRestore();
+
+    await frame();
+    await frame();
+    expect(draw).toHaveBeenCalledTimes(1);
+  });
+
+  it('defers a redraw requested while the document is hidden, then paints on visibilitychange', async () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const draw = vi.fn();
+    render(<Host apiRef={apiRef} layer={probeLayer(draw)} />);
+    await frame();
+    expect(draw).toHaveBeenCalledTimes(1);
+
+    const painted = vi.fn();
+    apiRef.current!.subscribeFrame(painted);
+
+    const hidden = vi.spyOn(document, 'hidden', 'get').mockReturnValue(true);
+    onTestFinished(() => { hidden.mockRestore(); });
+    const raf = vi.spyOn(window, 'requestAnimationFrame');
+    act(() => { apiRef.current!.requestRedraw(); });
+    expect(raf).not.toHaveBeenCalled();
+    raf.mockRestore();
+
+    await frame();
+    await frame();
+    expect(draw).toHaveBeenCalledTimes(1);
+    expect(painted).not.toHaveBeenCalled();
+
+    hidden.mockRestore();
+    act(() => { document.dispatchEvent(new Event('visibilitychange')); });
+    await frame();
+    await frame();
+
+    // Hidden means deferred, not dropped: this paint is the request made while
+    // the tab was in the background, not a fresh one.
+    expect(draw).toHaveBeenCalledTimes(2);
+    expect(painted).toHaveBeenCalledTimes(1);
+  });
+
+  it('schedules nothing on becoming visible when nothing asked for a redraw', async () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const draw = vi.fn();
+    render(<Host apiRef={apiRef} layer={probeLayer(draw)} />);
+    await frame();
+    expect(draw).toHaveBeenCalledTimes(1);
+
+    // Every canvas on the page hears this event; a clean one must not cost a
+    // frame for it.
+    const raf = vi.spyOn(window, 'requestAnimationFrame');
+    act(() => { document.dispatchEvent(new Event('visibilitychange')); });
+    expect(raf).not.toHaveBeenCalled();
+    raf.mockRestore();
+
+    await frame();
+    await frame();
+    expect(draw).toHaveBeenCalledTimes(1);
+  });
 });
 
 // `layers` is memoized here on purpose: an object literal in JSX is a fresh
@@ -360,5 +433,48 @@ describe('Canvas syncPaint', () => {
     unmount();
     act(() => { api.requestRedraw(); });
     expect(draw).toHaveBeenCalledTimes(1);
+  });
+
+  it('holds a sync paint while the document is hidden and lands it on visibilitychange', async () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const draw = vi.fn();
+    const layer = probeLayer(draw);
+    const { rerender } = render(<SyncHost apiRef={apiRef} layer={layer} syncPaint />);
+    expect(draw).toHaveBeenCalledTimes(1);
+
+    const hidden = vi.spyOn(document, 'hidden', 'get').mockReturnValue(true);
+    onTestFinished(() => { hidden.mockRestore(); });
+
+    // A background tab still commits React updates, and a sync paint is the one
+    // path the browser's own frame throttling does not stop.
+    act(() => { rerender(<SyncHost apiRef={apiRef} layer={layer} width={140} syncPaint />); });
+    expect(draw).toHaveBeenCalledTimes(1);
+    act(() => { apiRef.current!.requestRedraw(); });
+    expect(draw).toHaveBeenCalledTimes(1);
+
+    hidden.mockRestore();
+    act(() => { document.dispatchEvent(new Event('visibilitychange')); });
+    await frame();
+    await frame();
+    expect(draw).toHaveBeenCalledTimes(2);
+  });
+
+  it('drops a scheduled frame that a sync paint has already satisfied', async () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const draw = vi.fn();
+    const layer = probeLayer(draw);
+    const { rerender } = render(<SyncHost apiRef={apiRef} layer={layer} />);
+    await frame();
+    expect(draw).toHaveBeenCalledTimes(1);
+
+    act(() => { apiRef.current!.requestRedraw(); });
+    expect(draw).toHaveBeenCalledTimes(1);
+
+    act(() => { rerender(<SyncHost apiRef={apiRef} layer={layer} syncPaint />); });
+    expect(draw).toHaveBeenCalledTimes(2);
+
+    await frame();
+    await frame();
+    expect(draw).toHaveBeenCalledTimes(2);
   });
 });

@@ -1,12 +1,16 @@
 /**
  * The frame loop behind `<Canvas>`: a dirty flag, one `requestAnimationFrame`
  * in flight at a time, and a subscriber set notified after a paint lands.
+ * Nothing paints while the document is hidden; the dirty flag holds the request
+ * until `visibilitychange` brings the surface back.
  *
  * @internal Not consumer surface. Canvas exposes `requestRedraw` and
  *   `subscribeFrame` on its ref handle; this is how they are implemented.
  */
 
 import { useCallback, useLayoutEffect, useRef } from 'react';
+
+const isHidden = () => typeof document !== 'undefined' && document.hidden;
 
 export interface FrameLoop {
   /** Mark the surface dirty and schedule a frame. Identity is stable for the
@@ -60,13 +64,16 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
       // Released before the paint, so a `requestRedraw` issued from inside a
       // layer's draw schedules the next frame instead of being swallowed.
       rafRef.current = 0;
-      if (!aliveRef.current) return;
+      if (!aliveRef.current || !dirtyRef.current) return;
       runPaint();
     });
   }, [runPaint]);
 
   const requestRedraw = useCallback(() => {
     dirtyRef.current = true;
+    // Hidden suppresses the sync path too: a background tab still commits React
+    // updates, and that is the one paint the browser's throttling does not stop.
+    if (isHidden()) return;
     // A request made from inside a draw would recurse forever if it painted
     // here, so re-entrant ones always fall through to a frame.
     if (syncRef.current && aliveRef.current && !paintingRef.current) {
@@ -89,13 +96,18 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
   useLayoutEffect(() => {
     aliveRef.current = true;
     const subs = subsRef.current;
+    const onVisibility = () => {
+      if (!isHidden() && dirtyRef.current) scheduleFrame();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
     return () => {
       aliveRef.current = false;
+      document.removeEventListener('visibilitychange', onVisibility);
       if (rafRef.current !== 0) cancelAnimationFrame(rafRef.current);
       rafRef.current = 0;
       subs.clear();
     };
-  }, []);
+  }, [scheduleFrame]);
 
   return { requestRedraw, subscribeFrame };
 }
