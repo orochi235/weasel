@@ -247,15 +247,15 @@ export type {
   UseGestureDispatcherOptions,
 } from './interactions/dispatcher';
 
-// ─── Viewport: wheel / velocity / decay / tween / pinch / animation ─────────
+// ─── Viewport: wheel / velocity / decay / pinch / camera animation ──────────
 export * from './core/viewport/wheelHandler';
 export { clientToCanvas } from './core/viewport/clientToCanvas';
 export { useVelocityTracker } from './core/viewport/useVelocityTracker';
 export { useDecayLoop } from './core/viewport/useDecayLoop';
 export type { DecayLoopConfig, PanBounds } from './core/viewport/useDecayLoop';
-export { useViewTween } from './core/viewport/useViewTween';
 export { usePinchGesture } from './core/viewport/usePinchGesture';
-export { useViewAnimation } from './core/viewport/useViewAnimation';
+export { interpolateView } from './core/viewport/interpolateView';
+export { useViewAnimation, VIEW_ANIMATION_KEY } from './core/viewport/useViewAnimation';
 
 // ─── Tools: dispatcher, registry, declarative routing, built-ins ────────────
 export * from './tools';
@@ -1117,7 +1117,12 @@ export type { Contribution, Eligibility, EligibilityState, OverlayPosition } fro
 export { liveScope, mergeContributions, scopeBindings } from './contributions';
 export type { InsertOverlayStyle } from './tools/builtin/marquee';
 export type { InsertPoint } from './interactions/gestures/types';
-export type { AnimateToBoundsOptions } from './core/viewport/useViewAnimation';
+export type {
+  AnimateToBoundsOptions,
+  ViewAnimationApi,
+  ViewAnimationOptions,
+  ViewChannel,
+} from './core/viewport/useViewAnimation';
 export type {
   UseHandToolOptions,
   InertiaConfig as HandToolInertiaConfig,
