@@ -1,6 +1,7 @@
 /**
  * `useViewDepSource` — builds a stable `ViewApi` that reads from
- * `currentViewRef` and writes via `onViewChange`.
+ * `currentViewRef`, writes via `onViewChange`, and (when a camera runner is
+ * passed) exposes animation.
  *
  * NOTE: this hook does **not** itself call `useDepSource('view', ...)` because
  * `useStandardActions` already publishes the `view` dep when it is passed in
@@ -14,24 +15,57 @@
 import { useRef } from 'react';
 import type React from 'react';
 import type { ViewApi } from 'interactions/actions/depSchema';
+import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
 import type { View } from 'core/viewport/view';
+
+interface Wiring {
+  currentViewRef: React.RefObject<View>;
+  onViewChange: (v: View) => void;
+  recenter?: () => View | void;
+  hostSize?: () => { width: number; height: number } | null;
+  animation?: ViewAnimationApi;
+}
 
 export function useViewDepSource(
   currentViewRef: React.RefObject<View>,
   onViewChange: (v: View) => void,
-  recenter?: () => void,
+  recenter?: () => View | void,
   hostSize?: () => { width: number; height: number } | null,
+  animation?: ViewAnimationApi,
 ): ViewApi {
-  const viewApiRef = useRef<ViewApi>({
-    get: () => currentViewRef.current,
-    set: (v: View) => onViewChange(v),
-  });
-  // Refresh closures every render so the latest onViewChange / recenter are captured.
-  viewApiRef.current = {
-    get: () => currentViewRef.current,
-    set: (v: View) => onViewChange(v),
-    ...(recenter ? { recenter } : {}),
-    ...(hostSize ? { hostSize } : {}),
-  };
+  // Every method reads through this, so the latest onViewChange / recenter /
+  // runner is captured without the API object itself changing identity.
+  const wiring = useRef<Wiring>({ currentViewRef, onViewChange, recenter, hostSize, animation });
+  wiring.current = { currentViewRef, onViewChange, recenter, hostSize, animation };
+
+  // The optional members must be *absent*, not undefined-valued, when unwired:
+  // `viewportZoomAction` branches on `view.recenter` being truthy. So the API
+  // is rebuilt only when that presence set changes.
+  const shape = `${recenter ? 'r' : ''}${hostSize ? 'h' : ''}${animation ? 'a' : ''}`;
+  const shapeRef = useRef<string | null>(null);
+  const viewApiRef = useRef<ViewApi | null>(null);
+
+  if (viewApiRef.current === null || shapeRef.current !== shape) {
+    shapeRef.current = shape;
+    viewApiRef.current = {
+      get: () => wiring.current.currentViewRef.current,
+      // A camera animation writes through `onViewChange` directly, so anything
+      // arriving here is someone else moving the camera and cancels it.
+      set: (v: View) => {
+        wiring.current.animation?.stopIfExternal();
+        wiring.current.onViewChange(v);
+      },
+      ...(recenter ? { recenter: () => wiring.current.recenter!() } : {}),
+      ...(hostSize ? { hostSize: () => wiring.current.hostSize!() } : {}),
+      ...(animation
+        ? {
+            animate: (to: View, opts?: Parameters<ViewAnimationApi['animate']>[1]) =>
+              wiring.current.animation!.animate(to, opts),
+            stopAnimation: () => wiring.current.animation!.stop(),
+            animationTarget: () => wiring.current.animation!.target(),
+          }
+        : {}),
+    };
+  }
   return viewApiRef.current;
 }
