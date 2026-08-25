@@ -1,0 +1,20 @@
+.lk-floating-panel {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  background: var(--wzl-surface);
+  border: var(--wzl-border-w) solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+  padding: var(--wzl-space-sm);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 40%);
+}
+
+// An item with no measured size is withheld from layout, so the first paint
+// would otherwise land at the top-left before jumping to its anchor.
+.lk-floating-panel:not([data-placed='true']) {
+  visibility: hidden;
+}
+
+.lk-floating-panel[data-dragging='true'] {
+  cursor: grabbing;
+}
