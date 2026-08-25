@@ -70,6 +70,7 @@
       "interactions/*": ["./packages/core/src/interactions/*"],
       "tools/*": ["./packages/core/src/tools/*"],
       "canvas/*": ["./packages/core/src/canvas/*"],
+      "renderer/*": ["./packages/core/src/renderer/*"],
       "debug/*": ["./packages/core/src/debug/*"]
     }
   },

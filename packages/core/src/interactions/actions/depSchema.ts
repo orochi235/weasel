@@ -12,8 +12,8 @@
  * ## Improvisation notes
  *
  * - **`view`**: No `ViewApi` interface existed. A minimal `{ get(): View;
- *   set(v: View): void }` is defined here; a future refinement may include
- *   animation helpers or fit-to-bounds.
+ *   set(v: View): void }` is defined here, since grown optional `recenter`,
+ *   `hostSize` and camera-animation members.
  *
  * - **`scene`**: `Scene<TData, TLayer, TPose>` is a generic interface with no
  *   canonical "erased" alias. We use `Scene<unknown, string, unknown>` as the
@@ -30,6 +30,7 @@
 
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
+import type { ViewAnimationOptions } from 'core/viewport/useViewAnimation';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { InsertAdapter } from 'core/adapters/types';
@@ -48,21 +49,28 @@ import type { PoseProjection } from './resize/geometry';
 import type { GeometryProjection } from './geometryProjection';
 import type { DragSample } from './invoker';
 
-/** Minimal view API the action layer consumes. May be refined later. */
+/** Minimal view API the action layer consumes. */
 export interface ViewApi {
   get(): View;
   set(v: View): void;
-  /** Optional recenter callback. When wired, `viewportZoomAction`'s
-   *  `reset` branch (Cmd-0) calls this instead of resetting to identity —
-   *  letting consumers re-fit the page (or other reference bounds) into
-   *  the workspace. Receives no args; the consumer reads its own bounds
-   *  + host dims and dispatches `setView(...)`. */
-  recenter?(): void;
+  /** Optional recenter callback. When wired, `viewportZoomAction`'s `reset`
+   *  branch (Cmd-0) calls this instead of resetting to identity — letting
+   *  consumers re-fit the page (or other reference bounds) into the workspace.
+   *  Return the target `View` to let the action animate there; return nothing
+   *  to keep dispatching the view yourself. */
+  recenter?(): View | void;
   /** Optional canvas-local host dimensions (CSS px). When wired,
    *  `viewportZoomAction`'s keyboard branches (Cmd+= / Cmd+-) anchor at the
    *  host center instead of the top-left origin. Null when the host isn't
    *  measurable (unmounted). */
   hostSize?(): { width: number; height: number } | null;
+  /** Optional camera animation. `<SceneCanvas>` wires these three; a consumer
+   *  publishing their own `view` dep need not, and actions fall back to `set`. */
+  animate?(to: View, opts?: ViewAnimationOptions): void;
+  stopAnimation?(): void;
+  /** Where an in-flight camera animation is heading, or null. Compute the next
+   *  discrete step from this so repeated presses compound. */
+  animationTarget?(): View | null;
 }
 
 /**

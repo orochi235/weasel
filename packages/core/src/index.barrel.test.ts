@@ -144,3 +144,13 @@ describe('registry-unification exports (DepRegistry + dispatcher)', () => {
     expect(Barrel.defaultCommitAdapter).toBeDefined();
   });
 });
+
+describe('camera animation barrel surface', () => {
+  it('exports the camera runner and its interpolator, and no longer exports useViewTween', () => {
+    const b = Barrel as Record<string, unknown>;
+    expect(typeof b.useViewAnimation).toBe('function');
+    expect(typeof b.interpolateView).toBe('function');
+    expect(b.VIEW_ANIMATION_KEY).toBe('view');
+    expect('useViewTween' in b).toBe(false);
+  });
+});

@@ -33,15 +33,19 @@ export interface PinchZoomToolOpts {
  *
  * The anchor point under the gesture midpoint stays fixed on screen as the
  * view scales.
+ *
+ * @param getView Read at gesture time, not at render time: each pinch move
+ *   applies a per-frame delta to the view the previous move produced, and the
+ *   canvas does not re-render between them.
  */
 export function usePinchZoomTool(
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
-  view: View,
+  getView: () => View,
   setView: (v: View) => void,
   opts: PinchZoomToolOpts = {},
 ) {
-  const viewRef = useRef(view);
-  viewRef.current = view;
+  const getViewRef = useRef(getView);
+  getViewRef.current = getView;
   const setViewRef = useRef(setView);
   setViewRef.current = setView;
   const { min = 0.1, max = 8, enabled = true } = opts;
@@ -59,7 +63,7 @@ export function usePinchZoomTool(
       const [cx, cy] = clientToCanvas(el, clientAnchor.x, clientAnchor.y);
       anchor = { x: cx, y: cy };
     }
-    const newView = zoomAt(target?.view ?? viewRef.current, anchor, scaleFactor, { min, max });
+    const newView = zoomAt(target?.view ?? getViewRef.current(), anchor, scaleFactor, { min, max });
     (target ? target.setView : setViewRef.current)(newView);
   }, enabled);
 }

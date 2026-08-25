@@ -212,8 +212,7 @@ not routed by the dispatcher — you own the pointer events.
 
 - `useCanvasSize(ref)` — observed CSS-pixel size.
 - `useZoom({ ... })`, `useAutoCenter(...)` — viewport helpers.
-- `useViewTween(...)`, `useViewAnimation(...)` — animated view changes
-  (`animateToBounds` and friends).
+- `useViewAnimation(view, animator?)` — animated view changes, on the kit animator
 - `useVelocityTracker()`, `useDecayLoop(config)` — inertial-pan building
   blocks.
 - `usePinchGesture(...)` — raw two-finger pinch, below `viewport.pinchZoom`.

@@ -3,7 +3,6 @@
  *
  * ## Bindings (parametric — each passes `params.kind`)
  * - `{ kind: 'wheel', mods: { mod: true } }` → Cmd+wheel, params: `{ kind: 'wheel' }`
- *   (also covers Mac trackpad pinch, which the browser synthesizes as ctrl+wheel)
  * - `{ kind: 'key', key: '=' }` → zoom in, params: `{ kind: 'in' }`
  * - `{ kind: 'key', key: '-' }` → zoom out, params: `{ kind: 'out' }`
  * - `{ kind: 'key', key: '0' }` → reset zoom, params: `{ kind: 'reset' }`
@@ -17,7 +16,13 @@
  * - `'in'`/`'out'`: step zoom by ×1.25 / ×0.8, anchored at the host center
  *   when the `view` dep wires `hostSize()` (SceneCanvas does), falling back
  *   to the canvas top-left origin for consumers that don't.
- * - `'reset'`: resets scale to 1, translation to 0.
+ * - `'reset'`: resets scale to 1, translation to 0, or calls the `view` dep's
+ *   `recenter()`.
+ *
+ * The three discrete branches glide instead of jumping when the `animate`
+ * option is configured and the `view` dep implements `animate` — they hand the
+ * action a target and nothing in between, which is the whole condition for
+ * tweening. `'wheel'` always jumps per sample.
  *
  * ## Key binding modifier notes
  * The key bindings (`=`, `-`, `0`) require `mod: true` (Cmd on Mac, Ctrl elsewhere).
@@ -27,6 +32,8 @@
 import type { Action } from '../registry';
 import type { ViewApi } from '../depSchema';
 import { zoomAt } from 'core/viewport/zoomAt';
+import type { View } from 'core/viewport/view';
+import type { ViewAnimationOptions } from 'core/viewport/useViewAnimation';
 
 // Multiplicative step for keyboard zoom (matches useKeyboardZoomTool default).
 const KEY_STEP = 1.25;
@@ -46,13 +53,23 @@ const WHEEL_STEP = 1.1;
 
 /**
  * @experimental
+ * Tuning for the animated form of the discrete zoom steps.
+ */
+export interface ViewportZoomAnimateOptions extends ViewAnimationOptions {
+  /** Duration for the Cmd+0 reset branch. Defaults to `ms`. */
+  resetMs?: number;
+}
+
+/**
+ * @experimental
  * Tuning for {@link makeViewportZoomAction}.
  */
 export interface ViewportZoomOptions {
   /**
    * Which wheel gesture triggers zoom.
    * - `'mod'` (default): Cmd/Ctrl+wheel — coexists with plain-wheel pan
-   *   (`viewport.wheelPan`) and Mac trackpad pinch (ctrl+wheel).
+   *   (`viewport.wheelPan`). A Mac trackpad pinch arrives as ctrl+wheel, which
+   *   `mod: true` forbids on Mac; nothing here handles it.
    * - `'plain'`: bare wheel, no modifier. Pair with `viewport.pan: false`,
    *   since plain wheel otherwise drives pan and the two would compete.
    */
@@ -61,6 +78,13 @@ export interface ViewportZoomOptions {
   min?: number;
   /** Upper clamp on the resulting view scale, forwarded to `zoomAt`. Default 8. */
   max?: number;
+  /**
+   * Glide the discrete steps (Cmd+=, Cmd+-, Cmd+0) instead of jumping.
+   * `true` uses the kit defaults; an object tunes them. Wheel and pinch never
+   * animate — their input already samples every frame. Requires a `view` dep
+   * that implements `animate`; without one this is ignored.
+   */
+  animate?: boolean | ViewportZoomAnimateOptions;
 }
 
 /**
@@ -81,6 +105,12 @@ export function makeViewportZoomAction(
     opts.wheel === 'plain'
       ? { kind: 'wheel' as const }
       : { kind: 'wheel' as const, mods: { mod: true } };
+
+  const rawAnimate = opts.animate === true ? {} : (opts.animate || null);
+  const tweenOpts: ViewAnimationOptions | null = rawAnimate
+    ? { ms: rawAnimate.ms, easing: rawAnimate.easing, interpolator: rawAnimate.interpolator }
+    : null;
+  const resetMs = rawAnimate?.resetMs;
 
   return {
     id: 'viewport.zoom',
@@ -117,6 +147,15 @@ export function makeViewportZoomAction(
         const current = view.get();
         const kind = params?.kind as string | undefined;
 
+        const canAnimate = tweenOpts !== null && typeof view.animate === 'function';
+        const stepTo = (target: View, ms?: number) => {
+          if (!canAnimate) { view.set(target); return; }
+          view.animate!(target, { ...tweenOpts!, ms: ms ?? tweenOpts!.ms });
+        };
+        // Successive presses compound off where the camera is heading, not off
+        // whichever frame the tween happens to be on.
+        const stepFrom = (): View => (canAnimate && view.animationTarget?.()) || current;
+
         switch (kind) {
           case 'wheel': {
             const deltaY = (params?.deltaY as number | undefined) ?? 0;
@@ -127,21 +166,22 @@ export function makeViewportZoomAction(
             break;
           }
           case 'in':
-            view.set(zoomAt(current, keyAnchor(view), KEY_STEP, clamp));
+            stepTo(zoomAt(stepFrom(), keyAnchor(view), KEY_STEP, clamp));
             break;
           case 'out':
-            view.set(zoomAt(current, keyAnchor(view), 1 / KEY_STEP, clamp));
+            stepTo(zoomAt(stepFrom(), keyAnchor(view), 1 / KEY_STEP, clamp));
             break;
-          case 'reset':
+          case 'reset': {
             // Prefer the consumer-supplied recenter when available — typically
-            // re-fits the document page into the workspace. Fall back to
-            // identity (origin, scale 1) when no recenter is wired.
-            if (view.recenter) {
-              view.recenter();
-            } else {
-              view.set({ x: 0, y: 0, scale: { x: 1, y: 1 } });
-            }
+            // re-fits the document page into the workspace. A recenter that
+            // returns its target can be animated; one that returns nothing
+            // dispatched the view itself and is already done.
+            const target = view.recenter
+              ? view.recenter()
+              : { x: 0, y: 0, scale: { x: 1, y: 1 } };
+            if (target) stepTo(target, resetMs);
             break;
+          }
           default:
             // Unknown kind — no-op. Legacy bridge calls with params=undefined;
             // default to zoom-in as a sensible fallback.

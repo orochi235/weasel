@@ -74,14 +74,23 @@ export interface UseSceneTextEditOptions<TData> {
    * The overlay takes a single scale factor, so a non-uniform view scale is
    * represented by its `scale.x`; text under `scale.x !== scale.y` will not
    * match the canvas.
+   *
+   * A thunk is re-read on every projection, which is what an uncontrolled
+   * `SceneCanvas` needs — its camera lives in a ref and moves without a
+   * render, so pass the handle's `getView`. A plain `View` is the value from
+   * the render that supplied it, which is correct for a controlled consumer.
    */
-  view?: View;
+  view?: View | (() => View);
   /**
    * Forwarded to `useTextEdit`: is `el` part of the editor's own chrome?
    * Focus moving into it does not end the edit. Wire it to whatever renders
    * the character controls.
    */
   isEditorChrome?: (el: Element) => boolean;
+}
+
+function resolveView(view: View | (() => View) | undefined): View | undefined {
+  return typeof view === 'function' ? view() : view;
 }
 
 /** Return shape extends `UseTextEditReturn` with an `onDoubleClick`
@@ -137,7 +146,7 @@ export function useSceneTextEdit<
       const style = optsRef.current.getStyle
         ? optsRef.current.getStyle(node.data)
         : node.data.style;
-      const view = optsRef.current.view;
+      const view = resolveView(optsRef.current.view);
       const zoom = view ? view.scale.x : 1;
       // Only the origin is projected. Width, height and font size stay in
       // world units and reach the screen through the overlay's own
@@ -193,7 +202,7 @@ export function useSceneTextEdit<
     // `pointInTextPose` and `caretIndexAt` both work in world units, so the
     // canvas-space click has to be un-projected before either sees it.
     const [canvasX, canvasY] = clientToCanvas(canvas, e.clientX, e.clientY);
-    const view = optsRef.current.view;
+    const view = resolveView(optsRef.current.view);
     const cx = view ? canvasX / view.scale.x + view.x : canvasX;
     const cy = view ? canvasY / view.scale.y + view.y : canvasY;
     const readText = (data: TData): string =>
@@ -219,11 +228,11 @@ export function useSceneTextEdit<
 
       const ctx = canvas.getContext('2d');
       if (!ctx) {
-        edit.startEdit(String(order[i]));
+        edit.startEdit(String(node.id));
         return;
       }
       const caret = caretIndexAt(ctx, cx, cy, pose);
-      edit.startEdit(String(order[i]), { caret });
+      edit.startEdit(String(node.id), { caret });
       return;
     }
   }, [edit]);

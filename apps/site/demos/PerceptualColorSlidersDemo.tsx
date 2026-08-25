@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Slider, chromaAt, oklchToHex, paintGradientTrack, type ChromaCurve, type Thumb } from '@weasel-js/ui';
 import { SceneCanvas, hexToRgba, polygonFromPoints, useScene } from '@weasel-js/core';
 import type { RenderLayer } from '@weasel-js/core';
-import { viewToMat3, type DrawCommand } from '@weasel-js/core/renderer';
+import type { DrawCommand } from '@weasel-js/core/renderer';
 
 type CThumb = Thumb & { key: 'cTop' | 'cPeak' | 'cBot' };
 
@@ -151,13 +151,11 @@ function ChromaCurveDiagram({ params, bounds }: { params: RampParams; bounds: Ch
   ], [lo, hi, params.midL, params.hue, params.chroma.cBot, params.chroma.cPeak, params.chroma.cTop, bounds.cBot, bounds.cPeak, bounds.cTop]);
 
   // Custom render layer: a single 3-vertex polygon with per-vertex colors,
-  // interpolated by the kit's `pathFillVColor` shader. The polygon is in
-  // canvas-local / world coords (identity view); `viewToMat3(view)` is the
-  // standard transform wrapper.
+  // interpolated by the kit's `pathFillVColor` shader, emitted in world coords.
   const layer: RenderLayer<unknown> = useMemo(() => ({
     id: 'chroma-curve-fill',
     label: 'Chroma curve (vertex colors)',
-    draw: (_data, view) => {
+    draw: () => {
       const path = polygonFromPoints(points.map(p => ({ x: xAt(p.L), y: yAt(p.C) })));
       const colors = points.flatMap(p => hexToRgba(p.color));
       // The vertex-color render path is gated by `cmd.fill` being truthy
@@ -169,7 +167,7 @@ function ChromaCurveDiagram({ params, bounds }: { params: RampParams; bounds: Ch
         fill: { color: '#fff' },
         vertexColors: colors,
       };
-      return [{ kind: 'group', transform: viewToMat3(view), children: [cmd] }];
+      return [cmd];
     },
     // Re-evaluate whenever the curve points move.
   }), [points]);

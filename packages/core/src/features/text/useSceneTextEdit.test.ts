@@ -6,6 +6,7 @@
  */
 import { describe, expect, it, beforeEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
+import type { MouseEvent } from 'react';
 import { useScene } from '../../core/scene/useScene';
 import { asNodeId } from '../../core/scene/types';
 import type { View } from '../../core/viewport/view';
@@ -128,5 +129,73 @@ describe('useSceneTextEdit — setStyle', () => {
     act(() => hook.result.current.edit.commit());
     const runs = hook.result.current.scene.get(asNodeId('a'))?.data.runs;
     expect(runs).toEqual([{ text: 'ab' }, { text: 'cd', bold: true }]);
+  });
+});
+
+/**
+ * A `view` thunk is the uncontrolled-canvas path: the camera lives in a ref
+ * and moves without a React render, so a `View` captured at render time
+ * would freeze the overlay while the canvas pans under it.
+ */
+describe('useSceneTextEdit — view thunk', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  function renderThunkEdit(read: () => View) {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const hook = renderHook(() => {
+      const scene = useScene({ items: [NODE] });
+      return useSceneTextEdit(scene, container, { view: read });
+    });
+    return { hook, container };
+  }
+
+  it('re-reads the thunk on every projection, so the overlay tracks a moving camera', () => {
+    let live: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    const frames: FrameRequestCallback[] = [];
+    const realRaf = globalThis.requestAnimationFrame;
+    globalThis.requestAnimationFrame = ((cb: FrameRequestCallback) => {
+      frames.push(cb);
+      return frames.length;
+    }) as typeof globalThis.requestAnimationFrame;
+    try {
+      const { hook, container } = renderThunkEdit(() => live);
+      act(() => hook.result.current.startEdit('a'));
+      const el = overlayOf(container);
+      // (100 - 0) * 1 + the hook's +1 / -1 rasterization nudge.
+      expect(el.style.left).toBe('101px');
+      expect(el.style.top).toBe('49px');
+
+      live = { x: 40, y: 10, scale: { x: 1, y: 1 } };
+      act(() => { frames[frames.length - 1]!(0); });
+      expect(el.style.left).toBe('61px');
+      expect(el.style.top).toBe('39px');
+
+      live = { x: 90, y: 45, scale: { x: 2, y: 2 } };
+      act(() => { frames[frames.length - 1]!(0); });
+      expect(el.style.left).toBe('21px');
+      expect(el.style.top).toBe('9px');
+      expect(el.style.transform).toBe('scale(2)');
+    } finally {
+      globalThis.requestAnimationFrame = realRaf;
+    }
+  });
+
+  it('un-projects a double-click through the thunk read at click time', () => {
+    let live: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    const { hook, container } = renderThunkEdit(() => live);
+    const canvas = document.createElement('canvas');
+    container.appendChild(canvas);
+
+    // The node's world box is x 100..300, y 50..90. jsdom reports a zeroed
+    // client rect, so a click at (10, 10) is canvas-space (10, 10) — inside
+    // the node only once the camera has panned to (100, 50).
+    live = { x: 100, y: 50, scale: { x: 1, y: 1 } };
+    act(() => hook.result.current.onDoubleClick({
+      target: canvas, clientX: 10, clientY: 10,
+    } as unknown as MouseEvent<HTMLElement>));
+    expect(hook.result.current.editingId).toBe('a');
   });
 });

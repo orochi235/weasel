@@ -4,6 +4,7 @@ import {
   useScene,
   useSelection,
   createViewportLayer,
+  meanScale,
   viewportsAt,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
@@ -50,6 +51,57 @@ export function pipView(items: ReturnType<typeof makeRandomScene>): View {
   };
 }
 
+interface SourceItem { pose: Pose; data: NodeData }
+
+/**
+ * The scene's rects, emitted in **world** coordinates.
+ *
+ * A `space: 'world'` layer must not apply the view itself: `drawOneLayer`
+ * wraps its output in `viewToMat3` of whichever view is rendering it, so a
+ * layer that pre-multiplies lands its content at scale squared, off-screen.
+ */
+export function createSceneSourceLayer(items: () => Iterable<SourceItem>): RenderLayer<unknown> {
+  return {
+    id: 'viewport-source',
+    label: 'Viewport source',
+    space: 'world',
+    draw: (): DrawCommand[] =>
+      [...items()].map(({ pose, data }): DrawCommand => ({
+        kind: 'path',
+        path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
+        fill: { fill: 'solid', color: data.color },
+      })),
+  };
+}
+
+/**
+ * The main canvas's visible window as a dashed world-space rect, so any
+ * viewport lensing it shows where the outer camera is looking.
+ *
+ * Width and dash divide by the lensing view's scale - the world-space way to
+ * pin a hairline to screen pixels.
+ */
+export function createViewIndicatorLayer(mainView: () => View): RenderLayer<unknown> {
+  return {
+    id: 'viewport-indicator',
+    label: 'Visible area',
+    space: 'world',
+    draw: (_data, v): DrawCommand[] => {
+      const main = mainView();
+      const px = 1 / meanScale(v.scale);
+      return [{
+        kind: 'path',
+        path: {
+          kind: 'rect',
+          x: main.x, y: main.y,
+          width: W / main.scale.x, height: H / main.scale.y,
+        },
+        stroke: { paint: { fill: 'solid', color: '#ffffff' }, width: px, dash: [2 * px, 3 * px] },
+      }];
+    },
+  };
+}
+
 export function ViewportLayerDemo() {
   const initial = useMemo(makeRandomScene, []);
   const scene = useScene<NodeData, LayerId, Pose>({
@@ -60,64 +112,15 @@ export function ViewportLayerDemo() {
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
   const [probe, setProbe] = useState('—');
 
-  // A trivial source layer that paints the same shapes the main scene
-  // shows. The viewport renders this through its own `View`. In a richer
-  // setup you'd pass the kit-built scene layer here so the viewport tracks
-  // edits live.
-  const sceneSource = useMemo<RenderLayer<unknown>>(
-    () => ({
-      id: 'viewport-source',
-      label: 'Viewport source',
-      space: 'world',
-      draw: (_data, v): DrawCommand[] => {
-        const cmds: DrawCommand[] = [];
-        for (const node of scene.nodes.values()) {
-          if (node.kind !== 'leaf') continue;
-          const pose = node.pose as Pose;
-          const data = node.data as NodeData;
-          const sx = (pose.x - v.x) * v.scale.x;
-          const sy = (pose.y - v.y) * v.scale.y;
-          cmds.push({
-            kind: 'path',
-            path: { kind: 'rect', x: sx, y: sy, width: pose.width * v.scale.x, height: pose.height * v.scale.y },
-            fill: { fill: 'solid', color: data.color },
-          });
-        }
-        return cmds;
-      },
-    }),
+  const sceneSource = useMemo(
+    () =>
+      createSceneSourceLayer(() =>
+        [...scene.nodes.values()]
+          .filter((n) => n.kind === 'leaf')
+          .map((n) => ({ pose: n.pose, data: n.data }))),
     [scene],
   );
-
-  // Source layer that draws a dashed outline showing where the main
-  // canvas's visible window falls in world coordinates. The minimap
-  // composes this on top of `sceneSource`, so the indicator stays anchored
-  // to whatever world rect the main canvas is currently looking at.
-  const viewIndicator = useMemo<RenderLayer<unknown>>(
-    () => ({
-      id: 'viewport-indicator',
-      label: 'Visible area',
-      space: 'world',
-      draw: (_data, v): DrawCommand[] => {
-        // Visible world rect of the main canvas, in world coords.
-        const worldX = view.x;
-        const worldY = view.y;
-        const worldW = W / view.scale.x;
-        const worldH = H / view.scale.y;
-        // Transform into minimap-screen coords using the minimap's view.
-        const sx = (worldX - v.x) * v.scale.x;
-        const sy = (worldY - v.y) * v.scale.y;
-        const sw = worldW * v.scale.x;
-        const sh = worldH * v.scale.y;
-        return [{
-          kind: 'path',
-          path: { kind: 'rect', x: sx, y: sy, width: sw, height: sh },
-          stroke: { paint: { fill: 'solid', color: '#ffffff' }, width: 1, dash: [2, 3] },
-        }];
-      },
-    }),
-    [view],
-  );
+  const viewIndicator = useMemo(() => createViewIndicatorLayer(() => view), [view]);
 
   // Minimap: top-right corner, fixed scale that fits the world bounds.
   const minimap = useMemo(

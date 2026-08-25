@@ -300,6 +300,56 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
 
 ## Viewport
 
+- **(P3) `useViewAnimation` builds an animator it never uses.** The hook calls
+  `useAnimator()` unconditionally so it can fall back to its own animator when
+  the caller passes none — hooks cannot be conditional — so `<SceneCanvas>`,
+  which always passes `cameraAnimator`, constructs a second idle `Animator` per
+  canvas. It registers nothing and its rAF loop never starts, so the cost is one
+  object plus a no-op unmount effect, but it is dead weight and it makes
+  "SceneCanvas runs the camera on its own animator" untestable by swapping the
+  argument: `useViewAnimation(channel, undefined)` behaves identically. Fixing
+  it wants either a positional-animator variant or a `useAnimatorOrNull` seam.
+
+- **(P3) Camera-animation loose ends (from the 2026-08-25 review).** None is
+  load-bearing for what shipped; all four are real.
+
+  - **`onDone` can fire on a cancel.** `Animator.tween`'s tick calls `onTick`
+    and then `onDone` in the same pass once `t >= 1`
+    (`animation/useAnimator.ts:306`), so a write that cancels the tween from
+    inside that last `onTick` still gets the completion callback. It is the
+    animator's contract rather than `useViewAnimation`'s, so the fix belongs
+    there and touches every tween.
+
+  - **`ViewportZoomAnimateOptions` declares `onDone` and the action drops it.**
+    `makeViewportZoomAction` rebuilds the tween options field by field as
+    `{ ms, easing, interpolator }`
+    (`interactions/actions/defaults/viewportZoom.ts:110`), so an `onDone`
+    passed through `viewport.zoom`'s `animate` is silently ignored.
+
+  - **`viewport.animatedZoom` is spelled narrower than the option it feeds.**
+    `SceneCanvas.tsx:604` restates the shape as `{ ms, resetMs, easing }` while
+    `ViewportZoomAnimateOptions` extends `ViewAnimationOptions`, so
+    `interpolator` cannot be reached from the `<SceneCanvas>` prop at all.
+    Reference the interface instead of restating it.
+
+  - **`useViewDepSource`'s presence-set rebuild is untested, on a reason that
+    does not hold.** `canvas/deps/view.ts:41` says the optional members must be
+    absent rather than undefined-valued because `viewportZoomAction` branches on
+    `view.recenter` being truthy — but a truthy check cannot tell the two apart,
+    and nothing in the tree does an `in` or `hasOwnProperty` check on a
+    `ViewApi`. Spreading every member unconditionally leaves the suite green.
+    Find the real constraint and pin it with a test, or drop the `shape` string.
+
+  - **A controlled consumer's own `setState` cannot interrupt a glide.** Every
+    view write that goes through the canvas cancels the camera runner, via the
+    `onViewChange` it fires on both branches. A consumer who owns `view` in
+    state and writes it directly does not go through the canvas: the prop change
+    arrives asynchronously, after the runner has lowered the flag that
+    distinguishes its own frames, so it is indistinguishable from one. Comparing
+    the incoming prop against the last value written would work only for
+    consumers who store the view by reference — one who normalizes or clamps it
+    would have every frame of their own glide cancelled. Wants a real design.
+
 - **(P2) Viewports as a first-class canvas concept.** `createViewportLayer`
   re-projects on request (`layer.reproject(outer, dims, screen)`, `viewportsAt`
   for the topmost of several, shipped 2026-08-15), but the dispatcher knows
@@ -411,6 +461,123 @@ Core five + Crop shipped. Remaining:
 ---
 
 ## Rendering & paint
+
+- **(P2) `createParallaxLayer` bypasses `drawOneLayer`, so a source layer's
+  `space` is silently ignored.** `packages/core/src/features/parallax/createParallaxLayer.ts:36`
+  calls `layer.draw(...)` directly where `viewportLayer.ts` calls `drawOneLayer(...)`.
+  ParallaxDemo's four layers therefore declare `space: 'world'` while their bodies
+  pre-project — harmless today because nothing applies the transform, but the
+  labels are lies, and changing that one line to `drawOneLayer` converts all four
+  into a double-applied view transform (the bug fixed in `6eec0d88`).
+  `apps/draw/src/useLoupe.ts:49` has the same shape. Fix the bypass and the
+  demos together, or neither.
+
+- **(P3) A comment in `SceneCanvas` contradicts the line beneath it.**
+  `packages/core/src/canvas/SceneCanvas.tsx:1199-1200` says "SceneCanvas's default
+  is pan+zoom enabled even when the consumer omits the viewport prop (undefined
+  !== false)" directly above `const viewportRegistered = !!viewport;` — and
+  `!!undefined` is `false`. Browser behavior agrees with the code, not the
+  comment. Either the default is wrong or the comment is; decide which.
+
+- **(P1) `curve-lab` renders in an infinite loop.** 62 x `Maximum update depth
+  exceeded` at load. `usePublishSelection`'s effect
+  (`packages/core/src/canvas/SelectionContext.tsx:117`) has deps `[ctx, serialized]`,
+  and `ctx` takes a new identity on every `setState` — so N canvases holding
+  *different* selections in one provider thrash forever. curve-lab's four panels
+  each call `useSelection({ initial: [nodeId], lock: true })` with a different id.
+  The panels still paint correctly; this is a console and CPU defect, not a
+  visual one. Predates the frame-loop arc, which touched neither file.
+
+- **(P1) A second `<SceneCanvas>` under one `ActionsProvider` unregisters the
+  first's viewport actions.** In `vertex-widths` and `boolean-ops` — and
+  `curve-lab` and `rotated-resize-math` — wheel pan and Cmd+wheel/Cmd+-/Cmd+0 do
+  nothing at all; the canvas is pixel-identical after six zoom notches, with no
+  `view` or `viewport` prop set, where the documented default is that they stay
+  wired. `useViewportActions.ts` registers `viewport.pan` / `viewport.zoom` by
+  **action id** into the shared registry and unregisters them on cleanup, so
+  sibling canvases collide on those ids and one instance's teardown takes the
+  registration out from under the others. Predates the frame-loop arc.
+
+- **(P2) The text-edit overlay does not scale with the canvas.** `#text` at ~2x
+  renders the DOM overlay at 1x font size in a 240x80 box while the selection
+  frame around it is correctly zoomed — the text sits detached from the glyphs it
+  is editing (`fontSize: 16px, transform: none` at both 1x and 2x). The demo
+  (`apps/site/demos/TextDemo.tsx:38`) calls `useSceneTextEdit(scene, container)`
+  with no `options.view`, so `getScreenPose` resolves `zoom = 1`. Documented hook
+  behavior, so this is a demo gap — but the demo enables Cmd+wheel zoom by
+  default, putting the broken state one gesture away. The live-view thunk added in
+  `99e2f969` is the surface that fixes it: pass the canvas handle's `getView`.
+
+- **(P2) The canvas's repaint tripwire has a blind spot: `helpersForLayersRef`.**
+  `Canvas` marks itself dirty from a `useEffect` whose dep array is meant to
+  name every input the paint reads. `helpersForLayersRef` — selection, preview
+  poses, chrome state, `getIsVisible` — is written during render and appears in
+  neither that array nor an imperative redraw of its own. It works today only
+  because `SceneCanvas` calls `requestRedraw()` by hand at six sites
+  (`SceneCanvas.tsx:936, 946, 952, 1082, 1087, 1622`), which means the primitive
+  is trusting its wrapper to remember. A bare `<Canvas>` consumer changing
+  selection gets no repaint, and the comment above the dep array claims the
+  opposite ("every input the paint reads must appear here"). Either fold the
+  helpers into the tripwire or make the comment tell the truth about who owns
+  the redraw.
+
+- **(P2) A throwing layer takes down the whole frame, as an uncaught error.**
+  Since the paint moved onto the frame loop, a `draw` that throws surfaces as an
+  uncaught `requestAnimationFrame` error on the window; before, it ran inside a
+  `useEffect` and reached the nearest React error boundary. Neither is the
+  behavior worth wanting. `drawLayers` is the place that can do better — it
+  already iterates layers holding the layer id, the debug sink and the command
+  cache, so a per-layer `try`/`catch` can drop that layer's commands, report
+  `{ layerId, error }` to the sink, and paint the rest. A canvas visibly missing
+  one layer, with a console error naming it, beats both a blank canvas and a
+  silently-vanished layer. Open questions: whether a throwing layer stays
+  evicted until its `deps` change, whether the sink grows an error channel, and
+  what the headless `renderSceneToPixels` path does with a failure. Do **not**
+  put the `catch` in `useFrameLoop` — scheduling has no information about what a
+  draw failure means, and the granularity is wrong there.
+
+- **(P1) The hud loupe's pixel mode reads back a stale buffer.** `refreshPixels`
+  calls `readbackRegion` — `gl.readPixels` — straight off an aim change
+  (`packages/hud/src/loupe/createLoupe.ts:152`), which since the frame loop
+  landed is a moment with no paint behind it: the buffer holds the previous
+  frame, so the magnifier shows the scene as it was one frame ago while dragging.
+  The changeset names the remedy and nothing in `packages/hud/src` implements it
+  — no call to `subscribeFrame` exists there. Fix shape: `HudHost`
+  (`packages/hud/src/host.ts`) gains `subscribeFrame`, which `attachHud` already
+  has on the `api` it shims from (`attach.ts:144`), and the loupe defers the
+  readback to the next landed paint instead of taking it inline.
+
+- **(P1) `SceneCanvas` re-renders on every scene mutation.** Its own
+  `useSyncExternalStore` (`SceneCanvas.tsx:894`) commits the canvas for every
+  version bump, whether or not the host passed
+  `useScene(..., { subscribe: false })` — the ~100–110 commits/s the scene
+  side-scroller still pays. The ephemeral-pose-overrides arc does not close
+  this: it only stops *pose overrides* bumping the version, and a demo's own
+  `scene.add` / `scene.batch` still notifies. The shape worth trying is that the
+  subscription call `requestRedraw()` rather than commit — `Canvas` already
+  takes `contentVersion` as a getter, so the paint can sample the version
+  without a render. What that costs is real design work: some chrome genuinely
+  needs a commit on a scene change (layer panels, counts, anything rendering
+  node data as DOM), and deciding which is the whole question.
+
+- **(P3) Sync paints do not coalesce.** `CanvasProps.syncPaint`
+  (`Canvas.tsx:234-242`) promises "a synchronous paint per commit", singular,
+  but the loop paints per *request*: one commit carrying a sibling
+  layout-effect `requestRedraw` produced two full GL paints where the async
+  path produced one. Coalescing would mean deferring to a microtask at the end
+  of the commit, which gives up the "pixels land before the surrounding layout
+  effects read the DOM" ordering that `syncPaint` exists for. Either the
+  ordering guarantee or the singular paint — the doc currently claims both.
+
+- **(P3) `paintInputsRef` is written during render.** `Canvas.tsx:1295` assigns
+  it in the render body, so a concurrent render React starts and abandons still
+  leaves its inputs in the ref, and the next `requestRedraw` from any source —
+  a gesture, a HUD, the view — paints inputs that were never committed. This is
+  a second `startTransition` hazard, distinct from the documented one (that one
+  is about DOM lagging the canvas; this one is about the canvas painting a
+  render that does not exist), and it is documented nowhere. Writing the ref
+  from a layout effect instead would fix it and cost the sync-paint ordering,
+  which is the same trade as the entry above.
 
 - **(P2) `before` and `after` layer chains do not compose.** In
   `packages/core/src/canvas/layerOrder.ts`, `emitBefore` recurses only into a
@@ -789,30 +956,72 @@ milliseconds are inflated by the tracing, the ratios are the signal):
 | | immediate | scene graph |
 |---|---|---|
 | frames committed / s | 109 | 76 |
-| main-thread busy / s | 1.00× | **1.27×** |
+| main-thread busy / s, immediate = 1.00× | 1.00× | **1.27×** |
 | main-thread busy / committed frame | 6.31 ms | **11.57 ms** |
 | major GC over the window | 57 ms | **549 ms** |
 
 Unloaded, both peg the 120 Hz display and neither drops a frame. The costs only
 separate under load — which is the honest read: the retained tree is affordable
-here, and it is not free.
+here, and it is not free. That load was never written down, so the table below
+is a different, recorded measurement rather than a fifth column here.
+
+Re-measured after the frame-loop arc, same machine and browser: both demos with
+the run started and no player input, ten-second windows, DevTools tracing on.
+"main" is the tree before the arc, "frame loop" after. Busy is the sum of
+renderer-main `RunTask`; the scene twin's frame count is its own readout, the
+immediate twin's a `requestAnimationFrame` counter. The scene-graph "frame loop"
+column shows two runs, which is the run-to-run spread.
+
+| | immediate, main | immediate, frame loop | scene graph, main | scene graph, frame loop |
+|---|---|---|---|---|
+| frames / s | 120 | 120 | 120 | 120 |
+| main-thread busy / s, busy seconds per wall second | 0.19× | **0.11×** | 0.47× | **0.35–0.38×** |
+| busy / committed frame | 1.58 ms | **0.89 ms** | 3.94 ms | **2.88–3.21 ms** |
+| major GC over 10 s | 0 ms | 2 ms | 10 ms | 4–10 ms |
+| `CanvasInner` setState / s | 118 | **0** | 120 | 100–110 |
+
+The last row counts `CanvasInner`'s own state writes, not React commits: both
+demos commit at roughly 5 Hz besides, from the readout interval in
+`SideScrollerDemo.tsx:110-125`, which is what the React Profiler will show.
+
+Both twins hold 120 Hz at this load, so the frame rate says nothing and busy per
+frame is the number that moves. The immediate twin drops 44%, and `118 → 0` is
+firm for structural rather than statistical reasons: that twin renders an empty
+scene at a constant view and the branch never touched it, so those writes were
+`CanvasInner`'s per-paint `setState` and they are gone by construction.
+
+The scene twin drops 18–27% — its two runs spread 2.88–3.21 ms, about 11%, at
+n=1 per configuration — and effectively all of that is the demo's own switch to
+`setView` on the handle. With the camera left in `useState`, the frame loop alone
+measured 3.86 ms/frame against main's 3.94: a 0.08 ms difference inside a 0.33 ms
+spread, which is no measurable timing difference at all. Read the mechanism
+instead of the number — a consumer calling `setState` every frame pays for that
+render whatever the canvas does underneath it, so decoupling paint from render
+cannot show up until the consumer stops.
+
+Major GC did not move, as expected — per-frame pose allocation belongs to the
+ephemeral-pose-overrides arc.
 
 What it surfaced:
 
-- **(P1) A per-frame camera costs a React render per frame.** `view` is a prop
-  or `SceneCanvas`'s own `useState` (`SceneCanvas.tsx:961`), the paint is a
-  `useEffect` keyed on it (`Canvas.tsx:1284`), and `requestRedraw` is
-  `setRedrawNonce(n => n + 1)` (`Canvas.tsx:780`) — so every repaint is a React
-  render by construction. This is the seam that made the load-test twin pin
-  `view` to identity and hand-project every layer, which in turn is what forced
-  the scene graph off entirely. Decoupling the paint loop from the React render
-  cycle is the fix: `requestRedraw` marks a dirty ref, a rAF loop paints, and
-  `view` becomes a ref with a subscription for whatever DOM chrome renders it.
-  Note `useSyncExternalStore` already de-opts scene mutations from concurrent
-  rendering, so this spends concurrency rather than buying it; what decoupling
-  actually trades away is single-commit consistency between React-rendered DOM
-  and canvas pixels (one frame of skew, unbounded only for scene-derived DOM
-  inside a `startTransition`).
+- **(P1) A per-frame camera costs a React render per frame — landed
+  2026-08-25.** The canvas paints from its own animation frame
+  (`packages/core/src/canvas/useFrameLoop.ts`) and the view lives in a ref with
+  `getView` / `setView` / `subscribeView` / `subscribeFrame` on the canvas
+  handle, so a camera driven through `setView` costs no render. The second table
+  above is what it bought. Design:
+  `docs/superpowers/specs/2026-08-24-frame-loop-decoupling-design.md`, Part 1.
+
+- **(P1) `SceneCanvas` commits on every scene mutation, even when the host opted
+  out** — those are the ~100–110 commits/s the scene twin still pays above.
+  Carried under Rendering & paint, since it is not this demo's problem. The
+  ephemeral-pose-overrides arc
+  (`docs/superpowers/plans/2026-08-24-ephemeral-pose-overrides.md`) narrows it
+  but does not close it: an override never bumps the version, while this demo's
+  `scene.add` / `scene.batch` still does. Measuring anything else per-frame
+  means stopping the scene writes first —
+  `apps/site/demos/__tests__/SceneScrollerDemo.test.tsx` freezes `syncScene` to
+  isolate the camera at all.
 
 - **(P1) `setPose` demands a fresh pose object per node per frame, and the GC
   bill is visible.** `nodeMemo` keys painter output on pose *reference*

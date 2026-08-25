@@ -19,7 +19,7 @@
  *   `docs/TODO.md`.
  */
 
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type React from 'react';
 import type { FillStyle } from 'core/paint-types';
 import { composeOrderedLayers, placeToolOverlays } from './layerOrder';
@@ -36,6 +36,7 @@ import { aggregatePreviewIds } from './toolPreview';
 import type { GestureSource } from './gestureBounds';
 import { useViewHelpers } from './useViewHelpers';
 import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
+import { useFrameLoop } from './useFrameLoop';
 import type { CanvasHelpers, CanvasSurfaceHelpers } from './useViewHelpers';
 
 import type { ToolCtx } from 'tools/types';
@@ -223,6 +224,22 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    *  same contract the headless `renderSceneToPixels` path follows (that
    *  path never reads ambient density at all). */
   dpr?: number;
+
+  /** The version of whatever content this canvas draws, sampled at paint time
+   *  and reported by {@link CanvasExtensionApi.getPaintedVersion}.
+   *  `<SceneCanvas>` wires this to `scene.getVersion`. Chrome that must not
+   *  show DOM ahead of pixels compares the two and defers a frame. */
+  contentVersion?: () => number;
+
+  /** Paint inside the React commit rather than on the next animation frame.
+   *  Costs a synchronous paint per commit and per redraw request; buys
+   *  single-commit consistency between React-rendered DOM and canvas pixels.
+   *  For consumers with DOM chrome pinned to canvas content that cannot
+   *  tolerate a frame of skew. Live: toggling it switches modes from the next
+   *  redraw on. A redraw requested from inside a layer's `draw`, or from a
+   *  `subscribeFrame` callback, still waits for a frame — painting it in place
+   *  would recurse. */
+  syncPaint?: boolean;
 
   /**
    * Combined adapter for scene-slot rendering, bounds computation, and
@@ -710,6 +727,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     width,
     height,
     dpr: dprProp,
+    contentVersion,
+    syncPaint = false,
     adapter: adapterProp,
     layers: layersMap,
     selection,
@@ -776,16 +795,29 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const layerVisibilityRef = useRef(layerVisibility);
   layerVisibilityRef.current = layerVisibility;
 
-  const [redrawNonce, setRedrawNonce] = useState(0);
-  const requestRedraw = useCallback(() => setRedrawNonce(n => n + 1), []);
+  // React does not drive the paint; the frame loop does. The thunk defers to
+  // `paint` below, which needs inputs this render has not computed yet.
+  const paintRef = useRef<() => boolean>(() => false);
+  const { requestRedraw, subscribeFrame } = useFrameLoop(
+    useCallback(() => paintRef.current(), []),
+    { syncPaint },
+  );
 
+  const contentVersionRef = useRef(contentVersion);
+  contentVersionRef.current = contentVersion;
+  const paintedVersionRef = useRef(0);
+  const getPaintedVersion = useCallback(() => paintedVersionRef.current, []);
+
+  // The `layersWithDebug` memo reads `extrasRef.current`, so registration has
+  // to bump state to re-run it. Rare (a HUD attaching, a loupe mounting).
+  const [extrasVersion, setExtrasVersion] = useState(0);
   const extrasRef = useRef<Set<RenderLayer<unknown>>>(new Set());
   const registerLayer = useCallback((layer: RenderLayer<unknown>) => {
     extrasRef.current.add(layer);
-    setRedrawNonce(n => n + 1);
+    setExtrasVersion(n => n + 1);
     return () => {
       extrasRef.current.delete(layer);
-      setRedrawNonce(n => n + 1);
+      setExtrasVersion(n => n + 1);
     };
   }, []);
 
@@ -826,38 +858,68 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     helpersForLayersRef.current,
   ), [hitTestExtrasIn]);
 
+  // The uncontrolled view lives in a ref, not `useState`, so a camera moving
+  // at 60 Hz costs no React render; DOM that mirrors it subscribes instead.
+  const viewRef = useRef<View>(viewProp ?? defaultView ?? { x: 0, y: 0, scale: { x: 1, y: 1 } });
+  const isControlled = viewProp !== undefined;
+  if (isControlled) viewRef.current = viewProp;
+  const viewSubsRef = useRef<Set<(v: View) => void>>(new Set());
+  const onViewChangeRef = useRef(onViewChange);
+  onViewChangeRef.current = onViewChange;
+  const viewBoundsRef = useRef(viewBounds);
+  viewBoundsRef.current = viewBounds;
+  const isControlledRef = useRef(isControlled);
+  isControlledRef.current = isControlled;
+  const controlledWarnedRef = useRef(false);
+
+  const setView = useCallback((next: View | ((current: View) => View)) => {
+    const resolved = typeof next === 'function' ? next(viewRef.current) : next;
+    const bounds = viewBoundsRef.current;
+    const clamped = bounds ? clampView(resolved, bounds, dimsRef.current) : resolved;
+    if (isControlledRef.current) {
+      // The prop is the authority; writing the ref would put pixels and props
+      // out of step with nothing to reconcile them.
+      const forward = onViewChangeRef.current;
+      if (!controlledWarnedRef.current) {
+        controlledWarnedRef.current = true;
+        console.warn(forward
+          ? '[weasel] setView not applied locally: this canvas is controlled by its `view` prop. The value was forwarded to `onViewChange` — update the prop from there, or drop it to take the imperative path.'
+          : '[weasel] setView ignored: this canvas is controlled by its `view` prop and has no `onViewChange`, so the value has nowhere to go. Update the prop, or drop it to take the imperative path.');
+      }
+      forward?.(clamped);
+      return;
+    }
+    viewRef.current = clamped;
+    for (const fn of viewSubsRef.current) fn(clamped);
+    onViewChangeRef.current?.(clamped);
+    requestRedraw();
+  }, [requestRedraw]);
+  const setViewRef = useRef(setView);
+  setViewRef.current = setView;
+
+  const getView = useCallback(() => viewRef.current, []);
+  const subscribeView = useCallback((fn: (v: View) => void) => {
+    viewSubsRef.current.add(fn);
+    return () => { viewSubsRef.current.delete(fn); };
+  }, []);
+
   useImperativeHandle(ref, () => ({
     element: canvasRef.current,
     requestRedraw,
+    subscribeFrame,
     registerLayer,
     hitTestExtras,
-  }), [canvasRef, requestRedraw, registerLayer, hitTestExtras]);
+    getView,
+    setView,
+    subscribeView,
+    getPaintedVersion,
+  }), [canvasRef, requestRedraw, subscribeFrame, registerLayer, hitTestExtras,
+       getView, setView, subscribeView, getPaintedVersion]);
 
   // GL renderer (lazy-instantiated on first paint).
   const glRendererRef = useRef<WeaselRenderer | null>(null);
   const layerCacheRef = useRef<LayerCommandCache>(new Map());
   const lastResizeRef = useRef<{ w: number; h: number; dpr: number } | null>(null);
-
-  // Viewport state: hybrid uncontrolled/controlled. When `viewProp` is
-  // supplied we are controlled (consumer owns state). Otherwise we keep
-  // internal state seeded from `defaultView`. `setView` always fires
-  // `onViewChange` so consumers can persist regardless of mode.
-  const [internalView, setInternalView] = useState<View>(defaultView ?? { x: 0, y: 0, scale: { x: 1, y: 1 } });
-  const effectiveView: View = viewProp ?? internalView;
-  const viewRef = useRef<View>(effectiveView);
-  viewRef.current = effectiveView;
-  const onViewChangeRef = useRef(onViewChange);
-  onViewChangeRef.current = onViewChange;
-  const viewBoundsRef = useRef(viewBounds);
-  viewBoundsRef.current = viewBounds;
-  const setView = useCallback((next: View) => {
-    const bounds = viewBoundsRef.current;
-    const clamped = bounds ? clampView(next, bounds, { width, height }) : next;
-    if (viewProp === undefined) setInternalView(clamped);
-    onViewChangeRef.current?.(clamped);
-  }, [viewProp, width, height]);
-  const setViewRef = useRef(setView);
-  setViewRef.current = setView;
 
   // Pinch-zoom: Canvas owns the DOM listener because it needs canvasRef.
   // usePinchZoomTool is a no-op when viewport?.pinchZoom is falsy. Hand tool,
@@ -887,7 +949,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   usePinchZoomTool(
     canvasRef,
-    effectiveView,
+    getView,
     setView,
     { ...(pinchConfig ?? {}), enabled: pinchConfig !== null, resolveTarget: resolvePinchTarget },
   );
@@ -1217,84 +1279,117 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       ? [...withViews, createDebugOverlayLayer({ sink: debugSink, config: resolvedDebugConfig })]
       : withViews;
     return [...base, ...extrasRef.current];
-    // redrawNonce drives re-reads of extrasRef when layers are registered/detached;
+    // extrasVersion drives re-reads of extrasRef when layers are registered/detached;
     // viewRegistryVersion does the same for registered views.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layers, debugSink, resolvedDebugConfig, redrawNonce, viewRegistry, viewRegistryVersion]);
+  }, [layers, debugSink, resolvedDebugConfig, extrasVersion, viewRegistry, viewRegistryVersion]);
 
-  useEffect(() => {
+  const shaderIdKey = shaders?.map((h) => h.id).join('|') ?? '';
+
+  // Everything the paint reads that a React render owns. Written during
+  // render, not commit: an abandoned render still leaves its inputs here.
+  const paintInputsRef = useRef({
+    layers: layersWithDebug, width, height, debugSink,
+    dpr: dprProp, layerVisibility, layerOrder, shaders,
+  });
+  paintInputsRef.current = {
+    layers: layersWithDebug, width, height, debugSink,
+    dpr: dprProp, layerVisibility, layerOrder, shaders,
+  };
+
+  const paint = useCallback((): boolean => {
     const c = canvasRef.current;
-    if (!c) return;
+    if (!c) return false;
+    const {
+      layers: paintLayers, width: w, height: h, debugSink: sink,
+      dpr: dprIn, layerVisibility: vis, layerOrder: order,
+      shaders: paintShaders,
+    } = paintInputsRef.current;
 
     // Clear sink at the top of every paint so per-frame records don't leak.
-    debugSink?.beginFrame();
-    if (debugSink) {
-      const arr = layersWithDebug;
-      for (let i = 0; i < arr.length; i++) {
-        const layer = arr[i];
+    sink?.beginFrame();
+    if (sink) {
+      for (let i = 0; i < paintLayers.length; i++) {
+        const layer = paintLayers[i];
         if (layer.id === 'debug-overlay') continue;
-        debugSink.recordLayer(layer.id, layer.label, layer.space ?? 'world', i);
+        sink.recordLayer(layer.id, layer.label, layer.space ?? 'world', i);
       }
     }
 
     let renderer = glRendererRef.current;
     if (!renderer) {
-      const dpr = dprProp ?? (window.devicePixelRatio || 1);
+      const dpr = dprIn ?? (window.devicePixelRatio || 1);
       const gl = c.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true });
       if (!gl || typeof (gl as Partial<WebGL2RenderingContext>).enable !== 'function') {
         // jsdom or unsupported environment — bail silently (test envs hit
         // this; jsdom returns a non-null stub but lacks WebGL2 methods).
-        return;
+        return false;
       }
       try {
         renderer = new WeaselRenderer({
           gl: gl as WebGL2RenderingContext,
           canvas: c,
-          width,
-          height,
+          width: w,
+          height: h,
           dpr,
         });
       } catch {
         // Test env or context creation failure — bail silently.
-        return;
+        return false;
       }
       glRendererRef.current = renderer;
-      lastResizeRef.current = { w: width, h: height, dpr };
-      // Shader registration is handled entirely by the shaderIdKey effect below;
-      // do not call registerShadersOnRenderer here to avoid double compilation.
+      lastResizeRef.current = { w, h, dpr };
+      // The renderer is born on a frame, after every effect on the mounting
+      // commit, so only this branch can register the shaders it mounted with.
+      registerShadersOnRenderer(renderer, paintShaders);
     } else {
-      const dpr = dprProp ?? (window.devicePixelRatio || 1);
+      const dpr = dprIn ?? (window.devicePixelRatio || 1);
       const last = lastResizeRef.current;
-      if (!last || last.w !== width || last.h !== height || last.dpr !== dpr) {
-        renderer.resize({ width, height, dpr });
-        lastResizeRef.current = { w: width, h: height, dpr };
+      if (!last || last.w !== w || last.h !== h || last.dpr !== dpr) {
+        renderer.resize({ width: w, height: h, dpr });
+        lastResizeRef.current = { w, h, dpr };
       }
     }
 
+    const view = viewRef.current;
     const commands = drawLayers(
-      layersWithDebug,
+      paintLayers,
       helpersForLayersRef.current,
-      layerVisibility ?? NO_LAYER_VISIBILITY,
-      layerOrder,
-      effectiveView,
-      { width, height },
+      vis ?? NO_LAYER_VISIBILITY,
+      order,
+      view,
+      { width: w, height: h },
       layerCacheRef.current,
     );
-    renderer.render(commands, viewToMat3(effectiveView));
-  }, [layersWithDebug, width, height, effectiveView, debugSink, redrawNonce, dprProp,
-      layerVisibility, layerOrder]);
+    renderer.render(commands, viewToMat3(view));
+    paintedVersionRef.current = contentVersionRef.current?.() ?? 0;
+    return true;
+  }, []);
+  paintRef.current = paint;
+
+  // A tripwire, not a list of values this effect uses: every input the paint
+  // reads must appear here, or changing it paints stale. Layout, not passive,
+  // so a `syncPaint` surface lands its pixels in the same commit as the DOM.
+  useLayoutEffect(() => {
+    requestRedraw();
+  }, [layersWithDebug, width, height, viewProp, debugSink, dprProp,
+      layerVisibility, layerOrder, shaderIdKey, syncPaint, requestRedraw]);
 
   // The GL context and everything it owns (programs, texture caches, VBOs)
   // outlive React state, so unmount has to free them explicitly or a
   // remounting host walks into the browser's live-context cap.
-  useEffect(() => () => {
-    glRendererRef.current?.dispose();
-    glRendererRef.current = null;
-    layerCacheRef.current.clear();
-    lastResizeRef.current = null;
+  useEffect(() => {
+    const layerCache = layerCacheRef.current;
+    const viewSubs = viewSubsRef.current;
+    return () => {
+      glRendererRef.current?.dispose();
+      glRendererRef.current = null;
+      layerCache.clear();
+      lastResizeRef.current = null;
+      viewSubs.clear();
+    };
   }, []);
 
-  const shaderIdKey = shaders?.map((h) => h.id).join('|') ?? '';
   useEffect(() => {
     const renderer = glRendererRef.current;
     if (!renderer) return;
