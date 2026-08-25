@@ -37,7 +37,7 @@ import { execFileSync } from 'node:child_process';
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 /** Published packages, in dependency order. */
-const PACKAGES = ['geom', 'gestures', 'history', 'modes', 'theme', 'font', 'core', 'svg', 'd3', 'ui', 'hud', 'weasel-js'];
+const PACKAGES = ['geom', 'gestures', 'history', 'modes', 'theme', 'font', 'audio', 'core', 'svg', 'd3', 'ui', 'hud', 'weasel-js', 'labkit'];
 
 const fail = (msg, detail) => {
   console.error(`[smoke] ${msg}\n`);
@@ -161,6 +161,75 @@ console.log(
     `${seenDts.size} in types; no alias leaks.`,
 );
 
+// The same undeclared-dependency rule, applied to every published package
+// rather than to core alone. Packing cannot catch this on its own: every
+// @weasel-js package lands in the smoke tree whether or not the importer
+// declared it, so a bare specifier resolves either way and the bundle passes.
+// Only the manifest says whether a real consumer's install would have it.
+// @weasel-js/labkit shipped `@weasel-js/ui` as a devDependency while
+// re-exporting it from a published subpath, and every gate stayed green.
+{
+  const IMPORTS = /^\s*(import|export)\b([\s\S]*?)from\s*['"](@weasel-js\/[^'"]+)['"]/gm;
+  const problems = [];
+
+  for (const name of PACKAGES) {
+    const pkgDir = join(repoRoot, 'packages', name);
+    let manifest;
+    try {
+      manifest = JSON.parse(await readFile(join(pkgDir, 'package.json'), 'utf8'));
+    } catch {
+      continue;
+    }
+    const allowed = new Set([
+      ...Object.keys(manifest.dependencies ?? {}),
+      ...Object.keys(manifest.peerDependencies ?? {}),
+    ]);
+
+    const files = [];
+    const walkSrc = async (dir) => {
+      let entries;
+      try {
+        entries = await readdir(dir, { withFileTypes: true });
+      } catch {
+        return;
+      }
+      for (const e of entries) {
+        const child = join(dir, e.name);
+        if (e.isDirectory()) await walkSrc(child);
+        // Tests and stories are not published surface.
+        else if (/\.tsx?$/.test(e.name) && !/\.(test|stories|bench)\.tsx?$/.test(e.name)) {
+          files.push(child);
+        }
+      }
+    };
+    await walkSrc(join(pkgDir, 'src'));
+
+    for (const file of files) {
+      const text = await readFile(file, 'utf8');
+      for (const [, , clause, spec] of text.matchAll(IMPORTS)) {
+        const trimmed = clause.trim();
+        if (/^type\b/.test(trimmed)) continue;
+        const named = trimmed.match(/^\{([\s\S]*)\}$/);
+        if (named && named[1].split(',').every((x) => !x.trim() || /^type\s/.test(x.trim()))) {
+          continue;
+        }
+        const pkg = spec.split('/').slice(0, 2).join('/');
+        if (pkg === manifest.name || allowed.has(pkg)) continue;
+        problems.push(`${manifest.name}: imports ${pkg} (${file.slice(repoRoot.length + 1)})`);
+      }
+    }
+  }
+
+  if (problems.length) {
+    fail(
+      'packages import @weasel-js dependencies they do not declare — a clean install\n' +
+        'cannot resolve these, even though the monorepo and this smoke tree both can:',
+      [...new Set(problems)].join('\n'),
+    );
+  }
+  console.log(`[smoke] declaration audit OK — ${PACKAGES.length} packages declare what they import.`);
+}
+
 // The `weasel-js` alias must stay a thin re-export of core, never a second
 // bundled copy of the kit — two copies means two React hook instances and two
 // font registries for anyone holding both names. Checked statically: esbuild
@@ -259,6 +328,14 @@ await writeFile(
     `import * as toolPalette from '@weasel-js/ui/components/ToolPalette';\n` +
     `import * as prefs from '@weasel-js/ui/components/Prefs';\n` +
     `import * as callout from '@weasel-js/ui/components/Callout';\n` +
+    // labkit re-exports @weasel-js/ui through its own `./weasel-ui` subpath, so
+    // that path is only importable if labkit *declares* ui as a runtime
+    // dependency. It shipped as a devDependency, which a clean install cannot
+    // resolve — packing labkit is what turns that into a failed gate rather
+    // than a failed `npm i`.
+    `import * as labkit from '@weasel-js/labkit';\n` +
+    `import * as labkitUi from '@weasel-js/labkit/weasel-ui';\n` +
+    `import * as labkitPrimitives from '@weasel-js/labkit/primitives';\n` +
     `import * as toastSub from '@weasel-js/ui/components/Toast';\n` +
     `import * as hud from '@weasel-js/hud';\n` +
     `import '@weasel-js/theme/tokens.css';\n` +
