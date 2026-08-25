@@ -6,6 +6,12 @@
   background: var(--wzl-surface);
 }
 
+// Standalone, the shell owns its surface. Inside `<Lab>` that surface is the
+// one thing between the viewer and `.lk-lab`'s nebula, so it steps aside.
+.lk-lab > .lk-shell {
+  background: transparent;
+}
+
 .lk-shell-header {
   display: flex;
   align-items: center;
