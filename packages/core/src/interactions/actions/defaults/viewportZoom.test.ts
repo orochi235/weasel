@@ -332,4 +332,17 @@ describe('makeViewportZoomAction with animate', () => {
     expect(calls.animate).toEqual([]);
     expect(calls.set).toEqual([]);
   });
+
+  it('forwards every declared animate option — onDone included — and strips resetMs', () => {
+    const onDone = vi.fn();
+    const easing = (t: number) => t;
+    const interpolator = () => (t: number) => ({ x: t, y: t, scale: { x: 1, y: 1 } });
+    const action = makeViewportZoomAction({
+      animate: { ms: 300, resetMs: 500, easing, interpolator, onDone },
+    });
+    const { api, calls } = makeAnimatedView();
+    getImmediateInvoker(action).run({ view: api }, { kind: 'in' });
+
+    expect(calls.animate[0].opts).toEqual({ ms: 300, easing, interpolator, onDone });
+  });
 });
