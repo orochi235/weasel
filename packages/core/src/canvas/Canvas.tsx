@@ -422,7 +422,9 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * Hand tool registration, wheel pan/zoom action descriptors, and keyboard
    * zoom shortcuts are SceneCanvas-level concerns and are NOT owned by Canvas.
    * Those belong with the tool registry and gesture dispatcher that live in
-   * SceneCanvas.
+   * SceneCanvas — which is also why SceneCanvas does not pass this prop: it
+   * drives pinch through the `viewport.pinchZoom` action instead, and both
+   * paths at once would apply one gesture's zoom factor twice.
    *
    * When omitted, no pinch-zoom listener is attached.
    */

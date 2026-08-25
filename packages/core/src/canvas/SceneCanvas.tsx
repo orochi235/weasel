@@ -107,6 +107,7 @@ import type { PolygonPath } from 'features/paths/types';
 import { useActionsPropResolver } from './SceneCanvas/useActionsPropResolver';
 import { useViewportActions } from './SceneCanvas/useViewportActions';
 import type { ViewportZoomOptions } from 'interactions/actions/defaults/viewportZoom';
+import type { PinchZoomOptions } from 'interactions/actions/defaults/pinchZoom';
 import { ActiveToolContextProviderIfRoot } from 'interactions/actions/activeToolContext';
 import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
 import { createDispatcher, type Dispatcher } from 'interactions/dispatcher/dispatcher';
@@ -587,20 +588,24 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /** Viewport feature wiring.
      *
-     *  - `inertia`, `pinchZoom`, `animatedZoom` are opt-in: pass `true`
-     *    for defaults or an object to tune. Omitted means off.
-     *  - `pan` (wheel pan) and `zoom` (Cmd+wheel + Cmd+=/-/0) are opt-OUT:
-     *    on by default; pass `false` to disable. They are wired by registering
-     *    the kit's `viewport.pan` / `viewport.zoom` action descriptors with
-     *    the actions registry — disabling via the `actions` prop
-     *    (`actions: { 'viewport.wheelPan': null }`) also works and runs after this.
+     *  - `inertia` is opt-in: pass `true` for defaults or an object to tune.
+     *    Omitted means off. (`animatedZoom` is declared but unimplemented.)
+     *  - `pan` (wheel pan), `zoom` (Cmd+wheel + Cmd+=/-/0) and `pinchZoom`
+     *    (two-finger pinch) are opt-OUT: on by default; pass `false` to
+     *    disable. All three are wired by registering the kit's `viewport.*`
+     *    action descriptors with the actions registry — disabling via the
+     *    `actions` prop (`actions: { 'viewport.wheelPan': null }`) also works
+     *    and runs after this.
      *
-     *  When omitted entirely, no hand/pinch tools are registered but the
-     *  default wheel pan + Cmd+wheel/key zoom remain wired (canvas-first
-     *  default). Pass `{ pan: false, zoom: false }` to opt out entirely. */
+     *  When omitted entirely, no hand tool is registered but the default wheel
+     *  pan, Cmd+wheel/key zoom and pinch zoom remain wired (canvas-first
+     *  default). Pass `{ pan: false, zoom: false, pinchZoom: false }` to opt
+     *  out entirely. */
     viewport?: {
       inertia?: boolean | { friction?: number; minSpeed?: number; boundary?: 'stop' | 'bounce' | 'spring'; bounds?: PanBounds };
-      pinchZoom?: boolean | { min?: number; max?: number };
+      /** Two-finger pinch zoom. `true`/omitted = on with the kit's 0.1–8
+       *  clamp; `false` disables. An object sets the scale clamp. */
+      pinchZoom?: boolean | PinchZoomOptions;
       /** Glide Cmd+=/-/0 instead of jumping. `true` uses the kit defaults
        *  (250 ms, ease-out-cubic); an object tunes them. Wheel and pinch are
        *  unaffected — their input already samples every frame. */
@@ -1912,7 +1917,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       // `subscribeGestures()` — Canvas has no dispatcher of its own.
       gestureSource={gestureSource}
       previewPoseExtra={previewPoseExtra}
-      viewport={viewport}
+      // No `viewport`: Canvas reads it only to attach `usePinchZoomTool`, which
+      // predates the `viewport.pinchZoom` action wired above. Both applied the
+      // same gesture's factor. The hook stays the bare-`<Canvas>` pinch path.
       backgroundFill={backgroundFill}
       cursorCoordsHud={cursorCoordsHud}
       pickHud={pickHud}
@@ -1982,6 +1989,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 pickEvery={internalPickEvery}
                 viewportPanEnabled={viewport?.pan !== false}
                 viewportZoom={resolvedViewportZoom}
+                viewportPinchZoom={viewport?.pinchZoom ?? true}
                 viewportRecenter={viewport?.recenter}
                 viewAnimation={viewAnimation}
                 editAnchorsExternalState={editAnchorsExternalState}
@@ -2336,6 +2344,7 @@ function StandardActionsRegistrar({
   pickEvery,
   viewportPanEnabled,
   viewportZoom,
+  viewportPinchZoom,
   viewportRecenter,
   viewAnimation,
   editAnchorsExternalState,
@@ -2380,6 +2389,9 @@ function StandardActionsRegistrar({
   /** Resolved `viewport.zoom` setting — `true` (default Cmd+wheel zoom),
    *  `false` (disabled), or a {@link ViewportZoomOptions} config. */
   viewportZoom: boolean | ViewportZoomOptions;
+  /** Resolved `viewport.pinchZoom` setting — `true` (default two-finger pinch),
+   *  `false` (disabled), or a {@link PinchZoomOptions} scale clamp. */
+  viewportPinchZoom: boolean | PinchZoomOptions;
   /** Optional recenter callback. When supplied, wires through to the
    *  `view` dep so `viewport.zoom` reset (Cmd-0) calls it instead of
    *  snapping to identity. A returned `View` is a target the kit may
@@ -2484,7 +2496,7 @@ function StandardActionsRegistrar({
   // published just above), so they're registered here rather than in
   // KIT_STANDARD_DESCRIPTORS. Both default ON; consumer opts out via
   // `viewport={{ pan: false }}` / `viewport={{ zoom: false }}`.
-  useViewportActions({ pan: viewportPanEnabled, zoom: viewportZoom });
+  useViewportActions({ pan: viewportPanEnabled, zoom: viewportZoom, pinchZoom: viewportPinchZoom });
 
   // Per-dep wiring modules under `src/canvas/deps/`. See each file for the
   // dep's contract and trade-offs.

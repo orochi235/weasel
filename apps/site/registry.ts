@@ -338,10 +338,10 @@ const DEMO_META: DemoMeta[] = [
   },
   {
     id: 'viewport',
-    title: 'Viewport (inertia · pinch · animated zoom)',
+    title: 'Viewport (inertia · pinch · keyboard zoom)',
     category: 'Viewport',
-    description: 'SceneCanvas viewport prop wires inertia pan, pinch zoom, and animated keyboard zoom in one place. Inertia uses a friction-decayed velocity loop after drag release; boundary clamping can stop or bounce the pan at configurable limits. Pinch zoom attaches pointer-event listeners directly to the canvas element, so it covers touch screens; a Mac trackpad pinch arrives as ctrl+wheel and is not wired yet. animatedZoom tweens the discrete steps — ⌘+=, ⌘+-, ⌘+0 — through the kit animator, interpolating scale geometrically and holding the zoom anchor fixed; wheel and pinch keep jumping per sample, since their input already arrives every frame. Any pan or wheel zoom cancels a glide in progress.',
-    hint: 'Drag fast and release to coast · ⌘+= / ⌘+- / ⌘+0 to zoom with easing · pan mid-zoom to interrupt it · toggle boundary to see stop vs bounce.',
+    description: 'SceneCanvas viewport prop wires inertia pan, pinch zoom, and animated keyboard zoom in one place. Inertia uses a friction-decayed velocity loop after drag release; boundary clamping can stop or bounce the pan at configurable limits. A touch-screen pinch reaches the viewport.pinchZoom action through the dispatcher\'s two-finger multitouch stream; a trackpad pinch emits no touch pointers at all, so the browser sends ctrl+wheel and viewport.zoom claims that instead. animatedZoom tweens the discrete steps — ⌘+=, ⌘+-, ⌘+0 — through the kit animator, interpolating scale geometrically and holding the zoom anchor fixed; wheel and pinch keep jumping per sample, since their input already arrives every frame. Any pan or wheel zoom cancels a glide in progress.',
+    hint: 'Drag fast and release to coast · ⌘+= / ⌘+- / ⌘+0 to zoom with easing · pan mid-zoom to interrupt it · pinch or ⌘+wheel to zoom · toggle boundary to see stop vs bounce.',
     load: () => import('./demos/ViewportDemo').then((m) => m.ViewportDemo),
     path: 'apps/site/demos/ViewportDemo.tsx',
   },

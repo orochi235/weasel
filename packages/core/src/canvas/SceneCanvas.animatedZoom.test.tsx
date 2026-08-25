@@ -227,18 +227,21 @@ const fireWheel = (el: HTMLElement, opts: { ctrlKey?: boolean; metaKey?: boolean
 };
 
 describe('wheel zoom on the mac platform branch', () => {
-  it('zooms on Cmd+wheel and ignores the ctrl+wheel a trackpad pinch arrives as', async () => {
+  it('zooms on Cmd+wheel and on the ctrl+wheel a trackpad pinch arrives as', async () => {
     const ref = { current: null as SceneCanvasApi | null };
     render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} viewport={PLAIN} />);
     await act(async () => { await frame(); });
     const el = ref.current!.element!;
 
+    // A trackpad pinch is ctrl+wheel, and `mod` resolves to metaKey on this
+    // branch — so the two need separate bindings to both land here.
     const before = ref.current!.getView();
     act(() => { fireWheel(el, { ctrlKey: true }); });
-    expect(ref.current!.getView()).toEqual(before);
+    const afterPinch = ref.current!.getView();
+    expect(afterPinch.scale.x).toBeCloseTo(before.scale.x * 1.1);
 
     act(() => { fireWheel(el, { metaKey: true }); });
-    expect(ref.current!.getView().scale.x).toBeGreaterThan(before.scale.x);
+    expect(ref.current!.getView().scale.x).toBeCloseTo(afterPinch.scale.x * 1.1);
   });
 });
 

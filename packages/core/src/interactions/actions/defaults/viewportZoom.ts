@@ -3,6 +3,10 @@
  *
  * ## Bindings (parametric — each passes `params.kind`)
  * - `{ kind: 'wheel', mods: { mod: true } }` → Cmd+wheel, params: `{ kind: 'wheel' }`
+ * - `{ kind: 'wheel', mods: { ctrl: true } }` → trackpad pinch, params: `{ kind: 'wheel' }`.
+ *   Browsers synthesize a trackpad pinch as ctrl+wheel. On a Mac that is a
+ *   *different* event from the `mod` binding above (`mod` is metaKey there), so
+ *   pinch needs its own binding or nothing claims it and the page zooms instead.
  * - `{ kind: 'key', key: '=' }` → zoom in, params: `{ kind: 'in' }`
  * - `{ kind: 'key', key: '-' }` → zoom out, params: `{ kind: 'out' }`
  * - `{ kind: 'key', key: '0' }` → reset zoom, params: `{ kind: 'reset' }`
@@ -120,6 +124,13 @@ export function makeViewportZoomAction(
       // wheel → wheel zoom (mod-gated by default; plain when configured)
       {
         spec: wheelSpec,
+        opts: { params: { kind: 'wheel' } },
+      },
+      // Trackpad pinch, which the browser delivers as ctrl+wheel. Distinct from
+      // the `mod` binding on mac; a duplicate of it elsewhere, where `matchBest`
+      // picks a single winner. `viewport.wheelPan` forbids ctrl, so no contest.
+      {
+        spec: { kind: 'wheel' as const, mods: { ctrl: true } },
         opts: { params: { kind: 'wheel' } },
       },
       // Cmd+= → zoom in (also accepts Cmd+Shift+= which is Cmd++ on many keyboards)
