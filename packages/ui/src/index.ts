@@ -3,6 +3,7 @@
 // policy panels (LayerList composition, document props) live in their
 // consuming app (today: `apps/draw/src/ui/`).
 export { dlog, isDebugEnabled } from './dlog';
+export * from './icons';
 export * from './components/ActionBar';
 export * from './components/Badge';
 export * from './components/Button';
