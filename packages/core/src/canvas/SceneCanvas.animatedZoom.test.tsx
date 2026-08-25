@@ -269,6 +269,28 @@ describe('viewport.animatedZoom at the keyboard (mac branch)', () => {
     expect(ref.current!.getView().scale.x).toBeCloseTo(1.25, 6);
   });
 
+  it('carries a custom interpolator and onDone from the prop to the tween', async () => {
+    const ref = { current: null as SceneCanvasApi | null };
+    const onDone = vi.fn();
+    const interpolator = vi.fn((from: View, to: View) => (t: number): View => ({
+      x: from.x + (to.x - from.x) * t,
+      y: from.y + (to.y - from.y) * t,
+      scale: {
+        x: from.scale.x + (to.scale.x - from.scale.x) * t,
+        y: from.scale.y + (to.scale.y - from.scale.y) * t,
+      },
+    }));
+    const viewport = { animatedZoom: { ms: 40, interpolator, onDone } };
+    render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} viewport={viewport} />);
+    await act(async () => { await frame(); });
+
+    act(() => { fireKey('=', { metaKey: true }); });
+    expect(interpolator).toHaveBeenCalledOnce();
+
+    await waitFor(() => { expect(onDone).toHaveBeenCalledOnce(); });
+    expect(ref.current!.getView().scale.x).toBeCloseTo(1.25, 6);
+  });
+
   it('three fast presses compound to 1.25 cubed', async () => {
     const ref = { current: null as SceneCanvasApi | null };
     render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} viewport={ANIMATED} />);
