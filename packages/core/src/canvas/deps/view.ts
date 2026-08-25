@@ -49,8 +49,8 @@ export function useViewDepSource(
     shapeRef.current = shape;
     viewApiRef.current = {
       get: () => wiring.current.currentViewRef.current,
-      // A camera animation writes through `onViewChange` directly, so anything
-      // arriving here is someone else moving the camera and cancels it.
+      // Not the canvas's only cancel feed (`onViewChange` is), but a `view` dep
+      // wired to something other than a `<SceneCanvas>` has only this one.
       set: (v: View) => {
         wiring.current.animation?.stopIfExternal();
         wiring.current.onViewChange(v);

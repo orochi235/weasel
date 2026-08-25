@@ -985,12 +985,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     onViewChangeProp?.(v);
   }, [viewProp, onViewChangeProp]);
 
-  // Canvas fires its `onViewChange` from inside `setView`, so this one must
-  // never write back to the canvas — `handleViewChange` here would recurse.
-  const notifyViewChange = useCallback((v: View) => {
-    onViewChangeProp?.(v);
-  }, [onViewChangeProp]);
-
   // The camera runs on its own animator, never the `animator` prop's: that prop
   // is the consumer's scene animator, and their `cancelAll()` or `pause()` must
   // not strand a zoom half-finished or freeze the camera.
@@ -1001,15 +995,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   );
   const viewAnimation = useViewAnimation(viewChannel, cameraAnimator);
 
-  // Any view write the runner did not make cancels it. `subscribeView` covers
-  // the uncontrolled path — hand tool, pinch, wheel, `handle.setView` — and the
-  // `view` dep's `set` covers a controlled canvas, whose writes go out through
-  // `onViewChange` and never reach a subscriber here.
-  useEffect(() => {
-    const api = canvasApiRef.current;
-    if (!api) return;
-    return api.subscribeView(() => viewAnimation.stopIfExternal());
-  }, [canvasReady, viewAnimation]);
+  // Never writes back to the canvas — `handleViewChange` would recurse. Every
+  // `Canvas.setView` lands here on both branches, so it is also the runner's
+  // one interrupt feed.
+  const notifyViewChange = useCallback((v: View) => {
+    viewAnimation.stopIfExternal();
+    onViewChangeProp?.(v);
+  }, [onViewChangeProp, viewAnimation]);
 
   // `animatedZoom` is the SceneCanvas-level spelling of the zoom action's
   // `animate` option, the way `pinchZoom` is of the pinch tool's clamp.

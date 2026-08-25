@@ -21,7 +21,7 @@ vi.hoisted(() => {
 });
 
 import { render, act, waitFor, cleanup } from '@testing-library/react';
-import { Profiler } from 'react';
+import { Profiler, useState } from 'react';
 import { useAnimator } from '../animation/useAnimator';
 import type { Animator } from '../animation/types';
 import { SceneCanvas } from './SceneCanvas';
@@ -158,6 +158,56 @@ describe('SceneCanvas camera handle', () => {
     await waitFor(() => { expect(ref.current!.isViewAnimating()).toBe(false); });
     expect(ref.current!.getView().x).toBeCloseTo(60, 6);
     expect(ref.current!.getView().scale.x).toBeCloseTo(2, 6);
+  });
+});
+
+/** A consumer that owns the view in state — the controlled contract, where
+ *  every write leaves through `onViewChange` and comes back as a prop. */
+function Controlled(
+  { apiRef, seen }: { apiRef: { current: SceneCanvasApi | null }; seen?: (v: View) => void },
+) {
+  const [view, setView] = useState<View>(HOME);
+  const [scene] = useState(makeScene);
+  return (
+    <SceneCanvas<D, L, P>
+      ref={apiRef}
+      scene={scene}
+      width={400}
+      height={200}
+      view={view}
+      onViewChange={(v) => { seen?.(v); setView(v); }}
+    />
+  );
+}
+
+describe('SceneCanvas camera handle on a controlled canvas', () => {
+  it('glides the controlled view through onViewChange', async () => {
+    const ref = { current: null as SceneCanvasApi | null };
+    render(<Controlled apiRef={ref} />);
+    await act(async () => { await frame(); });
+
+    act(() => { ref.current!.animateView({ x: 400, y: 0, scale: { x: 4, y: 4 } }, { ms: 40 }); });
+    expect(ref.current!.isViewAnimating()).toBe(true);
+
+    await waitFor(() => { expect(ref.current!.isViewAnimating()).toBe(false); });
+    expect(ref.current!.getView().x).toBeCloseTo(400, 6);
+    expect(ref.current!.getView().scale.x).toBeCloseTo(4, 6);
+  });
+
+  it('a view write during the glide cancels it and wins', async () => {
+    const ref = { current: null as SceneCanvasApi | null };
+    render(<Controlled apiRef={ref} />);
+    await act(async () => { await frame(); });
+
+    act(() => { ref.current!.animateView({ x: 400, y: 0, scale: { x: 4, y: 4 } }, { ms: 400 }); });
+    await act(async () => { await frame(); await frame(); });
+
+    const panned: View = { x: -50, y: 0, scale: { x: 1, y: 1 } };
+    act(() => { ref.current!.setView(panned); });
+    expect(ref.current!.isViewAnimating()).toBe(false);
+
+    await act(async () => { await frame(); await frame(); await frame(); });
+    expect(ref.current!.getView()).toEqual(panned);
   });
 });
 
