@@ -16,7 +16,7 @@ describe('SceneCanvas — override repaint', () => {
     const id = scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { label: 'a' } });
     const ref = createRef<SceneCanvasApi>();
 
-    render(<SceneCanvas ref={ref} width={100} height={100} scene={scene} drawOne={() => []} />);
+    render(<SceneCanvas ref={ref} width={100} height={100} scene={scene} layers={{}} />);
 
     const requestRedraw = vi.spyOn(ref.current!, 'requestRedraw');
     await act(async () => {
