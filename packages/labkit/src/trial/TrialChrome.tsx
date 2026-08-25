@@ -3,14 +3,13 @@ import { useStore } from 'zustand/react';
 import type { Instrument } from '../instrument/types';
 import type { JobHandle } from '../job/types';
 import { useLabContext } from '../lab/LabContext';
+import { JobProgress } from '../primitives/JobProgress';
 import { LabStoreContext } from '../state/context';
 import type { TrialRecord } from '../state/types';
 import { as2DView } from '../state/view';
 import { DefaultSidebar } from './DefaultSidebar';
-import { JobProgress } from '../primitives/JobProgress';
 import { DefaultStatusBar } from './DefaultStatusBar';
 import { DefaultToolbar } from './DefaultToolbar';
-import { TrialTitleBar } from './TrialTitleBar';
 import type {
   SidebarSlot,
   StatusBarSlot,
@@ -19,6 +18,7 @@ import type {
   TrialStatusBarContext,
   TrialToolbarContext,
 } from './slotTypes';
+import { TrialTitleBar } from './TrialTitleBar';
 
 export interface UndoBindings {
   canUndo: boolean;
@@ -158,9 +158,7 @@ export function TrialChrome({
           {sidebar ? sidebar(sidebarCtx) : <DefaultSidebar ctx={sidebarCtx} />}
           {sidebarExtras}
         </div>
-        <div
-          className={`lk-trial__content${instrument.canvas ? ' lk-trial__content--flush' : ''}`}
-        >
+        <div className={`lk-trial__content${instrument.canvas ? ' lk-trial__content--flush' : ''}`}>
           {children}
         </div>
       </div>

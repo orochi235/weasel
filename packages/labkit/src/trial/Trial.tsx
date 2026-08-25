@@ -4,12 +4,7 @@ import { CanvasStack } from '../canvas/CanvasStack';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import { DragOverlay, useDragDrop } from '../dragdrop/DragDropRuntime';
 import { Palette } from '../dragdrop/Palette';
-import type {
-  Instrument,
-  LayerDescriptor,
-  PaletteItem,
-  RenderContext,
-} from '../instrument/types';
+import type { Instrument, LayerDescriptor, PaletteItem, RenderContext } from '../instrument/types';
 import { useJob } from '../job/useJob';
 import { useLabContext } from '../lab/LabContext';
 import { LayerList } from '../layers/LayerList';

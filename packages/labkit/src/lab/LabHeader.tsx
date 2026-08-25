@@ -1,7 +1,7 @@
 import { AddIcon } from '@weasel-js/ui';
-import { useLabContext } from './LabContext';
 import { Select, ToggleBar } from '../passthrough/weasel-ui';
 import type { LabMode } from '../state/types';
+import { useLabContext } from './LabContext';
 
 const MODES: { value: LabMode; label: string }[] = [
   { value: 'auto', label: 'Auto' },

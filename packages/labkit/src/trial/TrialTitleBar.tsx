@@ -26,7 +26,12 @@ function Draggable({ nodeId, title, children }: TrialTitleBarProps & { nodeId: N
  *  is already the thing you expect to drag. */
 export function TrialTitleBar({ title, children }: TrialTitleBarProps) {
   const drag = useTrialDrag();
-  if (drag) return <Draggable nodeId={drag.nodeId} title={title} children={children} />;
+  if (drag)
+    return (
+      <Draggable nodeId={drag.nodeId} title={title}>
+        {children}
+      </Draggable>
+    );
   return (
     <div className="lk-trial__titlebar">
       <span className="lk-trial__title">{title}</span>

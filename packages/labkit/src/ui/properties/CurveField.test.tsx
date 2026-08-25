@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { assert, describe, expect, it, vi } from 'vitest';
 
 // CurveEditor uses weasel's own bundled React and fails in jsdom.
 // Mock it out — these tests only assert on readouts and the flip button.
@@ -81,13 +81,13 @@ describe('CurveField', () => {
       />,
     );
     const overlay = container.querySelector('.lk-curve-field__marks');
-    expect(overlay).not.toBeNull();
-    const rect = overlay!.querySelector('rect');
-    expect(rect).not.toBeNull();
+    assert(overlay);
+    const rect = overlay.querySelector('rect');
+    assert(rect);
     // x = 0.2 * 200 = 40; width = (0.4 - 0.2) * 200 = 40.
-    expect(rect!.getAttribute('x')).toBe('40');
-    expect(rect!.getAttribute('width')).toBe('40');
-    expect(rect!.getAttribute('fill')).toBe('#ffcc00');
+    expect(rect.getAttribute('x')).toBe('40');
+    expect(rect.getAttribute('width')).toBe('40');
+    expect(rect.getAttribute('fill')).toBe('#ffcc00');
   });
 
   it('renders a line mark as a positioned line', () => {
@@ -104,10 +104,10 @@ describe('CurveField', () => {
       />,
     );
     const line = container.querySelector('.lk-curve-field__marks line');
-    expect(line).not.toBeNull();
-    expect(line!.getAttribute('x1')).toBe('140');
-    expect(line!.getAttribute('x2')).toBe('140');
-    expect(line!.getAttribute('stroke')).toBe('#ffcc00');
+    assert(line);
+    expect(line.getAttribute('x1')).toBe('140');
+    expect(line.getAttribute('x2')).toBe('140');
+    expect(line.getAttribute('stroke')).toBe('#ffcc00');
   });
 
   it('omits the marks overlay when marks is undefined', () => {
