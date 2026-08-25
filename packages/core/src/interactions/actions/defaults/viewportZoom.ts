@@ -3,7 +3,6 @@
  *
  * ## Bindings (parametric — each passes `params.kind`)
  * - `{ kind: 'wheel', mods: { mod: true } }` → Cmd+wheel, params: `{ kind: 'wheel' }`
- *   (also covers Mac trackpad pinch, which the browser synthesizes as ctrl+wheel)
  * - `{ kind: 'key', key: '=' }` → zoom in, params: `{ kind: 'in' }`
  * - `{ kind: 'key', key: '-' }` → zoom out, params: `{ kind: 'out' }`
  * - `{ kind: 'key', key: '0' }` → reset zoom, params: `{ kind: 'reset' }`
@@ -69,7 +68,8 @@ export interface ViewportZoomOptions {
   /**
    * Which wheel gesture triggers zoom.
    * - `'mod'` (default): Cmd/Ctrl+wheel — coexists with plain-wheel pan
-   *   (`viewport.wheelPan`) and Mac trackpad pinch (ctrl+wheel).
+   *   (`viewport.wheelPan`). A Mac trackpad pinch arrives as ctrl+wheel, which
+   *   `mod: true` forbids on Mac; nothing here handles it.
    * - `'plain'`: bare wheel, no modifier. Pair with `viewport.pan: false`,
    *   since plain wheel otherwise drives pan and the two would compete.
    */

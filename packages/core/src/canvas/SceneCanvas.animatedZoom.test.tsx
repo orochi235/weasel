@@ -219,6 +219,29 @@ const fireKey = (key: string, opts: { metaKey?: boolean } = {}) => {
 
 const PLAIN = {} as const;
 
+const fireWheel = (el: HTMLElement, opts: { ctrlKey?: boolean; metaKey?: boolean }) => {
+  el.dispatchEvent(new WheelEvent('wheel', {
+    bubbles: true, cancelable: true, deltaY: -100,
+    ctrlKey: opts.ctrlKey ?? false, metaKey: opts.metaKey ?? false,
+  }));
+};
+
+describe('wheel zoom on the mac platform branch', () => {
+  it('zooms on Cmd+wheel and ignores the ctrl+wheel a trackpad pinch arrives as', async () => {
+    const ref = { current: null as SceneCanvasApi | null };
+    render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} viewport={PLAIN} />);
+    await act(async () => { await frame(); });
+    const el = ref.current!.element!;
+
+    const before = ref.current!.getView();
+    act(() => { fireWheel(el, { ctrlKey: true }); });
+    expect(ref.current!.getView()).toEqual(before);
+
+    act(() => { fireWheel(el, { metaKey: true }); });
+    expect(ref.current!.getView().scale.x).toBeGreaterThan(before.scale.x);
+  });
+});
+
 describe('viewport.animatedZoom at the keyboard (mac branch)', () => {
   it('Cmd+= jumps when animatedZoom is off', async () => {
     const ref = { current: null as SceneCanvasApi | null };
