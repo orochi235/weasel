@@ -144,7 +144,11 @@ export { editAnchorsAction } from './interactions/actions/defaults/editAnchors';
 export { lassoSelectAction } from './interactions/actions/defaults/lassoSelect';
 export { sliceAction } from './interactions/actions/defaults/slice';
 export type { SliceDep } from './interactions/actions/defaults/slice';
-export { pinchZoomAction } from './interactions/actions/defaults/pinchZoom';
+export {
+  pinchZoomAction,
+  makePinchZoomAction,
+  type PinchZoomOptions,
+} from './interactions/actions/defaults/pinchZoom';
 export {
   clipboardCopyAction,
   clipboardCutAction,
