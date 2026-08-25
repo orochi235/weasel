@@ -40,9 +40,16 @@ attempts missed; ask for the sketch again rather than iterating from prose.
    (`addTrial` / `setMode` are on `LabContext` with no UI), job status is still
    ad-hoc markup in `TrialChrome`, and the trial border is near-invisible against
    the workspace.
-2. Define the two areas the spec doesn't yet cover — a **tool palette** and the
-   **sidebar** — as real labkit surfaces rather than whatever a lab assembles.
-3. Arc 3, the density and type-scale pass.
+2. Define the areas the spec doesn't yet cover — a **tool palette**, the
+   **sidebar**, and a region for **viewport controls** — as real labkit surfaces
+   rather than whatever a lab assembles. Zoom sits in the trial toolbar today
+   because that is where it landed; the toolbar acts on the trial, pan/zoom/fit
+   act on the view of it. Wherever they go, `ScaleIndicator` and `FpsMeter`
+   probably follow.
+3. Decide what holds the toolbar's leading slot. Save/snapshot has it and hasn't
+   earned it — the answer likely depends on what the instrument declares, so this
+   may be a capability-driven region rather than a fixed control. Not a reshuffle.
+4. Arc 3, the density and type-scale pass.
 
 The title bar (24px for one word) and status bar (25px for "100%") are now the
 two heaviest pieces of chrome relative to what they carry.

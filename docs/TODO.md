@@ -23,7 +23,7 @@ Priority tags:
 - **Side-scroller demo** — after the two above, as a load test on both → [Animation](#animation)
 - **Per-command draw cost** — solid geometry batches; what is left is the flush itself, which stalls on rewriting its own buffer. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
 - **Audit for duplicated-then-drifted cascades** — two implementations of one lookup, agreeing by coincidence → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- **labkit presentation pass** — arc 1 done, arc 2 in flight on `feat/labkit-presentation-pass`; tool palette and sidebar still undefined → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- **labkit presentation pass** — arc 1 done, arc 2 in flight on `feat/labkit-presentation-pass`; tool palette, sidebar and viewport-control regions still undefined → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - **labkit: generate instrument controls from a schema or a TypeScript type** → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 ### P2 — broad reuse / friction-likely
@@ -981,6 +981,21 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   with a bare count and no progress element. The trial border is near-invisible
   against the workspace, and the title bar and status bar are the heaviest chrome
   relative to what they carry.
+
+  **Viewport controls need their own region.** Zoom currently sits as a group in
+  the trial toolbar, which is where it landed rather than where it belongs — the
+  toolbar is for acting on the trial, and pan/zoom/fit act on the *view* of it.
+  They want a carved-out spot: an overlay anchored inside the canvas, or a region
+  of the status bar, which already shows the zoom readout. Deciding that also
+  settles whether `ScaleIndicator` and `FpsMeter` live there, since both are
+  view-scoped readouts with nowhere of their own today.
+
+  **What occupies the toolbar's primary slot is unresolved.** Save/snapshot holds
+  the leading left position by default, and it should not — snapshotting is
+  occasional, and the leading slot is the most valuable real estate in the bar.
+  What earns it is an open question; it likely depends on what the instrument
+  declares, which means the slot may be a capability-driven region rather than a
+  fixed control. Do not just reshuffle the existing buttons.
 
   **The two undefined areas are the bigger gap.** A lab that wants a *tool
   palette* has nothing to reach for — `Palette` is the drag-drop source list, not
