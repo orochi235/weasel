@@ -36,10 +36,16 @@
   padding: var(--wzl-space-md);
 }
 
+// `.lk-shell-body` is a block container, so `flex: 1` here resolves to nothing
+// and the workspace's `height: 100%` collapses to zero.
 .lk-lab__body {
   display: flex;
-  flex: 1;
+  height: 100%;
   min-height: 0;
+
+  > .lk-workspace {
+    min-width: 0;
+  }
 }
 
 .lk-shell-footer {
