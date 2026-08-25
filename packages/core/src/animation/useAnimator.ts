@@ -306,7 +306,9 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
           o.onTick(value);
           if (t >= 1 && !lastValueEmitted) {
             lastValueEmitted = true;
-            o.onDone?.();
+            // That last onTick may have cancelled us — deregistering the id.
+            // A cancelled tween never completes, whenever the cancel landed.
+            if (animations.current.has(id)) o.onDone?.();
             return true;
           }
           return false;
