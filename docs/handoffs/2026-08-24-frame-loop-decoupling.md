@@ -117,10 +117,26 @@ must `EnterWorktree` into a tree before any agent can write there. The three bug
 
 **`animatedZoom` — specced, planned, and being implemented on this branch.** Spec
 `docs/superpowers/specs/2026-08-25-camera-animation-design.md`, plan
-`docs/superpowers/plans/2026-08-25-camera-animation.md` (9 tasks). Tasks 1-6 committed
-(`80271386`, `d619a564`, `7c9213bb`, `52848724`, `0422d350`, `4b541bce`); 7-9 in progress.
-`useViewTween` is deleted, `useViewAnimation` runs on the kit `Animator`, and the `view` dep gained
-`animate` / `stopAnimation` / `animationTarget`.
+`docs/superpowers/plans/2026-08-25-camera-animation.md` (9 tasks). **All nine committed**
+(`80271386`, `d619a564`, `7c9213bb`, `52848724`, `0422d350`, `4b541bce`, `8020441d`, `9df8977a`,
+`ba8b1398`). `useViewTween` is deleted, `useViewAnimation` runs on the kit `Animator`, the `view`
+dep gained `animate` / `stopAnimation` / `animationTarget`, and `<SceneCanvas>` publishes the
+runner on its ref handle (`animateView` / `stopViewAnimation` / `isViewAnimating`) and resolves
+`viewport.animatedZoom` into the zoom action's `animate` option.
+
+Driven by hand at `#viewport` on a real Mac: ⌘+= glides 1 → 1.25 over ~30 frames with the host
+centre pinned to one world point, ⌘+- and ⌘+0 the same, and a wheel pan mid-glide freezes the
+camera where it is instead of letting the tween finish. In the same session `wheel { ctrlKey }` —
+what a trackpad pinch actually sends — changed nothing and was not `preventDefault`ed, confirming
+`mac-pinch-zoom`'s bug 1 is still open here; the demo blurb now says so rather than claiming
+trackpad support.
+
+Two things the plan got wrong against this branch, both now handled in the tests:
+its Mac preamble stubs only `navigator.userAgent`, which does not reach the Mac branch while
+`IS_MAC` reads `platform ?? userAgent` and jsdom's `platform` is `''` — the tests stub `platform`;
+and its Task-7 mutation 3 (swap the camera's animator for the consumer's `animator` prop) cannot
+fail, because `useViewAnimation`'s own `useAnimator()` fallback makes the two identical when no
+prop is passed. A test that cancels the consumer's animator wholesale covers that claim instead.
 
 **This arc must rebase onto `mac-pinch-zoom`** — they collide in `SceneCanvasProps`' `animatedZoom`
 declaration, `viewportZoom.ts`, and the `viewport.pinchZoom` wiring. Original decision below.
