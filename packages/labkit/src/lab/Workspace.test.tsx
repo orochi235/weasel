@@ -1,6 +1,14 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, test, vi } from 'vitest';
+import { useTrialDrag } from '../trial/TrialDragContext';
 import { Workspace } from './Workspace';
+
+/** Reports whether its tile supplied a drag source — the title bar is the
+ *  drag surface now, so there is no grip element to assert on. */
+function DragProbe({ label }: { label: string }) {
+  const drag = useTrialDrag();
+  return <div data-testid={`drag-${label}`}>{drag ? 'draggable' : 'static'}</div>;
+}
 
 const VIEWPORT = { w: 800, h: 600 };
 
@@ -88,13 +96,14 @@ describe('Workspace', () => {
     const onReorder = vi.fn();
     const { container } = render(
       <Workspace ids={['a', 'b']} reorderable onReorder={onReorder} viewport={VIEWPORT}>
-        <div>a</div>
-        <div>b</div>
+        <DragProbe label="a" />
+        <DragProbe label="b" />
       </Workspace>,
     );
-    // The grid is controlled: it renders a handle per tile and commits nothing
-    // itself. Order still comes from `ids`.
-    expect(container.querySelectorAll('.lk-trial-tile__grip')).toHaveLength(2);
+    // The grid is controlled: each tile offers itself as a drag source and
+    // commits nothing itself. Order still comes from `ids`.
+    expect(screen.getByTestId('drag-a')).toHaveTextContent('draggable');
+    expect(screen.getByTestId('drag-b')).toHaveTextContent('draggable');
     expect(onReorder).not.toHaveBeenCalled();
     const nodes = [...container.querySelectorAll('[data-node]')].map((el) =>
       el.getAttribute('data-node'),
@@ -102,13 +111,14 @@ describe('Workspace', () => {
     expect(nodes).toEqual(['a', 'b']);
   });
 
-  test('renders no drag handles unless reorderable', () => {
-    const { container } = render(
+  test('offers no drag source unless reorderable', () => {
+    render(
       <Workspace ids={['a', 'b']} viewport={VIEWPORT}>
-        <div>a</div>
-        <div>b</div>
+        <DragProbe label="a" />
+        <DragProbe label="b" />
       </Workspace>,
     );
-    expect(container.querySelectorAll('.lk-trial-tile__grip')).toHaveLength(0);
+    expect(screen.getByTestId('drag-a')).toHaveTextContent('static');
+    expect(screen.getByTestId('drag-b')).toHaveTextContent('static');
   });
 });

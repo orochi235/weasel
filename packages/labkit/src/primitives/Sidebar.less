@@ -2,8 +2,10 @@
   display: flex;
   flex-direction: column;
   width: 280px;
+  flex: 1 1 auto;
   background: var(--wzl-surface-raised);
-  border-left: 1px solid var(--wzl-border);
+  border-right: 1px solid var(--wzl-border);
+  min-height: 0;
   transition: width 150ms ease;
 
   &--collapsed {

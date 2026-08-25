@@ -1006,6 +1006,7 @@ export {
   LassoIcon,
   RectIcon,
   EllipseIcon,
+  ImageIcon,
   EyedropperIcon,
   LineIcon,
   PolygonIcon,

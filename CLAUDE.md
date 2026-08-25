@@ -75,6 +75,19 @@ When building new tools, read these first:
 
 Do **not** write a tool that runs its own gesture (`useDragRect`) and commits with `ctx.applyBatch([createInsertOp(...)])`. That was the previous guidance here, and the code it pointed at had been dead for some time — see the 2026-07-27 layer-audit handoff.
 
+## Drawing icons
+
+**Proof SVG icons at 10–15× their display size.** A glyph authored on a 20×20
+viewBox gets inspected at ~240–320px before anyone looks at it small. At
+chrome size a misplaced arrowhead or a join that doesn't meet is two blurry
+pixels and reads as fine; blown up it is obviously broken. Render small only
+afterward, as a legibility check — never as the design surface.
+
+Compute terminus geometry, don't eyeball it. `M x y A rx ry rot laf sf dx dy`
+ends at `(x+dx, y+dy)` — an arrowhead capping that arc puts its vertex
+*there*. Same for a handle meeting a circle's rim: solve for the point on the
+circle rather than guessing a coordinate that looks close.
+
 ## Demo conventions
 
 **A demo is a reference implementation.** Its job is to show the proper way to

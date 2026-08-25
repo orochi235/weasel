@@ -1,5 +1,17 @@
+import {
+  CloneIcon,
+  CloseIcon,
+  FitIcon,
+  RedoIcon,
+  ResetIcon,
+  SnapshotIcon,
+  UndoIcon,
+  ZoomInIcon,
+  ZoomOutIcon,
+} from '@weasel-js/ui';
+import { Select } from '../passthrough/weasel-ui';
 import { Toolbar } from '../primitives/Toolbar';
-import { formatZoom } from '../ui/format';
+import { ZoomControl } from '../primitives/ZoomControl';
 import type { TrialToolbarContext } from './slotTypes';
 
 /** Props for `<DefaultToolbar>`. */
@@ -13,80 +25,79 @@ export function DefaultToolbar({ ctx }: DefaultToolbarProps) {
   return (
     <Toolbar>
       {ctx.hasUndo && (
-        <>
-          <Toolbar.Button onClick={ctx.undo} disabled={!ctx.canUndo} title="Undo (Cmd/Ctrl+Z)">
-            Undo
+        <Toolbar.Group aria-label="History">
+          <Toolbar.Button
+            iconOnly
+            onClick={ctx.undo}
+            disabled={!ctx.canUndo}
+            title="Undo (Cmd/Ctrl+Z)"
+          >
+            <UndoIcon size={16} />
           </Toolbar.Button>
           <Toolbar.Button
+            iconOnly
             onClick={ctx.redo}
             disabled={!ctx.canRedo}
             title="Redo (Cmd/Ctrl+Shift+Z)"
           >
-            Redo
+            <RedoIcon size={16} />
           </Toolbar.Button>
-          <Toolbar.Spacer />
-        </>
+        </Toolbar.Group>
       )}
 
       {ctx.hasCanvas && (
-        <>
-          <Toolbar.Button onClick={ctx.zoomOut} title="Zoom out">
-            −
+        <Toolbar.Group aria-label="Zoom">
+          <Toolbar.Button iconOnly onClick={ctx.zoomOut} title="Zoom out">
+            <ZoomOutIcon size={16} />
           </Toolbar.Button>
-          <span className="lk-toolbar__zoom-label">{formatZoom(ctx.zoom)}</span>
-          <Toolbar.Button onClick={ctx.zoomIn} title="Zoom in">
-            +
+          <ZoomControl zoom={ctx.zoom} onZoomChange={ctx.setZoom} />
+          <Toolbar.Button iconOnly onClick={ctx.zoomIn} title="Zoom in">
+            <ZoomInIcon size={16} />
           </Toolbar.Button>
-          <Toolbar.Button onClick={ctx.resetZoom} title="Reset zoom">
-            1:1
+          <Toolbar.Button iconOnly onClick={ctx.resetZoom} title="Actual size">
+            <FitIcon size={16} />
           </Toolbar.Button>
-          <Toolbar.Spacer />
-        </>
+        </Toolbar.Group>
       )}
 
-      <Toolbar.Button onClick={() => ctx.saveSnapshot()} title="Save snapshot (Cmd/Ctrl+S)">
-        Save
-      </Toolbar.Button>
+      <Toolbar.Group aria-label="Snapshots">
+        <Toolbar.Button onClick={() => ctx.saveSnapshot()} title="Save snapshot (Cmd/Ctrl+S)">
+          <SnapshotIcon size={16} />
+          <span>Save</span>
+        </Toolbar.Button>
+        {/* selectedKey is held at null so the control stays a "load one" action
+            rather than drifting into a display of what was loaded last. */}
+        {ctx.savedSnapshots.length > 0 && (
+          <Select
+            className="lk-toolbar__load-select"
+            aria-label="Load snapshot"
+            placeholder="Load…"
+            selectedKey={null}
+            options={ctx.savedSnapshots.map((sn) => ({ value: sn.id, label: sn.name }))}
+            onSelectionChange={(id) => {
+              if (id != null) ctx.loadSnapshot(String(id));
+            }}
+          />
+        )}
+      </Toolbar.Group>
 
-      {ctx.savedSnapshots.length > 0 && (
-        <select
-          className="lk-toolbar__load-select"
-          aria-label="Load snapshot"
-          defaultValue=""
-          onChange={(e) => {
-            const id = e.target.value;
-            if (id) {
-              ctx.loadSnapshot(id);
-              e.target.value = '';
-            }
-          }}
+      <Toolbar.Group end aria-label="Trial">
+        <Toolbar.Button iconOnly onClick={ctx.clone} title="Clone trial">
+          <CloneIcon size={16} />
+        </Toolbar.Button>
+        <Toolbar.Button iconOnly onClick={ctx.reset} title="Reset trial">
+          <ResetIcon size={16} />
+        </Toolbar.Button>
+        <Toolbar.Button
+          iconOnly
+          variant="danger"
+          onClick={ctx.close}
+          disabled={ctx.isLastTrial}
+          title={ctx.isLastTrial ? 'Cannot close the last trial' : 'Close trial'}
         >
-          <option value="" disabled>
-            Load…
-          </option>
-          {ctx.savedSnapshots.map((sn) => (
-            <option key={sn.id} value={sn.id}>
-              {sn.name}
-            </option>
-          ))}
-        </select>
-      )}
-
-      <Toolbar.Spacer />
-
-      <Toolbar.Button onClick={ctx.clone} title="Clone trial">
-        Clone
-      </Toolbar.Button>
-      <Toolbar.Button onClick={ctx.reset} title="Reset trial">
-        Reset
-      </Toolbar.Button>
-      <Toolbar.Button
-        onClick={ctx.close}
-        disabled={ctx.isLastTrial}
-        title={ctx.isLastTrial ? 'Cannot close the last trial' : 'Close trial'}
-      >
-        Close
-      </Toolbar.Button>
+          <CloseIcon size={16} />
+        </Toolbar.Button>
+      </Toolbar.Group>
     </Toolbar>
   );
 }

@@ -11,13 +11,13 @@ import { asNodeId, createNode, gridStrategy, type NodeId, Store } from 'windease
 import {
   type ChromeMap,
   Container,
-  DragHandle,
   DragProvider,
   Provider,
   StrategyRegistryProvider,
 } from 'windease/react';
 
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
+import { TrialDragContext } from '../trial/TrialDragContext';
 
 const ZONE_ID = asNodeId('lk-workspace');
 const STRATEGIES = { grid: gridStrategy as never };
@@ -175,14 +175,11 @@ export function Workspace({
       [KIND]: ({ node }) => {
         const content = byId.get(node.id) ?? null;
         if (!reorderable) return content;
-        // A tile is full of controls, so the whole thing can't be the handle.
         return (
-          <div className="lk-trial-tile">
-            <DragHandle nodeId={node.id} className="lk-trial-tile__grip">
-              <span className="lk-trial-tile__grip-dots" aria-hidden="true" />
-            </DragHandle>
-            <div className="lk-trial-tile__body">{content}</div>
-          </div>
+          // No grip strip: the trial's own title bar is the drag surface.
+          <TrialDragContext.Provider value={{ nodeId: node.id }}>
+            <div className="lk-trial-tile">{content}</div>
+          </TrialDragContext.Provider>
         );
       },
     };

@@ -228,11 +228,7 @@ function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) 
   let body: ReactNode;
   if (instrument.canvas) {
     body = (
-      <div
-        ref={canvasContainerRef}
-        className="lk-trial__canvas-host"
-        style={{ width: '100%', height: '100%', position: 'relative' }}
-      >
+      <div ref={canvasContainerRef} className="lk-trial__canvas-host">
         <CanvasStack
           layers={layersWithFeedback}
           view={view2d ?? DEFAULT_VIEW}

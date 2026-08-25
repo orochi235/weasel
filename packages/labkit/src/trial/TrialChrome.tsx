@@ -9,6 +9,7 @@ import { as2DView } from '../state/view';
 import { DefaultSidebar } from './DefaultSidebar';
 import { DefaultStatusBar } from './DefaultStatusBar';
 import { DefaultToolbar } from './DefaultToolbar';
+import { TrialTitleBar } from './TrialTitleBar';
 import type {
   SidebarSlot,
   StatusBarSlot,
@@ -144,8 +145,10 @@ export function TrialChrome({
     <section
       className="lk-trial"
       aria-label={`Trial ${record.instrumentName}`}
+      tabIndex={-1}
       onKeyDown={handleKeyDown}
     >
+      <TrialTitleBar title={record.instrumentName} />
       <div className="lk-trial__toolbar">
         {toolbar ? toolbar(toolbarCtx) : <DefaultToolbar ctx={toolbarCtx} />}
       </div>
@@ -154,7 +157,11 @@ export function TrialChrome({
           {sidebar ? sidebar(sidebarCtx) : <DefaultSidebar ctx={sidebarCtx} />}
           {sidebarExtras}
         </div>
-        <div className="lk-trial__content">{children}</div>
+        <div
+          className={`lk-trial__content${instrument.canvas ? ' lk-trial__content--flush' : ''}`}
+        >
+          {children}
+        </div>
       </div>
       <div className="lk-trial__status">
         {job ? (
