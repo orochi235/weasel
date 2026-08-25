@@ -440,6 +440,49 @@ Core five + Crop shipped. Remaining:
   put the `catch` in `useFrameLoop` — scheduling has no information about what a
   draw failure means, and the granularity is wrong there.
 
+- **(P1) The hud loupe's pixel mode reads back a stale buffer.** `refreshPixels`
+  calls `readbackRegion` — `gl.readPixels` — straight off an aim change
+  (`packages/hud/src/loupe/createLoupe.ts:152`), which since the frame loop
+  landed is a moment with no paint behind it: the buffer holds the previous
+  frame, so the magnifier shows the scene as it was one frame ago while dragging.
+  The changeset names the remedy and nothing in `packages/hud/src` implements it
+  — no call to `subscribeFrame` exists there. Fix shape: `HudHost`
+  (`packages/hud/src/host.ts`) gains `subscribeFrame`, which `attachHud` already
+  has on the `api` it shims from (`attach.ts:144`), and the loupe defers the
+  readback to the next landed paint instead of taking it inline.
+
+- **(P1) `SceneCanvas` re-renders on every scene mutation.** Its own
+  `useSyncExternalStore` (`SceneCanvas.tsx:894`) commits the canvas for every
+  version bump, whether or not the host passed
+  `useScene(..., { subscribe: false })` — the ~100–110 commits/s the scene
+  side-scroller still pays. The ephemeral-pose-overrides arc does not close
+  this: it only stops *pose overrides* bumping the version, and a demo's own
+  `scene.add` / `scene.batch` still notifies. The shape worth trying is that the
+  subscription call `requestRedraw()` rather than commit — `Canvas` already
+  takes `contentVersion` as a getter, so the paint can sample the version
+  without a render. What that costs is real design work: some chrome genuinely
+  needs a commit on a scene change (layer panels, counts, anything rendering
+  node data as DOM), and deciding which is the whole question.
+
+- **(P3) Sync paints do not coalesce.** `CanvasProps.syncPaint`
+  (`Canvas.tsx:234-242`) promises "a synchronous paint per commit", singular,
+  but the loop paints per *request*: one commit carrying a sibling
+  layout-effect `requestRedraw` produced two full GL paints where the async
+  path produced one. Coalescing would mean deferring to a microtask at the end
+  of the commit, which gives up the "pixels land before the surrounding layout
+  effects read the DOM" ordering that `syncPaint` exists for. Either the
+  ordering guarantee or the singular paint — the doc currently claims both.
+
+- **(P3) `paintInputsRef` is written during render.** `Canvas.tsx:1295` assigns
+  it in the render body, so a concurrent render React starts and abandons still
+  leaves its inputs in the ref, and the next `requestRedraw` from any source —
+  a gesture, a HUD, the view — paints inputs that were never committed. This is
+  a second `startTransition` hazard, distinct from the documented one (that one
+  is about DOM lagging the canvas; this one is about the canvas painting a
+  render that does not exist), and it is documented nowhere. Writing the ref
+  from a layout effect instead would fix it and cost the sync-paint ordering,
+  which is the same trade as the entry above.
+
 - **(P2) `before` and `after` layer chains do not compose.** In
   `packages/core/src/canvas/layerOrder.ts`, `emitBefore` recurses only into a
   layer's `before` children and `emitAfter` only into its `after` children. So a
@@ -817,7 +860,7 @@ milliseconds are inflated by the tracing, the ratios are the signal):
 | | immediate | scene graph |
 |---|---|---|
 | frames committed / s | 109 | 76 |
-| main-thread busy / s | 1.00× | **1.27×** |
+| main-thread busy / s, immediate = 1.00× | 1.00× | **1.27×** |
 | main-thread busy / committed frame | 6.31 ms | **11.57 ms** |
 | major GC over the window | 57 ms | **549 ms** |
 
@@ -836,18 +879,29 @@ column shows two runs, which is the run-to-run spread.
 | | immediate, main | immediate, frame loop | scene graph, main | scene graph, frame loop |
 |---|---|---|---|---|
 | frames / s | 120 | 120 | 120 | 120 |
-| main-thread busy / s | 0.19× | **0.11×** | 0.47× | **0.35–0.38×** |
+| main-thread busy / s, busy seconds per wall second | 0.19× | **0.11×** | 0.47× | **0.35–0.38×** |
 | busy / committed frame | 1.58 ms | **0.89 ms** | 3.94 ms | **2.88–3.21 ms** |
 | major GC over 10 s | 0 ms | 2 ms | 10 ms | 4–10 ms |
-| React commits / s | 118 | **0** | 120 | 100–110 |
+| `CanvasInner` setState / s | 118 | **0** | 120 | 100–110 |
+
+The last row counts `CanvasInner`'s own state writes, not React commits: both
+demos commit at roughly 5 Hz besides, from the readout interval in
+`SideScrollerDemo.tsx:110-125`, which is what the React Profiler will show.
 
 Both twins hold 120 Hz at this load, so the frame rate says nothing and busy per
-frame is the number that moves. The immediate twin drops 44%, all of it the
-render-per-paint the frame loop removed. The scene twin drops 18%, and nearly
-all of that is the demo's own switch to `setView` on the handle: with the camera
-left in `useState`, the frame loop alone measured 3.86 ms/frame against main's
-3.94. Decoupling paint from render buys a consumer nothing while that consumer
-still calls `setState` every frame.
+frame is the number that moves. The immediate twin drops 44%, and `118 → 0` is
+firm for structural rather than statistical reasons: that twin renders an empty
+scene at a constant view and the branch never touched it, so those writes were
+`CanvasInner`'s per-paint `setState` and they are gone by construction.
+
+The scene twin drops 18–27% — its two runs spread 2.88–3.21 ms, about 11%, at
+n=1 per configuration — and effectively all of that is the demo's own switch to
+`setView` on the handle. With the camera left in `useState`, the frame loop alone
+measured 3.86 ms/frame against main's 3.94: a 0.08 ms difference inside a 0.33 ms
+spread, which is no measurable timing difference at all. Read the mechanism
+instead of the number — a consumer calling `setState` every frame pays for that
+render whatever the canvas does underneath it, so decoupling paint from render
+cannot show up until the consumer stops.
 
 Major GC did not move, as expected — per-frame pose allocation belongs to the
 ephemeral-pose-overrides arc.
@@ -863,16 +917,15 @@ What it surfaced:
   `docs/superpowers/specs/2026-08-24-frame-loop-decoupling-design.md`, Part 1.
 
 - **(P1) `SceneCanvas` commits on every scene mutation, even when the host opted
-  out.** It tracks the scene through its own `useSyncExternalStore`
-  (`SceneCanvas.tsx:894`), so every `scene.batch` re-renders the canvas whether
-  or not the host passed `useScene(..., { subscribe: false })` — those are the
-  ~100–110 commits/s the scene twin still pays above. The
+  out** — those are the ~100–110 commits/s the scene twin still pays above.
+  Carried under Rendering & paint, since it is not this demo's problem. The
   ephemeral-pose-overrides arc
-  (`docs/superpowers/plans/2026-08-24-ephemeral-pose-overrides.md`) is what
-  closes it: an override never bumps the scene version, so it never notifies.
-  Until then, measuring anything else per-frame means stopping the scene writes
-  first — `apps/site/demos/__tests__/SceneScrollerDemo.test.tsx` freezes
-  `syncScene` to isolate the camera at all.
+  (`docs/superpowers/plans/2026-08-24-ephemeral-pose-overrides.md`) narrows it
+  but does not close it: an override never bumps the version, while this demo's
+  `scene.add` / `scene.batch` still does. Measuring anything else per-frame
+  means stopping the scene writes first —
+  `apps/site/demos/__tests__/SceneScrollerDemo.test.tsx` freezes `syncScene` to
+  isolate the camera at all.
 
 - **(P1) `setPose` demands a fresh pose object per node per frame, and the GC
   bill is visible.** `nodeMemo` keys painter output on pose *reference*

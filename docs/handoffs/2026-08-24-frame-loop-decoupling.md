@@ -21,11 +21,15 @@ Running autonomously overnight 2026-08-24/25.
 
 **What the arc actually bought, measured** (Task 10, second table in `docs/TODO.md`; the original
 table's load was never recorded so it could not be reproduced, and was left untouched rather than
-contaminated). The scene-graph platformer went 3.94 → 2.88-3.21 ms busy per frame — but only ~2% of
-that came from the kit frame loop, because the demo's own per-frame `setState` masked it; the demo's
-move to `setView` bought the other 17%. The immediate-mode twin, which never had per-frame consumer
-state, gained **44% from the kit change alone**: 1.58 → 0.89 ms/frame, and 118 `CanvasInner.setState`
-per second → **0**. GC did not move, as expected — that is the ephemeral-pose-overrides arc.
+contaminated). The scene-graph platformer went 3.94 → 2.88-3.21 ms busy per frame, and effectively
+all of that is the demo's own move to `setView`: with the camera left in `useState` the kit frame loop
+alone measured 3.86 ms against main's 3.94, a 0.08 ms delta inside a 0.33 ms run-to-run spread — no
+measurable timing difference. The mechanism, not the number, is the finding: a consumer rendering
+every frame pays for that render whatever the canvas does underneath it. The immediate-mode twin,
+which never had per-frame consumer state, gained **44% from the kit change alone**: 1.58 → 0.89
+ms/frame, and 118 `CanvasInner.setState` per second → **0** — firm structurally rather than
+statistically, since that twin was untouched by the branch and renders an empty scene at a constant
+view. GC did not move, as expected — that is the ephemeral-pose-overrides arc.
 
 **The remaining per-frame render cost is `SceneCanvas`'s own scene subscription.**
 `useSyncExternalStore` at `SceneCanvas.tsx:894` means every `scene.batch` commits even when the host
