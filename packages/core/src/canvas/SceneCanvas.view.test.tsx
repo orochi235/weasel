@@ -11,7 +11,7 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
 import { Profiler, StrictMode, useEffect } from 'react';
-import { SceneCanvas } from './SceneCanvas';
+import { SceneCanvas, type SceneCanvasProps } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { SceneCanvasApi } from './canvasExtension';
 import type { View } from 'core/viewport/view';
@@ -207,9 +207,26 @@ describe('SceneCanvas view', () => {
     expect(apiRef.current!.getPaintedVersion()).toBe(seeded);
 
     act(() => { addRect(); });
+    const bumped = scene.getVersion();
+    expect(bumped).toBeGreaterThan(seeded);
+    // Stamped at paint, not read live: the commit has landed, the frame has not.
+    expect(apiRef.current!.getPaintedVersion()).toBe(seeded);
+
     await frame();
     await frame();
-    expect(scene.getVersion()).toBeGreaterThan(seeded);
-    expect(apiRef.current!.getPaintedVersion()).toBe(scene.getVersion());
+    expect(apiRef.current!.getPaintedVersion()).toBe(bumped);
+  });
+
+  it('does not accept a consumer-supplied contentVersion', () => {
+    const props: SceneCanvasProps<D, L, P> = {
+      scene: newScene(),
+      width: 200,
+      height: 150,
+      // @ts-expect-error `contentVersion` is SceneCanvas's wiring to
+      // `scene.getVersion`; a consumer value would spread over it and make
+      // `getPaintedVersion()` report something other than the scene version.
+      contentVersion: () => 7,
+    };
+    expect(props.width).toBe(200);
   });
 });
