@@ -423,7 +423,37 @@ describe('Canvas syncPaint', () => {
     expect(draw).toHaveBeenCalledTimes(3);
   });
 
-  it('paints no more once unmounted', () => {
+  it('defers a redraw requested from a frame subscriber to the next frame', async () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const draw = vi.fn();
+    const layer = probeLayer(draw);
+    render(<SyncHost apiRef={apiRef} layer={layer} syncPaint />);
+    expect(draw).toHaveBeenCalledTimes(1);
+
+    // The cap is what keeps a regression reportable: without it, a subscriber
+    // that re-enters the paint synchronously overflows the stack instead of
+    // failing an assertion.
+    const CAP = 20;
+    let notified = 0;
+    apiRef.current!.subscribeFrame(() => {
+      notified++;
+      if (notified < CAP) apiRef.current!.requestRedraw();
+    });
+
+    act(() => { apiRef.current!.requestRedraw(); });
+    expect(draw).toHaveBeenCalledTimes(2);
+    expect(notified).toBe(1);
+
+    // One further paint per frame, the same shape the async path gives.
+    await frame();
+    await frame();
+    expect(draw).toHaveBeenCalledTimes(4);
+    expect(notified).toBe(3);
+  });
+
+  // Only that the handle stays safe to call — Canvas's `paint` bails on a null
+  // canvas ref, so the alive flag itself is covered in `useFrameLoop.test.tsx`.
+  it('survives a redraw request through the handle once unmounted', () => {
     const apiRef = { current: null as CanvasExtensionApi | null };
     const draw = vi.fn();
     const { unmount } = render(<SyncHost apiRef={apiRef} layer={probeLayer(draw)} syncPaint />);

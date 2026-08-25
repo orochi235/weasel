@@ -48,14 +48,16 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
     let landed = false;
     try {
       landed = paintRef.current();
+      if (!landed) {
+        dirtyRef.current = true;
+        return;
+      }
+      // Notified inside the guard: a subscriber calling `requestRedraw` under
+      // `syncPaint` would otherwise re-enter this synchronously, without bound.
+      for (const fn of subsRef.current) fn();
     } finally {
       paintingRef.current = false;
     }
-    if (!landed) {
-      dirtyRef.current = true;
-      return;
-    }
-    for (const fn of subsRef.current) fn();
   }, []);
 
   const scheduleFrame = useCallback(() => {
@@ -74,8 +76,8 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
     // Hidden suppresses the sync path too: a background tab still commits React
     // updates, and that is the one paint the browser's throttling does not stop.
     if (isHidden()) return;
-    // A request made from inside a draw would recurse forever if it painted
-    // here, so re-entrant ones always fall through to a frame.
+    // A request made from inside a draw or a frame subscriber would recurse
+    // forever if it painted here, so re-entrant ones fall through to a frame.
     if (syncRef.current && aliveRef.current && !paintingRef.current) {
       runPaint();
       return;

@@ -236,8 +236,9 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    *  single-commit consistency between React-rendered DOM and canvas pixels.
    *  For consumers with DOM chrome pinned to canvas content that cannot
    *  tolerate a frame of skew. Live: toggling it switches modes from the next
-   *  redraw on. A redraw requested from inside a layer's `draw` still waits
-   *  for a frame — painting it in place would recurse. */
+   *  redraw on. A redraw requested from inside a layer's `draw`, or from a
+   *  `subscribeFrame` callback, still waits for a frame — painting it in place
+   *  would recurse. */
   syncPaint?: boolean;
 
   /**
