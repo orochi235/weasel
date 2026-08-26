@@ -21,3 +21,15 @@ describe('font-size scale', () => {
     expect(tokenValue('font-size-xl')).toBe('20px');
   });
 });
+
+describe('font-weight scale', () => {
+  it('is one ladder of three ranks', () => {
+    expect(tokenValue('font-weight-normal')).toBe('300');
+    expect(tokenValue('font-weight-medium')).toBe('500');
+    expect(tokenValue('font-weight-bold')).toBe('700');
+  });
+
+  it('drops the light rank, which nothing distinguishes from normal', () => {
+    expect(tokenValue('font-weight-light')).toBeNull();
+  });
+});

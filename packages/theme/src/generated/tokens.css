@@ -95,15 +95,14 @@
   --wzl-ease-out-cubic: cubic-bezier(0.33, 1, 0.68, 1);
   --wzl-ease-in-out-cubic: cubic-bezier(0.65, 0, 0.35, 1);
   --wzl-ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
-  /* Condensed UI/display face. The heavier cuts get blocky at any size, so the weight tokens stay in the 200-400 range. */
+  /* Condensed UI/display face. */
   --wzl-font-ui: Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif;
   --wzl-font-display: Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif;
   --wzl-font-body: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --wzl-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --wzl-font-weight-light: 200;
   --wzl-font-weight-normal: 300;
-  --wzl-font-weight-medium: 350;
-  --wzl-font-weight-bold: 400;
+  --wzl-font-weight-medium: 500;
+  --wzl-font-weight-bold: 700;
   --wzl-surface: var(--wzl-gray-800);
   --wzl-surface-raised: var(--wzl-gray-700);
   --wzl-surface-sunken: var(--wzl-gray-900);

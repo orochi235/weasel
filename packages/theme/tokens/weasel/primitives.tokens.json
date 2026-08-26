@@ -104,7 +104,7 @@
 
   "fontFamily": {
     "$type": "fontFamily",
-    "font-ui":      { "$value": ["Oswald", "Helvetica Neue Condensed", "Arial Narrow", "system-ui", "sans-serif"], "$description": "Condensed UI/display face. The heavier cuts get blocky at any size, so the weight tokens stay in the 200-400 range." },
+    "font-ui":      { "$value": ["Oswald", "Helvetica Neue Condensed", "Arial Narrow", "system-ui", "sans-serif"], "$description": "Condensed UI/display face." },
     "font-display": { "$value": ["Oswald", "Helvetica Neue Condensed", "Arial Narrow", "system-ui", "sans-serif"] },
     "font-body":    { "$value": ["Inter", "system-ui", "-apple-system", "Segoe UI", "sans-serif"] },
     "font-mono":    { "$value": ["ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "monospace"] }
@@ -112,9 +112,8 @@
 
   "fontWeight": {
     "$type": "fontWeight",
-    "font-weight-light":  { "$value": 200 },
     "font-weight-normal": { "$value": 300 },
-    "font-weight-medium": { "$value": 350 },
-    "font-weight-bold":   { "$value": 400 }
+    "font-weight-medium": { "$value": 500 },
+    "font-weight-bold":   { "$value": 700 }
   }
 }
