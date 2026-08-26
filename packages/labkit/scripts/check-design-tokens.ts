@@ -50,6 +50,9 @@ const RAW = [
   { name: 'border-radius', re: /border-radius:[^;}]*\b\d*\.?\d+(px|rem|em)\b/ },
 ];
 
+// Five spellings of one semantic color, collapsed onto --wzl-danger in arc 4.
+const STRAY_DANGER_COLORS = ['#ff5b5b', '#c43c3c', '#f04438', '#ffb3a8'];
+
 // Innermost-first: `[^()]*` refuses a fallback containing parens, so repeated
 // passes collapse nested var() from the inside out.
 const VAR_CALL = /var\(\s*(--[\w-]+)\s*(?:,\s*([^()]*))?\)/g;
@@ -87,13 +90,21 @@ export function findOffenders(
   source: string,
   tokens: Record<string, string> = TOKEN_VALUES,
 ): Offender[] {
-  if (ALLOWLIST.some((a) => file.includes(a))) return [];
+  const allowlisted = ALLOWLIST.some((a) => file.includes(a));
   const out: Offender[] = [];
   source.split('\n').forEach((raw, i) => {
     const line = raw.replace(/\/\*.*?\*\//g, ' ').replace(/(^|[^:])\/\/.*$/, '$1');
-    const code = resolveVars(line, tokens, (match) => out.push({ file, line: i + 1, match }));
-    for (const { name, re } of RAW) {
-      if (re.test(code)) out.push({ file, line: i + 1, match: `raw ${name}: ${raw.trim()}` });
+    // The allowlist covers files that legitimately render literal scale values
+    // to document them; a stray color is never legitimate, so it's checked everywhere.
+    if (!allowlisted) {
+      const code = resolveVars(line, tokens, (match) => out.push({ file, line: i + 1, match }));
+      for (const { name, re } of RAW) {
+        if (re.test(code)) out.push({ file, line: i + 1, match: `raw ${name}: ${raw.trim()}` });
+      }
+    }
+    const stray = STRAY_DANGER_COLORS.find((c) => line.toLowerCase().includes(c));
+    if (stray) {
+      out.push({ file, line: i + 1, match: `stray danger color ${stray} — use var(--wzl-danger)` });
     }
   });
   return out;

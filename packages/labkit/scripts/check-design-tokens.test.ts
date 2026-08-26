@@ -53,4 +53,18 @@ describe('findOffenders', () => {
     expect(findOffenders('a.less', '.x { font-weight: var(--wzl-font-weight-bold); }')).toEqual([]);
     expect(findOffenders('a.less', '.x { font-weight: normal; }')).toEqual([]);
   });
+
+  it('flags a stray danger color and names the token', () => {
+    const out = findOffenders('a.less', '.x { color: #ff5b5b; }');
+    expect(out).toHaveLength(1);
+    expect(out[0].match).toContain('--wzl-danger');
+  });
+
+  it('accepts the danger token itself', () => {
+    expect(findOffenders('a.less', '.x { color: var(--wzl-danger); }')).toEqual([]);
+  });
+
+  it('flags a stray danger color even on an allowlisted file', () => {
+    expect(findOffenders('theme/base.less', '.x { color: #ff5b5b; }')).toHaveLength(1);
+  });
 });
