@@ -9,9 +9,9 @@
   // from its own workspace by nothing but a hairline. Raised reads as a panel,
   // and in dark it is translucent, so the backdrop still shows through.
   background: var(--wzl-surface-raised);
-  border: 1px solid var(--wzl-border);
+  border: var(--wzl-border-w) solid var(--wzl-border-raised);
   border-radius: var(--wzl-radius-md);
-  box-shadow: 0 1px 3px color-mix(in srgb, var(--wzl-fg) 10%, transparent);
+  box-shadow: 0 1px 3px var(--wzl-shadow);
   overflow: hidden;
 
   &__body {
@@ -64,12 +64,10 @@
 
   &__toolbar {
     flex-shrink: 0;
-    border-bottom: 1px solid var(--wzl-line-subtle);
   }
 
   &__status {
     flex-shrink: 0;
-    border-top: 1px solid var(--wzl-line-subtle);
   }
 
   &--unknown {
