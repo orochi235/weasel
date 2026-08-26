@@ -24,6 +24,14 @@ source edit in the same commit.
 **The main checkout is shared with a concurrent session.** Never `git add -A`. Stage the explicit
 paths each task names, and run `git status` before assuming the tree is yours.
 
+**Never `git stash`.** The stash stack is shared across every worktree of this repo, so a
+`stash`/`pop` pair run here can pop another session's work into your tree — there is currently a
+`draw-load-cost-wip` entry on it that is not ours. To capture a visual baseline, check out the
+prior commit into a throwaway worktree, or capture from a second Storybook started on the parent
+commit. If you truly must, use `git stash push -u -m "<unique-tag>"`, record the SHA from
+`git stash list --format='%H %gs'`, restore with `git stash apply <sha>` — never `pop` — and drop
+your own entry by re-finding it by tag.
+
 **jsdom cannot catch a layout collapse.** Any task that changes a container's box ends with a
 Storybook screenshot check, not just a green test run. This is not optional: arc 3 shipped a
 collapse that passed all 7903 tests while rendering an empty page.
@@ -576,7 +584,7 @@ function cssFiles(dir: string, out: string[] = []): string[] {
 }
 
 /** `font-size: 11px` — a literal length, not a var() or `inherit`. */
-const RAW_FONT_SIZE = /font-size:\s*(?!var\(|inherit|100%)[^;]*\d/;
+const RAW_FONT_SIZE = /font-size:[^;}]*\b\d*\.?\d+(px|rem|em|pt|ex|ch)\b/;
 
 describe('packages/ui type tokens', () => {
   it('sizes every glyph from the scale', () => {
@@ -682,7 +690,7 @@ Append to `packages/ui/src/tokenUsage.test.ts`:
 
 ```ts
 /** `border-radius: 3px` — a literal, but `50%` and `0` are legitimate. */
-const RAW_RADIUS = /border-radius:\s*(?!var\(|inherit|50%|0[;\s])[^;]*\d/;
+const RAW_RADIUS = /border-radius:[^;}]*\b\d*\.?\d+(px|rem|em)\b/;
 /** A bare hex or rgba() that is not inside a var() fallback. */
 const RAW_COLOR = /(?<!var\([^)]{0,80})(#[0-9a-fA-F]{3,8}\b|rgba?\()/;
 
@@ -877,8 +885,8 @@ function lessFiles(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-const RAW_FONT_SIZE = /font-size:\s*(?!var\(|inherit|100%)[^;]*\d/;
-const RAW_RADIUS = /border-radius:\s*(?!var\(|inherit|50%|0[;\s])[^;]*\d/;
+const RAW_FONT_SIZE = /font-size:[^;}]*\b\d*\.?\d+(px|rem|em|pt|ex|ch)\b/;
+const RAW_RADIUS = /border-radius:[^;}]*\b\d*\.?\d+(px|rem|em)\b/;
 
 function offenders(re: RegExp): string[] {
   return lessFiles(SRC).flatMap((f) =>
@@ -1579,9 +1587,9 @@ const TOKEN_VALUES: Record<string, string> = {
 };
 
 const RAW = [
-  { name: 'font-size', re: /font-size:\s*(?!var\(|inherit|100%)[^;]*\d/ },
-  { name: 'font-weight', re: /font-weight:\s*(?!var\(|inherit|normal|bold)[^;]*\d/ },
-  { name: 'border-radius', re: /border-radius:\s*(?!var\(|inherit|50%|0[;\s])[^;]*\d/ },
+  { name: 'font-size', re: /font-size:[^;}]*\b\d*\.?\d+(px|rem|em|pt|ex|ch)\b/ },
+  { name: 'font-weight', re: /font-weight:[^;}]*(?<!-)\b[1-9]00\b/ },
+  { name: 'border-radius', re: /border-radius:[^;}]*\b\d*\.?\d+(px|rem|em)\b/ },
 ];
 
 const VAR_FALLBACK = /var\(\s*(--wzl-[\w-]+)\s*,\s*([^)]+)\)/g;
