@@ -88,6 +88,26 @@ ends at `(x+dx, y+dy)` — an arrowhead capping that arc puts its vertex
 *there*. Same for a handle meeting a circle's rim: solve for the point on the
 circle rather than guessing a coordinate that looks close.
 
+**The small check is a separate check, and it is the pixel grid.** Proofing
+large tells you nothing about chrome size. Rasterise at the size the chrome
+actually renders — `DefaultToolbar` uses `size={16}` — magnify with
+nearest-neighbour, and look at the pixels the renderer produced. A 16px glyph
+inside a screenshot of a proof page has been resampled twice before you see it.
+
+**Check 1× and 2× separately; they disagree.** At 1× a 16px icon gets 16 device
+pixels and fine detail collapses; at 2× it gets 32 and the same drawing
+resolves. Neither grid is the answer on its own, and a conclusion drawn from one
+does not transfer.
+
+**Path order is z-order.** `gen:icons` emits paths in source order, so the
+sequence in `packages/ui/scripts/icons/` is load-bearing wherever a glyph gets
+depth from overlap. Reordering paths for tidiness breaks it silently.
+
+Fuller notes from the session that produced these — what stroke weight can and
+cannot fix, why rounded corners move numeric constraints, how `currentColor`
+behaves across inline / `<img>` / `mask-image`, and the size cost of sampled
+curves — are in `clone-icons/STYLE-LESSONS.md` in Mike's iCloud Drive.
+
 ## Demo conventions
 
 **A demo is a reference implementation.** Its job is to show the proper way to

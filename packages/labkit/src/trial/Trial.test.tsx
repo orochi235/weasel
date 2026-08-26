@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { Instrument } from '../instrument/types';
@@ -6,93 +6,8 @@ import { Lab } from '../lab/Lab';
 import { LabContext, type LabContextValue } from '../lab/LabContext';
 import { LabStoreContext } from '../state/context';
 import { createLabStore } from '../state/store';
-import type { TrialRecord } from '../state/types';
-import { DefaultToolbar } from './DefaultToolbar';
-import type { TrialToolbarContext } from './slotTypes';
+import type { SavedSnapshot, TrialRecord } from '../state/types';
 import { TrialChrome } from './TrialChrome';
-
-function makeCtx(overrides: Partial<TrialToolbarContext> = {}): TrialToolbarContext {
-  return {
-    trialId: 'ws-1',
-    instrumentName: 'Stub',
-    hasUndo: false,
-    canUndo: false,
-    canRedo: false,
-    undo: vi.fn(),
-    redo: vi.fn(),
-    zoom: 1,
-    setZoom: vi.fn(),
-    zoomIn: vi.fn(),
-    zoomOut: vi.fn(),
-    resetZoom: vi.fn(),
-    hasCanvas: false,
-    savedSnapshots: [],
-    saveSnapshot: vi.fn(),
-    loadSnapshot: vi.fn(),
-    clone: vi.fn(),
-    reset: vi.fn(),
-    close: vi.fn(),
-    isLastTrial: false,
-    ...overrides,
-  };
-}
-
-describe('<DefaultToolbar>', () => {
-  it('renders close button', () => {
-    render(<DefaultToolbar ctx={makeCtx()} />);
-    expect(screen.getByRole('button', { name: /close/i })).toBeInTheDocument();
-  });
-
-  it('disables close when isLastTrial is true', () => {
-    render(<DefaultToolbar ctx={makeCtx({ isLastTrial: true })} />);
-    expect(screen.getByRole('button', { name: /close/i })).toBeDisabled();
-  });
-
-  it('omits undo/redo buttons when hasUndo is false', () => {
-    render(<DefaultToolbar ctx={makeCtx({ hasUndo: false })} />);
-    expect(screen.queryByRole('button', { name: /undo/i })).toBeNull();
-    expect(screen.queryByRole('button', { name: /redo/i })).toBeNull();
-  });
-
-  it('shows undo/redo buttons when hasUndo is true', () => {
-    render(<DefaultToolbar ctx={makeCtx({ hasUndo: true, canUndo: true, canRedo: false })} />);
-    expect(screen.getByRole('button', { name: /undo/i })).not.toBeDisabled();
-    expect(screen.getByRole('button', { name: /redo/i })).toBeDisabled();
-  });
-
-  it('omits zoom buttons when hasCanvas is false', () => {
-    render(<DefaultToolbar ctx={makeCtx({ hasCanvas: false })} />);
-    expect(screen.queryByTitle('Zoom in')).toBeNull();
-    expect(screen.queryByTitle('Zoom out')).toBeNull();
-  });
-
-  it('shows zoom controls when hasCanvas is true', () => {
-    render(<DefaultToolbar ctx={makeCtx({ hasCanvas: true, zoom: 1.5 })} />);
-    expect(screen.getByTitle('Zoom in')).toBeInTheDocument();
-    expect(screen.getByTitle('Zoom out')).toBeInTheDocument();
-    // Zoom is an editable field now, not a readout.
-    expect(screen.getByRole('textbox', { name: /zoom/i })).toHaveValue('150%');
-    expect(screen.getByRole('slider', { name: /zoom/i })).toBeInTheDocument();
-  });
-
-  it('shows load select when snapshots exist', () => {
-    const ctx = makeCtx({
-      savedSnapshots: [
-        {
-          id: 's1',
-          name: 'First',
-          trialId: 'ws-1',
-          instrumentName: 'Stub',
-          config: {},
-          state: {},
-          savedAt: 1,
-        },
-      ],
-    });
-    render(<DefaultToolbar ctx={ctx} />);
-    expect(screen.getByRole('button', { name: /load snapshot/i })).toBeInTheDocument();
-  });
-});
 
 const stubInstrument: Instrument = {
   name: 'Stub',
@@ -115,6 +30,7 @@ type ChromeProps = Parameters<typeof TrialChrome>[0];
 function ChromeHarness({
   children,
   labOverrides,
+  instrument = stubInstrument,
   ...props
 }: { children?: ReactNode; labOverrides?: Partial<LabContextValue> } & Partial<ChromeProps>) {
   const store = createLabStore({
@@ -122,7 +38,7 @@ function ChromeHarness({
     storage: { read: () => null, write: () => {} },
   });
   const labCtx: LabContextValue = {
-    instruments: [stubInstrument],
+    instruments: [instrument],
     trials: [stubRecord],
     addTrial: vi.fn(),
     cloneTrial: vi.fn(),
@@ -143,7 +59,7 @@ function ChromeHarness({
         <TrialChrome
           trialId="ws-1"
           record={stubRecord}
-          instrument={stubInstrument}
+          instrument={instrument}
           isLastTrial={false}
           {...props}
         >
@@ -160,15 +76,47 @@ describe('<TrialChrome>', () => {
     expect(screen.getByTestId('content')).toBeInTheDocument();
   });
 
-  it('renders default toolbar when no toolbar prop is given', () => {
+  it('renders the built-in trial actions', () => {
     render(<ChromeHarness />);
-    expect(screen.getByRole('button', { name: /close/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Close trial' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Clone trial' })).toBeInTheDocument();
   });
 
-  it('renders custom toolbar when toolbar prop is provided', () => {
-    render(<ChromeHarness toolbar={() => <div data-testid="custom-toolbar">custom</div>} />);
-    expect(screen.getByTestId('custom-toolbar')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /close/i })).toBeNull();
+  it('disables close on the last trial', () => {
+    render(<ChromeHarness isLastTrial />);
+    expect(screen.getByRole('button', { name: /close/i })).toBeDisabled();
+  });
+
+  it('omits undo and redo unless the instrument declares undo', () => {
+    render(<ChromeHarness />);
+    expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();
+    render(
+      <ChromeHarness
+        instrument={{ ...stubInstrument, undo: {} }}
+        undoBindings={{ canUndo: true, canRedo: false, undo: vi.fn(), redo: vi.fn() }}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Undo' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Redo' })).toBeDisabled();
+  });
+
+  it('offers the snapshot loader once a snapshot exists', () => {
+    const snapshot: SavedSnapshot = {
+      id: 's1',
+      name: 'First',
+      trialId: 'ws-1',
+      instrumentName: 'Stub',
+      config: {},
+      state: {},
+      savedAt: 1,
+    };
+    render(<ChromeHarness labOverrides={{ savedSnapshots: [snapshot] }} />);
+    expect(screen.getByRole('button', { name: /load snapshot/i })).toBeInTheDocument();
+  });
+
+  it('renders a consumer contribution alongside the built-ins', () => {
+    render(<ChromeHarness chrome={[{ id: 'mine', region: 'status', item: { text: 'ready' } }]} />);
+    expect(screen.getByText('ready')).toBeInTheDocument();
   });
 
   it('Cmd+S triggers saveSnapshot', () => {
@@ -180,10 +128,31 @@ describe('<TrialChrome>', () => {
   });
 });
 
-describe('<Lab> + TrialChrome integration', () => {
+describe('chrome regions in a mounted lab', () => {
+  function renderLabWith(instrument: Instrument) {
+    return render(<Lab title="T" instruments={[instrument]} defaultInstrument={instrument.name} />);
+  }
+
+  it('puts zoom in the viewport region and not in the toolbar', () => {
+    renderLabWith({ ...stubInstrument, canvas: { layers: [] }, undo: {} });
+    const toolbar = document.querySelector('.lk-trial__toolbar') as HTMLElement;
+    const viewport = document.querySelector('.lk-viewport-controls') as HTMLElement;
+    expect(within(viewport).getByRole('button', { name: 'Zoom in' })).toBeInTheDocument();
+    expect(within(toolbar).queryByRole('button', { name: 'Zoom in' })).toBeNull();
+  });
+
+  it('renders no undo group for an instrument that does not declare undo', () => {
+    renderLabWith({ ...stubInstrument, canvas: { layers: [] } });
+    expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();
+  });
+
+  it('renders no viewport region for an instrument with no canvas', () => {
+    renderLabWith(stubInstrument);
+    expect(document.querySelector('.lk-viewport-controls')).toBeNull();
+  });
+
   it('Lab provides context for nested TrialChrome', () => {
-    render(<Lab instruments={[stubInstrument]} defaultInstrument="Stub" />);
-    // Lab seeds a trial; no chrome rendered without children — sanity check Lab mounts.
+    renderLabWith(stubInstrument);
     expect(document.querySelector('.lk-lab')).toBeTruthy();
   });
 });

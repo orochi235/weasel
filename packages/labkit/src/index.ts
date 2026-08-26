@@ -9,6 +9,7 @@ export {
   useOrbit,
   wrapYaw,
 } from './canvas/useOrbit';
+export * from './chrome';
 export { ControlPanel } from './controls/ControlPanel';
 export type {
   CheckboxField,
@@ -22,8 +23,6 @@ export type {
   SliderField,
   TextField,
 } from './controls/types';
-export type { CapabilityFlags } from './instrument/capabilityDetector';
-export { detectCapabilities } from './instrument/capabilityDetector';
 export { defineInstrument } from './instrument/defineInstrument';
 export type {
   CanvasCapability,
@@ -82,6 +81,7 @@ export type { ViewTransform2D } from './state/view';
 export { as2DView, DEFAULT_VIEW } from './state/view';
 export * from './surface';
 export { interstellarTheme } from './theme/interstellar';
+export type { ToolCapability, TrialTool } from './tools/types';
 export * from './trial';
 export * from './ui/layers';
 export * from './ui/properties';

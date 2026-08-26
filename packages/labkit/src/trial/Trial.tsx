@@ -2,6 +2,7 @@ import { type ReactNode, useContext, useMemo, useRef, useState } from 'react';
 import { useStore } from 'zustand/react';
 import { CanvasStack } from '../canvas/CanvasStack';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
+import type { TrialContribution } from '../chrome/types';
 import { DragOverlay, useDragDrop } from '../dragdrop/DragDropRuntime';
 import { Palette } from '../dragdrop/Palette';
 import type { Instrument, LayerDescriptor, PaletteItem, RenderContext } from '../instrument/types';
@@ -14,23 +15,22 @@ import type { TrialRecord } from '../state/types';
 import { as2DView, DEFAULT_VIEW } from '../state/view';
 import { createEventBus, type EventBus } from '../undo/eventBus';
 import { pushSnapshot, redo as undoRedo, undo as undoUndo } from '../undo/undoStack';
-import type { SidebarSlot, StatusBarSlot, ToolbarSlot } from './slotTypes';
 import type { UndoBindings } from './TrialChrome';
 import { TrialChrome } from './TrialChrome';
 
 /** Props for `<Trial>`. */
 export interface TrialProps {
   id: string;
-  /** Replace a piece of the trial chrome. `<Lab>` forwards its own slot props
-   *  here, so a lab sets these once rather than per trial. */
-  toolbar?: ToolbarSlot;
-  sidebar?: SidebarSlot;
-  statusBar?: StatusBarSlot;
+  /** Contributions the lab adds to this trial's chrome, merged after the
+   *  instrument's own. */
+  chrome?: readonly TrialContribution[];
+  /** Built-in contribution ids to drop. Throws on an id that is not there. */
+  suppress?: readonly string[];
 }
 
 /** Renders one trial from the lab store: looks up its record and
  *  instrument, and mounts the instrument inside the trial chrome. */
-export function Trial({ id, toolbar, sidebar, statusBar }: TrialProps) {
+export function Trial({ id, chrome, suppress }: TrialProps) {
   const lab = useLabContext();
   const storeCtx = useContext(LabStoreContext);
   if (!storeCtx) throw new Error('[labkit] <Trial> requires <LabStoreProvider>');
@@ -50,9 +50,8 @@ export function Trial({ id, toolbar, sidebar, statusBar }: TrialProps) {
       instrument={instrument}
       store={storeCtx.store}
       isLast={lab.trials.length <= 1}
-      toolbar={toolbar}
-      sidebar={sidebar}
-      statusBar={statusBar}
+      chrome={chrome}
+      suppress={suppress}
     />
   );
 }
@@ -62,25 +61,19 @@ interface TrialRuntimeProps {
   instrument: Instrument;
   store: LabStore;
   isLast: boolean;
-  toolbar?: ToolbarSlot;
-  sidebar?: SidebarSlot;
-  statusBar?: StatusBarSlot;
+  chrome?: readonly TrialContribution[];
+  suppress?: readonly string[];
 }
 
-function TrialRuntime({
-  record,
-  instrument,
-  store,
-  isLast,
-  toolbar,
-  sidebar,
-  statusBar,
-}: TrialRuntimeProps) {
+function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: TrialRuntimeProps) {
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const updateTrialState = useStore(store, (s) => s.updateTrialState);
   const updateTrialConfig = useStore(store, (s) => s.updateTrialConfig);
   const updateTrialView = useStore(store, (s) => s.updateTrialView);
   const updateTrialUndoStack = useStore(store, (s) => s.updateTrialUndoStack);
+  const labToolId = useStore(store, (s) => s.activeToolId);
+  const setLabTool = useStore(store, (s) => s.setLabTool);
+  const setTrialTool = useStore(store, (s) => s.setTrialTool);
 
   const busRef = useRef<EventBus | null>(null);
   if (busRef.current === null) busRef.current = createEventBus();
@@ -102,6 +95,17 @@ function TrialRuntime({
   };
 
   const setView = (v: unknown): void => updateTrialView(record.id, v);
+
+  // A trial gets its own slot when its instrument declares tools; otherwise it
+  // reads the lab's. Which slot a change writes follows from the same thing.
+  const declaresTools = instrument.tools != null;
+  const resolvedToolId = declaresTools
+    ? (record.activeToolId ?? instrument.tools?.initial ?? instrument.tools?.tools[0]?.id ?? null)
+    : labToolId;
+  const setActiveTool = (id: string): void => {
+    if (declaresTools) setTrialTool(record.id, id);
+    else setLabTool(id);
+  };
 
   // `CanvasStack` and the zoom controls are 2D; a trial holding another view shape
   // gets the default here and simply never renders them.
@@ -142,6 +146,7 @@ function TrialRuntime({
         if (!view2d) return;
         updateTrialView(record.id, { ...view2d, zoom: z });
       },
+      activeToolId: resolvedToolId,
     },
     emit: (event) => {
       snapshotIfNeeded(event);
@@ -258,26 +263,50 @@ function TrialRuntime({
     body = instrument.render(renderCtx);
   }
 
-  const paletteNode =
-    paletteItems.length > 0 ? (
-      <Palette items={paletteItems} onDragStart={dragDropResult.startDrag} />
-    ) : null;
+  const startDrag = dragDropResult.startDrag;
+  const paletteNode = useMemo(
+    () =>
+      paletteItems.length > 0 ? <Palette items={paletteItems} onDragStart={startDrag} /> : null,
+    [paletteItems, startDrag],
+  );
 
-  const layerListNode =
-    instrument.layers && layerDescriptors.length > 0 ? (
-      <LayerList
-        layers={layerDescriptors}
-        visibility={layerVisibility}
-        onReorder={(next) => {
-          setLayerOrder(next.map((l) => l.id));
-          bus.emit('layers.reorder');
-        }}
-        onToggle={(lid, visible) => {
-          setLayerVisibility((prev) => ({ ...prev, [lid]: visible }));
-          bus.emit('layers.toggle');
-        }}
-      />
-    ) : null;
+  const layerListNode = useMemo(
+    () =>
+      instrument.layers && layerDescriptors.length > 0 ? (
+        <LayerList
+          layers={layerDescriptors}
+          visibility={layerVisibility}
+          onReorder={(next) => {
+            setLayerOrder(next.map((l) => l.id));
+            bus.emit('layers.reorder');
+          }}
+          onToggle={(lid, visible) => {
+            setLayerVisibility((prev) => ({ ...prev, [lid]: visible }));
+            bus.emit('layers.toggle');
+          }}
+        />
+      ) : null,
+    [instrument.layers, layerDescriptors, layerVisibility, bus],
+  );
+
+  const extraChrome = useMemo<TrialContribution[]>(() => {
+    const out: TrialContribution[] = [];
+    if (paletteNode) {
+      out.push({
+        id: 'dragdrop-palette',
+        region: 'sidebar',
+        item: { title: 'Parts', body: paletteNode },
+      });
+    }
+    if (layerListNode) {
+      out.push({
+        id: 'layer-list',
+        region: 'sidebar',
+        item: { title: 'Layers', body: layerListNode },
+      });
+    }
+    return out;
+  }, [paletteNode, layerListNode]);
 
   return (
     <TrialChrome
@@ -287,15 +316,11 @@ function TrialRuntime({
       instrument={instrument}
       isLastTrial={isLast}
       undoBindings={undoBindings}
-      toolbar={toolbar}
-      sidebar={sidebar}
-      statusBar={statusBar}
-      sidebarExtras={
-        <>
-          {paletteNode}
-          {layerListNode}
-        </>
-      }
+      trialChrome={extraChrome}
+      chrome={chrome}
+      suppress={suppress}
+      activeToolId={resolvedToolId}
+      setActiveTool={setActiveTool}
     >
       {body}
     </TrialChrome>

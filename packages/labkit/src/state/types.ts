@@ -15,6 +15,8 @@ export interface TrialRecord<TS = unknown, TC = unknown, TV = unknown> {
   /** Opaque to labkit: persisted, restored on Reset and handed to the instrument,
    *  but never read into. A 3D lab puts an orbit here and keeps all three. */
   view: TV;
+  /** This trial's own tool slot. Undefined means it reads the lab's. */
+  activeToolId?: string | null;
   undoStack: UndoStack;
 }
 
@@ -39,6 +41,8 @@ export interface LabStoreState {
   trials: TrialRecord[];
   savedSnapshots: SavedSnapshot[];
   mode: LabMode;
+  /** The lab's tool slot — what a trial with no slot of its own resolves to. */
+  activeToolId: string | null;
   /** Per-trial tile extents, keyed by trial id. Opaque here — the
    *  shape belongs to whatever lays the trials out. */
   layout: Record<string, unknown>;

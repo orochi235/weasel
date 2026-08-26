@@ -17,9 +17,10 @@ if (typeof document !== 'undefined') {
   if (!document.getElementById(id)) {
     const style = document.createElement('style');
     style.id = id;
-    style.textContent =
-      `@font-face { font-family: 'Oswald'; font-style: normal; font-weight: 200 700; font-display: swap; src: url('${oswaldUrl}') format('woff2'); }` +
-      '.lk-sb-frame { padding: 16px; min-height: 100vh; }';
+    // The frame carries `.lk-root` for labkit's CSS and nothing else. Storybook's
+    // own `layout` parameter owns spacing — a padding here double-counts against
+    // `padded` and defeats `fullscreen`, which is what a lab needs.
+    style.textContent = `@font-face { font-family: 'Oswald'; font-style: normal; font-weight: 200 700; font-display: swap; src: url('${oswaldUrl}') format('woff2'); }`;
     document.head.appendChild(style);
   }
 }

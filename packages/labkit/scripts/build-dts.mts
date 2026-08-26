@@ -32,6 +32,7 @@ const weaselRoot = resolve(pkgRoot, '../..'); // monorepo root
 // matches the package `exports` map. Keys are output paths (sans extension).
 const entries: Record<string, string> = {
   index: 'src/index.ts',
+  'chrome/index': 'src/chrome/index.ts',
   'primitives/index': 'src/primitives/index.ts',
   'state/index': 'src/state/index.ts',
   'controls/index': 'src/controls/index.ts',

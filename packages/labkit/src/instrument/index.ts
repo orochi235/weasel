@@ -1,3 +1,4 @@
+export type { ToolCapability, TrialTool } from '../tools/types';
 export { defineInstrument } from './defineInstrument';
 export type {
   CanvasCapability,

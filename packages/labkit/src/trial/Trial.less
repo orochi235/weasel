@@ -25,9 +25,8 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
-    // `sidebarExtras` default to `min-height: auto` and so floor at their
-    // content height, which puts every pixel of shrink on the config panel.
-    // The column scrolls as one instead, and each section keeps its height.
+    // Sections floor at their content height, so without this the last ones
+    // are cut rather than reachable.
     overflow-y: auto;
   }
 
@@ -36,6 +35,8 @@
   // the column context and the stretched child, anything a lab returns
   // collapses to its intrinsic height and the trial looks empty below it.
   &__content {
+    // The viewport region anchors against this well.
+    position: relative;
     flex: 1;
     min-width: 0;
     min-height: 0;
@@ -131,11 +132,4 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-// `.lk-sidebar` stretches by default, which fights the scrolling column above.
-// (0,2,0) settles it against Sidebar.less's own (0,1,0) rule rather than
-// leaving it to stylesheet order.
-.lk-trial__sidebar > .lk-sidebar {
-  flex: 0 0 auto;
 }

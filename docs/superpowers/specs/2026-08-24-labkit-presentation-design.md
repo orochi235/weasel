@@ -19,11 +19,12 @@ own beyond lab-specific composition. `ui` depends on `core`, so `ui` can re-expo
 tool glyphs and give consumers one import site; the reverse direction is impossible and no
 future arrangement should attempt it.
 
-Three arcs, each with its own plan:
+Four arcs, each with its own plan:
 
 1. **Icon set** in `@weasel-js/ui` — the register, then the vocabulary.
 2. **Default chrome** in labkit, rebuilt on that set.
-3. **Visual language pass** across labkit's primitives so they read as one system.
+3. **Chrome regions** — one mechanism placing what a trial declares.
+4. **Visual language pass** across labkit's primitives so they read as one system.
 
 ---
 
@@ -117,24 +118,20 @@ no indeterminate state, no dismiss on error. It becomes a primitive.
   only when focus is already inside the trial — which clicking a canvas does not do.
 - Default snapshot names are `new Date().toLocaleString()`.
 
-## Arc 3 — visual language
+## Arc 3 — chrome regions
 
-Two areas labkit does not define at all, plus a density pass.
+The two areas labkit does not define at all — a **tool palette** and the **sidebar** as a real
+surface — plus the **viewport controls** that have nowhere of their own. All three turn out to
+be one problem: labkit has three half-built mechanisms for routing a declaration to chrome and
+no single one. Specified in `2026-08-25-labkit-chrome-regions-design.md`.
 
-**A tool palette.** A lab that wants one has nothing to reach for: `Palette` is the
-drag-drop source list, not a tool strip, and `@weasel-js/ui`'s `ToolPalette` /
-`ToolGroup` / `ToolButton` are neither wrapped by labkit nor routed through a trial's
-tool state.
+## Arc 4 — visual language
 
-**The sidebar.** Today it is a bare collapsible column holding one `ControlPanel`;
-anything else is hand-assembled, with no sections, no ordering, and no link between an
-instrument's declared capabilities and the panels that should appear. Both should be
-engine surface — a trial declares what it has, the chrome lays it out.
-
-Then a density, spacing and type-scale pass over `Toolbar`, `Sidebar`, `StatusBar`,
-`FpsMeter`, `ScaleIndicator` and `PropertyPanel` so they read as one system. The status bar currently sets
-monospace against the display font used everywhere else; the trial border and radius are
-nearly invisible against the workspace. Scope this arc from what arcs 1 and 2 expose.
+A density, spacing and type-scale pass over `Toolbar`, `Sidebar`, `StatusBar`, `FpsMeter`,
+`ScaleIndicator` and `PropertyPanel` so they read as one system. The status bar sets monospace
+against the display font used everywhere else, and the trial border and radius are nearly
+invisible against the workspace. It follows arc 3 rather than preceding it: restyling the chrome
+before the regions settle means restyling it twice.
 
 ---
 

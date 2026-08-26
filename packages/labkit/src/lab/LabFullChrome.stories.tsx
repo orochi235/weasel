@@ -293,29 +293,16 @@ export const SingleInstrument: Story = {
   },
 };
 
-/** The chrome a lab replaces rather than accepts. Every surface here is reached
- *  through `<Lab>` alone — before these props existed, a slot or a footer meant
- *  building `<TrialChrome>` by hand. */
-export const ReplacedChrome: Story = {
+/** The shell footer, which `<Lab>` had no prop for — reaching it used to mean
+ *  building `<LabShell>` yourself. Trial chrome is contributions now; see
+ *  `labkit/Chrome/Regions` for those. */
+export const WithFooter: Story = {
   args: {
     instruments: [spectrometer, beamProfile],
     defaultInstrument: 'Spectrometer',
-    title: 'Replaced chrome',
+    title: 'With footer',
     storage: null,
     mode: 'dark',
     footer: <span className="lk-run-tag">Footer — reached through LabProps.footer</span>,
-    toolbar: (ctx) => (
-      <span className="lk-run-tag">Toolbar slot for {ctx.instrumentName}</span>
-    ),
-    sidebar: (ctx) => (
-      <div className="lk-sidebar__placeholder">
-        Sidebar slot — {ctx.configFields.length} field(s)
-      </div>
-    ),
-    statusBar: (ctx) => (
-      <span className="lk-run-tag">
-        Status slot — zoom {ctx.zoom == null ? 'n/a' : `${Math.round(ctx.zoom * 100)}%`}
-      </span>
-    ),
   },
 };
