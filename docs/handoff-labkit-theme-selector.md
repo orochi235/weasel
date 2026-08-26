@@ -19,7 +19,7 @@ A pass over labkit chrome density. The sizing complaints are fixed, and
 `LabFullChrome.stories.tsx` (title `labkit/Lab/FullChrome`) puts every reachable
 chrome surface on one screen, which is how the remaining bugs were found.
 
-Two jobs remain: the API gaps below, and the mode icons.
+One job remains: the mode icons, which are blocked on a sketch from Mike.
 
 ## Done
 
@@ -62,6 +62,16 @@ Select, Input, NumberField and ComboBox each hard-coded 24px; labkit's ambient
 button default had been papering over the split by accident. The four controls
 now read the token and the token is 24px.
 
+**Chrome reachable from `<Lab>`.** Five surfaces the runtime rendered had no
+route to them short of building `<TrialChrome>` by hand. `LabProps` gains
+`footer` and the `toolbar` / `sidebar` / `statusBar` slots, forwarded through
+`<Trial>`. `DefaultSidebar` holds its own collapse state and passes `onToggle`.
+`LayerCapability.ids` accepts a `LayerDescriptor` as well as a bare string, so a
+layer can carry a label distinct from its canvas id and be marked `alwaysOn` —
+both already honoured by `LayerList`, neither expressible. `Instrument` gains a
+third type parameter for a job's item type, which had been pinned to `never`.
+The `ReplacedChrome` story exercises all of it through `<Lab>` alone.
+
 ## Decisions that are not in the code
 
 - **24px, not 28px** was Mike's call (2026-08-25) when asked which way to close
@@ -75,29 +85,6 @@ now read the token and the token is 24px.
   rather than a theme variable, so setting it cannot cascade into children.
 - **`ActionBar .button` was left at 28×28.** It is a square icon target, not a
   text control.
-
-## Next: chrome unreachable from inside a `<Lab>`
-
-Each is an API gap, not a style bug.
-
-- `ToolbarSlot` / `SidebarSlot` / `StatusBarSlot` — `<Trial>` takes only `{ id }`
-  and never forwards slots, so the slot system `TrialChrome` advertises is
-  reachable only by constructing `TrialChrome` yourself.
-- `LabShell`'s `footer` — no `LabProps` field, so unreachable from `<Lab>`.
-- Sidebar collapse toggle / `--collapsed` — `DefaultSidebar` never passes
-  `onToggle`.
-- `LayerList` labels are raw canvas layer ids (`Trial.tsx`,
-  `ids.map(lid => ({ id: lid, label: lid }))`) and `alwaysOn` cannot be set from
-  an instrument. The story works around it by naming the layers
-  `Grid`/`Trace`/`Marks`.
-- `Instrument.job` is typed `JobCapability<TS, TC, never>`, so an instrument
-  emitting items needs `item: x as never` to typecheck. labkit's own
-  `Trial.job.test.tsx` does exactly this.
-
-Worth raising with Mike as its own piece of work: these form fields are
-`width: 100%` with no intrinsic-width option, which is why labkit pins a width at
-all three call sites. A real affordance on the components would retire the
-convention.
 
 ## Next: the mode icons
 
@@ -113,6 +100,16 @@ close up — compute, don't eyeball. Proof at 240–320px, never at chrome size.
 glyph: a half-filled circle breaks a stroke-only set, and a monitor outline reads
 as "display" more than "follow the OS". Ask for a sketch — iterating on prose
 descriptions of a glyph has burned rounds before.
+
+## Worth raising as its own work
+
+- **weasel-ui's form fields are `width: 100%` with no intrinsic-width option**,
+  which is why labkit pins a width at all three of its Select/NumberField call
+  sites. A real affordance on the components would retire the convention.
+- **`.lk-shell` is `height: 100vh`.** A lab mounted anywhere but the viewport
+  top overflows by its own offset, which is why the shell footer sits just
+  below the fold in Storybook. Harmless on the labkit dev page, wrong in
+  general.
 
 ## Traps
 
