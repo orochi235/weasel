@@ -1,5 +1,6 @@
 import { type CSSProperties, type ReactNode, type RefCallback, useEffect, useState } from 'react';
 import { dlog, useReorderDragList } from '../../passthrough/weasel-ui';
+import { DragHandleGlyph } from '../../primitives/DragHandleGlyph';
 
 /** One card in a layer stack: its identity, the label shown when collapsed,
  *  and the optional select hoisted into its header. */
@@ -203,18 +204,5 @@ export function LayerStack({
         )}
       </div>
     </div>
-  );
-}
-
-function DragHandleGlyph() {
-  return (
-    <svg width="12" height="16" viewBox="0 0 8 16" fill="currentColor" aria-hidden="true">
-      <circle cx="2" cy="3" r="1.1" />
-      <circle cx="6" cy="3" r="1.1" />
-      <circle cx="2" cy="8" r="1.1" />
-      <circle cx="6" cy="8" r="1.1" />
-      <circle cx="2" cy="13" r="1.1" />
-      <circle cx="6" cy="13" r="1.1" />
-    </svg>
   );
 }

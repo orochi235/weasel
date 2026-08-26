@@ -46,7 +46,7 @@ This is intended for legend/HUD layers that should never be toggled off. Visibil
 
 ## Drag handle customization
 
-The drag handle is a button with text content `⋮⋮` and class `lk-layer-list__handle`. Row pitch — height plus row gap — is measured from the DOM when a drag starts, so restyling the row does not skew drag distance. It used to be a hardcoded `28`, which had already drifted from the rendered height by the time it was found.
+The drag handle is a button with class `lk-layer-list__handle` holding `<DragHandleGlyph>`, the same grip `LayerStack` uses. Its padding is transparent and cancelled by an equal negative margin, so the grab target is larger than the drawn dots without widening the row. Row pitch — height plus row gap — is measured from the DOM when a drag starts, so restyling the row does not skew drag distance. It used to be a hardcoded `28`, which had already drifted from the rendered height by the time it was found.
 
 Pointer capture is acquired on `pointerdown` and released on `pointerup`, so dragging works across the document without requiring window-level listeners.
 

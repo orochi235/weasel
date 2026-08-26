@@ -39,8 +39,13 @@
 // which would otherwise wrap this grip in a 24px chrome box with a border, an
 // elevated fill and 12px of side padding — around a glyph a third that size.
 .lk-root .lk-layer-list__handle {
+  display: inline-flex;
+  align-items: center;
   height: auto;
-  padding: 0;
+  // Transparent, so the grab target is comfortable while nothing but the dots
+  // is drawn. The negative margin keeps it from widening the row.
+  padding: 4px;
+  margin: -4px;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -48,8 +53,6 @@
   -webkit-backdrop-filter: none;
   cursor: grab;
   color: var(--wzl-fg-muted);
-  font-family: var(--wzl-font-mono);
-  line-height: var(--wzl-leading-tight);
 }
 
 .lk-root .lk-layer-list__handle:hover {

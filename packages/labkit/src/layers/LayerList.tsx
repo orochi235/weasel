@@ -1,5 +1,6 @@
 import { type PointerEvent, useRef, useState } from 'react';
 import type { LayerDescriptor } from '../instrument/types';
+import { DragHandleGlyph } from '../primitives/DragHandleGlyph';
 
 /** Props for `<LayerList>`. */
 export interface LayerListProps {
@@ -94,7 +95,7 @@ export function LayerList({ layers, visibility, onReorder, onToggle, className }
               onPointerMove={moveDrag}
               onPointerUp={endDrag}
             >
-              ⋮⋮
+              <DragHandleGlyph size={13} />
             </button>
             <input
               className="lk-layer-list__check"

@@ -107,7 +107,7 @@
 
 /* ---------- Sizes — set defaults for the custom props ---------- */
 
-.size_sm { --btn-height: 20px; --btn-padx: 8px; --btn-fontsize: var(--wzl-font-size); }
+.size_sm { --btn-height: 20px; --btn-padx: 8px; --btn-fontsize: var(--wzl-font-size-sm); }
 .size_md { --btn-height: 24px; --btn-padx: 12px; --btn-fontsize: var(--wzl-font-size); }
 
 .iconOnly.size_sm { width: 20px; --btn-padx: 0; }
