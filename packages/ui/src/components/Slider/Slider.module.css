@@ -54,7 +54,7 @@
   -webkit-backdrop-filter: blur(3px);
   /* Subtle raise — sells the "thumb is on top of the track" hierarchy. */
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  font: 500 0.65rem/1 ui-sans-serif, system-ui, sans-serif;
+  font: var(--wzl-font-weight-medium) var(--wzl-font-size-xs)/var(--wzl-leading-tight) ui-sans-serif, system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
   /* Thumb text reads against `--wzl-thumb-fill`, which can differ from the
    * surrounding panel text color. Default = dark; consumers re-skin via
@@ -85,7 +85,7 @@
 .readoutBelow {
   position: absolute;
   transform: translateX(-50%);
-  font: 500 0.65rem/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font: var(--wzl-font-weight-medium) var(--wzl-font-size-xs)/var(--wzl-leading-tight) ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   color: var(--wzl-fg-muted);
   white-space: nowrap;
 }
@@ -93,7 +93,7 @@
 .readoutInline {
   display: inline-block;
   margin-left: 8px;
-  font: 500 0.7rem/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font: var(--wzl-font-weight-medium) var(--wzl-font-size-sm)/var(--wzl-leading-tight) ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   color: var(--wzl-fg-muted);
   vertical-align: middle;
 }

@@ -41,8 +41,8 @@
   border: none;
   margin: 0;
   font-family: var(--wzl-font-ui);
-  font-weight: 300;
-  font-size: var(--btn-fontsize, 14px);
+  font-weight: var(--wzl-font-weight-normal);
+  font-size: var(--btn-fontsize, var(--wzl-font-size));
   line-height: 1;
   color: var(--wzl-fg-muted);
   cursor: pointer;
@@ -141,7 +141,7 @@
 
 .size_sm .segment {
   padding: 0 8px;
-  font-size: 11px;
+  font-size: var(--wzl-font-size-sm);
 }
 
 /* Minimal variant — strips the pill track, glass selected state, inset
@@ -158,8 +158,8 @@
 
 .variant_minimal .segment {
   padding: 0 4px;
-  font-size: 11px;
-  font-weight: 400;
+  font-size: var(--wzl-font-size-sm);
+  font-weight: var(--wzl-font-weight-medium);
   line-height: 1.4;
   border-radius: 2px;
   color: var(--wzl-fg-muted);
@@ -184,7 +184,7 @@
   color: var(--wzl-accent-fg, var(--wzl-accent));
   text-shadow: none;
   box-shadow: none;
-  font-weight: 500;
+  font-weight: var(--wzl-font-weight-medium);
 }
 
 .variant_minimal .segmentSelected::before {

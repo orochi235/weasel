@@ -17,7 +17,7 @@
   border-radius: var(--wzl-radius-sm);
   color: var(--wzl-fg);
   font-family: var(--wzl-font-ui);
-  font-size: 13px;
+  font-size: var(--wzl-font-size);
   line-height: 1;
   transition: border-color var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast);
 }
@@ -55,6 +55,6 @@
   display: inline-flex;
   align-items: center;
   color: var(--wzl-fg-subtle);
-  font-size: 12px;
+  font-size: var(--wzl-font-size-sm);
   pointer-events: none;
 }

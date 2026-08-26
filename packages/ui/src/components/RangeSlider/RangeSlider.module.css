@@ -22,13 +22,13 @@
 }
 
 .label {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: var(--wzl-font-size-sm);
+  font-weight: var(--wzl-font-weight-medium);
   color: var(--wzl-fg);
 }
 
 .output {
-  font-size: 12px;
+  font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-subtle);
   font-variant-numeric: tabular-nums;
 }

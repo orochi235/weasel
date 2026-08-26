@@ -57,14 +57,14 @@
 
 .title {
   display: block;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--wzl-font-size);
+  font-weight: var(--wzl-font-weight-bold);
 }
 
 .description {
   display: block;
   margin-top: 2px;
-  font-size: 12px;
+  font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-muted);
 }
 
@@ -73,7 +73,7 @@
   background: none;
   border: none;
   color: var(--wzl-fg-muted);
-  font-size: 16px;
+  font-size: var(--wzl-font-size-lg);
   line-height: 1;
   padding: 2px 4px;
   cursor: pointer;

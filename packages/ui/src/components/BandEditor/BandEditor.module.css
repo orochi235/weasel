@@ -9,7 +9,7 @@
 }
 
 .label {
-  font: var(--wzl-font-weight-medium, 500) var(--wzl-font-size-sm, 0.75rem) / 1.4 var(--wzl-font-ui, ui-sans-serif, system-ui, sans-serif);
+  font: var(--wzl-font-weight-medium) var(--wzl-font-size-sm) / var(--wzl-leading-tight) var(--wzl-font-ui);
   color: var(--wzl-fg-muted);
 }
 
@@ -37,7 +37,7 @@
   bottom: 7px;
   left: 0;
   transform: translateX(-50%);
-  font: var(--wzl-font-weight-medium, 500) 0.65rem / 1 var(--wzl-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font: var(--wzl-font-weight-medium) var(--wzl-font-size-xs) / var(--wzl-leading-tight) var(--wzl-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
   color: var(--wzl-fg-muted);
   white-space: nowrap;
 }
@@ -63,7 +63,7 @@
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm, 3px);
   color: var(--wzl-fg);
-  font: var(--wzl-font-weight-medium, 500) 0.7rem / 1 var(--wzl-font-ui, ui-sans-serif, system-ui, sans-serif);
+  font: var(--wzl-font-weight-medium) var(--wzl-font-size-sm) / var(--wzl-leading-tight) var(--wzl-font-ui, ui-sans-serif, system-ui, sans-serif);
   cursor: grab;
 }
 

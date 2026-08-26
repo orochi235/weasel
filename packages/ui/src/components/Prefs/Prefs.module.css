@@ -56,22 +56,22 @@
 
 .groupTitle {
   margin: 0;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--wzl-font-size-sm);
+  font-weight: var(--wzl-font-weight-bold);
   color: var(--wzl-fg);
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .subpanel .groupTitle {
-  font-size: 11px;
+  font-size: var(--wzl-font-size-sm);
   text-transform: none;
   letter-spacing: 0;
 }
 
 .groupDesc {
   margin: 0;
-  font-size: 11px;
+  font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-subtle);
   line-height: 1.35;
 }
@@ -87,7 +87,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  font-size: 12px;
+  font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg);
   cursor: default;
 }
@@ -107,7 +107,7 @@
   border: none;
   background: none;
   color: var(--wzl-fg-subtle);
-  font-size: 11px;
+  font-size: var(--wzl-font-size-sm);
   line-height: 1;
   cursor: help;
   border-radius: var(--wzl-radius-sm);
@@ -140,13 +140,13 @@
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--wzl-font-size-sm);
   resize: vertical;
 }
 
 .unrenderable {
   font-family: var(--wzl-font-mono);
-  font-size: 11px;
+  font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-subtle);
 }
 

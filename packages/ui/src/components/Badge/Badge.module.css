@@ -4,7 +4,7 @@
   align-items: baseline;
   vertical-align: baseline;
   gap: var(--badge-gap, 4px);
-  font-size: var(--badge-font-size, 10px);
+  font-size: var(--badge-font-size, var(--wzl-font-size-xs));
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--badge-fg, var(--wzl-fg-muted));
@@ -27,7 +27,7 @@
   --badge-gap: 6px;
   --badge-pad-x: 10px;
   --badge-pad-y: 3px;
-  --badge-font-size: 12px;
+  --badge-font-size: var(--wzl-font-size-sm);
 }
 
 .deco {
@@ -70,7 +70,7 @@
 .badge[data-variant='solid'] {
   --badge-fill: var(--badge-edge);
   --badge-fg: #fff;
-  font-weight: 600;
+  font-weight: var(--wzl-font-weight-bold);
 }
 .badge[data-variant='subtle'] {
   --badge-fill: color-mix(in oklab, var(--badge-edge) 14%, transparent);
@@ -172,11 +172,11 @@ a.badge:hover {
   color: var(--badge-fg);
   cursor: pointer;
   font: inherit;
-  font-size: 14px;
+  font-size: var(--wzl-font-size);
   line-height: 1;
   vertical-align: middle;
 }
 .remove:hover { background: color-mix(in oklab, var(--badge-fg) 20%, transparent); }
 .remove > svg { display: block; }
-.badge[data-size='md'] .remove { width: 16px; height: 16px; font-size: 16px; }
+.badge[data-size='md'] .remove { width: 16px; height: 16px; font-size: var(--wzl-font-size-lg); }
 .badge[data-size='md'] .remove > svg { width: 12px; height: 12px; }

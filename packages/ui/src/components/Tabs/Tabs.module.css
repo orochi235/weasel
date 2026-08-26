@@ -35,7 +35,7 @@
   border: none;
   color: var(--wzl-fg-muted);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--wzl-font-size-sm);
   cursor: pointer;
   outline: none;
   transition: color var(--wzl-motion-fast);

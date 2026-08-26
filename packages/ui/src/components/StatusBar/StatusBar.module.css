@@ -5,7 +5,7 @@
   flex-shrink: 0;
   padding: 4px 12px;
   font-family: var(--wzl-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
-  font-size: 11px;
+  font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-muted);
   background: var(--wzl-surface);
   border-top: 1px solid var(--wzl-border);

@@ -5,8 +5,8 @@
 }
 
 .title {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--wzl-font-size-sm);
+  font-weight: var(--wzl-font-weight-bold);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--wzl-fg-muted);
@@ -39,7 +39,7 @@
 
 .chevron {
   display: inline-block;
-  font-size: 10px;
+  font-size: var(--wzl-font-size-xs);
   line-height: 1;
   color: var(--wzl-fg-muted);
   transition: transform var(--wzl-motion-fast) ease;
@@ -52,7 +52,7 @@
   background: transparent;
   border: 0;
   padding: 0 6px;
-  font-size: 14px;
+  font-size: var(--wzl-font-size);
   line-height: 1;
   color: var(--wzl-fg-muted);
   cursor: pointer;

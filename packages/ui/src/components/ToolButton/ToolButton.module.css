@@ -12,7 +12,7 @@
   color: var(--wzl-fg);
   cursor: default;
   font-family: inherit;
-  font-size: 10px;
+  font-size: var(--wzl-font-size-xs);
   line-height: 1.1;
 }
 .button:hover:not([disabled]) {
@@ -34,9 +34,9 @@
 
 .icon { display: block; }
 .icon > svg { display: block; }
-.label { font-size: 10px; }
+.label { font-size: var(--wzl-font-size-xs); }
 .shortcut {
   color: var(--wzl-fg-muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 9px;
+  font-size: var(--wzl-font-size-2xs);
 }

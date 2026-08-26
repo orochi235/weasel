@@ -6,7 +6,7 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 11px;
+  font-size: var(--wzl-font-size-sm);
 }
 
 .table th,
@@ -22,7 +22,7 @@
 }
 
 .table th {
-  font-weight: 600;
+  font-weight: var(--wzl-font-weight-bold);
   color: var(--wzl-fg-muted);
   position: sticky;
   top: 0;

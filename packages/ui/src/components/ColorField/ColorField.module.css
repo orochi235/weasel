@@ -49,6 +49,6 @@
 .alphaReadout {
   min-inline-size: 3ch;
   text-align: end;
-  font-size: 11px;
+  font-size: var(--wzl-font-size-sm);
   opacity: 0.7;
 }
