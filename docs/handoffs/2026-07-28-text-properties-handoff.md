@@ -3,7 +3,7 @@
 Spec 1 (`@weasel-js/font` extraction) is **done and merged to main**, green through the
 full `prepublishOnly` gate plus visual. Merged; nothing pushed or published.
 
-Your work: `docs/superpowers/plans/2026-07-28-text-properties.md` (13 tasks).
+Your work: `2026-07-28-text-properties` (plan, deleted at merge) (13 tasks).
 Spec: `docs/superpowers/specs/2026-07-28-text-properties-design.md`.
 
 ## What landed that you depend on

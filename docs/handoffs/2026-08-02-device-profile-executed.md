@@ -3,7 +3,7 @@
 **Date:** 2026-08-02
 **Branch:** `device-profile-spec` (rebased onto `main` @ `70205932`)
 **Spec:** `docs/superpowers/specs/2026-07-28-device-profile-design.md`
-**Plan:** `docs/superpowers/plans/2026-07-28-device-profile.md`
+**Plan:** `2026-07-28-device-profile` (plan, deleted at merge)
 
 ---
 

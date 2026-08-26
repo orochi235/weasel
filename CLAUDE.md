@@ -30,6 +30,27 @@ on its own terms — not as the minimum some demo happened to need.
 
 Active todos live in `docs/TODO.md`. Consult it when planning new work or picking up a task.
 
+When work merges, update `docs/TODO.md` in the same change — retire the entry, or
+rewrite it around what is actually left. An entry describing work that shipped is
+worse than no entry: a reader plans against it. The index at the top of the file
+is a hand-maintained copy of claims that live further down, so fix both or fix
+neither.
+
+## Plans
+
+A plan is scaffolding for work in flight. **When the work merges, delete the
+plan** — `git log` is the archive, and a plan that outlives its branch becomes a
+confident description of a codebase that no longer exists. Never leave a merged
+plan on disk: its unchecked boxes read as open work, and nothing recomputes them.
+
+Don't write completion notes (`*-done.md`). "What landed" belongs in the commit
+message and the changeset.
+
+A lesson worth keeping past the merge goes in this file or a design doc, and only
+if it clears the bar in "Comment sparingly" below: not derivable from the code,
+still true, and costly to rediscover. Verify it against the tree before writing
+it down — most such lessons cite paths that have since moved.
+
 ## Releases: always write `patch`
 
 **Every changeset you write is `patch`.** Not `minor`, not `major` — regardless

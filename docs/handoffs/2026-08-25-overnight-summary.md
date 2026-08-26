@@ -14,13 +14,13 @@ Final gates on the frame-loop branch: **7469 passing, 2 skipped**, `tsc` clean, 
 
 ## What was asked, and what happened
 
-**Frame-loop decoupling** (`docs/superpowers/plans/2026-08-24-frame-loop-decoupling.md`, 11 tasks).
+**Frame-loop decoupling** (`2026-08-24-frame-loop-decoupling` (plan, deleted at merge), 11 tasks).
 The canvas paints from its own `requestAnimationFrame` loop instead of a React render, and the view
 moved into a ref with `getView`/`setView`/`subscribeView`/`subscribeFrame`/`getPaintedVersion` on the
 handle. `SceneCanvas` renders `Canvas` uncontrolled unless a consumer passes `view`. Details and the
 measured result are in `2026-08-24-frame-loop-decoupling.md`.
 
-**Camera animation** (`docs/superpowers/plans/2026-08-25-camera-animation.md`, 9 tasks). Your
+**Camera animation** (`2026-08-25-camera-animation` (plan, deleted at merge), 9 tasks). Your
 option 1: `animatedZoom` implemented on the animation system, `useViewTween`'s bespoke rAF loop
 deleted. Cmd+=/-/0 glide with a geometric scale curve and a fixed anchor; wheel and pinch still jump
 per sample by design; any pan cancels a glide. Verified in a headed browser on a real Mac — Cmd+=

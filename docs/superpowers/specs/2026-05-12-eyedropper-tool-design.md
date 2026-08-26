@@ -9,7 +9,7 @@
 **Source:** Two prior planning hooks call this out:
 
 - `docs/specs/2026-05-03-tool-primitive-design.md` — modifier (hotkey) slot pattern, with eyedropper as the canonical "hold-alt to engage" example.
-- `docs/plans/2026-05-03-tool-primitive-phase-2a.md` (line 1400) — Phase 2a deferral that left `eyedropper-stub` as the minimal sample tool not yet implemented.
+- `2026-05-03-tool-primitive-phase-2a` (plan, deleted at merge) (line 1400) — Phase 2a deferral that left `eyedropper-stub` as the minimal sample tool not yet implemented.
 
 ---
 

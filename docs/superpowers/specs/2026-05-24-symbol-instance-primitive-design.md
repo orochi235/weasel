@@ -6,7 +6,7 @@ This document captures a brainstorm from 2026-05-24. It is **not** an active pla
 
 - Re-read the current state of the modality design (`2026-05-24-modality-design.md`). The `symbol-edit` mode here assumes a particular shape for the mode preset; if modality has shipped and the preset has evolved, reconcile.
 - Re-read the deferred masks design (`2026-05-24-mask-primitive-design.md`). If masks have come off the shelf and shipped, the mask-instance composition story (mask reuse via symbols) needs to be verified end-to-end, not just assumed.
-- Check whether the Canvas/SceneCanvas seam refactor has landed (`docs/superpowers/plans/2026-05-24-canvas-scenecanvas-seam.md`). The hit-testing notes below assume `Hit.kind` from `getNodeAtPoint` as the kind transport.
+- Check whether the Canvas/SceneCanvas seam refactor has landed (`2026-05-24-canvas-scenecanvas-seam` (plan, deleted at merge)). The hit-testing notes below assume `Hit.kind` from `getNodeAtPoint` as the kind transport.
 - The "Reassessment checklist" at the bottom of this doc is for v2 (heavyweight) reassessment specifically; the bullets above are for v1 reassessment when picking the lightweight primitive up off the shelf.
 
 Design for a lightweight symbol/instance primitive in weasel, with extension hooks for a future heavyweight (Figma-style components) mode without reshaping the data model. Brainstormed 2026-05-24.

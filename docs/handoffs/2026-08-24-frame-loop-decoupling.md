@@ -6,8 +6,8 @@ branched from `e5eaf7aa`. Nothing pushed.
 **What this is:** implementing `docs/superpowers/specs/2026-08-24-frame-loop-decoupling-design.md`.
 Two independent arcs, one plan each:
 
-- `docs/superpowers/plans/2026-08-24-frame-loop-decoupling.md` — 11 tasks. **In progress.**
-- `docs/superpowers/plans/2026-08-24-ephemeral-pose-overrides.md` — 13 tasks. **Not started.**
+- `2026-08-24-frame-loop-decoupling` (plan, deleted at merge) — 11 tasks. **In progress.**
+- `2026-08-24-ephemeral-pose-overrides` (plan, deleted at merge) — 13 tasks. **Not started.**
 
 The plans carry the detail; this file only says where things stand.
 
@@ -117,7 +117,7 @@ must `EnterWorktree` into a tree before any agent can write there. The three bug
 
 **`animatedZoom` — specced, planned, and being implemented on this branch.** Spec
 `docs/superpowers/specs/2026-08-25-camera-animation-design.md`, plan
-`docs/superpowers/plans/2026-08-25-camera-animation.md` (9 tasks). **All nine committed**
+`2026-08-25-camera-animation` (plan, deleted at merge) (9 tasks). **All nine committed**
 (`80271386`, `d619a564`, `7c9213bb`, `52848724`, `0422d350`, `4b541bce`, `8020441d`, `9df8977a`,
 `ba8b1398`). `useViewTween` is deleted, `useViewAnimation` runs on the kit `Animator`, the `view`
 dep gained `animate` / `stopAnimation` / `animationTarget`, and `<SceneCanvas>` publishes the

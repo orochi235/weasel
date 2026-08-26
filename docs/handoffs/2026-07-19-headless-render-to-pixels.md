@@ -125,7 +125,7 @@ screen and print don't even share a rendering technology, let alone code.
 
 Implemented on branch `headless-render-to-pixels` as `renderSceneToPixels`
 (`src/canvas/renderSceneToPixels.ts`); see the plan at
-`docs/superpowers/plans/2026-07-19-headless-render-to-pixels.md`.
+`2026-07-19-headless-render-to-pixels` (plan, deleted at merge).
 Notes against the spec:
 - Req 6: mipmap fix applies to `GLImageCache` only — `GLTextureCache` is the
   MSDF atlas cache, where mipmaps are deliberately excluded (they corrupt the

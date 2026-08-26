@@ -1,9 +1,9 @@
 # canvas-kit Resize + Insert Design (Phase 2)
 
-**Status:** Implemented in `docs/superpowers/plans/2026-04-30-canvas-kit-resize-and-insert.md`.
+**Status:** Implemented in `2026-04-30-canvas-kit-resize-and-insert` (plan, deleted at merge).
 **Date:** 2026-04-30
 **Authors:** Mike
-**Predecessor:** `docs/superpowers/specs/2026-04-30-canvas-kit-interactions-design.md` (Phase 1 implemented in `docs/superpowers/plans/2026-04-30-canvas-kit-foundation-and-move.md`)
+**Predecessor:** `docs/superpowers/specs/2026-04-30-canvas-kit-interactions-design.md` (Phase 1 implemented in `2026-04-30-canvas-kit-foundation-and-move` (plan, deleted at merge))
 
 ## Goal
 

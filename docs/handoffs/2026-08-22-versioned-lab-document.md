@@ -7,7 +7,7 @@
 errors (`scripts/build-dts.mts`, `src/theme/Interstellar.stories.tsx`).
 
 Spec: `packages/labkit/docs/superpowers/specs/2026-08-22-versioned-lab-document-design.md`
-Plan: `packages/labkit/docs/superpowers/plans/2026-08-22-versioned-lab-document.md`
+Plan: `2026-08-22-versioned-lab-document` (plan, deleted at merge)
 
 Both are current — the plan was corrected mid-execution and the spec was
 amended once (see below).

@@ -23,7 +23,7 @@ The lab document goes to **version 2**, whose migration renames
 
 Spec: `packages/labkit/docs/superpowers/specs/2026-08-22-vocabulary-refresh-design.md`
 Plan, with the four decisions the spec left open:
-`packages/labkit/docs/superpowers/plans/2026-08-22-vocabulary-refresh.md`
+`2026-08-22-vocabulary-refresh` (plan, deleted at merge)
 
 **`Slider.stops`** — detents a drag catches on, in `@weasel-js/ui`. The one
 tuning-rail addition that lives outside labkit, and it has no dependency on

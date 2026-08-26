@@ -3,7 +3,7 @@
 **Status:** approved (brainstorm), pending implementation plan
 **Date:** 2026-05-05
 **Supersedes:** `docs/specs/2026-05-04-drag-insert-primitive-design.md` (and its plan
-`docs/plans/2026-05-04-drag-insert-primitive.md`). Most of the May 4 scope already landed
+`2026-05-04-drag-insert-primitive` (plan, deleted at merge)). Most of the May 4 scope already landed
 (both `useInsertTool` and `useTextTool` delegate to `useInsert`, share `applyHitExistingGate`,
 share `drawMarquee` + `InsertOverlayStyle`, and `useInsert` already has `pointInsert`/`clickOnly`).
 This revision documents what's left and expands scope to the gesture layer.
@@ -419,7 +419,7 @@ shared at construction time).
   - `src/tools/builtin/useTextTool.test.ts` (no surface change; verify behavior preservation)
 - **Delete:**
   - `docs/specs/2026-05-04-drag-insert-primitive-design.md` (superseded)
-  - `docs/plans/2026-05-04-drag-insert-primitive.md` (superseded)
+  - `2026-05-04-drag-insert-primitive` (plan, deleted at merge) (superseded)
 - **Possibly modify:**
   - `src/index.ts` if `defineDragInsertTool` is part of the public API surface (decision
     deferred to the plan; tentative answer is yes — future external drag-insert tools

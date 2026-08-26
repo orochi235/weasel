@@ -26,9 +26,9 @@ expected, not a defect.
 - `docs/superpowers/specs/2026-08-22-game-audio-animation-decomposition.md` — why three arcs, and the order
 - `docs/superpowers/specs/2026-08-22-animation-timeline-rig-design.md`
 - `docs/superpowers/specs/2026-08-22-audio-engine-design.md`
-- `docs/superpowers/plans/2026-08-22-animation-timeline.md`
-- `docs/superpowers/plans/2026-08-22-audio-engine.md`
-- `docs/superpowers/plans/2026-08-22-timeline-audio-demos.md` — runs after both merge
+- `2026-08-22-animation-timeline` (plan, deleted at merge)
+- `2026-08-22-audio-engine` (plan, deleted at merge)
+- `2026-08-22-timeline-audio-demos` (plan, deleted at merge) — runs after both merge
 
 Both plans were corrected mid-execution as agents found defects in them. The
 plan on each branch is ahead of the copy on `main`; take the branch's.

@@ -1,6 +1,6 @@
 # Text properties — progress
 
-Executing `docs/superpowers/plans/2026-07-28-text-properties.md` (13 tasks) on
+Executing `2026-07-28-text-properties` (plan, deleted at merge) (13 tasks) on
 branch `text-properties`, worktree `/Users/mike/src/weasel-text-properties`,
 based on `main` (spec 1 merged).
 
