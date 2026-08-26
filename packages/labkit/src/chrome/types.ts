@@ -4,7 +4,7 @@ import type { SavedSnapshot } from '../state/types';
 
 /** A named position in a trial's chrome. Content is not a region — that is
  *  the instrument. */
-export type TrialRegion = 'toolbar' | 'palette' | 'sidebar' | 'viewport' | 'status';
+export type TrialRegion = 'titlebar' | 'toolbar' | 'palette' | 'sidebar' | 'viewport' | 'status';
 
 /** An icon component taking a pixel size, as `@weasel-js/ui` glyphs do. */
 export type IconComponent = ComponentType<{ size?: number }>;
@@ -71,6 +71,7 @@ interface ContributionBase {
  * and visible in the declaration.
  */
 export type TrialContribution =
+  | (ContributionBase & { region: 'titlebar'; item: ToolbarItem; render?: never })
   | (ContributionBase & { region: 'toolbar'; item: ToolbarItem; render?: never })
   | (ContributionBase & { region: 'palette'; item: ToolItem; render?: never })
   | (ContributionBase & { region: 'sidebar'; item: SidebarSection; render?: never })

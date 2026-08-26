@@ -64,7 +64,7 @@
 
 .lk-sidebar-section__head {
   width: 100%;
-  padding: var(--wzl-space-xs) var(--wzl-space-sm);
+  padding: var(--wzl-space-xs);
   border: 0;
   background: transparent;
   color: var(--wzl-fg-muted);
@@ -80,6 +80,8 @@
   }
 }
 
+// The section body is the only thing that insets a panel — the panels
+// themselves carry no padding, so this is the whole gutter.
 .lk-sidebar-section__body {
-  padding: 0 var(--wzl-space-sm) var(--wzl-space-sm);
+  padding: 0 var(--wzl-space-xs) var(--wzl-space-xs);
 }

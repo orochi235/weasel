@@ -5,6 +5,7 @@ import { mergeContributions, suppressContributions } from '../chrome/merge';
 import { PaletteRegion } from '../chrome/regions/PaletteRegion';
 import { SidebarRegion } from '../chrome/regions/SidebarRegion';
 import { StatusRegion } from '../chrome/regions/StatusRegion';
+import { TitleBarRegion } from '../chrome/regions/TitleBarRegion';
 import { ToolbarRegion } from '../chrome/regions/ToolbarRegion';
 import { ViewportRegion } from '../chrome/regions/ViewportRegion';
 import type { TrialChromeContext, TrialContribution, TrialRegion } from '../chrome/types';
@@ -169,7 +170,9 @@ export function TrialChrome({
       tabIndex={-1}
       onKeyDown={handleKeyDown}
     >
-      <TrialTitleBar title={record.instrumentName} />
+      <TrialTitleBar title={record.instrumentName}>
+        <TitleBarRegion contributions={inRegion('titlebar')} ctx={ctx} />
+      </TrialTitleBar>
       <div className="lk-trial__toolbar">
         <ToolbarRegion contributions={inRegion('toolbar')} ctx={ctx} />
       </div>

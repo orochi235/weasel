@@ -110,7 +110,7 @@
   padding: 0 var(--wzl-space-sm);
   min-height: calc(var(--wzl-font-size-sm) * var(--wzl-leading) + var(--wzl-space-xs));
   background: var(--wzl-surface-sunken);
-  border-bottom: 1px solid var(--wzl-line-subtle);
+  border-bottom: var(--wzl-border-w) solid var(--wzl-border);
   border-radius: var(--wzl-radius-md) var(--wzl-radius-md) 0 0;
 
   // The bar is the drag surface, so it carries the cursor rather than an
@@ -120,6 +120,48 @@
     touch-action: none;
 
     &:active { cursor: grabbing; }
+  }
+}
+
+.lk-trial__titlebar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+
+// Prefixed with `.lk-root` to outrank base.less's `:where(button)` default,
+// which would give a 12px glyph a 24px chrome box on the title bar.
+.lk-root .lk-titlebar-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--wzl-radius-sm);
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  // Matches .lk-trial__title — the X reads as part of the bar's own type,
+  // not as chrome sitting on top of it.
+  color: var(--wzl-fg-muted);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--wzl-surface-hover);
+    color: var(--wzl-fg);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  &--danger:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--wzl-danger) 15%, transparent);
+    color: var(--wzl-danger);
   }
 }
 

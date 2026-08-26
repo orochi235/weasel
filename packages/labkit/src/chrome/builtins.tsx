@@ -140,8 +140,7 @@ export function builtinContributions(
   out.push({
     id: 'snapshot',
     region: 'toolbar',
-    group: 'trial',
-    end: true,
+    group: 'history',
     item: {
       icon: SnapshotIcon,
       label: 'Save snapshot',
@@ -188,8 +187,7 @@ export function builtinContributions(
   });
   out.push({
     id: 'close',
-    region: 'toolbar',
-    group: 'trial',
+    region: 'titlebar',
     end: true,
     item: {
       icon: CloseIcon,

@@ -1,6 +1,7 @@
 // The panel is a `<PropertyList>` now, so the rows carry their own styling
-// from PropertyPanel.less. This class remains as the consumer-facing hook and
-// as the panel's own padding.
+// from PropertyPanel.less. This class remains as the consumer-facing hook.
+// It carries no padding: whatever mounts the panel insets it, and a second
+// inset here doubled the gutter inside an already narrow sidebar.
 .lk-control-panel {
-  padding: var(--wzl-space-sm);
+  padding: 0;
 }
