@@ -123,6 +123,40 @@ else gets rebuilt on the system.
 
 Demos under `apps/site/demos/` are **terse and single-purpose** — each one exists to show a specific kit feature in the smallest plausible form. If a demo accumulates code that isn't directly pertinent to the feature it's demonstrating (custom hit-testers when defaults exist, hand-rolled adapter wiring, per-consumer index inversions), treat that as a signal that the kit's defaults / helpers should absorb the boilerplate. Being able to trim a demo or a simple consumer use-case is a legitimate driver for kit changes — there's limited value in showing consumers how to reimplement parts of the kit they could just find in source.
 
+## Traps
+
+Things that pass every test and are still wrong.
+
+**jsdom cannot catch a layout collapse.** Arc 3 of the labkit pass wrapped the workspace in a
+row whose `flex: 1` resolved to nothing inside a block container, so the lab rendered as an empty
+page — with all 7903 tests green. Screenshot anything that changes a container's box.
+
+**Storybook's theme global does not switch weasel's theme.** `tokens.css` keys its mode blocks
+off `[data-wzl-mode]`, which `applyTheme` writes. `&globals=theme:dark` sets `data-theme`, which
+nothing reads, so a "both themes" check driven from the URL verifies one theme twice — whichever
+`prefers-color-scheme` reports. labkit stories switch via the lab header's Auto/Light/Dark
+buttons; bare `@weasel-js/ui` stories need `data-wzl-mode` set by hand, and otherwise render on
+the `:root` dark default in both modes.
+
+**A `var()` inside a custom property is substituted where that property is declared.** So
+`--wzl-x: 0 1px 3px var(--wzl-shadow)` in `:root` bakes in the default mode's shadow and
+inherits that frozen value into every other mode's block. In a real property it resolves per
+element and is fine. Several theme tokens still have this defect — see `docs/TODO.md`.
+
+**`theme/base.less` element defaults live in `:where()` on purpose.** Bare `button` nested under
+`.lk-root` is specificity (0,1,1) and outranks every component class. Don't unwrap them. The flip
+side bites too: because `:where()` carries no specificity, its `height: var(--wzl-control-h)`
+still beats any `@weasel-js/ui` component that sizes its own buttons from padding — it has
+crushed a 16px glyph to 2px and forced 28px ToggleBar segments into a 17px track.
+
+**The git stash stack is shared by every worktree of this repo.** A `stash`/`pop` pair run in one
+worktree can pop another session's work into it. Use a throwaway worktree for a baseline instead;
+if you must stash, `push -u -m <tag>`, `apply` by SHA, and drop your own entry by tag.
+
+**The consumer smoke test cannot catch an undeclared dependency.** It packs every `@weasel-js`
+package into the tree, so a bare specifier resolves whether or not the importer declared it.
+`npm run check:manifests` is the check that works.
+
 ## Terminology
 
 UI words have specific referents — don't conflate them:

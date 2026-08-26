@@ -23,7 +23,6 @@ Priority tags:
 - **Side-scroller demo** — after the two above, as a load test on both → [Animation](#animation)
 - **Per-command draw cost** — solid geometry batches; what is left is the flush itself, which stalls on rewriting its own buffer. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
 - **Audit for duplicated-then-drifted cascades** — two implementations of one lookup, agreeing by coincidence → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- **labkit presentation pass** — arcs 1–3 merged; arc 4 (density) is what remains → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - **labkit: generate instrument controls from a schema or a TypeScript type** → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 ### P2 — broad reuse / friction-likely
@@ -1145,47 +1144,55 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
   Versioning stays a caret range, not lockstep: windease is a separate repo with its own release cadence, and a changesets `fixed` group cannot span repos anyway. The risk a range carries is the one to watch — windease shipping a breaking major that labkit's `^` silently declines to follow.
 
-- [x] **labkit presentation pass — arc 3, chrome regions — merged 2026-08-25.**
-  Design: `docs/superpowers/specs/2026-08-25-labkit-chrome-regions-design.md`.
+- **(P2) A mode-varying token referenced from a `:root` primitive freezes at the dark value.**
+  CSS substitutes a `var()` inside a *custom property* at the scope where that property is
+  declared, so a primitive in `:root` that references a mode semantic inherits the default
+  mode's value into every other mode's block. `--wzl-line`, `--wzl-line-subtle`,
+  `--wzl-line-strong`, `--wzl-surface-hover` and `--wzl-surface-pressed` are all authored this
+  way and all resolve to their dark values in light mode. Arc 4 sidestepped it by not shipping a
+  composite `--wzl-shadow-1`; the five existing ones are still wrong.
 
-  A trial's chrome is now assembled from contributions — `{ id, region, item }`
-  keyed to one of `toolbar` / `palette` / `sidebar` / `viewport` / `status`, with
-  `render` as a visible escape. `detectCapabilities`, the never-passed
-  `toolbar`/`sidebar`/`statusBar` slots and `sidebarExtras` are all gone.
-  labkit also has its own tool concept now, with a slot on the lab and an
-  optional one on each trial; core's `ToolsApi` is not reusable here, since it
-  binds hotkey slots, ambient tools and canvas overlay layers to the gesture
-  dispatcher and a labkit instrument is an arbitrary canvas or DOM tree.
+  It only bites the raw-`tokens.css` + `data-wzl-mode` path — `applyTheme.ts` re-emits every
+  resolved token into one rule, so labkit is fine. The broken path is what
+  `packages/ui/.storybook/preview.ts` uses, which is why the Foundations page's own light/dark
+  comparison is misleading. The fix is in `build-tokens.ts`: emit a primitive that references a
+  mode semantic into each mode block rather than into `:root`. The test must switch
+  `data-wzl-mode` and read a *computed* value — `generated.test.ts` already asserts the
+  `color-mix` mechanism is present, which is exactly what let this pass.
 
-  Arc 4 below is the open follow-up.
+- **(P2) `determinism.test.ts` rewrites generated files while other tests read them.**
+  `packages/theme/src/generated/determinism.test.ts` shells out to `gen:tokens`, overwriting
+  `tokens.css`, `themes.ts` and `manifest.ts` on disk, while other test files in the same vitest
+  project read those paths in parallel workers. A clean run is green; it only fails when
+  something else touches those files concurrently — which a developer running `gen:tokens` by
+  hand during a test run will do. Generate into a temp dir and diff, rather than writing over
+  the committed output.
 
-- **(P1) labkit arc 4 — density, spacing and type scale.** The regions have
-  settled, so the restyle no longer has to be done twice.
-  Inventory already taken: 128 `font-size` declarations across labkit and
-  `@weasel-js/ui` with 13% tokenized, spanning 15 distinct sizes from 9px to
-  18px; six radii for what is one card family; three conventions for monospace
-  (the token, the bare keyword, an inline stack); and raw `font-weight: 600`
-  against a token set resolving to 300/500/700. `PropertyPanel.less` holds 17
-  hardcoded colors, 11 of them in `EffectCard` — including a third danger red
-  unrelated to `--wzl-danger`, and `#0a0a14` hardcoded where `--wzl-fg-inverse`
-  exists, which is illegible on the light theme.
+- **(P3) Two more elements claim `role="toolbar"` without the keyboard contract.**
+  `.lk-palette-region` (`aria-label="Tools"`, `aria-orientation="vertical"`) and
+  `.lk-viewport-controls` (`aria-label="View"`) both take the role with no roving tabindex —
+  the defect arc 4 fixed on `<Toolbar>`, which now has `useRovingTabIndex`
+  (`packages/labkit/src/primitives/useRovingTabIndex.ts`). The vertical one also needs Up/Down,
+  which `nextIndex` does not handle yet.
 
-  The trial border sits at ~1.53:1 against the workspace and its box-shadow is a
-  *light* shadow on a near-black field, pointing the wrong way for elevation. The
-  title bar (24px for one word) and status bar (25px for "100%") are the heaviest
-  chrome relative to what they carry. `FpsMeter` and `ScaleIndicator` are
-  view-scoped readouts that arc 3 gives a home to but does not contribute, and
-  `ZoomControl` — arc 2's editable zoom field — left the default chrome with the
-  toolbar's zoom group and has no region of its own yet.
+- **(P3) The light accent sits below AA for text drawn on it.** `--wzl-fg-on-accent` against the
+  interstellar light accent `#a86f3c` measures 3.85:1, under the 4.5 AA needs for normal text.
+  This is every accent-filled control in `@weasel-js/ui`, not one site — a theme-level call
+  about the accent, not something to patch with a local literal.
 
-  **The toolbar claims no role, and cannot yet earn one.** `<Toolbar>` renders a
-  bare `<div>`, so `Toolbar.Group`'s `role="group"` sits inside nothing — biome's
-  `useSemanticElements` flags it and is suppressed there, because `<fieldset>`
-  means form controls, needs a `<legend>` to be named, and carries a UA
-  `min-width` that breaks flex children. Adding `role="toolbar"` is the real fix
-  and is not a one-liner: the APG pattern obliges roving tabindex and arrow-key
-  navigation, and claiming the role without them tells a screen-reader user to
-  press keys that do nothing.
+- **(P3) The color literals with no token equivalent.** Arc 4 tokenized what had a token and
+  left the rest rather than inventing a mapping — `check-design-tokens` covers size, weight,
+  radius and the stray danger reds, but not color generally, for that reason. What remains is
+  `Badge`'s tone palette (`#7ab8d4`, `#d4a574`), the `GradientHandles` and `Keycaps` literals,
+  and roughly 70 `rgba()` values that are depth geometry (box-shadow insets, gloss gradient
+  stops, the dialog scrim) for which the theme ships no shadow, gloss or scrim token. Each needs
+  a semantic name before it can become one.
+
+- **(P3) `ZoomControl`'s slider fixes its own width, so the viewport cluster can only wrap.**
+  `.lk-root .lk-zoom__slider { width: 108px }` pins the slider's min-content contribution, so no
+  flex pressure compresses the zoom row — under about a 168px well it wraps to two rows, and
+  below that it will overflow. Fixing it properly means changing how `ZoomControl` sizes its
+  slider.
 
 - **(P1) labkit: generate an instrument's controls from a schema or its config type.** An instrument declares its config twice. `defaultConfig(): TC` gives the values and, through `TC`, their types; `configSchema(): ConfigField[]` (`packages/labkit/src/controls/types.ts`) hand-repeats every key as a `slider` / `select` / `color` field with a label, bounds and a second default. Nothing holds the two to one answer — rename a key in `TC` and the panel keeps editing a field the instrument no longer reads, which `validateConfigSchema` cannot catch because it only ever sees the schema. An instance of the P1 above.
 
