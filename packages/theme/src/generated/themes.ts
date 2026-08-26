@@ -34,7 +34,11 @@ export type TokenName =
   | '--wzl-font-display'
   | '--wzl-font-mono'
   | '--wzl-font-size'
+  | '--wzl-font-size-2xs'
+  | '--wzl-font-size-lg'
   | '--wzl-font-size-sm'
+  | '--wzl-font-size-xl'
+  | '--wzl-font-size-xs'
   | '--wzl-font-ui'
   | '--wzl-font-weight-bold'
   | '--wzl-font-weight-light'
@@ -155,8 +159,12 @@ export const THEMES = {
       '--wzl-radius-lg': "14px",
       '--wzl-control-h': "24px",
       '--wzl-glass-blur': "3px",
-      '--wzl-font-size': "13px",
+      '--wzl-font-size-2xs': "9px",
+      '--wzl-font-size-xs': "10px",
       '--wzl-font-size-sm': "11px",
+      '--wzl-font-size': "13px",
+      '--wzl-font-size-lg': "16px",
+      '--wzl-font-size-xl': "20px",
       '--wzl-space-xs': "4px",
       '--wzl-space-sm': "8px",
       '--wzl-space-md': "12px",
@@ -240,8 +248,12 @@ export const THEMES = {
       '--wzl-radius-lg': "14px",
       '--wzl-control-h': "24px",
       '--wzl-glass-blur': "3px",
-      '--wzl-font-size': "13px",
+      '--wzl-font-size-2xs': "9px",
+      '--wzl-font-size-xs': "10px",
       '--wzl-font-size-sm': "11px",
+      '--wzl-font-size': "13px",
+      '--wzl-font-size-lg': "16px",
+      '--wzl-font-size-xl': "20px",
       '--wzl-space-xs': "4px",
       '--wzl-space-sm': "8px",
       '--wzl-space-md': "12px",
@@ -505,13 +517,35 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         "value": "3px",
         "description": "Backdrop blur radius for frosted surfaces. Pairs with glass-tint."
       },
-      "font-size": {
+      "font-size-2xs": {
         "type": "dimension",
-        "value": "13px"
+        "value": "9px",
+        "description": "Shortcut keys and index badges. Below this a glyph stops resolving at 1x."
+      },
+      "font-size-xs": {
+        "type": "dimension",
+        "value": "10px",
+        "description": "Tool-button labels under an icon."
       },
       "font-size-sm": {
         "type": "dimension",
-        "value": "11px"
+        "value": "11px",
+        "description": "Chrome labels, status readouts, section headings."
+      },
+      "font-size": {
+        "type": "dimension",
+        "value": "13px",
+        "description": "Controls and body text."
+      },
+      "font-size-lg": {
+        "type": "dimension",
+        "value": "16px",
+        "description": "Panel and dialog titles."
+      },
+      "font-size-xl": {
+        "type": "dimension",
+        "value": "20px",
+        "description": "The lab title. Replaces labkit's local --lk-title-size."
       },
       "space-xs": {
         "type": "dimension",

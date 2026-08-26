@@ -63,8 +63,12 @@
     "control-h":   { "$value": "24px", "$description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in." },
     "glass-blur":  { "$value": "3px", "$description": "Backdrop blur radius for frosted surfaces. Pairs with glass-tint." },
 
-    "font-size":    { "$value": "13px" },
-    "font-size-sm": { "$value": "11px" },
+    "font-size-2xs": { "$value": "9px", "$description": "Shortcut keys and index badges. Below this a glyph stops resolving at 1x." },
+    "font-size-xs":  { "$value": "10px", "$description": "Tool-button labels under an icon." },
+    "font-size-sm":  { "$value": "11px", "$description": "Chrome labels, status readouts, section headings." },
+    "font-size":     { "$value": "13px", "$description": "Controls and body text." },
+    "font-size-lg":  { "$value": "16px", "$description": "Panel and dialog titles." },
+    "font-size-xl":  { "$value": "20px", "$description": "The lab title. Replaces labkit's local --lk-title-size." },
 
     "space-xs": { "$value": "4px" },
     "space-sm": { "$value": "8px" },

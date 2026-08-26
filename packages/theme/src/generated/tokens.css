@@ -66,8 +66,18 @@
   --wzl-control-h: 24px;
   /* Backdrop blur radius for frosted surfaces. Pairs with glass-tint. */
   --wzl-glass-blur: 3px;
-  --wzl-font-size: 13px;
+  /* Shortcut keys and index badges. Below this a glyph stops resolving at 1x. */
+  --wzl-font-size-2xs: 9px;
+  /* Tool-button labels under an icon. */
+  --wzl-font-size-xs: 10px;
+  /* Chrome labels, status readouts, section headings. */
   --wzl-font-size-sm: 11px;
+  /* Controls and body text. */
+  --wzl-font-size: 13px;
+  /* Panel and dialog titles. */
+  --wzl-font-size-lg: 16px;
+  /* The lab title. Replaces labkit's local --lk-title-size. */
+  --wzl-font-size-xl: 20px;
   --wzl-space-xs: 4px;
   --wzl-space-sm: 8px;
   --wzl-space-md: 12px;

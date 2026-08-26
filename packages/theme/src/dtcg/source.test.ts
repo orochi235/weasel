@@ -17,7 +17,7 @@ const EXPECTED_NAMES = [
   'danger-base', 'warning-base', 'success-base',
   'radius-sm', 'radius-md', 'radius-lg', 'border-w', 'line-width', 'curve-width',
   'tb-height', 'control-h', 'glass-blur',
-  'font-size', 'font-size-sm',
+  'font-size-2xs', 'font-size-xs', 'font-size-sm', 'font-size', 'font-size-lg', 'font-size-xl',
   'space-xs', 'space-sm', 'space-md', 'space-lg',
   'z-toolbar', 'z-overlay', 'z-modal',
   'backdrop',
