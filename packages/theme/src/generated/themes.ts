@@ -56,6 +56,9 @@ export type TokenName =
   | '--wzl-gray-800'
   | '--wzl-gray-900'
   | '--wzl-line'
+  | '--wzl-line-height'
+  | '--wzl-line-height-snug'
+  | '--wzl-line-height-tight'
   | '--wzl-line-strong'
   | '--wzl-line-subtle'
   | '--wzl-line-width'
@@ -86,6 +89,9 @@ export type TokenName =
   | '--wzl-swatch-sky'
   | '--wzl-swatch-violet'
   | '--wzl-tb-height'
+  | '--wzl-tracking-none'
+  | '--wzl-tracking-wide'
+  | '--wzl-tracking-wider'
   | '--wzl-warning'
   | '--wzl-warning-base'
   | '--wzl-z-modal'
@@ -168,9 +174,15 @@ export const THEMES = {
       '--wzl-space-sm': "8px",
       '--wzl-space-md': "12px",
       '--wzl-space-lg': "16px",
+      '--wzl-tracking-none': "0",
+      '--wzl-tracking-wide': "0.06em",
+      '--wzl-tracking-wider': "0.08em",
       '--wzl-z-toolbar': "10",
       '--wzl-z-overlay': "20",
       '--wzl-z-modal': "30",
+      '--wzl-line-height-tight': "1",
+      '--wzl-line-height-snug': "1.2",
+      '--wzl-line-height': "1.4",
       '--wzl-backdrop': "none",
       '--wzl-motion-fast': "120ms",
       '--wzl-motion-medium': "240ms",
@@ -256,9 +268,15 @@ export const THEMES = {
       '--wzl-space-sm': "8px",
       '--wzl-space-md': "12px",
       '--wzl-space-lg': "16px",
+      '--wzl-tracking-none': "0",
+      '--wzl-tracking-wide': "0.06em",
+      '--wzl-tracking-wider': "0.08em",
       '--wzl-z-toolbar': "10",
       '--wzl-z-overlay': "20",
       '--wzl-z-modal': "30",
+      '--wzl-line-height-tight': "1",
+      '--wzl-line-height-snug': "1.2",
+      '--wzl-line-height': "1.4",
       '--wzl-backdrop': "none",
       '--wzl-motion-fast': "120ms",
       '--wzl-motion-medium': "240ms",
@@ -560,6 +578,20 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         "type": "dimension",
         "value": "16px"
       },
+      "tracking-none": {
+        "type": "dimension",
+        "value": "0"
+      },
+      "tracking-wide": {
+        "type": "dimension",
+        "value": "0.06em",
+        "description": "Uppercase section headings."
+      },
+      "tracking-wider": {
+        "type": "dimension",
+        "value": "0.08em",
+        "description": "Uppercase at 11px and below."
+      },
       "z-toolbar": {
         "type": "number",
         "value": 10
@@ -571,6 +603,21 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
       "z-modal": {
         "type": "number",
         "value": 30
+      },
+      "line-height-tight": {
+        "type": "number",
+        "value": 1,
+        "description": "Single-line controls; the box sets the height."
+      },
+      "line-height-snug": {
+        "type": "number",
+        "value": 1.2,
+        "description": "Headings and two-line labels."
+      },
+      "line-height": {
+        "type": "number",
+        "value": 1.4,
+        "description": "Body and anything that wraps."
       },
       "backdrop": {
         "type": "gradient",

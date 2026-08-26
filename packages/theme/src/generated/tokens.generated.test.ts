@@ -33,3 +33,17 @@ describe('font-weight scale', () => {
     expect(tokenValue('font-weight-light')).toBeNull();
   });
 });
+
+describe('line-height and letter-spacing', () => {
+  it('has a line-height for each role', () => {
+    expect(tokenValue('line-height-tight')).toBe('1');
+    expect(tokenValue('line-height-snug')).toBe('1.2');
+    expect(tokenValue('line-height')).toBe('1.4');
+  });
+
+  it('has a tracking scale for uppercase chrome', () => {
+    expect(tokenValue('tracking-none')).toBe('0');
+    expect(tokenValue('tracking-wide')).toBe('0.06em');
+    expect(tokenValue('tracking-wider')).toBe('0.08em');
+  });
+});

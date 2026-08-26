@@ -82,9 +82,20 @@
   --wzl-space-sm: 8px;
   --wzl-space-md: 12px;
   --wzl-space-lg: 16px;
+  --wzl-tracking-none: 0;
+  /* Uppercase section headings. */
+  --wzl-tracking-wide: 0.06em;
+  /* Uppercase at 11px and below. */
+  --wzl-tracking-wider: 0.08em;
   --wzl-z-toolbar: 10;
   --wzl-z-overlay: 20;
   --wzl-z-modal: 30;
+  /* Single-line controls; the box sets the height. */
+  --wzl-line-height-tight: 1;
+  /* Headings and two-line labels. */
+  --wzl-line-height-snug: 1.2;
+  /* Body and anything that wraps. */
+  --wzl-line-height: 1.4;
   /* Layered backdrop fill for a page or lab root. `none` here; a theme with a signature background sets it. */
   --wzl-backdrop: none;
   /* Micro-interactions — hover, focus, pressed. */

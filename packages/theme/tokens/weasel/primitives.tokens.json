@@ -73,14 +73,22 @@
     "space-xs": { "$value": "4px" },
     "space-sm": { "$value": "8px" },
     "space-md": { "$value": "12px" },
-    "space-lg": { "$value": "16px" }
+    "space-lg": { "$value": "16px" },
+
+    "tracking-none":  { "$value": "0" },
+    "tracking-wide":  { "$value": "0.06em", "$description": "Uppercase section headings." },
+    "tracking-wider": { "$value": "0.08em", "$description": "Uppercase at 11px and below." }
   },
 
   "number": {
     "$type": "number",
     "z-toolbar": { "$value": 10 },
     "z-overlay": { "$value": 20 },
-    "z-modal":   { "$value": 30 }
+    "z-modal":   { "$value": 30 },
+
+    "line-height-tight": { "$value": 1, "$description": "Single-line controls; the box sets the height." },
+    "line-height-snug":  { "$value": 1.2, "$description": "Headings and two-line labels." },
+    "line-height":       { "$value": 1.4, "$description": "Body and anything that wraps." }
   },
 
   "gradient": {
