@@ -14,6 +14,8 @@ interface DragState {
   pointerId: number;
   fromIndex: number;
   startY: number;
+  /** Row height plus row gap, measured when the drag starts. */
+  pitch: number;
 }
 
 /** A reorderable list of layers with per-layer visibility toggles. Layers
@@ -34,15 +36,25 @@ export function LayerList({ layers, visibility, onReorder, onToggle, className }
 
   const startDrag = (e: PointerEvent<HTMLElement>, index: number) => {
     e.currentTarget.setPointerCapture(e.pointerId);
-    dragRef.current = { pointerId: e.pointerId, fromIndex: index, startY: e.clientY };
+    // Measured at grab time rather than hardcoded: a restyle that changes row
+    // height or gap would otherwise silently skew every drag distance.
+    const row = e.currentTarget.closest('.lk-layer-list__row');
+    const list = row?.parentElement;
+    const gap = list ? Number.parseFloat(getComputedStyle(list).rowGap) || 0 : 0;
+    const pitch = row ? row.getBoundingClientRect().height + gap : 0;
+    dragRef.current = {
+      pointerId: e.pointerId,
+      fromIndex: index,
+      startY: e.clientY,
+      pitch: pitch > 0 ? pitch : 1,
+    };
     setDragIndex(index);
   };
 
   const moveDrag = (e: PointerEvent<HTMLElement>) => {
     const drag = dragRef.current;
     if (!drag || drag.pointerId !== e.pointerId) return;
-    const rowHeight = 28;
-    const delta = Math.round((e.clientY - drag.startY) / rowHeight);
+    const delta = Math.round((e.clientY - drag.startY) / drag.pitch);
     const target = Math.min(reorderable.length - 1, Math.max(0, drag.fromIndex + delta));
     setDragIndex(target);
   };
