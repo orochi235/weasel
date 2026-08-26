@@ -6,7 +6,7 @@ export const ICON_PATHS = {
   // View and lifecycle
   clone: `<path d="M7 7.4V4.6A1.6 1.6 0 0 1 8.6 3h6.8A1.6 1.6 0 0 1 17 4.6v6.8a1.6 1.6 0 0 1-1.6 1.6H12.6" stroke-linecap="butt"/><rect x="3" y="7" width="10" height="10" rx="1.6"/><path d="M5.7 10.8h4.6M5.7 13.4h3" stroke-width="1"/>`,
   reset: `<path d="M7.28 4.88A5.8 5.8 0 1 0 12.72 4.88"/><path d="M13.81 7.57 12.72 4.88 15.56 4.28"/>`,
-  close: `<path d="M6.7 6.7 13.3 13.3M13.3 6.7 6.7 13.3"/>`,
+  close: `<path d="M5 5 15 15M15 5 5 15" stroke-width="1.75"/>`,
   export: `<path d="M4 12.6v2.9A1.5 1.5 0 0 0 5.5 17h9a1.5 1.5 0 0 0 1.5-1.5v-2.9"/><path d="M10 3.2v8.5"/><path d="M11.7 9.35 10 11.7 8.3 9.35"/><path d="M6.8 14.7h6.4" stroke-width="1"/>`,
   zoomIn: `<circle cx="9" cy="9" r="5.4"/><path d="M12.82 12.82 16.9 16.9"/><path d="M9 6.7v4.6M6.7 9h4.6"/>`,
   pan: `<path d="M10 8.1V3.2M10 11.9V16.8M8.1 10H3.2M11.9 10H16.8"/><path d="M8.26 5.27 10 3.2 11.74 5.27M11.74 14.73 10 16.8 8.26 14.73M5.27 11.74 3.2 10 5.27 8.26M14.73 8.26 16.8 10 14.73 11.74"/><circle cx="10" cy="10" r="1.9"/>`,

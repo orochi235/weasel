@@ -90,7 +90,7 @@ export const BASE = {
     <path d="${resetArc}"/>
     <path d="${resetHead}"/>`,
 
-  close: `<path d="M6.7 6.7 13.3 13.3M13.3 6.7 6.7 13.3"/>`,
+  close: `<path d="M5 5 15 15M15 5 5 15" stroke-width="1.75"/>`,
 
   save: `
     <path d="M4 12.6v2.9A1.5 1.5 0 0 0 5.5 17h9a1.5 1.5 0 0 0 1.5-1.5v-2.9"/>
