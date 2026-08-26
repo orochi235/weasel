@@ -47,3 +47,15 @@ describe('line-height and letter-spacing', () => {
     expect(tokenValue('tracking-wider')).toBe('0.08em');
   });
 });
+
+describe('shape and elevation', () => {
+  it('has a pill radius so 999px stops being written by hand', () => {
+    expect(tokenValue('radius-pill')).toBe('999px');
+  });
+
+  it('derives elevation from a shadow color, never from the foreground', () => {
+    const shadow = tokenValue('shadow-1');
+    expect(shadow).not.toBeNull();
+    expect(shadow).not.toContain('--wzl-fg');
+  });
+});

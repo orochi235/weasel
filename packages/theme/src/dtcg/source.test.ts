@@ -15,13 +15,14 @@ const EXPECTED_NAMES = [
   'gray-500', 'gray-600', 'gray-700', 'gray-800', 'gray-900',
   'accent-soft', 'accent-base', 'accent-strong',
   'danger-base', 'warning-base', 'success-base',
-  'radius-sm', 'radius-md', 'radius-lg', 'border-w', 'line-width', 'curve-width',
+  'radius-sm', 'radius-md', 'radius-lg', 'radius-pill', 'border-w', 'line-width', 'curve-width',
   'tb-height', 'control-h', 'glass-blur',
   'font-size-2xs', 'font-size-xs', 'font-size-sm', 'font-size', 'font-size-lg', 'font-size-xl',
   'space-xs', 'space-sm', 'space-md', 'space-lg',
   'tracking-none', 'tracking-wide', 'tracking-wider',
   'z-toolbar', 'z-overlay', 'z-modal',
   'line-height-tight', 'line-height-snug', 'line-height',
+  'shadow-1',
   'backdrop',
   'motion-fast', 'motion-medium',
   'ease-in-cubic', 'ease-out-cubic', 'ease-in-out-cubic', 'ease-out-back',
@@ -36,6 +37,7 @@ const EXPECTED_NAMES = [
   'accent', 'accent-fg', 'accent-hover',
   'danger', 'warning', 'success', 'focus-ring', 'glass-tint',
   'fg-inverse', 'surface-hover', 'surface-pressed',
+  'shadow', 'border-raised',
 ].sort();
 
 describe('DTCG source', () => {

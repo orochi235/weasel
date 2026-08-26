@@ -10,6 +10,8 @@
     "border":         { "$value": "{color.gray-200}" },
     "border-strong":  { "$value": "{color.gray-300}" },
     "accent-fg":      { "$value": "{color.accent-base}", "$description": "Flips to the deep base in light mode, where it is the legible one." },
-    "fg-inverse":   { "$value": "{color.gray-50}", "$description": "Flips with the mode \u2014 see the dark layer." }
+    "fg-inverse":   { "$value": "{color.gray-50}", "$description": "Flips with the mode \u2014 see the dark layer." },
+    "shadow":        { "$value": "rgba(0, 0, 0, 0.18)" },
+    "border-raised": { "$value": "{color.gray-500}" }
   }
 }

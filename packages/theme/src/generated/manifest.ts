@@ -57,6 +57,7 @@ export const TOKEN_MANIFEST: readonly TokenManifestEntry[] = [
   { name: '--wzl-swatch-magenta', type: "color", group: "swatch", defaultValue: "#ff6eff", description: "" },
   { name: '--wzl-radius-sm', type: "dimension", group: "radius", defaultValue: "3px", description: "" },
   { name: '--wzl-radius-md', type: "dimension", group: "radius", defaultValue: "5px", description: "" },
+  { name: '--wzl-radius-pill', type: "dimension", group: "radius", defaultValue: "999px", description: "Fully rounded ends — segmented controls, progress tracks." },
   { name: '--wzl-border-w', type: "dimension", group: "border", defaultValue: "1px", description: "" },
   { name: '--wzl-line-width', type: "dimension", group: "line", defaultValue: "2px", description: "Structural lines — gridlines, dividers, axes." },
   { name: '--wzl-curve-width', type: "dimension", group: "curve", defaultValue: "3px", description: "Drawn data curves. Heavier than structural lines so data reads as primary content." },
@@ -77,6 +78,7 @@ export const TOKEN_MANIFEST: readonly TokenManifestEntry[] = [
   { name: '--wzl-tracking-none', type: "dimension", group: "tracking", defaultValue: "0", description: "" },
   { name: '--wzl-tracking-wide', type: "dimension", group: "tracking", defaultValue: "0.06em", description: "Uppercase section headings." },
   { name: '--wzl-tracking-wider', type: "dimension", group: "tracking", defaultValue: "0.08em", description: "Uppercase at 11px and below." },
+  { name: '--wzl-shadow-1', type: "dimension", group: "shadow", defaultValue: "0 1px 3px var(--wzl-shadow)", description: "One step of elevation — a trial, a floating panel." },
   { name: '--wzl-z-toolbar', type: "number", group: "z", defaultValue: "10", description: "" },
   { name: '--wzl-z-overlay', type: "number", group: "z", defaultValue: "20", description: "" },
   { name: '--wzl-z-modal', type: "number", group: "z", defaultValue: "30", description: "" },
@@ -107,4 +109,6 @@ export const TOKEN_MANIFEST: readonly TokenManifestEntry[] = [
   { name: '--wzl-border-strong', type: "color", group: "border", defaultValue: "#383b42", description: "" },
   { name: '--wzl-accent-fg', type: "color", group: "accent", defaultValue: "#5841b8", description: "Accent for foreground use — text, icons, selected labels drawn on a surface. accent is a fill; the midnight base is too dim to read as text on dark surfaces." },
   { name: '--wzl-fg-inverse', type: "color", group: "fg", defaultValue: "#0e0f12", description: "Text drawn on a filled foreground-colored element (e.g. a slider thumb). Flips with the mode, so it is a semantic, not an alias to a primitive." },
+  { name: '--wzl-shadow', type: "color", group: "shadow", defaultValue: "rgba(0, 0, 0, 0.6)", description: "Elevation. Always darker than any surface — never derived from fg, which is near-white on dark." },
+  { name: '--wzl-border-raised', type: "color", group: "border", defaultValue: "#4d5058", description: "The line separating a raised surface from the field behind it. Held at 3:1 against surface, which the general-purpose border is not." },
 ];

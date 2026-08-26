@@ -10,6 +10,8 @@
     "border":         { "$value": "{color.gray-700}" },
     "border-strong":  { "$value": "{color.gray-600}" },
     "accent-fg":      { "$value": "{color.accent-strong}", "$description": "Accent for foreground use — text, icons, selected labels drawn on a surface. accent is a fill; the midnight base is too dim to read as text on dark surfaces." },
-    "fg-inverse":   { "$value": "{color.gray-900}", "$description": "Text drawn on a filled foreground-colored element (e.g. a slider thumb). Flips with the mode, so it is a semantic, not an alias to a primitive." }
+    "fg-inverse":   { "$value": "{color.gray-900}", "$description": "Text drawn on a filled foreground-colored element (e.g. a slider thumb). Flips with the mode, so it is a semantic, not an alias to a primitive." },
+    "shadow":        { "$value": "rgba(0, 0, 0, 0.6)", "$description": "Elevation. Always darker than any surface — never derived from fg, which is near-white on dark." },
+    "border-raised": { "$value": "{color.gray-500}", "$description": "The line separating a raised surface from the field behind it. Held at 3:1 against surface, which the general-purpose border is not." }
   }
 }

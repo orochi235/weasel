@@ -22,7 +22,9 @@
         "fg-subtle": { "$value": "#5a5a78" },
         "accent": { "$value": "#b08adb" },
         "accent-hover": { "$value": "#c6a3ee" },
-        "focus-ring": { "$value": "rgba(176, 138, 219, 0.45)" }
+        "focus-ring": { "$value": "rgba(176, 138, 219, 0.45)" },
+        "shadow": { "$value": "rgba(0, 0, 0, 0.7)" },
+        "border-raised": { "$value": "rgba(255, 255, 255, 0.32)" }
       },
       "gradient": {
         "$type": "gradient",
@@ -44,7 +46,9 @@
         "fg-subtle": { "$value": "#a89b85" },
         "accent": { "$value": "#a86f3c" },
         "accent-hover": { "$value": "#c2854f" },
-        "focus-ring": { "$value": "rgba(168, 111, 60, 0.35)" }
+        "focus-ring": { "$value": "rgba(168, 111, 60, 0.35)" },
+        "shadow": { "$value": "rgba(80, 60, 40, 0.18)" },
+        "border-raised": { "$value": "#9e8b71" }
       }
     }
   }

@@ -54,6 +54,8 @@
   --wzl-swatch-magenta: #ff6eff;
   --wzl-radius-sm: 3px;
   --wzl-radius-md: 5px;
+  /* Fully rounded ends — segmented controls, progress tracks. */
+  --wzl-radius-pill: 999px;
   --wzl-border-w: 1px;
   /* Structural lines — gridlines, dividers, axes. */
   --wzl-line-width: 2px;
@@ -87,6 +89,8 @@
   --wzl-tracking-wide: 0.06em;
   /* Uppercase at 11px and below. */
   --wzl-tracking-wider: 0.08em;
+  /* One step of elevation — a trial, a floating panel. */
+  --wzl-shadow-1: 0 1px 3px var(--wzl-shadow);
   --wzl-z-toolbar: 10;
   --wzl-z-overlay: 20;
   --wzl-z-modal: 30;
@@ -126,6 +130,10 @@
   --wzl-accent-fg: var(--wzl-accent-strong);
   /* Text drawn on a filled foreground-colored element (e.g. a slider thumb). Flips with the mode, so it is a semantic, not an alias to a primitive. */
   --wzl-fg-inverse: var(--wzl-gray-900);
+  /* Elevation. Always darker than any surface — never derived from fg, which is near-white on dark. */
+  --wzl-shadow: rgba(0, 0, 0, 0.6);
+  /* The line separating a raised surface from the field behind it. Held at 3:1 against surface, which the general-purpose border is not. */
+  --wzl-border-raised: var(--wzl-gray-500);
 }
 
 :root {
@@ -146,6 +154,8 @@
   --wzl-border-strong: var(--wzl-gray-600);
   --wzl-accent-fg: var(--wzl-accent-strong);
   --wzl-fg-inverse: var(--wzl-gray-900);
+  --wzl-shadow: rgba(0, 0, 0, 0.6);
+  --wzl-border-raised: var(--wzl-gray-500);
 }
 
 [data-wzl-theme='weasel'][data-wzl-mode='light'],
@@ -161,4 +171,6 @@
   --wzl-border-strong: var(--wzl-gray-300);
   --wzl-accent-fg: var(--wzl-accent-base);
   --wzl-fg-inverse: var(--wzl-gray-50);
+  --wzl-shadow: rgba(0, 0, 0, 0.18);
+  --wzl-border-raised: var(--wzl-gray-500);
 }

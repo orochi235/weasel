@@ -13,6 +13,7 @@ export type TokenName =
   | '--wzl-accent-strong'
   | '--wzl-backdrop'
   | '--wzl-border'
+  | '--wzl-border-raised'
   | '--wzl-border-strong'
   | '--wzl-border-w'
   | '--wzl-control-h'
@@ -66,7 +67,10 @@ export type TokenName =
   | '--wzl-motion-medium'
   | '--wzl-radius-lg'
   | '--wzl-radius-md'
+  | '--wzl-radius-pill'
   | '--wzl-radius-sm'
+  | '--wzl-shadow'
+  | '--wzl-shadow-1'
   | '--wzl-space-lg'
   | '--wzl-space-md'
   | '--wzl-space-sm'
@@ -157,6 +161,7 @@ export const THEMES = {
       '--wzl-swatch-magenta': "#ff6eff",
       '--wzl-radius-sm': "3px",
       '--wzl-radius-md': "5px",
+      '--wzl-radius-pill': "999px",
       '--wzl-border-w': "1px",
       '--wzl-line-width': "2px",
       '--wzl-curve-width': "3px",
@@ -177,6 +182,7 @@ export const THEMES = {
       '--wzl-tracking-none': "0",
       '--wzl-tracking-wide': "0.06em",
       '--wzl-tracking-wider': "0.08em",
+      '--wzl-shadow-1': "0 1px 3px var(--wzl-shadow)",
       '--wzl-z-toolbar': "10",
       '--wzl-z-overlay': "20",
       '--wzl-z-modal': "30",
@@ -206,6 +212,8 @@ export const THEMES = {
       '--wzl-border-strong': "#383b42",
       '--wzl-accent-fg': "#5841b8",
       '--wzl-fg-inverse': "#0e0f12",
+      '--wzl-shadow': "rgba(0, 0, 0, 0.6)",
+      '--wzl-border-raised': "#4d5058",
     },
     "light": {
       '--wzl-gray-50': "#f5f5f6",
@@ -251,6 +259,7 @@ export const THEMES = {
       '--wzl-swatch-magenta': "#ff6eff",
       '--wzl-radius-sm': "3px",
       '--wzl-radius-md': "5px",
+      '--wzl-radius-pill': "999px",
       '--wzl-border-w': "1px",
       '--wzl-line-width': "2px",
       '--wzl-curve-width': "3px",
@@ -271,6 +280,7 @@ export const THEMES = {
       '--wzl-tracking-none': "0",
       '--wzl-tracking-wide': "0.06em",
       '--wzl-tracking-wider': "0.08em",
+      '--wzl-shadow-1': "0 1px 3px var(--wzl-shadow)",
       '--wzl-z-toolbar': "10",
       '--wzl-z-overlay': "20",
       '--wzl-z-modal': "30",
@@ -300,6 +310,8 @@ export const THEMES = {
       '--wzl-border-strong': "#9ea1a8",
       '--wzl-accent-fg': "#2e1f7a",
       '--wzl-fg-inverse': "#f5f5f6",
+      '--wzl-shadow': "rgba(0, 0, 0, 0.18)",
+      '--wzl-border-raised': "#4d5058",
     },
     },
   },
@@ -499,6 +511,11 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         "type": "dimension",
         "value": "5px"
       },
+      "radius-pill": {
+        "type": "dimension",
+        "value": "999px",
+        "description": "Fully rounded ends — segmented controls, progress tracks."
+      },
       "border-w": {
         "type": "dimension",
         "value": "1px"
@@ -591,6 +608,11 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         "type": "dimension",
         "value": "0.08em",
         "description": "Uppercase at 11px and below."
+      },
+      "shadow-1": {
+        "type": "dimension",
+        "value": "0 1px 3px var(--wzl-shadow)",
+        "description": "One step of elevation — a trial, a floating panel."
       },
       "z-toolbar": {
         "type": "number",
@@ -767,6 +789,16 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
           "type": "color",
           "value": "{color.gray-900}",
           "description": "Text drawn on a filled foreground-colored element (e.g. a slider thumb). Flips with the mode, so it is a semantic, not an alias to a primitive."
+        },
+        "shadow": {
+          "type": "color",
+          "value": "rgba(0, 0, 0, 0.6)",
+          "description": "Elevation. Always darker than any surface — never derived from fg, which is near-white on dark."
+        },
+        "border-raised": {
+          "type": "color",
+          "value": "{color.gray-500}",
+          "description": "The line separating a raised surface from the field behind it. Held at 3:1 against surface, which the general-purpose border is not."
         }
       },
       "light": {
@@ -811,6 +843,14 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
           "type": "color",
           "value": "{color.gray-50}",
           "description": "Flips with the mode — see the dark layer."
+        },
+        "shadow": {
+          "type": "color",
+          "value": "rgba(0, 0, 0, 0.18)"
+        },
+        "border-raised": {
+          "type": "color",
+          "value": "{color.gray-500}"
         }
       }
     }
