@@ -1,80 +1,134 @@
 # Handoff — labkit theme selector and chrome density
 
-**Branch:** `labkit-theme-selector`, worktree `.claude/worktrees/labkit-theme-selector`, based on `main` at `23af1930`. Nothing pushed. Commits: `53838c72` (toggle height + padding), `a6a9308a` (title size), `66068ca8` (the full-chrome story), plus handoff edits.
+For whoever picks this branch up next. It answers: what is fixed, what is left,
+and which decisions live only in conversation.
 
-**Dev server:** `cd packages/labkit && npm run dev` (was on :5174; :5173 taken).
+**Branch:** `labkit-theme-selector`, worktree `.claude/worktrees/labkit-theme-selector`,
+based on `main` at `23af1930`. Nothing pushed.
 
-**Storybook:** labkit stories are wired into the *root* Storybook, not a labkit-local one — `.storybook/main.ts:25` globs `packages/labkit/src/**/*.stories.tsx`, titled `labkit/…`. Run `npm run dev:storybook` from the worktree root (port 6010). Existing: `Lab.stories.tsx`, `Trial.stories.tsx`, `LabShell.stories.tsx`, `Workspace.stories.tsx`, plus the `ui/properties/*` set.
+**Servers:** `cd packages/labkit && npm run dev` for the lab page.
+`npm run dev:storybook -- -p <port>` from the worktree root for the stories —
+labkit's are in the *root* Storybook (`.storybook/main.ts:25` globs
+`packages/labkit/src/**/*.stories.tsx`, titled `labkit/…`). Port 6010 is usually
+taken by another session's Storybook serving a *different* worktree; pick your
+own port or you will be reading someone else's code.
 
 ## What this is
 
-A pass over labkit chrome density. Four sizing complaints are fixed; a story added to see all the chrome at once then exposed five more bugs, which are the next job. The mode icons are not started.
+A pass over labkit chrome density. The sizing complaints are fixed, and
+`LabFullChrome.stories.tsx` (title `labkit/Lab/FullChrome`) puts every reachable
+chrome surface on one screen, which is how the remaining bugs were found.
 
-**Start with the nebula (item 1 below).** It is the one that changes how every lab looks, so it wants Mike's eyes before anything else is built on top.
+Two jobs remain: the API gaps below, and the mode icons.
 
-## Done (`53838c72`)
+## Done
 
-- **Mode toggle height.** It was 17px beside a 28px "Add trial" button. Cause was not styling — `LabHeader` passed `size="sm"` to `ToggleBar`, and `ToggleBar.module.css:154` hard-codes `.size_sm { height: 17px }` while the default is `var(--wzl-tb-height, 28px)`. Dropping the prop lands it on 28px, the same `--wzl-control-h` the button uses. Verified in-browser: both 28.
-- **Workspace padding** 12px → 8px, via a new `--lk-workspace-pad` on `.lk-root` (`theme/base.less`), consumed by `.lk-shell-body`.
-- **Trial content padding** removed. `Trial.less` `&__content` no longer sets `padding`; the `--flush` modifier that used to zero it now carries only `overflow: hidden`.
-- **Lab title** 16px → 20px, via `--lk-title-size` (`a6a9308a`). The theme ships only body sizes (`--wzl-font-size: 13px`, `--wzl-font-size-sm: 11px`) and nothing for headings, so a title picks its own number either way; the token just gives it one named home. There is no heading scale to align to — don't go looking for one.
+**Nebula.** `.lk-shell` painted an opaque `--wzl-surface` over `.lk-lab`'s
+backdrop, so the nebula gradient had never been visible inside `<Lab>`.
+`.lk-lab > .lk-shell` is transparent now; standalone `<LabShell>` keeps its fill.
+Correction to the earlier note in this file: the *starfield* was never hidden —
+`.lk-lab::before` is positioned with `z-index: 0` and already painted above the
+shell's in-flow background.
 
-labkit tests green (52 files / 415 tests) after these.
+**One mechanism behind three style bugs.** A labkit class handed to a weasel-ui
+component through `className` landed beside that component's CSS-module class at
+equal specificity, so injection order decided the winner. Two rules now, both
+documented in `theme/base.less`:
 
-## Next up: five bugs the new story exposed
+- Labkit's element defaults sit under `:where(.lk-root) :where(button)`, scoring
+  (0,0,0), so a component always paints its own controls. This retired the
+  `height: auto` patch the mode toggle needed.
+- Deliberate overrides carry a `.lk-root` prefix, scoring (0,2,0), and win on
+  purpose. Used by the zoom field and both Selects.
 
-`packages/labkit/src/lab/LabFullChrome.stories.tsx` (`66068ca8`, title `labkit/Lab/FullChrome`, exports `AllChrome` and `SingleInstrument`) puts every reachable chrome surface on screen at once. It found these on its first run. Mike's instruction (2026-08-25) was **fix them, don't file them**. Work in this order.
+**Zoom readout.** Its field had stretched to the container's full 245px, sliding
+under the zoom buttons so they covered the leading "10" of "100%", and squeezing
+the slider to its 64px floor. Now 62px / 108px.
 
-### 1. The nebula backdrop is invisible in every Lab — start here
+**Sidebar crush.** `sidebarExtras` default to `min-height: auto` and floor at
+content height, so all shrink landed on the config panel — 60px of a 270px panel,
+cut mid-row. The column scrolls as one now and each section keeps its height.
 
-`theme/base.less:74-82` gives `.lk-lab` a `--wzl-backdrop` image and `:83` adds a ~40-stop radial-gradient starfield on `::before`. Both are then covered: `LabShell.less:6` gives the child `.lk-shell` `background: var(--wzl-surface)`, opaque `#0a0a14` in dark. Confirmed by setting the shell background to `transparent` in the live page — nebula and stars appear immediately.
+**Header row.** Two more of the same family, found while checking the above.
+`Select` is a form field defaulting to `width: 100%`; resolving that against a
+shrink-to-fit header row let it swallow the slack, pushing consumer header
+content to min-content and wrapping the row to three lines (89.8px → 41px once
+pinned). Separately the ToggleBar had no `flex-shrink: 0`, so its segments
+compressed past their labels and the pill track vanished entirely. Both
+pre-dated this branch.
 
-So the entire interstellar treatment has never been visible inside `<Lab>`. Fixing it changes how every lab looks, which is why it goes first and wants Mike's eyes before anything is built on top of it.
+**Control height is one number now (24px).** `--wzl-control-h` claimed 28px while
+Select, Input, NumberField and ComboBox each hard-coded 24px; labkit's ambient
+button default had been papering over the split by accident. The four controls
+now read the token and the token is 24px.
 
-The care needed: `.lk-shell` is also used *standalone* by `<LabShell>` with no `.lk-lab` ancestor, where it does need an opaque background. So it is not a matter of deleting the line — the fix is to drop the surface only when nested (a `.lk-lab .lk-shell` rule, or moving the opaque fill onto the standalone case). Check `LabShell.stories.tsx` for the standalone rendering.
+## Decisions that are not in the code
 
-### 2. The toolbar zoom readout overlaps its buttons and reads "0%"
+- **24px, not 28px** was Mike's call (2026-08-25) when asked which way to close
+  the gap.
+- **`tb-height` stays 28px** and did not move with it. It sizes a strip that
+  *contains* controls — `ToolOptionsBar` is `height: tb-height` with
+  `overflow: hidden` and no vertical padding, so 24px would clip the focus ring
+  of a 24px control inside it. Its description now says so.
+- **ToggleBar moved off `tb-height` onto `control-h`**, because a segmented
+  control is a control, not a strip. Its `height` prop writes a private `--tb-h`
+  rather than a theme variable, so setting it cannot cascade into children.
+- **`ActionBar .button` was left at 28×28.** It is a square icon target, not a
+  text control.
 
-`.lk-zoom__field { width: 62px }` ties on specificity (0,1,0) with weasel-ui's CSS-module `._field_… { width: 100% }`, and the module is injected later, so it wins. The field computes to 244.5px inside the 245px `.lk-zoom`, slides under the zoom-in / actual-size buttons, and they cover the leading "10" of "100%". The slider is squeezed to its 64px `min-width` at the same time.
+## Next: chrome unreachable from inside a `<Lab>`
 
-The input's `value` is correctly `"100%"` — this is purely visual, which makes it a **silent wrong readout**, not a cosmetic nit.
+Each is an API gap, not a style bug.
 
-### 3. This is one bug, not three — labkit cannot reliably style a weasel-ui component
-
-Bug 2 is the third sighting of the same defect. A labkit rule and a weasel-ui CSS-module class land on the same specificity and injection order decides the winner:
-
-- `.lk-root :where(button)` (`theme/base.less:41`) sets `height: var(--wzl-control-h)` on **every** button inside a weasel-ui component, not just labkit's bare ones. This is why `LabShell.less` carries a `button { height: auto; }` override under `.lk-lab-header__mode`. That override is **still load-bearing** — remove it and the 28px segments fill the 28px track and clip against its 1px padding. It is scoped to the *header* class, so the bug returns wherever else the control is drawn.
-- `.lk-zoom__field` vs `._field_…` (bug 2).
-
-Fix the mechanism once rather than patching each site. Two candidates: raise labkit's override specificity deliberately (`.lk-root` prefix or doubled class) as a convention, or put both sides in explicit `@layer`s so order stops being an accident. The layer route is the real fix but needs weasel-ui's CSS modules to participate. Mike's steer was to fix at the control so behavior travels into a trial, which argues against per-call-site patches.
-
-### 4. The sidebar is crushed when `sidebarExtras` are present
-
-With palette + layer list, `.lk-sidebar` gets 115px while `.lk-sidebar-body` holds 269px of content — about 1.5 of 6 config rows, cut mid-row. It does scroll, so nothing is unreachable; the default split just gives the extras all the room.
-
-### 5. Chrome that cannot be reached from inside a `<Lab>` at all
-
-Found while writing the story; each is an API gap, not a style bug:
-- `ToolbarSlot` / `SidebarSlot` / `StatusBarSlot` — `<Trial>` takes only `{ id }` and never forwards slots, so the slot system `TrialChrome` advertises is reachable only by constructing `TrialChrome` yourself.
+- `ToolbarSlot` / `SidebarSlot` / `StatusBarSlot` — `<Trial>` takes only `{ id }`
+  and never forwards slots, so the slot system `TrialChrome` advertises is
+  reachable only by constructing `TrialChrome` yourself.
 - `LabShell`'s `footer` — no `LabProps` field, so unreachable from `<Lab>`.
-- Sidebar collapse toggle / `--collapsed` — `DefaultSidebar` never passes `onToggle`.
-- `LayerList` labels are raw canvas layer ids (`Trial.tsx`, `ids.map(lid => ({ id: lid, label: lid }))`) and `alwaysOn` cannot be set from an instrument. The story works around it by naming the canvas layers `Grid`/`Trace`/`Marks`.
-- `Instrument.job` is typed `JobCapability<TS, TC, never>`, so an instrument emitting items needs `item: x as never` / `item as number` to typecheck. labkit's own `Trial.job.test.tsx` does exactly this.
+- Sidebar collapse toggle / `--collapsed` — `DefaultSidebar` never passes
+  `onToggle`.
+- `LayerList` labels are raw canvas layer ids (`Trial.tsx`,
+  `ids.map(lid => ({ id: lid, label: lid }))`) and `alwaysOn` cannot be set from
+  an instrument. The story works around it by naming the layers
+  `Grid`/`Trace`/`Marks`.
+- `Instrument.job` is typed `JobCapability<TS, TC, never>`, so an instrument
+  emitting items needs `item: x as never` to typecheck. labkit's own
+  `Trial.job.test.tsx` does exactly this.
 
-## Not done — the icons
+Worth raising with Mike as its own piece of work: these form fields are
+`width: 100%` with no intrinsic-width option, which is why labkit pins a width at
+all three call sites. A real affordance on the components would retire the
+convention.
 
-`MODES` in `LabHeader.tsx` is still three text labels (Auto / Light / Dark). The ask is icons for the three.
+## Next: the mode icons
 
-The icon system is real and has guard rails — do not hand-write paths:
-- Source lives in `packages/ui/scripts/icons/*.mjs`; `paths.ts` is **generated** (`node packages/ui/scripts/gen-icons.mjs`).
-- 20×20 viewBox, `fill: none`, `stroke: currentColor`, stroke-width 1.5, round caps.
-- `base.mjs` computes terminus geometry and *throws* when an arrowhead notch would close up. Follow that: compute, don't eyeball.
-- Repo rule: proof at 240–320px before committing, never at chrome size.
+`MODES` in `LabHeader.tsx` is still three text labels (Auto / Light / Dark).
 
-**The open design question** is the `auto` glyph. `light` (sun) and `dark` (crescent) are conventional and stroke-only. `auto`/system usually wants either a half-filled circle — which breaks a stroke-only register, since nothing else in the set fills — or a monitor outline, which reads as "display" more than "follow the OS". Get Mike's call, ideally from a sketch; iterating on prose descriptions of a glyph has burned rounds before.
+Do not hand-write paths. Source lives in `packages/ui/scripts/icons/*.mjs`;
+`paths.ts` is generated by `node packages/ui/scripts/gen-icons.mjs`. 20×20
+viewBox, `fill: none`, `stroke: currentColor`, width 1.5, round caps.
+`base.mjs` computes terminus geometry and throws when an arrowhead notch would
+close up — compute, don't eyeball. Proof at 240–320px, never at chrome size.
 
-## Context that isn't in the code
+**Blocked on Mike, and worth waiting for.** The open question is the `auto`
+glyph: a half-filled circle breaks a stroke-only set, and a monitor outline reads
+as "display" more than "follow the OS". Ask for a sketch — iterating on prose
+descriptions of a glyph has burned rounds before.
 
-- **`main` is shared and moving.** Another session works `feat/labkit-arc3` and has been committing to `main` all day. arc3 touches `LabShell.less` (a `.lk-lab__body` block inserted ~10 lines above the header rules) — expect a small conflict there, not a hard one.
-- labkit defines **zero** `--lk-*` tokens before this branch; it reaches straight for the raw scale (25× `--wzl-space-sm`, 9× `--wzl-space-xs`, 9× `--wzl-space-md`). `--lk-workspace-pad` is the first. Mike wants values like these named rather than picked off the t-shirt ramp, but a full retokenization was explicitly not attempted here.
-- Trial chrome cannot be drawn at lab level (`TrialChrome` needs a `TrialRecord` + `Instrument`); lab chrome *can* be drawn inside a trial, and theme is a single provider at `Lab.tsx:190`, so nesting inherits it.
+## Traps
+
+- **Verify a CSS probe before believing it.** Two separate probes reported "all
+  clear" against a defect that was plainly visible. First: modern CSSOM gives
+  `CSSStyleRule` an empty `cssRules` list for nested CSS, so `if (r.cssRules)`
+  recursion silently swallows every style rule. Second: `page.evaluate(fnString)`
+  returned undefined until the string was invoked as `` `(${fn})()` ``.
+  `scripts/find-css-ties.mjs <storybook-url> [story-id …]` is the surviving
+  harness: it plants a known collision on every page and reports BROKEN rather
+  than clean when it cannot find it. Exits non-zero on a tie or a broken run.
+- **`main` is shared and moving.** Another session works `feat/labkit-arc3` and
+  commits to `main`. arc3 touches `LabShell.less`, so expect a small conflict.
+- **`.claude/worktrees/merge-main` is not a worktree.** It is a stray directory
+  holding three PNGs and does not appear in `git worktree list`.
+- labkit defines almost no `--lk-*` tokens and reaches straight for the raw scale
+  (25× `--wzl-space-sm`, 9× `--wzl-space-xs`). `--lk-workspace-pad` and
+  `--lk-title-size` are the only two. Mike wants values like these named, but a
+  full retokenization was explicitly not attempted here.
