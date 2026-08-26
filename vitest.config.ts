@@ -88,7 +88,7 @@ export default defineConfig({
           // root setup/projects don't provide either.
           setupFiles: ['./packages/labkit/src/test-setup.ts'],
           css: true,
-          include: ['packages/labkit/src/**/*.{test,spec}.{ts,tsx}'],
+          include: ['packages/labkit/{src,scripts}/**/*.{test,spec}.{ts,tsx}'],
           exclude: ['**/node_modules/**'],
         },
       },
