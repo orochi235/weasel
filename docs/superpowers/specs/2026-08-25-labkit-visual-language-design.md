@@ -144,7 +144,7 @@ the next hardcoded size.
 
 ## Sequence
 
-Four commits, each independently reviewable:
+Four phases, each independently reviewable and each landing several commits:
 
 1. **Tokens.** Add the size/weight/line-height/letter-spacing/radius/shadow tokens; widen base
    weasel's weight scale. No consumers change, so nothing renders differently.
