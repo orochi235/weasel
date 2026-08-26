@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
+import { useVisibleRaf } from '../../scheduling/useVisibleRaf';
 import {
   DEFAULT_ALPHA_DECAY,
   DEFAULT_ALPHA_MIN,
@@ -33,7 +34,6 @@ export function useSimulation<TNode extends SimulationNode>(
   const alphaTargetRef = useRef(opts.alphaTarget ?? 0);
   const velocityDecayRef = useRef(opts.velocityDecay ?? DEFAULT_VELOCITY_DECAY);
 
-  const rafHandleRef = useRef<number | null>(null);
   /** Whether onEnd has fired since the last energization (restart / alpha set / target raise). */
   const endedRef = useRef(false);
   const mountedRef = useRef(true);
@@ -49,6 +49,17 @@ export function useSimulation<TNode extends SimulationNode>(
       cancelFrame: opts.cancelFrame ?? ((h) => cancelAnimationFrame(h)),
     };
   }
+
+  // The loop runs behind the visibility gate: a settling simulation stops
+  // integrating on a page nobody is looking at, and picks up where it left off.
+  // Its step is fixed rather than time-based, so there is no clock to rebase.
+  const frameLoop = useVisibleRaf(
+    () => { rafTick(); },
+    {
+      requestFrame: clockRef.current.requestFrame,
+      cancelFrame: clockRef.current.cancelFrame,
+    },
+  );
 
   /** Single synchronous integration step. Does NOT fire onTick / onEnd. */
   const tickOnce = (): void => {
@@ -85,16 +96,10 @@ export function useSimulation<TNode extends SimulationNode>(
     }
   };
 
-  const stopRaf = (): void => {
-    if (rafHandleRef.current !== null) {
-      clockRef.current!.cancelFrame(rafHandleRef.current);
-      rafHandleRef.current = null;
-    }
-  };
+  const stopRaf = (): void => { frameLoop.cancel(); };
 
   const rafTick = (): void => {
     if (!mountedRef.current) return;
-    rafHandleRef.current = null;
 
     tickOnce();
     optsRef.current.onTick?.(nodesRef.current);
@@ -108,13 +113,12 @@ export function useSimulation<TNode extends SimulationNode>(
       return;
     }
 
-    rafHandleRef.current = clockRef.current!.requestFrame(rafTick);
+    frameLoop.request();
   };
 
   const startRaf = (): void => {
-    if (rafHandleRef.current !== null) return;
     if (!mountedRef.current) return;
-    rafHandleRef.current = clockRef.current!.requestFrame(rafTick);
+    frameLoop.request();
   };
 
   // Initialize forces + node indices once on first render. The early init
@@ -141,9 +145,9 @@ export function useSimulation<TNode extends SimulationNode>(
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
-      stopRaf();
+      frameLoop.cancel();
     };
-  }, []);
+  }, [frameLoop]);
 
   // Stable handle. All methods read from refs, so a fixed identity is safe.
   const handle = useMemo<Simulation<TNode>>(() => {

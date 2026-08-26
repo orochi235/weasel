@@ -8,7 +8,8 @@
  * canvas + view ref) for quick coord-reconciliation during gesture
  * debugging.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useVisibleRaf } from '../scheduling/useVisibleRaf';
 import type { View } from 'core/viewport/view';
 import { clientToWorld } from 'core/viewport/clientToWorld';
 
@@ -39,24 +40,35 @@ export function CursorCoordsHud({ canvasRef, viewRef, offset }: CursorCoordsHudP
   const [fps, setFps] = useState<number>(0);
 
   // FPS counter: tally frames per rAF tick; flush once a second.
-  useEffect(() => {
-    let frames = 0;
-    let last = performance.now();
-    let raf = 0;
-    const tick = () => {
-      frames++;
+  const framesRef = useRef(0);
+  const lastFlushRef = useRef(0);
+  const fpsLoop = useVisibleRaf(
+    () => {
+      framesRef.current++;
       const now = performance.now();
-      const dt = now - last;
+      const dt = now - lastFlushRef.current;
       if (dt >= 1000) {
-        setFps(Math.round((frames * 1000) / dt));
-        frames = 0;
-        last = now;
+        setFps(Math.round((framesRef.current * 1000) / dt));
+        framesRef.current = 0;
+        lastFlushRef.current = now;
       }
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, []);
+      fpsLoop.request();
+    },
+    // Frames not drawn while hidden are not frames that were slow to draw:
+    // without this the readout would flush a near-zero rate on resume.
+    {
+      onResume: () => {
+        framesRef.current = 0;
+        lastFlushRef.current = performance.now();
+      },
+    },
+  );
+
+  useEffect(() => {
+    lastFlushRef.current = performance.now();
+    fpsLoop.request();
+    return () => fpsLoop.cancel();
+  }, [fpsLoop]);
 
   useEffect(() => {
     const readAnchor = (): HudState['anchor'] => {

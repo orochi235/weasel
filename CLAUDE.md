@@ -96,6 +96,14 @@ When building new tools, read these first:
 
 Do **not** write a tool that runs its own gesture (`useDragRect`) and commits with `ctx.applyBatch([createInsertOp(...)])`. That was the previous guidance here, and the code it pointed at had been dead for some time — see the 2026-07-27 layer-audit handoff.
 
+## Frame loops
+
+Every frame loop runs behind `useVisibleRaf` (`@weasel-js/core`), never a bare
+`requestAnimationFrame` — `npm run check:frame-loops` fails the build on one. A
+loop that measures elapsed time also needs `onResume` to rebase its clock, or an
+hour in a background tab arrives as one hour-long frame and it reports that as
+real. Full rule: `docs/proposals/2026-08-26-loops-stop-when-unseen.md`.
+
 ## Drawing icons
 
 **Proof SVG icons at 10–15× their display size.** A glyph authored on a 20×20

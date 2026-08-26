@@ -802,7 +802,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const paintRef = useRef<() => boolean>(() => false);
   const { requestRedraw, subscribeFrame } = useFrameLoop(
     useCallback(() => paintRef.current(), []),
-    { syncPaint },
+    { syncPaint, target: canvasRef },
   );
 
   const contentVersionRef = useRef(contentVersion);

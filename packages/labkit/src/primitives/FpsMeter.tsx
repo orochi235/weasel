@@ -1,3 +1,4 @@
+import { useVisibleRaf } from '@weasel-js/core';
 import { useEffect, useRef, useState } from 'react';
 import { rollingAverage } from './fpsAverage';
 
@@ -8,10 +9,10 @@ export function FpsMeter() {
   const [fps, setFps] = useState(0);
   const samplesRef = useRef<number[]>([]);
   const lastTimeRef = useRef<number | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    let rafId = 0;
-    const tick = (time: number) => {
+  const loop = useVisibleRaf(
+    (time) => {
       const last = lastTimeRef.current;
       if (last !== null) {
         const delta = time - last;
@@ -23,14 +24,24 @@ export function FpsMeter() {
         }
       }
       lastTimeRef.current = time;
-      rafId = requestAnimationFrame(tick);
-    };
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
-  }, []);
+      loop.request();
+    },
+    {
+      target: rootRef,
+      // The gap spent suspended is not a frame that took an hour to draw.
+      onResume: () => {
+        lastTimeRef.current = null;
+      },
+    },
+  );
+
+  useEffect(() => {
+    loop.request();
+    return () => loop.cancel();
+  }, [loop]);
 
   return (
-    <div className="lk-fps-meter">
+    <div className="lk-fps-meter" ref={rootRef}>
       <span className="lk-fps-meter-value">FPS {fps}</span>
     </div>
   );

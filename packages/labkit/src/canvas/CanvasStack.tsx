@@ -60,7 +60,7 @@ export function CanvasStack({
   }, []);
 
   const handlers = usePanZoom({ view, onViewChange });
-  useLayerScheduler({ layers, view, canvasRefs: canvasMap, size });
+  useLayerScheduler({ layers, view, canvasRefs: canvasMap, size, host: containerRef });
 
   const ctxValue = useMemo(() => ({ view }), [view]);
 

@@ -1,3 +1,4 @@
+import { useVisibleRaf } from '@weasel-js/core';
 import { useCallback, useEffect, useRef } from 'react';
 import { composeRects, rectsEqual } from './composeRects';
 import type { Box, Rect } from './rect';
@@ -35,7 +36,6 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
   const rects = useRef(new Map<string, Rect>());
   const dirty = useRef(new Set<string>());
   const needsMeasure = useRef(true);
-  const raf = useRef(0);
   const observer = useRef<ResizeObserver | null>(null);
   const lastDpr = useRef(0);
 
@@ -58,10 +58,8 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
     return changed;
   }, []);
 
-  const schedule = useCallback(() => {
-    if (raf.current) return;
-    raf.current = requestAnimationFrame(() => {
-      raf.current = 0;
+  const frameLoop = useVisibleRaf(
+    () => {
       const el = container.current;
       if (!el) {
         dirty.current.clear();
@@ -85,8 +83,15 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
         size: { width: box.width, height: box.height },
       });
       dirty.current.clear();
-    });
-  }, [measure]);
+    },
+    // The host attaches its container through `containerRef`, which may land
+    // well after this hook's first effect; the gate re-resolves it per request.
+    { target: () => container.current },
+  );
+
+  const schedule = useCallback(() => {
+    frameLoop.request();
+  }, [frameLoop]);
 
   const invalidate = useCallback(
     (id: string) => {
@@ -148,10 +153,9 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
     return () => {
       ro.disconnect();
       observer.current = null;
-      if (raf.current) cancelAnimationFrame(raf.current);
-      raf.current = 0;
+      frameLoop.cancel();
     };
-  }, [schedule]);
+  }, [schedule, frameLoop]);
 
   return { invalidate, invalidateAll, invalidateRects, registerTile, containerRef };
 }

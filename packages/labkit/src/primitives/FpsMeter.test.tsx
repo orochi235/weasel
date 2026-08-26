@@ -35,4 +35,48 @@ describe('FpsMeter', () => {
 
     vi.unstubAllGlobals();
   });
+
+  test('does not report a fabricated rate after a spell in a background tab', () => {
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      frames.push(cb);
+      return frames.length;
+    });
+    vi.stubGlobal('cancelAnimationFrame', () => {});
+    const setHidden = (next: boolean) => {
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => next });
+      document.dispatchEvent(new Event('visibilitychange'));
+    };
+
+    const run = (t: number) => {
+      const due = frames.splice(0, frames.length);
+      for (const cb of due) cb(t);
+    };
+
+    render(<FpsMeter />);
+    act(() => {
+      run(0);
+      run(16.67);
+      run(33.34);
+    });
+    const before = screen.getByText(/FPS\s+\d+/).textContent;
+
+    // An hour hidden. The frame that lands on resume is not a 60-minute frame,
+    // and must not enter the rolling average as one.
+    act(() => {
+      setHidden(true);
+    });
+    act(() => {
+      setHidden(false);
+    });
+    act(() => {
+      run(3_600_000);
+      run(3_600_016.67);
+    });
+
+    expect(screen.getByText(/FPS\s+\d+/).textContent).toBe(before);
+
+    setHidden(false);
+    vi.unstubAllGlobals();
+  });
 });

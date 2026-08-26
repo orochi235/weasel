@@ -1,4 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react';
+import { useVisibleRaf } from '@weasel-js/core';
 import s from './Badge.module.css';
 import { SHAPES, type BadgeShapeParams } from './shapes';
 import { BASES, type BadgeBase, type BadgeBaseParams } from './bases';
@@ -99,20 +100,29 @@ export function Badge(props: BadgeProps) {
   const ShapeBody = shapeModule.Component;
   const params = { ...(shapeModule.defaults ?? {}), ...(shapeParams ?? {}) };
 
+  const lastCrawlRef = useRef<number | null>(null);
+  const crawlLoop = useVisibleRaf(
+    (now) => {
+      const speed = typeof crawl === 'number' ? crawl : 0.2;
+      const last = lastCrawlRef.current;
+      lastCrawlRef.current = now;
+      if (last !== null) setPhase((p) => (p + (speed * (now - last)) / 1000) % 1);
+      crawlLoop.request();
+    },
+    // A crawl does not advance while nobody is watching it, so the frame that
+    // resumes it must not apply the whole interval at once.
+    { onResume: () => { lastCrawlRef.current = null; } },
+  );
+
   useEffect(() => {
-    if (!crawl) { setPhase(0); return; }
-    const speed = typeof crawl === 'number' ? crawl : 0.2;
-    let raf = 0;
-    let last = performance.now();
-    const tick = (now: number) => {
-      const dt = (now - last) / 1000;
-      last = now;
-      setPhase((p) => (p + speed * dt) % 1);
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [crawl]);
+    if (!crawl) {
+      setPhase(0);
+      return;
+    }
+    lastCrawlRef.current = null;
+    crawlLoop.request();
+    return () => crawlLoop.cancel();
+  }, [crawl, crawlLoop]);
   const cls = [s.badge, className].filter(Boolean).join(' ');
 
   // Compose-mode: explicit `base` prop wins; otherwise the shape may declare its own

@@ -37,6 +37,9 @@ jobs:
       # All thirteen packages share one `fixed` group, so one bump moves every
       # package — which is how 0.8.0 became 1.0.0 by accident on 2026-08-12.
       - run: npm run check:bumps
+      # Every kit frame loop runs behind `useVisibleRaf`; a bare
+      # requestAnimationFrame is how that stops being true.
+      - run: npm run check:frame-loops
       - run: npm run typecheck
       # Two things (eslint.config.js). The scoped no-restricted-imports blocks
       # guard one-way dependency arrows — core/ ← features/, and the leaf purity

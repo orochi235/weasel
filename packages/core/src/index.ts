@@ -252,6 +252,10 @@ export type {
   UseGestureDispatcherOptions,
 } from './interactions/dispatcher';
 
+// ─── Scheduling: the visibility gate every weasel frame loop runs behind ────
+export { useVisibleRaf } from './scheduling/useVisibleRaf';
+export type { VisibleRaf, VisibleRafOptions, VisibleRafTarget } from './scheduling/useVisibleRaf';
+
 // ─── Viewport: wheel / velocity / decay / pinch / camera animation ──────────
 export * from './core/viewport/wheelHandler';
 export { clientToCanvas } from './core/viewport/clientToCanvas';

@@ -10,6 +10,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useVisibleRaf } from '../../scheduling/useVisibleRaf';
 import type { ResolvedTextStyle, TextStyle } from './textStyle';
 import { fontString, resolveTextStyle } from './textStyle';
 import type { StyledRun } from './runs';
@@ -321,7 +322,10 @@ export function useTextEdit(
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
-  const rafRef = useRef<number | null>(null);
+  // The overlay-follow loop is built inside the editing effect; the gate's
+  // frame callback reaches it through this ref.
+  const tickRef = useRef<() => void>(() => {});
+  const frameLoop = useVisibleRaf(() => { tickRef.current(); });
   const initialCaretRef = useRef<number | 'all'>('all');
   const [selection, setSelection] = useState<TextEditSelection | null>(null);
   const [rangeStyle, setRangeStyle] = useState<RangeStyle | null>(null);
@@ -609,16 +613,18 @@ export function useTextEdit(
     // filters to selections inside the overlay.
     document.addEventListener('selectionchange', syncSelection);
 
-    const tick = () => {
+    // Follows the node's screen pose every frame — behind the visibility gate,
+    // so an overlay left open in a background tab costs nothing.
+    tickRef.current = () => {
       const pose = optsRef.current.getScreenPose(editingId);
       placeOverlay(overlay, pose, style);
-      rafRef.current = requestAnimationFrame(tick);
+      frameLoop.request();
     };
-    rafRef.current = requestAnimationFrame(tick);
+    frameLoop.request();
 
     return () => {
-      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
+      frameLoop.cancel();
+      tickRef.current = () => {};
       overlay.removeEventListener('keydown', onKeyDown);
       overlay.removeEventListener('blur', onBlur);
       overlay.removeEventListener('beforeinput', onBeforeInput);
@@ -629,7 +635,7 @@ export function useTextEdit(
       overlayRef.current = null;
       clearSelection();
     };
-  }, [editingId, commit, cancelEdit, syncSelection, clearSelection]);
+  }, [editingId, commit, cancelEdit, syncSelection, clearSelection, frameLoop]);
 
   return {
     editingId, startEdit, cancelEdit, commit, isEditing,

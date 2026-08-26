@@ -1,3 +1,4 @@
+import { useVisibleRaf } from '@weasel-js/core';
 import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { screenToWorld } from '../canvas/canvasCoords';
 import type {
@@ -42,7 +43,9 @@ export function useDragDrop<TS, TC>({
   const [drag, setDrag] = useState<DragState | null>(null);
   const dragRef = useRef<DragState | null>(null);
   dragRef.current = drag;
-  const rafThrottle = useRef<number | null>(null);
+  /** The move the next frame will resolve. Doubles as the throttle's flag:
+   *  non-null means a frame is already queued. */
+  const pendingPos = useRef<Point | null>(null);
 
   const isOverCanvas = useCallback(
     (screenPos: Point): boolean => {
@@ -69,37 +72,42 @@ export function useDragDrop<TS, TC>({
     [canvasContainerRef, view],
   );
 
+  const frameLoop = useVisibleRaf(() => {
+    const screenPos = pendingPos.current;
+    pendingPos.current = null;
+    const active = dragRef.current;
+    if (!active || !screenPos) return;
+    let feedback: DragFeedback | null = null;
+    if (capability.onDragOver && isOverCanvas(screenPos)) {
+      const world = screenToWorldFromContainer(screenPos);
+      if (world) feedback = capability.onDragOver(world, active.item, state, config);
+    }
+    setDrag({ ...active, screenPos, feedback });
+  });
+
   useEffect(() => {
     if (!drag) return;
     const handleMove = (e: PointerEvent) => {
       const screenPos = { x: e.clientX, y: e.clientY };
       const current = dragRef.current;
       if (!current) return;
-      if (rafThrottle.current !== null) {
+      if (pendingPos.current !== null) {
+        // A frame is already queued: keep the ghost under the cursor and let
+        // that frame probe the drop target from the newest position.
+        pendingPos.current = screenPos;
         dragRef.current = { ...current, screenPos };
         setDrag(dragRef.current);
         return;
       }
-      rafThrottle.current = requestAnimationFrame(() => {
-        rafThrottle.current = null;
-        const active = dragRef.current;
-        if (!active) return;
-        let feedback: DragFeedback | null = null;
-        if (capability.onDragOver && isOverCanvas(screenPos)) {
-          const world = screenToWorldFromContainer(screenPos);
-          if (world) feedback = capability.onDragOver(world, active.item, state, config);
-        }
-        setDrag({ ...active, screenPos, feedback });
-      });
+      pendingPos.current = screenPos;
+      frameLoop.request();
     };
     const handleUp = (e: PointerEvent) => {
       const screenPos = { x: e.clientX, y: e.clientY };
       const active = dragRef.current;
       if (!active) return;
-      if (rafThrottle.current !== null) {
-        cancelAnimationFrame(rafThrottle.current);
-        rafThrottle.current = null;
-      }
+      pendingPos.current = null;
+      frameLoop.cancel();
       if (isOverCanvas(screenPos)) {
         const world = screenToWorldFromContainer(screenPos);
         if (world) {
@@ -116,7 +124,17 @@ export function useDragDrop<TS, TC>({
       window.removeEventListener('pointermove', handleMove);
       window.removeEventListener('pointerup', handleUp);
     };
-  }, [drag, capability, state, config, setState, emit, isOverCanvas, screenToWorldFromContainer]);
+  }, [
+    drag,
+    capability,
+    state,
+    config,
+    setState,
+    emit,
+    frameLoop,
+    isOverCanvas,
+    screenToWorldFromContainer,
+  ]);
 
   const startDrag = useCallback((item: PaletteItem, originScreenPos: Point) => {
     setDrag({ item, screenPos: originScreenPos, feedback: null });

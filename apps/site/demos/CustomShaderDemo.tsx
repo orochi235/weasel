@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { SceneCanvas, useHandleDrag, useScene } from '@weasel-js/core';
+import { SceneCanvas, useHandleDrag, useScene, useVisibleRaf } from '@weasel-js/core';
 import type { RenderLayer } from '@weasel-js/core';
 import {
   registerProgram, registerTexture,
@@ -283,17 +283,27 @@ export function CustomShaderDemo() {
 
   // Animation loop — skipped when `?frozenTime=N` is present so visual specs
   // can capture a deterministic frame.
+  // `time` accumulates only the frames that ran, so a spell in a background tab
+  // resumes the shader where it stopped instead of jumping an hour forward.
+  const elapsedRef = useRef(0);
+  const lastFrameRef = useRef<number | null>(null);
+  const loop = useVisibleRaf(
+    (now) => {
+      const last = lastFrameRef.current;
+      lastFrameRef.current = now;
+      if (last !== null) elapsedRef.current += (now - last) / 1000;
+      setTime(elapsedRef.current);
+      loop.request();
+    },
+    { onResume: () => { lastFrameRef.current = null; } },
+  );
+
   useEffect(() => {
     if (frozen !== null) return;
-    let raf = 0;
-    const start = performance.now();
-    const tick = () => {
-      setTime((performance.now() - start) / 1000);
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [frozen]);
+    lastFrameRef.current = null;
+    loop.request();
+    return () => loop.cancel();
+  }, [frozen, loop]);
 
   // Drop expired ripples
   useEffect(() => {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { useVisibleRaf } from '../../scheduling/useVisibleRaf';
 
 /** Per-axis limits on a view's position. Any side may be left open. */
 export interface PanBounds {
@@ -41,7 +42,6 @@ const SPRING_DAMPING = 0.5;
 /** A rAF loop that coasts a value to a stop under friction, reporting the
  *  per-frame delta. What turns a released pan drag into momentum scrolling. */
 export function useDecayLoop() {
-  const rafRef = useRef<number | null>(null);
   const stateRef = useRef<{
     vx: number; vy: number;
     friction: number; minSpeed: number;
@@ -53,20 +53,29 @@ export function useDecayLoop() {
     onEnd?: () => void;
   } | null>(null);
 
+  const frameLoop = useVisibleRaf(
+    (now: number) => { tick(now); },
+    {
+      // Coasting does not continue while suspended: dropping `lastTime` makes
+      // the resuming frame seed a fresh interval instead of applying an hour of
+      // friction at once, which would end the decay before it was seen.
+      onResume: useCallback(() => {
+        if (stateRef.current) stateRef.current.lastTime = null;
+      }, []),
+    },
+  );
+
   const cancel = useCallback(() => {
-    if (rafRef.current !== null) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
+    frameLoop.cancel();
     stateRef.current = null;
-  }, []);
+  }, [frameLoop]);
 
   const tick = useCallback((now: number) => {
     const s = stateRef.current;
     if (!s) return;
     if (s.lastTime === null) {
       s.lastTime = now;
-      rafRef.current = requestAnimationFrame(tick);
+      frameLoop.request();
       return;
     }
     const dt = Math.min(now - s.lastTime, 64);  // cap at 64ms to avoid huge jumps
@@ -78,7 +87,7 @@ export function useDecayLoop() {
     const speed = Math.sqrt(s.vx * s.vx + s.vy * s.vy);
     if (speed < s.minSpeed) {
       stateRef.current = null;
-      rafRef.current = null;
+      frameLoop.cancel();
       s.onEnd?.();
       return;
     }
@@ -110,8 +119,8 @@ export function useDecayLoop() {
       s.posY += dy;
     }
     s.onTick(dx, dy);
-    rafRef.current = requestAnimationFrame(tick);
-  }, []);
+    frameLoop.request();
+  }, [frameLoop]);
 
   const start = useCallback((config: DecayLoopConfig) => {
     cancel();
@@ -124,8 +133,8 @@ export function useDecayLoop() {
       viewBounds, boundary,
       onTick, onEnd,
     };
-    rafRef.current = requestAnimationFrame(tick);
-  }, [cancel, tick]);
+    frameLoop.request();
+  }, [cancel, frameLoop]);
 
   useEffect(() => () => { cancel(); }, [cancel]);
 

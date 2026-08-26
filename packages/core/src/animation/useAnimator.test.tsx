@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAnimator } from './useAnimator';
 import { linear, SPRING_PRESETS } from './easings';
@@ -577,5 +577,57 @@ describe('useAnimator.physics', () => {
     // With spring force gone but residual positive velocity, position
     // should drift further forward before damping settles it.
     expect(samples[samples.length - 1]).toBeGreaterThan(atSwitch);
+  });
+});
+
+describe('useAnimator visibility', () => {
+  const setHidden = (next: boolean) => {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => next });
+    document.dispatchEvent(new Event('visibilitychange'));
+  };
+
+  afterEach(() => { setHidden(false); });
+
+  it('does not tick while the document is hidden', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const ticks: number[] = [];
+    act(() => {
+      result.current.tween<number>({
+        from: 0, to: 100, ms: 1000, easing: linear, onTick: (v) => ticks.push(v),
+      });
+    });
+    act(() => clock.advance(0));
+    expect(ticks).toHaveLength(1);
+
+    act(() => { setHidden(true); });
+    act(() => clock.advance(500));
+    act(() => clock.advance(500));
+    expect(ticks).toHaveLength(1);
+  });
+
+  it('does not charge an animation for the time it spent hidden', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const ticks: number[] = [];
+    act(() => {
+      result.current.tween<number>({
+        from: 0, to: 100, ms: 1000, easing: linear, onTick: (v) => ticks.push(v),
+      });
+    });
+    act(() => clock.advance(0));
+    act(() => clock.advance(200));
+    expect(ticks.at(-1)).toBeCloseTo(20, 6);
+
+    // An hour in a background tab. Resuming must not jump the tween to done.
+    act(() => { setHidden(true); });
+    act(() => clock.advance(3_600_000));
+    act(() => { setHidden(false); });
+    act(() => clock.advance(0));
+    expect(ticks.at(-1)).toBeCloseTo(20, 6);
+
+    act(() => clock.advance(300));
+    expect(ticks.at(-1)).toBeCloseTo(50, 6);
+    expect(result.current.isActive()).toBe(true);
   });
 });

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useVisibleRaf } from '../scheduling/useVisibleRaf';
 import { easeOut, SPRING_PRESETS } from './easings';
 import { createLoop, createTweenLoop } from './loop';
 import { createStagger, type StaggerTimers } from './stagger';
@@ -48,7 +49,6 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
   optsRef.current = opts;
   const animations = useRef<Map<number, ActiveAnimation>>(new Map());
   const nextId = useRef(1);
-  const rafHandle = useRef<number | null>(null);
   /**
    * Re-entrancy counter incremented around each animation tick in tickAll.
    * Exposed via `isTicking()`. > 0 ⇒ we're currently inside an animation's
@@ -64,6 +64,24 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
   // but before the next RAF schedules). Used by `<SceneCanvas animator>`
   // to request a redraw on every active frame.
   const tickSubscribers = useRef<Set<() => void>>(new Set());
+
+  // The loop runs behind the visibility gate. `tickAll` is built inside the
+  // memo below, so the frame callback reaches it through a ref.
+  const tickAllRef = useRef<((t: number) => void) | null>(null);
+  const frameLoop = useVisibleRaf(
+    useCallback((t: number) => { tickAllRef.current?.(t); }, []),
+    {
+      requestFrame: opts.requestFrame,
+      cancelFrame: opts.cancelFrame,
+      // An hour spent hidden is not an hour the animation ran: dropping each
+      // animation's last timestamp makes the resuming frame's `realDt` zero.
+      onResume: () => {
+        for (const anim of animations.current.values()) anim.lastRealNow = null;
+      },
+    },
+  );
+  const frameLoopRef = useRef(frameLoop);
+  frameLoopRef.current = frameLoop;
 
   // StrictMode-safe cleanup: when the component unmounts (including the
   // dev-mode double-mount that StrictMode performs), cancel every running
@@ -113,10 +131,6 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
     // forever (never reaching completion).
     const now = (): number =>
       (optsRef.current.now ?? (typeof performance !== 'undefined' ? performance.now.bind(performance) : Date.now))();
-    const requestFrame = (cb: (t: number) => void): number =>
-      (optsRef.current.requestFrame ?? requestAnimationFrame)(cb);
-    const cancelFrame = (h: number): void =>
-      (optsRef.current.cancelFrame ?? cancelAnimationFrame)(h);
     // Resolved timer pair, snapshotted lazily from optsRef on each call so a
     // test that updates the injection after mount still wins. Kept internal —
     // not exposed on the public Animator surface; passed directly into
@@ -153,44 +167,43 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       };
     };
 
+    const tickAll = (t: number): void => {
+      const finished: number[] = [];
+      for (const anim of animations.current.values()) {
+        const realDt = anim.lastRealNow == null ? 0 : t - anim.lastRealNow;
+        anim.lastRealNow = t;
+        const scale = globalPaused.current
+          ? 0
+          : globalTimeScale.current * (anim.paused ? 0 : anim.timeScale);
+        anim.virtualNow += realDt * scale;
+        // Increment tick depth around each animation's tick so re-entrant
+        // calls (e.g. `decay.onTick` → `adapter.setPose` →
+        // `animateOnSetPose` checking `isTicking()`) see the flag and
+        // skip scheduling a new wrap-tween that would fight the caller.
+        tickDepth.current += 1;
+        try {
+          if (anim.tick(anim.virtualNow)) finished.push(anim.id);
+        } finally {
+          tickDepth.current -= 1;
+        }
+      }
+      for (const id of finished) {
+        animations.current.delete(id);
+        fireCompletion(id);
+      }
+      // Notify every onTick subscriber AFTER the tick batch so they
+      // see the latest `colorOverrides` / pose values. Errors in one
+      // subscriber don't suppress the others.
+      for (const sub of tickSubscribers.current) {
+        try { sub(); } catch (err) { console.error('useAnimator: onTick subscriber threw', err); }
+      }
+      if (animations.current.size > 0) frameLoopRef.current.request();
+    };
+    tickAllRef.current = tickAll;
+
     const ensureLoop = (): void => {
-      if (rafHandle.current != null || animations.current.size === 0) return;
-      const tickAll = (t: number): void => {
-        rafHandle.current = null;
-        const finished: number[] = [];
-        for (const anim of animations.current.values()) {
-          const realDt = anim.lastRealNow == null ? 0 : t - anim.lastRealNow;
-          anim.lastRealNow = t;
-          const scale = globalPaused.current
-            ? 0
-            : globalTimeScale.current * (anim.paused ? 0 : anim.timeScale);
-          anim.virtualNow += realDt * scale;
-          // Increment tick depth around each animation's tick so re-entrant
-          // calls (e.g. `decay.onTick` → `adapter.setPose` →
-          // `animateOnSetPose` checking `isTicking()`) see the flag and
-          // skip scheduling a new wrap-tween that would fight the caller.
-          tickDepth.current += 1;
-          try {
-            if (anim.tick(anim.virtualNow)) finished.push(anim.id);
-          } finally {
-            tickDepth.current -= 1;
-          }
-        }
-        for (const id of finished) {
-          animations.current.delete(id);
-          fireCompletion(id);
-        }
-        // Notify every onTick subscriber AFTER the tick batch so they
-        // see the latest `colorOverrides` / pose values. Errors in one
-        // subscriber don't suppress the others.
-        for (const sub of tickSubscribers.current) {
-          try { sub(); } catch (err) { console.error('useAnimator: onTick subscriber threw', err); }
-        }
-        if (animations.current.size > 0) {
-          rafHandle.current = requestFrame(tickAll);
-        }
-      };
-      rafHandle.current = requestFrame(tickAll);
+      if (animations.current.size === 0) return;
+      frameLoopRef.current.request();
     };
 
     const cancelByKey = (key: string): void => {
@@ -419,10 +432,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       }
       animations.current.clear();
       for (const id of ids) fireCompletion(id);
-      if (rafHandle.current != null) {
-        cancelFrame(rafHandle.current);
-        rafHandle.current = null;
-      }
+      frameLoopRef.current.cancel();
     };
     cleanupRef.current = cancelAll;
     // Self-reference: loop/tweenLoop need to invoke methods on this same

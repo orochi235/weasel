@@ -1,3 +1,4 @@
+import { useVisibleRaf } from '@weasel-js/core';
 import { type RefObject, useEffect, useRef } from 'react';
 import type { ViewTransform } from '../instrument/types';
 
@@ -14,11 +15,19 @@ interface SchedulerOptions {
   view: ViewTransform;
   canvasRefs: RefObject<Map<string, HTMLCanvasElement>>;
   size: { width: number; height: number; dpr: number };
+  /** The element the stack occupies. Given one, the scheduler also stops while
+   *  the stack sits outside the viewport. */
+  host?: RefObject<Element | null>;
 }
 
-export function useLayerScheduler({ layers, view, canvasRefs, size }: SchedulerOptions): void {
+export function useLayerScheduler({
+  layers,
+  view,
+  canvasRefs,
+  size,
+  host,
+}: SchedulerOptions): void {
   const dirty = useRef<Set<string>>(new Set());
-  const rafId = useRef<number | null>(null);
   const lastRenderRef = useRef<Map<string, CanvasLayerDescriptor['render']>>(new Map());
 
   useEffect(() => {
@@ -37,9 +46,11 @@ export function useLayerScheduler({ layers, view, canvasRefs, size }: SchedulerO
     for (const layer of layers) dirty.current.add(layer.id);
   }, [view, size, layers]);
 
-  useEffect(() => {
-    const tick = () => {
-      rafId.current = null;
+  // Painting only what is dirty is not the same as doing nothing: a hidden tab
+  // still commits React updates, and the effect above marks every layer dirty
+  // on any view or size change. The gate is what actually stops the work.
+  const frameLoop = useVisibleRaf(
+    () => {
       if (dirty.current.size === 0) return;
       const map = canvasRefs.current;
       if (!map) {
@@ -60,15 +71,11 @@ export function useLayerScheduler({ layers, view, canvasRefs, size }: SchedulerO
         ctx.restore();
       }
       dirty.current.clear();
-    };
-    if (dirty.current.size > 0 && rafId.current === null) {
-      rafId.current = requestAnimationFrame(tick);
-    }
-    return () => {
-      if (rafId.current !== null) {
-        cancelAnimationFrame(rafId.current);
-        rafId.current = null;
-      }
-    };
+    },
+    { target: host },
+  );
+
+  useEffect(() => {
+    if (dirty.current.size > 0) frameLoop.request();
   });
 }
