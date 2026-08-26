@@ -39,7 +39,7 @@
   min-width: 80px;
   background: var(--wzl-surface-sunken);
   border: 1px solid var(--wzl-border);
-  border-radius: 3px;
+  border-radius: var(--wzl-radius-sm);
 }
 
 .slider[data-orientation="vertical"] .track {
@@ -53,7 +53,7 @@
   bottom: 0;
   left: 0;
   background: var(--wzl-accent-strong);
-  border-radius: 3px;
+  border-radius: var(--wzl-radius-sm);
 }
 
 .thumb {

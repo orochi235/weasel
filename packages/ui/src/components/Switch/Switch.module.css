@@ -22,7 +22,7 @@
   height: 16px;
   background: var(--wzl-surface-sunken);
   border: 1px solid var(--wzl-border-strong);
-  border-radius: 8px;
+  border-radius: var(--wzl-radius-pill);
   transition: background-color var(--wzl-motion-fast), border-color var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast);
 }
 

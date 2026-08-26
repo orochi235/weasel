@@ -60,5 +60,5 @@
 }
 .controls::-webkit-scrollbar-thumb {
   background: var(--wzl-border);
-  border-radius: 2px;
+  border-radius: var(--wzl-radius-sm);
 }

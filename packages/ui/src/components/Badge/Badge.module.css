@@ -59,7 +59,7 @@
 .badge[data-tone='accent']  { --badge-edge: var(--wzl-accent-fg, var(--wzl-accent, #7fb069)); }
 .badge[data-tone='info']    { --badge-edge: #7ab8d4; }
 .badge[data-tone='warn']    { --badge-edge: #d4a574; }
-.badge[data-tone='danger']  { --badge-edge: #c43c3c; }
+.badge[data-tone='danger']  { --badge-edge: var(--wzl-danger); }
 .badge[data-tone='muted']   { --badge-edge: var(--wzl-fg-muted); }
 .badge[data-tone='neutral'] { --badge-edge: var(--wzl-border); --badge-fg: var(--wzl-fg-muted); }
 
@@ -91,7 +91,7 @@
 
 .badge[data-shape='pill'] {
   display: inline;
-  border-radius: 9999px;
+  border-radius: var(--wzl-radius-pill);
   box-sizing: border-box;
   -webkit-box-decoration-break: slice;
   box-decoration-break: slice;
@@ -133,7 +133,7 @@
 .badge[data-shape='plain'][data-focused='true'] {
   outline: 2px solid color-mix(in oklab, var(--badge-edge) 60%, transparent);
   outline-offset: 3px;
-  border-radius: 2px;
+  border-radius: var(--wzl-radius-sm);
 }
 
 .badge[data-shape='plaque'] .content {

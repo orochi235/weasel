@@ -21,7 +21,7 @@
 
 .error {
   font-size: var(--wzl-font-size-sm);
-  color: var(--wzl-danger, #ff5b5b);
+  color: var(--wzl-danger);
   line-height: 1.4;
 }
 

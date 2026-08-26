@@ -28,7 +28,7 @@
 }
 
 .field[data-invalid] .frame {
-  border-color: var(--wzl-danger, #ff5b5b);
+  border-color: var(--wzl-danger);
 }
 
 .field[data-disabled] .frame {

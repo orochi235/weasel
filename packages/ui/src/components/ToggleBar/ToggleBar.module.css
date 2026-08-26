@@ -12,7 +12,7 @@
     rgba(0, 0, 0, 0.18) 0%,
     rgba(0, 0, 0, 0.05) 100%
   );
-  border-radius: 999px;
+  border-radius: var(--wzl-radius-pill);
   /* Clip segments to the track outline so interior corners read crisp and
      the selected segment's glass treatment doesn't paint over the rounded
      outer pixels. */
@@ -51,15 +51,15 @@
 }
 
 .segment:first-child {
-  border-radius: 999px 0 0 999px;
+  border-radius: var(--wzl-radius-pill) 0 0 var(--wzl-radius-pill);
 }
 
 .segment:last-child {
-  border-radius: 0 999px 999px 0;
+  border-radius: 0 var(--wzl-radius-pill) var(--wzl-radius-pill) 0;
 }
 
 .segment:only-child {
-  border-radius: 999px;
+  border-radius: var(--wzl-radius-pill);
 }
 
 .segment:focus-visible {
@@ -167,8 +167,8 @@
   height: auto;
   padding: 0;
   background: none;
-  border: 1px solid var(--wzl-border, rgba(255, 255, 255, 0.18));
-  border-radius: 3px;
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
   box-shadow: none;
   gap: 0;
 }
@@ -187,7 +187,7 @@
    without a heavy track. Only the inner edges get a rule — the outer
    border on `.variant_minimal` handles the perimeter. */
 .variant_minimal .segment + .segment {
-  border-left: 1px solid var(--wzl-border, rgba(255, 255, 255, 0.18));
+  border-left: 1px solid var(--wzl-border);
 }
 
 .variant_minimal .segment:first-child,
@@ -198,7 +198,7 @@
 
 .variant_minimal .segment:hover:not(:disabled):not(.segmentSelected) {
   color: var(--wzl-fg);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--wzl-surface-hover);
 }
 
 .variant_minimal .segmentSelected {

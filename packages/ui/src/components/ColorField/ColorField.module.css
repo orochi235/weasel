@@ -7,7 +7,7 @@
 .chip {
   position: relative;
   display: inline-flex;
-  border-radius: 4px;
+  border-radius: var(--wzl-radius-sm);
   overflow: hidden;
 }
 
@@ -16,7 +16,7 @@
   block-size: 20px;
   padding: 0;
   border: 1px solid var(--wzl-border, #444);
-  border-radius: 4px;
+  border-radius: var(--wzl-radius-sm);
   background: none;
   cursor: pointer;
 }
@@ -27,7 +27,7 @@
   content: '';
   position: absolute;
   inset: 1px;
-  border-radius: 3px;
+  border-radius: var(--wzl-radius-sm);
   pointer-events: none;
   background: repeating-conic-gradient(
       var(--wzl-border, #666) 0% 25%,

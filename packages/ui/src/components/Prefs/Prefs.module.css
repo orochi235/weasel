@@ -38,7 +38,7 @@
   padding: 8px 8px 8px 10px;
   background: var(--wzl-surface-sunken);
   border-left: 2px solid var(--wzl-border);
-  border-radius: 2px;
+  border-radius: var(--wzl-radius-sm);
 }
 
 .groupHeader {

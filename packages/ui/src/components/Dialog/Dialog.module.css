@@ -83,7 +83,7 @@
 }
 
 .close:hover {
-  background: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
+  background: var(--wzl-surface-hover);
   color: var(--wzl-fg);
 }
 

@@ -27,7 +27,7 @@
 }
 
 .field[data-invalid] .frame {
-  border-color: var(--wzl-danger, #ff5b5b);
+  border-color: var(--wzl-danger);
 }
 
 .field[data-disabled] .frame {
@@ -94,14 +94,14 @@
   display: flex;
   align-items: center;
   padding: 4px 8px;
-  border-radius: 3px;
+  border-radius: var(--wzl-radius-sm);
   cursor: pointer;
   color: var(--wzl-fg);
   outline: none;
 }
 
 .option[data-focused] {
-  background: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
+  background: var(--wzl-surface-hover);
 }
 
 .option[data-selected] {

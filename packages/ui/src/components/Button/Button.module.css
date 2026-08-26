@@ -208,11 +208,11 @@
 .variant_ghost::before { display: none; }
 
 .variant_ghost:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
+  background: var(--wzl-surface-hover);
 }
 
 .variant_ghost:active:not(:disabled) {
-  background: color-mix(in srgb, var(--wzl-fg) 18%, transparent);
+  background: var(--wzl-surface-pressed);
 }
 
 /* ---------- Modifiers ---------- */

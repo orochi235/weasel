@@ -27,7 +27,7 @@
 }
 
 .field[data-invalid] .frame {
-  border-color: var(--wzl-danger, #ff5b5b);
+  border-color: var(--wzl-danger);
 }
 
 .field[data-disabled] .frame {
@@ -80,12 +80,12 @@
 }
 
 .stepper[data-hovered]:not([data-disabled]) {
-  background: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
+  background: var(--wzl-surface-hover);
   color: var(--wzl-fg);
 }
 
 .stepper[data-pressed]:not([data-disabled]) {
-  background: color-mix(in srgb, var(--wzl-fg) 18%, transparent);
+  background: var(--wzl-surface-pressed);
 }
 
 .stepper[data-disabled] {

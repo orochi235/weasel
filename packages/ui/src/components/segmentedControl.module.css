@@ -16,7 +16,7 @@
     rgba(0, 0, 0, 0.18) 0%,
     rgba(0, 0, 0, 0.05) 100%
   );
-  border-radius: 999px;
+  border-radius: var(--wzl-radius-pill);
   /* Clip segments to the track outline so interior corners read crisp and
      the selected segment's glass treatment doesn't paint over the rounded
      outer pixels. */
@@ -55,15 +55,15 @@
 }
 
 .segment:first-child {
-  border-radius: 999px 0 0 999px;
+  border-radius: var(--wzl-radius-pill) 0 0 var(--wzl-radius-pill);
 }
 
 .segment:last-child {
-  border-radius: 0 999px 999px 0;
+  border-radius: 0 var(--wzl-radius-pill) var(--wzl-radius-pill) 0;
 }
 
 .segment:only-child {
-  border-radius: 999px;
+  border-radius: var(--wzl-radius-pill);
 }
 
 .segment:focus-visible {
@@ -161,7 +161,7 @@
   font-size: var(--wzl-font-size-sm);
   font-weight: var(--wzl-font-weight-medium);
   line-height: 1.4;
-  border-radius: 2px;
+  border-radius: var(--wzl-radius-sm);
   color: var(--wzl-fg-muted);
   transition: none;
 }
@@ -169,12 +169,12 @@
 .variant_minimal .segment:first-child,
 .variant_minimal .segment:last-child,
 .variant_minimal .segment:only-child {
-  border-radius: 2px;
+  border-radius: var(--wzl-radius-sm);
 }
 
 .variant_minimal .segment:hover:not(:disabled):not(.segmentSelected) {
   color: var(--wzl-fg);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--wzl-surface-hover);
 }
 
 .variant_minimal .segmentSelected {

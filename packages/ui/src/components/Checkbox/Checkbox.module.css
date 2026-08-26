@@ -41,7 +41,7 @@
 }
 
 .checkbox[data-invalid] .box {
-  border-color: var(--wzl-danger, #ff5b5b);
+  border-color: var(--wzl-danger);
 }
 
 .checkmark {

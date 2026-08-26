@@ -18,7 +18,7 @@
   height: var(--rp-track-height, 24px);
   background: var(--wzl-surface-sunken);
   border: 1px solid var(--wzl-border);
-  border-radius: 3px;
+  border-radius: var(--wzl-radius-sm);
   cursor: crosshair;
   /* No `overflow: hidden` here — thumbs at extreme values would get
    * clipped at the track edges. The gradient/track-paint clip is
@@ -28,7 +28,7 @@
 .trackInner {
   position: absolute;
   inset: 0;
-  border-radius: 3px;
+  border-radius: var(--wzl-radius-sm);
   overflow: hidden;
 }
 
@@ -45,7 +45,7 @@
   justify-content: center;
   background: color-mix(in srgb, var(--wzl-fg-muted) 70%, transparent);
   border: 1px solid var(--wzl-border-strong);
-  border-radius: 3px;
+  border-radius: var(--wzl-radius-sm);
   cursor: ew-resize;
   /* Frosted-glass over the (often colorful) track. Cheap on modern GPUs;
    * gracefully degrades to just the partial-alpha background on engines

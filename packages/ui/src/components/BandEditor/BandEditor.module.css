@@ -61,7 +61,7 @@
   margin: 0;
   background: var(--wzl-surface-raised);
   border: 1px solid var(--wzl-border);
-  border-radius: var(--wzl-radius-sm, 3px);
+  border-radius: var(--wzl-radius-sm);
   color: var(--wzl-fg);
   font: var(--wzl-font-weight-medium) var(--wzl-font-size-sm) / var(--wzl-leading-tight) var(--wzl-font-ui, ui-sans-serif, system-ui, sans-serif);
   cursor: grab;
@@ -136,5 +136,5 @@
 .seam:focus-visible {
   outline: 2px solid var(--wzl-accent);
   outline-offset: 0;
-  border-radius: 2px;
+  border-radius: var(--wzl-radius-sm);
 }

@@ -27,7 +27,7 @@
 }
 
 .toneDanger {
-  --callout-accent: var(--wzl-danger, #d94a3f);
+  --callout-accent: var(--wzl-danger);
 }
 
 .arrow svg {

@@ -4,7 +4,7 @@
   gap: 4px;
   background: var(--wzl-surface);
   border: 1px solid var(--wzl-border);
-  border-radius: 4px;
+  border-radius: var(--wzl-radius-sm);
   padding: 4px;
   user-select: none;
 }
