@@ -213,7 +213,7 @@ export const THEMES = {
       '--wzl-accent-fg': "#5841b8",
       '--wzl-fg-inverse': "#0e0f12",
       '--wzl-shadow': "rgba(0, 0, 0, 0.6)",
-      '--wzl-border-raised': "#4d5058",
+      '--wzl-border-raised': "#6f737b",
     },
     "light": {
       '--wzl-gray-50': "#f5f5f6",
@@ -311,7 +311,7 @@ export const THEMES = {
       '--wzl-accent-fg': "#2e1f7a",
       '--wzl-fg-inverse': "#f5f5f6",
       '--wzl-shadow': "rgba(0, 0, 0, 0.18)",
-      '--wzl-border-raised': "#4d5058",
+      '--wzl-border-raised': "#6f737b",
     },
     },
   },
@@ -797,8 +797,8 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         },
         "border-raised": {
           "type": "color",
-          "value": "{color.gray-500}",
-          "description": "The line separating a raised surface from the field behind it. Held at 3:1 against surface, which the general-purpose border is not."
+          "value": "{color.gray-400}",
+          "description": "The line separating a raised surface from the field behind it. Clears 3:1 against both surface and surface-raised in either mode, which the general-purpose border does not."
         }
       },
       "light": {
@@ -850,7 +850,7 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         },
         "border-raised": {
           "type": "color",
-          "value": "{color.gray-500}"
+          "value": "{color.gray-400}"
         }
       }
     }

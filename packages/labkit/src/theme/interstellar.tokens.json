@@ -24,7 +24,7 @@
         "accent-hover": { "$value": "#c6a3ee" },
         "focus-ring": { "$value": "rgba(176, 138, 219, 0.45)" },
         "shadow": { "$value": "rgba(0, 0, 0, 0.7)" },
-        "border-raised": { "$value": "rgba(255, 255, 255, 0.32)" }
+        "border-raised": { "$value": "rgba(255, 255, 255, 0.36)" }
       },
       "gradient": {
         "$type": "gradient",

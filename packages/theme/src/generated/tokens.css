@@ -132,8 +132,8 @@
   --wzl-fg-inverse: var(--wzl-gray-900);
   /* Elevation. Always darker than any surface — never derived from fg, which is near-white on dark. */
   --wzl-shadow: rgba(0, 0, 0, 0.6);
-  /* The line separating a raised surface from the field behind it. Held at 3:1 against surface, which the general-purpose border is not. */
-  --wzl-border-raised: var(--wzl-gray-500);
+  /* The line separating a raised surface from the field behind it. Clears 3:1 against both surface and surface-raised in either mode, which the general-purpose border does not. */
+  --wzl-border-raised: var(--wzl-gray-400);
 }
 
 :root {
@@ -155,7 +155,7 @@
   --wzl-accent-fg: var(--wzl-accent-strong);
   --wzl-fg-inverse: var(--wzl-gray-900);
   --wzl-shadow: rgba(0, 0, 0, 0.6);
-  --wzl-border-raised: var(--wzl-gray-500);
+  --wzl-border-raised: var(--wzl-gray-400);
 }
 
 [data-wzl-theme='weasel'][data-wzl-mode='light'],
@@ -172,5 +172,5 @@
   --wzl-accent-fg: var(--wzl-accent-base);
   --wzl-fg-inverse: var(--wzl-gray-50);
   --wzl-shadow: rgba(0, 0, 0, 0.18);
-  --wzl-border-raised: var(--wzl-gray-500);
+  --wzl-border-raised: var(--wzl-gray-400);
 }

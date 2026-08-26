@@ -110,5 +110,5 @@ export const TOKEN_MANIFEST: readonly TokenManifestEntry[] = [
   { name: '--wzl-accent-fg', type: "color", group: "accent", defaultValue: "#5841b8", description: "Accent for foreground use — text, icons, selected labels drawn on a surface. accent is a fill; the midnight base is too dim to read as text on dark surfaces." },
   { name: '--wzl-fg-inverse', type: "color", group: "fg", defaultValue: "#0e0f12", description: "Text drawn on a filled foreground-colored element (e.g. a slider thumb). Flips with the mode, so it is a semantic, not an alias to a primitive." },
   { name: '--wzl-shadow', type: "color", group: "shadow", defaultValue: "rgba(0, 0, 0, 0.6)", description: "Elevation. Always darker than any surface — never derived from fg, which is near-white on dark." },
-  { name: '--wzl-border-raised', type: "color", group: "border", defaultValue: "#4d5058", description: "The line separating a raised surface from the field behind it. Held at 3:1 against surface, which the general-purpose border is not." },
+  { name: '--wzl-border-raised', type: "color", group: "border", defaultValue: "#6f737b", description: "The line separating a raised surface from the field behind it. Clears 3:1 against both surface and surface-raised in either mode, which the general-purpose border does not." },
 ];
