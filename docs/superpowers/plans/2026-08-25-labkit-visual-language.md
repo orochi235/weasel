@@ -28,6 +28,17 @@ paths each task names, and run `git status` before assuming the tree is yours.
 Storybook screenshot check, not just a green test run. This is not optional: arc 3 shipped a
 collapse that passed all 7903 tests while rendering an empty page.
 
+**Switching theme in Storybook takes the in-page toggle, not the URL.** `<Lab>` mounts its own
+`ThemeProvider` defaulting to `Auto`, which follows `prefers-color-scheme`. Storybook's
+`&globals=theme:dark` sets `data-theme` on `<html>`, which that provider ignores — so the URL
+global renders whatever the browser's OS preference is, and a "both themes" check done that way
+verifies one theme twice. Click the lab header's `Auto` / `Light` / `Dark` buttons instead.
+
+**Read theme values off the painted element, not off `.lk-root`.** The mode toggle applies the
+theme to a nested node, so `getComputedStyle(document.querySelector('.lk-root'))` still reports
+light-mode token values while the trial renders dark. Assert against `.lk-trial` (or whichever
+element the rule targets).
+
 **Changesets are always `patch`** (repo rule, `CLAUDE.md`). Do not write a `bump-approved` marker.
 
 ---
@@ -256,11 +267,10 @@ Expected: no output.
 
 - [ ] **Step 9: Screenshot both themes**
 
-Storybook is at `http://localhost:6021` (start with `npx storybook dev -p 6021 --no-open`).
-Open `iframe.html?id=labkit-chrome-regions--every-region&viewMode=story` in each of
-`&globals=theme:dark` and `&globals=theme:light`. Body text moves 300→300 (unchanged); anything
-that read `light` moves 200→300 on the base theme. Confirm no text has become invisible or
-clipped.
+Open `http://localhost:6031/iframe.html?id=labkit-chrome-regions--every-region&viewMode=story`
+and switch theme with the lab header's Light / Dark buttons (see the rule above — the URL global
+does not drive the lab). Body text moves 300→300 (unchanged); anything that read `light` moves
+200→300 on the base theme. Confirm no text has become invisible or clipped.
 
 - [ ] **Step 10: Commit**
 
