@@ -60,7 +60,7 @@ export function ToolbarRegion({ contributions, ctx }: ToolbarRegionProps) {
   if (contributions.length === 0) return null;
   const groups = groupsOf(contributions);
   return (
-    <Toolbar>
+    <Toolbar aria-label="Trial actions">
       {groups.map((g) => (
         <Toolbar.Group key={g.key} end={g.end} aria-label={g.key}>
           {g.entries.map((c) => renderEntry(c, ctx))}

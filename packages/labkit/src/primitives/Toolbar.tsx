@@ -1,14 +1,29 @@
 import type { MouseEventHandler, ReactNode } from 'react';
+import { useRovingTabIndex } from './useRovingTabIndex';
 
 /** Props for `<Toolbar>`. */
 export interface ToolbarProps {
   children: ReactNode;
+  /** Names the toolbar for assistive tech. Required by the APG pattern when a
+   *  view holds more than one. */
+  'aria-label'?: string;
 }
 
 /** A horizontal bar of controls. Fill it with `<Toolbar.Title>`,
  *  `<Toolbar.Group>`, `<Toolbar.Button>` and `<Toolbar.Spacer>`. */
-export function Toolbar({ children }: ToolbarProps) {
-  return <div className="lk-toolbar">{children}</div>;
+export function Toolbar({ children, 'aria-label': ariaLabel }: ToolbarProps) {
+  const { ref, onKeyDown } = useRovingTabIndex<HTMLDivElement>();
+  return (
+    <div
+      ref={ref}
+      className="lk-toolbar"
+      role="toolbar"
+      aria-label={ariaLabel}
+      onKeyDown={onKeyDown}
+    >
+      {children}
+    </div>
+  );
 }
 
 interface TitleProps {
@@ -32,7 +47,6 @@ export interface ToolbarGroupProps {
  *  reads as one undifferentiated run. */
 function Group({ children, end, 'aria-label': ariaLabel }: ToolbarGroupProps) {
   return (
-    // biome-ignore lint/a11y/useSemanticElements: <fieldset> means form controls, needs a <legend> to be named, and its UA min-width breaks flex children.
     <div
       className={`lk-toolbar-group${end ? ' lk-toolbar-group--end' : ''}`}
       role="group"
