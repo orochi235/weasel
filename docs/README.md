@@ -28,6 +28,5 @@ For working code, the `apps/site/` directory has runnable consumers
 (`TransformDemo`, `CompoundPathsDemo`, `InsertDemo`, …); run them
 with `npm run dev:kit` from the repo root.
 
-`docs/specs/`, `docs/plans/`, and `docs/TODO.md` are internal — design
-notes, in-flight work, and historical decisions. They are not part of the
+`docs/specs/` and `docs/TODO.md` are internal — design notes and open work. They are not part of the
 user-facing reference.

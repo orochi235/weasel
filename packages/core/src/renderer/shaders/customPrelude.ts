@@ -18,7 +18,7 @@
  *   out vec2 v_screen      screen-space pixel coordinate of this fragment
  *   out vec2 v_world       approximate world-space coordinate (via view inverse)
  *
- * PREMULTIPLIED ALPHA REQUIREMENT (conventions §2):
+ * PREMULTIPLIED ALPHA REQUIREMENT:
  * The canvas uses premultipliedAlpha:true (the WebGL2 default). Consumer
  * fragment shaders MUST output premultiplied alpha:
  *

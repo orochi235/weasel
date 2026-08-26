@@ -6,7 +6,7 @@
  * calls getProgramSource() and compiles the result. This keeps registerProgram
  * GL-context-agnostic — identical pattern to registerFont storing ImageBitmap.
  *
- * Convention §9: module-level state = source strings only; compiled GL
+ * Module-level state = source strings only; compiled GL
  * programs live on each renderer's programRegistry (Map<id, ShaderProgram>).
  *
  * Lifecycle: program sources live for the module lifetime. No unregister in v1.
@@ -68,7 +68,7 @@ const isDev = (): boolean =>
  * (recommended). The kit's vertex shader exposes `v_uv`, `v_screen`, and
  * `v_world` varyings plus `u_bounds` and `u_view` uniforms.
  *
- * **IMPORTANT — Premultiplied alpha (conventions §2):**
+ * **IMPORTANT — Premultiplied alpha:**
  * Your fragment shader MUST output premultiplied alpha:
  *   `outColor = vec4(rgb * a, a);`  ← correct
  *   `outColor = vec4(rgb, a);`      ← WRONG — over-brightens translucent regions

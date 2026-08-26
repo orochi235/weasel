@@ -213,7 +213,7 @@ Kit provides: `Journal`, capability tags, mode definitions, mode-owned decoratio
 
 ### Coordination with the Canvas/SceneCanvas seam refactor
 
-A separate in-flight refactor (`docs/superpowers/plans/2026-05-24-canvas-scenecanvas-seam.md`) redraws the boundary between `<Canvas>` (scene-agnostic surface + viewport + pointer routing) and `<SceneCanvas>` (selection, picking, kind registry, tools/actions). The seam work and the modality work are independent but share a few integration points; the modality plan should land *after* the seam refactor, or merge cleanly with it, since modality consumes the new shapes:
+A separate in-flight refactor (`2026-05-24-canvas-scenecanvas-seam` (plan, deleted at merge)) redraws the boundary between `<Canvas>` (scene-agnostic surface + viewport + pointer routing) and `<SceneCanvas>` (selection, picking, kind registry, tools/actions). The seam work and the modality work are independent but share a few integration points; the modality plan should land *after* the seam refactor, or merge cleanly with it, since modality consumes the new shapes:
 
 - **Hit-kind transport.** Mode entry via double-click reads `Hit.kind` from `getNodeAtPoint`, not from the deprecated `adapter.kindOf` escape hatch. The post-Phase-4 SceneCanvas already routes kind through its own classifier; modality just consumes the existing channel.
 - **Selection ownership.** Post-refactor, `<Canvas>` carries no built-in selection — `<SceneCanvas>` always passes selection in. The mode machine, scoping dim, and journal target-id tracking all consume the SceneCanvas-level selection. There is no "Canvas-internal selection" to coordinate with.

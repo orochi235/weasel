@@ -1,8 +1,7 @@
 # Retiring the phase-table route grammar
 
-Closes the last structural finding of the 2026-07-27 layer audit
-(`docs/handoffs/2026-07-27-tool-gesture-duplication-audit.md` §3.1 / §3.4 / §3.6)
-and the P1 entry it became in `docs/TODO.md`.
+Closes the last structural finding of the 2026-07-27 layer audit and the P1
+entry it became in `docs/TODO.md`.
 
 ## The problem
 

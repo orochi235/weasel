@@ -452,6 +452,8 @@ function placeCaretAtChar(overlay: HTMLElement, charOffset: number): void {
   }
 }
 
+// jsdom implements no contenteditable editing, so it never fires `beforeinput`
+// on its own — typing into the overlay silently does nothing.
 function dispatchBeforeInput(overlay: HTMLElement, data: string): void {
   const ev = new InputEvent('beforeinput', {
     inputType: 'insertText',

@@ -1,7 +1,7 @@
 # Canvas / SceneCanvas seam — design
 
 Date: 2026-05-24
-Status: shipped. Plan: `docs/superpowers/plans/2026-05-24-canvas-scenecanvas-seam.md`.
+Status: shipped. Plan: `2026-05-24-canvas-scenecanvas-seam` (plan, deleted at merge).
 
 ## Before / after layout
 

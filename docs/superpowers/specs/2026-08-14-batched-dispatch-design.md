@@ -17,7 +17,13 @@ have landed. Read it before touching `renderer/draw.ts`,
 
 ## Status
 
-Steps 0–3 landed. Consecutive solid-fill geometry — rects, tessellated fills,
+Steps 0–3 landed. **This file stops there and is not the current record.** The
+flush work it describes as open was finished afterwards — the solid batch cycles
+a buffer ring instead of rewriting one pair (`12303bc0`) and skips uploads the
+GPU already has (`da7c1505`), taking a solid boundary from 27 us to 2.5 us.
+`docs/TODO.md` under "Release-gate & build hygiene" carries what is left.
+
+Steps 0–3 as landed: Consecutive solid-fill geometry — rects, tessellated fills,
 stroke ribbons — merges into one `drawElements` through the existing
 `pathFillVColor` program, with color on a vertex attribute and `u_color` held at
 white. A run survives any group that does not change what a draw looks like, and

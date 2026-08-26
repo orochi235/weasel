@@ -178,8 +178,7 @@ const SILHOUETTE_SLOT = 'shape:silhouette';
  * allocated a fresh `Path` per frame, defeating the tessellation cache in
  * `renderer/cache/cache.ts` (`WeakMap<Path, Mesh>`, keyed on Path identity).
  * `kit:text` and `kit:image` do not qualify — see the tests in
- * `NodeShape.cache.test.ts` that pin their opt-out, and the handoff at
- * `docs/handoffs/2026-08-01-node-memo-paint-caching.md`.
+ * `NodeShape.cache.test.ts` that pin their opt-out.
  */
 const PAINT_SLOT = 'shape:paint';
 

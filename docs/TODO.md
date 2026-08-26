@@ -4,8 +4,11 @@ Backlog for the canvas-kit framework (published as `@weasel-js/core`). The
 kit aims to be a generic 2D scene-graph foundation. Items here are evaluated
 for cross-app reuse, not consumer-app value.
 
-For history of completed work, see `git log` and the dated specs/plans under
-`docs/superpowers/specs/` and `docs/superpowers/plans/`.
+For history of completed work, see `git log` and the dated specs under
+`docs/superpowers/specs/`. Plans are deleted when their work merges.
+
+When work merges, retire its entry here in the same change. The index below is a
+hand-maintained copy of claims made further down; fix both or fix neither.
 
 Priority tags:
 - **(P1)** — foundational genericity gap; the kit can't do this today
@@ -18,12 +21,10 @@ Priority tags:
 
 ### Next up
 
-- **Animation timelines + hierarchical rig** — spec'd, phase 1 next → [Animation](#animation)
-- **`@weasel-js/audio`** — spec'd, phase 1 next → [Audio](#audio)
-- **Side-scroller demo** — after the two above, as a load test on both → [Animation](#animation)
-- **Per-command draw cost** — solid geometry batches; what is left is the flush itself, which stalls on rewriting its own buffer. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
-- **Audit for duplicated-then-drifted cascades** — two implementations of one lookup, agreeing by coincidence → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - **labkit: generate instrument controls from a schema or a TypeScript type** → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- **`<Timeline>` editor** — the one unbuilt phase of the timeline/rig arc → [Animation](#animation)
+- **Audit for duplicated-then-drifted cascades** — two implementations of one lookup, agreeing by coincidence → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- **Per-draw text buffers** — text mints a VAO and two buffers per draw; solid geometry stopped doing this when the batch started cycling buffers → [Release-gate & build hygiene](#release-gate--build-hygiene)
 
 ### P2 — broad reuse / friction-likely
 
@@ -39,13 +40,10 @@ Priority tags:
 - labkit `registerSerializers` has no callers; instrument serializers never run → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 **Lint**
-- `eqeqeq` (285) and `no-unused-vars` (129) deferred from the 2026-08-22 baseline → [Lint](#lint)
+- `eqeqeq` (275) and `no-unused-vars` (131) deferred from the 2026-08-22 baseline → [Lint](#lint)
 
 **Tools & gestures**
 - `ToolCtx` hard-codes 2D, blocking tool reuse by another kernel → [Tools & gestures](#tools--gestures)
-
-**Viewport**
-- Viewports as a first-class canvas concept (input, not just render) → [Viewport](#viewport)
 
 **Plugins & packaging**
 - Barrel-hygiene: selection (pending design review) → [Plugins & packaging](#plugins--packaging)
@@ -64,13 +62,6 @@ Priority tags:
 ---
 
 ## Tools & gestures
-
-<!-- The arbitration-layer items below came out of a read-only review of that
-     layer against CSS cascade / Flutter's gesture arena / Blender keymaps /
-     tldraw's StateNode chart. Reasoning that did not compress into these
-     entries — including why specificity-ordered fall-through is survivable at
-     all — is in docs/handoffs/2026-07-28-arbitration-followups.md. Reviewed
-     2026-07-28, re-verified against main 2026-07-31. -->
 
 - **(P2) No opt-out for individual standard actions.** `useStandardActions`
   registers a fixed descriptor list, so a consumer wanting its own align or
@@ -202,8 +193,7 @@ Priority tags:
   nodes, since the app's `Obj` union is path/text only.
 
 - **(P3) External-content ingestion — follow-ups.** Shipped 2026-07-03 (spec
-  `docs/superpowers/specs/2026-07-03-content-ingestion-design.md`, plan
-  `docs/superpowers/plans/2026-07-03-content-ingestion.md`): drop/paste
+  `docs/superpowers/specs/2026-07-03-content-ingestion-design.md`): drop/paste
   gesture kinds (`DropSpec`/`PasteSpec`, MIME-glob `types`), dispatcher DOM
   channels (drop/dragover/dragenter/paste + `weasel-dropover` class), ambient
   `ingest` action, content-handler registry (`packages/core/src/features/ingestion/`,
@@ -320,30 +310,21 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
   consumers who store the view by reference — one who normalizes or clamps it
   would have every frame of their own glide cancelled. Wants a real design.
 
-- **(P2) Viewports as a first-class canvas concept.** `createViewportLayer`
-  re-projects on request (`layer.reproject(outer, dims, screen)`, `viewportsAt`
-  for the topmost of several, shipped 2026-08-15), but the dispatcher knows
-  nothing about viewport rects, so tools still target the outer view — you
-  cannot drag a node inside a PiP. Making that work wants a `viewports` prop on
-  `<SceneCanvas>` feeding both render and input.
+- [x] **Viewports as a first-class canvas concept — landed 2026-08-23.**
+  `<CanvasView>` (`c91e186d`) is a second camera on one canvas: `SceneCanvas`
+  takes `views?: readonly CanvasViewProps[]` and routes input through a
+  `ViewIdResolver` in `useGestureDispatcher`, with per-pointer gesture pinning.
+  You can drag a node inside a PiP. The four semantic questions this entry used
+  to list were each answered by a named commit — pinch and hover route to the
+  view under the pointer (`4ac9273b`), a view hit-tests its own chrome
+  (`726f85e0`), selection is per-view (`7c202d28`). Tests:
+  `packages/core/src/canvas/CanvasView.test.tsx`.
 
-  The mechanical parts are small, and the input seam already exists:
-  `SceneCanvas.tsx:2220` wraps `affordanceAt` / `classifyTarget` to convert
-  client → world, which is exactly where "use the inner view when the point is
-  inside a viewport" belongs. The cost is the semantics, and they are open
-  questions rather than work items:
-
-  - Which view does a gesture inside a viewport act on? A two-finger pinch in a
-    PiP could zoom the inner view or the outer one; both are defensible.
-  - What does a drag that starts inside the rect and leaves it do?
-  - Which viewport wins when two overlap — paint order, or an explicit z?
-  - Does selection chrome render inside a viewport? Screen-space source layers
-    do not today (noted in `features/viewports/README.md`).
-
-  Answer these from the shape of the viewport model rather than guessing; the
-  re-projection primitive above is the piece this would call once it knows
-  which viewport owns the point. `<MinimapCanvas>` / `<SceneViewCanvas>` remain
-  the supported answers for the two common cases.
+- **(P3) The raw `createViewportLayer` path has no input wiring.**
+  `<CanvasView>` above is the supported answer; the older re-projection
+  prototype (`layer.reproject(outer, dims, screen)`, `viewportsAt`) still
+  renders without hit-testing, as `apps/site/registry.ts` says in its blurb.
+  Either retrofit it onto the resolver or retire it in favor of `<CanvasView>`.
 
 - **(P3) Two `meanScale` residuals under non-uniform zoom.** The hit-test half
   shipped 2026-08-12: `core/viewport/pxExtent` (`pxExtent` / `withinPxBox` /
@@ -414,7 +395,7 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
   continuous dash wrapping around. Visible on a round-cap dashed rectangle
   outline.
 
-- **(P3) `<style>`-element and class-selector support for `@weasel-js/svg`.** The presentation-attribute cascade now threads a resolved `StyleContext` through the recursive parse (`packages/svg/src/cascade.ts`, shipped 2026-07-25; spec `docs/superpowers/specs/2026-07-25-svg-cascade-context-design.md`, plan `docs/superpowers/plans/2026-07-25-svg-cascade-context.md`). Inheritance, the `inherit` keyword, `style=""`, text/`<tspan>` cascade, and `currentColor` all resolve without per-attribute DOM walks (`readInheritedAttr` deleted). Still unsupported: `<style>` elements and class/selector matching — the cascade handles inheritance, not selector specificity. `style=""` remains a regex scan, not a full CSS parser (`!important` unsupported). Selector matching is the missing piece; the threaded-context fast path could compute the per-element cascade from `getComputedStyle` against a hidden DOM node in the browser.
+- **(P3) `<style>`-element and class-selector support for `@weasel-js/svg`.** The presentation-attribute cascade now threads a resolved `StyleContext` through the recursive parse (`packages/svg/src/cascade.ts`, shipped 2026-07-25; spec `docs/superpowers/specs/2026-07-25-svg-cascade-context-design.md`). Inheritance, the `inherit` keyword, `style=""`, text/`<tspan>` cascade, and `currentColor` all resolve without per-attribute DOM walks (`readInheritedAttr` deleted). Still unsupported: `<style>` elements and class/selector matching — the cascade handles inheritance, not selector specificity. `style=""` remains a regex scan, not a full CSS parser (`!important` unsupported). Selector matching is the missing piece; the threaded-context fast path could compute the per-element cascade from `getComputedStyle` against a hidden DOM node in the browser.
 
 ### Pathfinder follow-ups (post-v1)
 
@@ -427,6 +408,7 @@ Core five + Crop shipped. Remaining:
 - **(P3) Live preview during the gesture.** Holding the op key while hovering a path to see the result before committing.
 - **(P3) Boolean ops on stroked paths.** Treat a stroke as a filled region, then clip. Blocked on stroke-to-fill (round/bevel/miter joins, end caps — its own design problem).
 - **(P3) Pathfinder against text glyphs.** Needs glyph-to-path extraction.
+- **(P3) "Create Outlines".** The destructive text→path conversion every vector editor has: replace a text node with the path geometry of its glyphs, giving up editability. Shares the glyph-to-path extraction above, but is a command in its own right.
 
 ---
 
@@ -530,6 +512,11 @@ Core five + Crop shipped. Remaining:
   without a render. What that costs is real design work: some chrome genuinely
   needs a commit on a scene change (layer panels, counts, anything rendering
   node data as DOM), and deciding which is the whole question.
+
+  Two demos still subscribe while driving poses from an animation tick, and
+  should take `subscribe: false` once that lands: `EasingsDemo.tsx:49` (a
+  `setPose` per marker per frame) and `TimelineDemo.tsx:43` (`move()` from a
+  sampled track's `onTick`). `SceneScrollerDemo.tsx:73` is the one that has.
 
 - **(P3) Sync paints do not coalesce.** `CanvasProps.syncPaint`
   (`Canvas.tsx:234-242`) promises "a synchronous paint per commit", singular,
@@ -670,8 +657,7 @@ Core five + Crop shipped. Remaining:
   so the face degrades to the SDF tier saying why. Actually reading the `sfnt`
   resources out of the map is unwritten and unreachable on current macOS (204
   `.ttf` / 128 `.ttc` / 38 `.otf`, no `.dfont`). Design record for the whole
-  tier: `docs/concepts.md` ("Font outlines") and
-  `docs/handoffs/2026-07-31-dynamic-font-tier.md`; the settled argument for
+  tier: `docs/concepts.md` ("Font outlines"); the settled argument for
   keeping container unpacking in `sfnt.ts` rather than upstreaming it or
   adopting fontkit is in that file's own header.
 
@@ -754,7 +740,7 @@ Core five + Crop shipped. Remaining:
 
 ## Scene, adapters & layout
 
-- **(P2) `arrayAdapter` as the default Canvas adapter — full unification.** Partial work shipped: Canvas synthesizes an adapter from `items`/`setItems`/`toPose`/`fromPose`/`createDefault`/`poseBounds`/`intersectsRect` when no explicit `adapter` is passed. It collapses the flat-list boilerplate but is array-shape specific. The deeper move — every scene is a tree rooted at one container — was taken by `useScene` (kit-owned tree with leaf/container) but the inline-props and explicit-adapter tiers still sit alongside rather than collapsed. Full unification (one adapter contract, one default wiring) remains an option for later.
+- **(P2) `arrayAdapter` as the default Canvas adapter — full unification.** The Canvas-level synthesis tier this entry used to describe is gone — `Canvas.tsx` no longer takes `items`/`setItems`/`createDefault`/`poseBounds`/`intersectsRect`, and only `toPose` survives as a layer-config override. `arrayAdapter`, `useArrayAdapter` and `sceneToAdapter` are still three separate wirings. The deeper move — every scene is a tree rooted at one container — was taken by `useScene` (kit-owned tree with leaf/container) but the inline-props and explicit-adapter tiers still sit alongside rather than collapsed. Full unification (one adapter contract, one default wiring) remains an option for later.
 
 - **(P3) The group's union box ignores child rotation.** Per-leaf scaling
   landed 2026-08-12 (`remapRotatedLeaf`): a rotated leaf in a group now scales
@@ -806,21 +792,24 @@ Core five + Crop shipped. Remaining:
 
 ## Animation
 
-### Timelines and rigging (active)
+### Timelines and rigging
 
 Design: `docs/superpowers/specs/2026-08-22-animation-timeline-rig-design.md`.
 Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decomposition.md`.
 
-- **(P1) Timeline primitive** — `animator.timeline(opts)`, registered in the
-  animator's table so its playhead is the entry's `virtualNow` and pause /
-  time-scale / `cancelKey` apply unchanged. Three track kinds: sampled (pure
-  function of `t`, reuses the tween interpolation contract), event (edge
-  crossings, silent under seek), and nested timelines. A public frame tick falls
-  out of the same mechanism.
-- **(P1) Hierarchical rig** — skeleton of named joints with their own TRS, poses
-  as local deltas, `blendPoses`, `resolveSkeleton`. Binding to scene nodes is a
-  dep following the `insert` pattern. Animating a rig is a `SampledTrack<Pose>`
-  whose `interpolate` is `blendPoses` — no rig-specific timeline integration.
+- [x] **Timeline primitive and hierarchical rig — landed 2026-08-22.**
+  `animator.timeline(opts)` (`packages/core/src/animation/timeline/`) registers
+  in the animator's table, with sampled / event / nested tracks. The rig
+  (`packages/core/src/animation/rig/`) ships `blendPoses`, `resolveSkeleton` and
+  `IDENTITY_JOINT`; animating one is a `SampledTrack<Pose>`. Demos:
+  `apps/site/demos/TimelineDemo.tsx`, `RigDemo.tsx`.
+
+  The follow-ups below are what is left.
+
+- **(P2) No dep binds a rig to scene nodes.** The design named a `useRig` dep
+  following the `insert` pattern; it was never built, so `RigDemo.tsx` calls
+  `resolveSkeleton` directly and draws from the result. Every consumer animating
+  a rig into a scene re-does that wiring by hand.
 - **(P2) `loop` cannot be changed after a timeline is created.** `loopsLeft` is
   seeded from `opts.loop` and `TimelineHandle` has no setter, so a transport
   with a loop toggle has to cancel and rebuild the timeline — and hold its track
@@ -986,9 +975,7 @@ What it surfaced:
 - **(P1) `SceneCanvas` commits on every scene mutation, even when the host opted
   out** — those are the ~100–110 commits/s the scene twin still pays above.
   Carried under Rendering & paint, since it is not this demo's problem. The
-  ephemeral-pose-overrides arc
-  (`docs/superpowers/plans/2026-08-24-ephemeral-pose-overrides.md`) narrows it
-  but does not close it: an override never bumps the version, while this demo's
+  ephemeral-pose-overrides arc narrows it but does not close it: an override never bumps the version, while this demo's
   `scene.add` / `scene.batch` still does. Measuring anything else per-frame
   means stopping the scene writes first —
   `apps/site/demos/__tests__/SceneScrollerDemo.test.tsx` freezes `syncScene` to
@@ -1059,13 +1046,14 @@ absorbed by the timeline arc above:
 
 Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
-- **(P1) `@weasel-js/audio`** — a leaf package with no weasel dependencies.
-  Lookahead scheduling on its own one-shot timer (the audio clock cannot be
-  paused or time-scaled by the animator, and rAF stops when nothing is
-  animating), voices with handles and `cancelKey`, buses with gain/mute/solo, 2D
-  spatialization as a pure `spatialize()` function, and analyser taps with
-  `bands(n)` for audio-reactive rendering. Registration: `build:leaves` and the
-  `fixed` group in `.changeset/config.json`.
+- [x] **`@weasel-js/audio` — shipped, published at 1.2.0.** A leaf package with
+  no weasel dependencies: lookahead scheduling on its own one-shot timer, voices
+  with handles and `cancelKey`, buses with gain/mute/solo, `spatialize()`, and
+  analyser taps with `bands(n)`. Registered in `build:leaves` and the `fixed`
+  group. Consumed by `AudioDemo`, `SideScrollerDemo` and `platformer/sfx.ts`.
+
+  Its plan file has every box unchecked too; the CHANGELOG and registry are the
+  record. The follow-ups below are what is left.
 - **(P2) Synth voices and a pattern player.** Today the engine plays
   `AudioBuffer`s: everything must be recorded or pre-rendered, so the
   side-scroller hand-writes PCM into a buffer for every sound it makes. The
@@ -1133,6 +1121,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   The pattern is what to go looking for: a lookup implemented once for the renderer and once for the hit-tester, or once in `<Canvas>` and once in `<SceneCanvas>`, agreeing by coincidence rather than by construction. Two more of the same kind turned up in the same arc and were collapsed with it: the affordance hit-tester built its own `ChromeState` beside the painted one (so mid-drag, handles painted at the ghost and hit-tested at the committed pose), and a view read gesture previews from the surface's dispatcher while owning one of its own.
 
   Known suspects still standing — there are two pinch-zoom implementations, `usePinchZoomTool`'s direct `usePinchGesture` listener on the canvas and `pinchZoomAction` through the dispatcher's multitouch synthesis, reached by two different `viewport` sub-flags (`pinchZoom` and `zoom`), so a consumer enabling both zooms twice; and `previewIdsExtra` / `previewPoseExtra` walk in-flight handles in a shape `usePreviewGhostLayer` also walks. The output is a list of pairs with a verdict each: collapse, or state why two are correct.
+
+  One pair to look at first: `SPEC_KIND_TO_GESTURE` exists twice, at `packages/core/src/tools/routing/reflection/registry.ts:58` and `apps/draw/src/dev/registryProbe.tsx:240`. The two differ on `drop`/`paste`, which is deliberate and explained at the probe — but the shape is the one this item is about: `Record<GestureSpec['kind'], …>` makes TypeScript demand every key at each site independently, so a new gesture kind gets answered twice with nothing holding the answers to each other.
+
+- **(P2) Safari's `gesturestart` / `gesturechange` / `gestureend` are unhandled.** They are the second trackpad pinch channel on macOS Safari, alongside the ctrl+wheel one `viewportZoom` reads. Nothing in the repo listens for them, so Safari trackpad pinch gets whatever the wheel path synthesizes. Worth deciding deliberately rather than by omission — and it belongs with the two-pinch-implementations item above, since that is where the channel would be consolidated.
 
 - **(P3) Alignment guides — v1 follow-ups.** Auto-derived alignment guides shipped 2026-06-19 (`packages/core/src/features/guides/alignment/`: `deriveAlignmentGuides` + `matchAlignment` + `alignMoveBehavior`/`alignInsertBehavior`/`alignResizeBehavior`, rendered via `createGuidesLayer`; demo `apps/site/demos/AlignmentGuidesDemo.tsx`). Spec: `docs/superpowers/specs/2026-06-19-alignment-guides-design.md`. Multi-select drag alignment shipped 2026-06-19 (`alignMoveBehavior` matches the selection's union AABB via `unionBounds`). Remaining deferred: (a) **Figma-style segment rendering** — line spanning only between the aligned objects with end ticks / offset labels, instead of full-canvas lines (needs a span-aware layer, not just axis+offset); (b) **equal-spacing / distribution guides** ("equal gaps" across 3+ objects); (c) **rotated-object alignment** — derivation/matching use AABBs, so a rotated object aligns by its bounding box.
 
@@ -1423,6 +1415,10 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 ## Demos & visual regression
 
+- **(P2) `TEXT_PAINTER` has no pixel coverage.** Every text-bearing visual spec routes around the default text drawer (`NodeShape.ts:349`, registered at `:688`): `text`, `text-aa` and `text-decoration` go through `createTextLayer`, while `text-outlines` and `render-to-pixels` build `textCommand()` by hand. It shipped on unit tests alone. A baseline demo that paints a `data.text` node through the default drawer is the missing check.
+
+- **(P3) No demo exercises non-modal path editing.** `enterPathEdit` / `editAnchors` only run under apps/draw's mode registry — `apps/site/demos/curveLab/RepresentationPanel.tsx:167` disables them and installs its own drag action. The `getActiveMode === undefined` fall-throughs (`SceneCanvas.tsx:1593`, `:1632`) are exercised by tests alone; a small site demo entering anchor editing with no mode registry would give both branches a live home.
+
 - **(P3) Demo coverage gap: HUD widget gallery.** `@weasel-js/hud` ships five widgets (`button`, `rect`, `text`, `image`, `label`) but only `button` is demo'd (`apps/site/demos/HudDemo.tsx`) — a single "HUD widget gallery" demo card would cover the other four. Brainstorm scope before writing it. (The former `@weasel-js/ui` `CommandPalette`/`PropertiesPanel` half of this item was dropped — those are app-local components in `apps/draw/src/ui/`, not `@weasel-js/ui` exports, so there's no kit-export demo gap.)
 
 ---
@@ -1460,9 +1456,9 @@ was hiding an assertion that read `.space` without narrowing.
 
 Deferred, with the rationale in `eslint.config.js` next to each:
 
-- **(P2) `eqeqeq`** — 285 findings. Real correctness, but a large mechanical
+- **(P2) `eqeqeq`** — 275 findings. Real correctness, but a large mechanical
   sweep with no bug attached to it yet.
-- **(P2) `@typescript-eslint/no-unused-vars`** — 129 findings. Two
+- **(P2) `@typescript-eslint/no-unused-vars`** — 131 findings. Two
   `eslint-disable` directives in the tree already name it and go live with it.
 - **(P3) eslint-plugin-react-hooks v7 compiler rules** — `refs` (387 findings
   across 103 files), `immutability` (18), `set-state-in-effect` (21),
@@ -1498,6 +1494,12 @@ Deferred, with the rationale in `eslint.config.js` next to each:
   A third run, on an unrelated branch, hit the same 9 and then passed clean on
   re-run — so it is the harness, not any one change.
 
+  `packages/core/src/core/stylus/usePointerStylus.test.tsx` ("throttles updates
+  by maxFps") joined the set on 2026-08-26: it read the post-throttle pressure
+  0.9 where it expects the throttle to have held 0.1, then passed alone in
+  648ms. Same cause, and the same fix reaches it — the throttle is timed off
+  `performance.now()` against real elapsed time.
+
 - **(P2) `test:kit` covers `packages/core` only, and its name says otherwise.**
   The `kit` vitest project globs `packages/core` plus `apps/site`; `svg`,
   `font`, `geom`, `history`, `gestures`, `modes`, `ui` and `hud` all run under
@@ -1519,7 +1521,7 @@ Deferred, with the rationale in `eslint.config.js` next to each:
 
 - **(P2) Decide where benchmarks live and how their results are kept.** There
   are benchmarks in the tree (`tests/perf`, the draw-cost work in
-  `docs/handoffs/2026-08-14-batched-dispatch.md`) with no shared convention:
+  `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`) with no shared convention:
   no agreed home, no format for a recorded result, no way to say whether a
   number moved since last time, and nothing that says which ones are expected
   to run in CI. Settle the layout — one directory or per-package, what a run
@@ -1567,7 +1569,7 @@ Deferred, with the rationale in `eslint.config.js` next to each:
   have to grow rather than being fixed at four vertices.
 
   The rest of the plan — one program plus atlases — is in
-  `docs/handoffs/2026-08-14-batched-dispatch.md`, with the traps, and a
+  `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`, with the traps, and a
   two-phase dispatch split that would make it tractable.
 
 - **(P3) Per-layer GPU dispatch skipping.** `RenderLayer.deps` (shipped

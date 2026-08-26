@@ -30,6 +30,27 @@ on its own terms — not as the minimum some demo happened to need.
 
 Active todos live in `docs/TODO.md`. Consult it when planning new work or picking up a task.
 
+When work merges, update `docs/TODO.md` in the same change — retire the entry, or
+rewrite it around what is actually left. An entry describing work that shipped is
+worse than no entry: a reader plans against it. The index at the top of the file
+is a hand-maintained copy of claims that live further down, so fix both or fix
+neither.
+
+## Plans
+
+A plan is scaffolding for work in flight. **When the work merges, delete the
+plan** — `git log` is the archive, and a plan that outlives its branch becomes a
+confident description of a codebase that no longer exists. Never leave a merged
+plan on disk: its unchecked boxes read as open work, and nothing recomputes them.
+
+Don't write completion notes (`*-done.md`). "What landed" belongs in the commit
+message and the changeset.
+
+A lesson worth keeping past the merge goes in this file or a design doc, and only
+if it clears the bar in "Comment sparingly" below: not derivable from the code,
+still true, and costly to rediscover. Verify it against the tree before writing
+it down — most such lessons cite paths that have since moved.
+
 ## Releases: always write `patch`
 
 **Every changeset you write is `patch`.** Not `minor`, not `major` — regardless
@@ -122,6 +143,15 @@ and the demo's own blurb says so (the side-scroller load test does). Anything
 else gets rebuilt on the system.
 
 Demos under `apps/site/demos/` are **terse and single-purpose** — each one exists to show a specific kit feature in the smallest plausible form. If a demo accumulates code that isn't directly pertinent to the feature it's demonstrating (custom hit-testers when defaults exist, hand-rolled adapter wiring, per-consumer index inversions), treat that as a signal that the kit's defaults / helpers should absorb the boilerplate. Being able to trim a demo or a simple consumer use-case is a legitimate driver for kit changes — there's limited value in showing consumers how to reimplement parts of the kit they could just find in source.
+
+## Test and typecheck commands
+
+Core's tests run under the root vitest config, not the package: `npx vitest run --project=kit`.
+The `core` workspace has no `test` script at all. `npm test` runs every project.
+
+Typecheck is `npx tsc --noEmit` **from the repo root**. `tsc -p packages/core/tsconfig.json`
+exits 1 with 31 pre-existing `TS6059` errors on a clean tree — core's `outDir` pins `rootDir` to
+`packages/core` while its `paths` reach into sibling packages. Those errors are not yours.
 
 ## Traps
 

@@ -21,7 +21,7 @@
 // catches the whole class — a renamed entry point, a `files` field that forgot a
 // directory, a subpath added to `exports` before the build emits it.
 import { execFileSync } from 'node:child_process';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -116,12 +116,25 @@ function packedFiles(dir) {
 }
 
 const failures = [];
+const fileListGaps = [];
 const packages = publishableWorkspaces();
 
 for (const { dir, manifest } of packages) {
   const packed = packedFiles(dir);
   const promised = advertisedPaths(manifest);
   const missing = promised.filter((p) => !packed.has(p));
+
+  // npm drops a `files` entry matching nothing instead of erroring, so a package
+  // can publish without the LICENSE it claims to carry and every gate stays
+  // green. Directories and globs are npm's to expand; single files are checkable.
+  if (Array.isArray(manifest.files)) {
+    const absent = manifest.files
+      .filter((f) => typeof f === 'string' && !f.includes('*'))
+      .map((f) => f.replace(/^\.?\//, '').replace(/\/$/, ''))
+      .filter((f) => !existsSync(join(dir, f)) || !statSync(join(dir, f)).isDirectory())
+      .filter((f) => !packed.has(f));
+    if (absent.length > 0) fileListGaps.push({ name: manifest.name, absent });
+  }
 
   // A package whose manifest points at .d.ts files but whose tarball has none
   // is the exact 0.5.0 failure. `missing` already covers it, but calling it out
@@ -142,6 +155,18 @@ for (const { dir, manifest } of packages) {
           : ''),
     );
   }
+}
+
+if (fileListGaps.length > 0) {
+  console.error(
+    `[manifests] ${fileListGaps.length} package(s) list files they do not ship:\n\n` +
+      fileListGaps
+        .map(({ name, absent }) => `  ${name}\n` + absent.map((p) => `    listed in \`files\`, absent from tarball: ${p}`).join('\n'))
+        .join('\n\n') +
+      '\n\nnpm silently ignores a `files` entry that matches nothing, so this never\n' +
+      'surfaces at publish time. Either add the file or stop listing it.\n',
+  );
+  process.exit(1);
 }
 
 if (failures.length > 0) {

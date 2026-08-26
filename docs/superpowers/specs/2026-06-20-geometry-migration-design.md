@@ -9,8 +9,8 @@ green throughout (kit 54/54, apps/draw 36/36). The deferred list is now EMPTY �
 carried over. (Seam 6 re-points only the inverse-rotation onto the kernel and keeps the
 richer `pointInPath` containment, since kernel `pointInPolygon` lacks curves/fillRule/
 subpaths — noted, not punted.) Plans:
-`docs/superpowers/plans/2026-06-20-geometry-migration.md` (Phases 2–3),
-`docs/superpowers/plans/2026-06-20-geometry-migration-remainder.md` (Phases 4–6).
+`2026-06-20-geometry-migration` (plan, deleted at merge) (Phases 2–3),
+`2026-06-20-geometry-migration-remainder` (plan, deleted at merge) (Phases 4–6).
 Branch: `feat/geometry-kernel`
 Depends on: `2026-06-20-geometry-kernel-representation-design.md` (Spec 1 — builds `@weasel-js/geom`)
 Companion analysis: `2026-06-20-geometry-consolidation-analysis.md` (the seven seams, the split, the 13 ranked items)
