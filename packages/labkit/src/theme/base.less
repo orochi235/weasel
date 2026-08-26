@@ -32,10 +32,14 @@
   *, *::before, *::after {
     box-sizing: border-box;
   }
+}
 
-  // Element defaults sit in :where() so they carry no specificity —
-  // otherwise `.lk-root button` (0,1,1) beats every component class and
-  // a toolbar cannot paint its own buttons.
+// Defaults for labkit's own bare markup. `.lk-root` is inside :where() too, so
+// the whole selector scores (0,0,0): a weasel-ui module class beats it on
+// specificity instead of on which stylesheet happened to be injected last.
+// Deliberate overrides of a weasel-ui component go the other way — see the
+// `.lk-root` prefix convention below.
+:where(.lk-root) {
   :where(button) {
     font: inherit;
     color: inherit;
@@ -68,6 +72,12 @@
     accent-color: var(--wzl-accent);
   }
 }
+
+// The `.lk-root` prefix convention: a labkit class handed to a weasel-ui
+// component through `className` lands beside that component's own CSS-module
+// class at equal specificity, so injection order — not intent — decides the
+// winner. Prefixing with `.lk-root` scores (0,2,0) and settles it. Use it only
+// where labkit means to override the component; plain `.lk-*` elsewhere.
 
 // Cosmic background applied to the Lab root. The starscape sits as a fixed
 // pseudo-element so panning the trial doesn't shift the field of stars.

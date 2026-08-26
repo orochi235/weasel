@@ -5,15 +5,27 @@
   min-width: 0;
 
   &__slider {
-    // Narrow enough to sit in a trial toolbar, wide enough for the octave
-    // detents to be separately hittable.
-    width: 108px;
     flex: 0 1 108px;
-    min-width: 64px;
   }
 
   &__field {
     flex: 0 0 auto;
-    width: 62px;
+  }
+}
+
+// Both children are weasel-ui components whose module classes set `width`.
+// See the `.lk-root` prefix convention in theme/base.less.
+.lk-root {
+  .lk-zoom {
+    // Narrow enough to sit in a trial toolbar, wide enough for the octave
+    // detents to be separately hittable.
+    &__slider {
+      width: 108px;
+      min-width: 64px;
+    }
+
+    &__field {
+      width: 62px;
+    }
   }
 }

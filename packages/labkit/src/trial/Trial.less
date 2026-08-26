@@ -25,6 +25,10 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
+    // `sidebarExtras` default to `min-height: auto` and so floor at their
+    // content height, which puts every pixel of shrink on the config panel.
+    // The column scrolls as one instead, and each section keeps its height.
+    overflow-y: auto;
   }
 
   // An instrument's rendered output is dropped in here directly, so the
@@ -121,4 +125,11 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+// `.lk-sidebar` stretches by default, which fights the scrolling column above.
+// (0,2,0) settles it against Sidebar.less's own (0,1,0) rule rather than
+// leaving it to stylesheet order.
+.lk-trial__sidebar > .lk-sidebar {
+  flex: 0 0 auto;
 }

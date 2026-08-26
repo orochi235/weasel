@@ -61,14 +61,6 @@
 .lk-lab-header__mode {
   opacity: 0.75;
 
-  // labkit's `:where(button)` default sets an explicit height, and because
-  // :where() carries no specificity it also wins over any @weasel-js/ui
-  // component that sizes its own buttons from padding — here it forced 28px
-  // segments into a 17px track, which the track then clipped.
-  button {
-    height: auto;
-  }
-
   &:hover,
   &:focus-within {
     opacity: 1;
