@@ -1,4 +1,4 @@
-import type { PrefGroup, PrefLeaf, PrefNumberUnit, PrefRenderer } from '@weasel-js/ui';
+import type { PrefGroup, PrefLeaf, PrefRenderer } from '@weasel-js/ui';
 
 /**
  * Renders the control cell for one config leaf. Identical to weasel-ui's
@@ -26,8 +26,6 @@ export interface Annotations {
   step?: number;
   control?: string;
   options?: readonly ConfigOption[];
-  alpha?: boolean;
-  unit?: PrefNumberUnit;
   placeholder?: string;
   maxLength?: number;
   /** Milliseconds to debounce a string leaf's live writes. Default 150. */

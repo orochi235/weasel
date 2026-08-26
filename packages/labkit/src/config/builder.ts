@@ -103,17 +103,13 @@ class NumberNode extends BaseNode<number> {
   input(): this {
     return this.ann({ control: 'input' });
   }
-
-  /** Edit in a display unit while storing a canonical one. */
-  unit(unit: NonNullable<Annotations['unit']>): this {
-    return this.ann({ unit });
-  }
 }
 
 class BooleanNode extends BaseNode<boolean> {
   readonly kind = 'boolean';
 
-  /** Render as a switch rather than a checkbox. */
+  /** Ask for a switch. `ControlPanel` still draws a checkbox; weasel-ui's
+   *  `PrefsForm` honors the distinction. */
   toggle(): this {
     return this.ann({ control: 'switch' });
   }
@@ -138,17 +134,12 @@ class StringNode extends BaseNode<string> {
 
 class ColorNode extends BaseNode<string> {
   readonly kind = 'color';
-
-  /** Offer an opacity control alongside the color. */
-  alpha(): this {
-    return this.ann({ alpha: true });
-  }
 }
 
 class EnumNode<T extends string> extends BaseNode<T> {
   readonly kind = 'enum';
 
-  /** Render as a radio group rather than a select. */
+  /** Render as a segmented control rather than a select. */
   radio(): this {
     return this.ann({ control: 'radio' });
   }
