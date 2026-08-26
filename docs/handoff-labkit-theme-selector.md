@@ -4,7 +4,7 @@ For whoever picks this branch up next. It answers: what is fixed, what is left,
 and which decisions live only in conversation.
 
 **Branch:** `labkit-theme-selector`, worktree `.claude/worktrees/labkit-theme-selector`,
-based on `main` at `23af1930`. Nothing pushed.
+merged up to `main` at `5ae2598d` (the arc3 chrome-region work). Nothing pushed.
 
 **Servers:** `cd packages/labkit && npm run dev` for the lab page.
 `npm run dev:storybook -- -p <port>` from the worktree root for the stories —
@@ -62,15 +62,11 @@ Select, Input, NumberField and ComboBox each hard-coded 24px; labkit's ambient
 button default had been papering over the split by accident. The four controls
 now read the token and the token is 24px.
 
-**Chrome reachable from `<Lab>`.** Five surfaces the runtime rendered had no
-route to them short of building `<TrialChrome>` by hand. `LabProps` gains
-`footer` and the `toolbar` / `sidebar` / `statusBar` slots, forwarded through
-`<Trial>`. `DefaultSidebar` holds its own collapse state and passes `onToggle`.
-`LayerCapability.ids` accepts a `LayerDescriptor` as well as a bare string, so a
-layer can carry a label distinct from its canvas id and be marked `alwaysOn` —
-both already honoured by `LayerList`, neither expressible. `Instrument` gains a
-third type parameter for a job's item type, which had been pinned to `never`.
-The `ReplacedChrome` story exercises all of it through `<Lab>` alone.
+**Reachable from `<Lab>`.** `LabProps` gains `footer`. `LayerCapability.ids`
+accepts a `LayerDescriptor` as well as a bare string, so a layer can carry a
+label distinct from its canvas id and be marked `alwaysOn` — both already
+honoured by `LayerList`, neither expressible. `Instrument` gains a third type
+parameter for a job's item type, which had been pinned to `never`.
 
 ## Decisions that are not in the code
 
@@ -85,6 +81,11 @@ The `ReplacedChrome` story exercises all of it through `<Lab>` alone.
   rather than a theme variable, so setting it cannot cascade into children.
 - **`ActionBar .button` was left at 28×28.** It is a square icon target, not a
   text control.
+- **The trial-chrome slot props this branch added were dropped in the merge.**
+  arc3's contributions — keyed to a region, with `suppress` for built-ins — do
+  the same job better, and `SidebarRegion` already collapses each section, so
+  carrying `<Lab>`'s `toolbar`/`sidebar`/`statusBar` and a `DefaultSidebar`
+  collapse state alongside would have been a second, weaker way in.
 
 ## Next: the mode icons
 
@@ -107,9 +108,7 @@ descriptions of a glyph has burned rounds before.
   which is why labkit pins a width at all three of its Select/NumberField call
   sites. A real affordance on the components would retire the convention.
 - **`.lk-shell` is `height: 100vh`.** A lab mounted anywhere but the viewport
-  top overflows by its own offset, which is why the shell footer sits just
-  below the fold in Storybook. Harmless on the labkit dev page, wrong in
-  general.
+  top overflows by its own offset. Wrong in general, harmless on the dev page.
 
 ## Traps
 
@@ -121,8 +120,9 @@ descriptions of a glyph has burned rounds before.
   `scripts/find-css-ties.mjs <storybook-url> [story-id …]` is the surviving
   harness: it plants a known collision on every page and reports BROKEN rather
   than clean when it cannot find it. Exits non-zero on a tie or a broken run.
-- **`main` is shared and moving.** Another session works `feat/labkit-arc3` and
-  commits to `main`. arc3 touches `LabShell.less`, so expect a small conflict.
+- **`main` is shared and moving.** The arc3 session merged 19 commits into
+  `main` mid-branch, rewriting how trial chrome renders. That merge is done and
+  in; expect the next one to move as far.
 - **`.claude/worktrees/merge-main` is not a worktree.** It is a stray directory
   holding three PNGs and does not appear in `git worktree list`.
 - labkit defines almost no `--lk-*` tokens and reaches straight for the raw scale

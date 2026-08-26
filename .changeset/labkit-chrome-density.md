@@ -30,13 +30,11 @@ by its sidebar extras; and the lab header wrapped to three lines because a
 `Select` swallowed the row's slack while the mode toggle compressed past its own
 labels.
 
-Five pieces of trial chrome the runtime already rendered had no route to them
-short of building `TrialChrome` by hand. `LabProps` gains `footer` and the
-`toolbar` / `sidebar` / `statusBar` slots, forwarded through `Trial`;
-`DefaultSidebar` passes `onToggle` so its collapsed state is reachable;
-`LayerCapability.ids` accepts a full `LayerDescriptor` as well as a bare string,
-so a layer can carry a label distinct from its canvas id and be marked
-`alwaysOn`; and `Instrument` gains a third type parameter for a job's item type,
-which had been pinned to `never`. Existing `string[]` layer declarations still
-typecheck. TypeScript infers all three type parameters or none, so a
-`defineInstrument` call that names state and config must name the item type too.
+`LabProps` gains `footer`, which had no route short of building `LabShell`
+yourself. `LayerCapability.ids` accepts a full `LayerDescriptor` as well as a
+bare string, so a layer can carry a label distinct from its canvas id and be
+marked `alwaysOn` — both already honoured by the layer list, neither
+expressible. Existing `string[]` declarations still typecheck. `Instrument`
+gains a third type parameter for a job's item type, which had been pinned to
+`never`; TypeScript infers all three or none, so a `defineInstrument` call that
+names state and config must name the item type too.
