@@ -110,7 +110,9 @@ describe('Toolbar keyboard contract', () => {
     const { rerender } = render(<Bar busy />);
     rerender(<Bar busy={false} />);
     await waitFor(() => {
-      const inOrder = screen.getAllByRole('button').filter((b) => !b.disabled && b.tabIndex === 0);
+      const inOrder = screen
+        .getAllByRole<HTMLButtonElement>('button')
+        .filter((b) => !b.disabled && b.tabIndex === 0);
       expect(inOrder).toHaveLength(1);
     });
   });
