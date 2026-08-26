@@ -516,6 +516,9 @@ describe('GL renderer', () => {
     expect(container.querySelector('canvas')).toBeTruthy();
   });
 
+  // Both flags fail silently, not loudly: without `stencil` every evenodd fill
+  // and clip renders as a solid shape; without `preserveDrawingBuffer`
+  // readPixels() after render returns all zeros.
   it('calls getContext("webgl2") with preserveDrawingBuffer + stencil', async () => {
     const getCtxSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext');
     render(<Canvas width={100} height={100} layers={{}} />);

@@ -1000,10 +1000,14 @@ function drawPathFillStencil(ctx: DrawContext, fill: FillStyle, handle: GLMeshHa
   gl.colorMask(true, true, true, true);
   gl.stencilFunc(gl.EQUAL, clipMask | 0x01, clipMask | 0x01);
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
+  // Paint uniforms go here, not above: pass 1 runs under a false colorMask, so
+  // a uniform missed here renders black while the GL-recorder tests still pass.
   setSolidPaintUniforms(ctx, ctx.pathFill, solid.color, solid.opacity);
   setColorMatrixUniforms(ctx, ctx.pathFill);
   gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
 
+  // Narrow to bit 0 first: clear only zeroes bits the mask enables, and
+  // pushClip owns bits 1-7.
   gl.stencilMask(0x01);
   gl.clear(gl.STENCIL_BUFFER_BIT);
   gl.disable(gl.STENCIL_TEST);
@@ -1170,6 +1174,8 @@ function drawPathStrokeStenciled(
 
   gl.drawElements(gl.TRIANGLES, ribbonHandle.indexCount, gl.UNSIGNED_INT, 0);
 
+  // Narrow to bit 0 first: clear only zeroes bits the mask enables, and
+  // pushClip owns bits 1-7.
   gl.stencilMask(0x01);
   gl.clear(gl.STENCIL_BUFFER_BIT);
   gl.disable(gl.STENCIL_TEST);

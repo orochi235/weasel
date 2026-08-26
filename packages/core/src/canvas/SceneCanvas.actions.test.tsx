@@ -238,6 +238,8 @@ describe('SceneCanvas actions integration', () => {
   it('unmount cleans up registered defaults', () => {
     const scene = makeScene();
     let seen: string[] = [];
+    // Probe must render AFTER SceneCanvas: effects run in commit order, so a
+    // probe placed first reads an empty registry and asserts nothing.
     function Probe3() { const r = useActionsRegistry(); useEffect(() => { seen = r ? r.list().map(a => a.id) : []; }); return null; }
     const { unmount, rerender } = render(
       <ActionsProvider>

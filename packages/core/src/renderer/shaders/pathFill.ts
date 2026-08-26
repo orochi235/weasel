@@ -10,7 +10,7 @@
  * color transform is applied to the straight-alpha SRC color BEFORE
  * premultiplication. Identity matrix + zero bias = pass-through.
  *
- * Output (both variants): PREMULTIPLIED alpha per conventions §2.
+ * Output (both variants): PREMULTIPLIED alpha.
  * Blend: caller sets `gl.blendFunc(ONE, ONE_MINUS_SRC_ALPHA)`.
  */
 
