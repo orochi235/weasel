@@ -10,11 +10,18 @@ export function StatusBar({ children }: StatusBarProps) {
   return <div className="lk-status-bar">{children}</div>;
 }
 
-interface SectionProps {
+/** Props for `<StatusBar.Section>`. */
+export interface StatusBarSectionProps {
   children: ReactNode;
+  /** Pushes this section, and everything after it, to the far end. */
+  end?: boolean;
 }
-function Section({ children }: SectionProps) {
-  return <span className="lk-status-bar-section">{children}</span>;
+function Section({ children, end }: StatusBarSectionProps) {
+  return (
+    <span className={`lk-status-bar-section${end ? ' lk-status-bar-section--end' : ''}`}>
+      {children}
+    </span>
+  );
 }
 
 /** One readout within a status bar. */

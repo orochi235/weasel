@@ -18,4 +18,11 @@
   border-right: 1px solid var(--wzl-line-subtle);
 
   &:last-child { border-right: none; }
+
+  &--end {
+    margin-left: auto;
+  }
+
+  // A section pushed to the end already reads as separated by the gap.
+  &:has(+ &--end) { border-right: none; }
 }

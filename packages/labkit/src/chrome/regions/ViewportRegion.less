@@ -4,6 +4,11 @@
   bottom: var(--wzl-space-sm);
   z-index: var(--wzl-z-overlay);
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  // Bounded by the well it floats in, so a wide control cluster wraps into the
+  // corner rather than running out under the sidebar.
+  max-width: calc(100% - 2 * var(--wzl-space-sm));
   gap: var(--wzl-space-xs);
   padding: var(--wzl-space-xs);
   border: var(--wzl-border-w) solid var(--wzl-border);

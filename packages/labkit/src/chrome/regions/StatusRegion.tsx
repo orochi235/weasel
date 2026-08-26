@@ -13,10 +13,15 @@ export function StatusRegion({ contributions, ctx }: StatusRegionProps) {
   return (
     <StatusBar>
       {contributions.map((c) => {
-        if (c.render) return <StatusBar.Section key={c.id}>{c.render(ctx)}</StatusBar.Section>;
+        if (c.render)
+          return (
+            <StatusBar.Section key={c.id} end={c.end}>
+              {c.render(ctx)}
+            </StatusBar.Section>
+          );
         if (c.region !== 'status' || !c.item) return null;
         return (
-          <StatusBar.Section key={c.id}>
+          <StatusBar.Section key={c.id} end={c.end}>
             <span title={c.item.title}>{c.item.text}</span>
           </StatusBar.Section>
         );

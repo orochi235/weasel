@@ -33,6 +33,10 @@ const bare: Instrument = {
   render: () => null,
 };
 
+const withCanvas: Instrument = { ...bare, canvas: { layers: [] } };
+
+const ctxWithZoom = (zoom: number | null): TrialChromeContext => ({ ...ctx, zoom });
+
 function ids(instrument: Instrument, c: TrialChromeContext = ctx): string[] {
   return builtinContributions(instrument, c).map((x) => x.id);
 }
@@ -49,15 +53,12 @@ describe('builtinContributions', () => {
   });
 
   it('puts zoom controls in the viewport region, not the toolbar', () => {
-    const withCanvas: Instrument = { ...bare, canvas: { layers: [] } };
     const zoomIn = builtinContributions(withCanvas, ctx).find((c) => c.id === 'zoom-in');
     expect(zoomIn?.region).toBe('viewport');
   });
 
   it('contributes no viewport controls when the view is not 2D', () => {
-    const withCanvas: Instrument = { ...bare, canvas: { layers: [] } };
-    const orbit = { ...ctx, zoom: null };
-    expect(ids(withCanvas, orbit)).not.toContain('zoom-in');
+    expect(ids(withCanvas, ctxWithZoom(null))).not.toContain('zoom-in');
   });
 
   it('contributes a settings section only when the schema has fields', () => {
@@ -112,5 +113,27 @@ describe('builtinContributions', () => {
     };
     const list = builtinContributions(full, ctx);
     expect(new Set(list.map((c) => c.id)).size).toBe(list.length);
+  });
+});
+
+describe('view readouts', () => {
+  it('contributes fps and scale to the status bar when the trial has a canvas', () => {
+    const out = builtinContributions(withCanvas, ctxWithZoom(1));
+    const status = out.filter((c) => c.region === 'status').map((c) => c.id);
+    expect(status).toContain('fps');
+    expect(status).toContain('scale');
+  });
+
+  it('contributes the zoom control to the viewport, replacing the readout', () => {
+    const out = builtinContributions(withCanvas, ctxWithZoom(1));
+    const viewport = out.filter((c) => c.region === 'viewport').map((c) => c.id);
+    expect(viewport).toContain('zoom-control');
+    expect(out.map((c) => c.id)).not.toContain('zoom-readout');
+  });
+
+  it('contributes none of them to a trial with no canvas', () => {
+    const out = builtinContributions(bare, ctxWithZoom(null));
+    expect(out.map((c) => c.id)).not.toContain('fps');
+    expect(out.map((c) => c.id)).not.toContain('zoom-control');
   });
 });

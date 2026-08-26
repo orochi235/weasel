@@ -12,7 +12,9 @@ import {
 import { ControlPanel } from '../controls/ControlPanel';
 import type { Instrument } from '../instrument/types';
 import { Select } from '../passthrough/weasel-ui';
-import { formatZoom } from '../ui/format';
+import { FpsMeter } from '../primitives/FpsMeter';
+import { ScaleIndicator } from '../primitives/ScaleIndicator';
+import { ZoomControl } from '../primitives/ZoomControl';
 import type { TrialChromeContext, TrialContribution } from './types';
 
 const ZOOM_STEP = 1.25;
@@ -98,9 +100,23 @@ export function builtinContributions(
       item: { icon: FitIcon, label: 'Actual size', onActivate: () => ctx.setZoom(1) },
     });
     out.push({
-      id: 'zoom-readout',
+      id: 'zoom-control',
+      region: 'viewport',
+      group: 'zoom',
+      render: (c) => <ZoomControl zoom={c.zoom ?? 1} onZoomChange={c.setZoom} />,
+    });
+    out.push({
+      id: 'scale',
       region: 'status',
-      item: { text: formatZoom(zoom), title: 'Zoom' },
+      group: 'view',
+      render: () => <ScaleIndicator />,
+    });
+    out.push({
+      id: 'fps',
+      region: 'status',
+      group: 'view',
+      end: true,
+      render: () => <FpsMeter />,
     });
   }
 
