@@ -16,7 +16,7 @@
   align-items: center;
   gap: var(--wzl-space-sm);
   padding: 4px 6px;
-  border-radius: 3px;
+  border-radius: var(--wzl-radius-sm);
   user-select: none;
 }
 
@@ -36,7 +36,7 @@
 .lk-layer-list__handle {
   cursor: grab;
   color: var(--wzl-fg-muted);
-  font-family: monospace;
+  font-family: var(--wzl-font-mono);
 }
 
 .lk-layer-list__handle:active {
@@ -50,4 +50,8 @@
 .lk-layer-list__label {
   flex: 1;
   font-size: var(--wzl-font-size-sm);
+}
+
+.lk-layer-list input[type='checkbox'] {
+  accent-color: var(--wzl-accent);
 }
