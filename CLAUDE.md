@@ -144,6 +144,15 @@ else gets rebuilt on the system.
 
 Demos under `apps/site/demos/` are **terse and single-purpose** — each one exists to show a specific kit feature in the smallest plausible form. If a demo accumulates code that isn't directly pertinent to the feature it's demonstrating (custom hit-testers when defaults exist, hand-rolled adapter wiring, per-consumer index inversions), treat that as a signal that the kit's defaults / helpers should absorb the boilerplate. Being able to trim a demo or a simple consumer use-case is a legitimate driver for kit changes — there's limited value in showing consumers how to reimplement parts of the kit they could just find in source.
 
+## Test and typecheck commands
+
+Core's tests run under the root vitest config, not the package: `npx vitest run --project=kit`.
+The `core` workspace has no `test` script at all. `npm test` runs every project.
+
+Typecheck is `npx tsc --noEmit` **from the repo root**. `tsc -p packages/core/tsconfig.json`
+exits 1 with 31 pre-existing `TS6059` errors on a clean tree — core's `outDir` pins `rootDir` to
+`packages/core` while its `paths` reach into sibling packages. Those errors are not yours.
+
 ## Traps
 
 Things that pass every test and are still wrong.

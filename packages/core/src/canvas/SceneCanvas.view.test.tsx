@@ -53,6 +53,9 @@ describe('SceneCanvas view', () => {
     const apiRef = { current: null as SceneCanvasApi | null };
     let commits = 0;
     render(
+      // Profiler wraps SceneCanvas itself, not an outer element: a setState
+      // inside it never re-renders a parent, so a Profiler one level up counts
+      // zero either way and the assertion passes vacuously.
       <Profiler id="scene-canvas" onRender={() => { commits++; }}>
         <SceneCanvas<D, L, P> ref={apiRef} scene={scene} width={200} height={150} />
       </Profiler>,

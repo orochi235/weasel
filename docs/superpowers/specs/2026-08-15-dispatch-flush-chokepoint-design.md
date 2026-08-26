@@ -94,7 +94,7 @@ are pixels.
 
 No materialized item list, no lookahead, no op reordering. The full two-phase
 split — walk into a flat list of draw items with resolved state, then group and
-emit — is what step 4 of `docs/handoffs/2026-08-14-batched-dispatch.md` (one
+emit — is what step 4 of `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md` (one
 program plus atlases) wants, and this does not pretend to be it. It makes that
 easier to reach by hoisting the routing decision out of the emitters, which is
 the part a planning phase would need either way.

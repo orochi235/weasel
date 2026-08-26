@@ -1,6 +1,6 @@
 # Binding Resolution — making precedence legible again
 
-Closes the second open item of `docs/handoffs/2026-07-28-phase-tables-retired.md`:
+Closes the second open item left by the phase-table retirement:
 apps/draw's inspector lost its Phases section and nothing replaced it.
 
 ## 1. What was actually lost

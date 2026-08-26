@@ -63,13 +63,6 @@ Priority tags:
 
 ## Tools & gestures
 
-<!-- The arbitration-layer items below came out of a read-only review of that
-     layer against CSS cascade / Flutter's gesture arena / Blender keymaps /
-     tldraw's StateNode chart. Reasoning that did not compress into these
-     entries — including why specificity-ordered fall-through is survivable at
-     all — is in docs/handoffs/2026-07-28-arbitration-followups.md. Reviewed
-     2026-07-28, re-verified against main 2026-07-31. -->
-
 - **(P2) No opt-out for individual standard actions.** `useStandardActions`
   registers a fixed descriptor list, so a consumer wanting its own align or
   distribute keybindings cannot suppress the kit's. `useAlign` /
@@ -415,6 +408,7 @@ Core five + Crop shipped. Remaining:
 - **(P3) Live preview during the gesture.** Holding the op key while hovering a path to see the result before committing.
 - **(P3) Boolean ops on stroked paths.** Treat a stroke as a filled region, then clip. Blocked on stroke-to-fill (round/bevel/miter joins, end caps — its own design problem).
 - **(P3) Pathfinder against text glyphs.** Needs glyph-to-path extraction.
+- **(P3) "Create Outlines".** The destructive text→path conversion every vector editor has: replace a text node with the path geometry of its glyphs, giving up editability. Shares the glyph-to-path extraction above, but is a command in its own right.
 
 ---
 
@@ -518,6 +512,11 @@ Core five + Crop shipped. Remaining:
   without a render. What that costs is real design work: some chrome genuinely
   needs a commit on a scene change (layer panels, counts, anything rendering
   node data as DOM), and deciding which is the whole question.
+
+  Two demos still subscribe while driving poses from an animation tick, and
+  should take `subscribe: false` once that lands: `EasingsDemo.tsx:49` (a
+  `setPose` per marker per frame) and `TimelineDemo.tsx:43` (`move()` from a
+  sampled track's `onTick`). `SceneScrollerDemo.tsx:73` is the one that has.
 
 - **(P3) Sync paints do not coalesce.** `CanvasProps.syncPaint`
   (`Canvas.tsx:234-242`) promises "a synchronous paint per commit", singular,
@@ -658,8 +657,7 @@ Core five + Crop shipped. Remaining:
   so the face degrades to the SDF tier saying why. Actually reading the `sfnt`
   resources out of the map is unwritten and unreachable on current macOS (204
   `.ttf` / 128 `.ttc` / 38 `.otf`, no `.dfont`). Design record for the whole
-  tier: `docs/concepts.md` ("Font outlines") and
-  `docs/handoffs/2026-07-31-dynamic-font-tier.md`; the settled argument for
+  tier: `docs/concepts.md` ("Font outlines"); the settled argument for
   keeping container unpacking in `sfnt.ts` rather than upstreaming it or
   adopting fontkit is in that file's own header.
 
@@ -1124,6 +1122,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
   Known suspects still standing — there are two pinch-zoom implementations, `usePinchZoomTool`'s direct `usePinchGesture` listener on the canvas and `pinchZoomAction` through the dispatcher's multitouch synthesis, reached by two different `viewport` sub-flags (`pinchZoom` and `zoom`), so a consumer enabling both zooms twice; and `previewIdsExtra` / `previewPoseExtra` walk in-flight handles in a shape `usePreviewGhostLayer` also walks. The output is a list of pairs with a verdict each: collapse, or state why two are correct.
 
+  One pair to look at first: `SPEC_KIND_TO_GESTURE` exists twice, at `packages/core/src/tools/routing/reflection/registry.ts:58` and `apps/draw/src/dev/registryProbe.tsx:240`. The two differ on `drop`/`paste`, which is deliberate and explained at the probe — but the shape is the one this item is about: `Record<GestureSpec['kind'], …>` makes TypeScript demand every key at each site independently, so a new gesture kind gets answered twice with nothing holding the answers to each other.
+
+- **(P2) Safari's `gesturestart` / `gesturechange` / `gestureend` are unhandled.** They are the second trackpad pinch channel on macOS Safari, alongside the ctrl+wheel one `viewportZoom` reads. Nothing in the repo listens for them, so Safari trackpad pinch gets whatever the wheel path synthesizes. Worth deciding deliberately rather than by omission — and it belongs with the two-pinch-implementations item above, since that is where the channel would be consolidated.
+
 - **(P3) Alignment guides — v1 follow-ups.** Auto-derived alignment guides shipped 2026-06-19 (`packages/core/src/features/guides/alignment/`: `deriveAlignmentGuides` + `matchAlignment` + `alignMoveBehavior`/`alignInsertBehavior`/`alignResizeBehavior`, rendered via `createGuidesLayer`; demo `apps/site/demos/AlignmentGuidesDemo.tsx`). Spec: `docs/superpowers/specs/2026-06-19-alignment-guides-design.md`. Multi-select drag alignment shipped 2026-06-19 (`alignMoveBehavior` matches the selection's union AABB via `unionBounds`). Remaining deferred: (a) **Figma-style segment rendering** — line spanning only between the aligned objects with end ticks / offset labels, instead of full-canvas lines (needs a span-aware layer, not just axis+offset); (b) **equal-spacing / distribution guides** ("equal gaps" across 3+ objects); (c) **rotated-object alignment** — derivation/matching use AABBs, so a rotated object aligns by its bounding box.
 
 - **(P3) Reconcile `BandEditor` with `Slider`.** `BandEditor` (bands: a contiguous tiling of an axis, seams draggable, each band carrying a payload) ships alongside `Slider` (a thumb list on an axis, `constraint: 'ordered'`, `onAddThumb`/`onRemoveThumb`, `renderTrack`). Under a contiguous tiling the two are the same control — N seams determine N+1 bands, so seams *are* an ordered thumb list — and they were kept separate deliberately: bridging them means teaching `Slider` about the region *between* thumbs (payload, hit-testing, selection), which is the wider change the reconciliation actually requires. The other trigger is `Slider` needing a non-linear axis. A third option arrived with `windease` 1.0 (2026-08-20): its `LayoutStrategy` is public API — `layout()` returns placements plus affordances, `reduce()` folds a gutter drag into strategy state — so a band control is a strategy you write rather than a control you build, and it brings widened gutter grab targets, `affects` for lock suppression, and — as of 1.2.0 — keyboard-operable gutters with it (`role="separator"` with the value triple, arrows plus Home/End, each keypress synthesized into the same drag event the pointer sends so the strategy clamps once). It ships no band strategy of its own: the two built-ins are `gridStrategy` and `stripStrategy`, and strip is `LayoutStrategy<void>` whose gutters are single-child `resize-x` affordances writing pixel `placement.size`. Mapping domain values onto seams is still the consumer's. Note `Slider` is the former `RangePicker` (renamed in `9e934725`); `docs/specs/2026-05-09-range-picker-design.md` still uses the old name, and `RangeSlider`'s doc comment calling `Slider` "canvas-scrub" is stale from the same rename.
@@ -1413,6 +1415,10 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 ## Demos & visual regression
 
+- **(P2) `TEXT_PAINTER` has no pixel coverage.** Every text-bearing visual spec routes around the default text drawer (`NodeShape.ts:349`, registered at `:688`): `text`, `text-aa` and `text-decoration` go through `createTextLayer`, while `text-outlines` and `render-to-pixels` build `textCommand()` by hand. It shipped on unit tests alone. A baseline demo that paints a `data.text` node through the default drawer is the missing check.
+
+- **(P3) No demo exercises non-modal path editing.** `enterPathEdit` / `editAnchors` only run under apps/draw's mode registry — `apps/site/demos/curveLab/RepresentationPanel.tsx:167` disables them and installs its own drag action. The `getActiveMode === undefined` fall-throughs (`SceneCanvas.tsx:1593`, `:1632`) are exercised by tests alone; a small site demo entering anchor editing with no mode registry would give both branches a live home.
+
 - **(P3) Demo coverage gap: HUD widget gallery.** `@weasel-js/hud` ships five widgets (`button`, `rect`, `text`, `image`, `label`) but only `button` is demo'd (`apps/site/demos/HudDemo.tsx`) — a single "HUD widget gallery" demo card would cover the other four. Brainstorm scope before writing it. (The former `@weasel-js/ui` `CommandPalette`/`PropertiesPanel` half of this item was dropped — those are app-local components in `apps/draw/src/ui/`, not `@weasel-js/ui` exports, so there's no kit-export demo gap.)
 
 ---
@@ -1515,7 +1521,7 @@ Deferred, with the rationale in `eslint.config.js` next to each:
 
 - **(P2) Decide where benchmarks live and how their results are kept.** There
   are benchmarks in the tree (`tests/perf`, the draw-cost work in
-  `docs/handoffs/2026-08-14-batched-dispatch.md`) with no shared convention:
+  `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`) with no shared convention:
   no agreed home, no format for a recorded result, no way to say whether a
   number moved since last time, and nothing that says which ones are expected
   to run in CI. Settle the layout — one directory or per-package, what a run
@@ -1563,7 +1569,7 @@ Deferred, with the rationale in `eslint.config.js` next to each:
   have to grow rather than being fixed at four vertices.
 
   The rest of the plan — one program plus atlases — is in
-  `docs/handoffs/2026-08-14-batched-dispatch.md`, with the traps, and a
+  `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`, with the traps, and a
   two-phase dispatch split that would make it tractable.
 
 - **(P3) Per-layer GPU dispatch skipping.** `RenderLayer.deps` (shipped

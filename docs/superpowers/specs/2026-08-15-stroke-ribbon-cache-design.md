@@ -13,7 +13,7 @@ what happens to a path whose stroke changes every frame.
 
 `drawPathStrokeUnclipped` calls `tessellateStroke` on every stroked command on
 every frame and throws the result away. Batched dispatch (see
-`docs/handoffs/2026-08-14-batched-dispatch.md`) took 3,200 stroked commands from
+`docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`) took 3,200 stroked commands from
 243.80 ms to 9.41 ms, and **7.9 of the remaining 9.41 ms is that tessellation** —
 batching moves buffer writes, it does not avoid rebuilding geometry.
 
