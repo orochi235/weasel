@@ -39,10 +39,6 @@ deliberately does *not* override it — those controls are not in the 22px bar.
 
 **Icons get proofed at 240–320px** (`CLAUDE.md`, "Drawing icons").
 
-**`clone` is unresolved.** Mike wants the two squares overlapping with the
-connection pinched at a medial plane — his sketch, not the current glyph. Five
-attempts missed. Ask for the sketch again; do not iterate from prose.
-
 **The smoke test cannot catch an undeclared dependency by bundling.** It packs
 every `@weasel-js` package into the tree, so a bare specifier resolves whether or
 not the importer declared it — confirmed by reintroducing the bug and watching
