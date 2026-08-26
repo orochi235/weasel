@@ -4,8 +4,11 @@ Backlog for the canvas-kit framework (published as `@weasel-js/core`). The
 kit aims to be a generic 2D scene-graph foundation. Items here are evaluated
 for cross-app reuse, not consumer-app value.
 
-For history of completed work, see `git log` and the dated specs/plans under
-`docs/superpowers/specs/` and `docs/superpowers/plans/`.
+For history of completed work, see `git log` and the dated specs under
+`docs/superpowers/specs/`. Plans are deleted when their work merges.
+
+When work merges, retire its entry here in the same change. The index below is a
+hand-maintained copy of claims made further down; fix both or fix neither.
 
 Priority tags:
 - **(P1)** — foundational genericity gap; the kit can't do this today
@@ -18,12 +21,10 @@ Priority tags:
 
 ### Next up
 
-- **Animation timelines + hierarchical rig** — spec'd, phase 1 next → [Animation](#animation)
-- **`@weasel-js/audio`** — spec'd, phase 1 next → [Audio](#audio)
-- **Side-scroller demo** — after the two above, as a load test on both → [Animation](#animation)
-- **Per-command draw cost** — solid geometry batches; what is left is the flush itself, which stalls on rewriting its own buffer. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
-- **Audit for duplicated-then-drifted cascades** — two implementations of one lookup, agreeing by coincidence → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - **labkit: generate instrument controls from a schema or a TypeScript type** → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- **`<Timeline>` editor** — the one unbuilt phase of the timeline/rig arc → [Animation](#animation)
+- **Audit for duplicated-then-drifted cascades** — two implementations of one lookup, agreeing by coincidence → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- **Per-draw text buffers** — text mints a VAO and two buffers per draw; solid geometry stopped doing this when the batch started cycling buffers → [Release-gate & build hygiene](#release-gate--build-hygiene)
 
 ### P2 — broad reuse / friction-likely
 
@@ -39,13 +40,10 @@ Priority tags:
 - labkit `registerSerializers` has no callers; instrument serializers never run → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 **Lint**
-- `eqeqeq` (285) and `no-unused-vars` (129) deferred from the 2026-08-22 baseline → [Lint](#lint)
+- `eqeqeq` (275) and `no-unused-vars` (131) deferred from the 2026-08-22 baseline → [Lint](#lint)
 
 **Tools & gestures**
 - `ToolCtx` hard-codes 2D, blocking tool reuse by another kernel → [Tools & gestures](#tools--gestures)
-
-**Viewport**
-- Viewports as a first-class canvas concept (input, not just render) → [Viewport](#viewport)
 
 **Plugins & packaging**
 - Barrel-hygiene: selection (pending design review) → [Plugins & packaging](#plugins--packaging)
@@ -202,8 +200,7 @@ Priority tags:
   nodes, since the app's `Obj` union is path/text only.
 
 - **(P3) External-content ingestion — follow-ups.** Shipped 2026-07-03 (spec
-  `docs/superpowers/specs/2026-07-03-content-ingestion-design.md`, plan
-  `docs/superpowers/plans/2026-07-03-content-ingestion.md`): drop/paste
+  `docs/superpowers/specs/2026-07-03-content-ingestion-design.md`): drop/paste
   gesture kinds (`DropSpec`/`PasteSpec`, MIME-glob `types`), dispatcher DOM
   channels (drop/dragover/dragenter/paste + `weasel-dropover` class), ambient
   `ingest` action, content-handler registry (`packages/core/src/features/ingestion/`,
@@ -320,30 +317,21 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
   consumers who store the view by reference — one who normalizes or clamps it
   would have every frame of their own glide cancelled. Wants a real design.
 
-- **(P2) Viewports as a first-class canvas concept.** `createViewportLayer`
-  re-projects on request (`layer.reproject(outer, dims, screen)`, `viewportsAt`
-  for the topmost of several, shipped 2026-08-15), but the dispatcher knows
-  nothing about viewport rects, so tools still target the outer view — you
-  cannot drag a node inside a PiP. Making that work wants a `viewports` prop on
-  `<SceneCanvas>` feeding both render and input.
+- [x] **Viewports as a first-class canvas concept — landed 2026-08-23.**
+  `<CanvasView>` (`c91e186d`) is a second camera on one canvas: `SceneCanvas`
+  takes `views?: readonly CanvasViewProps[]` and routes input through a
+  `ViewIdResolver` in `useGestureDispatcher`, with per-pointer gesture pinning.
+  You can drag a node inside a PiP. The four semantic questions this entry used
+  to list were each answered by a named commit — pinch and hover route to the
+  view under the pointer (`4ac9273b`), a view hit-tests its own chrome
+  (`726f85e0`), selection is per-view (`7c202d28`). Tests:
+  `packages/core/src/canvas/CanvasView.test.tsx`.
 
-  The mechanical parts are small, and the input seam already exists:
-  `SceneCanvas.tsx:2220` wraps `affordanceAt` / `classifyTarget` to convert
-  client → world, which is exactly where "use the inner view when the point is
-  inside a viewport" belongs. The cost is the semantics, and they are open
-  questions rather than work items:
-
-  - Which view does a gesture inside a viewport act on? A two-finger pinch in a
-    PiP could zoom the inner view or the outer one; both are defensible.
-  - What does a drag that starts inside the rect and leaves it do?
-  - Which viewport wins when two overlap — paint order, or an explicit z?
-  - Does selection chrome render inside a viewport? Screen-space source layers
-    do not today (noted in `features/viewports/README.md`).
-
-  Answer these from the shape of the viewport model rather than guessing; the
-  re-projection primitive above is the piece this would call once it knows
-  which viewport owns the point. `<MinimapCanvas>` / `<SceneViewCanvas>` remain
-  the supported answers for the two common cases.
+- **(P3) The raw `createViewportLayer` path has no input wiring.**
+  `<CanvasView>` above is the supported answer; the older re-projection
+  prototype (`layer.reproject(outer, dims, screen)`, `viewportsAt`) still
+  renders without hit-testing, as `apps/site/registry.ts` says in its blurb.
+  Either retrofit it onto the resolver or retire it in favor of `<CanvasView>`.
 
 - **(P3) Two `meanScale` residuals under non-uniform zoom.** The hit-test half
   shipped 2026-08-12: `core/viewport/pxExtent` (`pxExtent` / `withinPxBox` /
@@ -414,7 +402,7 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
   continuous dash wrapping around. Visible on a round-cap dashed rectangle
   outline.
 
-- **(P3) `<style>`-element and class-selector support for `@weasel-js/svg`.** The presentation-attribute cascade now threads a resolved `StyleContext` through the recursive parse (`packages/svg/src/cascade.ts`, shipped 2026-07-25; spec `docs/superpowers/specs/2026-07-25-svg-cascade-context-design.md`, plan `docs/superpowers/plans/2026-07-25-svg-cascade-context.md`). Inheritance, the `inherit` keyword, `style=""`, text/`<tspan>` cascade, and `currentColor` all resolve without per-attribute DOM walks (`readInheritedAttr` deleted). Still unsupported: `<style>` elements and class/selector matching — the cascade handles inheritance, not selector specificity. `style=""` remains a regex scan, not a full CSS parser (`!important` unsupported). Selector matching is the missing piece; the threaded-context fast path could compute the per-element cascade from `getComputedStyle` against a hidden DOM node in the browser.
+- **(P3) `<style>`-element and class-selector support for `@weasel-js/svg`.** The presentation-attribute cascade now threads a resolved `StyleContext` through the recursive parse (`packages/svg/src/cascade.ts`, shipped 2026-07-25; spec `docs/superpowers/specs/2026-07-25-svg-cascade-context-design.md`). Inheritance, the `inherit` keyword, `style=""`, text/`<tspan>` cascade, and `currentColor` all resolve without per-attribute DOM walks (`readInheritedAttr` deleted). Still unsupported: `<style>` elements and class/selector matching — the cascade handles inheritance, not selector specificity. `style=""` remains a regex scan, not a full CSS parser (`!important` unsupported). Selector matching is the missing piece; the threaded-context fast path could compute the per-element cascade from `getComputedStyle` against a hidden DOM node in the browser.
 
 ### Pathfinder follow-ups (post-v1)
 
@@ -754,7 +742,7 @@ Core five + Crop shipped. Remaining:
 
 ## Scene, adapters & layout
 
-- **(P2) `arrayAdapter` as the default Canvas adapter — full unification.** Partial work shipped: Canvas synthesizes an adapter from `items`/`setItems`/`toPose`/`fromPose`/`createDefault`/`poseBounds`/`intersectsRect` when no explicit `adapter` is passed. It collapses the flat-list boilerplate but is array-shape specific. The deeper move — every scene is a tree rooted at one container — was taken by `useScene` (kit-owned tree with leaf/container) but the inline-props and explicit-adapter tiers still sit alongside rather than collapsed. Full unification (one adapter contract, one default wiring) remains an option for later.
+- **(P2) `arrayAdapter` as the default Canvas adapter — full unification.** The Canvas-level synthesis tier this entry used to describe is gone — `Canvas.tsx` no longer takes `items`/`setItems`/`createDefault`/`poseBounds`/`intersectsRect`, and only `toPose` survives as a layer-config override. `arrayAdapter`, `useArrayAdapter` and `sceneToAdapter` are still three separate wirings. The deeper move — every scene is a tree rooted at one container — was taken by `useScene` (kit-owned tree with leaf/container) but the inline-props and explicit-adapter tiers still sit alongside rather than collapsed. Full unification (one adapter contract, one default wiring) remains an option for later.
 
 - **(P3) The group's union box ignores child rotation.** Per-leaf scaling
   landed 2026-08-12 (`remapRotatedLeaf`): a rotated leaf in a group now scales
@@ -806,21 +794,24 @@ Core five + Crop shipped. Remaining:
 
 ## Animation
 
-### Timelines and rigging (active)
+### Timelines and rigging
 
 Design: `docs/superpowers/specs/2026-08-22-animation-timeline-rig-design.md`.
 Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decomposition.md`.
 
-- **(P1) Timeline primitive** — `animator.timeline(opts)`, registered in the
-  animator's table so its playhead is the entry's `virtualNow` and pause /
-  time-scale / `cancelKey` apply unchanged. Three track kinds: sampled (pure
-  function of `t`, reuses the tween interpolation contract), event (edge
-  crossings, silent under seek), and nested timelines. A public frame tick falls
-  out of the same mechanism.
-- **(P1) Hierarchical rig** — skeleton of named joints with their own TRS, poses
-  as local deltas, `blendPoses`, `resolveSkeleton`. Binding to scene nodes is a
-  dep following the `insert` pattern. Animating a rig is a `SampledTrack<Pose>`
-  whose `interpolate` is `blendPoses` — no rig-specific timeline integration.
+- [x] **Timeline primitive and hierarchical rig — landed 2026-08-22.**
+  `animator.timeline(opts)` (`packages/core/src/animation/timeline/`) registers
+  in the animator's table, with sampled / event / nested tracks. The rig
+  (`packages/core/src/animation/rig/`) ships `blendPoses`, `resolveSkeleton` and
+  `IDENTITY_JOINT`; animating one is a `SampledTrack<Pose>`. Demos:
+  `apps/site/demos/TimelineDemo.tsx`, `RigDemo.tsx`.
+
+  The follow-ups below are what is left.
+
+- **(P2) No dep binds a rig to scene nodes.** The design named a `useRig` dep
+  following the `insert` pattern; it was never built, so `RigDemo.tsx` calls
+  `resolveSkeleton` directly and draws from the result. Every consumer animating
+  a rig into a scene re-does that wiring by hand.
 - **(P2) `loop` cannot be changed after a timeline is created.** `loopsLeft` is
   seeded from `opts.loop` and `TimelineHandle` has no setter, so a transport
   with a loop toggle has to cancel and rebuild the timeline — and hold its track
@@ -986,9 +977,7 @@ What it surfaced:
 - **(P1) `SceneCanvas` commits on every scene mutation, even when the host opted
   out** — those are the ~100–110 commits/s the scene twin still pays above.
   Carried under Rendering & paint, since it is not this demo's problem. The
-  ephemeral-pose-overrides arc
-  (`docs/superpowers/plans/2026-08-24-ephemeral-pose-overrides.md`) narrows it
-  but does not close it: an override never bumps the version, while this demo's
+  ephemeral-pose-overrides arc narrows it but does not close it: an override never bumps the version, while this demo's
   `scene.add` / `scene.batch` still does. Measuring anything else per-frame
   means stopping the scene writes first —
   `apps/site/demos/__tests__/SceneScrollerDemo.test.tsx` freezes `syncScene` to
@@ -1059,13 +1048,14 @@ absorbed by the timeline arc above:
 
 Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
-- **(P1) `@weasel-js/audio`** — a leaf package with no weasel dependencies.
-  Lookahead scheduling on its own one-shot timer (the audio clock cannot be
-  paused or time-scaled by the animator, and rAF stops when nothing is
-  animating), voices with handles and `cancelKey`, buses with gain/mute/solo, 2D
-  spatialization as a pure `spatialize()` function, and analyser taps with
-  `bands(n)` for audio-reactive rendering. Registration: `build:leaves` and the
-  `fixed` group in `.changeset/config.json`.
+- [x] **`@weasel-js/audio` — shipped, published at 1.2.0.** A leaf package with
+  no weasel dependencies: lookahead scheduling on its own one-shot timer, voices
+  with handles and `cancelKey`, buses with gain/mute/solo, `spatialize()`, and
+  analyser taps with `bands(n)`. Registered in `build:leaves` and the `fixed`
+  group. Consumed by `AudioDemo`, `SideScrollerDemo` and `platformer/sfx.ts`.
+
+  Its plan file has every box unchecked too; the CHANGELOG and registry are the
+  record. The follow-ups below are what is left.
 - **(P2) Synth voices and a pattern player.** Today the engine plays
   `AudioBuffer`s: everything must be recorded or pre-rendered, so the
   side-scroller hand-writes PCM into a buffer for every sound it makes. The
@@ -1460,9 +1450,9 @@ was hiding an assertion that read `.space` without narrowing.
 
 Deferred, with the rationale in `eslint.config.js` next to each:
 
-- **(P2) `eqeqeq`** — 285 findings. Real correctness, but a large mechanical
+- **(P2) `eqeqeq`** — 275 findings. Real correctness, but a large mechanical
   sweep with no bug attached to it yet.
-- **(P2) `@typescript-eslint/no-unused-vars`** — 129 findings. Two
+- **(P2) `@typescript-eslint/no-unused-vars`** — 131 findings. Two
   `eslint-disable` directives in the tree already name it and go live with it.
 - **(P3) eslint-plugin-react-hooks v7 compiler rules** — `refs` (387 findings
   across 103 files), `immutability` (18), `set-state-in-effect` (21),

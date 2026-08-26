@@ -30,7 +30,7 @@ const CORE_ALIASES = (() => {
  *     `refs` alone reports 387 times across 103 files, because reading a ref
  *     during render is how a canvas library gets at mutable frame state. Worth
  *     revisiting per rule; not worth adopting as a block.
- *   - `eqeqeq` (285) and `@typescript-eslint/no-unused-vars` (129). Both are
+ *   - `eqeqeq` (275) and `@typescript-eslint/no-unused-vars` (131). Both are
  *     real, both are large mechanical sweeps, and neither blocks the arc.
  */
 
