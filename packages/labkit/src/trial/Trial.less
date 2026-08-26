@@ -90,6 +90,12 @@
   font-size: var(--wzl-font-size-sm);
 }
 
+// Same `width: 100%` default as the header's Select — pinned so it cannot
+// absorb the toolbar's slack. Placeholder-only, so it need only fit "Load…".
+.lk-root .lk-toolbar__load-select {
+  width: 88px;
+}
+
 .lk-sidebar__placeholder {
   padding: var(--wzl-space-sm);
   color: var(--wzl-fg-muted);

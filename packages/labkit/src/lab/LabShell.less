@@ -56,10 +56,22 @@
   gap: var(--wzl-space-xs);
 }
 
+// `Select` is a form field and defaults to `width: 100%`. Left to resolve that
+// against a shrink-to-fit header row it swallows the slack, which pushed the
+// consumer's own header content down to min-content and wrapped the row to
+// three lines. See the `.lk-root` prefix convention in theme/base.less.
+.lk-root .lk-lab-header__add-select {
+  width: 160px;
+}
+
 // The mode toggle is a preference, not a primary action: it sits quiet until
 // the pointer is on it.
 .lk-lab-header__mode {
   opacity: 0.75;
+  // A consumer's own header content shares this row and does not shrink, so
+  // without this the segments compress past their labels and the pill track
+  // disappears entirely.
+  flex-shrink: 0;
 
   &:hover,
   &:focus-within {
