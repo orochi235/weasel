@@ -15,8 +15,8 @@
 .lk-property-panel__title {
   font-family: var(--wzl-font-display);
   font-weight: var(--wzl-font-weight-normal);
-  font-size: 1.05rem;
-  line-height: 1.2;
+  font-size: var(--wzl-font-size-lg);
+  line-height: var(--wzl-leading-snug);
   letter-spacing: 0.01em;
   color: var(--wzl-fg);
   margin: 0 0 12px;
@@ -85,8 +85,8 @@
 .lk-property-row__label {
   font-family: var(--wzl-font-display);
   font-weight: var(--wzl-font-weight-normal);
-  font-size: 0.78rem;
-  line-height: 1.2;
+  font-size: var(--wzl-font-size-sm);
+  line-height: var(--wzl-leading-snug);
   color: var(--wzl-fg-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -108,10 +108,9 @@
 .lk-property-row__readout-input {
   font: inherit;
   font-weight: var(--wzl-font-weight-medium);
-  // Force line-height 1 (the label parent inherits 1.2, which would make
-  // the input box ~3px taller than the SB reference). Matches SB
-  // styles.css:385 `font: 500 0.78rem/1`.
-  line-height: 1;
+  // Force leading-tight — the label parent inherits 1.2, which would make the
+  // input box ~3px taller than the speech-balloons reference.
+  line-height: var(--wzl-leading-tight);
   color: var(--wzl-accent);
   background: transparent;
   border: 1px solid transparent;
@@ -148,8 +147,8 @@
 // Word-style units (e.g. "px") read as a small dim suffix next to the digits.
 .lk-property-row__readout-unit {
   color: var(--wzl-fg-muted);
-  font-size: 0.78em;
-  line-height: 1;
+  font-size: var(--wzl-font-size-2xs);
+  line-height: var(--wzl-leading-tight);
   pointer-events: none;
 }
 // Symbol units (e.g. `<sup>°</sup>`) lean on the browser's native super
@@ -157,7 +156,7 @@
 // would re-collapse the glyph onto the baseline.
 .lk-property-row__readout-group sup {
   color: var(--wzl-fg-muted);
-  font-size: 0.7em;
+  font-size: var(--wzl-font-size-2xs);
   pointer-events: none;
 }
 
@@ -230,7 +229,10 @@
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
   padding: 6px 8px;
-  font: 400 0.85rem/1 var(--wzl-font-ui);
+  font-family: var(--wzl-font-ui);
+  font-weight: var(--wzl-font-weight-medium);
+  font-size: var(--wzl-font-size);
+  line-height: var(--wzl-leading-tight);
 }
 
 .lk-property-row input[type='text']:not(.lk-property-row__readout-input):focus,
@@ -248,7 +250,10 @@
   border: 0;
   border-radius: 0;
   padding: 2px 0;
-  font: 400 0.85rem/1 var(--wzl-font-ui);
+  font-family: var(--wzl-font-ui);
+  font-weight: var(--wzl-font-weight-medium);
+  font-size: var(--wzl-font-size);
+  line-height: var(--wzl-leading-tight);
   cursor: pointer;
 }
 .lk-property-row select:focus {
@@ -344,7 +349,7 @@
 .lk-property-row--checkbox .lk-property-row__label {
   text-transform: none;
   letter-spacing: normal;
-  font-size: 0.85rem;
+  font-size: var(--wzl-font-size);
   color: var(--wzl-fg);
   // Place the label after the checkbox visually.
   order: 1;
@@ -374,7 +379,10 @@
   color: var(--wzl-fg-muted);
   border: 0;
   border-radius: 0;
-  font: 400 0.78rem/1 var(--wzl-font-ui);
+  font-family: var(--wzl-font-ui);
+  font-weight: var(--wzl-font-weight-medium);
+  font-size: var(--wzl-font-size-sm);
+  line-height: var(--wzl-leading-tight);
   cursor: pointer;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -421,11 +429,11 @@
 .lk-subpanel__title {
   font-family: var(--wzl-font-display);
   font-weight: 400;
-  font-size: 0.72rem;
-  line-height: 1;
+  font-size: var(--wzl-font-size-sm);
+  line-height: var(--wzl-leading-tight);
   color: var(--wzl-fg);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--wzl-tracking-wider);
   margin: 0;
   padding: 6px 0 4px;
   display: flex;
@@ -517,15 +525,18 @@
 .lk-effect-card__title {
   font-family: var(--wzl-font-display);
   font-weight: 500;
-  font-size: 0.9rem;
-  line-height: 1;
+  font-size: var(--wzl-font-size);
+  line-height: var(--wzl-leading-tight);
   color: var(--wzl-fg);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .lk-effect-card__primary {
-  font: 400 0.75rem/1 var(--wzl-font-ui);
+  font-family: var(--wzl-font-ui);
+  font-weight: var(--wzl-font-weight-medium);
+  font-size: var(--wzl-font-size-sm);
+  line-height: var(--wzl-leading-tight);
   color: var(--wzl-fg);
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid var(--wzl-border);
@@ -550,7 +561,7 @@
   border-radius: 4px;
   width: 22px;
   height: 22px;
-  font-size: 0.85rem;
+  font-size: var(--wzl-font-size);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -583,7 +594,10 @@
   box-shadow: 0 0 6px color-mix(in srgb, var(--wzl-accent) 60%, transparent);
 }
 .lk-effect-card-list__empty {
-  font: var(--wzl-font-weight-normal) 0.78rem/1.4 var(--wzl-font-display);
+  font-family: var(--wzl-font-display);
+  font-weight: var(--wzl-font-weight-normal);
+  font-size: var(--wzl-font-size-sm);
+  line-height: var(--wzl-leading);
   color: var(--wzl-fg-muted);
   text-align: center;
   padding: 16px 12px;

@@ -14,7 +14,7 @@
   margin: 0;
   font-family: var(--wzl-font-display);
   font-weight: var(--wzl-font-weight-normal);
-  font-size: 1rem;
+  font-size: var(--wzl-font-size-lg);
   color: var(--wzl-fg);
 }
 
@@ -28,7 +28,7 @@
   border: 1px dashed var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
   padding: 2px 8px;
-  font-size: 0.78rem;
+  font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-subtle);
   cursor: pointer;
 }
@@ -51,7 +51,7 @@
 
 .lk-layer-stack__empty {
   color: var(--wzl-fg-subtle);
-  font-size: 0.85rem;
+  font-size: var(--wzl-font-size);
   padding: 8px;
   text-align: center;
 }
@@ -97,7 +97,7 @@
   height: 22px;
   border-radius: var(--wzl-radius-sm);
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: var(--wzl-font-size);
 }
 
 .lk-layer-card.has-accent .lk-layer-card__handle {
@@ -112,7 +112,7 @@
 .lk-layer-card__kind,
 .lk-layer-card__primary {
   flex: 1;
-  font-size: 0.9rem;
+  font-size: var(--wzl-font-size);
 }
 
 .lk-layer-card__primary {
@@ -121,14 +121,14 @@
   color: var(--wzl-fg);
   font: inherit;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--wzl-tracking-wide);
 }
 
 .lk-root .lk-layer-card__remove {
   background: transparent;
   border: 0;
   color: var(--wzl-fg-subtle);
-  font-size: 1rem;
+  font-size: var(--wzl-font-size-lg);
   cursor: pointer;
   padding: 2px 6px;
 }

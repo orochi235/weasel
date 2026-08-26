@@ -7,10 +7,10 @@ import type { ReactNode } from 'react';
  */
 export function SideBySide({ block, inline }: { block: ReactNode; inline: ReactNode }) {
   const labelStyle = {
-    font: '300 0.72rem/1 Oswald, system-ui',
+    font: 'var(--wzl-font-weight-normal) var(--wzl-font-size-sm)/var(--wzl-leading-tight) var(--wzl-font-ui)',
     color: 'var(--wzl-fg-muted)',
     textTransform: 'uppercase' as const,
-    letterSpacing: '0.08em',
+    letterSpacing: 'var(--wzl-tracking-wider)',
     margin: '0 0 8px',
   };
   return (
