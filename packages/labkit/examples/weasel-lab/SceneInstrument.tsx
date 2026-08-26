@@ -14,7 +14,7 @@ import type {
   UnitSystem,
 } from '@weasel-js/core';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { defineInstrument, type RenderContext } from '@weasel-js/labkit';
+import { type ConfigOf, defineInstrument, f, type RenderContext } from '@weasel-js/labkit';
 
 interface NodeData {
   color: string;
@@ -27,10 +27,13 @@ type SerializedSceneJSON = SerializedScene<NodeData, LayerId, Pose>;
 interface SceneState {
   scene: SerializedSceneJSON | null;
 }
-interface SceneConfig {
-  cellSize: number;
-  showGrid: boolean;
-}
+/** Declared once: the values, their types, and the controls that edit them.
+ *  `SceneConfig` is derived, so a renamed key cannot drift from the panel. */
+const sceneConfig = f.schema({
+  showGrid: f.boolean(true).label('Show grid'),
+  cellSize: f.number(20).range(5, 80).step(5).label('Grid spacing'),
+});
+type SceneConfig = ConfigOf<typeof sceneConfig>;
 
 const UNITS: UnitSystem = { base: 'px', units: { px: 1 } };
 
@@ -171,20 +174,8 @@ function SceneBody({ config, state, setState }: SceneBodyProps) {
 
 export const SceneInstrument = defineInstrument<SceneState, SceneConfig>({
   name: 'WeaselScene',
-  defaultConfig: () => ({ cellSize: 20, showGrid: true }),
+  config: sceneConfig,
   initialState: () => ({ scene: null }),
-  configSchema: () => [
-    { type: 'checkbox', key: 'showGrid', label: 'Show grid', default: true },
-    {
-      type: 'slider',
-      key: 'cellSize',
-      label: 'Grid spacing',
-      min: 5,
-      max: 80,
-      step: 5,
-      default: 20,
-    },
-  ],
   undo: { snapshotOn: ['state.change'], maxDepth: 50 },
   render: (ctx) => {
     const typed = ctx as RenderContext<SceneState, SceneConfig>;

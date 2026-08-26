@@ -101,19 +101,18 @@ import { FloatingPanel, Legend } from '@weasel-js/labkit';
 A lab where users drag items from a palette onto a canvas, with layer toggles and undo. (See `examples/drag-lab/` for the full version.)
 
 ```tsx
-import { defineInstrument, Lab } from '@weasel-js/labkit';
+import { type ConfigOf, defineInstrument, f, Lab } from '@weasel-js/labkit';
 import '@weasel-js/labkit/styles.css';
 
 interface Plant { id: string; kind: 'tree' | 'flower'; x: number; y: number }
 interface State { plants: Plant[] }
 
-const Garden = defineInstrument<State, { showGrid: boolean }>({
+const gardenConfig = f.schema({ showGrid: f.boolean(true) });
+
+const Garden = defineInstrument<State, ConfigOf<typeof gardenConfig>>({
   name: 'Garden',
-  defaultConfig: () => ({ showGrid: true }),
+  config: gardenConfig,
   initialState: () => ({ plants: [] }),
-  configSchema: () => [
-    { type: 'checkbox', key: 'showGrid', label: 'Show grid', default: true },
-  ],
   render: () => null,
   canvas: {
     layers: [
@@ -153,13 +152,14 @@ The Trial automatically:
 For data viz where users want to toggle traces, reference grids, or annotation layers:
 
 ```tsx
-const Viz = defineInstrument<{ data: number[] }, { binCount: number }>({
+const vizConfig = f.schema({
+  binCount: f.number(20).range(5, 100).step(1).label('Bins'),
+});
+
+const Viz = defineInstrument<{ data: number[] }, ConfigOf<typeof vizConfig>>({
   name: 'Histogram',
-  defaultConfig: () => ({ binCount: 20 }),
+  config: vizConfig,
   initialState: () => ({ data: generateSamples() }),
-  configSchema: () => [
-    { type: 'slider', key: 'binCount', label: 'Bins', min: 5, max: 100, step: 1, default: 20 },
-  ],
   render: () => null,
   canvas: {
     layers: [
