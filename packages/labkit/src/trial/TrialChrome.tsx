@@ -9,6 +9,7 @@ import { TitleBarRegion } from '../chrome/regions/TitleBarRegion';
 import { ToolbarRegion } from '../chrome/regions/ToolbarRegion';
 import { ViewportRegion } from '../chrome/regions/ViewportRegion';
 import type { TrialChromeContext, TrialContribution, TrialRegion } from '../chrome/types';
+import { useConfigSchema } from '../config/useConfigSchema';
 import type { Instrument } from '../instrument/types';
 import type { JobHandle } from '../job/types';
 import { useLabContext } from '../lab/LabContext';
@@ -78,6 +79,8 @@ export function TrialChrome({
   // and goes inert when the trial holds something else — an orbit, say.
   const view2d = as2DView(record.view);
 
+  const configSchema = useConfigSchema(instrument);
+
   const ctx = useMemo<TrialChromeContext>(() => {
     const setZoom = (z: number): void => {
       if (!view2d) return;
@@ -93,7 +96,8 @@ export function TrialChrome({
       canRedo: undoBindings?.canRedo ?? false,
       undo: undoBindings?.undo ?? NO_OP,
       redo: undoBindings?.redo ?? NO_OP,
-      configFields: instrument.configSchema?.() ?? [],
+      configSchema,
+      configFields: instrument.config ? [] : (instrument.configSchema?.() ?? []),
       config: record.config,
       setConfig: (key, value) => {
         const prevConfig = record.config as Record<string, unknown>;
@@ -131,20 +135,21 @@ export function TrialChrome({
     view2d,
     activeToolId,
     setActiveTool,
+    configSchema,
   ]);
 
   const contributions = useMemo(
     () =>
       suppressContributions(
         mergeContributions(
-          builtinContributions(instrument, ctx),
+          builtinContributions(instrument, ctx, lab.controls),
           [...(instrument.chrome ?? [])],
           [...(trialChrome ?? [])],
           [...(chrome ?? [])],
         ),
         suppress ?? [],
       ),
-    [instrument, ctx, trialChrome, chrome, suppress],
+    [instrument, ctx, trialChrome, chrome, suppress, lab.controls],
   );
 
   const inRegion = (region: TrialRegion): TrialContribution[] =>

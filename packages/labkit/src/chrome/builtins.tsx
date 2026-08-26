@@ -9,6 +9,7 @@ import {
   ZoomInIcon,
   ZoomOutIcon,
 } from '@weasel-js/ui';
+import type { ControlRenderer } from '../config/types';
 import { ControlPanel } from '../controls/ControlPanel';
 import type { Instrument } from '../instrument/types';
 import { Select } from '../passthrough/weasel-ui';
@@ -27,6 +28,7 @@ const ZOOM_STEP = 1.25;
 export function builtinContributions(
   instrument: Instrument,
   ctx: TrialChromeContext,
+  controls?: Record<string, ControlRenderer>,
 ): TrialContribution[] {
   const out: TrialContribution[] = [];
   const zoom = ctx.zoom;
@@ -120,7 +122,7 @@ export function builtinContributions(
     });
   }
 
-  if (ctx.configFields.length > 0) {
+  if (Object.keys(ctx.configSchema.group.children).length > 0) {
     out.push({
       id: 'settings',
       region: 'sidebar',
@@ -128,9 +130,10 @@ export function builtinContributions(
         title: 'Settings',
         body: (
           <ControlPanel
-            fields={ctx.configFields}
+            schema={ctx.configSchema}
             config={ctx.config as Record<string, unknown>}
             setConfig={(key, value) => ctx.setConfig(String(key), value)}
+            renderers={controls}
           />
         ),
       },

@@ -144,8 +144,9 @@ class EnumNode<T extends string> extends BaseNode<T> {
     return this.ann({ control: 'radio' });
   }
 
-  /** Relabel the choices. */
-  options(options: readonly ConfigOption[]): this {
+  /** Relabel the choices. Named `labels` rather than `options` because
+   *  `options` is the node's own extras bag. */
+  labels(options: readonly ConfigOption[]): this {
     return this.ann({ options });
   }
 }

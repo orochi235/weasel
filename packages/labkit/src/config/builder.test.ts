@@ -63,3 +63,25 @@ describe('builder', () => {
     expect(s.defaults()).toEqual({ showGrid: true, cellSize: 20 });
   });
 });
+
+describe('builder / node option collisions', () => {
+  // `options` is the node's extras bag AND was briefly an EnumNode method, so
+  // section/showIf/render silently vanished on every enum leaf. tsc caught it;
+  // this keeps a runtime witness.
+  it('every node kind exposes options as the extras bag, not a method', () => {
+    const nodes = [
+      f.number(1),
+      f.boolean(true),
+      f.string(''),
+      f.color('#fff'),
+      f.enum('a', ['a', 'b']),
+      f.value(1),
+      f.custom('vector2', 0),
+    ];
+    for (const node of nodes) {
+      expect(typeof node.options).toBe('object');
+      expect(node.section('S').options.section).toBe('S');
+      expect(node.render(() => null).options.render).toBeTypeOf('function');
+    }
+  });
+});
