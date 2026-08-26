@@ -9,7 +9,7 @@
    can tune both surfaces with one set of sliders. */
 .root {
   display: inline-flex;
-  height: var(--wzl-tb-height, 28px);
+  height: var(--tb-h, var(--wzl-control-h, 24px));
   padding: 2px;
   background: linear-gradient(
     180deg,

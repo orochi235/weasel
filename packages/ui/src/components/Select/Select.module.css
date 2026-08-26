@@ -11,7 +11,7 @@
   width: 100%;
   align-items: center;
   gap: 6px;
-  height: 24px;
+  height: var(--wzl-control-h);
   padding: 0 6px 0 10px;
   background: var(--wzl-surface-sunken);
   border: 1px solid var(--wzl-border);

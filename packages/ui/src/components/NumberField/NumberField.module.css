@@ -9,7 +9,7 @@
 .frame {
   display: flex;
   align-items: stretch;
-  height: 24px;
+  height: var(--wzl-control-h);
   background: var(--wzl-surface-sunken);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);

@@ -129,7 +129,7 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
   });
 
   const style: CSSProperties | undefined = height !== undefined
-    ? ({ ['--wzl-tb-height' as string]: `${height}px` } as CSSProperties)
+    ? ({ ['--tb-h' as string]: `${height}px` } as CSSProperties)
     : undefined;
 
   const rootCls = [

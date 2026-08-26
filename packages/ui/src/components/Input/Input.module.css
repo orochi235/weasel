@@ -10,7 +10,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  height: 24px;
+  height: var(--wzl-control-h);
   padding: 0 8px;
   background: var(--wzl-surface-sunken);
   border: 1px solid var(--wzl-border);

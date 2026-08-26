@@ -153,7 +153,7 @@ export const THEMES = {
       '--wzl-curve-width': "3px",
       '--wzl-tb-height': "28px",
       '--wzl-radius-lg': "14px",
-      '--wzl-control-h': "28px",
+      '--wzl-control-h': "24px",
       '--wzl-glass-blur': "3px",
       '--wzl-font-size': "13px",
       '--wzl-font-size-sm': "11px",
@@ -238,7 +238,7 @@ export const THEMES = {
       '--wzl-curve-width': "3px",
       '--wzl-tb-height': "28px",
       '--wzl-radius-lg': "14px",
-      '--wzl-control-h': "28px",
+      '--wzl-control-h': "24px",
       '--wzl-glass-blur': "3px",
       '--wzl-font-size': "13px",
       '--wzl-font-size-sm': "11px",
@@ -489,7 +489,7 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
       "tb-height": {
         "type": "dimension",
         "value": "28px",
-        "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToggleBar, ToolOptionsBar)."
+        "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
       },
       "radius-lg": {
         "type": "dimension",
@@ -497,8 +497,8 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
       },
       "control-h": {
         "type": "dimension",
-        "value": "28px",
-        "description": "Height of an interactive control — button, input, select. Distinct from tb-height, which sizes the strip a row of them sits in."
+        "value": "24px",
+        "description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
       },
       "glass-blur": {
         "type": "dimension",

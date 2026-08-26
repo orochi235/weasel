@@ -59,11 +59,11 @@
   --wzl-line-width: 2px;
   /* Drawn data curves. Heavier than structural lines so data reads as primary content. */
   --wzl-curve-width: 3px;
-  /* Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToggleBar, ToolOptionsBar). */
+  /* Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges. */
   --wzl-tb-height: 28px;
   --wzl-radius-lg: 14px;
-  /* Height of an interactive control — button, input, select. Distinct from tb-height, which sizes the strip a row of them sits in. */
-  --wzl-control-h: 28px;
+  /* Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in. */
+  --wzl-control-h: 24px;
   /* Backdrop blur radius for frosted surfaces. Pairs with glass-tint. */
   --wzl-glass-blur: 3px;
   --wzl-font-size: 13px;

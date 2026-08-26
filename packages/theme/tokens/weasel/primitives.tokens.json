@@ -58,9 +58,9 @@
     "border-w":    { "$value": "1px" },
     "line-width":  { "$value": "2px", "$description": "Structural lines — gridlines, dividers, axes." },
     "curve-width": { "$value": "3px", "$description": "Drawn data curves. Heavier than structural lines so data reads as primary content." },
-    "tb-height":   { "$value": "28px", "$description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToggleBar, ToolOptionsBar)." },
+    "tb-height":   { "$value": "28px", "$description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges." },
     "radius-lg":   { "$value": "14px" },
-    "control-h":   { "$value": "28px", "$description": "Height of an interactive control — button, input, select. Distinct from tb-height, which sizes the strip a row of them sits in." },
+    "control-h":   { "$value": "24px", "$description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in." },
     "glass-blur":  { "$value": "3px", "$description": "Backdrop blur radius for frosted surfaces. Pairs with glass-tint." },
 
     "font-size":    { "$value": "13px" },
