@@ -36,11 +36,16 @@ your own entry by re-finding it by tag.
 Storybook screenshot check, not just a green test run. This is not optional: arc 3 shipped a
 collapse that passed all 7903 tests while rendering an empty page.
 
-**Switching theme in Storybook takes the in-page toggle, not the URL.** `<Lab>` mounts its own
-`ThemeProvider` defaulting to `Auto`, which follows `prefers-color-scheme`. Storybook's
-`&globals=theme:dark` sets `data-theme` on `<html>`, which that provider ignores — so the URL
-global renders whatever the browser's OS preference is, and a "both themes" check done that way
-verifies one theme twice. Click the lab header's `Auto` / `Light` / `Dark` buttons instead.
+**Storybook's theme global is inert. The attribute is `data-wzl-mode`.** `tokens.css` keys its
+mode blocks off `[data-wzl-mode='dark'|'light']` (`tokens.css:142,159`), which `applyTheme.ts:72`
+writes. Storybook's `&globals=theme:dark` sets `data-theme`, which nothing reads — so a
+"both themes" check driven from the URL verifies one theme twice, and the theme it verifies is
+whatever `prefers-color-scheme` says.
+
+- **labkit stories** mount `<Lab>`, whose `ThemeProvider` writes `data-wzl-mode`. Switch with the
+  lab header's `Auto` / `Light` / `Dark` buttons.
+- **`packages/ui` stories** mount bare components. Nothing writes the attribute, so they render
+  on the `:root` default (dark) in both modes. Set `data-wzl-mode` on the story root yourself.
 
 **Read theme values off the painted element, not off `.lk-root`.** The mode toggle applies the
 theme to a nested node, so `getComputedStyle(document.querySelector('.lk-root'))` still reports
