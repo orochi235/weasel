@@ -899,7 +899,9 @@ Plus these labkit-specific fixes:
 - `LayerStack.less:49` `border-radius: 1px` is a bug — `var(--wzl-radius-sm)`.
 - `JobProgress.less:12` `999px` → `var(--wzl-radius-pill)`.
 - `theme/base.less:22-23` — delete `--lk-title-size: 20px` and point
-  `LabShell.less:27` at `var(--wzl-font-size-xl)`. The local token now duplicates a real one.
+  `LabShell.less:27` at `var(--wzl-font-size-xl)`. Its comment — *"the theme ships only body
+  sizes (13px / 11px), so headings pick their own"* — was true when written and Task 1 makes it
+  false. Delete the comment with the token; leaving it would assert a gap that no longer exists.
 
 - [ ] **Step 4: Retire the hand-written monospace stacks**
 
