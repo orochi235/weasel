@@ -1488,6 +1488,12 @@ Deferred, with the rationale in `eslint.config.js` next to each:
   A third run, on an unrelated branch, hit the same 9 and then passed clean on
   re-run — so it is the harness, not any one change.
 
+  `packages/core/src/core/stylus/usePointerStylus.test.tsx` ("throttles updates
+  by maxFps") joined the set on 2026-08-26: it read the post-throttle pressure
+  0.9 where it expects the throttle to have held 0.1, then passed alone in
+  648ms. Same cause, and the same fix reaches it — the throttle is timed off
+  `performance.now()` against real elapsed time.
+
 - **(P2) `test:kit` covers `packages/core` only, and its name says otherwise.**
   The `kit` vitest project globs `packages/core` plus `apps/site`; `svg`,
   `font`, `geom`, `history`, `gestures`, `modes`, `ui` and `hud` all run under
