@@ -47,6 +47,7 @@ export interface ToolbarGroupProps {
  *  reads as one undifferentiated run. */
 function Group({ children, end, 'aria-label': ariaLabel }: ToolbarGroupProps) {
   return (
+    // biome-ignore lint/a11y/useSemanticElements: a group inside role="toolbar" is the APG pattern; the rule is local and cannot see the parent. <fieldset> means form controls, needs a <legend> to be named, and its UA min-width breaks flex children.
     <div
       className={`lk-toolbar-group${end ? ' lk-toolbar-group--end' : ''}`}
       role="group"

@@ -9,9 +9,7 @@ const less = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'Trial.l
  *  matches braces, so a nested block cannot end the slice early. */
 function rule(selector: string): string {
   const nested = selector.replace(/^\.[a-z-]+?(__|--)/, '&$1');
-  const start = [selector, nested]
-    .map((s) => less.indexOf(`${s} {`))
-    .find((i) => i !== -1);
+  const start = [selector, nested].map((s) => less.indexOf(`${s} {`)).find((i) => i !== -1);
   if (start === undefined) throw new Error(`no rule for ${selector}`);
   const open = less.indexOf('{', start);
   let depth = 0;

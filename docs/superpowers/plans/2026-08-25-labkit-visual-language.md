@@ -1458,16 +1458,22 @@ npx vitest run packages/labkit/src/primitives/Toolbar.test.tsx packages/labkit/s
 
 Expected: PASS.
 
-- [ ] **Step 9: Remove the biome suppression**
+- [ ] **Step 9: Keep the biome suppression, and update its reason**
 
-In `Toolbar.tsx`, delete the `// biome-ignore lint/a11y/useSemanticElements:` comment above the
-`Group` div. `role="group"` inside `role="toolbar"` is now correct, so the rule no longer fires.
+`useSemanticElements` is a purely local rule — it never inspects ancestors, so `role="toolbar"`
+on the parent does not change its verdict, and biome 2.5 offers no per-role escape hatch. The
+suppression stays; only its justification changes, because the reason is now stronger than
+"`<fieldset>` is awkward":
+
+```tsx
+// biome-ignore lint/a11y/useSemanticElements: a group inside role="toolbar" is the APG pattern; the rule is local and cannot see the parent. <fieldset> means form controls, needs a <legend> to be named, and its UA min-width breaks flex children.
+```
 
 ```bash
 npm run lint -w @weasel-js/labkit
 ```
 
-Expected: PASS with no suppression and no new diagnostic.
+Expected: PASS.
 
 - [ ] **Step 10: Pass a name from the trial**
 
