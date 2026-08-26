@@ -54,6 +54,7 @@
   --wzl-swatch-magenta: #ff6eff;
   --wzl-radius-sm: 3px;
   --wzl-radius-md: 5px;
+  --wzl-radius-lg: 14px;
   /* Fully rounded ends — segmented controls, progress tracks. */
   --wzl-radius-pill: 999px;
   --wzl-border-w: 1px;
@@ -63,12 +64,11 @@
   --wzl-curve-width: 3px;
   /* Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges. */
   --wzl-tb-height: 28px;
-  --wzl-radius-lg: 14px;
   /* Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in. */
   --wzl-control-h: 24px;
   /* Backdrop blur radius for frosted surfaces. Pairs with glass-tint. */
   --wzl-glass-blur: 3px;
-  /* Shortcut keys and index badges. Below this a glyph stops resolving at 1x. */
+  /* Shortcut keys and index badges. The floor for chrome text. */
   --wzl-font-size-2xs: 9px;
   /* Tool-button labels under an icon. */
   --wzl-font-size-xs: 10px;
@@ -78,7 +78,7 @@
   --wzl-font-size: 13px;
   /* Panel and dialog titles. */
   --wzl-font-size-lg: 16px;
-  /* The lab title. Replaces labkit's local --lk-title-size. */
+  /* The largest chrome text — a lab or app title. */
   --wzl-font-size-xl: 20px;
   --wzl-space-xs: 4px;
   --wzl-space-sm: 8px;
@@ -89,17 +89,15 @@
   --wzl-tracking-wide: 0.06em;
   /* Uppercase at 11px and below. */
   --wzl-tracking-wider: 0.08em;
-  /* One step of elevation — a trial, a floating panel. */
-  --wzl-shadow-1: 0 1px 3px var(--wzl-shadow);
   --wzl-z-toolbar: 10;
   --wzl-z-overlay: 20;
   --wzl-z-modal: 30;
   /* Single-line controls; the box sets the height. */
-  --wzl-line-height-tight: 1;
+  --wzl-leading-tight: 1;
   /* Headings and two-line labels. */
-  --wzl-line-height-snug: 1.2;
+  --wzl-leading-snug: 1.2;
   /* Body and anything that wraps. */
-  --wzl-line-height: 1.4;
+  --wzl-leading: 1.4;
   /* Layered backdrop fill for a page or lab root. `none` here; a theme with a signature background sets it. */
   --wzl-backdrop: none;
   /* Micro-interactions — hover, focus, pressed. */
@@ -132,7 +130,7 @@
   --wzl-fg-inverse: var(--wzl-gray-900);
   /* Elevation. Always darker than any surface — never derived from fg, which is near-white on dark. */
   --wzl-shadow: rgba(0, 0, 0, 0.6);
-  /* The line separating a raised surface from the field behind it. Clears 3:1 against both surface and surface-raised in either mode, which the general-purpose border does not. */
+  /* The line around a raised surface. Clears 3:1 against surface and surface-raised in either mode, which the general-purpose border does not; over surface-sunken it does not, so a panel on a sunken field needs its own answer. */
   --wzl-border-raised: var(--wzl-gray-400);
 }
 

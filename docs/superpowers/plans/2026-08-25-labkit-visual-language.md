@@ -300,9 +300,9 @@ git commit -m "unify the font-weight scale on 300/500/700 across both themes"
 ```ts
 describe('line-height and letter-spacing', () => {
   it('has a line-height for each role', () => {
-    expect(tokenValue('line-height-tight')).toBe('1');
-    expect(tokenValue('line-height-snug')).toBe('1.2');
-    expect(tokenValue('line-height')).toBe('1.4');
+    expect(tokenValue('leading-tight')).toBe('1');
+    expect(tokenValue('leading-snug')).toBe('1.2');
+    expect(tokenValue('leading')).toBe('1.4');
   });
 
   it('has a tracking scale for uppercase chrome', () => {
@@ -331,9 +331,9 @@ Line-heights are unitless, so they belong in the existing `"number"` group:
     "z-toolbar": { "$value": 10 },
     "z-overlay": { "$value": 20 },
     "z-modal": { "$value": 30 },
-    "line-height-tight": { "$value": 1, "$description": "Single-line controls; the box sets the height." },
-    "line-height-snug": { "$value": 1.2, "$description": "Headings and two-line labels." },
-    "line-height": { "$value": 1.4, "$description": "Body and anything that wraps." }
+    "leading-tight": { "$value": 1, "$description": "Single-line controls; the box sets the height." },
+    "leading-snug": { "$value": 1.2, "$description": "Headings and two-line labels." },
+    "leading": { "$value": 1.4, "$description": "Body and anything that wraps." }
   },
 ```
 
@@ -383,9 +383,10 @@ describe('shape and elevation', () => {
   });
 
   it('derives elevation from a shadow color, never from the foreground', () => {
-    const shadow = tokenValue('shadow-1');
-    expect(shadow).not.toBeNull();
-    expect(shadow).not.toContain('--wzl-fg');
+    for (const decl of css.matchAll(/--wzl-shadow:\s*([^;]+);/g)) {
+      expect(decl[1]).not.toContain('--wzl-fg');
+    }
+    expect(css).toContain('--wzl-shadow:');
   });
 });
 ```
@@ -425,17 +426,18 @@ In `packages/theme/tokens/weasel/modes/light.tokens.json`, add the same two keys
     "border-raised":  { "$value": "{color.gray-500}" }
 ```
 
-- [ ] **Step 5: Add the composite shadow to the dimension group**
+- [ ] **Step 5: Ship no composite shadow token**
 
-`--wzl-shadow-1` is a full `box-shadow` value referencing the per-mode color. In
-`primitives.tokens.json`, `"dimension"`:
+The obvious convenience token — `--wzl-shadow-1: 0 1px 3px var(--wzl-shadow)` — is unsound and
+must not be added. A `var()` inside a *custom property* is substituted where that property is
+**declared**, so a `shadow-1` declared in `:root` bakes in the dark `--wzl-shadow` and inherits
+that frozen value into the light-mode block: light mode silently gets the dark shadow.
+Verified in a browser. The same var-in-a-real-property resolves correctly per element, so the
+consumer writes `box-shadow: 0 1px 3px var(--wzl-shadow)` and there is nothing to get wrong.
 
-```json
-    "shadow-1": {
-      "$value": "0 1px 3px var(--wzl-shadow)",
-      "$description": "One step of elevation — a trial, a floating panel."
-    },
-```
+`--wzl-line`, `--wzl-line-subtle`, `--wzl-line-strong`, `--wzl-surface-hover` and
+`--wzl-surface-pressed` are already broken this way — pre-existing, out of scope here, and
+recorded as a TODO entry in Task 14.
 
 - [ ] **Step 6: Regenerate and run the test**
 
@@ -626,7 +628,7 @@ Also fix the fallback that contradicts its token — `BandEditor/BandEditor.modu
 `var(--wzl-font-size-sm, 0.75rem)`, where 0.75rem is 12px and the token is 11px:
 
 ```css
-  font: var(--wzl-font-weight-medium) var(--wzl-font-size-sm) / var(--wzl-line-height-tight) var(--wzl-font-ui);
+  font: var(--wzl-font-weight-medium) var(--wzl-font-size-sm) / var(--wzl-leading-tight) var(--wzl-font-ui);
 ```
 
 - [ ] **Step 4: Run the test to verify it passes**
@@ -811,7 +813,7 @@ which is why they are being removed rather than converted in place. `PropertyPan
 ```less
   font-weight: var(--wzl-font-weight-medium);
   font-size: var(--wzl-font-size);
-  line-height: var(--wzl-line-height-tight);
+  line-height: var(--wzl-leading-tight);
 ```
 
 - [ ] **Step 3: Fix the hardcoded family in the story helper**
@@ -821,7 +823,7 @@ which is why they are being removed rather than converted in place. `PropertyPan
 the tokens:
 
 ```tsx
-font: 'var(--wzl-font-weight-normal) var(--wzl-font-size-sm)/var(--wzl-line-height-tight) var(--wzl-font-ui)',
+font: 'var(--wzl-font-weight-normal) var(--wzl-font-size-sm)/var(--wzl-leading-tight) var(--wzl-font-ui)',
 ```
 
 - [ ] **Step 4: Verify no rem/em survives in the tree**
@@ -1027,7 +1029,7 @@ Same file, `.lk-trial` (lines 11-14):
   background: var(--wzl-surface-raised);
   border: var(--wzl-border-w) solid var(--wzl-border-raised);
   border-radius: var(--wzl-radius-md);
-  box-shadow: var(--wzl-shadow-1);
+  box-shadow: 0 1px 3px var(--wzl-shadow);
 ```
 
 - [ ] **Step 5: Run the test**
@@ -1185,7 +1187,7 @@ With the readouts homed, the title bar carries name plus grip only. In `Trial.le
 `min-height: 24px` becomes the height its 15.4px of text needs:
 
 ```less
-  min-height: calc(var(--wzl-font-size-sm) * var(--wzl-line-height) + var(--wzl-space-xs));
+  min-height: calc(var(--wzl-font-size-sm) * var(--wzl-leading) + var(--wzl-space-xs));
 ```
 
 Screenshot again — a title bar that clips its own descenders is the failure mode here.
@@ -1725,6 +1727,24 @@ Anything genuinely left over becomes its own entry. Add one for the literals the
 not tokenize:
 
 ```markdown
+- **(P2) A mode-varying token referenced from a `:root` primitive freezes at the
+  dark value.** CSS substitutes a `var()` inside a *custom property* at the scope
+  where that property is declared, so a primitive in `:root` that references a
+  mode semantic inherits the default mode's value into every other mode's block.
+  `--wzl-line`, `--wzl-line-subtle`, `--wzl-line-strong`, `--wzl-surface-hover`
+  and `--wzl-surface-pressed` are all authored this way and all resolve to their
+  dark values in light mode. Arc 4 sidestepped it by not adding a composite
+  `--wzl-shadow-1`, but the five existing ones are still wrong.
+
+  It only bites the raw-`tokens.css` + `data-wzl-mode` path — `applyTheme.ts`
+  re-emits every resolved token into one rule, so labkit is fine. The broken path
+  is what `packages/ui/.storybook/preview.ts` uses, which is why the Foundations
+  page's own light/dark comparison is misleading. The fix is in
+  `build-tokens.ts`: emit a primitive that references a mode semantic into each
+  mode block rather than into `:root`. A test must switch `data-wzl-mode` and
+  read a computed value — `generated.test.ts` already asserts the `color-mix`
+  mechanism is *present*, which is what let this pass.
+
 - **(P3) The color literals with no token equivalent.** The arc-4 pass tokenized
   what had a token and left the rest rather than inventing a mapping —
   `check-design-tokens` covers size, weight and radius but not color, for that

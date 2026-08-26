@@ -12,6 +12,6 @@
     "accent-fg":      { "$value": "{color.accent-strong}", "$description": "Accent for foreground use — text, icons, selected labels drawn on a surface. accent is a fill; the midnight base is too dim to read as text on dark surfaces." },
     "fg-inverse":   { "$value": "{color.gray-900}", "$description": "Text drawn on a filled foreground-colored element (e.g. a slider thumb). Flips with the mode, so it is a semantic, not an alias to a primitive." },
     "shadow":        { "$value": "rgba(0, 0, 0, 0.6)", "$description": "Elevation. Always darker than any surface — never derived from fg, which is near-white on dark." },
-    "border-raised": { "$value": "{color.gray-400}", "$description": "The line separating a raised surface from the field behind it. Clears 3:1 against both surface and surface-raised in either mode, which the general-purpose border does not." }
+    "border-raised": { "$value": "{color.gray-400}", "$description": "The line around a raised surface. Clears 3:1 against surface and surface-raised in either mode, which the general-purpose border does not; over surface-sunken it does not, so a panel on a sunken field needs its own answer." }
   }
 }

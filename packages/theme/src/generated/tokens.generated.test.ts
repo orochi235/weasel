@@ -36,9 +36,9 @@ describe('font-weight scale', () => {
 
 describe('line-height and letter-spacing', () => {
   it('has a line-height for each role', () => {
-    expect(tokenValue('line-height-tight')).toBe('1');
-    expect(tokenValue('line-height-snug')).toBe('1.2');
-    expect(tokenValue('line-height')).toBe('1.4');
+    expect(tokenValue('leading-tight')).toBe('1');
+    expect(tokenValue('leading-snug')).toBe('1.2');
+    expect(tokenValue('leading')).toBe('1.4');
   });
 
   it('has a tracking scale for uppercase chrome', () => {
@@ -53,9 +53,12 @@ describe('shape and elevation', () => {
     expect(tokenValue('radius-pill')).toBe('999px');
   });
 
+  // --wzl-fg is near-white on dark, so an fg-derived shadow lights the field it
+  // should darken. Asserted on the color token, which is what could be misauthored.
   it('derives elevation from a shadow color, never from the foreground', () => {
-    const shadow = tokenValue('shadow-1');
-    expect(shadow).not.toBeNull();
-    expect(shadow).not.toContain('--wzl-fg');
+    for (const decl of css.matchAll(/--wzl-shadow:\s*([^;]+);/g)) {
+      expect(decl[1]).not.toContain('--wzl-fg');
+    }
+    expect(css).toContain('--wzl-shadow:');
   });
 });

@@ -55,21 +55,21 @@
     "$type": "dimension",
     "radius-sm":   { "$value": "3px" },
     "radius-md":   { "$value": "5px" },
+    "radius-lg":   { "$value": "14px" },
     "radius-pill": { "$value": "999px", "$description": "Fully rounded ends — segmented controls, progress tracks." },
     "border-w":    { "$value": "1px" },
     "line-width":  { "$value": "2px", "$description": "Structural lines — gridlines, dividers, axes." },
     "curve-width": { "$value": "3px", "$description": "Drawn data curves. Heavier than structural lines so data reads as primary content." },
     "tb-height":   { "$value": "28px", "$description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges." },
-    "radius-lg":   { "$value": "14px" },
     "control-h":   { "$value": "24px", "$description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in." },
     "glass-blur":  { "$value": "3px", "$description": "Backdrop blur radius for frosted surfaces. Pairs with glass-tint." },
 
-    "font-size-2xs": { "$value": "9px", "$description": "Shortcut keys and index badges. Below this a glyph stops resolving at 1x." },
+    "font-size-2xs": { "$value": "9px", "$description": "Shortcut keys and index badges. The floor for chrome text." },
     "font-size-xs":  { "$value": "10px", "$description": "Tool-button labels under an icon." },
     "font-size-sm":  { "$value": "11px", "$description": "Chrome labels, status readouts, section headings." },
     "font-size":     { "$value": "13px", "$description": "Controls and body text." },
     "font-size-lg":  { "$value": "16px", "$description": "Panel and dialog titles." },
-    "font-size-xl":  { "$value": "20px", "$description": "The lab title. Replaces labkit's local --lk-title-size." },
+    "font-size-xl":  { "$value": "20px", "$description": "The largest chrome text — a lab or app title." },
 
     "space-xs": { "$value": "4px" },
     "space-sm": { "$value": "8px" },
@@ -78,9 +78,7 @@
 
     "tracking-none":  { "$value": "0" },
     "tracking-wide":  { "$value": "0.06em", "$description": "Uppercase section headings." },
-    "tracking-wider": { "$value": "0.08em", "$description": "Uppercase at 11px and below." },
-
-    "shadow-1": { "$value": "0 1px 3px var(--wzl-shadow)", "$description": "One step of elevation — a trial, a floating panel." }
+    "tracking-wider": { "$value": "0.08em", "$description": "Uppercase at 11px and below." }
   },
 
   "number": {
@@ -89,9 +87,9 @@
     "z-overlay": { "$value": 20 },
     "z-modal":   { "$value": 30 },
 
-    "line-height-tight": { "$value": 1, "$description": "Single-line controls; the box sets the height." },
-    "line-height-snug":  { "$value": 1.2, "$description": "Headings and two-line labels." },
-    "line-height":       { "$value": 1.4, "$description": "Body and anything that wraps." }
+    "leading-tight": { "$value": 1, "$description": "Single-line controls; the box sets the height." },
+    "leading-snug":  { "$value": 1.2, "$description": "Headings and two-line labels." },
+    "leading":       { "$value": 1.4, "$description": "Body and anything that wraps." }
   },
 
   "gradient": {

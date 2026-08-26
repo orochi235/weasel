@@ -55,7 +55,9 @@ than the reverse: the hardcoded 500/600/700 usage is the real design, and under 
 those 21 sites have no token to swap to. `--wzl-font-weight-light` (200) is dropped; its 6 users
 want `normal`.
 
-**`--wzl-line-height-*` and `--wzl-letter-spacing-*` are new.** They have no tokens today.
+**`--wzl-leading-*` and `--wzl-tracking-*` are new.** They have no tokens today. `leading`
+rather than `line-height` because the generated manifest groups tokens by name prefix, and a
+`line-*` group already means drawn lines (`line-subtle`, `line-width`).
 
 **Units unify on px.** `packages/ui` sizes type in px (76 sites), `labkit/src/ui/properties` in
 rem/em (16). These are chrome dimensions, not reading text.

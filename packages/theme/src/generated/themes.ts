@@ -56,10 +56,10 @@ export type TokenName =
   | '--wzl-gray-700'
   | '--wzl-gray-800'
   | '--wzl-gray-900'
+  | '--wzl-leading'
+  | '--wzl-leading-snug'
+  | '--wzl-leading-tight'
   | '--wzl-line'
-  | '--wzl-line-height'
-  | '--wzl-line-height-snug'
-  | '--wzl-line-height-tight'
   | '--wzl-line-strong'
   | '--wzl-line-subtle'
   | '--wzl-line-width'
@@ -70,7 +70,6 @@ export type TokenName =
   | '--wzl-radius-pill'
   | '--wzl-radius-sm'
   | '--wzl-shadow'
-  | '--wzl-shadow-1'
   | '--wzl-space-lg'
   | '--wzl-space-md'
   | '--wzl-space-sm'
@@ -161,12 +160,12 @@ export const THEMES = {
       '--wzl-swatch-magenta': "#ff6eff",
       '--wzl-radius-sm': "3px",
       '--wzl-radius-md': "5px",
+      '--wzl-radius-lg': "14px",
       '--wzl-radius-pill': "999px",
       '--wzl-border-w': "1px",
       '--wzl-line-width': "2px",
       '--wzl-curve-width': "3px",
       '--wzl-tb-height': "28px",
-      '--wzl-radius-lg': "14px",
       '--wzl-control-h': "24px",
       '--wzl-glass-blur': "3px",
       '--wzl-font-size-2xs': "9px",
@@ -182,13 +181,12 @@ export const THEMES = {
       '--wzl-tracking-none': "0",
       '--wzl-tracking-wide': "0.06em",
       '--wzl-tracking-wider': "0.08em",
-      '--wzl-shadow-1': "0 1px 3px var(--wzl-shadow)",
       '--wzl-z-toolbar': "10",
       '--wzl-z-overlay': "20",
       '--wzl-z-modal': "30",
-      '--wzl-line-height-tight': "1",
-      '--wzl-line-height-snug': "1.2",
-      '--wzl-line-height': "1.4",
+      '--wzl-leading-tight': "1",
+      '--wzl-leading-snug': "1.2",
+      '--wzl-leading': "1.4",
       '--wzl-backdrop': "none",
       '--wzl-motion-fast': "120ms",
       '--wzl-motion-medium': "240ms",
@@ -259,12 +257,12 @@ export const THEMES = {
       '--wzl-swatch-magenta': "#ff6eff",
       '--wzl-radius-sm': "3px",
       '--wzl-radius-md': "5px",
+      '--wzl-radius-lg': "14px",
       '--wzl-radius-pill': "999px",
       '--wzl-border-w': "1px",
       '--wzl-line-width': "2px",
       '--wzl-curve-width': "3px",
       '--wzl-tb-height': "28px",
-      '--wzl-radius-lg': "14px",
       '--wzl-control-h': "24px",
       '--wzl-glass-blur': "3px",
       '--wzl-font-size-2xs': "9px",
@@ -280,13 +278,12 @@ export const THEMES = {
       '--wzl-tracking-none': "0",
       '--wzl-tracking-wide': "0.06em",
       '--wzl-tracking-wider': "0.08em",
-      '--wzl-shadow-1': "0 1px 3px var(--wzl-shadow)",
       '--wzl-z-toolbar': "10",
       '--wzl-z-overlay': "20",
       '--wzl-z-modal': "30",
-      '--wzl-line-height-tight': "1",
-      '--wzl-line-height-snug': "1.2",
-      '--wzl-line-height': "1.4",
+      '--wzl-leading-tight': "1",
+      '--wzl-leading-snug': "1.2",
+      '--wzl-leading': "1.4",
       '--wzl-backdrop': "none",
       '--wzl-motion-fast': "120ms",
       '--wzl-motion-medium': "240ms",
@@ -511,6 +508,10 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         "type": "dimension",
         "value": "5px"
       },
+      "radius-lg": {
+        "type": "dimension",
+        "value": "14px"
+      },
       "radius-pill": {
         "type": "dimension",
         "value": "999px",
@@ -535,10 +536,6 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         "value": "28px",
         "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
       },
-      "radius-lg": {
-        "type": "dimension",
-        "value": "14px"
-      },
       "control-h": {
         "type": "dimension",
         "value": "24px",
@@ -552,7 +549,7 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
       "font-size-2xs": {
         "type": "dimension",
         "value": "9px",
-        "description": "Shortcut keys and index badges. Below this a glyph stops resolving at 1x."
+        "description": "Shortcut keys and index badges. The floor for chrome text."
       },
       "font-size-xs": {
         "type": "dimension",
@@ -577,7 +574,7 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
       "font-size-xl": {
         "type": "dimension",
         "value": "20px",
-        "description": "The lab title. Replaces labkit's local --lk-title-size."
+        "description": "The largest chrome text — a lab or app title."
       },
       "space-xs": {
         "type": "dimension",
@@ -609,11 +606,6 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         "value": "0.08em",
         "description": "Uppercase at 11px and below."
       },
-      "shadow-1": {
-        "type": "dimension",
-        "value": "0 1px 3px var(--wzl-shadow)",
-        "description": "One step of elevation — a trial, a floating panel."
-      },
       "z-toolbar": {
         "type": "number",
         "value": 10
@@ -626,17 +618,17 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         "type": "number",
         "value": 30
       },
-      "line-height-tight": {
+      "leading-tight": {
         "type": "number",
         "value": 1,
         "description": "Single-line controls; the box sets the height."
       },
-      "line-height-snug": {
+      "leading-snug": {
         "type": "number",
         "value": 1.2,
         "description": "Headings and two-line labels."
       },
-      "line-height": {
+      "leading": {
         "type": "number",
         "value": 1.4,
         "description": "Body and anything that wraps."
@@ -798,7 +790,7 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         "border-raised": {
           "type": "color",
           "value": "{color.gray-400}",
-          "description": "The line separating a raised surface from the field behind it. Clears 3:1 against both surface and surface-raised in either mode, which the general-purpose border does not."
+          "description": "The line around a raised surface. Clears 3:1 against surface and surface-raised in either mode, which the general-purpose border does not; over surface-sunken it does not, so a panel on a sunken field needs its own answer."
         }
       },
       "light": {
