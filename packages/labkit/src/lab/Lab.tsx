@@ -7,6 +7,7 @@ import { LabStoreContext } from '../state/context';
 import { createLabStore, type LabStore } from '../state/store';
 import type { LabMode, StorageAdapter, TrialRecord } from '../state/types';
 import { interstellarTheme } from '../theme/interstellar';
+import type { SidebarSlot, StatusBarSlot, ToolbarSlot } from '../trial/slotTypes';
 import { Trial } from '../trial/Trial';
 import {
   addTrial as addTrialOp,
@@ -36,6 +37,13 @@ export interface LabProps {
    */
   nebula?: readonly string[];
   title?: string;
+  /** Rendered in the shell's footer, below the workspace. */
+  footer?: ReactNode;
+  /** Replace a piece of every trial's chrome. Forwarded to each `<Trial>`, so
+   *  a lab sets these once rather than reaching for `<TrialChrome>` itself. */
+  toolbar?: ToolbarSlot;
+  sidebar?: SidebarSlot;
+  statusBar?: StatusBarSlot;
   children?: ReactNode;
 }
 
@@ -89,6 +97,10 @@ export function Lab({
   mode,
   nebula,
   title,
+  footer,
+  toolbar,
+  sidebar,
+  statusBar,
   children,
 }: LabProps) {
   if (process.env.NODE_ENV !== 'production' && instruments.length === 0) {
@@ -196,6 +208,7 @@ export function Lab({
           <LabShell
             title={title ?? 'Labkit'}
             mode={modeValue}
+            footer={footer}
             header={
               <>
                 <LabHeader />
@@ -212,7 +225,13 @@ export function Lab({
               onLayoutChange={(next) => store.getState().setLayout(next)}
             >
               {trials.map((w) => (
-                <Trial key={w.id} id={w.id} />
+                <Trial
+                  key={w.id}
+                  id={w.id}
+                  toolbar={toolbar}
+                  sidebar={sidebar}
+                  statusBar={statusBar}
+                />
               ))}
             </Workspace>
           </LabShell>

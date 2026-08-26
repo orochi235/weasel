@@ -13,22 +13,22 @@ interface C {
 }
 
 function makeInstrument(name: string, n: number, delay: number) {
-  return defineInstrument<S, C>({
+  return defineInstrument<S, C, number>({
     name,
     defaultConfig: () => ({ n }),
     initialState: () => ({ items: [] }),
     render: () => null,
     job: {
       auto: true,
-      run: async function* ({ config, signal }): AsyncGenerator<JobEvent<never>> {
+      run: async function* ({ config, signal }): AsyncGenerator<JobEvent<number>> {
         yield { kind: 'total', total: config.n };
         for (let i = 0; i < config.n; i++) {
           await new Promise((r) => setTimeout(r, delay));
           if (signal.aborted) return;
-          yield { kind: 'item', item: i as never };
+          yield { kind: 'item', item: i };
         }
       },
-      onItem: (item, state) => ({ items: [...state.items, item as number] }),
+      onItem: (item, state) => ({ items: [...state.items, item] }),
     },
   });
 }

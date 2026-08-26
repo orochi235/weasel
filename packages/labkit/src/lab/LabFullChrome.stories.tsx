@@ -76,7 +76,7 @@ interface SweepSpec {
   fault?: string;
 }
 
-async function* sweep(spec: SweepSpec, signal: AbortSignal): AsyncGenerator<JobEvent<never>> {
+async function* sweep(spec: SweepSpec, signal: AbortSignal): AsyncGenerator<JobEvent<number>> {
   yield { kind: 'total', total: spec.count };
   for (let i = 0; i < spec.count; i++) {
     await wait(spec.everyMs, signal);
@@ -86,7 +86,7 @@ async function* sweep(spec: SweepSpec, signal: AbortSignal): AsyncGenerator<JobE
       yield { kind: 'failed', index: i, error: `Frame ${i}: detector saturated` };
       continue;
     }
-    yield { kind: 'item', item: (Math.sin(i * 0.55) * 42 + 58) as never };
+    yield { kind: 'item', item: Math.sin(i * 0.55) * 42 + 58 };
   }
 }
 
@@ -106,8 +106,8 @@ function scanInstrument(
   name: string,
   traceColor: string,
   spec: SweepSpec,
-): Instrument<ScanState, ScanConfig> {
-  return defineInstrument<ScanState, ScanConfig>({
+): Instrument<ScanState, ScanConfig, number> {
+  return defineInstrument<ScanState, ScanConfig, number>({
     name,
     defaultConfig: () => ({
       gain: 1.4,
@@ -124,7 +124,7 @@ function scanInstrument(
       initialView: { zoom: 1, pan: { x: 24, y: 24 } },
       layers: [
         {
-          id: 'Grid',
+          id: 'grid',
           draw: (c, { zoom }) => {
             c.strokeStyle = '#8894a8';
             c.globalAlpha = 0.3;
@@ -145,7 +145,7 @@ function scanInstrument(
           },
         },
         {
-          id: 'Trace',
+          id: 'trace',
           draw: (c, { state, config, zoom }) => {
             if (state.samples.length === 0) return;
             c.strokeStyle = config.traceColor;
@@ -161,7 +161,7 @@ function scanInstrument(
           },
         },
         {
-          id: 'Marks',
+          id: 'marks',
           draw: (c, { state, zoom }) => {
             c.strokeStyle = '#f08c00';
             c.lineWidth = 1 / zoom;
@@ -175,7 +175,13 @@ function scanInstrument(
         },
       ],
     },
-    layers: { ids: ['Grid', 'Trace', 'Marks'] },
+    layers: {
+      ids: [
+        { id: 'grid', label: 'Grid', alwaysOn: true },
+        { id: 'trace', label: 'Trace' },
+        { id: 'marks', label: 'Marks' },
+      ],
+    },
     dragDrop: {
       palette: [
         { id: 'peak', label: 'Peak marker' },
@@ -188,7 +194,7 @@ function scanInstrument(
     job: {
       auto: true,
       run: ({ signal }) => sweep(spec, signal),
-      onItem: (item, state) => ({ ...state, samples: [...state.samples, item as number] }),
+      onItem: (item, state) => ({ ...state, samples: [...state.samples, item] }),
     },
   });
 }
@@ -284,5 +290,32 @@ export const SingleInstrument: Story = {
     defaultInstrument: 'Run log',
     title: 'Run log',
     storage: null,
+  },
+};
+
+/** The chrome a lab replaces rather than accepts. Every surface here is reached
+ *  through `<Lab>` alone — before these props existed, a slot or a footer meant
+ *  building `<TrialChrome>` by hand. */
+export const ReplacedChrome: Story = {
+  args: {
+    instruments: [spectrometer, beamProfile],
+    defaultInstrument: 'Spectrometer',
+    title: 'Replaced chrome',
+    storage: null,
+    mode: 'dark',
+    footer: <span className="lk-run-tag">Footer — reached through LabProps.footer</span>,
+    toolbar: (ctx) => (
+      <span className="lk-run-tag">Toolbar slot for {ctx.instrumentName}</span>
+    ),
+    sidebar: (ctx) => (
+      <div className="lk-sidebar__placeholder">
+        Sidebar slot — {ctx.configFields.length} field(s)
+      </div>
+    ),
+    statusBar: (ctx) => (
+      <span className="lk-run-tag">
+        Status slot — zoom {ctx.zoom == null ? 'n/a' : `${Math.round(ctx.zoom * 100)}%`}
+      </span>
+    ),
   },
 };

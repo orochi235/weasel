@@ -14,17 +14,23 @@ import type { TrialRecord } from '../state/types';
 import { as2DView, DEFAULT_VIEW } from '../state/view';
 import { createEventBus, type EventBus } from '../undo/eventBus';
 import { pushSnapshot, redo as undoRedo, undo as undoUndo } from '../undo/undoStack';
+import type { SidebarSlot, StatusBarSlot, ToolbarSlot } from './slotTypes';
 import type { UndoBindings } from './TrialChrome';
 import { TrialChrome } from './TrialChrome';
 
 /** Props for `<Trial>`. */
 export interface TrialProps {
   id: string;
+  /** Replace a piece of the trial chrome. `<Lab>` forwards its own slot props
+   *  here, so a lab sets these once rather than per trial. */
+  toolbar?: ToolbarSlot;
+  sidebar?: SidebarSlot;
+  statusBar?: StatusBarSlot;
 }
 
 /** Renders one trial from the lab store: looks up its record and
  *  instrument, and mounts the instrument inside the trial chrome. */
-export function Trial({ id }: TrialProps) {
+export function Trial({ id, toolbar, sidebar, statusBar }: TrialProps) {
   const lab = useLabContext();
   const storeCtx = useContext(LabStoreContext);
   if (!storeCtx) throw new Error('[labkit] <Trial> requires <LabStoreProvider>');
@@ -44,6 +50,9 @@ export function Trial({ id }: TrialProps) {
       instrument={instrument}
       store={storeCtx.store}
       isLast={lab.trials.length <= 1}
+      toolbar={toolbar}
+      sidebar={sidebar}
+      statusBar={statusBar}
     />
   );
 }
@@ -53,9 +62,20 @@ interface TrialRuntimeProps {
   instrument: Instrument;
   store: LabStore;
   isLast: boolean;
+  toolbar?: ToolbarSlot;
+  sidebar?: SidebarSlot;
+  statusBar?: StatusBarSlot;
 }
 
-function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) {
+function TrialRuntime({
+  record,
+  instrument,
+  store,
+  isLast,
+  toolbar,
+  sidebar,
+  statusBar,
+}: TrialRuntimeProps) {
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const updateTrialState = useStore(store, (s) => s.updateTrialState);
   const updateTrialConfig = useStore(store, (s) => s.updateTrialConfig);
@@ -170,7 +190,7 @@ function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) 
 
   const layerDescriptors: LayerDescriptor[] = useMemo(() => {
     if (!instrument.layers) return [];
-    return instrument.layers.ids.map((lid) => ({ id: lid, label: lid }));
+    return instrument.layers.ids.map((l) => (typeof l === 'string' ? { id: l, label: l } : l));
   }, [instrument.layers]);
 
   const dragDropResult = useDragDrop({
@@ -267,6 +287,9 @@ function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) 
       instrument={instrument}
       isLastTrial={isLast}
       undoBindings={undoBindings}
+      toolbar={toolbar}
+      sidebar={sidebar}
+      statusBar={statusBar}
       sidebarExtras={
         <>
           {paletteNode}

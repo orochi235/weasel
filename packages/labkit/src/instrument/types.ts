@@ -45,7 +45,9 @@ export interface CanvasCapability<TS = unknown, TC = unknown> {
 /** Declares which of an instrument's layers the trial should offer
  *  show/hide controls for. */
 export interface LayerCapability {
-  ids: string[];
+  /** In list order. A bare string is a layer id that doubles as its own label;
+   *  give a descriptor instead to label a layer or mark it `alwaysOn`. */
+  ids: readonly (string | LayerDescriptor)[];
 }
 
 /** Declares that an instrument accepts items dragged from a palette: what the
@@ -91,7 +93,7 @@ export type DragFeedback = { ok: boolean; reason?: string };
  * a canvas, a layer list, palette drag-and-drop, undo. Declaring a capability
  * is what makes the trial provide the corresponding chrome.
  */
-export interface Instrument<TS = unknown, TC = unknown> {
+export interface Instrument<TS = unknown, TC = unknown, TItem = unknown> {
   name: string;
   defaultConfig: () => TC;
   initialState: (config: TC) => TS;
@@ -108,11 +110,11 @@ export interface Instrument<TS = unknown, TC = unknown> {
   undo?: UndoCapability;
   /** Work too slow to do during a render. The runtime starts it, aborts it on
    *  unmount and on a `key` change, and renders progress into the trial. */
-  job?: JobCapability<TS, TC, never>;
+  job?: JobCapability<TS, TC, TItem>;
 }
 
 /** Instruments as a lab receives them. `any` rather than `unknown` because
  *  parameter contravariance keeps a `defineInstrument<TS, TC>` result out of
  *  an `Instrument<unknown, unknown>[]`; it is contained to this alias. */
 // biome-ignore lint/suspicious/noExplicitAny: see above
-export type InstrumentList = readonly Instrument<any, any>[]; // eslint-disable-line @typescript-eslint/no-explicit-any -- contravariant TC; see above
+export type InstrumentList = readonly Instrument<any, any, any>[]; // eslint-disable-line @typescript-eslint/no-explicit-any -- contravariant TC; see above
