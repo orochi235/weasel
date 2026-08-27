@@ -7,7 +7,7 @@
  *     (select / hand / rect / ellipse / line / polygon / star / pencil /
  *     lasso / text / clone) plus the resize / rotate affordances.
  *   - `useScene` owns the document tree; pose is `{x,y,width,height,rotation?}`
- *     and data is the kit-native `{path, fill, stroke?, strokeWidth?, text?}`
+ *     and data is the kit-native `{path, fill, stroke?, text?}`
  *     shape consumed by PATH_PAINTER / kit:text. Both are what the bundled
  *     shape-tool `create` defaults already produce, so no per-tool overrides.
  *   - The Actions Registry (auto-mounted by SceneCanvas via
@@ -71,7 +71,11 @@ import {
   sampleGradientStops,
   fillInPoseFrame,
   fillToBoundsFrame,
+  solid,
+  strokeOf,
+  DEFAULT_SHAPE_FILL,
   type ToolPrefColor,
+  DEFAULT_FILL_COLOR,
   useClipboardOps,
   useDepSource,
   type ClipboardDep,
@@ -188,14 +192,11 @@ interface WeaselDrawData {
    *  `runsToPlainText(runs) === text` — and preferred by the `kit:text`
    *  painter when present. */
   runs?: StyledRun[];
-  /** A color string, or any `FillStyle` — gradient or pattern. Persisted
-   *  documents predate the object form and carry plain strings, which every
-   *  reader still accepts as an opaque solid. */
-  fill?: string | FillStyle;
-  /** A color string, or a whole `Stroke`. Imported artwork carrying a dash,
-   *  a cap or a gradient stroke arrives in the object form. */
-  stroke?: string | Stroke;
-  strokeWidth?: number;
+  /** The node's paint — solid, gradient or pattern. `null` is an explicit
+   *  "no fill"; absent takes the painter's default. */
+  fill?: FillStyle | null;
+  /** The whole stroke — paint, width, dash, cap, join, align. */
+  stroke?: Stroke | null;
   label?: string;
 }
 
@@ -385,10 +386,11 @@ function isFillStyleObject(raw: unknown): raw is FillStyle {
 
 function wdFillRenderer(colorActionId: string, opacityActionId: string): PropertyRenderer {
   return (ctx) => {
-    const fallback = (ctx.pref as ToolPrefColor).default;
+    const fallback = ctx.pref.default;
     const raw = ctx.value;
-    const value: string | FillStyle =
-      typeof raw === 'string' || isFillStyleObject(raw) ? (raw as string | FillStyle) : fallback;
+    const value: FillStyle = isFillStyleObject(raw) ? raw
+      : isFillStyleObject(fallback) ? fallback
+      : { color: DEFAULT_FILL_COLOR };
     const input = (
       <PropertyFillInput
         value={value}
@@ -412,7 +414,7 @@ function wdActionColorRenderer(colorActionId: string, opacityActionId: string): 
     // claiming one. Writes go through the actions, which preserve the rest
     // of the stroke.
     const fallback = (ctx.pref as ToolPrefColor).default;
-    const value = solidColorOf(ctx.value) ?? (typeof ctx.value === 'string' ? ctx.value : fallback);
+    const value = solidColorOf(ctx.value) ?? fallback;
     const input = (
       <PropertyColorInput value={value} colorActionId={colorActionId} opacityActionId={opacityActionId} />
     );
@@ -472,8 +474,7 @@ const WD_RENDERERS: Record<string, PropertyRenderer> = {
  * and return undefined until the row can draw a real preview.
  */
 function layerSwatch(data: WeaselDrawData): string | undefined {
-  if (typeof data.fill === 'string') return data.fill;
-  if (data.fill !== undefined) return paintChipColor(data.fill);
+  if (data.fill != null) return paintChipColor(data.fill);
   if (data.text === undefined) return undefined;
   const { fill } = resolveTextStyle(data.style);
   return 'color' in fill ? fill.color : undefined;
@@ -566,8 +567,8 @@ function SelectedGradientHandles(props: {
 }
 
 /** The gradient in a node's fill, or null for anything else. */
-function gradientOf(fill: string | FillStyle | undefined): GradientFill | null {
-  if (fill === undefined || typeof fill === 'string') return null;
+function gradientOf(fill: FillStyle | null | undefined): GradientFill | null {
+  if (fill == null) return null;
   switch (fill.fill) {
     case 'linear-gradient':
     case 'radial-gradient':
@@ -1034,10 +1035,10 @@ function Toolbar({
                 const data: WeaselDrawData = o.tool === 'text'
                   ? {
                       text: o.text,
-                      fill: textFill ?? '#000000',
+                      fill: solid(textFill ?? '#000000'),
                       ...(o.style ? { style: o.style } : {}),
                     }
-                  : { path: o.path, fill: o.fill, stroke: o.stroke, strokeWidth: o.strokeWidth };
+                  : { path: o.path, fill: o.fill, stroke: o.stroke };
                 const sceneId = scene.add({
                   kind: 'leaf',
                   layer: 'default',
@@ -1111,9 +1112,8 @@ function loadInitial(): AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawP
     pose: { x: 80, y: 80, width: 160, height: 100 },
     data: {
       path: rectPath(80, 80, 160, 100),
-      fill: '#7ab8d4',
-      stroke: '#0a3654',
-      strokeWidth: 2,
+      fill: solid('#7ab8d4'),
+      stroke: strokeOf('#0a3654', 2),
       label: 'Welcome',
     },
     id: asNodeId('starter-1'),
@@ -1207,9 +1207,8 @@ function BooleansAdapterPublisher({
           pose: { x: b.x, y: b.y, width: b.width, height: b.height },
           data: {
             path,
-            fill: template?.fill ?? '#888',
+            fill: template?.fill ?? DEFAULT_SHAPE_FILL,
             ...(template?.stroke !== undefined ? { stroke: template.stroke } : {}),
-            ...(template?.strokeWidth !== undefined ? { strokeWidth: template.strokeWidth } : {}),
           },
           parent: null,
         };

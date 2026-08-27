@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { computeSliceOps, type SliceLeaf, type WDLeafNode } from './sliceCommit';
 import { rectPath, type NodeId } from '@weasel-js/core';
+import { solid, strokeOf } from '@weasel-js/core';
 
 
 // ---------------------------------------------------------------------------
@@ -20,9 +21,8 @@ function makeLeafNode(overrides: Partial<WDLeafNode> = {}): WDLeafNode {
     pose: { x: 0, y: 0, width: 100, height: 100 },
     data: {
       path: squarePath,
-      fill: '#ff0000',
-      stroke: '#000000',
-      strokeWidth: 2,
+      fill: solid('#ff0000'),
+      stroke: strokeOf('#000000', 2),
     },
     ...overrides,
   };
@@ -94,9 +94,8 @@ describe('computeSliceOps', () => {
     const node = makeLeafNode({
       data: {
         path: squarePath,
-        fill: '#abcdef',
-        stroke: '#fedcba',
-        strokeWidth: 3,
+        fill: solid('#abcdef'),
+        stroke: strokeOf('#fedcba', 3),
       },
     });
 
@@ -117,9 +116,8 @@ describe('computeSliceOps', () => {
 
     for (const op of ops.slice(1)) {
       const inserted = (op as { args: { node: WDLeafNode } }).args.node;
-      expect(inserted.data.fill).toBe('#abcdef');
-      expect(inserted.data.stroke).toBe('#fedcba');
-      expect(inserted.data.strokeWidth).toBe(3);
+      expect(inserted.data.fill).toEqual({ color: '#abcdef' });
+      expect(inserted.data.stroke).toEqual({ paint: { color: '#fedcba' }, width: 3 });
       // Each piece should have a path set.
       expect(inserted.data.path).toBeDefined();
     }
@@ -127,12 +125,12 @@ describe('computeSliceOps', () => {
 
   it('two crossed leaves → ops concatenated per leaf, both deletes carry their own node', () => {
     const leafA: SliceLeaf = {
-      node: makeLeafNode({ id: 'a' as NodeId, data: { path: squarePath, fill: '#aaaaaa' } }),
+      node: makeLeafNode({ id: 'a' as NodeId, data: { path: squarePath, fill: solid('#aaaaaa') } }),
       index: 0,
       worldPath: squarePath,
     };
     const leafB: SliceLeaf = {
-      node: makeLeafNode({ id: 'b' as NodeId, data: { path: squarePath, fill: '#bbbbbb' } }),
+      node: makeLeafNode({ id: 'b' as NodeId, data: { path: squarePath, fill: solid('#bbbbbb') } }),
       index: 1,
       worldPath: squarePath,
     };
@@ -156,10 +154,10 @@ describe('computeSliceOps', () => {
 
     // Pieces inherit the fill of their source leaf, not the other leaf's.
     for (const op of ops.slice(1, 3)) {
-      expect((op as { args: { node: WDLeafNode } }).args.node.data.fill).toBe('#aaaaaa');
+      expect((op as { args: { node: WDLeafNode } }).args.node.data.fill).toEqual({ color: '#aaaaaa' });
     }
     for (const op of ops.slice(4, 6)) {
-      expect((op as { args: { node: WDLeafNode } }).args.node.data.fill).toBe('#bbbbbb');
+      expect((op as { args: { node: WDLeafNode } }).args.node.data.fill).toEqual({ color: '#bbbbbb' });
     }
 
     // All four inserted ids are distinct.

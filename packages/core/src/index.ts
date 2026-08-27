@@ -702,6 +702,9 @@ export {
   GHOST_STROKE,
   solid,
   strokeOf,
+  paintAlpha,
+  paintWithAlpha,
+  paintWithColor,
 } from './util/paint';
 
 // ─── Groups: union the bounds of a node set ─────────────────────────────────

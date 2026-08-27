@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import { asNodeId, toHex8, getAlpha01 } from '@weasel-js/core';
+import { asNodeId, paintAlpha } from '@weasel-js/core';
+import type { FillStyle, Stroke } from '@weasel-js/core';
 import {
   computeScrubbedPaints,
   type PaintSnapshot,
@@ -44,25 +45,18 @@ export function useOpacityScrub({ scene, selection, hostRef }: UseOpacityScrubAr
     function readSnapshot(id: string): PaintSnapshot | null {
       const node = sceneRef.current.get(asNodeId(id));
       if (!node) return null;
-      // `fill` and `stroke` are unions — only their color-string form has an
-      // alpha to scrub, and the rest passes through untouched.
-      const data = node.data as { fill?: unknown; stroke?: unknown } | undefined;
+      const data = node.data as { fill?: FillStyle | null; stroke?: Stroke | null } | undefined;
       return {
-        fill: (data?.fill ?? null) as string | null,
-        stroke: (data?.stroke ?? null) as string | null,
+        fill: data?.fill ?? null,
+        stroke: data?.stroke ?? null,
       };
     }
 
     function brightestAlphaOf(snap: PaintSnapshot): number {
-      const fillA =
-        typeof snap.fill === 'string' && snap.fill.startsWith('#')
-          ? getAlpha01(toHex8(snap.fill))
-          : 0;
-      const strokeA =
-        typeof snap.stroke === 'string' && snap.stroke.startsWith('#')
-          ? getAlpha01(toHex8(snap.stroke))
-          : 0;
-      return Math.max(fillA, strokeA);
+      return Math.max(
+        snap.fill ? paintAlpha(snap.fill) : 0,
+        snap.stroke ? paintAlpha(snap.stroke.paint) : 0,
+      );
     }
 
     // Each tick: rewind any prior tick's entry, then write the new state in

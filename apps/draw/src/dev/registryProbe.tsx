@@ -12,6 +12,7 @@ import {
   type TargetSpec,
   type ToolDef,
   type ToolsApi,
+  type FillStyle,
 } from '@weasel-js/core';
 import type { PhaseSpec } from '@weasel-js/gestures';
 import { formatRoute } from '@weasel-js/core/routing';
@@ -36,7 +37,7 @@ interface ProbeProps {
   onSnapshot(s: RegistrySnapshot): void;
 }
 
-interface ShapeData { fill: string }
+interface ShapeData { fill: FillStyle }
 interface ShapePose { x: number; y: number; width: number; height: number }
 
 /** Mounts a hidden SceneCanvas with the exhaustive tool bundle and lets the

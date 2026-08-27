@@ -2,7 +2,7 @@
  * Bridge between WeaselDraw's `Obj` discriminated union (`PathObj |
  * TextObj`, discriminated by `tool`) and `@weasel-js/svg`'s
  * `SvgNode` discriminated union. Each direction is intentionally lossy
- * at the edges (PathObj's stroke/strokeWidth compresses to an SvgStroke;
+ * at the edges (PathObj's stroke compresses to an SvgStroke;
  * SvgGroupNode flattens on import) — see comments inline for the
  * specifics.
  *
@@ -12,7 +12,7 @@
  * path-then-rect detector fired, else `tool: 'imported'`.
  */
 
-import { boundsOfPath, fillToBoundsFrame, resolveStrokeWidth } from '@weasel-js/core';
+import { boundsOfPath, fillToBoundsFrame, resolveStrokeWidth, solid } from '@weasel-js/core';
 import type { FillStyle, PolygonPath, Stroke, TextStyle } from '@weasel-js/core';
 import { strokeDataFromSvg } from '@weasel-js/svg';
 import type {
@@ -152,26 +152,20 @@ function decodePathToolAndParams(
 }
 
 /**
- * Lower an object's fill to an SVG paint. A plain string is a solid color;
- * anything else is a whole `FillStyle`, which the serializer turns into a
- * `<defs>` gradient and a `url(#…)` reference.
+ * Lower an object's paint to an SVG paint. A non-solid one is turned by the
+ * serializer into a `<defs>` gradient and a `url(#…)` reference.
  */
-function objPaintToSvg(fill: string | FillStyle): SvgPaint {
-  if (typeof fill === 'string') return { kind: 'solid', color: fill };
+function objPaintToSvg(fill: FillStyle): SvgPaint {
   if (fill.fill === undefined || fill.fill === 'solid') {
     return { kind: 'solid', color: fill.color };
   }
   return { kind: 'gradient', paint: fill };
 }
 
-/** Lower an object's stroke onto an `SvgStroke`. A color string pairs with
- *  `strokeWidth`; a `Stroke` carries its own width and the dash, cap, join
- *  and miter limit the pair cannot hold. SVG has no stroke alignment, so
- *  `align` is dropped. */
-function objStrokeToSvg(stroke: string | Stroke, strokeWidth: number): SvgStroke | undefined {
-  if (typeof stroke === 'string') {
-    return strokeWidth > 0 ? { paint: { kind: 'solid', color: stroke }, width: strokeWidth } : undefined;
-  }
+/** Lower an object's stroke onto an `SvgStroke`. SVG has no stroke
+ *  alignment, so `align` is dropped. */
+function objStrokeToSvg(stroke: Stroke | null): SvgStroke | undefined {
+  if (stroke === null) return undefined;
   const width = resolveStrokeWidth(stroke.width ?? 1, 1);
   if (width <= 0) return undefined;
   return {
@@ -216,9 +210,9 @@ export function objToSvgNode(o: Obj): SvgNode {
   const node: SvgPathNode = {
     kind: 'path',
     path: o.path,
-    fill: o.closed ? objPaintToSvg(o.fill) : { kind: 'none' },
+    fill: o.closed && o.fill !== null ? objPaintToSvg(o.fill) : { kind: 'none' },
   };
-  const stroke = objStrokeToSvg(o.stroke, o.strokeWidth);
+  const stroke = objStrokeToSvg(o.stroke);
   if (stroke) node.stroke = stroke;
   node.meta = { wd: { attrs: encodeWdAttrs(o) } };
   if (o.rotation) node.rotation = o.rotation;
@@ -289,13 +283,13 @@ function svgLeafToObj(
   // After `bounds`: a gradient fill — and a gradient stroke paint — are
   // normalized against them. `strokeDataFromSvg` is the same lowering the
   // drag-and-drop ingestion path uses, so the two importers can't drift.
-  const fill = fillFromPaint(n.fill, bounds, '#000000');
-  const { stroke = '#000000', strokeWidth = 0 } = strokeDataFromSvg(n.stroke, bounds);
+  const fill = fillFromPaint(n.fill, bounds, DEFAULT_IMPORT_FILL);
+  const stroke = strokeDataFromSvg(n.stroke, bounds) ?? null;
   const o: PathObj = {
     id,
     tool,
     x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height,
-    path: n.path, closed, fill, stroke, strokeWidth,
+    path: n.path, closed, fill, stroke,
     ...(params ? { params } : {}),
   };
   if (n.rotation) o.rotation = n.rotation;
@@ -425,12 +419,17 @@ export function sceneToSvgNodes(source: SceneSource, roots?: readonly string[]):
 function fillFromPaint(
   paint: SvgPathNode['fill'],
   bounds: RectBounds,
-  fallback: string,
-): string | FillStyle {
+  fallback: FillStyle,
+): FillStyle {
   if (paint.kind === 'none') return fallback;
-  if (paint.kind === 'solid') return paint.color;
+  if (paint.kind === 'solid') return solid(paint.color);
   return fillToBoundsFrame(paint.paint, bounds);
 }
+
+/** What an imported `fill="none"` path is filled with. WeaselDraw's own
+ *  `closed` flag decides whether that fill is painted, so the import keeps a
+ *  color for the object to fall back on when it is closed later. */
+const DEFAULT_IMPORT_FILL: FillStyle = { color: '#000000' };
 
 function isClosedPolygon(path: PolygonPath): boolean {
   const commands = path.commands;
