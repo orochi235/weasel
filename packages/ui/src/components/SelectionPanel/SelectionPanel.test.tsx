@@ -505,6 +505,96 @@ describe('SelectionPanel — object leaf', () => {
     });
   });
 
+  // A field the node does not hold must not be shown as though it did: the
+  // control would claim a value, and the next edit would write that invention
+  // back. `data.stroke` absent leaves every one of its fields with nothing.
+  describe('unset fields', () => {
+    const toggleProperties: NodePropertiesEntry[] = [
+      {
+        name: 'path',
+        schema: {
+          name: 'Properties',
+          children: {
+            appearance: {
+              name: 'Appearance',
+              children: {
+                'data.stroke': {
+                  kind: 'object',
+                  name: 'Stroke',
+                  description: '',
+                  default: { paint: { fill: 'solid', color: '#000000ff' }, width: 1 },
+                  children: {
+                    cap: {
+                      kind: 'enum', name: 'Cap', description: '', default: 'butt', control: 'toggle',
+                      options: [{ value: 'butt', label: 'Butt' }, { value: 'round', label: 'Round' }],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    ];
+
+    const renderToggle = (stroke: unknown) =>
+      render(
+        <SelectionPanel
+          scene={sceneWithStroke(stroke)}
+          selection={selectionOf(['p'])}
+          properties={toggleProperties}
+          routing={strokeRouting}
+        />,
+      );
+
+    const checkedLabels = () =>
+      screen.getAllByRole('radio')
+        .filter((b) => b.getAttribute('aria-checked') === 'true')
+        .map((b) => b.getAttribute('aria-label'));
+
+    it('lights no segment when the object is absent', () => {
+      renderToggle(undefined);
+      expect(screen.getAllByRole('radio')).toHaveLength(2);
+      expect(checkedLabels()).toEqual([]);
+    });
+
+    it('lights no segment when the object omits that field', () => {
+      // The stroke exists, so the leaf is not absent — but `cap` within it is.
+      renderToggle({ paint: { fill: 'solid', color: '#000000ff' }, width: 3 });
+      expect(checkedLabels()).toEqual([]);
+    });
+
+    it('still lights the segment the node does hold', () => {
+      renderToggle({ paint: { fill: 'solid', color: '#000000ff' }, width: 3, cap: 'round' });
+      expect(checkedLabels()).toEqual(['Round']);
+    });
+
+    it('leaves a select unselected rather than showing its default', () => {
+      render(
+        <SelectionPanel
+          scene={sceneWithStroke(undefined)}
+          selection={selectionOf(['p'])}
+          properties={strokeProperties}
+          routing={strokeRouting}
+        />,
+      );
+      expect(screen.getByLabelText('Cap')).toHaveTextContent('—');
+      expect(screen.getByLabelText('Cap')).not.toHaveTextContent('Butt');
+    });
+
+    it('leaves a number blank rather than showing its default', () => {
+      render(
+        <SelectionPanel
+          scene={sceneWithStroke(undefined)}
+          selection={selectionOf(['p'])}
+          properties={strokeProperties}
+          routing={strokeRouting}
+        />,
+      );
+      expect(screen.getByLabelText('Width')).toHaveValue('');
+    });
+  });
+
   it('lifts a scalar value through `fromScalar` before applying a field', () => {
     // The node holds a bare color string; editing width has to produce a whole
     // stroke rather than writing `width` into a string.

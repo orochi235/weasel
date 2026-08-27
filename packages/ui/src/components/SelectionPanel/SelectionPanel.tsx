@@ -40,10 +40,19 @@ export interface PropertyRenderContext {
   path: string;
   /** The schema leaf. App renderers narrow it to their own kind shape. */
   pref: ToolPrefLeaf;
-  /** Aggregated value across the selection; `undefined` when mixed. */
+  /** Aggregated value across the selection; `undefined` when mixed or unset. */
   value: unknown;
   /** True when selected nodes disagree at this path. */
   mixed: boolean;
+  /**
+   * True when the nodes agree and what they agree on is nothing — the field
+   * is absent, and whatever paints comes from a fallback further down.
+   *
+   * Distinct from `mixed`, and both leave `value` undefined. A control must
+   * not substitute its schema default here: doing so shows a value the node
+   * does not hold, and the next edit writes that invention back.
+   */
+  unset: boolean;
   /** Commit a value — fans out to every selected node in one undo step. */
   setValue: (value: unknown) => void;
   /**
@@ -227,6 +236,7 @@ function renderLeafControl(
     pref: leaf,
     value,
     mixed,
+    unset: !mixed && aggregated === undefined,
     setValue: (v) => commit(panelLeaf, v),
     valueAt: (p) => {
       const at = aggregateValue(nodes, p);
@@ -244,7 +254,7 @@ function renderBuiltin(
   ariaLabel: string,
   renderers?: Record<string, PropertyRenderer>,
 ): ReactNode {
-  const { pref, value, mixed, setValue } = ctx;
+  const { pref, value, mixed, unset, setValue } = ctx;
   switch (pref.kind) {
     case 'number': {
       const p = pref as ToolPrefNumber;
@@ -323,10 +333,11 @@ function renderBuiltin(
         <Switch isSelected={Boolean(value)} onChange={setValue} aria-label={ariaLabel} />
       );
       // Switch has no indeterminate state; a reduced-opacity wrapper with
-      // a title is the cheap honest cue for a mixed selection.
-      if (!mixed) return control;
+      // a title is the cheap honest cue for a mixed selection, and for a
+      // field the node leaves to its fallback.
+      if (!mixed && !unset) return control;
       return (
-        <span className={s.mixedSwitch} title="Mixed">
+        <span className={s.mixedSwitch} title={mixed ? 'Mixed' : 'Not set'}>
           {control}
         </span>
       );
@@ -354,7 +365,7 @@ function renderBuiltin(
                 ),
               ariaLabel: o.label,
             }))}
-            value={mixed ? null : (typeof value === 'string' ? value : p.default)}
+            value={mixed || unset ? null : (typeof value === 'string' ? value : p.default)}
             onChange={(next) => { if (next !== null) setValue(next); }}
           />
         );
@@ -363,8 +374,8 @@ function renderBuiltin(
         <Select<string>
           className={s.select}
           options={p.options.map((o) => ({ value: o.value, label: o.label }))}
-          selectedKey={mixed ? null : typeof value === 'string' ? value : p.default}
-          placeholder={mixed ? 'Mixed' : undefined}
+          selectedKey={mixed || unset ? null : typeof value === 'string' ? value : p.default}
+          placeholder={mixed ? 'Mixed' : unset ? '—' : undefined}
           onSelectionChange={setValue}
           aria-label={ariaLabel}
         />
@@ -483,6 +494,10 @@ function ObjectLeaf({
         pref: child,
         value: held?.[key],
         mixed: ctx.mixed,
+        // A field of an object the node does not hold is unset, and so is one
+        // the object omits — `data.stroke` absent leaves every stroke field
+        // with nothing behind it, not with the schema's defaults.
+        unset: !ctx.mixed && held?.[key] === undefined,
         valueAt: ctx.valueAt,
         setValue: (v) => {
           const base = held ?? pref.fromScalar?.(ctx.value) ?? {};
