@@ -1,8 +1,8 @@
 # Handoff — node paint as objects, and the property panel that edits it
 
 One branch now, `node-stroke-union`, worktree
-`.claude/worktrees/node-stroke-union`, at `4f192741`, 18 commits off `main`
-(`343c9913`). Not pushed. `tsc` and 7204 tests green.
+`.claude/worktrees/node-stroke-union`, at `c1b85113`, 21 commits off `main`
+(`5e91f912`, merged in). Not pushed. `tsc` and 7691 tests green.
 
 The design lives in `docs/proposals/2026-08-26-node-stroke-union.md` — read it
 first; it describes the model, not the branch. This file is only what that doc
@@ -28,6 +28,17 @@ renders no heading. `ToolPrefEnumControl` gains `'toggle'` with `short` option
 labels. `pair` merges adjacent fields into one row, inside an object leaf as
 well as in a section. `PropertyRenderContext.valueAt(path)` reads any other
 node path across the selection.
+
+**Paint out of `TextStyle`.** A text node paints from `data.fill` and
+`data.stroke` like every other kind; `TextStyle` is typography only.
+`withLeafStroke` is gone, and so is the duplicate `data.style.fill` control.
+The asymmetry this closed is worth knowing: `data.stroke` already reached
+text through the painter's fold, `data.fill` never did, so picking a fill
+colour with a text node selected wrote a field nothing read.
+`resolveTextStyle(style, paint)` takes the node's paint second and derives
+the caret and selection colours from it; `TextPose` and `SvgTextNode` each
+gained `fill` / `stroke`. A caller with no node — a HUD widget, the debug
+overlay — states its colour on the run.
 
 **The panel.** `SelectionPanel` honours `block`, has a story
 (`SelectionPanel.stories.tsx`) covering a shape node and a text node, and draws
@@ -69,23 +80,25 @@ cap domes there too and the glyph reads as a lozenge.
 
 ## Next, in order
 
-1. **Paint moves out of `TextStyle`.** A text node painted by `data.fill` /
-   `data.stroke` like every other node; `StyledRun.fill` / `.stroke` stay as
-   per-range overrides; `withLeafStroke` is deleted rather than gaining a fill
-   twin. Breaks documents holding `style.fill` — accepted, but it fails as a
-   wrong colour rather than an error, so it wants a changeset line.
-2. The placeholder pass (decision 2).
-3. **Units.** Mike asked where unit support already exists. `ToolPrefNumberUnit`
-   (`toDisplay`/`fromDisplay`/`suffix`) is the only mechanism wired end to end,
-   and exactly one leaf uses it (`pose.rotation`). Three things to know before
-   building on it: `PrefsForm` ignores `unit` entirely, so the same leaf shows
-   degrees in the panel and radians in preferences; `SelectionPanel` converts
-   the value but passes `min`/`max`/`step` unconverted; and the conversion
-   tables you'd want (`UnitSystem`, in/mm/px) live in a *different* mechanism
-   that is grid-snapping only, whose formatter `formatUnit` has zero callers.
-   Nothing anywhere parses `"12mm"`. The schema type is hand-duplicated in core
-   and weasel-ui by policy and a third time in the labkit adapter, so every
-   field added lands three times.
+1. **The placeholder pass** (open decision 2). A text node with no stroke
+   still shows Cap/Join/Align with segments lit, because a control with no
+   value falls back to its schema default and so *claims* one. It wants
+   placeholder-not-value semantics across every optional leaf.
+2. **Units.** Mike asked where unit support already exists.
+   `ToolPrefNumberUnit` (`toDisplay`/`fromDisplay`/`suffix`) is the only
+   mechanism wired end to end, and exactly one leaf uses it
+   (`pose.rotation`). Three things to know before building on it:
+   `PrefsForm` ignores `unit` entirely, so the same leaf shows degrees in the
+   panel and radians in preferences; `SelectionPanel` converts the value but
+   passes `min`/`max`/`step` unconverted; and the conversion tables you'd
+   want (`UnitSystem`, in/mm/px) live in a *different* mechanism that is
+   grid-snapping only, whose formatter `formatUnit` has zero callers.
+   Nothing anywhere parses `"12mm"`. The schema type is hand-duplicated in
+   core and weasel-ui by policy and a third time in the labkit adapter, so
+   every field added lands three times.
+3. Two gaps the paint move exposed rather than caused, both in `docs/TODO.md`:
+   outline-only text (a `null` fill has nowhere to be said), and text having
+   no `NodeInk` (a text stroke adds zero hit reach).
 
 ## Decisions made in conversation, not visible in the code
 
@@ -121,6 +134,14 @@ cap domes there too and the glyph reads as a lozenge.
   answers `/index.json` with stories that don't include yours — which reads as
   "my story failed to index" rather than "wrong server". `lsof -ti tcp:<port>`
   names the process and the tree it was started from.
+- **The draw app's text-colour round trip was never driven by hand.** The
+  painter reading `data.fill` is covered by tests and by the TextDemo and
+  outline-demo screenshots, but picking a swatch with a text node selected in
+  WeaselDraw was not: synthetic keystrokes do not reach the contenteditable
+  overlay (`fill()` bypasses its input handler, and `pressSequentially` on a
+  freshly-created node committed empty twice). Drive it manually before
+  trusting that path.
+
 - **jsdom cannot catch a layout collapse**, and didn't: the object leaf's
   double heading, its missing indentation, the content row nested inside a
   section of the same name, and the size/weight pair silently splitting into

@@ -29,6 +29,7 @@ Priority tags:
 ### P2 — broad reuse / friction-likely
 
 **Text**
+- Text cannot say "no fill", so outline-only text is unreachable → [Text](#text)
 - Cross-browser overlay alignment → [Text](#text)
 
 **Scene, adapters & layout**
@@ -635,6 +636,10 @@ Core five + Crop shipped. Remaining:
   box under any convention and needs a rule of its own. The outline tier makes
   this *easier*: reading font bytes gives access to both tables directly
   instead of to whichever one Chrome chose to expose. Recorded 2026-07-31.
+
+- **(P2) Text cannot say "no fill", so outline-only text is unreachable.** Every other node kind reads `data.fill: null` as an explicit no-paint; a text node resolves it to the default black instead, because a `ResolvedRun` must name a concrete `FillStyle` and nothing downstream can skip the fill pass. Making `ResolvedRun.fill` nullable is the change, and it reaches further than the type: `fillKey` / `sameFill` in `atlas/layoutRuns.ts` key the batch groups on it, the glyph batch would have to emit a run's stroke ribbon without its quads, and underline / strikethrough spans inherit the same fill. Stroked-but-unfilled text is the thing this buys, which is what a display-type outline actually is. Recorded 2026-08-27, when paint moved onto `data.fill`.
+
+- **(P3) A text node has no `NodeInk`, so its stroke adds no hit reach.** `TEXT_PAINTER` declares `paint` and `silhouette` and no `ink`, so `findShapeInk` returns null and `shapeCoversPoint` falls back to `DEFAULT_INK` — zero outset. `SHAPE_PAINTER.ink` and `PATH_PAINTER.ink` both run the stroke through the `{ outset, inset }` helper already; text wants the same, and now that its stroke is `data.stroke` like theirs it is a short one. A heavily outlined glyph is currently unpickable across the width of its own outline.
 
 - **(P2) Cross-browser overlay alignment.** `placeOverlay` uses an empirical `(+1, -1)` CSS-px nudge to compensate for canvas/CSS rasterization disagreement. Works on the dev setup; not universally correct across browsers/fonts/DPRs. A self-correcting probe was attempted and rejected.
 
