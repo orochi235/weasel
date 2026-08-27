@@ -179,11 +179,12 @@ Priority tags:
   (a) **embedded SVG blurs under zoom** — `imageCache` rasterizes once at
   natural size; re-rasterize at view scale (or draw from the live `Image`
   element) if crispness matters; (b) **a gradient *stroke* still flattens** to
-  a solid fallback in unpack. Fills stopped flattening 2026-08-16 — the
-  recorded blocker ("the `kit:path` painter data contract has no gradient
-  slot") had not been true for some time; `NodeFill` is `string | FillStyle`.
-  `data.stroke` genuinely is a color string, and giving it a paint slot means
-  changing the painter, not the importer; (c) **text box width is estimated** on the unpack path — external
+  a solid fallback in unpack, and so do dashes, caps, joins and miter limits.
+  The painter is no longer the obstacle: `data.stroke` is `NodeStroke =
+  string | Stroke` as of the node-stroke-union arc, so unpack can write the
+  whole `SvgStroke` through. `unpack.test.ts` currently pins the flattening
+  and inverts when it does. See
+  `docs/proposals/2026-08-26-node-stroke-union.md`; (c) **text box width is estimated** on the unpack path — external
   `<text>` carries `UNBOUNDED_TEXT_WIDTH` rather than a measurement, and
   unpack has no text-measure context, so it guesses from the longest line at
   0.6 em per glyph (closed 2026-08-16, along with `fontSize` joining the

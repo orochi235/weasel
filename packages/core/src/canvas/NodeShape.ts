@@ -36,12 +36,13 @@ import { textCommand, textCommandFromRuns } from 'features/text/textCommand';
 import type { TextStyle } from 'features/text/textStyle';
 import type { StyledRun } from 'features/text/runs';
 import { textLineBoxes } from 'features/text/lineBoxes';
-import type { FillStyle } from 'core/paint-types';
+import type { FillStyle, Stroke } from 'core/paint-types';
 import type { Path, PolygonPath } from 'features/paths/types';
 import { PATH_M, PATH_L, PATH_Z } from 'features/paths/types';
 import { ellipsePath, regularPolygonPath, starPath, linePath } from 'features/paths/builder';
 import { pathContainsPoint } from 'features/paths/pathHitTest';
 import { strokeHitTest } from 'features/paths/hitTest';
+import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import { poseRotationOf, rotatePathAround } from 'features/paths/poseRotation';
 import { pathInPoseFrame } from 'features/paths/pathInWorld';
 import { fillInPoseFrame } from '../core/fillInPoseFrame';
@@ -97,22 +98,41 @@ export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
    *  `paint` is allowed to be expensive (`kit:text` lays out glyphs). Keep it
    *  to cheap field reads.
    *
-   *  Painters that leave it undefined are treated as `{ filled: true,
-   *  strokeWidth: 0 }` — the pre-`ink` behavior, where the whole silhouette
-   *  interior is grabbable and the outline adds nothing. */
-  ink?(node: Node<TData, string, TPose>, pose: TPose): NodeInk | null;
+   *  Painters that leave it undefined are treated as {@link DEFAULT_INK} —
+   *  the pre-`ink` behavior, where the whole silhouette interior is grabbable
+   *  and the outline adds nothing.
+   *
+   *  `ctx.scale` carries the view scale so a `{ px }` stroke width resolves to
+   *  world units; without it a screen-pixel width is read as world units. */
+  ink?(node: Node<TData, string, TPose>, pose: TPose, ctx?: NodeInkCtx): NodeInkResult | null;
 }
 
-/** How a painter inks its silhouette. See {@link NodeShapeEntry.ink}. */
+/** How a painter inks its silhouette. See {@link NodeShapeEntry.ink}.
+ *
+ *  Reach is per-side because `align` decides which side the ribbon lands on:
+ *  a centered stroke straddles the outline, `'inner'` puts nothing outside it,
+ *  `'outer'` nothing inside. */
 export interface NodeInk {
   /** True when the silhouette's interior is painted, and so grabbable. */
   filled: boolean;
-  /** Stroke width in world units. `0` for no stroke. */
-  strokeWidth: number;
+  /** How far the ink reaches outside the outline, world units. */
+  outset: number;
+  /** How far it reaches inside. */
+  inset: number;
+}
+
+/** What a painter may return from `ink`. The `strokeWidth` form predates
+ *  per-side reach; it is read as a centered stroke. */
+export type NodeInkResult = NodeInk | { filled: boolean; strokeWidth: number };
+
+/** Per-call context for {@link NodeShapeEntry.ink}. */
+export interface NodeInkCtx {
+  /** View scale, for resolving `{ px }` stroke widths to world units. */
+  scale?: number;
 }
 
 /** What a painter that declares no `ink` is assumed to do. */
-const DEFAULT_INK: NodeInk = { filled: true, strokeWidth: 0 };
+const DEFAULT_INK: NodeInk = { filled: true, outset: 0, inset: 0 };
 
 /** Options for `registerNodeShape`. */
 export interface RegisterNodeShapeOptions {
@@ -238,8 +258,15 @@ export function findShapeSilhouette<TData, TPose>(
 export function findShapeInk<TData, TPose>(
   node: Node<TData, string, TPose>,
   pose: TPose,
+  ctx?: NodeInkCtx,
 ): NodeInk | null {
-  return findNodeShape(node)?.ink?.(node, pose) ?? null;
+  const ink = findNodeShape(node)?.ink?.(node, pose, ctx) ?? null;
+  if (ink === null) return null;
+  if ('strokeWidth' in ink) {
+    const half = ink.strokeWidth / 2;
+    return { filled: ink.filled, outset: half, inset: half };
+  }
+  return ink;
 }
 
 /** Options for {@link shapeCoversPoint}. */
@@ -253,6 +280,9 @@ export interface ShapeCoversPointOptions {
    *  one can hit. Defaults to `0` so a caller that hasn't thought about the
    *  view still gets exact geometry rather than a wrong guess. */
   tolerance?: number;
+  /** View scale, passed to the painter's `ink` so a `{ px }` stroke width
+   *  resolves to world units. Defaults to 1. */
+  scale?: number;
 }
 
 /**
@@ -288,13 +318,15 @@ export function shapeCoversPoint<TData, TPose>(
 ): boolean {
   const sil = findShapeSilhouette(node, pose);
   if (sil === null) return true;
-  const ink = findShapeInk(node, pose) ?? DEFAULT_INK;
-  if (ink.filled && pathContainsPoint(sil, x, y)) return true;
-  // Half the stroke lies outside the silhouette, so half-width is the reach.
-  // `tolerance` widens it to something a pointer can actually land on, and
-  // also makes a filled shape grabbable a few pixels outside its edge — which
-  // is what every editor does and what makes edge-dragging feel possible.
-  const reach = ink.strokeWidth / 2 + (opts.tolerance ?? 0);
+  const ink = findShapeInk(node, pose, { scale: opts.scale }) ?? DEFAULT_INK;
+  const inside = pathContainsPoint(sil, x, y);
+  if (ink.filled && inside) return true;
+  // The stroke reaches a different distance on each side, so which side the
+  // point is on picks the reach. `tolerance` widens it to something a pointer
+  // can actually land on, and also makes a filled shape grabbable a few pixels
+  // outside its edge — which is what every editor does and what makes
+  // edge-dragging feel possible.
+  const reach = (inside ? ink.inset : ink.outset) + (opts.tolerance ?? 0);
   return reach > 0 && strokeHitTest(sil, x, y, reach);
 }
 
@@ -336,10 +368,11 @@ interface RectPose { x: number; y: number; width: number; height: number }
  */
 function withLeafStroke(
   style: TextStyle | undefined,
-  stroke: string | undefined,
+  stroke: NodeStroke | undefined,
   strokeWidth: number | undefined,
 ): TextStyle | undefined {
   if (style?.stroke !== undefined) return style;
+  if (isStrokeSpec(stroke)) return { ...style, stroke };
   if (!stroke || stroke === 'none') return style;
   const width = strokeWidth ?? 1;
   if (width <= 0) return style;
@@ -365,7 +398,7 @@ const TEXT_PAINTER: NodeShapeEntry = {
       text: string;
       style?: TextStyle;
       runs?: readonly StyledRun[];
-      stroke?: string;
+      stroke?: NodeStroke;
       strokeWidth?: number;
     };
     const p = pose as RectPose;
@@ -484,6 +517,60 @@ function resolveNodeFill(
   return fallback === null ? null : { color: fallback };
 }
 
+/**
+ * What a node's `data.stroke` means to the built-in painters.
+ *
+ * A string is a color and `'none'` skips the stroke, mirroring
+ * {@link NodeFill}. An object is a {@link Stroke} used as-is — width, cap,
+ * join, dash, miter limit and align all reach the renderer — and it wins
+ * outright over `data.strokeWidth` rather than merging: a caller holding a
+ * full `Stroke` is not also asking for the color-string fields.
+ */
+export type NodeStroke = string | Stroke;
+
+function isStrokeSpec(v: NodeStroke | undefined): v is Stroke {
+  return typeof v === 'object' && v !== null;
+}
+
+/** The stroke a built-in painter should emit, or `null` for "no stroke". */
+function resolveNodeStroke(
+  stroke: NodeStroke | undefined,
+  strokeWidth: number | undefined,
+): Stroke | null {
+  if (isStrokeSpec(stroke)) return stroke;
+  if (!stroke || stroke === 'none') return null;
+  const width = strokeWidth ?? 0;
+  if (width <= 0) return null;
+  return { paint: { color: stroke }, width };
+}
+
+/** Bake a bounds-relative stroke paint onto the pose box, the way a fill is
+ *  baked. The pose is already in the projected path, so a paint left in
+ *  `'bounds'` units would reach the renderer describing a frame that never
+ *  exists. `null` when a pattern spec fails to resolve. */
+function strokeInPoseFrame(stroke: Stroke, pose: RectPose): Stroke | null {
+  const paint = resolveFillPattern(fillInPoseFrame(stroke.paint, pose));
+  if (paint === null) return null;
+  return paint === stroke.paint ? stroke : { ...stroke, paint };
+}
+
+/** Per-side grab reach for a resolved stroke, in world units. */
+function inkReach(
+  stroke: Stroke | null,
+  scale: number | undefined,
+): { outset: number; inset: number } {
+  if (stroke === null) return { outset: 0, inset: 0 };
+  const w = resolveStrokeWidth(stroke.width ?? 1, scale ?? 1);
+  switch (stroke.align ?? 'center') {
+    case 'inner':
+      return { outset: 0, inset: w };
+    case 'outer':
+      return { outset: w, inset: 0 };
+    default:
+      return { outset: w / 2, inset: w / 2 };
+  }
+}
+
 const PATH_PAINTER: NodeShapeEntry = {
   id: 'kit:path',
   matches: (node) => {
@@ -497,12 +584,13 @@ const PATH_PAINTER: NodeShapeEntry = {
     const d = node.data as {
       path: Path;
       fill?: NodeFill;
-      stroke?: string;
+      stroke?: NodeStroke;
       strokeWidth?: number;
       color?: string;
     };
     const projected = pathInPoseFrame(d.path, pose as RectPose);
-    const hasStroke = !!d.stroke && d.stroke !== 'none' && (d.strokeWidth ?? 0) > 0;
+    const strokeSpec = resolveNodeStroke(d.stroke, d.strokeWidth);
+    const hasStroke = strokeSpec !== null;
     // Treat 'none' as "skip fill". When neither fill nor color is set, fall
     // back to a default fill only if there's no stroke — otherwise the path
     // is stroke-only (e.g. pencil) and a default fill would be wrong.
@@ -511,13 +599,12 @@ const PATH_PAINTER: NodeShapeEntry = {
     // so a box-relative gradient has to be baked onto the same box here or
     // it would arrive in the renderer referring to a frame that never exists.
     const fill = declared && resolveFillPattern(fillInPoseFrame(declared, pose as RectPose));
+    const stroke = strokeSpec && strokeInPoseFrame(strokeSpec, pose as RectPose);
     const cmd: DrawCommand = {
       kind: 'path',
       path: projected,
       ...(fill ? { fill } : {}),
-      ...(hasStroke
-        ? { stroke: { paint: { color: d.stroke! }, width: d.strokeWidth ?? 1 } }
-        : {}),
+      ...(stroke ? { stroke } : {}),
     };
     return [cmd];
   }),
@@ -529,17 +616,18 @@ const PATH_PAINTER: NodeShapeEntry = {
   // 'none' handling, same "no fill declared and a stroke present means
   // stroke-only" fallback. Kept in step with `paint` by
   // `NodeShape.ink.test.ts`, which asserts the two agree.
-  ink: (node) => {
+  ink: (node, _pose, ctx) => {
     const d = node.data as {
       fill?: NodeFill;
-      stroke?: string;
+      stroke?: NodeStroke;
       strokeWidth?: number;
       color?: string;
     };
-    const hasStroke = !!d.stroke && d.stroke !== 'none' && (d.strokeWidth ?? 0) > 0;
+    const stroke = resolveNodeStroke(d.stroke, d.strokeWidth);
+    const hasStroke = stroke !== null;
     return {
       filled: resolveNodeFill(d.fill, d.color, hasStroke, hasStroke ? null : '#888') !== null,
-      strokeWidth: hasStroke ? (d.strokeWidth ?? 1) : 0,
+      ...inkReach(stroke, ctx?.scale),
     };
   },
 };
@@ -558,17 +646,17 @@ const SHAPE_PAINTER: NodeShapeEntry = {
   // fresh `Uint8Array` + `Float32Array` for every ellipse, polygon and star.
   // See PAINT_SLOT.
   paint: (node, pose) => nodeMemo(node, PAINT_SLOT, pose, () => {
-    const d = node.data as { shape: string; color?: string; fill?: NodeFill; stroke?: string; strokeWidth?: number; sides?: number; points?: number };
+    const d = node.data as { shape: string; color?: string; fill?: NodeFill; stroke?: NodeStroke; strokeWidth?: number; sides?: number; points?: number };
     const path = pathForShape(d, pose as RectPose);
     const declaredFill = resolveNodeFill(d.fill, d.color, false, '#888');
     const shapeFill = declaredFill && resolveFillPattern(fillInPoseFrame(declaredFill, pose as RectPose));
+    const strokeSpec = resolveNodeStroke(d.stroke, d.strokeWidth);
+    const stroke = strokeSpec && strokeInPoseFrame(strokeSpec, pose as RectPose);
     return [{
       kind: 'path',
       path,
       ...(shapeFill ? { fill: shapeFill } : {}),
-      ...(d.stroke && (d.strokeWidth ?? 0) > 0
-        ? { stroke: { paint: { color: d.stroke }, width: d.strokeWidth ?? 1 } }
-        : {}),
+      ...(stroke ? { stroke } : {}),
     }];
   }),
   silhouette: (node, pose) => {
@@ -577,10 +665,9 @@ const SHAPE_PAINTER: NodeShapeEntry = {
   },
   // `paint` above always emits a fill (defaulting to '#888'), so this shape
   // family is always filled — unlike `kit:path`, it has no stroke-only form.
-  ink: (node) => {
-    const d = node.data as { stroke?: string; strokeWidth?: number };
-    const hasStroke = !!d.stroke && (d.strokeWidth ?? 0) > 0;
-    return { filled: true, strokeWidth: hasStroke ? (d.strokeWidth ?? 1) : 0 };
+  ink: (node, _pose, ctx) => {
+    const d = node.data as { stroke?: NodeStroke; strokeWidth?: number };
+    return { filled: true, ...inkReach(resolveNodeStroke(d.stroke, d.strokeWidth), ctx?.scale) };
   },
 };
 

@@ -188,6 +188,13 @@ describe('kit:text painter — rich runs', () => {
       expect(text.style.stroke).toEqual({ paint: { color: '#f00' }, width: 3 });
     });
 
+    it('takes a whole Stroke, and ignores data.strokeWidth when it gets one', () => {
+      const stroke = { paint: { color: '#f00' }, width: 3, cap: 'round' as const };
+      const [cmd] = paintText({ text: 'hi', stroke, strokeWidth: 9 });
+      const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
+      expect(text.style.stroke).toEqual(stroke);
+    });
+
     it('defaults the width to 1 when only a colour is set', () => {
       const [cmd] = paintText({ text: 'hi', stroke: '#f00' });
       const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
@@ -321,5 +328,49 @@ describe('shapeCoversPoint', () => {
     const pose = { x: 0, y: 0, width: 10, height: 10 };
     const n = { ...node({ color: '#abc' }), pose }; // kit:rect-fallback
     expect(shapeCoversPoint(n, pose, 5, 5)).toBe(true);
+  });
+});
+
+describe('data.stroke as a whole Stroke', () => {
+  const pose = { x: 0, y: 0, width: 100, height: 100 };
+  const RECT = { kind: 'rect', x: 0, y: 0, width: 100, height: 100 };
+  const strokeOf = (data: unknown): unknown => {
+    const n = { ...node(data), pose };
+    const [cmd] = findNodeShape(n)!.paint(n, pose);
+    return (cmd as { stroke?: unknown }).stroke;
+  };
+
+  it('carries cap, join, dash and miter limit that the color form cannot express', () => {
+    const stroke = {
+      paint: { color: '#0f0' }, width: 12, cap: 'round', join: 'bevel',
+      dash: [8, 4], miterLimit: 2,
+    };
+    // `strokeWidth` is ignored outright — the object is the whole answer.
+    expect(strokeOf({ path: RECT, fill: 'none', stroke, strokeWidth: 3 })).toEqual(stroke);
+  });
+
+  it('reaches kit:shape the same way', () => {
+    const stroke = { paint: { color: '#0f0' }, width: 4, dash: [2, 2] };
+    expect(strokeOf({ shape: 'ellipse', fill: '#fff', stroke })).toEqual(stroke);
+  });
+
+  it('bakes a bounds-relative stroke gradient onto the pose box, as a fill is baked', () => {
+    // Left unbaked, the paint would reach the renderer in `'bounds'` fractions
+    // describing a frame that no longer exists — the pose is already in the path.
+    const paint = {
+      fill: 'linear-gradient' as const,
+      from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+      stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
+      units: 'bounds' as const,
+    };
+    const out = strokeOf({ path: RECT, fill: 'none', stroke: { paint, width: 6 } }) as {
+      paint: { units: string; from: { x: number }; to: { x: number } };
+    };
+    expect(out.paint.units).toBe('local');
+    expect(out.paint.to.x).toBe(100);
+  });
+
+  it("skips a 'none' stroke on kit:shape, which used to paint one colored 'none'", () => {
+    expect(strokeOf({ shape: 'rect', fill: '#fff', stroke: 'none', strokeWidth: 4 })).toBeUndefined();
   });
 });

@@ -4,6 +4,7 @@ import { ActionDisabledReason } from '../registry';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
+import type { Stroke } from 'core/paint-types';
 import { createSetDataOp } from 'core/ops/setData';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { mergeAlphaFromPrev } from '../../../util/color';
@@ -13,16 +14,35 @@ import { DEFAULT_STROKE_COLOR } from '../../../util/paint';
 // Internal scratch
 // ---------------------------------------------------------------------------
 
+/** What a node's `stroke` may hold: a color string, or a full `Stroke` —
+ *  width, cap, join, dash, align. Declared locally for the same reason
+ *  `setFill` declares `NodeFill` locally: the canonical one lives in the
+ *  canvas layer, which the interactions layer does not import. */
+type NodeStroke = string | Stroke;
+
+/** Apply `color` to whatever form the node's stroke is in. A string stays a
+ *  string; a `Stroke` keeps its width, cap, join and dash and takes a new
+ *  solid paint, so picking a color does not discard the rest of the stroke. */
+function strokeWithColor(prev: NodeStroke | undefined, color: string): NodeStroke {
+  return typeof prev === 'object' && prev !== null ? { ...prev, paint: { color } } : color;
+}
+
+/** The color alpha is merged against. Only a string stroke has one — there is
+ *  no meaningful alpha to lift off a gradient. */
+function prevStrokeColor(prev: NodeStroke | undefined): string {
+  return typeof prev === 'string' ? prev : DEFAULT_STROKE_COLOR;
+}
+
 interface SetStrokeScratch {
   ids: NodeId[];
-  scene: Scene<{ stroke?: string }, string, unknown>;
+  scene: Scene<{ stroke?: NodeStroke }, string, unknown>;
   /** Data snapshot at drag start, keyed by node id. */
-  startData: Map<NodeId, { stroke?: string }>;
+  startData: Map<NodeId, { stroke?: NodeStroke }>;
   /** The most-recently-received color string (may be 6- or 8-char hex). */
   currentColor: string;
   /** Preview data entries — merged stroke per selected node.
    *  Populated on start and refreshed on every onMove. */
-  previews: Map<NodeId, { stroke: string }>;
+  previews: Map<NodeId, { stroke: NodeStroke }>;
   /** Optional consumer commit hook captured at gesture start. When present,
    *  the ops-based commit routes through it (consumer history) instead of
    *  `scene.applyBatch`. Undefined → fall back to `scene.applyBatch`. */
@@ -34,7 +54,10 @@ function refreshPreviews(scratch: SetStrokeScratch): void {
   scratch.previews.clear();
   for (const id of scratch.ids) {
     const prev = scratch.startData.get(id);
-    const next = mergeAlphaFromPrev(scratch.currentColor, prev?.stroke ?? DEFAULT_STROKE_COLOR);
+    const next = strokeWithColor(
+      prev?.stroke,
+      mergeAlphaFromPrev(scratch.currentColor, prevStrokeColor(prev?.stroke)),
+    );
     scratch.previews.set(id, { ...(prev ?? {}), stroke: next });
   }
 }
@@ -67,7 +90,7 @@ export const setStrokeAction: Action & { requires: string[] } = {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
       const selection = ctx.deps.selection as SelectionApi | undefined;
-      const scene = ctx.deps.scene as Scene<{ stroke?: string }, string, unknown> | undefined;
+      const scene = ctx.deps.scene as Scene<{ stroke?: NodeStroke }, string, unknown> | undefined;
       const applyOps = ctx.deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
 
       if (!selection || !scene) return {};
@@ -81,10 +104,10 @@ export const setStrokeAction: Action & { requires: string[] } = {
       const initialColor = ctxColor ?? optsColor ?? DEFAULT_STROKE_COLOR;
 
       // Snapshot node data at drag start.
-      const startData = new Map<NodeId, { stroke?: string }>();
+      const startData = new Map<NodeId, { stroke?: NodeStroke }>();
       for (const id of ids) {
         const node = scene.get(id);
-        if (node) startData.set(id, { ...(node.data as { stroke?: string }) });
+        if (node) startData.set(id, { ...(node.data as { stroke?: NodeStroke }) });
       }
 
       const scratch: SetStrokeScratch = {
@@ -116,13 +139,16 @@ export const setStrokeAction: Action & { requires: string[] } = {
           const ops: Op[] = [];
           for (const id of scratch.ids) {
             const prev = scratch.startData.get(id);
-            const merged = mergeAlphaFromPrev(scratch.currentColor, prev?.stroke ?? DEFAULT_STROKE_COLOR);
+            const merged = strokeWithColor(
+              prev?.stroke,
+              mergeAlphaFromPrev(scratch.currentColor, prevStrokeColor(prev?.stroke)),
+            );
             // Re-read so concurrent edits to non-stroke fields aren't clobbered on commit.
             const nodeNow = scratch.scene.get(id);
             if (!nodeNow) continue;
-            const from = { ...(nodeNow.data as object) } as { stroke?: string };
+            const from = { ...(nodeNow.data as object) } as { stroke?: NodeStroke };
             const to = { ...from, stroke: merged };
-            ops.push(createSetDataOp<{ stroke?: string }>({ id: id as string, from, to }));
+            ops.push(createSetDataOp<{ stroke?: NodeStroke }>({ id: id as string, from, to }));
           }
           if (ops.length > 0) {
             // Route through the consumer hook when present (consumer history,
