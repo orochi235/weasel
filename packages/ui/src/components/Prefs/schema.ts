@@ -88,7 +88,7 @@ export interface PrefPaint extends PrefBase<'paint', unknown> {
  *  Mirrors core's `ToolPrefObject`: every child edit commits the parent whole,
  *  so a field is never written into a value that isn't an object yet. */
 export interface PrefObject extends PrefBase<'object', unknown> {
-  children: Record<string, PrefLeaf>;
+  children: Record<string, PrefLeaf | PrefGroup>;
   /** Lift a non-object value into the object form before a child edit. */
   fromScalar?: (value: unknown) => Record<string, unknown>;
 }

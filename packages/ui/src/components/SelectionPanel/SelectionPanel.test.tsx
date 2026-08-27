@@ -519,6 +519,58 @@ describe('SelectionPanel — object leaf', () => {
     });
   });
 
+  it('organises fields under a group heading without putting it in the path', () => {
+    // The heading is presentation; `width` is still a field of the stroke,
+    // so the commit is flat.
+    const grouped: NodePropertiesEntry[] = [
+      {
+        name: 'path',
+        schema: {
+          name: 'Properties',
+          children: {
+            appearance: {
+              name: 'Appearance',
+              children: {
+                'data.stroke': {
+                  kind: 'object',
+                  name: 'Stroke',
+                  description: '',
+                  default: {},
+                  block: true,
+                  children: {
+                    geometry: {
+                      name: 'Geometry',
+                      children: {
+                        width: { kind: 'number', name: 'Width', description: '', default: 1 },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    ];
+    const scene = sceneWithStroke({ paint: { color: '#000000ff' }, width: 3 });
+    render(
+      <SelectionPanel
+        scene={scene}
+        selection={selectionOf(['p'])}
+        properties={grouped}
+        routing={strokeRouting}
+      />,
+    );
+    expect(screen.getByText('Geometry')).toBeInTheDocument();
+    const width = screen.getByLabelText('Width');
+    fireEvent.change(width, { target: { value: '9' } });
+    fireEvent.blur(width);
+    expect(scene.get(asNodeId('p'))?.data.stroke).toEqual({
+      paint: { color: '#000000ff' },
+      width: 9,
+    });
+  });
+
   it('shows a gradient stroke paint as indeterminate rather than as a color', () => {
     const { container } = renderStroke(sceneWithStroke({
       paint: {

@@ -119,10 +119,14 @@ export interface ToolPrefPaint extends ToolPrefBase<'paint', unknown> {
  *
  * `children` paths are relative to the object. They are ordinary leaves, so a
  * field that is itself a union (a stroke's `paint`) declares the kind that
- * edits that union.
+ * edits that union. A child may also be a {@link ToolPrefGroup}, which
+ * organises the fields under a heading without contributing to the path —
+ * the same rule group keys follow at the top level. A `TextStyle` needs it:
+ * its character and paragraph fields belong to one value but read as two
+ * lists.
  */
 export interface ToolPrefObject extends ToolPrefBase<'object', unknown> {
-  children: Record<string, ToolPrefLeaf>;
+  children: Record<string, ToolPrefLeaf | ToolPrefGroup>;
   /**
    * Lift a non-object value into the object form, for a field that may also
    * be held as a scalar — a stroke stored as a bare color string. Called

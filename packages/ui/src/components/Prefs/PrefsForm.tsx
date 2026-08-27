@@ -286,9 +286,16 @@ function renderBuiltin(ctx: PrefRenderContext): ReactNode {
       const held = typeof value === 'object' && value !== null
         ? (value as Record<string, unknown>)
         : undefined;
-      return (
-        <div className={s.objectLeaf}>
-          {Object.entries(p.children).map(([key, child]) => (
+      const objectRows = (children: Record<string, PrefLeaf | PrefGroup>): ReactNode[] => {
+        const out: ReactNode[] = [];
+        for (const [key, child] of Object.entries(children)) {
+          if (!isPrefLeaf(child)) {
+            const inner = objectRows(child.children);
+            if (inner.length === 0) continue;
+            out.push(<h4 key={`group:${key}`} className={s.objectGroup}>{child.name}</h4>, ...inner);
+            continue;
+          }
+          out.push(
             <label key={key} className={s.objectRow}>
               <span className={s.objectLabel}>{child.name}</span>
               {renderBuiltin({
@@ -300,10 +307,12 @@ function renderBuiltin(ctx: PrefRenderContext): ReactNode {
                   setValue({ ...base, [key]: v });
                 },
               })}
-            </label>
-          ))}
-        </div>
-      );
+            </label>,
+          );
+        }
+        return out;
+      };
+      return <div className={s.objectLeaf}>{objectRows(p.children)}</div>;
     }
     default:
       // Unknown kind with no renderer entry: labeled placeholder, not a

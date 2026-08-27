@@ -10,6 +10,7 @@ import {
   type ToolPrefLeaf,
   type ToolPrefNumber,
   type ToolPrefPaint,
+  type ToolPrefGroup,
   type ToolPrefObject,
 } from '@weasel-js/core';
 import { ColorField } from '../ColorField';
@@ -371,30 +372,46 @@ function ObjectLeaf({
     ? (ctx.value as Record<string, unknown>)
     : undefined;
 
-  const rows = Object.entries(pref.children).map(([key, child]) => {
-    const childPath = `${ctx.path}.${key}`;
-    const childCtx: PropertyRenderContext = {
-      path: childPath,
-      pref: child,
-      value: held?.[key],
-      mixed: ctx.mixed,
-      valueAt: ctx.valueAt,
-      setValue: (v) => {
-        const base = held ?? pref.fromScalar?.(ctx.value) ?? {};
-        ctx.setValue({ ...base, [key]: v });
-      },
-    };
-    const custom = renderers?.[childPath] ?? renderers?.[child.kind];
-    const content = custom ? custom(childCtx) : renderBuiltin(childCtx, child.name, renderers);
-    if (content == null) return null;
-    return (
-      <div key={childPath} className={s.row}>
-        <span className={s.rowLabel} title={child.description}>{child.name}</span>
-        <span className={s.rowControls}>{content}</span>
-      </div>
-    );
-  }).filter(Boolean);
+  // A group among the children organises the fields under a heading without
+  // contributing to the path — the rule group keys follow at the top level.
+  const rowsOf = (children: Record<string, ToolPrefLeaf | ToolPrefGroup>): ReactNode[] => {
+    const out: ReactNode[] = [];
+    for (const [key, child] of Object.entries(children)) {
+      if (!('kind' in child)) {
+        const inner = rowsOf(child.children);
+        if (inner.length === 0) continue;
+        out.push(
+          <h5 key={`group:${key}`} className={s.sectionTitle}>{child.name}</h5>,
+          ...inner,
+        );
+        continue;
+      }
+      const childPath = `${ctx.path}.${key}`;
+      const childCtx: PropertyRenderContext = {
+        path: childPath,
+        pref: child,
+        value: held?.[key],
+        mixed: ctx.mixed,
+        valueAt: ctx.valueAt,
+        setValue: (v) => {
+          const base = held ?? pref.fromScalar?.(ctx.value) ?? {};
+          ctx.setValue({ ...base, [key]: v });
+        },
+      };
+      const custom = renderers?.[childPath] ?? renderers?.[child.kind];
+      const content = custom ? custom(childCtx) : renderBuiltin(childCtx, child.name, renderers);
+      if (content == null) continue;
+      out.push(
+        <div key={childPath} className={s.row}>
+          <span className={s.rowLabel} title={child.description}>{child.name}</span>
+          <span className={s.rowControls}>{content}</span>
+        </div>,
+      );
+    }
+    return out;
+  };
 
+  const rows = rowsOf(pref.children);
   if (rows.length === 0) return null;
   return (
     <div className={s.objectLeaf}>
