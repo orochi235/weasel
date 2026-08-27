@@ -98,7 +98,8 @@
     "format": "biome format --write .",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "docs:preview": "vitepress preview docs",
+    "dev:schema": "LABKIT_EXAMPLE=schema-lab vite"
   },
   "peerDependencies": {
     "react": "^19.0.0",
