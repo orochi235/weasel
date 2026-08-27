@@ -22,19 +22,28 @@ function isGroup(node: PrefNode): node is PrefGroup {
  *  Its children are ordinary leaves addressed under it, and `setAtPath`
  *  clones each level, so flattening them gives the panel a row per field
  *  without ever writing into a half-built object. */
-function isObjectLeaf(node: PrefNode): node is PrefLeaf & { children: Record<string, PrefLeaf> } {
+function isObjectLeaf(node: PrefNode): node is PrefLeaf & { children: Record<string, PrefNode> } {
   return 'kind' in node && (node as { kind: string }).kind === 'object';
+}
+
+/** An object leaf's fields, flattened under `prefix`. A group among them is
+ *  organisational and contributes nothing to the path, so its own children
+ *  are addressed under the object exactly as an ungrouped field is. */
+function objectFields(prefix: string, children: Record<string, PrefNode>): FlatPref[] {
+  const out: FlatPref[] = [];
+  for (const [key, child] of Object.entries(children)) {
+    if (isGroup(child)) out.push(...objectFields(prefix, child.children));
+    else out.push({ path: `${prefix}.${key}`, leaf: child as PrefLeaf });
+  }
+  return out;
 }
 
 export function flattenPrefs(group: PrefGroup): FlatPref[] {
   const out: FlatPref[] = [];
   for (const [key, node] of Object.entries(group.children)) {
     if (isGroup(node)) out.push(...flattenPrefs(node));
-    else if (isObjectLeaf(node)) {
-      for (const [childKey, child] of Object.entries(node.children)) {
-        out.push({ path: `${key}.${childKey}`, leaf: child });
-      }
-    } else out.push({ path: key, leaf: node as PrefLeaf });
+    else if (isObjectLeaf(node)) out.push(...objectFields(key, node.children));
+    else out.push({ path: key, leaf: node as PrefLeaf });
   }
   return out;
 }
