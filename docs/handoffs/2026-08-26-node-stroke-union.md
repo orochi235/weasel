@@ -1,8 +1,8 @@
 # Node paint as objects, and the property panel that edits it
 
-**Committed to `main`, not pushed** — the panel pass ends at `63a679ef`.
-The tree is clean. `tsc`,
-`npm test` (7714) and `npm run test:stories` (289) are green.
+**Committed to `main`, not pushed** — through `7b2873c1`. The tree is clean.
+`tsc`, `npm run lint`, `npm run build`, `npm test` (7725) and
+`npm run test:stories` (292) are green.
 
 The model is described in `docs/proposals/2026-08-26-node-stroke-union.md` —
 read that first. This file carries only what it can't: what is left, and the
@@ -59,6 +59,16 @@ override again. Separately, `color-scheme` was emitted only inside the
 dark palette with light native widgets; `:root` now carries the default mode's
 scheme, with a test.
 
+**The placeholder pass** then landed on top. A leaf whose value is absent no
+longer falls back to its schema default and renders it as chosen:
+`PropertyRenderContext` gains `unset`, `ObjectLeaf` propagates it to the fields
+of an object the node does not hold, enum toggles light nothing, selects show a
+placeholder and a switch borrows the mixed treatment. `PrefsForm` keeps
+substituting, deliberately. Colour and paint still substitute — see item 1.
+
+**`InlineRange`** now owns the range-track painting that the panel's slider and
+`ColorField`'s opacity slider had copied between them.
+
 ## What is left, in order
 
 1. **A paint editor in the kit.** `FillStyle` has five variants — solid,
@@ -79,20 +89,14 @@ scheme, with a test.
    `SelectionPanel` cannot reach. Not in `docs/TODO.md` yet; the adjacent
    pattern entry there is about tiles, not about the panel.
 
-2. **The placeholder pass.** A control with no value falls back to its schema
-   default and so *claims* one — a text node with no stroke lights a segment in
-   Cap, Join and Align. The diagnosis is narrower than it looks: the read path
-   already knows. `nodeValueAt` returns `undefined` and `aggregateValue` passes
-   it through; the information is discarded one line later where `undefined`
-   -because-absent and `undefined`-because-mixed collapse into one `value` plus
-   a `mixed` boolean. Each control then re-invents `?? p.default`. Most controls
-   can already express it — `ToggleBar` takes `value: null`, `Select` a
-   placeholder, `ColorField` a real `mixed` prop; `Switch` has no affordance.
-   The new slider branch shows `—` and is the shape to copy. **`PrefsForm` must
-   keep substituting** — a sparse prefs blob genuinely means "use the default",
-   which is exactly what a scene node does not mean.
+   **The colour and paint leaves are the placeholder pass's remainder**, and
+   they are here rather than with it because the question is a paint question:
+   `undefined` on `data.fill` means the painter's fallback, not nothing, so a
+   swatch showing the default is not obviously lying the way a lit Cap segment
+   was. Decide it with the editor's shape. `alpha: true` also has no control on
+   a `paint` leaf today; the app routes opacity through a separate action.
 
-3. **Units.** `ToolPrefNumberUnit` (`toDisplay`/`fromDisplay`/`suffix`) is the
+2. **Units.** `ToolPrefNumberUnit` (`toDisplay`/`fromDisplay`/`suffix`) is the
    only mechanism wired end to end and exactly one leaf uses it
    (`pose.rotation`). `PrefsForm` ignores `unit` entirely, so the same leaf
    shows degrees in the panel and radians in preferences; `SelectionPanel`
@@ -103,14 +107,14 @@ scheme, with a test.
    in core and weasel-ui by policy and again in the labkit adapter, so every
    field added lands three times.
 
-4. Two gaps the paint move exposed rather than caused, both in `docs/TODO.md`:
+3. Two gaps the paint move exposed rather than caused, both in `docs/TODO.md`:
    outline-only text (a `null` fill has nowhere to be said), and text having no
    `NodeInk` (a text stroke adds zero hit reach).
 
 ## Open decisions
 
-- **Optional fields display their defaults as if they were values** — item 2
-  above, still unanswered as a semantics question across every optional leaf.
+- **What `undefined` means on a paint leaf** — the placeholder pass settled
+  every other kind; this one is folded into item 1.
 - **The aqua.** Asked for ToggleBar's default treatment to move off "the aqua"
   and be saved for another theme. ToggleBar has no colour of its own — every
   surface is `var(--wzl-accent)`, deep indigo, which 17 components read; what
@@ -160,10 +164,9 @@ the left edge, pinning the ink to x 0 whatever the terminus did.
 of the track with `accent-color` and paints the remainder near-white on a dark
 surface regardless. Overriding the track background removes the accent fill
 entirely rather than recolouring the remainder — measured both ways. Both
-sliders therefore paint their own track from a `--slider-fill` custom property
-set inline, since no static rule expresses "filled to N%". The CSS is duplicated
-in `SelectionPanel.module.css` and `ColorField.module.css`; a shared range
-component is the right home and was not built.
+`InlineRange` therefore paints the whole track itself, from a `--slider-fill`
+custom property set inline — no static rule expresses "filled to N%". Any new
+range control belongs on it rather than on a bare `input type=range`.
 
 **`.size_sm .segment` outranks `.segment:has(> svg)`**, so a small bar's glyph
 padding has to be restated per size or glyphs get the text padding and read as
