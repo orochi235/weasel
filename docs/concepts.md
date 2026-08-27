@@ -475,12 +475,14 @@ behind them. A painter with no silhouette keeps the AABB answer, so the
 refinement can only ever tighten a pick.
 
 Whether the fill counts at all comes from `NodeShapeEntry.ink(node, pose)`,
-which returns `{ filled, strokeWidth }` off cheap node fields — deliberately
+which returns `{ filled, outset, inset }` off cheap node fields — deliberately
 *not* read back off `paint`, which may lay out glyphs on every pointer move.
+`outset` and `inset` are how far the ink reaches either side of the outline,
+which is per-side because a stroke's `align` decides which side it lands on.
 The fill test only runs when the painter fills; either way `shapeCoversPoint`
-ORs in `strokeHitTest` at `strokeWidth / 2 + tolerance`, so an outlined rect is
-grabbable by its outline and a bare line — zero area, unpickable by any fill
-test — is grabbable along its length. `tolerance` is
+ORs in `strokeHitTest` at that side's reach plus `tolerance`, so an outlined
+rect is grabbable by its outline and a bare line — zero area, unpickable by
+any fill test — is grabbable along its length. `tolerance` is
 `geometry.pickTolerancePx` (screen px, default 4, converted against the live
 view), because a hairline is a sub-world-unit target no pointing device can
 hit; the pose-rect pre-filter grows by the same amount or it would reject

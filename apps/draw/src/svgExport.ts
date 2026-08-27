@@ -51,26 +51,21 @@ interface WeaselDrawData {
   text?: string;
   /** Node-level typography, the same field `kit:text` paints from. */
   style?: TextStyle;
-  fill?: string | FillStyle;
-  stroke?: string | Stroke;
-  strokeWidth?: number;
+  fill?: FillStyle | null;
+  stroke?: Stroke | null;
 }
 
 /**
- * Fold the kit-native leaf stroke fields into a text node's style, exactly as
+ * Fold the kit-native leaf stroke into a text node's style, exactly as
  * `kit:text` does when painting it — so what the document exports is what the
- * canvas shows. An explicit `style.stroke` is the richer form and wins.
+ * canvas shows. An explicit `style.stroke` is the more specific declaration
+ * and wins.
  */
 function textStyleFor(data: WeaselDrawData): TextStyle | undefined {
   const style = data.style;
   if (style?.stroke !== undefined) return style;
-  if (typeof data.stroke === 'object' && data.stroke !== null) {
-    return { ...style, stroke: data.stroke };
-  }
-  if (!data.stroke || data.stroke === 'none') return style;
-  const width = data.strokeWidth ?? 1;
-  if (width <= 0) return style;
-  return { ...style, stroke: { paint: { fill: 'solid', color: data.stroke }, width } };
+  if (!data.stroke) return style;
+  return { ...style, stroke: data.stroke };
 }
 
 const WHITE = /^#?fff(fff)?(ff)?$/i;
@@ -82,6 +77,8 @@ const WHITE = /^#?fff(fff)?(ff)?$/i;
  * rides on the `Obj` so the serializer emits a rotate transform. Returns
  * `null` for a leaf with no drawable data.
  */
+const EXPORT_FALLBACK_FILL = { color: '#000000' };
+
 function leafToObj(id: string, data: WeaselDrawData, pose: WeaselDrawPose): Obj | null {
   if (data.text != null) {
     const o: TextObj = {
@@ -102,25 +99,19 @@ function leafToObj(id: string, data: WeaselDrawData, pose: WeaselDrawPose): Obj 
     tool: 'imported',
     x: pose.x, y: pose.y, width: pose.width, height: pose.height,
     path,
-    // `objToSvgNode` emits a solid fill iff `closed`, else fill:none. The
+    // `objToSvgNode` emits a fill iff `closed`, else fill:none. The
     // WeaselDraw leaf model has no `closed` flag — fill presence is the
-    // signal — so derive `closed` from `data.fill` to preserve the prior
-    // export's "fill when data.fill is set, else none" behavior.
+    // signal — so derive `closed` from `data.fill`.
     closed: data.fill != null,
     // The path above is baked into page coordinates, and the serializer
     // emits gradients as `userSpaceOnUse` — so a box-relative gradient has
     // to be resolved against the same pose, exactly as the painter does.
-    fill: data.fill == null ? '#000000'
-      : typeof data.fill === 'string' ? data.fill
-      : fillInPoseFrame(data.fill, pose),
+    fill: data.fill == null ? EXPORT_FALLBACK_FILL : fillInPoseFrame(data.fill, pose),
     // A gradient stroke paint gets the same pose-frame resolution the fill
     // above gets, and for the same reason.
-    stroke: data.stroke == null ? '#000000'
-      : typeof data.stroke === 'string' ? data.stroke
+    stroke: data.stroke == null
+      ? null
       : { ...data.stroke, paint: fillInPoseFrame(data.stroke.paint, pose) },
-    strokeWidth: typeof data.stroke === 'string' && (data.strokeWidth ?? 0) > 0
-      ? (data.strokeWidth ?? 1)
-      : 0,
   };
   if (pose.rotation) o.rotation = pose.rotation;
   return o;

@@ -376,8 +376,7 @@ const TILE_SIZES: readonly { value: number; label: string }[] = [
 ];
 
 /** The pattern in a fill, or null for anything else. */
-function asPattern(fill: string | FillStyle): PatternFill | null {
-  if (typeof fill === 'string') return null;
+function asPattern(fill: FillStyle): PatternFill | null {
   return fill.fill === 'pattern' ? fill : null;
 }
 
@@ -466,9 +465,8 @@ function firstStopColor(fill: GradientFill): string {
   return fill.stops.length > 0 ? fill.stops[0].color : '#000000ff';
 }
 
-/** The gradient in a fill, or null for a string, a solid or a pattern. */
-function asGradient(fill: string | FillStyle): GradientFill | null {
-  if (typeof fill === 'string') return null;
+/** The gradient in a fill, or null for a solid or a pattern. */
+function asGradient(fill: FillStyle): GradientFill | null {
   switch (fill.fill) {
     case 'linear-gradient':
     case 'radial-gradient':
@@ -488,8 +486,7 @@ function patternColor(fill: PatternFill): string {
 
 /** The color to show in the solid branch. A pattern has none, so the switch
  *  presents it as black until the user picks something. */
-function solidColorOf(fill: string | FillStyle): string {
-  if (typeof fill === 'string') return fill;
+function solidColorOf(fill: FillStyle): string {
   if (fill.fill === undefined || fill.fill === 'solid') return fill.color;
   return '#000000ff';
 }
@@ -503,7 +500,7 @@ function solidColorOf(fill: string | FillStyle): string {
  * gradient edit is one undo entry, exactly like a color edit.
  */
 export function PropertyFillInput(props: {
-  value: string | FillStyle;
+  value: FillStyle;
   colorActionId: string;
   opacityActionId: string;
 }) {

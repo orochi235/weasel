@@ -22,14 +22,11 @@ export interface PathObj extends BaseObj {
   tool: Exclude<ToolKind, 'text'>;
   path: Path;
   closed: boolean;
-  /** A color string, or a whole paint for gradient- and pattern-filled
-   *  objects. The SVG serializer emits the latter as a `<defs>` entry. */
-  fill: string | FillStyle;
-  /** A color string, or a whole `Stroke` for objects carrying a dash, a cap,
-   *  a join or a gradient paint. `strokeWidth` governs the string form only —
-   *  a `Stroke` carries its own width. */
-  stroke: string | Stroke;
-  strokeWidth: number;
+  /** The object's paint — solid, gradient or pattern. A non-solid one is
+   *  emitted by the SVG serializer as a `<defs>` entry. `null` is unfilled. */
+  fill: FillStyle | null;
+  /** The whole stroke — paint, width, dash, cap, join. `null` is unstroked. */
+  stroke: Stroke | null;
   params?: PathParams;
   /** Provenance for nodes minted by a boolean op. `tool` for these is
    *  always `'imported'`; the Layers panel uses `producedBy` to render

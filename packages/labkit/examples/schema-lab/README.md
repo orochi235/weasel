@@ -20,17 +20,18 @@ value back at the path its leaf names. No field is handled by name in either
 direction, so the panel is whatever the schema says — including `pose.rotation`,
 stored in radians and edited in degrees through the leaf's `unit`.
 
-Some kinds have no labkit control to map onto. `paint` is a tagged `FillStyle`
-union — a color swatch would write a solid over a gradient — so it is dropped
-rather than approximated. `stroke` is `string | Stroke`, and the swatch here
-edits only the string form; flattening the object form is exactly what
-weasel-ui's own `stroke` control exists to avoid.
+An `object` leaf — `data.stroke`, whose value is a whole `Stroke` — flattens
+into one field per child, addressed under it (`data.stroke.width`). Its
+`paint` child has no labkit control to map onto: `FillStyle` is a tagged
+union, and a color swatch would write a solid over a gradient, so it is
+dropped rather than approximated. `data.fill` is a `paint` leaf and goes the
+same way.
 
 ## Stroke
 
 A schema written by hand from core's `Stroke` (`core/paint-types.ts`), written
-straight onto `data.stroke` — which is `NodeStroke = string | Stroke`, so the
-built-in `kit:path` painter draws every field the panel edits.
+straight onto `data.stroke` — which is a whole `Stroke`, so the built-in
+`kit:path` painter draws every field the panel edits.
 
 `dash` is a `number[]`, which no control kind covers — the panel offers named
 presets instead. With `square` caps the caps close the gaps and every preset

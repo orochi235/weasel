@@ -7,15 +7,11 @@ import type { Op } from 'core/ops/types';
 import type { FillStyle } from 'core/paint-types';
 import { createSetDataOp } from 'core/ops/setData';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
-import { mergeAlphaFromPrev } from '../../../util/color';
-import { DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR } from '../../../util/paint';
-
-/** What a node's `fill` may hold: a color string, or any `FillStyle` —
- *  gradient, pattern or an explicit solid. */
-type NodeFill = string | FillStyle;
+import { paintWithColor } from '../../../util/paint';
+import { DEFAULT_STROKE_COLOR } from '../../../util/paint';
 
 interface SetFillData {
-  fill?: NodeFill;
+  fill?: FillStyle | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -45,15 +41,13 @@ interface SetFillScratch {
 /**
  * The fill to write for one node.
  *
- * A `paint` replaces the fill outright — a gradient has no single alpha to
- * inherit, and its stops already carry their own. A `color` keeps the
- * historical alpha-merge, but only against a previous fill that was itself a
- * color; there is no meaningful alpha to lift off a gradient or pattern.
+ * A `paint` replaces the fill outright. A `color` recolors the node's
+ * existing paint through `paintWithColor`, which keeps that paint's opacity
+ * unless the picked color states an alpha of its own.
  */
-function resolveFill(scratch: SetFillScratch, prev: SetFillData | undefined): NodeFill {
+function resolveFill(scratch: SetFillScratch, prev: SetFillData | undefined): FillStyle {
   if (scratch.currentPaint) return scratch.currentPaint;
-  const prevColor = typeof prev?.fill === 'string' ? prev.fill : DEFAULT_FILL_COLOR;
-  return mergeAlphaFromPrev(scratch.currentColor, prevColor);
+  return paintWithColor(prev?.fill ?? undefined, scratch.currentColor);
 }
 
 /** Refresh the preview map from the scratch's current paint and `startData`. */
@@ -96,9 +90,9 @@ function readParams(params: Record<string, unknown> | undefined): {
  * Takes either `color` (a hex string) or `paint` (a whole `FillStyle`, for
  * gradients and patterns). `paint` wins when both are present.
  *
- * Alpha semantics: a 6-char (no-alpha) color adopts the alpha from the node's
- * existing fill. An 8-char color keeps its own alpha. A `paint` is written
- * verbatim.
+ * Alpha semantics: alpha lives on the paint's `opacity`. A 6-char (no-alpha)
+ * color adopts the alpha of the node's existing paint; an 8-char color states
+ * its own. A `paint` is written verbatim.
  */
 export const setFillAction: Action & { requires: string[] } = {
   id: 'setFill',

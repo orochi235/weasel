@@ -10,6 +10,8 @@ import { parseSvg } from '@weasel-js/svg';
 import type { TextStyle } from '@weasel-js/core';
 import { svgNodesToSceneDrafts } from './svgInterop';
 import { buildWeaselClipboardText, extractWeaselClipboardFromSvg } from '@weasel-js/core';
+import { solid, strokeOf } from '@weasel-js/core';
+import type { FillStyle, Stroke } from '@weasel-js/core';
 import {
   selectionToSvgString,
   selectionToClipboardSvgString,
@@ -24,8 +26,8 @@ function fakeScene(nodes: Record<string, {
   kind: 'leaf' | 'container';
   pose: { x: number; y: number; width: number; height: number };
   data?: {
-    path?: unknown; fill?: unknown; text?: string; style?: unknown;
-    stroke?: string; strokeWidth?: number;
+    path?: unknown; fill?: FillStyle | null; text?: string; style?: unknown;
+    stroke?: Stroke | null;
   };
   children?: string[];
 }>, roots: string[]) {
@@ -43,9 +45,9 @@ function fakeScene(nodes: Record<string, {
 describe('text export', () => {
   /**
    * A text node's typography — including its stroke — lives in `data.style`
-   * (or, for the kit-native leaf fields, in `data.stroke` / `data.strokeWidth`
-   * the way `kit:shape` reads them). Export dropped all of it, so a styled
-   * text node came back as unstyled black text.
+   * (or, for the kit-native leaf field, in `data.stroke`, the way `kit:shape`
+   * reads it). Export dropped all of it, so a styled text node came back as
+   * unstyled black text.
    */
   it('carries the node style through to the <text> element', () => {
     const scene = fakeScene({
@@ -67,12 +69,12 @@ describe('text export', () => {
     expect(n.style?.fill).toEqual({ fill: 'solid', color: '#123456' });
   });
 
-  it('exports the leaf stroke fields as a text stroke', () => {
+  it('exports the leaf stroke as a text stroke', () => {
     const scene = fakeScene({
       t: {
         kind: 'leaf',
         pose: { x: 5, y: 6, width: 120, height: 40 },
-        data: { text: 'Hi', style: { fontSize: 32 }, stroke: '#c0392b', strokeWidth: 3 },
+        data: { text: 'Hi', style: { fontSize: 32 }, stroke: strokeOf('#c0392b', 3) },
       },
     }, ['t']);
 
@@ -87,7 +89,7 @@ describe('text export', () => {
       t: {
         kind: 'leaf',
         pose: { x: 5, y: 6, width: 120, height: 40 },
-        data: { text: 'Hi', style: { fontSize: 32 }, stroke: '#c0392b', strokeWidth: 3 },
+        data: { text: 'Hi', style: { fontSize: 32 }, stroke: strokeOf('#c0392b', 3) },
       },
     }, ['t']);
 
@@ -105,10 +107,9 @@ describe('text export', () => {
     });
   });
 
-  it('does not invent a stroke for stroke:none or a zero width', () => {
+  it('does not invent a stroke for a null or absent one', () => {
     for (const data of [
-      { text: 'Hi', stroke: 'none', strokeWidth: 3 },
-      { text: 'Hi', stroke: '#c0392b', strokeWidth: 0 },
+      { text: 'Hi', stroke: null },
       { text: 'Hi' },
     ]) {
       const scene = fakeScene({
@@ -128,12 +129,12 @@ describe('selectionToSvgString', () => {
       a: {
         kind: 'leaf',
         pose: { x: 0, y: 0, width: 10, height: 10 },
-        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: '#ff0000' },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: solid('#ff0000') },
       },
       b: {
         kind: 'leaf',
         pose: { x: 100, y: 100, width: 10, height: 10 },
-        data: { path: { kind: 'rect', x: 100, y: 100, width: 10, height: 10 }, fill: '#00ff00' },
+        data: { path: { kind: 'rect', x: 100, y: 100, width: 10, height: 10 }, fill: solid('#00ff00') },
       },
     }, ['a', 'b']);
 
@@ -151,12 +152,12 @@ describe('selectionToSvgString', () => {
       a: {
         kind: 'leaf',
         pose: { x: 0, y: 0, width: 10, height: 10 },
-        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: '#ff0000' },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: solid('#ff0000') },
       },
       b: {
         kind: 'leaf',
         pose: { x: 500, y: 500, width: 10, height: 10 },
-        data: { path: { kind: 'rect', x: 500, y: 500, width: 10, height: 10 }, fill: '#00ff00' },
+        data: { path: { kind: 'rect', x: 500, y: 500, width: 10, height: 10 }, fill: solid('#00ff00') },
       },
     }, ['a', 'b']);
 
@@ -171,12 +172,12 @@ describe('selectionToSvgString', () => {
       a: {
         kind: 'leaf',
         pose: { x: 0, y: 0, width: 10, height: 10 },
-        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: '#ff0000' },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: solid('#ff0000') },
       },
       b: {
         kind: 'leaf',
         pose: { x: 20, y: 0, width: 10, height: 10 },
-        data: { path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 }, fill: '#00ff00' },
+        data: { path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 }, fill: solid('#00ff00') },
       },
     }, ['a', 'b']);
 
@@ -197,17 +198,17 @@ describe('selectionToSvgString', () => {
       a: {
         kind: 'leaf',
         pose: { x: 0, y: 0, width: 10, height: 10 },
-        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: '#ff0000' },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: solid('#ff0000') },
       },
       b: {
         kind: 'leaf',
         pose: { x: 20, y: 0, width: 10, height: 10 },
-        data: { path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 }, fill: '#00ff00' },
+        data: { path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 }, fill: solid('#00ff00') },
       },
       c: {
         kind: 'leaf',
         pose: { x: 500, y: 500, width: 10, height: 10 },
-        data: { path: { kind: 'rect', x: 500, y: 500, width: 10, height: 10 }, fill: '#0000ff' },
+        data: { path: { kind: 'rect', x: 500, y: 500, width: 10, height: 10 }, fill: solid('#0000ff') },
       },
     }, ['g1', 'c']);
 
@@ -230,13 +231,13 @@ describe('selectionToClipboardSvgString', () => {
     a: {
       kind: 'leaf',
       pose: { x: 0, y: 0, width: 10, height: 10 },
-      data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: '#ff0000' },
+      data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: solid('#ff0000') },
     },
   }, ['a']);
   // A payload with a field the SVG mapping drops (label) — surviving the
   // text/plain round-trip is the point of the metadata embed.
   const payload = () => buildWeaselClipboardText([
-    { id: 'a', parent: null, pose: { x: 0, y: 0, width: 10, height: 10 }, data: { fill: '#ff0000', label: 'my label' } },
+    { id: 'a', parent: null, pose: { x: 0, y: 0, width: 10, height: 10 }, data: { fill: solid('#ff0000'), label: 'my label' } },
   ]);
 
   it('embeds the weasel payload extractably, byte-equal to the JSON flavor text', () => {

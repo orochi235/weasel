@@ -6,8 +6,14 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
 import { createSetDataOp } from 'core/ops/setData';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
-import { withAlpha01 } from '../../../util/color';
-import { DEFAULT_FILL_COLOR } from '../../../util/paint';
+import type { FillStyle } from 'core/paint-types';
+import { paintWithAlpha, solid, DEFAULT_FILL_COLOR } from '../../../util/paint';
+
+/** Set the paint's alpha, in the one slot every paint kind has. A node with
+ *  no fill yet takes the kit's default one. */
+function fillWithAlpha(prev: FillStyle | null | undefined, alpha: number): FillStyle {
+  return paintWithAlpha(prev ?? solid(DEFAULT_FILL_COLOR), alpha);
+}
 
 // ---------------------------------------------------------------------------
 // Internal scratch
@@ -15,14 +21,14 @@ import { DEFAULT_FILL_COLOR } from '../../../util/paint';
 
 interface SetFillOpacityScratch {
   ids: NodeId[];
-  scene: Scene<{ fill?: string }, string, unknown>;
+  scene: Scene<{ fill?: FillStyle | null }, string, unknown>;
   /** Data snapshot at drag start, keyed by node id. */
-  startData: Map<NodeId, { fill?: string }>;
-  /** The most-recently-received alpha value (0..1, clamped by withAlpha01). */
+  startData: Map<NodeId, { fill?: FillStyle | null }>;
+  /** The most-recently-received alpha value (0..1). */
   currentAlpha: number;
   /** Preview data entries — updated fill per selected node.
    *  Populated on start and refreshed on every onMove. */
-  previews: Map<NodeId, { fill: string }>;
+  previews: Map<NodeId, { fill: FillStyle }>;
   /** Optional consumer commit hook captured at gesture start. When present,
    *  the ops-based commit routes through it (consumer history) instead of
    *  `scene.applyBatch`. Undefined → fall back to `scene.applyBatch`. */
@@ -34,7 +40,7 @@ function refreshPreviews(scratch: SetFillOpacityScratch): void {
   scratch.previews.clear();
   for (const id of scratch.ids) {
     const prev = scratch.startData.get(id);
-    const next = withAlpha01(prev?.fill ?? DEFAULT_FILL_COLOR, scratch.currentAlpha);
+    const next = fillWithAlpha(prev?.fill, scratch.currentAlpha);
     scratch.previews.set(id, { ...(prev ?? {}), fill: next });
   }
 }
@@ -55,9 +61,10 @@ function refreshPreviews(scratch: SetFillOpacityScratch): void {
  * Either path is a single batch → one undo entry, preserving the old
  * `scene.batch('Set fill opacity', …)` semantics exactly.
  *
- * Alpha semantics: `params.alpha01` (0..1) replaces the alpha channel of each
- * node's existing fill while preserving the RGB. Clamping is delegated to
- * `withAlpha01`.
+ * Alpha semantics: `params.alpha01` (0..1) becomes each node's fill paint
+ * `opacity`, leaving the rest of the paint — color, gradient stops, pattern —
+ * alone. That is the one alpha slot a gradient or a pattern has, so it is the
+ * slot all of them use.
  */
 export const setFillOpacityAction: Action & { requires: string[] } = {
   id: 'setFillOpacity',
@@ -68,7 +75,7 @@ export const setFillOpacityAction: Action & { requires: string[] } = {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
       const selection = ctx.deps.selection as SelectionApi | undefined;
-      const scene = ctx.deps.scene as Scene<{ fill?: string }, string, unknown> | undefined;
+      const scene = ctx.deps.scene as Scene<{ fill?: FillStyle | null }, string, unknown> | undefined;
       const applyOps = ctx.deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
 
       if (!selection || !scene) return {};
@@ -82,10 +89,10 @@ export const setFillOpacityAction: Action & { requires: string[] } = {
       const initialAlpha = ctxAlpha ?? optsAlpha ?? 1;
 
       // Snapshot node data at drag start.
-      const startData = new Map<NodeId, { fill?: string }>();
+      const startData = new Map<NodeId, { fill?: FillStyle | null }>();
       for (const id of ids) {
         const node = scene.get(id);
-        if (node) startData.set(id, { ...(node.data as { fill?: string }) });
+        if (node) startData.set(id, { ...(node.data as { fill?: FillStyle | null }) });
       }
 
       const scratch: SetFillOpacityScratch = {
@@ -117,13 +124,13 @@ export const setFillOpacityAction: Action & { requires: string[] } = {
           const ops: Op[] = [];
           for (const id of scratch.ids) {
             const prev = scratch.startData.get(id);
-            const next = withAlpha01(prev?.fill ?? DEFAULT_FILL_COLOR, scratch.currentAlpha);
+            const next = fillWithAlpha(prev?.fill, scratch.currentAlpha);
             // Re-read so concurrent edits to non-fill fields aren't clobbered on commit.
             const nodeNow = scratch.scene.get(id);
             if (!nodeNow) continue;
-            const from = { ...(nodeNow.data as object) } as { fill?: string };
+            const from = { ...(nodeNow.data as object) } as { fill?: FillStyle | null };
             const to = { ...from, fill: next };
-            ops.push(createSetDataOp<{ fill?: string }>({ id: id as string, from, to }));
+            ops.push(createSetDataOp<{ fill?: FillStyle | null }>({ id: id as string, from, to }));
           }
           if (ops.length > 0) {
             // Route through the consumer hook when present (consumer history,

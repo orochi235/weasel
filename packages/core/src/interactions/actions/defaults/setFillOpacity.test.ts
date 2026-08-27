@@ -4,10 +4,12 @@ import type { InvocationCtx, OngoingHandle, BindingOpts } from '../invoker';
 import { asNodeId } from 'core/scene/types';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
+import type { FillStyle } from 'core/paint-types';
+import { solid } from '../../../util/paint';
 
-interface FakeNode { id: NodeId; kind: 'leaf'; pose: unknown; data: { fill?: string } }
+interface FakeNode { id: NodeId; kind: 'leaf'; pose: unknown; data: { fill?: FillStyle | null } }
 
-function makeScene(nodes: Record<string, { fill?: string }>) {
+function makeScene(nodes: Record<string, { fill?: FillStyle | null }>) {
   const current: Record<string, FakeNode> = {};
   for (const [id, d] of Object.entries(nodes)) {
     current[id] = { id: asNodeId(id), kind: 'leaf', pose: {}, data: { ...d } };
@@ -70,21 +72,23 @@ function getInvoker(): { start: (ctx: InvocationCtx, opts?: BindingOpts) => Ongo
 }
 
 describe('setFillOpacityAction', () => {
-  it('preserves RGB, replaces alpha on commit', () => {
-    const scene = makeScene({ a: { fill: '#aabbccff' } });
+  it('preserves the paint, replaces its opacity on commit', () => {
+    const scene = makeScene({ a: { fill: solid('#aabbccff') } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { alpha01: 0.5 } });
     const h = getInvoker().start(ctx, { params: { alpha01: 0.5 } });
     h.onEnd?.(ctx, 'commit');
     expect(scene.batches).toEqual(['Set fill opacity']);
-    expect((scene.updates[0].data as { fill: string }).fill).toBe('#aabbcc80');
+    expect((scene.updates[0].data as { fill: FillStyle }).fill)
+      .toEqual({ color: '#aabbcc', opacity: 0.5 });
   });
 
   it('clamps alpha01 to [0, 1]', () => {
-    const scene = makeScene({ a: { fill: '#aabbccff' } });
+    const scene = makeScene({ a: { fill: solid('#aabbccff') } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { alpha01: 2 } });
     const h = getInvoker().start(ctx, { params: { alpha01: 2 } });
     h.onEnd?.(ctx, 'commit');
-    expect((scene.updates[0].data as { fill: string }).fill).toBe('#aabbccff');
+    expect((scene.updates[0].data as { fill: FillStyle }).fill)
+      .toEqual({ color: '#aabbcc', opacity: 1 });
   });
 
   it('returns empty handle when selection is empty', () => {
@@ -94,27 +98,29 @@ describe('setFillOpacityAction', () => {
   });
 
   it('previewData carries the updated alpha during onMove', () => {
-    const scene = makeScene({ a: { fill: '#aabbccff' } });
+    const scene = makeScene({ a: { fill: solid('#aabbccff') } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { alpha01: 1 } });
     const h = getInvoker().start(ctx, { params: { alpha01: 1 } });
     h.onMove?.({ ...ctx, params: { alpha01: 0.25 } });
-    expect((h.previewData?.('a' as unknown as NodeId) as { fill: string }).fill).toBe('#aabbcc40');
+    expect((h.previewData?.('a' as unknown as NodeId) as { fill: FillStyle }).fill)
+      .toEqual({ color: '#aabbcc', opacity: 0.25 });
   });
 
   it('cancel does not write', () => {
-    const scene = makeScene({ a: { fill: '#aabbccff' } });
+    const scene = makeScene({ a: { fill: solid('#aabbccff') } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { alpha01: 0.5 } });
     const h = getInvoker().start(ctx, { params: { alpha01: 0.5 } });
     h.onEnd?.(ctx, 'cancel');
     expect(scene.update).not.toHaveBeenCalled();
   });
 
-  it('uses node default fill (#ffffffff) when node.data.fill is absent', () => {
+  it('uses the kit default fill when node.data.fill is absent', () => {
     const scene = makeScene({ a: {} });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { alpha01: 0.5 } });
     const h = getInvoker().start(ctx, { params: { alpha01: 0.5 } });
     h.onEnd?.(ctx, 'commit');
-    expect((scene.updates[0].data as { fill: string }).fill).toBe('#ffffff80');
+    expect((scene.updates[0].data as { fill: FillStyle }).fill)
+      .toEqual({ color: '#ffffff', opacity: 0.5 });
   });
 
   // -------------------------------------------------------------------------
@@ -122,7 +128,7 @@ describe('setFillOpacityAction', () => {
   // -------------------------------------------------------------------------
 
   it('routes the commit through the consumer applyOps hook once with setData ops + "Set fill opacity" label', () => {
-    const scene = makeScene({ a: { fill: '#aabbccff' }, b: { fill: '#11223344' } });
+    const scene = makeScene({ a: { fill: solid('#aabbccff') }, b: { fill: solid('#11223344') } });
     const applyOps = vi.fn<(ops: Op[], label: string) => void>();
     const ctx = makeCtx({ selectionIds: ['a', 'b'], scene, params: { alpha01: 1 }, applyOps });
     const h = getInvoker().start(ctx, { params: { alpha01: 1 } });
@@ -138,25 +144,26 @@ describe('setFillOpacityAction', () => {
     expect(label).toBe('Set fill opacity');
     expect(ops).toHaveLength(2);
     for (const op of ops) expect(op.name).toBe('setData');
-    const args0 = ops[0].args as { id: string; from: { fill?: string }; to: { fill?: string } };
-    const args1 = ops[1].args as { id: string; from: { fill?: string }; to: { fill?: string } };
+    const args0 = ops[0].args as { id: string; from: { fill?: FillStyle }; to: { fill?: FillStyle } };
+    const args1 = ops[1].args as { id: string; from: { fill?: FillStyle }; to: { fill?: FillStyle } };
     expect(args0.id).toBe('a');
     expect(args1.id).toBe('b');
-    // `from` is the pre-commit data; `to` carries the alpha-replaced fill.
-    expect(args0.from.fill).toBe('#aabbccff');
-    expect((args0.to as { fill: string }).fill).toBe('#aabbcc80');
-    expect(args1.from.fill).toBe('#11223344');
-    expect((args1.to as { fill: string }).fill).toBe('#11223380');
+    // `from` is the pre-commit data; `to` carries the opacity-replaced fill.
+    expect(args0.from.fill).toEqual({ color: '#aabbcc' });
+    expect((args0.to as { fill: FillStyle }).fill).toEqual({ color: '#aabbcc', opacity: 0.5 });
+    expect(args1.from.fill).toEqual(solid('#11223344'));
+    expect((args1.to as { fill: FillStyle }).fill).toEqual({ color: '#112233', opacity: 0.5 });
   });
 
   it('with no applyOps, falls back to one scene.applyBatch labeled "Set fill opacity"', () => {
-    const scene = makeScene({ a: { fill: '#aabbccff' } });
+    const scene = makeScene({ a: { fill: solid('#aabbccff') } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { alpha01: 0.5 } });
     const h = getInvoker().start(ctx, { params: { alpha01: 0.5 } });
     h.onEnd?.(ctx, 'commit');
     expect(scene.applyBatch).toHaveBeenCalledOnce();
     expect(scene.batches).toEqual(['Set fill opacity']);
     // The default adapter's setData routed back through scene.update.
-    expect((scene.updates[0].data as { fill: string }).fill).toBe('#aabbcc80');
+    expect((scene.updates[0].data as { fill: FillStyle }).fill)
+      .toEqual({ color: '#aabbcc', opacity: 0.5 });
   });
 });

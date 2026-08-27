@@ -7,36 +7,29 @@ import type { Op } from 'core/ops/types';
 import type { Stroke } from 'core/paint-types';
 import { createSetDataOp } from 'core/ops/setData';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
-import { withAlpha01 } from '../../../util/color';
-import { DEFAULT_STROKE_COLOR } from '../../../util/paint';
+import { paintWithAlpha, strokeOf, DEFAULT_STROKE_COLOR } from '../../../util/paint';
 
 // ---------------------------------------------------------------------------
 // Internal scratch
 // ---------------------------------------------------------------------------
 
-/** What a node's `stroke` may hold. See the same declaration in `setStroke`. */
-type NodeStroke = string | Stroke;
-
-/** Set the stroke's alpha in whatever form it is in. A string takes the alpha
- *  in its hex; a `Stroke` takes it as its paint's `opacity`, which is the only
- *  form that works for a gradient stroke. */
-function strokeWithAlpha(prev: NodeStroke | undefined, alpha: number): NodeStroke {
-  if (typeof prev === 'object' && prev !== null) {
-    return { ...prev, paint: { ...prev.paint, opacity: alpha } };
-  }
-  return withAlpha01(prev ?? DEFAULT_STROKE_COLOR, alpha);
+/** Set the stroke paint's alpha, in the one slot every paint kind has. A node
+ *  with no stroke yet gets a hairline one. */
+function strokeWithAlpha(prev: Stroke | null | undefined, alpha: number): Stroke {
+  const base = prev ?? strokeOf(DEFAULT_STROKE_COLOR);
+  return { ...base, paint: paintWithAlpha(base.paint, alpha) };
 }
 
 interface SetStrokeOpacityScratch {
   ids: NodeId[];
-  scene: Scene<{ stroke?: NodeStroke }, string, unknown>;
+  scene: Scene<{ stroke?: Stroke | null }, string, unknown>;
   /** Data snapshot at drag start, keyed by node id. */
-  startData: Map<NodeId, { stroke?: NodeStroke }>;
-  /** The most-recently-received alpha value (0..1, clamped by withAlpha01). */
+  startData: Map<NodeId, { stroke?: Stroke | null }>;
+  /** The most-recently-received alpha value (0..1). */
   currentAlpha: number;
   /** Preview data entries — updated stroke per selected node.
    *  Populated on start and refreshed on every onMove. */
-  previews: Map<NodeId, { stroke: NodeStroke }>;
+  previews: Map<NodeId, { stroke: Stroke }>;
   /** Optional consumer commit hook captured at gesture start. When present,
    *  the ops-based commit routes through it (consumer history) instead of
    *  `scene.applyBatch`. Undefined → fall back to `scene.applyBatch`. */
@@ -69,9 +62,9 @@ function refreshPreviews(scratch: SetStrokeOpacityScratch): void {
  * Either path is a single batch → one undo entry, preserving the old
  * `scene.batch('Set stroke opacity', …)` semantics exactly.
  *
- * Alpha semantics: `params.alpha01` (0..1) replaces the alpha channel of each
- * node's existing stroke while preserving the RGB. Clamping is delegated to
- * `withAlpha01`.
+ * Alpha semantics: `params.alpha01` (0..1) becomes each node's stroke paint
+ * `opacity`, leaving the rest of the stroke — color, width, cap, join, dash —
+ * alone.
  */
 export const setStrokeOpacityAction: Action & { requires: string[] } = {
   id: 'setStrokeOpacity',
@@ -82,7 +75,7 @@ export const setStrokeOpacityAction: Action & { requires: string[] } = {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
       const selection = ctx.deps.selection as SelectionApi | undefined;
-      const scene = ctx.deps.scene as Scene<{ stroke?: NodeStroke }, string, unknown> | undefined;
+      const scene = ctx.deps.scene as Scene<{ stroke?: Stroke | null }, string, unknown> | undefined;
       const applyOps = ctx.deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
 
       if (!selection || !scene) return {};
@@ -96,10 +89,10 @@ export const setStrokeOpacityAction: Action & { requires: string[] } = {
       const initialAlpha = ctxAlpha ?? optsAlpha ?? 1;
 
       // Snapshot node data at drag start.
-      const startData = new Map<NodeId, { stroke?: NodeStroke }>();
+      const startData = new Map<NodeId, { stroke?: Stroke | null }>();
       for (const id of ids) {
         const node = scene.get(id);
-        if (node) startData.set(id, { ...(node.data as { stroke?: NodeStroke }) });
+        if (node) startData.set(id, { ...(node.data as { stroke?: Stroke | null }) });
       }
 
       const scratch: SetStrokeOpacityScratch = {
@@ -135,9 +128,9 @@ export const setStrokeOpacityAction: Action & { requires: string[] } = {
             // Re-read so concurrent edits to non-stroke fields aren't clobbered on commit.
             const nodeNow = scratch.scene.get(id);
             if (!nodeNow) continue;
-            const from = { ...(nodeNow.data as object) } as { stroke?: NodeStroke };
+            const from = { ...(nodeNow.data as object) } as { stroke?: Stroke | null };
             const to = { ...from, stroke: next };
-            ops.push(createSetDataOp<{ stroke?: NodeStroke }>({ id: id as string, from, to }));
+            ops.push(createSetDataOp<{ stroke?: Stroke | null }>({ id: id as string, from, to }));
           }
           if (ops.length > 0) {
             // Route through the consumer hook when present (consumer history,

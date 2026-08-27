@@ -36,6 +36,8 @@ import {
   type ToolBundle,
   type ToolDef,
   type ToolsApi,
+  solid,
+  type FillStyle,
 } from '@weasel-js/core';
 import {
   buildRouteRegistry,
@@ -92,13 +94,13 @@ function writeBundle(b: ToolBundle): void {
 // to act on (select / resize / rotate need targets, etc.).
 // ─────────────────────────────────────────────────────────────────────────
 
-interface ShapeData { fill: string }
+interface ShapeData { fill: FillStyle }
 interface ShapePose { x: number; y: number; width: number; height: number }
 
 const INITIAL_NODES = [
-  { kind: 'leaf' as const, id: asNodeId('r1'), layer: 'default' as const, data: { fill: '#7fb069' }, pose: { x: 80,  y: 60,  width: 120, height: 80 } },
-  { kind: 'leaf' as const, id: asNodeId('r2'), layer: 'default' as const, data: { fill: '#d97757' }, pose: { x: 260, y: 100, width: 100, height: 100 } },
-  { kind: 'leaf' as const, id: asNodeId('r3'), layer: 'default' as const, data: { fill: '#5a8bd0' }, pose: { x: 140, y: 220, width: 160, height: 60 } },
+  { kind: 'leaf' as const, id: asNodeId('r1'), layer: 'default' as const, data: { fill: solid('#7fb069') }, pose: { x: 80,  y: 60,  width: 120, height: 80 } },
+  { kind: 'leaf' as const, id: asNodeId('r2'), layer: 'default' as const, data: { fill: solid('#d97757') }, pose: { x: 260, y: 100, width: 100, height: 100 } },
+  { kind: 'leaf' as const, id: asNodeId('r3'), layer: 'default' as const, data: { fill: solid('#5a8bd0') }, pose: { x: 140, y: 220, width: 160, height: 60 } },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────

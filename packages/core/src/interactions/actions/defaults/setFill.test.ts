@@ -4,10 +4,12 @@ import type { InvocationCtx, OngoingHandle, BindingOpts } from '../invoker';
 import { asNodeId } from 'core/scene/types';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
+import type { FillStyle } from 'core/paint-types';
+import { solid } from '../../../util/paint';
 
-interface FakeNode { id: NodeId; kind: 'leaf'; pose: unknown; data: { fill?: string; stroke?: string } }
+interface FakeNode { id: NodeId; kind: 'leaf'; pose: unknown; data: { fill?: FillStyle | null } }
 
-function makeScene(nodes: Record<string, { fill?: string }>) {
+function makeScene(nodes: Record<string, { fill?: FillStyle | null }>) {
   const current: Record<string, FakeNode> = {};
   for (const [id, d] of Object.entries(nodes)) {
     current[id] = { id: asNodeId(id), kind: 'leaf', pose: {}, data: { ...d } };
@@ -89,7 +91,7 @@ describe('setFillAction', () => {
   });
 
   it('does not write to scene on start', () => {
-    const scene = makeScene({ a: { fill: '#ffffffff' } });
+    const scene = makeScene({ a: { fill: solid('#ffffffff') } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { color: '#ff0000' } });
     getInvoker().start(ctx, { params: { color: '#ff0000' } });
     expect(scene.batch).not.toHaveBeenCalled();
@@ -97,36 +99,36 @@ describe('setFillAction', () => {
   });
 
   it('exposes the current color via previewData during the drag', () => {
-    const scene = makeScene({ a: { fill: '#ffffffff' } });
+    const scene = makeScene({ a: { fill: solid('#ffffffff') } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { color: '#ff0000' } });
     const h = getInvoker().start(ctx, { params: { color: '#ff0000' } });
     const preview = h.previewData?.('a' as unknown as NodeId);
-    expect(preview).toMatchObject({ fill: '#ff0000ff' });
+    expect(preview).toMatchObject({ fill: { color: '#ff0000' } });
   });
 
   it('onMove updates the preview color without touching scene', () => {
-    const scene = makeScene({ a: { fill: '#ffffffff' } });
+    const scene = makeScene({ a: { fill: solid('#ffffffff') } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { color: '#ff0000' } });
     const h = getInvoker().start(ctx, { params: { color: '#ff0000' } });
     h.onMove?.({ ...ctx, params: { color: '#00ff00' } });
-    expect(h.previewData?.('a' as unknown as NodeId)).toMatchObject({ fill: '#00ff00ff' });
+    expect(h.previewData?.('a' as unknown as NodeId)).toMatchObject({ fill: { color: '#00ff00' } });
     expect(scene.update).not.toHaveBeenCalled();
   });
 
   it('onEnd("commit") writes one scene.batch with the final color', () => {
-    const scene = makeScene({ a: { fill: '#ffffffff' }, b: { fill: '#000000ff' } });
+    const scene = makeScene({ a: { fill: solid('#ffffffff') }, b: { fill: solid('#000000ff') } });
     const ctx = makeCtx({ selectionIds: ['a', 'b'], scene, params: { color: '#ff0000' } });
     const h = getInvoker().start(ctx, { params: { color: '#ff0000' } });
     h.onMove?.({ ...ctx, params: { color: '#00ff00' } });
     h.onEnd?.(ctx, 'commit');
     expect(scene.batches).toEqual(['Set fill']);
     expect(scene.updates).toHaveLength(2);
-    expect((scene.updates[0].data as { fill: string }).fill).toBe('#00ff00ff');
-    expect((scene.updates[1].data as { fill: string }).fill).toBe('#00ff00ff');
+    expect((scene.updates[0].data as { fill: FillStyle }).fill).toEqual({ color: '#00ff00' });
+    expect((scene.updates[1].data as { fill: FillStyle }).fill).toEqual({ color: '#00ff00' });
   });
 
   it('onEnd("cancel") does not write to scene', () => {
-    const scene = makeScene({ a: { fill: '#ffffffff' } });
+    const scene = makeScene({ a: { fill: solid('#ffffffff') } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { color: '#ff0000' } });
     const h = getInvoker().start(ctx, { params: { color: '#ff0000' } });
     h.onEnd?.(ctx, 'cancel');
@@ -134,20 +136,21 @@ describe('setFillAction', () => {
     expect(scene.update).not.toHaveBeenCalled();
   });
 
-  it('preserves existing alpha when a 6-char color is supplied', () => {
-    const scene = makeScene({ a: { fill: '#11223380' } });
+  it("adopts the paint's existing opacity when a 6-char color is supplied", () => {
+    const scene = makeScene({ a: { fill: solid('#11223380') } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { color: '#ff0000' } });
     const h = getInvoker().start(ctx, { params: { color: '#ff0000' } });
     h.onEnd?.(ctx, 'commit');
-    expect((scene.updates[0].data as { fill: string }).fill).toBe('#ff000080');
+    expect((scene.updates[0].data as { fill: FillStyle }).fill)
+      .toEqual({ color: '#ff0000', opacity: solid('#11223380').opacity });
   });
 
   it('uses supplied alpha when an 8-char color is provided', () => {
-    const scene = makeScene({ a: { fill: '#11223380' } });
+    const scene = makeScene({ a: { fill: solid('#11223380') } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { color: '#ff000040' } });
     const h = getInvoker().start(ctx, { params: { color: '#ff000040' } });
     h.onEnd?.(ctx, 'commit');
-    expect((scene.updates[0].data as { fill: string }).fill).toBe('#ff000040');
+    expect((scene.updates[0].data as { fill: FillStyle }).fill).toEqual(solid('#ff000040'));
   });
 
   // -------------------------------------------------------------------------
@@ -155,7 +158,7 @@ describe('setFillAction', () => {
   // -------------------------------------------------------------------------
 
   it('routes the commit through the consumer applyOps hook once with setData ops + "Set fill" label', () => {
-    const scene = makeScene({ a: { fill: '#ffffffff' }, b: { fill: '#000000ff' } });
+    const scene = makeScene({ a: { fill: solid('#ffffffff') }, b: { fill: solid('#000000ff') } });
     const applyOps = vi.fn<(ops: Op[], label: string) => void>();
     const ctx = makeCtx({ selectionIds: ['a', 'b'], scene, params: { color: '#ff0000' }, applyOps });
     const h = getInvoker().start(ctx, { params: { color: '#ff0000' } });
@@ -171,26 +174,26 @@ describe('setFillAction', () => {
     expect(label).toBe('Set fill');
     expect(ops).toHaveLength(2);
     for (const op of ops) expect(op.name).toBe('setData');
-    const args0 = ops[0].args as { id: string; from: { fill?: string }; to: { fill?: string } };
-    const args1 = ops[1].args as { id: string; from: { fill?: string }; to: { fill?: string } };
+    const args0 = ops[0].args as { id: string; from: { fill?: FillStyle }; to: { fill?: FillStyle } };
+    const args1 = ops[1].args as { id: string; from: { fill?: FillStyle }; to: { fill?: FillStyle } };
     expect(args0.id).toBe('a');
     expect(args1.id).toBe('b');
-    // `from` is the pre-commit data; `to` carries the merged final fill.
-    expect(args0.from.fill).toBe('#ffffffff');
-    expect((args0.to as { fill: string }).fill).toBe('#00ff00ff');
-    expect(args1.from.fill).toBe('#000000ff');
-    expect((args1.to as { fill: string }).fill).toBe('#00ff00ff');
+    // `from` is the pre-commit data; `to` carries the recolored final fill.
+    expect(args0.from.fill).toEqual({ color: '#ffffff' });
+    expect((args0.to as { fill: FillStyle }).fill).toEqual({ color: '#00ff00' });
+    expect(args1.from.fill).toEqual({ color: '#000000' });
+    expect((args1.to as { fill: FillStyle }).fill).toEqual({ color: '#00ff00' });
   });
 
   it('with no applyOps, falls back to one scene.applyBatch labeled "Set fill"', () => {
-    const scene = makeScene({ a: { fill: '#ffffffff' } });
+    const scene = makeScene({ a: { fill: solid('#ffffffff') } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { color: '#ff0000' } });
     const h = getInvoker().start(ctx, { params: { color: '#ff0000' } });
     h.onEnd?.(ctx, 'commit');
     expect(scene.applyBatch).toHaveBeenCalledOnce();
     expect(scene.batches).toEqual(['Set fill']);
     // The default adapter's setData routed back through scene.update.
-    expect((scene.updates[0].data as { fill: string }).fill).toBe('#ff0000ff');
+    expect((scene.updates[0].data as { fill: FillStyle }).fill).toEqual({ color: '#ff0000' });
   });
 });
 
@@ -203,8 +206,8 @@ describe('setFillAction — non-solid paints', () => {
     units: 'local' as const,
   };
 
-  it('writes a paint verbatim rather than merging alpha into it', () => {
-    const scene = makeScene({ a: { fill: '#ffffff80' } });
+  it('writes a paint verbatim rather than folding an opacity into it', () => {
+    const scene = makeScene({ a: { fill: solid('#ffffff80') } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: GRADIENT } });
     const h = getInvoker().start(ctx);
     h.onEnd!(ctx, 'commit');
@@ -212,7 +215,7 @@ describe('setFillAction — non-solid paints', () => {
   });
 
   it('previews a paint during the gesture without writing to the scene', () => {
-    const scene = makeScene({ a: { fill: '#ffffffff' } });
+    const scene = makeScene({ a: { fill: solid('#ffffffff') } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: GRADIENT } });
     const h = getInvoker().start(ctx);
     expect(h.previewData!('a')).toMatchObject({ fill: GRADIENT });
@@ -220,7 +223,7 @@ describe('setFillAction — non-solid paints', () => {
   });
 
   it('follows a paint edited mid-gesture, so a stop drag previews live', () => {
-    const scene = makeScene({ a: { fill: '#ffffffff' } });
+    const scene = makeScene({ a: { fill: solid('#ffffffff') } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: GRADIENT } });
     const h = getInvoker().start(ctx);
     const moved = { ...GRADIENT, to: { x: 99, y: 0 } };
@@ -231,7 +234,7 @@ describe('setFillAction — non-solid paints', () => {
   });
 
   it('commits one batch for a paint, as for a color', () => {
-    const scene = makeScene({ a: { fill: '#ffffffff' }, b: { fill: '#000000ff' } });
+    const scene = makeScene({ a: { fill: solid('#ffffffff') }, b: { fill: solid('#000000ff') } });
     const ctx = makeCtx({ selectionIds: ['a', 'b'], scene, params: { paint: GRADIENT } });
     const h = getInvoker().start(ctx);
     h.onEnd!(ctx, 'commit');
@@ -239,20 +242,21 @@ describe('setFillAction — non-solid paints', () => {
   });
 
   it('lets a later color supersede a paint, so the picker still works after a gradient', () => {
-    const scene = makeScene({ a: { fill: '#ffffffff' } });
+    const scene = makeScene({ a: { fill: solid('#ffffffff') } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: GRADIENT } });
     const h = getInvoker().start(ctx);
     h.onMove!({ ...ctx, params: { color: '#ff0000' } });
     h.onEnd!(ctx, 'commit');
-    expect(scene.updates[0].data).toMatchObject({ fill: '#ff0000ff' });
+    expect(scene.updates[0].data).toMatchObject({ fill: { color: '#ff0000' } });
   });
 
-  it('does not try to lift alpha off a gradient when a color replaces one', () => {
-    const scene = makeScene({ a: { fill: GRADIENT as never } });
+  it('replaces a gradient outright when a color is picked over one', () => {
+    const scene = makeScene({ a: { fill: GRADIENT } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { color: '#ff0000' } });
     const h = getInvoker().start(ctx);
     h.onEnd!(ctx, 'commit');
-    // Alpha comes from the kit default, not from a nonexistent gradient alpha.
-    expect(scene.updates[0].data).toMatchObject({ fill: '#ff0000ff' });
+    // A gradient has no single color to recolor, so the solid supersedes it
+    // whole; its own opacity (absent here) is what carries over.
+    expect(scene.updates[0].data).toMatchObject({ fill: { color: '#ff0000' } });
   });
 });

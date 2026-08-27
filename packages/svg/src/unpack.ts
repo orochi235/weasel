@@ -6,7 +6,7 @@
  * `<SceneCanvas ingestion={{ svg: { unpack: unpackSvgFiles } }}>`.
  *
  * Leaf data targets the kit's built-in painters (`NodeShape.ts`): paths as
- * `{ path, fill?, stroke?, strokeWidth? }` (the `kit:path` contract), text
+ * `{ path, fill?, stroke? }` (the `kit:path` contract), text
  * as `{ text, style? }` (`kit:text`). Poses are absolute AABBs; the
  * renderer's `pathInPoseFrame` rebases stored geometry into the pose box,
  * so placement and fit-clamping operate on poses alone and never rewrite
@@ -33,10 +33,11 @@ import {
   dwarn,
   fillToBoundsFrame,
   resolveTextStyle,
+  solid,
+  type FillStyle,
   type IngestCtx,
-  type NodeFill,
-  type NodeStroke,
   type Op,
+  type Stroke,
   type TextStyle,
 } from '@weasel-js/core';
 
@@ -82,8 +83,9 @@ function freshSvgNodeId(): string {
   return `n${(svgIdCounter++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-/** Lower an `SvgPaint` onto the `kit:path` painter's `NodeFill` — a color
- *  string or a `FillStyle`. `'none'` is meaningful (painter skips the fill).
+/** Lower an `SvgPaint` onto the `kit:path` painter's `data.fill` — a
+ *  `FillStyle`, or `null` for SVG's `fill="none"` (the painter skips the
+ *  fill rather than falling back to its default).
  *
  *  A gradient rides through as the `FillStyle` it already is, normalized to
  *  the leaf's own box: `objectBoundingBox` gradients already are, and a
@@ -92,51 +94,39 @@ function freshSvgNodeId(): string {
 function fillFromPaint(
   paint: SvgPaint | undefined,
   box: SvgDraftBounds,
-): NodeFill | undefined {
+): FillStyle | null | undefined {
   if (!paint) return undefined;
-  if (paint.kind === 'none') return 'none';
-  if (paint.kind === 'solid') return paint.color;
+  if (paint.kind === 'none') return null;
+  if (paint.kind === 'solid') return solid(paint.color);
   const g = paint.paint;
   const units = 'units' in g ? g.units : undefined;
   return units === 'world' ? fillToBoundsFrame(g, box) : g;
 }
 
-/** Lower an `SvgStroke` onto the leaf's stroke fields.
+/** Lower an `SvgStroke` onto the leaf's `data.stroke`.
  *
- *  A plain solid stroke stays the color-string pair every kit consumer
- *  already reads. Anything the pair cannot hold — a gradient paint, a dash,
- *  a cap, a join, a miter limit, an opacity — comes through as the whole
- *  `Stroke`, which is what `data.stroke` takes. The paint is normalized to
- *  the leaf's own box the same way a fill is, so a `userSpaceOnUse` gradient
- *  survives the fit-clamp and the drop-point placement. */
+ *  Everything the SVG carried — paint, width, cap, join, dash, miter limit,
+ *  opacity — lands on the one `Stroke` `data.stroke` takes. The paint is
+ *  normalized to the leaf's own box the same way a fill is, so a
+ *  `userSpaceOnUse` gradient survives the fit-clamp and the drop-point
+ *  placement. */
 export function strokeDataFromSvg(
   stroke: SvgStroke | undefined,
   box: SvgDraftBounds,
-): { stroke?: NodeStroke; strokeWidth?: number } {
-  if (!stroke || stroke.paint.kind === 'none') return {};
+): Stroke | undefined {
+  if (!stroke || stroke.paint.kind === 'none') return undefined;
   const paint = fillFromPaint(stroke.paint, box);
-  if (paint === undefined || paint === 'none') return {};
-  const plain =
-    typeof paint === 'string'
-    && stroke.opacity === undefined
-    && stroke.cap === undefined
-    && stroke.join === undefined
-    && stroke.dash === undefined
-    && stroke.miterLimit === undefined;
-  if (plain) return { stroke: paint as string, strokeWidth: stroke.width };
+  if (paint === undefined || paint === null) return undefined;
   return {
-    stroke: {
-      paint: typeof paint === 'string'
-        ? { color: paint, ...(stroke.opacity !== undefined ? { opacity: stroke.opacity } : {}) }
-        : { ...paint, ...(stroke.opacity !== undefined ? { opacity: stroke.opacity } : {}) },
-      width: stroke.width,
-      ...(stroke.cap !== undefined ? { cap: stroke.cap } : {}),
-      ...(stroke.join !== undefined ? { join: stroke.join } : {}),
-      ...(stroke.dash !== undefined ? { dash: stroke.dash } : {}),
-      ...(stroke.miterLimit !== undefined ? { miterLimit: stroke.miterLimit } : {}),
-    },
+    paint: stroke.opacity !== undefined ? { ...paint, opacity: stroke.opacity } : paint,
+    width: stroke.width,
+    ...(stroke.cap !== undefined ? { cap: stroke.cap } : {}),
+    ...(stroke.join !== undefined ? { join: stroke.join } : {}),
+    ...(stroke.dash !== undefined ? { dash: stroke.dash } : {}),
+    ...(stroke.miterLimit !== undefined ? { miterLimit: stroke.miterLimit } : {}),
   };
 }
+
 
 /**
  * Walk an `SvgNode[]` tree and emit a flat, parent-before-child list of
@@ -215,6 +205,7 @@ export function svgNodesToKitDrafts(
     const pose: DraftPose = { x: b.x, y: b.y, width: b.width, height: b.height };
     if (n.rotation) pose.rotation = n.rotation;
     const fill = fillFromPaint(n.fill, b);
+    const strokeFromSvg = strokeDataFromSvg(n.stroke, b);
     drafts.push({
       kind: 'leaf',
       id: nextId(),
@@ -223,7 +214,7 @@ export function svgNodesToKitDrafts(
       data: {
         path: n.path,
         ...(fill !== undefined ? { fill } : {}),
-        ...strokeDataFromSvg(n.stroke, b),
+        ...(strokeFromSvg !== undefined ? { stroke: strokeFromSvg } : {}),
       },
     });
     return pose;

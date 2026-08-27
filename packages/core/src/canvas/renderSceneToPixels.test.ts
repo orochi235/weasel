@@ -96,7 +96,7 @@ describe('planPixelRender', () => {
   });
 
   it('source-rect cropping: view origin offsets node coordinates', () => {
-    const scene = fakeScene([leaf('r', { x: 5, y: 10, width: 1, height: 1 }, { fill: '#000' })]);
+    const scene = fakeScene([leaf('r', { x: 5, y: 10, width: 1, height: 1 }, { fill: { fill: { color: '#000' } } })]);
     const p = planPixelRender({ scene, sourceRect: RECT, scale: { x: 1, y: 1 } });
     // Node at the rect origin renders at output (0,0): the group transform is
     // viewToMat3({x:5, y:10, scale:{x:1,y:1}}) — translation = (-5, -10).
@@ -117,8 +117,8 @@ describe('planPixelRender', () => {
 
   it('honors pose rotation — a rotated node plans differently from an upright one', () => {
     const box = { x: 10, y: 20, width: 40, height: 20 };
-    const upright = planPixelRender({ scene: fakeScene([leaf('r', box, { color: '#000' })]), sourceRect: RECT, scale: { x: 1, y: 1 } });
-    const spun = planPixelRender({ scene: fakeScene([leaf('r', { ...box, rotation: Math.PI / 3 }, { color: '#000' })]), sourceRect: RECT, scale: { x: 1, y: 1 } });
+    const upright = planPixelRender({ scene: fakeScene([leaf('r', box, { fill: { color: '#000' } })]), sourceRect: RECT, scale: { x: 1, y: 1 } });
+    const spun = planPixelRender({ scene: fakeScene([leaf('r', { ...box, rotation: Math.PI / 3 }, { fill: { color: '#000' } })]), sourceRect: RECT, scale: { x: 1, y: 1 } });
     const childOf = (p: typeof upright) => soleNodeOutput(p.commands);
     expect(childOf(spun)).not.toEqual(childOf(upright));
     const wrap = childOf(spun) as unknown as { kind: string; transform: Float32Array };
@@ -127,7 +127,7 @@ describe('planPixelRender', () => {
   });
 
   it('honors alphaFor — a dimmed node plans differently from an opaque one', () => {
-    const scene = fakeScene([leaf('r', { x: 10, y: 20, width: 40, height: 20 }, { color: '#000' })]);
+    const scene = fakeScene([leaf('r', { x: 10, y: 20, width: 40, height: 20 }, { fill: { color: '#000' } })]);
     const opaque = planPixelRender({ scene, sourceRect: RECT, scale: { x: 1, y: 1 } });
     const dimmed = planPixelRender({ scene, sourceRect: RECT, scale: { x: 1, y: 1 }, alphaFor: () => 0.3 });
     const childOf = (p: typeof opaque) => soleNodeOutput(p.commands);
@@ -154,7 +154,7 @@ describe('renderSceneToPixels — GL execution (glRecorder)', () => {
   it('same-context determinism: identical call sequences across runs', () => {
     const run = () => {
       const rec = makeGLRecorder();
-      const scene = fakeScene([leaf('r', RECT, { fill: '#123456', label: undefined })]);
+      const scene = fakeScene([leaf('r', RECT, { fill: { color: '#123456' }, label: undefined })]);
       renderSceneToPixels({ scene, sourceRect: RECT, scale: { x: 2, y: 1 }, background: '#ffffff', createCanvas: recorderFactory(rec) });
       return rec.calls.map((c) => c.name).join(',');
     };

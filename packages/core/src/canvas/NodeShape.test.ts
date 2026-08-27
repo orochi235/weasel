@@ -10,6 +10,7 @@ import {
 } from './NodeShape';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
+import { solid, strokeOf } from '../util/paint';
 import { pathContainsPoint } from 'features/paths/pathHitTest';
 import type { Node } from 'core/scene/types';
 import type { DrawCommand } from '../renderer';
@@ -58,7 +59,7 @@ describe('shape painter registry', () => {
   it('findNodeShape returns the first matching painter', () => {
     expect(findNodeShape(node({ text: 'hi' }))?.id).toBe('kit:text');
     expect(findNodeShape(node({ path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 } }))?.id).toBe('kit:path');
-    expect(findNodeShape(node({ color: '#abc' }))?.id).toBe('kit:rect-fallback');
+    expect(findNodeShape(node({ shade: '#abc' }))?.id).toBe('kit:rect-fallback');
   });
 
   it('registers a normal-priority painter — added after built-ins', () => {
@@ -111,8 +112,8 @@ describe('shape painter registry', () => {
 });
 
 describe('findShapeSilhouette rotation', () => {
-  function poseNode(pose: object): Node<{ color: string }, 'default', object> {
-    return { id: 'n', kind: 'leaf', layer: 'default', pose, data: { color: '#abc' }, parent: null } as never;
+  function poseNode(pose: object): Node<{ shade: string }, 'default', object> {
+    return { id: 'n', kind: 'leaf', layer: 'default', pose, data: { shade: '#abc' }, parent: null } as never;
   }
 
   it('returns the unrotated silhouette for a pose with no rotation', () => {
@@ -177,34 +178,26 @@ describe('kit:text painter — rich runs', () => {
     expect(text.runs.map((r) => r.text)).toEqual(['hi']);
   });
 
-  // `kit:shape` already reads `data.stroke` / `data.strokeWidth` off the
-  // kit-native leaf shape. Text reading the same two fields is what makes a
-  // consumer's one pair of stroke controls mean the same thing on a text node
-  // as on a rect, instead of silently doing nothing.
-  describe('kit-native stroke fields', () => {
-    it('lifts data.stroke / data.strokeWidth onto the text style', () => {
-      const [cmd] = paintText({ text: 'hi', stroke: '#f00', strokeWidth: 3 });
-      const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-      expect(text.style.stroke).toEqual({ paint: { color: '#f00' }, width: 3 });
-    });
-
-    it('takes a whole Stroke, and ignores data.strokeWidth when it gets one', () => {
+  // `kit:shape` and `kit:path` read the same `data.stroke`. Text reading it
+  // too is what makes a consumer's one set of stroke controls mean the same
+  // thing on a text node as on a rect, instead of silently doing nothing.
+  describe('kit-native stroke field', () => {
+    it('lifts data.stroke onto the text style whole', () => {
       const stroke = { paint: { color: '#f00' }, width: 3, cap: 'round' as const };
-      const [cmd] = paintText({ text: 'hi', stroke, strokeWidth: 9 });
+      const [cmd] = paintText({ text: 'hi', stroke });
       const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
       expect(text.style.stroke).toEqual(stroke);
     });
 
-    it('defaults the width to 1 when only a colour is set', () => {
-      const [cmd] = paintText({ text: 'hi', stroke: '#f00' });
+    it('takes strokeOf() for the color-and-width case', () => {
+      const [cmd] = paintText({ text: 'hi', stroke: strokeOf('#f00') });
       const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-      expect(text.style.stroke?.width).toBe(1);
+      expect(text.style.stroke).toEqual({ paint: { color: '#f00' }, width: 1 });
     });
 
-    it('leaves the style alone for stroke: none or a zero width', () => {
+    it('leaves the style alone for stroke: null or no stroke at all', () => {
       for (const data of [
-        { text: 'hi', stroke: 'none', strokeWidth: 3 },
-        { text: 'hi', stroke: '#f00', strokeWidth: 0 },
+        { text: 'hi', stroke: null },
         { text: 'hi' },
       ]) {
         const [cmd] = paintText(data);
@@ -212,10 +205,10 @@ describe('kit:text painter — rich runs', () => {
       }
     });
 
-    it('an explicit style.stroke wins over the leaf fields', () => {
+    it('an explicit style.stroke wins over the leaf field', () => {
       const explicit = { paint: { color: '#00f' }, width: 8, join: 'round' as const };
       const [cmd] = paintText({
-        text: 'hi', stroke: '#f00', strokeWidth: 3, style: { stroke: explicit },
+        text: 'hi', stroke: strokeOf('#f00', 3), style: { stroke: explicit },
       });
       const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
       expect(text.style.stroke).toBe(explicit);
@@ -223,7 +216,7 @@ describe('kit:text painter — rich runs', () => {
 
     it('reaches runs-form text too', () => {
       const [cmd] = paintText({
-        text: 'ab', stroke: '#f00', strokeWidth: 2, runs: [{ text: 'a' }, { text: 'b' }],
+        text: 'ab', stroke: strokeOf('#f00', 2), runs: [{ text: 'a' }, { text: 'b' }],
       });
       const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
       expect(text.runs.every((r) => r.stroke?.width === 2)).toBe(true);
@@ -317,7 +310,7 @@ describe('shapeCoversPoint', () => {
     // An ellipse inscribed in its pose: the pose corner is inside the rect but
     // outside the drawn shape.
     const pose = { x: 0, y: 0, width: 100, height: 100 };
-    const n = { ...node({ shape: 'ellipse', fill: '#000' }), pose };
+    const n = { ...node({ shape: 'ellipse', fill: solid('#000') }), pose };
     expect(shapeCoversPoint(n, pose, 50, 50)).toBe(true);
     expect(shapeCoversPoint(n, pose, 2, 2)).toBe(false);
   });
@@ -326,15 +319,15 @@ describe('shapeCoversPoint', () => {
     // No opinion — the caller's own AABB test stands. Anything else would
     // silently make whole classes of node unpickable.
     const pose = { x: 0, y: 0, width: 10, height: 10 };
-    const n = { ...node({ color: '#abc' }), pose }; // kit:rect-fallback
+    const n = { ...node({ shade: '#abc' }), pose }; // kit:rect-fallback
     expect(shapeCoversPoint(n, pose, 5, 5)).toBe(true);
   });
 });
 
-describe('data.stroke as a whole Stroke', () => {
+describe('data.stroke is a whole Stroke', () => {
   const pose = { x: 0, y: 0, width: 100, height: 100 };
   const RECT = { kind: 'rect', x: 0, y: 0, width: 100, height: 100 };
-  const strokeOf = (data: unknown): unknown => {
+  const strokeCmdOf = (data: unknown): unknown => {
     const n = { ...node(data), pose };
     const [cmd] = findNodeShape(n)!.paint(n, pose);
     return (cmd as { stroke?: unknown }).stroke;
@@ -345,13 +338,12 @@ describe('data.stroke as a whole Stroke', () => {
       paint: { color: '#0f0' }, width: 12, cap: 'round', join: 'bevel',
       dash: [8, 4], miterLimit: 2,
     };
-    // `strokeWidth` is ignored outright — the object is the whole answer.
-    expect(strokeOf({ path: RECT, fill: 'none', stroke, strokeWidth: 3 })).toEqual(stroke);
+    expect(strokeCmdOf({ path: RECT, fill: null, stroke })).toEqual(stroke);
   });
 
   it('reaches kit:shape the same way', () => {
     const stroke = { paint: { color: '#0f0' }, width: 4, dash: [2, 2] };
-    expect(strokeOf({ shape: 'ellipse', fill: '#fff', stroke })).toEqual(stroke);
+    expect(strokeCmdOf({ shape: 'ellipse', fill: solid('#fff'), stroke })).toEqual(stroke);
   });
 
   it('bakes a bounds-relative stroke gradient onto the pose box, as a fill is baked', () => {
@@ -363,14 +355,15 @@ describe('data.stroke as a whole Stroke', () => {
       stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
       units: 'bounds' as const,
     };
-    const out = strokeOf({ path: RECT, fill: 'none', stroke: { paint, width: 6 } }) as {
+    const out = strokeCmdOf({ path: RECT, fill: null, stroke: { paint, width: 6 } }) as {
       paint: { units: string; from: { x: number }; to: { x: number } };
     };
     expect(out.paint.units).toBe('local');
     expect(out.paint.to.x).toBe(100);
   });
 
-  it("skips a 'none' stroke on kit:shape, which used to paint one colored 'none'", () => {
-    expect(strokeOf({ shape: 'rect', fill: '#fff', stroke: 'none', strokeWidth: 4 })).toBeUndefined();
+  it('skips a null stroke on kit:shape, the same as kit:path does', () => {
+    expect(strokeCmdOf({ shape: 'rect', fill: solid('#fff'), stroke: null })).toBeUndefined();
+    expect(strokeCmdOf({ path: RECT, fill: solid('#fff'), stroke: null })).toBeUndefined();
   });
 });

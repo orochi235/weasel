@@ -49,7 +49,7 @@ test.describe('rotation — WeaselDraw renderer', () => {
         {
           id: 'r1', kind: 'rect',
           x: 100, y: 100, width: 100, height: 60,
-          fill: '#3366ff', stroke: '#000000', strokeWidth: 0,
+          fill: { color: '#3366ff' }, stroke: null,
           rotation: Math.PI / 4,
         },
       ]);
@@ -84,7 +84,7 @@ test.describe('rotation — WeaselDraw renderer', () => {
           id: 'p1', kind: 'path',
           x: 100, y: 100, width: 60, height: 100,
           closed: true,
-          fill: '#cc3366', stroke: '#000000', strokeWidth: 0,
+          fill: { color: '#cc3366' }, stroke: null,
           rotation: Math.PI / 2,
           path: {
             kind: 'polygon',

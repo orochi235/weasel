@@ -26,7 +26,7 @@ import {
   polygonFromPoints,
 } from 'features/paths/builder';
 import { schneiderFit } from 'features/paths/schneiderFit';
-import { DEFAULT_PALETTE } from '../../util/paint';
+import { DEFAULT_PALETTE, solid, strokeOf } from '../../util/paint';
 
 interface OpsApplier {
   applyOps(ops: Op[], label?: string): void;
@@ -80,7 +80,8 @@ export function useInsertDepSource(
           seq = ++insertSeqRef.current;
           id = asNodeId(`kit-${kind}-${seq}`);
         }
-        const fill = DEFAULT_PALETTE[seq % DEFAULT_PALETTE.length];
+        const color = DEFAULT_PALETTE[seq % DEFAULT_PALETTE.length];
+        const fill = solid(color);
         const layer = (sc.layers[0]?.id ?? 'default') as string;
 
         // Consumer factory wins over the kit default for this kind (and is the
@@ -118,7 +119,7 @@ export function useInsertDepSource(
             const e = extras as Partial<{ a: { x: number; y: number }; b: { x: number; y: number } }>;
             const a = e.a ?? { x: bounds.x, y: bounds.y };
             const b = e.b ?? { x: bounds.x + bounds.width, y: bounds.y + bounds.height };
-            data = { path: linePath(a, b), fill, stroke: fill, strokeWidth: 2 };
+            data = { path: linePath(a, b), fill, stroke: strokeOf(color, 2) };
             break;
           }
           case 'polygon': {
@@ -157,7 +158,7 @@ export function useInsertDepSource(
             if (samples.length >= 4) {
               data = {
                 path: schneiderFit(samples as { x: number; y: number }[], 2.0),
-                stroke: fill, strokeWidth: 2,
+                stroke: strokeOf(color, 2),
               };
               let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
               for (const s of samples) {
@@ -170,7 +171,7 @@ export function useInsertDepSource(
             } else if (samples.length >= 2) {
               data = {
                 path: polygonFromPoints(samples as { x: number; y: number }[]),
-                stroke: fill, strokeWidth: 2,
+                stroke: strokeOf(color, 2),
               };
             } else {
               // Origin rect; pose (set above) carries position. See the 'rect'
