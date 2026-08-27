@@ -1,18 +1,14 @@
-# Handoff — node paint as objects, and the property panel that edits it
+# Node paint as objects, and the property panel that edits it
 
-One branch now, `node-stroke-union`, worktree
-`.claude/worktrees/node-stroke-union`, at `546f67d4`, 23 commits off `main`
-(`5e91f912`, merged in). Not pushed. `tsc`, `npm test` (7714) and `npm run
-build` green.
-
-`546f67d4` — the text quad ring — has nothing to do with this arc and only
-landed here because this is where the tree was. It is self-contained and
-cherry-picks onto `main` cleanly if you would rather the eventual PR did not
-carry it.
+**Merged to `main` at `6f819fc9` (2026-08-27). Not pushed.** `node-stroke-union`
+and `paint-object-collapse` are gone with their worktrees; there is no branch to
+pick up, only the agenda below. `tsc`, `npm test` (7714) and `npm run build` are
+green on `main`.
 
 The design lives in `docs/proposals/2026-08-26-node-stroke-union.md` — read it
-first; it describes the model, not the branch. This file is only what that doc
-can't carry.
+first; it describes the model, not the work. This file is only what that doc
+can't carry: what remains, and the decisions that live in conversation rather
+than in the tree.
 
 ## What landed
 
@@ -84,7 +80,7 @@ inner, center, outer.
 The cap bar starts at x -2 so the viewBox clips its *other* end; at 0 a round
 cap domes there too and the glyph reads as a lozenge.
 
-## Next, in order
+## What is left, in order
 
 1. **The placeholder pass** (open decision 2). A text node with no stroke
    still shows Cap/Join/Align with segments lit, because a control with no
@@ -124,12 +120,6 @@ cap domes there too and the glyph reads as a lozenge.
 
 ## Traps
 
-- **The shell cwd resets to the main checkout.** A relative-path command then
-  edits `/Users/mike/src/weasel` instead of the worktree, and a test run there
-  measures the wrong tree. It happened twice in one session, once producing a
-  confident and meaningless "all green", once a false report that a merge had
-  dropped a file. Use worktree-absolute paths for everything, and re-check
-  `pwd` after any command that ends in `open` or `cd`.
 - **`SceneCanvas.animatedZoom.test.tsx` fails 9 tests under full-suite load and
   passes 14/14 alone.** Reproduced on this branch, on the collapse branch and
   on untouched `main`, then passed on a later run — intermittent, pre-existing,
