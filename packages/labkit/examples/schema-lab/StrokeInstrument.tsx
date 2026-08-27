@@ -15,7 +15,7 @@ const ZIGZAG: Path = pathFromD(
  *  draws every field the panel edits — no painter of our own. */
 interface StrokeData {
   path: Path;
-  fill: 'none';
+  fill: null;
   stroke: Stroke;
 }
 
@@ -110,7 +110,7 @@ function buildScene(config: StrokeConfig): Scene<StrokeData, 'default', RectPose
         kind: 'leaf',
         layer: 'default',
         pose: { x: 40, y: 110, width: 384, height: 140 },
-        data: { path: ZIGZAG, fill: 'none', stroke: strokeFromConfig(config) },
+        data: { path: ZIGZAG, fill: null, stroke: strokeFromConfig(config) },
       },
     ],
   });

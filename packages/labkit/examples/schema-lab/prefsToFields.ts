@@ -18,11 +18,23 @@ function isGroup(node: PrefNode): node is PrefGroup {
   return 'children' in node && !('kind' in node);
 }
 
+/** An `object` leaf holds one value with its own fields — a `Stroke`, say.
+ *  Its children are ordinary leaves addressed under it, and `setAtPath`
+ *  clones each level, so flattening them gives the panel a row per field
+ *  without ever writing into a half-built object. */
+function isObjectLeaf(node: PrefNode): node is PrefLeaf & { children: Record<string, PrefLeaf> } {
+  return 'kind' in node && (node as { kind: string }).kind === 'object';
+}
+
 export function flattenPrefs(group: PrefGroup): FlatPref[] {
   const out: FlatPref[] = [];
   for (const [key, node] of Object.entries(group.children)) {
     if (isGroup(node)) out.push(...flattenPrefs(node));
-    else out.push({ path: key, leaf: node as PrefLeaf });
+    else if (isObjectLeaf(node)) {
+      for (const [childKey, child] of Object.entries(node.children)) {
+        out.push({ path: `${key}.${childKey}`, leaf: child });
+      }
+    } else out.push({ path: key, leaf: node as PrefLeaf });
   }
   return out;
 }
@@ -86,14 +98,6 @@ export function prefToField(path: string, leaf: PrefLeaf): ConfigField | null {
     case 'color':
       // `#rrggbbaa` is legal in the schema and illegal in `<input type="color">`.
       return { key: path, label, type: 'color', default: (leaf.default as string).slice(0, 7) };
-    case 'stroke':
-      // `string | Stroke`, and a color swatch can only edit the string form —
-      // writing a hex over the object form would flatten away its width, cap,
-      // join and dash. Editing the union properly takes a control that knows
-      // it is a union, which is what weasel-ui's `stroke` control is for.
-      return typeof leaf.default === 'string'
-        ? { key: path, label, type: 'color', default: leaf.default.slice(0, 7) }
-        : null;
     default:
       return null;
   }

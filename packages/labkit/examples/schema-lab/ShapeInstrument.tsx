@@ -1,5 +1,5 @@
-import { createScene, defaultNodeProperties } from '@weasel-js/core';
-import type { RectPose, Scene } from '@weasel-js/core';
+import { createScene, defaultNodeProperties, solid, strokeOf } from '@weasel-js/core';
+import type { FillStyle, RectPose, Scene, Stroke } from '@weasel-js/core';
 import { defineInstrument, type RenderContext } from '@weasel-js/labkit';
 import { useEffect, useRef } from 'react';
 import { decodePrefValue, flattenPrefs, type PrefGroup, prefDefaults, prefsToFields, setAtPath } from './prefsToFields';
@@ -11,9 +11,8 @@ const RECT_SCHEMA: PrefGroup = defaultNodeProperties.find((e) => e.name === 'rec
 
 interface ShapeData {
   shape: 'rect';
-  fill: string;
-  stroke: string;
-  strokeWidth: number;
+  fill: FillStyle;
+  stroke: Stroke;
 }
 type Config = Record<string, unknown>;
 
@@ -23,9 +22,7 @@ const START: Config = {
   'pose.y': 90,
   'pose.width': 260,
   'pose.height': 180,
-  'data.fill': '#7fb069',
-  'data.stroke': '#1c1c1c',
-  'data.strokeWidth': 6,
+  'data.stroke.width': 6,
 };
 
 function buildScene(): Scene<ShapeData, 'default', RectPose> {
@@ -36,7 +33,7 @@ function buildScene(): Scene<ShapeData, 'default', RectPose> {
         kind: 'leaf',
         layer: 'default',
         pose: { x: 120, y: 90, width: 260, height: 180 },
-        data: { shape: 'rect', fill: '#7fb069', stroke: '#1c1c1c', strokeWidth: 6 },
+        data: { shape: 'rect', fill: solid('#7fb069'), stroke: strokeOf('#1c1c1c', 6) },
       },
     ],
   });

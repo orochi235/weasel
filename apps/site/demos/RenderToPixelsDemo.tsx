@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import {
   SceneCanvas, useScene, renderSceneToPixels, defaultDrawOne, textCommand,
   registerCanvasFont,
+  solid,
 } from '@weasel-js/core';
-import type { TextStyle, TextVerticalAlign, SceneViewDrawOne } from '@weasel-js/core';
+import type { FillStyle, TextStyle, TextVerticalAlign, SceneViewDrawOne } from '@weasel-js/core';
 
 const W = 480, H = 340;
 
@@ -13,9 +14,9 @@ const W = 480, H = 340;
 // glyph ink renders, not which face.)
 registerCanvasFont('Arial');
 
-// `RECT_FALLBACK_PAINTER` (src/canvas/NodeShape.ts) reads `data.color` and
-// emits a solid fill — no stroke — so that's the shape that guarantees a
-// probe-able interior fill color rather than an outline.
+// `RECT_FALLBACK_PAINTER` (src/canvas/NodeShape.ts) reads `data.fill` and
+// emits it over the pose AABB — no stroke — so that's the shape that
+// guarantees a probe-able interior fill color rather than an outline.
 //
 // `text`/`style`/`verticalAlign` drive a second, box-aligned text node
 // (see `drawOne` below). The generic `kit:text` painter forwards pose
@@ -24,7 +25,7 @@ registerCanvasFont('Arial');
 // via the public `textCommand()` to exercise the renderer's box vertical
 // alignment (`TextDrawCommand.height`/`verticalAlign`) end-to-end.
 interface NodeData {
-  color?: string;
+  fill?: FillStyle;
   text?: string;
   style?: TextStyle;
   verticalAlign?: TextVerticalAlign;
@@ -51,11 +52,11 @@ export function RenderToPixelsDemo() {
     systemLayers: [{ id: 'default' }],
     initial: [
       { id: 'a' as never, kind: 'leaf', layer: 'default',
-        pose: { x: 40, y: 40, width: 120, height: 160 }, data: { color: '#7fb069' } },
+        pose: { x: 40, y: 40, width: 120, height: 160 }, data: { fill: solid('#7fb069') } },
       { id: 'b' as never, kind: 'leaf', layer: 'default',
-        pose: { x: 180, y: 70, width: 120, height: 100 }, data: { color: '#4a7fb0' } },
+        pose: { x: 180, y: 70, width: 120, height: 100 }, data: { fill: solid('#4a7fb0') } },
       { id: 'c' as never, kind: 'leaf', layer: 'default',
-        pose: { x: 330, y: 50, width: 110, height: 140 }, data: { color: '#d4a574' } },
+        pose: { x: 330, y: 50, width: 110, height: 140 }, data: { fill: solid('#d4a574') } },
       // Bottom strip, box-aligned text: box is much taller than one line of
       // text, `verticalAlign: 'bottom'` should push the glyphs to the
       // bottom of the box instead of the (legacy default) top.
@@ -70,9 +71,9 @@ export function RenderToPixelsDemo() {
       // knows about.
       { id: 'spun' as never, kind: 'leaf', layer: 'default',
         pose: { x: 40, y: 260, width: 60, height: 60, rotation: Math.PI / 4 },
-        data: { color: '#b04a7f' } },
+        data: { fill: solid('#b04a7f') } },
       { id: 'dimmed' as never, kind: 'leaf', layer: 'default',
-        pose: { x: 200, y: 260, width: 160, height: 60 }, data: { color: '#000000' } },
+        pose: { x: 200, y: 260, width: 160, height: 60 }, data: { fill: solid('#000000') } },
     ],
   });
   const outRef = useRef<HTMLCanvasElement>(null);

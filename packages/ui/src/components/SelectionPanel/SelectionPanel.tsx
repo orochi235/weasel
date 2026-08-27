@@ -48,9 +48,8 @@ export interface PropertyRenderContext {
    *
    * A control whose subject spans more than one field needs it: a font picker
    * reporting which variant will actually paint has to read the node's weight
-   * and style, and a stroke control folding in the legacy `data.strokeWidth`
-   * has to read that. Reading it off `value` is impossible — a leaf is handed
-   * one field.
+   * and style. Reading it off `value` is impossible — a leaf is handed one
+   * field.
    */
   valueAt: (path: string) => { value: unknown; mixed: boolean };
 }
@@ -345,8 +344,7 @@ function renderBuiltin(
     }
     case 'object': {
       // One value with fields hanging off it. Each child writes the parent
-      // whole, so a field is never set on a half-built object — and a value
-      // still held in a scalar form is lifted first by `fromScalar`.
+      // whole, so a field is never set on a half-built object.
       return <ObjectLeaf ctx={ctx} renderers={renderers} />;
     }
     default:
@@ -357,7 +355,7 @@ function renderBuiltin(
 /**
  * Renders an object leaf: a titled block whose rows are the object's own
  * fields. A child's edit commits the parent object, never the child's path —
- * writing into a path whose value is still a color string would corrupt it.
+ * writing into a path whose value is not an object yet would corrupt it.
  */
 function ObjectLeaf({
   ctx,

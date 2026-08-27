@@ -52,20 +52,21 @@ describe('svgNodesToKitDrafts', () => {
     expect(d.parentId).toBeNull();
     expect(d.pose).toEqual({ x: 10, y: 20, width: 30, height: 40 });
     expect(d.data.path).toEqual({ kind: 'rect', x: 10, y: 20, width: 30, height: 40 });
-    expect(d.data.fill).toBe('#ff0000');
+    expect(d.data.fill).toEqual({ color: '#ff0000' });
     expect(d.data.stroke).toBeUndefined();
   });
 
-  it('maps fill none / stroke to the PATH_PAINTER contract', () => {
+  it("maps SVG's fill=none to an explicit null fill, and a stroke to a Stroke", () => {
     const drafts = svgNodesToKitDrafts([rectNode(0, 0, 10, 10, {
       fill: { kind: 'none' },
       stroke: { paint: { kind: 'solid', color: '#00ff00' }, width: 3 },
     })], seq());
     const d = drafts[0];
     if (d.kind !== 'leaf') throw new Error('expected leaf');
-    expect(d.data.fill).toBe('none');
-    expect(d.data.stroke).toBe('#00ff00');
-    expect(d.data.strokeWidth).toBe(3);
+    // `null`, not absent: absent takes the painter's default fill, which is
+    // not what `fill="none"` asked for.
+    expect(d.data.fill).toBeNull();
+    expect(d.data.stroke).toEqual({ paint: { color: '#00ff00' }, width: 3 });
   });
 
   it('carries element rotation onto the pose', () => {
@@ -159,7 +160,7 @@ describe('svgNodesToKitDrafts', () => {
     });
   });
 
-  it('keeps a gradient STROKE as a paint — `data.stroke` is `string | Stroke`', () => {
+  it('keeps a gradient STROKE as a paint', () => {
     const drafts = svgNodesToKitDrafts([rectNode(0, 0, 10, 10, {
       stroke: {
         paint: {
@@ -180,10 +181,9 @@ describe('svgNodesToKitDrafts', () => {
       paint: { fill: 'linear-gradient' },
       width: 2,
     });
-    expect(d.data.strokeWidth).toBeUndefined();
   });
 
-  it('keeps dash, cap, join and miter limit, which the color pair cannot hold', () => {
+  it('keeps dash, cap, join and miter limit', () => {
     const drafts = svgNodesToKitDrafts([rectNode(0, 0, 10, 10, {
       stroke: {
         paint: { kind: 'solid', color: '#00ff00' },
