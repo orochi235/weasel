@@ -595,10 +595,21 @@ export function collectPropertiesTrait(
   live?: readonly NodePropertiesEntry[],
 ): readonly PropertiesKindEntry[] {
   const source = live ?? defaultNodeProperties;
-  const flattenPaths = (group: ToolPrefGroup): string[] =>
-    Object.entries(group.children).flatMap(([key, child]) =>
-      'kind' in child ? [key] : flattenPaths(child),
+  // An object leaf's fields are what the kind exposes; the leaf itself is
+  // the container. Groups inside one are organisational and add nothing to
+  // the path, exactly as they do at the top level.
+  const objectPaths = (prefix: string, children: ToolPrefGroup['children']): string[] =>
+    Object.entries(children).flatMap(([key, child]) =>
+      'kind' in child ? [`${prefix}.${key}`] : objectPaths(prefix, child.children),
     );
+  const flattenPaths = (group: ToolPrefGroup): string[] =>
+    Object.entries(group.children).flatMap(([key, child]) => {
+      if (!('kind' in child)) return flattenPaths(child);
+      const kids = (child as { kind: string; children?: ToolPrefGroup['children'] });
+      return kids.kind === 'object' && kids.children
+        ? objectPaths(key, kids.children)
+        : [key];
+    });
   return source.map((e) => ({
     kind: 'propertiesKind',
     trait: 'properties',

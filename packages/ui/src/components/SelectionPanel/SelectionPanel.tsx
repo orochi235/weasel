@@ -379,8 +379,10 @@ function ObjectLeaf({
         const inner = rowsOf(child.children);
         if (inner.length === 0) continue;
         out.push(
-          <h5 key={`group:${key}`} className={s.sectionTitle}>{child.name}</h5>,
-          ...inner,
+          <div key={`group:${key}`} className={s.objectGroup}>
+            <h5 className={s.sectionTitle}>{child.name}</h5>
+            {inner}
+          </div>,
         );
         continue;
       }
@@ -411,9 +413,13 @@ function ObjectLeaf({
 
   const rows = rowsOf(pref.children);
   if (rows.length === 0) return null;
+  // A value whose fields are entirely grouped is titled by those groups —
+  // its own heading would stack straight onto the first one and name nothing
+  // the reader can't already see.
+  const allGrouped = Object.values(pref.children).every((child) => !('kind' in child));
   return (
     <div className={s.objectLeaf}>
-      <h4 className={s.sectionTitle}>{pref.name}</h4>
+      {!allGrouped && <h4 className={s.sectionTitle}>{pref.name}</h4>}
       {rows}
     </div>
   );

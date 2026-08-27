@@ -92,5 +92,12 @@
 }
 
 .objectLeaf .sectionTitle {
-  margin-block-end: 5px;
+  margin-block: 7px 5px;
+}
+
+/* Fields under a heading inside an object read as belonging to it. */
+.objectGroup {
+  padding-inline-start: 8px;
+  border-inline-start: 1px solid var(--wzl-border);
+  margin-block-end: 4px;
 }

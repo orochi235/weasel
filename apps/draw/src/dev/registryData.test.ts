@@ -107,15 +107,17 @@ describe('collectPropertiesTrait', () => {
     }
   });
 
-  it('flattens the rect kind\'s nested schema groups into its exact 7 dotted leaf paths', () => {
+  it('flattens the rect kind\'s groups and object leaves into its exact 11 dotted leaf paths', () => {
     const entries = collectPropertiesTrait();
     const rect = entries.find((e) => e.id === 'rect');
     expect(rect).toBeDefined();
-    // `data.stroke` is one object leaf; its fields are children of that value,
-    // not sibling paths.
+    // `data.stroke` is one object leaf, so what it exposes is its fields —
+    // the leaf itself is the container, and the pane lists what is editable.
     expect(rect!.leafPaths).toEqual([
       'pose.x', 'pose.y', 'pose.width', 'pose.height', 'pose.rotation',
-      'data.fill', 'data.stroke',
+      'data.fill',
+      'data.stroke.paint', 'data.stroke.width', 'data.stroke.cap',
+      'data.stroke.join', 'data.stroke.align',
     ]);
   });
 

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { defaultNodeProperties, inferredNodeProperties } from './defaultNodeProperties';
 import { KIT_SHAPE_KINDS } from './shapeKinds';
 import { inferredNodeRouting } from './defaultNodeRouting';
-import type { ToolPrefGroup } from 'tools/prefs';
+import type { ToolPrefGroup, ToolPrefObject } from 'tools/prefs';
 
 describe('defaultNodeProperties', () => {
   it('stays in lockstep with KIT_SHAPE_KINDS', () => {
@@ -42,27 +42,34 @@ describe('inferredNodeProperties', () => {
     );
   });
 
-  it('gives text nodes Character and Paragraph groups', () => {
+  it('gives text nodes Character and Paragraph groups inside the style leaf', () => {
     const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
     const text = entry.schema.children.text as ToolPrefGroup;
-    expect(Object.keys(text.children)).toContain('character');
-    expect(Object.keys(text.children)).toContain('paragraph');
+    const style = text.children['data.style'] as ToolPrefObject;
+    expect(style.kind).toBe('object');
+    expect(Object.keys(style.children)).toEqual(['character', 'paragraph']);
   });
 
-  it('addresses typography through nested style paths', () => {
+  it('addresses typography as fields of the style, not as sibling paths', () => {
+    // The groups head the two lists and contribute nothing to the path, so a
+    // field inside one is a field of `data.style` — which is what lets one
+    // control commit the whole `TextStyle` instead of half-writing it.
     const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
-    const character = ((entry.schema.children.text as ToolPrefGroup).children.character) as ToolPrefGroup;
+    const style = ((entry.schema.children.text as ToolPrefGroup).children['data.style']) as ToolPrefObject;
+    const character = style.children.character as ToolPrefGroup;
     expect(Object.keys(character.children)).toEqual([
-      'data.style.fontSize',
-      'data.style.fontFamily',
-      'data.style.fontWeight',
-      'data.style.fontStyle',
-      'data.style.letterSpacing',
-      'data.style.underline',
-      'data.style.strikethrough',
+      'fontSize',
+      'fontFamily',
+      'fontWeight',
+      'fontStyle',
+      'letterSpacing',
+      'underline',
+      'strikethrough',
       // The whole paint union, not a color inside it — see the leaf's own
       // comment in `defaultNodeProperties`.
-      'data.style.fill',
+      'fill',
     ]);
+    const paragraph = style.children.paragraph as ToolPrefGroup;
+    expect(Object.keys(paragraph.children)).toEqual(['align', 'lineHeight']);
   });
 });

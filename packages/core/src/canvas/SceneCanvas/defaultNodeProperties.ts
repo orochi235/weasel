@@ -67,29 +67,43 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
               name: 'Text',
               children: {
                 'data.text': { kind: 'string', name: 'Text', description: 'Text content.', default: '' },
-                character: {
-                  name: 'Character',
+                // One object leaf, not a row of siblings addressing into it:
+                // `data.style` is a `TextStyle`, and its character and
+                // paragraph fields are one value that reads as two lists.
+                // The groups head those lists and contribute nothing to the
+                // path — a field inside one is still a field of the style.
+                'data.style': {
+                  kind: 'object',
+                  name: 'Style',
+                  description: 'Typography for the whole node.',
+                  default: {},
+                  block: true,
                   children: {
-                    'data.style.fontSize': { kind: 'number', name: 'Size', description: 'Font size, world units.', default: 16, min: 1, step: 1 },
-                    'data.style.fontFamily': { kind: 'font-family', name: 'Font', description: 'Registered font family.', default: 'sans-serif' },
-                    'data.style.fontWeight': { kind: 'number', name: 'Weight', description: 'Font weight, 100–900.', default: 400, min: 100, max: 900, step: 100 },
-                    'data.style.fontStyle': { kind: 'enum', name: 'Style', description: 'Upright or italic.', default: 'normal', options: [{ value: 'normal', label: 'Normal' }, { value: 'italic', label: 'Italic' }] },
-                    'data.style.letterSpacing': { kind: 'number', name: 'Tracking', description: 'Extra advance per glyph, world units.', default: 0, step: 0.1 },
-                    'data.style.underline': { kind: 'boolean', name: 'Underline', description: 'Underline the text.', default: false },
-                    'data.style.strikethrough': { kind: 'boolean', name: 'Strikethrough', description: 'Strike through the text.', default: false },
-                    // A `paint` leaf, not a `color` one pointed at
-                    // `…fill.color`: `TextStyle.fill` is the tagged paint
-                    // union, so a gradient-filled node would read `undefined`
-                    // there, show this default, and take an edit as a `color`
-                    // key grafted onto the gradient.
-                    'data.style.fill': { kind: 'paint', name: 'Color', description: 'Text color.', default: { fill: 'solid', color: '#000000ff' }, alpha: true },
-                  },
-                },
-                paragraph: {
-                  name: 'Paragraph',
-                  children: {
-                    'data.style.align': { kind: 'enum', name: 'Align', description: 'Horizontal alignment.', default: 'left', options: [{ value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' }] },
-                    'data.style.lineHeight': { kind: 'number', name: 'Leading', description: 'Line height as a multiple of font size.', default: 1.2, min: 0.5, step: 0.1 },
+                    character: {
+                      name: 'Character',
+                      children: {
+                        fontSize: { kind: 'number', name: 'Size', description: 'Font size, world units.', default: 16, min: 1, step: 1 },
+                        fontFamily: { kind: 'font-family', name: 'Font', description: 'Registered font family.', default: 'sans-serif' },
+                        fontWeight: { kind: 'number', name: 'Weight', description: 'Font weight, 100–900.', default: 400, min: 100, max: 900, step: 100 },
+                        fontStyle: { kind: 'enum', name: 'Style', description: 'Upright or italic.', default: 'normal', options: [{ value: 'normal', label: 'Normal' }, { value: 'italic', label: 'Italic' }] },
+                        letterSpacing: { kind: 'number', name: 'Tracking', description: 'Extra advance per glyph, world units.', default: 0, step: 0.1 },
+                        underline: { kind: 'boolean', name: 'Underline', description: 'Underline the text.', default: false },
+                        strikethrough: { kind: 'boolean', name: 'Strikethrough', description: 'Strike through the text.', default: false },
+                        // A `paint` leaf, not a `color` one pointed at
+                        // `…fill.color`: `TextStyle.fill` is the tagged paint
+                        // union, so a gradient-filled node would read
+                        // `undefined` there, show this default, and take an
+                        // edit as a `color` key grafted onto the gradient.
+                        fill: { kind: 'paint', name: 'Color', description: 'Text color.', default: { fill: 'solid', color: '#000000ff' }, alpha: true },
+                      },
+                    },
+                    paragraph: {
+                      name: 'Paragraph',
+                      children: {
+                        align: { kind: 'enum', name: 'Align', description: 'Horizontal alignment.', default: 'left', options: [{ value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' }] },
+                        lineHeight: { kind: 'number', name: 'Leading', description: 'Line height as a multiple of font size.', default: 1.2, min: 0.5, step: 0.1 },
+                      },
+                    },
                   },
                 },
               },
