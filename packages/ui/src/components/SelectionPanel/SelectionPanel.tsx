@@ -42,6 +42,17 @@ export interface PropertyRenderContext {
   mixed: boolean;
   /** Commit a value — fans out to every selected node in one undo step. */
   setValue: (value: unknown) => void;
+  /**
+   * The aggregated value at another node path — what `value` and `mixed` are
+   * for this leaf's own path, for any path.
+   *
+   * A control whose subject spans more than one field needs it: a font picker
+   * reporting which variant will actually paint has to read the node's weight
+   * and style, and a stroke control folding in the legacy `data.strokeWidth`
+   * has to read that. Reading it off `value` is impossible — a leaf is handed
+   * one field.
+   */
+  valueAt: (path: string) => { value: unknown; mixed: boolean };
 }
 
 /**
@@ -208,6 +219,10 @@ function renderLeafControl(
     value,
     mixed,
     setValue: (v) => commit(panelLeaf, v),
+    valueAt: (p) => {
+      const at = aggregateValue(nodes, p);
+      return at === MIXED ? { value: undefined, mixed: true } : { value: at, mixed: false };
+    },
   };
 
   const custom = renderers?.[path] ?? renderers?.[leaf.kind];

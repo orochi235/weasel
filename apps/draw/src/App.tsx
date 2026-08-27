@@ -436,19 +436,23 @@ const WD_RENDERERS: Record<string, PropertyRenderer> = {
   // has to read is a runtime fact, not a static option list. Keyed by kind
   // rather than path so any future family leaf picks it up.
   //
-  // The substitution probe runs at 400/normal: `PropertyRenderContext` carries
-  // one leaf's value, not its siblings, so this renderer can't see the node's
-  // `fontWeight` / `fontStyle`. Cross-family substitution — the thing the
-  // label reports — is decided by the family, so the variant only sharpens
-  // the message rather than changing whether there is one.
-  'font-family': (ctx) => (
-    <FontFamilySelect
-      value={ctx.mixed || typeof ctx.value !== 'string' ? undefined : ctx.value}
-      mixed={ctx.mixed}
-      onChange={ctx.setValue}
-      aria-label="Font"
-    />
-  ),
+  // The substitution probe runs at the node's own weight and style, so the
+  // label names the variant that will actually paint. A mixed selection has
+  // no single one; the probe falls back to 400/normal there.
+  'font-family': (ctx) => {
+    const weight = ctx.valueAt('data.style.fontWeight');
+    const style = ctx.valueAt('data.style.fontStyle');
+    return (
+      <FontFamilySelect
+        value={ctx.mixed || typeof ctx.value !== 'string' ? undefined : ctx.value}
+        mixed={ctx.mixed}
+        onChange={ctx.setValue}
+        weight={typeof weight.value === 'number' ? weight.value : undefined}
+        fontStyle={style.value === 'italic' ? 'italic' : undefined}
+        aria-label="Font"
+      />
+    );
+  },
 };
 
 // ─── Right sidebar: LayerList + SelectionPanel ──────────────────────────────
