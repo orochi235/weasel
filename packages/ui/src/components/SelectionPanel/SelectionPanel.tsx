@@ -15,6 +15,7 @@ import {
 } from '@weasel-js/core';
 import { ColorField } from '../ColorField';
 import { solidColorOf } from '../paintValue';
+import { InlineRange } from '../InlineRange';
 import { Input } from '../Input';
 import { NumberField } from '../NumberField';
 import { Select } from '../Select';
@@ -266,13 +267,7 @@ function renderBuiltin(
         const known = !mixed && stored !== undefined;
         return (
           <>
-            <input
-              type="range"
-              className={s.slider}
-              style={{
-                ['--slider-fill' as string]:
-                  `${known && max > min ? ((Math.min(Math.max(display, min), max) - min) / (max - min)) * 100 : 0}%`,
-              }}
+            <InlineRange
               min={min}
               max={max}
               step={p.step ?? 1}
@@ -280,6 +275,7 @@ function renderBuiltin(
               // so a value past `max` is still reported as what it is.
               value={known ? Math.min(Math.max(display, min), max) : min}
               disabled={mixed}
+              className={s.slider}
               aria-label={ariaLabel}
               onChange={(e) => {
                 const next = Number(e.target.value);

@@ -1,0 +1,47 @@
+/* The track is painted here rather than left to `accent-color`. A UA fills
+   the left of the track with the accent but draws the remainder near-white on
+   a dark surface whatever `color-scheme` says, and overriding the track's
+   background removes the accent fill instead of recolouring the remainder —
+   so the whole track is ours. `--slider-fill` carries the value, since no
+   static rule expresses "filled to N%". */
+.range {
+  flex: 1;
+  min-inline-size: 48px;
+  appearance: none;
+  -webkit-appearance: none;
+  block-size: 4px;
+  border-radius: var(--wzl-radius-pill);
+  background: linear-gradient(
+    to right,
+    var(--wzl-accent) 0 var(--slider-fill, 0%),
+    var(--wzl-border-strong) var(--slider-fill, 0%) 100%
+  );
+  cursor: pointer;
+}
+
+.range::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  inline-size: 12px;
+  block-size: 12px;
+  border-radius: 50%;
+  background: var(--wzl-accent);
+}
+
+.range::-moz-range-thumb {
+  inline-size: 12px;
+  block-size: 12px;
+  border: none;
+  border-radius: 50%;
+  background: var(--wzl-accent);
+}
+
+.range:focus-visible {
+  outline: 2px solid var(--wzl-accent);
+  outline-offset: 2px;
+}
+
+.range:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

@@ -35,6 +35,7 @@ export * from './components/NumberField';
 export * from './components/Select';
 export * from './components/ComboBox';
 export * from './components/RangeSlider';
+export * from './components/InlineRange';
 export * from './components/Dialog';
 export * from './components/Tooltip';
 export * from './components/Callout';

@@ -143,47 +143,9 @@
   margin-block-end: 4px;
 }
 
-/* Inline slider for a `control: 'slider'` number, matching the opacity
-   slider it shares a row with rather than the full-width RangeSlider.
-   The track is painted here rather than left to `accent-color`: the UA fills
-   the left of the track but draws the remainder near-white whatever
-   `color-scheme` says, which is wrong on every dark surface. `--slider-fill`
-   carries the value, since no static rule can express "filled to N%". */
+/* `InlineRange` owns the track; the row only says how it shares the space. */
 .slider {
   flex: 1;
-  min-inline-size: 48px;
-  appearance: none;
-  -webkit-appearance: none;
-  block-size: 4px;
-  border-radius: var(--wzl-radius-pill);
-  background: linear-gradient(
-    to right,
-    var(--wzl-accent) 0 var(--slider-fill, 0%),
-    var(--wzl-border-strong) var(--slider-fill, 0%) 100%
-  );
-  cursor: pointer;
-}
-
-.slider::-webkit-slider-thumb {
-  appearance: none;
-  -webkit-appearance: none;
-  inline-size: 12px;
-  block-size: 12px;
-  border-radius: 50%;
-  background: var(--wzl-accent);
-}
-
-.slider::-moz-range-thumb {
-  inline-size: 12px;
-  block-size: 12px;
-  border: none;
-  border-radius: 50%;
-  background: var(--wzl-accent);
-}
-
-.slider:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
 }
 
 .sliderReadout {

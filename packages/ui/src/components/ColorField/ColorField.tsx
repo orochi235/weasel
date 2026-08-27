@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { toHex8, getAlpha01, withAlpha01 } from '@weasel-js/core';
+import { InlineRange } from '../InlineRange';
 import s from './ColorField.module.css';
 
 /**
@@ -85,10 +86,8 @@ export function ColorField(props: ColorFieldProps) {
       </span>
       {alpha && (
         <>
-          <input
+          <InlineRange
             className={s.alphaRange}
-            style={{ ['--slider-fill' as string]: `${visibleAlphaPct}%` }}
-            type="range"
             min={0}
             max={100}
             step={1}

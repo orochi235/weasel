@@ -36,46 +36,9 @@
     50% / 8px 8px;
 }
 
-/* Track painted here, not left to `accent-color`: the UA fills the left of
-   the track but draws the remainder near-white whatever `color-scheme` says,
-   so any opacity below 100% showed a light bar on a dark panel.
-   `--slider-fill` carries the value — no static rule expresses "filled to
-   N%". Mirrored in SelectionPanel's `.slider`, which shares its rows. */
+/* `InlineRange` owns the track; this only says how it shares the row. */
 .alphaRange {
   flex: 1;
-  min-inline-size: 48px;
-  appearance: none;
-  -webkit-appearance: none;
-  block-size: 4px;
-  border-radius: var(--wzl-radius-pill);
-  background: linear-gradient(
-    to right,
-    var(--wzl-accent, #7ab8d4) 0 var(--slider-fill, 100%),
-    var(--wzl-border-strong) var(--slider-fill, 100%) 100%
-  );
-  cursor: pointer;
-}
-
-.alphaRange::-webkit-slider-thumb {
-  appearance: none;
-  -webkit-appearance: none;
-  inline-size: 12px;
-  block-size: 12px;
-  border-radius: 50%;
-  background: var(--wzl-accent, #7ab8d4);
-}
-
-.alphaRange::-moz-range-thumb {
-  inline-size: 12px;
-  block-size: 12px;
-  border: none;
-  border-radius: 50%;
-  background: var(--wzl-accent, #7ab8d4);
-}
-
-.alphaRange:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
 }
 
 .alphaReadout {
