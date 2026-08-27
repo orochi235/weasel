@@ -124,10 +124,10 @@ export interface ToolPrefPaint extends ToolPrefBase<'paint', unknown> {
 export interface ToolPrefObject extends ToolPrefBase<'object', unknown> {
   children: Record<string, ToolPrefLeaf>;
   /**
-   * Lift a non-object value into the object form, for a field that may also
-   * be held as a scalar — a stroke stored as a bare color string. Called
-   * before a child edit is applied; without it a scalar-valued leaf shows its
-   * children empty and refuses the edit.
+   * Lift a non-object value into the object form, for a consumer field that
+   * may also be held as a scalar. Called before a child edit is applied;
+   * without it a scalar-valued leaf shows its children empty and refuses the
+   * edit.
    */
   fromScalar?: (value: unknown) => Record<string, unknown>;
 }

@@ -37,6 +37,7 @@ import type { TextStyle } from 'features/text/textStyle';
 import type { StyledRun } from 'features/text/runs';
 import { textLineBoxes } from 'features/text/lineBoxes';
 import type { FillStyle, Stroke } from 'core/paint-types';
+import { DEFAULT_SHAPE_FILL } from '../util/paint';
 import type { Path, PolygonPath } from 'features/paths/types';
 import { PATH_M, PATH_L, PATH_Z } from 'features/paths/types';
 import { ellipsePath, regularPolygonPath, starPath, linePath } from 'features/paths/builder';
@@ -104,7 +105,7 @@ export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
    *
    *  `ctx.scale` carries the view scale so a `{ px }` stroke width resolves to
    *  world units; without it a screen-pixel width is read as world units. */
-  ink?(node: Node<TData, string, TPose>, pose: TPose, ctx?: NodeInkCtx): NodeInkResult | null;
+  ink?(node: Node<TData, string, TPose>, pose: TPose, ctx?: NodeInkCtx): NodeInk | null;
 }
 
 /** How a painter inks its silhouette. See {@link NodeShapeEntry.ink}.
@@ -120,10 +121,6 @@ export interface NodeInk {
   /** How far it reaches inside. */
   inset: number;
 }
-
-/** What a painter may return from `ink`. The `strokeWidth` form predates
- *  per-side reach; it is read as a centered stroke. */
-export type NodeInkResult = NodeInk | { filled: boolean; strokeWidth: number };
 
 /** Per-call context for {@link NodeShapeEntry.ink}. */
 export interface NodeInkCtx {
@@ -260,13 +257,7 @@ export function findShapeInk<TData, TPose>(
   pose: TPose,
   ctx?: NodeInkCtx,
 ): NodeInk | null {
-  const ink = findNodeShape(node)?.ink?.(node, pose, ctx) ?? null;
-  if (ink === null) return null;
-  if ('strokeWidth' in ink) {
-    const half = ink.strokeWidth / 2;
-    return { filled: ink.filled, outset: half, inset: half };
-  }
-  return ink;
+  return findNodeShape(node)?.ink?.(node, pose, ctx) ?? null;
 }
 
 /** Options for {@link shapeCoversPoint}. */
@@ -353,30 +344,22 @@ export function _resetShapePaintersForTests(): void {
 interface RectPose { x: number; y: number; width: number; height: number }
 
 /**
- * Fold the kit-native leaf stroke fields into a text node's `TextStyle`.
+ * Fold a text node's leaf `data.stroke` into its `TextStyle`.
  *
- * `kit:shape` reads `data.stroke` (a colour string) and `data.strokeWidth`
- * off the same leaf shape, and an app that draws both shapes and text has one
- * pair of stroke controls writing those two fields. Before this, setting them
- * on a text node did nothing at all — the control lied. Reading them here is
- * what makes it mean the same thing on both kinds of node.
+ * `kit:shape` and `kit:path` read the same `data.stroke`, and an app that
+ * draws both shapes and text has one set of stroke controls writing it.
+ * Reading it here is what makes it mean the same thing on every kind of node.
  *
- * `style.stroke` is the richer form (any paint, joins, caps, dashes), so an
- * explicit one wins outright rather than merging: a caller that has reached
- * for the full `Stroke` is not also asking for the colour string. Same
- * `'none'` and zero-width handling as `kit:shape`, for the same reason.
+ * `style.stroke` is the more specific declaration, so an explicit one wins
+ * outright rather than merging.
  */
 function withLeafStroke(
   style: TextStyle | undefined,
-  stroke: NodeStroke | undefined,
-  strokeWidth: number | undefined,
+  stroke: Stroke | null | undefined,
 ): TextStyle | undefined {
   if (style?.stroke !== undefined) return style;
-  if (isStrokeSpec(stroke)) return { ...style, stroke };
-  if (!stroke || stroke === 'none') return style;
-  const width = strokeWidth ?? 1;
-  if (width <= 0) return style;
-  return { ...style, stroke: { paint: { color: stroke }, width } };
+  if (!stroke) return style;
+  return { ...style, stroke };
 }
 
 const TEXT_PAINTER: NodeShapeEntry = {
@@ -398,8 +381,7 @@ const TEXT_PAINTER: NodeShapeEntry = {
       text: string;
       style?: TextStyle;
       runs?: readonly StyledRun[];
-      stroke?: NodeStroke;
-      strokeWidth?: number;
+      stroke?: Stroke | null;
     };
     const p = pose as RectPose;
     // `y` is the TOP of the first line box, not a baseline: `layoutRuns`
@@ -428,7 +410,7 @@ const TEXT_PAINTER: NodeShapeEntry = {
     // Empty runs are not a styling, so they fall back rather than paint
     // nothing.
     const y = p.y;
-    const style = withLeafStroke(d.style, d.stroke, d.strokeWidth);
+    const style = withLeafStroke(d.style, d.stroke);
     return d.runs && d.runs.length > 0
       ? [textCommandFromRuns(p.x, y, d.runs, style, undefined, p.height)]
       : [textCommand(p.x, y, d.text, style, undefined, p.height)];
@@ -486,62 +468,25 @@ function rectsToPath(rects: readonly { x: number; y: number; width: number; heig
 /**
  * What a node's `data.fill` means to the built-in painters.
  *
- * A string is a color, `'none'` skips the fill, and an object is a
- * {@link FillStyle} used as-is — which is how a gradient or a pattern reaches
- * the renderer without a consumer registering a painter of its own. The
- * renderer has taken every `FillStyle` variant since the paint model landed;
- * only these two painters were narrower than it.
- *
- * `undefined` falls back to `data.color`, then to a default fill — but only
- * when there is no stroke, since a stroke-only path (pencil) should not
- * acquire one.
+ * A {@link FillStyle} is used as-is — which is how a gradient or a pattern
+ * reaches the renderer without a consumer registering a painter of its own.
+ * `null` is an explicit "no fill"; `undefined` takes the painter's fallback.
+ * Write one with {@link solid} rather than by hand when all you have is a
+ * color.
  */
-export type NodeFill = string | FillStyle;
-
-function isFillStyle(v: NodeFill | undefined): v is FillStyle {
-  return typeof v === 'object' && v !== null;
-}
-
-/** The fill a built-in painter should emit, or `null` for "no fill". */
 function resolveNodeFill(
-  fill: NodeFill | undefined,
-  color: string | undefined,
-  hasStroke: boolean,
-  fallback: string | null,
+  fill: FillStyle | null | undefined,
+  fallback: FillStyle | null,
 ): FillStyle | null {
-  if (isFillStyle(fill)) return fill;
-  const c = fill ?? color;
-  if (c === 'none') return null;
-  if (c !== undefined) return { color: c };
-  if (hasStroke && fallback === null) return null;
-  return fallback === null ? null : { color: fallback };
+  return fill === undefined ? fallback : fill;
 }
 
-/**
- * What a node's `data.stroke` means to the built-in painters.
- *
- * A string is a color and `'none'` skips the stroke, mirroring
- * {@link NodeFill}. An object is a {@link Stroke} used as-is — width, cap,
- * join, dash, miter limit and align all reach the renderer — and it wins
- * outright over `data.strokeWidth` rather than merging: a caller holding a
- * full `Stroke` is not also asking for the color-string fields.
- */
-export type NodeStroke = string | Stroke;
-
-function isStrokeSpec(v: NodeStroke | undefined): v is Stroke {
-  return typeof v === 'object' && v !== null;
-}
-
-/** The stroke a built-in painter should emit, or `null` for "no stroke". */
-function resolveNodeStroke(
-  stroke: NodeStroke | undefined,
-  strokeWidth: number | undefined,
-): Stroke | null {
-  if (isStrokeSpec(stroke)) return stroke;
-  if (!stroke || stroke === 'none') return null;
-  const width = strokeWidth ?? 0;
-  if (width <= 0) return null;
-  return { paint: { color: stroke }, width };
+/** The stroke a built-in painter should emit, or `null` for "no stroke".
+ *  `data.stroke` is a whole {@link Stroke} — width, cap, join, dash, miter
+ *  limit and align all reach the renderer. {@link strokeOf} builds one from a
+ *  color. */
+function resolveNodeStroke(stroke: Stroke | null | undefined): Stroke | null {
+  return stroke ?? null;
 }
 
 /** Bake a bounds-relative stroke paint onto the pose box, the way a fill is
@@ -583,18 +528,16 @@ const PATH_PAINTER: NodeShapeEntry = {
   paint: (node, pose) => nodeMemo(node, PAINT_SLOT, pose, () => {
     const d = node.data as {
       path: Path;
-      fill?: NodeFill;
-      stroke?: NodeStroke;
-      strokeWidth?: number;
-      color?: string;
+      fill?: FillStyle | null;
+      stroke?: Stroke | null;
     };
     const projected = pathInPoseFrame(d.path, pose as RectPose);
-    const strokeSpec = resolveNodeStroke(d.stroke, d.strokeWidth);
+    const strokeSpec = resolveNodeStroke(d.stroke);
     const hasStroke = strokeSpec !== null;
-    // Treat 'none' as "skip fill". When neither fill nor color is set, fall
-    // back to a default fill only if there's no stroke — otherwise the path
-    // is stroke-only (e.g. pencil) and a default fill would be wrong.
-    const declared = resolveNodeFill(d.fill, d.color, hasStroke, hasStroke ? null : '#888');
+    // An undeclared fill falls back to the default one only if there's no
+    // stroke — otherwise the path is stroke-only (e.g. pencil) and a default
+    // fill would be wrong.
+    const declared = resolveNodeFill(d.fill, hasStroke ? null : DEFAULT_SHAPE_FILL);
     // The pose is baked into `projected` rather than emitted as a transform,
     // so a box-relative gradient has to be baked onto the same box here or
     // it would arrive in the renderer referring to a frame that never exists.
@@ -618,15 +561,13 @@ const PATH_PAINTER: NodeShapeEntry = {
   // `NodeShape.ink.test.ts`, which asserts the two agree.
   ink: (node, _pose, ctx) => {
     const d = node.data as {
-      fill?: NodeFill;
-      stroke?: NodeStroke;
-      strokeWidth?: number;
-      color?: string;
+      fill?: FillStyle | null;
+      stroke?: Stroke | null;
     };
-    const stroke = resolveNodeStroke(d.stroke, d.strokeWidth);
+    const stroke = resolveNodeStroke(d.stroke);
     const hasStroke = stroke !== null;
     return {
-      filled: resolveNodeFill(d.fill, d.color, hasStroke, hasStroke ? null : '#888') !== null,
+      filled: resolveNodeFill(d.fill, hasStroke ? null : DEFAULT_SHAPE_FILL) !== null,
       ...inkReach(stroke, ctx?.scale),
     };
   },
@@ -646,11 +587,11 @@ const SHAPE_PAINTER: NodeShapeEntry = {
   // fresh `Uint8Array` + `Float32Array` for every ellipse, polygon and star.
   // See PAINT_SLOT.
   paint: (node, pose) => nodeMemo(node, PAINT_SLOT, pose, () => {
-    const d = node.data as { shape: string; color?: string; fill?: NodeFill; stroke?: NodeStroke; strokeWidth?: number; sides?: number; points?: number };
+    const d = node.data as { shape: string; fill?: FillStyle | null; stroke?: Stroke | null; sides?: number; points?: number };
     const path = pathForShape(d, pose as RectPose);
-    const declaredFill = resolveNodeFill(d.fill, d.color, false, '#888');
+    const declaredFill = resolveNodeFill(d.fill, DEFAULT_SHAPE_FILL);
     const shapeFill = declaredFill && resolveFillPattern(fillInPoseFrame(declaredFill, pose as RectPose));
-    const strokeSpec = resolveNodeStroke(d.stroke, d.strokeWidth);
+    const strokeSpec = resolveNodeStroke(d.stroke);
     const stroke = strokeSpec && strokeInPoseFrame(strokeSpec, pose as RectPose);
     return [{
       kind: 'path',
@@ -663,11 +604,15 @@ const SHAPE_PAINTER: NodeShapeEntry = {
     const d = node.data as { shape: string; sides?: number; points?: number };
     return pathForShape(d, pose as RectPose);
   },
-  // `paint` above always emits a fill (defaulting to '#888'), so this shape
-  // family is always filled — unlike `kit:path`, it has no stroke-only form.
+  // `paint` above emits the default fill when none is declared, so a shape
+  // is filled unless it declares `fill: null` — unlike `kit:path`, it has no
+  // implicit stroke-only form.
   ink: (node, _pose, ctx) => {
-    const d = node.data as { stroke?: NodeStroke; strokeWidth?: number };
-    return { filled: true, ...inkReach(resolveNodeStroke(d.stroke, d.strokeWidth), ctx?.scale) };
+    const d = node.data as { fill?: FillStyle | null; stroke?: Stroke | null };
+    return {
+      filled: resolveNodeFill(d.fill, DEFAULT_SHAPE_FILL) !== null,
+      ...inkReach(resolveNodeStroke(d.stroke), ctx?.scale),
+    };
   },
 };
 
@@ -757,12 +702,13 @@ const RECT_FALLBACK_PAINTER: NodeShapeEntry = {
   id: 'kit:rect-fallback',
   matches: () => true,
   paint: (node, pose) => {
-    const d = node.data as { color?: string } | null;
+    const d = node.data as { fill?: FillStyle | null } | null;
     const p = pose as RectPose;
+    const fill = resolveNodeFill(d?.fill, DEFAULT_SHAPE_FILL);
     return [{
       kind: 'path',
       path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-      fill: { color: d?.color ?? '#888' },
+      ...(fill ? { fill } : {}),
     }];
   },
   silhouette: (_node, pose) => {

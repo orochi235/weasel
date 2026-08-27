@@ -3,6 +3,7 @@ import { findNodeShape, findShapeInk } from './NodeShape';
 import type { Node } from 'core/scene/types';
 import type { PathDrawCommand } from '../renderer';
 import type { FillStyle } from 'core/paint-types';
+import { solid, strokeOf } from '../util/paint';
 
 const POSE = { x: 0, y: 0, width: 100, height: 50 };
 const RECT_PATH = { kind: 'rect' as const, x: 0, y: 0, width: 100, height: 50 };
@@ -39,25 +40,24 @@ describe('kit:path accepts a FillStyle in data.fill', () => {
     expect(paintOf({ path: RECT_PATH, fill: pattern }).fill).toEqual(pattern);
   });
 
-  it('still treats a string as a solid color', () => {
-    expect(paintOf({ path: RECT_PATH, fill: '#abc' }).fill).toEqual({ color: '#abc' });
+  it('takes a solid() paint as a solid color', () => {
+    expect(paintOf({ path: RECT_PATH, fill: solid('#abc') }).fill).toEqual({ color: '#abc' });
   });
 
-  it("still skips the fill for 'none'", () => {
-    expect(paintOf({ path: RECT_PATH, fill: 'none' }).fill).toBeUndefined();
+  it('skips the fill for null', () => {
+    expect(paintOf({ path: RECT_PATH, fill: null }).fill).toBeUndefined();
   });
 
-  it('still falls back to data.color, then to the default', () => {
-    expect(paintOf({ path: RECT_PATH, color: '#123' }).fill).toEqual({ color: '#123' });
+  it('falls back to the default fill when none is declared', () => {
     expect(paintOf({ path: RECT_PATH }).fill).toEqual({ color: '#888' });
   });
 
   it('still leaves a stroke-only path unfilled', () => {
-    expect(paintOf({ path: RECT_PATH, stroke: '#000', strokeWidth: 2 }).fill).toBeUndefined();
+    expect(paintOf({ path: RECT_PATH, stroke: strokeOf('#000', 2) }).fill).toBeUndefined();
   });
 
   it('fills a stroked path when a gradient is declared', () => {
-    const cmd = paintOf({ path: RECT_PATH, fill: GRADIENT, stroke: '#000', strokeWidth: 2 });
+    const cmd = paintOf({ path: RECT_PATH, fill: GRADIENT, stroke: strokeOf('#000', 2) });
     expect(cmd.fill).toEqual(GRADIENT);
     expect(cmd.stroke?.width).toBe(2);
   });
@@ -66,16 +66,15 @@ describe('kit:path accepts a FillStyle in data.fill', () => {
 describe('ink() agrees with paint() about a FillStyle', () => {
   it('reports filled for a gradient, with or without a stroke', () => {
     expect(inkOf({ path: RECT_PATH, fill: GRADIENT })?.filled).toBe(true);
-    expect(inkOf({ path: RECT_PATH, fill: GRADIENT, stroke: '#000', strokeWidth: 2 })?.filled).toBe(true);
+    expect(inkOf({ path: RECT_PATH, fill: GRADIENT, stroke: strokeOf('#000', 2) })?.filled).toBe(true);
   });
 
-  it('keeps agreeing on the string cases', () => {
+  it('keeps agreeing on the solid, null and absent cases', () => {
     for (const data of [
-      { path: RECT_PATH, fill: '#abc' },
-      { path: RECT_PATH, fill: 'none' },
+      { path: RECT_PATH, fill: solid('#abc') },
+      { path: RECT_PATH, fill: null },
       { path: RECT_PATH },
-      { path: RECT_PATH, stroke: '#000', strokeWidth: 2 },
-      { path: RECT_PATH, color: '#123' },
+      { path: RECT_PATH, stroke: strokeOf('#000', 2) },
     ]) {
       expect(inkOf(data)?.filled).toBe(paintOf(data).fill !== undefined);
     }
@@ -87,12 +86,12 @@ describe('kit:shape accepts a FillStyle too', () => {
     expect(paintOf({ shape: 'ellipse', fill: GRADIENT }).fill).toEqual(GRADIENT);
   });
 
-  it('still defaults and still honours a color string', () => {
+  it('still defaults and still honours a solid paint', () => {
     expect(paintOf({ shape: 'ellipse' }).fill).toEqual({ color: '#888' });
-    expect(paintOf({ shape: 'ellipse', fill: '#abc' }).fill).toEqual({ color: '#abc' });
+    expect(paintOf({ shape: 'ellipse', fill: solid('#abc') }).fill).toEqual({ color: '#abc' });
   });
 
-  it("skips the fill for 'none', which it used to paint as the literal string", () => {
-    expect(paintOf({ shape: 'ellipse', fill: 'none' }).fill).toBeUndefined();
+  it('skips the fill for null', () => {
+    expect(paintOf({ shape: 'ellipse', fill: null }).fill).toBeUndefined();
   });
 });

@@ -13,6 +13,8 @@ import {
   asNodeId,
   boundsOfPath,
   DEFAULT_PALETTE,
+  solid,
+  strokeOf,
   useEllipseTool,
   useLassoTool,
   useLineTool,
@@ -23,7 +25,7 @@ import {
   useStarTool,
   useTextTool,
 } from '@weasel-js/core';
-import type { AnyTool, LassoHitMode, NodeId, Path, PolygonPath, Scene, SceneNode } from '@weasel-js/core';
+import type { AnyTool, FillStyle, LassoHitMode, NodeId, Path, PolygonPath, Scene, SceneNode, Stroke } from '@weasel-js/core';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
 import type { BuiltinShapeToolId } from './shapeKinds';
 
@@ -85,7 +87,7 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
   const makeLeaf = (
     id: NodeId,
     pose: Pose,
-    data: { path: Path; fill: string; stroke?: string; strokeWidth?: number; text?: string },
+    data: { path: Path; fill: FillStyle | null; stroke?: Stroke; text?: string },
   ): SceneNode<TData, TLayer, TPose> => ({
     id,
     kind: 'leaf',
@@ -127,12 +129,11 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
     adapter: {
       addNode: (carrier) => {
         const id = freshId('pn');
-        const stroke = nextFill();
+        const color = nextFill();
         const node = makeLeaf(id, carrier.bounds, {
           path: carrier.path,
-          fill: carrier.closed ? nextFill() : 'transparent',
-          stroke,
-          strokeWidth: 2,
+          fill: carrier.closed ? solid(nextFill()) : null,
+          stroke: strokeOf(color, 2),
         }) as LeafNode;
         adapter.insertNode(node);
         return String(id);

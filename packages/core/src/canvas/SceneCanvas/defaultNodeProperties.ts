@@ -15,9 +15,9 @@ export const rotationDegreesUnit: ToolPrefNumberUnit = {
 };
 
 /** Build the standard shape schema — Layout (pose box + rotation) +
- *  Appearance (fill / stroke / stroke width), optionally a Text group.
- *  Matches the kit's builtin-shape data template
- *  (`{ path, fill, stroke?, strokeWidth?, text? }`, `useBuiltinShapeTools`). */
+ *  Appearance (fill / stroke), optionally a Text group. Matches the kit's
+ *  builtin-shape data template (`{ path, fill, stroke?, text? }`,
+ *  `useBuiltinShapeTools`). */
 function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
   return {
     name: 'Properties',
@@ -35,12 +35,13 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
       appearance: {
         name: 'Appearance',
         children: {
-          'data.fill': { kind: 'color', name: 'Fill', description: 'Fill color.', default: '#000000ff', alpha: true },
-          // An object leaf, not a color one: `data.stroke` is `NodeStroke`,
-          // and its fields belong to one value. A color control pointed at
-          // the path writes a bare string over the whole stroke; sibling
-          // leaves addressing into it write fields of a value that may not
-          // be an object yet. `fromScalar` is what lifts the color form.
+          // A `paint` leaf, not a `color` one: `data.fill` is the tagged
+          // `FillStyle` union, so a color control pointed at it would read
+          // `undefined` off a gradient and write a bare string over it.
+          'data.fill': { kind: 'paint', name: 'Fill', description: 'Fill paint.', default: { fill: 'solid', color: '#000000ff' }, alpha: true },
+          // An object leaf: `data.stroke` is a whole `Stroke`, and its fields
+          // belong to one value. Sibling leaves addressing into it would each
+          // write one field of a value they can only half see.
           //
           // `dash` is absent on purpose: it is a `number[]`, and no leaf kind
           // edits one. It survives import, export and rendering untouched.
@@ -48,9 +49,8 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
             kind: 'object',
             name: 'Stroke',
             description: 'Stroke paint and line geometry.',
-            default: '#000000ff',
+            default: { paint: { fill: 'solid', color: '#000000ff' }, width: 1 },
             block: true,
-            fromScalar: (v) => ({ paint: { fill: 'solid', color: typeof v === 'string' ? v : '#000000ff' } }),
             children: {
               paint: { kind: 'paint', name: 'Color', description: 'Stroke paint.', default: { fill: 'solid', color: '#000000ff' }, alpha: true },
               width: { kind: 'number', name: 'Width', description: 'Stroke width, world units.', default: 1, min: 0, step: 0.5 },

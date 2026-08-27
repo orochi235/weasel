@@ -114,13 +114,13 @@ describe('SceneCanvas defaults', () => {
   });
 
   describe('defaultDrawOne', () => {
-    it('emits a filled rect using node.data.color', () => {
+    it('emits a filled rect using node.data.fill', () => {
       const node = {
         id: 'a',
         kind: 'leaf' as const,
         layer: 'default',
         pose: { x: 1, y: 2, width: 3, height: 4 },
-        data: { color: '#abc' },
+        data: { fill: { color: '#abc' } },
         parent: null,
       };
       const cmds = defaultDrawOne(node as never, node.pose);
@@ -133,7 +133,7 @@ describe('SceneCanvas defaults', () => {
       ]);
     });
 
-    it('falls back to gray when data has no color', () => {
+    it('falls back to gray when data has no fill', () => {
       const node = {
         id: 'a', kind: 'leaf' as const, layer: 'default',
         pose: { x: 0, y: 0, width: 10, height: 10 },

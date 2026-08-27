@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { defaultDrawOne } from './defaultDrawOne';
 import { registerNodeShape } from './NodeShape';
+import { solid, strokeOf } from '../util/paint';
 import type { Node } from 'core/scene/types';
 import type { DrawCommand, PathDrawCommand, TextDrawCommand } from '../renderer';
 
@@ -21,8 +22,8 @@ function node<TData>(data: TData): Node<TData, 'default', { x: number; y: number
 const POSE = { x: 10, y: 20, width: 80, height: 40 };
 
 describe('defaultDrawOne', () => {
-  it('rect fallback: paints data.color over the pose AABB', () => {
-    const cmds = defaultDrawOne(node({ color: '#abc' }), POSE);
+  it('rect fallback: paints data.fill over the pose AABB', () => {
+    const cmds = defaultDrawOne(node({ fill: solid('#abc') }), POSE);
     expect(cmds).toHaveLength(1);
     const cmd = cmds[0] as PathDrawCommand;
     expect(cmd.kind).toBe('path');
@@ -30,14 +31,14 @@ describe('defaultDrawOne', () => {
     expect(cmd.fill).toEqual({ color: '#abc' });
   });
 
-  it('rect fallback: uses neutral gray when data.color is missing', () => {
+  it('rect fallback: uses neutral gray when data.fill is missing', () => {
     const cmds = defaultDrawOne(node({}), POSE);
     const cmd = cmds[0] as PathDrawCommand;
     expect(cmd.fill).toEqual({ color: '#888' });
   });
 
   it('adds a top-left label overlay when data.label is present', () => {
-    const cmds = defaultDrawOne(node({ color: '#abc', label: 'Hi' }), POSE);
+    const cmds = defaultDrawOne(node({ fill: solid('#abc'), label: 'Hi' }), POSE);
     expect(cmds).toHaveLength(2);
     const label = cmds[1] as TextDrawCommand;
     expect(label.kind).toBe('text');
@@ -52,7 +53,7 @@ describe('defaultDrawOne', () => {
     // at the right place + size without touching data.path.
     const path = { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 };
     const cmds = defaultDrawOne(
-      node({ path, fill: '#f00', stroke: '#000', strokeWidth: 2 }),
+      node({ path, fill: solid('#f00'), stroke: strokeOf('#000', 2) }),
       POSE,
     );
     expect(cmds).toHaveLength(1);
@@ -67,19 +68,19 @@ describe('defaultDrawOne', () => {
     // the path reference unchanged. Guards the fast path against accidental
     // regressions on the common "freshly-created node" case.
     const path = { kind: 'rect' as const, x: 10, y: 20, width: 80, height: 40 };
-    const cmds = defaultDrawOne(node({ path, fill: '#f00' }), POSE);
+    const cmds = defaultDrawOne(node({ path, fill: solid('#f00') }), POSE);
     const cmd = cmds[0] as PathDrawCommand;
     expect(cmd.path).toBe(path);
   });
 
-  it('path branch: omits stroke when strokeWidth is 0 or missing', () => {
+  it('path branch: omits stroke when data.stroke is null or missing', () => {
     const path = { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 };
-    const cmds = defaultDrawOne(node({ path, fill: '#f00' }), POSE);
+    const cmds = defaultDrawOne(node({ path, fill: solid('#f00') }), POSE);
     const cmd = cmds[0] as PathDrawCommand;
     expect(cmd.stroke).toBeUndefined();
 
     const cmds2 = defaultDrawOne(
-      node({ path, fill: '#f00', stroke: '#000', strokeWidth: 0 }),
+      node({ path, fill: solid('#f00'), stroke: null }),
       POSE,
     );
     const cmd2 = cmds2[0] as PathDrawCommand;
@@ -89,7 +90,7 @@ describe('defaultDrawOne', () => {
   it('path branch: includes the label overlay when data.label is present', () => {
     const path = { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 };
     const cmds = defaultDrawOne(
-      node({ path, fill: '#f00', label: 'X' }),
+      node({ path, fill: solid('#f00'), label: 'X' }),
       POSE,
     );
     expect(cmds).toHaveLength(2);

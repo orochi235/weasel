@@ -298,9 +298,6 @@ export type {
   NodeShapeEntry,
   NodeInk,
   NodeInkCtx,
-  NodeInkResult,
-  NodeFill,
-  NodeStroke,
   RegisterNodeShapeOptions,
   NodePaintCtx,
   ShapeCoversPointOptions,
@@ -700,8 +697,11 @@ export { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev } from './util/colo
 export {
   DEFAULT_FILL_COLOR,
   DEFAULT_STROKE_COLOR,
+  DEFAULT_SHAPE_FILL,
   DEFAULT_PALETTE,
   GHOST_STROKE,
+  solid,
+  strokeOf,
 } from './util/paint';
 
 // ─── Groups: union the bounds of a node set ─────────────────────────────────
