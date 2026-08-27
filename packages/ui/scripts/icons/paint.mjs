@@ -18,15 +18,36 @@ const alignRing = disc(10, 10, R + W / 2) + disc(10, 10, R - W / 2);
 const alignOuter = `M0 0H20V20H0Z` + disc(10, 10, R);
 
 // ── cap ──────────────────────────────────────────────────────────────────
-// A bar ending on a hairline terminus rule. Without the rule, butt and square
-// are a claim about where the path stops rather than something you can see.
-// The bar starts off-viewBox so its *other* end is clipped away — at x 0 a
-// round cap domes there too and the glyph reads as a lozenge.
-const capBar = 'M-2 10H6.7';
-const capRule = 'M6.7 2.4V17.6';
-const cap = (linecap) =>
-  `<path d="${capBar}" stroke="currentColor" stroke-width="9.5" stroke-linecap="${linecap}" stroke-linejoin="miter"/>
-   <path d="${capRule}" stroke="currentColor" stroke-width="1" stroke-linecap="butt"/>`;
+// The one option glyph drawn in both registers: the path's body is a hollow
+// rectangle and the ink the cap *adds past its right edge* is solid, so butt
+// reads as "nothing beyond the end" rather than as a shorter bar.
+//
+// Each glyph is placed by its own ink extent, so `butt` — the one carrying no
+// ink past the edge — sits further right than the other two. Centring the set
+// on one shared x instead leaves `butt` visibly left in its segment, and a
+// segmented control is judged a button at a time rather than as a strip.
+//
+// The cap ink is flush with the body's OUTER profile (half a stroke past its
+// edges), not its centerline: the two otherwise meet in a visible step.
+const capH = 4.75;
+const capW = 1.5;
+const capLen = 9;
+const capOut = n(capH + capW / 2);
+const capInk = {
+  butt: () => '',
+  round: (x) => `M${n(x)} ${n(10 - capOut)}A${capOut} ${capOut} 0 0 1 ${n(x)} ${n(10 + capOut)}Z`,
+  square: (x) => `M${n(x)} ${n(10 - capOut)}H${n(x + capOut)}V${n(10 + capOut)}H${n(x)}Z`,
+};
+const cap = (linecap) => {
+  const reach = linecap === 'butt' ? capW / 2 : capOut;
+  const x0 = n(10 - (capW / 2 + capLen + reach) / 2 + capW / 2);
+  const x1 = n(x0 + capLen);
+  const ink = capInk[linecap](x1);
+  return (
+    `<path d="M${x0} ${n(10 - capH)}H${x1}V${n(10 + capH)}H${x0}Z" fill="none" stroke="currentColor" stroke-width="${capW}" stroke-linejoin="miter"/>` +
+    (ink ? `<path d="${ink}" fill="currentColor" stroke="none"/>` : '')
+  );
+};
 
 // ── join ─────────────────────────────────────────────────────────────────
 // Height ranks as the geometry does — miter runs furthest past the corner, a
