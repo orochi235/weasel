@@ -19,7 +19,7 @@ export type {
   ToolPrefEnum,
   ToolPrefColor,
   ToolPrefPaint,
-  ToolPrefStroke,
+  ToolPrefObject,
   ToolPrefCustom,
   ToolPrefLeaf,
   ToolPrefNumberUnit,

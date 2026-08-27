@@ -36,11 +36,29 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
         name: 'Appearance',
         children: {
           'data.fill': { kind: 'color', name: 'Fill', description: 'Fill color.', default: '#000000ff', alpha: true },
-          // A `stroke` leaf, not a `color` one: `data.stroke` is
-          // `NodeStroke`, and a color control pointed at it writes a bare
-          // string over a whole `Stroke`.
-          'data.stroke': { kind: 'stroke', name: 'Stroke', description: 'Stroke color, or a whole stroke.', default: '#000000ff', alpha: true },
-          'data.strokeWidth': { kind: 'number', name: 'Stroke width', description: 'Stroke width, world units.', default: 0, min: 0, step: 0.5 },
+          // An object leaf, not a color one: `data.stroke` is `NodeStroke`,
+          // and its fields belong to one value. A color control pointed at
+          // the path writes a bare string over the whole stroke; sibling
+          // leaves addressing into it write fields of a value that may not
+          // be an object yet. `fromScalar` is what lifts the color form.
+          //
+          // `dash` is absent on purpose: it is a `number[]`, and no leaf kind
+          // edits one. It survives import, export and rendering untouched.
+          'data.stroke': {
+            kind: 'object',
+            name: 'Stroke',
+            description: 'Stroke paint and line geometry.',
+            default: '#000000ff',
+            block: true,
+            fromScalar: (v) => ({ paint: { fill: 'solid', color: typeof v === 'string' ? v : '#000000ff' } }),
+            children: {
+              paint: { kind: 'paint', name: 'Color', description: 'Stroke paint.', default: { fill: 'solid', color: '#000000ff' }, alpha: true },
+              width: { kind: 'number', name: 'Width', description: 'Stroke width, world units.', default: 1, min: 0, step: 0.5 },
+              cap: { kind: 'enum', name: 'Cap', description: 'How an open end is drawn.', default: 'butt', options: [{ value: 'butt', label: 'Butt' }, { value: 'round', label: 'Round' }, { value: 'square', label: 'Square' }] },
+              join: { kind: 'enum', name: 'Join', description: 'How a corner is drawn.', default: 'miter', options: [{ value: 'miter', label: 'Miter' }, { value: 'round', label: 'Round' }, { value: 'bevel', label: 'Bevel' }] },
+              align: { kind: 'enum', name: 'Align', description: 'Where the ribbon sits relative to the edge.', default: 'center', options: [{ value: 'center', label: 'Center' }, { value: 'inner', label: 'Inner' }, { value: 'outer', label: 'Outer' }] },
+            },
+          },
         },
       },
       ...(opts.text

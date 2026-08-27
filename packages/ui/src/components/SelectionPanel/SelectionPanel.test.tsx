@@ -420,11 +420,12 @@ describe('SelectionPanel — paint leaf', () => {
 });
 
 /**
- * The `stroke` leaf addresses `string | Stroke`. A `color` leaf pointed at the
- * same path reads `undefined` off the object form, shows its own default, and
- * writes a bare hex back over the stroke's width, cap, join and dash.
+ * An object leaf holds one value with its fields hanging off it. Sibling
+ * leaves addressing into the same object would each write one field of a value
+ * they can only half see — and would corrupt it outright while it is still
+ * held in a scalar form.
  */
-describe('SelectionPanel — stroke leaf', () => {
+describe('SelectionPanel — object leaf', () => {
   interface StrokeData { kind: string; stroke?: unknown }
 
   const strokeRouting: NodeRoutingEntry[] = [
@@ -440,11 +441,19 @@ describe('SelectionPanel — stroke leaf', () => {
             name: 'Appearance',
             children: {
               'data.stroke': {
-                kind: 'stroke',
+                kind: 'object',
                 name: 'Stroke',
-                description: 'Stroke color, or a whole stroke.',
+                description: 'Stroke paint and line geometry.',
                 default: '#000000ff',
-                alpha: true,
+                block: true,
+                fromScalar: (v: unknown) => ({
+                  paint: { fill: 'solid', color: typeof v === 'string' ? v : '#000000ff' },
+                }),
+                children: {
+                  paint: { kind: 'paint', name: 'Color', description: '', default: { fill: 'solid', color: '#000000ff' }, alpha: true },
+                  width: { kind: 'number', name: 'Width', description: '', default: 1, min: 0, step: 0.5 },
+                  cap: { kind: 'enum', name: 'Cap', description: '', default: 'butt', options: [{ value: 'butt', label: 'Butt' }, { value: 'round', label: 'Round' }] },
+                },
               },
             },
           },
@@ -476,52 +485,50 @@ describe('SelectionPanel — stroke leaf', () => {
     );
   }
 
-  it('shows a color-string stroke as its color', () => {
-    renderStroke(sceneWithStroke('#ff0000ff'));
-    expect(screen.getByLabelText('Stroke')).toHaveValue('#ff0000');
+  it('renders a row per field, labeled by the child leaves', () => {
+    renderStroke(sceneWithStroke({ paint: { color: '#00ff00ff' }, width: 4, cap: 'round' }));
+    expect(screen.getByLabelText('Color')).toHaveValue('#00ff00');
+    expect(screen.getByLabelText('Width')).toHaveValue('4');
+    expect(screen.getByLabelText('Cap')).toBeInTheDocument();
   });
 
-  it('shows a solid-paint Stroke as its color', () => {
-    renderStroke(sceneWithStroke({ paint: { color: '#00ff00ff' }, width: 4 }));
-    expect(screen.getByLabelText('Stroke')).toHaveValue('#00ff00');
-  });
-
-  it('shows a gradient stroke as indeterminate rather than as a color', () => {
-    const { container } = renderStroke(sceneWithStroke({
-      paint: {
-        fill: 'linear-gradient',
-        from: { x: 0, y: 0 },
-        to: { x: 1, y: 0 },
-        stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
-      },
-      width: 4,
-    }));
-    expect(container.querySelector('[data-mixed]')).not.toBeNull();
-  });
-
-  it('keeps width, cap and dash when a color is picked', () => {
-    const scene = sceneWithStroke({
-      paint: { color: '#000000ff' }, width: 12, cap: 'round', dash: [8, 4],
-    });
+  it('commits the whole object when one field is edited', () => {
+    const scene = sceneWithStroke({ paint: { color: '#000000ff' }, width: 12, cap: 'round' });
     renderStroke(scene);
-    const input = screen.getByLabelText('Stroke');
+    const input = screen.getByLabelText('Color');
     fireEvent.input(input, { target: { value: '#123456' } });
     fireEvent.blur(input);
     expect(scene.get(asNodeId('p'))?.data.stroke).toEqual({
       paint: { fill: 'solid', color: '#123456ff' },
       width: 12,
       cap: 'round',
-      dash: [8, 4],
     });
   });
 
-  it('leaves a color-string stroke a string', () => {
+  it('lifts a scalar value through `fromScalar` before applying a field', () => {
+    // The node holds a bare color string; editing width has to produce a whole
+    // stroke rather than writing `width` into a string.
     const scene = sceneWithStroke('#ff0000ff');
     renderStroke(scene);
-    const input = screen.getByLabelText('Stroke');
-    fireEvent.input(input, { target: { value: '#123456' } });
-    fireEvent.blur(input);
-    expect(scene.get(asNodeId('p'))?.data.stroke).toBe('#123456ff');
+    const width = screen.getByLabelText('Width');
+    fireEvent.change(width, { target: { value: '7' } });
+    fireEvent.blur(width);
+    expect(scene.get(asNodeId('p'))?.data.stroke).toEqual({
+      paint: { fill: 'solid', color: '#ff0000ff' },
+      width: 7,
+    });
+  });
+
+  it('shows a gradient stroke paint as indeterminate rather than as a color', () => {
+    const { container } = renderStroke(sceneWithStroke({
+      paint: {
+        fill: 'linear-gradient',
+        from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+        stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
+      },
+      width: 4,
+    }));
+    expect(container.querySelector('[data-mixed]')).not.toBeNull();
   });
 });
 

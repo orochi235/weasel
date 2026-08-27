@@ -9,7 +9,7 @@
 
 /** The value types a built-in pref leaf can hold. */
 export type ToolPrefKind =
-  | 'number' | 'boolean' | 'string' | 'enum' | 'color' | 'paint' | 'stroke';
+  | 'number' | 'boolean' | 'string' | 'enum' | 'color' | 'paint' | 'object';
 
 interface ToolPrefBase<K extends string, Value> {
   kind: K;
@@ -108,18 +108,28 @@ export interface ToolPrefPaint extends ToolPrefBase<'paint', unknown> {
 }
 
 /**
- * A whole stroke, not a color inside one. The value is `string | Stroke` —
- * a color, or the full form carrying width, cap, join, dash, miter limit and
- * align.
+ * A leaf whose value is one object, with its own fields hanging off it.
  *
- * For the same reason {@link ToolPrefPaint} exists: pointing a `color` leaf at
- * a path that may hold the object reads `undefined` off it, shows the
- * control's default, and writes a bare string over the whole stroke on the
- * first edit. A union has to be edited as a union.
+ * A compound value — a stroke, a shadow, a pattern spec — could be described
+ * as several sibling leaves addressing into it (`data.stroke.width`,
+ * `data.stroke.cap`). It shouldn't be: each control would then write one field
+ * of a value it can only half see, and writing into something that is not an
+ * object yet corrupts it. Here the fields are `children` of one leaf, and
+ * every edit commits the parent object whole.
+ *
+ * `children` paths are relative to the object. They are ordinary leaves, so a
+ * field that is itself a union (a stroke's `paint`) declares the kind that
+ * edits that union.
  */
-export interface ToolPrefStroke extends ToolPrefBase<'stroke', unknown> {
-  /** Offer an opacity control alongside the color. */
-  alpha?: boolean;
+export interface ToolPrefObject extends ToolPrefBase<'object', unknown> {
+  children: Record<string, ToolPrefLeaf>;
+  /**
+   * Lift a non-object value into the object form, for a field that may also
+   * be held as a scalar — a stroke stored as a bare color string. Called
+   * before a child edit is applied; without it a scalar-valued leaf shows its
+   * children empty and refuses the edit.
+   */
+  fromScalar?: (value: unknown) => Record<string, unknown>;
 }
 
 /** One built-in pref leaf. `ToolPrefLeaf` widens this to include
@@ -131,7 +141,7 @@ export type ToolPref =
   | ToolPrefEnum
   | ToolPrefColor
   | ToolPrefPaint
-  | ToolPrefStroke;
+  | ToolPrefObject;
 
 // Compile-time tie: every built-in leaf kind must appear in ToolPrefKind
 // and vice versa (ToolPrefBase's K is open for ToolPrefCustom's sake, so

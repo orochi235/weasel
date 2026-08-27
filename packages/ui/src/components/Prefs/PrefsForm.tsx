@@ -2,7 +2,7 @@ import { useMemo, type ReactNode } from 'react';
 import { Focusable } from 'react-aria-components';
 import { Checkbox } from '../Checkbox';
 import { ColorField } from '../ColorField';
-import { solidColorOf, strokeColorOf, strokeWithColor } from '../paintValue';
+import { solidColorOf } from '../paintValue';
 import { Input } from '../Input';
 import { NumberField } from '../NumberField';
 import { RadioGroup, Radio } from '../RadioGroup';
@@ -21,7 +21,7 @@ import {
   type PrefLeaf,
   type PrefNumber,
   type PrefPaint,
-  type PrefStroke,
+  type PrefObject,
   type PrefString,
 } from './schema';
 import s from './Prefs.module.css';
@@ -279,18 +279,30 @@ function renderBuiltin(ctx: PrefRenderContext): ReactNode {
         />
       );
     }
-    case 'stroke': {
-      // `string | Stroke` — see the same case in `SelectionPanel`. Writes
-      // preserve the object form so width, cap, join and dash survive a
-      // color pick.
-      const p = pref as PrefStroke;
+    case 'object': {
+      // One value with its fields hanging off it: each child renders its own
+      // control and commits the parent object whole.
+      const p = pref as PrefObject;
+      const held = typeof value === 'object' && value !== null
+        ? (value as Record<string, unknown>)
+        : undefined;
       return (
-        <ColorField
-          value={strokeColorOf(value) ?? strokeColorOf(p.default)}
-          alpha={p.alpha}
-          onChange={(color) => setValue(strokeWithColor(value, color))}
-          aria-label={p.name}
-        />
+        <div className={s.objectLeaf}>
+          {Object.entries(p.children).map(([key, child]) => (
+            <label key={key} className={s.objectRow}>
+              <span className={s.objectLabel}>{child.name}</span>
+              {renderBuiltin({
+                path: `${ctx.path}.${key}`,
+                pref: child,
+                value: held?.[key],
+                setValue: (v) => {
+                  const base = held ?? p.fromScalar?.(value) ?? {};
+                  setValue({ ...base, [key]: v });
+                },
+              })}
+            </label>
+          ))}
+        </div>
       );
     }
     default:

@@ -101,7 +101,7 @@ import {
   StatusBarSpacer,
   ToolPalette,
   ToolOptionsBar,
-  strokeColorOf,
+  solidColorOf,
   type PropertyRenderer,
 } from '@weasel-js/ui';
 
@@ -407,11 +407,12 @@ function wdFillRenderer(colorActionId: string, opacityActionId: string): Propert
 
 function wdActionColorRenderer(colorActionId: string, opacityActionId: string): PropertyRenderer {
   return (ctx) => {
-    // `data.stroke` is `string | Stroke`, so the color shown comes off
-    // whichever form the node holds. Writes go through the actions, which
-    // preserve the object.
+    // Keyed at a paint path, so the value is the `FillStyle` itself. A
+    // gradient has no single color to show and falls back rather than
+    // claiming one. Writes go through the actions, which preserve the rest
+    // of the stroke.
     const fallback = (ctx.pref as ToolPrefColor).default;
-    const value = strokeColorOf(ctx.value) ?? fallback;
+    const value = solidColorOf(ctx.value) ?? (typeof ctx.value === 'string' ? ctx.value : fallback);
     const input = (
       <PropertyColorInput value={value} colorActionId={colorActionId} opacityActionId={opacityActionId} />
     );
@@ -431,7 +432,9 @@ const TEXT_CHROME_CLASS = 'wd-text-chrome';
 
 const WD_RENDERERS: Record<string, PropertyRenderer> = {
   'data.fill': wdFillRenderer('setFill', 'setFillOpacity'),
-  'data.stroke': wdActionColorRenderer('setStroke', 'setStrokeOpacity'),
+  // The stroke's colour row inside its object leaf; the other fields render
+  // from the schema. Keyed at the child path so the object rows survive.
+  'data.stroke.paint': wdActionColorRenderer('setStroke', 'setStrokeOpacity'),
   // The schema's `font-family` leaf has no builtin renderer — the registry it
   // has to read is a runtime fact, not a static option list. Keyed by kind
   // rather than path so any future family leaf picks it up.

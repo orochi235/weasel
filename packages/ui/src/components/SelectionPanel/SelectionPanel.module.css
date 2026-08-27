@@ -85,3 +85,12 @@
   opacity: 0.5;
   font-style: italic;
 }
+
+/* A `block` leaf that renders its own rows — an object leaf's fields. */
+.objectLeaf {
+  margin-block: 8px 4px;
+}
+
+.objectLeaf .sectionTitle {
+  margin-block-end: 5px;
+}

@@ -163,3 +163,23 @@
   flex: 1;
   min-width: 0;
 }
+
+/* An object leaf renders its fields as its own rows. */
+.objectLeaf {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  inline-size: 100%;
+}
+
+.objectRow {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.objectLabel {
+  font-size: var(--wzl-font-size-sm);
+  opacity: 0.75;
+}

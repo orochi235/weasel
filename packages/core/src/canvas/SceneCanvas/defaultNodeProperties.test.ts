@@ -22,7 +22,7 @@ describe('defaultNodeProperties', () => {
       }
       if (appearance && 'children' in appearance) {
         expect(Object.keys(appearance.children)).toEqual(
-          expect.arrayContaining(['data.fill', 'data.stroke', 'data.strokeWidth']),
+          expect.arrayContaining(['data.fill', 'data.stroke']),
         );
       }
     }

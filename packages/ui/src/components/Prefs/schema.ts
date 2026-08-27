@@ -84,16 +84,18 @@ export interface PrefPaint extends PrefBase<'paint', unknown> {
   alpha?: boolean;
 }
 
-/** A whole stroke — a color string, or the object carrying width, cap, join,
- *  dash and align. Mirrors core's `ToolPrefStroke`. */
-export interface PrefStroke extends PrefBase<'stroke', unknown> {
-  /** Offer an opacity control alongside the color. */
-  alpha?: boolean;
+/** A leaf whose value is one object, with its own fields as `children`.
+ *  Mirrors core's `ToolPrefObject`: every child edit commits the parent whole,
+ *  so a field is never written into a value that isn't an object yet. */
+export interface PrefObject extends PrefBase<'object', unknown> {
+  children: Record<string, PrefLeaf>;
+  /** Lift a non-object value into the object form before a child edit. */
+  fromScalar?: (value: unknown) => Record<string, unknown>;
 }
 
 /** The leaf kinds `PrefsForm` renders without a custom renderer. */
 export type BuiltinPref =
-  | PrefNumber | PrefBoolean | PrefString | PrefEnum | PrefColor | PrefPaint | PrefStroke;
+  | PrefNumber | PrefBoolean | PrefString | PrefEnum | PrefColor | PrefPaint | PrefObject;
 
 /**
  * Open leaf: any node with a `kind` the form doesn't know renders via the

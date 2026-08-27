@@ -107,13 +107,15 @@ describe('collectPropertiesTrait', () => {
     }
   });
 
-  it('flattens the rect kind\'s nested schema groups into its exact 8 dotted leaf paths', () => {
+  it('flattens the rect kind\'s nested schema groups into its exact 7 dotted leaf paths', () => {
     const entries = collectPropertiesTrait();
     const rect = entries.find((e) => e.id === 'rect');
     expect(rect).toBeDefined();
+    // `data.stroke` is one object leaf; its fields are children of that value,
+    // not sibling paths.
     expect(rect!.leafPaths).toEqual([
       'pose.x', 'pose.y', 'pose.width', 'pose.height', 'pose.rotation',
-      'data.fill', 'data.stroke', 'data.strokeWidth',
+      'data.fill', 'data.stroke',
     ]);
   });
 

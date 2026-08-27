@@ -201,10 +201,18 @@ describe('PrefsForm — union-valued leaves', () => {
             default: { fill: 'solid', color: '#000000ff' },
           },
           stroke: {
-            kind: 'stroke',
+            kind: 'object',
             name: 'Stroke',
-            description: 'Stroke color, or a whole stroke.',
+            description: 'Stroke paint and line geometry.',
             default: '#000000ff',
+            block: true,
+            fromScalar: (v: unknown) => ({
+              paint: { fill: 'solid', color: typeof v === 'string' ? v : '#000000ff' },
+            }),
+            children: {
+              paint: { kind: 'paint', name: 'Stroke color', description: '', default: { fill: 'solid', color: '#000000ff' } },
+              width: { kind: 'number', name: 'Stroke width', description: '', default: 1, min: 0 },
+            },
           },
         },
       },
@@ -238,11 +246,11 @@ describe('PrefsForm — union-valued leaves', () => {
     expect(onChange).toHaveBeenCalledWith('appearance.fill', { fill: 'solid', color: '#112233' });
   });
 
-  it('keeps a stroke object whole when its color is picked', () => {
+  it('commits the whole object when one of its fields is edited', () => {
     const onChange = renderUnion({
       appearance: { stroke: { paint: { color: '#000000ff' }, width: 6, dash: [4, 2] } },
     });
-    const input = screen.getByLabelText('Stroke', { selector: 'input[type="color"]' });
+    const input = screen.getByLabelText('Stroke color', { selector: 'input[type="color"]' });
     fireEvent.input(input, { target: { value: '#445566' } });
     fireEvent.blur(input);
     expect(onChange).toHaveBeenCalledWith('appearance.stroke', {
@@ -252,12 +260,14 @@ describe('PrefsForm — union-valued leaves', () => {
     });
   });
 
-  it('leaves a color-string stroke a string', () => {
+  it('lifts a scalar value before applying a field to it', () => {
     const onChange = renderUnion({ appearance: { stroke: '#ff0000ff' } });
-    const input = screen.getByLabelText('Stroke', { selector: 'input[type="color"]' });
+    const input = screen.getByLabelText('Stroke color', { selector: 'input[type="color"]' });
     fireEvent.input(input, { target: { value: '#445566' } });
     fireEvent.blur(input);
-    expect(onChange).toHaveBeenCalledWith('appearance.stroke', '#445566');
+    expect(onChange).toHaveBeenCalledWith('appearance.stroke', {
+      paint: { fill: 'solid', color: '#445566' },
+    });
   });
 });
 

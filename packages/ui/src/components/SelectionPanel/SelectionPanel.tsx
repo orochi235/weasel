@@ -10,10 +10,10 @@ import {
   type ToolPrefLeaf,
   type ToolPrefNumber,
   type ToolPrefPaint,
-  type ToolPrefStroke,
+  type ToolPrefObject,
 } from '@weasel-js/core';
 import { ColorField } from '../ColorField';
-import { solidColorOf, strokeColorOf, strokeWithColor } from '../paintValue';
+import { solidColorOf } from '../paintValue';
 import { Input } from '../Input';
 import { NumberField } from '../NumberField';
 import { Select } from '../Select';
@@ -183,6 +183,11 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
           <section key={section.key} className={s.section}>
             {section.name !== '' && <h3 className={s.sectionTitle}>{section.name}</h3>}
             {rows.map(({ row, controls }) => (
+              // A `block` leaf brings its own chrome — it spans the section
+              // instead of sitting in a labeled row's control cell.
+              row.leaves.length === 1 && row.leaves[0].leaf.block ? (
+                <div key={row.leaves[0].path}>{controls[0].content}</div>
+              ) : (
               <div key={row.leaves[0].path} className={s.row}>
                 <span className={s.rowLabel} title={row.leaves[0].leaf.description}>
                   {row.label}
@@ -193,6 +198,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
                   ))}
                 </span>
               </div>
+              )
             ))}
           </section>
         );
@@ -227,10 +233,14 @@ function renderLeafControl(
 
   const custom = renderers?.[path] ?? renderers?.[leaf.kind];
   if (custom) return custom(ctx);
-  return renderBuiltin(ctx, ariaLabel);
+  return renderBuiltin(ctx, ariaLabel, renderers);
 }
 
-function renderBuiltin(ctx: PropertyRenderContext, ariaLabel: string): ReactNode {
+function renderBuiltin(
+  ctx: PropertyRenderContext,
+  ariaLabel: string,
+  renderers?: Record<string, PropertyRenderer>,
+): ReactNode {
   const { pref, value, mixed, setValue } = ctx;
   switch (pref.kind) {
     case 'number': {
@@ -333,26 +343,65 @@ function renderBuiltin(ctx: PropertyRenderContext, ariaLabel: string): ReactNode
         />
       );
     }
-    case 'stroke': {
-      // `string | Stroke`. A color stroke has a color to show and a solid-paint
-      // one does; a gradient stroke does not, and gets the same indeterminate
-      // chip a mixed selection gets. Writes preserve the form: the object keeps
-      // its width, cap, join and dash rather than being flattened to a hex.
-      const p = pref as ToolPrefStroke;
-      const color = strokeColorOf(value) ?? (mixed ? undefined : strokeColorOf(p.default));
-      return (
-        <ColorField
-          value={mixed ? undefined : color}
-          mixed={mixed || (value !== undefined && strokeColorOf(value) === undefined)}
-          alpha={p.alpha}
-          onChange={(next) => setValue(strokeWithColor(value, next))}
-          aria-label={ariaLabel}
-        />
-      );
+    case 'object': {
+      // One value with fields hanging off it. Each child writes the parent
+      // whole, so a field is never set on a half-built object — and a value
+      // still held in a scalar form is lifted first by `fromScalar`.
+      return <ObjectLeaf ctx={ctx} renderers={renderers} />;
     }
     default:
       return <span className={s.unrenderable}>({pref.kind}: no renderer)</span>;
   }
+}
+
+/**
+ * Renders an object leaf: a titled block whose rows are the object's own
+ * fields. A child's edit commits the parent object, never the child's path —
+ * writing into a path whose value is still a color string would corrupt it.
+ */
+function ObjectLeaf({
+  ctx,
+  renderers,
+}: {
+  ctx: PropertyRenderContext;
+  renderers?: Record<string, PropertyRenderer>;
+}): ReactNode {
+  const pref = ctx.pref as ToolPrefObject;
+  const held = typeof ctx.value === 'object' && ctx.value !== null
+    ? (ctx.value as Record<string, unknown>)
+    : undefined;
+
+  const rows = Object.entries(pref.children).map(([key, child]) => {
+    const childPath = `${ctx.path}.${key}`;
+    const childCtx: PropertyRenderContext = {
+      path: childPath,
+      pref: child,
+      value: held?.[key],
+      mixed: ctx.mixed,
+      valueAt: ctx.valueAt,
+      setValue: (v) => {
+        const base = held ?? pref.fromScalar?.(ctx.value) ?? {};
+        ctx.setValue({ ...base, [key]: v });
+      },
+    };
+    const custom = renderers?.[childPath] ?? renderers?.[child.kind];
+    const content = custom ? custom(childCtx) : renderBuiltin(childCtx, child.name, renderers);
+    if (content == null) return null;
+    return (
+      <div key={childPath} className={s.row}>
+        <span className={s.rowLabel} title={child.description}>{child.name}</span>
+        <span className={s.rowControls}>{content}</span>
+      </div>
+    );
+  }).filter(Boolean);
+
+  if (rows.length === 0) return null;
+  return (
+    <div className={s.objectLeaf}>
+      <h4 className={s.sectionTitle}>{pref.name}</h4>
+      {rows}
+    </div>
+  );
 }
 
 /** Text input with commit-on-blur/Enter semantics — live-per-keystroke
