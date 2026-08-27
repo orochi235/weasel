@@ -6,6 +6,16 @@ For someone writing or reviewing a loop in `@weasel-js/core`, `@weasel-js/ui`
 or `labkit`. It answers: what stops a loop from burning CPU on a page the user
 has walked away from, and what a loop has to do to earn that.
 
+## The cost
+
+Closing one WebGL lab page left open in a background window took Chrome's GPU
+process from ~120% CPU to ~33%, and macOS `WindowServer` from ~126% to ~88%. A
+continuously redrawing window is composited once per display, so the bill scales
+with the desk: on five displays — four 6016×3384 framebuffers at 120 Hz,
+downsampled to 4K panels — that is ~9.8 Gpx/s of surface, and a loop that is
+cheap on a laptop is several times that there. Lab pages are the kit's own
+output, and they are what gets left open for days.
+
 ## The rule
 
 Every frame loop in the kit runs behind `useVisibleRaf`
