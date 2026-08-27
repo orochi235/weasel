@@ -16,10 +16,10 @@ describe('interstellarTheme', () => {
     // Inherited from weasel — interstellar overrides values, not the token set.
     expect(dark['--wzl-space-md']).toBe('12px');
     expect(dark['--wzl-swatch-cyan']).toBe('#00dfff');
-    expect(dark['--wzl-font-weight-medium']).toBe('500');
 
     // Deliberate divergences from the base.
     expect(dark['--wzl-radius-md']).toBe('6px');
+    expect(dark['--wzl-font-weight-light']).toBe('300');
     expect(dark['--wzl-glass-blur']).toBe('12px');
   });
 

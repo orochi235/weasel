@@ -6,6 +6,12 @@
       "$type": "dimension",
       "radius-md": { "$value": "6px" },
       "glass-blur": { "$value": "12px" }
+    },
+    "fontWeight": {
+      "$type": "fontWeight",
+      "font-weight-light": { "$value": 300 },
+      "font-weight-medium": { "$value": 500 },
+      "font-weight-bold": { "$value": 700 }
     }
   },
   "modes": {

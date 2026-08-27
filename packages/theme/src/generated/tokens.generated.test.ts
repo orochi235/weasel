@@ -23,14 +23,13 @@ describe('font-size scale', () => {
 });
 
 describe('font-weight scale', () => {
-  it('is one ladder of three ranks', () => {
+  // Oswald's usable range is narrow and its ranks sit low: asking it for the
+  // 500/700 a non-condensed face would use paints the whole surface bold.
+  it('is the ladder Oswald carries', () => {
+    expect(tokenValue('font-weight-light')).toBe('200');
     expect(tokenValue('font-weight-normal')).toBe('300');
-    expect(tokenValue('font-weight-medium')).toBe('500');
-    expect(tokenValue('font-weight-bold')).toBe('700');
-  });
-
-  it('drops the light rank, which nothing distinguishes from normal', () => {
-    expect(tokenValue('font-weight-light')).toBeNull();
+    expect(tokenValue('font-weight-medium')).toBe('350');
+    expect(tokenValue('font-weight-bold')).toBe('400');
   });
 });
 

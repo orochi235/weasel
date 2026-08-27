@@ -42,6 +42,7 @@ export type TokenName =
   | '--wzl-font-size-xs'
   | '--wzl-font-ui'
   | '--wzl-font-weight-bold'
+  | '--wzl-font-weight-light'
   | '--wzl-font-weight-medium'
   | '--wzl-font-weight-normal'
   | '--wzl-glass-blur'
@@ -198,9 +199,10 @@ export const THEMES = {
       '--wzl-font-display': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
       '--wzl-font-body': "Inter, system-ui, -apple-system, 'Segoe UI', sans-serif",
       '--wzl-font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+      '--wzl-font-weight-light': "200",
       '--wzl-font-weight-normal': "300",
-      '--wzl-font-weight-medium': "500",
-      '--wzl-font-weight-bold': "700",
+      '--wzl-font-weight-medium': "350",
+      '--wzl-font-weight-bold': "400",
       '--wzl-surface': "#181a1e",
       '--wzl-surface-raised': "#25272c",
       '--wzl-surface-sunken': "#0e0f12",
@@ -295,9 +297,10 @@ export const THEMES = {
       '--wzl-font-display': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
       '--wzl-font-body': "Inter, system-ui, -apple-system, 'Segoe UI', sans-serif",
       '--wzl-font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+      '--wzl-font-weight-light': "200",
       '--wzl-font-weight-normal': "300",
-      '--wzl-font-weight-medium': "500",
-      '--wzl-font-weight-bold': "700",
+      '--wzl-font-weight-medium': "350",
+      '--wzl-font-weight-bold': "400",
       '--wzl-surface': "#f5f5f6",
       '--wzl-surface-raised': "#e6e7e9",
       '--wzl-surface-sunken': "#c9cbcf",
@@ -693,7 +696,7 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
           "system-ui",
           "sans-serif"
         ],
-        "description": "Condensed UI/display face."
+        "description": "Condensed UI/display face. The heavier cuts get blocky at any size, so the weight tokens stay in the 200-400 range."
       },
       "font-display": {
         "type": "fontFamily",
@@ -725,17 +728,21 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
           "monospace"
         ]
       },
+      "font-weight-light": {
+        "type": "fontWeight",
+        "value": 200
+      },
       "font-weight-normal": {
         "type": "fontWeight",
         "value": 300
       },
       "font-weight-medium": {
         "type": "fontWeight",
-        "value": 500
+        "value": 350
       },
       "font-weight-bold": {
         "type": "fontWeight",
-        "value": 700
+        "value": 400
       }
     },
     "modes": {
