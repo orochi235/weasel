@@ -128,8 +128,11 @@ describe('drawText and the layout it is given', () => {
 function uploadedGlyphYs(): number[] {
   const out: number[] = [];
   for (const call of recorder.calls) {
-    if (call.name !== 'bufferData') continue;
-    const data = call.args[1];
+    // Either call: the text ring writes into a slot it already owns, so its
+    // geometry arrives by `bufferSubData` rather than a fresh `bufferData`.
+    const data = call.name === 'bufferData' ? call.args[1]
+      : call.name === 'bufferSubData' ? call.args[2]
+        : null;
     if (!(data instanceof Float32Array)) continue;
     for (let i = 1; i < data.length; i += 5) out.push(data[i]);
   }

@@ -89,6 +89,20 @@ function syntheticHandle(name: string, seq: number): { __id: string } {
   return { __id: `${name}_${seq}` };
 }
 
+/**
+ * Copy typed-array arguments as they are recorded.
+ *
+ * A caller is entitled to reuse the array it uploads from — the text ring
+ * packs every draw through one scratch buffer — so storing the reference
+ * records a value that later frames overwrite. A test reading it back then
+ * compares two frames and sees the same numbers twice, which passes.
+ */
+function snapshot(value: unknown): unknown {
+  return ArrayBuffer.isView(value) && !(value instanceof DataView)
+    ? (value as unknown as { slice(): unknown }).slice()
+    : value;
+}
+
 export function makeGLRecorder(): GLRecorder {
   const calls: GLCall[] = [];
 
@@ -122,7 +136,7 @@ export function makeGLRecorder(): GLRecorder {
       default:
         result = undefined;
     }
-    calls.push({ name, args, result });
+    calls.push({ name, args: args.map(snapshot), result });
     return result;
   };
 

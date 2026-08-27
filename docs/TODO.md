@@ -24,7 +24,6 @@ Priority tags:
 - **labkit: generate instrument controls from a schema or a TypeScript type** → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - **`<Timeline>` editor** — the one unbuilt phase of the timeline/rig arc → [Animation](#animation)
 - **Audit for duplicated-then-drifted cascades** — two implementations of one lookup, agreeing by coincidence → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- **Per-draw text buffers** — text mints a VAO and two buffers per draw; solid geometry stopped doing this when the batch started cycling buffers → [Release-gate & build hygiene](#release-gate--build-hygiene)
 
 ### P2 — broad reuse / friction-likely
 
@@ -1517,11 +1516,11 @@ Deferred, with the rationale in `eslint.config.js` next to each:
   batch started cycling its buffers, and is now 2.5 us for solid and under one
   for every other kind. See the boundary entry below.
 
-  **Text still mints a vertex array and two buffers per draw**, in
-  `drawTextGroup` and `drawTextDecorations` — the thing `drawImage` stopped
-  doing, and worth ~5 us a draw there. The same ring would fit, with one extra
-  problem: a text group's geometry is variable-length, so the ring's buffers
-  have to grow rather than being fixed at four vertices.
+  Text took the same ring on 2026-08-27 and went 6.65 -> 3.3 us, level with an
+  image draw; a slot's buffer grows to the largest run it has seen, and one
+  shared index buffer serves every slot because the quad pattern for N quads
+  is a prefix of the pattern for any larger N. The remaining per-command costs
+  above are otherwise unchanged.
 
   The rest of the plan — one program plus atlases — is in
   `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`, with the traps, and a

@@ -44,7 +44,7 @@ import { GroupState } from './state/GroupState';
 import type { DrawCommand } from './DrawCommand';
 import type { Mat3 } from './math/mat3';
 import {
-  dispatch, flushSolids, disposeImageQuads, OUTLINE_MIN_SCREEN_PX, type DrawContext,
+  dispatch, flushSolids, disposeImageQuads, disposeTextQuads, OUTLINE_MIN_SCREEN_PX, type DrawContext,
 } from './draw';
 import { SolidBatch } from './solidBatch';
 import {
@@ -409,6 +409,7 @@ export class WeaselRenderer {
     if (this.quadVbo) gl.deleteBuffer(this.quadVbo);
     if (this.quadIbo) gl.deleteBuffer(this.quadIbo);
     disposeImageQuads(gl, this.imageFill);
+    for (const prog of [this.textSdf, this.textSdfR8, this.pathFill]) disposeTextQuads(gl, prog);
     this.solidBatch.dispose();
   }
 

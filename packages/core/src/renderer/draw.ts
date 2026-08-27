@@ -1449,7 +1449,9 @@ function drawTextDecorations(ctx: DrawContext, decorations: readonly LaidOutDeco
 
   for (const { rgba, rects } of batches.values()) {
     // pathFill takes a_position only: stride 8, no UVs, no baselineY.
-    const vertices = new Float32Array(rects.length * 4 * 2);
+    const floats = rects.length * 4 * 2;
+    if (TEXT_RULE_VERTICES.length < floats) TEXT_RULE_VERTICES = new Float32Array(grownTo(floats));
+    const vertices = TEXT_RULE_VERTICES;
     let vi = 0;
     for (const d of rects) {
       const dx0 = d.x0 + dx, dx1 = d.x1 + dx;
@@ -1459,43 +1461,21 @@ function drawTextDecorations(ctx: DrawContext, decorations: readonly LaidOutDeco
       vertices[vi++] = dx0; vertices[vi++] = dy1;
       vertices[vi++] = dx1; vertices[vi++] = dy1;
     }
-    const indices = new Uint32Array(rects.length * 6);
-    let ii = 0;
-    for (let r = 0; r < rects.length; r++) {
-      const base = r * 4;
-      indices[ii++] = base;     indices[ii++] = base + 1; indices[ii++] = base + 2;
-      indices[ii++] = base + 1; indices[ii++] = base + 3; indices[ii++] = base + 2;
-    }
-
-    const vao = gl.createVertexArray();
-    if (!vao) throw new Error('drawTextDecorations: createVertexArray returned null');
-    gl.bindVertexArray(vao);
-
-    const vbo = gl.createBuffer();
-    if (!vbo) throw new Error('drawTextDecorations: createBuffer (VBO) returned null');
-    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW);
-
-    const aPosLoc = prog.attribute('a_position');
-    if (aPosLoc !== undefined) {
-      gl.enableVertexAttribArray(aPosLoc);
-      gl.vertexAttribPointer(aPosLoc, 2, gl.FLOAT, false, 8, 0);
-    }
-
-    const ibo = gl.createBuffer();
-    if (!ibo) throw new Error('drawTextDecorations: createBuffer (IBO) returned null');
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.DYNAMIC_DRAW);
+    const ring = textQuadRing(gl, prog, TEXT_RULE_STRIDE, (loc) => {
+      const aPos = loc('a_position');
+      if (aPos !== undefined) {
+        gl.enableVertexAttribArray(aPos);
+        gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, TEXT_RULE_STRIDE, 0);
+      }
+    });
+    ensureQuadIndices(gl, ring, rects.length);
+    bindTextQuadSlot(gl, ring, vertices.subarray(0, floats));
 
     setColorUniform(ctx, prog, rgba[0], rgba[1], rgba[2], rgba[3]);
     setAlphaUniform(ctx, prog, ctx.state.alpha);
 
-    gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_INT, 0);
+    gl.drawElements(gl.TRIANGLES, rects.length * 6, gl.UNSIGNED_INT, 0);
     gl.bindVertexArray(null);
-    // Per-draw VAO/VBO/IBO, freed immediately — same as drawTextGroup.
-    gl.deleteVertexArray(vao);
-    gl.deleteBuffer(vbo);
-    gl.deleteBuffer(ibo);
   }
 }
 
@@ -1510,7 +1490,9 @@ function drawTextGroup(ctx: DrawContext, group: LaidOutGroup, prog: ShaderProgra
   const gl = ctx.gl;
 
   // Pack quads into a vertex buffer (stride 20 bytes: x, y, u, v, baselineY floats).
-  const vertices = new Float32Array(group.quads.length * 4 * 5);
+  const floats = group.quads.length * 4 * 5;
+  if (TEXT_GROUP_VERTICES.length < floats) TEXT_GROUP_VERTICES = new Float32Array(grownTo(floats));
+  const vertices = TEXT_GROUP_VERTICES;
   let vi = 0;
   for (const q of group.quads) {
     const x0 = q.x0 + dx, x1 = q.x1 + dx;
@@ -1520,44 +1502,25 @@ function drawTextGroup(ctx: DrawContext, group: LaidOutGroup, prog: ShaderProgra
     vertices[vi++] = x0; vertices[vi++] = y1; vertices[vi++] = q.u0; vertices[vi++] = q.v1; vertices[vi++] = by;
     vertices[vi++] = x1; vertices[vi++] = y1; vertices[vi++] = q.u1; vertices[vi++] = q.v1; vertices[vi++] = by;
   }
-  const indices = new Uint32Array(group.quads.length * 6);
-  let ii = 0;
-  for (let q = 0; q < group.quads.length; q++) {
-    const base = q * 4;
-    indices[ii++] = base;     indices[ii++] = base + 1; indices[ii++] = base + 2;
-    indices[ii++] = base + 1; indices[ii++] = base + 3; indices[ii++] = base + 2;
-  }
-
-  const vao = gl.createVertexArray();
-  if (!vao) throw new Error('drawTextGroup: createVertexArray returned null');
-  gl.bindVertexArray(vao);
-
-  const vbo = gl.createBuffer();
-  if (!vbo) throw new Error('drawTextGroup: createBuffer (VBO) returned null');
-  gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-  gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW);
-
-  const stride = 20;
-  const aPosLoc = prog.attribute('a_position');
-  const aUvLoc  = prog.attribute('a_uv');
-  const aBaseLoc = prog.attribute('a_baselineY');
-  if (aPosLoc !== undefined) {
-    gl.enableVertexAttribArray(aPosLoc);
-    gl.vertexAttribPointer(aPosLoc, 2, gl.FLOAT, false, stride, 0);
-  }
-  if (aUvLoc !== undefined) {
-    gl.enableVertexAttribArray(aUvLoc);
-    gl.vertexAttribPointer(aUvLoc, 2, gl.FLOAT, false, stride, 8);
-  }
-  if (aBaseLoc !== undefined) {
-    gl.enableVertexAttribArray(aBaseLoc);
-    gl.vertexAttribPointer(aBaseLoc, 1, gl.FLOAT, false, stride, 16);
-  }
-
-  const ibo = gl.createBuffer();
-  if (!ibo) throw new Error('drawTextGroup: createBuffer (IBO) returned null');
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.DYNAMIC_DRAW);
+  const ring = textQuadRing(gl, prog, TEXT_GROUP_STRIDE, (loc) => {
+    const aPos = loc('a_position');
+    const aUv = loc('a_uv');
+    const aBase = loc('a_baselineY');
+    if (aPos !== undefined) {
+      gl.enableVertexAttribArray(aPos);
+      gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, TEXT_GROUP_STRIDE, 0);
+    }
+    if (aUv !== undefined) {
+      gl.enableVertexAttribArray(aUv);
+      gl.vertexAttribPointer(aUv, 2, gl.FLOAT, false, TEXT_GROUP_STRIDE, 8);
+    }
+    if (aBase !== undefined) {
+      gl.enableVertexAttribArray(aBase);
+      gl.vertexAttribPointer(aBase, 1, gl.FLOAT, false, TEXT_GROUP_STRIDE, 16);
+    }
+  });
+  ensureQuadIndices(gl, ring, group.quads.length);
+  bindTextQuadSlot(gl, ring, vertices.subarray(0, floats));
 
   // Per-group fill (color uniform).
   let r = 0, g = 0, b = 0, a = 1;
@@ -1586,11 +1549,8 @@ function drawTextGroup(ctx: DrawContext, group: LaidOutGroup, prog: ShaderProgra
   ctx.textureCache.bind(texId, 0);
   gl.uniform1i(prog.uniform('u_atlas')!, 0);
 
-  gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_INT, 0);
+  gl.drawElements(gl.TRIANGLES, group.quads.length * 6, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
-  gl.deleteVertexArray(vao);
-  gl.deleteBuffer(vbo);
-  gl.deleteBuffer(ibo);
 }
 
 /**
@@ -1664,6 +1624,143 @@ function imageQuadRing(gl: WebGL2RenderingContext, prog: ShaderProgram): ImageQu
   const ring: ImageQuadRing = { vaos, vbos, ibo, next: 0 };
   IMAGE_QUAD_RINGS.set(prog, ring);
   return ring;
+}
+
+/**
+ * The same ring as `imageQuadRing`, for the two text paths, whose geometry is
+ * variable-length — a group is as many quads as it has glyphs — so a slot's
+ * vertex buffer grows to the largest run it has seen instead of being fixed at
+ * four vertices. Growth is `bufferData`, which reallocates and therefore does
+ * wait on draws still reading the old store; it happens on the way up to a
+ * high-water mark and then stops, so it is not a per-draw cost.
+ *
+ * The index buffer is shared by every slot and grown the same way. Quad indices
+ * are a pure function of the quad count — the pattern for N quads is a prefix
+ * of the pattern for any larger N — so one buffer serves every slot and every
+ * draw, and nothing writes it except a growth.
+ *
+ * Keyed on the program for the reason the image ring is: a VAO name belongs to
+ * the context that created it.
+ */
+const TEXT_QUAD_RING_SIZE = 64;
+
+interface TextQuadSlot {
+  vao: WebGLVertexArrayObject;
+  vbo: WebGLBuffer;
+  /** Allocated size of `vbo`, in bytes. */
+  bytes: number;
+}
+
+interface TextQuadRing {
+  slots: TextQuadSlot[];
+  ibo: WebGLBuffer;
+  /** How many quads' worth of indices `ibo` currently holds. */
+  quads: number;
+  next: number;
+}
+
+const TEXT_QUAD_RINGS = new WeakMap<ShaderProgram, TextQuadRing>();
+
+/** Round up to the next power of two, so a run that keeps growing by a glyph
+ *  reallocates a logarithmic number of times rather than every draw. */
+function grownTo(need: number): number {
+  let n = 256;
+  while (n < need) n *= 2;
+  return n;
+}
+
+function textQuadRing(
+  gl: WebGL2RenderingContext,
+  prog: ShaderProgram,
+  stride: number,
+  configureAttribs: (loc: (name: string) => number | undefined) => void,
+): TextQuadRing {
+  const existing = TEXT_QUAD_RINGS.get(prog);
+  if (existing) return existing;
+
+  const ibo = gl.createBuffer();
+  if (!ibo) throw new Error('textQuadRing: createBuffer (IBO) returned null');
+
+  const slots: TextQuadSlot[] = [];
+  for (let i = 0; i < TEXT_QUAD_RING_SIZE; i++) {
+    const vao = gl.createVertexArray();
+    const vbo = gl.createBuffer();
+    if (!vao) throw new Error('textQuadRing: createVertexArray returned null');
+    if (!vbo) throw new Error('textQuadRing: createBuffer returned null');
+    const bytes = grownTo(64 * 4 * stride);
+    gl.bindVertexArray(vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+    gl.bufferData(gl.ARRAY_BUFFER, bytes, gl.DYNAMIC_DRAW);
+    configureAttribs((name) => prog.attribute(name));
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+    gl.bindVertexArray(null);
+    slots.push({ vao, vbo, bytes });
+  }
+
+  const ring: TextQuadRing = { slots, ibo, quads: 0, next: 0 };
+  TEXT_QUAD_RINGS.set(prog, ring);
+  return ring;
+}
+
+/** Scratch for the quad index pattern, grown alongside the ring's IBO. */
+let TEXT_QUAD_INDICES = new Uint32Array(0);
+
+/** vec2 a_position + vec2 a_uv + float a_baselineY. */
+const TEXT_GROUP_STRIDE = 20;
+/** vec2 a_position only — what `pathFill` takes. */
+const TEXT_RULE_STRIDE = 8;
+
+/** Packing scratch, reused per draw so a group's geometry costs no allocation. */
+let TEXT_GROUP_VERTICES = new Float32Array(0);
+let TEXT_RULE_VERTICES = new Float32Array(0);
+
+/** Make sure the ring's shared index buffer covers `quads` quads. Rewrites it
+ *  only when it has to grow, so the steady state writes no index data at all. */
+function ensureQuadIndices(gl: WebGL2RenderingContext, ring: TextQuadRing, quads: number): void {
+  if (quads <= ring.quads) return;
+  const grown = grownTo(quads);
+  if (TEXT_QUAD_INDICES.length < grown * 6) TEXT_QUAD_INDICES = new Uint32Array(grown * 6);
+  const idx = TEXT_QUAD_INDICES;
+  let ii = ring.quads * 6;
+  for (let q = ring.quads; q < grown; q++) {
+    const base = q * 4;
+    idx[ii++] = base;     idx[ii++] = base + 1; idx[ii++] = base + 2;
+    idx[ii++] = base + 1; idx[ii++] = base + 3; idx[ii++] = base + 2;
+  }
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ring.ibo);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, idx.subarray(0, grown * 6), gl.STATIC_DRAW);
+  ring.quads = grown;
+}
+
+/** Take the next slot, sized to hold `bytes`, with `vertices` uploaded into it
+ *  and its VAO bound. Returns nothing — the caller draws immediately. */
+function bindTextQuadSlot(
+  gl: WebGL2RenderingContext,
+  ring: TextQuadRing,
+  vertices: Float32Array,
+): void {
+  const slot = ring.slots[ring.next];
+  ring.next = (ring.next + 1) % TEXT_QUAD_RING_SIZE;
+  gl.bindVertexArray(slot.vao);
+  gl.bindBuffer(gl.ARRAY_BUFFER, slot.vbo);
+  const bytes = vertices.byteLength;
+  if (bytes > slot.bytes) {
+    slot.bytes = grownTo(bytes);
+    gl.bufferData(gl.ARRAY_BUFFER, slot.bytes, gl.DYNAMIC_DRAW);
+  }
+  gl.bufferSubData(gl.ARRAY_BUFFER, 0, vertices);
+}
+
+/** Release the text-quad ring `prog` owns. Called by `WeaselRenderer.dispose`. */
+export function disposeTextQuads(gl: WebGL2RenderingContext, prog: ShaderProgram): void {
+  const ring = TEXT_QUAD_RINGS.get(prog);
+  if (!ring) return;
+  for (const slot of ring.slots) {
+    gl.deleteVertexArray(slot.vao);
+    gl.deleteBuffer(slot.vbo);
+  }
+  gl.deleteBuffer(ring.ibo);
+  TEXT_QUAD_RINGS.delete(prog);
 }
 
 /** Release the image-quad ring `prog` owns. Called by `WeaselRenderer.dispose`. */

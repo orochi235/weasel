@@ -22,12 +22,14 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { registerFont, FIXTURE_FONT, registerFontOutlines, glyphOutline } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
 import { makeGLRecorder } from './test-utils/glRecorder';
+import { makeUploadTracker, type UploadTracker } from './test-utils/vertexUploads';
 import { WeaselRenderer } from './WeaselRenderer';
 import { _resetLayoutCacheForTests } from './cache/layoutCache';
 import type { DrawCommand } from './DrawCommand';
 import type { ResolvedRun } from 'features/text/runs/resolveRuns';
 
 let recorder: ReturnType<typeof makeGLRecorder>;
+let tracker: UploadTracker;
 let r: WeaselRenderer;
 
 beforeEach(async () => {
@@ -50,6 +52,7 @@ beforeEach(async () => {
   await registerFont('inter', {}, '/fonts/inter.json', '/fonts/inter.png');
 
   recorder = makeGLRecorder();
+  tracker = makeUploadTracker(recorder);
   r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
   recorder.reset();
 });
@@ -63,26 +66,12 @@ const RUN = (text: string, over: Partial<ResolvedRun> = {}): ResolvedRun => ({
 
 /**
  * Every vertex buffer uploaded this frame, with its floats-per-vertex read off
- * the `vertexAttribPointer` that follows rather than guessed from the length —
- * text quads are 5 (x, y, u, v, baselineY), decoration rects and outline
- * meshes are 2, and several lengths are consistent with either.
+ * the `vertexAttribPointer` recorded for that buffer rather than guessed from
+ * the length — text quads are 5 (x, y, u, v, baselineY), decoration rects and
+ * outline meshes are 2, and several lengths are consistent with either.
  */
 function uploaded(): { stride: number; data: Float32Array }[] {
-  const out: { stride: number; data: Float32Array }[] = [];
-  let pending: Float32Array | null = null;
-  for (const call of recorder.calls) {
-    if (call.name === 'bufferData') {
-      const data = call.args[1];
-      pending = data instanceof Float32Array ? data : null;
-      continue;
-    }
-    if (call.name !== 'vertexAttribPointer' || pending === null) continue;
-    // Byte stride; 0 means tightly packed, which for a_position is a vec2.
-    const bytes = call.args[4] as number;
-    out.push({ stride: bytes === 0 ? 2 : bytes / 4, data: pending });
-    pending = null;
-  }
-  return out;
+  return tracker.uploads();
 }
 
 /** Spacing between adjacent float32 values at the largest of `vs` — the

@@ -38,6 +38,20 @@ function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeof makeG
   return { ctx, calls: recorder.calls, gl: recorder.gl };
 }
 
+/**
+ * A vertex-data upload, whichever call carried it. The text ring writes into a
+ * slot whose buffer it already owns, so its geometry arrives by
+ * `bufferSubData`; every other draw path still mints a buffer and uses
+ * `bufferData`.
+ */
+const isVertexUpload = (c: { name: string; args: readonly unknown[] }): boolean =>
+  (c.name === 'bufferData' && c.args[1] instanceof Float32Array)
+  || (c.name === 'bufferSubData' && c.args[2] instanceof Float32Array);
+
+/** The floats an upload carried. */
+const uploadFloats = (c: { name: string; args: readonly unknown[] }): Float32Array =>
+  (c.name === 'bufferData' ? c.args[1] : c.args[2]) as Float32Array;
+
 describe('WeaselRenderer.render — kind: group', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
   let r: WeaselRenderer;
@@ -1083,14 +1097,14 @@ describe('drawText verticalAlign', () => {
   });
 
   // First vertex of the first quad in the first (and only, for this fixture
-  // font/text) bufferData upload of the text VBO: stride is [x, y, u, v,
+  // font/text) vertex upload of the text VBO: stride is [x, y, u, v,
   // baselineY], so index 1 is y0.
   function firstQuadY0(calls: ReturnType<typeof makeGLRecorder>['calls']): number {
     const upload = calls.find(
-      (c) => c.name === 'bufferData' && c.args[1] instanceof Float32Array,
+      isVertexUpload,
     );
-    if (!upload) throw new Error('no text vertex bufferData call recorded');
-    return (upload.args[1] as Float32Array)[1];
+    if (!upload) throw new Error('no text vertex upload recorded');
+    return uploadFloats(upload)[1];
   }
 
   it('shifts emitted quad y-coordinates by verticalAlignOffset(verticalAlign, height, textHeight)', async () => {
@@ -1244,7 +1258,7 @@ describe('drawText — substituted family reaches the GPU', () => {
     expect(draws).toHaveLength(1);
     // 1 glyph → 2 triangles → 6 indices.
     expect(draws[0].args[1]).toBe(6);
-    const vbo = calls.find((c) => c.name === 'bufferData' && c.args[1] instanceof Float32Array);
+    const vbo = calls.find(isVertexUpload);
     expect(vbo).toBeDefined();
   });
 
@@ -1299,9 +1313,9 @@ describe('drawText — letterSpacing reaches the GPU', () => {
 
   // x of each quad's first vertex in the text VBO (stride 5 floats, 4 verts/quad).
   function quadX0s(calls: ReturnType<typeof makeGLRecorder>['calls']): number[] {
-    const upload = calls.find((c) => c.name === 'bufferData' && c.args[1] instanceof Float32Array);
-    if (!upload) throw new Error('no text vertex bufferData call recorded');
-    const data = upload.args[1] as Float32Array;
+    const upload = calls.find(isVertexUpload);
+    if (!upload) throw new Error('no text vertex upload recorded');
+    const data = uploadFloats(upload);
     const out: number[] = [];
     for (let i = 0; i < data.length; i += 20) out.push(data[i]);
     return out;
@@ -1377,8 +1391,8 @@ describe('drawText — decoration reaches the GPU', () => {
     let color: number[] = [];
     for (const c of calls) {
       if (c.name === 'useProgram') bound = c.args[0];
-      if (c.name === 'bufferData' && c.args[0] === ARRAY_BUFFER && c.args[1] instanceof Float32Array) {
-        vertices = c.args[1] as Float32Array;
+      if (isVertexUpload(c) && c.args[0] === ARRAY_BUFFER) {
+        vertices = uploadFloats(c);
       }
       if (c.name === 'uniform4f') color = c.args.slice(1) as number[];
       if (c.name === 'drawElements' && bound === prog.handle) {
@@ -1536,9 +1550,9 @@ describe('drawText — decoration reaches the GPU', () => {
     // can't identify our draw.
     // (The clip rect's own mesh is also 8 floats, so match on the rule's y.)
     const at = calls.findIndex(
-      (c) => c.name === 'bufferData' && c.args[1] instanceof Float32Array
-        && (c.args[1] as Float32Array).length === 8
-        && Math.abs((c.args[1] as Float32Array)[1] - 32.2) < 1e-3,
+      (c) => isVertexUpload(c)
+        && uploadFloats(c).length === 8
+        && Math.abs(uploadFloats(c)[1] - 32.2) < 1e-3,
     );
     expect(at).toBeGreaterThanOrEqual(0);
     let enabled = false;
@@ -1644,8 +1658,8 @@ describe('drawText — outline tier', () => {
 
   /** Vertex buffers uploaded this frame, in upload order. */
   const uploads = (calls: readonly { name: string; args: readonly unknown[] }[]): Float32Array[] =>
-    calls.filter((c) => c.name === 'bufferData' && c.args[1] instanceof Float32Array)
-      .map((c) => c.args[1] as Float32Array);
+    calls.filter(isVertexUpload)
+      .map(uploadFloats);
 
   it('draws outline glyphs through pathFill, not the SDF programs', () => {
     const { ctx, calls } = createRecorderCtx();
@@ -1760,8 +1774,8 @@ describe('drawText — outline tier', () => {
     it('paints the stroke over the fill', () => {
       const { ctx, calls } = createRecorderCtx();
       dispatch(ctx, textCmd('A', { stroke: STROKE }));
-      const order = calls.filter((c) => c.name === 'bufferData' && c.args[1] instanceof Float32Array);
-      const [fillVerts, strokeVerts] = order.map((c) => c.args[1] as Float32Array);
+      const order = calls.filter(isVertexUpload);
+      const [fillVerts, strokeVerts] = order.map(uploadFloats);
       // The fill is the glyph's 3 vertices; the stroke ribbon is larger. That
       // asymmetry is what identifies which upload is which, and the order is
       // the assertion: fill first, stroke on top, as Canvas2D and SVG's
