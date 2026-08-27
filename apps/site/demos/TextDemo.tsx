@@ -57,6 +57,8 @@ export function TextDemo() {
         text: n.text,
         runs: n.runs,
         style: n.style,
+        fill: n.fill,
+        stroke: n.stroke,
       };
     },
     isHidden: (n) => edit.isEditing(n.id),

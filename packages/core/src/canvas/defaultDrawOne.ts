@@ -25,7 +25,7 @@
  */
 import type { Node } from 'core/scene/types';
 import type { DrawCommand } from '../renderer';
-import { textCommand } from 'features/text/textCommand';
+import { textCommandFromRuns } from 'features/text/textCommand';
 import { findNodeShape, type NodePaintCtx } from './NodeShape';
 
 /** Paint one node the way the kit does by default: dispatch to the first
@@ -46,11 +46,11 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
     // Copy rather than `push`. A painter's return value is not ours to grow:
     // one that memoizes its command list — which is the point of caching
     // `paint` — would gain another label command on every frame, forever.
-    return [...primary, textCommand(
+    return [...primary, textCommandFromRuns(
       p.x + 6,
       p.y + 14,
-      data.label,
-      { fontFamily: 'sans-serif', fontSize: 11, fill: { fill: 'solid', color: 'rgba(0,0,0,0.7)' } },
+      [{ text: data.label, fill: { fill: 'solid', color: 'rgba(0,0,0,0.7)' } }],
+      { fontFamily: 'sans-serif', fontSize: 11 },
     )];
   }
 

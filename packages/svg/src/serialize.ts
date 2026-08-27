@@ -128,8 +128,8 @@ function registerPaintServers(nodes: SvgNode[], registry: PaintServerRegistry): 
       // pre-pass is load-bearing: `<defs>` is emitted before the body, so a
       // paint first seen while writing an element would be referenced by an
       // id that no definition backs.
-      registerTextPaint(n.style?.fill, registry);
-      registerTextPaint(n.style?.stroke?.paint, registry);
+      registerTextPaint(n.fill, registry);
+      registerTextPaint(n.stroke?.paint, registry);
       for (const run of n.runs ?? []) {
         registerTextPaint(run.fill, registry);
         registerTextPaint(run.stroke?.paint, registry);
@@ -401,18 +401,18 @@ function textXml(node: SvgTextNode, registry: PaintServerRegistry, namespaces: R
   // below emits as `wd:line-height="..."`. There is no compat write of
   // `data-weasel-line-height` — per the SVG-native plan's Migration section,
   // no installed base exists to compat against.
-  if (style?.fill) {
-    if ('color' in style.fill) {
-      attrs.push(`fill="${style.fill.color}"`);
-      if (style.fill.opacity != null && style.fill.opacity !== 1) {
-        attrs.push(`fill-opacity="${trimNumber(style.fill.opacity)}"`);
+  if (node.fill) {
+    if ('color' in node.fill) {
+      attrs.push(`fill="${node.fill.color}"`);
+      if (node.fill.opacity != null && node.fill.opacity !== 1) {
+        attrs.push(`fill-opacity="${trimNumber(node.fill.opacity)}"`);
       }
     } else {
-      const id = registry.register(style.fill);
+      const id = registry.register(node.fill);
       attrs.push(`fill="url(#${id})"`);
     }
   }
-  for (const a of coreStrokeAttrs(style?.stroke, registry)) attrs.push(a);
+  for (const a of coreStrokeAttrs(node.stroke, registry)) attrs.push(a);
   if (node.opacity != null && node.opacity !== 1) {
     attrs.push(`opacity="${trimNumber(node.opacity)}"`);
   }

@@ -189,6 +189,8 @@ export function objToSvgNode(o: Obj): SvgNode {
       height: o.height,
       text: o.text,
     };
+    if (o.fill) node.fill = o.fill;
+    if (o.stroke) node.stroke = o.stroke;
     // Start the WeaselDraw attr bag with `tool: 'text'`; lineHeight (if any)
     // joins the same bag.
     const wdAttrs: Record<string, string> = encodeWdAttrs(o);
@@ -257,6 +259,8 @@ function svgLeafToObj(
       x: n.x, y: n.y, width: n.width, height: n.height,
       text: n.text,
     };
+    if (n.fill) o.fill = n.fill;
+    if (n.stroke) o.stroke = n.stroke;
     if (n.rotation) o.rotation = n.rotation;
     // Reconstitute the full TextStyle from weasel-svg's style + the
     // namespaced lineHeight from the meta bag. weasel-svg doesn't model

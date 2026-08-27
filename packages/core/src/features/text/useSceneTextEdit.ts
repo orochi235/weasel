@@ -24,12 +24,13 @@
 import { useCallback, useRef, type MouseEvent } from 'react';
 import { asNodeId } from '../../core/scene/types';
 import type { Scene } from '../../core/scene/types';
+import type { FillStyle, Stroke } from 'core/paint-types';
 import { clientToCanvas } from '../../core/viewport/clientToCanvas';
 import type { View } from '../../core/viewport/view';
 import type { RectPose } from '../groups/unionBounds';
 import { caretIndexAt, pointInTextPose } from './hitTest';
 import type { StyledRun } from './runs';
-import type { TextStyle } from './textStyle';
+import type { TextPaint, TextStyle } from './textStyle';
 import { useTextEdit, type UseTextEditReturn } from './useTextEdit';
 
 /** Shape the default projections expect `data` to satisfy. All fields
@@ -39,6 +40,8 @@ export interface DefaultTextData {
   text?: string;
   style?: TextStyle;
   runs?: readonly StyledRun[];
+  fill?: FillStyle | null;
+  stroke?: Stroke | null;
 }
 
 /** All-optional projections + fontSize fallback. */
@@ -47,6 +50,8 @@ export interface UseSceneTextEditOptions<TData> {
   getText?: (data: TData) => string;
   /** Read style from `data`. Default: `data.style`. */
   getStyle?: (data: TData) => TextStyle | undefined;
+  /** Read the node's paint from `data`. Default: `data.fill` / `data.stroke`. */
+  getPaint?: (data: TData) => TextPaint | undefined;
   /** Read rich-text runs from `data`. Default: `data.runs`. */
   getRuns?: (data: TData) => readonly StyledRun[] | undefined;
   /** Produce updated data with new text. Default: `{ ...data, text }`. */
@@ -138,6 +143,12 @@ export function useSceneTextEdit<
       if (!node) return undefined;
       const get = optsRef.current.getStyle;
       return get ? get(node.data) : node.data.style;
+    },
+    getPaint: (id) => {
+      const node = sceneRef.current.get(asNodeId(id));
+      if (!node) return undefined;
+      const get = optsRef.current.getPaint;
+      return get ? get(node.data) : { fill: node.data.fill, stroke: node.data.stroke };
     },
     getScreenPose: (id) => {
       const node = sceneRef.current.get(asNodeId(id));

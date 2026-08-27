@@ -1,6 +1,6 @@
 import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent } from '../widget';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
-import { textCommand } from '@weasel-js/core';
+import { textCommandFromRuns } from '@weasel-js/core';
 
 /** The events a button reports through `on` / `off`. */
 export type ButtonEvent = 'press' | 'hover' | 'leave';
@@ -87,14 +87,13 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
         path: { kind: 'rect', x, y, width: w, height: h },
         fill: { fill: 'solid', color: bodyColor },
       };
-      const text = textCommand(
+      const text = textCommandFromRuns(
         x + 8,                    // 8px left padding
         y + h / 2 + fontSize / 3, // rough vertical center
-        label,
+        [{ text: label, fill: { fill: 'solid', color: textColor } }],
         {
           fontFamily: opts.fontFamily ?? ctx.defaultFont,
           fontSize,
-          fill: { fill: 'solid', color: textColor },
         },
       );
       return [body, text];

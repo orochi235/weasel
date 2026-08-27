@@ -141,6 +141,7 @@ import {
   FontFamilySelect,
   TextEditDepPublisher,
   effectiveRangeStyle,
+  nodePaintFromPatch,
   textStyleFromPatch,
 } from './ui/CharacterOptions';
 import { DispatchTracePanel } from './dev/DispatchTracePanel';
@@ -463,20 +464,18 @@ const WD_RENDERERS: Record<string, PropertyRenderer> = {
 // ─── Right sidebar: LayerList + SelectionPanel ──────────────────────────────
 
 /**
- * The color chip on a layer row. Paths keep their paint in `data.fill`;
- * text keeps its own in `data.style.fill`, following the kit's `FillStyle`
- * model, and carries no `data.fill` at all — so reading only the latter left
- * every text row with a blank chip.
+ * The color chip on a layer row. Every node kind keeps its paint in
+ * `data.fill`, text included.
  *
  * `resolveTextStyle` is the same function the renderer resolves through, so
- * an unstyled text node reports the black it actually paints rather than
+ * an unpainted text node reports the black it actually paints rather than
  * nothing. Non-solid paints (gradient, pattern) have no single color to show
  * and return undefined until the row can draw a real preview.
  */
 function layerSwatch(data: WeaselDrawData): string | undefined {
   if (data.fill != null) return paintChipColor(data.fill);
   if (data.text === undefined) return undefined;
-  const { fill } = resolveTextStyle(data.style);
+  const { fill } = resolveTextStyle(data.style, { fill: data.fill });
   return 'color' in fill ? fill.color : undefined;
 }
 
@@ -1024,18 +1023,15 @@ function Toolbar({
                 const o = draft.obj;
                 const pose: WeaselDrawPose = { x: o.x, y: o.y, width: o.width, height: o.height };
                 if (o.rotation) pose.rotation = o.rotation;
-                const textFill = o.tool === 'text' && o.style?.fill && (o.style.fill.fill === 'solid' || o.style.fill.fill === undefined)
-                  ? o.style.fill.color
-                  : undefined;
-                // `style` carries the typography the painter reads —
-                // size, family, and the stroke. Dropping it imported every
-                // `<text>` as default-black 16px, however it was written.
-                // `data.fill` stays alongside it for the layer-row swatch,
-                // which reads the leaf field first.
+                // `style` carries the typography the painter reads — size and
+                // family. Dropping it imported every `<text>` as default-black
+                // 16px, however it was written. The paint rides beside it in
+                // `fill` / `stroke`, the same two leaves a path node uses.
                 const data: WeaselDrawData = o.tool === 'text'
                   ? {
                       text: o.text,
-                      fill: solid(textFill ?? '#000000'),
+                      fill: o.fill ?? solid('#000000'),
+                      ...(o.stroke ? { stroke: o.stroke } : {}),
                       ...(o.style ? { style: o.style } : {}),
                     }
                   : { path: o.path, fill: o.fill, stroke: o.stroke };
@@ -1698,13 +1694,14 @@ function EditorWithSharedScene({
   // What the options bar displays and where its edits go. A real range styles
   // the runs under it; a collapsed caret has no range, so the same controls
   // edit the node's own `TextStyle` — the values the sidebar shows.
-  const editingNodeStyle = textEdit.editingId != null
-    ? scene.get(asNodeId(textEdit.editingId))?.data.style
+  const editingNode = textEdit.editingId != null
+    ? scene.get(asNodeId(textEdit.editingId))
     : undefined;
   const hasRange = textEdit.selection != null && textEdit.selection.start !== textEdit.selection.end;
   const barStyle: RangeStyle = effectiveRangeStyle(
     hasRange ? textEdit.rangeStyle : null,
-    editingNodeStyle,
+    editingNode?.data.style,
+    { fill: editingNode?.data.fill, stroke: editingNode?.data.stroke },
   );
 
   const onCharacterPatch = useCallback((patch: RunStylePatch) => {
@@ -1718,8 +1715,13 @@ function EditorWithSharedScene({
     const nid = asNodeId(id);
     const node = scene.get(nid);
     if (!node) return;
+    const nodeFill = nodePaintFromPatch(patch);
     scene.update(nid, {
-      data: { ...node.data, style: { ...node.data.style, ...textStyleFromPatch(patch) } },
+      data: {
+        ...node.data,
+        style: { ...node.data.style, ...textStyleFromPatch(patch) },
+        ...(nodeFill !== undefined ? { fill: nodeFill } : {}),
+      },
     });
   }, [textEdit, scene]);
 

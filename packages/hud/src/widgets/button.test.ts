@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createButton } from './button';
+import type { TextDrawCommand } from '@weasel-js/core/renderer';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 
 const DEFAULT_RESOLVED_TOKENS = resolveTheme(weaselTheme, 'dark');
@@ -171,7 +172,7 @@ describe('button widget', () => {
     const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
     const customCtx = { ...ctx, tokens: { ...ctx.tokens, '--wzl-fg': '#decade' } };
     const cmds = b.draw(customCtx);
-    const text = cmds.find(c => c.kind === 'text') as { style: { fill: { color: string } } };
-    expect(text.style.fill.color).toBe('#decade');
+    const text = cmds.find(c => c.kind === 'text') as TextDrawCommand;
+    expect(text.runs[0].fill).toEqual({ fill: 'solid', color: '#decade' });
   });
 });

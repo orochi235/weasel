@@ -42,7 +42,10 @@ const ALPHA_FOR = (id: string): number => (id === 'dimmed' ? 0.25 : 1);
 const drawOne: SceneViewDrawOne<NodeData, LayerId, Pose> = (node, pose) => {
   const d = node.data;
   if (d.text != null) {
-    return [textCommand(pose.x, pose.y, d.text, d.style, undefined, pose.height, d.verticalAlign)];
+    return [textCommand(
+      pose.x, pose.y, d.text, d.style, undefined, pose.height, d.verticalAlign,
+      { fill: d.fill },
+    )];
   }
   return defaultDrawOne(node, pose);
 };

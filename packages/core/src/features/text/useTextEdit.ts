@@ -13,6 +13,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useVisibleRaf } from '../../scheduling/useVisibleRaf';
 import type { ResolvedTextStyle, TextStyle } from './textStyle';
 import { fontString, resolveTextStyle } from './textStyle';
+import type { TextPaint } from './textStyle';
 import type { StyledRun } from './runs';
 import { runsToPlainText } from './runs';
 import { runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset } from './domRuns';
@@ -217,6 +218,13 @@ export interface UseTextEditOptions {
   getText: (id: string) => string;
   /** Read style for `id` (used for font setup on the overlay). */
   getStyle: (id: string) => TextStyle | undefined;
+  /**
+   * Read the node's paint for `id` — its `data.fill` / `data.stroke`. The
+   * overlay paints its text and caret from the fill, so omitting this
+   * renders every node's editor in the default black however the node
+   * itself is painted.
+   */
+  getPaint?: (id: string) => TextPaint | undefined;
   /**
    * Write style back for `id`. Optional; needed only to turn a flag **off**
    * inside a node whose own `TextStyle` sets it. Run flags are additive, so
@@ -442,10 +450,10 @@ export function useTextEdit(
 
   useEffect(() => {
     if (editingId == null) return;
-    const { container, getText, getStyle, getScreenPose } = optsRef.current;
+    const { container, getText, getStyle, getPaint, getScreenPose } = optsRef.current;
     if (!container) return;
 
-    const style = resolveTextStyle(getStyle(editingId));
+    const style = resolveTextStyle(getStyle(editingId), getPaint?.(editingId));
     const overlay = document.createElement('div');
     const overlayClass = `weasel-text-edit-${++OVERLAY_SEQ}`;
     overlay.classList.add(overlayClass);

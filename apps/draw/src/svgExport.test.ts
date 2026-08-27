@@ -44,10 +44,10 @@ function fakeScene(nodes: Record<string, {
 
 describe('text export', () => {
   /**
-   * A text node's typography — including its stroke — lives in `data.style`
-   * (or, for the kit-native leaf field, in `data.stroke`, the way `kit:shape`
-   * reads it). Export dropped all of it, so a styled text node came back as
-   * unstyled black text.
+   * A text node's typography lives in `data.style` and its paint in
+   * `data.fill` / `data.stroke`, the way `kit:shape` reads them. Export
+   * dropped all of it, so a styled text node came back as unstyled black
+   * text.
    */
   it('carries the node style through to the <text> element', () => {
     const scene = fakeScene({
@@ -56,7 +56,8 @@ describe('text export', () => {
         pose: { x: 5, y: 6, width: 120, height: 40 },
         data: {
           text: 'Hi',
-          style: { fontSize: 32, fontFamily: 'Inter', fill: { fill: 'solid', color: '#123456' } },
+          style: { fontSize: 32, fontFamily: 'Inter' },
+          fill: { fill: 'solid', color: '#123456' },
         },
       },
     }, ['t']);
@@ -66,7 +67,7 @@ describe('text export', () => {
     if (n.kind !== 'text') throw new Error('expected text');
     expect(n.style?.fontSize).toBe(32);
     expect(n.style?.fontFamily).toBe('Inter');
-    expect(n.style?.fill).toEqual({ fill: 'solid', color: '#123456' });
+    expect(n.fill).toEqual({ fill: 'solid', color: '#123456' });
   });
 
   it('exports the leaf stroke as a text stroke', () => {
@@ -81,7 +82,7 @@ describe('text export', () => {
     const parsed = parseSvg(selectionToSvgString(scene, ['t']));
     const n = parsed.nodes[0];
     if (n.kind !== 'text') throw new Error('expected text');
-    expect(n.style?.stroke).toEqual({ paint: { fill: 'solid', color: '#c0392b' }, width: 3 });
+    expect(n.stroke).toEqual({ paint: { fill: 'solid', color: '#c0392b' }, width: 3 });
   });
 
   it('survives the whole loop: scene → SVG → parse → import drafts', () => {
@@ -98,10 +99,10 @@ describe('text export', () => {
     const drafts = svgNodesToSceneDrafts(parsed.nodes, () => `n${n++}`);
     const leaf = drafts.find(
       (d) => 'obj' in d && (d as { obj?: { tool?: string } }).obj?.tool === 'text',
-    ) as { obj: { style?: TextStyle } };
+    ) as { obj: { style?: TextStyle; stroke?: Stroke } };
 
     expect(leaf.obj.style?.fontSize).toBe(32);
-    expect(leaf.obj.style?.stroke).toEqual({
+    expect(leaf.obj.stroke).toEqual({
       paint: { fill: 'solid', color: '#c0392b' },
       width: 3,
     });
@@ -118,7 +119,7 @@ describe('text export', () => {
       const parsed = parseSvg(selectionToSvgString(scene, ['t']));
       const n = parsed.nodes[0];
       if (n.kind !== 'text') throw new Error('expected text');
-      expect(n.style?.stroke).toBeUndefined();
+      expect(n.stroke).toBeUndefined();
     }
   });
 });

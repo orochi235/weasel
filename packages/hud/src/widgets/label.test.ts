@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createLabel } from './label';
+import type { TextDrawCommand } from '@weasel-js/core/renderer';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 
 const DEFAULT_RESOLVED_TOKENS = resolveTheme(weaselTheme, 'dark');
@@ -31,8 +32,8 @@ describe('label widget', () => {
       defaultFont: 'Default',
       tokens: customTokens,
     });
-    const fill = (cmds[0] as { style: { fill: { color: string } } }).style.fill;
-    expect(fill.color).toBe('#abcdef');
+    const fill = (cmds[0] as TextDrawCommand).runs[0].fill;
+    expect(fill).toEqual({ fill: 'solid', color: '#abcdef' });
   });
 
   it('respects explicit color when supplied (theme overridden)', () => {
@@ -43,7 +44,7 @@ describe('label widget', () => {
       defaultFont: 'D',
       tokens: customTokens,
     });
-    const fill = (cmds[0] as { style: { fill: { color: string } } }).style.fill;
-    expect(fill.color).toBe('#ff0000');
+    const fill = (cmds[0] as TextDrawCommand).runs[0].fill;
+    expect(fill).toEqual({ fill: 'solid', color: '#ff0000' });
   });
 });

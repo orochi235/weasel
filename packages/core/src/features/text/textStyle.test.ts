@@ -2,14 +2,14 @@
  * Tests for `resolveTextStyle` + `fontString`. Default fill-in for
  * `TextStyle` is load-bearing: the renderer never sees `undefined`
  * fields, and the text overlay relies on `caretColor` / `selectionBackground`
- * being deterministic derivatives of `fill` when not specified.
+ * being deterministic derivatives of the node's fill when not specified.
  */
 import { describe, it, expect } from 'vitest';
 import {
   resolveTextStyle,
   fontString,
   DEFAULT_TEXT_STYLE,
-  type TextStyle,
+  type TextPaint,
 } from './textStyle';
 
 describe('resolveTextStyle', () => {
@@ -28,28 +28,28 @@ describe('resolveTextStyle', () => {
     expect(r.fill).toEqual(DEFAULT_TEXT_STYLE.fill);
   });
 
-  it('caretColor defaults to the fill\'s color', () => {
-    const r = resolveTextStyle({ fill: { fill: 'solid', color: '#ff0000' } });
+  it('caretColor defaults to the node fill\'s color', () => {
+    const r = resolveTextStyle({}, { fill: { fill: 'solid', color: '#ff0000' } });
     expect(r.caretColor).toBe('#ff0000');
   });
 
   it('caretColor falls back to #000 for non-solid fills', () => {
     // A pattern-paint shape (no `color` field) triggers the fallback.
-    const patternPaint = { fill: 'pattern', pattern: 'whatever' } as unknown as TextStyle['fill'];
-    const r = resolveTextStyle({ fill: patternPaint });
+    const patternPaint = { fill: 'pattern', pattern: 'whatever' } as unknown as TextPaint['fill'];
+    const r = resolveTextStyle({}, { fill: patternPaint });
     expect(r.caretColor).toBe('#000');
   });
 
   it('explicit caretColor overrides the fill-derived default', () => {
-    const r = resolveTextStyle({
-      fill: { fill: 'solid', color: '#ff0000' },
-      caretColor: '#00ff00',
-    });
+    const r = resolveTextStyle(
+      { caretColor: '#00ff00' },
+      { fill: { fill: 'solid', color: '#ff0000' } },
+    );
     expect(r.caretColor).toBe('#00ff00');
   });
 
   it('selectionBackground defaults to a 25% color-mix of caretColor', () => {
-    const r = resolveTextStyle({ fill: { fill: 'solid', color: '#abcdef' } });
+    const r = resolveTextStyle({}, { fill: { fill: 'solid', color: '#abcdef' } });
     expect(r.selectionBackground).toBe('color-mix(in srgb, #abcdef 25%, transparent)');
   });
 

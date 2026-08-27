@@ -55,19 +55,6 @@ interface WeaselDrawData {
   stroke?: Stroke | null;
 }
 
-/**
- * Fold the kit-native leaf stroke into a text node's style, exactly as
- * `kit:text` does when painting it — so what the document exports is what the
- * canvas shows. An explicit `style.stroke` is the more specific declaration
- * and wins.
- */
-function textStyleFor(data: WeaselDrawData): TextStyle | undefined {
-  const style = data.style;
-  if (style?.stroke !== undefined) return style;
-  if (!data.stroke) return style;
-  return { ...style, stroke: data.stroke };
-}
-
 const WHITE = /^#?fff(fff)?(ff)?$/i;
 
 /**
@@ -87,8 +74,10 @@ function leafToObj(id: string, data: WeaselDrawData, pose: WeaselDrawPose): Obj 
       x: pose.x, y: pose.y, width: pose.width, height: pose.height,
       text: data.text,
     };
-    const style = textStyleFor(data);
+    const style = data.style;
     if (style && Object.keys(style).length > 0) o.style = style;
+    if (data.fill) o.fill = data.fill;
+    if (data.stroke) o.stroke = data.stroke;
     if (pose.rotation) o.rotation = pose.rotation;
     return o;
   }

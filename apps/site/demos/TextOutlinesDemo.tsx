@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import {
   SceneCanvas, useScene, defaultDrawOne, textCommand,
   registerCanvasFont, registerFontOutlines, unregisterFontOutlines, outlineStatus,
+  solid,
 } from '@weasel-js/core';
 import { OUTLINE_MIN_SCREEN_PX } from '@weasel-js/core/renderer';
-import type { SceneCanvasApi, SceneViewDrawOne, TextStyle } from '@weasel-js/core';
+import type { FillStyle, SceneCanvasApi, SceneViewDrawOne, Stroke, TextStyle } from '@weasel-js/core';
 
 const W = 600, H = 300;
 
@@ -35,13 +36,13 @@ function loadDemoFace(): Promise<void> {
   return facePromise;
 }
 
-interface NodeData { text: string; style: TextStyle }
+interface NodeData { text: string; style: TextStyle; fill: FillStyle }
 type LayerId = 'default';
 interface Pose { x: number; y: number; width: number; height: number }
 
-const style = (fontSize: number): TextStyle => ({
-  fontSize, fontFamily: FAMILY, fill: { color: '#1a1a1a' },
-});
+const style = (fontSize: number): TextStyle => ({ fontSize, fontFamily: FAMILY });
+
+const TEXT_FILL = solid('#1a1a1a');
 
 /**
  * The stroke the toggle applies. Round joins because a glyph's outline has
@@ -50,11 +51,11 @@ const style = (fontSize: number): TextStyle => ({
  * one — which is the point: stroke width is a world measure and does not
  * scale with the type.
  */
-const DEMO_STROKE = {
-  paint: { color: '#c0392b' },
+const DEMO_STROKE: Stroke = {
+  paint: solid('#c0392b'),
   width: 2,
-  join: 'round' as const,
-  cap: 'round' as const,
+  join: 'round',
+  cap: 'round',
 };
 
 const NODES = [
@@ -66,17 +67,20 @@ const NODES = [
   kind: 'leaf' as const,
   layer: 'default' as const,
   pose: { x: 20, y: n.y, width: 560, height: n.h },
-  data: { text: n.text, style: style(n.size) },
+  data: { text: n.text, style: style(n.size), fill: TEXT_FILL },
 }));
 
 const makeDrawOne = (ready: boolean, stroked: boolean): SceneViewDrawOne<NodeData, LayerId, Pose> =>
   (node, pose) => {
     if (!ready) return [];
     if (!node.data.text) return defaultDrawOne(node, pose);
-    const style = stroked
-      ? { ...node.data.style, stroke: DEMO_STROKE }
-      : node.data.style;
-    return [textCommand(pose.x, pose.y, node.data.text, style)];
+    // Paint is the node's, not the style's — `data.fill` / `data.stroke`, the
+    // slots every node kind uses, handed to the command as its paint.
+    return [textCommand(
+      pose.x, pose.y, node.data.text, node.data.style,
+      undefined, undefined, undefined,
+      { fill: node.data.fill, stroke: stroked ? DEMO_STROKE : undefined },
+    )];
   };
 
 /**

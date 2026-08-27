@@ -126,7 +126,7 @@ describe('useTextEdit', () => {
     const h = makeHarness({ a: 'hi' });
     const opts = {
       ...h.opts,
-      getStyle: () => ({ fill: { fill: 'pattern', pattern: { id: 'test-tex' } } as const }),
+      getPaint: () => ({ fill: { fill: 'pattern', pattern: { id: 'test-tex' } } as const }),
     };
     const { result } = renderHook(() => useTextEdit(opts));
     act(() => result.current.startEdit('a'));
@@ -138,7 +138,7 @@ describe('useTextEdit', () => {
     const h = makeHarness({ a: 'hi' });
     const opts = {
       ...h.opts,
-      getStyle: () => ({ fill: { fill: 'solid', color: '#ff0000' } as const }),
+      getPaint: () => ({ fill: { fill: 'solid', color: '#ff0000' } as const }),
     };
     const { result } = renderHook(() => useTextEdit(opts));
     act(() => result.current.startEdit('a'));
@@ -146,11 +146,11 @@ describe('useTextEdit', () => {
     expect(overlay.style.color).toBe('rgb(255, 0, 0)');
   });
 
-  it('caretColor defaults to the text color when fill is solid', () => {
+  it('caretColor defaults to the node fill when it is solid', () => {
     const h = makeHarness({ a: 'hi' });
     const opts = {
       ...h.opts,
-      getStyle: () => ({ fill: { fill: 'solid', color: '#3366cc' } as const }),
+      getPaint: () => ({ fill: { fill: 'solid', color: '#3366cc' } as const }),
     };
     const { result } = renderHook(() => useTextEdit(opts));
     act(() => result.current.startEdit('a'));
@@ -162,7 +162,8 @@ describe('useTextEdit', () => {
     const h = makeHarness({ a: 'hi' });
     const opts = {
       ...h.opts,
-      getStyle: () => ({ fill: { fill: 'solid', color: '#000' } as const, caretColor: '#ff00ff' }),
+      getStyle: () => ({ caretColor: '#ff00ff' }),
+      getPaint: () => ({ fill: { fill: 'solid', color: '#000' } as const }),
     };
     const { result } = renderHook(() => useTextEdit(opts));
     act(() => result.current.startEdit('a'));
@@ -170,11 +171,11 @@ describe('useTextEdit', () => {
     expect(overlay.style.caretColor).toBe('#ff00ff');
   });
 
-  it('caretColor falls back to #000 when fill is a pattern', () => {
+  it('caretColor falls back to #000 when the node fill is a pattern', () => {
     const h = makeHarness({ a: 'hi' });
     const opts = {
       ...h.opts,
-      getStyle: () => ({ fill: { fill: 'pattern', pattern: { id: 'test-tex' } } as const }),
+      getPaint: () => ({ fill: { fill: 'pattern', pattern: { id: 'test-tex' } } as const }),
     };
     const { result } = renderHook(() => useTextEdit(opts));
     act(() => result.current.startEdit('a'));
@@ -186,7 +187,7 @@ describe('useTextEdit', () => {
     const h = makeHarness({ a: 'hi' });
     const opts = {
       ...h.opts,
-      getStyle: () => ({ fill: { fill: 'solid', color: '#3366cc' } as const }),
+      getPaint: () => ({ fill: { fill: 'solid', color: '#3366cc' } as const }),
     };
     const { result } = renderHook(() => useTextEdit(opts));
     act(() => result.current.startEdit('a'));

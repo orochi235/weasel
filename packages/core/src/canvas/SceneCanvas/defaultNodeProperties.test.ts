@@ -72,9 +72,8 @@ describe('inferredNodeProperties', () => {
       'letterSpacing',
       'underline',
       'strikethrough',
-      // The whole paint union, not a color inside it — see the leaf's own
-      // comment in `defaultNodeProperties`.
-      'fill',
+      // No `fill`: a text node's color is its own `data.fill`, in Appearance,
+      // the same leaf every other node kind paints from.
     ]);
     const paragraph = style.children.paragraph as ToolPrefGroup;
     expect(Object.keys(paragraph.children)).toEqual(['align', 'lineHeight']);

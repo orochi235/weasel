@@ -343,25 +343,6 @@ export function _resetShapePaintersForTests(): void {
 
 interface RectPose { x: number; y: number; width: number; height: number }
 
-/**
- * Fold a text node's leaf `data.stroke` into its `TextStyle`.
- *
- * `kit:shape` and `kit:path` read the same `data.stroke`, and an app that
- * draws both shapes and text has one set of stroke controls writing it.
- * Reading it here is what makes it mean the same thing on every kind of node.
- *
- * `style.stroke` is the more specific declaration, so an explicit one wins
- * outright rather than merging.
- */
-function withLeafStroke(
-  style: TextStyle | undefined,
-  stroke: Stroke | null | undefined,
-): TextStyle | undefined {
-  if (style?.stroke !== undefined) return style;
-  if (!stroke) return style;
-  return { ...style, stroke };
-}
-
 const TEXT_PAINTER: NodeShapeEntry = {
   id: 'kit:text',
   matches: (node) => {
@@ -381,6 +362,7 @@ const TEXT_PAINTER: NodeShapeEntry = {
       text: string;
       style?: TextStyle;
       runs?: readonly StyledRun[];
+      fill?: FillStyle | null;
       stroke?: Stroke | null;
     };
     const p = pose as RectPose;
@@ -410,10 +392,12 @@ const TEXT_PAINTER: NodeShapeEntry = {
     // Empty runs are not a styling, so they fall back rather than paint
     // nothing.
     const y = p.y;
-    const style = withLeafStroke(d.style, d.stroke);
+    // Text reads the same `data.fill` / `data.stroke` every other node kind
+    // reads, so one set of paint controls writes all of them.
+    const paint = { fill: d.fill, stroke: d.stroke };
     return d.runs && d.runs.length > 0
-      ? [textCommandFromRuns(p.x, y, d.runs, style, undefined, p.height)]
-      : [textCommand(p.x, y, d.text, style, undefined, p.height)];
+      ? [textCommandFromRuns(p.x, y, d.runs, d.style, undefined, p.height, undefined, paint)]
+      : [textCommand(p.x, y, d.text, d.style, undefined, p.height, undefined, paint)];
   }),
   // The pose is a *wrap box*, not a bounding box — "Away" in a 300-unit box
   // leaves most of it empty, and a pose-rect silhouette claims all of it. The

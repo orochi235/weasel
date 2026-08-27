@@ -178,40 +178,66 @@ describe('kit:text painter — rich runs', () => {
     expect(text.runs.map((r) => r.text)).toEqual(['hi']);
   });
 
-  // `kit:shape` and `kit:path` read the same `data.stroke`. Text reading it
-  // too is what makes a consumer's one set of stroke controls mean the same
-  // thing on a text node as on a rect, instead of silently doing nothing.
-  describe('kit-native stroke field', () => {
-    it('lifts data.stroke onto the text style whole', () => {
+  // `kit:shape` and `kit:path` read the same `data.fill` / `data.stroke`.
+  // Text reading them too is what makes a consumer's one set of paint
+  // controls mean the same thing on a text node as on a rect, instead of
+  // silently doing nothing.
+  describe('kit-native paint fields', () => {
+    it('paints the glyphs from data.fill', () => {
+      const [cmd] = paintText({ text: 'hi', fill: solid('#7fb069') });
+      const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
+      expect(text.runs.every((r) => r.fill)).toEqual(true);
+      expect(text.runs[0].fill).toEqual(solid('#7fb069'));
+    });
+
+    it('falls back to the default black with no data.fill', () => {
+      const [cmd] = paintText({ text: 'hi' });
+      const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
+      expect(text.runs[0].fill).toEqual({ fill: 'solid', color: '#000' });
+    });
+
+    it('a run fill overrides the node fill', () => {
+      const [cmd] = paintText({
+        text: 'ab',
+        fill: solid('#7fb069'),
+        runs: [{ text: 'a' }, { text: 'b', fill: solid('#d4a574') }],
+      });
+      const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
+      expect(text.runs.map((r) => r.fill)).toEqual([solid('#7fb069'), solid('#d4a574')]);
+    });
+
+    it('lifts data.stroke onto the runs whole', () => {
       const stroke = { paint: { color: '#f00' }, width: 3, cap: 'round' as const };
       const [cmd] = paintText({ text: 'hi', stroke });
       const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-      expect(text.style.stroke).toEqual(stroke);
+      expect(text.runs[0].stroke).toEqual(stroke);
     });
 
     it('takes strokeOf() for the color-and-width case', () => {
       const [cmd] = paintText({ text: 'hi', stroke: strokeOf('#f00') });
       const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-      expect(text.style.stroke).toEqual({ paint: { color: '#f00' }, width: 1 });
+      expect(text.runs[0].stroke).toEqual({ paint: { color: '#f00' }, width: 1 });
     });
 
-    it('leaves the style alone for stroke: null or no stroke at all', () => {
+    it('leaves the runs unstroked for stroke: null or no stroke at all', () => {
       for (const data of [
         { text: 'hi', stroke: null },
         { text: 'hi' },
       ]) {
         const [cmd] = paintText(data);
-        expect((cmd as Extract<DrawCommand, { kind: 'text' }>).style.stroke).toBeUndefined();
+        expect((cmd as Extract<DrawCommand, { kind: 'text' }>).runs[0].stroke).toBeUndefined();
       }
     });
 
-    it('an explicit style.stroke wins over the leaf field', () => {
+    it('a run stroke replaces the node stroke rather than merging', () => {
       const explicit = { paint: { color: '#00f' }, width: 8, join: 'round' as const };
       const [cmd] = paintText({
-        text: 'hi', stroke: strokeOf('#f00', 3), style: { stroke: explicit },
+        text: 'ab',
+        stroke: strokeOf('#f00', 3),
+        runs: [{ text: 'a' }, { text: 'b', stroke: explicit }],
       });
       const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-      expect(text.style.stroke).toBe(explicit);
+      expect(text.runs[1].stroke).toEqual(explicit);
     });
 
     it('reaches runs-form text too', () => {

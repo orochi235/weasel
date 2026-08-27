@@ -3,4 +3,4 @@ export type { CharacterOptionsProps } from './CharacterOptions';
 export { FontFamilySelect } from './FontFamilySelect';
 export type { FontFamilySelectProps } from './FontFamilySelect';
 export { TextEditDepPublisher } from './TextEditDepPublisher';
-export { effectiveRangeStyle, rangeStyleFromTextStyle, textStyleFromPatch } from './nodeStyle';
+export { effectiveRangeStyle, nodePaintFromPatch, rangeStyleFromTextStyle, textStyleFromPatch } from './nodeStyle';

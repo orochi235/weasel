@@ -247,7 +247,7 @@ function firstText(svg: string): SvgTextNode {
 describe('text cascade', () => {
   it('inherits fill from an ancestor <g>', () => {
     const t = firstText('<svg><g fill="#ff0000"><text x="0" y="10">hi</text></g></svg>');
-    expect(t.style?.fill).toMatchObject({ color: '#ff0000' });
+    expect(t.fill).toMatchObject({ color: '#ff0000' });
   });
 
   it('inherits font-family from an ancestor <g>', () => {
@@ -269,7 +269,7 @@ describe('text cascade', () => {
 
   it('resolves text fill="currentColor" against inherited color', () => {
     const t = firstText('<svg><g color="#00ff00"><text x="0" y="10" fill="currentColor">hi</text></g></svg>');
-    expect(t.style?.fill).toMatchObject({ color: '#00ff00' });
+    expect(t.fill).toMatchObject({ color: '#00ff00' });
   });
 
   it('resolves <tspan fill="currentColor"> against inherited color', () => {

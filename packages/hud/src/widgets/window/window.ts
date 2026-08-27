@@ -2,7 +2,7 @@ import type {
   Widget, WidgetBounds, HudDrawCtx, HudContentCtx, HudPointerEvent,
 } from '../../widget';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
-import { textCommand, pathFromD } from '@weasel-js/core';
+import { textCommandFromRuns, pathFromD } from '@weasel-js/core';
 import {
   zoneAt, windowContentRect, applyWindowDrag, cursorForZone,
   DEFAULT_WINDOW_METRICS, type WindowMetrics, type WindowZone,
@@ -141,12 +141,12 @@ export function createWindow(opts: WindowOptions): WindowWidget {
 
       if (!chrome) return out;
 
-      out.push(textCommand(
-        x + m.edge + 2, y, title,
+      out.push(textCommandFromRuns(
+        x + m.edge + 2, y,
+        [{ text: title, fill: { fill: 'solid', color: ctx.tokens['--wzl-fg-muted'] } }],
         {
           fontFamily: ctx.defaultFont,
           fontSize: 12,
-          fill: { fill: 'solid', color: ctx.tokens['--wzl-fg-muted'] },
         },
         // Reserve the close box so a long title is ellipsized rather than
         // running under the ✕.

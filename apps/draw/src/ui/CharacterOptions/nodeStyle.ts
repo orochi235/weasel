@@ -15,22 +15,31 @@
  * weight leaf in the sidebar is where a document sets an exact value.
  *
  * `italic` is a clean round-trip (both sides are two-valued), as are
- * `fontFamily`, `fontSize`, `letterSpacing`, `underline`, `strikethrough`,
- * and `fill`.
+ * `fontFamily`, `fontSize`, `letterSpacing`, `underline` and `strikethrough`.
+ *
+ * `fill` crosses a second seam: a run holds one, a node's `TextStyle` does
+ * not — a text node's fill is `data.fill`, the leaf every node kind paints
+ * from. So the node-side functions take the paint beside the style, and a
+ * patch's fill comes back out through `nodePaintFromPatch` rather than in
+ * the `TextStyle`.
  *
  * Nothing here is `MIXED`-aware: a single node has one style, and `MIXED`
  * only arises from aggregating several sources.
  */
 import { resolveTextStyle } from '@weasel-js/core';
-import type { RangeStyle, RunStylePatch, TextStyle } from '@weasel-js/core';
+import type { FillStyle, RangeStyle, RunStylePatch, TextPaint, TextStyle } from '@weasel-js/core';
 
 /** Weight at or above which a node reads as bold — the fallback's own bucket. */
 const BOLD_THRESHOLD = 600;
 
 /** What the bar should display for a node with no range selected. */
-export function rangeStyleFromTextStyle(style: TextStyle | undefined): RangeStyle {
-  if (!style) return {};
+export function rangeStyleFromTextStyle(
+  style: TextStyle | undefined,
+  paint?: TextPaint,
+): RangeStyle {
   const out: RangeStyle = {};
+  if (paint?.fill != null) out.fill = paint.fill;
+  if (!style) return out;
   const weight = typeof style.fontWeight === 'number' ? style.fontWeight : undefined;
   if (weight !== undefined) out.bold = weight >= BOLD_THRESHOLD;
   if (style.fontStyle !== undefined) out.italic = style.fontStyle === 'italic';
@@ -39,7 +48,6 @@ export function rangeStyleFromTextStyle(style: TextStyle | undefined): RangeStyl
   if (style.letterSpacing !== undefined) out.letterSpacing = style.letterSpacing;
   if (style.underline !== undefined) out.underline = style.underline;
   if (style.strikethrough !== undefined) out.strikethrough = style.strikethrough;
-  if (style.fill !== undefined) out.fill = style.fill;
   return out;
 }
 
@@ -68,10 +76,12 @@ const FLAGS = ['bold', 'italic', 'underline', 'strikethrough'] as const;
 export function effectiveRangeStyle(
   range: RangeStyle | null,
   style: TextStyle | undefined,
+  paint?: TextPaint,
 ): RangeStyle {
   // `ResolvedTextStyle` widens two overlay-only fields to `| null`, which
   // `TextStyle` doesn't allow. Neither is read here.
-  const base = rangeStyleFromTextStyle(resolveTextStyle(style) as TextStyle);
+  const resolved = resolveTextStyle(style, paint);
+  const base = rangeStyleFromTextStyle(resolved as TextStyle, { fill: resolved.fill });
   if (range === null) return base;
   const out: RangeStyle = { ...base };
   for (const key of FLAGS) {
@@ -84,7 +94,8 @@ export function effectiveRangeStyle(
   return out;
 }
 
-/** The `TextStyle` fields a bar patch sets. Merge over the node's current style. */
+/** The `TextStyle` fields a bar patch sets — typography only. Merge over
+ *  the node's current style; see `nodePaintFromPatch` for its color. */
 export function textStyleFromPatch(patch: RunStylePatch): TextStyle {
   const out: TextStyle = {};
   if (patch.bold !== undefined) out.fontWeight = patch.bold ? 700 : 400;
@@ -94,6 +105,13 @@ export function textStyleFromPatch(patch: RunStylePatch): TextStyle {
   if (patch.letterSpacing !== undefined) out.letterSpacing = patch.letterSpacing;
   if (patch.underline !== undefined) out.underline = patch.underline;
   if (patch.strikethrough !== undefined) out.strikethrough = patch.strikethrough;
-  if (patch.fill !== undefined) out.fill = patch.fill;
   return out;
+}
+
+/** The node fill a bar patch sets, or `undefined` when it sets none. A text
+ *  node's color is `data.fill`, so it leaves `TextStyle` by a separate door. */
+export function nodePaintFromPatch(patch: RunStylePatch): FillStyle | undefined {
+  return patch.fill === undefined || patch.fill === null
+    ? undefined
+    : (patch.fill as FillStyle);
 }

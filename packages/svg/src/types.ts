@@ -11,7 +11,7 @@
  * single `matrix(a b c d e f)` on the `<g>`.
  */
 
-import type { Path, FillStyle, StyledRun, TextStyle } from '@weasel-js/core';
+import type { Path, FillStyle, Stroke, StyledRun, TextStyle } from '@weasel-js/core';
 
 /**
  * Opaque pass-through bag for namespaced XML content.
@@ -158,8 +158,16 @@ export interface SvgTextNode {
   text: string;
   /** Optional per-range styling — same shape as `TextPose.runs`. */
   runs?: StyledRun[];
-  /** Node-wide style. Defaults applied at render time via `resolveTextStyle`. */
+  /** Node-wide typography. Defaults applied at render time via `resolveTextStyle`. */
   style?: TextStyle;
+  /**
+   * Node-wide glyph paint, the `FillStyle` / `Stroke` a kit text node holds
+   * in `data.fill` / `data.stroke`. Not `SvgPaint`, which is the path
+   * nodes' shape — a text paint reaches the renderer through the runs, and
+   * `StyledRun.fill` / `.stroke` override these per range.
+   */
+  fill?: FillStyle;
+  stroke?: Stroke;
   /** Element-level opacity (`opacity="..."`), 0..1. */
   opacity?: number;
   /** Element-level rotation in **radians**, pivoting around the unrotated

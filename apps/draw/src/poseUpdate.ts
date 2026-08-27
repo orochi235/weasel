@@ -38,6 +38,10 @@ export interface TextObj extends BaseObj {
   tool: 'text';
   text: string;
   style?: TextStyle;
+  /** Glyph paint. Not part of `style` — a text node paints from the same
+   *  `data.fill` / `data.stroke` every other node kind paints from. */
+  fill?: FillStyle;
+  stroke?: Stroke;
 }
 
 export type Obj = PathObj | TextObj;

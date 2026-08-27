@@ -8,7 +8,7 @@ import {
   polygonFromPoints,
   useScene,
   asNodeId,
-  textCommand,
+  textCommandFromRuns,
 } from '@weasel-js/core';
 import type { Path } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
@@ -203,11 +203,11 @@ export function CompoundPathsDemo() {
                 // GL renders MSDF text from registered fonts only.
                 const text = 'original artwork by claude';
                 const charW = 7;
-                return [textCommand(
+                return [textCommandFromRuns(
                   W - 10 - text.length * charW,
                   H - 8 - 14,
-                  text,
-                  { fontFamily: 'sans-serif', fontSize: 14, fill: { fill: 'solid', color: '#ff3344' } },
+                  [{ text, fill: { fill: 'solid', color: '#ff3344' } }],
+                  { fontFamily: 'sans-serif', fontSize: 14 },
                 )];
               },
             },

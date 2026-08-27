@@ -5,7 +5,7 @@ import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { meanScale } from 'core/viewport/meanScale';
 import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from 'features/paths/types';
-import { textCommand } from 'features/text/textCommand';
+import { textCommandFromRuns } from 'features/text/textCommand';
 import type {
   DebugConfig,
   DebugSink,
@@ -218,11 +218,12 @@ function emitIds(
   // an id label for free.
   for (const b of s.bounds) {
     const [sx, sy] = worldToScreen(b.bounds.x, b.bounds.y, t);
-    out.push(textCommand(sx + 2, sy + 11, b.id, {
-      fill: { fill: 'solid', color: theme.idText },
-      fontFamily: 'ui-monospace, Menlo, monospace',
-      fontSize: 10,
-    }));
+    out.push(textCommandFromRuns(
+      sx + 2,
+      sy + 11,
+      [{ text: b.id, fill: { fill: 'solid', color: theme.idText } }],
+      { fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 10 },
+    ));
   }
 }
 
@@ -254,15 +255,11 @@ function emitLayersPanel(
     fill: { fill: 'solid', color: theme.layerTextBg },
   });
   for (let i = 0; i < lines.length; i++) {
-    out.push(textCommand(
+    out.push(textCommandFromRuns(
       x + padX,
       y + padY + i * lineH,
-      lines[i],
-      {
-        fill: { fill: 'solid', color: theme.layerText },
-        fontFamily: 'ui-monospace, Menlo, monospace',
-        fontSize: 11,
-      },
+      [{ text: lines[i], fill: { fill: 'solid', color: theme.layerText } }],
+      { fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11 },
     ));
   }
 }
@@ -290,10 +287,11 @@ function emitFps(
     path: rectPath(x, y, boxW, boxH),
     fill: { fill: 'solid', color: theme.fpsTextBg },
   });
-  out.push(textCommand(x + padX, y + padY, text, {
-    fill: { fill: 'solid', color: theme.fpsText },
-    fontFamily: 'ui-monospace, Menlo, monospace',
-    fontSize: 11,
-  }));
+  out.push(textCommandFromRuns(
+    x + padX,
+    y + padY,
+    [{ text, fill: { fill: 'solid', color: theme.fpsText } }],
+    { fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11 },
+  ));
 }
 

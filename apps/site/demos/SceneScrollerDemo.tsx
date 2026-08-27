@@ -3,7 +3,7 @@ import {
   SceneCanvas,
   WeaselProvider,
   createParallaxLayer,
-  textCommand,
+  textCommandFromRuns,
   useAnimator,
   useHandTool,
   useScene,
@@ -162,11 +162,12 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
       space: 'screen',
       draw: (): DrawCommand[] => {
         const g = game.current;
-        const style = { fontFamily: 'sans-serif', fontSize: 14, fill: { fill: 'solid' as const, color: COLORS.hud } };
+        const style = { fontFamily: 'sans-serif', fontSize: 14 };
+        const paint = { fill: 'solid' as const, color: COLORS.hud };
         return [
-          textCommand(12, 22, `♥ ${Math.max(g.lives, 0)}`, style),
-          textCommand(72, 22, `◆ ${g.score} / ${g.coins.length}`, style),
-          textCommand(190, 22, `${g.elapsed.toFixed(1)}s`, style),
+          textCommandFromRuns(12, 22, [{ text: `♥ ${Math.max(g.lives, 0)}`, fill: paint }], style),
+          textCommandFromRuns(72, 22, [{ text: `◆ ${g.score} / ${g.coins.length}`, fill: paint }], style),
+          textCommandFromRuns(190, 22, [{ text: `${g.elapsed.toFixed(1)}s`, fill: paint }], style),
         ];
       },
     };

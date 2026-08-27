@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MIXED } from '@weasel-js/core';
-import { effectiveRangeStyle, rangeStyleFromTextStyle, textStyleFromPatch } from './nodeStyle';
+import { effectiveRangeStyle, nodePaintFromPatch, rangeStyleFromTextStyle, textStyleFromPatch } from './nodeStyle';
 
 describe('rangeStyleFromTextStyle', () => {
   it('reports nothing for an absent style', () => {
@@ -35,8 +35,7 @@ describe('rangeStyleFromTextStyle', () => {
         letterSpacing: 1.5,
         underline: true,
         strikethrough: false,
-        fill,
-      }),
+      }, { fill }),
     ).toEqual({
       italic: true,
       fontFamily: 'serif',
@@ -82,7 +81,14 @@ describe('textStyleFromPatch', () => {
       strikethrough: true,
       fill: { color: '#00ff00ff' },
     };
-    expect(rangeStyleFromTextStyle(textStyleFromPatch(patch))).toEqual(patch);
+    // The fill leaves through the other door: a node's color is `data.fill`,
+    // not a `TextStyle` field, so the round trip needs both halves.
+    expect(
+      rangeStyleFromTextStyle(
+        textStyleFromPatch(patch),
+        { fill: nodePaintFromPatch(patch) },
+      ),
+    ).toEqual(patch);
   });
 
   it('loses the exact weight on a round trip, by design', () => {

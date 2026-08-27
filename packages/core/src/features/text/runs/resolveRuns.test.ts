@@ -32,7 +32,7 @@ describe('resolveRuns', () => {
   });
 
   it('per-run fontSize / fontFamily / fill override node defaults', () => {
-    const style = resolveTextStyle({ fontSize: 16, fontFamily: 'inter', fill: { fill: 'solid', color: '#000' } });
+    const style = resolveTextStyle({ fontSize: 16, fontFamily: 'inter' }, { fill: { fill: 'solid', color: '#000' } });
     const runs: StyledRun[] = [
       {
         text: 'big',

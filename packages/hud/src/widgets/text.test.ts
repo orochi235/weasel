@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createText } from './text';
+import type { TextDrawCommand } from '@weasel-js/core/renderer';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 
 const DEFAULT_RESOLVED_TOKENS = resolveTheme(weaselTheme, 'dark');
@@ -48,8 +49,8 @@ describe('text widget', () => {
       tokens: { ...ctx.tokens, '--wzl-fg': '#facade' },
     };
     const cmds = t.draw(customCtx);
-    const fill = (cmds[0] as { style: { fill: { color: string } } }).style.fill;
-    expect(fill.color).toBe('#facade');
+    const fill = (cmds[0] as TextDrawCommand).runs[0].fill;
+    expect(fill).toEqual({ fill: 'solid', color: '#facade' });
   });
 
   it('respects explicit opts.color over theme', () => {
@@ -59,7 +60,7 @@ describe('text widget', () => {
       tokens: { ...ctx.tokens, '--wzl-fg': '#facade' },
     };
     const cmds = t.draw(customCtx);
-    const fill = (cmds[0] as { style: { fill: { color: string } } }).style.fill;
-    expect(fill.color).toBe('#ff0000');
+    const fill = (cmds[0] as TextDrawCommand).runs[0].fill;
+    expect(fill).toEqual({ fill: 'solid', color: '#ff0000' });
   });
 });

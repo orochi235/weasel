@@ -7,7 +7,7 @@ import {
   PATH_M,
   resolveSkeleton,
   SceneCanvas,
-  textCommand,
+  textCommandFromRuns,
   useAnimator,
   useScene,
 } from '@weasel-js/core';
@@ -87,11 +87,11 @@ function drawFigure(skeleton: Skeleton, pose: Pose, color: string, labels: boole
       fill: { color: '#f0e4cc' },
     });
     if (labels) {
-      cmds.push(textCommand(ox + 8, oy - 6, bone.name, {
-        fontFamily: 'sans-serif',
-        fontSize: 10,
-        fill: { fill: 'solid', color: '#a89878' },
-      }));
+      cmds.push(textCommandFromRuns(
+        ox + 8, oy - 6,
+        [{ text: bone.name, fill: { fill: 'solid', color: '#a89878' } }],
+        { fontFamily: 'sans-serif', fontSize: 10 },
+      ));
     }
   }
   return cmds;
@@ -143,12 +143,16 @@ export function RigDemo() {
     draw: () => [
       ...drawFigure(BY_SLIDER, sliderPose, '#7fb069', labels),
       ...drawFigure(BY_TRACK, trackPose.current, '#d4a574', labels),
-      textCommand(60, 300, 'blendPoses by hand', {
-        fontFamily: 'sans-serif', fontSize: 12, fill: { fill: 'solid', color: '#7fb069' },
-      }),
-      textCommand(330, 300, 'SampledTrack<Pose>.interpolate', {
-        fontFamily: 'sans-serif', fontSize: 12, fill: { fill: 'solid', color: '#d4a574' },
-      }),
+      textCommandFromRuns(
+        60, 300,
+        [{ text: 'blendPoses by hand', fill: { fill: 'solid', color: '#7fb069' } }],
+        { fontFamily: 'sans-serif', fontSize: 12 },
+      ),
+      textCommandFromRuns(
+        330, 300,
+        [{ text: 'SampledTrack<Pose>.interpolate', fill: { fill: 'solid', color: '#d4a574' } }],
+        { fontFamily: 'sans-serif', fontSize: 12 },
+      ),
     ],
   };
 

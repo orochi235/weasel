@@ -1,8 +1,11 @@
 /** Initial scene content for TextDemo — six text nodes covering single-line,
  *  multi-line, alignment, themed-editor styling, inline rich-text runs, and
  *  run-level decoration + tracking. */
+import { solid } from '@weasel-js/core';
 import type { RectPose, TextPose } from '@weasel-js/core';
 
+/** Paint is node data, not typography: `TextPose` carries `fill`/`stroke`
+ *  beside `text`, the same slots a shape node uses. */
 export type TextNode = TextPose & { id: string };
 export type Pose = RectPose;
 
@@ -14,7 +17,8 @@ export const INITIAL_TEXT_NODES: TextNode[] = [
     width: 240,
     height: 80,
     text: 'Click to select. Double-click to edit.\nDrag a selected node to move it.',
-    style: { fontSize: 16, fill: { fill: 'solid', color: '#1c1c1c' } },
+    fill: solid('#1c1c1c'),
+    style: { fontSize: 16 },
   },
   {
     id: 't2',
@@ -23,7 +27,8 @@ export const INITIAL_TEXT_NODES: TextNode[] = [
     width: 240,
     height: 60,
     text: 'Center-aligned.',
-    style: { fontSize: 20, align: 'center', fill: { fill: 'solid', color: '#3a4a8a' }, fontWeight: 600 },
+    fill: solid('#3a4a8a'),
+    style: { fontSize: 20, align: 'center', fontWeight: 600 },
   },
   {
     // The only scene that pins decoration geometry and tracking by pixels.
@@ -46,7 +51,8 @@ export const INITIAL_TEXT_NODES: TextNode[] = [
       { text: 'tracking', letterSpacing: 3 },
       { text: '.' },
     ],
-    style: { fontSize: 16, fill: { fill: 'solid', color: '#1c1c1c' } },
+    fill: solid('#1c1c1c'),
+    style: { fontSize: 16 },
   },
   {
     id: 't3',
@@ -55,7 +61,8 @@ export const INITIAL_TEXT_NODES: TextNode[] = [
     width: 480,
     height: 40,
     text: 'Enter commits, Shift+Enter newline, Escape cancels.',
-    style: { fontSize: 14, fontStyle: 'italic', fill: { fill: 'solid', color: '#6a6a6a' } },
+    fill: solid('#6a6a6a'),
+    style: { fontSize: 14, fontStyle: 'italic' },
   },
   {
     id: 't4',
@@ -64,10 +71,10 @@ export const INITIAL_TEXT_NODES: TextNode[] = [
     width: 480,
     height: 50,
     text: 'Themed editing — magenta caret, yellow ::selection.',
+    fill: solid('#7a1f5a'),
     style: {
       fontSize: 16,
       fontWeight: 600,
-      fill: { color: '#7a1f5a' },
       caretColor: '#ff00ff',
       selectionBackground: '#ffeb3b',
       selectionColor: '#000',
@@ -89,6 +96,7 @@ export const INITIAL_TEXT_NODES: TextNode[] = [
       { text: 'bold-italic', bold: true, italic: true },
       { text: ' word.' },
     ],
-    style: { fontSize: 16, fill: { fill: 'solid', color: '#1c1c1c' } },
+    fill: solid('#1c1c1c'),
+    style: { fontSize: 16 },
   },
 ];

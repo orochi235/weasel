@@ -5,10 +5,13 @@
  * text command derives `align` and per-run resolution the same way — a
  * caller that assembles the command by hand is one field away from a
  * silently different result.
+ *
+ * `paint` is the node's `data.fill` / `data.stroke`. A caller with no node —
+ * a HUD widget, a debug overlay — states its color on the run instead.
  */
 
 import type { DrawCommand } from '../../renderer';
-import type { TextStyle } from './textStyle';
+import type { TextPaint, TextStyle } from './textStyle';
 import { resolveTextStyle } from './textStyle';
 import { resolveRuns } from './runs/resolveRuns';
 import type { StyledRun } from './runs';
@@ -22,8 +25,9 @@ export function textCommandFromRuns(
   maxWidth?: number,
   height?: number,
   verticalAlign?: TextVerticalAlign,
+  paint?: TextPaint,
 ): DrawCommand {
-  const resolved = resolveTextStyle(style);
+  const resolved = resolveTextStyle(style, paint);
   return {
     kind: 'text',
     x,
@@ -48,6 +52,7 @@ export function textCommand(
   maxWidth?: number,
   height?: number,
   verticalAlign?: TextVerticalAlign,
+  paint?: TextPaint,
 ): DrawCommand {
-  return textCommandFromRuns(x, y, [{ text }], style, maxWidth, height, verticalAlign);
+  return textCommandFromRuns(x, y, [{ text }], style, maxWidth, height, verticalAlign, paint);
 }

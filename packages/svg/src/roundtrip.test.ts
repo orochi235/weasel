@@ -252,7 +252,7 @@ describe('round-trip', () => {
     expect(t.style?.fontWeight).toBe(700);
     expect(t.style?.fontStyle).toBe('italic');
     expect(t.style?.align).toBe('center');
-    expect(t.style?.fill).toEqual({ fill: 'solid', color: '#b03030' });
+    expect(t.fill).toEqual({ fill: 'solid', color: '#b03030' });
     expect(t.style?.letterSpacing).toBe(1.5);
     expect(t.style?.underline).toBe(true);
     expect(t.style?.strikethrough).toBe(true);
@@ -296,7 +296,7 @@ describe('round-trip', () => {
     const t = first.nodes[0];
     if (t.kind !== 'text') throw new Error('expected text');
 
-    expect(t.style?.stroke).toEqual({
+    expect(t.stroke).toEqual({
       paint: { fill: 'solid', color: '#c0392b' },
       width: 3,
       join: 'round',
@@ -323,7 +323,7 @@ describe('round-trip', () => {
     const second = parseSvg(out);
     const t2 = second.nodes[0];
     if (t2.kind !== 'text') throw new Error('expected text');
-    expect(t2.style?.stroke).toEqual(t.style?.stroke);
+    expect(t2.stroke).toEqual(t.stroke);
     expect(t2.runs?.[1].stroke).toEqual(t.runs?.[1].stroke);
   });
 
@@ -334,19 +334,17 @@ describe('round-trip', () => {
       kind: 'text',
       x: 0, y: 0, width: 100, height: 40,
       text: 'grad',
-      style: {
-        stroke: {
-          paint: {
-            fill: 'linear-gradient',
-            from: { x: 0, y: 0 },
-            to: { x: 1, y: 0 },
-            stops: [
-              { offset: 0, color: '#ff0000' },
-              { offset: 1, color: '#0000ff' },
-            ],
-          },
-          width: 2,
+      stroke: {
+        paint: {
+          fill: 'linear-gradient',
+          from: { x: 0, y: 0 },
+          to: { x: 1, y: 0 },
+          stops: [
+            { offset: 0, color: '#ff0000' },
+            { offset: 1, color: '#0000ff' },
+          ],
         },
+        width: 2,
       },
     };
     const out = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 100, height: 40 } });

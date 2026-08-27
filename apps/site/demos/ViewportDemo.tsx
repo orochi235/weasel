@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SceneCanvas, useScene, textCommand, meanScale } from '@weasel-js/core';
+import { SceneCanvas, useScene, textCommandFromRuns, meanScale } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 
 type Layer = 'scene';
@@ -85,11 +85,11 @@ export function ViewportDemo() {
                 },
                 // Center-aligned: x = center - (text_width / 2). Approximates
                 // ctx.textAlign='center' since TextDrawCommand uses left baseline.
-                textCommand(
+                textCommandFromRuns(
                   p.x + p.width / 2 - (label.length * charW) / 2,
                   p.y + p.height / 2 + fontSize / 3,  // textBaseline='middle' → shift down ~1/3 emHeight
-                  label,
-                  { fontFamily: 'sans-serif', fontSize, fill: { fill: 'solid', color: '#1a130d' } },
+                  [{ text: label, fill: { fill: 'solid', color: '#1a130d' } }],
+                  { fontFamily: 'sans-serif', fontSize },
                 ),
               ];
             },

@@ -1,5 +1,5 @@
 // apps/site/demos/platformer/skin.ts
-import { ellipsePath, polygonFromPoints, rectPath, textCommand } from '@weasel-js/core';
+import { ellipsePath, polygonFromPoints, rectPath, textCommandFromRuns } from '@weasel-js/core';
 import type { Dims, DrawCommand, Mat3, View } from '@weasel-js/core';
 import { calloutAge, calloutScreenPos, type Callout } from './callouts';
 import { worldToScreen } from './camera';
@@ -107,15 +107,14 @@ export function drawTiles(level: Level, view: View, dims: Dims): DrawCommand[] {
         out.push(
           // `y` is the top of the text box, not a baseline — centring means
           // handing it the box height and letting verticalAlign do the work.
-          textCommand(
+          textCommandFromRuns(
             p.x + s / 2,
             p.y,
-            '?',
+            [{ text: '?', fill: solid(COLORS.questionMark) }],
             {
               fontFamily: 'sans-serif',
               fontSize: s * 0.6,
               align: 'center',
-              fill: solid(COLORS.questionMark),
             },
             undefined,
             s,
@@ -266,12 +265,16 @@ export function drawCallouts(callouts: Callout[], view: View, dims: Dims, now: n
       fontFamily: 'sans-serif',
       fontSize: screen ? 22 : 12,
       align: 'center' as const,
-      fill: solid(COLORS.callout),
     };
     return {
       kind: 'group' as const,
       alpha: 1 - u,
-      children: [textCommand(pos.x, pos.y - u * CALLOUT_RISE, c.text, style)],
+      children: [textCommandFromRuns(
+        pos.x,
+        pos.y - u * CALLOUT_RISE,
+        [{ text: c.text, fill: solid(COLORS.callout) }],
+        style,
+      )],
     };
   });
 }
@@ -301,16 +304,15 @@ export function drawEnding(
       kind: 'group',
       alpha: ramp(0.25, 0.9),
       children: [
-        textCommand(
+        textCommandFromRuns(
           dims.width / 2,
           0,
-          text,
+          [{ text, fill: solid(won ? COLORS.endingWon : COLORS.endingLost) }],
           {
             fontFamily: 'Georgia, "Times New Roman", serif',
             fontSize: size,
             align: 'center',
             letterSpacing: size * 0.14,
-            fill: solid(won ? COLORS.endingWon : COLORS.endingLost),
           },
           undefined,
           dims.height,

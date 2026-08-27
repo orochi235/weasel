@@ -4,7 +4,7 @@ import {
   PATH_L,
   PATH_M,
   SceneCanvas,
-  textCommand,
+  textCommandFromRuns,
   useAnimator,
   useScene,
   useSelection,
@@ -161,9 +161,11 @@ export function AudioDemo() {
           path: { kind: 'rect', x: LISTENER.x - 9, y: LISTENER.y - 9, width: 18, height: 18 },
           fill: { color: '#d4c4a8' },
         },
-        textCommand(LISTENER.x + 14, LISTENER.y + 4, 'listener', {
-          fontFamily: 'sans-serif', fontSize: 11, fill: { fill: 'solid', color: '#a89878' },
-        }),
+        textCommandFromRuns(
+          LISTENER.x + 14, LISTENER.y + 4,
+          [{ text: 'listener', fill: { fill: 'solid', color: '#a89878' } }],
+          { fontFamily: 'sans-serif', fontSize: 11 },
+        ),
       ];
       const barW = W / BARS;
       for (let i = 0; i < BARS; i += 1) {

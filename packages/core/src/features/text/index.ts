@@ -13,7 +13,7 @@ export {
   resolveTextStyle,
   fontString,
 } from './textStyle';
-export type { TextStyle, ResolvedTextStyle } from './textStyle';
+export type { TextStyle, TextPaint, ResolvedTextStyle } from './textStyle';
 export { measureText, measuredWidth } from './measureText';
 export type { MeasuredText } from './measureText';
 export { measureTextBounds } from './measureTextBounds';
@@ -42,7 +42,7 @@ export { styleAtRange, applyStyleToRange } from './runs/rangeStyle';
 export type { RangeStyle, RunStylePatch, StyleKey } from './runs/rangeStyle';
 export { setFlagOverRange, nodeHasFlag } from './runs/flagRange';
 export type { FlagKey, SetFlagResult } from './runs/flagRange';
-export { textCommand } from './textCommand';
+export { textCommand, textCommandFromRuns } from './textCommand';
 export { verticalAlignOffset } from './verticalAlign';
 export type { TextVerticalAlign } from './verticalAlign';
 export {

@@ -1,6 +1,6 @@
 import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent } from '../widget';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import { textCommand } from '@weasel-js/core';
+import { textCommandFromRuns } from '@weasel-js/core';
 
 /** Options for a text widget. `x`/`y` place the text; its bounds follow from
  *  the string and font size. */
@@ -47,14 +47,13 @@ export function createText(opts: TextOptions): TextWidget {
     setText(t) { assertNotDisposed(); text = t; opts.onChange?.(); },
     draw(ctx: HudDrawCtx): DrawCommand[] {
       const color = opts.color ?? ctx.tokens['--wzl-fg'];
-      return [textCommand(
+      return [textCommandFromRuns(
         bounds.x,
         bounds.y,
-        text,
+        [{ text, fill: { fill: 'solid', color } }],
         {
           fontFamily: opts.fontFamily ?? ctx.defaultFont,
           fontSize: opts.fontSize,
-          fill: { fill: 'solid', color },
         },
       )];
     },

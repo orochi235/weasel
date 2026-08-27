@@ -19,7 +19,7 @@ import type {
   Matrix, NamespaceMeta, NamespacedElement, ParseOptions, ParseResult,
   SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode, SvgImageNode,
 } from './types';
-import type { StyledRun, TextStyle, FillStyle, Stroke } from '@weasel-js/core';
+import type { StyledRun, TextStyle, TextPaint, FillStyle, Stroke } from '@weasel-js/core';
 import { multiply, parseTransform, decomposeRotation, rebaseTransform, rotationComponent, isIdentity } from './transform';
 import { boundsOfPath } from '@weasel-js/core';
 import { IDENTITY_MATRIX, UNBOUNDED_TEXT_WIDTH } from './types';
@@ -796,7 +796,8 @@ function parseTextElement(
   const ay = m[1] * rawX + m[3] * rawY + m[5];
 
   const leafStyle = deriveStyle(style, el);
-  const textStyle = readTextStyle(leafStyle, gradients, onWarn);
+  const textStyle = readTextStyle(leafStyle, onWarn);
+  const textPaint = readTextPaint(leafStyle, gradients, onWarn);
   const fontSize = textStyle.fontSize ?? 16;
   const lineHeight = textStyle.lineHeight ?? 1.2;
 
@@ -863,6 +864,8 @@ function parseTextElement(
   );
   if (hasStyling) node.runs = runs;
   if (Object.keys(textStyle).length > 0) node.style = textStyle;
+  if (textPaint.fill != null) node.fill = textPaint.fill;
+  if (textPaint.stroke != null) node.stroke = textPaint.stroke;
   if (opacity != null) node.opacity = opacity;
   // Try to extract the element-local transform as a pure rotation about
   // the text box's center. When it doesn't decompose cleanly but contains
@@ -931,7 +934,6 @@ function readTspanRun(
 
 function readTextStyle(
   style: StyleContext,
-  gradients: GradientTable,
   onWarn: (m: string) => void,
 ): TextStyle {
   const out: TextStyle = {};
@@ -969,6 +971,17 @@ function readTextStyle(
   // Edit-overlay-only chrome (`caretColor`, `selectionBackground`,
   // `selectionColor`) is intentionally not persisted — those are UI state,
   // not document content.
+  return out;
+}
+
+/** Read a `<text>` element's glyph paint — the node's own fill and stroke,
+ *  which are not typography and do not live in its `TextStyle`. */
+function readTextPaint(
+  style: StyleContext,
+  gradients: GradientTable,
+  onWarn: (m: string) => void,
+): TextPaint {
+  const out: TextPaint = {};
   const fillRaw = resolveCurrentColor(style['fill'] ?? null, style);
   if (fillRaw) {
     const parsed = parsePaintAttr(fillRaw);

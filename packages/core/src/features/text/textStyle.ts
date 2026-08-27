@@ -4,9 +4,10 @@
  * `DEFAULT_TEXT_STYLE` and are applied at render/measure time, never written
  * back to the pose.
  *
- * `fill` follows the kit-wide `FillStyle` model — solid color or pattern. The
- * contenteditable edit overlay flattens non-solid fills to `'#000'` for CSS
- * since the browser can't paint with a texture handle.
+ * Paint is not typography and does not live here. A text node carries its
+ * fill and stroke in `data.fill` / `data.stroke`, the slots every other node
+ * kind uses; `resolveTextStyle` takes them as its second argument and
+ * `StyledRun.fill` / `.stroke` override them per range.
  */
 
 import type { FillStyle, Stroke } from 'core/paint-types';
@@ -25,11 +26,9 @@ export interface TextStyle {
   align?: 'left' | 'center' | 'right';
   /** Multiplier applied to `fontSize`. Default 1.2. */
   lineHeight?: number;
-  /** Default `{ fill: 'solid', color: '#000' }`. */
-  fill?: FillStyle;
   /**
-   * Caret color used by the edit overlay. Defaults to the text color when
-   * `fill` is solid; falls back to `#000` for non-solid paints.
+   * Caret color used by the edit overlay. Defaults to the node's fill when
+   * that fill is solid; falls back to `#000` for non-solid paints.
    */
   caretColor?: string;
   /**
@@ -46,19 +45,6 @@ export interface TextStyle {
   underline?: boolean;
   /** Default `false`. */
   strikethrough?: boolean;
-  /**
-   * Outline painted over the glyph fill. Omitted (the default) means no
-   * outline — there is no such thing as a default text stroke.
-   *
-   * Only glyphs on the outline tier are stroked: above
-   * `textOutlineMinScreenSize` a glyph is a real `PolygonPath`, so it gets
-   * the ordinary tessellated ribbon with real joins, caps and miters, in any
-   * paint. Below it a glyph is a sampled distance field with no geometry to
-   * stroke, and it renders unstroked rather than approximated. `width` is in
-   * world units, like every other stroke in the kit — it does not scale with
-   * `fontSize`.
-   */
-  stroke?: Stroke;
 }
 
 /** `TextStyle` with all fields filled in from defaults — what the renderer actually consumes. */
@@ -77,7 +63,7 @@ export interface ResolvedTextStyle {
   underline: boolean;
   strikethrough: boolean;
   /** Absent means no outline — unlike the other fields, this one has no
-   *  default to fall back to. See {@link TextStyle.stroke}. */
+   *  default to fall back to. See {@link TextPaint.stroke}. */
   stroke?: Stroke;
 }
 
@@ -112,10 +98,51 @@ export const DEFAULT_TEXT_STYLE: ResolvedTextStyle = {
   strikethrough: false,
 };
 
-/** Fill in a partial `TextStyle` with defaults from `DEFAULT_TEXT_STYLE`. */
-export function resolveTextStyle(style?: TextStyle): ResolvedTextStyle {
-  if (!style) return DEFAULT_TEXT_STYLE;
-  const fill = style.fill ?? DEFAULT_TEXT_STYLE.fill;
+/**
+ * The paint a text node hands its glyphs — `data.fill` and `data.stroke`,
+ * read straight off the node. Runs inherit these when they name none of
+ * their own.
+ *
+ * `fill: null` is not yet distinguishable from absent: a `ResolvedRun` must
+ * name a concrete fill, so unfilled-but-stroked text has nowhere to say so
+ * and falls back to the default black. See `docs/TODO.md`.
+ */
+export interface TextPaint {
+  fill?: FillStyle | null;
+  /**
+   * Outline painted over the glyph fill. Absent means no outline — there is
+   * no such thing as a default text stroke.
+   *
+   * Only glyphs on the outline tier are stroked: above
+   * `textOutlineMinScreenSize` a glyph is a real `PolygonPath`, so it gets
+   * the ordinary tessellated ribbon with real joins, caps and miters, in any
+   * paint. Below it a glyph is a sampled distance field with no geometry to
+   * stroke, and it renders unstroked rather than approximated. `width` is in
+   * world units, like every other stroke in the kit — it does not scale with
+   * `fontSize`.
+   */
+  stroke?: Stroke | null;
+}
+
+/** Fill in a partial `TextStyle` with defaults from `DEFAULT_TEXT_STYLE`,
+ *  taking the glyph paint from the node rather than from the style. */
+export function resolveTextStyle(
+  style?: TextStyle,
+  paint?: TextPaint,
+): ResolvedTextStyle {
+  const fill = paint?.fill ?? DEFAULT_TEXT_STYLE.fill;
+  const stroke = paint?.stroke ?? undefined;
+  if (!style) {
+    return fill === DEFAULT_TEXT_STYLE.fill && stroke === undefined
+      ? DEFAULT_TEXT_STYLE
+      : {
+        ...DEFAULT_TEXT_STYLE,
+        fill,
+        caretColor: paintColor(fill),
+        selectionBackground: defaultSelectionBackground(paintColor(fill)),
+        ...(stroke !== undefined ? { stroke } : {}),
+      };
+  }
   const caretColor = style.caretColor ?? paintColor(fill);
   let selectionBackground: string | null;
   if (style.selectionBackground === 'none') {
@@ -139,7 +166,7 @@ export function resolveTextStyle(style?: TextStyle): ResolvedTextStyle {
     letterSpacing: style.letterSpacing ?? DEFAULT_TEXT_STYLE.letterSpacing,
     underline: style.underline ?? DEFAULT_TEXT_STYLE.underline,
     strikethrough: style.strikethrough ?? DEFAULT_TEXT_STYLE.strikethrough,
-    ...(style.stroke !== undefined ? { stroke: style.stroke } : {}),
+    ...(stroke !== undefined ? { stroke } : {}),
   };
 }
 

@@ -336,7 +336,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
       kind: 'group',
       colorMatrix: NO_RED,
       children: [
-        { kind: 'text', x: 0, y: 0, runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { fill: 'solid', color: '#fff' }, letterSpacing: 0, underline: false, strikethrough: false }], align: 'left', style: { fontFamily: 'inter', fontSize: 32, fill: { color: '#fff' } } },
+        { kind: 'text', x: 0, y: 0, runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { fill: 'solid', color: '#fff' }, letterSpacing: 0, underline: false, strikethrough: false }], align: 'left', style: { fontFamily: 'inter', fontSize: 32 } },
       ],
     };
     r.render([cmd]);
@@ -375,7 +375,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
       kind: 'text', x: 0, y: 0,
       runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { fill: 'solid', color: '#fff' }, letterSpacing: 0, underline: false, strikethrough: false }],
       align: 'left',
-      style: { fontFamily: 'inter', fontSize: 32, fill: { color: '#fff' } },
+      style: { fontFamily: 'inter', fontSize: 32 },
     };
     r.render([cmd]);
     const matrixCalls = recorder.calls.filter((c) => c.name === 'uniformMatrix4fv');
