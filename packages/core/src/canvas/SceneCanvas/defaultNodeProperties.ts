@@ -54,9 +54,12 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
             children: {
               paint: { kind: 'paint', name: 'Color', description: 'Stroke paint.', default: { fill: 'solid', color: '#000000ff' }, alpha: true },
               width: { kind: 'number', name: 'Width', description: 'Stroke width, world units.', default: 1, min: 0, step: 0.5 },
-              cap: { kind: 'enum', name: 'Cap', description: 'How an open end is drawn.', default: 'butt', options: [{ value: 'butt', label: 'Butt' }, { value: 'round', label: 'Round' }, { value: 'square', label: 'Square' }] },
-              join: { kind: 'enum', name: 'Join', description: 'How a corner is drawn.', default: 'miter', options: [{ value: 'miter', label: 'Miter' }, { value: 'round', label: 'Round' }, { value: 'bevel', label: 'Bevel' }] },
-              align: { kind: 'enum', name: 'Align', description: 'Where the ribbon sits relative to the edge.', default: 'center', options: [{ value: 'center', label: 'Center' }, { value: 'inner', label: 'Inner' }, { value: 'outer', label: 'Outer' }] },
+              // Three options each, all short: a segmented control shows every
+              // one at once where a select shows the current one and hides the
+              // rest behind a click.
+              cap: { kind: 'enum', name: 'Cap', description: 'How an open end is drawn.', default: 'butt', control: 'toggle', pair: 'Line', options: [{ value: 'butt', label: 'Butt', short: 'B' }, { value: 'round', label: 'Round', short: 'R' }, { value: 'square', label: 'Square', short: 'S' }] },
+              join: { kind: 'enum', name: 'Join', description: 'How a corner is drawn.', default: 'miter', control: 'toggle', pair: 'Line', options: [{ value: 'miter', label: 'Miter', short: 'M' }, { value: 'round', label: 'Round', short: 'R' }, { value: 'bevel', label: 'Bevel', short: 'B' }] },
+              align: { kind: 'enum', name: 'Align', description: 'Where the ribbon sits relative to the edge.', default: 'center', control: 'toggle', pair: 'Line', options: [{ value: 'center', label: 'Center', short: 'C' }, { value: 'inner', label: 'Inner', short: 'I' }, { value: 'outer', label: 'Outer', short: 'O' }] },
             },
           },
         },
@@ -93,9 +96,9 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
                     character: {
                       name: 'Character',
                       children: {
-                        fontSize: { kind: 'number', name: 'Size', description: 'Font size, world units.', default: 16, min: 1, step: 1 },
                         fontFamily: { kind: 'font-family', name: 'Font', description: 'Registered font family.', default: 'sans-serif' },
-                        fontWeight: { kind: 'number', name: 'Weight', description: 'Font weight, 100–900.', default: 400, min: 100, max: 900, step: 100 },
+                        fontSize: { kind: 'number', name: 'Size', description: 'Font size, world units.', default: 16, min: 1, step: 1, pair: 'Size / weight' },
+                        fontWeight: { kind: 'number', name: 'Weight', description: 'Font weight, 100–900.', default: 400, min: 100, max: 900, step: 100, pair: 'Size / weight' },
                         fontStyle: { kind: 'enum', name: 'Style', description: 'Upright or italic.', default: 'normal', options: [{ value: 'normal', label: 'Normal' }, { value: 'italic', label: 'Italic' }] },
                         letterSpacing: { kind: 'number', name: 'Tracking', description: 'Extra advance per glyph, world units.', default: 0, step: 0.1 },
                         underline: { kind: 'boolean', name: 'Underline', description: 'Underline the text.', default: false },
@@ -111,7 +114,7 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
                     paragraph: {
                       name: 'Paragraph',
                       children: {
-                        align: { kind: 'enum', name: 'Align', description: 'Horizontal alignment.', default: 'left', options: [{ value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' }] },
+                        align: { kind: 'enum', name: 'Align', description: 'Horizontal alignment.', default: 'left', control: 'toggle', options: [{ value: 'left', label: 'Left', short: 'L' }, { value: 'center', label: 'Center', short: 'C' }, { value: 'right', label: 'Right', short: 'R' }] },
                         lineHeight: { kind: 'number', name: 'Leading', description: 'Line height as a multiple of font size.', default: 1.2, min: 0.5, step: 0.1 },
                       },
                     },

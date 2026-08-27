@@ -62,9 +62,11 @@ describe('inferredNodeProperties', () => {
     const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
     const style = ((entry.schema.children.text as ToolPrefGroup).children['data.style']) as ToolPrefObject;
     const character = style.children.character as ToolPrefGroup;
+    // Family first, then the paired size and weight — `pair` merges adjacent
+    // leaves, so the two it merges have to be adjacent.
     expect(Object.keys(character.children)).toEqual([
-      'fontSize',
       'fontFamily',
+      'fontSize',
       'fontWeight',
       'fontStyle',
       'letterSpacing',

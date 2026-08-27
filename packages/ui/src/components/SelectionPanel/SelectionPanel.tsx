@@ -19,6 +19,7 @@ import { Input } from '../Input';
 import { NumberField } from '../NumberField';
 import { Select } from '../Select';
 import { Switch } from '../Switch';
+import { ToggleBar } from '../ToggleBar';
 import {
   MIXED,
   aggregateValue,
@@ -298,6 +299,25 @@ function renderBuiltin(
     }
     case 'enum': {
       const p = pref as ToolPrefEnum;
+      if (p.control === 'toggle') {
+        // Every option visible at once, which is the point of a segmented
+        // control: `short` keeps it to the width a property row has, and the
+        // full label stays the accessible name. A mixed selection selects
+        // nothing rather than picking a winner.
+        return (
+          <ToggleBar<string>
+            size="sm"
+            ariaLabel={ariaLabel}
+            items={p.options.map((o) => ({
+              value: o.value,
+              label: o.short ?? o.label,
+              ariaLabel: o.label,
+            }))}
+            value={mixed ? null : (typeof value === 'string' ? value : p.default)}
+            onChange={(next) => { if (next !== null) setValue(next); }}
+          />
+        );
+      }
       return (
         <Select<string>
           className={s.select}
@@ -358,6 +378,21 @@ function renderBuiltin(
  * fields. A child's edit commits the parent object, never the child's path —
  * writing into a path whose value is not an object yet would corrupt it.
  */
+/** One labeled row inside an object leaf; `pair` merges adjacent fields into
+ *  it, exactly as the section rows merge theirs. */
+interface ObjectRow {
+  key: string;
+  pair?: string;
+  label: string;
+  title?: string;
+  controls: ReactNode[];
+}
+
+/**
+ * Renders an object leaf: the object's own fields, as rows. A child's edit
+ * commits the parent object, never the child's path — writing into a path
+ * whose value is not an object yet would corrupt it.
+ */
 function ObjectLeaf({
   ctx,
   renderers,
@@ -371,22 +406,20 @@ function ObjectLeaf({
     : undefined;
 
   // A value whose fields are entirely grouped is titled by those groups — its
-  // own heading would stack straight onto the first one and name nothing the
-  // reader can't already see.
+  // own heading would stack onto the first one and name nothing new.
   const allGrouped = Object.values(pref.children).every((child) => !('kind' in child));
 
-  // A group among the children organises the fields under a heading without
-  // contributing to the path — the rule group keys follow at the top level.
-  //
   // `indent` is false when nothing visible sits above these rows: depth is
-  // drawn only where a label marks it, so a group under a suppressed heading
-  // reads as a peer of the sections rather than as a level of nothing.
+  // drawn only where a label marks it.
   const rowsOf = (
     children: Record<string, ToolPrefLeaf | ToolPrefGroup>,
     indent: boolean,
   ): ReactNode[] => {
-    const out: ReactNode[] = [];
+    const out: (ReactNode | ObjectRow)[] = [];
     for (const [key, child] of Object.entries(children)) {
+      // A group among the children organises the fields under a heading
+      // without contributing to the path — the rule group keys follow at the
+      // top level.
       if (!('kind' in child)) {
         const labeled = child.name !== '';
         const inner = rowsOf(child.children, labeled);
@@ -414,14 +447,31 @@ function ObjectLeaf({
       const custom = renderers?.[childPath] ?? renderers?.[child.kind];
       const content = custom ? custom(childCtx) : renderBuiltin(childCtx, child.name, renderers);
       if (content == null) continue;
-      out.push(
-        <div key={childPath} className={s.row}>
-          <span className={s.rowLabel} title={child.description}>{child.name}</span>
-          <span className={s.rowControls}>{content}</span>
-        </div>,
-      );
+      const prev = out[out.length - 1];
+      const isRow = (v: ReactNode | ObjectRow): v is ObjectRow =>
+        typeof v === 'object' && v !== null && 'controls' in v;
+      if (child.pair !== undefined && isRow(prev) && prev.pair === child.pair) {
+        prev.controls.push(<Fragment key={childPath}>{content}</Fragment>);
+        continue;
+      }
+      out.push({
+        key: childPath,
+        pair: child.pair,
+        label: child.pair ?? child.name,
+        title: child.description,
+        controls: [<Fragment key={childPath}>{content}</Fragment>],
+      });
     }
-    return out;
+    return out.map((entry) =>
+      typeof entry === 'object' && entry !== null && 'controls' in entry ? (
+        <div key={entry.key} className={s.row}>
+          <span className={s.rowLabel} title={entry.title}>{entry.label}</span>
+          <span className={s.rowControls}>{entry.controls}</span>
+        </div>
+      ) : (
+        entry
+      ),
+    );
   };
 
   const rows = rowsOf(pref.children, !allGrouped);

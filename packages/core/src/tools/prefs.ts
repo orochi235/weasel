@@ -39,7 +39,7 @@ export type ToolPrefBooleanControl = 'checkbox' | 'switch';
 /** How a schema-driven UI should present a string pref. */
 export type ToolPrefStringControl = 'input' | 'textarea';
 /** How a schema-driven UI should present an enum pref. */
-export type ToolPrefEnumControl = 'select' | 'radio';
+export type ToolPrefEnumControl = 'select' | 'radio' | 'toggle';
 
 /** Display-unit conversion for number leaves whose stored value uses a
  *  canonical unit the user shouldn't see (e.g. radians stored, degrees
@@ -71,7 +71,10 @@ export interface ToolPrefString extends ToolPrefBase<'string', string> {
 /** A pref with a fixed set of labeled choices. */
 export interface ToolPrefEnum<T extends string = string>
   extends ToolPrefBase<'enum', T> {
-  options: readonly { value: T; label: string }[];
+  /** `short` is the label a segmented control uses when a full one would not
+   *  fit — a capital or two. The full `label` stays the accessible name, so
+   *  the abbreviation never becomes the only thing naming the option. */
+  options: readonly { value: T; label: string; short?: string }[];
   control?: ToolPrefEnumControl;
 }
 

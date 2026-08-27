@@ -15,7 +15,7 @@ export type PrefBooleanControl = 'checkbox' | 'switch';
 /** Which control renders a {@link PrefString}. */
 export type PrefStringControl = 'input' | 'textarea';
 /** Which control renders a {@link PrefEnum}. */
-export type PrefEnumControl = 'select' | 'radio';
+export type PrefEnumControl = 'select' | 'radio' | 'toggle';
 
 interface PrefBase<K extends string, Value> {
   kind: K;
@@ -67,7 +67,9 @@ export interface PrefString extends PrefBase<'string', string> {
 }
 /** A preference chosen from a fixed set of options. */
 export interface PrefEnum<T extends string = string> extends PrefBase<'enum', T> {
-  options: readonly { value: T; label: string }[];
+  /** `short` is what a segmented control shows when the full label will not
+   *  fit; `label` stays the accessible name. */
+  options: readonly { value: T; label: string; short?: string }[];
   control?: PrefEnumControl;
 }
 
