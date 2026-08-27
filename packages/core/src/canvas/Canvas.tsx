@@ -312,6 +312,12 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   className?: string;
   style?: React.CSSProperties;
   tabIndex?: number;
+  /** Fired when the canvas element gains focus. The canvas is focusable by
+   *  default (`tabIndex` 0), so consumers driving focus-dependent chrome —
+   *  a focus ring, a "keyboard shortcuts active" hint — need to observe it. */
+  onFocus?: React.FocusEventHandler<HTMLCanvasElement>;
+  /** Fired when the canvas element loses focus. */
+  onBlur?: React.FocusEventHandler<HTMLCanvasElement>;
   /**
    * When `true` (default), the canvas element receives focus on `pointerdown`
    * so keyboard events (tool hotkeys, undo/redo) are captured without a
@@ -741,6 +747,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     className,
     style,
     tabIndex = 0,
+    onFocus,
+    onBlur,
     autoFocusOnPointerDown = true,
     helpersRef,
     tools,
@@ -1415,6 +1423,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
         tabIndex={tabIndex}
         className={className}
         style={effectiveStyle}
+        onFocus={onFocus}
+        onBlur={onBlur}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
