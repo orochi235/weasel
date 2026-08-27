@@ -71,6 +71,10 @@ function emitCss(themes: LoadedTheme[]): string {
     const defaults = mergeTokens(primitives, modes[manifest.defaultMode]);
 
     lines.push(':root {');
+    // The default mode's scheme, not just its token values: without it a
+    // surface that never calls `applyTheme` gets dark colors and light native
+    // widgets — a range track and a scrollbar painted for the wrong theme.
+    lines.push(`  color-scheme: ${manifest.modes[manifest.defaultMode].colorScheme};`);
     for (const name of Object.keys(defaults)) {
       const desc = defaults[name].description;
       if (desc) lines.push(`  /* ${desc} */`);

@@ -63,6 +63,13 @@ describe('generated tokens.css', () => {
     expect(css).toMatch(/\[data-wzl-mode='light'\][\s\S]*color-scheme: light;/);
   });
 
+  // Without this, a surface that never calls `applyTheme` renders the dark
+  // palette with light native widgets — the range track and scrollbar of the
+  // other theme.
+  it('gives :root the default mode scheme, not only the mode blocks', () => {
+    expect(css).toMatch(/^:root \{\n {2}color-scheme: dark;/m);
+  });
+
   it('carries no remote @import', () => {
     expect(css).not.toContain('@import');
   });
