@@ -1,8 +1,14 @@
 # Handoff — node paint as objects, and the property panel that edits it
 
 One branch now, `node-stroke-union`, worktree
-`.claude/worktrees/node-stroke-union`, at `c1b85113`, 21 commits off `main`
-(`5e91f912`, merged in). Not pushed. `tsc` and 7691 tests green.
+`.claude/worktrees/node-stroke-union`, at `546f67d4`, 23 commits off `main`
+(`5e91f912`, merged in). Not pushed. `tsc`, `npm test` (7714) and `npm run
+build` green.
+
+`546f67d4` — the text quad ring — has nothing to do with this arc and only
+landed here because this is where the tree was. It is self-contained and
+cherry-picks onto `main` cleanly if you would rather the eventual PR did not
+carry it.
 
 The design lives in `docs/proposals/2026-08-26-node-stroke-union.md` — read it
 first; it describes the model, not the branch. This file is only what that doc
