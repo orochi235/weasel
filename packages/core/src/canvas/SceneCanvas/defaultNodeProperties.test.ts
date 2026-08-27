@@ -28,10 +28,15 @@ describe('defaultNodeProperties', () => {
     }
   });
 
-  it('text kind carries a data.text leaf', () => {
+  it('separates a text node\'s content from its typography', () => {
+    // Two sections, not one: the content is what the node is, the style is how
+    // it is drawn, and a single group named after the content field nested the
+    // word inside itself.
     const text = defaultNodeProperties.find((e) => e.name === 'text');
-    const textGroup = text?.schema.children.text;
-    expect(textGroup && 'children' in textGroup && 'data.text' in textGroup.children).toBe(true);
+    const content = text?.schema.children.content;
+    expect(content && 'children' in content && 'data.text' in content.children).toBe(true);
+    const typography = text?.schema.children.text;
+    expect(typography && 'children' in typography && 'data.style' in typography.children).toBe(true);
   });
 });
 

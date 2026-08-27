@@ -161,6 +161,11 @@ export type ToolPrefLeaf = ToolPref | ToolPrefCustom;
 
 /** Nestable group: branch nodes a tool can use to organize its prefs. */
 export interface ToolPrefGroup {
+  /** Heading for the group's rows. **Empty means no heading** — for a group
+   *  that exists to organise, not to name: one whose children are themselves
+   *  groups carrying the labels a reader needs. Give it a name whenever the
+   *  name is the referent (a `Border` group over `Top` / `Right` / `Bottom`
+   *  reads as nothing without it). */
   name: string;
   description?: string;
   children: Record<string, ToolPrefLeaf | ToolPrefGroup>;

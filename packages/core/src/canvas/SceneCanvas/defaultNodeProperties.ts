@@ -63,10 +63,21 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
       },
       ...(opts.text
         ? {
-            text: {
-              name: 'Text',
+            content: {
+              name: 'Content',
               children: {
-                'data.text': { kind: 'string', name: 'Text', description: 'Text content.', default: '' },
+                // `block`: the content is the section, so a 64px label column
+                // reading "Text" inside a section reading "Text" is one word
+                // twice and a narrower field for the sake of it.
+                'data.text': { kind: 'string', name: 'Text', description: 'Text content.', default: '', block: true },
+              },
+            },
+            text: {
+              // Headless: `Character` and `Paragraph` carry the labels, and a
+              // `Typography` heading over them names nothing a reader can't
+              // already see.
+              name: '',
+              children: {
                 // One object leaf, not a row of siblings addressing into it:
                 // `data.style` is a `TextStyle`, and its character and
                 // paragraph fields are one value that reads as two lists.

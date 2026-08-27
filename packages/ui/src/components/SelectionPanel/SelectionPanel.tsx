@@ -370,17 +370,30 @@ function ObjectLeaf({
     ? (ctx.value as Record<string, unknown>)
     : undefined;
 
+  // A value whose fields are entirely grouped is titled by those groups — its
+  // own heading would stack straight onto the first one and name nothing the
+  // reader can't already see.
+  const allGrouped = Object.values(pref.children).every((child) => !('kind' in child));
+
   // A group among the children organises the fields under a heading without
   // contributing to the path — the rule group keys follow at the top level.
-  const rowsOf = (children: Record<string, ToolPrefLeaf | ToolPrefGroup>): ReactNode[] => {
+  //
+  // `indent` is false when nothing visible sits above these rows: depth is
+  // drawn only where a label marks it, so a group under a suppressed heading
+  // reads as a peer of the sections rather than as a level of nothing.
+  const rowsOf = (
+    children: Record<string, ToolPrefLeaf | ToolPrefGroup>,
+    indent: boolean,
+  ): ReactNode[] => {
     const out: ReactNode[] = [];
     for (const [key, child] of Object.entries(children)) {
       if (!('kind' in child)) {
-        const inner = rowsOf(child.children);
+        const labeled = child.name !== '';
+        const inner = rowsOf(child.children, labeled);
         if (inner.length === 0) continue;
         out.push(
-          <div key={`group:${key}`} className={s.objectGroup}>
-            <h5 className={s.sectionTitle}>{child.name}</h5>
+          <div key={`group:${key}`} className={labeled && indent ? s.objectGroup : undefined}>
+            {labeled && <h5 className={s.sectionTitle}>{child.name}</h5>}
             {inner}
           </div>,
         );
@@ -411,12 +424,8 @@ function ObjectLeaf({
     return out;
   };
 
-  const rows = rowsOf(pref.children);
+  const rows = rowsOf(pref.children, !allGrouped);
   if (rows.length === 0) return null;
-  // A value whose fields are entirely grouped is titled by those groups —
-  // its own heading would stack straight onto the first one and name nothing
-  // the reader can't already see.
-  const allGrouped = Object.values(pref.children).every((child) => !('kind' in child));
   return (
     <div className={s.objectLeaf}>
       {!allGrouped && <h4 className={s.sectionTitle}>{pref.name}</h4>}
