@@ -13,8 +13,9 @@ const STANDARD_SLOT_SET = new Set<string>(STANDARD_SLOTS);
  * - Standard slots are emitted in `STANDARD_SLOTS` order.
  * - Each standard-slot layer is preceded by its `before` chain (deepest first)
  *   and followed by its `after` chain (ancestors first).
- * - `after: 'X'` accepts standard slot names OR other custom-layer keys —
- *   the resolver walks the chain transitively.
+ * - `after: 'X'` / `before: 'X'` accept standard slot names OR other
+ *   custom-layer keys, and chains may mix the two — a custom anchored
+ *   `before` a slot can itself carry an `after` chain, and vice versa.
  * - Customs with neither `after` nor `before` go to a tail bucket emitted
  *   after all standard slots.
  * - Dangling references (target unresolvable) go to the tail with a
@@ -58,33 +59,24 @@ export function composeOrderedLayers<TNode extends { id: string }, TPose>(
   const emitted = new Set<string>();
   const out: RenderLayer<unknown>[] = [];
 
-  function emitAfter(parentKey: string) {
-    const children = afterByParent.get(parentKey);
-    if (!children) return;
-    for (const child of children) {
-      if (emitted.has(child.key)) {
-        // Cycle — already emitted via another path. Warn once.
-        console.warn(`composeOrderedLayers: cycle detected involving custom layer "${child.key}"`);
-        continue;
-      }
-      emitted.add(child.key);
-      out.push(child.layer);
-      emitAfter(child.key);
+  function emitChild(child: { key: string; layer: RenderLayer<unknown> }) {
+    if (emitted.has(child.key)) {
+      // Cycle — already emitted via another path. Warn once.
+      console.warn(`composeOrderedLayers: cycle detected involving custom layer "${child.key}"`);
+      return;
     }
+    emitted.add(child.key);
+    emitBefore(child.key);
+    out.push(child.layer);
+    emitAfter(child.key);
+  }
+
+  function emitAfter(parentKey: string) {
+    for (const child of afterByParent.get(parentKey) ?? []) emitChild(child);
   }
 
   function emitBefore(parentKey: string) {
-    const children = beforeByParent.get(parentKey);
-    if (!children) return;
-    for (const child of children) {
-      if (emitted.has(child.key)) {
-        console.warn(`composeOrderedLayers: cycle detected involving custom layer "${child.key}"`);
-        continue;
-      }
-      emitted.add(child.key);
-      emitBefore(child.key);
-      out.push(child.layer);
-    }
+    for (const child of beforeByParent.get(parentKey) ?? []) emitChild(child);
   }
 
   for (const slot of STANDARD_SLOTS) {

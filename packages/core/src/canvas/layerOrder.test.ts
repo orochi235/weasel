@@ -120,6 +120,28 @@ describe('composeOrderedLayers', () => {
     expect(out.map(l => l.id)).toEqual(['b', 'a', 'scene']);
   });
 
+  it('composes an after chain hanging off a before-anchored custom', () => {
+    const out = composeOrderedLayers(
+      {
+        a: { layer: L('a'), before: 'scene' },
+        b: { layer: L('b'), after: 'a' },
+      },
+      { scene: L('scene') },
+    );
+    expect(out.map(l => l.id)).toEqual(['a', 'b', 'scene']);
+  });
+
+  it('composes a before chain hanging off an after-anchored custom', () => {
+    const out = composeOrderedLayers(
+      {
+        a: { layer: L('a'), after: 'scene' },
+        b: { layer: L('b'), before: 'a' },
+      },
+      { scene: L('scene') },
+    );
+    expect(out.map(l => l.id)).toEqual(['scene', 'b', 'a']);
+  });
+
   it('customs with no after/before go to tail', () => {
     const out = composeOrderedLayers(
       { tail: { layer: L('tail') } },
