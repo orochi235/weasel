@@ -197,6 +197,60 @@ describe('useGestureDispatcher', () => {
       });
       expect(ctxValue.hotkeyStack).toEqual([]);
     });
+
+    it('Space held across a window blur is released, not stuck', () => {
+      let ctxValue!: ActiveToolContextValue;
+
+      function CtxCapture() {
+        ctxValue = useActiveToolContext();
+        return null;
+      }
+
+      function ActiveToolDepSource() {
+        const ctx = useActiveToolContext();
+        useDepSource('activeTool', () => ctx);
+        return null;
+      }
+
+      function RegisterToolHold() {
+        const r = useActionsRegistry();
+        r?.register(makeToolOffhandAction(buildToolOffhandBindings([
+          { toolId: 'hand', key: ' ' },
+        ])));
+        return null;
+      }
+
+      function MountDispatcher() {
+        const ref = useRef<HTMLCanvasElement | null>(null);
+        const r = useActionsRegistry();
+        useGestureDispatcher({ canvasRef: ref, actions: r!, toolsById: new Map() });
+        return <canvas ref={ref} />;
+      }
+
+      render(
+        <DepRegistryProvider>
+          <ActiveToolContextProvider>
+              <ActionsProvider>
+                <ActiveToolDepSource />
+                <RegisterToolHold />
+                <MountDispatcher />
+                <CtxCapture />
+              </ActionsProvider>
+          </ActiveToolContextProvider>
+        </DepRegistryProvider>,
+      );
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
+      });
+      expect(ctxValue.hotkeyStack).toEqual(['hand']);
+
+      // The window loses focus mid-hold, so the keyup never arrives.
+      act(() => {
+        window.dispatchEvent(new Event('blur'));
+      });
+      expect(ctxValue.hotkeyStack).toEqual([]);
+    });
   });
 
   describe('hover-cursor pump', () => {

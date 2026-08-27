@@ -676,6 +676,24 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       heldKeys.delete(e.key);
     };
 
+    // A window that loses focus never delivers the keyup, so without this every
+    // in-flight key-held handle stays engaged until that key is pressed again.
+    const onWindowBlur = () => {
+      for (const key of heldKeys) {
+        const ev: InputEvent = {
+          kind: 'key-held',
+          key,
+          phase: 'up',
+          altKey: false,
+          ctrlKey: false,
+          metaKey: false,
+          shiftKey: false,
+        };
+        dispatch(ev);
+      }
+      heldKeys.clear();
+    };
+
     // -----------------------------------------------------------------------
     // Canvas wheel listener
     // -----------------------------------------------------------------------
@@ -1335,6 +1353,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     if (keyboard) {
       window.addEventListener('keydown', onKeyDown);
       window.addEventListener('keyup', onKeyUp);
+      window.addEventListener('blur', onWindowBlur);
     }
     // Hover-cursor refresh on modifier/hotkey changes — separate listeners
     // (not folded into onKeyDown/onKeyUp) so the pump also tracks modifiers
@@ -1362,6 +1381,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       if (keyboard) {
         window.removeEventListener('keydown', onKeyDown);
         window.removeEventListener('keyup', onKeyUp);
+        window.removeEventListener('blur', onWindowBlur);
       }
       window.removeEventListener('keydown', scheduleHoverCursorRefresh);
       window.removeEventListener('keyup', scheduleHoverCursorRefresh);

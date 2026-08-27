@@ -57,10 +57,11 @@ export function usePlatformerInput(): { current: HeldInput } {
 
   useAction(action);
 
-  // Losing focus mid-hold means the keyup never arrives and the direction sticks.
+  // The dispatcher releases the held keys on blur. `jumpPressed` is a one-shot
+  // edge this demo owns, so nothing else clears it if the loop never ran.
   useEffect(() => {
     const clear = () => {
-      held.current = { ...EMPTY };
+      held.current.jumpPressed = false;
     };
     window.addEventListener('blur', clear);
     return () => window.removeEventListener('blur', clear);
