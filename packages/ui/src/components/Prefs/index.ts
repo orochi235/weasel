@@ -16,6 +16,8 @@ export {
   type PrefNumber,
   type PrefNumberControl,
   type PrefNumberUnit,
+  type PrefPaint,
+  type PrefStroke,
   type PrefString,
   type PrefStringControl,
 } from './schema';

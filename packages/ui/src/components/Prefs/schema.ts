@@ -77,8 +77,23 @@ export interface PrefColor extends PrefBase<'color', string> {
   alpha?: boolean;
 }
 
+/** A whole paint — a solid color, a gradient, a pattern. Mirrors core's
+ *  `ToolPrefPaint`: the value is the tagged union, not a color inside it. */
+export interface PrefPaint extends PrefBase<'paint', unknown> {
+  /** Offer an opacity control alongside the color. */
+  alpha?: boolean;
+}
+
+/** A whole stroke — a color string, or the object carrying width, cap, join,
+ *  dash and align. Mirrors core's `ToolPrefStroke`. */
+export interface PrefStroke extends PrefBase<'stroke', unknown> {
+  /** Offer an opacity control alongside the color. */
+  alpha?: boolean;
+}
+
 /** The leaf kinds `PrefsForm` renders without a custom renderer. */
-export type BuiltinPref = PrefNumber | PrefBoolean | PrefString | PrefEnum | PrefColor;
+export type BuiltinPref =
+  | PrefNumber | PrefBoolean | PrefString | PrefEnum | PrefColor | PrefPaint | PrefStroke;
 
 /**
  * Open leaf: any node with a `kind` the form doesn't know renders via the

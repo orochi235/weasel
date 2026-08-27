@@ -10,8 +10,10 @@ import {
   type ToolPrefLeaf,
   type ToolPrefNumber,
   type ToolPrefPaint,
+  type ToolPrefStroke,
 } from '@weasel-js/core';
 import { ColorField } from '../ColorField';
+import { solidColorOf, strokeColorOf, strokeWithColor } from '../paintValue';
 import { Input } from '../Input';
 import { NumberField } from '../NumberField';
 import { Select } from '../Select';
@@ -213,16 +215,6 @@ function renderLeafControl(
   return renderBuiltin(ctx, ariaLabel);
 }
 
-/** The color of a solid `FillStyle`, or `undefined` for anything else —
- *  including a value that isn't a paint at all. `fill` is optional on the
- *  solid member of the union, so the tag alone can't decide it. */
-function solidColorOf(value: unknown): string | undefined {
-  if (typeof value !== 'object' || value === null) return undefined;
-  const paint = value as { fill?: string; color?: unknown };
-  if (paint.fill !== undefined && paint.fill !== 'solid') return undefined;
-  return typeof paint.color === 'string' ? paint.color : undefined;
-}
-
 function renderBuiltin(ctx: PropertyRenderContext, ariaLabel: string): ReactNode {
   const { pref, value, mixed, setValue } = ctx;
   switch (pref.kind) {
@@ -322,6 +314,23 @@ function renderBuiltin(ctx: PropertyRenderContext, ariaLabel: string): ReactNode
           // color }` hybrid that every structural `'color' in paint` check
           // downstream reads as solid.
           onChange={(color) => setValue({ fill: 'solid', color })}
+          aria-label={ariaLabel}
+        />
+      );
+    }
+    case 'stroke': {
+      // `string | Stroke`. A color stroke has a color to show and a solid-paint
+      // one does; a gradient stroke does not, and gets the same indeterminate
+      // chip a mixed selection gets. Writes preserve the form: the object keeps
+      // its width, cap, join and dash rather than being flattened to a hex.
+      const p = pref as ToolPrefStroke;
+      const color = strokeColorOf(value) ?? (mixed ? undefined : strokeColorOf(p.default));
+      return (
+        <ColorField
+          value={mixed ? undefined : color}
+          mixed={mixed || (value !== undefined && strokeColorOf(value) === undefined)}
+          alpha={p.alpha}
+          onChange={(next) => setValue(strokeWithColor(value, next))}
           aria-label={ariaLabel}
         />
       );

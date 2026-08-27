@@ -1,9 +1,8 @@
-import type { NodePropertiesEntry } from '@weasel-js/core';
+import type { ToolPrefGroup } from '@weasel-js/core';
 import type { ConfigField } from '@weasel-js/labkit';
 
-/** weasel's own property-schema group. Named through `NodePropertiesEntry`
- *  because `ToolPrefGroup` itself is not exported from `@weasel-js/core`. */
-export type PrefGroup = NodePropertiesEntry['schema'];
+/** weasel's own property-schema group. */
+export type PrefGroup = ToolPrefGroup;
 type PrefNode = PrefGroup['children'][string];
 type PrefLeaf = Exclude<PrefNode, PrefGroup>;
 
@@ -87,6 +86,14 @@ export function prefToField(path: string, leaf: PrefLeaf): ConfigField | null {
     case 'color':
       // `#rrggbbaa` is legal in the schema and illegal in `<input type="color">`.
       return { key: path, label, type: 'color', default: (leaf.default as string).slice(0, 7) };
+    case 'stroke':
+      // `string | Stroke`, and a color swatch can only edit the string form —
+      // writing a hex over the object form would flatten away its width, cap,
+      // join and dash. Editing the union properly takes a control that knows
+      // it is a union, which is what weasel-ui's `stroke` control is for.
+      return typeof leaf.default === 'string'
+        ? { key: path, label, type: 'color', default: leaf.default.slice(0, 7) }
+        : null;
     default:
       return null;
   }

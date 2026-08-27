@@ -2,6 +2,7 @@ import { useMemo, type ReactNode } from 'react';
 import { Focusable } from 'react-aria-components';
 import { Checkbox } from '../Checkbox';
 import { ColorField } from '../ColorField';
+import { solidColorOf, strokeColorOf, strokeWithColor } from '../paintValue';
 import { Input } from '../Input';
 import { NumberField } from '../NumberField';
 import { RadioGroup, Radio } from '../RadioGroup';
@@ -19,6 +20,8 @@ import {
   type PrefGroup,
   type PrefLeaf,
   type PrefNumber,
+  type PrefPaint,
+  type PrefStroke,
   type PrefString,
 } from './schema';
 import s from './Prefs.module.css';
@@ -256,6 +259,36 @@ function renderBuiltin(ctx: PrefRenderContext): ReactNode {
           value={hex}
           alpha={p.alpha}
           onChange={setValue}
+          aria-label={p.name}
+        />
+      );
+    }
+    case 'paint': {
+      // A whole `FillStyle`. A gradient or pattern has no single color to
+      // show, so the field goes blank rather than claiming one, and an edit
+      // writes a whole solid union member rather than grafting a `color` key
+      // onto the gradient.
+      const p = pref as PrefPaint;
+      const solid = solidColorOf(value) ?? solidColorOf(p.default);
+      return (
+        <ColorField
+          value={solid}
+          alpha={p.alpha}
+          onChange={(color) => setValue({ fill: 'solid', color })}
+          aria-label={p.name}
+        />
+      );
+    }
+    case 'stroke': {
+      // `string | Stroke` — see the same case in `SelectionPanel`. Writes
+      // preserve the object form so width, cap, join and dash survive a
+      // color pick.
+      const p = pref as PrefStroke;
+      return (
+        <ColorField
+          value={strokeColorOf(value) ?? strokeColorOf(p.default)}
+          alpha={p.alpha}
+          onChange={(color) => setValue(strokeWithColor(value, color))}
           aria-label={p.name}
         />
       );

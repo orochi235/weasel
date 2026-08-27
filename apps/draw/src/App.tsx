@@ -100,6 +100,7 @@ import {
   StatusBarSpacer,
   ToolPalette,
   ToolOptionsBar,
+  strokeColorOf,
   type PropertyRenderer,
 } from '@weasel-js/ui';
 
@@ -403,8 +404,11 @@ function wdFillRenderer(colorActionId: string, opacityActionId: string): Propert
 
 function wdActionColorRenderer(colorActionId: string, opacityActionId: string): PropertyRenderer {
   return (ctx) => {
+    // `data.stroke` is `string | Stroke`, so the color shown comes off
+    // whichever form the node holds. Writes go through the actions, which
+    // preserve the object.
     const fallback = (ctx.pref as ToolPrefColor).default;
-    const value = typeof ctx.value === 'string' ? ctx.value : fallback;
+    const value = strokeColorOf(ctx.value) ?? fallback;
     const input = (
       <PropertyColorInput value={value} colorActionId={colorActionId} opacityActionId={opacityActionId} />
     );

@@ -187,6 +187,80 @@ describe('PrefsForm color leaf', () => {
   });
 });
 
+describe('PrefsForm — union-valued leaves', () => {
+  const UNION_SCHEMA: PrefGroup = {
+    name: 'Appearance',
+    children: {
+      appearance: {
+        name: 'Appearance',
+        children: {
+          fill: {
+            kind: 'paint',
+            name: 'Fill',
+            description: 'Fill paint.',
+            default: { fill: 'solid', color: '#000000ff' },
+          },
+          stroke: {
+            kind: 'stroke',
+            name: 'Stroke',
+            description: 'Stroke color, or a whole stroke.',
+            default: '#000000ff',
+          },
+        },
+      },
+    },
+  };
+
+  const renderUnion = (values: unknown, onChange = vi.fn()) => {
+    render(<PrefsForm schema={UNION_SCHEMA} values={values} onChange={onChange} />);
+    return onChange;
+  };
+
+  it('renders a paint leaf as a color control instead of the no-renderer placeholder', () => {
+    renderUnion({ appearance: { fill: { fill: 'solid', color: '#ff0000ff' } } });
+    expect(screen.getByLabelText('Fill', { selector: 'input[type="color"]' })).toHaveValue('#ff0000');
+    expect(screen.queryByText('(paint: no renderer)')).toBeNull();
+  });
+
+  it('writes a whole solid paint rather than a bare color', () => {
+    const onChange = renderUnion({
+      appearance: {
+        fill: {
+          fill: 'linear-gradient',
+          from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+          stops: [{ offset: 0, color: '#000' }],
+        },
+      },
+    });
+    const input = screen.getByLabelText('Fill', { selector: 'input[type="color"]' });
+    fireEvent.input(input, { target: { value: '#112233' } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledWith('appearance.fill', { fill: 'solid', color: '#112233' });
+  });
+
+  it('keeps a stroke object whole when its color is picked', () => {
+    const onChange = renderUnion({
+      appearance: { stroke: { paint: { color: '#000000ff' }, width: 6, dash: [4, 2] } },
+    });
+    const input = screen.getByLabelText('Stroke', { selector: 'input[type="color"]' });
+    fireEvent.input(input, { target: { value: '#445566' } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledWith('appearance.stroke', {
+      paint: { fill: 'solid', color: '#445566' },
+      width: 6,
+      dash: [4, 2],
+    });
+  });
+
+  it('leaves a color-string stroke a string', () => {
+    const onChange = renderUnion({ appearance: { stroke: '#ff0000ff' } });
+    const input = screen.getByLabelText('Stroke', { selector: 'input[type="color"]' });
+    fireEvent.input(input, { target: { value: '#445566' } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledWith('appearance.stroke', '#445566');
+  });
+});
+
 describe('visiblePrefSubtree', () => {
   it('prunes groups whose leaves are all hidden', () => {
     const schema: PrefGroup = {

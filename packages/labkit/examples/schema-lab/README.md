@@ -20,12 +20,11 @@ value back at the path its leaf names. No field is handled by name in either
 direction, so the panel is whatever the schema says — including `pose.rotation`,
 stored in radians and edited in degrees through the leaf's `unit`.
 
-Two kinds have no labkit control to map onto: `paint` is a tagged `FillStyle`
-union (a color swatch would write a solid over a gradient), and it is dropped
-rather than approximated.
-
-`ToolPrefGroup` itself is not exported from `@weasel-js/core`, so the adapter
-names it as `NodePropertiesEntry['schema']`.
+Some kinds have no labkit control to map onto. `paint` is a tagged `FillStyle`
+union — a color swatch would write a solid over a gradient — so it is dropped
+rather than approximated. `stroke` is `string | Stroke`, and the swatch here
+edits only the string form; flattening the object form is exactly what
+weasel-ui's own `stroke` control exists to avoid.
 
 ## Stroke
 

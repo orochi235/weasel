@@ -8,7 +8,8 @@
 // structural subset of whatever a host app already has.
 
 /** The value types a built-in pref leaf can hold. */
-export type ToolPrefKind = 'number' | 'boolean' | 'string' | 'enum' | 'color' | 'paint';
+export type ToolPrefKind =
+  | 'number' | 'boolean' | 'string' | 'enum' | 'color' | 'paint' | 'stroke';
 
 interface ToolPrefBase<K extends string, Value> {
   kind: K;
@@ -106,6 +107,21 @@ export interface ToolPrefPaint extends ToolPrefBase<'paint', unknown> {
   alpha?: boolean;
 }
 
+/**
+ * A whole stroke, not a color inside one. The value is `string | Stroke` —
+ * a color, or the full form carrying width, cap, join, dash, miter limit and
+ * align.
+ *
+ * For the same reason {@link ToolPrefPaint} exists: pointing a `color` leaf at
+ * a path that may hold the object reads `undefined` off it, shows the
+ * control's default, and writes a bare string over the whole stroke on the
+ * first edit. A union has to be edited as a union.
+ */
+export interface ToolPrefStroke extends ToolPrefBase<'stroke', unknown> {
+  /** Offer an opacity control alongside the color. */
+  alpha?: boolean;
+}
+
 /** One built-in pref leaf. `ToolPrefLeaf` widens this to include
  *  app-defined kinds. */
 export type ToolPref =
@@ -114,7 +130,8 @@ export type ToolPref =
   | ToolPrefString
   | ToolPrefEnum
   | ToolPrefColor
-  | ToolPrefPaint;
+  | ToolPrefPaint
+  | ToolPrefStroke;
 
 // Compile-time tie: every built-in leaf kind must appear in ToolPrefKind
 // and vice versa (ToolPrefBase's K is open for ToolPrefCustom's sake, so

@@ -36,7 +36,10 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
         name: 'Appearance',
         children: {
           'data.fill': { kind: 'color', name: 'Fill', description: 'Fill color.', default: '#000000ff', alpha: true },
-          'data.stroke': { kind: 'color', name: 'Stroke', description: 'Stroke color.', default: '#000000ff', alpha: true },
+          // A `stroke` leaf, not a `color` one: `data.stroke` is
+          // `NodeStroke`, and a color control pointed at it writes a bare
+          // string over a whole `Stroke`.
+          'data.stroke': { kind: 'stroke', name: 'Stroke', description: 'Stroke color, or a whole stroke.', default: '#000000ff', alpha: true },
           'data.strokeWidth': { kind: 'number', name: 'Stroke width', description: 'Stroke width, world units.', default: 0, min: 0, step: 0.5 },
         },
       },

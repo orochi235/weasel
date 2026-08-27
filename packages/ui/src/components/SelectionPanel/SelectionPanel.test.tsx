@@ -418,3 +418,109 @@ describe('SelectionPanel — paint leaf', () => {
     });
   });
 });
+
+/**
+ * The `stroke` leaf addresses `string | Stroke`. A `color` leaf pointed at the
+ * same path reads `undefined` off the object form, shows its own default, and
+ * writes a bare hex back over the stroke's width, cap, join and dash.
+ */
+describe('SelectionPanel — stroke leaf', () => {
+  interface StrokeData { kind: string; stroke?: unknown }
+
+  const strokeRouting: NodeRoutingEntry[] = [
+    { name: 'path', matches: (d) => (d as StrokeData)?.kind === 'path' },
+  ];
+  const strokeProperties: NodePropertiesEntry[] = [
+    {
+      name: 'path',
+      schema: {
+        name: 'Properties',
+        children: {
+          appearance: {
+            name: 'Appearance',
+            children: {
+              'data.stroke': {
+                kind: 'stroke',
+                name: 'Stroke',
+                description: 'Stroke color, or a whole stroke.',
+                default: '#000000ff',
+                alpha: true,
+              },
+            },
+          },
+        },
+      },
+    },
+  ];
+
+  function sceneWithStroke(stroke: unknown) {
+    const scene = createScene<StrokeData, Layer, Pose>({ systemLayers: [{ id: 'default' }] });
+    scene.add({
+      id: asNodeId('p'),
+      kind: 'leaf',
+      layer: 'default',
+      pose: { x: 0, y: 0, width: 10, height: 10 },
+      data: { kind: 'path', stroke },
+    });
+    return scene;
+  }
+
+  function renderStroke(scene: ReturnType<typeof sceneWithStroke>) {
+    return render(
+      <SelectionPanel
+        scene={scene}
+        selection={selectionOf(['p'])}
+        properties={strokeProperties}
+        routing={strokeRouting}
+      />,
+    );
+  }
+
+  it('shows a color-string stroke as its color', () => {
+    renderStroke(sceneWithStroke('#ff0000ff'));
+    expect(screen.getByLabelText('Stroke')).toHaveValue('#ff0000');
+  });
+
+  it('shows a solid-paint Stroke as its color', () => {
+    renderStroke(sceneWithStroke({ paint: { color: '#00ff00ff' }, width: 4 }));
+    expect(screen.getByLabelText('Stroke')).toHaveValue('#00ff00');
+  });
+
+  it('shows a gradient stroke as indeterminate rather than as a color', () => {
+    const { container } = renderStroke(sceneWithStroke({
+      paint: {
+        fill: 'linear-gradient',
+        from: { x: 0, y: 0 },
+        to: { x: 1, y: 0 },
+        stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
+      },
+      width: 4,
+    }));
+    expect(container.querySelector('[data-mixed]')).not.toBeNull();
+  });
+
+  it('keeps width, cap and dash when a color is picked', () => {
+    const scene = sceneWithStroke({
+      paint: { color: '#000000ff' }, width: 12, cap: 'round', dash: [8, 4],
+    });
+    renderStroke(scene);
+    const input = screen.getByLabelText('Stroke');
+    fireEvent.input(input, { target: { value: '#123456' } });
+    fireEvent.blur(input);
+    expect(scene.get(asNodeId('p'))?.data.stroke).toEqual({
+      paint: { fill: 'solid', color: '#123456ff' },
+      width: 12,
+      cap: 'round',
+      dash: [8, 4],
+    });
+  });
+
+  it('leaves a color-string stroke a string', () => {
+    const scene = sceneWithStroke('#ff0000ff');
+    renderStroke(scene);
+    const input = screen.getByLabelText('Stroke');
+    fireEvent.input(input, { target: { value: '#123456' } });
+    fireEvent.blur(input);
+    expect(scene.get(asNodeId('p'))?.data.stroke).toBe('#123456ff');
+  });
+});

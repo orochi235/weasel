@@ -77,13 +77,21 @@ default, and writes a bare string over the whole `Stroke` on first touch —
 `ToolPref`'s own docs spell this out for `…fill.color`, and `SelectionPanel`'s
 `color` case is exactly that path today.
 
-So the schema replaces the `data.stroke` color leaf and the `data.strokeWidth`
-number leaf with a single leaf of a new `stroke` kind, and its control writes a
-whole value back. **It must preserve the string form when nothing rich is set**,
-because `setStroke` and `setStrokeOpacity` merge alpha with string operations on
-the stored value. Those two also need the `typeof prev === 'string'` guard that
-`setFill` already carries — without it, an object-form stroke is silently
-stringified the first time someone drags the opacity slider.
+So `data.stroke` becomes a leaf of a new `stroke` kind whose control writes a
+whole value back, preserving whichever form the node holds: a color string
+stays a string, and an object keeps its width, cap, join and dash and takes a
+new solid paint. `setStroke` and `setStrokeOpacity` need the same care plus the
+`typeof prev === 'string'` guard `setFill` already carries — without it, an
+object-form stroke is silently stringified the first time someone drags the
+opacity slider.
+
+**`data.strokeWidth` stays a leaf of its own**, and the control does not
+promote a color string into a `Stroke`. Promotion would have to carry the
+node's existing `data.strokeWidth` into the object and then leave that field
+stranded — read by nothing in the kit, still read by WeaselDraw's SVG
+exporter, which would then export a width the canvas is not painting. Editing
+cap, join and dash from a panel therefore waits on the SVG mapping in arc 3;
+until then the rich form is authored programmatically and edited safely.
 
 `PrefsForm` renders neither `paint` nor the new `stroke` kind today; it falls
 through to `({kind}: no renderer)`.
@@ -93,7 +101,12 @@ through to `({kind}: no renderer)`.
 1. `NodeStroke`, `resolveNodeStroke`, both painters, the two setter actions, and
    the `NodeInk` split.
 2. The `stroke` pref kind, its `SelectionPanel` control, and `PrefsForm`'s
-   missing cases.
+   missing cases — every control that touches the union reads and writes it as
+   a union.
+2b. Cap / join / dash rows, once arc 3 has taught the SVG path the object form.
+   Ordered after it because a panel that can mint a rich stroke in WeaselDraw
+   before its exporter understands one produces files that do not match the
+   canvas.
 3. `@weasel-js/svg`'s `unpack` stops flattening — gradient stroke paints,
    dashes, caps, joins and miter limit survive import, and `SvgStroke.opacity`
    lands on the paint's own `opacity`. `unpack.test.ts` currently *pins* the

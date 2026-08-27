@@ -4,6 +4,7 @@
 // consuming app (today: `apps/draw/src/ui/`).
 export { dlog, isDebugEnabled } from './dlog';
 export * from './icons';
+export { solidColorOf, strokeColorOf, strokeWithColor, isStrokeObject } from './components/paintValue';
 export * from './components/ActionBar';
 export * from './components/Badge';
 export * from './components/Button';
