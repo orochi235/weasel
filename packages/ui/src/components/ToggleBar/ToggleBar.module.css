@@ -50,6 +50,18 @@
   transition: color var(--wzl-motion-fast);
 }
 
+/* A glyph label is a fixed box, not text that can reflow: without this it is
+   the only thing in the segment flex can take width from, and three bars in
+   one property row squeeze it to nothing. The side padding drops with it —
+   8px around a 14px glyph is most of a segment. */
+.segment > svg {
+  flex: none;
+}
+
+.segment:has(> svg) {
+  padding: 0 5px;
+}
+
 .segment:first-child {
   border-radius: var(--wzl-radius-pill) 0 0 var(--wzl-radius-pill);
 }

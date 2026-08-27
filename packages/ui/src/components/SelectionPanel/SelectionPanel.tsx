@@ -20,6 +20,8 @@ import { NumberField } from '../NumberField';
 import { Select } from '../Select';
 import { Switch } from '../Switch';
 import { ToggleBar } from '../ToggleBar';
+import { Icon } from '../../icons/Icon';
+import { ICON_PATHS, type IconName } from '../../icons/paths';
 import {
   MIXED,
   aggregateValue,
@@ -301,16 +303,21 @@ function renderBuiltin(
       const p = pref as ToolPrefEnum;
       if (p.control === 'toggle') {
         // Every option visible at once, which is the point of a segmented
-        // control: `short` keeps it to the width a property row has, and the
-        // full label stays the accessible name. A mixed selection selects
-        // nothing rather than picking a winner.
+        // control: a glyph, else `short`, keeps it to the width a property row
+        // has, and the full label stays the accessible name. A mixed selection
+        // selects nothing rather than picking a winner.
         return (
           <ToggleBar<string>
             size="sm"
             ariaLabel={ariaLabel}
             items={p.options.map((o) => ({
               value: o.value,
-              label: o.short ?? o.label,
+              label:
+                o.icon && o.icon in ICON_PATHS ? (
+                  <Icon name={o.icon as IconName} size={14} />
+                ) : (
+                  (o.short ?? o.label)
+                ),
               ariaLabel: o.label,
             }))}
             value={mixed ? null : (typeof value === 'string' ? value : p.default)}
@@ -385,6 +392,10 @@ interface ObjectRow {
   pair?: string;
   label: string;
   title?: string;
+  /** Every field in the row brought its own chrome, so the row drops the
+   *  label column and spans the block. One unlabeled field in an otherwise
+   *  labeled pair would leave the row named after half of itself. */
+  block: boolean;
   controls: ReactNode[];
 }
 
@@ -445,13 +456,26 @@ function ObjectLeaf({
         },
       };
       const custom = renderers?.[childPath] ?? renderers?.[child.kind];
-      const content = custom ? custom(childCtx) : renderBuiltin(childCtx, child.name, renderers);
-      if (content == null) continue;
+      const rendered = custom ? custom(childCtx) : renderBuiltin(childCtx, child.name, renderers);
+      if (rendered == null) continue;
+      // A paired row spends its label on the pair, so a field in one is named
+      // only by its glyph. The control already carries `name` as its
+      // accessible name, which leaves the glyph decorative.
+      const glyph = child.pair !== undefined && child.icon && child.icon in ICON_PATHS;
+      const content = glyph ? (
+        <span className={s.namedField}>
+          <Icon name={child.icon as IconName} size={14} />
+          {rendered}
+        </span>
+      ) : (
+        rendered
+      );
       const prev = out[out.length - 1];
       const isRow = (v: ReactNode | ObjectRow): v is ObjectRow =>
         typeof v === 'object' && v !== null && 'controls' in v;
       if (child.pair !== undefined && isRow(prev) && prev.pair === child.pair) {
         prev.controls.push(<Fragment key={childPath}>{content}</Fragment>);
+        prev.block &&= child.block === true;
         continue;
       }
       out.push({
@@ -459,15 +483,22 @@ function ObjectLeaf({
         pair: child.pair,
         label: child.pair ?? child.name,
         title: child.description,
+        block: child.block === true,
         controls: [<Fragment key={childPath}>{content}</Fragment>],
       });
     }
     return out.map((entry) =>
       typeof entry === 'object' && entry !== null && 'controls' in entry ? (
-        <div key={entry.key} className={s.row}>
-          <span className={s.rowLabel} title={entry.title}>{entry.label}</span>
-          <span className={s.rowControls}>{entry.controls}</span>
-        </div>
+        entry.block ? (
+          <div key={entry.key} className={`${s.rowControls} ${s.blockRow}`} title={entry.title}>
+            {entry.controls}
+          </div>
+        ) : (
+          <div key={entry.key} className={s.row}>
+            <span className={s.rowLabel} title={entry.title}>{entry.label}</span>
+            <span className={s.rowControls}>{entry.controls}</span>
+          </div>
+        )
       ) : (
         entry
       ),

@@ -13,6 +13,7 @@ import { writeFileSync } from 'node:fs';
 import { BASE } from './icons/base.mjs';
 import { ACTIONS } from './icons/actions.mjs';
 import { STATE } from './icons/state.mjs';
+import { PAINT } from './icons/paint.mjs';
 
 // `save` split: the tray-and-arrow reads as download, so it carries `export`,
 // and capturing a trial's state gets its own camera.
@@ -22,6 +23,7 @@ const GROUPS = [
   ['View and lifecycle', BASE],
   ['Actions', ACTIONS],
   ['State and instrument', STATE],
+  ['Stroke cap, join and align', PAINT],
 ];
 
 const camel = (k) => k.replace(/-([a-z])/g, (_, c) => c.toUpperCase());

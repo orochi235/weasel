@@ -31,6 +31,9 @@ interface PrefBase<K extends string, Value> {
    *  controls that supply their own chrome (embedded sub-panel editors).
    *  The `description` still applies wherever the renderer surfaces it. */
   block?: boolean;
+  /** Glyph naming this leaf in the icon set, for rows whose own label is
+   *  spent on something else (a `pair`). */
+  icon?: string;
   /** Row-pairing hint for compact property UIs (`SelectionPanel`):
    *  leaves sharing a `pair` id render side-by-side on one row labeled
    *  with the `pair` string. Purely presentational. */
@@ -68,8 +71,10 @@ export interface PrefString extends PrefBase<'string', string> {
 /** A preference chosen from a fixed set of options. */
 export interface PrefEnum<T extends string = string> extends PrefBase<'enum', T> {
   /** `short` is what a segmented control shows when the full label will not
-   *  fit; `label` stays the accessible name. */
-  options: readonly { value: T; label: string; short?: string }[];
+   *  fit, and `icon` an {@link IconName} to show instead of either; `label`
+   *  stays the accessible name. An `icon` that names no glyph falls back to
+   *  `short`. */
+  options: readonly { value: T; label: string; short?: string; icon?: string }[];
   control?: PrefEnumControl;
 }
 

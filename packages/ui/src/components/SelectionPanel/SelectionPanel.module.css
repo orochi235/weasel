@@ -61,6 +61,30 @@
   min-inline-size: 0;
 }
 
+/* Glyph plus its control, held together so the pair row wraps between
+   fields rather than between a field and the icon naming it. */
+.namedField {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-inline-size: 0;
+}
+
+.namedField > svg {
+  flex: none;
+  opacity: 0.75;
+}
+
+.blockRow {
+  margin-block-end: 5px;
+}
+
+/* Sized by its control, not by an equal share of the row: three segmented
+   bars split evenly are narrower than their own segments. */
+.rowControls > .namedField {
+  flex: 0 1 auto;
+}
+
 .rowControls > * {
   flex: 1;
   min-inline-size: 0;

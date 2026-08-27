@@ -52,14 +52,18 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
             default: { paint: { fill: 'solid', color: '#000000ff' }, width: 1 },
             block: true,
             children: {
-              paint: { kind: 'paint', name: 'Color', description: 'Stroke paint.', default: { fill: 'solid', color: '#000000ff' }, alpha: true },
-              width: { kind: 'number', name: 'Width', description: 'Stroke width, world units.', default: 1, min: 0, step: 0.5 },
-              // Three options each, all short: a segmented control shows every
-              // one at once where a select shows the current one and hides the
-              // rest behind a click.
-              cap: { kind: 'enum', name: 'Cap', description: 'How an open end is drawn.', default: 'butt', control: 'toggle', pair: 'Line', options: [{ value: 'butt', label: 'Butt', short: 'B' }, { value: 'round', label: 'Round', short: 'R' }, { value: 'square', label: 'Square', short: 'S' }] },
-              join: { kind: 'enum', name: 'Join', description: 'How a corner is drawn.', default: 'miter', control: 'toggle', pair: 'Line', options: [{ value: 'miter', label: 'Miter', short: 'M' }, { value: 'round', label: 'Round', short: 'R' }, { value: 'bevel', label: 'Bevel', short: 'B' }] },
-              align: { kind: 'enum', name: 'Align', description: 'Where the ribbon sits relative to the edge.', default: 'center', control: 'toggle', pair: 'Line', options: [{ value: 'center', label: 'Center', short: 'C' }, { value: 'inner', label: 'Inner', short: 'I' }, { value: 'outer', label: 'Outer', short: 'O' }] },
+              // Both rows are `block`: under a heading already reading STROKE,
+              // a 64px label column spells the section name again and takes
+              // the width the controls need. Each field leads with its own
+              // glyph instead.
+              paint: { kind: 'paint', name: 'Color', description: 'Stroke paint.', default: { fill: 'solid', color: '#000000ff' }, alpha: true, block: true, pair: 'Paint' },
+              width: { kind: 'number', name: 'Width', description: 'Stroke width, world units.', default: 1, min: 0, step: 0.5, icon: 'strokeWidth', block: true, pair: 'Paint' },
+              // Three options each: a segmented control shows every one at
+              // once where a select shows the current one and hides the rest
+              // behind a click.
+              cap: { kind: 'enum', name: 'Cap', description: 'How an open end is drawn.', default: 'butt', control: 'toggle', icon: 'strokeCap', block: true, pair: 'Line', options: [{ value: 'butt', label: 'Butt', icon: 'capButt' }, { value: 'round', label: 'Round', icon: 'capRound' }, { value: 'square', label: 'Square', icon: 'capSquare' }] },
+              join: { kind: 'enum', name: 'Join', description: 'How a corner is drawn.', default: 'miter', control: 'toggle', icon: 'strokeJoin', block: true, pair: 'Line', options: [{ value: 'miter', label: 'Miter', icon: 'joinMiter' }, { value: 'round', label: 'Round', icon: 'joinRound' }, { value: 'bevel', label: 'Bevel', icon: 'joinBevel' }] },
+              align: { kind: 'enum', name: 'Align', description: 'Where the ribbon sits relative to the edge.', default: 'center', control: 'toggle', icon: 'strokeAlign', block: true, pair: 'Line', options: [{ value: 'inner', label: 'Inner', icon: 'alignInner' }, { value: 'center', label: 'Center', icon: 'alignCenter' }, { value: 'outer', label: 'Outer', icon: 'alignOuter' }] },
             },
           },
         },

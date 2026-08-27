@@ -25,6 +25,12 @@ interface ToolPrefBase<K extends string, Value> {
    *  (weasel-ui `PrefsForm` honors this for leaves whose control brings
    *  its own chrome). */
   block?: boolean;
+  /** Glyph naming this leaf in a host UI's icon set (weasel-ui resolves it
+   *  against `ICON_PATHS`). A plain string because core ships no icon set and
+   *  cannot depend on one. Read where a leaf's `name` has nowhere to go — a
+   *  `pair`ed row is labeled by the pair, so its fields have only the glyph
+   *  to tell them apart. */
+  icon?: string;
   /** Row-pairing hint for compact property UIs (weasel-ui
    *  `SelectionPanel`): leaves sharing a `pair` id render side-by-side
    *  on one row labeled with the `pair` string (e.g. `'Position'` for
@@ -72,9 +78,13 @@ export interface ToolPrefString extends ToolPrefBase<'string', string> {
 export interface ToolPrefEnum<T extends string = string>
   extends ToolPrefBase<'enum', T> {
   /** `short` is the label a segmented control uses when a full one would not
-   *  fit — a capital or two. The full `label` stays the accessible name, so
-   *  the abbreviation never becomes the only thing naming the option. */
-  options: readonly { value: T; label: string; short?: string }[];
+   *  fit — a capital or two. `icon` names a glyph in the host UI's set
+   *  (weasel-ui resolves it against `ICON_PATHS`) and outranks `short` where
+   *  it resolves. It is a plain string because core ships no icon set and
+   *  cannot depend on one. The full `label` stays the accessible name, so
+   *  neither the abbreviation nor the glyph becomes the only thing naming
+   *  the option. */
+  options: readonly { value: T; label: string; short?: string; icon?: string }[];
   control?: ToolPrefEnumControl;
 }
 
