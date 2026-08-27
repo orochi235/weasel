@@ -23,9 +23,13 @@ describe('useAction', () => {
     // ran during cleanup — verifiable by the next test below.
   });
 
-  it('no-ops silently when no provider is in scope', () => {
+  it('warns but does not throw when no provider is in scope', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const action: Action = { id: 'foo', label: 'Foo', invoker: { timing: 'immediate' as const, run: vi.fn() } };
     expect(() => renderHook(() => useAction(action))).not.toThrow();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0]![0])).toContain('foo');
+    warn.mockRestore();
   });
 
   it('re-registering with a new action object replaces the old one', () => {
