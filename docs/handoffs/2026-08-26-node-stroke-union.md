@@ -1,8 +1,8 @@
 # Handoff — node paint as objects, and the property panel that edits it
 
 One branch now, `node-stroke-union`, worktree
-`.claude/worktrees/node-stroke-union`, at `ce82f4a2`, 16 commits off `main`
-(`343c9913`). Not pushed. `tsc`, `eslint` and 7204 tests green.
+`.claude/worktrees/node-stroke-union`, at `4f192741`, 18 commits off `main`
+(`343c9913`). Not pushed. `tsc` and 7204 tests green.
 
 The design lives in `docs/proposals/2026-08-26-node-stroke-union.md` — read it
 first; it describes the model, not the branch. This file is only what that doc
