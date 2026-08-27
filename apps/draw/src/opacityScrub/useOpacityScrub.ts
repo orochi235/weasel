@@ -44,7 +44,9 @@ export function useOpacityScrub({ scene, selection, hostRef }: UseOpacityScrubAr
     function readSnapshot(id: string): PaintSnapshot | null {
       const node = sceneRef.current.get(asNodeId(id));
       if (!node) return null;
-      const data = node.data as { fill?: string | null; stroke?: string | null } | undefined;
+      // `fill` and `stroke` are unions — only their color-string form has an
+      // alpha to scrub, and the rest passes through untouched.
+      const data = node.data as { fill?: unknown; stroke?: unknown } | undefined;
       return {
         fill: (data?.fill ?? null) as string | null,
         stroke: (data?.stroke ?? null) as string | null,

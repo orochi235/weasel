@@ -178,20 +178,16 @@ Priority tags:
   batch per file). weaseldraw runs with `unpack` on. Remaining:
   (a) **embedded SVG blurs under zoom** — `imageCache` rasterizes once at
   natural size; re-rasterize at view scale (or draw from the live `Image`
-  element) if crispness matters; (b) **a gradient *stroke* still flattens** to
-  a solid fallback in unpack, and so do dashes, caps, joins and miter limits.
-  The painter is no longer the obstacle: `data.stroke` is `NodeStroke =
-  string | Stroke` as of the node-stroke-union arc, so unpack can write the
-  whole `SvgStroke` through. `unpack.test.ts` currently pins the flattening
-  and inverts when it does. See
-  `docs/proposals/2026-08-26-node-stroke-union.md`; (c) **text box width is estimated** on the unpack path — external
-  `<text>` carries `UNBOUNDED_TEXT_WIDTH` rather than a measurement, and
-  unpack has no text-measure context, so it guesses from the longest line at
-  0.6 em per glyph (closed 2026-08-16, along with `fontSize` joining the
-  fit-clamp); a real measure would want the atlas; (d) weaseldraw's file-menu import still uses its own
-  app-local `svgInterop` mapping (richer: `wd:` tool metadata, paper size)
-  — fold the shared walk if they drift, and note it now *drops* `<image>`
-  nodes, since the app's `Obj` union is path/text only.
+  element) if crispness matters; (b) **text box width is estimated** on the
+  unpack path — external `<text>` carries `UNBOUNDED_TEXT_WIDTH` rather than a
+  measurement, and unpack has no text-measure context, so it guesses from the
+  longest line at 0.6 em per glyph (closed 2026-08-16, along with `fontSize`
+  joining the fit-clamp); a real measure would want the atlas; (c) weaseldraw's
+  file-menu import still uses its own app-local `svgInterop` mapping (richer:
+  `wd:` tool metadata, paper size) — fold the shared walk if they drift, and
+  note it now *drops* `<image>` nodes, since the app's `Obj` union is path/text
+  only. The stroke lowering is already shared: both importers call
+  `strokeDataFromSvg`.
 
 - **(P3) External-content ingestion — follow-ups.** Shipped 2026-07-03 (spec
   `docs/superpowers/specs/2026-07-03-content-ingestion-design.md`): drop/paste

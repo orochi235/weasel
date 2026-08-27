@@ -39,7 +39,7 @@ import {
   type SceneSource,
   type WeaselDrawPaperSize,
 } from './svgInterop';
-import type { FillStyle } from '@weasel-js/core';
+import type { FillStyle, Stroke } from '@weasel-js/core';
 import type { Obj, PathObj, TextObj } from './poseUpdate';
 
 interface WeaselDrawPose {
@@ -52,7 +52,7 @@ interface WeaselDrawData {
   /** Node-level typography, the same field `kit:text` paints from. */
   style?: TextStyle;
   fill?: string | FillStyle;
-  stroke?: string;
+  stroke?: string | Stroke;
   strokeWidth?: number;
 }
 
@@ -64,6 +64,9 @@ interface WeaselDrawData {
 function textStyleFor(data: WeaselDrawData): TextStyle | undefined {
   const style = data.style;
   if (style?.stroke !== undefined) return style;
+  if (typeof data.stroke === 'object' && data.stroke !== null) {
+    return { ...style, stroke: data.stroke };
+  }
   if (!data.stroke || data.stroke === 'none') return style;
   const width = data.strokeWidth ?? 1;
   if (width <= 0) return style;
@@ -110,8 +113,14 @@ function leafToObj(id: string, data: WeaselDrawData, pose: WeaselDrawPose): Obj 
     fill: data.fill == null ? '#000000'
       : typeof data.fill === 'string' ? data.fill
       : fillInPoseFrame(data.fill, pose),
-    stroke: data.stroke ?? '#000000',
-    strokeWidth: data.stroke && (data.strokeWidth ?? 0) > 0 ? (data.strokeWidth ?? 1) : 0,
+    // A gradient stroke paint gets the same pose-frame resolution the fill
+    // above gets, and for the same reason.
+    stroke: data.stroke == null ? '#000000'
+      : typeof data.stroke === 'string' ? data.stroke
+      : { ...data.stroke, paint: fillInPoseFrame(data.stroke.paint, pose) },
+    strokeWidth: typeof data.stroke === 'string' && (data.strokeWidth ?? 0) > 0
+      ? (data.strokeWidth ?? 1)
+      : 0,
   };
   if (pose.rotation) o.rotation = pose.rotation;
   return o;

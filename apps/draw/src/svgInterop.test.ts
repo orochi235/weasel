@@ -26,7 +26,7 @@ import {
 interface RectObjT {
   id: string; tool: 'rect'; x: number; y: number; width: number; height: number;
   path: { kind: 'rect'; x: number; y: number; width: number; height: number };
-  closed: boolean; fill: string; stroke: string; strokeWidth: number;
+  closed: boolean; fill: string; stroke: unknown; strokeWidth: number;
 }
 interface TextObjT { id: string; tool: 'text'; x: number; y: number; width: number; height: number; text: string }
 interface PathObjT {
@@ -503,5 +503,56 @@ describe('rotation parse', () => {
     const t = out[0];
     expect(t.tool).toBe('text');
     expect(t.rotation).toBeCloseTo(Math.PI / 4, 5);
+  });
+});
+
+describe('stroke as a whole Stroke', () => {
+  const rect = (stroke: unknown, strokeWidth = 0): RectObjT => ({
+    id: 'r', tool: 'rect', x: 0, y: 0, width: 10, height: 10,
+    path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+    closed: true, fill: '#ffffff', stroke, strokeWidth,
+  });
+
+  it('emits dash, cap and join, which the color pair could not carry', () => {
+    const node = objToSvgNode(rect({
+      paint: { color: '#00ff00' }, width: 3, cap: 'round', join: 'bevel', dash: [4, 2],
+    }) as never) as SvgPathNode;
+    expect(node.stroke).toEqual({
+      paint: { kind: 'solid', color: '#00ff00' },
+      width: 3, cap: 'round', join: 'bevel', dash: [4, 2],
+    });
+  });
+
+  it('serializes them as the SVG attributes they are', () => {
+    const svg = serializeSvg([objToSvgNode(rect({
+      paint: { color: '#00ff00' }, width: 3, cap: 'round', dash: [4, 2],
+    }) as never)]);
+    expect(svg).toContain('stroke-dasharray="4 2"');
+    expect(svg).toContain('stroke-linecap="round"');
+  });
+
+  it('reads a dashed stroke back as the object form, not a flattened color', () => {
+    const parsed = parseSvg(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">'
+      + '<rect x="0" y="0" width="10" height="10" fill="none" stroke="#00ff00"'
+      + ' stroke-width="3" stroke-dasharray="4 2" stroke-linecap="round"/></svg>',
+    );
+    const drafts = svgNodesToSceneDrafts(parsed.nodes, ids());
+    const leaf = drafts.find((d) => d.kind === 'leaf');
+    expect(leaf).toBeDefined();
+    expect((leaf as { obj: { stroke: unknown } }).obj.stroke).toMatchObject({
+      width: 3, dash: [4, 2], cap: 'round',
+    });
+  });
+
+  it('keeps a plain solid stroke in the color-string form', () => {
+    const parsed = parseSvg(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">'
+      + '<rect x="0" y="0" width="10" height="10" fill="none" stroke="#00ff00" stroke-width="3"/></svg>',
+    );
+    const drafts = svgNodesToSceneDrafts(parsed.nodes, ids());
+    const leaf = drafts.find((d) => d.kind === 'leaf') as { obj: { stroke: unknown; strokeWidth: number } };
+    expect(leaf.obj.stroke).toBe('#00ff00');
+    expect(leaf.obj.strokeWidth).toBe(3);
   });
 });

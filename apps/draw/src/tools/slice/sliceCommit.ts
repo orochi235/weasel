@@ -25,7 +25,7 @@ interface WDData {
   path?: Path;
   text?: string;
   fill?: string | FillStyle;
-  stroke?: string;
+  stroke?: unknown;
   strokeWidth?: number;
   label?: string;
 }

@@ -1,4 +1,4 @@
-import type { BooleanOp, FillStyle, Path, TextStyle } from '@weasel-js/core';
+import type { BooleanOp, FillStyle, Path, Stroke, TextStyle } from '@weasel-js/core';
 
 export type ToolKind =
   | 'rect' | 'ellipse' | 'polygon' | 'star' | 'line'
@@ -25,7 +25,10 @@ export interface PathObj extends BaseObj {
   /** A color string, or a whole paint for gradient- and pattern-filled
    *  objects. The SVG serializer emits the latter as a `<defs>` entry. */
   fill: string | FillStyle;
-  stroke: string;
+  /** A color string, or a whole `Stroke` for objects carrying a dash, a cap,
+   *  a join or a gradient paint. `strokeWidth` governs the string form only —
+   *  a `Stroke` carries its own width. */
+  stroke: string | Stroke;
   strokeWidth: number;
   params?: PathParams;
   /** Provenance for nodes minted by a boolean op. `tool` for these is

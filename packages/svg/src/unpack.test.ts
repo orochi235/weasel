@@ -159,14 +159,76 @@ describe('svgNodesToKitDrafts', () => {
     });
   });
 
-  it('flattens a gradient STROKE — the painter has a color slot, not a paint one', () => {
+  it('keeps a gradient STROKE as a paint — `data.stroke` is `string | Stroke`', () => {
     const drafts = svgNodesToKitDrafts([rectNode(0, 0, 10, 10, {
-      stroke: { paint: { kind: 'gradient', paint: {} }, width: 2 },
+      stroke: {
+        paint: {
+          kind: 'gradient',
+          paint: {
+            fill: 'linear-gradient',
+            units: 'bounds',
+            from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+            stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }],
+          },
+        },
+        width: 2,
+      },
     })], seq());
     const d = drafts[0];
     if (d.kind !== 'leaf') throw new Error('expected leaf');
-    expect(typeof d.data.stroke).toBe('string');
-    expect(d.data.stroke).not.toBe('none');
+    expect(d.data.stroke).toMatchObject({
+      paint: { fill: 'linear-gradient' },
+      width: 2,
+    });
+    expect(d.data.strokeWidth).toBeUndefined();
+  });
+
+  it('keeps dash, cap, join and miter limit, which the color pair cannot hold', () => {
+    const drafts = svgNodesToKitDrafts([rectNode(0, 0, 10, 10, {
+      stroke: {
+        paint: { kind: 'solid', color: '#00ff00' },
+        width: 3, cap: 'round', join: 'bevel', dash: [4, 2], miterLimit: 8,
+      },
+    })], seq());
+    const d = drafts[0];
+    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    expect(d.data.stroke).toEqual({
+      paint: { color: '#00ff00' },
+      width: 3, cap: 'round', join: 'bevel', dash: [4, 2], miterLimit: 8,
+    });
+  });
+
+  it('carries stroke-opacity onto the paint', () => {
+    const drafts = svgNodesToKitDrafts([rectNode(0, 0, 10, 10, {
+      stroke: { paint: { kind: 'solid', color: '#00ff00' }, width: 1, opacity: 0.5 },
+    })], seq());
+    const d = drafts[0];
+    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    expect(d.data.stroke).toEqual({ paint: { color: '#00ff00', opacity: 0.5 }, width: 1 });
+  });
+
+  it('rebases a userSpaceOnUse gradient stroke onto the leaf box, as it does a fill', () => {
+    // Otherwise the fit-clamp and drop placement move the geometry out from
+    // under a paint still described in the source document's coordinates.
+    const drafts = svgNodesToKitDrafts([rectNode(20, 40, 10, 10, {
+      stroke: {
+        paint: {
+          kind: 'gradient',
+          paint: {
+            fill: 'linear-gradient',
+            units: 'world',
+            from: { x: 20, y: 40 }, to: { x: 30, y: 40 },
+            stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }],
+          },
+        },
+        width: 2,
+      },
+    })], seq());
+    const d = drafts[0];
+    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    expect((d.data.stroke as { paint: unknown }).paint).toMatchObject({
+      units: 'bounds', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+    });
   });
 });
 

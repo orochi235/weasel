@@ -12,8 +12,9 @@
  * path-then-rect detector fired, else `tool: 'imported'`.
  */
 
-import { boundsOfPath, fillToBoundsFrame } from '@weasel-js/core';
-import type { FillStyle, PolygonPath, TextStyle } from '@weasel-js/core';
+import { boundsOfPath, fillToBoundsFrame, resolveStrokeWidth } from '@weasel-js/core';
+import type { FillStyle, PolygonPath, Stroke, TextStyle } from '@weasel-js/core';
+import { strokeDataFromSvg } from '@weasel-js/svg';
 import type {
   ParseResult,
   SerializeOptions,
@@ -21,6 +22,7 @@ import type {
   SvgGroupNode,
   SvgPaint,
   SvgPathNode,
+  SvgStroke,
   SvgTextNode,
 } from '@weasel-js/svg';
 import type { Obj, PathObj, PathParams, TextObj, ToolKind } from './poseUpdate';
@@ -162,6 +164,26 @@ function objPaintToSvg(fill: string | FillStyle): SvgPaint {
   return { kind: 'gradient', paint: fill };
 }
 
+/** Lower an object's stroke onto an `SvgStroke`. A color string pairs with
+ *  `strokeWidth`; a `Stroke` carries its own width and the dash, cap, join
+ *  and miter limit the pair cannot hold. SVG has no stroke alignment, so
+ *  `align` is dropped. */
+function objStrokeToSvg(stroke: string | Stroke, strokeWidth: number): SvgStroke | undefined {
+  if (typeof stroke === 'string') {
+    return strokeWidth > 0 ? { paint: { kind: 'solid', color: stroke }, width: strokeWidth } : undefined;
+  }
+  const width = resolveStrokeWidth(stroke.width ?? 1, 1);
+  if (width <= 0) return undefined;
+  return {
+    paint: objPaintToSvg(stroke.paint),
+    width,
+    ...(stroke.cap !== undefined ? { cap: stroke.cap } : {}),
+    ...(stroke.join !== undefined ? { join: stroke.join } : {}),
+    ...(stroke.dash !== undefined ? { dash: stroke.dash } : {}),
+    ...(stroke.miterLimit !== undefined ? { miterLimit: stroke.miterLimit } : {}),
+  };
+}
+
 /** Lower one WeaselDraw object to an SvgNode for serialization. */
 export function objToSvgNode(o: Obj): SvgNode {
   if (o.tool === 'text') {
@@ -196,9 +218,8 @@ export function objToSvgNode(o: Obj): SvgNode {
     path: o.path,
     fill: o.closed ? objPaintToSvg(o.fill) : { kind: 'none' },
   };
-  if (o.strokeWidth > 0) {
-    node.stroke = { paint: { kind: 'solid', color: o.stroke }, width: o.strokeWidth };
-  }
+  const stroke = objStrokeToSvg(o.stroke, o.strokeWidth);
+  if (stroke) node.stroke = stroke;
   node.meta = { wd: { attrs: encodeWdAttrs(o) } };
   if (o.rotation) node.rotation = o.rotation;
   return node;
@@ -254,8 +275,6 @@ function svgLeafToObj(
     }
     return o;
   }
-  const stroke = n.stroke ? colorFromPaint(n.stroke.paint, '#000000') : '#000000';
-  const strokeWidth = n.stroke?.width ?? 0;
   const { tool, params } = decodePathToolAndParams(n.meta?.wd?.attrs, n.path.kind);
   let bounds: RectBounds;
   let closed: boolean;
@@ -267,8 +286,11 @@ function svgLeafToObj(
     bounds = { x: b.x, y: b.y, width: b.width, height: b.height };
     closed = isClosedPolygon(n.path);
   }
-  // After `bounds`: a gradient fill is normalized against them.
+  // After `bounds`: a gradient fill — and a gradient stroke paint — are
+  // normalized against them. `strokeDataFromSvg` is the same lowering the
+  // drag-and-drop ingestion path uses, so the two importers can't drift.
   const fill = fillFromPaint(n.fill, bounds, '#000000');
+  const { stroke = '#000000', strokeWidth = 0 } = strokeDataFromSvg(n.stroke, bounds);
   const o: PathObj = {
     id,
     tool,
@@ -392,17 +414,6 @@ export function sceneToSvgNodes(source: SceneSource, roots?: readonly string[]):
     if (n) out.push(n);
   }
   return out;
-}
-
-function colorFromPaint(
-  paint: SvgPathNode['fill'] | { kind: 'gradient'; paint: unknown },
-  fallback: string,
-): string {
-  if (paint.kind === 'none') return fallback;
-  if (paint.kind === 'solid') return paint.color;
-  // Strokes are the only caller left that cannot hold a gradient — the
-  // renderer requires a solid stroke paint. Fills go through `fillFromPaint`.
-  return fallback;
 }
 
 /**

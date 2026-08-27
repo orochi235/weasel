@@ -46,6 +46,7 @@ import {
   type ToolsApi,
   type Path,
   type FillStyle,
+  type Stroke,
   type GradientFill,
   type UiOngoingControl,
   type AlignEdge,
@@ -191,7 +192,9 @@ interface WeaselDrawData {
    *  documents predate the object form and carry plain strings, which every
    *  reader still accepts as an opaque solid. */
   fill?: string | FillStyle;
-  stroke?: string;
+  /** A color string, or a whole `Stroke`. Imported artwork carrying a dash,
+   *  a cap or a gradient stroke arrives in the object form. */
+  stroke?: string | Stroke;
   strokeWidth?: number;
   label?: string;
 }

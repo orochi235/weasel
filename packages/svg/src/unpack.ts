@@ -23,11 +23,9 @@
  * as-is. Each file commits as one `applyOps` batch, so the whole import is
  * a single undo step.
  *
- * Known flattenings (dwarn'd, not fatal): gradient paints collapse to a
- * fallback solid color (the `kit:path` painter takes color strings only).
  */
 import { parseSvg } from './parse';
-import type { SvgNode, SvgPaint } from './types';
+import type { SvgNode, SvgPaint, SvgStroke } from './types';
 import { UNBOUNDED_TEXT_WIDTH } from './types';
 import {
   boundsOfPath,
@@ -37,13 +35,13 @@ import {
   resolveTextStyle,
   type IngestCtx,
   type NodeFill,
+  type NodeStroke,
   type Op,
   type TextStyle,
 } from '@weasel-js/core';
 
 const CASCADE_OFFSET_PX = 24;
 const VIEWPORT_FIT = 0.9;
-const GRADIENT_FALLBACK = '#888888';
 
 /** Axis-aligned box, in the coordinate space of the SVG being unpacked. Used
  *  for the bounds a draft occupies before it becomes a scene node. */
@@ -103,14 +101,41 @@ function fillFromPaint(
   return units === 'world' ? fillToBoundsFrame(g, box) : g;
 }
 
-/** Flatten an `SvgPaint` to a color string. Strokes only: the `kit:path`
- *  painter's `data.stroke` is a color, with no slot for a paint server. */
-function strokeColorFromPaint(paint: SvgPaint | undefined): string | undefined {
-  if (!paint) return undefined;
-  if (paint.kind === 'none') return 'none';
-  if (paint.kind === 'solid') return paint.color;
-  dwarn('ingest', `svg unpack: gradient stroke flattened to ${GRADIENT_FALLBACK}`);
-  return GRADIENT_FALLBACK;
+/** Lower an `SvgStroke` onto the leaf's stroke fields.
+ *
+ *  A plain solid stroke stays the color-string pair every kit consumer
+ *  already reads. Anything the pair cannot hold — a gradient paint, a dash,
+ *  a cap, a join, a miter limit, an opacity — comes through as the whole
+ *  `Stroke`, which is what `data.stroke` takes. The paint is normalized to
+ *  the leaf's own box the same way a fill is, so a `userSpaceOnUse` gradient
+ *  survives the fit-clamp and the drop-point placement. */
+export function strokeDataFromSvg(
+  stroke: SvgStroke | undefined,
+  box: SvgDraftBounds,
+): { stroke?: NodeStroke; strokeWidth?: number } {
+  if (!stroke || stroke.paint.kind === 'none') return {};
+  const paint = fillFromPaint(stroke.paint, box);
+  if (paint === undefined || paint === 'none') return {};
+  const plain =
+    typeof paint === 'string'
+    && stroke.opacity === undefined
+    && stroke.cap === undefined
+    && stroke.join === undefined
+    && stroke.dash === undefined
+    && stroke.miterLimit === undefined;
+  if (plain) return { stroke: paint as string, strokeWidth: stroke.width };
+  return {
+    stroke: {
+      paint: typeof paint === 'string'
+        ? { color: paint, ...(stroke.opacity !== undefined ? { opacity: stroke.opacity } : {}) }
+        : { ...paint, ...(stroke.opacity !== undefined ? { opacity: stroke.opacity } : {}) },
+      width: stroke.width,
+      ...(stroke.cap !== undefined ? { cap: stroke.cap } : {}),
+      ...(stroke.join !== undefined ? { join: stroke.join } : {}),
+      ...(stroke.dash !== undefined ? { dash: stroke.dash } : {}),
+      ...(stroke.miterLimit !== undefined ? { miterLimit: stroke.miterLimit } : {}),
+    },
+  };
 }
 
 /**
@@ -190,7 +215,6 @@ export function svgNodesToKitDrafts(
     const pose: DraftPose = { x: b.x, y: b.y, width: b.width, height: b.height };
     if (n.rotation) pose.rotation = n.rotation;
     const fill = fillFromPaint(n.fill, b);
-    const stroke = n.stroke ? strokeColorFromPaint(n.stroke.paint) : undefined;
     drafts.push({
       kind: 'leaf',
       id: nextId(),
@@ -199,9 +223,7 @@ export function svgNodesToKitDrafts(
       data: {
         path: n.path,
         ...(fill !== undefined ? { fill } : {}),
-        ...(stroke !== undefined && stroke !== 'none'
-          ? { stroke, strokeWidth: n.stroke!.width }
-          : {}),
+        ...strokeDataFromSvg(n.stroke, b),
       },
     });
     return pose;

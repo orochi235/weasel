@@ -21,7 +21,7 @@ interface WDData {
   path?: import('@weasel-js/core').Path;
   text?: string;
   fill?: string | import('@weasel-js/core').FillStyle;
-  stroke?: string;
+  stroke?: unknown;
   strokeWidth?: number;
   label?: string;
 }
