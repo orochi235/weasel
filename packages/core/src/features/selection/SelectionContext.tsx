@@ -135,8 +135,12 @@ export function usePublishSelection(
   const kindsRef = useRef(kinds);
   kindsRef.current = kinds;
   const serialized = JSON.stringify([ids, kinds]);
+  // Depend on `publishSelection` rather than `ctx`: the provider mints a new
+  // context value on every publish, so keying on `ctx` refires this effect for
+  // every publisher whenever any one of them publishes.
+  const publish = ctx?.publishSelection;
   useEffect(() => {
-    if (!ctx) return;
-    ctx.publishSelection(idsRef.current, kindsRef.current);
-  }, [ctx, serialized]);
+    if (!publish) return;
+    publish(idsRef.current, kindsRef.current);
+  }, [publish, serialized]);
 }

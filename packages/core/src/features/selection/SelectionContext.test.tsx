@@ -191,3 +191,28 @@ describe('usePublishSelection', () => {
     expect(observedSelections).toBe(after1);
   });
 });
+
+describe('usePublishSelection effect stability', () => {
+  it('does not republish stale ids when the provider state changes elsewhere', () => {
+    function Publisher() {
+      usePublishSelection([asNodeId('a')]);
+      return null;
+    }
+    let ctx: ReturnType<typeof useSelectionContext> = null;
+    function Reader() {
+      ctx = useSelectionContext();
+      return null;
+    }
+    render(
+      <SelectionContextProvider>
+        <Publisher />
+        <Reader />
+      </SelectionContextProvider>,
+    );
+    expect(ctx!.selection).toEqual(['a']);
+    // Another owner publishes a different selection. The publisher's effect
+    // must not refire and stomp it back to ['a'].
+    act(() => ctx!.publishSelection([asNodeId('b')]));
+    expect(ctx!.selection).toEqual(['b']);
+  });
+});

@@ -4,6 +4,7 @@
   "description": "App-level modality primitives: capability tags, mode definitions, mode registry, and decoration layer.",
   "license": "MIT",
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",

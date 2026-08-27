@@ -103,6 +103,19 @@ describe('<Canvas>', () => {
     expect(canvas.style.display).toBe('block');
   });
 
+  it('forwards onFocus and onBlur from the canvas element', () => {
+    const onFocus = vi.fn();
+    const onBlur = vi.fn();
+    const { container } = render(
+      <Canvas width={10} height={10} layers={{}} onFocus={onFocus} onBlur={onBlur} />,
+    );
+    const canvas = container.querySelector('canvas')!;
+    fireEvent.focus(canvas);
+    expect(onFocus).toHaveBeenCalledTimes(1);
+    fireEvent.blur(canvas);
+    expect(onBlur).toHaveBeenCalledTimes(1);
+  });
+
   it('integrates with useSelection through useSelectTool (smoke)', () => {
     interface Rect { id: string; x: number; y: number; width: number; height: number }
     interface Pose { x: number; y: number; width: number; height: number }

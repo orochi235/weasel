@@ -526,20 +526,41 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
  * @experimental
  * Returns the parent `ActionsRegistry`, or `null` when no provider is in scope.
  */
+/**
+ * `import.meta.env.DEV` read through a cast — core must not depend on a
+ * bundler's ambient augmentation (`vite/client`) to compile. Mirrors the same
+ * cast in SceneCanvas.tsx, dispatcher.ts and buildDeps.ts.
+ */
+const IS_DEV: boolean = (() => {
+  try {
+    return Boolean((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV);
+  } catch {
+    return false;
+  }
+})();
+
 export function useActionsRegistry(): ActionsRegistry | null {
   return useContext(ActionsContext);
 }
 
 /**
  * @experimental
- * Register an `Action` for the lifetime of the calling component. No-op when
- * no `ActionsProvider` is in scope. Re-registers on `action` reference change
- * (consumers should memoize stable identities to avoid churn).
+ * Register an `Action` for the lifetime of the calling component. No-op (with
+ * a dev-only warning) when no `ActionsProvider` is in scope. Re-registers on
+ * `action` reference change (consumers should memoize stable identities to
+ * avoid churn).
  */
 export function useAction(action: Action): void {
   const reg = useActionsRegistry();
   useEffect(() => {
-    if (!reg) return;
+    if (!reg) {
+      if (IS_DEV) {
+        console.warn(
+          `useAction("${action.id}"): no <ActionsProvider> is in scope, so the action was not registered and its bindings will never fire.`,
+        );
+      }
+      return;
+    }
     return reg.register(action);
   }, [reg, action]);
 }

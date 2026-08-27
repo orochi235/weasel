@@ -429,15 +429,6 @@ Core five + Crop shipped. Remaining:
   `apps/draw/src/useLoupe.ts:49` has the same shape. Fix the bypass and the
   demos together, or neither.
 
-- **(P1) `curve-lab` renders in an infinite loop.** 62 x `Maximum update depth
-  exceeded` at load. `usePublishSelection`'s effect
-  (`packages/core/src/canvas/SelectionContext.tsx:117`) has deps `[ctx, serialized]`,
-  and `ctx` takes a new identity on every `setState` — so N canvases holding
-  *different* selections in one provider thrash forever. curve-lab's four panels
-  each call `useSelection({ initial: [nodeId], lock: true })` with a different id.
-  The panels still paint correctly; this is a console and CPU defect, not a
-  visual one. Predates the frame-loop arc, which touched neither file.
-
 - **(P1) A second `<SceneCanvas>` under one `ActionsProvider` unregisters the
   first's viewport actions.** In `vertex-widths` and `boolean-ops` — and
   `curve-lab` and `rotated-resize-math` — wheel pan and Cmd+wheel/Cmd+-/Cmd+0 do
@@ -533,32 +524,6 @@ Core five + Crop shipped. Remaining:
   render that does not exist), and it is documented nowhere. Writing the ref
   from a layout effect instead would fix it and cost the sync-paint ordering,
   which is the same trade as the entry above.
-
-- **(P2) `before` and `after` layer chains do not compose.** In
-  `packages/core/src/canvas/layerOrder.ts`, `emitBefore` recurses only into a
-  layer's `before` children and `emitAfter` only into its `after` children. So a
-  custom layer anchored with `before` never has its own `after` children
-  emitted — they fall through to the orphan pass, warn "dangling reference", and
-  land at the tail in map order. Anchoring a chain's root with
-  `before: 'scene'` and chaining the rest with `after` is the natural way to
-  write a painter's-order stack, and it silently produces accidental order that
-  happens to look right. The side-scroller demo hit exactly this with nine
-  layers. Fix: a layer's `before` children belong immediately before it and its
-  `after` children immediately after, whichever direction anchored the layer
-  itself — so each emit path should recurse into both, with the cycle guard
-  extended to match.
-
-- **(P2) Forward focus events from the canvas.** `Canvas` already defaults
-  `tabIndex` to 0, so the kit has decided the canvas is focusable — but
-  `CanvasProps` is a hand-enumerated interface with no `onFocus`/`onBlur`, so a
-  consumer can make it take focus and cannot react to it. Anything wanting a
-  focus ring, a "click to start" affordance, or to announce state to a screen
-  reader has to catch the bubbled event on an ancestor and filter by
-  `tagName === 'CANVAS'`, which the side-scroller demo now does. Add
-  `onFocus`/`onBlur` (and their capture forms) as real props. Deliberately not a
-  blanket DOM-props spread: the dispatcher owns pointer and key handlers, and a
-  consumer overriding those would break input in ways nothing warns about.
-  Focus and blur are safe precisely because the kit does not use them.
 
 
 - **(P1) A full-screen effects pass.** The renderer can draw over the frame but
@@ -854,20 +819,13 @@ What it surfaced:
   acceleration with scheduling jitter, so the HUD now folds in a sample only when
   the scale is unchanged between consecutive footfalls.
 
-- **(P2) `useAction` silently no-ops without an `ActionsProvider` ancestor.**
-  This cost the demo *all* keyboard input, undetected through thirteen tasks and
-  a green test suite: `usePlatformerInput()` ran in the component that *renders*
-  `<WeaselProvider>` rather than under it, so the action registered into a null
-  registry and nothing ever moved. Nothing warned. A dev-mode warning when
-  `useAction` finds no registry would have turned an afternoon into a minute.
-
 - **(P1) Two interactive `SceneCanvas` instances under one provider root kill
   each other's input.** `apps/site/main.tsx:48` mounts one `ActionsProvider` and
   one `SelectionContextProvider` for the whole site, and `WeaselProvider`'s
   `IfRoot` semantics defer to those rather than isolating — so a second canvas
-  fights the first over one actions registry and one selection publisher. It
-  fails as "Maximum update depth exceeded" with a canvas that no longer responds,
-  naming nothing. `BooleanOpsDemo.tsx:195` already carries a hand-rolled
+  fights the first over one actions registry. (The selection-publisher half of
+  this is fixed; what remains is the registry.) It fails with a canvas that no
+  longer responds, naming nothing. `BooleanOpsDemo.tsx:195` already carries a hand-rolled
   workaround for the same class of bug, and AnimationDemo now carries another.
   Either `WeaselProvider` grows an explicit isolation mode or `SceneCanvas`
   scopes its action registration per canvas. Surfaced 2026-08-24 rebuilding
@@ -876,10 +834,6 @@ What it surfaced:
 - **(P2) No key-state poll.** `key-held` gives edges; the dispatcher's held set
   tracks claims rather than physical keys and is not exported. Every character
   controller will rewrite `platformer/useInput.ts`'s reconstruction.
-
-- **(P2) Held keys stick when the window loses focus.** No `keyup` arrives, so
-  the binding stays open and the player keeps running. `useInput.ts` guards it
-  with a `blur` listener; the dispatcher should.
 
 - **(P2) `createParallaxLayer` cannot see a ref-driven camera.** It derives its
   inner view from the canvas's `view` prop. A consumer that pins that to identity
@@ -1001,13 +955,6 @@ What it surfaced:
   matrices and flattened onto eleven independent bone nodes every frame. Rotation-
   aware pose composition would let the rig be expressed as parenting, which is
   what it already is everywhere except the scene.
-
-- **(P2) `after:` never resolves off a `before:`-emitted custom layer.**
-  `emitBefore` recurses only into `beforeByParent` (`layerOrder.ts:76-86`), so
-  `{a: {before: 'scene'}, b: {after: 'a'}}` orphans `b` to the tail with a
-  "dangling reference" warning — silently painting it over everything. Cost an
-  afternoon of "why is the backdrop on top". Either resolve after-chains off
-  before-emitted parents or reject the combination outright.
 
 - **(P3) `kit:text` nodes cannot opt into `verticalAlign`.** The painter
   forwards the pose height but not the alignment (`NodeShape.ts:386`), so
@@ -1192,6 +1139,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P2) labkit: `registerSerializers` has no callers, so instrument serializers never run.** `LabStore.registerSerializers` exists and nothing in the repo calls it, leaving `serializers` permanently `{}` — `Instrument.serialize` / `deserialize` are dead at flush, at hydrate and around snapshots, and an instrument whose state is not JSON-safe silently loses it. Not a one-liner: `createLabStore` runs before any React provider mounts, so a late registration cannot reach hydration. The fix is probably to take serializers as a `CreateLabStoreOptions` field instead, which also gives the hook a place to be typed. Document migrations are unaffected — they operate on already-serialized JSON.
 
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
+
+- **(P2) weasel-ui form fields are `width: 100%` with no intrinsic-width option.** That is why labkit pins a width at all three of its `Select` / `NumberField` call sites. A real affordance on the components — an intrinsic or content-derived width — would retire the convention.
+
+- **(P3) `.lk-shell` is `height: 100vh`.** A lab mounted anywhere but the viewport top overflows by its own offset. Harmless on the dev page, wrong in general.
+
+- **(P3) labkit's mode toggle is three text labels.** `MODES` in `LabHeader.tsx` is Auto / Light / Dark as words. Blocked on a sketch from Mike for the `auto` glyph: a half-filled circle breaks a stroke-only set and a monitor outline reads as "display" rather than "follow the OS". Icons are authored in `packages/ui/scripts/icons/*.mjs` and generated by `node packages/ui/scripts/gen-icons.mjs`; see CLAUDE.md on proofing them.
 
 ### Align/distribute/flip follow-ups
 
