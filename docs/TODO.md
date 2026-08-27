@@ -432,14 +432,6 @@ Core five + Crop shipped. Remaining:
   `apps/draw/src/useLoupe.ts:49` has the same shape. Fix the bypass and the
   demos together, or neither.
 
-- **(P1) `curve-lab` renders in an infinite loop — publisher half fixed, needs
-  a browser re-check.** `usePublishSelection` no longer thrashes when N canvases
-  hold different selections in one provider (it keys on the stable publish
-  callback rather than the context value). The other known producer of `Maximum
-  update depth exceeded` on this page is the shared-provider entry below, which
-  is still open — so confirm in the browser whether curve-lab is actually quiet
-  before retiring this.
-
 - **(P1) A second `<SceneCanvas>` under one `ActionsProvider` unregisters the
   first's viewport actions.** In `vertex-widths` and `boolean-ops` — and
   `curve-lab` and `rotated-resize-math` — wheel pan and Cmd+wheel/Cmd+-/Cmd+0 do
