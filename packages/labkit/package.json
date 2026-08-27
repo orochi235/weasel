@@ -14,6 +14,9 @@
     "url": "https://github.com/orochi235/weasel/issues"
   },
   "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
   "engines": {
     "node": ">=22"
   },
