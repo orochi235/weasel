@@ -116,7 +116,7 @@ describe('collectPropertiesTrait', () => {
     expect(rect!.leafPaths).toEqual([
       'pose.x', 'pose.y', 'pose.width', 'pose.height', 'pose.rotation',
       'data.fill',
-      'data.stroke.paint', 'data.stroke.width', 'data.stroke.cap',
+      'data.stroke.width', 'data.stroke.paint', 'data.stroke.cap',
       'data.stroke.join', 'data.stroke.align',
     ]);
   });
@@ -126,10 +126,11 @@ describe('collectPropertiesTrait', () => {
     const rect = entries.find((e) => e.id === 'rect')!;
     const text = entries.find((e) => e.id === 'text')!;
     expect(text).toBeDefined();
-    // The text schema is the shape schema with a Text group appended, so the
-    // base leaves must survive in order — a count would only tell us the
-    // total changed, not whether `text` still carries pose and appearance.
-    expect(text.leafPaths.slice(0, rect.leafPaths.length)).toEqual(rect.leafPaths);
+    // The text schema is the shape schema with its text groups interleaved, so
+    // every base leaf must survive in relative order — a count would only tell
+    // us the total changed, not whether `text` still carries pose and
+    // appearance. Not a prefix: `Content` sits between Layout and Appearance.
+    expect(text.leafPaths.filter((p) => rect.leafPaths.includes(p))).toEqual(rect.leafPaths);
     expect(text.leafPaths.length).toBeGreaterThan(rect.leafPaths.length);
     // The text-only leaves, one per nesting level of the Text group, so a
     // group that stops being flattened is caught.

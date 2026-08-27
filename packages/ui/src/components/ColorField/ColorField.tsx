@@ -87,6 +87,7 @@ export function ColorField(props: ColorFieldProps) {
         <>
           <input
             className={s.alphaRange}
+            style={{ ['--slider-fill' as string]: `${visibleAlphaPct}%` }}
             type="range"
             min={0}
             max={100}
@@ -104,7 +105,7 @@ export function ColorField(props: ColorFieldProps) {
             onKeyUp={() => commit(visibleRgb, visibleAlphaPct / 100)}
             onBlur={() => commit(visibleRgb, visibleAlphaPct / 100)}
           />
-          <span className={s.alphaReadout} aria-hidden="true">{visibleAlphaPct}</span>
+          <span className={s.alphaReadout} aria-hidden="true">{visibleAlphaPct}%</span>
         </>
       )}
     </span>

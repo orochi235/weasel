@@ -13,7 +13,7 @@ export type ToggleBarItem<V extends string | number = string> = {
 /** Segment height and type scale for a {@link ToggleBar}. */
 export type ToggleBarSize = 'sm' | 'md';
 /** Visual treatment of a {@link ToggleBar}. */
-export type ToggleBarVariant = 'default' | 'minimal';
+export type ToggleBarVariant = 'default' | 'minimal' | 'flat';
 
 type CommonProps = {
   ariaLabel?: string;

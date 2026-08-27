@@ -250,6 +250,38 @@ function renderBuiltin(
       const p = pref as ToolPrefNumber;
       const stored = typeof value === 'number' && Number.isFinite(value) ? value : undefined;
       const display = stored !== undefined ? (p.unit ? p.unit.toDisplay(stored) : stored) : NaN;
+      if (p.control === 'slider') {
+        const min = p.min ?? 0;
+        const max = p.max ?? 100;
+        const known = !mixed && stored !== undefined;
+        return (
+          <>
+            <input
+              type="range"
+              className={s.slider}
+              style={{
+                ['--slider-fill' as string]:
+                  `${known && max > min ? ((Math.min(Math.max(display, min), max) - min) / (max - min)) * 100 : 0}%`,
+              }}
+              min={min}
+              max={max}
+              step={p.step ?? 1}
+              // The thumb clamps to the track; the readout beside it does not,
+              // so a value past `max` is still reported as what it is.
+              value={known ? Math.min(Math.max(display, min), max) : min}
+              disabled={mixed}
+              aria-label={ariaLabel}
+              onChange={(e) => {
+                const next = Number(e.target.value);
+                setValue(p.unit ? p.unit.fromDisplay(next) : next);
+              }}
+            />
+            <span className={s.sliderReadout} aria-hidden="true">
+              {known ? `${display}${p.unit?.suffix ?? ''}` : '—'}
+            </span>
+          </>
+        );
+      }
       const field = (
         <NumberField
           className={s.number}
@@ -309,6 +341,8 @@ function renderBuiltin(
         return (
           <ToggleBar<string>
             size="sm"
+            variant="flat"
+            className={s.toggle}
             ariaLabel={ariaLabel}
             items={p.options.map((o) => ({
               value: o.value,

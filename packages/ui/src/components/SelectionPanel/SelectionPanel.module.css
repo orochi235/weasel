@@ -79,15 +79,31 @@
   margin-block-end: 5px;
 }
 
-/* Sized by its control, not by an equal share of the row: three segmented
-   bars split evenly are narrower than their own segments. */
+/* Fields paired into one row split it evenly, the way Position's x/y do. */
 .rowControls > .namedField {
+  flex: 1 1 0;
+}
+
+/* Except around a segmented bar, which is sized by its segments: an equal
+   share of the row is wider than the buttons want to be. */
+.rowControls > .namedField:has(> .toggle) {
   flex: 0 1 auto;
 }
 
 .rowControls > * {
   flex: 1;
   min-inline-size: 0;
+}
+
+/* Bars sharing a row split the leftover between them, so the gap stays fixed
+   and the width lands on the segments. A bar with the row to itself is sized
+   by its segments instead — a third of 240px is a plate, not a button. */
+.rowControls > .toggle {
+  flex: 1 1 auto;
+}
+
+.rowControls > .toggle:only-child {
+  flex: 0 1 auto;
 }
 
 .number :global(input),
@@ -125,4 +141,55 @@
   padding-inline-start: 8px;
   border-inline-start: 1px solid var(--wzl-border);
   margin-block-end: 4px;
+}
+
+/* Inline slider for a `control: 'slider'` number, matching the opacity
+   slider it shares a row with rather than the full-width RangeSlider.
+   The track is painted here rather than left to `accent-color`: the UA fills
+   the left of the track but draws the remainder near-white whatever
+   `color-scheme` says, which is wrong on every dark surface. `--slider-fill`
+   carries the value, since no static rule can express "filled to N%". */
+.slider {
+  flex: 1;
+  min-inline-size: 48px;
+  appearance: none;
+  -webkit-appearance: none;
+  block-size: 4px;
+  border-radius: var(--wzl-radius-pill);
+  background: linear-gradient(
+    to right,
+    var(--wzl-accent) 0 var(--slider-fill, 0%),
+    var(--wzl-border-strong) var(--slider-fill, 0%) 100%
+  );
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  inline-size: 12px;
+  block-size: 12px;
+  border-radius: 50%;
+  background: var(--wzl-accent);
+}
+
+.slider::-moz-range-thumb {
+  inline-size: 12px;
+  block-size: 12px;
+  border: none;
+  border-radius: 50%;
+  background: var(--wzl-accent);
+}
+
+.slider:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.sliderReadout {
+  flex: none;
+  min-inline-size: 3ch;
+  text-align: end;
+  font-size: var(--wzl-font-size-sm);
+  opacity: 0.7;
 }

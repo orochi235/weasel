@@ -172,6 +172,13 @@
   font-size: var(--wzl-font-size-sm);
 }
 
+/* `.size_sm .segment` outranks the glyph rule above on specificity, so a
+   small bar's glyph segments need the tight padding restated to stay
+   near-square rather than reading as wide plates. */
+.size_sm .segment:has(> svg) {
+  padding: 0 3px;
+}
+
 /* Minimal variant — strips the pill track, glass selected state, inset
    shadows, and outer padding. Used in dense diagnostic surfaces (dispatch
    trace, lab inspectors) where the bar must read as plain text controls. */
@@ -224,5 +231,61 @@
 }
 
 .variant_minimal .segmentSelected::before {
+  content: none;
+}
+
+/* Flat variant — no track, no glass, no pill: each segment is its own
+   outlined cell. For property panels, where a bar sits in a row beside
+   inputs and the glass cylinder makes it the loudest thing on the surface. */
+.variant_flat {
+  padding: 0;
+  background: none;
+  border-radius: var(--wzl-radius-sm);
+  box-shadow: none;
+  overflow: visible;
+}
+
+.variant_flat .segment {
+  border: 1px solid var(--wzl-border-strong);
+  border-radius: 0;
+  /* Sunken, so an unselected cell sits below the panel and the selected one
+     reads as raised without needing the glass treatment back. */
+  background: var(--wzl-surface-sunken);
+  color: var(--wzl-fg-muted);
+}
+
+/* Adjacent cells share one rule rather than stacking two. */
+.variant_flat .segment + .segment {
+  margin-inline-start: -1px;
+}
+
+.variant_flat .segment:first-child {
+  border-start-start-radius: var(--wzl-radius-sm);
+  border-end-start-radius: var(--wzl-radius-sm);
+}
+
+.variant_flat .segment:last-child {
+  border-start-end-radius: var(--wzl-radius-sm);
+  border-end-end-radius: var(--wzl-radius-sm);
+}
+
+.variant_flat .segment:hover:not(:disabled):not(.segmentSelected) {
+  background: var(--wzl-surface-hover);
+  color: var(--wzl-fg);
+}
+
+.variant_flat .segmentSelected {
+  background: var(--wzl-accent);
+  border-color: var(--wzl-accent);
+  color: var(--wzl-fg-on-accent);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  text-shadow: none;
+  box-shadow: none;
+  /* Its own border rather than the neighbour's overlapping edge. */
+  z-index: 1;
+}
+
+.variant_flat .segmentSelected::before {
   content: none;
 }
