@@ -283,6 +283,20 @@ renders it in place of the degrading chip.
 passes `kindSwitch={false}` today precisely because it built a wider bar around
 it, and `PaintInput` is where that wider bar belongs.
 
+### It gets the whole row, and its own section
+
+`PaintInput` is a `block` leaf: the kind bar and the per-kind editor span the
+full width of the row, label column included. The panel's `.row` is a
+`64px 1fr` grid, so a labelled paint control gives up 64px to a word the
+section heading is already saying — the same argument `data.text` and every
+`data.stroke` field already make in `defaultNodeProperties.ts`.
+
+The section reading APPEARANCE becomes FILL. `appearance` stays as the
+structural group holding both paints but goes headless (`name: ''`, the way
+the `text` group already does), leaving FILL and STROKE as two peer sections.
+Today's shape is lopsided: a bare Fill row sits beside a STROKE section that
+heads its own fields, and the heading above both names neither.
+
 ### The kind switch remembers
 
 Switching kinds is lossy today and every switch is a committed undo entry.
