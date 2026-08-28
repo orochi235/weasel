@@ -1028,11 +1028,6 @@ function withResolvedStrokeWidth(ctx: DrawContext, cmd: PathDrawCommand): PathDr
 function drawPathStroke(ctx: DrawContext, rawCmd: PathDrawCommand): void {
   const cmd = withResolvedStrokeWidth(ctx, rawCmd);
   const stroke = cmd.stroke!;
-  const paint = stroke.paint;
-  if (paint.fill !== undefined && paint.fill !== 'solid') {
-    throw new Error('weasel step 2: stroke.paint must be solid; gradient/pattern arrives in step 5+');
-  }
-
   const align = stroke.align ?? 'center';
   if (cmd.path.kind === 'polygon' && align !== 'center') {
     flushSolids(ctx);
@@ -1045,13 +1040,15 @@ function drawPathStroke(ctx: DrawContext, rawCmd: PathDrawCommand): void {
 
 function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
   const stroke = cmd.stroke!;
-  const solid = stroke.paint as { color: string; opacity?: number };
+  const paint = stroke.paint;
+  const isSolid = paint.fill === undefined || paint.fill === 'solid';
+  const solid = paint as { color: string; opacity?: number };
   const mesh = strokeMesh(cmd.path, stroke, ctx.flattenTolerance);
   if (mesh.indices.length === 0) return;
 
   // Staged, a ribbon allocates nothing and joins the fill it sits on.
   const hasVColors = !!(stroke.vertexColors && stroke.vertexColors.length > 0);
-  if (tryStageSolid(ctx, mesh, hasVColors ? undefined : solid)) return;
+  if (tryStageSolid(ctx, mesh, isSolid && !hasVColors ? solid : undefined)) return;
 
   // The VAO records the per-draw color attribute, so a vertex-colored draw
   // cannot share a persistent one with a draw that has no vertex colors.
@@ -1059,13 +1056,20 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
     ? ctx.meshCache.uploadTransient(mesh)
     : ctx.meshCache.uploadRecurring(mesh);
 
+  if (!isSolid && !hasVColors) {
+    drawPathFillByKind(ctx, paint, handle);
+    return;
+  }
+
   const gl = ctx.gl;
   if (hasVColors) {
     const prog = ctx.pathFillVColor;
     gl.useProgram(prog.handle);
     gl.bindVertexArray(handle.vao);
     setProjAndModel(ctx, prog);
-    setSolidPaintUniforms(ctx, prog, solid.color, solid.opacity);
+    // Per-vertex colors are the paint here; a non-solid base has no single
+    // color to multiply by, so white leaves the vertex colors unmodified.
+    setSolidPaintUniforms(ctx, prog, isSolid ? solid.color : '#ffffff', paint.opacity);
     setColorMatrixUniforms(ctx, prog);
 
     const expanded = expandAnchorColors(stroke.vertexColors!, handle);
