@@ -87,7 +87,10 @@ interface NodeBase<TData, TLayer extends string, TPose> {
   /** Computes this node's path from its dependencies' poses, in `dependsOn`
    *  order. A dependency that has been removed arrives as `undefined`.
    *  Returning `null` means "nothing to draw right now". Re-evaluated when a
-   *  dependency's pose changes, never authored. */
+   *  dependency's pose changes, never authored.
+   *  `node` is deliberately widened: naming `TData`/`TLayer` here puts them in
+   *  a contravariant position, making `Scene` invariant in both and breaking
+   *  assignment kit-wide. The cost is that a `derive` casts to read `node.data`. */
   derive?: (
     node: Node<unknown, string, TPose>,
     deps: readonly (TPose | undefined)[],
@@ -226,7 +229,9 @@ export interface SerializedNode<TData, TLayer extends string, TPose> {
   dependsOn?: readonly string[];
   /** Registry key for the node's `derive` function. Omitted when it has none. */
   deriveKey?: string;
-  // Future function-field keys (drawOneKey, layoutStrategyKey, etc.) will live here.
+  // Future function-field keys (drawOneKey, layoutStrategyKey, etc.) will live
+  // here; a third one should be the point this stops being copied per field and
+  // becomes one shared registry-keyed-function-field helper.
 }
 
 /** Per-scene registry mapping string keys to live function references.

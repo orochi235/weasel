@@ -98,3 +98,52 @@ describe('derived geometry — serialization', () => {
     expect(() => scene.toJSON()).toThrow(/no matching registry key/);
   });
 });
+
+/** The test-only cache-size hook, mirroring `__clipCacheSize`. */
+function deriveCacheSize(scene: unknown): number {
+  return (scene as { __deriveCacheSize: () => number }).__deriveCacheSize();
+}
+
+describe('derived geometry — redo-cache pruning', () => {
+  it('prunes the cache entry when undo-stack overflow evicts a kit:add for a removed node', () => {
+    const scene = createScene<object, 'main', RectPose>({
+      systemLayers: LAYERS, registry, historyLimit: 2,
+    });
+    const dep = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const edge = scene.add({
+      kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
+      dependsOn: [dep], derive: connectCenters,
+    });
+    scene.remove(edge);
+    expect(deriveCacheSize(scene)).toBe(1);
+
+    // Two more ops push kit:add(edge) off the undo stack (limit=2). The node is
+    // absent from state.nodes, so the entry is unreachable and must be pruned.
+    scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
+    scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
+    expect(deriveCacheSize(scene)).toBe(0);
+  });
+
+  it('never caches a construction-path node, whose kit:add is unloggable and so unprunable', () => {
+    const scene = createScene<object, 'main', RectPose>({
+      systemLayers: LAYERS,
+      registry,
+      initial: [
+        { id: asNodeId('a'), kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} },
+        {
+          id: asNodeId('edge'), kind: 'leaf', layer: 'main',
+          pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
+          dependsOn: [asNodeId('a')], derive: connectCenters,
+        },
+      ],
+    });
+    expect(scene.get(asNodeId('edge'))!.derive).toBe(connectCenters);
+    expect(deriveCacheSize(scene)).toBe(0);
+
+    // kit:remove's revert clones the node, so undo restores derive without the cache.
+    scene.remove(asNodeId('edge'));
+    scene.undo();
+    expect(scene.get(asNodeId('edge'))!.derive).toBe(connectCenters);
+    expect(deriveCacheSize(scene)).toBe(0);
+  });
+});

@@ -322,24 +322,33 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
   /** Post-patch `clipFromPose` onto a container node after its `kit:add` op
    *  runs. The function cannot travel through the serializable op payload, so
-   *  we attach it directly to the live node here. Also caches the function in
-   *  `pendingClipPatches` so the `kit:add` redo path can re-attach it.
+   *  we attach it directly to the live node here. `cacheForRedo` also keeps the
+   *  reference in `pendingClipPatches`, which is where the `kit:add` redo path
+   *  reads it from — redo replays the op without a spec.
    *  No-op for leaves or when the spec has no `clipFromPose`. */
-  function patchClipFromPose(spec: AddNodeSpec<TData, TLayer, TPose>, id: NodeId): void {
+  function patchClipFromPose(
+    spec: AddNodeSpec<TData, TLayer, TPose>,
+    id: NodeId,
+    { cacheForRedo }: { cacheForRedo: boolean },
+  ): void {
     if (spec.kind === 'container' && spec.clipFromPose !== undefined) {
       (state.nodes.get(id) as ContainerNode<TData, TLayer, TPose>).clipFromPose = spec.clipFromPose;
-      // Cache for redo: kit:add apply doesn't have access to the spec, so we
-      // keep the function reference here and re-attach it after redo replays.
-      pendingClipPatches.set(id, spec.clipFromPose as NonNullable<ContainerNode<TData, TLayer, TPose>['clipFromPose']>);
+      if (cacheForRedo) {
+        pendingClipPatches.set(id, spec.clipFromPose as NonNullable<ContainerNode<TData, TLayer, TPose>['clipFromPose']>);
+      }
     }
   }
 
   /** `patchClipFromPose` for `derive`, on nodes of any kind. `dependsOn` is
    *  plain data and rides the `kit:add` payload instead. */
-  function patchDerive(spec: AddNodeSpec<TData, TLayer, TPose>, id: NodeId): void {
+  function patchDerive(
+    spec: AddNodeSpec<TData, TLayer, TPose>,
+    id: NodeId,
+    { cacheForRedo }: { cacheForRedo: boolean },
+  ): void {
     if (spec.derive === undefined) return;
     state.nodes.get(id)!.derive = spec.derive;
-    pendingDerivePatches.set(id, spec.derive);
+    if (cacheForRedo) pendingDerivePatches.set(id, spec.derive);
   }
 
   // ── Internal kit op kinds ──────────────────────────────────────────────
@@ -826,8 +835,8 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       }, `add ${spec.kind}`);
       // clipFromPose is a function and cannot travel through the serializable
       // op payload. Patch it directly onto the live node after the op applies.
-      patchClipFromPose(spec, id);
-      patchDerive(spec, id);
+      patchClipFromPose(spec, id, { cacheForRedo: true });
+      patchDerive(spec, id, { cacheForRedo: true });
       return id;
     },
 
@@ -1279,8 +1288,12 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         parent, index,
         ...(spec.dependsOn !== undefined ? { dependsOn: spec.dependsOn } : {}),
       });
-      patchClipFromPose(spec, id);
-      patchDerive(spec, id);
+      // No `kit:add` reaches history here, so nothing ever replays these and
+      // `pruneCacheForDroppedOps` — which only scans `kit:add` — could never
+      // drop the entries. A restore after `remove` comes from `kit:remove`'s
+      // revert, which clones the whole node and carries both fields along.
+      patchClipFromPose(spec, id, { cacheForRedo: false });
+      patchDerive(spec, id, { cacheForRedo: false });
     }
   }
 
@@ -1293,9 +1306,12 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   // ── Internal / test-only access ───────────────────────────────────────
   // Attach private state accessors directly on the returned object, hidden
   // behind `as unknown` because Scene<> is the public interface.
-  // __clipCacheSize: used only by test files to assert prune behaviour.
+  // __clipCacheSize / __deriveCacheSize: used only by test files to assert
+  // prune behaviour.
   (scene as unknown as { __clipCacheSize: () => number }).__clipCacheSize =
     () => pendingClipPatches.size;
+  (scene as unknown as { __deriveCacheSize: () => number }).__deriveCacheSize =
+    () => pendingDerivePatches.size;
 
   return scene;
 }
