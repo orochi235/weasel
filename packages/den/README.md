@@ -1,40 +1,37 @@
-# weasel-den (placeholder)
+# weasel-den (stale scaffold)
 
-This directory is a **scaffold marker**, not a working package. The build,
-demo, and WeaselDraw do not (yet) depend on anything here.
+This directory holds no package — no `package.json`, no `src/`. It marks a design
+(`docs/specs/2026-05-03-weasel-den-design.md`) that was approved, then partly
+overtaken by work that landed elsewhere, and never built. Read this before acting
+on that spec.
 
-## Why it exists
+## What shipped instead
 
-`docs/specs/2026-05-03-weasel-den-design.md` approves a peer workspace
-package `@weasel-js/den` whose scope is:
+**The pack shape was superseded.** The den's central abstraction was a hook
+returning `{ registry, alwaysOn, keybindings }`. Core's contribution system
+replaced it: `alwaysOn` became `ambient`, and the binary registry/ambient split
+became a four-condition eligibility *set* — `focus | offhand | always | claimed` —
+on `Contribution`, composed with `mergeContributions`
+(`packages/core/src/contributions/`).
 
-- Finished, stable tools (delete, duplicate, nudge, undo/redo, hand,
-  wheel-zoom, wheel-pan, keyboard-zoom). Today these still live inside
-  `src/tools/builtin/` of the core package.
-- Convenience composition layers — `useStandardTools`,
-  `useStandardCanvasSetup`.
-- Domain "packs" — `useDrawingAppPack`, future ones (diagram, whiteboard,
-  presentation) added per real consumer demand.
+**The convenience layer shipped inside core.** `ToolBundle`
+(`minimal | standard | exhaustive`) plus `defaultTools` / `toolOptions` on
+`SceneCanvas` cover what `useStandardTools` and `useStandardCanvasSetup` were for.
 
-The full migration is large (npm-workspaces conversion of the repo,
-moving all of core into `packages/weasel/`, then this package). It has
-been deferred so that weasel-ui — a sibling package for UI chrome
-primitives (`PropertiesPanel`, etc.) — could land first as a forcing
-function for the `packages/` layout.
+**The `{ adapter }` threading is obsolete** — and obsolete for exactly the tools the
+spec was migrating. Delete, duplicate, nudge, and undo/redo are actions that read
+deps by name; they no longer take adapters. See `docs/adapters.md`.
 
-This README exists so the spec doesn't get lost the next time someone
-looks at the file tree and asks "what's weasel-den?"
+**The stated blocker is gone.** The repo is an npm-workspaces monorepo and core
+lives at `packages/core`, so the spec's first two migration steps ("stand up
+workspaces", "move core into `packages/weasel/`") are done.
 
-## Status
+## What is still open
 
-- [ ] Stand up workspaces in repo root
-- [ ] Move core into `packages/weasel/`
-- [ ] Create real `packages/den/{package.json,tsconfig.json,src/}`
-- [ ] Migrate first tool (`useDeleteTool`)
-- [ ] Implement `useStandardTools`
-- [ ] Implement `useStandardCanvasSetup`
-- [ ] Implement `useDrawingAppPack`
-- [ ] Update demo + WeaselDraw to consume the den
+Moving finished, stable tools out of core for test-surface separation. That was the
+den's one motivation nothing has absorbed — and it does not need a new package;
+core's own workspace layout can hold them.
 
-See `docs/specs/2026-05-03-weasel-den-design.md` for the full plan and
-`docs/TODO.md` (`## weasel-den deferrals`) for tracked follow-ups.
+Domain bundles are `Contribution` bundles, not packs. The diagram one is designed
+separately and ships as `@weasel-js/diagram` — see
+`docs/superpowers/specs/2026-08-28-diagram-plugin-design.md`.

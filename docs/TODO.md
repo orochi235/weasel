@@ -1198,9 +1198,9 @@ Rollback path is small: split `layers` into `layers: FooLayers` (provider) + `wr
 
 ### weasel-den deferrals
 
-From `docs/specs/2026-05-03-weasel-den-design.md`:
+From `docs/specs/2026-05-03-weasel-den-design.md`. **Read `packages/den/README.md` first** — the spec's `{ registry, alwaysOn, keybindings }` pack shape was superseded by core's `Contribution` + `mergeContributions`, and its convenience layer shipped inside core as `ToolBundle`. The items below are what survives that.
 
-- **(P3) Additional packs.** `useDiagramPack` (connectors, snap-to-grid), `useWhiteboardPack` (sticky notes, freeform pen, text), `usePresentationPack` (frame tools, slide nav). Each is its own arc.
+- **(P3) Additional domain bundles.** `useWhiteboardPack` (sticky notes, freeform pen, text), `usePresentationPack` (frame tools, slide nav). Each is its own arc, and each is a `Contribution` bundle rather than a den pack. The diagram one is superseded — it has its own design in `docs/superpowers/specs/2026-08-28-diagram-plugin-design.md`, shipping as `@weasel-js/diagram`.
 - **(P3) Migrate `useSelectTool` / `useInsertTool` / `useTextTool` / `useUserPenTool` to weasel-den.** Defer until each is stable post-overlay-channel work and any further Tool API iteration. They're staying in core to keep being canonical examples for primitive design.
 - **(P3) Runtime plugin discovery.** Explicit non-goal in v1 — tools register statically via `useTools({ registry })`. Add when external authors want to ship tools without app rebuild.
 - **(P3) Public third-party extension SDK.** Deliberate exports happen during the split, but no marketing or stability guarantees yet.
@@ -1208,12 +1208,19 @@ From `docs/specs/2026-05-03-weasel-den-design.md`:
 
 ### d3 integration plugin
 
-**Force-direction half shipped 2026-05-16** (`useSimulation` + d3-force compat). Remaining:
+**Shipped.** `useSimulation` + d3-force compat (2026-05-16), then the data-join and transition chain in `@weasel-js/d3`: `d3Bind(scene, data, { key, animator }).pose().data().join()` and `.transition().duration().ease().delay().tween().end()`. Note `join()` takes no arguments — enter/update/exit is a diff it performs, not callbacks you pass. Demos: `ForceGraphDemo`, `D3SortableDemo`.
 
-- **(P3) Data-join surface.** `d3Bind(adapter, data, { key }).join({ enter, update, exit })` emitting batched ops.
-- **(P3) Transition bridge.** Mapping `d3-transition`'s duration/easing/end-promise onto `useAnimator` + pulling `d3-interpolate` in as the animator's color/path/object interpolator.
+Open, from `docs/superpowers/specs/2026-05-17-d3-plugin-design.md`:
 
-Simulation primitive itself open follow-ups: drag-to-pin helper hook, sugar wrapper that hides the d3-shaped nodes array, built-in forces (center/collide/x/y/drag), history-bypass adapter wrapper, worker offload mode, seedable RNG.
+- **(P3) Exit transitions.** Fade before remove — schedule the tween, emit Delete on tween end.
+- **(P3) Chained transitions.** `.transition().transition()`; the animator's loop primitive already sequences, the chain just needs to thread it.
+- **(P3) Typed `data` payload.** `.data(fn)` returns `Record<string, unknown>`; the binding could carry the data type through the chain for autocompletion.
+- **(P3) Indexed diff.** `join()` walks the scene O(n) per call; a key map is faster on large datasets.
+- **(P3) `d3-zoom` / `d3-drag` adapters.** Both duplicate kit systems (`useWheelZoomTool` / `useHandTool` / `useViewAnimation`; `useDragGesture`). A bridge is worth building only for d3 semantics the kit lacks, not for parity.
+
+`d3-scale` needs no bridge — consumers import `scaleLinear` and call it. Axis *rendering* (ticks, labels) is data-visualization surface and belongs to the reserved `chart` package, not to this one; see `docs/superpowers/specs/2026-08-28-diagram-plugin-design.md` for that split.
+
+Simulation primitive open follow-ups (all still open — no built-in forces, pin helper, or seeded RNG in `packages/core/src/features/simulation/`): drag-to-pin helper hook, sugar wrapper that hides the d3-shaped nodes array, built-in forces (center/collide/x/y/drag), history-bypass adapter wrapper, worker offload mode, seedable RNG.
 
 ### Parallax follow-ups
 
