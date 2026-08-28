@@ -555,7 +555,12 @@ export {
 } from './features/patterns/resolveSpec';
 
 // ─── Paint types: FillStyle, Stroke, gradients ──────────────────────────────
-export { alignedStrokeRect } from './core/paint-types';
+export {
+  alignedStrokeRect,
+  dashForStrokeStyle,
+  strokeDashStyleOf,
+  STROKE_DASH_RATIOS,
+} from './core/paint-types';
 export { resolveStrokeWidth } from './features/paths/tessellate/stroke';
 export type {
   FillStyle,
@@ -566,6 +571,7 @@ export type {
   TilePatternSpec,
   Stroke,
   StrokeAlign,
+  StrokeDashStyle,
   Region,
 } from './core/paint-types';
 export {

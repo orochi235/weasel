@@ -1,7 +1,8 @@
 import { inferredNodeRouting } from './defaultNodeRouting';
 import { KIT_SHAPE_KINDS } from './shapeKinds';
+import { dashForStrokeStyle, strokeDashStyleOf } from 'core/paint-types';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
-import type { ToolPrefGroup, ToolPrefNumberUnit } from 'tools/prefs';
+import type { ToolPrefEnumEncoding, ToolPrefGroup, ToolPrefNumberUnit } from 'tools/prefs';
 
 const RAD_TO_DEG = 180 / Math.PI;
 
@@ -12,6 +13,35 @@ export const rotationDegreesUnit: ToolPrefNumberUnit = {
   toDisplay: (rad) => Math.round(rad * RAD_TO_DEG * 10) / 10,
   fromDisplay: (deg) => deg / RAD_TO_DEG,
   suffix: '°',
+};
+
+/** `Stroke.width` off a partly-typed stroke object, or `undefined`. */
+function strokeWidthOf(stroke: Record<string, unknown> | undefined): number | { px: number } | undefined {
+  const w = stroke?.width;
+  if (typeof w === 'number') return w;
+  if (typeof w === 'object' && w !== null && typeof (w as { px?: unknown }).px === 'number') {
+    return w as { px: number };
+  }
+  return undefined;
+}
+
+/** `Stroke.dash` — a stored array of lengths — read and written as a named
+ *  style. The presets are multiples of the sibling `width`, which is why the
+ *  encoding is handed the whole stroke rather than the field. */
+const strokeDashEncoding: ToolPrefEnumEncoding = {
+  read: (dash, stroke) =>
+    stroke === undefined
+      ? undefined
+      : strokeDashStyleOf(Array.isArray(dash) ? (dash as number[]) : undefined, strokeWidthOf(stroke)),
+  write: (style, stroke) =>
+    style === 'dashed' || style === 'dotted'
+      ? dashForStrokeStyle(style, strokeWidthOf(stroke))
+      // `solid` is stored as no dash at all. `custom` is reportable, not
+      // authorable: it names an imported array, and the array it names is the
+      // one already stored.
+      : style === 'solid'
+        ? undefined
+        : stroke?.dash,
 };
 
 /** Build the standard shape schema — Layout (pose box + rotation) +
@@ -57,9 +87,6 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
           // An object leaf: `data.stroke` is a whole `Stroke`, and its fields
           // belong to one value. Sibling leaves addressing into it would each
           // write one field of a value they can only half see.
-          //
-          // `dash` is absent on purpose: it is a `number[]`, and no leaf kind
-          // edits one. It survives import, export and rendering untouched.
           'data.stroke': {
             kind: 'object',
             name: 'Stroke',
@@ -67,7 +94,7 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
             default: { paint: { fill: 'solid', color: '#000000ff' }, width: 1 },
             block: true,
             children: {
-              // Both rows are `block`: under a heading already reading STROKE,
+              // Every row is `block`: under a heading already reading STROKE,
               // a 64px label column spells the section name again and takes
               // the width the controls need. Each field leads with its own
               // glyph instead.
@@ -79,6 +106,10 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
               cap: { kind: 'enum', name: 'Cap', description: 'How an open end is drawn.', default: 'butt', control: 'toggle', block: true, pair: 'Line', options: [{ value: 'butt', label: 'Butt', icon: 'capButt' }, { value: 'round', label: 'Round', icon: 'capRound' }, { value: 'square', label: 'Square', icon: 'capSquare' }] },
               join: { kind: 'enum', name: 'Join', description: 'How a corner is drawn.', default: 'miter', control: 'toggle', block: true, pair: 'Line', options: [{ value: 'miter', label: 'Miter', icon: 'joinMiter' }, { value: 'round', label: 'Round', icon: 'joinRound' }, { value: 'bevel', label: 'Bevel', icon: 'joinBevel' }] },
               align: { kind: 'enum', name: 'Align', description: 'Where the ribbon sits relative to the edge.', default: 'center', control: 'toggle', block: true, pair: 'Line', options: [{ value: 'inner', label: 'Inner', icon: 'alignInner' }, { value: 'center', label: 'Center', icon: 'alignCenter' }, { value: 'outer', label: 'Outer', icon: 'alignOuter' }] },
+              // Its own row: three bars already fill the one above, and the
+              // dash pattern is a property of the line rather than of how the
+              // ribbon meets the geometry.
+              dash: { kind: 'enum', name: 'Style', description: 'Solid, dashed or dotted. Dash lengths are multiples of the stroke width, so a style holds as the width changes.', default: 'solid', control: 'toggle', block: true, encoding: strokeDashEncoding, options: [{ value: 'solid', label: 'Solid', icon: 'dashSolid' }, { value: 'dashed', label: 'Dashed', icon: 'dashDashed' }, { value: 'dotted', label: 'Dotted', icon: 'dashDotted' }, { value: 'custom', label: 'Custom', icon: 'dashCustom', disabled: true }] },
             },
           },
         },

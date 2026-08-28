@@ -205,6 +205,70 @@ export function alignedStrokeRect(
   };
 }
 
+/**
+ * The named line styles a `Stroke.dash` array reads as.
+ *
+ * `custom` is what an imported array that matches no preset reads as — it is
+ * reportable, not authorable: there is no array it maps back to.
+ */
+export type StrokeDashStyle = 'solid' | 'dashed' | 'dotted' | 'custom';
+
+/**
+ * Dash and gap lengths of the presets, **as multiples of the stroke width**.
+ *
+ * SVG dash lengths are absolute, so a fixed pattern is a different style at
+ * every width: `[6, 3]` is dots on a hairline and a railroad on a 20px
+ * stroke. Scaling by the width is what makes "dashed" one style.
+ */
+export const STROKE_DASH_RATIOS = {
+  dashed: [3, 2],
+  dotted: [1, 2],
+} as const satisfies Record<'dashed' | 'dotted', readonly [number, number]>;
+
+/** `width` as a plain number — a `{ px }` width is read at scale 1, matching
+ *  what an unresolved stroke reaching the tessellator gets. */
+function dashWidth(width: number | { px: number } | undefined): number {
+  const w = typeof width === 'object' ? width.px : (width ?? 1);
+  return Number.isFinite(w) && w > 0 ? w : 1;
+}
+
+/**
+ * The `Stroke.dash` array for a named style at `width`, or `undefined` for
+ * `solid` — which is stored as no dash at all, not as an empty pattern.
+ *
+ * `custom` has no array of its own and returns `undefined`; a caller that
+ * offers it as a choice should refuse the choice rather than call this.
+ */
+export function dashForStrokeStyle(
+  style: StrokeDashStyle,
+  width: number | { px: number } | undefined,
+): number[] | undefined {
+  if (style !== 'dashed' && style !== 'dotted') return undefined;
+  const w = dashWidth(width);
+  return STROKE_DASH_RATIOS[style].map((r) => r * w);
+}
+
+/**
+ * The style a stored `dash` reads as at `width`. Absent or empty is `solid`;
+ * an array matching neither preset is `custom`.
+ */
+export function strokeDashStyleOf(
+  dash: readonly number[] | undefined,
+  width: number | { px: number } | undefined,
+): StrokeDashStyle {
+  if (dash === undefined || dash.length === 0 || dash.every((v) => v === 0)) return 'solid';
+  const w = dashWidth(width);
+  for (const style of ['dashed', 'dotted'] as const) {
+    const preset = STROKE_DASH_RATIOS[style];
+    // Tolerance is relative to the width: the presets are multiples of it, and
+    // a round-tripped array carries the serializer's decimal trimming.
+    if (dash.length === preset.length && preset.every((r, i) => Math.abs(dash[i] - r * w) <= w * 1e-3)) {
+      return style;
+    }
+  }
+  return 'custom';
+}
+
 /** Region a fill is clipped to. */
 export interface Region {
   x: number;

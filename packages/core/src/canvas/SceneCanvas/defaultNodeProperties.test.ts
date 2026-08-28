@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { defaultNodeProperties, inferredNodeProperties } from './defaultNodeProperties';
 import { KIT_SHAPE_KINDS } from './shapeKinds';
 import { inferredNodeRouting } from './defaultNodeRouting';
-import type { ToolPrefGroup, ToolPrefObject } from 'tools/prefs';
+import type { ToolPrefEnum, ToolPrefGroup, ToolPrefObject } from 'tools/prefs';
 
 describe('defaultNodeProperties', () => {
   it('stays in lockstep with KIT_SHAPE_KINDS', () => {
@@ -37,6 +37,37 @@ describe('defaultNodeProperties', () => {
     expect(content && 'children' in content && 'data.text' in content.children).toBe(true);
     const typography = text?.schema.children.text;
     expect(typography && 'children' in typography && 'data.style' in typography.children).toBe(true);
+  });
+});
+
+describe('the stroke leaf\'s dash style', () => {
+  const dashLeaf = (): ToolPrefEnum => {
+    const entry = inferredNodeProperties.find((e) => e.name === 'path')!;
+    const appearance = entry.schema.children.appearance as ToolPrefGroup;
+    const stroke = appearance.children['data.stroke'] as ToolPrefObject;
+    return stroke.children.dash as ToolPrefEnum;
+  };
+
+  it('writes a preset as multiples of the stroke width', () => {
+    const { write } = dashLeaf().encoding!;
+    expect(write('dashed', { width: 4 })).toEqual([12, 8]);
+    expect(write('dotted', { width: 2 })).toEqual([2, 4]);
+    expect(write('solid', { width: 4, dash: [12, 8] })).toBeUndefined();
+  });
+
+  it('reads the stored array against that same width', () => {
+    const { read } = dashLeaf().encoding!;
+    expect(read(undefined, { width: 4 })).toBe('solid');
+    expect(read([12, 8], { width: 4 })).toBe('dashed');
+    expect(read([12, 8], { width: 1 })).toBe('custom');
+  });
+
+  it('reports nothing at all for a node holding no stroke', () => {
+    expect(dashLeaf().encoding!.read(undefined, undefined)).toBeUndefined();
+  });
+
+  it('leaves an imported array alone when custom is chosen', () => {
+    expect(dashLeaf().encoding!.write('custom', { width: 4, dash: [9, 1, 2, 1] })).toEqual([9, 1, 2, 1]);
   });
 });
 

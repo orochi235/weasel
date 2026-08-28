@@ -62,6 +62,18 @@ export const Shape: Story = {
   },
 };
 
+/** A stroke carrying a dash array that matches no preset — what an SVG import
+ *  produces. Style reports it as Custom, which it does not offer to author. */
+export const ImportedDash: Story = {
+  args: {
+    data: {
+      path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
+      fill: solid('#7fb069'),
+      stroke: { ...strokeOf('#1c1c1c', 6), dash: [9, 2, 2, 2] },
+    },
+  },
+};
+
 /** A text node: the same appearance block, plus the style leaf's Character and
  *  Paragraph groups. */
 export const Text: Story = {

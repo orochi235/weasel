@@ -74,6 +74,29 @@ export interface ToolPrefBoolean extends ToolPrefBase<'boolean', boolean> {
 export interface ToolPrefString extends ToolPrefBase<'string', string> {
   control?: ToolPrefStringControl;
 }
+/**
+ * Stored-value bridge for an enum leaf whose value is not the option string —
+ * the counterpart of {@link ToolPrefNumberUnit}, which does the same for a
+ * number stored in a canonical unit.
+ *
+ * A dash array is the case that needs it: `Stroke.dash` stores lengths, and
+ * the thing a person chooses is a style. The presets scale by the stroke's
+ * width, so both directions are given the object's other fields — a style is
+ * meaningless without the width it is a multiple of.
+ */
+export interface ToolPrefEnumEncoding<T extends string = string> {
+  /**
+   * The option `stored` reads as, or `undefined` for none — which a UI shows
+   * the way it shows a mixed selection, by selecting nothing.
+   *
+   * `siblings` is the object the leaf is a field of, or `undefined` when the
+   * node does not hold that object (and for a top-level leaf, which has none).
+   */
+  read: (stored: unknown, siblings: Record<string, unknown> | undefined) => T | undefined;
+  /** What to store for `option`. `undefined` removes the field. */
+  write: (option: T, siblings: Record<string, unknown> | undefined) => unknown;
+}
+
 /** A pref with a fixed set of labeled choices. */
 export interface ToolPrefEnum<T extends string = string>
   extends ToolPrefBase<'enum', T> {
@@ -83,9 +106,21 @@ export interface ToolPrefEnum<T extends string = string>
    *  it resolves. It is a plain string because core ships no icon set and
    *  cannot depend on one. The full `label` stays the accessible name, so
    *  neither the abbreviation nor the glyph becomes the only thing naming
-   *  the option. */
-  options: readonly { value: T; label: string; short?: string; icon?: string }[];
+   *  the option.
+   *
+   *  `disabled` marks an option a control reports but cannot author — the
+   *  value a stored form reads as when it matches nothing offered. Dropping it
+   *  from the list instead would leave the control selecting nothing and
+   *  claiming the field is unset. */
+  options: readonly {
+    value: T;
+    label: string;
+    short?: string;
+    icon?: string;
+    disabled?: boolean;
+  }[];
   control?: ToolPrefEnumControl;
+  encoding?: ToolPrefEnumEncoding<T>;
 }
 
 /** A single color, stored as a hex string. For a value that may also be a

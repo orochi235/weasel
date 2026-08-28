@@ -23,7 +23,7 @@ const GROUPS = [
   ['View and lifecycle', BASE],
   ['Actions', ACTIONS],
   ['State and instrument', STATE],
-  ['Stroke cap, join and align', PAINT],
+  ['Stroke cap, join, align and dash', PAINT],
 ];
 
 const camel = (k) => k.replace(/-([a-z])/g, (_, c) => c.toUpperCase());

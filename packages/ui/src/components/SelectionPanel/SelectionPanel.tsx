@@ -54,6 +54,15 @@ export interface PropertyRenderContext {
    * does not hold, and the next edit writes that invention back.
    */
   unset: boolean;
+  /**
+   * The fields of the object this leaf is a field of — `undefined` for a
+   * top-level leaf, and for a field of an object the node does not hold.
+   *
+   * What a control needs when its own field doesn't carry the whole answer:
+   * a stroke's dash lengths are multiples of the stroke's width, so reading
+   * the array as a style takes both.
+   */
+  siblings?: Record<string, unknown>;
   /** Commit a value — fans out to every selected node in one undo step. */
   setValue: (value: unknown) => void;
   /**
@@ -340,6 +349,19 @@ function renderBuiltin(
     }
     case 'enum': {
       const p = pref as ToolPrefEnum;
+      // An encoded leaf stores something other than the option string, so the
+      // option comes from the encoding rather than from the value — and an
+      // absent field is one of the things it reads (no dash is `solid`), which
+      // is why `unset` doesn't blank the control here.
+      const option = p.encoding
+        ? (mixed ? undefined : p.encoding.read(value, ctx.siblings))
+        : mixed || unset
+          ? undefined
+          : typeof value === 'string'
+            ? value
+            : p.default;
+      const choose = (next: string): void =>
+        setValue(p.encoding ? p.encoding.write(next, ctx.siblings) : next);
       if (p.control === 'toggle') {
         // Every option visible at once, which is the point of a segmented
         // control: a glyph, else `short`, keeps it to the width a property row
@@ -360,19 +382,20 @@ function renderBuiltin(
                   (o.short ?? o.label)
                 ),
               ariaLabel: o.label,
+              disabled: o.disabled,
             }))}
-            value={mixed || unset ? null : (typeof value === 'string' ? value : p.default)}
-            onChange={(next) => { if (next !== null) setValue(next); }}
+            value={option ?? null}
+            onChange={(next) => { if (next !== null) choose(next); }}
           />
         );
       }
       return (
         <Select<string>
           className={s.select}
-          options={p.options.map((o) => ({ value: o.value, label: o.label }))}
-          selectedKey={mixed || unset ? null : typeof value === 'string' ? value : p.default}
+          options={p.options.map((o) => ({ value: o.value, label: o.label, isDisabled: o.disabled }))}
+          selectedKey={option ?? null}
           placeholder={mixed ? 'Mixed' : unset ? '—' : undefined}
-          onSelectionChange={setValue}
+          onSelectionChange={choose}
           aria-label={ariaLabel}
         />
       );
@@ -494,9 +517,17 @@ function ObjectLeaf({
         // the object omits — `data.stroke` absent leaves every stroke field
         // with nothing behind it, not with the schema's defaults.
         unset: !ctx.mixed && held?.[key] === undefined,
+        siblings: held,
         valueAt: ctx.valueAt,
         setValue: (v) => {
           const base = held ?? pref.fromScalar?.(ctx.value) ?? {};
+          if (v === undefined) {
+            // A field written as absent is absent — leaving the key holding
+            // `undefined` says the object has a dash of nothing.
+            const { [key]: _dropped, ...rest } = base;
+            ctx.setValue(rest);
+            return;
+          }
           ctx.setValue({ ...base, [key]: v });
         },
       };
