@@ -71,7 +71,6 @@ import {
   solid,
   strokeOf,
   DEFAULT_SHAPE_FILL,
-  type ToolPrefColor,
   DEFAULT_FILL_COLOR,
   useCanvasSize,
   useClipboardOps,
@@ -408,12 +407,13 @@ function wdFillRenderer(colorActionId: string, opacityActionId: string): Propert
 
 function wdActionColorRenderer(colorActionId: string, opacityActionId: string): PropertyRenderer {
   return (ctx) => {
-    // Keyed at a paint path, so the value is the `FillStyle` itself. A
-    // gradient has no single color to show and falls back rather than
-    // claiming one. Writes go through the actions, which preserve the rest
-    // of the stroke.
-    const fallback = (ctx.pref as ToolPrefColor).default;
-    const value = solidColorOf(ctx.value) ?? fallback;
+    // Keyed at a paint path, so both the value and the schema default are
+    // whole `FillStyle`s. A gradient has no single color to show and falls
+    // back rather than claiming one; reading the default as a bare color
+    // string handed this control an object and threw. Writes go through the
+    // actions, which preserve the rest of the stroke.
+    const fallback = (ctx.pref as { default?: unknown }).default;
+    const value = solidColorOf(ctx.value) ?? solidColorOf(fallback) ?? DEFAULT_STROKE_COLOR;
     const input = (
       <PropertyColorInput value={value} colorActionId={colorActionId} opacityActionId={opacityActionId} />
     );
@@ -431,7 +431,7 @@ function wdActionColorRenderer(colorActionId: string, opacityActionId: string): 
  *  arbitrary focus target, including one inside a portalled popover. */
 const TEXT_CHROME_CLASS = 'wd-text-chrome';
 
-const WD_RENDERERS: Record<string, PropertyRenderer> = {
+export const WD_RENDERERS: Record<string, PropertyRenderer> = {
   'data.fill': wdFillRenderer('setFill', 'setFillOpacity'),
   // The stroke's colour row inside its object leaf; the other fields render
   // from the schema. Keyed at the child path so the object rows survive.
