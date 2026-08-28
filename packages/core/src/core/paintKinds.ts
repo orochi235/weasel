@@ -171,11 +171,12 @@ export function asPaint<T extends { fill: string }>(paint: T): FillStyle {
 
 /** Register a paint kind. Returns a disposer that removes it. */
 export function registerPaintKind(entry: PaintKindEntry): () => void {
-  if (entry.inPoseFrame !== undefined && entry.toBoundsFrame === undefined) {
+  if ((entry.inPoseFrame === undefined) !== (entry.toBoundsFrame === undefined)) {
+    const missing = entry.inPoseFrame === undefined ? 'inPoseFrame' : 'toBoundsFrame';
     throw new Error(
-      `weasel registerPaintKind: kind "${entry.id}" supplies inPoseFrame without ` +
-      'toBoundsFrame. A kind that converts one direction and not the other drifts ' +
-      'on the next resize; supply both or neither.',
+      `weasel registerPaintKind: kind "${entry.id}" is missing ${missing}. A kind ` +
+      'that converts one frame direction and not the other drifts on the next ' +
+      'resize; supply both or neither.',
     );
   }
   // Re-registering a built-in id is how a consumer closes a gap the kit leaves

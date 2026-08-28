@@ -139,8 +139,10 @@ describe('paint-kind registry', () => {
   });
 
   it('refuses a kind that converts one frame direction but not the other', () => {
-    const half = { ...washEntry(), toBoundsFrame: undefined };
-    expect(() => registerPaintKind(half)).toThrow(/toBoundsFrame/);
+    expect(() => registerPaintKind({ ...washEntry(), toBoundsFrame: undefined }))
+      .toThrow(/missing toBoundsFrame/);
+    expect(() => registerPaintKind({ ...washEntry(), inPoseFrame: undefined }))
+      .toThrow(/missing inPoseFrame/);
   });
 
   it('converts a registered kind bounds → pose frame', () => {
