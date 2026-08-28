@@ -10,6 +10,8 @@ export interface CanvasStackProps {
   layers: CanvasLayerDescriptor[];
   view: ViewTransform;
   onViewChange: (v: ViewTransform) => void;
+  minZoom?: number;
+  maxZoom?: number;
   width?: number | string;
   height?: number | string;
   className?: string;
@@ -24,6 +26,8 @@ export function CanvasStack({
   layers,
   view,
   onViewChange,
+  minZoom,
+  maxZoom,
   width = '100%',
   height = '100%',
   className,
@@ -59,7 +63,7 @@ export function CanvasStack({
     return () => ro.disconnect();
   }, []);
 
-  const handlers = usePanZoom({ view, onViewChange });
+  const handlers = usePanZoom({ view, onViewChange, minZoom, maxZoom });
   useLayerScheduler({ layers, view, canvasRefs: canvasMap, size, host: containerRef });
 
   const ctxValue = useMemo(() => ({ view }), [view]);

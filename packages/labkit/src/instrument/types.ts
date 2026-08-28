@@ -45,6 +45,10 @@ export interface CanvasLayer<TS = unknown, TC = unknown> {
 export interface CanvasCapability<TS = unknown, TC = unknown> {
   layers: CanvasLayer<TS, TC>[];
   initialView?: { zoom: number; pan: { x: number; y: number } };
+  /** Widens `usePanZoom`'s default clamp; the opening zoom stays reachable
+   *  regardless of these. */
+  minZoom?: number;
+  maxZoom?: number;
 }
 
 /** Declares which of an instrument's layers the trial should offer
