@@ -976,15 +976,6 @@ export function popClip(ctx: DrawContext, path: Path, oldDepth: number): void {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function drawPathFillStencil(ctx: DrawContext, fill: FillStyle, handle: GLMeshHandle): void {
-  // Step-4 evenodd stencil only supports solid fills cleanly. For non-solid,
-  // fall back to a single-pass solid-equivalent (deferred refinement).
-  if (fill.fill !== undefined && fill.fill !== 'solid') {
-    console.warn('weasel: evenodd stencil with non-solid fill not supported in step 4; rendering solid black.');
-  }
-  const solid = (fill.fill === undefined || fill.fill === 'solid')
-    ? (fill as { color: string; opacity?: number })
-    : { color: '#000', opacity: 1 };
-
   const gl = ctx.gl;
   gl.useProgram(ctx.pathFill.handle);
   gl.bindVertexArray(handle.vao);
@@ -1001,11 +992,12 @@ function drawPathFillStencil(ctx: DrawContext, fill: FillStyle, handle: GLMeshHa
   gl.colorMask(true, true, true, true);
   gl.stencilFunc(gl.EQUAL, clipMask | 0x01, clipMask | 0x01);
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
-  // Paint uniforms go here, not above: pass 1 runs under a false colorMask, so
-  // a uniform missed here renders black while the GL-recorder tests still pass.
-  setSolidPaintUniforms(ctx, ctx.pathFill, solid.color, solid.opacity);
-  setColorMatrixUniforms(ctx, ctx.pathFill);
-  gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
+  // The paint binds here, not above: pass 1 runs under a false colorMask, so a
+  // uniform missed here renders black while the GL-recorder tests still pass.
+  // Not `drawPathFillByKind` — its `applyClipTest` would disable this stencil.
+  if (bindPathFillByKind(ctx, fill)) {
+    gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
+  }
 
   // Narrow to bit 0 first: clear only zeroes bits the mask enables, and
   // pushClip owns bits 1-7.
