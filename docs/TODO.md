@@ -383,15 +383,6 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
   leaving core a rump copy. Full inventory in
   `docs/reviews/2026-08-22-core-geom-dupes.md`.
 
-- **(P3) Closed subpaths get a dash seam at the start point.** `splitForDash`
-  (`packages/core/src/features/paths/tessellate/stroke.ts:329`) walks a
-  closed subpath's closing segment but flushes the final run as its own open
-  sub-polyline rather than merging it with the first. When the dash pattern
-  doesn't divide evenly into the perimeter, the last dash and the first dash
-  end up as two butt-capped runs meeting at the start vertex instead of one
-  continuous dash wrapping around. Visible on a round-cap dashed rectangle
-  outline.
-
 - **(P3) `<style>`-element and class-selector support for `@weasel-js/svg`.** The presentation-attribute cascade now threads a resolved `StyleContext` through the recursive parse (`packages/svg/src/cascade.ts`, shipped 2026-07-25; spec `docs/superpowers/specs/2026-07-25-svg-cascade-context-design.md`). Inheritance, the `inherit` keyword, `style=""`, text/`<tspan>` cascade, and `currentColor` all resolve without per-attribute DOM walks (`readInheritedAttr` deleted). Still unsupported: `<style>` elements and class/selector matching — the cascade handles inheritance, not selector specificity. `style=""` remains a regex scan, not a full CSS parser (`!important` unsupported). Selector matching is the missing piece; the threaded-context fast path could compute the per-element cascade from `getComputedStyle` against a hidden DOM node in the browser.
 
 ### Pathfinder follow-ups (post-v1)
