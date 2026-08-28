@@ -18,9 +18,9 @@ conversation that are written nowhere else.
 
 - **Task 1 — dependents index.** `packages/core/src/core/scene/dependents.ts`.
   Commits `49ef0b47`, then `b5e0ba9f` fixing review findings.
-- **Task 2 — `dependsOn` / `derive` through the scene.** Commit `c26a7dbd`.
-  Spec review passed; quality review was in flight when this was written.
-  5016 tests, 0 type errors.
+- **Task 2 — `dependsOn` / `derive` through the scene.** Commits `c26a7dbd`,
+  then `38146517` fixing quality-review findings. Both reviews passed.
+  5018 tests, 0 type errors.
 
 ## Next
 
@@ -77,6 +77,13 @@ stale entries after a redo. Tabled in the plan's Task 2.
   that fails silently is the redo cache: `kit:add` replays without the original
   spec, so a function attached only at add time vanishes on redo. That cache also
   needs `onEvict` pruning or it leaks.
+- **The redo cache must not be primed from the construction path.** Nodes added
+  via `options.initial` / `loadState` go through `runOp`, not `executeAndLog`, so
+  no `kit:add` ever enters history for them — and `pruneCacheForDroppedOps` scans
+  only `kit:add`. Their entries could never be pruned. They were also never read:
+  with no `kit:add` to replay, a restore after `remove` comes from `kit:remove`'s
+  revert, which clones the node and carries the function along. Fixed for
+  `clipFromPose` too, where the leak was pre-existing.
 - **A test for the missing-registry-key warning passes vacuously if written the
   obvious way** — with an empty registry the key never reaches the payload at all.
   It has to go through `serializeHistory` → `restoreHistory` into a second,
