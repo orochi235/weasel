@@ -1,6 +1,7 @@
 /**
  * Reverse index for derived geometry: which nodes must recompute when a given
- * node's pose changes. Maintained by the scene on add and remove.
+ * node's pose changes. Maintained by the scene's op handlers, which replay on
+ * undo and redo.
  */
 import type { NodeId } from './types';
 

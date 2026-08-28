@@ -80,6 +80,18 @@ interface NodeBase<TData, TLayer extends string, TPose> {
   pose: TPose;
   data: TData;
   parent: NodeId | null;
+  /** Nodes whose poses this node's geometry is computed from. Fixed at add
+   *  time. Absent or empty means the node's geometry is authored, which is the
+   *  normal case. */
+  dependsOn?: readonly NodeId[];
+  /** Computes this node's path from its dependencies' poses, in `dependsOn`
+   *  order. A dependency that has been removed arrives as `undefined`.
+   *  Returning `null` means "nothing to draw right now". Re-evaluated when a
+   *  dependency's pose changes, never authored. */
+  derive?: (
+    node: Node<unknown, string, TPose>,
+    deps: readonly (TPose | undefined)[],
+  ) => Path | null;
 }
 
 /** A node with no children — a shape, a label, an image. */
@@ -150,6 +162,14 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   /** Only meaningful when `kind === 'container'`. Attach a clip-path function
    *  to the node; ignored for leaves. Mirrors `ContainerNode.clipFromPose`. */
   clipFromPose?: (pose: TPose) => Path | null;
+  /** Mirrors `SceneNode.dependsOn`. */
+  dependsOn?: readonly NodeId[];
+  /** Mirrors `SceneNode.derive`. Taken as a live function; its registry key is
+   *  looked up from it, never passed in. */
+  derive?: (
+    node: Node<unknown, string, TPose>,
+    deps: readonly (TPose | undefined)[],
+  ) => Path | null;
 }
 
 /** A custom scene mutation registered with `Scene.registerOp`: how to apply
@@ -202,6 +222,10 @@ export interface SerializedNode<TData, TLayer extends string, TPose> {
   /** Registry key for the container's clip-path factory.
    *  Containers only; omitted when the container has no clip. */
   clipFromPoseKey?: string;
+  /** Ids this node's geometry derives from. Omitted when it derives from nothing. */
+  dependsOn?: readonly string[];
+  /** Registry key for the node's `derive` function. Omitted when it has none. */
+  deriveKey?: string;
   // Future function-field keys (drawOneKey, layoutStrategyKey, etc.) will live here.
 }
 
@@ -211,6 +235,11 @@ export interface SerializedNode<TData, TLayer extends string, TPose> {
 export interface SceneRegistry<TPose> {
   /** Maps registry keys to `clipFromPose` factory functions for container nodes. */
   clipFromPose?: Readonly<Record<string, (pose: TPose) => Path | null>>;
+  /** Maps registry keys to `derive` functions for nodes with `dependsOn`. */
+  derive?: Readonly<Record<string, (
+    node: Node<unknown, string, TPose>,
+    deps: readonly (TPose | undefined)[],
+  ) => Path | null>>;
   // Reserved for future function fields.
 }
 

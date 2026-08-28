@@ -63,6 +63,12 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       reverseClipFromPose.set(fn, key);
     }
   }
+  const reverseDerive = new Map<NonNullable<Node<TData, TLayer, TPose>['derive']>, string>();
+  if (registry.derive) {
+    for (const [key, fn] of Object.entries(registry.derive)) {
+      reverseDerive.set(fn, key);
+    }
+  }
 
   /**
    * Side-channel cache of `clipFromPose` functions keyed by node id.
@@ -82,6 +88,10 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
    * from `state.nodes` AND unreachable via any remaining undo/redo log entry.
    */
   const pendingClipPatches = new Map<NodeId, NonNullable<ContainerNode<TData, TLayer, TPose>['clipFromPose']>>();
+
+  /** The same side-channel as `pendingClipPatches`, for `derive`. Pruned by
+   *  the same `onEvict` scan; see that comment for the invariant. */
+  const pendingDerivePatches = new Map<NodeId, NonNullable<Node<TData, TLayer, TPose>['derive']>>();
 
   for (let i = 0; i < options.systemLayers.length; i++) {
     const spec = options.systemLayers[i];
@@ -207,20 +217,21 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   }
 
   /**
-   * Prune `pendingClipPatches` entries for nodes referenced only by ops in
-   * entries that just became permanently unreachable (redo entries dropped
-   * by a branch edit, or undo entries evicted by `historyLimit`) — wired to
-   * the engine's `onEvict`. An entry is safe to drop when the node is absent
-   * from `state.nodes`: its only path back into the scene was through these
-   * now-unreachable ops.
+   * Prune `pendingClipPatches` / `pendingDerivePatches` entries for nodes
+   * referenced only by ops in entries that just became permanently unreachable
+   * (redo entries dropped by a branch edit, or undo entries evicted by
+   * `historyLimit`) — wired to the engine's `onEvict`. An entry is safe to drop
+   * when the node is absent from `state.nodes`: its only path back into the
+   * scene was through these now-unreachable ops.
    */
   function pruneCacheForDroppedOps(ops: readonly Op[]): void {
-    if (pendingClipPatches.size === 0) return;
+    if (pendingClipPatches.size === 0 && pendingDerivePatches.size === 0) return;
     for (const op of ops) {
       if (op.name !== 'kit:add') continue;
       const id = (op.args as { id?: NodeId } | null)?.id;
-      if (id && !state.nodes.has(id) && pendingClipPatches.has(id)) {
+      if (id && !state.nodes.has(id)) {
         pendingClipPatches.delete(id);
+        pendingDerivePatches.delete(id);
       }
     }
   }
@@ -323,6 +334,14 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     }
   }
 
+  /** `patchClipFromPose` for `derive`, on nodes of any kind. `dependsOn` is
+   *  plain data and rides the `kit:add` payload instead. */
+  function patchDerive(spec: AddNodeSpec<TData, TLayer, TPose>, id: NodeId): void {
+    if (spec.derive === undefined) return;
+    state.nodes.get(id)!.derive = spec.derive;
+    pendingDerivePatches.set(id, spec.derive);
+  }
+
   // ── Internal kit op kinds ──────────────────────────────────────────────
   // These are registered like any other op; the kit's mutation methods build
   // serializable payloads and route through the same log/replay machinery.
@@ -333,6 +352,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   registerKitOp<{
     id: NodeId; kind: 'leaf' | 'container'; layer: TLayer; pose: TPose; data: TData;
     parent: NodeId | null; index: number; clipKey?: string;
+    dependsOn?: readonly NodeId[]; deriveKey?: string;
   }>('kit:add', {
     apply: (p) => {
       if (state.nodes.has(p.id)) {
@@ -362,6 +382,20 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
           } else {
             dwarn('scene', `kit:add: clipKey "${p.clipKey}" not in this scene's registry — container "${p.id}" restored without clip. Register a function with this key in the registry option to restore the clip.`);
           }
+        }
+      }
+      if (p.dependsOn !== undefined) node.dependsOn = p.dependsOn;
+      // Same redo/restore pair as clipFromPose above, minus the container guard.
+      const cachedDerive = pendingDerivePatches.get(p.id);
+      if (cachedDerive) {
+        node.derive = cachedDerive;
+      } else if (p.deriveKey !== undefined) {
+        const fn = registry.derive?.[p.deriveKey];
+        if (fn) {
+          node.derive = fn;
+          pendingDerivePatches.set(p.id, fn);
+        } else {
+          dwarn('scene', `kit:add: deriveKey "${p.deriveKey}" not in this scene's registry — node "${p.id}" restored without derived geometry. Register a function with this key in the registry option to restore it.`);
         }
       }
     },
@@ -782,14 +816,18 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       const clipKey = spec.kind === 'container' && spec.clipFromPose !== undefined
         ? reverseClipFromPose.get(spec.clipFromPose as NonNullable<ContainerNode<TData, TLayer, TPose>['clipFromPose']>)
         : undefined;
+      const deriveKey = spec.derive !== undefined ? reverseDerive.get(spec.derive) : undefined;
       executeAndLog('kit:add', {
         id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
         parent, index,
         ...(clipKey !== undefined ? { clipKey } : {}),
+        ...(spec.dependsOn !== undefined ? { dependsOn: spec.dependsOn } : {}),
+        ...(deriveKey !== undefined ? { deriveKey } : {}),
       }, `add ${spec.kind}`);
       // clipFromPose is a function and cannot travel through the serializable
       // op payload. Patch it directly onto the live node after the op applies.
       patchClipFromPose(spec, id);
+      patchDerive(spec, id);
       return id;
     },
 
@@ -1149,6 +1187,17 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
           }
           out.clipFromPoseKey = key;
         }
+        if (n.dependsOn && n.dependsOn.length > 0) out.dependsOn = n.dependsOn;
+        if (n.derive) {
+          const key = reverseDerive.get(n.derive);
+          if (!key) {
+            throw new Error(
+              `Scene.toJSON: node '${id}' has derive but no matching registry key. ` +
+              `The function must be registered via createScene's registry option to round-trip.`
+            );
+          }
+          out.deriveKey = key;
+        }
         nodes.push(out);
       }
       const systemLayers = state.layers.map((l) => {
@@ -1186,6 +1235,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       // Clear history + transient batch/clip caches.
       history.clear();
       pendingClipPatches.clear();
+      pendingDerivePatches.clear();
       currentBatch = null;
       batchDepth = 0;
       batchDirty = false;
@@ -1227,8 +1277,10 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       runOp('kit:add', {
         id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
         parent, index,
+        ...(spec.dependsOn !== undefined ? { dependsOn: spec.dependsOn } : {}),
       });
       patchClipFromPose(spec, id);
+      patchDerive(spec, id);
     }
   }
 
@@ -1250,8 +1302,8 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
 /** Map a `SerializedScene` to construction specs. Shared by `sceneFromJSON`
  *  (new instance) and `Scene.loadState` (in-place). Validates version and
- *  resolves `clipFromPoseKey` → function via the registry; throws on an
- *  unsupported version or an unknown registry key. */
+ *  resolves `clipFromPoseKey` / `deriveKey` → function via the registry;
+ *  throws on an unsupported version or an unknown registry key. */
 function specsFromSerialized<TData, TLayer extends string, TPose>(
   json: SerializedScene<TData, TLayer, TPose>,
   registry: SceneRegistry<TPose>,
@@ -1277,6 +1329,17 @@ function specsFromSerialized<TData, TLayer extends string, TPose>(
         );
       }
       (spec as { clipFromPose?: typeof fn }).clipFromPose = fn;
+    }
+    if (n.dependsOn !== undefined) spec.dependsOn = n.dependsOn as readonly NodeId[];
+    if (n.deriveKey !== undefined) {
+      const fn = registry.derive?.[n.deriveKey];
+      if (!fn) {
+        throw new Error(
+          `Scene: unknown derive key '${n.deriveKey}'. ` +
+          `Register a function with this key in the registry option.`,
+        );
+      }
+      spec.derive = fn;
     }
     return spec;
   });
