@@ -191,6 +191,17 @@ crushed a 16px glyph to 2px and forced 28px ToggleBar segments into a 17px track
 worktree can pop another session's work into it. Use a throwaway worktree for a baseline instead;
 if you must stash, `push -u -m <tag>`, `apply` by SHA, and drop your own entry by tag.
 
+**A path-fill painter's bind half and draw half must stay split.** `applyClipTest`
+disables the stencil test at clip depth 0 and overwrites `stencilFunc` otherwise, so any
+function owning its own stencil state — `drawPathStrokeStenciled`, `drawPathFillStencil` —
+binds with `bindPathFillByKind` and draws itself. Calling `drawPathFillByKind` from either
+one paints the full doubled ribbon, or fills the holes of an even-odd path, with every test
+green. Write the naive version first and watch the guard test fail before fixing it.
+
+**`tryStageSolid(ctx, mesh, undefined)` flushes the staged run and returns `false`.** Pass
+`undefined` for a non-batchable paint rather than hand-rolling a `flushSolids`, or draw
+ordering breaks.
+
 **The consumer smoke test cannot catch an undeclared dependency.** It packs every `@weasel-js`
 package into the tree, so a bare specifier resolves whether or not the importer declared it.
 `npm run check:manifests` is the check that works.
