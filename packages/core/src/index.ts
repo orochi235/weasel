@@ -576,6 +576,7 @@ export type {
   Region,
 } from './core/paint-types';
 export {
+  isGradientFill,
   sampleGradientStops,
   withGradientKind,
   gradientGeometry,
