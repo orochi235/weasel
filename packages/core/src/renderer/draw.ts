@@ -1119,7 +1119,9 @@ function drawPathStrokeStenciled(
   align: 'inner' | 'outer',
 ): void {
   const stroke = cmd.stroke!;
-  const solid = stroke.paint as { color: string; opacity?: number };
+  const paint = stroke.paint;
+  const isSolid = paint.fill === undefined || paint.fill === 'solid';
+  const solid = paint as { color: string; opacity?: number };
   const widerStroke: Stroke = {
     ...stroke,
     width: resolveStrokeWidth(stroke.width ?? 1, 1) * 2,
@@ -1159,8 +1161,25 @@ function drawPathStrokeStenciled(
     gl.stencilFunc(gl.EQUAL, clipMask, clipMask | 0x01);
   }
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
-  setSolidPaintUniforms(ctx, prog, solid.color, solid.opacity);
-  setColorMatrixUniforms(ctx, prog);
+  // Bind the paint here rather than through `drawPathFillByKind`: that calls
+  // `applyClipTest`, which at clip depth 0 disables the stencil test this
+  // function just set up to clip the ribbon to one side.
+  let ribbonProg: ShaderProgram | null = prog;
+  if (useVColor) {
+    // Per-vertex colors are the paint here; a non-solid base has no single
+    // color to multiply by, so white leaves the vertex colors unmodified.
+    setSolidPaintUniforms(ctx, prog, isSolid ? solid.color : '#ffffff', paint.opacity);
+    setColorMatrixUniforms(ctx, prog);
+  } else {
+    ribbonProg = bindPathFillByKind(ctx, paint);
+  }
+  if (!ribbonProg) {
+    gl.stencilMask(0x01);
+    gl.clear(gl.STENCIL_BUFFER_BIT);
+    gl.disable(gl.STENCIL_TEST);
+    gl.bindVertexArray(null);
+    return;
+  }
   gl.bindVertexArray(ribbonHandle.vao);
 
   let colorVbo: WebGLBuffer | null = null;
@@ -1170,7 +1189,7 @@ function drawPathStrokeStenciled(
     if (!colorVbo) throw new Error('drawPathStrokeStenciled: createBuffer (color VBO) returned null');
     gl.bindBuffer(gl.ARRAY_BUFFER, colorVbo);
     gl.bufferData(gl.ARRAY_BUFFER, expanded, gl.DYNAMIC_DRAW);
-    const aVColorLoc = prog.attribute('a_vertexColor');
+    const aVColorLoc = ribbonProg.attribute('a_vertexColor');
     if (aVColorLoc !== undefined) {
       gl.enableVertexAttribArray(aVColorLoc);
       gl.vertexAttribPointer(aVColorLoc, 4, gl.FLOAT, false, 0, 0);

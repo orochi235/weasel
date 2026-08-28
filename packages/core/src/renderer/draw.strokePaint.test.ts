@@ -28,6 +28,32 @@ const GRADIENT: FillStyle = {
   units: 'local',
 };
 
+const STENCIL_TEST = 0x0B90;
+const EQUAL = 0x0202;
+
+interface DrawState {
+  readonly stencilEnabled: boolean;
+  readonly stencilFunc: readonly unknown[] | null;
+  readonly colorWrite: boolean;
+}
+
+/** The GL state each `drawElements` of a frame sees, replayed from the
+ *  recorded call sequence. */
+function statesAtDraws(rec: Recorder): DrawState[] {
+  let stencilEnabled = false;
+  let stencilFunc: readonly unknown[] | null = null;
+  let colorWrite = true;
+  const states: DrawState[] = [];
+  for (const call of rec.calls) {
+    if (call.name === 'enable' && call.args[0] === STENCIL_TEST) stencilEnabled = true;
+    else if (call.name === 'disable' && call.args[0] === STENCIL_TEST) stencilEnabled = false;
+    else if (call.name === 'stencilFunc') stencilFunc = call.args;
+    else if (call.name === 'colorMask') colorWrite = call.args[0] === true;
+    else if (call.name === 'drawElements') states.push({ stencilEnabled, stencilFunc, colorWrite });
+  }
+  return states;
+}
+
 type Recorder = ReturnType<typeof makeGLRecorder>;
 
 describe('renderer — non-solid stroke paint', () => {
@@ -51,5 +77,24 @@ describe('renderer — non-solid stroke paint', () => {
 
   it('paints a gradient stroke on an inner-aligned polygon instead of throwing', () => {
     expect(() => render({ width: 10, align: 'inner', paint: GRADIENT })).not.toThrow();
+  });
+
+  /** Inner/outer alignment paints a doubled ribbon and stencils half of it
+   *  away, so the ribbon draw carries GL state this function set up itself.
+   *  Binding the paint through `drawPathFillByKind` calls `applyClipTest`,
+   *  which at clip depth 0 disables the stencil test outright — the stroke
+   *  then paints at double width, centred, and nothing throws. */
+  it('keeps the alignment stencil test for a gradient ribbon', () => {
+    for (const [align, keepRef] of [['inner', 0x01], ['outer', 0x00]] as const) {
+      render({ width: 10, align, paint: GRADIENT });
+      const draws = statesAtDraws(recorder);
+      // The silhouette into stencil bit 0, then the ribbon clipped against it.
+      expect(draws).toHaveLength(2);
+      const [silhouette, ribbon] = draws;
+      expect(silhouette.colorWrite).toBe(false);
+      expect(ribbon.colorWrite).toBe(true);
+      expect(ribbon.stencilEnabled).toBe(true);
+      expect(ribbon.stencilFunc).toEqual([EQUAL, keepRef, 0x01]);
+    }
   });
 });
