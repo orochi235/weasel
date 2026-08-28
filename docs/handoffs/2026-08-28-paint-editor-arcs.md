@@ -1,65 +1,93 @@
 # The paint editor arcs
 
-For whoever picks up arc 3 or 4. The design — five arcs, why each is ordered where it
-is, the 24 structural switch sites a paint kind touches — is
-`docs/superpowers/specs/2026-08-27-paint-editor-design.md`. Read that; this file
-only carries what it can't.
+For whoever picks up arc 4, the last one unbuilt. The design — five arcs, why
+each is ordered where it is, the 24 structural switch sites a paint kind
+touches — is `docs/superpowers/specs/2026-08-27-paint-editor-design.md`. Read
+that; this file only carries what it can't.
 
 ## Where the work stands
 
-Arcs 1 and 2 are merged. So is the stroke-dash arc, which is a different field
-and was never part of these five. All of it landed on `main` on 2026-08-28,
-along with a fix for the four demos `19d2f0e1` left painting fallback gray.
-**`main` is 77 commits ahead of `origin/main` and nothing is pushed.**
+Arcs 1, 2, 3 and 5 are merged, along with the stroke-dash arc, which is a
+different field and was never one of these five. All of it landed on `main` on
+2026-08-28. **`main` is 95 commits ahead of `origin/main` and nothing is
+pushed.** The merged tree passes typecheck, lint, 8085 tests, a full build and
+`check:bumps` / `check:manifests` / `check:frame-loops`.
 
-Arc 1 fixed a live crash: `drawPathStroke` threw on any non-solid stroke paint,
-so importing an SVG whose shape carried `stroke="url(#grad)"` produced a scene
-that threw on the next frame. It also stopped a non-solid even-odd fill
-rendering black. The seam it introduced — each path-fill painter split into a
-bind half and a draw half — is load-bearing for arc 3 and easy to collapse back
-by accident. It is written up under Traps in `CLAUDE.md`, with the reason.
+Only **arc 4 — `PaintInput` in `@weasel-js/ui`** remains.
 
-Arc 2 landed in the spec's 2c → 2b → 2a order. `setStroke` now takes a whole
-`paint`, so a gradient stroke is writable as well as paintable, and
-`strokeWith(paint, width?)` joins `strokeOf` as core's constructor for a paint
-with no color to pass. The four paint actions collapsed onto `createPaintAction`
-— 710 lines to 318, with the four test harnesses becoming one — and the four
-suites are byte-identical below their imports, which is what says the collapse
-changed no behavior.
+## What the earlier arcs left you
 
-One deviation from the spec, worth knowing before reading the factory: its
-`readParams` is a reducer over the previous state, not the spec's
-`(params) => Partial<TState>`. `setFill` and `setStroke` supersede a paint with
-a later color, and no per-field merge of the params expresses that.
+Arc 3's registry is what arc 4's kind bar is driven by, so read
+`packages/core/src/core/paintKinds.ts` before designing the control.
+`listPaintKinds()` enumerates every kind, and each entry carries the `label`,
+`seed(fromColor)` and `colorOf(paint)` the bar needs, plus an `Editor` slot arc
+4 is the first to fill.
 
-Arc 5 landed on `arc5-gradient-overlay` (unmerged). `useNodeOverlayFrame` is
-the kit's overlay frame and `SceneGradientHandles` the scene-aware half of
-`GradientHandles`; WeaselDraw's copies of both are gone. Selecting the node the
-overlay exists to edit turned out to crash the app's properties panel — the
-`data.stroke.paint` row read that leaf's schema default as a color string, and
-a paint leaf's default is a whole `FillStyle`. Fixed on the same branch.
+Four decisions inside arc 3 depart from the spec, all in the entry's shape:
 
-`View` has no rotation field, so the spec's "a rotated pose and a rotated view"
-test is a rotated pose under a panned, anisotropically scaled view.
+- **The render slot is `bind`, not `draw`.** A caller owning its own stencil
+  state issues its own draw call, so an entry exposing only `draw` would be
+  unreachable from the aligned-stroke and even-odd-fill paths.
+- **Programs compile on first use**, not through a construction hook — the only
+  shape that also covers a kind registered after a renderer exists.
+- **Each kit layer keeps its own built-in branch** and consults the registry
+  only for kinds it does not recognize. A built-in's render slot lives in the
+  renderer and its serialize slot in `@weasel-js/svg`; no one module can own
+  all five slots without inverting a package dependency.
+- **`FillStyle` stays a closed union.** Opening its discriminant widens every
+  built-in member and breaks the narrowing the kit's own branches depend on. A
+  registered kind declares its own interface and passes it through `asPaint`.
 
-## What is next
+One capability the spec promised is therefore gone: a fourth gradient can no
+longer ride the built-in shader on `u_gradKind == 3`, because
+`PaintBindContext` does not expose `ctx.gradFill`. Exposing it would couple a
+consumer to `GRAD_FRAG_SRC`'s internal uniform contract. Registering a
+gradient-shaped kind now means bringing a shader.
 
-Arcs 3 and 4. Arc 3 (the paint-kind registry) gates arc 4 so the kind bar is
-not written twice.
+Arc 5 shipped `useNodeOverlayFrame` and `SceneGradientHandles`, so the on-canvas
+geometry half of the editor is already done and already handles both paint
+slots. Arc 4 is the panel half only.
 
-One decision already made, not re-litigable from the spec alone: **arc 3 is a
-full registry, renderer included** — a registered kind brings its own shader and
-needs no kit edits. An editor-only registry was rejected as a second place to
-register the same kind.
+## Arc 4's three layout decisions
+
+Recorded in the spec's arc 4 section, but they are Mike's and are not derivable
+from the code:
+
+1. The kind bar and per-kind editor **take the whole row, label column
+   included** — `PaintInput` is a `block` leaf.
+2. The section reading APPEARANCE **becomes FILL**, with `appearance` going
+   headless (`name: ''`) so FILL and STROKE end up peer sections.
+3. Panel bodies already lost their horizontal padding, so the row is 20px wider
+   than the spec's screenshots imply.
+
+## Open, not blocked
+
+- **`SidebarPanel`'s title no longer aligns with `SelectionPanel`'s section
+  titles** — 8px versus 0 — since the padding change. Either pull `titleButton`
+  to `padding: 4px 0`, or keep the inset as a hierarchy cue. Undecided.
+- **Consolidate the paint demos into one "stroke and fill" demo.** Filed in
+  `docs/TODO.md`; it wants the arc 4 control to exist first.
+- **Conic gradients still serialize as nothing.** Now closeable without a kit
+  edit: re-register `conic-gradient` with a `toSvg`, and disposing that
+  override restores the built-in.
 
 ## Traps
 
-**A guard test that passes on the naive implementation is worthless**, and both
-of arc 1's stencil bugs are invisible without one. Write the broken version,
-watch the test fail, then fix.
+**A guard test that passes on the naive implementation is worthless.** Write the
+broken version, watch the test fail, then fix. Arc 1's two stencil bugs, arc 3's
+frame conversions and arc 5's rotation were all verified this way — arc 5 by
+neutering `rotationMatrix` to identity and confirming the guards went red.
+
+**`View` has no rotation field.** The spec asks for a rotated-view test that
+cannot be written; a panned, anisotropically scaled view is the strongest
+available equivalent, and it is what breaks a two-point translate-and-scale
+inverse.
 
 **A local visual pass does not imply CI passes** — Chromium anti-aliases
 hairline 2D strokes only on GPU.
 
 **`tsc -p packages/core/tsconfig.json` reports 31 pre-existing `TS6059` errors.**
 Typecheck from the repo root instead.
+
+**Another session shares this checkout.** Stage explicit paths, never
+`git add -A`, and check `git worktree list` before assuming a branch is yours.
