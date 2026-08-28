@@ -214,6 +214,19 @@ original spec. Find each by grepping `clipFromPose` and `clipKey`, and mirror it
 `spec.kind === 'container'` at every site. `dependsOn` / `derive` apply to **every** node kind,
 so those guards must not be copied across.
 
+**Index maintenance goes in the OP HANDLERS, not the scene's public methods.** This is the
+easiest thing in the arc to get subtly wrong. `scene.remove()` and `scene.add()` run once, but
+`kit:add` / `kit:remove` `apply` and `revert` run again on every undo and redo — replaying a
+delete through `apply` never re-enters `scene.remove()`. Put the four calls here and they stay
+symmetric under replay:
+
+| Op handler | Call |
+|---|---|
+| `kit:add` apply | `dependents.add(id, dependsOn)` |
+| `kit:add` revert | `dependents.remove(id)` |
+| `kit:remove` apply | `dependents.remove(nid)` for every node in the payload |
+| `kit:remove` revert | `dependents.add(n.id, n.dependsOn)` for every node restored |
+
 **The redo cache is not free.** `pendingClipPatches` is pruned through the history engine's
 `onEvict` (`scene.ts:210-224`) so it cannot grow without bound as history branches or
 overflows. A parallel `pendingDerivePatches` map needs the same pruning in the same loop —
@@ -840,7 +853,7 @@ descendants; it must also collect dependents, and each dependent's own descendan
         const n = requireNode(nid);
         return n.kind === 'container' ? { ...n, children: [...n.children] } : { ...n };
       });
-      for (const nid of ids) { overrides.clear(nid); dependents.remove(nid); }
+      for (const nid of ids) overrides.clear(nid);
       executeAndLog('kit:remove', {
         rootId: id, parent: node.parent, index, nodes: snapshot,
       }, 'remove');
@@ -848,8 +861,10 @@ descendants; it must also collect dependents, and each dependent's own descendan
 ```
 
 `kit:remove`'s `apply` deletes every id in `p.nodes`, so widening the snapshot is what deletes
-the dependents. Its `revert` already restores every node in the list — extend it to re-register
-each restored node in the dependents index:
+the dependents. Index maintenance lives in the op handlers per Task 2's table, NOT in this
+method — `apply` must `dependents.remove(n.id)` for every node it deletes, so that redoing a
+delete tears the index down the same way the first delete did. Its `revert` already restores
+every node in the list; extend it to re-register each:
 
 ```ts
     revert: (p) => {
