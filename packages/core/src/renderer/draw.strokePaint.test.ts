@@ -5,6 +5,9 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { PolygonPath, Stroke, FillStyle } from '@weasel-js/core';
+import { parseSvg, svgNodesToKitDrafts } from '@weasel-js/svg';
+import type { Node } from 'core/scene/types';
+import { findNodeShape } from '../canvas/NodeShape';
 import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
@@ -169,5 +172,51 @@ describe('renderer — non-solid even-odd fill', () => {
     expect(paint.colorWrite).toBe(true);
     expect(paint.stencilEnabled).toBe(true);
     expect(paint.stencilFunc).toEqual([EQUAL, 0x01, 0x01]);
+  });
+});
+
+describe('renderer — a gradient stroke that came from SVG import', () => {
+  const SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ff0000"/><stop offset="1" stop-color="#0000ff"/>
+    </linearGradient></defs>
+    <rect x="10" y="10" width="100" height="50" fill="none" stroke="url(#g)" stroke-width="4"/>
+  </svg>`;
+
+  /** The route a dropped file takes: parser, unpack drafts, then the
+   *  `kit:path` painter that turns a leaf's data into draw commands. */
+  function importedRect(): { stroke: Stroke; commands: DrawCommand[] } {
+    const { nodes } = parseSvg(SVG);
+    let seq = 0;
+    const drafts = svgNodesToKitDrafts(nodes, () => `n${++seq}`);
+    const leaf = drafts.find((d) => d.kind === 'leaf');
+    if (leaf?.kind !== 'leaf') throw new Error('expected a leaf draft');
+    const node = { id: leaf.id, pose: leaf.pose, data: leaf.data } as unknown as Node<unknown, string, unknown>;
+    const painter = findNodeShape(node)?.paint;
+    if (!painter) throw new Error('no painter matched the imported leaf');
+    return {
+      stroke: leaf.data.stroke as Stroke,
+      commands: painter(node, leaf.pose) as DrawCommand[],
+    };
+  }
+
+  it('carries the paint server onto the stroke as a gradient', () => {
+    expect(importedRect().stroke.paint).toMatchObject({ fill: 'linear-gradient' });
+  });
+
+  it('renders it, baking the imported stops into a ramp', () => {
+    const recorder = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
+    _resetStrokeMeshCacheForTests();
+    const { commands } = importedRect();
+    recorder.reset();
+
+    expect(() => r.render(commands)).not.toThrow();
+
+    const ramps = uploadedRamps(recorder);
+    expect(ramps).toHaveLength(1);
+    const texels = ramps[0][8] as Uint8ClampedArray;
+    expect(Array.from(texels.slice(0, 4))).toEqual([255, 0, 0, 255]);
+    expect(Array.from(texels.slice(-4))).toEqual([0, 0, 255, 255]);
   });
 });
