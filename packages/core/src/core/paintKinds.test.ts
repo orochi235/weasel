@@ -8,9 +8,10 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { FillStyle, PolygonPath } from '@weasel-js/core';
 import { serializeSvg } from '@weasel-js/svg';
 import type { SvgNode } from '@weasel-js/svg';
-import { registerPaintKind, _resetPaintKindsForTests, listPaintKinds, getPaintKind } from './paintKinds';
+import { registerPaintKind, asPaint, _resetPaintKindsForTests, listPaintKinds, getPaintKind } from './paintKinds';
 import type { PaintKindEntry } from './paintKinds';
 import { fillInPoseFrame, fillToBoundsFrame } from './fillInPoseFrame';
+import { findNodeShape } from '../canvas/NodeShape';
 import { registerProgram } from '../renderer/shaders/registerProgram';
 import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
 import { WeaselRenderer } from '../renderer/WeaselRenderer';
@@ -51,18 +52,18 @@ out vec4 outColor;
 void main() { outColor = vec4(u_washColor.rgb * u_washColor.a, u_washColor.a); }
 `;
 
-const WASH: FillStyle = {
+const WASH: FillStyle = asPaint<WashFill>({
   fill: 'test-wash',
   origin: { x: 0.25, y: 0.5 },
   color: '#ff00ff',
   units: 'bounds',
-} as unknown as FillStyle;
+});
 
 function washEntry(): PaintKindEntry {
   return {
     id: 'test-wash',
     label: 'Wash',
-    seed: (color) => ({ fill: 'test-wash', origin: { x: 0.5, y: 0.5 }, color, units: 'bounds' } as unknown as FillStyle),
+    seed: (color) => asPaint<WashFill>({ fill: 'test-wash', origin: { x: 0.5, y: 0.5 }, color, units: 'bounds' }),
     colorOf: (paint) => (paint as unknown as WashFill).color,
     bind: (ctx) => {
       const prog = ctx.program(WASH_PROGRAM);
@@ -74,20 +75,20 @@ function washEntry(): PaintKindEntry {
     inPoseFrame: (fill, box) => {
       const f = fill as unknown as WashFill;
       if (f.units !== 'bounds') return fill;
-      return {
+      return asPaint<WashFill>({
         ...f,
         origin: { x: box.x + f.origin.x * box.width, y: box.y + f.origin.y * box.height },
         units: 'local',
-      } as unknown as FillStyle;
+      });
     },
     toBoundsFrame: (fill, box) => {
       const f = fill as unknown as WashFill;
       if (box.width === 0 || box.height === 0) return fill;
-      return {
+      return asPaint<WashFill>({
         ...f,
         origin: { x: (f.origin.x - box.x) / box.width, y: (f.origin.y - box.y) / box.height },
         units: 'bounds',
-      } as unknown as FillStyle;
+      });
     },
     toSvg: (id, fill) => {
       const f = fill as unknown as WashFill;
@@ -123,6 +124,20 @@ describe('paint-kind registry', () => {
     expect(getPaintKind('test-wash')).toBeUndefined();
   });
 
+  it('restores the built-in when an override of one is disposed', () => {
+    // Re-registering a built-in id is how a consumer closes a gap the kit
+    // leaves — conic gradients still serialize as nothing. Disposing that
+    // override must put the built-in back, not delete the kind outright.
+    const off = registerPaintKind({
+      ...getPaintKind('conic-gradient')!,
+      toSvg: (id) => `<conic id="${id}"/>`,
+    });
+    expect(getPaintKind('conic-gradient')?.toSvg).toBeDefined();
+    off();
+    expect(getPaintKind('conic-gradient')?.label).toBe('Conic');
+    expect(getPaintKind('conic-gradient')?.toSvg).toBeUndefined();
+  });
+
   it('refuses a kind that converts one frame direction but not the other', () => {
     const half = { ...washEntry(), toBoundsFrame: undefined };
     expect(() => registerPaintKind(half)).toThrow(/toBoundsFrame/);
@@ -142,14 +157,14 @@ describe('paint-kind registry', () => {
     // Start in the pose frame, so a no-op implementation cannot pass by
     // handing back the `bounds` value it was given.
     const posed = { ...(WASH as unknown as WashFill), origin: { x: 60, y: 40 }, units: 'local' as const };
-    const back = fillToBoundsFrame(posed as unknown as FillStyle, box) as unknown as WashFill;
+    const back = fillToBoundsFrame(asPaint<WashFill>(posed), box) as unknown as WashFill;
     expect(back.units).toBe('bounds');
     expect(back.origin.x).toBeCloseTo(0.25);
     expect(back.origin.y).toBeCloseTo(0.5);
   });
 
   it('leaves an unregistered kind untouched rather than guessing a frame', () => {
-    const alien = { fill: 'not-registered', color: '#123456' } as unknown as FillStyle;
+    const alien = asPaint({ fill: 'not-registered', color: '#123456' });
     const box = { x: 10, y: 20, width: 200, height: 40 };
     expect(fillInPoseFrame(alien, box)).toBe(alien);
     expect(fillToBoundsFrame(alien, box)).toBe(alien);
@@ -166,6 +181,23 @@ describe('paint-kind registry', () => {
     const ref = /fill="url\(#([^)]+)\)"/.exec(out);
     expect(ref).not.toBeNull();
     expect(out).toContain(`<linearGradient id="${ref![1]}"><stop offset="0" stop-color="#ff00ff"/></linearGradient>`);
+  });
+
+  it('repaints a node whose kind registers after it was first painted', () => {
+    // `NodeShape`'s paint slot memoizes per node and calls `fillInPoseFrame`
+    // inside it, so the registry is ambient state that memo cannot see change.
+    const node = {
+      id: 'a', kind: 'leaf', layer: 'default',
+      data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: WASH },
+    } as never;
+    const pose = { x: 10, y: 20, width: 200, height: 40 };
+    const before = findNodeShape(node)!.paint!(node, pose as never) as Array<{ fill: unknown }>;
+    expect((before[0].fill as unknown as WashFill).units).toBe('bounds');
+
+    dispose = registerPaintKind(washEntry());
+
+    const after = findNodeShape(node)!.paint!(node, pose as never) as Array<{ fill: unknown }>;
+    expect((after[0].fill as unknown as WashFill).units).toBe('local');
   });
 
   it('paints a registered kind through its own program', () => {

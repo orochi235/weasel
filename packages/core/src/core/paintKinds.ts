@@ -17,6 +17,7 @@ import type {
   FillStyle, GradientFill, GradientKind, GradientUnits, GradStop, TilePatternSpec,
 } from './paint-types';
 import { gradientForBounds } from './gradient';
+import { bumpNodeMemoGeneration } from './scene/nodeMemo';
 import type { ComponentType } from 'react';
 import type { FillPoseBox } from './fillInPoseFrame';
 import type { Mat3 } from '../renderer/math/mat3';
@@ -155,10 +156,18 @@ function seedBuiltins(): void {
 }
 seedBuiltins();
 
-/** Bumped whenever the kind set changes, so a memo over ambient registry
- *  state can see it move. */
-let generation = 0;
-const listeners = new Set<() => void>();
+/**
+ * A consumer's own paint, typed as a `FillStyle`.
+ *
+ * `FillStyle` stays a closed union: opening its discriminant would widen every
+ * built-in member and break the narrowing the kit's own branches depend on.
+ * A registered kind declares its own interface instead and passes it through
+ * here — the kit reads only `fill` and hands the whole object back to that
+ * kind's slots.
+ */
+export function asPaint<T extends { fill: string }>(paint: T): FillStyle {
+  return paint as unknown as FillStyle;
+}
 
 /** Register a paint kind. Returns a disposer that removes it. */
 export function registerPaintKind(entry: PaintKindEntry): () => void {
@@ -169,11 +178,19 @@ export function registerPaintKind(entry: PaintKindEntry): () => void {
       'on the next resize; supply both or neither.',
     );
   }
+  // Re-registering a built-in id is how a consumer closes a gap the kit leaves
+  // — conic gradients still serialize as nothing — so disposing that override
+  // puts the built-in back rather than deleting the kind.
+  const displaced = KINDS.get(entry.id);
   KINDS.set(entry.id, entry);
-  bumpPaintKindGeneration();
+  // `NodeShape`'s paint slot memoizes per node and resolves a fill's frame
+  // inside it, so the kind set is ambient state that memo cannot see change.
+  bumpNodeMemoGeneration();
   return () => {
-    if (KINDS.get(entry.id) === entry) KINDS.delete(entry.id);
-    bumpPaintKindGeneration();
+    if (KINDS.get(entry.id) !== entry) return;
+    if (displaced) KINDS.set(entry.id, displaced);
+    else KINDS.delete(entry.id);
+    bumpNodeMemoGeneration();
   };
 }
 
@@ -192,24 +209,9 @@ export function paintKindOf(fill: FillStyle): PaintKindEntry | undefined {
   return getPaintKind(fill.fill ?? 'solid');
 }
 
-export function paintKindGeneration(): number {
-  return generation;
-}
-
-/** Subscribe to kind-set changes. Returns an unsubscribe. */
-export function subscribePaintKinds(fn: () => void): () => void {
-  listeners.add(fn);
-  return () => { listeners.delete(fn); };
-}
-
-function bumpPaintKindGeneration(): void {
-  generation++;
-  for (const fn of listeners) fn();
-}
-
 /** @internal Test helper — do not call from product code. */
 export function _resetPaintKindsForTests(): void {
   KINDS = new Map();
   seedBuiltins();
-  bumpPaintKindGeneration();
+  bumpNodeMemoGeneration();
 }

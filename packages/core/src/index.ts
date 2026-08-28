@@ -703,11 +703,10 @@ export { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev } from './util/colo
 // ─── Paint kinds: the registry that makes FillStyle open ────────────────────
 export {
   registerPaintKind,
+  asPaint,
   getPaintKind,
   listPaintKinds,
   paintKindOf,
-  paintKindGeneration,
-  subscribePaintKinds,
   _resetPaintKindsForTests,
 } from './core/paintKinds';
 export type {
