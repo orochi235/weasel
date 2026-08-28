@@ -6,6 +6,7 @@
  * emit a fresh `<defs>` block with stable generated ids.
  */
 
+import { getPaintKind } from '@weasel-js/core';
 import type { FillStyle, GradStop, GradientUnits } from '@weasel-js/core';
 import { parsePaintAttr } from './color';
 import { trimNumber } from './transform';
@@ -214,7 +215,7 @@ export class PaintServerRegistry {
       parts.push(
         paint.fill === 'pattern'
           ? patternXml(id, paint, onWarn)
-          : gradientXml(id, paint),
+          : gradientXml(id, paint) || (getPaintKind(paint.fill)?.toSvg?.(id, paint) ?? ''),
       );
     }
     parts.push('</defs>');

@@ -700,6 +700,23 @@ export { constrainTo45 } from './util/constrainTo45';
 export { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev } from './util/color';
 
 // ─── Default paint constants (fill/stroke/palette/ghost) ────────────────────
+// ─── Paint kinds: the registry that makes FillStyle open ────────────────────
+export {
+  registerPaintKind,
+  asPaint,
+  getPaintKind,
+  listPaintKinds,
+  paintKindOf,
+  _resetPaintKindsForTests,
+} from './core/paintKinds';
+export type {
+  PaintKind,
+  PaintKindEntry,
+  PaintKindEditorProps,
+  PaintBindContext,
+  PaintProgram,
+} from './core/paintKinds';
+
 export {
   DEFAULT_FILL_COLOR,
   DEFAULT_STROKE_COLOR,

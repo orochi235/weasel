@@ -10,6 +10,7 @@
  */
 
 import type { FillStyle, GradientFill } from './paint-types';
+import { getPaintKind } from './paintKinds';
 
 /** The box a `'bounds'` gradient's normalized geometry is mapped onto —
  *  usually a node's bounds. */
@@ -32,6 +33,9 @@ export interface FillPoseBox {
  * radius proportionate instead.
  */
 export function fillInPoseFrame(fill: FillStyle, box: FillPoseBox): FillStyle {
+  if (!isBuiltinKind(fill)) {
+    return getPaintKind(fill.fill)?.inPoseFrame?.(fill, box) ?? fill;
+  }
   if (isBoundsPattern(fill)) {
     const o = fill.origin ?? { x: 0, y: 0 };
     return { ...fill, origin: { x: box.x + o.x, y: box.y + o.y }, units: 'local' as const };
@@ -66,6 +70,9 @@ export function fillInPoseFrame(fill: FillStyle, box: FillPoseBox): FillStyle {
  * fill is returned untouched rather than divided by zero.
  */
 export function fillToBoundsFrame(fill: FillStyle, box: FillPoseBox): FillStyle {
+  if (!isBuiltinKind(fill)) {
+    return getPaintKind(fill.fill)?.toBoundsFrame?.(fill, box) ?? fill;
+  }
   if (fill.fill === 'pattern') {
     const o = fill.origin ?? { x: 0, y: 0 };
     return { ...fill, origin: { x: o.x - box.x, y: o.y - box.y }, units: 'bounds' as const };
@@ -108,4 +115,12 @@ function isBoundsGradient(fill: FillStyle | undefined): fill is GradientFill {
     return false;
   }
   return fill.units === 'bounds';
+}
+
+/** The five kinds whose frame conversion is written above. Anything else is a
+ *  registered kind and converts through its own entry. */
+function isBuiltinKind(fill: FillStyle): boolean {
+  const kind = fill.fill ?? 'solid';
+  return kind === 'solid' || kind === 'pattern'
+    || kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'conic-gradient';
 }
