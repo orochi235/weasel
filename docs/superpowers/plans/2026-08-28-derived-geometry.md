@@ -194,7 +194,25 @@ git commit -m "add the dependents index for derived geometry"
 
 **Files:**
 - Modify: `packages/core/src/core/scene/types.ts`
+- Modify: `packages/core/src/core/scene/scene.ts`
 - Test: `packages/core/src/core/scene/scene.derived.test.ts` (create)
+
+`clipFromPose` is the precedent to mirror, and it threads through **six** sites in `scene.ts`.
+Miss one and the failure is silent — most often on redo, where `kit:add` replays without the
+original spec. Find each by grepping `clipFromPose` and `clipKey`, and mirror it:
+
+| # | Site | What it does |
+|---|---|---|
+| 1 | `reverseClipFromPose` (~line 57) | function → key map, built from the registry at scene construction |
+| 2 | `add()` (~line 782) | looks the key up in that reverse map and puts `clipKey` on the `kit:add` payload |
+| 3 | `patchClipFromPose` (~line 317) | attaches the function to the live node **and caches it in `pendingClipPatches` for redo** |
+| 4 | `kit:add` apply (~line 350) | restores from the redo cache, else resolves `clipKey` through the registry, else `dwarn`s |
+| 5 | `toJSON()` (~line 1140) | emits `clipFromPoseKey`, **throwing** if the function has no registry key |
+| 6 | `specsFromSerialized` (~line 1271) | resolves the key back to a function; shared by `sceneFromJSON` and `loadState`, so both are covered at once |
+
+**One difference from `clipFromPose`:** it is container-only and guarded by
+`spec.kind === 'container'` at every site. `dependsOn` / `derive` apply to **every** node kind,
+so those guards must not be copied across.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -202,7 +220,7 @@ Create `packages/core/src/core/scene/scene.derived.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
-import { createScene, sceneToJSON, sceneFromJSON } from './scene';
+import { createScene, sceneFromJSON } from './scene';
 import { asNodeId, type RectPose } from './types';
 import { linePath } from 'features/paths';
 
@@ -222,22 +240,21 @@ const registry = { derive: { 'test:connect': connectCenters } };
 
 describe('derived geometry — serialization', () => {
   it('round-trips dependsOn and the derive registry key', () => {
-    const scene = createScene<{ label?: string }, 'main', RectPose>({
-      systemLayers: LAYERS, registry,
-    });
+    const scene = createScene<{}, 'main', RectPose>({ systemLayers: LAYERS, registry });
     const a = scene.add({ layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
     const b = scene.add({ layer: 'main', pose: { x: 100, y: 0, width: 10, height: 10 }, data: {} });
     const edge = scene.add({
       layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
-      dependsOn: [a, b], deriveKey: 'test:connect',
+      dependsOn: [a, b], derive: connectCenters,
     });
 
-    const json = sceneToJSON(scene);
+    const json = scene.toJSON();
     const node = json.nodes.find((n) => n.id === edge)!;
     expect(node.dependsOn).toEqual([a, b]);
     expect(node.deriveKey).toBe('test:connect');
 
-    const restored = sceneFromJSON(json, { systemLayers: LAYERS, registry });
+    // sceneFromJSON reads systemLayers out of the JSON — it takes no such option.
+    const restored = sceneFromJSON(json, { registry });
     const live = restored.get(asNodeId(edge))!;
     expect(live.dependsOn).toEqual([a, b]);
     expect(live.derive).toBe(connectCenters);
@@ -246,9 +263,33 @@ describe('derived geometry — serialization', () => {
   it('a node with no dependsOn serializes without the fields', () => {
     const scene = createScene<{}, 'main', RectPose>({ systemLayers: LAYERS, registry });
     scene.add({ layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
-    const json = sceneToJSON(scene);
+    const json = scene.toJSON();
     expect(json.nodes[0]!.dependsOn).toBeUndefined();
     expect(json.nodes[0]!.deriveKey).toBeUndefined();
+  });
+
+  it('keeps derive attached across undo then redo', () => {
+    const scene = createScene<{}, 'main', RectPose>({ systemLayers: LAYERS, registry });
+    const a = scene.add({ layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const b = scene.add({ layer: 'main', pose: { x: 100, y: 0, width: 10, height: 10 }, data: {} });
+    const edge = scene.add({
+      layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
+      dependsOn: [a, b], derive: connectCenters,
+    });
+    scene.undo();
+    scene.redo();
+    // kit:add replays without the spec — without a redo cache this is undefined.
+    expect(scene.get(asNodeId(edge))!.derive).toBe(connectCenters);
+  });
+
+  it('throws from toJSON when derive is not in the registry', () => {
+    const scene = createScene<{}, 'main', RectPose>({ systemLayers: LAYERS, registry });
+    const a = scene.add({ layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    scene.add({
+      layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
+      dependsOn: [a], derive: () => null,   // never registered
+    });
+    expect(() => scene.toJSON()).toThrow(/no matching registry key/);
   });
 });
 ```
@@ -256,7 +297,7 @@ describe('derived geometry — serialization', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run --project=kit scene.derived.test.ts`
-Expected: FAIL — TypeScript rejects `dependsOn` / `deriveKey` on `AddNodeSpec`.
+Expected: FAIL — TypeScript rejects `dependsOn` / `derive` on `AddNodeSpec`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -264,7 +305,7 @@ In `packages/core/src/core/scene/types.ts`, add to `interface NodeBase`:
 
 ```ts
   /** Nodes whose poses this node's geometry is computed from. Fixed at add
-   *  time. Empty or absent means the node's geometry is authored, which is the
+   *  time. Absent or empty means the node's geometry is authored, which is the
    *  normal case. */
   dependsOn?: readonly NodeId[];
   /** Computes this node's path from its dependencies' poses, in `dependsOn`
@@ -277,8 +318,8 @@ In `packages/core/src/core/scene/types.ts`, add to `interface NodeBase`:
   ) => Path | null;
 ```
 
-Add the same two fields to `AddNodeSpec` (with `deriveKey?: string` in place of `derive`,
-matching how `clipFromPose` is specified), then to `SerializedNode`:
+Add both to `AddNodeSpec` too (taking the live function, exactly as `clipFromPose` does — the
+key is looked up from it, not passed). Then `SerializedNode`:
 
 ```ts
   /** Ids this node's geometry derives from. Omitted when it derives from nothing. */
@@ -287,7 +328,7 @@ matching how `clipFromPose` is specified), then to `SerializedNode`:
   deriveKey?: string;
 ```
 
-And to `SceneRegistry`:
+And `SceneRegistry`:
 
 ```ts
   /** Maps registry keys to `derive` functions for nodes with `dependsOn`. */
@@ -297,16 +338,19 @@ And to `SceneRegistry`:
   ) => Path | null>>;
 ```
 
-In `packages/core/src/core/scene/scene.ts`, mirror `patchClipFromPose` with a `patchDerive`
-that copies `dependsOn` onto the live node and resolves `deriveKey` through
-`registry.derive`, and extend `sceneToJSON` to emit both fields when present.
+Then work the six sites in the table above. `dependsOn` is a plain array of ids and travels
+through the `kit:add` payload as ordinary serializable data — only `derive` needs the
+key/reverse-map/redo-cache treatment.
 
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run --project=kit scene.derived.test.ts`
-Expected: PASS, 2 tests.
+Expected: PASS, 4 tests.
 
-Then: `npx tsc --noEmit` from the repo root. Expected: no new errors.
+Run the existing scene suite for regressions: `npx vitest run --project=kit core/scene`
+Expected: PASS.
+
+Then `npx tsc --noEmit` from the worktree root. Expected: no new errors.
 
 - [ ] **Step 5: Commit**
 
@@ -341,7 +385,7 @@ describe('derived geometry — invalidation', () => {
     const b = scene.add({ layer: 'main', pose: { x: 100, y: 0, width: 10, height: 10 }, data: {} });
     const edge = scene.add({
       layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
-      dependsOn: [a, b], deriveKey: 'test:connect',
+      dependsOn: [a, b], derive: connectCenters,
     });
     return { scene, a, b, edge };
   }
@@ -385,7 +429,7 @@ describe('derived geometry — invalidation', () => {
     const { scene, a, edge } = setup();
     const label = scene.add({
       layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
-      dependsOn: [asNodeId(edge)], deriveKey: 'test:connect',
+      dependsOn: [asNodeId(edge)], derive: connectCenters,
     });
     const counter = { n: 0 };
     derivedCount(scene, label, counter);
@@ -657,7 +701,7 @@ describe('derived geometry — cascade delete', () => {
     const b = scene.add({ layer: 'main', pose: { x: 100, y: 0, width: 10, height: 10 }, data: {} });
     const edge = scene.add({
       layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
-      dependsOn: [a, b], deriveKey: 'test:connect',
+      dependsOn: [a, b], derive: connectCenters,
     });
     return { scene, a, b, edge };
   }
@@ -682,7 +726,7 @@ describe('derived geometry — cascade delete', () => {
     const { scene, a, edge } = setup();
     const label = scene.add({
       layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
-      dependsOn: [asNodeId(edge)], deriveKey: 'test:connect',
+      dependsOn: [asNodeId(edge)], derive: connectCenters,
     });
     scene.remove(asNodeId(a));
     expect(scene.get(asNodeId(label))).toBeUndefined();
