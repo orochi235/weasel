@@ -129,9 +129,10 @@ function conicArmRadius(units: GradientFill['units']): number {
 }
 
 /**
- * A gradient spanning a box corner-to-corner (linear) or filling it
- * (radial / conic) — the sensible starting geometry when a consumer turns a
- * solid fill into a gradient and has only the shape's bounds to go on.
+ * A gradient spanning a box left edge to right edge through its vertical
+ * center (linear) or filling it (radial / conic) — the sensible starting
+ * geometry when a consumer turns a solid fill into a gradient and has only
+ * the shape's bounds to go on.
  */
 export function gradientForBounds(
   kind: GradientKind,
