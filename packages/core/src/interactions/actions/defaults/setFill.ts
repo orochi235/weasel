@@ -8,7 +8,7 @@ import type { FillStyle } from 'core/paint-types';
 import { createSetDataOp } from 'core/ops/setData';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { paintWithColor } from '../../../util/paint';
-import { DEFAULT_STROKE_COLOR } from '../../../util/paint';
+import { DEFAULT_FILL_COLOR } from '../../../util/paint';
 
 interface SetFillData {
   fill?: FillStyle | null;
@@ -115,7 +115,7 @@ export const setFillAction: Action & { requires: string[] } = {
       const fromCtx = readParams(ctx.params);
       const fromOpts = readParams(opts?.params as Record<string, unknown> | undefined);
       const initialPaint = fromCtx.paint ?? fromOpts.paint;
-      const initialColor = fromCtx.color ?? fromOpts.color ?? DEFAULT_STROKE_COLOR;
+      const initialColor = fromCtx.color ?? fromOpts.color ?? DEFAULT_FILL_COLOR;
 
       // Snapshot node data at drag start.
       const startData = new Map<NodeId, SetFillData>();

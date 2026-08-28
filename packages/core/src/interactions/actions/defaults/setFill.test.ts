@@ -5,7 +5,7 @@ import { asNodeId } from 'core/scene/types';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { FillStyle } from 'core/paint-types';
-import { solid } from '../../../util/paint';
+import { DEFAULT_FILL_COLOR, solid } from '../../../util/paint';
 
 interface FakeNode { id: NodeId; kind: 'leaf'; pose: unknown; data: { fill?: FillStyle | null } }
 
@@ -125,6 +125,14 @@ describe('setFillAction', () => {
     expect(scene.updates).toHaveLength(2);
     expect((scene.updates[0].data as { fill: FillStyle }).fill).toEqual({ color: '#00ff00' });
     expect((scene.updates[1].data as { fill: FillStyle }).fill).toEqual({ color: '#00ff00' });
+  });
+
+  it('seeds from the default fill color when started with no color or paint', () => {
+    const scene = makeScene({ a: { fill: solid('#11223344') } });
+    const ctx = makeCtx({ selectionIds: ['a'], scene });
+    const h = getInvoker().start(ctx, undefined);
+    expect(h.previewData?.('a' as unknown as NodeId))
+      .toMatchObject({ fill: solid(DEFAULT_FILL_COLOR) });
   });
 
   it('onEnd("cancel") does not write to scene', () => {
