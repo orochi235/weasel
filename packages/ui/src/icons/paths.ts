@@ -52,7 +52,7 @@ export const ICON_PATHS = {
   error: `<circle cx="10" cy="10" r="7"/><path d="M7.6 7.6 12.4 12.4M12.4 7.6 7.6 12.4"/>`,
   busy: `<path d="M10 3.2A6.8 6.8 0 1 1 3.2 10"/>`,
 
-  // Stroke cap, join and align
+  // Stroke cap, join, align and dash
   strokeWidth: `<path d="M3.4 5.6h13.2" stroke-width="1"/><path d="M3.4 10h13.2" stroke-width="2"/><path d="M3.4 15.2h13.2" stroke-width="3.4"/>`,
   strokeCap: `<path d="M2.5 10H12" stroke-linecap="butt"/><path d="M12 6V14" stroke-width="1"/>`,
   strokeJoin: `<path d="M4.4 15.5 10 5.5 15.6 15.5" stroke-linecap="butt" stroke-linejoin="miter"/>`,
@@ -66,6 +66,10 @@ export const ICON_PATHS = {
   alignInner: `<path d="M10 3.8A6.2 6.2 0 1 0 10 16.2A6.2 6.2 0 1 0 10 3.8Z" fill="currentColor" stroke="none"/>`,
   alignCenter: `<path d="M10 2.1A7.9 7.9 0 1 0 10 17.9A7.9 7.9 0 1 0 10 2.1ZM10 5.5A4.5 4.5 0 1 0 10 14.5A4.5 4.5 0 1 0 10 5.5Z" fill="currentColor" stroke="none" fill-rule="evenodd"/>`,
   alignOuter: `<path d="M0 0H20V20H0ZM10 3.8A6.2 6.2 0 1 0 10 16.2A6.2 6.2 0 1 0 10 3.8Z" fill="currentColor" stroke="none" fill-rule="evenodd"/>`,
+  dashSolid: `<path d="M2 10h16" stroke-width="3" stroke-linecap="butt"/>`,
+  dashDashed: `<path d="M2 10h16" stroke-width="3" stroke-linecap="butt" stroke-dasharray="6 4"/>`,
+  dashDotted: `<path d="M2 10h16" stroke-width="3" stroke-linecap="butt" stroke-dasharray="2.5 2"/>`,
+  dashCustom: `<path d="M2 10h16" stroke-width="3" stroke-linecap="butt" stroke-dasharray="5 2 2 2"/>`,
 } as const;
 
 /** Every glyph name in the set. */

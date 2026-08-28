@@ -27,5 +27,6 @@ export type {
   ToolPrefBooleanControl,
   ToolPrefStringControl,
   ToolPrefEnumControl,
+  ToolPrefEnumEncoding,
 } from './prefs';
 export * from './builtin';

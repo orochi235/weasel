@@ -1,4 +1,4 @@
-// Stroke cap, join and align. Unlike the outlined register in base.mjs these
+// Stroke cap, join, align and dash. Unlike the outlined register in base.mjs these
 // are filled silhouettes: the glyph IS the ink, so the option it names is
 // legible as a shape rather than as a diagram of one.
 
@@ -56,6 +56,22 @@ const cap = (linecap) => {
 const fill = (d, rule) =>
   `<path d="${d}" fill="currentColor" stroke="none"${rule ? ` fill-rule="${rule}"` : ''}/>`;
 
+// ── dash ─────────────────────────────────────────────────────────────────
+// One rule across the box at four patterns. Drawn heavier than the set's 1.5
+// so a gap survives the 16px grid, and butt-capped so a mark is the length the
+// array says rather than half a round cap longer at each end.
+//
+// Every pattern is solved to end on ink at both ends of the run. A pattern
+// that merely repeats leaves a partial period at the right, and the four then
+// differ in how far their ink reaches as well as in rhythm — which is the
+// louder difference, and the wrong one.
+const dashRun = 16;
+const dashRule = (pattern) =>
+  `<path d="M2 10h${dashRun}" stroke-width="3" stroke-linecap="butt"${pattern ? ` stroke-dasharray="${pattern}"` : ''}/>`;
+/** `count` marks of `mark` units, gapped to fill the run exactly. */
+const dashEven = (count, mark) =>
+  dashRule(`${mark} ${n((dashRun - count * mark) / (count - 1))}`);
+
 // ── the categories ───────────────────────────────────────────────────────
 // Each is the bare path its row treats, in the outlined register: the label
 // is the line, the options beside it are the ink. Staying at the set's 1.5
@@ -86,4 +102,11 @@ export const PAINT = {
   'align-inner': fill(disc(10, 10, R)),
   'align-center': fill(alignRing, 'evenodd'),
   'align-outer': fill(alignOuter, 'evenodd'),
+
+  'dash-solid': dashRule(''),
+  'dash-dashed': dashEven(2, 6),
+  'dash-dotted': dashEven(4, 2.5),
+  // Long-short-long: the one pattern that is neither preset, which is what
+  // `custom` reports. 5 + 2 + 2 + 2 + 5 is the run exactly.
+  'dash-custom': dashRule('5 2 2 2'),
 };

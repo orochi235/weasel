@@ -152,8 +152,10 @@ the left edge, pinning the ink to x 0 whatever the terminus did.
   heading don't indent.
 - **A union is edited as a union**, and fields of one value are children, not
   siblings. Both rules exist because the alternative silently corrupts data.
-- **Dash has no control.** A `number[]` has no leaf kind. It survives import,
-  render and export untouched.
+- **A control's shape is not its value's shape.** Dash was left out as
+  uneditable because a `number[]` has no leaf kind; it is an enum of
+  width-relative presets over an array, via `ToolPrefEnum.encoding`. Reach for
+  that before concluding a field has no control.
 - The `stroke` pref kind and `NodeInkResult` were both added and then deleted.
   Don't reintroduce them: the first was a one-off for what `ToolPrefObject`
   does generally, the second a compatibility shim.

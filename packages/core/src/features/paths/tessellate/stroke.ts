@@ -432,15 +432,48 @@ function splitForDash(pl: Polyline, dash: number[]): Polyline[] {
   }
 
   if (curPts && curPts.length >= 4) {
-    out.push({
+    const tail: Polyline = {
       points: curPts,
       closed: false,
       anchorA: new Uint32Array(curA!),
       anchorB: new Uint32Array(curB!),
       anchorT: new Float32Array(curT!),
-    });
+    };
+    // A closed subpath's walk ends at the vertex it started from, so the run
+    // still open there and the run that started there are one dash. Pushed
+    // separately they are two butt-capped ribbons meeting at the seam — the
+    // visible artifact whenever the pattern doesn't divide the perimeter.
+    const tx = curPts[curPts.length - 2], ty = curPts[curPts.length - 1];
+    const meets = (x: number, y: number) => Math.hypot(tx - x, ty - y) <= 1e-9;
+    if (pl.closed && out.length > 0 && meets(out[0].points[0], out[0].points[1])) {
+      out[0] = joinAtSeam(tail, out[0]);
+    } else if (pl.closed && out.length === 0 && meets(curPts[0], curPts[1])) {
+      // Every gap fell outside the perimeter: the dash is the whole loop, and
+      // a loop stroked as an open run seams at its own start vertex too.
+      out.push({
+        points: curPts.slice(0, -2),
+        closed: true,
+        anchorA: tail.anchorA!.slice(0, -1),
+        anchorB: tail.anchorB!.slice(0, -1),
+        anchorT: tail.anchorT!.slice(0, -1),
+      });
+    } else {
+      out.push(tail);
+    }
   }
   return out;
+}
+
+/** `tail` continued by `head`, which starts where `tail` ends — the shared
+ *  vertex is carried once. */
+function joinAtSeam(tail: Polyline, head: Polyline): Polyline {
+  return {
+    points: [...tail.points, ...head.points.slice(2)],
+    closed: false,
+    anchorA: Uint32Array.from([...tail.anchorA!, ...head.anchorA!.subarray(1)]),
+    anchorB: Uint32Array.from([...tail.anchorB!, ...head.anchorB!.subarray(1)]),
+    anchorT: Float32Array.from([...tail.anchorT!, ...head.anchorT!.subarray(1)]),
+  };
 }
 
 function makeSeg(ax: number, ay: number, bx: number, by: number, halfA: number, halfB: number): Seg | null {

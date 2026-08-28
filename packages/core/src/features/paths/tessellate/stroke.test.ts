@@ -215,6 +215,40 @@ describe('tessellateStroke dash patterns', () => {
     expect([(v[8] + v[10]) / 2, (v[9] + v[11]) / 2]).toEqual([3, 1]);
   });
 
+  // A closed subpath's dash walk ends where it began. Flushing that last run
+  // separately leaves it and the first run as two butt-capped ribbons meeting
+  // at the start vertex — a visible notch on a dashed rectangle.
+  it('joins a closed subpath\'s last dash to its first', () => {
+    // Perimeter 40, pattern period 9: the fourth gap ends 4 units short of the
+    // start, so the walk is mid-dash when it arrives there.
+    const path: RectPath = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
+    const mesh = tessellateStroke(path, {
+      paint: { color: '#000' }, width: 2, dash: [6, 3], cap: 'butt', join: 'miter',
+    });
+    const has = (x: number, y: number) => {
+      for (let i = 0; i < mesh.vertices.length; i += 2) {
+        if (mesh.vertices[i] === x && mesh.vertices[i + 1] === y) return true;
+      }
+      return false;
+    };
+    // The seam corner is mitered, which only a run that spans it can produce.
+    expect(has(-1, -1)).toBe(true);
+    // And the two butt caps that would meet there are gone.
+    expect(has(1, 0)).toBe(true);
+    expect(has(0, -1)).toBe(true);
+    expect(has(0, 0)).toBe(true);
+  });
+
+  it('strokes a closed subpath the pattern never gaps as one closed ribbon', () => {
+    const path: RectPath = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
+    const base = { paint: { color: '#000' }, width: 2, cap: 'butt' as const, join: 'miter' as const };
+    // 100 units of "on" swallow the whole 40-unit perimeter.
+    const dashed = tessellateStroke(path, { ...base, dash: [100, 10] });
+    const solid = tessellateStroke(path, base);
+    expect(Array.from(dashed.vertices)).toEqual(Array.from(solid.vertices));
+    expect(dashed.indices.length).toBe(solid.indices.length);
+  });
+
   it('treats an odd-length dash pattern as the pattern repeated twice', () => {
     const path: PolygonPath = {
       kind: 'polygon',

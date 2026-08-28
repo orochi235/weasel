@@ -3,7 +3,9 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import {
   createScene,
   asNodeId,
+  dashForStrokeStyle,
   rotationDegreesUnit,
+  strokeDashStyleOf,
   type NodePropertiesEntry,
   type NodeRoutingEntry,
   type SelectionApi,
@@ -592,6 +594,126 @@ describe('SelectionPanel — object leaf', () => {
         />,
       );
       expect(screen.getByLabelText('Width')).toHaveValue('');
+    });
+  });
+
+  /**
+   * `Stroke.dash` stores lengths; the thing a person chooses is a style. The
+   * leaf's `encoding` is what bridges the two, and the presets are multiples
+   * of the sibling `width`, so both directions read it.
+   */
+  describe('an enum leaf whose stored value is not the option string', () => {
+    const dashProperties: NodePropertiesEntry[] = [
+      {
+        name: 'path',
+        schema: {
+          name: 'Properties',
+          children: {
+            appearance: {
+              name: 'Appearance',
+              children: {
+                'data.stroke': {
+                  kind: 'object',
+                  name: 'Stroke',
+                  description: '',
+                  default: { paint: { fill: 'solid', color: '#000000ff' }, width: 1 },
+                  children: {
+                    dash: {
+                      kind: 'enum', name: 'Style', description: '', default: 'solid', control: 'toggle',
+                      encoding: {
+                        read: (dash, stroke) =>
+                          stroke === undefined
+                            ? undefined
+                            : strokeDashStyleOf(Array.isArray(dash) ? (dash as number[]) : undefined, stroke.width as number),
+                        write: (style, stroke) =>
+                          style === 'dashed' || style === 'dotted'
+                            ? dashForStrokeStyle(style, stroke?.width as number)
+                            : undefined,
+                      },
+                      options: [
+                        { value: 'solid', label: 'Solid' },
+                        { value: 'dashed', label: 'Dashed' },
+                        { value: 'dotted', label: 'Dotted' },
+                        { value: 'custom', label: 'Custom', disabled: true },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    ];
+
+    const renderDash = (stroke: unknown) => {
+      const scene = sceneWithStroke(stroke);
+      render(
+        <SelectionPanel
+          scene={scene}
+          selection={selectionOf(['p'])}
+          properties={dashProperties}
+          routing={strokeRouting}
+        />,
+      );
+      return scene;
+    };
+
+    const lit = () =>
+      screen.getAllByRole('radio')
+        .filter((b) => b.getAttribute('aria-checked') === 'true')
+        .map((b) => b.getAttribute('aria-label'));
+
+    const strokeOfWidth = (width: number, dash?: number[]) => ({
+      paint: { fill: 'solid', color: '#000000ff' }, width, ...(dash ? { dash } : {}),
+    });
+
+    it('reads an absent dash as solid', () => {
+      renderDash(strokeOfWidth(4));
+      expect(lit()).toEqual(['Solid']);
+    });
+
+    it('reads the stored array against the stroke width', () => {
+      renderDash(strokeOfWidth(4, [12, 8]));
+      expect(lit()).toEqual(['Dashed']);
+    });
+
+    it('reads the same array as custom at another width', () => {
+      renderDash(strokeOfWidth(1, [12, 8]));
+      expect(lit()).toEqual(['Custom']);
+    });
+
+    it('writes an array scaled by the width', () => {
+      const scene = renderDash(strokeOfWidth(4));
+      fireEvent.click(screen.getByLabelText('Dashed'));
+      expect(scene.get(asNodeId('p'))?.data.stroke).toEqual({
+        paint: { fill: 'solid', color: '#000000ff' }, width: 4, dash: [12, 8],
+      });
+    });
+
+    it('removes the field rather than storing an empty pattern for solid', () => {
+      const scene = renderDash(strokeOfWidth(4, [12, 8]));
+      fireEvent.click(screen.getByLabelText('Solid'));
+      const stroke = scene.get(asNodeId('p'))?.data.stroke as Record<string, unknown>;
+      expect(stroke).toEqual({ paint: { fill: 'solid', color: '#000000ff' }, width: 4 });
+      expect('dash' in stroke).toBe(false);
+    });
+
+    // `custom` reports an imported array honestly; there is no array it maps
+    // back to, so the segment refuses the click rather than inventing one.
+    it('will not author custom', () => {
+      const scene = renderDash(strokeOfWidth(1, [9, 1, 2, 1]));
+      expect(lit()).toEqual(['Custom']);
+      expect(screen.getByLabelText('Custom')).toBeDisabled();
+      // Off the imported array, the segment is still no way back to one.
+      fireEvent.click(screen.getByLabelText('Solid'));
+      fireEvent.click(screen.getByLabelText('Custom'));
+      expect((scene.get(asNodeId('p'))?.data.stroke as Record<string, unknown>).dash).toBeUndefined();
+    });
+
+    it('lights nothing when the node holds no stroke at all', () => {
+      renderDash(undefined);
+      expect(lit()).toEqual([]);
     });
   });
 
