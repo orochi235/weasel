@@ -1,6 +1,6 @@
 # The paint editor arcs
 
-For whoever picks up arc 3. The design — five arcs, why each is ordered where it
+For whoever picks up arc 3 or 4. The design — five arcs, why each is ordered where it
 is, the 24 structural switch sites a paint kind touches — is
 `docs/superpowers/specs/2026-08-27-paint-editor-design.md`. Read that; this file
 only carries what it can't.
@@ -32,11 +32,20 @@ One deviation from the spec, worth knowing before reading the factory: its
 `(params) => Partial<TState>`. `setFill` and `setStroke` supersede a paint with
 a later color, and no per-field merge of the params expresses that.
 
+Arc 5 landed on `arc5-gradient-overlay` (unmerged). `useNodeOverlayFrame` is
+the kit's overlay frame and `SceneGradientHandles` the scene-aware half of
+`GradientHandles`; WeaselDraw's copies of both are gone. Selecting the node the
+overlay exists to edit turned out to crash the app's properties panel — the
+`data.stroke.paint` row read that leaf's schema default as a color string, and
+a paint leaf's default is a whole `FillStyle`. Fixed on the same branch.
+
+`View` has no rotation field, so the spec's "a rotated pose and a rotated view"
+test is a rotated pose under a panned, anisotropically scaled view.
+
 ## What is next
 
-Arcs 3–5. Arc 3 (the paint-kind registry) gates arc 4 so the kind bar is not
-written twice. Arc 5 (the geometry overlay) is independent of both and can move
-earlier if the overlay matters more than extensibility.
+Arcs 3 and 4. Arc 3 (the paint-kind registry) gates arc 4 so the kind bar is
+not written twice.
 
 One decision already made, not re-litigable from the spec alone: **arc 3 is a
 full registry, renderer included** — a registered kind brings its own shader and
