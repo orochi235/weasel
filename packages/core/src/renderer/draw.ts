@@ -717,55 +717,62 @@ function setSolidPaintUniforms(
   setAlphaUniform(ctx, prog, ctx.state.alpha);
 }
 
-function drawPathFillByKind(ctx: DrawContext, fill: FillStyle, handle: GLMeshHandle): void {
+/**
+ * Bind the program, uniforms and textures for `fill`, and return the program.
+ *
+ * Split from the draw so a caller owning its own stencil state can paint
+ * without `applyClipTest` clobbering it — `drawPathStrokeStenciled` clips a
+ * doubled ribbon to one side of the silhouette, and `applyClipTest` at depth 0
+ * disables the stencil test outright.
+ */
+function bindPathFillByKind(ctx: DrawContext, fill: FillStyle): ShaderProgram | null {
   const kind = fill.fill ?? 'solid';
-  if (kind === 'solid') {
-    const solid = fill as { color: string; opacity?: number };
-    drawPathFillSolid(ctx, solid, handle);
-  } else if (kind === 'pattern') {
-    drawPathFillPattern(ctx, fill as Extract<FillStyle, { fill: 'pattern' }>, handle);
-  } else {
-    drawPathFillGradient(ctx, fill as Extract<FillStyle, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>, handle);
-  }
+  if (kind === 'solid') return bindPathFillSolid(ctx, fill as { color: string; opacity?: number });
+  if (kind === 'pattern') return bindPathFillPattern(ctx, fill as Extract<FillStyle, { fill: 'pattern' }>);
+  return bindPathFillGradient(ctx, fill as Extract<FillStyle, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>);
 }
 
-function drawPathFillSolid(
-  ctx: DrawContext,
-  fill: { color: string; opacity?: number },
-  handle: GLMeshHandle,
-): void {
+function drawPathFillByKind(ctx: DrawContext, fill: FillStyle, handle: GLMeshHandle): void {
+  const prog = bindPathFillByKind(ctx, fill);
+  if (!prog) return;
   const gl = ctx.gl;
-  gl.useProgram(ctx.pathFill.handle);
   gl.bindVertexArray(handle.vao);
-  setProjAndModel(ctx, ctx.pathFill);
-  setSolidPaintUniforms(ctx, ctx.pathFill, fill.color, fill.opacity);
-  setColorMatrixUniforms(ctx, ctx.pathFill);
   applyClipTest(ctx);
   gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
 }
 
-function drawPathFillPattern(
+function bindPathFillSolid(
+  ctx: DrawContext,
+  fill: { color: string; opacity?: number },
+): ShaderProgram {
+  const prog = ctx.pathFill;
+  ctx.gl.useProgram(prog.handle);
+  setProjAndModel(ctx, prog);
+  setSolidPaintUniforms(ctx, prog, fill.color, fill.opacity);
+  setColorMatrixUniforms(ctx, prog);
+  return prog;
+}
+
+function bindPathFillPattern(
   ctx: DrawContext,
   fill: Extract<FillStyle, { fill: 'pattern' }>,
-  handle: GLMeshHandle,
-): void {
+): ShaderProgram | null {
   const tex = fill.pattern as TextureHandle;
   const entry = getTexture(tex.id);
   if (!entry) {
     const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
     if (isDev) console.warn(`weasel: pattern TextureHandle "${tex.id}" not registered`);
-    return;
+    return null;
   }
   ctx.textureCache.upload(tex.id, entry.source, 'repeat');
 
   // A path fill mesh carries a_position only, so the tile coordinate is
   // recovered per fragment from the screen position — the same route
   // gradients take through `u_worldInv`, and the reason this can't reuse
-  // the image-fill shader (whose a_uv would be unbound here, and was).
+  // the image-fill shader, whose a_uv such a mesh leaves unbound.
   const gl = ctx.gl;
   gl.useProgram(ctx.patternFill.handle);
-  gl.bindVertexArray(handle.vao);
   setProjAndModel(ctx, ctx.patternFill);
   setColorMatrixUniforms(ctx, ctx.patternFill);
   gl.uniformMatrix3fv(ctx.patternFill.uniform('u_worldInv')!, false, gradientSpaceInverse(ctx, fill.units));
@@ -777,9 +784,7 @@ function drawPathFillPattern(
   gl.uniform1i(ctx.patternFill.uniform('u_sampler')!, 0);
   gl.uniform1f(ctx.patternFill.uniform('u_opacity')!, fill.opacity ?? 1);
   setAlphaUniform(ctx, ctx.patternFill, ctx.state.alpha);
-  applyClipTest(ctx);
-  gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
-  gl.bindVertexArray(null);
+  return ctx.patternFill;
 }
 
 /** Tile extent in paint-space units — one tile spans this many units of
@@ -805,16 +810,14 @@ function gradientSpaceInverse(ctx: DrawContext, units: GradientUnits | undefined
   return mat3.identity();
 }
 
-function drawPathFillGradient(
+function bindPathFillGradient(
   ctx: DrawContext,
   fill: Extract<FillStyle, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>,
-  handle: GLMeshHandle,
-): void {
+): ShaderProgram {
   const gl = ctx.gl;
   const key = ctx.gradRampCache.upload(fill.stops);
 
   gl.useProgram(ctx.gradFill.handle);
-  gl.bindVertexArray(handle.vao);
   setProjAndModel(ctx, ctx.gradFill);
 
   gl.uniformMatrix3fv(ctx.gradFill.uniform('u_worldInv')!, false, gradientSpaceInverse(ctx, fill.units));
@@ -851,9 +854,7 @@ function drawPathFillGradient(
     gl.uniform1f(ctx.gradFill.uniform('u_gradAngle')!, fill.angle);
   }
 
-  applyClipTest(ctx);
-  gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
-  gl.bindVertexArray(null);
+  return ctx.gradFill;
 }
 
 // ─── Per-fragment clip test ───────────────────────────────────────────────────
