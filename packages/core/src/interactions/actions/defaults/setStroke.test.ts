@@ -220,3 +220,76 @@ describe('setStrokeAction', () => {
       .toEqual({ paint: { color: '#ff0000' }, width: 2 });
   });
 });
+
+describe('setStrokeAction — non-solid paints', () => {
+  const GRADIENT = {
+    fill: 'linear-gradient' as const,
+    from: { x: 0, y: 0 },
+    to: { x: 10, y: 0 },
+    stops: [{ offset: 0, color: '#000000' }, { offset: 1, color: '#ffffff' }],
+    units: 'local' as const,
+  };
+
+  it('writes a paint verbatim rather than folding an opacity into it', () => {
+    const scene = makeScene({ a: { stroke: strokeOf('#ffffff80', 2) } });
+    const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: GRADIENT } });
+    const h = getInvoker().start(ctx);
+    h.onEnd!(ctx, 'commit');
+    expect(scene.updates[0].data).toMatchObject({ stroke: { paint: GRADIENT, width: 2 } });
+  });
+
+  it('previews a paint during the gesture without writing to the scene', () => {
+    const scene = makeScene({ a: { stroke: strokeOf('#000000ff', 2) } });
+    const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: GRADIENT } });
+    const h = getInvoker().start(ctx);
+    expect(h.previewData!('a')).toMatchObject({ stroke: { paint: GRADIENT, width: 2 } });
+    expect(scene.update).not.toHaveBeenCalled();
+  });
+
+  it('follows a paint edited mid-gesture, so a stop drag previews live', () => {
+    const scene = makeScene({ a: { stroke: strokeOf('#000000ff', 2) } });
+    const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: GRADIENT } });
+    const h = getInvoker().start(ctx);
+    const moved = { ...GRADIENT, to: { x: 99, y: 0 } };
+    h.onMove!({ ...ctx, params: { paint: moved } });
+    expect(h.previewData!('a')).toMatchObject({ stroke: { paint: moved, width: 2 } });
+    h.onEnd!(ctx, 'commit');
+    expect(scene.updates[0].data).toMatchObject({ stroke: { paint: moved, width: 2 } });
+  });
+
+  it('commits one batch for a paint, as for a color', () => {
+    const scene = makeScene({
+      a: { stroke: strokeOf('#000000ff', 2) },
+      b: { stroke: strokeOf('#ffffffff', 2) },
+    });
+    const ctx = makeCtx({ selectionIds: ['a', 'b'], scene, params: { paint: GRADIENT } });
+    const h = getInvoker().start(ctx);
+    h.onEnd!(ctx, 'commit');
+    expect(scene.batches).toEqual(['Set stroke']);
+  });
+
+  it('lets a later color supersede a paint, so the picker still works after a gradient', () => {
+    const scene = makeScene({ a: { stroke: strokeOf('#000000ff', 2) } });
+    const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: GRADIENT } });
+    const h = getInvoker().start(ctx);
+    h.onMove!({ ...ctx, params: { color: '#ff0000' } });
+    h.onEnd!(ctx, 'commit');
+    expect(scene.updates[0].data).toMatchObject({ stroke: { paint: { color: '#ff0000' }, width: 2 } });
+  });
+
+  it('replaces a gradient outright when a color is picked over one', () => {
+    const scene = makeScene({ a: { stroke: { paint: GRADIENT, width: 2 } } });
+    const ctx = makeCtx({ selectionIds: ['a'], scene, params: { color: '#ff0000' } });
+    const h = getInvoker().start(ctx);
+    h.onEnd!(ctx, 'commit');
+    expect(scene.updates[0].data).toMatchObject({ stroke: { paint: { color: '#ff0000' }, width: 2 } });
+  });
+
+  it('seeds a width when a paint lands on a node with no stroke', () => {
+    const scene = makeScene({ a: {} });
+    const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: GRADIENT } });
+    const h = getInvoker().start(ctx);
+    h.onEnd!(ctx, 'commit');
+    expect(scene.updates[0].data).toEqual({ stroke: { paint: GRADIENT, width: 1 } });
+  });
+});

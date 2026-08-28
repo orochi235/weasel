@@ -52,6 +52,12 @@ export function strokeOf(color: string, width = 1): Stroke {
   return { paint: solid(color), width };
 }
 
+/** A stroke painted with `paint` at `width` world units — `strokeOf`'s sibling
+ *  for a gradient or pattern, which has no color to pass. */
+export function strokeWith(paint: FillStyle, width = 1): Stroke {
+  return { paint, width };
+}
+
 /** The kit's default node paint — what a shape with no declared fill paints. */
 export const DEFAULT_SHAPE_FILL: FillStyle = { color: '#888' };
 
