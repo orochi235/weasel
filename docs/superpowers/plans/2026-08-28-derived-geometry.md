@@ -214,6 +214,11 @@ original spec. Find each by grepping `clipFromPose` and `clipKey`, and mirror it
 `spec.kind === 'container'` at every site. `dependsOn` / `derive` apply to **every** node kind,
 so those guards must not be copied across.
 
+**The redo cache is not free.** `pendingClipPatches` is pruned through the history engine's
+`onEvict` (`scene.ts:210-224`) so it cannot grow without bound as history branches or
+overflows. A parallel `pendingDerivePatches` map needs the same pruning in the same loop —
+prefer extending that existing loop to drop from both maps over writing a second one.
+
 - [ ] **Step 1: Write the failing test**
 
 Create `packages/core/src/core/scene/scene.derived.test.ts`:
