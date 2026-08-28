@@ -374,8 +374,8 @@ const INITIAL_FILL_COLOR = '#7ab8d4ff';
  *  Keyed by path (not `color` kind) so a future third color leaf can't
  *  silently fall through to the wrong pair of actions. */
 /** Fill gets the paint-kind switch on top of the color input, so a node can
- *  carry a gradient. Stroke keeps the plain color renderer — the renderer
- *  requires a solid stroke paint. */
+ *  carry a gradient. Stroke keeps the plain color renderer — the kit can paint
+ *  and write a non-solid stroke now, but PaintInput is what will edit one. */
 /** Every `FillStyle` variant, not just the gradients. Keyed on the union's
  *  own discriminant, so a variant added later needs no change here — the
  *  earlier `'stops' in raw` test silently downgraded patterns to the

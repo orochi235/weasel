@@ -1,158 +1,55 @@
 import type { Action } from '../registry';
-import type { InvocationCtx, OngoingHandle, BindingOpts } from '../invoker';
-import { ActionDisabledReason } from '../registry';
-import type { Scene, NodeId } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
-import type { Op } from 'core/ops/types';
-import type { Stroke } from 'core/paint-types';
-import { createSetDataOp } from 'core/ops/setData';
-import { defaultCommitAdapter } from '../defaultCommitAdapter';
-import { paintWithColor, strokeOf } from '../../../util/paint';
-import { DEFAULT_STROKE_COLOR } from '../../../util/paint';
+import type { FillStyle, Stroke } from 'core/paint-types';
+import { createPaintAction } from './createPaintAction';
+import { paintWithColor, strokeOf, strokeWith, DEFAULT_STROKE_COLOR } from '../../../util/paint';
 
-// ---------------------------------------------------------------------------
-// Internal scratch
-// ---------------------------------------------------------------------------
-
-/** Recolor a node's stroke. The stroke keeps its width, cap, join and dash
- *  and its paint takes the new color, so picking a color does not discard the
- *  rest of the stroke. A node with no stroke yet gets a hairline one. */
-function strokeWithColor(prev: Stroke | null | undefined, color: string): Stroke {
-  if (!prev) return strokeOf(color);
-  return { ...prev, paint: paintWithColor(prev.paint, color) };
+/** `setStroke`'s gesture state — `setFill`'s, against a stroke. */
+interface SetStrokeState {
+  /** May be 6- or 8-char hex. Ignored while `paint` is set. */
+  color: string;
+  paint?: FillStyle;
 }
 
-interface SetStrokeScratch {
-  ids: NodeId[];
-  scene: Scene<{ stroke?: Stroke | null }, string, unknown>;
-  /** Data snapshot at drag start, keyed by node id. */
-  startData: Map<NodeId, { stroke?: Stroke | null }>;
-  /** The most-recently-received color string (may be 6- or 8-char hex). */
-  currentColor: string;
-  /** Preview data entries — merged stroke per selected node.
-   *  Populated on start and refreshed on every onMove. */
-  previews: Map<NodeId, { stroke: Stroke }>;
-  /** Optional consumer commit hook captured at gesture start. When present,
-   *  the ops-based commit routes through it (consumer history) instead of
-   *  `scene.applyBatch`. Undefined → fall back to `scene.applyBatch`. */
-  applyOps?: (ops: Op[], label: string) => void;
+/** Repaint a node's stroke, keeping its width, cap, join, dash and align, so
+ *  picking a paint does not discard the rest of the stroke. A node with no
+ *  stroke yet gets a hairline one. */
+function repaint(prev: Stroke | null | undefined, state: SetStrokeState): Stroke {
+  if (state.paint) return prev ? { ...prev, paint: state.paint } : strokeWith(state.paint);
+  if (!prev) return strokeOf(state.color);
+  return { ...prev, paint: paintWithColor(prev.paint, state.color) };
 }
-
-/** Refresh the preview map from `scratch.currentColor` and `startData`. */
-function refreshPreviews(scratch: SetStrokeScratch): void {
-  scratch.previews.clear();
-  for (const id of scratch.ids) {
-    const prev = scratch.startData.get(id);
-    const next = strokeWithColor(prev?.stroke, scratch.currentColor);
-    scratch.previews.set(id, { ...(prev ?? {}), stroke: next });
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Descriptor
-// ---------------------------------------------------------------------------
 
 /**
  * Static descriptor for the `setStroke` Action.
  *
- * Ongoing-timing action: on start captures per-node data; on each onMove
- * updates preview stroke without touching the scene; on commit emits one
- * `createSetDataOp` per selected node (from = pre-commit data, to = merged
- * stroke) and routes the batch through the consumer `applyOps` hook when present
- * (consumer history) else `scene.applyBatch` + `defaultCommitAdapter` (whose
- * `setData` delegates to `scene.update({ data })`). Either way the whole stroke
- * is one batch → one undo entry, preserving the old `scene.batch('Set stroke', …)`
- * semantics exactly.
+ * Takes either `color` (a hex string) or `paint` (a whole `FillStyle`, for
+ * gradients and patterns). `paint` wins when both are present. A stroke's
+ * width, cap, join, dash and align survive either.
  *
  * Alpha semantics: alpha lives on the stroke paint's `opacity`. A 6-char
  * (no-alpha) color adopts the alpha of the node's existing stroke paint; an
- * 8-char color states its own.
+ * 8-char color states its own. A `paint` is written verbatim.
  */
-export const setStrokeAction: Action & { requires: string[] } = {
+export const setStrokeAction: Action & { requires: string[] } = createPaintAction<
+  SetStrokeState,
+  Stroke,
+  'stroke'
+>({
   id: 'setStroke',
   label: 'Set stroke',
-  eligible: { capability: 'applies-fill' },
-  requires: ['selection', 'scene', 'applyOps'],
-  invoker: {
-    timing: 'ongoing',
-    start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
-      const selection = ctx.deps.selection as SelectionApi | undefined;
-      const scene = ctx.deps.scene as Scene<{ stroke?: Stroke | null }, string, unknown> | undefined;
-      const applyOps = ctx.deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
-
-      if (!selection || !scene) return {};
-
-      const ids = selection.get() as NodeId[];
-      if (ids.length === 0) return {};
-
-      // Resolve initial color: prefer ctx.params, fall back to opts.params.
-      const ctxColor = ctx.params?.color as string | undefined;
-      const optsColor = (opts?.params as { color?: string } | undefined)?.color;
-      const initialColor = ctxColor ?? optsColor ?? DEFAULT_STROKE_COLOR;
-
-      // Snapshot node data at drag start.
-      const startData = new Map<NodeId, { stroke?: Stroke | null }>();
-      for (const id of ids) {
-        const node = scene.get(id);
-        if (node) startData.set(id, { ...(node.data as { stroke?: Stroke | null }) });
-      }
-
-      const scratch: SetStrokeScratch = {
-        ids,
-        scene,
-        startData,
-        currentColor: initialColor,
-        previews: new Map(),
-        applyOps,
-      };
-      refreshPreviews(scratch);
-
-      return {
-        onMove(moveCtx: InvocationCtx): void {
-          const next = moveCtx.params?.color as string | undefined;
-          if (next === undefined) return;
-          scratch.currentColor = next;
-          refreshPreviews(scratch);
-        },
-        onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
-          if (reason === 'cancel') {
-            scratch.previews.clear();
-            return;
-          }
-          // Build one setData op per selected node. `from` is the node's
-          // pre-commit data (read here, BEFORE any mutation); `to` is the same
-          // data with the merged final stroke — exactly the values the old
-          // `scene.update(id, { data: { …nodeNow.data, stroke } })` wrote.
-          const ops: Op[] = [];
-          for (const id of scratch.ids) {
-            const prev = scratch.startData.get(id);
-            const merged = strokeWithColor(prev?.stroke, scratch.currentColor);
-            // Re-read so concurrent edits to non-stroke fields aren't clobbered on commit.
-            const nodeNow = scratch.scene.get(id);
-            if (!nodeNow) continue;
-            const from = { ...(nodeNow.data as object) } as { stroke?: Stroke | null };
-            const to = { ...from, stroke: merged };
-            ops.push(createSetDataOp<{ stroke?: Stroke | null }>({ id: id as string, from, to }));
-          }
-          if (ops.length > 0) {
-            // Route through the consumer hook when present (consumer history,
-            // one undo entry there); otherwise commit straight to the scene's
-            // own history. Either path is a single batch → one undo entry.
-            if (scratch.applyOps) scratch.applyOps(ops, 'Set stroke');
-            else scratch.scene.applyBatch(ops, 'Set stroke', defaultCommitAdapter(scratch.scene));
-          }
-          scratch.previews.clear();
-        },
-        previewIds: () => scratch.previews.keys(),
-        previewData: (id: string) => scratch.previews.get(id as unknown as NodeId) ?? null,
-      };
-    },
+  dataKey: 'stroke',
+  initialState: (pick) => ({
+    color: pick<string>('color') ?? DEFAULT_STROKE_COLOR,
+    paint: pick<FillStyle>('paint'),
+  }),
+  readParams: (prev, params) => {
+    const color = params?.color as string | undefined;
+    const paint = params?.paint as FillStyle | undefined;
+    if (color === undefined && paint === undefined) return null;
+    if (color === undefined) return { ...prev, paint };
+    // An explicit color supersedes a paint from an earlier tick; otherwise a
+    // picker drag after a gradient would do nothing.
+    return { color, paint };
   },
-  enabled: (deps) => {
-    const sel = deps?.selection as SelectionApi | undefined;
-    if (!sel || (sel.get() as unknown[]).length === 0) {
-      return ActionDisabledReason.SelectionRequired;
-    }
-    return true;
-  },
-};
+  merge: repaint,
+});

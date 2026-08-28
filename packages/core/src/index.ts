@@ -708,6 +708,7 @@ export {
   GHOST_STROKE,
   solid,
   strokeOf,
+  strokeWith,
   paintAlpha,
   paintWithAlpha,
   paintWithColor,

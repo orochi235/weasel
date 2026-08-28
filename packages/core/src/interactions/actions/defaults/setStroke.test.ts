@@ -1,75 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { setStrokeAction } from './setStroke';
-import type { InvocationCtx, OngoingHandle, BindingOpts } from '../invoker';
-import { asNodeId } from 'core/scene/types';
+import type { InvocationCtx } from '../invoker';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { Stroke } from 'core/paint-types';
 import { solid, strokeOf } from '../../../util/paint';
+import { makeScene, makeSelection, makeCtx, ongoingInvoker } from './paintActionTestUtils';
 
-interface FakeNode { id: NodeId; kind: 'leaf'; pose: unknown; data: { stroke?: Stroke | null } }
-
-function makeScene(nodes: Record<string, { stroke?: Stroke | null }>) {
-  const current: Record<string, FakeNode> = {};
-  for (const [id, d] of Object.entries(nodes)) {
-    current[id] = { id: asNodeId(id), kind: 'leaf', pose: {}, data: { ...d } };
-  }
-  const updates: Array<{ id: string; data: unknown }> = [];
-  const batches: string[] = [];
-  return {
-    get: (id: NodeId) => current[id as unknown as string] ?? null,
-    update: vi.fn((id: NodeId, patch: { data: unknown }) => {
-      updates.push({ id: id as unknown as string, data: patch.data });
-      current[id as unknown as string].data = patch.data as never;
-    }),
-    setPose: vi.fn(),
-    batch: vi.fn((label: string, fn: () => void) => { batches.push(label); fn(); }),
-    // Mirror the real scene: applyBatch records one undo entry and applies each
-    // op through the supplied adapter. The action passes `defaultCommitAdapter`,
-    // whose `setData` calls `scene.update({ data })` — so each op routes back
-    // through `update` above, populating `updates`.
-    applyBatch: vi.fn((opList: unknown[], label: string, adapter: unknown) => {
-      batches.push(label);
-      for (const op of opList as Array<{ apply(a: unknown): void }>) op.apply(adapter);
-    }),
-    renderOrder: () => Object.keys(current).map((id) => asNodeId(id)),
-    updates,
-    batches,
-  };
-}
-
-function makeSelection(ids: string[]) {
-  return {
-    get: () => ids.map(asNodeId),
-    current: ids.map(asNodeId),
-    set: vi.fn(), add: vi.fn(), remove: vi.fn(), toggle: vi.fn(), clear: vi.fn(),
-    contains: vi.fn().mockReturnValue(false),
-  };
-}
-
-function makeCtx(opts: {
-  selectionIds: string[];
-  scene: ReturnType<typeof makeScene>;
-  params?: Record<string, unknown>;
-  applyOps?: (ops: Op[], label: string) => void;
-}): InvocationCtx {
-  return {
-    world: { x: 0, y: 0 },
-    screen: { x: 0, y: 0 },
-    modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: {
-      selection: makeSelection(opts.selectionIds),
-      scene: opts.scene,
-      ...(opts.applyOps ? { applyOps: opts.applyOps } : {}),
-    },
-    params: opts.params,
-  };
-}
-
-function getInvoker(): { start: (ctx: InvocationCtx, opts?: BindingOpts) => OngoingHandle } {
-  if (setStrokeAction.invoker?.timing !== 'ongoing') throw new Error('not ongoing');
-  return setStrokeAction.invoker;
-}
+const getInvoker = () => ongoingInvoker(setStrokeAction);
 
 describe('setStrokeAction', () => {
   it('returns an empty handle when selection is empty', () => {
@@ -218,5 +156,78 @@ describe('setStrokeAction', () => {
     // The default adapter's setData routed back through scene.update.
     expect((scene.updates[0].data as { stroke: Stroke }).stroke)
       .toEqual({ paint: { color: '#ff0000' }, width: 2 });
+  });
+});
+
+describe('setStrokeAction — non-solid paints', () => {
+  const GRADIENT = {
+    fill: 'linear-gradient' as const,
+    from: { x: 0, y: 0 },
+    to: { x: 10, y: 0 },
+    stops: [{ offset: 0, color: '#000000' }, { offset: 1, color: '#ffffff' }],
+    units: 'local' as const,
+  };
+
+  it('writes a paint verbatim rather than folding an opacity into it', () => {
+    const scene = makeScene({ a: { stroke: strokeOf('#ffffff80', 2) } });
+    const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: GRADIENT } });
+    const h = getInvoker().start(ctx);
+    h.onEnd!(ctx, 'commit');
+    expect(scene.updates[0].data).toMatchObject({ stroke: { paint: GRADIENT, width: 2 } });
+  });
+
+  it('previews a paint during the gesture without writing to the scene', () => {
+    const scene = makeScene({ a: { stroke: strokeOf('#000000ff', 2) } });
+    const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: GRADIENT } });
+    const h = getInvoker().start(ctx);
+    expect(h.previewData!('a')).toMatchObject({ stroke: { paint: GRADIENT, width: 2 } });
+    expect(scene.update).not.toHaveBeenCalled();
+  });
+
+  it('follows a paint edited mid-gesture, so a stop drag previews live', () => {
+    const scene = makeScene({ a: { stroke: strokeOf('#000000ff', 2) } });
+    const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: GRADIENT } });
+    const h = getInvoker().start(ctx);
+    const moved = { ...GRADIENT, to: { x: 99, y: 0 } };
+    h.onMove!({ ...ctx, params: { paint: moved } });
+    expect(h.previewData!('a')).toMatchObject({ stroke: { paint: moved, width: 2 } });
+    h.onEnd!(ctx, 'commit');
+    expect(scene.updates[0].data).toMatchObject({ stroke: { paint: moved, width: 2 } });
+  });
+
+  it('commits one batch for a paint, as for a color', () => {
+    const scene = makeScene({
+      a: { stroke: strokeOf('#000000ff', 2) },
+      b: { stroke: strokeOf('#ffffffff', 2) },
+    });
+    const ctx = makeCtx({ selectionIds: ['a', 'b'], scene, params: { paint: GRADIENT } });
+    const h = getInvoker().start(ctx);
+    h.onEnd!(ctx, 'commit');
+    expect(scene.batches).toEqual(['Set stroke']);
+  });
+
+  it('lets a later color supersede a paint, so the picker still works after a gradient', () => {
+    const scene = makeScene({ a: { stroke: strokeOf('#000000ff', 2) } });
+    const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: GRADIENT } });
+    const h = getInvoker().start(ctx);
+    h.onMove!({ ...ctx, params: { color: '#ff0000' } });
+    h.onEnd!(ctx, 'commit');
+    expect(scene.updates[0].data).toMatchObject({ stroke: { paint: { color: '#ff0000' }, width: 2 } });
+  });
+
+  it('replaces a gradient outright when a color is picked over one', () => {
+    const scene = makeScene({ a: { stroke: { paint: GRADIENT, width: 2 } } });
+    const ctx = makeCtx({ selectionIds: ['a'], scene, params: { color: '#ff0000' } });
+    const h = getInvoker().start(ctx);
+    h.onEnd!(ctx, 'commit');
+    expect(scene.updates[0].data).toMatchObject({ stroke: { paint: { color: '#ff0000' }, width: 2 } });
+  });
+
+  it('seeds a width when a paint lands on a node with no stroke', () => {
+    const scene = makeScene({ a: {} });
+    const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: GRADIENT } });
+    const h = getInvoker().start(ctx);
+    h.onEnd!(ctx, 'commit');
+    expect(scene.updates[0].data).toEqual({ stroke: { paint: GRADIENT, width: 1 } });
   });
 });
