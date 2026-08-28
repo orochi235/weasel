@@ -1,19 +1,19 @@
 import { useRef } from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
-import type { RenderLayer, CanvasHelpers } from '@weasel-js/core';
+import type { FillStyle, RenderLayer, CanvasHelpers } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 
-interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
+interface Rect { id: string; x: number; y: number; width: number; height: number; fill: FillStyle }
 
 const W = 480, H = 360;
 
 const INITIAL: Rect[] = [
-  { id: 'a', x:  40, y:  40, width: 120, height:  90, color: '#7fb069' },
-  { id: 'b', x: 220, y:  60, width:  60, height:  60, color: '#d4a574' },
-  { id: 'c', x: 320, y:  40, width: 110, height: 130, color: '#a48bd4' },
-  { id: 'd', x:  60, y: 200, width: 100, height:  80, color: '#6ab0c4' },
-  { id: 'e', x: 220, y: 220, width:  60, height:  40, color: '#d47a7a' },
-  { id: 'f', x: 320, y: 220, width:  90, height: 100, color: '#c4b06a' },
+  { id: 'a', x:  40, y:  40, width: 120, height:  90, fill: { color: '#7fb069' } },
+  { id: 'b', x: 220, y:  60, width:  60, height:  60, fill: { color: '#d4a574' } },
+  { id: 'c', x: 320, y:  40, width: 110, height: 130, fill: { color: '#a48bd4' } },
+  { id: 'd', x:  60, y: 200, width: 100, height:  80, fill: { color: '#6ab0c4' } },
+  { id: 'e', x: 220, y: 220, width:  60, height:  40, fill: { color: '#d47a7a' } },
+  { id: 'f', x: 320, y: 220, width:  90, height: 100, fill: { color: '#c4b06a' } },
 ];
 
 // --- Quadtree (demo-local; no scene-graph integration). Builds fresh on each
@@ -57,7 +57,7 @@ function createQuadtreeLayer(
     const live = helpersRef.current;
     const rects = getRects().map((r) => {
       const b = live?.getEffectiveBounds(r.id);
-      return b ? { id: r.id, x: b.x, y: b.y, width: b.width, height: b.height, color: r.color } : r;
+      return b ? { id: r.id, x: b.x, y: b.y, width: b.width, height: b.height, fill: r.fill } : r;
     });
     return buildTree({ x: 0, y: 0, width: W, height: H }, rects);
   };

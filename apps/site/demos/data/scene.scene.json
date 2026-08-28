@@ -13,14 +13,14 @@
       "kind": "leaf",
       "layer": "zones",
       "pose": { "x": 280, "y": 60, "width": 160, "height": 200 },
-      "data": { "color": "rgba(164, 139, 212, 0.55)", "label": "Sun zone" }
+      "data": { "fill": { "color": "rgba(164, 139, 212, 0.55)" }, "label": "Sun zone" }
     },
     {
       "id": "planter-1",
       "kind": "container",
       "layer": "structures",
       "pose": { "x": 60, "y": 80, "width": 160, "height": 100 },
-      "data": { "color": "#d4a574", "label": "Planter" }
+      "data": { "fill": { "color": "#d4a574" }, "label": "Planter" }
     },
     {
       "id": "plant-a",
@@ -28,7 +28,7 @@
       "kind": "leaf",
       "layer": "structures",
       "pose": { "x": 80, "y": 100, "width": 30, "height": 30 },
-      "data": { "color": "#7fb069" }
+      "data": { "fill": { "color": "#7fb069" } }
     },
     {
       "id": "plant-b",
@@ -36,7 +36,7 @@
       "kind": "leaf",
       "layer": "structures",
       "pose": { "x": 130, "y": 110, "width": 30, "height": 30 },
-      "data": { "color": "#7fb069" }
+      "data": { "fill": { "color": "#7fb069" } }
     }
   ]
 }
