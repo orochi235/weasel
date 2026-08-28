@@ -60,6 +60,7 @@ export * from './features/grid';
 export * from './features/viewports';
 export * from './features/parallax';
 export * from './features/simulation';
+export * from './features/overlays';
 
 // ─── Stylus input: stylus / coalesced events / pressure ─────────────────────
 export {
@@ -575,6 +576,7 @@ export type {
   Region,
 } from './core/paint-types';
 export {
+  isGradientFill,
   sampleGradientStops,
   withGradientKind,
   gradientGeometry,
