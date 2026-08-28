@@ -34,4 +34,29 @@ describe('createDependentsIndex', () => {
     idx.add(a, [b]);
     expect([...idx.transitiveDependentsOf(a)].sort()).toEqual([a, b]);
   });
+
+  it('re-registering an id replaces its dependencies rather than accumulating them', () => {
+    const idx = createDependentsIndex();
+    idx.add(c, [a]);
+    idx.add(c, [b]);
+    expect([...idx.dependentsOf(a)]).toEqual([]);
+    expect([...idx.dependentsOf(b)]).toEqual([c]);
+  });
+
+  it('re-registering with an empty list clears the previous registration', () => {
+    const idx = createDependentsIndex();
+    idx.add(c, [a]);
+    idx.add(c, []);
+    expect([...idx.dependentsOf(a)]).toEqual([]);
+  });
+
+  it('removes a node that is both a dependent and a dependency', () => {
+    const idx = createDependentsIndex();
+    idx.add(b, [a]);   // edge b depends on node a
+    idx.add(c, [b]);   // label c depends on edge b
+    idx.remove(b);
+    expect([...idx.dependentsOf(a)]).toEqual([]);
+    expect([...idx.transitiveDependentsOf(a)]).toEqual([]);
+    expect([...idx.dependentsOf(b)]).toEqual([]);
+  });
 });
