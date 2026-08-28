@@ -717,55 +717,62 @@ function setSolidPaintUniforms(
   setAlphaUniform(ctx, prog, ctx.state.alpha);
 }
 
-function drawPathFillByKind(ctx: DrawContext, fill: FillStyle, handle: GLMeshHandle): void {
+/**
+ * Bind the program, uniforms and textures for `fill`, and return the program.
+ *
+ * Split from the draw so a caller owning its own stencil state can paint
+ * without `applyClipTest` clobbering it — `drawPathStrokeStenciled` clips a
+ * doubled ribbon to one side of the silhouette, and `applyClipTest` at depth 0
+ * disables the stencil test outright.
+ */
+function bindPathFillByKind(ctx: DrawContext, fill: FillStyle): ShaderProgram | null {
   const kind = fill.fill ?? 'solid';
-  if (kind === 'solid') {
-    const solid = fill as { color: string; opacity?: number };
-    drawPathFillSolid(ctx, solid, handle);
-  } else if (kind === 'pattern') {
-    drawPathFillPattern(ctx, fill as Extract<FillStyle, { fill: 'pattern' }>, handle);
-  } else {
-    drawPathFillGradient(ctx, fill as Extract<FillStyle, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>, handle);
-  }
+  if (kind === 'solid') return bindPathFillSolid(ctx, fill as { color: string; opacity?: number });
+  if (kind === 'pattern') return bindPathFillPattern(ctx, fill as Extract<FillStyle, { fill: 'pattern' }>);
+  return bindPathFillGradient(ctx, fill as Extract<FillStyle, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>);
 }
 
-function drawPathFillSolid(
-  ctx: DrawContext,
-  fill: { color: string; opacity?: number },
-  handle: GLMeshHandle,
-): void {
+function drawPathFillByKind(ctx: DrawContext, fill: FillStyle, handle: GLMeshHandle): void {
+  const prog = bindPathFillByKind(ctx, fill);
+  if (!prog) return;
   const gl = ctx.gl;
-  gl.useProgram(ctx.pathFill.handle);
   gl.bindVertexArray(handle.vao);
-  setProjAndModel(ctx, ctx.pathFill);
-  setSolidPaintUniforms(ctx, ctx.pathFill, fill.color, fill.opacity);
-  setColorMatrixUniforms(ctx, ctx.pathFill);
   applyClipTest(ctx);
   gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
 }
 
-function drawPathFillPattern(
+function bindPathFillSolid(
+  ctx: DrawContext,
+  fill: { color: string; opacity?: number },
+): ShaderProgram {
+  const prog = ctx.pathFill;
+  ctx.gl.useProgram(prog.handle);
+  setProjAndModel(ctx, prog);
+  setSolidPaintUniforms(ctx, prog, fill.color, fill.opacity);
+  setColorMatrixUniforms(ctx, prog);
+  return prog;
+}
+
+function bindPathFillPattern(
   ctx: DrawContext,
   fill: Extract<FillStyle, { fill: 'pattern' }>,
-  handle: GLMeshHandle,
-): void {
+): ShaderProgram | null {
   const tex = fill.pattern as TextureHandle;
   const entry = getTexture(tex.id);
   if (!entry) {
     const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
     if (isDev) console.warn(`weasel: pattern TextureHandle "${tex.id}" not registered`);
-    return;
+    return null;
   }
   ctx.textureCache.upload(tex.id, entry.source, 'repeat');
 
   // A path fill mesh carries a_position only, so the tile coordinate is
   // recovered per fragment from the screen position — the same route
   // gradients take through `u_worldInv`, and the reason this can't reuse
-  // the image-fill shader (whose a_uv would be unbound here, and was).
+  // the image-fill shader, whose a_uv such a mesh leaves unbound.
   const gl = ctx.gl;
   gl.useProgram(ctx.patternFill.handle);
-  gl.bindVertexArray(handle.vao);
   setProjAndModel(ctx, ctx.patternFill);
   setColorMatrixUniforms(ctx, ctx.patternFill);
   gl.uniformMatrix3fv(ctx.patternFill.uniform('u_worldInv')!, false, gradientSpaceInverse(ctx, fill.units));
@@ -777,9 +784,7 @@ function drawPathFillPattern(
   gl.uniform1i(ctx.patternFill.uniform('u_sampler')!, 0);
   gl.uniform1f(ctx.patternFill.uniform('u_opacity')!, fill.opacity ?? 1);
   setAlphaUniform(ctx, ctx.patternFill, ctx.state.alpha);
-  applyClipTest(ctx);
-  gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
-  gl.bindVertexArray(null);
+  return ctx.patternFill;
 }
 
 /** Tile extent in paint-space units — one tile spans this many units of
@@ -805,16 +810,14 @@ function gradientSpaceInverse(ctx: DrawContext, units: GradientUnits | undefined
   return mat3.identity();
 }
 
-function drawPathFillGradient(
+function bindPathFillGradient(
   ctx: DrawContext,
   fill: Extract<FillStyle, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>,
-  handle: GLMeshHandle,
-): void {
+): ShaderProgram {
   const gl = ctx.gl;
   const key = ctx.gradRampCache.upload(fill.stops);
 
   gl.useProgram(ctx.gradFill.handle);
-  gl.bindVertexArray(handle.vao);
   setProjAndModel(ctx, ctx.gradFill);
 
   gl.uniformMatrix3fv(ctx.gradFill.uniform('u_worldInv')!, false, gradientSpaceInverse(ctx, fill.units));
@@ -851,9 +854,7 @@ function drawPathFillGradient(
     gl.uniform1f(ctx.gradFill.uniform('u_gradAngle')!, fill.angle);
   }
 
-  applyClipTest(ctx);
-  gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
-  gl.bindVertexArray(null);
+  return ctx.gradFill;
 }
 
 // ─── Per-fragment clip test ───────────────────────────────────────────────────
@@ -975,15 +976,6 @@ export function popClip(ctx: DrawContext, path: Path, oldDepth: number): void {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function drawPathFillStencil(ctx: DrawContext, fill: FillStyle, handle: GLMeshHandle): void {
-  // Step-4 evenodd stencil only supports solid fills cleanly. For non-solid,
-  // fall back to a single-pass solid-equivalent (deferred refinement).
-  if (fill.fill !== undefined && fill.fill !== 'solid') {
-    console.warn('weasel: evenodd stencil with non-solid fill not supported in step 4; rendering solid black.');
-  }
-  const solid = (fill.fill === undefined || fill.fill === 'solid')
-    ? (fill as { color: string; opacity?: number })
-    : { color: '#000', opacity: 1 };
-
   const gl = ctx.gl;
   gl.useProgram(ctx.pathFill.handle);
   gl.bindVertexArray(handle.vao);
@@ -1000,11 +992,12 @@ function drawPathFillStencil(ctx: DrawContext, fill: FillStyle, handle: GLMeshHa
   gl.colorMask(true, true, true, true);
   gl.stencilFunc(gl.EQUAL, clipMask | 0x01, clipMask | 0x01);
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
-  // Paint uniforms go here, not above: pass 1 runs under a false colorMask, so
-  // a uniform missed here renders black while the GL-recorder tests still pass.
-  setSolidPaintUniforms(ctx, ctx.pathFill, solid.color, solid.opacity);
-  setColorMatrixUniforms(ctx, ctx.pathFill);
-  gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
+  // The paint binds here, not above: pass 1 runs under a false colorMask, so a
+  // uniform missed here renders black while the GL-recorder tests still pass.
+  // Not `drawPathFillByKind` — its `applyClipTest` would disable this stencil.
+  if (bindPathFillByKind(ctx, fill)) {
+    gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
+  }
 
   // Narrow to bit 0 first: clear only zeroes bits the mask enables, and
   // pushClip owns bits 1-7.
@@ -1027,11 +1020,6 @@ function withResolvedStrokeWidth(ctx: DrawContext, cmd: PathDrawCommand): PathDr
 function drawPathStroke(ctx: DrawContext, rawCmd: PathDrawCommand): void {
   const cmd = withResolvedStrokeWidth(ctx, rawCmd);
   const stroke = cmd.stroke!;
-  const paint = stroke.paint;
-  if (paint.fill !== undefined && paint.fill !== 'solid') {
-    throw new Error('weasel step 2: stroke.paint must be solid; gradient/pattern arrives in step 5+');
-  }
-
   const align = stroke.align ?? 'center';
   if (cmd.path.kind === 'polygon' && align !== 'center') {
     flushSolids(ctx);
@@ -1044,13 +1032,15 @@ function drawPathStroke(ctx: DrawContext, rawCmd: PathDrawCommand): void {
 
 function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
   const stroke = cmd.stroke!;
-  const solid = stroke.paint as { color: string; opacity?: number };
+  const paint = stroke.paint;
+  const isSolid = paint.fill === undefined || paint.fill === 'solid';
+  const solid = paint as { color: string; opacity?: number };
   const mesh = strokeMesh(cmd.path, stroke, ctx.flattenTolerance);
   if (mesh.indices.length === 0) return;
 
   // Staged, a ribbon allocates nothing and joins the fill it sits on.
   const hasVColors = !!(stroke.vertexColors && stroke.vertexColors.length > 0);
-  if (tryStageSolid(ctx, mesh, hasVColors ? undefined : solid)) return;
+  if (tryStageSolid(ctx, mesh, isSolid && !hasVColors ? solid : undefined)) return;
 
   // The VAO records the per-draw color attribute, so a vertex-colored draw
   // cannot share a persistent one with a draw that has no vertex colors.
@@ -1058,13 +1048,20 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
     ? ctx.meshCache.uploadTransient(mesh)
     : ctx.meshCache.uploadRecurring(mesh);
 
+  if (!isSolid && !hasVColors) {
+    drawPathFillByKind(ctx, paint, handle);
+    return;
+  }
+
   const gl = ctx.gl;
   if (hasVColors) {
     const prog = ctx.pathFillVColor;
     gl.useProgram(prog.handle);
     gl.bindVertexArray(handle.vao);
     setProjAndModel(ctx, prog);
-    setSolidPaintUniforms(ctx, prog, solid.color, solid.opacity);
+    // Per-vertex colors are the paint here; a non-solid base has no single
+    // color to multiply by, so white leaves the vertex colors unmodified.
+    setSolidPaintUniforms(ctx, prog, isSolid ? solid.color : '#ffffff', paint.opacity);
     setColorMatrixUniforms(ctx, prog);
 
     const expanded = expandAnchorColors(stroke.vertexColors!, handle);
@@ -1114,7 +1111,9 @@ function drawPathStrokeStenciled(
   align: 'inner' | 'outer',
 ): void {
   const stroke = cmd.stroke!;
-  const solid = stroke.paint as { color: string; opacity?: number };
+  const paint = stroke.paint;
+  const isSolid = paint.fill === undefined || paint.fill === 'solid';
+  const solid = paint as { color: string; opacity?: number };
   const widerStroke: Stroke = {
     ...stroke,
     width: resolveStrokeWidth(stroke.width ?? 1, 1) * 2,
@@ -1154,8 +1153,25 @@ function drawPathStrokeStenciled(
     gl.stencilFunc(gl.EQUAL, clipMask, clipMask | 0x01);
   }
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
-  setSolidPaintUniforms(ctx, prog, solid.color, solid.opacity);
-  setColorMatrixUniforms(ctx, prog);
+  // Bind the paint here rather than through `drawPathFillByKind`: that calls
+  // `applyClipTest`, which at clip depth 0 disables the stencil test this
+  // function just set up to clip the ribbon to one side.
+  let ribbonProg: ShaderProgram | null = prog;
+  if (useVColor) {
+    // Per-vertex colors are the paint here; a non-solid base has no single
+    // color to multiply by, so white leaves the vertex colors unmodified.
+    setSolidPaintUniforms(ctx, prog, isSolid ? solid.color : '#ffffff', paint.opacity);
+    setColorMatrixUniforms(ctx, prog);
+  } else {
+    ribbonProg = bindPathFillByKind(ctx, paint);
+  }
+  if (!ribbonProg) {
+    gl.stencilMask(0x01);
+    gl.clear(gl.STENCIL_BUFFER_BIT);
+    gl.disable(gl.STENCIL_TEST);
+    gl.bindVertexArray(null);
+    return;
+  }
   gl.bindVertexArray(ribbonHandle.vao);
 
   let colorVbo: WebGLBuffer | null = null;
@@ -1165,7 +1181,7 @@ function drawPathStrokeStenciled(
     if (!colorVbo) throw new Error('drawPathStrokeStenciled: createBuffer (color VBO) returned null');
     gl.bindBuffer(gl.ARRAY_BUFFER, colorVbo);
     gl.bufferData(gl.ARRAY_BUFFER, expanded, gl.DYNAMIC_DRAW);
-    const aVColorLoc = prog.attribute('a_vertexColor');
+    const aVColorLoc = ribbonProg.attribute('a_vertexColor');
     if (aVColorLoc !== undefined) {
       gl.enableVertexAttribArray(aVColorLoc);
       gl.vertexAttribPointer(aVColorLoc, 4, gl.FLOAT, false, 0, 0);
