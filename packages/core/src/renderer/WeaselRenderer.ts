@@ -295,6 +295,25 @@ export class WeaselRenderer {
     this.programRegistry.set(handle.id, program);
   }
 
+  /**
+   * The compiled program for `id`, compiling it against this context on first
+   * use. Unlike {@link registerProgram} this neither throws on a missing
+   * source nor on a compile failure: a paint kind asking for a program it
+   * never registered must decline the paint, not take down the frame.
+   */
+  private ensureProgram(id: string): ShaderProgram | null {
+    const existing = this.programRegistry.get(id);
+    if (existing) return existing;
+    if (this.disposed || !getProgramSource(id)) return null;
+    try {
+      this.registerProgram({ id });
+    } catch (e) {
+      console.error(`weasel: failed to compile paint program "${id}":`, e);
+      return null;
+    }
+    return this.programRegistry.get(id) ?? null;
+  }
+
   private applyViewport(): void {
     this.gl.viewport(0, 0, this.widthCss * this.dpr, this.heightCss * this.dpr);
   }
@@ -450,6 +469,7 @@ export class WeaselRenderer {
       imageCache: this.imageCache,
       gradRampCache: this.gradRampCache,
       programRegistry: this.programRegistry,
+      ensureProgram: (id) => this.ensureProgram(id),
       quadVbo: this.quadVbo,
       quadIbo: this.quadIbo,
       solidBatch: this.solidBatch,
