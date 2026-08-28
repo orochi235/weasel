@@ -21,10 +21,3 @@ export function strokeColorOf(value: unknown): string | undefined {
   if (typeof value !== 'object' || value === null || !('paint' in value)) return undefined;
   return solidColorOf((value as { paint: unknown }).paint);
 }
-
-/** Recolor a stroke, keeping its width, cap, join, dash and align — so
- *  picking a color doesn't silently discard the rest. */
-export function strokeWithColor(prev: unknown, color: string): unknown {
-  if (typeof prev !== 'object' || prev === null) return { paint: { fill: 'solid', color } };
-  return { ...prev, paint: { fill: 'solid', color } };
-}
