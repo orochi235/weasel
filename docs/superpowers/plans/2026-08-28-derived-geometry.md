@@ -648,34 +648,89 @@ export function resolveDerivedPath<TData, TLayer extends string, TPose>(
 Run: `npx vitest run --project=kit derivedPath.test.ts`
 Expected: PASS, 4 tests.
 
-- [ ] **Step 5: Add `derivedPath` to the paint context**
+- [ ] **Step 5: Fix the `drawOne` / `NodePaintCtx` signature collision**
 
-In `packages/core/src/canvas/NodeShape.ts`, extend `NodePaintCtx`:
+There is nowhere to put a derived path today, and the reason is a latent looseness worth fixing
+rather than working around.
+
+The scene walk calls `drawOne(node, pose, view)` — third argument a `View`
+(`buildSceneTree.ts:55`). But `defaultDrawOne(node, pose, ctx?: NodePaintCtx)` declares its
+third as a paint context (`defaultDrawOne.ts:36`). Both compile only because every
+`NodePaintCtx` field is optional, so a `View` satisfies it vacuously — which also means
+`resolveImage` is silently always `undefined` on both the live and headless walks. The only
+place it is ever really supplied is `renderSceneToPixels.ts:142`, which wraps `defaultDrawOne`
+in its own closure.
+
+**Decision: widen both signatures to `(node, pose, view, ctx?)` rather than adding an
+overload.** One rule beats a second code path, and a compat shim here would preserve the exact
+confusion being fixed. `defaultDrawOne` is exported (`packages/core/src/index.ts:283`), so this
+is a breaking change for any consumer who passes a third argument to it — call that out in the
+changeset prose.
+
+Apply:
+
+1. `NodePaintCtx` gains the field:
 
 ```ts
-  /** The node's derived path, resolved by the scene walk before painting.
-   *  Present only for nodes with `dependsOn`; a painter for authored geometry
-   *  never sees it. Supplied here rather than computed by the painter because
-   *  `paint` has no scene handle and deriving needs other nodes' poses. */
+  /** The node's derived path, resolved by the scene-aware `drawOne` wrapper
+   *  before painting. Present only for nodes with `dependsOn`. Supplied here
+   *  rather than computed by the painter because `paint` has no scene handle
+   *  and deriving needs other nodes' poses. */
   derivedPath?: Path | null;
 ```
 
-Then in the scene walk (`buildSceneLayer` and `buildSceneViewCommands`), call
-`resolveDerivedPath` for each node and pass the result through in the `NodePaintCtx` handed to
-`drawOne`.
+2. `defaultDrawOne` becomes `(node, pose, view?, ctx?: NodePaintCtx)`, and `SceneViewDrawOne`
+   gains the matching fourth parameter.
+3. Update `renderSceneToPixels.ts:142` to the new arity:
+   `(node, pose, view) => defaultDrawOne(node, pose, view, { resolveImage })`.
 
-- [ ] **Step 6: Run the full canvas suite**
+- [ ] **Step 6: Resolve the path in the two scene-aware wrappers**
+
+Both walks already build a wrapper that closes over the scene, for exactly this reason.
+`sceneViewRender.ts:158` says so in a comment: *"The scene is in scope here, so this is where
+the override's alpha is applied on the headless path; `SceneCanvas` does the same for the live
+one."* Derived paths go in the same two places, beside the alpha.
+
+The pose lookup must be the **effective world** pose — override if present, else the composed
+world pose — because two endpoints can sit in different containers, and a dragged endpoint
+lives in an override. `sceneAsHierarchy` (`sceneViewRender.ts:124`) already composes exactly
+that: `getPose: (id) => scene.overrides.get(id)?.pose ?? scene.get(id)!.pose`. Build the lookup
+from that adapter through `worldPoseLookup(adapter, compose)`
+(`features/groups/composePose.ts:151`) — do not hand-roll a second one, and do not pass local
+poses.
+
+In `buildSceneViewCommands`'s `wrappedDrawOne`:
+
+```ts
+    const overrideAlpha = scene.overrides.get(node.id as NodeId)?.alpha ?? 1;
+    return wrapNodeOutput(
+      drawOne(node, pose, v, { derivedPath: resolveDerivedPath(node, poseOf) }),
+      pose,
+      (alphaFor ? alphaFor(node.id) : 1) * overrideAlpha,
+    );
+```
+
+Make the same change in `SceneCanvas`'s live-path wrapper, which is the sibling of this one.
+
+- [ ] **Step 7: Register a painter for derived nodes**
+
+Register `kit:derived` via `registerNodeShape`, matching nodes whose `dependsOn` is non-empty,
+painting `ctx?.derivedPath` when it is a path and emitting `[]` when it is `null`. Give it a
+priority above `kit:rect-fallback` so a derived node does not fall through to a rect. Follow
+`kit:path`'s structure — it is the closest existing painter.
+
+- [ ] **Step 8: Run the full canvas suite**
 
 Run: `npx vitest run --project=kit canvas`
-Expected: PASS, no regressions.
+Expected: PASS, no regressions. Signature changes will surface here if anything was missed.
 
-Then `npx tsc --noEmit` from the repo root. Expected: no new errors.
+Then `npx tsc --noEmit` from the worktree root. Expected: no new errors.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
-git add packages/core/src/canvas/derivedPath.ts packages/core/src/canvas/derivedPath.test.ts packages/core/src/canvas/NodeShape.ts
-git commit -m "resolve derived paths in the scene walk and pass them to painters"
+git add packages/core/src/canvas/
+git commit -m "resolve derived paths in the scene walks and pass them to painters"
 ```
 
 ---
