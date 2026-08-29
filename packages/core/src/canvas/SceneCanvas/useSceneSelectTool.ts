@@ -13,7 +13,8 @@
  */
 import { useMemo } from 'react';
 import { sceneToAdapter, type SceneToAdapterOptions } from '../sceneAdapter';
-import { passesAncestorClips } from '../clipChain';
+import { pickWalk, scenePickSource } from 'canvas/pickWalk';
+import { pathContainsPoint } from 'features/paths/pathHitTest';
 import { useSelectTool, type Bounds } from 'tools/builtin/select';
 import { pickTopMostHit, type PickTopMostHitAdapter } from 'tools/builtin/pickTopMostHit';
 import { useRotateTool } from 'tools/builtin/rotate';
@@ -26,11 +27,9 @@ import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
 import { snap as snapBehavior } from 'interactions/gestures/shared/snap';
-import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
 import { translateRectPose, type RectPose } from 'features/groups/composePose';
-import { aabbOfPose, isPathLike, poseContainsRotated } from './poseGeometry';
+import { aabbOfPose, poseContainsRotated } from './poseGeometry';
 import { shapeCoversPoint, findShapeInk } from 'canvas/NodeShape';
-import { hiddenLayerIds } from 'canvas/deps/hitTestArea';
 import { meanScale } from 'core/viewport/meanScale';
 
 /**
@@ -69,6 +68,15 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
    *  to `pickEvery` / `pickBest` instead. Omitted in tests and non-viewport
    *  hosts, where scale is 1. */
   getView?: () => PickCamera | null;
+  /** The asking view's painted alpha per node — its `alphaFor` times any
+   *  per-node override alpha. A node the view paints at alpha 0 is not on
+   *  screen, so picking must not answer for it. */
+  alphaOf?: (id: string) => number;
+  /** The asking view's answer to "does this scene layer reach the screen".
+   *  `layerVisibility` and `layerOrder` both gate a layer out of the paint
+   *  (`drawLayers` drops any layer missing from a supplied order), and an
+   *  undrawn layer must not claim clicks. */
+  layerIsPainted?: (layer: string) => boolean;
   selectTool?: {
     move?: UseMoveOptions<TPose>;
     resize?: UseResizeOptions<TPose>;
@@ -121,7 +129,10 @@ export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
 export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   args: UseSceneSelectToolArgs<TData, TLayer, TPose>,
 ): UseSceneSelectToolReturn<TData, TLayer, TPose> {
-  const { scene, selection, geometry, selectTool: opts, insertTool, layouts, getView } = args;
+  const {
+    scene, selection, geometry, selectTool: opts, insertTool, layouts, getView,
+    alphaOf, layerIsPainted,
+  } = args;
 
   const pickEveryProp = geometry?.pickEvery;
   const boundsOfProp = geometry?.boundsOf;
@@ -181,24 +192,6 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       // surface, not on adapter shapes).
       getSelection: (): string[] => [...selection.adapterMethods.getSelection()],
       setSelection: (ids: string[]) => selection.adapterMethods.setSelection(ids as NodeId[]),
-      // Default marquee hit-test: walk every renderOrder node and collect ids
-      // whose AABB intersects the marquee rect. Path-shaped poses use their
-      // path descriptor for a tighter test.
-      hitTestArea: (rect: { x: number; y: number; width: number; height: number }): string[] => {
-        const hits: string[] = [];
-        for (const n of scene.renderOrderNodes()) {
-          if (isPathLike(n.pose) && pathPoseDescriptor.intersectsRect) {
-            if (pathPoseDescriptor.intersectsRect(n.pose, rect)) hits.push(n.id);
-            continue;
-          }
-          const b = aabbOfPose(n.pose);
-          if (b.x < rect.x + rect.width && b.x + b.width > rect.x
-            && b.y < rect.y + rect.height && b.y + b.height > rect.y) {
-            hits.push(n.id);
-          }
-        }
-        return hits;
-      },
     };
   }, [scene, commitInsert, insertLayer, layouts, selection]);
 
@@ -241,35 +234,34 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       // every zoom but 1.
       const scale = meanScale((camera ?? getView?.())?.scale ?? { x: 1, y: 1 });
       const tolerance = pickTolerancePx / scale;
-      const out: string[] = [];
-      const hidden = hiddenLayerIds(scene.layers);
-      for (const n of scene.renderOrderNodes()) {
-        // A hidden layer isn't painted (`buildSceneTree` skips its bucket), so
-        // picking must not answer for it either.
-        if (hidden.size > 0 && hidden.has(n.layer)) continue;
-        // Through the adapter, not `n.pose`: an ephemeral override is the pose
-        // the renderer draws, so it has to be the one picking tests.
-        const pose = adapter.getPose(n.id);
-        // The pre-filter has to be at least as generous as the refinement that
-        // follows it, or it rejects points the refinement would have claimed.
-        // A stroke reaches past the pose box by `outset` — a whole stroke
-        // width for an outer align — on top of the pointer slop.
-        const outset = shapePicking
-          ? (findShapeInk(n, pose, { scale })?.outset ?? 0)
-          : 0;
-        if (!poseContainsRotated(pose, wx, wy, tolerance + outset)) continue;
-        // `shapeCoversPoint` narrows the rect to the ink the painter actually
-        // lays down (and answers `true` for painters that have no silhouette,
-        // so nothing becomes unpickable).
-        if (shapePicking && !shapeCoversPoint(n, pose, wx, wy, { tolerance, scale })) continue;
-        // A container clips its subtree and the renderer honors it, so a child
-        // outside the clip is unpainted — and must not be pickable either.
-        if (!passesAncestorClips(scene, n, wx, wy)) continue;
-        out.push(n.id);
-      }
-      return out;
+      // Through the adapter, not `n.pose`: an ephemeral override is the pose
+      // the renderer draws, so it has to be the one picking tests.
+      const src = scenePickSource<TData, TLayer, TPose>(scene, {
+        getPose: (id) => adapter.getPose(id),
+        ...(alphaOf ? { alphaOf } : {}),
+        ...(layerIsPainted ? { layerIsPainted } : {}),
+      });
+      return pickWalk<TPose>(src, {
+        hits: (n, pose) => {
+          // The pre-filter has to be at least as generous as the refinement
+          // that follows it, or it rejects points the refinement would have
+          // claimed. A stroke reaches past the pose box by `outset` — a whole
+          // stroke width for an outer align — on top of the pointer slop.
+          const outset = shapePicking
+            ? (findShapeInk(n as never, pose, { scale })?.outset ?? 0)
+            : 0;
+          if (!poseContainsRotated(pose, wx, wy, tolerance + outset)) return false;
+          // `shapeCoversPoint` narrows the rect to the ink the painter actually
+          // lays down (and answers `true` for painters that have no silhouette,
+          // so nothing becomes unpickable).
+          return !shapePicking
+            || shapeCoversPoint(n as never, pose, wx, wy, { tolerance, scale });
+        },
+        clipAdmits: (clip) => pathContainsPoint(clip, wx, wy),
+      });
     };
-  }, [scene, adapter, pickEveryProp, shapePicking, pickTolerancePx, getView]);
+  }, [scene, adapter, pickEveryProp, shapePicking, pickTolerancePx, getView,
+      alphaOf, layerIsPainted]);
 
   const wiredBoundsOf = useMemo(() => {
     return (id: string): Bounds | null => {

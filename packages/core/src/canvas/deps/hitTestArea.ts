@@ -27,8 +27,15 @@
  */
 import type { Scene, NodeId } from 'core/scene/types';
 import { nodeMemo } from 'core/scene/nodeMemo';
-import { effectivePose } from 'core/scene/poseOverrides';
 import { axisAlignedBounds } from 'core/geometry/unionBounds';
+import { pathIntersectsRect } from 'features/paths/pathHitTest';
+import {
+  pickWalk,
+  scenePickSource,
+  type ScenePickSourceOptions,
+} from 'canvas/pickWalk';
+
+export { hiddenLayerIds } from 'canvas/pickWalk';
 import { aabbOfPose } from 'canvas/SceneCanvas/poseGeometry';
 import { pointInPolygon, segmentsCross } from '@weasel-js/geom';
 import { findShapeSilhouette } from 'canvas/NodeShape';
@@ -44,17 +51,6 @@ export interface AABBBounds {
 /** Closed area polygon as interleaved [x0,y0,x1,y1,…]; closing edge implicit. */
 type AreaCoords = ArrayLike<number>;
 
-/** Layer ids the scene reports as hidden. Only an explicit `false` hides a
- *  layer: a partial scene stand-in that omits the flag stays pickable. */
-export function hiddenLayerIds(
-  layers: readonly { id: string; visible?: boolean }[] | undefined,
-): Set<string> {
-  const out = new Set<string>();
-  for (const layer of layers ?? []) {
-    if (layer.visible === false) out.add(layer.id);
-  }
-  return out;
-}
 
 /**
  * Marquee entry point: rect bounds. Converts the rect to its four corners and
@@ -64,10 +60,11 @@ export function hiddenLayerIds(
 export function hitTestArea(
   scene: Scene<unknown, string, unknown>,
   bounds: AABBBounds,
+  opts?: ScenePickSourceOptions<unknown>,
 ): NodeId[] {
   const { x, y, width: w, height: h } = bounds;
   const area = [x, y, x + w, y, x + w, y + h, x, y + h];
-  return hitTestAreaPolygon(scene, area, { x, y, width: w, height: h }, true);
+  return hitTestAreaPolygon(scene, area, { x, y, width: w, height: h }, true, opts);
 }
 
 /**
@@ -84,84 +81,83 @@ export function hitTestAreaPolygon(
    *  the marquee answer without any silhouette work. Never pass this for a
    *  lasso polygon — a node inside the hull's box can miss the hull. */
   areaIsRect = false,
+  /** The asking view's alpha and layer accessors. A bare scene answers for
+   *  itself; a view that dims or reorders layers has to supply its own. */
+  opts?: ScenePickSourceOptions<unknown>,
 ): NodeId[] {
   const ab = areaBounds ?? boundsOf(area);
   if (!ab) return [];
-  const hits: NodeId[] = [];
-  const hidden = hiddenLayerIds(scene.layers);
-  const order = scene.renderOrderNodes();
-  for (let i = 0; i < order.length; i++) {
-    const node = order[i];
-    if (node.kind === 'container') continue;
-    if (hidden.size > 0 && hidden.has(node.layer)) continue;
-    const pose = effectivePose(scene.overrides, node);
-    // `isPathLike(pose) && pose.kind !== 'rect'` inlined: this runs per node and
-    // the predicate call cost 16% of the scan over a 10,000-rect scene.
-    const silhouette = pose !== null && typeof pose === 'object'
-      && (pose as Path).kind === 'polygon';
+  return pickWalk<unknown>(scenePickSource(scene, opts), {
+    // A marquee that returns a container *and* its children selects the same
+    // ink twice; the container comes back through the selection's own
+    // parent-folding instead.
+    includeContainers: false,
+    clipAdmits: (clip, _node, pose) =>
+      pathIntersectsRect(clip, axisAlignedBounds(aabbOfPose(pose)))
+      && pathIntersectsRect(clip, ab),
+    hits: (node, pose) => {
+      // `isPathLike(pose) && pose.kind !== 'rect'` inlined: this runs per node
+      // and the predicate call cost 16% of the scan over a 10,000-rect scene.
+      const silhouette = pose !== null && typeof pose === 'object'
+        && (pose as Path).kind === 'polygon';
 
-    // 1. AABB fast-reject. Memo is silhouettes-only — `aabbOfPose` answers a
-    // rect pose by identity, so memoizing one costs more than it saves.
-    // `b` may be shared across queries; never mutate it.
-    // Rotated poses expand to the AABB of their ink: a 100x20 rect at 45 deg
-    // spans far outside its own box, and an un-expanded fast-reject drops the
-    // marquee before the silhouette test can claim it.
-    const b = silhouette
-      ? nodeMemo(node, 'aabb', pose, () => aabbOfPose(pose))
-      : axisAlignedBounds(aabbOfPose(pose));
-    // Match the historical hitTestAABB skip: a pose without finite numeric
-    // bounds (neither path-like nor a plain x/y/w/h rect) is not hit-tested.
-    if (
-      !Number.isFinite(b.x) ||
-      !Number.isFinite(b.y) ||
-      !Number.isFinite(b.width) ||
-      !Number.isFinite(b.height)
-    ) {
-      continue;
-    }
-    if (
-      b.x >= ab.x + ab.width ||
-      b.x + b.width <= ab.x ||
-      b.y >= ab.y + ab.height ||
-      b.y + b.height <= ab.y
-    ) {
-      continue;
-    }
-
-    // 2. Swallowed whole by a rect marquee — no silhouette can change the
-    // answer, so skip the kernel and the painter lookup both.
-    if (
-      areaIsRect &&
-      b.x >= ab.x && b.y >= ab.y &&
-      b.x + b.width <= ab.x + ab.width &&
-      b.y + b.height <= ab.y + ab.height
-    ) {
-      hits.push(node.id);
-      continue;
-    }
-
-    // 3. SILHOUETTE poses: kernel polygon-overlap against the area polygon.
-    if (silhouette) {
-      if (silhouetteOverlapsArea((pose as PolygonPath).coords, area)) {
-        hits.push(node.id);
+      // 1. AABB fast-reject. Memo is silhouettes-only — `aabbOfPose` answers a
+      // rect pose by identity, so memoizing one costs more than it saves.
+      // `b` may be shared across queries; never mutate it.
+      // Rotated poses expand to the AABB of their ink: a 100x20 rect at 45 deg
+      // spans far outside its own box, and an un-expanded fast-reject drops the
+      // marquee before the silhouette test can claim it.
+      const b = silhouette
+        ? nodeMemo(node as never, 'aabb', pose, () => aabbOfPose(pose))
+        : axisAlignedBounds(aabbOfPose(pose));
+      // Match the historical hitTestAABB skip: a pose without finite numeric
+      // bounds (neither path-like nor a plain x/y/w/h rect) is not hit-tested.
+      if (
+        !Number.isFinite(b.x) ||
+        !Number.isFinite(b.y) ||
+        !Number.isFinite(b.width) ||
+        !Number.isFinite(b.height)
+      ) {
+        return false;
       }
-      continue;
-    }
+      if (
+        b.x >= ab.x + ab.width ||
+        b.x + b.width <= ab.x ||
+        b.y >= ab.y + ab.height ||
+        b.y + b.height <= ab.y
+      ) {
+        return false;
+      }
 
-    // 4. Everything else — the kit's own inserted shapes among them, which
-    // carry a bare `{x,y,w,h}` pose and keep their geometry on `data`. Ask the
-    // painter for the world-frame silhouette; a polygon gets the same kernel
-    // test as a polygon pose. A rect silhouette (or no painter) falls back to
-    // the historical AABB-overlap-is-a-hit behavior, which the fast-reject
-    // above has already established.
-    const drawn = findShapeSilhouette(node, pose);
-    if (drawn?.kind === 'polygon') {
-      if (silhouetteOverlapsArea(drawn.coords, area)) hits.push(node.id);
-      continue;
-    }
-    hits.push(node.id);
-  }
-  return hits;
+      // 2. Swallowed whole by a rect marquee — no silhouette can change the
+      // answer, so skip the kernel and the painter lookup both.
+      if (
+        areaIsRect &&
+        b.x >= ab.x && b.y >= ab.y &&
+        b.x + b.width <= ab.x + ab.width &&
+        b.y + b.height <= ab.y + ab.height
+      ) {
+        return true;
+      }
+
+      // 3. SILHOUETTE poses: kernel polygon-overlap against the area polygon.
+      if (silhouette) {
+        return silhouetteOverlapsArea((pose as PolygonPath).coords, area);
+      }
+
+      // 4. Everything else — the kit's own inserted shapes among them, which
+      // carry a bare `{x,y,w,h}` pose and keep their geometry on `data`. Ask the
+      // painter for the world-frame silhouette; a polygon gets the same kernel
+      // test as a polygon pose. A rect silhouette (or no painter) falls back to
+      // the historical AABB-overlap-is-a-hit behavior, which the fast-reject
+      // above has already established.
+      const drawn = findShapeSilhouette(node as never, pose);
+      if (drawn?.kind === 'polygon') {
+        return silhouetteOverlapsArea(drawn.coords, area);
+      }
+      return true;
+    },
+  }) as NodeId[];
 }
 
 /**

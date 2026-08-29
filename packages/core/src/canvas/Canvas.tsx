@@ -46,7 +46,7 @@ import type { View } from 'core/viewport/view';
 import { clampView } from 'core/viewport/clampView';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
 import {
-  drawLayers, isLayerVisible,
+  drawLayers, isLayerPainted,
   type Dims, type LayerCommandCache, type RenderLayer,
 } from 'core/layers/render';
 import { WeaselRenderer, viewToMat3, type DrawCommand, type ShaderProgramHandle } from '../renderer';
@@ -804,6 +804,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   getIsVisibleRef.current = getIsVisible;
   const layerVisibilityRef = useRef(layerVisibility);
   layerVisibilityRef.current = layerVisibility;
+  const layerOrderRef = useRef(layerOrder);
+  layerOrderRef.current = layerOrder;
 
   // React does not drive the paint; the frame loop does. The thunk defers to
   // `paint` below, which needs inputs this render has not computed yet.
@@ -847,9 +849,10 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     const layers = [...extrasRef.current].reverse();
     const isVisible = getIsVisibleRef.current?.() ?? alwaysVisible;
     const visibility = layerVisibilityRef.current ?? NO_LAYER_VISIBILITY;
+    const order = layerOrderRef.current;
     for (const layer of layers) {
       if (!layer.hitTest) continue;
-      if (!isLayerVisible(layer, visibility)) continue;
+      if (!isLayerPainted(layer, visibility, order)) continue;
       const hit = layer.hitTest(worldX, worldY, data, view, dims, isVisible);
       if (hit) return { layerId: layer.id, hit };
     }

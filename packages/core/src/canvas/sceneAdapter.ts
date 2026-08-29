@@ -36,9 +36,10 @@ import {
   polygonContainsRectCenter,
   polygonIntersectsRect,
 } from 'core/geometry/polygonHitTestRect';
-import type { Path } from 'features/paths/types';
-import { findShapeSilhouette } from './NodeShape';
 import { pathIntersectsRect } from 'features/paths/pathHitTest';
+import { pickWalk, scenePickSource } from 'canvas/pickWalk';
+import { aabbOfPose } from 'canvas/SceneCanvas/poseGeometry';
+import { axisAlignedBounds } from 'core/geometry/unionBounds';
 import { translateRectPose } from 'features/groups/composePose';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
 
@@ -138,91 +139,24 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
 // ─── Clip-aware hierarchical walk ────────────────────────────────────────────
 
 /**
- * Test whether a node's bounds pass all accumulated ancestor clips.
- * A clip "passes" for a child when the child's bounds intersect the clip
- * region — i.e., some part of the child is visible through the clip.
- */
-function nodeBoundsPassClips(
-  clips: readonly Path[],
-  bounds: Bounds,
-): boolean {
-  for (const clip of clips) {
-    if (!pathIntersectsRect(clip, bounds)) return false;
-  }
-  return true;
-}
-
-/**
- * Walk the scene tree hierarchically (roots → children via DFS), evaluating
- * each node against a geometry callback. When a container has `clipFromPose`,
- * the clip is evaluated once for that container and accumulated into an
- * ancestor-clip chain: descendants whose bounds don't intersect any ancestor
- * clip are excluded from results even if they satisfy the geometry callback.
+ * Evaluate every scene node against a geometry callback, honoring the clips
+ * its ancestors impose.
  *
- * Containers are gated on ancestor clips before their own geometry test —
- * consistent with leaves. A container whose AABB doesn't pass the enclosing
- * grandparent clip is not included, and neither are its children.
+ * Delegates to the shared `pickWalk`, so this answers the same question — in
+ * the same node order, against the same override-aware poses — as the live
+ * marquee and the two point walks. The one declared difference is that this
+ * one **includes containers**: a bare-adapter consumer with no selection
+ * parent-folding wants the container back, where the live dep path does not.
  */
 function walkClipAware<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   poseBounds: (pose: TPose) => Bounds,
-  nodeTest: (node: Node<TData, TLayer, TPose>) => boolean,
+  nodeTest: (node: Node<TData, TLayer, TPose>, pose: TPose) => boolean,
 ): string[] {
-  const results: string[] = [];
-
-  // `ancestorClips` accumulates clip paths from parent containers.
-  // Each entry is computed exactly once when visiting that container.
-  function walk(nodeId: string, ancestorClips: readonly Path[]): void {
-    const node = scene.get(asNodeId(nodeId));
-    if (!node) return;
-
-    if (node.kind === 'container') {
-      // Gate the container on ancestor clips first, same as leaves.
-      // A container outside its grandparent's clip is invisible — exclude it
-      // and skip its children entirely.
-      if (ancestorClips.length > 0) {
-        const b = poseBounds(node.pose);
-        if (!nodeBoundsPassClips(ancestorClips, b)) return;
-      }
-
-      // Test this container's own geometry.
-      if (nodeTest(node)) results.push(nodeId);
-
-      // Compute this container's clip exactly once per query visit.
-      // Explicit `clipFromPose` wins; otherwise fall back to the painter
-      // silhouette so non-rect shape kinds clip area-select correctly
-      // without per-node wiring.
-      const ownClip: Path | null =
-        typeof node.clipFromPose === 'function'
-          ? node.clipFromPose(node.pose)
-          : findShapeSilhouette(
-              node as unknown as Node<unknown, string, TPose>,
-              node.pose,
-            );
-      const childClips: readonly Path[] =
-        ownClip !== null ? [...ancestorClips, ownClip] : ancestorClips;
-
-      // Recurse into children, propagating the accumulated clip chain.
-      for (const childId of scene.childrenOf(asNodeId(nodeId))) {
-        walk(childId, childClips);
-      }
-    } else {
-      // Leaf node — included only if it passes all ancestor clips AND the
-      // geometry test. The clip chain is empty for plain trees, so
-      // nodeBoundsPassClips short-circuits to true with no clip overhead.
-      if (ancestorClips.length > 0) {
-        const b = poseBounds(node.pose);
-        if (!nodeBoundsPassClips(ancestorClips, b)) return;
-      }
-      if (nodeTest(node)) results.push(nodeId);
-    }
-  }
-
-  for (const rootId of scene.roots) {
-    walk(rootId, []);
-  }
-
-  return results;
+  return pickWalk<TPose>(scenePickSource(scene), {
+    hits: (node, pose) => nodeTest(node as unknown as Node<TData, TLayer, TPose>, pose),
+    clipAdmits: (clip, _node, pose) => pathIntersectsRect(clip, poseBounds(pose)),
+  });
 }
 
 // Fallback id generator for `commitInsert` when the consumer factory omits
@@ -272,7 +206,10 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
   const sel = options.selection;
   const getSelection = sel?.getSelection ?? sel?.get ?? (() => [] as string[]);
   const setSelection = sel?.setSelection ?? sel?.set ?? (() => {});
-  const poseBounds = options.poseBounds ?? ((p: TPose) => p as unknown as Bounds);
+  // Not identity: a path pose has no top-level x/y/w/h, so an identity
+  // default answered NaN for one and every area query silently missed it.
+  const poseBounds = options.poseBounds
+    ?? ((p: TPose) => axisAlignedBounds(aabbOfPose(p)) as Bounds);
 
   const cascadeTranslate: ((pose: TPose, dx: number, dy: number) => TPose) | null =
     options.cascadeContainerPose === 'rect'
@@ -443,8 +380,8 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     getSelection,
     setSelection,
     hitTestArea(rect: Bounds) {
-      return walkClipAware(scene, poseBounds, (n) => {
-        const b = poseBounds(n.pose);
+      return walkClipAware(scene, poseBounds, (_n, pose) => {
+        const b = poseBounds(pose);
         return (
           b.x < rect.x + rect.width &&
           b.x + b.width > rect.x &&
@@ -455,8 +392,8 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     },
     hitTestLasso(polygon, mode: LassoHitMode) {
       if (polygon.length < 3) return [];
-      return walkClipAware(scene, poseBounds, (n) => {
-        const b = poseBounds(n.pose);
+      return walkClipAware(scene, poseBounds, (_n, pose) => {
+        const b = poseBounds(pose);
         return (
           mode === 'centers' ? polygonContainsRectCenter(polygon, b) :
           mode === 'enclosed' ? polygonContainsRect(polygon, b) :

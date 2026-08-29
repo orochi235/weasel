@@ -1,8 +1,8 @@
 import { useMemo, useRef, createElement } from 'react';
 import { SelectIcon } from '../../../icons';
 import { pathContainsPoint } from 'features/paths/pathHitTest';
-import type { Path } from 'features/paths/types';
-import { findShapeSilhouette, shapeCoversPoint } from 'canvas/NodeShape';
+import { shapeCoversPoint } from 'canvas/NodeShape';
+import { pickWalk, adapterPickSource, ownClipOf } from 'canvas/pickWalk';
 import type { Node } from 'core/scene/types';
 import type { MoveAdapter } from 'core/adapters/types';
 import type { AreaSelectAdapter } from 'core/adapters/types';
@@ -166,11 +166,6 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   // consumer that zooms should pass `pickTolerance` from its own scale.
   const tolerance = options.pickTolerance ?? 0;
   const pickEveryFn = options.pickEvery ?? ((worldX: number, worldY: number): string[] => {
-    const hier = adapter as unknown as {
-      getNode?: (id: string) => unknown;
-      getChildren?: (parentId: string | null) => readonly string[];
-    };
-
     /** AABB first (cheap), then the painter's ink when asked for and
      *  available. A painter with no `silhouette` — or one that returns null,
      *  as `kit:text` does for an empty node — keeps the AABB answer.
@@ -191,64 +186,23 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
       );
     };
 
-    if (typeof hier.getChildren !== 'function' || typeof hier.getNode !== 'function') {
-      const out: string[] = [];
-      for (const obj of adapter.getNodes()) {
-        const pose = adapter.getPose(obj.id);
-        if (covers(obj, pose, poseBoundsFn(pose))) out.push(obj.id);
-      }
-      return out;
-    }
-
-    const out: string[] = [];
-
-    function walk(parentId: string | null, ancestorClips: readonly Path[]): void {
-      nextChild: for (const childId of hier.getChildren!(parentId)) {
-        const node = hier.getNode!(childId) as {
-          kind?: string;
-          clipFromPose?: (pose: TPose) => Path | null;
-        };
-        const pose = adapter.getPose(childId);
-
-        if (node.kind === 'container') {
-          let ownClip: Path | null = null;
-          if (typeof node.clipFromPose === 'function') {
-            ownClip = node.clipFromPose(pose);
-          } else {
-            ownClip = findShapeSilhouette(
-              node as unknown as Node<unknown, string, TPose>,
-              pose,
-            );
-          }
-
-          const b = poseBoundsFn(pose);
-          const inAabb = worldX >= b.x && worldX <= b.x + b.width
-              && worldY >= b.y && worldY <= b.y + b.height;
-          const inClip = ownClip === null || pathContainsPoint(ownClip, worldX, worldY);
-          let passesAncestors = true;
-          for (const clip of ancestorClips) {
-            if (!pathContainsPoint(clip, worldX, worldY)) { passesAncestors = false; break; }
-          }
-          if (inAabb && inClip && passesAncestors) {
-            out.push(childId);
-          }
-
-          const childClips: readonly Path[] =
-            ownClip !== null ? [...ancestorClips, ownClip] : ancestorClips;
-
-          walk(childId, childClips);
-        } else {
-          for (const clip of ancestorClips) {
-            if (!pathContainsPoint(clip, worldX, worldY)) continue nextChild;
-          }
-          if (covers(node, pose, poseBoundsFn(pose))) out.push(childId);
-        }
-      }
-    }
-
-    walk(null, []);
-    return out;
+    return pickWalk<TPose>(adapterPickSource(adapter as never), {
+      hits: (node, pose) => {
+        const b = poseBoundsFn(pose);
+        if (node.kind !== 'container') return covers(node, pose, b);
+        // A container's own clip *is* its hit shape — it is picked where it
+        // paints, and it paints only inside its clip. Ancestor clips are the
+        // walk's business; this one is not.
+        const inAabb = worldX >= b.x && worldX <= b.x + b.width
+          && worldY >= b.y && worldY <= b.y + b.height;
+        if (!inAabb) return false;
+        const own = ownClipOf(node, pose);
+        return own === null || pathContainsPoint(own, worldX, worldY);
+      },
+      clipAdmits: (clip) => pathContainsPoint(clip, worldX, worldY),
+    });
   });
+
   const pickEveryRef = useRef(pickEveryFn);
   pickEveryRef.current = pickEveryFn;
 

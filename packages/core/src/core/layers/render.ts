@@ -170,6 +170,8 @@ export function drawLayers<TData>(
   }
 
   for (const layer of sequence) {
+    // `order` is already applied by `sequence`; passing it again would be a
+    // second, redundant lookup for the same answer.
     if (!isLayerVisible(layer, visibility)) continue;
 
     for (const c of drawOneLayer(layer, data, v, dims, cache)) out.push(c);
@@ -181,9 +183,6 @@ export function drawLayers<TData>(
 /**
  * Resolve one layer's visibility: `alwaysOn` wins, then an explicit entry in
  * `visibility`, then `defaultVisible`, defaulting to shown.
- *
- * Hit-testing asks this too. A layer that is hidden but still claims pointer
- * events is a pointer landing on nothing the user can see.
  */
 export function isLayerVisible<TData>(
   layer: RenderLayer<TData>,
@@ -192,6 +191,25 @@ export function isLayerVisible<TData>(
   if (layer.alwaysOn) return true;
   if (layer.id in visibility) return visibility[layer.id]!;
   return layer.defaultVisible ?? true;
+}
+
+/**
+ * Does this layer reach the screen at all — both gates, in the order
+ * `drawLayers` applies them.
+ *
+ * **A listed `order` is the whole list**, so omission from it drops a layer
+ * that `visibility` would have shown, and `alwaysOn` does not rescue it.
+ * Hit-testing asks this, not `isLayerVisible`: a layer that is not painted
+ * but still claims pointer events is a pointer landing on nothing the user
+ * can see.
+ */
+export function isLayerPainted<TData>(
+  layer: RenderLayer<TData>,
+  visibility: Record<string, boolean>,
+  order: string[] | undefined,
+): boolean {
+  if (order && !order.includes(layer.id)) return false;
+  return isLayerVisible(layer, visibility);
 }
 
 /**

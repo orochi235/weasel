@@ -1204,12 +1204,27 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     };
   }, [kindClassifier, scene]);
 
+  // The painted alpha of a node in this view: the caller's `alphaFor`
+  // (scoping-dim, and anything else a consumer fades) times any per-node
+  // override alpha. `<Canvas>` has no scene, so the override half is folded
+  // in here — and the pick path reads the same number the painter does, or a
+  // node faded to nothing stays clickable.
+  const overrideAlphaFor = useCallback(
+    (id: string) => scene.overrides.get(id as never)?.alpha ?? 1,
+    [scene],
+  );
+  const composedAlphaFor = useMemo(
+    () => (alphaFor ? (id: string) => alphaFor(id) * overrideAlphaFor(id) : overrideAlphaFor),
+    [alphaFor, overrideAlphaFor],
+  );
+
   const { adapter, selectTool: internalSelect, rotateTool, pickEvery: internalPickEvery, pickBest: internalPickBest, boundsOf: internalBoundsOf } = useSceneSelectTool({
     scene,
     selection,
     geometry,
     // The pick tolerance is declared in screen pixels; this is what converts it.
     getView: () => currentViewRef.current,
+    alphaOf: composedAlphaFor,
     selectTool: selectToolWithDefaults,
     ...(insertTool ? { insertTool } : {}),
     ...(layouts ? { layouts } : {}),
@@ -1815,22 +1830,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     });
   }, [mergedLayers.selectionOverlay, getSuppressedSelectionIds]);
 
-  // When alphaFor is supplied — or any node carries an override alpha — patch
-  // a composed multiplier into the scene slot config so buildSceneLayer
-  // (called inside Canvas) wraps per-node commands with it. Canvas has no
-  // scene, so the override half has to be folded in here.
-  const overrideAlphaFor = useCallback(
-    (id: string) => scene.overrides.get(id as never)?.alpha ?? 1,
-    [scene],
-  );
   const sceneSlotWithAlpha = useMemo(() => {
     const slot = mergedLayers.scene;
     if (!slot || 'layer' in slot) return slot; // null or CustomLayerEntry — leave alone
-    const composed = alphaFor
-      ? (id: string) => alphaFor(id) * overrideAlphaFor(id)
-      : overrideAlphaFor;
-    return { ...slot, alphaFor: composed };
-  }, [mergedLayers.scene, alphaFor, overrideAlphaFor]);
+    return { ...slot, alphaFor: composedAlphaFor };
+  }, [mergedLayers.scene, composedAlphaFor]);
 
   const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => ({
     ...mergedLayers,
