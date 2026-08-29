@@ -8,7 +8,17 @@
  */
 
 import { hexToRgba, rgbaToHex } from '../renderer/math/color';
-import type { GradStop, GradientFill, GradientKind } from './paint-types';
+import type { FillStyle, GradStop, GradientFill, GradientKind } from '@weasel-js/paint';
+
+/** Narrow a paint to the gradient members of `FillStyle`. The three
+ *  discriminants are the union's own definition of `GradientFill`, so every
+ *  consumer that reaches for gradient geometry starts here. */
+export function isGradientFill(fill: FillStyle | null | undefined): fill is GradientFill {
+  if (fill == null) return false;
+  return fill.fill === 'linear-gradient'
+    || fill.fill === 'radial-gradient'
+    || fill.fill === 'conic-gradient';
+}
 
 /**
  * Color at position `t` (0..1) along a stop list, matching how the GL ramp

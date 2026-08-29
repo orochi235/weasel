@@ -1,9 +1,13 @@
 # text
 
-Text as a first-class scene citizen: styled runs, measurement, layout, GL
-rendering, and in-place editing.
+Text as a first-class scene citizen: draw commands, picking, and in-place
+editing. This file is a map, not a tour.
 
-The largest feature module in the kit. This file is a map, not a tour.
+**Typography lives in `@weasel-js/text`** — the run model, style resolution,
+`layoutRuns`, wrap and measurement all moved there so a consumer can lay out
+text without the scene graph. What stays here is what needs a scene, a
+renderer or React. The two halves are described together below, because the
+editing surface is unreadable without the model it edits.
 
 ## Runs are the data model
 
@@ -14,13 +18,14 @@ conversions in `runs.ts` are the boundary with everything else:
 | --- | --- |
 | `toRuns` | anything → runs |
 | `runsToPlainText` | runs → plain text (clipboard, search) |
-| `runsToMarkdown` / `markdownToRuns` | runs ⇄ markdown |
+| `runsToMarkdown` / `markdownToRuns` | runs ⇄ an inline grammar, `MARKDOWN_RUN_GRAMMAR` by default |
 
-`runs/resolveRuns.ts` resolves inherited style down each run.
-`textStyle.ts` owns `DEFAULT_TEXT_STYLE`, `resolveTextStyle`, and
-`fontString`.
+`runs.ts`, `runs/resolveRuns.ts` and `textStyle.ts` — the conversions above,
+plus `resolveRuns` and `DEFAULT_TEXT_STYLE` / `resolveTextStyle` /
+`fontString` — are in `@weasel-js/text`, and re-exported from
+`@weasel-js/core` unchanged.
 
-`runs/rangeStyle.ts` is the **public run algebra**: `styleAtRange` reports
+`runs/rangeStyle.ts` stays here — it is the **public run algebra**: `styleAtRange` reports
 what a character range shares (`MIXED` where the runs disagree),
 `applyStyleToRange` patches one, splitting and re-coalescing around it. A
 caret addresses a range, not a path, which is why this is a separate surface
@@ -81,8 +86,11 @@ box from swallowing clicks on whatever is behind it.
 
 | Dir | Role |
 | --- | --- |
-| `atlas/` | `layoutRuns` — the runs-aware glyph layout, and the only glyph walk in the kit. The atlas itself (`FontAtlas`, `registerFont`) and runtime rasterization live in `@weasel-js/font`. |
-| `runs/` | Run resolution. |
+| `runs/` | `rangeStyle` / `flagRange` — the caret-range patch algebra, which serves the editor. |
+
+`layoutRuns` — the runs-aware glyph layout, and the only glyph walk in the
+kit — is `@weasel-js/text`'s `layout/`. The atlas itself (`FontAtlas`,
+`registerFont`) and runtime rasterization are in `@weasel-js/font`.
 
 ## Editing
 
@@ -109,8 +117,9 @@ a zoom other than 1.
 
 ## Odds and ends
 
-- `markdownText.ts` — `createMarkdownRenderer` / `layoutMarkdown`, the richer
-  layout path (`PositionedRun`, `LayoutLine`, `LayoutResult`).
+- `markdownText.ts` (in `@weasel-js/text`) — `createMarkdownRenderer` /
+  `layoutMarkdown`, the richer layout path (`PositionedRun`, `LayoutLine`,
+  `LayoutResult`).
 - `renderLabel.ts` — the small pill-with-text used for chrome labels, with a
   pluggable `TextRenderer`. Unrelated to scene text nodes.
 - `textCommand.ts` — the draw-command shape. `textCommandFromRuns` is the

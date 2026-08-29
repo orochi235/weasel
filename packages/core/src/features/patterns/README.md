@@ -13,7 +13,7 @@ Repeating texture tiles for `FillStyle`.
 
 The returned `TextureHandle` is what `FillStyle.pattern` accepts — so a
 patterned fill is `{ fill: 'pattern', pattern: handle }`. See
-`core/paint-types.ts`.
+`@weasel-js/paint`.
 
 The tile is rasterized **once**, at build time, not per frame. Consequences
 worth knowing: a pattern doesn't re-render when you zoom (it's a texture, so it

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset } from './domRuns';
-import type { StyledRun } from './runs';
+import type { StyledRun } from '@weasel-js/text';
 
 describe('runsToDom', () => {
   let parent: HTMLDivElement;

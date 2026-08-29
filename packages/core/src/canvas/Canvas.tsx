@@ -21,7 +21,7 @@
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type React from 'react';
-import type { FillStyle } from 'core/paint-types';
+import type { FillStyle } from '@weasel-js/paint';
 import { composeOrderedLayers, placeToolOverlays } from './layerOrder';
 import {
   STANDARD_SLOTS,

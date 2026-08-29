@@ -21,7 +21,7 @@ export interface CanvasSizeSnapshot extends CanvasSize {
  *  so dragging a window to a different-density display without resizing it
  *  left the snapshot stale. The profile watches a re-armed resolution media
  *  query instead. */
-export function useCanvasSize(containerRef: RefObject<HTMLDivElement | null>): CanvasSizeSnapshot {
+export function useCanvasSize(containerRef: RefObject<HTMLElement | null>): CanvasSizeSnapshot {
   const { dpr } = useDeviceProfile();
   const [size, setSize] = useState<CanvasSize>({ width: 0, height: 0 });
 

@@ -8,7 +8,6 @@ export {
   PropertyNumberInput,
   PropertyAxisInput,
   PropertyColorInput,
-  PropertyFillInput,
   PropertySelect,
   PropertySwatchGrid,
   PropertyButton,

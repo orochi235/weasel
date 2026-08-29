@@ -7,7 +7,7 @@
  * session, matching `registerTexture`'s own lifetime.
  */
 
-import type { FillStyle, TilePatternSpec } from '../../core/paint-types';
+import type { FillStyle, TilePatternSpec } from '@weasel-js/paint';
 import type { TextureHandle } from '../../renderer/textures/registerTexture';
 import { hatch, crosshatch, dots, chunks } from './patterns-builtin';
 

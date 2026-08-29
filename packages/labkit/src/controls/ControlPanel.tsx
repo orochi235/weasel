@@ -1,19 +1,37 @@
-import { useEffect, useRef, useState } from 'react';
+import type { PrefLeaf } from '@weasel-js/ui';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { fromConfigFields } from '../config/fromConfigField';
+import type { ControlRenderer, ResolvedConfig } from '../config/types';
+import { isLeafVisible } from '../config/visible';
+import { PropertyGroup } from '../ui/properties/PropertyGroup';
 import {
   CheckboxRow,
   ColorRow,
   NumberRow,
   PropertyList,
+  PropertyRow,
   SelectRow,
-  SliderRow,
   TextRow,
+  ToggleRow,
+  SliderRow,
 } from '../ui/properties/PropertyPanel';
-import type { ConfigField, TextField } from './types';
+import type { ConfigField } from './types';
 
 export interface ControlPanelProps<TC extends Record<string, unknown>> {
-  fields: ConfigField[];
+  /** The instrument's resolved config schema. */
+  schema?: ResolvedConfig;
+  /** @deprecated Pass `schema`. A field list is adapted into one internally. */
+  fields?: ConfigField[];
   config: TC;
   setConfig: (key: keyof TC, value: unknown) => void;
+  /**
+   * Control overrides and app-defined kinds, PrefsForm-style. Keys are config
+   * paths (checked first) or leaf kinds. A renderer returning `null` collapses
+   * the row; entries override the built-in rows on collision.
+   */
+  renderers?: Record<string, ControlRenderer>;
+  /** Draw leaves marked `hidden`. */
+  showHidden?: boolean;
   className?: string;
 }
 
@@ -21,105 +39,170 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> {
  *  back through `setConfig`. Built on the property rows, so a lab's controls
  *  are the same aligned, themed rows the rest of the kit uses. */
 export function ControlPanel<TC extends Record<string, unknown>>({
+  schema,
   fields,
   config,
   setConfig,
+  renderers,
+  showHidden = false,
   className,
 }: ControlPanelProps<TC>) {
+  const resolved = useMemo(
+    () => schema ?? fromConfigFields(fields ?? []),
+    [schema, fields],
+  );
+
+  const paths = Object.keys(resolved.group.children);
+  const sectioned = new Set(resolved.sections.flatMap((s) => s.paths));
+  const loose = paths.filter((p) => !sectioned.has(p));
+
+  const row = (path: string): ReactNode => (
+    <ControlRow
+      key={path}
+      path={path}
+      resolved={resolved}
+      config={config}
+      setConfig={setConfig}
+      renderers={renderers}
+      showHidden={showHidden}
+    />
+  );
+
   return (
     <PropertyList className={className ? `lk-control-panel ${className}` : 'lk-control-panel'}>
-      {fields.map((field) => (
-        <ControlRow key={field.key} field={field} config={config} setConfig={setConfig} />
+      {loose.map(row)}
+      {resolved.sections.map((section) => (
+        <PropertyGroup key={section.label} title={section.label}>
+          {section.paths.map(row)}
+        </PropertyGroup>
       ))}
     </PropertyList>
   );
 }
 
 interface ControlRowProps<TC extends Record<string, unknown>> {
-  field: ConfigField;
+  path: string;
+  resolved: ResolvedConfig;
   config: TC;
   setConfig: (key: keyof TC, value: unknown) => void;
+  renderers?: Record<string, ControlRenderer>;
+  showHidden: boolean;
+}
+
+/** Reads a labkit-only extra off a leaf. `PrefLeaf` has no field for these,
+ *  and extra keys survive the resolve pass at runtime. */
+function extra<T>(leaf: PrefLeaf, key: string): T | undefined {
+  return (leaf as unknown as Record<string, T | undefined>)[key];
 }
 
 function ControlRow<TC extends Record<string, unknown>>({
-  field,
+  path,
+  resolved,
   config,
   setConfig,
+  renderers,
+  showHidden,
 }: ControlRowProps<TC>) {
-  const write = (value: unknown): void => setConfig(field.key as keyof TC, value);
-  const read = <T,>(fallback: T): T => (config[field.key] as T | undefined) ?? fallback;
+  const leaf = resolved.group.children[path] as PrefLeaf | undefined;
+  if (!leaf || !('kind' in leaf)) return null;
+  if (!isLeafVisible(resolved, path, config as Record<string, unknown>, showHidden)) return null;
 
-  switch (field.type) {
-    case 'slider':
-      return (
-        <SliderRow
-          label={field.label}
-          value={read(field.default)}
-          min={field.min}
-          max={field.max}
-          step={field.step}
-          onChange={write}
-        />
-      );
-    case 'checkbox':
-      return <CheckboxRow label={field.label} value={read(field.default)} onChange={write} />;
-    case 'select':
-      return (
-        <SelectRow
-          label={field.label}
-          value={read(field.default)}
-          options={field.options}
-          onChange={write}
-        />
-      );
+  const write = (value: unknown): void => setConfig(path as keyof TC, value);
+  const fallback = extra<unknown>(leaf, 'default');
+  const value = config[path] ?? fallback;
+
+  // Most specific wins, and within a tier the lab's entry beats the
+  // instrument's: controls[path] -> node .render -> controls[kind] -> built-in.
+  const custom =
+    renderers?.[path] ?? resolved.renderers[path] ?? renderers?.[leaf.kind];
+  if (custom) return custom({ path, pref: leaf, value, setValue: write });
+
+  const label = leaf.name;
+  const read = <T,>(): T => value as T;
+
+  switch (leaf.kind) {
     case 'number': {
+      const min = extra<number>(leaf, 'min');
+      const max = extra<number>(leaf, 'max');
+      const step = extra<number>(leaf, 'step');
+      if (extra<string>(leaf, 'control') === 'slider' && min !== undefined && max !== undefined) {
+        return (
+          <SliderRow
+            label={label}
+            value={read<number>()}
+            min={min}
+            max={max}
+            step={step}
+            onChange={write}
+          />
+        );
+      }
       // NumberRow commits every keystroke and does not clamp, so the bounds a
       // schema declares are enforced here — an instrument should never be
       // handed a config value outside the range it asked for.
-      const lo = field.min ?? Number.NEGATIVE_INFINITY;
-      const hi = field.max ?? Number.POSITIVE_INFINITY;
+      const lo = min ?? Number.NEGATIVE_INFINITY;
+      const hi = max ?? Number.POSITIVE_INFINITY;
       return (
         <NumberRow
-          label={field.label}
-          value={read(field.default)}
-          min={field.min}
-          max={field.max}
-          step={field.step}
+          label={label}
+          value={read<number>()}
+          min={min}
+          max={max}
+          step={step}
           onChange={(n) => write(Math.min(hi, Math.max(lo, n)))}
         />
       );
     }
-    case 'text':
-      return <DebouncedTextRow field={field} config={config} setConfig={setConfig} />;
+    case 'boolean':
+      return <CheckboxRow label={label} value={read<boolean>()} onChange={write} />;
+    case 'enum': {
+      const options = extra<readonly { value: string; label: string }[]>(leaf, 'options') ?? [];
+      const Row = extra<string>(leaf, 'control') === 'radio' ? ToggleRow : SelectRow;
+      return (
+        <Row label={label} value={read<string>()} options={options} onChange={write} />
+      );
+    }
+    case 'string':
+      return <DebouncedTextRow leaf={leaf} label={label} value={read<string>()} write={write} />;
     case 'color':
-      return <ColorRow label={field.label} value={read(field.default)} onChange={write} />;
+      return <ColorRow label={label} value={read<string>()} onChange={write} />;
     default:
-      // A schema can arrive from outside TypeScript, so an unknown type is
-      // skipped rather than thrown — one bad field must not blank the panel.
-      return null;
+      // A kind with no renderer is named rather than dropped: one leaf a lab
+      // has not wired up must not blank the panel, and a silent gap reads as
+      // "this control does not exist".
+      return (
+        <PropertyRow label={label}>
+          <span className="lk-control-panel__unknown">no control for “{leaf.kind}”</span>
+        </PropertyRow>
+      );
   }
 }
 
 /** Text writes are debounced so typing does not re-run the instrument on every
  *  keystroke, which means the row is locally controlled between commits and has
  *  to notice when the config changes underneath it. */
-function DebouncedTextRow<TC extends Record<string, unknown>>({
-  field,
-  config,
-  setConfig,
-}: { field: TextField } & Omit<ControlRowProps<TC>, 'field'>) {
-  const debounceMs = field.debounceMs ?? 150;
-  const external = (config[field.key] as string | undefined) ?? field.default;
-  const [local, setLocal] = useState(external);
+function DebouncedTextRow({
+  leaf,
+  label,
+  value,
+  write,
+}: {
+  leaf: PrefLeaf;
+  label: string;
+  value: string;
+  write: (value: unknown) => void;
+}) {
+  const debounceMs = extra<number>(leaf, 'debounceMs') ?? 150;
+  const [local, setLocal] = useState(value);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastExternal = useRef(external);
+  const lastExternal = useRef(value);
 
   useEffect(() => {
-    if (external !== lastExternal.current) {
-      lastExternal.current = external;
-      setLocal(external);
+    if (value !== lastExternal.current) {
+      lastExternal.current = value;
+      setLocal(value);
     }
-  }, [external]);
+  }, [value]);
 
   useEffect(
     () => () => {
@@ -130,16 +213,16 @@ function DebouncedTextRow<TC extends Record<string, unknown>>({
 
   return (
     <TextRow
-      label={field.label}
+      label={label}
       value={local}
-      placeholder={field.placeholder}
-      maxLength={field.maxLength}
+      placeholder={extra<string>(leaf, 'placeholder')}
+      maxLength={extra<number>(leaf, 'maxLength')}
       onChange={(next) => {
         setLocal(next);
         if (timer.current) clearTimeout(timer.current);
         const commit = () => {
           lastExternal.current = next;
-          setConfig(field.key as keyof TC, next);
+          write(next);
         };
         if (debounceMs === 0) commit();
         else timer.current = setTimeout(commit, debounceMs);

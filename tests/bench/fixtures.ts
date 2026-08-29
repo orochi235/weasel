@@ -10,7 +10,7 @@ import {
 } from 'core/geometry/path';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type Scene } from 'core/scene/types';
-import type { ResolvedRun } from 'features/text/runs/resolveRuns';
+import type { ResolvedRun } from '@weasel-js/text';
 
 /** Small fast PRNG. Same seed, same stream, on every engine. */
 export function mulberry32(seed: number): () => number {

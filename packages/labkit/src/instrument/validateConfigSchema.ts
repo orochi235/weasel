@@ -1,4 +1,4 @@
-import type { ConfigField, ConfigFieldType } from '../controls/types';
+import type { ConfigField } from '../controls/types';
 
 /** Whether a config schema is usable, and every problem found rather than
  *  just the first. */
@@ -7,11 +7,13 @@ export interface ValidationResult {
   errors: string[];
 }
 
-const KNOWN_TYPES: ConfigFieldType[] = ['slider', 'checkbox', 'select', 'number', 'text', 'color'];
-
 /** Check a config schema for the mistakes that would otherwise surface as a
- *  silently broken control: empty or duplicate keys, unknown field types, and
- *  fields whose own constraints do not hold. */
+ *  silently broken control: empty or duplicate keys, and fields whose own
+ *  constraints do not hold.
+ *
+ *  An unrecognized type is not an error — a lab supplies controls for its own
+ *  kinds through `ControlPanel`'s `renderers`, and this cannot see them. Such
+ *  a field simply has no constraints to check here. */
 export function validateConfigSchema(fields: ConfigField[]): ValidationResult {
   const errors: string[] = [];
   const seenKeys = new Set<string>();
@@ -27,11 +29,6 @@ export function validateConfigSchema(fields: ConfigField[]): ValidationResult {
 
     if (field.label === '') {
       errors.push(`Field "${field.key}" has empty label`);
-    }
-
-    if (!KNOWN_TYPES.includes(field.type)) {
-      errors.push(`Unknown field type: "${field.type}" on key "${field.key}"`);
-      continue;
     }
 
     if (field.type === 'slider') {

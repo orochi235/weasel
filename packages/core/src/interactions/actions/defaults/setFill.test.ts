@@ -3,7 +3,7 @@ import { setFillAction } from './setFill';
 import type { InvocationCtx } from '../invoker';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
-import type { FillStyle } from 'core/paint-types';
+import type { FillStyle } from '@weasel-js/paint';
 import { DEFAULT_FILL_COLOR, solid } from '../../../util/paint';
 import { makeScene, makeSelection, makeCtx, ongoingInvoker } from './paintActionTestUtils';
 

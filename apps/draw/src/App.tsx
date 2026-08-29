@@ -34,6 +34,7 @@ import {
   useScene,
   useSelection,
   useActionsRegistry,
+  type UiOngoingControl,
   useBooleansAdapter,
   rectPath,
   asNodeId,
@@ -47,8 +48,6 @@ import {
   type Path,
   type FillStyle,
   type Stroke,
-  type GradientFill,
-  type UiOngoingControl,
   type AlignEdge,
   type DistributeAxis,
   type SerializedScene,
@@ -69,13 +68,11 @@ import {
   inferredNodeRouting,
   resolveTextStyle,
   sampleGradientStops,
-  fillInPoseFrame,
-  fillToBoundsFrame,
+  isGradientFill,
   solid,
   strokeOf,
   DEFAULT_SHAPE_FILL,
-  type ToolPrefColor,
-  DEFAULT_FILL_COLOR,
+  useCanvasSize,
   useClipboardOps,
   useDepSource,
   type ClipboardDep,
@@ -95,18 +92,19 @@ import {
 } from '@weasel-js/core';
 import { useHudContribution } from '@weasel-js/hud/react';
 import {
-  GradientHandles,
   ResizeHandle,
   Sidebar,
   SidebarPanel,
+  SceneGradientHandles,
   SelectionPanel,
   StatusBar,
   StatusBarItem,
   StatusBarSpacer,
   ToolPalette,
   ToolOptionsBar,
-  solidColorOf,
   type PropertyRenderer,
+  type PropertyRenderContext,
+  PaintInput,
 } from '@weasel-js/ui';
 
 import { ActionBar, type FlipAxis, type PaperSizeKey } from './ActionBar';
@@ -121,7 +119,6 @@ import {
   PropertyRow,
   PropertyTextInput,
   PropertyColorInput,
-  PropertyFillInput,
   PropertySwatchGrid,
   PropertySelect,
 } from './ui/PropertiesPanel';
@@ -385,59 +382,65 @@ function isFillStyleObject(raw: unknown): raw is FillStyle {
   return 'fill' in raw || 'stops' in raw || 'color' in raw;
 }
 
-function wdFillRenderer(colorActionId: string, opacityActionId: string): PropertyRenderer {
-  return (ctx) => {
-    const fallback = ctx.pref.default;
-    const raw = ctx.value;
-    const value: FillStyle = isFillStyleObject(raw) ? raw
-      : isFillStyleObject(fallback) ? fallback
-      : { color: DEFAULT_FILL_COLOR };
-    const input = (
-      <PropertyFillInput
-        value={value}
-        colorActionId={colorActionId}
-        opacityActionId={opacityActionId}
-      />
-    );
-    if (!ctx.mixed) return input;
-    return (
-      <span title="Mixed" className="wd-mixed">
-        {input}
-      </span>
-    );
-  };
+/**
+ * A paint leaf routed through an action, so a scrub coalesces into one undo
+ * entry instead of one per tick. The control itself is the kit's `PaintInput`
+ * — the app supplies only which action the writes land on.
+ */
+function wdPaintRenderer(actionId: string): PropertyRenderer {
+  return (ctx) => <WdPaintLeaf ctx={ctx} actionId={actionId} />;
 }
 
-function wdActionColorRenderer(colorActionId: string, opacityActionId: string): PropertyRenderer {
-  return (ctx) => {
-    // Keyed at a paint path, so the value is the `FillStyle` itself. A
-    // gradient has no single color to show and falls back rather than
-    // claiming one. Writes go through the actions, which preserve the rest
-    // of the stroke.
-    const fallback = (ctx.pref as ToolPrefColor).default;
-    const value = solidColorOf(ctx.value) ?? fallback;
-    const input = (
-      <PropertyColorInput value={value} colorActionId={colorActionId} opacityActionId={opacityActionId} />
-    );
-    if (!ctx.mixed) return input;
-    return (
-      <span title="Mixed" className="wd-mixed">
-        {input}
-      </span>
-    );
-  };
+function WdPaintLeaf({ ctx, actionId }: { ctx: PropertyRenderContext; actionId: string }) {
+  const actions = useActionsRegistry();
+  const ctrlRef = useRef<UiOngoingControl | null>(null);
+
+  const fallback = ctx.pref.default;
+  const raw = ctx.value;
+  // `null` is an explicit "no paint" and must not fall through to the schema
+  // default, or the None segment unlights itself on the next render.
+  const value: FillStyle | null | undefined = raw === null ? null
+    : isFillStyleObject(raw) ? raw
+    : isFillStyleObject(fallback) ? fallback
+    : undefined;
+
+  /** `commit` with no preceding `input` opens and closes the control in one
+   *  go — a kind switch is a complete gesture on its own. */
+  function dispatch(paint: FillStyle | null, phase: 'input' | 'commit'): void {
+    if (!ctrlRef.current) {
+      ctrlRef.current = actions?.begin(actionId, { paint }) ?? null;
+    } else {
+      ctrlRef.current.update({ paint });
+    }
+    if (phase === 'commit' && ctrlRef.current) {
+      ctrlRef.current.end('commit');
+      ctrlRef.current = null;
+    }
+  }
+
+  return (
+    <PaintInput
+      value={value}
+      mixed={ctx.mixed}
+      unset={ctx.unset}
+      aria-label={ctx.pref.name}
+      onInput={(next) => dispatch(next, 'input')}
+      onChange={(next) => dispatch(next, 'commit')}
+    />
+  );
 }
+
 /** Marks the tool options bar as the text editor's own chrome, so focus
  *  landing in it doesn't commit the edit those controls are there to style.
  *  A class rather than a ref because the check is a `closest()` from an
  *  arbitrary focus target, including one inside a portalled popover. */
 const TEXT_CHROME_CLASS = 'wd-text-chrome';
 
-const WD_RENDERERS: Record<string, PropertyRenderer> = {
-  'data.fill': wdFillRenderer('setFill', 'setFillOpacity'),
-  // The stroke's colour row inside its object leaf; the other fields render
+export const WD_RENDERERS: Record<string, PropertyRenderer> = {
+  'data.fill': wdPaintRenderer('setFill'),
+  // The stroke's paint row inside its object leaf; the other fields render
   // from the schema. Keyed at the child path so the object rows survive.
-  'data.stroke.paint': wdActionColorRenderer('setStroke', 'setStrokeOpacity'),
+  'data.stroke.paint': wdPaintRenderer('setStroke'),
   // The schema's `font-family` leaf has no builtin renderer — the registry it
   // has to read is a runtime fact, not a static option list. Keyed by kind
   // rather than path so any future family leaf picks it up.
@@ -485,97 +488,10 @@ function layerSwatch(data: WeaselDrawData): string | undefined {
  *  draws with. A pattern built from a raw `TextureHandle` has no color to
  *  report. */
 function paintChipColor(fill: FillStyle): string | undefined {
-  const gradient = gradientOf(fill);
-  if (gradient) return sampleGradientStops(gradient.stops, 0.5);
+  if (isGradientFill(fill)) return sampleGradientStops(fill.stops, 0.5);
   if (fill.fill === undefined || fill.fill === 'solid') return fill.color;
   if (fill.fill === 'pattern' && 'tile' in fill.pattern) return fill.pattern.color;
   return undefined;
-}
-
-/**
- * On-canvas geometry handles for the selected node's gradient, when there is
- * exactly one and its fill is one.
- *
- * The node's stored gradient is in `bounds` units — `0..1` across its pose
- * box — so the mapping to overlay pixels is the pose box composed with the
- * view, and the drag math in `<GradientHandles>` inverts it. That keeps the
- * stored paint resolution-independent: the same numbers survive pan, zoom
- * and a resize of the node.
- */
-function SelectedGradientHandles(props: {
-  scene: ReturnType<typeof useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>;
-  selection: ReturnType<typeof useSelection>;
-  view: View;
-  width: number;
-  height: number;
-}): ReactElement | null {
-  const { scene, selection, view, width, height } = props;
-  const actions = useActionsRegistry();
-  const ctrlRef = useRef<UiOngoingControl | null>(null);
-
-  const ids = selection.get();
-  const node = ids.length === 1 ? scene.get(ids[0]) : null;
-  const gradient = node?.kind === 'leaf' ? gradientOf(node.data.fill) : null;
-
-  if (!gradient || !node || node.kind !== 'leaf') return null;
-  if (width <= 0 || height <= 0) return null;
-
-  const pose = node.pose;
-  // `<GradientHandles>` needs an isotropic frame; the stored gradient is in
-  // `bounds`, whose two axes have different scales. Resolve into page space
-  // on the way in, re-normalize on the way out.
-  const resolved = fillInPoseFrame(gradient, pose) as GradientFill;
-  const t = viewToTransform(view);
-  const toScreen = (p: { x: number; y: number }): { x: number; y: number } => {
-    const [x, y] = worldToScreen(p.x, p.y, t);
-    return { x, y };
-  };
-  // Invert by projecting two known points: the view may be anisotropic, so
-  // the two axes need separate scales.
-  const origin = toScreen({ x: 0, y: 0 });
-  const unit = toScreen({ x: 1, y: 1 });
-  const toLocal = (p: { x: number; y: number }): { x: number; y: number } => ({
-    x: unit.x === origin.x ? 0 : (p.x - origin.x) / (unit.x - origin.x),
-    y: unit.y === origin.y ? 0 : (p.y - origin.y) / (unit.y - origin.y),
-  });
-
-  const dispatch = (next: GradientFill, phase: 'input' | 'commit'): void => {
-    const paint = fillToBoundsFrame(next, pose);
-    if (!ctrlRef.current) {
-      ctrlRef.current = actions?.begin('setFill', { paint }) ?? null;
-    } else {
-      ctrlRef.current.update({ paint });
-    }
-    if (phase === 'commit' && ctrlRef.current) {
-      ctrlRef.current.end('commit');
-      ctrlRef.current = null;
-    }
-  };
-
-  return (
-    <GradientHandles
-      value={resolved}
-      toScreen={toScreen}
-      toLocal={toLocal}
-      width={width}
-      height={height}
-      onInput={(next) => dispatch(next, 'input')}
-      onChange={(next) => dispatch(next, 'commit')}
-    />
-  );
-}
-
-/** The gradient in a node's fill, or null for anything else. */
-function gradientOf(fill: FillStyle | null | undefined): GradientFill | null {
-  if (fill == null) return null;
-  switch (fill.fill) {
-    case 'linear-gradient':
-    case 'radial-gradient':
-    case 'conic-gradient':
-      return fill;
-    default:
-      return null;
-  }
 }
 
 interface RightSidebarProps {
@@ -1345,6 +1261,11 @@ function EditorWithSharedScene({
 }): ReactElement {
   const [tools, setTools] = useState<ToolsApi | null>(null);
   const actionsReg = useActionsRegistry();
+  const colors = useColorContext();
+  // On-canvas gradient handles edit one node's one paint; which paint is the
+  // side the swatches have focus on.
+  const selectedIds = selection.get();
+  const soleSelectedId = selectedIds.length === 1 ? selectedIds[0] : null;
   const [paperSize, setPaperSize] = useState<PaperSizeKey>('letter');
   const [gridVisible, setGridVisible] = useState(false);
   const [snapToGrid, setSnapToGrid] = useState(false);
@@ -1516,18 +1437,7 @@ function EditorWithSharedScene({
   // Track host CSS dims so we can size the canvas + fit the page on mount /
   // paper-size change.
   const hostRef = useRef<HTMLDivElement | null>(null);
-  const [hostDims, setHostDims] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
-  useEffect(() => {
-    const el = hostRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      const r = entries[0]?.contentRect;
-      if (!r) return;
-      setHostDims({ width: r.width, height: r.height });
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+  const hostDims = useCanvasSize(hostRef);
 
   // Lifted view state (controlled SceneCanvas). Refit-to-page runs on initial
   // host-dims sample and on every paperSize change; we deliberately do NOT
@@ -1973,12 +1883,12 @@ function EditorWithSharedScene({
             />
           </SceneCanvas>
           )}
-          <SelectedGradientHandles
+          <SceneGradientHandles
             scene={scene}
-            selection={selection}
+            containerRef={hostRef}
+            nodeId={soleSelectedId}
+            slot={colors.focused}
             view={view}
-            width={hostDims.width}
-            height={hostDims.height}
           />
         </div>
         <ResizeHandle

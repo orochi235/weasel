@@ -21,12 +21,22 @@ describe('validateConfigSchema', () => {
     expect(r.errors).toContain('Duplicate config key: "a"');
   });
 
-  it('flags unknown field type', () => {
+  it('accepts an unknown field type — a lab may supply its renderer', () => {
     const fields = [
-      { key: 'x', label: 'X', type: 'mystery', default: 1 },
+      { key: 'x', label: 'X', type: 'vector2', default: 1 },
     ] as unknown as ConfigField[];
     const r = validateConfigSchema(fields);
-    expect(r.errors).toContain('Unknown field type: "mystery" on key "x"');
+    expect(r.valid).toBe(true);
+    expect(r.errors).toEqual([]);
+  });
+
+  it('still checks keys and labels on an unknown field type', () => {
+    const fields = [
+      { key: '', label: '', type: 'vector2', default: 1 },
+    ] as unknown as ConfigField[];
+    const r = validateConfigSchema(fields);
+    expect(r.errors).toContain('Field has empty key');
+    expect(r.errors).toContain('Field "" has empty label');
   });
 
   it('flags slider min >= max', () => {

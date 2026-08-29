@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
+  isGradientFill,
   sampleGradientStops,
   withGradientKind,
   gradientGeometry,
   gradientForBounds,
 } from './gradient';
-import type { GradStop, GradientFill } from './paint-types';
+import type { GradStop, GradientFill } from '@weasel-js/paint';
 
 const BW: GradStop[] = [
   { offset: 0, color: '#000000' },
@@ -203,5 +204,21 @@ describe('conic conversions respect the unit system', () => {
     const radial = withGradientKind(conicIn('world'), 'radial-gradient');
     if (radial.fill !== 'radial-gradient') throw new Error('unreachable');
     expect(radial.radius).toBeGreaterThan(1);
+  });
+});
+
+describe('isGradientFill', () => {
+  const stops = [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }];
+
+  it('accepts all three gradient kinds', () => {
+    expect(isGradientFill({ fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops })).toBe(true);
+    expect(isGradientFill({ fill: 'radial-gradient', center: { x: 0, y: 0 }, radius: 1, stops })).toBe(true);
+    expect(isGradientFill({ fill: 'conic-gradient', center: { x: 0, y: 0 }, angle: 0, stops })).toBe(true);
+  });
+
+  it('rejects everything else, absence included', () => {
+    expect(isGradientFill({ fill: 'solid', color: '#f00' })).toBe(false);
+    expect(isGradientFill(null)).toBe(false);
+    expect(isGradientFill(undefined)).toBe(false);
   });
 });

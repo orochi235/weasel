@@ -33,8 +33,10 @@ export interface PaintActionSpec<TState, TValue, K extends string> {
   /** The state one onMove tick moves to, or `null` when its params carry
    *  nothing this action reads — the preview then stands. */
   readParams(prev: TState, params: Params): TState | null;
-  /** The value to write for one node, from that node's value at gesture start. */
-  merge(prev: TValue | null | undefined, state: TState): TValue;
+  /** The value to write for one node, from that node's value at gesture start.
+   *  `null` writes the absence of paint, which is a value like any other —
+   *  a node with `fill: null` paints no fill. */
+  merge(prev: TValue | null | undefined, state: TState): TValue | null;
 }
 
 interface Scratch<TState, TValue, K extends string> {

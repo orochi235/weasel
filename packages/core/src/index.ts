@@ -60,6 +60,7 @@ export * from './features/grid';
 export * from './features/viewports';
 export * from './features/parallax';
 export * from './features/simulation';
+export * from './features/overlays';
 
 // ─── Stylus input: stylus / coalesced events / pressure ─────────────────────
 export {
@@ -544,6 +545,56 @@ export type {
 
 // ─── Text rendering / editing ───────────────────────────────────────────────
 export * from './features/text';
+// Named rather than `export *`: a star re-export of an external package emits no
+// binding in core's bundle, and a consumer importing one of these through
+// `@weasel-js/core` fails to resolve it. Caught by `test:smoke:consumer`.
+export {
+  toRuns,
+  runsToPlainText,
+  runsToMarkdown,
+  markdownToRuns,
+  MARKDOWN_RUN_GRAMMAR,
+  DEFAULT_TEXT_STYLE,
+  resolveTextStyle,
+  fontString,
+  resolveRuns,
+  layoutRuns,
+  measureText,
+  measuredWidth,
+  measureTextBounds,
+  textLineBoxes,
+  verticalAlignOffset,
+  createMarkdownRenderer,
+  layoutMarkdown,
+} from '@weasel-js/text';
+export type {
+  StyledRun,
+  RunGrammar,
+  RunMarker,
+  RunFlag,
+  TextStyle,
+  TextPaint,
+  ResolvedTextStyle,
+  ResolvedRun,
+  TextPose,
+  TextVerticalAlign,
+  LayoutRunsOpts,
+  LaidOutRuns,
+  LaidOutGroup,
+  LaidOutQuad,
+  LaidOutOutlineGlyph,
+  LaidOutDecoration,
+  LaidOutLineBox,
+  MeasuredText,
+  MeasureTextBoundsOpts,
+  TextLineBoxesOpts,
+  MarkdownFontOptions,
+  MeasureFn,
+  PositionedRun,
+  LayoutLine,
+  LayoutResult,
+  TextRenderer,
+} from '@weasel-js/text';
 
 // ─── Tile / pattern fills ───────────────────────────────────────────────────
 export { createTilePattern } from './features/patterns';
@@ -560,7 +611,7 @@ export {
   dashForStrokeStyle,
   strokeDashStyleOf,
   STROKE_DASH_RATIOS,
-} from './core/paint-types';
+} from '@weasel-js/paint';
 export { resolveStrokeWidth } from './features/paths/tessellate/stroke';
 export type {
   FillStyle,
@@ -573,8 +624,9 @@ export type {
   StrokeAlign,
   StrokeDashStyle,
   Region,
-} from './core/paint-types';
+} from '@weasel-js/paint';
 export {
+  isGradientFill,
   sampleGradientStops,
   withGradientKind,
   gradientGeometry,
@@ -700,6 +752,23 @@ export { constrainTo45 } from './util/constrainTo45';
 export { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev } from './util/color';
 
 // ─── Default paint constants (fill/stroke/palette/ghost) ────────────────────
+// ─── Paint kinds: the registry that makes FillStyle open ────────────────────
+export {
+  registerPaintKind,
+  asPaint,
+  getPaintKind,
+  listPaintKinds,
+  paintKindOf,
+  _resetPaintKindsForTests,
+} from './core/paintKinds';
+export type {
+  PaintKind,
+  PaintKindEntry,
+  PaintKindEditorProps,
+  PaintBindContext,
+  PaintProgram,
+} from './core/paintKinds';
+
 export {
   DEFAULT_FILL_COLOR,
   DEFAULT_STROKE_COLOR,
@@ -1116,7 +1185,7 @@ export type {
   OutlineFontStyle,
   LocalFontOutlinesResult,
 } from '@weasel-js/font';
-export type { TextureHandle } from './renderer/textures/registerTexture';
+export type { TextureHandle } from '@weasel-js/paint';
 export type {
   LayersMap,
   SceneSlotConfig,

@@ -8,7 +8,7 @@ import { planPixelRender } from './renderSceneToPixels';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Node, type NodeId, type RectPose } from 'core/scene/types';
 import type { Path } from 'core/geometry/path';
-import type { FillStyle } from 'core/paint-types';
+import type { FillStyle } from '@weasel-js/paint';
 import type { View } from 'core/viewport/view';
 import type { DrawCommand } from '../renderer';
 import { linePath } from 'features/paths/builder';

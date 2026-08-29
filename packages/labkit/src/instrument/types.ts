@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { TrialContribution } from '../chrome/types';
+import type { ConfigSchema } from '../config/types';
 import type { ConfigField } from '../controls/types';
 import type { JobCapability, JobHandle } from '../job/types';
 import type { ToolCapability } from '../tools/types';
@@ -45,6 +46,10 @@ export interface CanvasLayer<TS = unknown, TC = unknown> {
 export interface CanvasCapability<TS = unknown, TC = unknown> {
   layers: CanvasLayer<TS, TC>[];
   initialView?: { zoom: number; pan: { x: number; y: number } };
+  /** Widens `usePanZoom`'s default clamp; the opening zoom stays reachable
+   *  regardless of these. */
+  minZoom?: number;
+  maxZoom?: number;
 }
 
 /** Declares which of an instrument's layers the trial should offer
@@ -102,6 +107,12 @@ export interface Instrument<TS = unknown, TC = unknown, TItem = unknown> {
   name: string;
   defaultConfig: () => TC;
   initialState: (config: TC) => TS;
+  /** The instrument's config, declared once: values, types and controls.
+   *  Supplying this makes `defaultConfig` optional — `defineInstrument`
+   *  synthesizes it. Prefer it over `defaultConfig` + `configSchema`. */
+  config?: ConfigSchema<TC>;
+  /** @deprecated Declare `config` instead; this repeats what `TC` already
+   *  says and nothing holds the two to one answer. */
   configSchema?: () => ConfigField[];
   /** The instrument's DOM. With `canvas`, this renders as an overlay above the
    *  layers rather than instead of them; return `null` for canvas only. */

@@ -18,6 +18,8 @@ import {
   getFontFallbackPolicy, getDefaultFontFamily,
   claimFallbackWarning, _clearFallbackWarnings,
 } from './fallback';
+import { outlineMetrics } from './outline/outlineRegistry';
+import type { OutlineFace } from './outline/OutlineFace';
 
 /** A registered face: its parsed metrics and the atlas image to sample. */
 export interface FontEntry {
@@ -194,12 +196,17 @@ export interface ResolveResult {
    */
   resolved: { family: string; weight: number; style: FontStyle };
   synthetic: { bold: boolean; italic: boolean };
-  /** Which tier resolved: a baked MSDF atlas, or the runtime canvas-SDF
-   *  dynamic atlas. Misses report 'atlas' (the default tier). */
-  source: 'atlas' | 'canvas';
+  /** Which tier resolved: a baked MSDF atlas, the runtime canvas-SDF dynamic
+   *  atlas, or a parsed font face serving both geometry and metrics. Misses
+   *  report 'atlas' (the default tier). */
+  source: 'atlas' | 'canvas' | 'outline';
   /** Set only when source === 'canvas': the dynamic face whose BmFont-shaped
    *  `font` layoutRuns consumes in place of `entry.font`. */
   dynamicFace?: DynamicFace;
+  /** Set only when source === 'outline': the parsed face supplying advances,
+   *  kerning and the baseline. There is no atlas behind this tier, so it is
+   *  the only metrics source the run has. */
+  outlineFace?: OutlineFace;
   /**
    * Set when the requested family was not registered and the fallback policy
    * substituted a different one. Reported structurally so a UI can say
@@ -227,6 +234,22 @@ function missResolveResult(
       resolved: { family, weight, style },
       synthetic: { bold: false, italic: false },
       source: 'canvas',
+    };
+  }
+
+  // Outline-only: a family with parsed font bytes and no atlas. Ranked above
+  // every fallback below because it is the *real* face — exact geometry and
+  // the font's own advances — where the alternatives are a resampled raster
+  // or a different typeface. Below explicit canvas enrollment, which is a
+  // consumer saying which tier it wants for this family.
+  const face = outlineMetrics(family, weight, style === 'italic' ? 'italic' : 'normal');
+  if (face) {
+    return {
+      entry: null,
+      outlineFace: face,
+      resolved: { family, weight, style },
+      synthetic: { bold: false, italic: false },
+      source: 'outline',
     };
   }
 

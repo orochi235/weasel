@@ -1,0 +1,12 @@
+/* Kind switch stacked over whichever paint body it selects. */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-inline-size: 0;
+}
+
+/* A value is in effect but nobody chose it. Never louder than mixed. */
+.unset {
+  opacity: 0.55;
+}

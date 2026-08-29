@@ -38,9 +38,13 @@ A map of the library so agents can find what they need quickly.
 | `defineInstrument()` | `src/instrument/defineInstrument.ts` |
 | Capability types (`Instrument`, `RenderContext`, ...) | `src/instrument/types.ts` |
 | Capability detector (booleans for each capability) | `src/instrument/capabilityDetector.ts` |
+| Config builder (`f.schema`, `f.number`, ...) | `src/config/builder.ts` |
+| Rule chain + labkit's own inference | `src/config/rules.ts` |
+| Schema -> weasel-ui `PrefGroup` | `src/config/resolve.ts` |
+| Legacy `ConfigField[]` adapter | `src/config/fromConfigField.ts` |
 | Config schema validator | `src/instrument/validateConfigSchema.ts` |
-| Config field types (`ConfigField`, ...) | `src/controls/types.ts` |
-| `<ControlPanel>` (renders `configSchema`) | `src/controls/ControlPanel.tsx` |
+| Config field types (`ConfigField`, deprecated) | `src/controls/types.ts` |
+| `<ControlPanel>` (renders a resolved schema) | `src/controls/ControlPanel.tsx` |
 
 ### Plan 4 — Lab/Trial runtime
 

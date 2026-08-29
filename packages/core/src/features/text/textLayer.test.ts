@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { createTextLayer, type TextPose } from './textLayer';
-import type { StyledRun } from './runs';
+import { createTextLayer } from './textLayer';
+import type { TextPose } from '@weasel-js/text';
+import type { StyledRun } from '@weasel-js/text';
 
 interface Node {
   id: string;

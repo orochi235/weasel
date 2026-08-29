@@ -1,5 +1,8 @@
-import type { Stroke, FillStyle, GradientUnits, Path } from '@weasel-js/core';
-import { resolveTextStyle } from '@weasel-js/core';
+import type { Stroke, FillStyle, GradientUnits } from '@weasel-js/paint';
+import type { Path } from '@weasel-js/core';
+import { getPaintKind } from 'core/paintKinds';
+import type { PaintBindContext } from 'core/paintKinds';
+import { resolveTextStyle } from '@weasel-js/text';
 import type {
   DrawCommand,
   GroupDrawCommand,
@@ -29,9 +32,9 @@ import {
 } from '@weasel-js/font';
 import {
   type LaidOutGroup, type LaidOutDecoration, type LaidOutOutlineGlyph,
-} from 'features/text/atlas/layoutRuns';
+} from '@weasel-js/text';
 import { cachedLayoutRuns } from './cache/layoutCache';
-import { verticalAlignOffset } from 'features/text/verticalAlign';
+import { verticalAlignOffset } from '@weasel-js/text';
 import type { Mesh } from './cache/mesh';
 import { outlineMesh } from './cache/outlineMeshCache';
 import { outlineStrokeMesh, quantizeEmWidth } from './cache/outlineStrokeMeshCache';
@@ -52,6 +55,9 @@ export interface DrawContext {
   imageCache: GLImageCache;
   gradRampCache: GradientRampCache;
   programRegistry: Map<string, ShaderProgram>;
+  /** Compile-on-first-use for a registered paint kind's program. Absent when
+   *  a caller drives `dispatch` without a renderer behind it. */
+  ensureProgram?(id: string): ShaderProgram | null;
   quadVbo: WebGLBuffer | null;
   quadIbo: WebGLBuffer | null;
   /** Staging for the consecutive-rect batch. Draws are deferred into it, so a
@@ -729,8 +735,34 @@ function bindPathFillByKind(ctx: DrawContext, fill: FillStyle): ShaderProgram | 
   const kind = fill.fill ?? 'solid';
   if (kind === 'solid') return bindPathFillSolid(ctx, fill as { color: string; opacity?: number });
   if (kind === 'pattern') return bindPathFillPattern(ctx, fill as Extract<FillStyle, { fill: 'pattern' }>);
-  return bindPathFillGradient(ctx, fill as Extract<FillStyle, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>);
+  if (kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'conic-gradient') {
+    return bindPathFillGradient(ctx, fill as Extract<FillStyle, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>);
+  }
+  const bind = getPaintKind(kind)?.bind;
+  return bind ? bind(paintBindContext(ctx), fill) : null;
 }
+
+/** The narrow renderer surface a registered paint kind binds against, built
+ *  once per frame context. `DrawContext` is not consumer surface. */
+function paintBindContext(ctx: DrawContext): PaintBindContext {
+  const cached = BIND_CONTEXTS.get(ctx);
+  if (cached) return cached;
+  const made: PaintBindContext = {
+    gl: ctx.gl,
+    get alpha() { return ctx.state.alpha; },
+    program: (id) => ctx.ensureProgram?.(id) ?? ctx.programRegistry.get(id) ?? null,
+    setProjAndModel: (prog) => setProjAndModel(ctx, prog),
+    spaceInverse: (units) => gradientSpaceInverse(ctx, units),
+    bindRamp: (stops, unit) => {
+      const key = ctx.gradRampCache.upload(stops);
+      ctx.gradRampCache.bind(key, unit);
+    },
+  };
+  BIND_CONTEXTS.set(ctx, made);
+  return made;
+}
+
+const BIND_CONTEXTS = new WeakMap<DrawContext, PaintBindContext>();
 
 function drawPathFillByKind(ctx: DrawContext, fill: FillStyle, handle: GLMeshHandle): void {
   const prog = bindPathFillByKind(ctx, fill);

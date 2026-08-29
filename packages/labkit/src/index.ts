@@ -10,6 +10,28 @@ export {
   wrapYaw,
 } from './canvas/useOrbit';
 export * from './chrome';
+export { f } from './config/builder';
+export { fromConfigFields } from './config/fromConfigField';
+export { resolveConfigSchema } from './config/resolve';
+export { applyRules, builtinRules, titleCase } from './config/rules';
+export type {
+  Annotations,
+  ConfigNode,
+  ConfigOf,
+  ConfigOption,
+  ConfigRule,
+  ConfigRuleContext,
+  ConfigSchema,
+  ControlRenderer,
+  InferConfig,
+  LeafPatch,
+  NodeOptions,
+  NodeValue,
+  ResolvedConfig,
+  SectionSpec,
+} from './config/types';
+export { useConfigSchema } from './config/useConfigSchema';
+export { isLeafVisible } from './config/visible';
 export { ControlPanel } from './controls/ControlPanel';
 export type {
   CheckboxField,
@@ -23,7 +45,7 @@ export type {
   SliderField,
   TextField,
 } from './controls/types';
-export { defineInstrument } from './instrument/defineInstrument';
+export { defineInstrument, type InstrumentSpec } from './instrument/defineInstrument';
 export type {
   CanvasCapability,
   CanvasLayer,

@@ -307,9 +307,9 @@ import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { vi } from 'vitest';
 import { resolveTextStyle } from '@weasel-js/core';
-import { layoutRuns } from 'features/text/atlas/layoutRuns';
-import { verticalAlignOffset } from 'features/text/verticalAlign';
-import type { ResolvedRun } from 'features/text/runs/resolveRuns';
+import { layoutRuns } from '@weasel-js/text';
+import { verticalAlignOffset } from '@weasel-js/text';
+import type { ResolvedRun } from '@weasel-js/text';
 
 describe('WeaselRenderer.render — color matrix on text + image', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
@@ -1639,7 +1639,7 @@ describe('drawText — outline tier', () => {
     await registerFont('inter', { weight: 400, style: 'normal' }, '/f.json', '/f.png');
 
     registerFontOutlines('inter', { weight: 400, style: 'normal' }, new ArrayBuffer(4), {
-      parser: () => ({ unitsPerEm: 1000, glyphD: (cp: number) => (cp === 32 ? null : GLYPH_D) }),
+      parser: () => ({ unitsPerEm: 1000, ascender: 0.8, advanceOf: (cp: number) => (cp === 32 ? 0.25 : 0.6), kernOf: () => 0, glyphD: (cp: number) => (cp === 32 ? null : GLYPH_D) }),
     });
     // Drive the (async) face load to ready, the way a second frame would.
     glyphOutline('inter', 400, 'normal', 65);

@@ -26,7 +26,7 @@ import { makeUploadTracker, type UploadTracker } from './test-utils/vertexUpload
 import { WeaselRenderer } from './WeaselRenderer';
 import { _resetLayoutCacheForTests } from './cache/layoutCache';
 import type { DrawCommand } from './DrawCommand';
-import type { ResolvedRun } from 'features/text/runs/resolveRuns';
+import type { ResolvedRun } from '@weasel-js/text';
 
 let recorder: ReturnType<typeof makeGLRecorder>;
 let tracker: UploadTracker;
@@ -187,6 +187,9 @@ describe('drawText places the layout rather than baking it', () => {
     registerFontOutlines('inter', {}, new ArrayBuffer(4), {
       parser: () => ({
         unitsPerEm: 1000,
+        ascender: 0.8,
+        advanceOf: (cp: number) => (cp === 32 ? 0.25 : 0.6),
+        kernOf: () => 0,
         glyphD: (cp: number) => (cp === 32 ? null : 'M0 0L0.5 -0.7L1 0Z'),
       }),
     });

@@ -9,9 +9,9 @@
  * Each WeaselRenderer's GLTextureCache does its own dedup via has(id).
  */
 
-export interface TextureHandle {
-  readonly id: string;
-}
+import type { TextureHandle } from '@weasel-js/paint';
+
+export type { TextureHandle };
 
 export interface TextureEntry {
   source: HTMLImageElement | ImageBitmap;

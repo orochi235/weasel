@@ -5,6 +5,7 @@ import {
   defaultNodeProperties,
   inferredNodeProperties,
   inferredNodeRouting,
+  gradientForBounds,
   solid,
   strokeOf,
   type RectPose,
@@ -82,6 +83,50 @@ export const Text: Story = {
       text: 'The quick brown fox',
       fill: solid('#1c1c1c'),
       style: { fontSize: 18, fontFamily: 'sans-serif', fontWeight: 500, align: 'center', lineHeight: 1.4 },
+    },
+  },
+};
+
+const UNIT_BOX = { x: 0, y: 0, width: 1, height: 1 };
+const RAMP = [
+  { offset: 0, color: '#7fb069ff' },
+  { offset: 1, color: '#1c1c1cff' },
+];
+
+/** A gradient fill, which the paint leaf now previews and edits in place
+ *  rather than degrading to the indeterminate chip. */
+export const GradientFillPaint: Story = {
+  args: {
+    data: {
+      path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
+      fill: gradientForBounds('linear-gradient', UNIT_BOX, RAMP, 'bounds'),
+      stroke: strokeOf('#1c1c1c', 4),
+    },
+  },
+};
+
+/** A gradient on the stroke too — the same leaf, so both paints get the same
+ *  editor. FILL and STROKE read as peer sections. */
+export const GradientStrokePaint: Story = {
+  args: {
+    data: {
+      path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
+      fill: solid('#7fb069'),
+      stroke: {
+        ...strokeOf('#1c1c1c', 6),
+        paint: gradientForBounds('radial-gradient', UNIT_BOX, RAMP, 'bounds'),
+      },
+    },
+  },
+};
+
+/** A pattern fill: the tile grid and size switch, promoted into the kit. */
+export const PatternFillPaint: Story = {
+  args: {
+    data: {
+      path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
+      fill: { fill: 'pattern', pattern: { tile: 'crosshatch', color: '#7fb069ff', size: 8 }, units: 'bounds' },
+      stroke: strokeOf('#1c1c1c', 4),
     },
   },
 };

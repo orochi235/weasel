@@ -1,5 +1,5 @@
 import type { Action } from '../registry';
-import type { Stroke } from 'core/paint-types';
+import type { Stroke } from '@weasel-js/paint';
 import { createPaintAction } from './createPaintAction';
 import { paintWithAlpha, strokeOf, DEFAULT_STROKE_COLOR } from '../../../util/paint';
 

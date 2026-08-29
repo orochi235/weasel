@@ -1,5 +1,5 @@
 import type { Action } from '../registry';
-import type { FillStyle } from 'core/paint-types';
+import type { FillStyle } from '@weasel-js/paint';
 import { createPaintAction } from './createPaintAction';
 import { paintWithColor, DEFAULT_FILL_COLOR } from '../../../util/paint';
 
@@ -8,7 +8,9 @@ import { paintWithColor, DEFAULT_FILL_COLOR } from '../../../util/paint';
 interface SetFillState {
   /** May be 6- or 8-char hex. Ignored while `paint` is set. */
   color: string;
-  paint?: FillStyle;
+  /** `null` is an explicit no-fill, distinct from `undefined`, which means
+   *  this gesture carries no paint and the color applies. */
+  paint?: FillStyle | null;
 }
 
 /**
@@ -31,17 +33,20 @@ export const setFillAction: Action & { requires: string[] } = createPaintAction<
   dataKey: 'fill',
   initialState: (pick) => ({
     color: pick<string>('color') ?? DEFAULT_FILL_COLOR,
-    paint: pick<FillStyle>('paint'),
+    paint: pick<FillStyle | null>('paint'),
   }),
   readParams: (prev, params) => {
     const color = params?.color as string | undefined;
-    const paint = params?.paint as FillStyle | undefined;
+    const paint = params?.paint as FillStyle | null | undefined;
     if (color === undefined && paint === undefined) return null;
     if (color === undefined) return { ...prev, paint };
     // An explicit color supersedes a paint from an earlier tick; otherwise a
     // picker drag after a gradient would do nothing.
     return { color, paint };
   },
-  merge: (prev, state) =>
-    state.paint ?? paintWithColor(prev ?? undefined, state.color),
+  // `??` would read an explicit no-fill as "no paint given" and repaint the
+  // node with the state's color, so absence has to be tested for.
+  merge: (prev, state) => (state.paint !== undefined
+    ? state.paint
+    : paintWithColor(prev ?? undefined, state.color)),
 });

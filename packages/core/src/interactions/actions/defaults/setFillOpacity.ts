@@ -1,5 +1,5 @@
 import type { Action } from '../registry';
-import type { FillStyle } from 'core/paint-types';
+import type { FillStyle } from '@weasel-js/paint';
 import { createPaintAction } from './createPaintAction';
 import { paintWithAlpha, solid, DEFAULT_FILL_COLOR } from '../../../util/paint';
 

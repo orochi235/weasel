@@ -1,5 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { f } from '../config/builder';
+import { resolveConfigSchema } from '../config/resolve';
 import { ControlPanel } from './ControlPanel';
 import type { ConfigField } from './types';
 
@@ -138,14 +140,172 @@ describe('<ControlPanel> color', () => {
 });
 
 describe('<ControlPanel> defensive', () => {
-  it('renders nothing for an unknown field type without crashing', () => {
+  it('names an unknown field type rather than dropping its row', () => {
     const fields = [
       { key: 'mystery', label: 'Mystery', type: 'mystery', default: 1 },
+      { key: 'ok', label: 'Ok', type: 'checkbox', default: true },
     ] as unknown as ConfigField[];
     const { container } = render(
-      <ControlPanel fields={fields} config={{ mystery: 1 }} setConfig={vi.fn()} />,
+      <ControlPanel fields={fields} config={{ mystery: 1, ok: true }} setConfig={vi.fn()} />,
     );
     expect(container.querySelector('.lk-control-panel')).not.toBeNull();
+    // A kind a lab has not wired up must not blank the panel, and a silently
+    // dropped row reads as "this control does not exist".
+    expect(screen.getByText(/mystery/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Ok')).toBeInTheDocument();
+  });
+});
+
+describe('<ControlPanel> schema', () => {
+  it('renders a schema through the built-in rows', () => {
+    const schema = resolveConfigSchema(f.schema({ showGrid: f.boolean(true) }), []);
+    render(<ControlPanel schema={schema} config={{ showGrid: true }} setConfig={vi.fn()} />);
+    expect(screen.getByLabelText('Show grid')).toBeInTheDocument();
+  });
+
+  it('writes back through setConfig keyed by path', () => {
+    const setConfig = vi.fn();
+    const schema = resolveConfigSchema(f.schema({ showGrid: f.boolean(true) }), []);
+    render(<ControlPanel schema={schema} config={{ showGrid: true }} setConfig={setConfig} />);
+    fireEvent.click(screen.getByLabelText('Show grid'));
+    expect(setConfig).toHaveBeenCalledWith('showGrid', false);
+  });
+
+  it('picks a slider for a bounded number and an input for an open one', () => {
+    const schema = resolveConfigSchema(
+      f.schema({ a: f.number(5).range(0, 10), b: f.number(5) }),
+      [],
+    );
+    render(<ControlPanel schema={schema} config={{ a: 5, b: 5 }} setConfig={vi.fn()} />);
+    expect(screen.getByLabelText('B')).toHaveAttribute('type', 'number');
+  });
+
+  it('falls back to the leaf default when config holds no value', () => {
+    const schema = resolveConfigSchema(f.schema({ tint: f.color('#123456') }), []);
+    render(<ControlPanel schema={schema} config={{}} setConfig={vi.fn()} />);
+    expect(screen.getByLabelText('Tint')).toHaveValue('#123456');
+  });
+});
+
+describe('<ControlPanel> renderers', () => {
+  it('renderers[path] beats renderers[kind]', () => {
+    const schema = resolveConfigSchema(f.schema({ tint: f.color('#ffffff') }), []);
+    render(
+      <ControlPanel
+        schema={schema}
+        config={{ tint: '#ffffff' }}
+        setConfig={vi.fn()}
+        renderers={{ color: () => <span>by-kind</span>, tint: () => <span>by-path</span> }}
+      />,
+    );
+    expect(screen.getByText('by-path')).toBeInTheDocument();
+    expect(screen.queryByText('by-kind')).not.toBeInTheDocument();
+  });
+
+  it('a lab renderer for the path beats the node\'s own .render', () => {
+    const schema = resolveConfigSchema(
+      f.schema({ tint: f.color('#ffffff').render(() => <span>by-node</span>) }),
+      [],
+    );
+    render(
+      <ControlPanel
+        schema={schema}
+        config={{ tint: '#ffffff' }}
+        setConfig={vi.fn()}
+        renderers={{ tint: () => <span>by-path</span> }}
+      />,
+    );
+    expect(screen.getByText('by-path')).toBeInTheDocument();
+  });
+
+  it("a node's .render beats a lab renderer for the kind", () => {
+    const schema = resolveConfigSchema(
+      f.schema({ tint: f.color('#ffffff').render(() => <span>by-node</span>) }),
+      [],
+    );
+    render(
+      <ControlPanel
+        schema={schema}
+        config={{ tint: '#ffffff' }}
+        setConfig={vi.fn()}
+        renderers={{ color: () => <span>by-kind</span> }}
+      />,
+    );
+    expect(screen.getByText('by-node')).toBeInTheDocument();
+  });
+
+  it('supplies a control for a kind labkit does not ship', () => {
+    const schema = resolveConfigSchema(f.schema({ offset: f.custom('vector2', { x: 1 }) }), []);
+    render(
+      <ControlPanel
+        schema={schema}
+        config={{ offset: { x: 1 } }}
+        setConfig={vi.fn()}
+        renderers={{ vector2: (ctx) => <span>vec:{String((ctx.value as { x: number }).x)}</span> }}
+      />,
+    );
+    expect(screen.getByText('vec:1')).toBeInTheDocument();
+  });
+
+  it('a renderer returning null collapses the row', () => {
+    const schema = resolveConfigSchema(f.schema({ tint: f.color('#ffffff') }), []);
+    const { container } = render(
+      <ControlPanel
+        schema={schema}
+        config={{ tint: '#ffffff' }}
+        setConfig={vi.fn()}
+        renderers={{ color: () => null }}
+      />,
+    );
     expect(container.querySelector('.lk-property-row')).toBeNull();
+  });
+});
+
+describe('<ControlPanel> visibility and sections', () => {
+  it('hides a row whose showIf is false', () => {
+    const schema = resolveConfigSchema(
+      f.schema({
+        showGrid: f.boolean(true),
+        cellSize: f.number(20).showIf((c) => c.showGrid === true),
+      }),
+      [],
+    );
+    const { rerender } = render(
+      <ControlPanel schema={schema} config={{ showGrid: true, cellSize: 20 }} setConfig={vi.fn()} />,
+    );
+    expect(screen.getByLabelText('Cell size')).toBeInTheDocument();
+    rerender(
+      <ControlPanel
+        schema={schema}
+        config={{ showGrid: false, cellSize: 20 }}
+        setConfig={vi.fn()}
+      />,
+    );
+    expect(screen.queryByLabelText('Cell size')).not.toBeInTheDocument();
+  });
+
+  it('keeps a hidden leaf out unless asked for it', () => {
+    const schema = resolveConfigSchema(f.schema({ seed: f.number(0).hidden() }), []);
+    const { rerender } = render(
+      <ControlPanel schema={schema} config={{ seed: 0 }} setConfig={vi.fn()} />,
+    );
+    expect(screen.queryByLabelText('Seed')).not.toBeInTheDocument();
+    rerender(<ControlPanel schema={schema} config={{ seed: 0 }} setConfig={vi.fn()} showHidden />);
+    expect(screen.getByLabelText('Seed')).toBeInTheDocument();
+  });
+
+  it('groups sectioned leaves under a heading, ungrouped ones first', () => {
+    const schema = resolveConfigSchema(
+      f.schema({ showGrid: f.boolean(true), seed: f.number(0).section('Advanced') }),
+      [],
+    );
+    const { container } = render(
+      <ControlPanel schema={schema} config={{ showGrid: true, seed: 0 }} setConfig={vi.fn()} />,
+    );
+    expect(screen.getByText('Advanced')).toBeInTheDocument();
+    const group = container.querySelector('.lk-property-group');
+    expect(group).not.toBeNull();
+    expect(group?.textContent).toContain('Seed');
+    expect(group?.textContent).not.toContain('Show grid');
   });
 });

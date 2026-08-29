@@ -37,7 +37,7 @@ import { execFileSync } from 'node:child_process';
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 /** Published packages, in dependency order. */
-const PACKAGES = ['geom', 'gestures', 'history', 'modes', 'theme', 'font', 'audio', 'core', 'svg', 'd3', 'ui', 'hud', 'weasel-js', 'labkit'];
+const PACKAGES = ['geom', 'gestures', 'history', 'modes', 'theme', 'font', 'paint', 'text', 'audio', 'core', 'svg', 'd3', 'ui', 'hud', 'weasel-js', 'labkit'];
 
 const fail = (msg, detail) => {
   console.error(`[smoke] ${msg}\n`);

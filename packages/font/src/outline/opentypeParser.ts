@@ -38,6 +38,22 @@ function loadOpenType(): Promise<OpenType> {
 }
 
 /**
+ * opentype.js 2.0 publishes ESM under `module` and a UMD bundle under `main`.
+ * Only a bundler reads `module`; Node takes the UMD one, whose named exports
+ * it cannot detect, so `ns.parse` is `undefined` there and every face fails to
+ * load. The registry catches that and degrades to the SDF tier, which is why
+ * it looks like nothing is wrong in an app that has an atlas — and why a
+ * headless consumer, which has neither, gets no glyphs and no explanation.
+ *
+ * Exported for the test: the suite resolves through vite, which reads
+ * `module` and therefore cannot reproduce the shape that breaks.
+ */
+export function parserOf(ns: OpenType): OpenType['parse'] {
+  const interop = ns as OpenType & { default?: OpenType };
+  return interop.default?.parse ?? ns.parse;
+}
+
+/**
  * Wrap a parsed opentype.js font.
  *
  * `charToGlyphIndex` reports 0 — `.notdef` — for a codepoint the font does
@@ -47,8 +63,21 @@ function loadOpenType(): Promise<OpenType> {
  * fallback ladder run.
  */
 function faceFor(font: import('opentype.js').Font): OutlineFace {
+  const upem = font.unitsPerEm;
   return {
-    unitsPerEm: font.unitsPerEm,
+    unitsPerEm: upem,
+    ascender: font.ascender / upem,
+    advanceOf(cp: number): number | null {
+      const index = font.charToGlyphIndex(String.fromCodePoint(cp));
+      if (!index) return null;
+      return (font.glyphs.get(index).advanceWidth ?? 0) / upem;
+    },
+    kernOf(left: number, right: number): number {
+      const l = font.charToGlyphIndex(String.fromCodePoint(left));
+      const r = font.charToGlyphIndex(String.fromCodePoint(right));
+      if (!l || !r) return 0;
+      return font.getKerningValue(font.glyphs.get(l), font.glyphs.get(r)) / upem;
+    },
     glyphD(cp: number): string | null {
       const index = font.charToGlyphIndex(String.fromCodePoint(cp));
       if (!index) return null;
@@ -68,9 +97,9 @@ function faceFor(font: import('opentype.js').Font): OutlineFace {
  */
 export function createOpenTypeParser(postScriptName?: string): OutlineParser {
   return async (bytes: ArrayBuffer): Promise<OutlineFace> => {
-    const opentype = await loadOpenType();
+    const parse = parserOf(await loadOpenType());
     const { bytes: single } = sfntFromCollection(bytes, postScriptName);
-    return faceFor(opentype.parse(single));
+    return faceFor(parse(single));
   };
 }
 

@@ -3,7 +3,7 @@ import { setStrokeAction } from './setStroke';
 import type { InvocationCtx } from '../invoker';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
-import type { Stroke } from 'core/paint-types';
+import type { Stroke } from '@weasel-js/paint';
 import { solid, strokeOf } from '../../../util/paint';
 import { makeScene, makeSelection, makeCtx, ongoingInvoker } from './paintActionTestUtils';
 

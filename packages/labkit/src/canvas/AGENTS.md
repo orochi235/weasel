@@ -28,6 +28,8 @@ interface CanvasStackProps {
   layers: CanvasLayerDescriptor[];      // { id, visible, render(ctx, view) }
   view: ViewTransform;                  // { zoom, pan: { x, y } }
   onViewChange: (v: ViewTransform) => void;
+  minZoom?: number;                     // default 0.1, forwarded to usePanZoom
+  maxZoom?: number;                     // default 32, forwarded to usePanZoom
   width?: number | string;              // default '100%'
   height?: number | string;             // default '100%'
   className?: string;
@@ -78,6 +80,8 @@ Both are pure. Pan is applied in screen space; zoom multiplies world coordinates
 ## Pan/zoom behavior
 
 Implemented in `usePanZoom`. Mouse-wheel zoom is anchored at the cursor; primary-button drag pans. `isDragging()` is exposed so consumers can suppress click handlers during a pan.
+
+Zoom is clamped to `[minZoom, maxZoom]` (defaults 0.1 / 32), settable via `CanvasStack`'s props and, for an instrument's own canvas, `CanvasCapability.minZoom` / `maxZoom`. The clamp always widens to admit whatever zoom the canvas opened at — an instrument declaring `initialView.zoom: 1600` with the default range is not clamped down to 32 on the first wheel event.
 
 ## Testing notes
 

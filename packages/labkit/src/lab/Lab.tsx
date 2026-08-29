@@ -2,6 +2,7 @@ import { ThemeProvider } from '@weasel-js/theme/react';
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef } from 'react';
 import { useStore } from 'zustand/react';
 import type { TrialContribution } from '../chrome/types';
+import type { ConfigRule, ControlRenderer } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
 import { noneAdapter } from '../state/adapters';
 import { LabStoreContext } from '../state/context';
@@ -48,6 +49,13 @@ export interface LabProps {
   /** Tools offered lab-wide. A trial whose instrument declares none of its own
    *  reflects and writes this slot. */
   tools?: readonly TrialTool[];
+  /** Rules run over every instrument's config leaves, before labkit's own
+   *  inference — where a lab states a convention once instead of annotating
+   *  each field. Memoize or hoist. */
+  configRules?: readonly ConfigRule[];
+  /** Control overrides and app-defined kinds for every trial's settings panel.
+   *  Keys are config paths (checked first) or leaf kinds. Memoize or hoist. */
+  controls?: Record<string, ControlRenderer>;
   children?: ReactNode;
 }
 
@@ -105,6 +113,8 @@ export function Lab({
   chrome,
   suppress,
   tools,
+  configRules,
+  controls,
   children,
 }: LabProps) {
   if (process.env.NODE_ENV !== 'production' && instruments.length === 0) {
@@ -190,8 +200,10 @@ export function Lab({
       setMode: (m) => {
         store.getState().setMode(m);
       },
+      configRules,
+      controls,
     };
-  }, [instruments, trials, savedSnapshots, modeValue, store]);
+  }, [instruments, trials, savedSnapshots, modeValue, store, configRules, controls]);
 
   // Only override the backdrop in dark, where there is one to override.
   // Setting a CSS custom property is the sanctioned use of inline style.

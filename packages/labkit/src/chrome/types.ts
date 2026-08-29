@@ -1,4 +1,5 @@
 import type { ComponentType, ReactNode } from 'react';
+import type { ResolvedConfig } from '../config/types';
 import type { ConfigField } from '../controls/types';
 import type { SavedSnapshot } from '../state/types';
 
@@ -102,6 +103,11 @@ export interface TrialChromeContext {
   undo: () => void;
   redo: () => void;
 
+  /** The instrument's controls, resolved against the lab's rules. Always
+   *  populated: a legacy `configSchema()` is adapted into the same shape. */
+  configSchema: ResolvedConfig;
+  /** @deprecated Read `configSchema`. Empty for an instrument declaring
+   *  `config`, since a builder schema has no `ConfigField[]` form. */
   configFields: ConfigField[];
   config: unknown;
   setConfig: (key: string, value: unknown) => void;

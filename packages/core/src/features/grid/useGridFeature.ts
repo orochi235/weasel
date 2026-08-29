@@ -17,7 +17,7 @@ import { clientToCanvasRect } from 'core/viewport/clientToCanvas';
 import { pointToGridCell } from 'interactions/gestures/shared/strategies/grid';
 import type { UnitSystem, UnitValue } from 'core/units';
 import type { RenderLayer } from 'core/layers/render';
-import type { FillStyle, Stroke } from 'core/paint-types';
+import type { FillStyle, Stroke } from '@weasel-js/paint';
 import { createGridLayer } from './layer';
 import { createCellHighlightLayer } from './cellHighlight';
 

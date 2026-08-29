@@ -8,7 +8,7 @@
  *  All values are `#rrggbbaa` so they round-trip through the kit's hex8 alpha
  *  helpers (`util/color`) without ambiguity.
  */
-import type { FillStyle, Stroke } from '../core/paint-types';
+import type { FillStyle, Stroke } from '@weasel-js/paint';
 import { getAlpha01 } from './color';
 
 /** Default fill paint for shapes and the fill action — opaque white. */

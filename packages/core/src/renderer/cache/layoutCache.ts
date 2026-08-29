@@ -55,8 +55,8 @@ import {
   layoutRuns,
   type LaidOutRuns,
   type LayoutRunsOpts,
-} from 'features/text/atlas/layoutRuns';
-import type { ResolvedRun } from 'features/text/runs/resolveRuns';
+} from '@weasel-js/text';
+import type { ResolvedRun } from '@weasel-js/text';
 import { glyphGeneration } from '@weasel-js/font';
 
 /** Distinct option combinations held for one runs array before the whole set

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { caretIndexAt, pointInTextPose } from './hitTest';
-import type { TextPose } from './textLayer';
-import { DEFAULT_TEXT_STYLE } from './textStyle';
+import type { TextPose } from '@weasel-js/text';
+import { DEFAULT_TEXT_STYLE } from '@weasel-js/text';
 
 const pose: TextPose = { x: 10, y: 20, width: 100, height: 40, text: 'hi' };
 

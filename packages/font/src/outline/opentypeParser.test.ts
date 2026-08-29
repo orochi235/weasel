@@ -12,7 +12,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { openTypeParser } from './opentypeParser';
+import { openTypeParser, parserOf } from './opentypeParser';
 import type { OutlineFace } from './OutlineFace';
 
 const INTER_TTF = resolve(import.meta.dirname, '../../../../assets/fonts/inter/inter.ttf');
@@ -87,5 +87,22 @@ describe.skipIf(!existsSync(INTER_TTF))('opentype parser, bundled Inter subset',
       const d = face.glyphD(cp);
       if (d) expect(d).not.toMatch(/[eE]/);
     }
+  });
+});
+
+describe('parserOf — module interop', () => {
+  const parse = (() => null) as unknown as typeof import('opentype.js').parse;
+
+  it('takes the named export when the module has one', () => {
+    const ns = { parse } as unknown as typeof import('opentype.js');
+    expect(parserOf(ns)).toBe(parse);
+  });
+
+  it('reaches through `default` when it does not', () => {
+    // What Node hands back for opentype.js's UMD build: no detectable named
+    // exports, everything under the interop default. Reading `ns.parse` here
+    // yields undefined and every face fails to load.
+    const ns = { default: { parse } } as unknown as typeof import('opentype.js');
+    expect(parserOf(ns)).toBe(parse);
   });
 });

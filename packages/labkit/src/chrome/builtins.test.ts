@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { f } from '../config/builder';
+import { fromConfigFields } from '../config/fromConfigField';
+import { resolveConfigSchema } from '../config/resolve';
 import type { Instrument } from '../instrument/types';
 import { builtinContributions } from './builtins';
 import type { TrialChromeContext } from './types';
@@ -14,6 +17,7 @@ const ctx: TrialChromeContext = {
   undo: () => {},
   redo: () => {},
   configFields: [],
+  configSchema: fromConfigFields([]),
   config: {},
   setConfig: () => {},
   savedSnapshots: [],
@@ -65,9 +69,19 @@ describe('builtinContributions', () => {
     expect(ids(bare)).not.toContain('settings');
     const withFields = {
       ...ctx,
-      configFields: [{ key: 'n', label: 'N', type: 'number' as const, default: 1 }],
+      configSchema: fromConfigFields([
+        { key: 'n', label: 'N', type: 'number' as const, default: 1 },
+      ]),
     };
     expect(ids(bare, withFields)).toContain('settings');
+  });
+
+  it('contributes a settings section for a builder schema too', () => {
+    const withSchema = {
+      ...ctx,
+      configSchema: resolveConfigSchema(f.schema({ showGrid: f.boolean(true) }), []),
+    };
+    expect(ids(bare, withSchema)).toContain('settings');
   });
 
   it('reflects undo availability in the item, not by omitting it', () => {

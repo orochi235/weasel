@@ -386,13 +386,40 @@ describe('SelectionPanel — paint leaf', () => {
     expect(screen.getByLabelText('Color')).toHaveValue('#00ff00');
   });
 
-  it('shows a gradient fill as indeterminate rather than as a color', () => {
+  it('shows a gradient fill as a gradient, not as the indeterminate chip', () => {
+    // The checkerboard used to mean both "mixed selection" and "structurally
+    // not a solid". Now that the leaf previews a gradient as a gradient it
+    // means mixed and nothing else.
     const { container } = renderPaint({
       fill: 'linear-gradient',
       from: { x: 0, y: 0 },
       to: { x: 1, y: 0 },
-      stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
+      stops: [{ offset: 0, color: '#000000ff' }, { offset: 1, color: '#ffffffff' }],
     });
+    expect(screen.getByRole('radio', { name: 'Linear' })).toBeChecked();
+    expect(screen.getByLabelText('Stop 1 at 0%')).toBeInTheDocument();
+    expect(container.querySelector('[data-mixed]')).toBeNull();
+  });
+
+  it('still shows the indeterminate chip for a genuinely mixed selection', () => {
+    const scene = createScene<PaintData, Layer, Pose>({ systemLayers: [{ id: 'default' }] });
+    for (const [id, color] of [['a', '#ff0000ff'], ['b', '#00ff00ff']] as const) {
+      scene.add({
+        id: asNodeId(id),
+        kind: 'leaf',
+        layer: 'default',
+        pose: { x: 0, y: 0, width: 10, height: 10 },
+        data: { kind: 'text', style: { fill: { fill: 'solid', color } } },
+      });
+    }
+    const { container } = render(
+      <SelectionPanel
+        scene={scene}
+        selection={selectionOf(['a', 'b'])}
+        properties={paintProperties}
+        routing={paintRouting}
+      />,
+    );
     expect(container.querySelector('[data-mixed]')).not.toBeNull();
   });
 
@@ -401,7 +428,7 @@ describe('SelectionPanel — paint leaf', () => {
       fill: 'radial-gradient',
       center: { x: 0, y: 0 },
       radius: 1,
-      stops: [{ offset: 0, color: '#000' }],
+      stops: [{ offset: 0, color: '#000000ff' }],
     });
     render(
       <SelectionPanel
@@ -411,6 +438,13 @@ describe('SelectionPanel — paint leaf', () => {
         routing={paintRouting}
       />,
     );
+    // Switching kind is now how a gradient becomes a solid, and it must
+    // replace the union member rather than graft a `color` onto it. The
+    // registry seeds an untagged solid, which is the member's own shape —
+    // what must not survive is any of the gradient.
+    fireEvent.click(screen.getByRole('radio', { name: 'Solid' }));
+    expect(scene.get(asNodeId('t'))?.data.style?.fill).toEqual({ color: '#000000ff' });
+
     const input = screen.getByLabelText('Color');
     fireEvent.input(input, { target: { value: '#123456' } });
     fireEvent.blur(input);
@@ -783,16 +817,29 @@ describe('SelectionPanel — object leaf', () => {
     });
   });
 
-  it('shows a gradient stroke paint as indeterminate rather than as a color', () => {
+  it('offers no None on the stroke paint, which cannot hold one', () => {
+    // `Stroke.paint` is required. A nested paint writes one field of its
+    // parent, so offering None here would produce `{ ...stroke, paint: null }`
+    // — an invalid Stroke. Dropping the stroke is the parent's edit to make.
+    renderStroke(sceneWithStroke({ paint: { fill: 'solid', color: '#00ff00ff' }, width: 4 }));
+    expect(screen.queryByRole('radio', { name: 'None' })).toBeNull();
+    expect(screen.getByRole('radio', { name: 'Solid' })).toBeInTheDocument();
+  });
+
+  it('edits a gradient stroke paint as a gradient', () => {
+    // The stroke's paint field is the same `paint` leaf the fill uses, so it
+    // gets the whole editor rather than a chip that can only degrade it.
     const { container } = renderStroke(sceneWithStroke({
       paint: {
         fill: 'linear-gradient',
         from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
-        stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
+        stops: [{ offset: 0, color: '#000000ff' }, { offset: 1, color: '#ffffffff' }],
       },
       width: 4,
     }));
-    expect(container.querySelector('[data-mixed]')).not.toBeNull();
+    expect(screen.getByRole('radio', { name: 'Linear' })).toBeChecked();
+    expect(screen.getByLabelText('Stop 1 at 0%')).toBeInTheDocument();
+    expect(container.querySelector('[data-mixed]')).toBeNull();
   });
 });
 
