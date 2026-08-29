@@ -35,9 +35,11 @@ packages obey it.
 | `@weasel-js/paint` | `FillStyle`, `Stroke`, gradients, dashes, `Region`, `TextureHandle` | nothing |
 | `@weasel-js/text` | run model, style resolution, layout, measurement, metrics seam | `paint`, `font`, `geom` |
 
-`core` gains both as dependencies and re-exports their public surface, exactly
-as it already does for `@weasel-js/history`, so `@weasel-js/core`'s API does
-not change.
+`core` gains both as dependencies and re-exports their public surface, so
+`@weasel-js/core`'s API does not change. By name, not `export *`: a star
+re-export of an external package leaves no binding in core's bundle, and a
+downstream bundler fails to resolve one. `npm run test:smoke:consumer` is the
+only gate that catches it.
 
 `paint` is its own package rather than a module inside `text` because a
 gradient editor importing `FillStyle` from a package named "text" is a naming
