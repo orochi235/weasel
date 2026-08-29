@@ -23,6 +23,31 @@ const connectCenters = (_node: unknown, deps: readonly (RectPose | undefined)[])
 
 const registry = { derive: { 'test:connect': connectCenters } };
 
+function setup() {
+  const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS, registry });
+  const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+  const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 100, y: 0, width: 10, height: 10 }, data: {} });
+  const edge = scene.add({
+    kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
+    dependsOn: [a, b], derive: connectCenters,
+  });
+  return { scene, a, b, edge };
+}
+
+/** Nothing depends on `box`, but it moves `a`'s world pose — which is what
+ *  `derive` reads under a non-identity pose composition. */
+function setupNested() {
+  const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS, registry });
+  const box = scene.add({ kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: {} });
+  const a = scene.add({ kind: 'leaf', parent: box, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+  const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 100, y: 0, width: 10, height: 10 }, data: {} });
+  const edge = scene.add({
+    kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
+    dependsOn: [a, b], derive: connectCenters,
+  });
+  return { scene, box, a, b, edge };
+}
+
 describe('derived geometry — serialization', () => {
   it('round-trips dependsOn and the derive registry key', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS, registry });
@@ -150,17 +175,6 @@ describe('derived geometry — redo-cache pruning', () => {
 });
 
 describe('derived geometry — invalidation', () => {
-  function setup() {
-    const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS, registry });
-    const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
-    const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 100, y: 0, width: 10, height: 10 }, data: {} });
-    const edge = scene.add({
-      kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
-      dependsOn: [a, b], derive: connectCenters,
-    });
-    return { scene, a, b, edge };
-  }
-
   /** Memoize a counter against a node the way the paint path will, so a
    *  surviving cache entry is observable as a call that did not happen. */
   function derivedCount(
@@ -231,20 +245,6 @@ describe('derived geometry — invalidation', () => {
     derivedCount(scene, edge, counter);
     expect(counter.n).toBe(2);
   });
-
-  /** Nothing depends on `box`, but it moves `a`'s world pose — which is what
-   *  `derive` reads under a non-identity pose composition. */
-  function setupNested() {
-    const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS, registry });
-    const box = scene.add({ kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: {} });
-    const a = scene.add({ kind: 'leaf', parent: box, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
-    const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 100, y: 0, width: 10, height: 10 }, data: {} });
-    const edge = scene.add({
-      kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
-      dependsOn: [a, b], derive: connectCenters,
-    });
-    return { scene, box, a, b, edge };
-  }
 
   /** `dependsOn` is unvalidated and `derive` hands `undefined` to a dependency
    *  that isn't there, so naming an id that does not exist yet is legal. */
@@ -334,5 +334,157 @@ describe('derived geometry — invalidation', () => {
     scene.undo();
     derivedCount(scene, edge, counter);
     expect(counter.n).toBe(2);
+  });
+});
+
+describe('derived geometry — cascade delete', () => {
+  const leaf = { kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} } as const;
+
+  /** Houses the edge under a container with a sibling on each side, so a
+   *  re-attach at the wrong index is visible rather than incidentally right. */
+  function setupHoused() {
+    const { scene, a, b, edge } = setup();
+    const box = scene.add({ kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: {} });
+    const before = scene.add({ ...leaf, parent: box });
+    const after = scene.add({ ...leaf, parent: box });
+    scene.move(edge, box, 1);
+    return { scene, a, b, edge, box, before, after };
+  }
+
+  it('removes dependents along with the node they depend on', () => {
+    const { scene, a, b, edge } = setup();
+    scene.remove(a);
+    expect(scene.get(a)).toBeUndefined();
+    expect(scene.get(edge)).toBeUndefined();
+    expect(scene.get(b)).toBeDefined();
+  });
+
+  it('is a single undo entry — one undo restores both, one redo removes both', () => {
+    const { scene, a, edge } = setup();
+    scene.remove(a);
+    scene.undo();
+    expect(scene.get(a)).toBeDefined();
+    expect(scene.get(edge)).toBeDefined();
+    scene.redo();
+    expect(scene.get(a)).toBeUndefined();
+    expect(scene.get(edge)).toBeUndefined();
+  });
+
+  it('cascades transitively to a label on the edge', () => {
+    const { scene, a, edge } = setup();
+    const label = scene.add({
+      kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
+      dependsOn: [edge], derive: connectCenters,
+    });
+    scene.remove(a);
+    expect(scene.get(label)).toBeUndefined();
+  });
+
+  it("cascades to a dependent of a removed container's descendant", () => {
+    const { scene, box, a, edge } = setupNested();
+    scene.remove(box);
+    expect(scene.get(a)).toBeUndefined();
+    expect(scene.get(edge)).toBeUndefined();
+    scene.undo();
+    expect(scene.get(edge)).toBeDefined();
+  });
+
+  it('restores a cascaded node with its dependsOn and derive intact', () => {
+    const { scene, a, b, edge } = setup();
+    scene.remove(a);
+    expect(scene.get(edge)).toBeUndefined();   // else the assertions below read the original
+    scene.undo();
+    const live = scene.get(edge)!;
+    expect(live.dependsOn).toHaveLength(2);
+    expect(live.dependsOn).toEqual([a, b]);
+    expect(live.derive).toBe(connectCenters);
+  });
+
+  it('unlinks a cascaded root from the root list, and restores its order', () => {
+    const { scene, a, b, edge } = setup();
+    scene.remove(a);
+    expect(scene.roots).toEqual([b]);
+    scene.undo();
+    expect(scene.roots).toEqual([a, b, edge]);
+  });
+
+  it("unlinks a cascaded dependent from its parent's children", () => {
+    const { scene, a, box, before, after } = setupHoused();
+    scene.remove(a);
+    expect(scene.childrenOf(box)).toEqual([before, after]);
+  });
+
+  it('restores a cascaded dependent at its original index among its siblings', () => {
+    const { scene, a, edge, box, before, after } = setupHoused();
+    scene.remove(a);
+    expect(scene.get(edge)).toBeUndefined();   // else it never left the index it is checked at
+    scene.undo();
+    expect(scene.childrenOf(box)).toEqual([before, edge, after]);
+  });
+
+  it('restores two cascaded siblings at their own indices', () => {
+    const { scene, a, b } = setup();
+    const box = scene.add({ kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: {} });
+    const s0 = scene.add({ ...leaf, parent: box });
+    const e1 = scene.add({ ...leaf, parent: box, dependsOn: [a, b], derive: connectCenters });
+    const s2 = scene.add({ ...leaf, parent: box });
+    const e3 = scene.add({ ...leaf, parent: box, dependsOn: [a, b], derive: connectCenters });
+    const s4 = scene.add({ ...leaf, parent: box });
+
+    scene.remove(a);
+    expect(scene.childrenOf(box)).toEqual([s0, s2, s4]);
+    scene.undo();
+    expect(scene.childrenOf(box)).toEqual([s0, e1, s2, e3, s4]);
+  });
+
+  it("takes a cascaded dependent's own children with it", () => {
+    const { scene, a, b } = setup();
+    const group = scene.add({
+      kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {},
+      dependsOn: [a, b], derive: connectCenters,
+    });
+    const child = scene.add({ ...leaf, parent: group });
+
+    scene.remove(a);
+    expect(scene.get(group)).toBeUndefined();
+    expect(scene.get(child)).toBeUndefined();
+    scene.undo();
+    expect(scene.childrenOf(group)).toEqual([child]);
+  });
+
+  it('clears the pose override of a cascaded node', () => {
+    const { scene, a, edge } = setup();
+    scene.overrides.set(edge, { pose: { x: 7, y: 7, width: 1, height: 1 } });
+    scene.remove(a);
+    expect(scene.overrides.get(edge)).toBeUndefined();
+  });
+
+  it('terminates on a dependency cycle', () => {
+    const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS, registry });
+    const edge = asNodeId('edge');
+    const a = scene.add({ ...leaf, dependsOn: [edge], derive: connectCenters });
+    scene.add({ ...leaf, id: edge, dependsOn: [a], derive: connectCenters });
+
+    scene.remove(a);
+    expect(scene.roots).toEqual([]);
+  });
+
+  it('restores a node that cascaded through its own parent without duplicating it', () => {
+    const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS, registry });
+    const a = scene.add(leaf);
+    // A container deriving from its own child. The removed node is a descendant
+    // of the node that cascades, so the tree loses the parent, not the child.
+    const box = scene.add({
+      kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: {},
+      dependsOn: [a], derive: connectCenters,
+    });
+    scene.move(a, box, 0);
+
+    scene.remove(a);
+    expect(scene.get(box)).toBeUndefined();
+    expect(scene.roots).toEqual([]);
+    scene.undo();
+    expect(scene.roots).toEqual([box]);
+    expect(scene.childrenOf(box)).toEqual([a]);
   });
 });
