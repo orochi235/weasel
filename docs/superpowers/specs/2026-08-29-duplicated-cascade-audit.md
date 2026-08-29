@@ -113,13 +113,6 @@ Two still stand:
 New, and none of it fixed. Each is the same pattern in a place the audit did not
 reach.
 
-- **`getChildren` is two contracts under one name**, both in
-  `core/adapters/types.ts`: `MoveAdapter.getChildren(id)` returns a node's
-  direct children for the move cascade; `OrderedAdapter.getChildren(parentId)`
-  is the z-ordering seam. They land on the same adapter object, and
-  `arrayAdapter` exposes the first shape under the name the ops read with the
-  second meaning — so an op asking for root order gets `[]`, silently. The op
-  layer only survives it because the ordinal fallback exists.
 - **Three path walkers have no `default:` arm**, so a sixth opcode would stop
   their coordinate cursor advancing and silently misparse everything after:
   `features/paths/booleans.adapter.ts:89`,
@@ -131,6 +124,9 @@ reach.
   `useDeviceProfile()` and one option.
 - **`move/gestureAdapter.ts` has no `index` parameter on `insertNode`** and
   neither ordering accessor, so undo through the move pipeline still appends.
+  `arrayAdapter` has no `setChildOrder` either, so it places by ordinal rather
+  than by anchor — deliberate for now, and the reason the ordinal fallback
+  exists beside the anchor.
 - **`flipPoseAboutBounds` carries `rotation` through unchanged**, so flipping a
   30°-rotated shape should leave it at −30° and does not. Extents stay correct
   (a rotated box's AABB is symmetric under a sign flip), which is why it hides;
