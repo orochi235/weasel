@@ -1,8 +1,8 @@
 # Duplicated-cascade audit — what is left
 
 **Date:** 2026-08-29
-**Status:** Tier 1, Tier 2 and half of Tier 4 collapsed. Tier 3 and the walk
-unification are open.
+**Status:** Tier 1, Tier 2, Tier 3 and the live Tier 4 defects collapsed. The
+walk unification is open.
 **For:** whoever does the rest. Assumes repo familiarity, no session context.
 **Answers:** which lookups in this engine are still implemented twice, and which
 one survives.
@@ -27,27 +27,25 @@ derived by `keyof typeof`, one exported accessor.
 
 ## Tier 3 — closure-over-surface, live now that N views exist
 
-Untouched. Each of these paints or answers for view zero in every view, because
-`<CanvasView>` draws the surface's layer array unchanged and only the envelope
-differs. A `draw: (_data, …)` is therefore a guarantee of answering for the
-wrong view, not merely an unused argument.
+Collapsed. All nine sites now answer for the view being drawn or dispatched to.
+Three seams carry it, and the fix pattern is worth knowing before adding a
+tenth: **a layer must not hold state a view owns.**
 
-`usePreviewGhostLayer.ts:80` (a drag in view B ghosts in view A) ·
-`useDispatcherOverlayLayer.ts:80` (marquee paints in the wrong view; reads
-`isVisible` off the envelope but the dispatcher from a closure) ·
-`pathEditingOverlayLayer.ts:114` · `slopsDebugLayer.ts:53` (a debug overlay that
-lies about hit regions) · chrome-caps `RuleCtx` (`SceneCanvas.tsx` — rules are
-correctly surface-wide, the **ctx** is not, and the same ctx gates dispatcher
-eligibility for keyboard dispatch) · pointer world coords
-(`PointerProviderIfRoot.tsx:44`, which paste-at-pointer reads) ·
-`deps/ingestion.ts:30` (every Cmd+V centers on the wrong camera) · pick
-tolerance (`SceneCanvas.tsx`) · `deps/dispatcher.ts:19` (Escape in view B
-cancels view A).
+- `CanvasViewHelpers` publishes `getPreviewSources()`, `getGestureOverlays()`
+  and `getIsVisible()`, and `canvas/drawEnvelope.ts` is how a layer reads them
+  off its `data` argument. The preview-ghost, dispatcher-overlay,
+  path-editing and slops-debug layers take all their live state from there.
+- `SurfaceViewInputs.chromeCaps` builds a `RuleCtx` per view. The rules stay
+  surface-wide; the context is the asking view's selection, camera and
+  in-flight action, and `DispatcherViewTarget.getRuleCtx` feeds the same one
+  to the eligibility filter.
+- `<CanvasView>` overlays the `ingestion` and `dispatcher` deps, and
+  `PointerPublisher` routes through `viewRegistry.resolver.at`.
 
-**Verdict: COLLAPSE** — publish `getPreviewIds` and the overlay/dispatcher reads
-on the view helpers, give `RuleCtx` a per-view construction, and route the rest
-through `viewRegistry.resolver.at`, which the virtual-viewports spec already
-establishes as the one resolver per surface.
+Pick tolerance is the one that could not become an envelope read: a world
+point does not carry the scale it was produced under, so `pickEvery` /
+`pickBest` take an explicit `PickCamera` and the caller that made the point
+supplies it.
 
 All eleven `exhaustive-deps` suppressions were checked and none is stale in
 time — each bottoms out in a ref reassigned every render, with a version key as
@@ -79,15 +77,7 @@ A's clip chain and `adapter.getPose`. The obstacle is that A is generic over
 walk has to be adapter-shaped, with the Scene callers going through
 `sceneToAdapter`.
 
-Same axis, three more, all untouched:
-
-**Stroke reach.** `NodeShape.ts:486` `inkReach` handles stroke align correctly
-and is defeated by a pre-filter using `tolerance` alone, so half a thick outer
-stroke's ink is unclickable — and by `ShapeCoversPointOptions.scale` never
-being passed, so `{px}` widths resolve as world units while the caller computes
-`meanScale(view.scale)` one line above. `canvas/SceneCanvas/poseGeometry.ts:54`
-claims *"the pre-filter has to be at least as generous as the refinement that
-follows it"*; it is not.
+Same axis, two more, both untouched:
 
 **Text.** Three computations of one quantity: the paint cache (`draw.ts:1282`),
 an uncached `layoutRuns` for the silhouette that *cannot* hit that cache (it
@@ -101,12 +91,9 @@ is undrawn yet still claims clicks.
 
 ## Comments that assert a collapse which never happened
 
-Two still stand:
-
-- `canvas/NodeShape.ts:6`, `:233`, `:285` — the silhouette is *"the same
-  boundary used for clipping and SVG export."* The exporter is not among
-  `findShapeSilhouette`'s five callers.
-- `canvas/SceneCanvas/poseGeometry.ts:54` — see "Stroke reach" above.
+One still stands: `canvas/NodeShape.ts:6`, `:233`, `:285` — the silhouette is
+*"the same boundary used for clipping and SVG export."* The exporter is not
+among `findShapeSilhouette`'s five callers.
 
 ## Found while collapsing
 

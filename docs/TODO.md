@@ -22,7 +22,7 @@ Priority tags:
 ### Next up
 
 - **`<Timeline>` editor** — the one unbuilt phase of the timeline/rig arc → [Animation](#animation)
-- **Finish the duplicated-cascade collapses** — Tier 1/2 landed; Tier 3's wrong-view bugs and the walk unification are open → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- **Finish the duplicated-cascade collapses** — Tier 1/2/3 landed; the walk unification and the stroke/text/alpha sites are open → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 ### P2 — broad reuse / friction-likely
 
@@ -1074,19 +1074,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P1) Finish the duplicated-cascade collapses.** Tier 1, Tier 2 and the three
-  live Tier 4 defects landed 2026-08-29 — see `git log` and `.changeset/` for what
-  each one was. `docs/superpowers/specs/2026-08-29-duplicated-cascade-audit.md` has
-  been rewritten down to what is left; read it rather than this entry for detail.
+- **(P1) Finish the duplicated-cascade collapses.** Tier 1, Tier 2, Tier 3 and the
+  three live Tier 4 defects landed 2026-08-29 — see `git log` and `.changeset/` for
+  what each one was. `docs/superpowers/specs/2026-08-29-duplicated-cascade-audit.md`
+  has been rewritten down to what is left; read it rather than this entry for detail.
 
-  Open: **Tier 3**, nine sites that close over surface state and so answer for view
-  zero in every view — a live wrong-view bug now that N views exist, not a latent
-  one (a drag in view B ghosts in view A, Cmd+V centers on the wrong camera, Escape
-  in view B cancels view A). **The walk unification** — the four hit-test walks no
-  longer disagree on any case with a test, which is why it is still worth doing: the
-  next divergence will be as silent as the last three. **Stroke reach, text metrics
-  and alpha/`layerOrder`** on the same axis: half a thick outer stroke's ink is
-  unclickable, one text quantity is computed three ways, and a node at alpha 0 is
+  Open: **the walk unification** — the four hit-test walks no longer disagree on any
+  case with a test, which is why it is still worth doing: the next divergence will be
+  as silent as the last three. **Text metrics and alpha/`layerOrder`** on the same
+  axis: one text quantity is computed three ways, and a node faded to alpha 0 is
   invisible and fully clickable.
 
   The audit also turned up eight defects outside its own pattern while the collapses
