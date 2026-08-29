@@ -6,7 +6,7 @@ import {
   gradientGeometry,
   gradientForBounds,
 } from './gradient';
-import type { GradStop, GradientFill } from './paint-types';
+import type { GradStop, GradientFill } from '@weasel-js/paint';
 
 const BW: GradStop[] = [
   { offset: 0, color: '#000000' },

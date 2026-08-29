@@ -13,7 +13,7 @@
  */
 import { bench, describe } from 'vitest';
 import { registerFont } from '@weasel-js/font';
-import { layoutRuns } from 'features/text/atlas/layoutRuns';
+import { layoutRuns } from '@weasel-js/text';
 // Relative: core's `renderer/` tree has no bare path mapping (nothing inside
 // core imports it by one), so there is no alias to lean on here.
 import {

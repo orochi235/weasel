@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createPathLayer } from './pathLayer';
 import { polygonFromPoints, rectPath } from './builder';
 import type { Path } from './types';
-import type { FillStyle, Stroke } from 'core/paint-types';
+import type { FillStyle, Stroke } from '@weasel-js/paint';
 import { ColorOverrideRegistry } from '../../animation/colorRegistry';
 
 // createPathLayer emits raw world-space PathDrawCommands. The viewToMat3

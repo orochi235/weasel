@@ -28,7 +28,7 @@ import type { DrawCommand, ShaderProgramHandle } from '../renderer';
 import { subscribeImageReady } from 'features/images/imageCache';
 import { subscribeGlyphReady } from '@weasel-js/font';
 import { defaultDrawOne } from './defaultDrawOne';
-import type { FillStyle } from 'core/paint-types';
+import type { FillStyle } from '@weasel-js/paint';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap, CanvasSelectionMode, SelectionOverlaySlotConfig } from './Canvas';
 import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';

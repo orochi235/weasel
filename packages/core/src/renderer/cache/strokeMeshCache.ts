@@ -8,7 +8,8 @@
  * Design: `docs/superpowers/specs/2026-08-15-stroke-ribbon-cache-design.md`.
  */
 
-import type { Path, Stroke } from '@weasel-js/core';
+import type { Path } from '@weasel-js/core';
+import type { Stroke } from '@weasel-js/paint';
 import { tessellateStroke, resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import type { Mesh } from './mesh';
 

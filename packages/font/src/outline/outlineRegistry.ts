@@ -260,6 +260,34 @@ export function glyphOutline(
   return d;
 }
 
+/**
+ * Metrics for a registered outline face, or `null` when this tier cannot
+ * supply them yet — nothing registered, bytes still loading, or a failed load.
+ *
+ * The face is the *only* metrics source for a family that has no atlas, which
+ * is the case this exists for: without it such a family cannot lay out at all.
+ * It does not disturb metric neutrality — a family that has an atlas resolves
+ * to the atlas long before anything asks here, so registering outlines still
+ * cannot move text that was already rendering.
+ *
+ * Starts the load on a first call and answers `null` for now, exactly like
+ * `glyphOutline`, so a per-frame caller falls through and picks it up on the
+ * frame after the bytes land.
+ */
+export function outlineMetrics(
+  family: string,
+  weight: number,
+  style: OutlineFontStyle,
+): OutlineFace | null {
+  const slot = slots.get(slotKey(family, weight, style));
+  if (!slot) return null;
+  if (slot.status === 'idle') {
+    void beginLoad(slot);
+    return null;
+  }
+  return slot.status === 'ready' ? slot.face! : null;
+}
+
 async function beginLoad(slot: FaceSlot): Promise<void> {
   slot.status = 'loading';
   try {

@@ -7,7 +7,7 @@
  * serializer would let the raster and vector forms drift apart silently.
  */
 
-import type { TilePatternSpec } from '../../core/paint-types';
+import type { TilePatternSpec } from '@weasel-js/paint';
 
 /** One primitive within a pattern tile, in tile-local coordinates. */
 export type TileShape =

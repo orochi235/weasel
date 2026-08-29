@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { fillInPoseFrame, fillToBoundsFrame } from './fillInPoseFrame';
-import type { FillStyle, GradientFill } from './paint-types';
+import type { FillStyle, GradientFill } from '@weasel-js/paint';
 
 const STOPS = [
   { offset: 0, color: '#000000' },

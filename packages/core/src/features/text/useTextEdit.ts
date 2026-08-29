@@ -11,11 +11,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useVisibleRaf } from '../../scheduling/useVisibleRaf';
-import type { ResolvedTextStyle, TextStyle } from './textStyle';
-import { fontString, resolveTextStyle } from './textStyle';
-import type { TextPaint } from './textStyle';
-import type { StyledRun } from './runs';
-import { runsToPlainText } from './runs';
+import type { ResolvedTextStyle, TextStyle } from '@weasel-js/text';
+import { fontString, resolveTextStyle } from '@weasel-js/text';
+import type { TextPaint } from '@weasel-js/text';
+import type { StyledRun } from '@weasel-js/text';
+import { runsToPlainText } from '@weasel-js/text';
 import { runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset } from './domRuns';
 import { applyStyleToRange, runsCarryStyling, styleAtRange } from './runs/rangeStyle';
 import { nodeHasFlag, setFlagOverRange, type FlagKey } from './runs/flagRange';

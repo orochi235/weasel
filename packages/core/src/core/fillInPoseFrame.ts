@@ -9,7 +9,7 @@
  * the renderer in one frame.
  */
 
-import type { FillStyle, GradientFill } from './paint-types';
+import type { FillStyle, GradientFill } from '@weasel-js/paint';
 import { getPaintKind } from './paintKinds';
 
 /** The box a `'bounds'` gradient's normalized geometry is mapped onto —

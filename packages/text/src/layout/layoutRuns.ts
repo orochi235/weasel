@@ -39,7 +39,7 @@
  * pen deltas, never an absolute coordinate, so the translation is exact.
  */
 
-import type { FillStyle, Stroke } from 'core/paint-types';
+import type { FillStyle, Stroke } from '@weasel-js/paint';
 import {
   resolveFontVariant, resolveGlyphFallback, glyphOutline,
   type ResolveResult, type BmFontChar, type BmFont,
@@ -174,6 +174,38 @@ const UNDERLINE_OFFSET = 0.10;
 const STRIKETHROUGH_OFFSET = -0.30;
 const DECORATION_THICKNESS = 0.05;
 
+/**
+ * Where a run's advances, kerning and baseline come from.
+ *
+ * The two tiers that carry metrics express them in different units — a baked
+ * atlas in its own bake-size units, a parsed face in ems — so the walk reads
+ * both through this instead of naming a `BmFont`. `size` is the divisor that
+ * takes either into world units (`fontSize / size`), which is why an em-space
+ * face reports `size: 1`.
+ *
+ * Not exported: a consumer supplies metrics by registering a font, not by
+ * implementing this. It exists so the atlas is one case rather than the only
+ * one.
+ */
+interface MetricsSource {
+  /** Units per em of whatever `advance`, `base` and `kernOf` are measured in. */
+  size: number;
+  /** Line top to baseline, in those same units. */
+  base: number;
+  /** Advance for `cp`, or null when this source has no glyph for it. */
+  advanceOf(cp: number): number | null;
+  kernOf(left: number, right: number): number;
+}
+
+function atlasMetrics(font: BmFont): MetricsSource {
+  return {
+    size: font.info.size,
+    base: font.common.base,
+    advanceOf: (cp) => font.charMap.get(cp)?.xadvance ?? null,
+    kernOf: (l, r) => font.kerningMap.get(l)?.get(r) ?? 0,
+  };
+}
+
 export interface LayoutRunsOpts {
   maxWidth: number;
   lineHeight: number;
@@ -192,6 +224,10 @@ export interface LayoutRunsOpts {
    * glyph looks like, never where it sits — so measurement callers
    * (`measureTextBounds`, `textLineBoxes`) leave it unset and still agree
    * with the paint, and crossing the threshold cannot reflow text.
+   *
+   * Ignored for a family that resolved to the outline tier because it has no
+   * atlas: there the geometry is not an upgrade over another rendering, it is
+   * the only one, so the threshold has nothing to choose between.
    */
   outlineMinSize?: number;
 }
@@ -402,8 +438,10 @@ export function layoutRuns(
   // Position (x) is filled in during the line-fitting pass.
   interface Entry {
     run: ResolvedRun;
-    font: BmFont;
-    glyph: BmFontChar;
+    /** The atlas to sample, or null on the outline tier, which has none. */
+    font: BmFont | null;
+    metrics: MetricsSource;
+    glyph: BmFontChar | null;
     cp: number;
     advance: number;         // xadvance in world units (already scaled)
     tracking: number;        // run letterSpacing, added after this glyph (world units)
@@ -418,17 +456,23 @@ export function layoutRuns(
   //    kerning using the left glyph's atlas+scale across run boundaries.
   const entries: Entry[] = [];
   let prevCp: number | undefined;
-  let prevFont: BmFont | undefined;
+  let prevMetrics: MetricsSource | undefined;
   let prevFontSize: number | undefined;
 
   for (const run of runs) {
     const resolved = resolveFontVariant(run.fontFamily, run.fontWeight, run.fontStyle);
-    const font = resolved.entry?.font ?? resolved.dynamicFace?.font;
-    if (!font) {
-      prevCp = undefined; prevFont = undefined; prevFontSize = undefined;
+    const outlineFace = resolved.outlineFace;
+    const font = resolved.entry?.font ?? resolved.dynamicFace?.font ?? null;
+    // Em space is unit-scale, so a parsed face divides by 1 and its advances
+    // are already the world-unit fractions of `fontSize` layout wants.
+    const metrics: MetricsSource | undefined = outlineFace
+      ? { size: 1, base: outlineFace.ascender, advanceOf: (cp) => outlineFace.advanceOf(cp), kernOf: (l, r) => outlineFace.kernOf(l, r) }
+      : font ? atlasMetrics(font) : undefined;
+    if (!metrics) {
+      prevCp = undefined; prevMetrics = undefined; prevFontSize = undefined;
       continue;
     }
-    const scale = run.fontSize / font.info.size;
+    const scale = run.fontSize / metrics.size;
     // World units — deliberately not scaled by fontSize, so the same tracking
     // opens the same visual gap whatever size the run is set at.
     const tracking = run.letterSpacing;
@@ -440,58 +484,81 @@ export function layoutRuns(
 
       if (isNewline) {
         entries.push({
-          run, font,
+          run, font, metrics,
           glyph: { id: cp, x: 0, y: 0, width: 0, height: 0, xoffset: 0, yoffset: 0, xadvance: 0, page: 0 },
           // A newline consumes no advance, so it takes no tracking either.
           cp, advance: 0, tracking: 0, kerningBefore: 0, isSpace: false, isNewline: true,
           resolved, fontSize: run.fontSize,
         });
-        prevCp = undefined; prevFont = undefined; prevFontSize = undefined;
+        prevCp = undefined; prevMetrics = undefined; prevFontSize = undefined;
         continue;
       }
 
       if (isSpace) {
         // Use atlas glyph if present; otherwise synthesize a zero-size entry
         // with a reasonable advance so spaces still participate in line-fitting.
-        const spaceGlyph = resolved.dynamicFace ? resolved.dynamicFace.requestGlyph(32) : font.charMap.get(32);
-        const advance = spaceGlyph
-          ? spaceGlyph.xadvance * scale
+        const spaceGlyph = resolved.dynamicFace ? resolved.dynamicFace.requestGlyph(32) : font?.charMap.get(32) ?? null;
+        const spaceAdvance = spaceGlyph ? spaceGlyph.xadvance : metrics.advanceOf(32);
+        const advance = spaceAdvance !== null
+          ? spaceAdvance * scale
           : run.fontSize * 0.25;
         let kerningBefore = 0;
-        if (prevCp !== undefined && prevFont !== undefined && prevFontSize !== undefined) {
-          const kAtlas = prevFont.kerningMap.get(prevCp)?.get(cp) ?? 0;
-          kerningBefore = kAtlas * (prevFontSize / prevFont.info.size);
+        if (prevCp !== undefined && prevMetrics !== undefined && prevFontSize !== undefined) {
+          kerningBefore = prevMetrics.kernOf(prevCp, cp) * (prevFontSize / prevMetrics.size);
         }
         entries.push({
-          run, font,
+          run, font, metrics,
           glyph: spaceGlyph ?? { id: 32, x: 0, y: 0, width: 0, height: 0, xoffset: 0, yoffset: 0, xadvance: 0, page: 0 },
           cp, advance, tracking, kerningBefore, isSpace: true, isNewline: false,
           resolved, fontSize: run.fontSize,
         });
-        prevCp = cp; prevFont = font; prevFontSize = run.fontSize;
+        prevCp = cp; prevMetrics = metrics; prevFontSize = run.fontSize;
+        continue;
+      }
+
+      // The outline tier has no atlas to miss in and no tier below it to
+      // escalate to: the face either has the glyph or the run does not
+      // contain it. Its advance is the only thing needed to place it.
+      if (outlineFace) {
+        const adv = metrics.advanceOf(cp);
+        if (adv === null) {
+          prevCp = cp; prevMetrics = metrics; prevFontSize = run.fontSize;
+          continue;
+        }
+        let kerningBefore = 0;
+        if (prevCp !== undefined && prevMetrics !== undefined && prevFontSize !== undefined) {
+          kerningBefore = prevMetrics.kernOf(prevCp, cp) * (prevFontSize / prevMetrics.size);
+        }
+        entries.push({
+          run, font: null, metrics, glyph: null, cp,
+          advance: adv * scale,
+          tracking, kerningBefore, isSpace, isNewline: false,
+          resolved, fontSize: run.fontSize,
+        });
+        prevCp = cp; prevMetrics = metrics; prevFontSize = run.fontSize;
         continue;
       }
 
       const hit = resolved.dynamicFace
-        ? { glyph: resolved.dynamicFace.requestGlyph(cp), font, resolved }
-        : resolveGlyph(run, font, resolved, cp);
+        ? { glyph: resolved.dynamicFace.requestGlyph(cp), font: font!, resolved }
+        : resolveGlyph(run, font!, resolved, cp);
       if (!hit) {
-        prevCp = cp; prevFont = font; prevFontSize = run.fontSize;
+        prevCp = cp; prevMetrics = metrics; prevFontSize = run.fontSize;
         continue;
       }
       // An escalated codepoint is served by a different atlas with its own
       // bake size, so its scale — and the group it lands in — are its own.
       const glyphFont = hit.font;
+      const glyphMetrics = glyphFont === font ? metrics : atlasMetrics(glyphFont);
       const glyphScale = run.fontSize / glyphFont.info.size;
 
       let kerningBefore = 0;
-      if (prevCp !== undefined && prevFont !== undefined && prevFontSize !== undefined) {
-        const kAtlas = prevFont.kerningMap.get(prevCp)?.get(cp) ?? 0;
-        kerningBefore = kAtlas * (prevFontSize / prevFont.info.size);
+      if (prevCp !== undefined && prevMetrics !== undefined && prevFontSize !== undefined) {
+        kerningBefore = prevMetrics.kernOf(prevCp, cp) * (prevFontSize / prevMetrics.size);
       }
 
       entries.push({
-        run, font: glyphFont, glyph: hit.glyph, cp,
+        run, font: glyphFont, metrics: glyphMetrics, glyph: hit.glyph, cp,
         advance: hit.glyph.xadvance * glyphScale,
         tracking,
         kerningBefore,
@@ -499,7 +566,7 @@ export function layoutRuns(
         resolved: hit.resolved, fontSize: run.fontSize,
       });
 
-      prevCp = cp; prevFont = glyphFont; prevFontSize = run.fontSize;
+      prevCp = cp; prevMetrics = glyphMetrics; prevFontSize = run.fontSize;
     }
   }
 
@@ -579,6 +646,13 @@ export function layoutRuns(
    * upgrade applied where it is available, never a requirement.
    */
   function outlineFor(e: Entry): string | null {
+    const r0 = e.resolved.resolved;
+    // An outline-only run has no atlas behind it. Every gate below trades one
+    // rendering for another; here there is no other, so gating would paint
+    // nothing at all.
+    if (e.resolved.source === 'outline') {
+      return glyphOutline(r0.family, r0.weight, r0.style, e.cp);
+    }
     const min = opts.outlineMinSize;
     if (min === undefined) return null;
     // A stroked run ignores the size gate. The gate is there because the SDF
@@ -658,8 +732,8 @@ export function layoutRuns(
     // to the newline that closed it.
     const baselineSource = line.entries[0] ?? line.blank;
     const lineBaselineY = baselineSource
-      ? penY + baselineSource.font.common.base
-        * (baselineSource.fontSize / baselineSource.font.info.size)
+      ? penY + baselineSource.metrics.base
+        * (baselineSource.fontSize / baselineSource.metrics.size)
       : penY;
 
     let penX = lineX0;
@@ -669,8 +743,8 @@ export function layoutRuns(
       // Every branch below moves the pen by exactly this, so glyph positions
       // stay in step with the line width accumulated above.
       const step = e.advance + e.tracking;
-      const scale = e.fontSize / e.font.info.size;
-      const baselineY = penY + e.font.common.base * scale;
+      const scale = e.fontSize / e.metrics.size;
+      const baselineY = penY + e.metrics.base * scale;
 
       // Extend or (re)open the decoration span *before* the no-ink bail-out
       // below, so a decorated span's spaces stay under the rule. `step`
@@ -728,7 +802,8 @@ export function layoutRuns(
       // zero-area one (a space in either source), or a dynamic glyph not baked
       // yet (page < 0). Advance the pen anyway so the line doesn't reflow when
       // a bake lands, and so a space's tracking still separates its neighbors.
-      if (e.advance === 0 || e.glyph.width === 0 || e.glyph.page < 0) {
+      if (e.font === null || e.glyph === null
+          || e.advance === 0 || e.glyph.width === 0 || e.glyph.page < 0) {
         penX += step;
         continue;
       }

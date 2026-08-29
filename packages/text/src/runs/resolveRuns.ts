@@ -16,7 +16,7 @@
  * `runs/rangeStyle.ts` for why the model collapses the tri-state.
  */
 
-import type { FillStyle, Stroke } from 'core/paint-types';
+import type { FillStyle, Stroke } from '@weasel-js/paint';
 import type { StyledRun } from '../runs';
 import type { ResolvedTextStyle } from '../textStyle';
 

@@ -20,13 +20,13 @@
  * an `x` harder to click than an `X`.
  */
 
-import type { Rect } from 'core/geometry/polygonHitTestRect';
-import { resolveTextStyle } from './textStyle';
-import { resolveRuns } from './runs/resolveRuns';
-import { toRuns } from './runs';
-import { layoutRuns } from './atlas/layoutRuns';
+import type { Rect } from '@weasel-js/geom';
+import { resolveTextStyle } from '../textStyle';
+import { resolveRuns } from '../runs/resolveRuns';
+import { toRuns } from '../runs';
+import { layoutRuns } from '../layout/layoutRuns';
 import { verticalAlignOffset } from './verticalAlign';
-import type { TextPose } from './textLayer';
+import type { TextPose } from '../pose';
 
 /** Options for {@link textLineBoxes}. */
 export interface TextLineBoxesOpts {

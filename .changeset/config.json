@@ -6,6 +6,8 @@
     [
       "@weasel-js/core",
       "@weasel-js/font",
+      "@weasel-js/paint",
+      "@weasel-js/text",
       "@weasel-js/geom",
       "@weasel-js/gestures",
       "@weasel-js/history",

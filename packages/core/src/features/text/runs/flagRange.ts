@@ -20,8 +20,8 @@
  * four.
  */
 
-import type { StyledRun } from '../runs';
-import type { TextStyle } from '../textStyle';
+import type { StyledRun } from '@weasel-js/text';
+import type { TextStyle } from '@weasel-js/text';
 import { applyStyleToRange } from './rangeStyle';
 
 /** The additive run flags. */

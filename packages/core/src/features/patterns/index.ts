@@ -1,7 +1,7 @@
 /**
  * Tile-pattern primitive — a small helper for building repeating texture
  * tiles from a draw callback. The result plugs into a `FillStyle` of
- * `{ fill: 'pattern', pattern }` (see `../../core/paint-types.ts`).
+ * `{ fill: 'pattern', pattern }` (see `@weasel-js/paint`).
  *
  * GL-backed: the tile is rendered to an `OffscreenCanvas` (with a 2D fallback
  * to a regular `<canvas>` for environments without `OffscreenCanvas`),

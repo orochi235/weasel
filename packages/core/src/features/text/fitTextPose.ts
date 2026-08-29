@@ -19,9 +19,9 @@
  * `x` / `y` after calling.
  */
 
-import { measureText, measuredWidth } from './measureText';
-import { fontString, resolveTextStyle } from './textStyle';
-import type { TextPose } from './textLayer';
+import { measureText, measuredWidth } from '@weasel-js/text';
+import { fontString, resolveTextStyle } from '@weasel-js/text';
+import type { TextPose } from '@weasel-js/text';
 
 /** Options for `fitTextPose`. */
 export interface FitTextPoseOptions {

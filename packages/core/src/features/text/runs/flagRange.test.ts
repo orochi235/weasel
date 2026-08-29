@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { setFlagOverRange, nodeHasFlag } from './flagRange';
 import { styleAtRange } from './rangeStyle';
-import type { StyledRun } from '../runs';
-import type { TextStyle } from '../textStyle';
+import type { StyledRun } from '@weasel-js/text';
+import type { TextStyle } from '@weasel-js/text';
 
 const plain: StyledRun[] = [{ text: 'one two three' }];
 /** `[0, 4)` is 'one ', `[4, 7)` is 'two', `[7, 13)` is ' three'. */

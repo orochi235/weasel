@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { setStrokeOpacityAction } from './setStrokeOpacity';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
-import type { Stroke } from 'core/paint-types';
+import type { Stroke } from '@weasel-js/paint';
 import { solid, strokeOf } from '../../../util/paint';
 import { makeScene, makeCtx, ongoingInvoker } from './paintActionTestUtils';
 

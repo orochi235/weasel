@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { setFillOpacityAction } from './setFillOpacity';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
-import type { FillStyle } from 'core/paint-types';
+import type { FillStyle } from '@weasel-js/paint';
 import { solid } from '../../../util/paint';
 import { makeScene, makeCtx, ongoingInvoker } from './paintActionTestUtils';
 
