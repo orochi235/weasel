@@ -16,19 +16,12 @@
  * dispatch on `kind`.
  */
 
-/** Command code: moveTo. */
-export const PATH_M = 0;
-/** Command code: lineTo. */
-export const PATH_L = 1;
-/** Command code: cubic bezier (`bezierCurveTo`). */
-export const PATH_C = 2;
-/** Command code: quadratic bezier (`quadraticCurveTo`). */
-export const PATH_Q = 3;
-/** Command code: close subpath. */
-export const PATH_Z = 4;
-
-/** Float coords consumed by each command, indexed by command code. */
-export const PATH_CMD_LENGTHS: readonly number[] = [2, 2, 6, 4, 0];
+// Opcodes live in @weasel-js/geom, which owns the command table every walker
+// in every package derives coord counts from. Re-exported by name (never
+// `export *`, which esbuild cannot enumerate across a package boundary).
+export {
+  PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z, PATH_CMD_LENGTHS, pathCommandCoordCount,
+} from '@weasel-js/geom';
 
 /** Fill rule used by polygon path hit-testing and `ctx.fill()`. */
 export type PathFillRule = 'nonzero' | 'evenodd';

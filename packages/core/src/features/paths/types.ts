@@ -7,7 +7,7 @@
  * already use.
  */
 export {
-  PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z, PATH_CMD_LENGTHS,
+  PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z, PATH_CMD_LENGTHS, pathCommandCoordCount,
 } from 'core/geometry/path';
 export type {
   Path, PolygonPath, RectPath, PathFillRule,

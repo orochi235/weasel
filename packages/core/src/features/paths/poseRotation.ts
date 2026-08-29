@@ -13,7 +13,8 @@
  * Lives in `features/paths` (the low layer) so both `features` and `canvas`
  * can share it without `features` importing `canvas`.
  */
-import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, type Path, type PolygonPath } from './types';
+import { forEachSegment, pathCommandCoordCount } from '@weasel-js/geom';
+import { PATH_L, PATH_M, PATH_Z, type Path, type PolygonPath } from './types';
 
 /** Pivot (`cx`, `cy`) and angle resolved from a pose's rotation convention. */
 export interface PoseRotation {
@@ -58,17 +59,14 @@ function rotatePolygon(path: PolygonPath, cx: number, cy: number, rotation: numb
   const sin = Math.sin(rotation);
   const { commands, coords } = path;
   const next = new Float32Array(coords.length);
-  let ci = 0;
-  for (let i = 0; i < commands.length; i++) {
-    const len = COORD_COUNT[commands[i]];
-    for (let k = 0; k < len; k += 2) {
+  forEachSegment(commands, coords, (cmd, ci) => {
+    for (let k = 0, len = pathCommandCoordCount(cmd); k < len; k += 2) {
       const dx = coords[ci + k] - cx;
       const dy = coords[ci + k + 1] - cy;
       next[ci + k] = cx + dx * cos - dy * sin;
       next[ci + k + 1] = cy + dx * sin + dy * cos;
     }
-    ci += len;
-  }
+  });
   return { kind: 'polygon', commands: path.commands, coords: next, fillRule: path.fillRule };
 }
 
@@ -92,11 +90,3 @@ function rotateRectCorners(
   const coords = new Float32Array([x0, y0, x1, y1, x2, y2, x3, y3]);
   return { kind: 'polygon', commands, coords, fillRule: 'nonzero' };
 }
-
-const COORD_COUNT: Readonly<Record<number, number>> = {
-  [PATH_M]: 2,
-  [PATH_L]: 2,
-  [PATH_C]: 6,
-  [PATH_Q]: 4,
-  [PATH_Z]: 0,
-};

@@ -1,21 +1,52 @@
 /**
- * SVG-style command-stream encoding — geom's canonical copy. `Path` in
- * @weasel-js/core wraps this with `kind` + `fillRule`. Codes lifted from
- * features/paths/types.ts; Spec 2 re-points that file to re-export these.
+ * SVG-style command-stream encoding — the kit's single declaration of the path
+ * opcodes. `Path` in @weasel-js/core wraps this with `kind` + `fillRule`.
+ *
+ * The codes index a `Uint8Array` command stream whose coords live in a
+ * parallel float array, so a code declared anywhere but `PATH_COMMANDS` makes
+ * every walker that doesn't know it misread the coord stream from that command
+ * on — silently, for every path. Derive, never restate.
  */
-export const PATH_M = 0; // moveTo
-/** Straight segment from the pen to the next coord pair. */
-export const PATH_L = 1;
-/** Cubic bezier: two control points then the endpoint. */
-export const PATH_C = 2;
-/** Quadratic bezier: one control point then the endpoint. */
-export const PATH_Q = 3;
-/** Close the current subpath back to its start. Consumes no coords and leaves
- *  the pen where it is. */
-export const PATH_Z = 4;
+
+/** Opcode table: command code and the float coords it consumes. */
+export const PATH_COMMANDS = {
+  /** moveTo — opens a new subpath. */
+  M: { code: 0, coords: 2 },
+  /** Straight segment from the pen to the next coord pair. */
+  L: { code: 1, coords: 2 },
+  /** Cubic bezier: two control points then the endpoint. */
+  C: { code: 2, coords: 6 },
+  /** Quadratic bezier: one control point then the endpoint. */
+  Q: { code: 3, coords: 4 },
+  /** Close the current subpath back to its start. Consumes no coords and
+   *  leaves the pen where it is. */
+  Z: { code: 4, coords: 0 },
+} as const;
+
+/** Mnemonic of a declared command (`'M' | 'L' | …`). */
+export type PathCommandName = keyof typeof PATH_COMMANDS;
+/** Numeric code of a declared command. */
+export type PathCommandCode = (typeof PATH_COMMANDS)[PathCommandName]['code'];
+
+export const PATH_M = PATH_COMMANDS.M.code;
+export const PATH_L = PATH_COMMANDS.L.code;
+export const PATH_C = PATH_COMMANDS.C.code;
+export const PATH_Q = PATH_COMMANDS.Q.code;
+export const PATH_Z = PATH_COMMANDS.Z.code;
 
 /** Float coords consumed by each command, indexed by command code. */
-export const PATH_CMD_LENGTHS: readonly number[] = [2, 2, 6, 4, 0];
+export const PATH_CMD_LENGTHS: readonly number[] = buildCmdLengths();
+
+function buildCmdLengths(): number[] {
+  const lengths: number[] = [];
+  for (const { code, coords } of Object.values(PATH_COMMANDS)) lengths[code] = coords;
+  return lengths;
+}
+
+/** Float coords consumed by the command with this code. */
+export function pathCommandCoordCount(cmd: number): number {
+  return PATH_CMD_LENGTHS[cmd];
+}
 
 /**
  * Visit each command with its coord offset and the pen position BEFORE the
@@ -33,7 +64,7 @@ export function forEachSegment(
   for (let i = 0; i < commands.length; i++) {
     const cmd = commands[i];
     visit(cmd, ci, px, py);
-    const len = PATH_CMD_LENGTHS[cmd];
+    const len = pathCommandCoordCount(cmd);
     if (len > 0) {
       px = coords[ci + len - 2];
       py = coords[ci + len - 1];

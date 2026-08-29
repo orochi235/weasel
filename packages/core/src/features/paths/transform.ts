@@ -10,10 +10,10 @@
  * zero or refusing to resize.
  */
 
-import { boxToBox } from '@weasel-js/geom';
+import { boxToBox, forEachSegment, pathCommandCoordCount } from '@weasel-js/geom';
 import { boundsOfPath } from './bounds';
 import { transformPath } from './transformPath';
-import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, type Path, type PolygonPath, type RectPath } from './types';
+import type { Path, PolygonPath, RectPath } from './types';
 
 /**
  * Translate a path by (dx, dy). Returns a new instance — the kit's pose
@@ -30,15 +30,12 @@ export function translatePath(path: Path, dx: number, dy: number): Path {
 function translatePolygonCopy(path: PolygonPath, dx: number, dy: number): PolygonPath {
   const next = new Float32Array(path.coords.length);
   const { commands, coords } = path;
-  let ci = 0;
-  for (let i = 0; i < commands.length; i++) {
-    const len = COORD_COUNT[commands[i]];
-    for (let k = 0; k < len; k += 2) {
+  forEachSegment(commands, coords, (cmd, ci) => {
+    for (let k = 0, len = pathCommandCoordCount(cmd); k < len; k += 2) {
       next[ci + k] = coords[ci + k] + dx;
       next[ci + k + 1] = coords[ci + k + 1] + dy;
     }
-    ci += len;
-  }
+  });
   return { kind: 'polygon', commands: path.commands, coords: next, fillRule: path.fillRule };
 }
 
@@ -49,15 +46,12 @@ function translatePolygonCopy(path: PolygonPath, dx: number, dy: number): Polygo
  */
 export function translatePolygonInPlace(path: PolygonPath, dx: number, dy: number): PolygonPath {
   const { commands, coords } = path;
-  let ci = 0;
-  for (let i = 0; i < commands.length; i++) {
-    const len = COORD_COUNT[commands[i]];
-    for (let k = 0; k < len; k += 2) {
+  forEachSegment(commands, coords, (cmd, ci) => {
+    for (let k = 0, len = pathCommandCoordCount(cmd); k < len; k += 2) {
       coords[ci + k] += dx;
       coords[ci + k + 1] += dy;
     }
-    ci += len;
-  }
+  });
   return path;
 }
 
@@ -82,11 +76,3 @@ function scalePolygon(path: PolygonPath, src: RectPath, dst: RectPath): PolygonP
   // src/dst are axis-aligned, so the polygon stays a polygon after this pure scale+translate.
   return transformPath(path, m) as PolygonPath;
 }
-
-const COORD_COUNT: Readonly<Record<number, number>> = {
-  [PATH_M]: 2,
-  [PATH_L]: 2,
-  [PATH_C]: 6,
-  [PATH_Q]: 4,
-  [PATH_Z]: 0,
-};

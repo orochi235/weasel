@@ -10,6 +10,7 @@ export {
   PATH_Q,
   PATH_Z,
   PATH_CMD_LENGTHS,
+  pathCommandCoordCount,
   type Path,
   type PolygonPath,
   type RectPath,

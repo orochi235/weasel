@@ -1,7 +1,8 @@
+import { forEachSegment, pathCommandCoordCount } from '@weasel-js/geom';
 import { boundsOfPath } from './bounds';
 import { pointInPath } from './hitTest';
 import { translatePath } from './transform';
-import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, type Path, type PolygonPath } from './types';
+import type { Path, PolygonPath } from './types';
 import { aabbIntersectsRect, type PoseProjection } from 'interactions/actions/resize/geometry';
 import type { ResizePose } from 'interactions/gestures/types';
 
@@ -80,22 +81,11 @@ export const pathPoseDescriptor: PoseProjection<Path> = {
 function remapPolygon(path: PolygonPath, src: ResizePose, dst: ResizePose, sx: number, sy: number): PolygonPath {
   const next = new Float32Array(path.coords.length);
   const { commands, coords } = path;
-  let ci = 0;
-  for (let i = 0; i < commands.length; i++) {
-    const len = COORD_COUNT[commands[i]];
-    for (let k = 0; k < len; k += 2) {
+  forEachSegment(commands, coords, (cmd, ci) => {
+    for (let k = 0, len = pathCommandCoordCount(cmd); k < len; k += 2) {
       next[ci + k] = dst.x + (coords[ci + k] - src.x) * sx;
       next[ci + k + 1] = dst.y + (coords[ci + k + 1] - src.y) * sy;
     }
-    ci += len;
-  }
+  });
   return { kind: 'polygon', commands: path.commands, coords: next, fillRule: path.fillRule };
 }
-
-const COORD_COUNT: Readonly<Record<number, number>> = {
-  [PATH_M]: 2,
-  [PATH_L]: 2,
-  [PATH_C]: 6,
-  [PATH_Q]: 4,
-  [PATH_Z]: 0,
-};
