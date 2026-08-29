@@ -204,9 +204,8 @@ export function useSceneTextEdit<
   });
 
   const onDoubleClick = useCallback((e: MouseEvent<HTMLElement>) => {
-    // Find the canvas element. The dblclick bubbles from the canvas up to
-    // any wrapping container — we want the canvas to read its 2D context
-    // for the caret measurement.
+    // The dblclick bubbles from the canvas up to any wrapping container; the
+    // canvas is what the click coordinates are relative to.
     const canvas = e.target instanceof HTMLCanvasElement ? e.target : null;
     if (!canvas) return;
 
@@ -220,6 +219,8 @@ export function useSceneTextEdit<
       optsRef.current.getText ? optsRef.current.getText(data) : (data.text ?? '');
     const readStyle = (data: TData): TextStyle | undefined =>
       optsRef.current.getStyle ? optsRef.current.getStyle(data) : data.style;
+    const readRuns = (data: TData): readonly StyledRun[] | undefined =>
+      optsRef.current.getRuns ? optsRef.current.getRuns(data) : data.runs;
 
     // Top-most-first hit test: renderOrder() is back-to-front, so iterate
     // in reverse and break on the first hit.
@@ -233,17 +234,12 @@ export function useSceneTextEdit<
         width: node.pose.width,
         height: node.pose.height,
         text,
+        runs: readRuns(node.data) as StyledRun[] | undefined,
         style: readStyle(node.data),
       };
       if (!pointInTextPose(cx, cy, pose)) continue;
 
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        edit.startEdit(String(node.id));
-        return;
-      }
-      const caret = caretIndexAt(ctx, cx, cy, pose);
-      edit.startEdit(String(node.id), { caret });
+      edit.startEdit(String(node.id), { caret: caretIndexAt(cx, cy, pose) });
       return;
     }
   }, [edit]);

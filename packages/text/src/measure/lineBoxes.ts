@@ -6,9 +6,9 @@
  * node's extent — picking, lasso, clipping, SVG export — claims that empty
  * space. `textLineBoxes` returns the per-line rectangles instead.
  *
- * The numbers come from `layoutRuns`, the same walk that positions the glyphs,
- * through the same `resolveTextStyle` → `resolveRuns` → `layoutRuns` chain as
- * `textCommand` — so the boxes cannot drift from what is painted. In
+ * The numbers come from `cachedLayoutRuns`, the same memoized walk that
+ * positions the glyphs, through the same `resolveTextStyle` → `resolveRuns`
+ * chain as `textCommand` — so the boxes cannot drift from what is painted. In
  * particular they honor `align` (a centered line reports its own span, not the
  * wrap width) and `verticalAlign` (the block shifts inside `[y, y + height]`
  * exactly as `drawText` shifts the quads).
@@ -24,7 +24,7 @@ import type { Rect } from '@weasel-js/geom';
 import { resolveTextStyle } from '../textStyle';
 import { resolveRuns } from '../runs/resolveRuns';
 import { toRuns } from '../runs';
-import { layoutRuns } from '../layout/layoutRuns';
+import { cachedLayoutRuns } from '../layout/layoutCache';
 import { verticalAlignOffset } from './verticalAlign';
 import type { TextPose } from '../pose';
 
@@ -58,7 +58,7 @@ export function textLineBoxes(pose: TextPose, opts: TextLineBoxesOpts = {}): Rec
   // styling, so they fall back to the plain string rather than measure nothing.
   const source = pose.runs && pose.runs.length > 0 ? pose.runs : pose.text;
   const runs = resolveRuns(toRuns(source), style);
-  const laid = layoutRuns(runs, {
+  const laid = cachedLayoutRuns(runs, {
     maxWidth: opts.maxWidth ?? pose.width,
     lineHeight: style.lineHeight,
     align: style.align,

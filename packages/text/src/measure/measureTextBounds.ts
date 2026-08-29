@@ -1,7 +1,7 @@
 import type { TextStyle } from '../textStyle';
 import { resolveTextStyle } from '../textStyle';
 import { resolveRuns } from '../runs/resolveRuns';
-import { layoutRuns } from '../layout/layoutRuns';
+import { cachedLayoutRuns } from '../layout/layoutCache';
 
 /** Options for `measureTextBounds`. */
 export interface MeasureTextBoundsOpts {
@@ -14,8 +14,8 @@ export interface MeasureTextBoundsOpts {
 /**
  * Measure how the GL/MSDF renderer will lay out a single plain-text string,
  * using the registered font atlas metrics. Mirrors {@link textCommand} exactly
- * (`resolveTextStyle` → `resolveRuns` → `layoutRuns`), so the returned bounds
- * match what actually gets drawn — use it to size backgrounds/pills, place
+ * (`resolveTextStyle` → `resolveRuns` → `cachedLayoutRuns`), so the returned
+ * bounds match what actually gets drawn — use it to size backgrounds/pills, place
  * labels, or test overlap without guessing widths.
  *
  * Pass `opts.maxWidth` to measure word-wrapped height (e.g. for a fixed-width
@@ -34,10 +34,12 @@ export function measureTextBounds(
 ): { width: number; height: number } {
   const resolved = resolveTextStyle(style);
   const runs = resolveRuns([{ text }], resolved);
-  const { bounds } = layoutRuns(runs, {
+  const { bounds } = cachedLayoutRuns(runs, {
     maxWidth: opts?.maxWidth ?? Infinity,
     lineHeight: opts?.lineHeight ?? resolved.lineHeight,
     align: resolved.align,
   });
-  return bounds;
+  // Copied: the layout behind it is shared, and handing a caller a mutable
+  // reference into a cache entry is how one measurement corrupts the next.
+  return { width: bounds.width, height: bounds.height };
 }

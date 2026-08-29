@@ -24,6 +24,11 @@ export { resolveRuns } from './runs/resolveRuns';
 export type { ResolvedRun } from './runs/resolveRuns';
 
 export { layoutRuns } from './layout/layoutRuns';
+export {
+  cachedLayoutRuns,
+  LAYOUT_CACHE_VARIANT_LIMIT,
+  LAYOUT_CACHE_STRUCTURAL_LIMIT,
+} from './layout/layoutCache';
 export type {
   LayoutRunsOpts,
   LaidOutRuns,

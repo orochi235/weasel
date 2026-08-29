@@ -2,7 +2,7 @@ export * from './renderLabel';
 export { createTextLayer } from './textLayer';
 export type { CreateTextLayerOpts } from './textLayer';
 export { pointInTextPose, caretIndexAt } from './hitTest';
-export type { PointInTextPoseOpts } from './hitTest';
+export type { PointInTextPoseOpts, CaretIndexAtOpts } from './hitTest';
 export { fitTextPose } from './fitTextPose';
 export type { FitTextPoseOptions } from './fitTextPose';
 export { useTextEdit } from './useTextEdit';

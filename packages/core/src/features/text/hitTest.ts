@@ -6,13 +6,16 @@
  * drag target).
  *
  * `caretIndexAt` does the finer test: given a world-space (x, y) inside the
- * pose, returns the corresponding character offset in `pose.text` so the
- * consumer can place the caret on click. Re-runs the wrap to map the click
- * back through `lineStarts`; respects `style.align` for line anchoring.
+ * pose, returns the corresponding character offset so the consumer can place
+ * the caret on click. It reads the caret stops off the same
+ * `cachedLayoutRuns` result the renderer paints and `textLineBoxes` picks
+ * against, so the caret cannot land on a different line — or between
+ * different glyphs — than the one under the pointer.
  */
 
-import { measureText, measuredWidth } from '@weasel-js/text';
-import { fontString, resolveTextStyle } from '@weasel-js/text';
+import {
+  cachedLayoutRuns, resolveRuns, resolveTextStyle, toRuns, verticalAlignOffset,
+} from '@weasel-js/text';
 import type { TextPose } from '@weasel-js/text';
 
 /** Options for `pointInTextPose`. */
@@ -37,72 +40,68 @@ export function pointInTextPose(
   );
 }
 
+/** Options for `caretIndexAt`. */
+export interface CaretIndexAtOpts {
+  /**
+   * Wrap width. Default `pose.width`, which is what `createTextLayer` passes
+   * and what `TextPose` means by its box.
+   *
+   * Pass `Infinity` for a node painted by the built-in `kit:text` painter:
+   * that painter deliberately does not forward `maxWidth`, so its text does
+   * not wrap, and a caret mapped through a finite width would answer for a
+   * line break the paint never made. Mirrors `textLineBoxes`.
+   */
+  maxWidth?: number;
+}
+
 /**
- * Map a world-space point inside `pose` to a character offset into
- * `pose.text` (0..text.length). Clicks above the first line clamp to 0;
- * clicks below the last line clamp to `text.length`. Within a line, the
- * caret lands between two glyphs at whichever side of the glyph midpoint
- * `x` falls on — the standard "snap caret to nearest character boundary"
- * rule.
+ * Map a world-space point inside `pose` to a character offset into the pose's
+ * text (0..length). Clicks above the first line clamp to 0; clicks below the
+ * last line clamp to the end. Within a line, the caret lands between two
+ * glyphs at whichever side of the advance cell's midpoint `x` falls on — the
+ * standard "snap caret to nearest character boundary" rule.
  *
- * The `ctx` is used only for `measureText`; its `font` is set internally
- * to match the resolved text style. Pass any 2D context (the same one used
- * to render is fine).
+ * Honors `pose.runs` (a mixed-size line snaps on the cells each run actually
+ * produced) and `pose.verticalAlign`. The offset is into the runs'
+ * concatenated text, which `TextPose` requires to equal `pose.text`.
  */
 export function caretIndexAt(
-  ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   pose: TextPose,
+  opts: CaretIndexAtOpts = {},
 ): number {
   const style = resolveTextStyle(pose.style);
-  ctx.save();
-  ctx.font = fontString(style);
-  try {
-    const wrapped = measureText(ctx, pose.text, pose.width, style);
-    if (wrapped.lines.length === 0) return 0;
+  // `runs` wins when non-empty, matching every painter: empty runs are not a
+  // styling, so they fall back to the plain string rather than measure nothing.
+  const source = pose.runs && pose.runs.length > 0 ? pose.runs : pose.text;
+  const runs = resolveRuns(toRuns(source), style);
+  const laid = cachedLayoutRuns(runs, {
+    maxWidth: opts.maxWidth ?? pose.width,
+    lineHeight: style.lineHeight,
+    align: style.align,
+  });
 
-    const lineHeightPx = style.fontSize * style.lineHeight;
-    const rawLine = Math.floor((y - pose.y) / lineHeightPx);
-    if (rawLine < 0) return 0;
-    if (rawLine >= wrapped.lines.length) return pose.text.length;
+  const lines = laid.lines;
+  if (lines.length === 0) return 0;
 
-    const line = wrapped.lines[rawLine];
-    const lineStart = wrapped.lineStarts[rawLine];
-    // `letter-spacing` is not part of the CSS `font` shorthand, so setting
-    // `ctx.font = fontString(style)` above never carries it — tracking has to
-    // be added to the measured advances by hand or the caret drifts further
-    // from the pointer with every glyph. Applied after *every* character
-    // including the last, matching CSS and `layoutRuns`; `measuredWidth` is
-    // the same formula the wrap above now uses, so the line this maps into
-    // and the line the renderer painted are the same line.
-    const tracking = style.letterSpacing;
-    const lineWidth = measuredWidth(ctx, line, style);
+  // The same translate `drawText` applies to the quads — the layout is
+  // origin-relative — plus the `verticalAlign` shift.
+  const dx = pose.x;
+  const dy = pose.y + verticalAlignOffset(pose.verticalAlign, pose.height, laid.bounds.height);
 
-    let xLeft: number;
-    switch (style.align) {
-      case 'right':
-        xLeft = pose.x + pose.width - lineWidth;
-        break;
-      case 'center':
-        xLeft = pose.x + (pose.width - lineWidth) / 2;
-        break;
-      default:
-        xLeft = pose.x;
-    }
+  const last = lines[lines.length - 1];
+  if (y < dy + lines[0].y0) return lines[0].caretIndices[0];
+  if (y >= dy + last.y1) return last.caretIndices[last.caretIndices.length - 1];
 
-    if (x <= xLeft) return lineStart;
-
-    let cursor = xLeft;
-    for (let i = 0; i < line.length; i++) {
-      // Snap on the midpoint of the glyph's full advance cell (glyph + its
-      // trailing tracking), which is the step the pen actually takes.
-      const step = ctx.measureText(line[i]).width + tracking;
-      if (x < cursor + step / 2) return lineStart + i;
-      cursor += step;
-    }
-    return lineStart + line.length;
-  } finally {
-    ctx.restore();
+  let line = last;
+  for (const candidate of lines) {
+    if (y < dy + candidate.y1) { line = candidate; break; }
   }
+
+  const { caretXs, caretIndices } = line;
+  for (let i = 0; i + 1 < caretXs.length; i++) {
+    if (x < dx + (caretXs[i] + caretXs[i + 1]) / 2) return caretIndices[i];
+  }
+  return caretIndices[caretIndices.length - 1];
 }

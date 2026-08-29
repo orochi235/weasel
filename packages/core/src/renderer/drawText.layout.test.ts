@@ -20,15 +20,17 @@ import type { DrawCommand } from './DrawCommand';
 import type { LaidOutRuns } from '@weasel-js/text';
 
 /** Every layout produced during a render, each with a snapshot of its state
- *  as it was returned — before `drawText` had a chance to touch it. */
+ *  as it was returned — before `drawText` had a chance to touch it. Spied at
+ *  `cachedLayoutRuns` rather than `layoutRuns`: that is what `drawText`
+ *  imports, and on a cache hit the raw layout is never called at all. */
 const captured: { result: LaidOutRuns; asReturned: string }[] = [];
 
 vi.mock('@weasel-js/text', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@weasel-js/text')>();
   return {
     ...actual,
-    layoutRuns: (...args: Parameters<typeof actual.layoutRuns>) => {
-      const result = actual.layoutRuns(...args);
+    cachedLayoutRuns: (...args: Parameters<typeof actual.cachedLayoutRuns>) => {
+      const result = actual.cachedLayoutRuns(...args);
       captured.push({ result, asReturned: JSON.stringify(result) });
       return result;
     },

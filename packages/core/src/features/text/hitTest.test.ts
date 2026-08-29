@@ -1,7 +1,22 @@
-import { describe, expect, it } from 'vitest';
+/**
+ * The caret reads its stops off the layout the renderer paints, so every
+ * expectation below is a number that layout produces.
+ *
+ * The `inter` fixture atlas is baked at size 32 and carries exactly two
+ * glyphs — `A` (advance 23) and `B` (advance 22) — plus one kerning pair,
+ * `A→B` at -1. At `fontSize: 32` the scale is 1, so those are world units,
+ * and the pair is the whole point: the previous caret summed
+ * `ctx.measureText` per character, which cannot see a kern at all and put
+ * every boundary after an `A` one unit to the right of the painted glyph.
+ * There is no space glyph, so a space takes the `fontSize * 0.25` fallback
+ * advance (8).
+ */
+import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
+import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
+import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { caretIndexAt, pointInTextPose } from './hitTest';
 import type { TextPose } from '@weasel-js/text';
-import { DEFAULT_TEXT_STYLE } from '@weasel-js/text';
 
 const pose: TextPose = { x: 10, y: 20, width: 100, height: 40, text: 'hi' };
 
@@ -26,102 +41,132 @@ describe('pointInTextPose', () => {
   });
 });
 
-/** Stub ctx where each char is 10 wide; ignores .save/.restore/.font. */
-function makeCtx(charWidth = 10): CanvasRenderingContext2D {
-  return {
-    save: () => {},
-    restore: () => {},
-    set font(_v: string) {},
-    measureText: (s: string) => ({ width: s.length * charWidth }) as TextMetrics,
-  } as unknown as CanvasRenderingContext2D;
-}
-
 describe('caretIndexAt', () => {
-  // 16px / lineHeight 1.2 → lineHeightPx 19.2
-  const lh = DEFAULT_TEXT_STYLE.fontSize * DEFAULT_TEXT_STYLE.lineHeight;
+  const SIZE = 32;
+  const STYLE = { fontFamily: 'inter', fontSize: SIZE };
+  /** `fontSize * lineHeight` at the 1.2 default. */
+  const LINE = SIZE * 1.2;
+
+  beforeEach(async () => {
+    _resetFontRegistryForTests();
+    _resetLayoutCacheForTests();
+    const encoder = new TextEncoder();
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.endsWith('.json')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(FIXTURE_FONT) });
+      }
+      return Promise.resolve({
+        ok: true,
+        blob: () => Promise.resolve(new Blob([encoder.encode('PNG')], { type: 'image/png' })),
+      });
+    }) as typeof fetch;
+    global.createImageBitmap = vi.fn().mockResolvedValue({
+      width: 512, height: 512, close: vi.fn(),
+    } as unknown as ImageBitmap);
+    await registerFont('inter', {}, '/fonts/inter.json', '/fonts/inter.png');
+    _resetLayoutCacheForTests();
+  });
+
+  function textPose(over: Partial<TextPose> = {}): TextPose {
+    return { x: 0, y: 0, width: 400, height: 200, text: 'AB', style: STYLE, ...over };
+  }
 
   it('returns 0 when clicking left of the first glyph', () => {
-    const ctx = makeCtx();
-    const pose: TextPose = { x: 0, y: 0, width: 200, height: 40, text: 'hello' };
-    expect(caretIndexAt(ctx, -50, 5, pose)).toBe(0);
-    expect(caretIndexAt(ctx, 0, 5, pose)).toBe(0);
+    expect(caretIndexAt(-50, 5, textPose())).toBe(0);
+    expect(caretIndexAt(0, 5, textPose())).toBe(0);
   });
 
-  it('snaps to the glyph midpoint within a line', () => {
-    const ctx = makeCtx(); // 10px per char
-    const pose: TextPose = { x: 0, y: 0, width: 200, height: 40, text: 'hello' };
-    // 'h' spans 0..10 (midpoint 5); x=4 → before mid → 0; x=6 → after mid → 1.
-    expect(caretIndexAt(ctx, 4, 5, pose)).toBe(0);
-    expect(caretIndexAt(ctx, 6, 5, pose)).toBe(1);
-    // 'e' spans 10..20 (mid 15). x=15 → 2 (between 'e' and 'l').
-    expect(caretIndexAt(ctx, 15, 5, pose)).toBe(2);
+  it('snaps on the midpoint of the advance cell the layout produced', () => {
+    // 'A' spans 0..23; kerning pulls 'B' back to 22..44. Midpoints 11 and 33.
+    const p = textPose();
+    expect(caretIndexAt(10, 5, p)).toBe(0);
+    expect(caretIndexAt(12, 5, p)).toBe(1);
+    expect(caretIndexAt(32, 5, p)).toBe(1);
+    expect(caretIndexAt(34, 5, p)).toBe(2);
   });
 
-  it('returns text.length past the end of the last line', () => {
-    const ctx = makeCtx();
-    const pose: TextPose = { x: 0, y: 0, width: 200, height: 40, text: 'hello' };
-    expect(caretIndexAt(ctx, 999, 5, pose)).toBe(5);
-    expect(caretIndexAt(ctx, 5, 999, pose)).toBe(5);
+  it('places the boundary after a kerned pair where the glyph is painted', () => {
+    // The regression the `ctx.measureText` stub could never show. Per-character
+    // measurement sums 23 + 22 with no kern, putting 'B' at 23..46 and its
+    // midpoint at 34.5 — so 33.5 answered 1 where the painted glyph says 2.
+    const p = textPose();
+    expect(caretIndexAt(33.5, 5, p)).toBe(2);
+    // And the kerned line is a unit narrower than the unkerned sum, so the
+    // end-of-line stop moves with it.
+    expect(caretIndexAt(44.5, 5, p)).toBe(2);
   });
 
-  it('uses lineStarts to map clicks on wrapped lines', () => {
-    const ctx = makeCtx();
-    // Wraps to ['the quick', 'brown']; 'brown' starts at index 10.
-    const pose: TextPose = { x: 0, y: 0, width: 100, height: 40, text: 'the quick brown' };
-    // y on second line, x just past first glyph midpoint of 'b' → 11.
-    expect(caretIndexAt(ctx, 6, lh + 5, pose)).toBe(11);
-    // Click at left edge of second line → start of 'brown'.
-    expect(caretIndexAt(ctx, 0, lh + 5, pose)).toBe(10);
+  it('honors a per-run font size', () => {
+    // 'A' at 32 advances 23; 'B' at 64 advances 44, and the kern between them
+    // scales with the *left* glyph's size, so it is still -1. The old path read
+    // `pose.text` only and stepped both cells at the node's fontSize.
+    const p = textPose({
+      text: 'AB',
+      runs: [
+        { text: 'A' },
+        { text: 'B', fontSize: 64 },
+      ],
+    });
+    // 'B' spans 22..66, midpoint 44 — a uniform-size walk would put it at 33.
+    expect(caretIndexAt(40, 5, p)).toBe(1);
+    expect(caretIndexAt(46, 5, p)).toBe(2);
+  });
+
+  it('returns the end offset past the last line', () => {
+    const p = textPose();
+    expect(caretIndexAt(999, 5, p)).toBe(2);
+    expect(caretIndexAt(5, 999, p)).toBe(2);
+  });
+
+  it('maps clicks on wrapped lines through their own offsets', () => {
+    // 'AB AB' in a 50-wide box: 'AB ' is 52 wide with the fallback space, and
+    // the next word's 44 does not fit, so the second 'AB' starts at offset 3.
+    const p = textPose({ text: 'AB AB', width: 50 });
+    expect(caretIndexAt(0, LINE + 5, p)).toBe(3);
+    expect(caretIndexAt(12, LINE + 5, p)).toBe(4);
+    expect(caretIndexAt(0, 5, p)).toBe(0);
+  });
+
+  it('maps clicks on a forced line break', () => {
+    const p = textPose({ text: 'AB\nAB' });
+    expect(caretIndexAt(0, LINE + 5, p)).toBe(3);
+    expect(caretIndexAt(999, 5, p)).toBe(2);
   });
 
   it('steps the caret by advance + tracking when letterSpacing is set', () => {
-    const ctx = makeCtx(); // 10px per char
-    const pose: TextPose = {
-      x: 0, y: 0, width: 200, height: 40, text: 'hello',
-      style: { letterSpacing: 4 },
-    };
-    // Each advance cell is 10 + 4 = 14 wide. 'h' spans 0..14 (mid 7).
-    expect(caretIndexAt(ctx, 6, 5, pose)).toBe(0);
-    expect(caretIndexAt(ctx, 8, 5, pose)).toBe(1);
-    // 'e' spans 14..28 (mid 21).
-    expect(caretIndexAt(ctx, 20, 5, pose)).toBe(1);
-    expect(caretIndexAt(ctx, 22, 5, pose)).toBe(2);
-  });
-
-  it('leaves caret placement unchanged when letterSpacing is 0', () => {
-    const ctx = makeCtx();
-    const pose: TextPose = {
-      x: 0, y: 0, width: 200, height: 40, text: 'hello',
-      style: { letterSpacing: 0 },
-    };
-    expect(caretIndexAt(ctx, 4, 5, pose)).toBe(0);
-    expect(caretIndexAt(ctx, 6, 5, pose)).toBe(1);
-    expect(caretIndexAt(ctx, 15, 5, pose)).toBe(2);
-  });
-
-  it('includes trailing tracking in the line width used for alignment', () => {
-    const ctx = makeCtx();
-    const pose: TextPose = {
-      x: 0, y: 0, width: 100, height: 40, text: 'hi',
-      style: { align: 'right', letterSpacing: 5 },
-    };
-    // CSS applies tracking after every glyph including the last, so 'hi' is
-    // 2*10 + 2*5 = 30 wide and right-aligns to x=70..100.
-    expect(caretIndexAt(ctx, 65, 5, pose)).toBe(0);
-    // 'h' cell spans 70..85 (mid 77.5).
-    expect(caretIndexAt(ctx, 76, 5, pose)).toBe(0);
-    expect(caretIndexAt(ctx, 79, 5, pose)).toBe(1);
+    // Tracking lands after every code point, so 'A' spans 0..27 (23 + 4) and
+    // 'B' 26..53. Midpoints 13.5 and 39.5.
+    const p = textPose({ style: { ...STYLE, letterSpacing: 4 } });
+    expect(caretIndexAt(12, 5, p)).toBe(0);
+    expect(caretIndexAt(15, 5, p)).toBe(1);
+    expect(caretIndexAt(38, 5, p)).toBe(1);
+    expect(caretIndexAt(41, 5, p)).toBe(2);
   });
 
   it('honors right alignment when computing the line anchor', () => {
-    const ctx = makeCtx();
-    const pose: TextPose = {
-      x: 0, y: 0, width: 100, height: 40, text: 'hi',
-      style: { align: 'right' },
-    };
-    // 'hi' is 20px wide; right-aligned in a 100-wide pose → spans x=80..100.
-    // Click at x=70 (left of the line) returns 0; at x=90 (mid 'i' boundary) returns 1.
-    expect(caretIndexAt(ctx, 70, 5, pose)).toBe(0);
-    expect(caretIndexAt(ctx, 85, 5, pose)).toBe(1);
+    // 'AB' is 44 wide, right-aligned in a 100-wide pose → spans 56..100, with
+    // the A/B boundary's midpoint at 56 + 11 = 67.
+    const p = textPose({ width: 100, style: { ...STYLE, align: 'right' } });
+    expect(caretIndexAt(50, 5, p)).toBe(0);
+    expect(caretIndexAt(66, 5, p)).toBe(0);
+    expect(caretIndexAt(68, 5, p)).toBe(1);
+  });
+
+  it('shifts with verticalAlign, which the pose-relative line math ignored', () => {
+    // One 38.4-tall line bottom-aligned in a 200-tall box sits at y 161.6..200,
+    // so a click at y = 5 is above the text, not on its first line.
+    const p = textPose({ text: 'AB\nAB', verticalAlign: 'bottom' });
+    expect(caretIndexAt(999, 5, p)).toBe(0);
+    expect(caretIndexAt(999, 199, p)).toBe(5);
+  });
+
+  it('reads the wrap width from opts when the painter does not wrap', () => {
+    // `kit:text` paints with `maxWidth: Infinity`; a caret mapped through the
+    // pose width would answer for a line break the paint never made.
+    const p = textPose({ text: 'AB AB', width: 50 });
+    expect(caretIndexAt(60, 5, p, { maxWidth: Infinity })).toBe(3);
+    expect(caretIndexAt(60, 5, p)).toBe(3);
+    // Unwrapped, everything is on line 0 — so there is no second line to click.
+    expect(caretIndexAt(0, LINE + 5, p, { maxWidth: Infinity })).toBe(5);
   });
 });

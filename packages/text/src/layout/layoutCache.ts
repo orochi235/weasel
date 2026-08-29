@@ -1,5 +1,7 @@
 /**
- * Laid-out text, keyed on the runs that produced it.
+ * Laid-out text, memoized. The one entry point every caller of `layoutRuns`
+ * should reach for — the renderer's paint path, the silhouette measurement
+ * behind picking, and caret hit-testing all answer from this.
  *
  * `layoutRuns` is the most expensive derivation in the kit — it walks every
  * codepoint, resolves a face per run, measures, wraps, aligns, and places a
@@ -8,17 +10,22 @@
  * 25.9 for 200 wrapped paragraphs. That last figure is the entire frame
  * budget spent before a single triangle is drawn.
  *
- * ### The key
+ * ### Two keys, tried in order
  *
- * Keyed on the `ResolvedRun[]` **array identity**, the same contract as
- * `cache.ts`'s `WeakMap<Path, Mesh>` — and for the same reason: it makes the
- * entry collectable with whatever owns the runs, and it costs nothing to
- * compare. It also carries the same requirement: whoever produces the runs has
- * to hand back a stable array, or this cache is allocated, consulted, missed
- * and repopulated on every frame. `kit:text`'s memoized `paint` is what makes
- * that true for scene text nodes.
+ * **Array identity**, in a `WeakMap`, the same contract as the renderer's
+ * `WeakMap<Path, Mesh>` — and for the same reason: it makes the entry
+ * collectable with whatever owns the runs, and the lookup is a pointer
+ * compare. `kit:text`'s memoized `paint` hands back a stable array per node,
+ * so the renderer stays on this path.
  *
- * Under that, one entry per distinct `(maxWidth, lineHeight, align, outline
+ * **Structure**, in a bounded `Map`, for every caller that cannot. Measuring
+ * a pose resolves its style and allocates a fresh `ResolvedRun[]` each call,
+ * so an identity-keyed cache could never hold anything for it — and those
+ * callers run on the drag path, once per pose change. Serializing the runs is
+ * real work, unlike the pointer compare above, which is exactly why it is
+ * second: an identity hit never pays for it.
+ *
+ * Under either, one entry per distinct `(maxWidth, lineHeight, align, outline
  * threshold)`. Position is deliberately absent: `layoutRuns` emits
  * origin-relative geometry and `drawText` translates at upload, so a text node
  * dragged across the page keeps hitting the same entry.
@@ -34,7 +41,7 @@
  * valid across every zoom that doesn't cross a glyph size, and is dropped the
  * moment one does.
  *
- * ### What the key cannot see
+ * ### What the keys cannot see
  *
  * The font set. A face landing changes metrics with no change to the runs, so
  * every lookup compares `glyphGeneration()` — advanced by the dynamic SDF
@@ -42,26 +49,29 @@
  * everything when it moves. That is the same escape hatch `nodeMemo`'s
  * generation counter provides, for the same class of failure. Polled rather
  * than subscribed: a module-load subscription is a cross-package side effect
- * that makes importing the renderer require the font package's whole surface.
+ * that makes importing this package require the font package's whole surface.
  *
- * ### Bound
+ * ### Bounds
  *
- * Variants per runs array are capped and evicted wholesale. Wholesale rather
- * than LRU, matching `outlineMeshCache`: the refill cost is one layout, and
- * the bookkeeping would cost more than the misses it avoids.
+ * Variants per runs array are capped and evicted wholesale, matching
+ * `outlineMeshCache`: the refill cost is one layout, and the bookkeeping would
+ * cost more than the misses it avoids. The structural map cannot ride an
+ * array's lifetime the way the `WeakMap` does — nothing collects its keys —
+ * so it is a real LRU with a hard entry count.
  */
 
-import {
-  layoutRuns,
-  type LaidOutRuns,
-  type LayoutRunsOpts,
-} from '@weasel-js/text';
-import type { ResolvedRun } from '@weasel-js/text';
+import type { FillStyle, Stroke } from '@weasel-js/paint';
 import { glyphGeneration } from '@weasel-js/font';
+import type { ResolvedRun } from '../runs/resolveRuns';
+import { layoutRuns, type LaidOutRuns, type LayoutRunsOpts } from './layoutRuns';
 
 /** Distinct option combinations held for one runs array before the whole set
  *  is dropped. Sized for "a few views onto the same text". */
 export const LAYOUT_CACHE_VARIANT_LIMIT = 8;
+
+/** Layouts held against the structural key before the least recently used one
+ *  is dropped. Sized for "every text node visible on a page, plus slack". */
+export const LAYOUT_CACHE_STRUCTURAL_LIMIT = 64;
 
 interface Entry {
   /** `generation` when this entry was filled. */
@@ -70,7 +80,8 @@ interface Entry {
 }
 
 let cache = new WeakMap<readonly ResolvedRun[], Entry>();
-
+let structural = new Map<string, LaidOutRuns>();
+let structuralGeneration = -1;
 
 /**
  * How many of the distinct font sizes present in `runs` reach `min`. Equal
@@ -94,6 +105,59 @@ function outlineBucket(runs: readonly ResolvedRun[], min: number | undefined): n
 
 function variantKey(runs: readonly ResolvedRun[], opts: LayoutRunsOpts): string {
   return `${opts.maxWidth}|${opts.lineHeight}|${opts.align}|${outlineBucket(runs, opts.outlineMinSize)}`;
+}
+
+let nextRefId = 1;
+const refIds = new WeakMap<object, number>();
+
+/** A stable id for a paint this key cannot serialize. */
+function refId(o: object): number {
+  let id = refIds.get(o);
+  if (id === undefined) {
+    id = nextRefId++;
+    refIds.set(o, id);
+  }
+  return id;
+}
+
+/**
+ * A paint's contribution to the key. Solid paints compare by value, so two
+ * runs set to the same colour share a layout; gradients and patterns get a
+ * per-object id, because they have no cheap structural equality and a false
+ * positive would hand back groups carrying the wrong paint.
+ *
+ * `layoutRuns`'s own `fillKey` mints a fresh random string for the non-solid
+ * case — fine for grouping within one layout, useless as a cache key.
+ */
+function paintKey(p: FillStyle): string {
+  return 'color' in p ? `s${p.color}:${p.opacity ?? 1}` : `#${refId(p)}`;
+}
+
+function strokeKey(s: Stroke | undefined): string {
+  if (!s) return '-';
+  const width = s.width ?? 1;
+  return [
+    paintKey(s.paint), typeof width === 'number' ? width : `px${width.px}`,
+    s.join ?? 'miter', s.cap ?? 'butt',
+    s.miterLimit ?? '', s.align ?? 'center', (s.dash ?? []).join(','),
+  ].join(':');
+}
+
+/**
+ * Everything about `runs` that changes the layout. The two author-supplied
+ * strings are length-prefixed so neither can forge a neighbouring field by
+ * containing a separator; every other term is a number, an enum, or a paint
+ * already escaped by `paintKey`.
+ */
+function runsKey(runs: readonly ResolvedRun[]): string {
+  let out = '';
+  for (const r of runs) {
+    out += `${r.text.length}:${r.text}|${r.fontFamily.length}:${r.fontFamily}`
+      + `|${r.fontSize}|${r.fontWeight}|${r.fontStyle}|${r.letterSpacing}`
+      + `|${r.underline ? 1 : 0}${r.strikethrough ? 1 : 0}`
+      + `|${paintKey(r.fill)}|${strokeKey(r.stroke)}|`;
+  }
+  return out;
 }
 
 /**
@@ -127,7 +191,24 @@ export function cachedLayoutRuns(
   const hit = entry.byVariant.get(key);
   if (hit !== undefined) return hit;
 
-  const laid = layoutRuns(runs, opts);
+  if (structuralGeneration !== fonts) {
+    structural.clear();
+    structuralGeneration = fonts;
+  }
+  const structuralK = `${runsKey(runs)} ${key}`;
+  let laid = structural.get(structuralK);
+  if (laid !== undefined) {
+    // Re-insert to move it to the young end; `Map` iterates in insertion order,
+    // which is what makes `keys().next()` the least recently used.
+    structural.delete(structuralK);
+  } else {
+    laid = layoutRuns(runs, opts);
+    if (structural.size >= LAYOUT_CACHE_STRUCTURAL_LIMIT) {
+      structural.delete(structural.keys().next().value!);
+    }
+  }
+  structural.set(structuralK, laid);
+
   if (entry.byVariant.size >= LAYOUT_CACHE_VARIANT_LIMIT) entry.byVariant.clear();
   entry.byVariant.set(key, laid);
   return laid;
@@ -136,4 +217,6 @@ export function cachedLayoutRuns(
 /** Test helper. Do not call from product code. */
 export function _resetLayoutCacheForTests(): void {
   cache = new WeakMap();
+  structural = new Map();
+  structuralGeneration = -1;
 }

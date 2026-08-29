@@ -24,7 +24,7 @@ import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-
 import { makeGLRecorder } from './test-utils/glRecorder';
 import { makeUploadTracker, type UploadTracker } from './test-utils/vertexUploads';
 import { WeaselRenderer } from './WeaselRenderer';
-import { _resetLayoutCacheForTests } from './cache/layoutCache';
+import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import type { DrawCommand } from './DrawCommand';
 import type { ResolvedRun } from '@weasel-js/text';
 

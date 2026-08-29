@@ -52,6 +52,7 @@
       "@weasel-js/text": ["./packages/text/src/index.ts"],
       "@weasel-js/paint": ["./packages/paint/src/index.ts"],
       "@weasel-js/font/test-seams": ["./packages/font/src/test-seams.ts"],
+      "@weasel-js/text/test-seams": ["./packages/text/src/test-seams.ts"],
       "@weasel-js/theme": ["./packages/theme/src/index.ts"],
       "@weasel-js/theme/react": ["./packages/theme/src/react.tsx"],
       "@weasel-js/theme/tokens.css": ["./packages/theme/src/generated/tokens.css"],

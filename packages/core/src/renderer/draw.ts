@@ -33,8 +33,7 @@ import {
 import {
   type LaidOutGroup, type LaidOutDecoration, type LaidOutOutlineGlyph,
 } from '@weasel-js/text';
-import { cachedLayoutRuns } from './cache/layoutCache';
-import { verticalAlignOffset } from '@weasel-js/text';
+import { verticalAlignOffset, cachedLayoutRuns } from '@weasel-js/text';
 import type { Mesh } from './cache/mesh';
 import { outlineMesh } from './cache/outlineMeshCache';
 import { outlineStrokeMesh, quantizeEmWidth } from './cache/outlineStrokeMeshCache';

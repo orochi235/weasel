@@ -141,6 +141,24 @@ export interface LaidOutLineBox {
   x0: number; y0: number; x1: number; y1: number;
   /** The line's baseline, for callers placing carets or rules against it. */
   baselineY: number;
+  /**
+   * Caret stops along this line, left to right: `caretXs[i]` is the left edge
+   * of the i-th advance cell, and the last entry is the line's right edge, so
+   * there is always one more stop than cell. Post-alignment, in the same
+   * origin-relative space as `x0`/`x1`.
+   *
+   * A cell spans one code point *plus* the kerning that precedes the next
+   * one, which is why a caret snapped to these midpoints lands where the
+   * glyphs actually were painted rather than where an unkerned re-measure
+   * would put them.
+   */
+  caretXs: number[];
+  /**
+   * Source offset for each stop in `caretXs`, as a UTF-16 index into the
+   * runs' concatenated text. Not contiguous: a code point the face cannot
+   * serve occupies no cell, and the wrap swallows the break between lines.
+   */
+  caretIndices: number[];
 }
 
 export interface LaidOutRuns {
@@ -450,6 +468,10 @@ export function layoutRuns(
     isNewline: boolean;
     resolved: ResolveResult;
     fontSize: number;
+    /** UTF-16 offset of this code point in the runs' concatenated text. */
+    srcIndex: number;
+    /** One past it — `srcIndex + 2` for an astral code point. */
+    srcEnd: number;
   }
 
   // 1. Flatten all runs into entries with per-glyph data, computing
@@ -458,6 +480,7 @@ export function layoutRuns(
   let prevCp: number | undefined;
   let prevMetrics: MetricsSource | undefined;
   let prevFontSize: number | undefined;
+  let srcIndex = 0;
 
   for (const run of runs) {
     const resolved = resolveFontVariant(run.fontFamily, run.fontWeight, run.fontStyle);
@@ -469,6 +492,9 @@ export function layoutRuns(
       ? { size: 1, base: outlineFace.ascender, advanceOf: (cp) => outlineFace.advanceOf(cp), kernOf: (l, r) => outlineFace.kernOf(l, r) }
       : font ? atlasMetrics(font) : undefined;
     if (!metrics) {
+      // Skipped, but its characters still occupy source offsets — dropping
+      // them here would shift every later run's caret indices left.
+      srcIndex += run.text.length;
       prevCp = undefined; prevMetrics = undefined; prevFontSize = undefined;
       continue;
     }
@@ -481,6 +507,9 @@ export function layoutRuns(
       const cp = ch.codePointAt(0)!;
       const isNewline = cp === 10;
       const isSpace = cp === 32;
+      const srcStart = srcIndex;
+      const srcEnd = srcIndex + ch.length;
+      srcIndex = srcEnd;
 
       if (isNewline) {
         entries.push({
@@ -488,7 +517,7 @@ export function layoutRuns(
           glyph: { id: cp, x: 0, y: 0, width: 0, height: 0, xoffset: 0, yoffset: 0, xadvance: 0, page: 0 },
           // A newline consumes no advance, so it takes no tracking either.
           cp, advance: 0, tracking: 0, kerningBefore: 0, isSpace: false, isNewline: true,
-          resolved, fontSize: run.fontSize,
+          resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd,
         });
         prevCp = undefined; prevMetrics = undefined; prevFontSize = undefined;
         continue;
@@ -510,7 +539,7 @@ export function layoutRuns(
           run, font, metrics,
           glyph: spaceGlyph ?? { id: 32, x: 0, y: 0, width: 0, height: 0, xoffset: 0, yoffset: 0, xadvance: 0, page: 0 },
           cp, advance, tracking, kerningBefore, isSpace: true, isNewline: false,
-          resolved, fontSize: run.fontSize,
+          resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd,
         });
         prevCp = cp; prevMetrics = metrics; prevFontSize = run.fontSize;
         continue;
@@ -533,7 +562,7 @@ export function layoutRuns(
           run, font: null, metrics, glyph: null, cp,
           advance: adv * scale,
           tracking, kerningBefore, isSpace, isNewline: false,
-          resolved, fontSize: run.fontSize,
+          resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd,
         });
         prevCp = cp; prevMetrics = metrics; prevFontSize = run.fontSize;
         continue;
@@ -563,7 +592,7 @@ export function layoutRuns(
         tracking,
         kerningBefore,
         isSpace, isNewline: false,
-        resolved: hit.resolved, fontSize: run.fontSize,
+        resolved: hit.resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd,
       });
 
       prevCp = cp; prevMetrics = glyphMetrics; prevFontSize = run.fontSize;
@@ -736,9 +765,14 @@ export function layoutRuns(
         * (baselineSource.fontSize / baselineSource.metrics.size)
       : penY;
 
+    const caretXs: number[] = [];
+    const caretIndices: number[] = [];
+
     let penX = lineX0;
     for (const e of line.entries) {
       penX += e.kerningBefore;
+      caretXs.push(penX);
+      caretIndices.push(e.srcIndex);
       // One step per character: the glyph's advance plus its run's tracking.
       // Every branch below moves the pen by exactly this, so glyph positions
       // stay in step with the line width accumulated above.
@@ -826,12 +860,20 @@ export function layoutRuns(
     }
     // A rule never crosses a line break: close the span at end of line.
     flushSpan();
+    // Closing stop: the line's right edge, at the offset just past its last
+    // character. A blank line has no cell to close, so its only stop is the
+    // newline that made it.
+    const lastCell = line.entries[line.entries.length - 1];
+    caretXs.push(penX);
+    caretIndices.push(lastCell ? lastCell.srcEnd : (line.blank?.srcIndex ?? 0));
     lineBoxes.push({
       x0: lineX0,
       y0: penY,
       x1: lineX0 + line.width,
       y1: penY + line.height,
       baselineY: lineBaselineY,
+      caretXs,
+      caretIndices,
     });
     maxLineWidth = Math.max(maxLineWidth, line.width);
     penY += line.height;

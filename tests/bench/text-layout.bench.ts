@@ -13,12 +13,8 @@
  */
 import { bench, describe } from 'vitest';
 import { registerFont } from '@weasel-js/font';
-import { layoutRuns } from '@weasel-js/text';
-// Relative: core's `renderer/` tree has no bare path mapping (nothing inside
-// core imports it by one), so there is no alias to lean on here.
-import {
-  cachedLayoutRuns, _resetLayoutCacheForTests,
-} from '../../packages/core/src/renderer/cache/layoutCache';
+import { layoutRuns, cachedLayoutRuns } from '@weasel-js/text';
+import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { alternatingRuns, benchFontJson, plainRun, proseOf } from './fixtures';
 
 const ATLAS = benchFontJson();
@@ -91,6 +87,13 @@ describe('layoutCache — hit vs miss (500 glyphs, wrapped)', () => {
   cachedLayoutRuns(runs, WRAP);
   bench('cachedLayoutRuns hit', () => {
     cachedLayoutRuns(runs, WRAP);
+  });
+  // What every measurement caller pays: a fresh array each call, so the
+  // identity WeakMap misses and the structural key is built and hit. The gap
+  // to the row above is the cost of serializing the runs; the gap to the row
+  // below is what it saves.
+  bench('cachedLayoutRuns structural hit', () => {
+    cachedLayoutRuns([...runs], WRAP);
   });
   bench('cachedLayoutRuns miss', () => {
     _resetLayoutCacheForTests();

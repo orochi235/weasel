@@ -63,15 +63,15 @@ destroys the distance field.
 `measureText` (advance/metrics) and `measureTextBounds` (ink bounds) are
 distinct; `fitTextPose.ts` and `verticalAlign.ts` build on them for
 fit-to-box and baseline placement. Every 2D-side width goes through
-`measuredWidth`, which adds tracking the way `layoutRuns` does — the two
-paths have to agree on where a line breaks or `caretIndexAt` maps a click to
-the wrong line.
+`measuredWidth`, which adds tracking the way `layoutRuns` does — `fitTextPose`
+is the last caller that wraps by `ctx.measureText`, and a box it sizes has to
+break where the GL path breaks.
 
 `lineBoxes.ts` answers the other measurement question: not how big is the
 text, but **where inside its box does it sit**. A text pose is a *wrap box* —
 `"Away"` in a 600-unit box leaves most of the box empty — so anything treating
 the pose as the node's extent claims empty space. `textLineBoxes` returns the
-per-line rects, read straight off `layoutRuns`'s own line walk rather than
+per-line rects, read straight off `cachedLayoutRuns`'s own line walk rather than
 re-measured, and honoring `align` and `verticalAlign`. The `kit:text`
 silhouette is built from it, which is how shape-accurate picking stops a text
 box from swallowing clicks on whatever is behind it.
@@ -98,7 +98,8 @@ kit — is `@weasel-js/text`'s `layout/`. The atlas itself (`FontAtlas`,
 `domRuns.ts` bridges to a DOM editing surface (contenteditable) — text editing
 uses real DOM for IME, spellcheck, and accessibility rather than reimplementing
 a caret on canvas. `hitTest.ts` provides `pointInTextPose` and `caretIndexAt`
-to map clicks back into the run model.
+to map clicks back into the run model; the caret snaps to the advance cells
+`cachedLayoutRuns` produced, so it cannot drift from the painted glyphs.
 
 Two things a consumer building character controls needs:
 

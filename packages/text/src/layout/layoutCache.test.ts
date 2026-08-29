@@ -10,8 +10,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
-import { cachedLayoutRuns, _resetLayoutCacheForTests, LAYOUT_CACHE_VARIANT_LIMIT } from './layoutCache';
-import type { ResolvedRun } from '@weasel-js/text';
+import {
+  cachedLayoutRuns, _resetLayoutCacheForTests,
+  LAYOUT_CACHE_VARIANT_LIMIT, LAYOUT_CACHE_STRUCTURAL_LIMIT,
+} from './layoutCache';
+import type { ResolvedRun } from '../runs/resolveRuns';
 
 function stubFetch() {
   const encoder = new TextEncoder();
@@ -57,12 +60,34 @@ describe('cachedLayoutRuns', () => {
     expect(b).toBe(a);
   });
 
-  it('keys on the runs array identity, not its contents', () => {
-    // Mirrors `WeakMap<Path, Mesh>` in cache.ts: identity is the contract, and
-    // it is what makes the entry collectable with the node that owns it. The
-    // painter memo (`kit:text`) is what makes that identity stable per frame.
+  it('answers a fresh array from the structural key', () => {
+    // The identity `WeakMap` is the renderer's fast path and nothing else's:
+    // `textLineBoxes` and `caretIndexAt` resolve a style and allocate a new
+    // `ResolvedRun[]` per call, so before the structural key they re-laid out
+    // every text node on every pose change.
     const a = cachedLayoutRuns([run('hello world')], OPTS);
     const b = cachedLayoutRuns([run('hello world')], OPTS);
+    expect(b).toBe(a);
+  });
+
+  it('separates runs that differ in any field the layout reads', () => {
+    const base = cachedLayoutRuns([run('hello world')], OPTS);
+    const bigger = cachedLayoutRuns([{ ...run('hello world'), fontSize: 24 }], OPTS);
+    const tracked = cachedLayoutRuns([{ ...run('hello world'), letterSpacing: 3 }], OPTS);
+    const bold = cachedLayoutRuns([{ ...run('hello world'), fontWeight: 700 }], OPTS);
+    const ruled = cachedLayoutRuns([{ ...run('hello world'), underline: true }], OPTS);
+    const other = cachedLayoutRuns([{ ...run('hello world'), fill: { fill: 'solid', color: '#f00' } }], OPTS);
+    for (const variant of [bigger, tracked, bold, ruled, other]) {
+      expect(variant).not.toBe(base);
+    }
+  });
+
+  it('does not let one run\'s text run into the next field', () => {
+    // The two author-supplied strings are length-prefixed for this: a text of
+    // `'a|4:sans'` against family `'sans'` must not serialize the same as a
+    // text of `'a'` against a family that swallowed the rest.
+    const a = cachedLayoutRuns([{ ...run('a|4:sans'), fontFamily: 'inter' }], OPTS);
+    const b = cachedLayoutRuns([{ ...run('a'), fontFamily: '|4:sansinter' }], OPTS);
     expect(b).not.toBe(a);
   });
 
@@ -142,11 +167,32 @@ describe('cachedLayoutRuns', () => {
   it('bounds the variants held for one runs array', () => {
     // Wholesale eviction, matching outlineMeshCache's policy: without a cap
     // the map hanging off a live node grows with every distinct option set.
+    // The layout itself survives the clear — the structural map still holds
+    // it — so what the cap actually costs is the key build, not a re-layout.
     const runs = [run('hello world')];
     const first = cachedLayoutRuns(runs, OPTS);
     for (let i = 1; i <= LAYOUT_CACHE_VARIANT_LIMIT; i++) {
       cachedLayoutRuns(runs, { ...OPTS, maxWidth: 400 + i });
     }
-    expect(cachedLayoutRuns(runs, OPTS)).not.toBe(first);
+    expect(cachedLayoutRuns(runs, OPTS)).toBe(first);
+  });
+
+  it('bounds the structural map, evicting least-recently-used', () => {
+    // Nothing collects a string key, so this side cannot ride an array's
+    // lifetime the way the WeakMap does — it needs a real cap.
+    const first = cachedLayoutRuns([run('text 0')], OPTS);
+    for (let i = 1; i <= LAYOUT_CACHE_STRUCTURAL_LIMIT; i++) {
+      cachedLayoutRuns([run(`text ${i}`)], OPTS);
+    }
+    expect(cachedLayoutRuns([run('text 0')], OPTS)).not.toBe(first);
+  });
+
+  it('keeps a re-read entry young', () => {
+    const first = cachedLayoutRuns([run('text 0')], OPTS);
+    for (let i = 1; i < LAYOUT_CACHE_STRUCTURAL_LIMIT; i++) {
+      cachedLayoutRuns([run(`text ${i}`)], OPTS);
+      // Touching it on every insert keeps it off the old end of the map.
+      expect(cachedLayoutRuns([run('text 0')], OPTS)).toBe(first);
+    }
   });
 });
