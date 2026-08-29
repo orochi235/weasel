@@ -43,8 +43,10 @@ jobs:
       # on macOS.
       - run: npx playwright install chromium
 
+      # caffeinate -d: with the runner's display asleep, the render pipeline
+      # stalls for seconds at a time — p95 holds but the mean fails the budget.
       - name: Run performance specs
-        run: npm run test:perf
+        run: caffeinate -d -i npm run test:perf
 
       # The per-command and frame-budget tables are printed, not asserted, so
       # the log is the artifact that matters even on a pass.
