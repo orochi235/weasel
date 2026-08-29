@@ -225,6 +225,9 @@ export const GardenInstrument = defineInstrument<GardenState, GardenConfig>({
   name: 'Garden',
   defaultConfig: () => ({ showGrid: true }),
   initialState: () => ({ scene: null }),
+  // Kept on the legacy defaultConfig + configSchema path on purpose, so both
+  // ways of declaring config keep live coverage. SceneInstrument shows the
+  // builder.
   configSchema: () => [
     { type: 'checkbox', key: 'showGrid', label: 'Show grid', default: true },
   ],

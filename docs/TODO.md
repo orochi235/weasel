@@ -21,7 +21,6 @@ Priority tags:
 
 ### Next up
 
-- **labkit: generate instrument controls from a schema or a TypeScript type** → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - **`<Timeline>` editor** — the one unbuilt phase of the timeline/rig arc → [Animation](#animation)
 - **Audit for duplicated-then-drifted cascades** — two implementations of one lookup, agreeing by coincidence → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
@@ -38,6 +37,8 @@ Priority tags:
 
 **Selection, actions & UI panels**
 - labkit `registerSerializers` has no callers; instrument serializers never run → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- labkit: nested config values — `f.schema` is flat because `setConfig` is → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- Reconcile core's `ToolPrefLeaf` with weasel-ui's `PrefLeaf` — the `paint` kind has already drifted → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 **Lint**
 - `eqeqeq` (275) and `no-unused-vars` (131) deferred from the 2026-08-22 baseline → [Lint](#lint)
@@ -1125,11 +1126,36 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   below that it will overflow. Fixing it properly means changing how `ZoomControl` sizes its
   slider.
 
-- **(P1) labkit: generate an instrument's controls from a schema or its config type.** An instrument declares its config twice. `defaultConfig(): TC` gives the values and, through `TC`, their types; `configSchema(): ConfigField[]` (`packages/labkit/src/controls/types.ts`) hand-repeats every key as a `slider` / `select` / `color` field with a label, bounds and a second default. Nothing holds the two to one answer — rename a key in `TC` and the panel keeps editing a field the instrument no longer reads, which `validateConfigSchema` cannot catch because it only ever sees the schema. An instance of the P1 above.
+- **(P2) labkit: nested config values.** `f.schema` emits a flat `PrefGroup` —
+  every leaf a direct child, so a leaf's path is its config key and both
+  `ControlPanel` and weasel-ui's `PrefsForm` address it identically. `.section()`
+  buckets leaves under a heading without nesting the value. Real nesting needs
+  path writes through `setConfig` / `updateTrialConfig` (both flat today),
+  `onConfigChange` diffing over a tree, and a storage migration. `PrefGroup`
+  already nests, so the vocabulary is not the blocker.
 
-  The ask is to hand labkit a schema or a TypeScript type definition and get the panel. Most of `ConfigField` is inferrable from a type: `boolean` is a checkbox, a string union is a select, `number` is a number field. What a type cannot say is the rest of it — a bounded number wants a slider and its min/max, a string may be a color or a path, every field wants a human label — so the design question is where those annotations live and how a consumer overrides one generated field without hand-writing the whole schema.
+- **(P2) Reconcile core's `ToolPrefLeaf` with weasel-ui's `PrefLeaf`.**
+  `packages/ui/src/components/Prefs/schema.ts` avoids importing
+  `@weasel-js/core` on purpose so a `ToolPrefGroup` assigns into `PrefGroup`
+  with no cast, and its header says "Keep the two in sync field-for-field."
+  They are not: core has `paint` (`ToolPrefPaint`) and ui has no equivalent, so
+  `defaultNodeProperties` emits `kind: 'paint'` and `kind: 'font-family'` leaves
+  that `PrefsForm` can only render as placeholders. Core carries a compile-time
+  exhaustiveness tie (`_BuiltinKindsExact`, `prefs.ts:118`); there is no
+  cross-package counterpart and there cannot be one while the contract is
+  structural, so the invariant is a comment. labkit now builds on `PrefLeaf`
+  (2026-08-26), which stopped a third dialect but did not close this.
 
-  The input is the other open question, and the two are not exclusive: a runtime schema value (Standard Schema, Zod, JSON Schema) carries its own validator and needs no build step, while reading `TC` itself is the version with nothing to keep in sync at all and costs a TS-program pass. A runtime schema as the base with a type-level path over it is the shape to design against.
+- **(P3) `ControlPanel` ignores three `Pref*` presentation fields.** `control:
+  'switch'` draws a checkbox and `control: 'radio'` draws a segmented
+  `ToggleRow`; both are reasonable renderings, and `PrefsForm` honors the
+  distinction. `pair` is not honored at all. Two more were deliberately kept out
+  of the builder rather than shipped inert, because ignoring them corrupts a
+  value rather than an appearance: `unit` (a number stored in radians and
+  displayed in degrees would be edited raw) and `alpha` (`ColorRow` takes alpha
+  as a separate 0..1 value, so an `#rrggbbaa` default truncates on first edit).
+  Honoring those two means teaching `ControlPanel` a hex-alpha split and a unit
+  conversion.
 
 - **(P2) labkit: `registerSerializers` has no callers, so instrument serializers never run.** `LabStore.registerSerializers` exists and nothing in the repo calls it, leaving `serializers` permanently `{}` — `Instrument.serialize` / `deserialize` are dead at flush, at hydrate and around snapshots, and an instrument whose state is not JSON-safe silently loses it. Not a one-liner: `createLabStore` runs before any React provider mounts, so a late registration cannot reach hydration. The fix is probably to take serializers as a `CreateLabStoreOptions` field instead, which also gives the hook a place to be typed. Document migrations are unaffected — they operate on already-serialized JSON.
 
