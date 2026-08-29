@@ -35,6 +35,6 @@ A group carries either textured quads (from a baked MSDF atlas) or outline
 glyphs — em-space SVG path data plus the pen position, baseline and scale to
 place it — for a consumer that tessellates its own geometry.
 
-Advances, kerning and line metrics currently come from a registered atlas; see
-`docs/superpowers/specs/2026-08-28-text-package-extraction-design.md` for the
-metrics seam that lifts that requirement.
+Metrics come from whichever tier resolved the family: a baked MSDF atlas, or —
+for a family registered with `registerFontOutlines` and no atlas — the parsed
+face itself, so font bytes alone are enough to lay text out.

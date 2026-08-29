@@ -33,12 +33,30 @@ export interface OutlineFace {
    *  divided by it, so callers never need to. */
   unitsPerEm: number;
   /**
+   * Distance from the line top to the baseline, in em units — the outline
+   * tier's analogue of a `BmFont`'s `common.base`.
+   *
+   * Read from `hhea`, which is what `msdf-bmfont-xml` bakes, so a face used
+   * for metrics puts text on the same baseline as an atlas of the same font.
+   * `docs/TODO.md` tracks the wider disagreement with `sTypoAscender`.
+   */
+  ascender: number;
+  /**
    * Em-space SVG path data for `cp`, or `null` when this face has no glyph
    * for the codepoint *or* the glyph has no contours (a space). Both answers
    * mean the same thing to a caller: there is nothing here to tessellate, so
    * fall through to whatever tier would have drawn it.
    */
   glyphD(cp: number): string | null;
+  /**
+   * Advance width for `cp` in em units, or `null` when the face has no glyph
+   * for it. Distinct from `glyphD` answering `null`: a space has an advance
+   * and no contours, and layout needs the advance either way.
+   */
+  advanceOf(cp: number): number | null;
+  /** Kerning adjustment between two codepoints, in em units — negative pulls
+   *  them together. `0` when the face kerns neither this pair nor at all. */
+  kernOf(left: number, right: number): number;
 }
 
 /**

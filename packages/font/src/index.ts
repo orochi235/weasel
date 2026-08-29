@@ -48,6 +48,7 @@ export {
   outlineStatus,
   listFontOutlines,
   glyphOutline,
+  outlineMetrics,
 } from './outline/outlineRegistry';
 export type {
   OutlineSource,

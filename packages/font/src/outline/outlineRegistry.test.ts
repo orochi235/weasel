@@ -9,6 +9,9 @@ import { subscribeGlyphReady, _clearGlyphReadySubscribers } from '../glyphReady'
 /** A face that answers for 'A' and nothing else. */
 const stubFace: OutlineFace = {
   unitsPerEm: 1000,
+  ascender: 0.8,
+  advanceOf: (cp: number) => (cp === 32 ? 0.25 : 0.6),
+  kernOf: () => 0,
   glyphD: (cp) => (cp === 65 ? 'M0 0L0.5 -0.7L1 0Z' : null),
 };
 
@@ -63,7 +66,7 @@ describe('outline registry', () => {
   it('reports a codepoint the face lacks as null, and asks the face once', async () => {
     const glyphD = vi.fn(stubFace.glyphD);
     registerFontOutlines('Fake', {}, new ArrayBuffer(4), {
-      parser: () => ({ unitsPerEm: 1000, glyphD }),
+      parser: () => ({ unitsPerEm: 1000, ascender: 0.8, advanceOf: (cp: number) => (cp === 32 ? 0.25 : 0.6), kernOf: () => 0, glyphD }),
     });
     glyphOutline('Fake', 400, 'normal', 65);
     await settle();
@@ -110,6 +113,9 @@ describe('outline registry', () => {
     registerFontOutlines('Fake', {}, new ArrayBuffer(4), {
       parser: () => ({
         unitsPerEm: 1000,
+        ascender: 0.8,
+        advanceOf: (cp: number) => (cp === 32 ? 0.25 : 0.6),
+        kernOf: () => 0,
         glyphD: (cp) => {
           if (cp === 66) throw new Error('bad glyf entry');
           return 'M0 0Z';
@@ -176,11 +182,17 @@ describe('outline registry', () => {
   describe('contour closure', () => {
     const openParser: OutlineParser = () => ({
       unitsPerEm: 1000,
+      ascender: 0.8,
+      advanceOf: (cp: number) => (cp === 32 ? 0.25 : 0.6),
+      kernOf: () => 0,
       glyphD: (cp) => (cp === 65 ? 'M0 0L0.5-0.7L1 0' : null),
     });
 
     const twoContourParser: OutlineParser = () => ({
       unitsPerEm: 1000,
+      ascender: 0.8,
+      advanceOf: (cp: number) => (cp === 32 ? 0.25 : 0.6),
+      kernOf: () => 0,
       glyphD: (cp) => (cp === 65 ? 'M0 0L1 0L1-1M0.2-0.2L0.8-0.2L0.8-0.8' : null),
     });
 

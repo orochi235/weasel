@@ -133,13 +133,20 @@ kerning and line metrics through one interface that the atlas and an
 outline-only face both satisfy:
 
 ```ts
-export interface GlyphSource {
-  advanceOf(cp: number, fontSize: number): number | null;
-  kernOf(left: number, right: number, fontSize: number): number;
-  /** Baseline offset and default line height, in world units at `fontSize`. */
-  lineMetrics(fontSize: number): { base: number; lineHeight: number };
+interface MetricsSource {
+  /** Units per em of whatever the three below are measured in. */
+  size: number;
+  /** Line top to baseline, in those units. */
+  base: number;
+  advanceOf(cp: number): number | null;
+  kernOf(left: number, right: number): number;
 }
 ```
+
+`size` rather than a world-unit conversion per call: an atlas measures in its
+bake size and a parsed face in ems, and one divisor (`fontSize / size`)
+reconciles them at every site that already had one. It stays internal — a
+consumer supplies metrics by registering a font, not by implementing this.
 
 The quad channel still requires an atlas — UVs come from nowhere else — so an
 outline-only source emits `glyphs` and never `quads`, which is already how an
