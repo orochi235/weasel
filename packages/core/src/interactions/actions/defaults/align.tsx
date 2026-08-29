@@ -4,7 +4,7 @@ import type { PoseProjection } from '../resize/geometry';
 import { RECT_POSE_DESCRIPTOR } from '../resize/geometry';
 import type { ResizePose } from '../../gestures/types';
 import { alignDeltaFor, translatePoseViaDescriptor, type AlignEdge } from '../align/align';
-import { unionBounds } from 'features/groups/unionBounds';
+import { unionBounds } from 'core/geometry/unionBounds';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
 import type { SelectionApi } from 'core/selection/useSelection';

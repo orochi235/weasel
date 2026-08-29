@@ -21,7 +21,7 @@ import { useGestureDispatcher } from './useGestureDispatcher';
 import { insertAction } from '../actions/defaults/insert';
 import { createDispatcher, type Dispatcher } from './dispatcher';
 import { createGestureSource } from 'canvas/SceneCanvas/dispatcherGestureBounds';
-import { unionGestureBounds } from 'canvas/gestureBounds';
+import { unionAABB } from 'core/geometry/unionBounds';
 import type { InsertDep } from '../actions/depSchema';
 import type { NodeId } from 'core/scene/types';
 
@@ -209,22 +209,22 @@ describe('insertAction integration via gesture dispatcher', () => {
     const { getByTestId } = render(<Harness />);
     const canvas = getByTestId('canvas');
 
-    expect(unionGestureBounds(source.bounds() ?? [])).toBeNull();
+    expect(unionAABB(source.bounds() ?? [])).toBeNull();
 
     act(() => { fire(canvas, 'pointerdown', 10, 10); });
     act(() => { fire(canvas, 'pointermove', 60, 35); });
-    expect(unionGestureBounds(source.bounds() ?? []))
+    expect(unionAABB(source.bounds() ?? []))
       .toEqual({ x: 10, y: 10, width: 50, height: 25 });
 
     act(() => { fire(canvas, 'pointermove', 110, 60); });
-    expect(unionGestureBounds(source.bounds() ?? []))
+    expect(unionAABB(source.bounds() ?? []))
       .toEqual({ x: 10, y: 10, width: 100, height: 50 });
 
     // On release the node commits and the gesture is over — bounds go back to
     // null, and the committed geometry is the consumer's own business.
     act(() => { fire(canvas, 'pointerup', 110, 60); });
     expect(calls).toHaveLength(1);
-    expect(unionGestureBounds(source.bounds() ?? [])).toBeNull();
+    expect(unionAABB(source.bounds() ?? [])).toBeNull();
   });
 
   it('bumps the gesture version on each pump of an insert drag', () => {

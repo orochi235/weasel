@@ -10,7 +10,7 @@ import {
   type FlipAxis,
   type FlipPivot,
 } from '../flip/helpers';
-import { unionBounds } from 'features/groups/unionBounds';
+import { unionBounds } from 'core/geometry/unionBounds';
 import type { Action } from '../registry';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { requiresSelection } from './requiresSelection';

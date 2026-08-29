@@ -19,7 +19,7 @@
  * **Pose shape:** TPose is generic; callers must supply `getBounds(pose)`
  * to project any pose into the AABB the renderer needs. For rect-shaped
  * poses (`{x, y, width, height}`) pass the identity. For `Path` poses pass
- * `boundsOfPath`. Container ids reduce via `unionBounds` over the projected
+ * `boundsOfPath`. Container ids reduce via `unionAABB` over the projected
  * AABBs.
  */
 
@@ -27,7 +27,7 @@ import type { DrawCommand } from '../../renderer';
 import { mat3, type Mat3 } from '../../renderer';
 import type { NodeId } from 'core/scene/types';
 import type { RenderLayer } from 'core/layers/render';
-import { unionBounds } from '../groups/unionBounds';
+import { unionAABB } from 'core/geometry/unionBounds';
 import { alignedStrokeRect, type FillStyle, type Stroke } from '@weasel-js/paint';
 import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import {
@@ -149,7 +149,7 @@ export function composeSelectionPose<TPose>(
         }
         leafBounds.push(getBounds(getStoredPose(leafId)));
       }
-      const u = unionBounds(leafBounds);
+      const u = unionAABB(leafBounds);
       if (u === null) return null;
       return fromBounds(u);
     }
@@ -199,7 +199,7 @@ function makeContainerAwareBoundsResolver<TPose>(
       if (p !== null) leafBounds.push(getBounds(p));
     }
     if (leafBounds.length === 0) return null;
-    return unionBounds(leafBounds);
+    return unionAABB(leafBounds);
   };
 }
 

@@ -6,7 +6,7 @@ import type {
   ResizePose,
 } from 'interactions/gestures/types';
 import { pxExtent } from 'core/viewport/pxExtent';
-import { unionBounds } from 'features/groups/unionBounds';
+import { unionBounds } from 'core/geometry/unionBounds';
 import type {
   AlignAnchor,
   AlignBounds,

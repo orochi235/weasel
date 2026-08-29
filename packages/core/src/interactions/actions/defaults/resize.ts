@@ -63,7 +63,7 @@ import { boxToBox } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
-import { unionBounds } from 'features/groups/unionBounds';
+import { unionBounds } from 'core/geometry/unionBounds';
 
 // ---------------------------------------------------------------------------
 // Defaults applied when `resizePolicy` dep is absent. Mirrors the

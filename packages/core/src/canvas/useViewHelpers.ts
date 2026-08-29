@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef } from 'react';
 import { firstPreviewPose, firstPreviewBounds, aggregatePreviewIds } from './toolPreview';
-import { unionGestureBounds, type GestureSource } from './gestureBounds';
+import type { GestureSource } from './gestureBounds';
+import { unionAABB } from 'core/geometry/unionBounds';
 import { buildChromeState, type ChromeState } from 'core/selection/chromeState';
 import type { PoseProjection } from 'interactions/actions/resize/geometry';
 import type { NodeId } from 'core/scene/types';
@@ -273,7 +274,7 @@ export function useViewHelpers<TPose>(
       // world AABBs.
       const extraBounds = gestureSource?.bounds();
       if (extraBounds) for (const b of extraBounds) parts.push(b);
-      return unionGestureBounds(parts);
+      return unionAABB(parts);
     },
     subscribeGestures: (fn: () => void): (() => void) =>
       gestureSource?.subscribe(fn) ?? noOpUnsubscribe,

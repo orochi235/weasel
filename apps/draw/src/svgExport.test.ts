@@ -24,7 +24,7 @@ import {
 // exported from svgExport.ts.
 function fakeScene(nodes: Record<string, {
   kind: 'leaf' | 'container';
-  pose: { x: number; y: number; width: number; height: number };
+  pose: { x: number; y: number; width: number; height: number; rotation?: number };
   data?: {
     path?: unknown; fill?: FillStyle | null; text?: string; style?: unknown;
     stroke?: Stroke | null;
@@ -187,6 +187,22 @@ describe('selectionToSvgString', () => {
 
     expect(parsed.nodes).toHaveLength(2);
     expect(parsed.viewBox).toEqual({ x: 0, y: 0, width: 30, height: 10 });
+  });
+
+  it('fits the viewBox to a rotated node\'s ink, not its unrotated pose box', () => {
+    const scene = fakeScene({
+      a: {
+        kind: 'leaf',
+        pose: { x: 0, y: 0, width: 40, height: 10, rotation: Math.PI / 2 },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 40, height: 10 }, fill: solid('#ff0000') },
+      },
+    }, ['a']);
+
+    const parsed = parseSvg(selectionToSvgString(scene, ['a']));
+
+    // The quarter-turned rect occupies x 15..25, y -15..25.
+    expect(parsed.viewBox!.y).toBeCloseTo(-15);
+    expect(parsed.viewBox!.height).toBeCloseTo(40);
   });
 
   it('walks a selected container subtree (only its descendants, wd:group-id preserved)', () => {

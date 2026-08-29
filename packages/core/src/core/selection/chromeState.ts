@@ -1,6 +1,7 @@
 import type { NodeId } from '../scene/types';
 import type { ModifierState } from '../modifierState';
 import type { Bounds } from '../viewport/fitViewToBounds';
+import { unionAABB } from 'core/geometry/unionBounds';
 
 export type { Bounds };
 
@@ -30,7 +31,8 @@ export interface ChromeState {
    *  computable. */
   boundsOf(id: string): Bounds | null;
   /** Multi-union AABB when `multiActive`. Computed lazily from `boundsOf`
-   *  over every selected id; null otherwise. */
+   *  over every selected id, expanding rotated members to the extent of
+   *  their ink; null otherwise. */
   readonly unionBounds: Bounds | null;
   /** Active modifier state at the moment of the call. */
   readonly modifiers: ModifierState;
@@ -72,18 +74,7 @@ export function buildChromeState(args: BuildChromeStateArgs): ChromeState {
         cached.value = null;
         return null;
       }
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      let any = false;
-      for (const id of selection) {
-        const b = effectiveBoundsOf(id);
-        if (!b) continue;
-        any = true;
-        if (b.x < minX) minX = b.x;
-        if (b.y < minY) minY = b.y;
-        if (b.x + b.width > maxX) maxX = b.x + b.width;
-        if (b.y + b.height > maxY) maxY = b.y + b.height;
-      }
-      cached.value = any ? { x: minX, y: minY, width: maxX - minX, height: maxY - minY } : null;
+      cached.value = unionAABB(selection.map((id) => effectiveBoundsOf(id)));
       return cached.value;
     },
   };

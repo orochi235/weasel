@@ -25,7 +25,7 @@ import {
   fillInPoseFrame,
   pathInPoseFrame,
   rectPath,
-  unionBounds,
+  unionAABB,
 } from '@weasel-js/core';
 import {
   serializeSvg,
@@ -211,7 +211,7 @@ export function selectionToSvgString<TLayer extends string>(
 ): string {
   const nodes = sceneToSvgNodes(sceneSourceOf(scene), ids);
 
-  const bounds = unionBounds(
+  const bounds = unionAABB(
     ids
       .map((id) => scene.get(id as never)?.pose)
       .filter((p): p is WeaselDrawPose => p != null),

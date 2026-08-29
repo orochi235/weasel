@@ -34,6 +34,7 @@ import type { Op } from 'core/ops/types';
 import { createTransformOp } from 'core/ops/transform';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import type { SelectionApi } from 'core/selection/useSelection';
+import { unionAABB, type RectPose } from 'core/geometry/unionBounds';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -142,11 +143,10 @@ export const rotateAction: Action & { requires: string[] } = {
       const ids = selection.get() as NodeId[];
       if (ids.length === 0) return {};
 
-      // Capture origin poses, AABB centers, and union bounds.
       const originPoses = new Map<NodeId, unknown>();
       const originCenters = new Map<NodeId, { x: number; y: number }>();
       const originRotations = new Map<NodeId, number>();
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      const originRects: RectPose[] = [];
 
       for (const id of ids) {
         const node = scene.get(id);
@@ -157,15 +157,13 @@ export const rotateAction: Action & { requires: string[] } = {
         const cy = pr.y + pr.height / 2;
         originCenters.set(id, { x: cx, y: cy });
         originRotations.set(id, pr.rotation);
-        if (pr.x < minX) minX = pr.x;
-        if (pr.y < minY) minY = pr.y;
-        if (pr.x + pr.width > maxX) maxX = pr.x + pr.width;
-        if (pr.y + pr.height > maxY) maxY = pr.y + pr.height;
+        originRects.push(pr);
       }
 
       if (originPoses.size === 0) return {};
 
-      const unionCenter = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+      const union = unionAABB(originRects)!;
+      const unionCenter = { x: union.x + union.width / 2, y: union.y + union.height / 2 };
       const startPointerAngle = Math.atan2(
         ctx.world.y - unionCenter.y,
         ctx.world.x - unionCenter.x,

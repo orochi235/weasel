@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAlign, alignDeltaFor, translatePoseViaDescriptor } from './align';
 import type { AlignAdapter } from './align';
-import { unionBounds } from 'features/groups/unionBounds';
+import { unionBounds } from 'core/geometry/unionBounds';
 import type { Op } from 'core/ops/types';
 import { type NodeId } from 'core/scene/types';
 import { pathPoseDescriptor } from 'features/paths/poseDescriptor';

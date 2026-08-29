@@ -784,8 +784,8 @@ export {
 } from './util/paint';
 
 // ─── Groups: union the bounds of a node set ─────────────────────────────────
-export { unionBounds } from './features/groups/unionBounds';
-export type { RectPose } from './features/groups/unionBounds';
+export { unionBounds, unionAABB, axisAlignedBounds } from './core/geometry/unionBounds';
+export type { RectPose } from './core/geometry/unionBounds';
 
 // ─── Undo history: createHistory + entry shape ──────────────────────────────
 // The explicit `createHistory` shadows the engine's own in the star re-export

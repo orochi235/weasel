@@ -5,7 +5,7 @@ import { dispatchApplyBatch } from 'core/applyOps';
 import type { NodeId } from 'core/scene/types';
 import { RECT_POSE_DESCRIPTOR, type PoseProjection } from '../resize/geometry';
 import type { ResizePose } from '../../gestures/types';
-import { unionBounds } from 'features/groups/unionBounds';
+import { unionBounds } from 'core/geometry/unionBounds';
 
 /** Edge or center the selection should align to within the selection's union AABB. */
 export type AlignEdge = 'left' | 'right' | 'top' | 'bottom' | 'center-x' | 'center-y';

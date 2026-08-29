@@ -30,6 +30,7 @@ interface Pose {
   y: number;
   width: number;
   height: number;
+  rotation?: number;
 }
 
 const DIMS = { width: 200, height: 200 };
@@ -110,6 +111,25 @@ describe('composeSelectionPose with containers', () => {
     expect(resolve('c')).toEqual({ x: 0, y: 0, width: 30, height: 40 });
     // A plain leaf resolves to its own pose.
     expect(resolve('a')).toBe(stale.a);
+  });
+
+  it('resolves a container around a rotated leaf\'s ink, not its pose box', () => {
+    const leaf: Record<string, Pose> = {
+      a: { x: 0, y: 0, width: 10, height: 10 },
+      b: { x: 40, y: 0, width: 40, height: 10, rotation: Math.PI / 2 },
+    };
+    const { getChildren, isContainer } = makeContainerTree({ c: ['a', 'b'] });
+    const resolve = composeSelectionPose<Pose>({
+      getStoredPose: (id) => leaf[id],
+      getChildren,
+      isContainer,
+      getBounds: (p) => p,
+      fromBounds: (b) => ({ ...b }),
+    });
+    // b turned a quarter turn spans y -15..25, past both edges of its own box.
+    const out = resolve('c') as Pose;
+    expect(out.y).toBeCloseTo(-15);
+    expect(out.height).toBeCloseTo(40);
   });
 
   it('non-container id resolves identical to no-accessor behavior', () => {

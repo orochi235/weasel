@@ -340,4 +340,29 @@ describe('rotateAction descriptor', () => {
     expect(ops[0].args.id).toBe('a');
     expect(ops[1].args.id).toBe('b');
   });
+
+  it('pivots a multi-selection on the union of rotated ink, not of unrotated boxes', () => {
+    const invoker = getOngoingInvoker(rotateAction);
+    // b is 40x10 turned a quarter turn, so it occupies x 55..65, y -15..25 —
+    // well outside its own pose box. With a its union is x 0..65, y -15..25,
+    // centered at (32.5, 5); folding the unrotated boxes gives (40, 5).
+    const { scene, ...ctx } = makeCtx({
+      selectionIds: ['a', 'b'],
+      world: { x: 132.5, y: 5 },
+      sceneNodes: {
+        a: { pose: { x: 0, y: 0, width: 10, height: 10, rotation: 0 } },
+        b: { pose: { x: 40, y: 0, width: 40, height: 10, rotation: Math.PI / 2 } },
+      },
+    });
+    const handle = invoker.start(ctx as InvocationCtx, undefined);
+
+    // Swing the pointer to the opposite side: a half turn about the pivot.
+    const half = { ...(ctx as InvocationCtx), world: { x: -67.5, y: 5 } };
+    handle.onMove!(half);
+    handle.onEnd!(half, 'commit');
+
+    // a's center starts at (5, 5); reflected through (32.5, 5) it lands at 60.
+    const a = scene.poses.get('a') as { x: number; width: number };
+    expect(a.x + a.width / 2).toBeCloseTo(60);
+  });
 });

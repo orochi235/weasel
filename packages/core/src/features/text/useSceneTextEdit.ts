@@ -27,7 +27,7 @@ import type { Scene } from '../../core/scene/types';
 import type { FillStyle, Stroke } from '@weasel-js/paint';
 import { clientToCanvas } from '../../core/viewport/clientToCanvas';
 import type { View } from '../../core/viewport/view';
-import type { RectPose } from '../groups/unionBounds';
+import type { RectPose } from 'core/geometry/unionBounds';
 import { caretIndexAt, pointInTextPose } from './hitTest';
 import type { StyledRun } from '@weasel-js/text';
 import type { TextPaint, TextStyle } from '@weasel-js/text';

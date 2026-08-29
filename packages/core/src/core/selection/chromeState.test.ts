@@ -97,4 +97,22 @@ describe('buildChromeState', () => {
     void state.unionBounds;
     expect(calls).toBe(1);
   });
+
+  it('unionBounds covers a rotated member\'s ink, not its unrotated box', () => {
+    // The frame and its handles are painted from this box and hit-tested
+    // against it, so an under-reported union puts both inside the shape.
+    const boxes: Record<string, { x: number; y: number; width: number; height: number; rotation?: number }> = {
+      a: { x: 0, y: 0, width: 10, height: 10 },
+      b: { x: 40, y: 0, width: 40, height: 10, rotation: Math.PI / 2 },
+    };
+    const state = buildChromeState({
+      selection: [asNodeId('a'), asNodeId('b')],
+      multiActive: true,
+      effectiveBoundsOf: (id) => boxes[id] ?? null,
+      modifiers: NO_MOD,
+    });
+    // b spans y -15..25 once rotated; the union must reach both extremes.
+    expect(state.unionBounds!.y).toBeCloseTo(-15);
+    expect(state.unionBounds!.y + state.unionBounds!.height).toBeCloseTo(25);
+  });
 });

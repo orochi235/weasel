@@ -1,5 +1,36 @@
-import { describe, it, expect } from 'vitest';
-import { axisAlignedBounds, unionGestureBounds } from './gestureBounds';
+import { describe, expect, it } from 'vitest';
+import { axisAlignedBounds, unionAABB, unionBounds } from './unionBounds';
+
+describe('unionBounds', () => {
+  it('returns null for empty input', () => {
+    expect(unionBounds([])).toBeNull();
+  });
+
+  it('returns the rect itself for a single pose', () => {
+    expect(unionBounds([{ x: 5, y: 6, width: 7, height: 8 }])).toEqual({
+      x: 5,
+      y: 6,
+      width: 7,
+      height: 8,
+    });
+  });
+
+  it('computes envelope of two disjoint rects', () => {
+    const out = unionBounds([
+      { x: 0, y: 0, width: 10, height: 10 },
+      { x: 50, y: 60, width: 20, height: 30 },
+    ]);
+    expect(out).toEqual({ x: 0, y: 0, width: 70, height: 90 });
+  });
+
+  it('handles negative coordinates', () => {
+    const out = unionBounds([
+      { x: -10, y: -20, width: 5, height: 5 },
+      { x: 0, y: 0, width: 10, height: 10 },
+    ]);
+    expect(out).toEqual({ x: -10, y: -20, width: 20, height: 30 });
+  });
+});
 
 describe('axisAlignedBounds', () => {
   it('returns an unrotated box unchanged (and without a rotation field)', () => {
@@ -33,22 +64,22 @@ describe('axisAlignedBounds', () => {
   });
 });
 
-describe('unionGestureBounds', () => {
+describe('unionAABB', () => {
   it('returns null for an empty iterable', () => {
-    expect(unionGestureBounds([])).toBeNull();
+    expect(unionAABB([])).toBeNull();
   });
 
   it('returns null when every part is null/undefined', () => {
-    expect(unionGestureBounds([null, undefined, null])).toBeNull();
+    expect(unionAABB([null, undefined, null])).toBeNull();
   });
 
   it('returns a single part as its own AABB', () => {
-    expect(unionGestureBounds([{ x: 1, y: 2, width: 3, height: 4 }]))
+    expect(unionAABB([{ x: 1, y: 2, width: 3, height: 4 }]))
       .toEqual({ x: 1, y: 2, width: 3, height: 4 });
   });
 
   it('unions disjoint parts into their envelope', () => {
-    const u = unionGestureBounds([
+    const u = unionAABB([
       { x: 0, y: 0, width: 10, height: 10 },
       { x: 50, y: 20, width: 10, height: 10 },
     ]);
@@ -56,7 +87,7 @@ describe('unionGestureBounds', () => {
   });
 
   it('skips nulls interleaved with real parts', () => {
-    const u = unionGestureBounds([
+    const u = unionAABB([
       null,
       { x: 0, y: 0, width: 10, height: 10 },
       undefined,
@@ -66,7 +97,7 @@ describe('unionGestureBounds', () => {
   });
 
   it('folds rotated parts by their rotated extent, not their local box', () => {
-    const u = unionGestureBounds([
+    const u = unionAABB([
       { x: 0, y: 0, width: 10, height: 10, rotation: Math.PI / 4 },
     ])!;
     const half = (10 * Math.SQRT2) / 2;
@@ -74,10 +105,30 @@ describe('unionGestureBounds', () => {
   });
 
   it('never reports a rotation on the union', () => {
-    const u = unionGestureBounds([
+    const u = unionAABB([
       { x: 0, y: 0, width: 10, height: 10, rotation: Math.PI / 4 },
       { x: 100, y: 0, width: 10, height: 10, rotation: Math.PI / 4 },
     ])!;
     expect('rotation' in u).toBe(false);
+  });
+});
+
+describe('unionAABB vs unionBounds', () => {
+  it('agree when nothing is rotated', () => {
+    const poses = [
+      { x: 0, y: 0, width: 10, height: 10 },
+      { x: 50, y: 60, width: 20, height: 30 },
+    ];
+    expect(unionAABB(poses)).toEqual(unionBounds(poses));
+  });
+
+  it('diverge once a member is rotated past its own box', () => {
+    // 40x10 rotated a quarter turn occupies y -15..25 about its center.
+    const poses = [
+      { x: 40, y: 0, width: 40, height: 10, rotation: Math.PI / 2 },
+      { x: 0, y: 0, width: 10, height: 10 },
+    ];
+    expect(unionAABB(poses)!.y).toBeCloseTo(-15);
+    expect(unionBounds(poses)!.y).toBe(0);
   });
 });
