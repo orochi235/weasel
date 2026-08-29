@@ -21,7 +21,4 @@ Flip needed only its union pivot changed: mirroring maps a centre and preserves
 size, and an expanded box is concentric with the box it came from.
 
 `alignMoveBehavior` folds the dragged selection the same way, so a drag snaps
-by its ink. Two known gaps remain on that axis: `deriveAlignmentGuides` still
-advertises a stationary rotated sibling's guides at its unrotated edges, and
-`useDistribute`'s `gaps` mode still divides by unrotated sizes (`defaults`
-hardcodes `centers`, so only the hook reaches it).
+by its ink.

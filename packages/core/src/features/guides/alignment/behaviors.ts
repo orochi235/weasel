@@ -6,7 +6,7 @@ import type {
   ResizePose,
 } from 'interactions/gestures/types';
 import { pxExtent } from 'core/viewport/pxExtent';
-import { unionAABB } from 'core/geometry/unionBounds';
+import { unionBounds } from 'core/geometry/unionBounds';
 import type {
   AlignAnchor,
   AlignBounds,
@@ -39,14 +39,14 @@ export function alignMoveBehavior<TPose>(args: AlignMoveArgs<TPose>): MoveBehavi
     onMove(ctx, transform) {
       if (args.bypassKey && ctx.modifiers[args.bypassKey]) { args.setActiveGuides([]); return; }
       if (transform.kind !== 'translate') return;
-      // Union AABB of every dragged id at its proposed (translated) position.
+      // Union of every dragged id's visual box at its proposed position.
       const boxes: AlignBounds[] = [];
       for (const id of ctx.draggedIds) {
         const originPose = ctx.origin.get(id);
         if (originPose === undefined) continue;
         boxes.push(proj.boundsOf(proj.translate(originPose, transform.dx, transform.dy)));
       }
-      const union = unionAABB(boxes);
+      const union = unionBounds(boxes);
       if (union === null) return;
       const m = matchAlignment(union, args.getCandidates(), worldTol(args), MOVE_ANCHORS);
       if (m.activeX === null && m.activeY === null) { args.setActiveGuides([]); return; }

@@ -3,6 +3,7 @@ import { flipAction } from './flip';
 import { asNodeId } from 'core/scene/types';
 import type { NodeId } from 'core/scene/types';
 import type { BoundGesture } from '../registry';
+import { rotatedRectCorners } from '../rotate/geometry';
 
 interface Pose { x: number; y: number; width: number; height: number; rotation?: number }
 
@@ -243,6 +244,48 @@ describe('flipAction with a rotated member', () => {
 
     // Visual union spans x 0..65, centreline 32.5: the two ink boxes swap.
     expect(scene.poses.get('a')).toMatchObject({ x: 55, y: 0 });
-    expect(scene.poses.get('r')).toMatchObject({ x: -15, y: 0, rotation: Math.PI / 2 });
+    expect(scene.poses.get('r')).toMatchObject({ x: -15, y: 0, rotation: -Math.PI / 2 });
+  });
+
+  it('negates a 30 degree rotation, leaving the stored box alone', () => {
+    const scene = makeStubScene({ r: { x: 40, y: 0, width: 40, height: 10, rotation: Math.PI / 6 } });
+
+    runFlip({ selection: makeSelection(['r']), scene }, { axis: 'x' });
+
+    expect(scene.poses.get('r')).toEqual({ x: 40, y: 0, width: 40, height: 10, rotation: -Math.PI / 6 });
+  });
+
+  it('reflects a rotated shape rather than translating it', () => {
+    // The stored box is symmetric about its own centreline, so x/y/w/h alone
+    // cannot tell a mirror from a no-op. The corner set can.
+    const before: Required<Pose> = { x: 40, y: 0, width: 40, height: 10, rotation: Math.PI / 6 };
+    const scene = makeStubScene({ r: { ...before } });
+
+    runFlip({ selection: makeSelection(['r']), scene }, { axis: 'x' });
+
+    const cx = before.x + before.width / 2;
+    const mirrored = sortCorners(
+      rotatedRectCorners(before).map((c) => ({ x: 2 * cx - c.x, y: c.y })),
+    );
+    const actual = sortCorners(rotatedRectCorners(scene.poses.get('r') as Required<Pose>));
+    for (let i = 0; i < 4; i++) {
+      expect(actual[i].x).toBeCloseTo(mirrored[i].x, 9);
+      expect(actual[i].y).toBeCloseTo(mirrored[i].y, 9);
+    }
+  });
+
+  it('flipping the same axis twice restores the pose', () => {
+    const before: Pose = { x: 40, y: 0, width: 40, height: 10, rotation: Math.PI / 6 };
+    const scene = makeStubScene({ r: { ...before } });
+    const selection = makeSelection(['r']);
+
+    runFlip({ selection, scene }, { axis: 'y' });
+    runFlip({ selection, scene }, { axis: 'y' });
+
+    expect(scene.poses.get('r')).toEqual(before);
   });
 });
+
+function sortCorners(cs: { x: number; y: number }[]): { x: number; y: number }[] {
+  return [...cs].sort((p, q) => (p.x - q.x) || (p.y - q.y));
+}

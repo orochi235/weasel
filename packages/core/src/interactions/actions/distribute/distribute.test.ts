@@ -7,8 +7,9 @@ import { type NodeId } from 'core/scene/types';
 import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
 import { polygonFromPoints } from 'features/paths/builder';
 import type { Path } from 'features/paths/types';
+import { axisAlignedBounds } from 'core/geometry/unionBounds';
 
-interface RectPose { x: number; y: number; width: number; height: number; tag?: string }
+interface RectPose { x: number; y: number; width: number; height: number; rotation?: number; tag?: string }
 
 function makeRectAdapter(initial: string[] = [], poses: Record<string, RectPose> = {}) {
   const selection: NodeId[] = [...initial] as NodeId[];
@@ -216,5 +217,34 @@ describe('useDistribute', () => {
     const f0 = result.current.distribute;
     rerender();
     expect(result.current.distribute).toBe(f0);
+  });
+});
+
+describe('useDistribute with a rotated member', () => {
+  it('gaps mode divides by ink extent, so the visual gaps come out equal', () => {
+    const poses: Record<string, RectPose> = {
+      a: { x: 0,  y: 0, width: 10, height: 10 },
+      // 20x20 turned 45 degrees: 28.28 of ink across a 20-wide stored box.
+      b: { x: 30, y: 0, width: 20, height: 20, rotation: Math.PI / 4 },
+      c: { x: 60, y: 0, width: 10, height: 10 },
+      d: { x: 90, y: 0, width: 10, height: 10 },
+    };
+    const helpers = makeRectAdapter(['a', 'b', 'c', 'd'], poses);
+    const { result } = renderHook(() => useDistribute(helpers.adapter));
+    act(() => { result.current.distribute('x', 'gaps'); });
+
+    const moved = new Map(
+      helpers.batches[0].ops.map((op) => {
+        const m = applyOp<RectPose>(op);
+        return [m.id, m.pose] as const;
+      }),
+    );
+    const ink = ['a', 'b', 'c', 'd'].map((id) => axisAlignedBounds(moved.get(id) ?? poses[id]));
+    const gaps = [0, 1, 2].map((i) => ink[i + 1].x - (ink[i].x + ink[i].width));
+    expect(gaps[1]).toBeCloseTo(gaps[0], 9);
+    expect(gaps[2]).toBeCloseTo(gaps[0], 9);
+    // Endpoints stay put; the rotated member's own width never enters the sum.
+    expect(ink[0].x).toBeCloseTo(0, 9);
+    expect(ink[3].x + ink[3].width).toBeCloseTo(100, 9);
   });
 });

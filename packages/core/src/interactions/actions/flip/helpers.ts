@@ -21,7 +21,9 @@ export type FlipPivot = 'each' | 'union';
 /** Reflect `pose` across the centerline of `pivotBounds` along `axis`, using
  *  `geometry` to read bounds and remap. The pose's own AABB is read once to
  *  compute the reflected destination rect; coords inside the pose are then
- *  remapped through the affine that takes its own bounds → reflected dst. */
+ *  remapped through the affine that takes its own bounds → reflected dst.
+ *  A rotation the pose carries is negated: a mirror reverses the sense of the
+ *  turn, and `remapBounds` carries the original angle through untouched. */
 export function flipPoseAboutBounds<TPose>(
   pose: TPose,
   axis: FlipAxis,
@@ -35,7 +37,8 @@ export function flipPoseAboutBounds<TPose>(
     ? { x: 2 * cxPivot - src.x, y: src.y, width: -src.width, height: src.height }
     : { x: src.x, y: 2 * cyPivot - src.y, width: src.width, height: -src.height };
   const next = geometry.remapBounds(pose, src, dst);
-  return normalizeNegativeExtent(next);
+  const rotation = geometry.getRotation?.(pose) ?? (src as { rotation?: number }).rotation ?? 0;
+  return negateRotation(normalizeNegativeExtent(next), rotation);
 }
 
 /** Reflect `pose` across the centerline of its own AABB along `axis`. */
@@ -45,6 +48,16 @@ export function flipPoseViaDescriptor<TPose>(
   geometry: PoseProjection<TPose>,
 ): TPose {
   return flipPoseAboutBounds(pose, axis, geometry, geometry.getBounds(pose));
+}
+
+/** `PoseProjection` reads rotation but has no writer, so the mirrored angle
+ *  goes back onto `RectPose.rotation` — the kit's only writable rotation. A
+ *  pose model without that field (Path) reports 0 and is left alone. */
+function negateRotation<TPose>(pose: TPose, rotation: number): TPose {
+  if (rotation === 0) return pose;
+  const current = (pose as { rotation?: unknown }).rotation;
+  if (typeof current !== 'number') return pose;
+  return { ...(pose as object), rotation: -current } as TPose;
 }
 
 function normalizeNegativeExtent<TPose>(pose: TPose): TPose {

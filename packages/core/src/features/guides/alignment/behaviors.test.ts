@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { alignMoveBehavior, alignInsertBehavior, alignResizeBehavior } from './behaviors';
+import { deriveAlignmentGuides } from './derive';
 import type { Guide } from '../types';
 import type {
   GestureContext,
@@ -179,5 +180,23 @@ describe('alignMoveBehavior with a rotated pose', () => {
     const res = b.onMove!(ctx({}, rotated), tt(0, 0));
     expect(res).toEqual({ transform: { kind: 'translate', dx: -5, dy: 0 } });
     expect(active).toEqual([{ id: 'L', axis: 'x', offset: 50 }]);
+  });
+
+  it('matches a rotated selection against a rotated sibling, ink to ink', () => {
+    // Sibling 40x10 at a quarter turn: ink x 55..65, stored box x 40..80.
+    const sibling: Pose = { x: 40, y: 0, width: 40, height: 10, rotation: Math.PI / 2 };
+    const dragged: Pose = { x: 100, y: 100, width: 40, height: 10, rotation: Math.PI / 2 };
+    let active: readonly Guide[] = [];
+    const b = alignMoveBehavior<Pose>({
+      getCandidates: () => deriveAlignmentGuides([sibling]),
+      setActiveGuides: (g) => { active = g; },
+      tolerance: 6,
+    });
+    // Proposed dx -48 puts the dragged ink's left edge at 67, 2 short of the
+    // sibling's ink right edge (65). The stored boxes would have matched a
+    // different pair (52 against 55) and shifted the other way.
+    const res = b.onMove!(ctx({}, dragged), tt(-48, 0));
+    expect(res).toEqual({ transform: { kind: 'translate', dx: -50, dy: 0 } });
+    expect(active.map((g) => g.offset)).toEqual([65]);
   });
 });

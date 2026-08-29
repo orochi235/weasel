@@ -41,8 +41,9 @@ function makeSelection(ids: string[]) {
 function runDescriptor(
   action: typeof distributeHorizontalAction,
   deps: { selection: ReturnType<typeof makeSelection>; scene: ReturnType<typeof makeScene>['scene'] },
+  params?: Record<string, unknown>,
 ) {
-  (action.invoker as ImmediateInvoker).run(deps as Parameters<ImmediateInvoker['run']>[0]);
+  (action.invoker as ImmediateInvoker).run(deps as Parameters<ImmediateInvoker['run']>[0], params);
 }
 
 // ---------------------------------------------------------------------------
@@ -160,5 +161,22 @@ describe('distribute with a rotated member', () => {
     expect(setPose).toHaveBeenCalledOnce();
     expect(setPose.mock.calls[0][0]).toBe('c');
     expect(setPose.mock.calls[0][1]).toMatchObject({ x: 27.5, y: 0 });
+  });
+});
+
+describe('distribute mode param', () => {
+  it('params.mode "gaps" equalizes the empty runs, not the centres', () => {
+    const poses = {
+      a: { x: 0,  y: 0, width: 10, height: 10 },
+      b: { x: 30, y: 0, width: 40, height: 10 },
+      c: { x: 80, y: 0, width: 20, height: 10 },
+    };
+    const { scene, setPose } = makeScene(poses);
+    const selection = makeSelection(['a', 'b', 'c']);
+    runDescriptor(distributeHorizontalAction, { selection, scene }, { mode: 'gaps' });
+    // span 100, sizes 70 → gap 15, so b starts at 25. Centres mode puts it at 27.5.
+    expect(setPose).toHaveBeenCalledOnce();
+    expect(setPose.mock.calls[0][0]).toBe('b');
+    expect(setPose.mock.calls[0][1]).toMatchObject({ x: 25, y: 0 });
   });
 });

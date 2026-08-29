@@ -4,13 +4,15 @@ import type { Op } from 'core/ops/types';
 import { dispatchApplyBatch } from 'core/applyOps';
 import type { NodeId } from 'core/scene/types';
 import { RECT_POSE_DESCRIPTOR, type PoseProjection } from '../resize/geometry';
-import { translatePoseViaDescriptor } from '../align/align';
+import { translatePoseViaDescriptor, visualBoundsViaDescriptor } from '../align/align';
+import { planDistribute } from './plan';
 
 /** Axis along which selection is distributed. `'x'` spreads horizontally. */
 export type DistributeAxis = 'x' | 'y';
 
-/** `'centers'` spaces AABB centers equally; `'gaps'` makes the gap between
- *  consecutive AABBs equal. Endpoints stay put in both modes. */
+/** `'centers'` spaces centers equally; `'gaps'` makes the gap between
+ *  consecutive items equal. Both measure a rotated item by its ink extent.
+ *  Endpoints stay put in both modes. */
 export type DistributeMode = 'centers' | 'gaps';
 
 /** Adapter for `useDistribute`. */
@@ -59,55 +61,16 @@ export function useDistribute<TPose>(
       (RECT_POSE_DESCRIPTOR as unknown as PoseProjection<TPose>);
     const m = mode ?? o.defaultMode ?? 'centers';
 
-    const items = sel.map((id, i) => {
+    const items = sel.map((id) => {
       const pose = a.getPose(id);
-      const b = geom.getBounds(pose);
-      return { id, pose, b, origIndex: i };
+      return { id, pose, b: visualBoundsViaDescriptor(pose, geom) };
     });
-
-    const min = (b: { x: number; y: number; width: number; height: number }) =>
-      axis === 'x' ? b.x : b.y;
-    const size = (b: { x: number; y: number; width: number; height: number }) =>
-      axis === 'x' ? b.width : b.height;
-    const center = (b: { x: number; y: number; width: number; height: number }) =>
-      min(b) + size(b) / 2;
-
-    const sorted = [...items].sort((p, q) => min(p.b) - min(q.b));
-    const n = sorted.length;
-    const first = sorted[0];
-    const last = sorted[n - 1];
-
-    const targetMin = new Map<number, number>();
-    if (m === 'centers') {
-      const c0 = center(first.b);
-      const cN = center(last.b);
-      const stride = (cN - c0) / (n - 1);
-      for (let i = 0; i < n; i++) {
-        const it = sorted[i];
-        const targetCenter = c0 + stride * i;
-        targetMin.set(it.origIndex, targetCenter - size(it.b) / 2);
-      }
-    } else {
-      // 'gaps': equal spacing between consecutive AABBs.
-      // gap = ((last.max - first.min) - sum(sizes)) / (n - 1)
-      const span = (min(last.b) + size(last.b)) - min(first.b);
-      let sumSizes = 0;
-      for (const it of sorted) sumSizes += size(it.b);
-      const gap = (span - sumSizes) / (n - 1);
-      let cursor = min(first.b);
-      for (let i = 0; i < n; i++) {
-        const it = sorted[i];
-        targetMin.set(it.origIndex, cursor);
-        cursor += size(it.b) + gap;
-      }
-    }
+    const targets = planDistribute(items.map((it) => it.b), axis, m);
 
     const ops: Op[] = [];
-    for (const it of items) {
-      const desired = targetMin.get(it.origIndex);
-      if (desired === undefined) continue;
-      const current = min(it.b);
-      const delta = desired - current;
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      const delta = targets[i] - (axis === 'x' ? it.b.x : it.b.y);
       if (delta === 0) continue;
       const dx = axis === 'x' ? delta : 0;
       const dy = axis === 'y' ? delta : 0;

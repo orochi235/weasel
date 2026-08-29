@@ -37,6 +37,13 @@ describe('deriveAlignmentGuides', () => {
     expect(leftTens.length).toBe(1);
   });
 
+  it('a rotated target advertises its ink edges, not its stored box', () => {
+    // 40x10 turned a quarter turn about its centre (60, 5): ink x 55..65.
+    const g = deriveAlignmentGuides([{ x: 40, y: 0, width: 40, height: 10, rotation: Math.PI / 2 }]);
+    const xs = g.filter((q) => q.axis === 'x').map((q) => q.offset).sort((a, b) => a - b);
+    expect(xs).toEqual([55, 60, 65]);
+  });
+
   it('ids are stable and offset-derived', () => {
     const g = deriveAlignmentGuides([box]);
     const left = g.find((q) => q.axis === 'x' && q.offset === 10)!;
