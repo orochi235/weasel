@@ -1,14 +1,16 @@
 name: Performance
 
 # Manual and nightly only, never on push. The specs under tests/perf/ assert on
-# wall-clock timing under a real GL renderer, and a shared runner's variance is
-# larger than the regressions worth catching — gating a PR on them would block
-# merges on runner weather. Read the run as a trend against previous runs, not
-# as a pass/fail on the change.
+# wall-clock timing under a real GL renderer, and runner variance is larger than
+# the regressions worth catching — gating a PR on them would block merges on
+# runner weather. Read the run as a trend against previous runs, not as a
+# pass/fail on the change.
 #
-# GitHub runners have no GPU, so Chromium falls back to SwiftShader. The specs
-# print the unmasked GL renderer for exactly this reason: absolute numbers here
-# are not comparable to a local machine's, only to other runs of this workflow.
+# Runs on the self-hosted M1 Max (`studio`), which has a real Metal GPU. Runs
+# before 2026-08-29 used GitHub's runners, which have no GPU and fall back to
+# SwiftShader — the trend is discontinuous at that boundary and earlier numbers
+# are not comparable. The specs print the unmasked GL renderer, so the log says
+# which side of it a run is on.
 on:
   workflow_dispatch:
   schedule:
@@ -21,7 +23,9 @@ concurrency:
 
 jobs:
   perf:
-    runs-on: ubuntu-22.04
+    runs-on: [self-hosted, macOS, ARM64, gpu]
+    # The runner is a single machine, so a hung job blocks every later run.
+    timeout-minutes: 45
     env:
       NPM_CONFIG_LOGLEVEL: error
 
@@ -35,7 +39,9 @@ jobs:
 
       - run: npm ci
 
-      - run: npx playwright install --with-deps chromium
+      # No --with-deps: that installs Linux system packages via apt and fails
+      # on macOS.
+      - run: npx playwright install chromium
 
       - name: Run performance specs
         run: npm run test:perf

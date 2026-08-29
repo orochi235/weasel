@@ -19,7 +19,9 @@ export default defineConfig({
     // `globalThis.gc()`, so a spec can collect the garbage it built between
     // measurements instead of paying for it inside a timed block. Absent the
     // flag `gc` is undefined and specs fall back to timing through it.
-    launchOptions: { args: ['--js-flags=--expose-gc'] },
+    // `--use-angle=metal` because headless otherwise picks ANGLE's OpenGL
+    // backend, measuring a path shipping Chrome on macOS does not take.
+    launchOptions: { args: ['--js-flags=--expose-gc', '--use-angle=metal'] },
     viewport: { width: 1280, height: 800 },
     deviceScaleFactor: 1,
     screenshot: 'only-on-failure',
