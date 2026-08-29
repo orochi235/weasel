@@ -207,6 +207,55 @@ describe('kit:derived painter', () => {
     expect(findNodeShape(plain)?.id).toBe('kit:rect-fallback');
   });
 
+  it('leaves a node carrying dependsOn but no derive to the other painters', () => {
+    // The two fields are independent optionals, and claiming this node would
+    // paint nothing at all where the same node without `dependsOn` draws.
+    const inert: Node<Data, 'main', RectPose> = {
+      id: asNodeId('inert'), kind: 'leaf', layer: 'main', data: {}, parent: null,
+      pose: pose(0), dependsOn: [asNodeId('a')],
+    };
+    expect(findNodeShape(inert)?.id).toBe('kit:rect-fallback');
+  });
+
+  it('paints a node with dependsOn but no derive exactly as it would without it', () => {
+    const inert: Node<Data, 'main', RectPose> = {
+      id: asNodeId('inert2'), kind: 'leaf', layer: 'main', data: {}, parent: null,
+      pose: pose(0), dependsOn: [asNodeId('a')],
+    };
+    const plain: Node<Data, 'main', RectPose> = {
+      id: asNodeId('plain2'), kind: 'leaf', layer: 'main', data: {}, parent: null,
+      pose: pose(0),
+    };
+    expect(defaultDrawOne(inert, inert.pose, VIEW))
+      .toEqual(defaultDrawOne(plain, plain.pose, VIEW));
+  });
+
+  it('a node whose derive key was missing at replay still paints', () => {
+    // `kit:add` warns and restores the node without `derive`, keeping
+    // `dependsOn`. Degrading to the authored appearance is what the warning
+    // promises; disappearing is not.
+    const connect: Derive = () => null;
+    const authored = createScene<Data, 'main', RectPose>({
+      systemLayers: [{ id: 'main' }],
+      registry: { derive: { 'test:connect': connect } },
+    });
+    const dep = authored.add({ kind: 'leaf', layer: 'main', pose: pose(0), data: {} });
+    authored.add({
+      id: asNodeId('edge-replay'), kind: 'leaf', layer: 'main', pose: pose(0), data: {},
+      dependsOn: [dep], derive: connect,
+    });
+    authored.undo();
+
+    const replayed = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    replayed.loadState(authored.toJSON());
+    replayed.restoreHistory(authored.serializeHistory());
+    replayed.redo();
+
+    const node = replayed.get(asNodeId('edge-replay'))!;
+    expect(node.derive).toBeUndefined();
+    expect(defaultDrawOne(node, node.pose, VIEW).length).toBeGreaterThan(0);
+  });
+
   it('paints the derived path it is handed', () => {
     const node = makeNode(() => null);
     const path = linePath({ x: 0, y: 0 }, { x: 100, y: 0 });

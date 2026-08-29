@@ -720,7 +720,11 @@ const IMAGE_PAINTER: NodeShapeEntry = {
  */
 const DERIVED_PAINTER: NodeShapeEntry = {
   id: 'kit:derived',
-  matches: (node) => (node.dependsOn?.length ?? 0) > 0,
+  // `dependsOn` alone is not enough: the two fields are independent optionals,
+  // and `kit:add` restores a node with its `dependsOn` intact when its
+  // `derive` key is missing from the registry. Claiming that node would paint
+  // nothing where the authored appearance is what the warning promises.
+  matches: (node) => (node.dependsOn?.length ?? 0) > 0 && node.derive !== undefined,
   paint: (node, _pose, ctx) => {
     const path = ctx?.derivedPath;
     if (path == null) return [];
