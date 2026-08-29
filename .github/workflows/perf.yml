@@ -13,6 +13,11 @@ name: Performance
 # which side of it a run is on.
 on:
   workflow_dispatch:
+    inputs:
+      spec:
+        description: 'Playwright filter — run only specs whose path matches. Empty runs all.'
+        required: false
+        default: ''
   schedule:
     # 07:00 UTC daily — off the working day for either coast.
     - cron: '0 7 * * *'
@@ -46,7 +51,9 @@ jobs:
       # caffeinate -d: with the runner's display asleep, the render pipeline
       # stalls for seconds at a time — p95 holds but the mean fails the budget.
       - name: Run performance specs
-        run: caffeinate -d -i npm run test:perf
+        env:
+          SPEC_FILTER: ${{ inputs.spec }}
+        run: caffeinate -d -i npm run test:perf -- $SPEC_FILTER
 
       # The per-command and frame-budget tables are printed, not asserted, so
       # the log is the artifact that matters even on a pass.
