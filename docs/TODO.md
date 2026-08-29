@@ -24,6 +24,9 @@ Priority tags:
 - **labkit: generate instrument controls from a schema or a TypeScript type** → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - **`<Timeline>` editor** — the one unbuilt phase of the timeline/rig arc → [Animation](#animation)
 - **Audit for duplicated-then-drifted cascades** — two implementations of one lookup, agreeing by coincidence → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- **A derived edge does not follow a live drag under any built-in tool** — "drag a box and the edge follows" is unreachable with the shipped tools → [Scene, adapters & layout](#scene-adapters--layout)
+- **Undo after a Delete loses cascaded nodes** — derived geometry ships with this hole → [Scene, adapters & layout](#scene-adapters--layout)
+- **Derived nodes have no silhouette and no `ink`** — a derived edge is effectively unpickable → [Scene, adapters & layout](#scene-adapters--layout)
 
 ### P2 — broad reuse / friction-likely
 
@@ -713,6 +716,106 @@ Core five + Crop shipped. Remaining:
   grabbable one diverge.
 
 - **(P3) SceneCanvas → useSceneAdapter for adapter construction.** Surfaced 2026-05-21 during the node-kind registry landing. Today `SceneCanvas` constructs its synthesized adapter inside `useSceneSelectTool` (the select-tool hook), which means every new `SceneToAdapterOptions` field (`layouts`, `cascadeContainerPose`, `kindOf`, …) has to be drilled through the hook's surface. `useSceneAdapter` already exposes the full options shape; lifting adapter construction to `SceneCanvas` and handing the result down would stop the drill-through and shrink `useSceneSelectTool`'s API. Out of scope for the registry work; file when next refactoring the SceneCanvas internals.
+
+### Derived geometry follow-ups
+
+Left open by the derived-path arc (`dependsOn` / `derive` / `SceneRegistry.derive`;
+the seam is documented in `docs/extending.md`). The two P1s below are the ones
+that decide whether anything diagram-shaped can be built on it yet.
+
+- **(P1) A derived edge does not follow a live drag under any built-in tool.**
+  `scenePoseLookup` reads pose overrides, but the built-in move, resize and
+  rotate actions publish `previewPose` instead
+  (`interactions/actions/defaults/move.ts:795`) — a separate channel it never
+  consults. The dragged endpoint ghosts at its new position while the edge, not
+  in `previewIds`, stays anchored to the old one and jumps on drop. Consumers
+  driving overrides directly (the forceGraph demo) are fine. The fix is an
+  interaction decision — make dependents join `previewIds` and ghost with them,
+  or route built-in previews through overrides — so it belongs with the connect
+  gesture. **"Drag a box and the edge follows" is not reachable with the shipped
+  tools until this closes.**
+
+- **(P1) Derived nodes have no silhouette and no `ink`.** `findShapeSilhouette`
+  takes no paint context, so `kit:derived` cannot report one;
+  `shapeCoversPoint` returns `true` on a null silhouette and picking degrades to
+  the caller's AABB, which for a derived edge is a zero-sized pose — effectively
+  unpickable. `findShapeInk` likewise returns `null`, so a stroked edge gets zero
+  grab reach on top of that. Same root cause, and fixing only `silhouette` leaves
+  picking half-broken. A derived container also contributes no clip. Must close
+  before the connect gesture; "you cannot click an edge" is not a shippable
+  diagram.
+
+- **(P1) Undo after a Delete loses cascaded nodes.** `createDeleteOp.invert()`
+  re-inserts only the single captured node, and under `applyBatch` no
+  `kit:remove` reaches history — so undo restores the endpoint and drops the
+  edge. This pre-exists for containers, whose children are lost the same way, but
+  the arc's promise that "undo cannot restore the halves separately" rests on it.
+  **Arc 1 ships with this hole.** The fix is two parts and neither is a bugfix:
+  make the `insertNode` adapters carry `dependsOn` / `derive` (below), then add a
+  multi-node delete op carrying the closure snapshot plus an `insertNodes` that
+  re-attaches by parent and ascending index. That is a second implementation of
+  the detach-root reasoning in `kit:remove`, and the two rotting apart is the
+  argument for designing it rather than patching it.
+
+  Routing `deleteAction` through `scene.removeMany` does **not** fix this and was
+  rejected: `removeMany` goes through `executeAndLog`, which does not consult
+  `getActiveJournal()`, so it would silently move deletes out of a consumer's
+  active journal into the scene's own history. `apps/draw` wires that for real
+  and no in-tree test would have caught it.
+
+- **(P2) Derived pose.** Arc 1b of
+  `docs/superpowers/specs/2026-08-28-diagram-plugin-design.md` — the same
+  dependency machinery driving a node's pose rather than its path. Unblocks the
+  group-bounds defect (`interactions/actions/defaults/group.ts:68`), where a
+  container's union AABB is computed once at creation and never re-derived.
+  Reaches much further than derived path did: pose feeds bounds, which feeds
+  hit-testing, selection chrome, snapping and layout.
+
+- **(P2) Value-compare the resolved poses in `resolveDerivedPath`.**
+  Invalidation is pushed by the scene today, which is closed only under the
+  triggers someone enumerated — the arc's reviews found three rounds of misses
+  (ancestor moves, removal, a dependency appearing). Comparing the resolved
+  poses by *value* is instead closed under whatever `derive` actually read, and
+  needs no push at all for the existence cases. Not the reference comparison the
+  seam rejects: an override mutates its buffer in place, which defeats reference
+  equality but not value equality. Deferred because its cost is unmeasured — it
+  resolves every dependency's pose on every frame. Measure against a real diagram
+  before taking it.
+
+- **(P2) `kit:remove`'s snapshot carries `derive` as a live function**, so a
+  persisted-then-restored history brings derived nodes back inert: `dependsOn`
+  survives the JSON round-trip and repopulates the index, but the node will never
+  paint. `kit:add` already solves this with `deriveKey` plus registry
+  re-resolution; `kit:remove` should mirror it.
+
+- **(P2) The `insertNode` adapters drop `dependsOn` and `derive`.**
+  `canvas/sceneAdapter.ts` forwards `clipFromPose` and neither of these;
+  `interactions/actions/defaultCommitAdapter.ts` forwards none of the three. A
+  derived node round-tripped through either comes back inert. Gates the undo hole
+  above.
+
+- **(P3) `setDependsOn` op.** `dependsOn` is fixed at add time, so retargeting an
+  edge is remove plus add. Design it with the connect gesture rather than ahead
+  of it.
+
+- **(P3) `kit:derived` registers after `kit:path` / `kit:shape` / `kit:image`**,
+  so a derived node whose `data` also carries `path` / `shape` / `image` silently
+  loses its derived path to those painters.
+
+- **(P3) `scenePoseLookup` does not honor `SceneSlotConfig.toPose`**, which
+  `buildSceneLayer` shims onto the live adapter's `getPose`. A consumer using it
+  would paint dependencies at poses `derive` never saw.
+
+- **(P3) `Scene<TData, TLayer, TPose>` is contravariant in `TPose`** via
+  `clipFromPose` and `derive`, so no concretely-typed scene satisfies the
+  action-facing `Scene<unknown, string, unknown>`. Pre-dates `derive` —
+  `clipFromPose` has the same shape — and the action layer already reaches its
+  scene through a cast everywhere, so nothing is blocked today.
+
+- **(P3) `kit:setData` and `kit:setLayer` do not invalidate dependents.** Matters
+  only if a `derive` reads a dependency's `data`. `kit:move` and `kit:setLayer`
+  also never drop a node's own pose-keyed slots, which is a `nodeMemo` question
+  rather than a dependents one.
 
 ### `useScene` follow-ups
 

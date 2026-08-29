@@ -1,8 +1,8 @@
 # Extending weasel
 
-Four common extension points: custom layers, custom affordances, custom
-gesture behaviors, and non-rect poses — plus writing a whole new action when
-none of those fit.
+Five common extension points: custom layers, custom affordances, custom
+gesture behaviors, non-rect poses, and derived geometry — plus writing a whole
+new action when none of those fit.
 
 ## Custom layers
 
@@ -220,6 +220,101 @@ which treats any pose as `{ x, y, … }`. Two ways out for a non-rect pose:
 
 For an end-to-end working demo of all of the above, see
 `apps/site/demos/CompoundPathsDemo.tsx`.
+
+## Derived geometry
+
+A node's path can be computed from other nodes' poses instead of authored. An
+edge drawn between two boxes is the motivating case: the edge is an ordinary
+scene node — it selects, styles, clips, exports and undoes like any other — but
+its path is never written, so dragging a box records a move of the box and
+nothing else.
+
+Declare the dependencies and the function that reads them:
+
+```ts
+import {
+  createScene, linePath, strokeOf,
+  type SceneNode, type Path, type RectPose,
+} from '@weasel-js/core';
+
+const connectCenters = (
+  _node: SceneNode<unknown, string, RectPose>,
+  [from, to]: readonly (RectPose | undefined)[],
+): Path | null =>
+  from && to
+    ? linePath(
+        { x: from.x + from.width / 2, y: from.y + from.height / 2 },
+        { x: to.x + to.width / 2, y: to.y + to.height / 2 },
+      )
+    : null;
+
+const scene = createScene<object, 'main', RectPose>({
+  systemLayers: [{ id: 'main' }],
+  registry: { derive: { 'app:connect': connectCenters } },
+});
+
+const box = (x: number, y: number) =>
+  scene.add({ kind: 'leaf', layer: 'main', pose: { x, y, width: 40, height: 40 }, data: {} });
+const a = box(0, 0);
+const b = box(200, 90);
+
+scene.add({
+  kind: 'leaf',
+  layer: 'main',
+  pose: { x: 0, y: 0, width: 0, height: 0 },
+  data: { stroke: strokeOf('#1c1c1c', 2) },
+  dependsOn: [a, b],
+  derive: connectCenters,
+});
+```
+
+The built-in `kit:derived` painter draws whatever `derive` returns, reading
+`data.fill` and `data.stroke` the way `kit:path` does. The returned path is in
+**world** coordinates, not the pose frame: the pose above is a zero-sized
+placeholder, and all it still contributes is rotation. A bounds-relative fill
+resolves against the derived path's own box.
+
+`derive` receives each dependency's **effective** pose in `dependsOn` order —
+its ephemeral override when it has one, else the pose the scene stores — which
+is exactly what the render walks paint. A dependency the scene cannot resolve
+arrives as `undefined`; returning `null` means "nothing to draw right now".
+
+`node` arrives typed `SceneNode<unknown, string, TPose>`, so a `derive` that
+reads `node.data` casts. Naming `TData` and `TLayer` there would put them in a
+contravariant position and make `Scene` invariant in both.
+
+**Serialization carries a registry key, never the function.** `SceneRegistry`
+does for `derive` what it already does for `clipFromPose`: `toJSON` looks the
+function up in `registry.derive` and writes `deriveKey`, throwing if it has no
+key, and `sceneFromJSON` resolves the key back. A key missing from the registry
+restores the node without its derived geometry and warns.
+
+**Invalidation is pushed by the scene, not pulled by comparison.** A pose
+override mutates its buffer in place rather than replacing the reference —
+which is what a drag does — so no reference-keyed memo can observe an endpoint
+moving. The scene keeps a reverse index and drops its dependents' pose-keyed
+memo slots wherever a dependency's pose can change, transitively, including on
+undo. Nothing in the paint path watches for it.
+
+**Deleting a node deletes everything that derives from it**, transitively,
+including those nodes' own subtrees, as one undo entry. A dependent is not a
+descendant, so `scene.remove` can take nodes anywhere in the tree that the
+caller never named — deleting a box takes its edges, and `removeLayer` reaches
+nodes on other layers. `scene.removeMany(ids)` does the same for several roots
+in one entry, absorbing ids that another root's cascade already covers, which
+is what makes it safe to hand a whole selection.
+
+`dependsOn` is fixed when the node is added; retargeting is remove plus add.
+Reparenting a node out from under its dependents is legal and intended: the
+geometry keeps recomputing across the new frame, because `derive` reads world
+poses and `Scene` stores them absolutely.
+
+**Two gaps to know about before building on this** — both in `docs/TODO.md`
+under "Derived geometry follow-ups": a derived node has no silhouette, so a
+zero-sized edge is effectively unpickable; and the built-in move, resize and
+rotate actions publish previews on a channel the derived lookup does not read,
+so an edge stays anchored during a drag and jumps on drop. Driving the pose
+overrides directly is unaffected.
 
 ## Custom actions
 

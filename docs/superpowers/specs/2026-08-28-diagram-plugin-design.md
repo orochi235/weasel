@@ -66,9 +66,18 @@ function-field on a node, re-evaluated each render, serialized by `SceneRegistry
 
 It belongs in `core`, not in the plugin, because it is not an edge feature. Edge labels,
 leader lines, callouts, dimension annotations, brackets, and a frame that hugs its contents are
-all the same primitive. It also fixes an existing defect — a group container's bounds are a snapshot taken
-at creation and never re-derived when its children move
-(`core/src/interactions/actions/defaults/group.ts:68`).
+all the same primitive.
+
+It does **not** fix the group-bounds defect — a container's bounds are a snapshot taken at
+creation and never re-derived when its children move
+(`core/src/interactions/actions/defaults/group.ts:68`). Stale bounds are a derived *pose*; this
+is derived *path*. Adjacent seams, not the same one, and derived pose reaches much further,
+because pose feeds bounds, which feeds hit-testing, selection chrome, snapping and layout. It is
+arc 1b below.
+
+So derived path has no consumer outside this plugin, and the case for putting it in `core` rather
+than in the plugin is thinner than "it also fixes an existing defect" made it. It still stands on
+the list above.
 
 **New scene rule: deleting a node invalidates its dependents.** Deleting a `DiagramNode`
 removes its edges in the same undo entry. The scene has never needed cascade integrity before;
@@ -206,10 +215,15 @@ retired when this lands.
 
 ## Arcs
 
-1. **Derived geometry in core.** `dependsOn` + `derive` + memo invalidation + cascade delete,
-   with the group-bounds defect fixed as its first consumer. Lands and goes green alone; it
-   touches the hot render path and the serialization format, and nothing diagram-shaped should
-   be built on an unproven seam.
+1. **Derived path in core.** `dependsOn` + `derive` + memo invalidation + cascade delete. Lands
+   and goes green alone; it touches the hot render path and the serialization format, and nothing
+   diagram-shaped should be built on an unproven seam.
+
+   **1b. Derived pose.** The same dependency machinery driving a node's pose rather than its
+   path, which is what the group-bounds defect at
+   `core/src/interactions/actions/defaults/group.ts:68` needs. Behind arc 1 because pose feeds
+   bounds, hit-testing, selection chrome and layout, so it reaches much further into the frame
+   than painting does.
 2. **Stroke markers in core**, including the stroke inset and SVG `<marker>` round-trip in
    `@weasel-js/svg`. Independent of arc 1; the two can run in parallel.
 3. **`packages/diagram` skeleton.** The `DiagramNode` trait and default perimeter ports on
