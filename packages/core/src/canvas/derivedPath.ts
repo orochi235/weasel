@@ -7,7 +7,7 @@
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import type { Path } from 'core/geometry/path';
 import { nodeMemo } from 'core/scene/nodeMemo';
-import type { SceneViewDrawOne } from './sceneViewRender';
+import type { SceneViewDrawOne } from './NodeShape';
 
 const SLOT = 'kit:derivedPath';
 
@@ -50,16 +50,22 @@ export function scenePoseLookup<TData, TLayer extends string, TPose>(
 }
 
 /**
- * Wrap a `drawOne` so every node it paints arrives with its derived path.
+ * Wrap a `drawOne` so a node that derives its geometry arrives at the painter
+ * with the resolved path. The painter has no scene handle and so cannot read
+ * the dependencies' poses itself; both scene walks wrap here instead.
  *
- * Both scene walks wrap here rather than deriving inside the painter, which
- * has no scene handle and so cannot read the dependencies' poses.
+ * A node that derives nothing passes the caller's `ctx` through untouched —
+ * this runs per node per frame, and an added `{ derivedPath: null }` would be
+ * an allocation per node for a field no painter reads.
  */
 export function withDerivedPaths<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   drawOne: SceneViewDrawOne<TData, TLayer, TPose>,
 ): SceneViewDrawOne<TData, TLayer, TPose> {
   const poseOf = scenePoseLookup(scene);
-  return (node, pose, view) =>
-    drawOne(node, pose, view, { derivedPath: resolveDerivedPath(node, poseOf) });
+  return (node, pose, view, ctx) => {
+    const deps = node.dependsOn;
+    if (deps === undefined || deps.length === 0) return drawOne(node, pose, view, ctx);
+    return drawOne(node, pose, view, { ...ctx, derivedPath: resolveDerivedPath(node, poseOf) });
+  };
 }

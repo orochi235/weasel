@@ -31,7 +31,7 @@ import { defaultDrawOne } from './defaultDrawOne';
 import type { FillStyle } from 'core/paint-types';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap, CanvasSelectionMode, SceneSlotConfig, SelectionOverlaySlotConfig } from './Canvas';
-import { withDerivedPaths } from './derivedPath';
+import { wireSceneSlotToScene } from './sceneSlotWiring';
 import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';
 import type { Animator } from '../animation/types';
 import { useAnimator } from '../animation/useAnimator';
@@ -210,27 +210,6 @@ function recordCoordTrace(entry: CoordTraceEntry): void {
 }
 
 export { defaultDrawOne } from './defaultDrawOne';
-
-/**
- * Fold the two things `<Canvas>` cannot know into the scene slot: each node's
- * per-node override alpha, and its derived path. Both need the `Scene`, which
- * `<Canvas>` never sees; `buildSceneViewCommands` does the same for the
- * headless walk.
- */
-export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
-  slot: SceneSlotConfig<Node<TData, TLayer, TPose>, TPose>,
-  scene: Scene<TData, TLayer, TPose>,
-  alphaFor?: (id: string) => number,
-): SceneSlotConfig<Node<TData, TLayer, TPose>, TPose> {
-  const overrideAlphaFor = (id: string) => scene.overrides.get(id as NodeId)?.alpha ?? 1;
-  return {
-    ...slot,
-    drawOne: withDerivedPaths(scene, slot.drawOne),
-    alphaFor: alphaFor
-      ? (id: string) => alphaFor(id) * overrideAlphaFor(id)
-      : overrideAlphaFor,
-  };
-}
 
 /** Deep-merge user-supplied `layers` with kit defaults. Slots the user
  *  doesn't mention get filled with defaults; slots explicitly set to
@@ -1522,7 +1501,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [],
   );
 
-  const sceneSlotWithAlpha = useMemo(() => {
+  const sceneSlot = useMemo(() => {
     const slot = mergedLayers.scene;
     if (!slot || 'layer' in slot) return slot; // null or CustomLayerEntry — leave alone
     return wireSceneSlotToScene(
@@ -1539,7 +1518,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const previewLayer = usePreviewGhostLayer<TData, TLayer, TPose>({
     scene,
     tools,
-    sceneSlot: sceneSlotWithAlpha,
+    sceneSlot,
     dispatcher,
   });
 
@@ -1826,9 +1805,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => ({
     ...mergedLayers,
-    // Inject the composed alphaFor into the scene slot (scoping-dim, plus any
-    // per-node override alpha).
-    ...(sceneSlotWithAlpha ? { scene: sceneSlotWithAlpha } : {}),
+    ...(sceneSlot ? { scene: sceneSlot } : {}),
     // Pass the pre-built selection overlay layer so Canvas receives a
     // CustomLayerEntry and skips its own factory construction for this slot.
     selectionOverlay: selectionOverlayLayer
@@ -1839,7 +1816,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ...(penPreviewLayer ? { penPreview: { layer: penPreviewLayer, after: 'dispatcherOverlay' } } : {}),
     pathEditingOverlay: { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
     ...(debug?.slops ? { slopsDebug: { layer: slopsLayer, after: 'pathEditingOverlay' } } : {}),
-  }), [mergedLayers, sceneSlotWithAlpha, selectionOverlayLayer, previewLayer, dispatcherOverlay, penPreviewLayer, pathEditingOverlayLayer, debug?.slops, slopsLayer]);
+  }), [mergedLayers, sceneSlot, selectionOverlayLayer, previewLayer, dispatcherOverlay, penPreviewLayer, pathEditingOverlayLayer, debug?.slops, slopsLayer]);
 
   // Standard-action deps: closures over the live scene / selection / adapter
   // so the resolved actions always read current state. `useStandardActions`

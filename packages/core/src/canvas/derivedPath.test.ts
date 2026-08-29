@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { resolveDerivedPath, scenePoseLookup, withDerivedPaths } from './derivedPath';
-import { wireSceneSlotToScene } from './SceneCanvas';
+import { wireSceneSlotToScene } from './sceneSlotWiring';
 import { defaultDrawOne } from './defaultDrawOne';
 import { findNodeShape, type NodePaintCtx } from './NodeShape';
 import { buildSceneViewCommands } from './sceneViewRender';
@@ -8,6 +8,7 @@ import { planPixelRender } from './renderSceneToPixels';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Node, type NodeId, type RectPose } from 'core/scene/types';
 import type { Path } from 'core/geometry/path';
+import type { FillStyle } from 'core/paint-types';
 import type { View } from 'core/viewport/view';
 import type { DrawCommand } from '../renderer';
 import { linePath } from 'features/paths/builder';
@@ -22,6 +23,7 @@ type Derive = (
 ) => Path | null;
 
 type Data = { label?: string };
+type GradientData = { fill: FillStyle };
 
 function makeNode(derive: Derive): Node<Data, 'main', RectPose> {
   return {
@@ -161,6 +163,24 @@ describe('withDerivedPaths', () => {
     expect(drawOne.mock.calls[0].slice(0, 3)).toEqual([node, node.pose, VIEW]);
   });
 
+  it('merges the caller\'s ctx rather than replacing it', () => {
+    const { scene, edge } = makeEdgeScene();
+    const drawOne = spyDrawOne();
+    const node = scene.get(edge)!;
+    const resolveImage = () => undefined;
+    withDerivedPaths(scene, drawOne)(node, node.pose, VIEW, { resolveImage });
+    expect(drawOne.mock.calls[0][3]?.resolveImage).toBe(resolveImage);
+  });
+
+  it('hands a node that derives nothing the caller\'s own ctx object', () => {
+    const { scene, a } = makeEdgeScene();
+    const drawOne = spyDrawOne();
+    const node = scene.get(a)!;
+    const ctx: NodePaintCtx = { resolveImage: () => undefined };
+    withDerivedPaths(scene, drawOne)(node, node.pose, VIEW, ctx);
+    expect(drawOne.mock.calls[0][3]).toBe(ctx);
+  });
+
   it('resolves against the moved dependency after a setPose', () => {
     const { scene, edge, b } = makeEdgeScene();
     const drawOne = spyDrawOne();
@@ -192,6 +212,31 @@ describe('kit:derived painter', () => {
     const path = linePath({ x: 0, y: 0 }, { x: 100, y: 0 });
     const cmds = defaultDrawOne(node, node.pose, VIEW, { derivedPath: path });
     expect(pathCommands(cmds).map((c) => c.path)).toEqual([path]);
+  });
+
+  it('maps a bounds gradient onto the derived path, not the node\'s pose', () => {
+    // The pose is the zero-sized placeholder a derived edge carries; mapping
+    // the gradient onto it would collapse both endpoints onto its origin.
+    const node: Node<GradientData, 'main', RectPose> = {
+      id: asNodeId('edge-grad'), kind: 'leaf', layer: 'main', parent: null,
+      pose: { x: 0, y: 0, width: 0, height: 0 },
+      data: {
+        fill: {
+          fill: 'linear-gradient',
+          from: { x: 0, y: 0 },
+          to: { x: 1, y: 0 },
+          stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
+          units: 'bounds',
+        },
+      },
+      dependsOn: [asNodeId('a'), asNodeId('b')],
+      derive: () => null,
+    };
+    const path = linePath({ x: 20, y: 0 }, { x: 120, y: 0 });
+    const cmds = defaultDrawOne(node, node.pose, VIEW, { derivedPath: path });
+    const fill = (cmds[0] as { fill: Extract<FillStyle, { fill: 'linear-gradient' }> }).fill;
+    expect(fill.from).toEqual({ x: 20, y: 0 });
+    expect(fill.to).toEqual({ x: 120, y: 0 });
   });
 
   it('paints nothing when the path is null — never a fallback rect', () => {

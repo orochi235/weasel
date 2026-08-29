@@ -11,6 +11,7 @@ import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render } from '@testing-library/react';
 import type { CanvasProps } from './Canvas';
+import type { CanvasExtensionApi } from './canvasExtension';
 import type { Node, RectPose, Scene } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import type { DrawCommand } from '../renderer';
@@ -59,7 +60,7 @@ vi.mock('./Canvas', async (importOriginal) => {
         getPaintedVersion: () => 0,
         registerLayer: () => () => {},
         hitTestExtras: () => null,
-      };
+      } satisfies CanvasExtensionApi;
       const set = (v: unknown) => {
         if (typeof ref === 'function') ref(v);
         else if (ref) (ref as React.MutableRefObject<unknown>).current = v;

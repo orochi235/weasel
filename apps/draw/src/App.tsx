@@ -1593,7 +1593,7 @@ function EditorWithSharedScene({
       id: 'loupe-scene',
       label: 'Loupe scene',
       space: 'screen',
-      draw: (_data, v) => buildSceneViewCommands(scene, v, (node, pose) => defaultDrawOne(node, pose)),
+      draw: (_data, v) => buildSceneViewCommands(scene, v, defaultDrawOne),
     },
   ], [paperLayer, scene]);
 

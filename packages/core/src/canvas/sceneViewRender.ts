@@ -25,24 +25,9 @@ import type { Node, NodeId, Scene } from '../core/scene/types';
 import { wrapNodeOutput } from './wrapNodeOutput';
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
 import { withDerivedPaths } from './derivedPath';
-import type { NodePaintCtx } from './NodeShape';
+import type { SceneViewDrawOne } from './NodeShape';
 
-/**
- * Per-node draw function. Mirrors the scene-slot `drawOne` signature on
- * `<SceneCanvas>` (`SceneSlotConfig.drawOne`) so consumers can reuse the
- * same callback (or a simplified variant) between a main canvas and a
- * detached scene-view canvas.
- *
- * The function is called once per node in `scene.renderOrder()`. Returned
- * commands are in world coords; the caller's `view` is applied at the
- * group level (see `renderSceneToCanvas`'s implementation).
- */
-export type SceneViewDrawOne<TData, TLayer extends string, TPose> = (
-  node: Node<TData, TLayer, TPose>,
-  pose: TPose,
-  view: View,
-  ctx?: NodePaintCtx,
-) => DrawCommand[];
+export type { SceneViewDrawOne } from './NodeShape';
 
 /** What to draw into an existing canvas: the scene, the view, and the same
  *  painting hooks `<SceneCanvas>` takes. */

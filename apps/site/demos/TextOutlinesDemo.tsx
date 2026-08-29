@@ -71,9 +71,9 @@ const NODES = [
 }));
 
 const makeDrawOne = (ready: boolean, stroked: boolean): SceneViewDrawOne<NodeData, LayerId, Pose> =>
-  (node, pose) => {
+  (node, pose, view, ctx) => {
     if (!ready) return [];
-    if (!node.data.text) return defaultDrawOne(node, pose);
+    if (!node.data.text) return defaultDrawOne(node, pose, view, ctx);
     // Paint is the node's, not the style's — `data.fill` / `data.stroke`, the
     // slots every node kind uses, handed to the command as its paint.
     return [textCommand(
