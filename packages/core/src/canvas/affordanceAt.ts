@@ -25,33 +25,14 @@ import type { ChromeState } from 'core/selection/chromeState';
 import type { EditAnchorsDep } from 'interactions/actions/depSchema';
 import type { View } from 'core/viewport/view';
 import type { AffordanceHit } from 'interactions/actions/invoker';
-import { DEFAULT_ROTATION_HANDLE_DISTANCE } from 'interactions/actions/rotate/handle';
 import type { Affordance, CommonAffordanceScratch } from 'affordances/types';
 import { hitAffordanceRegions, type AffordanceRegionHit } from 'affordances/hitAffordanceRegions';
 import { createCornerResizeAffordance } from 'affordances/cornerResize';
 import { createRotationAffordance } from 'affordances/rotationHandle';
 import { createPathAnchorAffordances, type AnchorState } from 'affordances/pathAnchors';
-import { ANCHOR_HIT_BASE_PX, HANDLE_BASE_PX } from 'core/device/targets';
+import { targetSizesPx } from 'core/device/targets';
 
 export type { AnchorState };
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-/** Default hit-test radius for corner handles, in **screen** pixels. Mirrors
- *  DEFAULT_HANDLE_SIZE from SceneCanvas (8px CSS).
- *
- *  This used to be a world-unit radius, which every caller had to scale-correct
- *  by hand (`8 / meanScale(view.scale)`) or else watch the hit zone shrink
- *  under the visual handle at zoom > 1. Regions express hit radii in screen
- *  pixels and the framework converts, so the correction happens once, in the
- *  one place that knows the view. */
-export const HANDLE_HIT_RADIUS = HANDLE_BASE_PX;
-
-/** Hit-test radius for anchor and control-handle points, in screen pixels.
- *  Mirrors `useEditAnchors` default (`hitRadius = 8`). */
-export const ANCHOR_HIT_RADIUS = ANCHOR_HIT_BASE_PX;
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -64,12 +45,16 @@ export interface BuildAffordanceAtOptions {
   /** Live view. Needed because region hit radii and the rotate band are
    *  declared in screen pixels and resolved against the current scale. */
   getView: () => View;
-  /** Corner-handle hit radius in screen px. Default {@link HANDLE_HIT_RADIUS}. */
+  /** Pointer-size multiplier from the live `DeviceProfile`. Every default
+   *  below is resolved through {@link targetSizesPx} at this scale, so the
+   *  grab zone tracks the painted chrome on a coarse pointer. Default 1. */
+  targetScale?: number;
+  /** Corner-handle hit radius in screen px. Overrides the device-scaled default. */
   handleHitRadius?: number;
-  /** Anchor / control hit radius in screen px. Default {@link ANCHOR_HIT_RADIUS}. */
+  /** Anchor / control hit radius in screen px. Overrides the device-scaled default. */
   anchorHitRadius?: number;
   /** Minimum rotate-band thickness outside the selection AABB, in screen px.
-   *  Default {@link DEFAULT_ROTATION_HANDLE_DISTANCE}. */
+   *  Overrides the device-scaled default. */
   rotateBandPx?: number;
   /** Anchor-editing state. When omitted, anchors aren't hit-tested. */
   getAnchorState?: () => AnchorState | null;
@@ -115,12 +100,13 @@ export function anchorStateFrom(
 export function buildAffordanceAt(
   opts: BuildAffordanceAtOptions,
 ): (worldPoint: { x: number; y: number }) => AffordanceHit | null {
+  const sizes = targetSizesPx(opts.targetScale);
   const {
     getChromeState,
     getView,
-    handleHitRadius = HANDLE_HIT_RADIUS,
-    anchorHitRadius = ANCHOR_HIT_RADIUS,
-    rotateBandPx = DEFAULT_ROTATION_HANDLE_DISTANCE,
+    handleHitRadius = sizes.handle,
+    anchorHitRadius = sizes.anchor,
+    rotateBandPx = sizes.rotationDistance,
     getAnchorState,
     getIsVisible,
   } = opts;

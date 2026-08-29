@@ -58,7 +58,7 @@ import { ViewRegistryProvider, useOptionalViewRegistry } from './viewRegistry';
 import { ViewInputsProvider, type SurfaceViewInputs } from './viewInputs';
 import { CanvasView, type CanvasViewProps } from './CanvasView';
 import type { DeviceProfile } from '../core/device/types';
-import { HANDLE_BASE_PX } from '../core/device/targets';
+import { HANDLE_BASE_PX, targetSizesPx } from '../core/device/targets';
 import { ActionsProviderIfRoot } from './SceneCanvas/ActionsProviderIfRoot';
 import { useToolActions } from './SceneCanvas/useToolActions';
 import { PointerProviderIfRoot, PointerPublisher } from './SceneCanvas/PointerProviderIfRoot';
@@ -228,7 +228,7 @@ export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
       node: Node<TData, TLayer, TPose>,
       pose: TPose,
     ) => DrawCommand[] },
-    selectionOverlay: { handles: { size: HANDLE_BASE_PX * targetScale } },
+    selectionOverlay: { handles: { size: targetSizesPx(targetScale).handle } },
   };
 
   if (!user) return defaults as LayersMap<Node<TData, TLayer, TPose>, TPose>;
@@ -891,6 +891,16 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // their own media queries.
   const deviceProfile = useDeviceProfile(device);
 
+  // How big grabbable chrome is for this pointer type. Paint (the selection
+  // overlay), hit-test (`buildAffordanceAt`) and the slops debug overlay all
+  // resolve from this one object — a size read from the base constants
+  // directly is unscaled, and a coarse pointer then paints chrome it cannot
+  // grab.
+  const chromeSizes = useMemo(
+    () => targetSizesPx(deviceProfile.targetScale),
+    [deviceProfile.targetScale],
+  );
+
   // `scene` accepts either a live `Scene` or a `SerializedScene` JSON
   // object. JSON is baked once via useState init; subsequent renders
   // ignore prop changes (use a `key` prop on `<SceneCanvas>` to force a
@@ -1145,12 +1155,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   // Adapter + select tool — folded into a single hook that synthesizes both.
   // Apply the handle-size fallback here so useSceneSelectTool always receives
-  // a concrete radius even when the caller omits selectTool entirely. Scaled
-  // by the device profile so the hit radius tracks the painted size — the
-  // overlay's handle size goes through the same base in
-  // `mergeLayersWithDefaults`.
+  // a concrete radius even when the caller omits selectTool entirely.
   const selectToolWithDefaults = useMemo(() => ({
-    handleHitRadius: HANDLE_BASE_PX * deviceProfile.targetScale,
+    handleHitRadius: chromeSizes.handle,
     // Shift-click belongs to the anchor selection while a path is being
     // anchor-edited; see `UseSelectToolOptions.extendClickLocked`.
     extendClickLocked: () => effectivePathEditingId() !== '',
@@ -1160,7 +1167,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     // pipeline (audit 3.4). The classifier is now `select.pick`, which
     // declares that capability itself — one rule, evaluated in one place.
     ...selectToolOpts,
-  }), [selectToolOpts, deviceProfile.targetScale, effectivePathEditingId]);
+  }), [selectToolOpts, chromeSizes.handle, effectivePathEditingId]);
 
   // Stable ref to the live selection; updated every render so the affordanceAt
   // and classifyTarget thunks (which live in an effect closure) always read
@@ -1696,9 +1703,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       // top of the rendered anchors during anchor-edit drags AND when
       // the whole path is being moved.
       getPose: (id) => livePathFor(id) as never,
+      targetScale: deviceProfile.targetScale,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [internalBoundsOf],
+    [internalBoundsOf, deviceProfile.targetScale],
   );
 
   // Resolve the live (preview-aware) world polygon for `id`. Reads from
@@ -2028,6 +2036,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 dispatcher={dispatcher}
                 getIsVisibleForCanvas={getIsVisibleForCanvas}
                 getRuleCtx={getActiveMode ? buildCurrentRuleCtx : undefined}
+                targetScale={deviceProfile.targetScale}
+                handleHitRadius={selectToolOpts?.handleHitRadius}
                 onDoubleClick={onDoubleClickObserver}
               />
               <ToolKeybindingsMounter
@@ -2112,6 +2122,8 @@ function GestureDispatcherMounter({
   dispatcher,
   getIsVisibleForCanvas,
   getRuleCtx,
+  targetScale,
+  handleHitRadius,
   onDoubleClick,
 }: {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -2148,6 +2160,12 @@ function GestureDispatcherMounter({
    *  dispatcher's eligibility filter sees the same mode/capabilities/selection
    *  view of the world that chrome-caps does. */
   getRuleCtx?: () => RuleCtx;
+  /** `DeviceProfile.targetScale`, so the affordance grab zones resolve to the
+   *  same sizes the chrome paints at. */
+  targetScale?: number;
+  /** Consumer override for the corner-handle grab radius
+   *  (`selectTool.handleHitRadius`). Undefined takes the device-scaled size. */
+  handleHitRadius?: number;
   /** Fires on every synthesized double click, in world coords. Backs the
    *  `onDoubleClick` prop — see the option's doc on
    *  `UseGestureDispatcherOptions` for why it's an observer, not a binding. */
@@ -2197,6 +2215,8 @@ function GestureDispatcherMounter({
       // The caller used to do that division itself (`8 / meanScale(scale)`),
       // in two places, with a comment explaining what breaks if you forget.
       getView: () => viewRef.current ?? { x: 0, y: 0, scale: { x: 1, y: 1 } },
+      ...(targetScale !== undefined ? { targetScale } : {}),
+      ...(handleHitRadius !== undefined ? { handleHitRadius } : {}),
       getAnchorState,
       // Chrome-caps resolver: keep the affordance hit-test in sync with what
       // the renderer is actually painting. Without this, a click on a (no
@@ -2205,7 +2225,8 @@ function GestureDispatcherMounter({
       // bounding box instead of moving the anchor.
       ...(getIsVisibleForCanvas ? { getIsVisible: () => getIsVisibleForCanvas() } : {}),
     });
-  }, [selectionRef, boundsOf, viewRef, getAnchorState, getIsVisibleForCanvas, viewRegistry]);
+  }, [selectionRef, boundsOf, viewRef, getAnchorState, getIsVisibleForCanvas, viewRegistry,
+      targetScale, handleHitRadius]);
 
   // Build the `classifyTarget` thunk. Converts client coords → world coords
   // internally using the canvas rect + view, then delegates to `buildClassifyTarget`.

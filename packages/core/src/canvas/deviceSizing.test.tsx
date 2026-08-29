@@ -15,6 +15,7 @@ import { COARSE_TARGET_SCALE, resolveDeviceProfile } from '../core/device/profil
 import { DEFAULT_HANDLE_SIZE, mergeLayersWithDefaults } from './SceneCanvas';
 import { DEFAULT_ROTATION_HANDLE_DISTANCE } from '../interactions/actions/rotate';
 import { createCornerResizeAffordance } from '../affordances/cornerResize';
+import { buildAffordanceAt } from './affordanceAt';
 import type { ChromeState } from 'core/selection/chromeState';
 import { asNodeId } from 'core/scene/types';
 
@@ -79,5 +80,28 @@ describe('device-scaled chrome sizing', () => {
       expect(r.paint).toMatchObject({ sizePx: HANDLE_BASE_PX });
       expect(r.shape).toMatchObject({ hitRadiusPx: HANDLE_BASE_PX });
     }
+  });
+});
+
+describe('device-scaled affordance hit zones', () => {
+  const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+  // Top-left corner of `singleSelection()`'s bounds.
+  const CORNER = { x: 100, y: 100 };
+  // Between the fine grab half-extent (8px) and the coarse one (8 * 1.75 = 14px).
+  const OFF = 12;
+
+  const hitAt = (targetScale: number) =>
+    buildAffordanceAt({
+      getChromeState: singleSelection,
+      getView: () => view,
+      targetScale,
+    })({ x: CORNER.x - OFF, y: CORNER.y - OFF })?.kind;
+
+  it('a coarse pointer grabs a corner handle out to the scaled radius', () => {
+    expect(hitAt(coarse.targetScale)).toBe('handle:top-left');
+  });
+
+  it('a fine pointer does not', () => {
+    expect(hitAt(1)).not.toBe('handle:top-left');
   });
 });

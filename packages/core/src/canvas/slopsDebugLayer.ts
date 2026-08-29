@@ -17,8 +17,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { Path, PolygonPath } from 'features/paths/types';
 import { circlePath } from 'features/paths/markers';
 import { enumerateAnchors } from 'interactions/actions/edit-anchors/geometry';
-import { HANDLE_HIT_RADIUS, ANCHOR_HIT_RADIUS } from './affordanceAt';
-import { DEFAULT_ROTATION_HANDLE_DISTANCE } from 'interactions/actions/rotate/handle';
+import { targetSizesPx } from 'core/device/targets';
 import { meanScale } from 'core/viewport/meanScale';
 
 interface View { x: number; y: number; scale: { x: number; y: number } }
@@ -34,6 +33,9 @@ export interface CreateSlopsDebugLayerOptions {
   /** Returns the pose for a given id — used to pull the polygon path when
    *  the editing target is a polygon-pose node. */
   getPose: (id: string) => Path | null;
+  /** Pointer-size multiplier from the live `DeviceProfile`. Resolves the same
+   *  sizes `buildAffordanceAt` hit-tests with. Default 1. */
+  targetScale?: number;
 }
 
 function w2s(wx: number, wy: number, view: View): [number, number] {
@@ -56,9 +58,11 @@ export function createSlopsDebugLayer(
 
       // Affordance regions declare their hit radii in screen pixels and
       // `hitAffordanceRegions` converts, so this screen-space layer draws
-      // them as-is. Scaling here would inflate the halo past the real hit
-      // zone at zoom > 1 — the debug overlay's one job is not to lie.
-      const r = HANDLE_HIT_RADIUS;
+      // them as-is. Scaling by the *view* here would inflate the halo past
+      // the real hit zone at zoom > 1 — the debug overlay's one job is not
+      // to lie.
+      const sizes = targetSizesPx(opts.targetScale);
+      const r = sizes.handle;
 
       // Corner resize handles + rotation handle, per selected id.
       // Affordance pipeline only fires rotation when selection.length === 1;
@@ -86,12 +90,11 @@ export function createSlopsDebugLayer(
         const id = sel[0] as string;
         const b = opts.boundsOf(id);
         if (b) {
-          // Rotation handle: top-center, offset upward by rotateDistance
-          // (DEFAULT_ROTATION_HANDLE_DISTANCE is in world units in the
-          // hit-test; converting back via meanScale gives the same screen
-          // position the visible handle uses).
+          // Rotation handle: top-center, offset upward by the rotate
+          // distance (a screen-px length; dividing by meanScale puts it back
+          // in the world units these bounds are in).
           const cx = b.x + b.width / 2;
-          const cy = b.y - DEFAULT_ROTATION_HANDLE_DISTANCE / meanScale(view.scale);
+          const cy = b.y - sizes.rotationDistance / meanScale(view.scale);
           const [sx, sy] = w2s(cx, cy, view);
           out.push({
             kind: 'path',
@@ -105,7 +108,7 @@ export function createSlopsDebugLayer(
       // Anchor / control-handle slops, when an editing target is active.
       const editingId = opts.getEditingId();
       if (editingId) {
-        const anchorR = ANCHOR_HIT_RADIUS;
+        const anchorR = sizes.anchor;
         const pose = opts.getPose(editingId);
         if (pose && pose.kind === 'polygon') {
           const anchors = enumerateAnchors(pose as PolygonPath);

@@ -4,6 +4,7 @@ import {
   createRotationAffordance,
 } from 'affordances/rotationHandle';
 import type { RotateAdapter } from 'core/adapters/types';
+import { ROTATION_HANDLE_BASE_PX } from 'core/device/targets';
 import { defineTool } from '../../defineTool';
 import type { Tool } from '../../types';
 import type { RenderLayer } from 'core/layers/render';
@@ -20,8 +21,8 @@ function toChromeState(data: unknown): ChromeState {
   return data as ChromeState;
 }
 
-/** Options for `useRotateTool` — mostly the placement and hit size of the
- *  rotation handle. */
+/** Options for `useRotateTool` — mostly the placement of the rotation
+ *  handle's hover band. */
 export interface UseRotateToolOptions<TNode extends { id: string }, _TPose> {
   /** Legacy `useRotate` options surface. Ignored now —
    *  rotation flows through `rotateAction`, whose option surface is
@@ -29,10 +30,10 @@ export interface UseRotateToolOptions<TNode extends { id: string }, _TPose> {
    *  backwards-compat with consumers (notably `SceneCanvas`'s
    *  `rotateOptions`) that still pass a value. */
   rotate?: unknown;
-  /** Distance from top edge of bounds to rotation handle center. Default: 24. */
+  /** Minimum thickness of the rotate band outside the selection AABB, in
+   *  screen px. Defaults to {@link ROTATION_HANDLE_BASE_PX}; `<SceneCanvas>`
+   *  passes the device-scaled value. */
   rotationHandleDistance?: number;
-  /** Square hit-radius for the rotation handle. Default: 8. */
-  handleHitRadius?: number;
   /** World-space bounds lookup. Required for the rotation affordance hit-test
    *  in consumers that wire a `boundsOf` source separately from the
    *  ChromeState-driven affordance pipeline. Retained for parity with
@@ -66,8 +67,8 @@ export function useRotateTool<TNode extends { id: string }, _TPose>(
 ): Tool<unknown> & {
   overlay: RenderLayer<unknown>;
 } {
-  const handleHitRadius = options.handleHitRadius ?? 8;
-  const rotationHandleDistance = options.rotationHandleDistance ?? 24;
+  const rotationHandleDistance =
+    options.rotationHandleDistance ?? ROTATION_HANDLE_BASE_PX;
 
   // Latest-callback refs so the overlay/affordance closures see the most
   // recent option closures without rebuilding the Tool record.
@@ -76,13 +77,9 @@ export function useRotateTool<TNode extends { id: string }, _TPose>(
   const boundsOfRef = useRef(options.boundsOf);
   boundsOfRef.current = options.boundsOf;
 
-  // Rotation affordance. The legacy `rotationHandleDistance` /
-  // `handleHitRadius` knobs are no longer used — the affordance is now
-  // an invisible elliptical ring around the selection AABB (see
-  // `createRotationAffordance`). The `bandPx` option is the only knob
-  // exposed for ring thickness, defaulting to 24. `paint: null` keeps
-  // the ring fully invisible — the cursor change on hover is the only
-  // visual cue, matching the documented intent.
+  // Rotation affordance: an invisible elliptical ring around the selection
+  // AABB, `rotationHandleDistance` thick. `paint: null` keeps it invisible —
+  // the hover cursor is the only visual cue, matching the documented intent.
   const rotationAff = useMemo(
     () => createRotationAffordance({ bandPx: rotationHandleDistance, paint: null }),
     [rotationHandleDistance],
@@ -157,7 +154,6 @@ export function useRotateTool<TNode extends { id: string }, _TPose>(
         overlay,
       };
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [overlay, handleHitRadius, rotationHandleDistance],
+    [overlay],
   );
 }
