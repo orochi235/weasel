@@ -495,8 +495,8 @@ function resolveNodeStroke(stroke: Stroke | null | undefined): Stroke | null {
   return stroke ?? null;
 }
 
-/** Bake a bounds-relative stroke paint onto the pose box, the way a fill is
- *  baked. The pose is already in the projected path, so a paint left in
+/** Bake a bounds-relative stroke paint onto the given box, the way a fill is
+ *  baked. The box is the frame the path was projected into, so a paint left in
  *  `'bounds'` units would reach the renderer describing a frame that never
  *  exists. `null` when a pattern spec fails to resolve. */
 function strokeInPoseFrame(stroke: Stroke, box: FillPoseBox): Stroke | null {
