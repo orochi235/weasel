@@ -22,7 +22,7 @@ Priority tags:
 ### Next up
 
 - **`<Timeline>` editor** — the one unbuilt phase of the timeline/rig arc → [Animation](#animation)
-- **Audit for duplicated-then-drifted cascades** — two implementations of one lookup, agreeing by coincidence → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- **Collapse the duplicated cascades the 2026-08-29 audit found** — 8 live user-visible defects, incl. undo losing a deleted group's children → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 ### P2 — broad reuse / friction-likely
 
@@ -45,6 +45,9 @@ Priority tags:
 
 **Tools & gestures**
 - `ToolCtx` hard-codes 2D, blocking tool reuse by another kernel → [Tools & gestures](#tools--gestures)
+
+**Viewport**
+- Zoom clamped by two disagreeing constant families; wheel answered three times with inverted modifiers → [Viewport](#viewport)
 
 **Plugins & packaging**
 - Barrel-hygiene: selection (pending design review) → [Plugins & packaging](#plugins--packaging)
@@ -287,6 +290,21 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
 ---
 
 ## Viewport
+
+- **(P2) Zoom is clamped by two disagreeing families of constants, and the wheel
+  is answered three times.** `zoomAt` defaults `0.1`/`8` and three call sites
+  re-declare the same pair; `fitViewToBounds`' `SYSTEM_MAX_SCALE`, `wheelHandler`
+  and `useZoom` use `0.1`/`10`, and `fitViewToBounds`' comment claims to mirror
+  `DEFAULT_MAX_ZOOM` while mirroring the wrong one. So fit-to-bounds can legally
+  produce 10x and the next pinch frame clamps it back to 8x. Separately,
+  `viewportZoom` (plain wheel = pan, mod = zoom), `computeWheelAction` (plain =
+  zoom, meta = scroll) and `useZoom` answer the wheel with **inverted modifier
+  meanings**; the latter two pan in screen pixels, which cannot be fed to
+  `view.set` at all, and all three are public. `usePinchZoomTool` is now dead
+  surface — `SceneCanvas` drives pinch through the action alone — but is still
+  exported, and it is the only one of the two that routes an anchor to the view
+  under the fingers. Found by the 2026-08-29 cascade audit; see
+  `docs/superpowers/specs/2026-08-29-duplicated-cascade-audit.md`.
 
 - **(P3) `useViewAnimation` builds an animator it never uses.** The hook calls
   `useAnimator()` unconditionally so it can fall back to its own animator when
@@ -1056,15 +1074,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P1) Audit the engine for cascades that were duplicated and then drifted.** Selection chrome resolved a node's bounds through two independent cascades — the overlay layer's `getPose` chain and `useViewHelpers`' `boundsWithPreview` — that were supposed to give the same answer and did not: they consulted the same two preview sources in opposite priority, and only one of them carried rotation. Nothing caught it, because with one camera and one selection the two rarely disagreed on a value anyone could see. Virtual viewports collapsed that pair (the layer now reads bounds off the draw envelope, one cascade, the one the chrome state was built with).
+- **(P1) Collapse the duplicated cascades the 2026-08-29 audit found.** The investigation is done — findings, sites and a verdict per pair are in `docs/superpowers/specs/2026-08-29-duplicated-cascade-audit.md`. What is left is the work. Read that spec's "Comments that assert a collapse which never happened" section first: seven docstrings tell a reader the collapse already landed, and each is false.
 
-  The pattern is what to go looking for: a lookup implemented once for the renderer and once for the hit-tester, or once in `<Canvas>` and once in `<SceneCanvas>`, agreeing by coincidence rather than by construction. Two more of the same kind turned up in the same arc and were collapsed with it: the affordance hit-tester built its own `ChromeState` beside the painted one (so mid-drag, handles painted at the ghost and hit-tested at the committed pose), and a view read gesture previews from the surface's dispatcher while owning one of its own.
+  Live and user-visible, in rank order: **deleting a group destroys its children on undo** (`createDeleteOp.invert()` re-inserts one node while `apply` cascades the subtree — reproduced against a real scene on `main` and on `arc1-derived-geometry`, which does not fix it); **union AABB is rotation-blind in ten of eleven implementations**, and `axisAlignedBounds` — the one that is correct, and documents why — has a single non-test caller inside its own file; **handles paint at `HANDLE_BASE_PX * targetScale` and hit-test unscaled**, so a coarse pointer paints 14px and grabs 8px; **the gradient the canvas paints is not the one the editor shows** (the ramp extrapolates below the first stop and inverts on coincident stops); **pose overrides are painted through and picked around**, against a contract in `core/scene/types.ts:268` saying both; **conic gradients export a dangling `url(#…)`** with no warning; **a nascent insert's extent is answered three ways**, so a horizontal Alt-drag reports height 0; **reparent's inverse drops the sibling index**, so Cmd+G then undo changes paint order.
 
-  Known suspects still standing — there are two pinch-zoom implementations, `usePinchZoomTool`'s direct `usePinchGesture` listener on the canvas and `pinchZoomAction` through the dispatcher's multitouch synthesis, reached by two different `viewport` sub-flags (`pinchZoom` and `zoom`), so a consumer enabling both zooms twice; and `previewIdsExtra` / `previewPoseExtra` walk in-flight handles in a shape `usePreviewGhostLayer` also walks. The output is a list of pairs with a verdict each: collapse, or state why two are correct.
+  Then the structural tiers: the motivating fix was applied to `createSelectionOverlayLayer` and not to the two public primitives it calls itself equivalent to; path command opcodes exist five times across two packages, where a sixth opcode desynchronizes both readings of one `Uint8Array` silently; four hit-test walks each fix what the others miss, so a clipped-away child is invisible and still clickable; and nine layer/lookup sites still close over surface state, which is a live wrong-view bug now that N views exist rather than a latent one.
 
-  One pair to look at first: `SPEC_KIND_TO_GESTURE` exists twice, at `packages/core/src/tools/routing/reflection/registry.ts:58` and `apps/draw/src/dev/registryProbe.tsx:240`. The two differ on `drop`/`paste`, which is deliberate and explained at the probe — but the shape is the one this item is about: `Record<GestureSpec['kind'], …>` makes TypeScript demand every key at each site independently, so a new gesture kind gets answered twice with nothing holding the answers to each other.
+  Two entries here were falsified by the audit and are corrected below: the pinch-zoom double-apply, and the `previewIdsExtra` suspect.
 
-- **(P2) Safari's `gesturestart` / `gesturechange` / `gestureend` are unhandled.** They are the second trackpad pinch channel on macOS Safari, alongside the ctrl+wheel one `viewportZoom` reads. Nothing in the repo listens for them, so Safari trackpad pinch gets whatever the wheel path synthesizes. Worth deciding deliberately rather than by omission — and it belongs with the two-pinch-implementations item above, since that is where the channel would be consolidated.
+- **(P2) Safari's `gesturestart` / `gesturechange` / `gestureend` are unhandled.** They are the second trackpad pinch channel on macOS Safari, alongside the ctrl+wheel one `viewportZoom` reads. Nothing in the repo listens for them, so Safari trackpad pinch gets whatever the wheel path synthesizes. Worth deciding deliberately rather than by omission. Note before adding a listener: `viewportZoom` now claims bare ctrl+wheel, so a `gesturechange` handler becomes a *second* channel for the same physical gesture — the double-apply `.changeset/mac-trackpad-pinch-zoom.md` just removed. Consolidate it into `makeViewportZoomAction` behind one scale-delta seam, not as a fourth listener.
 
 - **(P3) Alignment guides — v1 follow-ups.** Auto-derived alignment guides shipped 2026-06-19 (`packages/core/src/features/guides/alignment/`: `deriveAlignmentGuides` + `matchAlignment` + `alignMoveBehavior`/`alignInsertBehavior`/`alignResizeBehavior`, rendered via `createGuidesLayer`; demo `apps/site/demos/AlignmentGuidesDemo.tsx`). Spec: `docs/superpowers/specs/2026-06-19-alignment-guides-design.md`. Multi-select drag alignment shipped 2026-06-19 (`alignMoveBehavior` matches the selection's union AABB via `unionBounds`). Remaining deferred: (a) **Figma-style segment rendering** — line spanning only between the aligned objects with end ticks / offset labels, instead of full-canvas lines (needs a span-aware layer, not just axis+offset); (b) **equal-spacing / distribution guides** ("equal gaps" across 3+ objects); (c) **rotated-object alignment** — derivation/matching use AABBs, so a rotated object aligns by its bounding box.
 
