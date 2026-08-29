@@ -88,6 +88,101 @@ const category = {
   'stroke-align': '<circle cx="10" cy="10" r="6.2"/>',
 };
 
+
+// ── paint kind ───────────────────────────────────────────────────────────
+// The five members of the paint union, as swatches. A monochrome glyph
+// cannot show a real ramp, so the three gradients state theirs as graduated
+// ink — the same four steps in three geometries, which is what makes them
+// read as a set rather than as three unrelated pictures.
+const BOX = 3.4;
+const BOX_END = 16.6;
+const RAMP = [1, 0.68, 0.42, 0.2];
+
+const step = (d, op) => `<path d="${d}" fill="currentColor" stroke="none" fill-opacity="${op}"/>`;
+
+// Four vertical bands, edge to edge with no seam between them.
+const linearBands = RAMP.map((op, i) => {
+  const w = (BOX_END - BOX) / RAMP.length;
+  const x = n(BOX + i * w);
+  return step(`M${x} ${BOX}H${n(x + w)}V${BOX_END}H${x}Z`, op);
+}).join('');
+
+// Concentric squares, not discs: every other kind in the bar is a square
+// swatch, and a lone circle reads as a different sort of thing rather than
+// as this set's radial member.
+//
+// Drawn as even-odd RINGS rather than nested filled boxes. Nesting only
+// works while the ramp darkens inward — an outward-darkening one puts an
+// opaque box under the translucent ones and every inner step composites
+// against it instead of against the page.
+const box = (h) => `M${n(10 - h)} ${n(10 - h)}H${n(10 + h)}V${n(10 + h)}H${n(10 - h)}Z`;
+const RADII = [6.6, 5.05, 3.5, 1.95];
+// Its own ramp, not the shared one. Four nested rings put four edges in a
+// box the others fill with one or two, so at the shared ramp's levels it
+// reads brighter than its neighbours at the same nominal opacity — the whole
+// scale is stepped down to sit with them.
+const RADIAL_RAMP = [0.7, 0.53, 0.37, 0.2];
+const ring = (d, op) =>
+  `<path d="${d}" fill="currentColor" fill-rule="evenodd" stroke="none" fill-opacity="${op}"/>`;
+const radialRings = RADII.map((h, i) =>
+  ring(i === RADII.length - 1 ? box(h) : box(h) + box(RADII[i + 1]), RADIAL_RAMP[i]),
+).join('');
+
+// Four quadrant wedges swept from the center. Each corner point is the box
+// corner, so the wedges tile the square exactly.
+const CORNERS = [
+  [BOX_END, BOX], [BOX_END, BOX_END], [BOX, BOX_END], [BOX, BOX],
+];
+const conicWedges = RAMP.map((op, i) => {
+  const [ax, ay] = CORNERS[i];
+  const [bx, by] = CORNERS[(i + 1) % 4];
+  return step(`M10 10L${ax} ${ay}L${bx} ${by}Z`, op);
+}).join('');
+
+// 45-degree stripes as filled polygons, so the pattern swatch is solid ink
+// in the same register as the other four rather than an outlined box. Each
+// stripe is the square clipped to the band c1 <= x + y <= c2, solved by
+// Sutherland-Hodgman against the two half-planes — the corner stripes are
+// triangles and eyeballing their vertices does not land on the edge.
+const SQUARE = [[BOX, BOX], [BOX_END, BOX], [BOX_END, BOX_END], [BOX, BOX_END]];
+
+// `axis` picks the diagonal family: 'sum' is x + y (down-right rules),
+// 'diff' is y - x (up-right rules). One crosshatch needs both.
+const clipHalf = (poly, keepBelow, c, axis) => {
+  const f = axis === 'sum' ? (p) => p[0] + p[1] : (p) => p[1] - p[0];
+  const inside = (p) => (keepBelow ? f(p) <= c : f(p) >= c);
+  const cross = (a, b) => {
+    const t = (c - f(a)) / (f(b) - f(a));
+    return [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])];
+  };
+  const out = [];
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i];
+    const b = poly[(i + 1) % poly.length];
+    if (inside(a)) out.push(a);
+    if (inside(a) !== inside(b)) out.push(cross(a, b));
+  }
+  return out;
+};
+
+const stripe = (c1, c2, axis) => {
+  const poly = clipHalf(clipHalf(SQUARE, false, c1, axis), true, c2, axis);
+  if (poly.length < 3) return '';
+  const d = poly.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${n(x)} ${n(y)}`).join('') + 'Z';
+  return `<path d="${d}" fill="currentColor" stroke="none"/>`;
+};
+
+// Both diagonal families, band centers stepping by 6.6 out to +/-13.2 — the
+// extremes sit ON the corners, so those bands are half-clipped and the ink
+// reaches all four. Centering them inside the box instead leaves the corners
+// bare and the silhouette reads as a lozenge rather than a swatch.
+const HATCH_W = 2.6;
+const HATCH_OFFSETS = [-13.2, -6.6, 0, 6.6, 13.2];
+const crosshatch = (mid, axis) =>
+  HATCH_OFFSETS
+    .map((o) => stripe(mid + o - HATCH_W / 2, mid + o + HATCH_W / 2, axis))
+    .join('');
+
 export const PAINT = {
   ...category,
 
@@ -109,4 +204,23 @@ export const PAINT = {
   // Long-short-long: the one pattern that is neither preset, which is what
   // `custom` reports. 5 + 2 + 2 + 2 + 5 is the run exactly.
   'dash-custom': dashRule('5 2 2 2'),
+
+  'paint-solid': step(`M${BOX} ${BOX}H${BOX_END}V${BOX_END}H${BOX}Z`, 1),
+  'paint-linear': linearBands,
+  'paint-radial': radialRings,
+  'paint-conic': conicWedges,
+  // Crosshatch rather than a one-way hatch: a single diagonal run is the
+  // universal "none / not applicable" strike, which is the one thing this
+  // glyph must not say.
+  'paint-pattern': crosshatch(BOX + BOX_END, 'sum') + crosshatch(0, 'diff'),
+
+  // Illustrator's convention, and the one glyph in the set that is an empty
+  // box rather than a mass of ink — the absence of paint should not look like
+  // one of the paints. The slash is the theme's danger red rather than
+  // `currentColor`: it stays red on a selected segment, which is what makes
+  // it read as "none" instead of as a diagonal texture. Butt caps so it stops
+  // exactly on the corners it is drawn between.
+  'paint-none': `<path d="M${BOX} ${BOX}H${BOX_END}V${BOX_END}H${BOX}Z"/>`
+    + `<path d="M${BOX} ${BOX_END}L${BOX_END} ${BOX}" stroke="var(--wzl-danger, #d94a3f)"`
+    + ` stroke-width="1.8" stroke-linecap="butt"/>`,
 };

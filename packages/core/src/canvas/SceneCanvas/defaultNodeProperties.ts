@@ -78,12 +78,17 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
           }
         : {}),
       appearance: {
-        name: 'Appearance',
+        // Headless: `Fill` and `Stroke` head their own blocks, and an
+        // `Appearance` rule over them names neither of the two paints a
+        // reader is looking at.
+        name: '',
         children: {
           // A `paint` leaf, not a `color` one: `data.fill` is the tagged
           // `FillStyle` union, so a color control pointed at it would read
           // `undefined` off a gradient and write a bare string over it.
-          'data.fill': { kind: 'paint', name: 'Fill', description: 'Fill paint.', default: { fill: 'solid', color: '#000000ff' }, alpha: true },
+          // `block` for the same reason every stroke field is: the kind bar
+          // and the per-kind editor want the width a 64px label column takes.
+          'data.fill': { kind: 'paint', name: 'Fill', description: 'Fill paint.', default: { fill: 'solid', color: '#000000ff' }, alpha: true, block: true },
           // An object leaf: `data.stroke` is a whole `Stroke`, and its fields
           // belong to one value. Sibling leaves addressing into it would each
           // write one field of a value they can only half see.
@@ -98,8 +103,10 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
               // a 64px label column spells the section name again and takes
               // the width the controls need. Each field leads with its own
               // glyph instead.
-              width: { kind: 'number', name: 'Width', description: 'Stroke width, world units.', default: 1, min: 0, max: 20, step: 0.5, control: 'slider', icon: 'strokeWidth', block: true, pair: 'Paint' },
-              paint: { kind: 'paint', name: 'Color', description: 'Stroke paint.', default: { fill: 'solid', color: '#000000ff' }, alpha: true, block: true, pair: 'Paint' },
+              // Unpaired: the paint field is a whole paint editor — a kind bar
+              // over a per-kind body — and cannot share a row with a slider.
+              width: { kind: 'number', name: 'Width', description: 'Stroke width, world units.', default: 1, min: 0, max: 20, step: 0.5, control: 'slider', icon: 'strokeWidth', block: true },
+              paint: { kind: 'paint', name: 'Paint', description: 'Stroke paint.', default: { fill: 'solid', color: '#000000ff' }, alpha: true, block: true },
               // Three options each: a segmented control shows every one at
               // once where a select shows the current one and hides the rest
               // behind a click.

@@ -1,6 +1,7 @@
 import { Fragment, useState, useSyncExternalStore, type ReactNode } from 'react';
 import {
   asNodeId,
+  type FillStyle,
   type NodePropertiesEntry,
   type NodeRoutingEntry,
   type Scene,
@@ -14,7 +15,7 @@ import {
   type ToolPrefObject,
 } from '@weasel-js/core';
 import { ColorField } from '../ColorField';
-import { solidColorOf } from '../paintValue';
+import { PaintInput } from '../PaintInput';
 import { InlineRange } from '../InlineRange';
 import { Input } from '../Input';
 import { NumberField } from '../NumberField';
@@ -138,6 +139,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
     .filter((n): n is NonNullable<typeof n> => n != null) as readonly AnyNode[];
 
   const kinds = nodes.map((n) => classifyKind(n, routing));
+  const selectionKey = nodes.map((n) => n.id).join(',');
   const sections = effectiveSections(kinds, properties);
 
   if (nodes.length === 0) {
@@ -194,6 +196,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
                   nodes,
                   renderers,
                   commit,
+                  selectionKey,
                 ),
               }))
               .filter((c) => c.content != null);
@@ -206,9 +209,18 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
             {section.name !== '' && <h3 className={s.sectionTitle}>{section.name}</h3>}
             {rows.map(({ row, controls }) => (
               // A `block` leaf brings its own chrome — it spans the section
-              // instead of sitting in a labeled row's control cell.
+              // instead of sitting in a labeled row's control cell. Under a
+              // headless section nothing else names it, so it heads itself;
+              // an object leaf already renders its own heading.
               row.leaves.length === 1 && row.leaves[0].leaf.block ? (
-                <div key={row.leaves[0].path}>{controls[0].content}</div>
+                <div key={row.leaves[0].path}>
+                  {section.name === '' && row.leaves[0].leaf.kind !== 'object' && (
+                    <h4 className={s.sectionTitle} title={row.leaves[0].leaf.description}>
+                      {row.leaves[0].leaf.name}
+                    </h4>
+                  )}
+                  {controls[0].content}
+                </div>
               ) : (
               <div key={row.leaves[0].path} className={s.row}>
                 <span className={s.rowLabel} title={row.leaves[0].leaf.description}>
@@ -235,6 +247,7 @@ function renderLeafControl(
   nodes: readonly AnyNode[],
   renderers: Record<string, PropertyRenderer> | undefined,
   commit: (leaf: PanelLeaf, value: unknown) => void,
+  selectionKey: string,
 ): ReactNode {
   const { path, leaf } = panelLeaf;
   const aggregated = aggregateValue(nodes, path);
@@ -256,13 +269,20 @@ function renderLeafControl(
 
   const custom = renderers?.[path] ?? renderers?.[leaf.kind];
   if (custom) return custom(ctx);
-  return renderBuiltin(ctx, ariaLabel, renderers);
+  return renderBuiltin(ctx, ariaLabel, renderers, selectionKey);
 }
 
 function renderBuiltin(
   ctx: PropertyRenderContext,
   ariaLabel: string,
   renderers?: Record<string, PropertyRenderer>,
+  /** Identifies the current selection, so a control holding per-selection
+   *  scratch (the paint kind memory) is remounted rather than carried over. */
+  selectionKey = '',
+  /** True for a field of an object leaf. Such a field writes itself into its
+   *  parent, so it can only hold values its parent's type permits — which is
+   *  what rules "none" out for a nested paint. */
+  nested = false,
 ): ReactNode {
   const { pref, value, mixed, unset, setValue } = ctx;
   switch (pref.kind) {
@@ -413,23 +433,33 @@ function renderBuiltin(
       );
     }
     case 'paint': {
-      // The value is a whole `FillStyle`. A solid one has a color to show; a
-      // pattern or gradient does not, and showing the control's default there
-      // would claim a color the shape doesn't have. It gets the same
-      // indeterminate chip a genuinely mixed selection gets — in both cases
-      // the honest statement is "there is no single color here".
+      // The value is a whole `FillStyle`, and `PaintInput` edits it as one —
+      // previewing a gradient as a gradient rather than degrading it to the
+      // indeterminate chip. That leaves the checkerboard meaning `mixed` and
+      // nothing else.
       const p = pref as ToolPrefPaint;
-      const solid = solidColorOf(value) ?? (mixed ? undefined : solidColorOf(p.default));
+      // `??` would read an explicit `null` — "no paint" — as absent and show
+      // the schema default over it, so the None segment could never stay lit.
+      // Unset shows the fallback that is actually on the canvas, dimmed: true,
+      // but not chosen, which is what the dimming says.
+      const paint = (value === null
+        ? null
+        : (value ?? (mixed ? undefined : p.default))) as FillStyle | null | undefined;
       return (
-        <ColorField
-          value={mixed ? undefined : solid}
-          mixed={mixed || (value !== undefined && solidColorOf(value) === undefined)}
-          alpha={p.alpha}
-          // Write the whole union member. Setting a `color` key on the
-          // existing paint would leave a `{ fill: 'linear-gradient', stops,
-          // color }` hybrid that every structural `'color' in paint` check
-          // downstream reads as solid.
-          onChange={(color) => setValue({ fill: 'solid', color })}
+        <PaintInput
+          // Per-kind switch memory is scratch for one selection; carrying it
+          // across would recall the previous node's gradient.
+          key={selectionKey}
+          value={paint}
+          mixed={mixed}
+          unset={unset}
+          // A nested paint writes one field of its parent, and no kit paint
+          // field is optional — `Stroke.paint` is required. Removing the
+          // whole parent is a different edit than repainting it, so the
+          // control must not offer one as the other. A consumer whose
+          // renderer owns the parent key (WeaselDraw's `setStroke`) can.
+          allowNone={!nested}
+          onChange={setValue}
           aria-label={ariaLabel}
         />
       );
@@ -437,7 +467,7 @@ function renderBuiltin(
     case 'object': {
       // One value with fields hanging off it. Each child writes the parent
       // whole, so a field is never set on a half-built object.
-      return <ObjectLeaf ctx={ctx} renderers={renderers} />;
+      return <ObjectLeaf ctx={ctx} renderers={renderers} selectionKey={selectionKey} />;
     }
     default:
       return <span className={s.unrenderable}>({pref.kind}: no renderer)</span>;
@@ -471,9 +501,11 @@ interface ObjectRow {
 function ObjectLeaf({
   ctx,
   renderers,
+  selectionKey = '',
 }: {
   ctx: PropertyRenderContext;
   renderers?: Record<string, PropertyRenderer>;
+  selectionKey?: string;
 }): ReactNode {
   const pref = ctx.pref as ToolPrefObject;
   const held = typeof ctx.value === 'object' && ctx.value !== null
@@ -532,12 +564,16 @@ function ObjectLeaf({
         },
       };
       const custom = renderers?.[childPath] ?? renderers?.[child.kind];
-      const rendered = custom ? custom(childCtx) : renderBuiltin(childCtx, child.name, renderers);
+      const rendered = custom
+        ? custom(childCtx)
+        : renderBuiltin(childCtx, child.name, renderers, selectionKey, true);
       if (rendered == null) continue;
-      // A paired row spends its label on the pair, so a field in one is named
-      // only by its glyph. The control already carries `name` as its
-      // accessible name, which leaves the glyph decorative.
-      const glyph = child.pair !== undefined && child.icon && child.icon in ICON_PATHS;
+      // Neither a paired row nor a block one gives a field its own label
+      // column, so the glyph is all that names it on screen. The control
+      // already carries `name` as its accessible name, which leaves the
+      // glyph decorative.
+      const unlabeled = child.pair !== undefined || child.block === true;
+      const glyph = unlabeled && child.icon && child.icon in ICON_PATHS;
       const content = glyph ? (
         <span className={s.namedField}>
           <Icon name={child.icon as IconName} size={14} />

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { ActionsProvider } from '@weasel-js/core';
 import type { PropertyRenderContext } from '@weasel-js/ui';
 import { WD_RENDERERS } from '../App';
@@ -41,14 +41,21 @@ function colorInputValue(value: unknown): string | undefined {
 }
 
 describe("WeaselDraw's data.stroke.paint renderer", () => {
-  // A gradient stroke, and a node with no stroke at all, both leave the leaf
-  // with no single color. Falling back to the schema default — a FillStyle —
-  // handed the color input an object and threw the panel away.
+  // A node with no stroke at all leaves the leaf with no value. Falling back
+  // to the schema default — a whole `FillStyle` — handed the old color input
+  // an object and threw the panel away.
   it.each([
-    ['a gradient stroke', GRADIENT, '#000000'],
     ['no stroke', undefined, '#000000'],
     ['a solid stroke', { fill: 'solid', color: '#123456ff' }, '#123456'],
   ])('shows a color for %s', (_label, value, expected) => {
     expect(colorInputValue(value)).toBe(expected);
+  });
+
+  it('edits a gradient stroke as a gradient', () => {
+    render(
+      <ActionsProvider>{WD_RENDERERS['data.stroke.paint'](ctxWith(GRADIENT))}</ActionsProvider>,
+    );
+    expect(screen.getByRole('radio', { name: 'Linear' })).toBeChecked();
+    expect(screen.getByLabelText('Stop 1 at 0%')).toBeInTheDocument();
   });
 });

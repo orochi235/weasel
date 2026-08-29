@@ -79,6 +79,10 @@ export interface PaintBindContext {
 export interface PaintKindEntry {
   id: string;
   label: string;
+  /** Glyph naming this kind in an editor's kind bar, as an icon name the UI
+   *  layer resolves — the same indirection `ToolPrefBase.icon` uses. A kind
+   *  without one is named by its `label`. */
+  icon?: string;
   /** A paint of this kind seeded from a color — what an editor writes when a
    *  consumer switches a solid to this kind. */
   seed(fromColor: string): FillStyle;
@@ -108,17 +112,19 @@ const BUILTINS: readonly PaintKindEntry[] = [
   {
     id: 'solid',
     label: 'Solid',
+    icon: 'paintSolid',
     seed: (color) => ({ color }),
     colorOf: (paint) => ((paint.fill ?? 'solid') === 'solid'
       ? (paint as { color: string }).color
       : undefined),
   },
-  gradientKind('linear-gradient', 'Linear'),
-  gradientKind('radial-gradient', 'Radial'),
-  gradientKind('conic-gradient', 'Conic'),
+  gradientKind('linear-gradient', 'Linear', 'paintLinear'),
+  gradientKind('radial-gradient', 'Radial', 'paintRadial'),
+  gradientKind('conic-gradient', 'Conic', 'paintConic'),
   {
     id: 'pattern',
     label: 'Pattern',
+    icon: 'paintPattern',
     seed: (color) => ({
       fill: 'pattern',
       pattern: { tile: 'hatch', color },
@@ -130,10 +136,11 @@ const BUILTINS: readonly PaintKindEntry[] = [
   },
 ];
 
-function gradientKind(id: GradientKind, label: string): PaintKindEntry {
+function gradientKind(id: GradientKind, label: string, icon: string): PaintKindEntry {
   return {
     id,
     label,
+    icon,
     // `bounds` units make the seed independent of the node's actual size.
     seed: (color) => gradientForBounds(id, UNIT_BOX, twoStopRamp(color), 'bounds'),
     colorOf: (paint) => (paint as Partial<GradientFill>).stops?.[0]?.color,
