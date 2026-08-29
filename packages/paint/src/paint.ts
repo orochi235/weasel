@@ -15,7 +15,7 @@
  * path tessellation and the selection overlay.
  */
 
-import type { TextureHandle } from '../renderer/textures/registerTexture';
+import type { TextureHandle } from './texture';
 
 /**
  * Color/texture strategy for fills (and, via `Stroke.paint`, strokes).

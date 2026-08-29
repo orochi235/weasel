@@ -1,7 +1,7 @@
-import type { TextStyle } from './textStyle';
-import { resolveTextStyle } from './textStyle';
-import { resolveRuns } from './runs/resolveRuns';
-import { layoutRuns } from './atlas/layoutRuns';
+import type { TextStyle } from '../textStyle';
+import { resolveTextStyle } from '../textStyle';
+import { resolveRuns } from '../runs/resolveRuns';
+import { layoutRuns } from '../layout/layoutRuns';
 
 /** Options for `measureTextBounds`. */
 export interface MeasureTextBoundsOpts {

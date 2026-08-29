@@ -1,5 +1,6 @@
-import type { Path, Stroke } from '@weasel-js/core';
-import { alignedStrokeRect } from '@weasel-js/core';
+import type { Path } from '@weasel-js/core';
+import type { Stroke } from '@weasel-js/paint';
+import { alignedStrokeRect } from '@weasel-js/paint';
 import type { Mesh } from '../../../renderer/cache/mesh';
 import { extractPolylines, type Polyline } from './polyline';
 

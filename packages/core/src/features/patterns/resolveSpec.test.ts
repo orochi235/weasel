@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { installFakeOffscreenCanvas, uninstallFakeOffscreenCanvas } from './test-utils/fakeOffscreenCanvas';
 import { resolvePatternSpec, resolveFillPattern, isPatternSpec, _resetPatternSpecCacheForTests } from './resolveSpec';
 import { _resetTextureRegistryForTests } from '../../renderer/textures/registerTexture';
-import type { FillStyle, TilePatternSpec } from '../../core/paint-types';
+import type { FillStyle, TilePatternSpec } from '@weasel-js/paint';
 
 const HATCH: TilePatternSpec = { tile: 'hatch', color: '#0fb5a8' };
 

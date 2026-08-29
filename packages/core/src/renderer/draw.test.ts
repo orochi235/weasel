@@ -307,9 +307,9 @@ import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { vi } from 'vitest';
 import { resolveTextStyle } from '@weasel-js/core';
-import { layoutRuns } from 'features/text/atlas/layoutRuns';
-import { verticalAlignOffset } from 'features/text/verticalAlign';
-import type { ResolvedRun } from 'features/text/runs/resolveRuns';
+import { layoutRuns } from '@weasel-js/text';
+import { verticalAlignOffset } from '@weasel-js/text';
+import type { ResolvedRun } from '@weasel-js/text';
 
 describe('WeaselRenderer.render — color matrix on text + image', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;

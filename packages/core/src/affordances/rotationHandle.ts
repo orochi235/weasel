@@ -1,6 +1,6 @@
 import type { Affordance, AffordanceBinding, AffordanceRegion, CommonAffordanceScratch } from './types';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
-import type { FillStyle, Stroke } from 'core/paint-types';
+import type { FillStyle, Stroke } from '@weasel-js/paint';
 import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
 
 /** Options for `createRotationAffordance` — how thick the rotate band is

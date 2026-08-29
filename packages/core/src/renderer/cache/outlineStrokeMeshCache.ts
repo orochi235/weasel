@@ -25,7 +25,7 @@
 
 import { pathFromD } from 'features/paths/pathFromD';
 import { tessellateStroke } from 'features/paths/tessellate/stroke';
-import type { Stroke } from 'core/paint-types';
+import type { Stroke } from '@weasel-js/paint';
 import type { Mesh } from './mesh';
 import { OUTLINE_FLATTEN_TOLERANCE } from './outlineMeshCache';
 

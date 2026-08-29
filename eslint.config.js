@@ -125,6 +125,53 @@ export default [
   },
   {
     /**
+     * `@weasel-js/text` is a leaf: core's renderer depends on it (its
+     * `DrawCommand` names `ResolvedRun`), never the reverse. A reach back into
+     * core would duplicate the layout module the renderer caches against.
+     */
+    files: ['packages/text/src/**/*.{ts,tsx}'],
+    languageOptions,
+    plugins,
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@weasel-js/core', '@weasel-js/core/*', ...CORE_ALIASES],
+              message:
+                '@weasel-js/text is a leaf package and must not import from core.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    /**
+     * `@weasel-js/paint` is the bottom of the stack: plain paint vocabulary,
+     * named by text, geometry and the renderer alike. It imports nothing.
+     */
+    files: ['packages/paint/src/**/*.{ts,tsx}'],
+    languageOptions,
+    plugins,
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@weasel-js/*', '!@weasel-js/paint', ...CORE_ALIASES],
+              message:
+                '@weasel-js/paint must not depend on any weasel package.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    /**
      * `@weasel-js/audio` depends on no weasel package at all: positional audio
      * takes plain `{ x, y }`, which is what lets a consumer use it without the
      * canvas. Its tsconfig extends the root, so every alias above resolves

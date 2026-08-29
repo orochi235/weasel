@@ -3,7 +3,7 @@ import {
   dashForStrokeStyle,
   strokeDashStyleOf,
   STROKE_DASH_RATIOS,
-} from './paint-types';
+} from './paint';
 
 describe('stroke dash styles', () => {
   it('scales a preset by the stroke width', () => {

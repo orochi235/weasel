@@ -10,7 +10,7 @@
  * `StyledRun.fill` / `.stroke` override them per range.
  */
 
-import type { FillStyle, Stroke } from 'core/paint-types';
+import type { FillStyle, Stroke } from '@weasel-js/paint';
 
 /** User-facing text style. All fields optional; defaults applied at render time via `resolveTextStyle`. */
 export interface TextStyle {

@@ -7,7 +7,7 @@
  */
 
 import { type DrawCommand } from '../../renderer';
-import { type FillStyle, type Stroke } from 'core/paint-types';
+import { type FillStyle, type Stroke } from '@weasel-js/paint';
 import type { RenderLayer } from 'core/layers/render';
 import type { Path } from './types';
 import { countPathAnchors } from './anchors';

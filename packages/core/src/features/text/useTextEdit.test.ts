@@ -2,9 +2,9 @@ import { describe, expect, it, beforeEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { useTextEdit } from './useTextEdit';
 import type { UseTextEditOptions } from './useTextEdit';
-import type { StyledRun } from './runs';
+import type { StyledRun } from '@weasel-js/text';
 import { MIXED } from './runs/rangeStyle';
-import type { TextStyle } from './textStyle';
+import type { TextStyle } from '@weasel-js/text';
 
 function makeHarness(initial: Record<string, string>) {
   const texts = { ...initial };

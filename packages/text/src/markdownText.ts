@@ -115,7 +115,13 @@ export function layoutMarkdown(
   return { lines, width, height };
 }
 
-import type { TextRenderer } from './renderLabel';
+/** Pluggable text-painting strategy. The default fills white at `(x, y)`; markdown renderers replace this. */
+export type TextRenderer = (
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+) => void;
 
 /** Font styling options threaded through `createMarkdownRenderer`. */
 export interface MarkdownFontOptions {

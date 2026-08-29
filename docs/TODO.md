@@ -28,6 +28,7 @@ Priority tags:
 ### P2 — broad reuse / friction-likely
 
 **Text**
+- Text layout still needs a baked atlas for its metrics → [Text](#text)
 - Text cannot say "no fill", so outline-only text is unreachable → [Text](#text)
 - Cross-browser overlay alignment → [Text](#text)
 
@@ -603,6 +604,18 @@ Core five + Crop shipped. Remaining:
 ---
 
 ## Text
+
+- **(P2) Layout still needs a baked atlas for its metrics.** `@weasel-js/text`
+  ships the run model, wrap and `layoutRuns`, so a consumer with its own
+  renderer can borrow the typography — but every advance, kern and line metric
+  still comes off a `BmFont`, and the outline tier is metric-neutral by
+  design. A consumer holding font bytes and no atlas cannot lay anything out.
+  Arc 2 of
+  `docs/superpowers/specs/2026-08-28-text-package-extraction-design.md`: give
+  `OutlineFace` `advanceOf` / `kernOf` in em units (opentype.js has both), and
+  route the entry walk through one `GlyphSource` the atlas and an outline-only
+  face both satisfy. Done when a test lays out a string from bytes with
+  nothing registered.
 
 - **(P3) `.dfont` machine faces still can't reach the outline tier.** The
   *silence* closed 2026-08-16 — `isDataForkFont` recognizes a Macintosh

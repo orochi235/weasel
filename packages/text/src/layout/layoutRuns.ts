@@ -39,7 +39,7 @@
  * pen deltas, never an absolute coordinate, so the translation is exact.
  */
 
-import type { FillStyle, Stroke } from 'core/paint-types';
+import type { FillStyle, Stroke } from '@weasel-js/paint';
 import {
   resolveFontVariant, resolveGlyphFallback, glyphOutline,
   type ResolveResult, type BmFontChar, type BmFont,

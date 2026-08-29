@@ -17,14 +17,14 @@ import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
-import type { LaidOutRuns } from 'features/text/atlas/layoutRuns';
+import type { LaidOutRuns } from '@weasel-js/text';
 
 /** Every layout produced during a render, each with a snapshot of its state
  *  as it was returned — before `drawText` had a chance to touch it. */
 const captured: { result: LaidOutRuns; asReturned: string }[] = [];
 
-vi.mock('features/text/atlas/layoutRuns', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('features/text/atlas/layoutRuns')>();
+vi.mock('@weasel-js/text', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@weasel-js/text')>();
   return {
     ...actual,
     layoutRuns: (...args: Parameters<typeof actual.layoutRuns>) => {

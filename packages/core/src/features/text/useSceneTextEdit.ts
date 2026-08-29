@@ -24,13 +24,13 @@
 import { useCallback, useRef, type MouseEvent } from 'react';
 import { asNodeId } from '../../core/scene/types';
 import type { Scene } from '../../core/scene/types';
-import type { FillStyle, Stroke } from 'core/paint-types';
+import type { FillStyle, Stroke } from '@weasel-js/paint';
 import { clientToCanvas } from '../../core/viewport/clientToCanvas';
 import type { View } from '../../core/viewport/view';
 import type { RectPose } from '../groups/unionBounds';
 import { caretIndexAt, pointInTextPose } from './hitTest';
-import type { StyledRun } from './runs';
-import type { TextPaint, TextStyle } from './textStyle';
+import type { StyledRun } from '@weasel-js/text';
+import type { TextPaint, TextStyle } from '@weasel-js/text';
 import { useTextEdit, type UseTextEditReturn } from './useTextEdit';
 
 /** Shape the default projections expect `data` to satisfy. All fields

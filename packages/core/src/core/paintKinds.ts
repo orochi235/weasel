@@ -15,7 +15,7 @@
 
 import type {
   FillStyle, GradientFill, GradientKind, GradientUnits, GradStop, TilePatternSpec,
-} from './paint-types';
+} from '@weasel-js/paint';
 import { gradientForBounds } from './gradient';
 import { bumpNodeMemoGeneration } from './scene/nodeMemo';
 import type { ComponentType } from 'react';

@@ -26,7 +26,7 @@ import { makeUploadTracker, type UploadTracker } from './test-utils/vertexUpload
 import { WeaselRenderer } from './WeaselRenderer';
 import { _resetLayoutCacheForTests } from './cache/layoutCache';
 import type { DrawCommand } from './DrawCommand';
-import type { ResolvedRun } from 'features/text/runs/resolveRuns';
+import type { ResolvedRun } from '@weasel-js/text';
 
 let recorder: ReturnType<typeof makeGLRecorder>;
 let tracker: UploadTracker;

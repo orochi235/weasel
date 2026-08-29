@@ -1,7 +1,7 @@
 import type { ChromeState } from 'core/selection/chromeState';
 import type { DrawCommand } from '../renderer';
 import type { View } from 'core/viewport/view';
-import type { FillStyle, Stroke } from 'core/paint-types';
+import type { FillStyle, Stroke } from '@weasel-js/paint';
 
 /**
  * @experimental

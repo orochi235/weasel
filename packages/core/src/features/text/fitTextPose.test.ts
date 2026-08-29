@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { fitTextPose } from './fitTextPose';
-import { DEFAULT_TEXT_STYLE } from './textStyle';
-import type { TextPose } from './textLayer';
+import { DEFAULT_TEXT_STYLE } from '@weasel-js/text';
+import type { TextPose } from '@weasel-js/text';
 
 /** Stub ctx where each char is 10 wide. */
 function makeCtx(charWidth = 10): CanvasRenderingContext2D {

@@ -16,7 +16,7 @@
  * already matches `style` (use `fontString(style)`).
  */
 
-import type { ResolvedTextStyle } from './textStyle';
+import type { ResolvedTextStyle } from '../textStyle';
 
 /**
  * Advance width of `text` in world units, tracking included.

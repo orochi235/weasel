@@ -202,6 +202,14 @@ green. Write the naive version first and watch the guard test fail before fixing
 `undefined` for a non-batchable paint rather than hand-rolling a `flushSolids`, or draw
 ordering breaks.
 
+**`export * from '@weasel-js/<pkg>'` in core's barrel emits no binding in the
+bundle.** A star re-export of an *external* package survives typecheck and the
+unit suite, then fails at the consumer's bundler — `No matching export in
+core/dist/index.js` — because esbuild cannot see through the package boundary
+to enumerate the names. Re-export from another workspace package by name, the
+way core already does for `@weasel-js/font`. Only `npm run test:smoke:consumer`
+catches it.
+
 **The consumer smoke test cannot catch an undeclared dependency.** It packs every `@weasel-js`
 package into the tree, so a bare specifier resolves whether or not the importer declared it.
 `npm run check:manifests` is the check that works.

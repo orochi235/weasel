@@ -9,7 +9,7 @@
  * (300/500/900) are out of scope for slice 1.
  */
 
-import type { FillStyle, Stroke } from 'core/paint-types';
+import type { FillStyle, Stroke } from '@weasel-js/paint';
 import type { TextStyle } from './textStyle';
 
 /** A span of text with its own styling, as authored. Fields left absent

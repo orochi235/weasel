@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { measureText } from './measureText';
-import { DEFAULT_TEXT_STYLE } from './textStyle';
+import { DEFAULT_TEXT_STYLE } from '../textStyle';
 
 /** Stub ctx where each char is 10 wide. */
 function makeCtx(charWidth = 10): CanvasRenderingContext2D {

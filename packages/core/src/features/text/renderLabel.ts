@@ -1,10 +1,5 @@
-/** Pluggable text-painting strategy. The default fills white at `(x, y)`; markdown renderers replace this. */
-export type TextRenderer = (
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  x: number,
-  y: number,
-) => void;
+import type { TextRenderer } from '@weasel-js/text';
+
 
 /** Visual options for `renderLabel`. */
 export interface LabelOptions {

@@ -31,7 +31,7 @@
 
 import { MIXED } from 'core/mixed';
 import type { Mixed } from 'core/mixed';
-import type { StyledRun } from '../runs';
+import type { StyledRun } from '@weasel-js/text';
 
 export { MIXED };
 export type { Mixed };

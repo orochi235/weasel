@@ -11,11 +11,11 @@
  */
 
 import type { DrawCommand } from '../../renderer';
-import type { TextPaint, TextStyle } from './textStyle';
-import { resolveTextStyle } from './textStyle';
-import { resolveRuns } from './runs/resolveRuns';
-import type { StyledRun } from './runs';
-import type { TextVerticalAlign } from './verticalAlign';
+import type { TextPaint, TextStyle } from '@weasel-js/text';
+import { resolveTextStyle } from '@weasel-js/text';
+import { resolveRuns } from '@weasel-js/text';
+import type { StyledRun } from '@weasel-js/text';
+import type { TextVerticalAlign } from '@weasel-js/text';
 
 export function textCommandFromRuns(
   x: number,

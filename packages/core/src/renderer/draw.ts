@@ -1,7 +1,8 @@
-import type { Stroke, FillStyle, GradientUnits, Path } from '@weasel-js/core';
+import type { Stroke, FillStyle, GradientUnits } from '@weasel-js/paint';
+import type { Path } from '@weasel-js/core';
 import { getPaintKind } from 'core/paintKinds';
 import type { PaintBindContext } from 'core/paintKinds';
-import { resolveTextStyle } from '@weasel-js/core';
+import { resolveTextStyle } from '@weasel-js/text';
 import type {
   DrawCommand,
   GroupDrawCommand,
@@ -31,9 +32,9 @@ import {
 } from '@weasel-js/font';
 import {
   type LaidOutGroup, type LaidOutDecoration, type LaidOutOutlineGlyph,
-} from 'features/text/atlas/layoutRuns';
+} from '@weasel-js/text';
 import { cachedLayoutRuns } from './cache/layoutCache';
-import { verticalAlignOffset } from 'features/text/verticalAlign';
+import { verticalAlignOffset } from '@weasel-js/text';
 import type { Mesh } from './cache/mesh';
 import { outlineMesh } from './cache/outlineMeshCache';
 import { outlineStrokeMesh, quantizeEmWidth } from './cache/outlineStrokeMeshCache';

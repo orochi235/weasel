@@ -1,6 +1,10 @@
 /** Axis-aligned box as [minX, minY, maxX, maxY]. */
 export type Box = [number, number, number, number];
 
+/** An axis-aligned rectangle in object form. `Box` is the tuple form; this is
+ *  the one that survives being read by a human. */
+export interface Rect { x: number; y: number; width: number; height: number }
+
 /** Tight bounds of an interleaved coord stream, or null if empty. */
 export function boundsOfCoords(coords: ArrayLike<number>): Box | null {
   if (coords.length < 2) return null;

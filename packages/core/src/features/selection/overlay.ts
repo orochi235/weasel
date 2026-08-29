@@ -28,7 +28,7 @@ import { mat3, type Mat3 } from '../../renderer';
 import type { NodeId } from 'core/scene/types';
 import type { RenderLayer } from 'core/layers/render';
 import { unionBounds } from '../groups/unionBounds';
-import { alignedStrokeRect, type FillStyle, type Stroke } from 'core/paint-types';
+import { alignedStrokeRect, type FillStyle, type Stroke } from '@weasel-js/paint';
 import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import {
   rotationHandle,

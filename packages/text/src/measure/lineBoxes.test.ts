@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { textLineBoxes } from './lineBoxes';
-import type { TextPose } from './textLayer';
+import type { TextPose } from '../pose';
 
 // FIXTURE_FONT carries only 'A' and 'B' (and no space glyph — layout
 // synthesizes a 0.25 em advance for that), so every string here is spelled out

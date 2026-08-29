@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { findNodeShape, findShapeInk } from './NodeShape';
 import type { Node } from 'core/scene/types';
 import type { PathDrawCommand } from '../renderer';
-import type { FillStyle } from 'core/paint-types';
+import type { FillStyle } from '@weasel-js/paint';
 import { solid, strokeOf } from '../util/paint';
 
 const POSE = { x: 0, y: 0, width: 100, height: 50 };

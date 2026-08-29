@@ -6,12 +6,11 @@
  * fill rule (matches `pointInPath`).
  */
 
-import { pointInPolygon, segmentsCross } from '@weasel-js/geom';
+import { pointInPolygon, segmentsCross, type Rect } from '@weasel-js/geom';
 
 /** A 2D point or vector. */
 export interface Vec2 { x: number; y: number }
-/** An axis-aligned rectangle. */
-export interface Rect { x: number; y: number; width: number; height: number }
+export type { Rect };
 
 /** Flatten a Vec2 array into an interleaved [x0,y0,x1,y1,...] array. */
 function flattenVerts(poly: ReadonlyArray<Vec2>): number[] {

@@ -1,0 +1,49 @@
+{
+  "name": "@weasel-js/text",
+  "version": "1.2.0",
+  "description": "Typography for weasel: styled runs, style resolution, kerned glyph layout, wrap and measurement. No scene graph, no React.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "@weasel-js/font": "1.2.0",
+    "@weasel-js/geom": "1.2.0",
+    "@weasel-js/paint": "1.2.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "build": "tsup"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/text"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

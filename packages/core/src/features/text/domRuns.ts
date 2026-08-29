@@ -6,8 +6,8 @@
  * has `white-space: pre-wrap` so they render as line breaks.
  */
 
-import type { FillStyle } from 'core/paint-types';
-import type { StyledRun } from './runs';
+import type { FillStyle } from '@weasel-js/paint';
+import type { StyledRun } from '@weasel-js/text';
 
 function solidColor(p: FillStyle | undefined): string | null {
   if (!p) return null;

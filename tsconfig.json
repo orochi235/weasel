@@ -49,6 +49,8 @@
       "@weasel-js/geom/booleans": ["./packages/geom/src/booleans/index.ts"],
       "@weasel-js/geom/*": ["./packages/geom/src/*"],
       "@weasel-js/font": ["./packages/font/src/index.ts"],
+      "@weasel-js/text": ["./packages/text/src/index.ts"],
+      "@weasel-js/paint": ["./packages/paint/src/index.ts"],
       "@weasel-js/font/test-seams": ["./packages/font/src/test-seams.ts"],
       "@weasel-js/theme": ["./packages/theme/src/index.ts"],
       "@weasel-js/theme/react": ["./packages/theme/src/react.tsx"],
@@ -79,6 +81,6 @@
   // core silently breaks them otherwise. The Playwright suites under
   // tests/e2e, tests/perf and tests/visual drive the app over a wire and
   // don't.
-  "include": ["apps", "tests/bench", "packages/core/src", "packages/weasel-js/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/history/src", "packages/modes/src", "packages/gestures/src", "packages/d3/src", "packages/labkit/src", "packages/audio/src"],
+  "include": ["apps", "tests/bench", "packages/core/src", "packages/weasel-js/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/paint/src", "packages/text/src", "packages/history/src", "packages/modes/src", "packages/gestures/src", "packages/d3/src", "packages/labkit/src", "packages/audio/src"],
   "exclude": ["node_modules", "dist"]
 }

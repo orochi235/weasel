@@ -10,7 +10,7 @@
 
 import { type DrawCommand } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
-import { type Stroke } from 'core/paint-types';
+import { type Stroke } from '@weasel-js/paint';
 import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import { resolveUnit, type UnitSystem, type UnitValue } from 'core/units';
 import { meanScale } from 'core/viewport/meanScale';
