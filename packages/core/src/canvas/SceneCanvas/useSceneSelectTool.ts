@@ -29,7 +29,7 @@ import { snap as snapBehavior } from 'interactions/gestures/shared/snap';
 import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
 import { translateRectPose, type RectPose } from 'features/groups/composePose';
 import { aabbOfPose, isPathLike, poseContainsRotated } from './poseGeometry';
-import { shapeCoversPoint } from 'canvas/NodeShape';
+import { shapeCoversPoint, findShapeInk } from 'canvas/NodeShape';
 import { hiddenLayerIds } from 'canvas/deps/hitTestArea';
 import { meanScale } from 'core/viewport/meanScale';
 
@@ -229,7 +229,11 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       }
       // Screen-pixel slop → world units, so the grab zone around an outline
       // stays the same apparent thickness at any zoom.
-      const tolerance = pickTolerancePx / meanScale(getView?.()?.scale ?? { x: 1, y: 1 });
+      // `scale` also resolves a stroke's `{px}` width into world units; without
+      // it a pixel width is read as a world width and the reach is wrong at
+      // every zoom but 1.
+      const scale = meanScale(getView?.()?.scale ?? { x: 1, y: 1 });
+      const tolerance = pickTolerancePx / scale;
       const out: string[] = [];
       const hidden = hiddenLayerIds(scene.layers);
       for (const n of scene.renderOrderNodes()) {
@@ -239,15 +243,18 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
         // Through the adapter, not `n.pose`: an ephemeral override is the pose
         // the renderer draws, so it has to be the one picking tests.
         const pose = adapter.getPose(n.id);
-        // The pose rect is the pre-filter — grown by the tolerance, because a
-        // shape's outline (and the slop around it) reaches outside its own
-        // bounds, and an un-grown pre-filter would reject those hits before
-        // the refinement ever ran.
-        if (!poseContainsRotated(pose, wx, wy, tolerance)) continue;
+        // The pre-filter has to be at least as generous as the refinement that
+        // follows it, or it rejects points the refinement would have claimed.
+        // A stroke reaches past the pose box by `outset` — a whole stroke
+        // width for an outer align — on top of the pointer slop.
+        const outset = shapePicking
+          ? (findShapeInk(n, pose, { scale })?.outset ?? 0)
+          : 0;
+        if (!poseContainsRotated(pose, wx, wy, tolerance + outset)) continue;
         // `shapeCoversPoint` narrows the rect to the ink the painter actually
         // lays down (and answers `true` for painters that have no silhouette,
         // so nothing becomes unpickable).
-        if (shapePicking && !shapeCoversPoint(n, pose, wx, wy, { tolerance })) continue;
+        if (shapePicking && !shapeCoversPoint(n, pose, wx, wy, { tolerance, scale })) continue;
         // A container clips its subtree and the renderer honors it, so a child
         // outside the clip is unpainted — and must not be pickable either.
         if (!passesAncestorClips(scene, n, wx, wy)) continue;

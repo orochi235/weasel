@@ -52,9 +52,9 @@ export function poseContains<TPose>(
     return strokeHitTest(pose, wx, wy, tolerance ?? DEFAULT_PATH_STROKE_SLOP);
   }
   const b = aabbOfPose(pose);
-  // The pre-filter has to be at least as generous as the refinement that
-  // follows it, or a hit on a shape's outline is rejected before the outline
-  // is ever consulted.
+  // `tolerance` is the caller's whole budget for being at least as generous
+  // as whatever refinement follows: pointer slop AND the stroke's outward
+  // reach, which this function cannot see.
   const t = tolerance ?? 0;
   return wx >= b.x - t && wx <= b.x + b.width + t
       && wy >= b.y - t && wy <= b.y + b.height + t;

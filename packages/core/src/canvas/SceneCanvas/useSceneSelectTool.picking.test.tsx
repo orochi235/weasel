@@ -16,7 +16,7 @@ import { asNodeId } from 'core/scene/types';
 import { useSceneSelectTool } from './useSceneSelectTool';
 import { rectPath } from 'features/paths/builder';
 
-interface Item { shape?: string; fill?: string; color?: string }
+interface Item { shape?: string; fill?: string; color?: string; stroke?: unknown }
 type Pose = { x: number; y: number; width: number; height: number };
 
 const NODES: UseSceneOptions<Item, 'default', Pose>['initial'] = [
@@ -192,5 +192,41 @@ describe('useSceneSelectTool — ancestor clips', () => {
     // box, so passing documents a clip pass rather than a bare AABB pass.
     const r = clipHarness([-20, -20, 40, 40], { x: -5, y: -5, width: 10, height: 10 });
     expect(r.current.pickEvery(0, 0)).toContain('inner');
+  });
+});
+
+describe('useSceneSelectTool — stroke reach', () => {
+  // `shapeCoversPoint` grants a grab out to the stroke's outer reach, and the
+  // AABB pre-filter that runs first grew only by `tolerance` — so half a thick
+  // outer stroke's ink was unclickable, and the refinement never saw the point.
+  function strokedHarness(scale = 1) {
+    const { result } = renderHook(() => {
+      const scene = useScene<Item, 'default', Pose>({
+        systemLayers: [{ id: 'default' }],
+        initial: [{
+          id: asNodeId('boxed'),
+          kind: 'leaf',
+          layer: 'default',
+          pose: { x: 0, y: 0, width: 100, height: 100 },
+          data: { shape: 'rect', stroke: { width: 20, align: 'outer', paint: '#000' } },
+        }],
+      });
+      const selection = useSelection({ mode: 'single' });
+      return useSceneSelectTool({
+        scene,
+        selection,
+        getView: () => ({ x: 0, y: 0, scale: { x: scale, y: scale } }),
+      });
+    });
+    return result;
+  }
+
+  it('picks a point inside a thick outer stroke, outside the pose box', () => {
+    // The stroke reaches 20 world units past the edge; -10 is in its ink.
+    expect(strokedHarness().current.pickEvery(-10, 50)).toContain('boxed');
+  });
+
+  it('still rejects a point past the stroke', () => {
+    expect(strokedHarness().current.pickEvery(-40, 50)).not.toContain('boxed');
   });
 });
