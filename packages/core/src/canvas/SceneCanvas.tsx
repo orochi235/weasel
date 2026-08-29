@@ -30,7 +30,8 @@ import { subscribeGlyphReady } from '@weasel-js/font';
 import { defaultDrawOne } from './defaultDrawOne';
 import type { FillStyle } from 'core/paint-types';
 import { Canvas } from './Canvas';
-import type { CanvasProps, LayersMap, CanvasSelectionMode, SelectionOverlaySlotConfig } from './Canvas';
+import type { CanvasProps, LayersMap, CanvasSelectionMode, SceneSlotConfig, SelectionOverlaySlotConfig } from './Canvas';
+import { withDerivedPaths } from './derivedPath';
 import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';
 import type { Animator } from '../animation/types';
 import { useAnimator } from '../animation/useAnimator';
@@ -209,6 +210,27 @@ function recordCoordTrace(entry: CoordTraceEntry): void {
 }
 
 export { defaultDrawOne } from './defaultDrawOne';
+
+/**
+ * Fold the two things `<Canvas>` cannot know into the scene slot: each node's
+ * per-node override alpha, and its derived path. Both need the `Scene`, which
+ * `<Canvas>` never sees; `buildSceneViewCommands` does the same for the
+ * headless walk.
+ */
+export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
+  slot: SceneSlotConfig<Node<TData, TLayer, TPose>, TPose>,
+  scene: Scene<TData, TLayer, TPose>,
+  alphaFor?: (id: string) => number,
+): SceneSlotConfig<Node<TData, TLayer, TPose>, TPose> {
+  const overrideAlphaFor = (id: string) => scene.overrides.get(id as NodeId)?.alpha ?? 1;
+  return {
+    ...slot,
+    drawOne: withDerivedPaths(scene, slot.drawOne),
+    alphaFor: alphaFor
+      ? (id: string) => alphaFor(id) * overrideAlphaFor(id)
+      : overrideAlphaFor,
+  };
+}
 
 /** Deep-merge user-supplied `layers` with kit defaults. Slots the user
  *  doesn't mention get filled with defaults; slots explicitly set to
@@ -1791,22 +1813,15 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     });
   }, [mergedLayers.selectionOverlay, getSuppressedSelectionIds]);
 
-  // When alphaFor is supplied — or any node carries an override alpha — patch
-  // a composed multiplier into the scene slot config so buildSceneLayer
-  // (called inside Canvas) wraps per-node commands with it. Canvas has no
-  // scene, so the override half has to be folded in here.
-  const overrideAlphaFor = useCallback(
-    (id: string) => scene.overrides.get(id as never)?.alpha ?? 1,
-    [scene],
-  );
   const sceneSlotWithAlpha = useMemo(() => {
     const slot = mergedLayers.scene;
     if (!slot || 'layer' in slot) return slot; // null or CustomLayerEntry — leave alone
-    const composed = alphaFor
-      ? (id: string) => alphaFor(id) * overrideAlphaFor(id)
-      : overrideAlphaFor;
-    return { ...slot, alphaFor: composed };
-  }, [mergedLayers.scene, alphaFor, overrideAlphaFor]);
+    return wireSceneSlotToScene(
+      slot as SceneSlotConfig<Node<TData, TLayer, TPose>, TPose>,
+      scene,
+      alphaFor,
+    );
+  }, [mergedLayers.scene, alphaFor, scene]);
 
   const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => ({
     ...mergedLayers,

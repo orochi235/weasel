@@ -62,6 +62,10 @@ export interface NodePaintCtx {
    *  paints the deterministic grey placeholder outline (never the ambient
    *  load-status error variant). */
   resolveImage?: (node: Node<unknown, string, unknown>) => ImageBitmap | undefined;
+  /** The node's derived path, resolved by the scene-aware `drawOne` wrapper
+   *  before painting: `paint` has no scene handle, and deriving needs the
+   *  dependencies' poses. `null` for a node that derives from nothing. */
+  derivedPath?: Path | null;
 }
 
 /** A painter for one kind of node: which nodes it claims, and the draw
@@ -678,6 +682,29 @@ const IMAGE_PAINTER: NodeShapeEntry = {
   },
 };
 
+/** Built-in painter for nodes whose geometry is computed from other nodes'
+ *  poses. The path itself arrives on the paint context — see
+ *  {@link NodePaintCtx.derivedPath}. Fill and stroke follow `kit:path`. */
+const DERIVED_PAINTER: NodeShapeEntry = {
+  id: 'kit:derived',
+  matches: (node) => (node.dependsOn?.length ?? 0) > 0,
+  paint: (node, pose, ctx) => {
+    const path = ctx?.derivedPath;
+    if (path == null) return [];
+    const d = node.data as { fill?: FillStyle | null; stroke?: Stroke | null } | null;
+    const strokeSpec = resolveNodeStroke(d?.stroke);
+    const declared = resolveNodeFill(d?.fill, strokeSpec === null ? DEFAULT_SHAPE_FILL : null);
+    const fill = declared && resolveFillPattern(fillInPoseFrame(declared, pose as RectPose));
+    const stroke = strokeSpec && strokeInPoseFrame(strokeSpec, pose as RectPose);
+    return [{
+      kind: 'path',
+      path,
+      ...(fill ? { fill } : {}),
+      ...(stroke ? { stroke } : {}),
+    }];
+  },
+};
+
 const RECT_FALLBACK_PAINTER: NodeShapeEntry = {
   // Last-resort painter — always matches, so it must be registered last
   // within `'normal'`. Consumers who want a different fallback should
@@ -706,6 +733,7 @@ function registerBuiltInShapePainters(): void {
   registerNodeShape(PATH_PAINTER);
   registerNodeShape(SHAPE_PAINTER);
   registerNodeShape(IMAGE_PAINTER);
+  registerNodeShape(DERIVED_PAINTER);
   registerNodeShape(RECT_FALLBACK_PAINTER);
 }
 

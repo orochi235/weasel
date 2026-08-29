@@ -183,7 +183,7 @@ describe('defaultDrawOne', () => {
   it('threads NodePaintCtx to the painter (image resolver)', () => {
     const bmp = { width: 2, height: 2, close() {} } as unknown as ImageBitmap;
     const n = node({ image: { src: 'x' } });
-    const cmds = defaultDrawOne(n, POSE, { resolveImage: () => bmp });
+    const cmds = defaultDrawOne(n, POSE, undefined, { resolveImage: () => bmp });
     expect(cmds[0]).toMatchObject({ kind: 'image', image: bmp });
   });
 });

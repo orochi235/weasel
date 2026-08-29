@@ -43,6 +43,7 @@ import type { ToolCtx } from 'tools/types';
 import type { Op } from 'core/ops/types';
 import { dispatchApplyBatch } from 'core/applyOps';
 import type { View } from 'core/viewport/view';
+import type { NodePaintCtx } from './NodeShape';
 import { clampView } from 'core/viewport/clampView';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
 import {
@@ -117,8 +118,10 @@ export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
   objects?: TNode[];
   /** Project an object to its committed pose. Defaults to `adapter.getPose(obj.id)`. */
   toPose?: (obj: TNode) => TPose;
-  /** Draw a single object as a `DrawCommand` tree. */
-  drawOne: (obj: TNode, pose: TPose, view: View) => DrawCommand[];
+  /** Draw a single object as a `DrawCommand` tree. `ctx` carries what only a
+   *  scene-aware caller can supply (a node's derived path); `<SceneCanvas>`
+   *  fills it in, bare `<Canvas>` never does. */
+  drawOne: (obj: TNode, pose: TPose, view: View, ctx?: NodePaintCtx) => DrawCommand[];
   /** Default ghost alpha for the move-overlay slot. Default 0.85. */
   ghostAlpha?: number;
   /**

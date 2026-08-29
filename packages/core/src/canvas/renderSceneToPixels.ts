@@ -74,9 +74,10 @@ export interface RenderSceneToPixelsArgs<TData, TLayer extends string, TPose> {
   /** Output pixels per scene unit, per axis. Anisotropic values supported. */
   scale: { x: number; y: number };
   /** Per-node draw callback. Default: `defaultDrawOne` with `resolveImage`
-   *  threaded as its `NodePaintCtx`. Custom `drawOne` callers that still
-   *  want resolver injection should call `defaultDrawOne(node, pose, ctx)`
-   *  themselves. */
+   *  merged into the `NodePaintCtx` the scene walk supplies. Custom `drawOne`
+   *  callers that still want resolver injection should call
+   *  `defaultDrawOne(node, pose, view, { ...ctx, resolveImage })` themselves —
+   *  dropping the walk's `ctx` drops derived geometry with it. */
   drawOne?: SceneViewDrawOne<TData, TLayer, TPose>;
   /** Bitmap resolver for image nodes — lets consumers reuse their own decode
    *  caches. `undefined` results paint the deterministic grey placeholder
@@ -139,7 +140,7 @@ export function planPixelRender<TData, TLayer extends string, TPose>(
 
   const resolveImage = args.resolveImage as ((n: Node<unknown, string, unknown>) => ImageBitmap | undefined) | undefined;
   const drawOne: SceneViewDrawOne<TData, TLayer, TPose> =
-    args.drawOne ?? ((node, pose) => defaultDrawOne(node, pose, { resolveImage }));
+    args.drawOne ?? ((node, pose, view, ctx) => defaultDrawOne(node, pose, view, { ...ctx, resolveImage }));
 
   const commands: DrawCommand[] = [];
   if (args.background !== undefined) {
