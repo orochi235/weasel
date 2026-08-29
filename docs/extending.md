@@ -284,10 +284,13 @@ reads `node.data` casts. Naming `TData` and `TLayer` there would put them in a
 contravariant position and make `Scene` invariant in both.
 
 **Serialization carries a registry key, never the function.** `SceneRegistry`
-does for `derivePath` what it already does for `clipFromPose`: `toJSON` looks the
-function up in `registry.derivePath` and writes `derivePathKey`, throwing if it has no
-key, and `sceneFromJSON` resolves the key back. A key missing from the registry
-restores the node without its derived geometry and warns.
+does for `derivePath` what it already does for `clipFromPose`: `toJSON` looks
+the function up in `registry.derivePath` and writes `derivePathKey`, throwing if
+it has no key, and `sceneFromJSON` resolves the key back — **throwing** on a key
+the registry does not hold, so a document never loads half-derived. Replaying a
+persisted *history* is the lenient path: `kit:add` warns and restores the node
+without its `derivePath`, keeping `dependsOn`, so it paints its authored
+appearance rather than vanishing.
 
 **Invalidation is pushed by the scene, not pulled by comparison.** A pose
 override mutates its buffer in place rather than replacing the reference —

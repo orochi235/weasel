@@ -348,7 +348,12 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
    *  every node deriving from any of those, then those nodes' subtrees in turn.
    *  A dependent is not a descendant, so the second pass is a separate
    *  reachability walk; `ids` grows as it runs, which is what carries the
-   *  cascade transitively and upward through a dependent's own ancestors. */
+   *  cascade transitively and upward through a dependent's own ancestors.
+   *
+   *  `coveredByEmitted` in `interactions/actions/defaults/delete.ts` computes
+   *  this same closure from the other end, walking up from each candidate,
+   *  because no public surface exposes the reverse `dependsOn` index. A third
+   *  cascade relation has to be added to both or they silently disagree. */
   function removalClosure(rootIds: readonly NodeId[]): {
     ids: NodeId[];
     removing: Set<NodeId>;

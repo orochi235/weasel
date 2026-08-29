@@ -48,7 +48,7 @@ for diagrams of tens to hundreds of edges, wrong for a 10k-edge force graph. The
 
 The engine cannot express a node whose geometry depends on another node.
 `NodeShapeEntry.paint(node, pose, ctx)` receives no scene handle
-(`packages/core/src/canvas/NodeShape.ts:96`), so an edge cannot be written as a painter.
+(`packages/core/src/canvas/NodeShape.ts:110`), so an edge cannot be written as a painter.
 
 Add to `Node`:
 
@@ -57,12 +57,16 @@ dependsOn?: NodeId[]
 derivePath?: (node, deps: PoseLookup) => Path   // registered by key in SceneRegistry
 ```
 
-A resolve pass runs once per frame ahead of paint. `nodeMemo`'s key extends to include the
-resolved dependency poses, so a cached derived path invalidates when an endpoint moves.
+Resolution happens inside the paint walk, in the wrapper that already has the scene in scope,
+and the resolved path reaches the painter on `NodePaintCtx`. Invalidation is **pushed**: the
+scene keeps a reverse dependency index and drops a dependent's pose-keyed memo slot wherever a
+dependency's pose can change. `nodeMemo`'s key is unchanged — value-comparing the resolved
+dependency poses would close the same hole by pulling, and is deferred as a follow-up rather
+than shipped.
 
-This follows `ContainerNode.clipFromPose` (`core/src/core/scene/types.ts:103`), already a
+This follows `ContainerNode.clipFromPose` (`core/src/core/scene/types.ts:169`), already a
 function-field on a node, re-evaluated each render, serialized by `SceneRegistry` key
-(`types.ts:211`). The difference is the dependency list.
+(`types.ts:242`). The difference is the dependency list.
 
 It belongs in `core`, not in the plugin, because it is not an edge feature. Edge labels,
 leader lines, callouts, dimension annotations, brackets, and a frame that hugs its contents are
@@ -74,10 +78,6 @@ creation and never re-derived when its children move
 is derived *path*. Adjacent seams, not the same one, and derived pose reaches much further,
 because pose feeds bounds, which feeds hit-testing, selection chrome, snapping and layout. It is
 arc 1b below.
-
-So derived path has no consumer outside this plugin, and the case for putting it in `core` rather
-than in the plugin is thinner than "it also fixes an existing defect" made it. It still stands on
-the list above.
 
 **New scene rule: deleting a node invalidates its dependents.** Deleting a `DiagramNode`
 removes its edges in the same undo entry. The scene has never needed cascade integrity before;

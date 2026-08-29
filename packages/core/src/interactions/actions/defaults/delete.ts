@@ -69,7 +69,7 @@ function coveredByEmitted(
  * Which ids survive the filter depends on their order, so the ops are a cover
  * of the selection rather than its minimal set of roots. Each op re-inserts
  * only its own node on undo; cascaded nodes are restored only on the scene's
- * own `kit:remove` path — see the note on `deleteAction`.
+ * own `kit:remove` path — see `deleteAction` below.
  *
  * Shared with `clipboardCutAction` — cut is copy plus exactly this.
  */
@@ -99,6 +99,11 @@ export function buildDeleteOps(
  * @experimental
  * Static descriptor for the `delete` Action. Removes every selected
  * node from the scene as a single batched op (one undo entry).
+ *
+ * **Undo does not restore what the removal cascaded.** Each op captures one
+ * node and re-inserts only that node, so a container's children and a deleted
+ * node's dependents are gone after the undo that brings the node back. Tracked
+ * in `docs/TODO.md` under "Derived geometry follow-ups".
  */
 export const deleteAction: Action & { requires: string[] } = {
   id: 'delete',

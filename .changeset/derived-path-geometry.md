@@ -10,8 +10,11 @@ rather than it being authored. An edge drawn between two boxes is then an
 ordinary scene node — selectable, styleable, exportable — whose geometry never
 enters undo history. The seam and its traps are in `docs/extending.md`.
 
-New surface: `scene.removeMany(ids)`, `NodeBase.dependsOn` / `NodeBase.derivePath`,
-`SceneRegistry.derivePath`, `SerializedNode.derivePathKey`, `NodePaintCtx.derivedPath`.
+New surface: `scene.removeMany(ids)`; `dependsOn` and `derivePath` on
+`NodeBase` and on `AddNodeSpec`, which is what a consumer writes;
+`SceneRegistry.derivePath`; `SerializedNode.dependsOn` and
+`SerializedNode.derivePathKey`, both additions to the serialization format;
+`NodePaintCtx.derivedPath`.
 
 Deleting a node now deletes everything that derives from it, transitively,
 including those nodes' own subtrees, in one undo entry — so `scene.remove` can
@@ -20,12 +23,16 @@ reaches nodes on other layers. Undo after the built-in **Delete** key does not
 yet restore the cascaded nodes; see "Derived geometry follow-ups" in
 `docs/TODO.md`.
 
-**Breaking: `defaultDrawOne`, `SceneViewDrawOne` and `SceneSlotConfig.drawOne`
-take `(node, pose, view, ctx?)`.** The paint context moves to a fourth
-parameter, so a three-argument call is now a type error. It fixes a latent bug:
-the scene walk was passing a `View` into a parameter typed `NodePaintCtx`, which
-compiled only because every `NodePaintCtx` field is optional — leaving
-`resolveImage` silently `undefined` on both the live and headless walks.
+**Breaking: `defaultDrawOne` takes `(node, pose, view?, ctx?)`.** The paint
+context moves to a fourth parameter, so a call passing a `NodePaintCtx` third is
+now a type error rather than a silent slide into the `view` slot. The same
+fourth parameter is added to the `SceneViewDrawOne` and `SceneSlotConfig.drawOne`
+callback types, which is not a break: an existing three-parameter implementation
+still satisfies them, and an existing three-argument call still compiles.
+
+**Breaking: `Scene` gained a required `removeMany`.** A hand-written object
+typed as a `Scene` — a test double, most likely — no longer typechecks until it
+implements it.
 
 **Breaking: `kit:remove`'s op payload changed shape.** `rootId` / `parent` /
 `index` became `detached: { id, parent, index }[]`, because a cascaded dependent

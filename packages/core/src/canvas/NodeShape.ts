@@ -66,7 +66,9 @@ export interface NodePaintCtx {
   resolveImage?: (node: Node<unknown, string, unknown>) => ImageBitmap | undefined;
   /** The node's derived path, resolved by the scene-aware `drawOne` wrapper
    *  before painting: `paint` has no scene handle, and deriving needs the
-   *  dependencies' poses. `null` for a node that derives from nothing. */
+   *  dependencies' poses. **Absent** for a node that derives from nothing —
+   *  the wrapper hands such a node the caller's own ctx untouched. `null`
+   *  means the node derives but has nothing to draw. */
   derivedPath?: Path | null;
 }
 
