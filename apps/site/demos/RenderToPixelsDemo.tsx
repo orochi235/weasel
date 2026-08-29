@@ -39,7 +39,7 @@ interface Pose { x: number; y: number; width: number; height: number; rotation?:
 // multiplier is unmistakable against the white background.
 const ALPHA_FOR = (id: string): number => (id === 'dimmed' ? 0.25 : 1);
 
-const drawOne: SceneViewDrawOne<NodeData, LayerId, Pose> = (node, pose) => {
+const drawOne: SceneViewDrawOne<NodeData, LayerId, Pose> = (node, pose, view, ctx) => {
   const d = node.data;
   if (d.text != null) {
     return [textCommand(
@@ -47,7 +47,7 @@ const drawOne: SceneViewDrawOne<NodeData, LayerId, Pose> = (node, pose) => {
       { fill: d.fill },
     )];
   }
-  return defaultDrawOne(node, pose);
+  return defaultDrawOne(node, pose, view, ctx);
 };
 
 export function RenderToPixelsDemo() {

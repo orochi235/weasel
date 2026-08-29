@@ -24,6 +24,7 @@
  * overlay since their content already shows.
  */
 import type { Node } from 'core/scene/types';
+import type { View } from 'core/viewport/view';
 import type { DrawCommand } from '../renderer';
 import { textCommandFromRuns } from 'features/text/textCommand';
 import { findNodeShape, type NodePaintCtx } from './NodeShape';
@@ -34,6 +35,7 @@ import { findNodeShape, type NodePaintCtx } from './NodeShape';
 export function defaultDrawOne<TData, TLayer extends string, TPose>(
   node: Node<TData, TLayer, TPose>,
   pose: TPose,
+  _view?: View,
   ctx?: NodePaintCtx,
 ): DrawCommand[] {
   const painter = findNodeShape(node);

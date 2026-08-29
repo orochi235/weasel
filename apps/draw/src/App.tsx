@@ -965,9 +965,9 @@ function Toolbar({
         }}
         onNew={(size) => {
           setPaperSize(size);
-          // Wipe everything — `scene.batch` keeps it undoable.
+          // The batch is what names the entry and captures the prior selection.
           scene.batch('New document', () => {
-            for (const id of [...scene.renderOrder()]) scene.remove(id);
+            scene.removeMany([...scene.renderOrder()]);
           });
         }}
         gridVisible={gridVisible}
@@ -1503,7 +1503,7 @@ function EditorWithSharedScene({
       id: 'loupe-scene',
       label: 'Loupe scene',
       space: 'screen',
-      draw: (_data, v) => buildSceneViewCommands(scene, v, (node, pose) => defaultDrawOne(node, pose)),
+      draw: (_data, v) => buildSceneViewCommands(scene, v, defaultDrawOne),
     },
   ], [paperLayer, scene]);
 

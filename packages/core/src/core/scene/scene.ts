@@ -2,6 +2,8 @@ import { createHistory, type HistorySelection, type Journal, type SerializedHist
 import type { Op } from 'core/ops/types';
 import { rebuildOp as rebuildGlobalOp } from 'core/ops/registry';
 import { dwarn } from 'debug/flag';
+import { createDependentsIndex } from './dependents';
+import { dropPoseKeyedMemoSlots } from './nodeMemo';
 import { createPoseOverrides } from './poseOverrides';
 import {
   asNodeId,
@@ -63,6 +65,12 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       reverseClipFromPose.set(fn, key);
     }
   }
+  const reverseDerivePath = new Map<NonNullable<Node<TData, TLayer, TPose>['derivePath']>, string>();
+  if (registry.derivePath) {
+    for (const [key, fn] of Object.entries(registry.derivePath)) {
+      reverseDerivePath.set(fn, key);
+    }
+  }
 
   /**
    * Side-channel cache of `clipFromPose` functions keyed by node id.
@@ -82,6 +90,29 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
    * from `state.nodes` AND unreachable via any remaining undo/redo log entry.
    */
   const pendingClipPatches = new Map<NodeId, NonNullable<ContainerNode<TData, TLayer, TPose>['clipFromPose']>>();
+
+  /** The same side-channel as `pendingClipPatches`, for `derivePath`. Pruned by
+   *  the same `onEvict` scan; see that comment for the invariant. */
+  const pendingDerivePathPatches = new Map<NodeId, NonNullable<Node<TData, TLayer, TPose>['derivePath']>>();
+
+  /** Maintained from `kit:add` / `kit:remove` — the only two places a node is
+   *  created or destroyed, and unlike `add`/`remove` they replay on undo/redo. */
+  const dependents = createDependentsIndex();
+
+  /** Walks `id`'s whole subtree. Not required while `Scene` stores absolute
+   *  poses and the render walks compose nothing; it is here so `derivePath`'s
+   *  world-pose contract still holds if they ever do. */
+  function invalidateDependents(id: NodeId): void {
+    if (dependents.isEmpty()) return;
+    const subtree: NodeId[] = [id];
+    descendants(id, subtree);
+    for (const src of subtree) {
+      for (const dep of dependents.transitiveDependentsOf(src)) {
+        const node = state.nodes.get(dep);
+        if (node !== undefined) dropPoseKeyedMemoSlots(node);
+      }
+    }
+  }
 
   for (let i = 0; i < options.systemLayers.length; i++) {
     const spec = options.systemLayers[i];
@@ -146,7 +177,10 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   /** Ephemeral per-node overrides. Deliberately not part of `state`, for the
    *  same reason `selection` isn't: not document content, never reaches
    *  `toJSON`, and never touches history. */
-  const overrides = createPoseOverrides<TPose>((id) => state.nodes.get(id));
+  const overrides = createPoseOverrides<TPose>(
+    (id) => state.nodes.get(id),
+    invalidateDependents,
+  );
 
   // wrappers close over their payloads). Eviction (branch-edit redo-clears
   // + historyLimit overflow) drives pendingClipPatches pruning via onEvict.
@@ -207,20 +241,21 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   }
 
   /**
-   * Prune `pendingClipPatches` entries for nodes referenced only by ops in
-   * entries that just became permanently unreachable (redo entries dropped
-   * by a branch edit, or undo entries evicted by `historyLimit`) — wired to
-   * the engine's `onEvict`. An entry is safe to drop when the node is absent
-   * from `state.nodes`: its only path back into the scene was through these
-   * now-unreachable ops.
+   * Prune `pendingClipPatches` / `pendingDerivePathPatches` entries for nodes
+   * referenced only by ops in entries that just became permanently unreachable
+   * (redo entries dropped by a branch edit, or undo entries evicted by
+   * `historyLimit`) — wired to the engine's `onEvict`. An entry is safe to drop
+   * when the node is absent from `state.nodes`: its only path back into the
+   * scene was through these now-unreachable ops.
    */
   function pruneCacheForDroppedOps(ops: readonly Op[]): void {
-    if (pendingClipPatches.size === 0) return;
+    if (pendingClipPatches.size === 0 && pendingDerivePathPatches.size === 0) return;
     for (const op of ops) {
       if (op.name !== 'kit:add') continue;
       const id = (op.args as { id?: NodeId } | null)?.id;
-      if (id && !state.nodes.has(id) && pendingClipPatches.has(id)) {
+      if (id && !state.nodes.has(id)) {
         pendingClipPatches.delete(id);
+        pendingDerivePathPatches.delete(id);
       }
     }
   }
@@ -309,18 +344,70 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     }
   }
 
+  /** Everything removing `rootIds` takes with it: each root's subtree, then
+   *  every node deriving from any of those, then those nodes' subtrees in turn.
+   *  A dependent is not a descendant, so the second pass is a separate
+   *  reachability walk; `ids` grows as it runs, which is what carries the
+   *  cascade transitively and upward through a dependent's own ancestors.
+   *
+   *  `coveredByEmitted` in `interactions/actions/defaults/delete.ts` computes
+   *  this same closure from the other end, walking up from each candidate,
+   *  because no public surface exposes the reverse `dependsOn` index. A third
+   *  cascade relation has to be added to both or they silently disagree. */
+  function removalClosure(rootIds: readonly NodeId[]): {
+    ids: NodeId[];
+    removing: Set<NodeId>;
+  } {
+    const ids: NodeId[] = [];
+    const removing = new Set<NodeId>();
+    function take(id: NodeId): void {
+      if (removing.has(id)) return;
+      removing.add(id);
+      ids.push(id);
+      const sub: NodeId[] = [];
+      descendants(id, sub);
+      for (const s of sub) {
+        if (removing.has(s)) continue;
+        removing.add(s);
+        ids.push(s);
+      }
+    }
+    for (const root of rootIds) take(root);
+    for (let i = 0; i < ids.length; i++) {
+      for (const dep of dependents.transitiveDependentsOf(ids[i])) take(dep);
+    }
+    return { ids, removing };
+  }
+
   /** Post-patch `clipFromPose` onto a container node after its `kit:add` op
    *  runs. The function cannot travel through the serializable op payload, so
-   *  we attach it directly to the live node here. Also caches the function in
-   *  `pendingClipPatches` so the `kit:add` redo path can re-attach it.
+   *  we attach it directly to the live node here. `cacheForRedo` also keeps the
+   *  reference in `pendingClipPatches`, which is where the `kit:add` redo path
+   *  reads it from — redo replays the op without a spec.
    *  No-op for leaves or when the spec has no `clipFromPose`. */
-  function patchClipFromPose(spec: AddNodeSpec<TData, TLayer, TPose>, id: NodeId): void {
+  function patchClipFromPose(
+    spec: AddNodeSpec<TData, TLayer, TPose>,
+    id: NodeId,
+    { cacheForRedo }: { cacheForRedo: boolean },
+  ): void {
     if (spec.kind === 'container' && spec.clipFromPose !== undefined) {
       (state.nodes.get(id) as ContainerNode<TData, TLayer, TPose>).clipFromPose = spec.clipFromPose;
-      // Cache for redo: kit:add apply doesn't have access to the spec, so we
-      // keep the function reference here and re-attach it after redo replays.
-      pendingClipPatches.set(id, spec.clipFromPose as NonNullable<ContainerNode<TData, TLayer, TPose>['clipFromPose']>);
+      if (cacheForRedo) {
+        pendingClipPatches.set(id, spec.clipFromPose as NonNullable<ContainerNode<TData, TLayer, TPose>['clipFromPose']>);
+      }
     }
+  }
+
+  /** `patchClipFromPose` for `derivePath`, on nodes of any kind. `dependsOn` is
+   *  plain data and rides the `kit:add` payload instead. */
+  function patchDerivePath(
+    spec: AddNodeSpec<TData, TLayer, TPose>,
+    id: NodeId,
+    { cacheForRedo }: { cacheForRedo: boolean },
+  ): void {
+    if (spec.derivePath === undefined) return;
+    state.nodes.get(id)!.derivePath = spec.derivePath;
+    if (cacheForRedo) pendingDerivePathPatches.set(id, spec.derivePath);
   }
 
   // ── Internal kit op kinds ──────────────────────────────────────────────
@@ -333,6 +420,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   registerKitOp<{
     id: NodeId; kind: 'leaf' | 'container'; layer: TLayer; pose: TPose; data: TData;
     parent: NodeId | null; index: number; clipKey?: string;
+    dependsOn?: readonly NodeId[]; derivePathKey?: string;
   }>('kit:add', {
     apply: (p) => {
       if (state.nodes.has(p.id)) {
@@ -364,42 +452,78 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
           }
         }
       }
+      if (p.dependsOn !== undefined) node.dependsOn = p.dependsOn;
+      dependents.add(p.id, p.dependsOn ?? []);
+      // Same redo/restore pair as clipFromPose above, minus the container guard.
+      const cachedDerivePath = pendingDerivePathPatches.get(p.id);
+      if (cachedDerivePath) {
+        node.derivePath = cachedDerivePath;
+      } else if (p.derivePathKey !== undefined) {
+        const fn = registry.derivePath?.[p.derivePathKey];
+        if (fn) {
+          node.derivePath = fn;
+          pendingDerivePathPatches.set(p.id, fn);
+        } else {
+          dwarn('scene', `kit:add: derivePathKey "${p.derivePathKey}" not in this scene's registry — node "${p.id}" restored without derived geometry. Register a function with this key in the registry option to restore it.`);
+        }
+      }
+      invalidateDependents(p.id);
     },
     revert: (p) => {
       detach(p.id);
       state.nodes.delete(p.id);
+      dependents.remove(p.id);
+      invalidateDependents(p.id);
       // Note: we intentionally do NOT delete the pendingClipPatches entry —
       // redo will re-apply the node and re-attach clipFromPose from it.
     },
   });
 
-  // Remove captures a snapshot of the subtree so revert can restore it exactly.
+  /**
+   * Snapshot of every node a removal deletes, so revert restores it exactly.
+   *
+   * A cascade unlinks several disjoint subtrees, not one, so `detached` names
+   * each node the tree has to re-link; everything else in `nodes` has a parent
+   * that is also going and rides back in that parent's cloned `children`.
+   * Entries are sorted by ascending sibling index — globally rather than
+   * per-parent, because only same-parent order constrains re-insertion and
+   * entries under different parents never interact.
+   */
   interface RemoveSnapshot {
     nodes: Node<TData, TLayer, TPose>[];
-    parent: NodeId | null;
-    index: number;
-    rootId: NodeId;
+    detached: { id: NodeId; parent: NodeId | null; index: number }[];
   }
+  // Neither half invalidates dependents: removal's closure takes every live one.
   registerKitOp<RemoveSnapshot>('kit:remove', {
     apply: (p) => {
-      detach(p.rootId);
-      for (const n of p.nodes) state.nodes.delete(n.id);
+      for (const d of p.detached) detach(d.id);
+      for (const n of p.nodes) {
+        state.nodes.delete(n.id);
+        dependents.remove(n.id);
+      }
     },
     revert: (p) => {
-      // Restore nodes in original order (parents before children).
+      // Order-independent: every clone carries its own parent and children.
       for (const n of p.nodes) {
         const clone: Node<TData, TLayer, TPose> = n.kind === 'container'
           ? { ...n, children: [...n.children] }
           : { ...n };
         state.nodes.set(n.id, clone);
+        dependents.add(n.id, clone.dependsOn ?? []);
       }
-      attach(p.rootId, p.parent, p.index);
+      for (const d of p.detached) attach(d.id, d.parent, d.index);
     },
   });
 
   registerKitOp<{ id: NodeId; from: TPose; to: TPose }>('kit:setPose', {
-    apply: (p) => { (requireNode(p.id) as { pose: TPose }).pose = p.to; },
-    revert: (p) => { (requireNode(p.id) as { pose: TPose }).pose = p.from; },
+    apply: (p) => {
+      (requireNode(p.id) as { pose: TPose }).pose = p.to;
+      invalidateDependents(p.id);
+    },
+    revert: (p) => {
+      (requireNode(p.id) as { pose: TPose }).pose = p.from;
+      invalidateDependents(p.id);
+    },
   });
 
   registerKitOp<{ id: NodeId; from: TData; to: TData }>('kit:setData', {
@@ -426,10 +550,12 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     apply: (p) => {
       detach(p.id);
       attach(p.id, p.toParent, p.toIndex);
+      invalidateDependents(p.id);
     },
     revert: (p) => {
       detach(p.id);
       attach(p.id, p.fromParent, p.fromIndex);
+      invalidateDependents(p.id);
     },
   });
 
@@ -782,34 +908,46 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       const clipKey = spec.kind === 'container' && spec.clipFromPose !== undefined
         ? reverseClipFromPose.get(spec.clipFromPose as NonNullable<ContainerNode<TData, TLayer, TPose>['clipFromPose']>)
         : undefined;
+      const derivePathKey = spec.derivePath !== undefined ? reverseDerivePath.get(spec.derivePath) : undefined;
       executeAndLog('kit:add', {
         id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
         parent, index,
         ...(clipKey !== undefined ? { clipKey } : {}),
+        ...(spec.dependsOn !== undefined ? { dependsOn: spec.dependsOn } : {}),
+        ...(derivePathKey !== undefined ? { derivePathKey } : {}),
       }, `add ${spec.kind}`);
       // clipFromPose is a function and cannot travel through the serializable
       // op payload. Patch it directly onto the live node after the op applies.
-      patchClipFromPose(spec, id);
+      patchClipFromPose(spec, id, { cacheForRedo: true });
+      patchDerivePath(spec, id, { cacheForRedo: true });
       return id;
     },
 
     remove(id) {
-      const node = requireNode(id);
-      const sibs = siblingsOf(node.parent);
-      const index = sibs.indexOf(id);
-      // Snapshot subtree (root + descendants) so revert can restore it.
-      const ids: NodeId[] = [id];
-      descendants(id, ids);
+      scene.removeMany([id]);
+    },
+
+    removeMany(rootIds) {
+      if (rootIds.length === 0) return;
+      // Every id resolves against the pre-removal tree, so an id another one
+      // cascades away is absorbed rather than being a second, failing removal.
+      const { ids, removing } = removalClosure(rootIds);
+      // requireNode is what rejects an id that is not in the scene, and it runs
+      // before anything mutates.
       const snapshot: Node<TData, TLayer, TPose>[] = ids.map((nid) => {
         const n = requireNode(nid);
         return n.kind === 'container' ? { ...n, children: [...n.children] } : { ...n };
       });
+      // The rest is reachable through a snapshotted parent's cloned `children`.
+      const detached = snapshot
+        .filter((n) => n.parent === null || !removing.has(n.parent))
+        .map((n) => ({ id: n.id, parent: n.parent, index: siblingsOf(n.parent).indexOf(n.id) }))
+        .sort((l, r) => l.index - r.index);
       // Ephemeral, and ids are reusable: an override left behind would
       // reattach itself to whatever is added under this id next.
       for (const nid of ids) overrides.clear(nid);
-      executeAndLog('kit:remove', {
-        rootId: id, parent: node.parent, index, nodes: snapshot,
-      }, 'remove');
+      const payload: RemoveSnapshot = { nodes: snapshot, detached };
+      executeAndLog('kit:remove', payload, 'remove');
     },
 
     update(id, patch) {
@@ -925,18 +1063,11 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         throw new Error(`Scene: cannot remove system layer "${layer}"`);
       }
       scene.batch('removeLayer', () => {
-        // Cascade-delete every node tagged to this layer. Each remove() cascades
-        // its subtree, so repeatedly pull any still-present tagged node until
-        // none remain — this naturally avoids double-removing a node already
-        // dropped as a descendant of an earlier removal.
-        for (;;) {
-          let next: NodeId | undefined;
-          for (const [id, node] of state.nodes) {
-            if (node.layer === layer) { next = id; break; }
-          }
-          if (next === undefined) break;
-          scene.remove(next);
+        const tagged: NodeId[] = [];
+        for (const [id, node] of state.nodes) {
+          if (node.layer === layer) tagged.push(id);
         }
+        scene.removeMany(tagged);
         const finalIndex = requireLayerIndex(layer);
         executeAndLog('kit:removeLayer', { record: rec, index: finalIndex }, 'removeLayer');
       });
@@ -1149,6 +1280,17 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
           }
           out.clipFromPoseKey = key;
         }
+        if (n.dependsOn && n.dependsOn.length > 0) out.dependsOn = n.dependsOn;
+        if (n.derivePath) {
+          const key = reverseDerivePath.get(n.derivePath);
+          if (!key) {
+            throw new Error(
+              `Scene.toJSON: node '${id}' has derivePath but no matching registry key. ` +
+              `The function must be registered via createScene's registry option to round-trip.`
+            );
+          }
+          out.derivePathKey = key;
+        }
         nodes.push(out);
       }
       const systemLayers = state.layers.map((l) => {
@@ -1165,6 +1307,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       // version or unknown registry key).
       const specs = specsFromSerialized(json, registry);
       // Reset node + layer state.
+      dependents.clear();
       state.nodes.clear();
       state.roots.length = 0;
       state.layers.length = 0;
@@ -1186,6 +1329,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       // Clear history + transient batch/clip caches.
       history.clear();
       pendingClipPatches.clear();
+      pendingDerivePathPatches.clear();
       currentBatch = null;
       batchDepth = 0;
       batchDirty = false;
@@ -1227,8 +1371,14 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       runOp('kit:add', {
         id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
         parent, index,
+        ...(spec.dependsOn !== undefined ? { dependsOn: spec.dependsOn } : {}),
       });
-      patchClipFromPose(spec, id);
+      // No `kit:add` reaches history here, so nothing ever replays these and
+      // `pruneCacheForDroppedOps` — which only scans `kit:add` — could never
+      // drop the entries. A restore after `remove` comes from `kit:remove`'s
+      // revert, which clones the whole node and carries both fields along.
+      patchClipFromPose(spec, id, { cacheForRedo: false });
+      patchDerivePath(spec, id, { cacheForRedo: false });
     }
   }
 
@@ -1241,17 +1391,20 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   // ── Internal / test-only access ───────────────────────────────────────
   // Attach private state accessors directly on the returned object, hidden
   // behind `as unknown` because Scene<> is the public interface.
-  // __clipCacheSize: used only by test files to assert prune behaviour.
+  // __clipCacheSize / __derivePathCacheSize: used only by test files to assert
+  // prune behaviour.
   (scene as unknown as { __clipCacheSize: () => number }).__clipCacheSize =
     () => pendingClipPatches.size;
+  (scene as unknown as { __derivePathCacheSize: () => number }).__derivePathCacheSize =
+    () => pendingDerivePathPatches.size;
 
   return scene;
 }
 
 /** Map a `SerializedScene` to construction specs. Shared by `sceneFromJSON`
  *  (new instance) and `Scene.loadState` (in-place). Validates version and
- *  resolves `clipFromPoseKey` → function via the registry; throws on an
- *  unsupported version or an unknown registry key. */
+ *  resolves `clipFromPoseKey` / `derivePathKey` → function via the registry;
+ *  throws on an unsupported version or an unknown registry key. */
 function specsFromSerialized<TData, TLayer extends string, TPose>(
   json: SerializedScene<TData, TLayer, TPose>,
   registry: SceneRegistry<TPose>,
@@ -1277,6 +1430,17 @@ function specsFromSerialized<TData, TLayer extends string, TPose>(
         );
       }
       (spec as { clipFromPose?: typeof fn }).clipFromPose = fn;
+    }
+    if (n.dependsOn !== undefined) spec.dependsOn = n.dependsOn as readonly NodeId[];
+    if (n.derivePathKey !== undefined) {
+      const fn = registry.derivePath?.[n.derivePathKey];
+      if (!fn) {
+        throw new Error(
+          `Scene: unknown derivePath key '${n.derivePathKey}'. ` +
+          `Register a function with this key in the registry option.`,
+        );
+      }
+      spec.derivePath = fn;
     }
     return spec;
   });

@@ -1525,3 +1525,85 @@ describe('history persistence (serializeHistory / restoreHistory)', () => {
     expect((node as { clipFromPose?: unknown }).clipFromPose).toBeUndefined();
   });
 });
+
+describe('removeMany', () => {
+  function makeScene() {
+    const scene = createScene<Data, 'structures', typeof POSE>({
+      systemLayers: [{ id: 'structures' }],
+    });
+    const leaf = { kind: 'leaf', layer: 'structures', pose: POSE, data: { label: '' } } as const;
+    return { scene, leaf };
+  }
+
+  it('removes several roots as one undoable step', () => {
+    const { scene, leaf } = makeScene();
+    const a = scene.add(leaf);
+    const b = scene.add(leaf);
+    const c = scene.add(leaf);
+
+    scene.removeMany([a, c]);
+    expect(scene.roots).toEqual([b]);
+
+    scene.undo();
+    expect(scene.roots).toEqual([a, b, c]);
+  });
+
+  it('absorbs an id another id in the list already takes', () => {
+    const { scene, leaf } = makeScene();
+    const box = scene.add({ ...leaf, kind: 'container' });
+    const child = scene.add({ ...leaf, parent: box });
+
+    expect(() => scene.removeMany([box, child])).not.toThrow();
+    expect(scene.get(child)).toBeUndefined();
+    scene.undo();
+    expect(scene.childrenOf(box)).toEqual([child]);
+  });
+
+  it('absorbs a duplicated id', () => {
+    const { scene, leaf } = makeScene();
+    const a = scene.add(leaf);
+    expect(() => scene.removeMany([a, a])).not.toThrow();
+    expect(scene.roots).toEqual([]);
+  });
+
+  it('throws on an id that is not in the scene', () => {
+    const { scene, leaf } = makeScene();
+    const a = scene.add(leaf);
+    expect(() => scene.removeMany([a, asNodeId('ghost')])).toThrow(/unknown node id/);
+  });
+
+  it('takes the enclosing batch\'s label, not its own', () => {
+    const { scene, leaf } = makeScene();
+    scene.add({ ...leaf, kind: 'container' });
+    scene.add(leaf);
+    scene.batch('New document', () => {
+      scene.removeMany([...scene.renderOrder()]);
+    });
+    expect(scene.roots).toEqual([]);
+    expect(scene.historyEntries().at(-1)!.label).toBe('New document');
+  });
+
+  it('labels its own entry "remove" when there is no enclosing batch', () => {
+    const { scene, leaf } = makeScene();
+    scene.add(leaf);
+    scene.removeMany([...scene.renderOrder()]);
+    expect(scene.historyEntries().at(-1)!.label).toBe('remove');
+  });
+
+  it('records no history step for an empty list', () => {
+    const { scene, leaf } = makeScene();
+    const a = scene.add(leaf);
+    scene.removeMany([]);
+    // One undo has to reach the add. If the empty list recorded a step of its
+    // own, this undo is spent on it and `a` is still here.
+    scene.undo();
+    expect(scene.get(a)).toBeUndefined();
+  });
+
+  it('leaves the scene untouched when an id is unknown', () => {
+    const { scene, leaf } = makeScene();
+    const a = scene.add(leaf);
+    expect(() => scene.removeMany([a, asNodeId('ghost')])).toThrow();
+    expect(scene.get(a)).toBeDefined();
+  });
+});

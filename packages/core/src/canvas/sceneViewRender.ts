@@ -24,22 +24,10 @@ import type { View } from '../core/viewport/view';
 import type { Node, NodeId, Scene } from '../core/scene/types';
 import { wrapNodeOutput } from './wrapNodeOutput';
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
+import { withDerivedPaths } from './derivedPath';
+import type { SceneViewDrawOne } from './NodeShape';
 
-/**
- * Per-node draw function. Mirrors the scene-slot `drawOne` signature on
- * `<SceneCanvas>` (`SceneSlotConfig.drawOne`) so consumers can reuse the
- * same callback (or a simplified variant) between a main canvas and a
- * detached scene-view canvas.
- *
- * The function is called once per node in `scene.renderOrder()`. Returned
- * commands are in world coords; the caller's `view` is applied at the
- * group level (see `renderSceneToCanvas`'s implementation).
- */
-export type SceneViewDrawOne<TData, TLayer extends string, TPose> = (
-  node: Node<TData, TLayer, TPose>,
-  pose: TPose,
-  view: View,
-) => DrawCommand[];
+export type { SceneViewDrawOne } from './NodeShape';
 
 /** What to draw into an existing canvas: the scene, the view, and the same
  *  painting hooks `<SceneCanvas>` takes. */
@@ -155,17 +143,18 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
   extraCommands?: ReadonlyArray<DrawCommand>,
   alphaFor?: (id: string) => number,
 ): DrawCommand[] {
+  // The scene is in scope here, so this is where the override's alpha and the
+  // derived paths are applied on the headless path; `SceneCanvas` does the same
+  // for the live one. `Canvas` itself never sees a scene, so it can't and doesn't.
+  const derived = withDerivedPaths(scene, drawOne);
   const wrappedDrawOne = (
     node: Node<TData, TLayer, TPose>,
     pose: TPose,
     v: View,
   ): DrawCommand[] => {
-    // The scene is in scope here, so this is where the override's alpha is
-    // applied on the headless path; `SceneCanvas` does the same for the live
-    // one. `Canvas` itself never sees a scene, so it can't and doesn't.
     const overrideAlpha = scene.overrides.get(node.id as NodeId)?.alpha ?? 1;
     return wrapNodeOutput(
-      drawOne(node, pose, v),
+      derived(node, pose, v),
       pose,
       (alphaFor ? alphaFor(node.id) : 1) * overrideAlpha,
     );

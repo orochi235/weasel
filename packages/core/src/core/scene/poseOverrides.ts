@@ -6,10 +6,12 @@ import type { NodeId, PoseOverride, PoseOverrides } from './types';
  *
  * `getNode` resolves an id to the node object the painter memo is keyed on —
  * the only thing this module needs from the scene, and the reason it doesn't
- * import one.
+ * import one. `onInvalidate` lets the scene invalidate derived nodes from the
+ * same chokepoint.
  */
 export function createPoseOverrides<TPose>(
   getNode: (id: NodeId) => { data?: unknown } | undefined,
+  onInvalidate?: (id: NodeId) => void,
 ): PoseOverrides<TPose> {
   const entries = new Map<NodeId, PoseOverride<TPose>>();
   const listeners = new Set<() => void>();
@@ -18,6 +20,7 @@ export function createPoseOverrides<TPose>(
   function invalidate(id: NodeId): void {
     const node = getNode(id);
     if (node) dropPoseKeyedMemoSlots(node);
+    onInvalidate?.(id);
   }
 
   function published(): void {

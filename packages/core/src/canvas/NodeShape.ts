@@ -31,6 +31,7 @@
  * for the trait taxonomy.
  */
 import type { Node } from 'core/scene/types';
+import type { View } from 'core/viewport/view';
 import type { DrawCommand } from '../renderer';
 import { textCommand, textCommandFromRuns } from 'features/text/textCommand';
 import type { TextStyle } from '@weasel-js/text';
@@ -42,11 +43,12 @@ import type { Path, PolygonPath } from 'features/paths/types';
 import { PATH_M, PATH_L, PATH_Z } from 'features/paths/types';
 import { ellipsePath, regularPolygonPath, starPath, linePath } from 'features/paths/builder';
 import { pathContainsPoint } from 'features/paths/pathHitTest';
+import { boundsOfPath } from 'features/paths/bounds';
 import { strokeHitTest } from 'features/paths/hitTest';
 import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import { poseRotationOf, rotatePathAround } from 'features/paths/poseRotation';
 import { pathInPoseFrame } from 'features/paths/pathInWorld';
-import { fillInPoseFrame } from '../core/fillInPoseFrame';
+import { fillInPoseFrame, type FillPoseBox } from '../core/fillInPoseFrame';
 import { resolveFillPattern } from '../features/patterns/resolveSpec';
 import { getImageBitmap, imageStatus } from 'features/images/imageCache';
 import { nodeMemo, bumpNodeMemoGeneration } from 'core/scene/nodeMemo';
@@ -62,7 +64,29 @@ export interface NodePaintCtx {
    *  paints the deterministic grey placeholder outline (never the ambient
    *  load-status error variant). */
   resolveImage?: (node: Node<unknown, string, unknown>) => ImageBitmap | undefined;
+  /** The node's derived path, resolved by the scene-aware `drawOne` wrapper
+   *  before painting: `paint` has no scene handle, and deriving needs the
+   *  dependencies' poses. **Absent** for a node that derives from nothing —
+   *  the wrapper hands such a node the caller's own ctx untouched. `null`
+   *  means the node derives but has nothing to draw. */
+  derivedPath?: Path | null;
 }
+
+/**
+ * Per-node draw function — the scene-slot `drawOne` signature shared by
+ * `<SceneCanvas>`, `renderSceneToCanvas` and `renderSceneToPixels`, so a
+ * consumer can reuse one callback across a main canvas and a detached view.
+ *
+ * Called once per node in the walk. Returned commands are world-space; the
+ * caller applies the view transform at the group level. `ctx` is supplied by
+ * the scene-aware wrappers — see {@link NodePaintCtx}.
+ */
+export type SceneViewDrawOne<TData, TLayer extends string, TPose> = (
+  node: Node<TData, TLayer, TPose>,
+  pose: TPose,
+  view: View,
+  ctx?: NodePaintCtx,
+) => DrawCommand[];
 
 /** A painter for one kind of node: which nodes it claims, and the draw
  *  commands it emits for them. Registering one is how a consumer teaches the
@@ -474,12 +498,12 @@ function resolveNodeStroke(stroke: Stroke | null | undefined): Stroke | null {
   return stroke ?? null;
 }
 
-/** Bake a bounds-relative stroke paint onto the pose box, the way a fill is
- *  baked. The pose is already in the projected path, so a paint left in
+/** Bake a bounds-relative stroke paint onto the given box, the way a fill is
+ *  baked. The box is the frame the path was projected into, so a paint left in
  *  `'bounds'` units would reach the renderer describing a frame that never
  *  exists. `null` when a pattern spec fails to resolve. */
-function strokeInPoseFrame(stroke: Stroke, pose: RectPose): Stroke | null {
-  const paint = resolveFillPattern(fillInPoseFrame(stroke.paint, pose));
+function strokeInPoseFrame(stroke: Stroke, box: FillPoseBox): Stroke | null {
+  const paint = resolveFillPattern(fillInPoseFrame(stroke.paint, box));
   if (paint === null) return null;
   return paint === stroke.paint ? stroke : { ...stroke, paint };
 }
@@ -679,6 +703,49 @@ const IMAGE_PAINTER: NodeShapeEntry = {
   },
 };
 
+/**
+ * Built-in painter for nodes whose geometry is computed from other nodes'
+ * poses. The path itself arrives on the paint context — see
+ * {@link NodePaintCtx.derivedPath}.
+ *
+ * Fill and stroke resolve as `kit:path`'s do, but against the **derived path's
+ * own bounds**, not the pose. `kit:path` projects its path into the pose frame
+ * first, so there the two boxes are the same one; here the path is already
+ * absolute and the pose is typically a zero-sized placeholder, which would
+ * collapse a box-relative gradient onto a point.
+ *
+ * Not memoized on {@link PAINT_SLOT} on purpose: that key is `(node, pose,
+ * data)` and cannot see `ctx.derivedPath`, so it would serve one caller's
+ * commands to a caller that passed a different path.
+ *
+ * Rotation still comes from the pose — `wrapNodeOutput` turns the output about
+ * the pose AABB's center, which for a zero-sized pose is its origin.
+ */
+const DERIVED_PAINTER: NodeShapeEntry = {
+  id: 'kit:derived',
+  // `dependsOn` alone is not enough: the two fields are independent optionals,
+  // and `kit:add` restores a node with its `dependsOn` intact when its
+  // `derivePath` key is missing from the registry. Claiming that node would paint
+  // nothing where the authored appearance is what the warning promises.
+  matches: (node) => (node.dependsOn?.length ?? 0) > 0 && node.derivePath !== undefined,
+  paint: (node, _pose, ctx) => {
+    const path = ctx?.derivedPath;
+    if (path == null) return [];
+    const box = boundsOfPath(path);
+    const d = node.data as { fill?: FillStyle | null; stroke?: Stroke | null } | null;
+    const strokeSpec = resolveNodeStroke(d?.stroke);
+    const declared = resolveNodeFill(d?.fill, strokeSpec === null ? DEFAULT_SHAPE_FILL : null);
+    const fill = declared && resolveFillPattern(fillInPoseFrame(declared, box));
+    const stroke = strokeSpec && strokeInPoseFrame(strokeSpec, box);
+    return [{
+      kind: 'path',
+      path,
+      ...(fill ? { fill } : {}),
+      ...(stroke ? { stroke } : {}),
+    }];
+  },
+};
+
 const RECT_FALLBACK_PAINTER: NodeShapeEntry = {
   // Last-resort painter — always matches, so it must be registered last
   // within `'normal'`. Consumers who want a different fallback should
@@ -707,6 +774,7 @@ function registerBuiltInShapePainters(): void {
   registerNodeShape(PATH_PAINTER);
   registerNodeShape(SHAPE_PAINTER);
   registerNodeShape(IMAGE_PAINTER);
+  registerNodeShape(DERIVED_PAINTER);
   registerNodeShape(RECT_FALLBACK_PAINTER);
 }
 

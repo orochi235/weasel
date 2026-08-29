@@ -80,6 +80,23 @@ interface NodeBase<TData, TLayer extends string, TPose> {
   pose: TPose;
   data: TData;
   parent: NodeId | null;
+  /** Nodes whose poses this node's geometry is computed from. Fixed at add
+   *  time. Absent or empty means the node's geometry is authored, which is the
+   *  normal case. */
+  dependsOn?: readonly NodeId[];
+  /** Computes this node's path from its dependencies' poses, in `dependsOn`
+   *  order. A dependency that has been removed arrives as `undefined`.
+   *  Returning `null` means "nothing to draw right now". Re-evaluated when a
+   *  dependency's world pose changes, never authored. Absolute-pose `Scene`
+   *  makes that the dependency's own pose, and an ancestor's move reaches it as
+   *  a `setPose` of its own from the container cascade.
+   *  `node` is deliberately widened: naming `TData`/`TLayer` here puts them in
+   *  a contravariant position, making `Scene` invariant in both and breaking
+   *  assignment kit-wide. The cost is that a `derivePath` casts to read `node.data`. */
+  derivePath?: (
+    node: Node<unknown, string, TPose>,
+    deps: readonly (TPose | undefined)[],
+  ) => Path | null;
 }
 
 /** A node with no children — a shape, a label, an image. */
@@ -150,6 +167,14 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   /** Only meaningful when `kind === 'container'`. Attach a clip-path function
    *  to the node; ignored for leaves. Mirrors `ContainerNode.clipFromPose`. */
   clipFromPose?: (pose: TPose) => Path | null;
+  /** Mirrors `SceneNode.dependsOn`. */
+  dependsOn?: readonly NodeId[];
+  /** Mirrors `SceneNode.derivePath`. Taken as a live function; its registry key is
+   *  looked up from it, never passed in. */
+  derivePath?: (
+    node: Node<unknown, string, TPose>,
+    deps: readonly (TPose | undefined)[],
+  ) => Path | null;
 }
 
 /** A custom scene mutation registered with `Scene.registerOp`: how to apply
@@ -202,7 +227,13 @@ export interface SerializedNode<TData, TLayer extends string, TPose> {
   /** Registry key for the container's clip-path factory.
    *  Containers only; omitted when the container has no clip. */
   clipFromPoseKey?: string;
-  // Future function-field keys (drawOneKey, layoutStrategyKey, etc.) will live here.
+  /** Ids this node's geometry derives from. Omitted when it derives from nothing. */
+  dependsOn?: readonly string[];
+  /** Registry key for the node's `derivePath` function. Omitted when it has none. */
+  derivePathKey?: string;
+  // Future function-field keys (drawOneKey, layoutStrategyKey, etc.) will live
+  // here; a third one should be the point this stops being copied per field and
+  // becomes one shared registry-keyed-function-field helper.
 }
 
 /** Per-scene registry mapping string keys to live function references.
@@ -211,6 +242,11 @@ export interface SerializedNode<TData, TLayer extends string, TPose> {
 export interface SceneRegistry<TPose> {
   /** Maps registry keys to `clipFromPose` factory functions for container nodes. */
   clipFromPose?: Readonly<Record<string, (pose: TPose) => Path | null>>;
+  /** Maps registry keys to `derivePath` functions for nodes with `dependsOn`. */
+  derivePath?: Readonly<Record<string, (
+    node: Node<unknown, string, TPose>,
+    deps: readonly (TPose | undefined)[],
+  ) => Path | null>>;
   // Reserved for future function fields.
 }
 
@@ -335,10 +371,19 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
 
   // Mutations (all auto-undoable)
   add(spec: AddNodeSpec<TData, TLayer, TPose>): NodeId;
-  /** Delete `id` **and its entire subtree** — every descendant is removed in
-   *  the same operation. Recorded as one undoable step; `undo()` restores the
-   *  whole subtree (root + descendants, child order intact). */
+  /** Delete `id`, its **entire subtree**, and **everything that derives from**
+   *  any of those nodes — a node listing one of them in `dependsOn` goes too,
+   *  along with its own subtree, transitively. A dependent can live anywhere in
+   *  the tree, so this deletes nodes the caller never named and may unlink
+   *  several disjoint subtrees at once. Recorded as one undoable step; `undo()`
+   *  restores every one of them where it was, child order intact. */
   remove(id: NodeId): void;
+  /** {@link remove} over several roots at once, as a **single** undoable step.
+   *  Ids resolve against the tree as it stands at the call, so an id that
+   *  another one would cascade away is absorbed rather than removed twice —
+   *  which is what makes it safe to pass a whole selection. Throws if any id is
+   *  not in the scene; an empty list does nothing and records no step. */
+  removeMany(ids: readonly NodeId[]): void;
   update(id: NodeId, patch: { data: TData }): void;
   setPose(id: NodeId, pose: TPose): void;
   /** Retag `id` to `layer`. On a **container this cascades**: every descendant
@@ -372,6 +417,9 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   setLayerVisible(layer: TLayer, visible: boolean): void;
   setLayerLocked(layer: TLayer, locked: boolean): void;
   addLayer(spec: AddLayerSpec<TLayer>): void;
+  /** Drop a user layer and every node tagged to it, as one undoable step.
+   *  Removal cascades, so this also deletes nodes **on other layers** that
+   *  derive from a node on this one. */
   removeLayer(layer: TLayer): void;
   renameLayer(layer: TLayer, name: string): void;
   moveLayer(layer: TLayer, index: number): void;

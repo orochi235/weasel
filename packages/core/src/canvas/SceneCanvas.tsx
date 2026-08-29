@@ -30,7 +30,8 @@ import { subscribeGlyphReady } from '@weasel-js/font';
 import { defaultDrawOne } from './defaultDrawOne';
 import type { FillStyle } from '@weasel-js/paint';
 import { Canvas } from './Canvas';
-import type { CanvasProps, LayersMap, CanvasSelectionMode, SelectionOverlaySlotConfig } from './Canvas';
+import type { CanvasProps, LayersMap, CanvasSelectionMode, SceneSlotConfig, SelectionOverlaySlotConfig } from './Canvas';
+import { wireSceneSlotToScene, composeAlphaFor } from './sceneSlotWiring';
 import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';
 import type { Animator } from '../animation/types';
 import { useAnimator } from '../animation/useAnimator';
@@ -1209,13 +1210,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // override alpha. `<Canvas>` has no scene, so the override half is folded
   // in here — and the pick path reads the same number the painter does, or a
   // node faded to nothing stays clickable.
-  const overrideAlphaFor = useCallback(
-    (id: string) => scene.overrides.get(id as never)?.alpha ?? 1,
-    [scene],
-  );
   const composedAlphaFor = useMemo(
-    () => (alphaFor ? (id: string) => alphaFor(id) * overrideAlphaFor(id) : overrideAlphaFor),
-    [alphaFor, overrideAlphaFor],
+    () => composeAlphaFor(scene, alphaFor),
+    [scene, alphaFor],
   );
 
   const { adapter, selectTool: internalSelect, rotateTool, pickEvery: internalPickEvery, pickBest: internalPickBest, boundsOf: internalBoundsOf } = useSceneSelectTool({
@@ -1527,12 +1524,23 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [],
   );
 
+  const sceneSlot = useMemo(() => {
+    const slot = mergedLayers.scene;
+    if (!slot || 'layer' in slot) return slot; // null or CustomLayerEntry — leave alone
+    return wireSceneSlotToScene(
+      slot as SceneSlotConfig<Node<TData, TLayer, TPose>, TPose>,
+      scene,
+      alphaFor,
+    );
+  }, [mergedLayers.scene, alphaFor, scene]);
+
   // Preview-ghost layer: renders in-flight gesture poses on top of the
   // committed scene using the scene slot's `drawOne`, from whichever view's
-  // preview sources the draw envelope carries.
+  // preview sources the draw envelope carries. It takes the scene-wired slot,
+  // so a ghosted derived node still resolves its path.
   const previewLayer = usePreviewGhostLayer<TData, TLayer, TPose>({
     scene,
-    sceneSlot: mergedLayers.scene,
+    sceneSlot,
     dispatcher,
   });
 
@@ -1833,17 +1841,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     });
   }, [mergedLayers.selectionOverlay, getSuppressedSelectionIds]);
 
-  const sceneSlotWithAlpha = useMemo(() => {
-    const slot = mergedLayers.scene;
-    if (!slot || 'layer' in slot) return slot; // null or CustomLayerEntry — leave alone
-    return { ...slot, alphaFor: composedAlphaFor };
-  }, [mergedLayers.scene, composedAlphaFor]);
-
   const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => ({
     ...mergedLayers,
-    // Inject the composed alphaFor into the scene slot (scoping-dim, plus any
-    // per-node override alpha).
-    ...(sceneSlotWithAlpha ? { scene: sceneSlotWithAlpha } : {}),
+    ...(sceneSlot ? { scene: sceneSlot } : {}),
     // Pass the pre-built selection overlay layer so Canvas receives a
     // CustomLayerEntry and skips its own factory construction for this slot.
     selectionOverlay: selectionOverlayLayer
@@ -1854,7 +1854,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ...(penPreviewLayer ? { penPreview: { layer: penPreviewLayer, after: 'dispatcherOverlay' } } : {}),
     pathEditingOverlay: { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
     ...(debug?.slops ? { slopsDebug: { layer: slopsLayer, after: 'pathEditingOverlay' } } : {}),
-  }), [mergedLayers, sceneSlotWithAlpha, selectionOverlayLayer, previewLayer, dispatcherOverlay, penPreviewLayer, pathEditingOverlayLayer, debug?.slops, slopsLayer]);
+  }), [mergedLayers, sceneSlot, selectionOverlayLayer, previewLayer, dispatcherOverlay, penPreviewLayer, pathEditingOverlayLayer, debug?.slops, slopsLayer]);
 
   // Standard-action deps: closures over the live scene / selection / adapter
   // so the resolved actions always read current state. `useStandardActions`
