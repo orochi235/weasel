@@ -22,7 +22,7 @@ Priority tags:
 ### Next up
 
 - **`<Timeline>` editor** — the one unbuilt phase of the timeline/rig arc → [Animation](#animation)
-- **Collapse the duplicated cascades the 2026-08-29 audit found** — 8 live user-visible defects, incl. undo losing a deleted group's children → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- **Finish the duplicated-cascade collapses** — Tier 1/2 landed; Tier 3's wrong-view bugs and the walk unification are open → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 ### P2 — broad reuse / friction-likely
 
@@ -1074,13 +1074,24 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P1) Collapse the duplicated cascades the 2026-08-29 audit found.** The investigation is done — findings, sites and a verdict per pair are in `docs/superpowers/specs/2026-08-29-duplicated-cascade-audit.md`. What is left is the work. Read that spec's "Comments that assert a collapse which never happened" section first: seven docstrings tell a reader the collapse already landed, and each is false.
+- **(P1) Finish the duplicated-cascade collapses.** Tier 1, Tier 2 and the three
+  live Tier 4 defects landed 2026-08-29 — see `git log` and `.changeset/` for what
+  each one was. `docs/superpowers/specs/2026-08-29-duplicated-cascade-audit.md` has
+  been rewritten down to what is left; read it rather than this entry for detail.
 
-  Live and user-visible, in rank order: **deleting a group destroys its children on undo** (`createDeleteOp.invert()` re-inserts one node while `apply` cascades the subtree — reproduced against a real scene on `main` and on `arc1-derived-geometry`, which does not fix it); **union AABB is rotation-blind in ten of eleven implementations**, and `axisAlignedBounds` — the one that is correct, and documents why — has a single non-test caller inside its own file; **handles paint at `HANDLE_BASE_PX * targetScale` and hit-test unscaled**, so a coarse pointer paints 14px and grabs 8px; **the gradient the canvas paints is not the one the editor shows** (the ramp extrapolates below the first stop and inverts on coincident stops); **pose overrides are painted through and picked around**, against a contract in `core/scene/types.ts:268` saying both; **conic gradients export a dangling `url(#…)`** with no warning; **a nascent insert's extent is answered three ways**, so a horizontal Alt-drag reports height 0; **reparent's inverse drops the sibling index**, so Cmd+G then undo changes paint order.
+  Open: **Tier 3**, nine sites that close over surface state and so answer for view
+  zero in every view — a live wrong-view bug now that N views exist, not a latent
+  one (a drag in view B ghosts in view A, Cmd+V centers on the wrong camera, Escape
+  in view B cancels view A). **The walk unification** — the four hit-test walks no
+  longer disagree on any case with a test, which is why it is still worth doing: the
+  next divergence will be as silent as the last three. **Stroke reach, text metrics
+  and alpha/`layerOrder`** on the same axis: half a thick outer stroke's ink is
+  unclickable, one text quantity is computed three ways, and a node at alpha 0 is
+  invisible and fully clickable.
 
-  Then the structural tiers: the motivating fix was applied to `createSelectionOverlayLayer` and not to the two public primitives it calls itself equivalent to; path command opcodes exist five times across two packages, where a sixth opcode desynchronizes both readings of one `Uint8Array` silently; four hit-test walks each fix what the others miss, so a clipped-away child is invisible and still clickable; and nine layer/lookup sites still close over surface state, which is a live wrong-view bug now that N views exist rather than a latent one.
-
-  Two entries here were falsified by the audit and are corrected below: the pinch-zoom double-apply, and the `previewIdsExtra` suspect.
+  The audit also turned up eight defects outside its own pattern while the collapses
+  were being done — `getChildren` carrying two contracts under one name being the
+  worst — listed under "Found while collapsing" in the spec.
 
 - **(P2) Safari's `gesturestart` / `gesturechange` / `gestureend` are unhandled.** They are the second trackpad pinch channel on macOS Safari, alongside the ctrl+wheel one `viewportZoom` reads. Nothing in the repo listens for them, so Safari trackpad pinch gets whatever the wheel path synthesizes. Worth deciding deliberately rather than by omission. Note before adding a listener: `viewportZoom` now claims bare ctrl+wheel, so a `gesturechange` handler becomes a *second* channel for the same physical gesture — the double-apply `.changeset/mac-trackpad-pinch-zoom.md` just removed. Consolidate it into `makeViewportZoomAction` behind one scale-delta seam, not as a fourth listener.
 
