@@ -31,7 +31,9 @@ export interface ArrayAdapterConfig<TNode extends { id: string }, TPose> {
   getParent?: (id: string) => string | null;
   /** Optional reparent mutator. Default is a noop. */
   setParent?: (id: string, parentId: string | null) => void;
-  /** Optional children lookup. Default omits the method. */
+  /** Optional children lookup for a node id. The adapter answers the root
+   *  itself, from `ref` and `getParent` in array order, so this is never
+   *  called with `null`. Default omits the method entirely. */
   getChildren?: (id: string) => string[] | undefined;
 
   /** Live ref to the current selection. Default: empty array. */
@@ -260,8 +262,17 @@ export function arrayAdapter<TNode extends { id: string }, TPose>(
   };
 
   if (getChildren) {
-    (adapter as ArrayAdapter<TNode, TPose> & { getChildren: (id: string) => string[] }).getChildren =
-      (id) => getChildren(id) ?? [];
+    (adapter as ArrayAdapter<TNode, TPose> & {
+      getChildren: (parentId: string | null) => string[];
+    }).getChildren = (parentId) => {
+      // Root order is the item array's order, which this adapter owns — asking
+      // the consumer would get a callback written for node ids, and its `[]`
+      // is indistinguishable from "the root has no children".
+      if (parentId === null) {
+        return ref.current.filter((o) => getParent(o.id) === null).map((o) => o.id);
+      }
+      return getChildren(parentId) ?? [];
+    };
   }
 
   return adapter;

@@ -94,13 +94,17 @@ export interface MoveAdapter<TNode extends { id: string }, TPose> {
     worldX: number,
     worldY: number,
   ): SnapTarget<TPose> | null;
-  /** Optional: direct children of `id`. When present (alongside the
-   *  `cascadeWorldPose` option on `useMove`), dragging a node
-   *  auto-cascades its descendants in the live overlay so structurally-
-   *  grouped children visually follow the parent during the drag. No
-   *  additional ops are generated — children's local poses don't change
-   *  when the parent's local pose moves. */
-  getChildren?(id: string): string[];
+  /** Optional: ordered children of `parentId`, `null` for the root siblings.
+   *  One contract with {@link OrderedAdapter.getChildren} — the two land on
+   *  the same adapter object, and an implementation that answers only node
+   *  ids returns `[]` for the root, which the ops read as "no siblings".
+   *
+   *  When present (alongside the `cascadeWorldPose` option on `useMove`),
+   *  dragging a node auto-cascades its descendants in the live overlay so
+   *  structurally-grouped children visually follow the parent during the
+   *  drag. No additional ops are generated — children's local poses don't
+   *  change when the parent's local pose moves. */
+  getChildren?(parentId: string | null): string[];
   /** Optional: layout strategy attached to a container, or null if the
    *  container uses absolute positioning (default behavior). When present,
    *  `useMove` uses the strategy to compute drop targets, sibling reflow,
@@ -264,7 +268,8 @@ export interface LayerEnumerableAdapter<TLayer extends string = string> {
  */
 export interface OrderedAdapter {
   /** Ordered children of `parentId` (or root siblings if null), in z-order:
-   *  index 0 is bottom, last index is top. */
+   *  index 0 is bottom, last index is top. The same contract
+   *  {@link MoveAdapter.getChildren} declares — one method, two readers. */
   getChildren?(parentId: string | null): string[];
 
   /** Rewrite the order of `parentId`'s children. Length and contents must

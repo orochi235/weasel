@@ -129,3 +129,34 @@ describe('arrayAdapter — commitPaste', () => {
     expect(out[0].id).not.toBe(out[1].id);
   });
 });
+
+describe('arrayAdapter — getChildren answers the ordered contract', () => {
+  type Obj = { id: string; x: number; y: number; width: number; height: number; parent?: string };
+
+  function makeFixture() {
+    const items: Obj[] = [
+      { id: 'root-a', x: 0, y: 0, width: 10, height: 10 },
+      { id: 'root-b', x: 20, y: 0, width: 10, height: 10 },
+      { id: 'kid', x: 1, y: 1, width: 2, height: 2, parent: 'root-a' },
+    ];
+    const ref = { current: items };
+    return arrayAdapter<Obj, Obj>({
+      ref,
+      setItems: (u) => { ref.current = u(ref.current); },
+      toPose: (o) => o,
+      getParent: (id) => ref.current.find((o) => o.id === id)?.parent ?? null,
+      getChildren: (id) => ref.current.filter((o) => o.parent === id).map((o) => o.id),
+    });
+  }
+
+  it('answers a node id with that node\'s children', () => {
+    expect(makeFixture().getChildren!('root-a')).toEqual(['kid']);
+  });
+
+  it('answers null with the root siblings, in z-order', () => {
+    // The ops read `getChildren` with the OrderedAdapter meaning, where null
+    // is the root. An adapter that answers [] there silently loses the slot
+    // an op captured, and undo appends.
+    expect(makeFixture().getChildren!(null)).toEqual(['root-a', 'root-b']);
+  });
+});
