@@ -253,6 +253,8 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
           layers={layersWithFeedback}
           view={view2d ?? DEFAULT_VIEW}
           onViewChange={setView}
+          minZoom={instrument.canvas.minZoom}
+          maxZoom={instrument.canvas.maxZoom}
         >
           {instrument.render(renderCtx)}
         </CanvasStack>

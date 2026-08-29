@@ -4,6 +4,8 @@ import type { ViewTransform } from '../instrument/types';
 export interface UsePanZoomOptions {
   view: ViewTransform;
   onViewChange: (v: ViewTransform) => void;
+  /** The opening `view.zoom` always stays reachable, widening these past
+   *  whatever is passed here if it would otherwise exclude it. */
   minZoom?: number;
   maxZoom?: number;
 }
@@ -26,6 +28,10 @@ interface DragState {
 
 const DRAG_THRESHOLD = 3;
 
+function isPositiveFinite(n: number): boolean {
+  return Number.isFinite(n) && n > 0;
+}
+
 export function usePanZoom({
   view,
   onViewChange,
@@ -35,6 +41,10 @@ export function usePanZoom({
   const dragRef = useRef<DragState | null>(null);
   const viewRef = useRef(view);
   viewRef.current = view;
+  // Captured once, from the view the canvas opened at — not the current view,
+  // which would let a prior zoom-out shrink the range and trap the opening
+  // view unreachable behind it.
+  const initialZoomRef = useRef(isPositiveFinite(view.zoom) ? view.zoom : null);
 
   const onWheel = useCallback(
     (e: WheelEvent<HTMLElement>) => {
@@ -43,9 +53,13 @@ export function usePanZoom({
       const cursorX = e.clientX - rect.left;
       const cursorY = e.clientY - rect.top;
       const v = viewRef.current;
+      const initialZoom = initialZoomRef.current;
+      const effectiveMin = initialZoom == null ? minZoom : Math.min(minZoom, initialZoom);
+      const effectiveMax = initialZoom == null ? maxZoom : Math.max(maxZoom, initialZoom);
       const factor = Math.exp(-e.deltaY * 0.001);
-      const nextZoom = Math.min(maxZoom, Math.max(minZoom, v.zoom * factor));
-      const ratio = nextZoom / v.zoom;
+      const rawZoom = isPositiveFinite(v.zoom) ? v.zoom : 1;
+      const nextZoom = Math.min(effectiveMax, Math.max(effectiveMin, rawZoom * factor));
+      const ratio = nextZoom / rawZoom;
       const nextPan = {
         x: cursorX - (cursorX - v.pan.x) * ratio,
         y: cursorY - (cursorY - v.pan.y) * ratio,
