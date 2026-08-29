@@ -270,3 +270,50 @@ describe('groupAction.run — undo restores paint order', () => {
     expect([...scene.childrenOf(box)]).toEqual([a, b, c]);
   });
 });
+
+describe('groupAction.run — undo restores document order for a multi-node group', () => {
+  function fiveRoots() {
+    const scene = makeScene();
+    const pose = { x: 0, y: 0, width: 10, height: 10 };
+    const mk = () => scene.add({ kind: 'leaf', layer: 'main', pose, data: {} });
+    const [a, b, c, d, e] = [mk(), mk(), mk(), mk(), mk()];
+    return { scene, a: a!, b: b!, c: c!, d: d!, e: e! };
+  }
+
+  it('returns a contiguous run to its original root slots', () => {
+    const { scene, a, b, c, d, e } = fiveRoots();
+    const selection = makeSelection([b, c, d]);
+
+    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    scene.undo();
+
+    expect([...scene.roots]).toEqual([a, b, c, d, e]);
+  });
+
+  it('returns a scattered set to its original root slots', () => {
+    const { scene, a, b, c, d, e } = fiveRoots();
+    const selection = makeSelection([b, d]);
+
+    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    scene.undo();
+
+    expect([...scene.roots]).toEqual([a, b, c, d, e]);
+  });
+
+  it('redo re-groups, and a second undo restores order again', () => {
+    const { scene, a, b, c, d, e } = fiveRoots();
+    const selection = makeSelection([b, c, d]);
+
+    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    const containerId = selection.get()[0]!;
+    scene.undo();
+    scene.redo();
+
+    expect([...scene.roots]).toEqual([a, e, containerId]);
+    expect([...scene.childrenOf(containerId)]).toEqual([b, c, d]);
+
+    scene.undo();
+
+    expect([...scene.roots]).toEqual([a, b, c, d, e]);
+  });
+});

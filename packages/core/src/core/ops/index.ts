@@ -15,4 +15,4 @@ export {
 export type { ReorderDirection } from './reorder';
 export { createSetPathOp } from './setPath';
 export type { SetPathFields } from './setPath';
-export { registerOpFactory, rebuildOp } from './registry';
+export { registerOpFactory, rebuildOp, registeredOpNames } from './registry';

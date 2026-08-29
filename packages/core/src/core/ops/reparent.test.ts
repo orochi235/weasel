@@ -92,11 +92,14 @@ describe('createReparentOp — sibling index', () => {
     expect(a.order.ROOT).toEqual(['a', 'b', 'c']);
   });
 
-  it('invert swaps fromIndex and toIndex', () => {
+  it('invert swaps the from- and to-slots', () => {
     const op = createReparentOp({
       id: 'a', fromParentId: null, toParentId: 'p', fromIndex: 2, toIndex: 0,
     });
-    expect(op.invert().args).toMatchObject({ fromIndex: 0, toIndex: 2 });
+    expect(op.invert().args).toMatchObject({
+      fromSlot: { index: 0 },
+      toSlot: { index: 2 },
+    });
   });
 
   it('appends when no index is given', () => {
@@ -110,5 +113,52 @@ describe('createReparentOp — sibling index', () => {
     const a = { setParent: (id: string, parentId: string | null) => calls.push({ id, parentId }) };
     createReparentOp({ id: 'a', fromParentId: null, toParentId: 'p', toIndex: 0 }).apply(a as never);
     expect(calls).toEqual([{ id: 'a', parentId: 'p' }]);
+  });
+});
+
+describe('createReparentOp — slot anchoring', () => {
+  function makeOrderedAdapter(order: Record<string, string[]>) {
+    return {
+      order,
+      setParent(id: string, parentId: string | null) {
+        for (const key of Object.keys(order)) {
+          const i = order[key].indexOf(id);
+          if (i >= 0) order[key].splice(i, 1);
+        }
+        (order[parentId ?? 'ROOT'] ??= []).push(id);
+      },
+      getChildren: (parentId: string | null) => (order[parentId ?? 'ROOT'] ?? []).slice(),
+      setChildOrder: (parentId: string | null, ids: string[]) => { order[parentId ?? 'ROOT'] = ids.slice(); },
+    };
+  }
+
+  it('observes the from-slot on apply, overriding a caller-supplied index', () => {
+    const a = makeOrderedAdapter({ ROOT: ['x', 'y', 'z'], p: [] });
+    const op = createReparentOp({ id: 'y', fromParentId: null, toParentId: 'p', fromIndex: 99 });
+    op.apply(a as never);
+
+    expect((op.args as { fromSlot: { index: number; before?: string | null } }).fromSlot)
+      .toEqual({ index: 1, before: 'z' });
+  });
+
+  it('undo of a whole batch restores every node, replayed in reverse', () => {
+    const a = makeOrderedAdapter({ ROOT: ['a', 'b', 'c', 'd', 'e'], p: [] });
+    const ops = ['b', 'c', 'd'].map((id) =>
+      createReparentOp({ id, fromParentId: null, toParentId: 'p' }));
+    for (const op of ops) op.apply(a as never);
+    expect(a.order.ROOT).toEqual(['a', 'e']);
+
+    // History inverts a batch in reverse order.
+    for (const op of [...ops].reverse()) op.invert().apply(a as never);
+
+    expect(a.order.ROOT).toEqual(['a', 'b', 'c', 'd', 'e']);
+  });
+
+  it('returns a node that was last to the end', () => {
+    const a = makeOrderedAdapter({ ROOT: ['a', 'b'], p: [] });
+    const op = createReparentOp({ id: 'b', fromParentId: null, toParentId: 'p' });
+    op.apply(a as never);
+    op.invert().apply(a as never);
+    expect(a.order.ROOT).toEqual(['a', 'b']);
   });
 });

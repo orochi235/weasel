@@ -1,13 +1,13 @@
 import type { Op } from './types';
 import { createInsertOp } from './create';
 import { registerOpFactory } from './registry';
+import { captureSlot, parentOf, slotFromIndex, type OrderedReader, type Slot } from './slot';
 
-interface DeleteAdapter<TNode> {
+interface DeleteAdapter<TNode> extends OrderedReader {
   removeNode(id: string): void;
   /** Subtree reads, used to snapshot descendants before the cascade. Optional
    *  — a flat adapter has neither, and a delete there is a single node. */
   getNode?(id: string): TNode | undefined;
-  getChildren?(parentId: string | null): string[];
 }
 
 interface InsertAdapter<TNode> {
@@ -25,13 +25,14 @@ interface Placed<TNode> {
 interface DeleteArgs<TNode extends { id: string }> {
   node: TNode;
   label?: string;
-  /** Z-index the node occupies in its host array at the moment of delete.
-   *  Forwarded through `invert()` to the re-insert so undo restores paint
-   *  order — without this, undo of a multi-delete batch fully reverses
-   *  the stack. Required: every delete callsite knows where the node sits
-   *  (it has to, to remove it), so there's no good reason to drop the
-   *  data on the floor. */
-  index: number;
+  /** Sibling ordinal the node occupies at the moment of delete. Sugar for
+   *  `slot: { index }`, and only a seed: `apply` re-observes the node's full
+   *  slot through the adapter and that observation supersedes this. Kept
+   *  because it is the whole story for a flat adapter with no `getChildren`,
+   *  where nothing can be observed. */
+  index?: number;
+  /** Full slot, anchor included. Written by `apply`; supersedes `index`. */
+  slot?: Slot;
   /** Descendants of `node`, preorder (parents before children). `removeNode`
    *  cascades the whole subtree, so an inverse that re-inserts `node` alone
    *  brings the container back empty and drops every child on the floor.
@@ -66,8 +67,9 @@ function captureDescendants<TNode extends { id: string }>(
 /** Op: remove `node` and its subtree from the scene; inverts to a re-insert
  *  of the whole subtree at its captured slots. */
 export function createDeleteOp<TNode extends { id: string }>(args: DeleteArgs<TNode>): Op {
-  const { node, label, index } = args;
-  const argsForSerial: DeleteArgs<TNode> = { node, label, index, descendants: args.descendants };
+  const { node, label } = args;
+  let slot: Slot = args.slot ?? slotFromIndex(args.index);
+  const argsForSerial: DeleteArgs<TNode> = { node, label, slot, descendants: args.descendants };
   let captured: Placed<TNode>[] = args.descendants ?? [];
   return {
     name: 'delete',
@@ -75,6 +77,11 @@ export function createDeleteOp<TNode extends { id: string }>(args: DeleteArgs<TN
     label,
     apply(adapter) {
       const a = adapter as DeleteAdapter<TNode>;
+      const observed = captureSlot(a, parentOf(node), node.id);
+      if (observed) {
+        slot = observed;
+        argsForSerial.slot = observed;
+      }
       const snapshot = captureDescendants(a, node.id);
       if (snapshot) {
         captured = snapshot;
@@ -84,7 +91,8 @@ export function createDeleteOp<TNode extends { id: string }>(args: DeleteArgs<TN
     },
     invert() {
       const subtree = captured;
-      const reinsert = createInsertOp<TNode>({ node, label, index });
+      const restoredSlot = slot;
+      const reinsert = createInsertOp<TNode>({ node, label, slot: restoredSlot });
       if (subtree.length === 0) return reinsert;
       return {
         label,
@@ -98,7 +106,8 @@ export function createDeleteOp<TNode extends { id: string }>(args: DeleteArgs<TN
             a.insertNode(entry.node, entry.index);
           }
         },
-        invert: () => createDeleteOp<TNode>({ node, label, index, descendants: subtree }),
+        invert: () =>
+          createDeleteOp<TNode>({ node, label, slot: restoredSlot, descendants: subtree }),
       };
     },
   };

@@ -130,3 +130,80 @@ describe('createDeleteOp', () => {
     expect(() => op.invert().apply(flat as never)).not.toThrow();
   });
 });
+
+describe('createDeleteOp — slot anchoring', () => {
+  it('records the following sibling, and null when the node was last', () => {
+    const adapter = makeAdapter([leaf('a', 1), leaf('b', 2), leaf('c', 3)]);
+    const mid = createDeleteOp<Obj>({ node: adapter.getNode('b')!, index: 1 });
+    const last = createDeleteOp<Obj>({ node: adapter.getNode('c')!, index: 2 });
+    mid.apply(adapter as never);
+    last.apply(adapter as never);
+
+    expect((mid.args as { slot: { before?: string | null } }).slot.before).toBe('c');
+    expect((last.args as { slot: { before?: string | null } }).slot.before).toBeNull();
+  });
+
+  it('distinguishes an unobserved slot from a tail slot across JSON', () => {
+    const flat = {
+      removeNode: () => {},
+      insertNode: () => {},
+    };
+    const unobserved = createDeleteOp<Obj>({ node: leaf('a', 1), index: 0 });
+    unobserved.apply(flat as never);
+
+    const adapter = makeAdapter([leaf('a', 1), leaf('b', 2)]);
+    const tail = createDeleteOp<Obj>({ node: adapter.getNode('b')!, index: 1 });
+    tail.apply(adapter as never);
+
+    const round = (op: { args?: unknown }): { slot: { before?: string | null } } =>
+      JSON.parse(JSON.stringify(op.args));
+    expect('before' in round(unobserved).slot).toBe(false);
+    expect(round(tail).slot.before).toBeNull();
+  });
+
+  it('re-inserts before the anchor even when the list has shifted underneath', () => {
+    const adapter = makeAdapter([leaf('a', 1), leaf('b', 2), leaf('c', 3), leaf('d', 4)]);
+    const del = createDeleteOp<Obj>({ node: adapter.getNode('b')!, index: 1 });
+    del.apply(adapter as never);
+    // A separate edit removes a's slot, so b's recorded index 1 is now wrong.
+    adapter.removeNode('a');
+    expect(adapter.order.ROOT).toEqual(['c', 'd']);
+
+    del.invert().apply(adapter as never);
+
+    expect(adapter.order.ROOT).toEqual(['b', 'c', 'd']);
+  });
+
+  it('falls back to the recorded index when the anchor is gone too', () => {
+    const adapter = makeAdapter([leaf('a', 1), leaf('b', 2), leaf('c', 3)]);
+    const del = createDeleteOp<Obj>({ node: adapter.getNode('b')!, index: 1 });
+    del.apply(adapter as never);
+    adapter.removeNode('c');
+    expect(adapter.order.ROOT).toEqual(['a']);
+
+    del.invert().apply(adapter as never);
+
+    expect(adapter.order.ROOT).toEqual(['a', 'b']);
+  });
+
+  it('appends when the node was last', () => {
+    const adapter = makeAdapter([leaf('a', 1), leaf('b', 2), leaf('c', 3)]);
+    const del = createDeleteOp<Obj>({ node: adapter.getNode('c')!, index: 2 });
+    del.apply(adapter as never);
+    adapter.removeNode('a');
+
+    del.invert().apply(adapter as never);
+
+    expect(adapter.order.ROOT).toEqual(['b', 'c']);
+  });
+
+  it('honors the supplied index on an adapter with no ordering seam', () => {
+    const order: string[] = ['a', 'c'];
+    const flat = {
+      removeNode: (id: string) => { order.splice(order.indexOf(id), 1); },
+      insertNode: (o: Obj, index?: number) => { order.splice(index ?? order.length, 0, o.id); },
+    };
+    createDeleteOp<Obj>({ node: leaf('b', 2), index: 1 }).invert().apply(flat as never);
+    expect(order).toEqual(['a', 'b', 'c']);
+  });
+});

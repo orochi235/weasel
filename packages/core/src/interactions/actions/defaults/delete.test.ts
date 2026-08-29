@@ -119,7 +119,7 @@ describe('deleteAction commit routing', () => {
     expect(selection.set).toHaveBeenCalledWith([]);
   });
 
-  it('captures each node\'s host-array index in its delete op', () => {
+  it('captures each node\'s host-array slot in its delete op', () => {
     // a, b at root; c is a child of b.
     const { scene } = makeStubScene(
       { a: {}, b: {}, c: { parent: 'b' } },
@@ -132,9 +132,12 @@ describe('deleteAction commit routing', () => {
 
     const [ops] = applyOps.mock.calls[0];
     // c is index 0 among b's children; a is index 0 among roots.
-    const byId = new Map(ops.map((o) => [(o.args as { node: { id: string } }).node.id, o.args as { index: number }]));
-    expect(byId.get('c')!.index).toBe(0);
-    expect(byId.get('a')!.index).toBe(0);
+    const byId = new Map(ops.map((o) => [
+      (o.args as { node: { id: string } }).node.id,
+      o.args as { slot: { index: number } },
+    ]));
+    expect(byId.get('c')!.slot.index).toBe(0);
+    expect(byId.get('a')!.slot.index).toBe(0);
   });
 
   it('falls back to scene.applyBatch (one batch entry) when no applyOps is present', () => {
@@ -230,5 +233,89 @@ describe('deleteAction.run — undo against a real Scene', () => {
 
     expect(scene.get(group)).toBeUndefined();
     expect(scene.get(c1)).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Multi-node undo. `History.invertEntry` replays a batch's inverses in
+// REVERSE order, so a slot recorded as a bare index is replayed against a
+// list that hasn't been refilled yet and clamps to the end.
+// ---------------------------------------------------------------------------
+
+describe('deleteAction.run — undo restores document order for a multi-node batch', () => {
+  type Layer = 'main';
+
+  function fiveRoots() {
+    const scene = createScene<Record<string, never>, Layer>({ systemLayers: [{ id: 'main' }] });
+    const pose = { x: 0, y: 0, width: 10, height: 10 };
+    const mk = () => scene.add({ kind: 'leaf', layer: 'main', pose, data: {} });
+    const [a, b, c, d, e] = [mk(), mk(), mk(), mk(), mk()];
+    return { scene, a: a!, b: b!, c: c!, d: d!, e: e! };
+  }
+
+  it('restores a contiguous run', () => {
+    const { scene, a, b, c, d, e } = fiveRoots();
+    runDelete({ selection: makeSelection([b, c, d]), scene });
+    expect([...scene.roots]).toEqual([a, e]);
+
+    scene.undo();
+
+    expect([...scene.roots]).toEqual([a, b, c, d, e]);
+  });
+
+  it('restores a scattered set', () => {
+    const { scene, a, b, c, d, e } = fiveRoots();
+    runDelete({ selection: makeSelection([b, d]), scene });
+    expect([...scene.roots]).toEqual([a, c, e]);
+
+    scene.undo();
+
+    expect([...scene.roots]).toEqual([a, b, c, d, e]);
+  });
+
+  it('restores a run given in reverse selection order (each anchor also deleted)', () => {
+    const { scene, a, b, c, d, e } = fiveRoots();
+    runDelete({ selection: makeSelection([d, c, b]), scene });
+
+    scene.undo();
+
+    expect([...scene.roots]).toEqual([a, b, c, d, e]);
+  });
+
+  it('restores a run that includes the last sibling', () => {
+    const { scene, a, b, c, d, e } = fiveRoots();
+    runDelete({ selection: makeSelection([c, d, e]), scene });
+    expect([...scene.roots]).toEqual([a, b]);
+
+    scene.undo();
+
+    expect([...scene.roots]).toEqual([a, b, c, d, e]);
+  });
+
+  it('redo re-removes the batch, and a second undo restores order again', () => {
+    const { scene, a, b, c, d, e } = fiveRoots();
+    runDelete({ selection: makeSelection([b, c, d]), scene });
+    scene.undo();
+    scene.redo();
+    expect([...scene.roots]).toEqual([a, e]);
+
+    scene.undo();
+
+    expect([...scene.roots]).toEqual([a, b, c, d, e]);
+  });
+
+  it('restores children of a container in order', () => {
+    const scene = createScene<Record<string, never>, Layer>({ systemLayers: [{ id: 'main' }] });
+    const pose = { x: 0, y: 0, width: 10, height: 10 };
+    const box = scene.add({ kind: 'container', layer: 'main', pose, data: {} });
+    const mk = () => scene.add({ kind: 'leaf', layer: 'main', pose, data: {}, parent: box });
+    const [a, b, c, d, e] = [mk(), mk(), mk(), mk(), mk()];
+
+    runDelete({ selection: makeSelection([b!, c!, d!]), scene });
+    expect([...scene.childrenOf(box)]).toEqual([a, e]);
+
+    scene.undo();
+
+    expect([...scene.childrenOf(box)]).toEqual([a, b, c, d, e]);
   });
 });

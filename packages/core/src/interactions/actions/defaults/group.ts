@@ -73,7 +73,8 @@ export const groupAction: Action & { requires: string[] } = {
       //      id; we pre-generate one so the insert op carries a full node —
       //      the id was never observable, so behavior is preserved);
       //   2. reparent each selected id under the new container, in selection
-      //      order, capturing each node's PRE-mutation parent as `from`.
+      //      order, capturing each node's PRE-mutation parent as `from`
+      //      (the op captures the sibling slot itself, on apply).
       // The container must exist before any child reparents into it, so the
       // insert op is emitted first. Member poses are intentionally untouched
       // (absolute-pose model — reparenting alone doesn't move members).
@@ -92,12 +93,10 @@ export const groupAction: Action & { requires: string[] } = {
         }),
       ];
       for (const node of nodes) {
-        const siblings = node.parent == null ? scene.roots : scene.childrenOf(node.parent);
         ops.push(createReparentOp({
           id: node.id as string,
           fromParentId: (node.parent ?? null) as string | null,
           toParentId: containerId as string,
-          fromIndex: siblings.indexOf(node.id),
           label: 'Group',
         }));
       }

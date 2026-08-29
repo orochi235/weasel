@@ -1,8 +1,9 @@
 import type { Op } from './types';
 import { createDeleteOp } from './delete';
 import { registerOpFactory } from './registry';
+import { parentOf, resolveSlot, slotFromIndex, type OrderedReader, type Slot } from './slot';
 
-interface InsertAdapter<TNode> {
+interface InsertAdapter<TNode> extends OrderedReader {
   /** When `index` is supplied, insert at that position; adapters that ignore
    *  the second arg (or don't expose it) fall back to their default
    *  placement (typically append-to-end). */
@@ -17,30 +18,29 @@ export type InsertOp = Op;
 interface InsertArgs<TNode extends { id: string }> {
   node: TNode;
   label?: string;
-  /** Original z-index in the host array. Forwarded to
-   *  `adapter.insertNode(node, index)` when present so undo of a multi-delete
-   *  batch restores paint order instead of reversing it. Optional — adapters
-   *  that don't honor it still work. */
+  /** Sibling ordinal to insert at. Sugar for `slot: { index }` — the weaker
+   *  of the two forms, and all a fresh-insert callsite can know. */
   index?: number;
+  /** Full slot, anchor included. Produced only by `captureSlot` (via a
+   *  delete op's `invert`), and supersedes `index` when present. */
+  slot?: Slot;
 }
 
 /** Op: insert `node` into the scene; inverts to a delete of the same id. */
 export function createInsertOp<TNode extends { id: string }>(args: InsertArgs<TNode>): InsertOp {
-  const { node, label, index } = args;
+  const { node, label } = args;
+  const slot: Slot = args.slot ?? slotFromIndex(args.index);
   return {
     name: 'insert',
-    args: { node, label, index },
+    args: { node, label, slot },
     label,
     apply(adapter) {
-      (adapter as InsertAdapter<TNode>).insertNode(node, index);
+      const a = adapter as InsertAdapter<TNode>;
+      const parentId = parentOf(node);
+      a.insertNode(node, resolveSlot(a.getChildren?.(parentId), slot));
     },
     invert() {
-      // Insert's `index` is optional (fresh-insert callsites have no
-      // meaningful original position); the inverted Delete needs *some*
-      // index. Default to -1 — the symmetry only matters when the Insert
-      // itself was a re-insert from a prior Delete, in which case the
-      // index round-trips correctly.
-      return createDeleteOp({ node, label, index: index ?? -1 });
+      return createDeleteOp({ node, label, slot });
     },
   };
 }

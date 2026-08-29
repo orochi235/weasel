@@ -41,7 +41,9 @@ export function _clearOpFactoriesForTest(): void {
   FACTORIES.clear();
 }
 
-/** Test-only: read-only snapshot of currently-registered names. */
-export function _registeredOpNamesForTest(): string[] {
+/** Every op name currently registered, in registration order. The kit's
+ *  built-ins self-register at module init, so importing the barrel is enough
+ *  to see all of them; consumer factories appear once their module has run. */
+export function registeredOpNames(): readonly string[] {
   return [...FACTORIES.keys()];
 }
