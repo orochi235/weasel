@@ -10,7 +10,8 @@ import {
   type FlipAxis,
   type FlipPivot,
 } from '../flip/helpers';
-import { unionBounds } from 'core/geometry/unionBounds';
+import { unionAABB } from 'core/geometry/unionBounds';
+import { visualBoundsViaDescriptor } from '../align/align';
 import type { Action } from '../registry';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { requiresSelection } from './requiresSelection';
@@ -31,8 +32,10 @@ import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
  * semantics exactly.
  *
  * Pivot: `'each'` (per-item own AABB) unless the caller passes `'union'`,
- * which mirrors every pose about the selection's union AABB so items swap
- * sides as well as reflect.
+ * which mirrors every pose about the selection's *visual* union AABB — the
+ * rotated ink extents — so items swap sides as well as reflect. A rotated
+ * member's own mirrored position needs no expansion: `axisAlignedBounds`
+ * keeps the stored box's centre, so mirroring either box lands the same place.
  */
 function flipSelection(
   selection: SelectionApi,
@@ -48,7 +51,7 @@ function flipSelection(
 
   const nodes = ids.map((id) => scene.get(id)).filter((n) => n != null);
   const unionPivot = pivot === 'union'
-    ? unionBounds(nodes.map((n) => geom.getBounds(n.pose)))
+    ? unionAABB(nodes.map((n) => visualBoundsViaDescriptor(n.pose, geom)))
     : null;
 
   // Read poses BEFORE building ops so each op's `from` is the pre-flip value

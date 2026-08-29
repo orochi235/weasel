@@ -10,7 +10,7 @@ import type {
   ResizePose,
 } from 'interactions/gestures/types';
 
-interface Pose { x: number; y: number; width: number; height: number }
+interface Pose { x: number; y: number; width: number; height: number; rotation?: number }
 
 function ctx(
   modifiers: Partial<ModifierState> = {},
@@ -162,5 +162,22 @@ describe('alignResizeBehavior', () => {
     // east edge 150 -> 152: width 50 -> 52, x unchanged.
     expect(res).toEqual({ pose: { x: 100, y: 100, width: 52, height: 50 } });
     expect(active).toEqual([{ id: 'r', axis: 'x', offset: 152 }]);
+  });
+});
+
+describe('alignMoveBehavior with a rotated pose', () => {
+  it('snaps by the ink extent, not the stored pose box', () => {
+    // 40x10 turned a quarter turn: ink spans x 55..65, stored box x 40..80.
+    const rotated: Pose = { x: 40, y: 0, width: 40, height: 10, rotation: Math.PI / 2 };
+    let active: readonly Guide[] = [];
+    const b = alignMoveBehavior<Pose>({
+      getCandidates: () => [{ id: 'L', axis: 'x', offset: 50 }],
+      setActiveGuides: (g) => { active = g; },
+      tolerance: 6,
+    });
+    // 50 is 5 from the ink's left edge (in tolerance) and 10 from the box's.
+    const res = b.onMove!(ctx({}, rotated), tt(0, 0));
+    expect(res).toEqual({ transform: { kind: 'translate', dx: -5, dy: 0 } });
+    expect(active).toEqual([{ id: 'L', axis: 'x', offset: 50 }]);
   });
 });

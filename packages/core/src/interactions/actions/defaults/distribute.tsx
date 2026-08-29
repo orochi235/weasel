@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { Scene } from 'core/scene/types';
 import type { PoseProjection } from '../resize/geometry';
 import { RECT_POSE_DESCRIPTOR } from '../resize/geometry';
-import { translatePoseViaDescriptor } from '../align/align';
+import { translatePoseViaDescriptor, visualBoundsViaDescriptor } from '../align/align';
 import type { DistributeAxis } from '../distribute/distribute';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
@@ -41,7 +41,7 @@ function distributeSelection(
   const items = ids.map((id, i) => {
     const node = scene.get(id);
     const pose = node?.pose ?? { x: 0, y: 0, width: 0, height: 0 };
-    const b = geom.getBounds(pose) as BoundsLike;
+    const b = visualBoundsViaDescriptor(pose, geom) as BoundsLike;
     return { id, pose, b, origIndex: i };
   });
 

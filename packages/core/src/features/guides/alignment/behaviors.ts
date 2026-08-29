@@ -6,7 +6,7 @@ import type {
   ResizePose,
 } from 'interactions/gestures/types';
 import { pxExtent } from 'core/viewport/pxExtent';
-import { unionBounds } from 'core/geometry/unionBounds';
+import { unionAABB } from 'core/geometry/unionBounds';
 import type {
   AlignAnchor,
   AlignBounds,
@@ -46,7 +46,7 @@ export function alignMoveBehavior<TPose>(args: AlignMoveArgs<TPose>): MoveBehavi
         if (originPose === undefined) continue;
         boxes.push(proj.boundsOf(proj.translate(originPose, transform.dx, transform.dy)));
       }
-      const union = unionBounds(boxes);
+      const union = unionAABB(boxes);
       if (union === null) return;
       const m = matchAlignment(union, args.getCandidates(), worldTol(args), MOVE_ANCHORS);
       if (m.activeX === null && m.activeY === null) { args.setActiveGuides([]); return; }

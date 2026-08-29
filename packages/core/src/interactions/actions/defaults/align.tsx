@@ -3,8 +3,13 @@ import type { Scene } from 'core/scene/types';
 import type { PoseProjection } from '../resize/geometry';
 import { RECT_POSE_DESCRIPTOR } from '../resize/geometry';
 import type { ResizePose } from '../../gestures/types';
-import { alignDeltaFor, translatePoseViaDescriptor, type AlignEdge } from '../align/align';
-import { unionBounds } from 'core/geometry/unionBounds';
+import {
+  alignDeltaFor,
+  translatePoseViaDescriptor,
+  visualBoundsViaDescriptor,
+  type AlignEdge,
+} from '../align/align';
+import { unionAABB } from 'core/geometry/unionBounds';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -63,9 +68,9 @@ function alignSelection(
     const node = scene.get(id);
     return node?.pose ?? { x: 0, y: 0, width: 0, height: 0 };
   });
-  const bounds = poses.map((p) => geom.getBounds(p) as ResizePose);
+  const bounds = poses.map((p) => visualBoundsViaDescriptor(p, geom) as ResizePose);
   // Guarded non-empty by `ids.length < 2` above → `!` is safe.
-  const union = unionBounds(bounds)!;
+  const union = unionAABB(bounds)!;
   scene.batch('Align', () => {
     for (let i = 0; i < ids.length; i++) {
       const { dx, dy } = alignDeltaFor(bounds[i], union, edge);

@@ -4,7 +4,7 @@ import { asNodeId } from 'core/scene/types';
 import type { NodeId } from 'core/scene/types';
 import type { BoundGesture } from '../registry';
 
-interface Pose { x: number; y: number; width: number; height: number }
+interface Pose { x: number; y: number; width: number; height: number; rotation?: number }
 
 // ---------------------------------------------------------------------------
 // Stub scene
@@ -227,5 +227,22 @@ describe('flipAction (axis param)', () => {
     expect(() => {
       runFlip({}, { axis: 'x' });
     }).not.toThrow();
+  });
+});
+
+describe('flipAction with a rotated member', () => {
+  it('pivot "union" mirrors about the visual envelope', () => {
+    const scene = makeStubScene({
+      a: { x: 0, y: 0, width: 10, height: 10 },
+      // ink x 55..65; stored box x 40..80.
+      r: { x: 40, y: 0, width: 40, height: 10, rotation: Math.PI / 2 },
+    });
+    const selection = makeSelection(['a', 'r']);
+
+    runFlip({ selection, scene }, { axis: 'x', pivot: 'union' });
+
+    // Visual union spans x 0..65, centreline 32.5: the two ink boxes swap.
+    expect(scene.poses.get('a')).toMatchObject({ x: 55, y: 0 });
+    expect(scene.poses.get('r')).toMatchObject({ x: -15, y: 0, rotation: Math.PI / 2 });
   });
 });

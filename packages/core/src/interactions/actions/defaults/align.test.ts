@@ -12,7 +12,7 @@ import type { NodeId } from 'core/scene/types';
 import { ActionDisabledReason } from '../registry';
 import type { ImmediateInvoker } from '../invoker';
 
-interface Pose { x: number; y: number; width: number; height: number }
+interface Pose { x: number; y: number; width: number; height: number; rotation?: number }
 
 function makeScene(poses: Record<string, Pose>) {
   const current = { ...poses };
@@ -216,3 +216,33 @@ describe('alignCenterYAction descriptor', () => {
   });
 });
 
+
+// ---------------------------------------------------------------------------
+// Rotated members
+// ---------------------------------------------------------------------------
+
+describe('align with a rotated member', () => {
+  // 40x10 posed at x=40 and turned a quarter turn about its own centre:
+  // its ink occupies x 55..65, y -15..25 while the stored box is x 40..80, y 0..10.
+  const rotated = { x: 40, y: 0, width: 40, height: 10, rotation: Math.PI / 2 };
+
+  it('align-left lines up the rotated ink, not the stored pose box', () => {
+    const { scene, setPose } = makeScene({ a: { x: 0, y: 0, width: 10, height: 10 }, r: rotated });
+    const selection = makeSelection(['a', 'r']);
+    runDescriptor(alignLeftAction, { selection, scene });
+    // Visual union left = 0; the rotated ink starts at 55 → shift by -55.
+    expect(setPose).toHaveBeenCalledOnce();
+    expect(setPose.mock.calls[0][0]).toBe('r');
+    expect(setPose.mock.calls[0][1]).toMatchObject({ x: -15, y: 0, rotation: Math.PI / 2 });
+  });
+
+  it('align-top takes the union top edge from the rotated ink', () => {
+    const { scene, setPose } = makeScene({ a: { x: 0, y: 0, width: 10, height: 10 }, r: rotated });
+    const selection = makeSelection(['a', 'r']);
+    runDescriptor(alignTopAction, { selection, scene });
+    // Visual union top = -15 (the rotated ink), so the unrotated square moves up.
+    expect(setPose).toHaveBeenCalledOnce();
+    expect(setPose.mock.calls[0][0]).toBe('a');
+    expect(setPose.mock.calls[0][1]).toMatchObject({ x: 0, y: -15 });
+  });
+});

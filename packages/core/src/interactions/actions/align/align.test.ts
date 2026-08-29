@@ -9,7 +9,7 @@ import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
 import { polygonFromPoints } from 'features/paths/builder';
 import type { Path } from 'features/paths/types';
 
-interface RectPose { x: number; y: number; width: number; height: number; tag?: string }
+interface RectPose { x: number; y: number; width: number; height: number; rotation?: number; tag?: string }
 
 function makeRectAdapter(initial: string[] = [], poses: Record<string, RectPose> = {}) {
   let selection: NodeId[] = [...initial] as NodeId[];
@@ -226,5 +226,23 @@ describe('useAlign', () => {
     const f0 = result.current.align;
     rerender();
     expect(result.current.align).toBe(f0);
+  });
+});
+
+describe('useAlign with a rotated member', () => {
+  it('left-align uses the rotated ink extent, not the stored pose box', () => {
+    const helpers = makeRectAdapter(['a', 'r'], {
+      a: { x: 0, y: 0, width: 10, height: 10 },
+      // ink x 55..65; stored box x 40..80.
+      r: { x: 40, y: 0, width: 40, height: 10, rotation: Math.PI / 2 },
+    });
+    const { result } = renderHook(() => useAlign(helpers.adapter));
+    act(() => { result.current.align('left'); });
+    expect(helpers.batches).toHaveLength(1);
+    expect(helpers.batches[0].ops).toHaveLength(1);
+    expect(applyOp<RectPose>(helpers.batches[0].ops[0])).toMatchObject({
+      id: 'r',
+      pose: { x: -15, y: 0, rotation: Math.PI / 2 },
+    });
   });
 });

@@ -8,7 +8,7 @@ import type { NodeId } from 'core/scene/types';
 import { ActionDisabledReason } from '../registry';
 import type { ImmediateInvoker } from '../invoker';
 
-interface Pose { x: number; y: number; width: number; height: number }
+interface Pose { x: number; y: number; width: number; height: number; rotation?: number }
 
 function makeScene(poses: Record<string, Pose>) {
   const current = { ...poses };
@@ -139,3 +139,26 @@ describe('distributeVerticalAction descriptor', () => {
   });
 });
 
+
+// ---------------------------------------------------------------------------
+// Rotated members
+// ---------------------------------------------------------------------------
+
+describe('distribute with a rotated member', () => {
+  it('picks endpoints by visual extent, so the rotated ink anchors the span', () => {
+    const poses = {
+      a: { x: 0, y: 0, width: 10, height: 10 },
+      // ink x 55..65 (centre 60); stored box x 40..80.
+      r: { x: 40, y: 0, width: 40, height: 10, rotation: Math.PI / 2 },
+      c: { x: 50, y: 0, width: 10, height: 10 },
+    };
+    const { scene, setPose } = makeScene(poses);
+    const selection = makeSelection(['a', 'r', 'c']);
+    runDescriptor(distributeHorizontalAction, { selection, scene });
+    // Visual order is a(0..10), c(50..60), r(55..65): a and r are the endpoints,
+    // so c is the middle item. Centres 5 → 60 put it at 32.5 → x = 27.5.
+    expect(setPose).toHaveBeenCalledOnce();
+    expect(setPose.mock.calls[0][0]).toBe('c');
+    expect(setPose.mock.calls[0][1]).toMatchObject({ x: 27.5, y: 0 });
+  });
+});

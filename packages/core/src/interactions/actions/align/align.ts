@@ -5,9 +5,10 @@ import { dispatchApplyBatch } from 'core/applyOps';
 import type { NodeId } from 'core/scene/types';
 import { RECT_POSE_DESCRIPTOR, type PoseProjection } from '../resize/geometry';
 import type { ResizePose } from '../../gestures/types';
-import { unionBounds } from 'core/geometry/unionBounds';
+import { axisAlignedBounds, unionAABB } from 'core/geometry/unionBounds';
 
-/** Edge or center the selection should align to within the selection's union AABB. */
+/** Edge or center the selection should align to within the selection's visual
+ *  union AABB (rotated members contribute their ink extent). */
 export type AlignEdge = 'left' | 'right' | 'top' | 'bottom' | 'center-x' | 'center-y';
 
 /** Adapter for `useAlign`. */
@@ -31,6 +32,26 @@ export interface UseAlignOptions<TPose> {
 export interface UseAlignReturn {
   /** Imperative trigger. No-op when fewer than 2 items selected. */
   align(edge: AlignEdge): void;
+}
+
+/**
+ * The pose's *visual* bounds: its descriptor bounds expanded to cover the
+ * rotated rectangle, so a turned shape reports the extent of its ink rather
+ * than the box it was posed in. Align, distribute and flip all fold these.
+ *
+ * Both ends of an align must use it — a visual union measured against
+ * unrotated member boxes misplaces every rotated member. The expanded box
+ * shares its centre with the stored one, so the delta stays a translation of
+ * the stored pose and no re-posing is needed.
+ */
+export function visualBoundsViaDescriptor<TPose>(
+  pose: TPose,
+  geometry: PoseProjection<TPose>,
+): ResizePose {
+  const b = geometry.getBounds(pose);
+  const rotation =
+    geometry.getRotation?.(pose) ?? (b as { rotation?: number }).rotation ?? 0;
+  return axisAlignedBounds({ x: b.x, y: b.y, width: b.width, height: b.height, rotation });
 }
 
 /** Compute the (dx, dy) translation that moves AABB `b` so that the requested
@@ -81,9 +102,9 @@ export function useAlign<TPose>(
       o.geometry ??
       (RECT_POSE_DESCRIPTOR as unknown as PoseProjection<TPose>);
     const poses = sel.map((id) => a.getPose(id));
-    const bounds = poses.map((p) => geom.getBounds(p));
+    const bounds = poses.map((p) => visualBoundsViaDescriptor(p, geom));
     // Guarded non-empty by `sel.length < 2` above → `!` is safe.
-    const union = unionBounds(bounds)!;
+    const union = unionAABB(bounds)!;
     const ops: Op[] = [];
     for (let i = 0; i < sel.length; i++) {
       const { dx, dy } = alignDeltaFor(bounds[i], union, edge);

@@ -1,4 +1,4 @@
-export { useAlign, alignDeltaFor, translatePoseViaDescriptor } from './align';
+export { useAlign, alignDeltaFor, translatePoseViaDescriptor, visualBoundsViaDescriptor } from './align';
 export type {
   AlignAdapter,
   AlignEdge,
