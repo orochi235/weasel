@@ -33,7 +33,8 @@ export type PaintProgram = ShaderProgram;
  */
 export type PaintKind = 'solid' | 'linear-gradient' | 'radial-gradient' | 'conic-gradient' | 'pattern' | (string & {});
 
-/** What a registered kind's editor renders. Arc 4 supplies the control. */
+/** What a registered kind's editor renders. `PaintInput` in `@weasel-js/ui`
+ *  is the control that mounts it. */
 export interface PaintKindEditorProps {
   value: FillStyle;
   onInput?(next: FillStyle): void;
