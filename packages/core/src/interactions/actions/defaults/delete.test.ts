@@ -7,6 +7,7 @@ import type { ImmediateInvoker } from '../invoker';
 import type { NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
+import { createScene } from 'core/scene/scene';
 
 // ---------------------------------------------------------------------------
 // Stub scene — tracks removals, roots/children for index capture, and an
@@ -162,5 +163,72 @@ describe('deleteAction commit routing', () => {
     expect(applyOps).not.toHaveBeenCalled();
     expect(scene.applyBatch).not.toHaveBeenCalled();
     expect(selection.set).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Real-Scene undo integration. The stub scene above cannot see this: its
+// `remove` drops a single id, while `scene.remove` cascades the subtree.
+// ---------------------------------------------------------------------------
+
+describe('deleteAction.run — undo against a real Scene', () => {
+  type Layer = 'main';
+
+  function sceneFixture() {
+    const scene = createScene<Record<string, never>, Layer>({ systemLayers: [{ id: 'main' }] });
+    const pose = { x: 0, y: 0, width: 10, height: 10 };
+    const group = scene.add({ kind: 'container', layer: 'main', pose, data: {} });
+    const c1 = scene.add({ kind: 'leaf', layer: 'main', pose, data: {}, parent: group });
+    const c2 = scene.add({ kind: 'leaf', layer: 'main', pose, data: {}, parent: group });
+    return { scene, group, c1, c2 };
+  }
+
+  it('restores a deleted container together with its children', () => {
+    const { scene, group, c1, c2 } = sceneFixture();
+    const selection = makeSelection([group as string]);
+
+    runDelete({ selection, scene });
+
+    expect(scene.get(group)).toBeUndefined();
+    expect(scene.get(c1)).toBeUndefined();
+
+    scene.undo();
+
+    expect(scene.get(group)).toBeDefined();
+    expect(scene.childrenOf(group)).toEqual([c1, c2]);
+    expect(scene.get(c1)!.parent).toBe(group);
+    expect(scene.get(c2)!.parent).toBe(group);
+  });
+
+  it('restores a nested subtree, poses and all', () => {
+    const scene = createScene<{ tag?: string }, 'main'>({ systemLayers: [{ id: 'main' }] });
+    const pose = { x: 0, y: 0, width: 10, height: 10 };
+    const outer = scene.add({ kind: 'container', layer: 'main', pose, data: {} });
+    const inner = scene.add({ kind: 'container', layer: 'main', pose, data: {}, parent: outer });
+    const deep = scene.add({
+      kind: 'leaf', layer: 'main', pose: { x: 5, y: 6, width: 1, height: 2 },
+      data: { tag: 'deep' }, parent: inner,
+    });
+    const selection = makeSelection([outer as string]);
+
+    runDelete({ selection, scene });
+    scene.undo();
+
+    expect(scene.childrenOf(outer)).toEqual([inner]);
+    expect(scene.childrenOf(inner)).toEqual([deep]);
+    expect(scene.get(deep)!.pose).toEqual({ x: 5, y: 6, width: 1, height: 2 });
+    expect(scene.get(deep)!.data).toEqual({ tag: 'deep' });
+  });
+
+  it('redo re-deletes the whole subtree', () => {
+    const { scene, group, c1 } = sceneFixture();
+    const selection = makeSelection([group as string]);
+
+    runDelete({ selection, scene });
+    scene.undo();
+    scene.redo();
+
+    expect(scene.get(group)).toBeUndefined();
+    expect(scene.get(c1)).toBeUndefined();
   });
 });

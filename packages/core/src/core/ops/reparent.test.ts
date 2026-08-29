@@ -58,3 +58,57 @@ describe('createReparentOp', () => {
     expect(createReparentOp({ id: 'b', fromParentId: null, toParentId: 'p' }).coalesceKey).toBe('reparent:b');
   });
 });
+
+describe('createReparentOp — sibling index', () => {
+  /** Ordered fake: setParent appends, setChildOrder rewrites a sibling list. */
+  function makeOrderedAdapter(order: Record<string, string[]>) {
+    return {
+      order,
+      setParent(id: string, parentId: string | null) {
+        for (const key of Object.keys(order)) {
+          const i = order[key].indexOf(id);
+          if (i >= 0) order[key].splice(i, 1);
+        }
+        (order[parentId ?? 'ROOT'] ??= []).push(id);
+      },
+      getChildren: (parentId: string | null) => (order[parentId ?? 'ROOT'] ?? []).slice(),
+      setChildOrder: (parentId: string | null, ids: string[]) => { order[parentId ?? 'ROOT'] = ids.slice(); },
+    };
+  }
+
+  it('apply places the node at toIndex instead of appending', () => {
+    const a = makeOrderedAdapter({ ROOT: ['x'], p: ['m', 'n'] });
+    createReparentOp({ id: 'x', fromParentId: null, toParentId: 'p', toIndex: 1 }).apply(a as never);
+    expect(a.order.p).toEqual(['m', 'x', 'n']);
+  });
+
+  it('invert restores the node to fromIndex', () => {
+    const a = makeOrderedAdapter({ ROOT: ['a', 'b', 'c'], p: [] });
+    const op = createReparentOp({ id: 'b', fromParentId: null, toParentId: 'p', fromIndex: 1 });
+    op.apply(a as never);
+    expect(a.order.ROOT).toEqual(['a', 'c']);
+
+    op.invert().apply(a as never);
+    expect(a.order.ROOT).toEqual(['a', 'b', 'c']);
+  });
+
+  it('invert swaps fromIndex and toIndex', () => {
+    const op = createReparentOp({
+      id: 'a', fromParentId: null, toParentId: 'p', fromIndex: 2, toIndex: 0,
+    });
+    expect(op.invert().args).toMatchObject({ fromIndex: 0, toIndex: 2 });
+  });
+
+  it('appends when no index is given', () => {
+    const a = makeOrderedAdapter({ ROOT: ['x'], p: ['m', 'n'] });
+    createReparentOp({ id: 'x', fromParentId: null, toParentId: 'p' }).apply(a as never);
+    expect(a.order.p).toEqual(['m', 'n', 'x']);
+  });
+
+  it('ignores indices on an adapter with no ordering seam', () => {
+    const calls: { id: string; parentId: string | null }[] = [];
+    const a = { setParent: (id: string, parentId: string | null) => calls.push({ id, parentId }) };
+    createReparentOp({ id: 'a', fromParentId: null, toParentId: 'p', toIndex: 0 }).apply(a as never);
+    expect(calls).toEqual([{ id: 'a', parentId: 'p' }]);
+  });
+});

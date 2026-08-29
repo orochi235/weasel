@@ -4,7 +4,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import { createReparentOp } from 'core/ops/reparent';
-import { unionBounds, type RectPose } from 'features/groups/unionBounds';
+import { unionBounds, type RectPose } from 'core/geometry/unionBounds';
 import type { Action } from '../registry';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 
@@ -92,10 +92,12 @@ export const groupAction: Action & { requires: string[] } = {
         }),
       ];
       for (const node of nodes) {
+        const siblings = node.parent == null ? scene.roots : scene.childrenOf(node.parent);
         ops.push(createReparentOp({
           id: node.id as string,
           fromParentId: (node.parent ?? null) as string | null,
           toParentId: containerId as string,
+          fromIndex: siblings.indexOf(node.id),
           label: 'Group',
         }));
       }

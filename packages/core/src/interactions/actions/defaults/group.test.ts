@@ -239,3 +239,34 @@ describe('ungroupAction.run', () => {
     expect(selection.get()).toEqual([a, containerB]);
   });
 });
+
+describe('groupAction.run — undo restores paint order', () => {
+  it('returns a grouped node to its original root slot, not the end', () => {
+    const scene = makeScene();
+    const pose = { x: 0, y: 0, width: 10, height: 10 };
+    const a = scene.add({ kind: 'leaf', layer: 'main', pose, data: {} });
+    const b = scene.add({ kind: 'leaf', layer: 'main', pose, data: {} });
+    const c = scene.add({ kind: 'leaf', layer: 'main', pose, data: {} });
+    const selection = makeSelection([b]);
+
+    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    scene.undo();
+
+    expect([...scene.roots]).toEqual([a, b, c]);
+  });
+
+  it('returns a node grouped out of a container to its original child slot', () => {
+    const scene = makeScene();
+    const pose = { x: 0, y: 0, width: 10, height: 10 };
+    const box = scene.add({ kind: 'container', layer: 'main', pose, data: {} });
+    const a = scene.add({ kind: 'leaf', layer: 'main', pose, data: {}, parent: box });
+    const b = scene.add({ kind: 'leaf', layer: 'main', pose, data: {}, parent: box });
+    const c = scene.add({ kind: 'leaf', layer: 'main', pose, data: {}, parent: box });
+    const selection = makeSelection([b]);
+
+    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    scene.undo();
+
+    expect([...scene.childrenOf(box)]).toEqual([a, b, c]);
+  });
+});
