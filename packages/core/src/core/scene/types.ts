@@ -87,8 +87,9 @@ interface NodeBase<TData, TLayer extends string, TPose> {
   /** Computes this node's path from its dependencies' poses, in `dependsOn`
    *  order. A dependency that has been removed arrives as `undefined`.
    *  Returning `null` means "nothing to draw right now". Re-evaluated when a
-   *  dependency's world pose changes — including when an ancestor of one moves
-   *  or is reparented — never authored.
+   *  dependency's world pose changes, never authored. Absolute-pose `Scene`
+   *  makes that the dependency's own pose, and an ancestor's move reaches it as
+   *  a `setPose` of its own from the container cascade.
    *  `node` is deliberately widened: naming `TData`/`TLayer` here puts them in
    *  a contravariant position, making `Scene` invariant in both and breaking
    *  assignment kit-wide. The cost is that a `derive` casts to read `node.data`. */

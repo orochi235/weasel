@@ -99,9 +99,9 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
    *  created or destroyed, and unlike `add`/`remove` they replay on undo/redo. */
   const dependents = createDependentsIndex();
 
-  /** `derive` reads its dependencies' *world* poses, so moving a node moves
-   *  every descendant's too — invalidating only `id`'s dependents would leave
-   *  a nested dependency's memo stale under a non-identity pose composition. */
+  /** Walks `id`'s whole subtree. Not required while `Scene` stores absolute
+   *  poses and the render walks compose nothing; it is here so `derive`'s
+   *  world-pose contract still holds if they ever do. */
   function invalidateDependents(id: NodeId): void {
     if (dependents.isEmpty()) return;
     const subtree: NodeId[] = [id];

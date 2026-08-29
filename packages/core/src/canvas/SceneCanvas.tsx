@@ -1522,13 +1522,24 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [],
   );
 
+  const sceneSlotWithAlpha = useMemo(() => {
+    const slot = mergedLayers.scene;
+    if (!slot || 'layer' in slot) return slot; // null or CustomLayerEntry — leave alone
+    return wireSceneSlotToScene(
+      slot as SceneSlotConfig<Node<TData, TLayer, TPose>, TPose>,
+      scene,
+      alphaFor,
+    );
+  }, [mergedLayers.scene, alphaFor, scene]);
+
   // Preview-ghost layer: renders in-flight gesture poses on top of the
   // committed scene using the scene slot's `drawOne`. Walks both the
-  // tools registry and the dispatcher's in-flight handles.
+  // tools registry and the dispatcher's in-flight handles. It takes the
+  // scene-wired slot, so a ghosted derived node still resolves its path.
   const previewLayer = usePreviewGhostLayer<TData, TLayer, TPose>({
     scene,
     tools,
-    sceneSlot: mergedLayers.scene,
+    sceneSlot: sceneSlotWithAlpha,
     dispatcher,
   });
 
@@ -1812,16 +1823,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         : {}),
     });
   }, [mergedLayers.selectionOverlay, getSuppressedSelectionIds]);
-
-  const sceneSlotWithAlpha = useMemo(() => {
-    const slot = mergedLayers.scene;
-    if (!slot || 'layer' in slot) return slot; // null or CustomLayerEntry — leave alone
-    return wireSceneSlotToScene(
-      slot as SceneSlotConfig<Node<TData, TLayer, TPose>, TPose>,
-      scene,
-      alphaFor,
-    );
-  }, [mergedLayers.scene, alphaFor, scene]);
 
   const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => ({
     ...mergedLayers,
