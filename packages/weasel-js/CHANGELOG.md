@@ -1,5 +1,48 @@
 # weasel-js
 
+## 1.3.0
+
+### Patch Changes
+
+- Updated dependencies [ba8b139]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [67bcb05]
+- Updated dependencies [47cbb08]
+- Updated dependencies [c24e7de]
+- Updated dependencies [ce82f4a]
+- Updated dependencies [be697dc]
+- Updated dependencies [26bbdcf]
+- Updated dependencies [546f67d]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [ccd51cc]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [d9f110e]
+- Updated dependencies [0dd35a1]
+- Updated dependencies [1a0bea3]
+- Updated dependencies [9d95836]
+- Updated dependencies [62a3c46]
+- Updated dependencies [5f6c28e]
+- Updated dependencies [3cd1ee8]
+- Updated dependencies [4f1ef0b]
+- Updated dependencies [0114abf]
+- Updated dependencies [50bc909]
+- Updated dependencies [6a06f6d]
+- Updated dependencies [a37ee0b]
+- Updated dependencies [c1b8511]
+- Updated dependencies [ce2b5c7]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [7a746df]
+- Updated dependencies [4f19274]
+- Updated dependencies [07fd2de]
+- Updated dependencies [81213fc]
+- Updated dependencies [c1b8511]
+- Updated dependencies [546f67d]
+- Updated dependencies [2b86e00]
+- Updated dependencies [bca99e3]
+- Updated dependencies [5923c8b]
+- Updated dependencies [3fb3a46]
+  - @weasel-js/core@1.3.0
+
 ## 1.2.0
 
 ### Patch Changes

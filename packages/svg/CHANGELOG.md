@@ -1,5 +1,166 @@
 # @weasel-js/svg
 
+## 1.3.0
+
+### Patch Changes
+
+- 50bc909: `FillStyle` is open: register a sixth paint kind and it renders, converts
+  frames and serializes.
+
+  `registerPaintKind(entry)` returns a disposer and `_resetPaintKindsForTests`
+  re-seeds the five built-ins, matching the kit's other module-global
+  registries. An entry carries the editor's slots (`label`, `seed`, `colorOf`,
+  `Editor`), a render slot, both frame-conversion directions, and an SVG
+  `<defs>` slot. `listPaintKinds()` enumerates them, and `asPaint` types a
+  consumer's own paint as a `FillStyle` — the union itself stays closed, because
+  opening its discriminant would widen every built-in member.
+
+  Three defects fall out of the same change, each of which a sixth kind hit
+  immediately. The renderer's fill dispatch fell off the end of its switch into
+  an unguarded cast to the gradient union, so an unknown kind read `stops` off a
+  paint with none and threw mid-frame. `fillInPoseFrame` and its inverse returned
+  an unknown kind untouched, leaving it painting in screen space on a node that
+  moves. `<defs>` emitted nothing for a kind `gradientXml` did not know while
+  still writing the `url(#id)` that referenced it.
+
+  Registering a kind now bumps the node memo generation, so a node painted
+  before the registration repaints rather than holding the frame it resolved
+  when the kind was unknown.
+
+- 6a06f6d: Node paint is an object: `data.fill` is a `FillStyle`, `data.stroke` a `Stroke`
+
+  Each concept now has exactly one shape. `data.fill` holds a `FillStyle`,
+  `data.stroke` a whole `Stroke`, and `null` on either is an explicit "no paint"
+  where `undefined` takes the painter's fallback. Two new authoring helpers keep
+  hand-written node data short:
+
+  ```ts
+  data: { path, fill: solid('#7fb069'), stroke: strokeOf('#1c1c1c', 2) }
+  ```
+
+  **Breaking, with no compatibility path.** A document written against the old
+  shapes renders wrong rather than failing, which is accepted:
+
+  - `NodeFill = string | FillStyle` and `NodeStroke = string | Stroke` are gone,
+    and so are the string branches of `resolveNodeFill` / `resolveNodeStroke`.
+    A node holding `fill: '#f00'` now paints the default grey.
+  - `data.strokeWidth` is deleted. A stroke's width is `Stroke.width`.
+  - `data.color` — the legacy alias `kit:path` and the rect fallback read — is
+    deleted. The fallback painter reads `data.fill` like everything else.
+  - `fill: 'none'` is now `fill: null`; `stroke: 'none'` is `stroke: null`.
+  - `NodeInkResult` is gone: a painter's `ink` returns `NodeInk` and nothing
+    else. A painter returning `{ filled, strokeWidth }` no longer type-checks
+    and its reach is read as zero.
+  - `@weasel-js/ui` drops `isStrokeObject`, which existed only to discriminate
+    the union; `strokeColorOf` and `strokeWithColor` lose their string branches.
+  - `@weasel-js/svg`'s `strokeDataFromSvg` returns `Stroke | undefined` instead
+    of a `{ stroke, strokeWidth }` pair, and stops flattening a plain solid
+    stroke into a color. SVG's `fill="none"` imports as `fill: null`.
+
+  **A paint's alpha lives in `opacity`, one slot for every paint kind.** That is
+  the only slot a gradient or a pattern has, so it is the slot all of them use,
+  and the renderer multiplies a hex alpha by it — the two would fight if both
+  carried the value. `solid()` therefore moves an alpha channel out of the hex:
+  `solid('#ff000080')` is `{ color: '#ff0000', opacity: 0.502 }`.
+
+  The four setter actions follow: `setFillOpacity` / `setStrokeOpacity` write
+  `opacity` rather than splicing hex, so they now work on a gradient fill, which
+  they used to leave untouched. `setFill` / `setStroke` given a `color` recolor
+  the node's existing paint through the new `paintWithColor`, keeping its opacity
+  unless the picked color states an alpha of its own — and `setStroke` keeps the
+  stroke's width, cap, join and dash instead of replacing the whole value.
+
+  New exports: `solid`, `strokeOf`, `paintAlpha`, `paintWithAlpha`,
+  `paintWithColor`, `DEFAULT_SHAPE_FILL`.
+
+  `defaultNodeProperties` moves `data.fill` from a `color` leaf to a `paint` one
+  — a color control pointed at a `FillStyle` reads `undefined` off a gradient and
+  writes a bare string over it — and the `data.stroke` object leaf drops its
+  `fromScalar`, which had nothing left to lift.
+
+- 2b2d971: Keep a stroke's dash, cap, join and gradient paint through SVG import
+
+  `unpack` lowered every stroke to a color string plus a width, because that was
+  all `data.stroke` could hold — a gradient stroke became `#888888` with a
+  warning, and dashes, caps, joins and miter limits were dropped silently. Now
+  that `data.stroke` is `NodeStroke = string | Stroke`, the whole `SvgStroke`
+  comes through.
+
+  A plain solid stroke still arrives as the color-string pair every consumer
+  already reads. Anything the pair cannot express — a gradient paint, a dash, a
+  cap, a join, a miter limit, a `stroke-opacity` — arrives as the object form,
+  with the paint normalized to the leaf's own box exactly as a gradient fill is,
+  so a `userSpaceOnUse` gradient survives the fit-clamp and the drop placement.
+
+  `strokeDataFromSvg` is exported, so a second importer lowering SVG onto kit
+  nodes doesn't have to re-derive which form to write.
+
+- c1b8511: **Breaking:** paint leaves `TextStyle`. A text node's color and outline are
+  `data.fill` and `data.stroke` — the same two leaves every other node kind
+  paints from — and `TextStyle` holds typography only. `TextStyle.fill` and
+  `TextStyle.stroke` are gone, with no compatibility read: a document that put
+  its color in `style.fill` now renders in the default black rather than
+  erroring, so check documents that predate this.
+
+  This fixes a real asymmetry rather than only moving fields. `data.stroke`
+  already reached text through a fold in the painter, but `data.fill` did not:
+  picking a fill color with a text node selected wrote a field nothing read, so
+  the canvas did not change. `setFill`, `setFillOpacity`, the opacity scrub and
+  the Appearance leaf now all mean the same thing on text as on a rect. The
+  duplicate `data.style.fill` control is gone from the text schema with them.
+
+  `resolveTextStyle(style, paint)` takes the node's paint as a second argument
+  and is what derives the caret and selection colors, so the edit overlay
+  matches the glyphs it sits on; `useTextEdit` gained a `getPaint` option for
+  the same reason, defaulted by `useSceneTextEdit` from `data.fill` /
+  `data.stroke`. `TextPose` gained `fill` / `stroke`, so text drawn through
+  `createTextLayer` is painted rather than black. `SvgTextNode` gained the same
+  two, and SVG import and export carry text paint there instead of inside the
+  style. `StyledRun.fill` and `.stroke` are unchanged and still override the
+  node's per range — which is also where a caller with no node at all, a HUD
+  widget or a debug overlay, now states its color.
+
+  `textCommandFromRuns` is exported from the package root.
+
+- Updated dependencies [ba8b139]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [67bcb05]
+- Updated dependencies [47cbb08]
+- Updated dependencies [c24e7de]
+- Updated dependencies [ce82f4a]
+- Updated dependencies [be697dc]
+- Updated dependencies [26bbdcf]
+- Updated dependencies [546f67d]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [ccd51cc]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [d9f110e]
+- Updated dependencies [0dd35a1]
+- Updated dependencies [1a0bea3]
+- Updated dependencies [9d95836]
+- Updated dependencies [62a3c46]
+- Updated dependencies [5f6c28e]
+- Updated dependencies [3cd1ee8]
+- Updated dependencies [4f1ef0b]
+- Updated dependencies [0114abf]
+- Updated dependencies [50bc909]
+- Updated dependencies [6a06f6d]
+- Updated dependencies [a37ee0b]
+- Updated dependencies [c1b8511]
+- Updated dependencies [ce2b5c7]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [7a746df]
+- Updated dependencies [4f19274]
+- Updated dependencies [07fd2de]
+- Updated dependencies [81213fc]
+- Updated dependencies [c1b8511]
+- Updated dependencies [546f67d]
+- Updated dependencies [2b86e00]
+- Updated dependencies [bca99e3]
+- Updated dependencies [5923c8b]
+- Updated dependencies [3fb3a46]
+  - @weasel-js/core@1.3.0
+
 ## 1.2.0
 
 ### Patch Changes
