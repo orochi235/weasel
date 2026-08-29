@@ -3,7 +3,7 @@
  * (shape, routing, label, icon, affordances, …) is its own registry;
  * this one holds the per-kind `paint` + `silhouette` (and future
  * fields) used by `defaultDrawOne`, clipping, non-rect hit-testing,
- * lasso/area-select, and SVG export.
+ * and lasso/area-select.
  *
  * Teaching the kit about a new kind of shape goes through this registry
  * rather than by overriding `drawOne`. Overrides are still possible but
@@ -86,9 +86,9 @@ export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
   paint(node: Node<TData, string, TPose>, pose: TPose, ctx?: NodePaintCtx): DrawCommand[];
   /** Optional: derive the node's silhouette path from its pose.
    *  Used by clipping (when the container has no explicit
-   *  `clipFromPose`), by non-rect hit-testing, by lasso/area-select,
-   *  and by SVG export. Painters whose visual has no meaningful closed
-   *  silhouette (e.g. text) leave this undefined. */
+   *  `clipFromPose`), by non-rect hit-testing, and by lasso/area-select.
+   *  Painters whose visual has no meaningful closed silhouette (e.g. text)
+   *  leave this undefined. */
   silhouette?(node: Node<TData, string, TPose>, pose: TPose): Path | null;
   /** Optional: how the silhouette is inked — whether the interior is filled,
    *  and how wide the outline is. Read by picking, so that an unfilled shape
@@ -230,7 +230,7 @@ function matchNodeShape<TData, TPose>(
 /** Find the painter for `node` and ask it for the node's silhouette path,
  *  in **world** coords. Returns null if no painter matches, or the matching
  *  painter has no `silhouette` method, or the method returns null. Used by
- *  clipping, generic non-rect hit-testing, lasso, and SVG export — anywhere
+ *  clipping, generic non-rect hit-testing and lasso/area-select — anywhere
  *  the kit needs the "closed boundary" of whatever this kind of node draws as.
  *
  *  Painters return their silhouette in the pose's local (unrotated) frame;
@@ -283,7 +283,8 @@ export interface ShapeCoversPointOptions {
  * everything that is not a rectangle: the concave notch of a star, the corner
  * outside an ellipse, the blank right half of a text box. This asks the
  * painter's silhouette instead, which is the same boundary used for clipping
- * and SVG export, so "what you can click" and "what is drawn" answer together.
+ * and area-select, so "what you can click" and "what is drawn" answer
+ * together.
  *
  * "What is drawn" includes the *ink*, not just the boundary. A shape whose
  * interior isn't filled — an outlined rect, a pencil stroke, a bare line — is
