@@ -18,7 +18,7 @@ conversions in `runs.ts` are the boundary with everything else:
 | --- | --- |
 | `toRuns` | anything → runs |
 | `runsToPlainText` | runs → plain text (clipboard, search) |
-| `runsToMarkdown` / `markdownToRuns` | runs ⇄ markdown |
+| `runsToMarkdown` / `markdownToRuns` | runs ⇄ an inline grammar, `MARKDOWN_RUN_GRAMMAR` by default |
 
 `runs.ts`, `runs/resolveRuns.ts` and `textStyle.ts` — the conversions above,
 plus `resolveRuns` and `DEFAULT_TEXT_STYLE` / `resolveTextStyle` /

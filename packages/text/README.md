@@ -38,3 +38,7 @@ place it — for a consumer that tessellates its own geometry.
 Metrics come from whichever tier resolved the family: a baked MSDF atlas, or —
 for a family registered with `registerFontOutlines` and no atlas — the parsed
 face itself, so font bytes alone are enough to lay text out.
+
+The inline grammar `runsToMarkdown` / `markdownToRuns` speak is a parameter,
+defaulting to `MARKDOWN_RUN_GRAMMAR` (`**bold**`, `*italic*`, `***both***`).
+Pass a `RunGrammar` with different markers to read or write another spelling.

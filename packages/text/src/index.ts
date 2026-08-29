@@ -9,8 +9,9 @@ export {
   runsToPlainText,
   runsToMarkdown,
   markdownToRuns,
+  MARKDOWN_RUN_GRAMMAR,
 } from './runs';
-export type { StyledRun } from './runs';
+export type { StyledRun, RunGrammar, RunMarker, RunFlag } from './runs';
 
 export {
   DEFAULT_TEXT_STYLE,

@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { toRuns, runsToPlainText, runsToMarkdown, markdownToRuns, type StyledRun } from './runs';
+import {
+  toRuns, runsToPlainText, runsToMarkdown, markdownToRuns,
+  MARKDOWN_RUN_GRAMMAR, type StyledRun, type RunGrammar,
+} from './runs';
 
 describe('toRuns', () => {
   it('wraps a string into a single run', () => {
@@ -122,5 +125,60 @@ describe('markdownToRuns', () => {
   it('round-trips plain → md → runs → md', () => {
     const md = '**hello** *world*';
     expect(runsToMarkdown(markdownToRuns(md))).toBe(md);
+  });
+});
+
+describe('custom run grammars', () => {
+  /** The two flags the markdown subset has no spelling for. */
+  const EXTENDED: RunGrammar = {
+    markers: [
+      ...MARKDOWN_RUN_GRAMMAR.markers,
+      { delimiter: '~', repeat: 2, flags: ['strikethrough'] },
+      { delimiter: '_', repeat: 1, flags: ['underline'] },
+    ],
+  };
+
+  it('reads markers the default grammar has no spelling for', () => {
+    expect(markdownToRuns('a ~~b~~ _c_', EXTENDED)).toEqual([
+      { text: 'a ' },
+      { text: 'b', strikethrough: true },
+      { text: ' ' },
+      { text: 'c', underline: true },
+    ]);
+  });
+
+  it('writes them back', () => {
+    const runs = [{ text: 'b', strikethrough: true }, { text: 'c', underline: true }];
+    expect(runsToMarkdown(runs, EXTENDED)).toBe('~~b~~_c_');
+  });
+
+  it('escapes every delimiter the grammar names, not just the default ones', () => {
+    // `~` and `_` are literal text under the default grammar and must survive
+    // it unescaped; under EXTENDED they are markers and must not.
+    expect(runsToMarkdown([{ text: 'a~b_c' }])).toBe('a~b_c');
+    expect(runsToMarkdown([{ text: 'a~b_c' }], EXTENDED)).toBe('a\\~b\\_c');
+    expect(markdownToRuns('a\\~b\\_c', EXTENDED)).toEqual([{ text: 'a~b_c' }]);
+  });
+
+  it('nests markers when no single one spells the whole run', () => {
+    // EXTENDED has no one marker for bold + strikethrough.
+    expect(runsToMarkdown([{ text: 'x', bold: true, strikethrough: true }], EXTENDED))
+      .toBe('**~~x~~**');
+  });
+
+  it('drops a flag the grammar cannot spell, keeping the text', () => {
+    expect(runsToMarkdown([{ text: 'x', underline: true }])).toBe('x');
+  });
+
+  it('round-trips through a grammar that renames the delimiters entirely', () => {
+    const shouty: RunGrammar = {
+      markers: [{ delimiter: '!', repeat: 1, flags: ['bold'] }],
+    };
+    expect(markdownToRuns('a !b!', shouty)).toEqual([
+      { text: 'a ' },
+      { text: 'b', bold: true },
+    ]);
+    // `*` is ordinary text here, and is left alone in both directions.
+    expect(runsToMarkdown([{ text: 'a*b' }], shouty)).toBe('a*b');
   });
 });

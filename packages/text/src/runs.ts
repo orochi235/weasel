@@ -53,42 +53,138 @@ export function runsToPlainText(runs: readonly StyledRun[]): string {
   return out;
 }
 
-function escapeMarkdown(s: string): string {
-  return s.replace(/\\/g, '\\\\').replace(/\*/g, '\\*');
+/** A run flag an inline marker can toggle. The four additive style toggles on
+ *  `StyledRun`; the valued fields (family, size, paint) have no inline
+ *  spelling and are not addressable this way. */
+export type RunFlag = 'bold' | 'italic' | 'underline' | 'strikethrough';
+
+/** One inline marker: a delimiter repeated `repeat` times, and the flags it
+ *  turns on between its opening and closing occurrence. */
+export interface RunMarker {
+  delimiter: string;
+  repeat: number;
+  flags: readonly RunFlag[];
 }
 
-/** Render runs as Markdown, preserving bold and italic. The flavor written to
- *  the clipboard alongside the plain-text one. */
-export function runsToMarkdown(runs: readonly StyledRun[]): string {
+/**
+ * The inline grammar `runsToMarkdown` writes and `markdownToRuns` reads.
+ *
+ * Markers sharing a delimiter are matched longest-first, which is what lets
+ * `***` mean something other than `**` followed by `*`. A backslash escapes
+ * any delimiter character and itself, in both directions.
+ */
+export interface RunGrammar {
+  markers: readonly RunMarker[];
+}
+
+/**
+ * The markdown subset the kit reads and writes: `**bold**`, `*italic*`,
+ * `***both***`.
+ *
+ * Deliberately not the whole of markdown, and deliberately silent on
+ * `underline` / `strikethrough` — the two run flags with no entry here are
+ * dropped by `runsToMarkdown`, as they always have been. A grammar that wants
+ * `~~struck~~` adds one marker; nothing else has to change.
+ */
+export const MARKDOWN_RUN_GRAMMAR: RunGrammar = {
+  markers: [
+    { delimiter: '*', repeat: 3, flags: ['bold', 'italic'] },
+    { delimiter: '*', repeat: 2, flags: ['bold'] },
+    { delimiter: '*', repeat: 1, flags: ['italic'] },
+  ],
+};
+
+/** Delimiter characters of a grammar, plus the backslash that escapes them. */
+function escapees(grammar: RunGrammar): Set<string> {
+  const out = new Set<string>(['\\']);
+  for (const m of grammar.markers) out.add(m.delimiter);
+  return out;
+}
+
+function escapeFor(text: string, chars: ReadonlySet<string>): string {
+  let out = '';
+  for (const ch of text) out += chars.has(ch) ? `\\${ch}` : ch;
+  return out;
+}
+
+/** The flags a run turns on, in the grammar's own marker order so two runs
+ *  with the same flags always serialize identically. */
+function flagsOf(run: StyledRun, grammar: RunGrammar): Set<RunFlag> {
+  const on = new Set<RunFlag>();
+  for (const m of grammar.markers) {
+    for (const f of m.flags) if (run[f]) on.add(f);
+  }
+  return on;
+}
+
+function sameFlags(a: ReadonlySet<RunFlag>, b: readonly RunFlag[]): boolean {
+  return a.size === b.length && b.every((f) => a.has(f));
+}
+
+/**
+ * Render runs in `grammar`, defaulting to the markdown subset. The flavor
+ * written to the clipboard alongside the plain-text one.
+ *
+ * A run whose flags exactly match one marker takes it; otherwise the markers
+ * that cover them nest. Flags no marker spells are dropped — the text still
+ * round-trips, without that styling.
+ */
+export function runsToMarkdown(
+  runs: readonly StyledRun[],
+  grammar: RunGrammar = MARKDOWN_RUN_GRAMMAR,
+): string {
+  const chars = escapees(grammar);
   let out = '';
   for (const r of runs) {
-    const escaped = escapeMarkdown(r.text);
-    if (r.bold && r.italic) out += `***${escaped}***`;
-    else if (r.bold) out += `**${escaped}**`;
-    else if (r.italic) out += `*${escaped}*`;
-    else out += escaped;
+    const escaped = escapeFor(r.text, chars);
+    const on = flagsOf(r, grammar);
+    if (on.size === 0) { out += escaped; continue; }
+
+    const exact = grammar.markers.find((m) => sameFlags(on, m.flags));
+    if (exact) {
+      const d = exact.delimiter.repeat(exact.repeat);
+      out += `${d}${escaped}${d}`;
+      continue;
+    }
+    // No single marker says all of it: nest the ones that each say part.
+    const covering = grammar.markers.filter(
+      (m) => m.flags.length === 1 && on.has(m.flags[0]),
+    );
+    const open = covering.map((m) => m.delimiter.repeat(m.repeat)).join('');
+    const close = [...covering].reverse().map((m) => m.delimiter.repeat(m.repeat)).join('');
+    out += `${open}${escaped}${close}`;
   }
   return out;
 }
 
 /**
- * Parse a small markdown subset (`**bold**`, `*italic*`, `***both***`) into
- * styled runs. Backslash escapes `\*` and `\\`. Newlines are preserved as
- * literal characters inside a run — they're not run-boundary markers in
- * this format.
+ * Parse `input` in `grammar`, defaulting to the markdown subset, into styled
+ * runs. Newlines are preserved as literal characters inside a run — they are
+ * not run-boundary markers in this format.
  */
-export function markdownToRuns(input: string): StyledRun[] {
+export function markdownToRuns(
+  input: string,
+  grammar: RunGrammar = MARKDOWN_RUN_GRAMMAR,
+): StyledRun[] {
+  const chars = escapees(grammar);
+  // Longest-first per delimiter, so `***` is tried before `**` before `*`.
+  const byDelimiter = new Map<string, RunMarker[]>();
+  for (const m of grammar.markers) {
+    const list = byDelimiter.get(m.delimiter) ?? [];
+    list.push(m);
+    byDelimiter.set(m.delimiter, list);
+  }
+  for (const list of byDelimiter.values()) list.sort((a, b) => b.repeat - a.repeat);
+
   const runs: StyledRun[] = [];
-  let bold = false;
-  let italic = false;
+  const active = new Set<RunFlag>();
   let buf = '';
   let i = 0;
 
   function flush(): void {
     if (buf.length === 0) return;
     const run: StyledRun = { text: buf };
-    if (bold) run.bold = true;
-    if (italic) run.italic = true;
+    for (const f of active) run[f] = true;
     runs.push(run);
     buf = '';
   }
@@ -96,27 +192,26 @@ export function markdownToRuns(input: string): StyledRun[] {
   while (i < input.length) {
     const ch = input[i];
 
-    if (ch === '\\' && i + 1 < input.length && '*\\'.includes(input[i + 1])) {
+    if (ch === '\\' && i + 1 < input.length && chars.has(input[i + 1])) {
       buf += input[i + 1];
       i += 2;
       continue;
     }
 
-    if (ch === '*') {
+    const markers = byDelimiter.get(ch);
+    if (markers) {
       let count = 0;
-      while (i + count < input.length && input[i + count] === '*') count++;
+      while (i + count < input.length && input[i + count] === ch) count++;
+      // The longest marker the delimiter run can pay for. A run shorter than
+      // every marker still matches the shortest, which is how a lone `*`
+      // toggles italic where `***` toggles both.
+      const marker = markers.find((m) => m.repeat <= count) ?? markers[markers.length - 1];
       flush();
-      if (count >= 3) {
-        bold = !bold;
-        italic = !italic;
-        i += 3;
-      } else if (count === 2) {
-        bold = !bold;
-        i += 2;
-      } else {
-        italic = !italic;
-        i += 1;
+      for (const f of marker.flags) {
+        if (active.has(f)) active.delete(f);
+        else active.add(f);
       }
+      i += marker.repeat;
       continue;
     }
 

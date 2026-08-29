@@ -553,6 +553,7 @@ export {
   runsToPlainText,
   runsToMarkdown,
   markdownToRuns,
+  MARKDOWN_RUN_GRAMMAR,
   DEFAULT_TEXT_STYLE,
   resolveTextStyle,
   fontString,
@@ -568,6 +569,9 @@ export {
 } from '@weasel-js/text';
 export type {
   StyledRun,
+  RunGrammar,
+  RunMarker,
+  RunFlag,
   TextStyle,
   TextPaint,
   ResolvedTextStyle,
