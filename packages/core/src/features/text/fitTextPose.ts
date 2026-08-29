@@ -19,8 +19,7 @@
  * `x` / `y` after calling.
  */
 
-import { measureText, measuredWidth } from '@weasel-js/text';
-import { fontString, resolveTextStyle } from '@weasel-js/text';
+import { cachedLayoutRuns, resolveRuns, toRuns, resolveTextStyle } from '@weasel-js/text';
 import type { TextPose } from '@weasel-js/text';
 
 /** Options for `fitTextPose`. */
@@ -33,36 +32,24 @@ export interface FitTextPoseOptions {
 
 /** Recompute a `TextPose`'s `width`/`height` to fit its content; pure helper, doesn't mutate scene state. */
 export function fitTextPose(
-  ctx: CanvasRenderingContext2D,
   pose: TextPose,
   opts: FitTextPoseOptions = {},
 ): TextPose {
   const axis = opts.axis ?? 'height';
   const { padX, padY } = resolvePadding(opts.padding);
   const style = resolveTextStyle(pose.style);
-  ctx.save();
-  ctx.font = fontString(style);
-  try {
-    const lineHeightPx = style.fontSize * style.lineHeight;
-    if (axis === 'height') {
-      const measured = measureText(ctx, pose.text, pose.width - padX * 2, style);
-      return { ...pose, height: measured.height + padY * 2 };
-    }
-    // axis === 'both'
-    const lines = pose.text.split('\n');
-    let maxWidth = 0;
-    for (const line of lines) {
-      const w = measuredWidth(ctx, line, style);
-      if (w > maxWidth) maxWidth = w;
-    }
-    return {
-      ...pose,
-      width: maxWidth + padX * 2,
-      height: lines.length * lineHeightPx + padY * 2,
-    };
-  } finally {
-    ctx.restore();
-  }
+  const source = pose.runs && pose.runs.length > 0 ? pose.runs : pose.text;
+  const { bounds } = cachedLayoutRuns(resolveRuns(toRuns(source), style), {
+    maxWidth: axis === 'height' ? pose.width - padX * 2 : Infinity,
+    lineHeight: style.lineHeight,
+    align: style.align,
+  });
+  if (axis === 'height') return { ...pose, height: bounds.height + padY * 2 };
+  return {
+    ...pose,
+    width: bounds.width + padX * 2,
+    height: bounds.height + padY * 2,
+  };
 }
 
 function resolvePadding(p: FitTextPoseOptions['padding']): { padX: number; padY: number } {

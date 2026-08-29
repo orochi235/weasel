@@ -1,99 +1,109 @@
-import { describe, expect, it } from 'vitest';
+/**
+ * `fitTextPose` sizes a pose from the layout the renderer paints, so every
+ * expectation below is a number that layout produces.
+ *
+ * The `inter` fixture atlas is baked at size 32 and carries exactly two
+ * glyphs — `A` (advance 23) and `B` (advance 22) — plus one kerning pair,
+ * `A→B` at -1. At `fontSize: 32` the scale is 1, so those are world units.
+ * There is no space glyph, so a space takes the `fontSize * 0.25` fallback
+ * advance (8). These tests used to run against a stub where every character
+ * measured 10 wide, which is why nothing here caught that the box disagreed
+ * with the paint by a kern on every pair.
+ */
+import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
+import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
+import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { fitTextPose } from './fitTextPose';
-import { DEFAULT_TEXT_STYLE } from '@weasel-js/text';
 import type { TextPose } from '@weasel-js/text';
 
-/** Stub ctx where each char is 10 wide. */
-function makeCtx(charWidth = 10): CanvasRenderingContext2D {
-  return {
-    save: () => {},
-    restore: () => {},
-    set font(_v: string) {},
-    measureText: (s: string) => ({ width: s.length * charWidth }) as TextMetrics,
-  } as unknown as CanvasRenderingContext2D;
-}
-
-const lh = DEFAULT_TEXT_STYLE.fontSize * DEFAULT_TEXT_STYLE.lineHeight;
+const SIZE = 32;
+const STYLE = { fontFamily: 'inter', fontSize: SIZE };
+/** `fontSize * lineHeight` at the 1.2 default. */
+const LINE = SIZE * 1.2;
 
 describe('fitTextPose', () => {
-  it('grows height to fit wrapped content (default axis)', () => {
-    const ctx = makeCtx();
-    // 'the quick brown' wraps to 2 lines at width 100.
-    const pose: TextPose = { x: 5, y: 7, width: 100, height: 1, text: 'the quick brown' };
-    const fit = fitTextPose(ctx, pose);
+  beforeEach(async () => {
+    _resetFontRegistryForTests();
+    _resetLayoutCacheForTests();
+    const encoder = new TextEncoder();
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.endsWith('.json')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(FIXTURE_FONT) });
+      }
+      return Promise.resolve({
+        ok: true,
+        blob: () => Promise.resolve(new Blob([encoder.encode('PNG')], { type: 'image/png' })),
+      });
+    }) as typeof fetch;
+    global.createImageBitmap = vi.fn().mockResolvedValue({
+      width: 512, height: 512, close: vi.fn(),
+    } as unknown as ImageBitmap);
+    await registerFont('inter', {}, '/fonts/inter.json', '/fonts/inter.png');
+    _resetLayoutCacheForTests();
+  });
+
+  function textPose(over: Partial<TextPose> = {}): TextPose {
+    return { x: 5, y: 7, width: 400, height: 1, text: 'AB', style: STYLE, ...over };
+  }
+
+  it('keeps x, y and width when growing height', () => {
+    const fit = fitTextPose(textPose());
     expect(fit.x).toBe(5);
     expect(fit.y).toBe(7);
-    expect(fit.width).toBe(100);
-    expect(fit.height).toBe(2 * lh);
+    expect(fit.width).toBe(400);
+    expect(fit.height).toBe(LINE);
+  });
+
+  it('grows height to fit wrapped content', () => {
+    // 'AB AB' is 44 + 8 + 44 = 96 unwrapped; at width 60 it wraps to 2 lines.
+    const fit = fitTextPose(textPose({ width: 60, text: 'AB AB' }));
+    expect(fit.height).toBe(2 * LINE);
   });
 
   it('respects vertical padding when growing height', () => {
-    const ctx = makeCtx();
-    const pose: TextPose = { x: 0, y: 0, width: 100, height: 0, text: 'one line' };
-    const fit = fitTextPose(ctx, pose, { padding: { y: 4 } });
-    expect(fit.height).toBe(lh + 8);
+    const fit = fitTextPose(textPose(), { padding: { y: 4 } });
+    expect(fit.height).toBe(LINE + 8);
   });
 
   it('subtracts horizontal padding from the wrap width', () => {
-    const ctx = makeCtx();
-    // 'abcde' is 50px. With width 60 and padX 10, available wrap width is 40 → wraps.
-    const pose: TextPose = { x: 0, y: 0, width: 60, height: 0, text: 'abc def' };
-    const fit = fitTextPose(ctx, pose, { padding: { x: 10 } });
-    expect(fit.height).toBe(2 * lh);
+    // 'AB AB' fits on one line at 96 wide, but not once padding takes 40 of it.
+    const wide = fitTextPose(textPose({ width: 100, text: 'AB AB' }));
+    expect(wide.height).toBe(LINE);
+    const padded = fitTextPose(textPose({ width: 100, text: 'AB AB' }), { padding: { x: 20 } });
+    expect(padded.height).toBe(2 * LINE);
   });
 
-  it('axis=both fits to the longest unwrapped line', () => {
-    const ctx = makeCtx();
-    // Lines: 'short' (50), 'much longer line' (160), 'mid' (30). Max = 160.
-    const pose: TextPose = { x: 0, y: 0, width: 99, height: 99, text: 'short\nmuch longer line\nmid' };
-    const fit = fitTextPose(ctx, pose, { axis: 'both' });
-    expect(fit.width).toBe(160);
-    expect(fit.height).toBe(3 * lh);
+  it('axis=both fits to the longest line and ignores the pose width', () => {
+    const fit = fitTextPose(textPose({ width: 9, text: 'A\nAB\nB' }), { axis: 'both' });
+    // 'AB' is the longest: 23 + 22 - 1 kern = 44.
+    expect(fit.width).toBe(44);
+    expect(fit.height).toBe(3 * LINE);
   });
 
   it('axis=both adds padding on both axes', () => {
-    const ctx = makeCtx();
-    const pose: TextPose = { x: 0, y: 0, width: 0, height: 0, text: 'hi' };
-    const fit = fitTextPose(ctx, pose, { axis: 'both', padding: 6 });
-    expect(fit.width).toBe(20 + 12);
-    expect(fit.height).toBe(lh + 12);
+    const fit = fitTextPose(textPose({ text: 'AB' }), { axis: 'both', padding: 6 });
+    expect(fit.width).toBe(44 + 12);
+    expect(fit.height).toBe(LINE + 12);
   });
 
-  it('preserves x, y, text, and style', () => {
-    const ctx = makeCtx();
-    const pose: TextPose = {
-      x: 11, y: 22, width: 100, height: 0,
-      text: 'hello', style: { fontSize: 16, align: 'center' },
-    };
-    const fit = fitTextPose(ctx, pose, { axis: 'both' });
-    expect(fit.x).toBe(11);
-    expect(fit.y).toBe(22);
-    expect(fit.text).toBe('hello');
-    expect(fit.style).toEqual({ fontSize: 16, align: 'center' });
-  });
-});
-
-describe('fitTextPose — tracking', () => {
-  it("axis 'both' sizes the box to include tracking", () => {
-    // 5 glyphs × 10 + 5 × 3 tracking = 65. Without counting tracking the box
-    // came back 50 wide and clipped the text it was fitted to.
-    const ctx = makeCtx();
-    const pose: TextPose = {
-      x: 0, y: 0, width: 1, height: 1,
-      text: 'abcde',
-      style: { letterSpacing: 3 },
-    };
-    expect(fitTextPose(ctx, pose, { axis: 'both' }).width).toBe(65);
+  it('sizes by the kerned width, not the sum of the advances', () => {
+    // The regression the 10px-per-char stub could never show: summing per
+    // character gives 23 + 22 = 45, and the painted line is 44.
+    const fit = fitTextPose(textPose({ text: 'AB' }), { axis: 'both' });
+    expect(fit.width).toBe(44);
   });
 
-  it("axis 'height' wraps with tracking counted", () => {
-    const ctx = makeCtx();
-    const pose: TextPose = {
-      x: 0, y: 0, width: 100, height: 1,
-      text: 'the quick brown',
-      style: { letterSpacing: 2 },
-    };
-    // Three lines instead of two — the same break the renderer makes.
-    expect(fitTextPose(ctx, pose, { axis: 'height' }).height).toBe(3 * lh);
+  it('measures per-run sizes, which the pose-level style alone cannot', () => {
+    // A second run at double the size is twice as wide; the old path read
+    // `pose.text` and the node style only, so both runs measured at 32.
+    const plain = fitTextPose(textPose({ text: 'AB' }), { axis: 'both' });
+    const mixed = fitTextPose(
+      textPose({ text: 'AB', runs: [{ text: 'A' }, { text: 'B', fontSize: SIZE * 2 }] }),
+      { axis: 'both' },
+    );
+    // 'B' doubles from 22 to 44, so the line is 22 wider than the plain one.
+    expect(plain.width).toBe(44);
+    expect(mixed.width).toBe(66);
   });
 });
