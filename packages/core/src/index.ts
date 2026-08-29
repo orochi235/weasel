@@ -541,6 +541,7 @@ export type {
   SelectionOutlineLayerOpts,
   SelectionHandlesLayerOpts,
   SelectionOverlayLayerOpts,
+  SelectionHandleStyle,
 } from './features/selection/overlay';
 
 // ─── Text rendering / editing ───────────────────────────────────────────────
@@ -667,6 +668,7 @@ export {
   PATH_Q,
   PATH_Z,
   PATH_CMD_LENGTHS,
+  pathCommandCoordCount,
   PathBuilder,
   pathFromD,
   polygonFromPoints,

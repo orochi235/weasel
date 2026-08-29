@@ -203,15 +203,10 @@ function makeContainerAwareBoundsResolver<TPose>(
   };
 }
 
-/** Shared options between outline and handles layers. */
+/** Options every selection layer shares. `getSelection` and `getPose` are
+ *  declared on {@link SelectionOverlayLayerOpts}, which makes both optional —
+ *  omitted, they come off the draw envelope. */
 interface SelectionLayerCommon<TPose> {
-  getSelection: () => readonly NodeId[];
-  /** Return null to skip rendering for an id (e.g. resolved pose unavailable).
-   *  Takes `string` rather than `NodeId` because the container-aware bounds
-   *  resolver internally walks expanded leaf ids via `getChildren`, which is
-   *  generic over arbitrary string ids. NodeIds flow in fine — a NodeId is a
-   *  string. */
-  getPose: (id: string) => TPose | null;
   /**
    * Project a pose into its AABB. Defaults to the identity — rect-shaped
    * poses (`{x, y, width, height}`) need no override. For `Path` poses pass
@@ -226,37 +221,19 @@ interface SelectionLayerCommon<TPose> {
   isContainer?: (id: string) => boolean;
 }
 
-/** Options for `createSelectionOutlineLayer`. */
-export interface SelectionOutlineLayerOpts<TPose> extends SelectionLayerCommon<TPose> {
-  /** Outline stroke style + outset distance from the pose rect. */
-  outline?: Stroke & { pad?: number };
-}
+/** Options for `createSelectionOutlineLayer`. The overlay layer's options
+ *  minus the handle visuals — the two run the same body. */
+export type SelectionOutlineLayerOpts<TPose> =
+  Omit<SelectionOverlayLayerOpts<TPose>, 'handles' | 'handlesOf' | 'rotationHandle'>;
 
-/** Options for `createSelectionHandlesLayer`. */
-export interface SelectionHandlesLayerOpts<TPose> extends SelectionLayerCommon<TPose> {
-  /** Handle visuals. Omit for defaults. */
-  handles?: {
-    size?: number;
-    fill?: FillStyle;
-    outline?: Stroke;
-  };
-  /** Override handle placement. Default: 4 corners of the AABB. */
-  handlesOf?: (bounds: Bounds) => { x: number; y: number }[];
-  /** Render a rotation handle above the (rotated) top-center of the AABB.
-   *  When `true`, uses default visuals + distance. When an object, override
-   *  the world-space distance from the top edge. Defaults to `false` —
-   *  consumers opt in only when wiring `useRotate`. */
-  rotationHandle?:
-    | boolean
-    | {
-        /** World-pixel distance from the top edge to the handle center. */
-        distance?: number;
-      };
-}
+/** Options for `createSelectionHandlesLayer`. The overlay layer's options
+ *  minus the outline stroke — the two run the same body. */
+export type SelectionHandlesLayerOpts<TPose> =
+  Omit<SelectionOverlayLayerOpts<TPose>, 'outline'>;
 
 /** Options for `createSelectionOverlayLayer`. */
 export interface SelectionOverlayLayerOpts<TPose>
-  extends Omit<SelectionLayerCommon<TPose>, 'getSelection' | 'getPose'> {
+  extends SelectionLayerCommon<TPose> {
   /**
    * Which ids to draw chrome for. Omit to take them from the `ChromeState` on
    * the draw envelope, which is what makes one canvas's several views each
@@ -267,21 +244,18 @@ export interface SelectionOverlayLayerOpts<TPose>
    */
   getSelection?: () => readonly NodeId[];
   /**
-   * Resolve an id to the pose to draw chrome around. Omit to take bounds from
-   * the same envelope `getSelection` omitted takes ids from — one cascade,
-   * the one the chrome state was built with, rather than a second one here
-   * that has to agree with it.
+   * Resolve an id to the pose to draw chrome around. Return null to skip an
+   * id. Omit to take bounds from the same envelope `getSelection` omitted
+   * takes ids from — one cascade, the one the chrome state was built with,
+   * rather than a second one here that has to agree with it.
+   *
+   * Takes `string` rather than `NodeId` because the container-aware resolver
+   * walks expanded leaf ids via `getChildren`, which is generic over strings.
    */
   getPose?: (id: string) => TPose | null;
   outline?: Stroke & { pad?: number };
   /** Pass `false` to render outlines only. */
-  handles?:
-    | {
-        size?: number;
-        fill?: FillStyle;
-        outline?: Stroke;
-      }
-    | false;
+  handles?: SelectionHandleStyle | false;
   handlesOf?: (bounds: Bounds) => { x: number; y: number }[];
   /** See {@link SelectionHandlesLayerOpts.rotationHandle}. */
   rotationHandle?:
@@ -346,13 +320,20 @@ function resolveOutlineStroke(opts?: Stroke & { pad?: number }): {
   };
 }
 
+/** Handle visuals, as a consumer supplies them. */
+export interface SelectionHandleStyle {
+  size?: number;
+  fill?: FillStyle;
+  outline?: Stroke;
+}
+
 interface ResolvedHandles {
   size: number;
   fill: FillStyle;
   outline: Stroke;
 }
 
-function resolveHandles(opts?: SelectionHandlesLayerOpts<unknown>['handles']): ResolvedHandles {
+function resolveHandles(opts?: SelectionHandleStyle): ResolvedHandles {
   return {
     size: opts?.size ?? DEFAULT_HANDLE_SIZE,
     fill: opts?.fill ?? DEFAULT_HANDLE_FILL,
@@ -604,82 +585,22 @@ function rotationHandleCommands(
   ];
 }
 
-/**
- * `RenderLayer` that draws selection outlines only. Stack alongside
- * `createSelectionHandlesLayer` (or just use `createSelectionOverlayLayer`
- * for the common case) when both passes are wanted.
- */
-export function createSelectionOutlineLayer<TPose>(
-  opts: SelectionOutlineLayerOpts<TPose>,
-): RenderLayer<unknown> {
-  const { stroke, pad } = resolveOutlineStroke(opts.outline);
-  const getBounds = opts.getBounds ?? ((pose: TPose) => pose as unknown as Bounds);
-  const resolveBounds = makeContainerAwareBoundsResolver(opts.getPose, getBounds, opts.getChildren, opts.isContainer);
-  return {
-    id: 'selection-outline',
-    label: 'Selection outline',
-    space: 'screen',
-    draw: (_data, view) => {
-      const ids = opts.getSelection();
-      if (ids.length === 0) return [];
-      return outlineCommandsFor(ids, resolveBounds, stroke, pad, view);
-    },
-  };
+/** Which passes a selection layer runs. The three exported factories differ
+ *  only in this — everything else they do is shared, so a fix to one is a fix
+ *  to all three. */
+interface SelectionPasses {
+  readonly id: string;
+  readonly label: string;
+  readonly outline: boolean;
+  readonly handles: boolean;
 }
 
-/**
- * `RenderLayer` that draws selection handles only. Stack on top of
- * `createSelectionOutlineLayer` (handles render on top of the outline).
- */
-export function createSelectionHandlesLayer<TPose>(
-  opts: SelectionHandlesLayerOpts<TPose>,
-): RenderLayer<unknown> {
-  const handles = resolveHandles(opts.handles);
-  const handlesOf = opts.handlesOf ?? defaultHandlesOf;
-  const getBounds = opts.getBounds ?? ((pose: TPose) => pose as unknown as Bounds);
-  const resolveBounds = makeContainerAwareBoundsResolver(opts.getPose, getBounds, opts.getChildren, opts.isContainer);
-  const rotationHandleDistance = resolveRotationHandleDistance(opts.rotationHandle);
-  return {
-    id: 'selection-handles',
-    label: 'Selection handles',
-    space: 'screen',
-    draw: (_data, view) => {
-      const ids = opts.getSelection();
-      if (ids.length === 0) return [];
-      const out = handleCommandsFor(ids, resolveBounds, handles, handlesOf, view);
-      if (rotationHandleDistance !== null) {
-        for (const id of ids) {
-          const b = resolveBounds(id);
-          if (!b) continue;
-          for (const cmd of rotationHandleCommands(b, handles, rotationHandleDistance, view)) {
-            out.push(cmd);
-          }
-        }
-      }
-      return out;
-    },
-  };
-}
-
-function resolveRotationHandleDistance(
-  opt: boolean | { distance?: number } | undefined,
-): number | null {
-  if (!opt) return null;
-  if (opt === true) return DEFAULT_ROTATION_HANDLE_DISTANCE;
-  return opt.distance ?? DEFAULT_ROTATION_HANDLE_DISTANCE;
-}
-
-/**
- * Convenience wrapper that draws outlines then handles in a single layer.
- * Equivalent to stacking `createSelectionOutlineLayer` and
- * `createSelectionHandlesLayer` in a layer sequence. Pass `handles: false` to
- * render outlines only.
- */
-export function createSelectionOverlayLayer<TPose>(
+function buildSelectionLayer<TPose>(
   opts: SelectionOverlayLayerOpts<TPose>,
+  passes: SelectionPasses,
 ): RenderLayer<unknown> {
   const { stroke, pad } = resolveOutlineStroke(opts.outline);
-  const handlesEnabled = opts.handles !== false;
+  const handlesEnabled = passes.handles && opts.handles !== false;
   const handles = handlesEnabled ? resolveHandles(opts.handles || undefined) : null;
   const handlesOf = opts.handlesOf ?? defaultHandlesOf;
   const getBounds = opts.getBounds ?? ((pose: TPose) => pose as unknown as Bounds);
@@ -687,11 +608,13 @@ export function createSelectionOverlayLayer<TPose>(
   const poseBounds = getPose
     ? makeContainerAwareBoundsResolver(getPose, getBounds, opts.getChildren, opts.isContainer)
     : null;
-  const rotationHandleDistance = resolveRotationHandleDistance(opts.rotationHandle);
+  const rotationHandleDistance = passes.handles
+    ? resolveRotationHandleDistance(opts.rotationHandle)
+    : null;
 
   return {
-    id: 'selection-overlay',
-    label: 'Selection',
+    id: passes.id,
+    label: passes.label,
     space: 'screen',
     draw: (data, view) => {
       // The synthetic multi-resize id resolves to `ChromeState.unionBounds`,
@@ -716,7 +639,7 @@ export function createSelectionOverlayLayer<TPose>(
       // `getIsVisible` is wired (legacy callers / tests), every pass
       // runs — preserving pre-chrome-caps behavior.
       const isVisible = asIsVisible(data);
-      const showOutline = isVisible ? isVisible('selection.outline') : true;
+      const showOutline = passes.outline && (isVisible ? isVisible('selection.outline') : true);
       const showHandles = isVisible ? isVisible('selection.resize-handles') : true;
       const showRotation = isVisible ? isVisible('selection.rotation-handle') : true;
 
@@ -754,6 +677,60 @@ export function createSelectionOverlayLayer<TPose>(
       return out;
     },
   };
+}
+
+function resolveRotationHandleDistance(
+  opt: boolean | { distance?: number } | undefined,
+): number | null {
+  if (!opt) return null;
+  if (opt === true) return DEFAULT_ROTATION_HANDLE_DISTANCE;
+  return opt.distance ?? DEFAULT_ROTATION_HANDLE_DISTANCE;
+}
+/**
+ * `RenderLayer` that draws selection outlines only. Stack alongside
+ * `createSelectionHandlesLayer` (or use `createSelectionOverlayLayer`, which
+ * runs both passes in one layer) when both are wanted.
+ */
+export function createSelectionOutlineLayer<TPose>(
+  opts: SelectionOutlineLayerOpts<TPose>,
+): RenderLayer<unknown> {
+  return buildSelectionLayer(opts, {
+    id: 'selection-outline',
+    label: 'Selection outline',
+    outline: true,
+    handles: false,
+  });
+}
+
+/**
+ * `RenderLayer` that draws selection handles only. Stack on top of
+ * `createSelectionOutlineLayer` (handles render on top of the outline).
+ */
+export function createSelectionHandlesLayer<TPose>(
+  opts: SelectionHandlesLayerOpts<TPose>,
+): RenderLayer<unknown> {
+  return buildSelectionLayer(opts, {
+    id: 'selection-handles',
+    label: 'Selection handles',
+    outline: false,
+    handles: true,
+  });
+}
+
+/**
+ * Draws outlines then handles in a single layer. Exactly equivalent to
+ * stacking `createSelectionOutlineLayer` and `createSelectionHandlesLayer` —
+ * all three run the same body. Pass `handles: false` to render outlines only.
+ */
+export function createSelectionOverlayLayer<TPose>(
+  opts: SelectionOverlayLayerOpts<TPose>,
+): RenderLayer<unknown> {
+  return buildSelectionLayer(opts, {
+    id: 'selection-overlay',
+    label: 'Selection',
+    outline: true,
+    handles: true,
+  });
 }
 
 /** Pull a chrome-caps visibility predicate off the draw `data` envelope.

@@ -395,6 +395,44 @@ describe('createSelectionHandlesLayer', () => {
   });
 });
 
+describe('the outline and handles layers are the overlay layer, split', () => {
+  // `createSelectionOverlayLayer` documents itself as equivalent to stacking
+  // the two primitives, and consumers stack them on that promise.
+  const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+  const OPTS = {
+    getSelection: () => [asNodeId(MULTI_RESIZE_TARGET_ID)],
+    getPose: (id: string) =>
+      id === MULTI_RESIZE_TARGET_ID ? { x: 999, y: 999, width: 1, height: 1 } : null,
+    handles: { size: 8 },
+    rotationHandle: true,
+  };
+  const data = {
+    getChromeState: () => ({ unionBounds: { x: 0, y: 0, width: 100, height: 100 } }),
+  };
+
+  it('stacking the two matches the wrapper, command for command', () => {
+    const stacked = [
+      ...createSelectionOutlineLayer<Pose>(OPTS).draw(data, VIEW, DIMS),
+      ...createSelectionHandlesLayer<Pose>(OPTS).draw(data, VIEW, DIMS),
+    ];
+    const combined = createSelectionOverlayLayer<Pose>(OPTS).draw(data, VIEW, DIMS);
+    expect(stacked).toEqual(combined);
+  });
+
+  it('both honor a chrome-caps gate on the envelope', () => {
+    const gated = { getIsVisible: () => (id: string) => id === 'selection.outline' };
+    expect(createSelectionHandlesLayer<Pose>(OPTS).draw(gated, VIEW, DIMS)).toEqual([]);
+    expect(createSelectionOutlineLayer<Pose>(OPTS).draw(gated, VIEW, DIMS).length)
+      .toBeGreaterThan(0);
+  });
+
+  it('both honor suppression', () => {
+    const opts = { ...OPTS, getSuppressedIds: () => new Set([MULTI_RESIZE_TARGET_ID]) };
+    expect(createSelectionOutlineLayer<Pose>(opts).draw(data, VIEW, DIMS)).toEqual([]);
+    expect(createSelectionHandlesLayer<Pose>(opts).draw(data, VIEW, DIMS)).toEqual([]);
+  });
+});
+
 describe('createSelectionOverlayLayer.draw', () => {
   it('emits outline + handles commands in a single flat list', () => {
     const layer = createSelectionOverlayLayer<Pose>({
