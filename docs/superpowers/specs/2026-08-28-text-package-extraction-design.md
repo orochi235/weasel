@@ -99,6 +99,12 @@ The outline tier is deliberately metric-neutral (it changes what a glyph looks
 like, never where it sits), so registering outlines buys geometry and no
 metrics. A consumer holding a `.ttf` and nothing else cannot lay anything out.
 
+This does not relax the outline tier's metric neutrality. That invariant
+governs a family that *has* an atlas — swapping geometry at the size threshold
+must never reflow text, and it still must not. What follows adds a rung to the
+bottom of the ladder for a family that has no atlas at all, which today cannot
+resolve and renders nothing.
+
 Two changes fix that.
 
 **Faces report metrics.** `OutlineFace` gains two members beside `glyphD`,
@@ -160,7 +166,8 @@ is already the shape `@weasel-js/font` chose for crossing a package boundary.
 ## 7. Arcs
 
 1. **The move.** Two leaves, `Rect` to geom, core re-exports, `layoutRuns`
-   public. No behavior change; the existing suite is the proof.
+   public. No behavior change; the existing suite is the proof. **Landed** —
+   commit `extract the typography layer into @weasel-js/text`.
 2. **The metrics seam.** `OutlineFace` metrics, `GlyphSource` in the layout
    walk, outline-only registration. Ends with a test that lays out a string
    from font bytes with no atlas registered at all.
