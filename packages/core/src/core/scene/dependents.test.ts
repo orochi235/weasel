@@ -50,13 +50,23 @@ describe('createDependentsIndex', () => {
     expect([...idx.dependentsOf(a)]).toEqual([]);
   });
 
-  it('removes a node that is both a dependent and a dependency', () => {
+  it('removing a node forgets what it declared but not what declares it', () => {
     const idx = createDependentsIndex();
     idx.add(b, [a]);   // edge b depends on node a
     idx.add(c, [b]);   // label c depends on edge b
     idx.remove(b);
     expect([...idx.dependentsOf(a)]).toEqual([]);
     expect([...idx.transitiveDependentsOf(a)]).toEqual([]);
+    // c never stopped depending on b, so removing b must not discard that.
+    expect([...idx.dependentsOf(b)]).toEqual([c]);
+  });
+
+  it('drops a dependency edge only once the dependent itself is removed', () => {
+    const idx = createDependentsIndex();
+    idx.add(b, [a]);
+    idx.add(c, [b]);
+    idx.remove(b);
+    idx.remove(c);
     expect([...idx.dependentsOf(b)]).toEqual([]);
   });
 });

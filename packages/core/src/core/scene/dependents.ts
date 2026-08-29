@@ -1,15 +1,20 @@
 /**
  * Reverse index for derived geometry: which nodes must recompute when a given
- * node's pose changes. Not yet wired into the scene — when it is, maintenance
- * belongs in the op handlers, which replay on undo and redo, rather than in
- * `add`/`remove`, which do not.
+ * node's pose changes.
  */
 import type { NodeId } from './types';
 
+const NONE: readonly NodeId[] = Object.freeze([]);
+
 export interface DependentsIndex {
   add(id: NodeId, deps: readonly NodeId[]): void;
-  /** Forget `id` entirely — both as a dependent and as a dependency. */
+  /** Forget what `id` declared. Deliberately not symmetric: who depends on
+   *  `id` is those nodes' declaration, not `id`'s, and outlives its removal. */
   remove(id: NodeId): void;
+  /** Forget every registration. */
+  clear(): void;
+  /** True when nothing derives from anything. */
+  isEmpty(): boolean;
   dependentsOf(id: NodeId): Iterable<NodeId>;
   /** Nodes that derive from `id` directly or through a chain. Excludes `id`
    *  itself unless a cycle leads back to it. */
@@ -50,17 +55,28 @@ export function createDependentsIndex(): DependentsIndex {
 
     remove(id) {
       detachOwnDeps(id);
-      forward.delete(id);
+    },
+
+    clear() {
+      forward.clear();
+      reverse.clear();
+    },
+
+    isEmpty() {
+      return forward.size === 0;
     },
 
     dependentsOf(id) {
       const set = forward.get(id);
-      return set === undefined ? [] : [...set];
+      return set === undefined ? NONE : [...set];
     },
 
     transitiveDependentsOf(id) {
+      // Runs per node per frame; the miss must not allocate.
+      const direct = forward.get(id);
+      if (direct === undefined) return NONE;
       const out = new Set<NodeId>();
-      const stack: NodeId[] = [...(forward.get(id) ?? [])];
+      const stack: NodeId[] = [...direct];
       while (stack.length > 0) {
         const next = stack.pop()!;
         if (out.has(next)) continue;   // also what stops a cycle

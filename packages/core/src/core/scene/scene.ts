@@ -2,6 +2,8 @@ import { createHistory, type HistorySelection, type Journal, type SerializedHist
 import type { Op } from 'core/ops/types';
 import { rebuildOp as rebuildGlobalOp } from 'core/ops/registry';
 import { dwarn } from 'debug/flag';
+import { createDependentsIndex } from './dependents';
+import { dropPoseKeyedMemoSlots } from './nodeMemo';
 import { createPoseOverrides } from './poseOverrides';
 import {
   asNodeId,
@@ -93,6 +95,25 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
    *  the same `onEvict` scan; see that comment for the invariant. */
   const pendingDerivePatches = new Map<NodeId, NonNullable<Node<TData, TLayer, TPose>['derive']>>();
 
+  /** Maintained from `kit:add` / `kit:remove` — the only two places a node is
+   *  created or destroyed, and unlike `add`/`remove` they replay on undo/redo. */
+  const dependents = createDependentsIndex();
+
+  /** `derive` reads its dependencies' *world* poses, so moving a node moves
+   *  every descendant's too — invalidating only `id`'s dependents would leave
+   *  a nested dependency's memo stale under a non-identity pose composition. */
+  function invalidateDependents(id: NodeId): void {
+    if (dependents.isEmpty()) return;
+    const subtree: NodeId[] = [id];
+    descendants(id, subtree);
+    for (const src of subtree) {
+      for (const dep of dependents.transitiveDependentsOf(src)) {
+        const node = state.nodes.get(dep);
+        if (node !== undefined) dropPoseKeyedMemoSlots(node);
+      }
+    }
+  }
+
   for (let i = 0; i < options.systemLayers.length; i++) {
     const spec = options.systemLayers[i];
     if (state.layerIndex.has(spec.id)) {
@@ -156,7 +177,10 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   /** Ephemeral per-node overrides. Deliberately not part of `state`, for the
    *  same reason `selection` isn't: not document content, never reaches
    *  `toJSON`, and never touches history. */
-  const overrides = createPoseOverrides<TPose>((id) => state.nodes.get(id));
+  const overrides = createPoseOverrides<TPose>(
+    (id) => state.nodes.get(id),
+    invalidateDependents,
+  );
 
   // wrappers close over their payloads). Eviction (branch-edit redo-clears
   // + historyLimit overflow) drives pendingClipPatches pruning via onEvict.
@@ -394,6 +418,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         }
       }
       if (p.dependsOn !== undefined) node.dependsOn = p.dependsOn;
+      dependents.add(p.id, p.dependsOn ?? []);
       // Same redo/restore pair as clipFromPose above, minus the container guard.
       const cachedDerive = pendingDerivePatches.get(p.id);
       if (cachedDerive) {
@@ -407,10 +432,13 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
           dwarn('scene', `kit:add: deriveKey "${p.deriveKey}" not in this scene's registry — node "${p.id}" restored without derived geometry. Register a function with this key in the registry option to restore it.`);
         }
       }
+      invalidateDependents(p.id);
     },
     revert: (p) => {
       detach(p.id);
       state.nodes.delete(p.id);
+      dependents.remove(p.id);
+      invalidateDependents(p.id);
       // Note: we intentionally do NOT delete the pendingClipPatches entry —
       // redo will re-apply the node and re-attach clipFromPose from it.
     },
@@ -426,7 +454,11 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   registerKitOp<RemoveSnapshot>('kit:remove', {
     apply: (p) => {
       detach(p.rootId);
-      for (const n of p.nodes) state.nodes.delete(n.id);
+      invalidateDependents(p.rootId);
+      for (const n of p.nodes) {
+        state.nodes.delete(n.id);
+        dependents.remove(n.id);
+      }
     },
     revert: (p) => {
       // Restore nodes in original order (parents before children).
@@ -435,14 +467,22 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
           ? { ...n, children: [...n.children] }
           : { ...n };
         state.nodes.set(n.id, clone);
+        dependents.add(n.id, clone.dependsOn ?? []);
       }
       attach(p.rootId, p.parent, p.index);
+      invalidateDependents(p.rootId);
     },
   });
 
   registerKitOp<{ id: NodeId; from: TPose; to: TPose }>('kit:setPose', {
-    apply: (p) => { (requireNode(p.id) as { pose: TPose }).pose = p.to; },
-    revert: (p) => { (requireNode(p.id) as { pose: TPose }).pose = p.from; },
+    apply: (p) => {
+      (requireNode(p.id) as { pose: TPose }).pose = p.to;
+      invalidateDependents(p.id);
+    },
+    revert: (p) => {
+      (requireNode(p.id) as { pose: TPose }).pose = p.from;
+      invalidateDependents(p.id);
+    },
   });
 
   registerKitOp<{ id: NodeId; from: TData; to: TData }>('kit:setData', {
@@ -469,10 +509,12 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     apply: (p) => {
       detach(p.id);
       attach(p.id, p.toParent, p.toIndex);
+      invalidateDependents(p.id);
     },
     revert: (p) => {
       detach(p.id);
       attach(p.id, p.fromParent, p.fromIndex);
+      invalidateDependents(p.id);
     },
   });
 
@@ -1223,6 +1265,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       // version or unknown registry key).
       const specs = specsFromSerialized(json, registry);
       // Reset node + layer state.
+      dependents.clear();
       state.nodes.clear();
       state.roots.length = 0;
       state.layers.length = 0;
