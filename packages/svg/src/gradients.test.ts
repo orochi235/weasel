@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { parseSvg } from './parse';
+import { serializeSvg } from './serialize';
+import type { SvgNode } from './types';
 
 function gradientOf(svg: string, index = 0): Record<string, unknown> {
   const node = parseSvg(svg).nodes[index] as { fill: { kind: string; paint: Record<string, unknown> } };
@@ -96,5 +98,29 @@ describe('gradient collection', () => {
       `<svg xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="c"/></defs></svg>`,
     );
     expect(r.warnings).toContain('unsupported <defs> child: <clipPath>');
+  });
+});
+
+describe('gradient serialization', () => {
+  const conicRect: SvgNode[] = [{
+    kind: 'path',
+    path: { kind: 'rect', x: 0, y: 0, width: 100, height: 50 },
+    fill: {
+      kind: 'gradient',
+      paint: {
+        fill: 'conic-gradient',
+        center: { x: 0.5, y: 0.5 },
+        angle: 0,
+        stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }],
+        units: 'bounds',
+      },
+    },
+  }];
+
+  it('warns rather than silently emitting a dangling url(#…) for a conic gradient', () => {
+    const warnings: string[] = [];
+    const svg = serializeSvg(conicRect, { onWarn: (m) => warnings.push(m) });
+    expect(warnings.join(' ')).toContain('conic-gradient');
+    expect(svg).not.toContain('<conicGradient');
   });
 });

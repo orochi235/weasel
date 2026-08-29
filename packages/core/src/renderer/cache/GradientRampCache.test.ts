@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { makeGLRecorder } from '../test-utils/glRecorder';
 import { buildGradientRamp, GradientRampCache } from './GradientRampCache';
 import type { GradStop } from '@weasel-js/core';
+import { sampleGradientStops } from '../../core/gradient';
+import { parseColorToRgba255 } from '../math/color';
 
 const BLACK_WHITE: GradStop[] = [
   { offset: 0, color: '#000000' },
@@ -135,5 +137,66 @@ describe('GradientRampCache', () => {
     reset();
     cache.upload(BLACK_WHITE);
     expect(calls.some((c) => c.name === 'createTexture')).toBe(true);
+  });
+});
+
+// The GL ramp and the editor's stop sampler answer the same question, so a
+// disagreement between them is a gradient that paints differently from the
+// swatch that authored it.
+describe('ramp / editor agreement', () => {
+  function rampAt(stops: GradStop[], texel: number): number[] {
+    const ramp = buildGradientRamp(stops);
+    return Array.from(ramp.slice(texel * 4, texel * 4 + 4));
+  }
+
+  function editorAt(stops: GradStop[], texel: number): number[] {
+    return parseColorToRgba255(sampleGradientStops(stops, texel / 255));
+  }
+
+  function expectAgreement(stops: GradStop[], texels: number[]): void {
+    for (const texel of texels) {
+      const ramp = rampAt(stops, texel);
+      const editor = editorAt(stops, texel);
+      for (let c = 0; c < 4; c++) {
+        expect(
+          Math.abs(ramp[c] - editor[c]),
+          `texel ${texel} channel ${c}: ramp ${ramp} vs editor ${editor}`,
+        ).toBeLessThanOrEqual(1);
+      }
+    }
+  }
+
+  it('agrees below the first stop', () => {
+    expectAgreement(
+      [{ offset: 0.5, color: '#808080' }, { offset: 1, color: '#a0b0c0' }],
+      [0, 32, 64, 128, 192, 255],
+    );
+  });
+
+  it('agrees above the last stop', () => {
+    expectAgreement(
+      [{ offset: 0, color: '#a0b0c0' }, { offset: 0.5, color: '#808080' }],
+      [0, 64, 128, 192, 255],
+    );
+  });
+
+  it('agrees on the tie-break at a coincident pair', () => {
+    const c = 128 / 255;
+    expectAgreement(
+      [
+        { offset: 0, color: '#ff0000' },
+        { offset: c, color: '#00ff00' },
+        { offset: c, color: '#0000ff' },
+        { offset: 1, color: '#0000ff' },
+      ],
+      [0, 64, 128, 192, 255],
+    );
+  });
+
+  it('agrees on a stop written as a CSS named color', () => {
+    expectAgreement(
+      [{ offset: 0, color: 'red' }, { offset: 1, color: 'blue' }],
+      [0, 128, 255],
+    );
   });
 });

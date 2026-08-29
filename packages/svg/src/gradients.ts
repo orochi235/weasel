@@ -211,16 +211,25 @@ export class PaintServerRegistry {
     if (this.order.length === 0) return '';
     const parts: string[] = ['<defs>'];
     for (const paint of this.order) {
-      const id = this.byPaint.get(paint)!;
-      parts.push(
-        paint.fill === 'pattern'
-          ? patternXml(id, paint, onWarn)
-          : gradientXml(id, paint) || (getPaintKind(paint.fill)?.toSvg?.(id, paint) ?? ''),
-      );
+      parts.push(paintServerXml(this.byPaint.get(paint)!, paint, onWarn));
     }
     parts.push('</defs>');
     return parts.join('');
   }
+}
+
+/** One paint server's `<defs>` entry: the built-in mapping, else the kind's
+ *  own `toSvg`, else nothing plus a warning. The referencing element already
+ *  carries `fill="url(#id)"`, so a silent omission is a dangling reference and
+ *  the shape vanishes in a viewer. */
+function paintServerXml(id: string, paint: FillStyle, onWarn?: (m: string) => void): string {
+  if (paint.fill === 'pattern') return patternXml(id, paint, onWarn);
+  const builtin = gradientXml(id, paint);
+  if (builtin) return builtin;
+  const custom = getPaintKind(paint.fill)?.toSvg?.(id, paint);
+  if (custom) return custom;
+  onWarn?.(`${paint.fill} fill has no vector form — omitted from <defs>`);
+  return '';
 }
 
 /** `GradientUnits` → SVG `gradientUnits`. `'screen'` (the kit's default, and

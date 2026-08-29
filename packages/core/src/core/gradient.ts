@@ -7,8 +7,14 @@
  * `withGradientKind` exists to translate.
  */
 
-import { hexToRgba, rgbaToHex } from '../renderer/math/color';
+import { resolveColor, rgbaToHex } from '../renderer/math/color';
 import type { FillStyle, GradStop, GradientFill, GradientKind } from '@weasel-js/paint';
+
+/** A stop with its color already parsed to 0..1 RGBA. */
+export interface ResolvedGradientStop {
+  offset: number;
+  rgba: readonly [number, number, number, number];
+}
 
 /** Narrow a paint to the gradient members of `FillStyle`. The three
  *  discriminants are the union's own definition of `GradientFill`, so every
@@ -21,44 +27,68 @@ export function isGradientFill(fill: FillStyle | null | undefined): fill is Grad
 }
 
 /**
- * Color at position `t` (0..1) along a stop list, matching how the GL ramp
- * texture is built: stops sorted by offset, flat extension past either end,
- * linear RGB interpolation between neighbors.
+ * Sort a stop list by offset and parse each color to 0..1 RGBA — the reading
+ * of a stop list that `sampleResolvedStops` works from, hoisted out so a
+ * caller sampling many positions (the GL ramp) parses each color once.
  *
- * Returns transparent black for an empty list. Alpha is interpolated too, so
- * a stop list fading to `transparent` samples correctly.
+ * Colors go through `resolveColor`, so any CSS color the kit understands is a
+ * legal stop, not just hex.
  */
-export function sampleGradientStops(stops: readonly GradStop[], t: number): string {
-  if (stops.length === 0) return 'rgba(0,0,0,0)';
-  const sorted = [...stops].sort((a, b) => a.offset - b.offset);
-  if (sorted.length === 1) return sorted[0].color;
+export function resolveGradientStops(stops: readonly GradStop[]): ResolvedGradientStop[] {
+  return [...stops]
+    .sort((a, b) => a.offset - b.offset)
+    .map((s) => ({ offset: s.offset, rgba: resolveColor(s.color) }));
+}
 
-  const first = sorted[0];
-  const last = sorted[sorted.length - 1];
-  if (t <= first.offset) return first.color;
-  if (t >= last.offset) return last.color;
+/**
+ * RGBA (0..1) at position `t` along resolved stops: flat extension past
+ * either end, linear interpolation between neighbors, alpha included.
+ *
+ * The single definition of what a stop list means. The GL ramp texture bakes
+ * this at 256 positions and an editor calls it per pixel of a track; a second
+ * implementation is a gradient that paints differently from its own swatch.
+ *
+ * Returns transparent black for an empty list.
+ */
+export function sampleResolvedStops(
+  stops: readonly ResolvedGradientStop[], t: number,
+): readonly [number, number, number, number] {
+  if (stops.length === 0) return TRANSPARENT;
+  const first = stops[0];
+  const last = stops[stops.length - 1];
+  if (t <= first.offset) return first.rgba;
+  if (t >= last.offset) return last.rgba;
 
-  for (let i = 0; i < sorted.length - 1; i++) {
-    const lo = sorted[i];
-    const hi = sorted[i + 1];
+  for (let i = 0; i < stops.length - 1; i++) {
+    const lo = stops[i];
+    const hi = stops[i + 1];
     if (t < lo.offset || t > hi.offset) continue;
     const span = hi.offset - lo.offset;
     // Coincident stops are a hard color break: take the later one.
-    if (span <= 0) return hi.color;
-    return lerpColor(lo.color, hi.color, (t - lo.offset) / span);
+    if (span <= 0) return hi.rgba;
+    const f = (t - lo.offset) / span;
+    return [
+      lo.rgba[0] + (hi.rgba[0] - lo.rgba[0]) * f,
+      lo.rgba[1] + (hi.rgba[1] - lo.rgba[1]) * f,
+      lo.rgba[2] + (hi.rgba[2] - lo.rgba[2]) * f,
+      lo.rgba[3] + (hi.rgba[3] - lo.rgba[3]) * f,
+    ];
   }
-  return last.color;
+  return last.rgba;
 }
 
-function lerpColor(a: string, b: string, t: number): string {
-  const [ar, ag, ab, aa] = hexToRgba(a);
-  const [br, bg, bb, ba] = hexToRgba(b);
-  return rgbaToHex([
-    ar + (br - ar) * t,
-    ag + (bg - ag) * t,
-    ab + (bb - ab) * t,
-    aa + (ba - aa) * t,
-  ]);
+const TRANSPARENT: readonly [number, number, number, number] = [0, 0, 0, 0];
+
+/**
+ * Color at position `t` (0..1) along a stop list, as a hex string — the same
+ * sampling the GL ramp texture bakes, so an editor track and the painted
+ * gradient cannot disagree.
+ *
+ * Returns transparent black for an empty list.
+ */
+export function sampleGradientStops(stops: readonly GradStop[], t: number): string {
+  if (stops.length === 0) return 'rgba(0,0,0,0)';
+  return rgbaToHex(sampleResolvedStops(resolveGradientStops(stops), t));
 }
 
 /**

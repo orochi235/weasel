@@ -9,7 +9,7 @@
  */
 
 import type { GradStop } from '@weasel-js/paint';
-import { resolveColor } from '../math/color';
+import { resolveGradientStops, sampleResolvedStops } from '../../core/gradient';
 
 const RAMP_SIZE = 256;
 
@@ -19,38 +19,13 @@ export function buildGradientRamp(stops: GradStop[]): Uint8ClampedArray {
   const data = new Uint8ClampedArray(RAMP_SIZE * 4);
   if (stops.length === 0) return data;
 
-  const sorted = [...stops].sort((a, b) => a.offset - b.offset);
-  const parsed: [number, number, number, number][] = sorted.map((s) => {
-    const [r, g, b, a] = resolveColor(s.color);
-    return [r * 255, g * 255, b * 255, a * 255];
-  });
-
+  const resolved = resolveGradientStops(stops);
   for (let i = 0; i < RAMP_SIZE; i++) {
-    const t = i / (RAMP_SIZE - 1);
-    let lo = 0;
-    for (let j = 0; j < sorted.length - 1; j++) {
-      if (t >= sorted[j].offset) lo = j;
-    }
-    const hi = Math.min(lo + 1, sorted.length - 1);
-
-    let r: number, g: number, b: number, a: number;
-    if (lo === hi) {
-      [r, g, b, a] = parsed[lo];
-    } else {
-      const span = sorted[hi].offset - sorted[lo].offset;
-      const frac = span > 0 ? (t - sorted[lo].offset) / span : 0;
-      const [r0, g0, b0, a0] = parsed[lo];
-      const [r1, g1, b1, a1] = parsed[hi];
-      r = r0 + (r1 - r0) * frac;
-      g = g0 + (g1 - g0) * frac;
-      b = b0 + (b1 - b0) * frac;
-      a = a0 + (a1 - a0) * frac;
-    }
-
-    data[i * 4]     = r;
-    data[i * 4 + 1] = g;
-    data[i * 4 + 2] = b;
-    data[i * 4 + 3] = a;
+    const [r, g, b, a] = sampleResolvedStops(resolved, i / (RAMP_SIZE - 1));
+    data[i * 4]     = r * 255;
+    data[i * 4 + 1] = g * 255;
+    data[i * 4 + 2] = b * 255;
+    data[i * 4 + 3] = a * 255;
   }
 
   return data;
