@@ -22,8 +22,15 @@ kliegsminister) opens at `zoom: 1600` against the old hardcoded `maxZoom: 32`, s
 collapses the canvas 50x and `maxZoom` blocks getting back. That is what "the canvas goes blank on
 one twitch" is.
 
-So the remaining work is a **labkit release plus a version bump in klieg**, and a release here is
-tag-triggered — a deliberate step, not a side effect of merging.
+So the remaining work is a **labkit release**, and a release here is tag-triggered — a deliberate
+step, not a side effect of merging.
+
+Klieg needs no manifest edit to take it. It declares `"@weasel-js/labkit": "^1.1.0"`, and the caret
+already accepts any `1.x` at or above that; what pins it to exactly 1.1.0 is its **lockfile**. So the
+consumer side is `npm update @weasel-js/labkit` and a committed `package-lock.json`, not a dependency
+bump. Raising klieg's floor to the released version is worth doing anyway — otherwise a fresh clone
+can resolve back to a labkit without these fixes and reintroduce both bugs silently — but that is a
+separate choice, not what unblocks it.
 
 ## The invariant, and the way it gets broken
 
