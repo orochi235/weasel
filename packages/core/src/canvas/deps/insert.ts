@@ -6,9 +6,11 @@
  * these kinds are kit-shipped tools; a future phase can expose a
  * `nodeFactories` prop for consumer-defined kinds.
  *
- * Trade-off: `line`, `polygon`, and `star` receive AABB bounds from the
+ * `line`, `polygon`, `star` and `pencil` receive the drag AABB from the
  * insertAction invoker, but `extras` may carry richer geometry (endpoints,
- * center+radius+rotation, point trail) which we prefer when present.
+ * center+radius+rotation, point trail). `insertPreviewExtent` resolves the
+ * two into the node's real extent — the same resolution the live preview
+ * and the reported gesture bounds use.
  */
 import { useRef } from 'react';
 import { useDepSource } from 'interactions/actions/depRegistry';
@@ -26,6 +28,7 @@ import {
   polygonFromPoints,
 } from 'features/paths/builder';
 import { schneiderFit } from 'features/paths/schneiderFit';
+import { insertPreviewExtent } from '../insertPreviewExtent';
 import { DEFAULT_PALETTE, solid, strokeOf } from '../../util/paint';
 
 interface OpsApplier {
@@ -84,6 +87,11 @@ export function useInsertDepSource(
         const fill = solid(color);
         const layer = (sc.layers[0]?.id ?? 'default') as string;
 
+        // The nascent node's extent — drag AABB reconciled with whatever
+        // richer geometry `extras` carries.
+        const extent = insertPreviewExtent({ shape: kind, bounds, extras });
+        const pose: unknown = extent.bounds;
+
         // Consumer factory wins over the kit default for this kind (and is the
         // only way to insert consumer-defined kinds like `text`). It owns the
         // node's data + optional pose; the dep still supplies id/layer/op.
@@ -91,124 +99,83 @@ export function useInsertDepSource(
         if (factory) {
           const built = factory(bounds, extras);
           if (built === null) return null;
-          const factoredPose = built.pose ??
-            { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
           ad.applyOps(
-            [createInsertOp({ node: { id, kind: 'leaf', layer, pose: factoredPose, data: built.data } as unknown as { id: string }, label: `Insert ${kind}` })],
+            [createInsertOp({ node: { id, kind: 'leaf', layer, pose: built.pose ?? pose, data: built.data } as unknown as { id: string }, label: `Insert ${kind}` })],
             `Insert ${kind}`,
           );
           return id;
         }
 
+        const geom = extent.geometry;
         let data: unknown;
-        let pose: unknown = { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
 
-        switch (kind) {
-          case 'rect':
-            // Geometry-in-local-frame: the rect path lives at the origin and the
-            // pose carries position (`pose = {x: bounds.x, y: bounds.y, …}` above).
-            // The renderer's `pathInPoseFrame` rebases a rect path onto the pose box
-            // regardless of the stored coords, so origin vs. duplicated-pose-coords
-            // render/hit-test identically — don't double-count the position. (#13)
-            data = { path: rectPath(0, 0, bounds.width, bounds.height), fill };
+        switch (geom.kind) {
+          case 'line':
+            data = { path: linePath(geom.a, geom.b), fill, stroke: strokeOf(color, 2) };
             break;
-          case 'ellipse':
-            data = { path: ellipsePath(bounds), fill };
+          case 'polygon':
+            data = {
+              path: regularPolygonPath(geom.center, geom.radius, geom.sides, geom.rotation),
+              fill,
+            };
             break;
-          case 'line': {
-            const e = extras as Partial<{ a: { x: number; y: number }; b: { x: number; y: number } }>;
-            const a = e.a ?? { x: bounds.x, y: bounds.y };
-            const b = e.b ?? { x: bounds.x + bounds.width, y: bounds.y + bounds.height };
-            data = { path: linePath(a, b), fill, stroke: strokeOf(color, 2) };
+          case 'star':
+            data = {
+              path: starPath(geom.center, geom.outerRadius, geom.points, geom.innerRadius, geom.rotation),
+              fill,
+            };
             break;
-          }
-          case 'polygon': {
-            const e = extras as Partial<{
-              sides: number; rotation: number;
-              center: { x: number; y: number }; radius: number;
-            }>;
-            const sides = Math.max(3, Math.floor(e.sides ?? 6));
-            const rotation = e.rotation ?? 0;
-            const cx = e.center?.x ?? bounds.x + bounds.width / 2;
-            const cy = e.center?.y ?? bounds.y + bounds.height / 2;
-            const r = e.radius ?? Math.min(bounds.width, bounds.height) / 2;
-            data = { path: regularPolygonPath({ x: cx, y: cy }, r, sides, rotation), fill };
-            pose = { x: cx - r, y: cy - r, width: r * 2, height: r * 2 };
-            break;
-          }
-          case 'star': {
-            const e = extras as Partial<{
-              points: number; innerRadiusRatio: number; rotation: number;
-              center: { x: number; y: number }; outerRadius: number;
-            }>;
-            const points = Math.max(3, Math.floor(e.points ?? 5));
-            const ratio = e.innerRadiusRatio ?? 0.5;
-            const rotation = e.rotation ?? 0;
-            const cx = e.center?.x ?? bounds.x + bounds.width / 2;
-            const cy = e.center?.y ?? bounds.y + bounds.height / 2;
-            const outerR = e.outerRadius ?? Math.min(bounds.width, bounds.height) / 2;
-            const innerR = outerR * ratio;
-            data = { path: starPath({ x: cx, y: cy }, outerR, points, innerR, rotation), fill };
-            pose = { x: cx - outerR, y: cy - outerR, width: outerR * 2, height: outerR * 2 };
-            break;
-          }
           case 'pencil': {
-            const e = extras as Partial<{ samples: ReadonlyArray<{ x: number; y: number }> }>;
-            const samples = e.samples ?? [];
+            const samples = geom.samples as { x: number; y: number }[];
             if (samples.length >= 4) {
-              data = {
-                path: schneiderFit(samples as { x: number; y: number }[], 2.0),
-                stroke: strokeOf(color, 2),
-              };
-              let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-              for (const s of samples) {
-                if (s.x < minX) minX = s.x;
-                if (s.y < minY) minY = s.y;
-                if (s.x > maxX) maxX = s.x;
-                if (s.y > maxY) maxY = s.y;
-              }
-              pose = { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+              data = { path: schneiderFit(samples, 2.0), stroke: strokeOf(color, 2) };
             } else if (samples.length >= 2) {
-              data = {
-                path: polygonFromPoints(samples as { x: number; y: number }[]),
-                stroke: strokeOf(color, 2),
-              };
+              data = { path: polygonFromPoints(samples), stroke: strokeOf(color, 2) };
             } else {
-              // Origin rect; pose (set above) carries position. See the 'rect'
-              // case for why duplicating bounds.x/y into the path is redundant. (#13)
-              data = { path: rectPath(0, 0, bounds.width, bounds.height), fill };
+              data = { path: rectPath(0, 0, extent.bounds.width, extent.bounds.height), fill };
             }
             break;
           }
-          case 'text': {
-            // The built-in `useTextTool` drags an empty text box you then
-            // type into (edit is entered via `enterTextEdit`), so `extras`
-            // carries no content and `text` defaults to `''`. An ambient
-            // ingest (e.g. a future `text/plain` handler) may pass `text`.
-            // The kit:text painter matches on `data.text != null`, and style
-            // defaults (fontSize 16, `#000`) are applied at render time, so a
-            // bare `{ text }` is a complete, editable node. Pose = drag bounds.
-            const e = extras as Partial<{ text: string }>;
-            data = { text: e.text ?? '' };
+          case 'box':
+            switch (kind) {
+              case 'rect':
+                // Geometry-in-local-frame: the rect path lives at the origin and
+                // the pose carries position. `pathInPoseFrame` rebases a rect path
+                // onto the pose box regardless of the stored coords, so origin vs.
+                // duplicated-pose-coords render identically — don't double-count
+                // the position. (#13)
+                data = { path: rectPath(0, 0, extent.bounds.width, extent.bounds.height), fill };
+                break;
+              case 'ellipse':
+                data = { path: ellipsePath(extent.bounds), fill };
+                break;
+              case 'text': {
+                // The built-in `useTextTool` drags an empty text box you then type
+                // into (edit is entered via `enterTextEdit`), so `extras` carries
+                // no content and `text` defaults to `''`. The kit:text painter
+                // matches on `data.text != null` and applies style defaults at
+                // render time, so a bare `{ text }` is a complete, editable node.
+                const e = extras as Partial<{ text: string }>;
+                data = { text: e.text ?? '' };
+                break;
+              }
+              case 'image': {
+                // The bitmap is loaded + cached by `imageCache` keyed on `src`;
+                // only the (serializable) `src` lives on the node.
+                const e = extras as Partial<{ src: string; opacity: number }>;
+                data = {
+                  image: {
+                    src: e.src ?? '',
+                    ...(e.opacity !== undefined ? { opacity: e.opacity } : {}),
+                  },
+                };
+                break;
+              }
+              default:
+                console.warn(`weasel insertDep: no factory for kind="${kind}". Skipping insert.`);
+                return null;
+            }
             break;
-          }
-          case 'image': {
-            // `src` rides along on the binding params (set by `useImageTool`).
-            // The bitmap is loaded + cached by `imageCache` keyed on `src`;
-            // only the (serializable) `src` lives on the node. Pose carries
-            // position + size from the drawn bounds (set above).
-            const e = extras as Partial<{ src: string; opacity: number }>;
-            data = {
-              image: {
-                src: e.src ?? '',
-                ...(e.opacity !== undefined ? { opacity: e.opacity } : {}),
-              },
-            };
-            break;
-          }
-          default:
-            console.warn(`weasel insertDep: no factory for kind="${kind}". Skipping insert.`);
-            return null;
         }
 
         ad.applyOps(

@@ -15,11 +15,13 @@
  *    signal, bundled into the object `<Canvas>` takes.
  *
  * `useDispatcherOverlayLayer` paints the same `insertPreview` overlays this
- * reads, so the reported bounds and the drawn preview can't disagree.
+ * reads, and both size them through `insertPreviewExtent`, so the reported
+ * bounds and the drawn preview can't disagree.
  */
 import type { Dispatcher } from 'interactions/dispatcher/dispatcher';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { GestureSource } from '../gestureBounds';
+import { insertPreviewExtent } from '../insertPreviewExtent';
 
 /**
  * Ids every in-flight handle is previewing.
@@ -42,7 +44,7 @@ export function dispatcherGestureIds(dispatcher: Dispatcher | null | undefined):
 
 /**
  * World-space AABBs of in-flight gestures with no scene node yet — the
- * `insertPreview` overlay variant.
+ * `insertPreview` overlay variant, sized by {@link insertPreviewExtent}.
  *
  * Only `insertPreview`. `marquee` and `lasso` are in-flight gestures with
  * geometry too, but they *select* rather than *propose content*: a consumer
@@ -56,8 +58,8 @@ export function dispatcherInsertBounds(dispatcher: Dispatcher | null | undefined
   for (const handle of dispatcher.getInFlightHandles()) {
     const ov = handle.overlay?.();
     if (!ov || ov.kind !== 'insertPreview') continue;
-    const b = ov.bounds;
-    // A zero-area preview is the pointerdown frame before the first move.
+    const b = insertPreviewExtent(ov).bounds;
+    // A zero-area extent is the pointerdown frame before the first move.
     // Mirrors `useDispatcherOverlayLayer`'s skip, pencil exception included:
     // a pencil gesture can be meaningful at near-zero AABB (closed loop /
     // sub-threshold), so it reports its point rather than nothing.
