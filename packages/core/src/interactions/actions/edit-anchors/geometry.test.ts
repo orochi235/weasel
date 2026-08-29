@@ -126,3 +126,10 @@ describe('withCoord', () => {
     expect(next.fillRule).toBe('evenodd');
   });
 });
+
+describe('enumerateAnchors unknown commands', () => {
+  it('throws rather than misreading the coord stream', () => {
+    const p = path([PATH_M, 99, PATH_L], [0, 0, 10, 0, 10, 10]);
+    expect(() => enumerateAnchors(p)).toThrow(/enumerateAnchors: unknown command 99/);
+  });
+});

@@ -17,6 +17,8 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { createSelectionOverlayLayer } from 'features/selection/overlay';
 import { ViewInputsProvider } from './viewInputs';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import { DeviceProfileProvider } from 'core/device/useDeviceProfile';
+import type { DeviceProfile } from 'core/device/types';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -392,6 +394,9 @@ describe('<CanvasView> hit-testing', () => {
   const POSES: Record<string, Bounds> = {
     a: { x: 0, y: 0, width: 10, height: 10 },
     b: { x: 40, y: 0, width: 10, height: 10 },
+    // Big enough that the fine (8px) and coarse (14px) corner radii do not
+    // overlap, so one point can distinguish them.
+    c: { x: 20, y: 20, width: 40, height: 40 },
   };
   /** Stands in for the surface's selection, which a view shares by default. */
   const SURFACE_SELECTION = {
@@ -418,7 +423,7 @@ describe('<CanvasView> hit-testing', () => {
     selectionApi: SURFACE_SELECTION,
   };
 
-  function panelTarget(selected: readonly string[]) {
+  function panelTarget(selected: readonly string[], device?: Partial<DeviceProfile>) {
     let registry!: ViewRegistry;
     function Panel() {
       const selection = useSelection({ initial: selected as readonly NodeId[] });
@@ -427,8 +432,10 @@ describe('<CanvasView> hit-testing', () => {
     render(
       <ViewRegistryProvider>
         <ViewInputsProvider value={INPUTS}>
-          <Harness layers={[]} onReady={(r) => { registry = r; }} />
-          <Panel />
+          <DeviceProfileProvider {...(device ? { value: device } : {})}>
+            <Harness layers={[]} onReady={(r) => { registry = r; }} />
+            <Panel />
+          </DeviceProfileProvider>
         </ViewInputsProvider>
       </ViewRegistryProvider>,
     );
@@ -447,6 +454,19 @@ describe('<CanvasView> hit-testing', () => {
   it('classifies a body under the point in this view\'s coordinates', () => {
     expect(panelTarget(['b']).classifyTarget!({ x: 145, y: 5 }))
       .toMatchObject({ body: 'selected-body' });
+  });
+
+  // World (31, 22) is 11.2px from c's top-left corner — outside the 8px fine
+  // radius, inside the 14px coarse one.
+  const NEAR_CORNER = { x: 131, y: 22 };
+
+  it('misses a corner handle 11px away under a fine pointer', () => {
+    expect(panelTarget(['c'], { coarsePointer: false }).affordanceAt!(NEAR_CORNER)).toBeNull();
+  });
+
+  it('widens the corner hit radius under a coarse pointer', () => {
+    const hit = panelTarget(['c'], { coarsePointer: true }).affordanceAt!(NEAR_CORNER);
+    expect(hit?.kind).toBe('handle:top-left');
   });
 });
 

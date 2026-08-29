@@ -21,6 +21,7 @@ import type { PoseProjection } from 'interactions/actions/resize/geometry';
 import { useViewHelpers } from './useViewHelpers';
 import { anchorStateFrom, buildAffordanceAt, buildClassifyTarget } from './affordanceAt';
 import { useOptionalDepRegistry } from 'interactions/actions/depRegistry';
+import { useDeviceProfile } from 'core/device/useDeviceProfile';
 import {
   createGestureSource,
   createDispatcherPreviewSources,
@@ -231,12 +232,15 @@ export function CanvasView(props: CanvasViewProps): null {
 
   const getAnchorState = useMemo(() => anchorStateFrom(() => depRegistryRef.current), []);
 
+  const { targetScale } = useDeviceProfile();
+
   // Selection chrome hit-testing for this view: same construction the surface
   // does for its own, against this view's chrome and camera.
   const affordanceAt = useMemo(() => {
     const inner = buildAffordanceAt({
       getChromeState: () => helpersRef.current.getChromeState(),
       getView: () => live.current.view,
+      targetScale,
       getAnchorState,
       getIsVisible: () => helpersRef.current.getIsVisible(),
     });
@@ -263,7 +267,7 @@ export function CanvasView(props: CanvasViewProps): null {
       }
       return inner(world);
     };
-  }, [getAnchorState, clientToWorldHere, rectNow, registry]);
+  }, [getAnchorState, clientToWorldHere, rectNow, registry, targetScale]);
 
   const classifyTarget = useMemo(() => {
     const inner = buildClassifyTarget(

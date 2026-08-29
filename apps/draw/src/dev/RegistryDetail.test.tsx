@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
 import { keySpecFromKey } from '@weasel-js/ui';
 import { RegistryDetail, RouteBadge } from './RegistryDetail';
-import type { TreeEntry } from './registryData';
+import type { ActionEntry, TreeEntry } from './registryData';
 
 describe('RegistryDetail', () => {
   it('renders a Tool entry with id and route signatures', () => {
@@ -86,6 +86,31 @@ describe('RegistryDetail', () => {
     render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
     expect(screen.getByText('createInsertOp')).toBeTruthy();
   });
+
+  // `ingest` binds drop and paste with every modifier `'optional'`. A
+  // formatter that only reports modifiers set to `true` renders both as the
+  // empty string and the action vanishes from the gesture's binding list.
+  it.each([
+    ['drop', '[*] drop ?shift ?alt ?ctrl ?meta'],
+    ['paste', '[*] paste ?shift ?alt ?ctrl ?meta'],
+  ])(
+    'lists the ingest action on the %s gesture as %s',
+    (gestureKind, route) => {
+      const ANY_MODS = {
+        alt: 'optional', ctrl: 'optional', meta: 'optional', shift: 'optional',
+      } as const;
+      const ingest: ActionEntry = {
+        kind: 'action', id: 'ingest', label: 'Insert external content',
+        defaultBinding: [
+          { kind: 'drop', mods: ANY_MODS },
+          { kind: 'paste', mods: ANY_MODS },
+        ],
+      };
+      const entry: TreeEntry = { kind: 'gesture', id: gestureKind, label: gestureKind };
+      render(<RegistryDetail entry={entry} tools={[]} actions={[ingest]} onNavigate={() => {}} />);
+      expect(screen.getByText(route)).toBeTruthy();
+    },
+  );
 
 });
 

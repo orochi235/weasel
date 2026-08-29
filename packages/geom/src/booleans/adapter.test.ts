@@ -83,3 +83,15 @@ describe('multiPolygonToPath', () => {
     expect(p.commands).toHaveLength(0);
   });
 });
+
+describe('pathToMultiPolygon unknown commands', () => {
+  it('throws rather than misreading the coord stream', () => {
+    const bogus: GeomPath = {
+      kind: 'polygon',
+      commands: Uint8Array.of(PATH_M, 99, PATH_L, PATH_Z),
+      coords: Float64Array.of(0, 0, 10, 0, 5, 10),
+      fillRule: 'nonzero',
+    };
+    expect(() => pathToMultiPolygon(bogus)).toThrow(/pathToMultiPolygon: unknown command 99/);
+  });
+});

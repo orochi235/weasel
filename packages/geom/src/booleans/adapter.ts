@@ -123,6 +123,8 @@ export function pathToMultiPolygon(
         finalizeCurrent();
         break;
       }
+      default:
+        throw new Error(`pathToMultiPolygon: unknown command ${cmd}`);
     }
   }
   finalizeCurrent();

@@ -1,4 +1,6 @@
 import { Fragment, type ReactNode } from 'react';
+import type { GestureSpec } from '@weasel-js/core';
+import { routesForSpec } from '@weasel-js/core/routing';
 import { Badge, DataGrid, KeyCap, KeySequence, Powerline, keySpecFromKey, keySpecsFromMods, type BadgeProps, type DataGridColumn, type KeySpec, type LogicalModSpec, type PowerlineProps } from '@weasel-js/ui';
 import type { ParsedModifiers, ModifierKey } from '@weasel-js/core/routing';
 
@@ -76,19 +78,13 @@ function summarizeActionParams(
   return { paramNames: Array.from(names), rows };
 }
 
-/** One-line, plain-text summary of a `GestureSpec` — `key R`, `key-held
- *  Space`, `wheel`. Just enough discrimination for the bindings table cell;
- *  full route rendering lives elsewhere (Powerline). */
-function describeGestureSpec(
-  spec: { kind?: string; key?: unknown } | undefined,
-): string {
+/** Plain-text route notation for a `GestureSpec` — `[*] drop`,
+ *  `[initial] drag(left) => * +shift` — one route per arg alternative,
+ *  comma-joined. Falls back to the bare kind for kinds the route grammar
+ *  has no name for. */
+function describeGestureSpec(spec: { kind?: string } | undefined): string {
   if (!spec || !spec.kind) return '(unknown)';
-  if (spec.kind === 'key' || spec.kind === 'key-held') {
-    const k = Array.isArray(spec.key) ? (spec.key as readonly unknown[])[0] : spec.key;
-    const label = typeof k === 'string' ? (k === ' ' ? 'Space' : k) : '?';
-    return `${spec.kind} ${label}`;
-  }
-  return spec.kind;
+  return routesForSpec(spec as GestureSpec).join(', ') || spec.kind;
 }
 
 /** Render a `HotkeyTrigger` value (`'space' | 'alt' | 'ctrl' | 'meta' |
@@ -730,36 +726,11 @@ function flattenActionBindings(actions: readonly ActionEntry[]): ActionBindingRo
       rows.push({
         actionId: a.id,
         specKind: spec.kind,
-        bindingText: describeBinding(spec as Record<string, unknown>),
+        bindingText: describeGestureSpec(spec),
       });
     }
   }
   return rows;
-}
-
-function describeBinding(spec: Record<string, unknown>): string {
-  const parts: string[] = [];
-  const key = spec['key'];
-  if (typeof key === 'string') parts.push(`key=${key === ' ' ? 'Space' : key}`);
-  else if (Array.isArray(key)) parts.push(`key=[${key.join(',')}]`);
-  const mods = spec['mods'];
-  if (mods && typeof mods === 'object') {
-    const active = Object.entries(mods as Record<string, unknown>)
-      .filter(([, v]) => v === true)
-      .map(([k]) => k);
-    if (active.length > 0) parts.push(`+${active.join('+')}`);
-  }
-  const target = spec['target'];
-  if (typeof target === 'string') parts.push(`→ ${target}`);
-  const phase = spec['phase'];
-  if (Array.isArray(phase)) {
-    const p = phase.map((a) => {
-      const at = a as { channel?: string; phase?: string };
-      return at.channel && at.phase ? `${at.channel}:${at.phase}` : '?';
-    }).join(' / ');
-    parts.push(`[${p}]`);
-  }
-  return parts.join(' ');
 }
 
 /** Payload schema for a gesture's dispatched event, extracted from the kit

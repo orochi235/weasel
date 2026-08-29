@@ -7,7 +7,8 @@
  * the move behaviors call (`getParent` / `getNodes` / `getNode`) plus the
  * mutators the committed ops apply through (`setPose` / `setParent` /
  * `setData` / `removeNode` / `insertNode` — `setData` carries the
- * geometryProjection seam's data-sync op).
+ * geometryProjection seam's data-sync op) and the sibling-order seam
+ * (`getChildren` / `setChildOrder`) those ops read to restore a node's slot.
  */
 import type { Node, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
@@ -19,7 +20,9 @@ export type MoveGestureAdapter<TPose> = MoveAdapter<Node<unknown, string, TPose>
   setParent(id: string, parentId: string | null): void;
   setData(id: string, data: unknown): void;
   removeNode(id: string): void;
-  insertNode(node: Node<unknown, string, TPose>): void;
+  insertNode(node: Node<unknown, string, TPose>, index?: number): void;
+  getChildren(parentId: string | null): string[];
+  setChildOrder(parentId: string | null, ids: string[]): void;
 };
 
 export function moveGestureAdapter<TPose>(
@@ -37,14 +40,26 @@ export function moveGestureAdapter<TPose>(
       scene.move(asNodeId(id), parentId === null ? null : asNodeId(parentId)),
     setData: (id, data) => scene.update(asNodeId(id), { data } as never),
     removeNode: (id) => scene.remove(asNodeId(id)),
-    insertNode: (node) =>
+    insertNode: (node, index) =>
       scene.add({
         kind: node.kind,
         layer: node.layer,
         pose: node.pose,
         data: node.data,
         id: node.id,
+        ...(index !== undefined ? { index } : {}),
         ...(node.parent !== null ? { parent: node.parent } : {}),
       }),
+    getChildren: (parentId) =>
+      parentId === null ? [...scene.roots] : [...scene.childrenOf(asNodeId(parentId))],
+    setChildOrder: (parentId, ids) => {
+      scene.batch('Reorder', () => {
+        for (let i = 0; i < ids.length; i++) {
+          const current = parentId === null ? scene.roots : scene.childrenOf(asNodeId(parentId));
+          if (current[i] === ids[i]) continue;
+          scene.reorder(asNodeId(ids[i]), i);
+        }
+      });
+    },
   };
 }

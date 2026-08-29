@@ -174,3 +174,15 @@ describe('pathToMultiPolygon ring grouping', () => {
     expect(mp[1]).toHaveLength(1);
   });
 });
+
+describe('pathToMultiPolygon unknown commands', () => {
+  it('throws rather than misreading the coord stream', () => {
+    const bogus: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, 99, PATH_L, PATH_Z]),
+      coords: new Float32Array([0, 0, 10, 0, 5, 10]),
+      fillRule: 'nonzero',
+    };
+    expect(() => pathToMultiPolygon(bogus)).toThrow(/pathToMultiPolygon: unknown command 99/);
+  });
+});

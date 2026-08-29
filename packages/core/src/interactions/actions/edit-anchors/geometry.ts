@@ -98,6 +98,8 @@ export function enumerateAnchors(path: PolygonPath): PathAnchor[] {
         lastAnchor = null;
         break;
       }
+      default:
+        throw new Error(`enumerateAnchors: unknown command ${cmd}`);
     }
   }
   return anchors;
