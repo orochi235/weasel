@@ -25,6 +25,9 @@ import type { Node, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import { effectivePose } from 'core/scene/poseOverrides';
 
+/** Shared, never mutated: most scenes are flat and every node returns it. */
+const EMPTY_PARENTS: readonly never[] = [];
+
 /** The subset of a node the walk itself reads. Deliberately structural: a
  *  bare adapter's node satisfies it as readily as a `SceneNode`. */
 export interface PickCandidate<TPose> {
@@ -166,14 +169,34 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
 ): PickSource<TPose> {
   const hidden = hiddenLayerIds(scene.layers);
   const { getPose, alphaOf, layerIsPainted } = opts;
+
+  // Resolved once per walk rather than once per candidate: a scene with
+  // nothing faded has nothing to say about alpha, and asking it per node is a
+  // Map lookup on a linear scan that has no other reason to touch the
+  // override table. Needs enumeration — a partial scene stand-in carrying
+  // only `get` falls back to reading per node.
+  let faded: Set<string> | null = null;
+  const enumerable = typeof scene.overrides?.ids === 'function';
+  if (!alphaOf && enumerable) {
+    for (const id of scene.overrides.ids()) {
+      const a = scene.overrides.get(id)?.alpha;
+      if (a !== undefined && a <= 0) (faded ??= new Set()).add(id);
+    }
+  }
+  const readAlpha = alphaOf
+    ?? (enumerable
+      ? (faded ? (id: string) => (faded.has(id) ? 0 : 1) : undefined)
+      : (id: string) => scene.overrides.get(asNodeId(id))?.alpha ?? 1);
+
   return {
     order: () => scene.renderOrderNodes() as unknown as readonly PickCandidate<TPose>[],
     poseOf: getPose
       ? (node) => getPose(node.id)
       : (node) => effectivePose(scene.overrides, node as never),
     parentsOf(node) {
-      const chain: PickCandidate<TPose>[] = [];
       let parentId = (node as { parent?: string | null }).parent ?? null;
+      if (parentId === null) return EMPTY_PARENTS;
+      const chain: PickCandidate<TPose>[] = [];
       const seen = new Set<string>();
       while (parentId !== null) {
         if (seen.has(parentId)) break;
@@ -185,9 +208,14 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
       }
       return chain;
     },
-    alphaOf: alphaOf ?? ((id) => scene.overrides.get(asNodeId(id))?.alpha ?? 1),
-    layerIsPainted: (layer) =>
-      !hidden.has(layer) && (layerIsPainted === undefined || layerIsPainted(layer)),
+    // Absent entirely when nothing is faded, so the walk skips the gate.
+    ...(readAlpha ? { alphaOf: readAlpha } : {}),
+    ...(hidden.size > 0 || layerIsPainted
+      ? {
+        layerIsPainted: (layer: string) =>
+          !hidden.has(layer) && (layerIsPainted === undefined || layerIsPainted(layer)),
+      }
+      : {}),
   };
 }
 

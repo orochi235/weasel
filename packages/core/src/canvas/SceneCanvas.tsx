@@ -1224,7 +1224,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     geometry,
     // The pick tolerance is declared in screen pixels; this is what converts it.
     getView: () => currentViewRef.current,
-    alphaOf: composedAlphaFor,
+    // Only when the consumer actually fades something. Without a prop the
+    // composed function is just the override lookup, and the source resolves
+    // that once per walk instead of once per candidate.
+    ...(alphaFor ? { alphaOf: composedAlphaFor } : {}),
     selectTool: selectToolWithDefaults,
     ...(insertTool ? { insertTool } : {}),
     ...(layouts ? { layouts } : {}),
