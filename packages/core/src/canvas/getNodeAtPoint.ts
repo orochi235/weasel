@@ -9,6 +9,8 @@
  * classifies the node's `data` via its routing registry).
  */
 
+import type { PickCamera } from './SceneCanvas/useSceneSelectTool';
+
 /** The hit record returned by a `getNodeAtPoint` function.  Matches the
  *  shape expected by `ToolsDispatcher.__setGetNodeAtPoint`. */
 export interface NodeAtPointHit {
@@ -40,11 +42,11 @@ export type NodeResolver = (id: string) => { kind: string; pose: unknown; data: 
  * @param nodeResolver  Optional per-id resolver. SceneCanvas builds this from its adapter.
  */
 export function makeGetNodeAtPoint(
-  pickEvery: (wx: number, wy: number) => string | string[] | null,
+  pickEvery: (wx: number, wy: number, camera?: PickCamera | null) => string | string[] | null,
   nodeResolver?: NodeResolver,
-): (wx: number, wy: number) => NodeAtPointHit | null {
-  return (wx: number, wy: number): NodeAtPointHit | null => {
-    const raw = pickEvery(wx, wy);
+): (wx: number, wy: number, camera?: PickCamera | null) => NodeAtPointHit | null {
+  return (wx: number, wy: number, camera?: PickCamera | null): NodeAtPointHit | null => {
+    const raw = pickEvery(wx, wy, camera);
     // Normalize `string | string[] | null` to topmost id (first entry).
     const id = Array.isArray(raw) ? raw[0] ?? null : raw;
     if (id == null) return null;

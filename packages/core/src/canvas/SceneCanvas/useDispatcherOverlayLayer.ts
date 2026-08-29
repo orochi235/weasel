@@ -1,8 +1,9 @@
 /**
  * Dispatcher overlay render layer for `<SceneCanvas>`.
  *
- * Walks the dispatcher's in-flight `OngoingHandle`s, calls each handle's
- * optional `overlay()` method, and paints the returned shape as chrome.
+ * Paints the overlay shapes the drawing view's in-flight handles publish,
+ * taken off the draw envelope so a panel shows its own gesture rather than
+ * the surface's.
  *
  * Distinct from `usePreviewGhostLayer`, which paints displaced scene-node
  * silhouettes via `previewIds()` / `previewPose(id)`. The dispatcher
@@ -31,6 +32,7 @@ import {
 } from 'features/paths/builder';
 import { getImageBitmap } from 'features/images/imageCache';
 import { insertPreviewExtent } from '../insertPreviewExtent';
+import { gestureOverlaysFrom, isVisibleFrom } from '../drawEnvelope';
 
 /** Style knobs for the dispatcher-overlay layer's marquee + lasso paints.
  *  Defaults match the legacy `useSelectTool` `areaSelectOverlayStyle`
@@ -55,13 +57,13 @@ const DEFAULT_STYLE: Required<DispatcherOverlayStyle> = {
 const PREVIEW_CONTENT_OPACITY = 0.85;
 
 export function useDispatcherOverlayLayer(args: {
+  /** The surface's dispatcher, subscribed to only so a pump repaints. What
+   *  gets painted is the drawing view's own `getGestureOverlays()`. */
   dispatcher: Dispatcher | null | undefined;
   style?: DispatcherOverlayStyle;
 }): RenderLayer<unknown> {
   const { dispatcher, style } = args;
 
-  const dispatcherRef = useRef(dispatcher);
-  dispatcherRef.current = dispatcher;
   const styleRef = useRef(style);
   styleRef.current = style;
 
@@ -79,24 +81,18 @@ export function useDispatcherOverlayLayer(args: {
       label: 'Dispatcher overlay',
       space: 'screen',
       draw: (data, view) => {
-        const disp = dispatcherRef.current;
-        if (!disp) return [];
         const cfg = { ...DEFAULT_STYLE, ...(styleRef.current ?? {}) };
         const t = viewToTransform(view);
         const out: DrawCommand[] = [];
 
         // Chrome-caps gate. Mirrors `composeAffordanceLayer` /
         // `createSelectionOverlayLayer`: pull a visibility predicate off
-        // the data envelope (`<Canvas>` puts it there) and consult it
-        // per overlay before pushing draw commands. Absent envelope →
-        // every overlay paints (legacy callers / tests unchanged).
-        const isVisible = asIsVisible(data);
+        // the data envelope and consult it per overlay before pushing draw
+        // commands. Absent envelope → every overlay paints.
+        const isVisible = isVisibleFrom(data);
         const passes = (id: string) => (isVisible ? isVisible(id) : true);
 
-        for (const handle of disp.getInFlightHandles()) {
-          const ov = handle.overlay?.();
-          if (!ov) continue;
-
+        for (const ov of gestureOverlaysFrom(data)) {
           if (ov.kind === 'marquee') {
             if (!passes('action.marquee')) continue;
             // Normalize start/current → AABB, project to screen coords.
@@ -281,14 +277,4 @@ export function useDispatcherOverlayLayer(args: {
     }),
     [],
   );
-}
-
-/** Pull a chrome-caps visibility predicate off the draw `data` envelope.
- *  Returns `null` when the caller passed bare data (no `getIsVisible`
- *  thunk) — the layer then paints every overlay unconditionally,
- *  matching pre-chrome-caps behavior. */
-function asIsVisible(data: unknown): ((id: string) => boolean) | null {
-  const maybe = data as { getIsVisible?: () => (id: string) => boolean };
-  if (typeof maybe?.getIsVisible === 'function') return maybe.getIsVisible();
-  return null;
 }

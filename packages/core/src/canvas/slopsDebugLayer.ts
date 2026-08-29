@@ -12,9 +12,9 @@
 
 import type { DrawCommand } from '../renderer';
 import type { RenderLayer } from 'core/layers/render';
-import type { SelectionApi } from 'core/selection/useSelection';
-import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { Path, PolygonPath } from 'features/paths/types';
+import type { GesturePreviewSource } from './gestureBounds';
+import { chromeStateFrom, previewSourcesFrom } from './drawEnvelope';
 import { circlePath } from 'features/paths/markers';
 import { enumerateAnchors } from 'interactions/actions/edit-anchors/geometry';
 import { targetSizesPx } from 'core/device/targets';
@@ -23,16 +23,13 @@ import { meanScale } from 'core/viewport/meanScale';
 interface View { x: number; y: number; scale: { x: number; y: number } }
 
 export interface CreateSlopsDebugLayerOptions {
-  /** Live selection. Slops are computed only for selected ids. */
-  selectionRef: React.RefObject<SelectionApi>;
-  /** AABB lookup for selected ids (same source the affordance pipeline uses). */
-  boundsOf: (id: string) => Bounds | null;
   /** Returns the active editing-id for path-edit chrome, or null. When set
    *  to a polygon id, also renders anchor / control-handle slops. */
   getEditingId: () => string | null;
   /** Returns the pose for a given id — used to pull the polygon path when
-   *  the editing target is a polygon-pose node. */
-  getPose: (id: string) => Path | null;
+   *  the editing target is a polygon-pose node. `previews` are the drawing
+   *  view's in-flight preview surfaces. */
+  getPose: (id: string, previews: readonly GesturePreviewSource[]) => Path | null;
   /** Pointer-size multiplier from the live `DeviceProfile`. Resolves the same
    *  sizes `buildAffordanceAt` hit-tests with. Default 1. */
   targetScale?: number;
@@ -52,9 +49,14 @@ export function createSlopsDebugLayer(
     id: 'slops-debug',
     label: 'Slops (debug)',
     space: 'screen',
-    draw: (_data, view) => {
+    draw: (data, view) => {
       const out: DrawCommand[] = [];
-      const sel = opts.selectionRef.current?.current ?? [];
+      // Selection and bounds come off the envelope: the halos have to sit on
+      // the chrome the drawing view actually painted, and a debug overlay's
+      // one job is not to lie.
+      const chrome = chromeStateFrom(data);
+      const sel = chrome?.selection ?? [];
+      const boundsOf = (id: string) => chrome?.boundsOf(id) ?? null;
 
       // Affordance regions declare their hit radii in screen pixels and
       // `hitAffordanceRegions` converts, so this screen-space layer draws
@@ -68,7 +70,7 @@ export function createSlopsDebugLayer(
       // Affordance pipeline only fires rotation when selection.length === 1;
       // mirror that here so the slop overlay matches reality.
       for (const id of sel) {
-        const b = opts.boundsOf(id);
+        const b = boundsOf(id);
         if (!b) continue;
         const corners: [number, number][] = [
           [b.x, b.y],
@@ -88,7 +90,7 @@ export function createSlopsDebugLayer(
       }
       if (sel.length === 1) {
         const id = sel[0] as string;
-        const b = opts.boundsOf(id);
+        const b = boundsOf(id);
         if (b) {
           // Rotation handle: top-center, offset upward by the rotate
           // distance (a screen-px length; dividing by meanScale puts it back
@@ -109,7 +111,7 @@ export function createSlopsDebugLayer(
       const editingId = opts.getEditingId();
       if (editingId) {
         const anchorR = sizes.anchor;
-        const pose = opts.getPose(editingId);
+        const pose = opts.getPose(editingId, previewSourcesFrom(data));
         if (pose && pose.kind === 'polygon') {
           const anchors = enumerateAnchors(pose as PolygonPath);
           for (const a of anchors) {

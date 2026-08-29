@@ -178,14 +178,13 @@ export interface DispatcherContext {
   /** Platform flag for `mod` shorthand resolution. */
   isMac: boolean;
   /**
-   * Thunk returning a fresh `RuleCtx` for the current frame. When
-   * supplied, the dispatcher filters matched candidates by their
-   * declared `Action.eligible` rule (omitted => always eligible).
-   * When omitted, no eligibility filtering is applied — preserves
-   * backward compatibility for callers (tests, legacy harnesses) that
-   * don't wire up chrome-caps state.
+   * Thunk returning a fresh `RuleCtx` for the current frame — the routed
+   * view's, when the surface hosts several. When it answers, the dispatcher
+   * filters matched candidates by their declared `Action.eligible` rule
+   * (omitted => always eligible). Absent, or answering `undefined`, applies
+   * no eligibility filtering.
    */
-  getRuleCtx?: () => RuleCtx;
+  getRuleCtx?: () => RuleCtx | undefined;
 }
 
 /**

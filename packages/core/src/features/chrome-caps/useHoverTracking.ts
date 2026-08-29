@@ -1,10 +1,9 @@
 /**
  * useHoverTracking — last-hovered NodeId for chrome-caps rules.
  *
- * Attaches a `pointermove` listener to the supplied canvas; on each
- * move, converts client coords → world coords and runs the supplied
- * `getNodeAtPoint`, caching the resulting id on a ref. Cleared on
- * `pointerleave` (pointer left the canvas → nothing is hovered).
+ * Attaches a `pointermove` listener to the supplied canvas; on each move it
+ * runs the supplied `nodeAtClientPoint` and caches the resulting id on a ref.
+ * Cleared on `pointerleave` (pointer left the canvas → nothing is hovered).
  *
  * Returns a stable getter — call once per frame from `buildChromeCtx`.
  *
@@ -19,10 +18,11 @@ import type { NodeId } from '../../core/scene/types';
 /** Options for `useHoverTracking`. */
 export interface UseHoverTrackingArgs {
   canvasRef: RefObject<HTMLCanvasElement | null>;
-  /** Client → world conversion. Same shape as the dispatcher's. */
-  clientToWorld: (clientX: number, clientY: number) => { x: number; y: number };
-  /** Topmost-id resolver. Returns null when the world point hits nothing. */
-  getNodeAtPoint: (worldX: number, worldY: number) => { id: NodeId } | null;
+  /** Topmost id under a client point, or null. One lookup rather than a
+   *  client→world thunk beside a world-space picker: a screen-pixel pick
+   *  tolerance converts against the camera the point resolved to, and two
+   *  thunks are two chances to disagree about which view that is. */
+  nodeAtClientPoint: (clientX: number, clientY: number) => { id: NodeId } | null;
   enabled?: boolean;
 }
 
@@ -30,21 +30,17 @@ export interface UseHoverTrackingArgs {
  *  so per-frame code can read the current value without the hover re-rendering
  *  the component on every pointer move. */
 export function useHoverTracking(args: UseHoverTrackingArgs): () => NodeId | null {
-  const { canvasRef, clientToWorld, getNodeAtPoint, enabled = true } = args;
+  const { canvasRef, nodeAtClientPoint, enabled = true } = args;
   const hoverRef = useRef<NodeId | null>(null);
-  const clientToWorldRef = useRef(clientToWorld);
-  clientToWorldRef.current = clientToWorld;
-  const getNodeAtPointRef = useRef(getNodeAtPoint);
-  getNodeAtPointRef.current = getNodeAtPoint;
+  const nodeAtRef = useRef(nodeAtClientPoint);
+  nodeAtRef.current = nodeAtClientPoint;
 
   useEffect(() => {
     if (!enabled) return;
     const c = canvasRef.current;
     if (!c) return;
     const onMove = (e: PointerEvent) => {
-      const w = clientToWorldRef.current(e.clientX, e.clientY);
-      const hit = getNodeAtPointRef.current(w.x, w.y);
-      hoverRef.current = hit?.id ?? null;
+      hoverRef.current = nodeAtRef.current(e.clientX, e.clientY)?.id ?? null;
     };
     const onLeave = () => { hoverRef.current = null; };
     c.addEventListener('pointermove', onMove);

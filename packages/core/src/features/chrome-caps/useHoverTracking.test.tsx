@@ -27,10 +27,13 @@ function renderHoverHook(opts: {
     const ref = useRef<HTMLCanvasElement | null>(null);
     useEffect(() => { ref.current = canvas; }, []);
     ref.current = canvas;
+    const toWorld = opts.clientToWorld ?? ((cx: number, cy: number) => ({ x: cx, y: cy }));
     return useHoverTracking({
       canvasRef: ref,
-      clientToWorld: opts.clientToWorld ?? ((cx, cy) => ({ x: cx, y: cy })),
-      getNodeAtPoint: opts.getNodeAtPoint,
+      nodeAtClientPoint: (cx, cy) => {
+        const w = toWorld(cx, cy);
+        return opts.getNodeAtPoint(w.x, w.y);
+      },
     });
   });
   return { canvas, getHover: result.current, cleanup: () => canvas.remove() };

@@ -7,6 +7,7 @@
 import type { ToolsApi } from 'tools/useTools';
 import type { AnyTool } from 'tools/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
+import type { GesturePreviewSource } from './gestureBounds';
 
 /** Iterate all tools in priority order: hotkey-engaged → active → rest of
  *  registry → ambient. Skips duplicates so each tool is only visited once.
@@ -59,4 +60,13 @@ export function aggregatePreviewIds(tools: ToolsApi | undefined): Set<string> {
     for (const id of ids) out.add(id);
   }
   return out;
+}
+
+/** Every tool that can publish a preview, in priority order and deduplicated —
+ *  the tool half of a view's preview sources. A drag may run through `select`
+ *  while the active tool is `clone`, so the active tool alone is the wrong
+ *  source. */
+export function toolPreviewSources(tools: ToolsApi | undefined): GesturePreviewSource[] {
+  if (!tools) return [];
+  return [...toolsInPriorityOrder(tools)];
 }

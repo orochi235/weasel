@@ -6,8 +6,9 @@
  * but a human user needs to see what's hittable.
  *
  * The layer reads the live edit target each frame via the supplied
- * `getEditingId()` + `getPose(id)` thunks. Returns `[]` when no editing
- * target is set or the target isn't a polygon — the layer never throws.
+ * `getEditingId()` + `getPose(...)` thunks, resolving the path against the
+ * drawing view's own previews. Returns `[]` when no editing target is set or
+ * the target isn't a polygon — the layer never throws.
  *
  * Anchors render as small white-filled stroked squares — filled solid
  * when selected; control points as small filled circles connected to
@@ -23,6 +24,8 @@
 import type { DrawCommand } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
 import type { Path, PolygonPath } from './types';
+import type { GesturePreviewSource } from 'canvas/gestureBounds';
+import { previewSourcesFrom, isVisibleFrom } from 'canvas/drawEnvelope';
 import { pathToAnchors } from './anchors';
 import { circlePath, linePath, rectMarkerPath, squarePath } from './markers';
 
@@ -35,9 +38,15 @@ export interface CreatePathEditingOverlayLayerOptions {
    *  when no node is being edited. Read each frame so live selection /
    *  edit-target changes show up without re-creating the layer. */
   getEditingId(): string | null;
-  /** Returns the pose for an id, or null if the node has been deleted.
-   *  Non-polygon poses are tolerated (the layer no-ops on them). */
-  getPose(id: string): Path | null;
+  /**
+   * Returns the pose for an id, or null if the node has been deleted.
+   * Non-polygon poses are tolerated (the layer no-ops on them).
+   *
+   * `previews` are the drawing view's in-flight preview surfaces, so an
+   * anchor dragged in one panel does not move in the others. Resolve against
+   * them before falling back to the committed pose.
+   */
+  getPose(id: string, previews: readonly GesturePreviewSource[]): Path | null;
   /** Flat indices of the selected anchors. Selected anchors render
    *  filled; unselected ones hollow — the standard vector-editor cue for
    *  "these are what the arrow keys and Delete will act on". Omit when
@@ -46,12 +55,6 @@ export interface CreatePathEditingOverlayLayerOptions {
   /** In-flight anchor-marquee rect in world coords, or null. Drawn as a
    *  rubber band while `marqueeAnchorsAction` is dragging. */
   getMarquee?(): { x: number; y: number; width: number; height: number } | null;
-  /** Chrome-caps predicate. The layer asks `'path-edit.anchors'` before
-   *  drawing anything, so paint and the anchor hit-test in
-   *  `affordanceAt` consult the same rule — otherwise a consumer that
-   *  hides the chrome still gets grabbable invisible anchors, or vice
-   *  versa. Omit to always draw when an edit target is set. */
-  isVisible?(chromeId: string): boolean;
   /** Optional styling overrides. */
   style?: PathEditingOverlayStyle;
 }
@@ -111,11 +114,15 @@ export function createPathEditingOverlayLayer(
     id: 'path-editing-overlay',
     label: 'Path editing',
     space: 'screen',
-    draw: (_data, view) => {
+    draw: (data, view) => {
       const id = opts.getEditingId();
       if (!id) return [];
-      if (opts.isVisible && !opts.isVisible('path-edit.anchors')) return [];
-      const pose = opts.getPose(id);
+      // Chrome-caps gate off the envelope, so paint and the anchor hit-test in
+      // `affordanceAt` consult the same rule — otherwise a consumer that hides
+      // the chrome still gets grabbable invisible anchors, or vice versa.
+      const isVisible = isVisibleFrom(data);
+      if (isVisible && !isVisible('path-edit.anchors')) return [];
+      const pose = opts.getPose(id, previewSourcesFrom(data));
       if (!pose || pose.kind !== 'polygon') return [];
 
       const { anchors } = pathToAnchors(pose as PolygonPath);

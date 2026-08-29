@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef } from 'react';
-import { firstPreviewPose, firstPreviewBounds, aggregatePreviewIds } from './toolPreview';
-import type { GestureSource } from './gestureBounds';
+import { firstPreviewPose, firstPreviewBounds, aggregatePreviewIds, toolPreviewSources } from './toolPreview';
+import type { GestureSource, GesturePreviewSource } from './gestureBounds';
+import type { OngoingOverlay } from 'interactions/actions/invoker';
 import { unionAABB } from 'core/geometry/unionBounds';
 import { buildChromeState, type ChromeState } from 'core/selection/chromeState';
 import type { PoseProjection } from 'interactions/actions/resize/geometry';
@@ -10,6 +11,8 @@ import type { DebugSink } from '../debug/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 const noOpUnsubscribe = (): void => {};
+
+const alwaysVisible = (): boolean => true;
 
 /**
  * The half of {@link CanvasHelpers} that belongs to one view — everything
@@ -84,12 +87,36 @@ export interface CanvasViewHelpers<TPose> {
    *  custom layers that need overlay-aware selection state (selection ids,
    *  bounds, multi-union AABB, modifier flags) read from this. */
   getChromeState(): ChromeState;
+  /**
+   * Everything publishing an in-flight preview for this view, in resolution
+   * order: tool-side first (hotkey → active → registry → ambient), then the
+   * handles in flight on this view's dispatcher. Readers take the first
+   * non-null answer per id.
+   *
+   * A ghost layer must read this off its draw envelope rather than close over
+   * a dispatcher: one layer array paints every view, so a closure ghosts view
+   * zero's drag into every panel.
+   */
+  getPreviewSources(): readonly GesturePreviewSource[];
+  /** Overlay shapes this view's in-flight handles publish — marquee, lasso,
+   *  insert preview, raw commands. Same envelope rule as
+   *  {@link CanvasViewHelpers.getPreviewSources}. */
+  getGestureOverlays(): readonly OngoingOverlay[];
+  /**
+   * Chrome-caps visibility predicate, keyed by chrome id. Overlay layers and
+   * affordances call it per element to decide whether to draw / hit-test.
+   *
+   * The rule table is the surface's; the context it resolves against is this
+   * view's selection, camera and in-flight action — so the predicate belongs
+   * here rather than on {@link CanvasSurfaceHelpers}. Unwired, it is the
+   * universal `() => true`.
+   */
+  getIsVisible(): (id: string) => boolean;
 }
 
 /**
  * The half of {@link CanvasHelpers} that belongs to the surface — one GL
- * context, one debug sink, one chrome-caps resolver, however many views are
- * drawn on it.
+ * context, one debug sink, however many views are drawn on it.
  */
 export interface CanvasSurfaceHelpers {
   /** Active debug sink, when `<Canvas debug=...>` is enabled. Layers that
@@ -97,11 +124,6 @@ export interface CanvasSurfaceHelpers {
    *  call into this from their `draw` callback. Returns `null` when
    *  debug is off — no-op for production renders. */
   getDebug(): DebugSink | null;
-  /** Chrome-caps visibility predicate, keyed by chrome id. Returns a
-   *  function that affordance/overlay layers can call per-element to
-   *  decide whether to draw / hit-test. When the parent didn't supply
-   *  a resolver, this returns the universal `() => true`. */
-  getIsVisible(): (id: string) => boolean;
 }
 
 /** Live overlay-aware lookups exposed to custom layers via `helpersRef`.
@@ -124,6 +146,8 @@ export interface UseViewHelpersOpts<TPose> {
    *  mid-gesture doesn't rebuild the memos that depend on them. */
   previewPoseExtra: ((id: string) => unknown) | undefined;
   previewIdsExtra: (() => Iterable<string> | null) | undefined;
+  /** Chrome-caps predicate for this view. Absent means everything is visible. */
+  getIsVisible?: (() => (id: string) => boolean) | undefined;
 }
 
 export interface ViewHelpersBundle<TPose> {
@@ -155,7 +179,7 @@ export function useViewHelpers<TPose>(
 ): ViewHelpersBundle<TPose> {
   const {
     adapter, geometry, boundsOf, selection, tools, gestureSource,
-    previewPoseExtra, previewIdsExtra,
+    previewPoseExtra, previewIdsExtra, getIsVisible,
   } = opts;
 
   const baseBoundsOf = useMemo(() => {
@@ -280,6 +304,12 @@ export function useViewHelpers<TPose>(
       gestureSource?.subscribe(fn) ?? noOpUnsubscribe,
     getGestureVersion: (): number => gestureSource?.getVersion() ?? 0,
     getChromeState: () => chromeState,
+    getPreviewSources: (): readonly GesturePreviewSource[] => [
+      ...toolPreviewSources(tools),
+      ...(gestureSource?.previewSources() ?? []),
+    ],
+    getGestureOverlays: (): readonly OngoingOverlay[] => gestureSource?.overlays() ?? [],
+    getIsVisible: (): ((id: string) => boolean) => getIsVisible?.() ?? alwaysVisible,
   };
 
   return {

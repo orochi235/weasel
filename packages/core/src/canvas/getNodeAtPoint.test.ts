@@ -59,11 +59,12 @@ describe('makeGetNodeAtPoint', () => {
     expect(hit?.data).toBe(data);
   });
 
-  it('passes world coords through to pickEvery', () => {
+  it('passes world coords and the resolving camera through to pickEvery', () => {
     const pickEvery = vi.fn(() => null as string | null);
     const fn = makeGetNodeAtPoint(pickEvery);
-    fn(42, 99);
-    expect(pickEvery).toHaveBeenCalledWith(42, 99);
+    const camera = { scale: { x: 2, y: 2 } };
+    fn(42, 99, camera);
+    expect(pickEvery).toHaveBeenCalledWith(42, 99, camera);
   });
 
   it('passes the topmost id to nodeResolver, not all ids', () => {

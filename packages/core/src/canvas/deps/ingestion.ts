@@ -1,13 +1,13 @@
 /**
  * `useIngestionDepSource` — wires the `ingestion` dep consumed by
- * `ingestAction`. Computes the visible world rect from the canvas's client
- * rect + current view (same `clientToWorld` math the dispatcher uses), and
- * forwards the consumer's optional `resolveSrc`.
+ * `ingestAction`, for the canvas's own view. Computes the visible world rect
+ * from the canvas's client rect + current view, and forwards the consumer's
+ * optional `resolveSrc`. A `<CanvasView>` overlays this dep with its own rect.
  */
 import { useRef, type RefObject } from 'react';
 import { useDepSource } from 'interactions/actions/depRegistry';
 import type { ClipboardIngestCtx, IngestionDep, SvgIngestOptions } from 'interactions/actions/depSchema';
-import { clientToWorld } from 'core/viewport/clientToWorld';
+import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
 import type { View } from 'core/viewport/view';
 
 export function useIngestionDepSource(
@@ -30,11 +30,7 @@ export function useIngestionDepSource(
     viewportWorldRect() {
       const canvas = canvasRef.current;
       if (!canvas) return { x: 0, y: 0, width: 0, height: 0 };
-      const view = getViewRef.current();
-      const rect = canvas.getBoundingClientRect();
-      const [x0, y0] = clientToWorld(rect.left, rect.top, rect, view);
-      const [x1, y1] = clientToWorld(rect.left + rect.width, rect.top + rect.height, rect, view);
-      return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+      return viewportWorldRect(getViewRef.current(), canvas.getBoundingClientRect());
     },
     get resolveSrc() {
       return resolveSrcRef.current;

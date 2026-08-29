@@ -102,6 +102,14 @@ export interface DispatcherViewTarget {
    * routing correct.
    */
   deps?: () => Partial<DepSchema>;
+  /**
+   * This view's chrome-caps rule context, for the eligibility filter. The rule
+   * table is the surface's, but a rule keyed on selection or the in-flight
+   * action answers per view — so an action hidden in one panel must not
+   * decline a gesture in another. `undefined` means "nothing gates here", the
+   * same answer a surface with no mode registry gives.
+   */
+  getRuleCtx?: () => import('../../features/chrome-caps').RuleCtx | undefined;
 }
 
 /**
@@ -255,7 +263,7 @@ export interface UseGestureDispatcherOptions {
    * `Action.eligible` rule (omitted => always eligible). `<SceneCanvas>`
    * wires this; tests / harnesses without chrome-caps state can omit it.
    */
-  getRuleCtx?: () => import('../../features/chrome-caps').RuleCtx;
+  getRuleCtx?: () => import('../../features/chrome-caps').RuleCtx | undefined;
 
   /**
    * Routing for a canvas hosting more than one view: the non-root dispatch
@@ -337,6 +345,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
   // Stable ref to the latest context values so event listeners always see
   // current state without needing to re-register on every render.
+  // No `getRuleCtx` here: eligibility is a per-view answer, so it rides on the
+  // dispatch record and `ctxNow` installs the routed view's.
   const ctxRef = useRef<DispatcherContext>({
     actions,
     depRegistry,
@@ -344,7 +354,6 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     hotkeyStack: activeTool.hotkeyStack,
     toolsById,
     isMac: IS_MAC,
-    getRuleCtx,
   });
   ctxRef.current = {
     actions,
@@ -353,15 +362,16 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     hotkeyStack: activeTool.hotkeyStack,
     toolsById,
     isMac: IS_MAC,
-    getRuleCtx,
   };
 
   // The flat options are view zero.
   const rootTargetRef = useRef<DispatcherViewTarget>({
     id: null, dispatcher: dispatcherRef.current, affordanceAt, classifyTarget, clientToWorld,
+    getRuleCtx,
   });
   rootTargetRef.current = {
     id: null, dispatcher: dispatcherRef.current, affordanceAt, classifyTarget, clientToWorld,
+    getRuleCtx,
   };
   const viewsRef = useRef(views);
   viewsRef.current = views;
@@ -452,7 +462,13 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     const dispatcherNow = (): Dispatcher => target().dispatcher;
 
     const routedDeps = withViewDeps(() => ctxRef.current.depRegistry, () => target().deps?.());
-    const ctxNow = (): DispatcherContext => ({ ...ctxRef.current, depRegistry: routedDeps });
+    // Eligibility is evaluated against the routed view's rule context, not the
+    // surface's — same reason its deps are.
+    const routedRuleCtx = (): ReturnType<NonNullable<DispatcherViewTarget['getRuleCtx']>> =>
+      target().getRuleCtx?.();
+    const ctxNow = (): DispatcherContext => ({
+      ...ctxRef.current, depRegistry: routedDeps, getRuleCtx: routedRuleCtx,
+    });
     const canvas = canvasRef.current;
 
     // Convert a client-space pointer position to world-space. When no

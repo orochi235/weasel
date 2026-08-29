@@ -7,11 +7,31 @@
  * yet. `<Canvas>` collects the parts named here and folds them with
  * `unionAABB` (`core/geometry/unionBounds`).
  *
- * Kept free of tool / dispatcher types so `<Canvas>` stays dispatcher-agnostic:
+ * Kept free of the dispatcher itself so `<Canvas>` stays dispatcher-agnostic:
  * it owns the `CanvasHelpers` contract, and the live gesture state lives in
- * the dispatcher.
+ * the dispatcher. The overlay and preview shapes an action publishes are data,
+ * and travel through here as such.
  */
 import type { Bounds } from 'core/viewport/fitViewToBounds';
+import type { OngoingOverlay } from 'interactions/actions/invoker';
+
+/**
+ * A source of in-flight preview state — a tool from the tools registry, or an
+ * `OngoingHandle` from the dispatcher's in-flight map. Readers merge several
+ * with first-non-null semantics.
+ *
+ * @public
+ */
+export interface GesturePreviewSource {
+  previewIds?(): Iterable<string> | null;
+  previewPose?(id: string): unknown;
+  /** Companion to `previewPose` for actions that mutate node data (anchor
+   *  edits on `data.path` nodes). Absent/null falls back to committed data. */
+  previewData?(id: string): unknown;
+  /** Subset of `previewIds` painted at full opacity rather than as a ghost —
+   *  a layout sibling reflowing to its destination is not in flight. */
+  previewOpaqueIds?(): Iterable<string> | null;
+}
 
 /**
  * Everything `<Canvas>` needs to know about in-flight gestures that it can't
@@ -44,4 +64,11 @@ export interface GestureSource {
   subscribe(fn: () => void): () => void;
   /** Monotonic counter bumped on the same events `subscribe` fires on. */
   getVersion(): number;
+  /** The in-flight handles' preview surfaces, in dispatch order. What a ghost
+   *  layer paints from — read off the draw envelope so a layer drawn for one
+   *  view cannot report another's gesture. */
+  previewSources(): readonly GesturePreviewSource[];
+  /** The overlay shapes the in-flight handles publish — marquee, lasso, insert
+   *  preview, raw commands. */
+  overlays(): readonly OngoingOverlay[];
 }

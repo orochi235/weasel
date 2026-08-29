@@ -12,7 +12,8 @@
  *  - {@link dispatcherInsertBounds} — the AABBs of gestures that have no
  *    scene id at all (a drag-to-insert, pre-commit);
  *  - {@link createGestureSource} — those two plus the dispatcher's change
- *    signal, bundled into the object `<Canvas>` takes.
+ *    signal, its in-flight preview surfaces and its published overlays,
+ *    bundled into the object `<Canvas>` takes.
  *
  * `useDispatcherOverlayLayer` paints the same `insertPreview` overlays this
  * reads, and both size them through `insertPreviewExtent`, so the reported
@@ -21,6 +22,7 @@
 import type { Dispatcher } from 'interactions/dispatcher/dispatcher';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { GestureSource } from '../gestureBounds';
+import type { OngoingOverlay } from 'interactions/actions/invoker';
 import { insertPreviewExtent } from '../insertPreviewExtent';
 
 /**
@@ -87,6 +89,15 @@ export function createGestureSource(
     bounds: () => dispatcherInsertBounds(getDispatcher()),
     subscribe: (fn) => getDispatcher()?.subscribe(fn) ?? NO_OP_UNSUBSCRIBE,
     getVersion: () => getDispatcher()?.getVersion() ?? 0,
+    previewSources: () => [...(getDispatcher()?.getInFlightHandles() ?? [])],
+    overlays: () => {
+      const out: OngoingOverlay[] = [];
+      for (const handle of getDispatcher()?.getInFlightHandles() ?? []) {
+        const ov = handle.overlay?.();
+        if (ov) out.push(ov);
+      }
+      return out;
+    },
   };
 }
 

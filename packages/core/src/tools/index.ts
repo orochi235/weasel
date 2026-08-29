@@ -9,6 +9,7 @@ export type {
   Tool, AnyTool, ToolCtx, ToolModifiers, ToolSlot,
   HotkeyTrigger,
 } from './types';
+export { TOOL_PREF_KINDS, isBuiltinToolPref } from './prefs';
 export type {
   ToolPref,
   ToolPrefGroup,

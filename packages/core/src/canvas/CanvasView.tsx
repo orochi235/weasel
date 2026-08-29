@@ -13,7 +13,8 @@ import { clampView } from 'core/viewport/clampView';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { createViewportLayer } from 'features/viewports/viewportLayer';
 import { createDispatcher } from 'interactions/dispatcher/dispatcher';
-import type { ViewApi } from 'interactions/actions/depSchema';
+import type { IngestionDep, ViewApi } from 'interactions/actions/depSchema';
+import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/selection/useSelection';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 import type { PoseProjection } from 'interactions/actions/resize/geometry';
@@ -24,7 +25,7 @@ import {
   createGestureSource,
   createDispatcherPreviewSources,
 } from './SceneCanvas/dispatcherGestureBounds';
-import { useOptionalViewInputs, type SurfaceViewInputs } from './viewInputs';
+import { useOptionalViewInputs, type SurfaceViewInputs, type ViewRuleInputs } from './viewInputs';
 import {
   useOptionalViewRegistry,
   IDENTITY_VIEW,
@@ -162,6 +163,22 @@ export function CanvasView(props: CanvasViewProps): null {
     },
   }), [rectNow, setView]);
 
+  // Paste placement is a camera question, so it is this view's when the paste
+  // routed here. The rest of the dep — `resolveSrc`, `svg`, `clipboard` — is
+  // the surface's one wiring, read live off the canvas registry.
+  const ingestionApi = useMemo<IngestionDep>(() => {
+    const base = (): IngestionDep | undefined => depRegistryRef.current?.get('ingestion');
+    return {
+      viewportWorldRect: () => {
+        const rect = rectNow();
+        return viewportWorldRect(live.current.view, { width: rect.w, height: rect.h });
+      },
+      get resolveSrc() { return base()?.resolveSrc; },
+      get svg() { return base()?.svg; },
+      get clipboard() { return base()?.clipboard; },
+    };
+  }, [rectNow]);
+
   // One dispatcher per view: in-flight handles are per-view state, and two
   // views must not be able to see each other's.
   const dispatcherRef = useRef<ReturnType<typeof createDispatcher> | null>(null);
@@ -177,16 +194,27 @@ export function CanvasView(props: CanvasViewProps): null {
   }), []);
   const selection = viewSelection ?? inputs?.selectionApi ?? ownSelection;
   live.current.selection = selection;
+
+  const inputsRef = useRef(inputs);
+  inputsRef.current = inputs;
+
+  /** The chrome-caps context this view answers for: its selection, its camera,
+   *  its dispatcher's in-flight action. */
+  const ruleInputs = useCallback((): ViewRuleInputs => ({
+    selection: live.current.selection.get(),
+    view: live.current.view,
+    action: dispatcherRef.current!.getActiveAction(),
+  }), []);
+
   const { helpers } = useViewHelpers<unknown>({
     ...(inputs ?? NO_INPUTS),
     ...own,
     selection: selection.current,
+    getIsVisible: () =>
+      inputsRef.current?.chromeCaps?.isVisible(ruleInputs()) ?? ALWAYS_VISIBLE,
   });
   const helpersRef = useRef(helpers);
   helpersRef.current = helpers;
-
-  const inputsRef = useRef(inputs);
-  inputsRef.current = inputs;
 
   /** A client point in this view's world. The rect moves with the outer
    *  camera, so it is read per call rather than closed over. */
@@ -210,7 +238,7 @@ export function CanvasView(props: CanvasViewProps): null {
       getChromeState: () => helpersRef.current.getChromeState(),
       getView: () => live.current.view,
       getAnchorState,
-      getIsVisible: () => inputsRef.current?.getIsVisible?.() ?? ALWAYS_VISIBLE,
+      getIsVisible: () => helpersRef.current.getIsVisible(),
     });
     return (screenPoint: { x: number; y: number }) => {
       const world = clientToWorldHere(screenPoint.x, screenPoint.y);
@@ -242,8 +270,11 @@ export function CanvasView(props: CanvasViewProps): null {
       () => live.current.selection.get(),
       (wx, wy) => {
         const i = inputsRef.current;
-        if (i?.pickBest) return i.pickBest(wx, wy);
-        const ids = i?.pickEvery?.(wx, wy) ?? [];
+        // This view's camera: the point came out of `clientToWorldHere`, and a
+        // screen-pixel tolerance needs the scale that produced it.
+        const camera = live.current.view;
+        if (i?.pickBest) return i.pickBest(wx, wy, camera);
+        const ids = i?.pickEvery?.(wx, wy, camera) ?? [];
         return ids.length > 0 ? ids[ids.length - 1]! : null;
       },
       (id) => inputsRef.current?.kindOfNode?.(id),
@@ -272,14 +303,22 @@ export function CanvasView(props: CanvasViewProps): null {
       affordanceAt,
       classifyTarget,
       clientToWorld: clientToWorldHere,
-      // Only a view with its own selection overlays the dep; otherwise the
-      // surface's answer stands, wrappers (`selectionMode`) included.
-      deps: () => (live.current.viewSelection
-        ? { view: viewApi, selection: live.current.viewSelection }
-        : { view: viewApi }),
+      deps: () => ({
+        view: viewApi,
+        ingestion: ingestionApi,
+        // An Escape here cancels what is in flight here.
+        dispatcher: { cancelAll: (reason) => dispatcherRef.current!.cancelAll(reason) },
+        // Only a view with its own selection overlays that one; otherwise the
+        // surface's answer stands, wrappers (`selectionMode`) included.
+        ...(live.current.viewSelection ? { selection: live.current.viewSelection } : {}),
+      }),
+      // Action eligibility is chrome-caps evaluated against this view, so a
+      // rule that hides an action in one panel cannot decline a gesture in
+      // another.
+      getRuleCtx: () => inputsRef.current?.chromeCaps?.ruleCtx(ruleInputs()),
     },
   }), [id, order, label, background, registry, rectAt, viewApi,
-       affordanceAt, classifyTarget, clientToWorldHere]);
+       affordanceAt, classifyTarget, clientToWorldHere, ruleInputs, ingestionApi]);
 
   useEffect(() => {
     if (!registry) return;

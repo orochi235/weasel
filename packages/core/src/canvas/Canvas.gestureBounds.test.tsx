@@ -67,6 +67,8 @@ function sourceOf(parts: Partial<GestureSource>): GestureSource {
     bounds: () => null,
     subscribe: () => () => {},
     getVersion: () => 0,
+    previewSources: () => [],
+    overlays: () => [],
     ...parts,
   };
 }

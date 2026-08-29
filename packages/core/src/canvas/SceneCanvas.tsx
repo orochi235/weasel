@@ -55,7 +55,7 @@ import type { SnapStrategy } from 'interactions/gestures/types';
 import { dlog } from '../debug/flag';
 import { DeviceProfileProvider, useDeviceProfile } from '../core/device/useDeviceProfile';
 import { ViewRegistryProvider, useOptionalViewRegistry } from './viewRegistry';
-import { ViewInputsProvider, type SurfaceViewInputs } from './viewInputs';
+import { ViewInputsProvider, type SurfaceViewInputs, type ViewRuleInputs } from './viewInputs';
 import { CanvasView, type CanvasViewProps } from './CanvasView';
 import type { DeviceProfile } from '../core/device/types';
 import { HANDLE_BASE_PX, targetSizesPx } from '../core/device/targets';
@@ -67,6 +67,8 @@ import { useHandTool } from 'tools/builtin/hand';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
 import { createGestureSource, createDispatcherPreviewSources } from './SceneCanvas/dispatcherGestureBounds';
+import type { PickCamera } from './SceneCanvas/useSceneSelectTool';
+import type { GesturePreviewSource } from './gestureBounds';
 import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
 import { createPathEditingOverlayLayer } from 'features/paths/pathEditingOverlayLayer';
 import { createSlopsDebugLayer } from './slopsDebugLayer';
@@ -1233,8 +1235,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     };
     const base = makeGetNodeAtPoint(internalPickEvery, nodeResolver);
     if (!isPointerInteractive) return base;
-    return (wx: number, wy: number) => {
-      const hit = base(wx, wy);
+    return (wx: number, wy: number, camera?: PickCamera | null) => {
+      const hit = base(wx, wy, camera);
       if (hit == null) return null;
       if (isPointerInteractive(hit.id) === false) return null;
       return hit;
@@ -1508,11 +1510,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   );
 
   // Preview-ghost layer: renders in-flight gesture poses on top of the
-  // committed scene using the scene slot's `drawOne`. Walks both the
-  // tools registry and the dispatcher's in-flight handles.
+  // committed scene using the scene slot's `drawOne`, from whichever view's
+  // preview sources the draw envelope carries.
   const previewLayer = usePreviewGhostLayer<TData, TLayer, TPose>({
     scene,
-    tools,
     sceneSlot: mergedLayers.scene,
     dispatcher,
   });
@@ -1528,22 +1529,22 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // caches the topmost-id from `getNodeAtPoint` on a ref. No re-renders.
   const surfaceViewRegistry = useOptionalViewRegistry();
 
-  const chromeCapsClientToWorld = useCallback((clientX: number, clientY: number): { x: number; y: number } => {
-    const canvas = internalCanvasRef.current;
-    if (!canvas) return { x: clientX, y: clientY };
-    // Hover has no pointer to capture, so it always resolves fresh: whichever
-    // view is under the cursor right now owns the point.
-    const target = surfaceViewRegistry?.resolver.at(null, clientX, clientY);
-    const origin = target?.origin ?? canvas.getBoundingClientRect();
-    const view = target?.view ?? currentViewRef.current;
-    const [x, y] = clientToWorldHelper(clientX, clientY, origin, view);
-    return { x, y };
-  }, [surfaceViewRegistry]);
+  const getNodeAtPointRefForHover = useRef(getNodeAtPoint);
+  getNodeAtPointRefForHover.current = getNodeAtPoint;
   const getHover = useHoverTracking({
     canvasRef: internalCanvasRef,
-    clientToWorld: chromeCapsClientToWorld,
-    getNodeAtPoint: (wx, wy) => {
-      const hit = getNodeAtPoint?.(wx, wy);
+    // One lookup, not a client→world thunk beside a picker: the point and the
+    // camera its tolerance converts against have to come from the same view.
+    // Hover has no pointer to capture, so it resolves fresh — whichever view
+    // is under the cursor right now owns the point.
+    nodeAtClientPoint: (clientX, clientY) => {
+      const canvas = internalCanvasRef.current;
+      if (!canvas) return null;
+      const target = surfaceViewRegistry?.resolver.at(null, clientX, clientY);
+      const origin = target?.origin ?? canvas.getBoundingClientRect();
+      const view = target?.view ?? currentViewRef.current;
+      const [x, y] = clientToWorldHelper(clientX, clientY, origin, view);
+      const hit = getNodeAtPointRefForHover.current?.(x, y, view);
       return hit ? { id: hit.id as NodeId } : null;
     },
     enabled: chromeVisibility !== undefined,
@@ -1596,8 +1597,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   /** Build the live RuleCtx — selection + view + modifiers + mode + capabilities
    *  + active action. Consumed by chrome-caps' resolver and the dispatcher's
    *  eligibility filter so both see the same view of the world. */
-  const buildCurrentRuleCtx = useCallback(() => {
-    const sel = selectionForCapsRef.current;
+  const buildRuleCtxFor = useCallback((inputs: ViewRuleInputs) => {
+    const sel = inputs.selection;
     // No mode registry wired → behave as normal mode, capabilities included.
     // An empty set here would make every `capability:` rule false and hide
     // the chrome those rules gate. See DEFAULT_ALLOWED_CAPABILITIES.
@@ -1608,9 +1609,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       selection: sel,
       multiActive: sel.length > 1,
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      action: dispatcher.getActiveAction(),
+      action: inputs.action,
       hover: getHover(),
-      view: currentViewRef.current,
+      view: inputs.view,
     });
     // buildChromeCtx returns a ChromeCtx (legacy shape); resolveVisibility
     // accepts both ChromeCtx and RuleCtx and supplies defaults when mode/
@@ -1631,7 +1632,18 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       editingAnchors: effectivePathEditingId() !== '',
       device: deviceProfileRef.current,
     };
-  }, [dispatcher, getHover, effectivePathEditingId]);
+  }, [getHover, effectivePathEditingId]);
+
+  /** The surface's own view zero. */
+  const currentRuleInputs = useCallback((): ViewRuleInputs => ({
+    selection: selectionForCapsRef.current,
+    view: currentViewRef.current,
+    action: dispatcher.getActiveAction(),
+  }), [dispatcher]);
+  const buildCurrentRuleCtx = useCallback(
+    () => buildRuleCtxFor(currentRuleInputs()),
+    [buildRuleCtxFor, currentRuleInputs],
+  );
 
   // Anchor editing survives only as long as the active mode permits it.
   // Deliberately undefined when no mode registry is wired: "no modality"
@@ -1647,14 +1659,21 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   );
   anchorEditingAllowedRef.current = anchorEditingAllowed;
 
-  const getIsVisibleForCanvas = useCallback((): (id: string) => boolean => {
-    const ruleCtx = buildCurrentRuleCtx() as Parameters<typeof resolveVisibility>[1];
-    return resolveVisibility(chromeVisibilityRef.current, ruleCtx);
-  }, [buildCurrentRuleCtx]);
-  // Stable indirection so the memoized path-editing overlay layer can ask
-  // the live predicate without being rebuilt each render.
-  const getIsVisibleForCanvasRef = useRef(getIsVisibleForCanvas);
-  getIsVisibleForCanvasRef.current = getIsVisibleForCanvas;
+  /** The chrome-caps answers for one view: the surface's rule table evaluated
+   *  against that view's selection, camera and in-flight action. */
+  const chromeCaps = useMemo(() => ({
+    ruleCtx: (inputs: ViewRuleInputs) =>
+      (getActiveModeRef.current ? buildRuleCtxFor(inputs) as RuleCtx : undefined),
+    isVisible: (inputs: ViewRuleInputs) => resolveVisibility(
+      chromeVisibilityRef.current,
+      buildRuleCtxFor(inputs) as Parameters<typeof resolveVisibility>[1],
+    ),
+  }), [buildRuleCtxFor]);
+
+  const getIsVisibleForCanvas = useCallback(
+    (): ((id: string) => boolean) => chromeCaps.isVisible(currentRuleInputs()),
+    [chromeCaps, currentRuleInputs],
+  );
 
   // Pen preview overlay — reads the pen tool's persistent scratch and draws
   // the in-progress path (anchors, handles, rubber-band, close hint). Only
@@ -1696,17 +1715,15 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // doesn't churn.
   const slopsLayer = useMemo(
     () => createSlopsDebugLayer({
-      selectionRef: selectionRef as unknown as React.RefObject<SelectionApi>,
-      boundsOf: (id) => internalBoundsOf?.(id) ?? null,
       getEditingId: () => effectivePathEditingId() || null,
       // Halos follow the live (preview-aware) polygon so they sit on
       // top of the rendered anchors during anchor-edit drags AND when
       // the whole path is being moved.
-      getPose: (id) => livePathFor(id) as never,
+      getPose: (id, previews) => livePathFor(id, previews) as never,
       targetScale: deviceProfile.targetScale,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [internalBoundsOf, deviceProfile.targetScale],
+    [deviceProfile.targetScale],
   );
 
   // Resolve the live (preview-aware) world polygon for `id`. Reads from
@@ -1716,27 +1733,27 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // dispatch separately. Synthesizes a (pose, data) pair and routes it
   // through `resolveEditablePathOf` so chrome and slops viz follow
   // *any* in-flight gesture that previews state for the editing id.
-  const livePathFor = (id: string): PolygonPath | null => {
+  const livePathFor = (
+    id: string,
+    previews: readonly GesturePreviewSource[],
+  ): PolygonPath | null => {
     const node = sceneRefForOverlay.current?.get(id as never);
     if (!node) return null;
     let pose = node.pose as unknown;
     let data = node.data as unknown;
     let touched = false;
-    const disp = dispatcherRef.current;
-    if (disp) {
-      for (const handle of disp.getInFlightHandles()) {
-        const previewIds = handle.previewIds?.();
-        if (!previewIds) continue;
-        let owns = false;
-        for (const pid of previewIds) {
-          if (pid === id) { owns = true; break; }
-        }
-        if (!owns) continue;
-        const p = handle.previewPose?.(id);
-        if (p != null && !touched) { pose = p; touched = true; }
-        const d = handle.previewData?.(id);
-        if (d != null) { data = d; touched = true; }
+    for (const source of previews) {
+      const previewIds = source.previewIds?.();
+      if (!previewIds) continue;
+      let owns = false;
+      for (const pid of previewIds) {
+        if (pid === id) { owns = true; break; }
       }
+      if (!owns) continue;
+      const p = source.previewPose?.(id);
+      if (p != null && !touched) { pose = p; touched = true; }
+      const d = source.previewData?.(id);
+      if (d != null) { data = d; touched = true; }
     }
     return resolveEditablePathOf({ pose, data } as { pose: unknown; data: unknown });
   };
@@ -1744,10 +1761,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const pathEditingOverlayLayer = useMemo(
     () => createPathEditingOverlayLayer({
       getEditingId: () => effectivePathEditingId() || null,
-      getPose: (id) => livePathFor(id) as never,
+      getPose: (id, previews) => livePathFor(id, previews) as never,
       getSelectedAnchors: () => selectedAnchorsRef.current,
       getMarquee: () => anchorMarqueeRef.current,
-      isVisible: (chromeId: string) => getIsVisibleForCanvasRef.current()(chromeId),
     }),
     // Stable identity — closure reads live state through refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1916,10 +1932,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     pickEvery: internalPickEvery,
     pickBest: internalPickBest,
     kindOfNode,
-    getIsVisible: getIsVisibleForCanvas,
+    chromeCaps,
     selectionApi: selection,
   }), [adapter, internalBoundsOf, tools, internalPickEvery, internalPickBest, kindOfNode,
-       getIsVisibleForCanvas, selection]);
+       chromeCaps, selection]);
 
   const canvas = (
     <Canvas<Node<TData, TLayer, TPose>, TPose>
@@ -1991,7 +2007,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
           <PointerProviderIfRoot>
             <ActionsProviderIfRoot>
               {canvas}
-              <PointerPublisher canvasRef={internalCanvasRef} viewRef={currentViewRef} />
+              <PointerPublisher canvasRef={internalCanvasRef} />
               <StandardActionsRegistrar
                 selection={selection}
                 scene={scene as Scene<unknown, string, unknown>}

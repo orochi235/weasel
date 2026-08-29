@@ -1095,6 +1095,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     gestureSource,
     previewPoseExtra,
     previewIdsExtra,
+    getIsVisible: () => getIsVisibleRef.current?.() ?? alwaysVisible,
   });
 
   // The affordance-layer hit-test used to be wired into the tool-routing
@@ -1105,7 +1106,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   const surfaceHelpers: CanvasSurfaceHelpers = {
     getDebug: () => debugSink,
-    getIsVisible: () => getIsVisibleRef.current?.() ?? alwaysVisible,
   };
   const helpersForLayers: CanvasHelpers<TPose> = { ...viewHelpers, ...surfaceHelpers };
   helpersForLayersRef.current = helpersForLayers;

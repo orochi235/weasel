@@ -14,6 +14,8 @@ import type { ToolsApi } from 'tools/useTools';
 import type { Dispatcher } from 'interactions/dispatcher/dispatcher';
 import type { OngoingHandle } from 'interactions/actions/invoker';
 import { usePreviewGhostLayer } from './usePreviewGhostLayer';
+import { toolPreviewSources } from '../toolPreview';
+import type { GesturePreviewSource } from '../gestureBounds';
 
 interface Data { label: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -67,6 +69,17 @@ function makeDispatcher(handles: OngoingHandle[]): Dispatcher {
   };
 }
 
+/** The preview half of a view's draw envelope: what `useViewHelpers` puts
+ *  there — tool sources first, then that view's in-flight handles. */
+function env(tools: ToolsApi | undefined, handles: readonly OngoingHandle[] = []) {
+  return {
+    getPreviewSources: (): readonly GesturePreviewSource[] => [
+      ...toolPreviewSources(tools),
+      ...handles,
+    ],
+  };
+}
+
 /** Walk a DrawCommand tree and collect all leaf `kind: 'path'` rects. */
 function collectRects(cmds: DrawCommand[]): Array<{ x: number; y: number }> {
   const out: Array<{ x: number; y: number }> = [];
@@ -96,13 +109,12 @@ describe('usePreviewGhostLayer — dispatcher in-flight handles', () => {
     const { result } = renderHook(() =>
       usePreviewGhostLayer<Data, 'main', Pose>({
         scene,
-        tools,
         sceneSlot: { drawOne },
         dispatcher,
       }),
     );
 
-    const cmds = result.current.draw(undefined, VIEW, DIMS);
+    const cmds = result.current.draw(env(tools, [handle]), VIEW, DIMS);
     const rects = collectRects(cmds);
     expect(rects).toHaveLength(1);
     expect(rects[0]).toEqual({ x: PREVIEW_POSE.x, y: PREVIEW_POSE.y });
@@ -118,27 +130,17 @@ describe('usePreviewGhostLayer — dispatcher in-flight handles', () => {
     };
     const tools = makeToolsApi();
 
-    // Start: one handle in flight → ghost emitted.
-    const { result: r1 } = renderHook(() =>
+    const { result } = renderHook(() =>
       usePreviewGhostLayer<Data, 'main', Pose>({
         scene,
-        tools,
         sceneSlot: { drawOne },
         dispatcher: makeDispatcher([handle]),
       }),
     );
-    expect(collectRects(r1.current.draw(undefined, VIEW, DIMS))).toHaveLength(1);
-
-    // After commit: dispatcher reports no in-flight handles → no ghost.
-    const { result: r2 } = renderHook(() =>
-      usePreviewGhostLayer<Data, 'main', Pose>({
-        scene,
-        tools,
-        sceneSlot: { drawOne },
-        dispatcher: makeDispatcher([]),
-      }),
-    );
-    expect(collectRects(r2.current.draw(undefined, VIEW, DIMS))).toHaveLength(0);
+    // Start: one handle in flight → ghost emitted.
+    expect(collectRects(result.current.draw(env(tools, [handle]), VIEW, DIMS))).toHaveLength(1);
+    // After commit: no in-flight handles → no ghost.
+    expect(collectRects(result.current.draw(env(tools), VIEW, DIMS))).toHaveLength(0);
   });
 
   it('tool-side preview takes priority over dispatcher-side on overlapping id', () => {
@@ -166,13 +168,12 @@ describe('usePreviewGhostLayer — dispatcher in-flight handles', () => {
     const { result } = renderHook(() =>
       usePreviewGhostLayer<Data, 'main', Pose>({
         scene,
-        tools,
         sceneSlot: { drawOne },
         dispatcher,
       }),
     );
 
-    const rects = collectRects(result.current.draw(undefined, VIEW, DIMS));
+    const rects = collectRects(result.current.draw(env(tools, [handle]), VIEW, DIMS));
     expect(rects).toHaveLength(1);
     expect(rects[0]).toEqual({ x: TOOL_POSE.x, y: TOOL_POSE.y });
   });
@@ -193,13 +194,12 @@ describe('usePreviewGhostLayer — previewOpaqueIds', () => {
     const { result } = renderHook(() =>
       usePreviewGhostLayer<Data, 'main', Pose>({
         scene,
-        tools: makeToolsApi(),
         sceneSlot: { drawOne },
         dispatcher: makeDispatcher([handle]),
       }),
     );
 
-    const cmds = result.current.draw(undefined, VIEW, DIMS) as GroupDrawCommand[];
+    const cmds = result.current.draw(env(makeToolsApi(), [handle]), VIEW, DIMS) as GroupDrawCommand[];
     const byAlpha = cmds.map((c) => [c.alpha, collectRects(c.children).map((r) => r.x)]);
     expect(byAlpha).toEqual([
       [undefined, [99]],
@@ -220,13 +220,12 @@ describe('usePreviewGhostLayer — previewOpaqueIds', () => {
     const { result } = renderHook(() =>
       usePreviewGhostLayer<Data, 'main', Pose>({
         scene,
-        tools: makeToolsApi(),
         sceneSlot: { drawOne },
         dispatcher: makeDispatcher([handle]),
       }),
     );
 
-    const cmds = result.current.draw(undefined, VIEW, DIMS) as GroupDrawCommand[];
+    const cmds = result.current.draw(env(makeToolsApi(), [handle]), VIEW, DIMS) as GroupDrawCommand[];
     expect(cmds.map((c) => c.alpha)).toEqual([0.85]);
   });
 });

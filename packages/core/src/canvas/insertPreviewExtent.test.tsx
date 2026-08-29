@@ -13,7 +13,7 @@ import type { DrawCommand, PathDrawCommand } from '../renderer';
 import type { Dispatcher } from 'interactions/dispatcher/dispatcher';
 import type { OngoingHandle, OngoingOverlay } from 'interactions/actions/invoker';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
-import { dispatcherInsertBounds } from './SceneCanvas/dispatcherGestureBounds';
+import { createGestureSource, dispatcherInsertBounds } from './SceneCanvas/dispatcherGestureBounds';
 import { insertPreviewExtent } from './insertPreviewExtent';
 import { useInsertDepSource } from './deps/insert';
 import {
@@ -52,7 +52,10 @@ const handleFor = (ov: InsertPreview): OngoingHandle => ({ overlay: () => ov });
 function paintedPoints(ov: InsertPreview): { x: number; y: number }[] {
   const dispatcher = makeDispatcher([handleFor(ov)]);
   const { result } = renderHook(() => useDispatcherOverlayLayer({ dispatcher }));
-  const cmds: DrawCommand[] = result.current.draw(undefined, VIEW, DIMS);
+  const source = createGestureSource(() => dispatcher);
+  const cmds: DrawCommand[] = result.current.draw(
+    { getGestureOverlays: () => source.overlays() }, VIEW, DIMS,
+  );
   const paths = cmds.filter((c): c is PathDrawCommand => c.kind === 'path');
   // The last path is the anchor dot when present; the shape is the first.
   const p = paths[0]?.path;

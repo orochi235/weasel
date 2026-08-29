@@ -238,13 +238,59 @@ describe('<CanvasView> draw contribution', () => {
     );
 
     const surfaceEnvelope = {
-      getIsVisible: () => () => false,
+      getDebug: () => null,
       getChromeState: () => ({ selection: ['theirs'] }),
     };
     registry.list()[0]!.layer.draw(surfaceEnvelope, OUTER, DIMS);
 
     const chrome = (seen as { getChromeState(): { selection: readonly NodeId[] } }).getChromeState();
     expect(chrome.selection).toEqual(['mine']);
+    expect((seen as { getDebug(): unknown }).getDebug()).toBe(null);
+  });
+
+  // Chrome-caps rules are the surface's; the context they resolve against is
+  // the asking view's, so a rule keyed on selection answers differently in a
+  // panel that owns one.
+  it('resolves its chrome-caps predicate against its own selection', () => {
+    let seen: Record<string, unknown> | undefined;
+    const probe: RenderLayer<unknown> = {
+      id: 'probe',
+      label: 'probe',
+      draw: (data) => { seen = data as Record<string, unknown>; return []; },
+    };
+    let registry!: ViewRegistry;
+    const inputs = {
+      adapter: undefined,
+      geometry: AUTO_POSE_DESCRIPTOR as never,
+      boundsOf: undefined,
+      tools: undefined,
+      selectionApi: { current: ['theirs' as NodeId] } as unknown as SelectionApi,
+      chromeCaps: {
+        ruleCtx: (i: { selection: readonly NodeId[] }) => i as never,
+        // "visible iff this view has something selected" — a rule keyed on
+        // exactly the state that differs between views.
+        isVisible: (i: { selection: readonly NodeId[] }) =>
+          (_id: string) => i.selection.length > 0,
+      },
+    };
+    function Panel() {
+      const panel = useSelection({ initial: [] });
+      return <CanvasView id="panel" bounds={PANEL} selection={panel} />;
+    }
+    render(
+      <ViewRegistryProvider>
+        <ViewInputsProvider value={inputs as never}>
+          <Harness layers={[probe]} onReady={(r) => { registry = r; }} />
+          <Panel />
+        </ViewInputsProvider>
+      </ViewRegistryProvider>,
+    );
+
+    registry.list()[0]!.layer.draw({}, OUTER, DIMS);
+    // The surface has one id selected and the panel has none, so the surface's
+    // answer would be `true` and the panel's is `false`.
+    expect(inputs.chromeCaps.isVisible({ selection: inputs.selectionApi.current } as never)('x'))
+      .toBe(true);
     expect((seen as { getIsVisible(): (id: string) => boolean }).getIsVisible()('x')).toBe(false);
   });
 });
