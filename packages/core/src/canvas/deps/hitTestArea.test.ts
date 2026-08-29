@@ -14,6 +14,10 @@ import { hitTestArea } from './hitTestArea';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 
+/** The hand-rolled scenes below stand in for a real `Scene`, which always
+ *  carries an overrides map; `hitTestArea` resolves poses through it. */
+const NO_OVERRIDES = { get: () => undefined };
+
 /** Right triangle: (0,0) -> (100,0) -> (0,100), closed. AABB = [0,0,100,100].
  *  Hypotenuse from (100,0) to (0,100); the upper-right corner of the AABB
  *  (x+y > 100) is outside the silhouette. */
@@ -31,6 +35,7 @@ function triangleScene(): Scene<unknown, string, unknown> {
     renderOrder: () => ['t'] as NodeId[],
     renderOrderNodes: () => [...nodes.values()],
     get: (id: NodeId) => nodes.get(id as string) as never,
+    overrides: NO_OVERRIDES,
   } as unknown as Scene<unknown, string, unknown>;
 }
 
@@ -58,6 +63,7 @@ describe('hitTestArea — silhouette awareness', () => {
       renderOrder: () => ['m'] as NodeId[],
       renderOrderNodes: () => [...nodes.values()],
       get: (id: NodeId) => nodes.get(id as string) as never,
+      overrides: NO_OVERRIDES,
     } as unknown as Scene<unknown, string, unknown>;
     expect(hitTestArea(scene, { x: 0, y: 0, width: 1000, height: 1000 })).toEqual([]);
   });
@@ -92,6 +98,7 @@ describe('hitTestArea — geometry held on node.data', () => {
       renderOrder: () => ['t'] as NodeId[],
       renderOrderNodes: () => [...nodes.values()],
       get: (id: NodeId) => nodes.get(id as string) as never,
+      overrides: NO_OVERRIDES,
     } as unknown as Scene<unknown, string, unknown>;
   }
 
@@ -116,6 +123,7 @@ describe('hitTestArea — geometry held on node.data', () => {
       renderOrder: () => ['p'] as NodeId[],
       renderOrderNodes: () => [...nodes.values()],
       get: (id: NodeId) => nodes.get(id as string) as never,
+      overrides: NO_OVERRIDES,
     } as unknown as Scene<unknown, string, unknown>;
     expect(hitTestArea(scene, { x: 90, y: 90, width: 8, height: 8 })).toEqual(['p']);
   });
@@ -187,5 +195,52 @@ describe('hitTestArea — the memoized AABB tracks the scene', () => {
     api.update(id, { data: { label: 'renamed' } });
     expect(hitTestArea(scene, NEAR)).toEqual([id]);
     expect(hitTestArea(scene, FAR)).toEqual([]);
+  });
+});
+
+describe('hitTestArea — rotation and overrides', () => {
+  function rectScene(): Scene<unknown, string, unknown> {
+    return createScene<unknown, string, unknown>({
+      systemLayers: [{ id: 'default' }],
+      initial: [{
+        id: 'r' as NodeId,
+        kind: 'leaf',
+        layer: 'default',
+        pose: { x: 0, y: 0, width: 100, height: 20, rotation: Math.PI / 4 },
+        data: null,
+      }],
+    });
+  }
+
+  it('selects a rotated rect by the corner that protrudes past its pose box', () => {
+    // 100x20 at 45 deg puts a corner at (21.7, -32.4) — 32 units above the
+    // pose box, which spans y 0..20. A marquee over that corner alone must
+    // survive the fast-reject long enough for the silhouette test to claim it.
+    expect(hitTestArea(rectScene(), { x: 15, y: -40, width: 15, height: 15 }))
+      .toEqual(['r']);
+  });
+
+  it('still rejects a marquee that clears the rotated ink entirely', () => {
+    // Same expanded box, but this marquee sits in the empty part of it: the
+    // expansion must not turn the fast-reject into the whole answer.
+    expect(hitTestArea(rectScene(), { x: 40, y: -30, width: 20, height: 15 }))
+      .toEqual([]);
+  });
+
+  it('selects an overridden node where the override draws it', () => {
+    const scene = createScene<unknown, string, unknown>({
+      systemLayers: [{ id: 'default' }],
+      initial: [{
+        id: 'o' as NodeId,
+        kind: 'leaf',
+        layer: 'default',
+        pose: { x: 0, y: 0, width: 10, height: 10 },
+        data: null,
+      }],
+    });
+    scene.overrides.set('o' as NodeId, { pose: { x: 200, y: 200, width: 10, height: 10 } });
+
+    expect(hitTestArea(scene, { x: 195, y: 195, width: 20, height: 20 })).toEqual(['o']);
+    expect(hitTestArea(scene, { x: -5, y: -5, width: 20, height: 20 })).toEqual([]);
   });
 });

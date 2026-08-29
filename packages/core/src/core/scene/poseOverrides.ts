@@ -64,3 +64,17 @@ export function createPoseOverrides<TPose>(
     },
   };
 }
+
+/**
+ * The pose to draw, pick and measure a node at: its ephemeral override when
+ * one is set, its document pose otherwise.
+ *
+ * The one rule. Reading `node.pose` directly is how the render and hit-test
+ * paths came to disagree about where a node is.
+ */
+export function effectivePose<TPose>(
+  overrides: Pick<PoseOverrides<TPose>, 'get'>,
+  node: { id: NodeId; pose: TPose },
+): TPose {
+  return overrides.get(node.id)?.pose ?? node.pose;
+}

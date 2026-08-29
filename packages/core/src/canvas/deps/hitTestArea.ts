@@ -27,6 +27,8 @@
  */
 import type { Scene, NodeId } from 'core/scene/types';
 import { nodeMemo } from 'core/scene/nodeMemo';
+import { effectivePose } from 'core/scene/poseOverrides';
+import { axisAlignedBounds } from 'core/geometry/unionBounds';
 import { aabbOfPose } from 'canvas/SceneCanvas/poseGeometry';
 import { pointInPolygon, segmentsCross } from '@weasel-js/geom';
 import { findShapeSilhouette } from 'canvas/NodeShape';
@@ -92,7 +94,7 @@ export function hitTestAreaPolygon(
     const node = order[i];
     if (node.kind === 'container') continue;
     if (hidden.size > 0 && hidden.has(node.layer)) continue;
-    const pose = node.pose;
+    const pose = effectivePose(scene.overrides, node);
     // `isPathLike(pose) && pose.kind !== 'rect'` inlined: this runs per node and
     // the predicate call cost 16% of the scan over a 10,000-rect scene.
     const silhouette = pose !== null && typeof pose === 'object'
@@ -101,9 +103,12 @@ export function hitTestAreaPolygon(
     // 1. AABB fast-reject. Memo is silhouettes-only — `aabbOfPose` answers a
     // rect pose by identity, so memoizing one costs more than it saves.
     // `b` may be shared across queries; never mutate it.
+    // Rotated poses expand to the AABB of their ink: a 100x20 rect at 45 deg
+    // spans far outside its own box, and an un-expanded fast-reject drops the
+    // marquee before the silhouette test can claim it.
     const b = silhouette
       ? nodeMemo(node, 'aabb', pose, () => aabbOfPose(pose))
-      : aabbOfPose(pose);
+      : axisAlignedBounds(aabbOfPose(pose));
     // Match the historical hitTestAABB skip: a pose without finite numeric
     // bounds (neither path-like nor a plain x/y/w/h rect) is not hit-tested.
     if (

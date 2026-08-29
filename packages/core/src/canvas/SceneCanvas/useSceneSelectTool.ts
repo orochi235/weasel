@@ -13,6 +13,7 @@
  */
 import { useMemo } from 'react';
 import { sceneToAdapter, type SceneToAdapterOptions } from '../sceneAdapter';
+import { passesAncestorClips } from '../clipChain';
 import { useSelectTool, type Bounds } from 'tools/builtin/select';
 import { pickTopMostHit, type PickTopMostHitAdapter } from 'tools/builtin/pickTopMostHit';
 import { useRotateTool } from 'tools/builtin/rotate';
@@ -235,36 +236,43 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
         // A hidden layer isn't painted (`buildSceneTree` skips its bucket), so
         // picking must not answer for it either.
         if (hidden.size > 0 && hidden.has(n.layer)) continue;
+        // Through the adapter, not `n.pose`: an ephemeral override is the pose
+        // the renderer draws, so it has to be the one picking tests.
+        const pose = adapter.getPose(n.id);
         // The pose rect is the pre-filter — grown by the tolerance, because a
         // shape's outline (and the slop around it) reaches outside its own
         // bounds, and an un-grown pre-filter would reject those hits before
         // the refinement ever ran.
-        if (!poseContainsRotated(n.pose, wx, wy, tolerance)) continue;
+        if (!poseContainsRotated(pose, wx, wy, tolerance)) continue;
         // `shapeCoversPoint` narrows the rect to the ink the painter actually
         // lays down (and answers `true` for painters that have no silhouette,
         // so nothing becomes unpickable).
-        if (shapePicking && !shapeCoversPoint(n, n.pose, wx, wy, { tolerance })) continue;
+        if (shapePicking && !shapeCoversPoint(n, pose, wx, wy, { tolerance })) continue;
+        // A container clips its subtree and the renderer honors it, so a child
+        // outside the clip is unpainted — and must not be pickable either.
+        if (!passesAncestorClips(scene, n, wx, wy)) continue;
         out.push(n.id);
       }
       return out;
     };
-  }, [scene, pickEveryProp, shapePicking, pickTolerancePx, getView]);
+  }, [scene, adapter, pickEveryProp, shapePicking, pickTolerancePx, getView]);
 
   const wiredBoundsOf = useMemo(() => {
     return (id: string): Bounds | null => {
       if (boundsOfProp) return boundsOfProp(id);
       const n = scene.get(asNodeId(id));
       if (!n) return null;
-      const b = aabbOfPose(n.pose);
+      const pose = adapter.getPose(id);
+      const b = aabbOfPose(pose);
       // Surface rotation to the overlay directly from the pose. Independent
       // of any gesture-side descriptor (notably `selectTool.resize.geometry`,
       // which the rotated-resize math demo deliberately subverts to
       // demonstrate counterexamples — the overlay must keep showing the
       // rect's true rotation regardless).
-      const rot = (n.pose as { rotation?: number }).rotation;
+      const rot = (pose as { rotation?: number }).rotation;
       return rot ? { ...b, rotation: rot } : b;
     };
-  }, [scene, boundsOfProp]);
+  }, [scene, adapter, boundsOfProp]);
 
   const selectTool = useSelectTool<Node<TData, TLayer, TPose>, TPose>(adapter, {
     pickEvery: wiredHitBody,

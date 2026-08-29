@@ -266,7 +266,9 @@ export interface UseSceneOptions<TData, TLayer extends string, TPose = RectPose>
  */
 export interface PoseOverride<TPose> {
   /** Replaces the node's document pose everywhere the render and hit-test
-   *  paths read one, including the clip a container derives from its pose. */
+   *  paths read one, including the clip a container derives from its pose.
+   *  Resolved by `effectivePose` — reading `node.pose` directly is how those
+   *  paths came to disagree about where a node is. */
   pose?: TPose;
   /** Multiplied into the node's painted alpha, on top of any `alphaFor`. */
   alpha?: number;

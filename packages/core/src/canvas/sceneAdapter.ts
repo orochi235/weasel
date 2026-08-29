@@ -28,6 +28,7 @@ import type {
 import type { LayoutStrategy } from '../layout/types';
 import type { Op } from 'core/ops/types';
 import type { Node, NodeId, Scene } from 'core/scene/types';
+import { effectivePose } from 'core/scene/poseOverrides';
 import { asNodeId } from 'core/scene/types';
 import { applyOpsTo } from 'core/applyOps';
 import {
@@ -318,9 +319,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       const nid = asNodeId(id);
       const n = scene.get(nid);
       if (!n) throw new Error(`sceneToAdapter: unknown node "${id}"`);
-      // Ephemeral overrides win here so painting and hit-testing agree: this
-      // is the pose `buildSceneTree` draws AND the one `pickEvery` tests.
-      return scene.overrides.get(nid)?.pose ?? n.pose;
+      return effectivePose(scene.overrides, { id: nid, pose: n.pose });
     },
     getParent(id) {
       const n = scene.get(asNodeId(id));

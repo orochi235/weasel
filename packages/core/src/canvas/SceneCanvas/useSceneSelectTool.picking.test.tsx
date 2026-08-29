@@ -14,6 +14,7 @@ import type { UseSceneOptions } from 'core/scene/types';
 import { useSelection } from 'core/selection/useSelection';
 import { asNodeId } from 'core/scene/types';
 import { useSceneSelectTool } from './useSceneSelectTool';
+import { rectPath } from 'features/paths/builder';
 
 interface Item { shape?: string; fill?: string; color?: string }
 type Pose = { x: number; y: number; width: number; height: number };
@@ -106,5 +107,90 @@ describe('useSceneSelectTool — geometry.picking', () => {
     const pick = harness('shape');
     const ids = pick(15, 15); // inside `under` AND inside the ellipse
     expect(ids).toEqual(['under', 'ellipse']);
+  });
+});
+
+describe('useSceneSelectTool — pose overrides', () => {
+  // An override replaces the pose everywhere the render and hit-test paths
+  // read one (`core/scene/types.ts`). The ForceGraph demo paints every node at
+  // its simulated position, so picking the document pose picks empty space.
+  function overrideHarness() {
+    const { result } = renderHook(() => {
+      const scene = useScene<Item, 'default', Pose>({
+        systemLayers: [{ id: 'default' }],
+        initial: (NODES ?? []).slice(0, 1),
+      });
+      const selection = useSelection({ mode: 'single' });
+      return { scene, tool: useSceneSelectTool({ scene, selection }) };
+    });
+    act(() => {
+      result.current.scene.overrides.set(asNodeId('under'), {
+        pose: { x: 200, y: 200, width: 20, height: 20 },
+      });
+    });
+    return result;
+  }
+
+  it('picks where the override draws the node', () => {
+    const result = overrideHarness();
+    expect(result.current.tool.pickEvery(205, 205)).toEqual(['under']);
+  });
+
+  it('stops picking where the document pose used to be', () => {
+    const result = overrideHarness();
+    expect(result.current.tool.pickEvery(5, 5)).toEqual([]);
+  });
+
+  it('reports bounds at the override, so chrome follows the paint', () => {
+    const result = overrideHarness();
+    expect(result.current.tool.boundsOf('under')).toMatchObject({ x: 200, y: 200 });
+  });
+});
+
+describe('useSceneSelectTool — ancestor clips', () => {
+  // `useSelectTool`'s own walk has answered this since clipping shipped
+  // (see useSelectTool.clipping.test.tsx); the walk SceneCanvas installs
+  // instead of it had no clip term, so a child clipped out of view was
+  // invisible and still clickable.
+  function clipHarness(clip: [number, number, number, number], leaf: Pose) {
+    const { result } = renderHook(() => {
+      const scene = useScene<Item, 'default', Pose>({
+        systemLayers: [{ id: 'default' }],
+        initial: [
+          {
+            id: asNodeId('bed'),
+            kind: 'container',
+            layer: 'default',
+            pose: { x: -50, y: -50, width: 150, height: 150 },
+            data: {},
+            clipFromPose: () => rectPath(...clip),
+          },
+          {
+            id: asNodeId('inner'),
+            parent: asNodeId('bed'),
+            kind: 'leaf',
+            layer: 'default',
+            pose: leaf,
+            data: {},
+          },
+        ],
+      });
+      const selection = useSelection({ mode: 'single' });
+      return useSceneSelectTool({ scene, selection });
+    });
+    return result;
+  }
+
+  it('does not pick a leaf the container clips away', () => {
+    // The point is inside the leaf's own box and outside the clip.
+    const r = clipHarness([50, 50, 50, 50], { x: -5, y: -5, width: 20, height: 20 });
+    expect(r.current.pickEvery(0, 0)).not.toContain('inner');
+  });
+
+  it('still picks a leaf inside the clip', () => {
+    // Paired with the case above: the clip is smaller than the container's
+    // box, so passing documents a clip pass rather than a bare AABB pass.
+    const r = clipHarness([-20, -20, 40, 40], { x: -5, y: -5, width: 10, height: 10 });
+    expect(r.current.pickEvery(0, 0)).toContain('inner');
   });
 });
