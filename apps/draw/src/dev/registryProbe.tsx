@@ -5,22 +5,13 @@ import {
   defaultNodeProperties,
   useActionsRegistry,
   useScene,
-  type GestureSpec,
-  type ModSpec,
   type NodePropertiesEntry,
   type NodeRoutingEntry,
-  type TargetSpec,
   type ToolDef,
   type ToolsApi,
   type FillStyle,
 } from '@weasel-js/core';
-import type { PhaseSpec } from '@weasel-js/gestures';
-import { formatRoute } from '@weasel-js/core/routing';
-import type {
-  GestureName,
-  ParsedModifiers,
-  PhaseAtom,
-} from '@weasel-js/core/routing';
+import { routesForSpec } from '@weasel-js/core/routing';
 import { isValidElement, type ReactNode } from 'react';
 import type { DeclaredRoute, ToolSurface, ToolEntry, ActionEntry, CallbackRef, CallbackSource } from './registryData';
 import { formatShortcutParts } from '@weasel-js/ui';
@@ -211,7 +202,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
  *  Tool instead of declaring them in the def (`useSelectTool` does exactly
  *  that — it spreads the defineTool result and appends `bindings`). Reading
  *  `def.bindings` alone missed every one of those. */
-function collectDeclaredRoutes(
+export function collectDeclaredRoutes(
   def: ToolDef<unknown>,
   bindings: ToolDef<unknown>['bindings'],
   _callbacks: readonly CallbackRef[],
@@ -232,35 +223,13 @@ function collectDeclaredRoutes(
   return out;
 }
 
-/** Map of `GestureSpec.kind` → `GestureName` used by the route grammar.
- *  `multiTouch` has no route-grammar gesture (only its tap synthesis does),
- *  so specs of that kind are skipped. Likewise `drop` / `paste`: the
- *  content-ingestion gestures shipped without route-grammar names, so the
- *  inspector skips their bindings too. Adding `drop` / `paste` to the route
- *  grammar is a tracked follow-up (docs/TODO.md, ingestion residuals). */
-const SPEC_KIND_TO_GESTURE: Record<GestureSpec['kind'], GestureName | undefined> = {
-  key: 'keyDown',
-  'key-held': 'keyHeld',
-  wheel: 'wheel',
-  click: 'click',
-  doubleClick: 'dblTap',
-  contextMenu: 'contextMenu',
-  longPress: 'longPress',
-  drag: 'drag',
-  pointerDown: 'pointerDown',
-  multiTouch: undefined,
-  multiTouchTap: 'multiTouchTap',
-  drop: undefined,
-  paste: undefined,
-};
-
 function bindingRouteRefs(
   bindings: ToolDef<unknown>['bindings'],
 ): readonly { route: string; actionId: string }[] {
   if (!bindings || bindings.length === 0) return [];
   const out: { route: string; actionId: string }[] = [];
   for (const b of bindings) {
-    for (const route of specToRouteStrings(b.spec)) {
+    for (const route of routesForSpec(b.spec)) {
       out.push({ route, actionId: b.actionId });
     }
   }
@@ -287,65 +256,6 @@ function bestActionHandlerSource(action: unknown): CallbackSource | undefined {
     }
   }
   return sourceOf(a.enabled);
-}
-
-function specToRouteStrings(spec: GestureSpec): readonly string[] {
-  const gesture = SPEC_KIND_TO_GESTURE[spec.kind];
-  if (!gesture) return [];
-  const phases = phaseSpecToAtoms(spec.phase);
-  const modifiers = modSpecToParsed(spec.mods);
-
-  let args: readonly (string | undefined)[] = [undefined];
-  let target: string | undefined;
-
-  if (spec.kind === 'wheel') {
-    args = [spec.direction ?? '*'];
-  } else if (spec.kind === 'key' || spec.kind === 'key-held') {
-    args = Array.isArray(spec.key) ? spec.key : [spec.key];
-  } else if (spec.kind === 'multiTouchTap') {
-    args = [String(spec.fingers)];
-  } else if (
-    spec.kind === 'click' || spec.kind === 'doubleClick' ||
-    spec.kind === 'contextMenu' || spec.kind === 'drag'
-  ) {
-    target = targetSpecToString(spec.target);
-  }
-
-  return args.map((arg) => formatRoute({ phases, gesture, arg, target, modifiers }));
-}
-
-function phaseSpecToAtoms(phase: PhaseSpec | undefined): readonly PhaseAtom[] {
-  // Bindings without a `phase` qualifier match in any phase. Surface that as
-  // the explicit `*` atom rather than picking one of initial/engaged
-  // arbitrarily — `formatRoute` renders it as `[*]` so the inspector reads
-  // honestly.
-  if (phase === undefined) return [{ channel: '&', phase: '*' }];
-  if (phase === 'initial' || phase === 'engaged' || phase === '*') {
-    return [{ channel: '&', phase }];
-  }
-  return phase;
-}
-
-function modSpecToParsed(mods: ModSpec | undefined): ParsedModifiers {
-  if (!mods) return {};
-  const out: ParsedModifiers = {};
-  for (const name of ['mod', 'shift', 'alt', 'ctrl', 'meta'] as const) {
-    const v = mods[name];
-    if (v === true) out[name] = 'required';
-    else if (v === 'optional') out[name] = 'optional';
-  }
-  return out;
-}
-
-/** Render a TargetSpec as the route grammar's target token. Predicate
- *  targets (`{ kindOf }`) collapse to a single sentinel string — the
- *  predicate body isn't representable in the v3 grammar, but emitting *some*
- *  target keeps the route in the inspector and groups predicate-bindings
- *  together under one `routeTarget` entry. */
-function targetSpecToString(target: TargetSpec | undefined): string {
-  if (target === undefined) return '*';
-  if (typeof target === 'string') return target;
-  return 'predicate';
 }
 
 /** `GestureSpec.kind` -> the `GestureChannels` key it sets. */

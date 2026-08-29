@@ -1,6 +1,7 @@
 import type { Tool } from '../../types';
 import type { GestureSpec, ModSpec, TargetSpec, PhaseSpec } from '@weasel-js/gestures';
-import type { ParsedModifiers, ModifierKey } from '../routeGrammar';
+import type { ParsedModifiers, ModifierKey, PhaseAtom } from '../routeGrammar';
+import { formatRoute } from '../routeGrammar';
 import { getGestureDescriptor, isKnownGestureName, type GestureName } from '../gestures';
 
 /**
@@ -54,7 +55,9 @@ export const PREDICATE_TARGET = 'predicate';
 
 /** `GestureSpec.kind` → route-grammar gesture name. `multiTouch` has no
  *  route-grammar gesture (only its tap synthesis does), so specs of that kind
- *  are skipped. */
+ *  are skipped. Read it through {@link routeGestureForSpecKind} — a second
+ *  copy of this table typechecks while silently disagreeing, which is how
+ *  drop and paste went missing from the draw inspector. */
 const SPEC_KIND_TO_GESTURE: Record<GestureSpec['kind'], GestureName | undefined> = {
   key: 'keyDown',
   'key-held': 'keyHeld',
@@ -95,6 +98,41 @@ export function buildRouteRegistry(
   return out;
 }
 
+/** The route-grammar gesture a `GestureSpec.kind` routes as, or `undefined`
+ *  for kinds the grammar has no name for. */
+export function routeGestureForSpecKind(
+  kind: GestureSpec['kind'],
+): GestureName | undefined {
+  const gesture = SPEC_KIND_TO_GESTURE[kind];
+  return gesture && isKnownGestureName(gesture) ? gesture : undefined;
+}
+
+/**
+ * Every route string one `GestureSpec` declares, in route-grammar notation.
+ *
+ * One string per arg alternative — a spec bound to `['ArrowUp','ArrowDown']`
+ * yields two routes, because each is separately conflictable and separately
+ * readable. Returns `[]` for spec kinds the grammar can't name.
+ *
+ * This is the display counterpart to {@link buildRouteRegistry}: same
+ * projection of a spec onto the grammar, rendered as text instead of as a
+ * conflict-checkable row.
+ */
+export function routesForSpec(spec: GestureSpec): readonly string[] {
+  const gesture = routeGestureForSpecKind(spec.kind);
+  if (!gesture) return [];
+  const descriptor = getGestureDescriptor(gesture);
+  const modifiers = parseModSpec('mods' in spec ? spec.mods : undefined);
+  const phases = phaseAtomsForSpec('phase' in spec ? spec.phase : undefined);
+  const target = descriptor.hasTarget
+    ? routeTargetForSpec('target' in spec ? spec.target : undefined) ?? '*'
+    : undefined;
+  const args = descriptor.arg
+    ? routeArgsForSpec(spec, descriptor.arg.default)
+    : [undefined];
+  return args.map((arg) => formatRoute({ phases, gesture, arg, target, modifiers }));
+}
+
 function entryFor(
   toolId: string,
   spec: GestureSpec,
@@ -111,7 +149,7 @@ function entryFor(
     modifiers: parseModSpec('mods' in spec ? spec.mods : undefined),
     arg: descriptor.arg ? argOf(spec, descriptor.arg.default) : undefined,
     target: descriptor.hasTarget
-      ? targetOf('target' in spec ? spec.target : undefined)
+      ? routeTargetForSpec('target' in spec ? spec.target : undefined)
       : undefined,
     spec,
   };
@@ -144,19 +182,37 @@ function parseModSpec(mods: ModSpec | undefined): ParsedModifiers {
   return out;
 }
 
-function targetOf(target: TargetSpec | undefined): string | undefined {
+/** Expand a `PhaseSpec` to the atoms `formatRoute` renders. A spec with no
+ *  `phase` matches in either phase, which the grammar spells `[*]`. */
+function phaseAtomsForSpec(phase: PhaseSpec | undefined): readonly PhaseAtom[] {
+  if (phase === undefined) return [{ channel: '&', phase: '*' }];
+  if (phase === 'initial' || phase === 'engaged' || phase === '*') {
+    return [{ channel: '&', phase }];
+  }
+  return phase;
+}
+
+function routeTargetForSpec(target: TargetSpec | undefined): string | undefined {
   if (target === undefined) return undefined;
   return typeof target === 'string' ? target : PREDICATE_TARGET;
 }
 
+/** Every arg value a spec's route slot can take, one per alternative. Both
+ *  the registry row and the route string read the arg here. */
+function routeArgsForSpec(
+  spec: GestureSpec,
+  fallback: string | undefined,
+): readonly (string | undefined)[] {
+  if ('key' in spec) return Array.isArray(spec.key) ? spec.key : [spec.key];
+  if ('fingers' in spec) return [String(spec.fingers)];
+  if ('direction' in spec) return [spec.direction ?? fallback];
+  if ('types' in spec) return [spec.types?.length ? spec.types.join('|') : fallback];
+  return [fallback];
+}
+
 function argOf(spec: GestureSpec, fallback: string | undefined): string | undefined {
-  if ('key' in spec) {
-    return Array.isArray(spec.key) ? spec.key.join('|') : spec.key;
-  }
-  if ('fingers' in spec) return String(spec.fingers);
-  if ('direction' in spec) return spec.direction ?? fallback;
-  if ('types' in spec) return spec.types?.length ? spec.types.join('|') : fallback;
-  return fallback;
+  const args = routeArgsForSpec(spec, fallback);
+  return args.length > 1 ? args.join('|') : args[0];
 }
 
 // Re-export for downstream consumers.

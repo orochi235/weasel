@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { buildRouteRegistry, PREDICATE_TARGET, type RegistryEntry } from './registry';
+import { buildRouteRegistry, routesForSpec, routeGestureForSpecKind, PREDICATE_TARGET, type RegistryEntry } from './registry';
 import type { Tool } from '../../types';
+import type { GestureSpec } from '@weasel-js/gestures';
 
 function tool(id: string, bindings: unknown[]): Tool<unknown> {
   return { id, bindings } as unknown as Tool<unknown>;
@@ -162,5 +163,60 @@ describe('buildRouteRegistry', () => {
     it('reports an empty atom array as any', () => {
       expect(phaseOfBinding([])).toBe('any');
     });
+  });
+});
+
+
+/** Every `GestureSpec.kind` the grammar names, with a minimal spec of that
+ *  kind. Adding a kind to `GestureSpec` without adding it here fails to
+ *  compile — which is the point: the next kind cannot be answered in one
+ *  place and forgotten in another. */
+const SPEC_BY_KIND: Record<GestureSpec['kind'], GestureSpec> = {
+  key: { kind: 'key', key: 'Escape' },
+  'key-held': { kind: 'key-held', key: ' ' },
+  wheel: { kind: 'wheel' },
+  click: { kind: 'click' },
+  doubleClick: { kind: 'doubleClick' },
+  contextMenu: { kind: 'contextMenu' },
+  longPress: { kind: 'longPress' },
+  drag: { kind: 'drag' },
+  pointerDown: { kind: 'pointerDown' },
+  multiTouch: { kind: 'multiTouch' },
+  multiTouchTap: { kind: 'multiTouchTap', fingers: 2 },
+  drop: { kind: 'drop' },
+  paste: { kind: 'paste' },
+} as unknown as Record<GestureSpec['kind'], GestureSpec>;
+
+describe('routesForSpec', () => {
+  it('emits a route for every spec kind the grammar names', () => {
+    for (const [kind, spec] of Object.entries(SPEC_BY_KIND)) {
+      const named = routeGestureForSpecKind(kind as GestureSpec['kind']) !== undefined;
+      const routes = routesForSpec(spec);
+      expect(
+        { kind, routed: routes.length > 0 },
+        `spec kind ${kind}`,
+      ).toEqual({ kind, routed: named });
+    }
+  });
+
+  it('routes the content-ingestion gestures', () => {
+    expect(routesForSpec({ kind: 'drop' } as GestureSpec)).toEqual(['[*] drop']);
+    expect(routesForSpec({ kind: 'paste' } as GestureSpec)).toEqual(['[*] paste']);
+    expect(routesForSpec({ kind: 'drop', types: ['image/png'] } as GestureSpec))
+      .toEqual(['[*] drop(image/png)']);
+  });
+
+  it('emits one route per key alternative', () => {
+    expect(routesForSpec({ kind: 'key', key: ['ArrowUp', 'ArrowDown'] } as GestureSpec))
+      .toEqual(['[*] keyDown(ArrowUp)', '[*] keyDown(ArrowDown)']);
+  });
+
+  it('renders a predicate target with the same sentinel the registry uses', () => {
+    const [route] = routesForSpec({ kind: 'drag', target: { kindOf: () => true } } as unknown as GestureSpec);
+    expect(route).toContain(PREDICATE_TARGET);
+  });
+
+  it('skips kinds the grammar has no name for', () => {
+    expect(routesForSpec({ kind: 'multiTouch' } as GestureSpec)).toEqual([]);
   });
 });

@@ -290,13 +290,6 @@ export interface PhaseOutputEntry {
   label: string;
 }
 
-/** Stable name stamped onto an `Op` by its factory — the runtime
- *  discriminant the op-factory registry uses for serialize/restore. Mirrors
- *  the names registered in `src/core/ops/*.ts`. */
-export const OP_KIND_NAMES: readonly string[] = [
-  'insert', 'delete', 'transform', 'reparent', 'setSelection', 'setText', 'setPath',
-];
-
 export interface OpKindEntry { kind: 'opKind'; id: string; label: string }
 
 
@@ -388,14 +381,14 @@ export function collectBundles(): readonly BundleEntry[] {
   }));
 }
 
-const OP_FACTORY_NAMES: readonly string[] = [
-  'createInsertOp', 'createDeleteOp', 'createTransformOp',
-  'createReparentOp', 'createSetSelectionOp', 'createSetTextOp', 'createSetPathOp',
-];
-
+/** The `createXOp` barrel export behind each registered op kind. The kit
+ *  names every factory after its op kind, so the registry drives this list;
+ *  the `typeof` guard turns a break in that convention into a missing row
+ *  rather than a crash, and `registryData.test.ts` fails when it breaks. */
 export function collectOpFactories(): readonly OpFactoryEntry[] {
-  return OP_FACTORY_NAMES
-    .filter((name) => typeof (Weasel as Record<string, unknown>)[name] === 'function')
+  return Weasel.registeredOpNames()
+    .map((name) => `create${name[0]!.toUpperCase()}${name.slice(1)}Op`)
+    .filter((name) => typeof (Weasel as unknown as Record<string, unknown>)[name] === 'function')
     .map((id) => ({ kind: 'opFactory', id, label: id }));
 }
 
@@ -467,8 +460,11 @@ export function collectGestures(): readonly GestureEntry[] {
   return GESTURE_CATALOG_KEYS.map((id) => ({ kind: 'gesture', id, label: id }));
 }
 
+/** Op kinds the kit can serialize and rebuild — the stable `name` each op
+ *  factory stamps onto its `Op`. Read from the live factory registry so a
+ *  newly-registered op appears here without a second list to update. */
 export function collectOpKinds(): readonly OpKindEntry[] {
-  return OP_KIND_NAMES.map((id) => ({ kind: 'opKind', id, label: id }));
+  return Weasel.registeredOpNames().map((id) => ({ kind: 'opKind', id, label: id }));
 }
 
 export function collectSlots(): readonly SlotEntry[] {

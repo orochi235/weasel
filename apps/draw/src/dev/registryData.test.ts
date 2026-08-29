@@ -5,8 +5,10 @@ import {
   collectRoutingTrait,
   collectPropertiesTrait,
   collectOpFactories,
+  collectOpKinds,
   collectShapeTrait,
 } from './registryData';
+import * as Weasel from '@weasel-js/core';
 import { defaultNodeRouting, defaultNodeProperties, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 
 describe('registryData static collectors', () => {
@@ -28,6 +30,19 @@ describe('registryData static collectors', () => {
     const exhaustive = bundles.find((b) => b.id === 'exhaustive')!;
     expect(exhaustive.tools).toContain('rect');
     expect(exhaustive.tools).toContain('ellipse');
+  });
+
+  it('collectOpKinds lists every op kind registered with the kit', () => {
+    const listed = collectOpKinds().map((o) => o.id).sort();
+    expect(listed).toEqual([...Weasel.registeredOpNames()].sort());
+  });
+
+  it('collectOpFactories names a real factory export for every registered op kind', () => {
+    const ids = collectOpFactories().map((f) => f.id).sort();
+    const expected = Weasel.registeredOpNames()
+      .map((n) => `create${n[0]!.toUpperCase()}${n.slice(1)}Op`)
+      .sort();
+    expect(ids).toEqual(expected);
   });
 
   it('collectOpFactories returns named op factories from the kit barrel', () => {
