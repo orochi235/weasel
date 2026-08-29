@@ -34,6 +34,7 @@ import {
   useScene,
   useSelection,
   useActionsRegistry,
+  type UiOngoingControl,
   useBooleansAdapter,
   rectPath,
   asNodeId,
@@ -71,7 +72,6 @@ import {
   solid,
   strokeOf,
   DEFAULT_SHAPE_FILL,
-  DEFAULT_FILL_COLOR,
   useCanvasSize,
   useClipboardOps,
   useDepSource,
@@ -102,8 +102,9 @@ import {
   StatusBarSpacer,
   ToolPalette,
   ToolOptionsBar,
-  solidColorOf,
   type PropertyRenderer,
+  type PropertyRenderContext,
+  PaintInput,
 } from '@weasel-js/ui';
 
 import { ActionBar, type FlipAxis, type PaperSizeKey } from './ActionBar';
@@ -118,7 +119,6 @@ import {
   PropertyRow,
   PropertyTextInput,
   PropertyColorInput,
-  PropertyFillInput,
   PropertySwatchGrid,
   PropertySelect,
 } from './ui/PropertiesPanel';
@@ -382,49 +382,54 @@ function isFillStyleObject(raw: unknown): raw is FillStyle {
   return 'fill' in raw || 'stops' in raw || 'color' in raw;
 }
 
-function wdFillRenderer(colorActionId: string, opacityActionId: string): PropertyRenderer {
-  return (ctx) => {
-    const fallback = ctx.pref.default;
-    const raw = ctx.value;
-    const value: FillStyle = isFillStyleObject(raw) ? raw
-      : isFillStyleObject(fallback) ? fallback
-      : { color: DEFAULT_FILL_COLOR };
-    const input = (
-      <PropertyFillInput
-        value={value}
-        colorActionId={colorActionId}
-        opacityActionId={opacityActionId}
-      />
-    );
-    if (!ctx.mixed) return input;
-    return (
-      <span title="Mixed" className="wd-mixed">
-        {input}
-      </span>
-    );
-  };
+/**
+ * A paint leaf routed through an action, so a scrub coalesces into one undo
+ * entry instead of one per tick. The control itself is the kit's `PaintInput`
+ * — the app supplies only which action the writes land on.
+ */
+function wdPaintRenderer(actionId: string): PropertyRenderer {
+  return (ctx) => <WdPaintLeaf ctx={ctx} actionId={actionId} />;
 }
 
-function wdActionColorRenderer(colorActionId: string, opacityActionId: string): PropertyRenderer {
-  return (ctx) => {
-    // Keyed at a paint path, so both the value and the schema default are
-    // whole `FillStyle`s. A gradient has no single color to show and falls
-    // back rather than claiming one; reading the default as a bare color
-    // string handed this control an object and threw. Writes go through the
-    // actions, which preserve the rest of the stroke.
-    const fallback = (ctx.pref as { default?: unknown }).default;
-    const value = solidColorOf(ctx.value) ?? solidColorOf(fallback) ?? DEFAULT_STROKE_COLOR;
-    const input = (
-      <PropertyColorInput value={value} colorActionId={colorActionId} opacityActionId={opacityActionId} />
-    );
-    if (!ctx.mixed) return input;
-    return (
-      <span title="Mixed" className="wd-mixed">
-        {input}
-      </span>
-    );
-  };
+function WdPaintLeaf({ ctx, actionId }: { ctx: PropertyRenderContext; actionId: string }) {
+  const actions = useActionsRegistry();
+  const ctrlRef = useRef<UiOngoingControl | null>(null);
+
+  const fallback = ctx.pref.default;
+  const raw = ctx.value;
+  // `null` is an explicit "no paint" and must not fall through to the schema
+  // default, or the None segment unlights itself on the next render.
+  const value: FillStyle | null | undefined = raw === null ? null
+    : isFillStyleObject(raw) ? raw
+    : isFillStyleObject(fallback) ? fallback
+    : undefined;
+
+  /** `commit` with no preceding `input` opens and closes the control in one
+   *  go — a kind switch is a complete gesture on its own. */
+  function dispatch(paint: FillStyle | null, phase: 'input' | 'commit'): void {
+    if (!ctrlRef.current) {
+      ctrlRef.current = actions?.begin(actionId, { paint }) ?? null;
+    } else {
+      ctrlRef.current.update({ paint });
+    }
+    if (phase === 'commit' && ctrlRef.current) {
+      ctrlRef.current.end('commit');
+      ctrlRef.current = null;
+    }
+  }
+
+  return (
+    <PaintInput
+      value={value}
+      mixed={ctx.mixed}
+      unset={ctx.unset}
+      aria-label={ctx.pref.name}
+      onInput={(next) => dispatch(next, 'input')}
+      onChange={(next) => dispatch(next, 'commit')}
+    />
+  );
 }
+
 /** Marks the tool options bar as the text editor's own chrome, so focus
  *  landing in it doesn't commit the edit those controls are there to style.
  *  A class rather than a ref because the check is a `closest()` from an
@@ -432,10 +437,10 @@ function wdActionColorRenderer(colorActionId: string, opacityActionId: string): 
 const TEXT_CHROME_CLASS = 'wd-text-chrome';
 
 export const WD_RENDERERS: Record<string, PropertyRenderer> = {
-  'data.fill': wdFillRenderer('setFill', 'setFillOpacity'),
-  // The stroke's colour row inside its object leaf; the other fields render
+  'data.fill': wdPaintRenderer('setFill'),
+  // The stroke's paint row inside its object leaf; the other fields render
   // from the schema. Keyed at the child path so the object rows survive.
-  'data.stroke.paint': wdActionColorRenderer('setStroke', 'setStrokeOpacity'),
+  'data.stroke.paint': wdPaintRenderer('setStroke'),
   // The schema's `font-family` leaf has no builtin renderer — the registry it
   // has to read is a runtime fact, not a static option list. Keyed by kind
   // rather than path so any future family leaf picks it up.

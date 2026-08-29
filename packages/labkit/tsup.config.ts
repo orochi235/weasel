@@ -1,9 +1,34 @@
+import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'tsup';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const weaselRoot = resolve(here, '../..');
+const coreDir = resolve(weaselRoot, 'packages/core');
+
+/**
+ * Core's every entry point, aliased to its built file.
+ *
+ * esbuild's `alias` substitutes by prefix, so mapping the bare specifier alone
+ * sends `@weasel-js/core/patterns-builtin` to `.../dist/index.js/patterns-builtin`
+ * and the build dies on a path that is not a directory. Reading the subpaths off
+ * core's `exports` keeps this correct as entry points come and go, rather than
+ * naming the one import that happened to reach here first.
+ */
+function coreAliases(): Record<string, string> {
+  const { exports: map } = JSON.parse(
+    readFileSync(resolve(coreDir, 'package.json'), 'utf8'),
+  ) as { exports: Record<string, { import?: string } | string> };
+  const out: Record<string, string> = {};
+  for (const [sub, target] of Object.entries(map)) {
+    const file = typeof target === 'string' ? target : target.import;
+    if (!file?.endsWith('.js')) continue;
+    const specifier = sub === '.' ? '@weasel-js/core' : `@weasel-js/core/${sub.slice(2)}`;
+    out[specifier] = resolve(coreDir, file);
+  }
+  return out;
+}
 
 export default defineConfig({
   entry: {
@@ -45,10 +70,7 @@ export default defineConfig({
   // weasel's bare core/ imports).
   noExternal: [/^@weasel-js\//],
   esbuildOptions(options) {
-    options.alias = {
-      ...(options.alias ?? {}),
-      '@weasel-js/core': resolve(weaselRoot, 'packages/core/dist/index.js'),
-    };
+    options.alias = { ...(options.alias ?? {}), ...coreAliases() };
   },
   splitting: true,
   treeshake: true,

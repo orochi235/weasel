@@ -1,0 +1,39 @@
+/* Tile grid over the size switch. */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-inline-size: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--wzl-swatch-size, 28px), 1fr));
+  gap: 0;
+}
+
+/* The swatch's whole face is its own tile, so it must not carry a flat
+   background — and the tile repeats at its own scale, not the swatch's. */
+.swatch {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+  padding: 0;
+  border: 0.5px solid var(--wzl-border);
+  border-radius: 0;
+  cursor: pointer;
+  background-color: var(--wzl-surface-sunken);
+  background-image: var(--tile-preview);
+  background-repeat: repeat;
+  background-size: 16px 16px;
+  background-clip: padding-box;
+}
+
+.swatch:hover {
+  border-color: var(--wzl-fg-muted);
+}
+
+.swatchActive {
+  border-color: var(--wzl-accent);
+  box-shadow: 0 0 0 1px var(--wzl-accent);
+}

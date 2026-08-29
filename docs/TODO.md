@@ -1373,11 +1373,11 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 - **(P2) Consolidate the paint demos into one "stroke and fill" demo.** `gradients`,
   `pattern-playground`, `vertex-colors` and `vertex-widths` are four cards each
-  showing one corner of the same subject, and the paint-editor arcs
-  (`docs/superpowers/specs/2026-08-27-paint-editor-design.md`) give the kit a
-  `PaintInput` and a geometry overlay that a combined demo should be built on
-  rather than around. Rethink the scope before splitting the work — this is a
-  redesign, not a merge of four files.
+  showing one corner of the same subject. The pieces a combined demo should be
+  built on now exist — `PaintInput` edits a whole `FillStyle` and
+  `SceneGradientHandles` puts the geometry on the artwork — so this is no
+  longer blocked on the kit. Rethink the scope before splitting the work: it is
+  a redesign, not a merge of four files.
 
 - **(P3) Demo coverage gap: HUD widget gallery.** `@weasel-js/hud` ships five widgets (`button`, `rect`, `text`, `image`, `label`) but only `button` is demo'd (`apps/site/demos/HudDemo.tsx`) — a single "HUD widget gallery" demo card would cover the other four. Brainstorm scope before writing it. (The former `@weasel-js/ui` `CommandPalette`/`PropertiesPanel` half of this item was dropped — those are app-local components in `apps/draw/src/ui/`, not `@weasel-js/ui` exports, so there's no kit-export demo gap.)
 
