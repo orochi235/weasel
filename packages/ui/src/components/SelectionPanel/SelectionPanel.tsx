@@ -1,6 +1,7 @@
 import { Fragment, useState, useSyncExternalStore, type ReactNode } from 'react';
 import {
   asNodeId,
+  isBuiltinToolPref,
   type FillStyle,
   type NodePropertiesEntry,
   type NodeRoutingEntry,
@@ -285,6 +286,9 @@ function renderBuiltin(
   nested = false,
 ): ReactNode {
   const { pref, value, mixed, unset, setValue } = ctx;
+  if (!isBuiltinToolPref(pref)) {
+    return <span className={s.unrenderable}>({pref.kind}: no renderer)</span>;
+  }
   switch (pref.kind) {
     case 'number': {
       const p = pref as ToolPrefNumber;
@@ -469,8 +473,14 @@ function renderBuiltin(
       // whole, so a field is never set on a half-built object.
       return <ObjectLeaf ctx={ctx} renderers={renderers} selectionKey={selectionKey} />;
     }
-    default:
-      return <span className={s.unrenderable}>({pref.kind}: no renderer)</span>;
+    default: {
+      // Not reachable while every built-in kind has an arm — and a new kind
+      // that lacks one is a compile error here, never a blank cell.
+      const _exhaustive: never = pref;
+      throw new Error(
+        `SelectionPanel: no control for built-in pref kind "${(_exhaustive as { kind: string }).kind}"`,
+      );
+    }
   }
 }
 

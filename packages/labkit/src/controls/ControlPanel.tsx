@@ -1,3 +1,4 @@
+import { isBuiltinToolPref } from '@weasel-js/core';
 import type { PrefLeaf } from '@weasel-js/ui';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { fromConfigFields } from '../config/fromConfigField';
@@ -120,6 +121,8 @@ function ControlRow<TC extends Record<string, unknown>>({
   const label = leaf.name;
   const read = <T,>(): T => value as T;
 
+  if (!isBuiltinToolPref(leaf)) return <UnwiredRow label={label} kind={leaf.kind} />;
+
   switch (leaf.kind) {
     case 'number': {
       const min = extra<number>(leaf, 'min');
@@ -166,16 +169,31 @@ function ControlRow<TC extends Record<string, unknown>>({
       return <DebouncedTextRow leaf={leaf} label={label} value={read<string>()} write={write} />;
     case 'color':
       return <ColorRow label={label} value={read<string>()} onChange={write} />;
-    default:
-      // A kind with no renderer is named rather than dropped: one leaf a lab
-      // has not wired up must not blank the panel, and a silent gap reads as
-      // "this control does not exist".
-      return (
-        <PropertyRow label={label}>
-          <span className="lk-control-panel__unknown">no control for “{leaf.kind}”</span>
-        </PropertyRow>
+    case 'paint':
+    case 'object':
+      // Declined: a hex swatch would write a solid over a gradient, and a flat
+      // row would write one field into a half-built object. Override with
+      // `render` to edit either.
+      return <UnwiredRow label={label} kind={leaf.kind} />;
+    default: {
+      // Not reachable while every built-in kind has an arm — and a new kind
+      // that lacks one is a compile error here, never a blank row.
+      const _exhaustive: never = leaf;
+      throw new Error(
+        `ControlPanel: no control for built-in pref kind "${(_exhaustive as { kind: string }).kind}"`,
       );
+    }
   }
+}
+
+/** A leaf this panel has no control for is named rather than dropped: a silent
+ *  gap reads as "this control does not exist". */
+function UnwiredRow({ label, kind }: { label: string; kind: string }) {
+  return (
+    <PropertyRow label={label}>
+      <span className="lk-control-panel__unknown">no control for “{kind}”</span>
+    </PropertyRow>
+  );
 }
 
 /** Text writes are debounced so typing does not re-run the instrument on every

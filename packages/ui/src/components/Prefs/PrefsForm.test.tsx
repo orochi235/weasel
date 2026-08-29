@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { PrefsForm, type PrefRenderContext } from './PrefsForm';
-import { visiblePrefSubtree, type PrefGroup } from './schema';
+import { visiblePrefSubtree, type PrefEnumEncoding, type PrefGroup } from './schema';
+import { TOOL_PREF_KINDS, type ToolPrefKind } from '@weasel-js/core';
 
 const SCHEMA: PrefGroup = {
   name: 'Preferences',
@@ -286,5 +287,114 @@ describe('visiblePrefSubtree', () => {
     };
     expect(visiblePrefSubtree(schema, false)).toBeNull();
     expect(visiblePrefSubtree(schema, true)).not.toBeNull();
+  });
+});
+
+describe('PrefsForm — encoded enum leaves', () => {
+  // The shape core's `stroke.dash` leaf uses: the stored value is a dash
+  // array scaled by the sibling stroke width, and the thing chosen is a style.
+  const dashEncoding: PrefEnumEncoding = {
+    read: (stored, siblings) => {
+      if (!Array.isArray(stored) || stored.length === 0) return 'solid';
+      const w = typeof siblings?.width === 'number' ? siblings.width : 1;
+      const [on, off] = stored as number[];
+      if (on === w * 2 && off === w * 2) return 'dashed';
+      if (on === 0 && off === w * 2) return 'dotted';
+      return 'custom';
+    },
+    write: (option, siblings) => {
+      const w = typeof siblings?.width === 'number' ? siblings.width : 1;
+      if (option === 'dashed') return [w * 2, w * 2];
+      if (option === 'dotted') return [0, w * 2];
+      return undefined;
+    },
+  };
+
+  const DASH_SCHEMA: PrefGroup = {
+    name: 'Appearance',
+    children: {
+      appearance: {
+        name: 'Appearance',
+        children: {
+          stroke: {
+            kind: 'object',
+            name: 'Stroke',
+            description: 'Stroke geometry.',
+            default: {},
+            children: {
+              width: { kind: 'number', name: 'Width', description: '', default: 1 },
+              dash: {
+                kind: 'enum',
+                name: 'Style',
+                description: '',
+                default: 'solid',
+                control: 'radio',
+                encoding: dashEncoding,
+                options: [
+                  { value: 'solid', label: 'Solid' },
+                  { value: 'dashed', label: 'Dashed' },
+                  { value: 'dotted', label: 'Dotted' },
+                  { value: 'custom', label: 'Custom', disabled: true },
+                ],
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+
+  const renderDash = (values: unknown, onChange = vi.fn()) => {
+    render(<PrefsForm schema={DASH_SCHEMA} values={values} onChange={onChange} />);
+    return onChange;
+  };
+
+  it('selects the option the stored value encodes, not the raw value', () => {
+    renderDash({ appearance: { stroke: { width: 4, dash: [8, 8] } } });
+    expect(screen.getByRole('radio', { name: 'Dashed' })).toBeChecked();
+    // The object row's `<label>` associates with the first radio, so Solid's
+    // accessible name picks up the group label twice.
+    expect(screen.getByRole('radio', { name: /Solid/ })).not.toBeChecked();
+  });
+
+  it('writes the encoded form, committing the whole object', () => {
+    const onChange = renderDash({ appearance: { stroke: { width: 4, dash: [8, 8] } } });
+    fireEvent.click(screen.getByRole('radio', { name: 'Dotted' }));
+    expect(onChange).toHaveBeenCalledWith('appearance.stroke', { width: 4, dash: [0, 8] });
+  });
+
+  it('disables an option the control reports but cannot author', () => {
+    renderDash({ appearance: { stroke: { width: 4, dash: [3, 1, 5] } } });
+    expect(screen.getByRole('radio', { name: 'Custom' })).toBeDisabled();
+    expect(screen.getByRole('radio', { name: 'Custom' })).toBeChecked();
+  });
+});
+
+describe('PrefsForm — exhaustiveness over built-in kinds', () => {
+  const KIND = 'spline' as ToolPrefKind;
+  afterEach(() => {
+    delete (TOOL_PREF_KINDS as Record<string, true>)[KIND];
+  });
+
+  const schemaWith = (kind: string): PrefGroup => ({
+    name: 'root',
+    children: {
+      g: {
+        name: 'G',
+        children: { leaf: { kind, name: 'Leaf', description: '', default: null } },
+      },
+    },
+  });
+
+  it('names an app-defined kind rather than rendering nothing', () => {
+    render(<PrefsForm schema={schemaWith('registry-enum')} onChange={() => {}} />);
+    expect(screen.getByText('(registry-enum: no renderer)')).toBeTruthy();
+  });
+
+  it('throws for a built-in kind with no case arm', () => {
+    (TOOL_PREF_KINDS as Record<string, true>)[KIND] = true;
+    expect(() =>
+      render(<PrefsForm schema={schemaWith(KIND)} onChange={() => {}} />),
+    ).toThrow(/spline/);
   });
 });

@@ -1,5 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, expectTypeOf } from 'vitest';
+import { TOOL_PREF_KINDS, isBuiltinToolPref } from './prefs';
 import type {
+  ToolPref,
+  ToolPrefKind,
   ToolPrefColor,
   ToolPrefCustom,
   ToolPrefGroup,
@@ -47,5 +50,29 @@ describe('ToolPref schema additions', () => {
     const leaves: ToolPrefLeaf[] = [fill, x, rotation, custom];
     expect(Object.keys(group.children)).toHaveLength(4);
     expect(leaves).toHaveLength(4);
+  });
+});
+
+describe('built-in kind table', () => {
+  it('lists exactly the kinds the built-in union declares', () => {
+    expectTypeOf<keyof typeof TOOL_PREF_KINDS>().toEqualTypeOf<ToolPrefKind>();
+    expectTypeOf<ToolPref['kind']>().toEqualTypeOf<ToolPrefKind>();
+    expect(Object.keys(TOOL_PREF_KINDS).sort()).toEqual(
+      ['boolean', 'color', 'enum', 'number', 'object', 'paint', 'string'],
+    );
+  });
+
+  it('narrows a built-in leaf and rejects an app-defined one', () => {
+    const custom: ToolPrefCustom = {
+      kind: 'registry-enum', name: 'Shape', description: '', default: null,
+    };
+    const color: ToolPrefColor = {
+      kind: 'color', name: 'Fill', description: '', default: '#000000',
+    };
+    expect(isBuiltinToolPref(custom)).toBe(false);
+    expect(isBuiltinToolPref(color)).toBe(true);
+    // A leaf whose kind collides with an Object.prototype key is app-defined
+    // like any other — `in` would answer true here.
+    expect(isBuiltinToolPref({ ...custom, kind: 'toString' })).toBe(false);
   });
 });

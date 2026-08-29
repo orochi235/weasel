@@ -10,19 +10,13 @@ import { RangeSlider } from '../RangeSlider';
 import { Select } from '../Select';
 import { Switch } from '../Switch';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
+import { isBuiltinToolPref } from '@weasel-js/core';
 import {
   isPrefLeaf,
   prefValueAtPath,
   visiblePrefSubtree,
-  type PrefBoolean,
-  type PrefColor,
-  type PrefEnum,
   type PrefGroup,
   type PrefLeaf,
-  type PrefNumber,
-  type PrefPaint,
-  type PrefObject,
-  type PrefString,
 } from './schema';
 import s from './Prefs.module.css';
 
@@ -172,30 +166,38 @@ function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref: PrefLe
   );
 }
 
-function renderBuiltin(ctx: PrefRenderContext): ReactNode {
+function renderBuiltin(
+  ctx: PrefRenderContext,
+  // The object a nested leaf is a field of — what an enum `encoding` reads
+  // and writes against. Undefined for a top-level leaf, which has none.
+  siblings?: Record<string, unknown>,
+): ReactNode {
   const { pref, value, setValue } = ctx;
+  if (!isBuiltinToolPref(pref)) {
+    // App-defined kind with no `renderers` entry: labeled placeholder, not a
+    // crash — a missing wiring should be visible and recoverable.
+    return <span className={s.unrenderable}>({pref.kind}: no renderer)</span>;
+  }
   switch (pref.kind) {
     case 'boolean': {
-      const p = pref as PrefBoolean;
       const checked = Boolean(value);
-      return p.control === 'switch' ? (
-        <Switch isSelected={checked} onChange={setValue} aria-label={p.name} />
+      return pref.control === 'switch' ? (
+        <Switch isSelected={checked} onChange={setValue} aria-label={pref.name} />
       ) : (
-        <Checkbox isSelected={checked} onChange={setValue} aria-label={p.name} />
+        <Checkbox isSelected={checked} onChange={setValue} aria-label={pref.name} />
       );
     }
     case 'number': {
-      const p = pref as PrefNumber;
       const n = typeof value === 'number' && Number.isFinite(value) ? value : 0;
-      if (p.control === 'slider') {
+      if (pref.control === 'slider') {
         return (
           <RangeSlider
             value={n}
             onChange={(v) => setValue(typeof v === 'number' ? v : v[0])}
-            minValue={p.min}
-            maxValue={p.max}
-            step={p.step ?? 1}
-            aria-label={p.name}
+            minValue={pref.min}
+            maxValue={pref.max}
+            step={pref.step ?? 1}
+            aria-label={pref.name}
           />
         );
       }
@@ -203,63 +205,72 @@ function renderBuiltin(ctx: PrefRenderContext): ReactNode {
         <NumberField
           value={n}
           onChange={setValue}
-          minValue={p.min}
-          maxValue={p.max}
-          step={p.step ?? 1}
-          aria-label={p.name}
+          minValue={pref.min}
+          maxValue={pref.max}
+          step={pref.step ?? 1}
+          aria-label={pref.name}
         />
       );
     }
     case 'string': {
-      const p = pref as PrefString;
       const text = typeof value === 'string' ? value : '';
-      if (p.control === 'textarea') {
+      if (pref.control === 'textarea') {
         return (
           <textarea
             className={s.textarea}
             value={text}
             onChange={(e) => setValue(e.target.value)}
-            aria-label={p.name}
+            aria-label={pref.name}
             rows={3}
           />
         );
       }
-      return <Input value={text} onChange={setValue} aria-label={p.name} />;
+      return <Input value={text} onChange={setValue} aria-label={pref.name} />;
     }
     case 'enum': {
-      const p = pref as PrefEnum;
-      const selected = typeof value === 'string' ? value : p.default;
-      if (p.control === 'radio') {
+      const encoding = pref.encoding;
+      // An encoded leaf stores something other than the option string (a dash
+      // array), so reading the raw value selects nothing and writing one
+      // replaces the stored form with the option string.
+      const option = encoding
+        ? encoding.read(value, siblings)
+        : typeof value === 'string'
+          ? value
+          : pref.default;
+      const choose = (next: string): void =>
+        setValue(encoding ? encoding.write(next, siblings) : next);
+      if (pref.control === 'radio') {
         return (
-          <RadioGroup
-            value={selected}
-            onChange={(v) => setValue(v)}
-            aria-label={p.name}
-          >
-            {p.options.map((o) => (
-              <Radio key={o.value} value={o.value}>{o.label}</Radio>
+          <RadioGroup value={option ?? null} onChange={choose} aria-label={pref.name}>
+            {pref.options.map((o) => (
+              <Radio key={o.value} value={o.value} isDisabled={o.disabled}>
+                {o.label}
+              </Radio>
             ))}
           </RadioGroup>
         );
       }
       return (
         <Select<string>
-          options={p.options.map((o) => ({ value: o.value, label: o.label }))}
-          selectedKey={selected}
-          onSelectionChange={(v) => setValue(v)}
-          aria-label={p.name}
+          options={pref.options.map((o) => ({
+            value: o.value,
+            label: o.label,
+            isDisabled: o.disabled,
+          }))}
+          selectedKey={option ?? null}
+          onSelectionChange={choose}
+          aria-label={pref.name}
         />
       );
     }
     case 'color': {
-      const p = pref as PrefColor;
-      const hex = typeof value === 'string' ? value : p.default;
+      const hex = typeof value === 'string' ? value : pref.default;
       return (
         <ColorField
           value={hex}
-          alpha={p.alpha}
+          alpha={pref.alpha}
           onChange={setValue}
-          aria-label={p.name}
+          aria-label={pref.name}
         />
       );
     }
@@ -268,21 +279,20 @@ function renderBuiltin(ctx: PrefRenderContext): ReactNode {
       // show, so the field goes blank rather than claiming one, and an edit
       // writes a whole solid union member rather than grafting a `color` key
       // onto the gradient.
-      const p = pref as PrefPaint;
-      const solid = solidColorOf(value) ?? solidColorOf(p.default);
+      const solid = solidColorOf(value) ?? solidColorOf(pref.default);
       return (
         <ColorField
           value={solid}
-          alpha={p.alpha}
+          alpha={pref.alpha}
           onChange={(color) => setValue({ fill: 'solid', color })}
-          aria-label={p.name}
+          aria-label={pref.name}
         />
       );
     }
     case 'object': {
       // One value with its fields hanging off it: each child renders its own
       // control and commits the parent object whole.
-      const p = pref as PrefObject;
+      const p = pref;
       const held = typeof value === 'object' && value !== null
         ? (value as Record<string, unknown>)
         : undefined;
@@ -306,7 +316,7 @@ function renderBuiltin(ctx: PrefRenderContext): ReactNode {
                   const base = held ?? p.fromScalar?.(value) ?? {};
                   setValue({ ...base, [key]: v });
                 },
-              })}
+              }, held)}
             </label>,
           );
         }
@@ -314,9 +324,13 @@ function renderBuiltin(ctx: PrefRenderContext): ReactNode {
       };
       return <div className={s.objectLeaf}>{objectRows(p.children)}</div>;
     }
-    default:
-      // Unknown kind with no renderer entry: labeled placeholder, not a
-      // crash — a missing wiring should be visible and recoverable.
-      return <span className={s.unrenderable}>({pref.kind}: no renderer)</span>;
+    default: {
+      // Not reachable while every built-in kind has an arm — and a new kind
+      // that lacks one is a compile error here, never a blank row.
+      const _exhaustive: never = pref;
+      throw new Error(
+        `PrefsForm: no control for built-in pref kind "${(_exhaustive as { kind: string }).kind}"`,
+      );
+    }
   }
 }

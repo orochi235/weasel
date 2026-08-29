@@ -1,4 +1,4 @@
-import type { ToolPrefGroup } from '@weasel-js/core';
+import { isBuiltinToolPref, type ToolPrefGroup } from '@weasel-js/core';
 import type { ConfigField } from '@weasel-js/labkit';
 
 /** weasel's own property-schema group. */
@@ -54,6 +54,9 @@ export function flattenPrefs(group: PrefGroup): FlatPref[] {
  *  write a solid color over a gradient. */
 export function prefToField(path: string, leaf: PrefLeaf): ConfigField | null {
   const label = leaf.name;
+  // An app-defined kind is the lab's own business; only the built-ins are
+  // this function's to translate.
+  if (!isBuiltinToolPref(leaf)) return null;
   switch (leaf.kind) {
     case 'number': {
       const n = leaf as PrefLeaf & {
@@ -107,8 +110,17 @@ export function prefToField(path: string, leaf: PrefLeaf): ConfigField | null {
     case 'color':
       // `#rrggbbaa` is legal in the schema and illegal in `<input type="color">`.
       return { key: path, label, type: 'color', default: (leaf.default as string).slice(0, 7) };
-    default:
+    case 'paint':
+    case 'object':
+      // Declined: a `ConfigField` is a scalar control, and neither a paint
+      // union nor an object leaf survives being flattened into one.
       return null;
+    default: {
+      const _exhaustive: never = leaf;
+      throw new Error(
+        `prefToField: no control for built-in pref kind "${(_exhaustive as { kind: string }).kind}"`,
+      );
+    }
   }
 }
 

@@ -1,5 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { TOOL_PREF_KINDS, type ToolPrefKind } from '@weasel-js/core';
+import type { PrefLeaf } from '@weasel-js/ui';
+import type { ResolvedConfig } from '../config/types';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
 import { ControlPanel } from './ControlPanel';
@@ -307,5 +310,53 @@ describe('<ControlPanel> visibility and sections', () => {
     expect(group).not.toBeNull();
     expect(group?.textContent).toContain('Seed');
     expect(group?.textContent).not.toContain('Show grid');
+  });
+});
+
+describe('<ControlPanel> built-in kind coverage', () => {
+  const KIND = 'spline' as ToolPrefKind;
+  afterEach(() => {
+    delete (TOOL_PREF_KINDS as Record<string, true>)[KIND];
+  });
+
+  const schemaWith = (...leaves: PrefLeaf[]): ResolvedConfig => ({
+    group: {
+      name: 'root',
+      children: Object.fromEntries(leaves.map((leaf, i) => [`k${i}`, leaf])),
+    },
+    sections: [],
+    showIf: new Map(),
+    renderers: {},
+  });
+
+  it('declines paint and object with a named row rather than a blank one', () => {
+    render(
+      <ControlPanel
+        schema={schemaWith(
+          { kind: 'paint', name: 'Fill', description: '', default: null },
+          {
+            kind: 'object', name: 'Stroke', description: '', default: {},
+            children: { width: { kind: 'number', name: 'Width', description: '', default: 1 } },
+          },
+        )}
+        config={{}}
+        setConfig={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/no control for .paint./)).toBeInTheDocument();
+    expect(screen.getByText(/no control for .object./)).toBeInTheDocument();
+  });
+
+  it('throws for a built-in kind with no case arm', () => {
+    (TOOL_PREF_KINDS as Record<string, true>)[KIND] = true;
+    expect(() =>
+      render(
+        <ControlPanel
+          schema={schemaWith({ kind: KIND, name: 'Curve', description: '', default: null })}
+          config={{}}
+          setConfig={vi.fn()}
+        />,
+      ),
+    ).toThrow(/spline/);
   });
 });

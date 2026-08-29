@@ -204,6 +204,32 @@ type _BuiltinKindsExact = [ToolPref['kind']] extends [ToolPrefKind]
 const _builtinKindsExact: _BuiltinKindsExact = true;
 void _builtinKindsExact;
 
+/**
+ * The built-in kinds, as a table. A kind added to {@link ToolPrefKind} is a
+ * compile error here, and from here it is one in every renderer's `never`
+ * guard — the only thing standing between a new kind and rendering as
+ * nothing in four places at once.
+ */
+export const TOOL_PREF_KINDS: Record<ToolPrefKind, true> = {
+  number: true,
+  boolean: true,
+  string: true,
+  enum: true,
+  color: true,
+  paint: true,
+  object: true,
+};
+
+/**
+ * Narrows a leaf to the built-in union, so a renderer's switch discriminates
+ * on {@link ToolPrefKind} instead of the open `string` that
+ * {@link ToolPrefCustom} widens `kind` to. An app-defined kind answers false
+ * and belongs to the renderer's custom-renderer path.
+ */
+export function isBuiltinToolPref(leaf: ToolPrefLeaf): leaf is ToolPref {
+  return Object.hasOwn(TOOL_PREF_KINDS, leaf.kind);
+}
+
 /** Built-in or app-defined leaf. */
 export type ToolPrefLeaf = ToolPref | ToolPrefCustom;
 
