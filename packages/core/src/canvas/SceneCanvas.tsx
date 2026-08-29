@@ -73,7 +73,8 @@ import { createSlopsDebugLayer } from './slopsDebugLayer';
 import type { PenScratch } from 'tools/builtin/pen';
 import type { Tool } from 'tools/types';
 import { useBuiltinShapeTools, type BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
-import type { BuiltinShapeToolId } from './SceneCanvas/shapeKinds';
+import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
+import type { BuiltinShapeToolId } from 'core/shapeKinds';
 export type { BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
 import { DepRegistryProviderIfRoot } from './SceneCanvas/DepRegistryProviderIfRoot';
 import {
@@ -255,10 +256,14 @@ export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
   return result;
 }
 
+/** Built-in tool ids that aren't shape tools — the ones with no entry in
+ *  the `core/shapeKinds` table. */
+const NON_SHAPE_BUILTIN_TOOLS = ['select', 'rotate', 'hand'] as const;
+
 /** Built-in tool ids SceneCanvas knows how to mount when no `tools` prop
  *  is supplied. Pass a subset via `defaultTools` to slim the registered set. */
 export type BuiltinToolId =
-  | 'select' | 'rotate' | 'hand'
+  | (typeof NON_SHAPE_BUILTIN_TOOLS)[number]
   | BuiltinShapeToolId;
 
 /** Named preset tool collections for the `toolBundle` prop. Maps to a
@@ -276,11 +281,7 @@ export const BUNDLE_TOOLS: Record<ToolBundle, readonly BuiltinToolId[]> = {
   // everyday shape-drawing set. It stays in `exhaustive`, which means
   // everything.
   standard: ['select', 'rotate', 'hand', 'rect', 'ellipse', 'line'],
-  exhaustive: [
-    'select', 'rotate', 'hand',
-    'rect', 'ellipse', 'line', 'polygon', 'star', 'pen', 'pencil',
-    'lasso', 'text',
-  ],
+  exhaustive: [...NON_SHAPE_BUILTIN_TOOLS, ...KIT_SHAPE_KINDS],
 };
 
 /** Minimal hit descriptor passed to `onDoubleClick`. Contains the fields
@@ -1279,8 +1280,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // here so the rest of the if-ladder treats them identically to ids that
   // came in via `defaultTools` / `toolBundle`.
   const KNOWN_BUILTIN_IDS: ReadonlySet<BuiltinToolId> = new Set<BuiltinToolId>([
-    'select', 'rotate', 'hand',
-    'rect', 'ellipse', 'line', 'polygon', 'star', 'pen', 'pencil', 'lasso', 'text',
+    ...NON_SHAPE_BUILTIN_TOOLS, ...KIT_SHAPE_KINDS,
   ]);
   const toolsPatchExtras = (() => {
     if (!toolsProp || isToolsApi(toolsProp)) return null;

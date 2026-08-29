@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { defaultNodeProperties, inferredNodeProperties } from './defaultNodeProperties';
-import { KIT_SHAPE_KINDS } from './shapeKinds';
+import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { inferredNodeRouting } from './defaultNodeRouting';
 import type { ToolPrefEnum, ToolPrefGroup, ToolPrefObject } from 'tools/prefs';
 

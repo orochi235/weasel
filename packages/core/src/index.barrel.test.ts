@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import * as Barrel from './index';
+import { SHAPE_KINDS, shapeKindsWhere } from './core/shapeKinds';
 
 const ROOT = __dirname;
 
@@ -49,32 +50,16 @@ describe('kit barrel parity', () => {
     expect(missing, `Op factories defined in src/core/ops/ but not re-exported from src/index.ts: ${missing.join(', ')}`).toEqual([]);
   });
 
-  // The Bundle Inspector (`apps/draw/src/dev/registryData.ts`) used
-  // to hardcode `SHAPE_KIND_IDS` mirrored from `BuiltinShapeToolId`. The kit
-  // is now the source of truth — assert every shape kind the inspector
-  // expects is present on the kit-exported tuple. Adding a new builtin shape
-  // tool that isn't appended here fails this test.
-  it('exports KIT_SHAPE_KINDS covering every BuiltinShapeToolId', () => {
+  // The Bundle Inspector (`apps/draw/src/dev/registryData.ts`) reads the
+  // kit-exported tuple rather than mirroring the union, so the barrel has to
+  // keep shipping it.
+  it('exports KIT_SHAPE_KINDS as derived from the shape-kind table', () => {
     const kinds = (Barrel as Record<string, unknown>).KIT_SHAPE_KINDS;
     expect(Array.isArray(kinds), 'KIT_SHAPE_KINDS must be exported as an array').toBe(true);
-    const arr = kinds as readonly string[];
-    expect(arr.length).toBeGreaterThan(0);
-    // Source the canonical list from the type-defining file. The string
-    // literals in the `BuiltinShapeToolId` union are the contract.
-    // (`BuiltinShapeToolId` / `KIT_SHAPE_KINDS` live in the dependency-free
-    // `shapeKinds.ts`; `useBuiltinShapeTools.tsx` just re-exports them.)
-    const shapeToolsSrc = readFileSync(
-      join(ROOT, 'canvas', 'SceneCanvas', 'shapeKinds.ts'),
-      'utf8',
-    );
-    const unionMatch = shapeToolsSrc.match(
-      /export\s+type\s+BuiltinShapeToolId\s*=([^;]+);/,
-    );
-    expect(unionMatch, 'could not locate BuiltinShapeToolId union').not.toBeNull();
-    const expected = [...unionMatch![1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
-    expect(expected.length).toBeGreaterThan(0);
-    const missing = expected.filter((id) => !arr.includes(id));
-    expect(missing, `BuiltinShapeToolId members missing from KIT_SHAPE_KINDS: ${missing.join(', ')}`).toEqual([]);
+    // `BuiltinShapeToolId` is `keyof`-derived from the same table, so the
+    // union can no longer drift from the tuple; what's left to check is that
+    // the barrel ships the derivation rather than a copy of it.
+    expect(kinds).toEqual(shapeKindsWhere(SHAPE_KINDS, 'tool'));
   });
 
   // `defaultNodeRouting` is now derived from `KIT_SHAPE_KINDS` via `.map` in the

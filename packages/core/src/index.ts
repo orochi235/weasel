@@ -1022,7 +1022,12 @@ export type {
   UseClipboardOpsOptions,
   UseClipboardOpsReturn,
 } from './interactions/actions/clipboard';
-export { useAlign, alignDeltaFor, translatePoseViaDescriptor } from './interactions/actions/align';
+export {
+  useAlign,
+  alignDeltaFor,
+  translatePoseViaDescriptor,
+  visualBoundsViaDescriptor,
+} from './interactions/actions/align';
 export type {
   AlignAdapter,
   AlignEdge,
@@ -1197,8 +1202,8 @@ export type {
 } from './canvas/Canvas';
 export type { BuiltinToolId, ToolBundle } from './canvas/SceneCanvas';
 export { BUNDLE_TOOLS, rotateAroundAABBCenter } from './canvas/SceneCanvas';
-export { KIT_SHAPE_KINDS } from './canvas/SceneCanvas/shapeKinds';
-export type { BuiltinShapeToolId } from './canvas/SceneCanvas/shapeKinds';
+export { KIT_SHAPE_KINDS } from './core/shapeKinds';
+export type { BuiltinShapeToolId } from './core/shapeKinds';
 export type { BuiltinToolOptions } from './canvas/SceneCanvas/useBuiltinShapeTools';
 export type { ViewportConfig } from './canvas/SceneCanvas/viewportConfig';
 export type { InsertNodeFactory } from './canvas/deps';

@@ -27,7 +27,7 @@ import {
 } from '@weasel-js/core';
 import type { AnyTool, FillStyle, LassoHitMode, NodeId, Path, PolygonPath, Scene, SceneNode, Stroke } from '@weasel-js/core';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
-import type { BuiltinShapeToolId } from './shapeKinds';
+import type { BuiltinShapeToolId } from 'core/shapeKinds';
 
 /** Per-tool option overrides for the built-in shape/lasso tools.
  *  Each entry is a narrow subset of the underlying hook's options surface
@@ -45,12 +45,12 @@ export interface BuiltinToolOptions {
   snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
 }
 
-// `BuiltinShapeToolId` / `KIT_SHAPE_KINDS` live in `./shapeKinds`, a
-// dependency-free module, so barrel-reachable code can import them without
-// entering this file's `@weasel-js/core` self-import cycle. Re-exported here
-// so existing importers of this module keep working unchanged.
-export { KIT_SHAPE_KINDS } from './shapeKinds';
-export type { BuiltinShapeToolId } from './shapeKinds';
+// `BuiltinShapeToolId` / `KIT_SHAPE_KINDS` derive from the `core/shapeKinds`
+// table, a dependency-free module, so barrel-reachable code can reach them
+// without entering this file's `@weasel-js/core` self-import cycle.
+// Re-exported here so existing importers of this module keep working.
+export { KIT_SHAPE_KINDS } from 'core/shapeKinds';
+export type { BuiltinShapeToolId } from 'core/shapeKinds';
 
 export interface UseBuiltinShapeToolsArgs<TData, TLayer extends string, TPose> {
   scene: Scene<TData, TLayer, TPose>;

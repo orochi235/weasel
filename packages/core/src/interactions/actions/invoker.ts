@@ -11,6 +11,7 @@
 
 import type { ActionBehavior, ModifierState, ResizeAnchor } from '../gestures/types';
 import type { ClaimableGesture } from '../../affordances/types';
+import type { KitInsertShape } from 'core/shapeKinds';
 
 export type { ModifierState } from '../gestures/types';
 
@@ -255,7 +256,7 @@ export type OngoingOverlay =
        * renderer narrows on `shape` and casts the field shape it expects.
        */
       kind: 'insertPreview';
-      shape: 'rect' | 'ellipse' | 'line' | 'polygon' | 'star' | 'pencil' | 'image';
+      shape: KitInsertShape;
       bounds: { x: number; y: number; width: number; height: number };
       extras: unknown;
       /** World-space point to paint a small "anchor" dot at. Sells the

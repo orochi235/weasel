@@ -4,6 +4,7 @@ import { insertAction } from './insert';
 import type { InvocationCtx, BindingOpts } from '../invoker';
 import type { NodeId } from 'core/scene/types';
 import type { InsertDep, SnapDep } from '../depSchema';
+import { SHAPE_KINDS, shapeKindsWhere } from 'core/shapeKinds';
 
 // ---------------------------------------------------------------------------
 // Stub insert dep
@@ -565,5 +566,20 @@ describe('insertAction — text', () => {
 
   it('commits the box even with no textEdit dep registered', () => {
     expect(drag('text', {}).calls).toHaveLength(1);
+  });
+});
+
+describe('insertAction — insert-kind parity', () => {
+  it('previews every kind the shape-kind table marks previewable', () => {
+    const invoker = getOngoingInvoker(insertAction);
+    const missing: string[] = [];
+    for (const kind of shapeKindsWhere(SHAPE_KINDS, 'insertPreview')) {
+      const dep = makeInsertDep();
+      const ctx = makeCtx({ world: { x: 0, y: 0 }, dep });
+      const handle = invoker.start(ctx, { params: { kind } });
+      handle.onMove!({ ...ctx, world: { x: 20, y: 30 } });
+      if (handle.overlay!()?.kind !== 'insertPreview') missing.push(kind);
+    }
+    expect(missing, `kinds with no live insert preview: ${missing.join(', ')}`).toEqual([]);
   });
 });

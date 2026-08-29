@@ -1,5 +1,5 @@
 import { inferredNodeRouting } from './defaultNodeRouting';
-import { KIT_SHAPE_KINDS } from './shapeKinds';
+import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { dashForStrokeStyle, strokeDashStyleOf } from '@weasel-js/paint';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
 import type { ToolPrefEnumEncoding, ToolPrefGroup, ToolPrefNumberUnit } from 'tools/prefs';

@@ -1,4 +1,4 @@
-import { KIT_SHAPE_KINDS } from './shapeKinds';
+import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import type { NodeRoutingEntry } from 'core/scene/NodeRouting';
 
 function isObj(d: unknown): d is Record<string, unknown> {

@@ -63,15 +63,8 @@ import { resolveParams } from '../invoker';
 import type { InsertDep, InsertExtras, SnapDep } from '../depSchema';
 import type { TextEditDep } from './enterTextEdit';
 import type { SelectionApi } from 'core/selection/useSelection';
-
-/** The kit's built-in insert kinds — those the dispatcher overlay layer
- *  knows how to render. Consumer-defined kinds fall through to `null`
- *  (no live preview, but commit still works). */
-const KIT_INSERT_KINDS = new Set([
-  'rect', 'ellipse', 'line', 'polygon', 'star', 'pencil', 'image',
-]);
-
-type KitInsertShape = 'rect' | 'ellipse' | 'line' | 'polygon' | 'star' | 'pencil' | 'image';
+import { shapeKindInfo } from 'core/shapeKinds';
+import type { KitInsertShape } from 'core/shapeKinds';
 
 // ---------------------------------------------------------------------------
 // Internal scratch
@@ -386,7 +379,7 @@ export const insertAction: Action & { requires: string[] } = {
           const kind = (resolved?.['kind'] as string | undefined) ?? 'rect';
           // Consumer-defined kinds aren't renderable by the kit overlay —
           // skip the preview rather than emit something half-faithful.
-          if (!KIT_INSERT_KINDS.has(kind)) return null;
+          if (!shapeKindInfo(kind)?.insertPreview) return null;
           const mode = effectiveOriginMode(resolved?.['originMode'], scratch.altHeld);
           const pts = resolveEndpoints(scratch, kind, mode);
           const bounds = computeBounds(
