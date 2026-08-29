@@ -22,7 +22,6 @@ Priority tags:
 ### Next up
 
 - **`<Timeline>` editor** — the one unbuilt phase of the timeline/rig arc → [Animation](#animation)
-- **Finish the duplicated-cascade collapses** — Tier 1/2/3 landed; the walk unification and the stroke/text/alpha sites are open → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 ### P2 — broad reuse / friction-likely
 
@@ -303,8 +302,7 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
   `view.set` at all, and all three are public. `usePinchZoomTool` is now dead
   surface — `SceneCanvas` drives pinch through the action alone — but is still
   exported, and it is the only one of the two that routes an anchor to the view
-  under the fingers. Found by the 2026-08-29 cascade audit; see
-  `docs/superpowers/specs/2026-08-29-duplicated-cascade-audit.md`.
+  under the fingers. Found by the 2026-08-29 cascade audit.
 
 - **(P3) `useViewAnimation` builds an animator it never uses.** The hook calls
   `useAnimator()` unconditionally so it can fall back to its own animator when
@@ -1074,20 +1072,45 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P1) Finish the duplicated-cascade collapses.** Tier 1, Tier 2, Tier 3 and the
-  three live Tier 4 defects landed 2026-08-29 — see `git log` and `.changeset/` for
-  what each one was. `docs/superpowers/specs/2026-08-29-duplicated-cascade-audit.md`
-  has been rewritten down to what is left; read it rather than this entry for detail.
+- **(P2) Things that look duplicated in this engine and are not.** Left from the
+  2026-08-29 duplicated-cascade audit, whose findings all landed — `git log` and
+  `.changeset/` are the record. This list is the other half: pairs a future audit
+  will flag again, and the reason each one stays two.
 
-  Open: **the walk unification** — the four hit-test walks no longer disagree on any
-  case with a test, which is why it is still worth doing: the next divergence will be
-  as silent as the last three. **Text metrics and alpha/`layerOrder`** on the same
-  axis: one text quantity is computed three ways, and a node faded to alpha 0 is
-  invisible and fully clickable.
+  Local- vs world-space bounds, and `nodeAtPoint` vs `pickBest`, are different
+  questions. Miter apex vs capsule, and butt cap vs half-disc, are a defensible hit
+  model over shared base geometry. `unionBounds` stays rotation-free beside
+  `unionAABB` for commit-time actions that write poses back in the unrotated frame.
+  SVG's `#000000` initial fill is a spec default, not drift. `resolveNodeFill`'s
+  split between `kit:path` and `kit:shape` is documented and correct.
+  `useBuiltinShapeTools`' nine hook calls are not a list, and are already
+  compiler-linked through the return type. `arrayAdapter` has no `setChildOrder`
+  because its root order *is* the item array's order. `sceneToAdapter`'s area walk
+  returns containers where the live marquee dep does not — one flag on the shared
+  walk, because a bare-adapter consumer has no selection parent-folding to fold
+  them back in.
 
-  The audit also turned up eight defects outside its own pattern while the collapses
-  were being done — `getChildren` carrying two contracts under one name being the
-  worst — listed under "Found while collapsing" in the spec.
+  One that is not settled: stroke align, clip and text layout genuinely cannot
+  round-trip through SVG 1.1, but the exporter does not say so out loud, and
+  silently dropping them is the part worth fixing.
+
+- **(P2) Nine defects the cascade audit turned up outside its own pattern.** All
+  found 2026-08-29 while collapsing, none of them an instance of the duplication
+  the audit was hunting, so each wants its own decision.
+
+  `selectAll` has no visibility filter, so Cmd+A then Delete removes nodes the user
+  cannot see. SVG export ignores `layer.visible` while pixel export honors it.
+  `LayerRecord.locked` is written in five places and read by nothing. User layers
+  lose their `name` through `toJSON`. `<image>` flip and source-rect never
+  serialize. `packages/{svg,hud,ui,labkit,modes,d3,paint}` never import `geom` at
+  all, and three incompatible matrix-singularity policies coexist.
+  `useHandTool.ts:81` carries four dead deps (`inertia`, `axis`, `tracker`,
+  `decay`) — the same inert-options bug recorded under Tools.
+
+  Text has one left: `measureText` / `measuredWidth` in `@weasel-js/text` now have
+  no in-repo caller. They are a legitimate Canvas2D measuring utility for consumers
+  drawing to a 2D context, but nothing in the kit measures that way any more, so
+  the question is whether they are public API or residue.
 
 - **(P2) Safari's `gesturestart` / `gesturechange` / `gestureend` are unhandled.** They are the second trackpad pinch channel on macOS Safari, alongside the ctrl+wheel one `viewportZoom` reads. Nothing in the repo listens for them, so Safari trackpad pinch gets whatever the wheel path synthesizes. Worth deciding deliberately rather than by omission. Note before adding a listener: `viewportZoom` now claims bare ctrl+wheel, so a `gesturechange` handler becomes a *second* channel for the same physical gesture — the double-apply `.changeset/mac-trackpad-pinch-zoom.md` just removed. Consolidate it into `makeViewportZoomAction` behind one scale-delta seam, not as a fourth listener.
 
