@@ -1072,6 +1072,26 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
+- **(P2) The shared pick walk's view-owned gates are not reachable everywhere.**
+  `pickWalk` (2026-08-29) asks a `PickSource` five questions per candidate, two
+  of which belong to the asking view rather than the scene: what alpha it paints
+  a node at, and whether it paints a layer at all. Neither has a supplier on
+  every path, and the two gaps want one decision between them.
+
+  `useSceneSelectTool` takes a `layerIsPainted`, but `<SceneCanvas>` exposes no
+  `layerVisibility` / `layerOrder` prop to build one from — only a bare
+  `<Canvas>` consumer can pass one, so today the option is consumer-only
+  surface. Either `<SceneCanvas>` should forward those props, or the scene's own
+  `LayerRecord.visible` is the whole answer at that level and the option should
+  say so.
+
+  `adapterPickSource` supplies neither gate: a bare `SelectAdapter` has no layer
+  enumeration and no override table, so a consumer without a `Scene` gets the
+  clip chain and the paint ordering but not alpha or layer paint. Defensible —
+  there is nothing to read them from — but it is now a declared asymmetry
+  between the two sources rather than an accident, and it should be either
+  documented as permanent or closed by widening `SelectAdapter`.
+
 - **(P2) Things that look duplicated in this engine and are not.** Left from the
   2026-08-29 duplicated-cascade audit, whose findings all landed — `git log` and
   `.changeset/` are the record. This list is the other half: pairs a future audit
@@ -1740,6 +1760,13 @@ Deferred, with the rationale in `eslint.config.js` next to each:
 ---
 
 ## Documentation
+
+- **(P3) `docs/audits/2026-05-05-exported-api.csv` records signatures that have
+  changed.** `caretIndexAt` and `fitTextPose` both dropped their
+  `CanvasRenderingContext2D` on 2026-08-29, and the audit still lists the old
+  shapes. It is a dated snapshot rather than maintained reference, so this only
+  matters if the audit is meant to be re-runnable — in which case the thing to
+  build is the regeneration script, not a hand-edit.
 
 - **(P2) README pitch sweep.** Initial draft landed; the `docs/` long-form sweep was completed (all hook names and import paths match the post-extraction surface). A re-pass before 0.1.0.
 
