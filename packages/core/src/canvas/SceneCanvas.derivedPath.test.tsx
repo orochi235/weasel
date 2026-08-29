@@ -91,7 +91,7 @@ function makeEdgeScene() {
     pose: pose(0),
     data: {},
     dependsOn: [a, b],
-    derive: (_node, deps) => {
+    derivePath: (_node, deps) => {
       const [from, to] = deps;
       if (!from || !to) return null;
       return linePath({ x: from.x, y: from.y }, { x: to.x, y: to.y });

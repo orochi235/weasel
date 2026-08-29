@@ -722,9 +722,9 @@ const DERIVED_PAINTER: NodeShapeEntry = {
   id: 'kit:derived',
   // `dependsOn` alone is not enough: the two fields are independent optionals,
   // and `kit:add` restores a node with its `dependsOn` intact when its
-  // `derive` key is missing from the registry. Claiming that node would paint
+  // `derivePath` key is missing from the registry. Claiming that node would paint
   // nothing where the authored appearance is what the warning promises.
-  matches: (node) => (node.dependsOn?.length ?? 0) > 0 && node.derive !== undefined,
+  matches: (node) => (node.dependsOn?.length ?? 0) > 0 && node.derivePath !== undefined,
   paint: (node, _pose, ctx) => {
     const path = ctx?.derivedPath;
     if (path == null) return [];

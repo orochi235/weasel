@@ -176,7 +176,7 @@ describe('deleteAction commit routing', () => {
 const LAYERS = [{ id: 'main' as const }];
 const leaf = { kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} } as const;
 
-/** `Scene` is contravariant in `TPose` through `clipFromPose` / `derive`, so a
+/** `Scene` is contravariant in `TPose` through `clipFromPose` / `derivePath`, so a
  *  concretely-typed scene never satisfies the action-facing `Scene<unknown,
  *  string, unknown>`. Same cast every other real-scene action test uses. */
 function asActionScene(scene: unknown): Scene<unknown, string, unknown> {

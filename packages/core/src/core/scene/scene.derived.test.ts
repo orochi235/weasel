@@ -6,7 +6,7 @@ import { PATH_L, PATH_M, type PolygonPath } from '../geometry/path';
 
 const LAYERS = [{ id: 'main' as const }];
 
-/** A derive that draws a line between the centers of its two dependencies. */
+/** A derivePath that draws a line between the centers of its two dependencies. */
 const connectCenters = (_node: unknown, deps: readonly (RectPose | undefined)[]): PolygonPath | null => {
   const [from, to] = deps;
   if (!from || !to) return null;
@@ -21,7 +21,7 @@ const connectCenters = (_node: unknown, deps: readonly (RectPose | undefined)[])
   };
 };
 
-const registry = { derive: { 'test:connect': connectCenters } };
+const registry = { derivePath: { 'test:connect': connectCenters } };
 
 function setup() {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS, registry });
@@ -29,13 +29,13 @@ function setup() {
   const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 100, y: 0, width: 10, height: 10 }, data: {} });
   const edge = scene.add({
     kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
-    dependsOn: [a, b], derive: connectCenters,
+    dependsOn: [a, b], derivePath: connectCenters,
   });
   return { scene, a, b, edge };
 }
 
 /** Nothing depends on `box`, but it moves `a`'s world pose — which is what
- *  `derive` reads under a non-identity pose composition. */
+ *  `derivePath` reads under a non-identity pose composition. */
 function setupNested() {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS, registry });
   const box = scene.add({ kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: {} });
@@ -43,31 +43,31 @@ function setupNested() {
   const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 100, y: 0, width: 10, height: 10 }, data: {} });
   const edge = scene.add({
     kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
-    dependsOn: [a, b], derive: connectCenters,
+    dependsOn: [a, b], derivePath: connectCenters,
   });
   return { scene, box, a, b, edge };
 }
 
 describe('derived geometry — serialization', () => {
-  it('round-trips dependsOn and the derive registry key', () => {
+  it('round-trips dependsOn and the derivePath registry key', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS, registry });
     const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
     const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 100, y: 0, width: 10, height: 10 }, data: {} });
     const edge = scene.add({
       kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
-      dependsOn: [a, b], derive: connectCenters,
+      dependsOn: [a, b], derivePath: connectCenters,
     });
 
     const json = scene.toJSON();
     const node = json.nodes.find((n) => n.id === edge)!;
     expect(node.dependsOn).toEqual([a, b]);
-    expect(node.deriveKey).toBe('test:connect');
+    expect(node.derivePathKey).toBe('test:connect');
 
     // sceneFromJSON reads systemLayers out of the JSON — it takes no such option.
     const restored = sceneFromJSON(json, { registry });
     const live = restored.get(asNodeId(edge))!;
     expect(live.dependsOn).toEqual([a, b]);
-    expect(live.derive).toBe(connectCenters);
+    expect(live.derivePath).toBe(connectCenters);
   });
 
   it('a node with no dependsOn serializes without the fields', () => {
@@ -75,24 +75,24 @@ describe('derived geometry — serialization', () => {
     scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
     const json = scene.toJSON();
     expect(json.nodes[0]!.dependsOn).toBeUndefined();
-    expect(json.nodes[0]!.deriveKey).toBeUndefined();
+    expect(json.nodes[0]!.derivePathKey).toBeUndefined();
   });
 
-  it('keeps derive attached across undo then redo', () => {
+  it('keeps derivePath attached across undo then redo', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS, registry });
     const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
     const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 100, y: 0, width: 10, height: 10 }, data: {} });
     const edge = scene.add({
       kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
-      dependsOn: [a, b], derive: connectCenters,
+      dependsOn: [a, b], derivePath: connectCenters,
     });
     scene.undo();
     scene.redo();
     // kit:add replays without the spec — without a redo cache this is undefined.
-    expect(scene.get(asNodeId(edge))!.derive).toBe(connectCenters);
+    expect(scene.get(asNodeId(edge))!.derivePath).toBe(connectCenters);
   });
 
-  it('warns rather than throwing when a derive key is missing at replay', () => {
+  it('warns rather than throwing when a derivePath key is missing at replay', () => {
     // The redo cache makes site 4's registry lookup unreachable in-process, so
     // this goes through a serialized history restored into a registry-less scene.
     const a = createScene<object, 'main', RectPose>({ systemLayers: LAYERS, registry });
@@ -100,9 +100,9 @@ describe('derived geometry — serialization', () => {
     a.add({
       id: asNodeId('edge'), kind: 'leaf', layer: 'main',
       pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
-      dependsOn: [dep], derive: connectCenters,
+      dependsOn: [dep], derivePath: connectCenters,
     });
-    a.undo();   // head state: the edge is absent; its add entry carries the deriveKey
+    a.undo();   // head state: the edge is absent; its add entry carries the derivePathKey
     const snap = a.serializeHistory();
 
     const b = createScene<object, 'main', RectPose>({ systemLayers: LAYERS, registry: {} });
@@ -111,23 +111,23 @@ describe('derived geometry — serialization', () => {
     expect(() => b.redo()).not.toThrow();
     const node = b.get(asNodeId('edge'))!;
     expect(node.dependsOn).toEqual([dep]);
-    expect(node.derive).toBeUndefined();
+    expect(node.derivePath).toBeUndefined();
   });
 
-  it('throws from toJSON when derive is not in the registry', () => {
+  it('throws from toJSON when derivePath is not in the registry', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS, registry });
     const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
     scene.add({
       kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
-      dependsOn: [a], derive: () => null,   // never registered
+      dependsOn: [a], derivePath: () => null,   // never registered
     });
     expect(() => scene.toJSON()).toThrow(/no matching registry key/);
   });
 });
 
 /** The test-only cache-size hook, mirroring `__clipCacheSize`. */
-function deriveCacheSize(scene: unknown): number {
-  return (scene as { __deriveCacheSize: () => number }).__deriveCacheSize();
+function derivePathCacheSize(scene: unknown): number {
+  return (scene as { __derivePathCacheSize: () => number }).__derivePathCacheSize();
 }
 
 describe('derived geometry — redo-cache pruning', () => {
@@ -138,16 +138,16 @@ describe('derived geometry — redo-cache pruning', () => {
     const dep = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
     const edge = scene.add({
       kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
-      dependsOn: [dep], derive: connectCenters,
+      dependsOn: [dep], derivePath: connectCenters,
     });
     scene.remove(edge);
-    expect(deriveCacheSize(scene)).toBe(1);
+    expect(derivePathCacheSize(scene)).toBe(1);
 
     // Two more ops push kit:add(edge) off the undo stack (limit=2). The node is
     // absent from state.nodes, so the entry is unreachable and must be pruned.
     scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
     scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
-    expect(deriveCacheSize(scene)).toBe(0);
+    expect(derivePathCacheSize(scene)).toBe(0);
   });
 
   it('never caches a construction-path node, whose kit:add is unloggable and so unprunable', () => {
@@ -159,18 +159,18 @@ describe('derived geometry — redo-cache pruning', () => {
         {
           id: asNodeId('edge'), kind: 'leaf', layer: 'main',
           pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
-          dependsOn: [asNodeId('a')], derive: connectCenters,
+          dependsOn: [asNodeId('a')], derivePath: connectCenters,
         },
       ],
     });
-    expect(scene.get(asNodeId('edge'))!.derive).toBe(connectCenters);
-    expect(deriveCacheSize(scene)).toBe(0);
+    expect(scene.get(asNodeId('edge'))!.derivePath).toBe(connectCenters);
+    expect(derivePathCacheSize(scene)).toBe(0);
 
-    // kit:remove's revert clones the node, so undo restores derive without the cache.
+    // kit:remove's revert clones the node, so undo restores derivePath without the cache.
     scene.remove(asNodeId('edge'));
     scene.undo();
-    expect(scene.get(asNodeId('edge'))!.derive).toBe(connectCenters);
-    expect(deriveCacheSize(scene)).toBe(0);
+    expect(scene.get(asNodeId('edge'))!.derivePath).toBe(connectCenters);
+    expect(derivePathCacheSize(scene)).toBe(0);
   });
 });
 
@@ -220,7 +220,7 @@ describe('derived geometry — invalidation', () => {
     const { scene, a, edge } = setup();
     const label = scene.add({
       kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
-      dependsOn: [edge], derive: connectCenters,
+      dependsOn: [edge], derivePath: connectCenters,
     });
     const counter = { n: 0 };
     derivedCount(scene, label, counter);
@@ -246,7 +246,7 @@ describe('derived geometry — invalidation', () => {
     expect(counter.n).toBe(2);
   });
 
-  /** `dependsOn` is unvalidated and `derive` hands `undefined` to a dependency
+  /** `dependsOn` is unvalidated and `derivePath` hands `undefined` to a dependency
    *  that isn't there, so naming an id that does not exist yet is legal. */
   function setupLateDependency() {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS, registry });
@@ -254,7 +254,7 @@ describe('derived geometry — invalidation', () => {
     const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 100, y: 0, width: 10, height: 10 }, data: {} });
     const edge = scene.add({
       kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
-      dependsOn: [later, b], derive: connectCenters,
+      dependsOn: [later, b], derivePath: connectCenters,
     });
     const addLater = () => scene.add({
       id: later, kind: 'leaf', layer: 'main',
@@ -374,7 +374,7 @@ describe('derived geometry — cascade delete', () => {
     const { scene, a, edge } = setup();
     const label = scene.add({
       kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
-      dependsOn: [edge], derive: connectCenters,
+      dependsOn: [edge], derivePath: connectCenters,
     });
     scene.remove(a);
     expect(scene.get(label)).toBeUndefined();
@@ -389,7 +389,7 @@ describe('derived geometry — cascade delete', () => {
     expect(scene.get(edge)).toBeDefined();
   });
 
-  it('restores a cascaded node with its dependsOn and derive intact', () => {
+  it('restores a cascaded node with its dependsOn and derivePath intact', () => {
     const { scene, a, b, edge } = setup();
     scene.remove(a);
     expect(scene.get(edge)).toBeUndefined();   // else the assertions below read the original
@@ -397,7 +397,7 @@ describe('derived geometry — cascade delete', () => {
     const live = scene.get(edge)!;
     expect(live.dependsOn).toHaveLength(2);
     expect(live.dependsOn).toEqual([a, b]);
-    expect(live.derive).toBe(connectCenters);
+    expect(live.derivePath).toBe(connectCenters);
   });
 
   it('unlinks a cascaded root from the root list, and restores its order', () => {
@@ -426,9 +426,9 @@ describe('derived geometry — cascade delete', () => {
     const { scene, a, b } = setup();
     const box = scene.add({ kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: {} });
     const s0 = scene.add({ ...leaf, parent: box });
-    const e1 = scene.add({ ...leaf, parent: box, dependsOn: [a, b], derive: connectCenters });
+    const e1 = scene.add({ ...leaf, parent: box, dependsOn: [a, b], derivePath: connectCenters });
     const s2 = scene.add({ ...leaf, parent: box });
-    const e3 = scene.add({ ...leaf, parent: box, dependsOn: [a, b], derive: connectCenters });
+    const e3 = scene.add({ ...leaf, parent: box, dependsOn: [a, b], derivePath: connectCenters });
     const s4 = scene.add({ ...leaf, parent: box });
 
     scene.remove(a);
@@ -441,7 +441,7 @@ describe('derived geometry — cascade delete', () => {
     const { scene, a, b } = setup();
     const group = scene.add({
       kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {},
-      dependsOn: [a, b], derive: connectCenters,
+      dependsOn: [a, b], derivePath: connectCenters,
     });
     const child = scene.add({ ...leaf, parent: group });
 
@@ -462,8 +462,8 @@ describe('derived geometry — cascade delete', () => {
   it('terminates on a dependency cycle', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS, registry });
     const edge = asNodeId('edge');
-    const a = scene.add({ ...leaf, dependsOn: [edge], derive: connectCenters });
-    scene.add({ ...leaf, id: edge, dependsOn: [a], derive: connectCenters });
+    const a = scene.add({ ...leaf, dependsOn: [edge], derivePath: connectCenters });
+    scene.add({ ...leaf, id: edge, dependsOn: [a], derivePath: connectCenters });
 
     scene.remove(a);
     expect(scene.roots).toEqual([]);
@@ -487,7 +487,7 @@ describe('derived geometry — cascade delete', () => {
     scene.addLayer({ id: 'notes', name: 'Notes' });
     const a = scene.add({ ...leaf, layer: 'base' });
     const label = scene.add({
-      ...leaf, layer: 'notes', dependsOn: [a], derive: connectCenters,
+      ...leaf, layer: 'notes', dependsOn: [a], derivePath: connectCenters,
     });
 
     scene.removeLayer('base');
@@ -503,7 +503,7 @@ describe('derived geometry — cascade delete', () => {
     // of the node that cascades, so the tree loses the parent, not the child.
     const box = scene.add({
       kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: {},
-      dependsOn: [a], derive: connectCenters,
+      dependsOn: [a], derivePath: connectCenters,
     });
     scene.move(a, box, 0);
 

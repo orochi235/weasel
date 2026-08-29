@@ -17,7 +17,7 @@ const pose = (x: number): RectPose => ({ x, y: 0, width: 10, height: 10 });
 
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
-type Derive = (
+type DerivePath = (
   node: Node<unknown, string, RectPose>,
   deps: readonly (RectPose | undefined)[],
 ) => Path | null;
@@ -25,7 +25,7 @@ type Derive = (
 type Data = { label?: string };
 type GradientData = { fill: FillStyle };
 
-function makeNode(derive: Derive): Node<Data, 'main', RectPose> {
+function makeNode(derivePath: DerivePath): Node<Data, 'main', RectPose> {
   return {
     id: asNodeId('edge'),
     kind: 'leaf',
@@ -34,17 +34,17 @@ function makeNode(derive: Derive): Node<Data, 'main', RectPose> {
     parent: null,
     pose: pose(0),
     dependsOn: [asNodeId('a'), asNodeId('b')],
-    derive,
+    derivePath,
   };
 }
 
 /** A scene holding two anchors and an edge deriving a line between them.
- *  `derive` reads the dependency poses it is handed, never the scene. */
+ *  `derivePath` reads the dependency poses it is handed, never the scene. */
 function makeEdgeScene() {
   const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const a = scene.add({ kind: 'leaf', layer: 'main', pose: pose(0), data: {} });
   const b = scene.add({ kind: 'leaf', layer: 'main', pose: pose(100), data: {} });
-  const derive: Derive = (_node, deps) => {
+  const derivePath: DerivePath = (_node, deps) => {
     const [from, to] = deps;
     if (!from || !to) return null;
     return linePath({ x: from.x, y: from.y }, { x: to.x, y: to.y });
@@ -55,7 +55,7 @@ function makeEdgeScene() {
     pose: pose(0),
     data: {},
     dependsOn: [a, b],
-    derive,
+    derivePath,
   });
   return { scene, a, b, edge };
 }
@@ -88,42 +88,42 @@ describe('resolveDerivedPath', () => {
     expect(resolveDerivedPath(plain, () => undefined)).toBeNull();
   });
 
-  it('calls derive with dependency poses in dependsOn order', () => {
-    const derive = vi.fn(() => linePath({ x: 0, y: 0 }, { x: 1, y: 1 }));
-    const node = makeNode(derive);
+  it('calls derivePath with dependency poses in dependsOn order', () => {
+    const derivePath = vi.fn(() => linePath({ x: 0, y: 0 }, { x: 1, y: 1 }));
+    const node = makeNode(derivePath);
     const poses = new Map([[asNodeId('a'), pose(0)], [asNodeId('b'), pose(100)]]);
     resolveDerivedPath(node, (id) => poses.get(id));
-    expect(derive).toHaveBeenCalledWith(node, [pose(0), pose(100)]);
+    expect(derivePath).toHaveBeenCalledWith(node, [pose(0), pose(100)]);
   });
 
   it('passes undefined for a dependency that no longer resolves', () => {
-    const derive = vi.fn(() => null);
-    const node = makeNode(derive);
+    const derivePath = vi.fn(() => null);
+    const node = makeNode(derivePath);
     const poses = new Map([[asNodeId('a'), pose(0)]]);
     resolveDerivedPath(node, (id) => poses.get(id));
-    expect(derive).toHaveBeenCalledWith(node, [pose(0), undefined]);
+    expect(derivePath).toHaveBeenCalledWith(node, [pose(0), undefined]);
   });
 
-  it('memoizes — a second call with unchanged poses does not re-derive', () => {
-    const derive = vi.fn(() => linePath({ x: 0, y: 0 }, { x: 1, y: 1 }));
-    const node = makeNode(derive);
+  it('memoizes — a second call with unchanged poses does not re-derivePath', () => {
+    const derivePath = vi.fn(() => linePath({ x: 0, y: 0 }, { x: 1, y: 1 }));
+    const node = makeNode(derivePath);
     const poses = new Map([[asNodeId('a'), pose(0)], [asNodeId('b'), pose(100)]]);
     const lookup = (id: NodeId) => poses.get(id);
     resolveDerivedPath(node, lookup);
     resolveDerivedPath(node, lookup);
-    expect(derive).toHaveBeenCalledTimes(1);
+    expect(derivePath).toHaveBeenCalledTimes(1);
   });
 
   it('re-derives once the scene drops the node\'s pose-keyed memo slots', async () => {
     const { dropPoseKeyedMemoSlots } = await import('core/scene/nodeMemo');
-    const derive = vi.fn(() => linePath({ x: 0, y: 0 }, { x: 1, y: 1 }));
-    const node = makeNode(derive);
+    const derivePath = vi.fn(() => linePath({ x: 0, y: 0 }, { x: 1, y: 1 }));
+    const node = makeNode(derivePath);
     const poses = new Map([[asNodeId('a'), pose(0)], [asNodeId('b'), pose(100)]]);
     const lookup = (id: NodeId) => poses.get(id);
     resolveDerivedPath(node, lookup);
     dropPoseKeyedMemoSlots(node);
     resolveDerivedPath(node, lookup);
-    expect(derive).toHaveBeenCalledTimes(2);
+    expect(derivePath).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -207,7 +207,7 @@ describe('kit:derived painter', () => {
     expect(findNodeShape(plain)?.id).toBe('kit:rect-fallback');
   });
 
-  it('leaves a node carrying dependsOn but no derive to the other painters', () => {
+  it('leaves a node carrying dependsOn but no derivePath to the other painters', () => {
     // The two fields are independent optionals, and claiming this node would
     // paint nothing at all where the same node without `dependsOn` draws.
     const inert: Node<Data, 'main', RectPose> = {
@@ -217,7 +217,7 @@ describe('kit:derived painter', () => {
     expect(findNodeShape(inert)?.id).toBe('kit:rect-fallback');
   });
 
-  it('paints a node with dependsOn but no derive exactly as it would without it', () => {
+  it('paints a node with dependsOn but no derivePath exactly as it would without it', () => {
     const inert: Node<Data, 'main', RectPose> = {
       id: asNodeId('inert2'), kind: 'leaf', layer: 'main', data: {}, parent: null,
       pose: pose(0), dependsOn: [asNodeId('a')],
@@ -230,19 +230,19 @@ describe('kit:derived painter', () => {
       .toEqual(defaultDrawOne(plain, plain.pose, VIEW));
   });
 
-  it('a node whose derive key was missing at replay still paints', () => {
-    // `kit:add` warns and restores the node without `derive`, keeping
+  it('a node whose derivePath key was missing at replay still paints', () => {
+    // `kit:add` warns and restores the node without `derivePath`, keeping
     // `dependsOn`. Degrading to the authored appearance is what the warning
     // promises; disappearing is not.
-    const connect: Derive = () => null;
+    const connect: DerivePath = () => null;
     const authored = createScene<Data, 'main', RectPose>({
       systemLayers: [{ id: 'main' }],
-      registry: { derive: { 'test:connect': connect } },
+      registry: { derivePath: { 'test:connect': connect } },
     });
     const dep = authored.add({ kind: 'leaf', layer: 'main', pose: pose(0), data: {} });
     authored.add({
       id: asNodeId('edge-replay'), kind: 'leaf', layer: 'main', pose: pose(0), data: {},
-      dependsOn: [dep], derive: connect,
+      dependsOn: [dep], derivePath: connect,
     });
     authored.undo();
 
@@ -252,7 +252,7 @@ describe('kit:derived painter', () => {
     replayed.redo();
 
     const node = replayed.get(asNodeId('edge-replay'))!;
-    expect(node.derive).toBeUndefined();
+    expect(node.derivePath).toBeUndefined();
     expect(defaultDrawOne(node, node.pose, VIEW).length).toBeGreaterThan(0);
   });
 
@@ -279,7 +279,7 @@ describe('kit:derived painter', () => {
         },
       },
       dependsOn: [asNodeId('a'), asNodeId('b')],
-      derive: () => null,
+      derivePath: () => null,
     };
     const path = linePath({ x: 20, y: 0 }, { x: 120, y: 0 });
     const cmds = defaultDrawOne(node, node.pose, VIEW, { derivedPath: path });

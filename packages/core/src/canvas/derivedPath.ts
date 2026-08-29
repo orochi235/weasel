@@ -13,20 +13,20 @@ const SLOT = 'kit:derivedPath';
 
 /**
  * The path `node` computes from its dependencies' poses, or `null` when it
- * derives from nothing (the normal case) or its `derive` has nothing to draw.
+ * derives from nothing (the normal case) or its `derivePath` has nothing to draw.
  *
  * `poseOf` supplies each dependency's painted pose; one it cannot resolve
- * reaches `derive` as `undefined`.
+ * reaches `derivePath` as `undefined`.
  */
 export function resolveDerivedPath<TData, TLayer extends string, TPose>(
   node: Node<TData, TLayer, TPose>,
   poseOf: (id: NodeId) => TPose | undefined,
 ): Path | null {
   const deps = node.dependsOn;
-  const derive = node.derive;
-  if (deps === undefined || deps.length === 0 || derive === undefined) return null;
+  const derivePath = node.derivePath;
+  if (deps === undefined || deps.length === 0 || derivePath === undefined) return null;
   return nodeMemo(node, SLOT, node.pose, () =>
-    derive(node as Node<unknown, string, TPose>, deps.map((id) => poseOf(id))),
+    derivePath(node as Node<unknown, string, TPose>, deps.map((id) => poseOf(id))),
   );
 }
 

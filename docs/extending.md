@@ -250,7 +250,7 @@ const connectCenters = (
 
 const scene = createScene<object, 'main', RectPose>({
   systemLayers: [{ id: 'main' }],
-  registry: { derive: { 'app:connect': connectCenters } },
+  registry: { derivePath: { 'app:connect': connectCenters } },
 });
 
 const box = (x: number, y: number) =>
@@ -264,28 +264,28 @@ scene.add({
   pose: { x: 0, y: 0, width: 0, height: 0 },
   data: { stroke: strokeOf('#1c1c1c', 2) },
   dependsOn: [a, b],
-  derive: connectCenters,
+  derivePath: connectCenters,
 });
 ```
 
-The built-in `kit:derived` painter draws whatever `derive` returns, reading
+The built-in `kit:derived` painter draws whatever `derivePath` returns, reading
 `data.fill` and `data.stroke` the way `kit:path` does. The returned path is in
 **world** coordinates, not the pose frame: the pose above is a zero-sized
 placeholder, and all it still contributes is rotation. A bounds-relative fill
 resolves against the derived path's own box.
 
-`derive` receives each dependency's **effective** pose in `dependsOn` order —
+`derivePath` receives each dependency's **effective** pose in `dependsOn` order —
 its ephemeral override when it has one, else the pose the scene stores — which
 is exactly what the render walks paint. A dependency the scene cannot resolve
 arrives as `undefined`; returning `null` means "nothing to draw right now".
 
-`node` arrives typed `SceneNode<unknown, string, TPose>`, so a `derive` that
+`node` arrives typed `SceneNode<unknown, string, TPose>`, so a `derivePath` that
 reads `node.data` casts. Naming `TData` and `TLayer` there would put them in a
 contravariant position and make `Scene` invariant in both.
 
 **Serialization carries a registry key, never the function.** `SceneRegistry`
-does for `derive` what it already does for `clipFromPose`: `toJSON` looks the
-function up in `registry.derive` and writes `deriveKey`, throwing if it has no
+does for `derivePath` what it already does for `clipFromPose`: `toJSON` looks the
+function up in `registry.derivePath` and writes `derivePathKey`, throwing if it has no
 key, and `sceneFromJSON` resolves the key back. A key missing from the registry
 restores the node without its derived geometry and warns.
 
@@ -306,7 +306,7 @@ is what makes it safe to hand a whole selection.
 
 `dependsOn` is fixed when the node is added; retargeting is remove plus add.
 Reparenting a node out from under its dependents is legal and intended: the
-geometry keeps recomputing across the new frame, because `derive` reads world
+geometry keeps recomputing across the new frame, because `derivePath` reads world
 poses and `Scene` stores them absolutely.
 
 **Two gaps to know about before building on this** — both in `docs/TODO.md`

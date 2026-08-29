@@ -719,7 +719,7 @@ Core five + Crop shipped. Remaining:
 
 ### Derived geometry follow-ups
 
-Left open by the derived-path arc (`dependsOn` / `derive` / `SceneRegistry.derive`;
+Left open by the derived-path arc (`dependsOn` / `derivePath` / `SceneRegistry.derivePath`;
 the seam is documented in `docs/extending.md`). The two P1s below are the ones
 that decide whether anything diagram-shaped can be built on it yet.
 
@@ -751,7 +751,7 @@ that decide whether anything diagram-shaped can be built on it yet.
   edge. This pre-exists for containers, whose children are lost the same way, but
   the arc's promise that "undo cannot restore the halves separately" rests on it.
   **Arc 1 ships with this hole.** The fix is two parts and neither is a bugfix:
-  make the `insertNode` adapters carry `dependsOn` / `derive` (below), then add a
+  make the `insertNode` adapters carry `dependsOn` / `derivePath` (below), then add a
   multi-node delete op carrying the closure snapshot plus an `insertNodes` that
   re-attaches by parent and ascending index. That is a second implementation of
   the detach-root reasoning in `kit:remove`, and the two rotting apart is the
@@ -775,20 +775,20 @@ that decide whether anything diagram-shaped can be built on it yet.
   Invalidation is pushed by the scene today, which is closed only under the
   triggers someone enumerated — the arc's reviews found three rounds of misses
   (ancestor moves, removal, a dependency appearing). Comparing the resolved
-  poses by *value* is instead closed under whatever `derive` actually read, and
+  poses by *value* is instead closed under whatever `derivePath` actually read, and
   needs no push at all for the existence cases. Not the reference comparison the
   seam rejects: an override mutates its buffer in place, which defeats reference
   equality but not value equality. Deferred because its cost is unmeasured — it
   resolves every dependency's pose on every frame. Measure against a real diagram
   before taking it.
 
-- **(P2) `kit:remove`'s snapshot carries `derive` as a live function**, so a
+- **(P2) `kit:remove`'s snapshot carries `derivePath` as a live function**, so a
   persisted-then-restored history brings derived nodes back inert: `dependsOn`
   survives the JSON round-trip and repopulates the index, but the node will never
-  paint. `kit:add` already solves this with `deriveKey` plus registry
+  paint. `kit:add` already solves this with `derivePathKey` plus registry
   re-resolution; `kit:remove` should mirror it.
 
-- **(P2) The `insertNode` adapters drop `dependsOn` and `derive`.**
+- **(P2) The `insertNode` adapters drop `dependsOn` and `derivePath`.**
   `canvas/sceneAdapter.ts` forwards `clipFromPose` and neither of these;
   `interactions/actions/defaultCommitAdapter.ts` forwards none of the three. A
   derived node round-tripped through either comes back inert. Gates the undo hole
@@ -804,16 +804,16 @@ that decide whether anything diagram-shaped can be built on it yet.
 
 - **(P3) `scenePoseLookup` does not honor `SceneSlotConfig.toPose`**, which
   `buildSceneLayer` shims onto the live adapter's `getPose`. A consumer using it
-  would paint dependencies at poses `derive` never saw.
+  would paint dependencies at poses `derivePath` never saw.
 
 - **(P3) `Scene<TData, TLayer, TPose>` is contravariant in `TPose`** via
-  `clipFromPose` and `derive`, so no concretely-typed scene satisfies the
-  action-facing `Scene<unknown, string, unknown>`. Pre-dates `derive` —
+  `clipFromPose` and `derivePath`, so no concretely-typed scene satisfies the
+  action-facing `Scene<unknown, string, unknown>`. Pre-dates `derivePath` —
   `clipFromPose` has the same shape — and the action layer already reaches its
   scene through a cast everywhere, so nothing is blocked today.
 
 - **(P3) `kit:setData` and `kit:setLayer` do not invalidate dependents.** Matters
-  only if a `derive` reads a dependency's `data`. `kit:move` and `kit:setLayer`
+  only if a `derivePath` reads a dependency's `data`. `kit:move` and `kit:setLayer`
   also never drop a node's own pose-keyed slots, which is a `nodeMemo` question
   rather than a dependents one.
 

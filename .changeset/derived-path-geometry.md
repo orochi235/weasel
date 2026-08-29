@@ -4,14 +4,14 @@
 
 A node's path can be derived from other nodes' poses
 
-A node declares `dependsOn: NodeId[]` and a `derive` function resolved by key
+A node declares `dependsOn: NodeId[]` and a `derivePath` function resolved by key
 through `SceneRegistry`, and the scene walks resolve its path before painting
 rather than it being authored. An edge drawn between two boxes is then an
 ordinary scene node — selectable, styleable, exportable — whose geometry never
 enters undo history. The seam and its traps are in `docs/extending.md`.
 
-New surface: `scene.removeMany(ids)`, `NodeBase.dependsOn` / `NodeBase.derive`,
-`SceneRegistry.derive`, `SerializedNode.deriveKey`, `NodePaintCtx.derivedPath`.
+New surface: `scene.removeMany(ids)`, `NodeBase.dependsOn` / `NodeBase.derivePath`,
+`SceneRegistry.derivePath`, `SerializedNode.derivePathKey`, `NodePaintCtx.derivedPath`.
 
 Deleting a node now deletes everything that derives from it, transitively,
 including those nodes' own subtrees, in one undo entry — so `scene.remove` can

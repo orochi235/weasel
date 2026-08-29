@@ -54,7 +54,7 @@ Add to `Node`:
 
 ```ts
 dependsOn?: NodeId[]
-derive?: (node, deps: PoseLookup) => Path   // registered by key in SceneRegistry
+derivePath?: (node, deps: PoseLookup) => Path   // registered by key in SceneRegistry
 ```
 
 A resolve pass runs once per frame ahead of paint. `nodeMemo`'s key extends to include the
@@ -146,7 +146,7 @@ reimplementing text measurement.
 
 ## DiagramEdge
 
-A leaf scene node with `dependsOn: [from, to]` whose `derive` runs a **router**. Routers
+A leaf scene node with `dependsOn: [from, to]` whose `derivePath` runs a **router**. Routers
 register by key — the idiom `registerNodeShape` and `NodeRouting` already use — so consumers
 add their own. Ships: `straight`, `orthogonal`, `bezier`. Arrowheads come from stroke markers,
 not from the router.
@@ -215,7 +215,7 @@ retired when this lands.
 
 ## Arcs
 
-1. **Derived path in core.** `dependsOn` + `derive` + memo invalidation + cascade delete. Lands
+1. **Derived path in core.** `dependsOn` + `derivePath` + memo invalidation + cascade delete. Lands
    and goes green alone; it touches the hot render path and the serialization format, and nothing
    diagram-shaped should be built on an unproven seam.
 

@@ -92,8 +92,8 @@ interface NodeBase<TData, TLayer extends string, TPose> {
    *  a `setPose` of its own from the container cascade.
    *  `node` is deliberately widened: naming `TData`/`TLayer` here puts them in
    *  a contravariant position, making `Scene` invariant in both and breaking
-   *  assignment kit-wide. The cost is that a `derive` casts to read `node.data`. */
-  derive?: (
+   *  assignment kit-wide. The cost is that a `derivePath` casts to read `node.data`. */
+  derivePath?: (
     node: Node<unknown, string, TPose>,
     deps: readonly (TPose | undefined)[],
   ) => Path | null;
@@ -169,9 +169,9 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   clipFromPose?: (pose: TPose) => Path | null;
   /** Mirrors `SceneNode.dependsOn`. */
   dependsOn?: readonly NodeId[];
-  /** Mirrors `SceneNode.derive`. Taken as a live function; its registry key is
+  /** Mirrors `SceneNode.derivePath`. Taken as a live function; its registry key is
    *  looked up from it, never passed in. */
-  derive?: (
+  derivePath?: (
     node: Node<unknown, string, TPose>,
     deps: readonly (TPose | undefined)[],
   ) => Path | null;
@@ -229,8 +229,8 @@ export interface SerializedNode<TData, TLayer extends string, TPose> {
   clipFromPoseKey?: string;
   /** Ids this node's geometry derives from. Omitted when it derives from nothing. */
   dependsOn?: readonly string[];
-  /** Registry key for the node's `derive` function. Omitted when it has none. */
-  deriveKey?: string;
+  /** Registry key for the node's `derivePath` function. Omitted when it has none. */
+  derivePathKey?: string;
   // Future function-field keys (drawOneKey, layoutStrategyKey, etc.) will live
   // here; a third one should be the point this stops being copied per field and
   // becomes one shared registry-keyed-function-field helper.
@@ -242,8 +242,8 @@ export interface SerializedNode<TData, TLayer extends string, TPose> {
 export interface SceneRegistry<TPose> {
   /** Maps registry keys to `clipFromPose` factory functions for container nodes. */
   clipFromPose?: Readonly<Record<string, (pose: TPose) => Path | null>>;
-  /** Maps registry keys to `derive` functions for nodes with `dependsOn`. */
-  derive?: Readonly<Record<string, (
+  /** Maps registry keys to `derivePath` functions for nodes with `dependsOn`. */
+  derivePath?: Readonly<Record<string, (
     node: Node<unknown, string, TPose>,
     deps: readonly (TPose | undefined)[],
   ) => Path | null>>;
