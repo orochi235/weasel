@@ -369,10 +369,19 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
 
   // Mutations (all auto-undoable)
   add(spec: AddNodeSpec<TData, TLayer, TPose>): NodeId;
-  /** Delete `id` **and its entire subtree** — every descendant is removed in
-   *  the same operation. Recorded as one undoable step; `undo()` restores the
-   *  whole subtree (root + descendants, child order intact). */
+  /** Delete `id`, its **entire subtree**, and **everything that derives from**
+   *  any of those nodes — a node listing one of them in `dependsOn` goes too,
+   *  along with its own subtree, transitively. A dependent can live anywhere in
+   *  the tree, so this deletes nodes the caller never named and may unlink
+   *  several disjoint subtrees at once. Recorded as one undoable step; `undo()`
+   *  restores every one of them where it was, child order intact. */
   remove(id: NodeId): void;
+  /** {@link remove} over several roots at once, as a **single** undoable step.
+   *  Ids resolve against the tree as it stands at the call, so an id that
+   *  another one would cascade away is absorbed rather than removed twice —
+   *  which is what makes it safe to pass a whole selection. Throws if any id is
+   *  not in the scene; an empty list does nothing and records no step. */
+  removeMany(ids: readonly NodeId[]): void;
   update(id: NodeId, patch: { data: TData }): void;
   setPose(id: NodeId, pose: TPose): void;
   /** Retag `id` to `layer`. On a **container this cascades**: every descendant
@@ -406,6 +415,9 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   setLayerVisible(layer: TLayer, visible: boolean): void;
   setLayerLocked(layer: TLayer, locked: boolean): void;
   addLayer(spec: AddLayerSpec<TLayer>): void;
+  /** Drop a user layer and every node tagged to it, as one undoable step.
+   *  Removal cascades, so this also deletes nodes **on other layers** that
+   *  derive from a node on this one. */
   removeLayer(layer: TLayer): void;
   renameLayer(layer: TLayer, name: string): void;
   moveLayer(layer: TLayer, index: number): void;

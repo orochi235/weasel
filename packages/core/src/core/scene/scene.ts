@@ -344,6 +344,36 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     }
   }
 
+  /** Everything removing `rootIds` takes with it: each root's subtree, then
+   *  every node deriving from any of those, then those nodes' subtrees in turn.
+   *  A dependent is not a descendant, so the second pass is a separate
+   *  reachability walk; `ids` grows as it runs, which is what carries the
+   *  cascade transitively and upward through a dependent's own ancestors. */
+  function removalClosure(rootIds: readonly NodeId[]): {
+    ids: NodeId[];
+    removing: Set<NodeId>;
+  } {
+    const ids: NodeId[] = [];
+    const removing = new Set<NodeId>();
+    function take(id: NodeId): void {
+      if (removing.has(id)) return;
+      removing.add(id);
+      ids.push(id);
+      const sub: NodeId[] = [];
+      descendants(id, sub);
+      for (const s of sub) {
+        if (removing.has(s)) continue;
+        removing.add(s);
+        ids.push(s);
+      }
+    }
+    for (const root of rootIds) take(root);
+    for (let i = 0; i < ids.length; i++) {
+      for (const dep of dependents.transitiveDependentsOf(ids[i])) take(dep);
+    }
+    return { ids, removing };
+  }
+
   /** Post-patch `clipFromPose` onto a container node after its `kit:add` op
    *  runs. The function cannot travel through the serializable op payload, so
    *  we attach it directly to the live node here. `cacheForRedo` also keeps the
@@ -444,13 +474,21 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     },
   });
 
-  // Remove snapshots every node it deletes so revert can restore it exactly.
-  // A cascade unlinks several disjoint subtrees, not one: `detached` names each
-  // node to re-link, ascending by index; the rest ride back in a cloned parent.
+  /**
+   * Snapshot of every node a removal deletes, so revert restores it exactly.
+   *
+   * A cascade unlinks several disjoint subtrees, not one, so `detached` names
+   * each node the tree has to re-link; everything else in `nodes` has a parent
+   * that is also going and rides back in that parent's cloned `children`.
+   * Entries are sorted by ascending sibling index — globally rather than
+   * per-parent, because only same-parent order constrains re-insertion and
+   * entries under different parents never interact.
+   */
   interface RemoveSnapshot {
     nodes: Node<TData, TLayer, TPose>[];
     detached: { id: NodeId; parent: NodeId | null; index: number }[];
   }
+  // Neither half invalidates dependents: removal's closure takes every live one.
   registerKitOp<RemoveSnapshot>('kit:remove', {
     apply: (p) => {
       for (const d of p.detached) detach(d.id);
@@ -460,7 +498,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       }
     },
     revert: (p) => {
-      // Restore nodes in original order (parents before children).
+      // Order-independent: every clone carries its own parent and children.
       for (const n of p.nodes) {
         const clone: Node<TData, TLayer, TPose> = n.kind === 'container'
           ? { ...n, children: [...n.children] }
@@ -881,43 +919,30 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     },
 
     remove(id) {
-      requireNode(id);
-      // A dependent is not a descendant, so this is a second reachability pass
-      // rather than a deeper walk; `ids` grows as it runs, carrying the cascade.
-      // kit:remove skips invalidation because this takes every live dependent.
-      const ids: NodeId[] = [id];
-      descendants(id, ids);
-      const going = new Set<NodeId>(ids);
-      for (let i = 0; i < ids.length; i++) {
-        for (const dep of dependents.transitiveDependentsOf(ids[i])) {
-          // The index keeps naming dependents of a node after that node goes:
-          // DependentsIndex.remove is asymmetric on purpose.
-          if (going.has(dep) || state.nodes.get(dep) === undefined) continue;
-          going.add(dep);
-          ids.push(dep);
-          const sub: NodeId[] = [];
-          descendants(dep, sub);
-          for (const s of sub) {
-            if (going.has(s)) continue;
-            going.add(s);
-            ids.push(s);
-          }
-        }
-      }
+      scene.removeMany([id]);
+    },
+
+    removeMany(rootIds) {
+      if (rootIds.length === 0) return;
+      // Every id resolves against the pre-removal tree, so an id another one
+      // cascades away is absorbed rather than being a second, failing removal.
+      const { ids, removing } = removalClosure(rootIds);
+      // requireNode is what rejects an id that is not in the scene, and it runs
+      // before anything mutates.
       const snapshot: Node<TData, TLayer, TPose>[] = ids.map((nid) => {
         const n = requireNode(nid);
         return n.kind === 'container' ? { ...n, children: [...n.children] } : { ...n };
       });
-      // Whatever has no parent going with it is what the tree has to unlink;
-      // the rest is reachable through a snapshotted parent's `children`.
+      // The rest is reachable through a snapshotted parent's cloned `children`.
       const detached = snapshot
-        .filter((n) => n.parent === null || !going.has(n.parent))
+        .filter((n) => n.parent === null || !removing.has(n.parent))
         .map((n) => ({ id: n.id, parent: n.parent, index: siblingsOf(n.parent).indexOf(n.id) }))
         .sort((l, r) => l.index - r.index);
       // Ephemeral, and ids are reusable: an override left behind would
       // reattach itself to whatever is added under this id next.
       for (const nid of ids) overrides.clear(nid);
-      executeAndLog('kit:remove', { nodes: snapshot, detached }, 'remove');
+      const payload: RemoveSnapshot = { nodes: snapshot, detached };
+      executeAndLog('kit:remove', payload, 'remove');
     },
 
     update(id, patch) {
@@ -1033,18 +1058,11 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         throw new Error(`Scene: cannot remove system layer "${layer}"`);
       }
       scene.batch('removeLayer', () => {
-        // Cascade-delete every node tagged to this layer. Each remove() cascades
-        // its subtree, so repeatedly pull any still-present tagged node until
-        // none remain — this naturally avoids double-removing a node already
-        // dropped as a descendant of an earlier removal.
-        for (;;) {
-          let next: NodeId | undefined;
-          for (const [id, node] of state.nodes) {
-            if (node.layer === layer) { next = id; break; }
-          }
-          if (next === undefined) break;
-          scene.remove(next);
+        const tagged: NodeId[] = [];
+        for (const [id, node] of state.nodes) {
+          if (node.layer === layer) tagged.push(id);
         }
+        scene.removeMany(tagged);
         const finalIndex = requireLayerIndex(layer);
         executeAndLog('kit:removeLayer', { record: rec, index: finalIndex }, 'removeLayer');
       });

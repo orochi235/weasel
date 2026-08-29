@@ -469,6 +469,33 @@ describe('derived geometry — cascade delete', () => {
     expect(scene.roots).toEqual([]);
   });
 
+  it('absorbs an id that another id in a removeMany already cascades away', () => {
+    const { scene, a, b, edge } = setup();
+    // The ordinary Cmd+A shape: the selection names both the node and its edge.
+    expect(() => scene.removeMany([a, edge])).not.toThrow();
+    expect(scene.roots).toEqual([b]);
+    scene.undo();
+    expect(scene.roots).toEqual([a, b, edge]);
+  });
+
+  it('removes a dependent on a surviving layer when its dependency\'s layer is dropped', () => {
+    const scene = createScene<object, 'main' | 'base' | 'notes', RectPose>({
+      systemLayers: [{ id: 'main' as const }],
+      registry,
+    });
+    scene.addLayer({ id: 'base', name: 'Base' });
+    scene.addLayer({ id: 'notes', name: 'Notes' });
+    const a = scene.add({ ...leaf, layer: 'base' });
+    const label = scene.add({
+      ...leaf, layer: 'notes', dependsOn: [a], derive: connectCenters,
+    });
+
+    scene.removeLayer('base');
+    expect(scene.get(a)).toBeUndefined();
+    // `label` is tagged to a layer that still exists; it goes because `a` did.
+    expect(scene.get(label)).toBeUndefined();
+  });
+
   it('restores a node that cascaded through its own parent without duplicating it', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS, registry });
     const a = scene.add(leaf);

@@ -14,16 +14,43 @@ function hostIndex(scene: Scene<unknown, string, unknown>, id: NodeId): number {
   return siblings.indexOf(id);
 }
 
-/** True when any ancestor of `id` is itself in `set`. */
-function hasSelectedAncestor(
+/**
+ * True when an op already emitted for one of `emitted` will take `id` with it.
+ *
+ * `scene.remove` cascades down two relations — a node's subtree, and everything
+ * declaring it in `dependsOn` — so this walks both of them back up from `id`
+ * and asks whether either reaches an id already spoken for. They have to be
+ * walked together, not one after the other: a child of an edge is reached only
+ * by stepping to its parent and then along that parent's `dependsOn`.
+ *
+ * Asking about ops already emitted, rather than about the whole selection, is
+ * what settles a cycle. Two ids that reach each other are each "covered by the
+ * other" and filtering both deletes nothing; growing `emitted` in input order
+ * keeps the first and drops the rest. The cycle need not be one of `dependsOn`
+ * alone — a node deriving from its own descendant closes the loop through the
+ * combined graph this walks.
+ *
+ * Upward rather than downward (which is how `Scene` computes the same closure
+ * internally) because no public surface exposes the reverse `dependsOn` index;
+ * walking down would mean rebuilding it from every node in the scene per call.
+ */
+function coveredByEmitted(
   scene: Scene<unknown, string, unknown>,
   id: NodeId,
-  set: ReadonlySet<string>,
+  emitted: ReadonlySet<string>,
 ): boolean {
-  let parent = scene.get(id)?.parent ?? null;
-  while (parent != null) {
-    if (set.has(parent)) return true;
-    parent = scene.get(parent)?.parent ?? null;
+  const seen = new Set<string>([id]);
+  const stack: NodeId[] = [id];
+  while (stack.length > 0) {
+    const node = scene.get(stack.pop()!);
+    if (!node) continue;
+    const up = node.parent == null ? node.dependsOn ?? [] : [node.parent, ...node.dependsOn ?? []];
+    for (const next of up) {
+      if (seen.has(next)) continue;
+      if (emitted.has(next)) return true;
+      seen.add(next);
+      stack.push(next);
+    }
   }
   return false;
 }
@@ -33,11 +60,16 @@ function hasSelectedAncestor(
  * host-array index BEFORE any removal, so `invert()` re-inserts at the right
  * slot and undo restores paint order. Ids with no live node are skipped.
  *
- * Descendants of another id in the set are skipped too: `removeNode` cascades
- * the subtree, so a container's op already takes its children with it and a
- * second op for a child would throw `unknown node id` mid-batch. Selecting a
- * group and its members at once (Cmd+A does exactly that) is the ordinary way
- * to hit this.
+ * Ids an already-emitted op will take are skipped: `removeNode` cascades both
+ * the subtree and the dependents, so a second op for a node the first has taken
+ * would throw `unknown node id` mid-batch — escaping the batch with the scene
+ * already mutated. Selecting a container and its members, or a node and an edge
+ * drawn from it, is the ordinary way to hit this; Cmd+A does both.
+ *
+ * Which ids survive the filter depends on their order, so the ops are a cover
+ * of the selection rather than its minimal set of roots. Each op re-inserts
+ * only its own node on undo; cascaded nodes are restored only on the scene's
+ * own `kit:remove` path — see the note on `deleteAction`.
  *
  * Shared with `clipboardCutAction` — cut is copy plus exactly this.
  */
@@ -46,12 +78,14 @@ export function buildDeleteOps(
   ids: readonly string[],
   label: string,
 ): Op[] {
-  const set = new Set<string>(ids);
+  const emitted = new Set<string>();
   const ops: Op[] = [];
   for (const id of ids) {
     const node = scene.get(id as NodeId);
     if (!node) continue;
-    if (hasSelectedAncestor(scene, id as NodeId, set)) continue;
+    if (emitted.has(id)) continue;
+    if (coveredByEmitted(scene, id as NodeId, emitted)) continue;
+    emitted.add(id);
     ops.push(createDeleteOp<Node<unknown, string, unknown>>({
       node,
       index: hostIndex(scene, id as NodeId),
