@@ -4,22 +4,29 @@
  * Mirrors the per-frame translate semantics of the `useMove` hook:
  *   - `start`: capture origin poses for all selected nodes; record the
  *     current drag delta in scratch each frame.
- *   - `onMove`: update the in-scratch `currentDelta` only — no scene writes.
- *     This avoids polluting the undo stack with O(N-frames) entries.
+ *   - `onMove`: update the in-scratch `currentDelta`, and publish the frame's
+ *     poses as ephemeral overrides. No *document* writes, so the undo stack
+ *     still sees one entry for the whole drag.
  *   - `onEnd('commit')`: emit the final delta as transform ops and route
  *     them through the consumer `applyOps` hook when present, else
  *     `scene.applyBatch(ops, 'Move', adapter)` — either way a single batch
  *     → exactly one undo entry for the whole drag.
- *   - `onEnd('cancel')`: no scene writes — the scene was never mutated during
- *     the drag, so no restoration is needed.
+ *   - `onEnd('cancel')`: drop the overrides — the document was never mutated,
+ *     so the committed poses are the restoration.
  *
- * ## Why no per-frame scene writes
+ * ## Why no per-frame document writes
  *
  * `Scene.setPose` calls `executeAndLog`, which immediately records an undo
- * entry on the scene's history engine. Per-frame writes during drag would create
- * O(frames) history entries — matching `useMove`'s approach of tracking
- * poses only in React state (overlay) during the drag and committing a
- * single `createTransformOp` batch at the end.
+ * entry on the scene's history engine. Per-frame writes during drag would
+ * create O(frames) history entries, so the drag commits one
+ * `createTransformOp` batch at the end.
+ *
+ * The per-frame poses still go *somewhere* the scene can see: the ephemeral
+ * override table, which bypasses history entirely. That is what lets a node
+ * deriving its geometry from a dragged one follow the drag — `scenePoseLookup`
+ * and the pick source both read overrides, and neither can see this action's
+ * scratch. Keeping the frame in scratch alone is why the edge used to stay
+ * anchored to the old endpoint and jump on drop.
  *
  * The behavior pipeline (snap-to-grid, snap-back-or-delete, snap-to-container,
  * etc.) via `opts.behaviors` from `BindingOpts` IS wired: `start` builds a
@@ -41,6 +48,7 @@ import type { Action } from '../registry';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '../invoker';
 import { resolveParams } from '../invoker';
 import type { Scene, NodeId } from 'core/scene/types';
+import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides';
 import { asNodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { Mat3 } from '@weasel-js/geom';
@@ -301,6 +309,9 @@ interface MoveScratch {
   /** In-flight preview poses keyed by node id (roots + cascaded children).
    *  Populated on onMove; cleared on onEnd. Read by `previewIds`/`previewPose`. */
   previews: Map<NodeId, unknown>;
+  /** The override entry published to the scene for each previewed id, held by
+   *  reference so a frame mutates it in place — see `PoseOverrides`. */
+  overrideEntries: Map<NodeId, { pose: unknown }>;
   /** Pose projection captured at drag start. Used by `translatePoseGeneric`
    *  so non-rect poses (e.g. polygon Paths) translate via the consumer's
    *  descriptor instead of the rect-pose default. Undefined when the
@@ -553,6 +564,7 @@ export const moveAction: Action & { requires: string[] } = {
         scene,
         currentDelta: { dx: 0, dy: 0 },
         previews: new Map<NodeId, unknown>(),
+        overrideEntries: new Map<NodeId, { pose: unknown }>(),
         projection,
         behaviors,
         gestureCtx,
@@ -613,10 +625,15 @@ export const moveAction: Action & { requires: string[] } = {
           // Layout reflow pass — single-select only; no-op without a layout dep.
           scratch.layoutPass = null;
           if (scratch.ids.length === 1) runLayoutPass(scratch, moveCtx);
+
+          // After the layout pass, so a reflowed sibling publishes too.
+          syncPreviewOverrides(scratch);
         },
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           if (reason === 'cancel') {
-            // Scene was never mutated during drag; nothing to restore.
+            // The document was never mutated — only the ephemeral overrides,
+            // and dropping them restores the committed poses.
+            dropPreviewOverrides(scratch);
             scratch.previews.clear();
             return;
           }
@@ -789,6 +806,9 @@ export const moveAction: Action & { requires: string[] } = {
             }
             if (ops.length > 0) commitOps(ops, 'Move');
           }
+          // After the commit, so no frame can paint the pre-drag pose between
+          // the override going away and the document catching up.
+          dropPreviewOverrides(scratch);
           scratch.previews.clear();
         },
         previewIds: () => scratch.previews.keys(),

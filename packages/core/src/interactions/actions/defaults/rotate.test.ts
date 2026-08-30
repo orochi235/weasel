@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
+import { createPoseOverrides } from 'core/scene/poseOverrides';
 import { rotateAction } from './rotate';
 import type { InvocationCtx } from '../invoker';
-import type { NodeId } from 'core/scene/types';
+import type { NodeId, PoseOverrides } from 'core/scene/types';
 
 // ---------------------------------------------------------------------------
 // Stub scene (mirrors move.test.ts pattern)
@@ -9,6 +10,7 @@ import type { NodeId } from 'core/scene/types';
 
 interface StubScene {
   poses: Map<string, unknown>;
+  overrides: PoseOverrides<unknown>;
   batchLog: Array<{ label: string; ops: Array<{ id: string; pose: unknown }> }>;
   get(id: NodeId): { pose: unknown; kind: 'leaf'; layer: string; data: unknown; parent: null } | undefined;
   setPose(id: NodeId, pose: unknown): void;
@@ -25,6 +27,7 @@ function makeStubScene(initial: Record<string, { pose: unknown }>): StubScene {
   return {
     poses,
     batchLog,
+    overrides: createPoseOverrides<unknown>((id: string) => (poses.has(id) ? { } : undefined)),
     get(id: NodeId) {
       if (!poses.has(id)) return undefined;
       return { pose: poses.get(id), kind: 'leaf' as const, layer: 'main', data: {}, parent: null };
@@ -364,5 +367,37 @@ describe('rotateAction descriptor', () => {
     // a's center starts at (5, 5); reflected through (32.5, 5) it lands at 60.
     const a = scene.poses.get('a') as { x: number; width: number };
     expect(a.x + a.width / 2).toBeCloseTo(60);
+  });
+});
+
+describe('rotateAction — the scene sees the in-flight pose', () => {
+  // A node deriving its geometry from a rotating one reads the scene's
+  // override table, not this action's scratch. Publishing there is what makes
+  // a derived edge follow the gesture instead of jumping on drop.
+  function rotating() {
+    const invoker = getOngoingInvoker(rotateAction);
+    const { scene, ...ctx } = makeCtx({
+      selectionIds: ['a'],
+      world: { x: 135, y: 75 },
+      sceneNodes: { a: { pose: { x: 100, y: 50, width: 50, height: 50, rotation: 0 } } },
+    });
+    const handle = invoker.start(ctx as InvocationCtx, undefined);
+    const moved = { ...(ctx as InvocationCtx), world: { x: 125, y: 65 } };
+    handle.onMove!(moved);
+    return { scene, handle, moved };
+  }
+
+  it('publishes an override while rotating and drops it on commit', () => {
+    const { scene, handle, moved } = rotating();
+    expect(scene.overrides.ids()).toEqual(['a']);
+
+    handle.onEnd!(moved, 'commit');
+    expect(scene.overrides.ids()).toEqual([]);
+  });
+
+  it('drops the override on cancel', () => {
+    const { scene, handle, moved } = rotating();
+    handle.onEnd!(moved, 'cancel');
+    expect(scene.overrides.ids()).toEqual([]);
   });
 });

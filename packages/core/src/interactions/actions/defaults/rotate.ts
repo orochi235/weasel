@@ -30,6 +30,7 @@
 import type { Action } from '../registry';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
 import type { Scene, NodeId } from 'core/scene/types';
+import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides';
 import type { Op } from 'core/ops/types';
 import { createTransformOp } from 'core/ops/transform';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
@@ -103,6 +104,7 @@ interface RotateScratch {
   useUnionPivot: boolean;
   /** In-flight preview poses keyed by node id. */
   previews: Map<NodeId, unknown>;
+  overrideEntries: Map<NodeId, { pose: unknown }>;
   /** Optional consumer commit hook captured at gesture start. When present,
    *  ops-based commits route through it (consumer history) instead of
    *  `scene.applyBatch`. Undefined → fall back to `scene.applyBatch`. */
@@ -180,12 +182,13 @@ export const rotateAction: Action & { requires: string[] } = {
         currentDelta: 0,
         useUnionPivot: ids.length > 1,
         previews: new Map<NodeId, unknown>(),
+        overrideEntries: new Map<NodeId, { pose: unknown }>(),
         applyOps,
       };
 
       const recomputePreviews = (delta: number) => {
         scratch.previews.clear();
-        if (delta === 0) return;
+        if (delta === 0) { syncPreviewOverrides(scratch); return; }
         for (const id of scratch.ids) {
           const origin = scratch.originPoses.get(id);
           if (origin === undefined) continue;
@@ -203,6 +206,7 @@ export const rotateAction: Action & { requires: string[] } = {
             ),
           );
         }
+        syncPreviewOverrides(scratch);
       };
 
       return {
@@ -217,11 +221,13 @@ export const rotateAction: Action & { requires: string[] } = {
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           if (reason === 'cancel') {
+            dropPreviewOverrides(scratch);
             scratch.previews.clear();
             return;
           }
           // No movement — no-op.
           if (scratch.currentDelta === 0) {
+            dropPreviewOverrides(scratch);
             scratch.previews.clear();
             return;
           }
@@ -248,6 +254,7 @@ export const rotateAction: Action & { requires: string[] } = {
             if (scratch.applyOps) scratch.applyOps(ops, 'Rotate');
             else scratch.scene.applyBatch(ops, 'Rotate', defaultCommitAdapter(scratch.scene));
           }
+          dropPreviewOverrides(scratch);
           scratch.previews.clear();
         },
         previewIds: () => scratch.previews.keys(),

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { createPoseOverrides } from 'core/scene/poseOverrides';
 import type { Op } from 'core/ops/types';
 import { resizeAction } from './resize';
 import type { InvocationCtx } from '../invoker';
@@ -25,6 +26,7 @@ function makeStubScene(initial: Record<string, { pose: unknown }> = {}) {
   return {
     poses,
     batchLog,
+    overrides: createPoseOverrides<unknown>((id: string) => (poses.has(id) ? { } : undefined)),
     get(id: NodeId) {
       if (!poses.has(id)) return undefined;
       return { pose: poses.get(id), kind: 'leaf' as const, layer: 'main', data: {}, parent: null };
@@ -431,5 +433,51 @@ describe('resizeAction descriptor', () => {
       expect(pose.width).toBeCloseTo(120);
       expect(pose.height).toBeCloseTo(90);
     });
+  });
+});
+
+describe('resizeAction — the scene sees the in-flight pose', () => {
+  // A node deriving its geometry from a resizing one reads the scene's
+  // override table, not this action's scratch. Publishing there is what makes
+  // a derived edge follow the gesture instead of jumping on drop.
+  function resizing() {
+    const invoker = getOngoingInvoker(resizeAction);
+    const scene = makeStubScene({ a: { pose: { x: 0, y: 0, width: 100, height: 100 } } });
+    const ctx: InvocationCtx = {
+      world: { x: 100, y: 100 },
+      screen: { x: 100, y: 100 },
+      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      deps: { selection: { get: () => ['a' as NodeId] }, scene },
+      drag: {
+        start: { x: 100, y: 100 },
+        current: { x: 100, y: 100 },
+        delta: { x: 0, y: 0 },
+        affordance: {
+          kind: 'handle:bottom-right', fixedPoint: { x: 0, y: 0 },
+          targetIds: ['a'], anchor: { x: 'min', y: 'min' },
+        },
+      },
+    };
+    const handle = invoker.start(ctx, undefined);
+    const moved = {
+      ...ctx,
+      drag: { start: { x: 100, y: 100 }, current: { x: 120, y: 110 }, delta: { x: 20, y: 10 } },
+    };
+    handle.onMove!(moved);
+    return { scene, handle, moved };
+  }
+
+  it('publishes an override while resizing and drops it on commit', () => {
+    const { scene, handle, moved } = resizing();
+    expect(scene.overrides.ids()).toEqual(['a']);
+
+    handle.onEnd!(moved, 'commit');
+    expect(scene.overrides.ids()).toEqual([]);
+  });
+
+  it('drops the override on cancel', () => {
+    const { scene, handle, moved } = resizing();
+    handle.onEnd!(moved, 'cancel');
+    expect(scene.overrides.ids()).toEqual([]);
   });
 });

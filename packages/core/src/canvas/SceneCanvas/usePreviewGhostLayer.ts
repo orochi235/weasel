@@ -18,6 +18,7 @@ import { findShapeSilhouette } from '../NodeShape';
 import { wrapWithPoseRotation } from '../poseRotation';
 import type { Dispatcher } from 'interactions/dispatcher/dispatcher';
 import { previewSourcesFrom, previewPoseIn, previewDataIn } from '../drawEnvelope';
+import { resolveDerivedPath, scenePoseLookup } from '../derivedPath';
 
 const GHOST_ALPHA = 0.85;
 
@@ -69,6 +70,9 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
       if (idSet.size === 0) return [];
       const sc = sceneRef.current;
 
+      // Reads the same overrides an in-flight gesture publishes, so a derived
+      // container ghosts with the clip it will actually impose.
+      const poseOf = scenePoseLookup(sc);
       const previewPoseFor = (id: string): TPose | null =>
         previewPoseIn(sources, id) as TPose | null;
       const previewDataFor = (id: string): TData | null =>
@@ -105,6 +109,7 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
           const clip = findShapeSilhouette(
             effNode as unknown as Node<unknown, string, TPose>,
             effPose,
+            { derivedPath: resolveDerivedPath(effNode, poseOf) },
           );
           if (clip) group.clip = clip;
         }

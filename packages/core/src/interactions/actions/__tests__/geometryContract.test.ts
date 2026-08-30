@@ -19,6 +19,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { createPoseOverrides } from 'core/scene/poseOverrides';
+import type { PoseOverrides } from 'core/scene/types';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { InvocationCtx, OngoingInvoker, ImmediateInvoker } from '../invoker';
@@ -99,6 +101,7 @@ function nodeFromPath(id: string, path: Path): TestNode {
 
 interface StubScene {
   poses: Map<string, AABBPose>;
+  overrides: PoseOverrides<unknown>;
   datas: Map<string, DrawData>;
   get(id: NodeId): { pose: AABBPose; data: DrawData; kind: 'leaf'; layer: string; parent: null } | undefined;
   setPose(id: NodeId, pose: AABBPose): void;
@@ -114,6 +117,7 @@ function makeStubScene(node: TestNode): StubScene {
   const scene: StubScene = {
     poses,
     datas,
+    overrides: createPoseOverrides<unknown>((id) => (poses.has(id as string) ? { } : undefined)),
     roots: [node.id as NodeId],
     get(id: NodeId) {
       if (!poses.has(id as string)) return undefined;

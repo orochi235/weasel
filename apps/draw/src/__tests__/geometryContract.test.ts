@@ -40,7 +40,9 @@ import {
   pathSubtract,
   splitPathByLine,
 } from '@weasel-js/core';
-import type { Path, ResizeAnchor, InvocationCtx, OngoingInvoker, Action, Op } from '@weasel-js/core';
+import type {
+  Path, ResizeAnchor, InvocationCtx, OngoingInvoker, Action, Op, PoseOverrides,
+} from '@weasel-js/core';
 
 // ---------------------------------------------------------------------------
 // apps/draw node model (verbatim from App.tsx)
@@ -81,6 +83,7 @@ function nodeFromPath(id: string, path: Path): DrawNode {
 
 interface StubScene {
   poses: Map<string, WeaselDrawPose>;
+  overrides: PoseOverrides<unknown>;
   datas: Map<string, WeaselDrawData>;
   get(id: string): { pose: WeaselDrawPose; data: WeaselDrawData; kind: 'leaf'; layer: string; parent: null } | undefined;
   setPose(id: string, pose: WeaselDrawPose): void;
@@ -89,12 +92,33 @@ interface StubScene {
   roots: string[];
 }
 
+/** The ephemeral override table the `Scene` contract requires. The ongoing
+ *  actions publish each gesture frame here, so a scene stand-in that omits it
+ *  throws mid-drag. Nothing in this file reads it back — it exists so the
+ *  stub honors the contract. */
+function stubOverrides(): PoseOverrides<unknown> {
+  const entries = new Map<string, { pose?: unknown; alpha?: number }>();
+  let generation = 0;
+  return {
+    set: (id, entry) => { entries.set(id as string, entry); generation++; },
+    get: (id) => entries.get(id as string),
+    has: (id) => entries.has(id as string),
+    ids: () => [...entries.keys()] as never,
+    clear: (id) => { entries.delete(id as string); generation++; },
+    clearAll: () => { entries.clear(); generation++; },
+    commit: () => { generation++; },
+    subscribe: () => () => {},
+    getGeneration: () => generation,
+  } as PoseOverrides<unknown>;
+}
+
 function makeStubScene(node: DrawNode): StubScene {
   const poses = new Map([[node.id, node.pose]]);
   const datas = new Map([[node.id, node.data]]);
   return {
     poses,
     datas,
+    overrides: stubOverrides(),
     roots: [node.id],
     get(id) {
       if (!poses.has(id)) return undefined;

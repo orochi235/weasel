@@ -22,7 +22,6 @@ Priority tags:
 ### Next up
 
 - **`<Timeline>` editor** — the one unbuilt phase of the timeline/rig arc → [Animation](#animation)
-- **A derived edge does not follow a live drag under any built-in tool** — "drag a box and the edge follows" is unreachable with the shipped tools → [Scene, adapters & layout](#scene-adapters--layout)
 
 ### P2 — broad reuse / friction-likely
 
@@ -735,21 +734,29 @@ Core five + Crop shipped. Remaining:
 ### Derived geometry follow-ups
 
 Left open by the derived-path arc (`dependsOn` / `derivePath` / `SceneRegistry.derivePath`;
-the seam is documented in `docs/extending.md`). Picking a derived node landed;
-the live-drag P1 below is what still stands between this and the connect
-gesture.
+the seam is documented in `docs/extending.md`). Both P1s closed — a derived node
+is picked and clipped where it paints, and it follows a live drag. What is left
+here is smaller than the connect gesture that comes next.
 
-- **(P1) A derived edge does not follow a live drag under any built-in tool.**
-  `scenePoseLookup` reads pose overrides, but the built-in move, resize and
-  rotate actions publish `previewPose` instead
-  (`interactions/actions/defaults/move.ts:795`) — a separate channel it never
-  consults. The dragged endpoint ghosts at its new position while the edge, not
-  in `previewIds`, stays anchored to the old one and jumps on drop. Consumers
-  driving overrides directly (the forceGraph demo) are fine. The fix is an
-  interaction decision — make dependents join `previewIds` and ghost with them,
-  or route built-in previews through overrides — so it belongs with the connect
-  gesture. **"Drag a box and the edge follows" is not reachable with the shipped
-  tools until this closes.**
+- **(P3) The preview channel still carries pose twice.** `move` / `resize` /
+  `rotate` publish each frame to the scene's pose overrides *and* keep their own
+  `previews` map behind `previewIds` / `previewPose`. The overrides are what the
+  scene reads (derived geometry, picking); the map is what the ghost layer and
+  the selection-chrome bounds read. Collapsing them means teaching those two
+  readers to resolve through `effectivePose`, after which the map is redundant
+  for pose. It cannot go entirely: `previewData` — a path-anchor drag's
+  in-flight `data` — has no override equivalent, and `PoseOverride` is
+  `{ pose?, alpha? }`. Decide whether overrides grow a `data` field or the two
+  channels stay split by what they carry rather than by who writes them.
+
+- **(P3) `createPoseOverrides` is not public, but implementing `Scene` requires
+  one.** `Scene` is public and its `overrides: PoseOverrides<TPose>` is
+  mandatory — and now genuinely load-bearing, since every ongoing gesture writes
+  a frame to it. A consumer building a scene-like object by hand therefore has
+  to reimplement the table from the type, which `apps/draw`'s geometry-contract
+  test does (`stubOverrides`) precisely because it may only touch the published
+  surface. Either export the factory or say in the docs that hand-rolling one is
+  expected.
 
 - **(P3) A derived node is unpickable through a bare adapter.** The
   scene-backed half of this landed: `NodeShapeEntry.silhouette` takes a `NodeSilhouetteCtx`

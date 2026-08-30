@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import { createPoseOverrides } from 'core/scene/poseOverrides';
 import { moveAction } from './move';
 import type { InvocationCtx, BindingOpts } from '../invoker';
 import { createScene } from 'core/scene/scene';
-import type { NodeId, Scene } from 'core/scene/types';
+import type { NodeId, PoseOverrides, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { NodeAtPointDep } from '../depSchema';
 import { buildDepsFromRequires } from '../buildDeps';
@@ -45,6 +46,7 @@ function makeCtx(
 
 interface StubScene {
   poses: Map<string, unknown>;
+  overrides: PoseOverrides<unknown>;
   batchLog: Array<{ label: string; ops: Array<{ id: string; pose: unknown }> }>;
   children: Map<string, NodeId[]>;
   get(id: NodeId): { pose: unknown } | undefined;
@@ -70,6 +72,7 @@ function makeStubScene(
     poses,
     batchLog,
     children,
+    overrides: createPoseOverrides<unknown>((id) => (poses.has(id) ? { } : undefined)),
     childrenOf(id: NodeId): readonly NodeId[] {
       return children.get(id) ?? [];
     },

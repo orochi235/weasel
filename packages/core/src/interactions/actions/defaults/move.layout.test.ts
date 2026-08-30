@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { createPoseOverrides } from 'core/scene/poseOverrides';
+import type { PoseOverrides } from 'core/scene/types';
 import { moveAction } from './move';
 import type { InvocationCtx } from '../invoker';
 import { tileGrid } from '../../../layout/strategies';
@@ -34,6 +36,7 @@ interface AppliedBatch {
 
 interface StubScene {
   poses: Map<string, P>;
+  overrides: PoseOverrides<unknown>;
   childMap: Map<string, NodeId[]>;
   roots: NodeId[];
   appliedBatches: AppliedBatch[];
@@ -56,6 +59,7 @@ function makeScene(
   return {
     poses: p,
     childMap: c,
+    overrides: createPoseOverrides<unknown>((id) => (p.has(id) ? { } : undefined)),
     roots: roots as NodeId[],
     appliedBatches,
     get(id) {

@@ -38,6 +38,7 @@
 import type { Action } from '../registry';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
 import type { Scene, NodeId } from 'core/scene/types';
+import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type {
   GestureContext,
@@ -247,6 +248,7 @@ interface ResizeScratch {
   fixedWorld: { x: number; y: number };
   /** In-flight preview poses buffered during drag. */
   previews: Map<NodeId, unknown>;
+  overrideEntries: Map<NodeId, { pose: unknown }>;
   geometry: PoseProjection<unknown>;
   behaviors: BoundsConstraint<ResizePose>[];
   pointSnap: PointSnapBehavior<ResizePose>[];
@@ -378,6 +380,7 @@ export const resizeAction: Action & { requires: string[] } = {
         originRotation,
         fixedWorld,
         previews: new Map<NodeId, unknown>(),
+        overrideEntries: new Map<NodeId, { pose: unknown }>(),
         geometry,
         behaviors,
         pointSnap,
@@ -451,7 +454,7 @@ export const resizeAction: Action & { requires: string[] } = {
           if (!isGroupPath && scratch.writeIds.length === 1) {
             const id = scratch.writeIds[0];
             let proposedPose = computePose(id);
-            if (proposedPose === undefined) return;
+            if (proposedPose === undefined) { syncPreviewOverrides(scratch); return; }
 
             if (scratch.originRotation !== 0) {
               const newCenterX = proposedBounds.x + proposedBounds.width / 2;
@@ -496,10 +499,13 @@ export const resizeAction: Action & { requires: string[] } = {
               scratch.previews.set(id, next);
             }
           }
+
+          syncPreviewOverrides(scratch);
         },
 
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           if (reason === 'cancel') {
+            dropPreviewOverrides(scratch);
             scratch.previews.clear();
             return;
           }
@@ -512,6 +518,7 @@ export const resizeAction: Action & { requires: string[] } = {
           for (const b of scratch.behaviors) {
             const r = b.onEnd?.(scratch.gestureCtx as unknown as GestureContext<ResizePose>);
             if (r === null) {
+              dropPreviewOverrides(scratch);
               scratch.previews.clear();
               return;
             }
@@ -519,7 +526,7 @@ export const resizeAction: Action & { requires: string[] } = {
             // standard commit path.
           }
 
-          if (scratch.previews.size === 0) return;
+          if (scratch.previews.size === 0) { dropPreviewOverrides(scratch); return; }
 
           // Emit the final poses as transform ops (from = pre-drag start pose,
           // to = final preview pose) and route them through the consumer's
@@ -584,6 +591,7 @@ export const resizeAction: Action & { requires: string[] } = {
             if (scratch.applyOps) scratch.applyOps(ops, 'Resize');
             else scratch.scene.applyBatch(ops, 'Resize', defaultCommitAdapter(scratch.scene));
           }
+          dropPreviewOverrides(scratch);
           scratch.previews.clear();
         },
         previewIds: () => scratch.previews.keys(),

@@ -14,6 +14,7 @@
  * end-to-end rather than restating per-behavior math.
  */
 import { describe, it, expect } from 'vitest';
+import { createPoseOverrides } from 'core/scene/poseOverrides';
 import { resizeAction } from './resize';
 import type { InvocationCtx } from '../invoker';
 import type { NodeId } from 'core/scene/types';
@@ -39,6 +40,7 @@ function makeStubScene(initial: Record<string, { pose: unknown }> = {}) {
   );
   return {
     poses,
+    overrides: createPoseOverrides<unknown>((id) => (poses.has(id) ? { } : undefined)),
     get(id: NodeId) {
       if (!poses.has(id)) return undefined;
       return { pose: poses.get(id), kind: 'leaf' as const, layer: 'main', data: {}, parent: null };
