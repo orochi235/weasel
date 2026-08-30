@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { PolygonPath, RectPath, Stroke } from '@weasel-js/core';
+import { PATH_M, PATH_L } from '@weasel-js/core';
 import {
   strokeMesh,
   _resetStrokeMeshCacheForTests,
@@ -106,5 +107,36 @@ describe('stroke ribbon cache', () => {
       fillRule: 'nonzero',
     };
     expect(strokeMesh(poly, { ...base, width: 0 }, undefined).indices.length).toBe(0);
+  });
+});
+
+describe('marker inset in the cache key', () => {
+  const path: PolygonPath = {
+    kind: 'polygon',
+    commands: new Uint8Array([PATH_M, PATH_L]),
+    coords: new Float32Array([0, 0, 100, 0]),
+    fillRule: 'nonzero',
+  };
+  const base: Stroke = { paint: { fill: 'solid', color: '#000' }, width: 2 };
+  const maxX = (m: { vertices: Float32Array }) => {
+    let hi = -Infinity;
+    for (let i = 0; i < m.vertices.length; i += 2) hi = Math.max(hi, m.vertices[i]);
+    return hi;
+  };
+
+  it('misses the cache when only the marker inset changes', () => {
+    const plain = strokeMesh(path, base, undefined);
+    const marked = strokeMesh(path, { ...base, markerEnd: 'arrow' }, undefined);
+    expect(marked).not.toBe(plain);
+    expect(maxX(plain)).toBeCloseTo(100, 4);
+    expect(maxX(marked)).toBeCloseTo(94, 4);
+  });
+
+  it('shares one entry between two markers with the same inset', () => {
+    // 'arrow' and 'arrow-concave' both inset 3 — identical ribbons, so the
+    // marker identity must not be part of the key.
+    const a = strokeMesh(path, { ...base, markerEnd: 'arrow' }, undefined);
+    const b = strokeMesh(path, { ...base, markerEnd: 'arrow-concave' }, undefined);
+    expect(b).toBe(a);
   });
 });

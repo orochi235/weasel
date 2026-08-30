@@ -11,6 +11,7 @@
 import type { Path } from '@weasel-js/core';
 import type { Stroke } from '@weasel-js/paint';
 import { tessellateStroke, resolveStrokeWidth } from 'features/paths/tessellate/stroke';
+import { strokeInsets } from '../../core/markerInset';
 import type { Mesh } from './mesh';
 
 /**
@@ -32,10 +33,14 @@ let cache = new WeakMap<Path, Map<string, StrokeEntry>>();
 
 /** The stroke parameters that change the ribbon's geometry. `paint` and
  *  `vertexColors` are absent on purpose: both are applied over the same
- *  triangles at draw time. */
+ *  triangles at draw time. Marker *identity* is absent too — only the
+ *  resolved trim distance affects these triangles, so two heads with the
+ *  same inset share one entry. */
 function configKey(stroke: Stroke, flattenTolerance: number | undefined): string {
+  const width = resolveStrokeWidth(stroke.width ?? 1, 1);
+  const insets = strokeInsets(stroke, width);
   return [
-    resolveStrokeWidth(stroke.width ?? 1, 1),
+    width,
     stroke.cap ?? 'butt',
     stroke.join ?? 'miter',
     stroke.miterLimit ?? '',
@@ -43,6 +48,8 @@ function configKey(stroke: Stroke, flattenTolerance: number | undefined): string
     (stroke.dash ?? []).join(','),
     stroke.varyingWidthJoinThreshold ?? '',
     flattenTolerance ?? '',
+    insets.start,
+    insets.end,
   ].join('|');
 }
 
@@ -65,7 +72,13 @@ export function strokeMesh(
     return entry.mesh;
   }
 
-  const mesh = tessellateStroke(path, stroke, { flattenTolerance });
+  const width = resolveStrokeWidth(stroke.width ?? 1, 1);
+  const insets = strokeInsets(stroke, width);
+  const mesh = tessellateStroke(path, stroke, {
+    flattenTolerance,
+    startInset: insets.start,
+    endInset: insets.end,
+  });
   // Only a new key grows the map; replacing one under a churning
   // `vertexWidths` must not evict the other configurations alongside it.
   if (entry === undefined && byConfig.size >= STROKE_CONFIGS_PER_PATH) byConfig.clear();
