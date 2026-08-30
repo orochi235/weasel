@@ -390,23 +390,15 @@ describe('built-in marker geometry', () => {
     ]);
   });
 
-  it('anchors every entry at the origin', () => {
+  it('puts every leading edge exactly on the anchor', () => {
     for (const entry of BUILTIN_MARKERS) {
       const path = entry.path(ctx) as PolygonPath;
-      const hits = [];
-      for (let i = 0; i < path.coords.length; i += 2) {
-        if (Math.hypot(path.coords[i], path.coords[i + 1]) < 1e-6) hits.push(i);
-      }
-      expect(hits.length, `${entry.id} has no vertex at the origin`).toBeGreaterThan(0);
-    }
-  });
-
-  it('draws behind the anchor, never past it', () => {
-    for (const entry of BUILTIN_MARKERS) {
-      const path = entry.path(ctx) as PolygonPath;
-      for (let i = 0; i < path.coords.length; i += 2) {
-        expect(path.coords[i], `${entry.id} extends past the anchor`).toBeLessThanOrEqual(1e-6);
-      }
+      let maxX = -Infinity;
+      for (let i = 0; i < path.coords.length; i += 2) maxX = Math.max(maxX, path.coords[i]);
+      // Geometry trails back along -X from the anchor: it reaches the anchor
+      // and never passes it. Note this is not "some vertex sits at (0,0)" --
+      // a square's anchor is the midpoint of its leading edge, not a corner.
+      expect(maxX, `${entry.id} leading edge is not on the anchor`).toBeCloseTo(0, 6);
     }
   });
 
