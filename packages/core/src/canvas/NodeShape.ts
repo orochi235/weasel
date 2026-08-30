@@ -46,6 +46,8 @@ import { pathContainsPoint } from 'features/paths/pathHitTest';
 import { boundsOfPath } from 'features/paths/bounds';
 import { strokeHitTest } from 'features/paths/hitTest';
 import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
+import { markerDrawCommands } from 'features/paths/markerCommands';
+import { markerInset } from '../core/markerInset';
 import { poseRotationOf, rotatePathAround } from 'features/paths/poseRotation';
 import { pathInPoseFrame } from 'features/paths/pathInWorld';
 import { fillInPoseFrame, type FillPoseBox } from '../core/fillInPoseFrame';
@@ -542,13 +544,20 @@ function inkReach(
 ): { outset: number; inset: number } {
   if (stroke === null) return { outset: 0, inset: 0 };
   const w = resolveStrokeWidth(stroke.width ?? 1, scale ?? 1);
+  // A marker paints past the path's own end, and the kit's rule is that
+  // visible chrome is hittable — so the reach has to cover it.
+  const reach = Math.max(
+    markerInset(stroke.markerStart, w),
+    markerInset(stroke.markerEnd, w),
+    markerInset(stroke.markerMid, w),
+  );
   switch (stroke.align ?? 'center') {
     case 'inner':
-      return { outset: 0, inset: w };
+      return { outset: reach, inset: w };
     case 'outer':
-      return { outset: w, inset: 0 };
+      return { outset: w + reach, inset: 0 };
     default:
-      return { outset: w / 2, inset: w / 2 };
+      return { outset: w / 2 + reach, inset: w / 2 };
   }
 }
 
@@ -585,7 +594,10 @@ const PATH_PAINTER: NodeShapeEntry = {
       ...(fill ? { fill } : {}),
       ...(stroke ? { stroke } : {}),
     };
-    return [cmd];
+    if (!stroke) return [cmd];
+    // Markers paint after the ribbon so they sit on top of it.
+    const width = resolveStrokeWidth(stroke.width ?? 1, 1);
+    return [cmd, ...markerDrawCommands(projected, stroke, width, undefined)];
   }),
   silhouette: (node, pose) => {
     const d = node.data as { path: Path };
