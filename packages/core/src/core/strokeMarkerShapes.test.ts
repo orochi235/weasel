@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { BUILTIN_MARKERS } from './strokeMarkerShapes';
-import type { PolygonPath } from '../../core/geometry/path';
+import type { PolygonPath } from './geometry/path';
 
 const byId = (id: string) => {
   const e = BUILTIN_MARKERS.find((m) => m.id === id);

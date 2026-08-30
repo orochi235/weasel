@@ -6,12 +6,12 @@
  * in units of `MarkerCtx.size`, which defaults to the resolved stroke width —
  * one definition is therefore correct at any line weight.
  *
- * Not to be confused with `./markers.ts`, which builds decorative chrome
- * shapes and is unrelated.
+ * Not to be confused with `features/paths/markers.ts`, which builds
+ * decorative chrome shapes and is unrelated.
  */
 
-import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from '../../core/geometry/path';
-import type { MarkerCtx, MarkerEntry } from '../../core/strokeMarkers';
+import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from './geometry/path';
+import type { MarkerCtx, MarkerEntry } from './strokeMarkers';
 
 function poly(pts: readonly number[], size: number, close = true): PolygonPath {
   const n = pts.length / 2;

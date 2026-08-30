@@ -13,7 +13,7 @@
 import type { FillStyle, MarkerKey, Stroke } from '@weasel-js/paint';
 import type { Path } from './geometry/path';
 import { bumpNodeMemoGeneration } from './scene/nodeMemo';
-import { BUILTIN_MARKERS } from '../features/paths/strokeMarkerShapes';
+import { BUILTIN_MARKERS } from './strokeMarkerShapes';
 
 /** What an entry's `path` is given. Entries that ignore it may return a
  *  constant path. */

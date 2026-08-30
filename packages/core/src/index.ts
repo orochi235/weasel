@@ -788,7 +788,7 @@ export { markerInset, markerKeyOf, resolveMarkerSize, strokeInsets } from './cor
 export { markerSites } from './features/paths/markerSites';
 export type { MarkerSite, MarkerSiteRequest } from './features/paths/markerSites';
 export { markerDrawCommands } from './features/paths/markerCommands';
-export { BUILTIN_MARKERS } from './features/paths/strokeMarkerShapes';
+export { BUILTIN_MARKERS } from './core/strokeMarkerShapes';
 export { trimPolyline } from './features/paths/tessellate/trim';
 
 export {
