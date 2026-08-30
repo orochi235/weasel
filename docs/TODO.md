@@ -736,8 +736,8 @@ Core five + Crop shipped. Remaining:
 ### Derived geometry follow-ups
 
 Left open by the derived-path arc (`dependsOn` / `derivePath` / `SceneRegistry.derivePath`;
-the seam is documented in `docs/extending.md`). The two P1s below are the ones
-that decide whether anything diagram-shaped can be built on it yet.
+the seam is documented in `docs/extending.md`). The first two P1s below are the
+ones that decide whether anything diagram-shaped can be built on it yet.
 
 - **(P1) A derived edge does not follow a live drag under any built-in tool.**
   `scenePoseLookup` reads pose overrides, but the built-in move, resize and
@@ -761,14 +761,21 @@ that decide whether anything diagram-shaped can be built on it yet.
   before the connect gesture; "you cannot click an edge" is not a shippable
   diagram.
 
-- **(P1) Undo after a Delete loses cascaded nodes.** Same defect the 2026-08-29
-  cascade audit ranks first — see "Collapse the duplicated cascades" under
-  *Selection, actions & UI panels*, and fix it there. Recorded again here only
-  because derived geometry raised the stakes: `createDeleteOp.invert()`
-  re-inserts only the single captured node, and under `applyBatch` no
-  `kit:remove` reaches history — so undo restores the endpoint and drops the
-  edge. It pre-exists for containers, whose children are lost the same way, but
-  the arc's promise that "undo cannot restore the halves separately" rests on it.
+- **(P1) Undo after a Delete loses a node's dependents.** The container half of
+  this closed with the subtree snapshot in `createDeleteOp` (covered by
+  `defaults/delete.test.ts:190`); the `dependsOn` half did not.
+  `captureDescendants` (`core/ops/delete.ts:47`) walks `getChildren` only, and a
+  dependent is not a descendant — so deleting an endpoint cascades its edge away
+  through `removalClosure`, and `invert()` re-inserts the endpoint alone. The
+  rich `kit:remove` snapshot that *would* restore the whole closure never reaches
+  history, because `applyBatch` suppresses recording (`scene.ts:1134`) and logs
+  the external ops instead. The arc's promise that "undo cannot restore the
+  halves separately" rests on this.
+
+  `defaults/delete.test.ts:447` reads like it covers this and does not: it
+  destructures only the endpoint from its fixture, so the edge is never asserted
+  on. Adding that assertion fails today.
+
   **Arc 1 ships with this hole.** The fix is two parts and neither is a bugfix:
   make the `insertNode` adapters carry `dependsOn` / `derivePath` (below), then add a
   multi-node delete op carrying the closure snapshot plus an `insertNodes` that
