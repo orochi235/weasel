@@ -648,9 +648,9 @@ describe('letter-spacing / text-decoration', () => {
     expect(t.runs?.[0]?.strikethrough).toBeUndefined();
   });
 
-  it('an unrecognized text-decoration token (e.g. overline) is dropped without crashing', () => {
+  it('an unrecognized text-decoration token (e.g. blink) is dropped without crashing', () => {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
-      <text x="0" y="0"><tspan text-decoration="overline">hi</tspan></text>
+      <text x="0" y="0"><tspan text-decoration="blink">hi</tspan></text>
     </svg>`;
     const { nodes, warnings } = parseSvg(svg);
     expect(warnings).toEqual([]);
@@ -658,6 +658,33 @@ describe('letter-spacing / text-decoration', () => {
     if (t.kind !== 'text') throw new Error('expected text');
     expect(t.runs?.[0]?.underline).toBeUndefined();
     expect(t.runs?.[0]?.strikethrough).toBeUndefined();
+    expect(t.runs?.[0]?.overline).toBeUndefined();
+  });
+
+  it('serializes overline on a run and on the node style', () => {
+    const node: SvgNode = {
+      kind: 'text',
+      x: 0, y: 0, width: 100, height: 20,
+      text: 'hi',
+      style: { overline: true },
+      runs: [{ text: 'hi', underline: true, overline: true }],
+    };
+    const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 100, height: 20 } });
+    expect(svg).toContain('<text ');
+    expect(svg).toContain('text-decoration="overline"');
+    expect(svg).toContain('<tspan text-decoration="underline overline">hi</tspan>');
+  });
+
+  it('parses text-decoration="overline" to the overline flag at both levels', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
+      <text x="0" y="0" text-decoration="overline"><tspan text-decoration="line-through overline">hi</tspan></text>
+    </svg>`;
+    const { nodes, warnings } = parseSvg(svg);
+    expect(warnings).toEqual([]);
+    const t = nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.style?.overline).toBe(true);
+    expect(t.runs?.[0]).toMatchObject({ strikethrough: true, overline: true });
   });
 
   it('accepts letter-spacing with a unit suffix and drops the "normal" keyword', () => {
@@ -755,5 +782,137 @@ describe('letter-spacing / text-decoration', () => {
     const t = nodes[0];
     if (t.kind !== 'text') throw new Error('expected text');
     expect(t.runs?.[0]?.underline).toBe(true);
+  });
+});
+
+describe('baseline-shift / relative font-size', () => {
+  const box = { x: 0, y: 0, width: 100, height: 20 };
+
+  it('serializes script as SVG\'s own super/sub keywords', () => {
+    const node: SvgNode = {
+      kind: 'text',
+      x: 0, y: 0, width: 100, height: 20,
+      text: 'hi',
+      runs: [{ text: 'h', script: 'super' }, { text: 'i', script: 'sub' }],
+    };
+    const svg = serializeSvg([node], { viewBox: box });
+    expect(svg).toContain('<tspan baseline-shift="super">h</tspan>');
+    expect(svg).toContain('<tspan baseline-shift="sub">i</tspan>');
+  });
+
+  it('serializes baselineShift as a percentage of the parent font size', () => {
+    const node: SvgNode = {
+      kind: 'text',
+      x: 0, y: 0, width: 100, height: 20,
+      text: 'hi',
+      runs: [{ text: 'hi', baselineShift: 0.333 }],
+    };
+    const svg = serializeSvg([node], { viewBox: box });
+    expect(svg).toContain('baseline-shift="33.3%"');
+  });
+
+  it('emits the raw baselineShift for a run that also names a script', () => {
+    const node: SvgNode = {
+      kind: 'text',
+      x: 0, y: 0, width: 100, height: 20,
+      text: 'hi',
+      runs: [{ text: 'hi', script: 'super', baselineShift: 0.5 }],
+    };
+    const svg = serializeSvg([node], { viewBox: box });
+    expect(svg).toContain('baseline-shift="50%"');
+    expect(svg).not.toContain('baseline-shift="super"');
+    // The keyword carried the preset's size too, so with the keyword gone the
+    // size has to be spelled out or the run comes back full-size.
+    expect(svg).toContain('font-size="58.3%"');
+  });
+
+  it('serializes fontScale as a percentage font-size, and an absolute fontSize wins', () => {
+    const node: SvgNode = {
+      kind: 'text',
+      x: 0, y: 0, width: 100, height: 20,
+      text: 'hi',
+      runs: [{ text: 'h', fontScale: 0.583 }, { text: 'i', fontScale: 0.583, fontSize: 12 }],
+    };
+    const svg = serializeSvg([node], { viewBox: box });
+    expect(svg).toContain('<tspan font-size="58.3%">h</tspan>');
+    expect(svg).toContain('<tspan font-size="12">i</tspan>');
+  });
+
+  it('parses baseline-shift keywords, percentages and bare ems', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
+      <text x="0" y="0"><tspan baseline-shift="super">a</tspan><tspan baseline-shift="sub">b</tspan><tspan baseline-shift="33.3%">c</tspan><tspan baseline-shift="0.25">d</tspan></text>
+    </svg>`;
+    const { nodes, warnings } = parseSvg(svg);
+    expect(warnings).toEqual([]);
+    const t = nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.runs?.[0]).toMatchObject({ script: 'super' });
+    expect(t.runs?.[1]).toMatchObject({ script: 'sub' });
+    expect(t.runs?.[2]?.baselineShift).toBeCloseTo(0.333, 6);
+    expect(t.runs?.[3]?.baselineShift).toBe(0.25);
+  });
+
+  it('maps baseline-shift="baseline" and a zero shift to neither key', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
+      <text x="0" y="0"><tspan baseline-shift="baseline">a</tspan><tspan baseline-shift="0">b</tspan></text>
+    </svg>`;
+    const { nodes, warnings } = parseSvg(svg);
+    expect(warnings).toEqual([]);
+    const t = nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.runs?.[0]?.script).toBeUndefined();
+    expect(t.runs?.[0]?.baselineShift).toBeUndefined();
+    expect(t.runs?.[1]?.baselineShift).toBeUndefined();
+  });
+
+  it('warns on a baseline-shift unit it cannot convert but still parses the number', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
+      <text x="0" y="0"><tspan baseline-shift="4px">hi</tspan></text>
+    </svg>`;
+    const { nodes, warnings } = parseSvg(svg);
+    const t = nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.runs?.[0]?.baselineShift).toBe(4);
+    expect(warnings.some((w) => /baseline-shift/.test(w) && /px/.test(w))).toBe(true);
+  });
+
+  it('parses a percentage font-size to fontScale and a length to fontSize', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
+      <text x="0" y="0"><tspan font-size="58.3%">a</tspan><tspan font-size="12px">b</tspan></text>
+    </svg>`;
+    const { nodes, warnings } = parseSvg(svg);
+    expect(warnings).toEqual([]);
+    const t = nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.runs?.[0]?.fontScale).toBeCloseTo(0.583, 6);
+    expect(t.runs?.[0]?.fontSize).toBeUndefined();
+    expect(t.runs?.[1]?.fontSize).toBe(12);
+    expect(t.runs?.[1]?.fontScale).toBeUndefined();
+  });
+
+  it('round-trips overline, script, baselineShift and fontScale through SVG', () => {
+    const runs = [
+      { text: 'a', overline: true },
+      { text: 'b', script: 'super' as const },
+      { text: 'c', baselineShift: 0.33, fontScale: 0.6 },
+      // A half-overridden preset normalizes to the two primitives it stood
+      // for — not field-identical, but the same rendering, which is all SVG
+      // can carry here.
+      { text: 'd', script: 'sub' as const, baselineShift: 0.5 },
+    ];
+    const node: SvgNode = {
+      kind: 'text',
+      x: 0, y: 0, width: 100, height: 20,
+      text: 'abc',
+      runs,
+    };
+    const svg1 = serializeSvg([node], { viewBox: box });
+    const parsed = parseSvg(svg1);
+    expect(parsed.warnings).toEqual([]);
+    const t = parsed.nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.runs?.slice(0, 3)).toEqual(runs.slice(0, 3));
+    expect(t.runs?.[3]).toEqual({ text: 'd', baselineShift: 0.5, fontScale: 0.583 });
+    expect(serializeSvg(parsed.nodes, { viewBox: parsed.viewBox })).toBe(svg1);
   });
 });

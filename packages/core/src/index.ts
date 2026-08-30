@@ -560,6 +560,7 @@ export {
   resolveTextStyle,
   fontString,
   resolveRuns,
+  SCRIPT_METRICS,
   layoutRuns,
   cachedLayoutRuns,
   measureText,

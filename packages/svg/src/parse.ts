@@ -623,22 +623,69 @@ function parseLetterSpacing(raw: string, onWarn: (m: string) => void): number | 
 }
 
 /**
- * Parse an SVG `text-decoration` value into the two boolean flags the runs
- * model uses. `text-decoration` is a space-separated list of line tokens
+ * Parse an SVG `text-decoration` value into the boolean flags the runs model
+ * uses. `text-decoration` is a space-separated list of line tokens
  * (`underline`, `line-through`, `overline`, `blink`, `none`), matched
- * case-insensitively per CSS keyword rules; we only model `underline` and
- * `line-through` (→ `strikethrough`) — any other token (including `none`,
- * and unrecognized values like `overline`) is dropped without warning,
- * since it's either the explicit "no decoration" case or a decoration kind
- * the runs model has no key for.
+ * case-insensitively per CSS keyword rules; we model `underline`,
+ * `line-through` (→ `strikethrough`) and `overline` — any other token
+ * (including `none`) is dropped without warning, since it's either the
+ * explicit "no decoration" case or a decoration kind the runs model has no
+ * key for.
  */
-function parseTextDecoration(raw: string | null): { underline?: boolean; strikethrough?: boolean } {
+function parseTextDecoration(
+  raw: string | null,
+): { underline?: boolean; strikethrough?: boolean; overline?: boolean } {
   if (raw == null) return {};
   const tokens = raw.trim().toLowerCase().split(/\s+/);
-  const out: { underline?: boolean; strikethrough?: boolean } = {};
+  const out: { underline?: boolean; strikethrough?: boolean; overline?: boolean } = {};
   if (tokens.includes('underline')) out.underline = true;
   if (tokens.includes('line-through')) out.strikethrough = true;
+  if (tokens.includes('overline')) out.overline = true;
   return out;
+}
+
+/**
+ * Parse an SVG `baseline-shift` value into the run keys it maps to. `super`
+ * and `sub` are the presets `script` names; a percentage resolves against the
+ * parent's font size, which is the unit `baselineShift` is already in; and
+ * `baseline` (or a bare zero) is no shift at all. Any other value is read as
+ * ems, with a unit suffix other than `em` flagged the way
+ * `parseLetterSpacing` flags one.
+ */
+function parseBaselineShift(
+  raw: string,
+  onWarn: (m: string) => void,
+): { script?: 'super' | 'sub'; baselineShift?: number } {
+  const keyword = raw.trim().toLowerCase();
+  if (keyword === 'super' || keyword === 'sub') return { script: keyword };
+  const n = parseFloat(raw);
+  if (!Number.isFinite(n)) return {};
+  const unit = /^-?[\d.]+([a-z%]+)$/i.exec(raw.trim())?.[1]?.toLowerCase();
+  if (unit === '%') return { baselineShift: n / 100 };
+  if (unit && unit !== 'em') {
+    onWarn(`baseline-shift "${raw}" uses unit "${unit}", which is not converted; treated as ${n} em`);
+  }
+  return n === 0 ? {} : { baselineShift: n };
+}
+
+/**
+ * Parse a run's `font-size` into the key it maps to: a percentage is relative
+ * to the parent's size, which is `fontScale`, and a length is the absolute
+ * `fontSize`. Units other than `px` are numerically coerced and flagged, as
+ * in `parseLetterSpacing`.
+ */
+function parseRunFontSize(
+  raw: string,
+  onWarn: (m: string) => void,
+): { fontSize?: number; fontScale?: number } {
+  const n = parseFloat(raw);
+  if (!Number.isFinite(n)) return {};
+  const unit = /^-?[\d.]+([a-z%]+)$/i.exec(raw.trim())?.[1]?.toLowerCase();
+  if (unit === '%') return { fontScale: n / 100 };
+  if (unit && unit !== 'px') {
+    onWarn(`font-size "${raw}" uses unit "${unit}", which is not converted; treated as ${n} world units`);
+  }
+  return { fontSize: n };
 }
 
 /**
@@ -904,17 +951,25 @@ function readTspanRun(
   if (ff) run.fontFamily = ff;
   const sz = ownProp(el, 'font-size');
   if (sz != null) {
-    const n = parseFloat(sz);
-    if (Number.isFinite(n)) run.fontSize = n;
+    const size = parseRunFontSize(sz, onWarn);
+    if (size.fontSize != null) run.fontSize = size.fontSize;
+    if (size.fontScale != null) run.fontScale = size.fontScale;
   }
   const ls = ownProp(el, 'letter-spacing');
   if (ls != null) {
     const n = parseLetterSpacing(ls, onWarn);
     if (n != null) run.letterSpacing = n;
   }
+  const bs = ownProp(el, 'baseline-shift');
+  if (bs != null) {
+    const shift = parseBaselineShift(bs, onWarn);
+    if (shift.script != null) run.script = shift.script;
+    if (shift.baselineShift != null) run.baselineShift = shift.baselineShift;
+  }
   const decoration = parseTextDecoration(ownProp(el, 'text-decoration'));
   if (decoration.underline) run.underline = true;
   if (decoration.strikethrough) run.strikethrough = true;
+  if (decoration.overline) run.overline = true;
   const tspanStyle = deriveStyle(style, el);
   const fillAttr = resolveCurrentColor(ownProp(el, 'fill'), tspanStyle);
   if (fillAttr) {
@@ -963,6 +1018,7 @@ function readTextStyle(
   const decoration = parseTextDecoration(style['text-decoration'] ?? null);
   if (decoration.underline) out.underline = true;
   if (decoration.strikethrough) out.strikethrough = true;
+  if (decoration.overline) out.overline = true;
   // Note: `lineHeight` is no longer read from a `data-weasel-line-height`
   // attribute. WeaselDraw carries it through the generic namespace bag
   // as `meta.wd.attrs['line-height']`; svgInterop lifts it into / out of

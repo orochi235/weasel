@@ -6,7 +6,7 @@
  */
 
 import type { Path, Stroke } from '@weasel-js/core';
-import { boundsOfPath, resolveStrokeWidth } from '@weasel-js/core';
+import { boundsOfPath, resolveStrokeWidth, SCRIPT_METRICS } from '@weasel-js/core';
 import type {
   Matrix, NamespaceMeta, NamespacedElement, SerializeOptions, SvgGroupNode,
   SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode, SvgImageNode,
@@ -394,7 +394,7 @@ function textXml(node: SvgTextNode, registry: PaintServerRegistry, namespaces: R
   if (style?.letterSpacing != null && style.letterSpacing !== 0) {
     attrs.push(`letter-spacing="${trimNumber(style.letterSpacing)}"`);
   }
-  const decoration = textDecorationValue(style?.underline, style?.strikethrough);
+  const decoration = textDecorationValue(style?.underline, style?.strikethrough, style?.overline);
   if (decoration) attrs.push(`text-decoration="${decoration}"`);
   // Note: `lineHeight` is NOT emitted here. The bridge layer (svgInterop)
   // lifts it into `meta.wd.attrs['line-height']`, which `metaAttrsXml`
@@ -436,14 +436,34 @@ function runXml(run: import('@weasel-js/core').StyledRun, registry: PaintServerR
   if (run.bold) attrs.push(`font-weight="700"`);
   if (run.italic) attrs.push(`font-style="italic"`);
   if (run.fontFamily) attrs.push(`font-family="${escapeAttr(run.fontFamily)}"`);
+  // A percentage `font-size` is relative to the parent's, which is what
+  // `fontScale` means; an absolute `fontSize` wins over it here as it does in
+  // the runs model.
+  //
+  // `baseline-shift="super"` carries the preset's *size* as well as its rise,
+  // so a run that overrode only the rise has no keyword left to say the size
+  // with and must spell it out — without this the superscript comes back
+  // full-size at a raised baseline.
+  const presetScale = run.script != null && run.baselineShift != null
+    ? SCRIPT_METRICS[run.script].size
+    : undefined;
+  const scale = run.fontScale ?? presetScale;
   if (run.fontSize != null) attrs.push(`font-size="${trimNumber(run.fontSize)}"`);
+  else if (scale != null) attrs.push(`font-size="${trimNumber(scale * 100)}%"`);
+  // Same story for `baseline-shift`: an SVG percentage resolves against the
+  // parent's font size, which is the unit `baselineShift` is already in.
+  if (run.baselineShift != null) {
+    attrs.push(`baseline-shift="${trimNumber(run.baselineShift * 100)}%"`);
+  } else if (run.script) {
+    attrs.push(`baseline-shift="${run.script}"`);
+  }
   // Unlike the node-level style guard above, a run-level `0` is a meaningful
   // *override* (distinct from "inherit the node's letterSpacing") per the
   // runs model's additive-flags contract — emit it whenever it's set.
   if (run.letterSpacing != null) {
     attrs.push(`letter-spacing="${trimNumber(run.letterSpacing)}"`);
   }
-  const runDecoration = textDecorationValue(run.underline, run.strikethrough);
+  const runDecoration = textDecorationValue(run.underline, run.strikethrough, run.overline);
   if (runDecoration) attrs.push(`text-decoration="${runDecoration}"`);
   if (run.fill) {
     if ('color' in run.fill) {
@@ -459,14 +479,19 @@ function runXml(run: import('@weasel-js/core').StyledRun, registry: PaintServerR
 }
 
 /**
- * Combine the two decoration flags into an SVG `text-decoration` value —
+ * Combine the decoration flags into an SVG `text-decoration` value —
  * `"underline line-through"` when both are set, a single token when only
- * one is, or `null` (omit the attribute) when neither is set.
+ * one is, or `null` (omit the attribute) when none is set.
  */
-function textDecorationValue(underline: boolean | undefined, strikethrough: boolean | undefined): string | null {
+function textDecorationValue(
+  underline: boolean | undefined,
+  strikethrough: boolean | undefined,
+  overline: boolean | undefined,
+): string | null {
   const tokens: string[] = [];
   if (underline) tokens.push('underline');
   if (strikethrough) tokens.push('line-through');
+  if (overline) tokens.push('overline');
   return tokens.length > 0 ? tokens.join(' ') : null;
 }
 

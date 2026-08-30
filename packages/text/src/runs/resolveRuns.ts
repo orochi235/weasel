@@ -74,7 +74,9 @@ export interface ResolvedRun {
  * it is about to apply. Override either half per run with `baselineShift` /
  * `fontScale`.
  */
-export const SCRIPT_METRICS = Object.freeze({
+export const SCRIPT_METRICS: Readonly<
+  Record<'super' | 'sub', Readonly<{ size: number; shift: number }>>
+> = Object.freeze({
   super: Object.freeze({ size: 0.583, shift: 0.333 }),
   sub: Object.freeze({ size: 0.583, shift: -0.333 }),
 });
