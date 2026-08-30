@@ -6,12 +6,13 @@
  * emit a fresh `<defs>` block with stable generated ids.
  */
 
-import { getPaintKind } from '@weasel-js/core';
-import type { FillStyle, GradStop, GradientUnits } from '@weasel-js/core';
+import { getPaintKind, getMarker } from '@weasel-js/core';
+import type { FillStyle, GradStop, GradientUnits, MarkerEntry } from '@weasel-js/core';
 import { parsePaintAttr } from './color';
 import { trimNumber } from './transform';
 import { patternXml } from './patterns';
 import { collectElementsByTag, type ElementTable } from './elements';
+import { serializePathD } from './path-serializer';
 
 /** Collected gradient definitions, keyed by element id. */
 export type GradientTable = Map<string, FillStyle>;
@@ -197,6 +198,14 @@ export class PaintServerRegistry {
   private order: FillStyle[] = [];
   private counter = 0;
 
+  // Marker keys referenced by any stroke, in first-use order. The `<defs>`
+  // id is the marker key itself, not a minted counter id: `parseSvg` reads a
+  // `marker-end="url(#id)"` fragment back as the marker key directly (it
+  // never inspects the `<marker>` element), so a synthetic id would come
+  // back unresolvable and warn on round-trip.
+  private markerKeys: string[] = [];
+  private markerKeySet = new Set<string>();
+
   register(paint: FillStyle): string {
     const existing = this.byPaint.get(paint);
     if (existing) return existing;
@@ -206,16 +215,47 @@ export class PaintServerRegistry {
     return id;
   }
 
-  /** Emit `<defs>...</defs>` XML for every registered paint server. */
+  /** The `<defs>` id for a marker key — the key itself, minting nothing. */
+  markerId(key: string): string {
+    if (!this.markerKeySet.has(key)) {
+      this.markerKeySet.add(key);
+      this.markerKeys.push(key);
+    }
+    return key;
+  }
+
+  /** Emit `<defs>...</defs>` XML for every registered paint server and marker. */
   toDefsXml(onWarn?: (m: string) => void): string {
-    if (this.order.length === 0) return '';
+    if (this.order.length === 0 && this.markerKeys.length === 0) return '';
     const parts: string[] = ['<defs>'];
     for (const paint of this.order) {
       parts.push(paintServerXml(this.byPaint.get(paint)!, paint, onWarn));
     }
+    for (const key of this.markerKeys) {
+      const entry = getMarker(key);
+      if (!entry) continue;
+      parts.push(entry.toSvg ? entry.toSvg(key, entry) : defaultMarkerXml(key, entry));
+    }
     parts.push('</defs>');
     return parts.join('');
   }
+}
+
+/** The `<marker>` def for an entry with no `toSvg` of its own. */
+function defaultMarkerXml(id: string, entry: MarkerEntry): string {
+  const path = entry.path({ size: 1, stroke: { paint: { fill: 'solid', color: '#000' } } });
+  const d = serializePathD(path);
+  const fill = entry.fill === 'none' ? 'none' : 'context-stroke';
+  const outline = entry.outline
+    ? ` stroke="context-stroke" stroke-width="${entry.outline.width}" stroke-linecap="round" stroke-linejoin="round"`
+    : '';
+  // `overflow="visible"` overrides the UA default of `hidden`, which would
+  // otherwise clip the arrowhead to the marker's viewport.
+  return (
+    `<marker id="${id}" markerUnits="strokeWidth" markerWidth="8" markerHeight="8"` +
+    ` refX="0" refY="0" orient="auto" overflow="visible">` +
+    `<path d="${d}" fill="${fill}"${outline}/></marker>`
+  );
 }
 
 /** One paint server's `<defs>` entry: the built-in mapping, else the kind's

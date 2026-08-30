@@ -122,6 +122,7 @@ function registerPaintServers(nodes: SvgNode[], registry: PaintServerRegistry): 
     } else if (n.kind === 'path') {
       if (n.fill.kind === 'gradient') registry.register(n.fill.paint);
       if (n.stroke && n.stroke.paint.kind === 'gradient') registry.register(n.stroke.paint.paint);
+      registerMarkers(n.stroke, registry);
     } else if (n.kind === 'text') {
       // Text paints flow through `style` / `runs` rather than a top-level
       // SvgPaint, so register direct FillStyle references when present. This
@@ -130,6 +131,7 @@ function registerPaintServers(nodes: SvgNode[], registry: PaintServerRegistry): 
       // id that no definition backs.
       registerTextPaint(n.fill, registry);
       registerTextPaint(n.stroke?.paint, registry);
+      registerMarkers(n.stroke, registry);
       for (const run of n.runs ?? []) {
         registerTextPaint(run.fill, registry);
         registerTextPaint(run.stroke?.paint, registry);
@@ -144,6 +146,27 @@ function registerTextPaint(
   registry: PaintServerRegistry,
 ): void {
   if (paint && !('color' in paint)) registry.register(paint);
+}
+
+/** A marker reference in either shape — `SvgStroke` stores a bare key, the kit
+ *  `Stroke` stores a `MarkerRef`. */
+function markerKeyOfRef(ref: unknown): string | undefined {
+  if (typeof ref === 'string') return ref;
+  if (ref && typeof ref === 'object' && 'key' in ref) return String((ref as { key: string }).key);
+  return undefined;
+}
+
+/** Mint a `<defs>` id for every marker a stroke names, before the body is
+ *  written — same reason as the paint pre-pass above. */
+function registerMarkers(
+  stroke: { markerStart?: unknown; markerMid?: unknown; markerEnd?: unknown } | undefined,
+  registry: PaintServerRegistry,
+): void {
+  if (!stroke) return;
+  for (const ref of [stroke.markerStart, stroke.markerMid, stroke.markerEnd]) {
+    const key = markerKeyOfRef(ref);
+    if (key) registry.markerId(key);
+  }
 }
 
 function nodeXml(node: SvgNode, registry: PaintServerRegistry, namespaces: Record<string, string>): string {
@@ -284,6 +307,16 @@ function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServerRegist
     attrs.push(`stroke-dasharray="${stroke.dash.map(trimNumber).join(' ')}"`);
   }
   if (stroke.miterLimit != null) attrs.push(`stroke-miterlimit="${trimNumber(stroke.miterLimit)}"`);
+  for (const [field, attr] of [
+    ['markerStart', 'marker-start'],
+    ['markerMid', 'marker-mid'],
+    ['markerEnd', 'marker-end'],
+  ] as const) {
+    const ref = stroke[field];
+    if (ref === undefined) continue;
+    const key = typeof ref === 'string' ? ref : ref.key;
+    attrs.push(`${attr}="url(#${registry.markerId(key)})"`);
+  }
   return attrs;
 }
 
@@ -309,6 +342,15 @@ function strokeAttrsFor(stroke: SvgStroke, registry: PaintServerRegistry): strin
   }
   if (stroke.miterLimit != null) {
     attrs.push(`stroke-miterlimit="${trimNumber(stroke.miterLimit)}"`);
+  }
+  for (const [field, attr] of [
+    ['markerStart', 'marker-start'],
+    ['markerMid', 'marker-mid'],
+    ['markerEnd', 'marker-end'],
+  ] as const) {
+    const ref = stroke[field];
+    if (ref === undefined) continue;
+    attrs.push(`${attr}="url(#${registry.markerId(ref)})"`);
   }
   return attrs;
 }
