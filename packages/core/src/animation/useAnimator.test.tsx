@@ -47,6 +47,28 @@ describe('useAnimator.tween', () => {
     expect(ticks.some((v) => Math.abs(v - 50) < 0.5)).toBe(true);
   });
 
+  it('completes on schedule when the register clock leads the frame clock', () => {
+    // `lastRealNow` is seeded from `now()` at register, then compared against
+    // the timestamp the frame loop supplies. A browser shares one time origin
+    // between the two; jsdom does not, and started them ~600ms apart — so the
+    // first delta went hugely negative and `virtualNow` spent dozens of frames
+    // climbing back to zero before the tween advanced at all.
+    const base = makeClock();
+    const clock = { ...base, now: () => base.now() + 5000 };
+    const { result } = renderHook(() => useAnimator(clock));
+    const ticks: number[] = [];
+    act(() => {
+      result.current.tween<number>({
+        from: 0, to: 100, ms: 100, easing: linear, onTick: (v) => ticks.push(v),
+      });
+    });
+    act(() => base.advance(0));
+    act(() => base.advance(50));
+    act(() => base.advance(50));
+    expect(ticks[ticks.length - 1]).toBeCloseTo(100, 6);
+    expect(result.current.isActive()).toBe(false);
+  });
+
   it('calls onDone exactly once and isActive returns false after', () => {
     const clock = makeClock();
     const { result } = renderHook(() => useAnimator(clock));
