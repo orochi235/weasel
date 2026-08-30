@@ -23,7 +23,14 @@
  * aligns them the way inline text aligns everywhere else; line height is
  * `max(fontSize * lineHeight)` across the line.
  *
- * Underline and strikethrough come out on a second channel, `decorations` —
+ * A run may also sit off that shared baseline: `ResolvedRun.baselineShift`
+ * displaces it, which is what `script: 'super' | 'sub'` resolves to. The shift
+ * moves the run's glyphs, its outline geometry and its own decoration rules
+ * together, and deliberately does not feed back into the line's baseline or
+ * its height — a superscript rides on the line rather than reflowing it.
+ *
+ * Underline, strikethrough and overline come out on a second channel,
+ * `decorations` —
  * solid rectangles, not textured glyphs, so they cannot ride in a group's
  * `quads` (which upload UVs into an MSDF program). They are accumulated
  * during the same per-line pen walk that emits quads, *not* reconstructed
@@ -120,7 +127,7 @@ export interface LaidOutGroup {
  * the run(s) it decorates so the rule follows the text colour.
  */
 export interface LaidOutDecoration {
-  kind: 'underline' | 'strikethrough';
+  kind: 'underline' | 'strikethrough' | 'overline';
   x0: number; y0: number; x1: number; y1: number;
   fill: FillStyle;
 }
@@ -165,8 +172,8 @@ export interface LaidOutLineBox {
 
 export interface LaidOutRuns {
   groups: LaidOutGroup[];
-  /** Underline / strikethrough rules, in line order; underline before
-   *  strikethrough within a span. Empty when nothing is decorated. */
+  /** Decoration rules, in line order; within a span, underline then
+   *  strikethrough then overline. Empty when nothing is decorated. */
   decorations: LaidOutDecoration[];
   /** Per-line boxes in layout order. Lets a caller reason about where the
    *  text actually sits inside its wrap box without re-running the wrap —
@@ -178,13 +185,14 @@ export interface LaidOutRuns {
 
 /**
  * Decoration placement and weight, as fractions of the run's `fontSize`.
- * Offsets are the *top* edge of the rule, measured down from the baseline.
+ * Offsets are the *top* edge of the rule, measured down from the baseline —
+ * so the two rules that sit above it are negative.
  *
  * DERIVED, NOT MEASURED. `BmFont` exposes only `info.size`, `common.base`
  * and `common.lineHeight` — a BMFont JSON carries no decoration metrics at
  * all. A future HarfBuzz / OpenType path would read the real
  * `underlinePosition` and `underlineThickness` off the `post` table and
- * retire these three numbers.
+ * retire these numbers.
  *
  * Pinned by `tests/visual/text-decoration.spec.ts`, which measures the gap
  * between the two rules rather than a golden image — `text.spec.ts`'s 5%
@@ -192,6 +200,7 @@ export interface LaidOutRuns {
  */
 const UNDERLINE_OFFSET = 0.10;
 const STRIKETHROUGH_OFFSET = -0.30;
+const OVERLINE_OFFSET = -0.90;
 const DECORATION_THICKNESS = 0.05;
 
 /**
@@ -714,6 +723,7 @@ export function layoutRuns(
   interface DecoSpan {
     underline: boolean;
     strikethrough: boolean;
+    overline: boolean;
     fill: FillStyle;
     fontSize: number;
     baselineY: number;
@@ -734,6 +744,10 @@ export function layoutRuns(
     if (s.strikethrough) {
       const y0 = s.baselineY + s.fontSize * STRIKETHROUGH_OFFSET;
       decorations.push({ kind: 'strikethrough', x0: s.x0, y0, x1: s.x1, y1: y0 + thickness, fill: s.fill });
+    }
+    if (s.overline) {
+      const y0 = s.baselineY + s.fontSize * OVERLINE_OFFSET;
+      decorations.push({ kind: 'overline', x0: s.x0, y0, x1: s.x1, y1: y0 + thickness, fill: s.fill });
     }
   }
 
@@ -788,17 +802,21 @@ export function layoutRuns(
       // stay in step with the line width accumulated above.
       const step = e.advance + e.tracking;
       const scale = e.fontSize / e.metrics.size;
-      const baselineY = lineBaselineY;
+      // Positive raises, and y grows down, so the shift subtracts. Everything
+      // below places against `baselineY` and so follows the run up or down —
+      // its glyphs, its outline geometry and its decoration rules alike.
+      const baselineY = lineBaselineY - e.run.baselineShift;
 
       // Extend or (re)open the decoration span *before* the no-ink bail-out
       // below, so a decorated span's spaces stay under the rule. `step`
       // includes this glyph's trailing tracking, so the rule covers it — the
       // CSS rule, and the same span the line width already accounts for.
-      if (e.run.underline || e.run.strikethrough) {
+      if (e.run.underline || e.run.strikethrough || e.run.overline) {
         if (
           span !== null
           && span.underline === e.run.underline
           && span.strikethrough === e.run.strikethrough
+          && span.overline === e.run.overline
           && span.fontSize === e.fontSize
           && span.baselineY === baselineY
           && sameFill(span.fill, e.run.fill)
@@ -811,6 +829,7 @@ export function layoutRuns(
           span = {
             underline: e.run.underline,
             strikethrough: e.run.strikethrough,
+            overline: e.run.overline,
             fill: e.run.fill,
             fontSize: e.fontSize,
             baselineY,
@@ -893,13 +912,18 @@ export function layoutRuns(
     penY += line.height;
   }
 
-  // `bounds` measures line boxes only — a decoration rule can fall outside it.
+  // `bounds` measures line boxes only — a decoration rule, and a run shifted
+  // off the baseline, can both fall outside it.
   // An underline's bottom sits `base * scale + (UNDERLINE_OFFSET +
   // DECORATION_THICKNESS) * fontSize` below the line top, so it escapes the
   // last line once `lineHeight` drops below roughly `base / info.size + 0.15`
-  // (≈1.06 for the bundled atlases). Not reachable at the 1.2 default, so
-  // `measureTextBounds` and `verticalAlign: 'bottom'` are left as they are;
-  // tightening the box would move every existing text bound.
+  // (≈1.06 for the bundled atlases). An overline escapes the first line the
+  // other way for a face whose `base / info.size` is under 0.90, and a
+  // `baselineShift` escapes by however far it exceeds the slack around it.
+  // None of these are reachable at the 1.2 default with the bundled atlases
+  // and the `script` presets, so `measureTextBounds` and
+  // `verticalAlign: 'bottom'` are left as they are; tightening the box would
+  // move every existing text bound.
   return {
     groups: [...ctx.groups.values()],
     decorations,

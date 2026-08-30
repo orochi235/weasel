@@ -20,7 +20,7 @@ export {
 } from './textStyle';
 export type { TextStyle, TextPaint, ResolvedTextStyle } from './textStyle';
 
-export { resolveRuns } from './runs/resolveRuns';
+export { resolveRuns, SCRIPT_METRICS } from './runs/resolveRuns';
 export type { ResolvedRun } from './runs/resolveRuns';
 
 export { layoutRuns } from './layout/layoutRuns';

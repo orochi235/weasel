@@ -46,7 +46,7 @@ function run(text: string, fontSize = 16): ResolvedRun {
   return {
     text, fontFamily: 'inter', fontSize, fontWeight: 400, fontStyle: 'normal',
     fill: { fill: 'solid', color: '#000' }, letterSpacing: 0,
-    underline: false, strikethrough: false,
+    underline: false, strikethrough: false, overline: false, baselineShift: 0,
   };
 }
 
@@ -76,8 +76,10 @@ describe('cachedLayoutRuns', () => {
     const tracked = cachedLayoutRuns([{ ...run('hello world'), letterSpacing: 3 }], OPTS);
     const bold = cachedLayoutRuns([{ ...run('hello world'), fontWeight: 700 }], OPTS);
     const ruled = cachedLayoutRuns([{ ...run('hello world'), underline: true }], OPTS);
+    const over = cachedLayoutRuns([{ ...run('hello world'), overline: true }], OPTS);
+    const raised = cachedLayoutRuns([{ ...run('hello world'), baselineShift: 4 }], OPTS);
     const other = cachedLayoutRuns([{ ...run('hello world'), fill: { fill: 'solid', color: '#f00' } }], OPTS);
-    for (const variant of [bigger, tracked, bold, ruled, other]) {
+    for (const variant of [bigger, tracked, bold, ruled, over, raised, other]) {
       expect(variant).not.toBe(base);
     }
   });
