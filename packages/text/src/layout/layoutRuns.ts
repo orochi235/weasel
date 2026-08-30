@@ -18,8 +18,10 @@
  *
  * Word wrap is applied when `maxWidth` is finite: words are committed to
  * a new line when they would exceed the current line width. Forced line
- * breaks are emitted for `\n` codepoints. Mixed-size runs share a
- * baseline; line height is `max(fontSize * lineHeight)` across the line.
+ * breaks are emitted for `\n` codepoints. Every run on a line shares one
+ * baseline, sunk to clear the tallest run's ascent, so mixing sizes or faces
+ * aligns them the way inline text aligns everywhere else; line height is
+ * `max(fontSize * lineHeight)` across the line.
  *
  * Underline and strikethrough come out on a second channel, `decorations` —
  * solid rectangles, not textured glyphs, so they cannot ride in a group's
@@ -754,16 +756,24 @@ export function layoutRuns(
       return opts.align === 'center' ? slack / 2 : slack;
     })();
     const lineX0 = alignShift;
-    // The line's baseline, recorded for the box below. Every entry on a line
-    // shares `penY`, but not necessarily `font`/`fontSize` — a mixed-size line
-    // has one baseline per run under this model, and the first entry's is the
-    // one the box reports. A blank line has no entry at all, so it falls back
-    // to the newline that closed it.
-    const baselineSource = line.entries[0] ?? line.blank;
-    const lineBaselineY = baselineSource
-      ? penY + baselineSource.metrics.base
-        * (baselineSource.fontSize / baselineSource.metrics.size)
-      : penY;
+    // One baseline for the whole line, sunk far enough below the line top to
+    // clear the tallest run's ascent — so runs set at different sizes sit on
+    // it together instead of each hanging from the line top at its own depth.
+    // A blank line has no entry to measure, so it falls back to the newline
+    // that closed it.
+    //
+    // Deliberately computed from *unshifted* ascents: a run's `baselineShift`
+    // moves it off this baseline, so letting the shift feed back into the
+    // baseline it is measured against would drag the rest of the line with it.
+    let lineAscent = 0;
+    for (const e of line.entries) {
+      lineAscent = Math.max(lineAscent, e.metrics.base * (e.fontSize / e.metrics.size));
+    }
+    if (line.entries.length === 0 && line.blank) {
+      lineAscent = line.blank.metrics.base
+        * (line.blank.fontSize / line.blank.metrics.size);
+    }
+    const lineBaselineY = penY + lineAscent;
 
     const caretXs: number[] = [];
     const caretIndices: number[] = [];
@@ -778,7 +788,7 @@ export function layoutRuns(
       // stay in step with the line width accumulated above.
       const step = e.advance + e.tracking;
       const scale = e.fontSize / e.metrics.size;
-      const baselineY = penY + e.metrics.base * scale;
+      const baselineY = lineBaselineY;
 
       // Extend or (re)open the decoration span *before* the no-ink bail-out
       // below, so a decorated span's spaces stay under the rule. `step`
@@ -845,7 +855,11 @@ export function layoutRuns(
       const atlasW = e.font.common.scaleW;
       const atlasH = e.font.common.scaleH;
       const qx0 = penX + e.glyph.xoffset * scale;
-      const qy0 = penY + e.glyph.yoffset * scale;
+      // `yoffset` is measured from the line top in the atlas's own frame, so
+      // it is relative to that frame's baseline (`metrics.base`) — which is
+      // what lets a run hang off the line's shared baseline rather than off
+      // the line top, where its own ascent would place it.
+      const qy0 = baselineY + (e.glyph.yoffset - e.metrics.base) * scale;
       const qx1 = qx0 + e.glyph.width * scale;
       const qy1 = qy0 + e.glyph.height * scale;
       const u0 = e.glyph.x / atlasW;

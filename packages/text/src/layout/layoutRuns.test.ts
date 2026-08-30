@@ -49,6 +49,22 @@ async function registerFixture(family: string, opts: Array<{ weight?: number; st
   }
 }
 
+// A second atlas whose baseline sits lower in the same em, so a face's ascent
+// can be varied without varying its size — which is what separates "the line
+// sank its baseline to clear this face" from "the run is set larger".
+const TALL_FONT = { ...FIXTURE_FONT, common: { ...FIXTURE_FONT.common, base: 58 } };
+async function registerTallFont(): Promise<void> {
+  const prior = global.fetch;
+  global.fetch = vi.fn().mockImplementation((url: string) => {
+    if (url.endsWith('tall.json')) {
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(TALL_FONT) });
+    }
+    return (prior as unknown as (u: string) => unknown)(url);
+  }) as typeof fetch;
+  await registerFont('tall', {}, '/fonts/tall/tall.json', '/fonts/tall/tall.png');
+  global.fetch = prior;
+}
+
 const RUN_PLAIN = (text: string): ResolvedRun => ({
   text, fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal',
   fill: { fill: 'solid', color: '#000' }, letterSpacing: 0,
@@ -156,6 +172,28 @@ describe('layoutRuns — word wrap', () => {
     );
     const allQuads = out.groups.flatMap((g) => g.quads);
     expect(allQuads).toHaveLength(2);
+    // The tallest run's ascent sets it: base 29 in a 32 em, at fontSize 40.
+    expect(allQuads.map((q) => q.baselineY)).toEqual([36.25, 36.25]);
+    expect(out.lines[0].baselineY).toBeCloseTo(36.25, 6);
+    // The small run hangs off that baseline, so its ink sits *below* the big
+    // run's top rather than level with it at the line top.
+    const [smallQuad, bigQuad] = allQuads;
+    expect(smallQuad.y0).toBeGreaterThan(bigQuad.y0);
+  });
+
+  it('aligns two faces with different ascents on one baseline', async () => {
+    await registerFixture('inter', [{}]);
+    await registerTallFont();
+    // inter's base is 29 in a 32 em; tall's is 58. At the same fontSize the
+    // deeper ascent sinks the shared baseline, and both runs sit on it.
+    const out = layoutRuns(
+      [RUN_PLAIN('A'), { ...RUN_PLAIN('B'), fontFamily: 'tall' }],
+      { maxWidth: Infinity, lineHeight: 1.2, align: 'left' },
+    );
+    const baselines = out.groups.flatMap((g) => g.quads).map((q) => q.baselineY);
+    expect(baselines).toHaveLength(2);
+    expect(new Set(baselines).size).toBe(1);
+    expect(baselines[0]).toBeCloseTo(58, 6);
   });
 
   it('alignment shifts each line by (maxWidth - lineWidth) * factor', async () => {
@@ -600,39 +638,25 @@ describe('layoutRuns — decoration geometry', () => {
     expect(out.decorations[1].x0).toBeCloseTo(22, 6);
   });
 
-  // A second atlas whose baseline sits lower in the same em, so `baselineY`
-  // and `fontSize` can be varied independently — with one font each implies
-  // the other, and either merge guard alone would look sufficient.
-  const TALL_FONT = { ...FIXTURE_FONT, common: { ...FIXTURE_FONT.common, base: 58 } };
-  async function registerTall(): Promise<void> {
-    const prior = global.fetch;
-    global.fetch = vi.fn().mockImplementation((url: string) => {
-      if (url.endsWith('tall.json')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(TALL_FONT) });
-      }
-      return (prior as unknown as (u: string) => unknown)(url);
-    }) as typeof fetch;
-    await registerFont('tall', {}, '/fonts/tall/tall.json', '/fonts/tall/tall.png');
-    global.fetch = prior;
-  }
-
-  it('does not merge across a baseline change at equal font size', async () => {
+  it('merges across a face whose ascent differs, now that the line shares a baseline', async () => {
     await registerFixture('inter', [{}]);
-    await registerTall();
-    // base 29 vs 58, both at scale 1 → the rules sit 29 apart.
+    await registerTallFont();
+    // base 29 vs 58 at equal size: both runs sit on the deeper baseline, so
+    // the rule runs on under the join instead of stepping 29 units down.
     const out = layoutRuns(
       [UNDERLINED('A'), { ...UNDERLINED('B'), fontFamily: 'tall' }],
       OPTS,
       );
-    expect(out.decorations).toHaveLength(2);
-    expect(out.decorations[1].y0 - out.decorations[0].y0).toBeCloseTo(29, 6);
+    expect(out.decorations).toHaveLength(1);
+    // Shared baseline 58, plus the 0.10-em underline offset at fontSize 32.
+    expect(out.decorations[0].y0).toBeCloseTo(58 + 32 * 0.1, 6);
   });
 
   it('does not merge across a font-size change at equal baseline', async () => {
     await registerFixture('inter', [{}]);
-    await registerTall();
-    // tall's base 58 at fontSize 16 (scale 0.5) lands on 29 — exactly where
-    // inter's base 29 at fontSize 32 does. Same baseline, half the weight.
+    await registerTallFont();
+    // Same baseline now by construction; the sizes still differ, and offset
+    // and thickness both scale with size, so the two rules stay separate.
     const out = layoutRuns(
       [UNDERLINED('A'), { ...UNDERLINED('B'), fontFamily: 'tall', fontSize: 16 }],
       OPTS,
