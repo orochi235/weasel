@@ -7,7 +7,7 @@
  * a bare line, having no area at all, was unpickable outright.
  */
 import { describe, expect, it } from 'vitest';
-import { shapeCoversPoint, findShapeInk, registerNodeShape } from './NodeShape';
+import { shapeCoversPoint, findShapeInk, registerNodeShape, findNodeShape } from './NodeShape';
 import { solid, strokeOf } from '../util/paint';
 import { linePath } from 'features/paths/builder';
 import type { Node } from 'core/scene/types';
@@ -235,5 +235,38 @@ describe('shapeCoversPoint — align decides which side is grabbable', () => {
     });
     expect(shapeCoversPoint(outer, POSE, 106, 50)).toBe(true);
     expect(shapeCoversPoint(outer, POSE, 94, 50)).toBe(false);
+  });
+});
+
+/**
+ * A `Stroke` whose `paint` is missing.
+ *
+ * The type requires it, so nothing should ever build one — but a document is
+ * data, and a stroke assembled field-by-field (a width written onto a node
+ * that had no stroke) arrives here with no paint. It used to throw out of
+ * `fillInPoseFrame`, and because the throw escapes the painter it takes the
+ * whole frame with it: every other node and the document page vanish, and the
+ * canvas stays stale until something unrelated asks for a redraw. One
+ * malformed node must not be able to blank the document.
+ */
+describe('a stroke with no paint', () => {
+  const paintless = { width: 2 } as unknown as ReturnType<typeof strokeOf>;
+
+  it('paints the node without throwing', () => {
+    const node = pathNode({ fill: solid('#f00'), stroke: paintless });
+    expect(() => findNodeShape(node)!.paint(node, POSE)).not.toThrow();
+  });
+
+  it('emits no stroke — a stroke with no paint has nothing to draw', () => {
+    const node = pathNode({ fill: solid('#f00'), stroke: paintless });
+    const [cmd] = findNodeShape(node)!.paint(node, POSE);
+    expect(cmd).not.toHaveProperty('stroke');
+  });
+
+  it('reaches no further than an unstroked node for picking', () => {
+    // `ink` and `paint` have to agree, or a node is grabbable across a width
+    // it does not draw.
+    expect(findShapeInk(pathNode({ fill: solid('#f00'), stroke: paintless }), POSE))
+      .toEqual({ filled: true, outset: 0, inset: 0 });
   });
 });

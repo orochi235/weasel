@@ -43,6 +43,12 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
   syncRef.current = options.syncPaint ?? false;
   const subsRef = useRef<Set<() => void>>(new Set());
 
+  /** Set while recovering from a paint that threw, so one bad frame is retried
+   *  and a permanently throwing one still doesn't spin at frame rate. */
+  const retriedRef = useRef(false);
+  /** `frame.request`, which doesn't exist until after `runPaint` is built. */
+  const rearmRef = useRef<(() => void) | null>(null);
+
   const runPaint = useCallback(() => {
     dirtyRef.current = false;
     paintingRef.current = true;
@@ -53,9 +59,22 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
         dirtyRef.current = true;
         return;
       }
+      retriedRef.current = false;
       // Notified inside the guard: a subscriber calling `requestRedraw` under
       // `syncPaint` would otherwise re-enter this synchronously, without bound.
       for (const fn of subsRef.current) fn();
+    } catch (err) {
+      // A throw skips the `!landed` branch above, so without this the surface
+      // is left clean but unpainted — the pixels on screen are whatever the
+      // last landed frame left, and nothing repaints until something
+      // unrelated happens to request a redraw. That is how a single
+      // malformed node blanked a whole document until the pointer moved.
+      dirtyRef.current = true;
+      if (!retriedRef.current) {
+        retriedRef.current = true;
+        rearmRef.current?.();
+      }
+      throw err;
     } finally {
       paintingRef.current = false;
     }
@@ -68,6 +87,7 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
     }, [runPaint]),
     { target: options.target },
   );
+  rearmRef.current = () => { frame.request(); };
 
   const requestRedraw = useCallback(() => {
     dirtyRef.current = true;

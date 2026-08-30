@@ -24,50 +24,199 @@ import type { RangeStyle, RunStylePatch } from './runs/rangeStyle';
 type StyleFlag = FlagKey;
 
 /**
- * The shortcut each flag answers to. Strikethrough takes Cmd+Shift+X (Docs'
- * binding) and MUST require shift: bare Cmd+X is cut, and swallowing it here
- * would break cutting text mid-edit.
+ * A styling a shortcut or a control toggles. The additive booleans, plus the
+ * two `script` values — which are exclusive rather than additive, so they
+ * toggle against one enum rather than each owning a boolean.
+ */
+export type StyleToggle = StyleFlag | 'super' | 'sub';
+
+/**
+ * The shortcut each styling answers to. Strikethrough takes Cmd+Shift+X
+ * (Docs' binding) and MUST require shift: bare Cmd+X is cut, and swallowing
+ * it here would break cutting text mid-edit. Superscript takes Word's
+ * Cmd+Shift+=; subscript takes Cmd+Shift+- rather than Word's Cmd+-, because
+ * the unshifted pair is browser zoom, which a page cannot cancel.
+ * `overline` has no shortcut — no editor has established one — and is
+ * reachable only from a control.
+ *
+ * Matching is on the *unshifted* character (`shiftedKey`): a US layout
+ * reports Cmd+Shift+= as `'+'` and Cmd+Shift+- as `'_'`, so keying the table
+ * on what the legend says needs that mapping to survive the shift.
  *
  * Underline has to be intercepted, not merely supported. Left alone, the
  * browser runs its own `formatUnderline` and `domToRuns`' `<u>` flattening
- * makes that *look* like it worked while bypassing `toggleFlagInRange`
+ * makes that *look* like it worked while bypassing `patchForToggle`
  * entirely — no toggle-off, no mixed-range "turn the whole selection on"
  * rule, no pending style for a collapsed caret. The flattening stays
  * regardless, since it is what lets pasted decoration survive, but it is
  * defense in depth and was never the mechanism.
  */
-const FLAG_SHORTCUTS: ReadonlyArray<{ key: string; shift: boolean; flag: StyleFlag }> = [
-  { key: 'b', shift: false, flag: 'bold' },
-  { key: 'i', shift: false, flag: 'italic' },
-  { key: 'u', shift: false, flag: 'underline' },
-  { key: 'x', shift: true, flag: 'strikethrough' },
+const STYLE_SHORTCUTS: ReadonlyArray<{ key: string; shift: boolean; toggle: StyleToggle }> = [
+  { key: 'b', shift: false, toggle: 'bold' },
+  { key: 'i', shift: false, toggle: 'italic' },
+  { key: 'u', shift: false, toggle: 'underline' },
+  { key: 'x', shift: true, toggle: 'strikethrough' },
+  { key: '=', shift: true, toggle: 'super' },
+  { key: '-', shift: true, toggle: 'sub' },
 ];
 
-/** The flag `e` toggles, or null when it isn't a decoration shortcut. */
-function flagForKey(e: KeyboardEvent): StyleFlag | null {
-  if (!e.metaKey && !e.ctrlKey) return null;
-  const key = e.key.toLowerCase();
-  return FLAG_SHORTCUTS.find((s) => s.key === key && s.shift === e.shiftKey)?.flag ?? null;
-}
+/** The characters shift produces from the keys the table names. */
+const UNSHIFT: Readonly<Record<string, string>> = { '+': '=', _: '-' };
 
-/** `overlay.dataset` key holding the pending state of `flag` for a collapsed caret. */
-function pendingKey(flag: StyleFlag): string {
-  return `pending${flag[0].toUpperCase()}${flag.slice(1)}`;
+/** The styling `e` toggles, or null when it isn't a styling shortcut. */
+function toggleForKey(e: KeyboardEvent): StyleToggle | null {
+  if (!e.metaKey && !e.ctrlKey) return null;
+  const raw = e.key.toLowerCase();
+  const key = UNSHIFT[raw] ?? raw;
+  return STYLE_SHORTCUTS.find((s) => s.key === key && s.shift === e.shiftKey)?.toggle ?? null;
 }
 
 /**
- * Toggle `flag` across `[start, end)`: if every run in range already has it,
- * clear it; otherwise set it — so a mixed range turns fully on, as in every
- * other text editor. The splitting and coalescing live in the run algebra.
+ * The patch that toggles `toggle` against the styling in `current`: if it is
+ * already carried, clear it; otherwise set it — so a mixed range turns fully
+ * on, as in every other text editor. `script` clears to `undefined` rather
+ * than to `false`, since the off state of an enum is its absence.
+ *
+ * `nodeStyle` is read as well as `current`, and has to be: a node flag
+ * renders on every run whether or not the runs carry it, so a toggle that
+ * consulted the runs alone would read Cmd+B inside a `fontWeight: 700` node
+ * as "not bold" and *add* bold rather than clearing it. `script` has no node
+ * level to consult — by design; see `StyledRun.script`.
  */
-function toggleFlagInRange(
+function patchForToggle(
+  current: RangeStyle,
+  toggle: StyleToggle,
+  nodeStyle: TextStyle,
+): RunStylePatch {
+  if (toggle === 'super' || toggle === 'sub') {
+    return { script: current.script === toggle ? undefined : toggle };
+  }
+  const on = current[toggle] === true || nodeHasFlag(nodeStyle, toggle);
+  return { [toggle]: !on };
+}
+
+/**
+ * The styling at a collapsed caret: the run to its left, or — at the very
+ * start of the text — the run to its right. This is what the next typed
+ * character inherits, so it is what a character bar should be showing.
+ */
+function styleAtCaret(runs: readonly StyledRun[], at: number): RangeStyle {
+  return at > 0 ? styleAtRange(runs, at - 1, at) : styleAtRange(runs, 0, 1);
+}
+
+/**
+ * Splice `run` into `runs` at character offset `at`, splitting whichever run
+ * spans it. The result is normalized (empty runs dropped, identical
+ * neighbours merged) by the same algebra every other write goes through.
+ */
+function spliceRunAt(runs: readonly StyledRun[], at: number, run: StyledRun): StyledRun[] {
+  const out: StyledRun[] = [];
+  let pos = 0;
+  let placed = false;
+  for (const r of runs) {
+    const end = pos + r.text.length;
+    if (!placed && at <= end) {
+      const k = at - pos;
+      if (k > 0) out.push({ ...r, text: r.text.slice(0, k) });
+      out.push(run);
+      if (k < r.text.length) out.push({ ...r, text: r.text.slice(k) });
+      placed = true;
+    } else {
+      out.push({ ...r });
+    }
+    pos = end;
+  }
+  if (!placed) out.push(run);
+  // An empty patch over an empty range: this is the array-wide normalization
+  // pass, not a styling.
+  return applyStyleToRange(out, 0, 0, {});
+}
+
+/**
+ * Return focus to the overlay after a styling arrived from editor chrome.
+ *
+ * A control that took focus in order to be clicked still holds it when the
+ * patch lands, so the next keystroke goes to that button — and in an app that
+ * binds bare letters to tools, "click Superscript, then type the 2" activates
+ * the Text tool and pans the canvas instead of typing a 2. Restoring the
+ * caret is what makes a styling control usable mid-edit at all.
+ *
+ * Two things are left holding focus deliberately: a text entry in the chrome
+ * (the user is still typing a font size — stealing that is worse than the
+ * problem) and anything inside an open dialog, which is where a color
+ * picker's live `onChange` fires from.
+ */
+function restoreOverlayFocus(overlay: HTMLElement, range: TextEditSelection): void {
+  const active = document.activeElement;
+  if (active === overlay || overlay.contains(active)) return;
+  if (
+    active instanceof HTMLInputElement
+    || active instanceof HTMLTextAreaElement
+    || (active instanceof HTMLElement && active.isContentEditable)
+    || (active instanceof Element && active.closest('[role="dialog"]') !== null)
+  ) return;
+  overlay.focus();
+  const a = charOffsetToDomPosition(overlay, range.start);
+  const b = charOffsetToDomPosition(overlay, range.end);
+  const sel = window.getSelection();
+  if (!a || !b || !sel) return;
+  const r = document.createRange();
+  r.setStart(a.node, a.offset);
+  r.setEnd(b.node, b.offset);
+  sel.removeAllRanges();
+  sel.addRange(r);
+}
+
+/**
+ * Put the caret *between* two run spans when `offset` falls on the boundary
+ * of one, rather than at the same offset inside the left span's text node.
+ *
+ * The two positions are the same character offset and browsers report them
+ * identically, but they type differently: a caret inside a span has the next
+ * character absorbed by that run, and one between spans starts a fresh one.
+ * That distinction is the whole point after a pending style has just been
+ * committed to its own run — otherwise the character after a superscript is
+ * superscript too. Leaves the selection alone when the offset falls mid-run,
+ * where there is no boundary to prefer.
+ */
+function placeCaretBetweenRuns(
+  overlay: HTMLElement,
   runs: readonly StyledRun[],
-  start: number,
-  end: number,
-  flag: StyleFlag,
-): StyledRun[] {
-  const current = styleAtRange(runs, start, end)[flag];
-  return applyStyleToRange(runs, start, end, { [flag]: current !== true });
+  offset: number,
+): void {
+  let acc = 0;
+  let index = -1;
+  for (let i = 0; i < runs.length; i++) {
+    acc += runs[i].text.length;
+    if (acc === offset) { index = i; break; }
+    if (acc > offset) return;
+  }
+  const span = index >= 0 ? overlay.children[index] : null;
+  const sel = window.getSelection();
+  if (!span || !sel) return;
+  const range = document.createRange();
+  range.setStartAfter(span);
+  range.collapse(true);
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+/** No pending style. One frozen object so re-publishing an already-empty
+ *  pending style doesn't re-render every consumer. */
+const NO_PENDING: RunStylePatch = Object.freeze({});
+
+/**
+ * Merge `patch` into a pending style. A key set to `false` or `undefined` is
+ * deleted rather than stored — the same canonical form `patchRun` keeps, so
+ * the pending style and a stored run agree on what "off" looks like.
+ */
+function mergePending(prev: RunStylePatch, patch: RunStylePatch): RunStylePatch {
+  const next: Record<string, unknown> = { ...prev };
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === undefined || value === false) delete next[key];
+    else next[key] = value;
+  }
+  return next as RunStylePatch;
 }
 
 /**
@@ -291,8 +440,8 @@ export interface UseTextEditReturn {
    /**
    * The caret's character range, or `null` when nothing is being edited. A
    * collapsed caret reports `{ start: n, end: n }`, so `null` and "caret at
-   * n" stay distinguishable — a character-styling control routes the
-   * collapsed case to the node's `TextStyle` instead of to a range.
+   * n" stay distinguishable — a styling written at a collapsed caret arms
+   * {@link UseTextEditReturn.pendingStyle} instead of restyling a range.
    *
    * Follows the DOM selection, which browsers (and jsdom) report from a task
    * rather than synchronously; anything this hook writes itself updates it
@@ -306,19 +455,45 @@ export interface UseTextEditReturn {
   /**
    * The styling shared by every run in `selection` — a concrete value where
    * the range agrees, `MIXED` where it doesn't. `null` exactly when
-   * `selection` is `null`. A collapsed caret reports `{}`: no run is in
-   * range, so the range reader has nothing to say and the node's style is
-   * what applies.
+   * `selection` is `null`. A collapsed caret reports the styling *at* the
+   * caret (the run to its left, or the run to its right at offset 0), which
+   * is what the next typed character inherits.
+   *
+   * This does not include {@link UseTextEditReturn.pendingStyle}. A control
+   * showing what the next character will look like wants both, merged in
+   * that order; one showing what is already written wants only this.
    */
   rangeStyle: RangeStyle | null;
   /**
-   * Write `patch` over `selection`. A no-op with no active edit, with a
-   * collapsed caret (there is no range to style — patch the node's
-   * `TextStyle` instead), or with an empty patch. The caret survives, so a
-   * second style can be applied without re-selecting, and `rangeStyle`
-   * reflects the write before this returns.
+   * Styling armed at a collapsed caret, applied to the next character typed
+   * and then dropped. `{}` when nothing is armed — which is always the case
+   * while `selection` covers a real range, since a range is styled directly.
+   *
+   * Moving the caret abandons it, as in any other editor.
+   */
+  pendingStyle: RunStylePatch;
+  /**
+   * Write `patch` over `selection`. A no-op with no active edit or an empty
+   * patch. Over a real range this restyles the runs under it; at a collapsed
+   * caret it merges into `pendingStyle` instead, so the styling lands on
+   * what gets typed next rather than on text the user didn't select.
+   *
+   * Lowering a flag the *node* sets is neither of those — a run cannot say
+   * "not bold" — so it rewrites instead: the node flag is cleared and raised
+   * on every run outside the range. That path can decline (a node at
+   * `fontWeight: 900` has no run boolean to move it to), in which case
+   * nothing is written.
+   *
+   * The caret survives, so a second style can be applied without
+   * re-selecting, and `rangeStyle` reflects the write before this returns.
    */
   applyStyleToSelection: (patch: RunStylePatch) => void;
+  /**
+   * Toggle one styling over `selection` — set it if the range doesn't
+   * uniformly carry it, clear it if it does. The shape a B / I / x² control
+   * or a keyboard shortcut wants, and what this hook's own shortcuts call.
+   */
+  toggleStyle: (toggle: StyleToggle) => void;
 }
 
 /** In-place text editing via a contenteditable overlay positioned over the text node's screen-space pose. */
@@ -329,6 +504,10 @@ export function useTextEdit(
   optsRef.current = opts;
 
   const [editingId, setEditingId] = useState<string | null>(null);
+  // `applyStyleToSelection` needs the node being edited to reach its
+  // `TextStyle`, and is called from event handlers rather than from render.
+  const editingIdRef = useRef<string | null>(null);
+  editingIdRef.current = editingId;
   const overlayRef = useRef<HTMLDivElement | null>(null);
   // The overlay-follow loop is built inside the editing effect; the gate's
   // frame callback reaches it through this ref.
@@ -337,6 +516,27 @@ export function useTextEdit(
   const initialCaretRef = useRef<number | 'all'>('all');
   const [selection, setSelection] = useState<TextEditSelection | null>(null);
   const [rangeStyle, setRangeStyle] = useState<RangeStyle | null>(null);
+  const [pendingStyle, setPendingStyle] = useState<RunStylePatch>(NO_PENDING);
+  /** The pending style, read synchronously by `beforeinput` — which fires
+   *  well before React has re-rendered with the state above. */
+  const pendingRef = useRef<RunStylePatch>(NO_PENDING);
+  /** The caret offset the pending style was armed at, or `null` when nothing
+   *  is armed. Publishing any other range abandons it. */
+  const pendingAtRef = useRef<number | null>(null);
+
+  const armPending = useCallback((next: RunStylePatch, at: number) => {
+    const empty = Object.keys(next).length === 0;
+    pendingRef.current = empty ? NO_PENDING : next;
+    pendingAtRef.current = empty ? null : at;
+    setPendingStyle(pendingRef.current);
+  }, []);
+
+  const dropPending = useCallback(() => {
+    if (pendingAtRef.current === null) return;
+    pendingRef.current = NO_PENDING;
+    pendingAtRef.current = null;
+    setPendingStyle(NO_PENDING);
+  }, []);
 
   /**
    * The published range, mirrored in a ref. `applyStyleToSelection` reads it
@@ -360,10 +560,20 @@ export function useTextEdit(
    */
   /** Publish `range` and the styling the overlay currently carries across it. */
   const publishRange = useCallback((overlay: HTMLElement, range: TextEditSelection) => {
+    const collapsed = range.start === range.end;
+    // A pending style belongs to the caret position it was armed at. Any
+    // other range means the caret moved, which abandons it.
+    if (pendingAtRef.current !== null
+      && !(collapsed && range.start === pendingAtRef.current)) {
+      dropPending();
+    }
     selectionRef.current = range;
     setSelection((prev) => (sameSelection(prev, range) ? prev : range));
-    setRangeStyle(styleAtRange(domToRuns(overlay), range.start, range.end));
-  }, []);
+    const runs = domToRuns(overlay);
+    setRangeStyle(collapsed
+      ? styleAtCaret(runs, range.start)
+      : styleAtRange(runs, range.start, range.end));
+  }, [dropPending]);
 
   const syncSelection = useCallback(() => {
     const overlay = overlayRef.current;
@@ -378,7 +588,8 @@ export function useTextEdit(
     selectionRef.current = null;
     setSelection(null);
     setRangeStyle(null);
-  }, []);
+    dropPending();
+  }, [dropPending]);
 
   const cancelEdit = useCallback(() => {
     setEditingId(null);
@@ -439,14 +650,78 @@ export function useTextEdit(
     // clicked. `writeRunsPreservingSelection` puts the range back afterwards,
     // so a second styling can follow without re-selecting either way.
     const range = readSelectionOffsets(overlay) ?? selectionRef.current;
-    if (!range || range.start === range.end) return;
-    const next = applyStyleToRange(domToRuns(overlay), range.start, range.end, patch);
+    if (!range) return;
+
+    // Lowering a flag the node itself sets is not expressible additively —
+    // the run algebra can only add — so it takes the rewrite in
+    // `setFlagOverRange`: clear the node flag, raise it outside the range.
+    // This is the one styling that reaches existing text from a collapsed
+    // caret, and has to: "stop being bold from here on" is otherwise
+    // unsayable in a bold node.
+    const id = editingIdRef.current;
+    const setStyle = optsRef.current.setStyle;
+    const runs = domToRuns(overlay);
+    const unsetFlag = id !== null && setStyle
+      ? (Object.keys(patch) as FlagKey[]).find((key) =>
+          patch[key] === false
+          && nodeHasFlag(optsRef.current.getStyle(id) ?? {}, key))
+      : undefined;
+    if (unsetFlag !== undefined && id !== null && setStyle) {
+      const nodeStyle = optsRef.current.getStyle(id) ?? {};
+      const r = setFlagOverRange(runs, nodeStyle, range.start, range.end, unsetFlag, false);
+      if (!r.applied) return;
+      setStyle(id, r.style);
+      writeRunsPreservingSelection(overlay, r.runs, range.start, range.end);
+      publishRange(overlay, range);
+      // The rewrite raised the flag on every existing run, so a caret sitting
+      // at the end of one is now *inside* a flagged span and the next
+      // character would be absorbed by it. Arming the `false` keeps it out:
+      // it is not a storable run value, but it is enough to make
+      // `beforeinput` open a fresh span, which `runsToDom` then emits bare.
+      if (range.start === range.end) {
+        armPending({ ...pendingRef.current, [unsetFlag]: false }, range.start);
+      }
+      restoreOverlayFocus(overlay, range);
+      // Whatever else the patch carried still applies on its own terms.
+      const rest = { ...patch };
+      delete rest[unsetFlag];
+      if (Object.keys(rest).length > 0) applyStyleToSelection(rest);
+      return;
+    }
+
+    // A collapsed caret has no run to restyle, so the styling is armed for
+    // the next character instead of silently doing nothing.
+    if (range.start === range.end) {
+      armPending(mergePending(pendingRef.current, patch), range.start);
+      restoreOverlayFocus(overlay, range);
+      return;
+    }
+
+    const next = applyStyleToRange(runs, range.start, range.end, patch);
     writeRunsPreservingSelection(overlay, next, range.start, range.end);
+    restoreOverlayFocus(overlay, range);
     // Republish from the range we just styled, not from the DOM selection:
     // when the patch came from chrome the selection is in that control, and
     // re-reading it would leave a consumer showing the pre-patch styling.
     publishRange(overlay, range);
-  }, [publishRange]);
+  }, [publishRange, armPending]);
+
+  const toggleStyle = useCallback((toggle: StyleToggle) => {
+    const overlay = overlayRef.current;
+    if (!overlay) return;
+    const range = readSelectionOffsets(overlay) ?? selectionRef.current;
+    if (!range) return;
+    const runs = domToRuns(overlay);
+    const id = editingIdRef.current;
+    const nodeStyle = (id !== null ? optsRef.current.getStyle(id) : undefined) ?? {};
+    // At a collapsed caret the styling in play is what the caret sits in plus
+    // whatever is already armed, so pressing Cmd+B twice disarms rather than
+    // arming a second time.
+    const current = range.start === range.end
+      ? { ...styleAtCaret(runs, range.start), ...pendingRef.current }
+      : styleAtRange(runs, range.start, range.end);
+    applyStyleToSelection(patchForToggle(current, toggle, nodeStyle));
+  }, [applyStyleToSelection]);
 
   useEffect(() => {
     if (editingId == null) return;
@@ -491,45 +766,6 @@ export function useTextEdit(
     // otherwise render one frame with no selection.
     syncSelection();
 
-    function handleStyleToggle(flag: StyleFlag): void {
-      const range = readSelectionOffsets(overlay);
-      if (!range) return;
-      if (range.start === range.end) {
-        togglePending(flag);
-        return;
-      }
-      if (editingId === null) return;
-      const runs = domToRuns(overlay);
-      const nodeStyle = optsRef.current.getStyle(editingId) ?? {};
-      const setStyle = optsRef.current.setStyle;
-
-      // Turning a flag off that the NODE sets is not expressible additively:
-      // the run algebra can only add. Rewriting is, and needs the node style.
-      const current = styleAtRange(runs, range.start, range.end)[flag];
-      const unsetting = current === true;
-      if (unsetting && setStyle && nodeHasFlag(nodeStyle, flag)) {
-        const r = setFlagOverRange(runs, nodeStyle, range.start, range.end, flag, false);
-        if (!r.applied) return;
-        setStyle(editingId, r.style);
-        writeRunsPreservingSelection(overlay, r.runs, range.start, range.end);
-        syncSelection();
-        return;
-      }
-
-      const next = toggleFlagInRange(runs, range.start, range.end, flag);
-      writeRunsPreservingSelection(overlay, next, range.start, range.end);
-      syncSelection();
-    }
-
-    function togglePending(flag: StyleFlag): void {
-      const key = pendingKey(flag);
-      if (overlay.dataset[key] === '1') {
-        delete overlay.dataset[key];
-      } else {
-        overlay.dataset[key] = '1';
-      }
-    }
-
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -541,10 +777,10 @@ export function useTextEdit(
         cancelEdit();
         return;
       }
-      const flag = flagForKey(e);
-      if (flag) {
+      const toggle = toggleForKey(e);
+      if (toggle) {
         e.preventDefault();
-        handleStyleToggle(flag);
+        toggleStyle(toggle);
       }
     };
     const onBlur = (e: FocusEvent) => {
@@ -556,36 +792,34 @@ export function useTextEdit(
 
     const onBeforeInput = (ie: InputEvent) => {
       if (ie.inputType !== 'insertText' || !ie.data) return;
-      const pending = FLAG_SHORTCUTS
-        .map((s) => s.flag)
-        .filter((flag) => overlay.dataset[pendingKey(flag)] === '1');
+      const pending = pendingRef.current;
+      if (Object.keys(pending).length > 0) {
+        // Rebuild from the runs rather than splicing a span into the DOM.
+        // `insertNode` at a caret sitting inside a run span nests the new
+        // span *within* it, and `domToRuns` reads styling down the ancestor
+        // chain — so a pending style that has to escape the surrounding run
+        // (the `false` armed after a node-flag rewrite) would inherit exactly
+        // the flag it exists to shed. Going through the algebra also gets
+        // every run field for free, with no CSS written here.
+        const at = readSelectionOffsets(overlay) ?? selectionRef.current;
+        if (!at || at.start !== at.end) return;
+        ie.preventDefault();
+        const next = spliceRunAt(domToRuns(overlay), at.start, {
+          ...pending, text: ie.data,
+        } as StyledRun);
+        const after = at.start + ie.data.length;
+        writeRunsPreservingSelection(overlay, next, after, after);
+        placeCaretBetweenRuns(overlay, next, after);
+        dropPending();
+        publishRange(overlay, { start: after, end: after });
+        return;
+      }
       ie.preventDefault();
       const sel = window.getSelection();
       if (!sel || sel.rangeCount === 0) return;
       const range = sel.getRangeAt(0);
       range.deleteContents();
-      if (pending.length > 0) {
-        // Insert a new styled span for the pending-style character. The CSS
-        // written here is what `domToRuns` reads back, so it has to match the
-        // shapes `runsToDom` emits — both decorations share one
-        // `text-decoration`, since a second assignment would replace the first.
-        const span = document.createElement('span');
-        span.setAttribute('data-run', '');
-        if (pending.includes('bold')) span.style.fontWeight = '700';
-        if (pending.includes('italic')) span.style.fontStyle = 'italic';
-        const decorations: string[] = [];
-        if (pending.includes('underline')) decorations.push('underline');
-        if (pending.includes('strikethrough')) decorations.push('line-through');
-        if (decorations.length > 0) span.style.textDecoration = decorations.join(' ');
-        span.textContent = ie.data;
-        range.insertNode(span);
-        const after = document.createRange();
-        after.setStartAfter(span);
-        after.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(after);
-        for (const flag of pending) delete overlay.dataset[pendingKey(flag)];
-      } else {
+      {
         // No pending style — insert the character as a plain text node at the
         // caret position so the surrounding run's span absorbs it.
         const textNode = document.createTextNode(ie.data);
@@ -643,11 +877,12 @@ export function useTextEdit(
       overlayRef.current = null;
       clearSelection();
     };
-  }, [editingId, commit, cancelEdit, syncSelection, clearSelection, frameLoop]);
+  }, [editingId, commit, cancelEdit, syncSelection, clearSelection, frameLoop,
+      toggleStyle, dropPending]);
 
   return {
     editingId, startEdit, cancelEdit, commit, isEditing,
-    selection, rangeStyle, applyStyleToSelection,
+    selection, rangeStyle, pendingStyle, applyStyleToSelection, toggleStyle,
   };
 }
 

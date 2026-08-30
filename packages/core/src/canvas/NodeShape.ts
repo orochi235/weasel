@@ -447,8 +447,10 @@ const TEXT_PAINTER: NodeShapeEntry = {
     // nothing.
     const y = p.y;
     // Text reads the same `data.fill` / `data.stroke` every other node kind
-    // reads, so one set of paint controls writes all of them.
-    const paint = { fill: d.fill, stroke: d.stroke };
+    // reads, so one set of paint controls writes all of them — and through
+    // the same resolver, so a stroke carrying no paint is dropped here too
+    // rather than throwing once it reaches the renderer.
+    const paint = { fill: d.fill, stroke: resolveNodeStroke(d.stroke) ?? undefined };
     return d.runs && d.runs.length > 0
       ? [textCommandFromRuns(p.x, y, d.runs, d.style, undefined, p.height, undefined, paint)]
       : [textCommand(p.x, y, d.text, d.style, undefined, p.height, undefined, paint)];
@@ -522,9 +524,19 @@ function resolveNodeFill(
 /** The stroke a built-in painter should emit, or `null` for "no stroke".
  *  `data.stroke` is a whole {@link Stroke} — width, cap, join, dash, miter
  *  limit and align all reach the renderer. {@link strokeOf} builds one from a
- *  color. */
+ *  color.
+ *
+ *  A stroke carrying no `paint` reads as no stroke. `Stroke.paint` is
+ *  required by the type, so this is unreachable from well-formed data — but a
+ *  document is data, and a stroke assembled a field at a time (a width
+ *  written onto a node that had none) arrives here without one. Painting it
+ *  threw out of `fillInPoseFrame`, and the throw escapes the painter and
+ *  takes the whole frame with it: the page and every other node vanish, and
+ *  the canvas stays stale until something unrelated requests a redraw. One
+ *  malformed node must not be able to blank the document. */
 function resolveNodeStroke(stroke: Stroke | null | undefined): Stroke | null {
-  return stroke ?? null;
+  if (stroke == null || stroke.paint == null) return null;
+  return stroke;
 }
 
 /** Bake a bounds-relative stroke paint onto the given box, the way a fill is

@@ -134,6 +134,7 @@ describe('inferredNodeProperties', () => {
       'letterSpacing',
       'underline',
       'strikethrough',
+      'overline',
       // No `fill`: a text node's color is its own `data.fill`, in Appearance,
       // the same leaf every other node kind paints from.
     ]);

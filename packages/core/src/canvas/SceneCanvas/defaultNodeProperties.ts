@@ -174,6 +174,7 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
                         letterSpacing: { kind: 'number', name: 'Tracking', description: 'Extra advance per glyph, world units.', default: 0, step: 0.1 },
                         underline: { kind: 'boolean', name: 'Underline', description: 'Underline the text.', default: false },
                         strikethrough: { kind: 'boolean', name: 'Strikethrough', description: 'Strike through the text.', default: false },
+                        overline: { kind: 'boolean', name: 'Overline', description: 'Rule the text above its ascent.', default: false },
                       },
                     },
                     paragraph: {
