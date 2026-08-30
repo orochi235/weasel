@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/geom",
-  "version": "1.2.0",
+  "version": "1.3.0-pre.0",
   "description": "Pure 2D geometry kernel for @weasel-js/core: affine, box, curve, polyline. Dependency-free core; polygon booleans in the ./booleans subpath.",
   "license": "MIT",
   "type": "module",

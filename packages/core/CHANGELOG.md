@@ -1,5 +1,1513 @@
 # Changelog
 
+## 2.0.0-pre.0
+
+### Minor Changes
+
+- bca99e3: Extract the typography layer into `@weasel-js/text`, and the paint vocabulary
+  into `@weasel-js/paint` — two new Tier A leaves.
+
+  `@weasel-js/text` owns the run model, style resolution, `layoutRuns`, wrap and
+  measurement. It depends on `@weasel-js/font`, `@weasel-js/geom` and
+  `@weasel-js/paint`, and on nothing else: a consumer with its own renderer can
+  lay out text without taking the scene graph or a React peer dependency.
+  `layoutRuns` is now public — it was previously reachable only from inside core.
+
+  `@weasel-js/paint` holds `FillStyle`, `Stroke`, gradients, dashes and
+  `TextureHandle`. It was the blocker named in the 2026-07-28 font split: the
+  layout could not move while its fill type lived in the renderer's graph.
+
+  `@weasel-js/core` re-exports both surfaces, so its own API is unchanged.
+  `Rect` moves to `@weasel-js/geom`, beside `Box`.
+
+  Breaking for anyone importing these through core's internal paths rather than
+  its public entry (`core/paint-types`, `features/text/*`); those paths are gone.
+
+  Advances and kerning still come from a baked MSDF atlas — laying out from font
+  bytes alone needs the metrics seam in
+  `docs/superpowers/specs/2026-08-28-text-package-extraction-design.md`.
+
+  <!-- bump-approved: minor: Mike — two new published packages (@weasel-js/text, @weasel-js/paint) and layoutRuns promoted to public API, on top of ~50 patch changesets carrying new public surface across core, ui and labkit; called explicitly in conversation on 2026-08-29: "tag a minor release and push" -->
+
+### Patch Changes
+
+- 3386d64: Align, distribute and flip use visual bounds
+
+  These folded each member's unrotated pose box, so "Align Left" on a selection
+  containing a rotated shape lined up the boxes and left the rotated shape's ink
+  sticking out past the others. They now work on the visual bounding box, as
+  Figma and Illustrator do.
+
+  Both ends moved together — expanding only the union would have made alignment
+  worse, since the delta runs from an edge of the union to the same edge of each
+  member's box. The new exported `visualBoundsViaDescriptor(pose, geometry)`
+  reads a pose's bounds, recovers its rotation and expands via
+  `axisAlignedBounds`; the union folds those with `unionAABB`. The delta is still
+  applied as a translation of the stored pose through
+  `translatePoseViaDescriptor`, so a shape moves rather than being re-posed.
+
+  Flip needed only its union pivot changed: mirroring maps a centre and preserves
+  size, and an expanded box is concentric with the box it came from.
+
+  `alignMoveBehavior` folds the dragged selection the same way, so a drag snaps
+  by its ink.
+
+- ffafb7d: Never let an animation's virtual clock run backwards.
+
+  `useAnimator` seeds each animation's `lastRealNow` from `now()` at register
+  time, then advances its virtual clock by the difference against the timestamp
+  the frame loop supplies. Those two share a time origin in a browser, where the
+  rAF timestamp and `performance.now()` are both page-relative — but that is a
+  browser guarantee, not a universal one, and jsdom starts them roughly 600ms
+  apart. The first frame's delta then came out hugely negative and `virtualNow`
+  spent dozens of frames climbing back toward zero before a tween advanced at
+  all: a 40ms glide took 95 frames and over a second of wall time, growing worse
+  the longer the process had been alive.
+
+  A frame's elapsed time is never negative, so the sample is now clamped at
+  zero. Under a shared origin this is a no-op.
+
+- ba8b139: Camera animation: `viewport.animatedZoom` now does something
+
+  `animatedZoom` has been declared on `SceneCanvasProps.viewport` and read by
+  nothing; Cmd+=/-/0 was a bare `view.set`. It now routes the discrete zoom steps
+  through the kit's `Animator`. Wheel and pinch are unchanged and never animate —
+  their input already delivers a sample per frame.
+
+  Camera animation is a general surface, not a zoom flag. Three ways in, one
+  runner behind them:
+
+  - `useViewAnimation(view, animator?)` — `animate`, `animateToBounds`, `stop`,
+    `isAnimating`, `target`.
+  - The `view` dep gains optional `animate` / `stopAnimation` / `animationTarget`,
+    so any action can glide the camera.
+  - `SceneCanvasApi` gains `animateView` / `stopViewAnimation` /
+    `isViewAnimating` for fit-to-selection, recenter, or a scripted tour. All
+    three are **required** members: anyone hand-implementing `SceneCanvasApi`
+    (a test double, a wrapper) has to add them, the way `CanvasExtensionApi`
+    grew `getPaintedVersion`.
+
+  Scale interpolates geometrically and translation is derived from the screen
+  point the two views agree on, so a zoom stays anchored instead of drifting and
+  each frame changes the view by the same ratio. One animation runs at a time; any
+  other view write cancels it, and a cancel leaves the camera where it is rather
+  than jumping to the target. On an uncontrolled canvas the whole animation costs
+  no React render.
+
+  **Breaking:** `useViewTween` is removed. `useViewAnimation` keeps its name and
+  changes signature — it takes a `{ get, set }` view channel plus an optional
+  `Animator`, and `animateTo(from, to, { duration, easing })` becomes
+  `animate(to, { ms, easing })`. The `from` argument is gone because the runner
+  reads the live view, which is what lets an interrupted camera resume from where
+  it actually is instead of snapping back to a captured start. `cancel()` is now
+  `stop()`, and `animateToBounds(bounds, currentView, dims, { duration })` is now
+  `animateToBounds(bounds, dims, { ms })` — the `currentView` argument goes for
+  the same reason `from` does.
+
+  **Breaking:** `viewport.recenter` and `ViewApi.recenter` widen to
+  `() => View | void`. Returning the target view lets Cmd+0 animate there;
+  returning nothing keeps the existing behavior. `animatedZoom`'s config fields
+  are `ms` / `resetMs` rather than `duration` / `resetDuration`, matching the
+  animator's vocabulary.
+
+- 3fb3a46: Forward `onFocus` and `onBlur` from the canvas element
+
+  The canvas is focusable by default (`tabIndex` 0) but exposed no way to
+  observe focus, so consumers driving focus-dependent chrome had to attach a
+  listener to an ancestor and infer it. Both are now props on `CanvasProps`, and
+  so reach `SceneCanvasProps` and the canvas element unchanged.
+
+- 67bcb05: Drop four values the canvas layer memo no longer reads
+
+  `hit-test affordances against the painted chrome state` moved the selection
+  overlay to reading bounds off the chrome state at paint time, which left
+  `selectedIds`, `multiActive`, `previewToolPose` and `previewToolBounds`
+  referenced only by the `layers` memo's dependency array — nothing in the body
+  used them. Removing them from the array made all four dead locals, so they go
+  too.
+
+  The memo now rebuilds the layer array on layer/tool/geometry changes rather
+  than additionally on every selection and preview-pose change. Selection chrome
+  is unaffected: it repaints from chrome state, not from the identity of this
+  array.
+
+- 47cbb08: A closed subpath's dash no longer seams at its start vertex
+
+  `splitForDash` flushed the run still open when a closed subpath's walk returned
+  to the vertex it started from as its own open sub-polyline, so it and the run
+  that began there rendered as two butt-capped ribbons meeting at a point — a
+  notch on the corner of any dashed rectangle whose perimeter isn't a whole
+  multiple of the pattern. They are joined now, and the join the stroke asked for
+  is drawn across the seam like any other corner. A pattern whose first "on"
+  length covers the whole perimeter emits a closed ribbon, identical to the
+  undashed stroke.
+
+- f43e9c2: A derived edge follows the drag that moves its endpoint
+
+  `move`, `resize` and `rotate` kept their in-flight poses in action-local
+  scratch and published them only as `previewIds` / `previewPose`. That surface
+  is enough to paint a ghost and size selection chrome, but nothing that asks
+  the _scene_ where a node is can see it — and `scenePoseLookup`, which resolves
+  a derived node's geometry, asks the scene. So dragging a box left its edge
+  anchored to the pre-drag position until the drop, when the commit invalidated
+  the dependents and the edge jumped.
+
+  The three actions now also publish each frame into the scene's ephemeral pose
+  overrides (`syncPreviewOverrides` / `dropPreviewOverrides` in
+  `interactions/actions/previewOverrides.ts`). Overrides bypass `executeAndLog`,
+  so a drag still commits as exactly one undo entry — the reason the actions
+  avoided per-frame scene writes in the first place was history, and this writes
+  no history. Entries are set once and mutated in place, published with a single
+  `commit()` per frame.
+
+  Picking follows for free: the pick source resolves a derived path through its
+  own override-aware `poseOf`, so an edge is grabbable where it is drawn
+  mid-gesture rather than where it used to be.
+
+  `clone` is deliberately untouched — its previews are the new ghosts at the
+  drag target, and the originals never move, so nothing derives from a changed
+  pose.
+
+  Also closes the matching gap in the preview-ghost layer, which built a
+  container's clip with no derived path and so ghosted a derived container
+  without one.
+
+  Note for anyone with a hand-written `Scene` stand-in: `overrides` is now read
+  on every gesture frame. It was already required by the `Scene` contract, but a
+  partial fake that omitted it will now throw rather than silently skip.
+
+- bb27e83: A derived node is clickable where it paints
+
+  A node whose geometry comes from `derivePath` had no silhouette and no `ink`:
+  `NodeShapeEntry.silhouette` took only `(node, pose)`, and a derived path is
+  resolved from the _dependencies'_ poses, which a painter has no handle on. So
+  `kit:derived` could not report one, `shapeCoversPoint` read the resulting null
+  as "no opinion" and answered `true` everywhere, and picking fell back to the
+  node's own pose — for an edge, a zero-sized placeholder at the origin. An edge
+  was unpickable, and a derived container contributed no clip.
+
+  `silhouette` now takes a `NodeSilhouetteCtx` carrying `derivedPath`, on the
+  same convention `NodePaintCtx` already uses, and `kit:derived` reports the
+  derived path as its silhouette and its declared stroke as its `ink`.
+
+  Resolving that path needs the scene, so it is the _source_ that answers, not
+  the painter: `PickSource.derivedPathOf`, a matching optional argument to
+  `buildSceneTree`, and `SceneSlotConfig.derivedPathOf` — the slot already
+  carried the derived path a node _paints_, and now also the clip a derived
+  container _imposes_, so the live canvas and the headless walk clip alike. The
+  bare-adapter paths supply none of them and behave exactly as before.
+
+  The pre-filter had to move with it. `useSceneSelectTool` grew its region test
+  from the node's pose, which for a derived node is the wrong box entirely, so
+  the edge was rejected before the shape test could claim it. It now tests the
+  derived path when there is one — `poseContains` already reads a path-like pose
+  as a path, so this reuses it rather than adding a second reach calculation.
+
+  `findShapeSilhouette` skips its memo when handed a derived path. That slot is
+  keyed on `(node, pose, data)` and cannot see the path, so it would serve one
+  caller's silhouette to a caller that passed a different one — the same reason
+  `kit:derived` already skips `PAINT_SLOT`.
+
+- 6a33c3f: A node's path can be derived from other nodes' poses
+
+  A node declares `dependsOn: NodeId[]` and a `derivePath` function resolved by key
+  through `SceneRegistry`, and the scene walks resolve its path before painting
+  rather than it being authored. An edge drawn between two boxes is then an
+  ordinary scene node — selectable, styleable, exportable — whose geometry never
+  enters undo history. The seam and its traps are in `docs/extending.md`.
+
+  New surface: `scene.removeMany(ids)`; `dependsOn` and `derivePath` on
+  `NodeBase` and on `AddNodeSpec`, which is what a consumer writes;
+  `SceneRegistry.derivePath`; `SerializedNode.dependsOn` and
+  `SerializedNode.derivePathKey`, both additions to the serialization format;
+  `NodePaintCtx.derivedPath`.
+
+  Deleting a node now deletes everything that derives from it, transitively,
+  including those nodes' own subtrees, in one undo entry — so `scene.remove` can
+  remove nodes anywhere in the tree that the caller never named, and `removeLayer`
+  reaches nodes on other layers. Undo after the built-in **Delete** key does not
+  yet restore the cascaded nodes; see "Derived geometry follow-ups" in
+  `docs/TODO.md`.
+
+  **Breaking: `defaultDrawOne` takes `(node, pose, view?, ctx?)`.** The paint
+  context moves to a fourth parameter, so a call passing a `NodePaintCtx` third is
+  now a type error rather than a silent slide into the `view` slot. The same
+  fourth parameter is added to the `SceneViewDrawOne` and `SceneSlotConfig.drawOne`
+  callback types, which is not a break: an existing three-parameter implementation
+  still satisfies them, and an existing three-argument call still compiles.
+
+  **Breaking: `Scene` gained a required `removeMany`.** A hand-written object
+  typed as a `Scene` — a test double, most likely — no longer typechecks until it
+  implements it.
+
+  **Breaking: `kit:remove`'s op payload changed shape.** `rootId` / `parent` /
+  `index` became `detached: { id, parent, index }[]`, because a cascaded dependent
+  is not a descendant of the removed node and the tree has to be told about every
+  subtree that came out of it. A history persisted by an older build now throws
+  mid-undo rather than degrading. The break is deliberate; kit op payloads are not
+  versioned.
+
+- c24e7de: Detached views follow pose overrides
+
+  `<SceneViewCanvas>` and `<MinimapCanvas>` re-rendered off `scene.getVersion()`,
+  which a pose override deliberately never bumps — so they kept painting document
+  poses while `<SceneCanvas>` painted the overridden ones. A minimap beside a
+  canvas driving a drag or a simulation silently disagreed with it.
+
+  `<SceneViewCanvas>` now paints through `useFrameLoop` instead of from React, and
+  subscribes to `scene.overrides`. A render (prop change or version bump) and an
+  override commit both just mark the surface dirty, and one animation frame
+  coalesces them — so a 60 Hz override loop repaints these views with no React
+  render, and a backgrounded tab stops painting them entirely. The mount paint
+  stays synchronous, so the first frame is still the scene rather than a blank
+  canvas. `<MinimapCanvas>` inherits all of this through it.
+
+  Repaints driven by a prop change are now asynchronous: they land on the next
+  animation frame rather than in the layout effect of the render that caused them.
+  Code that renders and then reads pixels in the same tick needs to wait a frame.
+
+  A minimap's _framing_ still derives from document poses, so a node overridden
+  outside the document bounds paints outside the fitted frame — recomputing the
+  fit per frame would rescale the whole minimap throughout a settle.
+
+- ce82f4a: An enum leaf can ask for a segmented control, and `pair` works inside an object
+
+  `ToolPrefEnumControl` gains `'toggle'`: a three-option enum shows all three at
+  once instead of hiding two behind a select. Options carry an optional `short`
+  label — a capital or two — for the width a property row has; the full `label`
+  stays the accessible name, so the abbreviation never becomes the only thing
+  naming the option. A mixed selection selects no segment rather than picking a
+  winner.
+
+  `pair` now merges fields inside an object leaf, as it already did for section
+  rows — a hint shouldn't mean something different for being a field of a value
+  rather than a sibling of one. It merges _adjacent_ leaves in both places, so
+  the schema orders family, size, weight: size and weight pair, and family (which
+  sat between them) moves ahead of the pair rather than splitting it.
+
+  A stroke's cap, join and align share one row; property rows wrap rather than
+  overflow when the controls in them don't fit.
+
+- be697dc: Add ephemeral pose overrides to the scene
+
+  `scene.overrides` holds a per-node `{ pose?, alpha? }` that the render and
+  hit-test paths read through and that history, `toJSON()` and `getVersion()`
+  never see. It is additive: a scene with no overrides behaves exactly as before.
+
+  This is where per-frame motion belongs. A 60 Hz loop previously had to write
+  through `setPose`, which records an undo entry (one per frame at best, batched)
+  and bumps the scene version, re-rendering every `useSyncExternalStore`
+  subscriber. It also had to allocate a fresh pose object per moving node per
+  frame, because the painter memo keys on pose reference. An override entry is
+  hoisted once and mutated in place; `overrides.commit()` publishes the frame and
+  invalidates the memo for the overridden nodes only.
+
+  `commit()` is required after an in-place mutation — without it the memo serves
+  the previous frame's draw. Overrides are cleared when a node is removed, since
+  ids are reusable. To make a frame permanent, write it once through `setPose`
+  and clear the override; that single step is the undo entry.
+
+  `ForceGraphDemo` now settles with zero history entries and bakes the result as
+  one, replacing a per-tick batch of 24 `setPose` calls.
+
+- e909a3b: `fitTextPose` sizes a box the renderer will actually fill
+
+  It was the fourth site measuring text its own way: `ctx.measureText` per
+  character against system fonts, no kerning, `pose.text` only. Nothing masked
+  it the way the WebGL context masked the caret — a consumer calling it got a
+  box that disagreed with the paint, narrower by a kern on every pair and wrong
+  by the whole difference between the installed family and the registered face.
+  It goes through the shared layout now, so it sees kerning and per-run styling.
+
+  **Breaking:** `fitTextPose(ctx, pose, opts)` is now `fitTextPose(pose, opts)`.
+
+- 26bbdcf: Paint the canvas from its own animation frame instead of from a React render
+
+  `requestRedraw()` marks the surface dirty and the next frame paints, so many
+  redraws in one tick cost one paint. The view gains an imperative path on the
+  canvas handle — `setView` / `getView` / `subscribeView` — and `SceneCanvas` no
+  longer holds it in React state, so a camera moving at 60 Hz costs no renders.
+  Consumers passing a `view` prop stay controlled and are unaffected.
+
+  Opt-ins that come with it: `syncPaint` paints inside the commit for a consumer
+  that wants the old whole-cloth guarantee, `useScene(…, { subscribe: false })`
+  gives a host the scene without a render per mutation, `useSceneTextEdit`'s
+  `view` option accepts a thunk so the overlay tracks a ref-driven camera, and a
+  `contentVersion` prop feeds the version that `getPaintedVersion()` reports.
+
+  Two public signatures changed. `usePinchZoomTool` takes a view getter,
+  `getView: () => View`, where it took a `View` — nothing re-renders to refresh a
+  captured value any more. `CanvasExtensionApi` gained five required members —
+  `getView`, `setView`, `subscribeView`, `subscribeFrame`, `getPaintedVersion` —
+  so external code hand-implementing that interface stops typechecking; code that
+  only calls through the ref is unaffected.
+
+  Pixels and DOM can now be a frame apart, in whichever direction the change came
+  from. A view change leads with pixels: `setView` paints without rendering, so
+  DOM built from the view is stale until something re-renders it — position
+  world-anchored DOM from `subscribeView`. A scene change leads with DOM:
+  `SceneCanvas` still subscribes to the scene, so a `batch` commits now and the
+  pixels land next frame — compare `getPaintedVersion()` against the version you
+  are about to render when chrome must be in lockstep. Do not render scene-derived
+  DOM inside `startTransition`: React defers it and nothing forces it to catch up.
+
+  Anything reading the drawing buffer back outside a paint — the hud loupe's pixel
+  mode is the one in-tree case — can likewise see a buffer one frame older;
+  `subscribeFrame` runs on the frame that painted and removes the lag. Nothing
+  paints while `document.hidden` is true, `syncPaint` included, so a readback from
+  a background tab returns the frame from before the tab was hidden.
+
+- 546f67d: Copy typed-array arguments into `makeGLRecorder`'s call log as they are
+  recorded. A caller is entitled to reuse the array it uploads from, so storing
+  the reference recorded a value that later frames overwrote — a test reading
+  two frames back saw the same numbers twice and passed. Test-only surface.
+- 3fb3a46: Release held keys when the window loses focus
+
+  A window that blurs mid-hold never delivers the keyup, so every in-flight
+  `key-held` handle stayed engaged until that key was pressed again — holding
+  Space and tabbing away left the hand tool on the hotkey stack indefinitely.
+
+  The gesture dispatcher now fires the `key-held` up phase for each held key on
+  window blur. Consumers that hand-rolled this reset can drop it; ongoing
+  invocations see a normal `onEnd`.
+
+- ccd51cc: Add a 43-glyph monochrome icon set to `@weasel-js/ui`.
+
+  One register: a 20x20 viewBox drawn in `currentColor` at stroke-width 1.5 with
+  round caps and joins, hairline weight reserved for structure, and filled
+  regions only where an action has a subject. Covers transport, history, view,
+  trial lifecycle, collection, state, instrument and status vocabulary. Import a
+  named component (`CloneIcon`), or `Icon` when the glyph is chosen at runtime.
+
+  `@weasel-js/ui` also re-exports the tool glyphs that live in `@weasel-js/core`,
+  so consumers have one import site for the whole set. `ImageIcon` was reachable
+  from core's icons folder but missing from its public barrel; it is exported
+  now.
+
+  Glyph geometry is generated (`npm run gen:icons`) from `packages/ui/scripts/icons/`
+  rather than hand-placed, because arrowheads and joins that miss their terminus
+  are invisible at chrome size.
+
+- 3fb3a46: Compose `before` and `after` layer chains in both directions
+
+  `composeOrderedLayers` walked the two anchor maps separately: a chain hanging
+  off an `after` anchor only followed further `after` links, and likewise for
+  `before`. A custom layer anchored `before: 'scene'` carrying a second custom
+  anchored `after` it dropped that second layer to the tail with a spurious
+  dangling-reference warning.
+
+  Both walks now emit a layer's `before` chain, the layer, then its `after`
+  chain, so the two mix freely. Cycle detection and orphan fallback are
+  unchanged.
+
+- d9f110e: Stop every frame loop while nothing can see it
+
+  New public hook `useVisibleRaf` in `@weasel-js/core` owns the question of
+  whether a frame may run: nothing runs while `document.hidden`, and a loop that
+  names an element also stops while that element is outside the viewport. A
+  request made while suspended is held rather than dropped and re-armed on
+  resume, so a loop never polls visibility or needs restarting by hand.
+
+  Ten loops now run behind it — `useFrameLoop`, `useAnimator`, `useSimulation`,
+  `useDecayLoop`, `useTextEdit`'s overlay follow, `CursorCoordsHud`'s FPS
+  counter, `Badge`'s crawl, and labkit's `FpsMeter`, `useTiledSurface` and
+  `useLayerScheduler`. Only `useFrameLoop` consulted `document.hidden` before;
+  the rest ran on any page left open. `useLayerScheduler` looked safe and wasn't:
+  it paints only dirty layers, but a hidden tab still commits React updates and
+  its view/size effect marks every layer dirty.
+
+  Loops measuring elapsed time rebase their clock through the new `onResume`
+  option, so an hour spent hidden does not arrive as one hour-long frame — an FPS
+  meter reporting a rate nobody achieved, a tween jumping to its end value on
+  return. `dangerouslyRunWhenHidden` opts a loop out for offscreen recording or
+  export; nothing in the tree sets it.
+
+  `npm run check:frame-loops` fails the build on a bare `requestAnimationFrame`
+  in kit source, and runs in CI.
+
+- 0dd35a1: Fix pinch-to-zoom: mac trackpads zoomed the page, and `viewport.pinchZoom` zoomed twice
+
+  A trackpad pinch reaches the page as `wheel { ctrlKey: true }`. On a mac
+  `viewport.zoom`'s `mods: { mod: true }` binding requires metaKey and forbids
+  ctrl, and `viewport.wheelPan` forbids ctrl too, so nothing claimed the event
+  and the browser's own ctrl+wheel page zoom ran. `viewport.zoom` now carries a
+  second wheel binding on bare ctrl. Off mac it duplicates the `mod` binding,
+  where the matcher picks a single winner.
+
+  Nothing caught that because `IS_MAC` read `navigator.platform ?? userAgent`,
+  and jsdom reports an empty-string platform — not nullish, so the fallback never
+  fired and every mac binding in the kit was exercised only on the non-mac
+  branch. It reads `||` now.
+
+  Separately, `viewport.pinchZoom: true` mounted `<Canvas>`'s `usePinchZoomTool`
+  alongside the `viewport.pinchZoom` action that already handled the same
+  gesture, applying one pinch's factor twice — the opt-in broke the path that
+  worked without it. SceneCanvas drives pinch through the action alone, and the
+  flag configures it: new `makePinchZoomAction({ min, max })` (exported), with
+  the kit's 0.1–8 clamp now applied by default. `pinchZoom: false` disables pinch
+  for real; it previously left the action running. Bare `<Canvas>` keeps the hook
+  as its own pinch path.
+
+- 1a0bea3: `useNodeOverlayFrame`: the coordinate frame a DOM overlay pinned to a node needs
+
+  Nothing in the kit exported one, so consumers hand-rolled it — their own
+  `ResizeObserver` next to the existing `useCanvasSize`, and a translate-and-scale
+  inverse built by projecting two points. That inverse silently drops
+  `pose.rotation`, which is why on-canvas gradient handles on a rotated node sat
+  beside the paint instead of on it.
+
+  ```ts
+  useNodeOverlayFrame(scene, containerRef, nodeId, { view });
+  // → { box, toScreen, toLocal, width, height } | null
+  ```
+
+  `box` is the node's composed world box, unrotated — the frame `toScreen` maps
+  from, and the box to hand `fillInPoseFrame` / `fillToBoundsFrame`. Rotation
+  lives in the pose→world leg, where it belongs: a node's stored geometry and its
+  bounds-frame paint are pre-rotation by definition, so neither of those two
+  changes.
+
+  `@weasel-js/ui` gains `SceneGradientHandles`, the scene-aware half of
+  `GradientHandles`: it reads the gradient out of a node's `fill` **or** its
+  `stroke` — `slot` is a prop — and commits each drag through `setFill` or
+  `setStroke` as one undo entry. `GradientHandles` itself stays frame-agnostic.
+
+  Also: `isGradientFill` narrows a `FillStyle` to its three gradient members, and
+  `useCanvasSize` accepts any `HTMLElement` rather than only a `div`.
+
+- 9d95836: A node's `data.stroke` takes a whole `Stroke`, not just a color
+
+  `NodeStroke = string | Stroke`, mirroring `NodeFill`. A string is still a
+  color and `'none'` still skips the stroke; an object is a core `Stroke` whose
+  `width`, `cap`, `join`, `dash`, `miterLimit` and `align` all reach the
+  renderer, which has accepted them on `PathDrawCommand` all along. The object
+  wins outright over `data.strokeWidth` rather than merging with it, the same
+  rule `withLeafStroke` already applied to text. A bounds-relative stroke paint
+  is baked onto the pose box the way a fill is, so a gradient stroke resolves
+  against the box it was authored against.
+
+  `kit:shape` now honors `stroke: 'none'`, which only `kit:path` checked before.
+
+  `NodeInk` reports `{ filled, outset, inset }` instead of `{ filled,
+strokeWidth }`: `align: 'inner'` puts no ink outside the silhouette and
+  `'outer'` none inside, which one number could not say, so picking grabbed the
+  wrong side. `ink` takes an optional context carrying the view scale, so a
+  `{ px }` stroke width resolves to world units. A painter that still returns
+  `{ filled, strokeWidth }` is read as a centered stroke and keeps working.
+
+  `setStroke` and `setStrokeOpacity` no longer stringify a node's `Stroke`: a
+  color pick replaces its paint and keeps width, cap, join and dash, and an
+  opacity drag sets the paint's `opacity`, which is the only form that works on
+  a gradient stroke.
+
+  Editing UI for the rich form is not here yet — a schema-driven color control
+  still writes a bare string over the object, so nodes carrying one are for
+  programmatic authorship until `SelectionPanel` learns the union. See
+  `docs/proposals/2026-08-26-node-stroke-union.md`.
+
+- 62a3c46: Paint a gradient or pattern stroke instead of throwing.
+
+  `Stroke.paint` has always been a full `FillStyle`, and SVG import puts paint
+  servers there deliberately, but the renderer refused anything but a solid — so
+  importing a shape with `stroke="url(#grad)"` produced a scene that threw on the
+  next frame. Both stroke paths now paint the ribbon through the same route a
+  fill takes, including under the inner/outer alignment stencil. A non-solid
+  even-odd fill no longer renders black.
+
+- 5f6c28e: An object leaf's fields can be organised into groups
+
+  `ToolPrefObject.children` takes a `ToolPrefGroup` as well as a leaf. A group
+  heads its fields under a label and contributes nothing to the path — the same
+  rule group keys follow at the top level of a schema, so a field inside one is
+  still addressed as a field of the object.
+
+  Without it, a value with many fields renders as one undifferentiated list. A
+  `TextStyle` is the case that needs it: its character and paragraph fields are
+  one value but read as two lists.
+
+- 3cd1ee8: A schema leaf can hold an object, with its fields hanging off it
+
+  A compound value — a stroke, a shadow, a pattern spec — could be described as
+  sibling leaves addressing into it (`data.stroke.width`, `data.stroke.cap`).
+  It shouldn't be: each control then writes one field of a value it can only
+  half see, and writing a field into something that isn't an object yet corrupts
+  it outright.
+
+  `ToolPrefObject` describes the value instead. Its `children` are ordinary
+  leaves whose paths are relative to the object, and every child edit commits
+  the parent object whole. A field that is itself a union declares the kind that
+  edits that union — a stroke's `paint` is a `paint` leaf. `fromScalar` lifts a
+  value still held in a scalar form before a child edit lands on it, which is
+  how a stroke stored as a bare colour string gains a width.
+
+  `defaultNodeProperties` describes `data.stroke` this way, so the panel shows
+  Color, Width, Cap, Join and Align under one Stroke block, and the separate
+  `data.strokeWidth` leaf is gone. `SelectionPanel` now honours `block`, which
+  `PrefsForm` already did. The one-off `stroke` pref kind added days ago is
+  replaced by this general one.
+
+  `dash` has no leaf: it is a `number[]` and no kind edits one. It survives
+  import, export and rendering untouched.
+
+- 2ea772f: Selection handles are hit-tested at the size they are painted
+
+  Handles painted at `HANDLE_BASE_PX * targetScale` and hit-tested at the bare
+  constant, and neither `buildAffordanceAt` call site passed the option that
+  would have scaled it. A coarse pointer got a bigger picture and exactly the
+  same 8px grab zone it had on a mouse — the touch forgiveness the coarse profile
+  exists to provide never reached the hit-test. The slops debug overlay was a
+  third unscaled copy, so it drew hit regions where they were not.
+
+  `core/device/targets.ts` now holds one base table and one accessor,
+  `targetSizesPx(targetScale)`. Paint, hit-test and the debug overlay all resolve
+  through it. `HANDLE_BASE_PX`, `ANCHOR_HIT_BASE_PX` and
+  `ROTATION_HANDLE_BASE_PX` keep their names and values and now read off the
+  table; the internal `HANDLE_HIT_RADIUS` and `ANCHOR_HIT_RADIUS` are gone.
+
+  `buildAffordanceAt` and `createSlopsDebugLayer` take an optional `targetScale`.
+  `selectTool.handleHitRadius` now actually reaches the hit-test — it previously
+  reached nothing.
+
+  `useRotateTool`'s `handleHitRadius` option is **removed**. The rotation
+  affordance is an annulus with a band thickness and no point radius, so the
+  option could only ever have been a second name for `rotationHandleDistance`,
+  which is live and now defaults from the same table.
+
+  Known gap: `CanvasView` is a second `buildAffordanceAt` call site that reads no
+  device profile, so a nested view still hit-tests at the fine-pointer size.
+
+- f77bd95: `getChildren` means one thing on an adapter
+
+  `MoveAdapter` declared `getChildren(id)` — a node's direct children, for the
+  drag cascade — and `OrderedAdapter` declared `getChildren(parentId | null)`,
+  the z-ordering seam where `null` means the root. Both land on the same adapter
+  object, so `arrayAdapter` took the first shape from its config and exposed it
+  under the name the ops read with the second meaning. An op asking for root
+  order got `[]`, which reads as "the root has no siblings", and the slot it
+  captured was silently lost.
+
+  The two declarations are now one contract, and `arrayAdapter` answers the root
+  from its own item array rather than delegating — a consumer callback written
+  for node ids returns `[]` there, which cannot be told apart from a genuine
+  empty answer. A consumer's `getChildren` config is still only ever asked about
+  a node id.
+
+  `arrayAdapter` still exposes no `setChildOrder`, so it places by ordinal rather
+  than by anchor. That is unchanged, and it is why the ordinal fallback exists.
+
+- 2ea772f: The canvas and the gradient editor now sample one gradient
+
+  `buildGradientRamp` carried its own interpolation beside
+  `sampleGradientStops`, and the two disagreed three ways: the ramp had no guard
+  at either end and extrapolated past the first and last stop, the two picked
+  opposite sides of a coincident pair, and they parsed color differently — a stop
+  written as a CSS named color rendered on the canvas and threw in the editor.
+
+  `sampleGradientStops` keeps its semantics and is now the only implementation.
+  `resolveGradientStops` sorts and parses the list once; `sampleResolvedStops`
+  returns the color at `t`. The ramp cache builds its texels through those, so
+  there is no interpolation math left in the renderer.
+
+  Two behavior changes worth naming. `resolveColor` is the surviving parser, so
+  gradient stops accept named and functional colors everywhere — but no longer
+  hex without a leading `#`, which only the editor path had tolerated and the
+  canvas never accepted. And `sampleGradientStops` returns normalized hex at the
+  endpoints instead of echoing the raw stop string, so `'red'` comes back as
+  `'#ff0000'`.
+
+  **SVG export:** a conic gradient left the exporter as a dangling `url(#…)` —
+  the element already carried the reference, the built-in serializer returned
+  nothing, and the registry's `toSvg` slot has no in-repo implementation, so the
+  shape disappeared in a browser with no warning at all. Serialization now falls
+  through to the same warning the pattern path already emits when nothing can
+  produce a paint server. A consumer that registers a `toSvg` for
+  `conic-gradient` still serializes and gets no warning.
+
+- aba8d91: Answer "can this node be hit" in one place
+
+  Four tree walks answered it separately — the generic-adapter point pick, the
+  one `<SceneCanvas>` installs, `sceneToAdapter`'s area walk, and the live
+  marquee/lasso — plus a fifth that shadowed the third. They agreed on every case
+  that had a test and disagreed on the rest, three times, silently. `pickWalk`
+  now owns every gate; a query supplies only its own shape test and the clip
+  predicate for its region.
+
+  Behavior that changes as a result:
+
+  - **A node painted at alpha 0 is no longer clickable.** The pick path reads the
+    same number the painter does — the view's `alphaFor` times any per-node
+    override alpha — so a node faded out of sight stops claiming clicks. The
+    floor is exactly zero, so a fade-in is pickable from its first nonzero frame.
+    Alpha is per view: dimming a node in one view leaves it pickable in another.
+  - **A layer that is not painted no longer claims pointer events.** `drawLayers`
+    drops any layer missing from a supplied `layerOrder`, and the chrome hit path
+    only consulted `layerVisibility`. Both gates now run through one
+    `isLayerPainted`, which is exported.
+  - `sceneToAdapter`'s area walk reads override poses and hidden layers, which it
+    did not; its default `poseBounds` answers a path pose instead of `NaN`, which
+    is what the shadow walk existed to work around.
+  - An ancestor clip now rejects an area query that reaches into the clip where
+    the node is not, or reaches the node where the clip is not — the two terms
+    together, where one alone let false positives through.
+
+  `useSceneSelectTool` takes `alphaOf` and `layerIsPainted` for the asking view.
+  `passesAncestorClips` and its module are gone; `pickWalk`, `scenePickSource`,
+  `adapterPickSource` and `ownClipOf` replace them.
+
+- 2ea772f: A drag-to-insert reports the bounds it paints
+
+  The painter, the commit factory and `getGestureBounds()` each sized an
+  in-flight insert differently. The reporter read the drag rect alone, so a
+  centered Alt-drag reported a half-extent of `d` against a painted circumradius
+  of `d√2`, a purely horizontal Alt-drag reported **height 0** for a visibly tall
+  star, and a pencil scribble that looped back to its start reported nothing at
+  all. The painter and the commit agreed on polygon and star but not on line or
+  pencil: the commit posed the drag AABB for a line the painter drew endpoint to
+  endpoint, and fell back to the drag rect for a trail under four samples.
+
+  One function now answers it for all three. The zero-area skip in the painter
+  and the reporter tests the resolved extent rather than the raw drag rect, and
+  an `InsertNodeFactory` that returns no `pose` falls back to the extent. The
+  `bounds` argument handed to a factory is unchanged.
+
+- 3386d64: Path command opcodes derive from one table
+
+  `M`/`L`/`C`/`Q`/`Z` and their coordinate counts were declared five times —
+  once in core, once in `@weasel-js/geom`, and three more as `COORD_COUNT`
+  literals in the path transform, pose-rotation and pose-descriptor walkers. They
+  agreed, and nothing held them to each other: a sixth opcode desynchronizes two
+  packages' reading of the same `Uint8Array` with no exception and no type error,
+  and every walker misparses the coordinate stream from that command on.
+
+  `PATH_COMMANDS` in `@weasel-js/geom` is now the table. `PATH_M`…`PATH_Z`,
+  `PATH_CMD_LENGTHS` and the new `pathCommandCoordCount` all derive from it, and
+  core re-exports them by name, so the opcode constants keep their names, values
+  and literal types. The three walkers moved onto `forEachSegment` rather than
+  onto the accessor alone — they were duplicating the coordinate-cursor advance
+  as well as the length, and the cursor is the half that actually misreads.
+
+  Eight further files switch on these opcodes with inline literals. Five throw on
+  an unknown code; three — the path boolean adapter, the anchor-editing geometry,
+  and geom's own boolean adapter — have no `default` arm and would silently stop
+  advancing. Left as-is; they need per-command semantics, not one walker.
+
+- 68d2651: Pref leaf kinds are declared once, and every renderer is exhaustive
+
+  `@weasel-js/ui` carried its own copy of the pref-leaf union under a comment
+  saying to keep it in sync with core's field-for-field. It had drifted: ui's enum
+  leaf had neither `encoding` nor `options[].disabled`, so a dash-array
+  preference did not merely fail to select — choosing an option wrote the option
+  string over the stored dash array. labkit's two renderers were missing the
+  `paint` and `object` kinds outright.
+
+  ui's schema is now a rename re-export of core's declaration. The public `Pref*`
+  names are unchanged, and there is nothing left to keep in sync.
+
+  More importantly, all four renderer switches ended in `default:`, so adding a
+  built-in kind produced no error at any site and simply rendered nothing —
+  verified by adding one and typechecking. `ToolPrefLeaf` widens `kind` to
+  `string` so app-defined prefs can ride the same tree, which means a `never`
+  guard cannot sit on it directly. New from core: `TOOL_PREF_KINDS`, a
+  `Record<ToolPrefKind, true>` that a new kind fails to compile against first, and
+  `isBuiltinToolPref(leaf)`, which narrows to the closed union so each renderer
+  can discriminate and end in a `never`. App-defined kinds take the placeholder
+  path as before.
+
+  Dash-array preferences now select and commit correctly in `PrefsForm`: the enum
+  arm threads sibling values, routes through `encoding.read` / `encoding.write`,
+  and honors `option.disabled`. `SelectionPanel` already did all of this — it was
+  only the forked copy that could not express it.
+
+- 3386d64: Dragging out a text box shows a live preview
+
+  The set of insertable kinds and the `KitInsertShape` union sat on adjacent
+  lines with no linkage, and seven more sites restated one list or the other. The
+  drift was already live: the text tool binds `actionId: 'insert'` and commits
+  through the insert dep, but the runtime set never listed `text`, so a
+  drag-to-insert text box had no preview.
+
+  `SHAPE_KINDS` is now one descriptor table — a row per kind, flagged for whether
+  it has a built-in tool and whether it takes an insert preview. Both unions,
+  `KIT_SHAPE_KINDS`, `BUNDLE_TOOLS.exhaustive`, the known-builtin-id list and the
+  preview gate all derive from it.
+
+  Two type-surface consequences. `KIT_SHAPE_KINDS` is typed
+  `readonly BuiltinShapeToolId[]` rather than a literal tuple — same contents,
+  same order, and `(typeof KIT_SHAPE_KINDS)[number]` is unchanged; what goes is
+  positional and length typing, which nothing uses. And `OngoingOverlay['shape']`
+  gains `'text'`, which is the fix itself: a consumer switching exhaustively over
+  it gains a case, handled by the existing box arm.
+
+- c6c499d: Text layout is computed once, and the caret reads the layout that was painted
+
+  The paint, the pose silhouette and the click-to-edit caret each ran their own
+  walk. The paint went through a memoized `layoutRuns`; the silhouette re-ran
+  `layoutRuns` on every pose change, because it allocates a fresh `ResolvedRun[]`
+  per call and the cache keyed on array identity; and the caret summed
+  `ctx.measureText` per character, which sees no kerning, reads system fonts
+  rather than the registered face, and ignores per-run styling entirely. The
+  caret could therefore answer with a different line, and a different glyph, than
+  the one under the pointer — masked in practice only because it asked a WebGL
+  canvas for a 2D context and got `null`, degrading silently to no caret at all.
+
+  `cachedLayoutRuns` now lives in `@weasel-js/text` beside the function it caches,
+  and all three go through it. It keeps the array-identity `WeakMap` as the
+  renderer's zero-cost path and falls through to a bounded LRU keyed on the runs'
+  structure, which is what lets a caller that cannot hold a stable array hit it —
+  about 230× cheaper than laying out again, at roughly 4× the cost of the
+  identity hit. `LaidOutLineBox` carries the caret stops the pen produced, so
+  snapping is to the advance cells the glyphs were actually painted in.
+
+  **Breaking:** `caretIndexAt(ctx, x, y, pose)` is now
+  `caretIndexAt(x, y, pose, opts?)` — the `CanvasRenderingContext2D` is gone, and
+  an optional `maxWidth` mirrors `textLineBoxes` for nodes the `kit:text` painter
+  draws unwrapped. `useSceneTextEdit` no longer acquires a 2D context, so a
+  double-click always seeds the caret instead of falling back to editing from
+  offset 0. `@weasel-js/text` gains a `./test-seams` entry point exporting
+  `_resetLayoutCacheForTests`.
+
+- 4f1ef0b: Lay text out from font bytes alone — no baked atlas.
+
+  `registerFontOutlines` was a paint upgrade for a family that already had an
+  MSDF atlas; a family with only font bytes could not resolve, so it rendered
+  nothing. It is now a tier in its own right: `OutlineFace` reports `ascender`,
+  `advanceOf` and `kernOf` in em units, `resolveFontVariant` resolves an
+  outline-only family, and `layoutRuns` reads advances, kerning and the baseline
+  through one source the atlas and a parsed face both satisfy. `outlineMinSize`
+  does not gate such a family — there is no other tier to prefer.
+
+  This does not touch metric neutrality where it applies: a family that has an
+  atlas still resolves to the atlas, so registering outlines cannot move text
+  that was already rendering.
+
+  Also fixes the outline tier in Node. opentype.js publishes ESM under `module`
+  and UMD under `main`; Node takes the UMD build, whose named exports it cannot
+  detect, so `parse` was undefined and every face failed to load — silently, via
+  the fallback to SDF. A browser bundler reading `module` never saw it.
+
+  Breaking for a consumer-supplied `OutlineParser`: a face must now report
+  metrics as well as geometry.
+
+- 0114abf: Add `PaintInput`, a control that edits a whole `FillStyle`.
+
+  A kind bar over a per-kind body, driven by the paint-kind registry rather than
+  a fixed list, so a consumer's registered kind appears in the bar and renders
+  that entry's `Editor`. `SelectionPanel`'s `paint` leaf renders it in place of
+  the chip that showed a gradient as indeterminate and wrote a solid over it on
+  first touch — so the checkerboard now means a mixed selection and nothing else,
+  and a gradient stroke is editable rather than merely paintable.
+
+  Switching kinds keeps a per-kind memory for the control's lifetime, so
+  linear -> solid -> linear comes back with its stops instead of the ramp
+  `withGradientKind` cannot carry.
+
+  `PatternPicker` moves from WeaselDraw into `@weasel-js/ui`, which now depends
+  on `@weasel-js/svg` for its tile previews.
+
+  The bar offers **None**: "what kind of paint is this?" takes no-paint as an
+  answer. `setFill` and `setStroke` accept `paint: null` to write it — a fill
+  becomes `null`, and a stroke goes away entirely rather than keeping a width
+  that draws no ink. `PaintKindEntry` gains an optional `icon`, and the five
+  built-in kinds carry glyphs so six segments fit a property row.
+
+  `FILL` and `STROKE` are now peer sections: the `appearance` group goes headless
+  and `data.fill` becomes a block leaf. The stroke's paint is no longer paired
+  with its width — a whole paint editor cannot share a row with a slider.
+
+- 50bc909: `FillStyle` is open: register a sixth paint kind and it renders, converts
+  frames and serializes.
+
+  `registerPaintKind(entry)` returns a disposer and `_resetPaintKindsForTests`
+  re-seeds the five built-ins, matching the kit's other module-global
+  registries. An entry carries the editor's slots (`label`, `seed`, `colorOf`,
+  `Editor`), a render slot, both frame-conversion directions, and an SVG
+  `<defs>` slot. `listPaintKinds()` enumerates them, and `asPaint` types a
+  consumer's own paint as a `FillStyle` — the union itself stays closed, because
+  opening its discriminant would widen every built-in member.
+
+  Three defects fall out of the same change, each of which a sixth kind hit
+  immediately. The renderer's fill dispatch fell off the end of its switch into
+  an unguarded cast to the gradient union, so an unknown kind read `stops` off a
+  paint with none and threw mid-frame. `fillInPoseFrame` and its inverse returned
+  an unknown kind untouched, leaving it painting in screen space on a node that
+  moves. `<defs>` emitted nothing for a kind `gradientXml` did not know while
+  still writing the `url(#id)` that referenced it.
+
+  Registering a kind now bumps the node memo generation, so a node painted
+  before the registration repaints rather than holding the frame it resolved
+  when the kind was unknown.
+
+- 6a06f6d: Node paint is an object: `data.fill` is a `FillStyle`, `data.stroke` a `Stroke`
+
+  Each concept now has exactly one shape. `data.fill` holds a `FillStyle`,
+  `data.stroke` a whole `Stroke`, and `null` on either is an explicit "no paint"
+  where `undefined` takes the painter's fallback. Two new authoring helpers keep
+  hand-written node data short:
+
+  ```ts
+  data: { path, fill: solid('#7fb069'), stroke: strokeOf('#1c1c1c', 2) }
+  ```
+
+  **Breaking, with no compatibility path.** A document written against the old
+  shapes renders wrong rather than failing, which is accepted:
+
+  - `NodeFill = string | FillStyle` and `NodeStroke = string | Stroke` are gone,
+    and so are the string branches of `resolveNodeFill` / `resolveNodeStroke`.
+    A node holding `fill: '#f00'` now paints the default grey.
+  - `data.strokeWidth` is deleted. A stroke's width is `Stroke.width`.
+  - `data.color` — the legacy alias `kit:path` and the rect fallback read — is
+    deleted. The fallback painter reads `data.fill` like everything else.
+  - `fill: 'none'` is now `fill: null`; `stroke: 'none'` is `stroke: null`.
+  - `NodeInkResult` is gone: a painter's `ink` returns `NodeInk` and nothing
+    else. A painter returning `{ filled, strokeWidth }` no longer type-checks
+    and its reach is read as zero.
+  - `@weasel-js/ui` drops `isStrokeObject`, which existed only to discriminate
+    the union; `strokeColorOf` and `strokeWithColor` lose their string branches.
+  - `@weasel-js/svg`'s `strokeDataFromSvg` returns `Stroke | undefined` instead
+    of a `{ stroke, strokeWidth }` pair, and stops flattening a plain solid
+    stroke into a color. SVG's `fill="none"` imports as `fill: null`.
+
+  **A paint's alpha lives in `opacity`, one slot for every paint kind.** That is
+  the only slot a gradient or a pattern has, so it is the slot all of them use,
+  and the renderer multiplies a hex alpha by it — the two would fight if both
+  carried the value. `solid()` therefore moves an alpha channel out of the hex:
+  `solid('#ff000080')` is `{ color: '#ff0000', opacity: 0.502 }`.
+
+  The four setter actions follow: `setFillOpacity` / `setStrokeOpacity` write
+  `opacity` rather than splicing hex, so they now work on a gradient fill, which
+  they used to leave untouched. `setFill` / `setStroke` given a `color` recolor
+  the node's existing paint through the new `paintWithColor`, keeping its opacity
+  unless the picked color states an alpha of its own — and `setStroke` keeps the
+  stroke's width, cap, join and dash instead of replacing the whole value.
+
+  New exports: `solid`, `strokeOf`, `paintAlpha`, `paintWithAlpha`,
+  `paintWithColor`, `DEFAULT_SHAPE_FILL`.
+
+  `defaultNodeProperties` moves `data.fill` from a `color` leaf to a `paint` one
+  — a color control pointed at a `FillStyle` reads `undefined` off a gradient and
+  writes a bare string over it — and the `data.stroke` object leaf drops its
+  `fromScalar`, which had nothing left to lift.
+
+- a37ee0b: Separate a text node's content from its typography, and draw depth only where a label marks it
+
+  The text schema put `data.text` in a group named Text, so the section read
+  TEXT and the row inside it read Text — one word nested in itself — and the
+  style groups below it read as fields of the content string rather than as its
+  siblings. Content is its own section now, with the field full-width because
+  the section already names it.
+
+  A group with an empty `name` renders no heading. That already worked for
+  sections and is now documented on `ToolPrefGroup`, since it is how a schema
+  says "this group organises, it doesn't name": `Character` and `Paragraph`
+  carry the labels, and a `Typography` heading over them named nothing new.
+  It stays opt-in rather than a rule that rolls up any all-group parent —
+  a `Border` over `Top` / `Right` / `Bottom` needs its name.
+
+  Rows under a suppressed heading no longer indent. Depth drawn without a
+  visible parent put `Character` a level deeper than `Content` while being its
+  peer, which is the panel's own tree discipline broken by its own hand.
+
+- 611b30e: Layers and deps answer for the view they are drawn for
+
+  Nine lookups closed over the _surface's_ state at construction, so they answered
+  for view zero in every view. `<CanvasView>` draws the surface's layer array
+  unchanged and only the draw envelope differs, which makes a `draw: (_data, …)`
+  a guarantee of answering for the wrong view rather than merely an unused
+  argument. A drag in view B ghosted in view A, the marquee painted in the wrong
+  view, chrome-caps resolved against the surface's selection, every Cmd+V centered
+  on the wrong camera, and Escape in view B cancelled view A.
+
+  **New on `CanvasViewHelpers`** — `getPreviewSources()`, `getGestureOverlays()`
+  and `getIsVisible()`. All three are **required members**: anyone hand-writing a
+  `CanvasViewHelpers` (a test double, a wrapper) has to add them.
+  `getIsVisible` **moves off `CanvasSurfaceHelpers`**, where it could only ever
+  have answered for one view.
+
+  **New on `GestureSource`** — `previewSources()` and `overlays()`, also required,
+  alongside the newly exported `GesturePreviewSource`. `toolPreviewSources(tools)`
+  is the tool half.
+
+  **Layer options changed.** `createPathEditingOverlayLayer` and
+  `createSlopsDebugLayer` take `getPose(id, previews)` and have lost their
+  `isVisible` / `selectionRef` / `boundsOf` options — those come off the envelope
+  now. `usePreviewGhostLayer` has lost `tools`. Both it and
+  `useDispatcherOverlayLayer` keep `dispatcher` **only** to subscribe for repaint.
+
+  **Picking takes a camera.** `pickEvery`, `pickBest` and `makeGetNodeAtPoint`'s
+  result accept an optional trailing `PickCamera`. A world point does not carry
+  the scale it was produced under and picking has no draw envelope, so the caller
+  that produced the point supplies it; omitting it keeps the surface camera.
+
+  `useHoverTracking` took a `clientToWorld` thunk beside a world-space
+  `getNodeAtPoint` — the first resolved the view and the second did not, so hover
+  picked at the surface's scale inside a panel. It takes one
+  `nodeAtClientPoint(clientX, clientY)` now.
+
+  Anchor-editing target state stays surface-wide; only the preview resolution on
+  that path is per-view.
+
+- 9ad8cb2: Picking answers for what was painted
+
+  Three defects in `<SceneCanvas>`'s hit paths, all one shape — a pick answering
+  from something other than what the renderer drew.
+
+  **Pose overrides were painted through and picked around.** `PoseOverride.pose`
+  is documented as replacing the document pose _everywhere the render and
+  hit-test paths read one_, and `sceneAdapter.getPose` honored it. But
+  `<SceneCanvas>` supplies its own `pickEvery`, which read `node.pose` raw — as
+  did the bounds resolver feeding selection chrome and the affordance
+  `ChromeState`, and the marquee/lasso scan. A consumer animating nodes through
+  overrides painted them at one place and picked them at another. `effectivePose`
+  is now the single rule and every one of those reads through it.
+
+  **A clipped-away child was still clickable.** A container clips its subtree and
+  the renderer honors it, so a child outside the clip is not painted.
+  `useSelectTool`'s own walk has rejected those since clipping shipped; the walk
+  `<SceneCanvas>` installs instead had no clip term at all. The new
+  `passesAncestorClips` walks the parent chain per surviving candidate, so a flat
+  render-order scan can apply the same test.
+
+  **The marquee's fast-reject used the unrotated pose box.** A 100×20 rect turned
+  45° puts a corner 32 units above that box; a rubber-band over that corner was
+  rejected before the rotation-correct silhouette test ran, while a click on the
+  same pixel selected the shape.
+
+- c1b8511: Repaint the scene-graph side-scroller demo's world from `data.fill`. Its
+  tiles, coins, enemies and flagpole still declared `data.color`, the alias
+  removed when node paint became an object, so every one of them rendered in
+  the default gray — the demo whose whole point is being the visual twin of the
+  immediate-mode load test.
+- d793d3c: Flip negates rotation; alignment guides and `gaps` distribute measure ink
+
+  Three paths read a pose's stored, unrotated box where the rotated extent was
+  wanted.
+
+  `flipPoseAboutBounds` carried rotation through untouched, so a mirrored shape
+  came back turned the same way — invisible on a rectangle, whose AABB is
+  symmetric under a sign flip, and plainly wrong on an asymmetric one, which
+  translated instead of mirroring. It now negates the pose's rotation.
+
+  `deriveAlignmentGuides` advertised a stationary rotated sibling's lines at its
+  stored edges, while the dragged selection matched against them by its ink.
+  `RECT_ALIGN_PROJECTION.boundsOf` now returns the rotated AABB and
+  `deriveAlignmentGuides` reads its targets through the same projection — a new
+  `projection` option defaulting to the rect one, so existing callers get the fix
+  without a change.
+
+  `useDistribute`'s `gaps` mode divided the leftover span by stored widths, so a
+  rotated member ended up with a gap short by the difference; `centers` shared the
+  line and the blind spot. Both now measure with `visualBoundsViaDescriptor`.
+  `distributeHorizontalAction` / `distributeVerticalAction` also take
+  `params.mode`, so `gaps` is reachable from a binding rather than only from the
+  hook.
+
+  Flip and distribute return different poses than before for rotated shapes.
+  That is the fix, but it is a behavior change for anything depending on the
+  old output.
+
+- 3386d64: `@weasel-js/core/routing` exports the route-string projection
+
+  Anything rendering a `GestureSpec` as a route string had to re-implement the
+  projection, and the copy in WeaselDraw's registry inspector had drifted three
+  ways: it answered `drop` and `paste` with no gesture name, so every binding of
+  either vanished from the route list; its argument lookup missed a spec field;
+  and it gated targets on a hand-listed set of kinds, dropping them for
+  `pointerDown`, `longPress` and `wheel`.
+
+  New from the routing subpath: `routesForSpec(spec)` — every route string one
+  spec declares — plus `routeGestureForSpecKind(kind)` over the single spec-kind
+  map, and `PREDICATE_TARGET`, which `registry.ts` already exported but the
+  subpath index did not, so consumers reading `RegistryEntry.target` had no way
+  to compare against the sentinel its own docs name.
+
+- ce2b5c7: Make the inline run grammar a parameter instead of a hardcoded branch.
+
+  `runsToMarkdown` and `markdownToRuns` each had the markdown subset spelled out
+  in their control flow — `***`/`**`/`*` and a two-character escape set — so
+  reading or writing any other spelling meant forking both. They now take a
+  `RunGrammar`: a table of markers pairing a repeated delimiter with the run
+  flags it toggles, defaulting to `MARKDOWN_RUN_GRAMMAR`, which is exactly
+  today's behavior. Escaping follows the grammar's own delimiters.
+
+  Nothing changes for a caller that passes no grammar. `underline` and
+  `strikethrough` still have no markdown spelling and are still dropped by
+  `runsToMarkdown` — a grammar that wants `~~struck~~` now adds one marker
+  rather than editing the parser.
+
+- 2ea772f: `createSelectionOutlineLayer` and `createSelectionHandlesLayer` now do what the overlay layer does
+
+  `createSelectionOverlayLayer` documents itself as equivalent to stacking the
+  other two, and it was not. It reads `ChromeState` off the draw envelope,
+  resolves the synthetic multi-resize id to the union AABB, honors chrome-caps
+  visibility and suppressed ids, and takes selection and poses from the envelope
+  when they are omitted. The two primitives did none of that: they ignored the
+  draw envelope entirely, required a construction-time `getPose` cascade, and
+  knew nothing about the multi-selection union — so a consumer who stacked them,
+  on the wrapper's own promise, got chrome in the wrong place with no way to
+  tell.
+
+  All three now run one body and differ only in which passes they enable, so the
+  promise holds by construction. `SelectionOutlineLayerOpts` and
+  `SelectionHandlesLayerOpts` become the overlay's option set minus the visuals
+  that don't apply, which makes `getSelection` and `getPose` optional on both and
+  adds `getOutlineIds` and `getSuppressedIds`. Handle visuals are now the named
+  `SelectionHandleStyle`.
+
+- 3fb3a46: Key `usePublishSelection` on the publish callback, not the context value
+
+  The effect depended on the whole selection-context value, and the provider
+  mints a new value object on every publish. So one publisher publishing refired
+  the effect for every other publisher in scope, each of which republished its
+  own ids — a newer selection got stomped back to an older one, and two
+  publishers holding different ids under one provider never settled at all.
+
+  `publishSelection` is already a stable `useCallback`, so the effect now depends
+  on it directly. No provider change and no API change.
+
+- 84db1f6: Close four gaps that produced wrong answers with no error
+
+  Three path walkers — `pathToMultiPolygon` in core and in `@weasel-js/geom`, and
+  `enumerateAnchors` behind the bezier-edit overlay — handled M/L/C/Q/Z with no
+  `default:` arm, so a command code they did not know fell out of the switch
+  without advancing the coordinate cursor and every segment after it read the
+  wrong floats. They now throw, matching the six sibling walkers. This is a
+  behavior change for anyone feeding these a path built with an opcode outside
+  `PATH_COMMANDS`: what used to come back subtly wrong now raises.
+
+  A `<CanvasView>` built its affordance hit-test without a device profile, so a
+  nested view resolved fine-pointer radii even under a coarse pointer — 8px grab
+  zones against the 14px chrome the surface paints. It reads the profile
+  `<SceneCanvas>` publishes.
+
+  `moveGestureAdapter`'s `insertNode` took no `index`, and the adapter carried
+  neither `getChildren` nor `setChildOrder`, so the sibling slot a delete op
+  records had nowhere to land: undoing a delete through the move pipeline
+  appended the node to the end of its parent instead of putting it back where it
+  was. All three are there now.
+
+  The dev inspector's gesture panel formatted bindings with a private formatter
+  that reported only modifiers set to `true`. The `ingest` action marks every
+  modifier `'optional'`, so its drop and paste bindings rendered blank and the
+  action was invisible on both gestures. Both of the panel's plain-text
+  formatters now go through the kit's `routesForSpec`.
+
+- 3386d64: Undoing a multi-node delete or group restores document order
+
+  Restoring by stored index cannot survive replay: history runs a batch's
+  inverses in reverse, while indices captured before the mutation are only
+  correct in ascending order. Deleting `b, c, d` from `[a, b, c, d, e]` and
+  undoing gave `a, b, e, c, d`; Cmd+G on the same three did the same.
+
+  Ops now record a `Slot` — an ordinal plus the id of the following sibling at
+  capture. The anchor is the source of truth whenever it resolves, and it
+  resolves whatever else the batch has already restored. The ordinal remains as
+  the fallback for an adapter that can place by index but cannot enumerate
+  children. `before: null` means "last" and needs no sibling list; an absent
+  `before` means "unobserved", and the two survive `History.serialize` because
+  `undefined` drops out of JSON and `null` does not.
+
+  The ops observe their own slot during `apply()` rather than taking one from the
+  caller, so every existing emitter gets this without a call-site change.
+  `createDeleteOp`'s `index` argument is now a seed that `apply` supersedes; its
+  docstring said it was sufficient on its own, which it never was.
+
+  Adapters without an ordering seam still append, as they did before:
+  `arrayAdapter` has no `setChildOrder`, and the move gesture's adapter has
+  neither that nor an `index` parameter on `insertNode`.
+
+- 7a746df: A stroke's dash is edited as a style, not as an array
+
+  `Stroke.dash` already rendered, imported and exported; it had no control,
+  because a `number[]` has no leaf kind. It doesn't need one — the thing a person
+  chooses is a style, and the array is how it is stored. The stroke block gains a
+  Solid / Dashed / Dotted / Custom bar under cap, join and align.
+
+  `ToolPrefEnum` gains `encoding`: `read`/`write` between the stored value and
+  the option string, the counterpart of the `unit` a number leaf already has for
+  a value stored in a canonical unit. Both directions are handed the object the
+  leaf is a field of, because a dash pattern is meaningless without the width it
+  scales by — SVG dash lengths are absolute, so a fixed `[6, 3]` is dots on a
+  hairline and a railroad on a 20px stroke. `dashForStrokeStyle` /
+  `strokeDashStyleOf` are the mapping, exported: **dashed is 3× the width on and
+  2× off, dotted 1× on and 2× off**. An array matching neither reads as `custom`,
+  a new `disabled` option — one a control reports but refuses to author, since
+  there is no array behind it. `solid` is stored as no dash at all, and an object
+  leaf's field written as `undefined` is now removed rather than left holding it.
+
+- 4f19274: Cap, join and align are chosen by glyph, and the stroke block drops its labels
+
+  Nine option glyphs and four category glyphs join the icon set. The option
+  glyphs are filled silhouettes — the glyph is the ink, so a choice reads as a
+  shape rather than as a diagram of one. `align` is a circle zoomed until the
+  ink band's far edge leaves the box: `inner` closes into a disc, `outer` into
+  the box's complement of it, and `center` is the annulus straddling the path,
+  so the three are one band at three offsets. The categories are the bare path
+  each row treats, drawn in the outlined register.
+
+  A schema carries a glyph _id_, not a component: `ToolPrefEnum`'s options gain
+  `icon`, and every leaf gains one for rows whose own label is spent on a
+  `pair`. Core ships no icon set and cannot depend on one, so the field is a
+  plain string; weasel-ui resolves it against `ICON_PATHS` and falls back to
+  `short` where it names no glyph.
+
+  `SelectionPanel` now honours `block` inside an object leaf, not only at the
+  section level. A row whose fields are all `block` drops the 64px label column
+  and spans the block. The default stroke schema uses both: paint and width
+  share one label-less row, and cap/join/align share the next.
+
+  `align`'s options run inner, center, outer — the order the ink moves outward.
+
+- 94f2446: Add stroke markers — arrowheads and other line terminators as stroke style.
+
+  `markerStart` / `markerMid` / `markerEnd` on `Stroke` take a key resolved
+  through a new registry (`registerMarker`), shipping eight built-in shapes.
+  Unlike SVG, the stroke stops short of a filled head rather than running under
+  it to the tip; the distance is declared per marker, so an open V still reaches
+  the vertex. Round-trips through `@weasel-js/svg` as `marker-*` attributes plus
+  `<marker>` defs.
+
+- 07fd2de: `setStroke` takes a whole paint, so a gradient or pattern stroke is writable.
+
+  It accepted `{ color }` only, and merged through `paintWithColor`, which
+  supersedes a non-solid paint with a solid one — a gradient stroke was
+  unreachable even though `setStrokeOpacity` could already reach its alpha.
+  `paint` now wins over `color`, a color arriving later in the gesture supersedes
+  an earlier paint, and the stroke's width, cap, join, dash and align survive
+  either. New `strokeWith(paint, width?)` is `strokeOf`'s sibling for a paint
+  that has no color to pass.
+
+  Two fixes alongside it: `setFill` started with no `color` and no `paint` seeded
+  from `DEFAULT_STROKE_COLOR`, painting the selection black where
+  `setFillOpacity` seeds the same slot from `DEFAULT_FILL_COLOR`; and
+  `gradientForBounds`'s doc comment claimed a corner-to-corner linear gradient
+  where the body builds a left-edge-to-right-edge one.
+
+  `@weasel-js/ui` no longer exports `strokeWithColor`. It shared a name with
+  core's and disagreed with it — core's keeps the paint's opacity, ui's dropped
+  it — and nothing imported it.
+
+- 81213fc: Edit a node's stroke as the union it is
+
+  `data.stroke` holds `string | Stroke`, and the schema described it with a
+  `color` leaf — which reads `undefined` off the object form, shows its own
+  default, and writes a bare hex back over the stroke's width, cap, join and
+  dash on the first edit. The same trap `ToolPrefPaint` was introduced to avoid
+  for `FillStyle`.
+
+  A `stroke` pref kind now describes it, and `defaultNodeProperties` uses it.
+  Its control shows whichever color the value has — the string itself, or a
+  solid paint's color — gives a gradient stroke the indeterminate chip rather
+  than claiming a color it doesn't have, and preserves the form on write.
+
+  `PrefsForm` gained the `stroke` case and the `paint` case it never had; a
+  `paint` leaf used to render as the literal text `(paint: no renderer)`.
+  `solidColorOf`, `strokeColorOf`, `strokeWithColor` and `isStrokeObject` are
+  exported from `@weasel-js/ui` for consumers writing their own property
+  renderers against either union.
+
+  Cap, join and dash are not editable from a panel yet, and `data.strokeWidth`
+  remains its own leaf — see `docs/proposals/2026-08-26-node-stroke-union.md`
+  for why that waits on the SVG mapping.
+
+- 2f225d7: A thick stroke is clickable across its whole width
+
+  `shapeCoversPoint` grants a grab out to a stroke's outward reach — a full
+  stroke width for an `outer` align — but the AABB pre-filter that runs before it
+  grew only by the pointer slop. So half a thick outer stroke's ink was
+  unclickable: the point was rejected before the refinement that would have
+  claimed it ever ran. `poseContains` carried a comment claiming the pre-filter
+  was at least as generous as the refinement, which it cannot be on its own,
+  since it never sees the stroke. That budget is the caller's, and the comment
+  says so now.
+
+  `ShapeCoversPointOptions.scale` was never passed either, so a stroke width
+  declared in `px` resolved as world units and the reach was wrong at every zoom
+  but 1 — while the caller computed `meanScale(view.scale)` one line above.
+
+- 68069dc: Right-to-left text lays out in visual order
+
+  `LayoutRunsOpts` takes an optional `bidi` engine. Given one, `layoutRuns`
+  analyses the paragraph, reorders each line after the wrap, and mirrors brackets
+  in right-to-left runs. Given none, nothing changes: text lays out logically,
+  exactly as before.
+
+  `@weasel-js/text` declares the `BidiResolver` interface and does not depend on
+  `@weasel-js/bidi` — the dependency runs the other way from the usual, so a
+  consumer who renders no right-to-left text never installs the Unicode tables,
+  and a different implementation can be substituted. `@weasel-js/bidi` is a
+  devDependency here only, for a test that drives real Hebrew through the real
+  engine; types lining up is not evidence the semantics do.
+
+  `LaidOutCell` gains `advance` and `level`, and **`x` is no longer monotonic
+  across `cells`**. Cells stay in logical order — slot `i` is still character `i`
+  — while their x values follow the reordering. Sort on `x` for visual order, and
+  read a cell's extent as `[x, x + advance)` rather than reaching for the next
+  cell's `x`. Hit-testing was doing exactly that and now sweeps in visual order
+  against each cell's own extent, taking a right-to-left cell's visually-leading
+  half as the character's logical end.
+
+  Kerning is a gap between two adjacent characters, and the wrap measures it
+  logically. Reordering can put a different pair side by side, so the gap taken
+  is the one belonging to whichever of the two is logically second, and none at
+  all across a direction boundary — where the pair never touched in the source.
+
+  Laying out right-to-left text with no engine now warns once, naming the import.
+  The alternative is glyphs silently appearing reversed, which is the one real
+  hazard of making this opt-in.
+
+- 5d0ff9c: Every code point on a line gets a cell
+
+  `LaidOutLineBox` replaces its `caretXs` / `caretIndices` pair with
+  `cells: LaidOutCell[]` plus a `srcEnd` closing offset. A cell carries
+  `srcIndex`, `srcEnd`, `cp`, `x` and `drawsInk`, so slot `i` is `cells[i]` and
+  a consumer indexing per character no longer has to reconcile a sparse array
+  against the source string.
+
+  The old arrays were documented as non-contiguous, and two causes were real:
+
+  - A code point no tier could serve was dropped outright, taking its caret stop
+    with it. It now occupies a zero-advance cell. This is reachable whenever the
+    dynamic canvas fallback is off — which is the normal configuration for a
+    consumer registering its own outlines, where the outline tier has no rung
+    below it.
+  - A space opening a line — at the start of the text, or after a newline — was
+    discarded. It now keeps its cell and still consumes no width, so a line is
+    addressable per character without gaining an indent. A space that opens a
+    _wrapped_ line was never affected: the wrap leaves it as a trailing cell on
+    the line before.
+
+  Neither changes any geometry: both cells carry zero advance, zero tracking and
+  no kerning, so bounds, line widths and glyph positions are unchanged.
+
+  A newline still has no cell, since it separates cells rather than being one.
+  `srcEnd` is what a blank line carries in its place.
+
+  `drawsInk` is a property of the code point and the face, not of the call that
+  produced it: it does not flip when a dynamic bake lands or the outline
+  threshold is crossed, so the same text reports the same slots every time. A
+  zero-advance combining mark is `true` — it inks without advancing.
+
+- c1b8511: **Breaking:** paint leaves `TextStyle`. A text node's color and outline are
+  `data.fill` and `data.stroke` — the same two leaves every other node kind
+  paints from — and `TextStyle` holds typography only. `TextStyle.fill` and
+  `TextStyle.stroke` are gone, with no compatibility read: a document that put
+  its color in `style.fill` now renders in the default black rather than
+  erroring, so check documents that predate this.
+
+  This fixes a real asymmetry rather than only moving fields. `data.stroke`
+  already reached text through a fold in the painter, but `data.fill` did not:
+  picking a fill color with a text node selected wrote a field nothing read, so
+  the canvas did not change. `setFill`, `setFillOpacity`, the opacity scrub and
+  the Appearance leaf now all mean the same thing on text as on a rect. The
+  duplicate `data.style.fill` control is gone from the text schema with them.
+
+  `resolveTextStyle(style, paint)` takes the node's paint as a second argument
+  and is what derives the caret and selection colors, so the edit overlay
+  matches the glyphs it sits on; `useTextEdit` gained a `getPaint` option for
+  the same reason, defaulted by `useSceneTextEdit` from `data.fill` /
+  `data.stroke`. `TextPose` gained `fill` / `stroke`, so text drawn through
+  `createTextLayer` is painted rather than black. `SvgTextNode` gained the same
+  two, and SVG import and export carry text paint there instead of inside the
+  style. `StyledRun.fill` and `.stroke` are unchanged and still override the
+  node's per range — which is also where a caller with no node at all, a HUD
+  widget or a debug overlay, now states its color.
+
+  `textCommandFromRuns` is exported from the package root.
+
+- 546f67d: Draw text from a ring of reused vertex buffers instead of minting a vertex
+  array and two buffers per draw. `drawTextGroup` and `drawTextDecorations` were
+  the last paths still doing what `drawImage` stopped doing; text now costs
+  **3.3 us/command, down from 6.65** at 512 commands a frame on an M2 Max via
+  ANGLE (`tests/perf/transition-matrix.spec.ts`), which puts it level with an
+  image draw. No other command kind moved.
+
+  A text group is as many quads as it has glyphs, so unlike the image ring a
+  slot's buffer grows to the largest run it has seen rather than being fixed at
+  four vertices. The quad index pattern is a pure function of the quad count —
+  the pattern for N quads is a prefix of the pattern for any larger N — so one
+  index buffer serves every slot, grown the same way and written only when it
+  grows.
+
+- c2ffa49: Alignment can resolve against reading direction
+
+  `align` gains `start` and `end` alongside `left` / `center` / `right`, and
+  `TextStyle` gains `direction: 'ltr' | 'rtl'`. The split is CSS `text-align`'s:
+  the relative pair resolves against the direction, the absolute pair ignores it.
+  `resolveAlign(align, direction)` collapses one to the other and is exported for
+  consumers that need an edge rather than an intent.
+
+  Direction is an input, not something this package discovers. `@weasel-js/text`
+  has no DOM, so a consumer that reads `getComputedStyle(box).direction` passes
+  what it found; nothing here sniffs an environment.
+
+  Defaults are unchanged — `align: 'left'`, `direction: 'ltr'` — so no existing
+  layout moves. Making `start` the default alignment is a separate call.
+
+  `@weasel-js/svg` carries the direction through: `direction` joins the
+  inheritable presentation properties, and `text-anchor` is now written and read
+  against it. Two things were wrong before and are worth naming, because both
+  rendered plausible output:
+
+  - `align: 'start'` serialized to `text-anchor="end"` — the opposite edge — via
+    a mapping that assumed three values and read the fourth as its `else`.
+  - SVG's initial `text-anchor` is `start`, which under `direction="rtl"` is the
+    right edge, while this model's default `align` is `left`. They agree under
+    `ltr` and only there, so an RTL document with no explicit anchor imported as
+    left-aligned.
+
+  This is alignment and round-tripping only. Layout still walks code points in
+  logical order with the pen always increasing: there is no bidi reordering and
+  no shaping, so a Hebrew or Arabic string aligns to the correct edge and still
+  renders in logical order, and Arabic still renders unjoined.
+
+- 4c097ef: Sit every run on a line on one baseline
+
+  Mixed-size text hung each run off the _line top_ at its own ascent instead of
+  off a shared baseline, so a 16-unit run beside a 40-unit run floated up level
+  with the big run's cap rather than standing on the line with it. Two faces with
+  different ascents at the same size diverged the same way. Baseline alignment is
+  what inline text does everywhere else, and the module header already claimed
+  this behavior — the walk just never implemented it.
+
+  A line now sinks one baseline far enough to clear its tallest run's ascent and
+  places every glyph against it. Glyph quads derive their top from that baseline
+  rather than from the pen's line top, which is the whole of the change:
+  `qy0 = baselineY + (yoffset - metrics.base) * scale`.
+
+  Uniform-size text — nearly all text — is unchanged, since the maximum over one
+  value is that value. Only lines that actually mix sizes or faces move, and they
+  move to where they always should have been.
+
+  The test named "mixed-size runs share a baseline on the same line" asserted only
+  a quad count and passed throughout; it now asserts the baselines.
+
+- 2b86e00: A text node's style is one value, not ten sibling paths
+
+  `data.style.fontSize`, `.fontWeight`, `.align` and the rest addressed into one
+  `TextStyle` from ten independent leaves, each control writing a field of a
+  value it could only half see. `data.style` is an object leaf now, with
+  Character and Paragraph as groups inside it — groups head their fields and
+  contribute nothing to the path, so a field is still a field of the style and
+  one commit writes the whole thing.
+
+  An object leaf whose fields are entirely grouped no longer prints its own
+  heading, which would stack straight onto the first group's, and a group's
+  fields sit under a rule so the nesting reads. WeaselDraw's inspector descends
+  into an object leaf when listing what a kind exposes — the fields are the
+  editable surface; the leaf is the container.
+
+  `SelectionPanel` has a story now, which is how the two layout defects above
+  were found.
+
+- d933a89: Superscript, subscript and overline for styled runs
+
+  `StyledRun` gains `script: 'super' | 'sub'` — a raised or lowered baseline and
+  a smaller size together, the pair `<sup>` and `<sub>` imply. It is a preset
+  over two new primitives rather than a mechanism of its own:
+
+  - `baselineShift` — raise (positive) or lower (negative) a run off the line's
+    shared baseline, in ems of the inherited font size.
+  - `fontScale` — a multiplier on the inherited font size, the relative
+    counterpart to `fontSize`. An absolute `fontSize` still wins over it.
+
+  Naming either directly overrides that half of `script` and leaves the other
+  alone. The preset's numbers are exported as `SCRIPT_METRICS` (58.3% size,
+  ±33.3% position — Adobe's defaults, so a character panel can show percentages
+  its users already recognize) and are derived, not read from the font: `OS/2`
+  carries real `ySuperscript*` metrics but the baked atlas tier has no slot for
+  them, and metrics that applied on one glyph tier and not the other would
+  reflow text as it crossed the size threshold.
+
+  `resolveRuns` folds all of it into one world-unit `baselineShift` and a final
+  `fontSize`, so layout never learns superscripts exist — it places a run against
+  a baseline and an offset. The shift moves a run's glyphs, its outline geometry
+  and its own decoration rules together, and deliberately does not feed back into
+  the line's baseline or height: a superscript rides the line rather than
+  reflowing it.
+
+  `overline` joins `underline` and `strikethrough` on both `TextStyle` and
+  `StyledRun`, additive over the node style like the other two, and is now
+  available to a custom `RunGrammar` as a `RunFlag`. The default markdown grammar
+  is unchanged — it stays silent on the decorations, as it always has been.
+
+- 5923c8b: `Animator.tween` no longer fires `onDone` for a tween that was cancelled during
+  its own final `onTick`. The last tick emitted the value and completed in one
+  pass, so a write made from that tick — cancelling the tween — still got the
+  completion callback, against the documented "not called on cancel" contract.
+- 2ea772f: Undo of a delete restores the subtree; undo of a group restores the slot
+
+  Two ops inverted to something narrower than what they applied, so undo
+  silently lost data.
+
+  `createDeleteOp.invert()` re-inserted a single node while `apply()` called
+  `removeNode`, which cascades the whole subtree. Delete a container with two
+  children, undo, and the container came back with `children: []` while both
+  children were gone. The op now snapshots its descendants preorder through the
+  adapter's optional `getNode` / `getChildren` — the snapshot is written back
+  into `args`, so an op rebuilt from a serialized entry still inverts — and
+  re-inserts each descendant at its captured slot. A flat adapter's `removeNode`
+  does not cascade, so the inverse skips any descendant the adapter still reports
+  as live rather than duplicating it.
+
+  `createReparentOp` carried only the parent ids, so undoing a Cmd+G appended
+  instead of restoring the sibling slot and paint order changed. `ReparentArgs`
+  now carries `fromIndex` / `toIndex` and places through the existing
+  `getChildren` / `setChildOrder` seam that `createReorderOp` already uses —
+  `setParent`'s signature is unchanged. Adapters without that seam no-op as
+  before. `groupAction` captures each member's index before mutating; `move` and
+  `snapToContainer` pass none and are byte-identical.
+
+  `ops/delete.test.ts` stubbed `removeNode` as a one-id delete that did not
+  cascade, which is why nothing caught the first bug. It now runs against a
+  tree-backed fake.
+
+- 2ea772f: Selection chrome, gesture bounds and SVG export fold rotated ink, not pose boxes
+
+  Every union a user looks at or clicks folded each member's _unrotated_ box.
+  Select two shapes, rotate one, and the multi-selection frame and its handles
+  sat inside the rotated shape's ink — affordances hand `ChromeState.unionBounds`
+  out as the target bounds for paint _and_ hit-test, so the handles were both
+  drawn and grabbable in the wrong place, while `getGestureBounds()` reported the
+  correct larger box.
+
+  `unionAABB` expands each rotated member via `axisAlignedBounds` before folding
+  and is now the one implementation. It lives in `core/geometry/unionBounds.ts`
+  beside the rotation-free `unionBounds`, which stays correct for commit-time
+  actions that write poses back in the unrotated frame; the module says which to
+  reach for. `unionGestureBounds` is **removed** — it was `unionAABB` under
+  another name. Both new functions are exported from the package root.
+
+  Moved onto it: `ChromeState.unionBounds`, the selection overlay's
+  container-to-leaves resolver, the multi-rotate pivot (which put the pivot in
+  the wrong place whenever a member was rotated), and WeaselDraw's export
+  viewBox, which clipped rotated shapes out of the copied SVG.
+
+- 3fb3a46: Warn in dev when `useAction` finds no `ActionsProvider`
+
+  `useAction` returned early on a null registry, so an action registered above
+  the provider — or with no provider mounted — silently never fired its
+  bindings. It now warns in dev, naming the action id. Runtime behavior in
+  production builds is unchanged.
+
+- Updated dependencies [3386d64]
+- Updated dependencies [c6c499d]
+- Updated dependencies [20097e6]
+- Updated dependencies [84db1f6]
+- Updated dependencies [94f2446]
+- Updated dependencies [68069dc]
+- Updated dependencies [5d0ff9c]
+- Updated dependencies [0bb27a5]
+- Updated dependencies [c2ffa49]
+- Updated dependencies [4c097ef]
+- Updated dependencies [d933a89]
+  - @weasel-js/geom@2.0.0-pre.0
+  - @weasel-js/text@2.0.0-pre.0
+  - @weasel-js/gestures@2.0.0-pre.0
+  - @weasel-js/history@2.0.0-pre.0
+  - @weasel-js/modes@2.0.0-pre.0
+  - @weasel-js/paint@2.0.0-pre.0
+  - @weasel-js/font@2.0.0-pre.0
+
 ## 1.2.0
 
 ### Patch Changes

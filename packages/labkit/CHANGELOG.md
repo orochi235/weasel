@@ -1,5 +1,344 @@
 # @weasel-js/labkit
 
+## 2.0.0-pre.0
+
+### Patch Changes
+
+- 1f67cad: Draw labkit's chrome and the ui components from one type, weight and shape
+  scale. Sizes fold onto six ranks, so a 12px label now renders at 11 and a 14px
+  one at 13; corners fold onto four radii. `Button`'s `sm` and `md` text sizes
+  converge as part of that fold — the two still differ in height and padding.
+
+  Three components that were exported but rendered nowhere now appear in the
+  default chrome: `FpsMeter` and `ScaleIndicator` in the status bar,
+  `ZoomControl` in the viewport controls, replacing the plain zoom readout.
+  `StatusBar.Section` takes `end` to push a readout to the far side, mirroring
+  `Toolbar.Group`.
+
+  The trial's box-shadow no longer derives from the foreground color, so
+  elevation reads as elevation rather than as a halo on dark themes, and its
+  border clears 3:1 against the workspace in both modes.
+
+  `<Toolbar>` claims `role="toolbar"` and implements the APG keyboard contract:
+  one button in the tab order, arrows moving focus within, Home and End jumping
+  to the ends. It takes an `aria-label`.
+
+  Two colors were wrong rather than merely untokenized. The selected toggle in
+  `PropertyPanel` drew near-black text on an accent fill at 1.49:1 in dark mode;
+  it now uses `--wzl-fg-on-accent`. `LayerList`'s checkbox had no `accent-color`
+  and rendered in the OS blue.
+
+- c534ff5: Give every control one height, and stop labkit styling weasel-ui by load order
+
+  `--wzl-control-h` described itself as the height of a button, input or select
+  and claimed 28px, while `Select`, `Input`, `NumberField` and `ComboBox` each
+  hard-coded 24px. Nothing enforced the token, so the two numbers had drifted
+  apart unnoticed. The four controls read the token now and the token is 24px,
+  which is what they already rendered. `ToggleBar` moves off `--wzl-tb-height`
+  onto `--wzl-control-h` — a segmented control is a control, not the strip a row
+  of them sits in — and its `height` prop writes a private variable so setting it
+  cannot cascade into children. `--wzl-tb-height` stays 28px: it sizes a strip
+  that _contains_ controls, and 24px there would clip the focus ring of a 24px
+  control inside it.
+
+  In labkit, a class handed to a weasel-ui component through `className` landed
+  beside that component's CSS-module class at equal specificity, so whichever
+  stylesheet was injected last won. Labkit's element defaults now score (0,0,0)
+  so a component always paints its own controls, and deliberate overrides carry a
+  `.lk-root` prefix that wins on purpose. That fixes a zoom readout whose field
+  had stretched over its own buttons, hiding the leading "10" of "100%".
+
+  Also in labkit: `<Lab>`'s nebula backdrop was covered by an opaque shell and had
+  never been visible; a trial's config panel was crushed to 60px of a 270px panel
+  by its sidebar extras; and the lab header wrapped to three lines because a
+  `Select` swallowed the row's slack while the mode toggle compressed past its own
+  labels.
+
+  `LabProps` gains `footer`, which had no route short of building `LabShell`
+  yourself. `LayerCapability.ids` accepts a full `LayerDescriptor` as well as a
+  bare string, so a layer can carry a label distinct from its canvas id and be
+  marked `alwaysOn` — both already honoured by the layer list, neither
+  expressible. Existing `string[]` declarations still typecheck. `Instrument`
+  gains a third type parameter for a job's item type, which had been pinned to
+  `never`; TypeScript infers all three or none, so a `defineInstrument` call that
+  names state and config must name the item type too.
+
+- fca9bcf: Assemble a trial's chrome from what its instrument declares. A contribution is
+  data keyed to a region — `toolbar`, `palette`, `sidebar`, `viewport`, `status` —
+  and the regions render whatever the assembled list puts in them. Bundles
+  concatenate built-ins, then the instrument's, then the lab's, and a duplicate id
+  throws. A lab adds its own with `chrome` and drops a built-in with `suppress`.
+
+  An instrument declaring `tools` gets a palette region and its own tool slot; one
+  declaring none reads the lab's, which `<Lab tools>` fills. The resolved tool
+  reaches the instrument on `RenderContext.trial.activeToolId`.
+
+  Breaking: `detectCapabilities`, `CapabilityFlags`, `ToolbarSlot`, `SidebarSlot`,
+  `StatusBarSlot`, the matching `Trial*Context` types, `DefaultToolbar`,
+  `DefaultSidebar`, `DefaultStatusBar` and `TrialChrome`'s `sidebarExtras` are
+  removed. Zoom moves from the trial toolbar to the new viewport region.
+
+- 4f5d111: Declare an instrument's config once, with `f.schema`
+
+  An instrument used to declare its config twice: `defaultConfig(): TC` for the
+  values and their types, and `configSchema(): ConfigField[]` repeating every key
+  as a control with a label, bounds and a second default. Nothing held the two to
+  one answer, and `validateConfigSchema` could not catch the drift because it only
+  ever saw the schema.
+
+  `f.schema` replaces both. It infers `TC`, supplies the defaults, and says how
+  each value is edited:
+
+  ```ts
+  const config = f.schema({
+    showGrid: f.boolean(true),
+    cellSize: f.number(20).range(5, 80).step(5).label('Grid spacing'),
+  })
+
+  defineInstrument({ config, ... })   // defaultConfig is synthesized
+  type Config = ConfigOf<typeof config>
+  ```
+
+  This is additive. An instrument written with `defaultConfig` + `configSchema`
+  keeps working, and both paths now resolve to one renderer.
+
+  **Built on weasel-ui's `PrefLeaf`, not on `ConfigField`.** That vocabulary — the
+  one `PrefsForm` renders, and the one core's structurally-identical `ToolPrefLeaf`
+  feeds `SelectionPanel` — already carried kinds, bounds, options, labels, groups
+  and an open leaf kind. `ConfigField` was a third dialect of it, so it is now
+  adapted into `PrefLeaf` rather than extended.
+
+  Four ways in, for a lab that needs something the built-in controls do not give:
+
+  - `ControlPanel` takes `renderers`, keyed by config path (checked first) or leaf
+    kind, matching `PrefsForm.renderers` and `SelectionPanel.renderers`. A path key
+    overrides one field; a kind key supplies a control labkit does not ship.
+  - `.render()` on a builder node is the colocated form of the same thing.
+  - `<Lab configRules>` runs rules over every leaf before labkit's own inference,
+    so a lab states a convention once instead of annotating each field. labkit's
+    own inference ships as rules in that same vocabulary.
+  - `.showIf()` hides a row while the value stays in config, and `.section()`
+    groups rows under a heading.
+
+  `validateConfigSchema` no longer rejects an unrecognized field type: a lab
+  supplies controls for its own kinds through `renderers`, which validation cannot
+  see. Key, label and per-kind constraint checks are unchanged. Relatedly,
+  `ControlPanel` now renders a labeled placeholder for a kind with no control
+  instead of dropping the row silently.
+
+- 3e40669: Rebuild what a lab gets by default.
+
+  `ControlPanel` is built on the property rows instead of hand-rolled native
+  inputs, so an instrument's config panel is themed and aligned rather than
+  showing OS-blue checkboxes against the parchment theme. Same props, same
+  schema.
+
+  `<Lab>` renders a header: add a trial, and choose the color mode. Both drove
+  `LabContext` with no UI at all, so every consumer rebuilt them.
+
+  `JobProgress` replaces the ad-hoc job markup in the trial chrome — a real
+  progress element that stays indeterminate until the job reports a total,
+  with failures and errors distinguished.
+
+  A trial paints a raised surface, so it reads as a panel against the workspace
+  instead of being separated from it by a hairline.
+
+  **`@weasel-js/core` and `@weasel-js/ui` are now declared dependencies.** Both
+  were re-exported from published subpaths (`/weasel-canvas`, `/weasel-ui`)
+  while sitting in `devDependencies`, so a clean install could not resolve
+  them. The consumer smoke test grew a manifest audit that catches this class of
+  break for every package, and labkit is now packed and imported by it.
+
+- 511a547: Add `<FloatingPanel>` to `@weasel-js/labkit` — a draggable box that floats over
+  its offset parent and snaps to that parent's corners.
+
+  Drag it from anywhere that is not a control: `input`, `button`, `a`, `select`,
+  `textarea` and any `[data-no-drag]` element pass their pointer through, and a
+  drag that does start stops the event reaching a pan/zoom surface underneath.
+  `anchor` picks the resting corner, `snapCorners` limits which corners may
+  capture it, `inset` sets how far in it sits, and `storageKey` remembers where it
+  was left across reloads.
+
+  It drives windease's `floatingStrategy` — `layout()` and `reduce()` called as
+  pure functions — rather than mounting a windease container, because a lab
+  overlay has one item and no zone tree. This raises labkit's `windease` floor to
+  `^1.3.0`.
+
+  Parent it to the canvas stack's overlay: it positions against its offset parent,
+  so nesting it inside another absolutely-positioned overlay child measures that
+  child's box instead of the canvas.
+
+- 69ca8c6: `LayerList` and `LayerStack` now draw the same grip. `DragHandleGlyph` moves to
+  `primitives/` and is used by both, replacing the `⋮⋮` text `LayerList` carried.
+  It stays out of `@weasel-js/ui`'s icon register on purpose: that register is
+  outline strokes at a fixed weight, and a grip is filled dots.
+
+  The grip's grab target is padded and the padding cancelled by an equal negative
+  margin, so it is comfortable to hit without drawing anything larger than the
+  dots or widening the row.
+
+  A small `Button`'s label drops to `--wzl-font-size-sm`. It had converged with
+  medium's at 13px, which sat top-heavy against a small button's 12px icon and
+  20px box.
+
+- 8abb451: Add `<Legend>` to `@weasel-js/labkit` — a color key for labeling what a lab
+  draws on its canvas.
+
+  An entry is `{ key, label, color, mark? }`. `mark` picks the swatch shape so the
+  key looks like the thing it names: `line` (default), `dash`, `dot` or `band`.
+  The color rides a `--lk-legend-ink` custom property, which lets one rule set
+  paint all four shapes from the same value.
+
+  Presentational only — no handlers, no state, no hover behavior. Swatches are
+  `aria-hidden`, leaving the label to carry the meaning.
+
+- 9c84cdf: Add a `titlebar` region, and move the trial's close button into it. The close
+  button stays a suppressible contribution rather than becoming markup baked into
+  the title bar, so `suppress: ['close']` still works and a consumer can put its
+  own control up there. `TitleBarRegion` is exported alongside the other five.
+
+  Panels no longer inset themselves. `.lk-sidebar-section__body` was insetting a
+  panel and then `.lk-control-panel` and `.lk-layer-list` each inset it again,
+  which put the first control 16px into a 161px-wide sidebar. The section body is
+  now the only gutter, and it is tighter.
+
+  The layer list's drag grip was inheriting the `:where(button)` element default,
+  so a glyph rendered in a 37×24 box with a border, an elevated fill and a
+  backdrop blur. It is now the glyph.
+
+  The trial title bar's bottom border moves from `--wzl-line-subtle` to
+  `--wzl-border`, matching the toolbar directly below it — at the subtle value it
+  was effectively invisible in light mode.
+
+  Save-snapshot moves from the trial group to the history group, beside undo and
+  redo.
+
+- d9f110e: Stop every frame loop while nothing can see it
+
+  New public hook `useVisibleRaf` in `@weasel-js/core` owns the question of
+  whether a frame may run: nothing runs while `document.hidden`, and a loop that
+  names an element also stops while that element is outside the viewport. A
+  request made while suspended is held rather than dropped and re-armed on
+  resume, so a loop never polls visibility or needs restarting by hand.
+
+  Ten loops now run behind it — `useFrameLoop`, `useAnimator`, `useSimulation`,
+  `useDecayLoop`, `useTextEdit`'s overlay follow, `CursorCoordsHud`'s FPS
+  counter, `Badge`'s crawl, and labkit's `FpsMeter`, `useTiledSurface` and
+  `useLayerScheduler`. Only `useFrameLoop` consulted `document.hidden` before;
+  the rest ran on any page left open. `useLayerScheduler` looked safe and wasn't:
+  it paints only dirty layers, but a hidden tab still commits React updates and
+  its view/size effect marks every layer dirty.
+
+  Loops measuring elapsed time rebase their clock through the new `onResume`
+  option, so an hour spent hidden does not arrive as one hour-long frame — an FPS
+  meter reporting a rate nobody achieved, a tween jumping to its end value on
+  return. `dangerouslyRunWhenHidden` opts a loop out for offscreen recording or
+  export; nothing in the tree sets it.
+
+  `npm run check:frame-loops` fails the build on a bare `requestAnimationFrame`
+  in kit source, and runs in CI.
+
+- 20097e6: Declare `sideEffects` on the five packages that were missing it, so bundlers
+  can tree-shake unused exports instead of assuming every module does work at
+  import time.
+
+  `gestures`, `history`, `modes`, and `hud` are `false` — none of them touch a
+  global or run anything at module scope. `labkit` is `["*.css"]`, matching
+  `ui` and `theme`: its JS is side-effect-free, but a blanket `false` lets a
+  bundler drop the `@weasel-js/labkit/styles.css` import a consumer wrote by
+  hand, and the page then renders unstyled with no error anywhere.
+
+- c2d3906: Never clamp a canvas's opening zoom out of reach
+
+  An instrument declaring `initialView.zoom` far outside `usePanZoom`'s default
+  `[0.1, 32]` range collapsed on the first wheel event and could not zoom back:
+  the clamp rewrote the opening zoom to whichever bound it crossed, and pan was
+  rescaled by the same ratio, so the canvas appeared to go blank on one twitch.
+
+  `usePanZoom` now widens its effective range to always admit the zoom the
+  canvas opened at, for the life of that canvas — an explicit `maxZoom` below
+  the opening zoom no longer wins. `CanvasStack` and `CanvasCapability` (an
+  instrument's `canvas` config) both gain optional `minZoom` / `maxZoom` props
+  so an instrument can also widen the range up front instead of relying on the
+  invariant to save it.
+
+- Updated dependencies [3386d64]
+- Updated dependencies [ffafb7d]
+- Updated dependencies [ba8b139]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [67bcb05]
+- Updated dependencies [47cbb08]
+- Updated dependencies [f43e9c2]
+- Updated dependencies [bb27e83]
+- Updated dependencies [6a33c3f]
+- Updated dependencies [c24e7de]
+- Updated dependencies [ce82f4a]
+- Updated dependencies [be697dc]
+- Updated dependencies [e909a3b]
+- Updated dependencies [26bbdcf]
+- Updated dependencies [546f67d]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [ccd51cc]
+- Updated dependencies [1f67cad]
+- Updated dependencies [0769eea]
+- Updated dependencies [c534ff5]
+- Updated dependencies [69ca8c6]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [d9f110e]
+- Updated dependencies [0dd35a1]
+- Updated dependencies [1a0bea3]
+- Updated dependencies [9d95836]
+- Updated dependencies [62a3c46]
+- Updated dependencies [5f6c28e]
+- Updated dependencies [3cd1ee8]
+- Updated dependencies [2ea772f]
+- Updated dependencies [f77bd95]
+- Updated dependencies [2ea772f]
+- Updated dependencies [aba8d91]
+- Updated dependencies [2ea772f]
+- Updated dependencies [3386d64]
+- Updated dependencies [68d2651]
+- Updated dependencies [3386d64]
+- Updated dependencies [c6c499d]
+- Updated dependencies [4f1ef0b]
+- Updated dependencies [0114abf]
+- Updated dependencies [50bc909]
+- Updated dependencies [6a06f6d]
+- Updated dependencies [a37ee0b]
+- Updated dependencies [611b30e]
+- Updated dependencies [9ad8cb2]
+- Updated dependencies [c1b8511]
+- Updated dependencies [f918a87]
+- Updated dependencies [d793d3c]
+- Updated dependencies [3386d64]
+- Updated dependencies [ce2b5c7]
+- Updated dependencies [2ea772f]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [84db1f6]
+- Updated dependencies [3386d64]
+- Updated dependencies [7a746df]
+- Updated dependencies [4f19274]
+- Updated dependencies [94f2446]
+- Updated dependencies [07fd2de]
+- Updated dependencies [81213fc]
+- Updated dependencies [2f225d7]
+- Updated dependencies [68069dc]
+- Updated dependencies [5d0ff9c]
+- Updated dependencies [c1b8511]
+- Updated dependencies [546f67d]
+- Updated dependencies [c2ffa49]
+- Updated dependencies [4c097ef]
+- Updated dependencies [2b86e00]
+- Updated dependencies [d933a89]
+- Updated dependencies [bca99e3]
+- Updated dependencies [5923c8b]
+- Updated dependencies [2ea772f]
+- Updated dependencies [2ea772f]
+- Updated dependencies [3fb3a46]
+  - @weasel-js/core@2.0.0-pre.0
+  - @weasel-js/ui@2.0.0-pre.0
+  - @weasel-js/theme@2.0.0-pre.0
+
 ## 1.2.0
 
 ### Minor Changes

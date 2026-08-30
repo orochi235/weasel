@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/labkit",
-  "version": "1.2.0",
+  "version": "1.3.0-pre.0",
   "description": "React widgets for building self-contained interactive lab pages",
   "license": "MIT",
   "author": "orochi235",
@@ -109,9 +109,9 @@
     "react-dom": "^19.0.0"
   },
   "dependencies": {
-    "@weasel-js/core": "*",
-    "@weasel-js/theme": "*",
-    "@weasel-js/ui": "*",
+    "@weasel-js/core": "1.3.0-pre.0",
+    "@weasel-js/theme": "1.3.0-pre.0",
+    "@weasel-js/ui": "1.3.0-pre.0",
     "earcut": "2.2.4",
     "polygon-clipping": "^0.15.7",
     "react-aria-components": "^1.5.0",
@@ -122,7 +122,7 @@
     "@biomejs/biome": "^2.4.12",
     "@rollup/plugin-alias": "^6.0.0",
     "@testing-library/jest-dom": "^6.6.0",
-    "@weasel-js/modes": "*",
+    "@weasel-js/modes": "1.3.0-pre.0",
     "less": "^4.2.0",
     "rollup-plugin-dts": "^6.4.1",
     "tsx": "^4.19.0",
