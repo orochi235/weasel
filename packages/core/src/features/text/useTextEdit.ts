@@ -878,7 +878,7 @@ export function useTextEdit(
       clearSelection();
     };
   }, [editingId, commit, cancelEdit, syncSelection, clearSelection, frameLoop,
-      toggleStyle, dropPending]);
+      toggleStyle, dropPending, publishRange]);
 
   return {
     editingId, startEdit, cancelEdit, commit, isEditing,
