@@ -239,6 +239,15 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/ShapeToolsDemo').then((m) => m.ShapeToolsDemo),
     path: 'apps/site/demos/ShapeToolsDemo.tsx',
   },
+  {
+    id: 'stroke-markers',
+    title: 'Stroke markers',
+    category: 'Geometry',
+    description: 'Arrowheads and line terminators as stroke style — `markerStart` / `markerMid` / `markerEnd` on a Stroke, resolved through the marker registry. Each entry declares its own inset, so the ribbon stops at a filled head\'s base instead of spiking through its tip the way SVG does, while an open V still reaches the vertex. The bottom row is a thick translucent stroke where that inset is visible.',
+    hint: 'Every head takes the line\'s own paint; no second definition per color.',
+    load: () => import('./demos/StrokeMarkersDemo').then((m) => m.StrokeMarkersDemo),
+    path: 'apps/site/demos/StrokeMarkersDemo.tsx',
+  },
 
   {
     id: 'layout',
