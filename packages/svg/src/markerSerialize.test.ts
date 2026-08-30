@@ -45,3 +45,14 @@ describe('marker serialization', () => {
     expect((nodes[0] as { stroke?: { markerStart?: string; markerMid?: string; markerEnd?: string } }).stroke?.markerEnd).toBe('arrow');
   });
 });
+
+describe('an unregistered marker key', () => {
+  it('emits no attribute rather than a reference to a def that never exists', () => {
+    // markerId mints the id, toDefsXml skips entries with no registry match —
+    // so emitting unconditionally would leave a dangling IDREF that our own
+    // parser tolerates and every other tool does not.
+    const out = serializeSvg(line({ markerEnd: 'app-not-registered' }) as never);
+    expect(out).not.toContain('marker-end=');
+    expect(out).not.toContain('<marker ');
+  });
+});

@@ -315,7 +315,9 @@ function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServerRegist
     const ref = stroke[field];
     if (ref === undefined) continue;
     const key = typeof ref === 'string' ? ref : ref.key;
-    attrs.push(`${attr}="url(#${registry.markerId(key)})"`);
+    const id = registry.markerId(key);
+    if (id === undefined) continue;
+    attrs.push(`${attr}="url(#${id})"`);
   }
   return attrs;
 }
@@ -350,7 +352,9 @@ function strokeAttrsFor(stroke: SvgStroke, registry: PaintServerRegistry): strin
   ] as const) {
     const ref = stroke[field];
     if (ref === undefined) continue;
-    attrs.push(`${attr}="url(#${registry.markerId(ref)})"`);
+    const id = registry.markerId(ref);
+    if (id === undefined) continue;
+    attrs.push(`${attr}="url(#${id})"`);
   }
   return attrs;
 }

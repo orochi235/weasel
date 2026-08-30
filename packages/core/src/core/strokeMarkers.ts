@@ -31,7 +31,8 @@ export type MarkerPaint = FillStyle | 'line' | 'none';
 
 export interface MarkerEntry {
   /** `'kit:'`-free for built-ins so the key matches the SVG attribute value;
-   *  consumers should prefix (`'app:my-head'`). */
+   *  consumers should prefix (`'app-my-head'`). A key becomes the `id` of the
+   *  emitted `<marker>` def, so it must be a valid XML name — no colons. */
   id: MarkerKey;
   /** Geometry with its anchor at the origin, pointing +X, in units of
    *  `ctx.size`. An arbitrary anchor is expressed by where the geometry is

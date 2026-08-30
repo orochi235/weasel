@@ -215,8 +215,12 @@ export class PaintServerRegistry {
     return id;
   }
 
-  /** The `<defs>` id for a marker key — the key itself, minting nothing. */
-  markerId(key: string): string {
+  /** The `<defs>` id for a marker key — the key itself, minting nothing.
+   *  `undefined` when nothing is registered under `key`, so a caller emits no
+   *  attribute at all rather than a `url(#…)` pointing at a def that will
+   *  never be written. */
+  markerId(key: string): string | undefined {
+    if (getMarker(key) === undefined) return undefined;
     if (!this.markerKeySet.has(key)) {
       this.markerKeySet.add(key);
       this.markerKeys.push(key);
