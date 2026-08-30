@@ -49,6 +49,45 @@ which the scene answers with the pre-gesture pose.
 answers `null` for every ordinary node; treating that as a reason to bypass retires the memo
 scene-wide on every pointer move. There is a guard test for this in `derivedPath.test.ts`.
 
+## Verified in a browser, not just jsdom
+
+Both behaviors were confirmed against the running dev server with a real pointer
+drag, screenshotting with the button still down: the box moves, and the black
+connector tracks it mid-gesture rather than jumping at the drop.
+
+Two things that cost time and will cost it again:
+
+**`useScene` seeds `initial` once, and HMR keeps the old scene.** Editing a
+demo's node data and saving leaves the *previous* nodes live, so the canvas
+paints stale data with no error. A hard reload is the only way to trust a
+before/after. This is the dev-server-staleness trap in a new place.
+
+**A derived edge is now pickable, which changes what a click hits.** The
+connector's silhouette is the line, and it renders above its endpoints, so
+clicking a box *at its centre* — where the line starts — selects the edge, not
+the box. The edge's pose is a zero-sized placeholder, so dragging it looks like
+nothing happening at all, save for a few stray pixels of its selection outline.
+That is correct behavior and a genuinely confusing first encounter. Grab a box
+away from the line.
+
+## A demo is still wanted
+
+I wrote `DerivedGeometryDemo` (two boxes, a connector deriving the segment
+between their centres, no `drawOne` so the built-in `kit:derived` painter runs)
+and **reverted it** — a drag on a box also raised a marquee, which is not the
+standard a reference implementation is held to, and I could not isolate the
+tool-binding cause before running out of room. Worth redoing: the substance
+worked, and the demo is arc 7 of the plugin spec anyway.
+
+Two findings from that attempt, both non-obvious:
+
+- **Supplying `layers.scene.drawOne` replaces the built-in painter dispatch**,
+  so a derived node silently never paints. A demo of this seam must omit
+  `drawOne` and let `defaultDrawOne` run.
+- Compare against `MoveSnapDemo`, which drags a node cleanly. It passes
+  `selectTool={{ move: { behaviors } }}` and a `selectionOverlay` layer; the
+  marquee appeared with `selectTool={{}}`.
+
 ## What is next
 
 The connect gesture (arc 5) and `packages/diagram` (arc 3) are now unblocked. **Arc 2 — stroke
