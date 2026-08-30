@@ -207,6 +207,12 @@ describe('round-trip', () => {
     expect(b).toEqual(a);
   });
 
+  it('stroke markers (start, mid, end)', () => {
+    const { a, b, warnings } = roundTrip(F.MARKER_SVG);
+    expect(warnings).toEqual([]);
+    expect(b).toEqual(a);
+  });
+
   it('plain text', () => {
     const { a, b, warnings } = roundTrip(F.TEXT_PLAIN_SVG);
     expect(warnings).toEqual([]);

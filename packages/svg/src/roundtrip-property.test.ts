@@ -65,6 +65,10 @@ function makeTree(seed: number): SvgNode[] {
     if (r() < 0.5) s.join = pick(['miter', 'round', 'bevel'] as const);
     if (r() < 0.3) s.dash = [Math.round(r() * 50) / 10, Math.round(r() * 50) / 10];
     if (r() < 0.3) s.miterLimit = 1 + Math.round(r() * 100) / 10;
+    const MARKER_KEYS = ['arrow', 'arrow-open', 'diamond', 'circle', 'bar'];
+    if (r() < 0.3) s.markerStart = pick(MARKER_KEYS);
+    if (r() < 0.2) s.markerMid = pick(MARKER_KEYS);
+    if (r() < 0.4) s.markerEnd = pick(MARKER_KEYS);
     return s;
   };
 

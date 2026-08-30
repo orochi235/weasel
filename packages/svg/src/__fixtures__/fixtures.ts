@@ -61,6 +61,18 @@ export const STROKE_STYLE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox
   <polyline points="10,5 15,15 20,5" fill="none" stroke="#000" stroke-width="3" stroke-linejoin="miter" stroke-miterlimit="2"/>
 </svg>`;
 
+export const MARKER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120">
+  <defs>
+    <marker id="arrow" markerUnits="strokeWidth" markerWidth="8" markerHeight="8"
+      refX="0" refY="0" orient="auto" overflow="visible">
+      <path d="M0 0 L-3 -1.5 L-3 1.5 Z" fill="context-stroke"/>
+    </marker>
+  </defs>
+  <line x1="10" y1="20" x2="180" y2="20" stroke="#000" stroke-width="2" marker-end="url(#arrow)"/>
+  <polyline points="10,60 90,90 180,60" fill="none" stroke="#000" stroke-width="3"
+    marker-start="url(#arrow)" marker-mid="url(#arrow)" marker-end="url(#arrow)"/>
+</svg>`;
+
 export const TEXT_PLAIN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
   <text x="10" y="20" dominant-baseline="text-before-edge" data-weasel-width="180" data-weasel-height="40" font-size="16" font-family="sans-serif" fill="#1a130d">Hello, world!</text>
 </svg>`;
