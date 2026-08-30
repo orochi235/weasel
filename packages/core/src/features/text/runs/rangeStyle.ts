@@ -56,11 +56,15 @@ const STYLE_KEYS = [
   'italic',
   'underline',
   'strikethrough',
+  'overline',
   'fontFamily',
   'fontSize',
   'letterSpacing',
   'fill',
   'stroke',
+  'script',
+  'baselineShift',
+  'fontScale',
 ] as const satisfies readonly StyleKey[];
 
 // Every function here iterates STYLE_KEYS, so a key missing from the list is
@@ -80,6 +84,7 @@ const FLAG_KEYS: ReadonlySet<StyleKey> = new Set<StyleKey>([
   'italic',
   'underline',
   'strikethrough',
+  'overline',
 ]);
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {

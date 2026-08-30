@@ -20,10 +20,14 @@ interface StyleState {
   italic: boolean;
   underline: boolean;
   strikethrough: boolean;
+  overline: boolean;
   fontSize?: number;
   fontFamily?: string;
   color?: string;
   letterSpacing?: number;
+  script?: 'super' | 'sub';
+  baselineShift?: number;
+  fontScale?: number;
 }
 
 const EMPTY_STYLE: StyleState = {
@@ -31,6 +35,7 @@ const EMPTY_STYLE: StyleState = {
   italic: false,
   underline: false,
   strikethrough: false,
+  overline: false,
 };
 
 /**
@@ -63,6 +68,8 @@ function styleStateFromElement(el: Element, parent: StyleState): StyleState {
   // read them for the same reason `<b>`/`<i>` are read.
   if (tag === 'U') next.underline = true;
   if (tag === 'S' || tag === 'STRIKE' || tag === 'DEL') next.strikethrough = true;
+  if (tag === 'SUP') next.script = 'super';
+  if (tag === 'SUB') next.script = 'sub';
   if (el instanceof HTMLElement) {
     const fw = el.style.fontWeight;
     if (fw === '700' || fw === 'bold') next.bold = true;
@@ -85,10 +92,25 @@ function styleStateFromElement(el: Element, parent: StyleState): StyleState {
     if (td && !td.includes('none')) {
       next.underline ||= td.includes('underline');
       next.strikethrough ||= td.includes('line-through');
+      next.overline ||= td.includes('overline');
     }
+    // A percentage is `fontScale`'s own spelling — CSS resolves it against the
+    // parent, which is exactly what the field means. Any other unit is an
+    // absolute size.
     if (el.style.fontSize) {
-      const px = parseFloat(el.style.fontSize);
-      if (Number.isFinite(px)) next.fontSize = px;
+      const size = parseFloat(el.style.fontSize);
+      if (Number.isFinite(size)) {
+        if (el.style.fontSize.trim().endsWith('%')) next.fontScale = size / 100;
+        else next.fontSize = size;
+      }
+    }
+    const va = el.style.verticalAlign;
+    if (va === 'super' || va === 'sub') next.script = va === 'super' ? 'super' : 'sub';
+    if (va === 'baseline') next.script = undefined;
+    const rawShift = el.getAttribute('data-baseline-shift');
+    if (rawShift != null) {
+      const shift = parseFloat(rawShift);
+      if (Number.isFinite(shift)) next.baselineShift = shift;
     }
     if (el.style.fontFamily) next.fontFamily = el.style.fontFamily;
     if (el.style.color) next.color = el.style.color;
@@ -109,10 +131,14 @@ function styleEquals(a: StyleState, b: StyleState): boolean {
     a.italic === b.italic &&
     a.underline === b.underline &&
     a.strikethrough === b.strikethrough &&
+    a.overline === b.overline &&
     a.fontSize === b.fontSize &&
     a.fontFamily === b.fontFamily &&
     a.color === b.color &&
-    a.letterSpacing === b.letterSpacing
+    a.letterSpacing === b.letterSpacing &&
+    a.script === b.script &&
+    a.baselineShift === b.baselineShift &&
+    a.fontScale === b.fontScale
   );
 }
 
@@ -130,6 +156,12 @@ function toRun(text: string, style: StyleState): StyledRun {
   // one — so an undecorated run gets an absent key, never `false`.
   if (style.underline) run.underline = true;
   if (style.strikethrough) run.strikethrough = true;
+  if (style.overline) run.overline = true;
+  if (style.script != null) run.script = style.script;
+  // Both are meaningful at values that test falsy — a 0 shift cancels an
+  // inherited script's rise — so test for presence, as `letterSpacing` does.
+  if (style.baselineShift != null) run.baselineShift = style.baselineShift;
+  if (style.fontScale != null) run.fontScale = style.fontScale;
   return run;
 }
 
@@ -186,7 +218,9 @@ export function runsToDom(runs: readonly StyledRun[], parent: HTMLElement): void
     span.textContent = run.text;
     if (run.bold) span.style.fontWeight = '700';
     if (run.italic) span.style.fontStyle = 'italic';
+    // An absolute size wins over a relative one, as it does in `resolveRuns`.
     if (run.fontSize != null) span.style.fontSize = `${run.fontSize}px`;
+    else if (run.fontScale != null) span.style.fontSize = `${run.fontScale * 100}%`;
     if (run.fontFamily != null) span.style.fontFamily = run.fontFamily;
     const color = solidColor(run.fill);
     if (color != null) span.style.color = color;
@@ -196,7 +230,16 @@ export function runsToDom(runs: readonly StyledRun[], parent: HTMLElement): void
     const decorations: string[] = [];
     if (run.underline) decorations.push('underline');
     if (run.strikethrough) decorations.push('line-through');
+    if (run.overline) decorations.push('overline');
     if (decorations.length > 0) span.style.textDecoration = decorations.join(' ');
+    if (run.script != null) span.style.verticalAlign = run.script;
+    // The one run field with no CSS spelling: `vertical-align` takes a length
+    // or a percentage of the *line height*, and this is a fraction of the
+    // parent's font size. An attribute keeps the round-trip exact; the canvas
+    // underneath is what actually draws the run at its offset.
+    if (run.baselineShift != null) {
+      span.setAttribute('data-baseline-shift', String(run.baselineShift));
+    }
     // World units — the overlay's own node-level tracking is screen-scaled,
     // but a run override is stored as-is so the round-trip is lossless. CSS
     // `letter-spacing` is inherited and a child declaration *replaces* the

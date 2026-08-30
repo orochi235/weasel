@@ -16,8 +16,8 @@
  * The alternative was a tri-state run flag (`true` / `false` / inherit). It
  * cannot cover `bold` or `italic`: those are booleans on a run but
  * `fontWeight` and `fontStyle` on the node, so a run's `false` has no node-level
- * boolean to override. Tri-state fixes two of the four flags; this fixes all
- * four.
+ * boolean to override. Tri-state fixes two of the five flags; this fixes all
+ * five.
  */
 
 import type { StyledRun } from '@weasel-js/text';
@@ -25,7 +25,7 @@ import type { TextStyle } from '@weasel-js/text';
 import { applyStyleToRange } from './rangeStyle';
 
 /** The additive run flags. */
-export type FlagKey = 'bold' | 'italic' | 'underline' | 'strikethrough';
+export type FlagKey = 'bold' | 'italic' | 'underline' | 'strikethrough' | 'overline';
 
 /** The result of toggling a style flag over a text range: the rewritten runs
  *  and node style, and whether the change could be made at all. */
@@ -49,6 +49,7 @@ export function nodeHasFlag(style: TextStyle, key: FlagKey): boolean {
     case 'italic': return style.fontStyle === 'italic';
     case 'underline': return style.underline === true;
     case 'strikethrough': return style.strikethrough === true;
+    case 'overline': return style.overline === true;
   }
 }
 
@@ -71,6 +72,7 @@ function clearNodeFlag(style: TextStyle, key: FlagKey): TextStyle {
     case 'italic': next.fontStyle = 'normal'; break;
     case 'underline': delete next.underline; break;
     case 'strikethrough': delete next.strikethrough; break;
+    case 'overline': delete next.overline; break;
   }
   return next;
 }

@@ -29,6 +29,33 @@ export interface StyledRun {
   letterSpacing?: number;
   underline?: boolean;
   strikethrough?: boolean;
+  /** Draw a rule above this run's ascent. Additive over the node style. */
+  overline?: boolean;
+  /**
+   * Set this run as a superscript or subscript — a raised or lowered baseline
+   * and a smaller size together, which is the pair `<sup>` and `<sub>` imply.
+   *
+   * A preset over the two primitives below, not a third mechanism: it supplies
+   * a `baselineShift` and a `fontScale`, and naming either of those directly
+   * overrides that half while leaving the other alone. The numbers are in
+   * {@link SCRIPT_METRICS}.
+   *
+   * There is no node-level counterpart. A whole text node set as a superscript
+   * is a smaller node moved up, which the pose already says better.
+   */
+  script?: 'super' | 'sub';
+  /**
+   * Raise (positive) or lower (negative) this run off the line's shared
+   * baseline, in ems of the *inherited* font size — so a run's rise does not
+   * shrink along with the run when `fontScale` also applies.
+   */
+  baselineShift?: number;
+  /**
+   * Multiplier on the inherited font size. The relative counterpart to
+   * `fontSize`, which pins an absolute size and wins over this when both are
+   * present.
+   */
+  fontScale?: number;
 }
 
 /** Normalize the two accepted spellings of text content — a plain string or
@@ -53,10 +80,10 @@ export function runsToPlainText(runs: readonly StyledRun[]): string {
   return out;
 }
 
-/** A run flag an inline marker can toggle. The four additive style toggles on
- *  `StyledRun`; the valued fields (family, size, paint) have no inline
- *  spelling and are not addressable this way. */
-export type RunFlag = 'bold' | 'italic' | 'underline' | 'strikethrough';
+/** A run flag an inline marker can toggle. The additive style toggles on
+ *  `StyledRun`; the valued fields (family, size, paint, `script`) have no
+ *  inline spelling and are not addressable this way. */
+export type RunFlag = 'bold' | 'italic' | 'underline' | 'strikethrough' | 'overline';
 
 /** One inline marker: a delimiter repeated `repeat` times, and the flags it
  *  turns on between its opening and closing occurrence. */

@@ -154,7 +154,8 @@ function runsKey(runs: readonly ResolvedRun[]): string {
   for (const r of runs) {
     out += `${r.text.length}:${r.text}|${r.fontFamily.length}:${r.fontFamily}`
       + `|${r.fontSize}|${r.fontWeight}|${r.fontStyle}|${r.letterSpacing}`
-      + `|${r.underline ? 1 : 0}${r.strikethrough ? 1 : 0}`
+      + `|${r.underline ? 1 : 0}${r.strikethrough ? 1 : 0}${r.overline ? 1 : 0}`
+      + `|${r.baselineShift}`
       + `|${paintKey(r.fill)}|${strokeKey(r.stroke)}|`;
   }
   return out;

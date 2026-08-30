@@ -281,6 +281,8 @@ export function plainRun(text: string, fontSize = 16): ResolvedRun {
     letterSpacing: 0,
     underline: false,
     strikethrough: false,
+    overline: false,
+    baselineShift: 0,
   };
 }
 
