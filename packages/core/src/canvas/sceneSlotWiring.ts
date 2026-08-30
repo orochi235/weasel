@@ -9,7 +9,7 @@
  */
 import type { SceneSlotConfig } from './Canvas';
 import type { Node, NodeId, Scene } from 'core/scene/types';
-import { withDerivedPaths } from './derivedPath';
+import { withDerivedPaths, resolveDerivedPath, scenePoseLookup } from './derivedPath';
 
 /**
  * The alpha a view paints a node at: the view's own `alphaFor` times any
@@ -32,9 +32,11 @@ export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   alphaFor?: (id: string) => number,
 ): SceneSlotConfig<Node<TData, TLayer, TPose>, TPose> {
+  const poseOf = scenePoseLookup(scene);
   return {
     ...slot,
     drawOne: withDerivedPaths(scene, slot.drawOne),
+    derivedPathOf: (node) => resolveDerivedPath(node, poseOf),
     alphaFor: composeAlphaFor(scene, alphaFor),
   };
 }

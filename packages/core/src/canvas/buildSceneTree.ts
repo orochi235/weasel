@@ -2,6 +2,7 @@ import type { DrawCommand, GroupDrawCommand } from '../renderer';
 import type { View } from 'core/viewport/view';
 import { findShapeSilhouette } from './NodeShape';
 import type { Node } from 'core/scene/types';
+import type { Path } from 'features/paths/types';
 
 /**
  * The scene-tree reading surface `buildSceneTree` walks. A `SceneCanvasAdapter`
@@ -58,6 +59,11 @@ export function buildSceneTree<
    *  ancestor clips) and only this layer's group is returned. Used to render
    *  scene layers as separate, individually-orderable canvas slots. */
   forLayer?: string,
+  /** The path a container computes from its dependencies' poses. Only a
+   *  scene-backed caller can answer — deriving needs the dependencies' poses —
+   *  so the bare-adapter path omits it and a derived container contributes no
+   *  clip there, exactly as before. */
+  derivedPathOf?: (node: TNode, pose: TPose) => Path | null,
 ): DrawCommand[] {
   const layers = adapter.getLayers();
   const buckets = new Map<string, DrawCommand[]>();
@@ -88,6 +94,7 @@ export function buildSceneTree<
         clip = findShapeSilhouette(
           node as unknown as Node<unknown, string, TPose>,
           pose,
+          { derivedPath: derivedPathOf?.(node, pose) },
         );
       }
       if (clip) ownClips = [...ancestorClips, clip as GroupDrawCommand['clip']];

@@ -24,6 +24,7 @@ import { findShapeSilhouette } from 'canvas/NodeShape';
 import type { Node, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import { effectivePose } from 'core/scene/poseOverrides';
+import { resolveDerivedPath } from './derivedPath';
 
 /** Shared, never mutated: most scenes are flat and every node returns it. */
 const EMPTY_PARENTS: readonly never[] = [];
@@ -60,6 +61,11 @@ export interface PickSource<TPose> {
   /** Whether this layer reaches the screen in the asking view. Omit for a
    *  source with no layers. */
   layerIsPainted?(layer: string): boolean;
+  /** The path a node computes from its dependencies' poses, or null when it
+   *  derives nothing. Only a scene-backed source can answer — deriving needs
+   *  the dependencies' poses — so a bare adapter omits it, and every derived
+   *  node there keeps answering from its own (placeholder) pose. */
+  derivedPathOf?(node: PickCandidate<TPose>): Path | null;
 }
 
 /** One hit-test question: what region, and what counts as covering it. */
@@ -67,8 +73,11 @@ export interface PickQuery<TPose> {
   /** Default `true`. The area walks exclude containers so a marquee does not
    *  return a container and its children both. */
   includeContainers?: boolean;
-  /** Does this node, drawn at this pose, cover the query region? */
-  hits(node: PickCandidate<TPose>, pose: TPose): boolean;
+  /** Does this node, drawn at this pose, cover the query region? `derived`
+   *  is the node's resolved path when it has one — a derived node's pose is a
+   *  placeholder, so a region test that reads only the pose answers for the
+   *  wrong box. */
+  hits(node: PickCandidate<TPose>, pose: TPose, derived?: Path | null): boolean;
   /**
    * Does an ancestor's clip leave anything of `node` for this query to hit?
    *
@@ -77,14 +86,27 @@ export interface PickQuery<TPose> {
    * the node is not, and the node and the clip can overlap where the area is
    * not, and only the two terms together reject both.
    */
-  clipAdmits(clip: Path, node: PickCandidate<TPose>, pose: TPose): boolean;
+  clipAdmits(
+    clip: Path,
+    node: PickCandidate<TPose>,
+    pose: TPose,
+    derived?: Path | null,
+  ): boolean;
 }
 
 /** The clip a container imposes on its subtree, or null when it imposes none. */
-export function ownClipOf<TPose>(node: PickCandidate<TPose>, pose: TPose): Path | null {
+export function ownClipOf<TPose>(
+  node: PickCandidate<TPose>,
+  pose: TPose,
+  derived?: Path | null,
+): Path | null {
   if (node.kind !== 'container') return null;
   if (typeof node.clipFromPose === 'function') return node.clipFromPose(pose);
-  return findShapeSilhouette(node as unknown as Node<unknown, string, TPose>, pose);
+  return findShapeSilhouette(
+    node as unknown as Node<unknown, string, TPose>,
+    pose,
+    { derivedPath: derived },
+  );
 }
 
 /**
@@ -108,7 +130,9 @@ export function pickWalk<TPose>(
   const clipOf = (ancestor: PickCandidate<TPose>): Path | null => {
     const cached = clipPath.get(ancestor.id);
     if (cached !== undefined) return cached;
-    const resolved = ownClipOf(ancestor, src.poseOf(ancestor));
+    const resolved = ownClipOf(
+      ancestor, src.poseOf(ancestor), src.derivedPathOf?.(ancestor),
+    );
     clipPath.set(ancestor.id, resolved);
     return resolved;
   };
@@ -119,12 +143,13 @@ export function pickWalk<TPose>(
     if (src.alphaOf !== undefined && src.alphaOf(node.id) <= 0) continue;
 
     const pose = src.poseOf(node);
-    if (!q.hits(node, pose)) continue;
+    const derived = src.derivedPathOf?.(node);
+    if (!q.hits(node, pose, derived)) continue;
 
     let clipped = false;
     for (const ancestor of src.parentsOf(node)) {
       const clip = clipOf(ancestor);
-      if (clip !== null && !q.clipAdmits(clip, node, pose)) { clipped = true; break; }
+      if (clip !== null && !q.clipAdmits(clip, node, pose, derived)) { clipped = true; break; }
     }
     if (clipped) continue;
 
@@ -188,11 +213,25 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
       ? (faded ? (id: string) => (faded.has(id) ? 0 : 1) : undefined)
       : (id: string) => scene.overrides.get(asNodeId(id))?.alpha ?? 1);
 
+  const poseOf = getPose
+    ? (node: PickCandidate<TPose>) => getPose(node.id)
+    : (node: PickCandidate<TPose>) => effectivePose(scene.overrides, node as never);
+
+  // Through `poseOf`, not the document pose: a derived node has to be tested
+  // where the renderer draws its dependencies, which is what an override says.
+  const derivedPathOf = (node: PickCandidate<TPose>): Path | null => {
+    const n = node as unknown as Node<TData, TLayer, TPose>;
+    if (n.dependsOn === undefined || n.dependsOn.length === 0) return null;
+    return resolveDerivedPath(n, (id) => {
+      const dep = scene.get(id);
+      return dep === undefined ? undefined : poseOf(dep as never);
+    });
+  };
+
   return {
     order: () => scene.renderOrderNodes() as unknown as readonly PickCandidate<TPose>[],
-    poseOf: getPose
-      ? (node) => getPose(node.id)
-      : (node) => effectivePose(scene.overrides, node as never),
+    derivedPathOf,
+    poseOf,
     parentsOf(node) {
       let parentId = (node as { parent?: string | null }).parent ?? null;
       if (parentId === null) return EMPTY_PARENTS;

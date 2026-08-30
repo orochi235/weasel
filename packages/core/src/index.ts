@@ -299,6 +299,7 @@ export type {
   NodeShapeEntry,
   NodeInk,
   NodeInkCtx,
+  NodeSilhouetteCtx,
   RegisterNodeShapeOptions,
   NodePaintCtx,
   ShapeCoversPointOptions,

@@ -23,7 +23,6 @@ Priority tags:
 
 - **`<Timeline>` editor** — the one unbuilt phase of the timeline/rig arc → [Animation](#animation)
 - **A derived edge does not follow a live drag under any built-in tool** — "drag a box and the edge follows" is unreachable with the shipped tools → [Scene, adapters & layout](#scene-adapters--layout)
-- **Derived nodes have no silhouette and no `ink`** — a derived edge is effectively unpickable → [Scene, adapters & layout](#scene-adapters--layout)
 
 ### P2 — broad reuse / friction-likely
 
@@ -736,8 +735,9 @@ Core five + Crop shipped. Remaining:
 ### Derived geometry follow-ups
 
 Left open by the derived-path arc (`dependsOn` / `derivePath` / `SceneRegistry.derivePath`;
-the seam is documented in `docs/extending.md`). The first two P1s below are the
-ones that decide whether anything diagram-shaped can be built on it yet.
+the seam is documented in `docs/extending.md`). Picking a derived node landed;
+the live-drag P1 below is what still stands between this and the connect
+gesture.
 
 - **(P1) A derived edge does not follow a live drag under any built-in tool.**
   `scenePoseLookup` reads pose overrides, but the built-in move, resize and
@@ -751,15 +751,15 @@ ones that decide whether anything diagram-shaped can be built on it yet.
   gesture. **"Drag a box and the edge follows" is not reachable with the shipped
   tools until this closes.**
 
-- **(P1) Derived nodes have no silhouette and no `ink`.** `findShapeSilhouette`
-  takes no paint context, so `kit:derived` cannot report one;
-  `shapeCoversPoint` returns `true` on a null silhouette and picking degrades to
-  the caller's AABB, which for a derived edge is a zero-sized pose — effectively
-  unpickable. `findShapeInk` likewise returns `null`, so a stroked edge gets zero
-  grab reach on top of that. Same root cause, and fixing only `silhouette` leaves
-  picking half-broken. A derived container also contributes no clip. Must close
-  before the connect gesture; "you cannot click an edge" is not a shippable
-  diagram.
+- **(P3) A derived node is unpickable through a bare adapter.** The
+  scene-backed half of this landed: `NodeShapeEntry.silhouette` takes a `NodeSilhouetteCtx`
+  carrying `derivedPath`, `kit:derived` reports it plus its `ink`, and
+  `PickSource.derivedPathOf` / `buildSceneTree`'s optional argument resolve it
+  where a scene is in scope. What is left is the other side of that split:
+  `adapterPickSource` and `Canvas`'s bare-adapter render path cannot derive —
+  it needs the dependencies' poses — so a derived node there still answers from
+  its own placeholder pose. Closing it means giving the adapter surface a
+  dependency read, which is a bigger decision than picking.
 
 - **(P1) Undo after a Delete loses a node's dependents.** The container half of
   this closed with the subtree snapshot in `createDeleteOp` (covered by

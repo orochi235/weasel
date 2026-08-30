@@ -41,6 +41,7 @@ import type { CanvasHelpers, CanvasSurfaceHelpers } from './useViewHelpers';
 
 import type { ToolCtx } from 'tools/types';
 import type { Op } from 'core/ops/types';
+import type { Path } from 'features/paths/types';
 import { dispatchApplyBatch } from 'core/applyOps';
 import type { View } from 'core/viewport/view';
 import type { NodePaintCtx } from './NodeShape';
@@ -122,6 +123,11 @@ export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
    *  scene-aware caller can supply (a node's derived path); `<SceneCanvas>`
    *  fills it in, bare `<Canvas>` never does. */
   drawOne: (obj: TNode, pose: TPose, view: View, ctx?: NodePaintCtx) => DrawCommand[];
+  /** The path a container derives from its dependencies' poses, for the clip
+   *  it imposes on its subtree. The other half of what only a scene-aware
+   *  caller can supply — `drawOne`'s `ctx` carries the derived path a node
+   *  *paints*, this one the clip it *imposes*. */
+  derivedPathOf?: (obj: TNode, pose: TPose) => Path | null;
   /** Default ghost alpha for the move-overlay slot. Default 0.85. */
   ghostAlpha?: number;
   /**
@@ -625,6 +631,7 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
           filteredDrawOne as unknown as Parameters<typeof buildSceneTree>[1],
           view,
           slot?.forLayer,
+          cfg.derivedPathOf as Parameters<typeof buildSceneTree>[4],
         );
         return postProcess ? postProcess(tree, view, dims) : tree;
       }

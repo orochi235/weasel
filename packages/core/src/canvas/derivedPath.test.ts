@@ -2,7 +2,9 @@ import { describe, it, expect, vi } from 'vitest';
 import { resolveDerivedPath, scenePoseLookup, withDerivedPaths } from './derivedPath';
 import { wireSceneSlotToScene } from './sceneSlotWiring';
 import { defaultDrawOne } from './defaultDrawOne';
-import { findNodeShape, type NodePaintCtx } from './NodeShape';
+import {
+  findNodeShape, findShapeSilhouette, shapeCoversPoint, type NodePaintCtx,
+} from './NodeShape';
 import { buildSceneViewCommands } from './sceneViewRender';
 import { planPixelRender } from './renderSceneToPixels';
 import { createScene } from 'core/scene/scene';
@@ -331,5 +333,73 @@ describe('the scene walks resolve derived geometry', () => {
     scene.overrides.set(a, { alpha: 0.5 });
     const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene, () => 0.4);
     expect(slot.alphaFor!(a)).toBeCloseTo(0.2);
+  });
+});
+
+describe('the scene slot carries a derived container clip', () => {
+  it('supplies derivedPathOf, so the live canvas clips what the headless walk does', () => {
+    // `buildSceneViewCommands` resolves this itself for the headless walk.
+    // `<Canvas>` cannot — it walks an adapter — so the slot has to carry it,
+    // or a derived container clips off-screen and not on.
+    const { scene, edge } = makeEdgeScene();
+    const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene, () => 1);
+    expect(slot.derivedPathOf!(scene.get(edge)! as never, pose(0)))
+      .toEqual(linePath({ x: 0, y: 0 }, { x: 100, y: 0 }));
+  });
+});
+
+describe('picking a derived node', () => {
+  /** The edge runs (0,0) → (100,0); its own pose is a 10×10 placeholder at
+   *  the origin, which is why the pose AABB cannot answer for it. */
+  function edgeParts() {
+    const { scene, a, b, edge } = makeEdgeScene();
+    const node = scene.get(edge)!;
+    const path = resolveDerivedPath(node, scenePoseLookup(scene))!;
+    return { scene, a, b, edge, node, path };
+  }
+
+  it('reports the derived path as its silhouette', () => {
+    const { node, path } = edgeParts();
+    expect(findShapeSilhouette(node, node.pose, { derivedPath: path })).toEqual(path);
+  });
+
+  it('is grabbable along the line, far outside its own pose', () => {
+    const { node, path } = edgeParts();
+    expect(
+      shapeCoversPoint(node, node.pose, 50, 0, { tolerance: 2, derivedPath: path }),
+    ).toBe(true);
+  });
+
+  it('is not grabbable away from the line', () => {
+    const { node, path } = edgeParts();
+    expect(
+      shapeCoversPoint(node, node.pose, 50, 30, { tolerance: 2, derivedPath: path }),
+    ).toBe(false);
+  });
+
+  it('keeps memoizing a node that derives nothing', () => {
+    // A scene-backed source answers `null` for every ordinary node. If that
+    // counted as a reason to bypass the silhouette memo, the whole scene would
+    // rebuild its silhouette on every pointer move.
+    const plain: Node<Data, 'main', RectPose> = {
+      id: asNodeId('plain'), kind: 'leaf', layer: 'main', data: {}, parent: null,
+      pose: pose(0),
+    };
+    const first = findShapeSilhouette(plain, plain.pose, { derivedPath: null });
+    expect(findShapeSilhouette(plain, plain.pose, { derivedPath: null })).toBe(first);
+  });
+
+  it('follows a dependency move rather than serving a stale silhouette', () => {
+    const { scene, b, node } = edgeParts();
+    const lookup = scenePoseLookup(scene);
+    findShapeSilhouette(node, node.pose, {
+      derivedPath: resolveDerivedPath(node, lookup),
+    });
+
+    scene.setPose(b, pose(40));
+
+    const moved = resolveDerivedPath(scene.get(node.id)!, lookup);
+    expect(findShapeSilhouette(node, node.pose, { derivedPath: moved }))
+      .toEqual(linePath({ x: 0, y: 0 }, { x: 40, y: 0 }));
   });
 });

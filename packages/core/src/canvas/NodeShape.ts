@@ -113,7 +113,11 @@ export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
    *  `clipFromPose`), by non-rect hit-testing, and by lasso/area-select.
    *  Painters whose visual has no meaningful closed silhouette (e.g. text)
    *  leave this undefined. */
-  silhouette?(node: Node<TData, string, TPose>, pose: TPose): Path | null;
+  silhouette?(
+    node: Node<TData, string, TPose>,
+    pose: TPose,
+    ctx?: NodeSilhouetteCtx,
+  ): Path | null;
   /** Optional: how the silhouette is inked — whether the interior is filled,
    *  and how wide the outline is. Read by picking, so that an unfilled shape
    *  is grabbable by its outline rather than by its empty middle.
@@ -144,6 +148,15 @@ export interface NodeInk {
   outset: number;
   /** How far it reaches inside. */
   inset: number;
+}
+
+/** Per-call context for {@link NodeShapeEntry.silhouette}. */
+export interface NodeSilhouetteCtx {
+  /** The node's derived path, resolved by the caller — a painter has no scene
+   *  handle and deriving needs the dependencies' poses. Same convention as
+   *  {@link NodePaintCtx.derivedPath}: absent for a node that derives from
+   *  nothing, `null` when it derives but has nothing to draw. */
+  derivedPath?: Path | null;
 }
 
 /** Per-call context for {@link NodeShapeEntry.ink}. */
@@ -265,12 +278,21 @@ function matchNodeShape<TData, TPose>(
 export function findShapeSilhouette<TData, TPose>(
   node: Node<TData, string, TPose>,
   pose: TPose,
+  ctx?: NodeSilhouetteCtx,
 ): Path | null {
-  return nodeMemo(node as { data?: unknown }, SILHOUETTE_SLOT, pose, () => {
-    const sil = findNodeShape(node)?.silhouette?.(node, pose) ?? null;
+  const build = (): Path | null => {
+    const sil = findNodeShape(node)?.silhouette?.(node, pose, ctx) ?? null;
     const r = sil ? poseRotationOf(pose) : null;
     return sil && r ? rotatePathAround(sil, r.cx, r.cy, r.rotation) : sil;
-  });
+  };
+  // `SILHOUETTE_SLOT`'s key is (node, pose, data) and cannot see
+  // `ctx.derivedPath` — the same reason `kit:derived` skips `PAINT_SLOT`.
+  // Memoizing here would serve one caller's silhouette to a caller that
+  // passed a different path. Only an actual path skips it: a scene-backed
+  // source answers `null` for every ordinary node, and treating that as a
+  // reason to bypass would retire the memo for the whole scene.
+  if (ctx?.derivedPath != null) return build();
+  return nodeMemo(node as { data?: unknown }, SILHOUETTE_SLOT, pose, build);
 }
 
 /** Find the painter for `node` and ask how it inks its silhouette. Returns
@@ -298,6 +320,11 @@ export interface ShapeCoversPointOptions {
   /** View scale, passed to the painter's `ink` so a `{ px }` stroke width
    *  resolves to world units. Defaults to 1. */
   scale?: number;
+  /** The node's derived path — see {@link NodeSilhouetteCtx.derivedPath}.
+   *  Without it a derived node reports no silhouette and this answers `true`
+   *  everywhere, which degrades picking to the caller's AABB: for an edge,
+   *  a zero-sized pose. */
+  derivedPath?: Path | null;
 }
 
 /**
@@ -332,7 +359,7 @@ export function shapeCoversPoint<TData, TPose>(
   y: number,
   opts: ShapeCoversPointOptions = {},
 ): boolean {
-  const sil = findShapeSilhouette(node, pose);
+  const sil = findShapeSilhouette(node, pose, { derivedPath: opts.derivedPath });
   if (sil === null) return true;
   const ink = findShapeInk(node, pose, { scale: opts.scale }) ?? DEFAULT_INK;
   const inside = pathContainsPoint(sil, x, y);
@@ -743,6 +770,19 @@ const DERIVED_PAINTER: NodeShapeEntry = {
       ...(fill ? { fill } : {}),
       ...(stroke ? { stroke } : {}),
     }];
+  },
+  // The derived path *is* the silhouette, and it is already absolute — the
+  // pose is a placeholder, so nothing here can be recovered from it. Without
+  // a `ctx` this reports null, which `shapeCoversPoint` reads as "no
+  // opinion": picking then falls back to that zero-sized pose.
+  silhouette: (_node, _pose, ctx) => ctx?.derivedPath ?? null,
+  ink: (node, _pose, ctx) => {
+    const d = node.data as { fill?: FillStyle | null; stroke?: Stroke | null } | null;
+    const stroke = resolveNodeStroke(d?.stroke);
+    return {
+      filled: resolveNodeFill(d?.fill, stroke === null ? DEFAULT_SHAPE_FILL : null) !== null,
+      ...inkReach(stroke, ctx?.scale),
+    };
   },
 };
 

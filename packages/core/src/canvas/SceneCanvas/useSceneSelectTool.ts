@@ -28,7 +28,7 @@ import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
 import { snap as snapBehavior } from 'interactions/gestures/shared/snap';
 import { translateRectPose, type RectPose } from 'features/groups/composePose';
-import { aabbOfPose, poseContainsRotated } from './poseGeometry';
+import { aabbOfPose, poseContains, poseContainsRotated } from './poseGeometry';
 import { shapeCoversPoint, findShapeInk } from 'canvas/NodeShape';
 import { meanScale } from 'core/viewport/meanScale';
 
@@ -242,7 +242,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
         ...(layerIsPainted ? { layerIsPainted } : {}),
       });
       return pickWalk<TPose>(src, {
-        hits: (n, pose) => {
+        hits: (n, pose, derived) => {
           // The pre-filter has to be at least as generous as the refinement
           // that follows it, or it rejects points the refinement would have
           // claimed. A stroke reaches past the pose box by `outset` — a whole
@@ -250,12 +250,21 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
           const outset = shapePicking
             ? (findShapeInk(n as never, pose, { scale })?.outset ?? 0)
             : 0;
-          if (!poseContainsRotated(pose, wx, wy, tolerance + outset)) return false;
+          // A derived node's pose is a placeholder — typically zero-sized at
+          // the origin — so its own box rejects every point the path covers.
+          // The path is the region to test instead, and `poseContains` already
+          // reads a path-like pose as one.
+          const admitted = derived
+            ? poseContains(derived as never, wx, wy, tolerance + outset)
+            : poseContainsRotated(pose, wx, wy, tolerance + outset);
+          if (!admitted) return false;
           // `shapeCoversPoint` narrows the rect to the ink the painter actually
           // lays down (and answers `true` for painters that have no silhouette,
           // so nothing becomes unpickable).
           return !shapePicking
-            || shapeCoversPoint(n as never, pose, wx, wy, { tolerance, scale });
+            || shapeCoversPoint(n as never, pose, wx, wy, {
+              tolerance, scale, derivedPath: derived,
+            });
         },
         clipAdmits: (clip) => pathContainsPoint(clip, wx, wy),
       });

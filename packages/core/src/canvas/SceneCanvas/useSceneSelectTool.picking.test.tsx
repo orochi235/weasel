@@ -14,7 +14,7 @@ import type { UseSceneOptions } from 'core/scene/types';
 import { useSelection } from 'core/selection/useSelection';
 import { asNodeId } from 'core/scene/types';
 import { useSceneSelectTool } from './useSceneSelectTool';
-import { rectPath } from 'features/paths/builder';
+import { rectPath, linePath } from 'features/paths/builder';
 
 interface Item { shape?: string; fill?: string; color?: string; stroke?: unknown }
 type Pose = { x: number; y: number; width: number; height: number };
@@ -228,5 +228,60 @@ describe('useSceneSelectTool — stroke reach', () => {
 
   it('still rejects a point past the stroke', () => {
     expect(strokedHarness().current.pickEvery(-40, 50)).not.toContain('boxed');
+  });
+});
+
+describe('useSceneSelectTool — derived nodes', () => {
+  /** An edge deriving a line between two anchors 200 apart. Its own pose is a
+   *  zero-sized placeholder at the origin, so nothing about where it paints
+   *  can be read off the pose — the pre-filter has to consult the derived
+   *  path or it rejects the edge before the shape test ever runs. */
+  function derivedHarness() {
+    const { result } = renderHook(() => {
+      const scene = useScene<Item, 'default', Pose>({
+        systemLayers: [{ id: 'default' }],
+        initial: [
+          {
+            id: asNodeId('a'), kind: 'leaf', layer: 'default',
+            pose: { x: 0, y: 0, width: 10, height: 10 }, data: {},
+          },
+          {
+            id: asNodeId('b'), kind: 'leaf', layer: 'default',
+            pose: { x: 200, y: 0, width: 10, height: 10 }, data: {},
+          },
+          {
+            id: asNodeId('edge'), kind: 'leaf', layer: 'default',
+            pose: { x: 0, y: 0, width: 0, height: 0 },
+            data: { stroke: { width: 2, paint: '#000' } },
+            dependsOn: [asNodeId('a'), asNodeId('b')],
+            derivePath: (_n: unknown, deps: readonly (Pose | undefined)[]) => {
+              const [from, to] = deps;
+              if (!from || !to) return null;
+              return linePath({ x: from.x, y: from.y }, { x: to.x, y: to.y });
+            },
+          },
+        ] as UseSceneOptions<Item, 'default', Pose>['initial'],
+      });
+      const selection = useSelection({ mode: 'single' });
+      return { scene, tool: useSceneSelectTool({ scene, selection }) };
+    });
+    return result;
+  }
+
+  it('picks a derived edge along the line it paints', () => {
+    expect(derivedHarness().current.tool.pickEvery(100, 0)).toContain('edge');
+  });
+
+  it('does not pick a derived edge away from the line', () => {
+    expect(derivedHarness().current.tool.pickEvery(100, 60)).not.toContain('edge');
+  });
+
+  it('follows its dependencies when one of them moves', () => {
+    const result = derivedHarness();
+    act(() => {
+      result.current.scene.setPose(asNodeId('b'), { x: 0, y: 200, width: 10, height: 10 });
+    });
+    expect(result.current.tool.pickEvery(100, 0)).not.toContain('edge');
+    expect(result.current.tool.pickEvery(0, 100)).toContain('edge');
   });
 });
