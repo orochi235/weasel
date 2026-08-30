@@ -42,7 +42,9 @@ jobs:
           node-version: '24'
           cache: npm
 
-      - run: npm ci
+      # Skips the root `prepare` — a full tsup build the perf specs never use,
+      # since scripts/vite-aliases.ts resolves @weasel-js/* to packages/*/src.
+      - run: npm ci --ignore-scripts
 
       # No --with-deps: that installs Linux system packages via apt and fails
       # on macOS.
