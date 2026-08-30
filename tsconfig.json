@@ -50,6 +50,7 @@
       "@weasel-js/geom/*": ["./packages/geom/src/*"],
       "@weasel-js/font": ["./packages/font/src/index.ts"],
       "@weasel-js/text": ["./packages/text/src/index.ts"],
+      "@weasel-js/bidi": ["./packages/bidi/src/index.ts"],
       "@weasel-js/paint": ["./packages/paint/src/index.ts"],
       "@weasel-js/font/test-seams": ["./packages/font/src/test-seams.ts"],
       "@weasel-js/text/test-seams": ["./packages/text/src/test-seams.ts"],

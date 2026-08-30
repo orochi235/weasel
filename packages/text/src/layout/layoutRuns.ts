@@ -55,6 +55,7 @@ import {
 } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { resolveAlign, type TextAlign, type TextDirection } from '../textStyle';
+import type { BidiResolver } from './bidiSeam';
 
 /** One textured glyph quad, origin-relative — see the header. */
 export interface LaidOutQuad {
@@ -146,8 +147,17 @@ export interface LaidOutCell {
   /** One past it — `srcIndex + 2` for an astral code point. */
   srcEnd: number;
   cp: number;
-  /** Left edge of the cell, post-alignment, origin-relative like `x0`/`x1`. */
+  /** Left edge of the cell, post-alignment, origin-relative like `x0`/`x1`.
+   *
+   *  **Not monotonic across `cells`** once a bidi engine reorders a line: cells
+   *  stay in logical order and their x values do not. Sort on `x` for visual
+   *  order; never assume `cells[i + 1].x` is this cell's right edge. */
   x: number;
+  /** Width of the cell: its glyph's advance plus its run's tracking. */
+  advance: number;
+  /** Resolved bidi embedding level — even reads left-to-right. 0 with no
+   *  engine, which is the same as saying the text was laid out logically. */
+  level: number;
   /**
    * Whether this code point can put ink on the page. False for a space and
    * for a code point no tier could serve — each of which still holds its
@@ -269,6 +279,12 @@ export interface LayoutRunsOpts {
    * and ignore it, the way CSS `text-align` treats the same five values.
    */
   align: TextAlign;
+  /**
+   * Bidi engine. Omit and the text lays out in logical order, which is correct
+   * for left-to-right text and wrong for right-to-left text — see the warning
+   * this emits when it detects the latter without one.
+   */
+  bidi?: BidiResolver;
   /**
    * Reading direction, for resolving `start` / `end`. Default `'ltr'`.
    *
@@ -473,6 +489,38 @@ function resolveGlyph(
 // Layout runs per frame, so an unguarded warn would flood the console. Keyed
 // per (family, codepoint): one message per character the app actually can't
 // draw, however many times it appears.
+/**
+ * Code point blocks whose strong characters read right-to-left.
+ *
+ * A heuristic on purpose: the real answer is `Bidi_Class`, which lives in
+ * `@weasel-js/bidi` and is exactly what the caller has not installed when this
+ * matters. Every range here is wholly right-to-left, so it can miss a script
+ * but never accuse a left-to-right one.
+ */
+const RTL_BLOCKS: ReadonlyArray<readonly [number, number]> = [
+  [0x0590, 0x05ff], [0x0600, 0x07bf], [0x0860, 0x08ff],
+  [0xfb1d, 0xfdff], [0xfe70, 0xfeff],
+  [0x10800, 0x10fff], [0x1e800, 0x1efff],
+];
+
+let warnedLogicalRtl = false;
+
+function warnLogicalRtlOnce(): void {
+  if (warnedLogicalRtl) return;
+  warnedLogicalRtl = true;
+  console.warn(
+    'weasel layoutRuns: this text contains right-to-left characters but no ' +
+    '`bidi` engine was supplied, so it is being laid out in logical order — ' +
+    'the glyphs will appear reversed. Pass `bidi` from "@weasel-js/bidi": ' +
+    '`import { bidi } from "@weasel-js/bidi"` and add it to the layout options.',
+  );
+}
+
+/** @internal Test seam — the warning fires once per process otherwise. */
+export function _resetBidiWarningForTests(): void {
+  warnedLogicalRtl = false;
+}
+
 const warnedMissingGlyphs = new Set<string>();
 
 function warnMissingGlyphOnce(family: string, cp: number): void {
@@ -523,6 +571,9 @@ export function layoutRuns(
     srcIndex: number;
     /** One past it — `srcIndex + 2` for an astral code point. */
     srcEnd: number;
+    /** Position in the flat entry list, which is what the bidi engine indexes.
+     *  Survives the wrap's copies, unlike object identity. */
+    flat: number;
   }
 
   // 1. Flatten all runs into entries with per-glyph data, computing
@@ -569,7 +620,7 @@ export function layoutRuns(
           // A newline consumes no advance, so it takes no tracking either.
           cp, advance: 0, tracking: 0, kerningBefore: 0, isSpace: false, isNewline: true,
           drawsInk: false,
-          resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd,
+          resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd, flat: 0,
         });
         prevCp = undefined; prevMetrics = undefined; prevFontSize = undefined;
         continue;
@@ -592,7 +643,7 @@ export function layoutRuns(
           glyph: spaceGlyph ?? { id: 32, x: 0, y: 0, width: 0, height: 0, xoffset: 0, yoffset: 0, xadvance: 0, page: 0 },
           cp, advance, tracking, kerningBefore, isSpace: true, isNewline: false,
           drawsInk: false,
-          resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd,
+          resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd, flat: 0,
         });
         prevCp = cp; prevMetrics = metrics; prevFontSize = run.fontSize;
         continue;
@@ -608,7 +659,7 @@ export function layoutRuns(
             run, font: null, metrics, glyph: null, cp,
             advance: 0, tracking: 0, kerningBefore: 0, isSpace, isNewline: false,
             drawsInk: false,
-            resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd,
+            resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd, flat: 0,
           });
           prevCp = cp; prevMetrics = metrics; prevFontSize = run.fontSize;
           continue;
@@ -621,7 +672,7 @@ export function layoutRuns(
           run, font: null, metrics, glyph: null, cp,
           advance: adv * scale,
           tracking, kerningBefore, isSpace, isNewline: false, drawsInk: !isSpace,
-          resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd,
+          resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd, flat: 0,
         });
         prevCp = cp; prevMetrics = metrics; prevFontSize = run.fontSize;
         continue;
@@ -635,7 +686,7 @@ export function layoutRuns(
           run, font: null, metrics, glyph: null, cp,
           advance: 0, tracking: 0, kerningBefore: 0, isSpace, isNewline: false,
           drawsInk: false,
-          resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd,
+          resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd, flat: 0,
         });
         prevCp = cp; prevMetrics = metrics; prevFontSize = run.fontSize;
         continue;
@@ -657,11 +708,23 @@ export function layoutRuns(
         tracking,
         kerningBefore,
         isSpace, isNewline: false, drawsInk: !isSpace,
-        resolved: hit.resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd,
+        resolved: hit.resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd, flat: 0,
       });
 
       prevCp = cp; prevMetrics = glyphMetrics; prevFontSize = run.fontSize;
     }
+  }
+
+  for (let i = 0; i < entries.length; i++) entries[i].flat = i;
+
+  // The engine analyses the paragraph once; each line then asks for its own
+  // range, because L1 resets trailing whitespace against a line's end.
+  const analysis = opts.bidi
+    ? opts.bidi.analyze(entries.map((e) => e.cp), opts.direction ?? 'auto')
+    : null;
+  if (!opts.bidi
+      && entries.some((e) => RTL_BLOCKS.some(([lo, hi]) => e.cp >= lo && e.cp <= hi))) {
+    warnLogicalRtlOnce();
   }
 
   // 2. Walk entries, accumulating lines bounded by maxWidth when finite.
@@ -857,15 +920,76 @@ export function layoutRuns(
     }
     const lineBaselineY = penY + lineAscent;
 
-    const cells: LaidOutCell[] = [];
+    const cells: LaidOutCell[] = new Array(line.entries.length);
+
+    // Visual order for this line, as positions within `line.entries`. Without
+    // an engine that is logical order, and everything below collapses to the
+    // straight left-to-right walk it was.
+    const flatOf = line.entries.map((e) => e.flat);
+    const posOfFlat = new Map<number, number>();
+    flatOf.forEach((f, pos) => posOfFlat.set(f, pos));
+    let visual: number[] = line.entries.map((_, k) => k);
+    let levelOf: (pos: number) => number = () => 0;
+    if (opts.bidi && analysis !== null && line.entries.length > 0) {
+      const from = flatOf[0];
+      const to = flatOf[flatOf.length - 1] + 1;
+      const r = opts.bidi.reorder(analysis, from, to);
+      const seen = new Set<number>();
+      const ordered: number[] = [];
+      for (const f of r.order) {
+        const pos = posOfFlat.get(f);
+        if (pos !== undefined && !seen.has(pos)) { ordered.push(pos); seen.add(pos); }
+      }
+      // A position the engine dropped is a formatting control it removed; it
+      // still holds a cell here, placed where it sits logically.
+      for (let k = 0; k < line.entries.length; k++) if (!seen.has(k)) ordered.push(k);
+      visual = ordered;
+      levelOf = (pos) => {
+        const l = r.levels[flatOf[pos] - from];
+        return typeof l === 'number' && l >= 0 ? l : 0;
+      };
+    }
+
+    // L4 — a bracket in a right-to-left run paints as its mirror. Done here
+    // rather than during analysis because the same code point mirrors in one
+    // run and not in another, and the level is only known now.
+    if (opts.bidi) {
+      for (let pos = 0; pos < line.entries.length; pos++) {
+        if (levelOf(pos) % 2 === 0) continue;
+        const e = line.entries[pos];
+        const m = opts.bidi.mirror(e.cp);
+        if (m === null || m === e.cp) continue;
+        // The outline tier reads `cp` directly; the atlas tier needs the other
+        // glyph looked up. A face without it keeps the unmirrored one.
+        if (e.font !== null) {
+          const hit = resolveGlyph(e.run, e.font, e.resolved, m);
+          if (!hit) continue;
+          e.glyph = hit.glyph;
+        }
+        e.cp = m;
+      }
+    }
 
     let penX = lineX0;
-    for (const e of line.entries) {
-      penX += e.kerningBefore;
+    let prevPos = -1;
+    for (const pos of visual) {
+      const e = line.entries[pos];
+      // Kerning is a gap between two *adjacent* characters, and the wrap
+      // measured it logically. Reordering can put a different pair side by
+      // side: take the gap that belongs to whichever of the two is logically
+      // second, and none at all across a direction boundary, where the pair
+      // never touched in the source.
+      penX += prevPos < 0 ? 0
+        : pos === prevPos + 1 ? e.kerningBefore
+        : prevPos === pos + 1 ? line.entries[prevPos].kerningBefore
+        : 0;
+      prevPos = pos;
       const cell: LaidOutCell = {
-        srcIndex: e.srcIndex, srcEnd: e.srcEnd, cp: e.cp, x: penX, drawsInk: e.drawsInk,
+        srcIndex: e.srcIndex, srcEnd: e.srcEnd, cp: e.cp, x: penX,
+        advance: e.advance + e.tracking, level: levelOf(pos),
+        drawsInk: e.drawsInk,
       };
-      cells.push(cell);
+      cells[pos] = cell;
       // One step per character: the glyph's advance plus its run's tracking.
       // Every branch below moves the pen by exactly this, so glyph positions
       // stay in step with the line width accumulated above.

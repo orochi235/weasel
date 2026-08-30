@@ -99,11 +99,20 @@ export function caretIndexAt(
     if (y < dy + candidate.y1) { line = candidate; break; }
   }
 
-  // The stop closing a line is its right edge, which is not a cell.
+  // Cells are in logical order and their x values need not ascend, so the
+  // sweep has to be in visual order and each cell's own extent is what it is
+  // tested against — the next cell along is not its right edge.
   const { cells } = line;
-  for (let i = 0; i < cells.length; i++) {
-    const next = i + 1 < cells.length ? cells[i + 1].x : line.x1;
-    if (x < dx + (cells[i].x + next) / 2) return cells[i].srcIndex;
+  if (cells.length === 0) return line.srcEnd;
+  const visual = cells.map((_, i) => i).sort((a, b) => cells[a].x - cells[b].x);
+
+  for (const i of visual) {
+    const c = cells[i];
+    if (x >= dx + c.x + c.advance / 2) continue;
+    // A right-to-left cell reads the other way, so its visually-leading half
+    // is the character's logical end.
+    return c.level % 2 === 1 ? c.srcEnd : c.srcIndex;
   }
-  return line.srcEnd;
+  const trailing = cells[visual[visual.length - 1]];
+  return trailing.level % 2 === 1 ? trailing.srcIndex : trailing.srcEnd;
 }

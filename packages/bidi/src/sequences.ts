@@ -93,14 +93,14 @@ export function buildSequences(r: ExplicitResult): IsolatingRunSequence[] {
     const start = indices[0];
     const end = indices[indices.length - 1];
 
-    let before = paragraphLevel;
+    let before: number = paragraphLevel;
     for (let i = start - 1; i >= 0; i--) {
       if (!removed[i]) { before = levels[i]; break; }
     }
 
     // An unmatched initiator ends its sequence against the paragraph rather
     // than against whatever text happens to follow it.
-    let after = paragraphLevel;
+    let after: number = paragraphLevel;
     if (!(isIsolateInitiator(classes[end]) && !pdiOf.has(end))) {
       for (let i = end + 1; i < n; i++) {
         if (!removed[i]) { after = levels[i]; break; }

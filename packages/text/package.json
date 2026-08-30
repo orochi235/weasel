@@ -49,5 +49,8 @@
   "publishConfig": {
     "access": "public",
     "provenance": true
+  },
+  "devDependencies": {
+    "@weasel-js/bidi": "1.2.0"
   }
 }

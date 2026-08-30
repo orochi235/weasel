@@ -32,6 +32,7 @@ export {
   LAYOUT_CACHE_VARIANT_LIMIT,
   LAYOUT_CACHE_STRUCTURAL_LIMIT,
 } from './layout/layoutCache';
+export type { BidiResolver, BidiReordering, BidiAnalysis } from './layout/bidiSeam';
 export type {
   LayoutRunsOpts,
   LaidOutRuns,
