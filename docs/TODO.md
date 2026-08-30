@@ -733,6 +733,32 @@ Core five + Crop shipped. Remaining:
   write to, which is exactly the case that entry leaves undecided. Decide that
   one first. Recorded 2026-08-30.
 
+- **(P3) No vertical writing modes — traditional Japanese and Chinese cannot
+  be set.** Layout hard-codes horizontal: the pen advances in x, `LaidOutCell.x`
+  is an inline offset named for an axis, and `baselineY` names the other one.
+  Tategaki needs `writing-mode` (`horizontal-tb` / `vertical-rl` /
+  `vertical-lr`), where lines stack right-to-left and characters flow downward.
+
+  This is a bigger change than bidi rather than a peer of it, and the reason is
+  the public output: bidi is confined to ordering *within* a line, while
+  vertical changes the coordinate system every consumer reads. The honest
+  version makes the walk work in inline/block axes and maps to x/y once at the
+  end, the way CSS does — after which `cell.x` is an inline offset that happens
+  to be horizontal, rather than one that is horizontal by construction.
+
+  Three pieces beyond the axis swap. `text-orientation` decides whether a
+  character stands upright or rotates 90°, and it is *per character* off UAX
+  #50's `Vertical_Orientation` — embedded Latin rotates while CJK stays
+  upright, inside the same run. Vertical metrics come from the font's `vhea` /
+  `vmtx` tables, which a BMFont atlas does not carry at all. And the `vert` /
+  `vrt2` features substitute vertical forms of punctuation, so 、。「」 sit
+  where they belong — the same glyph-id plumbing the entry below needs, which
+  is the argument for building that seam once rather than twice.
+
+  Kinsoku shori (prohibited line-start and line-end characters) is a separate,
+  separable concern: it is a line-breaking rule, not a writing-mode one, and
+  applies to horizontal Japanese too.
+
 - **(P3) Arabic renders unjoined — no OpenType shaping.** Bidi puts an Arabic
   run in the right visual order, and it still comes out as a row of isolated
   letterforms, because joining is a substitution and not a reordering: the

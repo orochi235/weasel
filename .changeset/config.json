@@ -8,6 +8,7 @@
       "@weasel-js/font",
       "@weasel-js/paint",
       "@weasel-js/text",
+      "@weasel-js/bidi",
       "@weasel-js/geom",
       "@weasel-js/gestures",
       "@weasel-js/history",
