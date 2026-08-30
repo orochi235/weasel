@@ -126,6 +126,26 @@ export type GradientKind = GradientFill['fill'];
  */
 export type StrokeAlign = 'center' | 'inner' | 'outer';
 
+/**
+ * The kit's built-in marker vocabulary, open on the string the way
+ * `PaintKind` is so a consumer's registered key typechecks.
+ */
+export type KitMarkerKey =
+  | 'arrow' | 'arrow-open' | 'arrow-concave'
+  | 'diamond' | 'diamond-hollow'
+  | 'circle' | 'square' | 'bar';
+export type MarkerKey = KitMarkerKey | (string & {});
+
+/**
+ * A marker on one end (or every interior vertex) of a stroke.
+ *
+ * `size` reuses `Stroke.width`'s unit system: a bare number scales with the
+ * resolved stroke width, `{ px }` pins screen pixels. That is SVG's
+ * `markerUnits` in the idiom this codebase already resolves at draw time.
+ * Omitted, the marker is one stroke width per unit.
+ */
+export type MarkerRef = MarkerKey | { key: MarkerKey; size?: number | { px: number } };
+
 /** Stroke style: a FillStyle plus structural line parameters. */
 export interface Stroke {
   paint: FillStyle;
@@ -135,6 +155,14 @@ export interface Stroke {
   width?: number | { px: number };
   /** Per `CanvasRenderingContext2D.setLineDash` — empty/omitted = solid. */
   dash?: number[];
+  /** Marker at the first vertex of each open subpath, rotated to point back
+   *  along the line (SVG's `auto-start-reverse`, as the only behavior). */
+  markerStart?: MarkerRef;
+  /** Marker at every interior authored vertex, on the bisector of the
+   *  incoming and outgoing directions. Never insets the stroke. */
+  markerMid?: MarkerRef;
+  /** Marker at the last vertex of each open subpath. */
+  markerEnd?: MarkerRef;
   cap?: 'butt' | 'round' | 'square';
   join?: 'miter' | 'round' | 'bevel';
   /**
