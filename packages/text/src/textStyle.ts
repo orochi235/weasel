@@ -45,6 +45,8 @@ export interface TextStyle {
   underline?: boolean;
   /** Default `false`. */
   strikethrough?: boolean;
+  /** Default `false`. */
+  overline?: boolean;
 }
 
 /** `TextStyle` with all fields filled in from defaults — what the renderer actually consumes. */
@@ -62,6 +64,7 @@ export interface ResolvedTextStyle {
   letterSpacing: number;
   underline: boolean;
   strikethrough: boolean;
+  overline: boolean;
   /** Absent means no outline — unlike the other fields, this one has no
    *  default to fall back to. See {@link TextPaint.stroke}. */
   stroke?: Stroke;
@@ -96,6 +99,7 @@ export const DEFAULT_TEXT_STYLE: ResolvedTextStyle = {
   letterSpacing: 0,
   underline: false,
   strikethrough: false,
+  overline: false,
 };
 
 /**
@@ -166,6 +170,7 @@ export function resolveTextStyle(
     letterSpacing: style.letterSpacing ?? DEFAULT_TEXT_STYLE.letterSpacing,
     underline: style.underline ?? DEFAULT_TEXT_STYLE.underline,
     strikethrough: style.strikethrough ?? DEFAULT_TEXT_STYLE.strikethrough,
+    overline: style.overline ?? DEFAULT_TEXT_STYLE.overline,
     ...(stroke !== undefined ? { stroke } : {}),
   };
 }

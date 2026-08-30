@@ -76,6 +76,7 @@ function bottomAlignedText(): DrawCommand {
       text: 'Ay', fontFamily: 'inter', fontSize: 32, fontWeight: 400,
       fontStyle: 'normal', fill: { fill: 'solid', color: '#fff' },
       letterSpacing: 0, underline: true, strikethrough: false,
+      overline: false, baselineShift: 0,
     }],
     align: 'left',
     style: { fontFamily: 'inter', fontSize: 32, fill: { color: '#fff' } },

@@ -350,7 +350,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
       kind: 'group',
       colorMatrix: NO_RED,
       children: [
-        { kind: 'text', x: 0, y: 0, runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { fill: 'solid', color: '#fff' }, letterSpacing: 0, underline: false, strikethrough: false }], align: 'left', style: { fontFamily: 'inter', fontSize: 32 } },
+        { kind: 'text', x: 0, y: 0, runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { fill: 'solid', color: '#fff' }, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0 }], align: 'left', style: { fontFamily: 'inter', fontSize: 32 } },
       ],
     };
     r.render([cmd]);
@@ -387,7 +387,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
   it('uploads identity u_colorMatrix on text draws with no enclosing group transform', () => {
     const cmd: DrawCommand = {
       kind: 'text', x: 0, y: 0,
-      runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { fill: 'solid', color: '#fff' }, letterSpacing: 0, underline: false, strikethrough: false }],
+      runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { fill: 'solid', color: '#fff' }, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0 }],
       align: 'left',
       style: { fontFamily: 'inter', fontSize: 32 },
     };
@@ -929,7 +929,7 @@ describe('drawText synthetic-bold', () => {
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 700,
         fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
         letterSpacing: 0,
-        underline: false, strikethrough: false,
+        underline: false, strikethrough: false, overline: false, baselineShift: 0,
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
@@ -952,7 +952,7 @@ describe('drawText synthetic-bold', () => {
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 700,
         fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
         letterSpacing: 0,
-        underline: false, strikethrough: false,
+        underline: false, strikethrough: false, overline: false, baselineShift: 0,
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
@@ -1048,7 +1048,7 @@ describe('drawText synthetic-italic', () => {
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
         fontStyle: 'italic', fill: { fill: 'solid', color: '#000' },
         letterSpacing: 0,
-        underline: false, strikethrough: false,
+        underline: false, strikethrough: false, overline: false, baselineShift: 0,
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
@@ -1068,7 +1068,7 @@ describe('drawText synthetic-italic', () => {
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
         fontStyle: 'italic', fill: { fill: 'solid', color: '#000' },
         letterSpacing: 0,
-        underline: false, strikethrough: false,
+        underline: false, strikethrough: false, overline: false, baselineShift: 0,
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
@@ -1115,7 +1115,7 @@ describe('drawText verticalAlign', () => {
       text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
       fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
       letterSpacing: 0,
-      underline: false, strikethrough: false,
+      underline: false, strikethrough: false, overline: false, baselineShift: 0,
     }];
     const style = {};
 
@@ -1147,7 +1147,7 @@ describe('drawText verticalAlign', () => {
       text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
       fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
       letterSpacing: 0,
-      underline: false, strikethrough: false,
+      underline: false, strikethrough: false, overline: false, baselineShift: 0,
     }];
 
     const { ctx: ctxA, calls: callsA } = createRecorderCtx();
@@ -1240,7 +1240,7 @@ describe('drawText — substituted family reaches the GPU', () => {
       text: 'A', fontFamily: 'ghost', fontSize: 16, fontWeight: 400,
       fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
       letterSpacing: 0,
-      underline: false, strikethrough: false,
+      underline: false, strikethrough: false, overline: false, baselineShift: 0,
     }],
     maxWidth: Infinity, align: 'left', style: {},
   });
@@ -1278,7 +1278,7 @@ describe('drawText — substituted family reaches the GPU', () => {
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
         fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
         letterSpacing: 0,
-        underline: false, strikethrough: false,
+        underline: false, strikethrough: false, overline: false, baselineShift: 0,
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
@@ -1329,7 +1329,7 @@ describe('drawText — letterSpacing reaches the GPU', () => {
         text: 'AB', fontFamily: 'inter', fontSize: 32, fontWeight: 400,
         fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
         letterSpacing,
-        underline: false, strikethrough: false,
+        underline: false, strikethrough: false, overline: false, baselineShift: 0,
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
@@ -1411,7 +1411,8 @@ describe('drawText — decoration reaches the GPU', () => {
   const decoratedRun = (extra: Record<string, unknown>) => ({
     text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400,
     fontStyle: 'normal' as const, fill: { fill: 'solid' as const, color: '#000' },
-    letterSpacing: 0, underline: false, strikethrough: false, ...extra,
+    letterSpacing: 0, underline: false, strikethrough: false, overline: false,
+    baselineShift: 0, ...extra,
   });
 
   // FIXTURE_FONT at fontSize 32 → scale 1: 'A' advances 23, baseline is at
@@ -1651,7 +1652,9 @@ describe('drawText — outline tier', () => {
     x: 0, y: 0,
     runs: [{
       text, fontFamily: 'inter', fontWeight: 400, fontStyle: 'normal',
-      fontSize: SIZE, fill: { fill: 'solid', color: '#000' }, ...extra,
+      fontSize: SIZE, fill: { fill: 'solid', color: '#000' },
+      letterSpacing: 0, underline: false, strikethrough: false,
+      overline: false, baselineShift: 0, ...extra,
     }],
     maxWidth: Infinity, align: 'left', style: {},
   } as DrawCommand);

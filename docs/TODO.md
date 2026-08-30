@@ -28,6 +28,9 @@ Priority tags:
 **Text**
 - Text cannot say "no fill", so outline-only text is unreachable → [Text](#text)
 - Cross-browser overlay alignment → [Text](#text)
+- No editor surface for superscript / subscript → [Text](#text)
+- `apps/draw` drops every run's styling on SVG export and copy → [Text](#text)
+- Small caps and text-transform have no run spelling → [Text](#text)
 
 **Scene, adapters & layout**
 - `arrayAdapter` as default Canvas adapter — full unification → [Scene, adapters & layout](#scene-adapters--layout)
@@ -687,11 +690,21 @@ Core five + Crop shipped. Remaining:
   matching CSS rather than the GL path's cluster walk. Visible only on text
   with combining marks or emoji sequences.
 
-- **(P3) Decoration thickness is derived, not read from font metrics.** The
-  underline / strikethrough offsets and weight are the fixed `0.10` / `-0.30`
-  / `0.05` em constants in `layoutRuns`. Real fonts ship
-  `underlinePosition` / `underlineThickness`; the BmFont atlas format does
-  not carry them, so honoring them means extending the atlas metrics.
+- **(P3) Decoration and script metrics are derived, not read from the font.**
+  The underline / strikethrough / overline offsets and weight are the fixed
+  `0.10` / `-0.30` / `-0.90` / `0.05` em constants in `layoutRuns`, and
+  `SCRIPT_METRICS` (58.3% size, ±33.3% position) is Adobe's default rather
+  than the font's. Real fonts ship `post.underlinePosition` /
+  `underlineThickness` and `OS/2.ySuperscript*` / `ySubscript*`, and
+  `opentype.js` already parses both — `faceFor()` in
+  `packages/font/src/outline/opentypeParser.ts` reads only `unitsPerEm` and
+  `ascender` and discards the rest, so extending `OutlineFace` is the whole
+  change on that tier. The BmFont atlas format has no slot for any of it, so
+  the outline tier would honor the font and the SDF tiers would not — and a
+  metric that applied on one tier and not the other would reflow text as it
+  crossed the size threshold, which the tier is built never to do. Fixing this
+  properly means baking the metrics into the atlas JSON in
+  `packages/font/scripts/gen-font.ts`, not just reading them at runtime.
 
 - **(P3) `ToolOptionsBar` is not driven by tool prefs.** Its first tenant
   (draw's `CharacterOptions`) is hand-assembled. A tool declaring a
@@ -722,6 +735,52 @@ Core five + Crop shipped. Remaining:
 - **(P3) Complex-script text shaping (HarfBuzz).** `packages/core/src/features/text/atlas/layoutRuns.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping or reordering. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs.
 
 - **(P3) eric `labelHelpers.ts` deletion check.** Investigate whether eric (`~/src/eric`) can delete its local `labelHelpers.ts` after the text world-unit pass landed. If consumer-side world-unit helpers still cover gaps the primitives don't (e.g. world↔screen pad conversion at the call site), capture the remaining gap as a follow-up primitive proposal.
+
+- **(P2) Superscript / subscript have no editor surface.** `StyledRun.script`,
+  `baselineShift` and `fontScale` reach layout, the DOM overlay and SVG, but
+  nothing lets a user apply them: `setFlagOverRange` / `FlagKey` model additive
+  *booleans*, and `script` is a three-state enum (`'super'` / `'sub'` / none)
+  whose two values are mutually exclusive, so it needs its own toggle path
+  rather than a fifth flag. `useTextEdit`'s `FLAG_SHORTCUTS` and draw's
+  `CharacterOptions` both stop at the four booleans. Blocked behind the same
+  question as the entry above on `rangeStyle` and the un-set toggle: `script`
+  is run-level only by design, so a collapsed caret has no node-level field to
+  write to, which is exactly the case that entry leaves undecided. Decide that
+  one first. Recorded 2026-08-30.
+
+- **(P3) Small caps and `text-transform` have no run spelling.** The two
+  remaining gaps in the run style model after the superscript pass. Both are
+  harder than they look and for different reasons. `text-transform` breaks the
+  caret: `srcIndex` / `caretIndices` are UTF-16 offsets into the runs'
+  concatenated text, and `'ß'.toUpperCase()` is `'SS'`, so a transform that
+  changes length desynchronizes every offset after it — it needs a source-to-
+  transformed index map, not a `.toUpperCase()` in `resolveRuns`. Synthetic
+  small caps needs a *per-character* size within one run (lowercase rendered
+  as scaled-down uppercase), where the run is the unit that carries a size
+  today; the honest version splits the entry walk's size off the run, or
+  reads the `smcp` OpenType feature, which needs shaping. Real small caps is
+  a face, not a synthesis, and would fall out of the HarfBuzz entry below.
+
+- **(P2) `apps/draw` drops every run's styling on SVG export and copy.**
+  `packages/svg` serializes and parses `<tspan>` run styling in full, but the
+  app never hands it any: `TextObj` (`apps/draw/src/poseUpdate.ts`) has no
+  `runs` field, and neither `leafToObj` (`svgExport.ts`) nor `objToSvgNode` /
+  `svgLeafToObj` (`svgInterop.ts`) reads `data.runs`. So "Export SVG" and the
+  clipboard's SVG flavor — both routed through `sceneSourceOf` → `leafToObj` —
+  flatten bold, italic, per-run size, per-run fill and every decoration to the
+  node style. Canvas-to-canvas paste is unaffected: it goes through the
+  `application/x-weasel-clipboard+json` flavor, a structural clone with no
+  field list to fall behind. Predates the superscript work, which the new run
+  fields simply inherit. Recorded 2026-08-30.
+
+- **(P3) `layoutMarkdown` ignores the run fields it cannot paint.**
+  `packages/text/src/markdownText.ts` is the 2D-canvas path behind
+  `renderLabel` (chrome pills), and it reads `segRun.fontSize` while knowing
+  nothing about `fontScale`, `baselineShift` or any of the three decorations.
+  Left deliberately: it returns x-offsets with no per-run y, so it could honor
+  a superscript's *size* and not its *position*, and half a superscript reads
+  as a bug rather than a limitation. Either give `LayoutLine` a per-run y or
+  leave it narrow and say so in its header. Recorded 2026-08-30.
 
 - **(P3) `markdownToRuns` → AST.** Consider whether markdown markup (today `*`/`**`/`***` bold/italic toggles, parsed with flat boolean state in `packages/core/src/features/text/runs.ts:64`) should be promoted to a structured AST. The output is a flat `StyledRun[]`, not a tree. Defer to a future "rich text" pass — the current shape is sufficient for label/markdown rendering but limits reformatting / re-styling transforms.
 

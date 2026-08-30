@@ -360,12 +360,53 @@ describe('domRuns round-trip — decoration and tracking', () => {
     expect(domToRuns(parent)).toEqual(runs);
   });
 
+  it('round-trips overline, script, baselineShift and fontScale', () => {
+    const runs: StyledRun[] = [
+      { text: 'H' },
+      { text: '2', script: 'sub' },
+      { text: 'O, E=mc' },
+      { text: '2', script: 'super', overline: true },
+      { text: ' raw', baselineShift: -0.25, fontScale: 0.5 },
+    ];
+    runsToDom(runs, parent);
+    expect(domToRuns(parent)).toEqual(runs);
+  });
+
+  it('takes an absolute fontSize over fontScale, as resolveRuns does', () => {
+    runsToDom([{ text: 'a', fontSize: 24, fontScale: 0.5 }], parent);
+    const span = parent.firstElementChild as HTMLElement;
+    expect(span.style.fontSize).toBe('24px');
+    // The scale had no spelling left to take, so it does not survive — the
+    // absolute size it lost to is the one that mattered.
+    expect(domToRuns(parent)).toEqual([{ text: 'a', fontSize: 24 }]);
+  });
+
+  it('reads <sup> and <sub> a browser produced, like <b> and <i>', () => {
+    parent.innerHTML = 'x<sup>2</sup> and H<sub>2</sub>O';
+    expect(domToRuns(parent)).toEqual([
+      { text: 'x' },
+      { text: '2', script: 'super' },
+      { text: ' and H' },
+      { text: '2', script: 'sub' },
+      { text: 'O' },
+    ]);
+  });
+
+  it('does not coalesce two runs that differ only in their baseline', () => {
+    runsToDom([{ text: 'a' }, { text: 'b', script: 'super' }], parent);
+    expect(domToRuns(parent)).toHaveLength(2);
+    runsToDom([{ text: 'a', baselineShift: 0.1 }, { text: 'b', baselineShift: 0.2 }], parent);
+    expect(domToRuns(parent)).toHaveLength(2);
+  });
+
   it('is idempotent across a range of shapes', () => {
     const shapes: StyledRun[][] = [
       [{ text: 'plain' }],
       [{ text: 'a', underline: true }, { text: 'b' }],
       [{ text: 'a', strikethrough: true, letterSpacing: 0 }],
       [{ text: 'a\nb', underline: true, letterSpacing: -2 }],
+      [{ text: 'a', overline: true }, { text: 'b', script: 'super' }],
+      [{ text: 'a', baselineShift: 0, fontScale: 1 }],
       [
         { text: 'mixed ', bold: true, underline: true },
         { text: 'tail', italic: true, strikethrough: true, letterSpacing: 1.5 },

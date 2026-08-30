@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveRuns, type ResolvedRun } from './resolveRuns';
+import { resolveRuns, SCRIPT_METRICS, type ResolvedRun } from './resolveRuns';
 import { resolveTextStyle } from '../textStyle';
 import type { StyledRun } from '../runs';
 
@@ -81,6 +81,68 @@ describe('resolveRuns', () => {
     // layer discards the `false` that would express it.
     expect(resolveRuns([{ text: 'a', underline: false }], decorated)[0].underline).toBe(true);
     expect(resolveRuns([{ text: 'a', strikethrough: false }], decorated)[0].strikethrough).toBe(true);
+  });
+
+  it('resolves overline additively, like the other two decorations', () => {
+    const plain = resolveTextStyle({});
+    expect(resolveRuns([{ text: 'a' }], plain)[0].overline).toBe(false);
+    expect(resolveRuns([{ text: 'a', overline: true }], plain)[0].overline).toBe(true);
+    const decorated = resolveTextStyle({ overline: true });
+    expect(resolveRuns([{ text: 'a' }], decorated)[0].overline).toBe(true);
+    expect(resolveRuns([{ text: 'a', overline: false }], decorated)[0].overline).toBe(true);
+  });
+
+  it('expands `script` into a baseline shift and a smaller size', () => {
+    const style = resolveTextStyle({ fontSize: 100 });
+    const [plain, sup, sub] = resolveRuns(
+      [{ text: 'x' }, { text: '2', script: 'super' }, { text: '2', script: 'sub' }],
+      style,
+    );
+    expect(plain.baselineShift).toBe(0);
+    expect(plain.fontSize).toBe(100);
+
+    expect(sup.fontSize).toBeCloseTo(58.3, 6);
+    expect(sup.baselineShift).toBeCloseTo(33.3, 6);
+    // Sub mirrors super: same size, opposite sign.
+    expect(sub.fontSize).toBeCloseTo(58.3, 6);
+    expect(sub.baselineShift).toBeCloseTo(-33.3, 6);
+  });
+
+  it('measures the shift against the inherited size, not the shrunken one', () => {
+    // Were the shift measured against the run's own (already-scaled) size, a
+    // superscript would climb less the smaller it was set.
+    const style = resolveTextStyle({ fontSize: 100 });
+    const [run] = resolveRuns([{ text: '2', script: 'super' }], style);
+    expect(run.baselineShift).toBeCloseTo(100 * SCRIPT_METRICS.super.shift, 6);
+    expect(run.baselineShift).not.toBeCloseTo(run.fontSize * SCRIPT_METRICS.super.shift, 3);
+  });
+
+  it('lets baselineShift and fontScale each override half of a script preset', () => {
+    const style = resolveTextStyle({ fontSize: 100 });
+    const [shifted] = resolveRuns([{ text: '2', script: 'super', baselineShift: 0.5 }], style);
+    // The named shift wins; the preset's size survives.
+    expect(shifted.baselineShift).toBeCloseTo(50, 6);
+    expect(shifted.fontSize).toBeCloseTo(58.3, 6);
+
+    const [scaled] = resolveRuns([{ text: '2', script: 'super', fontScale: 0.25 }], style);
+    expect(scaled.fontSize).toBeCloseTo(25, 6);
+    expect(scaled.baselineShift).toBeCloseTo(33.3, 6);
+  });
+
+  it('takes an absolute fontSize over a relative fontScale when both are named', () => {
+    const style = resolveTextStyle({ fontSize: 100 });
+    expect(resolveRuns([{ text: 'a', fontScale: 0.5 }], style)[0].fontSize).toBe(50);
+    expect(resolveRuns([{ text: 'a', fontScale: 0.5, fontSize: 12 }], style)[0].fontSize).toBe(12);
+    // A run naming neither is untouched.
+    expect(resolveRuns([{ text: 'a' }], style)[0].fontSize).toBe(100);
+  });
+
+  it('carries a raw baselineShift with no script at all', () => {
+    const style = resolveTextStyle({ fontSize: 40 });
+    const [run] = resolveRuns([{ text: 'a', baselineShift: -0.25 }], style);
+    expect(run.baselineShift).toBeCloseTo(-10, 6);
+    // No script, so no size change came with it.
+    expect(run.fontSize).toBe(40);
   });
 
   it('returns an empty array for empty input', () => {

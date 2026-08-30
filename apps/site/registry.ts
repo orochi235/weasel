@@ -128,6 +128,16 @@ const DEMO_META: DemoMeta[] = [
   },
 
   {
+    id: 'text-script',
+    title: 'Superscript & baseline shift',
+    category: 'Text',
+    description: "StyledRun.script: 'super' | 'sub' sets a run as a superscript or subscript — a raised or lowered baseline and a smaller size together, the pair <sup> and <sub> imply. It is a preset over two primitives rather than a mechanism of its own: baselineShift raises or lowers a run off the line's shared baseline in ems of the inherited font size, and fontScale multiplies that inherited size (an absolute fontSize still wins). Naming either directly overrides that half and leaves the other alone, which is what the two sliders do. resolveRuns folds all of it into one world-unit offset and a final size, so layout places a run against a baseline and an offset without knowing superscripts exist — which is why a shifted run carries its own decoration rules with it. The bottom row is the other half of the story: every run on a line now shares one baseline, sunk to clear the tallest run's ascent, so mixing sizes aligns them the way inline text aligns everywhere else. overline joins underline and strikethrough on both the node style and the run.",
+    hint: "Drag the sliders and watch the rows that aren't shifted: they don't move. A shift displaces its own run and never feeds back into the line's baseline or height.",
+    load: () => import('./demos/TextScriptDemo').then((m) => m.TextScriptDemo),
+    path: 'apps/site/demos/TextScriptDemo.tsx',
+  },
+
+  {
     id: 'text-outlines',
     title: 'Outline tier',
     category: 'Text',

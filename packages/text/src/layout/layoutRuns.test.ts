@@ -49,10 +49,26 @@ async function registerFixture(family: string, opts: Array<{ weight?: number; st
   }
 }
 
+// A second atlas whose baseline sits lower in the same em, so a face's ascent
+// can be varied without varying its size — which is what separates "the line
+// sank its baseline to clear this face" from "the run is set larger".
+const TALL_FONT = { ...FIXTURE_FONT, common: { ...FIXTURE_FONT.common, base: 58 } };
+async function registerTallFont(): Promise<void> {
+  const prior = global.fetch;
+  global.fetch = vi.fn().mockImplementation((url: string) => {
+    if (url.endsWith('tall.json')) {
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(TALL_FONT) });
+    }
+    return (prior as unknown as (u: string) => unknown)(url);
+  }) as typeof fetch;
+  await registerFont('tall', {}, '/fonts/tall/tall.json', '/fonts/tall/tall.png');
+  global.fetch = prior;
+}
+
 const RUN_PLAIN = (text: string): ResolvedRun => ({
   text, fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal',
   fill: { fill: 'solid', color: '#000' }, letterSpacing: 0,
-  underline: false, strikethrough: false,
+  underline: false, strikethrough: false, overline: false, baselineShift: 0,
 });
 const RUN_BOLD = (text: string): ResolvedRun => ({ ...RUN_PLAIN(text), fontWeight: 700 });
 const RUN_ITALIC = (text: string): ResolvedRun => ({ ...RUN_PLAIN(text), fontStyle: 'italic' });
@@ -156,6 +172,44 @@ describe('layoutRuns — word wrap', () => {
     );
     const allQuads = out.groups.flatMap((g) => g.quads);
     expect(allQuads).toHaveLength(2);
+    // The tallest run's ascent sets it: base 29 in a 32 em, at fontSize 40.
+    expect(allQuads.map((q) => q.baselineY)).toEqual([36.25, 36.25]);
+    expect(out.lines[0].baselineY).toBeCloseTo(36.25, 6);
+    // The small run hangs off that baseline, so its ink sits *below* the big
+    // run's top rather than level with it at the line top.
+    const [smallQuad, bigQuad] = allQuads;
+    expect(smallQuad.y0).toBeGreaterThan(bigQuad.y0);
+  });
+
+  it('takes the tallest ascent on the line whichever run carries it', async () => {
+    await registerFixture('inter', [{}]);
+    const small: ResolvedRun = { ...RUN_PLAIN('A'), fontSize: 16 };
+    const big: ResolvedRun = { ...RUN_PLAIN('B'), fontSize: 40 };
+    // Both orders, so the baseline cannot be coming from whichever run the
+    // walk happened to visit first or last.
+    const bigFirst = layoutRuns([big, small], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const bigLast = layoutRuns([small, big], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    expect(bigFirst.lines[0].baselineY).toBeCloseTo(36.25, 6);
+    expect(bigLast.lines[0].baselineY).toBeCloseTo(36.25, 6);
+    for (const out of [bigFirst, bigLast]) {
+      const baselines = out.groups.flatMap((g) => g.quads).map((q) => q.baselineY);
+      expect(new Set(baselines)).toEqual(new Set([36.25]));
+    }
+  });
+
+  it('aligns two faces with different ascents on one baseline', async () => {
+    await registerFixture('inter', [{}]);
+    await registerTallFont();
+    // inter's base is 29 in a 32 em; tall's is 58. At the same fontSize the
+    // deeper ascent sinks the shared baseline, and both runs sit on it.
+    const out = layoutRuns(
+      [RUN_PLAIN('A'), { ...RUN_PLAIN('B'), fontFamily: 'tall' }],
+      { maxWidth: Infinity, lineHeight: 1.2, align: 'left' },
+    );
+    const baselines = out.groups.flatMap((g) => g.quads).map((q) => q.baselineY);
+    expect(baselines).toHaveLength(2);
+    expect(new Set(baselines).size).toBe(1);
+    expect(baselines[0]).toBeCloseTo(58, 6);
   });
 
   it('alignment shifts each line by (maxWidth - lineWidth) * factor', async () => {
@@ -257,7 +311,7 @@ describe('layoutRuns — canvas-dynamic faces', () => {
     fontSize: 24, // scale = 24/48 = 0.5
     fill: { fill: 'solid', color: '#000' },
     letterSpacing: 0,
-    underline: false, strikethrough: false,
+    underline: false, strikethrough: false, overline: false, baselineShift: 0,
   });
 
   it('lays out a dynamic run into a canvas-source group with quads', () => {
@@ -600,39 +654,25 @@ describe('layoutRuns — decoration geometry', () => {
     expect(out.decorations[1].x0).toBeCloseTo(22, 6);
   });
 
-  // A second atlas whose baseline sits lower in the same em, so `baselineY`
-  // and `fontSize` can be varied independently — with one font each implies
-  // the other, and either merge guard alone would look sufficient.
-  const TALL_FONT = { ...FIXTURE_FONT, common: { ...FIXTURE_FONT.common, base: 58 } };
-  async function registerTall(): Promise<void> {
-    const prior = global.fetch;
-    global.fetch = vi.fn().mockImplementation((url: string) => {
-      if (url.endsWith('tall.json')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(TALL_FONT) });
-      }
-      return (prior as unknown as (u: string) => unknown)(url);
-    }) as typeof fetch;
-    await registerFont('tall', {}, '/fonts/tall/tall.json', '/fonts/tall/tall.png');
-    global.fetch = prior;
-  }
-
-  it('does not merge across a baseline change at equal font size', async () => {
+  it('merges across a face whose ascent differs, now that the line shares a baseline', async () => {
     await registerFixture('inter', [{}]);
-    await registerTall();
-    // base 29 vs 58, both at scale 1 → the rules sit 29 apart.
+    await registerTallFont();
+    // base 29 vs 58 at equal size: both runs sit on the deeper baseline, so
+    // the rule runs on under the join instead of stepping 29 units down.
     const out = layoutRuns(
       [UNDERLINED('A'), { ...UNDERLINED('B'), fontFamily: 'tall' }],
       OPTS,
       );
-    expect(out.decorations).toHaveLength(2);
-    expect(out.decorations[1].y0 - out.decorations[0].y0).toBeCloseTo(29, 6);
+    expect(out.decorations).toHaveLength(1);
+    // Shared baseline 58, plus the 0.10-em underline offset at fontSize 32.
+    expect(out.decorations[0].y0).toBeCloseTo(58 + 32 * 0.1, 6);
   });
 
   it('does not merge across a font-size change at equal baseline', async () => {
     await registerFixture('inter', [{}]);
-    await registerTall();
-    // tall's base 58 at fontSize 16 (scale 0.5) lands on 29 — exactly where
-    // inter's base 29 at fontSize 32 does. Same baseline, half the weight.
+    await registerTallFont();
+    // Same baseline now by construction; the sizes still differ, and offset
+    // and thickness both scale with size, so the two rules stay separate.
     const out = layoutRuns(
       [UNDERLINED('A'), { ...UNDERLINED('B'), fontFamily: 'tall', fontSize: 16 }],
       OPTS,
@@ -668,7 +708,7 @@ describe('layoutRuns — a codepoint the atlas does not cover', () => {
   const run = (text: string): ResolvedRun => ({
     text, fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal',
     fill: { fill: 'solid', color: '#000' }, letterSpacing: 0,
-    underline: false, strikethrough: false,
+    underline: false, strikethrough: false, overline: false, baselineShift: 0,
   });
 
   function stubRasterizer() {
@@ -1073,5 +1113,136 @@ describe('layoutRuns from a font face alone', () => {
     });
 
     expect(out.groups[0].glyphs).toHaveLength(1);
+  });
+});
+
+describe('layoutRuns — baseline shift', () => {
+  const OPTS = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' as const };
+  const SHIFTED = (text: string, baselineShift: number): ResolvedRun =>
+    ({ ...RUN_PLAIN(text), baselineShift });
+
+  it('raises a run off the line baseline without moving its neighbours', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([RUN_PLAIN('A'), SHIFTED('B', 10)], OPTS);
+    const quads = out.groups.flatMap((g) => g.quads);
+    expect(quads.map((q) => q.baselineY)).toEqual([29, 19]);
+    // The line itself is unmoved: its box still reports the shared baseline,
+    // so a shifted run rides the line rather than reflowing it.
+    expect(out.lines[0].baselineY).toBe(29);
+    expect(out.lines[0].y0).toBe(0);
+    expect(out.bounds.height).toBeCloseTo(32 * 1.2, 6);
+  });
+
+  it('lowers on a negative shift, and moves the glyph ink with the baseline', async () => {
+    await registerFixture('inter', [{}]);
+    const plain = layoutRuns([RUN_PLAIN('A')], OPTS).groups[0].quads[0];
+    const down = layoutRuns([SHIFTED('A', -8)], OPTS).groups[0].quads[0];
+    expect(down.baselineY - plain.baselineY).toBeCloseTo(8, 6);
+    expect(down.y0 - plain.y0).toBeCloseTo(8, 6);
+    expect(down.y1 - plain.y1).toBeCloseTo(8, 6);
+    // Purely vertical — a shift buys no horizontal advance.
+    expect(down.x0).toBeCloseTo(plain.x0, 6);
+    expect(down.x1).toBeCloseTo(plain.x1, 6);
+  });
+
+  it('does not let a shift feed back into the line it is measured against', async () => {
+    await registerFixture('inter', [{}]);
+    // A lone raised run would drag the baseline up with it if the line's
+    // ascent were computed from shifted positions.
+    const out = layoutRuns([SHIFTED('A', 25)], OPTS);
+    expect(out.lines[0].baselineY).toBe(29);
+    expect(out.groups[0].quads[0].baselineY).toBe(4);
+  });
+
+  it('carries a shifted run’s own decoration rules with it', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns(
+      [{ ...RUN_PLAIN('A'), underline: true, baselineShift: 10 }],
+      OPTS,
+    );
+    expect(out.decorations).toHaveLength(1);
+    // Baseline 29 raised to 19, plus the 0.10-em underline offset at size 32.
+    expect(out.decorations[0].y0).toBeCloseTo(19 + 3.2, 6);
+  });
+
+  it('does not merge a decorated span across a baseline shift', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns(
+      [
+        { ...RUN_PLAIN('A'), underline: true },
+        { ...RUN_PLAIN('B'), underline: true, baselineShift: 10 },
+      ],
+      OPTS,
+    );
+    // Same size, same fill, same flags — only the baseline differs, which is
+    // exactly the guard `fontSize` alone cannot stand in for.
+    expect(out.decorations).toHaveLength(2);
+    expect(out.decorations[0].y0 - out.decorations[1].y0).toBeCloseTo(10, 6);
+  });
+
+  it('shifts outline geometry the same way it shifts quads', async () => {
+    await registerFixture('inter', [{}]);
+    registerFontOutlines('inter', { weight: 400, style: 'normal' }, new ArrayBuffer(4), {
+      parser: () => ({
+        unitsPerEm: 1000, ascender: 0.8,
+        advanceOf: () => 0.6, kernOf: () => 0,
+        glyphD: () => 'M0 0L0.5 -0.7L1 0Z',
+      }),
+    });
+    glyphOutline('inter', 400, 'normal', 65);
+    await new Promise((r) => setTimeout(r, 0));
+
+    const opts = { ...OPTS, outlineMinSize: 20 };
+    const plain = layoutRuns([RUN_PLAIN('A')], opts);
+    const raised = layoutRuns([SHIFTED('A', 12)], opts);
+    const a = plain.groups.find((g) => g.source === 'outline')!.glyphs[0];
+    const b = raised.groups.find((g) => g.source === 'outline')!.glyphs[0];
+    expect(a.baselineY - b.baselineY).toBeCloseTo(12, 6);
+    expect(b.x).toBeCloseTo(a.x, 6);
+    expect(b.scale).toBe(a.scale);
+  });
+});
+
+describe('layoutRuns — overline', () => {
+  const OPTS = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' as const };
+
+  it('places a rule above the ascent, spanning the run advance', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([{ ...RUN_PLAIN('A'), overline: true }], OPTS);
+    expect(out.decorations).toHaveLength(1);
+    const [rule] = out.decorations;
+    expect(rule.kind).toBe('overline');
+    // Baseline 29, less the 0.90-em offset at size 32.
+    expect(rule.y0).toBeCloseTo(29 - 28.8, 6);
+    expect(rule.y1 - rule.y0).toBeCloseTo(0.05 * 32, 6);
+    expect(rule.x0).toBeCloseTo(0, 6);
+    expect(rule.x1).toBeCloseTo(23, 6);
+    // Above the glyph it decorates, which is the whole point.
+    expect(rule.y1).toBeLessThan(out.groups[0].quads[0].y0);
+  });
+
+  it('emits all three rules for one span, underline then strikethrough then overline', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns(
+      [{ ...RUN_PLAIN('A'), underline: true, strikethrough: true, overline: true }],
+      OPTS,
+    );
+    expect(out.decorations.map((d) => d.kind))
+      .toEqual(['underline', 'strikethrough', 'overline']);
+    // Ordered down the page: overline highest, underline lowest.
+    const [under, strike, over] = out.decorations;
+    expect(over.y0).toBeLessThan(strike.y0);
+    expect(strike.y0).toBeLessThan(under.y0);
+  });
+
+  it('does not merge an overlined span with a merely underlined one', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns(
+      [{ ...RUN_PLAIN('A'), underline: true },
+       { ...RUN_PLAIN('B'), underline: true, overline: true }],
+      OPTS,
+    );
+    expect(out.decorations.map((d) => d.kind))
+      .toEqual(['underline', 'underline', 'overline']);
   });
 });

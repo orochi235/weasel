@@ -60,7 +60,7 @@ beforeEach(async () => {
 const RUN = (text: string, over: Partial<ResolvedRun> = {}): ResolvedRun => ({
   text, fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal',
   fill: { fill: 'solid', color: '#fff' }, letterSpacing: 0,
-  underline: false, strikethrough: false,
+  underline: false, strikethrough: false, overline: false, baselineShift: 0,
   ...over,
 });
 

@@ -50,6 +50,7 @@ describe('styleAtRange', () => {
       italic: false,
       underline: false,
       strikethrough: false,
+      overline: false,
     });
   });
 
