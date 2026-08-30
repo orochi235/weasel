@@ -32,7 +32,7 @@ const INHERITABLE = [
   'marker-start', 'marker-mid', 'marker-end',
   'color',
   'font-size', 'font-family', 'font-weight', 'font-style', 'text-anchor',
-  'letter-spacing', 'text-decoration',
+  'letter-spacing', 'text-decoration', 'direction',
 ] as const;
 
 /**

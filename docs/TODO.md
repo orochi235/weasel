@@ -748,10 +748,62 @@ Core five + Crop shipped. Remaining:
   write to, which is exactly the case that entry leaves undecided. Decide that
   one first. Recorded 2026-08-30.
 
+- **(P3) No vertical writing modes — traditional Japanese and Chinese cannot
+  be set.** Layout hard-codes horizontal: the pen advances in x, `LaidOutCell.x`
+  is an inline offset named for an axis, and `baselineY` names the other one.
+  Tategaki needs `writing-mode` (`horizontal-tb` / `vertical-rl` /
+  `vertical-lr`), where lines stack right-to-left and characters flow downward.
+
+  This is a bigger change than bidi rather than a peer of it, and the reason is
+  the public output: bidi is confined to ordering *within* a line, while
+  vertical changes the coordinate system every consumer reads. The honest
+  version makes the walk work in inline/block axes and maps to x/y once at the
+  end, the way CSS does — after which `cell.x` is an inline offset that happens
+  to be horizontal, rather than one that is horizontal by construction.
+
+  Three pieces beyond the axis swap. `text-orientation` decides whether a
+  character stands upright or rotates 90°, and it is *per character* off UAX
+  #50's `Vertical_Orientation` — embedded Latin rotates while CJK stays
+  upright, inside the same run. Vertical metrics come from the font's `vhea` /
+  `vmtx` tables, which a BMFont atlas does not carry at all. And the `vert` /
+  `vrt2` features substitute vertical forms of punctuation, so 、。「」 sit
+  where they belong — the same glyph-id plumbing the entry below needs, which
+  is the argument for building that seam once rather than twice.
+
+  Kinsoku shori (prohibited line-start and line-end characters) is a separate,
+  separable concern: it is a line-breaking rule, not a writing-mode one, and
+  applies to horizontal Japanese too.
+
+- **(P3) Arabic renders unjoined — no OpenType shaping.** Bidi puts an Arabic
+  run in the right visual order, and it still comes out as a row of isolated
+  letterforms, because joining is a substitution and not a reordering: the
+  `arab` script's `init` / `medi` / `fina` / `isol` features in `GSUB` pick a
+  contextual form per letter from its neighbours' joining classes. weasel reads
+  `kern` pairs and nothing else, so no substitution table is consulted at all.
+  Hebrew, Divehi and the other non-joining RTL scripts are unaffected and are
+  correct once bidi lands.
+
+  Where it plugs in: between run resolution and the layout walk, as a step that
+  maps a run's code points to *glyph ids* — which is the piece that does not
+  exist today. `layoutRuns` walks code points and looks each one up with
+  `metrics.advanceOf(cp)` / `charMap.get(cp)`, so a code point *is* a glyph
+  there. Shaping breaks that identity: one code point can select a different
+  glyph by context, and a ligature makes several code points one glyph. So the
+  walk has to carry `(glyphId, srcIndex, srcEnd)` rather than `cp`, and
+  `LaidOutCell` already has the shape to absorb it — a cluster spanning several
+  code points is cells sharing an `x`, the way a combining mark already is.
+  `MetricsSource` grows a glyph-id lookup beside its code-point one.
+
+  The same seam serves small caps (`smcp`) and real ligatures, which is why it
+  is worth building as glyph-id plumbing rather than an Arabic special case.
+  The atlas tier is the harder half: a baked BMFont atlas is keyed by code
+  point, so contextual forms need the outline tier or a dynamic atlas keyed by
+  glyph id.
+
 - **(P3) Small caps and `text-transform` have no run spelling.** The two
   remaining gaps in the run style model after the superscript pass. Both are
   harder than they look and for different reasons. `text-transform` breaks the
-  caret: `srcIndex` / `caretIndices` are UTF-16 offsets into the runs'
+  caret: `LaidOutCell.srcIndex` / `srcEnd` are UTF-16 offsets into the runs'
   concatenated text, and `'ß'.toUpperCase()` is `'SS'`, so a transform that
   changes length desynchronizes every offset after it — it needs a source-to-
   transformed index map, not a `.toUpperCase()` in `resolveRuns`. Synthetic

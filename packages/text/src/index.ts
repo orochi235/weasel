@@ -16,9 +16,12 @@ export type { StyledRun, RunGrammar, RunMarker, RunFlag } from './runs';
 export {
   DEFAULT_TEXT_STYLE,
   resolveTextStyle,
+  resolveAlign,
   fontString,
 } from './textStyle';
-export type { TextStyle, TextPaint, ResolvedTextStyle } from './textStyle';
+export type {
+  TextStyle, TextPaint, ResolvedTextStyle, TextAlign, TextDirection,
+} from './textStyle';
 
 export { resolveRuns, SCRIPT_METRICS } from './runs/resolveRuns';
 export type { ResolvedRun } from './runs/resolveRuns';
@@ -29,6 +32,7 @@ export {
   LAYOUT_CACHE_VARIANT_LIMIT,
   LAYOUT_CACHE_STRUCTURAL_LIMIT,
 } from './layout/layoutCache';
+export type { BidiResolver, BidiReordering, BidiAnalysis } from './layout/bidiSeam';
 export type {
   LayoutRunsOpts,
   LaidOutRuns,
@@ -37,6 +41,7 @@ export type {
   LaidOutOutlineGlyph,
   LaidOutDecoration,
   LaidOutLineBox,
+  LaidOutCell,
 } from './layout/layoutRuns';
 
 export { measureText, measuredWidth } from './measure/measureText';

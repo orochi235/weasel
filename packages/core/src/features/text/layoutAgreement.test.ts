@@ -95,10 +95,11 @@ describe('the paint, the silhouette and the caret', () => {
     // fixture glyphs sit at the size their run asked for.
     const penOfB = quads[1].x0 - 2 * (64 / SIZE);
     expect(penOfB).toBeCloseTo(22, 10);
-    expect(laid.lines[0].caretXs[1]).toBeCloseTo(penOfB, 10);
+    expect(laid.lines[0].cells[1].x).toBeCloseTo(penOfB, 10);
 
     // And the caret flips at that cell's midpoint, in world space.
-    const mid = POSE.x + (laid.lines[0].caretXs[1] + laid.lines[0].caretXs[2]) / 2;
+    // The stop closing the line is its right edge, not a third cell.
+    const mid = POSE.x + (laid.lines[0].cells[1].x + laid.lines[0].x1) / 2;
     expect(caretIndexAt(mid - 1, POSE.y + 5, POSE)).toBe(1);
     expect(caretIndexAt(mid + 1, POSE.y + 5, POSE)).toBe(2);
   });
@@ -106,7 +107,7 @@ describe('the paint, the silhouette and the caret', () => {
   it('agree on where the text ends', () => {
     const laid = painted();
     const [box] = textLineBoxes(POSE, { maxWidth: POSE.width });
-    const end = laid.lines[0].caretXs[laid.lines[0].caretXs.length - 1];
+    const end = laid.lines[0].x1;
     expect(POSE.x + end).toBeCloseTo(box.x + box.width, 10);
     expect(caretIndexAt(POSE.x + end + 10, POSE.y + 5, POSE)).toBe(POSE.text.length);
   });

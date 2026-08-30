@@ -1,7 +1,7 @@
 {
-  "name": "@weasel-js/text",
+  "name": "@weasel-js/bidi",
   "version": "1.2.0",
-  "description": "Typography for weasel: styled runs, style resolution, kerned glyph layout, wrap and measurement. No scene graph, no React.",
+  "description": "The Unicode Bidirectional Algorithm (UAX #9) for weasel: embedding levels, reordering and mirroring. Plain data in, plain data out; no renderer and no scene graph.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
@@ -13,16 +13,7 @@
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
-    "./test-seams": {
-      "import": "./dist/test-seams.js",
-      "types": "./dist/test-seams.d.ts"
-    },
     "./package.json": "./package.json"
-  },
-  "dependencies": {
-    "@weasel-js/font": "1.2.0",
-    "@weasel-js/geom": "1.2.0",
-    "@weasel-js/paint": "1.2.0"
   },
   "scripts": {
     "test": "vitest run",
@@ -33,7 +24,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/orochi235/weasel.git",
-    "directory": "packages/text"
+    "directory": "packages/bidi"
   },
   "bugs": {
     "url": "https://github.com/orochi235/weasel/issues"
@@ -49,8 +40,5 @@
   "publishConfig": {
     "access": "public",
     "provenance": true
-  },
-  "devDependencies": {
-    "@weasel-js/bidi": "1.2.0"
   }
 }

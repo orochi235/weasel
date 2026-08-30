@@ -91,17 +91,28 @@ export function caretIndexAt(
   const dy = pose.y + verticalAlignOffset(pose.verticalAlign, pose.height, laid.bounds.height);
 
   const last = lines[lines.length - 1];
-  if (y < dy + lines[0].y0) return lines[0].caretIndices[0];
-  if (y >= dy + last.y1) return last.caretIndices[last.caretIndices.length - 1];
+  if (y < dy + lines[0].y0) return lines[0].cells[0]?.srcIndex ?? lines[0].srcEnd;
+  if (y >= dy + last.y1) return last.srcEnd;
 
   let line = last;
   for (const candidate of lines) {
     if (y < dy + candidate.y1) { line = candidate; break; }
   }
 
-  const { caretXs, caretIndices } = line;
-  for (let i = 0; i + 1 < caretXs.length; i++) {
-    if (x < dx + (caretXs[i] + caretXs[i + 1]) / 2) return caretIndices[i];
+  // Cells are in logical order and their x values need not ascend, so the
+  // sweep has to be in visual order and each cell's own extent is what it is
+  // tested against — the next cell along is not its right edge.
+  const { cells } = line;
+  if (cells.length === 0) return line.srcEnd;
+  const visual = cells.map((_, i) => i).sort((a, b) => cells[a].x - cells[b].x);
+
+  for (const i of visual) {
+    const c = cells[i];
+    if (x >= dx + c.x + c.advance / 2) continue;
+    // A right-to-left cell reads the other way, so its visually-leading half
+    // is the character's logical end.
+    return c.level % 2 === 1 ? c.srcEnd : c.srcIndex;
   }
-  return caretIndices[caretIndices.length - 1];
+  const trailing = cells[visual[visual.length - 1]];
+  return trailing.level % 2 === 1 ? trailing.srcIndex : trailing.srcEnd;
 }

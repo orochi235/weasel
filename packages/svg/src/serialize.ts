@@ -433,9 +433,19 @@ function textXml(node: SvgTextNode, registry: PaintServerRegistry, namespaces: R
   if (style?.fontFamily) attrs.push(`font-family="${escapeAttr(style.fontFamily)}"`);
   if (style?.fontWeight != null) attrs.push(`font-weight="${String(style.fontWeight)}"`);
   if (style?.fontStyle && style.fontStyle !== 'normal') attrs.push(`font-style="${style.fontStyle}"`);
-  if (style?.align && style.align !== 'left') {
-    const anchor = style.align === 'center' ? 'middle' : 'end';
-    attrs.push(`text-anchor="${anchor}"`);
+  const direction = style?.direction ?? 'ltr';
+  if (direction === 'rtl') attrs.push('direction="rtl"');
+  if (style?.align != null || direction === 'rtl') {
+    // `text-anchor` is reading-order relative in SVG exactly as `start` / `end`
+    // are here, so the two relative values pass straight through and only the
+    // absolute pair has to be turned into an edge the reader resolves the same
+    // way. Under `ltr` this collapses to what it always wrote.
+    const align = style?.align ?? 'left';
+    const anchor = align === 'center' ? 'middle'
+      : align === 'start' ? 'start'
+      : align === 'end' ? 'end'
+      : (align === 'left') === (direction === 'ltr') ? 'start' : 'end';
+    if (anchor !== 'start') attrs.push(`text-anchor="${anchor}"`);
   }
   if (style?.letterSpacing != null && style.letterSpacing !== 0) {
     attrs.push(`letter-spacing="${trimNumber(style.letterSpacing)}"`);

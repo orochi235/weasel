@@ -1246,3 +1246,230 @@ describe('layoutRuns — overline', () => {
       .toEqual(['underline', 'underline', 'overline']);
   });
 });
+
+describe('layoutRuns — one cell per code point', () => {
+  // The fixture atlas carries only 'A' and 'B'. Under the default 'canvas'
+  // policy the dynamic tier serves anything else, which hides the drop; 'none'
+  // is the configuration a consumer registering its own outlines runs in.
+  async function registerBareFixture(): Promise<void> {
+    await registerFixture('inter', [{}]);
+    setFontFallbackPolicy('none');
+  }
+
+  it('keeps a cell for a code point the face cannot serve', async () => {
+    await registerBareFixture();
+    const out = layoutRuns([RUN_PLAIN('ACB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const cells = out.lines[0].cells;
+    expect(cells.map((c) => c.cp)).toEqual([65, 67, 66]);
+    expect(cells[1].drawsInk).toBe(false);
+  });
+
+  it('gives an unservable code point no advance', async () => {
+    await registerBareFixture();
+    const out = layoutRuns([RUN_PLAIN('ACB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const cells = out.lines[0].cells;
+    // 'C' occupies a slot but no width, so 'B' sits exactly where it would
+    // have without it.
+    expect(cells[2].x).toBeCloseTo(cells[1].x, 10);
+  });
+
+  it('keeps a cell for a space at the start of the text', async () => {
+    await registerBareFixture();
+    const out = layoutRuns([RUN_PLAIN(' AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const cells = out.lines[0].cells;
+    expect(cells.map((c) => c.cp)).toEqual([32, 65, 66]);
+    // The leading space is a slot, not an indent: 'A' still starts the line.
+    expect(cells[1].x).toBeCloseTo(0, 10);
+  });
+
+  it('keeps a cell for a space at the start of a line after a newline', async () => {
+    await registerBareFixture();
+    const out = layoutRuns([RUN_PLAIN('AB\n AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    expect(out.lines).toHaveLength(2);
+    expect(out.lines[1].cells.map((c) => c.cp)).toEqual([32, 65, 66]);
+    expect(out.lines[1].cells[1].x).toBeCloseTo(0, 10);
+  });
+
+  it('reports which cells drew ink', async () => {
+    await registerBareFixture();
+    const out = layoutRuns([RUN_PLAIN('A B')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    expect(out.lines[0].cells.map((c) => c.drawsInk)).toEqual([true, false, true]);
+  });
+
+  it('gives every code point on a line exactly one cell, wrapped or not', async () => {
+    await registerBareFixture();
+    for (const [text, maxWidth] of [
+      ['AB', Infinity],
+      ['ACB', Infinity],
+      [' AB', Infinity],
+      ['AB\n AB', Infinity],
+      ['AAAA BBBB', 100],
+      ['AAAA  BBBB', 100],
+      ['A  B', Infinity],
+      ['AB ', Infinity],
+      ['A\u{1F600}B', Infinity],
+    ] as Array<[string, number]>) {
+      const out = layoutRuns([RUN_PLAIN(text)], { maxWidth, lineHeight: 1.2, align: 'left' });
+      const cells = out.lines.reduce((n, l) => n + l.cells.length, 0);
+      // A newline separates cells rather than being one.
+      const expected = [...text].filter((c) => c !== '\n').length;
+      expect(cells, `${JSON.stringify(text)} @ ${maxWidth}`).toBe(expected);
+    }
+  });
+
+  it('numbers cells by code point while srcIndex stays UTF-16', async () => {
+    await registerBareFixture();
+    const out = layoutRuns([RUN_PLAIN('A\u{1F600}B')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const cells = out.lines[0].cells;
+    expect(cells).toHaveLength(3);
+    expect(cells.map((c) => c.srcIndex)).toEqual([0, 1, 3]);
+    expect(cells[1].srcEnd).toBe(3);
+  });
+});
+
+describe('layoutRuns — reading-order alignment', () => {
+  const BOX = { maxWidth: 200, lineHeight: 1.2 };
+  const xs = (o: ReturnType<typeof layoutRuns>) => o.lines[0].cells.map((c) => c.x);
+
+  it('resolves start to the left edge under ltr', async () => {
+    await registerFixture('inter', [{}]);
+    const start = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'start', direction: 'ltr' });
+    const left = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'left' });
+    expect(xs(start)).toEqual(xs(left));
+  });
+
+  it('resolves start to the right edge under rtl', async () => {
+    await registerFixture('inter', [{}]);
+    const start = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'start', direction: 'rtl' });
+    const right = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'right' });
+    expect(xs(start)).toEqual(xs(right));
+  });
+
+  it('resolves end against direction the other way', async () => {
+    await registerFixture('inter', [{}]);
+    const endRtl = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'end', direction: 'rtl' });
+    const left = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'left' });
+    expect(xs(endRtl)).toEqual(xs(left));
+  });
+
+  it('leaves left and right absolute under rtl', async () => {
+    await registerFixture('inter', [{}]);
+    const leftRtl = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'left', direction: 'rtl' });
+    const leftLtr = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'left', direction: 'ltr' });
+    expect(xs(leftRtl)).toEqual(xs(leftLtr));
+  });
+
+  it('defaults direction to ltr when the caller omits it', async () => {
+    await registerFixture('inter', [{}]);
+    const bare = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'start' });
+    const left = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'left' });
+    expect(xs(bare)).toEqual(xs(left));
+  });
+
+  it('centers identically whatever the direction', async () => {
+    await registerFixture('inter', [{}]);
+    const rtl = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'center', direction: 'rtl' });
+    const ltr = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'center', direction: 'ltr' });
+    expect(xs(rtl)).toEqual(xs(ltr));
+  });
+});
+
+describe('layoutRuns — trailing whitespace hangs', () => {
+  it('centers a line on its ink, not on its trailing space', async () => {
+    await registerFixture('inter', [{}]);
+    const opts = { maxWidth: 200, lineHeight: 1.2, align: 'center' as const };
+    const bare = layoutRuns([RUN_PLAIN('AB')], opts);
+    const trailed = layoutRuns([RUN_PLAIN('AB ')], opts);
+    // CSS hangs trailing whitespace: the visible text sits in the same place
+    // whether or not the line ends in a space.
+    expect(trailed.lines[0].cells[0].x).toBeCloseTo(bare.lines[0].cells[0].x, 10);
+  });
+
+  it('right-aligns a line on its ink, not on its trailing space', async () => {
+    await registerFixture('inter', [{}]);
+    const opts = { maxWidth: 200, lineHeight: 1.2, align: 'right' as const };
+    const bare = layoutRuns([RUN_PLAIN('AB')], opts);
+    const trailed = layoutRuns([RUN_PLAIN('AB ')], opts);
+    expect(trailed.lines[0].cells[0].x).toBeCloseTo(bare.lines[0].cells[0].x, 10);
+  });
+
+  it('still gives the hung space a cell past the ink', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([RUN_PLAIN('AB ')], { maxWidth: 200, lineHeight: 1.2, align: 'center' });
+    const cells = out.lines[0].cells;
+    expect(cells).toHaveLength(3);
+    expect(cells[2].cp).toBe(32);
+    expect(cells[2].x).toBeGreaterThan(cells[1].x);
+  });
+
+  it('leaves a left-aligned line alone', async () => {
+    await registerFixture('inter', [{}]);
+    const opts = { maxWidth: 200, lineHeight: 1.2, align: 'left' as const };
+    const bare = layoutRuns([RUN_PLAIN('AB')], opts);
+    const trailed = layoutRuns([RUN_PLAIN('AB ')], opts);
+    expect(trailed.lines[0].cells[0].x).toBeCloseTo(bare.lines[0].cells[0].x, 10);
+  });
+});
+
+describe('layoutRuns — bidi seam', () => {
+  const OPTS = { maxWidth: 200, lineHeight: 1.2, align: 'left' as const };
+  /** A stand-in engine: reverses everything, so "did the seam run" is visible
+   *  without pulling the real algorithm into a unit test. */
+  const REVERSING = {
+    analyze: (cps: readonly number[]) => ({ codePoints: [...cps] }),
+    reorder: (_a: unknown, start: number, end: number) => {
+      const order: number[] = [];
+      for (let i = end - 1; i >= start; i--) order.push(i);
+      return { order, levels: new Int16Array(end - start).fill(1) };
+    },
+    mirror: () => null,
+  };
+
+  it('lays out in logical order when no engine is supplied', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([RUN_PLAIN('AB')], OPTS);
+    const cells = out.lines[0].cells;
+    expect(cells[0].x).toBeLessThan(cells[1].x);
+  });
+
+  it('positions cells in the order the engine gives', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([RUN_PLAIN('AB')], { ...OPTS, bidi: REVERSING });
+    const cells = out.lines[0].cells;
+    // Reversed: 'B' is painted first, so 'A' now sits to its right.
+    expect(cells[0].x).toBeGreaterThan(cells[1].x);
+  });
+
+  it('keeps cells in logical order even when x is not monotonic', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([RUN_PLAIN('AB')], { ...OPTS, bidi: REVERSING });
+    // Slot i is still character i — the whole cell contract depends on this.
+    expect(out.lines[0].cells.map((c) => c.cp)).toEqual([65, 66]);
+  });
+
+  it('gives every cell its advance so a consumer can find its extent', async () => {
+    await registerFixture('inter', [{}]);
+    // 'AA' rather than 'AB': the fixture kerns A→B, and kerning is a gap
+    // *between* cells rather than part of either one's width.
+    const out = layoutRuns([RUN_PLAIN('AA')], OPTS);
+    const cells = out.lines[0].cells;
+    expect(cells[0].advance).toBeGreaterThan(0);
+    expect(cells[0].x + cells[0].advance).toBeCloseTo(cells[1].x, 10);
+  });
+
+  it('leaves kerning between cells rather than inside one', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([RUN_PLAIN('AB')], OPTS);
+    const [a, b] = out.lines[0].cells;
+    // The fixture kerns A→B by -1, so B starts a unit before A's extent ends.
+    expect(b.x).toBeCloseTo(a.x + a.advance - 1, 10);
+  });
+
+  it('reports the resolved level per cell', async () => {
+    await registerFixture('inter', [{}]);
+    const plain = layoutRuns([RUN_PLAIN('AB')], OPTS);
+    expect(plain.lines[0].cells.map((c) => c.level)).toEqual([0, 0]);
+    const rev = layoutRuns([RUN_PLAIN('AB')], { ...OPTS, bidi: REVERSING });
+    expect(rev.lines[0].cells.map((c) => c.level)).toEqual([1, 1]);
+  });
+});

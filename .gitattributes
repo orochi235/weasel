@@ -1,1 +1,4 @@
 packages/weasel-gl/fonts/**/*.png binary
+
+# Unicode conformance fixtures, stored gzipped (see packages/bidi/src/__fixtures__/README.md).
+packages/bidi/src/__fixtures__/*.gz binary
