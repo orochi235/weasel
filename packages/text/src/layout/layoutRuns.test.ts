@@ -1373,3 +1373,40 @@ describe('layoutRuns — reading-order alignment', () => {
     expect(xs(rtl)).toEqual(xs(ltr));
   });
 });
+
+describe('layoutRuns — trailing whitespace hangs', () => {
+  it('centers a line on its ink, not on its trailing space', async () => {
+    await registerFixture('inter', [{}]);
+    const opts = { maxWidth: 200, lineHeight: 1.2, align: 'center' as const };
+    const bare = layoutRuns([RUN_PLAIN('AB')], opts);
+    const trailed = layoutRuns([RUN_PLAIN('AB ')], opts);
+    // CSS hangs trailing whitespace: the visible text sits in the same place
+    // whether or not the line ends in a space.
+    expect(trailed.lines[0].cells[0].x).toBeCloseTo(bare.lines[0].cells[0].x, 10);
+  });
+
+  it('right-aligns a line on its ink, not on its trailing space', async () => {
+    await registerFixture('inter', [{}]);
+    const opts = { maxWidth: 200, lineHeight: 1.2, align: 'right' as const };
+    const bare = layoutRuns([RUN_PLAIN('AB')], opts);
+    const trailed = layoutRuns([RUN_PLAIN('AB ')], opts);
+    expect(trailed.lines[0].cells[0].x).toBeCloseTo(bare.lines[0].cells[0].x, 10);
+  });
+
+  it('still gives the hung space a cell past the ink', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([RUN_PLAIN('AB ')], { maxWidth: 200, lineHeight: 1.2, align: 'center' });
+    const cells = out.lines[0].cells;
+    expect(cells).toHaveLength(3);
+    expect(cells[2].cp).toBe(32);
+    expect(cells[2].x).toBeGreaterThan(cells[1].x);
+  });
+
+  it('leaves a left-aligned line alone', async () => {
+    await registerFixture('inter', [{}]);
+    const opts = { maxWidth: 200, lineHeight: 1.2, align: 'left' as const };
+    const bare = layoutRuns([RUN_PLAIN('AB')], opts);
+    const trailed = layoutRuns([RUN_PLAIN('AB ')], opts);
+    expect(trailed.lines[0].cells[0].x).toBeCloseTo(bare.lines[0].cells[0].x, 10);
+  });
+});

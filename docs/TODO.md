@@ -733,6 +733,32 @@ Core five + Crop shipped. Remaining:
   write to, which is exactly the case that entry leaves undecided. Decide that
   one first. Recorded 2026-08-30.
 
+- **(P3) Arabic renders unjoined — no OpenType shaping.** Bidi puts an Arabic
+  run in the right visual order, and it still comes out as a row of isolated
+  letterforms, because joining is a substitution and not a reordering: the
+  `arab` script's `init` / `medi` / `fina` / `isol` features in `GSUB` pick a
+  contextual form per letter from its neighbours' joining classes. weasel reads
+  `kern` pairs and nothing else, so no substitution table is consulted at all.
+  Hebrew, Divehi and the other non-joining RTL scripts are unaffected and are
+  correct once bidi lands.
+
+  Where it plugs in: between run resolution and the layout walk, as a step that
+  maps a run's code points to *glyph ids* — which is the piece that does not
+  exist today. `layoutRuns` walks code points and looks each one up with
+  `metrics.advanceOf(cp)` / `charMap.get(cp)`, so a code point *is* a glyph
+  there. Shaping breaks that identity: one code point can select a different
+  glyph by context, and a ligature makes several code points one glyph. So the
+  walk has to carry `(glyphId, srcIndex, srcEnd)` rather than `cp`, and
+  `LaidOutCell` already has the shape to absorb it — a cluster spanning several
+  code points is cells sharing an `x`, the way a combining mark already is.
+  `MetricsSource` grows a glyph-id lookup beside its code-point one.
+
+  The same seam serves small caps (`smcp`) and real ligatures, which is why it
+  is worth building as glyph-id plumbing rather than an Arabic special case.
+  The atlas tier is the harder half: a baked BMFont atlas is keyed by code
+  point, so contextual forms need the outline tier or a dynamic atlas keyed by
+  glyph id.
+
 - **(P3) Small caps and `text-transform` have no run spelling.** The two
   remaining gaps in the run style model after the superscript pass. Both are
   harder than they look and for different reasons. `text-transform` breaks the

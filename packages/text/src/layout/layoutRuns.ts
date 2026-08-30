@@ -814,6 +814,16 @@ export function layoutRuns(
   let maxLineWidth = 0;
   const finiteWidth = Number.isFinite(opts.maxWidth) ? opts.maxWidth : 0;
   for (const line of lines) {
+    // Trailing whitespace hangs: CSS aligns a line on its ink, so a line that
+    // happens to end in a space sits where it would without one. The space
+    // keeps its cell and its advance — it just hangs past the aligned edge.
+    let hung = 0;
+    for (let k = line.entries.length - 1; k >= 0; k--) {
+      const e = line.entries[k];
+      if (!e.isSpace) break;
+      hung += e.kerningBefore + e.advance + e.tracking;
+    }
+    const inkWidth = line.width - hung;
     const alignShift = (() => {
       if (align === 'left') return 0;
       // With a finite box, distribute the slack within `maxWidth` (x = 0 is
@@ -822,9 +832,9 @@ export function layoutRuns(
       // or right edge ('right'). This matches the canvas-2D `renderLabel`
       // anchor model so point-anchored labels center on x in both backends.
       if (!Number.isFinite(opts.maxWidth)) {
-        return align === 'center' ? -line.width / 2 : -line.width;
+        return align === 'center' ? -inkWidth / 2 : -inkWidth;
       }
-      const slack = finiteWidth - line.width;
+      const slack = finiteWidth - inkWidth;
       return align === 'center' ? slack / 2 : slack;
     })();
     const lineX0 = alignShift;
