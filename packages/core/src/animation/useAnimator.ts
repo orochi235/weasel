@@ -170,7 +170,14 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
     const tickAll = (t: number): void => {
       const finished: number[] = [];
       for (const anim of animations.current.values()) {
-        const realDt = anim.lastRealNow == null ? 0 : t - anim.lastRealNow;
+        // `t` comes from the frame clock; `lastRealNow` is seeded at register()
+        // from `now()`. The two share a time origin in a browser, where the rAF
+        // timestamp and `performance.now()` are both page-relative — but not
+        // everywhere: jsdom starts them ~600ms apart, which made the first
+        // frame's delta hugely negative and left `virtualNow` climbing back
+        // toward zero for dozens of frames before a tween advanced at all.
+        // Time never runs backwards, so a negative sample is never real.
+        const realDt = anim.lastRealNow == null ? 0 : Math.max(0, t - anim.lastRealNow);
         anim.lastRealNow = t;
         const scale = globalPaused.current
           ? 0
