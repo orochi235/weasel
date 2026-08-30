@@ -515,6 +515,119 @@ describe('useTextEdit — Cmd-B/I with collapsed caret (pending style)', () => {
   });
 });
 
+describe('useTextEdit — superscript and subscript', () => {
+  it('Cmd-Shift-= superscripts a selected range, and again clears it', () => {
+    const h = makeRichHarness({ a: { text: 'x2', runs: [{ text: 'x2' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    selectChars(overlay, 1, 2);
+    // A US layout reports Cmd+Shift+= as '+', not '='.
+    act(() => { pressKey(overlay, '+', { meta: true, shift: true }); });
+    expect(result.current.rangeStyle?.script).toBe('super');
+
+    act(() => { pressKey(overlay, '+', { meta: true, shift: true }); });
+    act(() => result.current.commit());
+    // Off is the enum's absence, not `script: false` — so the runs coalesce
+    // back to one, exactly as they were.
+    expect(h.runCommits[0].runs).toEqual([{ text: 'x2' }]);
+  });
+
+  it('subscript replaces superscript rather than stacking with it', () => {
+    const h = makeRichHarness({ a: { text: 'x2', runs: [{ text: 'x2' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    selectChars(overlay, 1, 2);
+    act(() => { pressKey(overlay, '+', { meta: true, shift: true }); });
+    act(() => { pressKey(overlay, '_', { meta: true, shift: true }); });
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([{ text: 'x' }, { text: '2', script: 'sub' }]);
+  });
+
+  it('superscript at a collapsed caret styles only the next typed character', () => {
+    const h = makeRichHarness({ a: { text: 'x', runs: [{ text: 'x' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    placeCaretAtChar(overlay, 1);
+    act(() => { pressKey(overlay, '+', { meta: true, shift: true }); });
+    act(() => dispatchBeforeInput(overlay, '2'));
+    act(() => dispatchBeforeInput(overlay, 'y'));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([
+      { text: 'x' },
+      { text: '2', script: 'super' },
+      { text: 'y' },
+    ]);
+  });
+});
+
+describe('useTextEdit — pending style at a collapsed caret', () => {
+  it('carries a valued field, not just the boolean flags', () => {
+    // The span is built through `runsToDom`, so every run field arrives
+    // styled without this path enumerating them.
+    const h = makeRichHarness({ a: { text: 'a', runs: [{ text: 'a' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    placeCaretAtChar(overlay, 1);
+    act(() => result.current.applyStyleToSelection({ fontSize: 32, baselineShift: 0.25 }));
+    act(() => dispatchBeforeInput(overlay, 'B'));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([
+      { text: 'a' },
+      { text: 'B', fontSize: 32, baselineShift: 0.25 },
+    ]);
+  });
+
+  it('is abandoned when the caret moves', async () => {
+    const h = makeRichHarness({ a: { text: 'abc', runs: [{ text: 'abc' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    await placeCaretAndSettle(overlay, 3);
+    act(() => result.current.applyStyleToSelection({ bold: true }));
+    expect(result.current.pendingStyle).toEqual({ bold: true });
+    await placeCaretAndSettle(overlay, 1);
+    expect(result.current.pendingStyle).toEqual({});
+    act(() => dispatchBeforeInput(overlay, 'X'));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([{ text: 'aXbc' }]);
+  });
+
+  it('toggling the same styling twice disarms it', () => {
+    const h = makeRichHarness({ a: { text: 'a', runs: [{ text: 'a' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    placeCaretAtChar(overlay, 1);
+    act(() => { pressKey(overlay, 'b', { meta: true }); });
+    expect(result.current.pendingStyle).toEqual({ bold: true });
+    act(() => { pressKey(overlay, 'b', { meta: true }); });
+    expect(result.current.pendingStyle).toEqual({});
+  });
+
+  it('lowers a node flag rather than arming an unsayable "not bold"', () => {
+    // A run cannot say "not bold", so "stop being bold from here on" inside a
+    // bold node is the one styling a collapsed caret writes to existing text:
+    // the node flag drops and every existing run takes it up.
+    const styles: Record<string, TextStyle> = { a: { fontSize: 16, fontWeight: 700 } };
+    const h = makeRichHarness({ a: { text: 'ab', runs: [{ text: 'ab' }] } });
+    h.opts.getStyle = (id) => styles[id];
+    h.opts.setStyle = (id, style) => { styles[id] = style; };
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    placeCaretAtChar(overlay, 2);
+    act(() => { pressKey(overlay, 'b', { meta: true }); });
+    expect(styles.a.fontWeight).toBe(400);
+    act(() => dispatchBeforeInput(overlay, 'c'));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([{ text: 'ab', bold: true }, { text: 'c' }]);
+  });
+});
+
 describe('useTextEdit — Cmd-B/I on range selection', () => {
   it('Cmd-B over plain text wraps the selected range in a bold run', () => {
     const h = makeRichHarness({ a: { text: 'one two three', runs: [{ text: 'one two three' }] } });
@@ -958,10 +1071,28 @@ describe('useTextEdit — range styling surface', () => {
     const overlay = getOverlay(h.container)!;
     await placeCaretAndSettle(overlay, 3);
     expect(result.current.selection).toEqual({ start: 3, end: 3 });
-    // Distinguishable from "no caret at all" (null) so a consumer can route a
-    // collapsed caret to the node's own TextStyle. No run is in range, so
-    // there is nothing for the range reader to report.
-    expect(result.current.rangeStyle).toEqual({});
+    // Distinguishable from "no caret at all" (null). The styling reported is
+    // the run the caret sits in — what the next typed character inherits.
+    expect(result.current.rangeStyle).toEqual({
+      bold: false, italic: false, underline: false, strikethrough: false, overline: false,
+    });
+  });
+
+  it('reports the styling of the run the caret sits in', async () => {
+    const h = makeRichHarness({
+      a: { text: 'abcd', runs: [{ text: 'ab', bold: true }, { text: 'cd', italic: true }] },
+    });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    // Offset 2 is the boundary: the run to the LEFT is the one being typed
+    // into, so bold wins over the italic run starting there.
+    await placeCaretAndSettle(overlay, 2);
+    expect(result.current.rangeStyle?.bold).toBe(true);
+    expect(result.current.rangeStyle?.italic).toBe(false);
+    // At offset 0 there is nothing to the left, so it reads rightward.
+    await placeCaretAndSettle(overlay, 0);
+    expect(result.current.rangeStyle?.bold).toBe(true);
   });
 
   it('leaves the runs alone when a patch is applied with a collapsed caret', async () => {
@@ -971,6 +1102,9 @@ describe('useTextEdit — range styling surface', () => {
     const overlay = getOverlay(h.container)!;
     await placeCaretAndSettle(overlay, 3);
     act(() => result.current.applyStyleToSelection({ underline: true }));
+    // It arms the styling for what comes next rather than restyling text the
+    // user didn't select.
+    expect(result.current.pendingStyle).toEqual({ underline: true });
     act(() => result.current.commit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'abcd' }]);
   });
