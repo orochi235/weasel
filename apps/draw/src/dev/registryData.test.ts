@@ -122,7 +122,7 @@ describe('collectPropertiesTrait', () => {
     }
   });
 
-  it('flattens the rect kind\'s groups and object leaves into its exact 12 dotted leaf paths', () => {
+  it('flattens the rect kind\'s groups and object leaves into its exact 15 dotted leaf paths', () => {
     const entries = collectPropertiesTrait();
     const rect = entries.find((e) => e.id === 'rect');
     expect(rect).toBeDefined();
@@ -133,6 +133,7 @@ describe('collectPropertiesTrait', () => {
       'data.fill',
       'data.stroke.width', 'data.stroke.paint', 'data.stroke.cap',
       'data.stroke.join', 'data.stroke.align', 'data.stroke.dash',
+      'data.stroke.markerStart', 'data.stroke.markerMid', 'data.stroke.markerEnd',
     ]);
   });
 
