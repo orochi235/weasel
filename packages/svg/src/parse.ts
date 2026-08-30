@@ -9,7 +9,7 @@
  */
 
 import type { Path, PolygonPath } from '@weasel-js/core';
-import { PATH_L, PATH_M, PATH_Z, pathFromD } from '@weasel-js/core';
+import { PATH_L, PATH_M, PATH_Z, pathFromD, getMarker } from '@weasel-js/core';
 import {
   rectElementToPath, circleToPath, ellipseToPath, lineToPath,
   parsePoints, polylineToPath, polygonToPath,
@@ -37,7 +37,7 @@ const SUPPORTED_LEAF_TAGS = new Set([
 const SUPPORTED_GROUP_TAGS = new Set(['g', 'svg']);
 
 const IGNORED_TAGS = new Set([
-  'defs', 'lineargradient', 'radialgradient', 'pattern',
+  'defs', 'lineargradient', 'radialgradient', 'pattern', 'marker',
   'title', 'desc', 'metadata',
 ]);
 
@@ -525,7 +525,29 @@ function readStroke(
     if (Number.isFinite(m) && m >= 1) stroke.miterLimit = m;
     else onWarn(`unrecognized stroke-miterlimit: ${miterAttr}`);
   }
+  for (const [attr, field] of [
+    ['marker-start', 'markerStart'],
+    ['marker-mid', 'markerMid'],
+    ['marker-end', 'markerEnd'],
+  ] as const) {
+    const id = parseMarkerRef(style[attr] ?? null);
+    if (id === undefined) continue;
+    if (getMarker(id) === undefined) {
+      onWarn(`${attr} references a marker this kit has no entry for: #${id}`);
+      continue;
+    }
+    stroke[field] = id;
+  }
   return stroke;
+}
+
+/** `url(#id)` -> `id`; `none`, an empty value, or anything else -> undefined. */
+function parseMarkerRef(raw: string | null): string | undefined {
+  if (!raw) return undefined;
+  const v = raw.trim();
+  if (v === '' || v === 'none') return undefined;
+  const m = /^url\(\s*#([^)\s]+)\s*\)/.exec(v);
+  return m ? m[1] : undefined;
 }
 
 /**
@@ -540,6 +562,7 @@ function readStroke(
 const STROKE_KEYS = [
   'stroke', 'stroke-width', 'stroke-opacity', 'stroke-linecap',
   'stroke-linejoin', 'stroke-dasharray', 'stroke-miterlimit',
+  'marker-start', 'marker-mid', 'marker-end',
 ] as const;
 
 function ownStrokeStyle(el: Element): StyleContext {
@@ -573,6 +596,9 @@ function coreStroke(stroke: SvgStroke | undefined): Stroke | undefined {
   if (stroke.join) out.join = stroke.join;
   if (stroke.dash) out.dash = stroke.dash;
   if (stroke.miterLimit != null) out.miterLimit = stroke.miterLimit;
+  if (stroke.markerStart) out.markerStart = stroke.markerStart;
+  if (stroke.markerMid) out.markerMid = stroke.markerMid;
+  if (stroke.markerEnd) out.markerEnd = stroke.markerEnd;
   return out;
 }
 

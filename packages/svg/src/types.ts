@@ -85,6 +85,10 @@ export interface SvgStroke {
    * attribute may render with longer miters than the source SVG intended.
    */
   miterLimit?: number;
+  /** `marker-start` / `marker-mid` / `marker-end`, as the bare `url(#id)` key. */
+  markerStart?: string;
+  markerMid?: string;
+  markerEnd?: string;
 }
 
 /**

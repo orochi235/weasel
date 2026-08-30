@@ -29,6 +29,7 @@ const INHERITABLE = [
   'fill', 'fill-opacity', 'fill-rule',
   'stroke', 'stroke-width', 'stroke-opacity',
   'stroke-linecap', 'stroke-linejoin', 'stroke-dasharray', 'stroke-miterlimit',
+  'marker-start', 'marker-mid', 'marker-end',
   'color',
   'font-size', 'font-family', 'font-weight', 'font-style', 'text-anchor',
   'letter-spacing', 'text-decoration',

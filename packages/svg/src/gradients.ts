@@ -34,8 +34,8 @@ export function collectGradients(svg: Element, onWarn?: (m: string) => void): Gr
   return out;
 }
 
-/** Paint servers aside, a `<defs>` child is something this package does not
- *  model (`<clipPath>`, `<marker>`, a `<use>` template). Say so once here. */
+/** Paint servers and `<marker>` aside, a `<defs>` child is something this
+ *  package does not model (`<clipPath>`, a `<use>` template). Say so once here. */
 function warnUnsupportedDefsChildren(svg: Element, onWarn?: (m: string) => void): void {
   if (!onWarn) return;
   const defs = svg.getElementsByTagName('defs');
@@ -44,7 +44,7 @@ function warnUnsupportedDefsChildren(svg: Element, onWarn?: (m: string) => void)
     for (let i = 0; i < root.children.length; i++) {
       const child = root.children[i];
       const tag = child.tagName.toLowerCase();
-      if (GRADIENT_TAGS.has(tag) || tag === 'pattern') continue;
+      if (GRADIENT_TAGS.has(tag) || tag === 'pattern' || tag === 'marker') continue;
       onWarn(`unsupported <defs> child: <${child.tagName}>`);
     }
   }
