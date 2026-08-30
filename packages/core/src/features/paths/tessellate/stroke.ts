@@ -3,10 +3,19 @@ import type { Stroke } from '@weasel-js/paint';
 import { alignedStrokeRect } from '@weasel-js/paint';
 import type { Mesh } from '../../../renderer/cache/mesh';
 import { extractPolylines, type Polyline } from './polyline';
+import { trimPolyline } from './trim';
 
 /** Options for stroke tessellation. */
 export interface StrokeOptions {
   flattenTolerance?: number;
+  /**
+   * Shorten each open subpath by this much at its start / end, in the same
+   * world units as the path. Stroke markers use this so a filled head is not
+   * speared by its own line; the caller resolves the distance, because this
+   * layer knows nothing about the marker registry.
+   */
+  startInset?: number;
+  endInset?: number;
 }
 
 const EMPTY_MESH: Mesh = {
@@ -99,8 +108,14 @@ export function tessellateStroke(
   const anchorB: number[] = [];
   const anchorT: number[] = [];
 
+  // Trim before dashing, so the dash pattern fits the visible line rather than
+  // running off under a marker head.
+  const startInset = opts.startInset ?? 0;
+  const endInset = opts.endInset ?? 0;
   for (const pl of polylines) {
-    const subs = dash.length > 0 ? splitForDash(pl, dash) : [pl];
+    const trimmed = startInset > 0 || endInset > 0 ? trimPolyline(pl, startInset, endInset) : pl;
+    if (trimmed === null) continue;
+    const subs = dash.length > 0 ? splitForDash(trimmed, dash) : [trimmed];
     for (const sub of subs) {
       expandPolyline(sub, width, join, cap, miterLimit, varyingThreshold, verts, idx, anchorA, anchorB, anchorT);
     }
