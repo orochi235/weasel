@@ -133,6 +133,34 @@ export interface LaidOutDecoration {
 }
 
 /**
+ * One advance cell: a single code point's slot on a line.
+ *
+ * A cell spans its code point *plus* the kerning that precedes the next one,
+ * so a caret snapped to the midpoint between two `x`s lands where the glyphs
+ * were actually painted rather than where an unkerned re-measure would put it.
+ */
+export interface LaidOutCell {
+  /** UTF-16 offset of this code point in the runs' concatenated text. */
+  srcIndex: number;
+  /** One past it — `srcIndex + 2` for an astral code point. */
+  srcEnd: number;
+  cp: number;
+  /** Left edge of the cell, post-alignment, origin-relative like `x0`/`x1`. */
+  x: number;
+  /**
+   * Whether this code point can put ink on the page. False for a space and
+   * for a code point no tier could serve — each of which still holds its
+   * slot. A zero-advance combining mark is `true`: it inks without advancing.
+   *
+   * A property of the character and the face, not of this call: it does not
+   * change when a dynamic bake lands or the outline threshold is crossed. A
+   * blank-but-servable glyph (NBSP in a face that has one) reports `true`;
+   * read the quad or outline geometry for exact ink extents.
+   */
+  drawsInk: boolean;
+}
+
+/**
  * One laid-out line's box, in the same world space as `LaidOutQuad`.
  *
  * `[x0, x1]` is the line's own advance width *after* alignment — not the
@@ -151,23 +179,20 @@ export interface LaidOutLineBox {
   /** The line's baseline, for callers placing carets or rules against it. */
   baselineY: number;
   /**
-   * Caret stops along this line, left to right: `caretXs[i]` is the left edge
-   * of the i-th advance cell, and the last entry is the line's right edge, so
-   * there is always one more stop than cell. Post-alignment, in the same
-   * origin-relative space as `x0`/`x1`.
+   * One cell per code point on this line, left to right. Every code point the
+   * line covers has exactly one, drawn or not; only a newline has none, since
+   * it separates cells rather than being one. So `cells[i]` is addressable as
+   * slot `i` and needs no reconstruction against the source string.
    *
-   * A cell spans one code point *plus* the kerning that precedes the next
-   * one, which is why a caret snapped to these midpoints lands where the
-   * glyphs actually were painted rather than where an unkerned re-measure
-   * would put them.
+   * A caret stop is a cell's `x`, and the stop closing the line is `x1` /
+   * `srcEnd` — there is one more stop than cell.
    */
-  caretXs: number[];
+  cells: LaidOutCell[];
   /**
-   * Source offset for each stop in `caretXs`, as a UTF-16 index into the
-   * runs' concatenated text. Not contiguous: a code point the face cannot
-   * serve occupies no cell, and the wrap swallows the break between lines.
+   * Source offset just past this line's last cell — the closing caret stop's
+   * index, and the only source offset a blank line carries.
    */
-  caretIndices: number[];
+  srcEnd: number;
 }
 
 export interface LaidOutRuns {
@@ -477,6 +502,8 @@ export function layoutRuns(
     kerningBefore: number;   // kerning gap consumed before this glyph
     isSpace: boolean;
     isNewline: boolean;
+    /** Whether this code point can put ink on the page — see `LaidOutCell`. */
+    drawsInk: boolean;
     resolved: ResolveResult;
     fontSize: number;
     /** UTF-16 offset of this code point in the runs' concatenated text. */
@@ -528,6 +555,7 @@ export function layoutRuns(
           glyph: { id: cp, x: 0, y: 0, width: 0, height: 0, xoffset: 0, yoffset: 0, xadvance: 0, page: 0 },
           // A newline consumes no advance, so it takes no tracking either.
           cp, advance: 0, tracking: 0, kerningBefore: 0, isSpace: false, isNewline: true,
+          drawsInk: false,
           resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd,
         });
         prevCp = undefined; prevMetrics = undefined; prevFontSize = undefined;
@@ -550,6 +578,7 @@ export function layoutRuns(
           run, font, metrics,
           glyph: spaceGlyph ?? { id: 32, x: 0, y: 0, width: 0, height: 0, xoffset: 0, yoffset: 0, xadvance: 0, page: 0 },
           cp, advance, tracking, kerningBefore, isSpace: true, isNewline: false,
+          drawsInk: false,
           resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd,
         });
         prevCp = cp; prevMetrics = metrics; prevFontSize = run.fontSize;
@@ -562,6 +591,12 @@ export function layoutRuns(
       if (outlineFace) {
         const adv = metrics.advanceOf(cp);
         if (adv === null) {
+          entries.push({
+            run, font: null, metrics, glyph: null, cp,
+            advance: 0, tracking: 0, kerningBefore: 0, isSpace, isNewline: false,
+            drawsInk: false,
+            resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd,
+          });
           prevCp = cp; prevMetrics = metrics; prevFontSize = run.fontSize;
           continue;
         }
@@ -572,7 +607,7 @@ export function layoutRuns(
         entries.push({
           run, font: null, metrics, glyph: null, cp,
           advance: adv * scale,
-          tracking, kerningBefore, isSpace, isNewline: false,
+          tracking, kerningBefore, isSpace, isNewline: false, drawsInk: !isSpace,
           resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd,
         });
         prevCp = cp; prevMetrics = metrics; prevFontSize = run.fontSize;
@@ -583,6 +618,12 @@ export function layoutRuns(
         ? { glyph: resolved.dynamicFace.requestGlyph(cp), font: font!, resolved }
         : resolveGlyph(run, font!, resolved, cp);
       if (!hit) {
+        entries.push({
+          run, font: null, metrics, glyph: null, cp,
+          advance: 0, tracking: 0, kerningBefore: 0, isSpace, isNewline: false,
+          drawsInk: false,
+          resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd,
+        });
         prevCp = cp; prevMetrics = metrics; prevFontSize = run.fontSize;
         continue;
       }
@@ -602,7 +643,7 @@ export function layoutRuns(
         advance: hit.glyph.xadvance * glyphScale,
         tracking,
         kerningBefore,
-        isSpace, isNewline: false,
+        isSpace, isNewline: false, drawsInk: !isSpace,
         resolved: hit.resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd,
       });
 
@@ -649,8 +690,12 @@ export function layoutRuns(
       if (cur.entries.length > 0) {
         cur.entries.push(e);
         cur.width += e.kerningBefore + e.advance + e.tracking;
-        cur.height = Math.max(cur.height, e.fontSize * opts.lineHeight);
+      } else {
+        // A space opening a line is a slot, not an indent — it keeps its cell
+        // so every code point stays addressable, but takes no width.
+        cur.entries.push({ ...e, kerningBefore: 0, advance: 0, tracking: 0 });
       }
+      cur.height = Math.max(cur.height, e.fontSize * opts.lineHeight);
       i++;
       continue;
     }
@@ -789,14 +834,15 @@ export function layoutRuns(
     }
     const lineBaselineY = penY + lineAscent;
 
-    const caretXs: number[] = [];
-    const caretIndices: number[] = [];
+    const cells: LaidOutCell[] = [];
 
     let penX = lineX0;
     for (const e of line.entries) {
       penX += e.kerningBefore;
-      caretXs.push(penX);
-      caretIndices.push(e.srcIndex);
+      const cell: LaidOutCell = {
+        srcIndex: e.srcIndex, srcEnd: e.srcEnd, cp: e.cp, x: penX, drawsInk: e.drawsInk,
+      };
+      cells.push(cell);
       // One step per character: the glyph's advance plus its run's tracking.
       // Every branch below moves the pen by exactly this, so glyph positions
       // stay in step with the line width accumulated above.
@@ -897,16 +943,15 @@ export function layoutRuns(
     // character. A blank line has no cell to close, so its only stop is the
     // newline that made it.
     const lastCell = line.entries[line.entries.length - 1];
-    caretXs.push(penX);
-    caretIndices.push(lastCell ? lastCell.srcEnd : (line.blank?.srcIndex ?? 0));
+    const srcEnd = lastCell ? lastCell.srcEnd : (line.blank?.srcIndex ?? 0);
     lineBoxes.push({
       x0: lineX0,
       y0: penY,
       x1: lineX0 + line.width,
       y1: penY + line.height,
       baselineY: lineBaselineY,
-      caretXs,
-      caretIndices,
+      cells,
+      srcEnd,
     });
     maxLineWidth = Math.max(maxLineWidth, line.width);
     penY += line.height;

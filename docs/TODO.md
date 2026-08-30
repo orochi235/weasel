@@ -736,7 +736,7 @@ Core five + Crop shipped. Remaining:
 - **(P3) Small caps and `text-transform` have no run spelling.** The two
   remaining gaps in the run style model after the superscript pass. Both are
   harder than they look and for different reasons. `text-transform` breaks the
-  caret: `srcIndex` / `caretIndices` are UTF-16 offsets into the runs'
+  caret: `LaidOutCell.srcIndex` / `srcEnd` are UTF-16 offsets into the runs'
   concatenated text, and `'ß'.toUpperCase()` is `'SS'`, so a transform that
   changes length desynchronizes every offset after it — it needs a source-to-
   transformed index map, not a `.toUpperCase()` in `resolveRuns`. Synthetic

@@ -37,6 +37,7 @@ export type {
   LaidOutOutlineGlyph,
   LaidOutDecoration,
   LaidOutLineBox,
+  LaidOutCell,
 } from './layout/layoutRuns';
 
 export { measureText, measuredWidth } from './measure/measureText';

@@ -1246,3 +1246,83 @@ describe('layoutRuns — overline', () => {
       .toEqual(['underline', 'underline', 'overline']);
   });
 });
+
+describe('layoutRuns — one cell per code point', () => {
+  // The fixture atlas carries only 'A' and 'B'. Under the default 'canvas'
+  // policy the dynamic tier serves anything else, which hides the drop; 'none'
+  // is the configuration a consumer registering its own outlines runs in.
+  async function registerBareFixture(): Promise<void> {
+    await registerFixture('inter', [{}]);
+    setFontFallbackPolicy('none');
+  }
+
+  it('keeps a cell for a code point the face cannot serve', async () => {
+    await registerBareFixture();
+    const out = layoutRuns([RUN_PLAIN('ACB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const cells = out.lines[0].cells;
+    expect(cells.map((c) => c.cp)).toEqual([65, 67, 66]);
+    expect(cells[1].drawsInk).toBe(false);
+  });
+
+  it('gives an unservable code point no advance', async () => {
+    await registerBareFixture();
+    const out = layoutRuns([RUN_PLAIN('ACB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const cells = out.lines[0].cells;
+    // 'C' occupies a slot but no width, so 'B' sits exactly where it would
+    // have without it.
+    expect(cells[2].x).toBeCloseTo(cells[1].x, 10);
+  });
+
+  it('keeps a cell for a space at the start of the text', async () => {
+    await registerBareFixture();
+    const out = layoutRuns([RUN_PLAIN(' AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const cells = out.lines[0].cells;
+    expect(cells.map((c) => c.cp)).toEqual([32, 65, 66]);
+    // The leading space is a slot, not an indent: 'A' still starts the line.
+    expect(cells[1].x).toBeCloseTo(0, 10);
+  });
+
+  it('keeps a cell for a space at the start of a line after a newline', async () => {
+    await registerBareFixture();
+    const out = layoutRuns([RUN_PLAIN('AB\n AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    expect(out.lines).toHaveLength(2);
+    expect(out.lines[1].cells.map((c) => c.cp)).toEqual([32, 65, 66]);
+    expect(out.lines[1].cells[1].x).toBeCloseTo(0, 10);
+  });
+
+  it('reports which cells drew ink', async () => {
+    await registerBareFixture();
+    const out = layoutRuns([RUN_PLAIN('A B')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    expect(out.lines[0].cells.map((c) => c.drawsInk)).toEqual([true, false, true]);
+  });
+
+  it('gives every code point on a line exactly one cell, wrapped or not', async () => {
+    await registerBareFixture();
+    for (const [text, maxWidth] of [
+      ['AB', Infinity],
+      ['ACB', Infinity],
+      [' AB', Infinity],
+      ['AB\n AB', Infinity],
+      ['AAAA BBBB', 100],
+      ['AAAA  BBBB', 100],
+      ['A  B', Infinity],
+      ['AB ', Infinity],
+      ['A\u{1F600}B', Infinity],
+    ] as Array<[string, number]>) {
+      const out = layoutRuns([RUN_PLAIN(text)], { maxWidth, lineHeight: 1.2, align: 'left' });
+      const cells = out.lines.reduce((n, l) => n + l.cells.length, 0);
+      // A newline separates cells rather than being one.
+      const expected = [...text].filter((c) => c !== '\n').length;
+      expect(cells, `${JSON.stringify(text)} @ ${maxWidth}`).toBe(expected);
+    }
+  });
+
+  it('numbers cells by code point while srcIndex stays UTF-16', async () => {
+    await registerBareFixture();
+    const out = layoutRuns([RUN_PLAIN('A\u{1F600}B')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const cells = out.lines[0].cells;
+    expect(cells).toHaveLength(3);
+    expect(cells.map((c) => c.srcIndex)).toEqual([0, 1, 3]);
+    expect(cells[1].srcEnd).toBe(3);
+  });
+});

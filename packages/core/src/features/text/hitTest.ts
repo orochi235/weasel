@@ -91,17 +91,19 @@ export function caretIndexAt(
   const dy = pose.y + verticalAlignOffset(pose.verticalAlign, pose.height, laid.bounds.height);
 
   const last = lines[lines.length - 1];
-  if (y < dy + lines[0].y0) return lines[0].caretIndices[0];
-  if (y >= dy + last.y1) return last.caretIndices[last.caretIndices.length - 1];
+  if (y < dy + lines[0].y0) return lines[0].cells[0]?.srcIndex ?? lines[0].srcEnd;
+  if (y >= dy + last.y1) return last.srcEnd;
 
   let line = last;
   for (const candidate of lines) {
     if (y < dy + candidate.y1) { line = candidate; break; }
   }
 
-  const { caretXs, caretIndices } = line;
-  for (let i = 0; i + 1 < caretXs.length; i++) {
-    if (x < dx + (caretXs[i] + caretXs[i + 1]) / 2) return caretIndices[i];
+  // The stop closing a line is its right edge, which is not a cell.
+  const { cells } = line;
+  for (let i = 0; i < cells.length; i++) {
+    const next = i + 1 < cells.length ? cells[i + 1].x : line.x1;
+    if (x < dx + (cells[i].x + next) / 2) return cells[i].srcIndex;
   }
-  return caretIndices[caretIndices.length - 1];
+  return line.srcEnd;
 }
