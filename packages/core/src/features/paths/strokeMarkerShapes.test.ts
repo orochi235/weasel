@@ -49,6 +49,23 @@ describe('built-in marker geometry', () => {
     expect(byId('arrow').fill ?? 'line').toBe('line');
   });
 
+  it('leaves an open head actually open', () => {
+    // Each arm is `outline.width` thick, so a V whose back opening is no wider
+    // than both arms together closes up and paints as a solid triangle — at
+    // every stroke width, since marker units scale with the line. Invisible to
+    // every other assertion here: the shape stays anchored, insets correctly
+    // and reports the right paints while rendering as the wrong marker.
+    const entry = byId('arrow-open');
+    const path = entry.path(ctx) as PolygonPath;
+    const n = path.coords.length;
+    const opening = Math.hypot(
+      path.coords[0] - path.coords[n - 2],
+      path.coords[1] - path.coords[n - 1],
+    );
+    const armWidth = (entry.outline as { width: number }).width;
+    expect(opening).toBeGreaterThan(armWidth * 2 + 0.5);
+  });
+
   it('scales geometry with ctx.size', () => {
     const small = byId('arrow').path({ ...ctx, size: 1 }) as PolygonPath;
     const large = byId('arrow').path({ ...ctx, size: 4 }) as PolygonPath;

@@ -46,8 +46,11 @@ export const BUILTIN_MARKERS: readonly MarkerEntry[] = [
     fill: 'none',
     outline: { width: 1 },
     // Open at the back, so the ribbon runs to the vertex and the arms meet it.
+    // Arms 3.5 long at ±35°: the back opening is 4 units against 2 units of
+    // arm, so the V still reads open. Shorter or narrower and the two arms
+    // close the gap themselves and it paints as a solid triangle.
     path: ({ size }: MarkerCtx) =>
-      poly([-2.17, -1.25, 0, 0, -2.17, 1.25], size, false),
+      poly([-2.867, -2.007, 0, 0, -2.867, 2.007], size, false),
   },
   {
     id: 'arrow-concave',
