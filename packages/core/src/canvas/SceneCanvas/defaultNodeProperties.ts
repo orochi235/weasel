@@ -1,5 +1,6 @@
 import { inferredNodeRouting } from './defaultNodeRouting';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
+import { listMarkers } from 'core/strokeMarkers';
 import { dashForStrokeStyle, strokeDashStyleOf } from '@weasel-js/paint';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
 import type { ToolPrefEnumEncoding, ToolPrefGroup, ToolPrefNumberUnit } from 'tools/prefs';
@@ -43,6 +44,25 @@ const strokeDashEncoding: ToolPrefEnumEncoding = {
         ? undefined
         : stroke?.dash,
 };
+
+/** `Stroke.markerStart` / `markerMid` / `markerEnd` — a `MarkerRef` — read and
+ *  written as a bare key, with the empty string standing for no marker. */
+const markerEncoding: ToolPrefEnumEncoding = {
+  read: (ref) => {
+    if (typeof ref === 'string') return ref;
+    if (ref && typeof ref === 'object' && 'key' in ref) return String((ref as { key: string }).key);
+    return '';
+  },
+  write: (value) => (value === '' ? undefined : value),
+};
+
+/** Options come from the registry, so a consumer's registered entry appears in
+ *  the picker with no kit edit. A `select` rather than a `toggle`: nine options
+ *  will not fit a segmented strip. */
+const markerOptions = () => [
+  { value: '', label: 'None' },
+  ...listMarkers().map((m) => ({ value: m.id, label: m.id })),
+];
 
 /** Build the standard shape schema — Layout (pose box + rotation) +
  *  Appearance (fill / stroke), optionally a Text group. Matches the kit's
@@ -117,6 +137,9 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
               // dash pattern is a property of the line rather than of how the
               // ribbon meets the geometry.
               dash: { kind: 'enum', name: 'Style', description: 'Solid, dashed or dotted. Dash lengths are multiples of the stroke width, so a style holds as the width changes.', default: 'solid', control: 'toggle', block: true, encoding: strokeDashEncoding, options: [{ value: 'solid', label: 'Solid', icon: 'dashSolid' }, { value: 'dashed', label: 'Dashed', icon: 'dashDashed' }, { value: 'dotted', label: 'Dotted', icon: 'dashDotted' }, { value: 'custom', label: 'Custom', icon: 'dashCustom', disabled: true }] },
+              markerStart: { kind: 'enum', name: 'Start', description: 'Marker at the first vertex of each open subpath.', default: '', control: 'select', block: true, pair: 'Markers', encoding: markerEncoding, options: markerOptions() },
+              markerMid: { kind: 'enum', name: 'Mid', description: 'Marker at every interior authored vertex.', default: '', control: 'select', block: true, pair: 'Markers', encoding: markerEncoding, options: markerOptions() },
+              markerEnd: { kind: 'enum', name: 'End', description: 'Marker at the last vertex of each open subpath.', default: '', control: 'select', block: true, pair: 'Markers', encoding: markerEncoding, options: markerOptions() },
             },
           },
         },

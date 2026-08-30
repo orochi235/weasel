@@ -602,6 +602,21 @@ Core five + Crop shipped. Remaining:
 
 - **(P3) Promote `ShaderDrawCommand` past `@experimental`.** Three uses now exercise it (plasma / ripple / voronoi panels), which is enough to have validated the surface. Open questions before stabilization: (a) array uniform binding shape — currently consumers must pass per-slot keys (`u_ripples[0]`, `u_ripples[1]`, …); should the kit accept a flat `Float32Array` and split it? (b) hot-reload story for `registerProgram` re-registration; (c) how to expose the renderer's program registry without leaking internals (`shaders` prop is the seam, but consumers writing custom RenderLayers may want more).
 
+- **(P3) An imported `<marker>` we have no key for warns and drops.**
+  `@weasel-js/svg`'s import path (`parse.ts:535`) only round-trips a
+  `marker-start` / `marker-mid` / `marker-end` value it recognizes by key; an
+  unfamiliar one warns through `onWarn` and its geometry is discarded. The
+  entry model (`MarkerEntry`, `packages/core/src/core/strokeMarkers.ts`) is
+  already general enough to hold one — geometry, independent paints, an
+  anchor, an orientation — so ingesting it later is a parser change, not a
+  redesign. See `docs/superpowers/specs/2026-08-30-stroke-markers-design.md`.
+
+- **(P3) No marker icons.** `defaultNodeProperties`'s `markerStart` /
+  `markerMid` / `markerEnd` leaves use a labelled `select`, where the sibling
+  stroke enums (`cap`, `join`, `align`, `dash`) are icon toggles — authoring
+  eight glyphs to this repo's icon standard is its own piece of work and was
+  deferred out of the stroke-markers arc.
+
 - **(P3) `extractUniformNames` regex coverage.** Two of the three gaps this
   entry used to claim were never real: matrix arrays (`mat3 u_xforms[4];`) and
   layout qualifiers both already worked — `\S+` takes any type name, and

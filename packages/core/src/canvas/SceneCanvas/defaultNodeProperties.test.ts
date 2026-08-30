@@ -71,6 +71,37 @@ describe('the stroke leaf\'s dash style', () => {
   });
 });
 
+describe('the stroke leaf\'s markers', () => {
+  const strokeLeaf = (): ToolPrefObject => {
+    const entry = inferredNodeProperties.find((e) => e.name === 'path')!;
+    const appearance = entry.schema.children.appearance as ToolPrefGroup;
+    return appearance.children['data.stroke'] as ToolPrefObject;
+  };
+
+  it('offers markerStart, markerMid and markerEnd, with the registry as options', () => {
+    for (const key of ['markerStart', 'markerMid', 'markerEnd']) {
+      const leaf = strokeLeaf().children[key] as ToolPrefEnum;
+      expect(leaf.kind).toBe('enum');
+      expect(leaf.options.map((o) => o.value)).toEqual(
+        expect.arrayContaining(['', 'arrow', 'circle', 'diamond']),
+      );
+    }
+  });
+
+  it('reads a bare key or a sized MarkerRef the same way', () => {
+    const { read } = (strokeLeaf().children.markerStart as ToolPrefEnum).encoding!;
+    expect(read('arrow', undefined)).toBe('arrow');
+    expect(read({ key: 'arrow', size: 4 }, undefined)).toBe('arrow');
+    expect(read(undefined, undefined)).toBe('');
+  });
+
+  it('writes the empty option as no marker at all', () => {
+    const { write } = (strokeLeaf().children.markerEnd as ToolPrefEnum).encoding!;
+    expect(write('', undefined)).toBeUndefined();
+    expect(write('circle', undefined)).toBe('circle');
+  });
+});
+
 describe('inferredNodeProperties', () => {
   it('stays in lockstep with inferredNodeRouting kind names', () => {
     expect(inferredNodeProperties.map((e) => e.name)).toEqual(
