@@ -1430,11 +1430,39 @@ describe('markerDrawCommands', () => {
     expect(cmds[0].stroke?.width).toBeCloseTo(2, 6);
   });
 
-  it('emits fill and outline together for a hollow head', () => {
+  it('emits an outline-only command for the hollow built-in', () => {
     const cmds = markerDrawCommands(LINE, { ...BASE, markerEnd: 'diamond-hollow' }, 2, undefined);
     expect(cmds).toHaveLength(1);
     expect(cmds[0].fill).toBeUndefined();
     expect(cmds[0].stroke).toBeDefined();
+  });
+
+  it('emits fill and outline together when an entry declares both', () => {
+    // The UML aggregation diamond: filled *and* outlined. This is the case a
+    // single `mode: 'fill' | 'stroke'` field could not express, and the reason
+    // an entry carries the two independently.
+    const dispose = registerMarker({
+      id: 'app:both',
+      inset: 2,
+      fill: { fill: 'solid', color: '#fff' },
+      outline: { width: 0.5 },
+      path: ({ size }) => ({
+        kind: 'polygon',
+        commands: new Uint8Array([PATH_M, PATH_L, PATH_L]),
+        coords: new Float32Array([0, 0, -2 * size, -size, -2 * size, size]),
+        fillRule: 'nonzero',
+      }),
+    });
+    try {
+      const cmds = markerDrawCommands(LINE, { ...BASE, markerEnd: 'app:both' }, 2, undefined);
+      expect(cmds).toHaveLength(1);
+      expect(cmds[0].fill).toEqual({ fill: 'solid', color: '#fff' });
+      // The outline declares no paint of its own, so it falls back to the line's.
+      expect(cmds[0].stroke?.paint).toEqual(PAINT);
+      expect(cmds[0].stroke?.width).toBeCloseTo(1, 6);
+    } finally {
+      dispose();
+    }
   });
 
   it('places the head at the line end, rotated to point along it', () => {
