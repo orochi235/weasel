@@ -31,7 +31,7 @@ const INHERITABLE = [
   'stroke-linecap', 'stroke-linejoin', 'stroke-dasharray', 'stroke-miterlimit',
   'color',
   'font-size', 'font-family', 'font-weight', 'font-style', 'text-anchor',
-  'letter-spacing', 'text-decoration',
+  'letter-spacing', 'text-decoration', 'direction',
 ] as const;
 
 /**

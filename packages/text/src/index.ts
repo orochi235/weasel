@@ -16,9 +16,12 @@ export type { StyledRun, RunGrammar, RunMarker, RunFlag } from './runs';
 export {
   DEFAULT_TEXT_STYLE,
   resolveTextStyle,
+  resolveAlign,
   fontString,
 } from './textStyle';
-export type { TextStyle, TextPaint, ResolvedTextStyle } from './textStyle';
+export type {
+  TextStyle, TextPaint, ResolvedTextStyle, TextAlign, TextDirection,
+} from './textStyle';
 
 export { resolveRuns, SCRIPT_METRICS } from './runs/resolveRuns';
 export type { ResolvedRun } from './runs/resolveRuns';

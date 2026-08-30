@@ -98,7 +98,8 @@ describe('the paint, the silhouette and the caret', () => {
     expect(laid.lines[0].cells[1].x).toBeCloseTo(penOfB, 10);
 
     // And the caret flips at that cell's midpoint, in world space.
-    const mid = POSE.x + (laid.lines[0].cells[1].x + laid.lines[0].cells[2].x) / 2;
+    // The stop closing the line is its right edge, not a third cell.
+    const mid = POSE.x + (laid.lines[0].cells[1].x + laid.lines[0].x1) / 2;
     expect(caretIndexAt(mid - 1, POSE.y + 5, POSE)).toBe(1);
     expect(caretIndexAt(mid + 1, POSE.y + 5, POSE)).toBe(2);
   });

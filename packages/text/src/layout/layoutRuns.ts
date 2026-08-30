@@ -54,6 +54,7 @@ import {
   type ResolveResult, type BmFontChar, type BmFont,
 } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
+import { resolveAlign, type TextAlign, type TextDirection } from '../textStyle';
 
 /** One textured glyph quad, origin-relative — see the header. */
 export interface LaidOutQuad {
@@ -263,7 +264,18 @@ function atlasMetrics(font: BmFont): MetricsSource {
 export interface LayoutRunsOpts {
   maxWidth: number;
   lineHeight: number;
-  align: 'left' | 'center' | 'right';
+  /**
+   * `start` / `end` resolve against `direction`; `left` / `right` are absolute
+   * and ignore it, the way CSS `text-align` treats the same five values.
+   */
+  align: TextAlign;
+  /**
+   * Reading direction, for resolving `start` / `end`. Default `'ltr'`.
+   *
+   * Taken as an input rather than sniffed: this package has no DOM, so a
+   * consumer reading `getComputedStyle(box).direction` passes what it found.
+   */
+  direction?: TextDirection;
   /**
    * World-space `fontSize` at or above which glyphs are emitted as outline
    * geometry, when the resolved face has outlines registered. Omit (the
@@ -487,6 +499,7 @@ export function layoutRuns(
   opts: LayoutRunsOpts,
 ): LaidOutRuns {
   const ctx: LayoutContext = { groups: new Map() };
+  const align = resolveAlign(opts.align, opts.direction ?? 'ltr');
 
   // Per-glyph entry produced by walking runs codepoint-by-codepoint.
   // Position (x) is filled in during the line-fitting pass.
@@ -802,17 +815,17 @@ export function layoutRuns(
   const finiteWidth = Number.isFinite(opts.maxWidth) ? opts.maxWidth : 0;
   for (const line of lines) {
     const alignShift = (() => {
-      if (opts.align === 'left') return 0;
+      if (align === 'left') return 0;
       // With a finite box, distribute the slack within `maxWidth` (x = 0 is
       // the box's left edge). With no box (infinite maxWidth), anchor on the
       // line's own width instead — x = 0 is the text's midpoint ('center')
       // or right edge ('right'). This matches the canvas-2D `renderLabel`
       // anchor model so point-anchored labels center on x in both backends.
       if (!Number.isFinite(opts.maxWidth)) {
-        return opts.align === 'center' ? -line.width / 2 : -line.width;
+        return align === 'center' ? -line.width / 2 : -line.width;
       }
       const slack = finiteWidth - line.width;
-      return opts.align === 'center' ? slack / 2 : slack;
+      return align === 'center' ? slack / 2 : slack;
     })();
     const lineX0 = alignShift;
     // One baseline for the whole line, sunk far enough below the line top to

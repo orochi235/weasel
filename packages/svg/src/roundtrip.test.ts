@@ -11,6 +11,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { parseSvg, serializeSvg, type SvgNode } from './index';
+import { resolveAlign } from '@weasel-js/core';
 import * as F from './__fixtures__/fixtures';
 
 interface NormalizedPath {
@@ -914,5 +915,36 @@ describe('baseline-shift / relative font-size', () => {
     expect(t.runs?.slice(0, 3)).toEqual(runs.slice(0, 3));
     expect(t.runs?.[3]).toEqual({ text: 'd', baselineShift: 0.5, fontScale: 0.583 });
     expect(serializeSvg(parsed.nodes, { viewBox: parsed.viewBox })).toBe(svg1);
+  });
+});
+
+describe('text direction', () => {
+  const VIEW = { viewBox: { x: 0, y: 0, width: 200, height: 100 } };
+  const ser = (style: Record<string, unknown>) => serializeSvg(
+    [{ id: 't1', kind: 'text', x: 0, y: 0, width: 100, height: 20, text: 'AB', style }] as unknown as SvgNode[],
+    VIEW,
+  );
+
+  it('writes direction="rtl" and keeps a reading-order start relative', () => {
+    const out = ser({ align: 'start', direction: 'rtl' });
+    expect(out).toContain('direction="rtl"');
+    // SVG's text-anchor is reading-order relative too, so a reading-order
+    // start stays `start` there rather than becoming the absolute edge.
+    expect(out).not.toContain('text-anchor="end"');
+  });
+
+  it('anchors an absolute left at the far edge under rtl', () => {
+    expect(ser({ align: 'left', direction: 'rtl' })).toContain('text-anchor="end"');
+  });
+
+  it('writes no direction for ltr', () => {
+    expect(ser({ align: 'left' })).not.toContain('direction=');
+  });
+
+  it('round-trips an rtl alignment to the same rendered edge', () => {
+    const out = ser({ align: 'start', direction: 'rtl' });
+    const back = parseSvg(out).nodes[0] as { style?: Record<string, unknown> };
+    expect(back.style?.direction).toBe('rtl');
+    expect(resolveAlign(back.style?.align as never, 'rtl')).toBe('right');
   });
 });

@@ -1326,3 +1326,50 @@ describe('layoutRuns — one cell per code point', () => {
     expect(cells[1].srcEnd).toBe(3);
   });
 });
+
+describe('layoutRuns — reading-order alignment', () => {
+  const BOX = { maxWidth: 200, lineHeight: 1.2 };
+  const xs = (o: ReturnType<typeof layoutRuns>) => o.lines[0].cells.map((c) => c.x);
+
+  it('resolves start to the left edge under ltr', async () => {
+    await registerFixture('inter', [{}]);
+    const start = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'start', direction: 'ltr' });
+    const left = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'left' });
+    expect(xs(start)).toEqual(xs(left));
+  });
+
+  it('resolves start to the right edge under rtl', async () => {
+    await registerFixture('inter', [{}]);
+    const start = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'start', direction: 'rtl' });
+    const right = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'right' });
+    expect(xs(start)).toEqual(xs(right));
+  });
+
+  it('resolves end against direction the other way', async () => {
+    await registerFixture('inter', [{}]);
+    const endRtl = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'end', direction: 'rtl' });
+    const left = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'left' });
+    expect(xs(endRtl)).toEqual(xs(left));
+  });
+
+  it('leaves left and right absolute under rtl', async () => {
+    await registerFixture('inter', [{}]);
+    const leftRtl = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'left', direction: 'rtl' });
+    const leftLtr = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'left', direction: 'ltr' });
+    expect(xs(leftRtl)).toEqual(xs(leftLtr));
+  });
+
+  it('defaults direction to ltr when the caller omits it', async () => {
+    await registerFixture('inter', [{}]);
+    const bare = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'start' });
+    const left = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'left' });
+    expect(xs(bare)).toEqual(xs(left));
+  });
+
+  it('centers identically whatever the direction', async () => {
+    await registerFixture('inter', [{}]);
+    const rtl = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'center', direction: 'rtl' });
+    const ltr = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'center', direction: 'ltr' });
+    expect(xs(rtl)).toEqual(xs(ltr));
+  });
+});

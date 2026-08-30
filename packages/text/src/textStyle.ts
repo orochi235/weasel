@@ -12,6 +12,31 @@
 
 import type { FillStyle, Stroke } from '@weasel-js/paint';
 
+/**
+ * Horizontal alignment. `start` / `end` resolve against the reading direction;
+ * `left` / `right` are absolute. Same five values as CSS `text-align`, with
+ * the same split between the relative pair and the absolute pair.
+ */
+export type TextAlign = 'left' | 'center' | 'right' | 'start' | 'end';
+
+/** Reading direction, which is what gives `start` / `end` their meaning. */
+export type TextDirection = 'ltr' | 'rtl';
+
+/**
+ * Collapse a possibly reading-order-relative alignment to an absolute edge.
+ *
+ * Layout works in absolute edges, so this runs once at its entry and `start` /
+ * `end` never reach the geometry.
+ */
+export function resolveAlign(
+  align: TextAlign,
+  direction: TextDirection,
+): 'left' | 'center' | 'right' {
+  if (align === 'start') return direction === 'rtl' ? 'right' : 'left';
+  if (align === 'end') return direction === 'rtl' ? 'left' : 'right';
+  return align;
+}
+
 /** User-facing text style. All fields optional; defaults applied at render time via `resolveTextStyle`. */
 export interface TextStyle {
   /** Font size in world units. Default 16. */
@@ -22,8 +47,10 @@ export interface TextStyle {
   fontWeight?: number | string;
   /** Default `'normal'`. */
   fontStyle?: 'normal' | 'italic';
-  /** Default `'left'`. */
-  align?: 'left' | 'center' | 'right';
+  /** Default `'left'`. Pass `'start'` to align by reading order instead. */
+  align?: TextAlign;
+  /** Reading direction, resolving `align: 'start' | 'end'`. Default `'ltr'`. */
+  direction?: TextDirection;
   /** Multiplier applied to `fontSize`. Default 1.2. */
   lineHeight?: number;
   /**
@@ -55,7 +82,9 @@ export interface ResolvedTextStyle {
   fontFamily: string;
   fontWeight: number | string;
   fontStyle: 'normal' | 'italic';
-  align: 'left' | 'center' | 'right';
+  /** Still relative if the author wrote it that way — `direction` resolves it. */
+  align: TextAlign;
+  direction: TextDirection;
   lineHeight: number;
   fill: FillStyle;
   caretColor: string;
@@ -91,6 +120,7 @@ export const DEFAULT_TEXT_STYLE: ResolvedTextStyle = {
   fontWeight: 400,
   fontStyle: 'normal',
   align: 'left',
+  direction: 'ltr',
   lineHeight: 1.2,
   fill: DEFAULT_FILL,
   caretColor: paintColor(DEFAULT_FILL),
@@ -162,6 +192,7 @@ export function resolveTextStyle(
     fontWeight: style.fontWeight ?? DEFAULT_TEXT_STYLE.fontWeight,
     fontStyle: style.fontStyle ?? DEFAULT_TEXT_STYLE.fontStyle,
     align: style.align ?? DEFAULT_TEXT_STYLE.align,
+    direction: style.direction ?? DEFAULT_TEXT_STYLE.direction,
     lineHeight: style.lineHeight ?? DEFAULT_TEXT_STYLE.lineHeight,
     fill,
     caretColor,

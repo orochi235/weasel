@@ -1006,10 +1006,19 @@ function readTextStyle(
   }
   const fs = style['font-style'];
   if (fs === 'italic' || fs === 'normal') out.fontStyle = fs;
-  const anchor = style['text-anchor'];
-  if (anchor === 'start') out.align = 'left';
+  if (style['direction'] === 'rtl') out.direction = 'rtl';
+  // Read back as an absolute edge against the direction just parsed: SVG has
+  // one relative pair where this model has a relative pair and an absolute
+  // one, so the spelling cannot survive the trip — the rendered edge does.
+  // SVG's initial `text-anchor` is `start`, which under `rtl` is the right
+  // edge — while this model's default `align` is `left`. The two agree under
+  // `ltr` and only there, so an absent anchor has to be written down when the
+  // direction is what makes them disagree.
+  const ltr = out.direction !== 'rtl';
+  const anchor = style['text-anchor'] ?? (ltr ? undefined : 'start');
+  if (anchor === 'start') out.align = ltr ? 'left' : 'right';
   else if (anchor === 'middle') out.align = 'center';
-  else if (anchor === 'end') out.align = 'right';
+  else if (anchor === 'end') out.align = ltr ? 'right' : 'left';
   const ls = style['letter-spacing'];
   if (ls != null) {
     const n = parseLetterSpacing(ls, onWarn);
