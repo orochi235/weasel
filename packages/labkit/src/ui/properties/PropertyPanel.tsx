@@ -1,4 +1,6 @@
+import { Tooltip, TooltipTrigger } from '@weasel-js/ui';
 import { type ReactNode, useState } from 'react';
+import { Focusable } from 'react-aria-components';
 import { dlog } from '../../passthrough/weasel-ui';
 import { formatNumber, parseSignedNumber } from '../format';
 
@@ -59,6 +61,11 @@ export interface PropertyRowProps {
   label: ReactNode;
   /** Right-aligned readout shown next to the label (e.g. current value). */
   readout?: ReactNode;
+  /**
+   * Help text for the row, shown in a tooltip off an ⓘ affordance beside the
+   * label. Empty or absent renders no affordance.
+   */
+  description?: string;
   variant?: PropertyRowVariant;
   /**
    * Label position relative to the control. "block" (default) stacks
@@ -66,6 +73,12 @@ export interface PropertyRowProps {
    * Color and checkbox variants are always inline by their own nature.
    */
   layout?: PropertyRowLayout;
+  /**
+   * Take the full width of the enclosing grid. Only has an effect inside a
+   * `<PropertyList pack="pairs">` or a `<Subpanel>`; elsewhere rows are already
+   * full width.
+   */
+  span?: boolean;
   children: ReactNode;
   htmlFor?: string;
   className?: string;
@@ -76,8 +89,10 @@ export interface PropertyRowProps {
 export function PropertyRow({
   label,
   readout,
+  description,
   variant = 'default',
   layout = 'block',
+  span,
   children,
   htmlFor,
   className,
@@ -87,15 +102,43 @@ export function PropertyRow({
   // checkbox have their own intrinsic orientation.
   const layoutClass =
     variant === 'default' && layout === 'inline' ? ' lk-property-row--inline' : '';
-  const cls = `lk-property-row${variantClass}${layoutClass}${className ? ` ${className}` : ''}`;
+  const spanClass = span ? ' lk-property-list__span' : '';
+  const cls = `lk-property-row${variantClass}${layoutClass}${spanClass}${className ? ` ${className}` : ''}`;
   return (
     <label className={cls} htmlFor={htmlFor}>
       <span className="lk-property-row__label">
         {label}
+        {description ? <PropertyRowHelp label={label} description={description} /> : null}
         {readout != null && <em className="lk-property-row__readout">{readout}</em>}
       </span>
       {children}
     </label>
+  );
+}
+
+/** Tooltip trigger for a row's `description`. A tooltip trigger has to be
+ *  interactive to be keyboard-reachable, so this is a real button. */
+function PropertyRowHelp({ label, description }: { label: ReactNode; description: string }) {
+  const name = typeof label === 'string' ? label : 'this setting';
+  return (
+    <TooltipTrigger>
+      <Focusable>
+        <button
+          type="button"
+          className="lk-property-row__help"
+          aria-label={`About ${name}`}
+          onClick={(e) => {
+            // The wrapping <label> would otherwise actuate the row's control.
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          ⓘ
+        </button>
+      </Focusable>
+      <Tooltip>{description}</Tooltip>
+    </TooltipTrigger>
   );
 }
 
@@ -118,6 +161,7 @@ export interface SliderRowProps {
    */
   unit?: ReactNode;
   layout?: PropertyRowLayout;
+  description?: string;
 }
 
 /** A bounded number edited by dragging, with a live readout whose precision
@@ -132,6 +176,7 @@ export function SliderRow({
   format,
   unit,
   layout,
+  description,
 }: SliderRowProps) {
   // Default readout precision tracks `step`: integer steps → 0 decimals,
   // 0.1 → 1 decimal, 0.05/0.02/0.01 → 2 decimals, 0.005 → 3, etc. Callers
@@ -153,6 +198,7 @@ export function SliderRow({
         />
       }
       layout={layout}
+      description={description}
     >
       <input
         type="range"
@@ -263,6 +309,7 @@ export interface ColorRowProps {
    * Use when the color's consumer drops alpha so the affordance reads dead.
    */
   alphaDisabled?: boolean;
+  description?: string;
 }
 
 /** A color swatch, optionally with an alpha slider beneath it. */
@@ -273,11 +320,12 @@ export function ColorRow({
   alpha,
   onAlphaChange,
   alphaDisabled,
+  description,
 }: ColorRowProps) {
   const showAlpha = alpha != null;
   const className = alphaDisabled ? 'lk-property-row--alpha-disabled' : undefined;
   return (
-    <PropertyRow label={label} variant="color" className={className}>
+    <PropertyRow label={label} variant="color" className={className} description={description}>
       <input type="color" value={value} onChange={(e) => onChange(e.target.value)} />
       {showAlpha && (
         <input
@@ -300,12 +348,13 @@ export interface CheckboxRowProps {
   label: ReactNode;
   value: boolean;
   onChange: (next: boolean) => void;
+  description?: string;
 }
 
 /** A boolean checkbox. */
-export function CheckboxRow({ label, value, onChange }: CheckboxRowProps) {
+export function CheckboxRow({ label, value, onChange, description }: CheckboxRowProps) {
   return (
-    <PropertyRow label={label} variant="checkbox">
+    <PropertyRow label={label} variant="checkbox" description={description}>
       <input type="checkbox" checked={value} onChange={(e) => onChange(e.target.checked)} />
     </PropertyRow>
   );
@@ -319,12 +368,21 @@ export interface TextRowProps {
   placeholder?: string;
   maxLength?: number;
   layout?: PropertyRowLayout;
+  description?: string;
 }
 
 /** A single-line text input. */
-export function TextRow({ label, value, onChange, placeholder, maxLength, layout }: TextRowProps) {
+export function TextRow({
+  label,
+  value,
+  onChange,
+  placeholder,
+  maxLength,
+  layout,
+  description,
+}: TextRowProps) {
   return (
-    <PropertyRow label={label} layout={layout}>
+    <PropertyRow label={label} layout={layout} description={description}>
       <input
         type="text"
         value={value}
@@ -346,6 +404,7 @@ export interface NumberRowProps {
   step?: number;
   placeholder?: string;
   layout?: PropertyRowLayout;
+  description?: string;
 }
 
 /** A number typed directly. Reach for `<SliderRow>` when the range matters
@@ -359,9 +418,10 @@ export function NumberRow({
   step,
   placeholder,
   layout,
+  description,
 }: NumberRowProps) {
   return (
-    <PropertyRow label={label} layout={layout}>
+    <PropertyRow label={label} layout={layout} description={description}>
       <input
         type="number"
         value={value}
@@ -392,6 +452,7 @@ export interface SelectRowProps<T extends string> {
   options: ReadonlyArray<SelectOption<T>>;
   onChange: (next: T) => void;
   layout?: PropertyRowLayout;
+  description?: string;
 }
 
 /** A dropdown over a fixed set of choices. Prefer `<ToggleRow>` when there
@@ -402,9 +463,10 @@ export function SelectRow<T extends string>({
   options,
   onChange,
   layout,
+  description,
 }: SelectRowProps<T>) {
   return (
-    <PropertyRow label={label} layout={layout}>
+    <PropertyRow label={label} layout={layout} description={description}>
       <select
         value={value}
         onChange={(e) => {
@@ -431,6 +493,7 @@ export interface ToggleRowProps<T extends string> {
   options: ReadonlyArray<SelectOption<T>>;
   onChange: (next: T) => void;
   layout?: PropertyRowLayout;
+  description?: string;
 }
 
 /** A segmented control: the same choice as a select, with every option
@@ -441,9 +504,10 @@ export function ToggleRow<T extends string>({
   options,
   onChange,
   layout,
+  description,
 }: ToggleRowProps<T>) {
   return (
-    <PropertyRow label={label} layout={layout}>
+    <PropertyRow label={label} layout={layout} description={description}>
       <div className="lk-property-row__toggle">
         {options.map((opt) => {
           const selected = opt.value === value;

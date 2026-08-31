@@ -102,6 +102,41 @@
   margin-left: auto;
 }
 
+// ⓘ help affordance beside a row label. Every dimension is stated because
+// `:where(.lk-root) :where(button)` scores (0,0,0): its `height:
+// var(--wzl-control-h)` and horizontal padding would otherwise stretch a
+// one-glyph button into a full-height control.
+.lk-property-row__help {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15em;
+  height: 1.15em;
+  padding: 0;
+  border: 0;
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--wzl-fg-subtle);
+  font-size: var(--wzl-font-size-sm);
+  line-height: 1;
+  letter-spacing: normal;
+  cursor: help;
+  border-radius: var(--wzl-radius-sm);
+}
+
+.lk-property-row__help:hover {
+  color: var(--wzl-fg);
+  border-color: transparent;
+}
+
+.lk-property-row__help:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: 1px;
+  color: var(--wzl-fg);
+}
+
 // Single always-rendered <input> styled to read as a text label until focused.
 // Padding/margin/width copied verbatim from speech-balloons (styles.css:384-409)
 // so visual density matches the source.

@@ -1,6 +1,6 @@
 import { isBuiltinToolPref } from '@weasel-js/core';
 import type { PrefLeaf } from '@weasel-js/ui';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { fromConfigFields } from '../config/fromConfigField';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { isLeafVisible } from '../config/visible';
@@ -12,9 +12,9 @@ import {
   PropertyList,
   PropertyRow,
   SelectRow,
+  SliderRow,
   TextRow,
   ToggleRow,
-  SliderRow,
 } from '../ui/properties/PropertyPanel';
 import type { ConfigField } from './types';
 
@@ -48,10 +48,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   showHidden = false,
   className,
 }: ControlPanelProps<TC>) {
-  const resolved = useMemo(
-    () => schema ?? fromConfigFields(fields ?? []),
-    [schema, fields],
-  );
+  const resolved = useMemo(() => schema ?? fromConfigFields(fields ?? []), [schema, fields]);
 
   const paths = Object.keys(resolved.group.children);
   const sectioned = new Set(resolved.sections.flatMap((s) => s.paths));
@@ -114,14 +111,15 @@ function ControlRow<TC extends Record<string, unknown>>({
 
   // Most specific wins, and within a tier the lab's entry beats the
   // instrument's: controls[path] -> node .render -> controls[kind] -> built-in.
-  const custom =
-    renderers?.[path] ?? resolved.renderers[path] ?? renderers?.[leaf.kind];
+  const custom = renderers?.[path] ?? resolved.renderers[path] ?? renderers?.[leaf.kind];
   if (custom) return custom({ path, pref: leaf, value, setValue: write });
 
   const label = leaf.name;
+  const description = leaf.description;
   const read = <T,>(): T => value as T;
 
-  if (!isBuiltinToolPref(leaf)) return <UnwiredRow label={label} kind={leaf.kind} />;
+  if (!isBuiltinToolPref(leaf))
+    return <UnwiredRow label={label} kind={leaf.kind} description={description} />;
 
   switch (leaf.kind) {
     case 'number': {
@@ -137,6 +135,7 @@ function ControlRow<TC extends Record<string, unknown>>({
             max={max}
             step={step}
             onChange={write}
+            description={description}
           />
         );
       }
@@ -153,28 +152,52 @@ function ControlRow<TC extends Record<string, unknown>>({
           max={max}
           step={step}
           onChange={(n) => write(Math.min(hi, Math.max(lo, n)))}
+          description={description}
         />
       );
     }
     case 'boolean':
-      return <CheckboxRow label={label} value={read<boolean>()} onChange={write} />;
+      return (
+        <CheckboxRow
+          label={label}
+          value={read<boolean>()}
+          onChange={write}
+          description={description}
+        />
+      );
     case 'enum': {
       const options = extra<readonly { value: string; label: string }[]>(leaf, 'options') ?? [];
       const Row = extra<string>(leaf, 'control') === 'radio' ? ToggleRow : SelectRow;
       return (
-        <Row label={label} value={read<string>()} options={options} onChange={write} />
+        <Row
+          label={label}
+          value={read<string>()}
+          options={options}
+          onChange={write}
+          description={description}
+        />
       );
     }
     case 'string':
-      return <DebouncedTextRow leaf={leaf} label={label} value={read<string>()} write={write} />;
+      return (
+        <DebouncedTextRow
+          leaf={leaf}
+          label={label}
+          value={read<string>()}
+          write={write}
+          description={description}
+        />
+      );
     case 'color':
-      return <ColorRow label={label} value={read<string>()} onChange={write} />;
+      return (
+        <ColorRow label={label} value={read<string>()} onChange={write} description={description} />
+      );
     case 'paint':
     case 'object':
       // Declined: a hex swatch would write a solid over a gradient, and a flat
       // row would write one field into a half-built object. Override with
       // `render` to edit either.
-      return <UnwiredRow label={label} kind={leaf.kind} />;
+      return <UnwiredRow label={label} kind={leaf.kind} description={description} />;
     default: {
       // Not reachable while every built-in kind has an arm — and a new kind
       // that lacks one is a compile error here, never a blank row.
@@ -188,9 +211,17 @@ function ControlRow<TC extends Record<string, unknown>>({
 
 /** A leaf this panel has no control for is named rather than dropped: a silent
  *  gap reads as "this control does not exist". */
-function UnwiredRow({ label, kind }: { label: string; kind: string }) {
+function UnwiredRow({
+  label,
+  kind,
+  description,
+}: {
+  label: string;
+  kind: string;
+  description?: string;
+}) {
   return (
-    <PropertyRow label={label}>
+    <PropertyRow label={label} description={description}>
       <span className="lk-control-panel__unknown">no control for “{kind}”</span>
     </PropertyRow>
   );
@@ -204,11 +235,13 @@ function DebouncedTextRow({
   label,
   value,
   write,
+  description,
 }: {
   leaf: PrefLeaf;
   label: string;
   value: string;
   write: (value: unknown) => void;
+  description?: string;
 }) {
   const debounceMs = extra<number>(leaf, 'debounceMs') ?? 150;
   const [local, setLocal] = useState(value);
@@ -232,6 +265,7 @@ function DebouncedTextRow({
   return (
     <TextRow
       label={label}
+      description={description}
       value={local}
       placeholder={extra<string>(leaf, 'placeholder')}
       maxLength={extra<number>(leaf, 'maxLength')}

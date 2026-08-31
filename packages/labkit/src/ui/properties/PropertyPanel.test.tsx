@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import {
   CheckboxRow,
@@ -79,6 +79,69 @@ describe('PropertyRow', () => {
       </PropertyRow>,
     );
     expect(container.querySelector('.lk-property-row--color')).not.toBeNull();
+  });
+
+  it('renders a help affordance for a non-empty description', () => {
+    render(
+      <PropertyRow label="Opacity" description="How see-through the shape is.">
+        <input type="text" defaultValue="x" />
+      </PropertyRow>,
+    );
+    expect(screen.getByRole('button', { name: 'About Opacity' })).toBeInTheDocument();
+  });
+
+  it('renders no help affordance for an empty or absent description', () => {
+    const { container, rerender } = render(
+      <PropertyRow label="Opacity" description="">
+        <input type="text" defaultValue="x" />
+      </PropertyRow>,
+    );
+    expect(container.querySelector('.lk-property-row__help')).toBeNull();
+    rerender(
+      <PropertyRow label="Opacity">
+        <input type="text" defaultValue="x" />
+      </PropertyRow>,
+    );
+    expect(container.querySelector('.lk-property-row__help')).toBeNull();
+  });
+
+  it('shows the description in a tooltip on keyboard focus', () => {
+    render(
+      <PropertyRow label="Opacity" description="How see-through the shape is.">
+        <input type="text" defaultValue="x" />
+      </PropertyRow>,
+    );
+    const help = screen.getByRole('button', { name: 'About Opacity' });
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    // RAC only opens a tooltip under keyboard modality.
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    act(() => help.focus());
+    expect(screen.getByRole('tooltip')).toHaveTextContent('How see-through the shape is.');
+  });
+
+  it('does not actuate the row control when the help affordance is clicked', () => {
+    const onChange = vi.fn();
+    render(
+      <CheckboxRow label="Visible" value={false} onChange={onChange} description="Show it." />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'About Visible' }));
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByRole('checkbox')).not.toBeChecked();
+  });
+
+  it('spans the grid when span is set', () => {
+    const { container, rerender } = render(
+      <PropertyRow label="L" span>
+        <input type="text" defaultValue="x" />
+      </PropertyRow>,
+    );
+    expect(container.querySelector('.lk-property-row')).toHaveClass('lk-property-list__span');
+    rerender(
+      <PropertyRow label="L">
+        <input type="text" defaultValue="x" />
+      </PropertyRow>,
+    );
+    expect(container.querySelector('.lk-property-row')).not.toHaveClass('lk-property-list__span');
   });
 });
 

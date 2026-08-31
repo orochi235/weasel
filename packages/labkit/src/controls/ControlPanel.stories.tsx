@@ -141,9 +141,48 @@ export const CustomControl: Story = {
   ),
 };
 
+const described = f.schema({
+  frequency: f
+    .number(2)
+    .range(0.1, 10)
+    .step(0.1)
+    .describe('Cycles per second the oscillator runs at.'),
+  amplitude: f.number(0.5).range(0, 1).step(0.05),
+  showGrid: f.boolean(true).describe('Draw the alignment grid behind the plot.'),
+  wave: f
+    .enum('sine', [
+      { value: 'sine', label: 'Sine' },
+      { value: 'square', label: 'Square' },
+    ])
+    .describe('Waveform the generator emits.'),
+  title: f.string('My experiment'),
+  tint: f.color('#3a86ff').describe('Plot line color.'),
+});
+
+/** A leaf with a `describe(...)` gets an \u24d8 beside its label whose tooltip
+ *  carries the text; leaves without one stay bare. */
+export const Described: Story = {
+  render: () => {
+    const schema = resolveConfigSchema(described, []);
+    const [config, setConfig] = useState<Record<string, unknown>>(described.defaults());
+    return (
+      <ControlPanel
+        schema={schema}
+        config={config}
+        setConfig={(key, value) => setConfig((prev) => ({ ...prev, [key as string]: value }))}
+      />
+    );
+  },
+};
+
 const conditional = f.schema({
   showGrid: f.boolean(true),
-  cellSize: f.number(20).range(5, 80).step(5).label('Grid spacing').showIf((c) => c.showGrid === true),
+  cellSize: f
+    .number(20)
+    .range(5, 80)
+    .step(5)
+    .label('Grid spacing')
+    .showIf((c) => c.showGrid === true),
 });
 
 /** `showIf` hides the row while the value stays in config. Toggle the
