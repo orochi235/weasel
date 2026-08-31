@@ -216,6 +216,9 @@ export interface LaidOutRuns {
    *  `textLineBoxes` builds the text silhouette from these, so picking and
    *  painting cannot drift apart. */
   lines: LaidOutLineBox[];
+  /** The text's ink box. `width` is the widest line measured to its last
+   *  non-space cell — a trailing space hangs past the aligned edge, so a
+   *  block wrapped at `maxWidth` never reports wider than it. */
   bounds: { width: number; height: number };
 }
 
@@ -539,23 +542,29 @@ function warnMissingGlyphOnce(family: string, cp: number): void {
   );
 }
 
+/** @internal Test seam — the warn-once keys are module state. */
+export function _resetMissingGlyphWarningsForTests(): void {
+  warnedMissingGlyphs.clear();
+}
+
 const warnedNoMetrics = new Set<string>();
 
-function warnNoMetricsOnce(family: string, weight: number | string, style: string): void {
+function warnNoMetricsOnce(family: string, weight: number, style: string): void {
   const key = `${family}|${weight}|${style}`;
   if (warnedNoMetrics.has(key)) return;
   warnedNoMetrics.add(key);
   console.warn(
-    `weasel layoutRuns: no font resolved for "${family}" ${weight} ${style} — ` +
-    `neither an outline face nor an atlas entry. The run is laid out as zero ` +
-    `glyphs, so its text will not appear, though its characters still hold ` +
-    `their source offsets. Register the family before laying out.`,
+    `weasel layoutRuns: no metrics for "${family}" ${weight}/${style} — neither ` +
+    `an atlas nor an outline face resolved, so every run set in it lays out as ` +
+    `nothing. Register it with registerFont / registerCanvasFont / ` +
+    `registerFontOutlines. If you did, check for a duplicated @weasel-js/font in ` +
+    `node_modules — its registry is module state, so a second copy is a second, ` +
+    `empty one.`,
   );
 }
 
 /** @internal Test seam — the warn-once keys are module state. */
-export function _resetMissingGlyphWarningsForTests(): void {
-  warnedMissingGlyphs.clear();
+export function _resetNoMetricsWarningsForTests(): void {
   warnedNoMetrics.clear();
 }
 
@@ -611,6 +620,8 @@ export function layoutRuns(
       ? { size: 1, base: outlineFace.ascender, advanceOf: (cp) => outlineFace.advanceOf(cp), kernOf: (l, r) => outlineFace.kernOf(l, r) }
       : font ? atlasMetrics(font) : undefined;
     if (!metrics) {
+      // A run with no metrics lays out as nothing, which is indistinguishable
+      // from empty text downstream — the only signal a consumer ever gets.
       warnNoMetricsOnce(run.fontFamily, run.fontWeight, run.fontStyle);
       // Skipped, but its characters still occupy source offsets — dropping
       // them here would shift every later run's caret indices left.
@@ -1118,7 +1129,7 @@ export function layoutRuns(
       cells,
       srcEnd,
     });
-    maxLineWidth = Math.max(maxLineWidth, line.width);
+    maxLineWidth = Math.max(maxLineWidth, inkWidth);
     penY += line.height;
   }
 

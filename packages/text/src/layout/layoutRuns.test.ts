@@ -15,7 +15,9 @@ import {
   __setGlyphRasterizerForTests,
   _resetFontOutlinesForTests,
 } from '@weasel-js/font/test-seams';
-import { layoutRuns, _resetMissingGlyphWarningsForTests } from './layoutRuns';
+import {
+  layoutRuns, _resetMissingGlyphWarningsForTests, _resetNoMetricsWarningsForTests,
+} from './layoutRuns';
 import { resolveRuns, type ResolvedRun } from '../runs/resolveRuns';
 import { resolveTextStyle } from '../textStyle';
 
@@ -695,42 +697,6 @@ describe('layoutRuns — decoration geometry', () => {
     const style = resolveTextStyle({ fontFamily: 'inter', fontSize: 32, underline: true });
     const out = layoutRuns(resolveRuns([{ text: 'A' }], style), OPTS);
     expect(out.decorations.map((d) => d.kind)).toEqual(['underline']);
-  });
-});
-
-describe('layoutRuns — a run that resolves no font at all', () => {
-  const OPTS = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' as const };
-
-  const run = (family: string): ResolvedRun => ({
-    text: 'AB', fontFamily: family, fontSize: 32, fontWeight: 400, fontStyle: 'normal',
-    fill: { fill: 'solid', color: '#000' }, letterSpacing: 0,
-    underline: false, strikethrough: false, overline: false, baselineShift: 0,
-  });
-
-  beforeEach(() => {
-    _resetDynamicFontsForTests();
-    _resetFallbackForTests();
-    _resetMissingGlyphWarningsForTests();
-    resetBakeBudget();
-  });
-
-  it('warns, and lays the run out as zero glyphs', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const out = layoutRuns([run('never-registered')], OPTS);
-
-    expect(out.groups).toEqual([]);
-    expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn.mock.calls[0][0]).toContain('no font resolved for "never-registered"');
-    warn.mockRestore();
-  });
-
-  it('warns once per family/weight/style, not once per run', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    layoutRuns([run('ghost'), run('ghost')], OPTS);
-    layoutRuns([run('ghost')], OPTS);
-
-    expect(warn).toHaveBeenCalledTimes(1);
-    warn.mockRestore();
   });
 });
 
@@ -1507,5 +1473,99 @@ describe('layoutRuns — bidi seam', () => {
     expect(plain.lines[0].cells.map((c) => c.level)).toEqual([0, 0]);
     const rev = layoutRuns([RUN_PLAIN('AB')], { ...OPTS, bidi: REVERSING });
     expect(rev.lines[0].cells.map((c) => c.level)).toEqual([1, 1]);
+  });
+});
+
+/**
+ * The failure that reaches a consumer as an empty canvas. A run whose family
+ * resolves to neither an atlas nor an outline face is skipped, and a skipped
+ * run is indistinguishable downstream from empty text — so the only signal is
+ * the one this warning emits.
+ */
+describe('layoutRuns — a family with no metrics at all', () => {
+  const OPTS = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' as const };
+
+  const run = (text: string, fontFamily = 'never-registered'): ResolvedRun => ({
+    text, fontFamily, fontSize: 32, fontWeight: 400, fontStyle: 'normal',
+    fill: { fill: 'solid', color: '#000' }, letterSpacing: 0,
+    underline: false, strikethrough: false, overline: false, baselineShift: 0,
+  });
+
+  beforeEach(() => {
+    _resetFontRegistryForTests();
+    _resetFallbackForTests();
+    _resetDynamicFontsForTests();
+    _resetNoMetricsWarningsForTests();
+  });
+
+  it('warns rather than laying out nothing in silence', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const out = layoutRuns([run('hello')], OPTS);
+
+    expect(out.groups).toHaveLength(0);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain('no metrics for "never-registered"');
+    warn.mockRestore();
+  });
+
+  // The duplicate-copy case is the one that costs an afternoon: the consumer
+  // registered the face, into the other copy's registry.
+  it('names the duplicated-font cause, which produces exactly this', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    layoutRuns([run('hello')], OPTS);
+    expect(warn.mock.calls[0][0]).toContain('@weasel-js/font');
+    warn.mockRestore();
+  });
+
+  it('warns once per family variant however many runs use it', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    layoutRuns([run('a'), run('b'), run('c')], OPTS);
+    layoutRuns([run('d')], OPTS);
+    layoutRuns([run('e', 'also-missing')], OPTS);
+
+    expect(warn).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
+  });
+});
+
+/**
+ * A line that wraps keeps the space it broke at. Alignment already hangs that
+ * space past the edge; `bounds` has to agree, or a caller scaling text to fit
+ * measures a block wider than the box it just fitted into.
+ */
+describe('layoutRuns — hung trailing whitespace and bounds', () => {
+  // 'AAAA BBBB' in the fixture atlas at size 32: 'AAAA' is 92 wide, 'BBBB' 88,
+  // a space 8. A 96-wide box breaks between the words, so the first line ends
+  // in the space it broke at.
+  const AAAA = 92;
+  const BBBB = 88;
+  const SPACE = 8;
+  const BOX = 96;
+
+  it('leaves a wrapped line out of bounds.width by its hung space', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([RUN_PLAIN('AAAA BBBB')], { maxWidth: BOX, lineHeight: 1.1, align: 'left' });
+
+    expect(out.lines).toHaveLength(2);
+    expect(out.bounds.width).toBe(AAAA);
+    expect(out.bounds.width).toBeLessThanOrEqual(BOX);
+  });
+
+  it('keeps the hung space in x1, which is the line-closing caret stop', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([RUN_PLAIN('AAAA BBBB')], { maxWidth: BOX, lineHeight: 1.1, align: 'left' });
+
+    expect(out.lines[0].x1).toBe(AAAA + SPACE);
+    expect(out.lines[1].x1).toBe(BBBB);
+  });
+
+  it('measures a line with no trailing space unchanged', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([RUN_PLAIN('AAAA')], { maxWidth: BOX, lineHeight: 1.1, align: 'left' });
+
+    expect(out.lines).toHaveLength(1);
+    expect(out.bounds.width).toBe(AAAA);
   });
 });

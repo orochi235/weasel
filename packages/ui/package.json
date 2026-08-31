@@ -30,7 +30,7 @@
   "peerDependencies": {
     "react": ">=18",
     "react-dom": ">=18",
-    "@weasel-js/core": ">=1.3.0-pre.0"
+    "@weasel-js/core": "1.3.0-pre.0"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
