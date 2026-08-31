@@ -99,13 +99,31 @@ currently carrying.
   retires the hack. Note this got _worse_ on 2026-08-31: clone and reset moved
   into `.lk-trial__titlebar-actions`, so three built-in buttons now share that
   span with any consumer contribution in it.
-- **`end: true` does not reach the region's far edge in the toolbar.** The
-  toolbar sizes to its content, so an `end` group lands beside its neighbours;
-  the app adds `.lk-trial__toolbar { width: 100% }` and a `flex: 1` spacer of
-  its own. The title bar half of this claim does not reproduce —
-  `.lk-trial__titlebar-actions` already carries `margin-left: auto` — so this is
-  a toolbar bug, not a general `end` bug. Reaching into the class names is the
-  part the consumer wants to stop doing.
+- **There is no leading slot in the title bar.** The only insertion point is
+  `.lk-trial__titlebar-actions`, which is right-aligned (`margin-left: auto`),
+  so a consumer contribution meant to _lead_ the bar — brick-icons' part title —
+  goes right along with the buttons. The app's `flex: 1` override on that span
+  is what pulls it back left, and deleting it snaps the title to the right edge;
+  it has been tested both ways. A `title` on the instrument spec solves that
+  case outright, and a `start` / `end` distinction, or a leading region, is the
+  general form. The clone and reset move of 2026-08-31 puts three built-in
+  buttons in that span instead of one, which makes the missing leading slot more
+  visible.
+- **`end: true` does not reach the far edge in the _toolbar_.** The toolbar
+  sizes to its content, so an `end` group lands beside its neighbours and the
+  app adds `.lk-trial__toolbar { width: 100% }` plus a `flex: 1` spacer. This
+  half is a real bug; the title bar half is the leading-slot item above, not an
+  `end` failure.
+- **`ControlPanel` cannot be told to render compactly.** A 38-flag schema draws
+  every row at `PropertyRow`'s default `layout="block"` — stacked label over
+  control. `PropertyRow` already takes `layout="inline"` and `PropertyList`
+  takes `pack="pairs"`, either of which roughly halves the panel, but
+  `ControlPanelProps` exposes neither and `NodeOptions` has no layout field, so
+  a schema-driven panel cannot reach them. Both escape hatches — hand-rolling
+  the `PropertyList`/`PropertyRow` tree, or a `renderers` entry per leaf kind —
+  give up what `ControlPanel` is for. `.pair()` is reachable but only helps
+  where two flags genuinely belong together. Wants a `layout`/`pack`
+  passthrough, or a `density` on the resolved schema.
 - **`ToolbarItem.onActivate` is `() => void` with no context**, so a
   contribution declared through `Lab.chrome` cannot call `ctx.saveSnapshot()`.
   Re-declaring a suppressed built-in in a different group therefore means
