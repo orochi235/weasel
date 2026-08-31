@@ -1,6 +1,6 @@
 import { isBuiltinToolPref } from '@weasel-js/core';
 import type { PrefLeaf } from '@weasel-js/ui';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { fromConfigFields } from '../config/fromConfigField';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { isLeafVisible } from '../config/visible';
@@ -12,9 +12,9 @@ import {
   PropertyList,
   PropertyRow,
   SelectRow,
+  SliderRow,
   TextRow,
   ToggleRow,
-  SliderRow,
 } from '../ui/properties/PropertyPanel';
 import type { ConfigField } from './types';
 
@@ -48,10 +48,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   showHidden = false,
   className,
 }: ControlPanelProps<TC>) {
-  const resolved = useMemo(
-    () => schema ?? fromConfigFields(fields ?? []),
-    [schema, fields],
-  );
+  const resolved = useMemo(() => schema ?? fromConfigFields(fields ?? []), [schema, fields]);
 
   const paths = Object.keys(resolved.group.children);
   const sectioned = new Set(resolved.sections.flatMap((s) => s.paths));
@@ -114,8 +111,7 @@ function ControlRow<TC extends Record<string, unknown>>({
 
   // Most specific wins, and within a tier the lab's entry beats the
   // instrument's: controls[path] -> node .render -> controls[kind] -> built-in.
-  const custom =
-    renderers?.[path] ?? resolved.renderers[path] ?? renderers?.[leaf.kind];
+  const custom = renderers?.[path] ?? resolved.renderers[path] ?? renderers?.[leaf.kind];
   if (custom) return custom({ path, pref: leaf, value, setValue: write });
 
   const label = leaf.name;
@@ -161,9 +157,7 @@ function ControlRow<TC extends Record<string, unknown>>({
     case 'enum': {
       const options = extra<readonly { value: string; label: string }[]>(leaf, 'options') ?? [];
       const Row = extra<string>(leaf, 'control') === 'radio' ? ToggleRow : SelectRow;
-      return (
-        <Row label={label} value={read<string>()} options={options} onChange={write} />
-      );
+      return <Row label={label} value={read<string>()} options={options} onChange={write} />;
     }
     case 'string':
       return <DebouncedTextRow leaf={leaf} label={label} value={read<string>()} write={write} />;

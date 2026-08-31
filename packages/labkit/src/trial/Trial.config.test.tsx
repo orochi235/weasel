@@ -54,11 +54,8 @@ describe('lab-wide config seams', () => {
       initialState: () => ({}),
       render: () => null,
     });
-    const colorByName: ConfigRule = (ctx) =>
-      ctx.key.endsWith('Color') ? { kind: 'color' } : null;
-    render(
-      <Lab instruments={[inst]} defaultInstrument="Ruled" configRules={[colorByName]} />,
-    );
+    const colorByName: ConfigRule = (ctx) => (ctx.key.endsWith('Color') ? { kind: 'color' } : null);
+    render(<Lab instruments={[inst]} defaultInstrument="Ruled" configRules={[colorByName]} />);
     expect(screen.getByLabelText('Tint color')).toHaveAttribute('type', 'color');
   });
 
@@ -83,9 +80,7 @@ describe('lab-wide config seams', () => {
     const vector2: ControlRenderer = (ctx) => (
       <span>vec:{String((ctx.value as { x: number }).x)}</span>
     );
-    render(
-      <Lab instruments={[inst]} defaultInstrument="Custom" controls={{ vector2 }} />,
-    );
+    render(<Lab instruments={[inst]} defaultInstrument="Custom" controls={{ vector2 }} />);
     expect(screen.getByText('vec:3')).toBeInTheDocument();
   });
 

@@ -54,8 +54,7 @@ describe('resolveConfigSchema', () => {
   });
 
   it('a consumer rule claims an f.value kind before the built-in', () => {
-    const colorByName: ConfigRule = (ctx) =>
-      ctx.key.endsWith('Color') ? { kind: 'color' } : null;
+    const colorByName: ConfigRule = (ctx) => (ctx.key.endsWith('Color') ? { kind: 'color' } : null);
     const r = resolveConfigSchema(f.schema({ tintColor: f.value('#fff') }), [colorByName]);
     expect(leafAt(r, 'tintColor').kind).toBe('color');
   });

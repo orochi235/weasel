@@ -38,6 +38,7 @@ export const RULES = [
   ['packages/core/src/layout', 'Extension points'],
   ['packages/core/src/affordances', 'Selection & actions'],
   ['packages/core/src/animation', 'Rendering'],
+  ['packages/core/src/scheduling', 'Rendering'],
   ['packages/core/src/debug', 'Extension points'],
   ['packages/core/src/icons', 'Extension points'],
   ['packages/core/src/features', 'Extension points'],
@@ -47,8 +48,11 @@ export const RULES = [
 
   // Sibling packages the barrel re-exports wholesale.
   ['packages/font/src', 'Text'],
+  ['packages/geom/src', 'Paths & geometry'],
   ['packages/gestures/src', 'Tools & gestures'],
   ['packages/history/src', 'History'],
+  ['packages/paint/src', 'Paint & fills'],
+  ['packages/text/src', 'Text'],
 ];
 
 /**

@@ -135,13 +135,18 @@ export function registerFontOutlines(
     face: null,
     glyphs: new Map(),
   });
+  // Layouts cache which tier each run resolved to and poll `glyphGeneration()`
+  // to know when to drop it; a registration that leaves it still is invisible.
+  notifyGlyphReady();
 }
 
 /** Drop a registration. Glyphs already handed out stay valid — they are
  *  plain path data — but nothing further resolves from this face. */
 export function unregisterFontOutlines(family: string, variant: OutlineVariant = {}): void {
   const { weight, style } = normalize(variant);
-  slots.delete(slotKey(family, weight, style));
+  // Only when something was actually dropped: `disableMachineFontOutlines`
+  // sweeps every weight/style pair, and a miss must not invalidate any layout.
+  if (slots.delete(slotKey(family, weight, style))) notifyGlyphReady();
 }
 
 /**
