@@ -17,9 +17,9 @@ const coreDir = resolve(weaselRoot, 'packages/core');
  * naming the one import that happened to reach here first.
  */
 function coreAliases(): Record<string, string> {
-  const { exports: map } = JSON.parse(
-    readFileSync(resolve(coreDir, 'package.json'), 'utf8'),
-  ) as { exports: Record<string, { import?: string } | string> };
+  const { exports: map } = JSON.parse(readFileSync(resolve(coreDir, 'package.json'), 'utf8')) as {
+    exports: Record<string, { import?: string } | string>;
+  };
   const out: Record<string, string> = {};
   for (const [sub, target] of Object.entries(map)) {
     const file = typeof target === 'string' ? target : target.import;

@@ -29,11 +29,7 @@ abstract class BaseNode<T> implements ConfigNode<T> {
   /** Clone into the same subclass. Subclasses with extra constructor
    *  arguments override this. */
   protected with(annotations: Annotations, options: NodeOptions): this {
-    const Ctor = this.constructor as new (
-      d: T,
-      a: Annotations,
-      o: NodeOptions,
-    ) => this;
+    const Ctor = this.constructor as new (d: T, a: Annotations, o: NodeOptions) => this;
     return new Ctor(this.default, annotations, options);
   }
 
