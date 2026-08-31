@@ -167,3 +167,24 @@ describe('reorderTrials', () => {
     expect(next.map((w) => w.id)).toEqual(['c', 'a', 'b']);
   });
 });
+
+describe('a size-aware initial view', () => {
+  const sized = {
+    name: 'Sized',
+    defaultConfig: () => ({}),
+    initialState: () => ({}),
+    render: () => null,
+    canvas: {
+      initialView: ({ width, height }: { width: number; height: number }) => ({
+        zoom: 1,
+        pan: { x: width / 2, y: height / 2 },
+      }),
+      layers: [],
+    },
+  } as unknown as Instrument;
+
+  it('leaves the view unplaced, because the canvas has no size yet', () => {
+    const [trial] = addTrial([], [sized], 'Sized');
+    expect(trial?.view).toBeNull();
+  });
+});

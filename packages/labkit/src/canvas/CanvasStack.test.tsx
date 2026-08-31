@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { CanvasStack } from './CanvasStack';
 import type { CanvasLayerDescriptor } from './useLayerScheduler';
@@ -78,5 +78,31 @@ describe('<CanvasStack>', () => {
       </CanvasStack>,
     );
     expect(getByText('overlay-content')).toBeInTheDocument();
+  });
+
+  it('hit-tests through the declared world spec', () => {
+    const rect = { left: 0, top: 0, width: 800, height: 600, right: 800, bottom: 600 };
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue(
+      rect as unknown as DOMRect,
+    );
+    const onHitTest = vi.fn();
+    const { container } = render(
+      <CanvasStack
+        layers={makeLayers(1)}
+        view={{ zoom: 2, pan: { x: 0, y: 0 } }}
+        onViewChange={vi.fn()}
+        worldSpec={{ origin: { x: 0.5, y: 0.5 }, yAxis: 'up' }}
+        onHitTest={onHitTest}
+      />,
+    );
+    const host = container.querySelector('.lk-canvas-stack');
+    if (!host) throw new Error('no stack host');
+    fireEvent.pointerDown(host, { button: 0, pointerId: 1, clientX: 500, clientY: 200 });
+    fireEvent.pointerUp(host, { pointerId: 1, clientX: 500, clientY: 200 });
+
+    // Origin is (400,300); the cursor is 100px right of it and 100px above it,
+    // at zoom 2 with y running up.
+    expect(onHitTest).toHaveBeenCalledWith({ x: 50, y: 50 });
+    vi.restoreAllMocks();
   });
 });

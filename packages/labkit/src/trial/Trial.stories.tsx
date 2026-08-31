@@ -60,6 +60,7 @@ function Harness() {
                 zoom: 1,
                 setZoom: () => {},
                 activeToolId: null,
+                visibleLayers: [],
               },
               emit: () => {},
             })}

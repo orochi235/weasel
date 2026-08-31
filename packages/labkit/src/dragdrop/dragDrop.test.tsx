@@ -41,9 +41,19 @@ function StateProbe({ onState }: { onState: (state: DropState) => void }) {
   return null;
 }
 
-function renderLab(probe?: (state: DropState) => void) {
+const centredInstrument = defineInstrument<DropState, Record<string, never>>({
+  ...testInstrument,
+  name: 'CentredDrop',
+  canvas: {
+    worldSpec: { origin: { x: 0.5, y: 0.5 }, yAxis: 'up' },
+    initialView: { zoom: 1, pan: { x: 0, y: 0 } },
+    layers: [{ id: 'main', draw: () => undefined }],
+  },
+});
+
+function renderLab(probe?: (state: DropState) => void, instrument = testInstrument) {
   return render(
-    <Lab instruments={[testInstrument]} defaultInstrument="TestDrop">
+    <Lab instruments={[instrument]} defaultInstrument={instrument.name}>
       {probe ? <StateProbe onState={probe} /> : null}
     </Lab>,
   );
@@ -138,5 +148,22 @@ describe('DragDrop integration', () => {
 
     windowPointerUp(250, 250);
     expect(document.querySelector('.lk-drag-ghost')).toBeNull();
+  });
+
+  it('drops through the instrument world spec, not the canvas top-left', () => {
+    let latest: DropState = { items: [] };
+    renderLab((s) => {
+      latest = s;
+    }, centredInstrument);
+    const palette = screen.getByRole('button', { name: 'Item A' });
+
+    act(() => {
+      pointerDown(palette, 0, 0);
+    });
+    // The host spans (100,100)-(500,500), so its centre is at (300,300).
+    // Dropping 50px right of centre and 50px above it, at zoom 1, y up.
+    windowPointerUp(350, 250);
+
+    expect(latest.items[0]).toMatchObject({ x: 50, y: 50 });
   });
 });

@@ -4,13 +4,28 @@ For whoever picks up labkit work next. It answers one question — which labkit
 changes do consuming projects actually want — and records the evidence so the
 survey does not have to be redone.
 
-Everything in "Done" below shipped on `main` (`f16e3ebb`). The rest is untouched.
+Everything in "Done" below has shipped. The rest is untouched.
 
 ## Done
 
 - **`@weasel-js/labkit/dragdrop`** exported three types and no runtime; its built
   `index.js` was empty. It now exports `Palette`, `DragGhost`, `useDragDrop` and
   `DragOverlay`.
+- **An instrument can declare its own coordinate system.**
+  `CanvasCapability.worldSpec` takes `origin` (a fraction of the viewport, so
+  `{x:0.5,y:0.5}` is "centred" with no size math) and `yAxis: 'up' | 'down'`.
+  `resolveFrame` turns it into a `WorldFrame` that `worldToScreen`,
+  `screenToWorld`, `applyCamera`, the wheel anchor and the drop position all
+  read, so a non-default world no longer drifts under the wheel. klieg's
+  `centred()` layer and its seeded pan can come out.
+- **`initialView` may be a function of the viewport size.** The trial's view
+  stays `null` until the canvas is first measured, then `CanvasStack`'s new
+  `onResize` places it. That retires the "have I centred yet" sentinel; Reset
+  nulls it again and re-frames.
+- **`RenderContext.trial.visibleLayers`** lists the canvas layers currently
+  shown, in declaration order. A legend no longer has to infer the set by
+  instrumenting every layer's draw.
+
 - **`TrialLayout`** reaches the root barrel, so klieg no longer reads it off
   `ComponentProps<typeof Workspace>`.
 - **Hover hints.** A described config leaf renders an ⓘ beside its label,
@@ -55,32 +70,6 @@ and precioussss's gem bench:
   declare `fire.hold` and it stays uneditable (`sherpa/TODO.md:96`). Already in
   `docs/TODO.md`; sherpa is the second asker.
 
-**An instrument can declare its own view** — five reports, one piece of work,
-in two halves.
-
-_The shape is fixed._ `ViewTransform` is `{zoom, pan}` — one uniform scale, pan
-in screen pixels, y-down, origin at the element's top-left. `worldToScreen` /
-`screenToWorld` bake it in and `usePanZoom` hard-codes the wheel arithmetic for
-`screen = pan + zoom * world`. An instrument whose world is not that layers its
-own transform on top, and the wheel then anchors on the wrong point: klieg's
-glyph lab (origin-at-centre, y-up) drifted `(1 - r) * (canvasW/2, canvasH/2)`
-per step, ~180x110 px at zoom 1600, with no error — it reads as "zoom out is
-centered wrong". `@weasel-js/core` already has the model this wants, `View =
-{x, y, scale: {x, y}}` with `zoomAt` / `clampView` / `fitToBounds`, and labkit
-already bundles `zoomAt` for its own viewport and pinch actions: two view models
-coexist inside labkit and the instrument canvas got the weaker one.
-`RenderContext.trial.view` is already `unknown`, so what actually pins the
-convention is `CanvasCapability.initialView`, the two coord helpers and
-`usePanZoom`.
-
-_The value is fixed._ `initialView` is a static literal cloned at trial creation
-(klieg's `subject: 'letter'` reframes and cannot re-zoom from 1600x); its `pan`
-is a screen offset an instrument cannot know without the canvas size, and there
-is no resize or view callback on the instrument surface, so placing a view means
-`trial.setView` plus a "have I centred yet" sentinel. It hangs off the `canvas`
-capability, so a foreign-renderer instrument cannot declare one at all. And the
-trial status bar still asserts a zoom for a view that has none.
-
 **List controls.** sherpa needs a recursive tree — `LayerList` is flat, so it
 hand-rolled `StepTree.tsx`. wod cannot use `LayerStack` because `kind`,
 `paletteKinds` and `onAdd` are required and its segments have no kind
@@ -101,17 +90,20 @@ wants a multi-control grid row and a multi-select row.
   `.storybook/preview.tsx:275` to mount ~28 stories. A `LabkitRoot` mount
   component was designed and rejected; the moves above shrink the problem
   without solving it.
-- **Layer visibility is not readable by an instrument.** It lives in `Trial.tsx`
-  local state (`layerVisibility`) and reaches neither `RenderContext` nor
-  `TrialChromeContext`. labkit skips a hidden layer's `draw`, so klieg drives a
-  legend that hides undrawn rows by instrumenting every layer's draw and
-  inferring the visible set from one paint pass.
 - **wod has three reach-ins to fix in its own repo**, all broken by the class
   names going private: `Editor.css:172` (`.lk-property-panel`) and anything
   styling `.lk-layer-card` become `className` props;
   `BreakpointPanel.tsx:77` becomes `<PropertySpan>`.
 
 ## Traps
+
+**`zoomAt` from `@weasel-js/core` cannot drive a y-up canvas.** It looked like
+the obvious way to stop labkit reimplementing fixed-point zoom — core's `View`
+carries per-axis scale, so y-up is just `scale.y < 0`. But its clamp is
+`min(max, max(min, scale * factor))` per axis against positive defaults, so a
+y-up view comes back at `+0.1`: axis flipped, zoom collapsed, silently. labkit's
+`usePanZoom` keeps its own arithmetic for this reason. Filed against core in
+`docs/TODO.md`.
 
 **Changesets 3.x migrates the pre-mode store on read.** A consumed changeset
 moves from a name in `pre.json`'s `changesets` array to a file under

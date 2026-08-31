@@ -2,6 +2,7 @@ import { type ReactNode, useContext, useMemo, useRef, useState } from 'react';
 import { useStore } from 'zustand/react';
 import { CanvasStack } from '../canvas/CanvasStack';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
+import { applyCamera, type ViewportSize } from '../canvas/worldSpec';
 import type { TrialContribution } from '../chrome/types';
 import { DragOverlay, useDragDrop } from '../dragdrop/DragDropRuntime';
 import { Palette } from '../dragdrop/Palette';
@@ -82,6 +83,14 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
   const [layerVisibility, setLayerVisibility] = useState<Record<string, boolean>>({});
   const [layerOrder, setLayerOrder] = useState<string[] | null>(null);
 
+  const visibleLayers = useMemo(
+    () =>
+      (instrument.canvas?.layers ?? [])
+        .filter((l) => layerVisibility[l.id] !== false)
+        .map((l) => l.id),
+    [instrument.canvas, layerVisibility],
+  );
+
   const undoCap = instrument.undo;
   const undoEvents = useMemo(() => new Set(undoCap?.snapshotOn ?? ['state.change']), [undoCap]);
   const maxDepth = undoCap?.maxDepth ?? 50;
@@ -95,6 +104,16 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
   };
 
   const setView = (v: unknown): void => updateTrialView(record.id, v);
+
+  // A function `initialView` needs the canvas size, so `trialOps` leaves the
+  // view null and the first measurement resolves it. Reset nulls it again,
+  // which re-frames — so the guard is the null itself, not a "have I run" flag.
+  const placeView = (size: ViewportSize): void => {
+    const declared = instrument.canvas?.initialView;
+    if (typeof declared !== 'function') return;
+    if (record.view != null) return;
+    setView(declared(size));
+  };
 
   // A trial gets its own slot when its instrument declares tools; otherwise it
   // reads the lab's. Which slot a change writes follows from the same thing.
@@ -147,6 +166,7 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
         updateTrialView(record.id, { ...view2d, zoom: z });
       },
       activeToolId: resolvedToolId,
+      visibleLayers,
     },
     emit: (event) => {
       snapshotIfNeeded(event);
@@ -183,11 +203,10 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
     return ordered.map((layer) => ({
       id: layer.id,
       visible: layerVisibility[layer.id] !== false,
-      render: (ctx, view) => {
+      render: (ctx, view, frame) => {
         // Camera applied here, so a layer draws in world coordinates. `zoom`
         // stays in the args for line widths, which must not scale with it.
-        ctx.translate(view.pan.x, view.pan.y);
-        ctx.scale(view.zoom, view.zoom);
+        applyCamera(ctx, view, frame);
         layer.draw(ctx, { state: record.state, config: record.config, zoom: view.zoom });
       },
     }));
@@ -202,6 +221,7 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
     capability: instrument.dragDrop ?? { palette: [], onDrop: (_p, _i, s) => s },
     canvasContainerRef,
     view: view2d ?? DEFAULT_VIEW,
+    worldSpec: instrument.canvas?.worldSpec,
     state: record.state,
     config: record.config,
     setState: (next) => {
@@ -253,6 +273,8 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
           layers={layersWithFeedback}
           view={view2d ?? DEFAULT_VIEW}
           onViewChange={setView}
+          worldSpec={instrument.canvas.worldSpec}
+          onResize={placeView}
           minZoom={instrument.canvas.minZoom}
           maxZoom={instrument.canvas.maxZoom}
         >

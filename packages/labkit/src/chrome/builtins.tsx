@@ -176,15 +176,13 @@ export function builtinContributions(
   }
   out.push({
     id: 'clone',
-    region: 'toolbar',
-    group: 'trial',
+    region: 'titlebar',
     end: true,
     item: { icon: CloneIcon, label: 'Clone trial', onActivate: ctx.clone },
   });
   out.push({
     id: 'reset',
-    region: 'toolbar',
-    group: 'trial',
+    region: 'titlebar',
     end: true,
     item: { icon: ResetIcon, label: 'Reset trial', onActivate: ctx.reset },
   });

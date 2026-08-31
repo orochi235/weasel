@@ -1,6 +1,7 @@
 import { useVisibleRaf } from '@weasel-js/core';
 import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { screenToWorld } from '../canvas/canvasCoords';
+import { resolveFrame, type WorldSpec } from '../canvas/worldSpec';
 import type {
   DragDropCapability,
   DragFeedback,
@@ -20,6 +21,9 @@ export interface UseDragDropArgs<TS, TC> {
   capability: DragDropCapability<TS, TC>;
   canvasContainerRef: RefObject<HTMLElement | null>;
   view: ViewTransform;
+  /** The instrument's coordinate system, resolved against the container each
+   *  time a screen point is converted — the container is what knows its size. */
+  worldSpec?: WorldSpec;
   state: TS;
   config: TC;
   setState: (next: TS | ((prev: TS) => TS)) => void;
@@ -39,6 +43,7 @@ export function useDragDrop<TS, TC>({
   config,
   setState,
   emit,
+  worldSpec,
 }: UseDragDropArgs<TS, TC>): UseDragDropResult {
   const [drag, setDrag] = useState<DragState | null>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -67,9 +72,10 @@ export function useDragDrop<TS, TC>({
       const el = canvasContainerRef.current;
       if (!el) return null;
       const r = el.getBoundingClientRect();
-      return screenToWorld({ x: screenPos.x - r.left, y: screenPos.y - r.top }, view);
+      const frame = resolveFrame(worldSpec, { width: r.width, height: r.height });
+      return screenToWorld({ x: screenPos.x - r.left, y: screenPos.y - r.top }, view, frame);
     },
-    [canvasContainerRef, view],
+    [canvasContainerRef, view, worldSpec],
   );
 
   const frameLoop = useVisibleRaf(() => {

@@ -1,5 +1,6 @@
 import { type PointerEvent, useCallback, useRef, type WheelEvent } from 'react';
 import type { ViewTransform } from '../instrument/types';
+import { DEFAULT_FRAME, type WorldFrame } from './worldSpec';
 
 export interface UsePanZoomOptions {
   view: ViewTransform;
@@ -8,6 +9,10 @@ export interface UsePanZoomOptions {
    *  whatever is passed here if it would otherwise exclude it. */
   minZoom?: number;
   maxZoom?: number;
+  /** The instrument's coordinate system, resolved against the viewport. The
+   *  wheel anchors in this frame; omitting it anchors at the element's
+   *  top-left, which is what labkit did before a frame could be declared. */
+  frame?: WorldFrame;
 }
 
 export interface PanZoomHandlers {
@@ -37,6 +42,7 @@ export function usePanZoom({
   onViewChange,
   minZoom = 0.1,
   maxZoom = 32,
+  frame = DEFAULT_FRAME,
 }: UsePanZoomOptions): PanZoomHandlers {
   const dragRef = useRef<DragState | null>(null);
   const viewRef = useRef(view);
@@ -50,8 +56,11 @@ export function usePanZoom({
     (e: WheelEvent<HTMLElement>) => {
       e.preventDefault();
       const rect = e.currentTarget.getBoundingClientRect();
-      const cursorX = e.clientX - rect.left;
-      const cursorY = e.clientY - rect.top;
+      // Anchored in frame space, not element space: `pan` is measured from the
+      // frame's origin, so anchoring at the raw cursor drifts by
+      // `(1 - ratio) * originPx` per step on any frame that moves the origin.
+      const cursorX = e.clientX - rect.left - frame.originPx.x;
+      const cursorY = e.clientY - rect.top - frame.originPx.y;
       const v = viewRef.current;
       const initialZoom = initialZoomRef.current;
       const effectiveMin = initialZoom == null ? minZoom : Math.min(minZoom, initialZoom);
@@ -66,7 +75,7 @@ export function usePanZoom({
       };
       onViewChange({ zoom: nextZoom, pan: nextPan });
     },
-    [onViewChange, minZoom, maxZoom],
+    [onViewChange, minZoom, maxZoom, frame],
   );
 
   const onPointerDown = useCallback((e: PointerEvent<HTMLElement>) => {

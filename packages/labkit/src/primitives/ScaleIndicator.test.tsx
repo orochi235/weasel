@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 import { CanvasStackContext } from '../canvas/CanvasStackContext';
+import { DEFAULT_FRAME } from '../canvas/worldSpec';
 import { ScaleIndicator } from './ScaleIndicator';
 
 describe('ScaleIndicator', () => {
@@ -27,7 +28,9 @@ describe('ScaleIndicator', () => {
 
   test('reads zoom from CanvasStackContext when prop omitted', () => {
     render(
-      <CanvasStackContext.Provider value={{ view: { zoom: 2.5, pan: { x: 0, y: 0 } } }}>
+      <CanvasStackContext.Provider
+        value={{ view: { zoom: 2.5, pan: { x: 0, y: 0 } }, frame: DEFAULT_FRAME }}
+      >
         <ScaleIndicator pixelsPerUnit={50} unit="ft" />
       </CanvasStackContext.Provider>,
     );
@@ -37,7 +40,9 @@ describe('ScaleIndicator', () => {
 
   test('explicit zoom prop overrides context', () => {
     render(
-      <CanvasStackContext.Provider value={{ view: { zoom: 100, pan: { x: 0, y: 0 } } }}>
+      <CanvasStackContext.Provider
+        value={{ view: { zoom: 100, pan: { x: 0, y: 0 } }, frame: DEFAULT_FRAME }}
+      >
         <ScaleIndicator zoom={1} pixelsPerUnit={50} unit="ft" />
       </CanvasStackContext.Provider>,
     );

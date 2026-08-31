@@ -12,9 +12,11 @@ function findInstrument(instruments: InstrumentList, name: string): Instrument {
 }
 
 function initialView(instrument: Instrument): TrialRecord['view'] {
-  return instrument.canvas?.initialView
-    ? structuredClone(instrument.canvas.initialView)
-    : { ...DEFAULT_VIEW, pan: { ...DEFAULT_VIEW.pan } };
+  const declared = instrument.canvas?.initialView;
+  // A function needs the canvas size, which no trial has at creation. `null`
+  // is the unplaced marker; `Trial` resolves it on the first non-empty size.
+  if (typeof declared === 'function') return null;
+  return declared ? structuredClone(declared) : { ...DEFAULT_VIEW, pan: { ...DEFAULT_VIEW.pan } };
 }
 
 /** Append a new trial running `instrumentName`, at that instrument's

@@ -50,6 +50,7 @@ Priority tags:
 
 **Viewport**
 - Zoom clamped by two disagreeing constant families; wheel answered three times with inverted modifiers → [Viewport](#viewport)
+- `zoomAt` flips and collapses any view with a negative scale axis → [Viewport](#viewport)
 
 **Plugins & packaging**
 - Barrel-hygiene: selection (pending design review) → [Plugins & packaging](#plugins--packaging)
@@ -293,6 +294,19 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
 ---
 
 ## Viewport
+
+- **(P2) `zoomAt` flips and collapses any view with a negative scale axis.**
+  `View.scale` is documented as pixels per world unit *per axis*, so
+  `scale.y < 0` is the ordinary spelling of a y-up camera. `zoomAt` clamps each
+  axis with `min(max, max(min, scale * factor))` against defaults `0.1`/`8`, so
+  a y-up view arrives as `+0.1`: axis flipped, zoom collapsed, no error. Probed
+  2026-08-31 — `zoomAt({x:0,y:0,scale:{x:2,y:-2}}, {x:10,y:10}, 1.1)` returns
+  `scale.y = 0.1`. `clampView` needs the same look. The fix is to clamp
+  magnitude and restore the sign, not to document the trap; a caller passing
+  per-axis bounds to work around it has to invert min and max on the negative
+  axis, which nothing would guess. Found while giving labkit's instrument canvas
+  a declarable coordinate system — labkit reimplements the anchoring itself for
+  exactly this reason, so the duplication is not gratuitous.
 
 - **(P2) Zoom is clamped by two disagreeing families of constants, and the wheel
   is answered three times.** `zoomAt` defaults `0.1`/`8` and three call sites

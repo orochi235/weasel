@@ -4,17 +4,24 @@ import { CanvasStackContext } from './CanvasStackContext';
 import { screenToWorld } from './canvasCoords';
 import { type CanvasLayerDescriptor, useLayerScheduler } from './useLayerScheduler';
 import { usePanZoom } from './usePanZoom';
+import { resolveFrame, type ViewportSize, type WorldSpec } from './worldSpec';
 
 /** Props for `<CanvasStack>`. */
 export interface CanvasStackProps {
   layers: CanvasLayerDescriptor[];
   view: ViewTransform;
   onViewChange: (v: ViewTransform) => void;
+  /** The instrument's coordinate system. Omitted, world (0,0) sits at the
+   *  element's top-left with y running down. */
+  worldSpec?: WorldSpec;
   minZoom?: number;
   maxZoom?: number;
   width?: number | string;
   height?: number | string;
   className?: string;
+  /** Fired whenever the stack is measured, so a consumer can place a view that
+   *  only makes sense in terms of the viewport. */
+  onResize?: (size: ViewportSize) => void;
   onHitTest?: (worldPos: Point) => void;
   children?: ReactNode;
 }
@@ -26,11 +33,13 @@ export function CanvasStack({
   layers,
   view,
   onViewChange,
+  worldSpec,
   minZoom,
   maxZoom,
   width = '100%',
   height = '100%',
   className,
+  onResize,
   onHitTest,
   children,
 }: CanvasStackProps) {
@@ -63,10 +72,19 @@ export function CanvasStack({
     return () => ro.disconnect();
   }, []);
 
-  const handlers = usePanZoom({ view, onViewChange, minZoom, maxZoom });
-  useLayerScheduler({ layers, view, canvasRefs: canvasMap, size, host: containerRef });
+  const onResizeRef = useRef(onResize);
+  onResizeRef.current = onResize;
+  useEffect(() => {
+    if (size.width === 0 && size.height === 0) return;
+    onResizeRef.current?.({ width: size.width, height: size.height });
+  }, [size.width, size.height]);
 
-  const ctxValue = useMemo(() => ({ view }), [view]);
+  const frame = useMemo(() => resolveFrame(worldSpec, size), [worldSpec, size]);
+
+  const handlers = usePanZoom({ view, onViewChange, minZoom, maxZoom, frame });
+  useLayerScheduler({ layers, view, frame, canvasRefs: canvasMap, size, host: containerRef });
+
+  const ctxValue = useMemo(() => ({ view, frame }), [view, frame]);
 
   const containerStyle: CSSProperties = { width, height };
   const canvasPx = {
@@ -84,7 +102,7 @@ export function CanvasStack({
     if (!wasDragging && onHitTest && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const screen = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-      onHitTest(screenToWorld(screen, view));
+      onHitTest(screenToWorld(screen, view, frame));
     }
   };
 

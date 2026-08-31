@@ -93,6 +93,7 @@ describe('SineWave instrument smoke test', () => {
         zoom: 1,
         setZoom: vi.fn(),
         activeToolId: null,
+        visibleLayers: [],
       },
       emit: vi.fn(),
     };

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { ViewportSize, WorldSpec } from '../canvas/worldSpec';
 import type { TrialContribution } from '../chrome/types';
 import type { ConfigSchema } from '../config/types';
 import type { ConfigField } from '../controls/types';
@@ -25,6 +26,10 @@ export interface RenderContext<TS = unknown, TC = unknown> {
     /** Resolved active tool: this trial's slot, or the lab's. Null when neither
      *  holds one. */
     activeToolId: string | null;
+    /** The canvas layers currently shown, in declaration order. labkit skips a
+     *  hidden layer's `draw`, so this is the only way to know what was
+     *  painted — a legend listing rows the view did not draw needs it. */
+    visibleLayers: readonly string[];
   };
   emit: (event: string) => void;
   /** Present only when the instrument declares a `job`. */
@@ -45,7 +50,14 @@ export interface CanvasLayer<TS = unknown, TC = unknown> {
  *  view starts. */
 export interface CanvasCapability<TS = unknown, TC = unknown> {
   layers: CanvasLayer<TS, TC>[];
-  initialView?: { zoom: number; pan: { x: number; y: number } };
+  /** The coordinate system this instrument's world is in. Omitted, world (0,0)
+   *  sits at the canvas top-left with y running down — what labkit assumed
+   *  before an instrument could say otherwise. */
+  worldSpec?: WorldSpec;
+  /** Where the view starts. A function is called once the canvas knows its
+   *  size, so an instrument can frame content it can only place in terms of
+   *  the viewport; until then the trial's view is `null`. */
+  initialView?: ViewTransform | ((size: ViewportSize) => ViewTransform);
   /** Widens `usePanZoom`'s default clamp; the opening zoom stays reachable
    *  regardless of these. */
   minZoom?: number;

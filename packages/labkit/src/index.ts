@@ -47,8 +47,23 @@ export {
   TextRow,
   ToggleRow,
 } from '@weasel-js/ui';
-export type { CanvasLayerDescriptor, CanvasStackContextValue, CanvasStackProps } from './canvas';
-export { CanvasStack, CanvasStackContext, screenToWorld, worldToScreen } from './canvas';
+export type {
+  CanvasLayerDescriptor,
+  CanvasStackContextValue,
+  CanvasStackProps,
+  ViewportSize,
+  WorldFrame,
+  WorldSpec,
+} from './canvas';
+export {
+  applyCamera,
+  CanvasStack,
+  CanvasStackContext,
+  DEFAULT_FRAME,
+  resolveFrame,
+  screenToWorld,
+  worldToScreen,
+} from './canvas';
 export type { OrbitHandlers, OrbitView, UseOrbitOptions, Vec3 } from './canvas/useOrbit';
 export {
   clampPitch,
