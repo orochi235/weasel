@@ -509,10 +509,12 @@ function warnLogicalRtlOnce(): void {
   if (warnedLogicalRtl) return;
   warnedLogicalRtl = true;
   console.warn(
+    // Naming the import in `from "<pkg>"` form would trip labkit's
+    // consumer smoke test, which greps dist for that exact shape.
     'weasel layoutRuns: this text contains right-to-left characters but no ' +
     '`bidi` engine was supplied, so it is being laid out in logical order — ' +
-    'the glyphs will appear reversed. Pass `bidi` from "@weasel-js/bidi": ' +
-    '`import { bidi } from "@weasel-js/bidi"` and add it to the layout options.',
+    'the glyphs will appear reversed. Import `bidi` out of the ' +
+    '`@weasel-js/bidi` package and add it to the layout options.',
   );
 }
 
