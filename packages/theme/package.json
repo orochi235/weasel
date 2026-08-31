@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/theme",
-  "version": "1.3.0-pre.0",
+  "version": "1.3.0",
   "description": "Design tokens shared by weasel-ui and weasel-hud — CSS variables + a parallel TS export.",
   "license": "MIT",
   "type": "module",

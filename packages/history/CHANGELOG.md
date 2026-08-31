@@ -1,5 +1,19 @@
 # @weasel-js/history
 
+## 1.3.0
+
+### Patch Changes
+
+- 20097e6: Declare `sideEffects` on the five packages that were missing it, so bundlers
+  can tree-shake unused exports instead of assuming every module does work at
+  import time.
+  
+  `gestures`, `history`, `modes`, and `hud` are `false` — none of them touch a
+  global or run anything at module scope. `labkit` is `["*.css"]`, matching
+  `ui` and `theme`: its JS is side-effect-free, but a blanket `false` lets a
+  bundler drop the `@weasel-js/labkit/styles.css` import a consumer wrote by
+  hand, and the page then renders unstyled with no error anywhere.
+
 ## 2.0.0-pre.0
 
 ### Patch Changes

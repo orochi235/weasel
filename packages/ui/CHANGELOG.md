@@ -1,5 +1,575 @@
 # @weasel-js/ui
 
+## 1.3.0
+
+### Patch Changes
+
+- c1e567f: Move `LayerStack` from `@weasel-js/labkit` to `@weasel-js/ui`. It is a generic
+  drag-reorderable stack of expandable cards — it reads nothing from labkit's
+  instrument, config, state, trial or lab layers — and a consumer who wanted it
+  had to take labkit and the lab frame it assumes.
+  
+  It can now be imported from `@weasel-js/ui` directly. **Existing
+  `@weasel-js/labkit` imports keep working**, from both the package root and
+  `@weasel-js/labkit/ui/layers`: labkit re-exports it, and it bundles weasel-ui
+  into its own dist, so this is a re-export rather than a new dependency.
+  
+  `DragHandleGlyph`, the grip both `LayerStack` and labkit's `LayerList` draw,
+  moves with it and is now public from `@weasel-js/ui`.
+  
+  `LayerStack` also takes a `className` now, appended to its root — the
+  supported way to reach it from a consumer stylesheet, since its own class
+  names are hashed.
+  
+  The class names are no longer public. The stylesheet moved from global
+  `lk-`-prefixed Less to a CSS module, matching the package it joined, so
+  `lk-layer-stack`, `lk-layer-card` and their neighbours no longer exist as
+  targetable selectors, and `--lk-layer-card-accent` is now
+  `--wzl-layer-stack-accent`, set for you by the `accent` prop on an item. The
+  card's `data-testid` drops the `lk-` prefix: `layer-card-<id>`.
+  
+  Two of the old rules were prefixed with `.lk-root` to outrank labkit's bare
+  `button` defaults. Those defaults now sit at zero specificity, so the module's
+  own class wins on its own; the stack no longer depends on a labkit ancestor,
+  and it restates the border-box reset and the button font and height that
+  `.lk-root` used to supply.
+- 555f84c: Move the property-panel components from `@weasel-js/labkit` to
+  `@weasel-js/ui`. `PropertyPanel`, `PropertyList`, `PropertyRow`, `SliderRow`,
+  `NumberRow`, `TextRow`, `SelectRow`, `ToggleRow`, `CheckboxRow`, `ColorRow`,
+  `Subpanel`, `PropertyGroup`, `CurveField` and `EffectCard` imported nothing
+  from labkit's instrument, config, state, trial or lab layers — they are
+  generic form UI, and a consumer who wanted them had to take labkit and its
+  lab frame to get them.
+  
+  They can now be imported from `@weasel-js/ui` directly. **Existing
+  `@weasel-js/labkit` imports keep working**: labkit re-exports the whole set,
+  and it bundles weasel-ui into its own dist, so this is a re-export rather
+  than a new dependency.
+  
+  The class names are no longer public. The stylesheet moved from global
+  `lk-`-prefixed Less to CSS modules, matching the package it joined, so
+  `lk-property-panel`, `lk-property-list__span` and their neighbours no longer
+  exist as targetable selectors. Code reaching them from its own stylesheet
+  should pass `className` instead — `PropertyPanel`, `PropertyList` and
+  `PropertyRow` all accept one. For full grid width, a row takes `PropertyRow`'s
+  `span` prop, and anything that is not a row goes in `<PropertySpan>`.
+  
+  `formatNumber` and its helpers consolidated onto weasel-ui's existing
+  `format/number`; labkit's duplicate is gone.
+- 52c7b2a: Depend on `font` and `core` as exact peers
+  
+  `@weasel-js/font` and `@weasel-js/core` keep registries that consumer code
+  writes into — registered faces and glyph-ready subscribers in one, content
+  handlers and paint kinds and shape painters in the other. Two physical copies
+  in a tree are two registries, so a face registered into one while layout
+  resolves against the other lays out nothing and the canvas is blank.
+  
+  Exact sibling pins are what produced the duplicate: a consumer mixing two
+  weasel releases left npm no choice but to nest a second copy, silently. As
+  peers, the same mix is an `ERESOLVE` at install time. `font` is now a peer of
+  `core`, `hud` and `text`; `core` is now a peer of `svg`, joining `d3`, `hud`
+  and `ui`, whose `>=` ranges tighten to exact so no version mix resolves by
+  accident.
+  
+  **This can break an install that currently succeeds.** Anyone resolving a
+  mixed set of weasel versions by luck now gets an install error instead of a
+  blank canvas. That is the point, but it is a break.
+  
+  `labkit` deliberately keeps `core` as an ordinary dependency: its build aliases
+  every core entry point to core's built files and inlines them, so it never
+  resolves core at the consumer and has nothing to peer. The flip side is that
+  labkit ships its own copy of core's registries, so a consumer using both still
+  has two — this change does not address that.
+- ce82f4a: An enum leaf can ask for a segmented control, and `pair` works inside an object
+  
+  `ToolPrefEnumControl` gains `'toggle'`: a three-option enum shows all three at
+  once instead of hiding two behind a select. Options carry an optional `short`
+  label — a capital or two — for the width a property row has; the full `label`
+  stays the accessible name, so the abbreviation never becomes the only thing
+  naming the option. A mixed selection selects no segment rather than picking a
+  winner.
+  
+  `pair` now merges fields inside an object leaf, as it already did for section
+  rows — a hint shouldn't mean something different for being a field of a value
+  rather than a sibling of one. It merges *adjacent* leaves in both places, so
+  the schema orders family, size, weight: size and weight pair, and family (which
+  sat between them) moves ahead of the pair rather than splitting it.
+  
+  A stroke's cap, join and align share one row; property rows wrap rather than
+  overflow when the controls in them don't fit.
+- ccd51cc: Add a 43-glyph monochrome icon set to `@weasel-js/ui`.
+  
+  One register: a 20x20 viewBox drawn in `currentColor` at stroke-width 1.5 with
+  round caps and joins, hairline weight reserved for structure, and filled
+  regions only where an action has a subject. Covers transport, history, view,
+  trial lifecycle, collection, state, instrument and status vocabulary. Import a
+  named component (`CloneIcon`), or `Icon` when the glyph is chosen at runtime.
+  
+  `@weasel-js/ui` also re-exports the tool glyphs that live in `@weasel-js/core`,
+  so consumers have one import site for the whole set. `ImageIcon` was reachable
+  from core's icons folder but missing from its public barrel; it is exported
+  now.
+  
+  Glyph geometry is generated (`npm run gen:icons`) from `packages/ui/scripts/icons/`
+  rather than hand-placed, because arrowheads and joins that miss their terminus
+  are invisible at chrome size.
+- 1f67cad: Draw labkit's chrome and the ui components from one type, weight and shape
+  scale. Sizes fold onto six ranks, so a 12px label now renders at 11 and a 14px
+  one at 13; corners fold onto four radii. `Button`'s `sm` and `md` text sizes
+  converge as part of that fold — the two still differ in height and padding.
+  
+  Three components that were exported but rendered nowhere now appear in the
+  default chrome: `FpsMeter` and `ScaleIndicator` in the status bar,
+  `ZoomControl` in the viewport controls, replacing the plain zoom readout.
+  `StatusBar.Section` takes `end` to push a readout to the far side, mirroring
+  `Toolbar.Group`.
+  
+  The trial's box-shadow no longer derives from the foreground color, so
+  elevation reads as elevation rather than as a halo on dark themes, and its
+  border clears 3:1 against the workspace in both modes.
+  
+  `<Toolbar>` claims `role="toolbar"` and implements the APG keyboard contract:
+  one button in the tab order, arrows moving focus within, Home and End jumping
+  to the ends. It takes an `aria-label`.
+  
+  Two colors were wrong rather than merely untokenized. The selected toggle in
+  `PropertyPanel` drew near-black text on an accent fill at 1.49:1 in dark mode;
+  it now uses `--wzl-fg-on-accent`. `LayerList`'s checkbox had no `accent-color`
+  and rendered in the OS blue.
+- c534ff5: Give every control one height, and stop labkit styling weasel-ui by load order
+  
+  `--wzl-control-h` described itself as the height of a button, input or select
+  and claimed 28px, while `Select`, `Input`, `NumberField` and `ComboBox` each
+  hard-coded 24px. Nothing enforced the token, so the two numbers had drifted
+  apart unnoticed. The four controls read the token now and the token is 24px,
+  which is what they already rendered. `ToggleBar` moves off `--wzl-tb-height`
+  onto `--wzl-control-h` — a segmented control is a control, not the strip a row
+  of them sits in — and its `height` prop writes a private variable so setting it
+  cannot cascade into children. `--wzl-tb-height` stays 28px: it sizes a strip
+  that *contains* controls, and 24px there would clip the focus ring of a 24px
+  control inside it.
+  
+  In labkit, a class handed to a weasel-ui component through `className` landed
+  beside that component's CSS-module class at equal specificity, so whichever
+  stylesheet was injected last won. Labkit's element defaults now score (0,0,0)
+  so a component always paints its own controls, and deliberate overrides carry a
+  `.lk-root` prefix that wins on purpose. That fixes a zoom readout whose field
+  had stretched over its own buttons, hiding the leading "10" of "100%".
+  
+  Also in labkit: `<Lab>`'s nebula backdrop was covered by an opaque shell and had
+  never been visible; a trial's config panel was crushed to 60px of a 270px panel
+  by its sidebar extras; and the lab header wrapped to three lines because a
+  `Select` swallowed the row's slack while the mode toggle compressed past its own
+  labels.
+  
+  `LabProps` gains `footer`, which had no route short of building `LabShell`
+  yourself. `LayerCapability.ids` accepts a full `LayerDescriptor` as well as a
+  bare string, so a layer can carry a label distinct from its canvas id and be
+  marked `alwaysOn` — both already honoured by the layer list, neither
+  expressible. Existing `string[]` declarations still typecheck. `Instrument`
+  gains a third type parameter for a job's item type, which had been pinned to
+  `never`; TypeScript infers all three or none, so a `defineInstrument` call that
+  names state and config must name the item type too.
+- 69ca8c6: `LayerList` and `LayerStack` now draw the same grip. `DragHandleGlyph` moves to
+  `primitives/` and is used by both, replacing the `⋮⋮` text `LayerList` carried.
+  It stays out of `@weasel-js/ui`'s icon register on purpose: that register is
+  outline strokes at a fixed weight, and a grip is filled dots.
+  
+  The grip's grab target is padded and the padding cancelled by an equal negative
+  margin, so it is comfortable to hit without drawing anything larger than the
+  dots or widening the row.
+  
+  A small `Button`'s label drops to `--wzl-font-size-sm`. It had converged with
+  medium's at 13px, which sat top-heavy against a small button's 12px icon and
+  20px box.
+- d9f110e: Stop every frame loop while nothing can see it
+  
+  New public hook `useVisibleRaf` in `@weasel-js/core` owns the question of
+  whether a frame may run: nothing runs while `document.hidden`, and a loop that
+  names an element also stops while that element is outside the viewport. A
+  request made while suspended is held rather than dropped and re-armed on
+  resume, so a loop never polls visibility or needs restarting by hand.
+  
+  Ten loops now run behind it — `useFrameLoop`, `useAnimator`, `useSimulation`,
+  `useDecayLoop`, `useTextEdit`'s overlay follow, `CursorCoordsHud`'s FPS
+  counter, `Badge`'s crawl, and labkit's `FpsMeter`, `useTiledSurface` and
+  `useLayerScheduler`. Only `useFrameLoop` consulted `document.hidden` before;
+  the rest ran on any page left open. `useLayerScheduler` looked safe and wasn't:
+  it paints only dirty layers, but a hidden tab still commits React updates and
+  its view/size effect marks every layer dirty.
+  
+  Loops measuring elapsed time rebase their clock through the new `onResume`
+  option, so an hour spent hidden does not arrive as one hour-long frame — an FPS
+  meter reporting a rate nobody achieved, a tween jumping to its end value on
+  return. `dangerouslyRunWhenHidden` opts a loop out for offscreen recording or
+  export; nothing in the tree sets it.
+  
+  `npm run check:frame-loops` fails the build on a bare `requestAnimationFrame`
+  in kit source, and runs in CI.
+- 1a0bea3: `useNodeOverlayFrame`: the coordinate frame a DOM overlay pinned to a node needs
+  
+  Nothing in the kit exported one, so consumers hand-rolled it — their own
+  `ResizeObserver` next to the existing `useCanvasSize`, and a translate-and-scale
+  inverse built by projecting two points. That inverse silently drops
+  `pose.rotation`, which is why on-canvas gradient handles on a rotated node sat
+  beside the paint instead of on it.
+  
+  ```ts
+  useNodeOverlayFrame(scene, containerRef, nodeId, { view })
+  // → { box, toScreen, toLocal, width, height } | null
+  ```
+  
+  `box` is the node's composed world box, unrotated — the frame `toScreen` maps
+  from, and the box to hand `fillInPoseFrame` / `fillToBoundsFrame`. Rotation
+  lives in the pose→world leg, where it belongs: a node's stored geometry and its
+  bounds-frame paint are pre-rotation by definition, so neither of those two
+  changes.
+  
+  `@weasel-js/ui` gains `SceneGradientHandles`, the scene-aware half of
+  `GradientHandles`: it reads the gradient out of a node's `fill` **or** its
+  `stroke` — `slot` is a prop — and commits each drag through `setFill` or
+  `setStroke` as one undo entry. `GradientHandles` itself stays frame-agnostic.
+  
+  Also: `isGradientFill` narrows a `FillStyle` to its three gradient members, and
+  `useCanvasSize` accepts any `HTMLElement` rather than only a `div`.
+- 5f6c28e: An object leaf's fields can be organised into groups
+  
+  `ToolPrefObject.children` takes a `ToolPrefGroup` as well as a leaf. A group
+  heads its fields under a label and contributes nothing to the path — the same
+  rule group keys follow at the top level of a schema, so a field inside one is
+  still addressed as a field of the object.
+  
+  Without it, a value with many fields renders as one undifferentiated list. A
+  `TextStyle` is the case that needs it: its character and paragraph fields are
+  one value but read as two lists.
+- 3cd1ee8: A schema leaf can hold an object, with its fields hanging off it
+  
+  A compound value — a stroke, a shadow, a pattern spec — could be described as
+  sibling leaves addressing into it (`data.stroke.width`, `data.stroke.cap`).
+  It shouldn't be: each control then writes one field of a value it can only
+  half see, and writing a field into something that isn't an object yet corrupts
+  it outright.
+  
+  `ToolPrefObject` describes the value instead. Its `children` are ordinary
+  leaves whose paths are relative to the object, and every child edit commits
+  the parent object whole. A field that is itself a union declares the kind that
+  edits that union — a stroke's `paint` is a `paint` leaf. `fromScalar` lifts a
+  value still held in a scalar form before a child edit lands on it, which is
+  how a stroke stored as a bare colour string gains a width.
+  
+  `defaultNodeProperties` describes `data.stroke` this way, so the panel shows
+  Color, Width, Cap, Join and Align under one Stroke block, and the separate
+  `data.strokeWidth` leaf is gone. `SelectionPanel` now honours `block`, which
+  `PrefsForm` already did. The one-off `stroke` pref kind added days ago is
+  replaced by this general one.
+  
+  `dash` has no leaf: it is a `number[]` and no kind edits one. It survives
+  import, export and rendering untouched.
+- 68d2651: Pref leaf kinds are declared once, and every renderer is exhaustive
+  
+  `@weasel-js/ui` carried its own copy of the pref-leaf union under a comment
+  saying to keep it in sync with core's field-for-field. It had drifted: ui's enum
+  leaf had neither `encoding` nor `options[].disabled`, so a dash-array
+  preference did not merely fail to select — choosing an option wrote the option
+  string over the stored dash array. labkit's two renderers were missing the
+  `paint` and `object` kinds outright.
+  
+  ui's schema is now a rename re-export of core's declaration. The public `Pref*`
+  names are unchanged, and there is nothing left to keep in sync.
+  
+  More importantly, all four renderer switches ended in `default:`, so adding a
+  built-in kind produced no error at any site and simply rendered nothing —
+  verified by adding one and typechecking. `ToolPrefLeaf` widens `kind` to
+  `string` so app-defined prefs can ride the same tree, which means a `never`
+  guard cannot sit on it directly. New from core: `TOOL_PREF_KINDS`, a
+  `Record<ToolPrefKind, true>` that a new kind fails to compile against first, and
+  `isBuiltinToolPref(leaf)`, which narrows to the closed union so each renderer
+  can discriminate and end in a `never`. App-defined kinds take the placeholder
+  path as before.
+  
+  Dash-array preferences now select and commit correctly in `PrefsForm`: the enum
+  arm threads sibling values, routes through `encoding.read` / `encoding.write`,
+  and honors `option.disabled`. `SelectionPanel` already did all of this — it was
+  only the forked copy that could not express it.
+- 0114abf: Add `PaintInput`, a control that edits a whole `FillStyle`.
+  
+  A kind bar over a per-kind body, driven by the paint-kind registry rather than
+  a fixed list, so a consumer's registered kind appears in the bar and renders
+  that entry's `Editor`. `SelectionPanel`'s `paint` leaf renders it in place of
+  the chip that showed a gradient as indeterminate and wrote a solid over it on
+  first touch — so the checkerboard now means a mixed selection and nothing else,
+  and a gradient stroke is editable rather than merely paintable.
+  
+  Switching kinds keeps a per-kind memory for the control's lifetime, so
+  linear -> solid -> linear comes back with its stops instead of the ramp
+  `withGradientKind` cannot carry.
+  
+  `PatternPicker` moves from WeaselDraw into `@weasel-js/ui`, which now depends
+  on `@weasel-js/svg` for its tile previews.
+  
+  The bar offers **None**: "what kind of paint is this?" takes no-paint as an
+  answer. `setFill` and `setStroke` accept `paint: null` to write it — a fill
+  becomes `null`, and a stroke goes away entirely rather than keeping a width
+  that draws no ink. `PaintKindEntry` gains an optional `icon`, and the five
+  built-in kinds carry glyphs so six segments fit a property row.
+  
+  `FILL` and `STROKE` are now peer sections: the `appearance` group goes headless
+  and `data.fill` becomes a block leaf. The stroke's paint is no longer paired
+  with its width — a whole paint editor cannot share a row with a slider.
+- 6a06f6d: Node paint is an object: `data.fill` is a `FillStyle`, `data.stroke` a `Stroke`
+  
+  Each concept now has exactly one shape. `data.fill` holds a `FillStyle`,
+  `data.stroke` a whole `Stroke`, and `null` on either is an explicit "no paint"
+  where `undefined` takes the painter's fallback. Two new authoring helpers keep
+  hand-written node data short:
+  
+  ```ts
+  data: { path, fill: solid('#7fb069'), stroke: strokeOf('#1c1c1c', 2) }
+  ```
+  
+  **Breaking, with no compatibility path.** A document written against the old
+  shapes renders wrong rather than failing, which is accepted:
+  
+  - `NodeFill = string | FillStyle` and `NodeStroke = string | Stroke` are gone,
+    and so are the string branches of `resolveNodeFill` / `resolveNodeStroke`.
+    A node holding `fill: '#f00'` now paints the default grey.
+  - `data.strokeWidth` is deleted. A stroke's width is `Stroke.width`.
+  - `data.color` — the legacy alias `kit:path` and the rect fallback read — is
+    deleted. The fallback painter reads `data.fill` like everything else.
+  - `fill: 'none'` is now `fill: null`; `stroke: 'none'` is `stroke: null`.
+  - `NodeInkResult` is gone: a painter's `ink` returns `NodeInk` and nothing
+    else. A painter returning `{ filled, strokeWidth }` no longer type-checks
+    and its reach is read as zero.
+  - `@weasel-js/ui` drops `isStrokeObject`, which existed only to discriminate
+    the union; `strokeColorOf` and `strokeWithColor` lose their string branches.
+  - `@weasel-js/svg`'s `strokeDataFromSvg` returns `Stroke | undefined` instead
+    of a `{ stroke, strokeWidth }` pair, and stops flattening a plain solid
+    stroke into a color. SVG's `fill="none"` imports as `fill: null`.
+  
+  **A paint's alpha lives in `opacity`, one slot for every paint kind.** That is
+  the only slot a gradient or a pattern has, so it is the slot all of them use,
+  and the renderer multiplies a hex alpha by it — the two would fight if both
+  carried the value. `solid()` therefore moves an alpha channel out of the hex:
+  `solid('#ff000080')` is `{ color: '#ff0000', opacity: 0.502 }`.
+  
+  The four setter actions follow: `setFillOpacity` / `setStrokeOpacity` write
+  `opacity` rather than splicing hex, so they now work on a gradient fill, which
+  they used to leave untouched. `setFill` / `setStroke` given a `color` recolor
+  the node's existing paint through the new `paintWithColor`, keeping its opacity
+  unless the picked color states an alpha of its own — and `setStroke` keeps the
+  stroke's width, cap, join and dash instead of replacing the whole value.
+  
+  New exports: `solid`, `strokeOf`, `paintAlpha`, `paintWithAlpha`,
+  `paintWithColor`, `DEFAULT_SHAPE_FILL`.
+  
+  `defaultNodeProperties` moves `data.fill` from a `color` leaf to a `paint` one
+  — a color control pointed at a `FillStyle` reads `undefined` off a gradient and
+  writes a bare string over it — and the `data.stroke` object leaf drops its
+  `fromScalar`, which had nothing left to lift.
+- a37ee0b: Separate a text node's content from its typography, and draw depth only where a label marks it
+  
+  The text schema put `data.text` in a group named Text, so the section read
+  TEXT and the row inside it read Text — one word nested in itself — and the
+  style groups below it read as fields of the content string rather than as its
+  siblings. Content is its own section now, with the field full-width because
+  the section already names it.
+  
+  A group with an empty `name` renders no heading. That already worked for
+  sections and is now documented on `ToolPrefGroup`, since it is how a schema
+  says "this group organises, it doesn't name": `Character` and `Paragraph`
+  carry the labels, and a `Typography` heading over them named nothing new.
+  It stays opt-in rather than a rule that rolls up any all-group parent —
+  a `Border` over `Top` / `Right` / `Bottom` needs its name.
+  
+  Rows under a suppressed heading no longer indent. Depth drawn without a
+  visible parent put `Character` a level deeper than `Content` while being its
+  peer, which is the panel's own tree discipline broken by its own hand.
+- f918a87: A property renderer can read the rest of the node, not just its own leaf
+  
+  `PropertyRenderContext` carried one leaf's aggregated value, so a control whose
+  subject spans several fields had no way to see the others. `valueAt(path)`
+  returns the same `{ value, mixed }` aggregation for any node path across the
+  same selection: a value when every selected node agrees, `mixed` when they
+  don't, and an undefined value when nothing carries the path.
+  
+  WeaselDraw's font picker is the case that asked for it. Its substitution label
+  names the variant a family will actually paint in, and it was probing at a
+  nominal 400/normal because the node's own `fontWeight` and `fontStyle` were out
+  of reach; it now probes at the node's real ones.
+- 7a746df: A stroke's dash is edited as a style, not as an array
+  
+  `Stroke.dash` already rendered, imported and exported; it had no control,
+  because a `number[]` has no leaf kind. It doesn't need one — the thing a person
+  chooses is a style, and the array is how it is stored. The stroke block gains a
+  Solid / Dashed / Dotted / Custom bar under cap, join and align.
+  
+  `ToolPrefEnum` gains `encoding`: `read`/`write` between the stored value and
+  the option string, the counterpart of the `unit` a number leaf already has for
+  a value stored in a canonical unit. Both directions are handed the object the
+  leaf is a field of, because a dash pattern is meaningless without the width it
+  scales by — SVG dash lengths are absolute, so a fixed `[6, 3]` is dots on a
+  hairline and a railroad on a 20px stroke. `dashForStrokeStyle` /
+  `strokeDashStyleOf` are the mapping, exported: **dashed is 3× the width on and
+  2× off, dotted 1× on and 2× off**. An array matching neither reads as `custom`,
+  a new `disabled` option — one a control reports but refuses to author, since
+  there is no array behind it. `solid` is stored as no dash at all, and an object
+  leaf's field written as `undefined` is now removed rather than left holding it.
+- 4f19274: Cap, join and align are chosen by glyph, and the stroke block drops its labels
+  
+  Nine option glyphs and four category glyphs join the icon set. The option
+  glyphs are filled silhouettes — the glyph is the ink, so a choice reads as a
+  shape rather than as a diagram of one. `align` is a circle zoomed until the
+  ink band's far edge leaves the box: `inner` closes into a disc, `outer` into
+  the box's complement of it, and `center` is the annulus straddling the path,
+  so the three are one band at three offsets. The categories are the bare path
+  each row treats, drawn in the outlined register.
+  
+  A schema carries a glyph *id*, not a component: `ToolPrefEnum`'s options gain
+  `icon`, and every leaf gains one for rows whose own label is spent on a
+  `pair`. Core ships no icon set and cannot depend on one, so the field is a
+  plain string; weasel-ui resolves it against `ICON_PATHS` and falls back to
+  `short` where it names no glyph.
+  
+  `SelectionPanel` now honours `block` inside an object leaf, not only at the
+  section level. A row whose fields are all `block` drops the 64px label column
+  and spans the block. The default stroke schema uses both: paint and width
+  share one label-less row, and cap/join/align share the next.
+  
+  `align`'s options run inner, center, outer — the order the ink moves outward.
+- 07fd2de: `setStroke` takes a whole paint, so a gradient or pattern stroke is writable.
+  
+  It accepted `{ color }` only, and merged through `paintWithColor`, which
+  supersedes a non-solid paint with a solid one — a gradient stroke was
+  unreachable even though `setStrokeOpacity` could already reach its alpha.
+  `paint` now wins over `color`, a color arriving later in the gesture supersedes
+  an earlier paint, and the stroke's width, cap, join, dash and align survive
+  either. New `strokeWith(paint, width?)` is `strokeOf`'s sibling for a paint
+  that has no color to pass.
+  
+  Two fixes alongside it: `setFill` started with no `color` and no `paint` seeded
+  from `DEFAULT_STROKE_COLOR`, painting the selection black where
+  `setFillOpacity` seeds the same slot from `DEFAULT_FILL_COLOR`; and
+  `gradientForBounds`'s doc comment claimed a corner-to-corner linear gradient
+  where the body builds a left-edge-to-right-edge one.
+  
+  `@weasel-js/ui` no longer exports `strokeWithColor`. It shared a name with
+  core's and disagreed with it — core's keeps the paint's opacity, ui's dropped
+  it — and nothing imported it.
+- 81213fc: Edit a node's stroke as the union it is
+  
+  `data.stroke` holds `string | Stroke`, and the schema described it with a
+  `color` leaf — which reads `undefined` off the object form, shows its own
+  default, and writes a bare hex back over the stroke's width, cap, join and
+  dash on the first edit. The same trap `ToolPrefPaint` was introduced to avoid
+  for `FillStyle`.
+  
+  A `stroke` pref kind now describes it, and `defaultNodeProperties` uses it.
+  Its control shows whichever color the value has — the string itself, or a
+  solid paint's color — gives a gradient stroke the indeterminate chip rather
+  than claiming a color it doesn't have, and preserves the form on write.
+  
+  `PrefsForm` gained the `stroke` case and the `paint` case it never had; a
+  `paint` leaf used to render as the literal text `(paint: no renderer)`.
+  `solidColorOf`, `strokeColorOf`, `strokeWithColor` and `isStrokeObject` are
+  exported from `@weasel-js/ui` for consumers writing their own property
+  renderers against either union.
+  
+  Cap, join and dash are not editable from a panel yet, and `data.strokeWidth`
+  remains its own leaf — see `docs/proposals/2026-08-26-node-stroke-union.md`
+  for why that waits on the SVG mapping.
+- 2b86e00: A text node's style is one value, not ten sibling paths
+  
+  `data.style.fontSize`, `.fontWeight`, `.align` and the rest addressed into one
+  `TextStyle` from ten independent leaves, each control writing a field of a
+  value it could only half see. `data.style` is an object leaf now, with
+  Character and Paragraph as groups inside it — groups head their fields and
+  contribute nothing to the path, so a field is still a field of the style and
+  one commit writes the whole thing.
+  
+  An object leaf whose fields are entirely grouped no longer prints its own
+  heading, which would stack straight onto the first group's, and a group's
+  fields sit under a rule so the nesting reads. WeaselDraw's inspector descends
+  into an object leaf when listing what a kind exposes — the fields are the
+  editable surface; the leaf is the container.
+  
+  `SelectionPanel` has a story now, which is how the two layout defects above
+  were found.
+- Updated dependencies [52c7b2a]
+- Updated dependencies [3386d64]
+- Updated dependencies [ffafb7d]
+- Updated dependencies [ba8b139]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [67bcb05]
+- Updated dependencies [47cbb08]
+- Updated dependencies [f43e9c2]
+- Updated dependencies [bb27e83]
+- Updated dependencies [6a33c3f]
+- Updated dependencies [c24e7de]
+- Updated dependencies [ce82f4a]
+- Updated dependencies [be697dc]
+- Updated dependencies [e909a3b]
+- Updated dependencies [26bbdcf]
+- Updated dependencies [546f67d]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [ccd51cc]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [d9f110e]
+- Updated dependencies [0dd35a1]
+- Updated dependencies [1a0bea3]
+- Updated dependencies [9d95836]
+- Updated dependencies [62a3c46]
+- Updated dependencies [5f6c28e]
+- Updated dependencies [3cd1ee8]
+- Updated dependencies [2ea772f]
+- Updated dependencies [f77bd95]
+- Updated dependencies [2ea772f]
+- Updated dependencies [aba8d91]
+- Updated dependencies [2ea772f]
+- Updated dependencies [3386d64]
+- Updated dependencies [68d2651]
+- Updated dependencies [3386d64]
+- Updated dependencies [c6c499d]
+- Updated dependencies [4f1ef0b]
+- Updated dependencies [0114abf]
+- Updated dependencies [50bc909]
+- Updated dependencies [6a06f6d]
+- Updated dependencies [a37ee0b]
+- Updated dependencies [611b30e]
+- Updated dependencies [9ad8cb2]
+- Updated dependencies [c1b8511]
+- Updated dependencies [d793d3c]
+- Updated dependencies [3386d64]
+- Updated dependencies [ce2b5c7]
+- Updated dependencies [2ea772f]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [20097e6]
+- Updated dependencies [84db1f6]
+- Updated dependencies [3386d64]
+- Updated dependencies [7a746df]
+- Updated dependencies [4f19274]
+- Updated dependencies [94f2446]
+- Updated dependencies [07fd2de]
+- Updated dependencies [81213fc]
+- Updated dependencies [2f225d7]
+- Updated dependencies [2b2d971]
+- Updated dependencies [00c5203]
+- Updated dependencies [68069dc]
+- Updated dependencies [5d0ff9c]
+- Updated dependencies [c1b8511]
+- Updated dependencies [546f67d]
+- Updated dependencies [c2ffa49]
+- Updated dependencies [4c097ef]
+- Updated dependencies [2b86e00]
+- Updated dependencies [d933a89]
+- Updated dependencies [bca99e3]
+- Updated dependencies [5923c8b]
+- Updated dependencies [2ea772f]
+- Updated dependencies [2ea772f]
+- Updated dependencies [3fb3a46]
+  - @weasel-js/core@1.3.0
+  - @weasel-js/svg@1.3.0
+  - @weasel-js/modes@1.3.0
+
 ## 2.0.0-pre.0
 
 ### Patch Changes

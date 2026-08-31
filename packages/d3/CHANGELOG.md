@@ -1,5 +1,104 @@
 # @weasel-js/d3
 
+## 1.3.0
+
+### Patch Changes
+
+- 52c7b2a: Depend on `font` and `core` as exact peers
+  
+  `@weasel-js/font` and `@weasel-js/core` keep registries that consumer code
+  writes into — registered faces and glyph-ready subscribers in one, content
+  handlers and paint kinds and shape painters in the other. Two physical copies
+  in a tree are two registries, so a face registered into one while layout
+  resolves against the other lays out nothing and the canvas is blank.
+  
+  Exact sibling pins are what produced the duplicate: a consumer mixing two
+  weasel releases left npm no choice but to nest a second copy, silently. As
+  peers, the same mix is an `ERESOLVE` at install time. `font` is now a peer of
+  `core`, `hud` and `text`; `core` is now a peer of `svg`, joining `d3`, `hud`
+  and `ui`, whose `>=` ranges tighten to exact so no version mix resolves by
+  accident.
+  
+  **This can break an install that currently succeeds.** Anyone resolving a
+  mixed set of weasel versions by luck now gets an install error instead of a
+  blank canvas. That is the point, but it is a break.
+  
+  `labkit` deliberately keeps `core` as an ordinary dependency: its build aliases
+  every core entry point to core's built files and inlines them, so it never
+  resolves core at the consumer and has nothing to peer. The flip side is that
+  labkit ships its own copy of core's registries, so a consumer using both still
+  has two — this change does not address that.
+- Updated dependencies [52c7b2a]
+- Updated dependencies [3386d64]
+- Updated dependencies [ffafb7d]
+- Updated dependencies [ba8b139]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [67bcb05]
+- Updated dependencies [47cbb08]
+- Updated dependencies [f43e9c2]
+- Updated dependencies [bb27e83]
+- Updated dependencies [6a33c3f]
+- Updated dependencies [c24e7de]
+- Updated dependencies [ce82f4a]
+- Updated dependencies [be697dc]
+- Updated dependencies [e909a3b]
+- Updated dependencies [26bbdcf]
+- Updated dependencies [546f67d]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [ccd51cc]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [d9f110e]
+- Updated dependencies [0dd35a1]
+- Updated dependencies [1a0bea3]
+- Updated dependencies [9d95836]
+- Updated dependencies [62a3c46]
+- Updated dependencies [5f6c28e]
+- Updated dependencies [3cd1ee8]
+- Updated dependencies [2ea772f]
+- Updated dependencies [f77bd95]
+- Updated dependencies [2ea772f]
+- Updated dependencies [aba8d91]
+- Updated dependencies [2ea772f]
+- Updated dependencies [3386d64]
+- Updated dependencies [68d2651]
+- Updated dependencies [3386d64]
+- Updated dependencies [c6c499d]
+- Updated dependencies [4f1ef0b]
+- Updated dependencies [0114abf]
+- Updated dependencies [50bc909]
+- Updated dependencies [6a06f6d]
+- Updated dependencies [a37ee0b]
+- Updated dependencies [611b30e]
+- Updated dependencies [9ad8cb2]
+- Updated dependencies [c1b8511]
+- Updated dependencies [d793d3c]
+- Updated dependencies [3386d64]
+- Updated dependencies [ce2b5c7]
+- Updated dependencies [2ea772f]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [84db1f6]
+- Updated dependencies [3386d64]
+- Updated dependencies [7a746df]
+- Updated dependencies [4f19274]
+- Updated dependencies [94f2446]
+- Updated dependencies [07fd2de]
+- Updated dependencies [81213fc]
+- Updated dependencies [2f225d7]
+- Updated dependencies [68069dc]
+- Updated dependencies [5d0ff9c]
+- Updated dependencies [c1b8511]
+- Updated dependencies [546f67d]
+- Updated dependencies [c2ffa49]
+- Updated dependencies [4c097ef]
+- Updated dependencies [2b86e00]
+- Updated dependencies [d933a89]
+- Updated dependencies [bca99e3]
+- Updated dependencies [5923c8b]
+- Updated dependencies [2ea772f]
+- Updated dependencies [2ea772f]
+- Updated dependencies [3fb3a46]
+  - @weasel-js/core@1.3.0
+
 ## 2.0.0-pre.0
 
 ### Patch Changes
