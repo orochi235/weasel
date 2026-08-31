@@ -15,7 +15,9 @@ import {
   __setGlyphRasterizerForTests,
   _resetFontOutlinesForTests,
 } from '@weasel-js/font/test-seams';
-import { layoutRuns, _resetMissingGlyphWarningsForTests } from './layoutRuns';
+import {
+  layoutRuns, _resetMissingGlyphWarningsForTests, _resetNoMetricsWarningsForTests,
+} from './layoutRuns';
 import { resolveRuns, type ResolvedRun } from '../runs/resolveRuns';
 import { resolveTextStyle } from '../textStyle';
 
@@ -1471,5 +1473,59 @@ describe('layoutRuns — bidi seam', () => {
     expect(plain.lines[0].cells.map((c) => c.level)).toEqual([0, 0]);
     const rev = layoutRuns([RUN_PLAIN('AB')], { ...OPTS, bidi: REVERSING });
     expect(rev.lines[0].cells.map((c) => c.level)).toEqual([1, 1]);
+  });
+});
+
+/**
+ * The failure that reaches a consumer as an empty canvas. A run whose family
+ * resolves to neither an atlas nor an outline face is skipped, and a skipped
+ * run is indistinguishable downstream from empty text — so the only signal is
+ * the one this warning emits.
+ */
+describe('layoutRuns — a family with no metrics at all', () => {
+  const OPTS = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' as const };
+
+  const run = (text: string, fontFamily = 'never-registered'): ResolvedRun => ({
+    text, fontFamily, fontSize: 32, fontWeight: 400, fontStyle: 'normal',
+    fill: { fill: 'solid', color: '#000' }, letterSpacing: 0,
+    underline: false, strikethrough: false, overline: false, baselineShift: 0,
+  });
+
+  beforeEach(() => {
+    _resetFontRegistryForTests();
+    _resetFallbackForTests();
+    _resetDynamicFontsForTests();
+    _resetNoMetricsWarningsForTests();
+  });
+
+  it('warns rather than laying out nothing in silence', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const out = layoutRuns([run('hello')], OPTS);
+
+    expect(out.groups).toHaveLength(0);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain('no metrics for "never-registered"');
+    warn.mockRestore();
+  });
+
+  // The duplicate-copy case is the one that costs an afternoon: the consumer
+  // registered the face, into the other copy's registry.
+  it('names the duplicated-font cause, which produces exactly this', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    layoutRuns([run('hello')], OPTS);
+    expect(warn.mock.calls[0][0]).toContain('@weasel-js/font');
+    warn.mockRestore();
+  });
+
+  it('warns once per family variant however many runs use it', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    layoutRuns([run('a'), run('b'), run('c')], OPTS);
+    layoutRuns([run('d')], OPTS);
+    layoutRuns([run('e', 'also-missing')], OPTS);
+
+    expect(warn).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
   });
 });
