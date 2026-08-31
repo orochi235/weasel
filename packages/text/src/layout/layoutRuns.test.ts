@@ -1529,3 +1529,43 @@ describe('layoutRuns — a family with no metrics at all', () => {
     warn.mockRestore();
   });
 });
+
+/**
+ * A line that wraps keeps the space it broke at. Alignment already hangs that
+ * space past the edge; `bounds` has to agree, or a caller scaling text to fit
+ * measures a block wider than the box it just fitted into.
+ */
+describe('layoutRuns — hung trailing whitespace and bounds', () => {
+  // 'AAAA BBBB' in the fixture atlas at size 32: 'AAAA' is 92 wide, 'BBBB' 88,
+  // a space 8. A 96-wide box breaks between the words, so the first line ends
+  // in the space it broke at.
+  const AAAA = 92;
+  const BBBB = 88;
+  const SPACE = 8;
+  const BOX = 96;
+
+  it('leaves a wrapped line out of bounds.width by its hung space', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([RUN_PLAIN('AAAA BBBB')], { maxWidth: BOX, lineHeight: 1.1, align: 'left' });
+
+    expect(out.lines).toHaveLength(2);
+    expect(out.bounds.width).toBe(AAAA);
+    expect(out.bounds.width).toBeLessThanOrEqual(BOX);
+  });
+
+  it('keeps the hung space in x1, which is the line-closing caret stop', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([RUN_PLAIN('AAAA BBBB')], { maxWidth: BOX, lineHeight: 1.1, align: 'left' });
+
+    expect(out.lines[0].x1).toBe(AAAA + SPACE);
+    expect(out.lines[1].x1).toBe(BBBB);
+  });
+
+  it('measures a line with no trailing space unchanged', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([RUN_PLAIN('AAAA')], { maxWidth: BOX, lineHeight: 1.1, align: 'left' });
+
+    expect(out.lines).toHaveLength(1);
+    expect(out.bounds.width).toBe(AAAA);
+  });
+});

@@ -216,6 +216,9 @@ export interface LaidOutRuns {
    *  `textLineBoxes` builds the text silhouette from these, so picking and
    *  painting cannot drift apart. */
   lines: LaidOutLineBox[];
+  /** The text's ink box. `width` is the widest line measured to its last
+   *  non-space cell — a trailing space hangs past the aligned edge, so a
+   *  block wrapped at `maxWidth` never reports wider than it. */
   bounds: { width: number; height: number };
 }
 
@@ -1124,7 +1127,7 @@ export function layoutRuns(
       cells,
       srcEnd,
     });
-    maxLineWidth = Math.max(maxLineWidth, line.width);
+    maxLineWidth = Math.max(maxLineWidth, inkWidth);
     penY += line.height;
   }
 
