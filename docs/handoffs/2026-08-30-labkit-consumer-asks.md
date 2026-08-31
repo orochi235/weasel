@@ -157,6 +157,32 @@ currently carrying.
   `.storybook/preview.tsx:275` to mount ~28 stories. A `LabkitRoot` mount
   component was designed and rejected; the moves above shrink the problem
   without solving it.
+- **`FloatingPanel` swallows a non-native control's click.** `isInteractive`
+  guards the drag by element name — `input, button, a, select, textarea,
+[data-no-drag]` — so anything else inside a panel gets `setPointerCapture` on
+  pointerdown, which retargets mouseup and means the browser synthesizes no
+  `click`. A `div role="button"`, a react-aria control that renders a div, or a
+  canvas is therefore dead to a real mouse while a programmatic `.click()`
+  still works, which is how it hides. The repo's own rule that a clickable
+  thing need not be a `<button>` is exactly what the allowlist assumes away.
+  Fix is either a designated drag handle or a few-px movement threshold before
+  capturing, not more names in the list.
+
+  brick-icons reported this as native `<button>` and `<select>` being dead,
+  which does **not** reproduce: that guard shipped in `bb66fe3c` (2026-08-25),
+  before the `@weasel-js/labkit@1.3.0` tag it is running. Its second instance —
+  its own pane capturing to pan, under an overlay of clickable boxes — is the
+  likelier cause of what it saw, and is not labkit's. Filed on the narrower
+  gap, which is real.
+
+- **The styleable surface has two prefixes and nothing says so.** DOM classes
+  are `lk-*`, design tokens are `--wzl-*`, and a consumer writing
+  `var(--lk-border, <fallback>)` gets the fallback on every one — silently, by
+  construction, because that is what a `var()` fallback is for. It cost
+  brick-icons dark-on-dark panels in the light theme. One line wherever the
+  consumer-facing styling contract is written down would retire it; there is no
+  such doc today, which is the actual gap.
+
 - **wod has three reach-ins to fix in its own repo**, all broken by the class
   names going private: `Editor.css:172` (`.lk-property-panel`) and anything
   styling `.lk-layer-card` become `className` props;
