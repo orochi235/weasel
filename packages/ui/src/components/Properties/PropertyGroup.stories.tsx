@@ -3,7 +3,7 @@ import { PropertyGroup } from './PropertyGroup';
 import { PropertyList, PropertyPanel, SliderRow } from './PropertyPanel';
 
 const meta: Meta<typeof PropertyGroup> = {
-  title: 'labkit/UI/Properties/PropertyGroup',
+  title: 'weasel-ui/Properties/PropertyGroup',
   component: PropertyGroup,
 };
 export default meta;

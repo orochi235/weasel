@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { CurveField } from './CurveField';
 
 const meta: Meta<typeof CurveField> = {
-  title: 'labkit/UI/Properties/CurveField',
+  title: 'weasel-ui/Properties/CurveField',
   component: CurveField,
 };
 export default meta;

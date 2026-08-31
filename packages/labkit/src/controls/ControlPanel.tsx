@@ -1,21 +1,21 @@
 import { isBuiltinToolPref } from '@weasel-js/core';
-import type { PrefLeaf } from '@weasel-js/ui';
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { fromConfigFields } from '../config/fromConfigField';
-import type { ControlRenderer, ResolvedConfig } from '../config/types';
-import { isLeafVisible } from '../config/visible';
-import { PropertyGroup } from '../ui/properties/PropertyGroup';
 import {
   CheckboxRow,
   ColorRow,
   NumberRow,
+  type PrefLeaf,
+  PropertyGroup,
   PropertyList,
   PropertyRow,
   SelectRow,
   SliderRow,
   TextRow,
   ToggleRow,
-} from '../ui/properties/PropertyPanel';
+} from '@weasel-js/ui';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { fromConfigFields } from '../config/fromConfigField';
+import type { ControlRenderer, ResolvedConfig } from '../config/types';
+import { isLeafVisible } from '../config/visible';
 import type { ConfigField } from './types';
 
 export interface ControlPanelProps<TC extends Record<string, unknown>> {

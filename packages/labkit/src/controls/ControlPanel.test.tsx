@@ -197,11 +197,11 @@ describe('<ControlPanel> schema', () => {
       }),
       [],
     );
-    const { container } = render(
+    render(
       <ControlPanel schema={schema} config={{ showGrid: true, snap: true }} setConfig={vi.fn()} />,
     );
     expect(screen.getByRole('button', { name: 'About Show grid' })).toBeInTheDocument();
-    expect(container.querySelectorAll('.lk-property-row__help')).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: /^About / })).toHaveLength(1);
   });
 });
 
@@ -267,7 +267,7 @@ describe('<ControlPanel> renderers', () => {
 
   it('a renderer returning null collapses the row', () => {
     const schema = resolveConfigSchema(f.schema({ tint: f.color('#ffffff') }), []);
-    const { container } = render(
+    render(
       <ControlPanel
         schema={schema}
         config={{ tint: '#ffffff' }}
@@ -275,7 +275,7 @@ describe('<ControlPanel> renderers', () => {
         renderers={{ color: () => null }}
       />,
     );
-    expect(container.querySelector('.lk-property-row')).toBeNull();
+    expect(screen.queryByText('Tint')).toBeNull();
   });
 });
 
@@ -321,11 +321,11 @@ describe('<ControlPanel> visibility and sections', () => {
       f.schema({ showGrid: f.boolean(true), seed: f.number(0).section('Advanced') }),
       [],
     );
-    const { container } = render(
+    render(
       <ControlPanel schema={schema} config={{ showGrid: true, seed: 0 }} setConfig={vi.fn()} />,
     );
     expect(screen.getByText('Advanced')).toBeInTheDocument();
-    const group = container.querySelector('.lk-property-group');
+    const group = screen.getByRole('heading', { name: 'Advanced' }).parentElement;
     expect(group).not.toBeNull();
     expect(group?.textContent).toContain('Seed');
     expect(group?.textContent).not.toContain('Show grid');

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import s from './Properties.module.css';
 
 /** Props for `<PropertyGroup>`. */
 export interface PropertyGroupProps {
@@ -30,16 +31,16 @@ export function PropertyGroup({
   pack = 'auto-color',
 }: PropertyGroupProps) {
   if (hidden) return null;
-  const packClass = pack === 'pairs' ? ' lk-property-group--pairs' : '';
-  const cls = `lk-property-group${packClass}${className ? ` ${className}` : ''}`;
+  const packClass = pack === 'pairs' ? ` ${s.groupPairs}` : '';
+  const cls = `${s.group}${packClass}${className ? ` ${className}` : ''}`;
   return (
     <div className={cls}>
-      <h3 className="lk-property-group__title">
+      <h3 className={s.groupTitle}>
         <hr />
         <span>{title}</span>
         <hr />
       </h3>
-      <div className="lk-property-group__body">{children}</div>
+      <div className={s.groupBody}>{children}</div>
     </div>
   );
 }

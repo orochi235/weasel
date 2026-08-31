@@ -19,6 +19,7 @@ export * from './components/PaintInput';
 export * from './components/PatternPicker';
 export * from './components/Powerline';
 export * from './components/Prefs';
+export * from './components/Properties';
 export * from './components/SelectionPanel';
 export * from './components/ResizeHandle';
 export * from './components/Sidebar';
@@ -55,7 +56,7 @@ export type { ChromaCurve, ChromaCurvePoint } from './color/oklch';
 export { useReorderDragList } from './useReorderDragList';
 export { useRovingTabIndex } from './useRovingTabIndex';
 export type { RovingItem, RovingTabIndex, UseRovingTabIndexOptions } from './useRovingTabIndex';
-export { formatNumber, MINUS_SIGN } from './format/number';
+export { formatNumber, formatZoom, MINUS_SIGN, parseSignedNumber } from './format/number';
 export type {
   LayerListItem,
   UseReorderDragListOptions,

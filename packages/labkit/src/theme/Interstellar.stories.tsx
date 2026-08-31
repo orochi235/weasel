@@ -8,7 +8,7 @@ import {
   PropertyPanel,
   SliderRow,
   TextRow,
-} from '../ui/properties/PropertyPanel';
+} from '@weasel-js/ui';
 import './Interstellar.stories.less';
 
 const meta: Meta = {

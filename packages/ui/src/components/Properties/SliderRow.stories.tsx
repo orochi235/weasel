@@ -4,7 +4,7 @@ import { SliderRow } from './PropertyPanel';
 import { SideBySide } from './storyLayouts';
 
 const meta: Meta<typeof SliderRow> = {
-  title: 'labkit/UI/Properties/Rows/SliderRow',
+  title: 'weasel-ui/Properties/Rows/SliderRow',
   component: SliderRow,
 };
 export default meta;

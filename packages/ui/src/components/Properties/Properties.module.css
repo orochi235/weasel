@@ -1,0 +1,756 @@
+/* One stylesheet for the whole property-panel family. PropertyList, PropertyRow,
+   PropertyGroup and Subpanel/EffectCard are styled together because the grid
+   rules genuinely cross components — `.listPairs > .subpanel` and
+   `.groupBody > :not(.rowColor)` name two components in one selector, and a CSS
+   Module can only compose local names within its own file. */
+
+/* Authored against a border-box reset (labkit's `.lk-root *`). weasel-ui has no
+   global reset, so the family restates it over its own subtrees. */
+.panel,
+.list,
+.row,
+.group,
+.subpanel,
+.card,
+.cardList,
+.panel *,
+.list *,
+.row *,
+.group *,
+.subpanel *,
+.card *,
+.cardList * {
+  box-sizing: border-box;
+}
+
+.panel {
+  background: var(--wzl-surface-raised);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-lg);
+  padding: 14px 16px;
+  backdrop-filter: blur(var(--wzl-glass-blur));
+  -webkit-backdrop-filter: blur(var(--wzl-glass-blur));
+}
+
+.panelTitle {
+  font-family: var(--wzl-font-display);
+  font-weight: var(--wzl-font-weight-light);
+  font-size: var(--wzl-font-size-lg);
+  line-height: var(--wzl-leading-snug);
+  letter-spacing: 0.01em;
+  color: var(--wzl-fg);
+  margin: 0 0 12px;
+}
+
+.list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 18px;
+  row-gap: 6px;
+  align-items: stretch;
+}
+
+/* Default packing: only color rows pair, everything else spans full width.
+   Scoped to NOT apply in pairs mode (otherwise this 0,2,0 selector beats the
+   pairs override below, which is only 0,1,0). */
+.list:not(.listPairs) > :not(.rowColor) {
+  grid-column: 1 / -1;
+}
+
+/* `pack="pairs"` flips that: every row auto-places into the 2-col grid two
+   per row, and explicit full-width children opt in via the span helper class. */
+.listPairs > * {
+  min-width: 0;
+}
+
+.listPairs > .span,
+.listPairs > .subpanel,
+.listPairs > h3 {
+  grid-column: 1 / -1;
+}
+
+/* ── Row ────────────────────────────────────────────────────────
+   Default shape: label on top (with optional right-aligned readout),
+   control below. */
+
+.row {
+  display: flex;
+  flex-direction: column;
+  /* No gap by default — controls sit flush under their label, matching
+     speech-balloons `.field { gap: 0 }`. Slider rows pull tighter still
+     via a negative margin on the label below. */
+  gap: 0;
+  min-width: 0;
+}
+
+/* Slider rows: pull the track up under the label so the row reads as one
+   tight block rather than a label + a separate horizontal strip. Also
+   bottom-align the track within the row so paired rows in a 2-col grid
+   keep their tracks lined up even when one label wraps to two lines. */
+.row:has(> input[type='range']) {
+  justify-content: flex-end;
+}
+
+.row:has(> input[type='range']) > .rowLabel {
+  /* Baseline-align (not center) so the readout input doesn't inflate the
+     label-group height past the text baseline. */
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px;
+  margin-bottom: -4px;
+}
+
+.row > input[type='range'] {
+  margin-top: auto;
+}
+
+.rowLabel {
+  font-family: var(--wzl-font-display);
+  font-weight: var(--wzl-font-weight-light);
+  font-size: var(--wzl-font-size-sm);
+  line-height: var(--wzl-leading-snug);
+  color: var(--wzl-fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.readout {
+  font-style: normal;
+  font-weight: var(--wzl-font-weight-medium);
+  color: var(--wzl-accent);
+  margin-left: auto;
+}
+
+/* ⓘ help affordance beside a row label. Every dimension is stated because a
+   host app's bare-element defaults can be authored at zero specificity —
+   labkit's `:where(.lk-root) :where(button)` sets `height: var(--wzl-control-h)`
+   and horizontal padding, which would otherwise stretch a one-glyph button into
+   a full-height control. */
+.help {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15em;
+  height: 1.15em;
+  padding: 0;
+  border: 0;
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--wzl-fg-subtle);
+  font-size: var(--wzl-font-size-sm);
+  line-height: 1;
+  letter-spacing: normal;
+  cursor: help;
+  border-radius: var(--wzl-radius-sm);
+}
+
+.help:hover {
+  color: var(--wzl-fg);
+  border-color: transparent;
+}
+
+.help:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: 1px;
+  color: var(--wzl-fg);
+}
+
+/* Single always-rendered <input> styled to read as a text label until focused. */
+.readoutInput {
+  font: inherit;
+  font-weight: var(--wzl-font-weight-medium);
+  /* Force leading-tight — the label parent inherits 1.2, which would make the
+     input box ~3px taller than the speech-balloons reference. */
+  line-height: var(--wzl-leading-tight);
+  color: var(--wzl-accent);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--wzl-radius-sm);
+  padding: 1px 0;
+  margin: 0;
+  width: calc(5em - 24px);
+  text-align: right;
+  cursor: text;
+  outline: none;
+  transition: background 80ms ease, border-color 80ms ease;
+  -moz-appearance: textfield;
+}
+
+.readoutInput:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.readoutInput:focus {
+  background: var(--wzl-surface-sunken);
+  border-color: var(--wzl-accent);
+}
+
+.readoutInput::-webkit-inner-spin-button,
+.readoutInput::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Inline-block (not flex) so the browser's native vertical-align for
+   <sub>/<sup> still works inside — flex collapses baseline semantics
+   and sinks superscripts onto the baseline. */
+.readoutGroup {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* Word-style units (e.g. "px") read as a small dim suffix next to the digits. */
+.readoutUnit {
+  color: var(--wzl-fg-muted);
+  font-size: var(--wzl-font-size-2xs);
+  line-height: var(--wzl-leading-tight);
+  pointer-events: none;
+}
+
+/* Symbol units (e.g. `<sup>°</sup>`) lean on the browser's native super
+   positioning. Just dim them to match — do NOT set line-height: 0, that
+   would re-collapse the glyph onto the baseline. */
+.readoutGroup sup {
+  color: var(--wzl-fg-muted);
+  font-size: var(--wzl-font-size-2xs);
+  pointer-events: none;
+}
+
+.row input[type='range'] {
+  /* Hairline track + small translucent thumb, tinted with the active --wzl-accent. */
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  width: 100%;
+  height: 12px;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.row input[type='range']::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: var(--wzl-radius-sm);
+  background: color-mix(in srgb, var(--wzl-accent) 18%, transparent);
+}
+
+.row input[type='range']::-moz-range-track {
+  height: 4px;
+  border-radius: var(--wzl-radius-sm);
+  background: color-mix(in srgb, var(--wzl-accent) 18%, transparent);
+}
+
+.row input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--wzl-accent) 70%, transparent);
+  border: none;
+  margin-top: -2px;
+}
+
+.row input[type='range']::-moz-range-thumb {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--wzl-accent) 70%, transparent);
+  border: none;
+}
+
+/* ── Inline layout: label sits to the left of the control. ────── */
+.rowInline {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.rowInline .rowLabel {
+  /* Label keeps its uppercase styling but won't expand to fill. */
+  flex: 0 0 auto;
+}
+
+.rowInline > input,
+.rowInline > select,
+.rowInline > .toggle {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.rowInline input[type='range'] {
+  width: auto;
+}
+
+.row input[type='text']:not(.readoutInput),
+.row input[type='number'] {
+  background: var(--wzl-surface-sunken);
+  color: var(--wzl-fg);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  padding: 6px 8px;
+  font-family: var(--wzl-font-ui);
+  font-weight: var(--wzl-font-weight-medium);
+  font-size: var(--wzl-font-size);
+  line-height: var(--wzl-leading-tight);
+}
+
+.row input[type='text']:not(.readoutInput):focus,
+.row input[type='number']:focus {
+  outline: 1px solid var(--wzl-accent);
+}
+
+/* Selects in property rows render borderless — chevron only, transparent
+   background, no chrome. Keep the native arrow via appearance: auto so users
+   still see something clickable. */
+.row select {
+  background: transparent;
+  color: var(--wzl-fg);
+  border: 0;
+  border-radius: 0;
+  padding: 2px 0;
+  font-family: var(--wzl-font-ui);
+  font-weight: var(--wzl-font-weight-medium);
+  font-size: var(--wzl-font-size);
+  line-height: var(--wzl-leading-tight);
+  cursor: pointer;
+}
+
+.row select:focus {
+  outline: 1px solid var(--wzl-accent);
+  outline-offset: 2px;
+}
+
+/* ── Color variant: label and swatch side-by-side, two per row in the grid.
+   Switches to a 2-row grid when an alpha slider is rendered beneath. */
+.rowColor {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto;
+  align-content: end;
+  column-gap: 8px;
+  row-gap: 0;
+  min-width: 0;
+}
+
+.rowColor .rowLabel {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+  flex: initial;
+  min-width: 0;
+}
+
+/* 36×24, hairline border, no padding. Padding: 0 is important — the native
+   <input type="color"> in some browsers (esp. Chrome) inflates beyond its
+   declared box when given padding, which expands the grid row and pushes
+   the paired slider track out of bottom alignment. */
+.rowColor input[type='color'] {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  box-sizing: border-box;
+  width: 36px;
+  height: 18px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--wzl-radius-sm);
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Alpha slider: full-width second row beneath the color swatch. */
+.rowColor input[type='range'].alpha {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  height: 12px;
+  width: 100%;
+  margin: 0;
+}
+
+.rowColor input[type='range'].alpha::-webkit-slider-runnable-track {
+  background: color-mix(in srgb, var(--wzl-accent) 10%, transparent);
+}
+
+.rowColor input[type='range'].alpha::-moz-range-track {
+  background: color-mix(in srgb, var(--wzl-accent) 10%, transparent);
+}
+
+/* Disabled state: dim the track, hide the thumb, swap the cursor — used when
+   the consumer of the color drops alpha so the affordance reads as inert. */
+.rowColor.alphaDisabled input[type='range'].alpha {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.rowColor.alphaDisabled input[type='range'].alpha::-webkit-slider-runnable-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.rowColor.alphaDisabled input[type='range'].alpha::-moz-range-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.rowColor.alphaDisabled input[type='range'].alpha::-webkit-slider-thumb {
+  background: transparent;
+}
+
+.rowColor.alphaDisabled input[type='range'].alpha::-moz-range-thumb {
+  background: transparent;
+}
+
+/* ── Checkbox variant: control-first inline layout, no uppercase label. */
+.rowCheckbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.rowCheckbox .rowLabel {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: var(--wzl-font-size);
+  color: var(--wzl-fg);
+  /* Place the label after the checkbox visually. */
+  order: 1;
+}
+
+.rowCheckbox input[type='checkbox'] {
+  accent-color: var(--wzl-accent);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+/* ── Segmented toggle group ───────────────────────────────────── */
+.toggle {
+  display: flex;
+  width: 100%;
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  overflow: hidden;
+}
+
+.toggleButton {
+  flex: 1;
+  height: 26px;
+  padding: 0 8px;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--wzl-fg-muted);
+  border: 0;
+  border-radius: 0;
+  font-family: var(--wzl-font-ui);
+  font-weight: var(--wzl-font-weight-medium);
+  font-size: var(--wzl-font-size-sm);
+  line-height: var(--wzl-leading-tight);
+  cursor: pointer;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.toggleButton + .toggleButton {
+  border-left: 1px solid var(--wzl-border);
+}
+
+.toggleButton:hover {
+  color: var(--wzl-fg);
+  border-color: var(--wzl-border);
+}
+
+.toggleButtonSelected {
+  background: var(--wzl-accent);
+  color: var(--wzl-fg-on-accent);
+  font-weight: var(--wzl-font-weight-medium);
+}
+
+.toggleButtonSelected:hover {
+  color: var(--wzl-fg-on-accent);
+}
+
+/* ── PropertyGroup ──────────────────────────────────────────────────
+   Bordered, sunken section inside a list. */
+.group {
+  grid-column: 1 / -1;
+  background: var(--wzl-surface-sunken);
+  border-radius: var(--wzl-radius-md);
+  padding: 10px 12px 12px;
+}
+
+.groupTitle {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 8px;
+  font-family: var(--wzl-font-display);
+  font-weight: var(--wzl-font-weight-light);
+  font-size: var(--wzl-font-size-sm);
+  letter-spacing: var(--wzl-tracking-wider);
+  text-transform: uppercase;
+  color: var(--wzl-fg-subtle);
+}
+
+.groupTitle hr {
+  border: 0;
+  border-top: 1px solid var(--wzl-border);
+  margin: 0;
+}
+
+.groupBody {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 16px;
+  row-gap: 10px;
+  /* Stretch so paired rows match in height — slider rows then bottom-align
+     their tracks (via `margin-top: auto`) and stay lined up even when one
+     sibling's label wraps to two lines. */
+  align-items: stretch;
+}
+
+.group:not(.groupPairs) .groupBody > :not(.rowColor) {
+  grid-column: 1 / -1;
+}
+
+.groupPairs .groupBody > * {
+  grid-column: auto;
+}
+
+.groupPairs .groupBody > h3,
+.groupPairs .groupBody > .span {
+  grid-column: 1 / -1;
+}
+
+/* ── Subpanel ────────────────────────────────────────────────────────
+   Headered group of controls inside a list. The header is a typographic
+   label flanked by a horizontal rule — no card chrome, just the divider. */
+.subpanel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 10px;
+  row-gap: 3px;
+  align-items: stretch;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.subpanel > * {
+  min-width: 0;
+}
+
+.subpanel > .subpanelTitle,
+.subpanel > .span {
+  grid-column: 1 / -1;
+}
+
+.subpanelTitle {
+  font-family: var(--wzl-font-display);
+  font-weight: var(--wzl-font-weight-medium);
+  font-size: var(--wzl-font-size-sm);
+  line-height: var(--wzl-leading-tight);
+  color: var(--wzl-fg);
+  text-transform: uppercase;
+  letter-spacing: var(--wzl-tracking-wider);
+  margin: 0;
+  padding: 6px 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.subpanelTitle > span {
+  flex: 0 0 auto;
+}
+
+.subpanelTitle > hr {
+  flex: 1 1 auto;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  margin: 0;
+}
+
+/* ── EffectCard ──────────────────────────────────────────────────────
+   Draggable, collapsible card. Optional --wzl-effect-card-accent re-binds the
+   local --wzl-accent so every descendant control auto-tints. */
+.card {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.cardDragging {
+  opacity: 0.45;
+}
+
+.cardExpanded {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.cardAccented {
+  /* Re-bind --wzl-accent inside the card so every descendant style that paints
+     with var(--wzl-accent) (readouts, slider thumb, etc.) picks up the
+     per-card tint automatically. */
+  --wzl-accent: var(--wzl-effect-card-accent);
+  background: color-mix(in srgb, var(--wzl-effect-card-accent) 4%, rgba(0, 0, 0, 0.28));
+  border-color: color-mix(in srgb, var(--wzl-effect-card-accent) 28%, var(--wzl-border));
+  border-left-width: 4px;
+  border-left-color: var(--wzl-effect-card-accent);
+}
+
+.cardAccented.cardExpanded {
+  background: color-mix(in srgb, var(--wzl-effect-card-accent) 5%, rgba(0, 0, 0, 0.35));
+}
+
+.cardAccented .cardHead {
+  background: color-mix(in srgb, var(--wzl-effect-card-accent) 38%, rgba(0, 0, 0, 0.4));
+}
+
+.cardAccented .cardHead:hover {
+  background: color-mix(in srgb, var(--wzl-effect-card-accent) 48%, rgba(0, 0, 0, 0.35));
+}
+
+.cardHead {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 2px 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cardHead:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.cardHandle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wzl-fg-muted);
+  cursor: grab;
+  padding: 0 2px;
+}
+
+.cardHandle:active {
+  cursor: grabbing;
+}
+
+.cardIndexBadge {
+  /* Rendered as a <button> (keyboard-operable drag/toggle handle); strip the
+     native button chrome so it matches the surrounding badge styling. */
+  appearance: none;
+  border: 0;
+  background: none;
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  min-width: 14px;
+  padding: 0 2px;
+  color: var(--wzl-effect-card-accent, var(--wzl-fg-muted));
+  font-size: var(--wzl-font-size);
+  font-weight: var(--wzl-font-weight-bold);
+  font-family: var(--wzl-font-mono);
+  line-height: 1;
+}
+
+.cardTitle {
+  font-family: var(--wzl-font-display);
+  font-weight: var(--wzl-font-weight-medium);
+  font-size: var(--wzl-font-size);
+  line-height: var(--wzl-leading-tight);
+  color: var(--wzl-fg);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cardPrimary {
+  font-family: var(--wzl-font-ui);
+  font-weight: var(--wzl-font-weight-medium);
+  font-size: var(--wzl-font-size-sm);
+  line-height: var(--wzl-leading-tight);
+  color: var(--wzl-fg);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  padding: 2px 6px;
+  margin-left: auto;
+}
+
+/* Push the remove button to the right edge — whether it follows a primary
+   chip or sits alone after the title. */
+.cardHead .cardRemove,
+.cardHead .cardPrimary + .cardRemove {
+  margin-left: auto;
+}
+
+.cardHead .cardPrimary ~ .cardRemove {
+  margin-left: 4px;
+}
+
+.cardRemove {
+  background: transparent;
+  color: var(--wzl-fg-muted);
+  border: 1px solid transparent;
+  border-radius: var(--wzl-radius-sm);
+  width: 22px;
+  height: 22px;
+  font-size: var(--wzl-font-size);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardRemove:hover {
+  color: var(--wzl-danger-fg, var(--wzl-danger));
+  border-color: color-mix(in srgb, var(--wzl-danger) 40%, transparent);
+  background: color-mix(in srgb, var(--wzl-danger) 8%, transparent);
+}
+
+.cardBody {
+  padding: 4px 12px 12px;
+  border-top: 1px solid var(--wzl-border);
+}
+
+/* ── EffectCardList ────────────────────────────────────────────────── */
+.cardList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cardListWrap {
+  position: relative;
+}
+
+.cardDropHint {
+  height: 0;
+  border-top: 2px solid var(--wzl-accent);
+  border-radius: var(--wzl-radius-sm);
+  margin: 2px 0;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--wzl-accent) 60%, transparent);
+}
+
+.cardListEmpty {
+  font-family: var(--wzl-font-display);
+  font-weight: var(--wzl-font-weight-light);
+  font-size: var(--wzl-font-size-sm);
+  line-height: var(--wzl-leading);
+  color: var(--wzl-fg-muted);
+  text-align: center;
+  padding: 16px 12px;
+  border: 1px dashed var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+}

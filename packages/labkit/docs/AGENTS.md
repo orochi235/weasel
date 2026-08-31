@@ -96,8 +96,8 @@ Capabilities compose: an instrument with `canvas` + `dragDrop` + `undo` gets all
 
 | Concept | Source |
 |---|---|
-| `<PropertyGroup>` (subpanel grouping with `hidden`) | `src/ui/properties/PropertyGroup.tsx` |
-| `<CurveField>` (1D y=f(x) curve editor) | `src/ui/properties/CurveField.tsx` |
+| `<PropertyGroup>` (subpanel grouping with `hidden`) | `@weasel-js/ui` (re-exported by labkit) |
+| `<CurveField>` (1D y=f(x) curve editor) | `@weasel-js/ui` (re-exported by labkit) |
 | `<LayerStack>` (expandable layer cards w/ drop-hint reorder) | `src/ui/layers/LayerStack.tsx` |
 | `<SingletonExperimentProvider>` (one-trial state runtime) | `src/state/SingletonExperiment.tsx` |
 | Weasel-ui passthroughs (`CurveEditor`, `useReorderDragList`, `formatNumber`, …) | `src/passthrough/weasel-ui.ts` (exported as `@weasel-js/labkit/weasel-ui`) |

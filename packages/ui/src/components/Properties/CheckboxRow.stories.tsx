@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { CheckboxRow } from './PropertyPanel';
 
 const meta: Meta<typeof CheckboxRow> = {
-  title: 'labkit/UI/Properties/Rows/CheckboxRow',
+  title: 'weasel-ui/Properties/Rows/CheckboxRow',
   component: CheckboxRow,
 };
 export default meta;

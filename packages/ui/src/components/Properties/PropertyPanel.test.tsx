@@ -12,6 +12,7 @@ import {
   TextRow,
   ToggleRow,
 } from './PropertyPanel';
+import s from './Properties.module.css';
 
 describe('PropertyPanel', () => {
   it('renders title and children', () => {
@@ -34,7 +35,7 @@ describe('PropertyPanel', () => {
         </PropertyRow>
       </PropertyPanel>,
     );
-    expect(container.querySelector('.lk-property-panel__title')).toBeNull();
+    expect(container.querySelector(`.${s.panelTitle}`)).toBeNull();
   });
 
   it('renders children directly (no implicit grid)', () => {
@@ -43,7 +44,7 @@ describe('PropertyPanel', () => {
         <span>raw child</span>
       </PropertyPanel>,
     );
-    expect(container.querySelector('.lk-property-list')).toBeNull();
+    expect(container.querySelector(`.${s.list}`)).toBeNull();
     expect(screen.getByText('raw child')).toBeInTheDocument();
   });
 });
@@ -57,7 +58,7 @@ describe('PropertyList', () => {
         </PropertyRow>
       </PropertyList>,
     );
-    expect(container.querySelector('.lk-property-list')).not.toBeNull();
+    expect(container.querySelector(`.${s.list}`)).not.toBeNull();
   });
 });
 
@@ -78,7 +79,7 @@ describe('PropertyRow', () => {
         <input type="color" defaultValue="#fff" />
       </PropertyRow>,
     );
-    expect(container.querySelector('.lk-property-row--color')).not.toBeNull();
+    expect(container.querySelector(`.${s.rowColor}`)).not.toBeNull();
   });
 
   it('renders a help affordance for a non-empty description', () => {
@@ -96,13 +97,13 @@ describe('PropertyRow', () => {
         <input type="text" defaultValue="x" />
       </PropertyRow>,
     );
-    expect(container.querySelector('.lk-property-row__help')).toBeNull();
+    expect(container.querySelector(`.${s.help}`)).toBeNull();
     rerender(
       <PropertyRow label="Opacity">
         <input type="text" defaultValue="x" />
       </PropertyRow>,
     );
-    expect(container.querySelector('.lk-property-row__help')).toBeNull();
+    expect(container.querySelector(`.${s.help}`)).toBeNull();
   });
 
   it('shows the description in a tooltip on keyboard focus', () => {
@@ -135,13 +136,13 @@ describe('PropertyRow', () => {
         <input type="text" defaultValue="x" />
       </PropertyRow>,
     );
-    expect(container.querySelector('.lk-property-row')).toHaveClass('lk-property-list__span');
+    expect(container.querySelector(`.${s.row}`)).toHaveClass(s.span);
     rerender(
       <PropertyRow label="L">
         <input type="text" defaultValue="x" />
       </PropertyRow>,
     );
-    expect(container.querySelector('.lk-property-row')).not.toHaveClass('lk-property-list__span');
+    expect(container.querySelector(`.${s.row}`)).not.toHaveClass(s.span);
   });
 });
 

@@ -1,5 +1,7 @@
 import { useCallback, useMemo } from 'react';
-import { type ControlPoint, CurveEditor, dlog } from '../../passthrough/weasel-ui';
+import { dlog } from '../../dlog';
+import { type ControlPoint, CurveEditor } from '../CurveEditor';
+import s from './CurveField.module.css';
 
 /** An annotation drawn over a curve plot: a shaded band across a range of x,
  *  or a vertical line at one x. */
@@ -30,7 +32,7 @@ export interface CurveFieldProps {
  * A function-domain (y = f(x), x ∈ [0,1]) curve editor with per-stop
  * numeric readouts and flip buttons. Wraps weasel-ui's
  * `CurveEditor`; consumers wanting the raw editor (2D paths,
- * custom anchors) should import it from `@weasel-js/labkit/weasel-ui`.
+ * custom anchors) should import that instead.
  */
 export function CurveField({
   values,
@@ -90,8 +92,8 @@ export function CurveField({
   }, [values, min, max, onChange]);
 
   return (
-    <div className="lk-curve-field">
-      <div className="lk-curve-field__plot">
+    <div className={s.field}>
+      <div className={s.plot}>
         <CurveEditor
           value={points}
           onInput={handleChange}
@@ -109,7 +111,7 @@ export function CurveField({
         />
         {marks && marks.length > 0 && (
           <svg
-            className="lk-curve-field__marks"
+            className={s.marks}
             width={width}
             height={height}
             viewBox={`0 0 ${width} ${height}`}
@@ -162,17 +164,17 @@ export function CurveField({
           </svg>
         )}
       </div>
-      <div className="lk-curve-field__actions">
-        <button type="button" className="lk-curve-field__action" onClick={handleFlip}>
+      <div className={s.actions}>
+        <button type="button" className={s.action} onClick={handleFlip}>
           Flip horizontally
         </button>
-        <button type="button" className="lk-curve-field__action" onClick={handleFlipVertical}>
+        <button type="button" className={s.action} onClick={handleFlipVertical}>
           Flip vertically
         </button>
         {defaults && (
           <button
             type="button"
-            className="lk-curve-field__action"
+            className={s.action}
             onClick={() => onChange([...defaults])}
           >
             Reset

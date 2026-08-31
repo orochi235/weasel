@@ -4,7 +4,7 @@ import { TextRow } from './PropertyPanel';
 import { SideBySide } from './storyLayouts';
 
 const meta: Meta<typeof TextRow> = {
-  title: 'labkit/UI/Properties/Rows/TextRow',
+  title: 'weasel-ui/Properties/Rows/TextRow',
   component: TextRow,
 };
 export default meta;

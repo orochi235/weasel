@@ -1,3 +1,48 @@
+// The property-panel family lives in `@weasel-js/ui` now; labkit re-exports it
+// so existing `@weasel-js/labkit` imports keep resolving. Named, not `export *`
+// — a star re-export of an external package emits no binding in the bundle.
+export type {
+  CheckboxRowProps,
+  ColorRowProps,
+  CurveFieldProps,
+  CurveMark,
+  EffectCardListItem,
+  EffectCardListProps,
+  EffectCardProps,
+  NumberRowProps,
+  PropertyGroupProps,
+  PropertyListPack,
+  PropertyListProps,
+  PropertyOption,
+  PropertyPanelProps,
+  PropertyRowLayout,
+  PropertyRowProps,
+  PropertyRowVariant,
+  PropertySpanProps,
+  SelectRowProps,
+  SliderRowProps,
+  SubpanelProps,
+  TextRowProps,
+  ToggleRowProps,
+} from '@weasel-js/ui';
+export {
+  CheckboxRow,
+  ColorRow,
+  CurveField,
+  EffectCard,
+  EffectCardList,
+  NumberRow,
+  PropertyGroup,
+  PropertyList,
+  PropertyPanel,
+  PropertyRow,
+  PropertySpan,
+  SelectRow,
+  SliderRow,
+  Subpanel,
+  TextRow,
+  ToggleRow,
+} from '@weasel-js/ui';
 export type { CanvasLayerDescriptor, CanvasStackContextValue, CanvasStackProps } from './canvas';
 export { CanvasStack, CanvasStackContext, screenToWorld, worldToScreen } from './canvas';
 export type { OrbitHandlers, OrbitView, UseOrbitOptions, Vec3 } from './canvas/useOrbit';
@@ -106,6 +151,5 @@ export { interstellarTheme } from './theme/interstellar';
 export type { ToolCapability, TrialTool } from './tools/types';
 export * from './trial';
 export * from './ui/layers';
-export * from './ui/properties';
 export type { EventBus, EventListener } from './undo';
 export { clearUndo, createEventBus, emptyStack, pushSnapshot, redo, undo } from './undo';

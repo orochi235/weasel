@@ -1,8 +1,9 @@
-import { Tooltip, TooltipTrigger } from '@weasel-js/ui';
 import { type ReactNode, useState } from 'react';
 import { Focusable } from 'react-aria-components';
-import { dlog } from '../../passthrough/weasel-ui';
-import { formatNumber, parseSignedNumber } from '../format';
+import { dlog } from '../../dlog';
+import { formatNumber, parseSignedNumber } from '../../format/number';
+import { Tooltip, TooltipTrigger } from '../Tooltip';
+import s from './Properties.module.css';
 
 /** Props for `<PropertyPanel>`. */
 export interface PropertyPanelProps {
@@ -14,10 +15,10 @@ export interface PropertyPanelProps {
 /** A titled panel holding property rows — the sidebar container the rest of
  *  this module's components fill. */
 export function PropertyPanel({ title, children, className }: PropertyPanelProps) {
-  const cls = className ? `lk-property-panel ${className}` : 'lk-property-panel';
+  const cls = className ? `${s.panel} ${className}` : s.panel;
   return (
     <div className={cls}>
-      {title != null && <h2 className="lk-property-panel__title">{title}</h2>}
+      {title != null && <h2 className={s.panelTitle}>{title}</h2>}
       {children}
     </div>
   );
@@ -35,8 +36,8 @@ export interface PropertyListProps {
    *   - `'auto-color'` (default): only color rows pair side-by-side; everything
    *     else spans the full width. Right for sparse top-level panels.
    *   - `'pairs'`: every row auto-places into the 2-column grid two-per-row.
-   *     Headers, subpanels, and full-width children (`<hr>`, curve blocks)
-   *     still span via `lk-property-list__span`. Right for dense effect bodies.
+   *     Headers and subpanels still span the full width; wrap any other
+   *     full-width child in `<PropertySpan>`. Right for dense effect bodies.
    */
   pack?: PropertyListPack;
 }
@@ -46,9 +47,25 @@ export interface PropertyListProps {
  * nest inside <PropertyPanel/> for the standard glass card.
  */
 export function PropertyList({ children, className, pack = 'auto-color' }: PropertyListProps) {
-  const packClass = pack === 'pairs' ? ' lk-property-list--pairs' : '';
-  const cls = `lk-property-list${packClass}${className ? ` ${className}` : ''}`;
+  const packClass = pack === 'pairs' ? ` ${s.listPairs}` : '';
+  const cls = `${s.list}${packClass}${className ? ` ${className}` : ''}`;
   return <div className={cls}>{children}</div>;
+}
+
+/** Props for `<PropertySpan>`. */
+export interface PropertySpanProps {
+  children: ReactNode;
+  className?: string;
+}
+
+/**
+ * Wrapper that makes an arbitrary child span both columns of a
+ * `<PropertyList pack="pairs">`, a `<PropertyGroup pack="pairs">` body, or a
+ * `<Subpanel>`. `<PropertyRow span>` covers the row case; this covers
+ * everything else a consumer puts in the grid.
+ */
+export function PropertySpan({ children, className }: PropertySpanProps) {
+  return <div className={className ? `${s.span} ${className}` : s.span}>{children}</div>;
 }
 
 /** Which control shape a row holds, which decides its intrinsic layout. */
@@ -97,19 +114,18 @@ export function PropertyRow({
   htmlFor,
   className,
 }: PropertyRowProps) {
-  const variantClass = variant === 'default' ? '' : ` lk-property-row--${variant}`;
+  const variantClass = variant === 'color' ? ` ${s.rowColor}` : variant === 'checkbox' ? ` ${s.rowCheckbox}` : '';
   // Layout only meaningfully applies to the default variant; color and
   // checkbox have their own intrinsic orientation.
-  const layoutClass =
-    variant === 'default' && layout === 'inline' ? ' lk-property-row--inline' : '';
-  const spanClass = span ? ' lk-property-list__span' : '';
-  const cls = `lk-property-row${variantClass}${layoutClass}${spanClass}${className ? ` ${className}` : ''}`;
+  const layoutClass = variant === 'default' && layout === 'inline' ? ` ${s.rowInline}` : '';
+  const spanClass = span ? ` ${s.span}` : '';
+  const cls = `${s.row}${variantClass}${layoutClass}${spanClass}${className ? ` ${className}` : ''}`;
   return (
     <label className={cls} htmlFor={htmlFor}>
-      <span className="lk-property-row__label">
+      <span className={s.rowLabel}>
         {label}
         {description ? <PropertyRowHelp label={label} description={description} /> : null}
-        {readout != null && <em className="lk-property-row__readout">{readout}</em>}
+        {readout != null && <em className={s.readout}>{readout}</em>}
       </span>
       {children}
     </label>
@@ -125,7 +141,7 @@ function PropertyRowHelp({ label, description }: { label: ReactNode; description
       <Focusable>
         <button
           type="button"
-          className="lk-property-row__help"
+          className={s.help}
           aria-label={`About ${name}`}
           onClick={(e) => {
             // The wrapping <label> would otherwise actuate the row's control.
@@ -183,7 +199,14 @@ export function SliderRow({
   // can still pass an explicit `format` to override (e.g. for a custom
   // unit string or a non-decimal display like fractions).
   const decimals = step >= 1 ? 0 : Math.min(6, Math.max(0, Math.ceil(-Math.log10(step))));
-  const effectiveFormat = format ?? ((n: number) => formatNumber(n, decimals));
+  const effectiveFormat =
+    format ??
+    ((n: number) =>
+      formatNumber(n, {
+        useGrouping: false,
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      }));
   return (
     <PropertyRow
       label={label}
@@ -235,7 +258,8 @@ function EditableReadout({ value, min, max, format, unit, onCommit }: EditableRe
   // Draft is non-null only while the input is focused. Live value mirrors
   // into the input otherwise. Pattern mirrors speech-balloons Lab.tsx:893-942.
   const [draft, setDraft] = useState<string | null>(null);
-  const fmt = (n: number) => (format ? format(n) : formatNumber(n));
+  const fmt = (n: number) =>
+    format ? format(n) : formatNumber(n, { useGrouping: false, maximumFractionDigits: 20 });
   const displayValue =
     draft !== null
       ? draft
@@ -246,7 +270,7 @@ function EditableReadout({ value, min, max, format, unit, onCommit }: EditableRe
 
   const suffix =
     unit == null ? null : typeof unit === 'string' ? (
-      <span className="lk-property-row__readout-unit">{unit}</span>
+      <span className={s.readoutUnit}>{unit}</span>
     ) : (
       unit
     );
@@ -260,11 +284,11 @@ function EditableReadout({ value, min, max, format, unit, onCommit }: EditableRe
   };
 
   return (
-    <span className="lk-property-row__readout-group">
+    <span className={s.readoutGroup}>
       <input
         type="text"
         inputMode="decimal"
-        className="lk-property-row__readout-input"
+        className={s.readoutInput}
         value={displayValue}
         onFocus={(e) => {
           const formatted = fmt(value);
@@ -323,14 +347,14 @@ export function ColorRow({
   description,
 }: ColorRowProps) {
   const showAlpha = alpha != null;
-  const className = alphaDisabled ? 'lk-property-row--alpha-disabled' : undefined;
+  const className = alphaDisabled ? s.alphaDisabled : undefined;
   return (
     <PropertyRow label={label} variant="color" className={className} description={description}>
       <input type="color" value={value} onChange={(e) => onChange(e.target.value)} />
       {showAlpha && (
         <input
           type="range"
-          className="lk-property-row__alpha"
+          className={s.alpha}
           min={0}
           max={1}
           step={0.01}
@@ -440,7 +464,7 @@ export function NumberRow({
   );
 }
 
-export interface SelectOption<T extends string> {
+export interface PropertyOption<T extends string> {
   value: T;
   label: ReactNode;
 }
@@ -449,7 +473,7 @@ export interface SelectOption<T extends string> {
 export interface SelectRowProps<T extends string> {
   label: ReactNode;
   value: T;
-  options: ReadonlyArray<SelectOption<T>>;
+  options: ReadonlyArray<PropertyOption<T>>;
   onChange: (next: T) => void;
   layout?: PropertyRowLayout;
   description?: string;
@@ -490,7 +514,7 @@ export function SelectRow<T extends string>({
 export interface ToggleRowProps<T extends string> {
   label: ReactNode;
   value: T;
-  options: ReadonlyArray<SelectOption<T>>;
+  options: ReadonlyArray<PropertyOption<T>>;
   onChange: (next: T) => void;
   layout?: PropertyRowLayout;
   description?: string;
@@ -508,7 +532,7 @@ export function ToggleRow<T extends string>({
 }: ToggleRowProps<T>) {
   return (
     <PropertyRow label={label} layout={layout} description={description}>
-      <div className="lk-property-row__toggle">
+      <div className={s.toggle}>
         {options.map((opt) => {
           const selected = opt.value === value;
           return (
@@ -517,9 +541,7 @@ export function ToggleRow<T extends string>({
               type="button"
               aria-pressed={selected}
               className={
-                selected
-                  ? 'lk-property-row__toggle-button lk-property-row__toggle-button--selected'
-                  : 'lk-property-row__toggle-button'
+                selected ? `${s.toggleButton} ${s.toggleButtonSelected}` : s.toggleButton
               }
               onClick={() => onChange(opt.value)}
             >

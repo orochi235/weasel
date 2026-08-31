@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { PropertyRow } from '@weasel-js/ui';
 import { useState } from 'react';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
 import type { ConfigRule, ControlRenderer } from '../config/types';
-import { PropertyRow } from '../ui/properties/PropertyPanel';
 import { ControlPanel } from './ControlPanel';
 import type { ConfigField } from './types';
 

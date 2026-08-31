@@ -23,7 +23,7 @@ interface DemoArgs {
 }
 
 const meta: Meta<DemoArgs> = {
-  title: 'labkit/UI/Properties/PropertyPanel',
+  title: 'weasel-ui/Properties/PropertyPanel',
   argTypes: {
     title: { control: 'text' },
     pack: {

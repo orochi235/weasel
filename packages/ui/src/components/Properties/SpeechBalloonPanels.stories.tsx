@@ -1,5 +1,5 @@
 // Visual parity check: rebuild a slice of the speech-balloons lab side panels
-// using only labkit primitives. If the readouts, units, alpha, two-per-row
+// using only these primitives. If the readouts, units, alpha, two-per-row
 // effect bodies, subpanels, and accent-tinted effect cards look the same as
 // the SB reference, we've captured the styling correctly.
 
@@ -12,13 +12,14 @@ import {
   EffectCardList,
   PropertyList,
   PropertyPanel,
+  PropertySpan,
   SelectRow,
   SliderRow,
   Subpanel,
 } from './';
 
 const meta: Meta = {
-  title: 'labkit/UI/Properties/PropertyPanel/SpeechBalloonPanels',
+  title: 'weasel-ui/Properties/PropertyPanel/SpeechBalloonPanels',
 };
 export default meta;
 type Story = StoryObj;
@@ -217,9 +218,9 @@ function ShadowPanel() {
   return (
     <PropertyPanel title="Shadow">
       <PropertyList pack="pairs">
-        <div className="lk-property-list__span">
+        <PropertySpan>
           <CheckboxRow label="Enabled" value={enabled} onChange={setEnabled} />
-        </div>
+        </PropertySpan>
         <SliderRow
           label="Offset X"
           value={dx}
@@ -275,7 +276,7 @@ export const LeftSidebar: Story = {
 };
 
 // ── Right sidebar: tails ───────────────────────────────────────────
-// Each tail is an EffectCard with a per-instance accent (--lk-panel-accent)
+// Each tail is an EffectCard with a per-instance accent (--wzl-effect-card-accent)
 // that re-binds --wzl-accent inside the card. Drag the badge handle to reorder.
 
 interface TailItem {

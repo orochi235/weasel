@@ -1,0 +1,41 @@
+.field {
+  display: grid;
+  gap: 6px;
+  grid-column: 1 / -1;
+  box-sizing: border-box;
+}
+
+.field * {
+  box-sizing: border-box;
+}
+
+.plot {
+  position: relative;
+  width: 100%;
+}
+
+.marks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+  justify-self: start;
+}
+
+.action {
+  background: transparent;
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  color: var(--wzl-fg);
+  padding: 4px 10px;
+  font-size: var(--wzl-font-size-sm);
+  cursor: pointer;
+}
+
+.action:hover {
+  background: var(--wzl-surface-raised);
+}

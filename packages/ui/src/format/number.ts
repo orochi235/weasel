@@ -20,3 +20,31 @@ export function formatNumber(value: number, options?: Intl.NumberFormatOptions):
     : String(value);
   return formatted.replace(/^-/, MINUS_SIGN);
 }
+
+/**
+ * Parses a string that may carry {@link MINUS_SIGN} in place of the ASCII
+ * hyphen. The inverse of {@link formatNumber} for any editing surface that
+ * renders its value through it and reads the edited text back.
+ */
+export function parseSignedNumber(text: string): number {
+  return Number(text.replace(MINUS_SIGN, '-'));
+}
+
+/** {@link String} with the leading ASCII hyphen swapped for {@link MINUS_SIGN}.
+ *  Locale-independent, unlike `toLocaleString`. */
+function signedString(value: number): string {
+  return String(value).replace(/^-/, MINUS_SIGN);
+}
+
+/**
+ * Formats a zoom factor for display. Below 2x a percentage reads naturally;
+ * past it the numbers get long and a multiplier is what people say out loud,
+ * so 250% shows as `2.5x`. Past 100x a tenth is noise, so the decimal is
+ * dropped and thousands are grouped: `1009.74` reads as `1,010x`.
+ */
+export function formatZoom(zoom: number): string {
+  if (!Number.isFinite(zoom)) return String(zoom);
+  if (zoom <= 2) return `${signedString(Math.round(zoom * 100))}%`;
+  if (zoom >= 100) return `${Math.round(zoom).toLocaleString('en-US')}x`;
+  return `${signedString(Math.round(zoom * 10) / 10)}x`;
+}

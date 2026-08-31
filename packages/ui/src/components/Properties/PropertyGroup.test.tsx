@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { PropertyGroup } from './PropertyGroup';
+import s from './Properties.module.css';
 
 describe('PropertyGroup', () => {
   it('renders title and children', () => {
@@ -28,6 +29,6 @@ describe('PropertyGroup', () => {
         <div>x</div>
       </PropertyGroup>,
     );
-    expect(container.firstChild).toHaveClass('lk-property-group');
+    expect(container.firstChild).toHaveClass(s.group);
   });
 });

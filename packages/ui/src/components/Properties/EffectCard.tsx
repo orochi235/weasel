@@ -1,4 +1,5 @@
 import { type CSSProperties, type ReactNode, useState } from 'react';
+import s from './Properties.module.css';
 
 // ── Subpanel ─────────────────────────────────────────────────────────
 // Headered group of controls inside a wider panel/list. The header is a
@@ -15,10 +16,10 @@ export interface SubpanelProps {
 /** A typographic divider inside a property list: a small title flanked by a
  *  rule. Purely a heading — use `<PropertyGroup>` for a bordered section. */
 export function Subpanel({ title, children, className }: SubpanelProps) {
-  const cls = className ? `lk-subpanel ${className}` : 'lk-subpanel';
+  const cls = className ? `${s.subpanel} ${className}` : s.subpanel;
   return (
     <div className={cls}>
-      <h4 className="lk-subpanel__title">
+      <h4 className={s.subpanelTitle}>
         <span>{title}</span>
         <hr />
       </h4>
@@ -28,9 +29,10 @@ export function Subpanel({ title, children, className }: SubpanelProps) {
 }
 
 // ── EffectCard ───────────────────────────────────────────────────────
-// Draggable, collapsible card for stacked effect editors. Optional --lk-panel-accent
-// per-instance recolors the title bar, border-left, and (via re-binding --wzl-accent
-// inside the card) every descendant control that reads from the accent token.
+// Draggable, collapsible card for stacked effect editors. Optional
+// --wzl-effect-card-accent per-instance recolors the title bar, border-left, and
+// (via re-binding --wzl-accent inside the card) every descendant control that
+// reads from the accent token.
 
 /** Props for `<EffectCard>`. */
 export interface EffectCardProps {
@@ -38,7 +40,7 @@ export interface EffectCardProps {
   title: ReactNode;
   /** Optional badge/chip displayed before the remove button (e.g. primary value summary). */
   primary?: ReactNode;
-  /** Optional accent color in any CSS color form. Sets --lk-panel-accent on the card. */
+  /** Optional accent color in any CSS color form. Sets --wzl-effect-card-accent on the card. */
   accent?: string;
   /** Optional ordinal badge that doubles as the drag handle (used by tail cards in SB). */
   index?: number;
@@ -86,11 +88,11 @@ export function EffectCard({
   children,
   className,
 }: EffectCardProps) {
-  const stateClass = `${expanded ? 'is-expanded' : 'is-collapsed'}${dragging ? ' is-dragging' : ''}${accent ? ' has-accent' : ''}`;
-  const cls = `lk-effect-card ${stateClass}${className ? ` ${className}` : ''}`;
+  const stateClass = `${expanded ? ` ${s.cardExpanded}` : ''}${dragging ? ` ${s.cardDragging}` : ''}${accent ? ` ${s.cardAccented}` : ''}`;
+  const cls = `${s.card}${stateClass}${className ? ` ${className}` : ''}`;
   // Per-instance dynamic color → CSS custom property requires inline style.
-  // The card's CSS re-binds --wzl-accent to --lk-panel-accent so descendants tint.
-  const style = accent ? ({ '--lk-panel-accent': accent } as CSSProperties) : undefined;
+  // The card's CSS re-binds --wzl-accent to it so descendants tint.
+  const style = accent ? ({ '--wzl-effect-card-accent': accent } as CSSProperties) : undefined;
 
   // When a toggle handler is supplied the header acts as a disclosure button:
   // role + tab stop + Enter/Space. Bundled together so the interactive props are
@@ -121,11 +123,11 @@ export function EffectCard({
       onDragLeave={onDragLeave}
       onDrop={onDrop}
     >
-      <div className="lk-effect-card__head" {...headProps}>
+      <div className={s.cardHead} {...headProps}>
         {index != null ? (
           <button
             type="button"
-            className="lk-effect-card__index-badge lk-effect-card__handle"
+            className={`${s.cardIndexBadge} ${s.cardHandle}`}
             title="Drag to reorder · click to toggle"
             aria-label={`Item ${index + 1} — drag to reorder, click to toggle`}
             onMouseDown={onPressHandle}
@@ -139,7 +141,7 @@ export function EffectCard({
           </button>
         ) : (
           <span
-            className="lk-effect-card__handle"
+            className={s.cardHandle}
             aria-hidden="true"
             title="Drag to reorder"
             onMouseDown={onPressHandle}
@@ -148,12 +150,12 @@ export function EffectCard({
             <DragHandleIcon />
           </span>
         )}
-        <span className="lk-effect-card__title">{title}</span>
-        {primary != null && <span className="lk-effect-card__primary">{primary}</span>}
+        <span className={s.cardTitle}>{title}</span>
+        {primary != null && <span className={s.cardPrimary}>{primary}</span>}
         {onRemove && (
           <button
             type="button"
-            className="lk-effect-card__remove"
+            className={s.cardRemove}
             onClick={(e) => {
               e.stopPropagation();
               onRemove();
@@ -165,7 +167,7 @@ export function EffectCard({
           </button>
         )}
       </div>
-      {expanded && <div className="lk-effect-card__body">{children}</div>}
+      {expanded && <div className={s.cardBody}>{children}</div>}
     </div>
   );
 }
@@ -244,11 +246,11 @@ export function EffectCardList<T extends EffectCardListItem>({
   );
 
   if (items.length === 0) {
-    return <>{empty ?? <div className="lk-effect-card-list__empty">No items.</div>}</>;
+    return <>{empty ?? <div className={s.cardListEmpty}>No items.</div>}</>;
   }
 
   return (
-    <div className="lk-effect-card-list">
+    <div className={s.cardList}>
       {items.map((item) => {
         const isExpanded = expanded.has(item.id);
         const isDragging = draggingId === item.id;
@@ -266,8 +268,8 @@ export function EffectCardList<T extends EffectCardListItem>({
           });
 
         return (
-          <div key={String(item.id)} className="lk-effect-card-list__wrap">
-            {showHintBefore && <div className="lk-effect-card-list__drop-hint" />}
+          <div key={String(item.id)} className={s.cardListWrap}>
+            {showHintBefore && <div className={s.cardDropHint} />}
             {renderItem(item, {
               isExpanded,
               isDragging,
@@ -315,7 +317,7 @@ export function EffectCardList<T extends EffectCardListItem>({
                 },
               },
             })}
-            {showHintAfter && <div className="lk-effect-card-list__drop-hint" />}
+            {showHintAfter && <div className={s.cardDropHint} />}
           </div>
         );
       })}

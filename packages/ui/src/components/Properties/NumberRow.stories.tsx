@@ -4,7 +4,7 @@ import { NumberRow } from './PropertyPanel';
 import { SideBySide } from './storyLayouts';
 
 const meta: Meta<typeof NumberRow> = {
-  title: 'labkit/UI/Properties/Rows/NumberRow',
+  title: 'weasel-ui/Properties/Rows/NumberRow',
   component: NumberRow,
 };
 export default meta;

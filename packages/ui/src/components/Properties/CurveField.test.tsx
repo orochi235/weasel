@@ -3,12 +3,13 @@ import { assert, describe, expect, it, vi } from 'vitest';
 
 // CurveEditor uses weasel's own bundled React and fails in jsdom.
 // Mock it out — these tests only assert on readouts and the flip button.
-vi.mock('../../passthrough/weasel-ui', async (importOriginal) => {
-  const real = await importOriginal<typeof import('../../passthrough/weasel-ui')>();
+vi.mock('../CurveEditor', async (importOriginal) => {
+  const real = await importOriginal<typeof import('../CurveEditor')>();
   return { ...real, CurveEditor: () => null };
 });
 
 import { CurveField } from './CurveField';
+import s from './CurveField.module.css';
 
 describe('CurveField', () => {
   it('flip button mirrors x → 1-x and resorts', () => {
@@ -80,7 +81,7 @@ describe('CurveField', () => {
         onChange={() => {}}
       />,
     );
-    const overlay = container.querySelector('.lk-curve-field__marks');
+    const overlay = container.querySelector(`.${s.marks}`);
     assert(overlay);
     const rect = overlay.querySelector('rect');
     assert(rect);
@@ -103,7 +104,7 @@ describe('CurveField', () => {
         onChange={() => {}}
       />,
     );
-    const line = container.querySelector('.lk-curve-field__marks line');
+    const line = container.querySelector(`.${s.marks} line`);
     assert(line);
     expect(line.getAttribute('x1')).toBe('140');
     expect(line.getAttribute('x2')).toBe('140');
@@ -122,6 +123,6 @@ describe('CurveField', () => {
         onChange={() => {}}
       />,
     );
-    expect(container.querySelector('.lk-curve-field__marks')).toBeNull();
+    expect(container.querySelector(`.${s.marks}`)).toBeNull();
   });
 });

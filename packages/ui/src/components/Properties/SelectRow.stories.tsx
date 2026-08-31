@@ -4,7 +4,7 @@ import { SelectRow } from './PropertyPanel';
 import { SideBySide } from './storyLayouts';
 
 const meta: Meta<typeof SelectRow> = {
-  title: 'labkit/UI/Properties/Rows/SelectRow',
+  title: 'weasel-ui/Properties/Rows/SelectRow',
   component: SelectRow,
 };
 export default meta;

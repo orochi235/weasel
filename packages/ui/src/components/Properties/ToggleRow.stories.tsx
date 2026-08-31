@@ -4,7 +4,7 @@ import { ToggleRow } from './PropertyPanel';
 import { SideBySide } from './storyLayouts';
 
 const meta: Meta<typeof ToggleRow> = {
-  title: 'labkit/UI/Properties/Rows/ToggleRow',
+  title: 'weasel-ui/Properties/Rows/ToggleRow',
   component: ToggleRow,
 };
 export default meta;

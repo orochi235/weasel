@@ -16,7 +16,7 @@ import {
 // Titled "Gallery" so it sorts above PropertyPanel/PropertyList/Rows in the
 // sidebar alphabetically (G < P < R). Acts as the visual root of the section.
 const meta: Meta = {
-  title: 'labkit/UI/Properties/Gallery',
+  title: 'weasel-ui/Properties/Gallery',
 };
 export default meta;
 type Story = StoryObj;

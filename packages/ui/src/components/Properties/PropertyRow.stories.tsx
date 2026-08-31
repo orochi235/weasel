@@ -3,7 +3,7 @@ import { PropertyRow } from './PropertyPanel';
 import { SideBySide } from './storyLayouts';
 
 const meta: Meta<typeof PropertyRow> = {
-  title: 'labkit/UI/Properties/Rows/PropertyRow',
+  title: 'weasel-ui/Properties/Rows/PropertyRow',
   component: PropertyRow,
 };
 export default meta;
