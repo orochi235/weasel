@@ -71,10 +71,10 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "peerDependencies": {
-    "react": ">=18"
+    "react": ">=18",
+    "@weasel-js/font": "1.3.0-pre.0"
   },
   "dependencies": {
-    "@weasel-js/font": "1.3.0-pre.0",
     "@weasel-js/geom": "1.3.0-pre.0",
     "@weasel-js/gestures": "1.3.0-pre.0",
     "@weasel-js/history": "1.3.0-pre.0",
