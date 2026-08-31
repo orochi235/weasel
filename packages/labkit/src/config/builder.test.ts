@@ -20,7 +20,13 @@ describe('builder', () => {
   it('keeps the subclass across a chain, so kind-specific methods survive', () => {
     const n = f.number(20).label('A').range(5, 80).describe('help').step(5);
     expect(n.kind).toBe('number');
-    expect(n.annotations).toMatchObject({ name: 'A', description: 'help', min: 5, max: 80, step: 5 });
+    expect(n.annotations).toMatchObject({
+      name: 'A',
+      description: 'help',
+      min: 5,
+      max: 80,
+      step: 5,
+    });
   });
 
   it('keeps a custom node kind across a chain', () => {

@@ -143,7 +143,12 @@ export const CustomControl: Story = {
 
 const conditional = f.schema({
   showGrid: f.boolean(true),
-  cellSize: f.number(20).range(5, 80).step(5).label('Grid spacing').showIf((c) => c.showGrid === true),
+  cellSize: f
+    .number(20)
+    .range(5, 80)
+    .step(5)
+    .label('Grid spacing')
+    .showIf((c) => c.showGrid === true),
 });
 
 /** `showIf` hides the row while the value stays in config. Toggle the

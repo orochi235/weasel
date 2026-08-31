@@ -1,10 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TOOL_PREF_KINDS, type ToolPrefKind } from '@weasel-js/core';
 import type { PrefLeaf } from '@weasel-js/ui';
-import type { ResolvedConfig } from '../config/types';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
+import type { ResolvedConfig } from '../config/types';
 import { ControlPanel } from './ControlPanel';
 import type { ConfigField } from './types';
 
@@ -205,7 +205,7 @@ describe('<ControlPanel> renderers', () => {
     expect(screen.queryByText('by-kind')).not.toBeInTheDocument();
   });
 
-  it('a lab renderer for the path beats the node\'s own .render', () => {
+  it("a lab renderer for the path beats the node's own .render", () => {
     const schema = resolveConfigSchema(
       f.schema({ tint: f.color('#ffffff').render(() => <span>by-node</span>) }),
       [],
@@ -274,7 +274,11 @@ describe('<ControlPanel> visibility and sections', () => {
       [],
     );
     const { rerender } = render(
-      <ControlPanel schema={schema} config={{ showGrid: true, cellSize: 20 }} setConfig={vi.fn()} />,
+      <ControlPanel
+        schema={schema}
+        config={{ showGrid: true, cellSize: 20 }}
+        setConfig={vi.fn()}
+      />,
     );
     expect(screen.getByLabelText('Cell size')).toBeInTheDocument();
     rerender(
@@ -335,7 +339,10 @@ describe('<ControlPanel> built-in kind coverage', () => {
         schema={schemaWith(
           { kind: 'paint', name: 'Fill', description: '', default: null },
           {
-            kind: 'object', name: 'Stroke', description: '', default: {},
+            kind: 'object',
+            name: 'Stroke',
+            description: '',
+            default: {},
             children: { width: { kind: 'number', name: 'Width', description: '', default: 1 } },
           },
         )}
