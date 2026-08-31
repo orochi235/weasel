@@ -68,7 +68,7 @@
     "gen:icons": "node packages/ui/scripts/gen-icons.mjs"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.27.0",
+    "@changesets/cli": "^3.0.1",
     "@fontsource/inter": "5.0.20",
     "@playwright/test": "1.47.2",
     "@storybook/addon-a11y": "^10.4.0",

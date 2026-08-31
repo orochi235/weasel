@@ -52,17 +52,22 @@ jobs:
       # checks this on the PR, but the release path accepts
       # `workflow_dispatch`, which bypasses that entirely.
       - run: npm run check:bumps
+      # v2 is required by @changesets/cli 3.x: the CLI moved its output to
+      # @clack/prompts and no longer prints the `New tag:` lines v1 scraped from
+      # stdout to learn what published. v1 against a 3.x CLI publishes to npm
+      # and then reports nothing as released.
+      # No NPM_TOKEN, and no `env:` at all. npm authentication is OIDC trusted
+      # publishing: the job mints a short-lived credential from `id-token: write`
+      # above, scoped to this run. Setting NPM_TOKEN/NODE_AUTH_TOKEN here would be
+      # actively harmful — npm prefers a token when it finds one, taking the
+      # classic path that npm revoked in December 2025 and losing provenance with
+      # it. GitHub auth is the `github-token` input, which defaults to
+      # `github.token`; v2 dropped the GITHUB_TOKEN environment variable, so
+      # setting it again would read as configuration and do nothing.
       - name: Create Release Pull Request or Publish
-        uses: changesets/action@v1
+        uses: changesets/action@v2
         with:
-          publish: npm run release
-          version: npx changeset version
-          commit: "chore: version packages"
-          title: "chore: version packages"
-        # No NPM_TOKEN. Authentication is OIDC trusted publishing: the job mints
-        # a short-lived credential from `id-token: write` above, scoped to this
-        # run. Setting NPM_TOKEN/NODE_AUTH_TOKEN here would be actively harmful —
-        # npm prefers a token when it finds one, taking the classic path that npm
-        # revoked in December 2025 and losing provenance with it.
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          publish-script: npm run release
+          version-script: npx changeset version
+          commit-message: "chore: version packages"
+          pr-title: "chore: version packages"
