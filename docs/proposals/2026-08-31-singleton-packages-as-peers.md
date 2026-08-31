@@ -70,9 +70,10 @@ verifies that advertised export paths exist in the tarball.
 
 ## Decisions this needs before it starts
 
-- **`weasel-js`** (the umbrella facade) declares `core` as an ordinary
-  dependency. It exists to deliver core, so a hard dep is arguably right and
-  it is the one package a consumer installs alone. Peer it or leave it?
+- **`weasel-js`** (the umbrella facade) is `private: true` and unpublished, so
+  its `core` dependency decides nothing yet. The name is blocked: npm's
+  similarity check strips punctuation, and `weasel-js` normalizes onto the
+  published `weasel.js`. Revisit once it has a name that publishes.
 - **`labkit`** bundles the other packages rather than resolving them at the
   consumer, so a real dependency may be correct there. Confirm before moving
   it.
