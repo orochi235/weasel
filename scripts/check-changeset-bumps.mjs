@@ -36,11 +36,21 @@ if (!existsSync(DIR)) {
   process.exit(0);
 }
 
-const files = readdirSync(DIR).filter((f) => f.endsWith('.md') && f !== 'README.md');
+// Changesets 3.x moves a changeset into `.changeset/pre/` once a prerelease
+// has consumed it. Those still decide the version every later prerelease
+// computes, so a bump hiding in there is exactly the case this guard exists
+// for — scan both.
+const PRE_DIR = join(DIR, 'pre');
+const mds = (dir) =>
+  existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.md') && f !== 'README.md') : [];
+const files = [
+  ...mds(DIR).map((f) => ({ file: f, path: join(DIR, f), label: `.changeset/${f}` })),
+  ...mds(PRE_DIR).map((f) => ({ file: f, path: join(PRE_DIR, f), label: `.changeset/pre/${f}` })),
+];
 const offenders = [];
 
-for (const file of files) {
-  const text = readFileSync(join(DIR, file), 'utf8');
+for (const { file, path, label } of files) {
+  const text = readFileSync(path, 'utf8');
   // Frontmatter is the leading `---` block; only bumps declared there count.
   const fm = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text);
   if (!fm) continue;
@@ -51,17 +61,17 @@ for (const file of files) {
     )].map((m) => m[1].trim());
     if (pkgs.length === 0) continue;
     if (approvalFor(text, level)) {
-      console.log(`[changeset-bumps] ${file}: ${level} approved — ${pkgs.join(', ')}`);
+      console.log(`[changeset-bumps] ${label}: ${level} approved — ${pkgs.join(', ')}`);
       continue;
     }
-    offenders.push({ file, level, pkgs });
+    offenders.push({ label, level, pkgs });
   }
 }
 
 if (offenders.length > 0) {
   console.error(`\n[changeset-bumps] BLOCKED: ${offenders.length} unapproved bump(s) above patch.\n`);
-  for (const { file, level, pkgs } of offenders) {
-    console.error(`  .changeset/${file}`);
+  for (const { label, level, pkgs } of offenders) {
+    console.error(`  ${label}`);
     for (const pkg of pkgs) console.error(`      ${pkg}: ${level}`);
   }
   console.error(`
