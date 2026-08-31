@@ -539,9 +539,24 @@ function warnMissingGlyphOnce(family: string, cp: number): void {
   );
 }
 
+const warnedNoMetrics = new Set<string>();
+
+function warnNoMetricsOnce(family: string, weight: number | string, style: string): void {
+  const key = `${family}|${weight}|${style}`;
+  if (warnedNoMetrics.has(key)) return;
+  warnedNoMetrics.add(key);
+  console.warn(
+    `weasel layoutRuns: no font resolved for "${family}" ${weight} ${style} — ` +
+    `neither an outline face nor an atlas entry. The run is laid out as zero ` +
+    `glyphs, so its text will not appear, though its characters still hold ` +
+    `their source offsets. Register the family before laying out.`,
+  );
+}
+
 /** @internal Test seam — the warn-once keys are module state. */
 export function _resetMissingGlyphWarningsForTests(): void {
   warnedMissingGlyphs.clear();
+  warnedNoMetrics.clear();
 }
 
 export function layoutRuns(
@@ -596,6 +611,7 @@ export function layoutRuns(
       ? { size: 1, base: outlineFace.ascender, advanceOf: (cp) => outlineFace.advanceOf(cp), kernOf: (l, r) => outlineFace.kernOf(l, r) }
       : font ? atlasMetrics(font) : undefined;
     if (!metrics) {
+      warnNoMetricsOnce(run.fontFamily, run.fontWeight, run.fontStyle);
       // Skipped, but its characters still occupy source offsets — dropping
       // them here would shift every later run's caret indices left.
       srcIndex += run.text.length;

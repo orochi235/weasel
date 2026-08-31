@@ -698,6 +698,42 @@ describe('layoutRuns — decoration geometry', () => {
   });
 });
 
+describe('layoutRuns — a run that resolves no font at all', () => {
+  const OPTS = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' as const };
+
+  const run = (family: string): ResolvedRun => ({
+    text: 'AB', fontFamily: family, fontSize: 32, fontWeight: 400, fontStyle: 'normal',
+    fill: { fill: 'solid', color: '#000' }, letterSpacing: 0,
+    underline: false, strikethrough: false, overline: false, baselineShift: 0,
+  });
+
+  beforeEach(() => {
+    _resetDynamicFontsForTests();
+    _resetFallbackForTests();
+    _resetMissingGlyphWarningsForTests();
+    resetBakeBudget();
+  });
+
+  it('warns, and lays the run out as zero glyphs', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const out = layoutRuns([run('never-registered')], OPTS);
+
+    expect(out.groups).toEqual([]);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain('no font resolved for "never-registered"');
+    warn.mockRestore();
+  });
+
+  it('warns once per family/weight/style, not once per run', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    layoutRuns([run('ghost'), run('ghost')], OPTS);
+    layoutRuns([run('ghost')], OPTS);
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+});
+
 describe('layoutRuns — a codepoint the atlas does not cover', () => {
   // U+2014. The fixture atlas carries 'A' and 'B' and nothing else, so this
   // is the same shape as the real defect: a run resolves to a perfectly good
