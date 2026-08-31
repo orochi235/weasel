@@ -53,6 +53,7 @@ Priority tags:
 
 **Plugins & packaging**
 - Barrel-hygiene: selection (pending design review) → [Plugins & packaging](#plugins--packaging)
+- Singleton-bearing packages (`font`, `core`) must be peer deps, not ordinary ones → [Plugins & packaging](#plugins--packaging)
 - `weasel-js` unscoped alias is unpublishable under that name → [Plugins & packaging](#plugins--packaging)
 
 **Performance**
@@ -1510,6 +1511,26 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 ---
 
 ## Plugins & packaging
+
+### Singleton-bearing packages must be peer dependencies
+
+- **(P2) `@weasel-js/font` and `@weasel-js/core` may not be duplicated, and
+  nothing currently stops it.** Both hold module-global registries that
+  consumer code writes into — font's registered faces and glyph-ready
+  subscribers, core's content handlers, paint kinds, shape painters and
+  markers. Two physical copies are two registries, so a consumer registers
+  into one while the renderer reads the other and gets a blank canvas. Exact
+  sibling pins across the lockstep group mean any consumer mixing two weasel
+  releases forces npm to nest a second copy; a peer dependency makes that an
+  `ERESOLVE` at install time instead. `core` is already a peer of `d3`, `hud`
+  and `ui` — half the arc is finishing that decision for `svg` and `labkit`,
+  and applying it to `font` in `core`, `hud` and `text`. `text` and `hud` hold
+  only caches and warn-dedup, so they need no change on their own account.
+  `layoutRuns` warns and names duplication as a cause since `4180095a`, which
+  makes the failure self-diagnosing but not impossible. Three decisions are
+  open before it starts (the umbrella `weasel-js`, bundling `labkit`, and
+  exact-vs-caret peer ranges) — see
+  `docs/proposals/2026-08-31-singleton-packages-as-peers.md`.
 
 ### Unscoped alias package name
 
