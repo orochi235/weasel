@@ -1,5 +1,300 @@
 # @weasel-js/svg
 
+## 1.3.0
+
+### Patch Changes
+
+- 52c7b2a: Depend on `font` and `core` as exact peers
+  
+  `@weasel-js/font` and `@weasel-js/core` keep registries that consumer code
+  writes into — registered faces and glyph-ready subscribers in one, content
+  handlers and paint kinds and shape painters in the other. Two physical copies
+  in a tree are two registries, so a face registered into one while layout
+  resolves against the other lays out nothing and the canvas is blank.
+  
+  Exact sibling pins are what produced the duplicate: a consumer mixing two
+  weasel releases left npm no choice but to nest a second copy, silently. As
+  peers, the same mix is an `ERESOLVE` at install time. `font` is now a peer of
+  `core`, `hud` and `text`; `core` is now a peer of `svg`, joining `d3`, `hud`
+  and `ui`, whose `>=` ranges tighten to exact so no version mix resolves by
+  accident.
+  
+  **This can break an install that currently succeeds.** Anyone resolving a
+  mixed set of weasel versions by luck now gets an install error instead of a
+  blank canvas. That is the point, but it is a break.
+  
+  `labkit` deliberately keeps `core` as an ordinary dependency: its build aliases
+  every core entry point to core's built files and inlines them, so it never
+  resolves core at the consumer and has nothing to peer. The flip side is that
+  labkit ships its own copy of core's registries, so a consumer using both still
+  has two — this change does not address that.
+- 2ea772f: The canvas and the gradient editor now sample one gradient
+  
+  `buildGradientRamp` carried its own interpolation beside
+  `sampleGradientStops`, and the two disagreed three ways: the ramp had no guard
+  at either end and extrapolated past the first and last stop, the two picked
+  opposite sides of a coincident pair, and they parsed color differently — a stop
+  written as a CSS named color rendered on the canvas and threw in the editor.
+  
+  `sampleGradientStops` keeps its semantics and is now the only implementation.
+  `resolveGradientStops` sorts and parses the list once; `sampleResolvedStops`
+  returns the color at `t`. The ramp cache builds its texels through those, so
+  there is no interpolation math left in the renderer.
+  
+  Two behavior changes worth naming. `resolveColor` is the surviving parser, so
+  gradient stops accept named and functional colors everywhere — but no longer
+  hex without a leading `#`, which only the editor path had tolerated and the
+  canvas never accepted. And `sampleGradientStops` returns normalized hex at the
+  endpoints instead of echoing the raw stop string, so `'red'` comes back as
+  `'#ff0000'`.
+  
+  **SVG export:** a conic gradient left the exporter as a dangling `url(#…)` —
+  the element already carried the reference, the built-in serializer returned
+  nothing, and the registry's `toSvg` slot has no in-repo implementation, so the
+  shape disappeared in a browser with no warning at all. Serialization now falls
+  through to the same warning the pattern path already emits when nothing can
+  produce a paint server. A consumer that registers a `toSvg` for
+  `conic-gradient` still serializes and gets no warning.
+- 50bc909: `FillStyle` is open: register a sixth paint kind and it renders, converts
+  frames and serializes.
+  
+  `registerPaintKind(entry)` returns a disposer and `_resetPaintKindsForTests`
+  re-seeds the five built-ins, matching the kit's other module-global
+  registries. An entry carries the editor's slots (`label`, `seed`, `colorOf`,
+  `Editor`), a render slot, both frame-conversion directions, and an SVG
+  `<defs>` slot. `listPaintKinds()` enumerates them, and `asPaint` types a
+  consumer's own paint as a `FillStyle` — the union itself stays closed, because
+  opening its discriminant would widen every built-in member.
+  
+  Three defects fall out of the same change, each of which a sixth kind hit
+  immediately. The renderer's fill dispatch fell off the end of its switch into
+  an unguarded cast to the gradient union, so an unknown kind read `stops` off a
+  paint with none and threw mid-frame. `fillInPoseFrame` and its inverse returned
+  an unknown kind untouched, leaving it painting in screen space on a node that
+  moves. `<defs>` emitted nothing for a kind `gradientXml` did not know while
+  still writing the `url(#id)` that referenced it.
+  
+  Registering a kind now bumps the node memo generation, so a node painted
+  before the registration repaints rather than holding the frame it resolved
+  when the kind was unknown.
+- 6a06f6d: Node paint is an object: `data.fill` is a `FillStyle`, `data.stroke` a `Stroke`
+  
+  Each concept now has exactly one shape. `data.fill` holds a `FillStyle`,
+  `data.stroke` a whole `Stroke`, and `null` on either is an explicit "no paint"
+  where `undefined` takes the painter's fallback. Two new authoring helpers keep
+  hand-written node data short:
+  
+  ```ts
+  data: { path, fill: solid('#7fb069'), stroke: strokeOf('#1c1c1c', 2) }
+  ```
+  
+  **Breaking, with no compatibility path.** A document written against the old
+  shapes renders wrong rather than failing, which is accepted:
+  
+  - `NodeFill = string | FillStyle` and `NodeStroke = string | Stroke` are gone,
+    and so are the string branches of `resolveNodeFill` / `resolveNodeStroke`.
+    A node holding `fill: '#f00'` now paints the default grey.
+  - `data.strokeWidth` is deleted. A stroke's width is `Stroke.width`.
+  - `data.color` — the legacy alias `kit:path` and the rect fallback read — is
+    deleted. The fallback painter reads `data.fill` like everything else.
+  - `fill: 'none'` is now `fill: null`; `stroke: 'none'` is `stroke: null`.
+  - `NodeInkResult` is gone: a painter's `ink` returns `NodeInk` and nothing
+    else. A painter returning `{ filled, strokeWidth }` no longer type-checks
+    and its reach is read as zero.
+  - `@weasel-js/ui` drops `isStrokeObject`, which existed only to discriminate
+    the union; `strokeColorOf` and `strokeWithColor` lose their string branches.
+  - `@weasel-js/svg`'s `strokeDataFromSvg` returns `Stroke | undefined` instead
+    of a `{ stroke, strokeWidth }` pair, and stops flattening a plain solid
+    stroke into a color. SVG's `fill="none"` imports as `fill: null`.
+  
+  **A paint's alpha lives in `opacity`, one slot for every paint kind.** That is
+  the only slot a gradient or a pattern has, so it is the slot all of them use,
+  and the renderer multiplies a hex alpha by it — the two would fight if both
+  carried the value. `solid()` therefore moves an alpha channel out of the hex:
+  `solid('#ff000080')` is `{ color: '#ff0000', opacity: 0.502 }`.
+  
+  The four setter actions follow: `setFillOpacity` / `setStrokeOpacity` write
+  `opacity` rather than splicing hex, so they now work on a gradient fill, which
+  they used to leave untouched. `setFill` / `setStroke` given a `color` recolor
+  the node's existing paint through the new `paintWithColor`, keeping its opacity
+  unless the picked color states an alpha of its own — and `setStroke` keeps the
+  stroke's width, cap, join and dash instead of replacing the whole value.
+  
+  New exports: `solid`, `strokeOf`, `paintAlpha`, `paintWithAlpha`,
+  `paintWithColor`, `DEFAULT_SHAPE_FILL`.
+  
+  `defaultNodeProperties` moves `data.fill` from a `color` leaf to a `paint` one
+  — a color control pointed at a `FillStyle` reads `undefined` off a gradient and
+  writes a bare string over it — and the `data.stroke` object leaf drops its
+  `fromScalar`, which had nothing left to lift.
+- 94f2446: Add stroke markers — arrowheads and other line terminators as stroke style.
+  
+  `markerStart` / `markerMid` / `markerEnd` on `Stroke` take a key resolved
+  through a new registry (`registerMarker`), shipping eight built-in shapes.
+  Unlike SVG, the stroke stops short of a filled head rather than running under
+  it to the tip; the distance is declared per marker, so an open V still reaches
+  the vertex. Round-trips through `@weasel-js/svg` as `marker-*` attributes plus
+  `<marker>` defs.
+- 2b2d971: Keep a stroke's dash, cap, join and gradient paint through SVG import
+  
+  `unpack` lowered every stroke to a color string plus a width, because that was
+  all `data.stroke` could hold — a gradient stroke became `#888888` with a
+  warning, and dashes, caps, joins and miter limits were dropped silently. Now
+  that `data.stroke` is `NodeStroke = string | Stroke`, the whole `SvgStroke`
+  comes through.
+  
+  A plain solid stroke still arrives as the color-string pair every consumer
+  already reads. Anything the pair cannot express — a gradient paint, a dash, a
+  cap, a join, a miter limit, a `stroke-opacity` — arrives as the object form,
+  with the paint normalized to the leaf's own box exactly as a gradient fill is,
+  so a `userSpaceOnUse` gradient survives the fit-clamp and the drop placement.
+  
+  `strokeDataFromSvg` is exported, so a second importer lowering SVG onto kit
+  nodes doesn't have to re-derive which form to write.
+- 00c5203: Round-trip overline, superscript and relative run sizes
+  
+  `<tspan>` now carries the four run fields added alongside superscript support,
+  in SVG's own vocabulary rather than a weasel-specific one: `text-decoration`
+  gains the `overline` token it previously parsed and dropped, `script` becomes
+  `baseline-shift="super"` / `"sub"`, a raw `baselineShift` becomes a
+  `baseline-shift` percentage, and `fontScale` becomes a percentage `font-size`.
+  Both percentages resolve against the parent in SVG, which is the unit the run
+  fields are already in.
+  
+  One case normalizes rather than round-tripping exactly. `baseline-shift="super"`
+  carries the preset's *size* as well as its rise, so a run that overrode only
+  the rise has no keyword left to say the size with; it serializes as the two
+  primitives the preset stood for and parses back that way. Same rendering,
+  different fields — without it the superscript came back full-size at a raised
+  baseline.
+- c1b8511: **Breaking:** paint leaves `TextStyle`. A text node's color and outline are
+  `data.fill` and `data.stroke` — the same two leaves every other node kind
+  paints from — and `TextStyle` holds typography only. `TextStyle.fill` and
+  `TextStyle.stroke` are gone, with no compatibility read: a document that put
+  its color in `style.fill` now renders in the default black rather than
+  erroring, so check documents that predate this.
+  
+  This fixes a real asymmetry rather than only moving fields. `data.stroke`
+  already reached text through a fold in the painter, but `data.fill` did not:
+  picking a fill color with a text node selected wrote a field nothing read, so
+  the canvas did not change. `setFill`, `setFillOpacity`, the opacity scrub and
+  the Appearance leaf now all mean the same thing on text as on a rect. The
+  duplicate `data.style.fill` control is gone from the text schema with them.
+  
+  `resolveTextStyle(style, paint)` takes the node's paint as a second argument
+  and is what derives the caret and selection colors, so the edit overlay
+  matches the glyphs it sits on; `useTextEdit` gained a `getPaint` option for
+  the same reason, defaulted by `useSceneTextEdit` from `data.fill` /
+  `data.stroke`. `TextPose` gained `fill` / `stroke`, so text drawn through
+  `createTextLayer` is painted rather than black. `SvgTextNode` gained the same
+  two, and SVG import and export carry text paint there instead of inside the
+  style. `StyledRun.fill` and `.stroke` are unchanged and still override the
+  node's per range — which is also where a caller with no node at all, a HUD
+  widget or a debug overlay, now states its color.
+  
+  `textCommandFromRuns` is exported from the package root.
+- c2ffa49: Alignment can resolve against reading direction
+  
+  `align` gains `start` and `end` alongside `left` / `center` / `right`, and
+  `TextStyle` gains `direction: 'ltr' | 'rtl'`. The split is CSS `text-align`'s:
+  the relative pair resolves against the direction, the absolute pair ignores it.
+  `resolveAlign(align, direction)` collapses one to the other and is exported for
+  consumers that need an edge rather than an intent.
+  
+  Direction is an input, not something this package discovers. `@weasel-js/text`
+  has no DOM, so a consumer that reads `getComputedStyle(box).direction` passes
+  what it found; nothing here sniffs an environment.
+  
+  Defaults are unchanged — `align: 'left'`, `direction: 'ltr'` — so no existing
+  layout moves. Making `start` the default alignment is a separate call.
+  
+  `@weasel-js/svg` carries the direction through: `direction` joins the
+  inheritable presentation properties, and `text-anchor` is now written and read
+  against it. Two things were wrong before and are worth naming, because both
+  rendered plausible output:
+  
+  - `align: 'start'` serialized to `text-anchor="end"` — the opposite edge — via
+    a mapping that assumed three values and read the fourth as its `else`.
+  - SVG's initial `text-anchor` is `start`, which under `direction="rtl"` is the
+    right edge, while this model's default `align` is `left`. They agree under
+    `ltr` and only there, so an RTL document with no explicit anchor imported as
+    left-aligned.
+  
+  This is alignment and round-tripping only. Layout still walks code points in
+  logical order with the pen always increasing: there is no bidi reordering and
+  no shaping, so a Hebrew or Arabic string aligns to the correct edge and still
+  renders in logical order, and Arabic still renders unjoined.
+- Updated dependencies [52c7b2a]
+- Updated dependencies [3386d64]
+- Updated dependencies [ffafb7d]
+- Updated dependencies [ba8b139]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [67bcb05]
+- Updated dependencies [47cbb08]
+- Updated dependencies [f43e9c2]
+- Updated dependencies [bb27e83]
+- Updated dependencies [6a33c3f]
+- Updated dependencies [c24e7de]
+- Updated dependencies [ce82f4a]
+- Updated dependencies [be697dc]
+- Updated dependencies [e909a3b]
+- Updated dependencies [26bbdcf]
+- Updated dependencies [546f67d]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [ccd51cc]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [d9f110e]
+- Updated dependencies [0dd35a1]
+- Updated dependencies [1a0bea3]
+- Updated dependencies [9d95836]
+- Updated dependencies [62a3c46]
+- Updated dependencies [5f6c28e]
+- Updated dependencies [3cd1ee8]
+- Updated dependencies [2ea772f]
+- Updated dependencies [f77bd95]
+- Updated dependencies [2ea772f]
+- Updated dependencies [aba8d91]
+- Updated dependencies [2ea772f]
+- Updated dependencies [3386d64]
+- Updated dependencies [68d2651]
+- Updated dependencies [3386d64]
+- Updated dependencies [c6c499d]
+- Updated dependencies [4f1ef0b]
+- Updated dependencies [0114abf]
+- Updated dependencies [50bc909]
+- Updated dependencies [6a06f6d]
+- Updated dependencies [a37ee0b]
+- Updated dependencies [611b30e]
+- Updated dependencies [9ad8cb2]
+- Updated dependencies [c1b8511]
+- Updated dependencies [d793d3c]
+- Updated dependencies [3386d64]
+- Updated dependencies [ce2b5c7]
+- Updated dependencies [2ea772f]
+- Updated dependencies [3fb3a46]
+- Updated dependencies [84db1f6]
+- Updated dependencies [3386d64]
+- Updated dependencies [7a746df]
+- Updated dependencies [4f19274]
+- Updated dependencies [94f2446]
+- Updated dependencies [07fd2de]
+- Updated dependencies [81213fc]
+- Updated dependencies [2f225d7]
+- Updated dependencies [68069dc]
+- Updated dependencies [5d0ff9c]
+- Updated dependencies [c1b8511]
+- Updated dependencies [546f67d]
+- Updated dependencies [c2ffa49]
+- Updated dependencies [4c097ef]
+- Updated dependencies [2b86e00]
+- Updated dependencies [d933a89]
+- Updated dependencies [bca99e3]
+- Updated dependencies [5923c8b]
+- Updated dependencies [2ea772f]
+- Updated dependencies [2ea772f]
+- Updated dependencies [3fb3a46]
+  - @weasel-js/core@1.3.0
+
 ## 2.0.0-pre.0
 
 ### Patch Changes

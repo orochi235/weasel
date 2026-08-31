@@ -1,5 +1,73 @@
 # @weasel-js/geom
 
+## 1.3.0
+
+### Patch Changes
+
+- 2621cbf: polygon-clipping is an optional peer of the ./booleans subpath, not a dependency
+  
+  geom's description promises a "dependency-free core; polygon booleans in the
+  ./booleans subpath", and `booleans/index.ts` says the split exists "so the core
+  stays `deps: {}`". The subpath split delivered that for the *import* graph only:
+  `polygon-clipping` sat in `dependencies`, so every consumer installed it and its
+  own two transitive deps — roughly half a megabyte — whether or not they ever
+  imported the subpath that uses it.
+  
+  It reaches consumers through `@weasel-js/text`, which needs one type from geom
+  (`Rect`, in `measure/lineBoxes.ts`) and none of its runtime. Nothing on that
+  path can bundle the clipper, so it was pure install weight.
+  
+  **Anyone importing `@weasel-js/geom/booleans` must now install
+  `polygon-clipping` themselves.** It is declared as an optional peer, so npm no
+  longer installs it automatically and the subpath is the only thing that breaks
+  without it. `@weasel-js/core` declares its own copy and is unaffected.
+- 3386d64: Path command opcodes derive from one table
+  
+  `M`/`L`/`C`/`Q`/`Z` and their coordinate counts were declared five times —
+  once in core, once in `@weasel-js/geom`, and three more as `COORD_COUNT`
+  literals in the path transform, pose-rotation and pose-descriptor walkers. They
+  agreed, and nothing held them to each other: a sixth opcode desynchronizes two
+  packages' reading of the same `Uint8Array` with no exception and no type error,
+  and every walker misparses the coordinate stream from that command on.
+  
+  `PATH_COMMANDS` in `@weasel-js/geom` is now the table. `PATH_M`…`PATH_Z`,
+  `PATH_CMD_LENGTHS` and the new `pathCommandCoordCount` all derive from it, and
+  core re-exports them by name, so the opcode constants keep their names, values
+  and literal types. The three walkers moved onto `forEachSegment` rather than
+  onto the accessor alone — they were duplicating the coordinate-cursor advance
+  as well as the length, and the cursor is the half that actually misreads.
+  
+  Eight further files switch on these opcodes with inline literals. Five throw on
+  an unknown code; three — the path boolean adapter, the anchor-editing geometry,
+  and geom's own boolean adapter — have no `default` arm and would silently stop
+  advancing. Left as-is; they need per-command semantics, not one walker.
+- 84db1f6: Close four gaps that produced wrong answers with no error
+  
+  Three path walkers — `pathToMultiPolygon` in core and in `@weasel-js/geom`, and
+  `enumerateAnchors` behind the bezier-edit overlay — handled M/L/C/Q/Z with no
+  `default:` arm, so a command code they did not know fell out of the switch
+  without advancing the coordinate cursor and every segment after it read the
+  wrong floats. They now throw, matching the six sibling walkers. This is a
+  behavior change for anyone feeding these a path built with an opcode outside
+  `PATH_COMMANDS`: what used to come back subtly wrong now raises.
+  
+  A `<CanvasView>` built its affordance hit-test without a device profile, so a
+  nested view resolved fine-pointer radii even under a coarse pointer — 8px grab
+  zones against the 14px chrome the surface paints. It reads the profile
+  `<SceneCanvas>` publishes.
+  
+  `moveGestureAdapter`'s `insertNode` took no `index`, and the adapter carried
+  neither `getChildren` nor `setChildOrder`, so the sibling slot a delete op
+  records had nowhere to land: undoing a delete through the move pipeline
+  appended the node to the end of its parent instead of putting it back where it
+  was. All three are there now.
+  
+  The dev inspector's gesture panel formatted bindings with a private formatter
+  that reported only modifiers set to `true`. The `ingest` action marks every
+  modifier `'optional'`, so its drop and paste bindings rendered blank and the
+  action was invisible on both gestures. Both of the panel's plain-text
+  formatters now go through the kit's `routesForSpec`.
+
 ## 2.0.0-pre.0
 
 ### Patch Changes
