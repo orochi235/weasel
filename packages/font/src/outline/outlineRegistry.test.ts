@@ -4,7 +4,7 @@ import {
   outlineStatus, listFontOutlines, glyphOutline, _resetFontOutlinesForTests,
 } from './outlineRegistry';
 import type { OutlineFace, OutlineParser } from './OutlineFace';
-import { subscribeGlyphReady, _clearGlyphReadySubscribers } from '../glyphReady';
+import { subscribeGlyphReady, glyphGeneration, _clearGlyphReadySubscribers } from '../glyphReady';
 
 /** A face that answers for 'A' and nothing else. */
 const stubFace: OutlineFace = {
@@ -53,9 +53,11 @@ describe('outline registry', () => {
   });
 
   it('notifies glyph-ready when a face lands, so a static canvas redraws', async () => {
+    // Subscribed after registering, which notifies in its own right: what
+    // this pins is the landing, which is the half a static canvas waits on.
+    registerFontOutlines('Fake', {}, new ArrayBuffer(4), { parser: stubParser });
     const seen = vi.fn();
     subscribeGlyphReady(seen);
-    registerFontOutlines('Fake', {}, new ArrayBuffer(4), { parser: stubParser });
 
     glyphOutline('Fake', 400, 'normal', 65);
     expect(seen).not.toHaveBeenCalled();
@@ -229,5 +231,32 @@ describe('outline registry', () => {
       { family: 'Abe', weight: 400, style: 'normal', status: 'idle' },
       { family: 'Zed', weight: 700, style: 'normal', status: 'idle' },
     ]);
+  });
+
+  // `layoutCache` keys nothing on the font set and polls `glyphGeneration()`
+  // instead, so a registration the counter does not move is a layout the
+  // renderer keeps serving from the tier that is no longer registered.
+  describe('glyph generation', () => {
+    it('advances when a face is registered', () => {
+      const before = glyphGeneration();
+      registerFontOutlines('Fake', { weight: 400 }, new ArrayBuffer(4), { parser: stubParser });
+      expect(glyphGeneration()).not.toBe(before);
+    });
+
+    it('advances when a face is unregistered', () => {
+      registerFontOutlines('Fake', { weight: 400 }, new ArrayBuffer(4), { parser: stubParser });
+      const before = glyphGeneration();
+      unregisterFontOutlines('Fake', { weight: 400 });
+      expect(glyphGeneration()).not.toBe(before);
+    });
+
+    // `disableMachineFontOutlines` sweeps 18 variants per family, nearly all
+    // of them absent. A miss that invalidated every text layout in the app
+    // would cost more than the registration it did not find.
+    it('stands still when an unregister removes nothing', () => {
+      const before = glyphGeneration();
+      unregisterFontOutlines('Never Registered', { weight: 400 });
+      expect(glyphGeneration()).toBe(before);
+    });
   });
 });
