@@ -1,16 +1,24 @@
-.lk-layer-stack {
+/* Authored against labkit's `.lk-root`, which supplied a border-box reset and a
+   set of bare-button defaults. weasel-ui has neither, so the stack restates
+   both over its own subtree rather than depending on an ancestor class. */
+.stack,
+.stack * {
+  box-sizing: border-box;
+}
+
+.stack {
   display: grid;
   gap: 8px;
 }
 
-.lk-layer-stack__head {
+.head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
-.lk-layer-stack__title {
+.title {
   margin: 0;
   font-family: var(--wzl-font-display);
   font-weight: var(--wzl-font-weight-light);
@@ -18,12 +26,14 @@
   color: var(--wzl-fg);
 }
 
-.lk-layer-stack__palette {
+.palette {
   display: flex;
   gap: 4px;
 }
 
-.lk-layer-stack__add {
+.add {
+  font: inherit;
+  height: var(--wzl-control-h);
   background: transparent;
   border: 1px dashed var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
@@ -33,58 +43,57 @@
   cursor: pointer;
 }
 
-.lk-layer-stack__add:hover {
+.add:hover {
   background: var(--wzl-surface-raised);
   color: var(--wzl-fg);
 }
 
-.lk-layer-stack__list {
+.list {
   display: grid;
   gap: 6px;
 }
 
-.lk-layer-stack__drop-hint {
+.dropHint {
   height: 2px;
   background: var(--wzl-accent);
   border-radius: var(--wzl-radius-sm);
 }
 
-.lk-layer-stack__empty {
+.empty {
   color: var(--wzl-fg-subtle);
   font-size: var(--wzl-font-size);
   padding: 8px;
   text-align: center;
 }
 
-.lk-layer-card {
+.card {
   background: var(--wzl-surface-raised);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-md);
   overflow: hidden;
 }
 
-.lk-layer-card.has-accent {
-  // Re-bind --wzl-accent inside the card so descendant controls (slider tracks
-  // and thumbs, readouts, etc.) tint to the per-card accent instead of the
-  // global theme accent. Mirrors EffectCard's behavior.
-  --wzl-accent: var(--lk-layer-card-accent);
-  border-left: 3px solid var(--lk-layer-card-accent);
+.cardAccented {
+  /* Re-bind --wzl-accent inside the card so descendant controls (slider tracks
+     and thumbs, readouts, etc.) tint to the per-card accent instead of the
+     global theme accent. Mirrors EffectCard's behavior. */
+  --wzl-accent: var(--wzl-layer-stack-accent);
+  border-left: 3px solid var(--wzl-layer-stack-accent);
 }
 
-.lk-layer-card.is-dragging {
+.cardDragging {
   opacity: 0.5;
 }
 
-.lk-layer-card__head {
+.cardHead {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 6px 8px;
 }
 
-// Prefixed with `.lk-root` to outrank the .lk-root button rule in base.less,
-// which would otherwise paint a chrome border + elevated bg on these buttons.
-.lk-root .lk-layer-card__handle {
+.handle {
+  font: inherit;
   background: transparent;
   border: 0;
   color: var(--wzl-fg-subtle);
@@ -100,22 +109,22 @@
   font-size: var(--wzl-font-size);
 }
 
-.lk-layer-card.has-accent .lk-layer-card__handle {
-  background: var(--lk-layer-card-accent);
+.cardAccented .handle {
+  background: var(--wzl-layer-stack-accent);
   color: white;
 }
 
-.lk-layer-card__handle:active {
+.handle:active {
   cursor: grabbing;
 }
 
-.lk-layer-card__kind,
-.lk-layer-card__primary {
+.kind,
+.primary {
   flex: 1;
   font-size: var(--wzl-font-size);
 }
 
-.lk-layer-card__primary {
+.primary {
   background: transparent;
   border: 0;
   color: var(--wzl-fg);
@@ -124,7 +133,9 @@
   letter-spacing: var(--wzl-tracking-wide);
 }
 
-.lk-root .lk-layer-card__remove {
+.remove {
+  font: inherit;
+  height: var(--wzl-control-h);
   background: transparent;
   border: 0;
   color: var(--wzl-fg-subtle);
@@ -133,11 +144,11 @@
   padding: 2px 6px;
 }
 
-.lk-layer-card__remove:hover {
+.remove:hover {
   color: var(--wzl-fg);
 }
 
-.lk-layer-card__body {
+.cardBody {
   padding: 8px;
   border-top: 1px solid var(--wzl-border);
 }

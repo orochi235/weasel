@@ -1,6 +1,8 @@
 import { type CSSProperties, type ReactNode, type RefCallback, useEffect, useState } from 'react';
-import { dlog, useReorderDragList } from '../../passthrough/weasel-ui';
-import { DragHandleGlyph } from '../../primitives/DragHandleGlyph';
+import { dlog } from '../../dlog';
+import { useReorderDragList } from '../../useReorderDragList';
+import { DragHandleGlyph } from '../DragHandleGlyph';
+import s from './LayerStack.module.css';
 
 /** One card in a layer stack: its identity, the label shown when collapsed,
  *  and the optional select hoisted into its header. */
@@ -15,7 +17,9 @@ export interface LayerStackItem {
    *  can switch mode/shape without expanding. */
   primaryValue?: string;
   primaryOptions?: string[];
-  /** Accent CSS color used as the left border / index-badge fill. */
+  /** Accent CSS color used as the left border / index-badge fill. Sets
+   *  --wzl-layer-stack-accent on the card, which re-binds --wzl-accent
+   *  for everything inside it. */
   accent?: string;
   /** Optional badge text rendered before the primary control
    *  (e.g. tail index "1", "2", "3"). When omitted a drag handle
@@ -40,11 +44,16 @@ export interface LayerStackProps {
   /** Hide the title + palette row (used when an outer wrap renders its
    *  own head — see speech-balloons Tails panel). */
   hideHead?: boolean;
+  /** Appended to the root element's class list. The module's own class names
+   *  are hashed, so this is the supported way to reach the stack from a
+   *  consumer stylesheet. */
+  className?: string;
 }
 
 /** A drag-reorderable stack of expandable cards, with a palette in the header
  *  for adding more. The body of each card is the caller's to render. */
 export function LayerStack({
+  className,
   title,
   items,
   paletteKinds,
@@ -94,8 +103,8 @@ export function LayerStack({
   });
 
   const toggleExpanded = (id: number | string) => {
-    setExpandedIds((s) => {
-      const n = new Set(s);
+    setExpandedIds((current) => {
+      const n = new Set(current);
       if (n.has(id)) n.delete(id);
       else n.add(id);
       return n;
@@ -103,16 +112,16 @@ export function LayerStack({
   };
 
   return (
-    <div className="lk-layer-stack">
+    <div className={className ? `${s.stack} ${className}` : s.stack}>
       {!hideHead && (
-        <div className="lk-layer-stack__head">
-          <h2 className="lk-layer-stack__title">{title}</h2>
-          <div className="lk-layer-stack__palette">
+        <div className={s.head}>
+          <h2 className={s.title}>{title}</h2>
+          <div className={s.palette}>
             {paletteKinds.map((k) => (
               <button
                 key={k}
                 type="button"
-                className="lk-layer-stack__add"
+                className={s.add}
                 onClick={() => {
                   dlog('layer-stack', 'onAdd', { kind: k });
                   onAdd(k);
@@ -126,7 +135,7 @@ export function LayerStack({
         </div>
       )}
       <div
-        className="lk-layer-stack__list"
+        className={s.list}
         ref={drag.containerProps.ref as RefCallback<HTMLDivElement>}
         onPointerMove={drag.containerProps.onPointerMove}
         onPointerUp={drag.containerProps.onPointerUp}
@@ -139,25 +148,24 @@ export function LayerStack({
           const showHintBefore = drag.state.targetIndex === i && draggedId !== String(item.id);
           const showHintAfter = drag.state.targetIndex === items.length && i === items.length - 1;
           const cardCls = [
-            'lk-layer-card',
-            expanded ? 'is-expanded' : 'is-collapsed',
-            isDragging ? 'is-dragging' : '',
-            item.accent ? 'has-accent' : '',
+            s.card,
+            isDragging ? s.cardDragging : '',
+            item.accent ? s.cardAccented : '',
           ]
             .filter(Boolean)
             .join(' ');
           const cardStyle = item.accent
-            ? ({ '--lk-layer-card-accent': item.accent } as CSSProperties)
+            ? ({ '--wzl-layer-stack-accent': item.accent } as CSSProperties)
             : undefined;
           const { onPointerDown } = drag.rowProps(String(item.id), i);
           return (
-            <div key={item.id} className="lk-layer-card-wrap">
-              {showHintBefore && <div className="lk-layer-stack__drop-hint" />}
-              <div className={cardCls} data-testid={`lk-layer-card-${item.id}`} style={cardStyle}>
-                <div className="lk-layer-card__head">
+            <div key={item.id}>
+              {showHintBefore && <div className={s.dropHint} />}
+              <div className={cardCls} data-testid={`layer-card-${item.id}`} style={cardStyle}>
+                <div className={s.cardHead}>
                   <button
                     type="button"
-                    className="lk-layer-card__handle"
+                    className={s.handle}
                     aria-label={`Drag to reorder layer ${item.id}`}
                     onPointerDown={onPointerDown}
                     onClick={() => toggleExpanded(item.id)}
@@ -166,7 +174,7 @@ export function LayerStack({
                   </button>
                   {item.primaryValue !== undefined && item.primaryOptions ? (
                     <select
-                      className="lk-layer-card__primary"
+                      className={s.primary}
                       value={item.primaryValue}
                       aria-label={`Primary select for layer ${item.id}`}
                       onChange={(e) => onPrimaryChange(item.id, e.target.value)}
@@ -179,11 +187,11 @@ export function LayerStack({
                       ))}
                     </select>
                   ) : (
-                    <span className="lk-layer-card__kind">{item.kind}</span>
+                    <span className={s.kind}>{item.kind}</span>
                   )}
                   <button
                     type="button"
-                    className="lk-layer-card__remove"
+                    className={s.remove}
                     aria-label="Remove layer"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -193,14 +201,14 @@ export function LayerStack({
                     ✕
                   </button>
                 </div>
-                {expanded && <div className="lk-layer-card__body">{renderBody(item)}</div>}
+                {expanded && <div className={s.cardBody}>{renderBody(item)}</div>}
               </div>
-              {showHintAfter && <div className="lk-layer-stack__drop-hint" />}
+              {showHintAfter && <div className={s.dropHint} />}
             </div>
           );
         })}
         {items.length === 0 && (
-          <div className="lk-layer-stack__empty">No layers — add one above.</div>
+          <div className={s.empty}>No layers — add one above.</div>
         )}
       </div>
     </div>

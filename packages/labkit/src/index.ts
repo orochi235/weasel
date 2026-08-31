@@ -1,6 +1,7 @@
-// The property-panel family lives in `@weasel-js/ui` now; labkit re-exports it
-// so existing `@weasel-js/labkit` imports keep resolving. Named, not `export *`
-// — a star re-export of an external package emits no binding in the bundle.
+// The property-panel family and LayerStack live in `@weasel-js/ui` now; labkit
+// re-exports them so existing `@weasel-js/labkit` imports keep resolving. Named,
+// not `export *` — a star re-export of an external package emits no binding in
+// the bundle.
 export type {
   CheckboxRowProps,
   ColorRowProps,
@@ -9,6 +10,8 @@ export type {
   EffectCardListItem,
   EffectCardListProps,
   EffectCardProps,
+  LayerStackItem,
+  LayerStackProps,
   NumberRowProps,
   PropertyGroupProps,
   PropertyListPack,
@@ -31,6 +34,7 @@ export {
   CurveField,
   EffectCard,
   EffectCardList,
+  LayerStack,
   NumberRow,
   PropertyGroup,
   PropertyList,
@@ -150,6 +154,5 @@ export * from './surface';
 export { interstellarTheme } from './theme/interstellar';
 export type { ToolCapability, TrialTool } from './tools/types';
 export * from './trial';
-export * from './ui/layers';
 export type { EventBus, EventListener } from './undo';
 export { clearUndo, createEventBus, emptyStack, pushSnapshot, redo, undo } from './undo';

@@ -6,9 +6,9 @@ export interface DragHandleGlyphProps {
 
 /** The two-column dot grip used on anything draggable by a handle.
  *
- *  Deliberately not part of `@weasel-js/ui`'s icon register: that register is
- *  outline strokes at a fixed weight, and a grip is filled dots. Forcing it in
- *  would either break the register's rule or produce a worse glyph. */
+ *  Deliberately not part of the icon register: that register is outline strokes
+ *  at a fixed weight, and a grip is filled dots. Forcing it in would either
+ *  break the register's rule or produce a worse glyph. */
 export function DragHandleGlyph({ size = 16 }: DragHandleGlyphProps) {
   return (
     <svg

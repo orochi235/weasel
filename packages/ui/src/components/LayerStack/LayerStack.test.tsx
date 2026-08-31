@@ -1,22 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-
-// useReorderDragList pulls its own React copy from weasel/node_modules, which
-// breaks hooks in jsdom. Stub it out with a no-op implementation.
-vi.mock('../../passthrough/weasel-ui', () => ({
-  dlog: () => {},
-  useReorderDragList: () => ({
-    rowProps: (_id: string, _i: number) => ({ onPointerDown: () => {} }),
-    containerProps: {
-      ref: () => {},
-      onPointerMove: () => {},
-      onPointerUp: () => {},
-      onPointerCancel: () => {},
-    },
-    state: { draggedIds: null, targetIndex: null },
-  }),
-}));
-
 import { LayerStack, type LayerStackItem } from './LayerStack';
 
 const items: LayerStackItem[] = [
@@ -43,7 +26,7 @@ describe('LayerStack', () => {
     for (const k of ['fill', 'tail', 'shadow']) {
       expect(screen.getByRole('button', { name: new RegExp(`add ${k}`, 'i') })).toBeInTheDocument();
     }
-    expect(screen.getAllByTestId(/lk-layer-card-/)).toHaveLength(3);
+    expect(screen.getAllByTestId(/layer-card-/)).toHaveLength(3);
   });
 
   it('clicking a palette button calls onAdd with that kind', () => {
@@ -164,7 +147,23 @@ describe('LayerStack', () => {
     expect(screen.queryByTestId('body-1')).not.toBeInTheDocument();
   });
 
-  // TODO: reorder off-by-one fix (Bug 1) is covered by manual integration
-  // testing in speech-balloons once LayerStack is consumed there (B3).
-  // useReorderDragList is mocked in unit tests, making onReorder untestable here.
+
+  it('appends className to the root, keeping its own hashed class', () => {
+    const { container } = render(
+      <LayerStack
+        title="Fill"
+        items={items}
+        paletteKinds={['fill']}
+        onAdd={() => {}}
+        onRemove={() => {}}
+        onReorder={() => {}}
+        onPrimaryChange={() => {}}
+        renderBody={() => null}
+        className="host-stack"
+      />,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.classList.contains('host-stack')).toBe(true);
+    expect(root.classList.length).toBeGreaterThan(1);
+  });
 });

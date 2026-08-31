@@ -1,6 +1,6 @@
 import { type PointerEvent, useRef, useState } from 'react';
 import type { LayerDescriptor } from '../instrument/types';
-import { DragHandleGlyph } from '../primitives/DragHandleGlyph';
+import { DragHandleGlyph } from '../passthrough/weasel-ui';
 
 /** Props for `<LayerList>`. */
 export interface LayerListProps {
