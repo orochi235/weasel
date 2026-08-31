@@ -2,27 +2,44 @@
 
 For whoever picks up labkit work next. It answers one question — which labkit
 changes do consuming projects actually want — and records the evidence so the
-survey does not have to be redone. Nothing here is started.
+survey does not have to be redone.
 
-Replaces `2026-08-28-labkit-fixes-klieg-waits-on.md`, which described the zoom
-clamp as unpushed on a worktree. It merged (`8bed4819`) and is on `origin/main`.
+Everything in "Done" below shipped on `main` (`f16e3ebb`). The rest is untouched.
 
-Branch `labkit/consumer-asks`, worktree `.claude/worktrees/labkit-asks`, deps
-installed, no commits on it yet.
+## Done
+
+- **`@weasel-js/labkit/dragdrop`** exported three types and no runtime; its built
+  `index.js` was empty. It now exports `Palette`, `DragGhost`, `useDragDrop` and
+  `DragOverlay`.
+- **`TrialLayout`** reaches the root barrel, so klieg no longer reads it off
+  `ComponentProps<typeof Workspace>`.
+- **Hover hints.** A described config leaf renders an ⓘ beside its label,
+  following `PrefsForm`'s tooltip shape. Every leaf already carried a
+  `description`; `ControlPanel` was reading only `name`.
+- **`lk-property-list__span`.** `PropertyRow` takes `span`, and `PropertySpan`
+  wraps a non-row child. wod's hand-typed class name has a route now.
+- **The property panel and `LayerStack` moved to `@weasel-js/ui`**, styles
+  converted from global `lk-` Less to CSS modules. labkit re-exports both, so
+  existing imports resolve. Class names are no longer public: reach in through
+  the `className` props.
+- **The changesets version bug.** `changeset version` computed `2.0.0-pre.0`
+  because `assemble-release-plan@6` promoted a peer dependent to major whenever
+  the new version left its peer range, and a prerelease satisfies a range only
+  if the range carries a prerelease at the same major.minor.patch. Fixed by
+  `@changesets/cli@3`, which deletes that promotion. See "Traps" — the upgrade
+  moved the on-disk changeset format.
 
 ## Delivered by a release, not by code
 
-klieg is pinned to labkit **1.1.0** while **1.2.0** is published, so it is
+klieg is pinned to labkit **1.1.0** while newer versions are published, so it is
 missing `useTiledSurface`, `useOrbit`, the opaque trial view and the `job`
 capability — features built for klieg and precioussss in the first place. Its
 caret already admits them; what pins it is klieg's lockfile. `npm update
 @weasel-js/labkit` in `~/src/klieg`.
 
-klieg also deferred `FloatingPanel` and `Legend` upstream because 1.2.0 shipped
-without them, and grew `LegendPanel.tsx` with a locally-declared `LegendEntry`
-instead. Both exist on `main` now. When they ship, that local copy comes out —
-`klieg/docs/superpowers/plans/2026-08-23-corner-lab-legend.md` says to reopen
-only if labkit ever ships `FloatingPanel`.
+klieg also deferred `FloatingPanel` and `Legend` upstream and grew
+`LegendPanel.tsx` with a locally-declared `LegendEntry`. Both exist on `main`
+now; that local copy can come out.
 
 ## Asked for by two projects
 
@@ -32,14 +49,11 @@ and precioussss's gem bench:
 - `commit: 'end'` on sliders. klieg bypasses `SliderRow` for weasel-ui's
   `Slider` entirely to get it; `precioussss/apps/lab/src/gemBench.tsx:50` has a
   comment claiming behaviour that does not exist.
-- Hover hints. **Nearly free:** `Annotations.description` already exists in
-  `config/types.ts` and weasel-ui's `PrefsForm` renders it as a tooltip.
-  labkit's own `ControlPanel` never passes it through.
 - Snap-to-stops, lens binding, inert-with-a-reason, computed bounds — filed in
   `packages/labkit/docs/IDEAS.md`.
 - Nested paths. `ResolvedConfig.group` is documented flat, so sherpa cannot
-  declare `fire.hold` and it stays uneditable (`sherpa/TODO.md:96`). Already
-  `docs/TODO.md:1377`; sherpa is the second asker.
+  declare `fire.hold` and it stays uneditable (`sherpa/TODO.md:96`). Already in
+  `docs/TODO.md`; sherpa is the second asker.
 
 **An instrument can request a view** — four reports, one piece of work.
 `initialView` is static per instrument (klieg's `subject: 'letter'` reframes and
@@ -54,43 +68,51 @@ hand-rolled `StepTree.tsx`. wod cannot use `LayerStack` because `kind`,
 (`wod/docs/superpowers/specs/2026-07-30-wod-editor-design.md:229`). wod also
 wants a multi-control grid row and a multi-select row.
 
-## Small and unambiguous
+## Still open
 
-- `@weasel-js/labkit/dragdrop` is a public subpath exporting **three types and
-  no runtime**. `DragDropRuntime`, `Palette` and `DragGhost` exist in source,
-  unexported. sherpa withdrew its ask on finding `useReorderDragList` in
-  `@weasel-js/ui`, but a subpath with no runtime is still a defect.
-- `Workspace`'s `layout` type is not exported; klieg reads it off
-  `ComponentProps<typeof Workspace>` (`tube-lab/src/persist.ts:7`).
-- `lk-property-list__span` is a private class name wod types by hand for a
-  full-width child. It wants to be a prop.
 - `FloatingPanel` is pointer-only — no keyboard move (`windease/TODO.md:349`).
-- labkit's stylesheet assumes the host supplies a dark ground. sherpa rendered
-  white-on-white through 361 passing tests before anyone saw it.
-
-## Follow-up this session created
-
-`changeset version` computes **2.0.0-pre.0**, not 1.3.0-pre.0, because `d3`,
-`hud` and `ui` peer-depend on `@weasel-js/core` and changesets promotes a peer
-dependent past the bump its own changesets asked for; the `fixed` group then
-moves all sixteen. `6b87ddd9` sets the number by hand rather than fixing that,
-so the next release repeats it. `onlyUpdatePeerDependentsWhenOutOfRange` is
-already true and did not prevent it.
+  Deliberately skipped; Mike does not want it yet.
+- **Bare mounting has no supported path.** `.lk-root` carries labkit's whole
+  style scope — tokens, fonts, the box-sizing reset, every element default under
+  `:where(.lk-root)` — and `LabShell` is the only thing that applies it. klieg
+  renders `Workspace` bare (`tube-lab/src/App.tsx:562`) and sherpa renders
+  `ControlPanel` bare (`apps/studio/src/panes/Inspector.tsx:44,50`), both
+  deliberately, both working around the missing token root from their own
+  stylesheets. labkit's own Storybook hand-rolls the contract at
+  `.storybook/preview.tsx:275` to mount ~28 stories. A `LabkitRoot` mount
+  component was designed and rejected; the moves above shrink the problem
+  without solving it.
+- **wod has three reach-ins to fix in its own repo**, all broken by the class
+  names going private: `Editor.css:172` (`.lk-property-panel`) and anything
+  styling `.lk-layer-card` become `className` props;
+  `BreakpointPanel.tsx:77` becomes `<PropertySpan>`.
 
 ## Traps
 
-**A test file that passes alone and fails in a full run is measuring uptime,
-not your change.** `SceneCanvas.animatedZoom.test.tsx` did this, and bisecting
-it with the single file in isolation at one end and the full suite at the other
-produced a clean, entirely false "both parents green, merge red". Use one probe
-across the whole range. Fixed in `useAnimator.ts` — jsdom gives `rAF` and
-`performance.now()` origins ~600ms apart.
+**Changesets 3.x migrates the pre-mode store on read.** A consumed changeset
+moves from a name in `pre.json`'s `changesets` array to a file under
+`.changeset/pre/`, and `pre.json` shrinks to `{mode, tag}`. Any command triggers
+it, including `changeset status`. It looks exactly like something deleted every
+changeset. It did not. `check:bumps` scans both directories for this reason.
 
-**npm's web auth needs a TTY.** Neither the Bash tool nor a `!`-prefixed
-command is one, so `npm login` and a 2FA `npm publish` print their URL and exit
-non-zero. A real terminal window is the only path. On a passkey account there
-is no OTP code to fall back to.
+**The consumer smoke test cannot tell a quoted import from a real one.** It greps
+labkit's `dist` for `from "@weasel-js/…"`, so a warning string spelling out an
+import statement fails it. That broke CI once and was reintroduced once by a
+merge taking a file wholesale.
 
-**A registry `GET` can 404 for minutes after a `PUT 200`.** Publishes that had
-already succeeded looked like they had never run. Check the npm debug log's
-`http fetch PUT` line before concluding anything.
+**labkit bundles its siblings** (`tsup.config.ts`, `noExternal`), so a source
+edit in `packages/text` does not reach labkit's bundle until the whole workspace
+is rebuilt. A smoke test run before that reports the previous build's result.
+
+**A test file that passes alone and fails in a full run is measuring uptime, not
+your change.** `SceneCanvas.animatedZoom.test.tsx` did this; bisecting with one
+file in isolation at one end and the full suite at the other produced a clean,
+entirely false "both parents green, merge red". Use one probe across the range.
+
+**npm's web auth needs a TTY.** Neither the Bash tool nor a `!`-prefixed command
+is one, so `npm login` and a 2FA `npm publish` print their URL and exit non-zero.
+
+**A registry `GET` can 404 for minutes after a `PUT 200`** — and changesets can
+report a publish that never happened. 1.3.0-pre.0 reported all sixteen packages
+published while `gestures` and `audio` never reached the registry. Check the
+registry directly, not the run log.

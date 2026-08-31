@@ -1038,8 +1038,9 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
   first: whether enabling looping on a timeline sitting at `duration` restarts
   it, or takes effect on the next pass.
 - **(P2) `<Timeline>` editor** — transport, lanes, draggable keyframes,
-  per-segment easing. Goes in `@weasel-js/ui` next to `BandEditor`, `Slider` and
-  `CurveEditor`; `labkit` has none of those and doesn't depend on `ui`.
+  per-segment easing. Goes in `@weasel-js/ui` next to `BandEditor`, `Slider`,
+  `CurveEditor` and the property panel; `labkit` depends on `ui` and re-exports
+  from it, so a consumer reaching either package gets it.
 - **(P3) Inverse kinematics** — a solver that writes poses. Composes with the rig
   above and needs nothing here changed.
 - **(P3) Skinning** — per-vertex bone weights deforming path geometry. The
