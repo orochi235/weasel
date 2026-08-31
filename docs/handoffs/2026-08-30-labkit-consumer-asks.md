@@ -66,6 +66,11 @@ and precioussss's gem bench:
   comment claiming behaviour that does not exist.
 - Snap-to-stops, lens binding, inert-with-a-reason, computed bounds — filed in
   `packages/labkit/docs/IDEAS.md`.
+- Collapsible sections. `SectionSpec` groups leaves under a heading but has no
+  disclosure, so brick-icons' 38 flags in seven sections is still one long
+  scroll. `SidebarSection` already has `defaultCollapsed`; `SectionSpec` wants
+  the same, remembering its state per trial. brick-icons is the third asker on
+  this family.
 - Nested paths. `ResolvedConfig.group` is documented flat, so sherpa cannot
   declare `fire.hold` and it stays uneditable (`sherpa/TODO.md:96`). Already in
   `docs/TODO.md`; sherpa is the second asker.
@@ -75,6 +80,43 @@ hand-rolled `StepTree.tsx`. wod cannot use `LayerStack` because `kind`,
 `paletteKinds` and `onAdd` are required and its segments have no kind
 (`wod/docs/superpowers/specs/2026-07-30-wod-editor-design.md:229`). wod also
 wants a multi-control grid row and a multi-select row.
+
+## Asked for by brick-icons
+
+A ~1500-line consumer app (a workspace of trials, each rendering one LEGO part
+through two engines) built against 1.3.0. Each item is a workaround it is
+currently carrying.
+
+- **`addTrial` takes only an instrument name**, so opening a trial _on a given
+  subject_ has nowhere to put the subject. The app passes it through a
+  module-level one-slot box that `defaultConfig()` reads and clears, which works
+  only because `addTrial` calls `defaultConfig()` synchronously. Wants
+  `addTrial(name, { config })`.
+- **A trial's title is the instrument name, with no way to override it.** Every
+  trial reads "part-inspector" where the user needs the part. The app hides
+  `.lk-trial__title` with CSS and leads with its own `titlebar` contribution.
+  Either `title` on the instrument spec or `setTitle` on `TrialChromeContext`
+  retires the hack. Note this got _worse_ on 2026-08-31: clone and reset moved
+  into `.lk-trial__titlebar-actions`, so three built-in buttons now share that
+  span with any consumer contribution in it.
+- **`end: true` does not reach the region's far edge in the toolbar.** The
+  toolbar sizes to its content, so an `end` group lands beside its neighbours;
+  the app adds `.lk-trial__toolbar { width: 100% }` and a `flex: 1` spacer of
+  its own. The title bar half of this claim does not reproduce —
+  `.lk-trial__titlebar-actions` already carries `margin-left: auto` — so this is
+  a toolbar bug, not a general `end` bug. Reaching into the class names is the
+  part the consumer wants to stop doing.
+- **`ToolbarItem.onActivate` is `() => void` with no context**, so a
+  contribution declared through `Lab.chrome` cannot call `ctx.saveSnapshot()`.
+  Re-declaring a suppressed built-in in a different group therefore means
+  dropping to the `render` escape hatch and hand-rolling the button, losing the
+  chrome's layout. Wants `onActivate: (ctx: TrialChromeContext) => void`.
+- **The README's Usage example is misleading.** It shows
+  `<LabShell><Workspace>…</Workspace></LabShell>`, which reads as how to build a
+  lab. `<Lab>` renders its own shell, workspace and one `<Trial>` per record and
+  puts `children` in the shell header — following the README inside a `<Lab>`
+  lays the whole app out as one header item with every trial rendered twice. One
+  line saying `<Lab>` owns the shell would have saved the trace.
 
 ## Still open
 
