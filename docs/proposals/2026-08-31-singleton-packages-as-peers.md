@@ -1,5 +1,9 @@
 # Singleton-bearing packages belong in `peerDependencies`
 
+**Shipped.** `font` is a peer of `core`, `hud` and `text`; `core` is a peer of
+`svg`, and the `d3` / `hud` / `ui` ranges are exact. What is left is the
+`labkit` row in `docs/TODO.md`.
+
 For whoever picks up weasel's packaging next. It assumes you know what a
 module-global registry is and nothing else about this arc.
 
@@ -68,19 +72,18 @@ Gate on `npm run test:smoke:consumer`. Its declaration audit is what actually
 checks that packages declare what they import — `check:manifests` only
 verifies that advertised export paths exist in the tarball.
 
-## Decisions this needs before it starts
+## Decisions, as settled
 
-- **`weasel-js`** (the umbrella facade) is `private: true` and unpublished, so
-  its `core` dependency decides nothing yet. The name is blocked: npm's
-  similarity check strips punctuation, and `weasel-js` normalizes onto the
-  published `weasel.js`. Revisit once it has a name that publishes.
-- **`labkit`** bundles the other packages rather than resolving them at the
-  consumer, so a real dependency may be correct there. Confirm before moving
-  it.
-- **Peer range: exact or caret?** Exact (`1.3.0-pre.0`) matches how the fixed
-  group already pins and makes *any* version mix an install error. A caret
-  permits drift within a major, which is the thing that produced the bug.
-  Exact is the safer default and the noisier one.
+- **Peer ranges are exact.** Changesets rewrites an exact peer range in the
+  same pass that bumps the group, so a dependent never sees an out-of-range
+  peer and no release escalates to a major on its account.
+- **`labkit` keeps an ordinary dependency.** Its build inlines core, so it has
+  nothing to resolve at the consumer and nothing to peer. It ships a second
+  copy of core's registries as a result — the open row in `docs/TODO.md`.
+- **No devDependency pairing.** npm links workspace siblings regardless; the
+  three pre-existing peers build today without one.
+- **The umbrella `weasel-js`** is private and unpublished, so its `core`
+  dependency settles nothing until the package has a name that publishes.
 
 ## What this costs consumers
 

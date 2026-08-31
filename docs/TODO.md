@@ -53,7 +53,7 @@ Priority tags:
 
 **Plugins & packaging**
 - Barrel-hygiene: selection (pending design review) → [Plugins & packaging](#plugins--packaging)
-- Singleton-bearing packages (`font`, `core`) must be peer deps, not ordinary ones → [Plugins & packaging](#plugins--packaging)
+- `labkit` inlines `core`, so a consumer using both holds two registries → [Plugins & packaging](#plugins--packaging)
 - `weasel-js` unscoped alias is unpublishable under that name → [Plugins & packaging](#plugins--packaging)
 
 **Performance**
@@ -1512,25 +1512,19 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Plugins & packaging
 
-### Singleton-bearing packages must be peer dependencies
+### labkit inlines core, so a consumer using both holds two registries
 
-- **(P2) `@weasel-js/font` and `@weasel-js/core` may not be duplicated, and
-  nothing currently stops it.** Both hold module-global registries that
-  consumer code writes into — font's registered faces and glyph-ready
-  subscribers, core's content handlers, paint kinds, shape painters and
-  markers. Two physical copies are two registries, so a consumer registers
-  into one while the renderer reads the other and gets a blank canvas. Exact
-  sibling pins across the lockstep group mean any consumer mixing two weasel
-  releases forces npm to nest a second copy; a peer dependency makes that an
-  `ERESOLVE` at install time instead. `core` is already a peer of `d3`, `hud`
-  and `ui` — half the arc is finishing that decision for `svg` and `labkit`,
-  and applying it to `font` in `core`, `hud` and `text`. `text` and `hud` hold
-  only caches and warn-dedup, so they need no change on their own account.
-  `layoutRuns` warns and names duplication as a cause since `4180095a`, which
-  makes the failure self-diagnosing but not impossible. Three decisions are
-  open before it starts (the umbrella `weasel-js`, bundling `labkit`, and
-  exact-vs-caret peer ranges) — see
-  `docs/proposals/2026-08-31-singleton-packages-as-peers.md`.
+- **(P2) `@weasel-js/labkit` bundles `core` rather than resolving it at the
+  consumer.** Its `tsup` config aliases every `@weasel-js/core` entry point to
+  core's built files, so core is inlined and labkit's dist imports it nowhere.
+  That is why labkit kept an ordinary dependency when `font` and `core` became
+  exact peers everywhere else — a peer names a copy it never resolves. The
+  consequence is the failure the peer change just closed, reached by another
+  route: a consumer using labkit *and* core registers a face or a paint kind
+  into one copy of the registries and reads the other, and gets a blank canvas
+  with no diagnostic beyond the `layoutRuns` warning. Either externalize core
+  in labkit's build and peer it as `svg` now does, or state that labkit is a
+  whole-harness import that must not sit beside a direct core dependency.
 
 ### Unscoped alias package name
 
