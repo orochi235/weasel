@@ -62,7 +62,25 @@
   border-bottom: var(--wzl-border-w) solid var(--wzl-line-subtle);
 }
 
+.lk-sidebar-section__bar {
+  display: flex;
+  align-items: center;
+}
+
+.lk-sidebar-section__undock {
+  padding: 0 var(--wzl-space-xs);
+  border: 0;
+  background: transparent;
+  color: var(--wzl-fg-subtle);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--wzl-fg);
+  }
+}
+
 .lk-sidebar-section__head {
+  flex: 1;
   width: 100%;
   padding: var(--wzl-space-xs);
   border: 0;

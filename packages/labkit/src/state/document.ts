@@ -7,9 +7,10 @@ import type {
   SerializedTrial,
   StorageAdapter,
 } from './types';
+import type { UndockedPanels } from './undock';
 
 /** Bumped whenever the persisted shape changes; every bump needs a migration. */
-export const CURRENT_DOCUMENT_VERSION = 2;
+export const CURRENT_DOCUMENT_VERSION = 3;
 
 /** The one key a lab persists under. The `:doc` suffix keeps it out of the
  *  legacy bucket namespace, where a lab named `a:saves` would otherwise write
@@ -28,6 +29,7 @@ export function quarantineKey(storageKey: string): string {
 export function emptyDocument(mode: LabMode): LabDocument {
   return {
     version: CURRENT_DOCUMENT_VERSION,
+    undockedPanels: {},
     trials: [],
     saves: [],
     layout: {},
@@ -161,6 +163,10 @@ export function normalizeDocument(
     saves: Array.isArray(doc.saves) ? (doc.saves as SavedSnapshot[]) : [],
     layout:
       doc.layout && typeof doc.layout === 'object' ? (doc.layout as Record<string, unknown>) : {},
+    undockedPanels:
+      doc.undockedPanels && typeof doc.undockedPanels === 'object'
+        ? (doc.undockedPanels as UndockedPanels)
+        : {},
     mode,
   };
 }
@@ -190,5 +196,11 @@ export function migrateV1toV2(doc: Record<string, unknown>): Record<string, unkn
   return { ...rest, trials: Array.isArray(workspaces) ? workspaces : [], version: 2 };
 }
 
+/** Version 2 to version 3: undocked sidebar panels became persisted state.
+ *  Nothing existing moves; the field simply starts empty. */
+export function migrateV2toV3(doc: Record<string, unknown>): Record<string, unknown> {
+  return { ...doc, undockedPanels: {}, version: 3 };
+}
+
 /** Index `i` migrates a version-`i` document to version `i + 1`. */
-export const MIGRATIONS: Migration[] = [migrateV0toV1, migrateV1toV2];
+export const MIGRATIONS: Migration[] = [migrateV0toV1, migrateV1toV2, migrateV2toV3];

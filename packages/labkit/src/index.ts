@@ -162,6 +162,8 @@ export type {
   TrialStateHandle,
   UndoStack,
 } from './state/types';
+export type { UndockedPanel, UndockedPanels } from './state/undock';
+export { dockPanel, panelKey, undockPanel } from './state/undock';
 export { useTrialState } from './state/useTrialState';
 export type { ViewTransform2D } from './state/view';
 export { as2DView, DEFAULT_VIEW } from './state/view';

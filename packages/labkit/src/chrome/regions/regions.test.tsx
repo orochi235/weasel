@@ -6,7 +6,12 @@ import { StatusRegion } from './StatusRegion';
 import { ViewportRegion } from './ViewportRegion';
 
 const Glyph = () => <svg />;
-const ctx = { trialId: 't1' } as unknown as TrialChromeContext;
+const ctx = {
+  trialId: 't1',
+  undockedPanels: [],
+  undockPanel: () => {},
+  dockPanel: () => {},
+} as unknown as TrialChromeContext;
 
 describe('SidebarRegion', () => {
   it('renders nothing when empty', () => {

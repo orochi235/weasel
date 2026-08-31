@@ -45,4 +45,6 @@ export type {
   TrialStateHandle,
   UndoStack,
 } from './types';
+export type { UndockedPanel, UndockedPanels } from './undock';
+export { dockPanel, panelKey, undockPanel } from './undock';
 export { useTrialState } from './useTrialState';

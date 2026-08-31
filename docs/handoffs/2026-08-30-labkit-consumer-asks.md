@@ -46,11 +46,12 @@ Everything in "Done" below has shipped. The rest is untouched.
 
 ## Delivered by a release, not by code
 
-klieg is pinned to labkit **1.1.0** while newer versions are published, so it is
-missing `useTiledSurface`, `useOrbit`, the opaque trial view and the `job`
-capability — features built for klieg and precioussss in the first place. Its
-caret already admits them; what pins it is klieg's lockfile. `npm update
-@weasel-js/labkit` in `~/src/klieg`.
+klieg has since moved to 1.3.0 with all four `@weasel-js` packages pinned
+together, so `useTiledSurface`, `useOrbit`, the opaque trial view and the `job`
+capability all reach it now. Kept as the shape of the problem rather than a live
+one: features built for a consumer do not reach it until its lockfile moves, and
+a report of "labkit cannot do X" from a pinned consumer is a lockfile question
+first.
 
 klieg also deferred `FloatingPanel` and `Legend` upstream and grew
 `LegendPanel.tsx` with a locally-declared `LegendEntry`. Both exist on `main`
@@ -114,16 +115,22 @@ currently carrying.
   app adds `.lk-trial__toolbar { width: 100% }` plus a `flex: 1` spacer. This
   half is a real bug; the title bar half is the leading-slot item above, not an
   `end` failure.
+- **`ControlPanel` drops a `.pair()` annotation silently.** The builder offers
+  it, `NodeOptions` carries it, and `ControlPanel` renders its leaves into a
+  `PropertyList` at a hardcoded `pack="auto-color"` — which by its own docstring
+  pairs colour rows and spans everything else full width. So `.pair()` on any
+  non-colour kind is inert whatever the renderer does, with nothing to observe.
+  Worse than a missing feature: the API accepts the instruction and discards it.
+  Either the panel honours `pack`, or `.pair()` should not be on the builder.
 - **`ControlPanel` cannot be told to render compactly.** A 38-flag schema draws
   every row at `PropertyRow`'s default `layout="block"` — stacked label over
-  control. `PropertyRow` already takes `layout="inline"` and `PropertyList`
-  takes `pack="pairs"`, either of which roughly halves the panel, but
-  `ControlPanelProps` exposes neither and `NodeOptions` has no layout field, so
-  a schema-driven panel cannot reach them. Both escape hatches — hand-rolling
-  the `PropertyList`/`PropertyRow` tree, or a `renderers` entry per leaf kind —
-  give up what `ControlPanel` is for. `.pair()` is reachable but only helps
-  where two flags genuinely belong together. Wants a `layout`/`pack`
-  passthrough, or a `density` on the resolved schema.
+  control — and `ControlPanelProps` exposes neither `layout` nor `pack`.
+  brick-icons worked around it with a `controls` entry per leaf kind that
+  re-declares the row as `layout="inline"`, which roughly halved the panel and
+  keys by kind so new flags pick it up unnamed. That escape hatch works and it
+  is keeping it; the ask is for a `layout`/`pack` passthrough or a `density` on
+  the resolved schema, so a schema-driven panel does not have to re-implement
+  four rows to be compact.
 - **`ToolbarItem.onActivate` is `() => void` with no context**, so a
   contribution declared through `Lab.chrome` cannot call `ctx.saveSnapshot()`.
   Re-declaring a suppressed built-in in a different group therefore means

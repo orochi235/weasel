@@ -8,6 +8,7 @@ import {
   MIGRATIONS,
   migrateV0toV1,
   migrateV1toV2,
+  migrateV2toV3,
   normalizeDocument,
   quarantineDocument,
   quarantineKey,
@@ -324,6 +325,7 @@ describe('normalizeDocument', () => {
       trials: [],
       saves: [],
       layout: {},
+      undockedPanels: {},
       mode: 'auto',
     });
   });
@@ -365,5 +367,26 @@ describe('normalizeDocument', () => {
     expect(out.trials).toEqual([]);
     expect(out.saves).toEqual([]);
     expect(out.layout).toEqual({});
+  });
+});
+
+describe('version 2 to version 3', () => {
+  it('gives a document with no undocked panels an empty set', () => {
+    const out = migrateV2toV3({ version: 2, trials: [], saves: [], layout: {}, mode: 'auto' });
+    expect(out.version).toBe(3);
+    expect(out.undockedPanels).toEqual({});
+  });
+
+  it('leaves the rest of the document alone', () => {
+    const out = migrateV2toV3({
+      version: 2,
+      trials: [{ id: 'a' }],
+      saves: [],
+      layout: { a: 1 },
+      mode: 'dark',
+    });
+    expect(out.trials).toEqual([{ id: 'a' }]);
+    expect(out.layout).toEqual({ a: 1 });
+    expect(out.mode).toBe('dark');
   });
 });

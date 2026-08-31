@@ -280,6 +280,26 @@ export const AllChrome: Story = {
   },
 };
 
+/** Undocking, in both targets. `Notes` declares `undockAs: 'floating'`, so its
+ *  tear-out control sends it to the layer above the grid; every other section
+ *  defaults to a tile and joins the tiling as a peer of the trials. */
+export const UndockablePanels: Story = {
+  args: {
+    ...AllChrome.args,
+    chrome: [
+      {
+        id: 'notes',
+        region: 'sidebar',
+        item: {
+          title: 'Notes',
+          undockAs: 'floating',
+          body: <p className="lk-run-tag">Undock me — I float.</p>,
+        },
+      },
+    ],
+  },
+};
+
 /** The chrome the other story cannot show at the same time: one instrument, so
  *  the header is an Add trial button; one trial, so Close is disabled; no
  *  config schema, canvas, undo or job, so the sidebar falls back to its

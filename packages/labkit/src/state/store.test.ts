@@ -649,3 +649,27 @@ describe('createLabStore — folding without a mutation', () => {
     warn.mockRestore();
   });
 });
+
+describe('undocking a sidebar panel', () => {
+  it('starts with nothing undocked', () => {
+    expect(makeStore().getState().undockedPanels).toEqual({});
+  });
+
+  it('records an undock and docks it back', () => {
+    const s = makeStore();
+    s.getState().undockPanel('t1', 'settings', 'floating');
+    expect(Object.values(s.getState().undockedPanels)).toEqual([
+      { trialId: 't1', sectionId: 'settings', as: 'floating' },
+    ]);
+    s.getState().dockPanel('t1', 'settings');
+    expect(s.getState().undockedPanels).toEqual({});
+  });
+
+  it('closing a trial takes its undocked panels with it', () => {
+    const s = makeStore();
+    s.getState().addTrial({ id: 't1', instrumentName: 'i', config: {}, state: {}, view: null });
+    s.getState().undockPanel('t1', 'settings');
+    s.getState().removeTrial('t1');
+    expect(s.getState().undockedPanels).toEqual({});
+  });
+});

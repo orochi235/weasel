@@ -9,3 +9,76 @@
   height: 100%;
   min-height: 0;
 }
+
+// An undocked sidebar section. A tile version is placed by the grid like any
+// trial; the floating version sits above the grid in its own layer.
+.lk-panel-tile {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border: var(--wzl-border-w) solid var(--wzl-line-subtle);
+  border-radius: var(--wzl-radius-sm);
+  background: var(--wzl-surface);
+}
+
+.lk-panel-tile__titlebar {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-sm);
+  flex-shrink: 0;
+  padding: 0 var(--wzl-space-sm);
+  border-bottom: var(--wzl-border-w) solid var(--wzl-line-subtle);
+}
+
+.lk-panel-tile__title {
+  flex: 1;
+  color: var(--wzl-fg-muted);
+  font-family: var(--wzl-font-display);
+  font-size: var(--wzl-font-size-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lk-panel-tile__dock {
+  border: 0;
+  background: transparent;
+  color: var(--wzl-fg-subtle);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--wzl-fg);
+  }
+}
+
+.lk-panel-tile__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.lk-workspace-host {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.lk-workspace__floating {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+
+  > * {
+    pointer-events: auto;
+  }
+}
+
+.lk-panel-tile--floating {
+  position: absolute;
+  top: var(--wzl-space-md);
+  right: var(--wzl-space-md);
+  width: 260px;
+  height: auto;
+  max-height: 60%;
+  box-shadow: var(--wzl-shadow-panel, 0 2px 8px rgb(0 0 0 / 0.3));
+}

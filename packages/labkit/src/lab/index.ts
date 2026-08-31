@@ -6,5 +6,5 @@ export type { LabPaletteProps } from './LabPalette';
 export { LabPalette } from './LabPalette';
 export type { LabShellProps } from './LabShell';
 export { LabShell } from './LabShell';
-export type { TrialLayout, WorkspaceProps } from './Workspace';
+export type { PanelDescriptor, TrialLayout, WorkspaceProps } from './Workspace';
 export { Workspace } from './Workspace';

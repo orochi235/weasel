@@ -37,6 +37,11 @@ export interface SidebarSection {
   title: string;
   /** Starts collapsed. The open/closed state itself is the region's. */
   defaultCollapsed?: boolean;
+  /** Offer the tear-out control. On by default; a section that only makes
+   *  sense beside its trial sets this false. */
+  undockable?: boolean;
+  /** Where the tear-out control sends it. Default `'tile'`. */
+  undockAs?: 'tile' | 'floating';
   body: ReactNode;
 }
 
@@ -111,6 +116,13 @@ export interface TrialChromeContext {
   configFields: ConfigField[];
   config: unknown;
   setConfig: (key: string, value: unknown) => void;
+
+  /** Section ids this trial currently has torn out of its sidebar. */
+  undockedPanels: readonly string[];
+  /** Tear a sidebar section out into the workspace. */
+  undockPanel: (sectionId: string, as?: 'tile' | 'floating') => void;
+  /** Put a torn-out section back in the sidebar. */
+  dockPanel: (sectionId: string) => void;
 
   savedSnapshots: SavedSnapshot[];
   saveSnapshot: (name?: string) => void;

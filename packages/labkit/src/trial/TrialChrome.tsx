@@ -18,6 +18,7 @@ import { LabStoreContext } from '../state/context';
 import type { TrialRecord } from '../state/types';
 import { as2DView } from '../state/view';
 import { TrialTitleBar } from './TrialTitleBar';
+import { UndockedSections } from './UndockedSections';
 
 export interface UndoBindings {
   canUndo: boolean;
@@ -74,6 +75,16 @@ export function TrialChrome({
   const updateTrialView = useStore(storeCtx.store, (s) => s.updateTrialView);
   const updateTrialConfig = useStore(storeCtx.store, (s) => s.updateTrialConfig);
   const updateTrialState = useStore(storeCtx.store, (s) => s.updateTrialState);
+  const undockPanelAction = useStore(storeCtx.store, (s) => s.undockPanel);
+  const dockPanelAction = useStore(storeCtx.store, (s) => s.dockPanel);
+  const undockedPanels = useStore(storeCtx.store, (s) => s.undockedPanels);
+  const undockedIds = useMemo(
+    () =>
+      Object.values(undockedPanels)
+        .filter((p) => p.trialId === trialId)
+        .map((p) => p.sectionId),
+    [undockedPanels, trialId],
+  );
 
   // The trial view is opaque to labkit, so the zoom chrome asks for the 2D shape
   // and goes inert when the trial holds something else — an orbit, say.
@@ -113,6 +124,9 @@ export function TrialChrome({
           updateTrialState(trialId, nextState as never);
         }
       },
+      undockedPanels: undockedIds,
+      undockPanel: (sectionId, as) => undockPanelAction(trialId, sectionId, as),
+      dockPanel: (sectionId) => dockPanelAction(trialId, sectionId),
       savedSnapshots: lab.savedSnapshots.filter((s) => s.trialId === trialId),
       saveSnapshot: (name) => lab.saveSnapshot(trialId, name),
       loadSnapshot: (snapshotId) => lab.loadSnapshot(trialId, snapshotId),
@@ -136,6 +150,9 @@ export function TrialChrome({
     activeToolId,
     setActiveTool,
     configSchema,
+    undockedIds,
+    undockPanelAction,
+    dockPanelAction,
   ]);
 
   const contributions = useMemo(
@@ -185,6 +202,11 @@ export function TrialChrome({
         <PaletteRegion contributions={inRegion('palette')} ctx={ctx} />
         <div className="lk-trial__sidebar">
           <SidebarRegion contributions={inRegion('sidebar')} ctx={ctx} />
+          <UndockedSections
+            trialId={trialId}
+            sections={inRegion('sidebar').filter((c) => undockedIds.includes(c.id))}
+            onDock={ctx.dockPanel}
+          />
         </div>
         <div className={`lk-trial__content${instrument.canvas ? ' lk-trial__content--flush' : ''}`}>
           {children}

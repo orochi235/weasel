@@ -1,3 +1,4 @@
+import type { UndockedPanels } from './undock';
 /** A trial's undo history, as snapshots of its state either side of the
  *  present. */
 export interface UndoStack {
@@ -46,6 +47,9 @@ export interface LabStoreState {
   /** Per-trial tile extents, keyed by trial id. Opaque here — the
    *  shape belongs to whatever lays the trials out. */
   layout: Record<string, unknown>;
+  /** Sidebar sections torn out of their trial. A panel here is not rendered in
+   *  its trial's sidebar; the workspace renders it instead. */
+  undockedPanels: UndockedPanels;
 }
 
 /** Where a lab persists itself. Implementations are keyed string storage and
@@ -91,6 +95,8 @@ export interface LabDocument {
   trials: SerializedTrial[];
   saves: SavedSnapshot[];
   layout: Record<string, unknown>;
+  /** Sidebar sections torn out of their trial, keyed by trial and section. */
+  undockedPanels: UndockedPanels;
   mode: LabMode;
 }
 

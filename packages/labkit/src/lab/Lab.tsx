@@ -22,8 +22,9 @@ import { LabContext, type LabContextValue } from './LabContext';
 import { LabHeader } from './LabHeader';
 import { LabPalette } from './LabPalette';
 import { LabShell } from './LabShell';
+import { createPanelHostRegistry, PanelHostContext } from './panelHost';
 import { useResolvedMode } from './useSystemMode';
-import { type TrialLayout, Workspace } from './Workspace';
+import { type PanelDescriptor, type TrialLayout, Workspace } from './Workspace';
 
 /** Props for `<Lab>`. */
 export interface LabProps {
@@ -137,6 +138,23 @@ export function Lab({
   const savedSnapshots = useStore(store, (s) => s.savedSnapshots);
   const modeValue = useStore(store, (s) => s.mode);
   const layout = useStore(store, (s) => s.layout);
+  const undockedPanels = useStore(store, (s) => s.undockedPanels);
+
+  // One registry for the lab's lifetime: a panel host is a DOM node the
+  // workspace owns and the trial portals into, so it must outlive both ends of
+  // a dock/undock without being rebuilt.
+  const panelHostsRef = useRef<ReturnType<typeof createPanelHostRegistry> | null>(null);
+  if (panelHostsRef.current === null) panelHostsRef.current = createPanelHostRegistry();
+
+  const workspacePanels = useMemo<PanelDescriptor[]>(
+    () =>
+      Object.entries(undockedPanels).map(([key, panel]) => ({
+        key,
+        title: panel.sectionId,
+        as: panel.as,
+      })),
+    [undockedPanels],
+  );
   const resolvedMode = useResolvedMode(modeValue);
 
   useEffect(() => {
@@ -232,21 +250,24 @@ export function Lab({
               </>
             }
           >
-            <div className="lk-lab__body">
-              {tools ? <LabPalette tools={tools} /> : null}
-              <Workspace
-                ids={trials.map((w) => w.id)}
-                resizable
-                reorderable
-                onReorder={(ids) => contextValue.reorderTrials(ids)}
-                layout={layout as TrialLayout}
-                onLayoutChange={(next) => store.getState().setLayout(next)}
-              >
-                {trials.map((w) => (
-                  <Trial key={w.id} id={w.id} chrome={chrome} suppress={suppress} />
-                ))}
-              </Workspace>
-            </div>
+            <PanelHostContext.Provider value={panelHostsRef.current}>
+              <div className="lk-lab__body">
+                {tools ? <LabPalette tools={tools} /> : null}
+                <Workspace
+                  panels={workspacePanels}
+                  ids={trials.map((w) => w.id)}
+                  resizable
+                  reorderable
+                  onReorder={(ids) => contextValue.reorderTrials(ids)}
+                  layout={layout as TrialLayout}
+                  onLayoutChange={(next) => store.getState().setLayout(next)}
+                >
+                  {trials.map((w) => (
+                    <Trial key={w.id} id={w.id} chrome={chrome} suppress={suppress} />
+                  ))}
+                </Workspace>
+              </div>
+            </PanelHostContext.Provider>
           </LabShell>
         </ThemeProvider>
       </LabContext.Provider>

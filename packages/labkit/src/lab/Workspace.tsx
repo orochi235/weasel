@@ -7,7 +7,7 @@ import {
   useMemo,
   useRef,
 } from 'react';
-import { asNodeId, createNode, gridStrategy, type NodeId, Store } from 'windease';
+import { asNodeId, createNode, floatingStrategy, gridStrategy, type NodeId, Store } from 'windease';
 import {
   type ChromeMap,
   Container,
@@ -18,9 +18,12 @@ import {
 
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { TrialDragContext } from '../trial/TrialDragContext';
+import { usePanelHosts } from './panelHost';
 
 const ZONE_ID = asNodeId('lk-workspace');
-const STRATEGIES = { grid: gridStrategy as never };
+const STRATEGIES = { grid: gridStrategy as never, floating: floatingStrategy as never };
+const FLOAT_ZONE_ID = asNodeId('lk-workspace-floating');
+const PANEL_KIND = 'panel';
 const KIND = 'trial';
 
 /** A tile's persisted extent, keyed by the id its caller gave it. Grid resizes
@@ -56,6 +59,11 @@ export interface WorkspaceProps {
   onLayoutChange?: (layout: TrialLayout) => void;
   gap?: number;
   padding?: number;
+  /** Undocked sidebar panels to render alongside the trials. A `'tile'` panel
+   *  joins the grid as a peer of the trials; a `'floating'` one goes into the
+   *  floating zone above it. The body is portalled in by the trial that owns
+   *  it, so all this renders is the frame and the host. */
+  panels?: readonly PanelDescriptor[];
   /**
    * Fixed tiling extent. Omit in an app — the grid measures its own box. Supply
    * it where nothing measures, notably jsdom: at a zero measurement the grid
@@ -79,10 +87,39 @@ function extentOf(store: Store, id: NodeId): TrialLayout[string] | null {
  * Tiles are absolutely positioned at the rects `gridStrategy` computes, not
  * laid out by CSS — `windease/styles.css` (folded into
  * `@weasel-js/labkit/styles.css`) carries the rules that positioning depends on.
+ *
+ * `panels` are undocked sidebar sections. A `'tile'` panel is registered as a
+ * peer of the trials under `PANEL_KIND`, so the grid places and resizes it like
+ * one; a `'floating'` panel goes in the overlay above. Either way this renders
+ * only the frame and an empty host: the section's content is portalled in by
+ * the trial that owns it, which is what keeps a torn-out section inside its
+ * trial's React tree instead of rebuilding it as a sibling.
  */
+
+/** The frame an undocked panel gets: a box, and the host element its trial
+ *  portals into. The title and the dock control come through the portal with
+ *  the body — the workspace knows a panel's key, not what is in it. */
+function PanelFrame({ panel, floating = false }: { panel: PanelDescriptor; floating?: boolean }) {
+  const hosts = usePanelHosts();
+  return (
+    <div className={floating ? 'lk-panel-tile lk-panel-tile--floating' : 'lk-panel-tile'}>
+      <div className="lk-panel-tile__body" ref={(el) => hosts?.set(panel.key, el)} />
+    </div>
+  );
+}
+
+/** One undocked panel, as the workspace needs to know it. */
+export interface PanelDescriptor {
+  /** Stable key; also the portal host key the owning trial writes into. */
+  key: string;
+  title: string;
+  as: 'tile' | 'floating';
+}
+
 export function Workspace({
   children,
   ids,
+  panels,
   resizable = false,
   reorderable = false,
   onReorder,
@@ -93,9 +130,24 @@ export function Workspace({
   viewport,
 }: WorkspaceProps) {
   const items = Children.toArray(children);
-  const idKey = ids ? ids.join(',') : `#${items.length}`;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: idKey is the stable projection of items/ids; depending on those directly rebuilds every render and re-runs the sync effect forever
-  const nodeIds = useMemo(() => items.map((_, i) => asNodeId(ids?.[i] ?? `lk-ws-${i}`)), [idKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const tilePanels = useMemo(() => (panels ?? []).filter((p) => p.as === 'tile'), [panels]);
+  const floatPanels = useMemo(() => (panels ?? []).filter((p) => p.as === 'floating'), [panels]);
+  // Identity has to be stable while the id *contents* are unchanged: the sync
+  // effect below keys off it, and a fresh array every render would re-register
+  // every tile forever. A ref keyed on the joined ids says that directly, where
+  // a `useMemo` on the same key can only say it by suppressing both linters.
+  const wantedIds = [
+    ...items.map((_, i) => ids?.[i] ?? `lk-ws-${i}`),
+    ...tilePanels.map((p) => `lk-panel-${p.key}`),
+  ];
+  const idKey = wantedIds.join(',');
+  const idKeyRef = useRef<string | null>(null);
+  const nodeIdsRef = useRef<NodeId[]>([]);
+  if (idKeyRef.current !== idKey) {
+    idKeyRef.current = idKey;
+    nodeIdsRef.current = wantedIds.map(asNodeId);
+  }
+  const nodeIds = nodeIdsRef.current;
 
   // Held in refs rather than depended on: a fresh object each render would
   // re-run the sync effect, and only a newly registered tile reads `layout`.
@@ -115,6 +167,13 @@ export function Workspace({
         kind: 'zone',
         id: ZONE_ID,
         container: { strategyId: 'grid', config: { resizable, gap, padding } },
+      }),
+    );
+    store.registerNode(
+      createNode({
+        kind: 'zone',
+        id: FLOAT_ZONE_ID,
+        container: { strategyId: 'floating', config: {} },
       }),
     );
     storeRef.current = store;
@@ -137,7 +196,8 @@ export function Workspace({
     }
     for (const id of nodeIds) {
       if (present.has(id)) continue;
-      store.registerNode(createNode({ kind: KIND, id, parentId: ZONE_ID, focus: true }));
+      const kind = String(id).startsWith('lk-panel-') ? PANEL_KIND : KIND;
+      store.registerNode(createNode({ kind, id, parentId: ZONE_ID, focus: true }));
       store.showNode(id);
       const saved = layoutRef.current?.[id];
       if (saved) store.patchPlacement(id, saved);
@@ -171,7 +231,15 @@ export function Workspace({
 
   const chrome = useMemo<ChromeMap>(() => {
     const byId = new Map<string, ReactNode>(nodeIds.map((id, i) => [id, items[i]]));
+    const panelByNode = new Map<string, PanelDescriptor>(
+      tilePanels.map((p) => [`lk-panel-${p.key}`, p]),
+    );
     return {
+      [PANEL_KIND]: ({ node }) => {
+        const panel = panelByNode.get(String(node.id));
+        if (!panel) return null;
+        return <PanelFrame panel={panel} />;
+      },
       [KIND]: ({ node }) => {
         const content = byId.get(node.id) ?? null;
         if (!reorderable) return content;
@@ -183,7 +251,16 @@ export function Workspace({
         );
       },
     };
-  }, [nodeIds, items, reorderable]);
+  }, [nodeIds, items, reorderable, tilePanels]);
+
+  const floatingLayer =
+    floatPanels.length === 0 ? null : (
+      <div className="lk-workspace__floating">
+        {floatPanels.map((p) => (
+          <PanelFrame key={p.key} panel={p} floating />
+        ))}
+      </div>
+    );
 
   const grid = (
     <Container
@@ -199,7 +276,19 @@ export function Workspace({
   return (
     <Provider store={store}>
       <StrategyRegistryProvider strategies={STRATEGIES}>
-        {reorderable ? <DragProvider>{grid}</DragProvider> : grid}
+        {floatingLayer ? (
+          // The floating layer insets against the workspace, so it needs a
+          // positioned box around both. Without one it insets against the page
+          // and lands over the lab header.
+          <div className="lk-workspace-host">
+            {reorderable ? <DragProvider>{grid}</DragProvider> : grid}
+            {floatingLayer}
+          </div>
+        ) : reorderable ? (
+          <DragProvider>{grid}</DragProvider>
+        ) : (
+          grid
+        )}
       </StrategyRegistryProvider>
     </Provider>
   );

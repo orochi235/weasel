@@ -20,6 +20,11 @@ import type {
   SavedSnapshot,
   TrialRecord,
 } from './types';
+import {
+  dockPanel as dockPanelIn,
+  type UndockedPanel,
+  undockPanel as undockPanelIn,
+} from './undock';
 
 /** Every mutation a lab store supports: managing trials, saving and
  *  restoring snapshots, and setting the color mode. */
@@ -42,6 +47,10 @@ export interface LabStoreActions {
   setLabTool: (id: string | null) => void;
   setTrialTool: (trialId: string, id: string | null) => void;
   setLayout: (layout: Record<string, unknown>) => void;
+  /** Tear a sidebar section out of its trial. Default target is a workspace tile. */
+  undockPanel: (trialId: string, sectionId: string, as?: UndockedPanel['as']) => void;
+  /** Put one section back, or — with no `sectionId` — every panel the trial owns. */
+  dockPanel: (trialId: string, sectionId?: string) => void;
 }
 
 /** A lab's store: its state and actions, plus the hook instruments use to
@@ -72,6 +81,7 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
     savedSnapshots: hydratedSnapshots,
     mode: hydratedMode,
     layout: hydratedLayout,
+    undockedPanels: hydrated.undockedPanels,
     activeToolId: null,
 
     addTrial: (record) => {
@@ -82,7 +92,10 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
     },
 
     removeTrial: (id) => {
-      set((s) => ({ trials: s.trials.filter((w) => w.id !== id) }));
+      set((s) => ({
+        trials: s.trials.filter((w) => w.id !== id),
+        undockedPanels: dockPanelIn(s.undockedPanels, id),
+      }));
       scheduleFlush();
     },
 
@@ -211,6 +224,16 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
         trials: s.trials.map((t) => (t.id === trialId ? { ...t, activeToolId: id } : t)),
       })),
 
+    undockPanel: (trialId, sectionId, as) => {
+      set((s) => ({ undockedPanels: undockPanelIn(s.undockedPanels, trialId, sectionId, as) }));
+      scheduleFlush();
+    },
+
+    dockPanel: (trialId, sectionId) => {
+      set((s) => ({ undockedPanels: dockPanelIn(s.undockedPanels, trialId, sectionId) }));
+      scheduleFlush();
+    },
+
     setLayout: (layout) => {
       set({ layout });
       scheduleFlush();
@@ -227,6 +250,7 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
         trials: serializeTrials(s.trials, serializers),
         saves: s.savedSnapshots,
         layout: s.layout,
+        undockedPanels: s.undockedPanels,
         mode: s.mode,
       };
       const serialized = JSON.stringify(document);
