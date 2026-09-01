@@ -270,3 +270,38 @@ describe('a stroke with no paint', () => {
       .toEqual({ filled: true, outset: 0, inset: 0 });
   });
 });
+
+describe('findShapeInk — text', () => {
+  const textNode = (data: Record<string, unknown>): Node<unknown, string, RectPose> => ({
+    id: asNodeId('t'),
+    kind: 'leaf',
+    layer: 'main',
+    pose: { x: 0, y: 0, width: 100, height: 100 },
+    data: { text: 'Away', ...data },
+  } as unknown as Node<unknown, string, RectPose>);
+
+  it('gives a stroked text node the same reach as any other kind', () => {
+    expect(findShapeInk(textNode({ stroke: strokeOf('#000', 4) }), POSE))
+      .toEqual({ filled: true, outset: 2, inset: 2 });
+  });
+
+  it('stays filled with no stroke — text has no outline-only form', () => {
+    expect(findShapeInk(textNode({}), POSE))
+      .toEqual({ filled: true, outset: 0, inset: 0 });
+  });
+});
+
+describe('painter precedence', () => {
+  it('paints a derived node that also carries a path with its derived path', () => {
+    const node = {
+      id: asNodeId('d'),
+      kind: 'leaf',
+      layer: 'main',
+      pose: { x: 0, y: 0, width: 100, height: 100 },
+      dependsOn: [asNodeId('a')],
+      derivePath: () => null,
+      data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } },
+    } as unknown as Node<unknown, string, RectPose>;
+    expect(findNodeShape(node)?.id).toBe('kit:derived');
+  });
+});

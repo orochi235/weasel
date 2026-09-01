@@ -673,8 +673,6 @@ Core five + Crop shipped. Remaining:
 
 - **(P2) Text cannot say "no fill", so outline-only text is unreachable.** Every other node kind reads `data.fill: null` as an explicit no-paint; a text node resolves it to the default black instead, because a `ResolvedRun` must name a concrete `FillStyle` and nothing downstream can skip the fill pass. Making `ResolvedRun.fill` nullable is the change, and it reaches further than the type: `fillKey` / `sameFill` in `atlas/layoutRuns.ts` key the batch groups on it, the glyph batch would have to emit a run's stroke ribbon without its quads, and underline / strikethrough spans inherit the same fill. Stroked-but-unfilled text is the thing this buys, which is what a display-type outline actually is. Recorded 2026-08-27, when paint moved onto `data.fill`.
 
-- **(P3) A text node has no `NodeInk`, so its stroke adds no hit reach.** `TEXT_PAINTER` declares `paint` and `silhouette` and no `ink`, so `findShapeInk` returns null and `shapeCoversPoint` falls back to `DEFAULT_INK` — zero outset. `SHAPE_PAINTER.ink` and `PATH_PAINTER.ink` both run the stroke through the `{ outset, inset }` helper already; text wants the same, and now that its stroke is `data.stroke` like theirs it is a short one. A heavily outlined glyph is currently unpickable across the width of its own outline.
-
 - **(P2) Cross-browser overlay alignment.** `placeOverlay` uses an empirical `(+1, -1)` CSS-px nudge to compensate for canvas/CSS rasterization disagreement. Works on the dev setup; not universally correct across browsers/fonts/DPRs. A self-correcting probe was attempted and rejected.
 
 - **(P3) `rangeStyle` reports the runs alone; consumers merge the node style.**
@@ -899,10 +897,6 @@ here is smaller than the connect gesture that comes next.
 - **(P3) `setDependsOn` op.** `dependsOn` is fixed at add time, so retargeting an
   edge is remove plus add. Design it with the connect gesture rather than ahead
   of it.
-
-- **(P3) `kit:derived` registers after `kit:path` / `kit:shape` / `kit:image`**,
-  so a derived node whose `data` also carries `path` / `shape` / `image` silently
-  loses its derived path to those painters.
 
 - **(P3) `scenePoseLookup` does not honor `SceneSlotConfig.toPose`**, which
   `buildSceneLayer` shims onto the live adapter's `getPose`. A consumer using it

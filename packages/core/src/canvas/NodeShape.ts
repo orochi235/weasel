@@ -479,6 +479,14 @@ const TEXT_PAINTER: NodeShapeEntry = {
     if (boxes.length === 0) return null;
     return rectsToPath(boxes);
   },
+  // `filled` is unconditional: a text node's `data.fill: null` still resolves
+  // to the default in `ResolvedRun`, so there is no outline-only text to
+  // report. The reach is the point — a heavily outlined glyph was unpickable
+  // across the width of its own outline.
+  ink: (node, _pose, ctx) => {
+    const d = node.data as { stroke?: Stroke | null };
+    return { filled: true, ...inkReach(resolveNodeStroke(d.stroke), ctx?.scale) };
+  },
 };
 
 /**
@@ -835,10 +843,13 @@ const RECT_FALLBACK_PAINTER: NodeShapeEntry = {
 
 function registerBuiltInShapePainters(): void {
   registerNodeShape(TEXT_PAINTER);
+  // Ahead of path/shape/image: a derived node whose `data` also carries a
+  // `path`, `shape` or `image` means the derived path, and those three match
+  // on the presence of the field alone.
+  registerNodeShape(DERIVED_PAINTER);
   registerNodeShape(PATH_PAINTER);
   registerNodeShape(SHAPE_PAINTER);
   registerNodeShape(IMAGE_PAINTER);
-  registerNodeShape(DERIVED_PAINTER);
   registerNodeShape(RECT_FALLBACK_PAINTER);
 }
 
