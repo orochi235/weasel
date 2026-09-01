@@ -8,8 +8,7 @@ import {
   useBooleansAdapter,
   useStandardActions,
   useSelection,
-  SelectionContextProvider,
-  DepRegistryProvider,
+  WeaselProvider,
   PATH_M,
   PATH_L,
   PATH_Z,
@@ -80,23 +79,25 @@ const INITIAL_NODES = [
 function Panel({ id, paths }: { id: string; paths: PanelItem[] }) {
   const scene = useScene<PanelItem>({ items: paths });
   return (
-    <SceneCanvas
-      width={W}
-      height={H}
-      className="ckd-canvas"
-      scene={scene}
-      selectionMode="multi"
-      layers={{
-        scene: {
-          drawOne: (node): DrawCommand[] => [{
-            kind: 'path',
-            path: node.data.path,
-            fill: { color: node.data.color },
-          }],
-        },
-      }}
-      data-panel={id}
-    />
+    <WeaselProvider isolate>
+      <SceneCanvas
+        width={W}
+        height={H}
+        className="ckd-canvas"
+        scene={scene}
+        selectionMode="multi"
+        layers={{
+          scene: {
+            drawOne: (node): DrawCommand[] => [{
+              kind: 'path',
+              path: node.data.path,
+              fill: { color: node.data.color },
+            }],
+          },
+        }}
+        data-panel={id}
+      />
+    </WeaselProvider>
   );
 }
 
@@ -192,37 +193,32 @@ function InteractivePanel() {
   }, [scene, selection]);
 
   return (
-    // Wrap in its own SelectionContextProvider so this canvas's non-empty
-    // initial selection doesn't fight with the 6 static panels (which all
-    // publish an empty selection) over the shared outer context.
-    <SelectionContextProvider>
-      <div className="ckd-boolops-panel">
-        <h3 className="ckd-boolops-label">Interactive</h3>
-        <div className="ckd-boolops-toolbar">
-          <ActionBar group="pathfinder" />
-          <button type="button" className="ckd-boolops-reset" onClick={reset}>
-            Reset
-          </button>
-        </div>
-        <SceneCanvas
-          width={W}
-          height={H}
-          className="ckd-canvas"
-          scene={scene}
-          selection={selection}
-          layers={{
-            scene: {
-              drawOne: (node): DrawCommand[] => [{
-                kind: 'path',
-                path: node.data.path,
-                fill: { color: node.data.color },
-              }],
-            },
-          }}
-          data-panel="interactive"
-        />
+    <div className="ckd-boolops-panel">
+      <h3 className="ckd-boolops-label">Interactive</h3>
+      <div className="ckd-boolops-toolbar">
+        <ActionBar group="pathfinder" />
+        <button type="button" className="ckd-boolops-reset" onClick={reset}>
+          Reset
+        </button>
       </div>
-    </SelectionContextProvider>
+      <SceneCanvas
+        width={W}
+        height={H}
+        className="ckd-canvas"
+        scene={scene}
+        selection={selection}
+        layers={{
+          scene: {
+            drawOne: (node): DrawCommand[] => [{
+              kind: 'path',
+              path: node.data.path,
+              fill: { color: node.data.color },
+            }],
+          },
+        }}
+        data-panel="interactive"
+      />
+    </div>
   );
 }
 
@@ -244,14 +240,15 @@ export function BooleanOpsDemo() {
 
   return (
     <div className="ckd-boolops-grid">
-      {/* useBooleansAdapter / useStandardActions inside InteractivePanel both
-          publish into the dep registry, which would otherwise be auto-mounted
-          by SceneCanvas's DepRegistryProviderIfRoot. Since the hooks run
-          BEFORE InteractivePanel's SceneCanvas mounts, hoist the provider
-          here so the registry is in scope when the hooks fire. */}
-      <DepRegistryProvider>
+      {/* The scope sits above InteractivePanel, not inside it: its
+          useBooleansAdapter / useStandardActions hooks publish into the dep
+          registry before its SceneCanvas mounts, so the registry has to be in
+          scope by the time they fire. Isolated because this canvas's non-empty
+          initial selection would otherwise fight the static panels' empty
+          ones, and one actions registry routes input to one canvas. */}
+      <WeaselProvider isolate>
         <InteractivePanel />
-      </DepRegistryProvider>
+      </WeaselProvider>
 
       <div className="ckd-boolops-panel">
         <h3 className="ckd-boolops-label">Inputs</h3>

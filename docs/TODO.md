@@ -1011,17 +1011,16 @@ single-purpose demo convention — an exception, not a precedent.
 
 What it surfaced:
 
-- **(P1) Two interactive `SceneCanvas` instances under one provider root kill
-  each other's input.** `apps/site/main.tsx:48` mounts one `ActionsProvider` and
-  one `SelectionContextProvider` for the whole site, and `WeaselProvider`'s
-  `IfRoot` semantics defer to those rather than isolating — so a second canvas
-  fights the first over one actions registry. (The selection-publisher half of
-  this is fixed; what remains is the registry.) It fails with a canvas that no
-  longer responds, naming nothing. `BooleanOpsDemo.tsx:195` already carries a hand-rolled
-  workaround for the same class of bug, and AnimationDemo now carries another.
-  Either `WeaselProvider` grows an explicit isolation mode or `SceneCanvas`
-  scopes its action registration per canvas. Surfaced 2026-08-24 rebuilding
-  AnimationDemo's flick panel as a real canvas.
+- **(P3) One actions registry still routes input to one canvas.**
+  `<WeaselProvider isolate>` gives each canvas its own scope, which is what both
+  demos wanted and what they now use, and a second canvas claiming a shared
+  registry says so instead of failing silently. What is still unbuilt is
+  canvases genuinely *sharing* a registry: `setDispatcher` holds one dispatcher,
+  so a toolbar outside two canvases has nothing to say which one it drives.
+  That wants a focused-canvas concept — which canvas an ambient `<ActionBar>`,
+  keybinding or palette targets — and the registry keyed per canvas beneath it.
+  Worth doing when a consumer wants two canvases under one toolbar; isolation
+  covers two canvases that simply coexist.
 
 - **(P2) No key-state poll.** `key-held` gives edges; the dispatcher's held set
   tracks claims rather than physical keys and is not exported. Every character

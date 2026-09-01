@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActionsProvider,
   animateLifecycle,
   animateOnSetPose,
   asNodeId,
@@ -8,7 +7,6 @@ import {
   easeInOutSine,
   momentum,
   SceneCanvas,
-  SelectionContextProvider,
   WeaselProvider,
   sceneToAdapter,
   useAnimator,
@@ -355,35 +353,33 @@ function FlickSnapPanel({ animator }: { animator: Animator }) {
     [animator, tracker],
   );
 
-  // Own actions + selection providers. The demo site mounts one of each at its
-  // root; sharing them with the card canvas kills input on both canvases.
+  // The demo site mounts one provider set at its root; sharing it with the card
+  // canvas would leave whichever mounted first unable to dispatch.
   return (
-    <ActionsProvider>
-      <SelectionContextProvider>
-        <SceneCanvas
-          width={FLICK_W}
-          height={FLICK_H}
-          className="ckd-canvas"
-          scene={scene}
-          selection={selection}
-          selectTool={{ move: { behaviors } }}
-          layers={{
-            grid: {
-              spacing: FLICK_GRID,
-              bounds: () => ({ x: 0, y: 0, width: FLICK_W, height: FLICK_H }),
-            },
-            scene: {
-              drawOne: (n, p): DrawCommand[] => [{
-                kind: 'path',
-                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                fill: { color: n.data.color },
-              }],
-            },
-            selectionOverlay: { handles: false },
-          }}
-        />
-      </SelectionContextProvider>
-    </ActionsProvider>
+    <WeaselProvider isolate>
+      <SceneCanvas
+        width={FLICK_W}
+        height={FLICK_H}
+        className="ckd-canvas"
+        scene={scene}
+        selection={selection}
+        selectTool={{ move: { behaviors } }}
+        layers={{
+          grid: {
+            spacing: FLICK_GRID,
+            bounds: () => ({ x: 0, y: 0, width: FLICK_W, height: FLICK_H }),
+          },
+          scene: {
+            drawOne: (n, p): DrawCommand[] => [{
+              kind: 'path',
+              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+              fill: { color: n.data.color },
+            }],
+          },
+          selectionOverlay: { handles: false },
+        }}
+      />
+    </WeaselProvider>
   );
 }
 
@@ -391,7 +387,7 @@ export function AnimationDemo() {
   const animator = useAnimator();
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <WeaselProvider><AnimationDemoInner animator={animator} /></WeaselProvider>
+      <WeaselProvider isolate><AnimationDemoInner animator={animator} /></WeaselProvider>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <span style={{ opacity: 0.7 }}>
           Flick-snap: drag the block, release with velocity. Decay first, then snaps to nearest 60-px grid cell.

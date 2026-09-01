@@ -305,16 +305,19 @@ export interface ActionsRegistry {
   begin(id: string, params?: Record<string, unknown>): UiOngoingControl | null;
 
   /** Wire a dispatcher into the registry so `begin()` can delegate to it.
-   *  Call with `null` to detach. Idempotent. */
-  setDispatcher(d: Dispatcher | null): void;
+   *  Returns a release that clears the slot only while this dispatcher still
+   *  holds it: a canvas displaced by a later one must not take input away from
+   *  the canvas now on screen. Call with `null` to detach unconditionally. */
+  setDispatcher(d: Dispatcher | null): () => void;
 
   /** Wire a `DepRegistry` into the registry so `trigger()` / `begin()` can
    *  resolve action deps even when this provider is mounted ABOVE the dep
    *  registry (e.g. a consumer's root `<ActionsProvider>` reused by
    *  SceneCanvas's `ActionsProviderIfRoot`). Takes precedence over the dep
    *  registry read from context at the provider's own level. Call with
-   *  `null` to detach. */
-  setDepRegistry(r: DepRegistry | null): void;
+   *  `null` to detach unconditionally; the returned release clears the slot
+   *  only while this registry still holds it. */
+  setDepRegistry(r: DepRegistry | null): () => void;
 }
 
 // ─── Registration-time validation ─────────────────────────────────────────
@@ -369,6 +372,20 @@ function validateActionDefaultBinding(action: Action): void {
   }
 }
 
+/**
+ * A second `<SceneCanvas>` claiming one registry leaves the first unable to
+ * dispatch anything, and the symptom — a canvas that stops responding — names
+ * neither canvas nor the registry they share.
+ */
+function warnSharedScope(): void {
+  if (!IS_DEV) return;
+  console.warn(
+    'weasel: a second dispatcher claimed this <ActionsProvider>, so only the ' +
+    'newest <SceneCanvas> under it will respond to input. Give each canvas its ' +
+    'own scope with <WeaselProvider isolate>.',
+  );
+}
+
 const ActionsContext = createContext<ActionsRegistry | null>(null);
 
 /**
@@ -390,6 +407,10 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   const depReg = useOptionalDepRegistry();
   const depRegRef = useRef<DepRegistry | null>(depReg);
   depRegRef.current = depReg;
+
+  // One warning per registry: the message is about the scope, not about which
+  // canvas lost, and a page of canvases would otherwise repeat it per mount.
+  const warnedRef = useRef(false);
 
   // Dep registry wired via setDepRegistry — set by SceneCanvas's registrar
   // when this provider sits above the dep-registry scope (consumer root
@@ -486,10 +507,16 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
         };
       },
       setDispatcher: (d: Dispatcher | null) => {
+        if (d && dispatcherRef.current && dispatcherRef.current !== d && !warnedRef.current) {
+          warnedRef.current = true;
+          warnSharedScope();
+        }
         dispatcherRef.current = d;
+        return () => { if (dispatcherRef.current === d) dispatcherRef.current = null; };
       },
       setDepRegistry: (r: DepRegistry | null) => {
         wiredDepRegRef.current = r;
+        return () => { if (wiredDepRegRef.current === r) wiredDepRegRef.current = null; };
       },
       begin: (id: string, params?: Record<string, unknown>) => {
         const disp = dispatcherRef.current;

@@ -449,8 +449,8 @@ function stubActionsRegistry(actions: readonly Action[]): ActionsRegistry {
     trigger: () => false,
     subscribe: () => () => {},
     begin: () => null,
-    setDispatcher: () => {},
-    setDepRegistry: () => {},
+    setDispatcher: () => () => {},
+    setDepRegistry: () => () => {},
   };
 }
 

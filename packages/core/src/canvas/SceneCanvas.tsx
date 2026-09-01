@@ -2498,11 +2498,12 @@ function StandardActionsRegistrar({
 
   // Wire the dispatcher into the registry so registry.begin() can delegate
   // to dispatcher.beginUiOngoing() for UI-driven ongoing actions (color,
-  // opacity). Detach on unmount so the registry doesn't hold a stale ref.
+  // opacity). The returned release detaches only while this canvas still holds
+  // the slot, so unmounting one of two canvases sharing a registry does not
+  // take input away from the other.
   useEffect(() => {
     if (!registry) return;
-    registry.setDispatcher(dispatcher);
-    return () => registry.setDispatcher(null);
+    return registry.setDispatcher(dispatcher);
   }, [registry, dispatcher]);
 
   // Wire the dep registry the same way: when the ActionsProvider in scope
@@ -2512,8 +2513,7 @@ function StandardActionsRegistrar({
   const wiredDepRegistry = useDepRegistry();
   useEffect(() => {
     if (!registry) return;
-    registry.setDepRegistry(wiredDepRegistry);
-    return () => registry.setDepRegistry(null);
+    return registry.setDepRegistry(wiredDepRegistry);
   }, [registry, wiredDepRegistry]);
 
   // Populate the action-lookup ref so the dispatcher's getAction closure
