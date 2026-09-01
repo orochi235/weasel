@@ -387,14 +387,12 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
 
 - **(P2) `packages/core` re-implements much of `@weasel-js/geom`, and the
   copies have drifted.** Roughly two thirds of geom's public surface has no
-  importer in core. `forEachSegment` is written about a dozen times, two
-  copies wrong: `tessellate.ts` treats `PATH_Z` as a no-op instead of
-  returning the pen to the subpath start, and `pathDistance.ts` dispatches
-  through an `if`/`else if` chain with no `else`, so an unrecognized command
-  leaves `ci` unadvanced and every later coordinate read is misaligned.
-  `PATH_CMD_LENGTHS` has three further private copies whose `undefined`
-  lookup makes `ci += undefined` a `NaN` index — every later typed-array
-  write is then a silent no-op. Six independent `cubicEvalAt`s.
+  importer in core. `forEachSegment` is written about a dozen times; the two
+  wrong copies are fixed (`tessellate.ts` now restores the pen on `PATH_Z`,
+  `pathDistance.ts` throws on an unrecognized command instead of leaving `ci`
+  unadvanced), and the `PATH_CMD_LENGTHS` copies are gone — `packages/geom`
+  holds the only definition and core imports it. Six independent
+  `cubicEvalAt`s remain.
   `poseDescriptor.ts`'s hand-rolled `boxToBox` disagrees with geom's on the
   degenerate axis. The unification should carry `pathCrop`,
   `flattenQuadratic` and the arc-length flatteners into geom rather than

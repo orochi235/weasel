@@ -58,6 +58,9 @@ function flattenPolygon(p: PolygonPath, tolerance: number): FlattenedContours {
   let coordIdx = 0;
   let prevX = 0;
   let prevY = 0;
+  let startX = 0;
+  let startY = 0;
+  let startAnchor = -1;
   let prevAnchor = -1;
   let anchorCounter = 0;
 
@@ -68,6 +71,9 @@ function flattenPolygon(p: PolygonPath, tolerance: number): FlattenedContours {
         contourStarts.push(out.length / 2);
         prevX = coords[coordIdx];
         prevY = coords[coordIdx + 1];
+        startX = prevX;
+        startY = prevY;
+        startAnchor = anchorCounter;
         out.push(prevX, prevY);
         anchorA.push(anchorCounter);
         anchorB.push(anchorCounter);
@@ -136,6 +142,12 @@ function flattenPolygon(p: PolygonPath, tolerance: number): FlattenedContours {
         break;
       }
       case PATH_Z: {
+        // Z returns the pen to the subpath start. It emits no vertex — the
+        // contour is closed implicitly — but a command after it must flatten
+        // from there, not from the last point drawn.
+        prevX = startX;
+        prevY = startY;
+        prevAnchor = startAnchor;
         break;
       }
       default:

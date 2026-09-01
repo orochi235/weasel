@@ -124,6 +124,10 @@ function polygonPathDistance(path: PolygonPath, px: number, py: number): number 
       const d2 = pointSegmentDist2(px, py, curX, curY, startX, startY);
       if (d2 < best) best = d2;
       curX = startX; curY = startY;
+    } else {
+      // Falling through would leave `ci` unadvanced, silently misaligning
+      // every later coordinate read against its command.
+      throw new Error(`pathDistanceToPoint: unknown command code ${cmd}`);
     }
   }
   return best === Infinity ? Infinity : Math.sqrt(best);

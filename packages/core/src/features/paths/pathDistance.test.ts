@@ -70,3 +70,15 @@ describe('pathDistanceToPoint', () => {
     expect(pathDistanceToPoint(empty, 0, 0)).toBe(Infinity);
   });
 });
+
+describe('pathDistanceToPoint — unknown command', () => {
+  it('throws rather than silently misaligning the coordinate cursor', () => {
+    const bogus: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, 99, PATH_L]),
+      coords: new Float32Array([0, 0, 5, 5, 10, 10]),
+      fillRule: 'nonzero',
+    };
+    expect(() => pathDistanceToPoint(bogus, 0, 0)).toThrow(/unknown command code 99/);
+  });
+});

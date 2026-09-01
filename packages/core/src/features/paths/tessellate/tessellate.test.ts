@@ -6,6 +6,7 @@ import {
   PATH_Z,
   type PolygonPath,
 } from '@weasel-js/core';
+import { PATH_C } from '@weasel-js/core';
 import { tessellate } from './tessellate';
 
 describe('tessellate (RectPath)', () => {
@@ -247,5 +248,32 @@ describe('tessellate — anchor parameterization', () => {
       }
     }
     expect(foundInterior).toBe(true);
+  });
+});
+
+describe('tessellate — pen position after Z', () => {
+  it('flattens a curve following Z from the subpath start, not from the last drawn point', () => {
+    // SVG puts the pen back at the subpath start on Z, so the cubic below runs
+    // from (0,0). Spelling the close as an explicit `L 0 0` must therefore
+    // flatten the cubic to exactly the same points.
+    const viaZ: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_Z, PATH_C]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 30, 20, 30, 20, 20]),
+      fillRule: 'nonzero',
+    };
+    const viaLineTo: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_C]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 0, 0, 30, 20, 30, 20, 20]),
+      fillRule: 'nonzero',
+    };
+
+    const z = Array.from(tessellate(viaZ).vertices);
+    const l = Array.from(tessellate(viaLineTo).vertices);
+    // `viaLineTo` emits one extra vertex for the explicit close; the cubic's
+    // flattened run is the tail of both.
+    const cubicLength = z.length - 3 * 2;
+    expect(z.slice(-cubicLength)).toEqual(l.slice(-cubicLength));
   });
 });
