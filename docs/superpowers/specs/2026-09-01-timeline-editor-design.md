@@ -61,9 +61,14 @@ Writes `loopsLeft` (`true → Infinity`, `false → 0`, `n → n`) and does noth
 
 **A timeline parked at `duration` does not restart.** `setLoop` sets policy; the transport's play
 button starts playback. Enabling the loop on a finished timeline is therefore visibly inert until
-something resumes it, which is correct rather than broken: the alternative gives `setLoop` a hidden
+something restarts it, which is correct rather than broken: the alternative gives `setLoop` a hidden
 playback side effect that fires from one particular playhead position, and a consumer restoring
 saved transport state — loop first, then seek — gets a surprise start.
+
+Restarting one takes a rewind, not just a `resume`. `rearm` (`createTimeline.ts:168`) returns early
+on `playhead >= duration`, so `resume()` on a finished timeline revives nothing and reports no
+error. The transport's play button seeks to 0 first when the playhead is at the end — which is what
+play-at-end should do anyway. `setLoop` itself stays free of this.
 
 This retires the `loop cannot be changed after a timeline is created` entry in `docs/TODO.md`,
 whose stated blocker was exactly this decision.
@@ -95,6 +100,7 @@ packages/ui/src/components/Timeline/
   lanes.ts        (+test) Track[] -> lane rows, nested flattening
   keys.ts         (+test) move / insert / delete / snap
   easingSpec.ts   (+test) spec <-> picker label, bezier sampling for the curve
+  EasingPicker.tsx       the per-segment easing control
   Timeline.module.css - Timeline.stories.tsx - index.ts
 ```
 
@@ -137,8 +143,11 @@ interface KeySelection { trackIndex: number; keyIndex: number }
 interface KeyEditorCtx<T = unknown> {
   key: Keyframe<T>;
   track: SampledTrack<T>;
+  selection: KeySelection;
   /** Replace the selected key. Routed through the component's own onChange. */
   commit: (next: Keyframe<T>) => void;
+  /** Set the easing shaping the approach into this key. */
+  setEasing: (easing: EasingSpec | undefined) => void;
 }
 
 interface TransportProps {
@@ -195,6 +204,10 @@ Re-render is driven by `useSyncExternalStore` over `handle.subscribe`. `subscrib
 only, so the playhead needs the animator's frame instead — the wrapper reads `handle.time()` under
 `useVisibleRaf` while the timeline is unpaused.
 
+A segment is named by the key it runs *into*, because that is the key whose `easing` shapes it —
+`sampleTrack.ts:45`'s convention. So a segment selection is a `KeySelection` and needs no type of
+its own.
+
 ### Interaction
 
 | Gesture | Effect |
@@ -204,6 +217,7 @@ only, so the playhead needs the animator's frame instead — the wrapper reads `
 | double-click a lane | insert a key at that time |
 | `Delete` on a selected key | remove it |
 | click a segment | select it; easing picker in the inspector strip |
+| `Enter` / `Space` on a focused segment | the same |
 | drag a bezier handle (graph mode) | write `{ bezier: [...] }` onto the key |
 | wheel or pinch on the ruler | zoom the time window; drag to pan |
 | `alt` during a key drag | defeat snapping |
