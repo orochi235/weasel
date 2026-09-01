@@ -10,7 +10,6 @@
  */
 
 import type { FillStyle, Stroke } from '@weasel-js/paint';
-import type { TextStyle } from './textStyle';
 
 /** A span of text with its own styling, as authored. Fields left absent
  *  inherit from the node's text style — this is the difference between a run

@@ -1,3 +1,4 @@
+import { useRovingTabIndex } from '../../primitives/useRovingTabIndex';
 import type { TrialChromeContext, TrialContribution } from '../types';
 
 /** Props for `<ViewportRegion>`. */
@@ -11,9 +12,16 @@ export interface ViewportRegionProps {
  * rather than in the toolbar, which acts on the trial itself.
  */
 export function ViewportRegion({ contributions, ctx }: ViewportRegionProps) {
+  const { ref, onKeyDown } = useRovingTabIndex<HTMLDivElement>();
   if (contributions.length === 0) return null;
   return (
-    <div className="lk-viewport-controls" role="toolbar" aria-label="View">
+    <div
+      ref={ref}
+      className="lk-viewport-controls"
+      role="toolbar"
+      aria-label="View"
+      onKeyDown={onKeyDown}
+    >
       {contributions.map((c) => {
         if (c.render) return <span key={c.id}>{c.render(ctx)}</span>;
         if (c.region !== 'viewport' || !c.item) return null;

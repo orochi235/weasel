@@ -1,4 +1,5 @@
 import { ToolButton, ToolGroup } from '../../passthrough/weasel-ui';
+import { useRovingTabIndex } from '../../primitives/useRovingTabIndex';
 import type { TrialChromeContext, TrialContribution } from '../types';
 
 /** Props for `<PaletteRegion>`. */
@@ -10,13 +11,16 @@ export interface PaletteRegionProps {
 /** A trial's tool strip. Selection lives in the trial's or the lab's tool
  *  slot; this region only reflects it. */
 export function PaletteRegion({ contributions, ctx }: PaletteRegionProps) {
+  const { ref, onKeyDown } = useRovingTabIndex<HTMLDivElement>('vertical');
   if (contributions.length === 0) return null;
   return (
     <div
+      ref={ref}
       className="lk-palette-region"
       role="toolbar"
       aria-label="Tools"
       aria-orientation="vertical"
+      onKeyDown={onKeyDown}
     >
       <ToolGroup orientation="vertical">
         {contributions.map((c) => {

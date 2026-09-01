@@ -25,3 +25,24 @@ describe('nextIndex', () => {
     expect(nextIndex(0, 'ArrowRight', 0)).toBeNull();
   });
 });
+
+describe('nextIndex — vertical', () => {
+  it('walks the down/up arrows', () => {
+    expect(nextIndex(0, 'ArrowDown', 3, 'vertical')).toBe(1);
+    expect(nextIndex(2, 'ArrowDown', 3, 'vertical')).toBe(0);
+    expect(nextIndex(1, 'ArrowUp', 3, 'vertical')).toBe(0);
+    expect(nextIndex(0, 'ArrowUp', 3, 'vertical')).toBe(2);
+  });
+
+  it('leaves the cross-axis arrows to the page', () => {
+    expect(nextIndex(0, 'ArrowRight', 3, 'vertical')).toBeNull();
+    expect(nextIndex(0, 'ArrowLeft', 3, 'vertical')).toBeNull();
+    expect(nextIndex(0, 'ArrowDown', 3)).toBeNull();
+    expect(nextIndex(0, 'ArrowUp', 3)).toBeNull();
+  });
+
+  it('still jumps to the ends', () => {
+    expect(nextIndex(1, 'Home', 3, 'vertical')).toBe(0);
+    expect(nextIndex(1, 'End', 3, 'vertical')).toBe(2);
+  });
+});

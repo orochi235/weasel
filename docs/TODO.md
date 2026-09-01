@@ -1334,13 +1334,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `data-wzl-mode` and read a *computed* value — `generated.test.ts` already asserts the
   `color-mix` mechanism is present, which is exactly what let this pass.
 
-- **(P3) Two more elements claim `role="toolbar"` without the keyboard contract.**
-  `.lk-palette-region` (`aria-label="Tools"`, `aria-orientation="vertical"`) and
-  `.lk-viewport-controls` (`aria-label="View"`) both take the role with no roving tabindex —
-  the defect arc 4 fixed on `<Toolbar>`, which now has `useRovingTabIndex`
-  (`packages/labkit/src/primitives/useRovingTabIndex.ts`). The vertical one also needs Up/Down,
-  which `nextIndex` does not handle yet.
-
 - **(P3) The light accent sits below AA for text drawn on it.** `--wzl-fg-on-accent` against the
   interstellar light accent `#a86f3c` measures 3.85:1, under the 4.5 AA needs for normal text.
   This is every accent-filled control in `@weasel-js/ui`, not one site — a theme-level call

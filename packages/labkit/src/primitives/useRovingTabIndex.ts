@@ -1,20 +1,27 @@
 import { type KeyboardEvent, useCallback, useEffect, useRef } from 'react';
 
-/** Where a key takes focus within `count` items, or null if it does not move it. */
-export function nextIndex(current: number, key: string, count: number): number | null {
+/** Which axis a toolbar's arrow keys walk. Matches `aria-orientation`. */
+export type RovingOrientation = 'horizontal' | 'vertical';
+
+/** Where a key takes focus within `count` items, or null if it does not move it.
+ *
+ *  Only the arrows on the toolbar's own axis move focus — APG leaves the
+ *  cross-axis arrows to the page, so a vertical strip does not swallow
+ *  ArrowLeft. `Home` / `End` work on both. */
+export function nextIndex(
+  current: number,
+  key: string,
+  count: number,
+  orientation: RovingOrientation = 'horizontal',
+): number | null {
   if (count === 0) return null;
-  switch (key) {
-    case 'ArrowRight':
-      return (current + 1) % count;
-    case 'ArrowLeft':
-      return (current - 1 + count) % count;
-    case 'Home':
-      return 0;
-    case 'End':
-      return count - 1;
-    default:
-      return null;
-  }
+  const forward = orientation === 'vertical' ? 'ArrowDown' : 'ArrowRight';
+  const back = orientation === 'vertical' ? 'ArrowUp' : 'ArrowLeft';
+  if (key === forward) return (current + 1) % count;
+  if (key === back) return (current - 1 + count) % count;
+  if (key === 'Home') return 0;
+  if (key === 'End') return count - 1;
+  return null;
 }
 
 /**
@@ -23,7 +30,9 @@ export function nextIndex(current: number, key: string, count: number): number |
  * threaded through props, because the items are arbitrary children — the
  * container never sees them as a list it could index.
  */
-export function useRovingTabIndex<T extends HTMLElement>() {
+export function useRovingTabIndex<T extends HTMLElement>(
+  orientation: RovingOrientation = 'horizontal',
+) {
   const ref = useRef<T | null>(null);
   const stop = useRef(0);
 
@@ -66,13 +75,13 @@ export function useRovingTabIndex<T extends HTMLElement>() {
     (e: KeyboardEvent<T>) => {
       const found = items();
       const current = found.indexOf(document.activeElement as HTMLElement);
-      const next = nextIndex(current === -1 ? 0 : current, e.key, found.length);
+      const next = nextIndex(current === -1 ? 0 : current, e.key, found.length, orientation);
       if (next === null) return;
       e.preventDefault();
       found[next]?.focus();
       setTabStop(next);
     },
-    [items, setTabStop],
+    [items, setTabStop, orientation],
   );
 
   return { ref, onKeyDown };
