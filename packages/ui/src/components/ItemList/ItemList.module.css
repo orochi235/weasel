@@ -1,0 +1,55 @@
+/* One height and one inset for every sidebar list. A panel stacking two of
+   them has to have their rows line up, which is what a private copy of this
+   file per list stopped happening. */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  user-select: none;
+  -webkit-user-select: none;
+  position: relative;
+  width: 100%;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  height: 24px;
+  font-size: 12px;
+  color: var(--wzl-fg);
+  background: transparent;
+  border-radius: 2px;
+  cursor: default;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.row:hover {
+  background: var(--wzl-surface);
+}
+
+.label {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.selected,
+.selected:hover {
+  background: var(--wzl-border);
+  color: var(--wzl-fg);
+}
+
+/* Present but not in effect. */
+.muted {
+  color: var(--wzl-fg-subtle);
+}
+
+.empty {
+  padding: 12px 8px;
+  font-size: 12px;
+  color: var(--wzl-fg-subtle);
+  font-style: italic;
+}

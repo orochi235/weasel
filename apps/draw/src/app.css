@@ -242,11 +242,6 @@ html, body, #root {
 
 /* Pull LayerList rows out to the panel edges by absorbing the parent
    SidebarPanel's 8px body padding via negative margin. */
-.wd-layerlist-fill {
-  margin-left: -8px;
-  margin-right: -8px;
-}
-
 .wd-app .wd-sidebar.left {
   /* Sized to the ActiveSwatches widget (56px square) — the limiting
      element. The vertical ToolPalette's 44px buttons fit comfortably

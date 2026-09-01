@@ -13,6 +13,7 @@ export * from './components/DragHandleGlyph';
 export * from './components/Keycaps';
 export * from './components/LayerStack';
 export * from './components/Slider';
+export * from './components/ItemList';
 export * from './components/ToggleBar';
 export * from './components/OptionsBar';
 export * from './components/ActionsBar';

@@ -44,3 +44,9 @@
 .color {
   flex: none;
 }
+
+/* Overline's toggle wears the rule it applies — there is no conventional
+   letter for it the way B / I / U / S are conventional. */
+.overGlyph {
+  text-decoration: overline;
+}

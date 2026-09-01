@@ -83,7 +83,6 @@ import {
   type StyledRun,
   type TextStyle,
   type RangeStyle,
-  type RunStylePatch,
   type Scene,
   type SceneCanvasApi,
   buildSceneViewCommands,
@@ -138,8 +137,6 @@ import {
   FontFamilySelect,
   TextEditDepPublisher,
   effectiveRangeStyle,
-  nodePaintFromPatch,
-  textStyleFromPatch,
 } from './ui/CharacterOptions';
 import { DispatchTracePanel } from './dev/DispatchTracePanel';
 import { lookupShortcutByToolId } from './dev/keybindingsView';
@@ -611,7 +608,6 @@ function RightSidebar({
       >
         <LayerList
           {...layerListProps}
-          className="wd-layerlist-fill"
           empty={<em style={{ opacity: 0.6 }}>No nodes</em>}
         />
       </SidebarPanel>
@@ -1601,39 +1597,22 @@ function EditorWithSharedScene({
     }
   }, [modeId, textEdit]);
 
-  // What the options bar displays and where its edits go. A real range styles
-  // the runs under it; a collapsed caret has no range, so the same controls
-  // edit the node's own `TextStyle` — the values the sidebar shows.
+  // What the options bar displays. The node's own style resolved first, the
+  // range (or the run the caret sits in) over it, and last what is armed for
+  // the next keystroke — which is what the user will see themselves type.
   const editingNode = textEdit.editingId != null
     ? scene.get(asNodeId(textEdit.editingId))
     : undefined;
-  const hasRange = textEdit.selection != null && textEdit.selection.start !== textEdit.selection.end;
-  const barStyle: RangeStyle = effectiveRangeStyle(
-    hasRange ? textEdit.rangeStyle : null,
-    editingNode?.data.style,
-    { fill: editingNode?.data.fill, stroke: editingNode?.data.stroke },
-  );
+  const barStyle: RangeStyle = {
+    ...effectiveRangeStyle(
+      textEdit.rangeStyle,
+      editingNode?.data.style,
+      { fill: editingNode?.data.fill, stroke: editingNode?.data.stroke },
+    ),
+    ...textEdit.pendingStyle,
+  };
 
-  const onCharacterPatch = useCallback((patch: RunStylePatch) => {
-    const id = textEdit.editingId;
-    if (id == null) return;
-    const sel = textEdit.selection;
-    if (sel != null && sel.start !== sel.end) {
-      textEdit.applyStyleToSelection(patch);
-      return;
-    }
-    const nid = asNodeId(id);
-    const node = scene.get(nid);
-    if (!node) return;
-    const nodeFill = nodePaintFromPatch(patch);
-    scene.update(nid, {
-      data: {
-        ...node.data,
-        style: { ...node.data.style, ...textStyleFromPatch(patch) },
-        ...(nodeFill !== undefined ? { fill: nodeFill } : {}),
-      },
-    });
-  }, [textEdit, scene]);
+  const onCharacterPatch = textEdit.applyStyleToSelection;
 
   // The overlay draws the node being edited, so the scene layer must not draw
   // it too — otherwise every keystroke shows against the pre-edit glyphs.

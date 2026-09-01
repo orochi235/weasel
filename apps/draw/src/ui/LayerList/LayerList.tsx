@@ -1,6 +1,6 @@
 import type { ReactNode, PointerEvent as ReactPointerEvent, CSSProperties } from 'react';
 import { useRef } from 'react';
-import { useReorderDragList, type LayerListItem } from '@weasel-js/ui';
+import { ItemList, useReorderDragList, type ItemListRow, type LayerListItem } from '@weasel-js/ui';
 import s from './LayerList.module.css';
 
 export type { LayerListItem };
@@ -62,63 +62,49 @@ export function LayerList(props: LayerListProps) {
     pendingClickRef.current = null;
   };
 
-  if (items.length === 0) {
-    return (
-      <div className={[s.list, className].filter(Boolean).join(' ')}>
-        <div className={s.empty}>{empty ?? '—'}</div>
-      </div>
-    );
-  }
+  const rows: ItemListRow[] = items.map((item, i) => {
+    const isSelected = selectedIds.includes(item.id);
+    return {
+      id: item.id,
+      label: item.label,
+      selected: isSelected,
+      className: (drag.state.draggedIds?.includes(item.id) ?? false) ? s.dragging : undefined,
+      leading: item.swatch !== undefined
+        ? <span className={s.swatch} style={{ background: item.swatch }} aria-hidden="true" />
+        : undefined,
+      rowProps: {
+        'data-row-index': i,
+        'data-locked': item.locked ? 'true' : undefined,
+        'data-selected': isSelected ? 'true' : undefined,
+        onPointerDown: (e) => handleRowPointerDown(item.id, i, e),
+      },
+    };
+  });
 
   return (
-    <div
-      className={[s.list, className].filter(Boolean).join(' ')}
+    <ItemList
+      rows={rows}
+      className={className}
+      empty={empty}
       ref={drag.containerProps.ref as React.RefCallback<HTMLDivElement>}
-      onPointerMove={drag.containerProps.onPointerMove}
-      onPointerUp={handleContainerPointerUp}
-      onPointerCancel={drag.containerProps.onPointerCancel}
-    >
-      {items.map((item, i) => {
-        const isSelected = selectedIds.includes(item.id);
-        const isDragging = drag.state.draggedIds?.includes(item.id) ?? false;
-        const cls = [s.row, isSelected && s.selected, isDragging && s.dragging]
-          .filter(Boolean)
-          .join(' ');
-        return (
-          <div
-            key={item.id}
-            data-row-index={i}
-            data-locked={item.locked ? 'true' : undefined}
-            data-selected={isSelected ? 'true' : undefined}
-            className={cls}
-            onPointerDown={(e) => handleRowPointerDown(item.id, i, e)}
-          >
-            {item.swatch !== undefined && (
-              <span
-                className={s.swatch}
-                style={{ background: item.swatch }}
-                aria-hidden="true"
-              />
-            )}
-            <span className={s.label}>{item.label}</span>
-          </div>
-        );
-      })}
-      {drag.state.targetIndex !== null && (
-        // Dynamic pixel positioning for the drop indicator — cannot be expressed
-        // as a static CSS class (offset depends on targetIndex at runtime).
-        <div
-          className={s.dropIndicator}
-          style={dropIndicatorStyle(drag.state.targetIndex)}
-        />
-      )}
-    </div>
+      containerProps={{
+        onPointerMove: drag.containerProps.onPointerMove,
+        onPointerUp: handleContainerPointerUp,
+        onPointerCancel: drag.containerProps.onPointerCancel,
+      }}
+      overlay={drag.state.targetIndex !== null
+        // Pixel positioning: the offset depends on targetIndex at runtime, so
+        // it cannot be a static class.
+        ? <div className={s.dropIndicator} style={dropIndicatorStyle(drag.state.targetIndex)} />
+        : undefined}
+    />
   );
 }
 
 function dropIndicatorStyle(targetIndex: number): CSSProperties {
-  // 28px row + 1px gap = 29px per row; container has no top padding.
-  const ROW_H = 28;
+  // Must track `ItemList`'s row height — 24px row + 1px gap per row, with no
+  // top padding on the container.
+  const ROW_H = 24;
   const GAP = 1;
   const y = targetIndex * (ROW_H + GAP) - GAP / 2;
   return { top: `${y}px` };

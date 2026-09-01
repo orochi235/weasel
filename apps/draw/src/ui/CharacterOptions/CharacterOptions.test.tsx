@@ -46,11 +46,74 @@ describe('CharacterOptions — flag toggles', () => {
     expect(onPatch).toHaveBeenCalledWith({ bold: true });
   });
 
-  it('offers all four run flags', () => {
+  it('offers all five run flags', () => {
     render(<CharacterOptions style={{}} onPatch={vi.fn()} />);
-    for (const name of ['Bold', 'Italic', 'Underline', 'Strikethrough']) {
+    for (const name of ['Bold', 'Italic', 'Underline', 'Strikethrough', 'Overline']) {
       expect(toggle(name)).toHaveAttribute('aria-pressed', 'false');
     }
+  });
+});
+
+describe('CharacterOptions — script', () => {
+  it('sets superscript', () => {
+    const onPatch = vi.fn();
+    render(<CharacterOptions style={{}} onPatch={onPatch} />);
+    fireEvent.click(toggle('Superscript'));
+    expect(onPatch).toHaveBeenCalledWith({ script: 'super' });
+  });
+
+  it('clears by clicking the lit segment — off is the enum\'s absence', () => {
+    const onPatch = vi.fn();
+    render(<CharacterOptions style={{ script: 'super' }} onPatch={onPatch} />);
+    fireEvent.click(toggle('Superscript'));
+    expect(onPatch).toHaveBeenCalledWith({ script: undefined });
+  });
+
+  it('swaps rather than stacking — the two are mutually exclusive', () => {
+    const onPatch = vi.fn();
+    render(<CharacterOptions style={{ script: 'super' }} onPatch={onPatch} />);
+    fireEvent.click(toggle('Subscript'));
+    expect(onPatch).toHaveBeenCalledWith({ script: 'sub' });
+  });
+
+  it('renders a mixed script as indeterminate on both segments', () => {
+    render(<CharacterOptions style={{ script: MIXED }} onPatch={vi.fn()} />);
+    expect(toggle('Superscript')).toHaveAttribute('aria-pressed', 'mixed');
+    expect(toggle('Subscript')).toHaveAttribute('aria-pressed', 'mixed');
+  });
+
+  it('does not light a script segment for an unset script', () => {
+    render(<CharacterOptions style={{}} onPatch={vi.fn()} />);
+    expect(toggle('Superscript')).toHaveAttribute('aria-pressed', 'false');
+    expect(toggle('Subscript')).toHaveAttribute('aria-pressed', 'false');
+  });
+});
+
+describe('CharacterOptions — script primitives', () => {
+  it('shows the two fractions as percentages', () => {
+    render(
+      <CharacterOptions style={{ baselineShift: 0.333, fontScale: 0.583 }} onPatch={vi.fn()} />,
+    );
+    expect(screen.getByRole('textbox', { name: 'Baseline shift' })).toHaveValue('33.3%');
+    expect(screen.getByRole('textbox', { name: 'Scale' })).toHaveValue('58.3%');
+  });
+
+  it('commits a percentage back as the fraction the run stores', () => {
+    const onPatch = vi.fn();
+    render(<CharacterOptions style={{ fontScale: 1 }} onPatch={onPatch} />);
+    const input = screen.getByRole('textbox', { name: 'Scale' });
+    fireEvent.change(input, { target: { value: '50%' } });
+    fireEvent.blur(input);
+    expect(onPatch).toHaveBeenCalledWith({ fontScale: 0.5 });
+  });
+
+  it('takes a negative baseline shift — that is what a subscript is', () => {
+    const onPatch = vi.fn();
+    render(<CharacterOptions style={{ baselineShift: 0 }} onPatch={onPatch} />);
+    const input = screen.getByRole('textbox', { name: 'Baseline shift' });
+    fireEvent.change(input, { target: { value: '-33.3%' } });
+    fireEvent.blur(input);
+    expect(onPatch).toHaveBeenCalledWith({ baselineShift: -0.333 });
   });
 });
 

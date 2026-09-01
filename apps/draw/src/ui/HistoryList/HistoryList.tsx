@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { ItemList, type ItemListRow } from '@weasel-js/ui';
 import s from './HistoryList.module.css';
 
 /** A single row in the history panel. Mirrors `weasel-kit`'s
@@ -31,35 +32,15 @@ export interface HistoryListProps {
  *  signals the divider between undo and redo. */
 export function HistoryList(props: HistoryListProps) {
   const { items, currentIndex, onJump, className, empty } = props;
-  if (items.length === 0) {
-    return (
-      <div className={[s.list, className].filter(Boolean).join(' ')}>
-        <div className={s.empty}>{empty ?? '—'}</div>
-      </div>
-    );
-  }
-  return (
-    <div className={[s.list, className].filter(Boolean).join(' ')}>
-      {items.map((item, i) => {
-        const applied = i <= currentIndex;
-        const current = i === currentIndex;
-        const cls = [
-          s.row,
-          applied && s.applied,
-          !applied && s.future,
-          current && s.current,
-        ].filter(Boolean).join(' ');
-        return (
-          <div
-            key={item.id}
-            data-row-index={i}
-            className={cls}
-            onClick={() => onJump(i)}
-          >
-            {item.label}
-          </div>
-        );
-      })}
-    </div>
-  );
+  const rows: ItemListRow[] = items.map((item, i) => ({
+    id: item.id,
+    label: item.label,
+    // Everything at or before the marker has been applied; what follows is
+    // redoable, so it reads as present but not in effect.
+    muted: i > currentIndex,
+    selected: i === currentIndex,
+    className: i === currentIndex ? s.current : undefined,
+    rowProps: { 'data-row-index': i, onClick: () => onJump(i) },
+  }));
+  return <ItemList rows={rows} className={className} empty={empty} />;
 }

@@ -1,59 +1,8 @@
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  user-select: none;
-  position: relative;
-  width: 100%;
-}
-
-.row {
-  display: flex;
-  align-items: center;
-  padding: 0 8px;
-  height: 24px;
-  font-size: 12px;
-  color: var(--wzl-fg);
-  background: transparent;
-  border-radius: 2px;
-  cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.row:hover {
-  background: var(--wzl-surface);
-}
-
-/* "Applied" rows (on the undo stack at or before the current marker)
-   render with normal opacity. Future (redo) rows dim out so the user
-   can read the stack as past-→-future at a glance. */
-.applied {
-  color: var(--wzl-fg);
-}
-
-.future {
-  color: var(--wzl-fg-subtle);
-}
-
-/* The current row gets a stronger background and a faint bottom border
-   so the boundary between applied and future is visible without an
-   extra DOM divider. */
+/* The current row rules a line under itself, so the boundary between what is
+   applied and what is redoable reads without an extra divider element. The
+   row box itself is `ItemList`'s. */
 .current {
-  background: var(--wzl-border);
-  color: var(--wzl-fg);
   border-bottom: 1px solid var(--wzl-fg);
   border-radius: 2px 2px 0 0;
-}
-
-.current:hover {
-  background: var(--wzl-border);
-}
-
-.empty {
-  padding: 12px 8px;
-  font-size: 12px;
-  color: var(--wzl-fg-subtle);
-  font-style: italic;
+  cursor: pointer;
 }

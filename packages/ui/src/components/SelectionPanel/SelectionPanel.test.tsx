@@ -751,6 +751,75 @@ describe('SelectionPanel — object leaf', () => {
     });
   });
 
+  /**
+   * The real kit schema (`defaultNodeProperties`) declares no `fromScalar`
+   * and an object `default`, which the fixture above does not model — so the
+   * panel's own suite could not see this. Editing one field on a node with no
+   * stroke used to commit that field alone: a `Stroke` with no `paint`, which
+   * the type forbids, the painter threw on, and which took the whole frame
+   * with it — the document vanished until an unrelated redraw.
+   */
+  describe('a node holding no object at all', () => {
+    // As the kit declares it: no `fromScalar`, and a complete object default.
+    const realShape: NodePropertiesEntry[] = [{
+      name: 'path',
+      schema: {
+        name: 'Properties',
+        children: {
+          appearance: {
+            name: 'Appearance',
+            children: {
+              'data.stroke': {
+                kind: 'object',
+                name: 'Stroke',
+                description: '',
+                default: { paint: { fill: 'solid', color: '#000000ff' }, width: 1 },
+                block: true,
+                children: {
+                  paint: { kind: 'paint', name: 'Color', description: '', default: { fill: 'solid', color: '#000000ff' }, alpha: true },
+                  width: { kind: 'number', name: 'Width', description: '', default: 1, min: 0, step: 0.5 },
+                  cap: { kind: 'enum', name: 'Cap', description: '', default: 'butt', options: [{ value: 'butt', label: 'Butt' }, { value: 'round', label: 'Round' }] },
+                },
+              },
+            },
+          },
+        },
+      },
+    }] as unknown as NodePropertiesEntry[];
+
+    const renderReal = (scene: ReturnType<typeof sceneWithStroke>) => render(
+      <SelectionPanel
+        scene={scene}
+        selection={selectionOf(['p'])}
+        properties={realShape}
+        routing={strokeRouting}
+      />,
+    );
+
+    it('materializes the whole default when a field is written', () => {
+      const scene = sceneWithStroke(undefined);
+      renderReal(scene);
+      const width = screen.getByLabelText('Width');
+      fireEvent.change(width, { target: { value: '3' } });
+      fireEvent.blur(width);
+      expect(scene.get(asNodeId('p'))?.data.stroke).toEqual({
+        paint: { fill: 'solid', color: '#000000ff' },
+        width: 3,
+      });
+    });
+
+    it('never commits a stroke without a paint', () => {
+      const scene = sceneWithStroke(undefined);
+      renderReal(scene);
+      fireEvent.click(screen.getByLabelText('Cap'));
+      const width = screen.getByLabelText('Width');
+      fireEvent.change(width, { target: { value: '5' } });
+      fireEvent.blur(width);
+      const stroke = scene.get(asNodeId('p'))?.data.stroke as Record<string, unknown>;
+      expect(stroke.paint).toBeDefined();
+    });
+  });
+
   it('lifts a scalar value through `fromScalar` before applying a field', () => {
     // The node holds a bare color string; editing width has to produce a whole
     // stroke rather than writing `width` into a string.

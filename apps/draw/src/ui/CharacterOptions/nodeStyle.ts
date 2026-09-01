@@ -1,33 +1,27 @@
 /**
- * Bridge between the caret-range vocabulary (`RangeStyle` / `RunStylePatch`,
- * keyed like a `StyledRun`) and the node-level one (`TextStyle`).
+ * Reads the node-level vocabulary (`TextStyle`) into the caret-range one
+ * (`RangeStyle`, keyed like a `StyledRun`) so the options bar can *display*
+ * what is actually rendering. One direction only: the bar's edits all go to
+ * the runs, or to the pending style at a collapsed caret, and the node's own
+ * style is the sidebar's to write.
  *
- * The options bar speaks the first. With a collapsed caret there is no range
- * to style, so the same controls have to reach the node's own `TextStyle`
- * instead — which is *nearly* the same vocabulary, with one real difference:
+ * The two vocabularies are nearly the same, with one real difference:
  *
  * **A run's `bold` is a boolean; a node's `fontWeight` is a number.** So the
- * translation buckets, `>= 600` in and `700` / `400` out. A node at weight
- * 500 reads back as not-bold, and toggling bold off a node at 900 lands it at
- * 400 rather than at "one step lighter". That is the same bucket the font
- * fallback itself applies (`weightBucket` in `registerFont`), so the control
- * cannot promise finer resolution than the renderer delivers — the numeric
- * weight leaf in the sidebar is where a document sets an exact value.
- *
- * `italic` is a clean round-trip (both sides are two-valued), as are
- * `fontFamily`, `fontSize`, `letterSpacing`, `underline` and `strikethrough`.
+ * translation buckets at `>= 600`, the same bucket the font fallback itself
+ * applies (`weightBucket` in `registerFont`) — a node at weight 500 reads
+ * back as not-bold, and the numeric weight leaf in the sidebar is where a
+ * document sets an exact value.
  *
  * `fill` crosses a second seam: a run holds one, a node's `TextStyle` does
  * not — a text node's fill is `data.fill`, the leaf every node kind paints
- * from. So the node-side functions take the paint beside the style, and a
- * patch's fill comes back out through `nodePaintFromPatch` rather than in
- * the `TextStyle`.
+ * from. So these take the paint beside the style.
  *
  * Nothing here is `MIXED`-aware: a single node has one style, and `MIXED`
  * only arises from aggregating several sources.
  */
 import { resolveTextStyle } from '@weasel-js/core';
-import type { FillStyle, RangeStyle, RunStylePatch, TextPaint, TextStyle } from '@weasel-js/core';
+import type { RangeStyle, TextPaint, TextStyle } from '@weasel-js/core';
 
 /** Weight at or above which a node reads as bold — the fallback's own bucket. */
 const BOLD_THRESHOLD = 600;
@@ -48,11 +42,18 @@ export function rangeStyleFromTextStyle(
   if (style.letterSpacing !== undefined) out.letterSpacing = style.letterSpacing;
   if (style.underline !== undefined) out.underline = style.underline;
   if (style.strikethrough !== undefined) out.strikethrough = style.strikethrough;
+  if (style.overline !== undefined) out.overline = style.overline;
   return out;
 }
 
 /** The additive run flags — the keys whose inheritance is `||`, not `??`. */
-const FLAGS = ['bold', 'italic', 'underline', 'strikethrough'] as const;
+const FLAGS = ['bold', 'italic', 'underline', 'strikethrough', 'overline'] as const;
+
+/** Run-only styling: `script` and the two primitives it presets have no
+ *  node-level counterpart to resolve against, so they pass straight through.
+ *  A whole node set as a superscript is a smaller node moved up, which the
+ *  pose already says better — see `StyledRun.script`. */
+const RUN_ONLY = ['script', 'baselineShift', 'fontScale'] as const;
 
 /**
  * What is actually rendering across `range` — the values the bar should
@@ -88,30 +89,8 @@ export function effectiveRangeStyle(
     if (base[key] === true) continue;      // node turns it on for everything
     if (range[key] !== undefined) out[key] = range[key];
   }
-  for (const key of ['fontFamily', 'fontSize', 'letterSpacing', 'fill'] as const) {
+  for (const key of ['fontFamily', 'fontSize', 'letterSpacing', 'fill', ...RUN_ONLY] as const) {
     if (range[key] !== undefined) (out as Record<string, unknown>)[key] = range[key];
   }
   return out;
-}
-
-/** The `TextStyle` fields a bar patch sets — typography only. Merge over
- *  the node's current style; see `nodePaintFromPatch` for its color. */
-export function textStyleFromPatch(patch: RunStylePatch): TextStyle {
-  const out: TextStyle = {};
-  if (patch.bold !== undefined) out.fontWeight = patch.bold ? 700 : 400;
-  if (patch.italic !== undefined) out.fontStyle = patch.italic ? 'italic' : 'normal';
-  if (patch.fontFamily !== undefined) out.fontFamily = patch.fontFamily;
-  if (patch.fontSize !== undefined) out.fontSize = patch.fontSize;
-  if (patch.letterSpacing !== undefined) out.letterSpacing = patch.letterSpacing;
-  if (patch.underline !== undefined) out.underline = patch.underline;
-  if (patch.strikethrough !== undefined) out.strikethrough = patch.strikethrough;
-  return out;
-}
-
-/** The node fill a bar patch sets, or `undefined` when it sets none. A text
- *  node's color is `data.fill`, so it leaves `TextStyle` by a separate door. */
-export function nodePaintFromPatch(patch: RunStylePatch): FillStyle | undefined {
-  return patch.fill === undefined || patch.fill === null
-    ? undefined
-    : (patch.fill as FillStyle);
 }

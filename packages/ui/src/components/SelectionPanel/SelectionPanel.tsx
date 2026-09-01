@@ -562,7 +562,17 @@ function ObjectLeaf({
         siblings: held,
         valueAt: ctx.valueAt,
         setValue: (v) => {
-          const base = held ?? pref.fromScalar?.(ctx.value) ?? {};
+          // The node holds no object yet, so writing one field has to
+          // materialize the rest: the leaf's `default` is what a complete
+          // value looks like. Starting from `{}` instead committed the one
+          // field on its own — a `data.stroke` of `{ width: 2 }` with no
+          // `paint`, which the type forbids and the painter threw on, taking
+          // the whole frame and the visible document with it.
+          const base = held
+            ?? pref.fromScalar?.(ctx.value)
+            ?? (typeof pref.default === 'object' && pref.default !== null
+              ? { ...(pref.default as Record<string, unknown>) }
+              : {});
           if (v === undefined) {
             // A field written as absent is absent — leaving the key holding
             // `undefined` says the object has a dash of nothing.

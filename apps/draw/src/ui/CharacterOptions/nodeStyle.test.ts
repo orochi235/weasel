@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MIXED } from '@weasel-js/core';
-import { effectiveRangeStyle, nodePaintFromPatch, rangeStyleFromTextStyle, textStyleFromPatch } from './nodeStyle';
+import { effectiveRangeStyle, rangeStyleFromTextStyle } from './nodeStyle';
 
 describe('rangeStyleFromTextStyle', () => {
   it('reports nothing for an absent style', () => {
@@ -48,56 +48,6 @@ describe('rangeStyleFromTextStyle', () => {
   });
 });
 
-describe('textStyleFromPatch', () => {
-  it('turns the bold flag into a numeric weight in both directions', () => {
-    expect(textStyleFromPatch({ bold: true })).toEqual({ fontWeight: 700 });
-    expect(textStyleFromPatch({ bold: false })).toEqual({ fontWeight: 400 });
-  });
-
-  it('turns the italic flag into a font style in both directions', () => {
-    expect(textStyleFromPatch({ italic: true })).toEqual({ fontStyle: 'italic' });
-    expect(textStyleFromPatch({ italic: false })).toEqual({ fontStyle: 'normal' });
-  });
-
-  it('keeps `false` for the decorations — the node level is genuinely two-valued', () => {
-    // Unlike a run, where `false` means "delete the key" because run flags are
-    // additive, a node's `underline: false` is the real, expressible value.
-    expect(textStyleFromPatch({ underline: false })).toEqual({ underline: false });
-    expect(textStyleFromPatch({ strikethrough: false })).toEqual({ strikethrough: false });
-  });
-
-  it('patches only the keys it was given', () => {
-    expect(textStyleFromPatch({ fontSize: 20 })).toEqual({ fontSize: 20 });
-    expect(textStyleFromPatch({})).toEqual({});
-  });
-
-  it('round-trips everything but the weight bucket', () => {
-    const patch = {
-      italic: true,
-      fontFamily: 'serif',
-      fontSize: 24,
-      letterSpacing: 1.5,
-      underline: true,
-      strikethrough: true,
-      fill: { color: '#00ff00ff' },
-    };
-    // The fill leaves through the other door: a node's color is `data.fill`,
-    // not a `TextStyle` field, so the round trip needs both halves.
-    expect(
-      rangeStyleFromTextStyle(
-        textStyleFromPatch(patch),
-        { fill: nodePaintFromPatch(patch) },
-      ),
-    ).toEqual(patch);
-  });
-
-  it('loses the exact weight on a round trip, by design', () => {
-    const bold = rangeStyleFromTextStyle({ fontWeight: 900 }).bold;
-    expect(bold).toBe(true);
-    expect(textStyleFromPatch({ bold: bold === true }).fontWeight).toBe(700);
-  });
-});
-
 describe('effectiveRangeStyle', () => {
   it('falls back to the kit defaults when nothing is set', () => {
     const s = effectiveRangeStyle(null, undefined);
@@ -125,6 +75,23 @@ describe('effectiveRangeStyle', () => {
   it('adds a run flag to the node flag', () => {
     expect(effectiveRangeStyle({ bold: true }, {}).bold).toBe(true);
     expect(effectiveRangeStyle({ bold: false }, { fontWeight: 700 }).bold).toBe(true);
+    expect(effectiveRangeStyle({ overline: false }, { overline: true }).overline).toBe(true);
+  });
+
+  it('passes the run-only styling straight through', () => {
+    // `script` and the two primitives it presets have no node-level
+    // counterpart to resolve against, so there is nothing to merge.
+    const s = effectiveRangeStyle(
+      { script: 'super', baselineShift: 0.333, fontScale: 0.583 },
+      { fontSize: 24 },
+    );
+    expect(s.script).toBe('super');
+    expect(s.baselineShift).toBe(0.333);
+    expect(s.fontScale).toBe(0.583);
+  });
+
+  it('reports no script where the range sets none', () => {
+    expect(effectiveRangeStyle({}, { fontSize: 24 }).script).toBeUndefined();
   });
 
   it('collapses a mixed flag to true when the node sets it', () => {
