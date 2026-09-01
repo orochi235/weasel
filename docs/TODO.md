@@ -1334,14 +1334,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `data-wzl-mode` and read a *computed* value — `generated.test.ts` already asserts the
   `color-mix` mechanism is present, which is exactly what let this pass.
 
-- **(P2) `determinism.test.ts` rewrites generated files while other tests read them.**
-  `packages/theme/src/generated/determinism.test.ts` shells out to `gen:tokens`, overwriting
-  `tokens.css`, `themes.ts` and `manifest.ts` on disk, while other test files in the same vitest
-  project read those paths in parallel workers. A clean run is green; it only fails when
-  something else touches those files concurrently — which a developer running `gen:tokens` by
-  hand during a test run will do. Generate into a temp dir and diff, rather than writing over
-  the committed output.
-
 - **(P3) Two more elements claim `role="toolbar"` without the keyboard contract.**
   `.lk-palette-region` (`aria-label="Tools"`, `aria-orientation="vertical"`) and
   `.lk-viewport-controls` (`aria-label="View"`) both take the role with no roving tabindex —

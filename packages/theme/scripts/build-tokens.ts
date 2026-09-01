@@ -12,7 +12,11 @@ import type { FlatTokens } from '../src/dtcg/types';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const TOKENS_DIR = resolve(here, '../tokens');
-const OUT_DIR = resolve(here, '../src/generated');
+// Overridable so the determinism check can generate into a temp dir instead of
+// rewriting the committed files other tests are reading from concurrently.
+const OUT_DIR = process.env.WZL_TOKENS_OUT_DIR
+  ? resolve(process.env.WZL_TOKENS_OUT_DIR)
+  : resolve(here, '../src/generated');
 
 const readJson = (p: string) => JSON.parse(readFileSync(p, 'utf8'));
 
