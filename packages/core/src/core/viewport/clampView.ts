@@ -26,24 +26,29 @@ export interface CanvasSize {
  * sits in the middle of the canvas.
  */
 export function clampView(view: View, bounds: ClampBounds, canvas: CanvasSize): View {
-  const visW = canvas.width / view.scale.x;
-  const visH = canvas.height / view.scale.y;
+  // A negative scale is a flipped axis, so the visible rect runs the other way
+  // from `view.x`/`view.y`: its extent is the magnitude, and the anchor is the
+  // rect's far edge rather than its near one.
+  const visW = Math.abs(canvas.width / view.scale.x);
+  const visH = Math.abs(canvas.height / view.scale.y);
+  const flipX = view.scale.x < 0;
+  const flipY = view.scale.y < 0;
 
   let x: number;
   if (visW >= bounds.width) {
-    x = bounds.x + (bounds.width - visW) / 2;
+    x = bounds.x + (bounds.width - visW) / 2 + (flipX ? visW : 0);
   } else {
-    const minX = bounds.x;
-    const maxX = bounds.x + bounds.width - visW;
+    const minX = flipX ? bounds.x + visW : bounds.x;
+    const maxX = flipX ? bounds.x + bounds.width : bounds.x + bounds.width - visW;
     x = view.x < minX ? minX : view.x > maxX ? maxX : view.x;
   }
 
   let y: number;
   if (visH >= bounds.height) {
-    y = bounds.y + (bounds.height - visH) / 2;
+    y = bounds.y + (bounds.height - visH) / 2 + (flipY ? visH : 0);
   } else {
-    const minY = bounds.y;
-    const maxY = bounds.y + bounds.height - visH;
+    const minY = flipY ? bounds.y + visH : bounds.y;
+    const maxY = flipY ? bounds.y + bounds.height : bounds.y + bounds.height - visH;
     y = view.y < minY ? minY : view.y > maxY ? maxY : view.y;
   }
 

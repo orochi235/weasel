@@ -117,12 +117,23 @@ describe('FloatingPanel', () => {
 });
 
 describe('FloatingPanel dragging', () => {
-  it('marks itself dragging between pointerdown and pointerup', () => {
+  it('marks itself dragging once the pointer moves, not on the press', () => {
     const { panel } = renderPanel(<FloatingPanel>x</FloatingPanel>);
     fireEvent.pointerDown(panel, { clientX: 100, clientY: 100 });
+    expect(panel.dataset.dragging).toBeUndefined();
+    fireEvent.pointerMove(panel, { clientX: 140, clientY: 100 });
     expect(panel.dataset.dragging).toBe('true');
     fireEvent.pointerUp(panel);
     expect(panel.dataset.dragging).toBeUndefined();
+  });
+
+  it('a press that never moves is not a drag', () => {
+    const { panel } = renderPanel(<FloatingPanel anchor="top-left">x</FloatingPanel>);
+    const before = panel.style.left;
+    fireEvent.pointerDown(panel, { clientX: 100, clientY: 100 });
+    fireEvent.pointerUp(panel, { clientX: 100, clientY: 100 });
+    expect(panel.dataset.dragging).toBeUndefined();
+    expect(panel.style.left).toBe(before);
   });
 
   it('moves with the pointer, accumulating across moves', () => {
@@ -236,5 +247,28 @@ describe('FloatingPanel persistence', () => {
   it('survives a corrupt stored value rather than throwing', () => {
     localStorage.setItem('k', '{{{');
     expect(() => renderPanel(<FloatingPanel storageKey="k">x</FloatingPanel>)).not.toThrow();
+  });
+});
+
+describe('a child that is not a native control', () => {
+  // The real symptom — capture retargets mouseup, so the browser synthesizes no
+  // `click` on the child — cannot be reproduced in jsdom, which fires the click
+  // either way. Capture-on-press is the observable proxy for it.
+  it('does not capture the pointer until the pointer has actually moved', () => {
+    const captured: number[] = [];
+    Element.prototype.setPointerCapture = function (id: number) {
+      captured.push(id);
+    };
+    render(
+      <FloatingPanel>
+        {/* biome-ignore lint/a11y/useSemanticElements: a non-native control is the subject */}
+        <span data-testid="row" role="button" tabIndex={0}>
+          row
+        </span>
+      </FloatingPanel>,
+    );
+    const row = screen.getByTestId('row');
+    fireEvent.pointerDown(row, { pointerId: 1, button: 0, clientX: 40, clientY: 40 });
+    expect(captured).toEqual([]);
   });
 });

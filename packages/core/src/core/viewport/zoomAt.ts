@@ -16,6 +16,14 @@ export interface ZoomClampOpts {
  * `factor: number` means "apply uniformly to both axes". `factor: {x, y}`
  * applies per-axis factors. Likewise for `opts.min` / `opts.max`.
  */
+/** Bound a scale's *magnitude*, keeping its direction. `scale.y < 0` is how a
+ *  `View` spells a y-up camera, so clamping the signed value against positive
+ *  bounds would flip the axis and collapse the zoom rather than limit it. */
+function clampScale(scale: number, min: number, max: number): number {
+  const magnitude = Math.min(max, Math.max(min, Math.abs(scale)));
+  return scale < 0 ? -magnitude : magnitude;
+}
+
 export function zoomAt(
   view: View,
   anchor: { x: number; y: number },
@@ -29,8 +37,8 @@ export function zoomAt(
   const maxX = typeof opts?.max === 'number' ? opts.max : opts?.max?.x ?? 8;
   const maxY = typeof opts?.max === 'number' ? opts.max : opts?.max?.y ?? 8;
 
-  const nextX = Math.min(maxX, Math.max(minX, view.scale.x * fx));
-  const nextY = Math.min(maxY, Math.max(minY, view.scale.y * fy));
+  const nextX = clampScale(view.scale.x * fx, minX, maxX);
+  const nextY = clampScale(view.scale.y * fy, minY, maxY);
 
   const worldX = anchor.x / view.scale.x + view.x;
   const worldY = anchor.y / view.scale.y + view.y;

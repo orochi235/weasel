@@ -69,3 +69,36 @@ describe('zoomAt — per-axis', () => {
     expect(next.scale.y).toBe(0.5);
   });
 });
+
+describe('zoomAt on an axis with negative scale', () => {
+  // `View.scale` is pixels per world unit per axis, so `scale.y < 0` is the
+  // ordinary spelling of a y-up camera. The clamp must bound its magnitude.
+  const yUp = { x: 0, y: 0, scale: { x: 2, y: -2 } };
+
+  it('keeps the axis pointing the same way when zooming in', () => {
+    expect(zoomAt(yUp, { x: 10, y: 10 }, 1.1).scale.y).toBeCloseTo(-2.2, 10);
+  });
+
+  it('keeps the axis pointing the same way when zooming out', () => {
+    expect(zoomAt(yUp, { x: 10, y: 10 }, 0.5).scale.y).toBeCloseTo(-1, 10);
+  });
+
+  it('bounds the magnitude, not the signed value, at the max', () => {
+    expect(zoomAt(yUp, { x: 10, y: 10 }, 100, { max: 8 }).scale.y).toBeCloseTo(-8, 10);
+  });
+
+  it('bounds the magnitude, not the signed value, at the min', () => {
+    expect(zoomAt(yUp, { x: 10, y: 10 }, 0.001, { min: 0.1 }).scale.y).toBeCloseTo(-0.1, 10);
+  });
+
+  it('still holds the world point under the anchor fixed', () => {
+    const anchor = { x: 30, y: 40 };
+    const before = {
+      x: anchor.x / yUp.scale.x + yUp.x,
+      y: anchor.y / yUp.scale.y + yUp.y,
+    };
+    const next = zoomAt(yUp, anchor, 1.7);
+    expect(anchor.x / next.scale.x + next.x).toBeCloseTo(before.x, 10);
+    expect(anchor.y / next.scale.y + next.y).toBeCloseTo(before.y, 10);
+  });
+});

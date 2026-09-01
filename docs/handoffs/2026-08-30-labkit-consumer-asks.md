@@ -26,6 +26,16 @@ Everything in "Done" below has shipped. The rest is untouched.
   shown, in declaration order. A legend no longer has to infer the set by
   instrumenting every layer's draw.
 
+- **`FloatingPanel` no longer eats a non-native control's click.** It arms on
+  pointerdown and captures only once the pointer has travelled 3px, so a press
+  that does not move is never a drag and the child keeps its `click`. The old
+  element-name allowlist stays, so dragging from a native control still does
+  nothing. brick-icons confirmed the trigger was a `role="button"` span; native
+  `<button>` and `<select>` were exempt all along.
+- **The two-prefix styling contract is written down** — `RECIPES.md`, "Styling
+  labkit from your own stylesheet": classes are `lk-*`, tokens are `--wzl-*`,
+  `var(--lk-…)` silently takes its fallback, tokens are scoped to `.lk-root`,
+  and component class names are not public API.
 - **`TrialLayout`** reaches the root barrel, so klieg no longer reads it off
   `ComponentProps<typeof Workspace>`.
 - **Hover hints.** A described config leaf renders an ⓘ beside its label,
@@ -157,32 +167,6 @@ currently carrying.
   `.storybook/preview.tsx:275` to mount ~28 stories. A `LabkitRoot` mount
   component was designed and rejected; the moves above shrink the problem
   without solving it.
-- **`FloatingPanel` swallows a non-native control's click.** `isInteractive`
-  guards the drag by element name — `input, button, a, select, textarea,
-[data-no-drag]` — so anything else inside a panel gets `setPointerCapture` on
-  pointerdown, which retargets mouseup and means the browser synthesizes no
-  `click`. A `div role="button"`, a react-aria control that renders a div, or a
-  canvas is therefore dead to a real mouse while a programmatic `.click()`
-  still works, which is how it hides. The repo's own rule that a clickable
-  thing need not be a `<button>` is exactly what the allowlist assumes away.
-  Fix is either a designated drag handle or a few-px movement threshold before
-  capturing, not more names in the list.
-
-  brick-icons reported this as native `<button>` and `<select>` being dead,
-  which does **not** reproduce: that guard shipped in `bb66fe3c` (2026-08-25),
-  before the `@weasel-js/labkit@1.3.0` tag it is running. Its second instance —
-  its own pane capturing to pan, under an overlay of clickable boxes — is the
-  likelier cause of what it saw, and is not labkit's. Filed on the narrower
-  gap, which is real.
-
-- **The styleable surface has two prefixes and nothing says so.** DOM classes
-  are `lk-*`, design tokens are `--wzl-*`, and a consumer writing
-  `var(--lk-border, <fallback>)` gets the fallback on every one — silently, by
-  construction, because that is what a `var()` fallback is for. It cost
-  brick-icons dark-on-dark panels in the light theme. One line wherever the
-  consumer-facing styling contract is written down would retire it; there is no
-  such doc today, which is the actual gap.
-
 - **wod has three reach-ins to fix in its own repo**, all broken by the class
   names going private: `Editor.css:172` (`.lk-property-panel`) and anything
   styling `.lk-layer-card` become `className` props;
@@ -190,13 +174,14 @@ currently carrying.
 
 ## Traps
 
-**`zoomAt` from `@weasel-js/core` cannot drive a y-up canvas.** It looked like
-the obvious way to stop labkit reimplementing fixed-point zoom — core's `View`
-carries per-axis scale, so y-up is just `scale.y < 0`. But its clamp is
-`min(max, max(min, scale * factor))` per axis against positive defaults, so a
-y-up view comes back at `+0.1`: axis flipped, zoom collapsed, silently. labkit's
-`usePanZoom` keeps its own arithmetic for this reason. Filed against core in
-`docs/TODO.md`.
+**`zoomAt` used to be unusable for a y-up canvas, and no longer is.** Its clamp
+ran `min(max, max(min, scale * factor))` per axis against positive defaults, so
+a y-up view — `scale.y < 0`, which is how core's own `View` spells one — came
+back at `+0.1`, flipped and collapsed. Fixed 2026-08-31: it clamps magnitude and
+restores the sign, and `clampView` reads the visible extent as a magnitude with
+the interval flipped. labkit's `usePanZoom` still runs its own frame-space
+arithmetic, which is now a choice rather than a necessity — worth revisiting if
+the two view models are ever unified.
 
 **Changesets 3.x migrates the pre-mode store on read.** A consumed changeset
 moves from a name in `pre.json`'s `changesets` array to a file under

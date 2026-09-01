@@ -37,6 +37,9 @@ function borderBoxOf(entry: ResizeObserverEntry): { w: number; h: number } {
   return { w: entry.contentRect.width, h: entry.contentRect.height };
 }
 
+/** How far the pointer must travel before a press becomes a drag. */
+const DRAG_THRESHOLD = 3;
+
 /** A pointerdown on one of these is the child's, not a drag. */
 function isInteractive(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
@@ -127,18 +130,30 @@ export function FloatingPanel({
     .placements.get(ITEM_ID);
 
   const dragging = useRef<{ x: number; y: number } | null>(null);
+  /** Pressed but not yet moved far enough to be a drag. */
+  const pending = useRef<{ x: number; y: number; pointerId: number } | null>(null);
   const [isDragging, setDragging] = useState(false);
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (isInteractive(e.target)) return;
     // The canvas stack underneath owns pan/zoom on the same pointer events.
     e.stopPropagation();
-    dragging.current = { x: e.clientX, y: e.clientY };
-    setDragging(true);
-    e.currentTarget.setPointerCapture?.(e.pointerId);
+    // Armed, not capturing. Capture retargets mouseup to this element, and the
+    // browser then synthesizes no `click` on the child under the cursor — so
+    // capturing on press makes every non-native control in the panel dead to a
+    // real mouse, silently. `isInteractive` only exempts the names it lists; a
+    // `role="button"` span, a react-aria control or a canvas is not among them.
+    pending.current = { x: e.clientX, y: e.clientY, pointerId: e.pointerId };
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const armed = pending.current;
+    if (armed && armed.pointerId === e.pointerId && !dragging.current) {
+      if (Math.hypot(e.clientX - armed.x, e.clientY - armed.y) < DRAG_THRESHOLD) return;
+      dragging.current = { x: armed.x, y: armed.y };
+      setDragging(true);
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    }
     const from = dragging.current;
     if (!from) return;
     const dx = e.clientX - from.x;
@@ -160,6 +175,7 @@ export function FloatingPanel({
   };
 
   const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    pending.current = null;
     if (!dragging.current) return;
     dragging.current = null;
     setDragging(false);

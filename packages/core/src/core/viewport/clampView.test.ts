@@ -59,3 +59,30 @@ describe('clampView', () => {
     expect(clamped.y).toBe(0); // hit top edge (visH=50 < 200)
   });
 });
+
+describe('clampView on an axis with negative scale', () => {
+  // A y-up view shows [view.y + canvas.height / scale.y, view.y] — the visible
+  // rect runs *up* from the anchor, so both the extent test and the interval
+  // have to read the magnitude.
+  const bounds = { x: 0, y: 0, width: 1000, height: 1000 };
+  const canvas = { width: 200, height: 200 };
+
+  it('treats the visible extent as a magnitude, not a signed height', () => {
+    // scale.y -2 shows 100 world units, well inside the 1000 of bounds, so
+    // this must clamp against the edges rather than centre as if zoomed out.
+    const view = { x: 0, y: 500, scale: { x: 2, y: -2 } };
+    expect(clampView(view, bounds, canvas).y).toBe(500);
+  });
+
+  it('holds the visible rect inside bounds at the top edge', () => {
+    const view = { x: 0, y: 5000, scale: { x: 2, y: -2 } };
+    const out = clampView(view, bounds, canvas);
+    expect(out.y).toBe(bounds.y + bounds.height);
+  });
+
+  it('holds the visible rect inside bounds at the bottom edge', () => {
+    const view = { x: 0, y: -5000, scale: { x: 2, y: -2 } };
+    const out = clampView(view, bounds, canvas);
+    expect(out.y).toBe(bounds.y + 100);
+  });
+});
