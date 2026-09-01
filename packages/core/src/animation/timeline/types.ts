@@ -28,8 +28,10 @@ export interface SampledTrack<T> {
 export interface EventTrack {
   kind: 'event';
   label?: string;
-  /** Sorted ascending by `t`. */
-  events: { t: number; fire: () => void }[];
+  /** Sorted ascending by `t`. `fire` is told how far behind the frame its edge
+   *  was crossed, in ms — never negative, and measured against `duration` on
+   *  the loop seam, where the outgoing lap's tail fires after the wrap. */
+  events: { t: number; fire: (lateBy: number) => void }[];
 }
 
 /** A nested timeline, evaluated at `playhead - at`. Children are NOT registered

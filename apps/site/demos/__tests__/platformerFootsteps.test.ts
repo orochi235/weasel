@@ -12,16 +12,14 @@ describe('footstepTrack', () => {
     const track = footstepTrack((t) => fired.push(t));
     expect(track.kind).toBe('event');
     expect(track.events).toHaveLength(2);
-    track.events.forEach((e) => e.fire());
+    track.events.forEach((e) => e.fire(0));
     expect(fired).toEqual(FOOTFALLS);
   });
 
-  it('hands the handler the authored time, which is all `fire()` can carry', () => {
-    const seen: number[] = [];
-    const track = footstepTrack((t) => seen.push(t));
-    track.events[1].fire();
-    // The authored `t`, not the crossing time — `fire()` takes no argument, so
-    // the real playhead is unreachable from here. See docs/TODO.md.
-    expect(seen).toEqual([CLIPS.run.duration / 2]);
+  it('hands the handler which contact it is and how stale the crossing is', () => {
+    const seen: [number, number][] = [];
+    const track = footstepTrack((t, lateBy) => seen.push([t, lateBy]));
+    track.events[1].fire(7);
+    expect(seen).toEqual([[CLIPS.run.duration / 2, 7]]);
   });
 });

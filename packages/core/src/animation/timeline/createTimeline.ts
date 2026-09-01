@@ -97,7 +97,10 @@ export function createTimeline(
     for (const track of tracks) {
       if (track.kind === 'event') {
         const end = firstAfter(track.events, to);
-        for (let i = firstAfter(track.events, from); i < end; i += 1) track.events[i].fire();
+        for (let i = firstAfter(track.events, from); i < end; i += 1) {
+          const ev = track.events[i];
+          ev.fire(to - ev.t);
+        }
       } else if (track.kind === 'timeline') {
         fireEvents(track.timeline.tracks, from - track.at, to - track.at);
       }

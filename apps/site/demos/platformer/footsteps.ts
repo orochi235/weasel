@@ -7,15 +7,16 @@ export const FOOTFALLS = [0, CLIPS.run.duration / 2];
 /**
  * An `EventTrack` firing at each footfall.
  *
- * `fire()` takes no arguments, so the handler is told the *authored* time and
- * has no way to learn the actual crossing time. Anything scheduling audio from
- * here is stuck asking the engine for "now" at frame resolution, which is the
- * jitter this demo is built to expose.
+ * The handler is told which contact this is (its authored time) and how far
+ * behind the frame the contact was crossed, so it can place the sound against
+ * the instant the foot landed rather than the frame that noticed.
  */
-export function footstepTrack(onStep: (authoredT: number) => void): EventTrack {
+export function footstepTrack(
+  onStep: (authoredT: number, lateBy: number) => void,
+): EventTrack {
   return {
     kind: 'event',
     label: 'footsteps',
-    events: FOOTFALLS.map((t) => ({ t, fire: () => onStep(t) })),
+    events: FOOTFALLS.map((t) => ({ t, fire: (lateBy) => onStep(t, lateBy) })),
   };
 }

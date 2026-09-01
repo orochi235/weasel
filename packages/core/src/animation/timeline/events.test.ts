@@ -142,3 +142,90 @@ describe('event tracks', () => {
     expect(fired).toEqual(['x', 'x']);
   });
 });
+
+describe('event crossing lateness', () => {
+  it('tells a handler how far behind the frame its edge was crossed', () => {
+    const h = harness();
+    const late: number[] = [];
+    createTimeline(h.register, 1, {
+      duration: 100,
+      tracks: [{ kind: 'event', events: [{ t: 10, fire: (by) => late.push(by) }] }],
+    });
+    h.advance(60);
+    expect(late).toEqual([50]);
+  });
+
+  it('reports zero when the frame lands exactly on the edge', () => {
+    const h = harness();
+    const late: number[] = [];
+    createTimeline(h.register, 1, {
+      duration: 100,
+      tracks: [{ kind: 'event', events: [{ t: 50, fire: (by) => late.push(by) }] }],
+    });
+    h.advance(50);
+    expect(late).toEqual([0]);
+  });
+
+  it('gives each event in one long frame its own lateness', () => {
+    const h = harness();
+    const late: number[] = [];
+    createTimeline(h.register, 1, {
+      duration: 100,
+      tracks: [{
+        kind: 'event',
+        events: [
+          { t: 10, fire: (by) => late.push(by) },
+          { t: 50, fire: (by) => late.push(by) },
+          { t: 90, fire: (by) => late.push(by) },
+        ],
+      }],
+    });
+    h.advance(95);
+    expect(late).toEqual([85, 45, 5]);
+  });
+
+  // The tail of the outgoing lap fires after the playhead has already wrapped,
+  // so measuring against it reads -48 here rather than 2.
+  it('measures the loop seam tail against the duration, not the wrapped playhead', () => {
+    const h = harness();
+    const late: number[] = [];
+    createTimeline(h.register, 1, {
+      duration: 100,
+      loop: true,
+      tracks: [{ kind: 'event', events: [{ t: 98, fire: (by) => late.push(by) }] }],
+    });
+    h.advance(95);
+    h.advance(150);
+    expect(late).toEqual([2]);
+  });
+
+  it('reports a nested timeline event in the same ms, undisturbed by its offset', () => {
+    const h = harness();
+    const late: number[] = [];
+    createTimeline(h.register, 1, {
+      duration: 2000,
+      tracks: [{
+        kind: 'timeline',
+        at: 1000,
+        timeline: {
+          tracks: [{ kind: 'event', events: [{ t: 10, fire: (by) => late.push(by) }] }],
+        },
+      }],
+    });
+    h.advance(1050);
+    expect(late).toEqual([40]);
+  });
+
+  it('never reports a negative lateness across a multi-lap skip', () => {
+    const h = harness();
+    const late: number[] = [];
+    createTimeline(h.register, 1, {
+      duration: 100,
+      loop: true,
+      tracks: [{ kind: 'event', events: [{ t: 50, fire: (by) => late.push(by) }] }],
+    });
+    h.advance(60);
+    h.advance(1060);
+    expect(late.every((v) => v >= 0)).toBe(true);
+  });
+});

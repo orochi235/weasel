@@ -44,6 +44,9 @@ const IDENTITY_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 /** A footfall pair spanning a time-scale change is still accelerating, not
  *  steady — the gap would measure speed change, not scheduling jitter. */
 const JITTER_SCALE_TOLERANCE = 0.02;
+/** Footfalls are placed this far after their true crossing, so the frame that
+ *  happened to notice a contact stops deciding when it sounds. */
+const STEP_SCHEDULE_BUDGET_MS = 16;
 
 /** How long the blur holds after a head knock before fading back out. */
 const BONK_BLUR_MS = 260;
@@ -160,26 +163,33 @@ function SideScrollerDemoInner() {
       loop: true,
       autoplay: true,
       tracks: [
-        footstepTrack(() => {
+        footstepTrack((_authoredT, lateBy) => {
           const a = audio.current;
-          const now = performance.now();
           const s = stepStats.current;
           const scale = runScale.current;
+          // `lateBy` is timeline ms; the wall-clock span it stands for shrinks
+          // as the run cycle speeds up.
+          const lateWall = lateBy / Math.max(scale, 0.01);
+          const crossedAt = performance.now() - lateWall;
           // While the player is still accelerating, the scale at this footfall
           // differs from the one recorded at the last — skip those pairs so the
           // spread reflects steady-state scheduling, not a changing run speed.
           if (s.lastAt && Math.abs(scale - s.lastScale) <= JITTER_SCALE_TOLERANCE) {
-            const gap = now - s.lastAt;
+            const gap = crossedAt - s.lastAt;
             const expected = (CLIPS.run.duration / 2) / Math.max(scale, 0.01);
             s.spread = Math.max(s.spread, Math.abs(gap - expected));
           }
-          s.lastAt = now;
+          s.lastAt = crossedAt;
           s.lastScale = scale;
           s.count++;
           if (!a || a.engine.state() !== 'running') return;
-          // `fire()` gave us no crossing time, so "now" is the best available —
-          // at frame resolution, not the sample resolution the engine wants.
-          a.engine.play(a.sounds.step, { bus: 'sfx', gain: 0.35, when: a.engine.now() });
+          // A frame longer than the budget lands in the past and plays at once,
+          // which is what every footfall did before `lateBy` existed.
+          a.engine.play(a.sounds.step, {
+            bus: 'sfx',
+            gain: 0.35,
+            when: a.engine.now() + STEP_SCHEDULE_BUDGET_MS - lateWall,
+          });
         }),
       ],
       duration: CLIPS.run.duration,

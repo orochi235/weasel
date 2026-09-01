@@ -1011,20 +1011,6 @@ single-purpose demo convention — an exception, not a precedent.
 
 What it surfaced:
 
-- **(P1) `EventTrack` events cannot see their own crossing time.** An event is
-  `{ t, fire: () => void }` and `fire` takes no arguments, so a handler
-  scheduling audio can only ask the engine for "now" — frame resolution against a
-  scheduler built for sample resolution, discarding the precision the audio clock
-  exists to provide. Footsteps on the looping run cycle measured a peak spread of
-  **33–47 ms**, with steady-state deviations from a few ms to low double digits.
-  The fix is a time argument: `fire(crossedAt: number)`. Everything else here is
-  ergonomics; this one is a correctness ceiling.
-
-  Note the metric needed correcting to measure this honestly. Computing the
-  expected gap from the time scale *at the moment of firing* conflates
-  acceleration with scheduling jitter, so the HUD now folds in a sample only when
-  the scale is unchanged between consecutive footfalls.
-
 - **(P1) Two interactive `SceneCanvas` instances under one provider root kill
   each other's input.** `apps/site/main.tsx:48` mounts one `ActionsProvider` and
   one `SelectionContextProvider` for the whole site, and `WeaselProvider`'s
@@ -1052,12 +1038,15 @@ What it surfaced:
   layer primitive exists** (the P3 under Tiling) — the run cycle and the parallax
   bands are second sites wanting each.
 
-- **Tune the camera dead zone in the browser.** `DEAD_ZONE_X` in
-  `apps/site/demos/platformer/camera.ts` is a placeholder at 28 (vs
-  `DEAD_ZONE_Y` at 20); pick the real value on feel. A dead-zone camera settles
-  at exactly `DEAD_ZONE_X` from a stationary target, so
-  `platformerCamera.test.ts` asserts that invariant rather than a fixed distance
-  — changing the constant does not break the test.
+- **Tune two placeholder constants in the browser.** `DEAD_ZONE_X` in
+  `apps/site/demos/platformer/camera.ts` sits at 28 (vs `DEAD_ZONE_Y` at 20),
+  and `STEP_SCHEDULE_BUDGET_MS` in `SideScrollerDemo.tsx` at 16 — one frame,
+  picked rather than measured. Both want a value chosen on feel: the budget
+  trades constant footstep latency against how long a frame has to run before a
+  step falls back to playing immediately. A dead-zone camera settles at exactly
+  `DEAD_ZONE_X` from a stationary target, so `platformerCamera.test.ts` asserts
+  that invariant rather than a fixed distance — changing either constant does
+  not break a test.
 
 ### Side-scroller (scene graph) — landed
 
