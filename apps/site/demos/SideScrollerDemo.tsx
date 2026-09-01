@@ -254,9 +254,9 @@ function SideScrollerDemoInner() {
     };
 
     // Three bands at three rates: far hills at 0.2 crawl, near ones at 0.7
-    // nearly keep up. `createParallaxLayer` derives pan from the canvas's own
-    // view, which is pinned to identity — so each band derives from the
-    // camera ref directly instead, same as `tiles` below.
+    // nearly keep up. `createParallaxLayer` wraps source RenderLayers; these
+    // bands draw immediately, like `tiles` below, so they call the derive
+    // helper themselves against the camera ref.
     const bands = ([
       ['far', 0.2],
       ['mid', 0.45],

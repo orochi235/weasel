@@ -1015,13 +1015,6 @@ What it surfaced:
   tracks claims rather than physical keys and is not exported. Every character
   controller will rewrite `platformer/useInput.ts`'s reconstruction.
 
-- **(P2) `createParallaxLayer` cannot see a ref-driven camera.** It derives its
-  inner view from the canvas's `view` prop. A consumer that pins that to identity
-  and pans through refs — to keep a 60 Hz loop out of React state, which this
-  demo must — gets identity back for every `pan` value and a backdrop that
-  silently never moves. `deriveParallaxView` works correctly called directly. The
-  layer helper needs a way to take its outer view from the caller.
-
 - **`TimelineHandle` has no `setLoop`** (the P2 above) and **no tiled-content
   layer primitive exists** (the P3 under Tiling) — the run cycle and the parallax
   bands are second sites wanting each.

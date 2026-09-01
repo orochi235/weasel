@@ -3,8 +3,7 @@ import { defineViewportTool } from '../../defineViewportTool';
 import type { Tool } from '../../types';
 import { HandIcon } from '../../../icons';
 import type { View } from 'core/viewport/view';
-import { useVelocityTracker } from 'core/viewport/useVelocityTracker';
-import { useDecayLoop, type PanBounds } from 'core/viewport/useDecayLoop';
+import type { PanBounds } from 'core/viewport/useDecayLoop';
 
 /** Momentum settings for the hand tool: how quickly a flung view slows, when
  *  it stops, and what happens at the pan limits. */
@@ -17,7 +16,10 @@ export interface InertiaConfig {
   bounds?: PanBounds;
 }
 
-/** Options for `useHandTool`. */
+/** Options for `useHandTool`.
+ *
+ * Neither field is wired yet: the tool's only binding routes `drag` to
+ * `viewport.dragPan`, which implements neither momentum nor axis locking. */
 export interface UseHandToolOptions {
   inertia?: false | InertiaConfig;
   /**
@@ -52,12 +54,7 @@ interface HandScratch {
  * relative to the viewport — i.e. the camera moves *left*. So the new view
  * is `{ x: startView.x - dx, y: startView.y - dy }`.
  */
-export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | null> {
-  const inertia = opts.inertia === false ? false : opts.inertia;
-  const axis = opts.axis ?? 'both';
-  const tracker = useVelocityTracker();
-  const decay = useDecayLoop();
-
+export function useHandTool(_opts: UseHandToolOptions = {}): Tool<HandScratch | null> {
   return useMemo(
     () =>
       Object.assign(defineViewportTool<HandScratch>({
@@ -78,7 +75,6 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | n
         // phase entry.
         bindings: [{ spec: { kind: 'drag' as const }, actionId: 'viewport.dragPan' }],
       }) as Tool<HandScratch | null>,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [inertia, axis, tracker, decay],
+    [],
   );
 }

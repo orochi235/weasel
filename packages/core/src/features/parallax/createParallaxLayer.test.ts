@@ -77,3 +77,32 @@ describe('createParallaxLayer', () => {
     expect(draw.mock.calls[0]![2]).toEqual(dims);
   });
 });
+
+describe('createParallaxLayer — getOuterView', () => {
+  const IDENTITY: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+
+  it('derives from the supplied camera rather than the view the Canvas passes', () => {
+    const { layer, draw } = makeSpyLayer();
+    const l = createParallaxLayer({
+      id: 'p', label: 'P', source: [layer], pan: 0.5,
+      getOuterView: () => outer,
+    });
+    // The Canvas hands it identity — a ref-driven camera pins the `view` prop.
+    l.draw(undefined, IDENTITY, dims);
+    expect(draw.mock.calls[0][1]).toEqual({ x: 50, y: 25, scale: { x: 2, y: 2 } });
+  });
+
+  it('is read per draw, so a moving camera moves the plane', () => {
+    const { layer, draw } = makeSpyLayer();
+    let camera: View = IDENTITY;
+    const l = createParallaxLayer({
+      id: 'p', label: 'P', source: [layer], pan: 0.5,
+      getOuterView: () => camera,
+    });
+    l.draw(undefined, IDENTITY, dims);
+    camera = { x: 200, y: 0, scale: { x: 1, y: 1 } };
+    l.draw(undefined, IDENTITY, dims);
+    expect((draw.mock.calls[0][1] as View).x).toBe(0);
+    expect((draw.mock.calls[1][1] as View).x).toBe(100);
+  });
+});

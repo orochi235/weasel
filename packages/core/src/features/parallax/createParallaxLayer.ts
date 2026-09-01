@@ -1,4 +1,5 @@
 import type { RenderLayer } from '../../core/layers/render';
+import type { View } from '../../core/viewport/view';
 import { deriveParallaxView, type ParallaxOpts } from './deriveParallaxView';
 
 /** Options for `createParallaxLayer`. */
@@ -7,6 +8,11 @@ export interface CreateParallaxLayerOpts<TData> extends ParallaxOpts {
   label: string;
   /** Layers re-rendered through the derived inner view. */
   source: RenderLayer<TData>[];
+  /** Where the camera view comes from. Defaults to the view the Canvas hands
+   *  the layer — the `view` prop. A consumer running a 60 Hz camera through
+   *  refs pins that prop to identity, and would otherwise get identity back
+   *  for every `pan` value and a backdrop that never moves. */
+  getOuterView?: () => View;
 }
 
 /**
@@ -26,13 +32,13 @@ export interface CreateParallaxLayerOpts<TData> extends ParallaxOpts {
 export function createParallaxLayer<TData>(
   opts: CreateParallaxLayerOpts<TData>,
 ): RenderLayer<TData> {
-  const { id, label, source, pan, zoom, anchor } = opts;
+  const { id, label, source, pan, zoom, anchor, getOuterView } = opts;
   return {
     id,
     label,
     space: 'screen',
     draw: (data, outer, dims) => {
-      const inner = deriveParallaxView(outer, { pan, zoom, anchor });
+      const inner = deriveParallaxView(getOuterView?.() ?? outer, { pan, zoom, anchor });
       return source.flatMap((layer) => layer.draw(data, inner, dims));
     },
   };
