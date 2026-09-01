@@ -272,3 +272,44 @@ describe('a child that is not a native control', () => {
     expect(captured).toEqual([]);
   });
 });
+
+describe('a clickable row nested in a list, the shape a floating panel usually holds', () => {
+  it('does not capture the pointer on a press two ancestors below the panel', () => {
+    const captured: number[] = [];
+    Element.prototype.setPointerCapture = function (id: number) {
+      captured.push(id);
+    };
+    render(
+      <FloatingPanel>
+        <ul>
+          <li>
+            {/* biome-ignore lint/a11y/useSemanticElements: a non-native control is the subject */}
+            <span data-testid="row" role="button" tabIndex={0}>
+              row
+            </span>
+          </li>
+        </ul>
+      </FloatingPanel>,
+    );
+    fireEvent.pointerDown(screen.getByTestId('row'), {
+      pointerId: 1,
+      button: 0,
+      clientX: 40,
+      clientY: 40,
+    });
+    expect(captured).toEqual([]);
+  });
+
+  it('still drags when the press that started in the list actually moves', () => {
+    const { panel } = renderPanel(
+      <FloatingPanel anchor="top-left">
+        <ul>
+          <li>row</li>
+        </ul>
+      </FloatingPanel>,
+    );
+    fireEvent.pointerDown(screen.getByText('row'), { pointerId: 1, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(panel, { pointerId: 1, clientX: 200, clientY: 100 });
+    expect(panel.dataset.dragging).toBe('true');
+  });
+});
