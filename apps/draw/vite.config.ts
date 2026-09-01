@@ -32,13 +32,19 @@ export default defineConfig({
   },
   plugins: [
     react(),
-    callbackSourcePlugin({
-      includeDirs: [
-        resolve(repoRoot, 'packages/core/src/tools'),
-        resolve(repoRoot, 'packages/core/src/interactions/actions'),
-        resolve(repoRoot, 'apps/draw/src'),
-      ],
-    }),
+    // Opt-in: it AST-rewrites every module under those three trees on every
+    // serve transform, and it exists only to put source links on the dev
+    // inspector's callback rows. `sourceOf` degrades to no link without it.
+    // Run `WEASEL_CALLBACK_SOURCE=1 npm run dev:draw` when you want them.
+    ...(process.env.WEASEL_CALLBACK_SOURCE
+      ? [callbackSourcePlugin({
+          includeDirs: [
+            resolve(repoRoot, 'packages/core/src/tools'),
+            resolve(repoRoot, 'packages/core/src/interactions/actions'),
+            resolve(repoRoot, 'apps/draw/src'),
+          ],
+        })]
+      : []),
     traitSchemasPlugin({ repoRoot }),
   ],
   server: { port: 5174 },

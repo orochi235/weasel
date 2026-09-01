@@ -1607,13 +1607,14 @@ Still open, measured 2026-08-23 and not addressed by the two fixes above:
   accept an atlas URL or reuse an already-registered family rather than shipping
   its own copy.
 
-- **(P3) Two inspector-only Vite plugins dominate cold dev startup.**
-  `weasel:trait-schemas` runs ts-morph over the kit source — **6,305 ms** called
-  directly — and `callbackSourcePlugin` AST-rewrites every module under
-  `packages/core/src/tools`, `interactions/actions` and `apps/draw/src`. Removing
-  both took cold dev FCP from **6,852 ms to 3,556 ms (−48%)**. Put them behind an
-  env flag. Dev-only: production cold load is 8 requests / 939,885 bytes /
-  FCP 216 ms, against dev's 974 requests / 15,684,571 bytes / FCP 6,852 ms.
+- **(P3) Re-measure cold dev startup for `apps/draw`.** The two inspector-only
+  Vite plugins that dominated it — together, **6,852 ms to 3,556 ms (−48%)** when
+  removed — have both moved since. `callbackSourcePlugin` is now opt-in behind
+  `WEASEL_CALLBACK_SOURCE`, and `weasel:trait-schemas` computes lazily in
+  `load()` behind a `React.lazy` dev surface, so its 6,305 ms of ts-morph should
+  no longer be on first paint. Neither claim is measured. Dev-only either way:
+  production cold load is 8 requests / 939,885 bytes / FCP 216 ms, against dev's
+  974 requests / 15,684,571 bytes / FCP 6,852 ms.
 
 **Tree-shaking is exonerated for both apps** — a single-symbol build of
 `@weasel-js/core` is 1.04 kB, and barrel versus deep-path imports of
