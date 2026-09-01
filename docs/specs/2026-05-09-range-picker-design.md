@@ -2,7 +2,9 @@
 
 **Date:** 2026-05-09
 **Package:** `@weasel-js/ui`
-**Status:** Design approved, awaiting implementation plan.
+**Status:** Shipped, as `Slider` — this spec keeps the working name `RangePicker`
+throughout. Read every `RangePicker` below as `Slider`
+(`packages/ui/src/components/Slider/`).
 
 ## Summary
 

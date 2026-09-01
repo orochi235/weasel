@@ -21,9 +21,8 @@ dedupes them), but there's no reason to.
 
 ## Install
 
-```sh
-npm install weasel-js
-```
+Once published, `npm install weasel-js`. Until then, install
+`@weasel-js/core` and import from that name.
 
 ## Usage
 

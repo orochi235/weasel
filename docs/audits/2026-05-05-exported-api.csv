@@ -1142,8 +1142,7 @@ src/features/selection/useSelection.ts,useSelection.opts,param,opts: UseSelectio
 src/features/text/fitTextPose.ts,FitTextPoseOptions,interface,"{ axis, padding }",Options for fitTextPose.
 src/features/text/fitTextPose.ts,FitTextPoseOptions.axis?,field,'height' \,'both'
 src/features/text/fitTextPose.ts,FitTextPoseOptions.padding?,field,number \,{ x?: number; y?: number }
-src/features/text/fitTextPose.ts,fitTextPose,function,"(ctx: CanvasRenderingContext2D, pose: TextPose, opts: FitTextPoseOptions = {}) => TextPose","Recompute a TextPose's width/height to fit its content; pure helper, doesn't mutate scene state."
-src/features/text/fitTextPose.ts,fitTextPose.ctx,param,ctx: CanvasRenderingContext2D,
+src/features/text/fitTextPose.ts,fitTextPose,function,"(pose: TextPose, opts: FitTextPoseOptions = {}) => TextPose","Recompute a TextPose's width/height to fit its content; pure helper, doesn't mutate scene state."
 src/features/text/fitTextPose.ts,fitTextPose.pose,param,pose: TextPose,
 src/features/text/fitTextPose.ts,fitTextPose.opts,param,opts: FitTextPoseOptions = {},
 src/features/text/hitTest.ts,PointInTextPoseOpts,interface,{ padding },Options for pointInTextPose.
@@ -1153,8 +1152,7 @@ src/features/text/hitTest.ts,pointInTextPose.x,param,x: number,
 src/features/text/hitTest.ts,pointInTextPose.y,param,y: number,
 src/features/text/hitTest.ts,pointInTextPose.pose,param,pose: TextPose,
 src/features/text/hitTest.ts,pointInTextPose.opts,param,opts: PointInTextPoseOpts = {},
-src/features/text/hitTest.ts,caretIndexAt,function,"(ctx: CanvasRenderingContext2D, x: number, y: number, pose: TextPose) => number",Map a world-space point inside pose to a character offset into pose.text (0..text.length).
-src/features/text/hitTest.ts,caretIndexAt.ctx,param,ctx: CanvasRenderingContext2D,
+src/features/text/hitTest.ts,caretIndexAt,function,"(x: number, y: number, pose: TextPose, opts: CaretIndexAtOpts = {}) => number",Map a world-space point inside pose to a character offset into pose.text (0..text.length).
 src/features/text/hitTest.ts,caretIndexAt.x,param,x: number,
 src/features/text/hitTest.ts,caretIndexAt.y,param,y: number,
 src/features/text/hitTest.ts,caretIndexAt.pose,param,pose: TextPose,

@@ -22,8 +22,8 @@ export type RangeSliderProps = Omit<RACSliderProps, 'children' | 'className'> & 
 
 /**
  * Linear range slider on React Aria. Single-value by default; pass an array
- * to `value` / `defaultValue` for multi-thumb. Distinct from the kit's
- * canvas-scrub `Slider`, which is shaped for tool-canvas interactions.
+ * to `value` / `defaultValue` for multi-thumb. Distinct from `Slider`, which
+ * is fully controlled and gives each thumb its own bounds and readout.
  */
 export function RangeSlider(props: RangeSliderProps) {
   const { label, showOutput, formatOutput, className, ...rest } = props;

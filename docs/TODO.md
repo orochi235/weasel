@@ -1310,7 +1310,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) Alignment guides — v1 follow-ups.** Auto-derived alignment guides shipped 2026-06-19 (`packages/core/src/features/guides/alignment/`: `deriveAlignmentGuides` + `matchAlignment` + `alignMoveBehavior`/`alignInsertBehavior`/`alignResizeBehavior`, rendered via `createGuidesLayer`; demo `apps/site/demos/AlignmentGuidesDemo.tsx`). Spec: `docs/superpowers/specs/2026-06-19-alignment-guides-design.md`. Multi-select drag alignment shipped 2026-06-19 (`alignMoveBehavior` matches the selection's union AABB via `unionBounds`). Remaining deferred: (a) **Figma-style segment rendering** — line spanning only between the aligned objects with end ticks / offset labels, instead of full-canvas lines (needs a span-aware layer, not just axis+offset); (b) **equal-spacing / distribution guides** ("equal gaps" across 3+ objects). Rotated-object alignment is done: both ends read `AlignBoundsProjection.boundsOf`, which returns the rotated AABB.
 
-- **(P3) Reconcile `BandEditor` with `Slider`.** `BandEditor` (bands: a contiguous tiling of an axis, seams draggable, each band carrying a payload) ships alongside `Slider` (a thumb list on an axis, `constraint: 'ordered'`, `onAddThumb`/`onRemoveThumb`, `renderTrack`). Under a contiguous tiling the two are the same control — N seams determine N+1 bands, so seams *are* an ordered thumb list — and they were kept separate deliberately: bridging them means teaching `Slider` about the region *between* thumbs (payload, hit-testing, selection), which is the wider change the reconciliation actually requires. The other trigger is `Slider` needing a non-linear axis. A third option arrived with `windease` 1.0 (2026-08-20): its `LayoutStrategy` is public API — `layout()` returns placements plus affordances, `reduce()` folds a gutter drag into strategy state — so a band control is a strategy you write rather than a control you build, and it brings widened gutter grab targets, `affects` for lock suppression, and — as of 1.2.0 — keyboard-operable gutters with it (`role="separator"` with the value triple, arrows plus Home/End, each keypress synthesized into the same drag event the pointer sends so the strategy clamps once). It ships no band strategy of its own: the two built-ins are `gridStrategy` and `stripStrategy`, and strip is `LayoutStrategy<void>` whose gutters are single-child `resize-x` affordances writing pixel `placement.size`. Mapping domain values onto seams is still the consumer's. Note `Slider` is the former `RangePicker` (renamed in `9e934725`); `docs/specs/2026-05-09-range-picker-design.md` still uses the old name, and `RangeSlider`'s doc comment calling `Slider` "canvas-scrub" is stale from the same rename.
+- **(P3) Reconcile `BandEditor` with `Slider`.** `BandEditor` (bands: a contiguous tiling of an axis, seams draggable, each band carrying a payload) ships alongside `Slider` (a thumb list on an axis, `constraint: 'ordered'`, `onAddThumb`/`onRemoveThumb`, `renderTrack`). Under a contiguous tiling the two are the same control — N seams determine N+1 bands, so seams *are* an ordered thumb list — and they were kept separate deliberately: bridging them means teaching `Slider` about the region *between* thumbs (payload, hit-testing, selection), which is the wider change the reconciliation actually requires. The other trigger is `Slider` needing a non-linear axis. A third option arrived with `windease` 1.0 (2026-08-20): its `LayoutStrategy` is public API — `layout()` returns placements plus affordances, `reduce()` folds a gutter drag into strategy state — so a band control is a strategy you write rather than a control you build, and it brings widened gutter grab targets, `affects` for lock suppression, and — as of 1.2.0 — keyboard-operable gutters with it (`role="separator"` with the value triple, arrows plus Home/End, each keypress synthesized into the same drag event the pointer sends so the strategy clamps once). It ships no band strategy of its own: the two built-ins are `gridStrategy` and `stripStrategy`, and strip is `LayoutStrategy<void>` whose gutters are single-child `resize-x` affordances writing pixel `placement.size`. Mapping domain values onto seams is still the consumer's. Note `Slider` is the former `RangePicker`; its spec carries a banner saying so.
 
 - **(P3) windease follow-ups, now that labkit is on it.** `labkit` depends on `windease ^1.2.1` (`~/src/windease`, `orochi235/windease` — a browser window manager: nodes with capabilities, pure `LayoutStrategy` functions, DnD, JSON snapshots) and `Workspace.tsx` tiles through its `gridStrategy` and `Store`. `gridDims.ts` is gone, as the evaluation predicted: `gridStrategy` auto-balances to `ceil(sqrt(n))` on its own.
 
@@ -1454,8 +1454,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   lockstep `fixed` group so its version tracks the scoped packages. Publishing
   is one `private` flag away once a name is settled. Options: pick a different
   unscoped name, or decide the scoped `@weasel-js/core` is the only entry point
-  we want and delete the alias. Until then `npm install weasel-js` doesn't work
-  and no docs should claim it does.
+  we want and delete the alias. Its README says so.
 
 ### Plugin/bundling convention
 
@@ -1949,12 +1948,11 @@ Deferred, with the rationale in `eslint.config.js` next to each:
 
 ## Documentation
 
-- **(P3) `docs/audits/2026-05-05-exported-api.csv` records signatures that have
-  changed.** `caretIndexAt` and `fitTextPose` both dropped their
-  `CanvasRenderingContext2D` on 2026-08-29, and the audit still lists the old
-  shapes. It is a dated snapshot rather than maintained reference, so this only
-  matters if the audit is meant to be re-runnable — in which case the thing to
-  build is the regeneration script, not a hand-edit.
+- **(P3) `docs/audits/2026-05-05-exported-api.csv` has no regeneration script.**
+  The two signatures that had drifted (`caretIndexAt` and `fitTextPose`, which
+  dropped their `CanvasRenderingContext2D` on 2026-08-29) are corrected, but the
+  file is a hand-maintained snapshot and will drift again. Decide whether it is
+  meant to be re-runnable; if so the thing to build is the generator.
 
 - **(P2) README pitch sweep.** Initial draft landed; the `docs/` long-form sweep was completed (all hook names and import paths match the post-extraction surface). A re-pass before 0.1.0.
 
