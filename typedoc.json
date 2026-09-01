@@ -52,24 +52,13 @@
     // consolidating them is a real API decision, not a docs fix.
     "Point",
     "HandScratch",
-    "LineScratch",
-    "PencilScratch",
-    "SelectScratch",
-    "PenEditState",
     "HitAdapter",
     "BooleanZOrder",
     "ReorderAdapter",
-    "ToolsDispatcherOptions",
     "CreateDebugOverlayLayerOpts",
     "STANDARD_SLOTS",
     "KeyBinding",
-    "AreaSelectController",
-    "InsertController",
-    "MoveController",
-    "ResizeController",
-    "RotateController",
     "PenAnchor",
-    "PencilPoint",
     "View"
   ]
 }

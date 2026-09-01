@@ -1996,14 +1996,18 @@ Deferred, with the rationale in `eslint.config.js` next to each:
     described two existing consumers out of existence. It is now `@experimental`
     at its own definition, matching `ActionEnabledResult` and the rest of the
     `enabled` predicate surface.
-  - **Six typedoc warnings, all the same shape and all pre-existing** (the count
-    did not move across the sweep). Each is a type referenced by an exported
-    symbol but not itself exported — `Scale2`, `DEFAULT_INK`,
-    `useContributions` in core; `LongPressSpec` and `LongPressEvent` in
-    gestures — plus eleven stale entries in `typedoc.json`'s
-    `intentionallyNotExported` list. These are barrel decisions, not docs bugs.
-    Note that typedoc does not warn about missing JSDoc, so its warning count
-    was never a coverage measure.
+  - **Seventeen typedoc warnings, all barrel decisions.** Thirteen are a type
+    referenced by an exported symbol but not itself exported —
+    `NON_SHAPE_BUILTIN_TOOLS`, `SHAPE_KINDS`, `ShapeKindsWhere`,
+    `KitInsertShape`, `ShaderProgram`, `ToolPrefBase`, `SelectionStore`,
+    `Polyline`, `ReorderArgs`, `Scale2`, `WeaselProviderProps`,
+    `PinchZoomTarget`, `StyleToggle`. Four are `{@link}`s to symbols in the
+    same position (`DEFAULT_INK` twice, `SelectionHandlesLayerOpts.rotationHandle`,
+    `useContributions`). Each one asks the same question — export it, or leave
+    it internal and accept the warning — and answering them is an API pass, not
+    a docs fix. The stale `intentionallyNotExported` entries and the dangling
+    `TextStyle.stroke` link are gone. Note that typedoc does not warn about
+    missing JSDoc, so its warning count was never a coverage measure.
   - **`@weasel-js/ui`'s live/committed callback pair is now spelled one way:
     `onInput` live, `onChange` committed.** It used to be four ways, two of
     which disagreed about what `onChange` meant. `Slider`, `ResizeHandle`,

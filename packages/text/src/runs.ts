@@ -22,9 +22,8 @@ export interface StyledRun {
   fontFamily?: string;
   fontSize?: number;
   fill?: FillStyle;
-  /** Outline over this run's glyphs. Overrides the node style's stroke;
-   *  absent inherits it. Only painted on the outline tier — see
-   *  {@link TextStyle.stroke}. */
+  /** Outline over this run's glyphs. Overrides the node's own `data.stroke`;
+   *  absent inherits it. Only painted on the outline tier. */
   stroke?: Stroke;
   letterSpacing?: number;
   underline?: boolean;
