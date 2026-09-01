@@ -28,11 +28,11 @@ Priority tags:
 **Text**
 - Text cannot say "no fill", so outline-only text is unreachable → [Text](#text)
 - Cross-browser overlay alignment → [Text](#text)
-- No editor surface for superscript / subscript → [Text](#text)
 - `apps/draw` drops every run's styling on SVG export and copy → [Text](#text)
 - Small caps and text-transform have no run spelling → [Text](#text)
 
 **Scene, adapters & layout**
+- A stroke with no `paint` still throws outside the painters → [Rendering & paint](#rendering--paint)
 - `arrayAdapter` as default Canvas adapter — full unification → [Scene, adapters & layout](#scene-adapters--layout)
 - Layout strategies: drop rejection signal → [Scene, adapters & layout](#scene-adapters--layout)
 - Layout strategies: multi-select drag into a layout container → [Scene, adapters & layout](#scene-adapters--layout)
@@ -638,6 +638,19 @@ Core five + Crop shipped. Remaining:
 
 ---
 
+- **(P2) A stroke with no `paint` still throws outside the painters.** The
+  producer is fixed (`SelectionPanel`'s object leaf seeds from the leaf's
+  `default`, so a field written onto a node with no stroke materializes a
+  whole one) and the painters read such a stroke as no stroke. Documents
+  saved before that fix can still hold one, and four paths still dereference
+  `stroke.paint` unguarded: `packages/core/src/renderer/draw.ts:1066` and
+  `:1145` for any `DrawCommand` arriving from a consumer painter or overlay,
+  `apps/draw/src/svgExport.ts:103`, `apps/draw/src/svgInterop.ts:172`, and
+  `packages/svg/src/serialize.ts:272,294` — so exporting such a document
+  throws. Either normalize on load or make `Stroke.paint` optional in the type
+  and honest everywhere; a guard per call site is the version that rots.
+  Recorded 2026-08-30.
+
 ## Text
 
 - **(P3) `.dfont` machine faces still can't reach the outline tier.** The
@@ -669,18 +682,16 @@ Core five + Crop shipped. Remaining:
 
 - **(P2) Cross-browser overlay alignment.** `placeOverlay` uses an empirical `(+1, -1)` CSS-px nudge to compensate for canvas/CSS rasterization disagreement. Works on the dev setup; not universally correct across browsers/fonts/DPRs. A self-correcting probe was attempted and rejected.
 
-- **(P3) `rangeStyle` and the un-set toggle disagree about the node's flags.**
-  Surfaced 2026-08-16 while wiring `setStyle` through `useSceneTextEdit` (the
-  scene wrapper now supplies it by default, so a scene-wired consumer no longer
-  has to, and `apps/draw`'s bar works). `styleAtRange` reads the *runs* alone,
-  so over a plain run inside a `fontWeight: 700` node it reports `bold: false`
-  — and `useTextEdit`'s Cmd+B reads the same value, so the keystroke *adds*
-  bold rather than clearing the node flag. The `setStyle` path is reachable
-  only when the runs are themselves bold. Consumers paper over the display half
-  by merging the node style in (draw's `effectiveRangeStyle`), which means the
-  bar shows bold while the toggle believes otherwise. Decide whether
-  `rangeStyle` should fold in the node style — and if so, `current` in the
-  toggle has to fold it too, or the two drift the other way.
+- **(P3) `rangeStyle` reports the runs alone; consumers merge the node style.**
+  The toggle half of this is resolved: `patchForToggle` in `useTextEdit` reads
+  `nodeHasFlag` as well as the range, so Cmd+B inside a `fontWeight: 700` node
+  clears bold rather than adding it, and the un-set rewrite is reachable from
+  the bar and from a collapsed caret rather than only from the keyboard over a
+  range. What remains is the display half: `styleAtRange` still reports the
+  runs alone, so every consumer that wants "what is actually rendering" merges
+  the node style itself (draw's `effectiveRangeStyle`). Decide whether that
+  merge belongs in the kit — and if so, whether `rangeStyle` should carry it
+  or a second reader should.
 
   Unchanged and deliberate: a node at `fontWeight: 900` stays declined
   (`applied: false`) — `run.bold` is exactly 700, so pushing the weight onto
@@ -736,70 +747,6 @@ Core five + Crop shipped. Remaining:
 - **(P3) Complex-script text shaping (HarfBuzz).** `packages/core/src/features/text/atlas/layoutRuns.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping or reordering. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs.
 
 - **(P3) eric `labelHelpers.ts` deletion check.** Investigate whether eric (`~/src/eric`) can delete its local `labelHelpers.ts` after the text world-unit pass landed. If consumer-side world-unit helpers still cover gaps the primitives don't (e.g. world↔screen pad conversion at the call site), capture the remaining gap as a follow-up primitive proposal.
-
-- **(P2) Superscript / subscript have no editor surface.** `StyledRun.script`,
-  `baselineShift` and `fontScale` reach layout, the DOM overlay and SVG, but
-  nothing lets a user apply them: `setFlagOverRange` / `FlagKey` model additive
-  *booleans*, and `script` is a three-state enum (`'super'` / `'sub'` / none)
-  whose two values are mutually exclusive, so it needs its own toggle path
-  rather than a fifth flag. `useTextEdit`'s `FLAG_SHORTCUTS` and draw's
-  `CharacterOptions` both stop at the four booleans. Blocked behind the same
-  question as the entry above on `rangeStyle` and the un-set toggle: `script`
-  is run-level only by design, so a collapsed caret has no node-level field to
-  write to, which is exactly the case that entry leaves undecided. Decide that
-  one first. Recorded 2026-08-30.
-
-- **(P3) No vertical writing modes — traditional Japanese and Chinese cannot
-  be set.** Layout hard-codes horizontal: the pen advances in x, `LaidOutCell.x`
-  is an inline offset named for an axis, and `baselineY` names the other one.
-  Tategaki needs `writing-mode` (`horizontal-tb` / `vertical-rl` /
-  `vertical-lr`), where lines stack right-to-left and characters flow downward.
-
-  This is a bigger change than bidi rather than a peer of it, and the reason is
-  the public output: bidi is confined to ordering *within* a line, while
-  vertical changes the coordinate system every consumer reads. The honest
-  version makes the walk work in inline/block axes and maps to x/y once at the
-  end, the way CSS does — after which `cell.x` is an inline offset that happens
-  to be horizontal, rather than one that is horizontal by construction.
-
-  Three pieces beyond the axis swap. `text-orientation` decides whether a
-  character stands upright or rotates 90°, and it is *per character* off UAX
-  #50's `Vertical_Orientation` — embedded Latin rotates while CJK stays
-  upright, inside the same run. Vertical metrics come from the font's `vhea` /
-  `vmtx` tables, which a BMFont atlas does not carry at all. And the `vert` /
-  `vrt2` features substitute vertical forms of punctuation, so 、。「」 sit
-  where they belong — the same glyph-id plumbing the entry below needs, which
-  is the argument for building that seam once rather than twice.
-
-  Kinsoku shori (prohibited line-start and line-end characters) is a separate,
-  separable concern: it is a line-breaking rule, not a writing-mode one, and
-  applies to horizontal Japanese too.
-
-- **(P3) Arabic renders unjoined — no OpenType shaping.** Bidi puts an Arabic
-  run in the right visual order, and it still comes out as a row of isolated
-  letterforms, because joining is a substitution and not a reordering: the
-  `arab` script's `init` / `medi` / `fina` / `isol` features in `GSUB` pick a
-  contextual form per letter from its neighbours' joining classes. weasel reads
-  `kern` pairs and nothing else, so no substitution table is consulted at all.
-  Hebrew, Divehi and the other non-joining RTL scripts are unaffected and are
-  correct once bidi lands.
-
-  Where it plugs in: between run resolution and the layout walk, as a step that
-  maps a run's code points to *glyph ids* — which is the piece that does not
-  exist today. `layoutRuns` walks code points and looks each one up with
-  `metrics.advanceOf(cp)` / `charMap.get(cp)`, so a code point *is* a glyph
-  there. Shaping breaks that identity: one code point can select a different
-  glyph by context, and a ligature makes several code points one glyph. So the
-  walk has to carry `(glyphId, srcIndex, srcEnd)` rather than `cp`, and
-  `LaidOutCell` already has the shape to absorb it — a cluster spanning several
-  code points is cells sharing an `x`, the way a combining mark already is.
-  `MetricsSource` grows a glyph-id lookup beside its code-point one.
-
-  The same seam serves small caps (`smcp`) and real ligatures, which is why it
-  is worth building as glyph-id plumbing rather than an Arabic special case.
-  The atlas tier is the harder half: a baked BMFont atlas is keyed by code
-  point, so contextual forms need the outline tier or a dynamic atlas keyed by
-  glyph id.
 
 - **(P3) Small caps and `text-transform` have no run spelling.** The two
   remaining gaps in the run style model after the superscript pass. Both are
