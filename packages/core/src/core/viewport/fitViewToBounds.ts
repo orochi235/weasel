@@ -1,4 +1,5 @@
 import type { View } from './view';
+import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from './zoomBounds';
 
 /**
  * Axis-aligned rectangle in world space. Kit-wide `Bounds` shape used by
@@ -45,15 +46,6 @@ export interface FitViewToBoundsOptions {
 }
 
 /**
- * System-wide max scale used by viewport fits. Mirrors `DEFAULT_MAX_ZOOM` in
- * `wheelHandler.ts` / `useZoom`. Kept private here intentionally — consumers
- * who need a custom cap should pass `maxScale` explicitly.
- */
-const SYSTEM_MAX_SCALE = 10;
-/** System-wide min scale. Mirrors `DEFAULT_MIN_ZOOM`. */
-const SYSTEM_MIN_SCALE = 0.1;
-
-/**
  * Compute the target {@link View} that fits `bounds` (world space) inside
  * `viewportDims` (CSS px). The bounds are centered in the viewport with
  * uniform padding on all sides; the resulting scale is clamped to the
@@ -75,7 +67,7 @@ export function fitViewToBounds(
   currentView: View,
   opts: FitViewToBoundsOptions = {},
 ): View {
-  const { padding = 16, maxScale = SYSTEM_MAX_SCALE, minScale = SYSTEM_MIN_SCALE } = opts;
+  const { padding = 16, maxScale = DEFAULT_MAX_ZOOM, minScale = DEFAULT_MIN_ZOOM } = opts;
 
   if (bounds.width <= 0 || bounds.height <= 0) {
     console.warn('[weasel] fitViewToBounds: bounds has zero or negative area; returning currentView unchanged.', bounds);

@@ -107,6 +107,7 @@ export * from './core/viewport/fitToBounds';
 export { fitViewToBounds } from './core/viewport/fitViewToBounds';
 export type { Bounds, ViewportDims, FitViewToBoundsOptions } from './core/viewport/fitViewToBounds';
 export { zoomAt } from './core/viewport/zoomAt';
+export { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from './core/viewport/zoomBounds';
 export type { ZoomClampOpts } from './core/viewport/zoomAt';
 export { clampView } from './core/viewport/clampView';
 export type { ClampBounds, CanvasSize } from './core/viewport/clampView';

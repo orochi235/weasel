@@ -4,9 +4,11 @@
  * the focal-point zoom math is needed without React lifecycle.
  *
  * Conventions match the rest of the kit: `zoom` is a multiplier where `1`
- * means 100%. The default bounds are `{ min: 0.1, max: 10 }` (10% – 1000%),
- * matching `useZoom`'s defaults.
+ * means 100%. The default bounds are the kit's system-wide zoom clamp
+ * ({@link DEFAULT_MIN_ZOOM} – {@link DEFAULT_MAX_ZOOM}).
  */
+
+import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from './zoomBounds';
 
 /** Pure viewport state consumed and returned by `computeWheelAction`. */
 export interface WheelState {
@@ -25,9 +27,6 @@ export interface WheelInput {
   shiftKey?: boolean;
   metaKey?: boolean;
 }
-
-const DEFAULT_MIN_ZOOM = 0.1;
-const DEFAULT_MAX_ZOOM = 10;
 
 /** Inclusive `[min, max]` zoom clamp for `computeWheelAction`. Multiplier scale. */
 export interface ZoomBounds { min: number; max: number; }

@@ -36,6 +36,7 @@
 import type { Action } from '../registry';
 import type { ViewApi } from '../depSchema';
 import { zoomAt } from 'core/viewport/zoomAt';
+import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from 'core/viewport/zoomBounds';
 import type { View } from 'core/viewport/view';
 import type { ViewAnimationOptions } from 'core/viewport/useViewAnimation';
 
@@ -102,7 +103,7 @@ export interface ViewportZoomOptions {
 export function makeViewportZoomAction(
   opts: ViewportZoomOptions = {},
 ): Action & { requires: string[] } {
-  const clamp = { min: opts.min ?? 0.1, max: opts.max ?? 8 };
+  const clamp = { min: opts.min ?? DEFAULT_MIN_ZOOM, max: opts.max ?? DEFAULT_MAX_ZOOM };
   // 'plain': bare wheel (omitting `mods` forbids any modifier — see the
   // matcher's strict modifier check). 'mod': Cmd/Ctrl+wheel.
   const wheelSpec =

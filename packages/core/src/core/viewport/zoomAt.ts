@@ -1,6 +1,8 @@
 import type { View, ZoomFactor, ZoomBound } from './view';
+import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from './zoomBounds';
 
-/** Optional clamp bounds for `zoomAt`. Defaults: min=0.1, max=8 (per axis). */
+/** Optional clamp bounds for `zoomAt`. Defaults: {@link DEFAULT_MIN_ZOOM} /
+ *  {@link DEFAULT_MAX_ZOOM} (per axis). */
 export interface ZoomClampOpts {
   min?: ZoomBound;
   max?: ZoomBound;
@@ -32,10 +34,10 @@ export function zoomAt(
 ): View {
   const fx = typeof factor === 'number' ? factor : factor.x;
   const fy = typeof factor === 'number' ? factor : factor.y;
-  const minX = typeof opts?.min === 'number' ? opts.min : opts?.min?.x ?? 0.1;
-  const minY = typeof opts?.min === 'number' ? opts.min : opts?.min?.y ?? 0.1;
-  const maxX = typeof opts?.max === 'number' ? opts.max : opts?.max?.x ?? 8;
-  const maxY = typeof opts?.max === 'number' ? opts.max : opts?.max?.y ?? 8;
+  const minX = typeof opts?.min === 'number' ? opts.min : opts?.min?.x ?? DEFAULT_MIN_ZOOM;
+  const minY = typeof opts?.min === 'number' ? opts.min : opts?.min?.y ?? DEFAULT_MIN_ZOOM;
+  const maxX = typeof opts?.max === 'number' ? opts.max : opts?.max?.x ?? DEFAULT_MAX_ZOOM;
+  const maxY = typeof opts?.max === 'number' ? opts.max : opts?.max?.y ?? DEFAULT_MAX_ZOOM;
 
   const nextX = clampScale(view.scale.x * fx, minX, maxX);
   const nextY = clampScale(view.scale.y * fy, minY, maxY);

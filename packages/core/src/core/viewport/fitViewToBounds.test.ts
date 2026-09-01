@@ -47,15 +47,15 @@ describe('fitViewToBounds', () => {
     expect(v.scale.y).toBeCloseTo(1.68, 5);
   });
 
-  it('caps scale at system max (10) for tiny bounds', () => {
+  it('caps scale at system max (8) for tiny bounds', () => {
     const v = fitViewToBounds(
       { x: 0, y: 0, width: 1, height: 1 },
       { width: 1000, height: 1000 },
       CURRENT,
       { padding: 0 },
     );
-    expect(v.scale.x).toBe(10);
-    expect(v.scale.y).toBe(10);
+    expect(v.scale.x).toBe(8);
+    expect(v.scale.y).toBe(8);
   });
 
   it('respects an explicit maxScale override', () => {
@@ -150,17 +150,17 @@ describe('fitViewToBounds', () => {
 describe('fitViewToBounds — mode', () => {
   it("'fill' picks the larger axis ratio (uniform, overflows one axis)", () => {
     // bounds 10x100 in viewport 200x200 with padding 0:
-    //   sx = 200/10 = 20 (would clamp to maxScale 10)
+    //   sx = 200/10 = 20 (would clamp to maxScale 8)
     //   sy = 200/100 = 2
-    //   'fill' = max → 10 (clamped); bounds overflow on x axis
+    //   'fill' = max → 8 (clamped); bounds overflow on x axis
     const v = fitViewToBounds(
       { x: 0, y: 0, width: 10, height: 100 },
       { width: 200, height: 200 },
       CURRENT,
       { padding: 0, mode: 'fill' },
     );
-    expect(v.scale.x).toBe(10);
-    expect(v.scale.y).toBe(10);
+    expect(v.scale.x).toBe(8);
+    expect(v.scale.y).toBe(8);
   });
 
   it("'stretch' uses per-axis fit (non-uniform, bounds match viewport exactly)", () => {
@@ -170,7 +170,7 @@ describe('fitViewToBounds — mode', () => {
       CURRENT,
       { padding: 0, mode: 'stretch' },
     );
-    expect(v.scale.x).toBe(10); // clamped by maxScale
+    expect(v.scale.x).toBe(8); // clamped by maxScale
     expect(v.scale.y).toBe(2);
   });
 

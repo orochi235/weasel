@@ -34,6 +34,7 @@ import type { Action } from '../registry';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
 import type { ViewApi } from '../depSchema';
 import { zoomAt } from 'core/viewport/zoomAt';
+import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from 'core/viewport/zoomBounds';
 
 // ---------------------------------------------------------------------------
 // Internal scratch
@@ -73,7 +74,7 @@ export interface PinchZoomOptions {
 export function makePinchZoomAction(
   opts: PinchZoomOptions = {},
 ): Action & { requires: string[] } {
-  const clamp = { min: opts.min ?? 0.1, max: opts.max ?? 8 };
+  const clamp = { min: opts.min ?? DEFAULT_MIN_ZOOM, max: opts.max ?? DEFAULT_MAX_ZOOM };
   return {
     id: 'viewport.pinchZoom',
     label: 'Pinch Zoom',

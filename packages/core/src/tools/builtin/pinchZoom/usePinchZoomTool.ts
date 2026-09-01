@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { usePinchGesture } from 'core/viewport/usePinchGesture';
 import { zoomAt } from 'core/viewport/zoomAt';
+import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from 'core/viewport/zoomBounds';
 import { clientToCanvas } from 'core/viewport/clientToCanvas';
 import type { View } from 'core/viewport/view';
 
@@ -48,7 +49,7 @@ export function usePinchZoomTool(
   getViewRef.current = getView;
   const setViewRef = useRef(setView);
   setViewRef.current = setView;
-  const { min = 0.1, max = 8, enabled = true } = opts;
+  const { min = DEFAULT_MIN_ZOOM, max = DEFAULT_MAX_ZOOM, enabled = true } = opts;
   const resolveTargetRef = useRef(opts.resolveTarget);
   resolveTargetRef.current = opts.resolveTarget;
 

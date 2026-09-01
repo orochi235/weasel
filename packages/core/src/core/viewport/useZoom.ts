@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from 'react';
+import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from './zoomBounds';
 
 /**
  * @deprecated Prefer the descriptor-based viewport idiom: `<SceneCanvas>` now
@@ -66,8 +67,8 @@ function isEditableTarget(t: EventTarget | null): boolean {
 export function useZoom(
   opts: UseZoomOptions,
 ): UseZoomReturn {
-  const min = opts.min ?? 0.1;
-  const max = opts.max ?? 10;
+  const min = opts.min ?? DEFAULT_MIN_ZOOM;
+  const max = opts.max ?? DEFAULT_MAX_ZOOM;
   const wheelStep = opts.wheelStep ?? 1.1;
   const keyStep = opts.keyStep ?? 1.25;
 

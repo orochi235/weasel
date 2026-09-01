@@ -44,10 +44,10 @@ describe('useZoom — clamp policy', () => {
     expect(setPan).toHaveBeenCalledWith({ x: 0, y: 0 });
   });
 
-  it('uses default range [0.1, 10] when min/max omitted', () => {
+  it('uses default range [0.1, 8] when min/max omitted', () => {
     const { result, setZoom } = setup({ zoom: 1 });
     act(() => result.current.zoomTo(1000));
-    expect(setZoom).toHaveBeenCalledWith(10);
+    expect(setZoom).toHaveBeenCalledWith(8);
     setZoom.mockClear();
     act(() => result.current.zoomTo(0.0001));
     expect(setZoom).toHaveBeenCalledWith(0.1);
