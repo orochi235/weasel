@@ -169,6 +169,18 @@ Things that pass every test and are still wrong.
 row whose `flex: 1` resolved to nothing inside a block container, so the lab rendered as an empty
 page — with all 7903 tests green. Screenshot anything that changes a container's box.
 
+**A jsdom API that exists but has no consequence produces a test that cannot fail.**
+`setPointerCapture` is a real function there: it records the call and does nothing else, so
+`pointerup` is never retargeted and the element the browser would synthesize `click` on does not
+change. `FloatingPanel` captured on pointerdown — which in a browser kills the click on every
+non-native child — and the obvious test, that the child's `onClick` fired, passed before the fix
+and after it. This is what makes watch-it-fail the load-bearing half of TDD rather than a step of
+write-it-first: when a test written to fail doesn't, you are asserting the emulation. Assert a
+proxy on this side of the boundary instead — here, that nothing called `setPointerCapture` — and
+say in the test that it is a proxy. A stand-in that drops *cost* rather than behavior does the
+same to an efficiency claim: a fake client makes "refetches only when its inputs changed" green
+against a hook that refetches unconditionally.
+
 **Storybook's theme global does not switch weasel's theme.** `tokens.css` keys its mode blocks
 off `[data-wzl-mode]`, which `applyTheme` writes. `&globals=theme:dark` sets `data-theme`, which
 nothing reads, so a "both themes" check driven from the URL verifies one theme twice — whichever
