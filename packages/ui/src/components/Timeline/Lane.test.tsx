@@ -248,4 +248,56 @@ describe('Lane segment selection', () => {
     expect(resolveEasingSpy.mock.calls.length).toBeLessThan(5);
     resolveEasingSpy.mockRestore();
   });
+
+  describe('drag ghost', () => {
+    const grab = (i: number) =>
+      fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[i], { clientX: 0, clientY: 10, button: 0 });
+
+    it('shows no ghost until a drag starts', () => {
+      render(<Lane {...base} row={laneOf(sampled)} />);
+      expect(screen.queryByTestId('timeline-key-ghost')).not.toBeInTheDocument();
+    });
+
+    it('puts the ghost on the grabbed key before the pointer has moved', () => {
+      render(<Lane {...base} row={laneOf(sampled)} />);
+      grab(1);
+      expect(screen.getByTestId('timeline-key-ghost')).toHaveStyle({ left: '50%' });
+    });
+
+    it('moves the ghost with the pointer without committing', () => {
+      const onKeyCommit = vi.fn();
+      render(<Lane {...base} row={laneOf(sampled)} onKeyCommit={onKeyCommit} />);
+      grab(1);
+      fireEvent.pointerMove(document, { clientX: 400, clientY: 10 });
+      expect(screen.getByTestId('timeline-key-ghost')).toHaveStyle({ left: '80%' });
+      expect(onKeyCommit).not.toHaveBeenCalled();
+    });
+
+    it('marks the grabbed key as the drag origin, so it can be dimmed', () => {
+      render(<Lane {...base} row={laneOf(sampled)} />);
+      grab(1);
+      expect(screen.getAllByTestId('timeline-key')[1]).toHaveAttribute('data-dragging', 'true');
+      expect(screen.getAllByTestId('timeline-key')[0]).not.toHaveAttribute('data-dragging');
+    });
+
+    it('clears the ghost on pointerup', () => {
+      render(<Lane {...base} row={laneOf(sampled)} />);
+      grab(1);
+      fireEvent.pointerUp(document, { clientX: 400, clientY: 10 });
+      expect(screen.queryByTestId('timeline-key-ghost')).not.toBeInTheDocument();
+    });
+
+    it('clears the ghost when the gesture is cancelled', () => {
+      render(<Lane {...base} row={laneOf(sampled)} />);
+      grab(1);
+      fireEvent.pointerCancel(document, { clientX: 400, clientY: 10 });
+      expect(screen.queryByTestId('timeline-key-ghost')).not.toBeInTheDocument();
+    });
+
+    it('ghosts an event crossing too', () => {
+      render(<Lane {...base} row={laneOf(eventTrack)} />);
+      fireEvent.pointerDown(screen.getAllByTestId('timeline-event')[0], { clientX: 0, clientY: 10, button: 0 });
+      expect(screen.getByTestId('timeline-key-ghost')).toBeInTheDocument();
+    });
+  });
 });

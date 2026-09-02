@@ -86,6 +86,25 @@
 .key[aria-current='true'], .eventMark[aria-current='true'] { background: var(--wzl-accent-strong); }
 .key:focus-visible, .eventMark:focus-visible { outline: 2px solid var(--wzl-focus-ring); outline-offset: 1px; }
 
+/* The key stays drawn where it was committed while its ghost tracks the
+   pointer, so the drag reads as a move from somewhere to somewhere. */
+.key[data-dragging='true'], .eventMark[data-dragging='true'] { opacity: 0.4; }
+
+.keyGhost, .eventGhost {
+  position: absolute;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  margin-left: -4.5px;
+  background: var(--wzl-accent-soft);
+  border: 1px dashed var(--wzl-accent-strong);
+  pointer-events: none;
+}
+
+.keyGhost { transform: translateY(-50%) rotate(45deg); }
+.eventGhost { transform: translateY(-50%); border-radius: 50%; }
+.lane[data-mode='graph'] .keyGhost { top: auto; transform: translateY(50%) rotate(45deg); }
+
 .curve {
   position: absolute;
   inset: 0;

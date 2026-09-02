@@ -74,6 +74,11 @@ export function Lane(props: LaneProps): ReactElement {
   // Distinct from the committed spec on the key so a preview never writes it.
   const [dragBezier, setDragBezier] = useState<{ keyIndex: number; points: readonly [number, number, number, number] } | null>(null);
 
+  // Where the dragged key would land. Owned here rather than derived from the
+  // tracks prop, so a drag previews whether or not the consumer wires
+  // `onKeyInput` — the committed key stays put underneath as the origin.
+  const [drag, setDrag] = useState<{ keyIndex: number; t: number; value?: number } | null>(null);
+
   const span = win.to - win.from;
   const pct = (ms: number): string => `${span === 0 ? 0 : ((ms + row.offset - win.from) / span) * 100}%`;
 
@@ -160,18 +165,20 @@ export function Lane(props: LaneProps): ReactElement {
     };
     const up = (ev: PointerEvent): void => {
       points = at(ev);
-      setDragBezier(null);
       onEasingCommit?.(segIndex, { bezier: points });
       end();
     };
     const end = (): void => {
+      setDragBezier(null);
       document.removeEventListener('pointermove', move);
       document.removeEventListener('pointerup', up);
       document.removeEventListener('pointercancel', end);
+      endDragRef.current = null;
     };
     document.addEventListener('pointermove', move);
     document.addEventListener('pointerup', up);
     document.addEventListener('pointercancel', end);
+    endDragRef.current = end;
   };
 
   const onKeyPointerDown = (i: number) => (e: ReactPointerEvent<HTMLDivElement>): void => {
@@ -188,8 +195,11 @@ export function Lane(props: LaneProps): ReactElement {
     const valueOf = (ev: { clientY: number }): number | undefined =>
       graph ? valueAt(ev.clientY) : undefined;
 
+    setDrag({ keyIndex: i, t: times[i], value: values[i] });
+
     const move = (ev: PointerEvent): void => {
       const v = valueOf(ev);
+      setDrag({ keyIndex: i, t: at(ev), value: v ?? values[i] });
       if (v === undefined) onKeyInput(i, at(ev)); else onKeyInput(i, at(ev), v);
     };
     const up = (ev: PointerEvent): void => {
@@ -198,6 +208,7 @@ export function Lane(props: LaneProps): ReactElement {
       end();
     };
     const end = (): void => {
+      setDrag(null);
       document.removeEventListener('pointermove', move);
       document.removeEventListener('pointerup', up);
       document.removeEventListener('pointercancel', end);
@@ -278,12 +289,23 @@ export function Lane(props: LaneProps): ReactElement {
             aria-label={`${row.label} key at ${Math.round(t)} ms`}
             aria-current={selection === i ? 'true' : undefined}
             data-testid={row.kind === 'event' ? 'timeline-event' : 'timeline-key'}
+            data-dragging={drag?.keyIndex === i ? 'true' : undefined}
             className={row.kind === 'event' ? s.eventMark : s.key}
             style={graph ? { left: pct(t), bottom: `${vPct(values[i])}%` } : { left: pct(t) }}
             onPointerDown={onKeyPointerDown(i)}
             onKeyDown={onKeyDown(i, t)}
           />
         ))}
+        {drag ? (
+          <div
+            aria-hidden="true"
+            data-testid="timeline-key-ghost"
+            className={row.kind === 'event' ? s.eventGhost : s.keyGhost}
+            style={graph && drag.value !== undefined
+              ? { left: pct(drag.t), bottom: `${vPct(drag.value)}%` }
+              : { left: pct(drag.t) }}
+          />
+        ) : null}
         {graph && activeBezier && selectedSegment != null ? (
           <>
             <div
