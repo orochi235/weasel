@@ -3,6 +3,7 @@ import type { EventTrack, SampledTrack, TimelineTrack } from '@weasel-js/core';
 import s from './Timeline.module.css';
 import { createTimeScale, type TimeWindow } from './timeScale';
 import { snapTime } from './keys';
+import { sampleEasing } from './easingSpec';
 import type { LaneRow } from './lanes';
 
 /** Snap radius, in track pixels. */
@@ -11,6 +12,9 @@ const SNAP_PX = 6;
 /** One arrow-key step, in ms; shift multiplies by ten. */
 const KEY_STEP_MS = 10;
 
+/** Samples per segment when drawing an eased curve in graph mode. */
+const CURVE_SAMPLES = 16;
+
 export interface LaneProps {
   row: LaneRow;
   window: TimeWindow;
@@ -18,10 +22,10 @@ export interface LaneProps {
   /** Index of the selected key on THIS row, or null. */
   selection: number | null;
   onSelect: (keyIndex: number) => void;
-  /** Live during a drag. */
-  onKeyInput: (keyIndex: number, toMs: number) => void;
-  /** Once, at the end of a gesture. */
-  onKeyCommit: (keyIndex: number, toMs: number) => void;
+  /** Live during a drag. `value` is set only in graph mode on a numeric row. */
+  onKeyInput: (keyIndex: number, toMs: number, value?: number) => void;
+  /** Once, at the end of a gesture. `value` is set only in graph mode on a numeric row. */
+  onKeyCommit: (keyIndex: number, toMs: number, value?: number) => void;
   onInsert: (atMs: number) => void;
   onToggleExpand: () => void;
   expanded: boolean;
@@ -36,7 +40,7 @@ function entryTimes(row: LaneRow): number[] {
 }
 
 export function Lane(props: LaneProps): ReactElement {
-  const { row, window: win, selection, onSelect, onKeyInput, onKeyCommit, onInsert, onToggleExpand, expanded, snapTimes } = props;
+  const { row, window: win, mode, selection, onSelect, onKeyInput, onKeyCommit, onInsert, onToggleExpand, expanded, snapTimes } = props;
   const trackRef = useRef<HTMLDivElement | null>(null);
   const endDragRef = useRef<(() => void) | null>(null);
   useEffect(() => () => { endDragRef.current?.(); }, []);
@@ -55,6 +59,37 @@ export function Lane(props: LaneProps): ReactElement {
     return width === 0 ? 0 : (SNAP_PX / width) * span;
   };
 
+  // Value axis: only a numeric sampled row in graph mode has an honest one.
+  const graph = mode === 'graph' && row.numeric;
+  const sampledKeys = row.kind === 'sampled' ? (row.track as SampledTrack<number>).keys : [];
+  const values = sampledKeys.map((k) => k.value);
+  const lo = graph ? Math.min(...values) : 0;
+  const hi = graph ? Math.max(...values) : 1;
+  const vSpan = hi - lo || 1;
+  const vPct = (v: number): number => ((v - lo) / vSpan) * 100;
+
+  const valueAt = (clientY: number): number => {
+    const rect = trackRef.current?.getBoundingClientRect();
+    if (!rect || rect.height === 0) return lo;
+    const frac = 1 - (clientY - rect.top) / rect.height;
+    return lo + frac * vSpan;
+  };
+
+  const curvePoints = (): string => {
+    const pts: string[] = [];
+    for (let i = 1; i < sampledKeys.length; i++) {
+      const a = sampledKeys[i - 1];
+      const b = sampledKeys[i];
+      const eased = sampleEasing(b.easing, CURVE_SAMPLES);
+      for (let j = 0; j < eased.length; j++) {
+        const t = a.t + ((b.t - a.t) * j) / (eased.length - 1);
+        const v = a.value + (b.value - a.value) * eased[j];
+        pts.push(`${span === 0 ? 0 : ((t + row.offset - win.from) / span) * 100},${100 - vPct(v)}`);
+      }
+    }
+    return pts.join(' ');
+  };
+
   const onKeyPointerDown = (i: number) => (e: ReactPointerEvent<HTMLDivElement>): void => {
     if (e.button !== 0) return;
     e.stopPropagation();
@@ -64,9 +99,18 @@ export function Lane(props: LaneProps): ReactElement {
       const raw = Math.max(0, msAt(ev.clientX));
       return ev.altKey ? raw : snapTime(raw, snapTimes, snapPxToMs());
     };
+    const valueOf = (ev: { clientY: number }): number | undefined =>
+      graph ? valueAt(ev.clientY) : undefined;
 
-    const move = (ev: PointerEvent): void => { onKeyInput(i, at(ev)); };
-    const up = (ev: PointerEvent): void => { onKeyCommit(i, at(ev)); end(); };
+    const move = (ev: PointerEvent): void => {
+      const v = valueOf(ev);
+      if (v === undefined) onKeyInput(i, at(ev)); else onKeyInput(i, at(ev), v);
+    };
+    const up = (ev: PointerEvent): void => {
+      const v = valueOf(ev);
+      if (v === undefined) onKeyCommit(i, at(ev)); else onKeyCommit(i, at(ev), v);
+      end();
+    };
     const end = (): void => {
       document.removeEventListener('pointermove', move);
       document.removeEventListener('pointerup', up);
@@ -88,7 +132,7 @@ export function Lane(props: LaneProps): ReactElement {
   const times = entryTimes(row);
 
   return (
-    <div className={s.lane} data-depth={row.depth}>
+    <div className={s.lane} data-depth={row.depth} data-mode={mode}>
       <div className={s.laneLabel}>
         {row.kind === 'timeline' ? (
           <span
@@ -118,6 +162,11 @@ export function Lane(props: LaneProps): ReactElement {
             style={{ left: pct(0), width: `${span === 0 ? 0 : ((row.track as TimelineTrack).timeline.duration ?? 0) / span * 100}%` }}
           />
         ) : null}
+        {graph && sampledKeys.length > 1 ? (
+          <svg className={s.curve} data-testid="timeline-curve" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <polyline points={curvePoints()} vectorEffect="non-scaling-stroke" />
+          </svg>
+        ) : null}
         {times.map((t, i) => (
           <div
             key={i}
@@ -127,7 +176,7 @@ export function Lane(props: LaneProps): ReactElement {
             aria-current={selection === i ? 'true' : undefined}
             data-testid={row.kind === 'event' ? 'timeline-event' : 'timeline-key'}
             className={row.kind === 'event' ? s.eventMark : s.key}
-            style={{ left: pct(t) }}
+            style={graph ? { left: pct(t), bottom: `${vPct(values[i])}%` } : { left: pct(t) }}
             onPointerDown={onKeyPointerDown(i)}
             onKeyDown={onKeyDown(i, t)}
           />

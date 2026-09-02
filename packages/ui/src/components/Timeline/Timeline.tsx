@@ -115,15 +115,27 @@ export function Timeline(props: TimelineProps): ReactElement {
       {label ? <div className={s.label}>{label}</div> : null}
 
       {props.transport === false ? null : (
-        <Transport
-          {...(props.transport ?? {
-            paused: true, loop: false, rate: 1,
-            onPlay: () => {}, onPause: () => {},
-            onLoopChange: () => {}, onRateChange: () => {},
-          })}
-          playhead={playhead}
-          duration={duration}
-        />
+        <div className={s.transportRow}>
+          <Transport
+            {...(props.transport ?? {
+              paused: true, loop: false, rate: 1,
+              onPlay: () => {}, onPause: () => {},
+              onLoopChange: () => {}, onRateChange: () => {},
+            })}
+            playhead={playhead}
+            duration={duration}
+          />
+          <button
+            type="button"
+            role="switch"
+            aria-checked={(props.mode ?? 'dope') === 'graph'}
+            aria-label="Graph mode"
+            className={s.transportButton}
+            onClick={() => props.onModeChange?.((props.mode ?? 'dope') === 'graph' ? 'dope' : 'graph')}
+          >
+            ⟿
+          </button>
+        </div>
       )}
 
       <div className={s.body}>
@@ -153,14 +165,15 @@ export function Timeline(props: TimelineProps): ReactElement {
               snapTimes={snapTimes}
               onToggleExpand={() => toggle(row.key)}
               onSelect={(keyIndex) => { if (ti >= 0) setSelection({ trackIndex: ti, keyIndex }); }}
-              onKeyInput={(keyIndex, toMs) => {
+              onKeyInput={(keyIndex, toMs, value) => {
                 if (ti < 0 || !onInput) return;
-                onInput(moveKey(tracks, { trackIndex: ti, keyIndex }, toMs).tracks);
+                const r = moveKey(tracks, { trackIndex: ti, keyIndex }, toMs);
+                onInput(value === undefined ? r.tracks : setKeyValue(r.tracks, r.selection!, value));
               }}
-              onKeyCommit={(keyIndex, toMs) => {
+              onKeyCommit={(keyIndex, toMs, value) => {
                 if (ti < 0) return;
                 const r = moveKey(tracks, { trackIndex: ti, keyIndex }, toMs);
-                onChange(r.tracks);
+                onChange(value === undefined ? r.tracks : setKeyValue(r.tracks, r.selection!, value));
                 setSelection(r.selection);
               }}
               onInsert={(atMs) => {

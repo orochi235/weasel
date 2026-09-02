@@ -134,3 +134,43 @@ describe('Lane', () => {
     expect(capture).not.toHaveBeenCalled();
   });
 });
+
+describe('Lane in graph mode', () => {
+  it('draws a curve for a numeric sampled track', () => {
+    render(<Lane {...base} mode="graph" row={laneOf(sampled)} />);
+    expect(screen.getByTestId('timeline-curve')).toBeInTheDocument();
+  });
+
+  it('positions a key by value as well as time', () => {
+    render(<Lane {...base} mode="graph" row={laneOf(sampled)} />);
+    const [first, second] = screen.getAllByTestId('timeline-key');
+    expect(first).toHaveStyle({ bottom: '0%' });
+    expect(second).toHaveStyle({ bottom: '100%' });
+  });
+
+  it('drags a key in value as well as time', () => {
+    const onKeyCommit = vi.fn();
+    render(<Lane {...base} mode="graph" row={laneOf(sampled)} onKeyCommit={onKeyCommit} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, clientY: 0, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 250, clientY: 10 });
+    fireEvent.pointerUp(document, { clientX: 250, clientY: 10 });
+    expect(onKeyCommit).toHaveBeenCalledWith(1, 500, expect.closeTo(5, 1));
+  });
+
+  it('stays a dope row for a non-numeric sampled track', () => {
+    const posed = {
+      kind: 'sampled', label: 'p',
+      keys: [{ t: 0, value: { x: 0 } }, { t: 500, value: { x: 1 } }],
+      onTick: () => {},
+    } as unknown as Track;
+    render(<Lane {...base} mode="graph" row={laneOf(posed)} />);
+    expect(screen.queryByTestId('timeline-curve')).not.toBeInTheDocument();
+    expect(screen.getAllByTestId('timeline-key')).toHaveLength(2);
+  });
+
+  it('stays a dope row for an event track', () => {
+    render(<Lane {...base} mode="graph" row={laneOf(eventTrack)} />);
+    expect(screen.queryByTestId('timeline-curve')).not.toBeInTheDocument();
+    expect(screen.getAllByTestId('timeline-event')).toHaveLength(1);
+  });
+});
