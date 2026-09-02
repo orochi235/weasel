@@ -67,6 +67,11 @@ export interface TimelineOptions extends NestedTimeline {
 export interface TimelineHandle extends AnimationHandle {
   /** Move the playhead. Never fires event tracks, at any depth. */
   seek(t: number): void;
+  /** Change the loop policy. `true` loops forever, `n` allows n more laps,
+   *  `false` stops at `duration`. Sets policy only — a timeline already parked
+   *  at `duration` does not restart, because `rearm` declines to revive one.
+   *  Rewind it with `seek(0)` and `resume()` to play it again. */
+  setLoop(loop: boolean | number): void;
   /** Current playhead in ms. */
   time(): number;
   duration(): number;

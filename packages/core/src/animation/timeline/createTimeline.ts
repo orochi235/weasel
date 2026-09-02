@@ -196,6 +196,9 @@ export function createTimeline(
     time: () => playhead,
     duration: () => duration,
     tracks: () => opts.tracks,
+    setLoop(loop) {
+      loopsLeft = loop === true ? Infinity : loop === false ? 0 : loop;
+    },
     edit(fn) {
       fn();
       caches = new WeakMap();
