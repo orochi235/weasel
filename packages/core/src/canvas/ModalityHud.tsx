@@ -9,8 +9,8 @@
  * stays in sync with tool switches and hotkey engage/disengage without
  * prop plumbing.
  */
-import { useEffect, useState } from 'react';
 import { useOptionalActiveToolContext } from '../interactions/actions/activeToolContext';
+import { useHostAnchor } from './useHostAnchor';
 import s from './ModalityHud.module.css';
 
 export interface ModalityHudProps {
@@ -24,46 +24,24 @@ export interface ModalityHudProps {
   offset?: { top?: number; right?: number };
 }
 
-interface HudState {
-  anchor: { top: number; right: number } | null;
-}
-
 export function ModalityHud({ canvasRef, modeId, offset }: ModalityHudProps) {
   const toolCtx = useOptionalActiveToolContext();
-  const [state, setState] = useState<HudState>({ anchor: null });
+  const { ref, style } = useHostAnchor(
+    () => canvasRef.current?.parentElement ?? canvasRef.current,
+    {
+      align: { x: 'end', y: 'start' },
+      offset: { x: offset?.right ?? 8, y: offset?.top ?? 220 },
+    },
+  );
 
-  useEffect(() => {
-    const readAnchor = (): HudState['anchor'] => {
-      const canvas = canvasRef.current;
-      if (!canvas) return null;
-      const host = canvas.parentElement ?? canvas;
-      const rect = host.getBoundingClientRect();
-      return { top: rect.top, right: window.innerWidth - rect.right };
-    };
-
-    const onLayout = () => setState({ anchor: readAnchor() });
-
-    onLayout();
-    window.addEventListener('scroll', onLayout, true);
-    window.addEventListener('resize', onLayout);
-    return () => {
-      window.removeEventListener('scroll', onLayout, true);
-      window.removeEventListener('resize', onLayout);
-    };
-  }, [canvasRef]);
-
-  if (!state.anchor) return null;
-
-  const top = state.anchor.top + (offset?.top ?? 220);
-  const right = state.anchor.right + (offset?.right ?? 8);
-  const style = { top, right };
+  if (!style) return null;
 
   const active = toolCtx?.active ?? null;
   const hotkeys = toolCtx?.hotkeyStack ?? [];
   const hotkeyTop = hotkeys.length > 0 ? hotkeys[hotkeys.length - 1] : null;
 
   return (
-    <div className={s.hud} style={style}>
+    <div ref={ref} className={s.hud} style={style}>
       <div className={s.row}>
         <span className={s.label}>mode</span>
         <span className={modeId ? s.value : s.valueMuted}>{modeId ?? '—'}</span>

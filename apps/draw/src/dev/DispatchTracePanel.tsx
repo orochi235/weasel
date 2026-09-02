@@ -18,6 +18,7 @@
  * "Show dev panels" pref) only in development.
  */
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
+import { useHostAnchor } from '@weasel-js/core';
 import { ActionsBar } from '@weasel-js/ui';
 import s from './DispatchTracePanel.module.css';
 import {
@@ -43,44 +44,13 @@ export interface DispatchTracePanelProps {
   anchorSelector?: string;
 }
 
-interface Anchor { left: number; bottom: number; }
-
-function readAnchor(el: Element | null): Anchor | null {
-  if (!el) return null;
-  const r = el.getBoundingClientRect();
-  return { left: r.left, bottom: window.innerHeight - r.bottom };
-}
-
 export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactElement | null {
   const { defaultCollapsed = false, anchorSelector = '.wd-canvas-host, canvas' } = props;
   const [collapsed, setCollapsed] = useState<boolean>(defaultCollapsed);
-  const [anchor, setAnchor] = useState<Anchor | null>(null);
-
-  // Track the workspace element's bottom-left in viewport coords. Mirrors
-  // CursorCoordsHud's anchor-tracking so the widget sits inside the canvas
-  // even when the page scrolls or the layout reflows.
-  useEffect(() => {
-    let raf = 0;
-    const reread = () => {
-      const el = document.querySelector(anchorSelector);
-      setAnchor(readAnchor(el));
-    };
-    const schedule = () => {
-      if (raf) return;
-      raf = window.requestAnimationFrame(() => { raf = 0; reread(); });
-    };
-    reread();
-    window.addEventListener('scroll', schedule, true);
-    window.addEventListener('resize', schedule);
-    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(schedule) : null;
-    if (ro) ro.observe(document.body);
-    return () => {
-      window.removeEventListener('scroll', schedule, true);
-      window.removeEventListener('resize', schedule);
-      if (raf) window.cancelAnimationFrame(raf);
-      ro?.disconnect();
-    };
-  }, [anchorSelector]);
+  const { ref: anchorRef, style: anchorStyle } = useHostAnchor(
+    () => document.querySelector(anchorSelector),
+    { align: { x: 'start', y: 'end' }, offset: { x: 8, y: 8 } },
+  );
   const [entries, setEntries] = useState<TraceLogEntry[]>(() => readLog().slice());
   const [expanded, setExpanded] = useState<number | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
@@ -130,15 +100,12 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
   const visible = filtered.slice(-DISPLAY_LIMIT).reverse();
   const onToggleCollapse = useCallback(() => setCollapsed((c) => !c), []);
 
-  if (!anchor) return null;
-  const INSET = 8;
-  const style: CSSProperties = {
-    left: anchor.left + INSET,
-    bottom: anchor.bottom + INSET,
-  };
+  if (!anchorStyle) return null;
+  const style: CSSProperties = anchorStyle;
 
   return (
     <aside
+      ref={anchorRef}
       className={`${s.widget} ${collapsed ? s.widgetCollapsed : ''}`}
       style={style}
     >

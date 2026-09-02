@@ -8,6 +8,7 @@
  */
 import { useEffect, useState } from 'react';
 import type { View } from 'core/viewport/view';
+import { useHostAnchor } from './useHostAnchor';
 import s from './PickHud.module.css';
 
 /** Props for `<PickHud>`. */
@@ -28,31 +29,28 @@ interface HudState {
   ids: readonly string[];
   best: string | null;
   inCanvas: boolean;
-  anchor: { top: number; right: number } | null;
 }
 
 /** Debug overlay listing every node under the pointer, with the one a click
  *  would actually select shown in bold. */
 export function PickHud({ canvasRef, viewRef, pickEvery, pickBest, offset }: PickHudProps) {
   const [state, setState] = useState<HudState>({
-    ids: [], best: null, inCanvas: false, anchor: null,
+    ids: [], best: null, inCanvas: false,
   });
+  const { ref, style } = useHostAnchor(
+    () => canvasRef.current?.parentElement ?? canvasRef.current,
+    {
+      align: { x: 'end', y: 'start' },
+      offset: { x: offset?.right ?? 8, y: offset?.top ?? 76 },
+    },
+  );
 
   useEffect(() => {
-    const readAnchor = (): HudState['anchor'] => {
-      const canvas = canvasRef.current;
-      if (!canvas) return null;
-      const host = canvas.parentElement ?? canvas;
-      const rect = host.getBoundingClientRect();
-      return { top: rect.top, right: window.innerWidth - rect.right };
-    };
-
     const onMove = (e: PointerEvent) => {
       const canvas = canvasRef.current;
       const view = viewRef.current;
-      const anchor = readAnchor();
       if (!canvas || !view) {
-        setState({ ids: [], best: null, inCanvas: false, anchor });
+        setState({ ids: [], best: null, inCanvas: false });
         return;
       }
       const rect = canvas.getBoundingClientRect();
@@ -60,7 +58,7 @@ export function PickHud({ canvasRef, viewRef, pickEvery, pickBest, offset }: Pic
         e.clientX >= rect.left && e.clientX <= rect.right &&
         e.clientY >= rect.top  && e.clientY <= rect.bottom;
       if (!inCanvas) {
-        setState({ ids: [], best: null, inCanvas: false, anchor });
+        setState({ ids: [], best: null, inCanvas: false });
         return;
       }
       const worldX = (e.clientX - rect.left) / view.scale.x + view.x;
@@ -75,31 +73,20 @@ export function PickHud({ canvasRef, viewRef, pickEvery, pickBest, offset }: Pic
       if (pickBest) {
         try { best = pickBest(worldX, worldY); } catch { best = null; }
       }
-      setState({ ids, best, inCanvas: true, anchor });
+      setState({ ids, best, inCanvas: true });
     };
 
-    const onLayout = () => setState((s) => ({ ...s, anchor: readAnchor() }));
-
     document.addEventListener('pointermove', onMove);
-    window.addEventListener('scroll', onLayout, true);
-    window.addEventListener('resize', onLayout);
-    setState((s) => ({ ...s, anchor: readAnchor() }));
 
     return () => {
       document.removeEventListener('pointermove', onMove);
-      window.removeEventListener('scroll', onLayout, true);
-      window.removeEventListener('resize', onLayout);
     };
   }, [canvasRef, viewRef, pickEvery, pickBest]);
 
-  if (!state.anchor) return null;
-
-  const top = state.anchor.top + (offset?.top ?? 76);
-  const right = state.anchor.right + (offset?.right ?? 8);
-  const style = { top, right };
+  if (!style) return null;
 
   return (
-    <div className={s.hud} style={style}>
+    <div ref={ref} className={s.hud} style={style}>
       <div className={s.header}>pickEvery ({state.ids.length})</div>
       {state.ids.length === 0 ? (
         <div className={s.empty}>{state.inCanvas ? '—' : 'off-canvas'}</div>

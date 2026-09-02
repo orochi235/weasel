@@ -3,6 +3,7 @@ import type {
 } from '../../widget';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
 import { textCommandFromRuns, pathFromD } from '@weasel-js/core';
+import { clampRectWithin } from '@weasel-js/geom';
 import {
   zoneAt, windowContentRect, applyWindowDrag, cursorForZone,
   DEFAULT_WINDOW_METRICS, type WindowMetrics, type WindowZone,
@@ -63,14 +64,26 @@ export function createWindow(opts: WindowOptions): WindowWidget {
   const minW = opts.minW ?? 80;
   const minH = opts.minH ?? m.titleH + m.edge + 40;
 
-  const clamp = (b: WidgetBounds): WidgetBounds => ({
+  const clampSize = (b: WidgetBounds): WidgetBounds => ({
     x: b.x, y: b.y, w: Math.max(minW, b.w), h: Math.max(minH, b.h),
   });
+
+  // Draw is the only place a widget learns how big its host is, so a window
+  // created but never drawn has nothing to be kept inside of.
+  let hostDims: { width: number; height: number } | null = null;
+  const clampOnHost = (b: WidgetBounds): WidgetBounds => {
+    if (!hostDims) return b;
+    const r = clampRectWithin(
+      { x: b.x, y: b.y, width: b.w, height: b.h },
+      { x: 0, y: 0, width: hostDims.width, height: hostDims.height },
+    );
+    return { ...b, x: r.x, y: r.y };
+  };
 
   let disposed = false;
   let hidden = false;
   let title = opts.title;
-  let bounds = clamp({ x: opts.x, y: opts.y, w: opts.w, h: opts.h });
+  let bounds = clampSize({ x: opts.x, y: opts.y, w: opts.w, h: opts.h });
   let dragZone: WindowZone | null = null;
   let dragStart: WidgetBounds = bounds;
   let dragOrigin = { x: 0, y: 0 };
@@ -105,11 +118,12 @@ export function createWindow(opts: WindowOptions): WindowWidget {
 
     // Ends any drag in flight: `dragStart` would otherwise still hold the
     // pre-call bounds, so the next move would rebase from stale origin.
-    setBounds(b) { assertNotDisposed(); bounds = clamp(b); dragZone = null; pressZone = null; opts.onChange?.(); },
+    setBounds(b) { assertNotDisposed(); bounds = clampOnHost(clampSize(b)); dragZone = null; pressZone = null; opts.onChange?.(); },
     setHidden(h) { assertNotDisposed(); hidden = h; opts.onChange?.(); },
     setTitle(t) { assertNotDisposed(); title = t; opts.onChange?.(); },
 
     draw(ctx: HudDrawCtx): DrawCommand[] {
+      hostDims = ctx.dims;
       const { x, y, w, h } = bounds;
       const out: DrawCommand[] = [];
 
@@ -188,9 +202,12 @@ export function createWindow(opts: WindowOptions): WindowWidget {
           if (Math.hypot(evt.x - dragOrigin.x, evt.y - dragOrigin.y) > CLICK_SLOP) {
             pressMoved = true;
           }
-          const next = applyWindowDrag(
+          const dragged = applyWindowDrag(
             dragStart, dragZone, evt.x - dragOrigin.x, evt.y - dragOrigin.y, minW, minH,
           );
+          // Only 'title' translates without resizing (zones.ts), so it is the
+          // one drag where pulling the window back cannot fight the gesture.
+          const next = dragZone === 'title' ? clampOnHost(dragged) : dragged;
           if (next.x !== bounds.x || next.y !== bounds.y || next.w !== bounds.w || next.h !== bounds.h) {
             bounds = next;
             (dragZone === 'title' ? opts.onMove : opts.onResize)?.(bounds);

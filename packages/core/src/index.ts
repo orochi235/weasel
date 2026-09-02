@@ -284,6 +284,10 @@ export { usePinchZoomTool, type PinchZoomToolOpts } from './tools/builtin/pinchZ
 export { SceneCanvas, DEFAULT_HANDLE_SIZE } from './canvas/SceneCanvas';
 export { defaultDrawOne } from './canvas/defaultDrawOne';
 export type { SceneCanvasProps, SceneCanvasHit } from './canvas/SceneCanvas';
+export { hostAnchorRect, hostAnchorCss } from './canvas/hostAnchor';
+export type { HostAnchorInput, HostAnchorAlign, HostAnchorOffset } from './canvas/hostAnchor';
+export { useHostAnchor } from './canvas/useHostAnchor';
+export type { UseHostAnchorOptions, HostAnchorStyle } from './canvas/useHostAnchor';
 export { CursorCoordsHud } from './canvas/CursorCoordsHud';
 export type { CursorCoordsHudProps } from './canvas/CursorCoordsHud';
 export { PickHud } from './canvas/PickHud';
