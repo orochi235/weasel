@@ -174,3 +174,66 @@ describe('Lane in graph mode', () => {
     expect(screen.getAllByTestId('timeline-event')).toHaveLength(1);
   });
 });
+
+describe('Lane segment selection', () => {
+  it('selects the segment running into a key', () => {
+    const onSelectSegment = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} onSelectSegment={onSelectSegment} />);
+    fireEvent.click(screen.getAllByTestId('timeline-segment')[0]);
+    expect(onSelectSegment).toHaveBeenCalledWith(1);
+  });
+
+  it('renders one segment per gap between keys', () => {
+    render(<Lane {...base} row={laneOf(sampled)} />);
+    expect(screen.getAllByTestId('timeline-segment')).toHaveLength(1);
+  });
+
+  it('renders no segments on an event row', () => {
+    render(<Lane {...base} row={laneOf(eventTrack)} />);
+    expect(screen.queryAllByTestId('timeline-segment')).toHaveLength(0);
+  });
+
+  it('drags a bezier handle in graph mode', () => {
+    const onEasingCommit = vi.fn();
+    const eased = {
+      kind: 'sampled', label: 'x',
+      keys: [{ t: 0, value: 0 }, { t: 500, value: 10, easing: { bezier: [0.4, 0, 0.2, 1] } }],
+      onTick: () => {},
+    } as unknown as Track;
+    render(<Lane {...base} mode="graph" row={laneOf(eased)} selectedSegment={1} onEasingCommit={onEasingCommit} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-bezier-handle')[0], { clientX: 100, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 150, clientY: 10 });
+    fireEvent.pointerUp(document, { clientX: 150, clientY: 10 });
+    expect(onEasingCommit).toHaveBeenCalledTimes(1);
+    expect(onEasingCommit.mock.calls[0][1]).toHaveProperty('bezier');
+  });
+
+  it('shows no bezier handles for a spec without control points', () => {
+    render(<Lane {...base} mode="graph" row={laneOf(sampled)} selectedSegment={1} />);
+    expect(screen.queryAllByTestId('timeline-bezier-handle')).toHaveLength(0);
+  });
+
+  // Guards the bezierCache-growth hazard: a naive live preview that resolves a
+  // fresh bezier spec through resolveEasing/sampleEasing on every pointermove
+  // adds one permanent cache entry per move. The fix previews through
+  // cubicBezierEasing directly, so resolveEasing sees only the initial render.
+  it('previews a bezier drag without resolving a fresh spec on every move', async () => {
+    const core = await import('@weasel-js/core');
+    const resolveEasingSpy = vi.spyOn(core, 'resolveEasing');
+    resolveEasingSpy.mockClear();
+    const eased = {
+      kind: 'sampled', label: 'x',
+      keys: [{ t: 0, value: 0 }, { t: 500, value: 10, easing: { bezier: [0.4, 0, 0.2, 1] } }],
+      onTick: () => {},
+    } as unknown as Track;
+    render(<Lane {...base} mode="graph" row={laneOf(eased)} selectedSegment={1} onEasingCommit={() => {}} />);
+    resolveEasingSpy.mockClear();
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-bezier-handle')[0], { clientX: 100, clientY: 10, button: 0 });
+    for (let i = 0; i < 30; i++) {
+      fireEvent.pointerMove(document, { clientX: 100 + i, clientY: 10 });
+    }
+    fireEvent.pointerUp(document, { clientX: 130, clientY: 10 });
+    expect(resolveEasingSpy.mock.calls.length).toBeLessThan(5);
+    resolveEasingSpy.mockRestore();
+  });
+});

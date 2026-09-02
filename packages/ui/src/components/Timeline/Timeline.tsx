@@ -1,6 +1,7 @@
 import { useMemo, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type ReactNode } from 'react';
 import type { EasingSpec, Keyframe, SampledTrack, Track } from '@weasel-js/core';
 import s from './Timeline.module.css';
+import { EasingPicker } from './EasingPicker';
 import { Lane } from './Lane';
 import { Ruler } from './Ruler';
 import { Transport, type TransportProps } from './Transport';
@@ -65,6 +66,7 @@ export function Timeline(props: TimelineProps): ReactElement {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
   const [ownWindow, setOwnWindow] = useState<TimeWindow>({ from: 0, to: duration });
   const [ownSelection, setOwnSelection] = useState<KeySelection | null>(null);
+  const [segmentSelection, setSegmentSelection] = useState<KeySelection | null>(null);
 
   const win = props.window ?? ownWindow;
   const setWindow = props.onWindowChange ?? setOwnWindow;
@@ -103,6 +105,11 @@ export function Timeline(props: TimelineProps): ReactElement {
   const selectedTrack = selection ? tracks[selection.trackIndex] : undefined;
   const selectedKey = selectedTrack?.kind === 'sampled'
     ? (selectedTrack as SampledTrack<unknown>).keys[selection!.keyIndex]
+    : undefined;
+
+  const segmentTrack = segmentSelection ? tracks[segmentSelection.trackIndex] : undefined;
+  const segmentKey = segmentTrack?.kind === 'sampled'
+    ? (segmentTrack as SampledTrack<unknown>).keys[segmentSelection!.keyIndex]
     : undefined;
 
   return (
@@ -182,6 +189,12 @@ export function Timeline(props: TimelineProps): ReactElement {
                 onChange(r.tracks);
                 setSelection(r.selection);
               }}
+              selectedSegment={segmentSelection && segmentSelection.trackIndex === ti ? segmentSelection.keyIndex : null}
+              onSelectSegment={(keyIndex) => { if (ti >= 0) setSegmentSelection({ trackIndex: ti, keyIndex }); }}
+              onEasingCommit={(keyIndex, easing) => {
+                if (ti < 0) return;
+                onChange(setKeyEasing(tracks, { trackIndex: ti, keyIndex }, easing));
+              }}
             />
           );
         })}
@@ -196,6 +209,15 @@ export function Timeline(props: TimelineProps): ReactElement {
             commit: (next) => onChange(setKeyValue(tracks, selection, next.value)),
             setEasing: (easing) => onChange(setKeyEasing(tracks, selection, easing)),
           })}
+        </div>
+      ) : null}
+
+      {segmentSelection && segmentKey ? (
+        <div className={s.inspector}>
+          <EasingPicker
+            value={segmentKey.easing}
+            onChange={(next) => onChange(setKeyEasing(tracks, segmentSelection, next))}
+          />
         </div>
       ) : null}
     </div>

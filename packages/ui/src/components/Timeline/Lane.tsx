@@ -1,9 +1,9 @@
-import { useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
-import type { EventTrack, SampledTrack, TimelineTrack } from '@weasel-js/core';
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
+import { cubicBezierEasing, type EasingSpec, type EventTrack, type SampledTrack, type TimelineTrack } from '@weasel-js/core';
 import s from './Timeline.module.css';
 import { createTimeScale, type TimeWindow } from './timeScale';
 import { snapTime } from './keys';
-import { sampleEasing } from './easingSpec';
+import { easingBezier, sampleEasing } from './easingSpec';
 import type { LaneRow } from './lanes';
 
 /** Snap radius, in track pixels. */
@@ -31,6 +31,24 @@ export interface LaneProps {
   expanded: boolean;
   /** Times a dragged key snaps to. */
   snapTimes: readonly number[];
+  /** Index of the key a selected segment runs INTO, or null. */
+  selectedSegment?: number | null;
+  onSelectSegment?: (keyIndex: number) => void;
+  /** Once, at the end of a bezier-handle drag. */
+  onEasingCommit?: (keyIndex: number, easing: EasingSpec) => void;
+}
+
+/** `count` evenly spaced samples of a bezier curve, straight from its control
+ *  points — not through `resolveEasing`. A drag writes a fresh set of control
+ *  points on every pointermove, and `resolveEasing`'s cache is keyed by them:
+ *  routing a live preview through it would leave one permanent cache entry per
+ *  pixel of drag. Only the value committed on pointerup ever reaches it. */
+function sampleBezierDirect(points: readonly [number, number, number, number], count: number): number[] {
+  const fn = cubicBezierEasing(...points);
+  const out = new Array<number>(count);
+  const last = count - 1;
+  for (let i = 0; i < count; i++) out[i] = fn(last === 0 ? 0 : i / last);
+  return out;
 }
 
 function entryTimes(row: LaneRow): number[] {
@@ -40,10 +58,17 @@ function entryTimes(row: LaneRow): number[] {
 }
 
 export function Lane(props: LaneProps): ReactElement {
-  const { row, window: win, mode, selection, onSelect, onKeyInput, onKeyCommit, onInsert, onToggleExpand, expanded, snapTimes } = props;
+  const {
+    row, window: win, mode, selection, onSelect, onKeyInput, onKeyCommit, onInsert, onToggleExpand, expanded, snapTimes,
+    selectedSegment = null, onSelectSegment, onEasingCommit,
+  } = props;
   const trackRef = useRef<HTMLDivElement | null>(null);
   const endDragRef = useRef<(() => void) | null>(null);
   useEffect(() => () => { endDragRef.current?.(); }, []);
+
+  // Live position of a bezier handle being dragged; null once the drag ends.
+  // Distinct from the committed spec on the key so a preview never writes it.
+  const [dragBezier, setDragBezier] = useState<{ keyIndex: number; points: readonly [number, number, number, number] } | null>(null);
 
   const span = win.to - win.from;
   const pct = (ms: number): string => `${span === 0 ? 0 : ((ms + row.offset - win.from) / span) * 100}%`;
@@ -80,7 +105,9 @@ export function Lane(props: LaneProps): ReactElement {
     for (let i = 1; i < sampledKeys.length; i++) {
       const a = sampledKeys[i - 1];
       const b = sampledKeys[i];
-      const eased = sampleEasing(b.easing, CURVE_SAMPLES);
+      const eased = dragBezier && dragBezier.keyIndex === i
+        ? sampleBezierDirect(dragBezier.points, CURVE_SAMPLES)
+        : sampleEasing(b.easing, CURVE_SAMPLES);
       for (let j = 0; j < eased.length; j++) {
         const t = a.t + ((b.t - a.t) * j) / (eased.length - 1);
         const v = a.value + (b.value - a.value) * eased[j];
@@ -88,6 +115,58 @@ export function Lane(props: LaneProps): ReactElement {
       }
     }
     return pts.join(' ');
+  };
+
+  // The segment a bezier handle drags: the key it runs into and the one before it.
+  const committedBezier = selectedSegment != null && row.kind === 'sampled'
+    ? easingBezier(sampledKeys[selectedSegment]?.easing)
+    : null;
+  const activeBezier = dragBezier && dragBezier.keyIndex === selectedSegment ? dragBezier.points : committedBezier;
+
+  const bezierHandlePos = (segIndex: number, xFrac: number, yFrac: number): { left: string; bottom: string } => {
+    const a = sampledKeys[segIndex - 1];
+    const b = sampledKeys[segIndex];
+    const t = a.t + xFrac * (b.t - a.t);
+    const v = a.value + yFrac * (b.value - a.value);
+    return { left: pct(t), bottom: `${vPct(v)}%` };
+  };
+
+  const onHandlePointerDown = (segIndex: number, h: 0 | 1) => (e: ReactPointerEvent<HTMLDivElement>): void => {
+    if (e.button !== 0 || !committedBezier) return;
+    e.stopPropagation();
+    const a = sampledKeys[segIndex - 1];
+    const b = sampledKeys[segIndex];
+    let points: [number, number, number, number] = [...committedBezier];
+
+    const at = (ev: { clientX: number; clientY: number }): [number, number, number, number] => {
+      const ms = msAt(ev.clientX);
+      const xFrac = b.t === a.t ? 0 : Math.min(1, Math.max(0, (ms - a.t) / (b.t - a.t)));
+      const v = valueAt(ev.clientY);
+      const yFrac = b.value === a.value ? 0 : (v - a.value) / (b.value - a.value);
+      const next = [...points] as [number, number, number, number];
+      next[h * 2] = xFrac;
+      next[h * 2 + 1] = yFrac;
+      return next;
+    };
+
+    const move = (ev: PointerEvent): void => {
+      points = at(ev);
+      setDragBezier({ keyIndex: segIndex, points });
+    };
+    const up = (ev: PointerEvent): void => {
+      points = at(ev);
+      setDragBezier(null);
+      onEasingCommit?.(segIndex, { bezier: points });
+      end();
+    };
+    const end = (): void => {
+      document.removeEventListener('pointermove', move);
+      document.removeEventListener('pointerup', up);
+      document.removeEventListener('pointercancel', end);
+    };
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', up);
+    document.addEventListener('pointercancel', end);
   };
 
   const onKeyPointerDown = (i: number) => (e: ReactPointerEvent<HTMLDivElement>): void => {
@@ -162,6 +241,23 @@ export function Lane(props: LaneProps): ReactElement {
             style={{ left: pct(0), width: `${span === 0 ? 0 : ((row.track as TimelineTrack).timeline.duration ?? 0) / span * 100}%` }}
           />
         ) : null}
+        {row.kind === 'sampled' ? sampledKeys.slice(1).map((k, idx) => {
+          const i = idx + 1;
+          return (
+            <div
+              key={`seg-${i}`}
+              role="button"
+              tabIndex={0}
+              aria-label={`${row.label} segment into ${Math.round(k.t)} ms`}
+              aria-current={selectedSegment === i ? 'true' : undefined}
+              data-testid="timeline-segment"
+              className={s.segment}
+              style={{ left: pct(sampledKeys[i - 1].t), width: `${span === 0 ? 0 : ((k.t - sampledKeys[i - 1].t) / span) * 100}%` }}
+              onClick={() => onSelectSegment?.(i)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectSegment?.(i); } }}
+            />
+          );
+        }) : null}
         {graph && sampledKeys.length > 1 ? (
           <svg className={s.curve} data-testid="timeline-curve" viewBox="0 0 100 100" preserveAspectRatio="none">
             <polyline points={curvePoints()} vectorEffect="non-scaling-stroke" />
@@ -181,6 +277,28 @@ export function Lane(props: LaneProps): ReactElement {
             onKeyDown={onKeyDown(i, t)}
           />
         ))}
+        {graph && activeBezier && selectedSegment != null ? (
+          <>
+            <div
+              role="button"
+              tabIndex={0}
+              aria-label={`${row.label} bezier handle 1`}
+              data-testid="timeline-bezier-handle"
+              className={s.bezierHandle}
+              style={bezierHandlePos(selectedSegment, activeBezier[0], activeBezier[1])}
+              onPointerDown={onHandlePointerDown(selectedSegment, 0)}
+            />
+            <div
+              role="button"
+              tabIndex={0}
+              aria-label={`${row.label} bezier handle 2`}
+              data-testid="timeline-bezier-handle"
+              className={s.bezierHandle}
+              style={bezierHandlePos(selectedSegment, activeBezier[2], activeBezier[3])}
+              onPointerDown={onHandlePointerDown(selectedSegment, 1)}
+            />
+          </>
+        ) : null}
       </div>
     </div>
   );
