@@ -1,3 +1,4 @@
+import { resolveEasing } from '../easingSpec';
 import type { SampledTrack } from './types';
 
 /** Index of the last key at or before `t`, or -1 when `t` precedes all keys.
@@ -43,7 +44,7 @@ export function sampleTrack<T>(
   const span = b.t - a.t;
   const raw = span <= 0 ? 1 : (t - a.t) / span;
   // `easing` belongs to the key being approached, so `b` supplies it.
-  const u = b.easing ? b.easing(raw) : raw;
+  const u = b.easing ? resolveEasing(b.easing)(raw) : raw;
 
   if (track.interpolator) {
     let fn = segmentCache?.get(i + 1);

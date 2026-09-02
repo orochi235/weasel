@@ -1,14 +1,14 @@
 import { createTransformOp } from 'core/ops/transform';
 import { RECT_POSE_DESCRIPTOR, type PoseProjection } from 'interactions/actions/resize/geometry';
 import type { SceneAdapter } from 'core/adapters/types';
-import type { AnimationHandle, Animator, EasingFn, SpringPresetName } from './types';
+import type { AnimationHandle, Animator, EasingSpec, SpringPresetName } from './types';
 
 /** Options for `tweenPose`. */
 export interface TweenPoseOptions<TPose> {
   id: string;
   to: TPose;
   ms: number;
-  easing?: EasingFn;
+  easing?: EasingSpec;
   /** Pose descriptor with a `lerp(from, to, t)` method. Defaults to
    *  `RECT_POSE_DESCRIPTOR`, which interpolates x/y/width/height linearly. */
   geometry?: PoseProjection<TPose>;

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useVisibleRaf } from '../scheduling/useVisibleRaf';
 import { easeOut, SPRING_PRESETS } from './easings';
+import { resolveEasing } from './easingSpec';
 import { createLoop, createTweenLoop } from './loop';
 import { createStagger, type StaggerTimers } from './stagger';
 import { createTimeline } from './timeline/createTimeline';
@@ -298,7 +299,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       // virtualNow itself — naturally freezing when paused (virtualNow stops
       // advancing) and decoupled from wall time.
       const start = 0;
-      const easing = o.easing ?? easeOut;
+      const easing = resolveEasing(o.easing ?? easeOut);
       // Precedence: factory > per-tick > default numeric lerp. Factory is built
       // once at tween start so expensive setup (color space conversion etc.)
       // doesn't repeat per frame.

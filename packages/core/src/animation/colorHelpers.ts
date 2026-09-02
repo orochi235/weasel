@@ -1,7 +1,8 @@
+import { resolveEasing } from './easingSpec';
 import type {
   AnimationHandle,
   Animator,
-  EasingFn,
+  EasingSpec,
   SpringPresetName,
 } from './types';
 import type { VertexColorChannel } from './colorRegistry';
@@ -34,7 +35,7 @@ export interface TweenVertexColorsOptions {
    *  and be a positive multiple of 4. */
   from: readonly number[];
   ms: number;
-  easing?: EasingFn;
+  easing?: EasingSpec;
   interpolation?: ColorSpace;
   interpolate?: ColorInterpolate;
   onDone?: () => void;
@@ -149,7 +150,7 @@ export interface CycleVertexColorsOptions {
   channel: VertexColorChannel;
   msPerCycle: number;
   direction?: 1 | -1;
-  easing?: EasingFn;
+  easing?: EasingSpec;
   interpolation?: ColorSpace;
   /** Custom interpolator. Receives two RGBA arrays in 0..1 floats and a
    *  progress `t` in 0..1; returns the blended array in 0..1 floats. */
@@ -180,7 +181,7 @@ export function cycleVertexColors(
   const interp = resolveInterpolator(opts);
   const { id, channel } = opts;
   const direction = opts.direction ?? 1;
-  const easing = opts.easing ?? ((t: number) => t);
+  const easing = resolveEasing(opts.easing);
 
   const override = (base: readonly number[], tMs: number): number[] => {
     const n = base.length / 4;
@@ -239,7 +240,7 @@ export interface StaggerVertexColorsOptions {
   anchorMs: number;
   perAnchorDelay: number;
   origin?: 'first' | 'last' | number;
-  easing?: EasingFn;
+  easing?: EasingSpec;
   interpolation?: ColorSpace;
   interpolate?: ColorInterpolate;
   onDone?: () => void;
@@ -256,7 +257,7 @@ export function staggerVertexColors(
   const interp = resolveInterpolator(opts);
   const { id, channel, from, to, anchorMs, perAnchorDelay } = opts;
   const n = from.length / 4;
-  const easing = opts.easing ?? ((t: number) => t);
+  const easing = resolveEasing(opts.easing);
 
   const originIndex =
     opts.origin === 'last' ? n - 1 :

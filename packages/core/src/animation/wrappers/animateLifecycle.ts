@@ -1,7 +1,7 @@
 import { tweenPose } from '../poseHelpers';
 import type { PoseProjection } from 'interactions/actions/resize/geometry';
 import type { SceneAdapter } from 'core/adapters/types';
-import type { Animator, EasingFn } from '../types';
+import type { Animator, EasingSpec } from '../types';
 
 /** How nodes enter and leave. `enterFrom` derives the pose a new node starts
  *  at, given where it belongs; `exitTo` derives the pose a departing node
@@ -13,7 +13,7 @@ export interface LifecycleAnimation<TPose> {
   /** Pose to animate the existing object TO at remove. */
   exitTo?: (current: TPose) => TPose;
   ms?: number;
-  easing?: EasingFn;
+  easing?: EasingSpec;
   geometry?: PoseProjection<TPose>;
 }
 

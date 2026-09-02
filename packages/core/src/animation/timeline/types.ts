@@ -1,4 +1,4 @@
-import type { AnimationHandle, EasingFn, Interpolate, InterpolatorFactory } from '../types';
+import type { AnimationHandle, EasingSpec, Interpolate, InterpolatorFactory } from '../types';
 
 /** One keyframe. `easing` shapes the approach INTO this key from the previous
  *  one, so the first key's easing is never consulted. */
@@ -6,7 +6,8 @@ export interface Keyframe<T> {
   /** Time within the track's timeline, in ms. */
   t: number;
   value: T;
-  easing?: EasingFn;
+  /** A function, the name of a built-in, or cubic-bezier control points. */
+  easing?: EasingSpec;
 }
 
 /** A track sampled as a pure function of the playhead. Scrubbing one is free

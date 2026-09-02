@@ -1,10 +1,13 @@
 import type { ColorOverrideRegistry } from './colorRegistry';
 import type { TimelineHandle, TimelineOptions } from './timeline/types';
+import type { EasingSpec } from './easingSpec';
 
 /** An easing curve: maps normalized progress `t ∈ [0, 1]` to eased progress.
  *  Curves may leave the 0–1 range in the middle (back, elastic) but should
  *  pass through 0 at 0 and 1 at 1. */
 export type EasingFn = (t: number) => number;
+
+export type { BezierEasing, EasingSpec } from './easingSpec';
 
 /** Blends two `T` values at eased progress `t`. Called once per frame; see
  *  {@link InterpolatorFactory} when the blend has setup worth hoisting. */
@@ -52,7 +55,7 @@ export interface TweenOptions<T> {
   from: T;
   to: T;
   ms: number;
-  easing?: EasingFn;
+  easing?: EasingSpec;
   /** Required when T is not `number`. For T = number, defaults to linear numeric lerp.
    *  Called per-tick with `(from, to, t)`. For interpolators with expensive setup,
    *  prefer `interpolator` which is built once at tween start. */
@@ -322,7 +325,7 @@ export interface StaggerTweenOptions<T, TItem> {
   from: StaggerPerItem<T, TItem>;
   to: StaggerPerItem<T, TItem>;
   ms: StaggerPerItem<number, TItem>;
-  easing?: EasingFn;
+  easing?: EasingSpec;
   interpolate?: Interpolate<T>;
   onTick: (value: T, item: TItem, index: number) => void;
   onDone?: (item: TItem, index: number) => void;
@@ -365,7 +368,7 @@ export interface TweenLoopOptions<T> {
   from: T;
   to: T;
   ms: number;
-  easing?: EasingFn;
+  easing?: EasingSpec;
   /** `restart` (default): from→to every iteration.
    *  `reverse`: to→from every iteration.
    *  `alternate`: even iterations from→to, odd iterations to→from. */

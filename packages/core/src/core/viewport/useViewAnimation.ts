@@ -1,7 +1,7 @@
 import { useId, useMemo, useRef } from 'react';
 import { useAnimator } from '../../animation/useAnimator';
 import { easeOutCubic } from '../../animation/easings';
-import type { Animator, EasingFn, InterpolatorFactory } from '../../animation/types';
+import type { Animator, EasingSpec, InterpolatorFactory } from '../../animation/types';
 import { interpolateView } from './interpolateView';
 import { fitViewToBounds } from './fitViewToBounds';
 import type { Bounds, FitViewToBoundsOptions, ViewportDims } from './fitViewToBounds';
@@ -18,7 +18,7 @@ export interface ViewAnimationOptions {
   /** Duration in ms. Default 250. */
   ms?: number;
   /** Easing curve. Default `easeOutCubic`. */
-  easing?: EasingFn;
+  easing?: EasingSpec;
   /** Replace the kit's log-scale / fixed-anchor curve. */
   interpolator?: InterpolatorFactory<View>;
   /** Fires when the target is reached. Not called on cancel. */
