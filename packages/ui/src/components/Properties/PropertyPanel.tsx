@@ -178,6 +178,8 @@ export interface SliderRowProps {
   unit?: ReactNode;
   layout?: PropertyRowLayout;
   description?: string;
+  /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
+  span?: boolean;
 }
 
 /** A bounded number edited by dragging, with a live readout whose precision
@@ -193,6 +195,7 @@ export function SliderRow({
   unit,
   layout,
   description,
+  span,
 }: SliderRowProps) {
   // Default readout precision tracks `step`: integer steps → 0 decimals,
   // 0.1 → 1 decimal, 0.05/0.02/0.01 → 2 decimals, 0.005 → 3, etc. Callers
@@ -209,6 +212,7 @@ export function SliderRow({
       }));
   return (
     <PropertyRow
+      span={span}
       label={label}
       readout={
         <EditableReadout
@@ -334,6 +338,8 @@ export interface ColorRowProps {
    */
   alphaDisabled?: boolean;
   description?: string;
+  /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
+  span?: boolean;
 }
 
 /** A color swatch, optionally with an alpha slider beneath it. */
@@ -345,11 +351,12 @@ export function ColorRow({
   onAlphaChange,
   alphaDisabled,
   description,
+  span,
 }: ColorRowProps) {
   const showAlpha = alpha != null;
   const className = alphaDisabled ? s.alphaDisabled : undefined;
   return (
-    <PropertyRow label={label} variant="color" className={className} description={description}>
+    <PropertyRow span={span} label={label} variant="color" className={className} description={description}>
       <input type="color" value={value} onChange={(e) => onChange(e.target.value)} />
       {showAlpha && (
         <input
@@ -373,12 +380,14 @@ export interface CheckboxRowProps {
   value: boolean;
   onChange: (next: boolean) => void;
   description?: string;
+  /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
+  span?: boolean;
 }
 
 /** A boolean checkbox. */
-export function CheckboxRow({ label, value, onChange, description }: CheckboxRowProps) {
+export function CheckboxRow({ label, value, onChange, span, description }: CheckboxRowProps) {
   return (
-    <PropertyRow label={label} variant="checkbox" description={description}>
+    <PropertyRow span={span} label={label} variant="checkbox" description={description}>
       <input type="checkbox" checked={value} onChange={(e) => onChange(e.target.checked)} />
     </PropertyRow>
   );
@@ -393,6 +402,8 @@ export interface TextRowProps {
   maxLength?: number;
   layout?: PropertyRowLayout;
   description?: string;
+  /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
+  span?: boolean;
 }
 
 /** A single-line text input. */
@@ -404,9 +415,10 @@ export function TextRow({
   maxLength,
   layout,
   description,
+  span,
 }: TextRowProps) {
   return (
-    <PropertyRow label={label} layout={layout} description={description}>
+    <PropertyRow span={span} label={label} layout={layout} description={description}>
       <input
         type="text"
         value={value}
@@ -429,6 +441,8 @@ export interface NumberRowProps {
   placeholder?: string;
   layout?: PropertyRowLayout;
   description?: string;
+  /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
+  span?: boolean;
 }
 
 /** A number typed directly. Reach for `<SliderRow>` when the range matters
@@ -443,9 +457,10 @@ export function NumberRow({
   placeholder,
   layout,
   description,
+  span,
 }: NumberRowProps) {
   return (
-    <PropertyRow label={label} layout={layout} description={description}>
+    <PropertyRow span={span} label={label} layout={layout} description={description}>
       <input
         type="number"
         value={value}
@@ -477,6 +492,8 @@ export interface SelectRowProps<T extends string> {
   onChange: (next: T) => void;
   layout?: PropertyRowLayout;
   description?: string;
+  /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
+  span?: boolean;
 }
 
 /** A dropdown over a fixed set of choices. Prefer `<ToggleRow>` when there
@@ -488,9 +505,10 @@ export function SelectRow<T extends string>({
   onChange,
   layout,
   description,
+  span,
 }: SelectRowProps<T>) {
   return (
-    <PropertyRow label={label} layout={layout} description={description}>
+    <PropertyRow span={span} label={label} layout={layout} description={description}>
       <select
         value={value}
         onChange={(e) => {
@@ -518,6 +536,8 @@ export interface ToggleRowProps<T extends string> {
   onChange: (next: T) => void;
   layout?: PropertyRowLayout;
   description?: string;
+  /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
+  span?: boolean;
 }
 
 /** A segmented control: the same choice as a select, with every option
@@ -529,9 +549,10 @@ export function ToggleRow<T extends string>({
   onChange,
   layout,
   description,
+  span,
 }: ToggleRowProps<T>) {
   return (
-    <PropertyRow label={label} layout={layout} description={description}>
+    <PropertyRow span={span} label={label} layout={layout} description={description}>
       <div className={s.toggle}>
         {options.map((opt) => {
           const selected = opt.value === value;

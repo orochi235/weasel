@@ -45,8 +45,8 @@
 .list {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  column-gap: 18px;
-  row-gap: 6px;
+  column-gap: 10px;
+  row-gap: 4px;
   align-items: stretch;
 }
 
@@ -268,11 +268,16 @@
 .rowInline {
   flex-direction: row;
   align-items: center;
-  gap: 8px;
+  /* Label on the left edge, field on the right: fields of different widths
+     still line up as one rail down the column. */
+  justify-content: space-between;
+  gap: 6px;
 }
 
 .rowInline .rowLabel {
-  /* Label keeps its uppercase styling but won't expand to fill. */
+  /* The label never gives: shrinking it breaks a name like `silhouette_width`
+     mid-word, since it carries no break opportunity of its own. The field is
+     what yields as the column narrows. */
   flex: 0 0 auto;
 }
 
@@ -281,6 +286,28 @@
 .rowInline > .toggle {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+/* Fields size to their content, not to the row they happen to sit in: a number
+   is a handful of digits and a short string is a word. Stated as a width and
+   not as a `min(100%, …)`, because an auto-width sidebar sizes to what its
+   fields ask for and a percentage asks for an input's 20-character default. */
+.row input[type='number']:not(.readoutInput) {
+  width: var(--wzl-prop-number-width, 9ch);
+  max-width: 100%;
+}
+
+.row input[type='text']:not(.readoutInput) {
+  width: var(--wzl-prop-text-width, 16ch);
+  max-width: 100%;
+}
+
+/* An inline row stays on one line: the field gives up width to the label as the
+   column narrows, down to a floor that still shows a value. */
+.rowInline > input:not(.readoutInput),
+.rowInline > select {
+  flex: 0 1 auto;
+  min-width: 4ch;
 }
 
 .rowInline input[type='range'] {
@@ -293,7 +320,11 @@
   color: var(--wzl-fg);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
-  padding: 6px 8px;
+  /* Height is stated rather than padded to, because the display face's line box
+     is half again its font size — padding a field to size makes it 27px tall
+     around 13px of text and no amount of trimming the padding fixes that. */
+  height: var(--wzl-prop-field-height, 20px);
+  padding: 0 6px;
   font-family: var(--wzl-font-ui);
   font-weight: var(--wzl-font-weight-medium);
   font-size: var(--wzl-font-size);
@@ -313,7 +344,8 @@
   color: var(--wzl-fg);
   border: 0;
   border-radius: 0;
-  padding: 2px 0;
+  height: var(--wzl-prop-field-height, 20px);
+  padding: 0;
   font-family: var(--wzl-font-ui);
   font-weight: var(--wzl-font-weight-medium);
   font-size: var(--wzl-font-size);
@@ -480,15 +512,15 @@
   grid-column: 1 / -1;
   background: var(--wzl-surface-sunken);
   border-radius: var(--wzl-radius-md);
-  padding: 10px 12px 12px;
+  padding: 6px 10px 8px;
 }
 
 .groupTitle {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 10px;
-  margin: 0 0 8px;
+  gap: 8px;
+  margin: 0 0 4px;
   font-family: var(--wzl-font-display);
   font-weight: var(--wzl-font-weight-light);
   font-size: var(--wzl-font-size-sm);
@@ -506,8 +538,8 @@
 .groupBody {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  column-gap: 16px;
-  row-gap: 10px;
+  column-gap: 10px;
+  row-gap: 4px;
   /* Stretch so paired rows match in height — slider rows then bottom-align
      their tracks (via `margin-top: auto`) and stay lined up even when one
      sibling's label wraps to two lines. */
