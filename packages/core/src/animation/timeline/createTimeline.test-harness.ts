@@ -32,6 +32,7 @@ export function makeTimeline(opts: MakeTimelineOptions): TimelineTestHandle {
   let lastFinished = false;
   let cancelled = false;
   let paused = false;
+  let scale = 1;
 
   const register: TimelineRegister = (seed) => {
     tick = seed.tick;
@@ -42,7 +43,8 @@ export function makeTimeline(opts: MakeTimelineOptions): TimelineTestHandle {
       cancel: () => { cancelled = true; active = false; onCancel?.(); },
       pause: () => { paused = true; },
       resume: () => { paused = false; },
-      setTimeScale: () => {},
+      setTimeScale: (s) => { scale = s; },
+      timeScale: () => scale,
       isPaused: () => paused,
     };
   };

@@ -165,6 +165,10 @@ class CompositeHandle implements AnimationHandle {
     for (const c of this.children) c.setTimeScale(s);
   }
 
+  timeScale(): number {
+    return this.timeScale_;
+  }
+
   isPaused(): boolean {
     return this.paused_;
   }

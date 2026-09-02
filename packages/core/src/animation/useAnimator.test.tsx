@@ -479,6 +479,43 @@ describe('virtual clock — per-handle pause/resume/timeScale', () => {
     expect(a[a.length - 1]).toBeCloseTo(10, 0);
     expect(b[b.length - 1]).toBeCloseTo(20, 0);
   });
+
+  it('handle.timeScale() reads back the scale, defaulting to 1', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    let handle!: ReturnType<typeof result.current.tween>;
+    act(() => {
+      handle = result.current.tween({
+        from: 0, to: 100, ms: 1000, easing: (t) => t, onTick: () => {},
+      });
+    });
+    expect(handle.timeScale()).toBe(1);
+    act(() => handle.setTimeScale(0.5));
+    expect(handle.timeScale()).toBe(0.5);
+  });
+
+  it('handle.timeScale() reports 1 once the animation has finished', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    let handle!: ReturnType<typeof result.current.tween>;
+    act(() => {
+      handle = result.current.tween({
+        from: 0, to: 100, ms: 100, easing: (t) => t, onTick: () => {},
+      });
+    });
+    act(() => handle.setTimeScale(2));
+    act(() => clock.advance(0));
+    act(() => clock.advance(100));
+    expect(handle.timeScale()).toBe(1);
+  });
+
+  it('animator.timeScale() reads back the global scale', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    expect(result.current.timeScale()).toBe(1);
+    act(() => result.current.setTimeScale(3));
+    expect(result.current.timeScale()).toBe(3);
+  });
 });
 
 describe('useAnimator.colorOverrides', () => {

@@ -44,6 +44,9 @@ export interface AnimationHandle {
   resume(): void;
   /** Multiply this animation's virtual-clock rate by `scale`. 1 = normal. */
   setTimeScale(scale: number): void;
+  /** This animation's own time scale. 1 once it has finished, since the
+   *  animator no longer holds an entry to read. */
+  timeScale(): number;
   /** True iff this handle is currently paused. */
   isPaused(): boolean;
 }
@@ -201,6 +204,8 @@ export interface Animator {
   isPaused(): boolean;
   /** Multiply every animation's virtual-clock rate by `scale`. 1 = normal. */
   setTimeScale(scale: number): void;
+  /** The global time scale. Per-animation scales multiply on top of it. */
+  timeScale(): number;
   /** Freeze every animation whose `cancelKey` matches. */
   pauseKey(key: string): void;
   /** Resume every animation whose `cancelKey` matches. */

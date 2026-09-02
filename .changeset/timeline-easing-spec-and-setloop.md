@@ -17,3 +17,11 @@ the control-point tuple is `readonly` so an `as const` preset is assignable.
 parked at its duration does not restart — `rearm` declines to revive one — so
 play it again by seeking to 0 and resuming. Restoring saved transport state
 therefore cannot start playback as a side effect.
+
+Both settings now read back. `AnimationHandle.timeScale()` returns an
+animation's own scale, and `Animator.timeScale()` the global one, the way
+`isPaused()` already pairs with `pause()`. `TimelineHandle.loop()` returns the
+policy as it stands — `true`, `false`, or the laps a finite loop has left, which
+falls as they are consumed. A transport UI can drive itself off the handle
+instead of mirroring what it last wrote, which drifts as soon as anything else
+holding the handle sets it.

@@ -186,6 +186,7 @@ export function createTimeline(
     pause() { wantPaused = true; base.pause(); },
     resume() { wantPaused = false; base.resume(); },
     setTimeScale(s) { wantScale = s; base.setTimeScale(s); },
+    timeScale: () => (live ? base.timeScale() : wantScale),
     isPaused: () => (live ? base.isPaused() : wantPaused),
     seek(t) {
       offset = t - lastVirtual;
@@ -199,6 +200,7 @@ export function createTimeline(
     setLoop(loop) {
       loopsLeft = loop === true ? Infinity : loop === false ? 0 : loop;
     },
+    loop: () => (loopsLeft === Infinity ? true : loopsLeft === 0 ? false : loopsLeft),
     edit(fn) {
       fn();
       caches = new WeakMap();

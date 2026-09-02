@@ -72,6 +72,10 @@ export interface TimelineHandle extends AnimationHandle {
    *  at `duration` does not restart, because `rearm` declines to revive one.
    *  Rewind it with `seek(0)` and `resume()` to play it again. */
   setLoop(loop: boolean | number): void;
+  /** The loop policy as it now stands: `true` endless, `false` stopping at
+   *  `duration`, `n` for n laps still allowed. A finite count falls as laps
+   *  are consumed, matching what `setLoop` takes. */
+  loop(): boolean | number;
   /** Current playhead in ms. */
   time(): number;
   duration(): number;

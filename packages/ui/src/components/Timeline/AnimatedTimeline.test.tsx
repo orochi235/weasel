@@ -24,18 +24,23 @@ function fakeHandle(over: Partial<TimelineHandle> = {}): TimelineHandle & { live
   ];
   let t = 0;
   let paused = true;
+  let loop: boolean | number = false;
+  let scale = 1;
   return {
     live,
     id: 1,
     cancel: vi.fn(), pause: vi.fn(() => { paused = true; }), resume: vi.fn(() => { paused = false; }),
-    setTimeScale: vi.fn(), isPaused: () => paused,
+    setTimeScale: vi.fn((s: number) => { scale = s; }),
+    timeScale: () => scale,
+    isPaused: () => paused,
     seek: vi.fn((to: number) => { t = to; }),
     time: () => t,
     duration: () => 1000,
     tracks: () => live,
     edit: vi.fn((fn: () => void) => { fn(); }),
     subscribe: () => () => {},
-    setLoop: vi.fn(),
+    setLoop: vi.fn((next: boolean | number) => { loop = next; }),
+    loop: () => loop,
     ...over,
   } as TimelineHandle & { live: Track[] };
 }
@@ -105,5 +110,24 @@ describe('AnimatedTimeline', () => {
     render(<AnimatedTimeline handle={h} />);
     fireEvent.change(screen.getByLabelText(/rate/i), { target: { value: '2' } });
     expect(h.setTimeScale).toHaveBeenCalledWith(2);
+  });
+
+  it('shows the loop and rate the handle reports, not what the transport set', () => {
+    const h = fakeHandle({ loop: () => 3, timeScale: () => 4 });
+    render(<AnimatedTimeline handle={h} />);
+    expect(screen.getByRole('switch', { name: /loop/i })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByLabelText(/rate/i)).toHaveValue('4');
+  });
+
+  // The drift a mirrored copy caused: anything else holding the handle can set
+  // these, and the transport has to show the handle's answer, not its own.
+  it('picks up a loop or rate set off the component', () => {
+    const h = fakeHandle();
+    const { rerender } = render(<AnimatedTimeline handle={h} />);
+    h.setLoop(true);
+    h.setTimeScale(2);
+    rerender(<AnimatedTimeline handle={h} />);
+    expect(screen.getByRole('switch', { name: /loop/i })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByLabelText(/rate/i)).toHaveValue('2');
   });
 });

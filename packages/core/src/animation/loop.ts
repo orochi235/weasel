@@ -70,6 +70,7 @@ export function createLoop(
       supervisor.setTimeScale(s);
       current?.setTimeScale(s);
     },
+    timeScale: () => supervisor.timeScale(),
     isPaused: () => supervisor.isPaused(),
   };
 }

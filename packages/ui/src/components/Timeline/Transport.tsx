@@ -21,6 +21,11 @@ const seconds = (ms: number): string => `${(ms / 1000).toFixed(2)}s`;
 export function Transport(props: TransportProps): ReactElement {
   const { paused, loop, rate, playhead, duration, onPlay, onPause, onLoopChange, onRateChange } = props;
   const looping = loop !== false && loop !== 0;
+  // The handle's scale is whatever anything holding it set, so an off-list
+  // rate joins the options rather than leaving the select showing nothing.
+  const rates = RATES.includes(rate as typeof RATES[number])
+    ? (RATES as readonly number[])
+    : [...RATES, rate].sort((a, b) => a - b);
 
   return (
     <div className={s.transport}>
@@ -51,7 +56,7 @@ export function Transport(props: TransportProps): ReactElement {
       <label className={s.rate}>
         Rate
         <select value={rate} onChange={(e) => onRateChange(Number(e.target.value))}>
-          {RATES.map((r) => <option key={r} value={r}>{r}×</option>)}
+          {rates.map((r) => <option key={r} value={r}>{r}×</option>)}
         </select>
       </label>
     </div>

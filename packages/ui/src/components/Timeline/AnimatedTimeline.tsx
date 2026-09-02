@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useReducer, useRef, type ReactElement } from 'react';
 import { useVisibleRaf, type TimelineHandle, type Track } from '@weasel-js/core';
 import { Timeline, type TimelineProps } from './Timeline';
 
@@ -17,8 +17,6 @@ export interface AnimatedTimelineProps
 export function AnimatedTimeline(props: AnimatedTimelineProps): ReactElement {
   const { handle, ...rest } = props;
   const [, bump] = useReducer((n: number) => n + 1, 0);
-  const [loop, setLoopState] = useState<boolean | number>(false);
-  const [rate, setRate] = useState(1);
 
   // `subscribe` fires on `edit` only, so the playhead comes from the frame loop.
   useEffect(() => handle.subscribe(bump), [handle]);
@@ -58,8 +56,8 @@ export function AnimatedTimeline(props: AnimatedTimelineProps): ReactElement {
       onScrub={handle.seek}
       transport={props.transport === false ? false : {
         paused: handle.isPaused(),
-        loop,
-        rate,
+        loop: handle.loop(),
+        rate: handle.timeScale(),
         onPlay: () => {
           // `rearm` declines to revive a timeline at its duration, so resume
           // alone would do nothing. Play-at-end rewinds first.
@@ -69,8 +67,8 @@ export function AnimatedTimeline(props: AnimatedTimelineProps): ReactElement {
           bump();
         },
         onPause: () => { handle.pause(); bump(); },
-        onLoopChange: (next) => { handle.setLoop(next); setLoopState(next); },
-        onRateChange: (next) => { handle.setTimeScale(next); setRate(next); },
+        onLoopChange: (next) => { handle.setLoop(next); bump(); },
+        onRateChange: (next) => { handle.setTimeScale(next); bump(); },
       }}
     />
   );

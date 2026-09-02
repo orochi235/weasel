@@ -11,7 +11,7 @@ function harness() {
     tick = seed.tick;
     return {
       id: seed.id, cancel: () => {}, pause: () => {}, resume: () => {},
-      setTimeScale: () => {}, isPaused: () => false,
+      setTimeScale: () => {}, timeScale: () => 1, isPaused: () => false,
     };
   };
   return { register, advance: (t: number) => tick!(t) };
