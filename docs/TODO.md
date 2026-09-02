@@ -977,13 +977,6 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
   following the `insert` pattern; it was never built, so `RigDemo.tsx` calls
   `resolveSkeleton` directly and draws from the result. Every consumer animating
   a rig into a scene re-does that wiring by hand.
-- **(P2) `loop` cannot be changed after a timeline is created.** `loopsLeft` is
-  seeded from `opts.loop` and `TimelineHandle` has no setter, so a transport
-  with a loop toggle has to cancel and rebuild the timeline — and hold its track
-  array outside the rebuild so `edit()`-added keys survive it. That rebuild is
-  the bulk of `apps/site/demos/TimelineDemo.tsx`. A `setLoop` needs one decision
-  first: whether enabling looping on a timeline sitting at `duration` restarts
-  it, or takes effect on the next pass.
 - **(P2) `<Timeline>` editor** — transport, lanes, draggable keyframes,
   per-segment easing. Goes in `@weasel-js/ui` next to `BandEditor`, `Slider`,
   `CurveEditor` and the property panel; `labkit` depends on `ui` and re-exports
@@ -1033,9 +1026,8 @@ What it surfaced:
   silently never moves. `deriveParallaxView` works correctly called directly. The
   layer helper needs a way to take its outer view from the caller.
 
-- **`TimelineHandle` has no `setLoop`** (the P2 above) and **no tiled-content
-  layer primitive exists** (the P3 under Tiling) — the run cycle and the parallax
-  bands are second sites wanting each.
+- **No tiled-content layer primitive exists** (the P3 under Tiling) — the run
+  cycle and the parallax bands are second sites wanting it.
 
 - **Tune two placeholder constants in the browser.** `DEAD_ZONE_X` in
   `apps/site/demos/platformer/camera.ts` sits at 28 (vs `DEAD_ZONE_Y` at 20),
@@ -1759,6 +1751,13 @@ Deferred, with the rationale in `eslint.config.js` next to each:
   0.9 where it expects the throttle to have held 0.1, then passed alone in
   648ms. Same cause, and the same fix reaches it — the throttle is timed off
   `performance.now()` against real elapsed time.
+
+- **(P3) `SceneScrollerDemo`'s "advances the camera" test is flaky under load.**
+  `SceneScrollerDemoInner` drives `setStats` from a real 200 ms `setInterval`
+  while the test drives a real `requestAnimationFrame` loop, so under full-suite
+  CPU contention the seven awaited frames can overrun 200 ms and add exactly one
+  `Profiler` commit — failing an exact `toBe` on the count. Observed once in five
+  full runs, never in isolation. Fake both timers, or assert a range.
 
 - **(P2) `test:kit` covers `packages/core` only, and its name says otherwise.**
   The `kit` vitest project globs `packages/core` plus `apps/site`; `svg`,
