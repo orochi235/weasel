@@ -40,9 +40,7 @@
 }
 
 .chevron {
-  display: inline-block;
-  font-size: var(--wzl-font-size-xs);
-  line-height: 1;
+  flex: none;
   color: var(--wzl-fg-muted);
   transition: transform var(--wzl-motion-fast) ease;
 }

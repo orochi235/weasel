@@ -60,7 +60,9 @@
 .lane[data-depth='2'] .laneLabel { --depth: 2; }
 .lane[data-depth='3'] .laneLabel { --depth: 3; }
 
-.disclosure { cursor: pointer; color: var(--wzl-fg-muted); }
+.disclosure { display: inline-flex; flex: none; cursor: pointer; color: var(--wzl-fg-muted); }
+.disclosureIcon { transition: transform var(--wzl-motion-fast) ease; }
+.disclosureCollapsed { transform: rotate(-90deg); }
 
 .laneTrack {
   position: relative;

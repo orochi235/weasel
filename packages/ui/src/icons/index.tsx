@@ -47,6 +47,7 @@ export const PinIcon = (p: IconProps) => <Icon name="pin" {...p} />;
 export const LinkIcon = (p: IconProps) => <Icon name="link" {...p} />;
 export const CollapseIcon = (p: IconProps) => <Icon name="collapse" {...p} />;
 export const ExpandIcon = (p: IconProps) => <Icon name="expand" {...p} />;
+export const ChevronIcon = (p: IconProps) => <Icon name="chevron" {...p} />;
 export const TuneIcon = (p: IconProps) => <Icon name="tune" {...p} />;
 export const GridIcon = (p: IconProps) => <Icon name="grid" {...p} />;
 export const SnapIcon = (p: IconProps) => <Icon name="snap" {...p} />;
