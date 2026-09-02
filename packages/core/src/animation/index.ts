@@ -16,6 +16,11 @@ export {
   type EasingName,
   SPRING_PRESETS,
 } from './easings';
+export {
+  cubicBezierEasing,
+  resolveEasing,
+} from './easingSpec';
+export type { BezierEasing, EasingSpec } from './easingSpec';
 export { useAnimator } from './useAnimator';
 export {
   tweenPose, springPose,
