@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useVisibleRaf } from '../scheduling/useVisibleRaf';
 import {
   hostAnchorCss, hostAnchorRect,
   type HostAnchorAlign, type HostAnchorOffset,
@@ -42,36 +43,34 @@ export function useHostAnchor(
   const { x: alignX, y: alignY } = align;
   const { x: offsetX, y: offsetY } = offset;
 
+  const recompute = useCallback(() => {
+    const hostEl = resolve.current();
+    if (!hostEl) {
+      setStyle(null);
+      return;
+    }
+    const h = hostEl.getBoundingClientRect();
+    const p = panel?.getBoundingClientRect();
+    const viewport = { width: window.innerWidth, height: window.innerHeight };
+    const align = { x: alignX, y: alignY };
+    const rect = hostAnchorRect({
+      host: { x: h.left, y: h.top, width: h.width, height: h.height },
+      panel: { width: p?.width ?? 0, height: p?.height ?? 0 },
+      viewport,
+      align,
+      offset: { x: offsetX, y: offsetY },
+      padding,
+    });
+    setStyle(hostAnchorCss(rect, align, viewport));
+  }, [panel, alignX, alignY, offsetX, offsetY, padding]);
+
+  // Coalesces bursts of scroll/resize into one frame, and holds the work while
+  // the tab is hidden rather than dropping it.
+  const raf = useVisibleRaf(recompute);
+
   useEffect(() => {
-    let frame = 0;
-    const recompute = () => {
-      frame = 0;
-      const hostEl = resolve.current();
-      if (!hostEl) {
-        setStyle(null);
-        return;
-      }
-      const h = hostEl.getBoundingClientRect();
-      const p = panel?.getBoundingClientRect();
-      const viewport = { width: window.innerWidth, height: window.innerHeight };
-      const resolvedAlign = { x: alignX, y: alignY };
-      const rect = hostAnchorRect({
-        host: { x: h.left, y: h.top, width: h.width, height: h.height },
-        panel: { width: p?.width ?? 0, height: p?.height ?? 0 },
-        viewport,
-        align: resolvedAlign,
-        offset: { x: offsetX, y: offsetY },
-        padding,
-      });
-      setStyle(hostAnchorCss(rect, resolvedAlign, viewport));
-    };
-
-    const schedule = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(recompute);
-    };
-
     recompute();
+    const schedule = () => raf.request();
     window.addEventListener('scroll', schedule, true);
     window.addEventListener('resize', schedule);
     const observer =
@@ -83,10 +82,10 @@ export function useHostAnchor(
     return () => {
       window.removeEventListener('scroll', schedule, true);
       window.removeEventListener('resize', schedule);
-      if (frame) window.cancelAnimationFrame(frame);
+      raf.cancel();
       observer?.disconnect();
     };
-  }, [panel, alignX, alignY, offsetX, offsetY, padding]);
+  }, [recompute, raf, panel]);
 
   return { ref, style };
 }
