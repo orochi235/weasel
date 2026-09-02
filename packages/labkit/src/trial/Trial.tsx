@@ -10,13 +10,15 @@ import type { Instrument, LayerDescriptor, PaletteItem, RenderContext } from '..
 import { useJob } from '../job/useJob';
 import { useLabContext } from '../lab/LabContext';
 import { LayerList } from '../layers/LayerList';
+import { TrialLoupe } from '../loupe/TrialLoupe';
+import { resolveLoupe } from '../loupe/types';
 import { LabStoreContext } from '../state/context';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
 import { as2DView, DEFAULT_VIEW } from '../state/view';
 import { createEventBus, type EventBus } from '../undo/eventBus';
 import { pushSnapshot, redo as undoRedo, undo as undoUndo } from '../undo/undoStack';
-import type { UndoBindings } from './TrialChrome';
+import type { LoupeBindings, UndoBindings } from './TrialChrome';
 import { TrialChrome } from './TrialChrome';
 
 /** Props for `<Trial>`. */
@@ -68,6 +70,7 @@ interface TrialRuntimeProps {
 
 function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: TrialRuntimeProps) {
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
+  const loupeHostRef = useRef<HTMLDivElement | null>(null);
   const updateTrialState = useStore(store, (s) => s.updateTrialState);
   const updateTrialConfig = useStore(store, (s) => s.updateTrialConfig);
   const updateTrialView = useStore(store, (s) => s.updateTrialView);
@@ -82,6 +85,7 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
 
   const [layerVisibility, setLayerVisibility] = useState<Record<string, boolean>>({});
   const [layerOrder, setLayerOrder] = useState<string[] | null>(null);
+  const [loupeOn, setLoupeOn] = useState(false);
 
   const visibleLayers = useMemo(
     () =>
@@ -194,6 +198,15 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
       }
     : undefined;
 
+  const loupeCap = useMemo(() => {
+    const declared = instrument.loupe;
+    if (declared == null) return null;
+    return resolveLoupe(typeof declared === 'function' ? declared(record.config) : declared);
+  }, [instrument.loupe, record.config]);
+  const loupeBindings: LoupeBindings | undefined = loupeCap
+    ? { on: loupeOn, toggle: () => setLoupeOn((v) => !v) }
+    : undefined;
+
   const canvasLayers: CanvasLayerDescriptor[] = useMemo(() => {
     if (!instrument.canvas) return [];
     const baseLayers = instrument.canvas.layers;
@@ -265,6 +278,20 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
     ];
   }, [canvasLayers, dragDropResult.drag]);
 
+  // The lens tracks the pointer over whatever box holds the content: the canvas
+  // stack's own element, which it takes from context, or the wrapper below.
+  const lens = loupeCap ? (
+    <TrialLoupe
+      capability={loupeCap}
+      enabled={loupeOn}
+      state={record.state}
+      config={record.config}
+      view={view2d ?? DEFAULT_VIEW}
+      worldSpec={instrument.canvas?.worldSpec}
+      hostRef={loupeHostRef}
+    />
+  ) : null;
+
   let body: ReactNode;
   if (instrument.canvas) {
     body = (
@@ -279,8 +306,16 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
           maxZoom={instrument.canvas.maxZoom}
         >
           {instrument.render(renderCtx)}
+          {lens}
         </CanvasStack>
         <DragOverlay drag={dragDropResult.drag} />
+      </div>
+    );
+  } else if (lens) {
+    body = (
+      <div ref={loupeHostRef} className="lk-trial__loupe-host">
+        {instrument.render(renderCtx)}
+        {lens}
       </div>
     );
   } else {
@@ -335,6 +370,7 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
   return (
     <TrialChrome
       job={jobCap ? job : undefined}
+      loupe={loupeBindings}
       trialId={record.id}
       record={record}
       instrument={instrument}

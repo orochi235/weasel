@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { screenToWorld, viewToTransform, worldToScreen } from '@weasel-js/core';
-import { loupeInnerView } from './innerView';
-import { loupeSourcePoint } from './pick';
+import { loupeInnerView, loupeSourcePoint } from './geometry';
 
 const rect = { x: 30, y: 48, w: 208, h: 170 };
 

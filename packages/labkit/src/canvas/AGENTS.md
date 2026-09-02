@@ -18,6 +18,7 @@ into a camera is the host's job.
 | `CanvasStackContext.ts` | React context exposing the current `view` to descendants |
 | `useLayerScheduler.ts` | DPR-aware rAF scheduler; redraws dirty layers on view/state changes |
 | `usePanZoom.ts` | Pointer + wheel handlers that mutate `view` via `onViewChange` |
+| `camera.ts` | `zoomAt` (fixed-point zoom) and `centerOn` (put a world point at a viewport's middle) |
 | `canvasCoords.ts` | Pure `screenToWorld` / `worldToScreen` helpers |
 | `worldSpec.ts` | The instrument's declared coordinate system, and the camera derived from it |
 | `CanvasStack.less` | Container + canvas + overlay positioning |
@@ -116,9 +117,13 @@ The anchor is taken **in frame space** (`cursor - frame.originPx`), because
 `pan` is measured from the frame's origin. Anchoring at the raw cursor instead
 drifts by `(1 - ratio) * originPx` on every wheel step for any frame that moves
 the origin — around 180x110 px per step on a centred 1430x870 canvas, with no
-error raised. `zoomAt` from `@weasel-js/core` is **not** usable here: its clamp
-is `min(max, max(min, scale * factor))` per axis with positive defaults, so a
-y-up view (`scale.y` negative) comes back at `+0.1` — flipped and collapsed.
+error raised. The anchoring itself is `zoomAt` in `camera.ts`, which the loupe's wheel also
+uses — one fixed-point zoom rather than a copy per caller. Do not reach for
+`zoomAt` from `@weasel-js/core` instead: that one clamps
+`min(max, max(min, scale * factor))` per axis with positive defaults, so a y-up
+view (`scale.y` negative) comes back at `+0.1` — flipped and collapsed. labkit's
+holds one scalar zoom and keeps the y direction in the frame, so it has no such
+axis to invert.
 
 `CanvasCapability.initialView` may be a function of the viewport size instead of
 a literal. labkit then leaves the trial's view `null` until the canvas is first

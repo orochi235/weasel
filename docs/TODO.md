@@ -38,6 +38,7 @@ Priority tags:
 - Layout strategies: multi-select drag into a layout container → [Scene, adapters & layout](#scene-adapters--layout)
 
 **Selection, actions & UI panels**
+- labkit's loupe drives itself with plain listeners, not bindings → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit `registerSerializers` has no callers; instrument serializers never run → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit: nested config values — `f.schema` is flat because `setConfig` is → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Reconcile core's `ToolPrefLeaf` with weasel-ui's `PrefLeaf` — the `paint` kind has already drifted → [Selection, actions & UI panels](#selection-actions--ui-panels)
@@ -1236,6 +1237,17 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 ---
 
 ## Selection, actions & UI panels
+
+- **(P2) labkit's loupe drives itself with plain listeners, not bindings.** The
+  gesture grammar already has every gesture it needs — `keyHeld` with a free key
+  arg, `wheel` with a direction arg, `click` with a target
+  (`packages/gestures/src/grammar/gestures.ts:11-24`) — but a labkit trial does
+  not route input through the dispatcher, so `packages/labkit/src/loupe/useLoupe.ts`
+  attaches `pointermove`, `keydown`/`keyup` and a capture-phase `wheel` by hand,
+  the last of which has to run ahead of `usePanZoom` and stop propagation to do
+  it. They are all in that one hook so this is a single rewrite once trial input
+  goes through the dispatcher; the loupe is the reason to want that, not a
+  reason to build it first.
 
 - **(P2) `layout="inline"` does not cover every control kind, and row spacing is
   still not tokenized.** What remains of the density gap found 2026-09-01;

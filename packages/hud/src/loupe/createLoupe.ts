@@ -3,17 +3,16 @@ import {
   type RenderLayer, type View,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import {
+  createLoupeModel, loupeInnerView,
+  type LoupeMode, type LoupeModel, type LoupeSurface,
+} from '@weasel-js/loupe';
 import type { Hud } from '../hud';
 import type { WindowWidget } from '../widgets/window/window';
 import type { HudContentCtx, WidgetBounds } from '../widget';
-import { loupeInnerView } from './innerView';
-import { loupeSourcePoint } from './pick';
 import { readbackRegion } from './readback';
 
-/** How a loupe magnifies. `'vector'` re-renders the source layers through a
- *  zoomed-in view, so content stays sharp at any factor; `'pixel'` reads the
- *  framebuffer back and blows up the actual pixels. */
-export type LoupeMode = 'vector' | 'pixel';
+export type { LoupeMode };
 
 /** Options for `createLoupe`. */
 export interface LoupeOptions {
@@ -80,10 +79,6 @@ export interface LoupeHandle {
  */
 export function createLoupe(opts: LoupeOptions): LoupeHandle {
   const { hud, element, source, requestRedraw } = opts;
-  let mode: LoupeMode = opts.mode ?? 'vector';
-  let factor = opts.factor ?? 8;
-  let aim = { x: 0, y: 0 };
-  let color: string | null = null;
   let pixels: ImageBitmap | null = null;
   let pixelsPending = false;
   let pixelsStale = false;
@@ -92,15 +87,15 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   const b = opts.bounds ?? { x: 24, y: 24, w: 220, h: 200 };
 
   const content = (ctx: HudContentCtx): DrawCommand[] =>
-    mode === 'vector' ? drawVector(ctx) : drawPixels(ctx);
+    model.mode === 'vector' ? drawVector(ctx) : drawPixels(ctx);
 
   const backdropColor = (ctx: HudContentCtx): string =>
     opts.background ?? ctx.tokens['--wzl-surface'];
 
   const drawVector = (ctx: HudContentCtx): DrawCommand[] => {
-    const world = screenToWorld(aim.x, aim.y, viewToTransform(ctx.view));
+    const world = screenToWorld(model.aim.x, model.aim.y, viewToTransform(ctx.view));
     const inner: View = loupeInnerView(
-      { x: world[0], y: world[1] }, ctx.view, ctx.rect, factor,
+      { x: world[0], y: world[1] }, ctx.view, ctx.rect, model.factor,
     );
     // A fresh lens per frame: CreateViewportLayerOpts.view is static, and the
     // inner view moves with the pointer.
@@ -137,7 +132,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   };
 
   const refreshPixels = () => {
-    if (disposed || mode !== 'pixel') return;
+    if (disposed || model.mode !== 'pixel') return;
     // A readback requested mid-flight is remembered rather than dropped: the
     // aim that arrives during a fast drag is the one the user ends on.
     if (pixelsPending) { pixelsStale = true; return; }
@@ -147,10 +142,10 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     if (cssRect.width === 0) return;
     const dpr = element.width / cssRect.width;
     const rect = win.contentRect;
-    const rw = Math.max(1, Math.round((rect.w * dpr) / factor));
-    const rh = Math.max(1, Math.round((rect.h * dpr) / factor));
+    const rw = Math.max(1, Math.round((rect.w * dpr) / model.factor));
+    const rh = Math.max(1, Math.round((rect.h * dpr) / model.factor));
     const data = readbackRegion(
-      gl, { width: element.width, height: element.height }, aim, dpr, rw, rh,
+      gl, { width: element.width, height: element.height }, model.aim, dpr, rw, rh,
     );
     pixelsPending = true;
     pixelsStale = false;
@@ -182,13 +177,6 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
       .map((c) => c.toString(16).padStart(2, '0')).join('');
   };
 
-  const sampleColor = () => {
-    const hex = readHex(aim);
-    if (hex === null || hex === color) return;
-    color = hex;
-    opts.onColorChange?.(hex);
-  };
-
   const win = hud.window({
     id: 'weasel-loupe',
     x: b.x, y: b.y, w: b.w, h: b.h,
@@ -196,38 +184,31 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     titlebar: opts.titlebar,
     content,
     onResize: () => { refreshPixels(); },
-    onContentClick: (p) => { pick(p); },
+    onContentClick: (p) => { model.pick(p); },
     ...(opts.onClose ? { onClose: opts.onClose } : {}),
   });
 
-  const pick = (p?: { x: number; y: number }): string | null => {
-    if (disposed) return null;
-    const src = p ? loupeSourcePoint(p, win.contentRect, aim, factor) : aim;
-    // The window is in the framebuffer too. A lens point near enough to the
-    // frame maps back under it, and reading there reports chrome as artwork.
-    if (p && win.hitTest(src.x, src.y)) return null;
-    const hex = readHex(src);
-    if (hex !== null) opts.onPick?.(hex);
-    return hex;
+  const surface: LoupeSurface = {
+    lens: () => win.contentRect,
+    covers: (p) => win.hitTest(p.x, p.y),
+    sample: readHex,
+    hidden: () => win.hidden,
+    gone: () => win.disposed === true,
+    changed: () => { refreshPixels(); requestRedraw(); },
   };
+
+  const model: LoupeModel = createLoupeModel({
+    surface,
+    ...(opts.mode ? { mode: opts.mode } : {}),
+    ...(opts.factor !== undefined ? { factor: opts.factor } : {}),
+    ...(opts.onColorChange ? { onColorChange: opts.onColorChange } : {}),
+    ...(opts.onPick ? { onPick: opts.onPick } : {}),
+    onDispose: () => teardown(),
+  });
 
   const onPointerMove = (evt: PointerEvent) => {
     const r = element.getBoundingClientRect();
-    handleAim({ x: evt.clientX - r.left, y: evt.clientY - r.top });
-  };
-
-  const handleAim = (p: { x: number; y: number }) => {
-    if (disposed) return;
-    // The window can be removed through the HUD, which disposes it without
-    // going through `LoupeHandle.dispose`. Follow it down rather than keep
-    // reading pixels back for a loupe nobody can see.
-    if (win.disposed) { teardown(); return; }
-    if (win.hidden) return;
-    if (win.hitTest(p.x, p.y)) return;   // freeze rule
-    aim = p;
-    sampleColor();
-    if (mode === 'pixel') refreshPixels();
-    requestRedraw();
+    model.aimAt({ x: evt.clientX - r.left, y: evt.clientY - r.top });
   };
 
   const teardown = () => {
@@ -241,25 +222,16 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
 
   return {
     window: win,
-    get mode() { return mode; },
-    get factor() { return factor; },
-    get aim() { return aim; },
-    get color() { return color; },
-    setMode(next) {
-      if (next === mode) return;
-      mode = next;
-      if (mode === 'pixel') refreshPixels();
-      requestRedraw();
-    },
-    setFactor(next) {
-      factor = next;
-      if (mode === 'pixel') refreshPixels();
-      requestRedraw();
-    },
-    aimAt: handleAim,
-    pick,
+    get mode() { return model.mode; },
+    get factor() { return model.factor; },
+    get aim() { return model.aim; },
+    get color() { return model.color; },
+    setMode: model.setMode,
+    setFactor: model.setFactor,
+    aimAt: model.aimAt,
+    pick: model.pick,
     dispose() {
-      teardown();
+      model.dispose();
       win.dispose();
     },
   };

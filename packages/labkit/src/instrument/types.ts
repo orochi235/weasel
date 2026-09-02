@@ -4,6 +4,7 @@ import type { TrialContribution } from '../chrome/types';
 import type { ConfigSchema } from '../config/types';
 import type { ConfigField } from '../controls/types';
 import type { JobCapability, JobHandle } from '../job/types';
+import type { LoupeDeclaration } from '../loupe/types';
 import type { ToolCapability } from '../tools/types';
 
 /** What an instrument's `render` is handed: its state and config, the setters
@@ -139,6 +140,11 @@ export interface Instrument<TS = unknown, TC = unknown, TItem = unknown> {
   /** Tools this instrument offers. Declaring them gives the trial a palette
    *  region and its own tool slot. */
   tools?: ToolCapability;
+  /** Magnification. `true` takes every default and re-draws the instrument's
+   *  canvas layers through a zoomed camera; an instrument whose content is DOM
+   *  gives a `render` that draws it again at a camera it is handed. A function
+   *  is re-read as the config changes, so a setting can drive the lens. */
+  loupe?: LoupeDeclaration<TS, TC> | ((config: TC) => LoupeDeclaration<TS, TC>);
   /** Chrome this instrument contributes beyond what its capabilities imply. */
   chrome?: TrialContribution[];
   /** Work too slow to do during a render. The runtime starts it, aborts it on

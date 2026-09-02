@@ -19,6 +19,8 @@ const ctx: TrialChromeContext = {
   canRedo: false,
   undo: () => {},
   redo: () => {},
+  loupeOn: false,
+  toggleLoupe: () => {},
   configFields: [],
   configSchema: fromConfigFields([]),
   config: {},
@@ -63,6 +65,25 @@ describe('builtinContributions', () => {
     expect(ids(bare)).not.toContain('undo');
     expect(ids({ ...bare, undo: {} })).toContain('undo');
     expect(ids({ ...bare, undo: {} })).toContain('redo');
+  });
+
+  it('contributes the loupe toggle only when the instrument declares one', () => {
+    expect(ids(bare)).not.toContain('loupe');
+    expect(ids({ ...bare, loupe: true })).toContain('loupe');
+    expect(ids({ ...bare, loupe: { render: () => null } })).toContain('loupe');
+  });
+
+  it('offers the loupe to a DOM instrument, which declares no canvas', () => {
+    const contributions = builtinContributions({ ...bare, loupe: true }, ctx);
+    const loupe = contributions.find((c) => c.id === 'loupe');
+    expect(loupe?.region).toBe('toolbar');
+  });
+
+  it('reports the loupe switch position, so the button reads as held', () => {
+    const off = builtinContributions({ ...bare, loupe: true }, ctx);
+    const on = builtinContributions({ ...bare, loupe: true }, { ...ctx, loupeOn: true });
+    expect(off.find((c) => c.id === 'loupe')?.item).toMatchObject({ pressed: false });
+    expect(on.find((c) => c.id === 'loupe')?.item).toMatchObject({ pressed: true });
   });
 
   it('puts zoom controls in the viewport region, not the toolbar', () => {

@@ -82,7 +82,11 @@
       "types": "./dist/ui/layers/index.d.ts",
       "import": "./dist/ui/layers/index.js"
     },
-    "./styles.css": "./dist/styles.css"
+    "./styles.css": "./dist/styles.css",
+    "./loupe": {
+      "types": "./dist/loupe/index.d.ts",
+      "import": "./dist/loupe/index.js"
+    }
   },
   "scripts": {
     "dev": "vite",
@@ -110,6 +114,7 @@
   },
   "dependencies": {
     "@weasel-js/core": "1.3.0",
+    "@weasel-js/loupe": "1.3.0",
     "@weasel-js/theme": "1.3.0",
     "@weasel-js/ui": "1.3.0",
     "earcut": "2.2.4",

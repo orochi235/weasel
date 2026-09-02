@@ -70,6 +70,8 @@ export interface ToolbarButtonProps {
   variant?: 'default' | 'danger';
   /** Square, for a button whose whole content is one glyph. */
   iconOnly?: boolean;
+  /** Makes this a toggle: `aria-pressed`, and held down while true. */
+  pressed?: boolean;
 }
 
 function Button({
@@ -80,11 +82,13 @@ function Button({
   'aria-label': ariaLabel,
   variant = 'default',
   iconOnly,
+  pressed,
 }: ToolbarButtonProps) {
   const cls = [
     'lk-toolbar-button',
     variant === 'danger' && 'lk-toolbar-button--danger',
     iconOnly && 'lk-toolbar-button--icon',
+    pressed && 'lk-toolbar-button--pressed',
   ]
     .filter(Boolean)
     .join(' ');
@@ -96,6 +100,7 @@ function Button({
       disabled={disabled}
       title={title}
       aria-label={ariaLabel ?? title}
+      aria-pressed={pressed}
     >
       {children}
     </button>

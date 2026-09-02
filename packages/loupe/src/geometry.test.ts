@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { loupeInnerView } from './innerView';
+import { loupeInnerView } from './geometry';
 
 const outer = { x: 0, y: 0, scale: { x: 2, y: 2 } };
 const rect = { x: 500, y: 400, w: 200, h: 100 };

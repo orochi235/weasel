@@ -12,6 +12,7 @@
       "@weasel-js/geom",
       "@weasel-js/gestures",
       "@weasel-js/history",
+      "@weasel-js/loupe",
       "@weasel-js/modes",
       "@weasel-js/svg",
       "@weasel-js/d3",

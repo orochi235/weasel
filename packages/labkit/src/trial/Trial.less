@@ -65,6 +65,22 @@
     height: 100%;
   }
 
+  // A DOM instrument's own box, so the lens has something to be positioned
+  // against. Reproduces the content well's column so the instrument still
+  // stretches to it rather than collapsing to its intrinsic height.
+  &__loupe-host {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+
+    > * {
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+  }
+
   &__toolbar {
     flex-shrink: 0;
   }

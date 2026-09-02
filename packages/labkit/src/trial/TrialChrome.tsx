@@ -20,6 +20,12 @@ import { as2DView } from '../state/view';
 import { TrialTitleBar } from './TrialTitleBar';
 import { UndockedSections } from './UndockedSections';
 
+/** The trial's loupe as its chrome sees it: a switch and its position. */
+export interface LoupeBindings {
+  on: boolean;
+  toggle: () => void;
+}
+
 export interface UndoBindings {
   canUndo: boolean;
   canRedo: boolean;
@@ -36,6 +42,9 @@ export interface TrialChromeProps {
   undoBindings?: UndoBindings;
   /** Supplied when the instrument declares a `job`. */
   job?: JobHandle;
+  /** Supplied when the instrument declares a `loupe`. The lens itself is the
+   *  trial's to mount; the chrome only offers the switch. */
+  loupe?: LoupeBindings;
   /** Contributions the trial runtime itself adds — the drag palette and the
    *  layer list, which depend on runtime state the instrument cannot reach. */
   trialChrome?: readonly TrialContribution[];
@@ -62,6 +71,7 @@ export function TrialChrome({
   isLastTrial,
   undoBindings,
   job,
+  loupe,
   trialChrome,
   chrome,
   suppress,
@@ -107,6 +117,8 @@ export function TrialChrome({
       canRedo: undoBindings?.canRedo ?? false,
       undo: undoBindings?.undo ?? NO_OP,
       redo: undoBindings?.redo ?? NO_OP,
+      loupeOn: loupe?.on ?? false,
+      toggleLoupe: loupe?.toggle ?? NO_OP,
       configSchema,
       configFields: instrument.config ? [] : (instrument.configSchema?.() ?? []),
       config: record.config,
@@ -146,6 +158,7 @@ export function TrialChrome({
     updateTrialConfig,
     updateTrialState,
     undoBindings,
+    loupe,
     view2d,
     activeToolId,
     setActiveTool,

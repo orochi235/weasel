@@ -19,6 +19,9 @@ export interface ToolbarItem {
   disabled?: boolean;
   /** Reddens on hover. For actions that discard work. */
   danger?: boolean;
+  /** A toggle rather than a command: renders `aria-pressed` and reads as held
+   *  down while true. */
+  pressed?: boolean;
   /** Render the label beside the glyph rather than only in the tooltip. */
   showLabel?: boolean;
   onActivate: () => void;
@@ -107,6 +110,11 @@ export interface TrialChromeContext {
   canRedo: boolean;
   undo: () => void;
   redo: () => void;
+
+  /** Whether the trial's loupe is turned on. False for an instrument that
+   *  declares none, whose chrome offers no way to turn one on. */
+  loupeOn: boolean;
+  toggleLoupe: () => void;
 
   /** The instrument's controls, resolved against the lab's rules. Always
    *  populated: a legacy `configSchema()` is adapted into the same shape. */
