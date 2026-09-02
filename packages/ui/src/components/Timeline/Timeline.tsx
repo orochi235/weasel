@@ -133,7 +133,7 @@ export function Timeline(props: TimelineProps): ReactElement {
             className={s.transportButton}
             onClick={() => props.onModeChange?.((props.mode ?? 'dope') === 'graph' ? 'dope' : 'graph')}
           >
-            ⟿
+            Graph
           </button>
         </div>
       )}

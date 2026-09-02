@@ -19,6 +19,10 @@ so keys inside an expanded nested timeline drag, delete and re-ease like any
 other. Times reported to the editor are the addressed track's own; the component
 crosses into ruler time to snap and back out to commit.
 
+Dragging a key draws a dashed ghost at where it would land, with the committed
+key dimmed in place — the editor previews its own gesture rather than waiting
+for a consumer to wire `onInput` and feed the moved track back.
+
 Dragging a bezier handle previews the curve through `cubicBezierEasing`
 directly rather than `resolveEasing`, since a drag writes a fresh set of
 control points on every pointermove and `resolveEasing`'s cache is keyed by

@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { PauseIcon, PlayIcon } from '../../icons';
 import s from './Timeline.module.css';
 
 /** Playback rates the transport offers. */
@@ -35,7 +36,7 @@ export function Transport(props: TransportProps): ReactElement {
         aria-label={paused ? 'Play' : 'Pause'}
         onClick={paused ? onPlay : onPause}
       >
-        {paused ? '▶' : '❚❚'}
+        {paused ? <PlayIcon size={14} /> : <PauseIcon size={14} />}
       </button>
 
       <span className={s.time} data-testid="timeline-time">
