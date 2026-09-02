@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createTimeScale, panWindow, tickTimes, zoomWindow } from './timeScale';
+import { createTimeScale, panWindow, spanFraction, spanPercent, tickTimes, toFraction, toPercent, zoomWindow } from './timeScale';
 
 describe('createTimeScale', () => {
   it('maps the window ends to the track ends', () => {
@@ -95,5 +95,39 @@ describe('tickTimes', () => {
 
   it('returns no ticks for a zero-width track', () => {
     expect(tickTimes({ from: 0, to: 1000 }, 0, 50)).toEqual([]);
+  });
+});
+
+describe('width-free positioning', () => {
+  const win = { from: 200, to: 1200 };
+
+  it('places a time at its fraction of the window', () => {
+    expect(toFraction(win, 700)).toBeCloseTo(0.5, 9);
+    expect(toPercent(win, 700)).toBe('50%');
+  });
+
+  it('runs negative before the window and past 1 after it', () => {
+    expect(toFraction(win, 100)).toBeCloseTo(-0.1, 9);
+    expect(toFraction(win, 1700)).toBeCloseTo(1.5, 9);
+  });
+
+  it('measures a duration without subtracting the window origin', () => {
+    expect(spanFraction(win, 250)).toBeCloseTo(0.25, 9);
+    expect(spanPercent(win, 250)).toBe('25%');
+  });
+
+  it('collapses to zero rather than dividing by a zero span', () => {
+    const degenerate = { from: 5, to: 5 };
+    expect(toFraction(degenerate, 5)).toBe(0);
+    expect(toFraction(degenerate, 99)).toBe(0);
+    expect(spanFraction(degenerate, 99)).toBe(0);
+    expect(toPercent(degenerate, 99)).toBe('0%');
+  });
+
+  it('agrees with createTimeScale once a width is known', () => {
+    const scale = createTimeScale(win, 400);
+    for (const ms of [200, 450, 700, 1200]) {
+      expect(toFraction(win, ms) * 400).toBeCloseTo(scale.toPx(ms), 9);
+    }
   });
 });

@@ -27,6 +27,31 @@ export function createTimeScale(window: TimeWindow, widthPx: number): TimeScale 
   };
 }
 
+/** Where `ms` sits in the window, as a fraction. The width-free half of
+ *  `createTimeScale` — a CSS `left: %` needs no pixel width, and asking for one
+ *  is what drove three copies of this arithmetic into the lane and the ruler. */
+export function toFraction(window: TimeWindow, ms: number): number {
+  const span = window.to - window.from;
+  return span === 0 ? 0 : (ms - window.from) / span;
+}
+
+/** `toFraction` as a CSS percentage. */
+export function toPercent(window: TimeWindow, ms: number): string {
+  return `${toFraction(window, ms) * 100}%`;
+}
+
+/** A duration as a fraction of the window. Distinct from `toFraction`, which
+ *  measures a position and so subtracts `window.from`. */
+export function spanFraction(window: TimeWindow, ms: number): number {
+  const span = window.to - window.from;
+  return span === 0 ? 0 : ms / span;
+}
+
+/** A duration as a CSS percentage, for a width. */
+export function spanPercent(window: TimeWindow, ms: number): string {
+  return `${spanFraction(window, ms) * 100}%`;
+}
+
 function clampWindow(w: TimeWindow, bounds: TimeWindow): TimeWindow {
   const span = Math.min(w.to - w.from, bounds.to - bounds.from);
   let from = w.from;

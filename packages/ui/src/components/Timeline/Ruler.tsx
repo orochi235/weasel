@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactElement, type WheelEvent as ReactWheelEvent } from 'react';
 import s from './Timeline.module.css';
-import { createTimeScale, panWindow, tickTimes, zoomWindow, type TimeWindow } from './timeScale';
+import { createTimeScale, panWindow, tickTimes, toPercent, zoomWindow, type TimeWindow } from './timeScale';
 
 /** Minimum gap between ruler ticks, in px. */
 const TICK_SPACING_PX = 64;
@@ -81,8 +81,7 @@ export function Ruler(props: RulerProps): ReactElement {
   };
 
   const ticks = tickTimes(win, width, TICK_SPACING_PX);
-  const span = win.to - win.from;
-  const pct = (ms: number): string => `${span === 0 ? 0 : ((ms - win.from) / span) * 100}%`;
+  const pct = (ms: number): string => toPercent(win, ms);
 
   return (
     <div

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, 
 import { cubicBezierEasing, type EasingSpec, type EventTrack, type SampledTrack, type TimelineTrack } from '@weasel-js/core';
 import { ChevronIcon } from '../../icons';
 import s from './Timeline.module.css';
-import { createTimeScale, type TimeWindow } from './timeScale';
+import { createTimeScale, spanPercent, toFraction, toPercent, type TimeWindow } from './timeScale';
 import { snapTime } from './keys';
 import { easingBezier, sampleEasing } from './easingSpec';
 import type { LaneRow } from './lanes';
@@ -80,8 +80,7 @@ export function Lane(props: LaneProps): ReactElement {
   // `onKeyInput` — the committed key stays put underneath as the origin.
   const [drag, setDrag] = useState<{ keyIndex: number; t: number; value?: number } | null>(null);
 
-  const span = win.to - win.from;
-  const pct = (ms: number): string => `${span === 0 ? 0 : ((ms + row.offset - win.from) / span) * 100}%`;
+  const pct = (ms: number): string => toPercent(win, ms + row.offset);
 
   const msAt = (clientX: number): number => {
     const rect = trackRef.current?.getBoundingClientRect();
@@ -91,7 +90,8 @@ export function Lane(props: LaneProps): ReactElement {
 
   const snapPxToMs = (): number => {
     const width = trackRef.current?.getBoundingClientRect().width ?? 0;
-    return width === 0 ? 0 : (SNAP_PX / width) * span;
+    const scale = createTimeScale(win, width);
+    return scale.toMs(SNAP_PX) - scale.toMs(0);
   };
 
   // Value axis: only a numeric sampled row in graph mode has an honest one.
@@ -122,7 +122,7 @@ export function Lane(props: LaneProps): ReactElement {
       for (let j = 0; j < eased.length; j++) {
         const t = a.t + ((b.t - a.t) * j) / (eased.length - 1);
         const v = a.value + (b.value - a.value) * eased[j];
-        pts.push(`${span === 0 ? 0 : ((t + row.offset - win.from) / span) * 100},${100 - vPct(v)}`);
+        pts.push(`${toFraction(win, t + row.offset) * 100},${100 - vPct(v)}`);
       }
     }
     return pts.join(' ');
@@ -260,7 +260,7 @@ export function Lane(props: LaneProps): ReactElement {
           <div
             className={s.nestedBar}
             data-testid="timeline-nested"
-            style={{ left: pct(0), width: `${span === 0 ? 0 : ((row.track as TimelineTrack).timeline.duration ?? 0) / span * 100}%` }}
+            style={{ left: pct(0), width: spanPercent(win, (row.track as TimelineTrack).timeline.duration ?? 0) }}
           />
         ) : null}
         {row.kind === 'sampled' ? sampledKeys.slice(1).map((k, idx) => {
@@ -274,7 +274,7 @@ export function Lane(props: LaneProps): ReactElement {
               aria-current={selectedSegment === i ? 'true' : undefined}
               data-testid="timeline-segment"
               className={s.segment}
-              style={{ left: pct(sampledKeys[i - 1].t), width: `${span === 0 ? 0 : ((k.t - sampledKeys[i - 1].t) / span) * 100}%` }}
+              style={{ left: pct(sampledKeys[i - 1].t), width: spanPercent(win, k.t - sampledKeys[i - 1].t) }}
               onClick={() => onSelectSegment?.(i)}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectSegment?.(i); } }}
             />
