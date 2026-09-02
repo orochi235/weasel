@@ -78,4 +78,28 @@ describe('cubicBezierEasing', () => {
     for (let i = 0; i <= 100; i++) max = Math.max(max, fn(i / 100));
     expect(max).toBeGreaterThan(1);
   });
+
+  it('clamps x1/x2 outside 0..1, matching the clamped curve', () => {
+    const over = cubicBezierEasing(1.5, 0, 0.2, 1);
+    const clamped = cubicBezierEasing(1, 0, 0.2, 1);
+    for (const t of [0, 0.25, 0.5, 0.75, 1]) {
+      expect(over(t)).toBeCloseTo(clamped(t), 6);
+    }
+
+    const under = cubicBezierEasing(-0.5, 0, 0.2, 1);
+    const clampedUnder = cubicBezierEasing(0, 0, 0.2, 1);
+    for (const t of [0, 0.25, 0.5, 0.75, 1]) {
+      expect(under(t)).toBeCloseTo(clampedUnder(t), 6);
+    }
+  });
+
+  it('stays monotone for a curve whose x1 is out of range', () => {
+    const fn = cubicBezierEasing(1.5, 0, 0.2, 1);
+    let prev = -Infinity;
+    for (let i = 0; i <= 100; i++) {
+      const v = fn(i / 100);
+      expect(v).toBeGreaterThanOrEqual(prev - 1e-9);
+      prev = v;
+    }
+  });
 });

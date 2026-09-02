@@ -53,14 +53,19 @@ function solveForX(x: number, x1: number, x2: number): number {
   return t;
 }
 
-/** Build the easing curve for four cubic-bezier control points. */
+/** Build the easing curve for four cubic-bezier control points. `x1`/`x2` are
+ *  clamped to [0,1] — CSS `cubic-bezier()`'s constraint for a monotone x(t),
+ *  which both `solveForX` root-finders assume. `y1`/`y2` are unclamped: an
+ *  overshoot easing (back, elastic) needs them outside 0..1. */
 export function cubicBezierEasing(
   x1: number, y1: number, x2: number, y2: number,
 ): EasingFn {
+  const cx1 = Math.min(1, Math.max(0, x1));
+  const cx2 = Math.min(1, Math.max(0, x2));
   return (t) => {
     if (t <= 0) return 0;
     if (t >= 1) return 1;
-    return bezierAt(solveForX(t, x1, x2), y1, y2);
+    return bezierAt(solveForX(t, cx1, cx2), y1, y2);
   };
 }
 
