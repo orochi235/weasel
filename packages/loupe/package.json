@@ -1,7 +1,7 @@
 {
-  "name": "@weasel-js/hud",
+  "name": "@weasel-js/loupe",
   "version": "1.3.0",
-  "description": "WebGL-rendered UI widgets that composite into a weasel canvas",
+  "description": "Surface-free magnifier model: where a loupe is aimed, how far it magnifies, and what colour it is over. Painters live with the surfaces they draw on.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
@@ -13,27 +13,14 @@
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
-    "./react": {
-      "import": "./dist/react/index.js",
-      "types": "./dist/react/index.d.ts"
-    },
     "./package.json": "./package.json"
-  },
-  "peerDependencies": {
-    "react": ">=18",
-    "@weasel-js/core": "1.3.0",
-    "@weasel-js/font": "1.3.0"
-  },
-  "dependencies": {
-    "@weasel-js/loupe": "1.3.0",
-    "@weasel-js/theme": "1.3.0"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/orochi235/weasel.git",
-    "directory": "packages/hud"
+    "directory": "packages/loupe"
   },
   "bugs": {
     "url": "https://github.com/orochi235/weasel/issues"
@@ -41,13 +28,16 @@
   "engines": {
     "node": ">=22"
   },
+  "peerDependencies": {
+    "@weasel-js/core": "1.3.0"
+  },
   "files": [
     "dist",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "build": "vite build && tsc -p tsconfig.build.json"
+    "build": "tsup"
   },
   "publishConfig": {
     "access": "public",
