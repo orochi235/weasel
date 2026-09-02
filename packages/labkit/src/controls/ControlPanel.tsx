@@ -6,6 +6,7 @@ import {
   type PrefLeaf,
   PropertyGroup,
   PropertyList,
+  type PropertyRowLayout,
   PropertyRow,
   SelectRow,
   SliderRow,
@@ -17,6 +18,16 @@ import { fromConfigFields } from '../config/fromConfigField';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { isLeafVisible } from '../config/visible';
 import type { ConfigField } from './types';
+
+/** How a panel packs its rows into the two-column property grid.
+ *   - `'auto'`: narrow controls (numbers, checkboxes, dropdowns, colours) sit
+ *     two per row; the ones that need the width — text, sliders, segmented
+ *     toggles — span it.
+ *   - `'pairs'`: every row pairs. A control that needs the full width says so
+ *     itself, with `<PropertyRow span>`.
+ *   - `'one-up'`: one control per row, colours excepted.
+ */
+export type ControlPack = 'auto' | 'pairs' | 'one-up';
 
 export interface ControlPanelProps<TC extends Record<string, unknown>> {
   /** The instrument's resolved config schema. */
@@ -31,6 +42,11 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> {
    * the row; entries override the built-in rows on collision.
    */
   renderers?: Record<string, ControlRenderer>;
+  /** How rows pack into the two-column grid. Defaults to `'pairs'`. */
+  pack?: ControlPack;
+  /** Where a row's label sits relative to its control. Defaults to `'block'`
+   *  — above it, which is what leaves a paired row room for its value. */
+  layout?: PropertyRowLayout;
   /** Draw leaves marked `hidden`. */
   showHidden?: boolean;
   className?: string;
@@ -45,6 +61,8 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   config,
   setConfig,
   renderers,
+  pack = 'pairs',
+  layout = 'block',
   showHidden = false,
   className,
 }: ControlPanelProps<TC>) {
@@ -62,15 +80,21 @@ export function ControlPanel<TC extends Record<string, unknown>>({
       config={config}
       setConfig={setConfig}
       renderers={renderers}
+      pack={pack}
+      layout={layout}
       showHidden={showHidden}
     />
   );
 
+  const gridPack = pack === 'one-up' ? 'auto-color' : 'pairs';
   return (
-    <PropertyList className={className ? `lk-control-panel ${className}` : 'lk-control-panel'}>
+    <PropertyList
+      pack={gridPack}
+      className={className ? `lk-control-panel ${className}` : 'lk-control-panel'}
+    >
       {loose.map(row)}
       {resolved.sections.map((section) => (
-        <PropertyGroup key={section.label} title={section.label}>
+        <PropertyGroup key={section.label} title={section.label} pack={gridPack}>
           {section.paths.map(row)}
         </PropertyGroup>
       ))}
@@ -84,6 +108,8 @@ interface ControlRowProps<TC extends Record<string, unknown>> {
   config: TC;
   setConfig: (key: keyof TC, value: unknown) => void;
   renderers?: Record<string, ControlRenderer>;
+  pack: ControlPack;
+  layout: PropertyRowLayout;
   showHidden: boolean;
 }
 
@@ -99,6 +125,8 @@ function ControlRow<TC extends Record<string, unknown>>({
   config,
   setConfig,
   renderers,
+  pack,
+  layout,
   showHidden,
 }: ControlRowProps<TC>) {
   const leaf = resolved.group.children[path] as PrefLeaf | undefined;
@@ -112,11 +140,16 @@ function ControlRow<TC extends Record<string, unknown>>({
   // Most specific wins, and within a tier the lab's entry beats the
   // instrument's: controls[path] -> node .render -> controls[kind] -> built-in.
   const custom = renderers?.[path] ?? resolved.renderers[path] ?? renderers?.[leaf.kind];
+  // A custom row places itself like any other; one that needs the full width
+  // says so with `<PropertyRow span>`, which is the same opt-out a built-in has.
   if (custom) return custom({ path, pref: leaf, value, setValue: write });
 
   const label = leaf.name;
   const description = leaf.description;
   const read = <T,>(): T => value as T;
+  // `auto` gives the whole width to the controls that read badly at half of a
+  // sidebar's: free text, a slider track, a segmented toggle. `pairs` doesn't.
+  const wide = pack === 'auto';
 
   if (!isBuiltinToolPref(leaf))
     return <UnwiredRow label={label} kind={leaf.kind} description={description} />;
@@ -135,6 +168,8 @@ function ControlRow<TC extends Record<string, unknown>>({
             max={max}
             step={step}
             onChange={write}
+            layout={layout}
+            span={wide}
             description={description}
           />
         );
@@ -152,6 +187,7 @@ function ControlRow<TC extends Record<string, unknown>>({
           max={max}
           step={step}
           onChange={(n) => write(Math.min(hi, Math.max(lo, n)))}
+          layout={layout}
           description={description}
         />
       );
@@ -167,13 +203,16 @@ function ControlRow<TC extends Record<string, unknown>>({
       );
     case 'enum': {
       const options = extra<readonly { value: string; label: string }[]>(leaf, 'options') ?? [];
-      const Row = extra<string>(leaf, 'control') === 'radio' ? ToggleRow : SelectRow;
+      const segmented = extra<string>(leaf, 'control') === 'radio';
+      const Row = segmented ? ToggleRow : SelectRow;
       return (
         <Row
           label={label}
           value={read<string>()}
           options={options}
           onChange={write}
+          layout={layout}
+          span={segmented && wide}
           description={description}
         />
       );
@@ -185,6 +224,8 @@ function ControlRow<TC extends Record<string, unknown>>({
           label={label}
           value={read<string>()}
           write={write}
+          layout={layout}
+          span={wide}
           description={description}
         />
       );
@@ -235,12 +276,16 @@ function DebouncedTextRow({
   label,
   value,
   write,
+  layout,
+  span,
   description,
 }: {
   leaf: PrefLeaf;
   label: string;
   value: string;
   write: (value: unknown) => void;
+  layout?: PropertyRowLayout;
+  span?: boolean;
   description?: string;
 }) {
   const debounceMs = extra<number>(leaf, 'debounceMs') ?? 150;
@@ -265,6 +310,8 @@ function DebouncedTextRow({
   return (
     <TextRow
       label={label}
+      layout={layout}
+      span={span}
       description={description}
       value={local}
       placeholder={extra<string>(leaf, 'placeholder')}

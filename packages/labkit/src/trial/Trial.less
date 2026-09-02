@@ -22,6 +22,9 @@
 
   &__sidebar {
     flex-shrink: 0;
+    // Stated, not content-derived: an auto-width sidebar is as wide as its
+    // widest label, so one verbose config key sets the width of the lab.
+    width: var(--lk-trial-sidebar-w, 20rem);
     display: flex;
     flex-direction: column;
     min-height: 0;
