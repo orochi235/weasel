@@ -141,11 +141,23 @@ describe('Lane in graph mode', () => {
     expect(screen.getByTestId('timeline-curve')).toBeInTheDocument();
   });
 
-  it('positions a key by value as well as time', () => {
+  // Not 0% and 100%: the value axis is inset by V_INSET_PCT so a key at the
+  // minimum centres inside the lane rather than on its border, where it would
+  // hang half into the lane below.
+  it('positions a key by value as well as time, inside the lane', () => {
     render(<Lane {...base} mode="graph" row={laneOf(sampled)} />);
     const [first, second] = screen.getAllByTestId('timeline-key');
-    expect(first).toHaveStyle({ bottom: '0%' });
-    expect(second).toHaveStyle({ bottom: '100%' });
+    expect(first).toHaveStyle({ bottom: '8%' });
+    expect(second).toHaveStyle({ bottom: '92%' });
+  });
+
+  it('keeps the extreme keys clear of both lane borders', () => {
+    render(<Lane {...base} mode="graph" row={laneOf(sampled)} />);
+    for (const el of screen.getAllByTestId('timeline-key')) {
+      const pct = Number.parseFloat((el as HTMLElement).style.bottom);
+      expect(pct).toBeGreaterThan(0);
+      expect(pct).toBeLessThan(100);
+    }
   });
 
   it('drags a key in value as well as time', () => {

@@ -6,6 +6,10 @@ import { snapTime } from './keys';
 import { easingBezier, sampleEasing } from './easingSpec';
 import type { LaneRow } from './lanes';
 
+/** Keeps the extreme keys inside the lane: at 0% a marker centres on the lane's
+ *  border and hangs half into its neighbour. Symmetric, so the midpoint holds. */
+const V_INSET_PCT = 8;
+
 /** Snap radius, in track pixels. */
 const SNAP_PX = 6;
 
@@ -91,13 +95,14 @@ export function Lane(props: LaneProps): ReactElement {
   const lo = graph ? Math.min(...values) : 0;
   const hi = graph ? Math.max(...values) : 1;
   const vSpan = hi - lo || 1;
-  const vPct = (v: number): number => ((v - lo) / vSpan) * 100;
+  const vPct = (v: number): number => V_INSET_PCT + ((v - lo) / vSpan) * (100 - 2 * V_INSET_PCT);
 
   const valueAt = (clientY: number): number => {
     const rect = trackRef.current?.getBoundingClientRect();
     if (!rect || rect.height === 0) return lo;
     const frac = 1 - (clientY - rect.top) / rect.height;
-    return lo + frac * vSpan;
+    const norm = (frac * 100 - V_INSET_PCT) / (100 - 2 * V_INSET_PCT);
+    return lo + Math.min(1, Math.max(0, norm)) * vSpan;
   };
 
   const curvePoints = (): string => {
