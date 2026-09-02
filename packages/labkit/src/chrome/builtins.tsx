@@ -140,17 +140,6 @@ export function builtinContributions(
     });
   }
 
-  out.push({
-    id: 'snapshot',
-    region: 'toolbar',
-    group: 'history',
-    item: {
-      icon: SnapshotIcon,
-      label: 'Save snapshot',
-      shortcut: 'Mod+S',
-      onActivate: () => ctx.saveSnapshot(),
-    },
-  });
   if (ctx.savedSnapshots.length > 0) {
     // A picker is not an icon button, so it takes the render escape. Held at
     // `selectedKey={null}` so it stays a "load one" action rather than
@@ -185,6 +174,17 @@ export function builtinContributions(
     region: 'titlebar',
     end: true,
     item: { icon: ResetIcon, label: 'Reset trial', onActivate: ctx.reset },
+  });
+  out.push({
+    id: 'snapshot',
+    region: 'titlebar',
+    end: true,
+    item: {
+      icon: SnapshotIcon,
+      label: 'Save snapshot',
+      shortcut: 'Mod+S',
+      onActivate: () => ctx.saveSnapshot(),
+    },
   });
   out.push({
     id: 'close',

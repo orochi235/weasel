@@ -82,7 +82,7 @@ describe('<TrialChrome>', () => {
     expect(screen.getByRole('button', { name: 'Clone trial' })).toBeInTheDocument();
   });
 
-  it('puts clone and reset at the end of the title bar, beside close', () => {
+  it('puts clone, reset and snapshot at the end of the title bar, beside close', () => {
     const { container } = render(<ChromeHarness />);
     const titlebar = container.querySelector('.lk-trial__titlebar');
     if (!titlebar) throw new Error('no title bar');
@@ -91,7 +91,7 @@ describe('<TrialChrome>', () => {
     const labels = [...titlebar.querySelectorAll('button')].map((b) =>
       b.getAttribute('aria-label'),
     );
-    expect(labels).toEqual(['Clone trial', 'Reset trial', 'Close trial']);
+    expect(labels).toEqual(['Clone trial', 'Reset trial', 'Save snapshot', 'Close trial']);
   });
 
   it('disables close on the last trial', () => {

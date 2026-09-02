@@ -50,7 +50,13 @@ function ids(instrument: Instrument, c: TrialChromeContext = ctx): string[] {
 
 describe('builtinContributions', () => {
   it('always contributes the trial actions', () => {
-    expect(ids(bare)).toEqual(['snapshot', 'clone', 'reset', 'close']);
+    expect(ids(bare)).toEqual(['clone', 'reset', 'snapshot', 'close']);
+  });
+
+  it('puts snapshot in the title bar with clone and reset, not the toolbar', () => {
+    const snapshot = builtinContributions(bare, ctx).find((c) => c.id === 'snapshot');
+    expect(snapshot?.region).toBe('titlebar');
+    expect(snapshot?.end).toBe(true);
   });
 
   it('contributes undo and redo only when the instrument declares undo', () => {
