@@ -1,5 +1,5 @@
 import { useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
-import type { EventTrack, SampledTrack } from '@weasel-js/core';
+import type { EventTrack, SampledTrack, TimelineTrack } from '@weasel-js/core';
 import s from './Timeline.module.css';
 import { createTimeScale, type TimeWindow } from './timeScale';
 import { snapTime } from './keys';
@@ -115,7 +115,7 @@ export function Lane(props: LaneProps): ReactElement {
           <div
             className={s.nestedBar}
             data-testid="timeline-nested"
-            style={{ left: pct(0), width: `${span === 0 ? 0 : (row.track.timeline.duration ?? 0) / span * 100}%` }}
+            style={{ left: pct(0), width: `${span === 0 ? 0 : ((row.track as TimelineTrack).timeline.duration ?? 0) / span * 100}%` }}
           />
         ) : null}
         {times.map((t, i) => (
