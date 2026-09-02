@@ -95,6 +95,7 @@ export function Lane(props: LaneProps): ReactElement {
             role="button"
             tabIndex={0}
             aria-expanded={expanded}
+            data-testid="timeline-disclosure"
             className={s.disclosure}
             onClick={onToggleExpand}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleExpand(); } }}

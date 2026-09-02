@@ -126,3 +126,36 @@
 
 .time { font-variant-numeric: tabular-nums; color: var(--wzl-text-muted); }
 .rate { display: inline-flex; align-items: center; gap: 4px; color: var(--wzl-text-muted); }
+
+.root {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--wzl-surface-1);
+  border: 1px solid var(--wzl-border);
+  border-radius: 4px;
+  color: var(--wzl-text);
+}
+
+.label { padding: 4px 6px; font-size: var(--wzl-font-xs, 10px); color: var(--wzl-text-muted); }
+
+.body { display: flex; align-items: stretch; }
+.gutter { flex: 0 0 var(--wzl-timeline-label-w, 120px); border-right: 1px solid var(--wzl-border); }
+.rulerWrap { flex: 1 1 auto; min-width: 0; }
+
+.lanes {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.inspector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-top: 1px solid var(--wzl-border);
+  background: var(--wzl-surface-2);
+  font-size: var(--wzl-font-xs, 10px);
+}
