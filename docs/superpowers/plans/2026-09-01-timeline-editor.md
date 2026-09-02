@@ -1439,14 +1439,14 @@ Expected: FAIL — `Failed to resolve import "./easingSpec"`.
 ```ts
 import { EASINGS, resolveEasing, type EasingName, type EasingSpec } from '@weasel-js/core';
 
-function bezierOf(spec: EasingSpec): [number, number, number, number] | null {
+function bezierOf(spec: EasingSpec): readonly [number, number, number, number] | null {
   if (typeof spec === 'object' && spec !== null && 'bezier' in spec) return spec.bezier;
   return null;
 }
 
 /** Control points, for the graph view's draggable handles. `null` means this
  *  spec has no handles to drag — the view offers to convert it to a bezier. */
-export function easingBezier(spec?: EasingSpec): [number, number, number, number] | null {
+export function easingBezier(spec?: EasingSpec): readonly [number, number, number, number] | null {
   if (spec === undefined) return null;
   return bezierOf(spec);
 }
@@ -3137,7 +3137,7 @@ const PREVIEW_SAMPLES = 24;
 
 /** Control points for the named curves the picker can convert. A name the table
  *  does not cover converts to the CSS default rather than refusing. */
-const BEZIER_OF: Partial<Record<string, [number, number, number, number]>> = {
+const BEZIER_OF: Partial<Record<string, readonly [number, number, number, number]>> = {
   linear: [0, 0, 1, 1],
   easeInQuad: [0.11, 0, 0.5, 0],
   easeOutQuad: [0.5, 1, 0.89, 1],
@@ -3150,7 +3150,7 @@ const BEZIER_OF: Partial<Record<string, [number, number, number, number]>> = {
   easeInOutSine: [0.37, 0, 0.63, 1],
 };
 
-const DEFAULT_BEZIER: [number, number, number, number] = [0.25, 0.1, 0.25, 1];
+const DEFAULT_BEZIER: readonly [number, number, number, number] = [0.25, 0.1, 0.25, 1];
 
 export interface EasingPickerProps {
   value: EasingSpec | undefined;

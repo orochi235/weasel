@@ -4,7 +4,8 @@ import type { EasingFn } from './types';
 /** Cubic-bezier control points, CSS `cubic-bezier()` order. The curve's two
  *  endpoints are implicit at (0,0) and (1,1). */
 export interface BezierEasing {
-  bezier: [number, number, number, number];
+  /** `readonly` so an `as const` preset is assignable; nothing ever writes it. */
+  bezier: readonly [number, number, number, number];
 }
 
 /** An easing curve as a value: a function, the name of a built-in, or control

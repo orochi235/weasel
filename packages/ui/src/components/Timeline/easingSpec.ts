@@ -1,13 +1,13 @@
 import { EASINGS, resolveEasing, type EasingName, type EasingSpec } from '@weasel-js/core';
 
-function bezierOf(spec: EasingSpec): [number, number, number, number] | null {
+function bezierOf(spec: EasingSpec): readonly [number, number, number, number] | null {
   if (typeof spec === 'object' && spec !== null && 'bezier' in spec) return spec.bezier;
   return null;
 }
 
 /** Control points, for the graph view's draggable handles. `null` means this
  *  spec has no handles to drag — the view offers to convert it to a bezier. */
-export function easingBezier(spec?: EasingSpec): [number, number, number, number] | null {
+export function easingBezier(spec?: EasingSpec): readonly [number, number, number, number] | null {
   if (spec === undefined) return null;
   return bezierOf(spec);
 }
