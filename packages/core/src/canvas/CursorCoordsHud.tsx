@@ -35,10 +35,13 @@ export function CursorCoordsHud({ canvasRef, viewRef, offset }: CursorCoordsHudP
     client: { x: 0, y: 0 }, world: null, inCanvas: false,
   });
   const [fps, setFps] = useState<number>(0);
-  const { ref, style: anchorStyle } = useHostAnchor(canvasRef, {
-    top: offset?.top ?? 8,
-    right: offset?.right ?? 8,
-  });
+  const { ref, style: anchorStyle } = useHostAnchor(
+    () => canvasRef.current?.parentElement ?? canvasRef.current,
+    {
+      align: { x: 'end', y: 'start' },
+      offset: { x: offset?.right ?? 8, y: offset?.top ?? 8 },
+    },
+  );
 
   // FPS counter: tally frames per rAF tick; flush once a second.
   const framesRef = useRef(0);

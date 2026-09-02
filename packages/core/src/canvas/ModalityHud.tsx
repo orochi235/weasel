@@ -26,10 +26,13 @@ export interface ModalityHudProps {
 
 export function ModalityHud({ canvasRef, modeId, offset }: ModalityHudProps) {
   const toolCtx = useOptionalActiveToolContext();
-  const { ref, style } = useHostAnchor(canvasRef, {
-    top: offset?.top ?? 220,
-    right: offset?.right ?? 8,
-  });
+  const { ref, style } = useHostAnchor(
+    () => canvasRef.current?.parentElement ?? canvasRef.current,
+    {
+      align: { x: 'end', y: 'start' },
+      offset: { x: offset?.right ?? 8, y: offset?.top ?? 220 },
+    },
+  );
 
   if (!style) return null;
 
