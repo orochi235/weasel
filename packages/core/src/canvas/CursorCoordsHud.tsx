@@ -10,6 +10,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useVisibleRaf } from '../scheduling/useVisibleRaf';
+import { useHostAnchor } from './useHostAnchor';
 import type { View } from 'core/viewport/view';
 import { clientToWorld } from 'core/viewport/clientToWorld';
 
@@ -25,19 +26,19 @@ interface HudState {
   client: { x: number; y: number };
   world: { x: number; y: number } | null;
   inCanvas: boolean;
-  /** Canvas's top-right corner in viewport coords (px from top-left).
-   *  Captured at the same moment as the pointer reading so the HUD's
-   *  position tracks the canvas through scroll / resize / pan. */
-  anchor: { top: number; right: number } | null;
 }
 
 /** Debug overlay showing the pointer's client and world coordinates and the
  *  current frame rate, pinned to the canvas's top-right corner. */
 export function CursorCoordsHud({ canvasRef, viewRef, offset }: CursorCoordsHudProps) {
   const [state, setState] = useState<HudState>({
-    client: { x: 0, y: 0 }, world: null, inCanvas: false, anchor: null,
+    client: { x: 0, y: 0 }, world: null, inCanvas: false,
   });
   const [fps, setFps] = useState<number>(0);
+  const { ref, style: anchorStyle } = useHostAnchor(canvasRef, {
+    top: offset?.top ?? 8,
+    right: offset?.right ?? 8,
+  });
 
   // FPS counter: tally frames per rAF tick; flush once a second.
   const framesRef = useRef(0);
@@ -71,24 +72,12 @@ export function CursorCoordsHud({ canvasRef, viewRef, offset }: CursorCoordsHudP
   }, [fpsLoop]);
 
   useEffect(() => {
-    const readAnchor = (): HudState['anchor'] => {
-      const canvas = canvasRef.current;
-      if (!canvas) return null;
-      // Anchor to the canvas's container (e.g. WeaselDraw's striped workspace),
-      // falling back to the canvas itself if there's no wrapping parent.
-      // The "canvas area" in editor parlance is the workspace, not the page.
-      const host = canvas.parentElement ?? canvas;
-      const rect = host.getBoundingClientRect();
-      return { top: rect.top, right: window.innerWidth - rect.right };
-    };
-
     const onMove = (e: PointerEvent) => {
       const canvas = canvasRef.current;
       const view = viewRef.current;
       const client = { x: e.clientX, y: e.clientY };
-      const anchor = readAnchor();
       if (!canvas || !view) {
-        setState({ client, world: null, inCanvas: false, anchor });
+        setState({ client, world: null, inCanvas: false });
         return;
       }
       const rect = canvas.getBoundingClientRect();
@@ -97,37 +86,24 @@ export function CursorCoordsHud({ canvasRef, viewRef, offset }: CursorCoordsHudP
         e.clientY >= rect.top  && e.clientY <= rect.bottom;
       const [wx, wy] = clientToWorld(e.clientX, e.clientY, rect, view);
       const world = { x: wx, y: wy };
-      setState({ client, world, inCanvas, anchor });
+      setState({ client, world, inCanvas });
     };
 
-    // Refresh anchor on scroll/resize so the HUD sticks to the canvas's
-    // top-right corner even when the canvas itself moves.
-    const onLayout = () => setState((s) => ({ ...s, anchor: readAnchor() }));
-
     document.addEventListener('pointermove', onMove);
-    window.addEventListener('scroll', onLayout, true);
-    window.addEventListener('resize', onLayout);
-
-    // Initial anchor read so the HUD shows before the first pointermove.
-    setState((s) => ({ ...s, anchor: readAnchor() }));
 
     return () => {
       document.removeEventListener('pointermove', onMove);
-      window.removeEventListener('scroll', onLayout, true);
-      window.removeEventListener('resize', onLayout);
     };
   }, [canvasRef, viewRef]);
 
-  if (!state.anchor) return null;
-
-  const top = state.anchor.top + (offset?.top ?? 8);
-  const right = state.anchor.right + (offset?.right ?? 8);
+  if (!anchorStyle) return null;
 
   return (
     <div
+      ref={ref}
       style={{
         position: 'fixed',
-        top, right,
+        ...anchorStyle,
         zIndex: 10000,
         background: 'rgba(0,0,0,0.7)',
         color: '#e8e8e8',

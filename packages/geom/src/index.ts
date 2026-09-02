@@ -6,3 +6,4 @@ export { PATH_COMMANDS, PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z, PATH_CMD_LENGTHS
 export { cubicEvalAt, elevateQuadraticToCubic, flattenCubic, cubicBounds } from './curve';
 export { pointInPolygon, segmentsCross, pointSegmentDist2 } from './polyline';
 export { transformCoords } from './affine';
+export { placeRect, clampRectWithin, type Placement, type PlacementSide, type PlacementAlign, type PlaceRectOptions, type PlacedRect } from './place';

@@ -191,3 +191,49 @@ describe('window widget', () => {
     expect(win.bounds).toMatchObject({ w: 80, h: 60 });
   });
 });
+
+describe('window widget stays on the host', () => {
+  const drawn = () => {
+    const win = createWindow(opts);
+    win.draw(ctx);
+    return win;
+  };
+  const grabTitle = (win: ReturnType<typeof createWindow>) =>
+    win.onPointer({ type: 'down', x: 150, y: 100 + M.titleH / 2, native: null });
+
+  it('a move drag cannot push the window past the far edges', () => {
+    const win = drawn();
+    grabTitle(win);
+    win.onPointer({ type: 'move', x: 5000, y: 5000, native: null });
+    expect(win.bounds.x).toBe(600);
+    expect(win.bounds.y).toBe(450);
+  });
+
+  it('a move drag cannot push the window past the near edges', () => {
+    const win = drawn();
+    grabTitle(win);
+    win.onPointer({ type: 'move', x: -5000, y: -5000, native: null });
+    expect(win.bounds.x).toBe(0);
+    expect(win.bounds.y).toBe(0);
+  });
+
+  it('setBounds lands the window on the host', () => {
+    const win = drawn();
+    win.setBounds({ x: 5000, y: 5000, w: 200, h: 150 });
+    expect(win.bounds).toEqual({ x: 600, y: 450, w: 200, h: 150 });
+  });
+
+  it('leaves position alone until a draw has reported the host size', () => {
+    const win = createWindow(opts);
+    win.setBounds({ x: 5000, y: 5000, w: 200, h: 150 });
+    expect(win.bounds.x).toBe(5000);
+  });
+
+  it('does not fight a resize drag that crosses the host edge', () => {
+    const win = drawn();
+    win.onPointer({ type: 'down', x: 299, y: 175, native: null });
+    win.onPointer({ type: 'move', x: 900, y: 175, native: null });
+    expect(win.bounds.x).toBe(100);
+    expect(win.bounds.w).toBeGreaterThan(200);
+  });
+});
