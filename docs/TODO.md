@@ -41,6 +41,7 @@ Priority tags:
 - labkit `registerSerializers` has no callers; instrument serializers never run → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit: nested config values — `f.schema` is flat because `setConfig` is → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Reconcile core's `ToolPrefLeaf` with weasel-ui's `PrefLeaf` — the `paint` kind has already drifted → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- `ControlPanel` cannot ask for a denser row, and row spacing is not tokenized → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 **Lint**
 - `eqeqeq` (275) and `no-unused-vars` (131) deferred from the 2026-08-22 baseline → [Lint](#lint)
@@ -1235,6 +1236,29 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 ---
 
 ## Selection, actions & UI panels
+
+- **(P2) `ControlPanel` cannot ask for a denser row, and the row spacing is not
+  tokenized.** Two separate gaps, found 2026-09-01 by a lab whose settings panel
+  holds ~38 leaves.
+
+  The first is a pass-through that was never written. `PropertyRowLayout`
+  (`'block' | 'inline'`) and a `layout` prop already exist on `PropertyRow`,
+  `SliderRow`, `TextRow`, `NumberRow`, `SelectRow` and `ToggleRow`; every arm in
+  `ControlPanel`'s `ControlRow` switch calls those rows without one, so all of
+  them take the `layout = 'block'` default and a consumer wanting inline rows
+  re-declares the whole kind table through `renderers`. `ColorRow` and
+  `CheckboxRow` take no `layout` at all — `PropertyRow` gates the inline class on
+  `variant === 'default'`, and those two render `checkbox` and color variants —
+  so "give ControlPanel a layout prop" does not by itself cover every kind.
+
+  The second is that inline rows only get you so far: the remaining height is
+  five hard-coded numbers in `Properties.module.css` — `.list` `row-gap: 6px`,
+  `.group` `padding: 10px 12px 12px`, `.groupTitle` `margin: 0 0 8px`, `.panel`
+  `padding: 14px 16px`, `.panelTitle` `margin: 0 0 12px` — none of which read a
+  custom property, so nothing outside the module can move them without selector
+  surgery. A `density` prop belongs on the `@weasel-js/ui` containers, where the
+  CSS is, redefining those as locals; `ControlPanel` then forwards it alongside a
+  default `layout`.
 
 - **(P2) The shared pick walk's view-owned gates are not reachable everywhere.**
   `pickWalk` (2026-08-29) asks a `PickSource` five questions per candidate, two
