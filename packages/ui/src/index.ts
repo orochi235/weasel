@@ -52,6 +52,7 @@ export * from './components/PointPlotter';
 export * from './components/ColorField';
 export * from './components/GradientEditor';
 export * from './components/BandEditor';
+export * from './components/Timeline';
 export { paintGradientTrack } from './paintGradientTrack';
 export type { GradientTrackOpts } from './paintGradientTrack';
 export { oklchToHex, chromaAt } from './color/oklch';
