@@ -35,3 +35,62 @@
   background: var(--wzl-accent);
   pointer-events: none;
 }
+
+.lane {
+  display: flex;
+  align-items: stretch;
+  min-height: 20px;
+  border-bottom: 1px solid var(--wzl-border-subtle);
+}
+
+.laneLabel {
+  flex: 0 0 var(--wzl-timeline-label-w, 120px);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-inline: 6px;
+  padding-inline-start: calc(6px + var(--depth, 0) * 12px);
+  font-size: var(--wzl-font-xs, 10px);
+  color: var(--wzl-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lane[data-depth='1'] .laneLabel { --depth: 1; }
+.lane[data-depth='2'] .laneLabel { --depth: 2; }
+.lane[data-depth='3'] .laneLabel { --depth: 3; }
+
+.disclosure { cursor: pointer; color: var(--wzl-text-muted); }
+
+.laneTrack {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  background: var(--wzl-surface-1);
+}
+
+.key, .eventMark {
+  position: absolute;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  margin-left: -4.5px;
+  background: var(--wzl-text-muted);
+  cursor: ew-resize;
+}
+
+.key { transform: translateY(-50%) rotate(45deg); }
+.eventMark { transform: translateY(-50%); border-radius: 50%; }
+
+.key[aria-current='true'], .eventMark[aria-current='true'] { background: var(--wzl-accent); }
+.key:focus-visible, .eventMark:focus-visible { outline: 2px solid var(--wzl-focus); outline-offset: 1px; }
+
+.nestedBar {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  background: var(--wzl-surface-3);
+  border: 1px solid var(--wzl-border);
+  border-radius: 2px;
+}
