@@ -5,8 +5,8 @@ import { EasingPicker } from './EasingPicker';
 import { Lane } from './Lane';
 import { Ruler } from './Ruler';
 import { Transport, type TransportProps } from './Transport';
-import { buildLanes, type LaneRow } from './lanes';
-import { deleteKey, insertKey, moveKey, setKeyEasing, setKeyValue, type KeySelection } from './keys';
+import { buildLanes, trackAtPath } from './lanes';
+import { deleteKey, insertKey, moveKey, samePath, setKeyEasing, setKeyValue, type KeySelection } from './keys';
 import type { TimeWindow } from './timeScale';
 
 export type { KeySelection } from './keys';
@@ -47,13 +47,6 @@ export interface TimelineProps {
 
   label?: ReactNode;
   className?: string;
-}
-
-/** The flat index a lane row occupies among the top-level tracks, or -1 for a
- *  nested row. Editing a nested track's keys is a later change; nested rows are
- *  read-only for now and their keys do not drag. */
-function topLevelIndex(row: LaneRow): number {
-  return row.path.length === 1 ? row.path[0] : -1;
 }
 
 export function Timeline(props: TimelineProps): ReactElement {
@@ -102,12 +95,12 @@ export function Timeline(props: TimelineProps): ReactElement {
     }
   };
 
-  const selectedTrack = selection ? tracks[selection.trackIndex] : undefined;
+  const selectedTrack = selection ? trackAtPath(tracks, selection.trackPath) : undefined;
   const selectedKey = selectedTrack?.kind === 'sampled'
     ? (selectedTrack as SampledTrack<unknown>).keys[selection!.keyIndex]
     : undefined;
 
-  const segmentTrack = segmentSelection ? tracks[segmentSelection.trackIndex] : undefined;
+  const segmentTrack = segmentSelection ? trackAtPath(tracks, segmentSelection.trackPath) : undefined;
   const segmentKey = segmentTrack?.kind === 'sampled'
     ? (segmentTrack as SampledTrack<unknown>).keys[segmentSelection!.keyIndex]
     : undefined;
@@ -160,40 +153,37 @@ export function Timeline(props: TimelineProps): ReactElement {
 
       <div className={s.lanes}>
         {rows.map((row) => {
-          const ti = topLevelIndex(row);
+          const trackPath = row.path;
           return (
             <Lane
               key={row.key}
               row={row}
               window={win}
               mode={props.mode ?? 'dope'}
-              selection={selection && selection.trackIndex === ti ? selection.keyIndex : null}
+              selection={selection && samePath(selection.trackPath, trackPath) ? selection.keyIndex : null}
               expanded={expanded.has(row.key)}
               snapTimes={snapTimes}
               onToggleExpand={() => toggle(row.key)}
-              onSelect={(keyIndex) => { if (ti >= 0) setSelection({ trackIndex: ti, keyIndex }); }}
+              onSelect={(keyIndex) => setSelection({ trackPath, keyIndex })}
               onKeyInput={(keyIndex, toMs, value) => {
-                if (ti < 0 || !onInput) return;
-                const r = moveKey(tracks, { trackIndex: ti, keyIndex }, toMs);
+                if (!onInput) return;
+                const r = moveKey(tracks, { trackPath, keyIndex }, toMs);
                 onInput(value === undefined ? r.tracks : setKeyValue(r.tracks, r.selection!, value));
               }}
               onKeyCommit={(keyIndex, toMs, value) => {
-                if (ti < 0) return;
-                const r = moveKey(tracks, { trackIndex: ti, keyIndex }, toMs);
+                const r = moveKey(tracks, { trackPath, keyIndex }, toMs);
                 onChange(value === undefined ? r.tracks : setKeyValue(r.tracks, r.selection!, value));
                 setSelection(r.selection);
               }}
               onInsert={(atMs) => {
-                if (ti < 0) return;
-                const r = insertKey(tracks, ti, atMs);
+                const r = insertKey(tracks, trackPath, atMs);
                 onChange(r.tracks);
                 setSelection(r.selection);
               }}
-              selectedSegment={segmentSelection && segmentSelection.trackIndex === ti ? segmentSelection.keyIndex : null}
-              onSelectSegment={(keyIndex) => { if (ti >= 0) setSegmentSelection({ trackIndex: ti, keyIndex }); }}
+              selectedSegment={segmentSelection && samePath(segmentSelection.trackPath, trackPath) ? segmentSelection.keyIndex : null}
+              onSelectSegment={(keyIndex) => setSegmentSelection({ trackPath, keyIndex })}
               onEasingCommit={(keyIndex, easing) => {
-                if (ti < 0) return;
-                onChange(setKeyEasing(tracks, { trackIndex: ti, keyIndex }, easing));
+                onChange(setKeyEasing(tracks, { trackPath, keyIndex }, easing));
               }}
             />
           );

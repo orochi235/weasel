@@ -179,9 +179,11 @@ export function Lane(props: LaneProps): ReactElement {
     e.stopPropagation();
     onSelect(i);
 
+    // `snapTimes` are ruler times and `msAt` is track-local, so a nested row
+    // has to cross into ruler space to snap and back out to commit.
     const at = (ev: { clientX: number; altKey: boolean }): number => {
       const raw = Math.max(0, msAt(ev.clientX));
-      return ev.altKey ? raw : snapTime(raw, snapTimes, snapPxToMs());
+      return ev.altKey ? raw : snapTime(raw + row.offset, snapTimes, snapPxToMs()) - row.offset;
     };
     const valueOf = (ev: { clientY: number }): number | undefined =>
       graph ? valueAt(ev.clientY) : undefined;

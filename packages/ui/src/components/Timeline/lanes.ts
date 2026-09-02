@@ -55,7 +55,7 @@ export function buildLanes(
 }
 
 /** The track at an index path, or `undefined` when the path leaves the tree. */
-export function trackAtPath(tracks: readonly Track[], path: number[]): Track | undefined {
+export function trackAtPath(tracks: readonly Track[], path: readonly number[]): Track | undefined {
   let list: readonly Track[] = tracks;
   let found: Track | undefined;
   for (const i of path) {

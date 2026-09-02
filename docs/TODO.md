@@ -982,14 +982,6 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
   be applied on the CPU per frame. Needs the hierarchical rig first.
 - **(P3) Serializable clips** — follows from tracks being typed callbacks rather
   than data. Revisit with the editor's experience in hand.
-- **(P3) `TimelineHandle` has no getter for `loop` or the time scale.** `setLoop`
-  and `setTimeScale` write; nothing reads back. `AnimatedTimeline` therefore
-  mirrors both in React state, which drifts the moment anything else on the
-  handle sets them. Two getters on the handle would remove the mirror.
-- **(P3) Nested tracks are read-only in `<Timeline>`.** A nested timeline's lane
-  expands and its keys draw at the right times, but `keys.ts` addresses a track
-  by a single top-level index, so a nested key does not drag. Widening
-  `KeySelection` to the `LaneRow` path is the change.
 
 ### Side-scroller demo — landed
 

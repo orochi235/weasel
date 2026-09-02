@@ -1,5 +1,6 @@
 export { Timeline } from './Timeline';
 export type { KeyEditorCtx, KeySelection, TimelineProps, TimeWindow } from './Timeline';
+export { samePath } from './keys';
 export { AnimatedTimeline } from './AnimatedTimeline';
 export type { AnimatedTimelineProps } from './AnimatedTimeline';
 export { Transport } from './Transport';

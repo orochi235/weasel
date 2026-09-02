@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { render, fireEvent, screen } from '@testing-library/react';
-import type { SampledTrack, Track } from '@weasel-js/core';
+import type { SampledTrack, TimelineTrack, Track } from '@weasel-js/core';
 import { Timeline } from './Timeline';
 
 const TRACK_WIDTH = 500;
@@ -18,6 +18,21 @@ const tracks = (): Track[] => ([
   { kind: 'sampled', label: 'x', keys: [{ t: 0, value: 0 }, { t: 500, value: 10 }], onTick: () => {} },
   { kind: 'event', label: 'step', events: [{ t: 250, fire: () => {} }] },
 ] as Track[]);
+
+/** A single nested timeline offset by 100ms, holding one two-key track. */
+const nestedTracks = (): Track[] => ([{
+  kind: 'timeline', label: 'blink', at: 100,
+  timeline: {
+    tracks: [{
+      kind: 'sampled', label: 'o',
+      keys: [{ t: 0, value: 0 }, { t: 300, value: 10 }],
+      onTick: () => {},
+    }],
+  },
+}] as unknown as Track[]);
+
+const nestedKeyTimes = (out: Track[]): number[] =>
+  ((out[0] as TimelineTrack).timeline.tracks[0] as SampledTrack<number>).keys.map((k) => k.t);
 
 const base = {
   duration: 1000,
@@ -126,13 +141,43 @@ describe('Timeline', () => {
   });
 
   it('expands a nested timeline to show its children', () => {
-    const nested = [{
-      kind: 'timeline', label: 'blink', at: 100,
-      timeline: { tracks: [{ kind: 'sampled', label: 'o', keys: [{ t: 0, value: 0 }], onTick: () => {} }] },
-    }] as unknown as Track[];
-    render(<Timeline {...base} tracks={nested} />);
+    render(<Timeline {...base} tracks={nestedTracks()} />);
     expect(screen.getAllByTestId('timeline-lane-track')).toHaveLength(1);
     fireEvent.click(screen.getByTestId('timeline-disclosure'));
     expect(screen.getAllByTestId('timeline-lane-track')).toHaveLength(2);
+  });
+
+  it('drags a key inside an expanded nested timeline', () => {
+    const onChange = vi.fn();
+    render(<Timeline {...base} tracks={nestedTracks()} onChange={onChange} />);
+    fireEvent.click(screen.getByTestId('timeline-disclosure'));
+    // The nested track sits at `at: 100`, so a key dropped at ruler 800ms is
+    // 700ms into the child.
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[0], { clientX: 0, clientY: 10, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 400, clientY: 10 });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(nestedKeyTimes(onChange.mock.calls[0][0] as Track[])).toEqual([300, 700]);
+  });
+
+  it('deletes a selected nested key', () => {
+    const onChange = vi.fn();
+    render(<Timeline {...base} tracks={nestedTracks()} onChange={onChange} />);
+    fireEvent.click(screen.getByTestId('timeline-disclosure'));
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[0], { clientX: 0, clientY: 10, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 0, clientY: 10 });
+    onChange.mockClear();
+    fireEvent.keyDown(screen.getByTestId('timeline-root'), { key: 'Delete' });
+    expect(nestedKeyTimes(onChange.mock.calls[0][0] as Track[])).toEqual([300]);
+  });
+
+  it('snaps a nested key against ruler times, not track-local ones', () => {
+    const onChange = vi.fn();
+    render(<Timeline {...base} tracks={nestedTracks()} onChange={onChange} />);
+    fireEvent.click(screen.getByTestId('timeline-disclosure'));
+    // The sibling key is local 300, ruler 400 — 200px in. Dropped 4px shy of
+    // it, inside the 6px snap radius, so it lands exactly on it.
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[0], { clientX: 0, clientY: 10, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 196, clientY: 10 });
+    expect(nestedKeyTimes(onChange.mock.calls[0][0] as Track[])).toEqual([300, 300]);
   });
 });
