@@ -21,8 +21,6 @@ Priority tags:
 
 ### Next up
 
-- **`<Timeline>` editor** — the one unbuilt phase of the timeline/rig arc → [Animation](#animation)
-
 ### P2 — broad reuse / friction-likely
 
 **Text**
@@ -977,10 +975,6 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
   following the `insert` pattern; it was never built, so `RigDemo.tsx` calls
   `resolveSkeleton` directly and draws from the result. Every consumer animating
   a rig into a scene re-does that wiring by hand.
-- **(P2) `<Timeline>` editor** — transport, lanes, draggable keyframes,
-  per-segment easing. Goes in `@weasel-js/ui` next to `BandEditor`, `Slider`,
-  `CurveEditor` and the property panel; `labkit` depends on `ui` and re-exports
-  from it, so a consumer reaching either package gets it.
 - **(P3) Inverse kinematics** — a solver that writes poses. Composes with the rig
   above and needs nothing here changed.
 - **(P3) Skinning** — per-vertex bone weights deforming path geometry. The
@@ -988,6 +982,14 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
   be applied on the CPU per frame. Needs the hierarchical rig first.
 - **(P3) Serializable clips** — follows from tracks being typed callbacks rather
   than data. Revisit with the editor's experience in hand.
+- **(P3) `TimelineHandle` has no getter for `loop` or the time scale.** `setLoop`
+  and `setTimeScale` write; nothing reads back. `AnimatedTimeline` therefore
+  mirrors both in React state, which drifts the moment anything else on the
+  handle sets them. Two getters on the handle would remove the mirror.
+- **(P3) Nested tracks are read-only in `<Timeline>`.** A nested timeline's lane
+  expands and its keys draw at the right times, but `keys.ts` addresses a track
+  by a single top-level index, so a nested key does not drag. Widening
+  `KeySelection` to the `LaneRow` path is the change.
 
 ### Side-scroller demo — landed
 
