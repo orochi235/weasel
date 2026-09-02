@@ -38,13 +38,14 @@ function groupsOf(contributions: readonly TrialContribution[]): Group[] {
 function renderEntry(c: TrialContribution, ctx: TrialChromeContext): ReactNode {
   if (c.render) return <span key={c.id}>{c.render(ctx)}</span>;
   if (c.region !== 'toolbar' || !c.item) return null;
-  const { icon: Icon, label, shortcut, disabled, danger, showLabel } = c.item;
+  const { icon: Icon, label, shortcut, disabled, danger, showLabel, pressed } = c.item;
   return (
     <Toolbar.Button
       key={c.id}
       iconOnly={!showLabel}
       variant={danger ? 'danger' : 'default'}
       disabled={disabled}
+      pressed={pressed}
       aria-label={label}
       title={shortcut ? `${label} (${shortcut})` : label}
       onClick={c.item.onActivate}

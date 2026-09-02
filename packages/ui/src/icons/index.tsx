@@ -38,6 +38,7 @@ export const FullscreenIcon = (p: IconProps) => <Icon name="fullscreen" {...p} /
 export const CompareIcon = (p: IconProps) => <Icon name="compare" {...p} />;
 export const FilterIcon = (p: IconProps) => <Icon name="filter" {...p} />;
 export const SearchIcon = (p: IconProps) => <Icon name="search" {...p} />;
+export const LoupeIcon = (p: IconProps) => <Icon name="loupe" {...p} />;
 export const LayersIcon = (p: IconProps) => <Icon name="layers" {...p} />;
 export const LockIcon = (p: IconProps) => <Icon name="lock" {...p} />;
 export const UnlockIcon = (p: IconProps) => <Icon name="unlock" {...p} />;

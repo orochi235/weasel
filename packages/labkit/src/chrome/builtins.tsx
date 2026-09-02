@@ -2,6 +2,7 @@ import {
   CloneIcon,
   CloseIcon,
   FitIcon,
+  LoupeIcon,
   RedoIcon,
   ResetIcon,
   SnapshotIcon,
@@ -69,6 +70,20 @@ export function builtinContributions(
       region: 'palette',
       group: t.group,
       item: { icon: t.icon, label: t.label, shortcut: t.shortcut },
+    });
+  }
+
+  if (instrument.loupe != null) {
+    out.push({
+      id: 'loupe',
+      region: 'toolbar',
+      group: 'view',
+      item: {
+        icon: LoupeIcon,
+        label: 'Loupe',
+        pressed: ctx.loupeOn,
+        onActivate: ctx.toggleLoupe,
+      },
     });
   }
 

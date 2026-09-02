@@ -84,7 +84,14 @@ export function CanvasStack({
   const handlers = usePanZoom({ view, onViewChange, minZoom, maxZoom, frame });
   useLayerScheduler({ layers, view, frame, canvasRefs: canvasMap, size, host: containerRef });
 
-  const ctxValue = useMemo(() => ({ view, frame }), [view, frame]);
+  const ctxValue = useMemo(
+    () => ({
+      view,
+      frame,
+      surface: { element: containerRef, size, canvases: canvasMap, layers },
+    }),
+    [view, frame, size, layers],
+  );
 
   const containerStyle: CSSProperties = { width, height };
   const canvasPx = {

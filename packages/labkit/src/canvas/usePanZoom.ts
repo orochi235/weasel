@@ -1,5 +1,6 @@
 import { type PointerEvent, useCallback, useRef, type WheelEvent } from 'react';
 import type { ViewTransform } from '../instrument/types';
+import { zoomAt } from './camera';
 import { DEFAULT_FRAME, type WorldFrame } from './worldSpec';
 
 export interface UsePanZoomOptions {
@@ -56,24 +57,19 @@ export function usePanZoom({
     (e: WheelEvent<HTMLElement>) => {
       e.preventDefault();
       const rect = e.currentTarget.getBoundingClientRect();
-      // Anchored in frame space, not element space: `pan` is measured from the
-      // frame's origin, so anchoring at the raw cursor drifts by
-      // `(1 - ratio) * originPx` per step on any frame that moves the origin.
-      const cursorX = e.clientX - rect.left - frame.originPx.x;
-      const cursorY = e.clientY - rect.top - frame.originPx.y;
-      const v = viewRef.current;
       const initialZoom = initialZoomRef.current;
-      const effectiveMin = initialZoom == null ? minZoom : Math.min(minZoom, initialZoom);
-      const effectiveMax = initialZoom == null ? maxZoom : Math.max(maxZoom, initialZoom);
-      const factor = Math.exp(-e.deltaY * 0.001);
-      const rawZoom = isPositiveFinite(v.zoom) ? v.zoom : 1;
-      const nextZoom = Math.min(effectiveMax, Math.max(effectiveMin, rawZoom * factor));
-      const ratio = nextZoom / rawZoom;
-      const nextPan = {
-        x: cursorX - (cursorX - v.pan.x) * ratio,
-        y: cursorY - (cursorY - v.pan.y) * ratio,
-      };
-      onViewChange({ zoom: nextZoom, pan: nextPan });
+      onViewChange(
+        zoomAt(
+          viewRef.current,
+          Math.exp(-e.deltaY * 0.001),
+          { x: e.clientX - rect.left, y: e.clientY - rect.top },
+          {
+            frame,
+            min: initialZoom == null ? minZoom : Math.min(minZoom, initialZoom),
+            max: initialZoom == null ? maxZoom : Math.max(maxZoom, initialZoom),
+          },
+        ),
+      );
     },
     [onViewChange, minZoom, maxZoom, frame],
   );

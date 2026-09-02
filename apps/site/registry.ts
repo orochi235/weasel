@@ -556,6 +556,18 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/LoupeDemo').then((m) => m.LoupeDemo),
     path: 'apps/site/demos/LoupeDemo.tsx',
   },
+
+  // ─── labkit ───────────────────────────────────────────────────────────────
+  {
+    id: 'lab-loupe',
+    title: 'Loupe (lab capability)',
+    category: 'labkit',
+    description:
+      'The same magnifier as a labkit capability, painted two ways. `loupe: true` on an instrument that draws gets the canvas painter: the lens re-runs the instrument\'s own layers through a camera zoomed about the aimed point, so a hairline stays a hairline at any factor — switch Lens to `pixel` and it enlarges the pixels the stack presented instead. `loupe: { render }` on an instrument whose content is DOM gets the DOM painter: given a camera, the instrument draws itself again inside a circular clip. The lens takes no pointer events, so pan and the wheel keep working underneath it.',
+    hint: 'Press the loupe button in the toolbar, then move over the content — or hold Alt for a peek without turning it on. The wheel resizes the magnification while the lens is up, and pans the trial when it is not.',
+    load: () => import('./demos/LabLoupeDemo').then((m) => m.LabLoupeDemo),
+    path: 'apps/site/demos/LabLoupeDemo.tsx',
+  },
 ];
 
 export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({

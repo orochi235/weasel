@@ -43,6 +43,16 @@ export const STATE = {
   // collection
   filter: `<path d="M3.4 4.6h13.2L11.8 11v5.4L8.2 14.8V11z"/>`,
   search: `<circle cx="9" cy="9" r="5.4"/><path d="M12.82 12.82 16.9 16.9"/>`,
+
+  // Magnified pixels, not an empty lens: `zoomOut` is this silhouette with one
+  // bar in it and shares the trial's viewport controls, so anything linear
+  // inside reads as that at 16px. A dense square grid does not. Handle starts
+  // on the rim at -45°: 9 + 5.6*cos45 = 12.96.
+  loupe: `
+    <circle cx="9" cy="9" r="5.6"/>
+    <path d="M12.96 12.96 17 17"/>
+    <rect x="6" y="6" width="6" height="6" stroke-width="1"/>
+    <path d="M9 6v6M6 9h6" stroke-width="1"/>`,
   layers: `
     <path d="M10 2.8 17.2 6.6 10 10.4 2.8 6.6z"/>
     <path d="M2.8 10 10 13.8 17.2 10" stroke-width="1"/>

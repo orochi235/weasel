@@ -81,6 +81,7 @@ An instrument may declare any of these on its `defineInstrument({...})` spec:
 | `canvas` | Layered `<canvas>` stack with pan/zoom | Replaces `render(ctx)` body |
 | `layers` | Layer toggle/reorder UI | Adds `<LayerList>` to sidebar |
 | `dragDrop` | Palette + drop pipeline | Adds `<Palette>` to sidebar; pointer drag emits `canvas.itemAdded` |
+| `loupe` | Magnifier | Adds a `loupe` toolbar toggle; the lens re-draws the canvas layers at a zoomed camera, or calls the capability's own `render` for DOM content |
 | `undo` | Undo/redo bindings | Wires toolbar buttons; snapshots `state` on `snapshotOn` events |
 
 Capabilities compose: an instrument with `canvas` + `dragDrop` + `undo` gets all three behaviors automatically. See `src/trial/Trial.tsx` for the wiring.

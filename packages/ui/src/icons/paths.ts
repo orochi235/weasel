@@ -32,6 +32,7 @@ export const ICON_PATHS = {
   compare: `<rect x="3.4" y="4.6" width="13.2" height="10.8" rx="1.6"/><path d="M10 4.6v10.8" stroke-width="1"/><path d="M5.2 7.6h3.4M5.2 10h2.6M5.2 12.4h3.4" stroke-width="1"/><path d="M11.4 7.6h3.4M11.4 10h3.4M11.4 12.4h1.8" stroke-width="1"/>`,
   filter: `<path d="M3.4 4.6h13.2L11.8 11v5.4L8.2 14.8V11z"/>`,
   search: `<circle cx="9" cy="9" r="5.4"/><path d="M12.82 12.82 16.9 16.9"/>`,
+  loupe: `<circle cx="9" cy="9" r="5.6"/><path d="M12.96 12.96 17 17"/><rect x="6" y="6" width="6" height="6" stroke-width="1"/><path d="M9 6v6M6 9h6" stroke-width="1"/>`,
   layers: `<path d="M10 2.8 17.2 6.6 10 10.4 2.8 6.6z"/><path d="M2.8 10 10 13.8 17.2 10" stroke-width="1"/><path d="M2.8 13.4 10 17.2 17.2 13.4" stroke-width="1"/>`,
   lock: `<rect x="4.6" y="9" width="10.8" height="8" rx="1.6"/><path d="M7.2 9V6.6a2.8 2.8 0 0 1 5.6 0V9"/>`,
   unlock: `<rect x="4.6" y="9" width="10.8" height="8" rx="1.6"/><path d="M7.2 9V6.6a2.8 2.8 0 0 1 5.6 0"/>`,

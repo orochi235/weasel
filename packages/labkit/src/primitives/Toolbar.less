@@ -73,6 +73,14 @@
     border-color: var(--wzl-border);
   }
 
+  // A toggle that is on stays on when the pointer leaves, so it reads as held
+  // rather than hovered — the hover rule alone would be indistinguishable.
+  &--pressed {
+    background: var(--wzl-accent-soft);
+    border-color: var(--wzl-accent);
+    color: var(--wzl-fg);
+  }
+
   &--danger:hover:not(:disabled) {
     color: var(--wzl-danger);
     border-color: var(--wzl-danger);

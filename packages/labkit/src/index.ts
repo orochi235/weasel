@@ -51,18 +51,22 @@ export type {
   CanvasLayerDescriptor,
   CanvasStackContextValue,
   CanvasStackProps,
+  CanvasStackSurface,
   ViewportSize,
   WorldFrame,
   WorldSpec,
+  ZoomAtOptions,
 } from './canvas';
 export {
   applyCamera,
   CanvasStack,
   CanvasStackContext,
+  centerOn,
   DEFAULT_FRAME,
   resolveFrame,
   screenToWorld,
   worldToScreen,
+  zoomAt,
 } from './canvas';
 export type { OrbitHandlers, OrbitView, UseOrbitOptions, Vec3 } from './canvas/useOrbit';
 export {
@@ -133,6 +137,7 @@ export * from './job';
 export * from './lab';
 export type { LayerListProps } from './layers';
 export { LayerList } from './layers';
+export * from './loupe';
 export * from './primitives';
 export {
   createMemoryAdapter,

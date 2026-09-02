@@ -1,7 +1,9 @@
 export type { CanvasStackProps } from './CanvasStack';
 export { CanvasStack } from './CanvasStack';
-export type { CanvasStackContextValue } from './CanvasStackContext';
+export type { CanvasStackContextValue, CanvasStackSurface } from './CanvasStackContext';
 export { CanvasStackContext } from './CanvasStackContext';
+export type { ZoomAtOptions } from './camera';
+export { centerOn, zoomAt } from './camera';
 export { screenToWorld, worldToScreen } from './canvasCoords';
 export type { CanvasLayerDescriptor } from './useLayerScheduler';
 export type { ViewportSize, WorldFrame, WorldSpec } from './worldSpec';
