@@ -52,12 +52,17 @@ beforeAll(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   paintedViews.length = 0;
   flags.freezeScene = false;
 });
 
-const frame = () => act(async () => {
-  await new Promise((r) => requestAnimationFrame(() => r(null)));
+// jsdom drives rAF off a setInterval, so faking intervals puts the frame clock
+// and the demo's 200 ms stats readout on one virtual clock.
+const virtualFrame = () => act(async () => {
+  const painted = new Promise((r) => requestAnimationFrame(() => r(null)));
+  await vi.advanceTimersByTimeAsync(1000 / 60);
+  await painted;
 });
 
 describe('SceneScrollerDemo', () => {
@@ -101,6 +106,9 @@ describe('SceneScrollerDemo', () => {
   });
 
   it('advances the camera without re-rendering the demo', async () => {
+    // On a real clock the seven frames below can outlast the demo's 200 ms
+    // stats readout, whose commit then lands on this count.
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
     flags.freezeScene = true;
     let commits = 0;
     render(
@@ -108,12 +116,12 @@ describe('SceneScrollerDemo', () => {
         <SceneScrollerDemo />
       </Profiler>,
     );
-    await frame();
+    await virtualFrame();
     const before = commits;
     const paintsBefore = paintedViews.length;
 
     // Six simulated frames.
-    for (let i = 0; i < 6; i++) await frame();
+    for (let i = 0; i < 6; i++) await virtualFrame();
 
     // Guard: the loop really ran and really painted, six times, with the
     // demo's camera rather than the identity view.

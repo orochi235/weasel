@@ -1722,9 +1722,9 @@ Deferred, with the rationale in `eslint.config.js` next to each:
 
 - **(P2) View-animation tests flake under a loaded parallel run.** Two full
   `npm test` runs on 2026-08-25 failed with *different* sets — first
-  `apps/site/demos/__tests__/SceneScrollerDemo.test.tsx` (1 test), then
-  `packages/core/src/canvas/SceneCanvas.animatedZoom.test.tsx` (9 of its 14).
-  Each file passes on its own; only the 733-file parallel run trips them.
+  `apps/site/demos/__tests__/SceneScrollerDemo.test.tsx` (1 test, since fixed),
+  then `packages/core/src/canvas/SceneCanvas.animatedZoom.test.tsx` (9 of its
+  14). Each file passes on its own; only the 733-file parallel run trips them.
 
   The cause is real timers over a real animation. `animatedZoom` starts a 40ms
   rAF glide and then `await waitFor(() => expect(isViewAnimating()).toBe(false))`,
@@ -1735,7 +1735,9 @@ Deferred, with the rationale in `eslint.config.js` next to each:
 
   The fix is to stop racing wall-clock: drive the glide with fake timers and a
   controllable rAF so completion is deterministic. Raising the `waitFor` timeout
-  only widens the window the machine has to beat.
+  only widens the window the machine has to beat. `SceneScrollerDemo.test.tsx`
+  is the worked example — note that jsdom builds `requestAnimationFrame` on
+  `setInterval`, so faking intervals while still awaiting a real frame hangs.
 
   A third run, on an unrelated branch, hit the same 9 and then passed clean on
   re-run — so it is the harness, not any one change.
@@ -1745,13 +1747,6 @@ Deferred, with the rationale in `eslint.config.js` next to each:
   0.9 where it expects the throttle to have held 0.1, then passed alone in
   648ms. Same cause, and the same fix reaches it — the throttle is timed off
   `performance.now()` against real elapsed time.
-
-- **(P3) `SceneScrollerDemo`'s "advances the camera" test is flaky under load.**
-  `SceneScrollerDemoInner` drives `setStats` from a real 200 ms `setInterval`
-  while the test drives a real `requestAnimationFrame` loop, so under full-suite
-  CPU contention the seven awaited frames can overrun 200 ms and add exactly one
-  `Profiler` commit — failing an exact `toBe` on the count. Observed once in five
-  full runs, never in isolation. Fake both timers, or assert a range.
 
 - **(P2) `test:kit` covers `packages/core` only, and its name says otherwise.**
   The `kit` vitest project globs `packages/core` plus `apps/site`; `svg`,
