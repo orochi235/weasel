@@ -745,3 +745,168 @@ describe('Slider stops', () => {
     expect(lastValue(onInput)).toBeCloseTo(49, 5);
   });
 });
+
+describe('Slider stop marks', () => {
+  const ticksOf = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll<HTMLElement>('[data-slider-tick]'));
+
+  it('draws one mark per stop', () => {
+    const { container } = render(
+      <Slider min={0} max={100} stops={[0, 25, 50, 75, 100]} thumbs={[{ value: 10 }]} onInput={() => {}} />,
+    );
+    expect(ticksOf(container)).toHaveLength(5);
+  });
+
+  // jsdom lays nothing out, so the mark's *position* is only assertable as the
+  // fraction the component computed for it — the geometry is checked visually.
+  it('places each mark at the stop fraction', () => {
+    const { container } = render(
+      <Slider min={0} max={100} stops={[0, 25, 50, 75, 100]} thumbs={[{ value: 10 }]} onInput={() => {}} />,
+    );
+    expect(ticksOf(container).map(t => t.dataset.fraction)).toEqual(['0', '0.25', '0.5', '0.75', '1']);
+    expect(ticksOf(container).map(t => t.style.left)).toEqual(['0%', '25%', '50%', '75%', '100%']);
+  });
+
+  it('draws nothing when there are no stops', () => {
+    const { container } = render(<Slider min={0} max={1} thumbs={[{ value: 0.5 }]} onInput={() => {}} />);
+    expect(ticksOf(container)).toHaveLength(0);
+  });
+
+  it('omits stops the range excludes, matching what a drag can reach', () => {
+    const { container } = render(
+      <Slider min={0} max={100} stops={[-40, 50, 140]} thumbs={[{ value: 10 }]} onInput={() => {}} />,
+    );
+    expect(ticksOf(container).map(t => t.dataset.fraction)).toEqual(['0.5']);
+  });
+
+  it('hides the marks when showStops is off', () => {
+    const { container } = render(
+      <Slider min={0} max={100} stops={[0, 50, 100]} thumbs={[{ value: 10 }]} showStops={false} onInput={() => {}} />,
+    );
+    expect(ticksOf(container)).toHaveLength(0);
+  });
+
+  it('keeps the marks out of the accessibility tree and out of hit testing', () => {
+    const { container } = render(
+      <Slider min={0} max={100} stops={[0, 50, 100]} thumbs={[{ value: 10 }]} onInput={() => {}} />,
+    );
+    const marks = container.querySelector('[data-slider-ticks]') as HTMLElement;
+    expect(marks.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('does not let a mark swallow a track click that would add a thumb', () => {
+    const onAddThumb = vi.fn((v: number) => ({ value: v }));
+    const { container } = render(
+      <Slider min={0} max={100} stops={[0, 50, 100]} thumbs={[{ value: 10 }]} onAddThumb={onAddThumb} onInput={() => {}} />,
+    );
+    const track = container.querySelector('[data-slider-ticks]')!.parentElement as HTMLElement;
+    stubRect(track, { left: 0, width: 200 });
+    fireEvent.pointerDown(track, { clientX: 100, clientY: 12, button: 0 });
+    expect(onAddThumb).toHaveBeenCalledWith(50);
+  });
+});
+
+describe('Slider value text', () => {
+  it('publishes a thumb valueText as aria-valuetext', () => {
+    const { container } = render(
+      <Slider min={0} max={4} thumbs={[{ value: 2, valueText: '1x' }]} onInput={() => {}} />,
+    );
+    const thumb = container.querySelector('[role="slider"]') as HTMLElement;
+    expect(thumb.getAttribute('aria-valuetext')).toBe('1x');
+  });
+
+  it('leaves aria-valuetext off when a thumb has none', () => {
+    const { container } = render(<Slider min={0} max={1} thumbs={[{ value: 0.5 }]} onInput={() => {}} />);
+    const thumb = container.querySelector('[role="slider"]') as HTMLElement;
+    expect(thumb.hasAttribute('aria-valuetext')).toBe(false);
+  });
+});
+
+describe('Slider track click', () => {
+  const renderTrackClick = (props: Partial<Parameters<typeof Slider>[0]> = {}) => {
+    const onInput = vi.fn();
+    const onChange = vi.fn();
+    const { container } = render(
+      <Slider
+        min={0}
+        max={100}
+        thumbs={[{ value: 10 }]}
+        trackClick="move-nearest"
+        onInput={onInput}
+        onChange={onChange}
+        {...props}
+      />,
+    );
+    const thumb = container.querySelector('[role="slider"]') as HTMLElement;
+    const track = thumb.parentElement as HTMLElement;
+    stubRect(track, { left: 0, width: 200 });
+    return { track, thumb, onInput, onChange };
+  };
+
+  const lastValues = (fn: ReturnType<typeof vi.fn>): number[] =>
+    fn.mock.calls[fn.mock.calls.length - 1][0].map((t: { value: number }) => t.value);
+
+  it('ignores a track click by default', () => {
+    const { track, onInput } = renderTrackClick({ trackClick: undefined });
+    fireEvent.pointerDown(track, { clientX: 100, clientY: 12, button: 0 });
+    expect(onInput).not.toHaveBeenCalled();
+  });
+
+  it('moves the only thumb to the clicked value', () => {
+    const { track, onInput } = renderTrackClick();
+    fireEvent.pointerDown(track, { clientX: 100, clientY: 12, button: 0 });
+    expect(lastValues(onInput)).toEqual([50]);
+  });
+
+  it('moves the nearest thumb, leaving the others alone', () => {
+    const { track, onInput } = renderTrackClick({ thumbs: [{ value: 10 }, { value: 90 }] });
+    fireEvent.pointerDown(track, { clientX: 160, clientY: 12, button: 0 });
+    expect(lastValues(onInput)).toEqual([10, 80]);
+  });
+
+  it('lands the click on a stop', () => {
+    const { track, onInput } = renderTrackClick({ stops: [0, 50, 100] });
+    fireEvent.pointerDown(track, { clientX: 98, clientY: 12, button: 0 });
+    expect(lastValues(onInput)).toEqual([50]);
+  });
+
+  it('commits on release, not on the press', () => {
+    const { track, onInput, onChange } = renderTrackClick();
+    fireEvent.pointerDown(track, { clientX: 100, clientY: 12, button: 0 });
+    expect(onInput).toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.pointerUp(document, { clientX: 100, clientY: 12 });
+    expect(lastValues(onChange)).toEqual([50]);
+  });
+
+  // The press seeds the drag it starts. Without that seed the buffer still
+  // holds the pre-click value and a release with no movement commits it,
+  // silently undoing the click.
+  it('keeps the clicked value when the release follows with no movement', () => {
+    const { track, onChange } = renderTrackClick();
+    fireEvent.pointerDown(track, { clientX: 100, clientY: 12, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 100, clientY: 12 });
+    expect(lastValues(onChange)).toEqual([50]);
+  });
+
+  it('drags on from where the click landed', () => {
+    const { track, onInput } = renderTrackClick();
+    fireEvent.pointerDown(track, { clientX: 100, clientY: 12, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 150, clientY: 12 });
+    expect(lastValues(onInput)).toEqual([75]);
+  });
+
+  it('lets onAddThumb win over the move', () => {
+    const onAddThumb = vi.fn((v: number) => ({ value: v }));
+    const { track, onInput } = renderTrackClick({ onAddThumb });
+    fireEvent.pointerDown(track, { clientX: 100, clientY: 12, button: 0 });
+    expect(onAddThumb).toHaveBeenCalledWith(50);
+    expect(lastValues(onInput)).toEqual([10, 50]);
+  });
+
+  it('holds the moved thumb inside its bounds', () => {
+    const { track, onInput } = renderTrackClick({ thumbs: [{ value: 10, bounds: [0, 30] }] });
+    fireEvent.pointerDown(track, { clientX: 100, clientY: 12, button: 0 });
+    expect(lastValues(onInput)).toEqual([30]);
+  });
+});

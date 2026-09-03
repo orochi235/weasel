@@ -68,10 +68,17 @@ describe('Transport', () => {
     expect(screen.getByRole('switch', { name: /loop/i })).toBeChecked();
   });
 
-  it('changes the rate', () => {
+  // Keyboard, not a pointer: the detents are laid out, and jsdom has no layout,
+  // so a click at an x offset would be asserting the emulation.
+  it('changes the rate a detent at a time', () => {
     const onRateChange = vi.fn();
     render(<Transport {...props} onRateChange={onRateChange} />);
-    fireEvent.change(screen.getByLabelText(/rate/i), { target: { value: '2' } });
-    expect(onRateChange).toHaveBeenCalledWith(2);
+    fireEvent.keyDown(screen.getByRole('slider', { name: /rate/i }), { key: 'ArrowRight' });
+    expect(onRateChange).toHaveBeenCalledWith(2, expect.anything());
+  });
+
+  it('speaks the rate rather than the detent index', () => {
+    render(<Transport {...props} rate={4} />);
+    expect(screen.getByRole('slider', { name: /rate/i })).toHaveAttribute('aria-valuetext', '4x');
   });
 });

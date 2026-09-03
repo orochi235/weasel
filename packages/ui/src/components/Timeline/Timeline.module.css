@@ -180,7 +180,16 @@
 }
 
 .time { font-variant-numeric: tabular-nums; color: var(--wzl-fg-muted); }
-.rate { display: inline-flex; align-items: center; gap: 4px; color: var(--wzl-fg-muted); }
+.rate { display: inline-flex; align-items: center; gap: 6px; color: var(--wzl-fg-muted); }
+.rateSlider { width: 88px; }
+
+/* The detents carry no labels in a bar this dense, so the chosen rate is said
+   once, here, in a fixed-width cell so the controls beside it never shift. */
+.rateReadout {
+  min-width: 3ch;
+  font-variant-numeric: tabular-nums;
+  color: var(--wzl-fg);
+}
 
 .root {
   display: flex;

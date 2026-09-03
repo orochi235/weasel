@@ -19,7 +19,7 @@
   background: var(--wzl-surface-sunken);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
-  cursor: crosshair;
+  cursor: var(--rp-track-cursor, crosshair);
   /* No `overflow: hidden` here — thumbs at extreme values would get
    * clipped at the track edges. The gradient/track-paint clip is
    * applied to `.trackInner` instead, which lets thumbs spill freely. */
@@ -115,4 +115,22 @@
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
   /* Default notched SVG (down-pointing pentagon, matches the perceptual-color experiment). */
   --thumb-svg: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 30' preserveAspectRatio='none'%3E%3Cpolygon points='0,0 2.52,0 7,10.3 11.48,0 14,0 14,30 0,30' fill='rgba(255,255,255,0.62)' stroke='rgba(0,0,0,0.55)' stroke-width='0.75' stroke-linejoin='miter'/%3E%3C/svg%3E");
+}
+
+.ticks {
+  position: absolute;
+  inset: 0;
+  /* A mark must never eat the track click that adds a thumb, nor the
+   * pointerdown that starts a drag through it. */
+  pointer-events: none;
+}
+
+.tick {
+  position: absolute;
+  top: var(--rp-tick-inset, 20%);
+  bottom: var(--rp-tick-inset, 20%);
+  width: var(--rp-tick-width, 1px);
+  margin-left: calc(var(--rp-tick-width, 1px) / -2);
+  border-radius: var(--rp-tick-width, 1px);
+  background: var(--rp-tick-color, var(--wzl-border-strong));
 }

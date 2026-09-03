@@ -108,7 +108,7 @@ describe('AnimatedTimeline', () => {
   it('routes the rate control to setTimeScale', () => {
     const h = fakeHandle();
     render(<AnimatedTimeline handle={h} />);
-    fireEvent.change(screen.getByLabelText(/rate/i), { target: { value: '2' } });
+    fireEvent.keyDown(screen.getByRole('slider', { name: /rate/i }), { key: 'ArrowRight' });
     expect(h.setTimeScale).toHaveBeenCalledWith(2);
   });
 
@@ -116,7 +116,7 @@ describe('AnimatedTimeline', () => {
     const h = fakeHandle({ loop: () => 3, timeScale: () => 4 });
     render(<AnimatedTimeline handle={h} />);
     expect(screen.getByRole('switch', { name: /loop/i })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByLabelText(/rate/i)).toHaveValue('4');
+    expect(screen.getByRole('slider', { name: /rate/i })).toHaveAttribute('aria-valuetext', '4x');
   });
 
   // The drift a mirrored copy caused: anything else holding the handle can set
@@ -128,6 +128,6 @@ describe('AnimatedTimeline', () => {
     h.setTimeScale(2);
     rerender(<AnimatedTimeline handle={h} />);
     expect(screen.getByRole('switch', { name: /loop/i })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByLabelText(/rate/i)).toHaveValue('2');
+    expect(screen.getByRole('slider', { name: /rate/i })).toHaveAttribute('aria-valuetext', '2x');
   });
 });

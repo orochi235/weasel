@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { DetentSlider } from '../DetentSlider';
 import { PauseIcon, PlayIcon } from '../../icons';
 import s from './Timeline.module.css';
 
@@ -22,8 +23,9 @@ const seconds = (ms: number): string => `${(ms / 1000).toFixed(2)}s`;
 export function Transport(props: TransportProps): ReactElement {
   const { paused, loop, rate, playhead, duration, onPlay, onPause, onLoopChange, onRateChange } = props;
   const looping = loop !== false && loop !== 0;
-  // The handle's scale is whatever anything holding it set, so an off-list
-  // rate joins the options rather than leaving the select showing nothing.
+  // The handle's scale is whatever anything holding it set, so an off-list rate
+  // gets its own detent — `DetentSlider` would otherwise round it to the
+  // nearest and label the thumb with a rate the timeline is not running at.
   const rates = RATES.includes(rate as typeof RATES[number])
     ? (RATES as readonly number[])
     : [...RATES, rate].sort((a, b) => a - b);
@@ -54,12 +56,19 @@ export function Transport(props: TransportProps): ReactElement {
         ⟲
       </button>
 
-      <label className={s.rate}>
+      <div className={s.rate}>
         Rate
-        <select value={rate} onChange={(e) => onRateChange(Number(e.target.value))}>
-          {rates.map((r) => <option key={r} value={r}>{r}×</option>)}
-        </select>
-      </label>
+        <DetentSlider
+          ariaLabel="Rate"
+          items={rates}
+          value={rate}
+          onChange={onRateChange}
+          formatLabel={(r) => `${r}x`}
+          labels="none"
+          className={s.rateSlider}
+        />
+        <span className={s.rateReadout}>{rate}x</span>
+      </div>
     </div>
   );
 }
