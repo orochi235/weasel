@@ -172,9 +172,9 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
                         fontWeight: { kind: 'number', name: 'Weight', description: 'Font weight, 100–900.', default: 400, min: 100, max: 900, step: 100, pair: 'Size / weight' },
                         fontStyle: { kind: 'enum', name: 'Style', description: 'Upright or italic.', default: 'normal', options: [{ value: 'normal', label: 'Normal' }, { value: 'italic', label: 'Italic' }] },
                         letterSpacing: { kind: 'number', name: 'Tracking', description: 'Extra advance per glyph, world units.', default: 0, step: 0.1 },
-                        underline: { kind: 'boolean', name: 'Underline', description: 'Underline the text.', default: false },
-                        strikethrough: { kind: 'boolean', name: 'Strikethrough', description: 'Strike through the text.', default: false },
-                        overline: { kind: 'boolean', name: 'Overline', description: 'Rule the text above its ascent.', default: false },
+                        underline: { kind: 'boolean', name: 'Underline', description: 'Underline the text.', default: false, control: 'toggle', short: 'U', pair: 'Decoration' },
+                        strikethrough: { kind: 'boolean', name: 'Strikethrough', description: 'Strike through the text.', default: false, control: 'toggle', short: 'S', pair: 'Decoration' },
+                        overline: { kind: 'boolean', name: 'Overline', description: 'Rule the text above its ascent.', default: false, control: 'toggle', short: 'O', pair: 'Decoration' },
                       },
                     },
                     paragraph: {

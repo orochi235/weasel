@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { defaultNodeProperties, inferredNodeProperties } from './defaultNodeProperties';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { inferredNodeRouting } from './defaultNodeRouting';
-import type { ToolPrefEnum, ToolPrefGroup, ToolPrefObject } from 'tools/prefs';
+import type { ToolPrefBoolean, ToolPrefEnum, ToolPrefGroup, ToolPrefObject } from 'tools/prefs';
 
 describe('defaultNodeProperties', () => {
   it('stays in lockstep with KIT_SHAPE_KINDS', () => {
@@ -140,5 +140,17 @@ describe('inferredNodeProperties', () => {
     ]);
     const paragraph = style.children.paragraph as ToolPrefGroup;
     expect(Object.keys(paragraph.children)).toEqual(['align', 'lineHeight']);
+  });
+
+  it('asks for the three decorations as one row of toggles', () => {
+    const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
+    const style = ((entry.schema.children.text as ToolPrefGroup).children['data.style']) as ToolPrefObject;
+    const character = style.children.character as ToolPrefGroup;
+    const decorations = ['underline', 'strikethrough', 'overline'].map(
+      (k) => character.children[k] as ToolPrefBoolean,
+    );
+    expect(decorations.map((d) => d.control)).toEqual(['toggle', 'toggle', 'toggle']);
+    expect(decorations.map((d) => d.short)).toEqual(['U', 'S', 'O']);
+    expect(decorations.map((d) => d.pair)).toEqual(['Decoration', 'Decoration', 'Decoration']);
   });
 });
