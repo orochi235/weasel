@@ -859,6 +859,29 @@ describe('baseline-shift / relative font-size', () => {
     expect(t.runs?.[3]?.baselineShift).toBe(0.25);
   });
 
+  it('keeps a run-level property named on <text> itself, with no tspan to carry it', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
+      <text x="0" y="0" baseline-shift="super">hi</text>
+    </svg>`;
+    const { nodes } = parseSvg(svg);
+    const t = nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.runs?.[0]).toMatchObject({ text: 'hi', script: 'super' });
+  });
+
+  it('carries a <text>-level shift onto bare text either side of a tspan', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
+      <text x="0" y="0" baseline-shift="sub">a<tspan baseline-shift="super">b</tspan>c</text>
+    </svg>`;
+    const { nodes } = parseSvg(svg);
+    const t = nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.runs?.[0]).toMatchObject({ text: 'a', script: 'sub' });
+    // The tspan names its own, which wins over the inherited one.
+    expect(t.runs?.[1]).toMatchObject({ text: 'b', script: 'super' });
+    expect(t.runs?.[2]).toMatchObject({ text: 'c', script: 'sub' });
+  });
+
   it('maps baseline-shift="baseline" and a zero shift to neither key', () => {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
       <text x="0" y="0"><tspan baseline-shift="baseline">a</tspan><tspan baseline-shift="0">b</tspan></text>
