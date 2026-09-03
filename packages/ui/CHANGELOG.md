@@ -1,5 +1,219 @@
 # @weasel-js/ui
 
+## 1.4.0-pre.0
+
+### Patch Changes
+
+- 5c3e571: Add `ChevronIcon`, and use it for the disclosure in `SidebarPanel` and
+  `<Timeline>`'s lane labels.
+  
+  Both were rendering a literal `▾` character at 10px. A text glyph is not
+  centred in its em box — `▾` sits low and narrow inside a box that is not even
+  square — so `rotate(-90deg)` swung the visible triangle through an arc instead
+  of spinning it in place, moving it 4.0px across and 3.6px down. The new glyph's
+  ink centroid is placed at the centre of the 20×20 viewBox (the stroked region's
+  first moment, not the path's bounding box: two round caps outweigh the single
+  join at the vertex, so the mass sits above the bbox centre), and the icon's
+  box is square, so the rotation is concentric to within 0.005px.
+  
+  16px in `SidebarPanel` and 14px in a timeline lane are the smallest sizes at
+  which both arms and the vertex land solid ink on the 1× device grid.
+- e1838ff: Add `DetentSlider`, and make `Slider`'s stops visible.
+  
+  A numeric option with a small set of allowed values along a line is a slider
+  with detents, not a dropdown. `DetentSlider` takes `items`/`value`/`onChange`
+  the way `ToggleBar` does — it is that same "pick one of an ordered set", wearing
+  a slider's affordance — and the transport's playback rate now uses it.
+  
+  The track addresses the *index* of `items`, not the value. Rate steps are
+  geometric, so a linear value track puts 1× at a fifth of the way along and
+  crowds four of five detents into that fifth, making the most-used value the
+  hardest to hit. A log scale would rescue that particular list by coincidence
+  and not a 1-2-5 one. Index-addressing is also the honest model: a small allowed
+  set is an ordinal choice with nothing between the detents to represent. The
+  value is published as `aria-valuetext`, since `aria-valuenow` is then a
+  position rather than a quantity.
+  
+  Three changes to `Slider` fall out and are generally useful: `stops` now draw
+  (an invisible attractor that changes drag and keyboard behaviour is
+  indistinguishable from a bug — `showStops: false` opts out); `Thumb.valueText`
+  fills `aria-valuetext` for any non-linear scale; and `trackClick:
+  'move-nearest'` makes a press on bare track move the nearest thumb, off by
+  default so a stray click cannot yank a stop on a multi-thumb gradient.
+- 1b42b19: Add `ItemList`, the row chrome behind a sidebar list.
+  
+  WeaselDraw's Layers and History panels each carried a private copy of the same
+  container / row / empty-state CSS, and they had drifted: rows were 28px against
+  24px, and Layers was pulled 8px wider on both sides by a negative-margin class,
+  so two lists stacked in one sidebar did not line up. Both now render through
+  `ItemList` and agree by construction.
+  
+  It owns the container, the row box and the empty state, and nothing else. What
+  a row means stays with the consumer, reached through `className` and
+  `rowProps` — history dims its redo entries and rules a line under the current
+  one; the layer list drags to reorder, leads each row with a swatch, and hangs
+  its drop indicator off `overlay`.
+- 4dc5cad: A loupe any lab can turn on
+  
+  `loupe` joins `canvas`, `layers`, `dragDrop` and `undo` as an instrument
+  capability, so declaring one is what gives a trial the magnifier and its
+  toolbar switch — suppressible by id like every other built-in.
+  
+  Two painters, chosen by what the instrument's content is. `loupe: true` on an
+  instrument that draws gets the canvas painter: the lens re-runs that
+  instrument's own layers through a camera zoomed about the aimed point, so a
+  hairline is still a hairline at 30×, and `mode: 'pixel'` enlarges the pixels
+  the stack presented instead. `loupe: { render }` gets the DOM painter, for an
+  instrument whose content is markup: handed a camera, it draws itself again
+  inside a circular clip. Either way the lens takes no pointer events, so the
+  pan, the wheel and anything underneath keep working while it is up. A function
+  form — `loupe: (config) => …` — is re-read as the config changes, so a setting
+  can drive the lens.
+  
+  The lens follows the pointer while it is on, appears for as long as `Alt` is
+  held while it is off, and takes the wheel from pan/zoom to resize its
+  magnification. Those are plain listeners for now; `docs/TODO.md` records why,
+  and what replaces them.
+  
+  Supporting surface: `zoomAt` and `centerOn` are exported from
+  `@weasel-js/labkit` — the fixed-point zoom `usePanZoom` already ran, and the
+  camera that centres a world point in a viewport — so nothing composing a camera
+  has to re-derive one. `CanvasStackContext` now also carries the stack's
+  `surface`: its element, measured box, layers and presented canvases, which is
+  what an overlay needs to re-draw or read back what the stack painted.
+  `ToolbarItem` takes `pressed`, rendering `aria-pressed` and a held-down state,
+  and `@weasel-js/ui` gains a `loupe` glyph.
+- a6faf75: Pack property rows two-up, and size their fields to their content
+  
+  A property panel spent a full row on every leaf and stretched each field to
+  whatever width the row had, so a 38-flag lab sidebar scrolled for two screens
+  to show four dozen digits. The grid was already there — `PropertyList` and
+  `PropertyGroup` have taken `pack="pairs"` since they were written — but only
+  `PropertyRow` could opt out of it, so nothing that rendered a schema could use
+  it: `ControlPanel` hardcoded `pack="auto-color"`, which spans everything but a
+  colour.
+  
+  `ControlPanel` now takes `pack` and `layout`. It defaults to `pack="pairs"`
+  (two controls per row), with `'auto'` for the middle ground — text, sliders and
+  segmented toggles keep the full width, everything else pairs — and `'one-up'`
+  for what it used to do. A custom `controls` renderer places itself like any
+  built-in row and opts out the same way, with `<PropertyRow span>`.
+  
+  `span` is now on every typed row (`NumberRow`, `TextRow`, `SelectRow`,
+  `ToggleRow`, `CheckboxRow`, `ColorRow`, `SliderRow`), not just on the
+  `PropertyRow` they are built from.
+  
+  Fields size to their content rather than to their cell: a number gets 9ch and a
+  string 16ch, both capped at the column so a narrow sidebar still fills. Fields
+  also state a height (`--wzl-prop-field-height`, 20px) rather than padding to
+  one — the display face's line box is half again its font size, so a padded field
+  stood 27px tall around 13px of text and trimming the padding could not fix it.
+  The row and group gutters came in to match.
+  
+  Widths, heights and gutters are all overridable:
+  `--wzl-prop-number-width`, `--wzl-prop-text-width`, `--wzl-prop-field-height`.
+  
+  A lab's trial sidebar states its width (`--lk-trial-sidebar-w`, 20rem) instead
+  of deriving it from content: an auto-width sidebar is as wide as its widest
+  label, so one verbose config key was setting the width of the lab. An inline row
+  puts its label on the left edge and its field on the right, so fields of
+  different widths still read as one rail down the column, and it keeps its one
+  line in a column narrower than it wants: the field yields width to the label
+  down to a four-character floor, and the label — which may be a single
+  unbreakable name — never yields.
+  
+  Every property panel is visibly denser for this — WeaselDraw's inspector as
+  much as a lab's controls.
+- 016851c: Stop a stroke with no paint from blanking the whole document.
+  
+  `SelectionPanel`'s object leaf started from `{}` when the node held no value
+  yet, so editing any non-paint field of `data.stroke` on an unstroked node
+  committed that field alone — a `Stroke` with no `paint`, which the type
+  forbids. The leaf's declared `default` was dead for writes; it now seeds from
+  it, so writing one field materializes a complete value.
+  
+  Such a stroke threw out of `fillInPoseFrame`, and the throw escaped the painter
+  and took the frame with it: the document page and every other node vanished,
+  and the canvas stayed stale until something unrelated requested a redraw — so
+  WeaselDraw opened on an empty workspace and only drew once the pointer moved.
+  `resolveNodeStroke` now reads a paintless stroke as no stroke, and the text
+  painter routes through it like every other painter. The frame loop no longer
+  loses its dirty flag when a paint throws, so one bad frame is retried rather
+  than stranding the surface.
+- c9dd37f: Render text decorations as a toggle row, and ship a builtin font-family control
+  
+  `SelectionPanel` rendered every boolean leaf as a `Switch`, ignoring the leaf's
+  `control` entirely — so the three text decorations arrived as three switch rows
+  where every text editor puts one row of U / S / O. `ToolPrefBooleanControl` now
+  accepts `'toggle'`, `ToolPrefBoolean` carries a `short` label for it (the pair
+  takes the row's name, leaving the leaf only a glyph's worth of room), and the
+  panel honors both. Core's text schema asks for it: `underline`,
+  `strikethrough` and `overline` share a `Decoration` pair.
+  
+  A run of adjacent leaves sharing a `pair` renders as one `ToggleBar`, not one
+  bar per leaf — the same segmented control the `Align` row beside it already
+  draws. Each segment still writes only its own leaf, so flipping one decoration
+  never invents values for the other two. An unset toggle is left unselected
+  rather than dimmed: unselected is what a toggle button's off state means, and
+  the dimming the `Switch` path uses for the same case reads as disabled on one.
+  A leaf a consumer claims with its own `renderers` entry drops out of the run.
+  
+  `FontFamilySelect` moves from WeaselDraw into `@weasel-js/ui`, and
+  `SelectionPanel` reaches for it on a `font-family` leaf. Core's own default
+  text schema declares that kind, so a consumer passing no `renderers` — the
+  Storybook story, any app taking the defaults — got the literal
+  `(font-family: no renderer)` placeholder where the font picker belongs. The
+  control offers both tiers that can actually paint and probes substitution at
+  the node's own weight and style, so its label names the variant that will
+  render. `@weasel-js/ui` now depends on `@weasel-js/font`.
+- 6e5f821: Add `<Timeline>`, a keyframe editor for the timeline primitive.
+  
+  `<Timeline>` is controlled and pure: it takes tracks, a duration and a playhead,
+  and emits `onInput` during a gesture and `onChange` at its end.
+  `<AnimatedTimeline handle={h}>` binds it to a live `TimelineHandle`.
+  
+  A dope sheet edits time and easing for every track kind. A graph mode adds a
+  value axis, and only for sampled tracks whose values are numbers — a `Pose` has
+  no honest vertical position, so those rows stay dope rows. `renderKeyEditor`
+  hands the selected key to the consumer, which supplies a control that knows its
+  own value type.
+  
+  A `KeySelection` addresses a track by its index path (`{ trackPath: [2, 0] }`),
+  so keys inside an expanded nested timeline drag, delete and re-ease like any
+  other. Times reported to the editor are the addressed track's own; the component
+  crosses into ruler time to snap and back out to commit.
+  
+  Dragging a key draws a dashed ghost at where it would land, with the committed
+  key dimmed in place — the editor previews its own gesture rather than waiting
+  for a consumer to wire `onInput` and feed the moved track back.
+  
+  Dragging a bezier handle previews the curve through `cubicBezierEasing`
+  directly rather than `resolveEasing`, since a drag writes a fresh set of
+  control points on every pointermove and `resolveEasing`'s cache is keyed by
+  them — routing the preview through it would fill core's memo cache with
+  hundreds of throwaway entries per gesture.
+- Updated dependencies [1214ff5]
+- Updated dependencies [5295c34]
+- Updated dependencies [2fbf611]
+- Updated dependencies [7a0c568]
+- Updated dependencies [a7fa697]
+- Updated dependencies [2272682]
+- Updated dependencies [503b56d]
+- Updated dependencies [ac2deea]
+- Updated dependencies [23ffb2f]
+- Updated dependencies [016851c]
+- Updated dependencies [1b9575f]
+- Updated dependencies [c9dd37f]
+- Updated dependencies [9a000ea]
+- Updated dependencies [016851c]
+- Updated dependencies [8ddec11]
+- Updated dependencies [28894b9]
+- Updated dependencies [c4ccd0a]
+  - @weasel-js/core@1.4.0-pre.0
+  - @weasel-js/svg@1.4.0-pre.0
+  - @weasel-js/font@1.4.0-pre.0
+  - @weasel-js/modes@1.4.0-pre.0
+
 ## 1.3.0
 
 ### Patch Changes

@@ -1,5 +1,7 @@
 # @weasel-js/gestures
 
+## 1.4.0-pre.0
+
 ## 1.3.0
 
 ### Patch Changes

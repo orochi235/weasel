@@ -1,5 +1,37 @@
 # @weasel-js/svg
 
+## 1.4.0-pre.0
+
+### Patch Changes
+
+- 1b9575f: Keep a `baseline-shift` named on `<text>` itself.
+  
+  SVG allows `baseline-shift` on a `<text>` element and inherits it to the
+  content, but weasel only read it off `<tspan>` children — so
+  `<text baseline-shift="super">hi</text>` imported with the shift silently
+  dropped. Bare text now carries the shift its `<text>` names, and a `<tspan>`
+  naming its own still wins.
+  
+  It is the only run-level key with no node-level counterpart to be read into,
+  which is why it alone went missing.
+- Updated dependencies [1214ff5]
+- Updated dependencies [5295c34]
+- Updated dependencies [2fbf611]
+- Updated dependencies [7a0c568]
+- Updated dependencies [a7fa697]
+- Updated dependencies [2272682]
+- Updated dependencies [503b56d]
+- Updated dependencies [ac2deea]
+- Updated dependencies [23ffb2f]
+- Updated dependencies [016851c]
+- Updated dependencies [c9dd37f]
+- Updated dependencies [9a000ea]
+- Updated dependencies [016851c]
+- Updated dependencies [8ddec11]
+- Updated dependencies [28894b9]
+- Updated dependencies [c4ccd0a]
+  - @weasel-js/core@1.4.0-pre.0
+
 ## 1.3.0
 
 ### Patch Changes
