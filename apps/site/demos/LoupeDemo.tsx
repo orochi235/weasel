@@ -92,10 +92,11 @@ export function LoupeDemo() {
 
   useEffect(() => {
     const api = ref.current;
-    if (!api?.element) return;
+    if (!api?.surface) return;
     const loupe = createLoupe({
       hud,
-      element: api.element,
+      canvas: api.surface,
+      ...(api.element ? { input: api.element } : {}),
       source,
       requestRedraw: () => api.requestRedraw(),
       // Bare lens: the demo has nowhere to put a closed loupe back, so a

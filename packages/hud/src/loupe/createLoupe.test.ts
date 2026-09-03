@@ -26,7 +26,7 @@ describe('createLoupe', () => {
   it('creates a window widget on the hud', () => {
     const hud = createHud();
     hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
-    const loupe = createLoupe({ hud, element: makeElement(), source, requestRedraw: () => {} });
+    const loupe = createLoupe({ hud, canvas: makeElement(), source, requestRedraw: () => {} });
     expect(hud.widgets()).toContain(loupe.window);
   });
 
@@ -35,7 +35,7 @@ describe('createLoupe', () => {
     hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
     const el = makeElement();
     const remove = vi.spyOn(el, 'removeEventListener');
-    const loupe = createLoupe({ hud, element: el, source, requestRedraw: () => {} });
+    const loupe = createLoupe({ hud, canvas: el, source, requestRedraw: () => {} });
     hud.remove(loupe.window);
     // The next pointer sample is the one that notices and tears down.
     el.dispatchEvent(new MouseEvent('pointermove', { clientX: 400, clientY: 300 }));
@@ -47,7 +47,7 @@ describe('createLoupe', () => {
     const hud = createHud();
     hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
     const redraw = vi.fn();
-    const loupe = createLoupe({ hud, element: makeElement(), source, requestRedraw: redraw });
+    const loupe = createLoupe({ hud, canvas: makeElement(), source, requestRedraw: redraw });
     loupe.dispose();
     redraw.mockClear();
     loupe.aimAt({ x: 400, y: 300 });
@@ -62,7 +62,7 @@ describe('createLoupe', () => {
       ...source[0],
       draw: (data, v, d) => { seen.push(v); return source[0].draw(data, v, d); },
     }];
-    const loupe = createLoupe({ hud, element: makeElement(), source: spied, requestRedraw: () => {}, factor: 4 });
+    const loupe = createLoupe({ hud, canvas: makeElement(), source: spied, requestRedraw: () => {}, factor: 4 });
     loupe.aimAt({ x: 400, y: 300 });   // outside the default window bounds
     const rect = loupe.window.contentRect;
     const cmds = loupe.window.content!({ data: null, view, dims, rect, defaultFont: 'D', tokens });
@@ -79,7 +79,7 @@ describe('createLoupe', () => {
   it('freezes the aim while the pointer is over the window', () => {
     const hud = createHud();
     hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
-    const loupe = createLoupe({ hud, element: makeElement(), source, requestRedraw: () => {} });
+    const loupe = createLoupe({ hud, canvas: makeElement(), source, requestRedraw: () => {} });
     loupe.window.setBounds({ x: 0, y: 0, w: 200, h: 150 });
     loupe.aimAt({ x: 400, y: 300 });
     const before = loupe.aim;
@@ -91,7 +91,7 @@ describe('createLoupe', () => {
     const hud = createHud();
     hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
     const requestRedraw = vi.fn();
-    const loupe = createLoupe({ hud, element: makeElement(), source, requestRedraw });
+    const loupe = createLoupe({ hud, canvas: makeElement(), source, requestRedraw });
     requestRedraw.mockClear();
     loupe.setMode('pixel');
     expect(loupe.mode).toBe('pixel');
@@ -112,7 +112,7 @@ describe('createLoupe', () => {
       },
     } as unknown as WebGL2RenderingContext);
     const onColorChange = vi.fn();
-    const loupe = createLoupe({ hud, element: el, source, requestRedraw: () => {}, onColorChange });
+    const loupe = createLoupe({ hud, canvas: el, source, requestRedraw: () => {}, onColorChange });
     loupe.aimAt({ x: 400, y: 300 });
     expect(loupe.color).toBe('#0a7bd5');
     expect(onColorChange).toHaveBeenCalledWith('#0a7bd5');
@@ -136,7 +136,7 @@ describe('createLoupe', () => {
 
     const onPick = vi.fn();
     const loupe = createLoupe({
-      hud, element: el, source, requestRedraw: () => {}, factor: 8, onPick,
+      hud, canvas: el, source, requestRedraw: () => {}, factor: 8, onPick,
     });
     loupe.aimAt({ x: 400, y: 300 });
     reads.length = 0;
@@ -159,7 +159,7 @@ describe('createLoupe', () => {
       RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
       readPixels: (x: number, y: number) => { reads.push({ x, y }); },
     } as unknown as WebGL2RenderingContext);
-    const loupe = createLoupe({ hud, element: el, source, requestRedraw: () => {} });
+    const loupe = createLoupe({ hud, canvas: el, source, requestRedraw: () => {} });
     loupe.aimAt({ x: 400, y: 300 });
     reads.length = 0;
     loupe.pick();
@@ -176,7 +176,7 @@ describe('createLoupe', () => {
     } as unknown as WebGL2RenderingContext);
     const onPick = vi.fn();
     const loupe = createLoupe({
-      hud, element: el, source, requestRedraw: () => {}, factor: 2, onPick,
+      hud, canvas: el, source, requestRedraw: () => {}, factor: 2, onPick,
     });
     // Aim just past the window's left edge, then pick from the right half of
     // the lens: at 2x that lands back inside the frame, whose pixels are
@@ -192,7 +192,7 @@ describe('createLoupe', () => {
     const hud = createHud();
     hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
     const loupe = createLoupe({
-      hud, element: makeElement(), source, requestRedraw: () => {},
+      hud, canvas: makeElement(), source, requestRedraw: () => {},
       mode: 'pixel', background: '#123456',
     });
     const rect = loupe.window.contentRect;
@@ -222,7 +222,7 @@ describe('createLoupe', () => {
     );
     vi.stubGlobal('createImageBitmap', createImageBitmap);
 
-    const loupe = createLoupe({ hud, element: el, source, requestRedraw: () => {}, mode: 'pixel' });
+    const loupe = createLoupe({ hud, canvas: el, source, requestRedraw: () => {}, mode: 'pixel' });
     loupe.aimAt({ x: 400, y: 100 });
     expect(createImageBitmap).toHaveBeenCalledTimes(1);
 
@@ -250,7 +250,7 @@ describe('createLoupe', () => {
     hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
     const el = makeElement();
     const remove = vi.spyOn(el, 'removeEventListener');
-    const loupe = createLoupe({ hud, element: el, source, requestRedraw: () => {} });
+    const loupe = createLoupe({ hud, canvas: el, source, requestRedraw: () => {} });
     loupe.dispose();
     expect(hud.widgets()).not.toContain(loupe.window);
     expect(remove).toHaveBeenCalledWith('pointermove', expect.any(Function));

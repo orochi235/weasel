@@ -51,10 +51,11 @@ export function useLoupe(
 
   useEffect(() => {
     const api = ref.current;
-    if (!api?.element) return;
+    if (!api?.surface) return;
     const loupe = createLoupe({
       hud,
-      element: api.element,
+      canvas: api.surface,
+      ...(api.element ? { input: api.element } : {}),
       source: stableSource,
       requestRedraw: () => api.requestRedraw(),
       onColorChange: setColor,

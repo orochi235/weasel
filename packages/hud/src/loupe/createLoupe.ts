@@ -17,9 +17,13 @@ export type { LoupeMode };
 /** Options for `createLoupe`. */
 export interface LoupeOptions {
   hud: Hud;
-  /** The live canvas. Supplies the GL context for pixel mode and the pointer
-   *  feed for aiming. */
-  element: HTMLCanvasElement;
+  /** The canvas pixel mode reads back from. Supplies the GL context and the
+   *  drawing-buffer dimensions. */
+  canvas: HTMLCanvasElement;
+  /** Where the aim comes from: the element pointer events are taken from and
+   *  the rect client coords are measured against. Defaults to `canvas`, which
+   *  is right whenever the canvas is also the thing under the pointer. */
+  input?: HTMLElement;
   /** Layers re-rendered through the magnified inner view in vector mode. */
   source: RenderLayer<unknown>[];
   requestRedraw: () => void;
@@ -78,7 +82,8 @@ export interface LoupeHandle {
  * pointer; `dispose` removes it again.
  */
 export function createLoupe(opts: LoupeOptions): LoupeHandle {
-  const { hud, element, source, requestRedraw } = opts;
+  const { hud, canvas: element, source, requestRedraw } = opts;
+  const input = opts.input ?? element;
   let pixels: ImageBitmap | null = null;
   let pixelsPending = false;
   let pixelsStale = false;
@@ -207,18 +212,18 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   });
 
   const onPointerMove = (evt: PointerEvent) => {
-    const r = element.getBoundingClientRect();
+    const r = input.getBoundingClientRect();
     model.aimAt({ x: evt.clientX - r.left, y: evt.clientY - r.top });
   };
 
   const teardown = () => {
     disposed = true;
-    element.removeEventListener('pointermove', onPointerMove);
+    input.removeEventListener('pointermove', onPointerMove);
     pixels?.close();
     pixels = null;
   };
 
-  element.addEventListener('pointermove', onPointerMove);
+  input.addEventListener('pointermove', onPointerMove);
 
   return {
     window: win,
