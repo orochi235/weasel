@@ -1,7 +1,7 @@
 # Annotations: drawing on a lab surface
 
-**Spec. Nothing built yet.** Five arcs, two of them in `core` and independently
-useful.
+**Five arcs, two of them in `core` and independently useful. Arc 1 is built and
+arc 2 is spiked; arcs 3–5 are unbuilt.**
 
 For whoever picks up arc 1 or arc 2. It assumes you know weasel's renderer and
 `SceneCanvas` and labkit's instrument/capability model, and nothing about the
@@ -64,15 +64,25 @@ therefore works only by accident. Make it API:
   load-bearing for every clip and even-odd fill (`renderer/draw.ts`, bit split
   documented there) and nothing checks `getContextAttributes().stencil` today.
 
-The arc 2 spike carries a working prototype of the first two — `setTargetRect()`
-plus an `applyTarget()` inside `render()` — and two panes drawing into one buffer
-confirmed the scissor confines the frame clear. Take it as a starting point, not
-as the API: it has no stencil check and no guard test.
+**All four are built.** `setTarget({ origin, clear })` applies viewport and
+scissor inside `render()`; the frame clear is scissored and can be suppressed;
+blend / depth / cull / clear-colour are re-applied per frame; and the constructor
+throws on a context whose attributes report no stencil. The rect's *size* is the
+renderer's own `width`/`height` rather than part of the target, so `resize()`
+stays the one source of it. Unit tests in
+`packages/core/src/renderer/WeaselRenderer.target.test.ts`, real-GL guards in
+`tests/visual/tiled-surface.spec.ts`.
 
-Also worth costing here rather than discovering later: one renderer resized per
-pane per frame, against N renderers on one context. Mesh and text caches are
-per-renderer, so N renderers means N copies of every uploaded mesh and atlas on
-the same context.
+**Costed, and it does not force a decision** (`tests/perf/tiled-surface.spec.ts`).
+Two renderers on one context cost **12 GL buffers and 74KB at warm-up** — six
+buffers and ~37KB each — and **nothing extra per frame**: a drag's uploads are
+transient stroke and preview geometry, freed each frame by the content, not by
+the renderer count. So N renderers buy N copies of the *cache* and no per-frame
+penalty. One retargeted renderer would hold the union in a single cache, which
+is strictly less memory where panes draw the same shapes and a wash where they
+do not. At this scale the difference is too small to choose on; revisit if a lab
+puts many panes of heavy text on one surface, where the glyph atlas — not the
+mesh cache — is what duplicates.
 
 Standalone value: tiled and multi-view compositing want this whether or not
 annotations ship.
@@ -94,8 +104,9 @@ takes a caller-supplied `clientToWorld` and uses its ref only for
 `addEventListener`, cursor and one `getBoundingClientRect`, so widening it to
 `HTMLElement` is a type change.
 
-**The split holds — spiked 2026-09-02, in `apps/site/spike-arc2.tsx` and the
-`paintInto` / `inputElement` props behind it.** Two `SceneCanvas`es painted into
+**The split holds — spiked 2026-09-02; the page became the `tiled-surface` demo
+(`apps/site/demos/TiledSurfaceDemo.tsx`), and the `paintInto` / `inputElement`
+props on `<Canvas>` are still the spike's, awaiting this arc.** Two `SceneCanvas`es painted into
 one canvas at two rects on two cameras, each taking input from its own box.
 Drags landed at exactly the right world coordinates in both panes, and the
 selection handles, the drag ghost and the marquee all landed on the mark in the
@@ -250,6 +261,4 @@ jsdom cannot see most of this, and a test that cannot fail is worse than none.
 
 ## Open
 
-- Whether one `WeaselRenderer` resized per pane beats N renderers on one context
-  (arc 1). The spike ran N, which works but duplicates every cache per pane.
 - Whether `@weasel-js/svg` is peered or inlined in labkit (arc 4).

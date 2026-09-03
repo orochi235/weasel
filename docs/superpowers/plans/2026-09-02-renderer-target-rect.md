@@ -765,7 +765,7 @@ select tool, and hand-rolls nothing the kit provides.
 - Delete: `apps/site/spike-arc2.html`, `apps/site/spike-arc2.tsx`
 - Modify: `apps/site/registry.ts`
 
-- [ ] **Step 1: Write the demo**
+- [x] **Step 1: Write the demo**
 
 Create `apps/site/demos/TiledSurfaceDemo.tsx`:
 
@@ -896,7 +896,7 @@ export function TiledSurfaceDemo() {
 }
 ```
 
-- [ ] **Step 2: Add the three classes to the demo stylesheet**
+- [x] **Step 2: Add the three classes to the demo stylesheet**
 
 Append to `apps/site/canvas-kit-demo.css`:
 
@@ -906,7 +906,7 @@ Append to `apps/site/canvas-kit-demo.css`:
 .ckd-tile-pane { position: absolute; outline: none; }
 ```
 
-- [ ] **Step 3: Register the demo**
+- [x] **Step 3: Register the demo**
 
 In `apps/site/registry.ts`, add to `DEMO_META` in the Foundations group, after the
 `gestures` entry:
@@ -923,13 +923,13 @@ In `apps/site/registry.ts`, add to `DEMO_META` in the Foundations group, after t
   },
 ```
 
-- [ ] **Step 4: Delete the spike page**
+- [x] **Step 4: Delete the spike page**
 
 ```bash
 git rm apps/site/spike-arc2.html apps/site/spike-arc2.tsx
 ```
 
-- [ ] **Step 5: Look at it**
+- [x] **Step 5: Look at it**
 
 Run: `npx vite --config vite.config.ts --port 5177` and open
 `http://localhost:5177/weasel/#tiled-surface`.
@@ -940,13 +940,13 @@ of the left's, and its red mark is clipped off at the pane's right edge. Drag a
 rectangle in each: neither drag disturbs the other pane. **Screenshot it** — jsdom
 cannot see a layout collapse (CLAUDE.md, Traps).
 
-- [ ] **Step 6: Typecheck and lint**
+- [x] **Step 6: Typecheck and lint**
 
 Run: `npx tsc --noEmit && npm run lint`
 
 Expected: no output from either.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/site/demos/TiledSurfaceDemo.tsx apps/site/registry.ts apps/site/canvas-kit-demo.css
@@ -965,7 +965,7 @@ break the implementation deliberately and confirm the test notices. Do not skip 
 **Files:**
 - Create: `tests/visual/tiled-surface.spec.ts`
 
-- [ ] **Step 1: Write the test**
+- [x] **Step 1: Write the test**
 
 Create `tests/visual/tiled-surface.spec.ts`:
 
@@ -1074,7 +1074,7 @@ test('tiled-surface — an even-odd hole stays a hole in both panes', async ({ p
 });
 ```
 
-- [ ] **Step 2: Run it and watch it pass**
+- [x] **Step 2: Run it and watch it pass**
 
 Run: `npx playwright test --config=tests/visual/playwright.config.ts tiled-surface`
 
@@ -1082,7 +1082,7 @@ Expected: 3 passed. If the third fails, the ring's probe coordinates are wrong f
 what the demo actually draws — screenshot the surface and read the real geometry off
 it before touching the renderer.
 
-- [ ] **Step 3: Break the scissor and watch it fail**
+- [x] **Step 3: Break the scissor and watch it fail**
 
 In `WeaselRenderer.ts`, in `applyTarget()`, temporarily comment out the two lines:
 
@@ -1098,7 +1098,7 @@ comes back as pane B's cream (or the gutter probes come back opaque). If it PASS
 stop: the test is asserting nothing and needs fixing before the guard is worth
 keeping.
 
-- [ ] **Step 4: Restore and re-run**
+- [x] **Step 4: Restore and re-run**
 
 Uncomment both lines.
 
@@ -1106,7 +1106,7 @@ Run: `npx playwright test --config=tests/visual/playwright.config.ts tiled-surfa
 
 Expected: 3 passed.
 
-- [ ] **Step 5: Settle whether the stencil clear is load-bearing, and say so**
+- [x] **Step 5: Settle whether the stencil clear is load-bearing, and say so**
 
 The spec claims the guard is a stencil leak: one pane's even-odd fill reading bits
 its neighbour left set. That may not be reachable. `drawPathFillStencil` narrows to
@@ -1134,7 +1134,7 @@ Run: `npx playwright test --config=tests/visual/playwright.config.ts tiled-surfa
 
 Either way, restore the line before moving on and re-run to confirm 3 passed.
 
-- [ ] **Step 6: Run the whole visual suite**
+- [x] **Step 6: Run the whole visual suite**
 
 Run: `npx playwright test --config=tests/visual/playwright.config.ts`
 
@@ -1143,7 +1143,7 @@ Expected: 42 passed, 3 skipped, 1 failed. The one failure is
 fails identically on a clean tree and is not this work. If anything else is red, it
 is yours.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add tests/visual/tiled-surface.spec.ts docs/superpowers/specs/2026-09-02-labkit-annotations-design.md
@@ -1161,7 +1161,7 @@ its output is the deliverable; do not turn a number into a threshold.
 **Files:**
 - Create: `tests/perf/tiled-surface.spec.ts`
 
-- [ ] **Step 1: Write the measurement**
+- [x] **Step 1: Write the measurement**
 
 Create `tests/perf/tiled-surface.spec.ts`:
 
@@ -1227,14 +1227,14 @@ test('tiled-surface — buffer uploads and frame time, N renderers vs one', asyn
 });
 ```
 
-- [ ] **Step 2: Run it and read the numbers**
+- [x] **Step 2: Run it and read the numbers**
 
 Run: `npx playwright test --config=tests/perf/playwright.config.ts tiled-surface`
 
 Expected: 1 passed, with six numbers printed. There is no assertion — the point is
 the figures.
 
-- [ ] **Step 3: Record the answer in the spec**
+- [x] **Step 3: Record the answer in the spec**
 
 In `docs/superpowers/specs/2026-09-02-labkit-annotations-design.md`, replace this
 line in the "Open" section:
@@ -1249,7 +1249,7 @@ which way it points — moved up into the arc 1 section, since it is no longer o
 Two sentences. If the numbers do not settle it, say that instead and leave the
 question in "Open" with the figures attached.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add tests/perf/tiled-surface.spec.ts docs/superpowers/specs/2026-09-02-labkit-annotations-design.md
@@ -1264,7 +1264,7 @@ git commit -m "price N renderers on one context against one retargeted"
 - Create: `.changeset/renderer-target-rect.md`
 - Modify: `docs/TODO.md`
 
-- [ ] **Step 1: Write the changeset**
+- [x] **Step 1: Write the changeset**
 
 `patch` — always, in this repo, whatever the change does. See CLAUDE.md, "Releases:
 always write `patch`". **Do not write a `bump-approved` marker.**
@@ -1289,13 +1289,13 @@ attributes report no stencil buffer, which previously rendered clips and even-od
 fills wrong instead of failing.
 ```
 
-- [ ] **Step 2: Check the bump gate**
+- [x] **Step 2: Check the bump gate**
 
 Run: `npm run check:bumps`
 
 Expected: passes.
 
-- [ ] **Step 3: Retire the TODO entry, if there is one**
+- [x] **Step 3: Retire the TODO entry, if there is one**
 
 Run: `grep -n "target rect\|tiled\|scissor" docs/TODO.md`
 
@@ -1303,7 +1303,7 @@ If an entry covers this work, delete it or rewrite it around what is left — an
 the hand-maintained index at the top of the file in the same edit. If nothing
 matches, skip this step.
 
-- [ ] **Step 4: Full gate**
+- [x] **Step 4: Full gate**
 
 Run: `npx tsc --noEmit && npm run lint && npx vitest run --project=kit`
 
@@ -1311,7 +1311,7 @@ Expected: no output from the first two; all kit tests pass. Run this in the
 foreground and read the pass count — a backgrounded run has reported exit 0 over a
 real failure.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add .changeset/renderer-target-rect.md docs/TODO.md
