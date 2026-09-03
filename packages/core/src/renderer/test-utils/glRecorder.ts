@@ -17,6 +17,15 @@ export interface GLCall {
   readonly result: unknown;
 }
 
+export interface GLRecorderOptions {
+  /** Reported as `gl.drawingBufferWidth`. Default 800. */
+  drawingBufferWidth?: number;
+  /** Reported as `gl.drawingBufferHeight`. Default 600. */
+  drawingBufferHeight?: number;
+  /** Returned by `gl.getContextAttributes()`. Default `{ stencil: true }`. */
+  contextAttributes?: Partial<WebGLContextAttributes>;
+}
+
 export interface GLRecorder {
   readonly gl: WebGL2RenderingContext;
   readonly calls: GLCall[];
@@ -44,6 +53,7 @@ const GL_CONSTANTS: Readonly<Record<string, number>> = {
   BLEND: 0x0BE2,
   STENCIL_TEST: 0x0B90,
   CULL_FACE: 0x0B44,
+  SCISSOR_TEST: 0x0C11,
   // Blend factors
   SRC_ALPHA: 0x0302,
   ONE_MINUS_SRC_ALPHA: 0x0303,
@@ -103,8 +113,21 @@ function snapshot(value: unknown): unknown {
     : value;
 }
 
-export function makeGLRecorder(): GLRecorder {
+export function makeGLRecorder(options: GLRecorderOptions = {}): GLRecorder {
   const calls: GLCall[] = [];
+  const {
+    drawingBufferWidth = 800,
+    drawingBufferHeight = 600,
+    contextAttributes = { stencil: true },
+  } = options;
+
+  // Read as data, not called. The Proxy below hands back a recording function
+  // for every lowercase property, so without this `drawingBufferHeight` is a
+  // function and every y-flip computed from it is NaN — silently.
+  const DATA_PROPERTIES: Readonly<Record<string, unknown>> = {
+    drawingBufferWidth,
+    drawingBufferHeight,
+  };
 
   const handler = (name: string) => (...args: unknown[]) => {
     let result: unknown = undefined;
@@ -130,6 +153,9 @@ export function makeGLRecorder(): GLRecorder {
       case 'getProgramInfoLog':
         result = '';
         break;
+      case 'getContextAttributes':
+        result = { ...contextAttributes };
+        break;
       case 'getError':
         result = 0;
         break;
@@ -145,6 +171,7 @@ export function makeGLRecorder(): GLRecorder {
     {
       get(_, prop: string | symbol) {
         if (typeof prop !== 'string') return undefined;
+        if (prop in DATA_PROPERTIES) return DATA_PROPERTIES[prop];
         if (prop in GL_CONSTANTS) return GL_CONSTANTS[prop];
         if (/^[A-Z_0-9]+$/.test(prop)) return 0; // unknown all-caps constant → 0
         return handler(prop);
