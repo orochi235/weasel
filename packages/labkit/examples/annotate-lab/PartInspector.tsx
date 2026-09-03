@@ -11,7 +11,7 @@
  * trial's state and config, not from inside a component — an element a
  * capability names has to be reachable from outside React.
  */
-import { defineInstrument, f, useAnnotations } from '@weasel-js/labkit';
+import { type CaptureSource, defineInstrument, f, useAnnotations } from '@weasel-js/labkit';
 import { createRef } from 'react';
 
 interface Config {
@@ -24,6 +24,14 @@ const CONTENT = { w: 260, h: 180 };
 
 const flatRef = createRef<HTMLDivElement>();
 const shadedRef = createRef<HTMLDivElement>();
+
+/** The pane's own picture, for an export to draw marks over. The instrument
+ *  hands it back as markup because it *is* markup — an SVG base keeps the
+ *  export vector all the way through and rasterizes once at the end. */
+const svgOf = (ref: typeof flatRef) => (): CaptureSource => ({
+  kind: 'svg',
+  markup: ref.current?.querySelector('svg')?.outerHTML ?? '',
+});
 
 /** A crude bracket, drawn from the config so a change visibly moves it. */
 function Part({ angle, shading }: { angle: number; shading: Config['shading'] }) {
@@ -104,8 +112,23 @@ export const PartInspector = defineInstrument<Record<string, never>, Config>({
       // `shading` moves only the right pane's picture, so only that target
       // declares it: a mark on the left survives a change that would strand
       // one on the right.
-      { id: 'flat', ref: flatRef, content: CONTENT, positionDependsOn: ['angle'] },
-      { id: 'shaded', ref: shadedRef, content: CONTENT, positionDependsOn: ['angle', 'shading'] },
+      {
+        id: 'flat',
+        ref: flatRef,
+        content: CONTENT,
+        positionDependsOn: ['angle'],
+        base: svgOf(flatRef),
+      },
+      {
+        id: 'shaded',
+        ref: shadedRef,
+        content: CONTENT,
+        positionDependsOn: ['angle', 'shading'],
+        base: svgOf(shadedRef),
+      },
     ],
+    onCapture: (result) => {
+      console.log(`[annotate-lab] exported ${result.target} as ${result.format}`, result);
+    },
   },
 });

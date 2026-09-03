@@ -2,6 +2,7 @@ export type { CaptureArgs, CapturePlan, ComposeSvgArgs } from './capture';
 export { capturePlan, captureTarget, composeCaptureSvg } from './capture';
 export type { MarkDrawOptions } from './drawOne';
 export { createMarkDrawOne, resolveMarkStyle } from './drawOne';
+export { ExportMenu } from './ExportMenu';
 export type { WorldRect } from './frac';
 export { fracContains, fracIntersects, fracToWorld, roundFrac, worldToFrac } from './frac';
 export type { HistoryScene } from './history';

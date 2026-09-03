@@ -96,6 +96,7 @@
 - [ ] Register it; keep it terse and single-purpose per the demo rules in `CLAUDE.md`.
 - [ ] `tests/visual/annotations-capture.spec.ts`, **no committed baseline** — GL and SVG rasterization are not byte-identical across drivers. Draw a mark over the known feature, capture at `scale: 4`, read the result back with `createImageBitmap` → 2D canvas → `getImageData`, and probe: the mark's colour is present where the feature is, the base's colour is present where it should be, and the output is `content × 4` pixels.
 - [ ] A second case: `format: 'svg'` returns a document containing both the base's marker element and a `<path>` with the mark's stroke colour.
+- [ ] **A viewport calibration, which the repo does not have.** Drag a mark at a known client point on a pane and assert the store's `frac` is where the arithmetic says — on a pane that is *not* at the surface origin, which is the case that breaks. `tests/visual/insert.spec.ts` and `shape-tools.spec.ts` both defer exactly this in their own headers, and the overlay's client→world path was only ever checked by hand in the arc-2 spike.
 - [ ] A third: the toolbar Export → Download fires a real download (`page.waitForEvent('download')`) whose suggested filename names the target.
 - [ ] Tests pass; commit.
 

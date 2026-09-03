@@ -10,6 +10,7 @@ import {
   ZoomInIcon,
   ZoomOutIcon,
 } from '@weasel-js/ui';
+import { ExportMenu } from '../annotations/ExportMenu';
 import { MarkList } from '../annotations/MarkList';
 import { ANNOTATION_TOOLS } from '../annotations/toolMap';
 import type { ControlRenderer } from '../config/types';
@@ -148,6 +149,15 @@ export function builtinContributions(
   }
 
   if (instrument.annotations != null) {
+    // A popover, so it takes the `render` escape: the panel picks a target,
+    // and an icon button cannot ask which one.
+    out.push({
+      id: 'export',
+      region: 'toolbar',
+      group: 'trial',
+      end: true,
+      render: () => <ExportMenu />,
+    });
     out.push({
       id: 'marks',
       region: 'sidebar',

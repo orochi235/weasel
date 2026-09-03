@@ -60,3 +60,70 @@
   color: var(--wzl-fg-muted);
   cursor: pointer;
 }
+
+// The export panel: a target to export, how, and at what resolution. Held in
+// a popover because a mark belongs to a target — with more than one pane,
+// "export" on its own does not say what.
+.lk-export__panel {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--wzl-space-xs) var(--wzl-space-sm);
+  min-width: 220px;
+  font-size: var(--wzl-font-size-sm);
+}
+
+.lk-export__title {
+  grid-column: 1 / -1;
+  font-weight: var(--wzl-font-weight-medium);
+}
+
+// A row spans both columns and re-declares the same tracks, so every row's
+// label lines up whether it is a <label> or a <fieldset>: subgrid is what
+// keeps one column definition rather than three copies.
+.lk-export__row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+
+  > span:first-child {
+    grid-column: 1;
+    grid-row: 1;
+    color: var(--wzl-fg-muted);
+  }
+
+  > select {
+    grid-column: 2;
+  }
+}
+
+.lk-export__choices {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  gap: var(--wzl-space-sm);
+
+  label {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+  }
+}
+
+.lk-export__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: var(--wzl-space-xs);
+  margin-top: var(--wzl-space-xs);
+}
+
+.lk-export__error {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--wzl-danger);
+  font-size: var(--wzl-font-size-xs);
+}
