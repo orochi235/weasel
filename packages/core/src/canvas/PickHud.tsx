@@ -13,7 +13,11 @@ import s from './PickHud.module.css';
 
 /** Props for `<PickHud>`. */
 export interface PickHudProps {
-  canvasRef: React.RefObject<HTMLCanvasElement | null>;
+  canvasRef: React.RefObject<HTMLElement | null>;
+  /** Element the HUD pins its corner to. Defaults to the canvas's parent — the
+   *  wrapper a bare `<canvas>` sits in. A detached canvas passes its own input
+   *  box, whose parent is the shared surface every pane sits in. */
+  anchorRef?: React.RefObject<HTMLElement | null>;
   viewRef: React.RefObject<View>;
   /** World-space hit-test. Same shape as `useSelectTool`'s `pickEvery`. */
   pickEvery: (worldX: number, worldY: number) => readonly string[];
@@ -33,12 +37,12 @@ interface HudState {
 
 /** Debug overlay listing every node under the pointer, with the one a click
  *  would actually select shown in bold. */
-export function PickHud({ canvasRef, viewRef, pickEvery, pickBest, offset }: PickHudProps) {
+export function PickHud({ canvasRef, anchorRef, viewRef, pickEvery, pickBest, offset }: PickHudProps) {
   const [state, setState] = useState<HudState>({
     ids: [], best: null, inCanvas: false,
   });
   const { ref, style } = useHostAnchor(
-    () => canvasRef.current?.parentElement ?? canvasRef.current,
+    () => anchorRef?.current ?? canvasRef.current?.parentElement ?? canvasRef.current,
     {
       align: { x: 'end', y: 'start' },
       offset: { x: offset?.right ?? 8, y: offset?.top ?? 76 },

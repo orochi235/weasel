@@ -16,7 +16,11 @@ import { clientToWorld } from 'core/viewport/clientToWorld';
 
 /** Props for `<CursorCoordsHud>`. */
 export interface CursorCoordsHudProps {
-  canvasRef: React.RefObject<HTMLCanvasElement | null>;
+  canvasRef: React.RefObject<HTMLElement | null>;
+  /** Element the HUD pins its corner to. Defaults to the canvas's parent — the
+   *  wrapper a bare `<canvas>` sits in. A detached canvas passes its own input
+   *  box, whose parent is the shared surface every pane sits in. */
+  anchorRef?: React.RefObject<HTMLElement | null>;
   viewRef: React.RefObject<View>;
   /** Inset from the canvas's top-right corner, in px. Default 8 on both axes. */
   offset?: { top?: number; right?: number };
@@ -30,13 +34,13 @@ interface HudState {
 
 /** Debug overlay showing the pointer's client and world coordinates and the
  *  current frame rate, pinned to the canvas's top-right corner. */
-export function CursorCoordsHud({ canvasRef, viewRef, offset }: CursorCoordsHudProps) {
+export function CursorCoordsHud({ canvasRef, anchorRef, viewRef, offset }: CursorCoordsHudProps) {
   const [state, setState] = useState<HudState>({
     client: { x: 0, y: 0 }, world: null, inCanvas: false,
   });
   const [fps, setFps] = useState<number>(0);
   const { ref, style: anchorStyle } = useHostAnchor(
-    () => canvasRef.current?.parentElement ?? canvasRef.current,
+    () => anchorRef?.current ?? canvasRef.current?.parentElement ?? canvasRef.current,
     {
       align: { x: 'end', y: 'start' },
       offset: { x: offset?.right ?? 8, y: offset?.top ?? 8 },

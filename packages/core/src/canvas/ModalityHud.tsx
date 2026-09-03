@@ -14,7 +14,11 @@ import { useHostAnchor } from './useHostAnchor';
 import s from './ModalityHud.module.css';
 
 export interface ModalityHudProps {
-  canvasRef: React.RefObject<HTMLCanvasElement | null>;
+  canvasRef: React.RefObject<HTMLElement | null>;
+  /** Element the HUD pins its corner to. Defaults to the canvas's parent — the
+   *  wrapper a bare `<canvas>` sits in. A detached canvas passes its own input
+   *  box, whose parent is the shared surface every pane sits in. */
+  anchorRef?: React.RefObject<HTMLElement | null>;
   /** Active modality mode id. Omit until the mode machine is wired —
    *  the row renders `—` in that case. */
   modeId?: string;
@@ -24,10 +28,10 @@ export interface ModalityHudProps {
   offset?: { top?: number; right?: number };
 }
 
-export function ModalityHud({ canvasRef, modeId, offset }: ModalityHudProps) {
+export function ModalityHud({ canvasRef, anchorRef, modeId, offset }: ModalityHudProps) {
   const toolCtx = useOptionalActiveToolContext();
   const { ref, style } = useHostAnchor(
-    () => canvasRef.current?.parentElement ?? canvasRef.current,
+    () => anchorRef?.current ?? canvasRef.current?.parentElement ?? canvasRef.current,
     {
       align: { x: 'end', y: 'start' },
       offset: { x: offset?.right ?? 8, y: offset?.top ?? 220 },

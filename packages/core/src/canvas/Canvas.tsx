@@ -1522,7 +1522,39 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     inputElement.style.cursor = toolsCursor ?? '';
   }, [detached, inputElement, toolsCursor]);
 
-  if (detached) return null;
+  const huds = (
+    <>
+      {cursorCoordsHud && (
+        <CursorCoordsHud
+          canvasRef={canvasRef}
+          {...(detached ? { anchorRef: canvasRef } : {})}
+          viewRef={viewRef}
+        />
+      )}
+      {pickHud && (
+        <PickHud
+          canvasRef={canvasRef}
+          {...(detached ? { anchorRef: canvasRef } : {})}
+          viewRef={viewRef}
+          pickEvery={stablePickEveryForHud}
+          pickBest={stablePickBestForHud}
+        />
+      )}
+      {modalityHud && (
+        <ModalityHud
+          canvasRef={canvasRef}
+          {...(detached ? { anchorRef: canvasRef } : {})}
+          modeId={typeof modalityHud === 'object' ? modalityHud.modeId : undefined}
+        />
+      )}
+    </>
+  );
+
+  // Detached: no element of our own, but the HUDs are DOM and still belong to
+  // this pane. Held until the input element arrives — `useHostAnchor` resolves
+  // its host on mount and again only when the panel or the window moves, so a
+  // HUD mounted against a null host would latch off.
+  if (detached) return inputElement ? huds : null;
 
   return (
     <>
@@ -1550,23 +1582,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
         // else still works (this handler runs before the default menu).
         onContextMenu={(e) => e.preventDefault()}
       />
-      {cursorCoordsHud && (
-        <CursorCoordsHud canvasRef={canvasRef} viewRef={viewRef} />
-      )}
-      {pickHud && (
-        <PickHud
-          canvasRef={canvasRef}
-          viewRef={viewRef}
-          pickEvery={stablePickEveryForHud}
-          pickBest={stablePickBestForHud}
-        />
-      )}
-      {modalityHud && (
-        <ModalityHud
-          canvasRef={canvasRef}
-          modeId={typeof modalityHud === 'object' ? modalityHud.modeId : undefined}
-        />
-      )}
+      {huds}
     </>
   );
 }
