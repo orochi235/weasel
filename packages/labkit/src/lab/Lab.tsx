@@ -25,6 +25,7 @@ import { LabShell } from './LabShell';
 import { createPanelHostRegistry, PanelHostContext } from './panelHost';
 import { SurfaceContext } from '../surface/SurfaceContext';
 import { useTiledSurface } from '../surface/useTiledSurface';
+import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { useResolvedMode } from './useSystemMode';
 import { type PanelDescriptor, type TrialLayout, Workspace } from './Workspace';
 
@@ -153,10 +154,14 @@ export function Lab({
   if (panelHostsRef.current === null) panelHostsRef.current = createPanelHostRegistry();
 
   // One shared drawing surface for the whole lab, anchored to the body — tile
-  // rects compose against it. No renderer drives it yet; it is mounted so a
-  // tile can register and stay measured, and `Workspace` already invalidates
-  // rects when the grid moves something a ResizeObserver cannot see.
-  const surface = useTiledSurface({ onFrame: NO_FRAME });
+  // rects compose against it. No renderer drives the lab's own; it is mounted
+  // so a tile can register and stay measured, and `Workspace` already
+  // invalidates rects when the grid moves something a ResizeObserver cannot
+  // see. A host that already owns a surface keeps it: a lab embedded in a
+  // larger shared-surface app must not open a second GL tenancy.
+  const outerSurface = useSurfaceOptional();
+  const ownSurface = useTiledSurface({ onFrame: NO_FRAME });
+  const surface = outerSurface ?? ownSurface;
 
   const workspacePanels = useMemo<PanelDescriptor[]>(
     () =>
@@ -264,7 +269,10 @@ export function Lab({
           >
             <PanelHostContext.Provider value={panelHostsRef.current}>
               <SurfaceContext.Provider value={surface}>
-                <div className="lk-lab__body" ref={surface.containerRef}>
+                <div
+                  className="lk-lab__body"
+                  ref={outerSurface ? undefined : ownSurface.containerRef}
+                >
                   {tools ? <LabPalette tools={tools} /> : null}
                   <Workspace
                     panels={workspacePanels}
