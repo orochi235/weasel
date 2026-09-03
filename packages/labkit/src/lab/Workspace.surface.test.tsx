@@ -10,6 +10,7 @@ function fakeHandle(): SurfaceHandle {
     invalidateAll: vi.fn(),
     invalidateRects: vi.fn(),
     registerTile: vi.fn(),
+    registerPainter: vi.fn(() => () => {}),
     containerRef: vi.fn(),
   };
 }

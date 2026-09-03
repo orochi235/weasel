@@ -12,17 +12,23 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { SurfaceContext } from '../surface/SurfaceContext';
+import { useSurfaceOptional, useSurfaceTile } from '../surface/useSurfaceTile';
 import type { SurfaceFrame, SurfaceHandle } from '../surface/useTiledSurface';
 import { useTiledSurface } from '../surface/useTiledSurface';
-import { useSurfaceOptional, useSurfaceTile } from '../surface/useSurfaceTile';
 import { Lab } from './Lab';
 
 /** jsdom measures everything as zero, so each element is given a box by hand. */
 function stubBox(el: HTMLElement, left: number, top: number, width: number, height: number): void {
   vi.spyOn(el, 'getBoundingClientRect').mockReturnValue({
-    left, top, width, height,
-    right: left + width, bottom: top + height,
-    x: left, y: top, toJSON: () => ({}),
+    left,
+    top,
+    width,
+    height,
+    right: left + width,
+    bottom: top + height,
+    x: left,
+    y: top,
+    toJSON: () => ({}),
   } as DOMRect);
 }
 
@@ -56,13 +62,34 @@ describe('<Lab> surface provider', () => {
     expect(typeof (seen as unknown as SurfaceHandle).registerTile).toBe('function');
   });
 
+  it('mounts one inert buffer inside the lab body', () => {
+    const { container } = render(<Lab instruments={[probeInstrument]} defaultInstrument="Probe" />);
+    const canvases = container.querySelectorAll('.lk-lab__body > canvas.lk-lab__surface');
+    expect(canvases).toHaveLength(1);
+  });
+
+  it('mounts no buffer of its own when a host already owns the surface', () => {
+    function Host({ children }: { children: ReactNode }) {
+      const surface = useTiledSurface({ onFrame: () => {} });
+      return (
+        <SurfaceContext.Provider value={surface}>
+          <div ref={surface.containerRef}>{children}</div>
+        </SurfaceContext.Provider>
+      );
+    }
+    const { container } = render(
+      <Host>
+        <Lab instruments={[probeInstrument]} defaultInstrument="Probe" />
+      </Host>,
+    );
+    expect(container.querySelectorAll('canvas.lk-lab__surface')).toHaveLength(0);
+  });
+
   it('keeps the workspace a direct child of the lab body', () => {
     // The min-width:0 rule that keeps the flex row from overflowing is
     // `.lk-lab__body > .lk-workspace`. An element inserted between them drops
     // it, and jsdom cannot see the overflow that follows.
-    const { container } = render(
-      <Lab instruments={[probeInstrument]} defaultInstrument="Probe" />,
-    );
+    const { container } = render(<Lab instruments={[probeInstrument]} defaultInstrument="Probe" />);
     const body = container.querySelector('.lk-lab__body');
     expect(body).not.toBeNull();
     expect(body?.querySelector(':scope > .lk-workspace')).not.toBeNull();

@@ -1,6 +1,12 @@
 import { useCallback, useContext } from 'react';
-import { SurfaceContext } from './SurfaceContext';
+import { SurfaceCanvasContext, SurfaceContext } from './SurfaceContext';
 import type { SurfaceHandle } from './useTiledSurface';
+
+/** The surface's shared buffer, or null where nothing paints one. What a tile
+ *  hands to `paintInto`. */
+export function useSurfaceCanvas(): HTMLCanvasElement | null {
+  return useContext(SurfaceCanvasContext);
+}
 
 /** The surface above, or null. Use this where a surface is genuinely optional. */
 export function useSurfaceOptional(): SurfaceHandle | null {

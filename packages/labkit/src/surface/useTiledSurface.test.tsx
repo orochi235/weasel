@@ -228,4 +228,62 @@ describe('useTiledSurface', () => {
 
     expect(frames[0]?.rects.has('b')).toBe(false);
   });
+
+  it("calls a dirty tile's painter with that tile's rect", () => {
+    const frames: SurfaceFrame[] = [];
+    let handle: SurfaceHandle | null = null;
+    render(
+      <Harness
+        frames={frames}
+        onHandle={(h) => {
+          handle = h;
+        }}
+      />,
+    );
+    flushFrames();
+
+    const paintA = vi.fn();
+    const paintB = vi.fn();
+    act(() => {
+      handle?.registerPainter('a', paintA);
+      handle?.registerPainter('b', paintB);
+      handle?.invalidate('a');
+    });
+    flushFrames();
+
+    // The rect, not just the call: a painter handed the wrong origin paints
+    // the right picture in the wrong place.
+    expect(paintA).toHaveBeenCalledWith({ x: 0, y: 0, w: 400, h: 600 }, expect.anything());
+    expect(paintB).not.toHaveBeenCalled();
+  });
+
+  it('stops calling a painter that unregisters', () => {
+    const frames: SurfaceFrame[] = [];
+    let handle: SurfaceHandle | null = null;
+    render(
+      <Harness
+        frames={frames}
+        onHandle={(h) => {
+          handle = h;
+        }}
+      />,
+    );
+    flushFrames();
+
+    const paint = vi.fn();
+    let off: (() => void) | undefined;
+    act(() => {
+      off = handle?.registerPainter('a', paint);
+      handle?.invalidate('a');
+    });
+    flushFrames();
+    expect(paint).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      off?.();
+      handle?.invalidate('a');
+    });
+    flushFrames();
+    expect(paint).toHaveBeenCalledTimes(1);
+  });
 });

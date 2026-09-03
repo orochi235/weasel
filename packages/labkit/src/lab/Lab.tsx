@@ -1,5 +1,13 @@
 import { ThemeProvider } from '@weasel-js/theme/react';
-import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef } from 'react';
+import {
+  type CSSProperties,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useStore } from 'zustand/react';
 import type { TrialContribution } from '../chrome/types';
 import type { ConfigRule, ControlRenderer } from '../config/types';
@@ -8,6 +16,9 @@ import { noneAdapter } from '../state/adapters';
 import { LabStoreContext } from '../state/context';
 import { createLabStore, type LabStore } from '../state/store';
 import type { LabMode, StorageAdapter, TrialRecord } from '../state/types';
+import { SurfaceCanvasContext, SurfaceContext } from '../surface/SurfaceContext';
+import { useSurfaceCanvas, useSurfaceOptional } from '../surface/useSurfaceTile';
+import { useTiledSurface } from '../surface/useTiledSurface';
 import { interstellarTheme } from '../theme/interstellar';
 import type { TrialTool } from '../tools/types';
 import { Trial } from '../trial/Trial';
@@ -23,15 +34,8 @@ import { LabHeader } from './LabHeader';
 import { LabPalette } from './LabPalette';
 import { LabShell } from './LabShell';
 import { createPanelHostRegistry, PanelHostContext } from './panelHost';
-import { SurfaceContext } from '../surface/SurfaceContext';
-import { useTiledSurface } from '../surface/useTiledSurface';
-import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { useResolvedMode } from './useSystemMode';
 import { type PanelDescriptor, type TrialLayout, Workspace } from './Workspace';
-
-/** Stable identity: `useTiledSurface` holds this in a ref, but a fresh arrow
- *  each render would still churn the frame callback for no reason. */
-const NO_FRAME = (): void => {};
 
 /** Props for `<Lab>`. */
 export interface LabProps {
@@ -154,14 +158,38 @@ export function Lab({
   if (panelHostsRef.current === null) panelHostsRef.current = createPanelHostRegistry();
 
   // One shared drawing surface for the whole lab, anchored to the body — tile
-  // rects compose against it. No renderer drives the lab's own; it is mounted
-  // so a tile can register and stay measured, and `Workspace` already
-  // invalidates rects when the grid moves something a ResizeObserver cannot
-  // see. A host that already owns a surface keeps it: a lab embedded in a
-  // larger shared-surface app must not open a second GL tenancy.
+  // rects compose against it, and every tile paints into the one buffer.
+  // `Workspace` invalidates rects when the grid moves something a
+  // ResizeObserver cannot see. A host that already owns a surface keeps it: a
+  // lab embedded in a larger shared-surface app must not open a second GL
+  // tenancy, and mounts no buffer of its own.
   const outerSurface = useSurfaceOptional();
-  const ownSurface = useTiledSurface({ onFrame: NO_FRAME });
+  const outerCanvas = useSurfaceCanvas();
+  const [ownCanvas, setOwnCanvas] = useState<HTMLCanvasElement | null>(null);
+  const ownCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const bufferRef = useRef({ w: 0, h: 0 });
+  const surfaceRef = useRef<ReturnType<typeof useTiledSurface> | null>(null);
+
+  // Sizing the buffer clears all of it, so every tile has to repaint — not
+  // only the one whose move triggered the measurement.
+  const onFrame = useCallback((frame: { size: { width: number; height: number }; dpr: number }) => {
+    const c = ownCanvasRef.current;
+    if (!c) return;
+    const w = Math.round(frame.size.width * frame.dpr);
+    const h = Math.round(frame.size.height * frame.dpr);
+    if (bufferRef.current.w === w && bufferRef.current.h === h) return;
+    bufferRef.current = { w, h };
+    c.width = w;
+    c.height = h;
+    c.style.width = `${frame.size.width}px`;
+    c.style.height = `${frame.size.height}px`;
+    surfaceRef.current?.invalidateAll();
+  }, []);
+
+  const ownSurface = useTiledSurface({ onFrame });
+  surfaceRef.current = ownSurface;
   const surface = outerSurface ?? ownSurface;
+  const surfaceCanvas = outerSurface ? outerCanvas : ownCanvas;
 
   const workspacePanels = useMemo<PanelDescriptor[]>(
     () =>
@@ -269,25 +297,39 @@ export function Lab({
           >
             <PanelHostContext.Provider value={panelHostsRef.current}>
               <SurfaceContext.Provider value={surface}>
-                <div
-                  className="lk-lab__body"
-                  ref={outerSurface ? undefined : ownSurface.containerRef}
-                >
-                  {tools ? <LabPalette tools={tools} /> : null}
-                  <Workspace
-                    panels={workspacePanels}
-                    ids={trials.map((w) => w.id)}
-                    resizable
-                    reorderable
-                    onReorder={(ids) => contextValue.reorderTrials(ids)}
-                    layout={layout as TrialLayout}
-                    onLayoutChange={(next) => store.getState().setLayout(next)}
+                <SurfaceCanvasContext.Provider value={surfaceCanvas}>
+                  <div
+                    className="lk-lab__body"
+                    ref={outerSurface ? undefined : ownSurface.containerRef}
                   >
-                    {trials.map((w) => (
-                      <Trial key={w.id} id={w.id} chrome={chrome} suppress={suppress} />
-                    ))}
-                  </Workspace>
-                </div>
+                    {outerSurface ? null : (
+                      // Above the trials and inert: the marks a tile paints have
+                      // to sit over the instrument's own DOM, and nothing on this
+                      // buffer takes input — each tile has its own input box.
+                      <canvas
+                        className="lk-lab__surface"
+                        ref={(el) => {
+                          ownCanvasRef.current = el;
+                          setOwnCanvas(el);
+                        }}
+                      />
+                    )}
+                    {tools ? <LabPalette tools={tools} /> : null}
+                    <Workspace
+                      panels={workspacePanels}
+                      ids={trials.map((w) => w.id)}
+                      resizable
+                      reorderable
+                      onReorder={(ids) => contextValue.reorderTrials(ids)}
+                      layout={layout as TrialLayout}
+                      onLayoutChange={(next) => store.getState().setLayout(next)}
+                    >
+                      {trials.map((w) => (
+                        <Trial key={w.id} id={w.id} chrome={chrome} suppress={suppress} />
+                      ))}
+                    </Workspace>
+                  </div>
+                </SurfaceCanvasContext.Provider>
               </SurfaceContext.Provider>
             </PanelHostContext.Provider>
           </LabShell>

@@ -23,8 +23,16 @@ export interface SurfaceHandle {
    *  moved something a ResizeObserver cannot see. */
   invalidateRects: () => void;
   registerTile: (id: string, el: HTMLElement | null) => void;
+  /** Subscribe a tile to the frames it is dirty on. A tile paints on its own
+   *  loop, so this is how the surface wakes one: a resize of the shared buffer
+   *  clears every tile, not only the one that moved. */
+  registerPainter: (id: string, paint: TilePainter) => () => void;
   containerRef: (el: HTMLElement | null) => void;
 }
+
+/** What a tile's painter is handed: where it sits on the surface now, and the
+ *  frame that dirtied it. */
+export type TilePainter = (rect: Rect, frame: SurfaceFrame) => void;
 
 export interface UseTiledSurfaceOptions {
   onFrame: (frame: SurfaceFrame) => void;
@@ -35,6 +43,7 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
   const tiles = useRef(new Map<string, HTMLElement>());
   const rects = useRef(new Map<string, Rect>());
   const dirty = useRef(new Set<string>());
+  const painters = useRef(new Map<string, TilePainter>());
   const needsMeasure = useRef(true);
   const observer = useRef<ResizeObserver | null>(null);
   const lastDpr = useRef(0);
@@ -76,12 +85,18 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
       }
       if (dirty.current.size === 0) return;
       const box = el.getBoundingClientRect();
-      onFrameRef.current({
+      const frame: SurfaceFrame = {
         dirty: new Set(dirty.current),
         rects: new Map(rects.current),
         dpr,
         size: { width: box.width, height: box.height },
-      });
+      };
+      onFrameRef.current(frame);
+      // After the owner, which is what resized the buffer this frame.
+      for (const id of frame.dirty) {
+        const rect = frame.rects.get(id);
+        if (rect) painters.current.get(id)?.(rect, frame);
+      }
       dirty.current.clear();
     },
     // The host attaches its container through `containerRef`, which may land
@@ -130,6 +145,13 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
     [schedule],
   );
 
+  const registerPainter = useCallback((id: string, paint: TilePainter) => {
+    painters.current.set(id, paint);
+    return () => {
+      if (painters.current.get(id) === paint) painters.current.delete(id);
+    };
+  }, []);
+
   const containerRef = useCallback(
     (el: HTMLElement | null) => {
       if (container.current === el) return;
@@ -157,5 +179,12 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
     };
   }, [schedule, frameLoop]);
 
-  return { invalidate, invalidateAll, invalidateRects, registerTile, containerRef };
+  return {
+    invalidate,
+    invalidateAll,
+    invalidateRects,
+    registerTile,
+    registerPainter,
+    containerRef,
+  };
 }

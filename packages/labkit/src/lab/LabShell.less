@@ -48,10 +48,21 @@
   display: flex;
   height: 100%;
   min-height: 0;
+  position: relative;
 
   > .lk-workspace {
     min-width: 0;
   }
+}
+
+// The lab's one shared drawing buffer. Over the trials, because a tile's marks
+// annotate the instrument's own DOM; under the viewport chrome, whose z-overlay
+// outranks it; and inert, because every tile takes input from its own box.
+.lk-lab__surface {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .lk-shell-footer {
