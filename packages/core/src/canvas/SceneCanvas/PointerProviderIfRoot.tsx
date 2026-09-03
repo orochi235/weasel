@@ -31,7 +31,7 @@ export function PointerProviderIfRoot({ children }: { children: ReactNode }) {
 export function PointerPublisher({
   canvasRef,
 }: {
-  canvasRef: MutableRefObject<HTMLCanvasElement | null>;
+  canvasRef: MutableRefObject<HTMLElement | null>;
 }) {
   const ctx = usePointerContext();
   const registry = useOptionalViewRegistry();

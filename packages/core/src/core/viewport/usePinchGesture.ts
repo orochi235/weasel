@@ -16,7 +16,7 @@ function mid(a: { x: number; y: number }, b: { x: number; y: number }) {
  *   two by insertion order are tracked.
  */
 export function usePinchGesture(
-  canvasRef: React.RefObject<HTMLCanvasElement | null>,
+  canvasRef: React.RefObject<HTMLElement | null>,
   onPinch: (anchor: { x: number; y: number }, scaleFactor: number) => void,
   enabled = true,
 ) {

@@ -149,7 +149,7 @@ export interface ViewIdResolver {
  *  coordinates and hit targets bindings match against. */
 export interface UseGestureDispatcherOptions {
   /** Ref to the canvas element. Pointer/wheel/multitouch listeners attach here. */
-  canvasRef: RefObject<HTMLCanvasElement | null>;
+  canvasRef: RefObject<HTMLElement | null>;
   /** Action registry (ActionsRegistry from registry.tsx). */
   actions: ActionsRegistry;
   /** Tool definitions keyed by id. Typically passes an empty Map. */

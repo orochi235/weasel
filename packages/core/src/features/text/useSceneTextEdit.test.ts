@@ -198,4 +198,20 @@ describe('useSceneTextEdit — view thunk', () => {
     } as unknown as MouseEvent<HTMLElement>));
     expect(hook.result.current.editingId).toBe('a');
   });
+
+  it('opens the editor from a double-click whose target is not a canvas', () => {
+    // Under `paintInto` the dblclick target is the caller's input box, so the
+    // old `instanceof HTMLCanvasElement` gate made text editing a silent no-op
+    // on every detached surface.
+    let live: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    const { hook, container } = renderThunkEdit(() => live);
+    const box = document.createElement('div');
+    container.appendChild(box);
+
+    live = { x: 100, y: 50, scale: { x: 1, y: 1 } };
+    act(() => hook.result.current.onDoubleClick({
+      target: box, clientX: 10, clientY: 10,
+    } as unknown as MouseEvent<HTMLElement>));
+    expect(hook.result.current.editingId).toBe('a');
+  });
 });

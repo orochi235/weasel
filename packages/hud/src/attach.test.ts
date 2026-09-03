@@ -16,6 +16,7 @@ const IDENTITY_VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 function makeApi(): CanvasExtensionApi & { _layer?: RenderLayer<unknown> } {
   const api: CanvasExtensionApi & { _layer?: RenderLayer<unknown> } = {
     element: null,
+    surface: null,
     requestRedraw: vi.fn(),
     subscribeFrame: vi.fn(() => () => {}),
     hitTestExtras: vi.fn(() => null),
@@ -127,6 +128,7 @@ describe('attachHud', () => {
     try {
       const api: CanvasExtensionApi = {
         element: canvas,
+        surface: canvas,
         requestRedraw: vi.fn(),
         subscribeFrame: vi.fn(() => () => {}),
         hitTestExtras: vi.fn(() => null),

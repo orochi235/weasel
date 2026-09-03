@@ -52,6 +52,7 @@ vi.mock('./Canvas', async (importOriginal) => {
       // (it feeds `internalCanvasRef`).
       const api = {
         element: elRef.current,
+        surface: elRef.current,
         requestRedraw: () => {},
         subscribeFrame: () => () => {},
         getView: () => VIEW,

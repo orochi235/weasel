@@ -40,7 +40,7 @@ export interface PinchZoomToolOpts {
  *   canvas does not re-render between them.
  */
 export function usePinchZoomTool(
-  canvasRef: React.RefObject<HTMLCanvasElement | null>,
+  canvasRef: React.RefObject<HTMLElement | null>,
   getView: () => View,
   setView: (v: View) => void,
   opts: PinchZoomToolOpts = {},

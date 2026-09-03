@@ -1,11 +1,11 @@
 /**
- * Convert client coords to canvas CSS-pixel coords (relative to the canvas's
+ * Convert client coords to element CSS-pixel coords (relative to the element's
  * top-left). Apps drawing in CSS-pixel space feed the result directly into
  * world math when pan/zoom is identity. With pan/zoom, compose this with
  * your inverse-viewport transform.
  */
 export function clientToCanvas(
-  canvas: HTMLCanvasElement,
+  canvas: HTMLElement,
   clientX: number,
   clientY: number,
 ): [number, number] {

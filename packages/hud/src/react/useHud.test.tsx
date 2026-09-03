@@ -10,6 +10,7 @@ const IDENTITY_VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 function makeApi(): CanvasExtensionApi {
   return {
     element: null,
+    surface: null,
     requestRedraw: vi.fn(),
     subscribeFrame: vi.fn(() => () => {}),
     hitTestExtras: vi.fn(() => null),

@@ -205,8 +205,8 @@ export function useSceneTextEdit<
 
   const onDoubleClick = useCallback((e: MouseEvent<HTMLElement>) => {
     // The dblclick bubbles from the canvas up to any wrapping container; the
-    // canvas is what the click coordinates are relative to.
-    const canvas = e.target instanceof HTMLCanvasElement ? e.target : null;
+    // element it started on is what the click coordinates are relative to.
+    const canvas = e.target instanceof HTMLElement ? e.target : null;
     if (!canvas) return;
 
     // `pointInTextPose` and `caretIndexAt` both work in world units, so the

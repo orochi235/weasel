@@ -17,7 +17,7 @@ import type { NodeId } from '../../core/scene/types';
 
 /** Options for `useHoverTracking`. */
 export interface UseHoverTrackingArgs {
-  canvasRef: RefObject<HTMLCanvasElement | null>;
+  canvasRef: RefObject<HTMLElement | null>;
   /** Topmost id under a client point, or null. One lookup rather than a
    *  client→world thunk beside a world-space picker: a screen-pixel pick
    *  tolerance converts against the camera the point resolved to, and two

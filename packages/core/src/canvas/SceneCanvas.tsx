@@ -928,7 +928,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   // Internal canvas ref so usePinchZoomTool can attach pointer listeners
   // even when the consumer passes their own forwarded ref.
-  const internalCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const internalCanvasRef = useRef<HTMLElement | null>(null);
   // Holds the full `CanvasExtensionApi` so we can call `requestRedraw` after
   // dispatcher-side gesture pumps. Without this, dispatcher-only actions
   // (marquee, lasso, anything driven solely by `useGestureDispatcher`) never
@@ -2149,7 +2149,7 @@ function GestureDispatcherMounter({
   handleHitRadius,
   onDoubleClick,
 }: {
-  canvasRef: React.RefObject<HTMLCanvasElement | null>;
+  canvasRef: React.RefObject<HTMLElement | null>;
   /** Holds the full `CanvasExtensionApi` so the gesture dispatcher can call
    *  `requestRedraw()` between pointer events. */
   canvasApiRef?: React.RefObject<CanvasExtensionApi | null>;
@@ -2472,7 +2472,7 @@ function StandardActionsRegistrar({
   snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
   /** The canvas element ref, so `useIngestionDepSource` can compute the
    *  visible world rect from the client rect + current view. */
-  canvasRef: React.RefObject<HTMLCanvasElement | null>;
+  canvasRef: React.RefObject<HTMLElement | null>;
   /** Forwarded from `SceneCanvasProps.ingestion.resolveSrc` — consumer
    *  file→src override for the kit image handler. */
   ingestionResolveSrc?: (file: File) => Promise<string>;

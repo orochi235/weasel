@@ -11,7 +11,7 @@ import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
 import type { View } from 'core/viewport/view';
 
 export function useIngestionDepSource(
-  canvasRef: RefObject<HTMLCanvasElement | null>,
+  canvasRef: RefObject<HTMLElement | null>,
   getView: () => View,
   resolveSrc?: (file: File) => Promise<string>,
   svg?: SvgIngestOptions,
