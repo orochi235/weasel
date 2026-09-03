@@ -40,6 +40,8 @@ Priority tags:
 - labkit's loupe drives itself with plain listeners, not bindings → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Every React Aria overlay inside a lab renders unthemed → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Four drag lifecycles, four different lost-pointer policies → [Tools & gestures](#tools--gestures)
+- Cursor arc 2: rotation, which also fixes non-rotation-aware resize diagonals → [Tools & gestures](#tools--gestures)
+- Cursor arc 3: the painted tier, for cursors over 128px or sized in world units → [Tools & gestures](#tools--gestures)
 - labkit `registerSerializers` has no callers; instrument serializers never run → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit: nested config values — `f.schema` is flat because `setConfig` is → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Reconcile core's `ToolPrefLeaf` with weasel-ui's `PrefLeaf` — the `paint` kind has already drifted → [Selection, actions & UI panels](#selection-actions--ui-panels)
@@ -300,6 +302,38 @@ From `docs/specs/2026-05-03-pen-tool-design.md`:
 
 - **(P3) Snap-to-existing-anchors** (cross-path anchor snapping). Clicking near an existing path's anchor would coalesce. Useful for stitching paths. (Only a generic grid `snapPoint` exists today, not anchor magnetism.)
 - **(P3) Continue an existing path's open endpoint.** Click an existing open path's first/last anchor to pick it up and append. No extend-from-endpoint path exists today.
+
+### Cursor package follow-ups
+
+From `docs/superpowers/specs/2026-09-03-cursor-system-design.md`. Arc 1 (the
+baked tier) shipped: `@weasel-js/cursor` bakes an authored glyph to a
+`url(data:image/svg+xml,…)` string, and pencil, pen and eyedropper use it.
+
+- **(P2) Arc 2 — rotation.** Give `bakeCursor` an angle, quantized to 16 steps
+  of 22.5°, and widen `Tool.cursor` / `Action.cursor` / `Action.activeCursor` /
+  `AffordanceRegion.cursor` from `string` to the spec's `CursorSpec`. This is
+  one mechanism serving two things: a real rotate cursor for
+  `rotationHandle.ts:66`, which falls back to bare `'grab'`, and rotation-aware
+  diagonals for `cornerResize.ts:90`, which picks from corner parity and is
+  explicitly not rotation-aware.
+- **(P2) Arc 3 — painted tier.** A `Path2D` painter and a canvas layer for
+  cursors that cannot be CSS cursors: over 128 CSS px, sized in world units
+  (a brush radius that tracks zoom), or needing live scene data. The glyph
+  record already feeds both renderers; `bakeCursor` throws above the cap today
+  rather than emitting a cursor the browser drops silently.
+- **(P3) Arc 4 — retire the `apps/draw` cursor stub.** `app.css:327` forces
+  `cursor: copy` through a `[data-mode="path-edit"][data-alt-held="true"]`
+  selector fed by a hand-rolled Alt keydown/keyup listener in `App.tsx`,
+  bypassing the cursor pipeline entirely. Replace with an affordance- or
+  action-declared cursor and delete both.
+- **(P3) The `bucket` glyph is parked.** Three attempts failed to read at 24px —
+  a tapered pail with a spout is a pencil silhouette, and the handle that would
+  fix it wants a sketch rather than another guess. Nothing is blocked: no fill
+  tool consumes it. See the note in `packages/cursor/scripts/glyphs/draw.mjs`.
+- **(P3) Only Chrome is measured.** The spec's browser facts come from Chrome
+  152 / macOS 26.5. Safari and Firefox could rasterize an SVG cursor at 1× (the
+  fix is `image-set`, already documented) or cap at a different size. Both live
+  behind `bake.ts`. `packages/cursor/scripts/probe/` is the instrument.
 
 ### Tool overlay channel deferrals
 
