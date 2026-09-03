@@ -3,18 +3,10 @@
  *
  * **What it offers.** Both tiers that can actually paint: `listFonts()` for
  * families with a baked atlas, and `listCanvasFonts()` for families the
- * dynamic canvas-SDF tier will serve. The rule is unchanged — offer what
- * will render, invent nothing — but the second half of it used to be
- * unreachable. Canvas-enrolled families were omitted because the font
- * package had no way to enumerate them (`isCanvasFont` answers about one
- * family at a time), leaving a choice between omitting them and hard-coding
- * a list beside the enrollment calls. `listCanvasFonts` closed that gap, and
- * it reports service rather than membership, so a family auto-enrolled under
- * a policy that is no longer in force doesn't appear.
- *
- * WeaselDraw enrolls its candidates only after `document.fonts.check`
- * confirms the machine has them (`src/fonts.ts`), so "asserted to exist"
- * is now "verified present" for everything this app contributes.
+ * dynamic canvas-SDF tier will serve. Offer what will render, invent
+ * nothing — and `listCanvasFonts` reports service rather than membership,
+ * so a family auto-enrolled under a policy that is no longer in force
+ * doesn't appear.
  *
  * **What it does with a value it can't offer.** Nothing about the model
  * stops a node from naming a family that was never registered — a pasted
@@ -26,7 +18,7 @@
  * is in use that isn't.
  */
 import { listCanvasFonts, listFonts, resolveFontVariant } from '@weasel-js/font';
-import { Select } from '@weasel-js/ui';
+import { Select } from '../Select';
 
 export interface FontFamilySelectProps {
   /** Current family, or `undefined` when the sources disagree (`mixed`). */
