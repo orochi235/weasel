@@ -23,8 +23,14 @@ import { LabHeader } from './LabHeader';
 import { LabPalette } from './LabPalette';
 import { LabShell } from './LabShell';
 import { createPanelHostRegistry, PanelHostContext } from './panelHost';
+import { SurfaceContext } from '../surface/SurfaceContext';
+import { useTiledSurface } from '../surface/useTiledSurface';
 import { useResolvedMode } from './useSystemMode';
 import { type PanelDescriptor, type TrialLayout, Workspace } from './Workspace';
+
+/** Stable identity: `useTiledSurface` holds this in a ref, but a fresh arrow
+ *  each render would still churn the frame callback for no reason. */
+const NO_FRAME = (): void => {};
 
 /** Props for `<Lab>`. */
 export interface LabProps {
@@ -146,6 +152,12 @@ export function Lab({
   const panelHostsRef = useRef<ReturnType<typeof createPanelHostRegistry> | null>(null);
   if (panelHostsRef.current === null) panelHostsRef.current = createPanelHostRegistry();
 
+  // One shared drawing surface for the whole lab, anchored to the body — tile
+  // rects compose against it. No renderer drives it yet; it is mounted so a
+  // tile can register and stay measured, and `Workspace` already invalidates
+  // rects when the grid moves something a ResizeObserver cannot see.
+  const surface = useTiledSurface({ onFrame: NO_FRAME });
+
   const workspacePanels = useMemo<PanelDescriptor[]>(
     () =>
       Object.entries(undockedPanels).map(([key, panel]) => ({
@@ -251,22 +263,24 @@ export function Lab({
             }
           >
             <PanelHostContext.Provider value={panelHostsRef.current}>
-              <div className="lk-lab__body">
-                {tools ? <LabPalette tools={tools} /> : null}
-                <Workspace
-                  panels={workspacePanels}
-                  ids={trials.map((w) => w.id)}
-                  resizable
-                  reorderable
-                  onReorder={(ids) => contextValue.reorderTrials(ids)}
-                  layout={layout as TrialLayout}
-                  onLayoutChange={(next) => store.getState().setLayout(next)}
-                >
-                  {trials.map((w) => (
-                    <Trial key={w.id} id={w.id} chrome={chrome} suppress={suppress} />
-                  ))}
-                </Workspace>
-              </div>
+              <SurfaceContext.Provider value={surface}>
+                <div className="lk-lab__body" ref={surface.containerRef}>
+                  {tools ? <LabPalette tools={tools} /> : null}
+                  <Workspace
+                    panels={workspacePanels}
+                    ids={trials.map((w) => w.id)}
+                    resizable
+                    reorderable
+                    onReorder={(ids) => contextValue.reorderTrials(ids)}
+                    layout={layout as TrialLayout}
+                    onLayoutChange={(next) => store.getState().setLayout(next)}
+                  >
+                    {trials.map((w) => (
+                      <Trial key={w.id} id={w.id} chrome={chrome} suppress={suppress} />
+                    ))}
+                  </Workspace>
+                </div>
+              </SurfaceContext.Provider>
             </PanelHostContext.Provider>
           </LabShell>
         </ThemeProvider>
