@@ -31,6 +31,8 @@ const meta: Meta<typeof Slider> = {
       options: ['none', 'inline-after', 'below-thumb'],
     },
     allowShiftAll: { control: 'boolean' },
+    showStops: { control: 'boolean' },
+    trackClick: { control: 'inline-radio', options: ['none', 'move-nearest'] },
     ariaLabel: { control: 'text' },
     stops: { table: { disable: true } },
     thumbs: { table: { disable: true } },
@@ -84,6 +86,22 @@ export const ThreeStops: Story = {
 export const SnapsToStops: Story = {
   args: { step: 0.01, stops: [0, 0.25, 0.5, 0.75, 1], readoutPlacement: 'below-thumb' },
   render: (args) => <Wrapper {...args} initial={[{ value: 0.32 }]} />,
+};
+
+/** The marks are the stops. Turning them off leaves the same snapping with
+ *  nothing on screen to explain it — only worth it when the track's own paint
+ *  already reads as the stops. */
+export const StopsWithoutMarks: Story = {
+  args: { step: 0.01, stops: [0, 0.25, 0.5, 0.75, 1], showStops: false, readoutPlacement: 'below-thumb' },
+  render: (args) => <Wrapper {...args} initial={[{ value: 0.32 }]} />,
+};
+
+/** A press on bare track sends the nearest thumb there and keeps dragging.
+ *  Off by default, since on a multi-thumb editor it would yank a stop the
+ *  user was not aiming at. */
+export const TrackClickMovesNearest: Story = {
+  args: { step: 0.01, trackClick: 'move-nearest', readoutPlacement: 'below-thumb' },
+  render: (args) => <Wrapper {...args} initial={[{ value: 0.25 }, { value: 0.75 }]} />,
 };
 
 export const HueGradientTrack: Story = {

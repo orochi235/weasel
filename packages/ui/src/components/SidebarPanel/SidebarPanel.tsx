@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Focusable } from 'react-aria-components';
+import { ChevronIcon } from '../../icons';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './SidebarPanel.module.css';
 
@@ -52,7 +53,10 @@ export function SidebarPanel(props: SidebarPanelProps) {
               onClick={onToggleCollapse}
               aria-expanded={!collapsed}
             >
-              <span className={[s.chevron, collapsed && s.chevronCollapsed].filter(Boolean).join(' ')} aria-hidden="true">▾</span>
+              <ChevronIcon
+                size={16}
+                className={[s.chevron, collapsed && s.chevronCollapsed].filter(Boolean).join(' ')}
+              />
               <span className={s.title}>{title}</span>
             </button>
           ) : (

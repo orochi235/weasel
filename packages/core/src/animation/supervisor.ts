@@ -16,6 +16,7 @@ export interface Supervisor {
   pause(): void;
   resume(): void;
   setTimeScale(s: number): void;
+  timeScale(): number;
   isPaused(): boolean;
   setOnCancel(cb: () => void): void;
   cancelKey?: string;

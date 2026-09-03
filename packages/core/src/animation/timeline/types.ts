@@ -1,4 +1,4 @@
-import type { AnimationHandle, EasingFn, Interpolate, InterpolatorFactory } from '../types';
+import type { AnimationHandle, EasingSpec, Interpolate, InterpolatorFactory } from '../types';
 
 /** One keyframe. `easing` shapes the approach INTO this key from the previous
  *  one, so the first key's easing is never consulted. */
@@ -6,7 +6,8 @@ export interface Keyframe<T> {
   /** Time within the track's timeline, in ms. */
   t: number;
   value: T;
-  easing?: EasingFn;
+  /** A function, the name of a built-in, or cubic-bezier control points. */
+  easing?: EasingSpec;
 }
 
 /** A track sampled as a pure function of the playhead. Scrubbing one is free
@@ -66,6 +67,15 @@ export interface TimelineOptions extends NestedTimeline {
 export interface TimelineHandle extends AnimationHandle {
   /** Move the playhead. Never fires event tracks, at any depth. */
   seek(t: number): void;
+  /** Change the loop policy. `true` loops forever, `n` allows n more laps,
+   *  `false` stops at `duration`. Sets policy only — a timeline already parked
+   *  at `duration` does not restart, because `rearm` declines to revive one.
+   *  Rewind it with `seek(0)` and `resume()` to play it again. */
+  setLoop(loop: boolean | number): void;
+  /** The loop policy as it now stands: `true` endless, `false` stopping at
+   *  `duration`, `n` for n laps still allowed. A finite count falls as laps
+   *  are consumed, matching what `setLoop` takes. */
+  loop(): boolean | number;
   /** Current playhead in ms. */
   time(): number;
   duration(): number;

@@ -1,13 +1,13 @@
 import { tweenPose, springPose } from '../poseHelpers';
 import type { PoseProjection } from 'interactions/actions/resize/geometry';
 import type { SceneAdapter } from 'core/adapters/types';
-import type { Animator, EasingFn, SpringPresetName } from '../types';
+import type { Animator, EasingSpec, SpringPresetName } from '../types';
 
 /** Options for `animateOnSetPose`. */
 export interface AnimateOnSetPoseOptions<TPose> {
   /** Default: 200ms tween with easeOut. */
   ms?: number;
-  easing?: EasingFn;
+  easing?: EasingSpec;
   /** Use a spring instead of a duration tween. Mutually exclusive with ms/easing. */
   spring?: {
     preset?: SpringPresetName;

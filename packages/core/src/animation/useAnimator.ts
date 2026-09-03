@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useVisibleRaf } from '../scheduling/useVisibleRaf';
 import { easeOut, SPRING_PRESETS } from './easings';
+import { resolveEasing } from './easingSpec';
 import { createLoop, createTweenLoop } from './loop';
 import { createStagger, type StaggerTimers } from './stagger';
 import { createTimeline } from './timeline/createTimeline';
@@ -259,6 +260,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         pause: () => { const a = animations.current.get(anim.id); if (a) a.paused = true; },
         resume: () => { const a = animations.current.get(anim.id); if (a) a.paused = false; },
         setTimeScale: (s) => { const a = animations.current.get(anim.id); if (a) a.timeScale = s; },
+        timeScale: () => animations.current.get(anim.id)?.timeScale ?? 1,
         isPaused: () => animations.current.get(anim.id)?.paused ?? false,
       };
     };
@@ -285,6 +287,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         pause: base.pause,
         resume: base.resume,
         setTimeScale: base.setTimeScale,
+        timeScale: base.timeScale,
         isPaused: base.isPaused,
         setOnCancel: (cb) => { onCancelCb = cb; },
         cancelKey,
@@ -298,7 +301,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       // virtualNow itself — naturally freezing when paused (virtualNow stops
       // advancing) and decoupled from wall time.
       const start = 0;
-      const easing = o.easing ?? easeOut;
+      const easing = resolveEasing(o.easing ?? easeOut);
       // Precedence: factory > per-tick > default numeric lerp. Factory is built
       // once at tween start so expensive setup (color space conversion etc.)
       // doesn't repeat per frame.
@@ -473,6 +476,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       resume: () => { globalPaused.current = false; },
       isPaused: () => globalPaused.current,
       setTimeScale: (s) => { globalTimeScale.current = s; },
+      timeScale: () => globalTimeScale.current,
       pauseKey: (key) => {
         for (const a of animations.current.values()) if (a.cancelKey === key) a.paused = true;
       },

@@ -18,6 +18,11 @@ const rf2b = onCircle(10, 10, RR, 220);
 const collapse = chevron([10, 7.8], [0, 1], 5.6, 48) + chevron([10, 12.2], [0, -1], 5.6, 48);
 const expand = chevron([10, 4.4], [0, -1], 5.6, 48) + chevron([10, 15.6], [0, 1], 5.6, 48);
 
+// ── chevron ──────────────────────────────────────────────────────────────
+// Disclosure glyph — it spins under rotate(), so 12.4 centres the *stroked
+// region's centroid* on (10,10). Bbox-centring lands the ink 0.19 high.
+const chevronDown = chevron([10, 12.4], [0, 1], 6.6, 48);
+
 export const STATE = {
   // transport
   play: `<path d="${playTri}"/>`,
@@ -81,6 +86,7 @@ export const STATE = {
     <path d="M11.4 8.6a3.4 3.4 0 0 1 0 4.8l-2.2 2.2a3.4 3.4 0 0 1-4.8-4.8l1.1-1.1"/>`,
   collapse: `<path d="${collapse}"/>`,
   expand: `<path d="${expand}"/>`,
+  chevron: `<path d="${chevronDown}"/>`,
 
   // instrument
   tune: `
@@ -124,7 +130,8 @@ export const STATE_ORDER = [
   'crosshair', 'fullscreen', 'compare', 'filter',
   'search', 'layers', 'lock', 'unlock',
   'visible', 'hidden', 'pin', 'link',
-  'collapse', 'expand', 'tune', 'grid',
-  'snap', 'measure', 'randomize', 'refresh',
-  'info', 'warning', 'error', 'busy',
+  'collapse', 'expand', 'chevron', 'tune',
+  'grid', 'snap', 'measure', 'randomize',
+  'refresh', 'info', 'warning', 'error',
+  'busy',
 ];

@@ -31,6 +31,13 @@ export type Thumb = {
   label?: string;
   shape?: ThumbShape;
   bounds?: [number, number] | ((ctx: BoundsCtx) => [number, number]);
+  /**
+   * Spoken form of `value`, published as `aria-valuetext`. Required by ARIA
+   * whenever `value` is not the quantity the user is choosing — an index into
+   * a value list, a log-scaled position — since `aria-valuenow` alone then
+   * announces a number that means nothing.
+   */
+  valueText?: string;
 };
 
 /**
@@ -59,7 +66,13 @@ export type TrackCtx = {
  *
  * `stops` are attractors: a drag that passes within a few pixels of one lands
  * on it, and the arrow keys move stop to stop. `step` still quantizes the
- * values between them.
+ * values between them. Each one is drawn on the track as a mark; pass
+ * `showStops: false` for a track whose own paint already reads as the stops.
+ *
+ * `trackClick: 'move-nearest'` makes a press on bare track send the closest
+ * thumb there and continue as a drag. It is off by default because on a
+ * multi-thumb editor a stray click would yank a stop the user was not aiming
+ * at; `onAddThumb`, where it is set, keeps the track press.
  *
  * `constraint: 'ordered'` keeps thumbs from crossing each other. Supplying
  * `onAddThumb` makes a click on empty track create a thumb, and supplying
@@ -75,6 +88,8 @@ export type SliderProps<T extends Thumb = Thumb> = {
   max: number;
   step?: number;
   stops?: number[];
+  showStops?: boolean;
+  trackClick?: 'none' | 'move-nearest';
   constraint?: 'free' | 'ordered';
   onAddThumb?: (atValue: number) => T | null;
   onRemoveThumb?: (index: number) => boolean;
@@ -199,9 +214,12 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
     [min, max],
   );
 
+  // `seed` replaces the thumb list the drag starts from. A track press moves a
+  // thumb before the drag begins, and without seeding, a release with no
+  // movement would commit the stale buffer and undo that move.
   const beginThumbDrag = useCallback(
-    (index: number) => {
-      const buf: T[] = thumbs.map(t => ({ ...t }));
+    (index: number, seed?: readonly T[]) => {
+      const buf: T[] = (seed ?? thumbs).map(t => ({ ...t }));
       dragBufferRef.current = buf;
       let droppedOff = false;
 
@@ -362,7 +380,8 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
 
   const onTrackPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (typeof e.button === 'number' && e.button > 0) return;
-    if (!props.onAddThumb) return;
+    const wantsMove = (props.trackClick ?? 'none') === 'move-nearest' && thumbs.length > 0;
+    if (!props.onAddThumb && !wantsMove) return;
     // If the event originated on a thumb, the thumb's own handler ran first; this is a track click.
     if ((e.target as HTMLElement).closest(`.${s.thumb}`)) return;
     e.preventDefault();
@@ -374,11 +393,27 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
     v = snap(v, step, min);
     v = clamp(v, min, max);
     if (stops.length > 0) v = attract(v, stops, (STOP_SNAP_PX / rect.width) * (max - min));
-    const created = props.onAddThumb(v);
-    if (!created) return;
-    const next = [...thumbs.map(t => ({ ...t })), created] as T[];
+
+    if (props.onAddThumb) {
+      const created = props.onAddThumb(v);
+      if (!created) return;
+      const next = [...thumbs.map(t => ({ ...t })), created] as T[];
+      onInput(next);
+      onChange?.(next);
+      return;
+    }
+
+    let index = 0;
+    for (let i = 1; i < thumbs.length; i++) {
+      if (Math.abs(thumbs[i].value - v) < Math.abs(thumbs[index].value - v)) index = i;
+    }
+    const next = thumbs.map(t => ({ ...t })) as T[];
+    const [bLo, bHi] = resolveBounds(next[index], { thumbs: next, index }, min, max);
+    let moved = clamp(v, bLo, bHi);
+    if (constraint === 'ordered') moved = clampOrdered(moved, next, index, min, max, step);
+    next[index] = { ...next[index], value: moved };
     onInput(next);
-    onChange?.(next);
+    beginThumbDrag(index, next);
   };
 
   const onThumbKeyDown = (index: number) => (e: ReactKeyboardEvent) => {
@@ -455,6 +490,22 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
             })}
           </div>
         )}
+        {(props.showStops ?? true) && stops.length > 0 && (
+          <div className={s.ticks} data-slider-ticks aria-hidden="true">
+            {stops.map(v => {
+              const f = valueToFraction(v);
+              return (
+                <span
+                  key={v}
+                  className={s.tick}
+                  data-slider-tick
+                  data-fraction={String(f)}
+                  style={{ left: `${f * 100}%` }}
+                />
+              );
+            })}
+          </div>
+        )}
         {thumbs.map((thumb, i) => {
           const isNotched = thumb.shape === 'notched';
           const customRender = typeof thumb.shape === 'object' && thumb.shape !== null ? thumb.shape.render : null;
@@ -468,6 +519,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
               aria-valuemin={min}
               aria-valuemax={max}
               aria-valuenow={thumb.value}
+              aria-valuetext={thumb.valueText}
               aria-label={[ariaLabel, thumb.label].filter(Boolean).join(' ') || undefined}
               className={cls}
               style={{ left: `${valueToFraction(thumb.value) * 100}%` }}

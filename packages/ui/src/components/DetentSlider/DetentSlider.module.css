@@ -1,0 +1,45 @@
+.root {
+  position: relative;
+  /* Read by Slider's track and stop marks. Detents run the full height of the
+   * track so they read as notches rather than as tally marks beside it. */
+  --rp-tick-inset: 0;
+  --rp-tick-width: 1px;
+  --rp-tick-color: var(--wzl-border-strong);
+  --rp-track-cursor: pointer;
+  font-family: var(--wzl-font-ui);
+}
+
+.slider {
+  width: 100%;
+}
+
+.labels {
+  position: relative;
+  height: calc(var(--wzl-font-size-xs) * var(--wzl-leading-tight));
+  margin-top: var(--wzl-space-xs);
+}
+
+.label {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: var(--wzl-font-size-xs);
+  line-height: var(--wzl-leading-tight);
+  font-variant-numeric: tabular-nums;
+  color: var(--wzl-fg-subtle);
+}
+
+/* The end labels are pinned inside the track rather than centred on it, so a
+ * wide one can't spill past the control and misalign whatever sits beside it. */
+.label[data-edge="start"] {
+  transform: none;
+}
+
+.label[data-edge="end"] {
+  transform: translateX(-100%);
+}
+
+.label[data-selected] {
+  color: var(--wzl-fg);
+  font-weight: var(--wzl-font-weight-medium);
+}

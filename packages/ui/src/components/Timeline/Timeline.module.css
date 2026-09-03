@@ -1,0 +1,262 @@
+.ruler {
+  position: relative;
+  height: var(--wzl-control-h, 24px);
+  border-bottom: 1px solid var(--wzl-border);
+  background: var(--wzl-surface-raised);
+  cursor: ew-resize;
+  user-select: none;
+  overflow: hidden;
+}
+
+.tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(2px);
+  color: var(--wzl-fg-muted);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.tick::before {
+  content: '';
+  position: absolute;
+  left: -2px;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid var(--wzl-border);
+}
+
+.playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--wzl-accent-strong);
+  pointer-events: none;
+}
+
+.lane {
+  display: flex;
+  align-items: stretch;
+  min-height: 20px;
+  border-bottom: 1px solid var(--wzl-line-subtle);
+}
+
+.laneLabel {
+  flex: 0 0 var(--wzl-timeline-label-w, 120px);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-inline: 6px;
+  padding-inline-start: calc(6px + var(--depth, 0) * 12px);
+  font-size: var(--wzl-font-size);
+  color: var(--wzl-fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lane[data-depth='1'] .laneLabel { --depth: 1; }
+.lane[data-depth='2'] .laneLabel { --depth: 2; }
+.lane[data-depth='3'] .laneLabel { --depth: 3; }
+
+.disclosure { display: inline-flex; flex: none; cursor: pointer; color: var(--wzl-fg-muted); }
+.disclosureIcon { transition: transform var(--wzl-motion-fast) ease; }
+.disclosureCollapsed { transform: rotate(-90deg); }
+
+.laneTrack {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  background: var(--wzl-surface);
+}
+
+.key, .eventMark {
+  position: absolute;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  margin-left: -4.5px;
+  background: var(--wzl-fg-muted);
+  cursor: ew-resize;
+}
+
+.key { transform: translateY(-50%) rotate(45deg); }
+.eventMark { transform: translateY(-50%); border-radius: 50%; }
+
+.key[aria-current='true'], .eventMark[aria-current='true'] { background: var(--wzl-accent-strong); }
+.key:focus-visible, .eventMark:focus-visible { outline: 2px solid var(--wzl-focus-ring); outline-offset: 1px; }
+
+/* The key stays drawn where it was committed while its ghost tracks the
+   pointer, so the drag reads as a move from somewhere to somewhere. */
+.key[data-dragging='true'], .eventMark[data-dragging='true'] { opacity: 0.4; }
+
+.keyGhost, .eventGhost {
+  position: absolute;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  margin-left: -4.5px;
+  background: var(--wzl-accent-soft);
+  border: 1px dashed var(--wzl-accent-strong);
+  pointer-events: none;
+}
+
+.keyGhost { transform: translateY(-50%) rotate(45deg); }
+.eventGhost { transform: translateY(-50%); border-radius: 50%; }
+.lane[data-mode='graph'] .keyGhost { top: auto; transform: translateY(50%) rotate(45deg); }
+
+.curve {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  fill: none;
+  stroke: var(--wzl-accent-strong);
+  stroke-width: 1;
+}
+
+.lane[data-mode='graph'] { min-height: 72px; }
+.lane[data-mode='graph'] .key { top: auto; transform: translateY(50%) rotate(45deg); }
+
+.nestedBar {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  background: var(--wzl-surface-sunken);
+  border: 1px solid var(--wzl-border);
+  border-radius: 2px;
+}
+
+.transport {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--wzl-border);
+  background: var(--wzl-surface-raised);
+}
+
+.transportButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  padding: 2px 6px;
+  /* Sits on `--wzl-surface-raised`, so a transparent fill and a border that
+     close in value leave it reading as text rather than as a control. */
+  background: var(--wzl-surface);
+  border: 1px solid var(--wzl-border);
+  border-radius: 3px;
+  color: var(--wzl-fg);
+  cursor: pointer;
+}
+
+.transportButton:hover { border-color: var(--wzl-fg-muted); }
+
+.transportButton[aria-checked='true'] {
+  background: var(--wzl-accent-soft);
+  border-color: var(--wzl-accent-strong);
+  color: var(--wzl-accent-strong);
+}
+
+/* The bar's chrome lives on the row, so controls beside `<Transport>` sit
+   inside it rather than hanging off the panel's corner. `.transport` keeps its
+   own chrome for standalone use. */
+.transportRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-inline-end: 6px;
+  border-bottom: 1px solid var(--wzl-border);
+  background: var(--wzl-surface-raised);
+}
+
+.transportRow > .transport {
+  flex: 1 1 auto;
+  border-bottom: 0;
+  background: transparent;
+}
+
+.time { font-variant-numeric: tabular-nums; color: var(--wzl-fg-muted); }
+.rate { display: inline-flex; align-items: center; gap: 6px; color: var(--wzl-fg-muted); }
+.rateSlider { width: 88px; }
+
+/* The detents carry no labels in a bar this dense, so the chosen rate is said
+   once, here, in a fixed-width cell so the controls beside it never shift. */
+.rateReadout {
+  min-width: 3ch;
+  font-variant-numeric: tabular-nums;
+  color: var(--wzl-fg);
+}
+
+.root {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--wzl-surface);
+  border: 1px solid var(--wzl-border);
+  border-radius: 4px;
+  color: var(--wzl-fg);
+  /* `--wzl-font-ui` is condensed, so it reads a size smaller than it measures.
+     Everything below inherits this; override per rule only to go up. */
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size-sm);
+  line-height: var(--wzl-leading-snug);
+}
+
+.label { padding: 4px 6px; color: var(--wzl-fg-muted); }
+
+.body { display: flex; align-items: stretch; }
+.gutter { flex: 0 0 var(--wzl-timeline-label-w, 120px); border-right: 1px solid var(--wzl-border); }
+.rulerWrap { flex: 1 1 auto; min-width: 0; }
+
+.lanes {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.inspector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-top: 1px solid var(--wzl-border);
+  background: var(--wzl-surface-raised);
+}
+
+.segment {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  cursor: pointer;
+}
+
+.segment[aria-current='true'] { background: var(--wzl-accent-soft); }
+.segment:focus-visible { outline: 2px solid var(--wzl-focus-ring); outline-offset: -2px; }
+
+.easingPicker { display: inline-flex; align-items: center; gap: 6px; }
+.easingLabel { font-variant-numeric: tabular-nums; color: var(--wzl-fg-muted); }
+
+.easingPreview {
+  width: 32px;
+  height: 32px;
+  fill: none;
+  stroke: var(--wzl-accent-strong);
+  stroke-width: 1;
+  border: 1px solid var(--wzl-border);
+}
+
+.bezierHandle {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  border-radius: 50%;
+  background: var(--wzl-surface);
+  border: 1px solid var(--wzl-accent-strong);
+  cursor: grab;
+}

@@ -32,6 +32,7 @@ function harness() {
       pause: () => { const e = at(); if (e) e.paused = true; },
       resume: () => { const e = at(); if (e) e.paused = false; },
       setTimeScale: (s) => { const e = at(); if (e) e.scale = s; },
+      timeScale: () => at()?.scale ?? 1,
       isPaused: () => at()?.paused ?? false,
     };
   };
