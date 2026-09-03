@@ -63,6 +63,7 @@ export type {
   AnnotationTargetInfo,
   FracPoint,
   FracRect,
+  MarkScene,
   SerializedAnnotations,
   WorldRect,
 } from './annotations';
@@ -78,6 +79,25 @@ export {
   seenFrom,
   worldToFrac,
 } from './annotations';
+export type { AnnotationOverlayProps } from './annotations/AnnotationOverlay';
+export { AnnotationOverlay } from './annotations/AnnotationOverlay';
+export {
+  AnnotationsContext,
+  useAnnotations,
+  useAnnotationsOptional,
+} from './annotations/AnnotationsContext';
+export type { AnnotationTargetsProps } from './annotations/AnnotationTargets';
+export { AnnotationTargets } from './annotations/AnnotationTargets';
+export type { PaintableMark } from './annotations/paint';
+export { markCommands } from './annotations/paint';
+export type { AnnotationToolInfo } from './annotations/toolMap';
+export {
+  ANNOTATION_TOOLS,
+  ANNOTATION_WEASEL_TOOLS,
+  annotationToolInfo,
+} from './annotations/toolMap';
+export type { ContentSize, PaneSize } from './annotations/view';
+export { fitView, fromWeaselView, toWeaselView } from './annotations/view';
 export type {
   CanvasLayerDescriptor,
   CanvasStackContextValue,

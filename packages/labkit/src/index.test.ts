@@ -70,6 +70,22 @@ describe('surface, job and orbit entry points', () => {
     expect(typeof kit.useJob).toBe('function');
     expect(typeof kit.as2DView).toBe('function');
     expect(kit.SurfaceContext).toBeDefined();
+    expect(kit.SurfaceCanvasContext).toBeDefined();
+    expect(typeof kit.useSurfaceCanvas).toBe('function');
+  });
+});
+
+describe('the annotations capability', () => {
+  it('reaches a host through the package root', async () => {
+    const kit = await import('./index');
+    expect(typeof kit.useAnnotations).toBe('function');
+    expect(typeof kit.useAnnotationsOptional).toBe('function');
+    expect(typeof kit.AnnotationTargets).toBe('function');
+    expect(typeof kit.AnnotationOverlay).toBe('function');
+    expect(typeof kit.markCommands).toBe('function');
+    expect(typeof kit.annotationToolInfo).toBe('function');
+    expect(typeof kit.fitView).toBe('function');
+    expect(kit.ANNOTATION_TOOLS.map((t) => t.id)).toContain('arrow');
     expect(kit.DEFAULT_VIEW).toEqual({ zoom: 1, pan: { x: 0, y: 0 } });
   });
 });

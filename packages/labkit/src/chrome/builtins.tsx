@@ -10,6 +10,7 @@ import {
   ZoomInIcon,
   ZoomOutIcon,
 } from '@weasel-js/ui';
+import { ANNOTATION_TOOLS } from '../annotations/toolMap';
 import type { ControlRenderer } from '../config/types';
 import { ControlPanel } from '../controls/ControlPanel';
 import type { Instrument } from '../instrument/types';
@@ -61,10 +62,16 @@ export function builtinContributions(
     });
   }
 
+  // Declaring `annotations` provides the drawing palette, the way declaring
+  // `tools` provides the instrument's own; both write the same tool slot.
   // A tool id shares the contribution namespace, so a tool called `close`
-  // collides with the built-in close button and throws. Both are contributions
-  // to one trial's chrome.
-  for (const t of instrument.tools?.tools ?? []) {
+  // collides with the built-in close button and throws — and so do two tools
+  // of the same name from these two sources.
+  const tools = [
+    ...(instrument.annotations ? ANNOTATION_TOOLS : []),
+    ...(instrument.tools?.tools ?? []),
+  ];
+  for (const t of tools) {
     out.push({
       id: t.id,
       region: 'palette',

@@ -1,7 +1,7 @@
 export type { WorldRect } from './frac';
 export { fracContains, fracIntersects, fracToWorld, roundFrac, worldToFrac } from './frac';
 export { isStale, seenFrom } from './staleness';
-export type { AnnotationStoreOptions } from './store';
+export type { AnnotationStoreOptions, MarkScene } from './store';
 export { annotationsFromJSON, createAnnotationScene, createAnnotationStore } from './store';
 export type {
   Annotation,

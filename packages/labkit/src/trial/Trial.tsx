@@ -1,5 +1,9 @@
 import { type ReactNode, useContext, useMemo, useRef, useState } from 'react';
 import { useStore } from 'zustand/react';
+import { AnnotationsContext } from '../annotations/AnnotationsContext';
+import { AnnotationTargets } from '../annotations/AnnotationTargets';
+import { createAnnotationScene, createAnnotationStore } from '../annotations/store';
+import type { AnnotationTargetInfo } from '../annotations/types';
 import { CanvasStack } from '../canvas/CanvasStack';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import { applyCamera, type ViewportSize } from '../canvas/worldSpec';
@@ -119,11 +123,37 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
     setView(declared(size));
   };
 
+  // The capability's own `targets` thunk, re-read on every call: a target
+  // resizing or gaining a dependency must not need the store rebuilt. Held in
+  // a ref because the store is built once and closes over it.
+  const annotationsCap = instrument.annotations;
+  const targetsRef = useRef<() => readonly AnnotationTargetInfo[]>(() => []);
+  targetsRef.current = () =>
+    annotationsCap ? annotationsCap.targets(record.state, record.config) : [];
+
+  // One store for the trial's lifetime. Marks do not survive a reload yet —
+  // the storage slot is 3d.
+  const annotationsSceneRef = useRef<ReturnType<typeof createAnnotationScene> | null>(null);
+  if (annotationsSceneRef.current === null) annotationsSceneRef.current = createAnnotationScene();
+  const annotationsScene = annotationsSceneRef.current;
+  const annotationsRef = useRef<ReturnType<typeof createAnnotationStore> | null>(null);
+  if (annotationsRef.current === null) {
+    annotationsRef.current = createAnnotationStore({
+      scene: annotationsScene,
+      targets: () => targetsRef.current(),
+    });
+  }
+
   // A trial gets its own slot when its instrument declares tools; otherwise it
   // reads the lab's. Which slot a change writes follows from the same thing.
-  const declaresTools = instrument.tools != null;
+  // Annotation tools are a trial's own for the same reason: two trials
+  // annotating different pictures must not share one active tool.
+  const declaresTools = instrument.tools != null || instrument.annotations != null;
   const resolvedToolId = declaresTools
-    ? (record.activeToolId ?? instrument.tools?.initial ?? instrument.tools?.tools[0]?.id ?? null)
+    ? (record.activeToolId ??
+      instrument.tools?.initial ??
+      instrument.tools?.tools[0]?.id ??
+      (instrument.annotations ? 'select' : null))
     : labToolId;
   const setActiveTool = (id: string): void => {
     if (declaresTools) setTrialTool(record.id, id);
@@ -367,24 +397,40 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
     return out;
   }, [paletteNode, layerListNode]);
 
+  // Rendered beside the body rather than inside it: an overlay portals itself
+  // into the surface container, so where it sits in this tree decides only
+  // when its effects run — after the instrument's refs have attached.
+  const annotations = annotationsCap ? (
+    <AnnotationTargets
+      capability={annotationsCap}
+      state={record.state}
+      config={record.config}
+      scene={annotationsScene}
+      activeToolId={resolvedToolId}
+    />
+  ) : null;
+
   return (
     <TrialIdProvider trialId={record.id}>
-      <TrialChrome
-        job={jobCap ? job : undefined}
-        loupe={loupeBindings}
-        trialId={record.id}
-        record={record}
-        instrument={instrument}
-        isLastTrial={isLast}
-        undoBindings={undoBindings}
-        trialChrome={extraChrome}
-        chrome={chrome}
-        suppress={suppress}
-        activeToolId={resolvedToolId}
-        setActiveTool={setActiveTool}
-      >
-        {body}
-      </TrialChrome>
+      <AnnotationsContext.Provider value={annotationsCap ? annotationsRef.current : null}>
+        <TrialChrome
+          job={jobCap ? job : undefined}
+          loupe={loupeBindings}
+          trialId={record.id}
+          record={record}
+          instrument={instrument}
+          isLastTrial={isLast}
+          undoBindings={undoBindings}
+          trialChrome={extraChrome}
+          chrome={chrome}
+          suppress={suppress}
+          activeToolId={resolvedToolId}
+          setActiveTool={setActiveTool}
+        >
+          {body}
+          {annotations}
+        </TrialChrome>
+      </AnnotationsContext.Provider>
     </TrialIdProvider>
   );
 }
