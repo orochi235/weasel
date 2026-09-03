@@ -185,6 +185,21 @@ export class WeaselRenderer {
     if (!gl) throw new Error('WeaselRenderer: WebGL2 not available');
     this.gl = gl as WebGL2RenderingContext;
 
+    // Bits 0-7 are load-bearing: bit 0 for even-odd fills and stenciled
+    // strokes, bits 1-7 for clip depth (`renderer/draw.ts`). Without a stencil
+    // buffer both render wrong rather than not at all, so refuse the context
+    // instead of painting a plausible lie. A stub that cannot answer is not a
+    // stencil-less context — only an explicit `false` is.
+    const attrs = typeof this.gl.getContextAttributes === 'function'
+      ? this.gl.getContextAttributes()
+      : null;
+    if (attrs && attrs.stencil === false) {
+      throw new Error(
+        'WeaselRenderer: the supplied WebGL2 context has no stencil buffer. '
+        + 'Create it with { stencil: true } — clips and even-odd fills need one.',
+      );
+    }
+
     this.widthCss = opts.width;
     this.heightCss = opts.height;
     this.dpr = opts.dpr;
