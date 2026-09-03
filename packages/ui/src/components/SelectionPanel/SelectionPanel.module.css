@@ -106,6 +106,12 @@
   flex: 0 1 auto;
 }
 
+/* A flag bar is sized by its glyphs rather than by a share of the row: an
+   even split would fling one-letter segments to the margins. */
+.rowControls > .flagToggle {
+  flex: 0 0 auto;
+}
+
 .number :global(input),
 .select {
   font-size: var(--wzl-font-size-sm);

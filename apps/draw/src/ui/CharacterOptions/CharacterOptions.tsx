@@ -16,8 +16,7 @@
  */
 import { MIXED, SCRIPT_METRICS } from '@weasel-js/core';
 import type { RangeStyle, RunStylePatch, StyledRun } from '@weasel-js/core';
-import { ColorField, NumberField, ToggleBar } from '@weasel-js/ui';
-import { FontFamilySelect } from './FontFamilySelect';
+import { ColorField, FontFamilySelect, NumberField, ToggleBar } from '@weasel-js/ui';
 import s from './CharacterOptions.module.css';
 
 export interface CharacterOptionsProps {

@@ -7,6 +7,7 @@ import {
   type NodeRoutingEntry,
   type Scene,
   type SelectionApi,
+  type ToolPrefBoolean,
   type ToolPrefColor,
   type ToolPrefEnum,
   type ToolPrefLeaf,
@@ -16,6 +17,7 @@ import {
   type ToolPrefObject,
 } from '@weasel-js/core';
 import { ColorField } from '../ColorField';
+import { FontFamilySelect } from '../FontFamilySelect';
 import { PaintInput } from '../PaintInput';
 import { InlineRange } from '../InlineRange';
 import { Input } from '../Input';
@@ -186,10 +188,9 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
         // whole row / section when nothing survives. PrefsForm precedent.
         const rows = section.rows
           .map((row) => {
-            const controls = row.leaves
-              .map((panelLeaf) => ({
-                panelLeaf,
-                content: renderLeafControl(
+            const controls = renderCells(
+              row.leaves.map((panelLeaf) =>
+                leafCell(
                   panelLeaf,
                   row.leaves.length > 1
                     ? `${row.label} ${panelLeaf.leaf.name}`
@@ -199,8 +200,9 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
                   commit,
                   selectionKey,
                 ),
-              }))
-              .filter((c) => c.content != null);
+              ),
+              renderers,
+            );
             return { row, controls };
           })
           .filter(({ controls }) => controls.length > 0);
@@ -228,8 +230,8 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
                   {row.label}
                 </span>
                 <span className={s.rowControls}>
-                  {controls.map(({ panelLeaf, content }) => (
-                    <Fragment key={panelLeaf.path}>{content}</Fragment>
+                  {controls.map(({ key, content }) => (
+                    <Fragment key={key}>{content}</Fragment>
                   ))}
                 </span>
               </div>
@@ -242,14 +244,41 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   );
 }
 
-function renderLeafControl(
+/**
+ * One leaf with its context built but nothing rendered yet.
+ *
+ * Deferring the render is what lets a run of sibling flags become one bar:
+ * whether a leaf joins its neighbours is a fact about the run, which no leaf
+ * rendering itself can see.
+ */
+interface LeafCell {
+  key: string;
+  leaf: ToolPrefLeaf;
+  ctx: PropertyRenderContext;
+  /** The accessible name this leaf's control carries — qualified by the row's
+   *  pair where the row holds more than one leaf. */
+  ariaLabel: string;
+  /** Renders the leaf on its own, chrome and all. */
+  render: () => ReactNode;
+}
+
+/** A cell's content, once the run it belongs to has been decided. */
+interface RenderedCell {
+  key: string;
+  /** The leaf that names the cell — the run's first, for a flag bar. */
+  leaf: ToolPrefLeaf;
+  block: boolean;
+  content: ReactNode;
+}
+
+function leafCell(
   panelLeaf: PanelLeaf,
   ariaLabel: string,
   nodes: readonly AnyNode[],
   renderers: Record<string, PropertyRenderer> | undefined,
   commit: (leaf: PanelLeaf, value: unknown) => void,
   selectionKey: string,
-): ReactNode {
+): LeafCell {
   const { path, leaf } = panelLeaf;
   const aggregated = aggregateValue(nodes, path);
   const mixed = aggregated === MIXED;
@@ -268,9 +297,113 @@ function renderLeafControl(
     },
   };
 
-  const custom = renderers?.[path] ?? renderers?.[leaf.kind];
-  if (custom) return custom(ctx);
-  return renderBuiltin(ctx, ariaLabel, renderers, selectionKey);
+  return {
+    key: path,
+    leaf,
+    ctx,
+    ariaLabel,
+    render: () => {
+      const custom = renderers?.[path] ?? renderers?.[leaf.kind];
+      if (custom) return custom(ctx);
+      return renderBuiltin(ctx, ariaLabel, renderers, selectionKey);
+    },
+  };
+}
+
+/**
+ * True for a leaf that can join a flag bar: a paired toggle boolean the
+ * consumer has not claimed with a renderer of its own.
+ */
+function isFlagCell(cell: LeafCell, renderers?: Record<string, PropertyRenderer>): boolean {
+  const { leaf } = cell;
+  return (
+    leaf.kind === 'boolean' &&
+    (leaf as ToolPrefBoolean).control === 'toggle' &&
+    leaf.pair !== undefined &&
+    renderers?.[cell.ctx.path] === undefined &&
+    renderers?.[leaf.kind] === undefined
+  );
+}
+
+/**
+ * Renders a row's cells, collapsing each run of adjacent same-`pair` toggle
+ * booleans into one segmented bar — the idiom the enum toggle a row away
+ * already uses, rather than one detached pill per flag.
+ */
+function renderCells(
+  cells: readonly LeafCell[],
+  renderers?: Record<string, PropertyRenderer>,
+): RenderedCell[] {
+  const out: RenderedCell[] = [];
+  for (let i = 0; i < cells.length; ) {
+    const cell = cells[i];
+    if (!isFlagCell(cell, renderers)) {
+      const content = cell.render();
+      if (content != null) {
+        out.push({ key: cell.key, leaf: cell.leaf, block: cell.leaf.block === true, content });
+      }
+      i += 1;
+      continue;
+    }
+    let j = i + 1;
+    while (
+      j < cells.length &&
+      isFlagCell(cells[j], renderers) &&
+      cells[j].leaf.pair === cell.leaf.pair
+    ) {
+      j += 1;
+    }
+    const run = cells.slice(i, j);
+    out.push({
+      key: cell.key,
+      leaf: cell.leaf,
+      block: run.every((c) => c.leaf.block === true),
+      content: <FlagBar run={run} ariaLabel={cell.leaf.pair as string} />,
+    });
+    i = j;
+  }
+  return out;
+}
+
+/**
+ * A run of paired boolean flags as one multi-select bar — U / S / O, the way
+ * every text editor draws them.
+ */
+function FlagBar({ run, ariaLabel }: { run: readonly LeafCell[]; ariaLabel: string }): ReactNode {
+  const on = run.filter((c) => c.ctx.value === true).map((c) => c.key);
+  return (
+    <ToggleBar<string>
+      mode="multiple"
+      size="sm"
+      variant="flat"
+      className={s.flagToggle}
+      ariaLabel={ariaLabel}
+      items={run.map((c) => {
+        const p = c.leaf as ToolPrefBoolean;
+        return {
+          value: c.key,
+          label:
+            p.icon && p.icon in ICON_PATHS ? (
+              <Icon name={p.icon as IconName} size={14} />
+            ) : (
+              (p.short ?? p.name.slice(0, 1))
+            ),
+          ariaLabel: c.ariaLabel,
+        };
+      })}
+      value={on}
+      // Each flag owns its own path, so only the segment that moved is
+      // written — committing the run would write two fields nobody touched,
+      // and inside an object leaf would fabricate values for the other two.
+      mixedValues={run.filter((c) => c.ctx.mixed).map((c) => c.key)}
+      onChange={(next) => {
+        for (const c of run) {
+          const now = next.includes(c.key);
+          if (now !== on.includes(c.key)) c.ctx.setValue(now);
+        }
+      }}
+    />
+  );
 }
 
 function renderBuiltin(
@@ -286,6 +419,28 @@ function renderBuiltin(
   nested = false,
 ): ReactNode {
   const { pref, value, mixed, unset, setValue } = ctx;
+  if (pref.kind === 'font-family') {
+    // Not a `ToolPref` kind: its options are the live font registry, which no
+    // static schema can carry. Core's own text schema still declares it, so
+    // the panel ships the control rather than leaving every consumer to.
+    //
+    // The substitution probe runs at the node's own weight and style, so the
+    // label names the variant that will actually paint. A mixed selection has
+    // no single one; the probe falls back to 400/normal there.
+    const weight = ctx.valueAt('data.style.fontWeight');
+    const style = ctx.valueAt('data.style.fontStyle');
+    return (
+      <FontFamilySelect
+        className={s.select}
+        value={mixed || typeof value !== 'string' ? undefined : value}
+        mixed={mixed}
+        onChange={setValue}
+        weight={typeof weight.value === 'number' ? weight.value : undefined}
+        fontStyle={style.value === 'italic' ? 'italic' : undefined}
+        aria-label={ariaLabel}
+      />
+    );
+  }
   if (!isBuiltinToolPref(pref)) {
     return <span className={s.unrenderable}>({pref.kind}: no renderer)</span>;
   }
@@ -358,12 +513,43 @@ function renderBuiltin(
       );
     }
     case 'boolean': {
-      const control = (
-        <Switch isSelected={Boolean(value)} onChange={setValue} aria-label={ariaLabel} />
-      );
-      // Switch has no indeterminate state; a reduced-opacity wrapper with
-      // a title is the cheap honest cue for a mixed selection, and for a
-      // field the node leaves to its fallback.
+      const p = pref as ToolPrefBoolean;
+      if (p.control === 'toggle') {
+        // One segment, so the bar is the flag: `short` (else the initial of
+        // `name`) is all a paired row has room for, and `name` stays the
+        // accessible name.
+        //
+        // No dimming wrapper here. Unselected already *is* how a toggle button
+        // says "not set", and dimming it reads as disabled; mixed has an ARIA
+        // form on a toggle — `mixedValues` — which the `Switch` below has to
+        // fake for want of one.
+        return (
+          <ToggleBar<string>
+            mode="multiple"
+            size="sm"
+            variant="flat"
+            className={s.flagToggle}
+            ariaLabel={ariaLabel}
+            items={[{
+              value: ctx.path,
+              label:
+                p.icon && p.icon in ICON_PATHS ? (
+                  <Icon name={p.icon as IconName} size={14} />
+                ) : (
+                  (p.short ?? p.name.slice(0, 1))
+                ),
+              ariaLabel,
+            }]}
+            value={value === true ? [ctx.path] : []}
+            mixedValues={mixed ? [ctx.path] : []}
+            onChange={(next) => setValue(next.includes(ctx.path))}
+          />
+        );
+      }
+      const control = <Switch isSelected={Boolean(value)} onChange={setValue} aria-label={ariaLabel} />;
+      // Neither `Switch`'s indeterminate gap nor "unset" has an ARIA form, so
+      // a reduced-opacity wrapper with a title is the cue for both — a mixed
+      // selection, and a field the node leaves to its fallback.
       if (!mixed && !unset) return control;
       return (
         <span className={s.mixedSwitch} title={mixed ? 'Mixed' : 'Not set'}>
@@ -533,6 +719,33 @@ function ObjectLeaf({
     indent: boolean,
   ): ReactNode[] => {
     const out: (ReactNode | ObjectRow)[] = [];
+    const isRow = (v: ReactNode | ObjectRow): v is ObjectRow =>
+      typeof v === 'object' && v !== null && 'controls' in v;
+
+    // Cells accumulate unrendered so a run of adjacent same-`pair` flags can
+    // be seen as a run before any of them draws; a group heading between two
+    // fields ends the run, exactly as it ends a paired row.
+    let pending: LeafCell[] = [];
+    const flush = (): void => {
+      for (const { key, leaf, block, content } of renderCells(pending, renderers)) {
+        const prev = out[out.length - 1];
+        if (leaf.pair !== undefined && isRow(prev) && prev.pair === leaf.pair) {
+          prev.controls.push(<Fragment key={key}>{content}</Fragment>);
+          prev.block &&= block;
+          continue;
+        }
+        out.push({
+          key,
+          pair: leaf.pair,
+          label: leaf.pair ?? leaf.name,
+          title: leaf.description,
+          block,
+          controls: [<Fragment key={key}>{content}</Fragment>],
+        });
+      }
+      pending = [];
+    };
+
     for (const [key, child] of Object.entries(children)) {
       // A group among the children organises the fields under a heading
       // without contributing to the path — the rule group keys follow at the
@@ -541,6 +754,7 @@ function ObjectLeaf({
         const labeled = child.name !== '';
         const inner = rowsOf(child.children, labeled);
         if (inner.length === 0) continue;
+        flush();
         out.push(
           <div key={`group:${key}`} className={labeled && indent ? s.objectGroup : undefined}>
             {labeled && <h5 className={s.sectionTitle}>{child.name}</h5>}
@@ -583,42 +797,34 @@ function ObjectLeaf({
           ctx.setValue({ ...base, [key]: v });
         },
       };
-      const custom = renderers?.[childPath] ?? renderers?.[child.kind];
-      const rendered = custom
-        ? custom(childCtx)
-        : renderBuiltin(childCtx, child.name, renderers, selectionKey, true);
-      if (rendered == null) continue;
-      // Neither a paired row nor a block one gives a field its own label
-      // column, so the glyph is all that names it on screen. The control
-      // already carries `name` as its accessible name, which leaves the
-      // glyph decorative.
-      const unlabeled = child.pair !== undefined || child.block === true;
-      const glyph = unlabeled && child.icon && child.icon in ICON_PATHS;
-      const content = glyph ? (
-        <span className={s.namedField}>
-          <Icon name={child.icon as IconName} size={14} />
-          {rendered}
-        </span>
-      ) : (
-        rendered
-      );
-      const prev = out[out.length - 1];
-      const isRow = (v: ReactNode | ObjectRow): v is ObjectRow =>
-        typeof v === 'object' && v !== null && 'controls' in v;
-      if (child.pair !== undefined && isRow(prev) && prev.pair === child.pair) {
-        prev.controls.push(<Fragment key={childPath}>{content}</Fragment>);
-        prev.block &&= child.block === true;
-        continue;
-      }
-      out.push({
+      pending.push({
         key: childPath,
-        pair: child.pair,
-        label: child.pair ?? child.name,
-        title: child.description,
-        block: child.block === true,
-        controls: [<Fragment key={childPath}>{content}</Fragment>],
+        leaf: child,
+        ctx: childCtx,
+        ariaLabel: child.name,
+        render: () => {
+          const custom = renderers?.[childPath] ?? renderers?.[child.kind];
+          const rendered = custom
+            ? custom(childCtx)
+            : renderBuiltin(childCtx, child.name, renderers, selectionKey, true);
+          if (rendered == null) return null;
+          // Neither a paired row nor a block one gives a field its own label
+          // column, so the glyph is all that names it on screen. The control
+          // already carries `name` as its accessible name, which leaves the
+          // glyph decorative.
+          const unlabeled = child.pair !== undefined || child.block === true;
+          const glyph = unlabeled && child.icon && child.icon in ICON_PATHS;
+          if (!glyph) return rendered;
+          return (
+            <span className={s.namedField}>
+              <Icon name={child.icon as IconName} size={14} />
+              {rendered}
+            </span>
+          );
+        },
       });
     }
+    flush();
     return out.map((entry) =>
       typeof entry === 'object' && entry !== null && 'controls' in entry ? (
         entry.block ? (

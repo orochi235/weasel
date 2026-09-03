@@ -41,7 +41,7 @@ interface ToolPrefBase<K extends string, Value> {
 /** How a schema-driven UI should present a number pref. */
 export type ToolPrefNumberControl = 'input' | 'slider';
 /** How a schema-driven UI should present a boolean pref. */
-export type ToolPrefBooleanControl = 'checkbox' | 'switch';
+export type ToolPrefBooleanControl = 'checkbox' | 'switch' | 'toggle';
 /** How a schema-driven UI should present a string pref. */
 export type ToolPrefStringControl = 'input' | 'textarea';
 /** How a schema-driven UI should present an enum pref. */
@@ -69,6 +69,9 @@ export interface ToolPrefNumber extends ToolPrefBase<'number', number> {
 /** An on/off pref. */
 export interface ToolPrefBoolean extends ToolPrefBase<'boolean', boolean> {
   control?: ToolPrefBooleanControl;
+  /** The label a `toggle` shows, since a `pair`ed row is named by the pair
+   *  rather than by the leaf. `name` stays the accessible name. */
+  short?: string;
 }
 /** A free-text pref. */
 export interface ToolPrefString extends ToolPrefBase<'string', string> {

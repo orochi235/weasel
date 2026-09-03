@@ -31,6 +31,7 @@ export * from './components/StatusBar';
 export * from './components/ToolButton';
 export * from './components/ToolGroup';
 export * from './components/ToolPalette';
+export * from './components/FontFamilySelect';
 export * from './components/Field';
 export * from './components/Input';
 export * from './components/Checkbox';
