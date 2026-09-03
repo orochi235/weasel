@@ -1,8 +1,8 @@
 # Labkit — Recipes
 
-Composition patterns for common lab shapes. This file grows as plans land.
+Composition patterns for common lab shapes.
 
-## Plan 1 recipes
+## Shell and primitives
 
 ### A minimal lab shell with a tiled grid
 
@@ -13,15 +13,20 @@ import "@weasel-js/labkit/styles.css";
 export function MyLab() {
   return (
     <LabShell title="My Lab">
-      <Workspace>
-        <div>Trial 1</div>
-        <div>Trial 2</div>
-        <div>Trial 3</div>
+      <Workspace ids={["a", "b", "c"]} resizable>
+        <MyPane id="a" />
+        <MyPane id="b" />
+        <MyPane id="c" />
       </Workspace>
     </LabShell>
   );
 }
 ```
+
+`ids` are matched positionally and are what `resizable` and `reorderable` key
+off; without them a tile is identified by its position, so closing one from the
+middle shifts every id after it. `<Trial>` is not usable here — it reads the lab
+store and only mounts inside a `<Lab>`.
 
 ### A toolbar with undo/redo and a save button
 
@@ -132,7 +137,7 @@ silent fallback applies.
 `className`; add your own class through it and style that. Selectors written
 against `lk-*` names work until they don't, with no deprecation.
 
-## Plan 5 recipes — capabilities
+## Capabilities
 
 ### Build a drag-and-drop layout lab
 
@@ -279,4 +284,202 @@ System events worth knowing:
 - `'canvas.itemAdded'` — fired by the drag-drop pipeline after a successful drop
 - `'layers.toggle'` / `'layers.reorder'` — fired by `<LayerList>` interactions
 
-(More recipes added as plans land — custom storage adapters, MIDI/audio capabilities, etc.)
+## Annotations
+
+### Let users draw on an instrument's picture
+
+An instrument names the regions that accept marks. Everything else — the tool
+palette, the overlay, the store, undo, persistence, export — is labkit's.
+
+`targets()` is called with the trial's state and config, not from inside a
+component, so the refs it hands back have to be reachable from outside React:
+
+```tsx
+import { createRef } from "react";
+import { type CaptureSource, defineInstrument, f } from "@weasel-js/labkit";
+
+const paneRef = createRef<HTMLDivElement>();
+const CONTENT = { w: 260, h: 180 };
+
+export const Inspector = defineInstrument({
+  name: "Inspector",
+  config: f.schema({
+    angle: f.number(0).range(-45, 45).step(1),
+    label: f.string("bracket-7"),
+  }),
+  initialState: () => ({}),
+  render: (ctx) => (
+    <div ref={paneRef}>
+      <Part angle={ctx.config.angle} />
+    </div>
+  ),
+  annotations: {
+    targets: () => [
+      {
+        id: "pane",
+        ref: paneRef,
+        content: CONTENT,
+        positionDependsOn: ["angle"],
+        base: (): CaptureSource => ({
+          kind: "svg",
+          markup: paneRef.current?.querySelector("svg")?.outerHTML ?? "",
+        }),
+      },
+    ],
+    meaning: {
+      statuses: [
+        { id: "open", label: "Open", color: "#e5484d" },
+        { id: "confirmed", label: "Confirmed", color: "#f5a524" },
+        { id: "fixed", label: "Fixed", color: "#30a46c" },
+      ],
+    },
+  },
+});
+```
+
+| Target field | |
+| --- | --- |
+| `id` | Names the target. A mark's id is `<target>/<node>` |
+| `ref` | The element the overlay tracks and takes input from |
+| `content` | Intrinsic size in CSS pixels at zoom 1 — the box positions are fractions *of* |
+| `positionDependsOn` | Config keys whose change means a stored position no longer refers to the same picture |
+| `base` | The picture underneath the marks, for an export to draw over |
+| `view` | The pane's camera, mirrored so marks pan and zoom with what they mark |
+
+Positions cross the store boundary as fractions rather than pixels so a mark
+stays on the same feature when the picture is rendered at a different
+resolution. `positionDependsOn` is compared by value and labkit never looks
+inside it: a mark whose declared keys have moved draws dashed rather than
+vanishing, because it still describes something.
+
+Declare `positionDependsOn` per target, not per instrument. In a two-pane lab
+where one config key only moves the right pane, only that target lists it, and a
+mark on the left survives a change that would strand one on the right.
+
+### Read the marks from your own UI
+
+`useAnnotations()` returns a stable facade over mutable scenes and re-renders
+its caller whenever a mark changes. Reading `query()` without it renders one
+answer and never revises it.
+
+```tsx
+import { useAnnotations } from "@weasel-js/labkit";
+
+function MarkCount({ config }: { config: Config }) {
+  const marks = useAnnotations();
+  const all = marks.query();
+  const stale = all.filter((m) => marks.isStale(m, config)).length;
+  return <span>{all.length} marks{stale > 0 ? `, ${stale} stale` : ""}</span>;
+}
+```
+
+It throws outside a trial whose instrument declares `annotations`. For chrome
+that renders in every trial and does something else where there are no marks,
+use `useAnnotationsOptional()`.
+
+`query(q?)` filters by `target`, `kind`, `status`, `tags` and an arbitrary
+`where`, ANDed. `hitTest(target, pt, tol?)` returns marks under a point, topmost
+first; `within(target, box)` returns marks wholly inside a marquee. Both take
+fractions, not pixels.
+
+### Export a picture with its marks on it
+
+```tsx
+const { blob, width, height } = await marks.capture("pane", {
+  format: "svg",
+  scale: 2,
+});
+```
+
+The route depends on the target's `base`. An SVG base nests beside the marks in
+one document, which makes `format: 'svg'` a real vector export; anything else
+stacks rasters, with the marks drawn offscreen at export scale rather than read
+back off the live surface — so a capture neither depends on nor disturbs what is
+on screen. Resolution follows the target's `content` box times `scale`, not the
+size the pane happens to be on screen. A target declaring no `base` still
+exports, its marks on transparency.
+
+Declaring `annotations` earns an Export button in the trial toolbar.
+`AnnotationsCapability.onCapture` fires after every export, labkit's own chrome
+included, for a host that wants to file the blob somewhere of its own.
+
+### Keep the marks somewhere else
+
+Marks live in `TrialRecord.annotations` by default, written on a trailing
+debounce and flushed on unmount. An instrument whose marks belong in a format it
+already owns declares storage instead, and labkit never writes its own slot:
+
+```tsx
+annotations: {
+  targets: () => [...],
+  storage: {
+    load: () => JSON.parse(localStorage.getItem("my-marks") ?? "null"),
+    save: (doc) => localStorage.setItem("my-marks", JSON.stringify(doc)),
+  },
+}
+```
+
+Both halves are called outside React, and `save` is already debounced by the
+time it arrives.
+
+Undo is weasel history, not a second stack: `marks.undo()` / `redo()` take back
+the most recent mark change wherever it was made. Declaring `annotations` earns
+the trial's undo and redo buttons whether or not the instrument also declares
+`undo`; a trial declaring both gives the marks the buttons first.
+
+## Chrome
+
+### Add a toolbar button, a readout, or a sidebar panel
+
+A `TrialContribution` names one of six regions — `titlebar`, `toolbar`,
+`palette`, `sidebar`, `viewport`, `status` — and supplies data the region lays
+out. Contributions on `<Lab chrome>` reach every trial; an instrument's own
+`chrome` field reaches only its own.
+
+```tsx
+import type { TrialContribution } from "@weasel-js/labkit";
+
+const chrome: TrialContribution[] = [
+  { id: "seed", region: "status", item: { text: `seed ${seed}` } },
+  {
+    id: "notes",
+    region: "sidebar",
+    item: { title: "Notes", body: <Notes />, undockAs: "floating" },
+  },
+  {
+    id: "reseed",
+    region: "toolbar",
+    item: { icon: DiceIcon, label: "Reseed", shortcut: "R", onActivate: reseed },
+  },
+];
+
+<Lab chrome={chrome} suppress={["fps"]} instruments={[…]} defaultInstrument="…" />;
+```
+
+Groups sort by first appearance and items sort within a group by declaration
+order; `end` pushes a contribution and its group to the far end of the region.
+`suppress` drops a built-in by id — `undo`, `redo`, `loupe`, `zoom-in`,
+`zoom-out`, `actual-size`, `zoom-control`, `scale`, `fps`, `export`, `marks`,
+`settings`, `snapshot-load`, `clone`, `reset`, `snapshot`, `close` — and throws
+on an id that is not there.
+
+Supplying `render: (ctx) => ReactNode` instead of `item` opts out of the
+region's layout. It is deliberate, and visible in the declaration. `ctx` is the
+`TrialChromeContext`: the trial's id, zoom, undo bindings, resolved config,
+snapshots, tool slot, and the trial operations.
+
+### Let a sidebar panel be torn out
+
+A sidebar section offers a tear-out control by default. It goes into the
+workspace as a tile beside the trials, or as a floating panel, with the trial
+still rendering into it:
+
+```tsx
+{ id: "notes", region: "sidebar",
+  item: { title: "Notes", body: <Notes />, undockAs: "floating" } }
+```
+
+Set `undockable: false` on a section that only makes sense beside its trial.
+From a contribution's own `render`, `ctx.undockPanel(sectionId, as?)` and
+`ctx.dockPanel(sectionId)` move one, and `ctx.undockedPanels` says which are
+out.
