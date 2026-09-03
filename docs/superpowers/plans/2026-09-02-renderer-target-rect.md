@@ -66,7 +66,7 @@ Tasks 2–5 get tests that cannot fail.
 - Modify: `packages/core/src/renderer/test-utils/glRecorder.ts`
 - Test: `packages/core/src/renderer/test-utils/glRecorder.test.ts` (create)
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `packages/core/src/renderer/test-utils/glRecorder.test.ts`:
 
@@ -111,13 +111,13 @@ describe('makeGLRecorder', () => {
 });
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `npx vitest run --project=kit packages/core/src/renderer/test-utils/glRecorder.test.ts`
 
 Expected: FAIL. `gl.SCISSOR_TEST` is `0`; `gl.drawingBufferWidth` is a function, so `typeof` is `'function'`; `getContextAttributes()` returns `undefined`.
 
-- [ ] **Step 3: Add the constant**
+- [x] **Step 3: Add the constant**
 
 In `glRecorder.ts`, inside `GL_CONSTANTS`, under the `// Errors / state` group, after `CULL_FACE: 0x0B44,`:
 
@@ -125,7 +125,7 @@ In `glRecorder.ts`, inside `GL_CONSTANTS`, under the `// Errors / state` group, 
   SCISSOR_TEST: 0x0C11,
 ```
 
-- [ ] **Step 4: Make the recorder configurable**
+- [x] **Step 4: Make the recorder configurable**
 
 Replace the `GLRecorder` interface and the `makeGLRecorder` signature/Proxy in `glRecorder.ts`:
 
@@ -183,13 +183,13 @@ and change the Proxy's `get` trap to consult the data table first:
       },
 ```
 
-- [ ] **Step 5: Run the new test and the whole renderer suite**
+- [x] **Step 5: Run the new test and the whole renderer suite**
 
 Run: `npx vitest run --project=kit packages/core/src/renderer/`
 
 Expected: PASS, including the pre-existing `WeaselRenderer.test.ts`, `draw.test.ts` and `solidBatch.test.ts` — every existing `makeGLRecorder()` call site passes no argument and must keep working.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/core/src/renderer/test-utils/glRecorder.ts packages/core/src/renderer/test-utils/glRecorder.test.ts
@@ -204,7 +204,7 @@ git commit -m "let the GL recorder express scissor, buffer size and context attr
 - Modify: `packages/core/src/renderer/WeaselRenderer.ts`
 - Test: `packages/core/src/renderer/WeaselRenderer.target.test.ts` (create)
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `packages/core/src/renderer/WeaselRenderer.target.test.ts`:
 
@@ -237,13 +237,13 @@ describe('WeaselRenderer stencil requirement', () => {
 });
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `npx vitest run --project=kit packages/core/src/renderer/WeaselRenderer.target.test.ts`
 
 Expected: FAIL on the first case — nothing checks attributes, so no throw. The other two pass already.
 
-- [ ] **Step 3: Add the check**
+- [x] **Step 3: Add the check**
 
 In `WeaselRenderer.ts`, in the constructor, immediately after `this.gl = gl as WebGL2RenderingContext;`:
 
@@ -264,13 +264,13 @@ In `WeaselRenderer.ts`, in the constructor, immediately after `this.gl = gl as W
     }
 ```
 
-- [ ] **Step 4: Run the test**
+- [x] **Step 4: Run the test**
 
 Run: `npx vitest run --project=kit packages/core/src/renderer/WeaselRenderer.target.test.ts`
 
 Expected: PASS, 3 tests.
 
-- [ ] **Step 5: Check nothing else constructed a stencil-less renderer**
+- [x] **Step 5: Check nothing else constructed a stencil-less renderer**
 
 Run: `npx vitest run --project=kit`
 
@@ -278,7 +278,7 @@ Expected: PASS. The three production construction sites (`Canvas.tsx:1386`,
 `sceneViewRender.ts:215`, `renderSceneToPixels.ts:228`) all request
 `{ stencil: true }` already; this step confirms no test fixture did not.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/core/src/renderer/WeaselRenderer.ts packages/core/src/renderer/WeaselRenderer.target.test.ts
@@ -293,7 +293,7 @@ git commit -m "refuse a WebGL2 context with no stencil buffer"
 - Modify: `packages/core/src/renderer/WeaselRenderer.ts`
 - Test: `packages/core/src/renderer/WeaselRenderer.target.test.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `WeaselRenderer.target.test.ts`:
 
@@ -322,13 +322,13 @@ describe('WeaselRenderer per-frame GL state', () => {
 });
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `npx vitest run --project=kit packages/core/src/renderer/WeaselRenderer.target.test.ts -t "per-frame GL state"`
 
 Expected: FAIL — the state is set in the constructor only, so the second frame records none of it.
 
-- [ ] **Step 3: Extract the state block into a method**
+- [x] **Step 3: Extract the state block into a method**
 
 In `WeaselRenderer.ts`, add this private method next to `applyViewport`:
 
@@ -364,7 +364,7 @@ with:
 
 In `onContextRestored()`, replace the identical five lines with the same single call.
 
-- [ ] **Step 4: Call it from `render()`**
+- [x] **Step 4: Call it from `render()`**
 
 In `render()`, immediately after `this.groupState.reset();`:
 
@@ -372,14 +372,14 @@ In `render()`, immediately after `this.groupState.reset();`:
     this.applyGlState();
 ```
 
-- [ ] **Step 5: Run the test**
+- [x] **Step 5: Run the test**
 
 Run: `npx vitest run --project=kit packages/core/src/renderer/`
 
 Expected: PASS. `WeaselRenderer.test.ts`'s "configures alpha blending" constructor
 case still passes — the constructor still applies the state, through the method.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/core/src/renderer/WeaselRenderer.ts packages/core/src/renderer/WeaselRenderer.target.test.ts
@@ -399,7 +399,7 @@ should be incapable of.
 - Modify: `packages/core/src/renderer/WeaselRenderer.ts` (replaces the spike's `setTargetRect`)
 - Test: `packages/core/src/renderer/WeaselRenderer.target.test.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `WeaselRenderer.target.test.ts`:
 
@@ -489,13 +489,13 @@ describe('WeaselRenderer.setTarget', () => {
 });
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `npx vitest run --project=kit packages/core/src/renderer/WeaselRenderer.target.test.ts -t "setTarget"`
 
 Expected: FAIL — `setTarget` and `getTarget` do not exist. (`setTargetRect` from the spike does; it is about to go.)
 
-- [ ] **Step 3: Replace the spike's method with the real one**
+- [x] **Step 3: Replace the spike's method with the real one**
 
 In `WeaselRenderer.ts`, add above the class:
 
@@ -579,7 +579,7 @@ before the scissor is enabled erases every co-tenant. With Task 3 applied, the t
     this.applyTarget();
 ```
 
-- [ ] **Step 4: Export the type**
+- [x] **Step 4: Export the type**
 
 In `packages/core/src/renderer/index.ts`, add `RenderTarget` to the existing
 `WeaselRenderer` export line. If the file re-exports with `export { WeaselRenderer } from './WeaselRenderer';`, make it:
@@ -593,14 +593,14 @@ Then run `grep -n "WeaselRenderer" packages/core/src/index.ts` and add the same
 `export type { RenderTarget }` beside it, **by name** — never `export * from` another
 workspace package (see CLAUDE.md, "esbuild cannot see through the package boundary").
 
-- [ ] **Step 5: Run the tests**
+- [x] **Step 5: Run the tests**
 
 Run: `npx vitest run --project=kit packages/core/src/renderer/`
 
 Expected: PASS. `WeaselRenderer.test.ts`'s "sets initial viewport" and "updates
 viewport on resize" still pass — untargeted behaviour is unchanged.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/core/src/renderer/WeaselRenderer.ts packages/core/src/renderer/WeaselRenderer.target.test.ts packages/core/src/renderer/index.ts packages/core/src/index.ts
@@ -615,7 +615,7 @@ git commit -m "give WeaselRenderer a target rect applied inside render()"
 - Modify: `packages/core/src/renderer/WeaselRenderer.ts`
 - Test: `packages/core/src/renderer/WeaselRenderer.target.test.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `WeaselRenderer.target.test.ts`:
 
@@ -672,7 +672,7 @@ describe('WeaselRenderer clear policy', () => {
 });
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `npx vitest run --project=kit packages/core/src/renderer/WeaselRenderer.target.test.ts -t "clear policy"`
 
@@ -680,7 +680,7 @@ Expected: FAIL on "skips the frame clear" — `render()` clears unconditionally.
 other three pass, including the ordering one (Task 4 already put `applyTarget()`
 before the clear); it is there to keep that ordering from being refactored away.
 
-- [ ] **Step 3: Make the clear conditional**
+- [x] **Step 3: Make the clear conditional**
 
 In `render()`, replace:
 
@@ -698,13 +698,13 @@ with:
     }
 ```
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `npx vitest run --project=kit packages/core/src/renderer/WeaselRenderer.target.test.ts`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/core/src/renderer/WeaselRenderer.ts packages/core/src/renderer/WeaselRenderer.target.test.ts
@@ -718,7 +718,7 @@ git commit -m "let a target suppress the frame clear"
 **Files:**
 - Modify: `packages/core/src/canvas/Canvas.tsx`
 
-- [ ] **Step 1: Update the call site**
+- [x] **Step 1: Update the call site**
 
 In `paint()`, replace:
 
@@ -732,19 +732,19 @@ with:
     renderer.setTarget(rect ? { origin: { x: rect.x, y: rect.y } } : null);
 ```
 
-- [ ] **Step 2: Typecheck**
+- [x] **Step 2: Typecheck**
 
 Run: `npx tsc --noEmit` (from the repo root — see CLAUDE.md on why not `-p packages/core`)
 
 Expected: no output.
 
-- [ ] **Step 3: Run the suite**
+- [x] **Step 3: Run the suite**
 
 Run: `npx vitest run --project=kit`
 
 Expected: PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/core/src/canvas/Canvas.tsx
