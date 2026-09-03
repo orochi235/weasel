@@ -315,7 +315,7 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * default `(clientX - canvasRect.left) / scale + pan` calculation. Useful
    * for consumers that apply an additional CSS transform to the canvas element.
    */
-  clientToWorld?: (canvas: HTMLCanvasElement, cx: number, cy: number) => [number, number];
+  clientToWorld?: (canvas: HTMLElement, cx: number, cy: number) => [number, number];
 
   /**
    * SPIKE (arc 2). Paint into a caller-owned canvas at a rect instead of an
@@ -743,7 +743,7 @@ const NO_LAYER_VISIBILITY: Record<string, boolean> = {};
  *  supplied and the canvas rect otherwise. Every pointer path in this file
  *  goes through here so the two cannot drift. */
 function toWorld(
-  canvas: HTMLCanvasElement,
+  canvas: HTMLElement,
   clientX: number,
   clientY: number,
   view: View,
@@ -824,12 +824,15 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   // The element input comes from and every client→world conversion measures.
   // Normally the `<canvas>` this component renders; under `paintInto` it is
-  // the caller's `inputElement` instead, which is the whole point of the split
-  // — nothing downstream of here asks which of the two it is holding.
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  // the caller's `inputElement` instead — nothing downstream of here asks
+  // which of the two it is holding, because nothing downstream needs a canvas.
+  const canvasRef = useRef<HTMLElement | null>(null);
+  // The `<canvas>` this component rendered, if it rendered one. `paint` is the
+  // only thing that needs a real canvas, for `getContext`.
+  const ownCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const detached = !!paintInto;
   if (detached) {
-    canvasRef.current = (inputElement ?? null) as unknown as HTMLCanvasElement | null;
+    canvasRef.current = inputElement ?? null;
   }
   // Where pixels go. Split from `canvasRef` only when detached.
   const paintTargetRef = useRef<HTMLCanvasElement | null>(null);
@@ -960,7 +963,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   useImperativeHandle(ref, () => ({
     // Named rather than read off `canvasRef` so the handle rebuilds when a
     // detached surface's input element arrives, which is a render later.
-    element: detached ? (inputElement as HTMLCanvasElement | null) : canvasRef.current,
+    element: detached ? inputElement ?? null : canvasRef.current,
+    surface: detached ? paintInto?.canvas ?? null : ownCanvasRef.current,
     requestRedraw,
     subscribeFrame,
     registerLayer,
@@ -969,7 +973,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     setView,
     subscribeView,
     getPaintedVersion,
-  }), [canvasRef, detached, inputElement, requestRedraw, subscribeFrame, registerLayer,
+  }), [canvasRef, ownCanvasRef, detached, inputElement, paintInto?.canvas,
+       requestRedraw, subscribeFrame, registerLayer,
        hitTestExtras, getView, setView, subscribeView, getPaintedVersion]);
 
   // GL renderer (lazy-instantiated on first paint).
@@ -1354,7 +1359,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   };
 
   const paint = useCallback((): boolean => {
-    const c = paintTargetRef.current ?? canvasRef.current;
+    const c = paintTargetRef.current ?? ownCanvasRef.current;
     if (!c) return false;
     const rect = paintRectRef.current;
     const {
@@ -1482,7 +1487,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       if (pointerDownRef.current) return;
       const view = viewRef.current;
       const [worldX, worldY] = toWorld(
-        el as unknown as HTMLCanvasElement, e.clientX, e.clientY, view, clientToWorldRef.current,
+        el, e.clientX, e.clientY, view, clientToWorldRef.current,
       );
       const dims = dimsRef.current;
       for (const layer of layersForMoveRef.current) {
@@ -1522,7 +1527,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   return (
     <>
       <canvas
-        ref={canvasRef}
+        ref={(el) => { ownCanvasRef.current = el; canvasRef.current = el; }}
         width={width}
         height={height}
         tabIndex={tabIndex}

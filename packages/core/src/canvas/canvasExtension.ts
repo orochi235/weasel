@@ -23,10 +23,22 @@ import type { ViewAnimationOptions } from '../core/viewport/useViewAnimation';
  * @public
  */
 export interface CanvasExtensionApi {
-  /** The underlying HTMLCanvasElement. Null until the canvas mounts.
-   *  Use this for screenshots, getBoundingClientRect, focus management, etc.
-   *  (Replaces the pre-A2 pattern where `ref.current` directly *was* the element.) */
-  readonly element: HTMLCanvasElement | null;
+  /** Where pointer input, focus and the cursor live, and the element every
+   *  client→world conversion measures. Null until the canvas mounts.
+   *  Use this for `getBoundingClientRect` and focus management.
+   *
+   *  Normally the `<canvas>` the component renders, so `element === surface`.
+   *  Under `paintInto` it is the caller's `inputElement` instead — a plain box
+   *  over one pane of a shared surface — so use {@link surface} for anything
+   *  that needs the pixels. */
+  readonly element: HTMLElement | null;
+  /** The canvas pixels land on — for screenshots and readback. Null until the
+   *  canvas mounts.
+   *
+   *  Under `paintInto` this is the caller's shared canvas, which co-tenant
+   *  panes also paint into: its rect is the whole surface, not this pane's, so
+   *  read geometry off {@link element} rather than off this. */
+  readonly surface: HTMLCanvasElement | null;
   requestRedraw(): void;
   /**
    * Run `fn` after every paint, on the frame that painted — for chrome that
