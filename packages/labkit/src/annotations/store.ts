@@ -7,6 +7,7 @@ import {
 } from '@weasel-js/core';
 import type { WorldRect } from './frac';
 import { fracContains, fracIntersects, fracToWorld, roundFrac, worldToFrac } from './frac';
+import { MarkHistory } from './history';
 import { isStale as isStaleAgainst, seenFrom } from './staleness';
 import type {
   Annotation,
@@ -63,6 +64,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
   const { targets, restore } = opts;
   const scenes = new Map<string, MarkScene>();
   const subs = new Set<() => void>();
+  const history = new MarkHistory();
   const notify = (): void => {
     for (const fn of subs) fn();
   };
@@ -78,9 +80,17 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
         )
       : createAnnotationScene();
     scenes.set(target, scene);
-    scene.subscribe(notify);
+    history.track(target, scene);
+    scene.subscribe(() => {
+      history.observe(target, scene);
+      notify();
+    });
     return scene;
   };
+
+  /** Only for scenes that exist: asking for one would create it, and the
+   *  ordering never names a target it has not seen. */
+  const historySceneAt = (target: string) => scenes.get(target);
 
   // Restored scenes are materialized up front: everything below reads
   // `scenes`, and a mark that only appears once its pane asks for its scene is
@@ -170,6 +180,22 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
     isStale(a, config) {
       const keys = targetOf(a.target)?.positionDependsOn ?? [];
       return isStaleAgainst(a.seen, config, keys);
+    },
+
+    canUndo() {
+      return history.canUndo(historySceneAt);
+    },
+
+    canRedo() {
+      return history.canRedo(historySceneAt);
+    },
+
+    undo() {
+      return history.undo(historySceneAt);
+    },
+
+    redo() {
+      return history.redo(historySceneAt);
     },
 
     subscribe(fn) {

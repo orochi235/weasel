@@ -145,6 +145,14 @@ export interface AnnotationsApi {
    *  re-query rather than expecting a change payload. */
   subscribe(fn: () => void): () => void;
 
+  /** Whether the last mark change on any target can be taken back. Weasel
+   *  history is the authority; this only decides *which* target's. */
+  canUndo(): boolean;
+  canRedo(): boolean;
+  /** Take back the most recent mark change, wherever it was made. */
+  undo(): boolean;
+  redo(): boolean;
+
   add(init: AnnotationInit, config?: unknown): string;
   update(id: string, patch: AnnotationPatch): void;
   setMeta(id: string, meta: unknown): void;
