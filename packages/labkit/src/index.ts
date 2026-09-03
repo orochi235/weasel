@@ -98,6 +98,7 @@ export type { MarkListProps } from './annotations/MarkList';
 export { MarkList } from './annotations/MarkList';
 export type { MarkStyle, PaintableMark } from './annotations/paint';
 export { markCommands } from './annotations/paint';
+export { markSvgNodes } from './annotations/svgNodes';
 export type { AnnotationToolInfo } from './annotations/toolMap';
 export {
   ANNOTATION_TOOLS,
