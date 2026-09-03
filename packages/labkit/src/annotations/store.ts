@@ -5,6 +5,7 @@ import {
   type SerializedScene,
   sceneFromJSON,
 } from '@weasel-js/core';
+import { captureTarget } from './capture';
 import type { WorldRect } from './frac';
 import { fracContains, fracIntersects, fracToWorld, roundFrac, worldToFrac } from './frac';
 import { MarkHistory } from './history';
@@ -18,6 +19,7 @@ import type {
   AnnotationQuery,
   AnnotationsApi,
   AnnotationTargetInfo,
+  CaptureOptions,
   CaptureResult,
   FracPoint,
   FracRect,
@@ -269,6 +271,28 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
     remove(id) {
       const found = nodeOf(id);
       if (found) found.scene.remove(asNodeId(found.node.id));
+    },
+
+    async capture(target: string, captureOpts?: CaptureOptions) {
+      const info = targetOf(target);
+      if (!info) throw new Error(`[labkit] no annotation target called '${target}'`);
+      const result = await captureTarget(
+        {
+          target,
+          scene: sceneFor(target),
+          draw: {
+            content: info.content,
+            positionDependsOn: info.positionDependsOn,
+            config: opts.config?.(),
+            meaning: opts.meaning,
+          },
+          base: info.base,
+          onWarn: (message) => console.warn(`[labkit] capture: ${message}`),
+        },
+        captureOpts,
+      );
+      opts.onCapture?.(result);
+      return result;
     },
 
     toJSON(): SerializedAnnotations {

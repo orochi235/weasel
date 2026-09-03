@@ -208,6 +208,10 @@ export interface AnnotationsApi {
   undo(): boolean;
   redo(): boolean;
 
+  /** Export a target's picture with its marks on it. Rejects on an id the
+   *  instrument does not declare. */
+  capture(target: string, opts?: CaptureOptions): Promise<CaptureResult>;
+
   add(init: AnnotationInit, config?: unknown): string;
   update(id: string, patch: AnnotationPatch): void;
   setMeta(id: string, meta: unknown): void;

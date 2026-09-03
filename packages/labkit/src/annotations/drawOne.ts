@@ -1,6 +1,6 @@
 import type { DrawCommand, SceneNode, View } from '@weasel-js/core';
 import type { WorldRect } from './frac';
-import { markCommands } from './paint';
+import { type MarkStyle, markCommands } from './paint';
 import { isStale } from './staleness';
 import type { AnnotationData, AnnotationMeaning } from './types';
 
@@ -30,15 +30,18 @@ export function createMarkDrawOne(
   pose: WorldRect,
   view: View,
 ) => DrawCommand[] {
-  const keys = opts.positionDependsOn ?? [];
-  const colorOf = (status: string | undefined): string | undefined =>
-    opts.meaning?.statuses?.find((s) => s.id === status)?.color;
-
   return (node, pose) =>
-    markCommands({ pose, data: node.data }, opts.content, {
-      color: colorOf(node.data.status),
-      // Read off the node rather than through the store's `isStale`, which
-      // wants a projected Annotation this path does not have.
-      stale: isStale(node.data.seen, opts.config, keys),
-    });
+    markCommands({ pose, data: node.data }, opts.content, resolveMarkStyle(node.data, opts));
+}
+
+/** How a mark looks, as opposed to where it is. Separate from the callback
+ *  above because an SVG export resolves the same appearance without ever
+ *  building a draw command. */
+export function resolveMarkStyle(data: AnnotationData, opts: MarkDrawOptions): MarkStyle {
+  return {
+    color: opts.meaning?.statuses?.find((s) => s.id === data.status)?.color,
+    // Read off the node rather than through the store's `isStale`, which
+    // wants a projected Annotation this path does not have.
+    stale: isStale(data.seen, opts.config, opts.positionDependsOn ?? []),
+  };
 }

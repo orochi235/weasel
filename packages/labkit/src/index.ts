@@ -92,8 +92,10 @@ export {
 } from './annotations/AnnotationsContext';
 export type { AnnotationTargetsProps } from './annotations/AnnotationTargets';
 export { AnnotationTargets } from './annotations/AnnotationTargets';
+export type { CaptureArgs, CapturePlan, ComposeSvgArgs } from './annotations/capture';
+export { capturePlan, captureTarget, composeCaptureSvg } from './annotations/capture';
 export type { MarkDrawOptions } from './annotations/drawOne';
-export { createMarkDrawOne } from './annotations/drawOne';
+export { createMarkDrawOne, resolveMarkStyle } from './annotations/drawOne';
 export type { MarkListProps } from './annotations/MarkList';
 export { MarkList } from './annotations/MarkList';
 export type { MarkStyle, PaintableMark } from './annotations/paint';
