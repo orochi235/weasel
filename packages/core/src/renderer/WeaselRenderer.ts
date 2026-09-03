@@ -517,8 +517,10 @@ export class WeaselRenderer {
     this.applyTarget();
     // Ensure all stencil bits are cleared regardless of any mask left over
     // from the previous frame's clip ops.
-    gl.stencilMask(0xFF);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+    if (this.target?.clear !== false) {
+      gl.stencilMask(0xFF);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+    }
     const ctx: DrawContext = {
       gl,
       pathFill: this.pathFill,

@@ -143,3 +143,54 @@ describe('WeaselRenderer.setTarget', () => {
     expect(disabled).toContain(recorder.gl.SCISSOR_TEST);
   });
 });
+
+describe('WeaselRenderer clear policy', () => {
+  const clearCalls = (recorder: ReturnType<typeof makeGLRecorder>) =>
+    recorder.calls.filter((c) => c.name === 'clear');
+
+  it('clears colour and stencil by default', () => {
+    const recorder = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: recorder.gl, width: 100, height: 100, dpr: 1 });
+    recorder.reset();
+    r.render([]);
+    const bits = recorder.gl.COLOR_BUFFER_BIT | recorder.gl.STENCIL_BUFFER_BIT;
+    expect(clearCalls(recorder).some((c) => c.args[0] === bits)).toBe(true);
+  });
+
+  it('clears by default under a target too', () => {
+    const recorder = makeGLRecorder({ drawingBufferWidth: 820, drawingBufferHeight: 400 });
+    const r = new WeaselRenderer({ gl: recorder.gl, width: 380, height: 360, dpr: 1 });
+    r.setTarget({ origin: { x: 420, y: 20 } });
+    recorder.reset();
+    r.render([]);
+    expect(clearCalls(recorder).length).toBeGreaterThan(0);
+  });
+
+  it('skips the frame clear when the target says clear: false', () => {
+    const recorder = makeGLRecorder({ drawingBufferWidth: 820, drawingBufferHeight: 400 });
+    const r = new WeaselRenderer({ gl: recorder.gl, width: 380, height: 360, dpr: 1 });
+    r.setTarget({ origin: { x: 420, y: 20 }, clear: false });
+    recorder.reset();
+    r.render([]);
+    const bits = recorder.gl.COLOR_BUFFER_BIT | recorder.gl.STENCIL_BUFFER_BIT;
+    expect(clearCalls(recorder).some((c) => c.args[0] === bits)).toBe(false);
+  });
+
+  it('enables the scissor before clearing, so the clear cannot outrun the rect', () => {
+    // Ordering is the whole mechanism: gl.clear respects SCISSOR_TEST, so a
+    // clear issued before the scissor is enabled erases every co-tenant.
+    const recorder = makeGLRecorder({ drawingBufferWidth: 820, drawingBufferHeight: 400 });
+    const r = new WeaselRenderer({ gl: recorder.gl, width: 380, height: 360, dpr: 1 });
+    r.setTarget({ origin: { x: 420, y: 20 } });
+    recorder.reset();
+    r.render([]);
+
+    const names = recorder.calls.map((c) => c.name);
+    const scissorEnabled = recorder.calls.findIndex(
+      (c) => c.name === 'enable' && c.args[0] === recorder.gl.SCISSOR_TEST,
+    );
+    const firstClear = names.indexOf('clear');
+    expect(scissorEnabled).toBeGreaterThanOrEqual(0);
+    expect(firstClear).toBeGreaterThan(scissorEnabled);
+  });
+});
