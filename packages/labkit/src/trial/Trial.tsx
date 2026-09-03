@@ -12,7 +12,7 @@ import { useLabContext } from '../lab/LabContext';
 import { LayerList } from '../layers/LayerList';
 import { TrialLoupe } from '../loupe/TrialLoupe';
 import { resolveLoupe } from '../loupe/types';
-import { LabStoreContext } from '../state/context';
+import { LabStoreContext, TrialIdProvider } from '../state/context';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
 import { as2DView, DEFAULT_VIEW } from '../state/view';
@@ -368,21 +368,23 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
   }, [paletteNode, layerListNode]);
 
   return (
-    <TrialChrome
-      job={jobCap ? job : undefined}
-      loupe={loupeBindings}
-      trialId={record.id}
-      record={record}
-      instrument={instrument}
-      isLastTrial={isLast}
-      undoBindings={undoBindings}
-      trialChrome={extraChrome}
-      chrome={chrome}
-      suppress={suppress}
-      activeToolId={resolvedToolId}
-      setActiveTool={setActiveTool}
-    >
-      {body}
-    </TrialChrome>
+    <TrialIdProvider trialId={record.id}>
+      <TrialChrome
+        job={jobCap ? job : undefined}
+        loupe={loupeBindings}
+        trialId={record.id}
+        record={record}
+        instrument={instrument}
+        isLastTrial={isLast}
+        undoBindings={undoBindings}
+        trialChrome={extraChrome}
+        chrome={chrome}
+        suppress={suppress}
+        activeToolId={resolvedToolId}
+        setActiveTool={setActiveTool}
+      >
+        {body}
+      </TrialChrome>
+    </TrialIdProvider>
   );
 }
