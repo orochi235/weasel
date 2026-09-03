@@ -58,7 +58,7 @@ of how significant the change is, whether it adds API, or what semver would
 say. `minor` and `major` are Mike's calls, made explicitly, in the message
 where he makes them.
 
-All thirteen packages are in one changesets `fixed` group, so **one bump
+Every package is in one changesets `fixed` group, so **one bump
 anywhere moves every package**. weasel is 1.0.0 as of 2026-08-12 — reached by
 accident, from two `major` changesets that sat in `.changeset/` for days until
 an unrelated release consumed them.
