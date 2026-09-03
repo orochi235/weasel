@@ -11,6 +11,7 @@ import { PenIcon } from '../../../icons';
 import { PathBuilder } from 'features/paths/builder';
 import type { PolygonPath } from 'features/paths/types';
 import { constrainTo45 } from '../../../util/constrainTo45';
+import { cursorFor } from '@weasel-js/cursor';
 
 /**
  * In-progress pen anchor. `outHandle` is set when the anchor was placed via
@@ -452,7 +453,10 @@ export function usePenTool<TPose>(
       hookName: 'usePenTool',
       // Reads the tool's own ref rather than a scratch handed in by a
       // dispatcher — the pen owns this state and nothing else needs it.
-      cursor: () => (scratchRef.current?.closeHintActive ? 'pointer' : 'crosshair'),
+      cursor: () =>
+        scratchRef.current?.closeHintActive
+          ? 'pointer'
+          : cursorFor('pen', { fallback: 'crosshair' }),
       presentation: {
         label: 'Pen',
         icon: createElement(PenIcon),

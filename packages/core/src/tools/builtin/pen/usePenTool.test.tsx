@@ -129,10 +129,14 @@ describe('usePenTool', () => {
     expect(typeof tool.cursor).toBe('function');
   });
 
-  it('cursor is "crosshair" normally, "pointer" when closeHintActive', () => {
+  it('cursor is the nib glyph normally, "pointer" when closeHintActive', () => {
+    // jsdom draws no cursor; this checks the string handed to the host. The
+    // close hint stays a keyword because it is about what the next click does,
+    // not about which tool is active.
     const { tool, scratch } = setup();
     const cursor = tool.cursor as (ctx: never) => string;
-    expect(cursor({} as never)).toBe('crosshair');
+    expect(cursor({} as never)).toMatch(/^url\("data:image\/svg\+xml,/);
+    expect(cursor({} as never)).toMatch(/, crosshair$/);
     scratch.closeHintActive = true;
     expect(cursor({} as never)).toBe('pointer');
     scratch.closeHintActive = false;

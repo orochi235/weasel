@@ -33,11 +33,13 @@ describe('useEyedropperTool', () => {
     // hotkey lives on the ToolDef (reflection escape hatch) rather than on
     // the runtime Tool interface since Tool.hotkey was removed.
     expect((result.current.def as any)?.hotkey).toBe('alt');
-    // `defineTool` wraps a string cursor in a resolver.
+    // `defineTool` wraps a string cursor in a resolver. jsdom draws no cursor,
+    // so this checks the string handed to the host, not what renders.
     const cursor = typeof result.current.cursor === 'function'
       ? result.current.cursor({} as never)
       : result.current.cursor;
-    expect(cursor).toBe('crosshair');
+    expect(cursor).toMatch(/^url\("data:image\/svg\+xml,/);
+    expect(cursor).toMatch(/, crosshair$/);
   });
 
   it('binds one click route to its own action, and nothing else', () => {

@@ -5,6 +5,7 @@ import type { ToolKeybinding } from '../../routeTypes';
 import type { Action } from 'interactions/actions/registry';
 import type { NodeAtPointDep } from 'interactions/actions/depSchema';
 import { EyedropperIcon } from '../../../icons';
+import { cursorFor } from '@weasel-js/cursor';
 
 /** Options for `useEyedropperTool`. */
 export interface UseEyedropperToolOptions {
@@ -89,7 +90,7 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool<null> {
       hookName: 'useEyedropperTool',
       keybinding,
       hotkey,
-      cursor: 'crosshair',
+      cursor: cursorFor('eyedropper', { fallback: 'crosshair' }),
       presentation: {
         label: 'Eyedropper',
         icon: createElement(EyedropperIcon),

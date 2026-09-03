@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { defineTool } from '../../defineTool';
 import { PencilIcon } from '../../../icons';
 import type { Tool } from '../../types';
+import { cursorFor } from '@weasel-js/cursor';
 
 /** A single pointer sample captured during a freehand pencil stroke.
  *
@@ -43,7 +44,7 @@ export function usePencilTool(): Tool<null> {
         id: 'pencil',
         capabilities: ['creates-paths'],
         hookName: 'usePencilTool',
-        cursor: 'crosshair',
+        cursor: cursorFor('pencil', { fallback: 'crosshair' }),
         presentation: {
           label: 'Pencil',
           group: 'draw',
