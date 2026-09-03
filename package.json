@@ -26,7 +26,7 @@
     "dev:draw": "vite --config apps/draw/vite.config.ts",
     "dev:storybook": "storybook dev -p 6010 --no-open",
     "build": "npm run build:leaves && npm run build:core && npm run build:downstream",
-    "build:leaves": "npm run build -w @weasel-js/geom -w @weasel-js/gestures -w @weasel-js/history -w @weasel-js/modes -w @weasel-js/loupe -w @weasel-js/theme -w @weasel-js/paint -w @weasel-js/font -w @weasel-js/bidi -w @weasel-js/text -w @weasel-js/audio",
+    "build:leaves": "npm run build -w @weasel-js/geom -w @weasel-js/gestures -w @weasel-js/history -w @weasel-js/modes -w @weasel-js/loupe -w @weasel-js/theme -w @weasel-js/paint -w @weasel-js/font -w @weasel-js/bidi -w @weasel-js/text -w @weasel-js/audio -w @weasel-js/cursor",
     "build:core": "npm run build -w @weasel-js/core",
     "build:downstream": "npm run build -w @weasel-js/svg -w @weasel-js/d3 -w @weasel-js/ui -w @weasel-js/hud -w weasel-js -w @weasel-js/labkit",
     "build:demo": "vite build && npm run build:api",
