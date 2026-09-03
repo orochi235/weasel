@@ -38,6 +38,7 @@ Priority tags:
 **Selection, actions & UI panels**
 - Two implementations of an editable curve; the timeline built the second → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit's loupe drives itself with plain listeners, not bindings → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- Every React Aria overlay inside a lab renders unthemed → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit `registerSerializers` has no callers; instrument serializers never run → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit: nested config values — `f.schema` is flat because `setConfig` is → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Reconcile core's `ToolPrefLeaf` with weasel-ui's `PrefLeaf` — the `paint` kind has already drifted → [Selection, actions & UI panels](#selection-actions--ui-panels)
@@ -1234,6 +1235,22 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 ---
 
 ## Selection, actions & UI panels
+
+- **(P2) Every React Aria overlay inside a lab renders unthemed.** RAC portals a
+  `Popover` / `Modal` to `document.body`, which is outside the element labkit
+  paints its resolved tokens onto (`.lk-root`, via `applyTheme`). Every
+  `--wzl-*` custom property resolves to the empty string there, so the overlay
+  falls back to browser defaults — a light panel with unreadable text in a dark
+  lab. This hits `Select`'s dropdown, `ComboBox`, `Dialog` and `Callout` alike;
+  the annotation Export panel is only the first to have been looked at.
+
+  Its fix — passing the lab root as `UNSTABLE_portalContainer`
+  (`annotations/ExportMenu.tsx`) — is per call site, and the prop is deprecated
+  upstream in favour of a provider RAC 1.18 does not export. The durable answer
+  is probably in `@weasel-js/ui`: an overlay defaults to the nearest themed
+  ancestor of its trigger rather than to the body, which fixes every consumer
+  with no plumbing. That is a behaviour change for `apps/draw` too, so it wants
+  its own look.
 
 - **(P2) labkit's loupe drives itself with plain listeners, not bindings.** The
   gesture grammar already has every gesture it needs — `keyHeld` with a free key

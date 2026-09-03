@@ -1,9 +1,9 @@
 # Annotations: drawing on a lab surface
 
-**Five arcs, two of them in `core` and independently useful. Arcs 1 and 3 are
-built and closed, arc 2 is spiked; arcs 4 and 5 are unbuilt.**
+**Five arcs, two of them in `core` and independently useful. Arcs 1, 3 and 4
+are built and closed, arc 2 is spiked; arc 5 is unbuilt.**
 
-For whoever picks up arc 1 or arc 2. It assumes you know weasel's renderer and
+For whoever picks up arc 2 or arc 5. It assumes you know weasel's renderer and
 `SceneCanvas` and labkit's instrument/capability model, and nothing about the
 conversation that produced this.
 
@@ -232,33 +232,64 @@ its TOML.
 
 ## Arc 4 — capture
 
-labkit cannot rasterize the artifact underneath — it is the consumer's DOM. So a
-target hands over its base:
+**Built and closed.** A target hands over its base; labkit composites the marks
+over it and returns a Blob.
 
 ```ts
-capture?: () => CaptureSource | Promise<CaptureSource>;
+base?: () => CaptureSource | Promise<CaptureSource>;
 type CaptureSource =
   | { kind: 'svg'; markup: string }        // preferred
   | { kind: 'image'; src: string }
   | { kind: 'canvas'; canvas: HTMLCanvasElement };
 ```
 
-A target declaring none still exports its marks on transparency, which fails
-visibly rather than producing a blank brick.
+`capturePlan(base, format)` picks the route. An SVG base nests beside the marks
+in one document — one rasterize at the end, and an SVG output format for free.
+Anything else, or no base at all, stacks rasters: the base into a 2D canvas,
+the marks from `renderSceneToPixels` at export scale, composited over it. Marks
+are never read back off the live surface, so a capture neither depends on nor
+disturbs what is on screen. Output size is the target's *content box* times the
+scale, so it does not follow the size the pane happens to be on screen.
 
-With an `svg` base, marks serialize through `serializeSvg` (`@weasel-js/svg`)
-and nest into the artifact's markup — one rasterize at the end, and an SVG
-output format for free. Otherwise both sides rasterize and stack. Export renders
-offscreen at export scale via `renderSceneToPixels` rather than reading back the
-live surface, so a capture neither depends on nor disturbs what is on screen.
+`AnnotationsApi.capture(target, opts)` resolves to `{ blob, format, width,
+height, target }`; `targets()` reports what an instrument declared. The chrome
+is an Export button in the toolbar opening a panel — target, PNG or SVG, scale,
+then Download or Copy — because a mark belongs to a target and an icon button
+cannot ask which one.
 
-`capture()` returns a Blob. Where it goes is the host's: labkit ships download
-and copy-to-clipboard chrome (`ClipboardItem` with `image/png`) and an
-`onCapture(blob, meta)` hook.
+Five things were decided differently in the building:
 
-This adds `@weasel-js/svg` to labkit's dependencies. labkit inlines `core`
-(`docs/TODO.md`, "labkit inlines core"); decide whether `svg` is peered or
-inlined the same way in this arc, rather than at a consumer's bundler.
+- **The target's field is `base`, not `capture`.** Naming both the hand-over
+  and the API that returns a Blob `capture` makes every sentence about either
+  ambiguous. It sits on `AnnotationTargetInfo` rather than `AnnotationTarget`,
+  because the store is what calls it — `ref` and `view` are the React-shaped
+  half only the overlay reads.
+- **`@weasel-js/svg` is an ordinary dependency, inlined.** This was the Open
+  question and it was not a real fork: labkit's tsup declares
+  `noExternal: [/^@weasel-js\//]`, and `@weasel-js/ui` already depends on svg,
+  so it was already inlined into labkit's dist. Declaring it changes nothing
+  that ships.
+- **`onCapture` notifies; it does not intercept.** A hook that can suppress
+  labkit's own download needs a return protocol nobody can see from the call
+  site. A host wanting its own flow calls `capture()` from its own UI — the
+  same surface the chrome uses.
+- **SVG copies as text.** `ClipboardItem` takes `image/png` unprefixed;
+  `image/svg+xml` needs Chromium's `web ` prefix and nothing else reads it.
+- **Marks reach SVG through their own draw commands.** `markSvgNodes` maps over
+  what `markCommands` produced rather than switching over the mark kinds again,
+  and drops the marker reference on the way — an arrow's head is already its
+  own path command, and keeping the reference makes the serializer emit a
+  `<marker>` def that draws it twice.
+
+Two things the arc found that are not about capture:
+
+- **A React Aria overlay inside a lab renders unthemed.** It portals to
+  `document.body`, outside the element labkit paints its tokens onto, where
+  `--wzl-surface` resolves to the empty string. The export panel passes the lab
+  root as its portal container; nothing else in labkit does yet.
+- **The consumer smoke test's package list was hand-kept and had drifted.**
+  `loupe` and `bidi` were missing, so nothing packed them and the audit blamed
+  their importers. It reads the directory now.
 
 ## Arc 5 — brick-icons migrates
 
@@ -308,9 +339,20 @@ jsdom cannot see most of this, and a test that cannot fail is worse than none.
   rendered under `StrictMode`, was the tile deregistering on the remount and
   never coming back — mount / unmount / mount is the shape to test registration
   under.
-- Arc 4 is browser-only end to end. Assert pixels: a mark captured at `scale: 4`
-  lands on the same feature of the brick it was drawn over.
+- Arc 4 is browser-only end to end (`tests/visual/annotations-capture.spec.ts`),
+  and the trap it walked into is the shape of the pixel assertion. "The probed
+  pixel is reddish" passed against a capture carrying **no marks at all**,
+  because the demo's own top-left quadrant was orange enough to satisfy it. A
+  colour probe has to be close to the mark's actual colour, over a base
+  deliberately nowhere near it, with a second probe asserting the base is
+  *unchanged* where no mark went.
+
+  The same spec carries the repo's only viewport calibration for a drawn mark —
+  `insert.spec.ts` and `shape-tools.spec.ts` both defer a scripted-drag
+  insertion in their own headers. Writing it found a bug in its own demo: an
+  inline `<svg>` sits on a text baseline, so the pane's box was five pixels
+  taller than the picture, and a mark's fractions are fractions of the box.
 
 ## Open
 
-- Whether `@weasel-js/svg` is peered or inlined in labkit (arc 4).
+Nothing. The svg peer-or-inline question closed with arc 4.
