@@ -22,4 +22,21 @@ describe('haloFitsInBox', () => {
   it('exposes the halo width the check is derived from', () => {
     expect(CURSOR_HALO_WIDTH).toBe(2.6);
   });
+
+  it('reads an arc by its radii, not by its flags', () => {
+    // The naive version scraped every number out of `d`, so the rotation and
+    // the two 0/1 flags read as coordinates and every arc failed at once.
+    const disc = 'M 12 8.8 A 3.2 3.2 0 1 0 12 15.2 A 3.2 3.2 0 1 0 12 8.8 Z';
+    expect(haloFitsInBox(glyph(24, disc))).toBe(true);
+  });
+
+  it('bounds an arc by its true extent, not just its endpoints', () => {
+    // Endpoints sit at x=21 (inside), but the disc reaches x=24.2.
+    const offRight = 'M 21 8.8 A 3.2 3.2 0 1 0 21 15.2 A 3.2 3.2 0 1 0 21 8.8 Z';
+    expect(haloFitsInBox(glyph(24, offRight))).toBe(false);
+  });
+
+  it('refuses a relative command rather than mismeasuring it', () => {
+    expect(() => haloFitsInBox(glyph(24, 'M 5 5 l 6 6 Z'))).toThrow(/relative/);
+  });
 });

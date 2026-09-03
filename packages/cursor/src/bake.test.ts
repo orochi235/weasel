@@ -39,10 +39,26 @@ describe('bakeCursor', () => {
     expect(decodeURIComponent(uri)).toContain('#141418');
   });
 
-  it('paints the halo behind the fill on every ink path', () => {
+  it('draws every halo before any ink', () => {
+    // Not cosmetic: with each path stroking its own halo, a later path's halo
+    // cuts a white trench through an earlier path's fill where they overlap.
     const svg = decodeURIComponent(bakeCursor(PENCIL, {}));
-    expect(svg).toContain('paint-order="stroke fill"');
-    expect(svg).toContain('stroke-width="2.6"');
+    const lastHalo = svg.lastIndexOf(`stroke="#ffffff" stroke-width="2.6"`);
+    const firstInk = svg.indexOf(`fill="#141418"`);
+    expect(lastHalo).toBeGreaterThan(-1);
+    expect(firstInk).toBeGreaterThan(lastHalo);
+  });
+
+  it('widens a stroke member by the halo width in the halo pass', () => {
+    const handled: CursorGlyph = {
+      box: 24,
+      hotspot: [12, 12],
+      paths: [{ role: 'stroke', d: 'M 6 6 L 18 18', width: 1.6 }],
+    };
+    const svg = decodeURIComponent(bakeCursor(handled, {}));
+    // 1.6 of ink needs 1.6 + 2.6 of halo to keep 1.3 proud on either side.
+    expect(svg).toContain('stroke-width="4.2"');
+    expect(svg).toContain(`stroke="#141418" stroke-width="1.6"`);
   });
 
   it('declares the requested size on the svg element', () => {

@@ -13,13 +13,44 @@ export interface BakeOptions {
   readonly fallback?: string;
 }
 
-function renderPath(p: CursorPath): string {
+/**
+ * The halo pass. Every silhouette member is drawn once, wide, in halo colour
+ * before any ink lands.
+ *
+ * It has to be a separate pass rather than a per-path `paint-order`: with each
+ * path stroking its own halo, a later path's halo cuts a white trench through
+ * an earlier path's fill wherever the two overlap. One pass under everything
+ * gives the glyph a single continuous outline instead.
+ */
+function renderHalo(p: CursorPath): string {
   switch (p.role) {
     case 'ink':
+    case 'accent':
       return (
-        `<path d="${p.d}" fill="${CURSOR_INK}" stroke="${CURSOR_HALO}"` +
-        ` stroke-width="${CURSOR_HALO_WIDTH}" stroke-linejoin="round"` +
-        ` paint-order="stroke fill"/>`
+        `<path d="${p.d}" fill="${CURSOR_HALO}" stroke="${CURSOR_HALO}"` +
+        ` stroke-width="${CURSOR_HALO_WIDTH}" stroke-linejoin="round"/>`
+      );
+    case 'stroke':
+      return (
+        `<path d="${p.d}" fill="none" stroke="${CURSOR_HALO}"` +
+        ` stroke-width="${p.width + CURSOR_HALO_WIDTH}"` +
+        ` stroke-linecap="round" stroke-linejoin="round"/>`
+      );
+    // A detail IS halo-coloured and sits on top of the ink; it has no halo.
+    case 'detail':
+      return '';
+  }
+}
+
+function renderInk(p: CursorPath): string {
+  switch (p.role) {
+    case 'ink':
+      return `<path d="${p.d}" fill="${CURSOR_INK}"/>`;
+    case 'stroke':
+      return (
+        `<path d="${p.d}" fill="none" stroke="${CURSOR_INK}"` +
+        ` stroke-width="${p.width}" stroke-linecap="round"` +
+        ` stroke-linejoin="round"/>`
       );
     case 'detail':
       return (
@@ -46,8 +77,8 @@ export function bakeCursor(glyph: CursorGlyph, opts: BakeOptions = {}): string {
         `would drop the image and silently fall back. Use the painted tier.`,
     );
   }
-  // Paths emit in source order, which is z-order.
-  const body = glyph.paths.map(renderPath).join('');
+  // Halos first, then ink; within each pass, source order is z-order.
+  const body = glyph.paths.map(renderHalo).join('') + glyph.paths.map(renderInk).join('');
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"` +
     ` viewBox="0 0 ${glyph.box} ${glyph.box}">${body}</svg>`;

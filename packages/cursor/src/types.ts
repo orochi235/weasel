@@ -12,8 +12,10 @@ export interface CursorGlyph {
 }
 
 export type CursorPath =
-  /** The silhouette. Filled in ink, stroked in halo behind the fill. */
+  /** A filled part of the silhouette. */
   | { readonly role: 'ink'; readonly d: string }
+  /** An unfilled part of the silhouette — a handle, a wire, an arc. */
+  | { readonly role: 'stroke'; readonly d: string; readonly width: number }
   /** A division inside the silhouette, drawn in the halo color. */
   | { readonly role: 'detail'; readonly d: string; readonly width: number }
   /** A literal color, for glyphs that carry a swatch. */
@@ -35,21 +37,82 @@ export const CURSOR_HALO_WIDTH = 2.6;
  */
 export const CURSOR_MAX_CSS_PX = 128;
 
-/** Every coordinate pair in a `d` string. Enough for the extent check; these
- *  are authored paths in a known dialect, not arbitrary user input. */
-function coords(d: string): number[] {
-  return (d.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
+/**
+ * Axis-aligned bounds of an authored `d` string.
+ *
+ * Command-aware on purpose. Scraping every number out of the string instead
+ * reads an arc's radii and its three flags as coordinates, which reports a
+ * bogus `0` for every `A` ever written.
+ *
+ * An arc is bounded by the circle it lies on: its centre is recovered from the
+ * endpoints and radius, then the whole circle is admitted. Expanding the arc's
+ * *endpoint* by the radii instead over-reports whenever an endpoint sits at an
+ * extreme of the circle, which is exactly where the half-circle idiom these
+ * glyphs use puts it.
+ *
+ * The authored dialect is absolute `M`/`L`/`A`/`Z` with circular arcs. A
+ * relative command would be measured as if absolute and silently under-report,
+ * so it throws.
+ */
+function extent(d: string): { min: number; max: number } {
+  let min = Number.POSITIVE_INFINITY;
+  let max = Number.NEGATIVE_INFINITY;
+  let cx = 0;
+  let cy = 0;
+  const see = (v: number) => {
+    if (v < min) min = v;
+    if (v > max) max = v;
+  };
+  for (const [, cmd, args] of d.matchAll(/([A-Za-z])([^A-Za-z]*)/g)) {
+    if (cmd !== cmd.toUpperCase()) {
+      throw new Error(`cursor glyph path uses a relative command '${cmd}': ${d}`);
+    }
+    const nums = (args.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
+    if (cmd === 'Z') continue;
+    if (cmd === 'A') {
+      for (let i = 0; i + 7 <= nums.length; i += 7) {
+        const [rx, ry, , largeArc, sweep, x, y] = nums.slice(i, i + 7);
+        const r = Math.max(rx, ry);
+        const dx = x - cx;
+        const dy = y - cy;
+        const half = Math.hypot(dx, dy) / 2;
+        // Centre sits off the chord midpoint by this much, perpendicular to it.
+        const off = Math.sqrt(Math.max(0, r * r - half * half));
+        const sign = largeArc === sweep ? -1 : 1;
+        const ux = half > 0 ? -dy / (half * 2) : 0;
+        const uy = half > 0 ? dx / (half * 2) : 0;
+        const ox = (cx + x) / 2 + sign * off * ux;
+        const oy = (cy + y) / 2 + sign * off * uy;
+        see(ox - r);
+        see(ox + r);
+        see(oy - r);
+        see(oy + r);
+        cx = x;
+        cy = y;
+      }
+      continue;
+    }
+    // M and L: plain coordinate pairs.
+    for (let i = 0; i + 2 <= nums.length; i += 2) {
+      cx = nums[i];
+      cy = nums[i + 1];
+      see(cx);
+      see(cy);
+    }
+  }
+  return { min, max };
 }
 
 /**
- * True when every authored coordinate sits at least half a halo stroke inside
- * the viewBox. A clipped halo is invisible at proof size and flattens the
- * glyph's outline at cursor size, so it is worth failing loudly at authoring
- * time rather than discovering it on a dark background.
+ * True when every authored path sits at least half a halo stroke inside the
+ * viewBox. A clipped halo is invisible at proof size and flattens the glyph's
+ * outline at cursor size, so it is worth failing loudly at authoring time
+ * rather than discovering it on a dark background.
  */
 export function haloFitsInBox(glyph: CursorGlyph): boolean {
   const margin = CURSOR_HALO_WIDTH / 2;
-  return glyph.paths.every((p) =>
-    coords(p.d).every((v) => v >= margin && v <= glyph.box - margin),
-  );
+  return glyph.paths.every((p) => {
+    const { min, max } = extent(p.d);
+    return min >= margin && max <= glyph.box - margin;
+  });
 }

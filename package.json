@@ -65,7 +65,9 @@
     "prepare": "npm run build",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "gen:icons": "node packages/ui/scripts/gen-icons.mjs"
+    "gen:icons": "node packages/ui/scripts/gen-icons.mjs",
+    "gen:cursors": "node packages/cursor/scripts/gen-cursors.mjs",
+    "proof:cursors": "node --import ./packages/cursor/scripts/ts-resolve.mjs packages/cursor/scripts/proof-cursors.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.1",
