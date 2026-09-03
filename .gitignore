@@ -31,3 +31,6 @@ tests/bench/results/latest.json
 .superpowers/
 .*-progress.jsonl
 CLAUDE.local.md
+
+# Compiled helper for the cursor probe (macOS only)
+packages/cursor/scripts/probe/warp
