@@ -1127,6 +1127,7 @@ export {
   ImageIcon,
   EyedropperIcon,
   LineIcon,
+  ArrowIcon,
   PolygonIcon,
   StarIcon,
   PencilIcon,

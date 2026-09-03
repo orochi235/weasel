@@ -13,6 +13,7 @@ export { default as EllipseIcon } from './EllipseIcon';
 export { default as ImageIcon } from './ImageIcon';
 export { default as EyedropperIcon } from './EyedropperIcon';
 export { default as LineIcon } from './LineIcon';
+export { default as ArrowIcon } from './ArrowIcon';
 export { default as PolygonIcon } from './PolygonIcon';
 export { default as StarIcon } from './StarIcon';
 export { default as PencilIcon } from './PencilIcon';

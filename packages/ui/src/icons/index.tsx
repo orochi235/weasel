@@ -10,7 +10,7 @@ export type { IconName } from './paths';
 // Re-exported here so consumers have one import site for the whole set.
 export {
   SelectIcon, LassoIcon, RectIcon, EllipseIcon, ImageIcon, EyedropperIcon,
-  LineIcon, PolygonIcon, StarIcon, PencilIcon, TextIcon, PenIcon, HandIcon,
+  LineIcon, ArrowIcon, PolygonIcon, StarIcon, PencilIcon, TextIcon, PenIcon, HandIcon,
   UnknownIcon,
 } from '@weasel-js/core';
 
