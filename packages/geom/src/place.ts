@@ -74,8 +74,7 @@ export function clampRectWithin(rect: Rect, boundary: Rect, padding = 0): Rect {
   };
 }
 
-/** Slide along the alignment axis until the overlay is inside. An overlay too
- *  big to fit pins to the boundary's leading edge, because the low clamp runs last. */
+/** Slide along the alignment axis until the overlay is inside. */
 function shiftAcross(rect: Rect, boundary: Rect, side: PlacementSide, padding: number): Rect {
   const vertical = side === 'top' || side === 'bottom';
   const size = vertical ? rect.width : rect.height;
