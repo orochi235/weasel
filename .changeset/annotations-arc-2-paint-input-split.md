@@ -1,5 +1,5 @@
 ---
-'@weasel-js/core': patch
+'@weasel-js/core': minor
 '@weasel-js/hud': patch
 ---
 
@@ -22,3 +22,5 @@ optional `input` for the element aim is measured against.
 `surface` for pixels. And `clientToWorld`'s first parameter widens to
 `HTMLElement`, which stops compiling for a consumer who annotated that parameter
 as `HTMLCanvasElement`; one who let it infer is unaffected.
+
+<!-- bump-approved: minor: Mike — the labkit annotations arcs 1-4 (a shared drawing surface, a mark store, the overlay, and capture/export) plus this split of a canvas's paint target from its input target, on top of ~30 patch changesets carrying new public surface across core, ui and labkit; called explicitly in conversation on 2026-09-03: "we were going to cut a 1.4.0-pre release" -->
