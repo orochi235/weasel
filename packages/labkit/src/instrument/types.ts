@@ -5,6 +5,7 @@ import type { ConfigSchema } from '../config/types';
 import type { ConfigField } from '../controls/types';
 import type { JobCapability, JobHandle } from '../job/types';
 import type { LoupeDeclaration } from '../loupe/types';
+import type { AnnotationsCapability } from '../annotations/types';
 import type { ToolCapability } from '../tools/types';
 
 /** What an instrument's `render` is handed: its state and config, the setters
@@ -140,6 +141,10 @@ export interface Instrument<TS = unknown, TC = unknown, TItem = unknown> {
   /** Tools this instrument offers. Declaring them gives the trial a palette
    *  region and its own tool slot. */
   tools?: ToolCapability;
+  /** Regions of this instrument that accept marks, and optionally what a mark
+   *  is allowed to mean. Declaring it is what makes the trial provide the
+   *  annotation overlay and its chrome. */
+  annotations?: AnnotationsCapability<TS, TC>;
   /** Magnification. `true` takes every default and re-draws the instrument's
    *  canvas layers through a zoomed camera; an instrument whose content is DOM
    *  gives a `render` that draws it again at a camera it is handed. A function
