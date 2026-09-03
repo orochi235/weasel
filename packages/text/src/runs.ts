@@ -37,9 +37,6 @@ export interface StyledRun {
    * a `baselineShift` and a `fontScale`, and naming either of those directly
    * overrides that half while leaving the other alone. The numbers are in
    * {@link SCRIPT_METRICS}.
-   *
-   * There is no node-level counterpart. A whole text node set as a superscript
-   * is a smaller node moved up, which the pose already says better.
    */
   script?: 'super' | 'sub';
   /**
