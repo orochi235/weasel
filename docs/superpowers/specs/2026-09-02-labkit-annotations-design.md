@@ -64,6 +64,11 @@ therefore works only by accident. Make it API:
   load-bearing for every clip and even-odd fill (`renderer/draw.ts`, bit split
   documented there) and nothing checks `getContextAttributes().stencil` today.
 
+The arc 2 spike carries a working prototype of the first two — `setTargetRect()`
+plus an `applyTarget()` inside `render()` — and two panes drawing into one buffer
+confirmed the scissor confines the frame clear. Take it as a starting point, not
+as the API: it has no stencil check and no guard test.
+
 Also worth costing here rather than discovering later: one renderer resized per
 pane per frame, against N renderers on one context. Mesh and text caches are
 per-renderer, so N renderers means N copies of every uploaded mesh and atlas on
@@ -89,16 +94,29 @@ takes a caller-supplied `clientToWorld` and uses its ref only for
 `addEventListener`, cursor and one `getBoundingClientRect`, so widening it to
 `HTMLElement` is a type change.
 
-**Start with a spike, not a spec:** mount a `<Canvas>` painting into an external
-canvas at a rect while taking input from a separate element, and confirm a drag
-lands at the right world coordinates. If a preview or chrome layer turns out to
-measure the canvas it paints into, the arc's shape changes — better to know
-before planning it.
+**The split holds — spiked 2026-09-02, in `apps/site/spike-arc2.tsx` and the
+`paintInto` / `inputElement` props behind it.** Two `SceneCanvas`es painted into
+one canvas at two rects on two cameras, each taking input from its own box.
+Drags landed at exactly the right world coordinates in both panes, and the
+selection handles, the drag ghost and the marquee all landed on the mark in the
+2× pane sitting 420px into the shared buffer. Nothing in the preview or chrome
+path measures the canvas it paints into: every DOM measurement in `Canvas.tsx`
+and `SceneCanvas.tsx` is either an input listener or a client→world conversion,
+and both follow the input element.
 
-If this arc fails, arc 3 still lands on `<CanvasView>` over a weasel-owned
-surface. The store does not care who owns the pixels. Note that `CanvasView` is
-marked `@experimental`, so that fallback means ratifying it public first, the way
-`CanvasExtensionApi` was.
+Two things the spike found:
+
+- **Each pane needs its own `<WeaselProvider isolate>`.** A shared
+  `<ActionsProvider>` lets only the newest canvas under it respond to input, and
+  the rest go dead — the kit warns in the console when it happens. The collision
+  is at the provider, so giving each pane its own input element does not prevent
+  it.
+- **`WeaselRenderer` gets `gl` alone here, never `canvas`.** Handed the element
+  it sizes it, so every co-tenant would resize the shared surface to its own
+  pane.
+
+The `<CanvasView>` fallback (arc 3 over a weasel-owned surface, which would have
+meant ratifying an `@experimental` component public) is no longer needed.
 
 ## Arc 3 — the labkit `annotations` capability
 
@@ -220,7 +238,5 @@ jsdom cannot see most of this, and a test that cannot fail is worse than none.
 ## Open
 
 - Whether one `WeaselRenderer` resized per pane beats N renderers on one context
-  (arc 1).
-- Whether arc 2's split survives contact with the preview and chrome layers.
-  The spike answers this.
+  (arc 1). The spike ran N, which works but duplicates every cache per pane.
 - Whether `@weasel-js/svg` is peered or inlined in labkit (arc 4).

@@ -165,6 +165,7 @@ export class WeaselRenderer {
   private heightCss: number;
   private dpr: number;
   private canvas: HTMLCanvasElement | null = null;
+  private targetRect: { x: number; y: number; width: number; height: number } | null = null;
   private readonly imageMinification: ImageMinification;
   private readonly flattenTolerance?: number;
   private readonly bakeBudget: number;
@@ -315,7 +316,43 @@ export class WeaselRenderer {
   }
 
   private applyViewport(): void {
+    if (this.targetRect) return;
     this.gl.viewport(0, 0, this.widthCss * this.dpr, this.heightCss * this.dpr);
+  }
+
+  /**
+   * Confine this renderer to a rect of its drawing buffer, in CSS pixels with
+   * the origin at the buffer's TOP-left (GL's own origin is bottom-left; the
+   * flip happens here). Pass null to go back to owning the whole buffer.
+   *
+   * Set this when the buffer is shared: it is what makes `render()`'s frame
+   * clear stop at the rect's edge instead of erasing every co-tenant's pixels.
+   */
+  setTargetRect(rect: { x: number; y: number; width: number; height: number } | null): void {
+    this.targetRect = rect;
+    if (!rect) {
+      this.gl.disable(this.gl.SCISSOR_TEST);
+      this.applyViewport();
+    }
+  }
+
+  /** Viewport + scissor for this frame. Re-applied inside `render()` because a
+   *  co-tenant on the same context moves both between our frames. */
+  private applyTarget(): void {
+    const gl = this.gl;
+    const t = this.targetRect;
+    if (!t) {
+      gl.disable(gl.SCISSOR_TEST);
+      gl.viewport(0, 0, this.widthCss * this.dpr, this.heightCss * this.dpr);
+      return;
+    }
+    const x = Math.round(t.x * this.dpr);
+    const w = Math.round(t.width * this.dpr);
+    const h = Math.round(t.height * this.dpr);
+    const y = gl.drawingBufferHeight - Math.round(t.y * this.dpr) - h;
+    gl.viewport(x, y, w, h);
+    gl.scissor(x, y, w, h);
+    gl.enable(gl.SCISSOR_TEST);
   }
 
   isContextLost(): boolean {
@@ -451,6 +488,7 @@ export class WeaselRenderer {
     // New frame: refill the dynamic-glyph synchronous bake budget.
     resetBakeBudget(this.bakeBudget);
     this.groupState.reset();
+    this.applyTarget();
     // Ensure all stencil bits are cleared regardless of any mask left over
     // from the previous frame's clip ops.
     gl.stencilMask(0xFF);

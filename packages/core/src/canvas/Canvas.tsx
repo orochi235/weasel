@@ -317,6 +317,22 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    */
   clientToWorld?: (canvas: HTMLCanvasElement, cx: number, cy: number) => [number, number];
 
+  /**
+   * SPIKE (arc 2). Paint into a caller-owned canvas at a rect instead of an
+   * element this component creates. `x`/`y` are the rect's top-left in that
+   * canvas's CSS pixels; `width`/`height` come from the existing props.
+   *
+   * Requires `inputElement`: with no element of its own, there is nowhere for
+   * pointer input, focus or the cursor to live.
+   */
+  paintInto?: { canvas: HTMLCanvasElement | null; x: number; y: number };
+  /**
+   * SPIKE (arc 2). The element pointer input, focus and cursor come from, and
+   * the element every client→world conversion measures. Only read alongside
+   * `paintInto`.
+   */
+  inputElement?: HTMLElement | null;
+
   // --- Visuals / DOM passthrough ---
   className?: string;
   style?: React.CSSProperties;
@@ -753,6 +769,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     boundsOf,
     pickEvery,
     clientToWorld,
+    paintInto,
+    inputElement,
     geometry = AUTO_POSE_DESCRIPTOR as unknown as PoseProjection<TPose>,
     className,
     style,
@@ -804,7 +822,20 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   const adapter = adapterProp;
 
+  // The element input comes from and every client→world conversion measures.
+  // Normally the `<canvas>` this component renders; under `paintInto` it is
+  // the caller's `inputElement` instead, which is the whole point of the split
+  // — nothing downstream of here asks which of the two it is holding.
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const detached = !!paintInto;
+  if (detached) {
+    canvasRef.current = (inputElement ?? null) as unknown as HTMLCanvasElement | null;
+  }
+  // Where pixels go. Split from `canvasRef` only when detached.
+  const paintTargetRef = useRef<HTMLCanvasElement | null>(null);
+  paintTargetRef.current = detached ? (paintInto.canvas ?? null) : null;
+  const paintRectRef = useRef<{ x: number; y: number } | null>(null);
+  paintRectRef.current = detached ? { x: paintInto.x, y: paintInto.y } : null;
 
   // Read by `hitTestExtras`, which is built once and must see live values.
   const helpersForLayersRef = useRef<CanvasHelpers<TPose> | null>(null);
@@ -927,7 +958,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   }, []);
 
   useImperativeHandle(ref, () => ({
-    element: canvasRef.current,
+    // Named rather than read off `canvasRef` so the handle rebuilds when a
+    // detached surface's input element arrives, which is a render later.
+    element: detached ? (inputElement as HTMLCanvasElement | null) : canvasRef.current,
     requestRedraw,
     subscribeFrame,
     registerLayer,
@@ -936,8 +969,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     setView,
     subscribeView,
     getPaintedVersion,
-  }), [canvasRef, requestRedraw, subscribeFrame, registerLayer, hitTestExtras,
-       getView, setView, subscribeView, getPaintedVersion]);
+  }), [canvasRef, detached, inputElement, requestRedraw, subscribeFrame, registerLayer,
+       hitTestExtras, getView, setView, subscribeView, getPaintedVersion]);
 
   // GL renderer (lazy-instantiated on first paint).
   const glRendererRef = useRef<WeaselRenderer | null>(null);
@@ -1321,8 +1354,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   };
 
   const paint = useCallback((): boolean => {
-    const c = canvasRef.current;
+    const c = paintTargetRef.current ?? canvasRef.current;
     if (!c) return false;
+    const rect = paintRectRef.current;
     const {
       layers: paintLayers, width: w, height: h, debugSink: sink,
       dpr: dprIn, layerVisibility: vis, layerOrder: order,
@@ -1351,7 +1385,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       try {
         renderer = new WeaselRenderer({
           gl: gl as WebGL2RenderingContext,
-          canvas: c,
+          // A shared buffer is the caller's to size. Handing the renderer the
+          // element would have every co-tenant resize it to its own pane.
+          ...(rect ? {} : { canvas: c }),
           width: w,
           height: h,
           dpr,
@@ -1373,6 +1409,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
         lastResizeRef.current = { w, h, dpr };
       }
     }
+
+    renderer.setTargetRect(rect ? { x: rect.x, y: rect.y, width: w, height: h } : null);
 
     const view = viewRef.current;
     const commands = drawLayers(
@@ -1426,6 +1464,60 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const effectiveStyle: React.CSSProperties | undefined = toolsCursor
     ? { ...style, cursor: toolsCursor }
     : style;
+
+  // Detached: the four handlers below are declared as JSX props on an element
+  // this component no longer renders, so attach them to the caller's instead.
+  // Everything else about pointer input already attaches to `canvasRef`, which
+  // is that same element.
+  const layersForMoveRef = useRef(layersWithDebug);
+  layersForMoveRef.current = layersWithDebug;
+  useEffect(() => {
+    if (!detached || !inputElement) return;
+    const el = inputElement;
+    const onDown = (): void => {
+      if (autoFocusOnPointerDown) el.focus();
+      pointerDownRef.current = true;
+    };
+    const onMove = (e: PointerEvent): void => {
+      if (pointerDownRef.current) return;
+      const view = viewRef.current;
+      const [worldX, worldY] = toWorld(
+        el as unknown as HTMLCanvasElement, e.clientX, e.clientY, view, clientToWorldRef.current,
+      );
+      const dims = dimsRef.current;
+      for (const layer of layersForMoveRef.current) {
+        layer.onUncapturedMove?.(worldX, worldY, e, view, dims);
+      }
+    };
+    const onUp = (): void => { pointerDownRef.current = false; };
+    const onLeave = (): void => {
+      pointerDownRef.current = false;
+      for (const layer of layersForMoveRef.current) layer.onUncapturedLeave?.();
+    };
+    const onMenu = (e: Event): void => e.preventDefault();
+    el.addEventListener('pointerdown', onDown);
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerup', onUp);
+    el.addEventListener('pointerleave', onLeave);
+    el.addEventListener('contextmenu', onMenu);
+    return () => {
+      el.removeEventListener('pointerdown', onDown);
+      el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerup', onUp);
+      el.removeEventListener('pointerleave', onLeave);
+      el.removeEventListener('contextmenu', onMenu);
+    };
+  }, [detached, inputElement, autoFocusOnPointerDown]);
+
+  // The cursor is a tool's, but under `paintInto` it has no element of ours to
+  // sit on. Written imperatively rather than by the caller, so a tool's cursor
+  // keeps working without the caller mirroring tool state.
+  useEffect(() => {
+    if (!detached || !inputElement) return;
+    inputElement.style.cursor = toolsCursor ?? '';
+  }, [detached, inputElement, toolsCursor]);
+
+  if (detached) return null;
 
   return (
     <>
