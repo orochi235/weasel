@@ -86,6 +86,7 @@ describe('the annotations capability', () => {
     expect(typeof kit.annotationToolInfo).toBe('function');
     expect(typeof kit.fitView).toBe('function');
     expect(kit.ANNOTATION_TOOLS.map((t) => t.id)).toContain('arrow');
+    expect(typeof kit.MarkList).toBe('function');
     expect(kit.DEFAULT_VIEW).toEqual({ zoom: 1, pan: { x: 0, y: 0 } });
   });
 });

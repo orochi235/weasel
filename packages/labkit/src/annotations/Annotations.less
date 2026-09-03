@@ -9,3 +9,54 @@
   height: var(--lk-anno-h);
   z-index: 2;
 }
+
+// The sidebar list of marks. One row per mark: what it is, where it is, what
+// it says, and whether it still describes the picture under it.
+.lk-mark-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-xs);
+}
+
+.lk-mark-list__empty {
+  color: var(--wzl-fg-muted);
+  font-size: var(--wzl-font-size-sm);
+}
+
+.lk-mark-list__row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-xs);
+  padding: var(--wzl-space-xs);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  background: var(--wzl-surface-raised);
+}
+
+.lk-mark-list__head {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-xs);
+  font-size: var(--wzl-font-size-sm);
+}
+
+.lk-mark-list__target {
+  color: var(--wzl-fg-muted);
+}
+
+.lk-mark-list__stale {
+  color: var(--wzl-warning);
+  font-size: var(--wzl-font-size-xs);
+  text-transform: uppercase;
+}
+
+.lk-mark-list__drop {
+  margin-left: auto;
+  background: none;
+  border: 0;
+  color: var(--wzl-fg-muted);
+  cursor: pointer;
+}

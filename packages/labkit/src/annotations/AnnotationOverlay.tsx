@@ -14,10 +14,16 @@ import type { Rect } from '../surface/rect';
 import { useSurfaceCanvas, useSurfaceOptional } from '../surface/useSurfaceTile';
 import type { WorldRect } from './frac';
 import { markCommands } from './paint';
-import { seenFrom } from './staleness';
+import { isStale, seenFrom } from './staleness';
 import type { MarkScene } from './store';
 import { ANNOTATION_WEASEL_TOOLS, annotationToolInfo } from './toolMap';
-import type { AnnotationData, AnnotationKind, AnnotationTarget, FracPoint } from './types';
+import type {
+  AnnotationData,
+  AnnotationKind,
+  AnnotationMeaning,
+  AnnotationTarget,
+  FracPoint,
+} from './types';
 import { fitView, toWeaselView } from './view';
 
 /** Props for `<AnnotationOverlay>`. */
@@ -30,6 +36,8 @@ export interface AnnotationOverlayProps {
   config: unknown;
   /** The trial's resolved tool slot. */
   activeToolId: string | null;
+  /** The instrument's vocabulary, for a status's colour. */
+  meaning?: AnnotationMeaning;
 }
 
 const sameRect = (a: Rect | null, b: Rect): boolean =>
@@ -73,7 +81,13 @@ function pointsOf(
  * rects are measured against; positioning it among the instrument's own DOM
  * would put it in whatever positioning context happened to be there.
  */
-export function AnnotationOverlay({ target, scene, config, activeToolId }: AnnotationOverlayProps) {
+export function AnnotationOverlay({
+  target,
+  scene,
+  config,
+  activeToolId,
+  meaning,
+}: AnnotationOverlayProps) {
   const surface = useSurfaceOptional();
   const canvas = useSurfaceCanvas();
   const [rect, setRect] = useState<Rect | null>(null);
@@ -123,8 +137,17 @@ export function AnnotationOverlay({ target, scene, config, activeToolId }: Annot
 
   const view: View = toWeaselView(target.view ?? fitView(target.content, { w: rect.w, h: rect.h }));
 
+  const keys = target.positionDependsOn ?? [];
+  const colorOf = (status: string | undefined): string | undefined =>
+    meaning?.statuses?.find((s) => s.id === status)?.color;
+
   const drawOne = (node: SceneNode<AnnotationData, 'marks', WorldRect>): DrawCommand[] =>
-    markCommands({ pose: node.pose, data: node.data }, target.content);
+    markCommands({ pose: node.pose, data: node.data }, target.content, {
+      color: colorOf(node.data.status),
+      // Read from the node rather than through the store's `isStale`, which
+      // wants a projected Annotation this path does not have.
+      stale: isStale(node.data.seen, config, keys),
+    });
 
   const factories: Record<string, InsertNodeFactory> = {};
   for (const weaselTool of ANNOTATION_WEASEL_TOOLS) {

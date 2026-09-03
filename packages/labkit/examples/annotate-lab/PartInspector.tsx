@@ -46,7 +46,9 @@ function Part({ angle, shading }: { angle: number; shading: Config['shading'] })
   );
 }
 
-/** The store is reached through a hook, not through chrome context. */
+/** The store is reached through a hook, not through chrome context. The
+ *  sidebar's own `Marks` panel is labkit's; this is a host reading the same
+ *  store for its own caption. */
 function MarkCount({ config }: { config: Config }) {
   const marks = useAnnotations();
   const all = marks.query();
@@ -89,6 +91,15 @@ export const PartInspector = defineInstrument<Record<string, never>, Config>({
   initialState: () => ({}),
   render: (ctx) => <InspectorBody config={ctx.config} />,
   annotations: {
+    // What a mark is allowed to mean here. A status carries its own colour, so
+    // a fixed defect stops shouting without anyone re-drawing it.
+    meaning: {
+      statuses: [
+        { id: 'open', label: 'Open', color: '#e5484d' },
+        { id: 'confirmed', label: 'Confirmed', color: '#f5a524' },
+        { id: 'fixed', label: 'Fixed', color: '#30a46c' },
+      ],
+    },
     targets: () => [
       // `shading` moves only the right pane's picture, so only that target
       // declares it: a mark on the left survives a change that would strand

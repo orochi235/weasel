@@ -24,6 +24,17 @@ export interface PaintableMark {
   data: AnnotationData;
 }
 
+/** How a mark is drawn, as opposed to where. Resolved by the overlay from the
+ *  instrument's vocabulary and the mark's own staleness. */
+export interface MarkStyle {
+  /** The status's colour, or the default. */
+  color?: string;
+  /** A mark whose stored position no longer describes the picture. Drawn
+   *  dashed rather than hidden: it still describes *something*, and dropping
+   *  it would lose it. */
+  stale?: boolean;
+}
+
 const toWorld = (p: FracPoint, content: { w: number; h: number }) => ({
   x: p.x * content.w,
   y: p.y * content.h,
@@ -57,12 +68,18 @@ function polyline(points: { x: number; y: number }[]): Path {
  * that a bounding box cannot describe — a line's ends, a stroke's path — comes
  * from `data.points`, which is in fractions like the bounds.
  */
-export function markCommands(m: PaintableMark, content: { w: number; h: number }): DrawCommand[] {
+export function markCommands(
+  m: PaintableMark,
+  content: { w: number; h: number },
+  style: MarkStyle = {},
+): DrawCommand[] {
+  const color = style.color ?? MARK_COLOR;
   const stroke: Stroke = {
-    paint: { color: MARK_COLOR },
+    paint: { color },
     width: MARK_WIDTH,
     cap: 'round',
     join: 'round',
+    ...(style.stale ? { dash: [6, 4] } : {}),
   };
 
   switch (m.data.kind) {
@@ -104,7 +121,7 @@ export function markCommands(m: PaintableMark, content: { w: number; h: number }
           undefined,
           undefined,
           {
-            fill: { color: MARK_COLOR },
+            fill: { color },
           },
         ),
       ];

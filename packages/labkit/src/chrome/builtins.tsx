@@ -10,6 +10,7 @@ import {
   ZoomInIcon,
   ZoomOutIcon,
 } from '@weasel-js/ui';
+import { MarkList } from '../annotations/MarkList';
 import { ANNOTATION_TOOLS } from '../annotations/toolMap';
 import type { ControlRenderer } from '../config/types';
 import { ControlPanel } from '../controls/ControlPanel';
@@ -35,7 +36,9 @@ export function builtinContributions(
   const out: TrialContribution[] = [];
   const zoom = ctx.zoom;
 
-  if (instrument.undo != null) {
+  // Weasel history is the undo authority for marks, so declaring `annotations`
+  // gets the buttons whether or not the instrument also declares `undo`.
+  if (instrument.undo != null || instrument.annotations != null) {
     out.push({
       id: 'undo',
       region: 'toolbar',
@@ -141,6 +144,17 @@ export function builtinContributions(
       group: 'view',
       end: true,
       render: () => <FpsMeter />,
+    });
+  }
+
+  if (instrument.annotations != null) {
+    out.push({
+      id: 'marks',
+      region: 'sidebar',
+      item: {
+        title: 'Marks',
+        body: <MarkList meaning={instrument.annotations.meaning} config={ctx.config} />,
+      },
     });
   }
 

@@ -100,3 +100,26 @@ describe('markCommands', () => {
     expect(markCommands(mark('text'), CONTENT)).toEqual([]);
   });
 });
+
+describe('markCommands styling', () => {
+  it('takes a status colour over the default', () => {
+    const [cmd] = markCommands(mark('rect'), CONTENT, { color: '#30a46c' });
+    expect((cmd as { stroke?: { paint?: { color?: string } } }).stroke?.paint?.color).toBe(
+      '#30a46c',
+    );
+  });
+
+  it('dashes a stale mark rather than hiding it', () => {
+    // A stale mark still describes something; dropping it would lose it.
+    const [fresh] = markCommands(mark('rect'), CONTENT);
+    const [stale] = markCommands(mark('rect'), CONTENT, { stale: true });
+    expect((fresh as { stroke?: { dash?: number[] } }).stroke?.dash).toBeUndefined();
+    expect((stale as { stroke?: { dash?: number[] } }).stroke?.dash).toEqual([6, 4]);
+  });
+
+  it("colours a text mark's glyphs too, not only the outlines", () => {
+    const [cmd] = markCommands(mark('text', { title: 'x' }), CONTENT, { color: '#30a46c' });
+    const runs = (cmd as { runs: { fill?: { color?: string } }[] }).runs;
+    expect(runs[0]?.fill?.color).toBe('#30a46c');
+  });
+});

@@ -88,7 +88,9 @@ export {
 } from './annotations/AnnotationsContext';
 export type { AnnotationTargetsProps } from './annotations/AnnotationTargets';
 export { AnnotationTargets } from './annotations/AnnotationTargets';
-export type { PaintableMark } from './annotations/paint';
+export type { MarkListProps } from './annotations/MarkList';
+export { MarkList } from './annotations/MarkList';
+export type { MarkStyle, PaintableMark } from './annotations/paint';
 export { markCommands } from './annotations/paint';
 export type { AnnotationToolInfo } from './annotations/toolMap';
 export {

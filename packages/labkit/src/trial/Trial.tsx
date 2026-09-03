@@ -153,6 +153,20 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
     if (saveCap) saveCap.save(doc as never);
     else updateTrialAnnotations(record.id, doc);
   };
+  // Only when the pair flips, which is rare: bumping React state on every
+  // scene notification would re-render the trial on every frame of a drag,
+  // which is the thing the debounce below exists to avoid.
+  const [markMoves, setMarkMoves] = useState({ undo: false, redo: false });
+  useEffect(() => {
+    if (!annotationsCap) return;
+    const read = (): void => {
+      const next = { undo: annotations.canUndo(), redo: annotations.canRedo() };
+      setMarkMoves((prev) => (prev.undo === next.undo && prev.redo === next.redo ? prev : next));
+    };
+    read();
+    return annotations.subscribe(read);
+  }, [annotations, annotationsCap]);
+
   useEffect(() => {
     if (!annotationsCap) return;
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -242,24 +256,38 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
     job: jobCap ? job : undefined,
   };
 
-  const undoBindings: UndoBindings | undefined = undoCap
-    ? {
-        canUndo: record.undoStack.past.length > 0,
-        canRedo: record.undoStack.future.length > 0,
-        undo: () => {
-          const result = undoUndo(record.undoStack, structuredClone(record.state));
-          if (!result) return;
-          updateTrialState(record.id, result.snapshot as never);
-          updateTrialUndoStack(record.id, result.stack);
-        },
-        redo: () => {
-          const result = undoRedo(record.undoStack, structuredClone(record.state));
-          if (!result) return;
-          updateTrialState(record.id, result.snapshot as never);
-          updateTrialUndoStack(record.id, result.stack);
-        },
-      }
-    : undefined;
+  // Marks are undone through weasel history, not through labkit's snapshot
+  // stack — the spec's rule, and the reason a mark scene is the truth. A trial
+  // declaring both takes the marks first: the most recent thing the user did
+  // is what undo is for, and only a mark change moves the mark history.
+  const undoState = () => {
+    const result = undoUndo(record.undoStack, structuredClone(record.state));
+    if (!result) return;
+    updateTrialState(record.id, result.snapshot as never);
+    updateTrialUndoStack(record.id, result.stack);
+  };
+  const redoState = () => {
+    const result = undoRedo(record.undoStack, structuredClone(record.state));
+    if (!result) return;
+    updateTrialState(record.id, result.snapshot as never);
+    updateTrialUndoStack(record.id, result.stack);
+  };
+
+  const undoBindings: UndoBindings | undefined =
+    undoCap || annotationsCap
+      ? {
+          canUndo: markMoves.undo || (undoCap ? record.undoStack.past.length > 0 : false),
+          canRedo: markMoves.redo || (undoCap ? record.undoStack.future.length > 0 : false),
+          undo: () => {
+            if (annotationsCap && annotations.undo()) return;
+            if (undoCap) undoState();
+          },
+          redo: () => {
+            if (annotationsCap && annotations.redo()) return;
+            if (undoCap) redoState();
+          },
+        }
+      : undefined;
 
   const loupeCap = useMemo(() => {
     const declared = instrument.loupe;

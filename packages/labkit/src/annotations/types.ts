@@ -27,6 +27,9 @@ export type AnnotationKind = 'stroke' | 'line' | 'arrow' | 'rect' | 'ellipse' | 
 export interface AnnotationStatus {
   id: string;
   label: string;
+  /** What a mark in this status is drawn in. Omitted, it takes the default
+   *  mark colour — a status is allowed to be a label and nothing more. */
+  color?: string;
 }
 
 /** The optional meaning tier: what a mark means, as opposed to where it is.

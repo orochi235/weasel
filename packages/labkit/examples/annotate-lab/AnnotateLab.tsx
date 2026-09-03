@@ -1,4 +1,4 @@
-import { Lab } from '@weasel-js/labkit';
+import { Lab, localStorageAdapter } from '@weasel-js/labkit';
 import { PartInspector } from './PartInspector';
 
 export function AnnotateLab() {
@@ -6,6 +6,8 @@ export function AnnotateLab() {
     <Lab
       instruments={[PartInspector]}
       defaultInstrument="PartInspector"
+      storage={localStorageAdapter}
+      storageKey="annotate-lab"
       mode="dark"
       title="Annotate Lab"
     />

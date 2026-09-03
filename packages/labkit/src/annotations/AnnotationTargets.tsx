@@ -27,6 +27,7 @@ export function AnnotationTargets({
           key={t.id}
           target={t}
           scene={annotations.sceneFor(t.id)}
+          meaning={capability.meaning}
           config={config}
           activeToolId={activeToolId}
         />
