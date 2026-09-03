@@ -19,6 +19,7 @@ export {
 export {
   PathBuilder,
   polygonFromPoints,
+  polylineFromPoints,
   rectPath,
   ellipsePath,
   regularPolygonPath,

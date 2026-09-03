@@ -686,6 +686,7 @@ export {
   PathBuilder,
   pathFromD,
   polygonFromPoints,
+  polylineFromPoints,
   rectPath,
   ellipsePath,
   regularPolygonPath,

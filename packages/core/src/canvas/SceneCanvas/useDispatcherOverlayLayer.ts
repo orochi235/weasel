@@ -24,6 +24,7 @@ import { worldToScreen } from 'core/viewport/viewTransform';
 import type { Dispatcher } from 'interactions/dispatcher/dispatcher';
 import {
   polygonFromPoints,
+  polylineFromPoints,
   rectPath,
   ellipsePath,
   linePath,
@@ -190,11 +191,11 @@ export function useDispatcherOverlayLayer(args: {
                 );
                 break;
               case 'pencil': {
-                // Open polyline preview — matches the commit-time pencil
-                // factory's polygonFromPoints fallback (the schneider-fit
-                // path is post-commit refinement, not a live primitive).
+                // Genuinely open: `polygonFromPoints` closes the path, and the
+                // closing edge from the last sample back to the first reads as
+                // a marquee rather than as the stroke being drawn.
                 if (geom.samples.length < 2) break;
-                pathCmd = polygonFromPoints(projectPoints(geom.samples));
+                pathCmd = polylineFromPoints(projectPoints(geom.samples));
                 break;
               }
             }
@@ -214,7 +215,9 @@ export function useDispatcherOverlayLayer(args: {
             // at the AABB corner) and for center mode (dot marks the
             // growth axis). 4 CSS-px radius, same stroke color as the
             // ghost so it reads as part of the chrome.
-            if (ov.anchorPoint) {
+            // Not for a freehand stroke: the dot marks a growth axis, and a
+            // pencil has none — it just leaves a blob where the stroke began.
+            if (ov.anchorPoint && ov.shape !== 'pencil') {
               const anchorScreen = projectPoint(ov.anchorPoint.x, ov.anchorPoint.y);
               out.push({
                 kind: 'path',

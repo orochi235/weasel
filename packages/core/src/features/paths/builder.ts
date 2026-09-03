@@ -95,6 +95,23 @@ export function rectPath(x: number, y: number, width: number, height: number): R
   return { kind: 'rect', x, y, width, height };
 }
 
+/** Build an open polyline from a flat list of points — the same geometry as
+ *  {@link polygonFromPoints} without the closing edge. A freehand stroke and a
+ *  measurement line want this; a region wants the closed one. */
+export function polylineFromPoints(
+  points: readonly { x: number; y: number }[],
+): PolygonPath | RectPath {
+  const b = new PathBuilder();
+  const first = points[0];
+  if (!first) return rectPath(0, 0, 0, 0);
+  b.moveTo(first.x, first.y);
+  for (let i = 1; i < points.length; i++) {
+    const p = points[i];
+    if (p) b.lineTo(p.x, p.y);
+  }
+  return b.build();
+}
+
 /** Build a closed polygon from a flat list of points. */
 export function polygonFromPoints(
   points: readonly { x: number; y: number }[],
