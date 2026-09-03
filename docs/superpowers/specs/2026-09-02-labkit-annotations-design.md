@@ -1,7 +1,7 @@
 # Annotations: drawing on a lab surface
 
 **Five arcs, two of them in `core` and independently useful. Arcs 1 and 3 are
-built, arc 2 is spiked; arcs 4 and 5 are unbuilt.**
+built and closed, arc 2 is spiked; arcs 4 and 5 are unbuilt.**
 
 For whoever picks up arc 1 or arc 2. It assumes you know weasel's renderer and
 `SceneCanvas` and labkit's instrument/capability model, and nothing about the
@@ -131,11 +131,10 @@ meant ratifying an `@experimental` component public) is no longer needed.
 
 ## Arc 3 — the labkit `annotations` capability
 
-**Built, in three passes: the declaration and the store (3a/3b), then the
-overlay and the palette bridge (3c). What is left is 3d — persistence, undo
-delegation and the meaning chrome; nothing reads `AnnotationMeaning` yet and
-marks do not survive a reload.** Four things below were decided differently in
-the building, each for a reason the design could not see:
+**Built and closed, in four passes: the declaration and the store (3a/3b), the
+overlay and the palette bridge (3c), then persistence, undo and meaning (3d).**
+Five things below were decided differently in the building, each for a reason
+the design could not see:
 
 - **One scene per target, not one scene with a `target` field.** A pane's
   hit-test, marquee and paint all walk the whole scene they are handed and take
@@ -150,6 +149,20 @@ the building, each for a reason the design could not see:
 - **`subscribe(fn)` takes no change payload.** `Scene.subscribe` is a bare
   invalidation, so a delta would have to be synthesized by diffing snapshots on
   every mutation — a cost every consumer pays for information most do not use.
+- **Marks get a trial slot of their own, not `record.state`.** That slot is the
+  *instrument's* state, typed `TS`; labkit writing its own payload into it
+  corrupts a shape the instrument owns. `TrialRecord.annotations` is additive
+  and optional, so a document from before the arc lacks it and needs no
+  migration. An instrument may declare `annotations.storage` and keep its marks
+  itself, which is what lets a consumer hold them in a format it already owns.
+
+Undo is routed, not reimplemented: each target's scene owns its own stack, and
+`MarkHistory` keeps the order changes arrived in so "take back the last thing I
+did" crosses panes. It reads each scene's `historyIndex()` rather than its
+subscribe callback — a scene notifies on ephemeral changes that are not
+history, and a pane's own Cmd+Z has to *move* the ordering rather than append
+to it. Undo history itself is not persisted; `Scene.serializeHistory()` exists,
+but a reload restoring an undo stack over marks is a separate decision.
 
 A new optional field on `Instrument`, wired in `Trial.tsx` and
 `chrome/builtins.tsx` — capabilities are hardcoded fields, not a registry, so
@@ -207,8 +220,8 @@ weasel `ToolDef`s with bindings, per the reference implementations named in
 insert action minting the node. Not a tool running its own `useDragRect` and
 committing a batch.
 
-Storage — **not built; 3d.** It defaults to `record.state`, the only persisted
-instrument slot. Two
+Storage defaults to `TrialRecord.annotations` (see the deviation above), written
+on a trailing debounce and flushed on unmount. Two
 constraints come with it. `Instrument.serialize` / `deserialize` never run —
 `registerSerializers` has no callers, so state is `JSON.stringify`d raw — which
 means whatever annotations write there must be JSON-safe; `scene.toJSON()`
