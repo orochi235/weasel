@@ -1,3 +1,5 @@
+export type { MarkDrawOptions } from './drawOne';
+export { createMarkDrawOne } from './drawOne';
 export type { WorldRect } from './frac';
 export { fracContains, fracIntersects, fracToWorld, roundFrac, worldToFrac } from './frac';
 export type { HistoryScene } from './history';

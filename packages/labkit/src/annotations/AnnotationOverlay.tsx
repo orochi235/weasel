@@ -1,9 +1,7 @@
 import {
-  type DrawCommand,
   type InsertNodeFactory,
   SceneCanvas,
   type SceneCanvasApi,
-  type SceneNode,
   useActiveToolContext,
   type View,
   WeaselProvider,
@@ -12,9 +10,9 @@ import { type CSSProperties, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Rect } from '../surface/rect';
 import { useSurfaceCanvas, useSurfaceOptional } from '../surface/useSurfaceTile';
+import { createMarkDrawOne } from './drawOne';
 import type { WorldRect } from './frac';
-import { markCommands } from './paint';
-import { isStale, seenFrom } from './staleness';
+import { seenFrom } from './staleness';
 import type { MarkScene } from './store';
 import { ANNOTATION_WEASEL_TOOLS, annotationToolInfo } from './toolMap';
 import type {
@@ -137,17 +135,12 @@ export function AnnotationOverlay({
 
   const view: View = toWeaselView(target.view ?? fitView(target.content, { w: rect.w, h: rect.h }));
 
-  const keys = target.positionDependsOn ?? [];
-  const colorOf = (status: string | undefined): string | undefined =>
-    meaning?.statuses?.find((s) => s.id === status)?.color;
-
-  const drawOne = (node: SceneNode<AnnotationData, 'marks', WorldRect>): DrawCommand[] =>
-    markCommands({ pose: node.pose, data: node.data }, target.content, {
-      color: colorOf(node.data.status),
-      // Read from the node rather than through the store's `isStale`, which
-      // wants a projected Annotation this path does not have.
-      stale: isStale(node.data.seen, config, keys),
-    });
+  const drawOne = createMarkDrawOne({
+    content: target.content,
+    positionDependsOn: target.positionDependsOn,
+    config,
+    meaning,
+  });
 
   const factories: Record<string, InsertNodeFactory> = {};
   for (const weaselTool of ANNOTATION_WEASEL_TOOLS) {
