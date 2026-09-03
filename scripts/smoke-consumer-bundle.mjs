@@ -33,11 +33,25 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-/** Published packages, in dependency order. */
-const PACKAGES = ['geom', 'gestures', 'history', 'modes', 'theme', 'font', 'paint', 'text', 'audio', 'core', 'svg', 'd3', 'ui', 'hud', 'weasel-js', 'labkit'];
+/**
+ * Every package directory under `packages/`, read off disk rather than listed
+ * here. A hand-kept list drifts, and it drifts silently in the direction that
+ * matters: a package missing from it is not packed, so an importer of it fails
+ * to resolve and the whole audit reports a defect in the *importer*. `loupe`
+ * and `bidi` were both missing this way.
+ *
+ * Order does not matter — every package is packed before anything is bundled.
+ * The private `weasel-js` alias is included on purpose; the alias audit reads
+ * it.
+ */
+const PACKAGES = (await readdir(join(repoRoot, 'packages'), { withFileTypes: true }))
+  .filter((e) => e.isDirectory() && existsSync(join(repoRoot, 'packages', e.name, 'package.json')))
+  .map((e) => e.name)
+  .sort();
 
 const fail = (msg, detail) => {
   console.error(`[smoke] ${msg}\n`);
