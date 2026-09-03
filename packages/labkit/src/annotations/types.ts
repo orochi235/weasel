@@ -91,6 +91,33 @@ export type AnnotationPatch = Partial<
   Pick<Annotation, 'frac' | 'points' | 'title' | 'status' | 'tags' | 'meta'>
 >;
 
+/** A target's own picture, handed over for an export to draw marks on top of.
+ *  labkit cannot rasterize it: it is the consumer's DOM. `svg` is the one that
+ *  keeps the export vector all the way through. */
+export type CaptureSource =
+  | { kind: 'svg'; markup: string }
+  | { kind: 'image'; src: string }
+  | { kind: 'canvas'; canvas: HTMLCanvasElement };
+
+/** What an export produces, and at what resolution. */
+export interface CaptureOptions {
+  /** `png` rasterizes; `svg` stays vector, which needs the base to be one too
+   *  — a raster base embeds as an `<image>`. Default `png`. */
+  format?: 'png' | 'svg';
+  /** Output pixels per unit of the target's content box. Default 2. */
+  scale?: number;
+}
+
+/** A finished export. `width`/`height` are the output's, not the content
+ *  box's — `content × scale`. */
+export interface CaptureResult {
+  target: string;
+  blob: Blob;
+  format: 'png' | 'svg';
+  width: number;
+  height: number;
+}
+
 /** What the store needs to know about a target: enough to convert a position
  *  and to date a mark. `AnnotationTarget` adds what only the overlay reads. */
 export interface AnnotationTargetInfo {
@@ -102,6 +129,13 @@ export interface AnnotationTargetInfo {
    *  same picture. labkit snapshots and compares them without knowing what any
    *  of them mean. */
   positionDependsOn?: readonly string[];
+  /** The target's own picture, for an export to draw marks over. A target
+   *  declaring none exports its marks on transparency, which fails visibly
+   *  rather than producing a blank brick.
+   *
+   *  Here rather than on `AnnotationTarget` because the store is what calls
+   *  it: `ref` and `view` are the React-shaped half only the overlay reads. */
+  base?: () => CaptureSource | Promise<CaptureSource>;
 }
 
 /** One region of an instrument that accepts marks. */
@@ -127,6 +161,10 @@ export interface AnnotationsCapability<TS = unknown, TC = unknown> {
   targets: (state: TS, config: TC) => readonly AnnotationTarget[];
   meaning?: AnnotationMeaning;
   storage?: AnnotationStorage;
+  /** Fires after every finished export, labkit's own chrome included. A
+   *  notification, not an interception: a host wanting its own flow calls
+   *  `capture()` from its own UI, which is the surface the chrome uses. */
+  onCapture?: (result: CaptureResult) => void;
 }
 
 /** A persisted mark set. Versioned by this arc rather than by labkit's
@@ -144,6 +182,10 @@ export interface AnnotationsApi {
    *  because a pane's hit-test, marquee and paint walk the whole scene they
    *  are given: a shared one would put a neighbour's marks under the pointer. */
   sceneFor(target: string): MarkScene;
+  /** The targets the instrument declares, in declaration order. Chrome needs
+   *  the list and cannot get it from the capability, which wants instrument
+   *  state the chrome context does not carry. */
+  targets(): readonly AnnotationTargetInfo[];
   get(id: string): Annotation | undefined;
   /** Every mark matching the filters, in scene order. Omit `q` for all. */
   query(q?: AnnotationQuery): Annotation[];

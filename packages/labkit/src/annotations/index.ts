@@ -7,7 +7,7 @@ export { MarkList } from './MarkList';
 export type { MarkStyle, PaintableMark } from './paint';
 export { markCommands } from './paint';
 export { isStale, seenFrom } from './staleness';
-export type { AnnotationStoreOptions, MarkScene } from './store';
+export type { AnnotationStoreOptions, CaptureDeps, MarkScene } from './store';
 export { annotationsFromJSON, createAnnotationScene, createAnnotationStore } from './store';
 export type {
   Annotation,
@@ -22,6 +22,9 @@ export type {
   AnnotationsCapability,
   AnnotationTarget,
   AnnotationTargetInfo,
+  CaptureOptions,
+  CaptureResult,
+  CaptureSource,
   FracPoint,
   FracRect,
   SerializedAnnotations,

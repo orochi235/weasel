@@ -135,11 +135,19 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
   // One store for the trial's lifetime. Marks do not survive a reload yet —
   // the storage slot is 3d.
   const annotationsRef = useRef<ReturnType<typeof annotationsFromJSON> | null>(null);
+  // Read through refs for the same reason `targets` is: the store is built
+  // once, and an export must draw against the config the trial holds now.
+  const configRef = useRef<unknown>(record.config);
+  configRef.current = record.config;
   if (annotationsRef.current === null) {
     // Seeded from wherever the marks were kept: the instrument's own store if
     // it declared one, else this trial's slot.
     const kept = annotationsCap?.storage ? annotationsCap.storage.load() : record.annotations;
-    annotationsRef.current = annotationsFromJSON(kept, () => targetsRef.current());
+    annotationsRef.current = annotationsFromJSON(kept, () => targetsRef.current(), {
+      meaning: annotationsCap?.meaning,
+      config: () => configRef.current,
+      onCapture: (result) => annotationsCap?.onCapture?.(result),
+    });
   }
   const annotations = annotationsRef.current;
 

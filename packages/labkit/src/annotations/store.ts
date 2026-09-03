@@ -13,10 +13,12 @@ import type {
   Annotation,
   AnnotationData,
   AnnotationInit,
+  AnnotationMeaning,
   AnnotationPatch,
   AnnotationQuery,
   AnnotationsApi,
   AnnotationTargetInfo,
+  CaptureResult,
   FracPoint,
   FracRect,
   SerializedAnnotations,
@@ -39,6 +41,23 @@ export interface AnnotationStoreOptions {
   targets: () => readonly AnnotationTargetInfo[];
   /** Serialized scenes from a previous `toJSON`, keyed by target. */
   restore?: Readonly<Record<string, unknown>>;
+  /** The instrument's vocabulary, so an export draws a mark in the colour its
+   *  status gives it. */
+  meaning?: AnnotationMeaning;
+  /** The trial's live config. A getter for the same reason `targets` is: the
+   *  store is built once and the config changes under it. */
+  config?: () => unknown;
+  /** Notified after every finished export. */
+  onCapture?: (result: CaptureResult) => void;
+}
+
+/** Everything a capture needs that is not the store's own state. Split out so
+ *  `capture.ts` takes data rather than reaching back into the store. */
+export interface CaptureDeps {
+  scene: MarkScene;
+  target: AnnotationTargetInfo;
+  meaning?: AnnotationMeaning;
+  config: unknown;
 }
 
 const NO_CONTENT = { w: 0, h: 0 };
@@ -158,6 +177,8 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
   return {
     sceneFor,
 
+    targets,
+
     get(id) {
       const parts = splitId(id);
       return parts ? project(parts.target, parts.node) : undefined;
@@ -264,8 +285,9 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
 export function annotationsFromJSON(
   raw: unknown,
   targets: () => readonly AnnotationTargetInfo[],
+  rest: Omit<AnnotationStoreOptions, 'targets' | 'restore'> = {},
 ): AnnotationsApi {
   const doc = raw as Partial<SerializedAnnotations> | null;
-  if (doc?.version !== 1 || !doc.scenes) return createAnnotationStore({ targets });
-  return createAnnotationStore({ targets, restore: doc.scenes });
+  if (doc?.version !== 1 || !doc.scenes) return createAnnotationStore({ targets, ...rest });
+  return createAnnotationStore({ targets, restore: doc.scenes, ...rest });
 }
