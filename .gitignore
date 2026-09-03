@@ -30,3 +30,4 @@ tests/bench/results/latest.json
 .claude/scheduled_tasks.lock
 .superpowers/
 .*-progress.jsonl
+CLAUDE.local.md
