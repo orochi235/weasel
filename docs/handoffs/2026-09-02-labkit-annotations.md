@@ -67,15 +67,21 @@ pointer path was wrong.
 
 ## Traps found while surveying, worth not rediscovering
 
-- **`renderer/WeaselRenderer.ts` already accepts a caller-owned `gl`.** Drawing
-  into part of a buffer appears to work, but only because `render()` happens not
-  to touch the viewport and the frame clear happens to respect the scissor.
-  Neither is documented or tested. Arc 1 is making that real.
-- **Nothing in core calls `gl.scissor`,** and `gl.viewport` is called in exactly
-  one place. Stencil bits 0–7 are load-bearing for clips and even-odd fills, and
-  nothing validates that an injected context has a stencil buffer.
 - **brick-icons' lab consumes `@weasel-js/labkit` from npm**, so arcs 1–4 must
   release before arc 5 can migrate it.
+- **The GL recorder used to make renderer assertions that could not fail.**
+  `SCISSOR_TEST` was missing from its constants table so the Proxy answered 0,
+  and `drawingBufferHeight` is lowercase so it answered a *function*. Both fixed
+  in arc 1, but the shape recurs: anything ALL-CAPS the table does not know is
+  silently 0, and anything lowercase is silently a recording function.
+- **A perf measurement that drives hover events measures nothing.** A hover that
+  changes no state does not dirty the surface, so the loop times vsync while
+  reporting zero uploads as though the caches had absorbed the work. Count draw
+  calls alongside whatever else you count.
+
+The two traps this section opened with — the renderer's viewport never being
+touched in `render()`, and nothing validating an injected context's stencil —
+are what arc 1 fixed. See the spec's arc 1, not this list.
 
 ## State of the tree, as of this handoff
 
