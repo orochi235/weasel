@@ -1,5 +1,13 @@
 # @weasel-js/theme
 
+## 1.4.0-pre.0
+
+### Patch Changes
+
+- 53ffca9: `gen:tokens` honors `WZL_TOKENS_OUT_DIR`, so the determinism check generates
+  into a temp dir and diffs rather than overwriting `tokens.css`, `themes.ts` and
+  `manifest.ts` while other tests in the same vitest project are reading them.
+
 ## 1.3.0
 
 ### Patch Changes

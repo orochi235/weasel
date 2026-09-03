@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/font",
-  "version": "1.3.0",
+  "version": "1.4.0-pre.0",
   "description": "MSDF font atlases, glyph metrics, and runtime glyph rasterization for @weasel-js/core. Registry, kerning-aware glyph layout, and the SDF text shader source.",
   "license": "MIT",
   "type": "module",
