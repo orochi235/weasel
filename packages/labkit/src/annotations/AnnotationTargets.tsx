@@ -1,13 +1,12 @@
 import { AnnotationOverlay } from './AnnotationOverlay';
-import type { MarkScene } from './store';
-import type { AnnotationsCapability } from './types';
+import type { AnnotationsApi, AnnotationsCapability } from './types';
 
 /** Props for `<AnnotationTargets>`. */
 export interface AnnotationTargetsProps {
   capability: AnnotationsCapability;
   state: unknown;
   config: unknown;
-  scene: MarkScene;
+  annotations: AnnotationsApi;
   activeToolId: string | null;
 }
 
@@ -16,7 +15,7 @@ export function AnnotationTargets({
   capability,
   state,
   config,
-  scene,
+  annotations,
   activeToolId,
 }: AnnotationTargetsProps) {
   const targets = capability.targets(state, config);
@@ -27,7 +26,7 @@ export function AnnotationTargets({
         <AnnotationOverlay
           key={t.id}
           target={t}
-          scene={scene}
+          scene={annotations.sceneFor(t.id)}
           config={config}
           activeToolId={activeToolId}
         />

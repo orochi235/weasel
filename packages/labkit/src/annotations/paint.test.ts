@@ -48,11 +48,23 @@ describe('markCommands', () => {
     ]);
   });
 
-  it('makes an arrow the same line, carrying an end marker', () => {
-    const [cmd] = markCommands(mark('arrow', { points: ENDS }), CONTENT);
-    const stroke = (cmd as { stroke?: { markerEnd?: unknown } }).stroke;
+  it('makes an arrow the same line, plus the head as its own command', () => {
+    const cmds = markCommands(mark('arrow', { points: ENDS }), CONTENT);
+    const stroke = (cmds[0] as { stroke?: { markerEnd?: unknown } }).stroke;
     expect(stroke?.markerEnd).toBe('arrow');
-    expect(anchors([cmd])).toEqual([0.1 * 200, 0.2 * 100, 0.6 * 200, 0.9 * 100]);
+    expect(anchors([cmds[0]])).toEqual([0.1 * 200, 0.2 * 100, 0.6 * 200, 0.9 * 100]);
+
+    // The head has to be geometry, not just a field: `markerEnd` alone is
+    // inert outside the kit's own node painter, which is what shipped an
+    // arrow with no head.
+    expect(cmds).toHaveLength(2);
+    const head = anchors([cmds[1]]);
+    expect(head.length).toBeGreaterThan(0);
+    // Its vertex is the line's far end — computed, not eyeballed.
+    const near = (v: number, t: number) => Math.abs(v - t) < 1;
+    const xs = head.filter((_, i) => i % 2 === 0);
+    const ys = head.filter((_, i) => i % 2 === 1);
+    expect(xs.some((x, i) => near(x, 120) && near(ys[i] as number, 90))).toBe(true);
   });
 
   it('threads a freehand stroke through every point', () => {

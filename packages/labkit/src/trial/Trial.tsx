@@ -2,7 +2,7 @@ import { type ReactNode, useContext, useMemo, useRef, useState } from 'react';
 import { useStore } from 'zustand/react';
 import { AnnotationsContext } from '../annotations/AnnotationsContext';
 import { AnnotationTargets } from '../annotations/AnnotationTargets';
-import { createAnnotationScene, createAnnotationStore } from '../annotations/store';
+import { createAnnotationStore } from '../annotations/store';
 import type { AnnotationTargetInfo } from '../annotations/types';
 import { CanvasStack } from '../canvas/CanvasStack';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
@@ -133,15 +133,9 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
 
   // One store for the trial's lifetime. Marks do not survive a reload yet —
   // the storage slot is 3d.
-  const annotationsSceneRef = useRef<ReturnType<typeof createAnnotationScene> | null>(null);
-  if (annotationsSceneRef.current === null) annotationsSceneRef.current = createAnnotationScene();
-  const annotationsScene = annotationsSceneRef.current;
   const annotationsRef = useRef<ReturnType<typeof createAnnotationStore> | null>(null);
   if (annotationsRef.current === null) {
-    annotationsRef.current = createAnnotationStore({
-      scene: annotationsScene,
-      targets: () => targetsRef.current(),
-    });
+    annotationsRef.current = createAnnotationStore({ targets: () => targetsRef.current() });
   }
 
   // A trial gets its own slot when its instrument declares tools; otherwise it
@@ -405,7 +399,7 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
       capability={annotationsCap}
       state={record.state}
       config={record.config}
-      scene={annotationsScene}
+      annotations={annotationsRef.current}
       activeToolId={resolvedToolId}
     />
   ) : null;

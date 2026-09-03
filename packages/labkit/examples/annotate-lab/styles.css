@@ -1,0 +1,17 @@
+.ex-panes {
+  display: flex;
+  gap: 24px;
+  padding: 24px;
+  align-items: flex-start;
+}
+
+.ex-panes figcaption {
+  padding-top: 6px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.ex-count {
+  margin-left: 8px;
+  opacity: 0.7;
+}

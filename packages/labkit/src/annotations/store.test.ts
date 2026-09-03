@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { annotationsFromJSON, createAnnotationScene, createAnnotationStore } from './store';
+import { annotationsFromJSON, createAnnotationStore } from './store';
 import type { AnnotationInit, AnnotationTargetInfo } from './types';
 
 const TARGETS: AnnotationTargetInfo[] = [
@@ -8,8 +8,7 @@ const TARGETS: AnnotationTargetInfo[] = [
 ];
 
 function makeStore() {
-  const scene = createAnnotationScene();
-  return createAnnotationStore({ scene, targets: () => TARGETS });
+  return createAnnotationStore({ targets: () => TARGETS });
 }
 
 const RING: AnnotationInit = {
@@ -72,6 +71,17 @@ describe('the annotation store', () => {
     expect(store.hitTest('naive', { x: 0.15, y: 0.3 }, 0.06)).toHaveLength(1);
     // A target's marks are its own.
     expect(store.hitTest('occt', { x: 0.3, y: 0.3 })).toHaveLength(0);
+  });
+
+  it("keeps each target in its own scene, so a pane never sees a neighbour's marks", () => {
+    const store = makeStore();
+    store.add(RING);
+    store.add({ ...RING, target: 'occt' });
+    // Not a filter over one scene: the scene a pane is handed holds only its
+    // own marks, because its hit-test and marquee walk all of what they get.
+    expect(store.sceneFor('naive').renderOrder()).toHaveLength(1);
+    expect(store.sceneFor('occt').renderOrder()).toHaveLength(1);
+    expect(store.query({ target: 'naive' }).map((a) => a.target)).toEqual(['naive']);
   });
 
   it('takes what a box encloses, not what it grazes', () => {
@@ -155,6 +165,8 @@ describe('the annotation store', () => {
     // runs, so a Map or a class instance in here would be lost silently.
     expect(JSON.parse(JSON.stringify(out))).toEqual(out);
     expect(out.version).toBe(1);
+    // One scene per target, and only the ones that hold a mark.
+    expect(Object.keys(out.scenes)).toEqual(['naive']);
 
     const revived = annotationsFromJSON(JSON.parse(JSON.stringify(out)), () => TARGETS);
     expect(revived.get(id)).toEqual(store.get(id));

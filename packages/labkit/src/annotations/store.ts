@@ -24,57 +24,105 @@ import type {
 /** A mark's box in its target's world. Matches weasel's default `RectPose`. */
 type MarkPose = WorldRect;
 
-/** The scene a trial's marks live in. Its pose is the mark's box in the
- *  target's world; its data is what the mark is. */
+/** The scene one target's marks live in. */
 export type MarkScene = Scene<AnnotationData, 'marks', MarkPose>;
 
-/** The scene marks live in. One layer: marks do not stack in tiers, and a
- *  target's separation is a field, not a layer — a layer per target would
- *  rebuild the scene every time an instrument's target list changed. */
+/** A mark scene: one layer, because marks do not stack in tiers. */
 export function createAnnotationScene(): MarkScene {
   return createScene<AnnotationData, 'marks', MarkPose>({ systemLayers: [{ id: 'marks' }] });
 }
 
 export interface AnnotationStoreOptions {
-  scene: MarkScene;
   /** Re-read on every call, so a target resizing or gaining a dependency takes
    *  effect without rebuilding the store. */
   targets: () => readonly AnnotationTargetInfo[];
+  /** Serialized scenes from a previous `toJSON`, keyed by target. */
+  restore?: Readonly<Record<string, unknown>>;
 }
 
 const NO_CONTENT = { w: 0, h: 0 };
 
+/** A mark's id is its target and its node. One scene per target, so a node id
+ *  is only unique within one — and an annotation is addressed by both. */
+function splitId(id: string): { target: string; node: string } | undefined {
+  const at = id.lastIndexOf('/');
+  return at <= 0 ? undefined : { target: id.slice(0, at), node: id.slice(at + 1) };
+}
+
 /**
- * A facade over a weasel scene: the scene is the truth, this answers questions
- * about it. Everything crossing this boundary is in fractions of a target's
- * content box; the scene holds world units.
+ * A facade over one weasel scene per target: the scenes are the truth, this
+ * answers questions about them. Everything crossing this boundary is in
+ * fractions of a target's content box; the scenes hold world units.
+ *
+ * A scene per target rather than one scene with a `target` field, because a
+ * pane's hit-test, marquee and paint all walk the whole scene it is given and
+ * take no filter — one shared scene puts every other pane's marks under the
+ * pointer.
  */
 export function createAnnotationStore(opts: AnnotationStoreOptions): AnnotationsApi {
-  const { scene, targets } = opts;
+  const { targets, restore } = opts;
+  const scenes = new Map<string, MarkScene>();
+  const subs = new Set<() => void>();
+  const notify = (): void => {
+    for (const fn of subs) fn();
+  };
+
+  const sceneFor = (target: string): MarkScene => {
+    const known = scenes.get(target);
+    if (known) return known;
+    const raw = restore?.[target];
+    const scene = raw
+      ? sceneFromJSON<AnnotationData, 'marks', MarkPose>(
+          raw as SerializedScene<AnnotationData, 'marks', MarkPose>,
+          {},
+        )
+      : createAnnotationScene();
+    scenes.set(target, scene);
+    scene.subscribe(notify);
+    return scene;
+  };
+
+  // Restored scenes are materialized up front: everything below reads
+  // `scenes`, and a mark that only appears once its pane asks for its scene is
+  // a mark a sidebar cannot list.
+  for (const target of Object.keys(restore ?? {})) sceneFor(target);
 
   const targetOf = (id: string): AnnotationTargetInfo | undefined =>
     targets().find((t) => t.id === id);
 
-  const project = (id: string): Annotation | undefined => {
-    const node = scene.get(asNodeId(id));
-    if (!node) return undefined;
-    const data = node.data;
-    const content = targetOf(data.target)?.content ?? NO_CONTENT;
+  const contentOf = (id: string) => targetOf(id)?.content ?? NO_CONTENT;
+
+  const project = (target: string, node: string): Annotation | undefined => {
+    const found = scenes.get(target)?.get(asNodeId(node));
+    if (!found) return undefined;
     return {
-      ...data,
-      id,
-      frac: roundFrac(worldToFrac(node.pose as MarkPose, content)),
+      ...found.data,
+      target,
+      id: `${target}/${node}`,
+      frac: roundFrac(worldToFrac(found.pose as MarkPose, contentOf(target))),
     };
   };
 
-  const all = (): Annotation[] => {
+  /** Every target with a scene, in declaration order — then any whose target
+   *  the instrument has since stopped declaring, so its marks are not lost. */
+  const liveTargets = (): string[] => {
+    const declared = targets().map((t) => t.id);
+    const rest = [...scenes.keys()].filter((id) => !declared.includes(id));
+    return [...declared, ...rest];
+  };
+
+  const marksOn = (target: string): Annotation[] => {
+    const scene = scenes.get(target);
+    if (!scene) return [];
     const out: Annotation[] = [];
     for (const id of scene.renderOrder()) {
-      const a = project(String(id));
+      const a = project(target, String(id));
       if (a) out.push(a);
     }
     return out;
   };
+
+  const all = (): Annotation[] => liveTargets().flatMap(marksOn);
 
   const matches = (a: Annotation, q: AnnotationQuery): boolean => {
     if (q.target !== undefined && a.target !== q.target) return false;
@@ -88,21 +136,35 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
     return true;
   };
 
+  /** The node behind a public id, or undefined. */
+  const nodeOf = (id: string) => {
+    const parts = splitId(id);
+    if (!parts) return undefined;
+    const scene = scenes.get(parts.target);
+    const node = scene?.get(asNodeId(parts.node));
+    return node && scene ? { ...parts, scene, node } : undefined;
+  };
+
   return {
-    get: project,
+    sceneFor,
+
+    get(id) {
+      const parts = splitId(id);
+      return parts ? project(parts.target, parts.node) : undefined;
+    },
 
     query(q) {
       return q ? all().filter((a) => matches(a, q)) : all();
     },
 
     hitTest(target, pt: FracPoint, tol = 0) {
-      return all()
-        .filter((a) => a.target === target && fracContains(a.frac, pt, tol))
+      return marksOn(target)
+        .filter((a) => fracContains(a.frac, pt, tol))
         .reverse();
     },
 
     within(target, box: FracRect) {
-      return all().filter((a) => a.target === target && fracIntersects(box, a.frac));
+      return marksOn(target).filter((a) => fracIntersects(box, a.frac));
     },
 
     isStale(a, config) {
@@ -111,12 +173,14 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
     },
 
     subscribe(fn) {
-      return scene.subscribe(fn);
+      subs.add(fn);
+      return () => {
+        subs.delete(fn);
+      };
     },
 
     add(init: AnnotationInit, config?: unknown) {
       const target = targetOf(init.target);
-      const keys = target?.positionDependsOn ?? [];
       const data: AnnotationData = {
         target: init.target,
         kind: init.kind,
@@ -125,44 +189,45 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
         ...(init.status !== undefined ? { status: init.status } : {}),
         ...(init.tags !== undefined ? { tags: init.tags } : {}),
         ...(init.meta !== undefined ? { meta: init.meta } : {}),
-        seen: seenFrom(config, keys),
+        seen: seenFrom(config, target?.positionDependsOn ?? []),
       };
-      return String(
-        scene.add({
-          kind: 'leaf',
-          layer: 'marks',
-          pose: fracToWorld(roundFrac(init.frac), target?.content ?? NO_CONTENT),
-          data,
-        }),
-      );
+      const node = sceneFor(init.target).add({
+        kind: 'leaf',
+        layer: 'marks',
+        pose: fracToWorld(roundFrac(init.frac), target?.content ?? NO_CONTENT),
+        data,
+      });
+      return `${init.target}/${String(node)}`;
     },
 
     update(id, patch: AnnotationPatch) {
-      const node = scene.get(asNodeId(id));
-      if (!node) return;
+      const found = nodeOf(id);
+      if (!found) return;
       const { frac, ...meaning } = patch;
+      const nid = asNodeId(found.node.id);
       if (Object.keys(meaning).length > 0) {
-        scene.update(asNodeId(id), { data: { ...node.data, ...meaning } });
+        found.scene.update(nid, { data: { ...found.node.data, ...meaning } });
       }
       if (frac) {
-        const content = targetOf(node.data.target)?.content ?? NO_CONTENT;
-        scene.setPose(asNodeId(id), fracToWorld(roundFrac(frac), content));
+        found.scene.setPose(nid, fracToWorld(roundFrac(frac), contentOf(found.target)));
       }
     },
 
     setMeta(id, meta) {
-      const node = scene.get(asNodeId(id));
-      if (!node) return;
-      scene.update(asNodeId(id), { data: { ...node.data, meta } });
+      const found = nodeOf(id);
+      if (!found) return;
+      found.scene.update(asNodeId(found.node.id), { data: { ...found.node.data, meta } });
     },
 
     remove(id) {
-      const nid = asNodeId(id);
-      if (scene.get(nid)) scene.remove(nid);
+      const found = nodeOf(id);
+      if (found) found.scene.remove(asNodeId(found.node.id));
     },
 
     toJSON(): SerializedAnnotations {
-      return { version: 1, scene: scene.toJSON() };
+      const out: Record<string, unknown> = {};
+      for (const [target, scene] of scenes) out[target] = scene.toJSON();
+      return { version: 1, scenes: out };
     },
   };
 }
@@ -175,12 +240,6 @@ export function annotationsFromJSON(
   targets: () => readonly AnnotationTargetInfo[],
 ): AnnotationsApi {
   const doc = raw as Partial<SerializedAnnotations> | null;
-  if (doc?.version !== 1 || !doc.scene) {
-    return createAnnotationStore({ scene: createAnnotationScene(), targets });
-  }
-  const scene = sceneFromJSON<AnnotationData, 'marks', MarkPose>(
-    doc.scene as SerializedScene<AnnotationData, 'marks', MarkPose>,
-    {},
-  );
-  return createAnnotationStore({ scene, targets });
+  if (doc?.version !== 1 || !doc.scenes) return createAnnotationStore({ targets });
+  return createAnnotationStore({ targets, restore: doc.scenes });
 }

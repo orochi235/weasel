@@ -8,12 +8,12 @@
  * marks themselves are proved by `paint.test.ts` (pure) and by a screenshot.
  */
 import { act, render } from '@testing-library/react';
-import { useRef } from 'react';
+import { StrictMode, useRef } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SurfaceCanvasContext, SurfaceContext } from '../surface/SurfaceContext';
 import { useTiledSurface } from '../surface/useTiledSurface';
 import { AnnotationTargets } from './AnnotationTargets';
-import { createAnnotationScene } from './store';
+import { createAnnotationStore } from './store';
 import type { AnnotationsCapability, AnnotationTarget } from './types';
 
 function stubBox(el: HTMLElement, left: number, top: number, width: number, height: number): void {
@@ -40,7 +40,7 @@ function Harness({ toolId = 'rect' }: { toolId?: string }) {
   const a = useRef<HTMLDivElement | null>(null);
   const b = useRef<HTMLDivElement | null>(null);
   const surface = useTiledSurface({ onFrame: () => {} });
-  const scene = useRef(createAnnotationScene()).current;
+  const annotations = useRef(createAnnotationStore({ targets: () => [] })).current;
 
   const capability: AnnotationsCapability = {
     targets: (): AnnotationTarget[] => [
@@ -80,7 +80,7 @@ function Harness({ toolId = 'rect' }: { toolId?: string }) {
             capability={capability}
             state={{}}
             config={{}}
-            scene={scene}
+            annotations={annotations}
             activeToolId={toolId}
           />
         </div>
@@ -104,7 +104,7 @@ describe('<AnnotationTargets>', () => {
   });
 
   it('puts an input box over each target, at the rect the surface measured', () => {
-    const { container } = render(<Harness />);
+    const { container } = render(<Harness />, { wrapper: StrictMode });
     act(() => {
       vi.advanceTimersByTime(64);
     });
@@ -120,7 +120,7 @@ describe('<AnnotationTargets>', () => {
   });
 
   it('lands the boxes in the surface container, not among the instrument DOM', () => {
-    const { container } = render(<Harness />);
+    const { container } = render(<Harness />, { wrapper: StrictMode });
     act(() => {
       vi.advanceTimersByTime(64);
     });
@@ -131,7 +131,7 @@ describe('<AnnotationTargets>', () => {
   });
 
   it('takes its tiles back out on unmount', () => {
-    const { container, unmount } = render(<Harness />);
+    const { container, unmount } = render(<Harness />, { wrapper: StrictMode });
     act(() => {
       vi.advanceTimersByTime(64);
     });

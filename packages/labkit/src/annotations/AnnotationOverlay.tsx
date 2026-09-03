@@ -96,7 +96,16 @@ export function AnnotationOverlay({ target, scene, config, activeToolId }: Annot
     lastTile.current = el;
     surface?.registerTile(id, el);
   });
-  useEffect(() => () => surface?.registerTile(id, null), [surface, id]);
+  useEffect(
+    () => () => {
+      // Clearing this is what lets the effect above re-register on the next
+      // commit. StrictMode's mount / unmount / mount would otherwise take the
+      // tile out and never put it back, and the surface would measure nothing.
+      lastTile.current = null;
+      surface?.registerTile(id, null);
+    },
+    [surface, id],
+  );
 
   useEffect(
     () =>

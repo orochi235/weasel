@@ -1,5 +1,6 @@
 import type { RefObject } from 'react';
 import type { ViewTransform } from '../instrument/types';
+import type { MarkScene } from './store';
 
 /** A point in fractions of a target's content box. */
 export interface FracPoint {
@@ -52,7 +53,8 @@ export interface AnnotationData {
   seen?: Readonly<Record<string, unknown>>;
 }
 
-/** A mark, as the store reports it. */
+/** A mark, as the store reports it. `id` is `<target>/<node>`: one scene per
+ *  target means a node id is only unique within one. */
 export interface Annotation extends AnnotationData {
   id: string;
   /** Bounds in fractions of the target's content box. */
@@ -119,11 +121,16 @@ export interface AnnotationsCapability<TS = unknown, TC = unknown> {
  *  never into a trial's state. */
 export interface SerializedAnnotations {
   version: 1;
-  scene: unknown;
+  /** One serialized scene per target that has ever held a mark. */
+  scenes: Record<string, unknown>;
 }
 
 /** Everything a host can ask or tell labkit about the marks on its targets. */
 export interface AnnotationsApi {
+  /** The scene a target's marks live in, created on first ask. One per target
+   *  because a pane's hit-test, marquee and paint walk the whole scene they
+   *  are given: a shared one would put a neighbour's marks under the pointer. */
+  sceneFor(target: string): MarkScene;
   get(id: string): Annotation | undefined;
   /** Every mark matching the filters, in scene order. Omit `q` for all. */
   query(q?: AnnotationQuery): Annotation[];

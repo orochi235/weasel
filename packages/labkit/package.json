@@ -106,7 +106,8 @@
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",
-    "dev:schema": "LABKIT_EXAMPLE=schema-lab vite"
+    "dev:schema": "LABKIT_EXAMPLE=schema-lab vite",
+    "dev:annotate": "LABKIT_EXAMPLE=annotate-lab vite"
   },
   "peerDependencies": {
     "react": "^19.0.0",

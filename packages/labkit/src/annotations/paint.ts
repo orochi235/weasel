@@ -1,13 +1,21 @@
-import type { DrawCommand, Path } from '@weasel-js/core';
-import { ellipsePath, linePath, PathBuilder, rectPath, textCommand } from '@weasel-js/core';
+import type { DrawCommand, Path, Stroke } from '@weasel-js/core';
+import {
+  ellipsePath,
+  linePath,
+  markerDrawCommands,
+  PathBuilder,
+  rectPath,
+  textCommand,
+} from '@weasel-js/core';
 import type { WorldRect } from './frac';
 import type { AnnotationData, FracPoint } from './types';
 
 /** One loud color, not a themed one: a mark sits over the instrument's own
  *  picture and has to be legible against whatever that picture is. */
 const MARK_COLOR = '#e5484d';
-/** Screen pixels, so a mark stays the same weight as the pane zooms. */
-const MARK_WIDTH = { px: 2 };
+/** World units, so a mark thickens with the picture it annotates — and so the
+ *  marker geometry can be resolved here, which needs a resolved width. */
+const MARK_WIDTH = 2;
 const TEXT_SIZE = 14;
 
 /** The subset of a mark's scene node this needs: where it is, and what it is. */
@@ -50,11 +58,11 @@ function polyline(points: { x: number; y: number }[]): Path {
  * from `data.points`, which is in fractions like the bounds.
  */
 export function markCommands(m: PaintableMark, content: { w: number; h: number }): DrawCommand[] {
-  const stroke = {
+  const stroke: Stroke = {
     paint: { color: MARK_COLOR },
     width: MARK_WIDTH,
-    cap: 'round' as const,
-    join: 'round' as const,
+    cap: 'round',
+    join: 'round',
   };
 
   switch (m.data.kind) {
@@ -71,7 +79,15 @@ export function markCommands(m: PaintableMark, content: { w: number; h: number }
     case 'arrow': {
       const [a, b] = vertices(m, content);
       // The spec's arrow: a line carrying an end marker, not its own geometry.
-      return [{ kind: 'path', path: linePath(a, b), stroke: { ...stroke, markerEnd: 'arrow' } }];
+      // Markers are separate commands — a stroke's `markerEnd` is inert unless
+      // something turns it into geometry, and only the kit's own node painter
+      // does that, for the nodes it owns.
+      const marked: Stroke = { ...stroke, markerEnd: 'arrow' };
+      const path = linePath(a, b);
+      return [
+        { kind: 'path', path, stroke: marked },
+        ...markerDrawCommands(path, marked, MARK_WIDTH, undefined),
+      ];
     }
     case 'stroke':
       return [{ kind: 'path', path: polyline(vertices(m, content)), stroke }];
