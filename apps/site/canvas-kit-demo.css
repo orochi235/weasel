@@ -1002,3 +1002,32 @@ a:hover { text-decoration: underline; }
 .ckd-tile-surface { position: relative; }
 .ckd-tile-canvas { position: absolute; inset: 0; }
 .ckd-tile-pane { position: absolute; outline: none; }
+
+/* Annotation capture demo: the pane being marked, and the host's own capture
+   controls beside it. */
+.ckd-capture-stage {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  padding: 24px;
+}
+
+.ckd-capture-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  max-width: 260px;
+}
+
+.ckd-capture-panel img {
+  max-width: 240px;
+  border: 1px solid currentColor;
+}
+
+/* An inline <svg> sits on a text baseline, so its wrapper is a descender
+   taller than the picture — and the pane's box is what a mark's fractions are
+   fractions of. Five stray pixels of height put every mark slightly high. */
+.ckd-capture-stage svg {
+  display: block;
+}

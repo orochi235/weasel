@@ -568,6 +568,16 @@ const DEMO_META: DemoMeta[] = [
 
   // ─── labkit ───────────────────────────────────────────────────────────────
   {
+    id: 'annotation-capture',
+    title: 'Annotation capture',
+    category: 'labkit',
+    description:
+      "Draw on a lab's picture, then export the picture with the marks on it. The instrument hands over its own SVG as the base, so the marks serialize beside it into one document — vector all the way through, and rasterized once at the end. The toolbar's Export panel is labkit's caller; the buttons under the pane are the lab's own, calling `annotations.capture()` and doing what they like with the Blob.",
+    hint: 'Pick a tool from the palette, draw over the quadrants, then Capture. Change the hue and the mark goes dashed — its stored position no longer describes the picture.',
+    load: () => import('./demos/AnnotationCaptureDemo').then((m) => m.AnnotationCaptureDemo),
+    path: 'apps/site/demos/AnnotationCaptureDemo.tsx',
+  },
+  {
     id: 'lab-loupe',
     title: 'Loupe (lab capability)',
     category: 'labkit',
