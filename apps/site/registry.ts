@@ -60,6 +60,15 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/GesturesDemo').then((m) => m.GesturesDemo),
     path: 'apps/site/demos/GesturesDemo.tsx',
   },
+  {
+    id: 'tiled-surface',
+    title: 'Tiled surface',
+    category: 'Foundations',
+    description: 'Two independent scenes, two cameras, one WebGL context. Each `<SceneCanvas>` paints into a rect of one host-owned canvas via `paintInto` and takes pointer input from its own transparent box via `inputElement`. `WeaselRenderer.setTarget()` sets the viewport and scissor per frame, so each pane\u2019s frame clear stops at its own edge instead of erasing its neighbour. Each pane gets its own `<WeaselProvider isolate>` \u2014 a shared `<ActionsProvider>` lets only the newest canvas under it respond to input.',
+    hint: 'Drag a rectangle in either pane. The right pane is at 2\u00d7 zoom and panned, so its drags move half as far in world units.',
+    load: () => import('./demos/TiledSurfaceDemo').then((m) => m.TiledSurfaceDemo),
+    path: 'apps/site/demos/TiledSurfaceDemo.tsx',
+  },
 
   // ─── Tools ────────────────────────────────────────────────────────────────
   {

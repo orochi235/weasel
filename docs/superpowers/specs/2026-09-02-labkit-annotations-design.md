@@ -225,9 +225,22 @@ release before it can migrate.
 jsdom cannot see most of this, and a test that cannot fail is worse than none.
 
 - Arc 1's guard tests need real GL, so they belong in `tests/visual` under
-  Playwright. The load-bearing one: draw two tiles into one context *without*
-  clearing stencil inside each scissor and watch one pane's even-odd fill leak
-  into its neighbour. Write the naive version first and confirm the test fails.
+  Playwright (`tests/visual/tiled-surface.spec.ts`). The load-bearing one is the
+  frame **clear**, not the stencil: `gl.clear` ignores the viewport and respects
+  the scissor, so two tiles in one context with a viewport each and no scissor
+  means the second pane's clear erases the first, every frame. Drop
+  `gl.enable(SCISSOR_TEST)` and watch that test go red.
+
+  The stencil leak this section used to predict — one pane's even-odd fill
+  reading bits its neighbour left set — does not reproduce. Dropping
+  `STENCIL_BUFFER_BIT` from the frame clear leaves all three guards green,
+  because `drawPathFillStencil` narrows to `stencilMask(0x01)` and clears bit 0
+  after its own fill. The frame's stencil clear is belt-and-braces, worth keeping
+  for a clip abandoned mid-frame, but it is not what protects even-odd fills.
+
+  Beware a third shape: an assertion that content stops at the pane edge passes
+  with *either* the viewport or the scissor broken, since each clips drawing on
+  its own. Only the clear separates them.
 - Camera mirroring is a screenshot test. A mark that swims under pan is invisible
   to jsdom.
 - Arc 3's store is pure and belongs in vitest: query, `hitTest`, `within`,

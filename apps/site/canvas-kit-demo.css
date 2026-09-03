@@ -996,3 +996,9 @@ a:hover { text-decoration: underline; }
   width: 3.5em;
   opacity: 0.55;
 }
+
+/* Tiled surface demo: N panes painting into one canvas, each taking input
+   from its own transparent box over its rect. */
+.ckd-tile-surface { position: relative; }
+.ckd-tile-canvas { position: absolute; inset: 0; }
+.ckd-tile-pane { position: absolute; outline: none; }
