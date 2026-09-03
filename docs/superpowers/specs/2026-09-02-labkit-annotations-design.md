@@ -1,7 +1,7 @@
 # Annotations: drawing on a lab surface
 
-**Five arcs, two of them in `core` and independently useful. Arc 1 is built and
-arc 2 is spiked; arcs 3–5 are unbuilt.**
+**Five arcs, two of them in `core` and independently useful. Arcs 1 and 3 are
+built, arc 2 is spiked; arcs 4 and 5 are unbuilt.**
 
 For whoever picks up arc 1 or arc 2. It assumes you know weasel's renderer and
 `SceneCanvas` and labkit's instrument/capability model, and nothing about the
@@ -131,6 +131,26 @@ meant ratifying an `@experimental` component public) is no longer needed.
 
 ## Arc 3 — the labkit `annotations` capability
 
+**Built, in three passes: the declaration and the store (3a/3b), then the
+overlay and the palette bridge (3c). What is left is 3d — persistence, undo
+delegation and the meaning chrome; nothing reads `AnnotationMeaning` yet and
+marks do not survive a reload.** Four things below were decided differently in
+the building, each for a reason the design could not see:
+
+- **One scene per target, not one scene with a `target` field.** A pane's
+  hit-test, marquee and paint all walk the whole scene they are handed and take
+  no filter, so a shared scene puts every other pane's marks under the pointer
+  and paints them twice. An annotation's id is `<target>/<node>`, because a
+  node id is only unique inside one scene.
+- **A target with no `view` gets a fit, not the identity.** World is the
+  content box in CSS pixels; the pane is whatever size the layout gave it. At
+  zoom 1 a mark drawn on a scaled-down pane lands outside it.
+- **The mark kind comes from the labkit tool id, not the weasel insert.**
+  `arrow` and `stroke` ride `line` and `pencil`, which cannot tell them apart.
+- **`subscribe(fn)` takes no change payload.** `Scene.subscribe` is a bare
+  invalidation, so a delta would have to be synthesized by diffing snapshots on
+  every mutation — a cost every consumer pays for information most do not use.
+
 A new optional field on `Instrument`, wired in `Trial.tsx` and
 `chrome/builtins.tsx` — capabilities are hardcoded fields, not a registry, so
 there is no way to add one from outside labkit. Two more files read capability
@@ -187,7 +207,8 @@ weasel `ToolDef`s with bindings, per the reference implementations named in
 insert action minting the node. Not a tool running its own `useDragRect` and
 committing a batch.
 
-Storage defaults to `record.state`, the only persisted instrument slot. Two
+Storage — **not built; 3d.** It defaults to `record.state`, the only persisted
+instrument slot. Two
 constraints come with it. `Instrument.serialize` / `deserialize` never run —
 `registerSerializers` has no callers, so state is `JSON.stringify`d raw — which
 means whatever annotations write there must be JSON-safe; `scene.toJSON()`
@@ -267,7 +288,13 @@ jsdom cannot see most of this, and a test that cannot fail is worse than none.
 - Camera mirroring is a screenshot test. A mark that swims under pan is invisible
   to jsdom.
 - Arc 3's store is pure and belongs in vitest: query, `hitTest`, `within`,
-  `isStale`, fraction↔world, serialization round-trip.
+  `isStale`, fraction↔world, serialization round-trip. **The overlay is not**,
+  and the first browser run found three defects a green jsdom suite had missed:
+  every pane painting every other pane's marks, an arrow with no head, and a
+  mark count that never revised itself. What jsdom did catch, once the test
+  rendered under `StrictMode`, was the tile deregistering on the remount and
+  never coming back — mount / unmount / mount is the shape to test registration
+  under.
 - Arc 4 is browser-only end to end. Assert pixels: a mark captured at `scale: 4`
   lands on the same feature of the brick it was drawn over.
 
