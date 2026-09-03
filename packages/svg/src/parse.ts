@@ -882,6 +882,13 @@ function parseTextElement(
   // line of cap-height so weasel's box top approximates the cap-line.
   const topY = explicitTopAnchor ? ay : ay - fontSize;
 
+  // `baseline-shift` is legal and inheritable on <text> itself, and unlike
+  // every other run key it has no node-level home to be read into — so a bare
+  // text child would drop it. Seed those children with it instead; a <tspan>
+  // naming its own still wins, as the SVG cascade says.
+  const ownShift = ownProp(el, 'baseline-shift');
+  const inheritedShift = ownShift != null ? parseBaselineShift(ownShift, onWarn) : {};
+
   // Walk children: text nodes become plain run text; <tspan> elements
   // become StyledRuns with their attribute overrides applied.
   const runs: StyledRun[] = [];
@@ -890,13 +897,13 @@ function parseTextElement(
     if (child.nodeType === 3 /* TEXT_NODE */) {
       const t = child.textContent ?? '';
       if (!t) continue;
-      runs.push({ text: t });
+      runs.push({ text: t, ...inheritedShift });
     } else if (child.nodeType === 1 /* ELEMENT_NODE */) {
       const sp = child as Element;
       if (sp.tagName.toLowerCase() !== 'tspan') {
         onWarn(`<text> child <${sp.tagName}> not supported; flattening text content`);
         const t = sp.textContent ?? '';
-        if (t) runs.push({ text: t });
+        if (t) runs.push({ text: t, ...inheritedShift });
         continue;
       }
       const run = readTspanRun(sp, gradients, leafStyle, onWarn);
