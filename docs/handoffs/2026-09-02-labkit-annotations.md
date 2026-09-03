@@ -10,23 +10,23 @@ were reached, and what to do next.
 
 ## Where the work stopped
 
-The spec is approved section by section, and **the arc 2 spike has run and
-passed** — the split works, and the spec now records the outcome in place of the
-question. No production implementation exists.
+**Arc 1 is built, tested and green. Arc 2 is spiked but not built.** Arcs 3–5
+are untouched. The spec records all of this; run `git log --oneline main..HEAD`
+for the commits.
 
-The next step is the arc 1 implementation plan (`writing-plans`). Arc 2's plan
-can follow it or run beside it; neither blocks the other any more.
+The next step is arc 2: give `paintInto` / `inputElement` their real shape.
+They currently exist on `<Canvas>` labelled SPIKE, and the `tiled-surface` demo
+and arc 1's guard tests both depend on them, so they work — but three things are
+owed. `canvasRef` is typed `HTMLCanvasElement` and the input element is cast
+through it, rather than the ref being widened to `HTMLElement`.
+`CanvasExtensionApi.element` has no defined meaning when paint and input are two
+elements; it currently returns the input one. And the HUDs (`CursorCoordsHud`,
+`PickHud`, `ModalityHud`) drop when detached, because `<Canvas>` returns null
+rather than rendering them.
 
-On the branch as a single commit, clearly labelled, is the spike itself:
-`paintInto` / `inputElement` on `<Canvas>`, `setTargetRect()` on
-`WeaselRenderer`, and `apps/site/spike-arc2.{html,tsx}` behind them. It is a
-prototype, not a proposal — it has no stencil check, no guard test, drops the
-HUDs when detached, and casts an `HTMLElement` through `canvasRef`'s
-`HTMLCanvasElement` type. Arcs 1 and 2 should rewrite it, and `git revert` is
-the honest way to drop it if they take another shape. `npx vitest run
---project=kit` (5243 pass) and the visual suite are green against it; the one
-red spec, `lab-loupe.spec.ts:115`, fails identically at a clean HEAD and is not
-this work.
+`docs/superpowers/plans/2026-09-02-renderer-target-rect.md` is arc 1's plan with
+every box ticked. **Delete it when this branch merges** — a merged plan on disk
+reads as open work.
 
 ## Decisions made in conversation, not visible in the code
 
