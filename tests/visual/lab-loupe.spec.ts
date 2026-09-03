@@ -122,7 +122,10 @@ test(`${DEMO_ID} — the DOM lens re-renders the instrument bigger`, async ({ pa
   if (!host) throw new Error('no loupe host');
 
   const plain = await trial.locator('.lab-loupe-line').first().boundingBox();
-  await page.mouse.move(host.x + 200, host.y + 90);
+  // Aim at the middle of the host rather than a fixed offset into it: the lab
+  // lays the trial out in a column ~150px wide here, so `+200` landed outside
+  // the host, no pointer ever entered it, and the lens never mounted.
+  await page.mouse.move(host.x + host.width / 2, host.y + host.height / 2);
   await page.waitForTimeout(400);
 
   const magnified = await trial.locator('.lk-loupe .lab-loupe-line').first().boundingBox();
