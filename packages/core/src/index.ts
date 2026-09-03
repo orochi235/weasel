@@ -1166,6 +1166,7 @@ export type {
   Mat3,
   ImageMinification,
   SpriteSheet,
+  RenderTarget,
 } from './renderer';
 // Uniform-grid sprite sheet layout: frame index → `ImageDrawCommand.source`.
 export { frameRect } from './renderer';

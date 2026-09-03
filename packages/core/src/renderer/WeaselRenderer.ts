@@ -135,6 +135,23 @@ export interface WeaselRendererOptions {
   textOutlineMinScreenSize?: number;
 }
 
+/** Where a renderer draws inside a buffer it does not own.
+ *
+ *  The rect's SIZE is the renderer's own `width`/`height` — `resize()` owns
+ *  that, and a second copy here could disagree with the one `DrawContext`
+ *  reports to screen-space layers. */
+export interface RenderTarget {
+  /** Top-left of this renderer's output within the drawing buffer, in CSS
+   *  pixels, with the origin at the buffer's top-left. GL's bottom-left origin
+   *  is handled internally. */
+  origin: { x: number; y: number };
+  /** Clear colour and stencil within the rect before drawing. Default true.
+   *  Pass false only when the caller clears the whole buffer itself on behalf
+   *  of every co-tenant — a frame that clears neither inherits its neighbour's
+   *  stencil bits, and even-odd fills then fill their holes. */
+  clear?: boolean;
+}
+
 /**
  * The WebGL2 renderer: takes a list of draw commands and paints them.
  *
@@ -165,7 +182,7 @@ export class WeaselRenderer {
   private heightCss: number;
   private dpr: number;
   private canvas: HTMLCanvasElement | null = null;
-  private targetRect: { x: number; y: number; width: number; height: number } | null = null;
+  private target: RenderTarget | null = null;
   private readonly imageMinification: ImageMinification;
   private readonly flattenTolerance?: number;
   private readonly bakeBudget: number;
@@ -221,7 +238,7 @@ export class WeaselRenderer {
     }
 
     this.applyGlState();
-    this.applyViewport();
+    this.applyTarget();
 
     this.pathFill = new ShaderProgram(this.gl, VERT_SRC, FRAG_SRC);
     this.pathFill.lookupUniforms(PATH_FILL_UNIFORMS);
@@ -338,44 +355,33 @@ export class WeaselRenderer {
     gl.clearColor(0, 0, 0, 0);
   }
 
-  private applyViewport(): void {
-    if (this.targetRect) return;
-    this.gl.viewport(0, 0, this.widthCss * this.dpr, this.heightCss * this.dpr);
-  }
-
-  /**
-   * Confine this renderer to a rect of its drawing buffer, in CSS pixels with
-   * the origin at the buffer's TOP-left (GL's own origin is bottom-left; the
-   * flip happens here). Pass null to go back to owning the whole buffer.
-   *
-   * Set this when the buffer is shared: it is what makes `render()`'s frame
-   * clear stop at the rect's edge instead of erasing every co-tenant's pixels.
-   */
-  setTargetRect(rect: { x: number; y: number; width: number; height: number } | null): void {
-    this.targetRect = rect;
-    if (!rect) {
-      this.gl.disable(this.gl.SCISSOR_TEST);
-      this.applyViewport();
-    }
-  }
-
-  /** Viewport + scissor for this frame. Re-applied inside `render()` because a
-   *  co-tenant on the same context moves both between our frames. */
+  /** Viewport and scissor for this frame. Re-applied inside `render()` because
+   *  a co-tenant on the same context moves both between our frames. */
   private applyTarget(): void {
     const gl = this.gl;
-    const t = this.targetRect;
-    if (!t) {
+    const w = Math.round(this.widthCss * this.dpr);
+    const h = Math.round(this.heightCss * this.dpr);
+    if (!this.target) {
       gl.disable(gl.SCISSOR_TEST);
-      gl.viewport(0, 0, this.widthCss * this.dpr, this.heightCss * this.dpr);
+      gl.viewport(0, 0, w, h);
       return;
     }
-    const x = Math.round(t.x * this.dpr);
-    const w = Math.round(t.width * this.dpr);
-    const h = Math.round(t.height * this.dpr);
-    const y = gl.drawingBufferHeight - Math.round(t.y * this.dpr) - h;
+    const x = Math.round(this.target.origin.x * this.dpr);
+    const y = gl.drawingBufferHeight - Math.round(this.target.origin.y * this.dpr) - h;
     gl.viewport(x, y, w, h);
     gl.scissor(x, y, w, h);
     gl.enable(gl.SCISSOR_TEST);
+  }
+
+  /** Confine this renderer to a rect of its drawing buffer, or pass null to
+   *  give it the whole buffer back. Takes effect from the next `render()`. */
+  setTarget(target: RenderTarget | null): void {
+    this.target = target;
+    this.applyTarget();
+  }
+
+  getTarget(): RenderTarget | null {
+    return this.target;
   }
 
   isContextLost(): boolean {
@@ -390,7 +396,7 @@ export class WeaselRenderer {
   private onContextRestored(): void {
     this.contextLost = false;
     this.applyGlState();
-    this.applyViewport();
+    this.applyTarget();
     this.pathFill = new ShaderProgram(this.gl, VERT_SRC, FRAG_SRC);
     this.pathFill.lookupUniforms(PATH_FILL_UNIFORMS);
     this.pathFill.lookupAttributes(PATH_FILL_ATTRIBUTES);
@@ -561,7 +567,7 @@ export class WeaselRenderer {
         this.canvas.style.height = `${dims.height}px`;
       }
     }
-    this.applyViewport();
+    this.applyTarget();
   }
 
   /** @internal */ _gl(): WebGL2RenderingContext { return this.gl; }

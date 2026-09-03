@@ -5,7 +5,7 @@
  * custom shader API (registerProgram, registerTexture, kind:'shader').
  */
 
-export { WeaselRenderer, type WeaselRendererOptions } from './WeaselRenderer';
+export { WeaselRenderer, type WeaselRendererOptions, type RenderTarget } from './WeaselRenderer';
 export type { ImageMinification } from './cache/GLImageCache';
 export type {
   DrawCommand,

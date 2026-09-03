@@ -1410,7 +1410,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       }
     }
 
-    renderer.setTargetRect(rect ? { x: rect.x, y: rect.y, width: w, height: h } : null);
+    renderer.setTarget(rect ? { origin: { x: rect.x, y: rect.y } } : null);
 
     const view = viewRef.current;
     const commands = drawLayers(
