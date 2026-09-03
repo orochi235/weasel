@@ -68,8 +68,8 @@ export function createWindow(opts: WindowOptions): WindowWidget {
     x: b.x, y: b.y, w: Math.max(minW, b.w), h: Math.max(minH, b.h),
   });
 
-  // Draw is the only place a widget learns how big its host is, so a window
-  // created but never drawn has nothing to be kept inside of.
+  // No host size until a draw supplies one, so a window never drawn is not
+  // clamped.
   let hostDims: { width: number; height: number } | null = null;
   const clampOnHost = (b: WidgetBounds): WidgetBounds => {
     if (!hostDims) return b;

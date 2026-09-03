@@ -44,9 +44,9 @@ export type CalloutProps = Omit<
   modal?: boolean;
   /**
    * Show the × button. Defaults to `!modal`. In programmatic
-   * `triggerRef`/`anchorRect` modes the close button requires either
-   * controlled open (`isOpen` + `onOpenChange`) or `onDismiss`; with only
-   * `defaultOpen` it has no open-state setter to call and cannot close.
+   * `triggerRef`/`anchorRect` modes the close button needs controlled open
+   * (`isOpen` + `onOpenChange`); with only `defaultOpen` it has no open-state
+   * setter to call and cannot close.
    */
   showCloseButton?: boolean;
   /**
