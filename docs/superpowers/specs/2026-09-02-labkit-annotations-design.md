@@ -132,8 +132,11 @@ meant ratifying an `@experimental` component public) is no longer needed.
 ## Arc 3 — the labkit `annotations` capability
 
 A new optional field on `Instrument`, wired in `Trial.tsx` and
-`chrome/builtins.tsx` — capabilities are hardcoded fields read in those two
-places, not a registry, so there is no way to add one from outside labkit.
+`chrome/builtins.tsx` — capabilities are hardcoded fields, not a registry, so
+there is no way to add one from outside labkit. Two more files read capability
+fields and may need touching: `TrialChrome.tsx` (merges `instrument.chrome`,
+and keys a layout class off `instrument.canvas`) and `trialOps.ts` (seeds a
+reset view off `instrument.canvas?.initialView`).
 
 ```ts
 annotations: {
@@ -184,9 +187,14 @@ weasel `ToolDef`s with bindings, per the reference implementations named in
 insert action minting the node. Not a tool running its own `useDragRect` and
 committing a batch.
 
-Storage defaults to `record.state`, which is the only persisted instrument slot
-and brings the document-migration path with it. An instrument may supply an
-adapter instead; brick-icons keeps writing its TOML.
+Storage defaults to `record.state`, the only persisted instrument slot. Two
+constraints come with it. `Instrument.serialize` / `deserialize` never run —
+`registerSerializers` has no callers, so state is `JSON.stringify`d raw — which
+means whatever annotations write there must be JSON-safe; `scene.toJSON()`
+output is, a live `Scene` is not. And labkit's document migrations only reach
+top-level sections, never `trials[].state`, so annotations version their own
+payload. An instrument may supply an adapter instead; brick-icons keeps writing
+its TOML.
 
 ## Arc 4 — capture
 
@@ -225,11 +233,15 @@ becomes a mark plus the lab's own meaning. Marks gain geometry richer than a
 box, which is the point — a missing edge is a line, and the only shape available
 today is a rectangle around roughly where the line should be.
 
-This is the arc that proves arc 3's API. If all three files cannot be deleted,
-the API is wrong somewhere.
+This is the arc that proves arc 3's API. `MarkLayer` and `defects/geometry.ts`
+should go entirely. `defects/identity.ts` should lose its `seen` /
+`seenMatches` half to `positionDependsOn` and keep its `slug` / `defectId`
+half, which mints human-readable defect ids and has nothing to do with
+position. If the staleness half survives, the API is wrong somewhere.
 
-Note that the lab consumes `@weasel-js/labkit` from npm, so arcs 1–4 must
-release before it can migrate.
+Note that the lab pins `"@weasel-js/labkit": "1.3.0"` exactly, from npm — the
+same version weasel currently declares. So arcs 1–4 must release *and* the pin
+must move before it can migrate.
 
 ## Testing traps
 
