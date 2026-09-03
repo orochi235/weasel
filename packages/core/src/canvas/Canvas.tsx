@@ -318,18 +318,22 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   clientToWorld?: (canvas: HTMLElement, cx: number, cy: number) => [number, number];
 
   /**
-   * SPIKE (arc 2). Paint into a caller-owned canvas at a rect instead of an
-   * element this component creates. `x`/`y` are the rect's top-left in that
-   * canvas's CSS pixels; `width`/`height` come from the existing props.
+   * Paint into a caller-owned canvas at a rect on it, instead of an element
+   * this component creates. `x`/`y` are the rect's top-left in that canvas's
+   * CSS pixels; the rect's size is the existing `width`/`height` props.
    *
-   * Requires `inputElement`: with no element of its own, there is nowhere for
-   * pointer input, focus or the cursor to live.
+   * Requires `inputElement`: with no element of its own there is nowhere for
+   * pointer input, focus or the cursor to live, and nothing renders.
+   *
+   * N canvases can then share one GL context and one buffer. Each needs its
+   * own `<WeaselProvider isolate>` — under a shared `<ActionsProvider>` only
+   * the newest responds to input and the rest go silently dead.
    */
   paintInto?: { canvas: HTMLCanvasElement | null; x: number; y: number };
   /**
-   * SPIKE (arc 2). The element pointer input, focus and cursor come from, and
-   * the element every client→world conversion measures. Only read alongside
-   * `paintInto`.
+   * The element pointer input, focus and the cursor come from, and the element
+   * every client→world conversion measures. Only read alongside `paintInto`;
+   * an attached canvas uses the one it renders.
    */
   inputElement?: HTMLElement | null;
 

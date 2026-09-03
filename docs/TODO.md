@@ -496,6 +496,16 @@ Core five + Crop shipped. Remaining:
   has on the `api` it shims from (`attach.ts:144`), and the loupe defers the
   readback to the next landed paint instead of taking it inline.
 
+- **(P3) The loupe cannot aim at a detached pane.** `createLoupe` takes `canvas`
+  and `input` separately, so a pane's aim is measured against the pane box — but
+  `readbackRegion` still reads that aim as an offset into the *whole* drawing
+  buffer (`packages/hud/src/loupe/createLoupe.ts`). Over a `paintInto` surface
+  the two disagree by the pane's origin, so the lens shows the wrong region.
+  Fix shape: carry the target rect into the readback, which means either
+  `createLoupe` takes the pane origin or `CanvasExtensionApi` exposes the rect
+  it hands `WeaselRenderer.setTarget`. Nothing hits this yet — the
+  `tiled-surface` demo mounts no loupe.
+
 - **(P1) `SceneCanvas` re-renders on every scene mutation.** Its own
   `useSyncExternalStore` (`SceneCanvas.tsx:894`) commits the canvas for every
   version bump, whether or not the host passed
