@@ -1,8 +1,8 @@
-import { type ReactNode, useContext, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from 'zustand/react';
 import { AnnotationsContext } from '../annotations/AnnotationsContext';
 import { AnnotationTargets } from '../annotations/AnnotationTargets';
-import { createAnnotationStore } from '../annotations/store';
+import { annotationsFromJSON } from '../annotations/store';
 import type { AnnotationTargetInfo } from '../annotations/types';
 import { CanvasStack } from '../canvas/CanvasStack';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
@@ -79,6 +79,7 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
   const updateTrialConfig = useStore(store, (s) => s.updateTrialConfig);
   const updateTrialView = useStore(store, (s) => s.updateTrialView);
   const updateTrialUndoStack = useStore(store, (s) => s.updateTrialUndoStack);
+  const updateTrialAnnotations = useStore(store, (s) => s.updateTrialAnnotations);
   const labToolId = useStore(store, (s) => s.activeToolId);
   const setLabTool = useStore(store, (s) => s.setLabTool);
   const setTrialTool = useStore(store, (s) => s.setTrialTool);
@@ -133,10 +134,48 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
 
   // One store for the trial's lifetime. Marks do not survive a reload yet —
   // the storage slot is 3d.
-  const annotationsRef = useRef<ReturnType<typeof createAnnotationStore> | null>(null);
+  const annotationsRef = useRef<ReturnType<typeof annotationsFromJSON> | null>(null);
   if (annotationsRef.current === null) {
-    annotationsRef.current = createAnnotationStore({ targets: () => targetsRef.current() });
+    // Seeded from wherever the marks were kept: the instrument's own store if
+    // it declared one, else this trial's slot.
+    const kept = annotationsCap?.storage ? annotationsCap.storage.load() : record.annotations;
+    annotationsRef.current = annotationsFromJSON(kept, () => targetsRef.current());
   }
+  const annotations = annotationsRef.current;
+
+  // Written on a trailing debounce rather than per notification: a scene
+  // mutates every frame of a drag, and a zustand write per frame re-renders
+  // every trial in the lab. The unmount flush is not an optimization — the
+  // last mark before a trial closes is otherwise lost.
+  const saveCap = annotationsCap?.storage;
+  const saveRef = useRef<(doc: unknown) => void>(() => {});
+  saveRef.current = (doc) => {
+    if (saveCap) saveCap.save(doc as never);
+    else updateTrialAnnotations(record.id, doc);
+  };
+  useEffect(() => {
+    if (!annotationsCap) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let dirty = false;
+    const flush = (): void => {
+      if (!dirty) return;
+      dirty = false;
+      saveRef.current(annotations.toJSON());
+    };
+    const off = annotations.subscribe(() => {
+      dirty = true;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        timer = null;
+        flush();
+      }, 250);
+    });
+    return () => {
+      off();
+      if (timer) clearTimeout(timer);
+      flush();
+    };
+  }, [annotations, annotationsCap]);
 
   // A trial gets its own slot when its instrument declares tools; otherwise it
   // reads the lab's. Which slot a change writes follows from the same thing.
@@ -394,19 +433,19 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
   // Rendered beside the body rather than inside it: an overlay portals itself
   // into the surface container, so where it sits in this tree decides only
   // when its effects run — after the instrument's refs have attached.
-  const annotations = annotationsCap ? (
+  const annotationOverlays = annotationsCap ? (
     <AnnotationTargets
       capability={annotationsCap}
       state={record.state}
       config={record.config}
-      annotations={annotationsRef.current}
+      annotations={annotations}
       activeToolId={resolvedToolId}
     />
   ) : null;
 
   return (
     <TrialIdProvider trialId={record.id}>
-      <AnnotationsContext.Provider value={annotationsCap ? annotationsRef.current : null}>
+      <AnnotationsContext.Provider value={annotationsCap ? annotations : null}>
         <TrialChrome
           job={jobCap ? job : undefined}
           loupe={loupeBindings}
@@ -422,7 +461,7 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
           setActiveTool={setActiveTool}
         >
           {body}
-          {annotations}
+          {annotationOverlays}
         </TrialChrome>
       </AnnotationsContext.Provider>
     </TrialIdProvider>

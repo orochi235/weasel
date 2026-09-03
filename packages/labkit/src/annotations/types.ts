@@ -109,11 +109,21 @@ export interface AnnotationTarget extends AnnotationTargetInfo {
   view?: ViewTransform;
 }
 
-/** Declares that an instrument accepts marks: which regions take them, and
- *  optionally what a mark is allowed to mean. */
+/** Where an instrument keeps its own marks. Declaring this means labkit never
+ *  writes its trial slot — for an instrument whose marks belong in a format it
+ *  already owns. Both halves are called outside React; `save` is already
+ *  debounced by the time it arrives. */
+export interface AnnotationStorage {
+  load: () => SerializedAnnotations | null | undefined;
+  save: (doc: SerializedAnnotations) => void;
+}
+
+/** Declares that an instrument accepts marks: which regions take them,
+ *  optionally what a mark is allowed to mean, and optionally where they live. */
 export interface AnnotationsCapability<TS = unknown, TC = unknown> {
   targets: (state: TS, config: TC) => readonly AnnotationTarget[];
   meaning?: AnnotationMeaning;
+  storage?: AnnotationStorage;
 }
 
 /** A persisted mark set. Versioned by this arc rather than by labkit's
