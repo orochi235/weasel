@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
+import type { AnnotationsCapability } from '../annotations/types';
 import type { ViewportSize, WorldSpec } from '../canvas/worldSpec';
 import type { TrialContribution } from '../chrome/types';
 import type { ConfigSchema } from '../config/types';
 import type { ConfigField } from '../controls/types';
 import type { JobCapability, JobHandle } from '../job/types';
 import type { LoupeDeclaration } from '../loupe/types';
-import type { AnnotationsCapability } from '../annotations/types';
 import type { ToolCapability } from '../tools/types';
 
 /** What an instrument's `render` is handed: its state and config, the setters

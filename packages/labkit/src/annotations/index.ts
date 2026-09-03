@@ -1,8 +1,8 @@
-export { fracContains, fracIntersects, fracToWorld, roundFrac, worldToFrac } from './frac';
 export type { WorldRect } from './frac';
+export { fracContains, fracIntersects, fracToWorld, roundFrac, worldToFrac } from './frac';
 export { isStale, seenFrom } from './staleness';
-export { annotationsFromJSON, createAnnotationScene, createAnnotationStore } from './store';
 export type { AnnotationStoreOptions } from './store';
+export { annotationsFromJSON, createAnnotationScene, createAnnotationStore } from './store';
 export type {
   Annotation,
   AnnotationData,
@@ -11,9 +11,9 @@ export type {
   AnnotationMeaning,
   AnnotationPatch,
   AnnotationQuery,
+  AnnotationStatus,
   AnnotationsApi,
   AnnotationsCapability,
-  AnnotationStatus,
   AnnotationTarget,
   AnnotationTargetInfo,
   FracPoint,

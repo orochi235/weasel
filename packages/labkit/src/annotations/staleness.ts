@@ -7,10 +7,7 @@
 /** The values of `keys` in `config`, for storing beside a new mark. Keys the
  *  config does not carry are omitted rather than stored as undefined, so the
  *  snapshot says what was known rather than what was asked. */
-export function seenFrom(
-  config: unknown,
-  keys: readonly string[],
-): Record<string, unknown> {
+export function seenFrom(config: unknown, keys: readonly string[]): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   if (config === null || typeof config !== 'object') return out;
   const src = config as Record<string, unknown>;

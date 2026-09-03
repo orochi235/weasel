@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  fracContains,
-  fracIntersects,
-  fracToWorld,
-  roundFrac,
-  worldToFrac,
-} from './frac';
+import { fracContains, fracIntersects, fracToWorld, roundFrac, worldToFrac } from './frac';
 import type { FracRect } from './types';
 
 const CONTENT = { w: 256, h: 170 };

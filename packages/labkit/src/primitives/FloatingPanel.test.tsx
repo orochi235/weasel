@@ -256,7 +256,7 @@ describe('a child that is not a native control', () => {
   // either way. Capture-on-press is the observable proxy for it.
   it('does not capture the pointer until the pointer has actually moved', () => {
     const captured: number[] = [];
-    Element.prototype.setPointerCapture = function (id: number) {
+    Element.prototype.setPointerCapture = (id: number) => {
       captured.push(id);
     };
     render(
@@ -276,7 +276,7 @@ describe('a child that is not a native control', () => {
 describe('a clickable row nested in a list, the shape a floating panel usually holds', () => {
   it('does not capture the pointer on a press two ancestors below the panel', () => {
     const captured: number[] = [];
-    Element.prototype.setPointerCapture = function (id: number) {
+    Element.prototype.setPointerCapture = (id: number) => {
       captured.push(id);
     };
     render(

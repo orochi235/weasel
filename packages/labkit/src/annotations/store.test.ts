@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createAnnotationStore, createAnnotationScene, annotationsFromJSON } from './store';
+import { annotationsFromJSON, createAnnotationScene, createAnnotationStore } from './store';
 import type { AnnotationInit, AnnotationTargetInfo } from './types';
 
 const TARGETS: AnnotationTargetInfo[] = [

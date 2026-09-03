@@ -48,6 +48,37 @@ export {
   ToggleRow,
 } from '@weasel-js/ui';
 export type {
+  Annotation,
+  AnnotationData,
+  AnnotationInit,
+  AnnotationKind,
+  AnnotationMeaning,
+  AnnotationPatch,
+  AnnotationQuery,
+  AnnotationStatus,
+  AnnotationStoreOptions,
+  AnnotationsApi,
+  AnnotationsCapability,
+  AnnotationTarget,
+  AnnotationTargetInfo,
+  FracPoint,
+  FracRect,
+  SerializedAnnotations,
+  WorldRect,
+} from './annotations';
+export {
+  annotationsFromJSON,
+  createAnnotationScene,
+  createAnnotationStore,
+  fracContains,
+  fracIntersects,
+  fracToWorld,
+  isStale,
+  roundFrac,
+  seenFrom,
+  worldToFrac,
+} from './annotations';
+export type {
   CanvasLayerDescriptor,
   CanvasStackContextValue,
   CanvasStackProps,
@@ -173,37 +204,6 @@ export { useTrialState } from './state/useTrialState';
 export type { ViewTransform2D } from './state/view';
 export { as2DView, DEFAULT_VIEW } from './state/view';
 export * from './surface';
-export {
-  annotationsFromJSON,
-  createAnnotationScene,
-  createAnnotationStore,
-  fracContains,
-  fracIntersects,
-  fracToWorld,
-  isStale,
-  roundFrac,
-  seenFrom,
-  worldToFrac,
-} from './annotations';
-export type {
-  Annotation,
-  AnnotationData,
-  AnnotationInit,
-  AnnotationKind,
-  AnnotationMeaning,
-  AnnotationPatch,
-  AnnotationQuery,
-  AnnotationsApi,
-  AnnotationsCapability,
-  AnnotationStatus,
-  AnnotationStoreOptions,
-  AnnotationTarget,
-  AnnotationTargetInfo,
-  FracPoint,
-  FracRect,
-  SerializedAnnotations,
-  WorldRect,
-} from './annotations';
 export { interstellarTheme } from './theme/interstellar';
 export type { ToolCapability, TrialTool } from './tools/types';
 export * from './trial';

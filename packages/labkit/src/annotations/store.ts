@@ -1,4 +1,10 @@
-import { asNodeId, createScene, sceneFromJSON, type Scene, type SerializedScene } from '@weasel-js/core';
+import {
+  asNodeId,
+  createScene,
+  type Scene,
+  type SerializedScene,
+  sceneFromJSON,
+} from '@weasel-js/core';
 import { fracContains, fracIntersects, fracToWorld, roundFrac, worldToFrac } from './frac';
 import { isStale as isStaleAgainst, seenFrom } from './staleness';
 import type {
@@ -171,7 +177,7 @@ export function annotationsFromJSON(
   targets: () => readonly AnnotationTargetInfo[],
 ): AnnotationsApi {
   const doc = raw as Partial<SerializedAnnotations> | null;
-  if (!doc || doc.version !== 1 || !doc.scene) {
+  if (doc?.version !== 1 || !doc.scene) {
     return createAnnotationStore({ scene: createAnnotationScene(), targets });
   }
   const scene = sceneFromJSON<AnnotationData, 'marks', MarkPose>(
