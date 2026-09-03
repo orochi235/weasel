@@ -220,11 +220,7 @@ export class WeaselRenderer {
       this.canvas.addEventListener('webglcontextrestored', this.boundOnRestored);
     }
 
-    this.gl.enable(this.gl.BLEND);
-    this.gl.blendFunc(this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
-    this.gl.disable(this.gl.DEPTH_TEST);
-    this.gl.disable(this.gl.CULL_FACE);
-    this.gl.clearColor(0, 0, 0, 0);
+    this.applyGlState();
     this.applyViewport();
 
     this.pathFill = new ShaderProgram(this.gl, VERT_SRC, FRAG_SRC);
@@ -330,6 +326,18 @@ export class WeaselRenderer {
     return this.programRegistry.get(id) ?? null;
   }
 
+  /** The GL state every frame assumes. Applied per `render()` rather than once
+   *  at construction because a co-tenant sharing this context moves all of it
+   *  between our frames. */
+  private applyGlState(): void {
+    const gl = this.gl;
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.disable(gl.DEPTH_TEST);
+    gl.disable(gl.CULL_FACE);
+    gl.clearColor(0, 0, 0, 0);
+  }
+
   private applyViewport(): void {
     if (this.targetRect) return;
     this.gl.viewport(0, 0, this.widthCss * this.dpr, this.heightCss * this.dpr);
@@ -381,11 +389,7 @@ export class WeaselRenderer {
 
   private onContextRestored(): void {
     this.contextLost = false;
-    this.gl.enable(this.gl.BLEND);
-    this.gl.blendFunc(this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
-    this.gl.disable(this.gl.DEPTH_TEST);
-    this.gl.disable(this.gl.CULL_FACE);
-    this.gl.clearColor(0, 0, 0, 0);
+    this.applyGlState();
     this.applyViewport();
     this.pathFill = new ShaderProgram(this.gl, VERT_SRC, FRAG_SRC);
     this.pathFill.lookupUniforms(PATH_FILL_UNIFORMS);
@@ -503,6 +507,7 @@ export class WeaselRenderer {
     // New frame: refill the dynamic-glyph synchronous bake budget.
     resetBakeBudget(this.bakeBudget);
     this.groupState.reset();
+    this.applyGlState();
     this.applyTarget();
     // Ensure all stencil bits are cleared regardless of any mask left over
     // from the previous frame's clip ops.

@@ -36,3 +36,26 @@ describe('WeaselRenderer stencil requirement', () => {
       .not.toThrow();
   });
 });
+
+describe('WeaselRenderer per-frame GL state', () => {
+  it('re-establishes blend, depth, cull and clear colour on every render', () => {
+    const recorder = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: recorder.gl, width: 100, height: 100, dpr: 1 });
+    // Constructor state is not the claim — a co-tenant moves all of it between
+    // our frames, so the second frame must set it again just like the first.
+    r.render([]);
+    recorder.reset();
+    r.render([]);
+
+    const names = recorder.calls.map((c) => c.name);
+    expect(names).toContain('blendFunc');
+    expect(names).toContain('clearColor');
+
+    const enabled = recorder.calls.filter((c) => c.name === 'enable').map((c) => c.args[0]);
+    expect(enabled).toContain(recorder.gl.BLEND);
+
+    const disabled = recorder.calls.filter((c) => c.name === 'disable').map((c) => c.args[0]);
+    expect(disabled).toContain(recorder.gl.DEPTH_TEST);
+    expect(disabled).toContain(recorder.gl.CULL_FACE);
+  });
+});
