@@ -39,6 +39,7 @@ Priority tags:
 - Two implementations of an editable curve; the timeline built the second → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit's loupe drives itself with plain listeners, not bindings → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Every React Aria overlay inside a lab renders unthemed → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- Four drag lifecycles, four different lost-pointer policies → [Tools & gestures](#tools--gestures)
 - labkit `registerSerializers` has no callers; instrument serializers never run → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit: nested config values — `f.schema` is flat because `setConfig` is → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Reconcile core's `ToolPrefLeaf` with weasel-ui's `PrefLeaf` — the `paint` kind has already drifted → [Selection, actions & UI panels](#selection-actions--ui-panels)
@@ -71,6 +72,26 @@ Priority tags:
 ---
 
 ## Tools & gestures
+
+- **(P2) Four drag lifecycles, four different lost-pointer policies.** The
+  dispatcher (`useGestureDispatcher.tsx`), `handleDrag`, `thresholdDrag` and
+  `pointerDrag` each own a pointerdown-to-pointerup lifecycle, and each made a
+  different call about capture and teardown: the dispatcher captures and
+  listens on the element, `handleDrag` does the same but never recovers if
+  capture is lost, `thresholdDrag` captures and listens on `document`, and
+  `pointerDrag` listens on `document` with no capture at all.
+
+  None of them handles `lostpointercapture` — the string appears nowhere in the
+  repo — and none treats a `pointermove` with `buttons === 0` as the release it
+  missed. So a drag whose pointer leaves the element, or whose capturing
+  element is removed mid-gesture, hangs in flight. The dispatcher's
+  `onWindowBlur` releases held keys and leaves the drag running.
+
+  The fix worth making is one drag-session primitive that owns capture, the two
+  recovery rules and teardown, with all four built on it — patching them
+  one at a time leaves three copies of the same hole. Note the test trap: jsdom
+  records `setPointerCapture` and does nothing else, so a test of any of this
+  can pass against a broken implementation.
 
 - **(P2) No opt-out for individual standard actions.** `useStandardActions`
   registers a fixed descriptor list, so a consumer wanting its own align or
