@@ -11,11 +11,29 @@ import { defineInstrument, f, Lab, noneAdapter, useAnnotations } from '@weasel-j
 // In-repo, so the source stylesheet: a consumer imports the built
 // `@weasel-js/labkit/styles.css` instead.
 import '@weasel-js/labkit/styles.less';
-import { createRef, useState } from 'react';
+import { createRef, useCallback, useSyncExternalStore } from 'react';
 import 'windease/styles.css';
 
 const CONTENT = { w: 240, h: 160 };
 const paneRef = createRef<HTMLDivElement>();
+
+/** The last export, wherever it came from.
+ *
+ *  `onCapture` fires for labkit's own toolbar Export as well as for the
+ *  buttons below, which is the whole reason the hook exists: a host cannot
+ *  otherwise see an export it did not start. Module scope because the
+ *  capability is declared outside React, same as the target refs. */
+let latest: { url: string; w: number; h: number } | null = null;
+const listeners = new Set<() => void>();
+const subscribe = (fn: () => void) => {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+};
+function publish(next: typeof latest): void {
+  if (latest) URL.revokeObjectURL(latest.url);
+  latest = next;
+  for (const fn of listeners) fn();
+}
 
 /** Four flat quadrants and a black dot dead centre. A capture landing at the
  *  wrong scale or the wrong origin puts a mark over the wrong quadrant, which
@@ -46,20 +64,19 @@ function Target({ hue }: { hue: number }) {
  *  on where it goes. */
 function CapturePanel() {
   const marks = useAnnotations();
-  const [shot, setShot] = useState<{ url: string; w: number; h: number } | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const shot = useSyncExternalStore(
+    subscribe,
+    useCallback(() => latest, []),
+    () => null,
+  );
 
-  const run = async (format: 'png' | 'svg') => {
-    setError(null);
-    try {
-      const result = await marks.capture('pane', { format, scale: 4 });
-      setShot((was) => {
-        if (was) URL.revokeObjectURL(was.url);
-        return { url: URL.createObjectURL(result.blob), w: result.width, h: result.height };
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    }
+  // Nothing here handles the result: `onCapture` does, and it does the same
+  // for an export started from the toolbar.
+  const run = (format: 'png' | 'svg') => {
+    marks.capture('pane', { format, scale: 4 }).catch((err: unknown) => {
+      publish(null);
+      console.error('[annotation-capture] capture failed', err);
+    });
   };
 
   return (
@@ -79,7 +96,6 @@ function CapturePanel() {
           data-height={shot.h}
         />
       ) : null}
-      {error ? <p role="alert">{error}</p> : null}
     </div>
   );
 }
@@ -98,6 +114,8 @@ const inspector = defineInstrument<Record<string, never>, { hue: number }>({
   ),
   annotations: {
     meaning: { statuses: [{ id: 'flagged', label: 'Flagged', color: '#ffffff' }] },
+    onCapture: (result) =>
+      publish({ url: URL.createObjectURL(result.blob), w: result.width, h: result.height }),
     targets: () => [
       {
         id: 'pane',

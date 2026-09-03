@@ -127,8 +127,5 @@ export const PartInspector = defineInstrument<Record<string, never>, Config>({
         base: svgOf(shadedRef),
       },
     ],
-    onCapture: (result) => {
-      console.log(`[annotate-lab] exported ${result.target} as ${result.format}`, result);
-    },
   },
 });
