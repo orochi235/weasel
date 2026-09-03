@@ -1,3 +1,4 @@
+import type { BuiltinToolId } from '@weasel-js/core';
 import {
   ArrowIcon,
   EllipseIcon,
@@ -13,7 +14,7 @@ import type { AnnotationKind } from './types';
 /** Which weasel tool an annotation tool drives, and what kind of mark that
  *  makes. `select` makes none. */
 export interface AnnotationToolInfo {
-  weaselTool: string;
+  weaselTool: BuiltinToolId;
   kind?: AnnotationKind;
 }
 
@@ -48,6 +49,6 @@ export function annotationToolInfo(id: string | null): AnnotationToolInfo | unde
 }
 
 /** Every weasel tool the overlay has to mount for this palette to work. */
-export const ANNOTATION_WEASEL_TOOLS: readonly string[] = [
+export const ANNOTATION_WEASEL_TOOLS: readonly BuiltinToolId[] = [
   ...new Set(Object.values(TOOLS).map((t) => t.weaselTool)),
 ];

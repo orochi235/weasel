@@ -1,0 +1,11 @@
+// The box a target takes its marks' input from: transparent, over the target's
+// element, positioned in the surface container the tile rects are measured
+// against. Above the shared buffer, because the buffer takes no input at all.
+.lk-annotate__input {
+  position: absolute;
+  left: var(--lk-anno-x);
+  top: var(--lk-anno-y);
+  width: var(--lk-anno-w);
+  height: var(--lk-anno-h);
+  z-index: 2;
+}

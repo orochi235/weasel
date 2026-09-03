@@ -28,6 +28,9 @@ export interface SurfaceHandle {
    *  clears every tile, not only the one that moved. */
   registerPainter: (id: string, paint: TilePainter) => () => void;
   containerRef: (el: HTMLElement | null) => void;
+  /** The element tile rects are measured against, and so the one a tile's own
+   *  chrome positions itself inside. Null before the owner attaches it. */
+  getContainer: () => HTMLElement | null;
 }
 
 /** What a tile's painter is handed: where it sits on the surface now, and the
@@ -152,6 +155,8 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
     };
   }, []);
 
+  const getContainer = useCallback(() => container.current, []);
+
   const containerRef = useCallback(
     (el: HTMLElement | null) => {
       if (container.current === el) return;
@@ -186,5 +191,6 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
     registerTile,
     registerPainter,
     containerRef,
+    getContainer,
   };
 }

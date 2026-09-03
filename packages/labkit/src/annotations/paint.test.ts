@@ -12,7 +12,7 @@ function mark(kind: AnnotationKind, extra: Partial<AnnotationData> = {}) {
 /** Every point of the first command's path, in world units. */
 function anchors(cmds: ReturnType<typeof markCommands>): number[] {
   const cmd = cmds[0];
-  if (!cmd || cmd.kind !== 'path') throw new Error('expected a path command');
+  if (cmd?.kind !== 'path') throw new Error('expected a path command');
   const p = cmd.path as { kind: string; coords?: Float32Array };
   return p.coords ? [...p.coords] : [];
 }

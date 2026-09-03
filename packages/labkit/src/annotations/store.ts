@@ -5,6 +5,7 @@ import {
   type SerializedScene,
   sceneFromJSON,
 } from '@weasel-js/core';
+import type { WorldRect } from './frac';
 import { fracContains, fracIntersects, fracToWorld, roundFrac, worldToFrac } from './frac';
 import { isStale as isStaleAgainst, seenFrom } from './staleness';
 import type {
@@ -21,14 +22,11 @@ import type {
 } from './types';
 
 /** A mark's box in its target's world. Matches weasel's default `RectPose`. */
-interface MarkPose {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+type MarkPose = WorldRect;
 
-type MarkScene = Scene<AnnotationData, 'marks', MarkPose>;
+/** The scene a trial's marks live in. Its pose is the mark's box in the
+ *  target's world; its data is what the mark is. */
+export type MarkScene = Scene<AnnotationData, 'marks', MarkPose>;
 
 /** The scene marks live in. One layer: marks do not stack in tiers, and a
  *  target's separation is a field, not a layer — a layer per target would
