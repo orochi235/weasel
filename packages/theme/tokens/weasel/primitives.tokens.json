@@ -62,6 +62,11 @@
     "curve-width": { "$value": "3px", "$description": "Drawn data curves. Heavier than structural lines so data reads as primary content." },
     "tb-height":   { "$value": "28px", "$description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges." },
     "control-h":   { "$value": "24px", "$description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in." },
+    "slider-track-h":    { "$value": "4px", "$description": "Height of a linear range track. The kit's single-thumb ranges all wear this; Slider's default 24px canvas track does not." },
+    "slider-thumb-size": { "$value": "8px", "$description": "Diameter of a linear range thumb." },
+    "slider-track-tint": { "$value": "18%", "$description": "Accent proportion in a range track. Mixed into a real property, never into another custom property." },
+    "slider-thumb-tint": { "$value": "70%", "$description": "Accent proportion in a range thumb." },
+    "field-pad-x":       { "$value": "8px", "$description": "Horizontal padding inside a boxed field. Pairs with --wzl-field-h, which is a container override and has no :root default." },
     "glass-blur":  { "$value": "3px", "$description": "Backdrop blur radius for frosted surfaces. Pairs with glass-tint." },
 
     "font-size-2xs": { "$value": "9px", "$description": "Shortcut keys and index badges. The floor for chrome text." },

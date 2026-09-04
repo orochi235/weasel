@@ -30,6 +30,7 @@ export type TokenName =
   | '--wzl-fg-muted'
   | '--wzl-fg-on-accent'
   | '--wzl-fg-subtle'
+  | '--wzl-field-pad-x'
   | '--wzl-focus-ring'
   | '--wzl-font-body'
   | '--wzl-font-display'
@@ -71,6 +72,10 @@ export type TokenName =
   | '--wzl-radius-pill'
   | '--wzl-radius-sm'
   | '--wzl-shadow'
+  | '--wzl-slider-thumb-size'
+  | '--wzl-slider-thumb-tint'
+  | '--wzl-slider-track-h'
+  | '--wzl-slider-track-tint'
   | '--wzl-space-lg'
   | '--wzl-space-md'
   | '--wzl-space-sm'
@@ -168,6 +173,11 @@ export const THEMES = {
       '--wzl-curve-width': "3px",
       '--wzl-tb-height': "28px",
       '--wzl-control-h': "24px",
+      '--wzl-slider-track-h': "4px",
+      '--wzl-slider-thumb-size': "8px",
+      '--wzl-slider-track-tint': "18%",
+      '--wzl-slider-thumb-tint': "70%",
+      '--wzl-field-pad-x': "8px",
       '--wzl-glass-blur': "3px",
       '--wzl-font-size-2xs': "9px",
       '--wzl-font-size-xs': "10px",
@@ -266,6 +276,11 @@ export const THEMES = {
       '--wzl-curve-width': "3px",
       '--wzl-tb-height': "28px",
       '--wzl-control-h': "24px",
+      '--wzl-slider-track-h': "4px",
+      '--wzl-slider-thumb-size': "8px",
+      '--wzl-slider-track-tint': "18%",
+      '--wzl-slider-thumb-tint': "70%",
+      '--wzl-field-pad-x': "8px",
       '--wzl-glass-blur': "3px",
       '--wzl-font-size-2xs': "9px",
       '--wzl-font-size-xs': "10px",
@@ -543,6 +558,31 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         "type": "dimension",
         "value": "24px",
         "description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
+      },
+      "slider-track-h": {
+        "type": "dimension",
+        "value": "4px",
+        "description": "Height of a linear range track. The kit's single-thumb ranges all wear this; Slider's default 24px canvas track does not."
+      },
+      "slider-thumb-size": {
+        "type": "dimension",
+        "value": "8px",
+        "description": "Diameter of a linear range thumb."
+      },
+      "slider-track-tint": {
+        "type": "dimension",
+        "value": "18%",
+        "description": "Accent proportion in a range track. Mixed into a real property, never into another custom property."
+      },
+      "slider-thumb-tint": {
+        "type": "dimension",
+        "value": "70%",
+        "description": "Accent proportion in a range thumb."
+      },
+      "field-pad-x": {
+        "type": "dimension",
+        "value": "8px",
+        "description": "Horizontal padding inside a boxed field. Pairs with --wzl-field-h, which is a container override and has no :root default."
       },
       "glass-blur": {
         "type": "dimension",

@@ -67,6 +67,16 @@
   --wzl-tb-height: 28px;
   /* Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in. */
   --wzl-control-h: 24px;
+  /* Height of a linear range track. The kit's single-thumb ranges all wear this; Slider's default 24px canvas track does not. */
+  --wzl-slider-track-h: 4px;
+  /* Diameter of a linear range thumb. */
+  --wzl-slider-thumb-size: 8px;
+  /* Accent proportion in a range track. Mixed into a real property, never into another custom property. */
+  --wzl-slider-track-tint: 18%;
+  /* Accent proportion in a range thumb. */
+  --wzl-slider-thumb-tint: 70%;
+  /* Horizontal padding inside a boxed field. Pairs with --wzl-field-h, which is a container override and has no :root default. */
+  --wzl-field-pad-x: 8px;
   /* Backdrop blur radius for frosted surfaces. Pairs with glass-tint. */
   --wzl-glass-blur: 3px;
   /* Shortcut keys and index badges. The floor for chrome text. */
