@@ -126,7 +126,7 @@
   bottom: 4px;
   background: var(--wzl-surface-sunken);
   border: 1px solid var(--wzl-border);
-  border-radius: 2px;
+  border-radius: var(--wzl-radius-sm);
 }
 
 .transport {
@@ -148,7 +148,7 @@
      close in value leave it reading as text rather than as a control. */
   background: var(--wzl-surface);
   border: 1px solid var(--wzl-border);
-  border-radius: 3px;
+  border-radius: var(--wzl-radius-sm);
   color: var(--wzl-fg);
   cursor: pointer;
 }
@@ -197,7 +197,7 @@
   min-height: 0;
   background: var(--wzl-surface);
   border: 1px solid var(--wzl-border);
-  border-radius: 4px;
+  border-radius: var(--wzl-radius-sm);
   color: var(--wzl-fg);
   /* `--wzl-font-ui` is condensed, so it reads a size smaller than it measures.
      Everything below inherits this; override per rule only to go up. */

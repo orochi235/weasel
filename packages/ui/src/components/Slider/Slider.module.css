@@ -131,6 +131,6 @@
   bottom: var(--rp-tick-inset, 20%);
   width: var(--rp-tick-width, 1px);
   margin-left: calc(var(--rp-tick-width, 1px) / -2);
-  border-radius: var(--rp-tick-width, 1px);
+  border-radius: var(--wzl-radius-pill);
   background: var(--rp-tick-color, var(--wzl-border-strong));
 }
