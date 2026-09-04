@@ -370,10 +370,9 @@ export interface OngoingHandle {
  *  async side-effect; the registry doesn't wait). */
 export interface ImmediateInvoker {
   timing: 'immediate';
-  /** `params` carries the matched binding's opts.params. When
-   *  invoked via the legacy `Action.run` bridge or from the command palette
-   *  with no per-binding context, `params` is undefined; descriptors should
-   *  default to a sensible variant. */
+  /** `params` carries the matched binding's opts.params. Invoked from the
+   *  command palette, or anywhere else with no per-binding context, `params`
+   *  is undefined; descriptors should default to a sensible variant. */
   run(deps: ActionDeps, params?: Record<string, unknown>): void;
 }
 

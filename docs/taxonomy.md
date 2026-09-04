@@ -256,11 +256,11 @@ under `packages/core/src/interactions/actions/`.
 ### Action
 
 A user-intent operation that modifies app state. Identified by `{ id, label,
-defaultBinding?, invoker?, run?(), enabled?() }`. Discoverable via the Actions Registry +
+defaultBinding?, requires?, invoker?, enabled?() }`. Discoverable via the Actions Registry +
 command palette; bindable to a key, mouse gesture, button click, or any other
 [Gesture](#gesture). Actions with a `defaultBinding` are routed through the gesture
-dispatcher; actions without one fall back to the legacy
-`useKeybinding` path.
+dispatcher; one without a binding still registers, and is reached by
+`ActionsRegistry.trigger` — from the command palette, a toolbar button, or app code.
 
 Actions are the *application layer* of state change — the verbs the user can
 invoke. Each one either produces an [Op](#op) batch (for undoable mutations like

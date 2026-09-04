@@ -1,7 +1,7 @@
 /**
  * `useActionsPropResolver` — applies the `actions` prop overrides on top of
- * whatever was registered by `useStandardActions` and the legacy bridges. Runs
- * after both (caller mounts this hook last). Resolution rules:
+ * whatever `useStandardActions` registered. Runs after it (caller mounts this
+ * hook last). Resolution rules:
  *
  *   actions === null           → unregister every currently-registered action
  *   actions[id] === null       → unregister that id

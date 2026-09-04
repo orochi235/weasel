@@ -70,28 +70,32 @@ Core doesn't ship a prebuilt atlas — bake one with `npm run gen:font -- <font.
 
 ## Actions registry
 
-`<ActionsProvider>` wires a single `keydown` listener and dispatches to a registry of `Action` descriptors. `<SceneCanvas>` auto-mounts a provider (if no parent provider exists) and registers default actions for select-all, escape, duplicate, nudge, and reorder, all derived from the scene/selection/adapter it already owns.
+An `Action` is a named operation — `delete`, `duplicate`, `group`, `insert`, `viewport.dragPan` — paired with the input that triggers it. `<ActionsProvider>` holds the registered descriptors, and the gesture dispatcher matches live input against each one's `defaultBinding`. Keystrokes and pointer gestures take the same path, so a keyboard shortcut and a drag are two bindings on one action rather than two mechanisms.
+
+`<SceneCanvas>` auto-mounts a provider when none is above it and registers the kit-standard descriptors, derived from the scene, selection, view and history it already owns.
 
 ```tsx
-import { ActionsProvider, SceneCanvas } from '@weasel-js/core';
+import { SceneCanvas } from '@weasel-js/core';
 
-<ActionsProvider>
-  <SceneCanvas
-    scene={scene}
-    selection={selection}
-    actions={{
-      selectAll: null,                              // disable the default Cmd+A
-      copy: {                                       // add an app-specific action
-        label: 'Copy',
-        defaultBinding: { key: 'c', mod: true },
-        run: () => clipboard.copy(selection.current),
-      },
-    }}
-  />
-</ActionsProvider>
+<SceneCanvas
+  scene={scene}
+  selection={selection}
+  actions={{
+    duplicate: null,                                // drop the default
+    'app.publish': {                                // add your own
+      id: 'app.publish',
+      label: 'Publish',
+      defaultBinding: { kind: 'key', key: 'p', mods: { mod: true } },
+      requires: ['selection'],
+      invoker: { timing: 'immediate', run: ({ selection }) => publish(selection.get()) },
+    },
+  }}
+/>
 ```
 
-The `actions` prop accepts `null` (disable all defaults), a partial override of any default by id, or a full `Action` descriptor for new ids. Consumers that need finer control can call individual hooks (`useSelectAll`, `useEscape`, `useDuplicate`, `useNudge`, `useReorder`) which auto-register into a parent provider when present and fall back to direct keybindings when not.
+The `actions` prop takes `null` to unregister every default, or a record keyed by action id. Each value is `null` to drop that one id, a partial `Action` to merge onto the default of the same id, or a complete `Action` to register a new one.
+
+An action does its work through `invoker`, not a bare callback. `{ timing: 'immediate' }` runs once; `{ timing: 'ongoing' }` returns a handle so a drag can preview while it moves and commit at the end. The deps an invoker reads (`selection`, `scene`, `applyOps`, …) are declared in `requires` and resolved at invocation time, which is what lets a consumer swap one — see `useDepSource`.
 
 ## Custom shaders (`@experimental`)
 
