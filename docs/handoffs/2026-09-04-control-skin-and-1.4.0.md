@@ -1,35 +1,25 @@
 # Control skin arc + the 1.4.0 release
 
-**State at hand-off:** the arc is merged to `main` and pushed. 1.4.0 published for
-17 of 18 packages. **`@weasel-js/labkit@1.4.0` did not publish** and needs finishing.
+**State at hand-off:** the arc is merged to `main` and pushed, and 1.4.0 is
+published for all 18 packages and verified by a real install.
 
-## The one thing that is broken
+## The release needed two attempts — know this before the next one
 
-`@weasel-js/labkit` is still `1.3.0` on npm while every other package is `1.4.0`.
+The first publish run left `@weasel-js/labkit` on 1.3.0 while the other 17 went to
+1.4.0, and **reported success anyway**: run `33840685310` lists
+`@weasel-js/labkit@1.4.0` under "Successfully published:" while the registry had no
+`1.4.0` entry for it at all. A plain re-dispatch fixed it — `changeset publish`
+skips versions already on the registry, so the retry attempted labkit alone.
 
-The release workflow **reported it as published and exited success**. It did not
-publish. Verify with the registry, never the workflow log:
+Nothing explains *why* it failed. Ruled out: tarball size (0.4 MB, 290 files),
+first-publish, `check:manifests`. Not ruled out: whatever npm actually returned,
+because `NPM_CONFIG_LOGLEVEL: error` in `release.yml` suppresses it and changesets
+reports success when it cannot parse the publish result. **If a future release
+silently drops a package, remove that env var first** — the error is being thrown
+away, not absent.
 
-```
-curl -s "https://registry.npmjs.org/@weasel-js%2Flabkit" \
-  | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['dist-tags'],'1.4.0' in d['versions'])"
-```
-
-Run `33840685310` lists `@weasel-js/labkit@1.4.0` under "Successfully published:"
-and `time` on the registry has no `1.4.0` entry at all. Ruled out: tarball size
-(0.4 MB, 290 files), first-publish (labkit has 1.2.0, 1.3.0, and both 1.4.0-pre
-tags), and `check:manifests` (passes). Not yet ruled out: whatever npm actually
-returned — `NPM_CONFIG_LOGLEVEL: error` in `release.yml` suppresses it, and
-changesets reports success when it cannot parse the publish result.
-
-**To finish:** re-dispatch `gh workflow run release.yml --ref main`. `changeset
-publish` skips versions already on the registry, so a re-run attempts labkit
-alone. A retry was in flight at hand-off; check it before doing anything else.
-If it keeps failing, the next move is removing `NPM_CONFIG_LOGLEVEL: error` from
-`release.yml` so npm's actual error survives into the log.
-
-The lockstep is broken until this lands: a consumer installing `labkit@1.3.0`
-alongside `core@1.4.0` gets a mismatched pair.
+The standing lesson, which this is the second instance of: verify a publish against
+`https://registry.npmjs.org/<pkg>` and a real install. Never the workflow log.
 
 ## What landed
 
@@ -81,19 +71,13 @@ also swept in three pre-existing uncommitted hunks that were already in the work
 tree (`BalloonView` interface + cast, `mode="dark"` on `LabShell`) — not mine, not
 lost, but they rode along.
 
-**Its labkit symlink is repointed** at `.claude/worktrees/control-skin/packages/labkit`
-so it resolved this branch. Put it back when the worktree goes:
-
-```
-ln -sfn ../../../../weasel/packages/labkit \
-  ~/src/experiments/speech-balloons/node_modules/@weasel-js/labkit
-```
+Its labkit symlink was repointed at the `control-skin` worktree during the work and
+has been put back to `../../../../weasel/packages/labkit`. Nothing to do.
 
 ## Loose ends
 
-- `control-skin` worktree at `.claude/worktrees/control-skin` — merged, can be removed.
-- speech-balloons has two unpushed commits and other unrelated dirty files.
-- A Storybook dev server on :6010 and a speech-balloons Vite server on :5180 were
-  left running.
-- `main` was red before this arc (the same dts OOM) and CI has not been confirmed
-  green since the heap fix — check `gh run list --workflow=ci.yml`.
+- speech-balloons has two unpushed commits (`f6889d9`, `b4867d1`) and other unrelated
+  dirty files that were already there.
+- `main` was red before this arc — the same dts OOM broke CI as well as Release. The
+  heap fix is pushed, but CI has not been confirmed green since:
+  `gh run list --workflow=ci.yml`.
