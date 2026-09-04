@@ -159,10 +159,7 @@ function ControlRow<TC extends Record<string, unknown>>({
       const min = extra<number>(leaf, 'min');
       const max = extra<number>(leaf, 'max');
       const step = extra<number>(leaf, 'step');
-      // core spends a number leaf's `unit` on a stored-to-display conversion,
-      // which these rows do not apply — so only a bare suffix is honored.
-      const declaredUnit = extra<unknown>(leaf, 'unit');
-      const unit = typeof declaredUnit === 'string' ? declaredUnit : undefined;
+      const suffix = extra<string>(leaf, 'suffix');
       if (extra<string>(leaf, 'control') === 'slider' && min !== undefined && max !== undefined) {
         return (
           <SliderRow
@@ -171,7 +168,7 @@ function ControlRow<TC extends Record<string, unknown>>({
             min={min}
             max={max}
             step={step}
-            unit={unit}
+            unit={suffix}
             onChange={write}
             layout={layout}
             span={wide}
@@ -191,7 +188,7 @@ function ControlRow<TC extends Record<string, unknown>>({
           min={min}
           max={max}
           step={step}
-          unit={unit}
+          unit={suffix}
           onChange={(n) => write(Math.min(hi, Math.max(lo, n)))}
           layout={layout}
           description={description}

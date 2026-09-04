@@ -1494,6 +1494,108 @@ git commit -m "let a config leaf declare the unit its number is in"
 
 ---
 
+### Task 15: The leaf's display unit is `suffix`, and a builder can set it
+
+Task 14 read a leaf's `unit` as a display string. That key is already taken:
+`ToolPrefNumber` (`packages/core/src/tools/prefs.ts`) declares
+`unit?: ToolPrefNumberUnit`, a conversion descriptor `{ toDisplay, fromDisplay, suffix? }`
+that `SelectionPanel` consumes. Two meanings for one key in one system is what
+`docs/taxonomy.md` warns against, and it left the string form guarded by a `typeof`
+check rather than named honestly.
+
+`suffix` is the right word and the codebase already uses it — it is the field inside
+`ToolPrefNumberUnit` that carries exactly this string. `unit` goes back to meaning
+the descriptor, and nothing has to learn unit conversion.
+
+Second half: no builder method sets the string today, so it is reachable only from a
+hand-written leaf. `NumberNode` gains one.
+
+**Files:**
+- Modify: `packages/labkit/src/controls/ControlPanel.tsx`
+- Modify: `packages/labkit/src/controls/ControlPanel.test.tsx`
+- Modify: `packages/labkit/src/config/builder.ts`
+- Modify: `packages/labkit/src/config/builder.test.ts`
+- Modify: `.changeset/control-skin-unification.md`
+
+- [x] **Step 1: Extend the builder test first**
+
+`packages/labkit/src/config/builder.test.ts` already covers `.range()`, `.step()` and
+the other `NumberNode` methods — follow whatever shape those assertions use rather
+than inventing one. Add a case asserting `f.number(20).suffix('px')` puts
+`suffix: 'px'` on the leaf's annotations.
+
+- [x] **Step 2: Run it to watch it fail**
+
+Run: `npx vitest run --project=labkit packages/labkit/src/config/builder.test.ts`
+Expected: FAIL — `.suffix` is not a function.
+
+- [x] **Step 3: Add the builder method**
+
+In `builder.ts`, on `NumberNode`, beside `step()`:
+
+```ts
+  /** A display suffix for the value — `'px'`, `'ms'`, `'°'`. Presentation only:
+   *  it is never parsed, and the stored value stays a plain number. */
+  suffix(suffix: string): this {
+    return this.ann({ suffix });
+  }
+```
+
+- [x] **Step 4: Point `ControlPanel` at `suffix`**
+
+Replace Task 14's guarded `unit` read with a plain one:
+
+```tsx
+      const suffix = extra<string>(leaf, 'suffix');
+```
+
+and pass `unit={suffix}` to both `SliderRow` and `NumberRow` — the *row* prop stays
+`unit`, which is correct weasel-ui vocabulary and matches `SliderRow`'s existing API.
+Only the leaf key changes.
+
+Delete the `typeof declaredUnit === 'string'` guard and the test that pinned it: with
+`suffix` carrying the string, a leaf's `unit` is unambiguously the descriptor and
+`ControlPanel` simply does not read it. Do not leave a `unit` fallback — a second
+accepted spelling is how both spellings end up in use.
+
+- [x] **Step 5: Update the ControlPanel tests**
+
+The Task 14 tests declare `unit: 'px'` on a raw leaf. Change them to `suffix: 'px'`,
+and now that a builder method exists, build the schema with `f.number(…).suffix('px')`
+instead of the `as unknown as PrefLeaf` cast — the cast only existed because the key
+was undeclarable.
+
+- [x] **Step 6: Run both focused files**
+
+Run: `npx vitest run --project=labkit packages/labkit/src/config/builder.test.ts packages/labkit/src/controls/ControlPanel.test.tsx`
+Expected: PASS
+
+- [x] **Step 7: Typecheck**
+
+Run: `npx tsc --noEmit` from the worktree root.
+
+- [x] **Step 8: Correct the changeset**
+
+`.changeset/control-skin-unification.md` currently ends with a paragraph describing
+the `unit` collision and the `typeof` guard. That situation no longer exists — replace
+it, do not append to it:
+
+```markdown
+A number leaf declares its display suffix with `.suffix('px')`, which `ControlPanel`
+passes to the row. `unit` on a leaf keeps its existing meaning — the
+`{ toDisplay, fromDisplay, suffix }` conversion descriptor `SelectionPanel` reads —
+and `ControlPanel` does not interpret it.
+```
+
+- [x] **Step 9: Commit**
+
+```bash
+git add packages/labkit/src/config packages/labkit/src/controls .changeset/control-skin-unification.md docs/superpowers/plans/2026-09-03-control-skin-unification.md
+git commit -m "name a leaf's display suffix suffix, not unit"
+```
+
+---
+
 ## Final verification
 
 - [ ] `npx tsc --noEmit` from the worktree root — clean

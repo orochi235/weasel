@@ -421,46 +421,25 @@ describe('<ControlPanel> packing', () => {
   });
 });
 
-describe('<ControlPanel> unit', () => {
-  // A number leaf's `unit` is core's stored-to-display descriptor, so a bare
-  // string suffix is only expressible past the type.
-  const numberLeaf = (extras: Record<string, unknown>): PrefLeaf =>
-    ({
-      kind: 'number',
-      name: 'Width',
-      description: '',
-      default: 0,
-      ...extras,
-    }) as unknown as PrefLeaf;
+describe('<ControlPanel> suffix', () => {
+  const panel = (node: ReturnType<typeof f.number>) =>
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(f.schema({ width: node.label('Width') }), [])}
+        config={{ width: 20 }}
+        setConfig={vi.fn()}
+      />,
+    );
 
-  const panel = (leaf: PrefLeaf) => {
-    const schema: ResolvedConfig = {
-      group: { name: 'root', children: { width: leaf } },
-      sections: [],
-      showIf: new Map(),
-      renderers: {},
-    };
-    return render(<ControlPanel schema={schema} config={{ width: 20 }} setConfig={vi.fn()} />);
-  };
-
-  it('suffixes a slider readout with the unit the leaf declares', () => {
-    const { container } = panel(numberLeaf({ control: 'slider', min: 0, max: 100, unit: 'px' }));
+  it('suffixes a slider readout with the suffix the leaf declares', () => {
+    const { container } = panel(f.number(20).range(0, 100).slider().suffix('px'));
     expect(container.querySelector('input[type="range"]')).not.toBeNull();
     expect(container.textContent).toContain('px');
   });
 
-  it('suffixes a typed number with the unit the leaf declares', () => {
-    const { container } = panel(numberLeaf({ unit: 'px' }));
+  it('suffixes a typed number with the suffix the leaf declares', () => {
+    const { container } = panel(f.number(20).input().suffix('px'));
     expect(container.querySelector('input[type="number"]')).not.toBeNull();
     expect(container.textContent).toContain('px');
-  });
-
-  it('ignores a stored-to-display unit descriptor rather than rendering it', () => {
-    const { container } = panel(
-      numberLeaf({
-        unit: { toDisplay: (n: number) => n, fromDisplay: (n: number) => n, suffix: 'deg' },
-      }),
-    );
-    expect(container.textContent).not.toContain('deg');
   });
 });

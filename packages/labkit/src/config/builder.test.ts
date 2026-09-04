@@ -29,6 +29,11 @@ describe('builder', () => {
     });
   });
 
+  it('annotates a number with a display suffix', () => {
+    const n = f.number(20).suffix('px');
+    expect(n.annotations.suffix).toBe('px');
+  });
+
   it('keeps a custom node kind across a chain', () => {
     const n = f.custom('vector2', { x: 0 }).label('Offset');
     expect(n.kind).toBe('vector2');

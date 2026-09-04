@@ -90,6 +90,12 @@ class NumberNode extends BaseNode<number> {
     return this.ann({ step });
   }
 
+  /** A display suffix for the value — `'px'`, `'ms'`, `'°'`. Presentation only:
+   *  it is never parsed, and the stored value stays a plain number. */
+  suffix(suffix: string): this {
+    return this.ann({ suffix });
+  }
+
   /** Force a slider even without both bounds. */
   slider(): this {
     return this.ann({ control: 'slider' });

@@ -24,6 +24,7 @@ export interface Annotations {
   min?: number;
   max?: number;
   step?: number;
+  suffix?: string;
   control?: string;
   options?: readonly ConfigOption[];
   placeholder?: string;

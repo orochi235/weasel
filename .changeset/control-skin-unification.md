@@ -30,8 +30,7 @@ fallback form is deliberate — it resolves per element, so a toolbar's redeclar
 nothing ever set it.
 
 `NumberRow` gains a `unit` suffix, matching `SliderRow`, and right-aligns its value
-so a column of numbers shares a decimal position. labkit's `ControlPanel` passes a
-leaf's `unit` through to both rows when it is a string.
+so a column of numbers shares a decimal position.
 
 Behaviour changes worth knowing:
 
@@ -49,8 +48,7 @@ Behaviour changes worth knowing:
 Removes `--wzl-track-bg`, `--wzl-track-border`, `--wzl-thumb-fill`,
 `--wzl-thumb-border` and `--wzl-thumb-text`, which nothing read.
 
-A note on `unit` in a config leaf: `ToolPrefNumber` already uses that key for a
-conversion descriptor (`{ toDisplay, fromDisplay, suffix }`). `ControlPanel` honours
-a `unit` only when it is a string and ignores the descriptor, rather than printing
-its `suffix` beside an unconverted value. No builder method sets a string unit yet,
-so the key is reachable only from a hand-written leaf.
+A number leaf declares its display suffix with `.suffix('px')`, which `ControlPanel`
+passes to the row. `unit` on a leaf keeps its existing meaning — the
+`{ toDisplay, fromDisplay, suffix }` conversion descriptor `SelectionPanel` reads —
+and `ControlPanel` does not interpret it.
