@@ -3,6 +3,7 @@ import { viewportDragPanAction } from './viewportDragPan';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
 import type { InvocationCtx } from '../invoker';
+import type { DecayLoopConfig } from 'core/viewport/useDecayLoop';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -15,6 +16,15 @@ function makeView(initial: View = { x: 0, y: 0, scale: { x: 1, y: 1 } }): ViewAp
     get() { return v; },
     set(next) { v = next; (this as unknown as { _value: View })._value = next; },
   };
+}
+
+/** A view that also publishes `decay`, recording the config it was handed. */
+function makeDecayView(initial?: View) {
+  const view = makeView(initial) as ViewApi & { _value: View };
+  const calls: DecayLoopConfig[] = [];
+  view.decay = (config: DecayLoopConfig) => { calls.push(config); };
+  view.stopDecay = () => {};
+  return { view, calls };
 }
 
 function makeCtx(view: ViewApi, drag?: { delta: { x: number; y: number } }): InvocationCtx {
@@ -174,5 +184,149 @@ describe('viewportDragPanAction invoker', () => {
       handle.onMove?.(ctx);
     }).not.toThrow();
     expect(mockSet).not.toHaveBeenCalled();
+  });
+});
+
+
+// ---------------------------------------------------------------------------
+// Axis locking
+// ---------------------------------------------------------------------------
+
+describe('viewportDragPanAction axis locking', () => {
+  function startWith(view: ViewApi, params?: Record<string, unknown>) {
+    const invoker = getOngoingInvoker(viewportDragPanAction);
+    return invoker.start(makeCtx(view), params ? { params } : undefined);
+  }
+
+  it("axis 'x' pans x and leaves y at its start value", () => {
+    const view = makeView({ x: 100, y: 200, scale: { x: 1, y: 1 } });
+    const handle = startWith(view, { axis: 'x' });
+    handle.onMove!(makeCtx(view, { delta: { x: 30, y: 50 } }));
+    expect(view._value.x).toBe(70);   // 100 - 30
+    expect(view._value.y).toBe(200);  // untouched
+  });
+
+  it("axis 'y' pans y and leaves x at its start value", () => {
+    const view = makeView({ x: 100, y: 200, scale: { x: 1, y: 1 } });
+    const handle = startWith(view, { axis: 'y' });
+    handle.onMove!(makeCtx(view, { delta: { x: 30, y: 50 } }));
+    expect(view._value.x).toBe(100);
+    expect(view._value.y).toBe(150);  // 200 - 50
+  });
+
+  it("axis 'both' and an absent axis param both pan freely", () => {
+    for (const params of [{ axis: 'both' }, undefined]) {
+      const view = makeView({ x: 100, y: 200, scale: { x: 1, y: 1 } });
+      const handle = startWith(view, params);
+      handle.onMove!(makeCtx(view, { delta: { x: 30, y: 50 } }));
+      expect(view._value.x).toBe(70);
+      expect(view._value.y).toBe(150);
+    }
+  });
+
+  it('honors a params thunk, the form useHandTool supplies', () => {
+    const view = makeView({ x: 100, y: 200, scale: { x: 1, y: 1 } });
+    const invoker = getOngoingInvoker(viewportDragPanAction);
+    const handle = invoker.start(makeCtx(view), { params: () => ({ axis: 'x' }) });
+    handle.onMove!(makeCtx(view, { delta: { x: 30, y: 50 } }));
+    expect(view._value.y).toBe(200);
+  });
+
+  it('keeps the lock however the pointer wanders on the locked axis', () => {
+    const view = makeView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+    const handle = startWith(view, { axis: 'x' });
+    handle.onMove!(makeCtx(view, { delta: { x: 10, y: 40 } }));
+    handle.onMove!(makeCtx(view, { delta: { x: 20, y: -90 } }));
+    handle.onMove!(makeCtx(view, { delta: { x: 25, y: 5 } }));
+    expect(view._value.x).toBe(-25);
+    expect(view._value.y).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Inertia
+// ---------------------------------------------------------------------------
+
+describe('viewportDragPanAction inertia', () => {
+  const invoker = getOngoingInvoker(viewportDragPanAction);
+
+  function fling(
+    view: ViewApi,
+    params: Record<string, unknown> | undefined,
+    reason: 'commit' | 'cancel' = 'commit',
+  ) {
+    let now = 1000;
+    const spy = vi.spyOn(performance, 'now').mockImplementation(() => now);
+    try {
+      const handle = invoker.start(makeCtx(view), params ? { params } : undefined);
+      for (const step of [10, 20, 30, 40]) {
+        now += 16;
+        handle.onMove!(makeCtx(view, { delta: { x: step, y: step } }));
+      }
+      handle.onEnd!(makeCtx(view), reason);
+    } finally {
+      spy.mockRestore();
+    }
+  }
+
+  it('starts a decay on commit when inertia is configured', () => {
+    const { view, calls } = makeDecayView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+    fling(view, { inertia: { friction: 0.9 } });
+    expect(calls).toHaveLength(1);
+    expect(calls[0].friction).toBe(0.9);
+    // Dragging right moves the camera left, so the coast must continue left.
+    expect(calls[0].velocity.vx).toBeLessThan(0);
+    expect(calls[0].velocity.vy).toBeLessThan(0);
+  });
+
+  it('does not coast when the gesture was cancelled', () => {
+    const { view, calls } = makeDecayView();
+    fling(view, { inertia: { friction: 0.9 } }, 'cancel');
+    expect(calls).toHaveLength(0);
+  });
+
+  it('does not coast when inertia is absent or explicitly false', () => {
+    for (const params of [undefined, { inertia: false }]) {
+      const { view, calls } = makeDecayView();
+      fling(view, params);
+      expect(calls).toHaveLength(0);
+    }
+  });
+
+  it('does not throw when inertia is asked for but no decay dep is wired', () => {
+    const view = makeView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+    expect(() => fling(view, { inertia: { friction: 0.9 } })).not.toThrow();
+  });
+
+  it('forwards boundary and bounds to the decay loop', () => {
+    const { view, calls } = makeDecayView();
+    const bounds = { minX: -50, maxX: 50 };
+    fling(view, { inertia: { boundary: 'stop', bounds } });
+    expect(calls[0].boundary).toBe('stop');
+    expect(calls[0].viewBounds).toBe(bounds);
+  });
+
+  it('coast ticks move the view from wherever the drag landed', () => {
+    const { view, calls } = makeDecayView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+    fling(view, { inertia: {} });
+    const landed = view.get().x;
+    calls[0].onTick(-7, -3);
+    expect(view.get().x).toBe(landed - 7);
+  });
+
+  it('scales coast velocity by zoom, matching the drag conversion', () => {
+    const one = makeDecayView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+    fling(one.view, { inertia: {} });
+    const two = makeDecayView({ x: 0, y: 0, scale: { x: 2, y: 2 } });
+    fling(two.view, { inertia: {} });
+    expect(two.calls[0].velocity.vx).toBeCloseTo(one.calls[0].velocity.vx / 2);
+  });
+
+  it('locks coast velocity to the axis the drag was locked to', () => {
+    const { view, calls } = makeDecayView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+    fling(view, { axis: 'x', inertia: {} });
+    expect(calls[0].velocity.vx).toBeLessThan(0);
+    // -0 is a fine zero here; Object.is would split it from +0.
+    expect(calls[0].velocity.vy).toBeCloseTo(0);
   });
 });

@@ -16,6 +16,7 @@ import { useRef } from 'react';
 import type React from 'react';
 import type { ViewApi } from 'interactions/actions/depSchema';
 import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
+import type { DecayLoopConfig } from 'core/viewport/useDecayLoop';
 import type { View } from 'core/viewport/view';
 
 interface Wiring {
@@ -24,6 +25,13 @@ interface Wiring {
   recenter?: () => View | void;
   hostSize?: () => { width: number; height: number } | null;
   animation?: ViewAnimationApi;
+  decay?: DecayApi;
+}
+
+/** The slice of `useDecayLoop` the view dep republishes. */
+export interface DecayApi {
+  start(config: DecayLoopConfig): void;
+  cancel(): void;
 }
 
 export function useViewDepSource(
@@ -32,16 +40,17 @@ export function useViewDepSource(
   recenter?: () => View | void,
   hostSize?: () => { width: number; height: number } | null,
   animation?: ViewAnimationApi,
+  decay?: DecayApi,
 ): ViewApi {
   // Every method reads through this, so the latest onViewChange / recenter /
   // runner is captured without the API object itself changing identity.
-  const wiring = useRef<Wiring>({ currentViewRef, onViewChange, recenter, hostSize, animation });
-  wiring.current = { currentViewRef, onViewChange, recenter, hostSize, animation };
+  const wiring = useRef<Wiring>({ currentViewRef, onViewChange, recenter, hostSize, animation, decay });
+  wiring.current = { currentViewRef, onViewChange, recenter, hostSize, animation, decay };
 
   // An unwired optional member must read falsy — `viewportZoomAction` branches
   // on `view.recenter`, and a forwarder is truthy — so the identity-stable API
   // is rebuilt whenever that presence set changes.
-  const shape = `${recenter ? 'r' : ''}${hostSize ? 'h' : ''}${animation ? 'a' : ''}`;
+  const shape = `${recenter ? 'r' : ''}${hostSize ? 'h' : ''}${animation ? 'a' : ''}${decay ? 'd' : ''}`;
   const shapeRef = useRef<string | null>(null);
   const viewApiRef = useRef<ViewApi | null>(null);
 
@@ -63,6 +72,12 @@ export function useViewDepSource(
               wiring.current.animation!.animate(to, opts),
             stopAnimation: () => wiring.current.animation!.stop(),
             animationTarget: () => wiring.current.animation!.target(),
+          }
+        : {}),
+      ...(decay
+        ? {
+            decay: (config: DecayLoopConfig) => wiring.current.decay!.start(config),
+            stopDecay: () => wiring.current.decay!.cancel(),
           }
         : {}),
     };

@@ -137,6 +137,7 @@ export { insertAction } from './interactions/actions/defaults/insert';
 export { clearSelectionAction } from './interactions/actions/defaults/clearSelection';
 export { cloneAction } from './interactions/actions/defaults/clone';
 export { viewportDragPanAction } from './interactions/actions/defaults/viewportDragPan';
+export type { DragPanParams } from './interactions/actions/defaults/viewportDragPan';
 export {
   viewportZoomAction,
   makeViewportZoomAction,
@@ -262,8 +263,10 @@ export type { VisibleRaf, VisibleRafOptions, VisibleRafTarget } from './scheduli
 export * from './core/viewport/wheelHandler';
 export { clientToCanvas } from './core/viewport/clientToCanvas';
 export { useVelocityTracker } from './core/viewport/useVelocityTracker';
+export { createVelocityTracker } from './core/viewport/createVelocityTracker';
+export type { VelocityTracker } from './core/viewport/createVelocityTracker';
 export { useDecayLoop } from './core/viewport/useDecayLoop';
-export type { DecayLoopConfig, PanBounds } from './core/viewport/useDecayLoop';
+export type { DecayLoopConfig, PanBounds, InertiaConfig } from './core/viewport/useDecayLoop';
 export { usePinchGesture } from './core/viewport/usePinchGesture';
 export { interpolateView } from './core/viewport/interpolateView';
 export { useViewAnimation, VIEW_ANIMATION_KEY } from './core/viewport/useViewAnimation';

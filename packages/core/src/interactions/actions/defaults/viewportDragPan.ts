@@ -21,23 +21,22 @@
  * The descriptor captures `startView` in its own scratch at `start` time,
  * parallel to `useHandTool`'s `startView` capture in its scratch object.
  *
- * ## Axis locking
- * Not implemented here — this descriptor always pans both axes. Axis-locked
- * variants can be registered as separate descriptors by consumers.
- *
- * ## Inertia
- * Not implemented anywhere on the drag-pan path. `useHandTool` accepts an
- * `inertia` option and calls `useVelocityTracker` / `useDecayLoop`, but its
- * memo body ignores all three, so the option is inert — see docs/TODO.md.
- * `useDecayLoop` itself works and is exported for consumers who wire it up.
+ * ## Axis locking and inertia
+ * Both are read from the binding's `params` at `start`, so any consumer
+ * binding this action gets them — not just `useHandTool`. `axis` drops one
+ * component of every pan delta. `inertia` coasts the view after release,
+ * through the optional `view.decay` dep; with no such dep wired the pan
+ * simply lands, which is what an unconfigured consumer already expects.
  *
  * @see useHandTool — the React hook this descriptor parallels.
  */
 
 import type { Action } from '../registry';
-import type { InvocationCtx, OngoingHandle } from '../invoker';
+import { resolveParams, type InvocationCtx, type OngoingHandle, type BindingOpts } from '../invoker';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
+import type { InertiaConfig } from 'core/viewport/useDecayLoop';
+import { createVelocityTracker, type VelocityTracker } from 'core/viewport/createVelocityTracker';
 
 // ---------------------------------------------------------------------------
 // Internal scratch
@@ -46,6 +45,17 @@ import type { ViewApi } from '../depSchema';
 interface DragPanScratch {
   startView: View;
   view: ViewApi;
+  axis: 'both' | 'x' | 'y';
+  inertia: InertiaConfig | undefined;
+  tracker: VelocityTracker | undefined;
+  lastScreen: { x: number; y: number };
+}
+
+/** Binding params `viewport.dragPan` understands. `useHandTool` supplies both;
+ *  a bare binding supplies neither and pans both axes with no coasting. */
+export interface DragPanParams {
+  axis?: 'both' | 'x' | 'y';
+  inertia?: false | InertiaConfig;
 }
 
 // ---------------------------------------------------------------------------
@@ -79,12 +89,27 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
   requires: ['view'],
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx): OngoingHandle {
+    start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
       const view = ctx.deps.view as ViewApi | undefined;
       if (!view) return {};
 
       const startView = view.get();
-      const scratch: DragPanScratch = { startView, view };
+      // Gesture-driven ongoing actions never see `ctx.params` — the dispatcher
+      // hands the binding's unresolved `opts` here and nowhere else, and pumps
+      // `onMove` / `onEnd` with an empty deps bag. Everything the gesture needs
+      // has to be captured now.
+      const params = (resolveParams(opts?.params) ?? {}) as DragPanParams;
+      const inertia = params.inertia === false ? undefined : params.inertia;
+      const scratch: DragPanScratch = {
+        startView,
+        view,
+        axis: params.axis ?? 'both',
+        inertia,
+        // Only track when a coast could actually happen, so the common
+        // no-inertia drag does no per-move work.
+        tracker: inertia && view.decay ? createVelocityTracker() : undefined,
+        lastScreen: { x: 0, y: 0 },
+      };
 
       return {
         kind: 'pan',
@@ -103,7 +128,18 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
           // panning will exhibit the lag bug. The fallback exists so old
           // test fixtures continue to compile.
           const screen = moveCtx.drag.screenDelta ?? moveCtx.drag.delta;
-          const { x: screenDx, y: screenDy } = screen;
+          // An axis lock drops the other component of the *cumulative* delta,
+          // so the locked axis never moves however the pointer wanders.
+          const screenDx = scratch.axis === 'y' ? 0 : screen.x;
+          const screenDy = scratch.axis === 'x' ? 0 : screen.y;
+          if (scratch.tracker) {
+            scratch.tracker.record(
+              screenDx - scratch.lastScreen.x,
+              screenDy - scratch.lastScreen.y,
+              performance.now(),
+            );
+            scratch.lastScreen = { x: screenDx, y: screenDy };
+          }
           const sv = scratch.startView;
           // 1 screen px maps to 1/scale world units (at 2x zoom, 100 px →
           // 50 world units of pan).
@@ -113,8 +149,26 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
             y: sv.y - screenDy / sv.scale.y,
           });
         },
-        onEnd(): void {
-          // No scene ops to commit; view change is already live.
+        onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
+          // No scene ops to commit; the pan itself is already live. What is
+          // left is the coast, and only for a drag that actually ended.
+          const { tracker, inertia, view: v } = scratch;
+          if (reason === 'cancel' || !tracker || !inertia || !v.decay) return;
+          const { vx, vy } = tracker.getVelocity();
+          const scale = scratch.startView.scale;
+          v.decay({
+            // Screen px/ms → world units/ms, matching the onMove conversion.
+            velocity: { vx: -vx / scale.x, vy: -vy / scale.y },
+            friction: inertia.friction,
+            minSpeed: inertia.minSpeed,
+            boundary: inertia.boundary,
+            viewBounds: inertia.bounds,
+            initialPosition: { x: v.get().x, y: v.get().y },
+            onTick: (dx, dy) => {
+              const cur = v.get();
+              v.set({ ...cur, x: cur.x + dx, y: cur.y + dy });
+            },
+          });
         },
       };
     },

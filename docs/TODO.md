@@ -104,18 +104,6 @@ Priority tags:
   belongs on `UseStandardActionsOptions`, which is the only place that can
   honor it.
 
-- **(P2) `useHandTool`'s `inertia` and `axis` options are inert.** The hook
-  reads both into locals, calls `useVelocityTracker()` and `useDecayLoop()`,
-  and then uses all four only as `useMemo` deps — the memo body builds a tool
-  whose sole binding routes `drag` to `viewport.dragPan`, which implements
-  neither. An `eslint-disable` on exhaustive-deps sits over the dep array.
-  `<SceneCanvas viewport={{ inertia }}>` threads a full config
-  (`friction`, `minSpeed`, `boundary`, `bounds`) all the way down to nothing.
-  `useDecayLoop` and `useVelocityTracker` are themselves implemented and
-  tested, so this is wiring, not new machinery. Same family as
-  `useLassoTool`'s `mode` / `behaviors` and `Tool.onActivate`: public,
-  documented, silently no-op. Found 2026-08-22.
-
 - **(P3) A second finger still fires `pointerDown`-spec bindings.** Found while
   giving each pointer its own gesture channel (2026-08-01).
   `onPointerDown` dispatches the eager `stage: 'press'` copy
@@ -1411,8 +1399,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   lose their `name` through `toJSON`. `<image>` flip and source-rect never
   serialize. `packages/{svg,hud,ui,labkit,modes,d3,paint}` never import `geom` at
   all, and three incompatible matrix-singularity policies coexist.
-  `useHandTool.ts:81` carries four dead deps (`inertia`, `axis`, `tracker`,
-  `decay`) — the same inert-options bug recorded under Tools.
 
   Text has one left: `measureText` / `measuredWidth` in `@weasel-js/text` now have
   no in-repo caller. They are a legitimate Canvas2D measuring utility for consumers

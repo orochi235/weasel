@@ -1,26 +1,17 @@
-import { useMemo, createElement } from 'react';
+import { useMemo, useRef, createElement } from 'react';
 import { defineViewportTool } from '../../defineViewportTool';
 import type { Tool } from '../../types';
 import { HandIcon } from '../../../icons';
 import type { View } from 'core/viewport/view';
-import type { PanBounds } from 'core/viewport/useDecayLoop';
+import type { InertiaConfig } from 'core/viewport/useDecayLoop';
 
-/** Momentum settings for the hand tool: how quickly a flung view slows, when
- *  it stops, and what happens at the pan limits. */
-export interface InertiaConfig {
-  friction?: number;
-  minSpeed?: number;
-  /** What to do when inertial pan reaches `bounds`. Default: no clamping. */
-  boundary?: 'stop' | 'bounce' | 'spring';
-  /** View-coordinate limits for boundary clamping. Requires `boundary` to take effect. */
-  bounds?: PanBounds;
-}
+export type { InertiaConfig };
 
-/** Options for `useHandTool`.
- *
- * Neither field is wired yet: the tool's only binding routes `drag` to
- * `viewport.dragPan`, which implements neither momentum nor axis locking. */
+/** Options for `useHandTool`. Both are forwarded to `viewport.dragPan` as
+ *  binding params; momentum additionally needs a `view` dep publishing
+ *  `decay`, which `<SceneCanvas>` wires. */
 export interface UseHandToolOptions {
+  /** Momentum after release. Omit or pass `false` for none. */
   inertia?: false | InertiaConfig;
   /**
    * Which axes the drag responds to. Default `'both'`.
@@ -54,7 +45,12 @@ interface HandScratch {
  * relative to the viewport — i.e. the camera moves *left*. So the new view
  * is `{ x: startView.x - dx, y: startView.y - dy }`.
  */
-export function useHandTool(_opts: UseHandToolOptions = {}): Tool<HandScratch | null> {
+export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | null> {
+  // Read through a ref from a params thunk rather than closing over the
+  // values: a consumer passing `inertia={{ friction: 0.9 }}` inline would
+  // otherwise mint a new tool identity on every render.
+  const optsRef = useRef(opts);
+  optsRef.current = opts;
   return useMemo(
     () =>
       Object.assign(defineViewportTool<HandScratch>({
@@ -73,7 +69,16 @@ export function useHandTool(_opts: UseHandToolOptions = {}): Tool<HandScratch | 
         // viewportDragPanAction, which also owns the grabbing cursor
         // (`Action.activeCursor`) the tool used to declare as an `engaged`
         // phase entry.
-        bindings: [{ spec: { kind: 'drag' as const }, actionId: 'viewport.dragPan' }],
+        bindings: [{
+          spec: { kind: 'drag' as const },
+          actionId: 'viewport.dragPan',
+          opts: {
+            params: () => ({
+              axis: optsRef.current.axis ?? 'both',
+              inertia: optsRef.current.inertia,
+            }),
+          },
+        }],
       }) as Tool<HandScratch | null>,
     [],
   );

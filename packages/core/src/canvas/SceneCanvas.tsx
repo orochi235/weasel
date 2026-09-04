@@ -38,7 +38,7 @@ import { useAnimator } from '../animation/useAnimator';
 import { useViewAnimation } from 'core/viewport/useViewAnimation';
 import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
 import type { SceneToAdapterOptions } from './sceneAdapter';
-import type { PanBounds } from 'core/viewport/useDecayLoop';
+import { useDecayLoop, type PanBounds } from 'core/viewport/useDecayLoop';
 import type { View } from 'core/viewport/view';
 import type { Node, Scene, SerializedScene } from 'core/scene/types';
 import type { NodeId } from 'core/scene/types';
@@ -2532,6 +2532,10 @@ function StandardActionsRegistrar({
     return () => { getActionRef.current = null; };
   }, [registry, getActionRef]);
 
+  // Momentum for `viewport.dragPan`. The loop must be a hook (it owns a
+  // `useVisibleRaf`), so it is built here and republished on the view dep.
+  const decayLoop = useDecayLoop();
+
   // Build the ViewApi (stable identity, refreshed closures) and hand it to
   // useStandardActions (which publishes the `view` dep along with selection,
   // scene, history, pointer, activeTool). `hostSize` reads the live canvas
@@ -2545,6 +2549,7 @@ function StandardActionsRegistrar({
       return el ? { width: el.clientWidth, height: el.clientHeight } : null;
     },
     viewAnimation,
+    decayLoop,
   );
   // Scene owns its own undo/redo stacks via `useScene`. `undoAction` /
   // `redoAction` only call `history.undo()` / `history.redo()`, so the scene

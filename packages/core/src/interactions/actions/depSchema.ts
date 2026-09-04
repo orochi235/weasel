@@ -30,6 +30,7 @@
 
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
+import type { DecayLoopConfig } from 'core/viewport/useDecayLoop';
 import type { ViewAnimationOptions } from 'core/viewport/useViewAnimation';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
@@ -71,6 +72,11 @@ export interface ViewApi {
   /** Where an in-flight camera animation is heading, or null. Compute the next
    *  discrete step from this so repeated presses compound. */
   animationTarget?(): View | null;
+  /** Optional momentum decay. `<SceneCanvas>` wires this from `useDecayLoop`;
+   *  a consumer publishing their own `view` dep need not, and `viewport.dragPan`
+   *  simply lands the pan without coasting. */
+  decay?(config: DecayLoopConfig): void;
+  stopDecay?(): void;
 }
 
 /**

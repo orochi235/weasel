@@ -9,6 +9,18 @@ export interface PanBounds {
   maxY?: number;
 }
 
+/** Momentum settings for a pan: how quickly a flung view slows, when it stops,
+ *  and what happens at the pan limits. The `DecayLoopConfig` fields a caller
+ *  chooses up front, without the per-gesture `velocity` / `onTick`. */
+export interface InertiaConfig {
+  friction?: number;
+  minSpeed?: number;
+  /** What to do when inertial pan reaches `bounds`. Default: no clamping. */
+  boundary?: 'stop' | 'bounce' | 'spring';
+  /** View-coordinate limits for boundary clamping. Requires `boundary` to take effect. */
+  bounds?: PanBounds;
+}
+
 /** How a decay should run: its starting velocity, how fast it slows, and what
  *  happens if it reaches the pan limits. */
 export interface DecayLoopConfig {
