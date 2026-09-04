@@ -1,28 +1,32 @@
 /**
  * Emit labkit's `.d.ts` bundle.
  *
- * tsup's built-in dts (rollup-plugin-dts under the hood) can't type the bundled
- * weasel sources: it resolves workspace members via their node_modules symlinks
- * but can't resolve the root-package core, and it ignores the tsconfig `paths`
- * that `tsc` honors — so types drifted to `never`. This script runs
- * rollup-plugin-dts directly with an explicit alias plugin so every weasel
- * specifier resolves to SOURCE, the same way the runtime build and the dev
- * server do.
+ * tsup's built-in dts (rollup-plugin-dts under the hood) can't resolve the
+ * weasel specifiers labkit imports: it follows workspace node_modules symlinks
+ * but ignores the tsconfig `paths` that `tsc` honors, so types drifted to
+ * `never`. This script runs rollup-plugin-dts directly against an explicit
+ * table instead.
  *
- * The alias table comes straight from the monorepo's `weaselAliases()` — the
- * single source of truth for name→source mapping. Because the JS bundle, the
- * vite/vitest configs, and this dts build all read that one helper, a future
- * weasel package rename is a one-file change in `scripts/vite-aliases.ts`; this
- * script needs no edit.
+ * That table points at each dependency's BUILT declarations, mirroring the way
+ * `tsup.config.ts` aliases core to its built JS. Pointing it at source instead
+ * — as this script once did — pulls the whole weasel graph into one TypeScript
+ * program and roughly doubles both the heap and the wall time, to re-derive
+ * declarations the earlier build tiers have already emitted. The emitted types
+ * are identical either way.
+ *
+ * `build:leaves` → `build:core` → `build:downstream` puts labkit last, so those
+ * files exist by the time this runs; `requireBuilt()` says so plainly if they
+ * don't.
  *
  * Run via `tsx` (not plain node) so it can import the TypeScript helper above.
  */
-import { dirname, resolve } from 'node:path';
+import { existsSync } from 'node:fs';
+import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import alias from '@rollup/plugin-alias';
 import { rollup } from 'rollup';
 import { dts } from 'rollup-plugin-dts';
-import { weaselAliases } from '../../../scripts/vite-aliases.ts';
+import { weaselDtsAliases, weaselDtsPaths } from '../../../scripts/dts-aliases.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const pkgRoot = resolve(here, '..'); // packages/labkit
@@ -65,15 +69,33 @@ const external = [
   /^zustand($|\/)/,
 ];
 
+/**
+ * Fail with the fix rather than with a rollup resolution error, since building
+ * labkit alone in a tree that has never been built is an easy thing to do.
+ */
+function requireBuilt(entries: ReturnType<typeof weaselDtsAliases>): void {
+  const missing = entries
+    .map((e) => e.replacement)
+    .filter((f) => !f.includes('$1') && !existsSync(f))
+    .map((f) => relative(weaselRoot, f));
+  if (missing.length === 0) return;
+  console.error(
+    `labkit's .d.ts bundle inlines its dependencies' built declarations, and ${missing.length} are missing:\n` +
+      `${missing.map((f) => `  ${f}`).join('\n')}\n` +
+      'Run `npm run build` from the repo root, which builds those tiers first.',
+  );
+  process.exit(1);
+}
+
+const aliases = weaselDtsAliases(weaselRoot, ['@weasel-js/labkit']);
+
 async function main(): Promise<void> {
+  requireBuilt(aliases);
   const bundle = await rollup({
     input,
     external,
     plugins: [
-      // Resolve weasel specifiers to source. plugin-alias delegates the final
-      // resolution back through `this.resolve`, so rollup-plugin-dts supplies
-      // the `.ts`/`.tsx` extension for the rewritten (extensionless) paths.
-      alias({ entries: weaselAliases(weaselRoot) }),
+      alias({ entries: aliases }),
       // Stub style imports: CSS carries no type information, but a bare
       // side-effect import (e.g. Toast's toastViewTransitions.css) survives
       // tree-shaking, and rollup would otherwise parse the CSS as JS.
@@ -88,6 +110,7 @@ async function main(): Promise<void> {
       },
       dts({
         tsconfig: resolve(pkgRoot, 'tsconfig.dts.json'),
+        compilerOptions: { paths: weaselDtsPaths(weaselRoot, ['@weasel-js/labkit']) },
         // Don't follow into node_modules; third-party types stay external.
         respectExternal: false,
       }),

@@ -1,5 +1,5 @@
 {
-  "comment": "Supplies compilerOptions for labkit's .d.ts emission (scripts/build-dts.mts → rollup-plugin-dts). labkit bundles the weasel core + private sub-packages into its dist, so their raw source is compiled here for type emission and must resolve weasel against SOURCE — otherwise types drift to `never`. IMPORTANT: rollup-plugin-dts IGNORES the `paths` below; the build resolves weasel specifiers via the @rollup/plugin-alias table fed by the monorepo's weaselAliases() (scripts/vite-aliases.ts) — the single source of truth, so a future package rename is a one-file change there. These `paths` exist only so a direct `tsc -p tsconfig.dts.json` (a diagnostic typecheck) still resolves against source; keep them in sync with weaselAliases on rename, or drop them if the diagnostic isn't needed.",
+  "comment": "Supplies compilerOptions for labkit's .d.ts emission (scripts/build-dts.mts → rollup-plugin-dts). Weasel specifiers resolve the ordinary way — workspace symlink, then the package's `exports` types condition — so this program spans labkit's own source only; the alias table in build-dts.mts is what redirects them to built declarations for bundling.",
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
@@ -7,13 +7,6 @@
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
     "strict": true,
-    // noUncheckedIndexedAccess is OFF. This config resolves @weasel-js/core (and
-    // ui/modes) to SOURCE so the whole inlined graph is in the program — turning
-    // the flag on surfaces ~1,659 latent index-access violations across the
-    // entire weasel engine (paths/Bezier/NURBS/tessellation, renderer math,
-    // tools, interactions). rollup-plugin-dts doesn't run diagnostics, so this
-    // never broke the build; restoring the flag is a monorepo-wide hardening
-    // initiative, not a labkit change.
     "exactOptionalPropertyTypes": false,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
@@ -22,24 +15,7 @@
     "resolveJsonModule": true,
     "noEmit": true,
     "types": ["node"],
-    "ignoreDeprecations": "6.0",
-    "baseUrl": ".",
-    "paths": {
-      "@weasel-js/core": ["../core/src/index.ts"],
-      "@weasel-js/core/routing": ["../core/src/tools/routing/index.ts"],
-      "@weasel-js/core/*": ["../core/src/*"],
-      "@weasel-js/ui": ["../ui/src/index.ts"],
-      "@weasel-js/modes": ["../modes/src/index.ts"],
-      "@weasel-js/theme": ["../theme/src/index.ts"],
-      "@weasel-js/theme/tokens.css": ["../theme/src/generated/tokens.css"],
-      "core/*": ["../core/src/core/*"],
-      "features/*": ["../core/src/features/*"],
-      "affordances/*": ["../core/src/affordances/*"],
-      "interactions/*": ["../core/src/interactions/*"],
-      "tools/*": ["../core/src/tools/*"],
-      "canvas/*": ["../core/src/canvas/*"],
-      "debug/*": ["../core/src/debug/*"]
-    }
+    "ignoreDeprecations": "6.0"
   },
-  "include": ["src/**/*", "../ui/src/**/*", "../modes/src/**/*"]
+  "include": ["src/**/*"]
 }

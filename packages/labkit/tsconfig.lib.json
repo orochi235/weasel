@@ -8,10 +8,8 @@
     "strict": true,
     // noUncheckedIndexedAccess is OFF. Enabling it strict-checks everything
     // labkit resolves to SOURCE — all of packages/ui (~360 violations) via the
-    // @weasel-js/ui alias. The dts config reaches even further (the whole core
-    // engine); see tsconfig.dts.json. Restoring the flag is a monorepo-wide
-    // hardening initiative, not a labkit change. (The 4 spots in
-    // packages/ui/src/useReorderDragList.ts are already fixed.)
+    // @weasel-js/ui alias. Restoring the flag is a monorepo-wide hardening
+    // initiative, not a labkit change.
     "exactOptionalPropertyTypes": false,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
