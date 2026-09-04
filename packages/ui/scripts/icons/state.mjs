@@ -23,6 +23,62 @@ const expand = chevron([10, 4.4], [0, -1], 5.6, 48) + chevron([10, 15.6], [0, 1]
 // region's centroid* on (10,10). Bbox-centring lands the ink 0.19 high.
 const chevronDown = chevron([10, 12.4], [0, 1], 6.6, 48);
 
+
+// ── colour mode ──────────────────────────────────────────────────────────
+// Sun: disc plus eight rays on the axes and diagonals.
+const sunDisc = 3.5;
+const sunRays = [0, 45, 90, 135, 180, 225, 270, 315]
+  .map((d) => {
+    const [x1, y1] = onCircle(10, 10, 5.3, d);
+    const [x2, y2] = onCircle(10, 10, 7.7, d);
+    return `M${x1} ${y1}L${x2} ${y2}`;
+  })
+  .join('');
+
+// A crescent is one disc minus another, so both arcs have to terminate on the
+// two circle-circle intersections. Guessing those coordinates closes the path
+// with a straight seam and draws a swoosh instead of a moon.
+function circleIntersections(x0, y0, r0, x1, y1, r1) {
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const d = Math.hypot(dx, dy);
+  const a = (r0 * r0 - r1 * r1 + d * d) / (2 * d);
+  const h = Math.sqrt(r0 * r0 - a * a);
+  const [xm, ym] = [x0 + (a * dx) / d, y0 + (a * dy) / d];
+  const r = (v) => Math.round(v * 100) / 100;
+  return [
+    [r(xm + (h * dy) / d), r(ym - (h * dx) / d)],
+    [r(xm - (h * dy) / d), r(ym + (h * dx) / d)],
+  ];
+}
+
+const MOON_RO = 6.7;
+const MOON_RI = 5.9;
+const moonBite = 4.1 / Math.SQRT2;
+const [moonP1, moonP2] = circleIntersections(10, 10, MOON_RO, 10 + moonBite, 10 - moonBite, MOON_RI);
+const moonArc =
+  `M${moonP1[0]} ${moonP1[1]}A${MOON_RO} ${MOON_RO} 0 1 0 ${moonP2[0]} ${moonP2[1]}` +
+  `A${MOON_RI} ${MOON_RI} 0 0 1 ${moonP1[0]} ${moonP1[1]}Z`;
+
+// Four-pointed sparkle: tips on the axes, each side a quadratic whose control
+// point sits at the centre, which is what pulls the sides fully concave.
+const SPARK_R = 7.4;
+const round2 = (v) => Math.round(v * 100) / 100;
+const sparkTips = [
+  [10, round2(10 - SPARK_R)],
+  [round2(10 + SPARK_R), 10],
+  [10, round2(10 + SPARK_R)],
+  [round2(10 - SPARK_R), 10],
+];
+const sparkle =
+  `M${sparkTips[0][0]} ${sparkTips[0][1]}` +
+  sparkTips
+    .slice(1)
+    .concat([sparkTips[0]])
+    .map(([x, y]) => `Q10 10 ${x} ${y}`)
+    .join('') +
+  'Z';
+
 export const STATE = {
   // transport
   play: `<path d="${playTri}"/>`,
@@ -123,6 +179,11 @@ export const STATE = {
     <circle cx="10" cy="10" r="7"/>
     <path d="M7.6 7.6 12.4 12.4M12.4 7.6 7.6 12.4"/>`,
   busy: `<path d="M10 3.2A6.8 6.8 0 1 1 3.2 10"/>`,
+
+  // colour mode
+  'mode-light': `<circle cx="10" cy="10" r="${sunDisc}"/><path d="${sunRays}"/>`,
+  'mode-dark': `<path d="${moonArc}"/>`,
+  'mode-auto': `<path d="${sparkle}"/>`,
 };
 
 export const STATE_ORDER = [
@@ -134,4 +195,5 @@ export const STATE_ORDER = [
   'grid', 'snap', 'measure', 'randomize',
   'refresh', 'info', 'warning', 'error',
   'busy',
+  'mode-light', 'mode-dark', 'mode-auto',
 ];

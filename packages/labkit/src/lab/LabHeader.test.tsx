@@ -39,4 +39,16 @@ describe('<LabHeader>', () => {
       expect(screen.getByRole('radio', { name: label })).toBeInTheDocument();
     }
   });
+
+  it('draws each color mode as a glyph, with the word only as its name', () => {
+    // The assertion above passes whether the segment holds text or an icon,
+    // because both routes produce the same accessible name. This is the one
+    // that can tell them apart.
+    render(<Lab instruments={[Stub]} defaultInstrument="Stub" storage={null} />);
+    for (const label of ['Auto', 'Light', 'Dark']) {
+      const segment = screen.getByRole('radio', { name: label });
+      expect(segment.querySelector('svg')).not.toBeNull();
+      expect(segment).toHaveTextContent('');
+    }
+  });
 });

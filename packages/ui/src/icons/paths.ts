@@ -53,6 +53,9 @@ export const ICON_PATHS = {
   warning: `<path d="M10 3.4 17.4 16.2H2.6z"/><path d="M10 8.4v3.4"/><path d="M10 14h0"/>`,
   error: `<circle cx="10" cy="10" r="7"/><path d="M7.6 7.6 12.4 12.4M12.4 7.6 7.6 12.4"/>`,
   busy: `<path d="M10 3.2A6.8 6.8 0 1 1 3.2 10"/>`,
+  modeLight: `<circle cx="10" cy="10" r="3.5"/><path d="M15.3 10L17.7 10M13.75 6.25L15.44 4.56M10 4.7L10 2.3M6.25 6.25L4.56 4.56M4.7 10L2.3 10M6.25 13.75L4.56 15.44M10 15.3L10 17.7M13.75 13.75L15.44 15.44"/>`,
+  modeDark: `<path d="M8.19 3.55A6.7 6.7 0 1 0 16.45 11.81A5.9 5.9 0 0 1 8.19 3.55Z"/>`,
+  modeAuto: `<path d="M10 2.6Q10 10 17.4 10Q10 10 10 17.4Q10 10 2.6 10Q10 10 10 2.6Z"/>`,
 
   // Stroke cap, join, align and dash
   strokeWidth: `<path d="M3.4 5.6h13.2" stroke-width="1"/><path d="M3.4 10h13.2" stroke-width="2"/><path d="M3.4 15.2h13.2" stroke-width="3.4"/>`,
