@@ -92,3 +92,27 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+/* Mirrors the property rows' editable readout (`.readoutInput`), so a number
+   sitting inside other chrome does not draw a second box around itself. */
+.ghost {
+  height: auto;
+  background: transparent;
+  border-color: transparent;
+  color: var(--wzl-accent);
+  font-weight: var(--wzl-font-weight-medium);
+}
+
+.ghost input {
+  padding: 1px 0;
+}
+
+.ghost:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.ghost:focus-within {
+  background: var(--wzl-surface-sunken);
+  border-color: var(--wzl-focus-ring);
+  box-shadow: none;
+}

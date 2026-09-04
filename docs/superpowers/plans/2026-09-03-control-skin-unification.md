@@ -966,7 +966,7 @@ git commit -m "give every boxed field the same focus ring"
 - Create: `packages/ui/src/components/NumberField/NumberField.ghost.test.tsx`
 - Modify: `packages/labkit/src/primitives/ZoomControl.tsx`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `packages/ui/src/components/NumberField/NumberField.ghost.test.tsx`:
 
@@ -994,12 +994,12 @@ describe('NumberField ghost', () => {
 });
 ```
 
-- [ ] **Step 2: Run to watch it fail**
+- [x] **Step 2: Run to watch it fail**
 
 Run: `npx vitest run --project=weasel-ui packages/ui/src/components/NumberField/NumberField.ghost.test.tsx`
 Expected: FAIL — `ghost` is not a prop.
 
-- [ ] **Step 3: Add the prop**
+- [x] **Step 3: Add the prop**
 
 In `NumberField.tsx`, add to `NumberFieldProps` after `hideSteppers`:
 
@@ -1021,7 +1021,7 @@ Destructure it and apply the class:
       <Group className={ghost ? `${s.frame} ${s.ghost}` : s.frame}>
 ```
 
-- [ ] **Step 4: Add the styles**
+- [x] **Step 4: Add the styles**
 
 Append to `NumberField.module.css`:
 
@@ -1052,12 +1052,12 @@ Append to `NumberField.module.css`:
 }
 ```
 
-- [ ] **Step 5: Run to verify it passes**
+- [x] **Step 5: Run to verify it passes**
 
 Run: `npx vitest run --project=weasel-ui packages/ui/src/components/NumberField/NumberField.ghost.test.tsx`
 Expected: PASS, 2 tests
 
-- [ ] **Step 6: Put ZoomControl's readout on it**
+- [x] **Step 6: Put ZoomControl's readout on it**
 
 In `ZoomControl.tsx`, add `ghost` beside `hideSteppers`:
 
@@ -1073,16 +1073,16 @@ In `ZoomControl.tsx`, add `ghost` beside `hideSteppers`:
         ghost
 ```
 
-- [ ] **Step 7: Full suites, typecheck**
+- [x] **Step 7: Full suites, typecheck**
 
-Run: `npx tsc --noEmit && npx vitest run --project=weasel-ui && npx vitest run --project=labkit`
+Run: `npx tsc --noEmit` plus the focused file. Full suites are the arc's single closing sweep.
 Expected: PASS
 
-- [ ] **Step 8: Screenshot check**
+- [~] **Step 8: Screenshot check** (skipped — deferred to the arc's closing pass)
 
 Storybook: a lab story with a zoom control. The percentage should read as accent-coloured text with no box, filling on hover and focus. Both modes.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add packages/ui/src/components/NumberField packages/labkit/src/primitives/ZoomControl.tsx

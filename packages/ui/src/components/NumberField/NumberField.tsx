@@ -20,6 +20,9 @@ export type NumberFieldProps = Omit<RACNumberFieldProps, 'children' | 'className
   errorMessage?: ReactNode | ((v: ValidationResult) => ReactNode);
   /** Hide the up/down stepper buttons. Defaults to false. */
   hideSteppers?: boolean;
+  /** Render with no box until focused — the readout treatment the property
+   *  rows use, for a value that sits inside other chrome rather than in a form. */
+  ghost?: boolean;
   /** Native input placeholder — e.g. `'Mixed'` for a multi-selection
    *  editor with no shared value. */
   placeholder?: string;
@@ -38,14 +41,15 @@ export const NumberField = forwardRef(function NumberField(
   props: NumberFieldProps,
   ref: Ref<HTMLInputElement>,
 ) {
-  const { label, description, errorMessage, hideSteppers, placeholder, className, ...rest } = props;
+  const { label, description, errorMessage, hideSteppers, ghost, placeholder, className, ...rest } =
+    props;
   return (
     <RACNumberField
       {...rest}
       className={[s.field, fieldClasses.root, className].filter(Boolean).join(' ')}
     >
       {label !== undefined && <Label className={fieldClasses.label}>{label}</Label>}
-      <Group className={s.frame}>
+      <Group className={ghost ? `${s.frame} ${s.ghost}` : s.frame}>
         <RACInput ref={ref} placeholder={placeholder} />
         {!hideSteppers && (
           <div className={s.steppers}>

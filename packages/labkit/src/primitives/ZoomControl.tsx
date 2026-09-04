@@ -66,6 +66,7 @@ export function ZoomControl({
         maxValue={max}
         step={0.01}
         hideSteppers
+        ghost
         formatOptions={{ style: 'percent', maximumFractionDigits: 0 }}
         onChange={(next) => {
           if (!Number.isFinite(next)) return;
