@@ -17,7 +17,7 @@ than a few 3D tiles have to share one surface.
 | `deviceRect.ts` | `toDeviceRect` — y-flip and device-grid snapping for a GL viewport |
 | `useTiledSurface.ts` | ResizeObserver, dirty set, rAF coalescing, DPR |
 | `SurfaceContext.ts` | Carries the handle down |
-| `useSurfaceTile.ts` | `useSurfaceTile(id)`, `useSurface()`, `useSurfaceOptional()` |
+| `useSurfaceTile.ts` | `useSurfaceTile(id)`, `useTileId(id)`, `useSurface()`, `useSurfaceOptional()` |
 
 ## Shape of a consumer
 
@@ -39,6 +39,16 @@ const surface = useTiledSurface({
 `onFrame` carries **every** tile's rect, not only the dirty ones — a scissored
 draw has to know where it is drawing relative to a surface that may have resized
 under it.
+
+## A tile id is scoped to its trial
+
+The tile namespace is one lab-wide map, but an instrument names its regions once
+and every trial of it declares those same names. `useSurfaceTile` registers under
+`useTileId(id)` — `<trial>/<id>` inside a trial — and a frame's `rects` are keyed
+the same way, so a host looking a tile up calls `useTileId` for the key. Unscoped,
+the second trial to mount takes the first one's rect *and* its painter, and the
+first is never told it moved again: it keeps the box it was measured at while it
+was the only trial open.
 
 ## The unit is a rect, not a trial
 

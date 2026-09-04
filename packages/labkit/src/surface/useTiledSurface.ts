@@ -5,7 +5,10 @@ import type { Box, Rect } from './rect';
 
 /** What a surface owner is handed once per animation frame. `rects` carries every
  *  tile, not only the dirty ones: a scissored draw has to know where it is drawing
- *  relative to a surface that may have resized under it. */
+ *  relative to a surface that may have resized under it.
+ *
+ *  Its keys are what `useTileId` returns — `<trial>/<id>` for a tile registered
+ *  inside a trial — not the bare id the tile was named with. */
 export interface SurfaceFrame {
   dirty: ReadonlySet<string>;
   rects: ReadonlyMap<string, Rect>;

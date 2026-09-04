@@ -9,7 +9,7 @@ import {
 import { type CSSProperties, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Rect } from '../surface/rect';
-import { useSurfaceCanvas, useSurfaceOptional } from '../surface/useSurfaceTile';
+import { useSurfaceCanvas, useSurfaceOptional, useTileId } from '../surface/useSurfaceTile';
 import { createMarkDrawOne } from './drawOne';
 import type { WorldRect } from './frac';
 import { seenFrom } from './staleness';
@@ -101,12 +101,16 @@ export function AnnotationOverlay({
   configRef.current = config;
 
   const id = target.id;
+  // The surface's tile namespace is the whole lab's, and every trial of an
+  // instrument declares the same target ids — so the tile is registered under
+  // the trial-scoped key, not under `id`.
+  const tileId = useTileId(id);
   const lastTile = useRef<HTMLElement | null>(null);
   useEffect(() => {
     const el = target.ref.current ?? null;
     if (el === lastTile.current) return;
     lastTile.current = el;
-    surface?.registerTile(id, el);
+    surface?.registerTile(tileId, el);
   });
   useEffect(
     () => () => {
@@ -114,20 +118,20 @@ export function AnnotationOverlay({
       // commit. StrictMode's mount / unmount / mount would otherwise take the
       // tile out and never put it back, and the surface would measure nothing.
       lastTile.current = null;
-      surface?.registerTile(id, null);
+      surface?.registerTile(tileId, null);
     },
-    [surface, id],
+    [surface, tileId],
   );
 
   useEffect(
     () =>
-      surface?.registerPainter(id, (next) => {
+      surface?.registerPainter(tileId, (next) => {
         setRect((prev) => (sameRect(prev, next) ? prev : next));
         // The shared buffer was cleared if it resized this frame; this pane's
         // own loop has no way to know that.
         sceneCanvas.current?.requestRedraw();
       }),
-    [surface, id],
+    [surface, tileId],
   );
 
   const container = surface?.getContainer() ?? null;

@@ -12,7 +12,7 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { SurfaceContext } from '../surface/SurfaceContext';
-import { useSurfaceOptional, useSurfaceTile } from '../surface/useSurfaceTile';
+import { useSurfaceOptional, useSurfaceTile, useTileId } from '../surface/useSurfaceTile';
 import type { SurfaceFrame, SurfaceHandle } from '../surface/useTiledSurface';
 import { useTiledSurface } from '../surface/useTiledSurface';
 import { Lab } from './Lab';
@@ -39,9 +39,13 @@ beforeAll(() => {
 });
 
 let seen: SurfaceHandle | null | 'not-rendered' = 'not-rendered';
+/** The key the probe's tile is actually registered under: a tile inside a
+ *  trial is scoped by it, and the trial's id is minted by the store. */
+let paneTileId = 'pane';
 
 function Probe() {
   seen = useSurfaceOptional();
+  paneTileId = useTileId('pane');
   const tile = useSurfaceTile('pane');
   return <div data-testid="pane" ref={tile} />;
 }
@@ -146,7 +150,7 @@ describe('<Lab> tile round trip', () => {
 
     act(() => {
       handle?.invalidateRects();
-      handle?.invalidate('pane');
+      handle?.invalidate(paneTileId);
     });
     act(() => {
       vi.advanceTimersByTime(64);
@@ -156,7 +160,8 @@ describe('<Lab> tile round trip', () => {
     // that passes because nothing ran is the failure mode this arc keeps
     // hitting.
     expect(frames.length).toBeGreaterThan(0);
-    const rect = frames[frames.length - 1]?.rects.get('pane');
+    expect(paneTileId).not.toBe('pane');
+    const rect = frames[frames.length - 1]?.rects.get(paneTileId);
     expect(rect).toEqual({ x: 240, y: 100, w: 320, h: 200 });
   });
 });

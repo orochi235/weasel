@@ -1296,9 +1296,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   A consumer needing per-trial DOM refs must smuggle a trial key through its own
   instrument state and key a registry by it — brick-icons does. The camera is the
   same problem: it lives on the trial, not in `state`, so it rides in a ref. Both
-  are invisible with one trial open; with two, each trial's overlay measures the
-  other's panes. Passing the trial id (and view) to `targets` would remove the
-  whole class.
+  are invisible with one trial open. Passing the trial id (and view) to `targets`
+  would remove the whole class. (labkit's own half of this — two trials sharing
+  one surface tile id, so the second took the first one's rect and painter — is
+  fixed: tiles register under `useTileId(id)`.)
 
 - **(P3) A mark can be selected in two targets at once.** `AnnotationOverlay`
   leaves `selectionMode` at weasel's default `single`, and each canvas clears
