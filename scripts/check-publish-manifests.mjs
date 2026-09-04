@@ -21,34 +21,9 @@
 // catches the whole class — a renamed entry point, a `files` field that forgot a
 // directory, a subpath added to `exports` before the build emits it.
 import { execFileSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
-
-/** Every non-private workspace, i.e. everything `changeset publish` would push. */
-function publishableWorkspaces() {
-  const { workspaces = [] } = JSON.parse(readFileSync(join(repoRoot, 'package.json'), 'utf8'));
-  const out = [];
-  for (const pattern of workspaces) {
-    if (!pattern.endsWith('/*')) throw new Error(`unsupported workspace pattern: ${pattern}`);
-    const parent = join(repoRoot, pattern.slice(0, -2));
-    for (const entry of readdirSync(parent, { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue;
-      const dir = join(parent, entry.name);
-      let manifest;
-      try {
-        manifest = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
-      } catch {
-        continue; // not a package (e.g. packages/den is an empty placeholder)
-      }
-      if (manifest.private === true) continue;
-      out.push({ dir, manifest });
-    }
-  }
-  return out.sort((a, b) => a.manifest.name.localeCompare(b.manifest.name));
-}
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+import { publishableWorkspaces, repoRoot } from './lib/workspaces.mjs';
 
 /**
  * Every relative path a manifest promises a consumer can resolve.

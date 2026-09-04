@@ -37,6 +37,11 @@ jobs:
       # All thirteen packages share one `fixed` group, so one bump moves every
       # package — which is how 0.8.0 became 1.0.0 by accident on 2026-08-12.
       - run: npm run check:bumps
+      # A package that has never been published cannot be published by the
+      # release job's OIDC token — it needs one manual publish first. Warn
+      # here rather than fail: the PR that adds a package is legitimately the
+      # one where it does not exist yet. The release job gates on it.
+      - run: npm run check:first-publish -- --warn
       # Every kit frame loop runs behind `useVisibleRaf`; a bare
       # requestAnimationFrame is how that stops being true.
       - run: npm run check:frame-loops

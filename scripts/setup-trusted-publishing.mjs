@@ -20,36 +20,11 @@
 // offers "skip 2FA for the next 5 minutes" — enable it, and the rest run
 // unattended. The 2s pause between calls is npm's own rate-limit guidance.
 import { execFileSync } from 'node:child_process';
-import { readdirSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { publishablePackageNames, repoRoot } from './lib/workspaces.mjs';
 
-const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const WORKFLOW = 'release.yml';
-
-/** Everything `changeset publish` would push, i.e. every non-private workspace. */
-function publishablePackages() {
-  const { workspaces = [] } = JSON.parse(readFileSync(join(repoRoot, 'package.json'), 'utf8'));
-  const out = [];
-  for (const pattern of workspaces) {
-    if (!pattern.endsWith('/*')) throw new Error(`unsupported workspace pattern: ${pattern}`);
-    const parent = join(repoRoot, pattern.slice(0, -2));
-    for (const entry of readdirSync(parent, { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue;
-      let manifest;
-      try {
-        manifest = JSON.parse(readFileSync(join(parent, entry.name, 'package.json'), 'utf8'));
-      } catch {
-        continue; // not a workspace (no manifest) — e.g. a docs-only directory
-      }
-      // `weasel-js` is private on purpose: npm rejects the unscoped name as too
-      // similar to an existing package. It has nothing to trust-configure.
-      if (manifest.private) continue;
-      out.push(manifest.name);
-    }
-  }
-  return out.sort();
-}
 
 /** `owner/repo`, read from the manifest so this can't drift from the real remote. */
 function repoSlug() {
@@ -100,7 +75,7 @@ const listOnly = args.has('--list');
 // it will not carry all twelve packages on its own — its real use is retrying
 // the tail after the 5-minute skip window lapsed.
 const otp = argvIn.find((a) => a.startsWith('--otp='));
-const packages = publishablePackages();
+const packages = publishablePackageNames();
 const slug = repoSlug();
 const npmCmd = npmCommand();
 

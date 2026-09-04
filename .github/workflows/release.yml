@@ -52,6 +52,11 @@ jobs:
       # checks this on the PR, but the release path accepts
       # `workflow_dispatch`, which bypasses that entirely.
       - run: npm run check:bumps
+      # OIDC cannot create a package, so a workspace that has never been
+      # published fails at PUT with E404 — after its siblings are already out,
+      # because `changeset publish` is not atomic. Both 1.4.0-pre releases
+      # stranded nine packages that way. Ask before anything ships.
+      - run: npm run check:first-publish
       # v2 is required by @changesets/cli 3.x: the CLI moved its output to
       # @clack/prompts and no longer prints the `New tag:` lines v1 scraped from
       # stdout to learn what published. v1 against a 3.x CLI publishes to npm
