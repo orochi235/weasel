@@ -1,5 +1,16 @@
 # @weasel-js/hud
 
+## 1.4.0-pre.1
+
+### Patch Changes
+
+- Updated dependencies [36b6ee7]
+  - @weasel-js/core@1.4.0-pre.1
+  - @weasel-js/loupe@1.4.0-pre.1
+  - @weasel-js/font@1.4.0-pre.1
+  - @weasel-js/geom@1.4.0-pre.1
+  - @weasel-js/theme@1.4.0-pre.1
+
 ## 1.4.0-pre.0
 
 ### Patch Changes
