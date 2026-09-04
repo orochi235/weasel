@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/paint",
-  "version": "1.4.0-pre.0",
+  "version": "1.4.0-pre.1",
   "description": "Paint vocabulary for weasel: FillStyle, Stroke, gradients, dashes. Plain data, no renderer.",
   "license": "MIT",
   "type": "module",

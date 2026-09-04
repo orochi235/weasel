@@ -1,5 +1,7 @@
 # @weasel-js/theme
 
+## 1.4.0-pre.1
+
 ## 1.4.0-pre.0
 
 ### Patch Changes

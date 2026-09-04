@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/core",
-  "version": "1.4.0-pre.0",
+  "version": "1.4.0-pre.1",
   "description": "Domain-agnostic 2D scene graph primitives for React: viewport math, drag/resize/insert/clone interactions, layered canvas rendering.",
   "license": "MIT",
   "author": "orochi235",
@@ -72,16 +72,16 @@
   },
   "peerDependencies": {
     "react": ">=18",
-    "@weasel-js/font": "1.4.0-pre.0"
+    "@weasel-js/font": "1.4.0-pre.1"
   },
   "dependencies": {
-    "@weasel-js/cursor": "1.4.0-pre.0",
-    "@weasel-js/geom": "1.4.0-pre.0",
-    "@weasel-js/gestures": "1.4.0-pre.0",
-    "@weasel-js/history": "1.4.0-pre.0",
-    "@weasel-js/modes": "1.4.0-pre.0",
-    "@weasel-js/paint": "1.4.0-pre.0",
-    "@weasel-js/text": "1.4.0-pre.0",
+    "@weasel-js/cursor": "1.4.0-pre.1",
+    "@weasel-js/geom": "1.4.0-pre.1",
+    "@weasel-js/gestures": "1.4.0-pre.1",
+    "@weasel-js/history": "1.4.0-pre.1",
+    "@weasel-js/modes": "1.4.0-pre.1",
+    "@weasel-js/paint": "1.4.0-pre.1",
+    "@weasel-js/text": "1.4.0-pre.1",
     "earcut": "2.2.4",
     "polygon-clipping": "^0.15.7"
   },
