@@ -1,6 +1,6 @@
 # Control Skin Unification Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. **Tick each box as you finish it** — an unchecked box on shipped work reads as open work, and nothing recomputes it. `[~]` marks a step deliberately not run here; the text beside it says where it went instead.
 
 **Goal:** Collapse weasel-ui's six slider treatments and four field treatments onto the property-row skin, so adding a control anywhere in the kit doesn't mean re-authoring its track, thumb and box.
 
@@ -65,7 +65,7 @@
 
 The generator discards the type-group key and prefixes the leaf verbatim, so `dimension.slider-track-h` emits `--wzl-slider-track-h`. Percentages are off-label for `$type: dimension`, but leaves emit verbatim and nothing validates units.
 
-- [ ] **Step 1: Add the tokens**
+- [x] **Step 1: Add the tokens**
 
 In `primitives.tokens.json`, inside the existing `"dimension"` group, after the `"control-h"` line:
 
@@ -77,28 +77,28 @@ In `primitives.tokens.json`, inside the existing `"dimension"` group, after the 
     "field-pad-x":       { "$value": "8px", "$description": "Horizontal padding inside a boxed field. Pairs with --wzl-field-h, which is a container override and has no :root default." },
 ```
 
-- [ ] **Step 2: Run the determinism test to watch it fail**
+- [x] **Step 2: Run the determinism test to watch it fail**
 
 Run: `npx vitest run --project=weasel-ui packages/theme/src/generated/determinism.test.ts`
 Expected: FAIL — "`tokens.css` is stale — run `npm run gen:tokens -w @weasel-js/theme` and commit"
 
 This is the guard that a token edit was regenerated. Watching it fail is the point.
 
-- [ ] **Step 3: Regenerate**
+- [x] **Step 3: Regenerate**
 
 Run: `npm run gen:tokens -w @weasel-js/theme`
 
-- [ ] **Step 4: Verify the emitted names**
+- [x] **Step 4: Verify the emitted names**
 
 Run: `grep -n 'wzl-slider-\|wzl-field-pad-x' packages/theme/src/generated/tokens.css`
 Expected: five lines, in the `:root` block, e.g. `  --wzl-slider-track-h: 4px;`
 
-- [ ] **Step 5: Run the theme tests**
+- [x] **Step 5: Run the theme tests**
 
 Run: `npx vitest run --project=weasel-ui packages/theme/`
 Expected: PASS. `generated.test.ts` and `tokens.generated.test.ts` assert specific named values and are not count-based, so they need no edit.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/theme/tokens/weasel/primitives.tokens.json packages/theme/src/generated
@@ -116,12 +116,12 @@ git commit -m "add slider geometry and field padding tokens"
 - Modify: `packages/ui/src/components/Foundations/Foundations.stories.tsx:323-324`
 - Modify: `packages/ui/src/components/Slider/Slider.module.css:58-61`
 
-- [ ] **Step 1: Confirm they are unread**
+- [x] **Step 1: Confirm they are unread**
 
 Run: `grep -rn 'var(--wzl-track-bg\|var(--wzl-track-border\|var(--wzl-thumb-fill\|var(--wzl-thumb-border\|var(--wzl-thumb-text' packages apps --include='*.css' --include='*.less' --include='*.ts' --include='*.tsx' | grep -v dist`
 Expected: no output. If anything prints, stop and report — the alias is live and this task's premise is wrong.
 
-- [ ] **Step 2: Delete the declarations**
+- [x] **Step 2: Delete the declarations**
 
 In `apps/site/canvas-kit-demo.css`, delete these five lines:
 
@@ -133,7 +133,7 @@ In `apps/site/canvas-kit-demo.css`, delete these five lines:
   --wzl-thumb-text: #000;
 ```
 
-- [ ] **Step 3: Drop them from the Foundations listing**
+- [x] **Step 3: Drop them from the Foundations listing**
 
 In `Foundations.stories.tsx`, in the `'Deprecated aliases'` entry, delete these two lines:
 
@@ -142,7 +142,7 @@ In `Foundations.stories.tsx`, in the `'Deprecated aliases'` entry, delete these 
       '--wzl-thumb-fill', '--wzl-thumb-border', '--wzl-thumb-text',
 ```
 
-- [ ] **Step 4: Fix the false comment**
+- [x] **Step 4: Fix the false comment**
 
 In `Slider.module.css`, replace:
 
@@ -159,12 +159,12 @@ with:
   color: var(--wzl-fg-inverse);
 ```
 
-- [ ] **Step 5: Typecheck and test**
+- [x] **Step 5: Typecheck and test**
 
 Run: `npx tsc --noEmit && npx vitest run --project=weasel-ui`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/site/canvas-kit-demo.css packages/ui/src/components/Foundations/Foundations.stories.tsx packages/ui/src/components/Slider/Slider.module.css
@@ -181,7 +181,7 @@ git commit -m "delete five slider tokens nothing read"
 - Modify: `packages/ui/src/components/InlineRange/InlineRange.module.css`
 - Modify: `packages/ui/src/components/InlineRange/InlineRange.tsx`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `packages/ui/src/components/range.test.tsx`:
 
@@ -213,12 +213,12 @@ describe('shared range skin', () => {
 });
 ```
 
-- [ ] **Step 2: Run it to watch it fail**
+- [x] **Step 2: Run it to watch it fail**
 
 Run: `npx vitest run --project=weasel-ui packages/ui/src/components/range.test.tsx`
 Expected: FAIL — cannot resolve `./range.module.css`.
 
-- [ ] **Step 3: Create the shared module**
+- [x] **Step 3: Create the shared module**
 
 Create `packages/ui/src/components/range.module.css`:
 
@@ -236,11 +236,14 @@ Create `packages/ui/src/components/range.module.css`:
   -webkit-appearance: none;
   width: 100%;
   min-inline-size: 48px;
-  /* Taller than the track so the thumb has somewhere to spill. */
-  height: 12px;
+  /* The box is taller than the track so the thumb has room to spill; a surface
+     where the element itself IS the track overrides this. */
+  height: var(--wzl-range-box-h, 12px);
   margin: 0;
   padding: 0;
-  background: transparent;
+  /* Default keeps the element out of the way so the track pseudo-element shows;
+     a surface that paints the element itself sets this. */
+  background: var(--wzl-range-bg, transparent);
   cursor: pointer;
 }
 
@@ -310,7 +313,7 @@ Create `packages/ui/src/components/range.module.css`:
 }
 ```
 
-- [ ] **Step 4: Point InlineRange at it**
+- [x] **Step 4: Point InlineRange at it**
 
 Replace the whole of `packages/ui/src/components/InlineRange/InlineRange.module.css` with:
 
@@ -320,22 +323,30 @@ Replace the whole of `packages/ui/src/components/InlineRange/InlineRange.module.
    `--slider-fill` carries the value, since no static rule expresses it. */
 .range {
   flex: 1;
-  background: linear-gradient(
+  --wzl-range-bg: linear-gradient(
     to right,
     var(--wzl-accent) 0 var(--slider-fill, 0%),
     var(--wzl-border-strong) var(--slider-fill, 0%) 100%
   );
-  block-size: var(--wzl-slider-track-h);
+  --wzl-range-box-h: var(--wzl-slider-track-h);
+  /* The gradient above IS the track, so the shared track paint must not land on top of it. */
+  --wzl-range-track-bg: transparent;
   border-radius: var(--wzl-radius-pill);
 }
-
-/* The gradient above IS the track, so the shared runnable-track paint would
-   sit on top of it. Clear it on both engines. */
-.range::-webkit-slider-runnable-track,
-.range::-moz-range-track {
-  background: transparent;
-}
 ```
+
+**Why variables and not overriding declarations.** InlineRange is the only surface
+where the element *itself* is the painted track, so it disagrees with the shared
+module about `height`, `background`, and the track pseudo-element's `background`. Each
+disagreement, written as a competing declaration, would be two rules at (0,1,0) across
+a file boundary — resolved by stylesheet emission order, not by intent, and silently
+broken by a bundler reordering imports. Routing each through a variable leaves one
+declaration to win. The result is **zero selector overlap between the two files**:
+local declares `.range` and nothing else.
+
+The shared module's track rules therefore read
+`background: var(--wzl-range-track-bg, color-mix(…))` rather than the `color-mix()`
+directly.
 
 In `InlineRange.tsx`, add the shared import and put it first in the class list:
 
@@ -351,21 +362,21 @@ and change the `className` line to:
       className={[shared.range, s.range, className].filter(Boolean).join(' ')}
 ```
 
-- [ ] **Step 5: Run the test to verify it passes**
+- [x] **Step 5: Run the test to verify it passes**
 
 Run: `npx vitest run --project=weasel-ui packages/ui/src/components/range.test.tsx`
 Expected: PASS, 2 tests
 
-- [ ] **Step 6: Run the full ui suite and typecheck**
+- [x] **Step 6: Run the full ui suite and typecheck**
 
 Run: `npx tsc --noEmit && npx vitest run --project=weasel-ui`
 Expected: PASS
 
-- [ ] **Step 7: Screenshot check**
+- [~] **Step 7: Screenshot check** — deferred to the consolidated visual pass
 
 Run `npm run dev:storybook`, open the `InlineRange` story, and check it in both modes by setting `data-wzl-mode="light"` then `"dark"` on the story root in devtools. The thumb is now 8px and 70% accent (it was 12px solid); the fill gradient is unchanged.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add packages/ui/src/components/range.module.css packages/ui/src/components/range.test.tsx packages/ui/src/components/InlineRange
