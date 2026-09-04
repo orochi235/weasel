@@ -1,11 +1,12 @@
 # Annotations: drawing on a lab surface
 
-**Five arcs, two of them in `core` and independently useful. Arcs 1, 3 and 4
-are built and closed, arc 2 is spiked; arc 5 is unbuilt.**
+**Five arcs, two of them in `core` and independently useful. Arcs 1, 3, 4 and 5
+are built and closed; arc 2 is spiked.**
 
-For whoever picks up arc 2 or arc 5. It assumes you know weasel's renderer and
-`SceneCanvas` and labkit's instrument/capability model, and nothing about the
-conversation that produced this.
+For whoever picks up arc 2, or changes the annotations API arc 5 exercised. It
+assumes you know weasel's renderer and `SceneCanvas` and labkit's
+instrument/capability model, and nothing about the conversation that produced
+this.
 
 **The question this answers:** a lab renders something; you want to draw on top
 of it — mark a missing edge, circle a defect, write a note — keep those marks as
@@ -293,20 +294,51 @@ Two things the arc found that are not about capture:
 
 ## Arc 5 — brick-icons migrates
 
-`MarkLayer`, `defects/geometry.ts` and `defects/identity.ts` come out; a defect
-becomes a mark plus the lab's own meaning. Marks gain geometry richer than a
-box, which is the point — a missing edge is a line, and the only shape available
-today is a rectangle around roughly where the line should be.
+**Built.** `MarkLayer`, `defects/geometry.ts` and the staleness half of
+`defects/identity.ts` are gone; `slug` / `defectId` stayed, which is the
+acceptance test this section set and it held. A defect can now be a line rather
+than a box drawn roughly where the line should be.
 
-This is the arc that proves arc 3's API. `MarkLayer` and `defects/geometry.ts`
-should go entirely. `defects/identity.ts` should lose its `seen` /
-`seenMatches` half to `positionDependsOn` and keep its `slug` / `defectId`
-half, which mints human-readable defect ids and has nothing to do with
-position. If the staleness half survives, the API is wrong somewhere.
+The lab keeps its Python server as the record of truth and *projects* into the
+store, rather than declaring `annotations.storage`. That was not preference:
+`SerializedAnnotations` is opaque serialized scenes, so a server storing it goes
+blind to its own defects — no filtering by part, no cross-part list, no
+reporting — and `AnnotationStorage.load` is synchronous while every real backend
+is not. Any consumer with a server behind it will land here too.
 
-Note that the lab pins `"@weasel-js/labkit": "1.3.0"` exactly, from npm — the
-same version weasel currently declares. So arcs 1–4 must release *and* the pin
-must move before it can migrate.
+Five things the arc found. The first four are the API's, and the fifth is the
+one that cost real time.
+
+- **`targets(state, config)` cannot say which trial is asking.** The capability
+  is declared once per instrument; `targets` runs once per trial. A consumer
+  needing per-trial DOM refs has to smuggle a trial key through its own
+  instrument state and key a registry by it. Getting this wrong is invisible
+  with one trial open and silently catastrophic with two: each trial's overlay
+  measured the other's panes, one overlay covered 666×1326 of the workspace
+  instead of its 476×639 pane, and it swallowed clicks on the neighbouring
+  trial's tool rail. Every unit test stayed green.
+- **`targets` cannot reach the trial view either.** The camera lives on the
+  trial, not in `state`, so it rides in a ref the render keeps current. A target
+  that omits `view` gets a fit rather than failing, so the mistake shows up only
+  as marks that do not track pan and zoom.
+- **`subscribe` carries no delta**, so a consumer diffs snapshots to notice a new
+  or moved mark. Its doc comment also claimed it fires "after every mutation" —
+  it has always fired on selection changes too, because `scene.setSelection`
+  notifies. Corrected in the source.
+- **There was no way to learn what the user selected.** `hitTest` and `within`
+  are read-only probes and the overlay owns pointer input, so a host could draw
+  marks and never find out which one was clicked — a detail panel was
+  unbuildable. `selection()` / `setSelection()` close it. Selection turned out to
+  be scene state already, so the store fans across the scenes it holds; no
+  registration handshake and no React in the store.
+- **A stored fraction is a fraction of the measured pane box, not the render
+  box.** Both `geometry.ts`'s docstring and the server's TOML header said render
+  box. Believing them and passing `render_px` as a target's `content` moves every
+  previously filed mark — 75px horizontally and 150px vertically on a 1200×600
+  pane. Nothing errors. Both comments are now fixed.
+
+Still open: the overlay leaves `selectionMode` at `single` and each canvas clears
+only its own scene, so a selection can stand in two targets at once.
 
 ## Testing traps
 
