@@ -420,3 +420,47 @@ describe('<ControlPanel> packing', () => {
     expect(rowOf('Width')?.className).toMatch(/rowInline/);
   });
 });
+
+describe('<ControlPanel> unit', () => {
+  // A number leaf's `unit` is core's stored-to-display descriptor, so a bare
+  // string suffix is only expressible past the type.
+  const numberLeaf = (extras: Record<string, unknown>): PrefLeaf =>
+    ({
+      kind: 'number',
+      name: 'Width',
+      description: '',
+      default: 0,
+      ...extras,
+    }) as unknown as PrefLeaf;
+
+  const panel = (leaf: PrefLeaf) => {
+    const schema: ResolvedConfig = {
+      group: { name: 'root', children: { width: leaf } },
+      sections: [],
+      showIf: new Map(),
+      renderers: {},
+    };
+    return render(<ControlPanel schema={schema} config={{ width: 20 }} setConfig={vi.fn()} />);
+  };
+
+  it('suffixes a slider readout with the unit the leaf declares', () => {
+    const { container } = panel(numberLeaf({ control: 'slider', min: 0, max: 100, unit: 'px' }));
+    expect(container.querySelector('input[type="range"]')).not.toBeNull();
+    expect(container.textContent).toContain('px');
+  });
+
+  it('suffixes a typed number with the unit the leaf declares', () => {
+    const { container } = panel(numberLeaf({ unit: 'px' }));
+    expect(container.querySelector('input[type="number"]')).not.toBeNull();
+    expect(container.textContent).toContain('px');
+  });
+
+  it('ignores a stored-to-display unit descriptor rather than rendering it', () => {
+    const { container } = panel(
+      numberLeaf({
+        unit: { toDisplay: (n: number) => n, fromDisplay: (n: number) => n, suffix: 'deg' },
+      }),
+    );
+    expect(container.textContent).not.toContain('deg');
+  });
+});

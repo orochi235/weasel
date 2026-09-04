@@ -1450,16 +1450,16 @@ This is the half that makes units the default rather than an option: every schem
 - Modify: `packages/labkit/src/controls/ControlPanel.tsx` (~`:158-193`)
 - Create or extend a test under `packages/labkit/src/controls/`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Find the existing `ControlPanel` test file and follow its setup rather than inventing one — check `packages/labkit/src/controls/` and `packages/labkit/src/config/` for how a schema is built for a test. Then assert that a numeric leaf declaring `unit: 'px'` renders `px`, for both the slider form (`control: 'slider'` with min and max) and the plain number form.
 
-- [ ] **Step 2: Run it to watch it fail**
+- [x] **Step 2: Run it to watch it fail**
 
 Run: `npx vitest run --project=labkit <your test path>`
 Expected: FAIL — the unit is not read or passed.
 
-- [ ] **Step 3: Read it and pass it**
+- [x] **Step 3: Read it and pass it**
 
 Beside the existing `min`/`max`/`step` reads:
 
@@ -1471,21 +1471,21 @@ Pass `unit={unit}` to both the `<SliderRow>` and the `<NumberRow>` in that branc
 
 A leaf's `unit` is a string, not a node — a schema is data. A consumer wanting `<sup>°</sup>` uses the row directly, or supplies a `renderers` override. Do not add markup-from-string mapping.
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `npx vitest run --project=labkit <your test path>`
 Expected: PASS
 
-- [ ] **Step 5: Full suites and typecheck**
+- [ ] **Step 5: Full suites and typecheck** — `tsc --noEmit` clean; the suites are left to the arc's consolidated sweep
 
 Run: `npx tsc --noEmit && npx vitest run --project=labkit && npx vitest run --project=weasel-ui`
 Expected: PASS
 
-- [ ] **Step 6: Document the key**
+- [x] **Step 6: Document the key**
 
 `min`/`max`/`step`/`control` are documented wherever labkit describes a config leaf's extras — find that (check `packages/labkit/docs/`, `packages/labkit/README.md`, and the `config` source's own docstrings) and add `unit` beside them, in one line. If they are documented nowhere, add nothing: do not start a new document for one key.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add packages/labkit/src/controls
