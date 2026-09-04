@@ -306,13 +306,18 @@ From `docs/specs/2026-05-03-pen-tool-design.md`:
 All four arcs of `docs/superpowers/specs/2026-09-03-cursor-system-design.md`
 have shipped. What remains:
 
-- **(P2) The add-anchor `+` cursor has no owner.** Arc 4 deleted the
-  `apps/draw` `cursor: copy` stub and its Alt listener rather than relocating
-  them: the stub advertised an add-anchor sub-tool that does not exist, and
-  every pipeline route for it — an affordance region, an `Action.cursor`, a
-  layer claim — needs a hit-test or an action that has yet to be written. It
-  comes back as one `Action.cursor` on the add-anchor action, with no listener,
-  because the hover pump already re-resolves on modifier keydown/keyup.
+- **(P3) There is still no add-anchor sub-tool.** Arc 4 replaced the
+  `apps/draw` `cursor: copy` stub — a CSS rule fed by a hand-rolled Alt
+  listener — with `Action.cursor` on `clone`, which is what Alt-drag actually
+  does. The `+` now shows over a body in every mode rather than over the whole
+  canvas in path-edit only, and the pump gates it on Alt for free. What the
+  stub's comment promised, clicking to insert an anchor on a segment, was
+  never implemented and still is not; when it lands it declares its own
+  `Action.cursor` the same way.
+
+  Note for whoever writes it: `AffordanceRegion.cursor` and a layer claim
+  cannot see modifiers — `affordanceAt` and `RenderLayer.hitTest` take no
+  event — so `Action.cursor` is the only modifier-gated cursor channel.
 - **(P3) The `bucket` glyph is parked.** Three attempts failed to read at 24px —
   a tapered pail with a spout is a pencil silhouette, and the handle that would
   fix it wants a sketch rather than another guess. Nothing is blocked: no fill

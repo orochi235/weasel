@@ -394,3 +394,14 @@ describe('cloneAction descriptor', () => {
     expect(scene.addLog).toHaveLength(0);
   });
 });
+
+describe('clone cursor', () => {
+  it('declares the duplicate cursor for both the hover hint and the drag', () => {
+    // Alt-drag-to-duplicate had no cursor anywhere in the kit. It needs no
+    // modifier gate of its own: the select tool binds clone behind
+    // `mods: { alt: true }`, so the hover pump predicts this action — and
+    // shows this cursor — only while Alt is held over a body.
+    expect(cloneAction.cursor).toBe('copy');
+    expect(cloneAction.activeCursor).toBe('copy');
+  });
+});

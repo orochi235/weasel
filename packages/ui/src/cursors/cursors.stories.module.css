@@ -1,0 +1,113 @@
+.wrap {
+  padding: 24px;
+  color: var(--wzl-fg);
+}
+
+.heading {
+  font: 400 0.78rem/1 var(--wzl-font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--wzl-fg-muted);
+  margin: 0 0 12px;
+}
+
+.note {
+  font: 400 0.85rem/1.5 var(--wzl-font-ui);
+  color: var(--wzl-fg-muted);
+  max-width: 62ch;
+  margin: 0 0 20px;
+}
+
+/* Three grounds per glyph. The register's whole claim is that one drawing
+ * reads on all of them, so they sit side by side rather than in three
+ * separate stories where the comparison has to be done from memory. */
+.sheet {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--cell, 150px), 1fr));
+  gap: 20px 12px;
+}
+
+.cell {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.grounds {
+  display: flex;
+  border-radius: var(--wzl-radius-md);
+  overflow: hidden;
+  border: 1px solid var(--wzl-border);
+}
+
+.ground {
+  display: grid;
+  place-items: center;
+  padding: 10px;
+}
+
+.white { background: #ffffff; }
+.dark { background: #2a2a30; }
+.mid { background: #8a8f7a; }
+
+.caption {
+  font: 400 0.7rem/1.2 var(--wzl-font-mono);
+  color: var(--wzl-fg-muted);
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.proof { --cell: 320px; }
+
+/* Live strip: the only way to check a hotspot is to put the real cursor on
+ * the screen and aim it. Each cell's class is generated alongside a <style>
+ * block, because the cursor value is baked at runtime and cannot be authored. */
+.live {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.liveCell {
+  display: grid;
+  place-items: center;
+  height: 76px;
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+  background: var(--wzl-surface-raised);
+  font: 400 0.7rem/1.2 var(--wzl-font-mono);
+  color: var(--wzl-fg-muted);
+}
+
+.angles {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 8px;
+  max-width: 720px;
+}
+
+.angleCell {
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  padding: 8px 0;
+  background: #ffffff;
+  border-radius: var(--wzl-radius-sm);
+}
+
+.angleLabel {
+  font: 400 0.65rem/1 var(--wzl-font-mono);
+  color: #444;
+}
+
+.painted {
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  flex-wrap: wrap;
+  background: #8a8f7a;
+  padding: 20px;
+  border-radius: var(--wzl-radius-md);
+}

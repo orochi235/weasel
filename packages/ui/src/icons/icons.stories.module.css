@@ -25,3 +25,8 @@
 .proof {
   --cell: 220px;
 }
+
+.modePanel {
+  background: var(--wzl-surface);
+  color: var(--wzl-fg);
+}
