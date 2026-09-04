@@ -440,6 +440,12 @@ export interface NumberRowProps {
   max?: number;
   step?: number;
   placeholder?: string;
+  /**
+   * Optional suffix rendered after the field. A string becomes a dim "word"
+   * unit (e.g. "px"); pass JSX like `<sup>°</sup>` for symbol units. Display
+   * only — it never participates in parsing, and the value stays a number.
+   */
+  unit?: ReactNode;
   layout?: PropertyRowLayout;
   description?: string;
   /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
@@ -456,26 +462,37 @@ export function NumberRow({
   max,
   step,
   placeholder,
+  unit,
   layout,
   description,
   span,
 }: NumberRowProps) {
+  const input = (
+    <input
+      type="number"
+      value={value}
+      min={min}
+      max={max}
+      step={step}
+      placeholder={placeholder}
+      onChange={(e) => {
+        const raw = e.target.value;
+        if (raw === '') return;
+        const n = Number(raw);
+        if (Number.isFinite(n)) onChange(n);
+      }}
+    />
+  );
   return (
     <PropertyRow span={span} label={label} layout={layout} description={description}>
-      <input
-        type="number"
-        value={value}
-        min={min}
-        max={max}
-        step={step}
-        placeholder={placeholder}
-        onChange={(e) => {
-          const raw = e.target.value;
-          if (raw === '') return;
-          const n = Number(raw);
-          if (Number.isFinite(n)) onChange(n);
-        }}
-      />
+      {unit == null ? (
+        input
+      ) : (
+        <span className={s.fieldUnitGroup}>
+          {input}
+          {typeof unit === 'string' ? <span className={s.readoutUnit}>{unit}</span> : unit}
+        </span>
+      )}
     </PropertyRow>
   );
 }

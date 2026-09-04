@@ -213,10 +213,21 @@
   pointer-events: none;
 }
 
+.fieldUnitGroup {
+  display: inline-block;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.fieldUnitGroup .readoutUnit {
+  margin-left: 4px;
+}
+
 /* Symbol units (e.g. `<sup>°</sup>`) lean on the browser's native super
    positioning. Just dim them to match — do NOT set line-height: 0, that
    would re-collapse the glyph onto the baseline. */
-.readoutGroup sup {
+.readoutGroup sup,
+.fieldUnitGroup sup {
   color: var(--wzl-fg-muted);
   font-size: var(--wzl-font-size-2xs);
   pointer-events: none;

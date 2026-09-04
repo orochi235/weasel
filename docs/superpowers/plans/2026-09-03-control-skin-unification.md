@@ -1333,7 +1333,7 @@ Display only: `unit` never participates in parsing, and the value stays a number
 - Modify: `packages/ui/src/components/Properties/Properties.module.css`
 - Create: `packages/ui/src/components/Properties/NumberRow.unit.test.tsx`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```tsx
 import { render } from '@testing-library/react';
@@ -1357,7 +1357,7 @@ describe('NumberRow unit', () => {
     expect(input?.nextElementSibling?.textContent).toBe('px');
   });
 
-  it('accepts a node unit so a symbol can super itself', () => {
+  it('renders a node unit as given', () => {
     const { container } = render(
       <NumberRow label="Angle" value={90} unit={<sup>°</sup>} onChange={() => {}} />,
     );
@@ -1366,12 +1366,12 @@ describe('NumberRow unit', () => {
 });
 ```
 
-- [ ] **Step 2: Run it to watch it fail**
+- [x] **Step 2: Run it to watch it fail**
 
 Run: `npx vitest run --project=weasel-ui packages/ui/src/components/Properties/NumberRow.unit.test.tsx`
 Expected: FAIL on the second and third cases — `unit` is not a prop, so nothing renders.
 
-- [ ] **Step 3: Add the prop**
+- [x] **Step 3: Add the prop**
 
 In `NumberRowProps`, after `placeholder`:
 
@@ -1399,24 +1399,29 @@ Destructure it, and wrap the input so the suffix has somewhere to sit. Read the 
 
 where `input` is the `<input type="number">` element the component already builds. Reuse `s.readoutUnit` — it is the same dim typography `SliderRow` uses, and a second class for the same appearance would drift.
 
-- [ ] **Step 4: Add the wrapper style**
+- [x] **Step 4: Add the wrapper style**
 
 In `Properties.module.css`:
 
+Inline-block, matching `.readoutGroup` — a flex container sinks a `<sup>` onto the baseline, which that rule's own comment already states. `gap` doesn't apply, so the spacing goes on the suffix in this context only (a bare `.readoutUnit` margin would leak into `SliderRow`).
+
 ```css
-/* Inline-flex, not flex: the row's own layout still treats this as the single
-   control it wraps. */
 .fieldUnitGroup {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 4px;
+  display: inline-block;
+  white-space: nowrap;
   min-width: 0;
+}
+
+.fieldUnitGroup .readoutUnit {
+  margin-left: 4px;
 }
 ```
 
+Add `.fieldUnitGroup sup` to the existing `.readoutGroup sup` selector list rather than writing a second rule.
+
 Check afterwards whether `.row input[type='number']` still sizes correctly inside it — it has `width: var(--wzl-prop-number-width, 9ch)`, which the wrapper must not collapse.
 
-- [ ] **Step 5: Run to verify it passes**
+- [x] **Step 5: Run to verify it passes**
 
 Run: `npx vitest run --project=weasel-ui packages/ui/src/components/Properties/NumberRow.unit.test.tsx`
 Expected: PASS, 3 tests
@@ -1426,7 +1431,7 @@ Expected: PASS, 3 tests
 Run: `npx tsc --noEmit && npx vitest run --project=weasel-ui`
 Expected: PASS
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add packages/ui/src/components/Properties
