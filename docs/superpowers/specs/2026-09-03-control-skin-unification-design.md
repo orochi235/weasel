@@ -58,16 +58,27 @@ Add to `packages/theme/tokens/weasel/`:
 
 Delete the five dead aliases and fix the `Slider.module.css` comment that cites them.
 
+All five go in the `dimension` group, whose leaves the generator emits verbatim —
+percentages are off-label for that `$type`, but nothing validates units and the group
+exists only to carry `$type`. Run `npm run gen:tokens -w @weasel-js/theme` and commit
+the three regenerated files, or `determinism.test.ts` fails.
+
 **Do not** write `--wzl-slider-track-bg: color-mix(in srgb, var(--wzl-accent) 18%,
 transparent)`. A `var()` inside a custom property is substituted where the property
-is *declared*, so a `:root` declaration bakes in the default mode's accent and
-inherits that frozen value into every other mode's block. `--wzl-line` in the
-generated tokens has this defect today. Consumers write the `color-mix()` in a real
-property, where it resolves per element:
+is *declared*, so a `:root` declaration freezes whatever the referenced token means
+there. Consumers write the `color-mix()` in a real property, where it resolves per
+element:
 
 ```css
 background: color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-track-tint), transparent);
 ```
+
+This would not bite today — `--wzl-accent` resolves to `--wzl-accent-base` at `:root`
+and is mode-invariant, so freezing it changes nothing. It is cheap insurance against
+a mode or a second theme layering `accent`, and it costs one indirection. The same
+rule *does* bite live: `--wzl-line: color-mix(in srgb, var(--wzl-fg) 20%, transparent)`
+sits at `:root` while `--wzl-fg` is mode-varying, so light mode inherits dark's
+gray-100. Out of scope here; `docs/TODO.md` already tracks it.
 
 `--wzl-field-h` (§4) is deliberately **not** in this list. It is an override a
 container sets, never a token with a `:root` default — declaring it as
@@ -165,5 +176,11 @@ Storybook is the surface where a skin regression shows. Both `--wzl-slider-*` an
 buttons, not by `&globals=theme:dark` — that sets `data-theme`, which nothing reads,
 and would verify one mode twice.
 
-The `var()`-in-custom-property trap is invisible to a light-mode-only pass: the
-frozen value is the light one, so the defect only appears in dark. Check both.
+`determinism.test.ts` byte-compares the three generated theme files against a fresh
+generator run, so any token edit that isn't regenerated and committed fails there
+with a stale-file message. That is the guard on §1.
+
+CSS modules are not processed in the `weasel-ui` vitest project (only `labkit` sets
+`css: true`), so a computed-style assertion there would assert nothing. Skin tasks
+assert the *contract* in jsdom — that the shared class is applied, that a prop
+reaches its custom property — and the look is checked by screenshot.
