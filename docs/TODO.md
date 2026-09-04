@@ -40,7 +40,6 @@ Priority tags:
 - labkit's loupe drives itself with plain listeners, not bindings → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Every React Aria overlay inside a lab renders unthemed → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Four drag lifecycles, four different lost-pointer policies → [Tools & gestures](#tools--gestures)
-- Cursor arc 3: the painted tier, for cursors over 128px or sized in world units → [Tools & gestures](#tools--gestures)
 - labkit `registerSerializers` has no callers; instrument serializers never run → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit: nested config values — `f.schema` is flat because `setConfig` is → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Reconcile core's `ToolPrefLeaf` with weasel-ui's `PrefLeaf` — the `paint` kind has already drifted → [Selection, actions & UI panels](#selection-actions--ui-panels)
@@ -304,22 +303,16 @@ From `docs/specs/2026-05-03-pen-tool-design.md`:
 
 ### Cursor package follow-ups
 
-From `docs/superpowers/specs/2026-09-03-cursor-system-design.md`. Arcs 1 and 2
-shipped: `@weasel-js/cursor` bakes an authored glyph to a
-`url(data:image/svg+xml,…)` string at any of 16 rotations; the four cursor
-fields take a `CursorSpec`; pencil, pen and eyedropper are baked cursors, and
-the resize corners and the rotation ring turn their glyphs with the target.
+All four arcs of `docs/superpowers/specs/2026-09-03-cursor-system-design.md`
+have shipped. What remains:
 
-- **(P2) Arc 3 — painted tier.** A `Path2D` painter and a canvas layer for
-  cursors that cannot be CSS cursors: over 128 CSS px, sized in world units
-  (a brush radius that tracks zoom), or needing live scene data. The glyph
-  record already feeds both renderers; `bakeCursor` throws above the cap today
-  rather than emitting a cursor the browser drops silently.
-- **(P3) Arc 4 — retire the `apps/draw` cursor stub.** `app.css:327` forces
-  `cursor: copy` through a `[data-mode="path-edit"][data-alt-held="true"]`
-  selector fed by a hand-rolled Alt keydown/keyup listener in `App.tsx`,
-  bypassing the cursor pipeline entirely. Replace with an affordance- or
-  action-declared cursor and delete both.
+- **(P2) The add-anchor `+` cursor has no owner.** Arc 4 deleted the
+  `apps/draw` `cursor: copy` stub and its Alt listener rather than relocating
+  them: the stub advertised an add-anchor sub-tool that does not exist, and
+  every pipeline route for it — an affordance region, an `Action.cursor`, a
+  layer claim — needs a hit-test or an action that has yet to be written. It
+  comes back as one `Action.cursor` on the add-anchor action, with no listener,
+  because the hover pump already re-resolves on modifier keydown/keyup.
 - **(P3) The `bucket` glyph is parked.** Three attempts failed to read at 24px —
   a tapered pail with a spout is a pencil silhouette, and the handle that would
   fix it wants a sketch rather than another guess. Nothing is blocked: no fill

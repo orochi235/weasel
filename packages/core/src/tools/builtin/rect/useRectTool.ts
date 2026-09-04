@@ -2,6 +2,7 @@ import { useMemo, createElement } from 'react';
 import { defineTool } from '../../defineTool';
 import { RectIcon } from '../../../icons';
 import type { Tool } from '../../types';
+import { cursorFor } from '@weasel-js/cursor';
 
 /**
  * Drag-to-draw rectangle tool.
@@ -23,7 +24,7 @@ export function useRectTool(): Tool<null> {
         id: 'rect',
         capabilities: ['creates-shapes'],
         hookName: 'useRectTool',
-        cursor: 'crosshair',
+        cursor: cursorFor('crosshairRect', { fallback: 'crosshair' }),
         presentation: {
           label: 'Rectangle',
           icon: createElement(RectIcon),

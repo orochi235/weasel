@@ -26,7 +26,8 @@ import { itemsFromDataTransfer, itemsFromClipboardData } from 'features/ingestio
 import type { InputEvent } from './matcher';
 import type { BodyTarget, BodyClassification } from '@weasel-js/gestures';
 import type { CursorSpec } from '@weasel-js/cursor';
-import { resolveCursor } from '@weasel-js/cursor';
+import type { PaintedCursorState } from '../../features/cursor/paintedCursorState';
+import { resolveCursorTier } from '@weasel-js/cursor';
 
 // ---------------------------------------------------------------------------
 // Drop-over styling — class toggled on the canvas while an OS drag hovers it;
@@ -258,6 +259,16 @@ export interface UseGestureDispatcherOptions {
    * that's already the test contract.
    */
   requestRedraw?: () => void;
+  /**
+   * The surface's painted-cursor channel, read live because the canvas handle
+   * it lives on arrives a render after this hook runs.
+   *
+   * Given one, a cursor the CSS tier cannot express — sized in world units, or
+   * past the size the browser drops the image at — is published here and drawn
+   * by the painted-cursor layer instead. Without one, such a cursor resolves to
+   * `none` and the pointer shows nothing.
+   */
+  paintedCursor?: () => PaintedCursorState | undefined;
 
   /**
    * Thunk returning the live `RuleCtx` for the current frame. When supplied,
@@ -332,7 +343,7 @@ function computeMultiTouchGeometry(
  * providers.
  */
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, toolsById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, getRuleCtx, onDoubleClick, views } = opts;
+  const { canvasRef, actions, toolsById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, paintedCursor, getRuleCtx, onDoubleClick, views } = opts;
   const onDoubleClickRef = useRef(onDoubleClick);
   onDoubleClickRef.current = onDoubleClick;
   const activeTool = useActiveToolContext();
@@ -385,6 +396,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   ];
   const requestRedrawRef = useRef(requestRedraw);
   requestRedrawRef.current = requestRedraw;
+  const paintedCursorRef = useRef(paintedCursor);
+  paintedCursorRef.current = paintedCursor;
 
   // Double-click synthesis state. Lives at hook level (not inside the effect)
   // so it survives effect re-runs — otherwise HMR / StrictMode / a transient
@@ -1002,21 +1015,52 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     } | null = null;
     let cursorOverridden = false;
     const clearHoverCursor = () => {
+      paintedCursorRef.current?.()?.setOverride(null);
       if (cursorOverridden && canvas) {
         canvas.style.cursor = '';
         cursorOverridden = false;
       }
     };
     const applyHoverCursor = (spec: CursorSpec | null) => {
-      const cursor = spec === null ? null : resolveCursor(spec);
-      if (cursor && canvas) {
-        canvas.style.cursor = cursor;
-        cursorOverridden = true;
-      } else {
+      const tier = spec === null ? null : resolveCursorTier(spec);
+      if (!tier || !canvas) {
         clearHoverCursor();
+        return;
       }
+      // A painted cursor is two writes, not one: the native cursor gets out of
+      // the way and the layer is told what to draw. Doing only the first is a
+      // pointer with no cursor at all.
+      const painted = tier.kind === 'painted' ? tier : null;
+      paintedCursorRef.current?.()?.setOverride(painted);
+      const cursor = tier.kind === 'css' ? tier.css : 'none';
+      if (!cursor) {
+        clearHoverCursor();
+        return;
+      }
+      canvas.style.cursor = cursor;
+      cursorOverridden = true;
     };
+    /**
+     * Where the painted-cursor layer should draw, in canvas-local CSS px.
+     *
+     * Pushed after the cursor has been resolved, not before: on the move that
+     * first selects a painted cursor, a position written ahead of the decision
+     * is discarded and the glyph does not appear until the next move. Guarded
+     * on `active()`, so an ordinary CSS cursor costs no layout read per move.
+     */
+    function pushPaintedPointer(): void {
+      const painted = paintedCursorRef.current?.();
+      if (!painted?.active() || !canvas || !lastHover) return;
+      const r = canvas.getBoundingClientRect();
+      painted.setPointer(lastHover.clientX - r.left, lastHover.clientY - r.top);
+    }
+
     function refreshHoverCursor(): void {
+      resolveHoverCursor();
+      pushPaintedPointer();
+    }
+
+    function resolveHoverCursor(): void {
       if (!canvas || !lastHover) return;
       // Mid-gesture the prediction is meaningless — what matters is what the
       // gesture IS. An in-flight action's `activeCursor` wins; with none
@@ -1074,6 +1118,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     };
     const onHoverPointerLeave = () => {
       lastHover = null;
+      paintedCursorRef.current?.()?.clearPointer();
       clearHoverCursor();
     };
 

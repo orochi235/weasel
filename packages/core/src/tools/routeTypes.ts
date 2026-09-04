@@ -3,6 +3,7 @@ import type { RenderLayer } from '../core/layers/render';
 import type { GestureBinding } from '../interactions/actions/binding';
 import type { CapabilityTag } from '@weasel-js/modes';
 import type { OverlayPosition } from '../contributions/types';
+import type { CursorSpec } from '@weasel-js/cursor';
 
 /**
  * Configurable activation-key descriptor for tools that expose their
@@ -78,7 +79,7 @@ export interface ToolDef<TScratch = void> {
   hotkey?: HotkeyTrigger;
   onActivate?:   (ctx: ToolCtx<TScratch>) => void;
   onDeactivate?: (ctx: ToolCtx<TScratch>) => void;
-  cursor?: string | ((ctx: ToolCtx<TScratch>) => string);
+  cursor?: CursorSpec | ((ctx: ToolCtx<TScratch>) => CursorSpec);
   /** Override the default scratch initializer. Default is `() => null`
    *  cast to `TScratch`, which works for tools whose scratch is fresh
    *  every gesture. Tools that need scratch identity to survive across

@@ -3,6 +3,7 @@ import { defineTool } from '../../defineTool';
 import { StarIcon } from '../../../icons';
 import type { Tool } from '../../types';
 import type { Action } from 'interactions/actions/registry';
+import { cursorFor } from '@weasel-js/cursor';
 
 /** A point in world coordinates. */
 export interface StarPoint { x: number; y: number }
@@ -80,7 +81,7 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
         id: 'star',
         capabilities: ['creates-shapes'],
         hookName: 'useStarTool',
-        cursor: 'crosshair',
+        cursor: cursorFor('crosshairStar', { fallback: 'crosshair' }),
         // Registered by <ToolActionsMounter>, inside the ActionsProvider —
         // see `ToolDef.actions` for why the hook can't register it itself.
         actions: [adjustPointsAction],

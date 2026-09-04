@@ -43,15 +43,34 @@ const pen = {
 // Bulb upper-right, narrow stem to a tip at lower-left. The bulb is a real
 // disc, not a squared cap: with a cap it reads as a pencil ferrule and the
 // whole glyph becomes the pencil at cursor size.
-const bulb = (cx, cy, r) =>
+const circle = (cx, cy, r) =>
   `M ${n(cx)} ${n(cy - r)} A ${r} ${r} 0 1 0 ${n(cx)} ${n(cy + r)} A ${r} ${r} 0 1 0 ${n(cx)} ${n(cy - r)} Z`;
 const eyedropper = {
   box: 24,
   hotspot: [5, 19],
   paths: [
     { role: 'ink', d: 'M 5 19 L 6.8 14.8 L 14.4 7.2 L 16.8 9.6 L 9.2 17.2 Z' },
-    { role: 'ink', d: bulb(18.2, 5.8, 3.2) },
+    { role: 'ink', d: circle(18.2, 5.8, 3.2) },
   ],
 };
 
-export const DRAW = { pencil, pen, eyedropper };
+// ── brush ────────────────────────────────────────────────────────────
+// One ring and nothing else. The ring IS the brush's extent, so `radius` names
+// it and a world-sized spec scales the glyph until the ring measures the
+// radius the tool asked for.
+//
+// No centre mark: geometry scales with the ring, so any mark large enough to
+// see on a 20px brush is a quarter of the width of a 400px one. The hotspot
+// is the centre, which is what every painting app relies on too.
+//
+// Sized so the halo lands exactly on the box edge: a 1.6 ink ring carries
+// 4.2 of halo, 2.1 proud, and 12 - 2.1 is 9.9.
+const BRUSH_R = 9.9;
+const brush = {
+  box: 24,
+  hotspot: [12, 12],
+  radius: BRUSH_R,
+  paths: [{ role: 'stroke', d: circle(12, 12, BRUSH_R), width: 1.6 }],
+};
+
+export const DRAW = { pencil, pen, eyedropper, brush };

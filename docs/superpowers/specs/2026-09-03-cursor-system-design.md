@@ -130,7 +130,7 @@ packages/cursor/
   scripts/gen-cursors.mjs   -> src/glyphs.ts (generated, resolved literals)
   src/glyphs.ts             GENERATED
   src/bake.ts               glyph + size + rotation -> CSS cursor string
-  src/paint.ts              glyph -> Path2D draw onto a 2D context
+  src/paint.ts              glyph -> ordered paint ops + a placement matrix
   src/resolve.ts            spec -> { kind: 'baked', css } | { kind: 'painted', … }
   src/layer.ts              the painted-tier canvas layer
   src/index.ts
@@ -142,15 +142,29 @@ carries no math.
 
 ## Painted tier
 
-`@weasel-js/cursor` exports a canvas layer. When the resolver returns a painted
-cursor, core sets `cursor: none` on the host and the layer draws the glyph at
-the pointer each frame.
+When the resolver returns a painted cursor, `<Canvas>` sets `cursor: none` on
+the host and a screen-space layer draws the glyph at the pointer each frame.
 
 It is a layer rather than something each tool draws in its own `overlay` because
 the alternative is every tool re-wiring the same thing — the kit-level form of
 the hand-rolling defect the demo rules already forbid. Riding the existing
 extension/layer system also means HUD widget cursors (`Widget.cursorAt`) get the
 painted tier for free, through the layer-claim path they already use.
+
+**The layer lives in core, not in `@weasel-js/cursor`.** There is no 2D context
+to paint into: layers emit `DrawCommand` trees to a GL backend, and both
+`RenderLayer` and the `Path` that `pathFromD` builds are core types, so a layer
+in `cursor` would have to depend on the package that depends on it. `paint.ts`
+stops at the renderer-agnostic half — the ordered paint ops and the affine that
+places them — which is also what keeps the baker and the painter drawing the
+same glyph instead of two drawings that resemble each other.
+
+A glyph that measures something rather than depicting it declares
+`CursorGlyph.radius`, naming the circle a `worldRadius` refers to; without it
+the painter falls back to the box's inscribed circle and every brush ring is
+drawn a fixed fraction too large. World-sized glyphs also hold their line
+weight in CSS px while their geometry scales — a ring at a 400px radius drawn
+with a scaled weight is a filled blob.
 
 Per the frame-loop rule in `CLAUDE.md`, the layer draws under `useVisibleRaf` and
 never a bare `requestAnimationFrame`.
@@ -226,7 +240,8 @@ this package makes the real pipeline pleasant enough to use.
 
 ## Build order
 
-Four arcs, each landing something usable.
+All four arcs have shipped; this is what they were. Remaining follow-ups live
+in `docs/TODO.md`.
 
 1. **Baked tier.** Package skeleton, glyph format, `gen:cursors`, `bake.ts`,
    cache. Ships `pencil`, `pen`, `bucket`, `eyedropper` as static cursors, wired

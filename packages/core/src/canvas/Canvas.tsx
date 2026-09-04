@@ -78,7 +78,11 @@ import { createDebugOverlayLayer } from '../debug/createDebugOverlayLayer';
 
 const alwaysVisible = (_id: string): boolean => true;
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
-import { resolveCursor } from '@weasel-js/cursor';
+import { resolveCursorTier } from '@weasel-js/cursor';
+import type { ResolvedCursor } from '@weasel-js/cursor';
+import { createPaintedCursorState } from '../features/cursor/paintedCursorState';
+import type { PaintedCursor, PaintedCursorState } from '../features/cursor/paintedCursorState';
+import { createPaintedCursorLayer } from '../features/cursor/paintedCursorLayer';
 
 /**
  * The scene-tree reading methods Canvas feature-detects at draw time, as an
@@ -718,11 +722,11 @@ export function buildSceneLayers<TNode extends { id: string }, TPose>(
 function resolveToolsCursor(
   tools: ToolsApi,
   ctxBase?: () => Omit<ToolCtx, 'scratch'>,
-): string | undefined {
+): ResolvedCursor | undefined {
   const id = tools.hotkeyEngaged ?? tools.active;
   const tool = tools.registry[id];
   if (!tool?.cursor) return undefined;
-  if (typeof tool.cursor !== 'function') return resolveCursor(tool.cursor);
+  if (typeof tool.cursor !== 'function') return resolveCursorTier(tool.cursor);
   if (!ctxBase) return undefined;
   // Function form: invoke at render time with the live base ctx.
   //
@@ -734,7 +738,7 @@ function resolveToolsCursor(
   // does, for its close-path hint).
   try {
     const base = ctxBase();
-    return resolveCursor(tool.cursor({ ...base, scratch: null }));
+    return resolveCursorTier(tool.cursor({ ...base, scratch: null }));
   } catch {
     return undefined;
   }
@@ -965,6 +969,19 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     return () => { viewSubsRef.current.delete(fn); };
   }, []);
 
+  // The painted tier's channel. `<Canvas>` owns it because it owns both ends:
+  // the tool cursor that feeds it and the frame loop that has to repaint when
+  // it changes. The hover pump reaches it through the ref handle below.
+  const paintedCursor = useMemo<PaintedCursorState>(() => createPaintedCursorState(), []);
+  const paintedCursorLayer = useMemo(
+    () => createPaintedCursorLayer(paintedCursor),
+    [paintedCursor],
+  );
+  // An idle pointermove repaints nothing on its own, so a cursor the compositor
+  // is not drawing needs its own pump. The store stays quiet unless something
+  // painted is actually on screen.
+  useEffect(() => paintedCursor.subscribe(() => { requestRedraw(); }), [paintedCursor, requestRedraw]);
+
   useImperativeHandle(ref, () => ({
     // Named rather than read off `canvasRef` so the handle rebuilds when a
     // detached surface's input element arrives, which is a render later.
@@ -978,9 +995,11 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     setView,
     subscribeView,
     getPaintedVersion,
+    paintedCursor,
   }), [canvasRef, ownCanvasRef, detached, inputElement, paintInto?.canvas,
        requestRedraw, subscribeFrame, registerLayer,
-       hitTestExtras, getView, setView, subscribeView, getPaintedVersion]);
+       hitTestExtras, getView, setView, subscribeView, getPaintedVersion,
+       paintedCursor]);
 
   // GL renderer (lazy-instantiated on first paint).
   const glRendererRef = useRef<WeaselRenderer | null>(null);
@@ -1344,11 +1363,14 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     const base = debugSink && resolvedDebugConfig
       ? [...withViews, createDebugOverlayLayer({ sink: debugSink, config: resolvedDebugConfig })]
       : withViews;
-    return [...base, ...extrasRef.current];
+    // The cursor goes last: it is the one thing that is always in front of
+    // everything, including a consumer's own registered layers.
+    return [...base, ...extrasRef.current, paintedCursorLayer];
     // extrasVersion drives re-reads of extrasRef when layers are registered/detached;
     // viewRegistryVersion does the same for registered views.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layers, debugSink, resolvedDebugConfig, extrasVersion, viewRegistry, viewRegistryVersion]);
+  }, [layers, debugSink, resolvedDebugConfig, extrasVersion, viewRegistry, viewRegistryVersion,
+      paintedCursorLayer]);
 
   const shaderIdKey = shaders?.map((h) => h.id).join('|') ?? '';
 
@@ -1470,10 +1492,29 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shaderIdKey]);
 
-  const toolsCursor = tools ? resolveToolsCursor(tools, toolsCtxBase) : undefined;
+  const toolsCursorTier = tools ? resolveToolsCursor(tools, toolsCtxBase) : undefined;
+  // A painted tool cursor gets `none` here and the layer draws it instead.
+  const toolsCursor =
+    toolsCursorTier === undefined
+      ? undefined
+      : toolsCursorTier.kind === 'css'
+        ? toolsCursorTier.css
+        : 'none';
   const effectiveStyle: React.CSSProperties | undefined = toolsCursor
     ? { ...style, cursor: toolsCursor }
     : style;
+  const toolsPainted: PaintedCursor | null =
+    toolsCursorTier?.kind === 'painted' ? toolsCursorTier : null;
+  // Keyed on the value, not the object: the tier is rebuilt every render, and
+  // publishing from render would notify a repaint mid-render.
+  const toolsPaintedKey = toolsPainted
+    ? `${toolsPainted.glyph}|${toolsPainted.angle}|${toolsPainted.size}|${toolsPainted.worldRadius}`
+    : '';
+  useEffect(() => {
+    paintedCursor.setBase(toolsPainted);
+    // `toolsPainted` is a fresh object each render; the key is its identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paintedCursor, toolsPaintedKey]);
 
   // Detached: the four handlers below are declared as JSX props on an element
   // this component no longer renders, so attach them to the caller's instead.

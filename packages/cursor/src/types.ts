@@ -8,6 +8,13 @@ export interface CursorGlyph {
   readonly box: number;
   /** Hotspot in glyph units, scaled to integer CSS px at bake time. */
   readonly hotspot: readonly [number, number];
+  /**
+   * The glyph-unit radius a `worldRadius` spec means, for glyphs that measure
+   * something — a brush ring reads as a lie about the brush size unless the
+   * painter knows which circle in the drawing is the one being sized. Defaults
+   * to the box's inscribed radius.
+   */
+  readonly radius?: number;
   readonly paths: readonly CursorPath[];
 }
 

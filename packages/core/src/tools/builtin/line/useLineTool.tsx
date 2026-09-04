@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { defineTool } from '../../defineTool';
 import { LineIcon } from '../../../icons';
 import type { Tool } from '../../types';
+import { cursorFor } from '@weasel-js/cursor';
 
 /** An endpoint of a line, in world coordinates. */
 export interface LinePoint { x: number; y: number }
@@ -25,7 +26,7 @@ export function useLineTool(): Tool<null> {
         id: 'line',
         capabilities: ['creates-shapes'],
         hookName: 'useLineTool',
-        cursor: 'crosshair',
+        cursor: cursorFor('crosshairLine', { fallback: 'crosshair' }),
         presentation: {
           label: 'Line',
           group: 'shape',

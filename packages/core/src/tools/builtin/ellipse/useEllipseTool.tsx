@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { defineTool } from '../../defineTool';
 import { EllipseIcon } from '../../../icons';
 import type { Tool } from '../../types';
+import { cursorFor } from '@weasel-js/cursor';
 
 /**
  * Drag-to-draw ellipse tool. Mirrors `useRectTool`: the `drag` binding
@@ -16,7 +17,7 @@ export function useEllipseTool(): Tool<null> {
         id: 'ellipse',
         capabilities: ['creates-shapes'],
         hookName: 'useEllipseTool',
-        cursor: 'crosshair',
+        cursor: cursorFor('crosshairEllipse', { fallback: 'crosshair' }),
         presentation: {
           label: 'Ellipse',
           group: 'shape',

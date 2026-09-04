@@ -2,6 +2,7 @@
 import type { Tool, ToolCtx } from './types';
 import type { ToolDef } from './routeTypes';
 import { RESERVED_ID_NAMES, RESERVED_ID_PREFIXES } from '@weasel-js/gestures';
+import type { CursorSpec } from '@weasel-js/cursor';
 
 /** Validate that `id` is usable as a tool / channel id in the route
  *  grammar. Rejects ids that start with a reserved sigil (would shadow
@@ -44,10 +45,10 @@ export function defineTool<TScratch = void>(
 ): Tool<TScratch> {
   validateId(def.id, 'tool');
 
-  // Normalize `string | ((ctx) => string)` to the function form so callers
-  // have one shape to deal with. Returns '' (not undefined) so the signature
-  // satisfies `Tool.cursor: (ctx) => string`.
-  const resolveCursor = (ctx: ToolCtx<TScratch>): string => {
+  // Normalize `CursorSpec | ((ctx) => CursorSpec)` to the function form so
+  // callers have one shape to deal with. Returns '' (not undefined) so the
+  // signature satisfies `Tool.cursor: (ctx) => CursorSpec`.
+  const resolveCursor = (ctx: ToolCtx<TScratch>): CursorSpec => {
     if (def.cursor == null) return '';
     return typeof def.cursor === 'function' ? def.cursor(ctx) : def.cursor;
   };

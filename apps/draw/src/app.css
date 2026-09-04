@@ -320,12 +320,6 @@ html, body, #root {
   overflow: hidden;
 }
 
-/* Alt+hover cursor stub for future add-anchor sub-tool.
- * While in path-edit mode with Alt held, the cursor over the active path
- * switches to `copy` (the "+" cursor) as a visual affordance. No hit-test
- * gating is applied here — that's the add-anchor sub-tool's job. */
-.wd-canvas-host[data-mode="path-edit"][data-alt-held="true"] > canvas { cursor: copy; }
-
 /* Mode tint is painted by the kit's render pipeline (`workspaceTintLayer`
  * in App.tsx) so it can mask out the document page in world space.
  * No CSS-side tint here. */

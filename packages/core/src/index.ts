@@ -1227,14 +1227,22 @@ export type { TextureHandle } from '@weasel-js/paint';
 // baker reach consumers from here rather than through a second import.
 // Named, not `export *` — a star re-export of an external package survives
 // typecheck and emits no binding in the bundle.
-export { cursorFor, resolveCursor, bakeCursor } from '@weasel-js/cursor';
+export { cursorFor, resolveCursor, resolveCursorTier, bakeCursor } from '@weasel-js/cursor';
 export type {
   CursorSpec,
   CursorGlyphSpec,
   CursorGlyphName,
   CursorGlyph,
+  ResolvedCursor,
   BakeOptions,
 } from '@weasel-js/cursor';
+export { createPaintedCursorState } from './features/cursor/paintedCursorState';
+export type {
+  PaintedCursor,
+  PaintedCursorFrame,
+  PaintedCursorState,
+} from './features/cursor/paintedCursorState';
+export { createPaintedCursorLayer, PAINTED_CURSOR_LAYER_ID } from './features/cursor/paintedCursorLayer';
 export type {
   LayersMap,
   SceneSlotConfig,

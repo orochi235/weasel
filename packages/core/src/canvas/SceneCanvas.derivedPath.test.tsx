@@ -19,6 +19,7 @@ import type { Path } from 'core/geometry/path';
 import { createScene } from 'core/scene/scene';
 import { linePath } from 'features/paths/builder';
 import type { GesturePreviewSource } from './gestureBounds';
+import { createPaintedCursorState } from '../features/cursor/paintedCursorState';
 
 type Data = Record<string, never>;
 
@@ -59,6 +60,7 @@ vi.mock('./Canvas', async (importOriginal) => {
         setView: () => {},
         subscribeView: () => () => {},
         getPaintedVersion: () => 0,
+        paintedCursor: createPaintedCursorState(),
         registerLayer: () => () => {},
         hitTestExtras: () => null,
       } satisfies CanvasExtensionApi;

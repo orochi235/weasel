@@ -2,13 +2,26 @@ import { describe, expect, it } from 'vitest';
 import { GLYPHS } from './glyphs';
 import { haloFitsInBox, rotationFitsInBox } from './types';
 
-const NAMES = ['pencil', 'pen', 'eyedropper', 'resize', 'rotate'] as const;
+const NAMES = [
+  'pencil', 'pen', 'eyedropper', 'brush',
+  'crosshairRect', 'crosshairEllipse', 'crosshairLine', 'crosshairStar', 'crosshairPolygon',
+  'resize', 'rotate',
+] as const;
+
+/** Glyphs with a filled silhouette. `brush` is a bare ring and `crosshairLine`
+ *  is a cross plus a bar — both measure or point rather than depict, so
+ *  neither has a fill to assert. */
+const SILHOUETTE = [
+  'pencil', 'pen', 'eyedropper',
+  'crosshairRect', 'crosshairEllipse', 'crosshairStar', 'crosshairPolygon',
+  'resize', 'rotate',
+] as const;
 
 /** The glyphs the affordance layer bakes at an angle. */
 const ROTATABLE = ['resize', 'rotate'] as const;
 
 describe('GLYPHS', () => {
-  it('ships the arc 1 and arc 2 sets', () => {
+  it('ships the arc 1 to arc 4 sets', () => {
     expect(Object.keys(GLYPHS).sort()).toEqual([...NAMES].sort());
   });
 
@@ -26,8 +39,14 @@ describe('GLYPHS', () => {
     expect(y).toBeLessThanOrEqual(GLYPHS[name].box);
   });
 
-  it.each(NAMES)('%s has at least one ink path', (name) => {
+  it.each(SILHOUETTE)('%s has at least one ink path', (name) => {
     expect(GLYPHS[name].paths.some((p) => p.role === 'ink')).toBe(true);
+  });
+
+  it('gives brush a radius, so a world-sized ring measures what it claims', () => {
+    // Without it the painter falls back to the inscribed radius and every
+    // brush cursor is drawn 21% too big, consistently enough to look correct.
+    expect(GLYPHS.brush.radius).toBe(9.9);
   });
 
   it.each(ROTATABLE)('%s survives every rotation inside its viewBox', (name) => {

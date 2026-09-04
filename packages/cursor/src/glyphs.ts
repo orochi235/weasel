@@ -57,6 +57,187 @@ export const GLYPHS = {
       }
     ]
   },
+  "brush": {
+    "box": 24,
+    "hotspot": [
+      12,
+      12
+    ],
+    "radius": 9.9,
+    "paths": [
+      {
+        "role": "stroke",
+        "d": "M 12 2.1 A 9.9 9.9 0 1 0 12 21.9 A 9.9 9.9 0 1 0 12 2.1 Z",
+        "width": 1.6
+      }
+    ]
+  },
+  "crosshairRect": {
+    "box": 24,
+    "hotspot": [
+      9,
+      9
+    ],
+    "paths": [
+      {
+        "role": "stroke",
+        "d": "M 1.6 9 L 6.4 9",
+        "width": 1.6
+      },
+      {
+        "role": "stroke",
+        "d": "M 11.6 9 L 16.4 9",
+        "width": 1.6
+      },
+      {
+        "role": "stroke",
+        "d": "M 9 1.6 L 9 6.4",
+        "width": 1.6
+      },
+      {
+        "role": "stroke",
+        "d": "M 9 11.6 L 9 16.4",
+        "width": 1.6
+      },
+      {
+        "role": "ink",
+        "d": "M 14.2 14.2 L 21 14.2 L 21 21 L 14.2 21 Z"
+      }
+    ]
+  },
+  "crosshairEllipse": {
+    "box": 24,
+    "hotspot": [
+      9,
+      9
+    ],
+    "paths": [
+      {
+        "role": "stroke",
+        "d": "M 1.6 9 L 6.4 9",
+        "width": 1.6
+      },
+      {
+        "role": "stroke",
+        "d": "M 11.6 9 L 16.4 9",
+        "width": 1.6
+      },
+      {
+        "role": "stroke",
+        "d": "M 9 1.6 L 9 6.4",
+        "width": 1.6
+      },
+      {
+        "role": "stroke",
+        "d": "M 9 11.6 L 9 16.4",
+        "width": 1.6
+      },
+      {
+        "role": "ink",
+        "d": "M 17.6 13.9 A 3.7 3.7 0 1 0 17.6 21.3 A 3.7 3.7 0 1 0 17.6 13.9 Z"
+      }
+    ]
+  },
+  "crosshairLine": {
+    "box": 24,
+    "hotspot": [
+      9,
+      9
+    ],
+    "paths": [
+      {
+        "role": "stroke",
+        "d": "M 1.6 9 L 6.4 9",
+        "width": 1.6
+      },
+      {
+        "role": "stroke",
+        "d": "M 11.6 9 L 16.4 9",
+        "width": 1.6
+      },
+      {
+        "role": "stroke",
+        "d": "M 9 1.6 L 9 6.4",
+        "width": 1.6
+      },
+      {
+        "role": "stroke",
+        "d": "M 9 11.6 L 9 16.4",
+        "width": 1.6
+      },
+      {
+        "role": "stroke",
+        "d": "M 14.2 21 L 21 14.2",
+        "width": 2.2
+      }
+    ]
+  },
+  "crosshairStar": {
+    "box": 24,
+    "hotspot": [
+      9,
+      9
+    ],
+    "paths": [
+      {
+        "role": "stroke",
+        "d": "M 1.6 9 L 6.4 9",
+        "width": 1.6
+      },
+      {
+        "role": "stroke",
+        "d": "M 11.6 9 L 16.4 9",
+        "width": 1.6
+      },
+      {
+        "role": "stroke",
+        "d": "M 9 1.6 L 9 6.4",
+        "width": 1.6
+      },
+      {
+        "role": "stroke",
+        "d": "M 9 11.6 L 9 16.4",
+        "width": 1.6
+      },
+      {
+        "role": "ink",
+        "d": "M 17.6 13.4 L 18.72 16.06 L 21.59 16.3 L 19.41 18.19 L 20.07 21 L 17.6 19.5 L 15.13 21 L 15.79 18.19 L 13.61 16.3 L 16.48 16.06 Z"
+      }
+    ]
+  },
+  "crosshairPolygon": {
+    "box": 24,
+    "hotspot": [
+      9,
+      9
+    ],
+    "paths": [
+      {
+        "role": "stroke",
+        "d": "M 1.6 9 L 6.4 9",
+        "width": 1.6
+      },
+      {
+        "role": "stroke",
+        "d": "M 11.6 9 L 16.4 9",
+        "width": 1.6
+      },
+      {
+        "role": "stroke",
+        "d": "M 9 1.6 L 9 6.4",
+        "width": 1.6
+      },
+      {
+        "role": "stroke",
+        "d": "M 9 11.6 L 9 16.4",
+        "width": 1.6
+      },
+      {
+        "role": "ink",
+        "d": "M 17.6 13.5 L 21.5 16.33 L 20.01 20.92 L 15.19 20.92 L 13.7 16.33 Z"
+      }
+    ]
+  },
   "resize": {
     "box": 24,
     "hotspot": [

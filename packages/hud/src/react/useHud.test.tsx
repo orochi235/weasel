@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import { useHud } from './useHud';
 import type { CanvasExtensionApi } from '@weasel-js/core';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
+import { createPaintedCursorState } from '@weasel-js/core';
 
 const IDENTITY_VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
@@ -19,6 +20,7 @@ function makeApi(): CanvasExtensionApi {
     setView: vi.fn(),
     subscribeView: vi.fn(() => () => {}),
     getPaintedVersion: vi.fn(() => 0),
+    paintedCursor: createPaintedCursorState(),
   };
 }
 

@@ -3,6 +3,7 @@ import type { Dims, RenderLayer } from '../core/layers/render';
 import type { View } from '../core/viewport/view';
 import type { IngestItem } from '../features/ingestion/ingestItems';
 import type { ViewAnimationOptions } from '../core/viewport/useViewAnimation';
+import type { PaintedCursorState } from '../features/cursor/paintedCursorState';
 
 /**
  * The **base imperative ref handle** shared by the canvas components. For
@@ -69,6 +70,16 @@ export interface CanvasExtensionApi {
    *  content compares this against the version it is about to render and
    *  defers a frame when they differ. `0` until the first paint lands. */
   getPaintedVersion(): number;
+  /**
+   * The painted tier's channel for this surface.
+   *
+   * Most cursors are a CSS `url()` string the compositor draws, and nothing
+   * needs this. A cursor that is sized in world units or too big to be a CSS
+   * cursor at all is drawn into the canvas instead, and whoever decides which
+   * cursor is showing publishes it here — the kit's gesture dispatcher does,
+   * and so should an input layer built against a bare `<Canvas>`.
+   */
+  paintedCursor: PaintedCursorState;
   /** Register an externally-owned RenderLayer. The layer participates in the
    *  draw stack and, if it implements `hitTest`, in {@link hitTestExtras}. */
   registerLayer(layer: RenderLayer<unknown>): () => void;

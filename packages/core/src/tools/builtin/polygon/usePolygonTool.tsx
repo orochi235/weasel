@@ -3,6 +3,7 @@ import { defineTool } from '../../defineTool';
 import { PolygonIcon } from '../../../icons';
 import type { Tool } from '../../types';
 import type { Action } from 'interactions/actions/registry';
+import { cursorFor } from '@weasel-js/cursor';
 
 /** A point in world coordinates. */
 export interface PolygonPoint { x: number; y: number }
@@ -85,7 +86,7 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
         id: 'polygon',
         capabilities: ['creates-shapes'],
         hookName: 'usePolygonTool',
-        cursor: 'crosshair',
+        cursor: cursorFor('crosshairPolygon', { fallback: 'crosshair' }),
         // Registered by <ToolActionsMounter>, inside the ActionsProvider —
         // see `ToolDef.actions` for why the hook can't register it itself.
         actions: [adjustSidesAction],

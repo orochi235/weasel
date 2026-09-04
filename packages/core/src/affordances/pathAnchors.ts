@@ -8,6 +8,7 @@
  * too rather than only to the chrome that happened to be declarative already.
  */
 
+import type { CursorSpec } from '@weasel-js/cursor';
 import type { Affordance, AffordanceBinding, AffordanceRegion, CommonAffordanceScratch } from './types';
 import type { ChromeState } from 'core/selection/chromeState';
 import type { PolygonPath } from 'features/paths/types';
@@ -34,7 +35,7 @@ export interface PathAnchorAffordanceOptions {
   /** Hit radius (screen-px) for anchor and control points. Default 8. */
   hitRadius?: number;
   /** Cursor while hovering an anchor or control. Defaults to `'pointer'`. */
-  cursor?: string;
+  cursor?: CursorSpec;
 }
 
 /** What an anchor hit hands to the action that follows: which path, which

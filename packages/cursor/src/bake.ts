@@ -1,11 +1,7 @@
-import {
-  CURSOR_ANGLE_STEPS,
-  CURSOR_HALO,
-  CURSOR_HALO_WIDTH,
-  CURSOR_INK,
-  CURSOR_MAX_CSS_PX,
-} from './types';
-import type { CursorGlyph, CursorPath } from './types';
+import { cursorPaintOps } from './paint';
+import type { CursorPaintOp } from './paint';
+import { CURSOR_ANGLE_STEPS, CURSOR_MAX_CSS_PX } from './types';
+import type { CursorGlyph } from './types';
 
 export interface BakeOptions {
   /** Rendered size in CSS px. Default 24. */
@@ -29,53 +25,14 @@ export function quantizeCursorAngle(angle: number): number {
   return ((i % CURSOR_ANGLE_STEPS) + CURSOR_ANGLE_STEPS) % CURSOR_ANGLE_STEPS;
 }
 
-/**
- * The halo pass. Every silhouette member is drawn once, wide, in halo colour
- * before any ink lands.
- *
- * It has to be a separate pass rather than a per-path `paint-order`: with each
- * path stroking its own halo, a later path's halo cuts a white trench through
- * an earlier path's fill wherever the two overlap. One pass under everything
- * gives the glyph a single continuous outline instead.
- */
-function renderHalo(p: CursorPath): string {
-  switch (p.role) {
-    case 'ink':
-    case 'accent':
-      return (
-        `<path d="${p.d}" fill="${CURSOR_HALO}" stroke="${CURSOR_HALO}"` +
-        ` stroke-width="${CURSOR_HALO_WIDTH}" stroke-linejoin="round"/>`
-      );
-    case 'stroke':
-      return (
-        `<path d="${p.d}" fill="none" stroke="${CURSOR_HALO}"` +
-        ` stroke-width="${p.width + CURSOR_HALO_WIDTH}"` +
-        ` stroke-linecap="round" stroke-linejoin="round"/>`
-      );
-    // A detail IS halo-coloured and sits on top of the ink; it has no halo.
-    case 'detail':
-      return '';
-  }
-}
-
-function renderInk(p: CursorPath): string {
-  switch (p.role) {
-    case 'ink':
-      return `<path d="${p.d}" fill="${CURSOR_INK}"/>`;
-    case 'stroke':
-      return (
-        `<path d="${p.d}" fill="none" stroke="${CURSOR_INK}"` +
-        ` stroke-width="${p.width}" stroke-linecap="round"` +
-        ` stroke-linejoin="round"/>`
-      );
-    case 'detail':
-      return (
-        `<path d="${p.d}" fill="none" stroke="${CURSOR_HALO}"` +
-        ` stroke-width="${p.width}" stroke-linecap="round"/>`
-      );
-    case 'accent':
-      return `<path d="${p.d}" fill="${p.fill}"/>`;
-  }
+/** One paint op as an SVG element. */
+function renderOp(op: CursorPaintOp): string {
+  const fill = op.fill === undefined ? 'none' : op.fill;
+  const stroke = op.stroke
+    ? ` stroke="${op.stroke.color}" stroke-width="${op.stroke.width}"` +
+      ` stroke-linecap="round" stroke-linejoin="round"`
+    : '';
+  return `<path d="${op.d}" fill="${fill}"${stroke}/>`;
 }
 
 /**
@@ -93,8 +50,10 @@ export function bakeCursor(glyph: CursorGlyph, opts: BakeOptions = {}): string {
         `would drop the image and silently fall back. Use the painted tier.`,
     );
   }
-  // Halos first, then ink; within each pass, source order is z-order.
-  const paths = glyph.paths.map(renderHalo).join('') + glyph.paths.map(renderInk).join('');
+  // Halos first, then ink; within each pass, source order is z-order. The
+  // pass structure is `paint.ts`'s, so the painted tier draws the same glyph
+  // rather than a second drawing that resembles it.
+  const paths = cursorPaintOps(glyph).map(renderOp).join('');
 
   const c = glyph.box / 2;
   const step = quantizeCursorAngle(opts.angle ?? 0);

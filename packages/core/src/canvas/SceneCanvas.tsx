@@ -2339,6 +2339,13 @@ function GestureDispatcherMounter({
     canvasApiRef?.current?.requestRedraw?.();
   }, [canvasApiRef]);
 
+  // The painted tier's channel, read live for the same reason — the handle it
+  // lives on binds after mount.
+  const paintedCursor = useCallback(
+    () => canvasApiRef?.current?.paintedCursor,
+    [canvasApiRef],
+  );
+
   // Input routing to registered views. Rebuilt per event from the registry, so
   // a view that mounts or moves mid-session is routable on the next event; with
   // nothing registered every point resolves to the canvas, as before.
@@ -2365,6 +2372,7 @@ function GestureDispatcherMounter({
     dispatcher,
     clientToWorld,
     requestRedraw,
+    paintedCursor,
     getRuleCtx,
     onDoubleClick,
     ...(views ? { views } : {}),

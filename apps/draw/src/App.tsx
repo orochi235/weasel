@@ -1309,30 +1309,6 @@ function EditorWithSharedScene({
   // ── Mode id + breadcrumb state ────────────────────────────────────────────
   const modeId = useModeId(modality.machine);
 
-  // ── Alt-held tracking for path-edit cursor stub ──────────────────────────
-  // When path-edit is active and Alt is held, data-alt-held="true" on the
-  // host drives a `cursor: copy` rule — visual stub for the future
-  // add-anchor sub-tool. No hit-test gating (that's the sub-tool's job).
-  // Listener only registers while mode is path-edit to avoid leaking into
-  // other modes.
-  const [altHeld, setAltHeld] = useState(false);
-  useEffect(() => {
-    if (modeId !== 'path-edit') {
-      setAltHeld(false);
-      return;
-    }
-    const onDown = (e: KeyboardEvent): void => { if (e.key === 'Alt') setAltHeld(true); };
-    const onUp   = (e: KeyboardEvent): void => { if (e.key === 'Alt') setAltHeld(false); };
-    const onBlur = (): void => setAltHeld(false);
-    window.addEventListener('keydown', onDown);
-    window.addEventListener('keyup',   onUp);
-    window.addEventListener('blur',    onBlur);
-    return () => {
-      window.removeEventListener('keydown', onDown);
-      window.removeEventListener('keyup',   onUp);
-      window.removeEventListener('blur',    onBlur);
-    };
-  }, [modeId]);
   // Re-read on every render; `modeId` changing is what re-renders us, and the
   // resolved id is a tighter memo key than the mode it came from.
   const activeTargetId = modality.machine.getActiveTargetId();
@@ -1747,7 +1723,6 @@ function EditorWithSharedScene({
           ref={hostRef}
           onDoubleClick={textEdit.onDoubleClick}
           data-mode={modeId}
-          data-alt-held={altHeld ? 'true' : undefined}
         >
           <OpacityHud percent={opacityScrubPercent} />
           <ModeBreadcrumb

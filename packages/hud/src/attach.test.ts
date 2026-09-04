@@ -10,6 +10,7 @@ import type {
 } from '@weasel-js/core';
 import { DEFAULT_WIDGET_CLAIMS, type Widget } from './widget';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
+import { createPaintedCursorState } from '@weasel-js/core';
 
 const IDENTITY_VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
@@ -28,6 +29,7 @@ function makeApi(): CanvasExtensionApi & { _layer?: RenderLayer<unknown> } {
     setView: vi.fn(),
     subscribeView: vi.fn(() => () => {}),
     getPaintedVersion: vi.fn(() => 0),
+    paintedCursor: createPaintedCursorState(),
   };
   return api;
 }
@@ -137,6 +139,7 @@ describe('attachHud', () => {
         setView: vi.fn(),
         subscribeView: vi.fn(() => () => {}),
         getPaintedVersion: vi.fn(() => 0),
+        paintedCursor: createPaintedCursorState(),
       };
       const theme = { ...resolveTheme(weaselTheme, 'dark'), '--wzl-surface-raised': '#123456' };
       attachHud(api, hud, { theme });

@@ -246,6 +246,46 @@ describe('Canvas tools mode', () => {
     expect(canvas.style.cursor).toBe('crosshair');
   });
 
+  it('hands a world-sized tool cursor to the painted layer and hides the native one', () => {
+    // The escalation handoff, end to end through `<Canvas>`: a brush radius is
+    // a world quantity, so no CSS cursor can express it at every zoom. jsdom
+    // draws no cursor either way — what is asserted is the two writes that
+    // must happen together, since doing only the first leaves the pointer
+    // with nothing at all.
+    const apiRef = createRef<CanvasExtensionApi>();
+    function Test() {
+      const tools = useTools({
+        active: 't',
+        registry: { t: defineTool({ id: 't', cursor: { glyph: 'brush', worldRadius: 12 } }) },
+      });
+      return (
+        <Canvas
+          ref={apiRef}
+          width={100}
+          height={100}
+          adapter={{} as never}
+          layers={{}}
+          tools={tools}
+        />
+      );
+    }
+
+    const { container } = render(<WeaselProvider><Test /></WeaselProvider>);
+    const canvas = container.querySelector('canvas')! as HTMLCanvasElement;
+    expect(canvas.style.cursor).toBe('none');
+
+    const painted = apiRef.current!.paintedCursor;
+    expect(painted.active()).toBe(true);
+    // Nothing to draw until the pointer has a position — the dispatcher's
+    // hover pump supplies that; here it is set directly.
+    expect(painted.current()).toBeNull();
+    painted.setPointer(40, 25);
+    expect(painted.current()).toMatchObject({
+      cursor: { glyph: 'brush', worldRadius: 12 },
+      at: { x: 40, y: 25 },
+    });
+  });
+
   describe('tools integration', () => {
     it('appends tools.getActiveOverlays() to the layer pipeline (rendered last)', () => {
       const order: string[] = [];
