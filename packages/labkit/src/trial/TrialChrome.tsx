@@ -17,6 +17,7 @@ import { JobProgress } from '../primitives/JobProgress';
 import { LabStoreContext } from '../state/context';
 import type { TrialRecord } from '../state/types';
 import { as2DView } from '../state/view';
+import { TrialBody } from './TrialBody';
 import { TrialTitleBar } from './TrialTitleBar';
 import { UndockedSections } from './UndockedSections';
 
@@ -83,6 +84,7 @@ export function TrialChrome({
   const storeCtx = useContext(LabStoreContext);
   if (!storeCtx) throw new Error('[labkit] TrialChrome requires <LabStoreProvider>');
   const updateTrialView = useStore(storeCtx.store, (s) => s.updateTrialView);
+  const updateTrialSidebarWidth = useStore(storeCtx.store, (s) => s.updateTrialSidebarWidth);
   const updateTrialConfig = useStore(storeCtx.store, (s) => s.updateTrialConfig);
   const updateTrialState = useStore(storeCtx.store, (s) => s.updateTrialState);
   const undockPanelAction = useStore(storeCtx.store, (s) => s.undockPanel);
@@ -213,18 +215,24 @@ export function TrialChrome({
       </div>
       <div className="lk-trial__body">
         <PaletteRegion contributions={inRegion('palette')} ctx={ctx} />
-        <div className="lk-trial__sidebar">
-          <SidebarRegion contributions={inRegion('sidebar')} ctx={ctx} />
-          <UndockedSections
-            trialId={trialId}
-            sections={inRegion('sidebar').filter((c) => undockedIds.includes(c.id))}
-            onDock={ctx.dockPanel}
-          />
-        </div>
-        <div className={`lk-trial__content${instrument.canvas ? ' lk-trial__content--flush' : ''}`}>
+        <TrialBody
+          width={record.sidebarWidth}
+          onWidthChange={(w) => updateTrialSidebarWidth(trialId, w)}
+          contentClassName={instrument.canvas ? 'lk-trial__content--flush' : undefined}
+          sidebar={
+            <>
+              <SidebarRegion contributions={inRegion('sidebar')} ctx={ctx} />
+              <UndockedSections
+                trialId={trialId}
+                sections={inRegion('sidebar').filter((c) => undockedIds.includes(c.id))}
+                onDock={ctx.dockPanel}
+              />
+            </>
+          }
+        >
           {children}
           <ViewportRegion contributions={inRegion('viewport')} ctx={ctx} />
-        </div>
+        </TrialBody>
       </div>
       <div className="lk-trial__status">
         {job ? <JobProgress job={job} /> : null}

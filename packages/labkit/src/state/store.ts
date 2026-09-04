@@ -34,6 +34,7 @@ export interface LabStoreActions {
   updateTrialState: <TS>(id: string, next: TS | ((prev: TS) => TS)) => void;
   updateTrialConfig: <TC>(id: string, key: keyof TC, value: TC[keyof TC]) => void;
   updateTrialView: (id: string, view: unknown) => void;
+  updateTrialSidebarWidth: (id: string, width: number) => void;
   updateTrialAnnotations: (id: string, doc: unknown) => void;
   updateTrialUndoStack: (
     id: string,
@@ -132,6 +133,15 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
     updateTrialView: (id, view) => {
       set((s) => ({
         trials: s.trials.map((w) => (w.id === id && !Object.is(view, w.view) ? { ...w, view } : w)),
+      }));
+      scheduleFlush();
+    },
+
+    updateTrialSidebarWidth: (id, width) => {
+      set((s) => ({
+        trials: s.trials.map((w) =>
+          w.id === id && w.sidebarWidth !== width ? { ...w, sidebarWidth: width } : w,
+        ),
       }));
       scheduleFlush();
     },

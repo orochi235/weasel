@@ -18,6 +18,9 @@ export interface TrialRecord<TS = unknown, TC = unknown, TV = unknown> {
   view: TV;
   /** This trial's own tool slot. Undefined means it reads the lab's. */
   activeToolId?: string | null;
+  /** The extent the trial's sidebar was last dragged to, in pixels. Undefined
+   *  until someone moves the seam. */
+  sidebarWidth?: number;
   /** The marks on this trial's annotation targets, as `AnnotationsApi.toJSON`
    *  wrote them. Opaque here, and absent for a trial whose instrument declares
    *  no `annotations` — or declares its own `storage`. Not in `state`, which
