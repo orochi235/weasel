@@ -115,6 +115,12 @@ export type {
   CanvasStackContextValue,
   CanvasStackProps,
   CanvasStackSurface,
+  OrbitHandlers,
+  OrbitView,
+  PanZoomHandlers,
+  UseOrbitOptions,
+  UsePanZoomOptions,
+  Vec3,
   ViewportSize,
   WorldFrame,
   WorldSpec,
@@ -125,21 +131,19 @@ export {
   CanvasStack,
   CanvasStackContext,
   centerOn,
-  DEFAULT_FRAME,
-  resolveFrame,
-  screenToWorld,
-  worldToScreen,
-  zoomAt,
-} from './canvas';
-export type { OrbitHandlers, OrbitView, UseOrbitOptions, Vec3 } from './canvas/useOrbit';
-export {
   clampPitch,
+  DEFAULT_FRAME,
   orbitAfterDrag,
   orbitAfterWheel,
   PITCH_LIMIT,
+  resolveFrame,
+  screenToWorld,
   useOrbit,
+  usePanZoom,
+  worldToScreen,
   wrapYaw,
-} from './canvas/useOrbit';
+  zoomAt,
+} from './canvas';
 export * from './chrome';
 export { f } from './config/builder';
 export { fromConfigFields } from './config/fromConfigField';

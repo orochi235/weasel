@@ -225,8 +225,9 @@ import { toDeviceRect, useSurfaceTile, useTiledSurface } from '@weasel-js/labkit
 
 A trial's `view` is opaque to labkit — persisted, restored on Reset and handed
 to the instrument without being read into — so a 3D lab stores an orbit there.
-`useOrbit` is the 3D peer of `usePanZoom`. See `src/surface/AGENTS.md` for the
-contract and the traps.
+Both cameras ship independently of `CanvasStack`: `useOrbit` for a 3D view,
+`usePanZoom` for a 2D one over a `ViewTransform`. See `src/surface/AGENTS.md`
+for the contract and the traps.
 
 ## Subpath exports
 
@@ -240,7 +241,7 @@ directly. Several expose more than the root does, `/state` most of all.
 | `/primitives` | Toolbar, Sidebar, StatusBar, Legend, FloatingPanel, meters |
 | `/chrome` | Regions, contribution types, built-in contributions |
 | `/controls` | `<ControlPanel>` and the config field types |
-| `/canvas` | `<CanvasStack>`, coordinate helpers, `useOrbit` |
+| `/canvas` | `<CanvasStack>`, coordinate helpers, `usePanZoom`, `useOrbit` |
 | `/layers` | `<LayerList>` |
 | `/loupe` | Magnifier components and `useLoupe` |
 | `/surface` | Tiled surface hooks for your own renderer |
