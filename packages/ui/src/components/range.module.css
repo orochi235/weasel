@@ -1,0 +1,93 @@
+/* The one skin for a native <input type="range">. Imported by InlineRange and
+   by the property rows, which render the same DOM and used to carry three
+   independently authored copies of these rules.
+
+   The track is painted here rather than left to `accent-color`: a UA fills the
+   left of the track with the accent but draws the remainder near-white on a
+   dark surface whatever `color-scheme` says, and overriding the track's
+   background removes the accent fill instead of recolouring the remainder. */
+.range {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  min-inline-size: 48px;
+  /* The box is taller than the track so the thumb has room to spill; a surface
+     where the element itself IS the track overrides this. */
+  height: var(--wzl-range-box-h, 12px);
+  margin: 0;
+  padding: 0;
+  /* Transparent so the track pseudo-element shows; a surface that paints the element itself overrides it. */
+  background: var(--wzl-range-bg, transparent);
+  cursor: pointer;
+}
+
+.range::-webkit-slider-runnable-track {
+  height: var(--wzl-slider-track-h);
+  border-radius: var(--wzl-radius-sm);
+  background: var(
+    --wzl-range-track-bg,
+    color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-track-tint), transparent)
+  );
+}
+
+.range::-moz-range-track {
+  height: var(--wzl-slider-track-h);
+  border-radius: var(--wzl-radius-sm);
+  background: var(
+    --wzl-range-track-bg,
+    color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-track-tint), transparent)
+  );
+}
+
+.range::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: var(--wzl-slider-thumb-size);
+  height: var(--wzl-slider-thumb-size);
+  border: none;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-thumb-tint), transparent);
+  /* Centres an 8px thumb on a 4px track. Webkit does not centre it for you. */
+  margin-top: calc((var(--wzl-slider-track-h) - var(--wzl-slider-thumb-size)) / 2);
+}
+
+.range::-moz-range-thumb {
+  width: var(--wzl-slider-thumb-size);
+  height: var(--wzl-slider-thumb-size);
+  border: none;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-thumb-tint), transparent);
+}
+
+.range:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: 2px;
+}
+
+.range:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* Alpha variant: a fainter track, used where the row already carries a colour
+   swatch and the slider must not compete with it. */
+.alpha::-webkit-slider-runnable-track {
+  background: color-mix(in srgb, var(--wzl-accent) 10%, transparent);
+}
+
+.alpha::-moz-range-track {
+  background: color-mix(in srgb, var(--wzl-accent) 10%, transparent);
+}
+
+/* A dead alpha track keeps its groove but loses its thumb, so the affordance
+   reads inert rather than merely dimmed. Keyed off `:disabled`, which ColorRow
+   already sets on the input — not off a class on the row. */
+.alpha:disabled::-webkit-slider-runnable-track,
+.alpha:disabled::-moz-range-track {
+  background: color-mix(in srgb, var(--wzl-fg) 5%, transparent);
+}
+
+.alpha:disabled::-webkit-slider-thumb,
+.alpha:disabled::-moz-range-thumb {
+  background: transparent;
+}

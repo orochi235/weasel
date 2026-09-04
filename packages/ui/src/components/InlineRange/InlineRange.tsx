@@ -1,4 +1,5 @@
 import { type CSSProperties, type InputHTMLAttributes, type ReactElement } from 'react';
+import shared from '../range.module.css';
 import s from './InlineRange.module.css';
 
 /** Props for {@link InlineRange} — a range input's, with `value` required. */
@@ -30,7 +31,7 @@ export function InlineRange(props: InlineRangeProps): ReactElement {
       value={value}
       min={min}
       max={max}
-      className={[s.range, className].filter(Boolean).join(' ')}
+      className={[shared.range, s.range, className].filter(Boolean).join(' ')}
       style={{ ['--slider-fill' as string]: `${filled}%`, ...style } as CSSProperties}
     />
   );
