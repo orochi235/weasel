@@ -27,6 +27,18 @@
 
 `tsc -p packages/<pkg>/tsconfig.json` exits 1 with pre-existing `TS6059` errors on a clean tree. Always typecheck from the root.
 
+## Verification policy — this overrides the per-task steps below
+
+Several tasks below say "run the full ui suite". **Don't.** Per task, run:
+
+1. Your focused test file.
+2. `npx tsc --noEmit` from the worktree root.
+3. A project suite **only if you changed a `.ts`/`.tsx` file** — and only the project that covers it.
+
+A CSS-only change cannot move the `weasel-ui` suite: CSS modules are not processed in that project (only `labkit` sets `css: true`), so 2748 tests re-run to observe nothing. The full sweep happens once, in Final verification.
+
+**Never run a suite while another agent is running one.** Vitest takes ~11 of this machine's 12 cores, so two concurrent runs contend and produce timeouts that are not real failures — `packages/bidi/src/conformance.test.ts` has already failed this way at 5000ms and passes in 3.08s alone. A timeout in a file you did not touch is contention, not a regression: say so, don't chase it.
+
 **Theme switching in Storybook:** `&globals=theme:dark` sets `data-theme`, which nothing reads. `tokens.css` keys off `data-wzl-mode`. Use the lab header's Auto/Light/Dark buttons in labkit stories; for bare `@weasel-js/ui` stories set `data-wzl-mode` by hand on the root element.
 
 ---
@@ -392,7 +404,7 @@ git commit -m "give the kit one native-range skin and put InlineRange on it"
 - Modify: `packages/ui/src/components/Properties/PropertyPanel.tsx` (`SliderRow` ~`:231`, `ColorRow` ~`:363`)
 - Modify: `packages/ui/src/components/range.test.tsx`
 
-- [ ] **Step 1: Extend the test**
+- [x] **Step 1: Extend the test**
 
 Append to `packages/ui/src/components/range.test.tsx`, inside the existing `describe`:
 
@@ -433,12 +445,12 @@ Append to `packages/ui/src/components/range.test.tsx`, inside the existing `desc
   });
 ```
 
-- [ ] **Step 2: Run to watch it fail**
+- [x] **Step 2: Run to watch it fail**
 
 Run: `npx vitest run --project=weasel-ui packages/ui/src/components/range.test.tsx`
 Expected: FAIL on the two new cases — the range inputs carry no shared class.
 
-- [ ] **Step 3: Apply the class in PropertyPanel.tsx**
+- [x] **Step 3: Apply the class in PropertyPanel.tsx**
 
 Add the import beside the existing `s`:
 
@@ -469,7 +481,7 @@ In `ColorRow`, the alpha input's `className` is `s.alpha` today; make it:
 class here — `disabled={alphaDisabled}` is already on this input, and the shared
 module keys off `:disabled`.
 
-- [ ] **Step 4: Delete the superseded CSS**
+- [x] **Step 4: Delete the superseded CSS**
 
 In `Properties.module.css`, delete the block from `.row input[type='range'] {` through the closing brace of `.row input[type='range']::-moz-range-thumb` (lines ~224-266), and the alpha track/thumb rules at ~409-438 — `.rowColor input[type='range'].alpha::-webkit-slider-runnable-track` and everything through the last `.rowColor.alphaDisabled ... ::-moz-range-thumb`.
 
@@ -485,26 +497,33 @@ In `Properties.module.css`, delete the block from `.row input[type='range'] {` t
 
 Also delete `.rowColor.alphaDisabled input[type='range'].alpha { cursor: not-allowed; opacity: 0.55; }` — the shared `.range:disabled` rule says the same thing and reaches the element directly. Check whether `s.alphaDisabled` still has any other rule before removing the class from `ColorRow`; if it does not, leave the class in place anyway, since it is the row-level hook a consumer may style.
 
-- [ ] **Step 5: Run to verify it passes**
+- [x] **Step 5: Run to verify it passes**
 
 Run: `npx vitest run --project=weasel-ui packages/ui/src/components/range.test.tsx`
 Expected: PASS, 4 tests
 
-- [ ] **Step 6: Full suite, typecheck**
+- [x] **Step 6: Full suite, typecheck**
 
 Run: `npx tsc --noEmit && npx vitest run --project=weasel-ui && npx vitest run --project=labkit`
 Expected: PASS
 
-- [ ] **Step 7: Screenshot check**
+- [~] **Step 7: Screenshot check** — deferred to the consolidated visual pass at the end of the plan; Storybook not started for this task.
 
 Storybook: `Properties/Gallery`, `Properties/SliderRow`, `Properties/SpeechBalloonPanels`. Both modes. The rows should look **unchanged** — this task moves where the rules live, not what they say. A visible difference means the shared module's values drifted from the originals.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add packages/ui/src/components/Properties packages/ui/src/components/range.test.tsx
 git commit -m "put the property rows on the shared range skin"
 ```
+
+**Cascade finding (deviation from the KEEP list above):** `.row > input[type='range'] { margin-top: auto; }`
+was also deleted. It and the old `.row input[type='range'] { margin: 0 }` were both (0,2,1), so the later
+`margin: 0` won and `margin-top: auto` was dead. Moving the skin to the (0,1,0) `.range` class would have
+resurrected it. Measured in Chrome on a stretched row: `margin-top` `0px` before vs `45.5px` after, moving
+the label to the row top. `justify-content: flex-end` already bottom-aligns the track, which is what the
+comment above that block claims, so nothing was lost.
 
 ---
 
@@ -827,6 +846,22 @@ with:
 
 and in `.row select`, replace `height: var(--wzl-prop-field-height, 20px);` with `height: var(--wzl-field-h, var(--wzl-control-h));`.
 
+- [ ] **Step 3b: Right-align numeric fields**
+
+`NumberRow` is the only numeric field in the kit that is not right-aligned — `NumberField`'s inner input and the `.readoutInput` beside a slider both already are. So a labkit control panel renders a column of numbers that do not line up. Add to `Properties.module.css`, after the shared text/number rule:
+
+```css
+/* Numbers right-align so a column of them shares a decimal position; text does
+   not, so this cannot live in the rule the two share. */
+.row input[type='number'] {
+  text-align: right;
+}
+```
+
+Do NOT add `text-align` to the shared `.row input[type='text']:not(.readoutInput), .row input[type='number']` rule — that would right-align text fields too.
+
+Check afterwards that `.row input[type='number']` is not also declared in `range.module.css` (it will not be — that file only styles `input[type='range']`), and that this is the only `text-align` declaration reaching the element.
+
 - [ ] **Step 4: Confirm nothing still reads the retired name**
 
 Run: `grep -rn 'wzl-prop-field-height' packages apps --include='*.css' --include='*.less' --include='*.ts' --include='*.tsx' | grep -v dist`
@@ -839,9 +874,10 @@ Expected: PASS
 
 - [ ] **Step 6: Screenshot check**
 
-Two things to look at, both modes:
-1. `Properties/Gallery` — rows should be **unchanged** at 20px.
-2. A labkit toolbar story containing a `NumberField` — should still be 22px, proving the `var(--wzl-field-h, var(--wzl-control-h))` fallback resolves per element. If it went to 24px, someone declared `--wzl-field-h` at `:root`; remove that.
+Three things to look at, both modes:
+1. `Properties/Gallery` — rows should be **unchanged** at 20px, except that numeric fields now right-align.
+2. A labkit `ControlPanel` story — a column of numeric rows should share a right edge.
+3. A labkit toolbar story containing a `NumberField` — should still be 22px, proving the `var(--wzl-field-h, var(--wzl-control-h))` fallback resolves per element. If it went to 24px, someone declared `--wzl-field-h` at `:root`; remove that.
 
 - [ ] **Step 7: Commit**
 
@@ -1149,6 +1185,9 @@ Boxed fields size from `var(--wzl-field-h, var(--wzl-control-h))` — set
 `--wzl-field-h` on a container to change a whole panel's density. `PropertyList`
 sets its own, so property rows keep their 20px look.
 
+`NumberRow` right-aligns its value, so a column of numeric property rows shares a
+decimal position. `NumberField` and the slider readout already did.
+
 Behaviour changes worth knowing: `InlineRange`'s thumb is 8px and translucent rather
 than 12px and solid; every boxed field now focuses with the 1px ring the React Aria
 fields already used, replacing the property rows' bare outline; and the colour chip
@@ -1276,6 +1315,173 @@ git commit -m "use the kit's zoom control and select row"
 ```
 
 **Unrelated bug, do not fix here:** `.sb-checkbox` sets `color: var(--fg-muted)` (`#aaa`), which is invisible against the light toolbar the app currently renders — the three checkbox labels in the top strip read as bare squares. Note it and move on.
+
+---
+
+### Task 13: A unit suffix on `NumberRow`
+
+`SliderRow` takes `unit?: ReactNode` and renders it as a dim suffix beside its readout. `NumberRow` takes none, so a number typed directly carries no indication of what it measures — the same value is `20` in one row and `20 px` in the row above it. Give the typed number the same affordance.
+
+Display only: `unit` never participates in parsing, and the value stays a number. It sits after the input rather than inside it, so the field keeps its own box and the digits keep the full width they had.
+
+**Files:**
+- Modify: `packages/ui/src/components/Properties/PropertyPanel.tsx` (`NumberRowProps` ~`:435`, `NumberRow` ~`:451`)
+- Modify: `packages/ui/src/components/Properties/Properties.module.css`
+- Create: `packages/ui/src/components/Properties/NumberRow.unit.test.tsx`
+
+- [ ] **Step 1: Write the failing test**
+
+```tsx
+import { render } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+import { NumberRow } from './PropertyPanel';
+
+describe('NumberRow unit', () => {
+  it('renders no suffix by default', () => {
+    const { container } = render(<NumberRow label="Width" value={20} onChange={() => {}} />);
+    expect(container.textContent).not.toContain('px');
+  });
+
+  it('renders a string unit after the input', () => {
+    const { container } = render(
+      <NumberRow label="Width" value={20} unit="px" onChange={() => {}} />,
+    );
+    const input = container.querySelector('input[type="number"]');
+    expect(input).not.toBeNull();
+    expect(container.textContent).toContain('px');
+    // After the input, not before — the suffix reads as a trailing unit.
+    expect(input?.nextElementSibling?.textContent).toBe('px');
+  });
+
+  it('accepts a node unit so a symbol can super itself', () => {
+    const { container } = render(
+      <NumberRow label="Angle" value={90} unit={<sup>°</sup>} onChange={() => {}} />,
+    );
+    expect(container.querySelector('sup')?.textContent).toBe('°');
+  });
+});
+```
+
+- [ ] **Step 2: Run it to watch it fail**
+
+Run: `npx vitest run --project=weasel-ui packages/ui/src/components/Properties/NumberRow.unit.test.tsx`
+Expected: FAIL on the second and third cases — `unit` is not a prop, so nothing renders.
+
+- [ ] **Step 3: Add the prop**
+
+In `NumberRowProps`, after `placeholder`:
+
+```tsx
+  /**
+   * Optional suffix rendered after the field. A string becomes a dim "word"
+   * unit (e.g. "px"); pass JSX like `<sup>°</sup>` for symbol units. Display
+   * only — it never participates in parsing, and the value stays a number.
+   */
+  unit?: ReactNode;
+```
+
+Destructure it, and wrap the input so the suffix has somewhere to sit. Read the current `NumberRow` body first; keep its existing input untouched and only add the wrapper and suffix:
+
+```tsx
+      {unit == null ? (
+        input
+      ) : (
+        <span className={s.fieldUnitGroup}>
+          {input}
+          {typeof unit === 'string' ? <span className={s.readoutUnit}>{unit}</span> : unit}
+        </span>
+      )}
+```
+
+where `input` is the `<input type="number">` element the component already builds. Reuse `s.readoutUnit` — it is the same dim typography `SliderRow` uses, and a second class for the same appearance would drift.
+
+- [ ] **Step 4: Add the wrapper style**
+
+In `Properties.module.css`:
+
+```css
+/* Inline-flex, not flex: the row's own layout still treats this as the single
+   control it wraps. */
+.fieldUnitGroup {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+}
+```
+
+Check afterwards whether `.row input[type='number']` still sizes correctly inside it — it has `width: var(--wzl-prop-number-width, 9ch)`, which the wrapper must not collapse.
+
+- [ ] **Step 5: Run to verify it passes**
+
+Run: `npx vitest run --project=weasel-ui packages/ui/src/components/Properties/NumberRow.unit.test.tsx`
+Expected: PASS, 3 tests
+
+- [ ] **Step 6: Full suite and typecheck**
+
+Run: `npx tsc --noEmit && npx vitest run --project=weasel-ui`
+Expected: PASS
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add packages/ui/src/components/Properties
+git commit -m "give a typed number the same unit suffix a slider has"
+```
+
+---
+
+### Task 14: A config leaf can declare its unit
+
+`ControlPanel` renders a lab's config schema as property rows. It already reads `min`, `max`, `step` and `control` off a leaf through `extra<T>(leaf, key)`, an open accessor over the leaf's own keys — so a `unit` needs no change to any leaf type. Wire it, and both the slider and the typed number pick it up.
+
+This is the half that makes units the default rather than an option: every schema-driven lab panel gets them by declaring one key.
+
+**Files:**
+- Modify: `packages/labkit/src/controls/ControlPanel.tsx` (~`:158-193`)
+- Create or extend a test under `packages/labkit/src/controls/`
+
+- [ ] **Step 1: Write the failing test**
+
+Find the existing `ControlPanel` test file and follow its setup rather than inventing one — check `packages/labkit/src/controls/` and `packages/labkit/src/config/` for how a schema is built for a test. Then assert that a numeric leaf declaring `unit: 'px'` renders `px`, for both the slider form (`control: 'slider'` with min and max) and the plain number form.
+
+- [ ] **Step 2: Run it to watch it fail**
+
+Run: `npx vitest run --project=labkit <your test path>`
+Expected: FAIL — the unit is not read or passed.
+
+- [ ] **Step 3: Read it and pass it**
+
+Beside the existing `min`/`max`/`step` reads:
+
+```tsx
+      const unit = extra<string>(leaf, 'unit');
+```
+
+Pass `unit={unit}` to both the `<SliderRow>` and the `<NumberRow>` in that branch.
+
+A leaf's `unit` is a string, not a node — a schema is data. A consumer wanting `<sup>°</sup>` uses the row directly, or supplies a `renderers` override. Do not add markup-from-string mapping.
+
+- [ ] **Step 4: Run to verify it passes**
+
+Run: `npx vitest run --project=labkit <your test path>`
+Expected: PASS
+
+- [ ] **Step 5: Full suites and typecheck**
+
+Run: `npx tsc --noEmit && npx vitest run --project=labkit && npx vitest run --project=weasel-ui`
+Expected: PASS
+
+- [ ] **Step 6: Document the key**
+
+`min`/`max`/`step`/`control` are documented wherever labkit describes a config leaf's extras — find that (check `packages/labkit/docs/`, `packages/labkit/README.md`, and the `config` source's own docstrings) and add `unit` beside them, in one line. If they are documented nowhere, add nothing: do not start a new document for one key.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add packages/labkit/src/controls
+git commit -m "let a config leaf declare the unit its number is in"
+```
 
 ---
 

@@ -3,6 +3,7 @@ import { Focusable } from 'react-aria-components';
 import { dlog } from '../../dlog';
 import { formatNumber, parseSignedNumber } from '../../format/number';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
+import shared from '../range.module.css';
 import s from './Properties.module.css';
 
 /** Props for `<PropertyPanel>`. */
@@ -229,6 +230,7 @@ export function SliderRow({
     >
       <input
         type="range"
+        className={shared.range}
         tabIndex={-1}
         min={min}
         max={max}
@@ -354,14 +356,13 @@ export function ColorRow({
   span,
 }: ColorRowProps) {
   const showAlpha = alpha != null;
-  const className = alphaDisabled ? s.alphaDisabled : undefined;
   return (
-    <PropertyRow span={span} label={label} variant="color" className={className} description={description}>
+    <PropertyRow span={span} label={label} variant="color" description={description}>
       <input type="color" value={value} onChange={(e) => onChange(e.target.value)} />
       {showAlpha && (
         <input
           type="range"
-          className={s.alpha}
+          className={`${shared.range} ${shared.alpha} ${s.alpha}`}
           min={0}
           max={1}
           step={0.01}

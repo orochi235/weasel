@@ -181,6 +181,12 @@ say in the test that it is a proxy. A stand-in that drops *cost* rather than beh
 same to an efficiency claim: a fake client makes "refetches only when its inputs changed" green
 against a hook that refetches unconditionally.
 
+**The CSS-module proxy in the `weasel-ui` vitest project answers to any key.** `s.thisNeverExisted`
+comes back as `_thisNeverExisted_<filehash>`, so asserting a class proves only that the component
+asked for that key — never that a rule defines it, and a class whose rule was deleted still reads
+as present. The hash is per stylesheet, so an assertion can still tell *which* module a class came
+from; to know a rule survives, read the stylesheet or check it in a browser.
+
 **Storybook's theme global does not switch weasel's theme.** `tokens.css` keys its mode blocks
 off `[data-wzl-mode]`, which `applyTheme` writes. `&globals=theme:dark` sets `data-theme`, which
 nothing reads, so a "both themes" check driven from the URL verifies one theme twice — whichever

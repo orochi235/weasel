@@ -22,4 +22,40 @@ describe('shared range skin', () => {
     expect(cls).toContain(shared.range);
     expect(cls).toContain('mine');
   });
+
+  it('SliderRow wears the shared range class', async () => {
+    const { SliderRow } = await import('./Properties/PropertyPanel');
+    const { container } = render(
+      <SliderRow label="Bevel" value={5} min={0} max={10} step={1} onChange={() => {}} />,
+    );
+    const input = container.querySelector('input[type="range"]');
+    expect(input?.className.split(' ')).toContain(shared.range);
+  });
+
+  it('ColorRow alpha wears the shared range and alpha classes', async () => {
+    const { ColorRow } = await import('./Properties/PropertyPanel');
+    const { container } = render(
+      <ColorRow label="Fill" value="#3b82f6" alpha={1} onChange={() => {}} onAlphaChange={() => {}} />,
+    );
+    const cls = container.querySelector('input[type="range"]')?.className.split(' ') ?? [];
+    expect(cls).toContain(shared.range);
+    expect(cls).toContain(shared.alpha);
+  });
+
+  it('a disabled alpha track stays disabled on the input', async () => {
+    // The inert treatment is keyed off :disabled in the shared module, so the
+    // prop has to keep reaching the element and not only the row's class.
+    const { ColorRow } = await import('./Properties/PropertyPanel');
+    const { container } = render(
+      <ColorRow
+        label="Fill"
+        value="#3b82f6"
+        alpha={1}
+        alphaDisabled
+        onChange={() => {}}
+        onAlphaChange={() => {}}
+      />,
+    );
+    expect(container.querySelector('input[type="range"]')).toBeDisabled();
+  });
 });
