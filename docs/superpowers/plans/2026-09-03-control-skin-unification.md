@@ -618,7 +618,7 @@ git commit -m "skin a bare range input in labkit, not just its accent color"
 - Create: `packages/ui/src/components/Slider/Slider.density.test.tsx`
 - Modify: `packages/labkit/src/primitives/ZoomControl.tsx:45`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `packages/ui/src/components/Slider/Slider.density.test.tsx`:
 
@@ -659,12 +659,12 @@ describe('Slider density', () => {
 });
 ```
 
-- [ ] **Step 2: Run to watch it fail**
+- [x] **Step 2: Run to watch it fail**
 
 Run: `npx vitest run --project=weasel-ui packages/ui/src/components/Slider/Slider.density.test.tsx`
 Expected: FAIL — `density` is not a prop; the slim cases get `''`.
 
-- [ ] **Step 3: Add the prop**
+- [x] **Step 3: Add the prop**
 
 In `Slider.tsx`, add to `SliderProps` after `trackHeight`:
 
@@ -704,7 +704,7 @@ and replace the root `<div>`'s `className` and `style` at `:479-482` with:
     >
 ```
 
-- [ ] **Step 4: Make the thumb read the var**
+- [x] **Step 4: Make the thumb read the var**
 
 In `Slider.module.css`, in `.thumb`, replace:
 
@@ -739,12 +739,12 @@ and, so a slim thumb reads as a dot rather than a bar, add after the `.thumb` bl
 }
 ```
 
-- [ ] **Step 5: Run to verify it passes**
+- [x] **Step 5: Run to verify it passes**
 
 Run: `npx vitest run --project=weasel-ui packages/ui/src/components/Slider/Slider.density.test.tsx`
 Expected: PASS, 3 tests
 
-- [ ] **Step 6: Put ZoomControl on it**
+- [x] **Step 6: Put ZoomControl on it**
 
 In `packages/labkit/src/primitives/ZoomControl.tsx`, add `density="slim"` to the `<Slider>`:
 
@@ -757,16 +757,16 @@ In `packages/labkit/src/primitives/ZoomControl.tsx`, add `density="slim"` to the
         max={toTrack(max)}
 ```
 
-- [ ] **Step 7: Full suites, typecheck**
+- [x] **Step 7: Full suites, typecheck**
 
 Run: `npx tsc --noEmit && npx vitest run --project=weasel-ui && npx vitest run --project=labkit`
 Expected: PASS
 
-- [ ] **Step 8: Screenshot check**
+- [~] **Step 8: Screenshot check**
 
 Storybook: the `Slider` and `GradientEditor` stories must be **unchanged** (no `density`), and any lab story with a zoom control now shows a 4px track with a small round thumb. Both modes.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add packages/ui/src/components/Slider packages/labkit/src/primitives/ZoomControl.tsx

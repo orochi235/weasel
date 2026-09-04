@@ -96,6 +96,9 @@ export type SliderProps<T extends Thumb = Thumb> = {
   allowShiftAll?: boolean;
   renderTrack?: (ctx: TrackCtx) => ReactNode;
   trackHeight?: number;
+  /** `'slim'` drives the track and thumb from the kit's slider tokens, so a
+   *  Slider matches the property rows. `trackHeight` still wins if given. */
+  density?: 'default' | 'slim';
   renderReadout?: (thumb: T, index: number) => ReactNode;
   readoutPlacement?: 'none' | 'inline-after' | 'below-thumb';
   ariaLabel?: string;
@@ -191,7 +194,7 @@ function defaultReadout(thumb: Thumb): string {
  * in-flight state to buffer.
  */
 export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactElement {
-  const { thumbs, onInput, onChange, min, max, step, constraint, trackHeight, ariaLabel, className } = props;
+  const { thumbs, onInput, onChange, min, max, step, constraint, trackHeight, density, ariaLabel, className } = props;
 
   const stops = usableStops(props.stops, min, max);
 
@@ -475,10 +478,20 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
   const placement = props.readoutPlacement ?? 'none';
   const renderReadout = props.renderReadout;
 
+  const slim = density === 'slim';
+  const rootVars: Record<string, string> = {};
+  if (slim) {
+    rootVars['--rp-track-height'] = 'var(--wzl-slider-track-h)';
+    rootVars['--rp-thumb-size'] = 'var(--wzl-slider-thumb-size)';
+  }
+  // An explicit trackHeight wins: a caller who named a number meant it.
+  if (trackHeight !== undefined) rootVars['--rp-track-height'] = `${trackHeight}px`;
+  const rootClass = [s.root, slim && s.slim, className].filter(Boolean).join(' ');
+
   return (
     <div
-      className={className ? `${s.root} ${className}` : s.root}
-      style={trackHeight !== undefined ? ({ ['--rp-track-height' as string]: `${trackHeight}px` } as CSSProperties) : undefined}
+      className={rootClass}
+      style={Object.keys(rootVars).length > 0 ? (rootVars as CSSProperties) : undefined}
     >
       <div className={s.row}>
       <div className={s.track} ref={trackRef} onPointerDown={onTrackPointerDown}>
