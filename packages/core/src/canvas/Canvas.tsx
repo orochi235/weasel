@@ -78,6 +78,7 @@ import { createDebugOverlayLayer } from '../debug/createDebugOverlayLayer';
 
 const alwaysVisible = (_id: string): boolean => true;
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
+import { resolveCursor } from '@weasel-js/cursor';
 
 /**
  * The scene-tree reading methods Canvas feature-detects at draw time, as an
@@ -721,7 +722,7 @@ function resolveToolsCursor(
   const id = tools.hotkeyEngaged ?? tools.active;
   const tool = tools.registry[id];
   if (!tool?.cursor) return undefined;
-  if (typeof tool.cursor === 'string') return tool.cursor;
+  if (typeof tool.cursor !== 'function') return resolveCursor(tool.cursor);
   if (!ctxBase) return undefined;
   // Function form: invoke at render time with the live base ctx.
   //
@@ -733,7 +734,7 @@ function resolveToolsCursor(
   // does, for its close-path hint).
   try {
     const base = ctxBase();
-    return tool.cursor({ ...base, scratch: null });
+    return resolveCursor(tool.cursor({ ...base, scratch: null }));
   } catch {
     return undefined;
   }

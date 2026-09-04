@@ -27,3 +27,18 @@ describe('cursorFor', () => {
     expect(() => cursorFor('trowel')).toThrow(/trowel/);
   });
 });
+
+describe('cursorFor rotation', () => {
+  it('does not collide across angles', () => {
+    expect(cursorFor('pencil', { angle: 0 })).not.toBe(
+      cursorFor('pencil', { angle: Math.PI / 2 }),
+    );
+  });
+
+  it('shares one entry across angles inside a step', () => {
+    // The hover pump feeds a continuously varying selection rotation. Keying
+    // on the raw angle would mint an entry per pointer event and never hit.
+    expect(cursorFor('pencil', { angle: 0.01 })).toBe(cursorFor('pencil', { angle: 0 }));
+    expect(cursorFor('pencil', { angle: Math.PI * 2 })).toBe(cursorFor('pencil', { angle: 0 }));
+  });
+});

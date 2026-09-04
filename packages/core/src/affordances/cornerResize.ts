@@ -3,7 +3,7 @@ import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { ResizeAnchor } from 'interactions/gestures/types';
 import { CORNER_ANCHORS, cornerPoint, fixedCornerOf } from 'interactions/actions/resize/cornerHandles';
 import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
-import { localToWorld, transformOf } from './hitAffordanceRegions';
+import { angleOf, localToWorld, transformOf } from './hitAffordanceRegions';
 import { HANDLE_BASE_PX } from 'core/device/targets';
 
 /** Options for `createCornerResizeAffordance` — the size and appearance of
@@ -84,10 +84,16 @@ export function createCornerResizeAffordance(
           hitKind: c.kind,
           // Diagonal by fixed-corner parity: a matched-axis anchor (min-min /
           // max-max fixed) means the dragged corner sits on the ↘ diagonal;
-          // mixed axes sit on the ↗ diagonal. Not rotation-aware — a rotated
-          // target keeps the unrotated hint, the same policy as every
-          // mainstream editor short of Figma.
-          cursor: c.anchor.x === c.anchor.y ? 'nwse-resize' : 'nesw-resize',
+          // mixed axes sit on the ↗ diagonal. The glyph is horizontal at angle
+          // 0, so the diagonal is a half-quarter-turn either way, plus the
+          // target's own rotation. The keyword is the fallback rather than the
+          // answer: CSS has four of them, which cannot express a target
+          // rotated to anything but a multiple of 45°.
+          cursor: {
+            glyph: 'resize',
+            angle: (c.anchor.x === c.anchor.y ? Math.PI / 4 : -Math.PI / 4) + angleOf(xf),
+            fallback: c.anchor.x === c.anchor.y ? 'nwse-resize' : 'nesw-resize',
+          },
           bind: (): AffordanceBinding => ({
             initialScratch: {
               anchor: c.anchor,

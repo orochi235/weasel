@@ -2,7 +2,7 @@
   "name": "weasel",
   "private": true,
   "version": "0.4.0",
-  "description": "Monorepo root for the weasel canvas kit. Not published — the workspaces under packages/ are. See packages/core for @weasel-js/core.",
+  "description": "Monorepo root for the weasel canvas kit. Not published \u2014 the workspaces under packages/ are. See packages/core for @weasel-js/core.",
   "license": "MIT",
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
@@ -42,7 +42,7 @@
     "test:smoke": "vitest run --project=smoke",
     "test:smoke:consumer": "node scripts/smoke-consumer-bundle.mjs",
     "check:first-publish": "node scripts/check-first-publish.mjs",
-  "check:manifests": "node scripts/check-publish-manifests.mjs",
+    "check:manifests": "node scripts/check-publish-manifests.mjs",
     "check:bumps": "node scripts/check-changeset-bumps.mjs",
     "check:frame-loops": "node scripts/check-frame-loops.mjs",
     "audit:jsdoc": "node scripts/audit-jsdoc.mjs",
@@ -68,7 +68,8 @@
     "build-storybook": "storybook build",
     "gen:icons": "node packages/ui/scripts/gen-icons.mjs",
     "gen:cursors": "node packages/cursor/scripts/gen-cursors.mjs",
-    "proof:cursors": "node --import ./packages/cursor/scripts/ts-resolve.mjs packages/cursor/scripts/proof-cursors.mjs"
+    "proof:cursors": "node --import ./packages/cursor/scripts/ts-resolve.mjs packages/cursor/scripts/proof-cursors.mjs",
+    "proof:pixels": "node --import ./packages/cursor/scripts/ts-resolve.mjs packages/cursor/scripts/proof-pixels.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.1",

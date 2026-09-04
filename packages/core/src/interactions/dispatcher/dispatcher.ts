@@ -47,6 +47,7 @@ import { scopeBindings } from '../../contributions/assemble';
 import type { InputEvent, BindingScope, ScopedBinding } from './matcher';
 import { matchSorted, specificity } from './matcher';
 import { evaluate, describeRule, type Rule, type RuleCtx, type Condition } from '../../features/chrome-caps';
+import { resolveCursor } from '@weasel-js/cursor';
 
 /**
  * The in-flight handle slot a pointer's gestures key into.
@@ -1201,7 +1202,7 @@ export function createDispatcher(opts?: {
 
   function inFlightCursor(): string | null {
     for (const action of inFlightActions.values()) {
-      const cursor = action.activeCursor ?? action.cursor;
+      const cursor = resolveCursor(action.activeCursor ?? action.cursor);
       if (cursor) return cursor;
     }
     return null;

@@ -6,6 +6,7 @@ import type { DebugSink } from '../debug/types';
 import type { ToolKeybinding } from './routeTypes';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { Contribution } from '../contributions/types';
+import type { CursorSpec } from '@weasel-js/cursor';
 
 /** Modifier-key snapshot at event dispatch time. `space` is included
  *  because tools commonly use space as a hotkey-slot trigger and may
@@ -102,7 +103,7 @@ export interface Tool<TScratch = unknown> extends Contribution {
    *  the invoker knows which tool to switch to). */
   keybinding?: ToolKeybinding;
   initScratch?: () => TScratch;
-  cursor?: string | ((ctx: ToolCtx<TScratch>) => string);
+  cursor?: CursorSpec | ((ctx: ToolCtx<TScratch>) => CursorSpec);
   onActivate?: (ctx: ToolCtx<TScratch>) => void;
   onDeactivate?: (ctx: ToolCtx<TScratch>) => void;
   /** Returns the in-flight preview pose for `id` if this tool is mid-gesture

@@ -1,4 +1,5 @@
 import {
+  CURSOR_ANGLE_STEPS,
   CURSOR_HALO,
   CURSOR_HALO_WIDTH,
   CURSOR_INK,
@@ -9,8 +10,23 @@ import type { CursorGlyph, CursorPath } from './types';
 export interface BakeOptions {
   /** Rendered size in CSS px. Default 24. */
   readonly size?: number;
+  /** Clockwise rotation in radians about the box centre, quantized to
+   *  {@link CURSOR_ANGLE_STEPS} steps. Default 0. */
+  readonly angle?: number;
   /** Keyword drawn if the browser rejects the image. Default 'default'. */
   readonly fallback?: string;
+}
+
+/**
+ * Index of the quantization step an angle falls in, in `[0, CURSOR_ANGLE_STEPS)`.
+ *
+ * Exported because the bake cache keys on this rather than on the raw angle:
+ * the hover pump feeds a continuously varying selection rotation, and two
+ * angles in the same step must be one cache entry, not two.
+ */
+export function quantizeCursorAngle(angle: number): number {
+  const i = Math.round((angle / (Math.PI * 2)) * CURSOR_ANGLE_STEPS);
+  return ((i % CURSOR_ANGLE_STEPS) + CURSOR_ANGLE_STEPS) % CURSOR_ANGLE_STEPS;
 }
 
 /**
@@ -78,12 +94,27 @@ export function bakeCursor(glyph: CursorGlyph, opts: BakeOptions = {}): string {
     );
   }
   // Halos first, then ink; within each pass, source order is z-order.
-  const body = glyph.paths.map(renderHalo).join('') + glyph.paths.map(renderInk).join('');
+  const paths = glyph.paths.map(renderHalo).join('') + glyph.paths.map(renderInk).join('');
+
+  const c = glyph.box / 2;
+  const step = quantizeCursorAngle(opts.angle ?? 0);
+  const theta = (step / CURSOR_ANGLE_STEPS) * Math.PI * 2;
+  // A whole-glyph transform rather than rotated path data: the same record
+  // has to reach `paint.ts` unrotated, and a `d` string is not re-authorable.
+  const body = step === 0
+    ? paths
+    : `<g transform="rotate(${(step * 360) / CURSOR_ANGLE_STEPS} ${c} ${c})">${paths}</g>`;
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"` +
     ` viewBox="0 0 ${glyph.box} ${glyph.box}">${body}</svg>`;
-  const hx = Math.round((glyph.hotspot[0] / glyph.box) * size);
-  const hy = Math.round((glyph.hotspot[1] / glyph.box) * size);
+  // The hotspot travels with the glyph. Left behind, a rotated arrow would
+  // point from its tail.
+  const dx = glyph.hotspot[0] - c;
+  const dy = glyph.hotspot[1] - c;
+  const cos = Math.cos(theta);
+  const sin = Math.sin(theta);
+  const hx = Math.round(((c + cos * dx - sin * dy) / glyph.box) * size);
+  const hy = Math.round(((c + sin * dx + cos * dy) / glyph.box) * size);
   const uri = `data:image/svg+xml,${encodeURIComponent(svg)}`;
   return `url("${uri}") ${hx} ${hy}, ${opts.fallback ?? 'default'}`;
 }

@@ -60,6 +60,7 @@
       "@weasel-js/gestures": ["./packages/gestures/src/index.ts"],
       "@weasel-js/history": ["./packages/history/src/index.ts"],
       "@weasel-js/loupe": ["./packages/loupe/src/index.ts"],
+      "@weasel-js/cursor": ["./packages/cursor/src/index.ts"],
       "@weasel-js/modes": ["./packages/modes/src/index.ts"],
       "@weasel-js/modes/presets/default": ["./packages/modes/src/presets/default.ts"],
       "@weasel-js/audio": ["./packages/audio/src/index.ts"],

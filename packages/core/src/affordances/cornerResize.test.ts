@@ -129,3 +129,52 @@ describe('createCornerResizeAffordance', () => {
     expect(layer.hitTest(75, 75, state, VIEW, DIMS)).toBeNull();
   });
 });
+
+/** Bounds carrying a pose rotation, which `poseRotationOf` reads. */
+function stateRotated(rotation: number): ChromeState {
+  return {
+    selection: [asNodeId('a')],
+    multiActive: false,
+    boundsOf: () => ({ x: 100, y: 100, width: 50, height: 40, rotation }),
+    unionBounds: null,
+    modifiers: NO_MOD,
+  };
+}
+
+const cursorOf = (state: ChromeState, tag: string) => {
+  const r = createCornerResizeAffordance().regions(state).find((x) => x.id === `corner-${tag}`);
+  return r?.cursor;
+};
+
+describe('corner-resize cursors', () => {
+  it('picks the diagonal by corner parity on an unrotated target', () => {
+    // Tags name the FIXED corner: `min-min` fixed means the dragged corner is
+    // bottom-right, on the ↘ diagonal. The glyph is horizontal at angle 0, so
+    // that diagonal is a quarter-turn's half.
+    expect(cursorOf(stateWithSingle(), 'min-min')).toMatchObject({
+      glyph: 'resize',
+      angle: Math.PI / 4,
+      fallback: 'nwse-resize',
+    });
+    expect(cursorOf(stateWithSingle(), 'max-min')).toMatchObject({
+      glyph: 'resize',
+      angle: -Math.PI / 4,
+      fallback: 'nesw-resize',
+    });
+  });
+
+  it('turns the diagonal with the target', () => {
+    // The whole point of arc 2: at 90° the ↘ corner's resize axis runs ↙,
+    // which no CSS keyword pair can express and the old parity rule got wrong.
+    expect(cursorOf(stateRotated(Math.PI / 2), 'min-min')).toMatchObject({
+      angle: Math.PI / 4 + Math.PI / 2,
+    });
+  });
+
+  it('keeps a keyword fallback matching the unrotated diagonal', () => {
+    // The image is what carries the rotation; if the browser drops it, the
+    // parity keyword is still a better answer than `default`.
+    const c = cursorOf(stateRotated(Math.PI / 3), 'min-min');
+    expect(c).toMatchObject({ fallback: 'nwse-resize' });
+  });
+});

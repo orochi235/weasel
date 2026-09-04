@@ -12,6 +12,7 @@
 import type { ActionBehavior, ModifierState, ResizeAnchor } from '../gestures/types';
 import type { ClaimableGesture } from '../../affordances/types';
 import type { KitInsertShape } from 'core/shapeKinds';
+import type { CursorSpec } from '@weasel-js/cursor';
 
 export type { ModifierState } from '../gestures/types';
 
@@ -63,11 +64,11 @@ export interface AffordanceHit {
    *  Other affordance kinds (rotate-handle, anchor:N, controlIn:N, controlOut:N)
    *  leave this undefined. */
   anchor?: ResizeAnchor;
-  /** CSS cursor to show while the pointer hovers this affordance (no
+  /** Cursor to show while the pointer hovers this affordance (no
    *  gesture in flight). Consumed by the hover-cursor pump in
    *  `useGestureDispatcher`; unset = the pump falls through to
    *  action-cursor prediction, then to the active tool's cursor. */
-  cursor?: string;
+  cursor?: CursorSpec;
   /**
    * Free-form payload from whatever produced the hit, carried through to the
    * matching action untouched.

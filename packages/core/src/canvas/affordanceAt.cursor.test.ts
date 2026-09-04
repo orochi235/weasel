@@ -2,10 +2,10 @@
  * `AffordanceRegion.cursor` reaches the hover-cursor pump.
  *
  * It didn't used to. The field was declared on the region model and set by
- * `rotationHandle` (`'grab'`, customizable via `RotationHandleOptions.cursor`),
+ * `rotationHandle` (customizable via `RotationHandleOptions.cursor`),
  * but the only hit-tester that ran for kit chrome was the hand-written
  * classifier, which synthesized hits without going through region objects and
- * hardcoded `'grab'` on the rotate path. Consolidating onto one region walk is
+ * hardcoded a keyword on the rotate path. Consolidating onto one region walk is
  * what connects the declared value to the pump, which reads
  * `AffordanceHit.cursor`.
  */
@@ -37,17 +37,18 @@ describe('AffordanceHit.cursor comes from the region', () => {
 
   it('resize corners report a diagonal cursor matching their axis parity', () => {
     // Top-left and bottom-right sit on the ↘ diagonal; the other two on ↗.
-    expect(affordanceAt({ x: 0, y: 0 })?.cursor).toBe('nwse-resize');
-    expect(affordanceAt({ x: 100, y: 100 })?.cursor).toBe('nwse-resize');
-    expect(affordanceAt({ x: 100, y: 0 })?.cursor).toBe('nesw-resize');
-    expect(affordanceAt({ x: 0, y: 100 })?.cursor).toBe('nesw-resize');
+    // The keyword is the fallback now that the diagonal is a baked angle.
+    expect(affordanceAt({ x: 0, y: 0 })?.cursor).toMatchObject({ fallback: 'nwse-resize' });
+    expect(affordanceAt({ x: 100, y: 100 })?.cursor).toMatchObject({ fallback: 'nwse-resize' });
+    expect(affordanceAt({ x: 100, y: 0 })?.cursor).toMatchObject({ fallback: 'nesw-resize' });
+    expect(affordanceAt({ x: 0, y: 100 })?.cursor).toMatchObject({ fallback: 'nesw-resize' });
   });
 
-  it('the rotate ring reports grab', () => {
+  it('the rotate ring reports the rotate glyph', () => {
     // Just above the top edge: outside the AABB cutout, inside the ring.
     const hit = affordanceAt({ x: 50, y: -10 });
     expect(hit?.kind).toBe('rotate-handle');
-    expect(hit?.cursor).toBe('grab');
+    expect(hit?.cursor).toMatchObject({ glyph: 'rotate', fallback: 'grab' });
   });
 
   it("honors a custom cursor on the rotation affordance's region", () => {

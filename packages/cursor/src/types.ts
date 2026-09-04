@@ -31,6 +31,13 @@ export const CURSOR_HALO = '#ffffff';
 export const CURSOR_HALO_WIDTH = 2.6;
 
 /**
+ * Rotation steps a baked angle is quantized to. Below 16 the cursor visibly
+ * snaps against a smoothly rotating selection; above it the cache grows for no
+ * perceptible gain.
+ */
+export const CURSOR_ANGLE_STEPS = 16;
+
+/**
  * Chrome silently drops a cursor image above this size and falls back to the
  * keyword after the comma, with no error anywhere. Measured on Chrome 152 /
  * macOS 26.5; see the spec's "Measured browser behavior".
@@ -38,7 +45,7 @@ export const CURSOR_HALO_WIDTH = 2.6;
 export const CURSOR_MAX_CSS_PX = 128;
 
 /**
- * Axis-aligned bounds of an authored `d` string.
+ * Visits the points that bound an authored `d` string, for the fit guards below.
  *
  * Command-aware on purpose. Scraping every number out of the string instead
  * reads an arc's radii and its three flags as coordinates, which reports a
@@ -54,15 +61,9 @@ export const CURSOR_MAX_CSS_PX = 128;
  * relative command would be measured as if absolute and silently under-report,
  * so it throws.
  */
-function extent(d: string): { min: number; max: number } {
-  let min = Number.POSITIVE_INFINITY;
-  let max = Number.NEGATIVE_INFINITY;
+function walk(d: string, see: (x: number, y: number) => void): void {
   let cx = 0;
   let cy = 0;
-  const see = (v: number) => {
-    if (v < min) min = v;
-    if (v > max) max = v;
-  };
   for (const [, cmd, args] of d.matchAll(/([A-Za-z])([^A-Za-z]*)/g)) {
     if (cmd !== cmd.toUpperCase()) {
       throw new Error(`cursor glyph path uses a relative command '${cmd}': ${d}`);
@@ -83,10 +84,10 @@ function extent(d: string): { min: number; max: number } {
         const uy = half > 0 ? dx / (half * 2) : 0;
         const ox = (cx + x) / 2 + sign * off * ux;
         const oy = (cy + y) / 2 + sign * off * uy;
-        see(ox - r);
-        see(ox + r);
-        see(oy - r);
-        see(oy + r);
+        see(ox - r, oy - r);
+        see(ox + r, oy - r);
+        see(ox - r, oy + r);
+        see(ox + r, oy + r);
         cx = x;
         cy = y;
       }
@@ -96,11 +97,9 @@ function extent(d: string): { min: number; max: number } {
     for (let i = 0; i + 2 <= nums.length; i += 2) {
       cx = nums[i];
       cy = nums[i + 1];
-      see(cx);
-      see(cy);
+      see(cx, cy);
     }
   }
-  return { min, max };
 }
 
 /**
@@ -111,8 +110,35 @@ function extent(d: string): { min: number; max: number } {
  */
 export function haloFitsInBox(glyph: CursorGlyph): boolean {
   const margin = CURSOR_HALO_WIDTH / 2;
-  return glyph.paths.every((p) => {
-    const { min, max } = extent(p.d);
-    return min >= margin && max <= glyph.box - margin;
-  });
+  let ok = true;
+  for (const p of glyph.paths) {
+    walk(p.d, (x, y) => {
+      for (const v of [x, y]) {
+        if (v < margin || v > glyph.box - margin) ok = false;
+      }
+    });
+  }
+  return ok;
+}
+
+/**
+ * True when the glyph still fits its viewBox at every rotation — i.e. every
+ * authored point is inside the box's inscribed circle, halo included.
+ *
+ * Bake rotates about the box centre in a viewBox that does not grow, so a
+ * glyph that merely satisfies {@link haloFitsInBox} can have its corners
+ * sheared off partway round. The loss is a few pixels at cursor size and
+ * invisible until someone looks at exactly the wrong angle, which is why it
+ * is worth failing at authoring time.
+ */
+export function rotationFitsInBox(glyph: CursorGlyph): boolean {
+  const c = glyph.box / 2;
+  const limit = c - CURSOR_HALO_WIDTH / 2;
+  let ok = true;
+  for (const p of glyph.paths) {
+    walk(p.d, (x, y) => {
+      if (Math.hypot(x - c, y - c) > limit) ok = false;
+    });
+  }
+  return ok;
 }

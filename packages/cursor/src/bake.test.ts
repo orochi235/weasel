@@ -75,3 +75,44 @@ describe('bakeCursor', () => {
     expect(() => bakeCursor(PENCIL, { size: 160 })).toThrow(/128/);
   });
 });
+
+const ARROW: CursorGlyph = {
+  box: 24,
+  hotspot: [12, 4],
+  paths: [{ role: 'stroke', d: 'M 12 4 L 12 20', width: 1.6 }],
+};
+
+describe('bakeCursor rotation', () => {
+  it('emits nothing extra at zero, so an unrotated glyph is untouched', () => {
+    expect(bakeCursor(ARROW, { angle: 0 })).toBe(bakeCursor(ARROW, {}));
+    expect(decodeURIComponent(bakeCursor(ARROW, { angle: 0 }))).not.toContain('rotate(');
+  });
+
+  it('rotates about the box centre', () => {
+    const svg = decodeURIComponent(bakeCursor(ARROW, { angle: Math.PI / 2 }));
+    expect(svg).toContain('<g transform="rotate(90 12 12)">');
+  });
+
+  it('carries the hotspot around with the glyph', () => {
+    // Hotspot (12,4) is 8 above the centre; a quarter turn puts it 8 to the
+    // right. A hotspot left behind would point at the tail of the arrow.
+    expect(bakeCursor(ARROW, { angle: Math.PI / 2, size: 24 })).toContain('") 20 12,');
+  });
+
+  it('quantizes to 22.5 degrees', () => {
+    // Finer steps make the cursor snap visibly against a smoothly rotating
+    // selection; coarser gains nothing. 16 steps is the whole cache bound.
+    expect(bakeCursor(ARROW, { angle: 0.1 })).toBe(bakeCursor(ARROW, { angle: 0 }));
+    const svg = decodeURIComponent(bakeCursor(ARROW, { angle: 0.3 }));
+    expect(svg).toContain('rotate(22.5 12 12)');
+  });
+
+  it('normalizes a full turn away', () => {
+    expect(bakeCursor(ARROW, { angle: Math.PI / 2 + Math.PI * 2 })).toBe(
+      bakeCursor(ARROW, { angle: Math.PI / 2 }),
+    );
+    expect(bakeCursor(ARROW, { angle: -Math.PI / 2 })).toBe(
+      bakeCursor(ARROW, { angle: (3 * Math.PI) / 2 }),
+    );
+  });
+});

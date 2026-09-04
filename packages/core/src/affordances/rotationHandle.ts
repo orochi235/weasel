@@ -2,6 +2,8 @@ import type { Affordance, AffordanceBinding, AffordanceRegion, CommonAffordanceS
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { FillStyle, Stroke } from '@weasel-js/paint';
 import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
+import { angleOf, transformOf } from './hitAffordanceRegions';
+import type { CursorSpec } from '@weasel-js/cursor';
 
 /** Options for `createRotationAffordance` — how thick the rotate band is
  *  outside the selection, and how (or whether) it is painted. */
@@ -21,8 +23,10 @@ export interface RotationAffordanceOptions {
     | { fill?: FillStyle; stroke?: Stroke; insetPx?: number }
     | null
     | false;
-  /** Cursor while hovering the ring. Defaults to `'grab'`. */
-  cursor?: string;
+  /** Cursor while hovering the ring. Defaults to the `rotate` glyph turned
+   *  with the target, falling back to `'grab'` if the browser rejects the
+   *  image. */
+  cursor?: CursorSpec;
 }
 
 /** What a rotation-handle hit hands to the rotate action: what is being
@@ -60,11 +64,7 @@ const DEFAULT_PAINT: { fill?: FillStyle; stroke?: Stroke; insetPx?: number } = {
 export function createRotationAffordance(
   opts: RotationAffordanceOptions = {},
 ): Affordance {
-  const {
-    bandPx = 24,
-    paint = DEFAULT_PAINT,
-    cursor = 'grab',
-  } = opts;
+  const { bandPx = 24, paint = DEFAULT_PAINT, cursor } = opts;
 
   // Normalize `paint` into the AnnulusPaint shape understood by
   // `composeAffordanceLayer`. Three input forms are accepted: a bare
@@ -120,7 +120,14 @@ export function createRotationAffordance(
         },
         ...(annulusPaint ? { paint: annulusPaint } : {}),
         hitKind: 'rotate-handle',
-        cursor,
+        // Turned with the target, so the arc follows the selection it rotates.
+        // Resolved per region rather than defaulted in the option list because
+        // the angle is only known once a target is picked.
+        cursor: cursor ?? {
+          glyph: 'rotate',
+          angle: angleOf(transformOf(state, target.id)),
+          fallback: 'grab',
+        },
         bind: (): AffordanceBinding => ({
           initialScratch: {
             targetId: target.id,

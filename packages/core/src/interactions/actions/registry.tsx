@@ -21,6 +21,7 @@ import { useOptionalDepRegistry, type DepRegistry, type DepName } from './depReg
 import { buildDepsFromRequires } from './buildDeps';
 import { RESERVED_ID_NAMES, RESERVED_ID_PREFIXES, type PhaseAtom } from '../../tools/routing/routeGrammar';
 import type { Dispatcher, UiOngoingControl } from '../dispatcher/dispatcher';
+import type { CursorSpec } from '@weasel-js/cursor';
 export type { UiOngoingControl } from '../dispatcher/dispatcher';
 
 /**
@@ -149,12 +150,12 @@ export interface Action {
    * `Tool.cursor` shows). Affordance hits are resolved earlier in the
    * pump via `AffordanceRegion.cursor` and never reach this field.
    *
-   * Static string only. Prediction runs `enabled()` but cannot run the
+   * Static value only. Prediction runs `enabled()` but cannot run the
    * invoker, so an action that matches yet bails at `start()` (empty
    * handle) may still show its cursor — keep `enabled` accurate for
    * actions that declare one.
    */
-  cursor?: string;
+  cursor?: CursorSpec;
   /**
    * CSS cursor shown while THIS action's ongoing handle is in flight —
    * grabbing while panning, `move` while dragging a selection, `crosshair`
@@ -173,7 +174,7 @@ export interface Action {
    * being taken over by bindings, and neither could describe a cursor for an
    * action a tool doesn't own.
    */
-  activeCursor?: string;
+  activeCursor?: CursorSpec;
 }
 
 /**

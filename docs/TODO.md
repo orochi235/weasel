@@ -40,7 +40,6 @@ Priority tags:
 - labkit's loupe drives itself with plain listeners, not bindings → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Every React Aria overlay inside a lab renders unthemed → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Four drag lifecycles, four different lost-pointer policies → [Tools & gestures](#tools--gestures)
-- Cursor arc 2: rotation, which also fixes non-rotation-aware resize diagonals → [Tools & gestures](#tools--gestures)
 - Cursor arc 3: the painted tier, for cursors over 128px or sized in world units → [Tools & gestures](#tools--gestures)
 - labkit `registerSerializers` has no callers; instrument serializers never run → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit: nested config values — `f.schema` is flat because `setConfig` is → [Selection, actions & UI panels](#selection-actions--ui-panels)
@@ -305,17 +304,12 @@ From `docs/specs/2026-05-03-pen-tool-design.md`:
 
 ### Cursor package follow-ups
 
-From `docs/superpowers/specs/2026-09-03-cursor-system-design.md`. Arc 1 (the
-baked tier) shipped: `@weasel-js/cursor` bakes an authored glyph to a
-`url(data:image/svg+xml,…)` string, and pencil, pen and eyedropper use it.
+From `docs/superpowers/specs/2026-09-03-cursor-system-design.md`. Arcs 1 and 2
+shipped: `@weasel-js/cursor` bakes an authored glyph to a
+`url(data:image/svg+xml,…)` string at any of 16 rotations; the four cursor
+fields take a `CursorSpec`; pencil, pen and eyedropper are baked cursors, and
+the resize corners and the rotation ring turn their glyphs with the target.
 
-- **(P2) Arc 2 — rotation.** Give `bakeCursor` an angle, quantized to 16 steps
-  of 22.5°, and widen `Tool.cursor` / `Action.cursor` / `Action.activeCursor` /
-  `AffordanceRegion.cursor` from `string` to the spec's `CursorSpec`. This is
-  one mechanism serving two things: a real rotate cursor for
-  `rotationHandle.ts:66`, which falls back to bare `'grab'`, and rotation-aware
-  diagonals for `cornerResize.ts:90`, which picks from corner parity and is
-  explicitly not rotation-aware.
 - **(P2) Arc 3 — painted tier.** A `Path2D` painter and a canvas layer for
   cursors that cannot be CSS cursors: over 128 CSS px, sized in world units
   (a brush radius that tracks zoom), or needing live scene data. The glyph

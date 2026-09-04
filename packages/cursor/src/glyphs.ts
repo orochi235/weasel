@@ -56,6 +56,41 @@ export const GLYPHS = {
         "d": "M 18.2 2.6 A 3.2 3.2 0 1 0 18.2 9 A 3.2 3.2 0 1 0 18.2 2.6 Z"
       }
     ]
+  },
+  "resize": {
+    "box": 24,
+    "hotspot": [
+      12,
+      12
+    ],
+    "paths": [
+      {
+        "role": "ink",
+        "d": "M 2.5 12 L 7 8.8 L 7 10.7 L 17 10.7 L 17 8.8 L 21.5 12 L 17 15.2 L 17 13.3 L 7 13.3 L 7 15.2 Z"
+      }
+    ]
+  },
+  "rotate": {
+    "box": 24,
+    "hotspot": [
+      12,
+      12
+    ],
+    "paths": [
+      {
+        "role": "stroke",
+        "d": "M 5.8 9.74 A 6.6 6.6 0 0 1 18.2 9.74",
+        "width": 2.8
+      },
+      {
+        "role": "ink",
+        "d": "M 4.22 14.07 L 2.98 8.72 L 8.62 10.77 Z"
+      },
+      {
+        "role": "ink",
+        "d": "M 19.78 14.07 L 15.38 10.77 L 21.02 8.72 Z"
+      }
+    ]
   }
 } as const satisfies Record<string, CursorGlyph>;
 

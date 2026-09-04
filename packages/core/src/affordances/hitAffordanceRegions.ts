@@ -140,6 +140,11 @@ export function transformOf(state: ChromeState, targetId: string | null): Target
   };
 }
 
+/** A target transform's rotation in radians, for cursors baked at an angle. */
+export function angleOf(xf: TargetTransform): number {
+  return xf.identity ? 0 : Math.atan2(xf.sin, xf.cos);
+}
+
 /** local point → world point. */
 export function localToWorld(xf: TargetTransform, lx: number, ly: number): { x: number; y: number } {
   if (xf.identity) return { x: lx, y: ly };

@@ -101,11 +101,6 @@ describe('createRotationAffordance', () => {
     expect(annulusSemiAxes(s, zoomed)).toEqual({ rx: 22, ry: 22 });
   });
 
-  it('region carries cursor=grab by default', () => {
-    const r = createRotationAffordance().regions(stateWithSingle())[0]!;
-    expect(r.cursor).toBe('grab');
-  });
-
   it('hitTest miss inside the AABB (the cutout)', () => {
     const aff = createRotationAffordance();
     const layer = composeAffordanceLayer('x', 'X', [aff]);
@@ -187,5 +182,26 @@ describe('createRotationAffordance', () => {
     const layer = composeAffordanceLayer('x', 'X', [aff]);
     const state = stateWithSingle(Math.PI / 2);
     expect(layer.hitTest(110, 50, state, VIEW, DIMS)).not.toBeNull();
+  });
+});
+
+describe('rotation-handle cursor', () => {
+  const regionOf = (state: ChromeState, opts = {}) =>
+    createRotationAffordance(opts).regions(state)[0];
+
+  it('defaults to the rotate glyph rather than a bare grab', () => {
+    expect(regionOf(stateWithSingle())).toMatchObject({
+      cursor: { glyph: 'rotate', angle: 0, fallback: 'grab' },
+    });
+  });
+
+  it('turns the glyph with the target', () => {
+    expect(regionOf(stateWithSingle(Math.PI / 2)).cursor).toMatchObject({
+      angle: Math.PI / 2,
+    });
+  });
+
+  it('lets a caller override the whole spec', () => {
+    expect(regionOf(stateWithSingle(), { cursor: 'grab' }).cursor).toBe('grab');
   });
 });

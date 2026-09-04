@@ -2,6 +2,7 @@ import type { ChromeState } from 'core/selection/chromeState';
 import type { DrawCommand } from '../renderer';
 import type { View } from 'core/viewport/view';
 import type { FillStyle, Stroke } from '@weasel-js/paint';
+import type { CursorSpec } from '@weasel-js/cursor';
 
 /**
  * @experimental
@@ -107,10 +108,10 @@ export interface AffordanceRegion<TScratch = unknown> {
    *  `<affordanceId>:<regionId>`. */
   hitKind?: string;
 
-  /** CSS cursor to show while hovering this region. Read by the hover-cursor
+  /** Cursor to show while hovering this region. Read by the hover-cursor
    *  pump in `useGestureDispatcher` via `AffordanceHit.cursor`, which
    *  `buildAffordanceAt` fills in from the region the walk landed on. */
-  cursor?: string;
+  cursor?: CursorSpec;
 
   /** `'exclusive'` bars every binding whose target doesn't consult the
    *  affordance. Read only when the affordance is composed into a
@@ -193,9 +194,9 @@ export interface CommonAffordanceScratch {
  * outright.
  */
 export interface LayerHit<TScratch = unknown> extends AffordanceBinding<TScratch> {
-  /** CSS cursor while the pointer is over this hit. Reaches the hover-cursor
+  /** Cursor while the pointer is over this hit. Reaches the hover-cursor
    *  pump as `AffordanceHit.cursor`, the same path kit chrome uses. */
-  cursor?: string;
+  cursor?: CursorSpec;
   /** `'exclusive'` bars every binding whose target doesn't consult the
    *  affordance. Omitted means `'shared'` — today's behavior. Same name and
    *  meaning as `AffordanceHit.strength`, which it becomes. */

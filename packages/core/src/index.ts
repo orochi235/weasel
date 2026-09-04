@@ -1221,6 +1221,20 @@ export type {
   LocalFontOutlinesResult,
 } from '@weasel-js/font';
 export type { TextureHandle } from '@weasel-js/paint';
+
+// Custom tool cursors. `Tool.cursor`, `Action.cursor`, `Action.activeCursor`
+// and `AffordanceRegion.cursor` all take a `CursorSpec`, so the type and the
+// baker reach consumers from here rather than through a second import.
+// Named, not `export *` — a star re-export of an external package survives
+// typecheck and emits no binding in the bundle.
+export { cursorFor, resolveCursor, bakeCursor } from '@weasel-js/cursor';
+export type {
+  CursorSpec,
+  CursorGlyphSpec,
+  CursorGlyphName,
+  CursorGlyph,
+  BakeOptions,
+} from '@weasel-js/cursor';
 export type {
   LayersMap,
   SceneSlotConfig,

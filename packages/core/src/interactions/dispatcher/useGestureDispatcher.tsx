@@ -25,6 +25,8 @@ import { clientToCanvasRect } from 'core/viewport/clientToCanvas';
 import { itemsFromDataTransfer, itemsFromClipboardData } from 'features/ingestion/ingestItems';
 import type { InputEvent } from './matcher';
 import type { BodyTarget, BodyClassification } from '@weasel-js/gestures';
+import type { CursorSpec } from '@weasel-js/cursor';
+import { resolveCursor } from '@weasel-js/cursor';
 
 // ---------------------------------------------------------------------------
 // Drop-over styling — class toggled on the canvas while an OS drag hovers it;
@@ -1005,7 +1007,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         cursorOverridden = false;
       }
     };
-    const applyHoverCursor = (cursor: string | null) => {
+    const applyHoverCursor = (spec: CursorSpec | null) => {
+      const cursor = spec === null ? null : resolveCursor(spec);
       if (cursor && canvas) {
         canvas.style.cursor = cursor;
         cursorOverridden = true;

@@ -1,4 +1,4 @@
-import { bakeCursor } from './bake';
+import { bakeCursor, quantizeCursorAngle } from './bake';
 import type { BakeOptions } from './bake';
 import { GLYPHS } from './glyphs';
 import type { CursorGlyphName } from './glyphs';
@@ -9,13 +9,16 @@ const cache = new Map<string, string>();
 /**
  * The baked cursor string for a named glyph, memoized.
  *
- * The key space is bounded by the glyph set times the handful of sizes and
- * fallbacks in use, so the cache needs no eviction.
+ * The key space is bounded by the glyph set times 16 angles times the handful
+ * of sizes and fallbacks in use, so the cache needs no eviction.
  */
 export function cursorFor(name: CursorGlyphName, opts: BakeOptions = {}): string {
   const size = opts.size ?? 24;
   const fallback = opts.fallback ?? 'default';
-  const key = `${name}|${size}|${fallback}`;
+  // The step index, not the raw angle: the hover pump feeds a continuously
+  // varying selection rotation, so a raw-angle key would never hit.
+  const step = quantizeCursorAngle(opts.angle ?? 0);
+  const key = `${name}|${size}|${step}|${fallback}`;
   const hit = cache.get(key);
   if (hit !== undefined) return hit;
 
@@ -26,7 +29,7 @@ export function cursorFor(name: CursorGlyphName, opts: BakeOptions = {}): string
   if (glyph === undefined) {
     throw new Error(`unknown cursor glyph: ${String(name)}`);
   }
-  const css = bakeCursor(glyph, { size, fallback });
+  const css = bakeCursor(glyph, { size, fallback, angle: opts.angle ?? 0 });
   cache.set(key, css);
   return css;
 }
