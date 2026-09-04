@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/d3",
-  "version": "1.4.0-pre.1",
+  "version": "1.4.0",
   "description": "d3 bridge for weasel: data-join + transition chain over useScene and useAnimator. d3-force already integrates via useSimulation in the main kit.",
   "license": "MIT",
   "type": "module",
@@ -17,7 +17,7 @@
   },
   "peerDependencies": {
     "react": ">=18",
-    "@weasel-js/core": "1.4.0-pre.1"
+    "@weasel-js/core": "1.4.0"
   },
   "peerDependenciesMeta": {
     "d3-force": {

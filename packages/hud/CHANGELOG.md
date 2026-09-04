@@ -1,5 +1,111 @@
 # @weasel-js/hud
 
+## 1.4.0
+
+### Patch Changes
+
+- 1214ff5: Split a canvas's paint target from its input target.
+  
+  `<SceneCanvas paintInto={{ canvas, x, y }} inputElement={el}>` paints into a
+  rect of a canvas you own and takes pointer input from an element you own, so N
+  canvases share one GL context and one buffer. Each needs its own
+  `<WeaselProvider isolate>`.
+  
+  The ref handle names both elements: `element` is where input, focus and the
+  cursor live, and is now typed `HTMLElement` because detached it is not a canvas;
+  `surface` is where pixels land. Attached, they are the same `<canvas>` and
+  `element` keeps working as before. The HUDs render when detached too, anchored
+  to the input box rather than to the shared surface every pane sits in.
+  
+  Breaking, narrowly: `createLoupe`'s `element` option is now `canvas`, with an
+  optional `input` for the element aim is measured against.
+  `CanvasExtensionApi.element` no longer satisfies an `HTMLCanvasElement` — read
+  `surface` for pixels. And `clientToWorld`'s first parameter widens to
+  `HTMLElement`, which stops compiling for a consumer who annotated that parameter
+  as `HTMLCanvasElement`; one who let it infer is unaffected.
+  
+  <!-- bump-approved: minor: Mike — the labkit annotations arcs 1-4 (a shared drawing surface, a mark store, the overlay, and capture/export) plus this split of a canvas's paint target from its input target, on top of ~30 patch changesets carrying new public surface across core, ui and labkit; called explicitly in conversation on 2026-09-03: "we were going to cut a 1.4.0-pre release" -->
+- 0d0c885: Split the loupe's model out of its painter
+  
+  The loupe was a WebGL widget all the way down: `createLoupe` held both the
+  state a magnifier has — where it is aimed, how far it magnifies, whether it is
+  showing a re-render or actual pixels, what colour it is over — and the code
+  that draws that into a HUD window. None of the first half is about GL, and a
+  surface that is not a WebGL canvas could not have any of it.
+  
+  `@weasel-js/loupe` is the model on its own. It asks a `LoupeSurface` five
+  questions — where is the lens, does it cover this point, what colour is here,
+  can anyone still see it, and please repaint — and answers with aim, factor,
+  mode, colour and picking, including the freeze rule that keeps a stationary
+  lens' own borders reachable and the refusal to report a lens' chrome as
+  artwork. The pure geometry (`loupeInnerView`, `loupeSourcePoint`) moved with
+  it.
+  
+  `createLoupe`'s API is unchanged; it is now a painter over that model, and
+  `@weasel-js/hud` re-exports `loupeInnerView` from its new home. A painter for
+  a surface that is not a WebGL canvas no longer has to reimplement a magnifier
+  to exist.
+- a7fa697: Add an anchored-placement solver and keep HUD windows on their host.
+  
+  `@weasel-js/geom` gains `placeRect` and `clampRectWithin`. `placeRect` resolves an
+  overlay against an anchor: it picks a side, flips to the opposite one when the
+  preferred side has no room, and slides along the alignment axis to stay inside a
+  boundary. `clampRectWithin` is the containment half on its own — move a rect the
+  shortest distance that puts it inside a boundary, keeping its size. Both are pure
+  and take an explicit boundary rect, so a boundary that does not start at the
+  origin resolves correctly.
+  
+  A HUD window could previously be dragged fully off its host with no way to
+  recover it: `createWindow` clamped size but never position. Move drags and
+  `setBounds` now keep the window on the host. Resize drags are deliberately left
+  alone, so pulling an edge past the host does not fight the gesture.
+  
+  `@weasel-js/core` gains `hostAnchorRect`, `hostAnchorCss` and `useHostAnchor`,
+  which hold a fixed-position panel against a host element's corner and keep it
+  inside the viewport. The corner is an alignment per axis rather than a fixed
+  one, and `useHostAnchor` takes a function that resolves the host, so a host held
+  in a ref and one found by selector work the same way.
+  
+  `hostAnchorCss` pins whichever edges the alignment names. That is not cosmetic:
+  a panel whose width tracks its content holds the anchored edge still and grows
+  away from it, so pinning the wrong edge makes the anchored corner drift on every
+  content change.
+  
+  Four places were carrying their own copy of that anchor math and now share this
+  one — `CursorCoordsHud`, `PickHud`, `ModalityHud`, and WeaselDraw's
+  `DispatchTracePanel`, which anchors the opposite corner. None of the four
+  clamped, so a panel could hang off the edge when the host was scrolled or the
+  panel was tall.
+- Updated dependencies [eb16573]
+- Updated dependencies [72b30cc]
+- Updated dependencies [6650d67]
+- Updated dependencies [04ea2e8]
+- Updated dependencies [b656ebf]
+- Updated dependencies [1214ff5]
+- Updated dependencies [5295c34]
+- Updated dependencies [2fbf611]
+- Updated dependencies [36b6ee7]
+- Updated dependencies [7a0c568]
+- Updated dependencies [0d0c885]
+- Updated dependencies [a7fa697]
+- Updated dependencies [2272682]
+- Updated dependencies [503b56d]
+- Updated dependencies [ac2deea]
+- Updated dependencies [23ffb2f]
+- Updated dependencies [016851c]
+- Updated dependencies [c9dd37f]
+- Updated dependencies [9a000ea]
+- Updated dependencies [016851c]
+- Updated dependencies [53ffca9]
+- Updated dependencies [8ddec11]
+- Updated dependencies [28894b9]
+- Updated dependencies [c4ccd0a]
+  - @weasel-js/core@1.4.0
+  - @weasel-js/theme@1.4.0
+  - @weasel-js/loupe@1.4.0
+  - @weasel-js/geom@1.4.0
+  - @weasel-js/font@1.4.0
+
 ## 1.4.0-pre.1
 
 ### Patch Changes

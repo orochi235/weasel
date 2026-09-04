@@ -1,5 +1,32 @@
 # @weasel-js/d3
 
+## 1.4.0
+
+### Patch Changes
+
+- Updated dependencies [eb16573]
+- Updated dependencies [6650d67]
+- Updated dependencies [04ea2e8]
+- Updated dependencies [b656ebf]
+- Updated dependencies [1214ff5]
+- Updated dependencies [5295c34]
+- Updated dependencies [2fbf611]
+- Updated dependencies [36b6ee7]
+- Updated dependencies [7a0c568]
+- Updated dependencies [a7fa697]
+- Updated dependencies [2272682]
+- Updated dependencies [503b56d]
+- Updated dependencies [ac2deea]
+- Updated dependencies [23ffb2f]
+- Updated dependencies [016851c]
+- Updated dependencies [c9dd37f]
+- Updated dependencies [9a000ea]
+- Updated dependencies [016851c]
+- Updated dependencies [8ddec11]
+- Updated dependencies [28894b9]
+- Updated dependencies [c4ccd0a]
+  - @weasel-js/core@1.4.0
+
 ## 1.4.0-pre.1
 
 ### Patch Changes

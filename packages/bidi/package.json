@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/bidi",
-  "version": "1.4.0-pre.1",
+  "version": "1.4.0",
   "description": "The Unicode Bidirectional Algorithm (UAX #9) for weasel: embedding levels, reordering and mirroring. Plain data in, plain data out; no renderer and no scene graph.",
   "license": "MIT",
   "type": "module",

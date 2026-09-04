@@ -1,5 +1,7 @@
 # @weasel-js/gestures
 
+## 1.4.0
+
 ## 1.4.0-pre.1
 
 ## 1.4.0-pre.0

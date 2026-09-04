@@ -1,5 +1,403 @@
 # Changelog
 
+## 1.4.0
+
+### Minor Changes
+
+- 1214ff5: Split a canvas's paint target from its input target.
+  
+  `<SceneCanvas paintInto={{ canvas, x, y }} inputElement={el}>` paints into a
+  rect of a canvas you own and takes pointer input from an element you own, so N
+  canvases share one GL context and one buffer. Each needs its own
+  `<WeaselProvider isolate>`.
+  
+  The ref handle names both elements: `element` is where input, focus and the
+  cursor live, and is now typed `HTMLElement` because detached it is not a canvas;
+  `surface` is where pixels land. Attached, they are the same `<canvas>` and
+  `element` keeps working as before. The HUDs render when detached too, anchored
+  to the input box rather than to the shared surface every pane sits in.
+  
+  Breaking, narrowly: `createLoupe`'s `element` option is now `canvas`, with an
+  optional `input` for the element aim is measured against.
+  `CanvasExtensionApi.element` no longer satisfies an `HTMLCanvasElement` — read
+  `surface` for pixels. And `clientToWorld`'s first parameter widens to
+  `HTMLElement`, which stops compiling for a consumer who annotated that parameter
+  as `HTMLCanvasElement`; one who let it infer is unaffected.
+  
+  <!-- bump-approved: minor: Mike — the labkit annotations arcs 1-4 (a shared drawing surface, a mark store, the overlay, and capture/export) plus this split of a canvas's paint target from its input target, on top of ~30 patch changesets carrying new public surface across core, ui and labkit; called explicitly in conversation on 2026-09-03: "we were going to cut a 1.4.0-pre release" -->
+
+### Patch Changes
+
+- eb16573: Alt-drag-to-duplicate shows the duplicate cursor.
+  
+  `clone` declared no cursor, so the one gesture in the kit that copies instead
+  of moving looked exactly like a move until you released. It now declares
+  `cursor: 'copy'` and `activeCursor: 'copy'`, which needs no modifier gate of
+  its own: the select tool binds clone behind `mods: { alt: true }`, so the hover
+  pump predicts the action — and shows the cursor — only while Alt is held over a
+  body, and drops it the moment Alt is released.
+  
+  This replaces the `apps/draw` stub that arc 4 deleted. That stub forced
+  `cursor: copy` from a CSS rule fed by a hand-rolled Alt listener, scoped to
+  path-edit mode and applied over the whole canvas including where nothing would
+  happen. The affordance now shows wherever Alt-drag actually duplicates, in
+  every mode, through the cursor pipeline.
+  
+  `AffordanceRegion.cursor` and a layer claim cannot express this — neither
+  `affordanceAt` nor `RenderLayer.hitTest` receives the event, so `Action.cursor`
+  is the kit's only modifier-gated cursor channel.
+- 6650d67: Correct the actions-registry documentation, which described the API that was
+  replaced in May 2026.
+  
+  `packages/core/README.md` said `<ActionsProvider>` wires a keydown listener,
+  showed an `Action` with a `run` callback, and told consumers to reach for
+  `useSelectAll` / `useEscape` / `useDuplicate` / `useNudge` / `useReorder`. None
+  of that is true: keystrokes and pointer gestures both route through the gesture
+  dispatcher matching `defaultBinding`, an action does its work through `invoker`,
+  and those five hooks were deleted. `docs/taxonomy.md` likewise still listed
+  `Action.run` and a fallback to a `useKeybinding` path that no longer exists.
+- 04ea2e8: The painted cursor tier, and cursors that tell the five shape tools apart.
+  
+  A cursor that cannot be a CSS cursor is now drawn into the canvas instead of
+  being dropped. `resolveCursorTier` escalates when a glyph is sized in world
+  units, or past the 128 CSS px above which the browser silently discards the
+  image; `<Canvas>` then sets `cursor: none` and a screen-space layer paints the
+  glyph at the pointer. Tools never choose the tier — they declare what they
+  want, and a brush stays a brush across the radius where it stops being
+  expressible as a CSS cursor.
+  
+  `brush` ships with it, sized by `worldRadius` so its ring measures the brush at
+  every zoom. A glyph that measures something declares `CursorGlyph.radius` to
+  name the circle being sized, and world-sized glyphs hold their line weight in
+  CSS px while their geometry scales.
+  
+  `paint.ts` is the shared half: the baker and the painter both consume its
+  ordered paint ops, so the two tiers draw one glyph rather than two drawings
+  that resemble each other. The layer itself lives in core, which is where
+  `RenderLayer` and `Path` live.
+  
+  rect, ellipse, line, star and polygon were all bare `crosshair` and so
+  indistinguishable while in use; each now shows a crosshair badged with its
+  shape, hotspotted on the cross. `Tool.cursor` on a built `Tool` widens from
+  `string` to `CursorSpec`, which it should have done when `ToolDef.cursor` did.
+  
+  The `apps/draw` `cursor: copy` stub and its hand-rolled Alt listener are gone.
+  They advertised an add-anchor sub-tool that does not exist, so the affordance
+  was removed rather than relocated; `docs/TODO.md` records where it returns.
+- b656ebf: Rotatable cursors, and a `CursorSpec` for the four fields that declare one.
+  
+  `bakeCursor` takes an `angle` in radians, quantized to 16 steps of 22.5°, and
+  turns both the glyph and its hotspot. `Tool.cursor`, `Action.cursor`,
+  `Action.activeCursor` and `AffordanceRegion.cursor` widen from `string` to
+  `CursorSpec` — either a CSS keyword, which passes through untouched, or
+  `{ glyph, size?, angle?, fallback? }`. Every cursor declaration written before
+  this keeps working.
+  
+  Two glyphs ship with it. The selection's rotation ring now shows a real `rotate`
+  cursor instead of a bare `grab`, and the resize corners show a `resize` arrow
+  turned to the corner's actual axis — a rotated selection used to keep the
+  unrotated diagonal, because CSS has four diagonal keywords and a rotation needs
+  sixteen. The keyword remains as each spec's `fallback`.
+- 5295c34: Draw on a lab's instrument: the `annotations` capability gets its overlay.
+  
+  An instrument that declares `annotations` now gets a drawing surface on every
+  target it names — weasel tools, weasel selection, marks that pan and zoom with
+  what they mark — plus a palette (select, freehand, line, arrow, rectangle,
+  ellipse, text) and its own tool slot. `useAnnotations()` reaches the store from
+  the instrument's render or from a chrome contribution, and re-renders its
+  caller as marks change.
+  
+  The lab's shared surface grew the buffer that makes this possible: one
+  `<canvas>` over `.lk-lab__body`, and `SurfaceHandle.registerPainter`, which is
+  how a resize of that buffer reaches every tile rather than the one that moved.
+  `getContainer()` names the element tile rects are measured against.
+  
+  A mark is a weasel scene node in a scene of its own per target — a pane's
+  hit-test, marquee and paint walk the whole scene they are handed, so one shared
+  scene would put a neighbour's marks under the pointer. An annotation's id is
+  therefore `<target>/<node>`, and `createAnnotationStore` takes `targets` alone
+  plus an optional `restore`; `SerializedAnnotations` carries `scenes`, keyed by
+  target. Marks still do not survive a reload — the storage slot is the next arc.
+  
+  Core adds `ArrowIcon` to the built-in tool glyphs.
+- 2fbf611: Give a canvas its own provider scope with `<WeaselProvider isolate>`
+  
+  An actions registry holds exactly one dispatcher, so a second `<SceneCanvas>`
+  joining a scope displaced the first and took its input away. Worse, the
+  detach was unconditional: whichever canvas unmounted — or merely re-rendered
+  with a new dispatcher identity — cleared the slot for the one still on screen.
+  The symptom was a canvas that stopped responding, naming neither canvas nor the
+  registry they shared.
+  
+  `isolate` mounts every provider unconditionally instead of deferring to one
+  already in scope, so canvases that merely coexist get a scope each. This is the
+  shape consumers had already reached for by hand: `AnimationDemo` and
+  `BooleanOpsDemo` both mounted raw `ActionsProvider` / `SelectionContextProvider`
+  / `DepRegistryProvider` to shadow the ambient scope, and both now say `isolate`
+  instead.
+  
+  `setDispatcher` and `setDepRegistry` return a release that clears the slot only
+  while the caller still holds it, so a departing canvas can no longer disable a
+  surviving one. A second dispatcher claiming an occupied registry warns once,
+  naming `isolate` as the fix.
+  
+  Two canvases still cannot *share* one registry: a toolbar outside both has
+  nothing to say which one it drives. That needs a focused-canvas concept and is
+  not in this change.
+- 36b6ee7: Add `@weasel-js/cursor` and give three tools real cursors.
+  
+  A cursor glyph is SVG path `d` strings tagged with a paint role plus a hotspot
+  in glyph units — the one geometry form both a data-URI baker and a `Path2D`
+  painter consume without translating. `bakeCursor` renders one to a
+  `url(data:image/svg+xml,…)` string with the hotspot scaled to integer CSS px,
+  and `cursorFor` memoizes that per name and size. The pencil, pen and eyedropper
+  tools now show their own glyph instead of a shared `crosshair`.
+  
+  Cursors ship as SVG with no bitmap fallback: Chrome rasterizes an SVG data-URI
+  cursor at device scale, so it is already crisp on a retina display. `bakeCursor`
+  throws above 128 CSS px rather than emitting a cursor the browser would drop
+  silently — that size is where a later painted tier will take over.
+  
+  Glyph geometry is authored in `scripts/glyphs/` and generated to resolved
+  literals by `npm run gen:cursors`; `npm run proof:cursors` renders the baked
+  assets over three backgrounds for inspection.
+  
+  New API: `bakeCursor`, `cursorFor`, `GLYPHS`, `haloFitsInBox`, `CursorGlyph`,
+  `CursorPath`, `CursorGlyphName`, `BakeOptions`, and the register constants
+  `CURSOR_INK`, `CURSOR_HALO`, `CURSOR_HALO_WIDTH`, `CURSOR_MAX_CSS_PX`.
+- 7a0c568: Tell an event handler how late its crossing is
+  
+  `EventTrack`'s `fire` took no arguments, so a handler could only ask its own
+  clock for "now" — when the frame was processed, not when the playhead crossed
+  the edge. That held footstep scheduling in the side-scroller at frame
+  resolution against an audio engine built for sample resolution: a measured peak
+  spread of 33–47 ms on the looping run cycle.
+  
+  `fire(lateBy)` reports the gap between the crossing and the frame carrying it,
+  in timeline ms. It is never negative, including on the loop seam, where the
+  outgoing lap's tail fires after the playhead has already wrapped — the case
+  that makes a handler comparing against `handle.time()` read a negative
+  lateness. A nested timeline's events report the same figure as a top-level
+  one's; the track's offset cancels.
+  
+  Nothing has to change to compile: a zero-argument function is assignable to the
+  new signature.
+  
+  `lateBy` is a delta, not a clock reading, so events from two different
+  timelines still cannot be ordered against each other. That would need the
+  animator's virtual clock made public, which this does not do.
+  
+  `SideScrollerDemo` now places each footfall a fixed budget after its true
+  crossing, so which frame happened to notice a contact turns into constant
+  latency rather than audible spread.
+- a7fa697: Add an anchored-placement solver and keep HUD windows on their host.
+  
+  `@weasel-js/geom` gains `placeRect` and `clampRectWithin`. `placeRect` resolves an
+  overlay against an anchor: it picks a side, flips to the opposite one when the
+  preferred side has no room, and slides along the alignment axis to stay inside a
+  boundary. `clampRectWithin` is the containment half on its own — move a rect the
+  shortest distance that puts it inside a boundary, keeping its size. Both are pure
+  and take an explicit boundary rect, so a boundary that does not start at the
+  origin resolves correctly.
+  
+  A HUD window could previously be dragged fully off its host with no way to
+  recover it: `createWindow` clamped size but never position. Move drags and
+  `setBounds` now keep the window on the host. Resize drags are deliberately left
+  alone, so pulling an edge past the host does not fight the gesture.
+  
+  `@weasel-js/core` gains `hostAnchorRect`, `hostAnchorCss` and `useHostAnchor`,
+  which hold a fixed-position panel against a host element's corner and keep it
+  inside the viewport. The corner is an alignment per axis rather than a fixed
+  one, and `useHostAnchor` takes a function that resolves the host, so a host held
+  in a ref and one found by selector work the same way.
+  
+  `hostAnchorCss` pins whichever edges the alignment names. That is not cosmetic:
+  a panel whose width tracks its content holds the anchored edge still and grows
+  away from it, so pinning the wrong edge makes the anchored corner drift on every
+  content change.
+  
+  Four places were carrying their own copy of that anchor math and now share this
+  one — `CursorCoordsHud`, `PickHud`, `ModalityHud`, and WeaselDraw's
+  `DispatchTracePanel`, which anchors the opposite corner. None of the four
+  clamped, so a panel could hang off the edge when the host was scrolled or the
+  panel was tall.
+- 2272682: `createParallaxLayer` takes an optional `getOuterView`, so a plane can derive
+  from a ref-driven camera. It previously derived only from the canvas's `view`
+  prop; a consumer keeping a 60 Hz camera out of React state pins that prop to
+  identity and got identity back for every `pan` value — a backdrop that silently
+  never moved.
+  
+  `useHandTool` no longer builds a velocity tracker and a decay loop it never
+  uses. `inertia` and `axis` were already inert; they are now documented as such
+  until the `viewport.dragPan` action implements them.
+- 503b56d: Fix two path-walker bugs that produced wrong geometry with no error.
+  
+  `tessellate` treated `Z` as a no-op, so a command following a close flattened
+  from the last point drawn rather than from the subpath start — SVG puts the pen
+  back at the start. `pathDistanceToPoint` dispatched through an `if`/`else if`
+  chain with no final `else`, so an unrecognized command code left the coordinate
+  cursor unadvanced and silently misaligned every later read; it now throws.
+- ac2deea: Add `polylineFromPoints` — the open counterpart to `polygonFromPoints`.
+  
+  Same geometry, without the closing edge. A freehand stroke or a measurement
+  line wants this; a region wants the closed one. The pencil tool's drag preview
+  was building its ghost with `polygonFromPoints`, so the edge from the newest
+  sample back to the first swept across the drawing as the stroke grew and read
+  as a marquee.
+- 23ffb2f: `WeaselRenderer` can draw into a rect of a buffer it does not own.
+  `setTarget({ origin, clear })` applies a viewport and scissor inside `render()`,
+  so N renderers can share one WebGL context and one canvas without a frame clear
+  erasing a co-tenant. The rect's size is the renderer's own `width`/`height`, so
+  `resize()` remains the single source of it.
+  
+  Adds API. Two behaviour changes for existing callers: `render()` now
+  re-establishes blend, depth, cull and clear colour every frame instead of once at
+  construction, so a co-tenant moving that state no longer corrupts weasel's
+  frames; and the constructor now throws when handed a WebGL2 context whose
+  attributes report no stencil buffer, which previously rendered clips and even-odd
+  fills wrong rather than failing. A context that cannot report its attributes is
+  unaffected.
+- 016851c: Stop a stroke with no paint from blanking the whole document.
+  
+  `SelectionPanel`'s object leaf started from `{}` when the node held no value
+  yet, so editing any non-paint field of `data.stroke` on an unstroked node
+  committed that field alone — a `Stroke` with no `paint`, which the type
+  forbids. The leaf's declared `default` was dead for writes; it now seeds from
+  it, so writing one field materializes a complete value.
+  
+  Such a stroke threw out of `fillInPoseFrame`, and the throw escaped the painter
+  and took the frame with it: the document page and every other node vanished,
+  and the canvas stayed stale until something unrelated requested a redraw — so
+  WeaselDraw opened on an empty workspace and only drew once the pointer moved.
+  `resolveNodeStroke` now reads a paintless stroke as no stroke, and the text
+  painter routes through it like every other painter. The frame loop no longer
+  loses its dirty flag when a paint throws, so one bad frame is retried rather
+  than stranding the surface.
+- c9dd37f: Render text decorations as a toggle row, and ship a builtin font-family control
+  
+  `SelectionPanel` rendered every boolean leaf as a `Switch`, ignoring the leaf's
+  `control` entirely — so the three text decorations arrived as three switch rows
+  where every text editor puts one row of U / S / O. `ToolPrefBooleanControl` now
+  accepts `'toggle'`, `ToolPrefBoolean` carries a `short` label for it (the pair
+  takes the row's name, leaving the leaf only a glyph's worth of room), and the
+  panel honors both. Core's text schema asks for it: `underline`,
+  `strikethrough` and `overline` share a `Decoration` pair.
+  
+  A run of adjacent leaves sharing a `pair` renders as one `ToggleBar`, not one
+  bar per leaf — the same segmented control the `Align` row beside it already
+  draws. Each segment still writes only its own leaf, so flipping one decoration
+  never invents values for the other two. An unset toggle is left unselected
+  rather than dimmed: unselected is what a toggle button's off state means, and
+  the dimming the `Switch` path uses for the same case reads as disabled on one.
+  A leaf a consumer claims with its own `renderers` entry drops out of the run.
+  
+  `FontFamilySelect` moves from WeaselDraw into `@weasel-js/ui`, and
+  `SelectionPanel` reaches for it on a `font-family` leaf. Core's own default
+  text schema declares that kind, so a consumer passing no `renderers` — the
+  Storybook story, any app taking the defaults — got the literal
+  `(font-family: no renderer)` placeholder where the font picker belongs. The
+  control offers both tiers that can actually paint and probes substitution at
+  the node's own weight and style, so its label names the variant that will
+  render. `@weasel-js/ui` now depends on `@weasel-js/font`.
+- 9a000ea: A stroked text node now gets hit reach from its stroke. `TEXT_PAINTER` declared
+  no `ink`, so picking fell back to a zero-outset default and a heavily outlined
+  glyph was unpickable across the width of its own outline.
+  
+  `kit:derived` also now evaluates ahead of `kit:path` / `kit:shape` / `kit:image`.
+  A derived node whose `data` happens to carry a `path`, `shape` or `image` field
+  was silently painted by those painters instead of from its derived path.
+- 016851c: Add an editor surface for superscript, subscript and overline.
+  
+  `StyledRun.script`, `baselineShift`, `fontScale` and `overline` reached layout,
+  SVG and the DOM overlay but nothing could apply them. The character bar now
+  carries an x² / x₂ pair, an overline toggle beside B / I / U / S, and the two
+  primitives `script` presets — baseline shift and scale — as percentage fields
+  that show what the preset supplies and override just that half when typed over.
+  `overline` also joins the sidebar's node-level Character group. Superscript and
+  subscript take Cmd+Shift+= and Cmd+Shift+-; the unshifted pair is browser zoom,
+  which a page cannot cancel.
+  
+  A styling written at a collapsed caret now arms `useTextEdit`'s new
+  `pendingStyle` and applies to the next character typed, instead of being
+  dropped or restyling the whole node. That is what `script` needs — it has no
+  node-level counterpart to write to by design — and it makes the bar agree with
+  Cmd+B, which already behaved this way. `rangeStyle` reports the styling *at* a
+  collapsed caret rather than `{}`, and `toggleStyle` is public.
+  
+  Three fixes fall out of putting both paths through one implementation:
+  lowering a flag the node sets now works from the bar and from a collapsed
+  caret, not only from the keyboard over a range; a toggle reads the node's flags
+  as well as the runs, so Cmd+B inside a `fontWeight: 700` node clears bold
+  instead of adding it; and focus returns to the text after a styling control is
+  clicked, so typing continues in the document rather than reaching the app as
+  tool shortcuts.
+- 8ddec11: Accept a named or cubic-bezier easing wherever a curve is taken, and let a
+  timeline's loop policy change after it is created.
+  
+  `easing` was a bare function everywhere, which is fine to call and impossible to
+  name back, show in a picker, or serialize. It now also accepts the name of a
+  built-in (`'easeOutBack'`) or control points (`{ bezier: [0.4, 0, 0.2, 1] }`),
+  resolved by `resolveEasing` at the four places a curve is actually invoked. The
+  union is additive, so every existing function value stays assignable. Bezier x
+  control points are clamped to 0..1, which is what keeps the solve monotone, and
+  the control-point tuple is `readonly` so an `as const` preset is assignable.
+  
+  `TimelineHandle.setLoop(loop)` sets policy and nothing else. A timeline already
+  parked at its duration does not restart — `rearm` declines to revive one — so
+  play it again by seeking to 0 and resuming. Restoring saved transport state
+  therefore cannot start playback as a side effect.
+  
+  Both settings now read back. `AnimationHandle.timeScale()` returns an
+  animation's own scale, and `Animator.timeScale()` the global one, the way
+  `isPaused()` already pairs with `pause()`. `TimelineHandle.loop()` returns the
+  policy as it stands — `true`, `false`, or the laps a finite loop has left, which
+  falls as they are consumed. A transport UI can drive itself off the handle
+  instead of mirroring what it last wrote, which drifts as soon as anything else
+  holding the handle sets it.
+- 28894b9: Fix the viewport primitives on an axis with negative scale.
+  
+  `View.scale` is documented as pixels per world unit _per axis_, so `scale.y < 0`
+  is the ordinary way to spell a y-up camera. Two primitives did not read it that
+  way, and both failed silently rather than erroring.
+  
+  `zoomAt` clamped the signed scale against positive bounds
+  (`min(max, max(min, scale * factor))`), so one wheel step on a y-up view
+  returned `scale.y = +0.1`: the axis flipped and the zoom collapsed to the
+  minimum. It now bounds the magnitude and restores the sign, so a clamp limits a
+  flipped axis instead of unflipping it.
+  
+  `clampView` computed the visible world extent as `canvas.height / scale.y`,
+  which is negative on a flipped axis. That made the "is the view zoomed out past
+  the bounds" test never fire, and put the scroll interval on the wrong side of
+  the anchor — a y-up view could be panned outside its own bounds. It now takes
+  the extent as a magnitude and anchors the interval at the rect's far edge when
+  the axis is flipped.
+  
+  Found while giving labkit's instrument canvas a declarable coordinate system:
+  routing its wheel through `zoomAt` looked like the obvious way to stop
+  reimplementing fixed-point zoom, and would have been a bug.
+- c4ccd0a: Zoom now has one clamp. `DEFAULT_MIN_ZOOM` / `DEFAULT_MAX_ZOOM` are exported from
+  `@weasel-js/core` and every zoom path defaults from them — `zoomAt`, the
+  `viewport.zoom` and pinch actions, `usePinchZoomTool`, `fitViewToBounds`,
+  `computeWheelAction` and `useZoom`.
+  
+  **Behavior change:** the three paths that carried the second, undocumented pair
+  now cap at 8x rather than 10x. `fitViewToBounds` could previously land at 10x and
+  the next pinch frame would clamp it straight back to 8x. Pass an explicit
+  `maxScale` / `max` to keep 10x.
+- Updated dependencies [04ea2e8]
+- Updated dependencies [b656ebf]
+- Updated dependencies [36b6ee7]
+- Updated dependencies [a7fa697]
+  - @weasel-js/cursor@1.4.0
+  - @weasel-js/geom@1.4.0
+  - @weasel-js/text@1.4.0
+  - @weasel-js/font@1.4.0
+  - @weasel-js/gestures@1.4.0
+  - @weasel-js/history@1.4.0
+  - @weasel-js/modes@1.4.0
+  - @weasel-js/paint@1.4.0
+
 ## 1.4.0-pre.1
 
 ### Patch Changes

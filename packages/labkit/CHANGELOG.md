@@ -1,5 +1,481 @@
 # @weasel-js/labkit
 
+## 1.4.0
+
+### Patch Changes
+
+- 72b30cc: One skin for the kit's sliders and fields.
+  
+  `@weasel-js/ui` carried six slider treatments, three of which rendered the same
+  bare `<input type="range">` with independently hand-authored pseudo-element rules.
+  A new shared `range.module.css` is now the single source for that chrome, imported
+  by `InlineRange` and by the property rows; a bare range inside a labkit `.lk-root`
+  wears it too. New tokens carry the geometry: `--wzl-slider-track-h`,
+  `--wzl-slider-thumb-size`, `--wzl-slider-track-tint`, `--wzl-slider-thumb-tint`.
+  
+  `Slider` — the multi-thumb canvas widget — keeps its own 24px chrome, since a
+  gradient track needs a grabbable thumb, but gains `density="slim"` which drives its
+  track and thumb from those tokens. `ZoomControl` uses it, so a lab's zoom no longer
+  looks like a different design system from the panel beside it.
+  
+  `NumberField` gains `ghost`: transparent until focused, the readout treatment the
+  property rows already had. `hideSteppers` alone still painted the full sunken box,
+  which is why `ZoomControl`'s readout could not match a property row.
+  
+  Boxed fields size from `var(--wzl-field-h, var(--wzl-control-h))` and pad from
+  `--wzl-field-pad-x`. Set `--wzl-field-h` on a container to change a whole panel's
+  density; `PropertyList` sets its own, so property rows keep their 20px. The
+  fallback form is deliberate — it resolves per element, so a toolbar's redeclared
+  `--wzl-control-h` still reaches its fields. `--wzl-prop-field-height` is retired;
+  nothing ever set it.
+  
+  `NumberRow` gains a `unit` suffix, matching `SliderRow`, and right-aligns its value
+  so a column of numbers shares a decimal position.
+  
+  Behaviour changes worth knowing:
+  
+  - `InlineRange`'s thumb is 8px and translucent rather than 12px and solid.
+  - Every boxed field focuses with the 1px ring the React Aria fields already used,
+    replacing the property rows' bare outline; the colour chip gains a focus ring it
+    never had, and the property-row select moves from `--wzl-accent` to
+    `--wzl-focus-ring`.
+  - A `PropertyRow` rendered outside a `PropertyList` no longer picks up the dense
+    20px — density belongs to the container now. Every panel composes the list, so
+    this shows only in isolated stories.
+  - labkit's mark-title field renders with `Input` instead of a bare `<input>`, so it
+    no longer shows user-agent chrome. Its `onChange` now receives the string value.
+  
+  Removes `--wzl-track-bg`, `--wzl-track-border`, `--wzl-thumb-fill`,
+  `--wzl-thumb-border` and `--wzl-thumb-text`, which nothing read.
+  
+  A number leaf declares its display suffix with `.suffix('px')`, which `ControlPanel`
+  passes to the row. `unit` on a leaf keeps its existing meaning — the
+  `{ toDisplay, fromDisplay, suffix }` conversion descriptor `SelectionPanel` reads —
+  and `ControlPanel` does not interpret it.
+- 762f947: Re-export the icon set through `@weasel-js/labkit/weasel-ui`, and give the
+  three workspace-layout glyphs named components.
+  
+  A lab that depends only on `@weasel-js/labkit` could not draw a kit icon at
+  all: the passthrough carried every other primitive but not `Icon`,
+  `ICON_PATHS` or their types, so the only way in was a direct `@weasel-js/ui`
+  dependency — the thing the passthrough exists to avoid.
+  
+  `LayoutRowsIcon`, `LayoutColumnsIcon` and `LayoutGridIcon` join the named
+  glyph components in `@weasel-js/ui`.
+- 7aa92a8: Draw the lab's color mode as icons instead of words.
+  
+  `@weasel-js/ui` gains three glyphs — `modeLight` (a rayed sun), `modeDark` (a
+  crescent) and `modeAuto` (a four-pointed sparkle) — with `ModeLightIcon`,
+  `ModeDarkIcon` and `ModeAutoIcon` beside the other named components.
+  
+  labkit's header bar becomes `size="sm" variant="flat"`, the same treatment the
+  stroke cap / join / align rows use, with each segment holding a 14px glyph.
+  The words move to `ariaLabel`, so the control is still a radiogroup announcing
+  Auto / Light / Dark and its keyboard behaviour is unchanged.
+- a397fa6: Scope a surface tile's id to the trial it is registered in, so two trials of one
+  instrument no longer share a rect.
+  
+  A surface's tile namespace is one lab-wide map, but an instrument names its
+  regions once and every trial of it declares those same names. The second trial
+  to mount took the first one's entry — its rect, its ResizeObserver registration
+  and its painter — so the first was never told it had moved again, and kept the
+  box it was measured at while it was the only trial open: a 666px-wide overlay
+  standing over a 476px pane, swallowing input meant for its neighbour.
+  
+  `useSurfaceTile` and `AnnotationOverlay` now register under `useTileId(id)`,
+  newly exported, which is `<trial>/<id>` inside a trial and `id` alone outside
+  one. A frame's `rects` are keyed the same way, so a host looking a tile up calls
+  `useTileId` for the key rather than the name it registered with.
+- 21b0582: Give a trial's sidebar a draggable seam.
+  
+  `.lk-trial__sidebar` was a stated 320px with nothing between it and the
+  instrument, so a lab whose sidebar needed to be wider had no way to say so at
+  runtime. The sidebar and the content well are now a two-pane `windease` strip:
+  the seam is `stripStrategy`'s own resize affordance, which arrives as a
+  `role="separator"` carrying the range it can reach, operable by pointer and by
+  arrows / Home / End, and clamped against the content pane's floor rather than
+  the sidebar's alone.
+  
+  The width persists per trial (`TrialRecord.sidebarWidth`), so a dragged sidebar
+  survives a reload and a clone inherits it.
+  
+  `<TrialBody>` is exported for a lab composing its own chrome; `minWidth`,
+  `maxWidth` and `contentMinWidth` are its props. Like `<Workspace>`, it measures
+  its own box and takes a `viewport` where nothing measures — jsdom, notably.
+  
+  **`--lk-trial-sidebar-w` no longer does anything.** The width is a number the
+  trial holds, not a token the stylesheet reads; a lab that set the variable
+  should pass `width` to `<TrialBody>` or let the seam settle it.
+- d2f80b1: Give every trial a trial-id scope, and mount a shared drawing surface.
+  
+  `useTrialState()` threw inside any instrument hosted by a `<Lab>`:
+  `<TrialIdProvider>` had one production mount, in `SingletonExperiment`, so the
+  documented trial-scoped hook pattern was unreachable from an instrument's
+  `render`. `<Trial>` now provides it, outside `<TrialChrome>`, so contributions
+  can read trial state too.
+  
+  `useTiledSurface` had no production provider, so `useSurfaceOptional()` always
+  answered null and a registered tile reached nothing — including `Workspace`'s
+  own rect invalidation on grid moves, which was written against a surface
+  nothing supplied. `<Lab>` mounts one, anchored to `.lk-lab__body`, and defers
+  to a surface its host already owns rather than opening a second GL tenancy.
+- 1595a52: An instrument can declare regions that accept marks.
+  
+  `annotations: { targets, meaning? }` on an `Instrument` names the regions and,
+  optionally, the vocabulary a mark's status may use. `createAnnotationStore`
+  answers everything about the marks on those regions — `query`, `hitTest`,
+  `within`, `isStale` — over a weasel scene it treats as the truth rather than a
+  copy it keeps in step.
+  
+  Positions cross the store boundary as fractions of a target's content box, so a
+  mark stays on the same feature when the render resolution changes.
+  `positionDependsOn` names the config keys a target's positions depend on;
+  labkit snapshots them beside each mark and compares them later without knowing
+  what any of them mean.
+  
+  Snapshots from `toJSON()` are JSON-safe and carry their own version, because
+  labkit stringifies `record.state` raw and its document migrations never reach
+  into a trial's state.
+  
+  The overlay that renders marks and the tools that draw them are not in this
+  release: the store is reachable and testable on its own.
+- 5295c34: Draw on a lab's instrument: the `annotations` capability gets its overlay.
+  
+  An instrument that declares `annotations` now gets a drawing surface on every
+  target it names — weasel tools, weasel selection, marks that pan and zoom with
+  what they mark — plus a palette (select, freehand, line, arrow, rectangle,
+  ellipse, text) and its own tool slot. `useAnnotations()` reaches the store from
+  the instrument's render or from a chrome contribution, and re-renders its
+  caller as marks change.
+  
+  The lab's shared surface grew the buffer that makes this possible: one
+  `<canvas>` over `.lk-lab__body`, and `SurfaceHandle.registerPainter`, which is
+  how a resize of that buffer reaches every tile rather than the one that moved.
+  `getContainer()` names the element tile rects are measured against.
+  
+  A mark is a weasel scene node in a scene of its own per target — a pane's
+  hit-test, marquee and paint walk the whole scene they are handed, so one shared
+  scene would put a neighbour's marks under the pointer. An annotation's id is
+  therefore `<target>/<node>`, and `createAnnotationStore` takes `targets` alone
+  plus an optional `restore`; `SerializedAnnotations` carries `scenes`, keyed by
+  target. Marks still do not survive a reload — the storage slot is the next arc.
+  
+  Core adds `ArrowIcon` to the built-in tool glyphs.
+- 73052a9: Marks persist, undo takes them back, and a mark can say what it means. Closes
+  the `annotations` capability.
+  
+  `TrialRecord.annotations` is where a trial's marks are kept — written on a
+  trailing debounce and flushed on unmount, so the last mark before a close is
+  not lost. The field is optional and additive: a document written before this
+  change lacks it and needs no migration. An instrument that would rather own its
+  marks declares `annotations.storage` with a `load`/`save` pair, and labkit
+  never touches its own slot.
+  
+  Undo is routed to weasel history rather than reimplemented. Each target's marks
+  live in their own scene with its own stack, so `AnnotationsApi` grows
+  `undo` / `redo` / `canUndo` / `canRedo`, which take back the most recent change
+  wherever it was made. Declaring `annotations` now earns the trial's undo and
+  redo buttons whether or not the instrument also declares `undo`; a trial
+  declaring both takes the marks first.
+  
+  A `Marks` sidebar panel (`<MarkList>`) lists every mark with its kind, its
+  target, an editable title, a status picker and a staleness badge.
+  `AnnotationStatus` gains a `color`, which the mark on the canvas follows; a
+  mark whose target's declared config keys have moved draws dashed rather than
+  hidden, because it still describes something.
+- 25f6ee3: Export a lab's picture with its marks on it — new API, and new chrome.
+  
+  A target declares `base()`, handing over the picture underneath its marks as
+  SVG markup, an image `src` or a canvas. labkit cannot rasterize that itself: it
+  is the consumer's DOM. A target declaring no base still exports, its marks on
+  transparency.
+  
+  `AnnotationsApi` grows `capture(target, { format, scale })`, resolving to a
+  Blob plus its dimensions, and `targets()`, which reports the declared targets.
+  The route depends on the base: an SVG one nests beside the marks in a single
+  document that rasterizes once at the end, which also makes `format: 'svg'` a
+  real vector export. Anything else stacks rasters, the marks drawn offscreen at
+  export scale by `renderSceneToPixels` rather than read back off the live
+  surface — so a capture neither depends on nor disturbs what is on screen.
+  Export resolution follows the target's content box and the scale, not the size
+  the pane happens to be on screen.
+  
+  Declaring `annotations` now earns an Export button in the trial toolbar, opening
+  a panel that picks a target, PNG or SVG, and a scale, and then downloads or
+  copies. `AnnotationsCapability.onCapture` fires after every export, labkit's own
+  chrome included, for a host that wants to file the blob somewhere of its own.
+  
+  Two smaller additions come with it: `createMarkDrawOne` / `resolveMarkStyle`,
+  the single place a mark's colour and stale dash are resolved for both the
+  screen and an export, and `markSvgNodes`, which translates a mark's own draw
+  commands into `SvgNode`s rather than switching over the mark kinds a second
+  time.
+  
+  labkit gains a dependency on `@weasel-js/svg`. Its build already inlined that
+  package by way of `@weasel-js/ui`, so nothing about what ships changes; the
+  declaration is what the manifest audit reads.
+  
+  One caveat for anyone using React Aria overlays inside a lab: they portal to
+  `document.body` by default, which is outside the element labkit paints its
+  theme tokens onto, and they render unthemed there. The export panel passes the
+  lab root as its portal container. Nothing else in labkit does yet.
+- f046dfe: Let a host read and set which marks are selected.
+  
+  This adds API. `AnnotationsApi` grows `selection()` and `setSelection(ids)`,
+  in the same `<target>/<node>` ids the rest of the surface uses, merged across
+  every target — the question "which mark did the user just click?" had no public
+  answer, so a host could draw marks and query them but could not respond to one.
+  
+  There was nothing to build: the overlay's `<SceneCanvas>` per target already
+  runs weasel's own selection, and weasel keeps a canvas's selection on the scene
+  rather than in React. The store already holds those scenes, so it reads and
+  writes selection directly and the overlay is untouched. Click, marquee, handles
+  and undo's selection restore all come along for free.
+  
+  A selection change already reached `subscribe` for the same reason — a scene
+  notifies its listeners on `setSelection`. Its doc comment now says so.
+  
+  An id naming a target or a mark that is not there is dropped, matching how
+  `update`, `setMeta` and `remove` ignore one.
+- fa58247: Export `usePanZoom` from `@weasel-js/labkit` and `@weasel-js/labkit/canvas`,
+  alongside `UsePanZoomOptions` and `PanZoomHandlers`.
+  
+  The 2D camera was reachable only by adopting `CanvasStack`, which owns its own
+  `<canvas>` elements and layer scheduler — exactly what a lab hosting a foreign
+  renderer through `surface` has opted out of. Its 3D peer `useOrbit` was already
+  exported standalone, so such a lab got the orbit camera from labkit and had to
+  reimplement the pan/zoom one, cursor-anchored wheel zoom and reachable-opening-
+  zoom clamp included.
+  
+  `useOrbit` now also rides the `/canvas` subpath, where the two cameras sit
+  together.
+- 28894b9: `FloatingPanel` no longer swallows a click on a control that is not a native
+  element.
+  
+  It captured the pointer on pointerdown to drag itself. Capture retargets
+  mouseup, so the browser synthesizes no `click` on the child under the cursor —
+  and the guard exempting children was an element-name allowlist (`input`,
+  `button`, `a`, `select`, `textarea`, `[data-no-drag]`). Anything else in a panel
+  was therefore dead to a real mouse while a programmatic `.click()` still worked,
+  which is how it hid. A `role="button"` span, a component library's control that
+  renders a div, and a canvas were all affected.
+  
+  The panel now arms on pointerdown and captures only once the pointer has moved
+  3px, so a press that does not move is never a drag. The allowlist stays, so
+  dragging _from_ a native control still does nothing.
+  
+  Also documents the styling contract this came in alongside — see "Styling
+  labkit from your own stylesheet" in the recipes: classes are `lk-*`, tokens are
+  `--wzl-*`, and `var(--lk-…)` silently takes its fallback.
+- 4dc5cad: A loupe any lab can turn on
+  
+  `loupe` joins `canvas`, `layers`, `dragDrop` and `undo` as an instrument
+  capability, so declaring one is what gives a trial the magnifier and its
+  toolbar switch — suppressible by id like every other built-in.
+  
+  Two painters, chosen by what the instrument's content is. `loupe: true` on an
+  instrument that draws gets the canvas painter: the lens re-runs that
+  instrument's own layers through a camera zoomed about the aimed point, so a
+  hairline is still a hairline at 30×, and `mode: 'pixel'` enlarges the pixels
+  the stack presented instead. `loupe: { render }` gets the DOM painter, for an
+  instrument whose content is markup: handed a camera, it draws itself again
+  inside a circular clip. Either way the lens takes no pointer events, so the
+  pan, the wheel and anything underneath keep working while it is up. A function
+  form — `loupe: (config) => …` — is re-read as the config changes, so a setting
+  can drive the lens.
+  
+  The lens follows the pointer while it is on, appears for as long as `Alt` is
+  held while it is off, and takes the wheel from pan/zoom to resize its
+  magnification. Those are plain listeners for now; `docs/TODO.md` records why,
+  and what replaces them.
+  
+  Supporting surface: `zoomAt` and `centerOn` are exported from
+  `@weasel-js/labkit` — the fixed-point zoom `usePanZoom` already ran, and the
+  camera that centres a world point in a viewport — so nothing composing a camera
+  has to re-derive one. `CanvasStackContext` now also carries the stack's
+  `surface`: its element, measured box, layers and presented canvases, which is
+  what an overlay needs to re-draw or read back what the stack painted.
+  `ToolbarItem` takes `pressed`, rendering `aria-pressed` and a held-down state,
+  and `@weasel-js/ui` gains a `loupe` glyph.
+- 719c0fe: Rewrite labkit's public documentation. Docs only — no code changes.
+  
+  The README is the landing page of the published docs site, and it described a
+  package that no longer exists: v0.x, the lab/trial/instrument runtime "arriving
+  in later plans", and an Installation section telling readers to clone two repos
+  side by side and depend on `file:../labkit`. labkit is on the public registry
+  and is a workspace package in this monorepo, so both halves sent an adopter
+  somewhere that could not work.
+  
+  It now installs from npm, states the React 19 peer dependency, and covers the
+  surfaces it never mentioned: the capability list an instrument declares from,
+  annotations, chrome regions and undocking, the `f(...)` config schema, and all
+  fifteen subpath exports. The Usage example uses `<Lab>` rather than a shell
+  around bare `<div>`s, and the Development section lists the scripts the package
+  actually has — `npm run storybook` was not one of them.
+  
+  Four dead documentation links pointed at `orochi235.github.io/labkit/` and at a
+  standalone `orochi235/labkit` repo. The docs site is under
+  `orochi235.github.io/weasel/labkit/`, Storybook under
+  `orochi235.github.io/weasel/docs/ui/storybook/`, and the design spec is in this
+  repo.
+  
+  RECIPES gains annotations coverage — declaring targets, reading the store,
+  export, and keeping marks in your own storage — plus chrome contributions and
+  panel undocking. AGENTS gains source maps for both, and its stale rows are
+  fixed: it named seven files that had moved or been deleted, and told readers
+  design tokens are `--lk-*` when no such property is ever declared.
+- 3101f60: `PaletteRegion` and `ViewportRegion` claimed `role="toolbar"` without the
+  keyboard contract that role promises — no roving tabindex, every button in the
+  tab order. Both now use `useRovingTabIndex`, which takes an orientation: the
+  vertical palette walks ArrowUp/ArrowDown and leaves the cross-axis arrows to the
+  page, per APG.
+- 55b73ab: The Save snapshot button moves from a trial's toolbar to the end of its title
+  bar, beside clone and reset. The three are one group of trial-level actions and
+  now read as one. `Mod+S` is unchanged — the handler is on the trial element, not
+  the region. The Load snapshot picker stays in the toolbar; it is a select, not
+  an icon button.
+- aaf8bfc: A sidebar section can be torn out into the workspace, and put back.
+  
+  Every `sidebar` contribution now carries a tear-out control. Undocking moves
+  the section out of its trial's sidebar and into the workspace as either a tile
+  — a peer of the trials in the same grid, resizable and reorderable like one —
+  or a floating panel above the grid. The section says which it wants with
+  `undockAs: 'tile' | 'floating'` (default `'tile'`), and a section that only
+  makes sense beside its trial opts out with `undockable: false`.
+  
+  `Workspace` registers windease's `floatingStrategy` alongside `gridStrategy` to
+  carry the second target, and takes `panels: readonly PanelDescriptor[]`.
+  
+  The panel's content is **portalled** out of the trial rather than re-rendered
+  beside it: the workspace owns the frame and the host element, the trial owns
+  what goes in it. So a torn-out section keeps its place in the trial's React
+  tree — its context, its subscriptions and its own component state all survive
+  an undock and a dock, and an instrument does not have to make its panels
+  free-standing to allow it.
+  
+  `TrialChromeContext` gains `undockedPanels`, `undockPanel(sectionId, as?)` and
+  `dockPanel(sectionId)`, so a consumer can drive this from its own chrome
+  instead of the built-in control.
+  
+  Which panels are out is persisted with the rest of the lab, so it survives a
+  reload. That moves the document to **version 3**; `migrateV2toV3` starts the
+  field empty and touches nothing else. Closing a trial docks everything it
+  owned.
+  
+  `Workspace`'s node-id list is now kept in a ref keyed on the joined ids rather
+  than a `useMemo` over a stand-in key, which drops the two lint suppressions
+  that arrangement needed.
+- 6f0ba17: Let a labkit instrument declare its own coordinate system for the canvas.
+  
+  `CanvasCapability.worldSpec` takes an `origin` — a fraction of the viewport, so
+  `{x: 0.5, y: 0.5}` means "centred" without knowing the canvas size — and
+  `yAxis: 'up' | 'down'`. Omitting it keeps the convention labkit has always had:
+  world (0,0) at the element's top-left, y running down.
+  
+  The spec is resolved against the measured viewport into a `WorldFrame`, and
+  every path between world and screen now reads it: `worldToScreen`,
+  `screenToWorld`, the new `applyCamera`, `usePanZoom`'s wheel anchor, and the
+  drop position in `DragDropRuntime`. This is a bug fix as much as an addition —
+  an instrument whose world was not y-down-from-the-top-left previously had to
+  layer its own transform on top, and the wheel then anchored on the wrong point
+  and drifted by `(1 - ratio) * originPx` every step, with no error.
+  
+  `CanvasCapability.initialView` also accepts a function of the viewport size.
+  The trial's view stays `null` until the canvas is first measured and
+  `CanvasStack`'s new `onResize` places it, so an instrument that frames content
+  against the viewport no longer needs its own "have I placed this yet" flag.
+  
+  `RenderContext.trial.visibleLayers` lists the canvas layers currently shown, in
+  declaration order — labkit skips a hidden layer's `draw`, so this was
+  previously only discoverable by instrumenting every layer.
+  
+  Clone and Reset move from the trial toolbar to the right edge of the trial
+  title bar, beside Close.
+  
+  `CanvasStackContextValue` gains a required `frame`, and
+  `CanvasLayerDescriptor.render` takes it as a third argument.
+- a6faf75: Pack property rows two-up, and size their fields to their content
+  
+  A property panel spent a full row on every leaf and stretched each field to
+  whatever width the row had, so a 38-flag lab sidebar scrolled for two screens
+  to show four dozen digits. The grid was already there — `PropertyList` and
+  `PropertyGroup` have taken `pack="pairs"` since they were written — but only
+  `PropertyRow` could opt out of it, so nothing that rendered a schema could use
+  it: `ControlPanel` hardcoded `pack="auto-color"`, which spans everything but a
+  colour.
+  
+  `ControlPanel` now takes `pack` and `layout`. It defaults to `pack="pairs"`
+  (two controls per row), with `'auto'` for the middle ground — text, sliders and
+  segmented toggles keep the full width, everything else pairs — and `'one-up'`
+  for what it used to do. A custom `controls` renderer places itself like any
+  built-in row and opts out the same way, with `<PropertyRow span>`.
+  
+  `span` is now on every typed row (`NumberRow`, `TextRow`, `SelectRow`,
+  `ToggleRow`, `CheckboxRow`, `ColorRow`, `SliderRow`), not just on the
+  `PropertyRow` they are built from.
+  
+  Fields size to their content rather than to their cell: a number gets 9ch and a
+  string 16ch, both capped at the column so a narrow sidebar still fills. Fields
+  also state a height (`--wzl-prop-field-height`, 20px) rather than padding to
+  one — the display face's line box is half again its font size, so a padded field
+  stood 27px tall around 13px of text and trimming the padding could not fix it.
+  The row and group gutters came in to match.
+  
+  Widths, heights and gutters are all overridable:
+  `--wzl-prop-number-width`, `--wzl-prop-text-width`, `--wzl-prop-field-height`.
+  
+  A lab's trial sidebar states its width (`--lk-trial-sidebar-w`, 20rem) instead
+  of deriving it from content: an auto-width sidebar is as wide as its widest
+  label, so one verbose config key was setting the width of the lab. An inline row
+  puts its label on the left edge and its field on the right, so fields of
+  different widths still read as one rail down the column, and it keeps its one
+  line in a column narrower than it wants: the field yields width to the label
+  down to a four-character floor, and the label — which may be a single
+  unbreakable name — never yields.
+  
+  Every property panel is visibly denser for this — WeaselDraw's inspector as
+  much as a lab's controls.
+- Updated dependencies [eb16573]
+- Updated dependencies [72b30cc]
+- Updated dependencies [6650d67]
+- Updated dependencies [04ea2e8]
+- Updated dependencies [b656ebf]
+- Updated dependencies [762f947]
+- Updated dependencies [7aa92a8]
+- Updated dependencies [fea3092]
+- Updated dependencies [c64f152]
+- Updated dependencies [1214ff5]
+- Updated dependencies [5295c34]
+- Updated dependencies [2fbf611]
+- Updated dependencies [5c3e571]
+- Updated dependencies [36b6ee7]
+- Updated dependencies [e1838ff]
+- Updated dependencies [7a0c568]
+- Updated dependencies [1b42b19]
+- Updated dependencies [4dc5cad]
+- Updated dependencies [0d0c885]
+- Updated dependencies [a7fa697]
+- Updated dependencies [2272682]
+- Updated dependencies [503b56d]
+- Updated dependencies [ac2deea]
+- Updated dependencies [a6faf75]
+- Updated dependencies [23ffb2f]
+- Updated dependencies [016851c]
+- Updated dependencies [1b9575f]
+- Updated dependencies [c9dd37f]
+- Updated dependencies [9a000ea]
+- Updated dependencies [016851c]
+- Updated dependencies [53ffca9]
+- Updated dependencies [8ddec11]
+- Updated dependencies [6e5f821]
+- Updated dependencies [28894b9]
+- Updated dependencies [c4ccd0a]
+  - @weasel-js/core@1.4.0
+  - @weasel-js/theme@1.4.0
+  - @weasel-js/ui@1.4.0
+  - @weasel-js/loupe@1.4.0
+  - @weasel-js/svg@1.4.0
+
 ## 1.4.0-pre.1
 
 ### Patch Changes
