@@ -9,7 +9,7 @@
 .frame {
   display: flex;
   align-items: stretch;
-  height: var(--wzl-control-h);
+  height: var(--wzl-field-h, var(--wzl-control-h));
   background: var(--wzl-surface-sunken);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
@@ -43,7 +43,7 @@
   outline: none;
   color: inherit;
   font: inherit;
-  padding: 0 8px;
+  padding: 0 var(--wzl-field-pad-x);
 }
 
 .frame input::placeholder {

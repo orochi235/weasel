@@ -10,8 +10,8 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  height: var(--wzl-control-h);
-  padding: 0 8px;
+  height: var(--wzl-field-h, var(--wzl-control-h));
+  padding: 0 var(--wzl-field-pad-x);
   background: var(--wzl-surface-sunken);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);

@@ -48,6 +48,11 @@
   column-gap: 10px;
   row-gap: 4px;
   align-items: stretch;
+  /* A property panel is dense: its fields are shorter and tighter than a
+     standalone Input. Set here, on the container, so one declaration moves
+     every field in the panel. */
+  --wzl-field-h: 20px;
+  --wzl-field-pad-x: 6px;
 }
 
 /* Default packing: only color rows pair, everything else spans full width.
@@ -276,12 +281,18 @@
   /* Height is stated rather than padded to, because the display face's line box
      is half again its font size — padding a field to size makes it 27px tall
      around 13px of text and no amount of trimming the padding fixes that. */
-  height: var(--wzl-prop-field-height, 20px);
-  padding: 0 6px;
+  height: var(--wzl-field-h, var(--wzl-control-h));
+  padding: 0 var(--wzl-field-pad-x);
   font-family: var(--wzl-font-ui);
   font-weight: var(--wzl-font-weight-medium);
   font-size: var(--wzl-font-size);
   line-height: var(--wzl-leading-tight);
+}
+
+/* Numbers right-align so a column of them shares a decimal position; text does
+   not, so this cannot live in the rule the two share. */
+.row input[type='number'] {
+  text-align: right;
 }
 
 .row input[type='text']:not(.readoutInput):focus,
@@ -297,7 +308,7 @@
   color: var(--wzl-fg);
   border: 0;
   border-radius: 0;
-  height: var(--wzl-prop-field-height, 20px);
+  height: var(--wzl-field-h, var(--wzl-control-h));
   padding: 0;
   font-family: var(--wzl-font-ui);
   font-weight: var(--wzl-font-weight-medium);

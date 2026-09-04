@@ -783,7 +783,7 @@ Today: 24px RAC frames (22px inside `.lk-toolbar`), 20px property rows via a `--
 - Modify: `packages/ui/src/components/{Input,NumberField,ComboBox}/*.module.css` (`.frame`)
 - Modify: `packages/ui/src/components/Properties/Properties.module.css` (`.list`, the text/number rules, `.row select`)
 
-- [ ] **Step 1: Frames read the field vars**
+- [x] **Step 1: Frames read the field vars**
 
 In each of `Input/Input.module.css`, `NumberField/NumberField.module.css` and `ComboBox/ComboBox.module.css`, in `.frame`, replace:
 
@@ -809,7 +809,7 @@ In `NumberField.module.css` and `ComboBox.module.css` the padding is on `.frame 
   padding: 0 var(--wzl-field-pad-x);
 ```
 
-- [ ] **Step 2: The property list declares its density**
+- [x] **Step 2: The property list declares its density**
 
 In `Properties.module.css`, add to the `.list` rule:
 
@@ -828,7 +828,7 @@ In `Properties.module.css`, add to the `.list` rule:
 }
 ```
 
-- [ ] **Step 3: Retire `--wzl-prop-field-height`**
+- [x] **Step 3: Retire `--wzl-prop-field-height`**
 
 In `Properties.module.css`, in the `.row input[type='text']:not(.readoutInput), .row input[type='number']` rule, replace:
 
@@ -846,7 +846,7 @@ with:
 
 and in `.row select`, replace `height: var(--wzl-prop-field-height, 20px);` with `height: var(--wzl-field-h, var(--wzl-control-h));`.
 
-- [ ] **Step 3b: Right-align numeric fields**
+- [x] **Step 3b: Right-align numeric fields**
 
 `NumberRow` is the only numeric field in the kit that is not right-aligned — `NumberField`'s inner input and the `.readoutInput` beside a slider both already are. So a labkit control panel renders a column of numbers that do not line up. Add to `Properties.module.css`, after the shared text/number rule:
 
@@ -862,24 +862,24 @@ Do NOT add `text-align` to the shared `.row input[type='text']:not(.readoutInput
 
 Check afterwards that `.row input[type='number']` is not also declared in `range.module.css` (it will not be — that file only styles `input[type='range']`), and that this is the only `text-align` declaration reaching the element.
 
-- [ ] **Step 4: Confirm nothing still reads the retired name**
+- [x] **Step 4: Confirm nothing still reads the retired name**
 
 Run: `grep -rn 'wzl-prop-field-height' packages apps --include='*.css' --include='*.less' --include='*.ts' --include='*.tsx' | grep -v dist`
 Expected: no output.
 
-- [ ] **Step 5: Test and typecheck**
+- [x] **Step 5: Test and typecheck**
 
 Run: `npx tsc --noEmit && npx vitest run --project=weasel-ui && npx vitest run --project=labkit`
 Expected: PASS
 
-- [ ] **Step 6: Screenshot check**
+- [~] **Step 6: Screenshot check**
 
 Three things to look at, both modes:
 1. `Properties/Gallery` — rows should be **unchanged** at 20px, except that numeric fields now right-align.
 2. A labkit `ControlPanel` story — a column of numeric rows should share a right edge.
 3. A labkit toolbar story containing a `NumberField` — should still be 22px, proving the `var(--wzl-field-h, var(--wzl-control-h))` fallback resolves per element. If it went to 24px, someone declared `--wzl-field-h` at `:root`; remove that.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add packages/ui/src/components/Input packages/ui/src/components/NumberField packages/ui/src/components/ComboBox packages/ui/src/components/Properties
