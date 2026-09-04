@@ -15,9 +15,10 @@
  * Pan delta is divided by view.scale so that one screen-pixel scroll equals
  * one screen-pixel pan at any zoom level.
  *
- * The descriptor does NOT replicate inertia or axis-locking from
- * `useWheelPanTool` — those are opt-in features for specialist use-cases.
- * The canonical viewport pan exposed here uses the simple immediate-action path.
+ * `axis` locks the pan to one axis, matching `viewport.dragPan`'s param of
+ * the same name, so a consumer that wants a single-axis viewport can say so
+ * once per action instead of clamping every committed view. An axis lock
+ * outranks `swapAxis`: a shift-wheel routed into a barred axis moves nothing.
  */
 
 import type { Action } from '../registry';
@@ -58,6 +59,7 @@ export const viewportWheelPanAction: Action & { requires: string[] } = {
     run(deps, params) {
       const view = deps.view as ViewApi | undefined;
       if (!view) return;
+      const axis = (params?.axis as 'both' | 'x' | 'y' | undefined) ?? 'both';
       const deltaX = (params?.deltaX as number | undefined) ?? 0;
       const deltaY = (params?.deltaY as number | undefined) ?? 0;
       const current = view.get();
@@ -68,8 +70,35 @@ export const viewportWheelPanAction: Action & { requires: string[] } = {
       const swap = params?.swapAxis === true;
       const dx = swap ? (deltaX !== 0 ? deltaX : deltaY) / current.scale.x : deltaX / current.scale.x;
       const dy = swap ? 0 : deltaY / current.scale.y;
-      view.set({ ...current, x: current.x + dx, y: current.y + dy });
+      view.set({
+        ...current,
+        x: current.x + (axis === 'y' ? 0 : dx),
+        y: current.y + (axis === 'x' ? 0 : dy),
+      });
     },
   },
   enabled: () => true,
 };
+
+/** Tuning for {@link makeViewportWheelPanAction}. */
+export interface WheelPanOptions {
+  /** Lock the pan to one axis. Default `'both'`. Mirrors `viewport.dragPan`'s
+   *  `axis` param, so a single-axis viewport is declared once per action
+   *  rather than clamped on every committed view. */
+  axis?: 'both' | 'x' | 'y';
+}
+
+/** Builds a `viewport.wheelPan` descriptor with `opts` baked into both of its
+ *  default bindings. `viewportWheelPanAction` is the unconfigured one. */
+export function makeViewportWheelPanAction(
+  opts: WheelPanOptions = {},
+): Action & { requires: string[] } {
+  const axis = opts.axis ?? 'both';
+  return {
+    ...viewportWheelPanAction,
+    defaultBinding: [
+      { spec: { kind: 'wheel' }, opts: { params: { axis } } },
+      { spec: { kind: 'wheel', mods: { shift: true } }, opts: { params: { swapAxis: true, axis } } },
+    ],
+  };
+}

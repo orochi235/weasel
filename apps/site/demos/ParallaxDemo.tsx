@@ -189,13 +189,8 @@ function ParallaxDemoInner() {
   const selection = useSelection();
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
   const [zoomParallax, setZoomParallax] = useState(false);
-  const hand = useHandTool({ inertia: {} });
+  const hand = useHandTool({ inertia: {}, axis: 'x' });
   const tools = useTools({ active: 'hand', registry: { hand } });
-  // X-only viewport: the demo wants to scroll horizontally to show off the
-  // parallax planes. Both viewport.dragPan and viewport.pan write y, so we
-  // clamp on commit instead of relying on per-action axis options (which
-  // don't exist on those descriptors yet — see TODO).
-  const setViewXOnly = (next: View) => setView({ ...next, y: 0 });
 
   const sky = useMemo(
     () => createParallaxLayer<unknown>({
@@ -276,7 +271,8 @@ function ParallaxDemoInner() {
         scene={scene}
         selection={selection}
         view={view}
-        onViewChange={setViewXOnly}
+        onViewChange={setView}
+        viewport={{ pan: { axis: 'x' } }}
         tools={tools}
         layers={{
           scene: { drawOne: () => [] },

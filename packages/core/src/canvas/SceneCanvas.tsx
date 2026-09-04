@@ -39,6 +39,7 @@ import { useViewAnimation } from 'core/viewport/useViewAnimation';
 import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
 import type { SceneToAdapterOptions } from './sceneAdapter';
 import { useDecayLoop, type PanBounds } from 'core/viewport/useDecayLoop';
+import type { WheelPanOptions } from 'interactions/actions/defaults/viewportWheelPan';
 import type { View } from 'core/viewport/view';
 import type { Node, Scene, SerializedScene } from 'core/scene/types';
 import type { NodeId } from 'core/scene/types';
@@ -615,7 +616,9 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
        *  duration, easing, interpolator and the reset-branch duration. Wheel
        *  and pinch are unaffected — their input already samples every frame. */
       animatedZoom?: boolean | ViewportZoomAnimateOptions;
-      pan?: boolean;
+      /** Wheel pan. `true`/omitted = on; `false` disables; an object locks the
+       *  axis (`{ axis: 'x' }`) so a single-axis viewport needs no commit clamp. */
+      pan?: boolean | WheelPanOptions;
       /** Wheel/keyboard zoom. `true`/omitted = default Cmd+wheel zoom with the
        *  kit's 0.1–8 clamp; `false` disables. Pass a {@link ViewportZoomOptions}
        *  object to bind zoom to plain wheel (`wheel: 'plain'`, pair with
@@ -1265,12 +1268,15 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   const inertiaEnabled = !!viewport?.inertia;
   const inertiaObj = typeof viewport?.inertia === 'object' ? viewport.inertia : undefined;
-  const handToolInertia = inertiaEnabled && inertiaObj
+  // `inertia: true` means "on with kit defaults", so an enabled-but-objectless
+  // config still has to reach the tool — an empty object, not `undefined`,
+  // which the tool reads as off.
+  const handToolInertia = inertiaEnabled
     ? {
-        friction: inertiaObj.friction,
-        minSpeed: inertiaObj.minSpeed,
-        boundary: inertiaObj.boundary,
-        bounds: inertiaObj.bounds,
+        friction: inertiaObj?.friction,
+        minSpeed: inertiaObj?.minSpeed,
+        boundary: inertiaObj?.boundary,
+        bounds: inertiaObj?.bounds,
       }
     : undefined;
   // useHandTool must always be called (rules of hooks); it is a no-op when
@@ -2028,7 +2034,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 dispatcher={dispatcher}
                 getActionRef={getActionRef}
                 pickEvery={internalPickEvery}
-                viewportPanEnabled={viewport?.pan !== false}
+                viewportPanEnabled={viewport?.pan ?? true}
                 viewportZoom={resolvedViewportZoom}
                 viewportPinchZoom={viewport?.pinchZoom ?? true}
                 viewportRecenter={viewport?.recenter}
@@ -2447,7 +2453,7 @@ function StandardActionsRegistrar({
    *  reuse the same hit-test plumbing the tool dispatcher uses. */
   pickEvery: (worldX: number, worldY: number) => string[];
   /** Resolved `viewport.pan` flag — default true, false to disable. */
-  viewportPanEnabled: boolean;
+  viewportPanEnabled: boolean | WheelPanOptions;
   /** Resolved `viewport.zoom` setting — `true` (default Cmd+wheel zoom),
    *  `false` (disabled), or a {@link ViewportZoomOptions} config. */
   viewportZoom: boolean | ViewportZoomOptions;

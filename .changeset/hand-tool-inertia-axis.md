@@ -17,5 +17,10 @@ cannot call hooks. `InertiaConfig` moves next to `DecayLoopConfig` and
 `PanBounds` in `useDecayLoop`; `useHandTool` re-exports it, so the
 `HandToolInertiaConfig` alias on the barrel is unchanged.
 
-`apps/site/demos/ParallaxDemo.tsx` has been asking for `inertia: {}` since it
-was written and will now actually coast.
+`viewport.wheelPan` gains the same `axis` option through a
+`makeViewportWheelPanAction` factory, matching its `makeViewportZoomAction` /
+`makePinchZoomAction` siblings, and `<SceneCanvas viewport={{ pan: { axis } }}>`
+reaches it. Two things fall out: `viewport={{ inertia: true }}` was documented
+as "on with defaults" but produced no inertia — only the object form did — and
+`ParallaxDemo` can drop the `setViewXOnly` commit clamp it used because the
+axis options did not work.

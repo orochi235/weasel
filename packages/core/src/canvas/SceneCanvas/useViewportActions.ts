@@ -16,7 +16,10 @@
  */
 import { useEffect, useRef } from 'react';
 import { useActionsRegistry } from 'interactions/actions/registry';
-import { viewportWheelPanAction } from 'interactions/actions/defaults/viewportWheelPan';
+import {
+  makeViewportWheelPanAction,
+  type WheelPanOptions,
+} from 'interactions/actions/defaults/viewportWheelPan';
 import {
   makeViewportZoomAction,
   type ViewportZoomOptions,
@@ -27,7 +30,9 @@ import {
 } from 'interactions/actions/defaults/pinchZoom';
 
 export function useViewportActions(args: {
-  pan: boolean;
+  /** `true`/`false` toggles wheel pan; an object locks its axis (see
+   *  {@link WheelPanOptions}). */
+  pan: boolean | WheelPanOptions;
   /** `true`/`false` toggles the default Cmd+wheel zoom; an object tunes the
    *  wheel trigger + scale clamp (see {@link ViewportZoomOptions}). */
   zoom: boolean | ViewportZoomOptions;
@@ -44,6 +49,7 @@ export function useViewportActions(args: {
   // (object identity isn't stable across renders for inline literals).
   // JSON.stringify drops function-valued fields, so changing only
   // `animate.easing` does not re-register — pass a stable easing.
+  const panKey = typeof pan === 'object' ? JSON.stringify(pan) : String(pan);
   const zoomKey = typeof zoom === 'object' ? JSON.stringify(zoom) : String(zoom);
   const pinchKey = typeof pinchZoom === 'object' ? JSON.stringify(pinchZoom) : String(pinchZoom);
 
@@ -51,7 +57,11 @@ export function useViewportActions(args: {
     const r = regRef.current;
     if (!r) return;
     const unregisters: Array<() => void> = [];
-    if (pan) unregisters.push(r.register(viewportWheelPanAction));
+    if (pan) {
+      unregisters.push(
+        r.register(makeViewportWheelPanAction(typeof pan === 'object' ? pan : {})),
+      );
+    }
     if (zoom) {
       const zoomAction =
         typeof zoom === 'object' ? makeViewportZoomAction(zoom) : makeViewportZoomAction();
@@ -68,5 +78,5 @@ export function useViewportActions(args: {
     }
     return () => { for (const u of unregisters) u(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- configs tracked via zoomKey / pinchKey
-  }, [pan, zoomKey, pinchKey]);
+  }, [panKey, zoomKey, pinchKey]);
 }

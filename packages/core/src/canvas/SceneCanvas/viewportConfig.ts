@@ -7,6 +7,7 @@
  */
 import type { PanBounds } from 'core/viewport/useDecayLoop';
 import type { ViewportZoomOptions } from 'interactions/actions/defaults/viewportZoom';
+import type { WheelPanOptions } from 'interactions/actions/defaults/viewportWheelPan';
 
 /** Which viewport interactions `<SceneCanvas>` wires up — pan inertia, pinch
  *  zoom, wheel pan, wheel and keyboard zoom. Each may be switched off with
@@ -16,8 +17,9 @@ export interface ViewportConfig {
     | boolean
     | { friction?: number; minSpeed?: number; boundary?: 'stop' | 'bounce' | 'spring'; bounds?: PanBounds };
   pinchZoom?: boolean | { min?: number; max?: number };
-  /** Wheel pan (plain wheel → pan). Default: `true`. Set `false` to disable. */
-  pan?: boolean;
+  /** Wheel pan (plain wheel → pan). Default: `true`. Set `false` to disable,
+   *  or pass a {@link WheelPanOptions} object to lock it to one axis. */
+  pan?: boolean | WheelPanOptions;
   /** Wheel + keyboard zoom (Cmd+wheel, Cmd+=/-/0). Default: `true`. Set `false`
    *  to disable, or pass a {@link ViewportZoomOptions} object to tune the wheel
    *  trigger + scale clamp. */

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { viewportWheelPanAction } from './viewportWheelPan';
+import { viewportWheelPanAction, makeViewportWheelPanAction } from './viewportWheelPan';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
 
@@ -106,5 +106,62 @@ describe('viewportWheelPanAction invoker', () => {
     const invoker = getImmediateInvoker(viewportWheelPanAction);
     expect(() => invoker.run({}, { deltaX: 10, deltaY: 10 })).not.toThrow();
     expect(mockSet).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Axis locking
+// ---------------------------------------------------------------------------
+
+describe('viewportWheelPanAction axis locking', () => {
+  const run = getImmediateInvoker(viewportWheelPanAction).run;
+
+  it("axis 'x' leaves y alone", () => {
+    const view = makeView({ x: 10, y: 20, scale: { x: 1, y: 1 } });
+    run({ view }, { deltaX: 5, deltaY: 7, axis: 'x' });
+    expect(view._value.x).toBe(15);
+    expect(view._value.y).toBe(20);
+  });
+
+  it("axis 'y' leaves x alone", () => {
+    const view = makeView({ x: 10, y: 20, scale: { x: 1, y: 1 } });
+    run({ view }, { deltaX: 5, deltaY: 7, axis: 'y' });
+    expect(view._value.x).toBe(10);
+    expect(view._value.y).toBe(27);
+  });
+
+  it("defaults to 'both' when no axis param is given", () => {
+    const view = makeView({ x: 10, y: 20, scale: { x: 1, y: 1 } });
+    run({ view }, { deltaX: 5, deltaY: 7 });
+    expect(view._value.x).toBe(15);
+    expect(view._value.y).toBe(27);
+  });
+
+  it('bars a shift-wheel swap routed into a locked-out axis', () => {
+    // swapAxis sends deltaY into x; axis 'y' forbids x, so nothing moves.
+    const view = makeView({ x: 10, y: 20, scale: { x: 1, y: 1 } });
+    run({ view }, { deltaY: 9, swapAxis: true, axis: 'y' });
+    expect(view._value.x).toBe(10);
+    expect(view._value.y).toBe(20);
+  });
+});
+
+describe('makeViewportWheelPanAction', () => {
+  it('bakes the axis into both default bindings', () => {
+    const action = makeViewportWheelPanAction({ axis: 'x' });
+    expect(action.defaultBinding).toEqual([
+      { spec: { kind: 'wheel' }, opts: { params: { axis: 'x' } } },
+      { spec: { kind: 'wheel', mods: { shift: true } }, opts: { params: { swapAxis: true, axis: 'x' } } },
+    ]);
+  });
+
+  it("defaults to 'both' and keeps the descriptor's id and invoker", () => {
+    const action = makeViewportWheelPanAction();
+    expect(action.id).toBe('viewport.wheelPan');
+    expect(action.invoker).toBe(viewportWheelPanAction.invoker);
+    expect(action.defaultBinding).toEqual([
+      { spec: { kind: 'wheel' }, opts: { params: { axis: 'both' } } },
+      { spec: { kind: 'wheel', mods: { shift: true } }, opts: { params: { swapAxis: true, axis: 'both' } } },
+    ]);
   });
 });
