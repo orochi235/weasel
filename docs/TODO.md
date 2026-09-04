@@ -38,6 +38,8 @@ Priority tags:
 **Selection, actions & UI panels**
 - Two implementations of an editable curve; the timeline built the second → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit's loupe drives itself with plain listeners, not bindings → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- Accent-coloured readouts are illegible in dark mode → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- A slim Slider reserves the default thumb's height for below-thumb readouts → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Every React Aria overlay inside a lab renders unthemed → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Four drag lifecycles, four different lost-pointer policies → [Tools & gestures](#tools--gestures)
 - labkit `registerSerializers` has no callers; instrument serializers never run → [Selection, actions & UI panels](#selection-actions--ui-panels)
@@ -1585,6 +1587,31 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) Richer text style controls** (font, size, weight pickers).
 
 ---
+
+### Accent-coloured readouts are illegible in dark mode
+
+`.readout` and `.readoutInput` in `Properties.module.css` paint text with
+`var(--wzl-accent)`, which is mode-invariant `#2e1f7a` — a very dark violet. On
+the dark theme's `--wzl-surface` that is near-invisible; a slider's value reads as
+a smudge. `--wzl-accent-fg` exists for exactly this and resolves to
+`--wzl-accent-strong` in dark, `--wzl-accent-base` in light.
+
+Not a one-line swap, which is why it is here rather than done: consumer apps theme
+their panels by overriding `--wzl-accent` (speech-balloons to gold, `apps/draw`
+likewise). Moving the readouts to `--wzl-accent-fg` would make those overrides stop
+reaching the readouts, so the fix has to decide whether `--wzl-accent-fg` should
+derive from `--wzl-accent` rather than from the accent primitives.
+
+Predates the control-skin arc; visible in `weasel-ui-properties-gallery--all` with
+`data-wzl-mode="dark"`.
+
+### A slim Slider reserves the default thumb's height for below-thumb readouts
+
+`Slider.module.css`'s `.readoutsBelow` hardcodes `height: 14px`, which was the
+thumb size before `density="slim"` existed. A slim slider asking for
+`readoutPlacement="below-thumb"` reserves 14px for an 8px thumb. Harmless today —
+`ZoomControl`, the only slim caller, uses `readoutPlacement="none"` — so this is a
+trap for the next slim caller rather than a live defect.
 
 ## Plugins & packaging
 
