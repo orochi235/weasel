@@ -440,11 +440,6 @@ a:hover { text-decoration: underline; }
   --wzl-input-bg: var(--ckd-surface-2);
   --wzl-accent: var(--ckd-accent-dim);
   --wzl-danger: #c64a3a;
-  --wzl-track-bg: var(--ckd-surface-2);
-  --wzl-track-border: var(--ckd-border-2);
-  --wzl-thumb-fill: var(--ckd-muted);
-  --wzl-thumb-border: var(--ckd-border);
-  --wzl-thumb-text: #000;
   /* Newer semantic tokens consumed by SelectionPanel / ColorField /
      NumberField / Input / Select / Switch — not covered by the
      deprecated-alias names above. */

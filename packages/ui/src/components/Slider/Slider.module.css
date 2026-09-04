@@ -56,9 +56,6 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   font: var(--wzl-font-weight-medium) var(--wzl-font-size-xs)/var(--wzl-leading-tight) ui-sans-serif, system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
-  /* Thumb text reads against `--wzl-thumb-fill`, which can differ from the
-   * surrounding panel text color. Default = dark; consumers re-skin via
-   * `--wzl-thumb-text` if they pick a dark thumb fill. */
   color: var(--wzl-fg-inverse);
   /* White halo so labels stay legible over wildly varying gradient
    * backgrounds (e.g. labels 'T' / 'P' / 'B' over teal, hue 200° over

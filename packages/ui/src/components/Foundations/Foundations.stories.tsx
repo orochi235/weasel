@@ -320,8 +320,6 @@ const COLOR_TOKEN_GROUPS: ColorGroup[] = [
     tokens: [
       '--wzl-text', '--wzl-text-muted', '--wzl-bg', '--wzl-muted',
       '--wzl-panel-bg', '--wzl-panel-border', '--wzl-input-bg',
-      '--wzl-track-bg', '--wzl-track-border',
-      '--wzl-thumb-fill', '--wzl-thumb-border', '--wzl-thumb-text',
       '--wzl-button-fill', '--wzl-button-fill-hover', '--wzl-button-fill-pressed', '--wzl-button-text',
     ],
   },
