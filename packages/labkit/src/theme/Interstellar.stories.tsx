@@ -91,11 +91,12 @@ function SwatchGrid({ tokens, title }: { tokens: readonly Swatch[]; title: strin
 function NebulaPreview() {
   return (
     <div>
-      <h3 className="lk-theme-doc__heading">Cosmic backdrop (`--wzl-backdrop`)</h3>
+      <h3 className="lk-theme-doc__heading">Cosmic backdrop</h3>
       <div className="lk-theme-doc__nebula" style={{ background: 'var(--wzl-backdrop)' }} />
       <p className="lk-theme-doc__note">
-        Default: four radial gradients (purple, pink, blue, then a dark void base). Override per-Lab
-        by passing <code>nebula={'{[colors]}'}</code> to the <code>&lt;Lab&gt;</code> component.
+        <code>--wzl-backdrop</code> — four radial gradients (purple, pink, blue) over a dark void
+        base. Override per-Lab by passing <code>nebula={'{[colors]}'}</code> to the{' '}
+        <code>&lt;Lab&gt;</code> component.
       </p>
     </div>
   );
