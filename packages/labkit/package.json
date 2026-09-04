@@ -93,7 +93,7 @@
     "dev:drag": "LABKIT_EXAMPLE=drag-lab vite",
     "dev:weasel": "LABKIT_EXAMPLE=weasel-lab vite",
     "build": "tsup && npm run build:dts && npm run build:css && npm run build:fonts",
-    "build:dts": "tsx scripts/build-dts.mts",
+    "build:dts": "NODE_OPTIONS=--max-old-space-size=8192 tsx scripts/build-dts.mts",
     "prepublishOnly": "npm run build",
     "build:css": "node scripts/build-css.mjs",
     "build:fonts": "mkdir -p dist/fonts && cp ../theme/fonts/*.woff2 dist/fonts/",
