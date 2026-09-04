@@ -8,6 +8,8 @@ import {
   Dialog,
   Field,
   formatNumber,
+  ICON_PATHS,
+  Icon,
   Input,
   KeyCap,
   MINUS_SIGN,
@@ -67,6 +69,13 @@ describe('weasel-ui passthrough', () => {
       // React components are either plain functions or forwardRef/memo objects
       expect(['function', 'object']).toContain(typeof C);
     }
+  });
+
+  it('re-exports the icon set, so a lab need not depend on weasel-ui itself', () => {
+    expect(['function', 'object']).toContain(typeof Icon);
+    expect(ICON_PATHS.layoutRows).toContain('<rect');
+    expect(ICON_PATHS.layoutColumns).toContain('<rect');
+    expect(ICON_PATHS.layoutGrid).toContain('<rect');
   });
 
   it('re-exports app-chrome primitives as React components', () => {

@@ -62,3 +62,6 @@ export const InfoIcon = (p: IconProps) => <Icon name="info" {...p} />;
 export const WarningIcon = (p: IconProps) => <Icon name="warning" {...p} />;
 export const ErrorIcon = (p: IconProps) => <Icon name="error" {...p} />;
 export const BusyIcon = (p: IconProps) => <Icon name="busy" {...p} />;
+export const LayoutRowsIcon = (p: IconProps) => <Icon name="layoutRows" {...p} />;
+export const LayoutColumnsIcon = (p: IconProps) => <Icon name="layoutColumns" {...p} />;
+export const LayoutGridIcon = (p: IconProps) => <Icon name="layoutGrid" {...p} />;
