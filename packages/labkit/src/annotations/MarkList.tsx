@@ -1,3 +1,4 @@
+import { Input } from '../passthrough/weasel-ui';
 import { useAnnotations } from './AnnotationsContext';
 import type { AnnotationMeaning } from './types';
 
@@ -43,12 +44,12 @@ export function MarkList({ meaning, config }: MarkListProps) {
                 ×
               </button>
             </div>
-            <input
+            <Input
               className="lk-mark-list__title"
               aria-label={`Title of ${a.kind} on ${a.target}`}
               value={a.title ?? ''}
               placeholder="Untitled"
-              onChange={(e) => marks.update(a.id, { title: e.target.value })}
+              onChange={(next) => marks.update(a.id, { title: next })}
             />
             {statuses.length > 0 ? (
               // A native select: it carries role, name and keyboard operability

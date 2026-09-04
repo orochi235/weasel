@@ -1099,13 +1099,13 @@ The only bare `<input type="text">` in labkit. It gets no rule anywhere, so it r
 - Modify: `packages/labkit/src/annotations/MarkList.tsx`
 - Modify: `packages/labkit/src/annotations/Annotations.less`
 
-- [ ] **Step 1: Check for an existing test**
+- [x] **Step 1: Check for an existing test**
 
 Run: `grep -rn 'lk-mark-list__title\|Title of' packages/labkit/src --include='*.test.tsx'`
 
 If a test queries by the `lk-mark-list__title` class, it must keep passing — `<Input>` accepts `className`, so pass it through. If it queries by the `Title of …` aria-label, that is preserved by `aria-label` below.
 
-- [ ] **Step 2: Swap the element**
+- [x] **Step 2: Swap the element**
 
 In `MarkList.tsx`, add the import:
 
@@ -1129,7 +1129,7 @@ Replace the bare input:
 
 `Input` wraps React Aria's `TextField`, whose `onChange` hands you the **string**, not an event. That is the one behavioural difference from the bare element — do not write `e.target.value`.
 
-- [ ] **Step 3: Give the class a layout-only rule**
+- [x] **Step 3: Give the class a layout-only rule**
 
 In `Annotations.less`, beside the other `.lk-mark-list__*` rules, add:
 
@@ -1141,16 +1141,16 @@ In `Annotations.less`, beside the other `.lk-mark-list__*` rules, add:
 }
 ```
 
-- [ ] **Step 4: Test and typecheck**
+- [x] **Step 4: Test and typecheck**
 
 Run: `npx tsc --noEmit && npx vitest run --project=labkit`
 Expected: PASS
 
-- [ ] **Step 5: Screenshot check**
+- [~] **Step 5: Screenshot check**
 
 Storybook: the labkit annotations story. The title field should now match the kit's other inputs. Both modes.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/labkit/src/annotations
