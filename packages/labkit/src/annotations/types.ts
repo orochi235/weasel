@@ -196,8 +196,15 @@ export interface AnnotationsApi {
   within(target: string, box: FracRect): Annotation[];
   /** Whether `a`'s position still describes the picture `config` produces. */
   isStale(a: Annotation, config: unknown): boolean;
-  /** Fires after every mutation. No delta: the scene does not diff, so
-   *  re-query rather than expecting a change payload. */
+  /** The marks the user currently has selected, across every target, as
+   *  annotation ids. Every one resolves through `get`. */
+  selection(): readonly string[];
+  /** Replace the selection. An id naming a target or a mark that is not
+   *  there is dropped, the way `update` and `remove` ignore one. */
+  setSelection(ids: readonly string[]): void;
+  /** Fires after every mutation *and* after a selection change — weasel keeps
+   *  a canvas's selection on the scene, so both already arrive on this one
+   *  channel. No delta: re-query, and re-read `selection()`. */
   subscribe(fn: () => void): () => void;
 
   /** Whether the last mark change on any target can be taken back. Weasel

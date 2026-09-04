@@ -132,6 +132,11 @@ const marks = useAnnotations();
 const stale = marks.query({ target: 'pane' }).filter((m) => marks.isStale(m, config));
 ```
 
+`selection()` answers which marks the user has picked on the overlay, as
+annotation ids, and `setSelection()` replaces them — the same selection
+weasel's own click, marquee and handles drive, merged across every target.
+A panel that opens a card for the clicked mark subscribes and re-reads it.
+
 It also carries `get`, `hitTest`, `within`, `add`, `update`, `setMeta`,
 `remove`, `undo`/`redo` and `capture`.
 

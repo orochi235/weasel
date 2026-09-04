@@ -155,6 +155,78 @@ describe('the annotation store', () => {
     expect(fn.mock.calls.length).toBe(before);
   });
 
+  // What the overlay's canvas does to a selection is `scene.setSelection` —
+  // weasel binds `useSelection` to the scene it is handed, so the selection is
+  // scene state, not React state, and these exercise the real write. What they
+  // do NOT reach is the pointer half: no click, marquee or handle runs here,
+  // because jsdom has no WebGL2 and the overlay's canvas never paints or
+  // hit-tests. That the canvas is bound to this scene is core's claim.
+  it('merges the selection across targets, and maps it back to annotation ids', () => {
+    const store = makeStore();
+    const onNaive = store.add(RING);
+    const onOcct = store.add({ ...RING, target: 'occt' });
+
+    store.setSelection([onOcct, onNaive]);
+    // Declaration order, not call order: one merged answer over several scenes.
+    expect(store.selection()).toEqual([onNaive, onOcct]);
+    expect(store.selection().map((id) => store.get(id)?.target)).toEqual(['naive', 'occt']);
+  });
+
+  it('reads back what the canvas would have written into the scene', () => {
+    const store = makeStore();
+    const id = store.add(RING);
+    const [node] = [...store.sceneFor('naive').renderOrder()];
+    if (node === undefined) throw new Error('unreachable');
+
+    store.sceneFor('naive').setSelection([node]);
+    expect(store.selection()).toEqual([id]);
+  });
+
+  it('replaces rather than adds, clearing a target the new selection omits', () => {
+    const store = makeStore();
+    const onNaive = store.add(RING);
+    const onOcct = store.add({ ...RING, target: 'occt' });
+
+    store.setSelection([onNaive]);
+    store.setSelection([onOcct]);
+    expect(store.selection()).toEqual([onOcct]);
+    expect(store.sceneFor('naive').getSelection()).toEqual([]);
+  });
+
+  it('drops an id it cannot resolve instead of throwing', () => {
+    const store = makeStore();
+    const id = store.add(RING);
+
+    expect(() => store.setSelection(['naive/nope', 'ghost/1', 'noslash', ''])).not.toThrow();
+    expect(store.selection()).toEqual([]);
+
+    store.setSelection([id, id]);
+    expect(store.selection()).toEqual([id]);
+  });
+
+  it('stops reporting a selected mark once it is removed', () => {
+    const store = makeStore();
+    const id = store.add(RING);
+    store.setSelection([id]);
+    store.remove(id);
+    expect(store.selection()).toEqual([]);
+  });
+
+  it('notifies subscribers when the selection changes', () => {
+    const store = makeStore();
+    const id = store.add(RING);
+    const fn = vi.fn();
+    store.subscribe(fn);
+
+    store.setSelection([id]);
+    expect(fn).toHaveBeenCalled();
+
+    // A write that changes nothing is not an event.
+    const before = fn.mock.calls.length;
+    store.setSelection([id]);
+    expect(fn.mock.calls.length).toBe(before);
+  });
+
   it('round-trips through JSON, and the snapshot is JSON-clean', () => {
     const store = makeStore();
     const id = store.add(RING, { angle: 'iso', shading: 'outline' });

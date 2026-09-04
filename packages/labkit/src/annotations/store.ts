@@ -221,6 +221,36 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
       return history.redo(historySceneAt);
     },
 
+    selection() {
+      const out: string[] = [];
+      for (const target of liveTargets()) {
+        const scene = scenes.get(target);
+        if (!scene) continue;
+        for (const node of scene.getSelection()) {
+          if (scene.get(node)) out.push(`${target}/${String(node)}`);
+        }
+      }
+      return out;
+    },
+
+    setSelection(ids) {
+      const wanted = new Map<string, string[]>();
+      for (const id of ids) {
+        const found = nodeOf(id);
+        if (!found) continue;
+        const node = String(found.node.id);
+        const on = wanted.get(found.target);
+        if (!on) wanted.set(found.target, [node]);
+        else if (!on.includes(node)) on.push(node);
+      }
+      for (const [target, scene] of scenes) {
+        const next = wanted.get(target) ?? [];
+        const now = scene.getSelection();
+        if (now.length === next.length && next.every((n, i) => String(now[i]) === n)) continue;
+        scene.setSelection(next.map(asNodeId));
+      }
+    },
+
     subscribe(fn) {
       subs.add(fn);
       return () => {
