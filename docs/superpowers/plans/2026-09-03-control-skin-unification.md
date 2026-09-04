@@ -1164,7 +1164,7 @@ git commit -m "render a mark's title with the kit's Input"
 **Files:**
 - Create: `.changeset/control-skin-unification.md`
 
-- [ ] **Step 1: Write it**
+- [x] **Step 1: Write it**
 
 ```markdown
 ---
@@ -1203,12 +1203,12 @@ Removes `--wzl-track-bg`, `--wzl-track-border`, `--wzl-thumb-fill`,
 
 Every changeset in this repo is `patch`. Do not write `minor` or `major`, and do not write a `bump-approved` marker — that needs Mike's explicit OK in conversation, every time.
 
-- [ ] **Step 2: Verify the bump check passes**
+- [x] **Step 2: Verify the bump check passes**
 
 Run: `npm run check:bumps`
 Expected: PASS
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add .changeset/control-skin-unification.md
