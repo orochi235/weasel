@@ -66,8 +66,46 @@
     }
   }
 
+  // Mirrors packages/ui/src/components/range.module.css so a consumer's bare
+  // range matches the kit's. A weasel-ui component's own module class outranks
+  // this, which is what keeps InlineRange's gradient track intact.
   :where(input[type="range"]) {
-    accent-color: var(--wzl-accent);
+    appearance: none;
+    -webkit-appearance: none;
+    height: 12px;
+    background: transparent;
+    cursor: pointer;
+
+    &::-webkit-slider-runnable-track {
+      height: var(--wzl-slider-track-h);
+      border-radius: var(--wzl-radius-sm);
+      background: color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-track-tint), transparent);
+    }
+
+    &::-moz-range-track {
+      height: var(--wzl-slider-track-h);
+      border-radius: var(--wzl-radius-sm);
+      background: color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-track-tint), transparent);
+    }
+
+    &::-webkit-slider-thumb {
+      appearance: none;
+      -webkit-appearance: none;
+      width: var(--wzl-slider-thumb-size);
+      height: var(--wzl-slider-thumb-size);
+      border: none;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-thumb-tint), transparent);
+      margin-top: calc((var(--wzl-slider-track-h) - var(--wzl-slider-thumb-size)) / 2);
+    }
+
+    &::-moz-range-thumb {
+      width: var(--wzl-slider-thumb-size);
+      height: var(--wzl-slider-thumb-size);
+      border: none;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-thumb-tint), transparent);
+    }
   }
 }
 

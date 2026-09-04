@@ -534,7 +534,7 @@ A bare `<input type="range">` inside `.lk-root` currently gets `accent-color` an
 **Files:**
 - Modify: `packages/labkit/src/theme/base.less:69-71`
 
-- [ ] **Step 1: Replace the rule**
+- [x] **Step 1: Replace the rule**
 
 Replace:
 
@@ -590,16 +590,16 @@ with:
   }
 ```
 
-- [ ] **Step 2: Test and typecheck**
+- [x] **Step 2: Test and typecheck**
 
 Run: `npx tsc --noEmit && npx vitest run --project=labkit`
 Expected: PASS
 
-- [ ] **Step 3: Screenshot check**
+- [~] **Step 3: Screenshot check**
 
 Storybook: any labkit lab story. Confirm `InlineRange` inside a lab still shows its gradient fill — if the bare rule has flattened it, the `:where()` specificity assumption is wrong and this task must be scoped to `input[type=range]:not([class])` instead. Check both modes.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/labkit/src/theme/base.less
