@@ -896,7 +896,7 @@ Four treatments today: `border-color` + `box-shadow` (RAC frames), a bare `outli
 - Modify: `packages/ui/src/components/Properties/Properties.module.css`
 - Modify: `packages/ui/src/components/ColorField/ColorField.module.css`
 
-- [ ] **Step 1: Property rows adopt it**
+- [x] **Step 1: Property rows adopt it**
 
 Replace:
 
@@ -918,11 +918,11 @@ with:
 }
 ```
 
-- [ ] **Step 2: The ghost readout sources the ring colour**
+- [x] **Step 2: The ghost readout sources the ring colour**
 
 In `.readoutInput:focus`, replace `border-color: var(--wzl-accent);` with `border-color: var(--wzl-focus-ring);`. Keep `background: var(--wzl-surface-sunken);` — the fill is the ghost's affordance and is not a focus ring.
 
-- [ ] **Step 3: The colour chip gains one**
+- [x] **Step 3: The colour chip gains one**
 
 In `ColorField.module.css`, after the `.color` rule, add:
 
@@ -934,16 +934,20 @@ In `ColorField.module.css`, after the `.color` rule, add:
 }
 ```
 
-- [ ] **Step 4: Test and typecheck**
+- [~] **Step 4: Test and typecheck**
 
 Run: `npx tsc --noEmit && npx vitest run --project=weasel-ui`
 Expected: PASS
 
-- [ ] **Step 5: Screenshot check**
+CSS-only change; controller instructed `npx tsc --noEmit` only (PASS) and no suite run — CSS modules aren't compiled by the `weasel-ui` vitest project, so it can't observe a stylesheet edit.
+
+- [~] **Step 5: Screenshot check**
 
 Tab through `Properties/Gallery` and the `ColorField` story in both modes. Every boxed field should show the same 1px ring. This is the one task in the plan that deliberately changes how the property rows look.
 
-- [ ] **Step 6: Commit**
+Skipped — controller instructed not to start Storybook.
+
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/ui/src/components/Properties/Properties.module.css packages/ui/src/components/ColorField/ColorField.module.css

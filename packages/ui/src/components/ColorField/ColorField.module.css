@@ -21,6 +21,12 @@
   cursor: pointer;
 }
 
+.color:focus-visible {
+  outline: none;
+  border-color: var(--wzl-focus-ring);
+  box-shadow: 0 0 0 1px var(--wzl-focus-ring);
+}
+
 /* Indeterminate (mixed) presentation: checkerboard overlay atop the
  * swatch. pointer-events: none so the input stays clickable. */
 .root[data-mixed] .chip::after {

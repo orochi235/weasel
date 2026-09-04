@@ -188,7 +188,7 @@
 
 .readoutInput:focus {
   background: var(--wzl-surface-sunken);
-  border-color: var(--wzl-accent);
+  border-color: var(--wzl-focus-ring);
 }
 
 .readoutInput::-webkit-inner-spin-button,
@@ -297,7 +297,9 @@
 
 .row input[type='text']:not(.readoutInput):focus,
 .row input[type='number']:focus {
-  outline: 1px solid var(--wzl-accent);
+  outline: none;
+  border-color: var(--wzl-focus-ring);
+  box-shadow: 0 0 0 1px var(--wzl-focus-ring);
 }
 
 /* Selects in property rows render borderless — chevron only, transparent
