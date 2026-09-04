@@ -319,8 +319,10 @@
   cursor: pointer;
 }
 
+/* An outline rather than the boxed family's inset ring: a property-row select
+   is borderless, so there is no border to recolour. */
 .row select:focus {
-  outline: 1px solid var(--wzl-accent);
+  outline: 1px solid var(--wzl-focus-ring);
   outline-offset: 2px;
 }
 
