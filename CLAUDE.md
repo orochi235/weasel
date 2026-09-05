@@ -156,6 +156,8 @@ Demos under `apps/site/demos/` are **terse and single-purpose** — each one exi
 
 Core's tests run under the root vitest config, not the package: `npx vitest run --project=kit`.
 The `core` workspace has no `test` script at all. `npm test` runs every project.
+`packages/text` and `packages/bidi` run under the `weasel-ui` project, not `kit` — and running
+vitest from inside a package finds zero files and looks like a pass.
 
 Typecheck is `npx tsc --noEmit` **from the repo root**. `tsc -p packages/core/tsconfig.json`
 exits 1 with 31 pre-existing `TS6059` errors on a clean tree — core's `outDir` pins `rootDir` to
