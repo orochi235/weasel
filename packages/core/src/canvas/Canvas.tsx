@@ -1110,8 +1110,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
         worldX,
         worldY,
         modifiers: m
-          ? { alt: m.alt, shift: m.shift, meta: m.meta, ctrl: m.ctrl, space: false }
-          : { alt: false, shift: false, meta: false, ctrl: false, space: false },
+          ? { alt: m.alt, shift: m.shift, meta: m.meta, ctrl: m.ctrl }
+          : { alt: false, shift: false, meta: false, ctrl: false },
         selection: effectiveSelectionRefForCtx.current,
         adapter: effectiveAdapterRefForCtx.current,
         applyOps: (ops: Op[], label: string) => {

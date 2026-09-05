@@ -9,7 +9,7 @@ export function makeCtx<S = undefined>(
   return {
     worldX: 10,
     worldY: 20,
-    modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
+    modifiers: { alt: false, shift: false, meta: false, ctrl: false },
     selection: { current: [], set: vi.fn() } as unknown as ToolCtx<S>['selection'],
     adapter: {},
     applyOps: vi.fn(),

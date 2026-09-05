@@ -5,11 +5,11 @@ import type { PolygonPath } from 'features/paths/types';
 import type { Action } from 'interactions/actions/registry';
 import { ActionDisabledReason } from 'interactions/actions/registry';
 import type { ActionDeps, InvocationCtx, OngoingHandle } from 'interactions/actions/invoker';
+import type { ModifierState } from 'core/modifierState';
 
 interface Pose { kind: 'path'; path: PolygonPath; closed: boolean }
 
-type Mods = { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean; space: boolean };
-const NO_MODS: Mods = { alt: false, ctrl: false, meta: false, shift: false, space: false };
+const NO_MODS: ModifierState = { alt: false, ctrl: false, meta: false, shift: false };
 
 function makeAdapter() {
   const added: Pose[] = [];
@@ -72,7 +72,7 @@ function setup(over: {
     return true;
   };
 
-  const ctx = (world: { x: number; y: number }, mods: Partial<Mods>, start?: { x: number; y: number }): InvocationCtx => ({
+  const ctx = (world: { x: number; y: number }, mods: Partial<ModifierState>, start?: { x: number; y: number }): InvocationCtx => ({
     world,
     screen: world,
     modifiers: { ...NO_MODS, ...mods },
@@ -102,7 +102,7 @@ function setup(over: {
     },
 
     /** A drag from `from` to `to`, with optional intermediate moves. */
-    drag(from: { x: number; y: number }, to: { x: number; y: number }, mods: Partial<Mods> = {}, vias: Array<{ x: number; y: number }> = []) {
+    drag(from: { x: number; y: number }, to: { x: number; y: number }, mods: Partial<ModifierState> = {}, vias: Array<{ x: number; y: number }> = []) {
       const action = actionOf('pen.dragHandle');
       const invoker = action.invoker;
       if (invoker?.timing !== 'ongoing') throw new Error('pen.dragHandle is not ongoing');
