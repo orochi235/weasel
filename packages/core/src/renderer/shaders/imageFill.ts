@@ -1,16 +1,29 @@
 /**
  * GLSL ES 3.0 sources for the image / pattern fill shader.
  *
+ * Two variants:
+ *   - Flat: IMAGE_VERT_SRC + IMAGE_FRAG_SRC, one quad under `u_opacity`.
+ *   - VOpacity: IMAGE_VOPACITY_VERT_SRC + IMAGE_VOPACITY_FRAG_SRC, which reads
+ *     the same factor off a per-vertex `a_opacity` instead. The batch draws
+ *     with it so quads differing only in opacity still share one draw.
+ *
+ * The fold is exact, not an approximation under conditions the way the solid
+ * batch's is: `u_opacity` multiplies the alpha *after* the color matrix, so
+ * moving it to an attribute cannot interact with the matrix. Group alpha
+ * multiplies there too, which is why the batch folds it into the same
+ * attribute and leaves `u_alpha` at 1.
+ *
  * Inputs:
  *   a_position  vec2   screen-space x,y of the quad corner
  *   a_uv        vec2   texture coordinate 0..1
+ *   a_opacity   float  VOpacity only — replaces `u_opacity` per vertex
  *
  * Uniforms:
  *   u_proj         mat3        screen → clip projection
  *   u_model        mat3        cumulative group transform
  *   u_sampler      sampler2D   image texture (TEXTURE0)
- *   u_opacity      float       overall opacity, 0..1
- *   u_alpha        float       group alpha, 0..1
+ *   u_opacity      float       flat only — overall opacity, 0..1
+ *   u_alpha        float       group alpha, 0..1 (the batch leaves it at 1)
  *   u_colorMatrix  mat4        color transform applied to sampled texel before premultiply
  *   u_colorBias    vec4        bias added after the matrix (identity = zero bias)
  *
@@ -49,9 +62,52 @@ void main() {
 }
 `;
 
+export const IMAGE_VOPACITY_VERT_SRC = /* glsl */ `#version 300 es
+in vec2 a_position;
+in vec2 a_uv;
+in float a_opacity;
+uniform mat3 u_proj;
+uniform mat3 u_model;
+out vec2 v_uv;
+out float v_opacity;
+void main() {
+  vec3 screen = u_model * vec3(a_position, 1.0);
+  vec3 clip   = u_proj  * vec3(screen.xy, 1.0);
+  gl_Position = vec4(clip.xy, 0.0, 1.0);
+  v_uv = a_uv;
+  v_opacity = a_opacity;
+}
+`;
+
+export const IMAGE_VOPACITY_FRAG_SRC = /* glsl */ `#version 300 es
+precision highp float;
+in vec2 v_uv;
+in float v_opacity;
+uniform sampler2D u_sampler;
+uniform float u_alpha;
+uniform mat4 u_colorMatrix;
+uniform vec4 u_colorBias;
+out vec4 outColor;
+void main() {
+  vec4 texel = texture(u_sampler, v_uv);
+  vec4 mapped = clamp(u_colorMatrix * texel + u_colorBias, 0.0, 1.0);
+  float a = mapped.a * v_opacity * u_alpha;
+  outColor = vec4(mapped.rgb * a, a);
+}
+`;
+
 export const IMAGE_FILL_UNIFORMS = [
   'u_proj', 'u_model', 'u_sampler', 'u_opacity', 'u_alpha',
   'u_colorMatrix', 'u_colorBias',
 ] as const;
 
 export const IMAGE_FILL_ATTRIBUTES = ['a_position', 'a_uv'] as const;
+
+/** `u_opacity` is absent: the driver strips a uniform the source never reads,
+ *  so looking it up here would cache an undefined location under a live name. */
+export const IMAGE_VOPACITY_UNIFORMS = [
+  'u_proj', 'u_model', 'u_sampler', 'u_alpha',
+  'u_colorMatrix', 'u_colorBias',
+] as const;
+
+export const IMAGE_VOPACITY_ATTRIBUTES = ['a_position', 'a_uv', 'a_opacity'] as const;
