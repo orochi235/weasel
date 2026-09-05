@@ -137,9 +137,6 @@ export function LayerStack({
       <div
         className={s.list}
         ref={drag.containerProps.ref as RefCallback<HTMLDivElement>}
-        onPointerMove={drag.containerProps.onPointerMove}
-        onPointerUp={drag.containerProps.onPointerUp}
-        onPointerCancel={drag.containerProps.onPointerCancel}
       >
         {items.map((item, i) => {
           const expanded = expandedIds.has(item.id);

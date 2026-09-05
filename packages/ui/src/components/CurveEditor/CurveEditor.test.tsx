@@ -72,7 +72,7 @@ describe('CurveEditor — drag', () => {
     const middle = circles[1] as Element;
 
     fireEvent.pointerDown(middle, { clientX: 100, clientY: 50, pointerId: 1 });
-    fireEvent.pointerMove(window, { clientX: 120, clientY: 30, pointerId: 1 });
+    fireEvent.pointerMove(document, { clientX: 120, clientY: 30, pointerId: 1 });
 
     expect(onInput).toHaveBeenCalled();
     const lastCall = onInput.mock.calls[onInput.mock.calls.length - 1][0];
@@ -96,8 +96,8 @@ describe('CurveEditor — drag', () => {
     const middle = container.querySelectorAll('[data-anchor-index]')[1] as Element;
 
     fireEvent.pointerDown(middle, { clientX: 100, clientY: 50, pointerId: 1 });
-    fireEvent.pointerMove(window, { clientX: 120, clientY: 30, pointerId: 1 });
-    fireEvent.pointerUp(window, { clientX: 120, clientY: 30, pointerId: 1 });
+    fireEvent.pointerMove(document, { clientX: 120, clientY: 30, pointerId: 1 });
+    fireEvent.pointerUp(document, { clientX: 120, clientY: 30, pointerId: 1 });
 
     expect(onChange).toHaveBeenCalledTimes(1);
     const [next, prev] = onChange.mock.calls[0];
@@ -118,7 +118,7 @@ describe('CurveEditor — drag', () => {
     );
     const middle = container.querySelectorAll('[data-anchor-index]')[1] as Element;
     fireEvent.pointerDown(middle, { clientX: 100, clientY: 50, pointerId: 1 });
-    fireEvent.pointerMove(window, { clientX: 500, clientY: 50, pointerId: 1 });
+    fireEvent.pointerMove(document, { clientX: 500, clientY: 50, pointerId: 1 });
 
     const last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(last[1].x).toBeLessThanOrEqual(1.0);
@@ -141,7 +141,7 @@ describe('CurveEditor — drag', () => {
     );
     const middle = container.querySelectorAll('[data-anchor-index]')[1] as Element;
     fireEvent.pointerDown(middle, { clientX: 80, clientY: 60, pointerId: 1 });
-    fireEvent.pointerMove(window, { clientX: 500, clientY: 50, pointerId: 1 });
+    fireEvent.pointerMove(document, { clientX: 500, clientY: 50, pointerId: 1 });
 
     const last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     // In 2D, the middle anchor can exceed the right neighbor's x (0.8)…
@@ -169,7 +169,7 @@ describe('CurveEditor — drag', () => {
     // Move the pointer to the middle of the plot vertically. In an
     // inverted yRange, plotY=30 corresponds to modelY=30 (not 100).
     fireEvent.pointerDown(first, { clientX: 0, clientY: 50, pointerId: 1 });
-    fireEvent.pointerMove(window, { clientX: 0, clientY: 30, pointerId: 1 });
+    fireEvent.pointerMove(document, { clientX: 0, clientY: 30, pointerId: 1 });
 
     const last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(last[0].y).toBeGreaterThanOrEqual(0);
@@ -195,7 +195,7 @@ describe('CurveEditor — drag', () => {
     );
     const first = container.querySelectorAll('[data-anchor-index]')[0] as Element;
     fireEvent.pointerDown(first, { clientX: 100, clientY: 100, pointerId: 1 });
-    fireEvent.pointerMove(window, { clientX: 60, clientY: 100, pointerId: 1 });
+    fireEvent.pointerMove(document, { clientX: 60, clientY: 100, pointerId: 1 });
 
     const last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(last[0].x).toBeGreaterThanOrEqual(0);
@@ -221,13 +221,13 @@ describe('CurveEditor — drag', () => {
     const first = container.querySelectorAll('[data-anchor-index]')[0] as Element;
     // Drag way above the plot — clamp should hit yHi=100 (not collapse).
     fireEvent.pointerDown(first, { clientX: 0, clientY: 50, pointerId: 1 });
-    fireEvent.pointerMove(window, { clientX: 0, clientY: -500, pointerId: 1 });
+    fireEvent.pointerMove(document, { clientX: 0, clientY: -500, pointerId: 1 });
     let last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(last[0].y).toBeLessThanOrEqual(100);
     expect(last[0].y).toBeGreaterThanOrEqual(0);
 
     // Drag way below — clamp should hit yLo=0.
-    fireEvent.pointerMove(window, { clientX: 0, clientY: 600, pointerId: 1 });
+    fireEvent.pointerMove(document, { clientX: 0, clientY: 600, pointerId: 1 });
     last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(last[0].y).toBeLessThanOrEqual(100);
     expect(last[0].y).toBeGreaterThanOrEqual(0);
@@ -277,7 +277,7 @@ describe('CurveEditor — add and delete', () => {
     // but commit waits for pointerUp.
     expect(onInput).toHaveBeenCalled();
     expect(onChange).not.toHaveBeenCalled();
-    fireEvent.pointerUp(window, { clientX: 100, clientY: 50, pointerId: 3 });
+    fireEvent.pointerUp(document, { clientX: 100, clientY: 50, pointerId: 3 });
     expect(onChange).toHaveBeenCalledTimes(1);
     const [next] = onChange.mock.calls[0];
     expect(next).toHaveLength(3);
@@ -395,7 +395,7 @@ describe('CurveEditor — endpoint constraints', () => {
     );
     const first = container.querySelectorAll('[data-anchor-index]')[0] as Element;
     fireEvent.pointerDown(first, { clientX: 0, clientY: 100, pointerId: 7 });
-    fireEvent.pointerMove(window, { clientX: 60, clientY: 30, pointerId: 7 });
+    fireEvent.pointerMove(document, { clientX: 60, clientY: 30, pointerId: 7 });
 
     const last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(last[0].x).toBe(0);   // x clamped to xRange[0]
@@ -415,7 +415,7 @@ describe('CurveEditor — endpoint constraints', () => {
     );
     const first = container.querySelectorAll('[data-anchor-index]')[0] as Element;
     fireEvent.pointerDown(first, { clientX: 0, clientY: 70, pointerId: 9 });
-    fireEvent.pointerMove(window, { clientX: 60, clientY: 30, pointerId: 9 });
+    fireEvent.pointerMove(document, { clientX: 60, clientY: 30, pointerId: 9 });
 
     const last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(last[0].x).toBeCloseTo(0, 6);
@@ -435,7 +435,7 @@ describe('CurveEditor — endpoint constraints', () => {
     );
     const first = container.querySelectorAll('[data-anchor-index]')[0] as Element;
     fireEvent.pointerDown(first, { clientX: 0, clientY: 100, pointerId: 8 });
-    fireEvent.pointerMove(window, { clientX: 60, clientY: 30, pointerId: 8 });
+    fireEvent.pointerMove(document, { clientX: 60, clientY: 30, pointerId: 8 });
 
     expect(onInput).toHaveBeenCalled();
     const last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
@@ -613,7 +613,84 @@ describe('CurveEditor — visual chrome', () => {
     const middle = container.querySelectorAll('[data-anchor-index]')[1];
     fireEvent.pointerDown(middle, { clientX: 100, clientY: 50, pointerId: 10 });
     expect(middle.getAttribute('class')).toMatch(/active/);
-    fireEvent.pointerUp(window, { clientX: 100, clientY: 50, pointerId: 10 });
+    fireEvent.pointerUp(document, { clientX: 100, clientY: 50, pointerId: 10 });
     expect(middle.getAttribute('class')).not.toMatch(/active/);
+  });
+});
+
+describe('CurveEditor — pointer session', () => {
+  function dragging() {
+    const onChange = vi.fn();
+    const onInput = vi.fn();
+    const initial = [{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }];
+    const { container } = render(
+      <CurveEditor value={initial} onInput={onInput} onChange={onChange} width={200} height={100} />,
+    );
+    const svg = container.querySelector('svg')!;
+    const middle = container.querySelectorAll('[data-anchor-index]')[1] as Element;
+    fireEvent.pointerDown(middle, { clientX: 100, clientY: 50, pointerId: 1, buttons: 1 });
+    return { svg, onInput, onChange };
+  }
+
+  it('commits a release that lands outside the plot', () => {
+    const outside = document.createElement('div');
+    document.body.appendChild(outside);
+    const { onChange } = dragging();
+    fireEvent.pointerMove(document, { clientX: 120, clientY: 30, pointerId: 1, buttons: 1 });
+    fireEvent.pointerUp(outside, { clientX: 900, clientY: 900, pointerId: 1, bubbles: true });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    outside.remove();
+  });
+
+  // The session cancels on `lostpointercapture` whether or not it asked for
+  // capture, so this asserts the wiring, not a path a browser reaches here.
+  it('cancels the gesture when the plot loses pointer capture', () => {
+    const { svg, onInput, onChange } = dragging();
+    fireEvent.pointerMove(document, { clientX: 120, clientY: 30, pointerId: 1, buttons: 1 });
+    const moves = onInput.mock.calls.length;
+    fireEvent(svg, new PointerEvent('lostpointercapture', { pointerId: 1, bubbles: true }));
+    fireEvent.pointerMove(document, { clientX: 160, clientY: 10, pointerId: 1, buttons: 1 });
+    expect(onInput.mock.calls.length).toBe(moves);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('treats a move with no button held as the release it missed', () => {
+    const { onInput, onChange } = dragging();
+    fireEvent.pointerMove(document, { clientX: 120, clientY: 30, pointerId: 1, buttons: 1 });
+    const moves = onInput.mock.calls.length;
+    fireEvent.pointerMove(document, { clientX: 160, clientY: 10, pointerId: 1, buttons: 0 });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onInput.mock.calls.length).toBe(moves);
+  });
+
+  it('unmounting mid-gesture stops the drag reaching the document', () => {
+    const onInput = vi.fn();
+    const { container, unmount } = render(
+      <CurveEditor value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]} onInput={onInput} width={200} height={100} />,
+    );
+    const middle = container.querySelectorAll('[data-anchor-index]')[1] as Element;
+    fireEvent.pointerDown(middle, { clientX: 100, clientY: 50, pointerId: 1, buttons: 1 });
+    unmount();
+    onInput.mockClear();
+    fireEvent.pointerMove(document, { clientX: 160, clientY: 10, pointerId: 1, buttons: 1 });
+    expect(onInput).not.toHaveBeenCalled();
+  });
+});
+
+// PROXY ASSERTION — see Ruler.test.tsx for why this is asserted rather than the
+// browser behaviour it stands in for. Consumers render their own SVG chrome
+// into the plot through `children`, and capture would kill the click on it.
+describe('CurveEditor — pointer capture', () => {
+  it('never captures the pointer', () => {
+    const capture = vi.fn();
+    Element.prototype.setPointerCapture = capture;
+    const { container } = render(
+      <CurveEditor value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]} onInput={() => {}} width={200} height={100} />,
+    );
+    const middle = container.querySelectorAll('[data-anchor-index]')[1] as Element;
+    fireEvent.pointerDown(middle, { clientX: 100, clientY: 50, pointerId: 1, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 120, clientY: 30, pointerId: 1, buttons: 1 });
+    fireEvent.pointerUp(document, { clientX: 120, clientY: 30, pointerId: 1 });
+    expect(capture).not.toHaveBeenCalled();
   });
 });

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
-import { cubicBezierEasing, type EasingSpec, type EventTrack, type SampledTrack, type TimelineTrack } from '@weasel-js/core';
+import { cubicBezierEasing, openPointerSession, type EasingSpec, type EventTrack, type PointerSession, type SampledTrack, type TimelineTrack } from '@weasel-js/core';
 import { ChevronIcon } from '../../icons';
 import s from './Timeline.module.css';
 import { createTimeScale, spanPercent, toFraction, toPercent, type TimeWindow } from './timeScale';
@@ -68,8 +68,8 @@ export function Lane(props: LaneProps): ReactElement {
     selectedSegment = null, onSelectSegment, onEasingCommit,
   } = props;
   const trackRef = useRef<HTMLDivElement | null>(null);
-  const endDragRef = useRef<(() => void) | null>(null);
-  useEffect(() => () => { endDragRef.current?.(); }, []);
+  const sessionRef = useRef<PointerSession | null>(null);
+  useEffect(() => () => { sessionRef.current?.cancel(); }, []);
 
   // Live position of a bezier handle being dragged; null once the drag ends.
   // Distinct from the committed spec on the key so a preview never writes it.
@@ -142,6 +142,15 @@ export function Lane(props: LaneProps): ReactElement {
     return { left: pct(t), bottom: `${vPct(v)}%` };
   };
 
+  // No pointer capture — see `Ruler`, same idiom across the timeline.
+  const beginDrag = (
+    down: ReactPointerEvent<HTMLDivElement>,
+    cb: { onMove: (ev: PointerEvent) => void; onEnd: (ev: PointerEvent) => void; onCancel: () => void },
+  ): void => {
+    sessionRef.current?.cancel();
+    sessionRef.current = openPointerSession(down.currentTarget, down, cb, { capture: false });
+  };
+
   const onHandlePointerDown = (segIndex: number, h: 0 | 1) => (e: ReactPointerEvent<HTMLDivElement>): void => {
     if (e.button !== 0 || !committedBezier) return;
     e.stopPropagation();
@@ -160,26 +169,22 @@ export function Lane(props: LaneProps): ReactElement {
       return next;
     };
 
-    const move = (ev: PointerEvent): void => {
-      points = at(ev);
-      setDragBezier({ keyIndex: segIndex, points });
-    };
-    const up = (ev: PointerEvent): void => {
-      points = at(ev);
-      onEasingCommit?.(segIndex, { bezier: points });
-      end();
-    };
     const end = (): void => {
       setDragBezier(null);
-      document.removeEventListener('pointermove', move);
-      document.removeEventListener('pointerup', up);
-      document.removeEventListener('pointercancel', end);
-      endDragRef.current = null;
+      sessionRef.current = null;
     };
-    document.addEventListener('pointermove', move);
-    document.addEventListener('pointerup', up);
-    document.addEventListener('pointercancel', end);
-    endDragRef.current = end;
+    beginDrag(e, {
+      onMove: (ev) => {
+        points = at(ev);
+        setDragBezier({ keyIndex: segIndex, points });
+      },
+      onEnd: (ev) => {
+        points = at(ev);
+        onEasingCommit?.(segIndex, { bezier: points });
+        end();
+      },
+      onCancel: end,
+    });
   };
 
   const onKeyPointerDown = (i: number) => (e: ReactPointerEvent<HTMLDivElement>): void => {
@@ -198,27 +203,23 @@ export function Lane(props: LaneProps): ReactElement {
 
     setDrag({ keyIndex: i, t: times[i], value: values[i] });
 
-    const move = (ev: PointerEvent): void => {
-      const v = valueOf(ev);
-      setDrag({ keyIndex: i, t: at(ev), value: v ?? values[i] });
-      if (v === undefined) onKeyInput(i, at(ev)); else onKeyInput(i, at(ev), v);
-    };
-    const up = (ev: PointerEvent): void => {
-      const v = valueOf(ev);
-      if (v === undefined) onKeyCommit(i, at(ev)); else onKeyCommit(i, at(ev), v);
-      end();
-    };
     const end = (): void => {
       setDrag(null);
-      document.removeEventListener('pointermove', move);
-      document.removeEventListener('pointerup', up);
-      document.removeEventListener('pointercancel', end);
-      endDragRef.current = null;
+      sessionRef.current = null;
     };
-    document.addEventListener('pointermove', move);
-    document.addEventListener('pointerup', up);
-    document.addEventListener('pointercancel', end);
-    endDragRef.current = end;
+    beginDrag(e, {
+      onMove: (ev) => {
+        const v = valueOf(ev);
+        setDrag({ keyIndex: i, t: at(ev), value: v ?? values[i] });
+        if (v === undefined) onKeyInput(i, at(ev)); else onKeyInput(i, at(ev), v);
+      },
+      onEnd: (ev) => {
+        const v = valueOf(ev);
+        if (v === undefined) onKeyCommit(i, at(ev)); else onKeyCommit(i, at(ev), v);
+        end();
+      },
+      onCancel: end,
+    });
   };
 
   const onKeyDown = (i: number, t: number) => (e: ReactKeyboardEvent<HTMLDivElement>): void => {

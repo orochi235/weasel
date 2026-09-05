@@ -99,9 +99,6 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
   return (
     <div
       className={cls}
-      onPointerMove={dragEnabled ? drag.containerProps.onPointerMove : undefined}
-      onPointerUp={dragEnabled ? drag.containerProps.onPointerUp : undefined}
-      onPointerCancel={dragEnabled ? drag.containerProps.onPointerCancel : undefined}
     >
       <table className={s.table}>
         <thead>

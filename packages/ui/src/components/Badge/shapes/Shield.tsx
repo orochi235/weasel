@@ -1,5 +1,6 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import type { ShapeModule } from '../types';
+import { useSvgBox } from '../useSvgBox';
 
 export interface ShieldParams {
   pointDepth?: number;
@@ -23,21 +24,7 @@ function ShieldComponent({ variant, focused, params }: {
 }) {
   const cfg = { ...DEFAULTS, ...params };
   const ref = useRef<SVGGElement>(null);
-  const [box, setBox] = useState({ w: 100, h: 100 });
-
-  useLayoutEffect(() => {
-    const svg = ref.current?.ownerSVGElement;
-    if (!svg) return;
-    const update = () => {
-      const r = svg.getBoundingClientRect();
-      if (r.width > 0 && r.height > 0) setBox({ w: r.width, h: r.height });
-    };
-    update();
-    if (typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(update);
-    ro.observe(svg);
-    return () => ro.disconnect();
-  }, []);
+  const box = useSvgBox(ref);
 
   const pd = Math.max(60, Math.min(cfg.pointDepth, 110));
   const sh = Math.max(20, Math.min(cfg.shoulderY, pd - 5));

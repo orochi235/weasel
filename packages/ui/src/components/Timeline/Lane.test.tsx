@@ -301,3 +301,79 @@ describe('Lane segment selection', () => {
     });
   });
 });
+
+describe('Lane pointer session', () => {
+  const graphBase = { ...base, mode: 'graph' as const };
+
+  it('commits a key drag released outside the lane', () => {
+    const outside = document.createElement('div');
+    document.body.appendChild(outside);
+    const onKeyCommit = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} onKeyCommit={onKeyCommit} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, clientY: 10, button: 0, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 350, clientY: 10, buttons: 1 });
+    fireEvent.pointerUp(outside, { clientX: 350, clientY: 10, bubbles: true });
+    expect(onKeyCommit).toHaveBeenCalledTimes(1);
+    expect(onKeyCommit).toHaveBeenCalledWith(1, 700);
+  });
+
+  // The session cancels on `lostpointercapture` whether or not it asked for
+  // capture, so this asserts the wiring, not a path a browser reaches here.
+  it('cancels a key drag when the key loses pointer capture', () => {
+    const onKeyCommit = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} onKeyCommit={onKeyCommit} />);
+    const key = screen.getAllByTestId('timeline-key')[1];
+    fireEvent.pointerDown(key, { clientX: 250, clientY: 10, button: 0, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 350, clientY: 10, buttons: 1 });
+    fireEvent(key, new PointerEvent('lostpointercapture', { pointerId: 0, bubbles: true }));
+    expect(screen.queryByTestId('timeline-key-ghost')).not.toBeInTheDocument();
+    fireEvent.pointerMove(document, { clientX: 400, clientY: 10, buttons: 1 });
+    expect(onKeyCommit).not.toHaveBeenCalled();
+  });
+
+  it('treats a move with no button held as the release the key drag missed', () => {
+    const onKeyCommit = vi.fn();
+    const onKeyInput = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} onKeyInput={onKeyInput} onKeyCommit={onKeyCommit} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, clientY: 10, button: 0, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 350, clientY: 10, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 400, clientY: 10, buttons: 0 });
+    expect(onKeyInput).toHaveBeenCalledTimes(1);
+    expect(onKeyCommit).toHaveBeenCalledTimes(1);
+    expect(onKeyCommit).toHaveBeenCalledWith(1, 800);
+    expect(screen.queryByTestId('timeline-key-ghost')).not.toBeInTheDocument();
+  });
+
+  it('commits a bezier-handle drag released outside the lane', () => {
+    const outside = document.createElement('div');
+    document.body.appendChild(outside);
+    const onEasingCommit = vi.fn();
+    const eased = {
+      kind: 'sampled', label: 'x', numeric: true,
+      keys: [{ t: 0, value: 0 }, { t: 500, value: 10, easing: { bezier: [0.25, 0.1, 0.25, 1] } }],
+      onTick: () => {},
+    } as unknown as Track;
+    render(<Lane {...graphBase} row={laneOf(eased)} selectedSegment={1} onEasingCommit={onEasingCommit} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-bezier-handle')[0], { clientX: 100, clientY: 10, button: 0, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 150, clientY: 10, buttons: 1 });
+    fireEvent.pointerUp(outside, { clientX: 150, clientY: 10, bubbles: true });
+    expect(onEasingCommit).toHaveBeenCalledTimes(1);
+    outside.remove();
+  });
+
+  it('treats a move with no button held as the release the handle drag missed', () => {
+    const onEasingCommit = vi.fn();
+    const eased = {
+      kind: 'sampled', label: 'x', numeric: true,
+      keys: [{ t: 0, value: 0 }, { t: 500, value: 10, easing: { bezier: [0.25, 0.1, 0.25, 1] } }],
+      onTick: () => {},
+    } as unknown as Track;
+    render(<Lane {...graphBase} row={laneOf(eased)} selectedSegment={1} onEasingCommit={onEasingCommit} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-bezier-handle')[0], { clientX: 100, clientY: 10, button: 0, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 150, clientY: 10, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 200, clientY: 10, buttons: 0 });
+    expect(onEasingCommit).toHaveBeenCalledTimes(1);
+    fireEvent.pointerMove(document, { clientX: 250, clientY: 10, buttons: 1 });
+    expect(onEasingCommit).toHaveBeenCalledTimes(1);
+  });
+});

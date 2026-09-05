@@ -1,5 +1,6 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode, PointerEvent as ReactPointerEvent, RefCallback } from 'react';
+import { openPointerSession, type PointerSession } from '@weasel-js/core';
 
 /** One row in a reorderable list. */
 export interface LayerListItem {
@@ -20,8 +21,20 @@ export interface UseReorderDragListOptions {
   items: LayerListItem[];
   selectedIds: string[];
   onReorder(ids: string[], targetIndex: number): void;
+  /** A press that was released without ever engaging a drag — the click a
+   *  list row means by it. Fires for locked rows too, which can be selected
+   *  but not dragged. Modifiers are read at press, not at release. */
+  onPress?(id: string, mods: PressModifiers): void;
   /** Pointer-move distance (px) before pending drag engages. Default 4. */
   threshold?: number;
+}
+
+/** Modifier keys held when a press began. */
+export interface PressModifiers {
+  shiftKey: boolean;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  altKey: boolean;
 }
 
 /**
@@ -34,31 +47,17 @@ export interface ReorderDragState {
 }
 
 /**
- * Props to spread onto the list container and each row, plus the live
- * {@link ReorderDragState}.
+ * A `ref` for the list container, an `onPointerDown` for each row, and the
+ * live {@link ReorderDragState}. The container ref is required, not optional
+ * decoration: it is what the drop index is measured against and what the
+ * pointer session is opened on.
  */
 export interface ReorderDragHandlers {
   rowProps(id: string, index: number): { onPointerDown(e: ReactPointerEvent): void };
   containerProps: {
     ref: RefCallback<HTMLElement>;
-    onPointerMove(e: ReactPointerEvent): void;
-    onPointerUp(e: ReactPointerEvent): void;
-    onPointerCancel(e: ReactPointerEvent): void;
   };
   state: ReorderDragState;
-}
-
-interface PendingState {
-  id: string;
-  sourceIndex: number;
-  startX: number;
-  startY: number;
-  pointerId: number;
-}
-
-interface ActiveState extends PendingState {
-  draggedIds: string[];
-  targetIndex: number;
 }
 
 /**
@@ -78,6 +77,28 @@ function unlockedSegment(items: readonly LayerListItem[], sourceIndex: number): 
   return [lo, hi];
 }
 
+/** Would dropping `draggedIds` at `targetIndex` leave a contiguous block where it already is? */
+function isNoopDrop(items: readonly LayerListItem[], draggedIds: readonly string[], targetIndex: number): boolean {
+  const indices = draggedIds
+    .map((id) => items.findIndex((it) => it.id === id))
+    .filter((i) => i >= 0)
+    .sort((a, b) => a - b);
+  const contiguous =
+    indices.length > 0 &&
+    indices.every((v, i) => {
+      if (i === 0) return true;
+      const prev = indices[i - 1];
+      return prev !== undefined && v === prev + 1;
+    });
+  const first = indices[0];
+  const last = indices[indices.length - 1];
+  return contiguous
+    && first !== undefined
+    && last !== undefined
+    && targetIndex >= first
+    && targetIndex <= last + 1;
+}
+
 /**
  * Drag-to-reorder for a vertical list of rows. Dragging a row that is part of
  * the current selection drags the whole selection; dragging any other row
@@ -85,17 +106,20 @@ function unlockedSegment(items: readonly LayerListItem[], sourceIndex: number): 
  * drop. A drop that would leave a contiguous block where it already is does
  * not call `onReorder`.
  *
- * The pointer is captured on the row, so a drag that leaves the list still
- * tracks and still releases cleanly.
+ * A press opens an `openPointerSession` on the *container*, which owns the
+ * rest of the gesture: a drag that leaves the list still tracks, a release
+ * anywhere still drops, and a release the window never delivered still ends
+ * the drag. The container is the origin rather than the row because rows come
+ * and go as the list re-renders, and a drag must outlive the row it grabbed.
  */
 export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDragHandlers {
-  const { threshold = 4 } = opts;
   const optsRef = useRef(opts);
   optsRef.current = opts;
   const containerRef = useRef<HTMLElement | null>(null);
-  const pendingRef = useRef<PendingState | null>(null);
-  const activeRef = useRef<ActiveState | null>(null);
+  const sessionRef = useRef<PointerSession | null>(null);
   const [state, setState] = useState<ReorderDragState>({ draggedIds: null, targetIndex: null });
+
+  useEffect(() => () => { sessionRef.current?.cancel(); }, []);
 
   const computeTargetIndex = useCallback((clientY: number, sourceIndex: number): number => {
     const [lo, hi] = unlockedSegment(optsRef.current.items, sourceIndex);
@@ -116,98 +140,63 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
     containerRef.current = el;
   }, []);
 
-  const onPointerDownRow = useCallback((id: string, index: number, e: ReactPointerEvent) => {
-    // Locked items cannot be dragged — skip recording the pending state so
-    // pointer-move cannot engage. Plain click still works because LayerList
-    // tracks click intent in its own ref, separate from drag candidacy.
-    const item = optsRef.current.items[index];
-    if (item?.locked) return;
-    // Capture the pointer to the row so subsequent move/up events keep firing
-    // (on the row, bubbling to the container) even when the user drags
-    // outside the list's bounding box. Without capture, releasing outside
-    // the container leaves the drag state stuck because pointerup fires on
-    // the document, not the list.
-    try { (e.currentTarget as Element).setPointerCapture?.(e.pointerId); } catch { /* unsupported / already captured */ }
-    pendingRef.current = {
-      id,
-      sourceIndex: index,
-      startX: e.clientX,
-      startY: e.clientY,
-      pointerId: e.pointerId,
-    };
-  }, []);
-
   const reset = useCallback(() => {
-    pendingRef.current = null;
-    activeRef.current = null;
+    sessionRef.current = null;
     setState({ draggedIds: null, targetIndex: null });
   }, []);
 
-  const onPointerMove = useCallback((e: ReactPointerEvent) => {
-    const active = activeRef.current;
-    if (active) {
-      const targetIndex = computeTargetIndex(e.clientY, active.sourceIndex);
-      if (targetIndex !== active.targetIndex) {
-        active.targetIndex = targetIndex;
-        setState({ draggedIds: active.draggedIds, targetIndex });
-      }
-      return;
-    }
-    const pending = pendingRef.current;
-    if (!pending) return;
-    const dx = e.clientX - pending.startX;
-    const dy = e.clientY - pending.startY;
-    if (Math.hypot(dx, dy) < threshold) return;
-    // Engage.
-    const selected = optsRef.current.selectedIds;
-    const inSelection = selected.includes(pending.id);
-    const [lo, hi] = unlockedSegment(optsRef.current.items, pending.sourceIndex);
-    const draggedIds = (inSelection ? [...selected] : [pending.id]).filter((id) => {
-      const i = optsRef.current.items.findIndex((it) => it.id === id);
-      return i >= lo && i < hi;
+  const onPointerDownRow = useCallback((id: string, index: number, e: ReactPointerEvent) => {
+    const container = containerRef.current;
+    if (!container || sessionRef.current) return;
+
+    // A locked row still opens a session: it cannot be dragged, but the press
+    // has to reach `onPress` for the row to be selectable at all.
+    const draggable = !optsRef.current.items[index]?.locked;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const mods: PressModifiers = {
+      shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey,
+    };
+    let active: { draggedIds: string[]; targetIndex: number } | null = null;
+
+    sessionRef.current = openPointerSession(container, e, {
+      onMove: (ev) => {
+        if (active) {
+          const targetIndex = computeTargetIndex(ev.clientY, index);
+          if (targetIndex === active.targetIndex) return;
+          active.targetIndex = targetIndex;
+          setState({ draggedIds: active.draggedIds, targetIndex });
+          return;
+        }
+        if (!draggable) return;
+        if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < (optsRef.current.threshold ?? 4)) return;
+        const selected = optsRef.current.selectedIds;
+        const [lo, hi] = unlockedSegment(optsRef.current.items, index);
+        const draggedIds = (selected.includes(id) ? [...selected] : [id]).filter((x) => {
+          const i = optsRef.current.items.findIndex((it) => it.id === x);
+          return i >= lo && i < hi;
+        });
+        const targetIndex = computeTargetIndex(ev.clientY, index);
+        active = { draggedIds, targetIndex };
+        setState({ draggedIds, targetIndex });
+      },
+      onEnd: (ev) => {
+        if (active) {
+          const targetIndex = computeTargetIndex(ev.clientY, index);
+          if (!isNoopDrop(optsRef.current.items, active.draggedIds, targetIndex)) {
+            optsRef.current.onReorder(active.draggedIds, targetIndex);
+          }
+        } else {
+          optsRef.current.onPress?.(id, mods);
+        }
+        reset();
+      },
+      // Every cancel reason — the browser's, a lost capture, an unmount —
+      // says the gesture was interrupted rather than aimed, so the rows stay
+      // where they were.
+      onCancel: reset,
     });
-    const targetIndex = computeTargetIndex(e.clientY, pending.sourceIndex);
-    activeRef.current = { ...pending, draggedIds, targetIndex };
-    setState({ draggedIds, targetIndex });
-  }, [computeTargetIndex, threshold]);
-
-  const onPointerUp = useCallback((e: ReactPointerEvent) => {
-    const active = activeRef.current;
-    if (!active) {
-      reset();
-      return;
-    }
-    const targetIndex = computeTargetIndex(e.clientY, active.sourceIndex);
-    // Skip no-op: target lands inside the dragged-ids contiguous block.
-    const items = optsRef.current.items;
-    const indices = active.draggedIds
-      .map((id) => items.findIndex((it) => it.id === id))
-      .filter((i) => i >= 0)
-      .sort((a, b) => a - b);
-    const isContiguous =
-      indices.length > 0 &&
-      indices.every((v, i) => {
-        if (i === 0) return true;
-        const prev = indices[i - 1];
-        return prev !== undefined && v === prev + 1;
-      });
-    const first = indices[0];
-    const last = indices[indices.length - 1];
-    const wouldBeNoop =
-      isContiguous &&
-      first !== undefined &&
-      last !== undefined &&
-      targetIndex >= first &&
-      targetIndex <= last + 1;
-    if (!wouldBeNoop) {
-      optsRef.current.onReorder(active.draggedIds, targetIndex);
-    }
-    reset();
   }, [computeTargetIndex, reset]);
-
-  const onPointerCancel = useCallback(() => {
-    reset();
-  }, [reset]);
 
   return {
     rowProps: (id, index) => ({
@@ -215,9 +204,6 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
     }),
     containerProps: {
       ref: refCb,
-      onPointerMove,
-      onPointerUp,
-      onPointerCancel,
     },
     state,
   };

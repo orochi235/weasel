@@ -2,18 +2,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { DataGrid } from './DataGrid';
 
-// jsdom omits PointerEvent.
-if (typeof (globalThis as { PointerEvent?: unknown }).PointerEvent === 'undefined') {
-  class PolyfillPointerEvent extends MouseEvent {
-    pointerId: number;
-    constructor(type: string, init: PointerEventInit = {}) {
-      super(type, init);
-      this.pointerId = init.pointerId ?? 1;
-    }
-  }
-  (globalThis as { PointerEvent?: unknown }).PointerEvent = PolyfillPointerEvent;
-}
-
 interface Row { id: string; name: string; count: number }
 const ROWS: Row[] = [
   { id: 'a', name: 'Alpha', count: 3 },

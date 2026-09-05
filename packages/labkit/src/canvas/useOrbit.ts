@@ -1,4 +1,11 @@
-import { type PointerEvent, useCallback, useRef, type WheelEvent } from 'react';
+import { openPointerSession, type PointerSession } from '@weasel-js/core';
+import {
+  type PointerEvent as ReactPointerEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  type WheelEvent,
+} from 'react';
 
 /** A point in the space the instrument works in. */
 export interface Vec3 {
@@ -70,15 +77,12 @@ export interface UseOrbitOptions {
 
 export interface OrbitHandlers {
   onWheel: (e: WheelEvent<HTMLElement>) => void;
-  onPointerDown: (e: PointerEvent<HTMLElement>) => void;
-  onPointerMove: (e: PointerEvent<HTMLElement>) => void;
-  onPointerUp: (e: PointerEvent<HTMLElement>) => void;
+  onPointerDown: (e: ReactPointerEvent<HTMLElement>) => void;
   onDoubleClick: () => void;
   isDragging: () => boolean;
 }
 
 interface DragState {
-  pointerId: number;
   startX: number;
   startY: number;
   startView: OrbitView;
@@ -95,8 +99,11 @@ export function useOrbit({
   maxDistance = 1000,
 }: UseOrbitOptions): OrbitHandlers {
   const dragRef = useRef<DragState | null>(null);
+  const sessionRef = useRef<PointerSession | null>(null);
   const viewRef = useRef(view);
   viewRef.current = view;
+  const onViewChangeRef = useRef(onViewChange);
+  onViewChangeRef.current = onViewChange;
   const homeRef = useRef(home ?? view);
   if (home) homeRef.current = home;
 
@@ -108,42 +115,42 @@ export function useOrbit({
     [onViewChange, minDistance, maxDistance],
   );
 
-  const onPointerDown = useCallback((e: PointerEvent<HTMLElement>) => {
-    if (e.button !== 0) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    dragRef.current = {
-      pointerId: e.pointerId,
-      startX: e.clientX,
-      startY: e.clientY,
-      startView: viewRef.current,
-      moved: false,
-    };
+  const clearDrag = useCallback(() => {
+    dragRef.current = null;
+    sessionRef.current = null;
   }, []);
 
-  const onPointerMove = useCallback(
-    (e: PointerEvent<HTMLElement>) => {
-      const drag = dragRef.current;
-      if (!drag || drag.pointerId !== e.pointerId) return;
-      const dx = e.clientX - drag.startX;
-      const dy = e.clientY - drag.startY;
-      if (!drag.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
-      drag.moved = true;
-      onViewChange(orbitAfterDrag(drag.startView, dx, dy));
+  const onPointerDown = useCallback(
+    (e: ReactPointerEvent<HTMLElement>) => {
+      if (e.button !== 0) return;
+      const drag: DragState = {
+        startX: e.clientX,
+        startY: e.clientY,
+        startView: viewRef.current,
+        moved: false,
+      };
+      dragRef.current = drag;
+      sessionRef.current = openPointerSession(e.currentTarget, e, {
+        onMove: (ev) => {
+          const dx = ev.clientX - drag.startX;
+          const dy = ev.clientY - drag.startY;
+          if (!drag.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+          drag.moved = true;
+          onViewChangeRef.current(orbitAfterDrag(drag.startView, dx, dy));
+        },
+        onEnd: clearDrag,
+        // A cancelled turn keeps where it got to: every move was committed as
+        // it arrived, so there is nothing left to undo.
+        onCancel: clearDrag,
+      });
     },
-    [onViewChange],
+    [clearDrag],
   );
 
-  const onPointerUp = useCallback((e: PointerEvent<HTMLElement>) => {
-    const drag = dragRef.current;
-    if (!drag || drag.pointerId !== e.pointerId) return;
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    }
-    dragRef.current = null;
-  }, []);
+  useEffect(() => () => sessionRef.current?.cancel(), []);
 
   const onDoubleClick = useCallback(() => onViewChange(homeRef.current), [onViewChange]);
   const isDragging = useCallback(() => dragRef.current?.moved === true, []);
 
-  return { onWheel, onPointerDown, onPointerMove, onPointerUp, onDoubleClick, isDragging };
+  return { onWheel, onPointerDown, onDoubleClick, isDragging };
 }

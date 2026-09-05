@@ -1,10 +1,11 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode, type CSSProperties } from 'react';
 import { useVisibleRaf } from '@weasel-js/core';
 import s from './Badge.module.css';
 import { SHAPES, type BadgeShapeParams } from './shapes';
 import { BASES, type BadgeBase, type BadgeBaseParams } from './bases';
 import { EFFECTS, type EffectSpec, type BadgeEffect } from './effects';
 import type { BadgeShape, BadgeTone, BadgeVariant, BadgeSize } from './types';
+import { useSvgBox } from './useSvgBox';
 
 interface BadgeBaseProps {
   tone?: BadgeTone;
@@ -138,21 +139,7 @@ export function Badge(props: BadgeProps) {
     : (shapeComposeSpec?.effects as EffectSpec[] | undefined) ?? effects;
   const composeBaseParams = composeBase ? { ...(composeBase.defaults ?? {}), ...(resolvedBaseParams ?? {}) } : null;
   const decoRef = useRef<SVGSVGElement>(null);
-  const [box, setBox] = useState({ w: 100, h: 100 });
-  useLayoutEffect(() => {
-    if (!composeBase) return;
-    const svg = decoRef.current;
-    if (!svg) return;
-    const update = () => {
-      const r = svg.getBoundingClientRect();
-      if (r.width > 0 && r.height > 0) setBox({ w: r.width, h: r.height });
-    };
-    update();
-    if (typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(update);
-    ro.observe(svg);
-    return () => ro.disconnect();
-  }, [composeBase]);
+  const box = useSvgBox(decoRef, composeBase);
 
   const sampler = composeBase ? composeBase.build(composeBaseParams, box.w, box.h) : null;
 

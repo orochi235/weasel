@@ -78,11 +78,40 @@ const drawOne = (node: Node<D, L, P>, pose: P, _view: View): DrawCommand[] => [{
 
 const identityPoseBounds = (p: P): Bounds => p;
 
-function pointerEvent(canvas: HTMLElement, kind: 'pointerDown' | 'pointerMove' | 'pointerUp' | 'pointerCancel', opts: { x: number; y: number; pointerId?: number }) {
-  const ev = createEvent[kind](canvas, { pointerId: opts.pointerId ?? 1 });
+function pointerEvent(
+  target: HTMLElement | Document,
+  kind: 'pointerDown' | 'pointerMove' | 'pointerUp' | 'pointerCancel',
+  opts: { x: number; y: number; pointerId?: number; buttons?: number },
+) {
+  const ev = createEvent[kind](target as HTMLElement, {
+    pointerId: opts.pointerId ?? 1,
+    ...(opts.buttons === undefined ? {} : { buttons: opts.buttons }),
+  });
   Object.defineProperty(ev, 'clientX', { value: opts.x });
   Object.defineProperty(ev, 'clientY', { value: opts.y });
   return ev;
+}
+
+/** A mounted minimap with its capture methods stubbed. */
+function mountMinimap() {
+  const scene = makeScene();
+  const onChange = vi.fn();
+  const { container } = render(
+    <MinimapCanvas
+      scene={scene}
+      mainView={{ x: 0, y: 0, scale: { x: 1, y: 1 } }}
+      mainViewDims={{ width: 400, height: 300 }}
+      onMainViewChange={onChange}
+      width={100}
+      height={100}
+      drawOne={drawOne}
+    />,
+  );
+  const canvas = container.querySelector('canvas')!;
+  canvas.setPointerCapture = vi.fn();
+  canvas.releasePointerCapture = vi.fn();
+  canvas.hasPointerCapture = vi.fn().mockReturnValue(true);
+  return { canvas, onChange };
 }
 
 // ---------------------------------------------------------------------------
@@ -253,6 +282,42 @@ describe('<MinimapCanvas>', () => {
 
     onChange.mockClear();
     fireEvent(canvas, pointerEvent(canvas, 'pointerMove', { x: 50, y: 50 }));
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('tracks a drag that leaves the minimap and releases off it', () => {
+    const { canvas, onChange } = mountMinimap();
+
+    fireEvent(canvas, pointerEvent(canvas, 'pointerDown', { x: 10, y: 10 }));
+    fireEvent(document, pointerEvent(document, 'pointerMove', { x: 30, y: 30 }));
+    expect(onChange).toHaveBeenCalledTimes(2);
+
+    fireEvent(document, pointerEvent(document, 'pointerUp', { x: 30, y: 30 }));
+    onChange.mockClear();
+    fireEvent(document, pointerEvent(document, 'pointerMove', { x: 60, y: 60 }));
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('ends the drag when capture is lost mid-gesture', () => {
+    const { canvas, onChange } = mountMinimap();
+
+    fireEvent(canvas, pointerEvent(canvas, 'pointerDown', { x: 10, y: 10 }));
+    canvas.dispatchEvent(new PointerEvent('lostpointercapture', { pointerId: 1, bubbles: true }));
+
+    onChange.mockClear();
+    fireEvent(canvas, pointerEvent(canvas, 'pointerMove', { x: 50, y: 50 }));
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('reads a move with no button held as the release that never arrived', () => {
+    const { canvas, onChange } = mountMinimap();
+
+    fireEvent(canvas, pointerEvent(canvas, 'pointerDown', { x: 10, y: 10, buttons: 1 }));
+    onChange.mockClear();
+    fireEvent(document, pointerEvent(document, 'pointerMove', { x: 30, y: 30, buttons: 0 }));
+    expect(onChange).not.toHaveBeenCalled();
+
+    fireEvent(canvas, pointerEvent(canvas, 'pointerMove', { x: 50, y: 50, buttons: 0 }));
     expect(onChange).not.toHaveBeenCalled();
   });
 

@@ -8,12 +8,11 @@
  * the main canvas is currently looking. Click anywhere in the minimap to
  * recenter the main view on that world point; drag to pan continuously.
  *
- * Pointer-isolated from the main canvas: native `pointerdown` / `pointermove`
- * / `pointerup` / `pointercancel` listeners are attached to the underlying
- * `<canvas>` via `addEventListener` (not React-synthetic) with
- * `setPointerCapture`, so a drag that leaves the minimap rect still tracks
- * cleanly. No participation in the tool / action / dispatcher layer — this
- * is a single one-off click+drag gesture with a fixed effect (per the spec).
+ * Pointer-isolated from the main canvas: a native `pointerdown` listener on
+ * the underlying `<canvas>` opens an `openPointerSession`, which owns the
+ * rest of the drag. No participation in the tool / action / dispatcher layer
+ * — this is a single one-off click+drag gesture with a fixed effect (per the
+ * spec).
  */
 import {
   useCallback,
@@ -23,6 +22,7 @@ import {
   useSyncExternalStore,
 } from 'react';
 import type { Ref } from 'react';
+import { openPointerSession, type PointerSession } from '../interactions/gestures/pointerSession';
 import { SceneViewCanvas } from './SceneViewCanvas';
 import {
   computeFitView,
@@ -129,19 +129,12 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
   // Pointer handling
   // -------------------------------------------------------------------------
   //
-  // We attach native listeners (not React-synthetic) because:
-  //   1. `setPointerCapture` semantics demand the element-level event.
-  //   2. We need pointermove + pointerup/pointercancel that fire even when
-  //      the pointer leaves the minimap's bounding rect — capture routes
-  //      them back to the canvas regardless.
-  //
   // The "latest" pattern (refs holding the current mainView / dims / setter
   // / fitView) lets the listeners read up-to-date values without re-binding
   // every frame.
 
   const localCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const dragActiveRef = useRef(false);
-  const capturedPointerIdRef = useRef<number | null>(null);
+  const sessionRef = useRef<PointerSession | null>(null);
 
   const mainViewRef = useRef(mainView);
   const mainViewDimsRef = useRef(mainViewDims);
@@ -174,43 +167,19 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
 
   const handlePointerDown = useCallback((ev: PointerEvent) => {
     const canvas = localCanvasRef.current;
-    if (!canvas) return;
+    if (!canvas || sessionRef.current) return;
     // Only act on the primary button for mouse; touch/pen always proceed.
     if (ev.pointerType === 'mouse' && ev.button !== 0) return;
-    try {
-      canvas.setPointerCapture(ev.pointerId);
-    } catch {
-      // jsdom + some environments throw on setPointerCapture for synthetic
-      // events; ignore — we still drive the recenter via the listeners.
-    }
-    dragActiveRef.current = true;
-    capturedPointerIdRef.current = ev.pointerId;
+    // A recenter is applied the moment it is computed and there is nothing
+    // to commit, so a cancelled drag ends exactly where a released one does.
+    const done = () => { sessionRef.current = null; };
+    sessionRef.current = openPointerSession(canvas, ev, {
+      onMove: recenterFromPointer,
+      onEnd: done,
+      onCancel: done,
+    });
     recenterFromPointer(ev);
   }, [recenterFromPointer]);
-
-  const handlePointerMove = useCallback((ev: PointerEvent) => {
-    if (!dragActiveRef.current) return;
-    if (capturedPointerIdRef.current !== null
-      && ev.pointerId !== capturedPointerIdRef.current) {
-      return;
-    }
-    recenterFromPointer(ev);
-  }, [recenterFromPointer]);
-
-  const releaseCapture = useCallback((ev: PointerEvent) => {
-    const canvas = localCanvasRef.current;
-    if (canvas) {
-      try {
-        if (canvas.hasPointerCapture?.(ev.pointerId)) {
-          canvas.releasePointerCapture(ev.pointerId);
-        }
-      } catch {
-        // Same rationale as setPointerCapture: tolerate environment quirks.
-      }
-    }
-    dragActiveRef.current = false;
-    capturedPointerIdRef.current = null;
-  }, []);
 
   // Wire native listeners on the canvas. `<SceneViewCanvas>` doesn't expose
   // its element except via `canvasRef`, so we route both our internal ref
@@ -228,16 +197,11 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
     const canvas = localCanvasRef.current;
     if (!canvas) return;
     canvas.addEventListener('pointerdown', handlePointerDown);
-    canvas.addEventListener('pointermove', handlePointerMove);
-    canvas.addEventListener('pointerup', releaseCapture);
-    canvas.addEventListener('pointercancel', releaseCapture);
     return () => {
       canvas.removeEventListener('pointerdown', handlePointerDown);
-      canvas.removeEventListener('pointermove', handlePointerMove);
-      canvas.removeEventListener('pointerup', releaseCapture);
-      canvas.removeEventListener('pointercancel', releaseCapture);
+      sessionRef.current?.cancel();
     };
-  }, [handlePointerDown, handlePointerMove, releaseCapture]);
+  }, [handlePointerDown]);
 
   return (
     <SceneViewCanvas

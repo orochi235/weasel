@@ -54,13 +54,13 @@ describe('PointPlotter — drag', () => {
     );
     const anchor = container.querySelector('circle[data-anchor-index]')!;
     fireEvent.pointerDown(anchor, { clientX: 100, clientY: 50, pointerId: 1 });
-    fireEvent.pointerMove(window, { clientX: 120, clientY: 30, pointerId: 1 });
+    fireEvent.pointerMove(document, { clientX: 120, clientY: 30, pointerId: 1 });
     expect(onInput).toHaveBeenCalled();
     const lastNext = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(lastNext[0].x).toBeCloseTo(0.6, 6);
     expect(lastNext[0].y).toBeCloseTo(0.7, 6);
 
-    fireEvent.pointerUp(window, { clientX: 120, clientY: 30, pointerId: 1 });
+    fireEvent.pointerUp(document, { clientX: 120, clientY: 30, pointerId: 1 });
     expect(onChange).toHaveBeenCalledTimes(1);
     const [next, prev] = onChange.mock.calls[0];
     expect(prev).toEqual(initial);

@@ -1,4 +1,5 @@
-import { useCallback, useRef, type KeyboardEvent, type PointerEvent } from 'react';
+import { useCallback, useEffect, useRef, type KeyboardEvent, type PointerEvent } from 'react';
+import { openPointerSession, type PointerSession } from '@weasel-js/core';
 import s from './ResizeHandle.module.css';
 
 /**
@@ -76,39 +77,55 @@ export function ResizeHandle(props: ResizeHandleProps) {
     step = 1, ariaLabel, className,
   } = props;
 
-  // Drag origin. Captured on pointerdown so every move is measured against
+  // The session reads current props rather than the ones the pointerdown
+  // closed over, so a bound or a step changed mid-drag takes effect.
+  const latest = useRef(props);
+  latest.current = props;
+
+  // Drag origin. Measured on pointerdown so every move is measured against
   // the gesture's start rather than the previous sample — accumulating
   // per-sample deltas drifts once the pointer leaves the clamped range.
-  const drag = useRef<{ origin: number; startValue: number } | null>(null);
+  const drag = useRef<{ origin: number; startValue: number; last: number } | null>(null);
+  const session = useRef<PointerSession | null>(null);
+  useEffect(() => () => { session.current?.cancel(); }, []);
 
-  const axisOf = useCallback(
-    (e: PointerEvent<HTMLDivElement>) => (orientation === 'vertical' ? e.clientX : e.clientY),
-    [orientation],
-  );
+  const valueAt = (axis: number): number => {
+    const d = drag.current!;
+    const p = latest.current;
+    const delta = axis - d.origin;
+    return settle(d.startValue + (p.invert ? -delta : delta), p.min, p.max, p.step ?? 1);
+  };
+
+  const finish = (next: number) => {
+    drag.current = null;
+    session.current = null;
+    latest.current.onChange?.(next);
+  };
 
   const onPointerDown = useCallback((e: PointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return;
-    drag.current = { origin: axisOf(e), startValue: value };
-    // jsdom has no pointer capture; the guard keeps tests on the real path.
-    e.currentTarget.setPointerCapture?.(e.pointerId);
+    if (e.button !== 0 || session.current) return;
+    const p = latest.current;
+    const vertical = (p.orientation ?? 'vertical') === 'vertical';
+    const axisOf = (ev: { clientX: number; clientY: number }) => (vertical ? ev.clientX : ev.clientY);
+    drag.current = {
+      origin: axisOf(e),
+      startValue: p.value,
+      last: settle(p.value, p.min, p.max, p.step ?? 1),
+    };
+    session.current = openPointerSession(e.currentTarget, e, {
+      onMove: (ev) => {
+        const next = valueAt(axisOf(ev));
+        drag.current!.last = next;
+        latest.current.onInput(next);
+      },
+      onEnd: (ev) => { finish(valueAt(axisOf(ev))); },
+      // A cancelled resize settles where it was left: `onInput` has already
+      // moved the pane there and the consumer owns the value, so abandoning
+      // the commit would persist a size the user is no longer looking at.
+      onCancel: () => { finish(drag.current!.last); },
+    });
     e.preventDefault();
-  }, [axisOf, value]);
-
-  const onPointerMove = useCallback((e: PointerEvent<HTMLDivElement>) => {
-    const d = drag.current;
-    if (!d) return;
-    const delta = axisOf(e) - d.origin;
-    onInput(settle(d.startValue + (invert ? -delta : delta), min, max, step));
-  }, [axisOf, invert, max, min, onInput, step]);
-
-  const endDrag = useCallback((e: PointerEvent<HTMLDivElement>) => {
-    const d = drag.current;
-    if (!d) return;
-    drag.current = null;
-    e.currentTarget.releasePointerCapture?.(e.pointerId);
-    const delta = axisOf(e) - d.origin;
-    onChange?.(settle(d.startValue + (invert ? -delta : delta), min, max, step));
-  }, [axisOf, invert, max, min, onChange, step]);
+  }, []);
 
   const onKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
     const grow = orientation === 'vertical' ? 'ArrowRight' : 'ArrowDown';
@@ -140,9 +157,6 @@ export function ResizeHandle(props: ResizeHandleProps) {
       aria-valuemin={min}
       aria-valuemax={max}
       onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={endDrag}
-      onPointerCancel={endDrag}
       onKeyDown={onKeyDown}
     />
   );

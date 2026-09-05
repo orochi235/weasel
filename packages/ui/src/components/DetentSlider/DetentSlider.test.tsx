@@ -2,20 +2,6 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { DetentSlider } from './DetentSlider';
 
-// jsdom omits PointerEvent; the drag tests below need clientX to survive.
-if (typeof (globalThis as { PointerEvent?: unknown }).PointerEvent === 'undefined') {
-  class PolyfillPointerEvent extends MouseEvent {
-    pointerId: number;
-    pointerType: string;
-    constructor(type: string, init: PointerEventInit = {}) {
-      super(type, init);
-      this.pointerId = init.pointerId ?? 0;
-      this.pointerType = init.pointerType ?? '';
-    }
-  }
-  (globalThis as { PointerEvent?: unknown }).PointerEvent = PolyfillPointerEvent;
-}
-
 const RATES = [0.25, 0.5, 1, 2, 4];
 
 function renderRate(props: Partial<Parameters<typeof DetentSlider<number>>[0]> = {}) {

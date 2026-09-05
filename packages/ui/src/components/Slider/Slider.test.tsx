@@ -3,23 +3,6 @@ import { render, fireEvent } from '@testing-library/react';
 import { useState } from 'react';
 import { Slider } from './Slider';
 
-// jsdom omits PointerEvent. Without this shim, fireEvent.pointerDown/Move/Up dispatch
-// a plain Event with no clientX/clientY/button, which breaks every drag test below.
-// Aliasing PointerEvent to MouseEvent makes fireEvent construct a MouseEvent with the
-// init dictionary applied (clientX/clientY/button/etc).
-if (typeof (globalThis as { PointerEvent?: unknown }).PointerEvent === 'undefined') {
-  class PolyfillPointerEvent extends MouseEvent {
-    pointerId: number;
-    pointerType: string;
-    constructor(type: string, init: PointerEventInit = {}) {
-      super(type, init);
-      this.pointerId = init.pointerId ?? 0;
-      this.pointerType = init.pointerType ?? '';
-    }
-  }
-  (globalThis as { PointerEvent?: unknown }).PointerEvent = PolyfillPointerEvent;
-}
-
 function stubRect(el: Element, rect: Partial<DOMRect> = {}) {
   const full: DOMRect = { x: 0, y: 0, width: 200, height: 24, top: 0, left: 0, right: 200, bottom: 24, toJSON: () => ({}), ...rect };
   (el as HTMLElement).getBoundingClientRect = () => full;
@@ -908,5 +891,83 @@ describe('Slider track click', () => {
     const { track, onInput } = renderTrackClick({ thumbs: [{ value: 10, bounds: [0, 30] }] });
     fireEvent.pointerDown(track, { clientX: 100, clientY: 12, button: 0 });
     expect(lastValues(onInput)).toEqual([30]);
+  });
+});
+
+describe('Slider pointer session', () => {
+  function dragging() {
+    const onInput = vi.fn();
+    const onChange = vi.fn();
+    const { container } = render(
+      <Slider min={0} max={100} thumbs={[{ value: 50 }]} onInput={onInput} onChange={onChange} />,
+    );
+    const thumb = container.querySelector<HTMLElement>('[role="slider"]')!;
+    stubRect(thumb.parentElement!, { left: 0, width: 200 });
+    fireEvent.pointerDown(thumb, { clientX: 100, clientY: 12, pointerId: 1, button: 0, buttons: 1 });
+    return { thumb, onInput, onChange };
+  }
+
+  it('commits a release that lands outside the slider', () => {
+    const outside = document.createElement('div');
+    document.body.appendChild(outside);
+    const { onChange } = dragging();
+    fireEvent.pointerMove(document, { clientX: 150, clientY: 12, pointerId: 1, buttons: 1 });
+    fireEvent.pointerUp(outside, { clientX: 400, clientY: 900, pointerId: 1, bubbles: true });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0][0][0].value).toBeCloseTo(75, 5);
+    outside.remove();
+  });
+
+  it('cancels the drag when the thumb loses pointer capture', () => {
+    const { thumb, onInput, onChange } = dragging();
+    fireEvent.pointerMove(document, { clientX: 150, clientY: 12, pointerId: 1, buttons: 1 });
+    expect(onInput).toHaveBeenCalledTimes(1);
+    fireEvent(thumb, new PointerEvent('lostpointercapture', { pointerId: 1, bubbles: true }));
+    fireEvent.pointerMove(document, { clientX: 180, clientY: 12, pointerId: 1, buttons: 1 });
+    expect(onInput).toHaveBeenCalledTimes(1);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('treats a move with no button held as the release it missed', () => {
+    const { onInput, onChange } = dragging();
+    fireEvent.pointerMove(document, { clientX: 150, clientY: 12, pointerId: 1, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 180, clientY: 12, pointerId: 1, buttons: 0 });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    // The button-less move is the release, not a drag step: it must not move the thumb.
+    expect(onInput).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0][0][0].value).toBeCloseTo(75, 5);
+  });
+
+  it('ends a shift-all drag on the release it missed', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <Slider min={0} max={100} thumbs={[{ value: 20 }, { value: 60 }]} allowShiftAll onInput={() => {}} onChange={onChange} />,
+    );
+    const thumb = container.querySelector<HTMLElement>('[role="slider"]')!;
+    stubRect(thumb.parentElement!, { left: 0, width: 200 });
+    fireEvent.pointerDown(thumb, { clientX: 100, clientY: 12, pointerId: 1, button: 0, buttons: 1, shiftKey: true });
+    fireEvent.pointerMove(document, { clientX: 120, clientY: 12, pointerId: 1, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 140, clientY: 12, pointerId: 1, buttons: 0 });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0][0].map((t: { value: number }) => t.value)).toEqual([30, 70]);
+  });
+});
+
+// PROXY ASSERTION — see Ruler.test.tsx for why this is asserted rather than the
+// browser behaviour it stands in for. A custom thumb shape may render
+// interactive content, and capture would kill the click on it.
+describe('Slider pointer capture', () => {
+  it('never captures the pointer', () => {
+    const capture = vi.fn();
+    Element.prototype.setPointerCapture = capture;
+    const { container } = render(
+      <Slider min={0} max={100} thumbs={[{ value: 50 }]} onInput={() => {}} />,
+    );
+    const thumb = container.querySelector<HTMLElement>('[role="slider"]')!;
+    stubRect(thumb.parentElement!, { left: 0, width: 200 });
+    fireEvent.pointerDown(thumb, { clientX: 100, clientY: 12, pointerId: 1, button: 0, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 150, clientY: 12, pointerId: 1, buttons: 1 });
+    fireEvent.pointerUp(document, { clientX: 150, clientY: 12, pointerId: 1 });
+    expect(capture).not.toHaveBeenCalled();
   });
 });

@@ -81,7 +81,14 @@ export function CanvasStack({
 
   const frame = useMemo(() => resolveFrame(worldSpec, size), [worldSpec, size]);
 
-  const handlers = usePanZoom({ view, onViewChange, minZoom, maxZoom, frame });
+  const onTap = (e: PointerEvent) => {
+    const el = containerRef.current;
+    if (!onHitTest || !el) return;
+    const rect = el.getBoundingClientRect();
+    onHitTest(screenToWorld({ x: e.clientX - rect.left, y: e.clientY - rect.top }, view, frame));
+  };
+
+  const handlers = usePanZoom({ view, onViewChange, minZoom, maxZoom, frame, onTap });
   useLayerScheduler({ layers, view, frame, canvasRefs: canvasMap, size, host: containerRef });
 
   const ctxValue = useMemo(
@@ -103,16 +110,6 @@ export function CanvasStack({
     height: size.height,
   };
 
-  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    const wasDragging = handlers.isDragging();
-    handlers.onPointerUp(e);
-    if (!wasDragging && onHitTest && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      const screen = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-      onHitTest(screenToWorld(screen, view, frame));
-    }
-  };
-
   return (
     <CanvasStackContext.Provider value={ctxValue}>
       <div
@@ -121,8 +118,6 @@ export function CanvasStack({
         style={containerStyle}
         onWheel={handlers.onWheel}
         onPointerDown={handlers.onPointerDown}
-        onPointerMove={handlers.onPointerMove}
-        onPointerUp={handlePointerUp}
       >
         {layers.map((layer) => (
           <canvas

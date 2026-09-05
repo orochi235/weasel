@@ -5,7 +5,7 @@ import { ResizeHandle } from './ResizeHandle';
 function setup(props: Partial<React.ComponentProps<typeof ResizeHandle>> = {}) {
   const onInput = vi.fn();
   const onChange = vi.fn();
-  const { container } = render(
+  const { container, unmount } = render(
     <ResizeHandle
       value={260}
       min={200}
@@ -17,7 +17,7 @@ function setup(props: Partial<React.ComponentProps<typeof ResizeHandle>> = {}) {
     />,
   );
   const handle = container.querySelector<HTMLElement>('[role="separator"]')!;
-  return { handle, onInput, onChange };
+  return { handle, onInput, onChange, unmount };
 }
 
 describe('ResizeHandle', () => {
@@ -131,6 +131,49 @@ describe('ResizeHandle', () => {
     expect(onInput).toHaveBeenLastCalledWith(200);
     fireEvent.keyDown(handle, { key: 'End' });
     expect(onInput).toHaveBeenLastCalledWith(600);
+  });
+
+  it('ends the drag when the release lands off the handle', () => {
+    // The whole point of the session: pointerup on the document, not the
+    // element, is what a real drag that leaves the handle delivers.
+    const { handle, onInput, onChange } = setup();
+    fireEvent.pointerDown(handle, { button: 0, pointerId: 3, clientX: 500 });
+    fireEvent.pointerMove(document, { pointerId: 3, clientX: 540 });
+    expect(onInput).toHaveBeenLastCalledWith(300);
+    fireEvent.pointerUp(document, { pointerId: 3, clientX: 540 });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith(300);
+  });
+
+  it('settles the drag when capture is lost mid-gesture', () => {
+    const { handle, onInput, onChange } = setup();
+    fireEvent.pointerDown(handle, { button: 0, pointerId: 3, clientX: 500 });
+    fireEvent.pointerMove(document, { pointerId: 3, clientX: 540 });
+    handle.dispatchEvent(new PointerEvent('lostpointercapture', { pointerId: 3, bubbles: true }));
+    expect(onChange).toHaveBeenCalledWith(300);
+    onInput.mockClear();
+    fireEvent.pointerMove(document, { pointerId: 3, clientX: 560 });
+    expect(onInput).not.toHaveBeenCalled();
+  });
+
+  it('reads a move with no button held as the release that never arrived', () => {
+    const { handle, onInput, onChange } = setup();
+    fireEvent.pointerDown(handle, { button: 0, buttons: 1, pointerId: 3, clientX: 500 });
+    onInput.mockClear();
+    fireEvent.pointerMove(document, { buttons: 0, pointerId: 3, clientX: 540 });
+    expect(onChange).toHaveBeenCalledWith(300);
+    expect(onInput).not.toHaveBeenCalled();
+  });
+
+  it('settles rather than stranding when the handle unmounts mid-drag', () => {
+    const { handle, onInput, onChange, unmount } = setup();
+    fireEvent.pointerDown(handle, { button: 0, pointerId: 3, clientX: 500 });
+    fireEvent.pointerMove(document, { pointerId: 3, clientX: 540 });
+    unmount();
+    expect(onChange).toHaveBeenCalledWith(300);
+    onInput.mockClear();
+    fireEvent.pointerMove(document, { pointerId: 3, clientX: 560 });
+    expect(onInput).not.toHaveBeenCalled();
   });
 
   it('drags along the cross axis when horizontal', () => {

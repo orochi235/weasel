@@ -109,3 +109,40 @@ describe('Ruler', () => {
     expect(next.from).not.toBe(200);
   });
 });
+
+describe('Ruler pointer session', () => {
+  it('ends a scrub released outside the ruler', () => {
+    const outside = document.createElement('div');
+    document.body.appendChild(outside);
+    const onScrub = vi.fn();
+    render(<Ruler {...props} onScrub={onScrub} />);
+    fireEvent.pointerDown(ruler(), { clientX: 100, clientY: 5, button: 0, buttons: 1 });
+    fireEvent.pointerUp(outside, { clientX: 900, clientY: 900, bubbles: true });
+    onScrub.mockClear();
+    fireEvent.pointerMove(document, { clientX: 400, clientY: 5, buttons: 1 });
+    expect(onScrub).not.toHaveBeenCalled();
+    outside.remove();
+  });
+
+  it('ends the scrub when the ruler loses pointer capture', () => {
+    const onScrub = vi.fn();
+    render(<Ruler {...props} onScrub={onScrub} />);
+    fireEvent.pointerDown(ruler(), { clientX: 100, clientY: 5, button: 0, buttons: 1 });
+    fireEvent(ruler(), new PointerEvent('lostpointercapture', { pointerId: 0, bubbles: true }));
+    onScrub.mockClear();
+    fireEvent.pointerMove(document, { clientX: 400, clientY: 5, buttons: 1 });
+    expect(onScrub).not.toHaveBeenCalled();
+  });
+
+  it('treats a move with no button held as the release it missed', () => {
+    const onScrub = vi.fn();
+    render(<Ruler {...props} onScrub={onScrub} />);
+    fireEvent.pointerDown(ruler(), { clientX: 100, clientY: 5, button: 0, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 300, clientY: 5, buttons: 1 });
+    expect(onScrub).toHaveBeenLastCalledWith(600);
+    onScrub.mockClear();
+    fireEvent.pointerMove(document, { clientX: 400, clientY: 5, buttons: 0 });
+    fireEvent.pointerMove(document, { clientX: 450, clientY: 5, buttons: 1 });
+    expect(onScrub).not.toHaveBeenCalled();
+  });
+});
