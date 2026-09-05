@@ -10,7 +10,10 @@ export function load(app) {
     const uncategorized = [];
 
     for (const child of context.project.children ?? []) {
-      const sourcePath = child.sources?.[0]?.fileName ?? '';
+      // An alias of a symbol the barrel also exports under its own name is a
+      // reference with no source of its own; it belongs where its target lives.
+      const target = child.variant === 'reference' ? child.tryGetTargetReflection?.() : undefined;
+      const sourcePath = (target ?? child).sources?.[0]?.fileName ?? '';
       const category = categoryOf(sourcePath, child.name);
 
       if (!category) {

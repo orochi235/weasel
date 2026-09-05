@@ -47,6 +47,7 @@ export const RULES = [
   ['packages/core/src/core', 'Scene'],
 
   // Sibling packages the barrel re-exports wholesale.
+  ['packages/cursor/src', 'Tools & gestures'],
   ['packages/font/src', 'Text'],
   ['packages/geom/src', 'Paths & geometry'],
   ['packages/gestures/src', 'Tools & gestures'],
