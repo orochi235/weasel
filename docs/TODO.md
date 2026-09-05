@@ -565,23 +565,15 @@ Core five + Crop shipped. Remaining:
   it hands `WeaselRenderer.setTarget`. Nothing hits this yet — the
   `tiled-surface` demo mounts no loupe.
 
-- **(P1) `SceneCanvas` re-renders on every scene mutation.** Its own
-  `useSyncExternalStore` (`SceneCanvas.tsx:894`) commits the canvas for every
-  version bump, whether or not the host passed
-  `useScene(..., { subscribe: false })` — the ~100–110 commits/s the scene
-  side-scroller still pays. The ephemeral-pose-overrides arc does not close
-  this: it only stops *pose overrides* bumping the version, and a demo's own
-  `scene.add` / `scene.batch` still notifies. The shape worth trying is that the
-  subscription call `requestRedraw()` rather than commit — `Canvas` already
-  takes `contentVersion` as a getter, so the paint can sample the version
-  without a render. What that costs is real design work: some chrome genuinely
-  needs a commit on a scene change (layer panels, counts, anything rendering
-  node data as DOM), and deciding which is the whole question.
-
-  Two demos still subscribe while driving poses from an animation tick, and
-  should take `subscribe: false` once that lands: `EasingsDemo.tsx:49` (a
-  `setPose` per marker per frame) and `TimelineDemo.tsx:43` (`move()` from a
-  sampled track's `onTick`). `SceneScrollerDemo.tsx:73` is the one that has.
+- **(P2) Two demos still commit per animation frame.** `SceneCanvas` no longer
+  re-renders on a scene write, so `useScene(..., { subscribe: false })` now
+  means what it says — but a host taking the default still commits per write,
+  which is the wrong default for one driving poses from a tick. `EasingsDemo.tsx:49`
+  (a `setPose` per marker per frame) and `TimelineDemo.tsx:43` (`move()` from a
+  sampled track's `onTick`) should both take it; `SceneScrollerDemo.tsx:73`
+  already has. Neither renders scene data as DOM, so it is a one-line change
+  each — the reason to do it is that a demo is a reference implementation and
+  these two currently model the expensive shape.
 
 - **(P3) Sync paints do not coalesce.** `CanvasProps.syncPaint`
   (`Canvas.tsx:234-242`) promises "a synchronous paint per commit", singular,
@@ -1158,13 +1150,12 @@ What it surfaced:
   `docs/superpowers/specs/2026-08-24-frame-loop-decoupling-design.md`, Part 1.
 
 - **(P1) `SceneCanvas` commits on every scene mutation, even when the host opted
-  out** — those are the ~100–110 commits/s the scene twin still pays above.
-  Carried under Rendering & paint, since it is not this demo's problem. The
-  ephemeral-pose-overrides arc narrows it but does not close it: an override never bumps the version, while this demo's
-  `scene.add` / `scene.batch` still does. Measuring anything else per-frame
-  means stopping the scene writes first —
-  `apps/site/demos/__tests__/SceneScrollerDemo.test.tsx` freezes `syncScene` to
-  isolate the camera at all.
+  out — closed 2026-09-05.** Those were the ~100–110 commits/s in the table
+  above. The scene subscription now calls `requestRedraw()` instead of
+  committing, so the twin pays no render per frame write.
+  `apps/site/demos/__tests__/SceneScrollerDemo.test.tsx` still freezes
+  `syncScene` to isolate the camera; it no longer has to, and the mock can go
+  when someone next touches that file.
 
 - **(P1) `setPose` demands a fresh pose object per node per frame, and the GC
   bill is visible.** `nodeMemo` keys painter output on pose *reference*
