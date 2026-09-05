@@ -119,7 +119,7 @@ circle rather than guessing a coordinate that looks close.
 
 **The small check is a separate check, and it is the pixel grid.** Proofing
 large tells you nothing about chrome size. Rasterise at the size the chrome
-actually renders — `DefaultToolbar` uses `size={16}` — magnify with
+actually renders — labkit's chrome regions draw glyphs at `size={16}` — magnify with
 nearest-neighbour, and look at the pixels the renderer produced. A 16px glyph
 inside a screenshot of a proof page has been resampled twice before you see it.
 
