@@ -53,7 +53,7 @@ Priority tags:
 - `LabShell` is the only thing that applies labkit's style scope → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 **Lint**
-- `eqeqeq` (275) and `no-unused-vars` (131) deferred from the 2026-08-22 baseline → [Lint](#lint)
+- react-hooks v7 compiler rules, evaluated per rule → [Lint](#lint)
 
 **Tools & gestures**
 - `ToolCtx` hard-codes 2D, blocking tool reuse by another kernel → [Tools & gestures](#tools--gestures)
@@ -1955,10 +1955,6 @@ was hiding an assertion that read `.space` without narrowing.
 
 Deferred, with the rationale in `eslint.config.js` next to each:
 
-- **(P2) `eqeqeq`** — 275 findings. Real correctness, but a large mechanical
-  sweep with no bug attached to it yet.
-- **(P2) `@typescript-eslint/no-unused-vars`** — 131 findings. Two
-  `eslint-disable` directives in the tree already name it and go live with it.
 - **(P3) eslint-plugin-react-hooks v7 compiler rules** — `refs` (387 findings
   across 103 files), `immutability` (18), `set-state-in-effect` (21),
   `use-memo` (7), `globals` (6), `static-components` (3),
@@ -1966,10 +1962,16 @@ Deferred, with the rationale in `eslint.config.js` next to each:
   during render is how a canvas library reaches mutable frame state, so a large
   share are expected false positives. Worth evaluating rule by rule; not worth
   adopting as a block.
-- **(P3) `reportUnusedDisableDirectives`** — still `off`. It can't be turned on
-  while `no-unused-vars` is deferred and `no-explicit-any` is scoped out of
-  tests, because directives naming those would all report as unused. Flip it
-  with the two P2 rules above.
+
+`eqeqeq`, `@typescript-eslint/no-unused-vars` and
+`reportUnusedDisableDirectives` are all on as of 2026-09-05. The counts that
+had them recorded as large sweeps were measured with the rules' strict
+defaults: every one of the 317 `eqeqeq` reports was a `== null`, and 135 of the
+136 unused-vars reports were the `_`-prefixed discards this repo already writes
+deliberately. Configured to match those two conventions, the whole sweep was
+one dead `const` and four stale disable directives.
+
+---
 
 ## Release-gate & build hygiene
 

@@ -210,7 +210,7 @@ export function Workspace({
     if (!surface) return;
     surface.invalidateRects();
     return store.events.on('node.placementChanged', () => surface.invalidateRects());
-  }, [store, surface, nodeIds]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [store, surface, nodeIds]);
 
   useEffect(() => {
     if (!onLayoutChange) return;

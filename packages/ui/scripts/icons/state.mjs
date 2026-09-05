@@ -7,7 +7,6 @@ const playTri = `M7.6 5.2 15.6 10 7.6 14.8Z`;
 // Two arcs, each a third of the circle, heads on opposite ends. Distinct from
 // `reset`, which is a single near-full arc.
 const RR = 6.1;
-const ccwTangent = (deg) => [-Math.sin((deg * Math.PI) / 180), -Math.cos((deg * Math.PI) / 180)];
 const cwTangent = (deg) => [Math.sin((deg * Math.PI) / 180), Math.cos((deg * Math.PI) / 180)];
 const rf1a = onCircle(10, 10, RR, 200);
 const rf1b = onCircle(10, 10, RR, 40);
