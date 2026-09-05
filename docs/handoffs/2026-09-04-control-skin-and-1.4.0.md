@@ -63,7 +63,7 @@ Needs a call on whether `--wzl-accent-fg` should derive from `--wzl-accent`.
 
 ## Also touched, outside the kit
 
-`~/src/experiments/speech-balloons` — two commits, **not pushed**. `f6889d9`
+`~/src/experiments/speech-balloons` — two commits, since pushed. `f6889d9`
 migrates it off the `workspace`→`trial` rename it predated (it could not boot
 against a current labkit at all). `b4867d1` puts its zoom bar on `ZoomControl` and
 its font field on `SelectRow`, deleting ~49 lines of local CSS. That second commit
@@ -73,11 +73,3 @@ lost, but they rode along.
 
 Its labkit symlink was repointed at the `control-skin` worktree during the work and
 has been put back to `../../../../weasel/packages/labkit`. Nothing to do.
-
-## Loose ends
-
-- speech-balloons has two unpushed commits (`f6889d9`, `b4867d1`) and other unrelated
-  dirty files that were already there.
-- `main` was red before this arc — the same dts OOM broke CI as well as Release. The
-  heap fix is pushed, but CI has not been confirmed green since:
-  `gh run list --workflow=ci.yml`.

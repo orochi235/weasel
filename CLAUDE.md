@@ -234,6 +234,33 @@ catches it.
 package into the tree, so a bare specifier resolves whether or not the importer declared it.
 `npm run check:manifests` is the check that works.
 
+**`glRecorder`'s proxy answers to every name.** An ALL-CAPS property the constants table
+does not carry comes back as `0`, so an assertion naming a missing flag compares 0 against
+whatever else answers 0 and passes on a renderer that never touched it. A lowercase one
+comes back as a recording *function*, so a y-flip computed from a mistyped
+`drawingbufferheight` is silently `NaN`. Add the constant to `GL_CONSTANTS` first, and
+watch the assertion fail before trusting it.
+
+**A test file that passes alone and fails in a full run is measuring load, not your
+change.** Bisecting with the file in isolation at one end and the whole suite at the
+other produced a clean, entirely false "both parents green, merge red" — the two ends
+were different experiments. Use one probe across the whole range.
+
+**`useScene` builds its scene once into a ref and never rebuilds it.** Editing a demo's
+`initial` nodes and saving leaves the previous scene live under HMR, so the canvas paints
+the old data with no error and no warning. A hard reload is the only way to trust a
+before/after taken in the browser.
+
+**labkit bundles its siblings** (`noExternal` in `packages/labkit/tsup.config.ts`), so a
+source edit in `packages/text` or `packages/ui` does not reach labkit's `dist` until the
+whole workspace is rebuilt. A smoke test run before that reports the previous build's
+result as though it were the new one.
+
+**A perf loop driven by hover events measures vsync.** A hover that changes no state does
+not dirty the surface, so the loop reports zero uploads as though the caches had absorbed
+the work, and a cache that does nothing scores the same as one that works. Count draw
+calls alongside whatever else the loop counts.
+
 ## Terminology
 
 UI words have specific referents — don't conflate them:

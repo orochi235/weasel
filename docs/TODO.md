@@ -46,6 +46,11 @@ Priority tags:
 - labkit: nested config values — `f.schema` is flat because `setConfig` is → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Reconcile core's `ToolPrefLeaf` with weasel-ui's `PrefLeaf` — the `paint` kind has already drifted → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - `ControlPanel` rows: `ColorRow` / `CheckboxRow` take no `layout`, and row spacing is not tokenized → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- A number leaf's unit conversion is one leaf deep → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- `SliderRow` has no live/commit split → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- A schema section cannot be collapsed → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- Between them `LayerStack` and `LayerList` cover neither a kindless list nor a tree → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- `LabShell` is the only thing that applies labkit's style scope → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 **Lint**
 - `eqeqeq` (275) and `no-unused-vars` (131) deferred from the 2026-08-22 baseline → [Lint](#lint)
@@ -1554,6 +1559,86 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   consumer that needs one", which is reasoning this repo bans. Relatedly there
   is no `--wzl-handle-*` token: Timeline's `.key` (9px) and CurveEditor's
   endpoint (10px) are both 45°-rotated squares that arrived there independently.
+
+- **(P2) A number leaf's unit conversion is one leaf deep.** `ToolPrefNumberUnit`
+  (`toDisplay` / `fromDisplay` / `suffix`) is the only display-unit mechanism
+  wired end to end, and exactly one leaf uses it — `pose.rotation`, radians
+  stored, degrees shown. `SelectionPanel` converts the value and passes `min`,
+  `max` and `step` through unconverted, so a unit leaf that declares bounds
+  clamps display-space input against canonical-space limits. `PrefLeaf` has no
+  `unit` field at all, so `PrefsForm` renders the same leaf raw — the reconcile
+  entry above is where that half lives. Nothing anywhere parses a typed
+  `"12mm"`, and the conversion tables that would answer one (`UnitSystem`,
+  `IMPERIAL_INCHES` / `METRIC_MM` / `PIXELS`) belong to a separate mechanism
+  wired only to grid snapping, whose `formatUnit` has no callers.
+
+- **(P2) `SliderRow` has no live/commit split.** It takes one `onChange`, which
+  fires on every pointer move, so a control whose write is expensive — a
+  re-simulation, a refetch — has no way to say "on release". klieg bypasses the
+  row entirely and drives `@weasel-js/ui`'s `Slider` to get it; precioussss's gem
+  bench carries a comment claiming a commit-on-release behaviour it does not
+  have. `Slider` itself already spells the pair `onInput` live / `onChange`
+  committed; the row is what does not forward it.
+
+- **(P2) A schema section cannot be collapsed.** `SectionSpec` is
+  `{ label, paths }` and `ControlPanel` renders each one as a
+  `PropertyGroup`, which draws a heading and nothing else — so a schema with
+  dozens of leaves in several sections is one long scroll. `SidebarSection`
+  already has `defaultCollapsed`; the section spec and `PropertyGroup` want the
+  same, with the open/closed state remembered per trial. Asked for by klieg,
+  precioussss and brick-icons.
+
+- **(P2) Between them `LayerStack` and `LayerList` cover neither a kindless list
+  nor a tree.** `LayerStack` requires `kind`, `paletteKinds` and `onAdd`, so a
+  consumer whose items have no kind and no palette cannot use it — wod hand-rolls
+  a stack rather than pass three stubs. `LayerList` takes a flat
+  `LayerDescriptor[]` (`packages/labkit/src/layers/LayerList.tsx`), so sherpa
+  hand-rolled a recursive `StepTree` for nested steps. Two shapes are missing:
+  an add-less stack, and a list whose items have children.
+
+- **(P2) `LabShell` is the only thing that applies labkit's style scope.**
+  `.lk-root` carries the tokens, the fonts, the box-sizing reset and every
+  element default under `:where(.lk-root)`, and it is written in exactly one
+  place (`packages/labkit/src/lab/LabShell.tsx:27`). A consumer mounting a
+  labkit piece on its own — klieg renders `Workspace` bare, sherpa renders
+  `ControlPanel` bare — gets no tokens and rebuilds the contract from its own
+  stylesheet, as the labkit Storybook frame does
+  (`.storybook/preview.tsx:275`). A `LabkitRoot` mount component was designed
+  and rejected, so the answer is a different shape.
+
+- **(P3) A trial's title is its instrument name, and the title bar has no
+  leading slot.** `TrialChrome` passes `record.instrumentName` straight to
+  `TrialTitleBar` (`packages/labkit/src/trial/TrialChrome.tsx:210`), so every
+  trial running one instrument reads the same word where a consumer needs the
+  subject. The only insertion point is `TitleBarRegion`'s
+  `.lk-trial__titlebar-actions`, which is `margin-left: auto` and holds the four
+  built-ins — clone, reset, snapshot, close — so a contribution meant to lead
+  the bar lands at the right beside them. A `title` on the instrument spec (or
+  `setTitle` on `TrialChromeContext`) answers the common case; a leading region
+  answers it generally.
+
+- **(P3) `addTrial` takes only an instrument name**, so opening a trial *on a
+  given subject* has nowhere to put the subject. `defaultConfig()` is the only
+  hook, and it takes no arguments — brick-icons smuggles the subject through a
+  module-level one-slot box that `defaultConfig()` reads and clears, which works
+  only because `addTrial` calls it synchronously. `addTrial(name, { config })`
+  retires that.
+
+- **(P3) `ToolbarItem.onActivate` is `() => void`.** A contribution declared
+  through `Lab.chrome` therefore cannot call `ctx.saveSnapshot()` or anything
+  else on `TrialChromeContext`, so re-declaring a suppressed built-in in a
+  different group means dropping to the `render` escape hatch and hand-rolling
+  the button, losing the chrome's own layout. The regions already have the
+  context in hand (`packages/labkit/src/chrome/regions/ToolbarRegion.tsx`);
+  passing it to `onActivate` is the whole change.
+
+- **(P3) ToggleBar's selected segment is the Aqua glass ramp, not a colour of
+  its own.** Asked for: move the default treatment off "the aqua" and save it
+  for a theme that wants it. There is no ToggleBar colour to move — every
+  surface in the ramp is `var(--wzl-accent)`, which seventeen components read,
+  and `Button.variant_primary` is the same drawing. The panel's bars already sit
+  outside it via the `flat` variant. Doing this generally is a theme decision
+  about the glass, not a component change.
 
 ### Align/distribute/flip follow-ups
 

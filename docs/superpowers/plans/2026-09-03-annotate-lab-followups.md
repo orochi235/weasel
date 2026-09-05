@@ -4,20 +4,19 @@
 
 **What this is:** six defects and gaps found by actually using the annotate lab after arc 4 merged. Each one below is diagnosed against the code, not guessed. Two are already fixed.
 
-**Where the work is:** `main` is at `25f6ee3b` (arc 4, merged, unpushed — `origin/main` is 134 commits behind). Branch `fix/pencil-ghost` holds item 2. The primary checkout was detached at `main`; `main` itself lives in the `.claude/worktrees/trunk` worktree.
+**Where the work is:** everything below is on `main` and pushed. `main` lives in the `.claude/worktrees/trunk` worktree; the primary checkout sits detached at it.
 
 **To see the lab:** `npm run dev:annotate --workspace=@weasel-js/labkit` (port 5188). The site's capture demo is `npm run dev:kit` → `#annotation-capture`.
 
 ---
 
-## 1. The freehand cursor
+## 1. The freehand cursor — FIXED
 
 `usePencilTool` declares `cursor: 'crosshair'`, and that is what the pane reports — so does `rect` and `line`. Crosshair is right for placing a corner precisely; for a freehand stroke it says nothing about what the tool does, and every drawing tool looks identical.
 
 **Needs a decision before building:** which cursor. A pencil-tip cursor from a `data:` URI with its hotspot at the tip is the usual answer, and `PencilIcon` already exists to derive it from — but a 20×20 glyph is not a cursor, and per `CLAUDE.md` a drawn cursor gets proofed at 10–15× and then checked again on the pixel grid at 1× and 2×.
 
-- [ ] Ask which cursor, or ask for a sketch.
-- [ ] `packages/core/src/tools/builtin/pencil/usePencilTool.tsx` is the one line that changes.
+- [x] Done. `usePencilTool` takes `cursorFor('pencil', { fallback: 'crosshair' })` from `@weasel-js/cursor`.
 
 ## 2. The freehand ghost drew a marquee — FIXED
 
