@@ -86,7 +86,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   const input = opts.input ?? element;
   let pixels: ImageBitmap | null = null;
   let pixelsPending = false;
-  let pixelsStale = false;
+  let refreshWanted = false;
   let disposed = false;
 
   const b = opts.bounds ?? { x: 24, y: 24, w: 220, h: 200 };
@@ -136,11 +136,16 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     return out;
   };
 
+  // `gl.readPixels` outside a landed paint returns the *previous* frame, so an
+  // aim only marks the lens dirty; the read itself happens in the frame
+  // subscriber below, on the frame that painted.
+  const scheduleRefresh = () => {
+    if (disposed || model.mode !== 'pixel') return;
+    refreshWanted = true;
+  };
+
   const refreshPixels = () => {
     if (disposed || model.mode !== 'pixel') return;
-    // A readback requested mid-flight is remembered rather than dropped: the
-    // aim that arrives during a fast drag is the one the user ends on.
-    if (pixelsPending) { pixelsStale = true; return; }
     const gl = element.getContext('webgl2');
     if (!gl) return;
     const cssRect = element.getBoundingClientRect();
@@ -153,7 +158,6 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
       gl, { width: element.width, height: element.height }, model.aim, dpr, rw, rh,
     );
     pixelsPending = true;
-    pixelsStale = false;
     createImageBitmap(data)
       .then((bmp) => {
         if (disposed) { bmp.close(); return; }
@@ -161,11 +165,10 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
         pixels = bmp;
         pixelsPending = false;
         requestRedraw();
-        if (pixelsStale) refreshPixels();
       })
       .catch(() => {
         pixelsPending = false;
-        if (pixelsStale) refreshPixels();
+        requestRedraw();
       });
   };
 
@@ -188,7 +191,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     title: opts.title ?? 'Loupe',
     titlebar: opts.titlebar,
     content,
-    onResize: () => { refreshPixels(); },
+    onResize: () => { scheduleRefresh(); },
     onContentClick: (p) => { model.pick(p); },
     ...(opts.onClose ? { onClose: opts.onClose } : {}),
   });
@@ -199,7 +202,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     sample: readHex,
     hidden: () => win.hidden,
     gone: () => win.disposed === true,
-    changed: () => { refreshPixels(); requestRedraw(); },
+    changed: () => { scheduleRefresh(); requestRedraw(); },
   };
 
   const model: LoupeModel = createLoupeModel({
@@ -216,8 +219,18 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     model.aimAt({ x: evt.clientX - r.left, y: evt.clientY - r.top });
   };
 
+  const unsubscribeFrame = hud.subscribeFrame(() => {
+    // A refresh wanted while a bitmap is in flight is remembered rather than
+    // dropped: the flag survives until a frame finds it settled, so the aim
+    // the user ends a fast drag on is the one that gets read.
+    if (!refreshWanted || pixelsPending) return;
+    refreshWanted = false;
+    refreshPixels();
+  });
+
   const teardown = () => {
     disposed = true;
+    unsubscribeFrame();
     input.removeEventListener('pointermove', onPointerMove);
     pixels?.close();
     pixels = null;

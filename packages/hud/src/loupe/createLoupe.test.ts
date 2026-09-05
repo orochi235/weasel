@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
-import { createHud } from '../hud';
+import { createHud, type Hud } from '../hud';
 import { createLoupe } from './createLoupe';
 import type { RenderLayer, View } from '@weasel-js/core';
 
@@ -17,6 +17,18 @@ function makeElement() {
   return el;
 }
 
+/** Bind the hud to a host whose frame subscribers a test can fire by hand.
+ *  Returns a `frame()` that lands one paint. */
+function bindHost(hud: Hud): () => void {
+  const subs = new Set<() => void>();
+  hud.bind({
+    requestRedraw: () => {},
+    registerLayer: () => () => {},
+    subscribeFrame: (fn) => { subs.add(fn); return () => { subs.delete(fn); }; },
+  });
+  return () => { for (const fn of [...subs]) fn(); };
+}
+
 const source: RenderLayer<unknown>[] = [{
   id: 'src', label: 'src', space: 'world',
   draw: () => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { fill: 'solid', color: '#0f0' } }],
@@ -25,14 +37,14 @@ const source: RenderLayer<unknown>[] = [{
 describe('createLoupe', () => {
   it('creates a window widget on the hud', () => {
     const hud = createHud();
-    hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
+    bindHost(hud);
     const loupe = createLoupe({ hud, canvas: makeElement(), source, requestRedraw: () => {} });
     expect(hud.widgets()).toContain(loupe.window);
   });
 
   it('stops listening once the window is removed through the HUD', () => {
     const hud = createHud();
-    hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
+    bindHost(hud);
     const el = makeElement();
     const remove = vi.spyOn(el, 'removeEventListener');
     const loupe = createLoupe({ hud, canvas: el, source, requestRedraw: () => {} });
@@ -45,7 +57,7 @@ describe('createLoupe', () => {
 
   it('aimAt after dispose does nothing', () => {
     const hud = createHud();
-    hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
+    bindHost(hud);
     const redraw = vi.fn();
     const loupe = createLoupe({ hud, canvas: makeElement(), source, requestRedraw: redraw });
     loupe.dispose();
@@ -56,7 +68,7 @@ describe('createLoupe', () => {
 
   it('vector mode paints the source through a magnified inner view', () => {
     const hud = createHud();
-    hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
+    bindHost(hud);
     const seen: View[] = [];
     const spied: RenderLayer<unknown>[] = [{
       ...source[0],
@@ -78,7 +90,7 @@ describe('createLoupe', () => {
 
   it('freezes the aim while the pointer is over the window', () => {
     const hud = createHud();
-    hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
+    bindHost(hud);
     const loupe = createLoupe({ hud, canvas: makeElement(), source, requestRedraw: () => {} });
     loupe.window.setBounds({ x: 0, y: 0, w: 200, h: 150 });
     loupe.aimAt({ x: 400, y: 300 });
@@ -89,7 +101,7 @@ describe('createLoupe', () => {
 
   it('setMode switches the painter and requests a redraw', () => {
     const hud = createHud();
-    hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
+    bindHost(hud);
     const requestRedraw = vi.fn();
     const loupe = createLoupe({ hud, canvas: makeElement(), source, requestRedraw });
     requestRedraw.mockClear();
@@ -100,7 +112,7 @@ describe('createLoupe', () => {
 
   it('reports the hex color under the aim point', () => {
     const hud = createHud();
-    hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
+    bindHost(hud);
     const el = makeElement();
     vi.spyOn(el, 'getContext').mockReturnValue({
       RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
@@ -120,7 +132,7 @@ describe('createLoupe', () => {
 
   it('a click in the lens picks the color the lens shows there', () => {
     const hud = createHud();
-    hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
+    bindHost(hud);
     const el = makeElement();
     const reads: { x: number; y: number }[] = [];
     vi.spyOn(el, 'getContext').mockReturnValue({
@@ -152,7 +164,7 @@ describe('createLoupe', () => {
 
   it('picks at the aim point when given no point', () => {
     const hud = createHud();
-    hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
+    bindHost(hud);
     const el = makeElement();
     const reads: { x: number; y: number }[] = [];
     vi.spyOn(el, 'getContext').mockReturnValue({
@@ -168,7 +180,7 @@ describe('createLoupe', () => {
 
   it('declines a pick that maps back under the window itself', () => {
     const hud = createHud();
-    hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
+    bindHost(hud);
     const el = makeElement();
     vi.spyOn(el, 'getContext').mockReturnValue({
       RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
@@ -190,7 +202,7 @@ describe('createLoupe', () => {
 
   it('pixel mode paints its backdrop before the first readback settles', () => {
     const hud = createHud();
-    hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
+    bindHost(hud);
     const loupe = createLoupe({
       hud, canvas: makeElement(), source, requestRedraw: () => {},
       mode: 'pixel', background: '#123456',
@@ -204,9 +216,33 @@ describe('createLoupe', () => {
     }]);
   });
 
+  it('pixel mode reads back on the frame that painted, not on the aim', () => {
+    const hud = createHud();
+    const frame = bindHost(hud);
+    const el = makeElement();
+    vi.spyOn(el, 'getContext').mockReturnValue({
+      RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
+      readPixels: () => {},
+    } as unknown as WebGL2RenderingContext);
+    const createImageBitmap = vi.fn(() => new Promise<ImageBitmap>(() => {}));
+    vi.stubGlobal('createImageBitmap', createImageBitmap);
+
+    const loupe = createLoupe({ hud, canvas: el, source, requestRedraw: () => {}, mode: 'pixel' });
+    loupe.aimAt({ x: 400, y: 100 });
+    // Reading here would sample the frame before this aim: no paint has landed
+    // since it, so the buffer still holds the previous one.
+    expect(createImageBitmap).not.toHaveBeenCalled();
+
+    frame();
+    expect(createImageBitmap).toHaveBeenCalledTimes(1);
+
+    loupe.dispose();
+    vi.unstubAllGlobals();
+  });
+
   it('pixel mode re-reads after an in-flight readback settles', async () => {
     const hud = createHud();
-    hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
+    const frame = bindHost(hud);
     const el = makeElement();
     const reads: number[] = [];
     vi.spyOn(el, 'getContext').mockReturnValue({
@@ -224,22 +260,33 @@ describe('createLoupe', () => {
 
     const loupe = createLoupe({ hud, canvas: el, source, requestRedraw: () => {}, mode: 'pixel' });
     loupe.aimAt({ x: 400, y: 100 });
+    frame();
     expect(createImageBitmap).toHaveBeenCalledTimes(1);
 
-    // Two more aims land while the first bitmap is still in flight.
+    // Two more aims, and their frames, land while the first bitmap is in flight.
     loupe.aimAt({ x: 400, y: 200 });
+    frame();
     loupe.aimAt({ x: 400, y: 300 });
+    frame();
     expect(createImageBitmap).toHaveBeenCalledTimes(1);
 
     settles[0]();
     await Promise.resolve();
     await Promise.resolve();
 
-    // The trailing refresh runs once, against the final aim rather than the
-    // one that was current when the readback started.
+    // The trailing refresh runs once, on the next frame, against the final aim
+    // rather than the one that was current when the readback started.
+    frame();
     expect(createImageBitmap).toHaveBeenCalledTimes(2);
     const region = reads[reads.length - 1];
     expect(region).not.toBe(reads[0]);
+
+    // A frame with no aim behind it does not re-read.
+    settles[1]();
+    await Promise.resolve();
+    await Promise.resolve();
+    frame();
+    expect(createImageBitmap).toHaveBeenCalledTimes(2);
 
     loupe.dispose();
     vi.unstubAllGlobals();
@@ -247,7 +294,7 @@ describe('createLoupe', () => {
 
   it('dispose removes the window and detaches the pointer listener', () => {
     const hud = createHud();
-    hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
+    bindHost(hud);
     const el = makeElement();
     const remove = vi.spyOn(el, 'removeEventListener');
     const loupe = createLoupe({ hud, canvas: el, source, requestRedraw: () => {} });
