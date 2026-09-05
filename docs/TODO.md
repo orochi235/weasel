@@ -479,15 +479,23 @@ Core five + Crop shipped. Remaining:
   `apps/draw/src/useLoupe.ts:49` has the same shape. Fix the bypass and the
   demos together, or neither.
 
-- **(P1) A second `<SceneCanvas>` under one `ActionsProvider` unregisters the
-  first's viewport actions.** In `vertex-widths` and `boolean-ops` — and
-  `curve-lab` and `rotated-resize-math` — wheel pan and Cmd+wheel/Cmd+-/Cmd+0 do
-  nothing at all; the canvas is pixel-identical after six zoom notches, with no
-  `view` or `viewport` prop set, where the documented default is that they stay
-  wired. `useViewportActions.ts` registers `viewport.pan` / `viewport.zoom` by
-  **action id** into the shared registry and unregisters them on cleanup, so
-  sibling canvases collide on those ids and one instance's teardown takes the
-  registration out from under the others. Predates the frame-loop arc.
+- **(P2) An action a canvas suppresses is suppressed for every canvas.**
+  `useViewportActions.ts` answers `pinchZoom: false` with
+  `reg.unregister('viewport.pinchZoom')`, which now drops every registrant of
+  that id — so one canvas opting out takes pinch-zoom off a sibling that asked
+  for it, and nothing puts it back when the opting-out canvas unmounts. The same
+  door is open to `useActionsPropResolver`'s `actions={{ id: null }}`. Registration
+  is per-registrant since the stack landed; suppression is not, and a shared
+  registry has nowhere to hang "not for me". `<WeaselProvider isolate>` is the
+  only answer today and costs all cross-canvas sharing.
+
+- **(P3) The registry's dep slot has no identity guard.**
+  `DepRegistryProvider.register` (`depRegistry.tsx:41-44`) sets by name and its
+  release does a bare `delete`, so two canvases sharing a dep registry lose
+  `view` / `scene` / `selection` when either unmounts — the same shape as the
+  action-id collision fixed by stacking registrants, one layer down.
+  `vertex-widths` mounts one shared `DepRegistryProvider` over two canvases and
+  is the live instance.
 
 - **(P2) The text-edit overlay does not scale with the canvas.** `#text` at ~2x
   renders the DOM overlay at 1x font size in a 240x80 box while the selection

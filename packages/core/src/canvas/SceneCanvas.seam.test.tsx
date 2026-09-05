@@ -22,7 +22,7 @@ import { useEffect } from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
-import { useActionsRegistry } from 'interactions/actions/registry';
+import { useActionsRegistry, ActionsProvider } from 'interactions/actions/registry';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -431,6 +431,34 @@ describe('Behavior 9: viewport.pan and viewport.zoom register action descriptors
       </SceneCanvas>,
     );
 
+    expect(capturedIds).toContain('viewport.wheelPan');
+    expect(capturedIds).toContain('viewport.zoom');
+  });
+
+  // The reported failure: `vertex-widths`, `curve-lab` and
+  // `rotated-resize-math` mount several canvases under one <ActionsProvider>,
+  // and wheel pan / zoom were dead in all of them. Both canvases register the
+  // same ids; the second displaces the first, and its teardown used to delete
+  // the entry outright rather than uncover what it had displaced.
+  it('a sibling canvas unmounting leaves the viewport actions registered', () => {
+    const sceneA = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+    const sceneB = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+    let capturedIds: string[] = [];
+
+    function Pair({ showB }: { showB: boolean }) {
+      return (
+        <ActionsProvider>
+          <SceneCanvas scene={sceneA} layers={{}} width={200} height={200} />
+          {showB ? <SceneCanvas scene={sceneB} layers={{}} width={200} height={200} /> : null}
+          <ActionProbe onIds={(ids) => { capturedIds = ids; }} />
+        </ActionsProvider>
+      );
+    }
+
+    const { rerender } = render(<Pair showB />);
+    expect(capturedIds).toContain('viewport.zoom');
+
+    act(() => { rerender(<Pair showB={false} />); });
     expect(capturedIds).toContain('viewport.wheelPan');
     expect(capturedIds).toContain('viewport.zoom');
   });
