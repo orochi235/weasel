@@ -1,5 +1,6 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import type { ShapeModule } from '../types';
+import { useSvgBox } from '../useSvgBox';
 
 export interface PerforatedParams {
   holeRadius?: number;
@@ -16,21 +17,7 @@ function PerforatedComponent({ variant, focused, params }: {
   const cfg = { ...DEFAULTS, ...params };
   const maskId = useId();
   const ref = useRef<SVGGElement>(null);
-  const [box, setBox] = useState({ w: 100, h: 100 });
-
-  useLayoutEffect(() => {
-    const svg = ref.current?.ownerSVGElement;
-    if (!svg) return;
-    const update = () => {
-      const r = svg.getBoundingClientRect();
-      if (r.width > 0 && r.height > 0) setBox({ w: r.width, h: r.height });
-    };
-    update();
-    if (typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(update);
-    ro.observe(svg);
-    return () => ro.disconnect();
-  }, []);
+  const box = useSvgBox(ref);
 
   // Convert CSS-px hole sizing into viewBox units so holes look circular on either axis.
   const rx = (cfg.holeRadius / box.w) * 100;

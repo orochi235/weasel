@@ -54,6 +54,27 @@ function projectBounds<B extends Bounds>(b: B, view: View): B {
 }
 
 
+/**
+ * Transitive leaf ids under `id`. A childless node is a leaf only if it is not
+ * itself a container: an empty container contributes no bounds, and its own
+ * stored pose is at its most stale when no children are left to have moved it.
+ */
+function leavesOf(
+  id: string,
+  getChildren: (id: string) => readonly string[],
+  isContainer: (id: string) => boolean,
+): string[] {
+  if (!isContainer(id)) return [id];
+  const out: string[] = [];
+  const visit = (nid: string) => {
+    const kids = getChildren(nid);
+    if (kids.length === 0) { if (!isContainer(nid)) out.push(nid); return; }
+    for (const k of kids) visit(k);
+  };
+  visit(id);
+  return out;
+}
+
 /** Options for `composeSelectionPose`. */
 export interface ComposeSelectionPoseOpts<TPose> {
   /** Move overlay; when present its `poses` map wins over everything else. */
@@ -106,21 +127,8 @@ export function composeSelectionPose<TPose>(
   const getBounds = opts.getBounds ?? ((pose: TPose) => pose as unknown as Bounds);
   const fromBounds = opts.fromBounds ?? ((bounds: Bounds) => bounds as unknown as TPose);
 
-  const leavesOf = (id: string): string[] => {
-    if (!getChildren || !isContainer || !isContainer(id)) return [id];
-    const out: string[] = [];
-    const visit = (nid: string) => {
-      const kids = getChildren(nid);
-      // A childless node is a leaf only if it is not itself a container. An
-      // empty container contributes no bounds: this resolver exists to avoid
-      // a container's own stored pose, and that pose is at its most stale
-      // when there are no children left to have moved it.
-      if (kids.length === 0) { if (!isContainer(nid)) out.push(nid); return; }
-      for (const k of kids) visit(k);
-    };
-    visit(id);
-    return out;
-  };
+  const selectionLeaves = (id: string): string[] =>
+    getChildren && isContainer ? leavesOf(id, getChildren, isContainer) : [id];
 
   const resolveLeaf = (id: string): TPose => {
     const moved = moveOverlay?.poses.get(id);
@@ -131,7 +139,7 @@ export function composeSelectionPose<TPose>(
 
   return (id: string): TPose | null => {
     if (isContainer?.(id)) {
-      const leaves = leavesOf(id);
+      const leaves = selectionLeaves(id);
       if (leaves.length === 0) return null;
       const containerResizeLeafPoses =
         resizeOverlay && resizeOverlay.id === id ? resizeOverlay.leafPoses : undefined;
@@ -174,24 +182,12 @@ function makeContainerAwareBoundsResolver<TPose>(
       return p === null ? null : getBounds(p);
     };
   }
-  const leavesOf = (id: string): string[] => {
-    if (!isContainer(id)) return [id];
-    const out: string[] = [];
-    const visit = (nid: string) => {
-      const kids = getChildren(nid);
-      // See `composeSelectionPose.leavesOf` — an empty container is not a leaf.
-      if (kids.length === 0) { if (!isContainer(nid)) out.push(nid); return; }
-      for (const k of kids) visit(k);
-    };
-    visit(id);
-    return out;
-  };
   return (id: string): Bounds | null => {
     if (!isContainer(id)) {
       const p = getPose(id);
       return p === null ? null : getBounds(p);
     }
-    const leaves = leavesOf(id);
+    const leaves = leavesOf(id, getChildren, isContainer);
     if (leaves.length === 0) return null;
     const leafBounds: Bounds[] = [];
     for (const leafId of leaves) {
