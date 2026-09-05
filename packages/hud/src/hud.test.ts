@@ -8,6 +8,7 @@ function makeHost(): HudHost & { redrawCount: number } {
     redrawCount: 0,
     requestRedraw() { this.redrawCount++; },
     registerLayer: vi.fn(() => () => {}),
+    subscribeFrame: vi.fn(() => () => {}),
   };
   return host;
 }
@@ -141,7 +142,7 @@ describe('Hud', () => {
   it('window() adds the widget and wires onChange to markDirty', () => {
     const hud = createHud();
     const redraw = vi.fn();
-    hud.bind({ requestRedraw: redraw, registerLayer: () => () => {} });
+    hud.bind({ requestRedraw: redraw, registerLayer: () => () => {}, subscribeFrame: () => () => {} });
     const win = hud.window({ id: 'w', x: 0, y: 0, w: 200, h: 150, title: 'T' });
     expect(hud.widgets()).toContain(win);
     redraw.mockClear();
@@ -151,9 +152,43 @@ describe('Hud', () => {
 
   it('a disposed window removes itself from the hud', () => {
     const hud = createHud();
-    hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
+    hud.bind(makeHost());
     const win = hud.window({ id: 'w', x: 0, y: 0, w: 200, h: 150, title: 'T' });
     win.dispose();
     expect(hud.widgets()).not.toContain(win);
+  });
+
+  it('a frame subscription taken before bind starts firing when the host arrives', () => {
+    const hud = createHud();
+    const seen = vi.fn();
+    hud.subscribeFrame(seen);
+
+    const subs = new Set<() => void>();
+    hud.bind({
+      requestRedraw: () => {},
+      registerLayer: () => () => {},
+      subscribeFrame: (fn) => { subs.add(fn); return () => { subs.delete(fn); }; },
+    });
+    for (const fn of subs) fn();
+    expect(seen).toHaveBeenCalledTimes(1);
+
+    // Unbinding drops the host subscription rather than leaving it dangling.
+    hud.unbind();
+    expect(subs.size).toBe(0);
+  });
+
+  it('unsubscribing a frame callback stops it', () => {
+    const hud = createHud();
+    const seen = vi.fn();
+    const off = hud.subscribeFrame(seen);
+    const subs = new Set<() => void>();
+    hud.bind({
+      requestRedraw: () => {},
+      registerLayer: () => () => {},
+      subscribeFrame: (fn) => { subs.add(fn); return () => { subs.delete(fn); }; },
+    });
+    off();
+    for (const fn of subs) fn();
+    expect(seen).not.toHaveBeenCalled();
   });
 });

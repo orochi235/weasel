@@ -23,6 +23,10 @@ export interface Hud {
   markDirty(): void;
   bind(host: HudHost): void;
   unbind(): void;
+  /** Run `fn` after every paint the host lands. Survives bind/unbind: a
+   *  subscription taken before the HUD is bound starts firing when it is.
+   *  Returns an unsubscribe. */
+  subscribeFrame(fn: () => void): () => void;
   /** True after bind() and before unbind(). */
   readonly attached: boolean;
   /** Create a rect widget, add it to the HUD, and wire onChange → markDirty. */
@@ -44,8 +48,19 @@ export function createHud(): Hud {
   const list: Widget[] = [];
   let host: HudHost | null = null;
   let detached = false;
+  const frameSubs = new Set<() => void>();
+  let hostFrameSub: (() => void) | null = null;
 
   const requestRedraw = () => { host?.requestRedraw(); };
+
+  // One subscription on the host fans out to all of ours, so a subscriber
+  // taken while unbound is not lost and bind/unbind stays cheap.
+  const attachFrames = () => {
+    if (hostFrameSub || !host || frameSubs.size === 0) return;
+    hostFrameSub = host.subscribeFrame(() => {
+      for (const fn of [...frameSubs]) fn();
+    });
+  };
 
   // NOTE: factory methods (rect, text, image, label, button) inject
   // `onChange: () => requestRedraw()` into widget options so widget setters
@@ -95,11 +110,22 @@ export function createHud(): Hud {
       if (host) throw new Error('weasel-hud: HUD is already bound to a host.');
       host = h;
       detached = false;
+      attachFrames();
       if (list.length > 0) requestRedraw();
     },
     unbind() {
+      hostFrameSub?.();
+      hostFrameSub = null;
       host = null;
       detached = true;
+    },
+    subscribeFrame(fn) {
+      frameSubs.add(fn);
+      attachFrames();
+      return () => {
+        frameSubs.delete(fn);
+        if (frameSubs.size === 0) { hostFrameSub?.(); hostFrameSub = null; }
+      };
     },
     rect(opts) {
       let w: RectWidget | null = null;

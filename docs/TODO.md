@@ -527,16 +527,14 @@ Core five + Crop shipped. Remaining:
   put the `catch` in `useFrameLoop` — scheduling has no information about what a
   draw failure means, and the granularity is wrong there.
 
-- **(P1) The hud loupe's pixel mode reads back a stale buffer.** `refreshPixels`
-  calls `readbackRegion` — `gl.readPixels` — straight off an aim change
-  (`packages/hud/src/loupe/createLoupe.ts:152`), which since the frame loop
-  landed is a moment with no paint behind it: the buffer holds the previous
-  frame, so the magnifier shows the scene as it was one frame ago while dragging.
-  The changeset names the remedy and nothing in `packages/hud/src` implements it
-  — no call to `subscribeFrame` exists there. Fix shape: `HudHost`
-  (`packages/hud/src/host.ts`) gains `subscribeFrame`, which `attachHud` already
-  has on the `api` it shims from (`attach.ts:144`), and the loupe defers the
-  readback to the next landed paint instead of taking it inline.
+- **(P3) The loupe's colour sample is still read off an unlanded frame.** The
+  region readback now waits for a paint, but `readHex`
+  (`packages/hud/src/loupe/createLoupe.ts`) still calls `readbackRegion` inline
+  from `LoupeSurface.sample`, so `loupe.color` and `onColorChange` report the
+  frame before the aim. `pick()` cannot move — an eyedropper has to answer
+  synchronously, and at click time the last landed frame *is* what the user
+  clicked on, so that caller is already right. Only the aim-driven sample is
+  wrong, and fixing it means letting `model.color` settle a frame later.
 
 - **(P3) The loupe cannot aim at a detached pane.** `createLoupe` takes `canvas`
   and `input` separately, so a pane's aim is measured against the pane box — but

@@ -137,12 +137,12 @@ export function attachHud(
 
   const detachLayer = api.registerLayer(layer);
 
-  // Bind the HUD to a host shim. The HUD only uses requestRedraw and
-  // registerLayer in v1; provide registerLayer as a no-op since the HUD has
+  // Bind the HUD to a host shim. registerLayer is a no-op because the HUD has
   // already registered its single layer via api.registerLayer above.
   hud.bind({
     requestRedraw: api.requestRedraw,
     registerLayer: () => () => {},
+    subscribeFrame: api.subscribeFrame,
   });
 
   return () => {
