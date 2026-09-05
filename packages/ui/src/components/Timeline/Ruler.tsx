@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactElement, type WheelEvent as ReactWheelEvent } from 'react';
+import { openPointerSession, type PointerSession } from '@weasel-js/core';
 import s from './Timeline.module.css';
 import { createTimeScale, panWindow, tickTimes, toPercent, zoomWindow, type TimeWindow } from './timeScale';
 
@@ -25,8 +26,8 @@ function formatMs(ms: number): string {
 export function Ruler(props: RulerProps): ReactElement {
   const { window: win, bounds, playhead, onScrub, onWindowChange } = props;
   const trackRef = useRef<HTMLDivElement | null>(null);
-  const endDragRef = useRef<(() => void) | null>(null);
-  useEffect(() => () => { endDragRef.current?.(); }, []);
+  const sessionRef = useRef<PointerSession | null>(null);
+  useEffect(() => () => { sessionRef.current?.cancel(); }, []);
 
   // Re-render once the track is mounted so ticks lay out against its real
   // width — `trackRef.current` is null on the render that first attaches it.
@@ -51,23 +52,20 @@ export function Ruler(props: RulerProps): ReactElement {
     return Math.min(win.to, Math.max(win.from, raw));
   };
 
-  // Document listeners, never setPointerCapture: capture retargets pointerup and
-  // kills the click on non-native children. See BandEditor, same idiom.
+  // `capture: false`: the session tracks the pointer off the ruler on its own,
+  // and capture would retarget pointerup and kill the click on non-native
+  // children of the scrubbed track.
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
     if (e.button !== 0) return;
     onScrub(msAt(e.clientX));
 
-    const move = (ev: PointerEvent): void => { onScrub(msAt(ev.clientX)); };
-    const end = (): void => {
-      document.removeEventListener('pointermove', move);
-      document.removeEventListener('pointerup', end);
-      document.removeEventListener('pointercancel', end);
-      endDragRef.current = null;
-    };
-    document.addEventListener('pointermove', move);
-    document.addEventListener('pointerup', end);
-    document.addEventListener('pointercancel', end);
-    endDragRef.current = end;
+    sessionRef.current?.cancel();
+    const end = (): void => { sessionRef.current = null; };
+    sessionRef.current = openPointerSession(e.currentTarget, e, {
+      onMove: (ev) => { onScrub(msAt(ev.clientX)); },
+      onEnd: end,
+      onCancel: end,
+    }, { capture: false });
   };
 
   const onWheel = (e: ReactWheelEvent<HTMLDivElement>): void => {

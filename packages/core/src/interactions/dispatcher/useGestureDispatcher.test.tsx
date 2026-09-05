@@ -422,6 +422,34 @@ describe('useGestureDispatcher', () => {
       expect(endSpy).toHaveBeenCalledTimes(1);
     });
 
+    it('ends a stale drag when a fresh press arrives on the same pointer', () => {
+      // The release landed on another window and the pointer never came back
+      // over the canvas, so the missed-release rule never saw it. The next
+      // press is the proof it ended; without this the stale drag steers with
+      // the new press.
+      const endSpy = vi.fn();
+      const moveSpy = vi.fn();
+      const dragAction: Action = {
+        id: 'demo.drag',
+        label: 'drag',
+        defaultBinding: { kind: 'drag' },
+        invoker: {
+          timing: 'ongoing',
+          start: () => ({ onMove: () => moveSpy(), onEnd: (_c, reason) => endSpy(reason) }),
+        },
+      };
+      const { container } = render(
+        <Harness><Probe actionDef={dragAction} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
+      );
+      const canvas = container.querySelector('canvas')!;
+      act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0, pointerId: 1, buttons: 1 }); });
+      act(() => { fire(canvas, 'pointermove', { clientX: 40, clientY: 40, pointerId: 1, buttons: 1 }); });
+      expect(endSpy).not.toHaveBeenCalled();
+
+      act(() => { fire(canvas, 'pointerdown', { clientX: 5, clientY: 5, pointerId: 1, buttons: 1 }); });
+      expect(endSpy).toHaveBeenCalledTimes(1);
+    });
+
     it('leaves the drag alone when the source never reports buttons', () => {
       // A press carrying no button state means the source does not report it,
       // and every move would otherwise read as a release.

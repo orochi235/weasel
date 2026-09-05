@@ -391,3 +391,63 @@ describe('controlled round trip', () => {
     ).toEqual(['20', '60']);
   });
 });
+
+describe('seam drag pointer session', () => {
+  it('commits a release that lands outside the editor', () => {
+    const outside = document.createElement('div');
+    document.body.appendChild(outside);
+    const { seams, onChange } = setup();
+    fireEvent.pointerDown(seams()[0], { clientX: 80, clientY: 20, button: 0, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 160, clientY: 20, buttons: 1 });
+    fireEvent.pointerUp(outside, { clientX: 900, clientY: 900, bubbles: true });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(froms(onChange.mock.calls[0][0])).toEqual([0, 40, 60]);
+    outside.remove();
+  });
+
+  it('cancels the drag when the seam loses pointer capture', () => {
+    const { seams, onInput, onChange } = setup();
+    const seam = seams()[0];
+    fireEvent.pointerDown(seam, { clientX: 80, clientY: 20, button: 0, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 120, clientY: 20, buttons: 1 });
+    expect(onInput).toHaveBeenCalledTimes(1);
+    fireEvent(seam, new PointerEvent('lostpointercapture', { pointerId: 0, bubbles: true }));
+    fireEvent.pointerMove(document, { clientX: 300, clientY: 20, buttons: 1 });
+    expect(onInput).toHaveBeenCalledTimes(1);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('treats a move with no button held as the release it missed', () => {
+    const { seams, onInput, onChange } = setup();
+    fireEvent.pointerDown(seams()[0], { clientX: 80, clientY: 20, button: 0, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 160, clientY: 20, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 300, clientY: 20, buttons: 0 });
+    expect(onInput).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(froms(onChange.mock.calls[0][0])).toEqual([0, 40, 60]);
+  });
+
+  it('ends a band-body drag on the release it missed', () => {
+    const { bodies, onChange } = setup();
+    fireEvent.pointerDown(bodies()[1], { clientX: 100, clientY: 20, button: 0, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 140, clientY: 20, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 300, clientY: 20, buttons: 0 });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(froms(onChange.mock.calls[0][0])).toEqual([0, 30, 70]);
+  });
+});
+
+// PROXY ASSERTION — see Ruler.test.tsx for why this is asserted rather than the
+// browser behaviour it stands in for. A band body is a `<button>` whose content
+// the consumer renders, and capture would kill the click on it.
+describe('BandEditor pointer capture', () => {
+  it('never captures the pointer', () => {
+    const capture = vi.fn();
+    Element.prototype.setPointerCapture = capture;
+    const { seams } = setup();
+    fireEvent.pointerDown(seams()[0], { clientX: 80, clientY: 20, button: 0, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 160, clientY: 20, buttons: 1 });
+    fireEvent.pointerUp(document, { clientX: 160, clientY: 20 });
+    expect(capture).not.toHaveBeenCalled();
+  });
+});

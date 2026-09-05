@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
-import type { WheelEvent } from 'react';
+import type { PointerEvent as ReactPointerEvent, WheelEvent } from 'react';
 import { describe, expect, it } from 'vitest';
 import type { ViewTransform } from '../instrument/types';
 import { screenToWorld } from './canvasCoords';
@@ -107,5 +107,106 @@ describe('usePanZoom', () => {
       expect(after.x).toBeCloseTo(before.x, 6);
       expect(after.y).toBeCloseTo(before.y, 6);
     });
+  });
+});
+
+/** The fields `usePanZoom` reads off a React pointerdown, plus the element the
+ *  session hangs its document listeners off. */
+function press(
+  el: HTMLElement,
+  x: number,
+  y: number,
+  init: { pointerId?: number; button?: number; buttons?: number } = {},
+): ReactPointerEvent<HTMLElement> {
+  return {
+    pointerId: init.pointerId ?? 1,
+    button: init.button ?? 0,
+    buttons: init.buttons ?? 1,
+    clientX: x,
+    clientY: y,
+    currentTarget: el,
+  } as unknown as ReactPointerEvent<HTMLElement>;
+}
+
+function dispatchOn(target: EventTarget, type: string, init: PointerEventInit) {
+  act(() => {
+    target.dispatchEvent(new PointerEvent(type, { pointerId: 1, bubbles: true, ...init }));
+  });
+}
+
+function dragSetup(options?: Partial<UsePanZoomOptions>) {
+  let view: ViewTransform = { zoom: 1, pan: { x: 0, y: 0 } };
+  const onViewChange = (v: ViewTransform) => {
+    view = v;
+  };
+  const { result, unmount } = renderHook(() =>
+    usePanZoom({ ...options, view, onViewChange } as UsePanZoomOptions),
+  );
+  const el = document.createElement('div');
+  document.body.appendChild(el);
+  return { result, unmount, el, getView: () => view };
+}
+
+describe('usePanZoom dragging', () => {
+  it('pans from a move the element never sees', () => {
+    const { result, el, getView } = dragSetup();
+    act(() => result.current.onPointerDown(press(el, 100, 100)));
+    dispatchOn(document, 'pointermove', { buttons: 1, clientX: 150, clientY: 120 });
+    expect(getView().pan).toEqual({ x: 50, y: 20 });
+  });
+
+  it('ends the drag on a release dispatched off the element', () => {
+    const { result, el, getView } = dragSetup();
+    act(() => result.current.onPointerDown(press(el, 100, 100)));
+    dispatchOn(document, 'pointermove', { buttons: 1, clientX: 150, clientY: 120 });
+    dispatchOn(document, 'pointerup', { clientX: 150, clientY: 120 });
+    expect(result.current.isDragging()).toBe(false);
+    dispatchOn(document, 'pointermove', { buttons: 1, clientX: 400, clientY: 400 });
+    expect(getView().pan).toEqual({ x: 50, y: 20 });
+  });
+
+  it('ends the drag when capture is lost mid-gesture', () => {
+    const { result, el, getView } = dragSetup();
+    act(() => result.current.onPointerDown(press(el, 100, 100)));
+    dispatchOn(document, 'pointermove', { buttons: 1, clientX: 150, clientY: 120 });
+    dispatchOn(el, 'lostpointercapture', {});
+    expect(result.current.isDragging()).toBe(false);
+    dispatchOn(document, 'pointermove', { buttons: 1, clientX: 400, clientY: 400 });
+    expect(getView().pan).toEqual({ x: 50, y: 20 });
+  });
+
+  it('reads a move with nothing held as the release that never arrived', () => {
+    const { result, el, getView } = dragSetup();
+    act(() => result.current.onPointerDown(press(el, 100, 100, { buttons: 1 })));
+    dispatchOn(document, 'pointermove', { buttons: 1, clientX: 150, clientY: 120 });
+    expect(getView().pan).toEqual({ x: 50, y: 20 });
+    dispatchOn(document, 'pointermove', { buttons: 0, clientX: 300, clientY: 300 });
+    expect(getView().pan).toEqual({ x: 50, y: 20 });
+    expect(result.current.isDragging()).toBe(false);
+  });
+
+  it('reports a release that never crossed the threshold as a tap', () => {
+    const taps: number[] = [];
+    const { result, el } = dragSetup({ onTap: (e) => taps.push(e.clientX) });
+    act(() => result.current.onPointerDown(press(el, 100, 100)));
+    dispatchOn(document, 'pointerup', { clientX: 101, clientY: 100 });
+    expect(taps).toEqual([101]);
+  });
+
+  it('does not report a tap when the pointer panned', () => {
+    const taps: number[] = [];
+    const { result, el } = dragSetup({ onTap: (e) => taps.push(e.clientX) });
+    act(() => result.current.onPointerDown(press(el, 100, 100)));
+    dispatchOn(document, 'pointermove', { buttons: 1, clientX: 150, clientY: 120 });
+    dispatchOn(document, 'pointerup', { clientX: 150, clientY: 120 });
+    expect(taps).toEqual([]);
+  });
+
+  it('drops its listeners when the hook unmounts mid-drag', () => {
+    const { result, el, unmount, getView } = dragSetup();
+    act(() => result.current.onPointerDown(press(el, 100, 100)));
+    unmount();
+    dispatchOn(document, 'pointermove', { buttons: 1, clientX: 400, clientY: 400 });
+    expect(getView().pan).toEqual({ x: 0, y: 0 });
   });
 });

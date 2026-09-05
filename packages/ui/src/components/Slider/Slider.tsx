@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react';
+import { openPointerSession, type PointerSession } from '@weasel-js/core';
 import s from './Slider.module.css';
 import { formatNumber } from '../../format/number';
 
@@ -117,6 +118,10 @@ function clamp(v: number, lo: number, hi: number): number {
 /** How close a drag has to come to a stop, in track pixels, to land on it. */
 const STOP_SNAP_PX = 8;
 
+/** A custom `ThumbShape.render` may put interactive content inside the thumb,
+ *  and capture would retarget pointerup and kill the click on it. */
+const NO_CAPTURE = { capture: false } as const;
+
 /** The stops that are actually reachable: inside the range, deduped, ascending. */
 function usableStops(stops: number[] | undefined, min: number, max: number): number[] {
   if (!stops || stops.length === 0) return [];
@@ -201,11 +206,9 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
   const trackRef = useRef<HTMLDivElement | null>(null);
   // In-flight thumb buffer during a drag; null when not dragging.
   const dragBufferRef = useRef<T[] | null>(null);
-  // Teardown for the in-flight drag's document listeners, so unmounting
-  // mid-drag doesn't leave them running against a gone track.
-  const endDragRef = useRef<(() => void) | null>(null);
+  const sessionRef = useRef<PointerSession | null>(null);
 
-  useEffect(() => () => { endDragRef.current?.(); }, []);
+  useEffect(() => () => { sessionRef.current?.cancel(); }, []);
 
   const valueToFraction = useCallback(
     (v: number): number => (max === min ? 0 : clamp((v - min) / (max - min), 0, 1)),
@@ -221,7 +224,8 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
   // thumb before the drag begins, and without seeding, a release with no
   // movement would commit the stale buffer and undo that move.
   const beginThumbDrag = useCallback(
-    (index: number, seed?: readonly T[]) => {
+    (origin: Element, down: ReactPointerEvent, index: number, seed?: readonly T[]) => {
+      sessionRef.current?.cancel();
       const buf: T[] = (seed ?? thumbs).map(t => ({ ...t }));
       dragBufferRef.current = buf;
       let droppedOff = false;
@@ -256,22 +260,15 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
         onInput(buffer.map(t => ({ ...t })));
       };
 
-      const unlisten = () => {
-        document.removeEventListener('pointermove', onMove);
-        document.removeEventListener('pointerup', onUp);
-        document.removeEventListener('pointercancel', onCancel);
-        endDragRef.current = null;
-      };
-
-      // A canceled pointer never fires `pointerup`; without this the drag
-      // stays live and the thumb tracks a released pointer.
+      // A drag that ends without a release — cancelled pointer, lost capture,
+      // an unmount — drops the buffer without committing.
       const onCancel = () => {
-        unlisten();
+        sessionRef.current = null;
         dragBufferRef.current = null;
       };
 
-      const onUp = () => {
-        unlisten();
+      const onEnd = () => {
+        sessionRef.current = null;
         const buffer = dragBufferRef.current;
         dragBufferRef.current = null;
         if (!buffer) return;
@@ -289,16 +286,14 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
         onChange?.(buffer.map(t => ({ ...t })));
       };
 
-      document.addEventListener('pointermove', onMove);
-      document.addEventListener('pointerup', onUp);
-      document.addEventListener('pointercancel', onCancel);
-      endDragRef.current = onCancel;
+      sessionRef.current = openPointerSession(origin, down, { onMove, onEnd, onCancel }, NO_CAPTURE);
     },
     [thumbs, onInput, onChange, fractionToValue, min, max, step, stops, constraint, props],
   );
 
   const beginShiftAllDrag = useCallback(
-    (anchorX: number) => {
+    (origin: Element, down: ReactPointerEvent, anchorX: number) => {
+      sessionRef.current?.cancel();
       const buf: T[] = thumbs.map(t => ({ ...t }));
       const startValues = buf.map(t => t.value);
       dragBufferRef.current = buf;
@@ -328,29 +323,19 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
         onInput(buffer.map(t => ({ ...t })));
       };
 
-      const unlisten = () => {
-        document.removeEventListener('pointermove', onMove);
-        document.removeEventListener('pointerup', onUp);
-        document.removeEventListener('pointercancel', onCancel);
-        endDragRef.current = null;
-      };
-
       const onCancel = () => {
-        unlisten();
+        sessionRef.current = null;
         dragBufferRef.current = null;
       };
 
-      const onUp = () => {
-        unlisten();
+      const onEnd = () => {
+        sessionRef.current = null;
         const buffer = dragBufferRef.current;
         dragBufferRef.current = null;
         if (buffer) onChange?.(buffer.map(t => ({ ...t })));
       };
 
-      document.addEventListener('pointermove', onMove);
-      document.addEventListener('pointerup', onUp);
-      document.addEventListener('pointercancel', onCancel);
-      endDragRef.current = onCancel;
+      sessionRef.current = openPointerSession(origin, down, { onMove, onEnd, onCancel }, NO_CAPTURE);
     },
     [thumbs, onInput, onChange, min, max, step],
   );
@@ -364,10 +349,11 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
     (e.currentTarget as HTMLElement).focus?.();
     e.preventDefault();
     e.stopPropagation();
+    const origin = e.currentTarget as HTMLElement;
     if (e.shiftKey && props.allowShiftAll) {
-      beginShiftAllDrag(e.clientX);
+      beginShiftAllDrag(origin, e, e.clientX);
     } else {
-      beginThumbDrag(index);
+      beginThumbDrag(origin, e, index);
     }
   };
 
@@ -416,7 +402,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
     if (constraint === 'ordered') moved = clampOrdered(moved, next, index, min, max, step);
     next[index] = { ...next[index], value: moved };
     onInput(next);
-    beginThumbDrag(index, next);
+    beginThumbDrag(track, e, index, next);
   };
 
   const onThumbKeyDown = (index: number) => (e: ReactKeyboardEvent) => {

@@ -155,4 +155,45 @@ describe('openPointerSession', () => {
     document.dispatchEvent(move(1, 1, 3, 4));
     expect(onMove).toHaveBeenCalledTimes(1);
   });
+
+  it('cancels when a fresh press arrives on the same pointer', () => {
+    // The release landed on another window and the pointer never came back
+    // over us, so neither pointerup nor the missed-release rule ever fired.
+    // Without this the stale session resumes on the next move and steers the
+    // old drag with the new press.
+    const onCancel = vi.fn();
+    const onMove = vi.fn();
+    const s = openPointerSession(el(), down(), { onCancel, onMove });
+
+    document.dispatchEvent(down());
+    expect(onCancel).toHaveBeenCalledWith('superseded');
+    expect(s.active).toBe(false);
+
+    document.dispatchEvent(move(1, 1, 10, 20));
+    expect(onMove).not.toHaveBeenCalled();
+  });
+
+  it('a press from another pointer is not evidence about this one', () => {
+    // A second finger landing is not a release of the first.
+    const onCancel = vi.fn();
+    const s = openPointerSession(el(), down(1), { onCancel });
+    document.dispatchEvent(down(2));
+    expect(onCancel).not.toHaveBeenCalled();
+    expect(s.active).toBe(true);
+  });
+
+  it('does not cancel itself on the press that opened it', () => {
+    // The session is opened while its own pointerdown is still propagating.
+    // Document capture runs before the target, so the listener added here
+    // must not see the event that created it.
+    const onCancel = vi.fn();
+    const target = el();
+    let s: ReturnType<typeof openPointerSession> | null = null;
+    target.addEventListener('pointerdown', (e) => {
+      s = openPointerSession(target, e as PointerEvent, { onCancel });
+    });
+    target.dispatchEvent(down());
+    expect(onCancel).not.toHaveBeenCalled();
+    expect(s!.active).toBe(true);
+  });
 });

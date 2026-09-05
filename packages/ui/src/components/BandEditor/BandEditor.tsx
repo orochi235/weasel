@@ -9,6 +9,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react';
+import { openPointerSession, type PointerSession } from '@weasel-js/core';
 import s from './BandEditor.module.css';
 import { clamp01, resolveScale, type BandScale } from './scale';
 import {
@@ -115,8 +116,8 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
   const splitBand = props.splitBand ?? keepData;
 
   const trackRef = useRef<HTMLDivElement | null>(null);
-  const endDragRef = useRef<(() => void) | null>(null);
-  useEffect(() => () => { endDragRef.current?.(); }, []);
+  const sessionRef = useRef<PointerSession | null>(null);
+  useEffect(() => () => { sessionRef.current?.cancel(); }, []);
   const labelId = useId();
   const bands = normalizeBands(value, min);
   const sc = resolveScale(scale, min);
@@ -148,25 +149,20 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
     return best;
   };
 
-  const drag = (onMove: (ev: PointerEvent) => void, onEnd: () => void): void => {
-    const move = (ev: PointerEvent): void => onMove(ev);
-    const unlisten = (): void => {
-      document.removeEventListener('pointermove', move);
-      document.removeEventListener('pointerup', up);
-      document.removeEventListener('pointercancel', cancel);
-      endDragRef.current = null;
-    };
-    // A canceled pointer never fires `pointerup`; without this the seam keeps
-    // tracking a released pointer and the gesture never commits.
-    const cancel = (): void => unlisten();
-    const up = (): void => {
-      unlisten();
-      onEnd();
-    };
-    document.addEventListener('pointermove', move);
-    document.addEventListener('pointerup', up);
-    document.addEventListener('pointercancel', cancel);
-    endDragRef.current = cancel;
+  // No pointer capture: a band body is a `<button>` whose content the consumer
+  // renders, and capture would retarget pointerup and kill the click on it.
+  // A drag that ends without a release commits nothing.
+  const drag = (
+    down: ReactPointerEvent<HTMLElement>,
+    onMove: (ev: PointerEvent) => void,
+    onEnd: () => void,
+  ): void => {
+    sessionRef.current?.cancel();
+    sessionRef.current = openPointerSession(down.currentTarget, down, {
+      onMove,
+      onEnd: () => { sessionRef.current = null; onEnd(); },
+      onCancel: () => { sessionRef.current = null; },
+    }, { capture: false });
   };
 
   const onSeamPointerDown = (index: number) => (e: ReactPointerEvent<HTMLDivElement>): void => {
@@ -176,6 +172,7 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
     const base = bands;
     let latest: Band<T>[] | null = null;
     drag(
+      e,
       (ev) => {
         const to = clampSeamTo(base, index, fromUnit(snapped(unitAt(ev.clientX), ev.altKey)), min, max);
         latest = setSeam(base, index, to);
@@ -215,6 +212,7 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
     const startUnit = unitAt(e.clientX);
     let latest: Band<T>[] | null = null;
     drag(
+      e,
       (ev) => {
         const shift = clampBandShift(edges, index, unitAt(ev.clientX) - startUnit);
         latest = moveBandEdges(

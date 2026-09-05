@@ -17,7 +17,9 @@ export type PointerSessionCancelReason =
   /** Capture went away mid-gesture — usually the origin element was removed. */
   | 'lostcapture'
   /** `cancel()` — an unmount, a window blur, Escape, a consumer's own rule. */
-  | 'aborted';
+  | 'aborted'
+  /** A new press arrived on this pointer, so the tracked one had ended. */
+  | 'superseded';
 
 export interface PointerSessionCallbacks {
   /** Every move belonging to this pointer, while it is still held. */
@@ -48,9 +50,10 @@ export interface PointerSession {
  *
  * Listens on the origin's document rather than on the element: a captured
  * element that is removed mid-drag stops receiving events, and every listener
- * hung on it goes with it. Two recovery rules close the gaps a plain
- * pointerup/pointercancel pair leaves — `lostpointercapture` cancels, and a
- * move reporting no held button is read as the release that never arrived.
+ * hung on it goes with it. Three recovery rules close the gaps a plain
+ * pointerup/pointercancel pair leaves — `lostpointercapture` cancels, a move
+ * reporting no held button is read as the release that never arrived, and a
+ * fresh press on the same pointer says the tracked one had already ended.
  */
 export function openPointerSession(
   origin: Element,
@@ -68,6 +71,7 @@ export function openPointerSession(
     doc.removeEventListener('pointermove', onMove, true);
     doc.removeEventListener('pointerup', onUp, true);
     doc.removeEventListener('pointercancel', onPointerCancel, true);
+    doc.removeEventListener('pointerdown', onRepress, true);
     origin.removeEventListener(LOST_CAPTURE_EVENT, onLostCapture);
     if (opts.capture !== false) {
       try { origin.releasePointerCapture?.(pointerId); } catch { /* already gone */ }
@@ -99,6 +103,12 @@ export function openPointerSession(
   function onPointerCancel(e: PointerEvent) {
     if (mine(e)) abort('pointercancel');
   }
+  // A press on a pointer we still believe is held: the release landed
+  // somewhere that never told us, and where it ended is unknown — so this
+  // cancels rather than ending at the new press's coordinates.
+  function onRepress(e: PointerEvent) {
+    if (mine(e)) abort('superseded');
+  }
   function onLostCapture(e: Event) {
     if ((e as PointerEvent).pointerId === pointerId) abort('lostcapture');
   }
@@ -112,6 +122,7 @@ export function openPointerSession(
   doc.addEventListener('pointermove', onMove, true);
   doc.addEventListener('pointerup', onUp, true);
   doc.addEventListener('pointercancel', onPointerCancel, true);
+  doc.addEventListener('pointerdown', onRepress, true);
   origin.addEventListener(LOST_CAPTURE_EVENT, onLostCapture);
 
   return {

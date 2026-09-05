@@ -313,3 +313,85 @@ describe('a clickable row nested in a list, the shape a floating panel usually h
     expect(panel.dataset.dragging).toBe('true');
   });
 });
+
+describe('FloatingPanel drag lifecycle', () => {
+  const realCapture = Element.prototype.setPointerCapture;
+  afterEach(() => {
+    Element.prototype.setPointerCapture = realCapture;
+  });
+
+  it('keeps dragging from moves the panel never sees, and ends on a release off it', () => {
+    const { panel } = renderPanel(<FloatingPanel anchor="top-left">x</FloatingPanel>);
+    fireEvent.pointerDown(panel, { pointerId: 1, buttons: 1, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(document.body, { pointerId: 1, buttons: 1, clientX: 200, clientY: 180 });
+    expect(panel.dataset.dragging).toBe('true');
+    expect(panel.style.left).toBe('100px');
+    fireEvent.pointerUp(document.body, { pointerId: 1, clientX: 200, clientY: 180 });
+    expect(panel.dataset.dragging).toBeUndefined();
+    fireEvent.pointerMove(document.body, { pointerId: 1, buttons: 1, clientX: 300, clientY: 180 });
+    expect(panel.style.left).toBe('100px');
+  });
+
+  it('ends the drag when capture is lost mid-gesture', () => {
+    const { panel } = renderPanel(<FloatingPanel anchor="top-left">x</FloatingPanel>);
+    fireEvent.pointerDown(panel, { pointerId: 1, buttons: 1, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(document.body, { pointerId: 1, buttons: 1, clientX: 200, clientY: 180 });
+    fireEvent(panel, new PointerEvent('lostpointercapture', { pointerId: 1, bubbles: true }));
+    expect(panel.dataset.dragging).toBeUndefined();
+    fireEvent.pointerMove(document.body, { pointerId: 1, buttons: 1, clientX: 300, clientY: 180 });
+    expect(panel.style.left).toBe('100px');
+  });
+
+  it('reads a move with nothing held as the release that never arrived', () => {
+    const { panel } = renderPanel(<FloatingPanel anchor="top-left">x</FloatingPanel>);
+    fireEvent.pointerDown(panel, { pointerId: 1, buttons: 1, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(document.body, { pointerId: 1, buttons: 1, clientX: 200, clientY: 180 });
+    expect(panel.dataset.dragging).toBe('true');
+    fireEvent.pointerMove(document.body, { pointerId: 1, buttons: 0, clientX: 300, clientY: 180 });
+    expect(panel.dataset.dragging).toBeUndefined();
+    expect(panel.style.left).toBe('100px');
+  });
+
+  it('captures the pointer only once the press crosses the drag threshold', () => {
+    // A proxy for the real symptom: jsdom's setPointerCapture never retargets,
+    // so the child click a capture-on-press would swallow cannot be observed.
+    const captured: number[] = [];
+    Element.prototype.setPointerCapture = (id: number) => {
+      captured.push(id);
+    };
+    const { panel } = renderPanel(<FloatingPanel anchor="top-left">x</FloatingPanel>);
+    fireEvent.pointerDown(panel, { pointerId: 7, buttons: 1, clientX: 100, clientY: 100 });
+    expect(captured).toEqual([]);
+    fireEvent.pointerMove(document.body, { pointerId: 7, buttons: 1, clientX: 140, clientY: 100 });
+    expect(captured).toEqual([7]);
+  });
+
+  it('drops its document listeners when the panel unmounts mid-drag', () => {
+    const added: string[] = [];
+    const removed: string[] = [];
+    const realAdd = document.addEventListener.bind(document);
+    const realRemove = document.removeEventListener.bind(document);
+    const addSpy = vi
+      .spyOn(document, 'addEventListener')
+      .mockImplementation((type, listener, opts) => {
+        added.push(String(type));
+        realAdd(type as never, listener as never, opts as never);
+      });
+    const removeSpy = vi
+      .spyOn(document, 'removeEventListener')
+      .mockImplementation((type, listener, opts) => {
+        removed.push(String(type));
+        realRemove(type as never, listener as never, opts as never);
+      });
+    try {
+      const { panel, unmount } = renderPanel(<FloatingPanel>x</FloatingPanel>);
+      fireEvent.pointerDown(panel, { pointerId: 1, buttons: 1, clientX: 100, clientY: 100 });
+      expect(added).toContain('pointermove');
+      unmount();
+      expect(removed).toContain('pointermove');
+    } finally {
+      addSpy.mockRestore();
+      removeSpy.mockRestore();
+    }
+  });
+});

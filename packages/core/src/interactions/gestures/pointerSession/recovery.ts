@@ -1,9 +1,12 @@
 /**
- * The two releases a pointerdown/pointerup pair does not deliver.
+ * Two of the three releases a pointerdown/pointerup pair does not deliver.
  *
- * Both are shared with `useGestureDispatcher`, which owns its own multi-pointer
+ * Shared with `useGestureDispatcher`, which owns its own multi-pointer
  * lifecycle and cannot use `openPointerSession` — one implementation of each
- * rule rather than two that drift.
+ * rule rather than two that drift. The third rule — a fresh press on a pointer
+ * still believed held — is stated at each site instead, because the two
+ * lifecycles model "held" differently and there is no shared predicate to
+ * write.
  */
 
 /** The DOM event that says capture went away mid-gesture. */

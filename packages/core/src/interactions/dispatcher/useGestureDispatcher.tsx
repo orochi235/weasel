@@ -785,6 +785,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // instead of letting an ambient pan tool claim it. An absent `button`
       // (synthetic / programmatic events) counts as primary.
       if ((e.button ?? 0) !== 0) return;
+      // A press on a pointer the canvas still thinks is down: the previous
+      // release landed somewhere that never told us. End it before this one
+      // starts, or the stale gesture steers with the new press.
+      if (activePointers.has(e.pointerId)) onPointerUp(e);
       routeDown(e.pointerId, e.clientX, e.clientY);
       activePointers.add(e.pointerId);
       if (reportsButtons(e)) buttonsReportedFor.add(e.pointerId);
