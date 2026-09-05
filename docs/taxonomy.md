@@ -623,6 +623,26 @@ their controller objects are **deleted**. Ongoing behavior is now an
 [Action](#action) descriptor with an `ongoing` invoker returning an
 `OngoingHandle`.
 
+### Pointer session
+
+The DOM layer *underneath* a gesture: one pointer, held down, from press to
+release. `openPointerSession(origin, downEvent, callbacks)` answers the four
+questions every drag has to answer — whether to take pointer capture, which
+events belong to this pointer, how the gesture ends when no `pointerup` arrives,
+and what teardown removes. Nothing above it is its business: thresholds,
+coordinate spaces and meaning belong to the gesture built on top.
+
+It is not itself a Gesture. A gesture emits world-space data with a
+`start`/`move`/`end`/`cancel` shape; a session emits raw `PointerEvent`s and
+knows nothing about geometry. `useHandleDrag`, `startThresholdDrag` and
+`useDragHandle` are gestures built on one.
+
+Two recovery rules live in `pointerSession/recovery.ts` because
+`useGestureDispatcher` needs them too and owns its own multi-pointer lifecycle:
+`lostpointercapture` ends the gesture, and a `pointermove` reporting no held
+button is read as the release that never arrived — but only when the press
+reported button state at all, since synthesized events routinely carry none.
+
 ### Gesture overlay
 
 The live state an in-flight ongoing action exposes. Consumed by overlay layers

@@ -98,6 +98,7 @@ describe('useDragHandle', () => {
     const fakeReact = {
       pointerType: 'mouse',
       button: 0,
+      pointerId: 1,
       clientX: 0,
       clientY: 0,
       currentTarget: target,
@@ -117,6 +118,7 @@ describe('useDragHandle', () => {
     const fakeReact = {
       pointerType: 'mouse',
       button: 0,
+      pointerId: 1,
       clientX: 0,
       clientY: 0,
       currentTarget: target,
@@ -147,6 +149,7 @@ describe('useDragHandle', () => {
     const fakeReact = {
       pointerType: 'mouse',
       button: 0,
+      pointerId: 1,
       clientX: 0,
       clientY: 0,
       currentTarget: target,
@@ -193,6 +196,7 @@ describe('useDragHandle', () => {
     handle.current.onPointerDown({
       pointerType: 'mouse',
       button: 0,
+      pointerId: 1,
       clientX: 0,
       clientY: 0,
       currentTarget: source,
@@ -236,7 +240,7 @@ describe('useDragHandle', () => {
     });
     document.body.appendChild(source);
     const press = () => handle.current.onPointerDown({
-      pointerType: 'mouse', button: 0, clientX: 0, clientY: 0,
+      pointerType: 'mouse', button: 0, pointerId: 1, clientX: 0, clientY: 0,
       currentTarget: source, target: source,
     } as unknown as React.PointerEvent<HTMLElement>);
 
@@ -266,13 +270,60 @@ describe('useDragHandle', () => {
     const source = document.createElement('div');
     document.body.appendChild(source);
     result.current.onPointerDown({
-      pointerType: 'mouse', button: 0, clientX: 0, clientY: 0,
+      pointerType: 'mouse', button: 0, pointerId: 1, clientX: 0, clientY: 0,
       currentTarget: source, target: source,
     } as unknown as React.PointerEvent<HTMLElement>);
 
     unmount();
     firePointer('pointermove', { clientX: 100, clientY: 100 });
     expect(getPayload).not.toHaveBeenCalled();
+    document.body.removeChild(source);
+  });
+
+  it('unmounting after the threshold takes the ghost with it', () => {
+    // The pre- and post-threshold phases used to own separate listener
+    // triples, and only the pre-threshold one was cleaned up on unmount: a
+    // component torn down mid-drag left the ghost in the body and `activeDrag`
+    // set, which blocks every later drag process-wide.
+    const source = document.createElement('div');
+    Object.defineProperty(source, 'getBoundingClientRect', {
+      value: () => ({ width: 20, height: 20, x: 0, y: 0, left: 0, top: 0, right: 20, bottom: 20, toJSON() {} }),
+    });
+    document.body.appendChild(source);
+    const { result, unmount } = renderHook(() =>
+      useDragHandle(() => ({ kind: 'item', ids: ['x'] })),
+    );
+    const before = document.body.children.length;
+    result.current.onPointerDown({
+      pointerType: 'mouse', button: 0, pointerId: 1, clientX: 0, clientY: 0,
+      currentTarget: source, target: source,
+    } as unknown as React.PointerEvent<HTMLElement>);
+    firePointer('pointermove', { clientX: 30, clientY: 0 });
+    expect(document.body.children.length).toBe(before + 1);
+
+    unmount();
+    expect(document.body.children.length).toBe(before);
+
+    document.body.removeChild(source);
+  });
+
+  it('a second pointer does not drive or end the drag', () => {
+    const getPayload = vi.fn(() => ({ kind: 'item', ids: ['x'] }));
+    const { result } = renderHook(() => useDragHandle(getPayload));
+    const source = document.createElement('div');
+    document.body.appendChild(source);
+    result.current.onPointerDown({
+      pointerType: 'mouse', button: 0, pointerId: 1, clientX: 0, clientY: 0,
+      currentTarget: source, target: source,
+    } as unknown as React.PointerEvent<HTMLElement>);
+
+    firePointer('pointermove', { pointerId: 2, clientX: 30, clientY: 0 });
+    firePointer('pointerup', { pointerId: 2, clientX: 30, clientY: 0 });
+    expect(getPayload).not.toHaveBeenCalled();
+
+    firePointer('pointermove', { clientX: 30, clientY: 0 });
+    expect(getPayload).toHaveBeenCalledTimes(1);
+    firePointer('pointercancel', {});
     document.body.removeChild(source);
   });
 
@@ -302,6 +353,7 @@ describe('useDragHandle', () => {
     handle.current.onPointerDown({
       pointerType: 'mouse',
       button: 0,
+      pointerId: 1,
       clientX: 0,
       clientY: 0,
       currentTarget: source,

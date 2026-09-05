@@ -1,13 +1,19 @@
+import { openPointerSession } from '../pointerSession';
+
 /**
- * Wire up a pointer-driven drag with a movement threshold before activation.
- * Caller controls all listeners and side effects via callbacks. Captures
- * the pointer on the originating element so drags survive over-canvas/scroll.
+ * A drag that does not start until the pointer has moved far enough to mean
+ * it. Below the threshold the gesture is still a click; above it, `onActivate`
+ * fires once and every later move is a drag.
+ *
+ * The pointer lifecycle underneath — capture, pointer identity, lost-capture
+ * and missed-release recovery, teardown — belongs to `openPointerSession`.
  */
 export interface ThresholdDragOptions {
   threshold?: number;
   onActivate?: (e: PointerEvent) => void;
   onMove: (e: PointerEvent) => void;
   onCommit: (e: PointerEvent) => void;
+  /** Released below the threshold, or ended without a release at all. */
   onCancel?: () => void;
 }
 
@@ -15,6 +21,9 @@ export interface ThresholdDragOptions {
 export interface ThresholdDragHandle {
   /** True after the pointer has moved past `threshold` and the drag is live. */
   isDragging: () => boolean;
+  /** End the gesture now, as a cancel. For an unmount, an Escape, or any other
+   *  rule the caller owns. */
+  cancel: () => void;
 }
 
 /** Begin a threshold-gated drag from a React PointerDown event; returns a handle exposing live state. */
@@ -25,51 +34,31 @@ export function startThresholdDrag(
   const startX = e.clientX;
   const startY = e.clientY;
   const threshold = opts.threshold ?? 4;
-  const target = e.currentTarget as HTMLElement;
-  target.setPointerCapture(e.pointerId);
   let activated = false;
 
-  function maybeActivate(ev: PointerEvent) {
+  const maybeActivate = (ev: PointerEvent) => {
     if (activated) return;
     const dx = ev.clientX - startX;
     const dy = ev.clientY - startY;
     if (dx * dx + dy * dy < threshold * threshold) return;
     activated = true;
     opts.onActivate?.(ev);
-  }
+  };
 
-  function onMove(ev: PointerEvent) {
-    maybeActivate(ev);
-    if (!activated) return;
-    opts.onMove(ev);
-  }
+  const session = openPointerSession(e.currentTarget as Element, e, {
+    onMove: (ev) => {
+      maybeActivate(ev);
+      if (activated) opts.onMove(ev);
+    },
+    onEnd: (ev) => {
+      if (activated) opts.onCommit(ev);
+      else opts.onCancel?.();
+    },
+    onCancel: () => { opts.onCancel?.(); },
+  });
 
-  function cleanup() {
-    document.removeEventListener('pointermove', onMove);
-    document.removeEventListener('pointerup', onUp);
-    document.removeEventListener('pointercancel', onCancel);
-  }
-
-  function onUp(ev: PointerEvent) {
-    cleanup();
-    try {
-      target.releasePointerCapture(ev.pointerId);
-    } catch {}
-    if (!activated) {
-      opts.onCancel?.();
-      return;
-    }
-    opts.onCommit(ev);
-  }
-
-  function onCancel() {
-    cleanup();
-    opts.onCancel?.();
-  }
-
-  document.addEventListener('pointermove', onMove);
-  document.addEventListener('pointerup', onUp);
-  document.addEventListener('pointercancel', onCancel);
-
-  return { isDragging: () => activated };
+  return {
+    isDragging: () => activated,
+    cancel: () => { session.cancel(); },
+  };
 }

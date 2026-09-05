@@ -1,10 +1,25 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { clientToCanvasRect } from 'core/viewport/clientToCanvas';
+import {
+  openPointerSession,
+  type PointerSession,
+  type PointerSessionCancelReason,
+} from '../pointerSession';
 
 /** A 2D point in the rect element's local coordinate space. */
 export interface HandleDragPoint {
   x: number;
   y: number;
+}
+
+/** What a released drag reports. */
+export interface HandleDragEnd {
+  /** Where the pointer was let go, in the rect element's local space. */
+  point: HandleDragPoint;
+  /** False when the pointer never moved — a press, not a drag. Commit-on-end
+   *  consumers use this to tell an edit from a stray click. */
+  moved: boolean;
+  event: PointerEvent;
 }
 
 /** Options for {@link useHandleDrag}. */
@@ -13,8 +28,13 @@ export interface UseHandleDragOptions<T extends HTMLElement | SVGElement> {
   onMove: (p: HandleDragPoint, e: PointerEvent) => void;
   /** Called on `pointerdown` with the same local coords passed to `onMove`. */
   onStart?: (p: HandleDragPoint, e: React.PointerEvent<T>) => void;
-  /** Called on `pointerup` / `pointercancel`, after listeners are removed. */
-  onEnd?: (e: PointerEvent) => void;
+  /** The pointer was released. Not called when the drag is cancelled — a
+   *  cancelled gesture is not an edit, and conflating the two made every
+   *  commit-on-end consumer sniff the event type to tell them apart. */
+  onEnd?: (end: HandleDragEnd) => void;
+  /** The drag ended without a release: the pointer was cancelled, capture was
+   *  lost, or the component unmounted mid-gesture. */
+  onCancel?: (reason: PointerSessionCancelReason) => void;
   /**
    * Element whose `getBoundingClientRect()` defines the local coordinate
    * space. Defaults to the handle target's owning `<svg>` if it has one,
@@ -36,19 +56,27 @@ function defaultRectEl(target: HTMLElement | SVGElement): Element {
 }
 
 /**
- * Pointer-capture drag for SVG/HTML handles. On `pointerdown` captures the
- * pointer, then forwards every `pointermove` to `onMove` with coordinates
- * local to the rect-providing element (defaulting to the handle's owning
- * `<svg>`). Listeners are cleaned up on `pointerup` / `pointercancel`.
+ * Pointer drag for SVG/HTML handles. On `pointerdown` opens a
+ * {@link openPointerSession | pointer session} on the handle, then forwards
+ * every move to `onMove` with coordinates local to the rect-providing element
+ * (defaulting to the handle's owning `<svg>`).
+ *
+ * The rect is measured once, at the press: a handle that moves under its own
+ * drag must not shift the space its coordinates are reported in.
  */
 export function useHandleDrag<T extends HTMLElement | SVGElement>(
   opts: UseHandleDragOptions<T>,
 ): UseHandleDragReturn<T> {
-  const { onMove, onStart, onEnd, getRect } = opts;
+  const { onMove, onStart, onEnd, onCancel, getRect } = opts;
+  const live = useRef<PointerSession | null>(null);
+
+  useEffect(() => () => { live.current?.cancel(); }, []);
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent<T>) => {
       e.preventDefault();
+      live.current?.cancel();
+
       const target = e.currentTarget;
       const rectEl = getRect ? getRect(target) : defaultRectEl(target);
       const rect = rectEl.getBoundingClientRect();
@@ -57,27 +85,25 @@ export function useHandleDrag<T extends HTMLElement | SVGElement>(
         return { x, y };
       };
 
-      target.setPointerCapture(e.pointerId);
+      let moved = false;
+      live.current = openPointerSession(target, e, {
+        onMove: (ev) => {
+          moved = true;
+          onMove(localOf(ev.clientX, ev.clientY), ev);
+        },
+        onEnd: (ev) => {
+          live.current = null;
+          onEnd?.({ point: localOf(ev.clientX, ev.clientY), moved, event: ev });
+        },
+        onCancel: (reason) => {
+          live.current = null;
+          onCancel?.(reason);
+        },
+      });
+
       onStart?.(localOf(e.clientX, e.clientY), e);
-
-      const move = (ev: PointerEvent) => {
-        onMove(localOf(ev.clientX, ev.clientY), ev);
-      };
-      const end = (ev: PointerEvent) => {
-        target.removeEventListener('pointermove', move as EventListener);
-        target.removeEventListener('pointerup', end as EventListener);
-        target.removeEventListener('pointercancel', end as EventListener);
-        try {
-          target.releasePointerCapture(ev.pointerId);
-        } catch {}
-        onEnd?.(ev);
-      };
-
-      target.addEventListener('pointermove', move as EventListener);
-      target.addEventListener('pointerup', end as EventListener);
-      target.addEventListener('pointercancel', end as EventListener);
     },
-    [onMove, onStart, onEnd, getRect],
+    [onMove, onStart, onEnd, onCancel, getRect],
   );
 
   return { onPointerDown };

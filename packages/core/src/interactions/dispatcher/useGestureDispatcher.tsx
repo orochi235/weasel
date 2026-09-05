@@ -21,6 +21,7 @@ import type { ActionsRegistry } from '../actions/registry';
 import type { AffordanceHit } from '../actions/invoker';
 import type { Tool, ToolCtx } from '../../tools/types';
 import { createDispatcher, pointerGestureId, type Dispatcher, type DispatcherContext } from './dispatcher';
+import { LOST_CAPTURE_EVENT, isMissedRelease, reportsButtons } from '../gestures/pointerSession';
 import { clientToCanvasRect } from 'core/viewport/clientToCanvas';
 import { itemsFromDataTransfer, itemsFromClipboardData } from 'features/ingestion/ingestItems';
 import type { InputEvent } from './matcher';
@@ -522,6 +523,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
     // Tracks active pointer IDs for multi-touch synthesis.
     const activePointers = new Set<number>();
+    // Pointers whose press reported button state, so the missed-release rule
+    // can tell a real "nothing held" from a source that never reports buttons.
+    const buttonsReportedFor = new Set<number>();
 
     // Tracks latest screen-space position per pointer ID.
     // Used to compute centroid + spread for pinch-zoom pump events.
@@ -783,6 +787,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       if ((e.button ?? 0) !== 0) return;
       routeDown(e.pointerId, e.clientX, e.clientY);
       activePointers.add(e.pointerId);
+      if (reportsButtons(e)) buttonsReportedFor.add(e.pointerId);
       pointerPositions.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
       // Capture the pointer so pointermove/pointerup keep firing on the
@@ -914,6 +919,15 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     };
 
     const onPointerMove = (e: PointerEvent) => {
+      // The release that never arrived: this pointer is still down as far as
+      // the canvas knows, but it is moving with nothing held. Without this a
+      // drag whose pointerup landed on another window hangs in flight.
+      if (activePointers.has(e.pointerId)
+        && buttonsReportedFor.has(e.pointerId)
+        && isMissedRelease(e)) {
+        onPointerUp(e);
+        return;
+      }
       routeAt(e.pointerId, e.clientX, e.clientY);
       // Update this pointer's tracked position.
       if (activePointers.has(e.pointerId)) {
@@ -1127,6 +1141,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       cancelLongPress(e.pointerId);
       const prevSize = activePointers.size;
       activePointers.delete(e.pointerId);
+      buttonsReportedFor.delete(e.pointerId);
       pointerPositions.delete(e.pointerId);
 
       // If pointerdown was still buffered, the pointer never crossed the drag
@@ -1292,6 +1307,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       routeAt(e.pointerId, e.clientX, e.clientY);
       cancelLongPress(e.pointerId);
       activePointers.delete(e.pointerId);
+      buttonsReportedFor.delete(e.pointerId);
       pointerPositions.delete(e.pointerId);
       lastPointerDown.delete(e.pointerId);
       bufferedDown.delete(e.pointerId);
@@ -1308,6 +1324,17 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       };
       dispatch(ev);
       routeRelease(e.pointerId);
+    };
+
+    // The canvas captured this pointer at press. Losing that capture
+    // mid-gesture — the canvas removed, another element claiming it — means no
+    // further move or up is coming, so the gesture is over whether or not the
+    // finger is still down. A normal release fires this too, after pointerup
+    // has already cleared the pointer, so the guard makes that a no-op.
+    const onLostCapture = (e: Event) => {
+      const pe = e as PointerEvent;
+      if (!activePointers.has(pe.pointerId)) return;
+      onPointerCancel(pe);
     };
 
     // -----------------------------------------------------------------------
@@ -1430,6 +1457,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     canvas?.addEventListener('pointermove', onPointerMove);
     canvas?.addEventListener('pointerup', onPointerUp);
     canvas?.addEventListener('pointercancel', onPointerCancel);
+    canvas?.addEventListener(LOST_CAPTURE_EVENT, onLostCapture);
     canvas?.addEventListener('contextmenu', onContextMenu);
     canvas?.addEventListener('dragenter', onDragOver);
     canvas?.addEventListener('dragover', onDragOver);
@@ -1455,6 +1483,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       canvas?.removeEventListener('pointermove', onPointerMove);
       canvas?.removeEventListener('pointerup', onPointerUp);
       canvas?.removeEventListener('pointercancel', onPointerCancel);
+      canvas?.removeEventListener(LOST_CAPTURE_EVENT, onLostCapture);
       canvas?.removeEventListener('contextmenu', onContextMenu);
       canvas?.removeEventListener('dragenter', onDragOver);
       canvas?.removeEventListener('dragover', onDragOver);

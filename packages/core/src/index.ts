@@ -1007,9 +1007,17 @@ export type {
   UseDragRadialOptions,
   DragRadialController,
 } from './interactions/gestures/dragRadial';
+export { openPointerSession } from './interactions/gestures/pointerSession';
+export type {
+  PointerSession,
+  PointerSessionCallbacks,
+  PointerSessionCancelReason,
+  PointerSessionOptions,
+} from './interactions/gestures/pointerSession';
 export { useHandleDrag } from './interactions/gestures/handleDrag';
 export type {
   HandleDragPoint,
+  HandleDragEnd,
   UseHandleDragOptions,
   UseHandleDragReturn,
 } from './interactions/gestures/handleDrag';
