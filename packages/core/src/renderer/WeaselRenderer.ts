@@ -23,6 +23,10 @@ import {
   IMAGE_FRAG_SRC,
   IMAGE_FILL_UNIFORMS,
   IMAGE_FILL_ATTRIBUTES,
+  IMAGE_VOPACITY_VERT_SRC,
+  IMAGE_VOPACITY_FRAG_SRC,
+  IMAGE_VOPACITY_UNIFORMS,
+  IMAGE_VOPACITY_ATTRIBUTES,
 } from './shaders/imageFill';
 import {
   GRAD_VERT_SRC,
@@ -44,9 +48,10 @@ import { GroupState } from './state/GroupState';
 import type { DrawCommand } from './DrawCommand';
 import type { Mat3 } from './math/mat3';
 import {
-  dispatch, flushSolids, disposeImageQuads, disposeTextQuads, OUTLINE_MIN_SCREEN_PX, type DrawContext,
+  dispatch, flushBatches, disposeTextQuads, OUTLINE_MIN_SCREEN_PX, type DrawContext,
 } from './draw';
 import { SolidBatch } from './solidBatch';
+import { ImageBatch } from './imageBatch';
 import {
   CUSTOM_VERT_SRC, CUSTOM_ATTRIBUTES, CUSTOM_KIT_UNIFORMS,
   QUAD_VERTICES, QUAD_INDICES,
@@ -167,6 +172,7 @@ export class WeaselRenderer {
   private textSdf: ShaderProgram;
   private textSdfR8: ShaderProgram;
   private imageFill: ShaderProgram;
+  private imageFillVOpacity: ShaderProgram;
   private gradFill: ShaderProgram;
   private patternFill: ShaderProgram;
   private meshCache: GLMeshCache;
@@ -177,6 +183,7 @@ export class WeaselRenderer {
   private quadVbo: WebGLBuffer | null = null;
   private quadIbo: WebGLBuffer | null = null;
   private solidBatch: SolidBatch;
+  private imageBatch: ImageBatch;
   private readonly groupState = new GroupState();
   private widthCss: number;
   private heightCss: number;
@@ -260,6 +267,12 @@ export class WeaselRenderer {
     this.imageFill.lookupUniforms(IMAGE_FILL_UNIFORMS);
     this.imageFill.lookupAttributes(IMAGE_FILL_ATTRIBUTES);
 
+    this.imageFillVOpacity = new ShaderProgram(
+      this.gl, IMAGE_VOPACITY_VERT_SRC, IMAGE_VOPACITY_FRAG_SRC,
+    );
+    this.imageFillVOpacity.lookupUniforms(IMAGE_VOPACITY_UNIFORMS);
+    this.imageFillVOpacity.lookupAttributes(IMAGE_VOPACITY_ATTRIBUTES);
+
     this.gradFill = new ShaderProgram(this.gl, GRAD_VERT_SRC, GRAD_FRAG_SRC);
     this.gradFill.lookupUniforms(GRAD_FILL_UNIFORMS);
     this.gradFill.lookupAttributes(GRAD_FILL_ATTRIBUTES);
@@ -276,6 +289,7 @@ export class WeaselRenderer {
     this.gradRampCache = new GradientRampCache(this.gl);
     this.uploadQuadGeometry();
     this.solidBatch = new SolidBatch(this.gl, this.pathFillVColor);
+    this.imageBatch = new ImageBatch(this.gl, this.imageFillVOpacity);
   }
 
   private uploadQuadGeometry(): void {
@@ -412,6 +426,12 @@ export class WeaselRenderer {
     this.imageFill = new ShaderProgram(this.gl, IMAGE_VERT_SRC, IMAGE_FRAG_SRC);
     this.imageFill.lookupUniforms(IMAGE_FILL_UNIFORMS);
     this.imageFill.lookupAttributes(IMAGE_FILL_ATTRIBUTES);
+
+    this.imageFillVOpacity = new ShaderProgram(
+      this.gl, IMAGE_VOPACITY_VERT_SRC, IMAGE_VOPACITY_FRAG_SRC,
+    );
+    this.imageFillVOpacity.lookupUniforms(IMAGE_VOPACITY_UNIFORMS);
+    this.imageFillVOpacity.lookupAttributes(IMAGE_VOPACITY_ATTRIBUTES);
     this.gradFill = new ShaderProgram(this.gl, GRAD_VERT_SRC, GRAD_FRAG_SRC);
     this.gradFill.lookupUniforms(GRAD_FILL_UNIFORMS);
     this.gradFill.lookupAttributes(GRAD_FILL_ATTRIBUTES);
@@ -429,6 +449,7 @@ export class WeaselRenderer {
 
     this.uploadQuadGeometry();
     this.solidBatch = new SolidBatch(this.gl, this.pathFillVColor);
+    this.imageBatch = new ImageBatch(this.gl, this.imageFillVOpacity);
     for (const id of this.programRegistry.keys()) {
       const src = getProgramSource(id);
       if (!src) continue;
@@ -478,7 +499,7 @@ export class WeaselRenderer {
     }
     this.meshCache.freeTransient();
     this.meshCache.drainPendingDeletes();
-    for (const prog of [this.pathFill, this.pathFillVColor, this.textSdf, this.textSdfR8, this.imageFill, this.gradFill, this.patternFill]) {
+    for (const prog of [this.pathFill, this.pathFillVColor, this.textSdf, this.textSdfR8, this.imageFill, this.imageFillVOpacity, this.gradFill, this.patternFill]) {
       gl.deleteProgram(prog.handle);
     }
     for (const prog of this.programRegistry.values()) {
@@ -489,9 +510,9 @@ export class WeaselRenderer {
     this.gradRampCache.free();
     if (this.quadVbo) gl.deleteBuffer(this.quadVbo);
     if (this.quadIbo) gl.deleteBuffer(this.quadIbo);
-    disposeImageQuads(gl, this.imageFill);
     for (const prog of [this.textSdf, this.textSdfR8, this.pathFill]) disposeTextQuads(gl, prog);
     this.solidBatch.dispose();
+    this.imageBatch.dispose();
   }
 
   /**
@@ -528,6 +549,7 @@ export class WeaselRenderer {
       textSdf: this.textSdf,
       textSdfR8: this.textSdfR8,
       imageFill: this.imageFill,
+      imageFillVOpacity: this.imageFillVOpacity,
       gradFill: this.gradFill,
       patternFill: this.patternFill,
       meshCache: this.meshCache,
@@ -539,6 +561,7 @@ export class WeaselRenderer {
       quadVbo: this.quadVbo,
       quadIbo: this.quadIbo,
       solidBatch: this.solidBatch,
+      imageBatch: this.imageBatch,
       state: this.groupState,
       widthCss: this.widthCss,
       heightCss: this.heightCss,
@@ -548,9 +571,9 @@ export class WeaselRenderer {
       viewMatrix,
     };
     for (const cmd of commands) dispatch(ctx, cmd);
-    // The stream ended, so whatever rects are still staged have nothing left
-    // that could merge with them.
-    flushSolids(ctx);
+    // The stream ended, so whatever is still staged has nothing left that
+    // could merge with it.
+    flushBatches(ctx);
     // Free transient resources allocated during this frame (e.g. per-frame
     // stroke ribbons from tessellateStroke). Done after all draws complete
     // so we never delete a buffer that's still bound to a pending draw.
@@ -576,9 +599,11 @@ export class WeaselRenderer {
   /** @internal */ _pathFill(): ShaderProgram { return this.pathFill; }
   /** @internal */ _pathFillVColor(): ShaderProgram { return this.pathFillVColor; }
   /** @internal */ _solidBatch(): SolidBatch { return this.solidBatch; }
+  /** @internal */ _imageBatch(): ImageBatch { return this.imageBatch; }
   /** @internal */ _textSdf(): ShaderProgram { return this.textSdf; }
   /** @internal */ _textSdfR8(): ShaderProgram { return this.textSdfR8; }
   /** @internal */ _imageFill(): ShaderProgram { return this.imageFill; }
+  /** @internal */ _imageFillVOpacity(): ShaderProgram { return this.imageFillVOpacity; }
   /** @internal */ _gradFill(): ShaderProgram { return this.gradFill; }
   /** @internal */ _patternFill(): ShaderProgram { return this.patternFill; }
   /** @internal */ _meshCache(): GLMeshCache { return this.meshCache; }

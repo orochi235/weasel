@@ -29,6 +29,7 @@ export type DrawCommand =
   | GroupDrawCommand
   | TextDrawCommand
   | ImageDrawCommand
+  | SpritesDrawCommand
   | ShaderDrawCommand;
 
 /** Draw a path, filled and/or stroked. The workhorse command: every shape the
@@ -128,6 +129,40 @@ export interface ImageDrawCommand {
    *  move — a flipped draw covers exactly the pixels an unflipped one does. */
   flipX?: boolean;
   flipY?: boolean;
+}
+
+/** Floats per sprite in `SpritesDrawCommand.sprites`. */
+export const SPRITE_STRIDE = 9;
+
+/**
+ * Draw many quads sampling one bitmap — an atlas, a sprite sheet, a wall of
+ * thumbnails. The same picture as a run of `ImageDrawCommand`s the renderer
+ * would coalesce anyway, handed over already packed so it never walks a
+ * command object per quad.
+ *
+ * Reach for it past a few thousand sprites. Below that a plain run of image
+ * commands merges into the same single draw and reads better; the packed form
+ * exists because at 20,000 the object walk is about half the frame.
+ *
+ * The sprites are one run: they share a texture, a filter, and whatever group
+ * transform, alpha, color matrix and clip are live, exactly as a merged run of
+ * image commands would. Anything varying per sprite is in the array.
+ */
+export interface SpritesDrawCommand {
+  kind: 'sprites';
+  image: ImageBitmap;
+  /** Magnification filter for the whole run, as `ImageDrawCommand.sampling`. */
+  sampling?: 'linear' | 'nearest';
+  /**
+   * `SPRITE_STRIDE` floats per sprite:
+   * `dx, dy, dw, dh, sx, sy, sw, sh, opacity`.
+   *
+   * Destination is in the group's coordinates; source is in bitmap pixels,
+   * like `ImageDrawCommand.source`. A negative `sw` or `sh` mirrors that axis
+   * within the source rect, which is what `flipX` / `flipY` do. A trailing
+   * partial sprite is ignored.
+   */
+  sprites: Float32Array;
 }
 
 /**

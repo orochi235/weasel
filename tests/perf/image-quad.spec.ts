@@ -56,7 +56,7 @@ const SIZE = Number(process.env.WEASEL_PERF_SIZE ?? 48);
 const RUNS = 3;
 
 const RAW_VARIANTS = ['churn', 'churn-uniform', 'preloaded', 'arena', 'subdata', 'uniform', 'orphan', 'ring'] as const;
-const RENDERER_VARIANTS = ['image', 'pattern'] as const;
+const RENDERER_VARIANTS = ['image', 'atlas', 'sprites', 'pattern'] as const;
 
 interface Cell { run: number; group: 'raw' | 'renderer'; variant: string; perFrameMs: number }
 
@@ -103,7 +103,7 @@ test('image quad: geometry cost per draw', async ({ page }) => {
       }).__imageReport;
 
       const base = `/weasel/@fs${root}`;
-      const { WeaselRenderer, registerTexture } = await import(
+      const { WeaselRenderer, registerTexture, SPRITE_STRIDE } = await import(
         /* @vite-ignore */ `${base}/packages/core/src/renderer/index.ts`
       );
       const { checkerBitmap, imageBitmaps } = await import(
@@ -379,11 +379,22 @@ void main() { outColor = u_color; }`;
       const patternHandle = registerTexture(await checkerBitmap());
 
       const imageCmds: unknown[] = [];
+      const atlasCmds: unknown[] = [];
       const patternCmds: unknown[] = [];
+      // 4x4 cells of the first bitmap, so every quad samples one texture and
+      // the run has nothing to break it — the shape the mega view draws.
+      const CELL = 16;
       for (let i = 0; i < n; i++) {
         imageCmds.push({
           kind: 'image', image: bitmaps[i % bitmaps.length],
           x: px(i), y: py(i), w: SIZE, h: SIZE,
+        });
+        atlasCmds.push({
+          kind: 'image', image: bitmaps[0],
+          x: px(i), y: py(i), w: SIZE, h: SIZE,
+          source: {
+            x: (i % 4) * CELL, y: (Math.floor(i / 4) % 4) * CELL, w: CELL, h: CELL,
+          },
         });
         patternCmds.push({
           kind: 'path',
@@ -391,7 +402,21 @@ void main() { outColor = u_color; }`;
           fill: { fill: 'pattern', pattern: patternHandle, origin: { x: i % 8, y: i % 8 } },
         });
       }
-      const rendererCmds: Record<string, unknown[]> = { image: imageCmds, pattern: patternCmds };
+      // The same quads as `atlas`, packed — so the gap between the two is the
+      // command walk and nothing else.
+      const packed = new Float32Array(n * SPRITE_STRIDE);
+      for (let i = 0; i < n; i++) {
+        packed.set([
+          px(i), py(i), SIZE, SIZE,
+          (i % 4) * CELL, (Math.floor(i / 4) % 4) * CELL, CELL, CELL,
+          1,
+        ], i * SPRITE_STRIDE);
+      }
+      const spriteCmds = [{ kind: 'sprites', image: bitmaps[0], sprites: packed }];
+
+      const rendererCmds: Record<string, unknown[]> = {
+        image: imageCmds, atlas: atlasCmds, sprites: spriteCmds, pattern: patternCmds,
+      };
 
       // ─── timing ─────────────────────────────────────────────────────────
 
@@ -503,7 +528,9 @@ void main() { outColor = u_color; }`;
     '',
     '| variant | us/quad | what it does |',
     '|---|---:|---|',
-    row('renderer', 'image', 'kind: image through the renderer'),
+    row('renderer', 'image', 'kind: image, 6 bitmaps — nothing merges'),
+    row('renderer', 'atlas', 'kind: image, one bitmap and source rects — one run'),
+    row('renderer', 'sprites', 'kind: sprites — the same run, packed'),
     row('renderer', 'pattern', 'same rect, pattern fill — cached mesh, persistent VAO'),
     row('raw', 'preloaded', 'one buffer written once; only the index offset moves'),
     row('raw', 'churn', 'VAO + 2 buffers minted and freed per quad'),
@@ -514,6 +541,8 @@ void main() { outColor = u_color; }`;
     row('raw', 'orphan', 'one persistent buffer, respecified per quad'),
     row('raw', 'ring', 'a ring of persistent buffers, one written per quad'),
     '',
+    `renderer image − atlas (what coalescing is worth): ${(us('renderer', 'image') - us('renderer', 'atlas')).toFixed(2)} us`,
+    `renderer atlas − sprites (what the command walk costs): ${(us('renderer', 'atlas') - us('renderer', 'sprites')).toFixed(2)} us`,
     `renderer image − pattern: ${(us('renderer', 'image') - us('renderer', 'pattern')).toFixed(2)} us`,
     `raw churn − preloaded (the object lifecycle): ${(us('raw', 'churn') - us('raw', 'preloaded')).toFixed(2)} us`,
     `raw subdata − preloaded (rewriting one buffer): ${(us('raw', 'subdata') - us('raw', 'preloaded')).toFixed(2)} us`,

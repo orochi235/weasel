@@ -4,6 +4,7 @@ import { WeaselRenderer } from './WeaselRenderer';
 import { mat3 } from './math/mat3';
 import type { DrawCommand } from './DrawCommand';
 import { pushClip, popClip, drawGroup, dispatch, tryStageSolid, type DrawContext } from './draw';
+import { IMAGE_RING_SIZE } from './imageBatch';
 
 /**
  * Build a DrawContext backed by a GL recorder. Mirrors what WeaselRenderer.render
@@ -20,6 +21,7 @@ function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeof makeG
     textSdf: r._textSdf(),
     textSdfR8: r._textSdfR8(),
     imageFill: r._imageFill(),
+    imageFillVOpacity: r._imageFillVOpacity(),
     gradFill: r._gradFill(),
     patternFill: r._patternFill(),
     meshCache: r._meshCache(),
@@ -30,6 +32,7 @@ function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeof makeG
     quadVbo: null,
     quadIbo: null,
     solidBatch: r._solidBatch(),
+    imageBatch: r._imageBatch(),
     state: r._groupState(),
     widthCss: r._widthCss(),
     heightCss: r._heightCss(),
@@ -446,12 +449,45 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
     expect(magFilters).toEqual([recorder.gl.NEAREST, recorder.gl.LINEAR]);
   });
 
-  // The quad geometry is a persistent ring rather than a per-draw VAO and two
-  // buffers, which cost 5.4 us a draw. See tests/perf/image-quad.spec.ts.
-  it('mints no GL objects for an image draw once the quad ring exists', () => {
+  it('merges neighbouring images sharing a bitmap into one draw', () => {
     const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
     const img = { kind: 'image' as const, image: fakeBitmap, x: 0, y: 0, w: 16, h: 16 };
-    r.render([img]);
+    r.render([img, img, img]);
+    const draws = recorder.calls.filter((c) => c.name === 'drawElements').map((c) => c.args[1]);
+    // One draw over three quads: 18 indices, not three draws of 6.
+    expect(draws).toEqual([18]);
+  });
+
+  it('gives each flush its own ring slot', () => {
+    // Two bitmaps, so the second cannot join the first's run.
+    const a = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
+    const b = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
+    r.render([
+      { kind: 'image', image: a, x: 0, y: 0, w: 16, h: 16 },
+      { kind: 'image', image: b, x: 0, y: 0, w: 16, h: 16 },
+    ]);
+    // Replayed rather than counted: creating a slot binds its VAO too, so the
+    // bind that matters is whichever was live when the draw went out.
+    const bound: unknown[] = [];
+    let live: unknown = null;
+    for (const c of recorder.calls) {
+      if (c.name === 'bindVertexArray') live = c.args[0];
+      else if (c.name === 'drawElements') bound.push(live);
+    }
+    expect(bound).toHaveLength(2);
+    // Same slot twice in a row is the stall this ring exists to avoid.
+    expect(bound[0]).not.toBe(bound[1]);
+  });
+
+  // The quad geometry is a persistent ring rather than a per-draw VAO and two
+  // buffers, which cost 5.4 us a draw. See tests/perf/image-quad.spec.ts.
+  it('mints no GL objects for an image draw once every ring slot exists', () => {
+    const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
+    const img = { kind: 'image' as const, image: fakeBitmap, x: 0, y: 0, w: 16, h: 16 };
+    // Slots are created on first use and sized in tiers, so warming means a
+    // full turn at each run length this test then draws. Nothing about it is
+    // per-frame — it stops after one turn.
+    for (let i = 0; i <= IMAGE_RING_SIZE; i++) r.render([img, img, img]);
     recorder.reset();
 
     r.render([img, img, img]);
@@ -462,24 +498,13 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
     expect(named('deleteBuffer')).toHaveLength(0);
   });
 
-  it('draws neighbouring images from different ring slots', () => {
-    const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
-    const img = { kind: 'image' as const, image: fakeBitmap, x: 0, y: 0, w: 16, h: 16 };
-    r.render([img]);
-    recorder.reset();
-
-    r.render([img, img]);
-    const bound = recorder.calls
-      .filter((c) => c.name === 'bindVertexArray' && c.args[0] !== null)
-      .map((c) => c.args[0]);
-    expect(bound).toHaveLength(2);
-    // Same slot twice in a row is the stall this ring exists to avoid.
-    expect(bound[0]).not.toBe(bound[1]);
-  });
-
-  it('frees the quad ring on dispose', () => {
-    const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
-    r.render([{ kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 16, h: 16 }]);
+  it('frees the ring slots it took on dispose', () => {
+    const a = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
+    const b = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
+    r.render([
+      { kind: 'image', image: a, x: 0, y: 0, w: 16, h: 16 },
+      { kind: 'image', image: b, x: 0, y: 0, w: 16, h: 16 },
+    ]);
     recorder.reset();
 
     r.dispose();
@@ -2045,23 +2070,24 @@ describe('WeaselRenderer.render — kind: image, source rect and flip', () => {
   const bitmap = (width: number, height: number) =>
     ({ width, height, close: () => {} }) as unknown as ImageBitmap;
 
-  /** The image quad's 16 interleaved floats, copied out of the recorder.
-   *  `IMAGE_QUAD_VERTICES` is one reused array, so the recorded reference
-   *  reads as the *last* image draw — copy per call, one draw per render. */
+  /** One staged image quad: four vertices of `x, y, u, v, opacity`, wound
+   *  top-left, top-right, bottom-right, bottom-left. The batch stages into an
+   *  array sized for 64 quads and uploads a prefix of it, so this reads the
+   *  first upload's first 20 floats — one quad per render throughout. */
   function imageQuad(): Float32Array {
     const call = recorder.calls.find(
       (c) => c.name === 'bufferSubData'
         && c.args[2] instanceof Float32Array
-        && (c.args[2] as Float32Array).length === 16,
+        && (c.args[2] as Float32Array).length >= 20,
     );
     if (!call) throw new Error('no image quad upload recorded');
-    return Float32Array.from(call.args[2] as Float32Array);
+    return Float32Array.from((call.args[2] as Float32Array).subarray(0, 20));
   }
 
   /** [u0, v0, u1, v1] — the UVs of the top-left and bottom-right corners. */
   function uvs(): [number, number, number, number] {
     const v = imageQuad();
-    return [v[2], v[3], v[14], v[15]];
+    return [v[2], v[3], v[12], v[13]];
   }
 
   it('samples the whole bitmap when no source rect is given', () => {
@@ -2116,8 +2142,8 @@ describe('WeaselRenderer.render — kind: image, source rect and flip', () => {
       flipX: true, flipY: true,
     }]);
     const flipped = imageQuad();
-    // Positions are interleaved at 0,1 / 4,5 / 8,9 / 12,13.
-    for (const i of [0, 1, 4, 5, 8, 9, 12, 13]) {
+    // Positions are interleaved at 0,1 / 5,6 / 10,11 / 15,16.
+    for (const i of [0, 1, 5, 6, 10, 11, 15, 16]) {
       expect(flipped[i]).toBe(plain[i]);
     }
   });

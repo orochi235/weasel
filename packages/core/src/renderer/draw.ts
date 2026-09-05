@@ -9,8 +9,10 @@ import type {
   PathDrawCommand,
   TextDrawCommand,
   ImageDrawCommand,
+  SpritesDrawCommand,
   ShaderDrawCommand,
 } from './DrawCommand';
+import { SPRITE_STRIDE } from './DrawCommand';
 import { getTexture, type TextureHandle } from './textures/registerTexture';
 import type { ShaderUniform } from './shaders/registerProgram';
 import { IDENTITY_COLOR_MATRIX, type GroupState } from './state/GroupState';
@@ -39,6 +41,7 @@ import { outlineMesh } from './cache/outlineMeshCache';
 import { outlineStrokeMesh, quantizeEmWidth } from './cache/outlineStrokeMeshCache';
 import { strokeMesh } from './cache/strokeMeshCache';
 import { SolidBatch } from './solidBatch';
+import { ImageBatch } from './imageBatch';
 
 export interface DrawContext {
   gl: WebGL2RenderingContext;
@@ -47,6 +50,8 @@ export interface DrawContext {
   textSdf: ShaderProgram;
   textSdfR8: ShaderProgram;
   imageFill: ShaderProgram;
+  /** The `a_opacity` variant `flushImages` draws with. */
+  imageFillVOpacity: ShaderProgram;
   gradFill: ShaderProgram;
   patternFill: ShaderProgram;
   meshCache: GLMeshCache;
@@ -65,6 +70,13 @@ export interface DrawContext {
   /** Group state the staged rects were built under; `undefined` while nothing
    *  is staged. Written only by `pushRect` / `flushSolids`. */
   solidState?: StagedSolidState;
+  /** Staging for the consecutive-image batch. Deferred the same way, and
+   *  drained by the same `flushBatches`. */
+  imageBatch: ImageBatch;
+  /** What the staged quads sample and the state they were built under;
+   *  `undefined` while nothing is staged. At most one of `solidState` and this
+   *  is set: staging into either batch drains the other first. */
+  imageState?: StagedImageState;
   state: GroupState;
   widthCss: number;
   heightCss: number;
@@ -259,9 +271,10 @@ export function dispatch(ctx: DrawContext, cmd: DrawCommand): void {
   switch (cmd.kind) {
     case 'group':  return drawGroup(ctx, cmd);
     case 'path':   return drawPath(ctx, cmd);
-    case 'text':   flushSolids(ctx); return drawText(ctx, cmd);
-    case 'image':  flushSolids(ctx); return drawImage(ctx, cmd);
-    case 'shader': flushSolids(ctx); return drawShader(ctx, cmd);
+    case 'text':   flushBatches(ctx); return drawText(ctx, cmd);
+    case 'image':  return drawImage(ctx, cmd);
+    case 'sprites': return drawSprites(ctx, cmd);
+    case 'shader': flushBatches(ctx); return drawShader(ctx, cmd);
   }
 }
 
@@ -533,6 +546,7 @@ function canBatchMesh(mesh: Mesh): boolean {
  * run as before.
  */
 function stageSolid(ctx: DrawContext, vertices: number): StagedSolidState {
+  flushImages(ctx);
   if (ctx.solidState !== undefined && !stagedStateIsLive(ctx, ctx.solidState)) flushSolids(ctx);
   if (ctx.solidBatch.wouldOverflow(vertices)) flushSolids(ctx);
   if (ctx.solidState === undefined) {
@@ -597,7 +611,7 @@ export function tryStageSolid(
     pushMesh(ctx, mesh, paint);
     return true;
   }
-  flushSolids(ctx);
+  flushBatches(ctx);
   return false;
 }
 
@@ -636,6 +650,107 @@ export function flushSolids(ctx: DrawContext): void {
   gl.bindVertexArray(null);
   batch.reset();
   ctx.solidState = undefined;
+}
+
+/**
+ * What the staged image quads sample, and the state they were built under.
+ *
+ * Deliberately short. Position, the group transform, per-command opacity and
+ * group alpha all ride the vertices, so none of them breaks a run — which is
+ * what lets a wall of sprites under one atlas coalesce into a single draw.
+ * What is left is the state a batch genuinely cannot carry: one texture per
+ * draw, one MAG_FILTER per texture, one stencil configuration, and a color
+ * matrix that applies to the sampled texel and so cannot be folded into a
+ * factor applied after it.
+ */
+interface StagedImageState {
+  /** Identity, not contents: `GLImageCache` keys textures by the bitmap. */
+  image: ImageBitmap;
+  sampling: 'linear' | 'nearest';
+  colorMatrix: Float32Array;
+  clipDepth: number;
+}
+
+/** Whether the live state would draw the staged run identically. By value for
+ *  the color matrix, for the reason `stagedStateIsLive` gives. */
+function stagedImageStateIsLive(
+  ctx: DrawContext, staged: StagedImageState,
+  image: ImageBitmap, sampling: 'linear' | 'nearest',
+): boolean {
+  if (staged.image !== image) return false;
+  if (staged.sampling !== sampling) return false;
+  if (staged.clipDepth !== ctx.clipDepth) return false;
+  const colorMatrix = ctx.state.colorMatrix;
+  return staged.colorMatrix === colorMatrix || sameValues(staged.colorMatrix, colorMatrix);
+}
+
+/**
+ * Open or continue a run for one more quad, flushing first if the run would
+ * overflow or if `cmd` cannot join what is staged.
+ *
+ * Drains the solid batch before opening a run of its own. Only one of the two
+ * is ever live, so a flush of both is a flush of whichever had anything, and
+ * painter's order across the two kinds is the ordinary consequence.
+ */
+function stageImage(
+  ctx: DrawContext, image: ImageBitmap, sampling: 'linear' | 'nearest',
+): void {
+  flushSolids(ctx);
+  if (ctx.imageState !== undefined && !stagedImageStateIsLive(ctx, ctx.imageState, image, sampling)) {
+    flushImages(ctx);
+  }
+  if (ctx.imageBatch.wouldOverflow()) flushImages(ctx);
+  if (ctx.imageState === undefined) {
+    ctx.imageState = {
+      image, sampling,
+      colorMatrix: ctx.state.colorMatrix,
+      clipDepth: ctx.clipDepth,
+    };
+  }
+}
+
+/**
+ * Draw the staged image run as one `drawElements`, under the state it was
+ * staged under.
+ *
+ * `u_alpha` stays 1 and `u_model` identity: group alpha folded into
+ * `a_opacity` and the transform into the corners, so re-applying either here
+ * would apply it twice.
+ */
+export function flushImages(ctx: DrawContext): void {
+  const batch = ctx.imageBatch;
+  const staged = ctx.imageState;
+  if (batch.length === 0 || staged === undefined) return;
+  const gl = ctx.gl;
+  const prog = ctx.imageFillVOpacity;
+  gl.useProgram(prog.handle);
+  const indexCount = batch.uploadAndBind();
+  setProjAndModel(ctx, prog, BATCH_MODEL);
+  setAlphaUniform(ctx, prog, 1);
+  setColorMatrixUniforms(ctx, prog, staged.colorMatrix);
+  ctx.imageCache.bind(staged.image, 0);
+  // Set per-flush, not at upload: GLImageCache keys textures by bitmap
+  // identity, so the same bitmap can be drawn at both filters in one frame.
+  gl.texParameteri(
+    gl.TEXTURE_2D,
+    gl.TEXTURE_MAG_FILTER,
+    staged.sampling === 'nearest' ? gl.NEAREST : gl.LINEAR,
+  );
+  gl.uniform1i(prog.uniform('u_sampler')!, 0);
+  applyClipTest(ctx, staged.clipDepth);
+  gl.drawElements(gl.TRIANGLES, indexCount, gl.UNSIGNED_INT, 0);
+  // Not redundant: `drawShader` binds no VAO and points attributes at whatever
+  // is current, so a slot left bound here comes back corrupted a ring later.
+  gl.bindVertexArray(null);
+  batch.reset();
+  ctx.imageState = undefined;
+}
+
+/** Drain both batches. What every caller wants that is about to bind another
+ *  program, paint something that must land on top, or end the stream. */
+export function flushBatches(ctx: DrawContext): void {
+  flushSolids(ctx);
+  flushImages(ctx);
 }
 
 function expandAnchorColors(perAnchor: number[], handle: GLMeshHandle): Float32Array {
@@ -949,7 +1064,7 @@ function rasterizePathToStencil(ctx: DrawContext, path: Path): void {
 export function pushClip(ctx: DrawContext, path: Path, newDepth: number): void {
   // First, not last: a run staged outside the clip would otherwise draw under
   // a mask it never had.
-  flushSolids(ctx);
+  flushBatches(ctx);
   const gl = ctx.gl;
   const ancestors = ancestorMask(newDepth - 1);
   const newBit = 1 << newDepth;
@@ -983,7 +1098,7 @@ export function pushClip(ctx: DrawContext, path: Path, newDepth: number): void {
 export function popClip(ctx: DrawContext, path: Path, oldDepth: number): void {
   // First, not last: past here the mask is gone, and these pixels belonged
   // inside it.
-  flushSolids(ctx);
+  flushBatches(ctx);
   const gl = ctx.gl;
   // Re-enable stencil: child draw functions (evenodd/stenciled-stroke) disable
   // it at their end; we must set it before writing the clear pass.
@@ -1053,7 +1168,7 @@ function drawPathStroke(ctx: DrawContext, rawCmd: PathDrawCommand): void {
   const stroke = cmd.stroke!;
   const align = stroke.align ?? 'center';
   if (cmd.path.kind === 'polygon' && align !== 'center') {
-    flushSolids(ctx);
+    flushBatches(ctx);
     drawPathStrokeStenciled(ctx, cmd, align);
     return;
   }
@@ -1601,80 +1716,7 @@ function drawTextGroup(ctx: DrawContext, group: LaidOutGroup, prog: ShaderProgra
 }
 
 /**
- * Quad geometry for image draws: a ring of VAOs and vertex buffers, kept for
- * the life of the program that owns them.
- *
- * **A ring rather than one**, because the driver tracks a write hazard per
- * buffer object: writing the same quad buffer before every draw makes each
- * write wait on the draw still reading it. Measured per quad on an M2 Max via
- * ANGLE (`tests/perf/image-quad.spec.ts`), against 0.03 us for a buffer that
- * nothing writes: 40–80 us rewriting one buffer, 5.4 us minting a fresh VAO and
- * two buffers per draw, 0.3 us for this ring. Sixty-four slots puts that many
- * draws between a buffer's write and its next one.
- *
- * Keyed on the image program, so the ring belongs to the GL context that linked
- * it. Keying it on anything shared across renderers would hand a second context
- * VAO names it never created.
- */
-const IMAGE_QUAD_RING_SIZE = 64;
-
-interface ImageQuadRing {
-  vaos: WebGLVertexArrayObject[];
-  vbos: WebGLBuffer[];
-  ibo: WebGLBuffer;
-  next: number;
-}
-
-const IMAGE_QUAD_RINGS = new WeakMap<ShaderProgram, ImageQuadRing>();
-
-/** Two triangles over the four corners. Uploaded once and never rewritten, so
- *  every slot's VAO can point at the same buffer. */
-const IMAGE_QUAD_INDICES = new Uint32Array([0, 1, 2, 1, 3, 2]);
-
-/** vec2 a_position + vec2 a_uv. */
-const IMAGE_QUAD_STRIDE = 16;
-
-function imageQuadRing(gl: WebGL2RenderingContext, prog: ShaderProgram): ImageQuadRing {
-  const existing = IMAGE_QUAD_RINGS.get(prog);
-  if (existing) return existing;
-
-  const aPosLoc = prog.attribute('a_position');
-  const aUvLoc = prog.attribute('a_uv');
-  const ibo = gl.createBuffer();
-  if (!ibo) throw new Error('drawImage: createBuffer (IBO) returned null');
-
-  const vaos: WebGLVertexArrayObject[] = [];
-  const vbos: WebGLBuffer[] = [];
-  for (let slot = 0; slot < IMAGE_QUAD_RING_SIZE; slot++) {
-    const vao = gl.createVertexArray();
-    const vbo = gl.createBuffer();
-    if (!vao) throw new Error('drawImage: createVertexArray returned null');
-    if (!vbo) throw new Error('drawImage: createBuffer returned null');
-    gl.bindVertexArray(vao);
-    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-    gl.bufferData(gl.ARRAY_BUFFER, 4 * IMAGE_QUAD_STRIDE, gl.DYNAMIC_DRAW);
-    if (aPosLoc !== undefined) {
-      gl.enableVertexAttribArray(aPosLoc);
-      gl.vertexAttribPointer(aPosLoc, 2, gl.FLOAT, false, IMAGE_QUAD_STRIDE, 0);
-    }
-    if (aUvLoc !== undefined) {
-      gl.enableVertexAttribArray(aUvLoc);
-      gl.vertexAttribPointer(aUvLoc, 2, gl.FLOAT, false, IMAGE_QUAD_STRIDE, 8);
-    }
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-    if (slot === 0) gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, IMAGE_QUAD_INDICES, gl.STATIC_DRAW);
-    gl.bindVertexArray(null);
-    vaos.push(vao);
-    vbos.push(vbo);
-  }
-
-  const ring: ImageQuadRing = { vaos, vbos, ibo, next: 0 };
-  IMAGE_QUAD_RINGS.set(prog, ring);
-  return ring;
-}
-
-/**
- * The same ring as `imageQuadRing`, for the two text paths, whose geometry is
+ * A ring of VAOs and vertex buffers for the two text paths, whose geometry is
  * variable-length — a group is as many quads as it has glyphs — so a slot's
  * vertex buffer grows to the largest run it has seen instead of being fixed at
  * four vertices. Growth is `bufferData`, which reallocates and therefore does
@@ -1686,7 +1728,9 @@ function imageQuadRing(gl: WebGL2RenderingContext, prog: ShaderProgram): ImageQu
  * of the pattern for any larger N — so one buffer serves every slot and every
  * draw, and nothing writes it except a growth.
  *
- * Keyed on the program for the reason the image ring is: a VAO name belongs to
+ * A ring rather than one buffer because the driver tracks a write hazard per
+ * buffer object, so rewriting one before every draw makes each write wait on
+ * the draw still reading it. Keyed on the program because a VAO name belongs to
  * the context that created it.
  */
 const TEXT_QUAD_RING_SIZE = 64;
@@ -1810,29 +1854,19 @@ export function disposeTextQuads(gl: WebGL2RenderingContext, prog: ShaderProgram
   TEXT_QUAD_RINGS.delete(prog);
 }
 
-/** Release the image-quad ring `prog` owns. Called by `WeaselRenderer.dispose`. */
-export function disposeImageQuads(gl: WebGL2RenderingContext, prog: ShaderProgram): void {
-  const ring = IMAGE_QUAD_RINGS.get(prog);
-  if (!ring) return;
-  for (const vao of ring.vaos) gl.deleteVertexArray(vao);
-  for (const vbo of ring.vbos) gl.deleteBuffer(vbo);
-  gl.deleteBuffer(ring.ibo);
-  IMAGE_QUAD_RINGS.delete(prog);
-}
-
-/** Reused per draw: the corners go straight into the ring slot's buffer. */
-const IMAGE_QUAD_VERTICES = new Float32Array(16);
-
+/**
+ * Stage one image quad. Nothing reaches the GPU here — `flushImages` draws the
+ * run this joins.
+ *
+ * The upload has to happen now rather than at flush: a run is keyed on bitmap
+ * identity, and `flushImages` binds a texture it assumes already exists.
+ */
 function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
   ctx.imageCache.upload(cmd.image, cmd.image);
+  stageImage(ctx, cmd.image, cmd.sampling ?? 'linear');
 
-  const gl = ctx.gl;
-  const prog = ctx.imageFill;
-  gl.useProgram(prog.handle);
-
-  // A quad covering (x, y, w, h), sampling `source` (whole bitmap by default).
-  const x0 = cmd.x, y0 = cmd.y;
-  const x1 = cmd.x + cmd.w, y1 = cmd.y + cmd.h;
+  // Sampling window: the whole bitmap unless `source` narrows it, with the
+  // flips applied by swapping the ends rather than moving the quad.
   const src = cmd.source;
   let u0 = 0, v0 = 0, u1 = 1, v1 = 1;
   if (src) {
@@ -1842,36 +1876,49 @@ function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
   }
   if (cmd.flipX) { const t = u0; u0 = u1; u1 = t; }
   if (cmd.flipY) { const t = v0; v0 = v1; v1 = t; }
-  const v = IMAGE_QUAD_VERTICES;
-  v[0]  = x0; v[1]  = y0; v[2]  = u0; v[3]  = v0;
-  v[4]  = x1; v[5]  = y0; v[6]  = u1; v[7]  = v0;
-  v[8]  = x0; v[9]  = y1; v[10] = u0; v[11] = v1;
-  v[12] = x1; v[13] = y1; v[14] = u1; v[15] = v1;
 
-  const ring = imageQuadRing(gl, prog);
-  const slot = ring.next;
-  ring.next = (slot + 1) % IMAGE_QUAD_RING_SIZE;
-  gl.bindVertexArray(ring.vaos[slot]);
-  gl.bindBuffer(gl.ARRAY_BUFFER, ring.vbos[slot]);
-  gl.bufferSubData(gl.ARRAY_BUFFER, 0, v);
-
-  setProjAndModel(ctx, prog);
-  setColorMatrixUniforms(ctx, prog);
-  ctx.imageCache.bind(cmd.image, 0);
-  // Set per-draw, not at upload: GLImageCache keys textures by bitmap
-  // identity, so the same bitmap can be drawn at both filters in one frame.
-  gl.texParameteri(
-    gl.TEXTURE_2D,
-    gl.TEXTURE_MAG_FILTER,
-    cmd.sampling === 'nearest' ? gl.NEAREST : gl.LINEAR,
+  ctx.imageBatch.pushQuad(
+    cmd.x, cmd.y, cmd.w, cmd.h, ctx.state.transform,
+    u0, v0, u1, v1,
+    (cmd.opacity ?? 1) * ctx.state.alpha,
   );
-  gl.uniform1i(prog.uniform('u_sampler')!, 0);
-  gl.uniform1f(prog.uniform('u_opacity')!, cmd.opacity ?? 1);
-  setAlphaUniform(ctx, prog, ctx.state.alpha);
+}
 
-  applyClipTest(ctx);
-  gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, 0);
-  gl.bindVertexArray(null);
+/**
+ * Stage a packed run of sprites. The same staging `drawImage` does, minus a
+ * command object per quad — see `SpritesDrawCommand`.
+ *
+ * The run is opened once and reopened only when the per-flush cap forces a
+ * chunk, so the state check that costs a command its own run happens twice in
+ * a frame rather than twenty thousand times.
+ */
+function drawSprites(ctx: DrawContext, cmd: SpritesDrawCommand): void {
+  const data = cmd.sprites;
+  const count = Math.floor(data.length / SPRITE_STRIDE);
+  if (count === 0) return;
+
+  ctx.imageCache.upload(cmd.image, cmd.image);
+  const sampling = cmd.sampling ?? 'linear';
+  stageImage(ctx, cmd.image, sampling);
+
+  const batch = ctx.imageBatch;
+  const m = ctx.state.transform;
+  const groupAlpha = ctx.state.alpha;
+  const tw = cmd.image.width;
+  const th = cmd.image.height;
+
+  for (let s = 0, i = 0; s < count; s++, i += SPRITE_STRIDE) {
+    if (batch.wouldOverflow()) {
+      flushImages(ctx);
+      stageImage(ctx, cmd.image, sampling);
+    }
+    const sx = data[i + 4], sy = data[i + 5], sw = data[i + 6], sh = data[i + 7];
+    batch.pushQuad(
+      data[i], data[i + 1], data[i + 2], data[i + 3], m,
+      sx / tw, sy / th, (sx + sw) / tw, (sy + sh) / th,
+      data[i + 8] * groupAlpha,
+    );
+  }
 }
 
 export { mat3, getMesh };

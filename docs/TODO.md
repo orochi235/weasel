@@ -2071,6 +2071,15 @@ one dead `const` and four stale disable directives.
   is a prefix of the pattern for any larger N. The remaining per-command costs
   above are otherwise unchanged.
 
+  Images stopped paying per command on 2026-09-05. Consecutive image quads
+  coalesce into one `drawElements` (`renderer/imageBatch.ts`), and
+  `kind: 'sprites'` hands a run over as a `Float32Array` rather than a command
+  object each. Over one atlas at 20,000 quads: 51.3 -> 10.6 ms coalescing, ->
+  0.79 ms packed. A run breaks on a different bitmap, MAG_FILTER, clip depth or
+  color matrix; transform, group alpha and per-command opacity ride the
+  vertices. The unmerged case — a document with a handful of distinct bitmaps —
+  is unchanged, which is what a multi-texture batch would still be worth.
+
   The rest of the plan — one program plus atlases — is in
   `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`, with the traps, and a
   two-phase dispatch split that would make it tractable.
