@@ -9,8 +9,10 @@ import type {
   PathDrawCommand,
   TextDrawCommand,
   ImageDrawCommand,
+  SpritesDrawCommand,
   ShaderDrawCommand,
 } from './DrawCommand';
+import { SPRITE_STRIDE } from './DrawCommand';
 import { getTexture, type TextureHandle } from './textures/registerTexture';
 import type { ShaderUniform } from './shaders/registerProgram';
 import { IDENTITY_COLOR_MATRIX, type GroupState } from './state/GroupState';
@@ -271,6 +273,7 @@ export function dispatch(ctx: DrawContext, cmd: DrawCommand): void {
     case 'path':   return drawPath(ctx, cmd);
     case 'text':   flushBatches(ctx); return drawText(ctx, cmd);
     case 'image':  return drawImage(ctx, cmd);
+    case 'sprites': return drawSprites(ctx, cmd);
     case 'shader': flushBatches(ctx); return drawShader(ctx, cmd);
   }
 }
@@ -671,10 +674,11 @@ interface StagedImageState {
 /** Whether the live state would draw the staged run identically. By value for
  *  the color matrix, for the reason `stagedStateIsLive` gives. */
 function stagedImageStateIsLive(
-  ctx: DrawContext, staged: StagedImageState, cmd: ImageDrawCommand,
+  ctx: DrawContext, staged: StagedImageState,
+  image: ImageBitmap, sampling: 'linear' | 'nearest',
 ): boolean {
-  if (staged.image !== cmd.image) return false;
-  if (staged.sampling !== (cmd.sampling ?? 'linear')) return false;
+  if (staged.image !== image) return false;
+  if (staged.sampling !== sampling) return false;
   if (staged.clipDepth !== ctx.clipDepth) return false;
   const colorMatrix = ctx.state.colorMatrix;
   return staged.colorMatrix === colorMatrix || sameValues(staged.colorMatrix, colorMatrix);
@@ -688,16 +692,17 @@ function stagedImageStateIsLive(
  * is ever live, so a flush of both is a flush of whichever had anything, and
  * painter's order across the two kinds is the ordinary consequence.
  */
-function stageImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
+function stageImage(
+  ctx: DrawContext, image: ImageBitmap, sampling: 'linear' | 'nearest',
+): void {
   flushSolids(ctx);
-  if (ctx.imageState !== undefined && !stagedImageStateIsLive(ctx, ctx.imageState, cmd)) {
+  if (ctx.imageState !== undefined && !stagedImageStateIsLive(ctx, ctx.imageState, image, sampling)) {
     flushImages(ctx);
   }
   if (ctx.imageBatch.wouldOverflow()) flushImages(ctx);
   if (ctx.imageState === undefined) {
     ctx.imageState = {
-      image: cmd.image,
-      sampling: cmd.sampling ?? 'linear',
+      image, sampling,
       colorMatrix: ctx.state.colorMatrix,
       clipDepth: ctx.clipDepth,
     };
@@ -1858,7 +1863,7 @@ export function disposeTextQuads(gl: WebGL2RenderingContext, prog: ShaderProgram
  */
 function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
   ctx.imageCache.upload(cmd.image, cmd.image);
-  stageImage(ctx, cmd);
+  stageImage(ctx, cmd.image, cmd.sampling ?? 'linear');
 
   // Sampling window: the whole bitmap unless `source` narrows it, with the
   // flips applied by swapping the ends rather than moving the quad.
@@ -1877,6 +1882,43 @@ function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
     u0, v0, u1, v1,
     (cmd.opacity ?? 1) * ctx.state.alpha,
   );
+}
+
+/**
+ * Stage a packed run of sprites. The same staging `drawImage` does, minus a
+ * command object per quad — see `SpritesDrawCommand`.
+ *
+ * The run is opened once and reopened only when the per-flush cap forces a
+ * chunk, so the state check that costs a command its own run happens twice in
+ * a frame rather than twenty thousand times.
+ */
+function drawSprites(ctx: DrawContext, cmd: SpritesDrawCommand): void {
+  const data = cmd.sprites;
+  const count = Math.floor(data.length / SPRITE_STRIDE);
+  if (count === 0) return;
+
+  ctx.imageCache.upload(cmd.image, cmd.image);
+  const sampling = cmd.sampling ?? 'linear';
+  stageImage(ctx, cmd.image, sampling);
+
+  const batch = ctx.imageBatch;
+  const m = ctx.state.transform;
+  const groupAlpha = ctx.state.alpha;
+  const tw = cmd.image.width;
+  const th = cmd.image.height;
+
+  for (let s = 0, i = 0; s < count; s++, i += SPRITE_STRIDE) {
+    if (batch.wouldOverflow()) {
+      flushImages(ctx);
+      stageImage(ctx, cmd.image, sampling);
+    }
+    const sx = data[i + 4], sy = data[i + 5], sw = data[i + 6], sh = data[i + 7];
+    batch.pushQuad(
+      data[i], data[i + 1], data[i + 2], data[i + 3], m,
+      sx / tw, sy / th, (sx + sw) / tw, (sy + sh) / th,
+      data[i + 8] * groupAlpha,
+    );
+  }
 }
 
 export { mat3, getMesh };

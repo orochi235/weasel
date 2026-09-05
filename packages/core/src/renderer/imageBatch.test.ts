@@ -16,6 +16,7 @@ import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { IMAGE_RING_SIZE, MAX_IMAGE_VERTICES_PER_BATCH } from './imageBatch';
 import type { DrawCommand } from './DrawCommand';
+import { SPRITE_STRIDE } from './DrawCommand';
 
 describe('renderer — consecutive image batching', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
@@ -66,6 +67,9 @@ describe('renderer — consecutive image batching', () => {
       .map((c) => (c.args[2] as Float32Array).subarray(0, c.args[4] as number))
       .filter((v) => v.length >= 20 && v.length % 20 === 0);
   }
+
+  /** The 20 floats of quad `q` in an upload. */
+  const imageQuadOf = (v: Float32Array, q: number) => v.subarray(q * 20, q * 20 + 20);
 
   /** Every value written to `u_alpha` on the batch program. */
   function alphaWrites(): number[] {
@@ -203,6 +207,74 @@ describe('renderer — consecutive image batching', () => {
     } as unknown as DrawCommand;
     r.render([img(0), text, img(20)]);
     expect(draws()).toEqual([6, 6]);
+  });
+
+  describe('kind: sprites — the same run, handed over packed', () => {
+    /** `n` sprites over one 16x16 bitmap, each sampling a 4px cell. */
+    const packed = (n: number, opacity = 1) => {
+      const out = new Float32Array(n * SPRITE_STRIDE);
+      for (let i = 0; i < n; i++) {
+        out.set([i * 20, 0, 16, 16, (i % 4) * 4, 0, 4, 4, opacity], i * SPRITE_STRIDE);
+      }
+      return out;
+    };
+
+    const sprites = (s: Float32Array, extra = {}) =>
+      ({ kind: 'sprites' as const, image: atlas, sprites: s, ...extra }) as unknown as DrawCommand;
+
+    it('draws the whole run in one call', () => {
+      r.render([sprites(packed(500))]);
+      expect(draws()).toEqual([3000]);
+      expect(drawPrograms()).toEqual([r._imageFillVOpacity().handle]);
+    });
+
+    it('normalizes the source rect by the bitmap dimensions', () => {
+      r.render([sprites(packed(1))]);
+      const v = imageQuadOf(quadUploads()[0], 0);
+      // First cell of a 16x16 bitmap: 0..4 px is 0..0.25 in UV.
+      expect([v[2], v[3], v[12], v[13]]).toEqual([0, 0, 0.25, 0.25]);
+    });
+
+    it('mirrors within the source rect for a negative extent', () => {
+      const one = packed(1);
+      one[6] = -4;
+      one[4] = 4;
+      r.render([sprites(one)]);
+      const v = imageQuadOf(quadUploads()[0], 0);
+      expect([v[2], v[12]]).toEqual([0.25, 0]);
+    });
+
+    it('carries per-sprite opacity and multiplies it by group alpha', () => {
+      r.render([{
+        kind: 'group', alpha: 0.5, children: [sprites(packed(2, 0.5))],
+      }] as unknown as DrawCommand[]);
+      expect(imageQuadOf(quadUploads()[0], 0)[4]).toBeCloseTo(0.25);
+    });
+
+    it('joins a run of image commands over the same bitmap', () => {
+      r.render([img(0), sprites(packed(2)), img(60)]);
+      expect(draws()).toEqual([24]);
+    });
+
+    it('breaks the run for a different bitmap, like any other image', () => {
+      const other = bitmap();
+      r.render([img(0), sprites(packed(2), { image: other }), img(60)]);
+      expect(draws()).toEqual([6, 12, 6]);
+    });
+
+    it('chunks past the per-flush cap and keeps drawing', () => {
+      const cap = MAX_IMAGE_VERTICES_PER_BATCH / 4;
+      r.render([sprites(packed(cap + 3))]);
+      expect(draws()).toEqual([cap * 6, 18]);
+    });
+
+    it('ignores a trailing partial sprite and draws nothing for an empty run', () => {
+      r.render([sprites(new Float32Array(SPRITE_STRIDE + 4))]);
+      expect(draws()).toEqual([6]);
+      recorder.reset();
+      r.render([sprites(new Float32Array(0))]);
+      expect(draws()).toEqual([]);
+    });
   });
 
   it('chunks a run past the per-flush vertex cap', () => {
