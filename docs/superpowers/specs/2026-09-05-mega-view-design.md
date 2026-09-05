@@ -177,20 +177,39 @@ the chain stops there anyway.
 **Do not size the atlas from the item count.** The table's third column is a trap
 for exactly that reason; size it from the viewport.
 
-## What is unmeasured
+## What the renderer costs at this scale
 
-The scene-graph side is fine: the committed baseline has `renderOrder` draining a
-flat 10,000-node scene in **0.367ms**, with `setPose` on one node at ~0.005ms.
-That is ~45× headroom in a frame, and 20,000 stays comfortable.
+Measured 2026-09-05 on an M2 Max, ANGLE Metal, 800×600 at dpr 1, via
+`tests/perf/image-quad.spec.ts` (`WEASEL_PERF_N` sets the quad count,
+`WEASEL_PERF_SIZE` the quad edge). Median of 3 runs.
 
-The renderer side at this scale is **unknown**. `tests/perf/image-quad.spec.ts`
-runs at `N = 512` quads per frame and reports rather than gates. 512 → 20,000 is
-a 39× extrapolation nobody should make. Its `raw` variants — churn, arena,
-subdata, orphan, ring — exist because per-quad buffer-upload overhead is the cost
-that scales badly, and that is precisely the number this design rests on.
+| quads | `renderer/image` | `raw/preloaded` |
+|---:|---:|---:|
+| 512 | 3.05 ms | 0.015 ms |
+| 4,000 | 19.6 ms | 0.68 ms |
+| 20,000 | 51.3 ms | 3.83 ms |
 
-**Get that number before building anything.** It is a ladder on one existing
-constant: run `image-quad.spec.ts` at 512, 4k and 20k. If 20,000 quads batch into
-a handful of draw calls at a few milliseconds, the rest of this is bookkeeping.
-If per-quad overhead dominates, the batching path needs work first and no amount
-of atlas design compensates.
+**Per-quad overhead dominates, so the batching path has to be built first.**
+20,000 image commands is 51 ms — three frames' budget for one frame's work, and
+it is all CPU: rerunning 20,000 at 8px instead of 48px drops overdraw from 96×
+to 2.7× and moves the number by 0.05 ms. Fill rate is free here; the draw calls
+are not.
+
+The cause is `drawImage` in `packages/core/src/renderer/draw.ts`. It is one
+`drawElements` per command, and each one re-sets the program, the projection and
+model matrices, the color matrix, the texture bind and filter, three uniforms,
+and the clip test — plus a `flushSolids` before it. Nothing about the image path
+batches today.
+
+**The design's target path is affordable.** `raw/preloaded` — 20,000 draws
+against a vertex buffer written once, no per-quad write and no per-quad uniform
+— is 3.83 ms, and one batched `drawElements` over that same buffer is strictly
+less. That is the shape this design calls for, and it is ~13× cheaper than what
+the renderer does now. The atlas and LOD work is not what needs proving; a
+batched image path is.
+
+**Do not build the vertex buffer with `bufferSubData` per quad.** `raw/arena`
+does exactly that — one persistent buffer, each quad written at its own rising
+offset — and it is the only variant that gets *worse* per quad as N grows: 8.6
+µs at 512, 12.8 at 4,000, 33.9 at 20,000, which is 668 ms for one frame. Build
+the whole array CPU-side and upload it in one `bufferData`.

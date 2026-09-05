@@ -46,8 +46,12 @@ import { dirname, resolve } from 'node:path';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
-/** Commands (or quads) per frame. */
-const N = 512;
+/** Commands (or quads) per frame. `WEASEL_PERF_N` walks it up a ladder. */
+const N = Number(process.env.WEASEL_PERF_N ?? 512);
+
+/** Edge of each quad, in px. Scale it down as N goes up to hold painted area
+ *  constant, or the ladder measures fill rate instead of per-quad overhead. */
+const SIZE = Number(process.env.WEASEL_PERF_SIZE ?? 48);
 
 const RUNS = 3;
 
@@ -75,7 +79,7 @@ test('image quad: geometry cost per draw', async ({ page }) => {
       console.log(`collected between measurements: ${String(m.gcAvailable)}`);
       console.log(`every variant paints something: ${String(m.allPaint)}`);
       if (m.notPainting) console.log(`  NOT PAINTING: ${String(m.notPainting)}`);
-      console.log(`${N} quads per frame; ${total} cells`);
+      console.log(`${N} quads per frame at ${SIZE}px; ${total} cells`);
       console.log('');
       return;
     }
@@ -93,7 +97,7 @@ test('image quad: geometry cost per draw', async ({ page }) => {
   await page.waitForSelector('canvas');
 
   const { paints, glRenderer } = await page.evaluate(
-    async ({ root, n, runs, rawVariants, rendererVariants }) => {
+    async ({ root, n, size: SIZE, runs, rawVariants, rendererVariants }) => {
       const report = (globalThis as unknown as {
         __imageReport: (m: unknown) => Promise<void>;
       }).__imageReport;
@@ -169,7 +173,6 @@ void main() { outColor = u_color; }`;
       const uColor = gl.getUniformLocation(rawProg, 'u_color');
 
       const QUAD_INDICES = new Uint32Array([0, 1, 2, 1, 3, 2]);
-      const SIZE = 48;
 
       /** Screen-space corners of quad `i`, the layout `drawImage` builds. */
       const scratch = new Float32Array(8);
@@ -470,7 +473,7 @@ void main() { outColor = u_color; }`;
       return { paints, glRenderer };
     },
     {
-      root: repoRoot, n: N, runs: RUNS,
+      root: repoRoot, n: N, size: SIZE, runs: RUNS,
       rawVariants: [...RAW_VARIANTS], rendererVariants: [...RENDERER_VARIANTS],
     },
   );
@@ -495,7 +498,8 @@ void main() { outColor = u_color; }`;
   const lines = [
     '',
     `Image quad — 800x600, dpr 1, on ${glRenderer}`,
-    `${N} quads per frame, ${RUNS} runs; median us/quad, range in parens.`,
+    `${N} quads per frame at ${SIZE}px (${((N * SIZE * SIZE) / (800 * 600)).toFixed(1)}x overdraw), `
+    + `${RUNS} runs; median us/quad, range in parens.`,
     '',
     '| variant | us/quad | what it does |',
     '|---|---:|---|',
