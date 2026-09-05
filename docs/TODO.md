@@ -565,16 +565,6 @@ Core five + Crop shipped. Remaining:
   it hands `WeaselRenderer.setTarget`. Nothing hits this yet — the
   `tiled-surface` demo mounts no loupe.
 
-- **(P2) Two demos still commit per animation frame.** `SceneCanvas` no longer
-  re-renders on a scene write, so `useScene(..., { subscribe: false })` now
-  means what it says — but a host taking the default still commits per write,
-  which is the wrong default for one driving poses from a tick. `EasingsDemo.tsx:49`
-  (a `setPose` per marker per frame) and `TimelineDemo.tsx:43` (`move()` from a
-  sampled track's `onTick`) should both take it; `SceneScrollerDemo.tsx:73`
-  already has. Neither renders scene data as DOM, so it is a one-line change
-  each — the reason to do it is that a demo is a reference implementation and
-  these two currently model the expensive shape.
-
 - **(P3) Sync paints do not coalesce.** `CanvasProps.syncPaint`
   (`Canvas.tsx:234-242`) promises "a synchronous paint per commit", singular,
   but the loop paints per *request*: one commit carrying a sibling
