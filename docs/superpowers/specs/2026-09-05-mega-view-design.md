@@ -98,8 +98,9 @@ One atlas means one draw call either way: 10,000 quads sharing a texture batch
 into a single `drawElements`. The choice is not how many draws but what the
 vertex buffer holds.
 
-**Per-sprite** puts one quad per item, UVs indexing the atlas. 10,000 quads is
-625KB of vertex data, ~61us to upload, and only on layout change.
+**Per-sprite** puts one quad per item, UVs indexing the atlas. At the batch's
+five floats a vertex — position, UV, opacity — 10,000 quads is 800KB, uploaded
+in one `bufferSubData` and only on layout change.
 
 Per-sprite is the default because it is strictly more general: it is the only
 one of the two that leaves layout free. Blocks are a compression that costs that
@@ -179,37 +180,51 @@ for exactly that reason; size it from the viewport.
 
 ## What the renderer costs at this scale
 
-Measured 2026-09-05 on an M2 Max, ANGLE Metal, 800×600 at dpr 1, via
-`tests/perf/image-quad.spec.ts` (`WEASEL_PERF_N` sets the quad count,
-`WEASEL_PERF_SIZE` the quad edge). Median of 3 runs.
+**The renderer is no longer the barrier.** Measured 2026-09-05 on an M2 Max,
+ANGLE Metal, 800×600 at dpr 1, via `tests/perf/image-quad.spec.ts` (`WEASEL_PERF_N`
+sets the quad count). Median of 3 runs, milliseconds per frame:
 
-| quads | `renderer/image` | `raw/preloaded` |
-|---:|---:|---:|
-| 512 | 3.05 ms | 0.015 ms |
-| 4,000 | 19.6 ms | 0.68 ms |
-| 20,000 | 51.3 ms | 3.83 ms |
+| quads | before | one atlas, image commands | one atlas, `kind: sprites` |
+|---:|---:|---:|---:|
+| 512 | 3.05 | 0.094 | — |
+| 4,000 | 19.6 | 0.83 | — |
+| 20,000 | 51.3 | 10.6 | **0.79** |
 
-**Per-quad overhead dominates, so the batching path has to be built first.**
-20,000 image commands is 51 ms — three frames' budget for one frame's work, and
-it is all CPU: rerunning 20,000 at 8px instead of 48px drops overdraw from 96×
-to 2.7× and moves the number by 0.05 ms. Fill rate is free here; the draw calls
-are not.
+20,000 sprites now draw in well under a millisecond, against a 16ms frame. The
+ladder this spec asked for is answered: build the rest of it.
 
-The cause is `drawImage` in `packages/core/src/renderer/draw.ts`. It is one
-`drawElements` per command, and each one re-sets the program, the projection and
-model matrices, the color matrix, the texture bind and filter, three uniforms,
-and the clip test — plus a `flushSolids` before it. Nothing about the image path
-batches today.
+Two changes got there, both in `packages/core/src/renderer/`.
 
-**The design's target path is affordable.** `raw/preloaded` — 20,000 draws
-against a vertex buffer written once, no per-quad write and no per-quad uniform
-— is 3.83 ms, and one batched `drawElements` over that same buffer is strictly
-less. That is the shape this design calls for, and it is ~13× cheaper than what
-the renderer does now. The atlas and LOD work is not what needs proving; a
-batched image path is.
+**`ImageBatch` coalesces consecutive image quads into one draw.** A run breaks
+on a different bitmap, a different MAG_FILTER, a clip boundary, or a color
+matrix; the group transform, group alpha and per-command opacity all ride the
+vertices and break nothing. So the wall of sprites this design describes — one
+atlas page, one filter, no clip — is the best case, and it coalesces with no
+consumer changes at all.
 
-**Do not build the vertex buffer with `bufferSubData` per quad.** `raw/arena`
-does exactly that — one persistent buffer, each quad written at its own rising
-offset — and it is the only variant that gets *worse* per quad as N grows: 8.6
-µs at 512, 12.8 at 4,000, 33.9 at 20,000, which is 668 ms for one frame. Build
-the whole array CPU-side and upload it in one `bufferData`.
+**`kind: 'sprites'` hands the run over packed.** Coalescing alone left 20,000
+quads at ~10ms, nearly all of it walking 20,000 command objects.
+`SpritesDrawCommand` carries one bitmap and a `Float32Array` of nine floats a
+sprite — `dx, dy, dw, dh, sx, sy, sw, sh, opacity` — and stages through the same
+run, so a packed run and the image commands around it still merge. **Use it.**
+Emitting a command object per item would spend 90% of the frame on the object
+walk and nothing on the picture.
+
+Two things follow for the rest of the design.
+
+**Layout stays as free as the spec claims, and it is now cheap in absolute
+terms.** Re-sorting is rewriting destination floats in that array; the atlas is
+untouched. A strategy returning placements for all N is O(N) per frame against a
+frame that costs 0.79ms.
+
+**The remaining budget is residency, not drawing.** What is left to build — level
+selection, page fetch and upload, hysteresis, gutters — is the whole cost now.
+Do not spend design effort on draw batching that is done.
+
+## What is still unmeasured
+
+**Texture upload.** Nothing here measures fetching and uploading an atlas page
+mid-pan, which is the one per-frame cost the draw path does not cover and the
+one a level swap incurs. `GLImageCache.upload` is a `texImage2D` on the main
+thread; a 20MB page uploaded inside a frame is a stall no batching hides.
+Measure it before choosing how many levels the ladder has.
