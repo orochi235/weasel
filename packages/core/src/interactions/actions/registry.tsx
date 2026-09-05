@@ -276,7 +276,13 @@ export type ActionsProp = null | Record<string, ActionEntry>;
  * Imperative API exposed by `useActionsRegistry()`.
  */
 export interface ActionsRegistry {
+  /** Add an action and return its release. Registrants for one id stack,
+   *  newest live, so releasing yours uncovers whoever you displaced. Call it
+   *  from an effect and release it in that effect's cleanup — registering from
+   *  a render body pushes an entry per render and releases none. */
   register(action: Action): () => void;
+  /** Drop every registrant of `id`. This is the "this action should not exist"
+   *  door, not a release — for that, call what `register` returned. */
   unregister(id: string): void;
   list(): readonly Action[];
   /** Fire an immediate-invoker action by id. The optional `params` arg is

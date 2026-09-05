@@ -30,6 +30,27 @@ function mockRect(el: Element, rect: { left: number; top: number; width?: number
     }) as DOMRect;
 }
 
+/** A handle mounted in the document with a rect at the origin. */
+function mount(): HTMLDivElement {
+  const target = document.createElement('div');
+  document.body.appendChild(target);
+  mockRect(target, { left: 0, top: 0 });
+  target.setPointerCapture = vi.fn();
+  target.releasePointerCapture = vi.fn();
+  return target;
+}
+
+function press(target: HTMLDivElement, clientX: number, clientY: number): React.PointerEvent<HTMLDivElement> {
+  return {
+    preventDefault: () => {},
+    currentTarget: target,
+    pointerId: 1,
+    buttons: 1,
+    clientX,
+    clientY,
+  } as unknown as React.PointerEvent<HTMLDivElement>;
+}
+
 describe('useHandleDrag', () => {
   it('returns an onPointerDown handler', () => {
     const { result } = renderHook(() => useHandleDrag({ onMove: () => {} }));
@@ -128,10 +149,11 @@ describe('useHandleDrag', () => {
     document.body.removeChild(container);
   });
 
-  it('cleans up on pointercancel as well', () => {
+  it('reports a cancelled pointer as a cancel, not as an end', () => {
     const onEnd = vi.fn();
+    const onCancel = vi.fn();
     const { result } = renderHook(() =>
-      useHandleDrag<HTMLDivElement>({ onMove: () => {}, onEnd }),
+      useHandleDrag<HTMLDivElement>({ onMove: () => {}, onEnd, onCancel }),
     );
 
     const target = document.createElement('div');
@@ -150,7 +172,86 @@ describe('useHandleDrag', () => {
     result.current.onPointerDown(fakeReact);
 
     target.dispatchEvent(makePointerEvent('pointercancel'));
+    expect(onCancel).toHaveBeenCalledWith('pointercancel');
+    expect(onEnd).not.toHaveBeenCalled();
+
+    document.body.removeChild(target);
+  });
+
+  it('reports the end point and whether the pointer moved at all', () => {
+    const onEnd = vi.fn();
+    const { result } = renderHook(() =>
+      useHandleDrag<HTMLDivElement>({ onMove: () => {}, onEnd }),
+    );
+    const target = mount();
+    result.current.onPointerDown(press(target, 0, 0));
+
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 30, clientY: 40 }));
+    target.dispatchEvent(makePointerEvent('pointerup', { clientX: 30, clientY: 40 }));
     expect(onEnd).toHaveBeenCalledTimes(1);
+    expect(onEnd.mock.calls[0][0]).toMatchObject({ point: { x: 30, y: 40 }, moved: true });
+
+    document.body.removeChild(target);
+  });
+
+  it('a press that never moves ends with moved false', () => {
+    const onEnd = vi.fn();
+    const { result } = renderHook(() =>
+      useHandleDrag<HTMLDivElement>({ onMove: () => {}, onEnd }),
+    );
+    const target = mount();
+    result.current.onPointerDown(press(target, 5, 5));
+    target.dispatchEvent(makePointerEvent('pointerup', { clientX: 5, clientY: 5 }));
+    expect(onEnd.mock.calls[0][0]).toMatchObject({ moved: false });
+
+    document.body.removeChild(target);
+  });
+
+  it('ignores a second pointer arriving mid-drag', () => {
+    const onMove = vi.fn();
+    const onEnd = vi.fn();
+    const { result } = renderHook(() =>
+      useHandleDrag<HTMLDivElement>({ onMove, onEnd }),
+    );
+    const target = mount();
+    result.current.onPointerDown(press(target, 0, 0));
+
+    target.dispatchEvent(makePointerEvent('pointermove', { pointerId: 2, clientX: 9, clientY: 9 }));
+    target.dispatchEvent(makePointerEvent('pointerup', { pointerId: 2 }));
+    expect(onMove).not.toHaveBeenCalled();
+    expect(onEnd).not.toHaveBeenCalled();
+
+    // The real pointer still drives it.
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 9, clientY: 9 }));
+    expect(onMove).toHaveBeenCalledTimes(1);
+
+    document.body.removeChild(target);
+  });
+
+  it('keeps driving after the handle leaves the DOM under it', () => {
+    // The old lifecycle hung its listeners on the handle, so removing the
+    // handle mid-drag stranded the gesture with no end and no cancel.
+    const onCancel = vi.fn();
+    const { result } = renderHook(() =>
+      useHandleDrag<HTMLDivElement>({ onMove: () => {}, onCancel }),
+    );
+    const target = mount();
+    result.current.onPointerDown(press(target, 0, 0));
+
+    document.body.removeChild(target);
+    target.dispatchEvent(makePointerEvent('lostpointercapture'));
+    expect(onCancel).toHaveBeenCalledWith('lostcapture');
+  });
+
+  it('cancels an in-flight drag when the component unmounts', () => {
+    const onCancel = vi.fn();
+    const { result, unmount } = renderHook(() =>
+      useHandleDrag<HTMLDivElement>({ onMove: () => {}, onCancel }),
+    );
+    const target = mount();
+    result.current.onPointerDown(press(target, 0, 0));
+    unmount();
+    expect(onCancel).toHaveBeenCalledWith('aborted');
 
     document.body.removeChild(target);
   });

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { openPointerSession, type PointerSession } from '../pointerSession';
 
 /** Payload carried by an in-flight pointer drag — `kind` routes to drop zones, `ids` lists the dragged items. */
 export interface DragPayload {
@@ -71,59 +72,63 @@ function positionGhost(el: HTMLElement, x: number, y: number) {
   el.style.transform = `translate(${x - el.offsetWidth / 2}px, ${y - el.offsetHeight / 2}px) scale(0.92)`;
 }
 
+/** The ghost-and-zones half of a drag, driven by whoever owns the pointer. */
+interface GhostDrag {
+  move: (e: PointerEvent) => void;
+  drop: (e: PointerEvent) => void;
+  cancel: () => void;
+}
+
 function beginPointerDrag(
   payload: DragPayload,
   source: HTMLElement,
   startX: number,
   startY: number,
   ghostFn: (source: HTMLElement, payload: DragPayload) => HTMLElement,
-) {
-  if (activeDrag) return;
+): GhostDrag | null {
+  if (activeDrag) return null;
   const ghost = ghostFn(source, payload);
   document.body.appendChild(ghost);
   positionGhost(ghost, startX, startY);
   activeDrag = { payload, ghost, lastZone: null };
 
-  function onMove(e: PointerEvent) {
-    if (!activeDrag) return;
-    positionGhost(activeDrag.ghost, e.clientX, e.clientY);
-    const zone = findZone(e.clientX, e.clientY, payload.kind);
-    if (zone !== activeDrag.lastZone) {
-      activeDrag.lastZone?.onOver?.(false);
-      zone?.onOver?.(true);
-      activeDrag.lastZone = zone;
-    }
-    zone?.onMove?.(payload, e.clientX, e.clientY);
-  }
-  function onUp(e: PointerEvent) {
-    if (!activeDrag) return;
-    const zone = findZone(e.clientX, e.clientY, payload.kind);
-    const dropped = activeDrag.payload;
-    activeDrag.lastZone?.onOver?.(false);
-    // `activeDrag` is module state and gates every future drag, so a throwing
-    // consumer `onDrop` must not be able to strand it.
-    try {
-      if (zone) zone.onDrop(dropped, e.clientX, e.clientY);
-    } catch (err) {
-      console.error('weasel pointerDrag: drop zone onDrop threw', err);
-    } finally {
-      cleanup();
-    }
-  }
-  function onCancel() {
-    activeDrag?.lastZone?.onOver?.(false);
-    cleanup();
-  }
-  function cleanup() {
+  const teardown = () => {
     activeDrag?.ghost.remove();
     activeDrag = null;
-    document.removeEventListener('pointermove', onMove);
-    document.removeEventListener('pointerup', onUp);
-    document.removeEventListener('pointercancel', onCancel);
-  }
-  document.addEventListener('pointermove', onMove);
-  document.addEventListener('pointerup', onUp);
-  document.addEventListener('pointercancel', onCancel);
+  };
+
+  return {
+    move(e) {
+      if (!activeDrag) return;
+      positionGhost(activeDrag.ghost, e.clientX, e.clientY);
+      const zone = findZone(e.clientX, e.clientY, payload.kind);
+      if (zone !== activeDrag.lastZone) {
+        activeDrag.lastZone?.onOver?.(false);
+        zone?.onOver?.(true);
+        activeDrag.lastZone = zone;
+      }
+      zone?.onMove?.(payload, e.clientX, e.clientY);
+    },
+    drop(e) {
+      if (!activeDrag) return;
+      const zone = findZone(e.clientX, e.clientY, payload.kind);
+      const dropped = activeDrag.payload;
+      activeDrag.lastZone?.onOver?.(false);
+      // `activeDrag` is module state and gates every future drag, so a throwing
+      // consumer `onDrop` must not be able to strand it.
+      try {
+        if (zone) zone.onDrop(dropped, e.clientX, e.clientY);
+      } catch (err) {
+        console.error('weasel pointerDrag: drop zone onDrop threw', err);
+      } finally {
+        teardown();
+      }
+    },
+    cancel() {
+      activeDrag?.lastZone?.onOver?.(false);
+      teardown();
+    },
+  };
 }
 
 const DRAG_THRESHOLD_PX_SQ = 25;
@@ -140,47 +145,48 @@ export function useDragHandle(
 ) {
   const optsRef = useRef(options);
   optsRef.current = options;
-  // A press whose release never arrives — the row unmounts under the pointer —
-  // would otherwise leave three document listeners closed over a detached node.
-  const pendingTeardownRef = useRef<(() => void) | null>(null);
-  useEffect(() => () => { pendingTeardownRef.current?.(); }, []);
+  // One session spans the whole press, threshold and all, so a release that
+  // never arrives — the row unmounts under the pointer — cannot strand the
+  // ghost or its listeners. Before, the two phases owned separate listener
+  // triples and only the pre-threshold one was torn down on unmount.
+  const live = useRef<PointerSession | null>(null);
+  useEffect(() => () => { live.current?.cancel(); }, []);
+
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLElement>) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     const target = e.currentTarget as HTMLElement;
     if (e.target instanceof HTMLElement && e.target.closest('input, button, select, textarea')) return;
     const startX = e.clientX;
     const startY = e.clientY;
-    let started = false;
+    let ghost: GhostDrag | null = null;
+    let past = false;
 
-    function onMove(ev: PointerEvent) {
-      if (started) return;
-      const dx = ev.clientX - startX;
-      const dy = ev.clientY - startY;
-      if (dx * dx + dy * dy > DRAG_THRESHOLD_PX_SQ) {
-        started = true;
+    // No pointer capture: zones are resolved with `document.elementFromPoint`,
+    // which capture would not help, and the source row is free to be removed
+    // and re-rendered under the drag.
+    live.current = openPointerSession(target, e, {
+      onMove: (ev) => {
+        if (ghost) { ghost.move(ev); return; }
+        if (past) return;
+        const dx = ev.clientX - startX;
+        const dy = ev.clientY - startY;
+        if (dx * dx + dy * dy <= DRAG_THRESHOLD_PX_SQ) return;
+        past = true;
         const payload = getPayload();
-        cleanup();
-        if (payload) {
-          target.addEventListener(
-            'click',
-            (ce) => { ce.stopPropagation(); ce.preventDefault(); },
-            { capture: true, once: true },
-          );
-          beginPointerDrag(payload, target, ev.clientX, ev.clientY, optsRef.current?.createGhost ?? defaultGhost);
-        }
-      }
-    }
-    function onEnd() { cleanup(); }
-    function cleanup() {
-      document.removeEventListener('pointermove', onMove);
-      document.removeEventListener('pointerup', onEnd);
-      document.removeEventListener('pointercancel', onEnd);
-      pendingTeardownRef.current = null;
-    }
-    document.addEventListener('pointermove', onMove);
-    document.addEventListener('pointerup', onEnd);
-    document.addEventListener('pointercancel', onEnd);
-    pendingTeardownRef.current = cleanup;
+        if (!payload) return;
+        target.addEventListener(
+          'click',
+          (ce) => { ce.stopPropagation(); ce.preventDefault(); },
+          { capture: true, once: true },
+        );
+        ghost = beginPointerDrag(
+          payload, target, ev.clientX, ev.clientY,
+          optsRef.current?.createGhost ?? defaultGhost,
+        );
+      },
+      onEnd: (ev) => { live.current = null; ghost?.drop(ev); },
+      onCancel: () => { live.current = null; ghost?.cancel(); },
+    }, { capture: false });
   }, [getPayload]);
 
   return { onPointerDown, style: { touchAction: 'none' as const } };

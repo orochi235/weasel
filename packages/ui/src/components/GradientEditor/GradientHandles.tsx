@@ -172,29 +172,17 @@ function DragPoint({
   label: string;
   onDrag: (p: Point, phase: 'input' | 'commit') => void;
 }): ReactElement {
-  // `useHandleDrag` reports the pointer on move but not on end, so the last
-  // position is held here to commit with. It stays null until the pointer
-  // actually moves: a press that never moves must not write anything.
-  const last = useRef<Point | null>(null);
   const start = useRef<Point>(at);
   const drag = useHandleDrag<SVGCircleElement>({
-    onStart: () => {
-      start.current = at;
-      last.current = null;
+    onStart: () => { start.current = at; },
+    onMove: (p) => { onDrag(p, 'input'); },
+    onEnd: ({ point, moved }) => {
+      // A press that never moved is not an edit and must not write anything.
+      if (moved) onDrag(point, 'commit');
     },
-    onMove: (p) => {
-      last.current = p;
-      onDrag(p, 'input');
-    },
-    onEnd: (e) => {
-      const moved = last.current;
-      last.current = null;
-      if (moved === null) return;
-      // A canceled pointer is not an edit — put the live preview back where
-      // the gesture started rather than committing where it was abandoned.
-      if (e.type === 'pointercancel') onDrag(start.current, 'input');
-      else onDrag(moved, 'commit');
-    },
+    // An abandoned gesture is not an edit either — put the live preview back
+    // where it started rather than committing where it was left.
+    onCancel: () => { onDrag(start.current, 'input'); },
   });
   const onKeyDown = (e: ReactKeyboardEvent<SVGCircleElement>): void => {
     const amount = e.shiftKey ? KEY_STEP * 10 : KEY_STEP;

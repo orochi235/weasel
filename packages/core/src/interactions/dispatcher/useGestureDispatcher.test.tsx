@@ -396,6 +396,105 @@ describe('useGestureDispatcher', () => {
       expect(dragSpy).toHaveBeenCalledTimes(1);
     });
 
+    it('ends a drag whose release the canvas never saw', () => {
+      // The pointerup landed somewhere this document could not see — another
+      // window, a native drag. The next move arrives with nothing held, and
+      // that is the release. Without reading it the drag hangs in flight.
+      const endSpy = vi.fn();
+      const dragAction: Action = {
+        id: 'demo.drag',
+        label: 'drag',
+        defaultBinding: { kind: 'drag' },
+        invoker: {
+          timing: 'ongoing',
+          start: () => ({ onMove: () => {}, onEnd: (_c, reason) => endSpy(reason) }),
+        },
+      };
+      const { container } = render(
+        <Harness><Probe actionDef={dragAction} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
+      );
+      const canvas = container.querySelector('canvas')!;
+      act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0, pointerId: 1, buttons: 1 }); });
+      act(() => { fire(canvas, 'pointermove', { clientX: 40, clientY: 40, pointerId: 1, buttons: 1 }); });
+      expect(endSpy).not.toHaveBeenCalled();
+
+      act(() => { fire(canvas, 'pointermove', { clientX: 50, clientY: 50, pointerId: 1, buttons: 0 }); });
+      expect(endSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('leaves the drag alone when the source never reports buttons', () => {
+      // A press carrying no button state means the source does not report it,
+      // and every move would otherwise read as a release.
+      const endSpy = vi.fn();
+      const moveSpy = vi.fn();
+      const dragAction: Action = {
+        id: 'demo.drag',
+        label: 'drag',
+        defaultBinding: { kind: 'drag' },
+        invoker: {
+          timing: 'ongoing',
+          start: () => ({ onMove: () => moveSpy(), onEnd: () => endSpy() }),
+        },
+      };
+      const { container } = render(
+        <Harness><Probe actionDef={dragAction} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
+      );
+      const canvas = container.querySelector('canvas')!;
+      act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0, pointerId: 1 }); });
+      act(() => { fire(canvas, 'pointermove', { clientX: 40, clientY: 40, pointerId: 1 }); });
+      act(() => { fire(canvas, 'pointermove', { clientX: 50, clientY: 50, pointerId: 1 }); });
+      expect(endSpy).not.toHaveBeenCalled();
+      expect(moveSpy).toHaveBeenCalled();
+    });
+
+    it('cancels the gesture when the canvas loses the pointer capture', () => {
+      const endSpy = vi.fn();
+      const dragAction: Action = {
+        id: 'demo.drag',
+        label: 'drag',
+        defaultBinding: { kind: 'drag' },
+        invoker: {
+          timing: 'ongoing',
+          start: () => ({ onMove: () => {}, onEnd: (_c, reason) => endSpy(reason) }),
+        },
+      };
+      const { container } = render(
+        <Harness><Probe actionDef={dragAction} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
+      );
+      const canvas = container.querySelector('canvas')!;
+      act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0, pointerId: 1, buttons: 1 }); });
+      act(() => { fire(canvas, 'pointermove', { clientX: 40, clientY: 40, pointerId: 1, buttons: 1 }); });
+      expect(endSpy).not.toHaveBeenCalled();
+
+      act(() => { fire(canvas, 'lostpointercapture', { pointerId: 1 }); });
+      expect(endSpy).toHaveBeenCalledWith('cancel');
+    });
+
+    it('a released pointer losing capture reports nothing twice', () => {
+      // A real release fires pointerup and then lostpointercapture. The
+      // gesture is already over; the second must not re-report it.
+      const endSpy = vi.fn();
+      const dragAction: Action = {
+        id: 'demo.drag',
+        label: 'drag',
+        defaultBinding: { kind: 'drag' },
+        invoker: {
+          timing: 'ongoing',
+          start: () => ({ onMove: () => {}, onEnd: (_c, reason) => endSpy(reason) }),
+        },
+      };
+      const { container } = render(
+        <Harness><Probe actionDef={dragAction} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
+      );
+      const canvas = container.querySelector('canvas')!;
+      act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0, pointerId: 1, buttons: 1 }); });
+      act(() => { fire(canvas, 'pointermove', { clientX: 40, clientY: 40, pointerId: 1, buttons: 1 }); });
+      act(() => { fire(canvas, 'pointerup', { clientX: 40, clientY: 40, pointerId: 1 }); });
+      act(() => { fire(canvas, 'lostpointercapture', { pointerId: 1 }); });
+      expect(endSpy).toHaveBeenCalledTimes(1);
+      expect(endSpy).not.toHaveBeenCalledWith('cancel');
+    });
+
     it('refuses an ongoing invoker rather than colliding with the drag handle', () => {
       const startSpy = vi.fn();
       const err = vi.spyOn(console, 'error').mockImplementation(() => {});

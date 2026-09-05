@@ -30,14 +30,22 @@ function fireMove(x: number, y: number) {
   document.dispatchEvent(ev);
 }
 
+function fireMoveAs(pointerId: number, x: number, y: number) {
+  const ev = new Event('pointermove') as PointerEvent;
+  Object.assign(ev, { clientX: x, clientY: y, pointerId });
+  document.dispatchEvent(ev);
+}
+
 function fireUp(x: number, y: number) {
   const ev = new Event('pointerup') as PointerEvent;
   Object.assign(ev, { clientX: x, clientY: y, pointerId: 1 });
   document.dispatchEvent(ev);
 }
 
-function fireCancel() {
-  document.dispatchEvent(new Event('pointercancel'));
+function fireCancel(pointerId = 1) {
+  const ev = new Event('pointercancel') as PointerEvent;
+  Object.assign(ev, { pointerId });
+  document.dispatchEvent(ev);
 }
 
 afterEach(() => {
@@ -140,6 +148,39 @@ describe('startThresholdDrag', () => {
     fireMove(50, 50);
     fireCancel();
     expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a second pointer arriving mid-gesture', () => {
+    const start = makeStart(0, 0);
+    const onCancel = vi.fn();
+    const onCommit = vi.fn();
+    const onMove = vi.fn();
+    const h = startThresholdDrag(start as unknown as React.PointerEvent, { onMove, onCommit, onCancel });
+    fireMove(50, 50);
+    onMove.mockClear();
+
+    fireMoveAs(2, 90, 90);
+    fireCancel(2);
+    expect(onMove).not.toHaveBeenCalled();
+    expect(onCancel).not.toHaveBeenCalled();
+    expect(h.isDragging()).toBe(true);
+  });
+
+  it('cancel() ends a live gesture without committing', () => {
+    const start = makeStart(0, 0);
+    const onCancel = vi.fn();
+    const onCommit = vi.fn();
+    const h = startThresholdDrag(start as unknown as React.PointerEvent, {
+      onMove: () => {}, onCommit, onCancel,
+    });
+    fireMove(50, 50);
+    expect(h.isDragging()).toBe(true);
+    h.cancel();
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onCommit).not.toHaveBeenCalled();
+    // And it is really over: a later release commits nothing.
+    fireUp(50, 50);
+    expect(onCommit).not.toHaveBeenCalled();
   });
 
   it('removes listeners after commit so a stray pointermove does nothing', () => {
