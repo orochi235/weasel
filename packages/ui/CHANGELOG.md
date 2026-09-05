@@ -1,5 +1,49 @@
 # @weasel-js/ui
 
+## 1.4.1
+
+### Patch Changes
+
+- 73039aa: Collapse four duplicated helpers and drop three dead modules.
+  
+  `Badge`'s shape-control table lived twice — once in `shapeControls.ts`, which nothing imported, and once re-declared inside the stories, which is the copy that rendered. The stories now import the module, so the badge shape defaults have one definition again. `Badge`, `Shield` and `Perforated` shared eleven identical lines of ResizeObserver measurement for the same viewBox-unit conversion; that is now `useSvgBox`.
+  
+  `composeSelectionPose` and `makeContainerAwareBoundsResolver` each carried their own copy of the leaf walk, including the rule that keeps an empty container from contributing bounds — one function now, so the rule can be fixed in one place.
+- 0b0f13f: Put every drag in the kit on one pointer lifecycle, and recover the releases the DOM does not deliver.
+  
+  Fourteen pointerdown-to-pointerup lifecycles each answered capture, pointer identity, teardown and lost-pointer recovery for themselves. They now run on `openPointerSession`: `Slider`, `BandEditor`, `Timeline`'s `Lane` and `Ruler`, `LayeredCurveEditor`, `ResizeHandle`, `useReorderDragList`, `MinimapCanvas`, labkit's `LayerList`, `usePanZoom`, `useOrbit` and `FloatingPanel`. A drag released over another window, or whose element unmounts mid-gesture, now ends instead of hanging in flight.
+  
+  A third recovery rule joins the two that shipped with the primitive: a fresh press on a pointer still believed held reports `'superseded'`, because the release landed somewhere that never told us and the pointer never came back for the missed-release rule to see. Without it a stale session steers the next press. `useGestureDispatcher` applies the same rule to its own multi-pointer lifecycle.
+  
+  Breaking: hooks that drove their drag through returned React props no longer return them, because the session owns the gesture from the press.
+  
+  - `useReorderDragList`'s `containerProps` is `{ ref }` only; `onPointerMove` / `onPointerUp` / `onPointerCancel` are gone. It gains `onPress(id, mods)` — a press released without engaging a drag, fired for locked rows too, with the modifiers held at press. That is the click-vs-drag decision consumers previously had to reconstruct by sampling drag state before forwarding the pointerup, which no longer works now that the session ends first.
+  - labkit's `PanZoomHandlers` and `OrbitHandlers` lose `onPointerMove` / `onPointerUp`. `usePanZoom` gains `onTap` for the same reason.
+  
+  The five `@weasel-js/ui` drag surfaces pass `capture: false` deliberately and now assert it: capture retargets `pointerup` to the capture element and kills the click on consumer-rendered content inside a slider thumb, a band body, or curve-editor chrome.
+- 00af9ac: Add `openPointerSession`, and put the kit's drag lifecycles on it.
+  
+  `useHandleDrag`, `startThresholdDrag` and `useDragHandle` each owned a pointerdown-to-pointerup lifecycle and each answered the same four questions differently. Capture: two took it untry'd, one never took it. Listeners: one on the element, two on `document`. Pointer identity: none of the three filtered by `pointerId`, so a second finger drove and could end a drag in progress. Teardown on unmount: one had none, one had it for half its lifecycle.
+  
+  None of them — nor the dispatcher — handled `lostpointercapture`, and none read a `pointermove` with no button held as the release it missed. So a drag whose pointer left the element, or whose capturing element was removed mid-gesture, hung in flight with no end and no cancel.
+  
+  `openPointerSession(origin, downEvent, callbacks)` now decides all of it once: capture on the origin, listeners on the document so a removed element cannot strand the gesture, every event filtered to its own pointer, `lostpointercapture` and the missed release both closing the session, and one `cancel()` for unmount, Escape or blur. The missed-release rule disarms itself when the press reports no button state, so synthesized events do not read as instant releases.
+  
+  `useGestureDispatcher` keeps its own multi-pointer lifecycle — one canvas listener set keyed by `pointerId` is the right shape for multitouch — but takes both recovery rules from the same module, so there is one implementation of each rather than two that drift.
+  
+  Breaking, in `useHandleDrag`: `onEnd` now fires only on a real release and receives `{ point, moved, event }` instead of a bare event; a cancelled gesture reports through the new `onCancel(reason)`. The old signature made every commit-on-end consumer sniff `e.type === 'pointercancel'` to tell an edit from an abandoned drag, and hold its own ref to recover the end position — `GradientEditor` does neither now.
+- Updated dependencies [dcef92c]
+- Updated dependencies [73039aa]
+- Updated dependencies [b91a8dd]
+- Updated dependencies [caad52f]
+- Updated dependencies [0b0f13f]
+- Updated dependencies [00af9ac]
+- Updated dependencies [9b9224c]
+  - @weasel-js/core@1.4.1
+  - @weasel-js/svg@1.4.1
+  - @weasel-js/font@1.4.1
+  - @weasel-js/modes@1.4.1
+
 ## 1.4.0
 
 ### Patch Changes

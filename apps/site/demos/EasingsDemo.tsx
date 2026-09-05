@@ -46,7 +46,8 @@ function buildInitial(): Marker[] {
 }
 
 export function EasingsDemo() {
-  const scene = useScene<Marker>({ items: buildInitial() });
+  // A `setPose` per marker per frame; nothing here renders scene data as DOM.
+  const scene = useScene<Marker>({ items: buildInitial(), subscribe: false });
   const animator = useAnimator();
   const [duration, setDuration] = useState(1400);
 

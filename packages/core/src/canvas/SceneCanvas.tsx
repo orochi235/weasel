@@ -18,7 +18,7 @@
  * from `scene` knowledge (children-of-id + absolute pose lookup); consumers
  * can override either by passing their own `moveOptions.cascadeWorldPose`.
  */
-import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { dwarn } from '../debug';
 import type React from 'react';
 import type { ReactNode } from 'react';
@@ -911,8 +911,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // `scene` accepts either a live `Scene` or a `SerializedScene` JSON
   // object. JSON is baked once via useState init; subsequent renders
   // ignore prop changes (use a `key` prop on `<SceneCanvas>` to force a
-  // fresh canvas). Subscription is uniform — useSyncExternalStore on the
-  // resolved Scene's version stream.
+  // fresh canvas).
   const isSerialized = (s: unknown): boolean =>
     typeof s === 'object' && s != null && (s as { version?: unknown }).version === 1
       && Array.isArray((s as { nodes?: unknown }).nodes);
@@ -922,7 +921,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       : null,
   );
   const scene = bakedScene ?? (sceneInput as Scene<TData, TLayer, TPose>);
-  useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
 
   // Extract view-related props from rest so we can intercept them for the
   // pinch-zoom hook (which needs the current view) without breaking the
@@ -990,6 +988,17 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // what a frame loop is trying to avoid — so the repaint has to come from
   // here instead.
   useEffect(() => scene.overrides.subscribe(() => {
+    canvasApiRef.current?.requestRedraw?.();
+  }), [scene]);
+
+  // A scene write repaints; it does not re-render this component. The layers
+  // read the scene at paint time and `contentVersion` is a getter, so nothing
+  // here needs a commit to draw the new content. Chrome rendering node data as
+  // DOM subscribes for itself — `useScene`'s default, `SelectionPanel`, the
+  // panels an app hangs beside the canvas — which is what lets a host driving
+  // poses from a frame loop take `useScene(…, { subscribe: false })` and
+  // actually get it.
+  useEffect(() => scene.subscribe(() => {
     canvasApiRef.current?.requestRedraw?.();
   }), [scene]);
 

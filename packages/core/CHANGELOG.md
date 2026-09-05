@@ -1,5 +1,91 @@
 # Changelog
 
+## 1.4.1
+
+### Patch Changes
+
+- dcef92c: Restore a displaced action when the registrant that displaced it unregisters.
+  
+  The actions registry held one `Action` per id, so two `<SceneCanvas>` instances under one `<ActionsProvider>` collided: the second to mount displaced the first's `viewport.wheelPan` / `viewport.zoom` / `viewport.pinchZoom`, and its teardown then deleted the entry outright rather than uncovering what it had displaced. The canvas still on screen was left with no viewport actions at all — wheel pan and Cmd+wheel / Cmd+- / Cmd+0 dead, with no error. The `vertex-widths`, `curve-lab` and `rotated-resize-math` demos all mount several canvases this way.
+  
+  `register` now stacks registrants per id, newest live, and the unregister it returns takes its own entry out wherever that entry has since ended up. So a displaced registrant becomes live again when the one above it leaves, and a registrant that was already displaced still disturbs nothing when it goes. Last-writer-wins is unchanged while both are mounted.
+  
+  This closes the same hole for every other hook that registers a fixed id into a shared registry — `useStandardActions`, `useToolActions`, `useKeybindings`, `useContributions` — and lets `useActionsPropResolver` drop its restore hack, which re-registered a stale snapshot on cleanup and never took it off again.
+  
+  `unregister(id)` is unchanged and still drops every registrant of that id: it is the "this action should not exist" door, not a release.
+- 73039aa: Collapse four duplicated helpers and drop three dead modules.
+  
+  `Badge`'s shape-control table lived twice — once in `shapeControls.ts`, which nothing imported, and once re-declared inside the stories, which is the copy that rendered. The stories now import the module, so the badge shape defaults have one definition again. `Badge`, `Shield` and `Perforated` shared eleven identical lines of ResizeObserver measurement for the same viewBox-unit conversion; that is now `useSvgBox`.
+  
+  `composeSelectionPose` and `makeContainerAwareBoundsResolver` each carried their own copy of the leaf walk, including the rule that keeps an empty container from contributing bounds — one function now, so the rule can be fixed in one place.
+- b91a8dd: Coalesce consecutive image draws into one batch, and add `kind: 'sprites'` for a run handed over packed.
+  
+  `drawImage` was one `drawElements` per command, so an atlas-backed wall of thumbnails paid a draw call per thumbnail: 20,000 of them cost 51ms a frame on an M2 Max, three frames' budget for one frame's work. Consecutive image quads now stage into an `ImageBatch` and flush as a single draw — 10.6ms for that frame, and 0.094ms where it was 3.05 at 512 quads.
+  
+  Nothing changes for a consumer emitting `kind: 'image'`. A run merges across a group transform, a group alpha and a per-command opacity, because all three ride the vertices — opacity through a new `a_opacity` attribute, which is exact rather than conditional since `u_opacity` multiplies the alpha after the color matrix. A run breaks on a different bitmap, a different `sampling`, a clip boundary, or a color matrix.
+  
+  `SpritesDrawCommand` is for the case where even a command object per quad is too much. It carries one bitmap and a `Float32Array` of `SPRITE_STRIDE` floats a sprite — `dx, dy, dw, dh, sx, sy, sw, sh, opacity`, source in bitmap pixels, a negative `sw`/`sh` mirroring that axis — and stages through the same run, so a packed run and the image commands around it merge into one draw. It takes 20,000 sprites to 0.79ms. Below a few thousand a plain run of image commands merges into the same draw and reads better.
+  
+  Ring slots come in tiers sized to the flush. The driver's write hazard is per buffer object, so a one-quad flush into a slot sized for 256 waits on the whole thing — a frame of 20,000 quads that nothing merges cost 92ms against one slot size and 53ms against tiered ones, matching the unbatched path it replaces.
+- caad52f: Wire the hand tool's `inertia` and `axis` options, which accepted a full
+  config and did nothing.
+  
+  Both are now binding params on `viewport.dragPan`, so any consumer binding
+  that action gets them — not only `useHandTool`. `axis` drops one component of
+  every pan delta. `inertia` coasts the view after release through a new
+  optional `view.decay` dep, which `<SceneCanvas>` wires from `useDecayLoop`;
+  where no such dep is published the pan simply lands, as before.
+  
+  `useVelocityTracker`'s logic is now also available hook-free as
+  `createVelocityTracker`, because an Action descriptor is a static object and
+  cannot call hooks. `InertiaConfig` moves next to `DecayLoopConfig` and
+  `PanBounds` in `useDecayLoop`; `useHandTool` re-exports it, so the
+  `HandToolInertiaConfig` alias on the barrel is unchanged.
+  
+  `viewport.wheelPan` gains the same `axis` option through a
+  `makeViewportWheelPanAction` factory, matching its `makeViewportZoomAction` /
+  `makePinchZoomAction` siblings, and `<SceneCanvas viewport={{ pan: { axis } }}>`
+  reaches it. Two things fall out: `viewport={{ inertia: true }}` was documented
+  as "on with defaults" but produced no inertia — only the object form did — and
+  `ParallaxDemo` can drop the `setViewXOnly` commit clamp it used because the
+  axis options did not work.
+- 0b0f13f: Put every drag in the kit on one pointer lifecycle, and recover the releases the DOM does not deliver.
+  
+  Fourteen pointerdown-to-pointerup lifecycles each answered capture, pointer identity, teardown and lost-pointer recovery for themselves. They now run on `openPointerSession`: `Slider`, `BandEditor`, `Timeline`'s `Lane` and `Ruler`, `LayeredCurveEditor`, `ResizeHandle`, `useReorderDragList`, `MinimapCanvas`, labkit's `LayerList`, `usePanZoom`, `useOrbit` and `FloatingPanel`. A drag released over another window, or whose element unmounts mid-gesture, now ends instead of hanging in flight.
+  
+  A third recovery rule joins the two that shipped with the primitive: a fresh press on a pointer still believed held reports `'superseded'`, because the release landed somewhere that never told us and the pointer never came back for the missed-release rule to see. Without it a stale session steers the next press. `useGestureDispatcher` applies the same rule to its own multi-pointer lifecycle.
+  
+  Breaking: hooks that drove their drag through returned React props no longer return them, because the session owns the gesture from the press.
+  
+  - `useReorderDragList`'s `containerProps` is `{ ref }` only; `onPointerMove` / `onPointerUp` / `onPointerCancel` are gone. It gains `onPress(id, mods)` — a press released without engaging a drag, fired for locked rows too, with the modifiers held at press. That is the click-vs-drag decision consumers previously had to reconstruct by sampling drag state before forwarding the pointerup, which no longer works now that the session ends first.
+  - labkit's `PanZoomHandlers` and `OrbitHandlers` lose `onPointerMove` / `onPointerUp`. `usePanZoom` gains `onTap` for the same reason.
+  
+  The five `@weasel-js/ui` drag surfaces pass `capture: false` deliberately and now assert it: capture retargets `pointerup` to the capture element and kills the click on consumer-rendered content inside a slider thumb, a band body, or curve-editor chrome.
+- 00af9ac: Add `openPointerSession`, and put the kit's drag lifecycles on it.
+  
+  `useHandleDrag`, `startThresholdDrag` and `useDragHandle` each owned a pointerdown-to-pointerup lifecycle and each answered the same four questions differently. Capture: two took it untry'd, one never took it. Listeners: one on the element, two on `document`. Pointer identity: none of the three filtered by `pointerId`, so a second finger drove and could end a drag in progress. Teardown on unmount: one had none, one had it for half its lifecycle.
+  
+  None of them — nor the dispatcher — handled `lostpointercapture`, and none read a `pointermove` with no button held as the release it missed. So a drag whose pointer left the element, or whose capturing element was removed mid-gesture, hung in flight with no end and no cancel.
+  
+  `openPointerSession(origin, downEvent, callbacks)` now decides all of it once: capture on the origin, listeners on the document so a removed element cannot strand the gesture, every event filtered to its own pointer, `lostpointercapture` and the missed release both closing the session, and one `cancel()` for unmount, Escape or blur. The missed-release rule disarms itself when the press reports no button state, so synthesized events do not read as instant releases.
+  
+  `useGestureDispatcher` keeps its own multi-pointer lifecycle — one canvas listener set keyed by `pointerId` is the right shape for multitouch — but takes both recovery rules from the same module, so there is one implementation of each rather than two that drift.
+  
+  Breaking, in `useHandleDrag`: `onEnd` now fires only on a real release and receives `{ point, moved, event }` instead of a bare event; a cancelled gesture reports through the new `onCancel(reason)`. The old signature made every commit-on-end consumer sniff `e.type === 'pointercancel'` to tell an edit from an abandoned drag, and hold its own ref to recover the end position — `GradientEditor` does neither now.
+- 9b9224c: Remove `space` from `ToolModifiers`.
+  
+  Breaking for anyone constructing a `ToolModifiers` literal: the field is gone and an object still carrying it is now an excess property. Reading `ctx.modifiers.space` was already meaningless — `Canvas` hardcoded `false` at both construction sites, so the field never once reported a held space bar.
+  
+  Nothing needed it. Space-for-hand is armed by the tool's own `hotkey: 'space'` declaration, which routes through `tool.offhand` and the dispatcher's key-held lifecycle and never consults `ToolCtx`. The field existed for a mid-gesture read that no tool ever wrote or performed.
+- @weasel-js/cursor@1.4.1
+  - @weasel-js/font@1.4.1
+  - @weasel-js/geom@1.4.1
+  - @weasel-js/gestures@1.4.1
+  - @weasel-js/history@1.4.1
+  - @weasel-js/modes@1.4.1
+  - @weasel-js/paint@1.4.1
+  - @weasel-js/text@1.4.1
+
 ## 1.4.0
 
 ### Minor Changes

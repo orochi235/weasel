@@ -40,7 +40,9 @@ const toHex = (lab: readonly [number, number, number]): string => {
 };
 
 export function TimelineDemo() {
-  const scene = useScene<Rect>({ items: INITIAL });
+  // `move()` runs off a sampled track's tick; nothing here renders scene data
+  // as DOM. The scrub readout drives its own `setNow`.
+  const scene = useScene<Rect>({ items: INITIAL, subscribe: false });
   const animator = useAnimator();
 
   const tint = useRef(toHex(COLD));

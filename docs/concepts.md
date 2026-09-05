@@ -42,20 +42,27 @@ mid-frame, `subscribeView()` reports changes. A canvas holding a `view` prop is
 controlled instead: `setView()` refuses the local write, warns once, and
 forwards the value to `onViewChange`, so the owner's render is still paid.
 
-Pixels and DOM can therefore be a frame apart. Which one leads depends on what
-moved:
+Pixels and DOM can therefore be a frame apart, and pixels lead both times. What
+differs is what it takes to bring the DOM along:
 
 - **A view change leads with pixels.** `setView()` writes a ref and paints on
   the frame without rendering at all, so DOM built from the view stays stale
   until something else re-renders it. Position DOM pinned to world coordinates
   from `subscribeView`, and it moves on the frame the pixels move.
-- **A scene change leads with DOM.** `<SceneCanvas>` subscribes to the scene, so
-  a `scene.batch` commits immediately while the pixels land on the next frame.
+- **A scene change also leads with pixels.** `<SceneCanvas>` repaints on a scene
+  write without re-rendering itself: the layers read the scene at paint time, so
+  nothing about drawing the new content needs a commit. DOM built from scene
+  data comes from whoever subscribed for it — `useScene`'s default, a panel's
+  own subscription — and lands on that subscriber's render, not the canvas's.
   Chrome that must be in lockstep compares `getPaintedVersion()` — the content
   version the pixels were painted from — against the version it is about to
   render, and defers a frame when they differ. It reads `0` until the first
   paint lands, which is not a version any scene has; treat it as "nothing
   painted yet" rather than comparing it.
+
+  This is what makes `useScene(…, { subscribe: false })` mean what it says: a
+  host driving poses from a frame loop pays no render per write, because the
+  canvas no longer forces one behind its back.
 
 For readouts and panels either skew is invisible. Reading the drawing buffer
 back outside a paint can likewise see the previous frame; `subscribeFrame()`

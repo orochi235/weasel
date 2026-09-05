@@ -1,5 +1,18 @@
 # @weasel-js/svg
 
+## 1.4.1
+
+### Patch Changes
+
+- Updated dependencies [dcef92c]
+- Updated dependencies [73039aa]
+- Updated dependencies [b91a8dd]
+- Updated dependencies [caad52f]
+- Updated dependencies [0b0f13f]
+- Updated dependencies [00af9ac]
+- Updated dependencies [9b9224c]
+  - @weasel-js/core@1.4.1
+
 ## 1.4.0
 
 ### Patch Changes
