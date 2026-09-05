@@ -30,8 +30,6 @@ const CORE_ALIASES = (() => {
  *     `refs` alone reports 387 times across 103 files, because reading a ref
  *     during render is how a canvas library gets at mutable frame state. Worth
  *     revisiting per rule; not worth adopting as a block.
- *   - `eqeqeq` (275) and `@typescript-eslint/no-unused-vars` (131). Both are
- *     real, both are large mechanical sweeps, and neither blocks the arc.
  */
 
 const languageOptions = {
@@ -54,11 +52,9 @@ export default [
     ],
   },
   {
-    // Still off, but no longer because nothing runs: directives naming
-    // `no-unused-vars`, or sitting on an `any` in a test or a `console.warn`,
-    // name a rule that is off *here* and would report as unused. Flip this on
-    // when the two deferred rules above land.
-    linterOptions: { reportUnusedDisableDirectives: 'off' },
+    // A disable directive naming a rule nothing enforces is a comment claiming
+    // a problem that isn't there.
+    linterOptions: { reportUnusedDisableDirectives: 'error' },
   },
   {
     /**
@@ -226,6 +222,19 @@ export default [
       // pass to the very call that returns that key.
       'prefer-const': ['error', { ignoreReadBeforeAssign: true }],
       'no-var': 'error',
+      // `== null` is the idiomatic nullish check and the only loose comparison
+      // in the tree — all 317 reports were that one shape, so the exception is
+      // the rule's whole content here.
+      eqeqeq: ['error', 'always', { null: 'ignore' }],
+      // A leading underscore is how this repo already spells "declared and
+      // deliberately not read": a positional parameter before the one that is
+      // used, a destructured field being dropped, a caught error nobody
+      // inspects. 135 of the 136 reports were that.
+      '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+      }],
     },
   },
   {

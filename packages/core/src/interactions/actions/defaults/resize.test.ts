@@ -32,7 +32,6 @@ function makeStubScene(initial: Record<string, { pose: unknown }> = {}) {
       return { pose: poses.get(id), kind: 'leaf' as const, layer: 'main', data: {}, parent: null };
     },
     setPose(id: NodeId, pose: unknown) { poses.set(id, pose); },
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     batch<T>(_label: string, fn: () => T): T { return fn(); },
     // The commit path now emits transform ops through `commitOps` →
     // `scene.applyBatch` (when no consumer `applyOps`). Mirror the real scene:

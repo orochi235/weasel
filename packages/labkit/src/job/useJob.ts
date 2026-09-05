@@ -111,7 +111,7 @@ export function useJob<TS, TC, TItem>({
     lastKey.current = key;
     started.current = true;
     start();
-  }, [auto, key, start]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [auto, key, start]);
 
   useEffect(
     () => () => {
