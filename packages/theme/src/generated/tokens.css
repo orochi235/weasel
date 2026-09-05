@@ -166,6 +166,11 @@
   --wzl-fg-inverse: var(--wzl-gray-900);
   --wzl-shadow: rgba(0, 0, 0, 0.6);
   --wzl-border-raised: var(--wzl-gray-400);
+  --wzl-line-subtle: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
+  --wzl-line: color-mix(in srgb, var(--wzl-fg) 20%, transparent);
+  --wzl-line-strong: color-mix(in srgb, var(--wzl-fg) 40%, transparent);
+  --wzl-surface-hover: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
+  --wzl-surface-pressed: color-mix(in srgb, var(--wzl-fg) 18%, transparent);
 }
 
 [data-wzl-theme='weasel'][data-wzl-mode='light'],
@@ -183,4 +188,9 @@
   --wzl-fg-inverse: var(--wzl-gray-50);
   --wzl-shadow: rgba(0, 0, 0, 0.18);
   --wzl-border-raised: var(--wzl-gray-400);
+  --wzl-line-subtle: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
+  --wzl-line: color-mix(in srgb, var(--wzl-fg) 20%, transparent);
+  --wzl-line-strong: color-mix(in srgb, var(--wzl-fg) 40%, transparent);
+  --wzl-surface-hover: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
+  --wzl-surface-pressed: color-mix(in srgb, var(--wzl-fg) 18%, transparent);
 }

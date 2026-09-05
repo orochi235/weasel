@@ -1432,22 +1432,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
   Versioning stays a caret range, not lockstep: windease is a separate repo with its own release cadence, and a changesets `fixed` group cannot span repos anyway. The risk a range carries is the one to watch — windease shipping a breaking major that labkit's `^` silently declines to follow.
 
-- **(P2) A mode-varying token referenced from a `:root` primitive freezes at the dark value.**
-  CSS substitutes a `var()` inside a *custom property* at the scope where that property is
-  declared, so a primitive in `:root` that references a mode semantic inherits the default
-  mode's value into every other mode's block. `--wzl-line`, `--wzl-line-subtle`,
-  `--wzl-line-strong`, `--wzl-surface-hover` and `--wzl-surface-pressed` are all authored this
-  way and all resolve to their dark values in light mode. Arc 4 sidestepped it by not shipping a
-  composite `--wzl-shadow-1`; the five existing ones are still wrong.
-
-  It only bites the raw-`tokens.css` + `data-wzl-mode` path — `applyTheme.ts` re-emits every
-  resolved token into one rule, so labkit is fine. The broken path is what
-  `packages/ui/.storybook/preview.ts` uses, which is why the Foundations page's own light/dark
-  comparison is misleading. The fix is in `build-tokens.ts`: emit a primitive that references a
-  mode semantic into each mode block rather than into `:root`. The test must switch
-  `data-wzl-mode` and read a *computed* value — `generated.test.ts` already asserts the
-  `color-mix` mechanism is present, which is exactly what let this pass.
-
 - **(P3) The light accent sits below AA for text drawn on it.** `--wzl-fg-on-accent` against the
   interstellar light accent `#a86f3c` measures 3.85:1, under the 4.5 AA needs for normal text.
   This is every accent-filled control in `@weasel-js/ui`, not one site — a theme-level call

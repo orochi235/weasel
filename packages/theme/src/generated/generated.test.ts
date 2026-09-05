@@ -73,7 +73,45 @@ describe('generated tokens.css', () => {
   it('carries no remote @import', () => {
     expect(css).not.toContain('@import');
   });
+
+  // CSS substitutes a var() inside a *custom property* at the scope where that
+  // property is declared, not where it is used. So a `:root` token referencing
+  // a mode-varying one freezes at the default mode's value and inherits that
+  // frozen value into every other mode's block. The only fix is to redeclare it
+  // inside each mode block, where the reference resolves against that mode.
+  it('redeclares every mode-dependent token inside every mode block', () => {
+    const blocks = parseBlocks(css);
+    const root = blocks.find((b) => b.selector === ':root' && b.decls.size > 1)!;
+    const modes = blocks.filter((b) => b.selector.includes('data-wzl-mode'));
+    expect(modes.length).toBeGreaterThan(1);
+
+    // Names any mode block declares are the ones whose value depends on mode.
+    const modeVarying = new Set(modes.flatMap((b) => [...b.decls.keys()]));
+
+    const frozen: string[] = [];
+    for (const [name, value] of root.decls) {
+      const refs = [...value.matchAll(/var\((--wzl-[\w-]+)\)/g)].map((m) => m[1]);
+      if (!refs.some((r) => modeVarying.has(r))) continue;
+      for (const b of modes) {
+        if (!b.decls.has(name)) frozen.push(`${name} missing from ${b.selector}`);
+      }
+    }
+    expect(frozen).toEqual([]);
+  });
 });
+
+/** Split a stylesheet into `{ selector, decls }`, keeping only custom
+ *  properties. Good enough for the generated file, which has no nesting. */
+function parseBlocks(text: string): { selector: string; decls: Map<string, string> }[] {
+  const out: { selector: string; decls: Map<string, string> }[] = [];
+  const stripped = text.replace(/\/\*[\s\S]*?\*\//g, '');
+  for (const m of stripped.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+    const decls = new Map<string, string>();
+    for (const d of m[2].matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) decls.set(d[1], d[2].trim());
+    out.push({ selector: m[1].trim().replace(/\s+/g, ' '), decls });
+  }
+  return out;
+}
 
 describe('generated manifest.ts', () => {
   it('lists every token with its type and group', () => {

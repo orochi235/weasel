@@ -32,16 +32,21 @@ interface LoadedTheme {
   modes: Record<string, FlatTokens>;
 }
 
+/** `{color.gray-100}` → `gray-100`; `null` for a literal value. */
+function refTarget(token: FlatTokens[string] | undefined): string | null {
+  const raw = token?.value;
+  if (typeof raw !== 'string' || !/^\{[^}]+\}$/.test(raw.trim())) return null;
+  const path = raw.trim().slice(1, -1);
+  const dot = path.indexOf('.');
+  return dot === -1 ? path : path.slice(dot + 1);
+}
+
 /** `{color.gray-100}` → `var(--wzl-gray-100)`; literals pass through. */
 function cssValue(name: string, tokens: FlatTokens): string {
   const token = tokens[name];
-  const raw = token.value;
-  const isRef = typeof raw === 'string' && /^\{[^}]+\}$/.test(raw.trim());
+  const target = refTarget(token);
 
-  if (isRef) {
-    const path = (raw as string).trim().slice(1, -1);
-    const dot = path.indexOf('.');
-    const target = dot === -1 ? path : path.slice(dot + 1);
+  if (target !== null) {
     if (token.alpha !== undefined) {
       const pct = Math.round(token.alpha * 100);
       return `color-mix(in srgb, var(--wzl-${target}) ${pct}%, transparent)`;
@@ -74,6 +79,22 @@ function emitCss(themes: LoadedTheme[]): string {
   for (const { manifest, primitives, modes } of themes) {
     const defaults = mergeTokens(primitives, modes[manifest.defaultMode]);
 
+    // CSS substitutes a var() inside a *custom property* at the scope where
+    // that property is declared. So a primitive whose reference chain reaches
+    // a mode semantic resolves once, against `:root`'s default mode, and every
+    // other mode inherits that frozen value. These are emitted into each mode
+    // block as well, where the reference resolves against that mode.
+    const modeKeys = new Set(Object.values(modes).flatMap((m) => Object.keys(m)));
+    const dependsOnMode = (name: string, seen = new Set<string>()): boolean => {
+      if (modeKeys.has(name)) return true;
+      if (seen.has(name)) return false;
+      seen.add(name);
+      const ref = refTarget(primitives[name]);
+      return ref !== null && dependsOnMode(ref, seen);
+    };
+    const modeDependent = Object.keys(primitives)
+      .filter((n) => !modeKeys.has(n) && dependsOnMode(n));
+
     lines.push(':root {');
     // The default mode's scheme, not just its token values: without it a
     // surface that never calls `applyTheme` gets dark colors and light native
@@ -97,6 +118,9 @@ function emitCss(themes: LoadedTheme[]): string {
       lines.push(`[data-wzl-mode='${mode}'] {`);
       lines.push(`  color-scheme: ${cfg.colorScheme};`);
       for (const name of Object.keys(modes[mode])) {
+        lines.push(`  --wzl-${name}: ${cssValue(name, merged)};`);
+      }
+      for (const name of modeDependent) {
         lines.push(`  --wzl-${name}: ${cssValue(name, merged)};`);
       }
       lines.push('}', '');

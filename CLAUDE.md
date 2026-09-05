@@ -199,7 +199,9 @@ the `:root` dark default in both modes.
 **A `var()` inside a custom property is substituted where that property is declared.** So
 `--wzl-x: 0 1px 3px var(--wzl-shadow)` in `:root` bakes in the default mode's shadow and
 inherits that frozen value into every other mode's block. In a real property it resolves per
-element and is fine. Several theme tokens still have this defect — see `docs/TODO.md`.
+element and is fine. `build-tokens.ts` now redeclares any token whose reference chain reaches a
+mode semantic inside every mode block, so authoring one is safe — but hand-written CSS is not
+covered, and jsdom resolves neither `var()` nor `color-mix()`, so only a browser can tell you.
 
 **`theme/base.less` element defaults live in `:where()` on purpose.** Bare `button` nested under
 `.lk-root` is specificity (0,1,1) and outranks every component class. Don't unwrap them. The flip
