@@ -45,6 +45,42 @@ describe('ActionsRegistry — full coverage', () => {
     expect(list[0].label).toBe('A2');
   });
 
+  // Two <SceneCanvas> under one <ActionsProvider> both register `viewport.zoom`.
+  // Whichever mounted second wins while both are up; when it leaves, the one
+  // still on screen must get its own registration back rather than be left with
+  // no action at all.
+  it('a displaced registrant becomes live again when the displacer unregisters', () => {
+    const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
+    const reg = result.current!;
+    const first: Action = { id: 'viewport.zoom', label: 'First', invoker: { timing: 'immediate' as const, run: vi.fn() } };
+    const second: Action = { id: 'viewport.zoom', label: 'Second', invoker: { timing: 'immediate' as const, run: vi.fn() } };
+
+    let dropFirst: (() => void) | undefined;
+    let dropSecond: (() => void) | undefined;
+    act(() => { dropFirst = reg.register(first); });
+    act(() => { dropSecond = reg.register(second); });
+    expect(reg.list()[0].label).toBe('Second');
+
+    act(() => { dropSecond!(); });
+    expect(reg.list().map((a) => a.label)).toEqual(['First']);
+
+    act(() => { dropFirst!(); });
+    expect(reg.list()).toEqual([]);
+  });
+
+  it('a registrant that already left takes nothing with it', () => {
+    const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
+    const reg = result.current!;
+    const first: Action = { id: 'x', label: 'First', invoker: { timing: 'immediate' as const, run: vi.fn() } };
+    const second: Action = { id: 'x', label: 'Second', invoker: { timing: 'immediate' as const, run: vi.fn() } };
+
+    let dropFirst: (() => void) | undefined;
+    act(() => { dropFirst = reg.register(first); });
+    act(() => { reg.register(second); });
+    act(() => { dropFirst!(); });
+    expect(reg.list().map((a) => a.label)).toEqual(['Second']);
+  });
+
   it('after unregister, register(default) restores the default', () => {
     const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
     const reg = result.current!;

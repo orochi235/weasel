@@ -34,11 +34,6 @@ export function useActionsPropResolver(actions: ActionsProp | undefined): void {
     if (!prop) return;
 
     const unregisters: Array<() => void> = [];
-    // `register` replaces the slot, so tearing a merge down has to put the
-    // descriptor it displaced back: without this a re-render with a fresh
-    // `actions` object deletes the default and the next pass, finding no
-    // descriptor to merge onto, warns and leaves the id unregistered.
-    const restores: Array<() => void> = [];
     const warnedIds = new Set<string>();
 
     for (const [slotId, entry] of Object.entries(prop)) {
@@ -74,13 +69,12 @@ export function useActionsPropResolver(actions: ActionsProp | undefined): void {
       const { id: _drop, ...rest } = entry;
       void _drop;
       const merged: Action = { ...existing, ...rest };
-      restores.push(() => { reg.register(existing); });
+      // No explicit restore: `register` stacks, so popping `merged` uncovers
+      // the descriptor it displaced. Re-registering `existing` here would push
+      // a stale snapshot back on top and never take it off again.
       unregisters.push(reg.register(merged));
     }
 
-    return () => {
-      for (const u of unregisters) u();
-      for (const r of restores) r();
-    };
+    return () => { for (const u of unregisters) u(); };
   }, [reg, actions]);
 }

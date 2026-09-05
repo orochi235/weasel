@@ -396,7 +396,13 @@ const ActionsContext = createContext<ActionsRegistry | null>(null);
  * listener of its own — the gesture dispatcher owns input.
  */
 export function ActionsProvider({ children }: { children: ReactNode }): ReactElement {
-  const actionsRef = useRef<Map<string, Action>>(new Map());
+  // A stack of registrants per id, newest live. Two canvases under one provider
+  // both register `viewport.zoom`; with a single slot the second displaced the
+  // first and its teardown then deleted the entry outright, taking wheel zoom
+  // away from the canvas still on screen. Stacking means a displaced registrant
+  // is restored when the one above it leaves.
+  const actionsRef = useRef<Map<string, Action[]>>(new Map());
+  const liveAction = (id: string): Action | undefined => actionsRef.current.get(id)?.at(-1);
   const versionRef = useRef(0);
   const cachedRef = useRef<readonly Action[]>([]);
   const cachedVerRef = useRef(-1);
@@ -432,7 +438,9 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
     const snapshot = (): readonly Action[] => {
       const v = versionRef.current;
       if (cachedVerRef.current === v) return cachedRef.current;
-      const out = Object.freeze(Array.from(actionsRef.current.values()));
+      const out = Object.freeze(
+        Array.from(actionsRef.current.values(), (stack) => stack[stack.length - 1]),
+      );
       cachedRef.current = out;
       cachedVerRef.current = v;
       return out;
@@ -450,21 +458,30 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
       register: (action: Action) => {
         validateActionId(action.id);
         validateActionDefaultBinding(action);
-        actionsRef.current.set(action.id, action);
+        const stack = actionsRef.current.get(action.id);
+        if (stack) stack.push(action);
+        else actionsRef.current.set(action.id, [action]);
         versionRef.current++;
         notify();
+        let released = false;
         return () => {
+          if (released) return;
+          released = true;
           const cur = actionsRef.current.get(action.id);
-          // Only unregister if the current entry is still us (last-writer-wins
-          // means a later registrant should not be clobbered by our cleanup).
-          if (cur === action) {
-            actionsRef.current.delete(action.id);
-            versionRef.current++;
-            notify();
-          }
+          if (!cur) return;
+          // Our own entry, wherever it now sits: a registrant that was already
+          // displaced must take itself out without disturbing the one above it.
+          const i = cur.lastIndexOf(action);
+          if (i === -1) return;
+          cur.splice(i, 1);
+          if (cur.length === 0) actionsRef.current.delete(action.id);
+          versionRef.current++;
+          notify();
         };
       },
       unregister: (id: string) => {
+        // Drops every registrant of `id`, not just the live one — this is the
+        // "this action should not exist" door, not a release.
         if (actionsRef.current.delete(id)) {
           versionRef.current++;
           notify();
@@ -472,7 +489,7 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
       },
       list: () => snapshot(),
       trigger: (id: string, params?: Record<string, unknown>) => {
-        const a = actionsRef.current.get(id);
+        const a = liveAction(id);
         if (!a) return false;
         try {
           if (a.invoker && a.invoker.timing === 'immediate') {
@@ -523,7 +540,7 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
         const disp = dispatcherRef.current;
         if (!disp) return null;
         const r = wiredDepRegRef.current ?? depRegRef.current;
-        const a = actionsRef.current.get(id);
+        const a = liveAction(id);
         // Same resolution order as `trigger`: the action's declared `requires`
         // when it has one, the legacy fixed bag otherwise. The fixed bag has no
         // `applyOps`, so the paint actions — which declare it and are the only
