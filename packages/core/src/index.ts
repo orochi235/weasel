@@ -1178,6 +1178,7 @@ export type {
   GroupDrawCommand,
   TextDrawCommand,
   ImageDrawCommand,
+  SpritesDrawCommand,
   ShaderDrawCommand,
   ShaderProgramHandle,
   ShaderUniform,
@@ -1188,6 +1189,9 @@ export type {
 } from './renderer';
 // Uniform-grid sprite sheet layout: frame index → `ImageDrawCommand.source`.
 export { frameRect } from './renderer';
+// Floats per sprite in a `SpritesDrawCommand.sprites` array — a consumer
+// cannot pack one without it.
+export { SPRITE_STRIDE } from './renderer';
 // World-space RenderLayer draw functions wrap their commands in a
 // `kind: 'group'` whose transform is `viewToMat3(view)`. Exported here so
 // custom layers in consumer code can construct that wrapper without reaching

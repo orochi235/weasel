@@ -156,3 +156,27 @@ describe('camera animation barrel surface', () => {
     expect('useViewTween' in b).toBe(false);
   });
 });
+
+describe('draw command exports', () => {
+  const barrelSrc = (name: string) => readFileSync(join(ROOT, name), 'utf8');
+
+  /**
+   * Every `*DrawCommand` the renderer barrel names must be nameable from the
+   * main barrel too. `src/index.ts` re-exports the renderer by name rather
+   * than with a star, so adding a variant there and stopping reaches only
+   * consumers importing the `/renderer` subpath — which is how
+   * `SpritesDrawCommand` shipped in 1.4.1 unreachable from `@weasel-js/core`.
+   */
+  it('names every DrawCommand variant on the main barrel', () => {
+    const variantsIn = (src: string) =>
+      new Set([...src.matchAll(/\b(\w+DrawCommand)\b/g)].map((m) => m[1]));
+    const fromRenderer = variantsIn(barrelSrc('renderer/index.ts'));
+    const fromMain = variantsIn(barrelSrc('index.ts'));
+    expect(fromRenderer.size).toBeGreaterThan(4);
+    expect([...fromRenderer].filter((n) => !fromMain.has(n))).toEqual([]);
+  });
+
+  it('exports the constant a consumer needs to pack a sprite run', () => {
+    expect(Barrel.SPRITE_STRIDE).toBe(9);
+  });
+});
