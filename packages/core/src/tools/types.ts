@@ -8,15 +8,12 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { Contribution } from '../contributions/types';
 import type { CursorSpec } from '@weasel-js/cursor';
 
-/** Modifier-key snapshot at event dispatch time. `space` is included
- *  because tools commonly use space as a hotkey-slot trigger and may
- *  also want to read it as a flag mid-gesture. */
+/** Modifier-key snapshot at event dispatch time. */
 export interface ToolModifiers {
   alt: boolean;
   shift: boolean;
   meta: boolean;
   ctrl: boolean;
-  space: boolean;
 }
 
 /** Per-event context passed to every channel handler. `scratch` is typed
