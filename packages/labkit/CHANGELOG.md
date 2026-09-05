@@ -1,5 +1,40 @@
 # @weasel-js/labkit
 
+## 1.4.1
+
+### Patch Changes
+
+- a2c5318: Bundle labkit's `.d.ts` from its dependencies' built declarations instead of re-deriving them from source.
+  
+  The old pipeline aliased every weasel specifier to `src/`, so emitting labkit's types pulled the entire engine — around 1,900 files — into one TypeScript program. It needed just under 4GB of heap, which is above a CI runner's default, and had been failing the build. It now reads each dependency's `exports` `types` entry, the same tier ordering the JS build already relies on, and needs a little under 2GB. The emitted declarations are unchanged: same 749 exported symbols across the same 15 entry points, with identical type strings.
+  
+  Building labkit alone in a tree whose other packages have never been built now fails with the tiers to run rather than an unresolved import.
+- 0b0f13f: Put every drag in the kit on one pointer lifecycle, and recover the releases the DOM does not deliver.
+  
+  Fourteen pointerdown-to-pointerup lifecycles each answered capture, pointer identity, teardown and lost-pointer recovery for themselves. They now run on `openPointerSession`: `Slider`, `BandEditor`, `Timeline`'s `Lane` and `Ruler`, `LayeredCurveEditor`, `ResizeHandle`, `useReorderDragList`, `MinimapCanvas`, labkit's `LayerList`, `usePanZoom`, `useOrbit` and `FloatingPanel`. A drag released over another window, or whose element unmounts mid-gesture, now ends instead of hanging in flight.
+  
+  A third recovery rule joins the two that shipped with the primitive: a fresh press on a pointer still believed held reports `'superseded'`, because the release landed somewhere that never told us and the pointer never came back for the missed-release rule to see. Without it a stale session steers the next press. `useGestureDispatcher` applies the same rule to its own multi-pointer lifecycle.
+  
+  Breaking: hooks that drove their drag through returned React props no longer return them, because the session owns the gesture from the press.
+  
+  - `useReorderDragList`'s `containerProps` is `{ ref }` only; `onPointerMove` / `onPointerUp` / `onPointerCancel` are gone. It gains `onPress(id, mods)` — a press released without engaging a drag, fired for locked rows too, with the modifiers held at press. That is the click-vs-drag decision consumers previously had to reconstruct by sampling drag state before forwarding the pointerup, which no longer works now that the session ends first.
+  - labkit's `PanZoomHandlers` and `OrbitHandlers` lose `onPointerMove` / `onPointerUp`. `usePanZoom` gains `onTap` for the same reason.
+  
+  The five `@weasel-js/ui` drag surfaces pass `capture: false` deliberately and now assert it: capture retargets `pointerup` to the capture element and kills the click on consumer-rendered content inside a slider thumb, a band body, or curve-editor chrome.
+- Updated dependencies [dcef92c]
+- Updated dependencies [73039aa]
+- Updated dependencies [b91a8dd]
+- Updated dependencies [caad52f]
+- Updated dependencies [47c75ca]
+- Updated dependencies [0b0f13f]
+- Updated dependencies [00af9ac]
+- Updated dependencies [9b9224c]
+  - @weasel-js/core@1.4.1
+  - @weasel-js/ui@1.4.1
+  - @weasel-js/theme@1.4.1
+  - @weasel-js/loupe@1.4.1
+  - @weasel-js/svg@1.4.1
+
 ## 1.4.0
 
 ### Patch Changes
