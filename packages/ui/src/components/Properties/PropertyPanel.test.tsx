@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import {
   CheckboxRow,
@@ -152,6 +153,77 @@ describe('SliderRow', () => {
     render(<SliderRow label="Op" value={10} min={0} max={100} onChange={onChange} />);
     fireEvent.change(screen.getByRole('slider'), { target: { value: '42' } });
     expect(onChange).toHaveBeenCalledWith(42);
+  });
+
+  // A slider is controlled, so a test that drops the live value gets the DOM
+  // value snapped back and cannot see what the release reports.
+  function LiveSlider({
+    onInput,
+    onChange,
+  }: {
+    onInput?: (n: number) => void;
+    onChange: (n: number) => void;
+  }) {
+    const [v, setV] = useState(10);
+    const live = (n: number) => {
+      setV(n);
+      onInput?.(n);
+    };
+    return (
+      <SliderRow
+        label="Op"
+        value={v}
+        min={0}
+        max={100}
+        onInput={onInput ? live : undefined}
+        onChange={
+          onInput
+            ? onChange
+            : (n) => {
+                setV(n);
+                onChange(n);
+              }
+        }
+      />
+    );
+  }
+
+  it('reports moves to onInput and the release to onChange', () => {
+    const onInput = vi.fn();
+    const onChange = vi.fn();
+    render(<LiveSlider onInput={onInput} onChange={onChange} />);
+    const slider = screen.getByRole('slider');
+    fireEvent.input(slider, { target: { value: '42' } });
+    expect(onInput).toHaveBeenCalledWith(42);
+    expect(onChange).not.toHaveBeenCalled();
+    // A drag ends with a bare `change` — the value it carries is the one the
+    // last `input` already reported, which is why this one sets none.
+    fireEvent.change(slider);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith(42);
+    expect(onInput).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps a lone onChange live, with no second call on release', () => {
+    const onChange = vi.fn();
+    render(<LiveSlider onChange={onChange} />);
+    const slider = screen.getByRole('slider');
+    fireEvent.input(slider, { target: { value: '42' } });
+    fireEvent.change(slider);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith(42);
+  });
+
+  it('sends a typed readout through both halves of the pair', () => {
+    const onInput = vi.fn();
+    const onChange = vi.fn();
+    render(<LiveSlider onInput={onInput} onChange={onChange} />);
+    const readout = screen.getByRole('textbox');
+    fireEvent.focus(readout);
+    fireEvent.change(readout, { target: { value: '55' } });
+    fireEvent.blur(readout);
+    expect(onInput).toHaveBeenCalledWith(55);
+    expect(onChange).toHaveBeenCalledWith(55);
   });
 
   it('formats the readout when format is supplied', () => {

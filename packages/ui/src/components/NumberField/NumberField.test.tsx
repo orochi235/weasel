@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { useState } from 'react';
 import { NumberField } from './NumberField';
+import s from './NumberField.module.css';
 
 describe('NumberField', () => {
   function getInput(c: HTMLElement) {
@@ -40,6 +41,25 @@ describe('NumberField', () => {
   it('omits steppers when hideSteppers is set', () => {
     const { container } = render(<NumberField label="X" hideSteppers defaultValue={0} />);
     expect(container.querySelector('[slot="increment"]')).toBeNull();
+  });
+
+  /** jsdom resolves no CSS and the module proxy answers to any key, so the
+   *  class only proves the component asked for the fit rules — the painted
+   *  width is a browser check. */
+  describe("width='fit'", () => {
+    function root(container: HTMLElement) {
+      return container.querySelector('[data-rac]') as HTMLElement;
+    }
+
+    it('fills by default — no fit class', () => {
+      const { container } = render(<NumberField aria-label="X" defaultValue={1} />);
+      expect(root(container).classList.contains(s.fit)).toBe(false);
+    });
+
+    it('asks for the fit class when width is fit', () => {
+      const { container } = render(<NumberField aria-label="X" width="fit" defaultValue={1} />);
+      expect(root(container).classList.contains(s.fit)).toBe(true);
+    });
   });
 
   it('threads placeholder to the input', () => {

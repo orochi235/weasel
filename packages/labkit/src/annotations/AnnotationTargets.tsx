@@ -1,3 +1,4 @@
+import type { TrialInfo } from '../state/types';
 import { AnnotationOverlay } from './AnnotationOverlay';
 import type { AnnotationsApi, AnnotationsCapability } from './types';
 
@@ -6,6 +7,9 @@ export interface AnnotationTargetsProps {
   capability: AnnotationsCapability;
   state: unknown;
   config: unknown;
+  /** The trial these targets belong to. `capability.targets` is told it, so a
+   *  consumer holding per-trial refs can hand back this trial's. */
+  trial: TrialInfo;
   annotations: AnnotationsApi;
   activeToolId: string | null;
 }
@@ -15,10 +19,11 @@ export function AnnotationTargets({
   capability,
   state,
   config,
+  trial,
   annotations,
   activeToolId,
 }: AnnotationTargetsProps) {
-  const targets = capability.targets(state, config);
+  const targets = capability.targets(state, config, trial);
 
   return (
     <>

@@ -112,3 +112,36 @@
 .option[data-selected] .check {
   opacity: 1;
 }
+
+/* `width='fit'`: a hidden stack of every option label shares the value's grid
+   cell, so the trigger sizes to its widest option and never resizes on select. */
+.fit {
+  width: auto;
+  max-width: 100%;
+}
+
+.fit .trigger {
+  display: grid;
+  grid-template-columns: auto auto;
+}
+
+.fit .value,
+.fit .sizer {
+  grid-area: 1 / 1;
+}
+
+.fit .chevron {
+  grid-area: 1 / 2;
+}
+
+.sizer {
+  display: grid;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  white-space: nowrap;
+}
+
+.sizer > * {
+  grid-area: 1 / 1;
+}

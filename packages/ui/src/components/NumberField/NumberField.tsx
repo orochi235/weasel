@@ -26,6 +26,12 @@ export type NumberFieldProps = Omit<RACNumberFieldProps, 'children' | 'className
   /** Native input placeholder — e.g. `'Mixed'` for a multi-selection
    *  editor with no shared value. */
   placeholder?: string;
+  /**
+   * `'fill'` (the default) takes the width of whatever row the field sits in.
+   * `'fit'` sizes it to `--wzl-number-field-width` (`9ch` by default) plus its
+   * own chrome, rather than to the input's 20-character intrinsic width.
+   */
+  width?: 'fill' | 'fit';
   className?: string;
 };
 
@@ -41,12 +47,23 @@ export const NumberField = forwardRef(function NumberField(
   props: NumberFieldProps,
   ref: Ref<HTMLInputElement>,
 ) {
-  const { label, description, errorMessage, hideSteppers, ghost, placeholder, className, ...rest } =
-    props;
+  const {
+    label,
+    description,
+    errorMessage,
+    hideSteppers,
+    ghost,
+    placeholder,
+    width = 'fill',
+    className,
+    ...rest
+  } = props;
   return (
     <RACNumberField
       {...rest}
-      className={[s.field, fieldClasses.root, className].filter(Boolean).join(' ')}
+      className={[s.field, width === 'fit' && s.fit, fieldClasses.root, className]
+        .filter(Boolean)
+        .join(' ')}
     >
       {label !== undefined && <Label className={fieldClasses.label}>{label}</Label>}
       <Group className={ghost ? `${s.frame} ${s.ghost}` : s.frame}>

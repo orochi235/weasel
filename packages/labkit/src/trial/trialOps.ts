@@ -19,15 +19,36 @@ function initialView(instrument: Instrument): TrialRecord['view'] {
   return declared ? structuredClone(declared) : { ...DEFAULT_VIEW, pan: { ...DEFAULT_VIEW.pan } };
 }
 
-/** Append a new trial running `instrumentName`, at that instrument's
- *  default config and initial state. */
+/** What a trial opens on beyond its instrument's own defaults. */
+export interface AddTrialOptions<TC = Record<string, unknown>> {
+  /** Overlaid on `defaultConfig()` before `initialState` reads it, so a trial
+   *  opened on a subject is running that subject from its first frame. Keys
+   *  whose value is `undefined` are left to the default. */
+  config?: Partial<TC>;
+}
+
+/** `defaultConfig()` with `seed` written over it. Config is flat — a leaf's
+ *  path is its config key — so this is the whole merge. */
+function seedConfig<TC>(defaults: TC, seed: Partial<TC> | undefined): TC {
+  if (!seed) return defaults;
+  const out = { ...defaults };
+  for (const [key, value] of Object.entries(seed)) {
+    if (value !== undefined) (out as Record<string, unknown>)[key] = value;
+  }
+  return out;
+}
+
+/** Append a new trial running `instrumentName`, at that instrument's default
+ *  config — with `options.config` written over it — and the initial state
+ *  that config produces. */
 export function addTrial(
   trials: TrialRecord[],
   instruments: InstrumentList,
   instrumentName: string,
+  options: AddTrialOptions = {},
 ): TrialRecord[] {
   const instrument = findInstrument(instruments, instrumentName);
-  const config = instrument.defaultConfig();
+  const config = seedConfig(instrument.defaultConfig(), options.config);
   const state = instrument.initialState(config);
   const record: TrialRecord = {
     id: crypto.randomUUID(),
@@ -37,6 +58,7 @@ export function addTrial(
     view: initialView(instrument),
     undoStack: { past: [], future: [] },
   };
+  if (options.config) record.configSeed = options.config;
   return [...trials, record];
 }
 
@@ -65,8 +87,8 @@ export function closeTrial(trials: TrialRecord[], id: string): TrialRecord[] {
   return next.length === trials.length ? trials : next;
 }
 
-/** Return a trial to its instrument's defaults, keeping its id and its
- *  place in the list. */
+/** Return a trial to what it opened on — its instrument's defaults under the
+ *  seed `addTrial` was given — keeping its id and its place in the list. */
 export function resetTrial(
   trials: TrialRecord[],
   id: string,
@@ -76,7 +98,7 @@ export function resetTrial(
   const current = trials[idx];
   if (!current) return trials;
   const instrument = findInstrument(instruments, current.instrumentName);
-  const config = instrument.defaultConfig();
+  const config = seedConfig(instrument.defaultConfig(), current.configSeed);
   const state = instrument.initialState(config);
   const reset: TrialRecord = {
     ...current,

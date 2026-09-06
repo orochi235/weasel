@@ -220,8 +220,8 @@ export function Lab({
     return {
       instruments,
       trials,
-      addTrial: (instrumentName) => {
-        const next = addTrialOp(store.getState().trials, instruments, instrumentName);
+      addTrial: (instrumentName, options) => {
+        const next = addTrialOp(store.getState().trials, instruments, instrumentName, options);
         replaceTrials(next);
       },
       cloneTrial: (id) => {

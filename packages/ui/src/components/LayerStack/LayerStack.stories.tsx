@@ -43,3 +43,27 @@ export const Basic: StoryObj<typeof LayerStack> = {
     );
   },
 };
+
+/** No kinds, no palette, no remove: the header row disappears entirely and each
+ *  card is named by its own `label`. */
+export const AddLess: StoryObj<typeof LayerStack> = {
+  render: () => {
+    const [items, setItems] = useState<LayerStackItem[]>([
+      { id: 'base', label: 'Base coat' },
+      { id: 'wash', label: 'Wash' },
+      { id: 'gloss', label: 'Gloss', defaultExpanded: false },
+    ]);
+    return (
+      <div style={{ width: 320 }}>
+        <LayerStack
+          items={items}
+          onReorder={(ids) => {
+            const byId = new Map(items.map((i) => [i.id, i]));
+            setItems(ids.flatMap((id) => (byId.get(id) ? [byId.get(id) as LayerStackItem] : [])));
+          }}
+          renderBody={(item) => <div style={{ color: '#888' }}>settings for {item.label}</div>}
+        />
+      </div>
+    );
+  },
+};

@@ -6,7 +6,7 @@ export type { SidebarRegionProps } from './regions/SidebarRegion';
 export { SidebarRegion } from './regions/SidebarRegion';
 export type { StatusRegionProps } from './regions/StatusRegion';
 export { StatusRegion } from './regions/StatusRegion';
-export type { TitleBarRegionProps } from './regions/TitleBarRegion';
+export type { TitleBarPlacement, TitleBarRegionProps } from './regions/TitleBarRegion';
 export { TitleBarRegion } from './regions/TitleBarRegion';
 export type { ToolbarRegionProps } from './regions/ToolbarRegion';
 export { ToolbarRegion } from './regions/ToolbarRegion';

@@ -72,3 +72,34 @@ export const WithUnitSuffix: Story = {
     </div>
   ),
 };
+
+/** The live/commit pair: `onInput` follows the drag, `onChange` fires once the
+ *  pointer is released. Drag the track and watch the two counts diverge. */
+export const LiveAndCommitted: Story = {
+  render: () => {
+    function Split() {
+      const [value, setValue] = useState(40);
+      const [moves, setMoves] = useState(0);
+      const [commits, setCommits] = useState(0);
+      return (
+        <div style={{ width: 280 }}>
+          <SliderRow
+            label="Samples"
+            value={value}
+            min={0}
+            max={100}
+            onInput={(n) => {
+              setValue(n);
+              setMoves((c) => c + 1);
+            }}
+            onChange={() => setCommits((c) => c + 1)}
+          />
+          <p>
+            {moves} live, {commits} committed
+          </p>
+        </div>
+      );
+    }
+    return <Split />;
+  },
+};

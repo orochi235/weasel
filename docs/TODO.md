@@ -45,9 +45,8 @@ Priority tags:
 - labkit: nested config values — `f.schema` is flat because `setConfig` is → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Reconcile core's `ToolPrefLeaf` with weasel-ui's `PrefLeaf` — the `paint` kind has already drifted → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - A number leaf's unit conversion is one leaf deep → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- `SliderRow` has no live/commit split → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- A schema section cannot be collapsed → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- Between them `LayerStack` and `LayerList` cover neither a kindless list nor a tree → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- labkit UI state that should outlive a remount has nowhere to live → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- A section cannot declare "start closed" from the schema → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - `LabShell` is the only thing that applies labkit's style scope → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 **Lint**
@@ -1242,16 +1241,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) `annotations.targets` cannot say which trial is asking.** The capability
-  is declared once per instrument; `targets(state, config)` runs once per trial.
-  A consumer needing per-trial DOM refs must smuggle a trial key through its own
-  instrument state and key a registry by it — brick-icons does. The camera is the
-  same problem: it lives on the trial, not in `state`, so it rides in a ref. Both
-  are invisible with one trial open. Passing the trial id (and view) to `targets`
-  would remove the whole class. (labkit's own half of this — two trials sharing
-  one surface tile id, so the second took the first one's rect and painter — is
-  fixed: tiles register under `useTileId(id)`.)
-
 - **(P3) A mark can be selected in two targets at once.** `AnnotationOverlay`
   leaves `selectionMode` at weasel's default `single`, and each canvas clears
   only its own scene, so clicking in one target does not clear a selection
@@ -1434,7 +1423,17 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 
-- **(P2) weasel-ui form fields are `width: 100%` with no intrinsic-width option.** That is why labkit pins a width at all three of its `Select` / `NumberField` call sites. A real affordance on the components — an intrinsic or content-derived width — would retire the convention. Property-row inputs stopped stretching on 2026-09-01 (`--wzl-prop-number-width` / `--wzl-prop-text-width`), which is the shape the components want; `Select` and `NumberField` still fill.
+- **(P2) `ComboBox` has no intrinsic-width option, and labkit's three width
+  pins are still in place.** `Select` and `NumberField` take
+  `width?: 'fill' | 'fit'`, defaulting to `'fill'`: at `fit` a `Select` measures
+  its widest option so the control does not resize as the selection moves, and a
+  `NumberField` states `--wzl-number-field-width`, default `9ch`. `ComboBox`'s
+  text input was not touched and has the same gap. Retiring each labkit pin
+  means putting `width="fit"` at its call site — `LabHeader.tsx`
+  (`.lk-lab-header__add-select`, 160px), `chrome/builtins.tsx` plus `Trial.less`
+  (`.lk-toolbar__load-select`, 88px), and `ZoomControl.tsx` plus
+  `ZoomControl.less` (`.lk-zoom__field`, 62px, which wants
+  `--wzl-number-field-width: 5ch`).
 
 - **(P3) `.lk-shell` is `height: 100vh`.** A lab mounted anywhere but the viewport top overflows by its own offset. Harmless on the dev page, wrong in general.
 
@@ -1504,29 +1503,27 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `IMPERIAL_INCHES` / `METRIC_MM` / `PIXELS`) belong to a separate mechanism
   wired only to grid snapping, whose `formatUnit` has no callers.
 
-- **(P2) `SliderRow` has no live/commit split.** It takes one `onChange`, which
-  fires on every pointer move, so a control whose write is expensive — a
-  re-simulation, a refetch — has no way to say "on release". klieg bypasses the
-  row entirely and drives `@weasel-js/ui`'s `Slider` to get it; precioussss's gem
-  bench carries a comment claiming a commit-on-release behaviour it does not
-  have. `Slider` itself already spells the pair `onInput` live / `onChange`
-  committed; the row is what does not forward it.
+- **(P2) labkit UI state that should outlive a remount has nowhere to live.**
+  Two panel affordances shipped with only their in-memory half: a
+  `PropertyGroup`'s fold, held by `ControlPanel` behind `collapsed` /
+  `onCollapse`, and a trial's title, held by `TrialChrome` behind `title` /
+  `setTitle` on `TrialChromeContext`. A fold reopens on remount; a title does
+  not survive a reload. Both pairs are the seam a store plugs into, and the
+  durable half belongs in `packages/labkit/src/state/**` — either per-trial on
+  `TrialRecord`, mirroring `sidebarWidth` and costing a document migration, or
+  lab-level, mirroring the `undockedPanels` map. `TrialRecord.configSeed` took
+  the per-trial route and is the precedent to copy. The fold needs one thing
+  more: `SidebarRegion` gets `ctx` and no store access, so the setter has to be
+  threaded onto `TrialChromeContext`.
 
-- **(P2) A schema section cannot be collapsed.** `SectionSpec` is
-  `{ label, paths }` and `ControlPanel` renders each one as a
-  `PropertyGroup`, which draws a heading and nothing else — so a schema with
-  dozens of leaves in several sections is one long scroll. `SidebarSection`
-  already has `defaultCollapsed`; the section spec and `PropertyGroup` want the
-  same, with the open/closed state remembered per trial. Asked for by klieg,
-  precioussss and brick-icons.
-
-- **(P2) Between them `LayerStack` and `LayerList` cover neither a kindless list
-  nor a tree.** `LayerStack` requires `kind`, `paletteKinds` and `onAdd`, so a
-  consumer whose items have no kind and no palette cannot use it — wod hand-rolls
-  a stack rather than pass three stubs. `LayerList` takes a flat
-  `LayerDescriptor[]` (`packages/labkit/src/layers/LayerList.tsx`), so sherpa
-  hand-rolled a recursive `StepTree` for nested steps. Two shapes are missing:
-  an add-less stack, and a list whose items have children.
+- **(P2) A section cannot declare "start closed" from the schema.**
+  `PropertyGroup` folds now — `collapsible` / `defaultCollapsed` uncontrolled,
+  `collapsed` / `onCollapsedChange` controlled, drawn with `<Disclosure>` — and
+  `ControlPanel` passes it through as `collapse` and `collapsed` / `onCollapse`.
+  What a schema still cannot say is that a section opens closed: `SectionSpec`
+  (`packages/labkit/src/config/types.ts`) has no field for it and `resolve.ts`
+  builds it. Remembering the fold across a remount is the persistence entry
+  above. Asked for by klieg, precioussss and brick-icons.
 
 - **(P2) `LabShell` is the only thing that applies labkit's style scope.**
   `.lk-root` carries the tokens, the fonts, the box-sizing reset and every
@@ -1538,31 +1535,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   (`.storybook/preview.tsx:275`). A `LabkitRoot` mount component was designed
   and rejected, so the answer is a different shape.
 
-- **(P3) A trial's title is its instrument name, and the title bar has no
-  leading slot.** `TrialChrome` passes `record.instrumentName` straight to
-  `TrialTitleBar` (`packages/labkit/src/trial/TrialChrome.tsx:210`), so every
-  trial running one instrument reads the same word where a consumer needs the
-  subject. The only insertion point is `TitleBarRegion`'s
-  `.lk-trial__titlebar-actions`, which is `margin-left: auto` and holds the four
-  built-ins — clone, reset, snapshot, close — so a contribution meant to lead
-  the bar lands at the right beside them. A `title` on the instrument spec (or
-  `setTitle` on `TrialChromeContext`) answers the common case; a leading region
-  answers it generally.
-
-- **(P3) `addTrial` takes only an instrument name**, so opening a trial *on a
-  given subject* has nowhere to put the subject. `defaultConfig()` is the only
-  hook, and it takes no arguments — brick-icons smuggles the subject through a
-  module-level one-slot box that `defaultConfig()` reads and clears, which works
-  only because `addTrial` calls it synchronously. `addTrial(name, { config })`
-  retires that.
-
-- **(P3) `ToolbarItem.onActivate` is `() => void`.** A contribution declared
-  through `Lab.chrome` therefore cannot call `ctx.saveSnapshot()` or anything
-  else on `TrialChromeContext`, so re-declaring a suppressed built-in in a
-  different group means dropping to the `render` escape hatch and hand-rolling
-  the button, losing the chrome's own layout. The regions already have the
-  context in hand (`packages/labkit/src/chrome/regions/ToolbarRegion.tsx`);
-  passing it to `onActivate` is the whole change.
+- **(P3) The instrument spec has no `title`.** `TrialChromeContext` gained
+  `title` / `setTitle` — `setTitle(null)` restores the instrument name, and the
+  trial's `aria-label` follows — and `TitleBarRegion` takes
+  `placement: 'lead' | 'actions'`, so a contribution without `end` leads the
+  bar. A `title` on the instrument spec was not added; it wants
+  `packages/labkit/src/instrument/types.ts`. Holding a title across a reload is
+  the persistence entry above.
 
 - **(P3) ToggleBar's selected segment is the Aqua glass ramp, not a colour of
   its own.** Asked for: move the default treatment off "the aqua" and save it

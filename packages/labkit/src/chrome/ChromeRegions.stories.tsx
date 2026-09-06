@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { CrosshairIcon, HandIcon, PencilIcon } from '@weasel-js/ui';
+import { CrosshairIcon, HandIcon, PencilIcon, SnapshotIcon } from '@weasel-js/ui';
 import type { ConfigField } from '../controls/types';
 import type { Instrument } from '../instrument/types';
 import { Lab } from '../lab/Lab';
@@ -99,6 +99,47 @@ export const SuppressedAndReplaced: Story = {
           label: 'Export',
           showLabel: true,
           onActivate: () => {},
+        },
+      },
+    ],
+  },
+};
+
+const SUBJECTS = ['Ash', 'Birch', 'Cedar'];
+
+/** A trial titled by its subject rather than its instrument, with the leading
+ *  end of the title bar carrying the control that renames it — and the
+ *  snapshot built-in re-declared into the toolbar, which needs the context
+ *  `onActivate` is handed. */
+export const SubjectTitleAndLead: Story = {
+  args: {
+    instruments: [FullInstrument],
+    defaultInstrument: 'Every Region',
+    title: 'Title Bar Lead',
+    storage: null,
+    suppress: ['snapshot'],
+    chrome: [
+      {
+        id: 'subject',
+        region: 'titlebar',
+        item: {
+          icon: PencilIcon,
+          label: 'Next subject',
+          onActivate: (ctx) => {
+            const i = SUBJECTS.indexOf(ctx.title);
+            ctx.setTitle(SUBJECTS[(i + 1) % SUBJECTS.length]);
+          },
+        },
+      },
+      {
+        id: 'snapshot-in-toolbar',
+        region: 'toolbar',
+        group: 'trial',
+        item: {
+          icon: SnapshotIcon,
+          label: 'Snapshot',
+          showLabel: true,
+          onActivate: (ctx) => ctx.saveSnapshot(),
         },
       },
     ],

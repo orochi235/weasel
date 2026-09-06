@@ -6,6 +6,15 @@ export interface UndoStack {
   future: unknown[];
 }
 
+/** The trial a per-trial call is coming from. `id` is the id `useTileId`
+ *  scopes a surface tile under, so a consumer keying its own per-trial
+ *  registry and labkit's tiles agree on the key. */
+export interface TrialInfo<TV = unknown> {
+  id: string;
+  /** The trial's view, in whatever shape the instrument keeps it. */
+  view: TV;
+}
+
 /** One trial as the store holds it: which instrument it runs, that
  *  instrument's config and state, the camera, and the undo history. */
 export interface TrialRecord<TS = unknown, TC = unknown, TV = unknown> {
@@ -16,6 +25,10 @@ export interface TrialRecord<TS = unknown, TC = unknown, TV = unknown> {
   /** Opaque to labkit: persisted, restored on Reset and handed to the instrument,
    *  but never read into. A 3D lab puts an orbit here and keeps all three. */
   view: TV;
+  /** The config `addTrial` opened this trial on, overlaid on the instrument's
+   *  defaults. Kept so Reset restores the trial's own subject rather than the
+   *  bare defaults. */
+  configSeed?: Partial<TC>;
   /** This trial's own tool slot. Undefined means it reads the lab's. */
   activeToolId?: string | null;
   /** The extent the trial's sidebar was last dragged to, in pixels. Undefined

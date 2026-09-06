@@ -24,7 +24,10 @@ export interface ToolbarItem {
   pressed?: boolean;
   /** Render the label beside the glyph rather than only in the tooltip. */
   showLabel?: boolean;
-  onActivate: () => void;
+  /** Handed the trial's chrome context, so a contribution declared from the
+   *  lab can reach `ctx.saveSnapshot()` and the rest without the `render`
+   *  escape. A zero-argument handler stays valid. */
+  onActivate: (ctx: TrialChromeContext) => void;
 }
 
 /** A selectable tool in the palette region. */
@@ -53,7 +56,8 @@ export interface ViewportControl {
   icon: IconComponent;
   label: string;
   disabled?: boolean;
-  onActivate: () => void;
+  /** Handed the trial's chrome context, as `ToolbarItem.onActivate` is. */
+  onActivate: (ctx: TrialChromeContext) => void;
 }
 
 /** A readout in the status bar. */
@@ -100,6 +104,12 @@ export type TrialContribution =
 export interface TrialChromeContext {
   trialId: string;
   instrumentName: string;
+  /** What the title bar reads, which is the instrument's name until something
+   *  calls `setTitle`. */
+  title: string;
+  /** Retitle this trial; `null` restores the instrument name. The title is the
+   *  chrome's, not the trial record's, so it does not survive a reload. */
+  setTitle: (title: string | null) => void;
   isLastTrial: boolean;
 
   /** Null when the trial holds a view that is not the 2D one. */

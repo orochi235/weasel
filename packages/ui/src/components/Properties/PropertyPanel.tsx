@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Focusable } from 'react-aria-components';
 import { dlog } from '../../dlog';
 import { formatNumber, parseSignedNumber } from '../../format/number';
@@ -241,7 +241,18 @@ export interface SliderRowProps extends PropertyMetricProps {
   min: number;
   max: number;
   step?: number;
+  /**
+   * The committed value. Given `onInput` as well, it fires once a drag ends
+   * or a typed readout is accepted; on its own it fires on every move, which
+   * is what a row with one callback has always done.
+   */
   onChange: (next: number) => void;
+  /**
+   * The live value, fired continuously through a drag. Pass it alongside
+   * `onChange` when the write is expensive — cheap state here, the costly
+   * work there. Mirrors `<Slider>`'s `onInput` / `onChange` pair.
+   */
+  onInput?: (next: number) => void;
   /** Override how the value is rendered next to the label. Defaults to `value.toString()`. */
   format?: (value: number) => ReactNode;
   /**
@@ -265,6 +276,7 @@ export function SliderRow({
   max,
   step = 1,
   onChange,
+  onInput,
   format,
   unit,
   layout,
@@ -278,6 +290,23 @@ export function SliderRow({
   // can still pass an explicit `format` to override (e.g. for a custom
   // unit string or a non-decimal display like fractions).
   const decimals = step >= 1 ? 0 : Math.min(6, Math.max(0, Math.ceil(-Math.log10(step))));
+  const live = onInput ?? onChange;
+  const commit = onInput ? onChange : undefined;
+  const range = useRef<HTMLInputElement>(null);
+  const latestCommit = useRef(commit);
+  useEffect(() => {
+    latestCommit.current = commit;
+  });
+  useEffect(() => {
+    const el = range.current;
+    if (!el) return;
+    // The commit half is the platform's: a range input fires `input` through
+    // the drag and `change` once, on release. React's synthetic onChange sees
+    // only the first, since its value tracker drops the unchanged second.
+    const onCommit = () => latestCommit.current?.(Number(el.value));
+    el.addEventListener('change', onCommit);
+    return () => el.removeEventListener('change', onCommit);
+  }, []);
   const effectiveFormat =
     format ??
     ((n: number) =>
@@ -297,7 +326,10 @@ export function SliderRow({
           max={max}
           format={effectiveFormat}
           unit={unit}
-          onCommit={onChange}
+          onCommit={(next) => {
+            live(next);
+            commit?.(next);
+          }}
         />
       }
       layout={layout}
@@ -306,6 +338,7 @@ export function SliderRow({
       align={align}
     >
       <input
+        ref={range}
         type="range"
         className={shared.range}
         tabIndex={-1}
@@ -316,7 +349,7 @@ export function SliderRow({
         onChange={(e) => {
           const v = Number(e.target.value);
           dlog('property-panel', 'slider', { label, value: v });
-          onChange(v);
+          live(v);
         }}
       />
     </PropertyRow>

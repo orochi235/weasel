@@ -25,7 +25,7 @@ export function ViewportRegion({ contributions, ctx }: ViewportRegionProps) {
       {contributions.map((c) => {
         if (c.render) return <span key={c.id}>{c.render(ctx)}</span>;
         if (c.region !== 'viewport' || !c.item) return null;
-        const { icon: Icon, label, disabled } = c.item;
+        const { icon: Icon, label, disabled, onActivate } = c.item;
         return (
           <button
             key={c.id}
@@ -34,7 +34,7 @@ export function ViewportRegion({ contributions, ctx }: ViewportRegionProps) {
             aria-label={label}
             title={label}
             disabled={disabled}
-            onClick={c.item.onActivate}
+            onClick={() => onActivate(ctx)}
           >
             <Icon size={16} />
           </button>

@@ -6,22 +6,26 @@ The `src/layers/` directory implements the `<LayerList>` UI used by the `layers`
 
 | File | Role |
 |---|---|
-| `LayerList.tsx` | Layer toggle/reorder list (sidebar widget) |
-| `LayerList.less` | Row styling, drag handle, pinned-row variant |
+| `LayerList.tsx` | Layer toggle/reorder list, flat or nested (sidebar widget) |
+| `LayerList.less` | Row styling, drag handle, pinned-row variant, subtree indent |
+| `LayerList.stories.tsx` | Flat and nested renderings |
 
 ## Props
 
 ```ts
 interface LayerListProps {
-  layers: LayerDescriptor[];                    // { id, label, alwaysOn? }
+  layers: LayerTreeNode[];                      // LayerDescriptor + { children?, defaultCollapsed? }
   visibility: Record<string, boolean>;          // missing key → visible
-  onReorder: (newOrder: LayerDescriptor[]) => void;
+  onReorder: (newOrder: LayerTreeNode[]) => void;
   onToggle: (id: string, visible: boolean) => void;
+  collapsedIds?: readonly string[];             // supplying it makes collapse controlled
+  onCollapsedChange?: (ids: string[]) => void;
   className?: string;
 }
 ```
 
-`LayerDescriptor` lives in `src/instrument/types.ts`.
+`LayerDescriptor` lives in `src/instrument/types.ts`; `LayerTreeNode` extends it
+in `LayerList.tsx`, so a plain `LayerDescriptor[]` is still a valid `layers`.
 
 ## How it integrates
 
@@ -44,6 +48,24 @@ Setting `alwaysOn: true` on a `LayerDescriptor` does two things:
 
 This is intended for legend/HUD layers that should never be toggled off. Visibility for pinned rows is **not** read from the `visibility` prop; they always render.
 
+## Nesting
+
+A node with `children` renders an expandable subtree. The expand control is
+`<Disclosure>` from `@weasel-js/ui` — the same twisty every other collapsible
+surface uses.
+
+Reordering is scoped to siblings: a drag moves a row within its own parent's
+child list and never reparents it. `onReorder` still receives the whole tree,
+with only that sibling group's order changed.
+
+The twisty column appears only when some node in the tree has children — a flat
+list renders exactly the rows it always did. Within a tree, childless rows get
+`.lk-layer-list__twisty-gap` so labels stay aligned down a level.
+
+Collapse is uncontrolled by default, seeded once from each node's
+`defaultCollapsed`. Pass `collapsedIds` to own it; `onCollapsedChange` fires
+either way.
+
 ## Drag handle customization
 
 The drag handle is a button with class `lk-layer-list__handle` holding `<DragHandleGlyph>` (from `@weasel-js/ui`), the same grip `LayerStack` uses. Its padding is transparent and cancelled by an equal negative margin, so the grab target is larger than the drawn dots without widening the row. Row pitch — height plus row gap — is measured from the DOM when a drag starts, so restyling the row does not skew drag distance. It used to be a hardcoded `28`, which had already drifted from the rendered height by the time it was found.
@@ -59,7 +81,7 @@ If `layers.length === 0`, renders `.lk-layer-list__empty` with the text "No laye
 Fork this component if you need:
 - Multi-select reorder (current implementation is single-row)
 - Right-click context menu
-- Layer groups or nesting
+- Reparenting by drag (nesting renders, but a drag stays within one parent)
 - Solo/mute UI common in DAW-style apps
 
-The implementation is small (~100 lines) and self-contained — only depends on `LayerDescriptor` from instrument types.
+It is self-contained: `LayerDescriptor` from instrument types and `Disclosure`/`DragHandleGlyph` from `@weasel-js/ui`.

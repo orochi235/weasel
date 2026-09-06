@@ -82,6 +82,7 @@ function Harness({ toolId = 'rect' }: { toolId?: string }) {
             capability={capability}
             state={{}}
             config={{}}
+            trial={{ id: 'harness', view: null }}
             annotations={annotations}
             activeToolId={toolId}
           />
@@ -170,6 +171,7 @@ function OneTrial({
         capability={capability}
         state={{}}
         config={{}}
+        trial={{ id: trialId, view: null }}
         annotations={annotations}
         activeToolId="rect"
       />

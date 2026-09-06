@@ -9,6 +9,8 @@ import { createLabStore } from '../state/store';
 import type { SavedSnapshot, TrialRecord } from '../state/types';
 import { TrialChrome } from './TrialChrome';
 
+const Glyph = () => <svg />;
+
 const stubInstrument: Instrument = {
   name: 'Stub',
   defaultConfig: () => ({}),
@@ -129,6 +131,49 @@ describe('<TrialChrome>', () => {
   it('renders a consumer contribution alongside the built-ins', () => {
     render(<ChromeHarness chrome={[{ id: 'mine', region: 'status', item: { text: 'ready' } }]} />);
     expect(screen.getByText('ready')).toBeInTheDocument();
+  });
+
+  it('leads the title bar with a contribution that does not set `end`', () => {
+    const { container } = render(
+      <ChromeHarness
+        chrome={[
+          {
+            id: 'subject',
+            region: 'titlebar',
+            item: { icon: Glyph, label: 'Pick subject', onActivate: () => {} },
+          },
+        ]}
+      />,
+    );
+    const titlebar = container.querySelector('.lk-trial__titlebar');
+    if (!titlebar) throw new Error('no title bar');
+    const lead = screen.getByRole('button', { name: 'Pick subject' });
+    const heading = titlebar.querySelector('.lk-trial__title');
+    if (!heading) throw new Error('no title');
+    expect(titlebar.querySelector('.lk-trial__titlebar-lead')).toContainElement(lead);
+    expect(lead.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('reads the instrument name until a contribution calls setTitle', () => {
+    render(
+      <ChromeHarness
+        chrome={[
+          {
+            id: 'rename',
+            region: 'titlebar',
+            item: {
+              icon: Glyph,
+              label: 'Rename',
+              onActivate: (ctx) => ctx.setTitle('Sprocket 7'),
+            },
+          },
+        ]}
+      />,
+    );
+    expect(screen.getByRole('region', { name: 'Trial Stub' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Rename' }));
+    expect(screen.getByText('Sprocket 7')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Trial Sprocket 7' })).toBeInTheDocument();
   });
 
   it('Cmd+S triggers saveSnapshot', () => {

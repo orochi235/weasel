@@ -30,6 +30,35 @@ export const ExplicitChildren: Story = {
   ),
 };
 
+/** The two rows differ only in `width`. `fit` takes what its widest option —
+ *  "Vermilion" — needs and leaves the rest of the row to its neighbors; the
+ *  default `fill` swallows the slack and squeezes them to min-content. */
+export const FitWidth: Story = {
+  render: () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 480 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <button type="button">Add trial</button>
+        <Select
+          aria-label="Fits its options"
+          width="fit"
+          placeholder="Pick one"
+          options={[...COLORS, { value: 'v', label: 'Vermilion' }]}
+        />
+        <span>tail</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <button type="button">Add trial</button>
+        <Select
+          aria-label="Fills the row"
+          placeholder="Pick one"
+          options={[...COLORS, { value: 'v', label: 'Vermilion' }]}
+        />
+        <span>tail</span>
+      </div>
+    </div>
+  ),
+};
+
 export const Disabled: Story = {
   render: () => <Select label="Color" options={COLORS} defaultSelectedKey="r" isDisabled />,
 };

@@ -1,4 +1,4 @@
-import { type KeyboardEvent, type ReactNode, useContext, useMemo } from 'react';
+import { type KeyboardEvent, type ReactNode, useContext, useMemo, useState } from 'react';
 import { useStore } from 'zustand/react';
 import { builtinContributions } from '../chrome/builtins';
 import { mergeContributions, suppressContributions } from '../chrome/merge';
@@ -104,6 +104,9 @@ export function TrialChrome({
 
   const configSchema = useConfigSchema(instrument);
 
+  const [ownTitle, setTitle] = useState<string | null>(null);
+  const title = ownTitle ?? record.instrumentName;
+
   const ctx = useMemo<TrialChromeContext>(() => {
     const setZoom = (z: number): void => {
       if (!view2d) return;
@@ -112,6 +115,8 @@ export function TrialChrome({
     return {
       trialId,
       instrumentName: record.instrumentName,
+      title,
+      setTitle,
       isLastTrial,
       zoom: view2d ? view2d.zoom : null,
       setZoom,
@@ -155,6 +160,7 @@ export function TrialChrome({
     record,
     instrument,
     lab,
+    title,
     isLastTrial,
     updateTrialView,
     updateTrialConfig,
@@ -203,11 +209,14 @@ export function TrialChrome({
   return (
     <section
       className="lk-trial"
-      aria-label={`Trial ${record.instrumentName}`}
+      aria-label={`Trial ${title}`}
       tabIndex={-1}
       onKeyDown={handleKeyDown}
     >
-      <TrialTitleBar title={record.instrumentName}>
+      <TrialTitleBar
+        title={title}
+        lead={<TitleBarRegion placement="lead" contributions={inRegion('titlebar')} ctx={ctx} />}
+      >
         <TitleBarRegion contributions={inRegion('titlebar')} ctx={ctx} />
       </TrialTitleBar>
       <div className="lk-trial__toolbar">

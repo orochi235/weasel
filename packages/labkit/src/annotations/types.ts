@@ -1,5 +1,6 @@
 import type { RefObject } from 'react';
 import type { ViewTransform } from '../instrument/types';
+import type { TrialInfo } from '../state/types';
 import type { MarkScene } from './store';
 
 /** A point in fractions of a target's content box. */
@@ -158,7 +159,9 @@ export interface AnnotationStorage {
 /** Declares that an instrument accepts marks: which regions take them,
  *  optionally what a mark is allowed to mean, and optionally where they live. */
 export interface AnnotationsCapability<TS = unknown, TC = unknown> {
-  targets: (state: TS, config: TC) => readonly AnnotationTarget[];
+  /** `trial` is which trial is asking: a declaration made once per instrument
+   *  is called once per trial, and its targets are that trial's own. */
+  targets: (state: TS, config: TC, trial: TrialInfo) => readonly AnnotationTarget[];
   meaning?: AnnotationMeaning;
   storage?: AnnotationStorage;
   /** Fires after every finished export, labkit's own chrome included. A
