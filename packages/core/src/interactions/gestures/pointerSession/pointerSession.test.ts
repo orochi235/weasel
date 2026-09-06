@@ -68,15 +68,36 @@ describe('openPointerSession', () => {
     expect(s.active).toBe(false);
   });
 
-  it('cancels when the capture is lost mid-gesture', () => {
-    // The element being removed from the DOM is the case that matters: the
-    // browser fires lostpointercapture and the drag would otherwise hang.
+  it('cancels when the origin is removed and takes capture with it', () => {
+    // Nothing more is coming for a detached origin, so the drag would hang.
     const onCancel = vi.fn();
     const target = el();
     const s = openPointerSession(target, down(), { onCancel });
+    target.remove();
     target.dispatchEvent(new PointerEvent('lostpointercapture', { pointerId: 1, bubbles: true }));
     expect(onCancel).toHaveBeenCalledWith('lostcapture');
     expect(s.active).toBe(false);
+  });
+
+  it('keeps tracking when capture is lost but the origin is still there', () => {
+    // Chrome releases capture implicitly a beat before it delivers pointerup.
+    // Cancelling on that threw away a release already on its way — and the
+    // session reads the document, so it never needed capture to hear it.
+    const onCancel = vi.fn();
+    const onMove = vi.fn();
+    const onEnd = vi.fn();
+    const target = el();
+    const s = openPointerSession(target, down(), { onCancel, onMove, onEnd });
+
+    target.dispatchEvent(new PointerEvent('lostpointercapture', { pointerId: 1, bubbles: true }));
+    expect(onCancel).not.toHaveBeenCalled();
+    expect(s.active).toBe(true);
+
+    document.dispatchEvent(move(1, 1, 30, 40));
+    expect(onMove).toHaveBeenCalledTimes(1);
+    document.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1 }));
+    expect(onEnd).toHaveBeenCalledTimes(1);
+    expect(onCancel).not.toHaveBeenCalled();
   });
 
   it('a normal release does not also report a cancel', () => {

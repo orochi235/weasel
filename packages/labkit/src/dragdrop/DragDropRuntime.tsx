@@ -1,5 +1,12 @@
-import { useVisibleRaf } from '@weasel-js/core';
-import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
+import { openPointerSession, type PointerSession, useVisibleRaf } from '@weasel-js/core';
+import {
+  type PointerEvent as ReactPointerEvent,
+  type RefObject,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { screenToWorld } from '../canvas/canvasCoords';
 import { resolveFrame, type WorldSpec } from '../canvas/worldSpec';
 import type {
@@ -32,7 +39,7 @@ export interface UseDragDropArgs<TS, TC> {
 
 export interface UseDragDropResult {
   drag: DragState | null;
-  startDrag: (item: PaletteItem, originScreenPos: Point) => void;
+  startDrag: (item: PaletteItem, e: ReactPointerEvent) => void;
 }
 
 export function useDragDrop<TS, TC>({
@@ -51,6 +58,12 @@ export function useDragDrop<TS, TC>({
   /** The move the next frame will resolve. Doubles as the throttle's flag:
    *  non-null means a frame is already queued. */
   const pendingPos = useRef<Point | null>(null);
+  const sessionRef = useRef<PointerSession | null>(null);
+
+  /** A session keeps the closure it was opened with, so everything the drop
+   *  reads has to come from here rather than from that closure. */
+  const liveRef = useRef({ capability, state, config, setState, emit, view, worldSpec });
+  liveRef.current = { capability, state, config, setState, emit, view, worldSpec };
 
   const isOverCanvas = useCallback(
     (screenPos: Point): boolean => {
@@ -72,10 +85,14 @@ export function useDragDrop<TS, TC>({
       const el = canvasContainerRef.current;
       if (!el) return null;
       const r = el.getBoundingClientRect();
-      const frame = resolveFrame(worldSpec, { width: r.width, height: r.height });
-      return screenToWorld({ x: screenPos.x - r.left, y: screenPos.y - r.top }, view, frame);
+      const frame = resolveFrame(liveRef.current.worldSpec, { width: r.width, height: r.height });
+      return screenToWorld(
+        { x: screenPos.x - r.left, y: screenPos.y - r.top },
+        liveRef.current.view,
+        frame,
+      );
     },
-    [canvasContainerRef, view, worldSpec],
+    [canvasContainerRef],
   );
 
   const frameLoop = useVisibleRaf(() => {
@@ -83,68 +100,64 @@ export function useDragDrop<TS, TC>({
     pendingPos.current = null;
     const active = dragRef.current;
     if (!active || !screenPos) return;
+    const live = liveRef.current;
     let feedback: DragFeedback | null = null;
-    if (capability.onDragOver && isOverCanvas(screenPos)) {
+    if (live.capability.onDragOver && isOverCanvas(screenPos)) {
       const world = screenToWorldFromContainer(screenPos);
-      if (world) feedback = capability.onDragOver(world, active.item, state, config);
+      if (world) feedback = live.capability.onDragOver(world, active.item, live.state, live.config);
     }
     setDrag({ ...active, screenPos, feedback });
   });
 
-  useEffect(() => {
-    if (!drag) return;
-    const handleMove = (e: PointerEvent) => {
-      const screenPos = { x: e.clientX, y: e.clientY };
-      const current = dragRef.current;
-      if (!current) return;
-      if (pendingPos.current !== null) {
-        // A frame is already queued: keep the ghost under the cursor and let
-        // that frame probe the drop target from the newest position.
-        pendingPos.current = screenPos;
-        dragRef.current = { ...current, screenPos };
-        setDrag(dragRef.current);
-        return;
-      }
-      pendingPos.current = screenPos;
-      frameLoop.request();
-    };
-    const handleUp = (e: PointerEvent) => {
-      const screenPos = { x: e.clientX, y: e.clientY };
-      const active = dragRef.current;
-      if (!active) return;
-      pendingPos.current = null;
-      frameLoop.cancel();
-      if (isOverCanvas(screenPos)) {
-        const world = screenToWorldFromContainer(screenPos);
-        if (world) {
-          const nextState = capability.onDrop(world, active.item, state, config);
-          setState(nextState);
-          emit('canvas.itemAdded');
-        }
-      }
-      setDrag(null);
-    };
-    window.addEventListener('pointermove', handleMove);
-    window.addEventListener('pointerup', handleUp);
-    return () => {
-      window.removeEventListener('pointermove', handleMove);
-      window.removeEventListener('pointerup', handleUp);
-    };
-  }, [
-    drag,
-    capability,
-    state,
-    config,
-    setState,
-    emit,
-    frameLoop,
-    isOverCanvas,
-    screenToWorldFromContainer,
-  ]);
+  const clearDrag = useCallback(() => {
+    pendingPos.current = null;
+    frameLoop.cancel();
+    sessionRef.current = null;
+    dragRef.current = null;
+    setDrag(null);
+  }, [frameLoop]);
 
-  const startDrag = useCallback((item: PaletteItem, originScreenPos: Point) => {
-    setDrag({ item, screenPos: originScreenPos, feedback: null });
-  }, []);
+  const startDrag = useCallback(
+    (item: PaletteItem, e: ReactPointerEvent) => {
+      if (sessionRef.current) return;
+      const next: DragState = { item, screenPos: { x: e.clientX, y: e.clientY }, feedback: null };
+      dragRef.current = next;
+      setDrag(next);
+      sessionRef.current = openPointerSession(e.currentTarget, e, {
+        onMove: (ev) => {
+          const screenPos = { x: ev.clientX, y: ev.clientY };
+          const current = dragRef.current;
+          if (!current) return;
+          if (pendingPos.current !== null) {
+            // A frame is already queued: keep the ghost under the cursor and
+            // let that frame probe the drop target from the newest position.
+            pendingPos.current = screenPos;
+            dragRef.current = { ...current, screenPos };
+            setDrag(dragRef.current);
+            return;
+          }
+          pendingPos.current = screenPos;
+          frameLoop.request();
+        },
+        onEnd: (ev) => {
+          const screenPos = { x: ev.clientX, y: ev.clientY };
+          const active = dragRef.current;
+          clearDrag();
+          if (!active || !isOverCanvas(screenPos)) return;
+          const world = screenToWorldFromContainer(screenPos);
+          if (!world) return;
+          const live = liveRef.current;
+          live.setState(live.capability.onDrop(world, active.item, live.state, live.config));
+          live.emit('canvas.itemAdded');
+        },
+        // An interrupted gesture never named a destination, so it drops nothing.
+        onCancel: clearDrag,
+      });
+    },
+    [clearDrag, frameLoop, isOverCanvas, screenToWorldFromContainer],
+  );
+
+  useEffect(() => () => sessionRef.current?.cancel(), []);
 
   return { drag, startDrag };
 }

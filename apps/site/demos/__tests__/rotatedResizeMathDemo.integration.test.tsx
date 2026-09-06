@@ -23,10 +23,11 @@ describe('RotatedResizeMathDemo', () => {
     const before = captionCoords(green);
 
     // Body-translate: down at the rect center (160,120), drag +50,+30, up.
-    // Move/up listeners live on window for the duration of the gesture.
-    fireEvent.pointerDown(green, { clientX: 160, clientY: 120, pointerId: 1 });
-    fireEvent.pointerMove(window, { clientX: 210, clientY: 150, pointerId: 1 });
-    fireEvent.pointerUp(window, { clientX: 210, clientY: 150, pointerId: 1 });
+    // Fired on the panel, not on `window`: the gesture's pointer session
+    // listens on the document, which a window-dispatched event never reaches.
+    fireEvent.pointerDown(green, { clientX: 160, clientY: 120, pointerId: 1, buttons: 1 });
+    fireEvent.pointerMove(green, { clientX: 210, clientY: 150, pointerId: 1, buttons: 1 });
+    fireEvent.pointerUp(green, { clientX: 210, clientY: 150, pointerId: 1 });
 
     // After the gesture the live ghost is gone and the caption reads the
     // COMMITTED pose — it must reflect the translate, not snap back.
