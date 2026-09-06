@@ -14,7 +14,10 @@
 
 .lk-shell-header {
   display: flex;
-  align-items: center;
+  // Baseline, not center: the title is `--wzl-font-size-xl` and the controls
+  // beside it are not, so centering them leaves every label sitting off the
+  // title's baseline by half the difference in leading.
+  align-items: baseline;
   gap: var(--wzl-space-md);
   padding: var(--wzl-space-sm) var(--wzl-space-md);
   background: var(--wzl-surface-raised);
@@ -32,6 +35,9 @@
 .lk-shell-header-actions {
   margin-left: auto;
   display: flex;
+  // A flex container reports its first item's baseline, so this is what
+  // carries the row's baseline up to the header.
+  align-items: baseline;
   gap: var(--wzl-space-sm);
 }
 
@@ -73,10 +79,19 @@
   font-size: var(--wzl-font-size-sm);
 }
 
+// A flex container reports its *first* item's baseline, and the leading icon
+// is an <svg> with none — so a centered button hands the header a baseline
+// synthesized from the icon's bottom edge, and the label lands 2px off the
+// title. Baseline here makes the label the button's baseline; the icon keeps
+// its own centering through `align-self`.
 .lk-lab-header__add {
   display: inline-flex;
-  align-items: center;
+  align-items: baseline;
   gap: var(--wzl-space-xs);
+}
+
+.lk-lab-header__add > svg {
+  align-self: center;
 }
 
 // `Select` is a form field and defaults to `width: 100%`. Left to resolve that
