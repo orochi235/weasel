@@ -351,6 +351,8 @@
 .row input[type='number']:not(.readoutInput) {
   width: var(--wzl-prop-number-width, 9ch);
   max-width: 100%;
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .row input[type='text']:not(.readoutInput) {
@@ -391,6 +393,18 @@
    not, so this cannot live in the rule the two share. */
 .row input[type='number'] {
   text-align: right;
+}
+
+/* Chrome reserves the spin-button gutter at the right edge whether or not the
+   arrows are painted, so a right-aligned value stops ~20px short of its own
+   border and the row reads as if something is missing from that space. The
+   panel drives numbers by typing and dragging, never by the steppers.
+   `.readoutInput` has always dropped them; this is the same removal for the
+   typed field beside it. */
+.row input[type='number']::-webkit-inner-spin-button,
+.row input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .row input[type='text']:not(.readoutInput):focus,
