@@ -1,5 +1,65 @@
 # @weasel-js/labkit
 
+## 1.4.2
+
+### Patch Changes
+
+- bfb0595: Run the last four drags in the kit on `openPointerSession`. Capture, pointer identity, teardown and recovery from a release that never arrives are now decided in one place for every pointerdown-to-pointerup lifecycle in the kit.
+  
+  Fix a drag that silently dropped its commit. `openPointerSession` treated `lostpointercapture` as the end of the gesture, and Chrome releases capture implicitly a beat *before* it delivers `pointerup` — so a release already on its way arrived after the session had torn down its listeners, and the gesture ended as a cancel instead of a commit. Roughly three drags in four were lost this way in one measured consumer. Losing capture now ends a session only once the origin has left the document, which is the case the rule was written for: the session listens on the document, so capture is what retargets events, not what delivers them.
+  
+  The gesture dispatcher opens a session per held pointer instead of tracking pointers itself. Two behavior changes come with that: a drag released outside the canvas now ends, where before only pointer capture made that work; and a fresh press on a pointer still believed held cancels the stale gesture rather than committing it at the new press's coordinates, since where it actually ended is unknown.
+  
+  Two small breaking changes. `ThresholdDragOptions.onCancel` now fires only when a gesture ends without a release — a release below the threshold calls the new `onClick`. And in labkit, `useDragDrop`'s `startDrag` and `Palette`'s `onDragStart` take the React pointerdown event in place of a `Point`; a cancelled palette drag now drops nothing, where before it had no cancel path at all.
+  
+  `startThresholdDrag` also takes an `origin` element, for a list whose grabbed row unmounts mid-drag and drops capture with it. `useReorderDragList` uses it and no longer carries its own copy of the threshold logic.
+- b1cddc6: Property panels take `density` and `align`, and `layout` reaches every row kind.
+  
+  Three things a consumer could not do from outside `Properties.module.css`.
+  
+  **Spacing was four hard-coded numbers** — the list's row gap, the group's
+  padding, the group title's margin, the panel's padding — none of which read a
+  custom property. Every metric in the family now does: `--wzl-prop-row-gap`,
+  `--wzl-prop-column-gap`, `--wzl-prop-panel-pad`, `--wzl-prop-panel-title-gap`,
+  `--wzl-prop-group-pad`, `--wzl-prop-group-title-gap`,
+  `--wzl-prop-subpanel-row-gap`, `--wzl-prop-field-h`, `--wzl-prop-field-pad-x`.
+  A `density` of `'tight' | 'normal' | 'roomy'` on `PropertyPanel`,
+  `PropertyList`, `PropertyGroup`, `Subpanel` or `PropertyRow` sets them as a
+  bundle. Both props inherit, so the nearest container that states one wins and an
+  inner group can differ from the panel around it.
+  
+  **A color row centered its label and swatch and could not be told otherwise**,
+  so a palette panel — a column of swatches read as a group — had no way to line
+  them up. `align` takes `'start' | 'center' | 'end' | 'baseline'`; `baseline`
+  sits each swatch on its label's first-line baseline, which holds when labels
+  wrap to different heights. Left unset, a color row keeps sinking its content to
+  the row's bottom edge, so an alpha track stays level with the taller row beside
+  it.
+  
+  **`ColorRow` and `CheckboxRow` took no `layout`.** `PropertyRow` gated the
+  inline class on the default variant, so a panel asking for one orientation got
+  another for two row kinds out of six. `layout` is now unset by default and each
+  variant supplies its own — `block` for the default variant, `inline` for color
+  and checkbox — so passing it through a whole panel is safe, and `block` on a
+  color or checkbox row stacks it. `ControlPanel` forwards `layout` to those two
+  rows, and takes `density` and `align` of its own.
+  
+  `PropertyList` and `PropertyGroup` also take `pack="one-up"`, which gives every
+  row the full width, color rows included. `'auto-color'` pairs them two per row
+  and there was no way to opt out — which is the packing a palette needs.
+  
+  Nothing changes for a consumer that passes none of these.
+- Updated dependencies [bfb0595]
+- Updated dependencies [b1cddc6]
+- Updated dependencies [352f938]
+- Updated dependencies [3b07b13]
+- Updated dependencies [8e9eb1d]
+  - @weasel-js/core@1.4.2
+  - @weasel-js/ui@1.4.2
+  - @weasel-js/loupe@1.4.2
+  - @weasel-js/svg@1.4.2
+  - @weasel-js/theme@1.4.2
+
 ## 1.4.1
 
 ### Patch Changes
