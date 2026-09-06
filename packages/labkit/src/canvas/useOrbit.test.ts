@@ -133,14 +133,18 @@ describe('useOrbit dragging', () => {
     expect(getView()).toEqual(orbitAfterDrag(view, 100, 50));
   });
 
-  it('ends the drag when capture is lost mid-gesture', () => {
+  // The other half of the rule — a detached origin does cancel — is owned by
+  // pointerSession.test.ts, which exercises it without React in the way.
+  it('keeps turning when capture is lost and the element is still in the document', () => {
     const { result, el, getView } = dragSetup();
     act(() => result.current.onPointerDown(press(el, 100, 100)));
     dispatchOn(document, 'pointermove', { buttons: 1, clientX: 200, clientY: 150 });
+    // Chrome releases capture a beat before it delivers pointerup, so ending
+    // here throws away a release that has already been dispatched.
     dispatchOn(el, 'lostpointercapture', {});
-    expect(result.current.isDragging()).toBe(false);
+    expect(result.current.isDragging()).toBe(true);
     dispatchOn(document, 'pointermove', { buttons: 1, clientX: 400, clientY: 400 });
-    expect(getView()).toEqual(orbitAfterDrag(view, 100, 50));
+    expect(getView()).toEqual(orbitAfterDrag(view, 300, 300));
   });
 
   it('reads a move with nothing held as the release that never arrived', () => {

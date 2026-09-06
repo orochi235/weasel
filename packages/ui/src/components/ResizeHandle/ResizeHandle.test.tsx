@@ -145,15 +145,18 @@ describe('ResizeHandle', () => {
     expect(onChange).toHaveBeenCalledWith(300);
   });
 
-  it('settles the drag when capture is lost mid-gesture', () => {
+  // Chrome releases capture a beat before it delivers pointerup, so ending the
+  // gesture here throws away a release that has already been dispatched. The
+  // other half of the rule — a detached origin does cancel — is owned by
+  // pointerSession.test.ts.
+  it('keeps dragging when capture is lost and the handle is still in the document', () => {
     const { handle, onInput, onChange } = setup();
     fireEvent.pointerDown(handle, { button: 0, pointerId: 3, clientX: 500 });
     fireEvent.pointerMove(document, { pointerId: 3, clientX: 540 });
     handle.dispatchEvent(new PointerEvent('lostpointercapture', { pointerId: 3, bubbles: true }));
-    expect(onChange).toHaveBeenCalledWith(300);
-    onInput.mockClear();
     fireEvent.pointerMove(document, { pointerId: 3, clientX: 560 });
-    expect(onInput).not.toHaveBeenCalled();
+    expect(onInput).toHaveBeenLastCalledWith(320);
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it('reads a move with no button held as the release that never arrived', () => {

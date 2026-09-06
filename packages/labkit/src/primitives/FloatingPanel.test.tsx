@@ -332,14 +332,19 @@ describe('FloatingPanel drag lifecycle', () => {
     expect(panel.style.left).toBe('100px');
   });
 
-  it('ends the drag when capture is lost mid-gesture', () => {
+  // The other half of the rule — a detached origin does cancel — is owned by
+  // pointerSession.test.ts, which exercises it without React in the way.
+  it('keeps dragging when capture is lost and the panel is still in the document', () => {
     const { panel } = renderPanel(<FloatingPanel anchor="top-left">x</FloatingPanel>);
     fireEvent.pointerDown(panel, { pointerId: 1, buttons: 1, clientX: 100, clientY: 100 });
     fireEvent.pointerMove(document.body, { pointerId: 1, buttons: 1, clientX: 200, clientY: 180 });
-    fireEvent(panel, new PointerEvent('lostpointercapture', { pointerId: 1, bubbles: true }));
-    expect(panel.dataset.dragging).toBeUndefined();
-    fireEvent.pointerMove(document.body, { pointerId: 1, buttons: 1, clientX: 300, clientY: 180 });
     expect(panel.style.left).toBe('100px');
+    // Chrome releases capture a beat before it delivers pointerup, so ending
+    // here throws away a release that has already been dispatched.
+    fireEvent(panel, new PointerEvent('lostpointercapture', { pointerId: 1, bubbles: true }));
+    expect(panel.dataset.dragging).toBe('true');
+    fireEvent.pointerMove(document.body, { pointerId: 1, buttons: 1, clientX: 300, clientY: 180 });
+    expect(panel.style.left).toBe('200px');
   });
 
   it('reads a move with nothing held as the release that never arrived', () => {

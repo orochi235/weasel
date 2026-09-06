@@ -642,16 +642,17 @@ describe('CurveEditor — pointer session', () => {
     outside.remove();
   });
 
-  // The session cancels on `lostpointercapture` whether or not it asked for
-  // capture, so this asserts the wiring, not a path a browser reaches here.
-  it('cancels the gesture when the plot loses pointer capture', () => {
-    const { svg, onInput, onChange } = dragging();
+  // Chrome releases capture a beat before it delivers pointerup, so ending the
+  // gesture here throws away a release that has already been dispatched. The
+  // other half of the rule — a detached origin does cancel — is owned by
+  // pointerSession.test.ts.
+  it('keeps dragging when capture is lost and the plot is still in the document', () => {
+    const { svg, onInput } = dragging();
     fireEvent.pointerMove(document, { clientX: 120, clientY: 30, pointerId: 1, buttons: 1 });
     const moves = onInput.mock.calls.length;
     fireEvent(svg, new PointerEvent('lostpointercapture', { pointerId: 1, bubbles: true }));
     fireEvent.pointerMove(document, { clientX: 160, clientY: 10, pointerId: 1, buttons: 1 });
-    expect(onInput.mock.calls.length).toBe(moves);
-    expect(onChange).not.toHaveBeenCalled();
+    expect(onInput.mock.calls.length).toBeGreaterThan(moves);
   });
 
   it('treats a move with no button held as the release it missed', () => {
