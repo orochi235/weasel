@@ -4,6 +4,8 @@ import {
   ColorRow,
   NumberRow,
   type PrefLeaf,
+  type PropertyAlign,
+  type PropertyDensity,
   PropertyGroup,
   PropertyList,
   PropertyRow,
@@ -44,9 +46,16 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> {
   renderers?: Record<string, ControlRenderer>;
   /** How rows pack into the two-column grid. Defaults to `'pairs'`. */
   pack?: ControlPack;
-  /** Where a row's label sits relative to its control. Defaults to `'block'`
-   *  — above it, which is what leaves a paired row room for its value. */
+  /**
+   * Where a row's label sits relative to its control. Unset takes each row's
+   * own orientation — `block` (label above, which is what leaves a paired row
+   * room for its value) for most, `inline` for colors and checkboxes.
+   */
   layout?: PropertyRowLayout;
+  /** Room the rows get. Passed straight to the property list. */
+  density?: PropertyDensity;
+  /** Cross-axis alignment of an inline row's label and control. */
+  align?: PropertyAlign;
   /** Draw leaves marked `hidden`. */
   showHidden?: boolean;
   className?: string;
@@ -62,7 +71,9 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   setConfig,
   renderers,
   pack = 'pairs',
-  layout = 'block',
+  layout,
+  density,
+  align,
   showHidden = false,
   className,
 }: ControlPanelProps<TC>) {
@@ -90,6 +101,8 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   return (
     <PropertyList
       pack={gridPack}
+      density={density}
+      align={align}
       className={className ? `lk-control-panel ${className}` : 'lk-control-panel'}
     >
       {loose.map(row)}
@@ -109,7 +122,7 @@ interface ControlRowProps<TC extends Record<string, unknown>> {
   setConfig: (key: keyof TC, value: unknown) => void;
   renderers?: Record<string, ControlRenderer>;
   pack: ControlPack;
-  layout: PropertyRowLayout;
+  layout?: PropertyRowLayout;
   showHidden: boolean;
 }
 
@@ -201,6 +214,7 @@ function ControlRow<TC extends Record<string, unknown>>({
           label={label}
           value={read<boolean>()}
           onChange={write}
+          layout={layout}
           description={description}
         />
       );
@@ -234,7 +248,13 @@ function ControlRow<TC extends Record<string, unknown>>({
       );
     case 'color':
       return (
-        <ColorRow label={label} value={read<string>()} onChange={write} description={description} />
+        <ColorRow
+          label={label}
+          value={read<string>()}
+          onChange={write}
+          layout={layout}
+          description={description}
+        />
       );
     case 'paint':
     case 'object':

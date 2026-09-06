@@ -44,7 +44,6 @@ Priority tags:
 - labkit `registerSerializers` has no callers; instrument serializers never run → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit: nested config values — `f.schema` is flat because `setConfig` is → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Reconcile core's `ToolPrefLeaf` with weasel-ui's `PrefLeaf` — the `paint` kind has already drifted → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- `ControlPanel` rows: `ColorRow` / `CheckboxRow` take no `layout`, and row spacing is not tokenized → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - A number leaf's unit conversion is one leaf deep → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - `SliderRow` has no live/commit split → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - A schema section cannot be collapsed → [Selection, actions & UI panels](#selection-actions--ui-panels)
@@ -1300,32 +1299,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   it. They are all in that one hook so this is a single rewrite once trial input
   goes through the dispatcher; the loupe is the reason to want that, not a
   reason to build it first.
-
-- **(P2) `layout="inline"` does not cover every control kind, and row spacing is
-  still not tokenized.** What remains of the density gap found 2026-09-01;
-  `ControlPanel` now takes `pack` and `layout`, and fields size to their content.
-
-  `ColorRow` and `CheckboxRow` take no `layout` at all — `PropertyRow` gates the
-  inline class on `variant === 'default'`, and those two render the color and
-  checkbox variants — so a panel asking for inline rows still gets block ones for
-  two kinds out of six.
-
-  Spacing is four hard-coded numbers in `Properties.module.css` — `.list`
-  `row-gap`, `.group` `padding`, `.groupTitle` `margin`, `.panel` `padding` —
-  none of which read a custom property, so nothing outside the module can move
-  them without selector surgery.
-
-  Vertical alignment is the same shape of gap: `.rowColor .rowLabel` and
-  `.rowColor input[type='color']` are both `align-self: center`, so a consumer
-  building a palette panel — a column of colour rows read as a group rather than
-  one row at a time — cannot top-justify the swatches into a straight edge.
-  brick-icons overrides both selectors in its own stylesheet. Whatever lands has
-  to keep the alpha-slider case working: the comment on that block records that
-  padding on the colour input "expands the grid row and pushes the paired slider
-  track out of bottom alignment", so those metrics already carry weight. The field widths beside them now do
-  (`--wzl-prop-number-width`, `--wzl-prop-text-width`); a `density` prop on the
-  `@weasel-js/ui` containers, redefining the rest as locals, is the general
-  form.
 
 - **(P2) The shared pick walk's view-owned gates are not reachable everywhere.**
   `pickWalk` (2026-08-29) asks a `PickSource` five questions per candidate, two
