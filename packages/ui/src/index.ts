@@ -9,6 +9,7 @@ export * from './components/ActionBar';
 export * from './components/Badge';
 export * from './components/Button';
 export * from './components/DataGrid';
+export * from './components/Disclosure';
 export * from './components/DragHandleGlyph';
 export * from './components/Keycaps';
 export * from './components/LayerStack';

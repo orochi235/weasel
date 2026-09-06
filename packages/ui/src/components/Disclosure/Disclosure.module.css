@@ -1,0 +1,82 @@
+/* Every dimension is stated because a host app's bare-element defaults can be
+   authored at zero specificity — labkit's `:where(.lk-root) :where(button)`
+   sets `height: var(--wzl-control-h)` and horizontal padding, which would
+   otherwise stretch a 12px mark into a full-height control. */
+.twisty {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* A floor, not a size: a control sized to a 12px glyph is a 12px target,
+     which is under every pointer-size guideline there is. Stated as a minimum
+     so a larger mark grows the target with it rather than being shrunk to fit
+     — a flex item's default `flex-shrink: 1` would otherwise crush it. */
+  min-width: var(--wzl-disclosure-target, 20px);
+  min-height: var(--wzl-disclosure-target, 20px);
+  padding: 0;
+  border: 0;
+  border-radius: var(--wzl-radius-sm);
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--wzl-fg-muted);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.twisty:hover:not(:disabled) {
+  color: var(--wzl-fg);
+  background: var(--wzl-surface-raised);
+}
+
+.twisty:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: -2px;
+  color: var(--wzl-fg);
+}
+
+.twisty:disabled {
+  color: var(--wzl-fg-subtle);
+  cursor: not-allowed;
+}
+
+/* `currentColor` so the mark follows the button's own hover and disabled
+   colors, and so a consumer can recolor the pair with one declaration. */
+.mark {
+  display: block;
+  flex: none;
+  fill: currentColor;
+  transition: transform var(--wzl-motion-fast, 90ms) var(--wzl-ease-out, ease);
+}
+
+.twisty[aria-expanded='true'] .mark {
+  transform: rotate(90deg);
+}
+
+/* `direction="down"` starts pointing down and lifts to point up. */
+.down .mark {
+  transform: rotate(90deg);
+}
+
+.down[aria-expanded='true'] .mark {
+  transform: rotate(-90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mark {
+    transition: none;
+  }
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-disclosure-gap, 4px);
+}
+
+/* The row's content takes the rest and is allowed to shrink; the twisty is
+   not, so a long label truncates rather than crushing the control. */
+.rowBody {
+  flex: 1 1 auto;
+  min-width: 0;
+}
