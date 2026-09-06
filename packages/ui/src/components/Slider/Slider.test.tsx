@@ -918,15 +918,19 @@ describe('Slider pointer session', () => {
     outside.remove();
   });
 
-  it('cancels the drag when the thumb loses pointer capture', () => {
-    const { thumb, onInput, onChange } = dragging();
+  it('keeps dragging when capture is lost and the thumb is still in the document', () => {
+    const { thumb, onInput } = dragging();
     fireEvent.pointerMove(document, { clientX: 150, clientY: 12, pointerId: 1, buttons: 1 });
     expect(onInput).toHaveBeenCalledTimes(1);
+    // Chrome releases capture a beat before it delivers pointerup, so ending
+    // here throws away a release that has already been dispatched. The other
+    // half of the rule — a detached origin does cancel — belongs to
+    // pointerSession.test.ts, which owns it without React in the way.
     fireEvent(thumb, new PointerEvent('lostpointercapture', { pointerId: 1, bubbles: true }));
     fireEvent.pointerMove(document, { clientX: 180, clientY: 12, pointerId: 1, buttons: 1 });
-    expect(onInput).toHaveBeenCalledTimes(1);
-    expect(onChange).not.toHaveBeenCalled();
+    expect(onInput).toHaveBeenCalledTimes(2);
   });
+
 
   it('treats a move with no button held as the release it missed', () => {
     const { onInput, onChange } = dragging();

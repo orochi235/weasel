@@ -405,16 +405,19 @@ describe('seam drag pointer session', () => {
     outside.remove();
   });
 
-  it('cancels the drag when the seam loses pointer capture', () => {
-    const { seams, onInput, onChange } = setup();
+  // Chrome releases capture a beat before it delivers pointerup, so ending the
+  // gesture here throws away a release that has already been dispatched. The
+  // other half of the rule — a detached origin does cancel — is owned by
+  // pointerSession.test.ts.
+  it('keeps dragging when capture is lost and the seam is still in the document', () => {
+    const { seams, onInput } = setup();
     const seam = seams()[0];
     fireEvent.pointerDown(seam, { clientX: 80, clientY: 20, button: 0, buttons: 1 });
     fireEvent.pointerMove(document, { clientX: 120, clientY: 20, buttons: 1 });
     expect(onInput).toHaveBeenCalledTimes(1);
     fireEvent(seam, new PointerEvent('lostpointercapture', { pointerId: 0, bubbles: true }));
-    fireEvent.pointerMove(document, { clientX: 300, clientY: 20, buttons: 1 });
-    expect(onInput).toHaveBeenCalledTimes(1);
-    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.pointerMove(document, { clientX: 160, clientY: 20, buttons: 1 });
+    expect(onInput).toHaveBeenCalledTimes(2);
   });
 
   it('treats a move with no button held as the release it missed', () => {

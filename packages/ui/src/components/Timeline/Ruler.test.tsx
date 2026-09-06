@@ -124,14 +124,18 @@ describe('Ruler pointer session', () => {
     outside.remove();
   });
 
-  it('ends the scrub when the ruler loses pointer capture', () => {
+  // Chrome releases capture a beat before it delivers pointerup, so ending the
+  // scrub on `lostpointercapture` throws away a release already dispatched. The
+  // other half of the rule — a detached origin does cancel — belongs to
+  // pointerSession.test.ts, which owns it without React in the way.
+  it('keeps scrubbing when the ruler loses capture but stays mounted', () => {
     const onScrub = vi.fn();
     render(<Ruler {...props} onScrub={onScrub} />);
     fireEvent.pointerDown(ruler(), { clientX: 100, clientY: 5, button: 0, buttons: 1 });
     fireEvent(ruler(), new PointerEvent('lostpointercapture', { pointerId: 0, bubbles: true }));
     onScrub.mockClear();
     fireEvent.pointerMove(document, { clientX: 400, clientY: 5, buttons: 1 });
-    expect(onScrub).not.toHaveBeenCalled();
+    expect(onScrub).toHaveBeenCalledTimes(1);
   });
 
   it('treats a move with no button held as the release it missed', () => {

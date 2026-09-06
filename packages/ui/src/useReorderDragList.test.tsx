@@ -193,17 +193,18 @@ describe('useReorderDragList', () => {
     expect(latest.draggedIds).toBeNull();
   });
 
-  it('ends the drag when capture is lost mid-gesture', () => {
+  it('keeps the drag alive when capture is lost and the list is still mounted', () => {
     const { onReorder, list, row } = setup();
     press(row('a'), 16);
     move(999);
+    // Chrome releases capture a beat before it delivers pointerup, so ending
+    // the drag here throws away a drop that has already been dispatched. The
+    // other half of the rule — a detached origin does cancel — belongs to
+    // pointerSession.test.ts, which owns it without React in the way.
     fireEvent(list, new PointerEvent('lostpointercapture', { pointerId: 1, bubbles: true }));
-    expect(onReorder).not.toHaveBeenCalled();
-    expect(latest.draggedIds).toBeNull();
-
-    // The session is closed: a later release cannot resurrect the drop.
+    expect(latest.draggedIds).toEqual(['a']);
     release(999);
-    expect(onReorder).not.toHaveBeenCalled();
+    expect(onReorder).toHaveBeenCalledWith(['a'], ITEMS.length);
   });
 
   it('reads a move with no button held as the release that never arrived', () => {
@@ -276,9 +277,11 @@ describe('useReorderDragList press intent', () => {
   });
 
   it('does not report a press the session cancelled', () => {
-    const { row, list, onPress } = setup();
+    const { row, onPress } = setup();
     press(row('b'), 40);
-    fireEvent(list, new PointerEvent('lostpointercapture', { pointerId: 1, bubbles: true }));
+    // pointercancel, not a lost capture: capture goes away on its own a beat
+    // before every ordinary release, so it cannot be what cancels a session.
+    fireEvent.pointerCancel(document, { pointerId: 1, clientX: 100, clientY: 40 });
     release(40);
     expect(onPress).not.toHaveBeenCalled();
   });

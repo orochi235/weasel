@@ -317,18 +317,20 @@ describe('Lane pointer session', () => {
     expect(onKeyCommit).toHaveBeenCalledWith(1, 700);
   });
 
-  // The session cancels on `lostpointercapture` whether or not it asked for
-  // capture, so this asserts the wiring, not a path a browser reaches here.
-  it('cancels a key drag when the key loses pointer capture', () => {
+  // Chrome releases capture a beat before it delivers pointerup, so ending the
+  // drag on `lostpointercapture` throws away a release already dispatched. The
+  // other half of the rule — a detached origin does cancel — belongs to
+  // pointerSession.test.ts, which owns it without React in the way.
+  it('keeps a key drag alive when the key loses capture but stays mounted', () => {
     const onKeyCommit = vi.fn();
     render(<Lane {...base} row={laneOf(sampled)} onKeyCommit={onKeyCommit} />);
     const key = screen.getAllByTestId('timeline-key')[1];
     fireEvent.pointerDown(key, { clientX: 250, clientY: 10, button: 0, buttons: 1 });
     fireEvent.pointerMove(document, { clientX: 350, clientY: 10, buttons: 1 });
     fireEvent(key, new PointerEvent('lostpointercapture', { pointerId: 0, bubbles: true }));
-    expect(screen.queryByTestId('timeline-key-ghost')).not.toBeInTheDocument();
-    fireEvent.pointerMove(document, { clientX: 400, clientY: 10, buttons: 1 });
-    expect(onKeyCommit).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('timeline-key-ghost')).toBeInTheDocument();
+    fireEvent.pointerUp(document, { clientX: 400, clientY: 10 });
+    expect(onKeyCommit).toHaveBeenCalledTimes(1);
   });
 
   it('treats a move with no button held as the release the key drag missed', () => {

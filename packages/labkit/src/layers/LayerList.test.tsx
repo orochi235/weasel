@@ -73,6 +73,12 @@ function renderDraggable(onReorder = vi.fn()) {
   return { ...result, onReorder, handle: screen.getByLabelText('Reorder A') };
 }
 
+/** Index of the row the drag currently marks, or -1 when nothing is dragging. */
+function draggingRow(container: HTMLElement): number {
+  const rows = Array.from(container.querySelectorAll('.lk-layer-list__row'));
+  return rows.findIndex((r) => r.classList.contains('lk-layer-list__row--dragging'));
+}
+
 describe('<LayerList> reordering', () => {
   it('reorders from a release that lands off the handle', () => {
     const { onReorder, handle } = renderDraggable();
@@ -83,13 +89,19 @@ describe('<LayerList> reordering', () => {
     expect(onReorder.mock.calls[0][0].map((l: LayerDescriptor) => l.id)).toEqual(['b', 'a']);
   });
 
-  it('abandons the reorder when capture is lost mid-drag', () => {
+  // The other half of the rule — a detached origin does cancel — is owned by
+  // pointerSession.test.ts, which exercises it without React in the way.
+  it('keeps dragging when capture is lost and the handle is still in the document', () => {
     const { onReorder, handle, container } = renderDraggable();
     fireEvent.pointerDown(handle, { pointerId: 1, buttons: 1, clientY: 0 });
-    dispatchOn(document, 'pointermove', { buttons: 1, clientY: 1 });
+    // Chrome releases capture a beat before it delivers pointerup, so ending
+    // here throws away a release that has already been dispatched.
     dispatchOn(handle, 'lostpointercapture', {});
-    expect(onReorder).not.toHaveBeenCalled();
-    expect(container.querySelector('.lk-layer-list__row--dragging')).toBeNull();
+    dispatchOn(document, 'pointermove', { buttons: 1, clientY: 1 });
+    expect(draggingRow(container)).toBe(1);
+    dispatchOn(document, 'pointerup', { clientY: 1 });
+    expect(onReorder).toHaveBeenCalledTimes(1);
+    expect(onReorder.mock.calls[0][0].map((l: LayerDescriptor) => l.id)).toEqual(['b', 'a']);
   });
 
   it('reads a move with nothing held as the release that never arrived', () => {
