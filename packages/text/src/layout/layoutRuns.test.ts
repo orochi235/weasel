@@ -1569,3 +1569,30 @@ describe('layoutRuns — hung trailing whitespace and bounds', () => {
     expect(out.bounds.width).toBe(AAAA);
   });
 });
+
+describe('layoutRuns — a run built without a baselineShift', () => {
+  const OPTS = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' as const };
+
+  // `resolveRuns` always sets the field, but `layoutRuns` takes `ResolvedRun[]`
+  // and callers do hand-build them. Absent it the subtraction went NaN, and
+  // only on the vertical axis: x and the UVs stayed correct, so the glyphs drew
+  // as zero-area quads and the text reported as "rendered nothing" with no GL
+  // error and nothing in the console. The perf suite ran that way for a week.
+  it('lays the run out on the baseline rather than at NaN', async () => {
+    await registerFixture('inter', [{ weight: 400 }]);
+    const run = {
+      text: 'AB', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal',
+      fill: { fill: 'solid', color: '#000' }, letterSpacing: 0,
+      underline: false, strikethrough: false, overline: false,
+    } as unknown as ResolvedRun;
+
+    const quads = layoutRuns([run], OPTS).groups.flatMap((g) => g.quads);
+    expect(quads.length).toBeGreaterThan(0);
+    for (const q of quads) {
+      expect(Number.isFinite(q.y0)).toBe(true);
+      expect(Number.isFinite(q.y1)).toBe(true);
+      expect(Number.isFinite(q.baselineY)).toBe(true);
+      expect(q.y1).toBeGreaterThan(q.y0);
+    }
+  });
+});

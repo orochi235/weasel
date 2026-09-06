@@ -99,7 +99,7 @@ export function makeKindBuilders(res: KindResources): Record<KindId, LeafBuilder
       text: LABELS[i % LABELS.length],
       fontFamily: 'sans-serif', fontSize: 16, fontWeight: 400, fontStyle: 'normal',
       fill: { fill: 'solid', color: i % 2 ? '#222222' : '#0b5' },
-      letterSpacing: 0, underline: false, strikethrough: false,
+      letterSpacing: 0, underline: false, strikethrough: false, baselineShift: 0,
     }],
     align: 'left',
     style: { fontFamily: 'sans-serif', fontSize: 16, fill: { color: '#222222' } },
