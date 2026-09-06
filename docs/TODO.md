@@ -1313,7 +1313,16 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   Spacing is four hard-coded numbers in `Properties.module.css` — `.list`
   `row-gap`, `.group` `padding`, `.groupTitle` `margin`, `.panel` `padding` —
   none of which read a custom property, so nothing outside the module can move
-  them without selector surgery. The field widths beside them now do
+  them without selector surgery.
+
+  Vertical alignment is the same shape of gap: `.rowColor .rowLabel` and
+  `.rowColor input[type='color']` are both `align-self: center`, so a consumer
+  building a palette panel — a column of colour rows read as a group rather than
+  one row at a time — cannot top-justify the swatches into a straight edge.
+  brick-icons overrides both selectors in its own stylesheet. Whatever lands has
+  to keep the alpha-slider case working: the comment on that block records that
+  padding on the colour input "expands the grid row and pushes the paired slider
+  track out of bottom alignment", so those metrics already carry weight. The field widths beside them now do
   (`--wzl-prop-number-width`, `--wzl-prop-text-width`); a `density` prop on the
   `@weasel-js/ui` containers, redefining the rest as locals, is the general
   form.
