@@ -1027,7 +1027,11 @@ export function layoutRuns(
       // Positive raises, and y grows down, so the shift subtracts. Everything
       // below places against `baselineY` and so follows the run up or down —
       // its glyphs, its outline geometry and its decoration rules alike.
-      const baselineY = lineBaselineY - e.run.baselineShift;
+      // `?? 0` because 0 is the identity and the authored run type already
+      // makes the field optional. Absent it, every vertical coordinate on the
+      // quad goes NaN while x and the UVs stay right, so the glyphs draw as
+      // zero-area quads and the text reports as "rendered nothing".
+      const baselineY = lineBaselineY - (e.run.baselineShift ?? 0);
 
       // Extend or (re)open the decoration span *before* the no-ink bail-out
       // below, so a decorated span's spaces stay under the rule. `step`
