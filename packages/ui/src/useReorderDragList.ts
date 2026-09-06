@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode, PointerEvent as ReactPointerEvent, RefCallback } from 'react';
-import { openPointerSession, type PointerSession } from '@weasel-js/core';
+import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
 
 /** One row in a reorderable list. */
 export interface LayerListItem {
@@ -106,7 +106,7 @@ function isNoopDrop(items: readonly LayerListItem[], draggedIds: readonly string
  * drop. A drop that would leave a contiguous block where it already is does
  * not call `onReorder`.
  *
- * A press opens an `openPointerSession` on the *container*, which owns the
+ * A press opens a `startThresholdDrag` on the *container*, which owns the
  * rest of the gesture: a drag that leaves the list still tracks, a release
  * anywhere still drops, and a release the window never delivered still ends
  * the drag. The container is the origin rather than the row because rows come
@@ -116,10 +116,10 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
   const optsRef = useRef(opts);
   optsRef.current = opts;
   const containerRef = useRef<HTMLElement | null>(null);
-  const sessionRef = useRef<PointerSession | null>(null);
+  const dragRef = useRef<ThresholdDragHandle | null>(null);
   const [state, setState] = useState<ReorderDragState>({ draggedIds: null, targetIndex: null });
 
-  useEffect(() => () => { sessionRef.current?.cancel(); }, []);
+  useEffect(() => () => { dragRef.current?.cancel(); }, []);
 
   const computeTargetIndex = useCallback((clientY: number, sourceIndex: number): number => {
     const [lo, hi] = unlockedSegment(optsRef.current.items, sourceIndex);
@@ -141,54 +141,52 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
   }, []);
 
   const reset = useCallback(() => {
-    sessionRef.current = null;
+    dragRef.current = null;
     setState({ draggedIds: null, targetIndex: null });
   }, []);
 
   const onPointerDownRow = useCallback((id: string, index: number, e: ReactPointerEvent) => {
     const container = containerRef.current;
-    if (!container || sessionRef.current) return;
+    if (!container || dragRef.current) return;
 
-    // A locked row still opens a session: it cannot be dragged, but the press
-    // has to reach `onPress` for the row to be selectable at all.
-    const draggable = !optsRef.current.items[index]?.locked;
-    const startX = e.clientX;
-    const startY = e.clientY;
     const mods: PressModifiers = {
       shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey,
     };
-    let active: { draggedIds: string[]; targetIndex: number } | null = null;
+    let draggedIds: string[] = [];
+    let targetIndex = 0;
 
-    sessionRef.current = openPointerSession(container, e, {
-      onMove: (ev) => {
-        if (active) {
-          const targetIndex = computeTargetIndex(ev.clientY, index);
-          if (targetIndex === active.targetIndex) return;
-          active.targetIndex = targetIndex;
-          setState({ draggedIds: active.draggedIds, targetIndex });
-          return;
-        }
-        if (!draggable) return;
-        if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < (optsRef.current.threshold ?? 4)) return;
+    dragRef.current = startThresholdDrag(e, {
+      origin: container,
+      // A locked row still opens a drag so its release reaches `onPress`, and
+      // a threshold nothing can cross is what keeps it from ever engaging.
+      threshold: optsRef.current.items[index]?.locked
+        ? Number.POSITIVE_INFINITY
+        : (optsRef.current.threshold ?? 4),
+      onActivate: (ev) => {
         const selected = optsRef.current.selectedIds;
         const [lo, hi] = unlockedSegment(optsRef.current.items, index);
-        const draggedIds = (selected.includes(id) ? [...selected] : [id]).filter((x) => {
+        draggedIds = (selected.includes(id) ? [...selected] : [id]).filter((x) => {
           const i = optsRef.current.items.findIndex((it) => it.id === x);
           return i >= lo && i < hi;
         });
-        const targetIndex = computeTargetIndex(ev.clientY, index);
-        active = { draggedIds, targetIndex };
+        targetIndex = computeTargetIndex(ev.clientY, index);
         setState({ draggedIds, targetIndex });
       },
-      onEnd: (ev) => {
-        if (active) {
-          const targetIndex = computeTargetIndex(ev.clientY, index);
-          if (!isNoopDrop(optsRef.current.items, active.draggedIds, targetIndex)) {
-            optsRef.current.onReorder(active.draggedIds, targetIndex);
-          }
-        } else {
-          optsRef.current.onPress?.(id, mods);
+      onMove: (ev) => {
+        const next = computeTargetIndex(ev.clientY, index);
+        if (next === targetIndex) return;
+        targetIndex = next;
+        setState({ draggedIds, targetIndex });
+      },
+      onCommit: (ev) => {
+        const drop = computeTargetIndex(ev.clientY, index);
+        if (!isNoopDrop(optsRef.current.items, draggedIds, drop)) {
+          optsRef.current.onReorder(draggedIds, drop);
         }
+        reset();
+      },
+      onClick: () => {
+        optsRef.current.onPress?.(id, mods);
         reset();
       },
       // Every cancel reason — the browser's, a lost capture, an unmount —

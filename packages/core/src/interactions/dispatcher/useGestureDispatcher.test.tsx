@@ -422,11 +422,13 @@ describe('useGestureDispatcher', () => {
       expect(endSpy).toHaveBeenCalledTimes(1);
     });
 
-    it('ends a stale drag when a fresh press arrives on the same pointer', () => {
+    it('cancels a stale drag when a fresh press arrives on the same pointer', () => {
       // The release landed on another window and the pointer never came back
       // over the canvas, so the missed-release rule never saw it. The next
       // press is the proof it ended; without this the stale drag steers with
-      // the new press.
+      // the new press. It cancels rather than commits because where the
+      // pointer actually came up is unknown — the new press's coordinates are
+      // not it.
       const endSpy = vi.fn();
       const moveSpy = vi.fn();
       const dragAction: Action = {
@@ -448,6 +450,32 @@ describe('useGestureDispatcher', () => {
 
       act(() => { fire(canvas, 'pointerdown', { clientX: 5, clientY: 5, pointerId: 1, buttons: 1 }); });
       expect(endSpy).toHaveBeenCalledTimes(1);
+      expect(endSpy).toHaveBeenCalledWith('cancel');
+    });
+
+    it('ends a drag released outside the canvas', () => {
+      // The gesture is the pointer's, not the element's: a release anywhere
+      // in the document ends it, whether or not capture retargeted it back.
+      const endSpy = vi.fn();
+      const dragAction: Action = {
+        id: 'demo.drag',
+        label: 'drag',
+        defaultBinding: { kind: 'drag' },
+        invoker: {
+          timing: 'ongoing',
+          start: () => ({ onMove: () => {}, onEnd: (_c, reason) => endSpy(reason) }),
+        },
+      };
+      const { container } = render(
+        <Harness><Probe actionDef={dragAction} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
+      );
+      const canvas = container.querySelector('canvas')!;
+      act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0, pointerId: 1, buttons: 1 }); });
+      act(() => { fire(document.body, 'pointermove', { clientX: 40, clientY: 40, pointerId: 1, buttons: 1 }); });
+      expect(endSpy).not.toHaveBeenCalled();
+
+      act(() => { fire(document.body, 'pointerup', { clientX: 40, clientY: 40, pointerId: 1 }); });
+      expect(endSpy).toHaveBeenCalledWith('commit');
     });
 
     it('leaves the drag alone when the source never reports buttons', () => {
@@ -475,7 +503,7 @@ describe('useGestureDispatcher', () => {
       expect(moveSpy).toHaveBeenCalled();
     });
 
-    it('cancels the gesture when the canvas loses the pointer capture', () => {
+    it('keeps the gesture when capture is lost but the canvas is still there', () => {
       const endSpy = vi.fn();
       const dragAction: Action = {
         id: 'demo.drag',
@@ -494,8 +522,14 @@ describe('useGestureDispatcher', () => {
       act(() => { fire(canvas, 'pointermove', { clientX: 40, clientY: 40, pointerId: 1, buttons: 1 }); });
       expect(endSpy).not.toHaveBeenCalled();
 
+      // Chrome releases capture implicitly a beat before pointerup. Ending
+      // here threw the release away; the session reads the document and never
+      // needed capture to hear it.
       act(() => { fire(canvas, 'lostpointercapture', { pointerId: 1 }); });
-      expect(endSpy).toHaveBeenCalledWith('cancel');
+      expect(endSpy).not.toHaveBeenCalled();
+
+      act(() => { fire(canvas, 'pointerup', { clientX: 40, clientY: 40, pointerId: 1 }); });
+      expect(endSpy).toHaveBeenCalledWith('commit');
     });
 
     it('a released pointer losing capture reports nothing twice', () => {

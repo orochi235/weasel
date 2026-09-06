@@ -1,8 +1,9 @@
-import type { PaletteItem, Point } from '../instrument/types';
+import type { PointerEvent as ReactPointerEvent } from 'react';
+import type { PaletteItem } from '../instrument/types';
 
 export interface PaletteProps {
   items: PaletteItem[];
-  onDragStart: (item: PaletteItem, originScreenPos: Point) => void;
+  onDragStart: (item: PaletteItem, e: ReactPointerEvent) => void;
   className?: string;
 }
 
@@ -16,7 +17,7 @@ export function Palette({ items, onDragStart, className }: PaletteProps) {
           className="lk-palette__item"
           onPointerDown={(e) => {
             e.preventDefault();
-            onDragStart(item, { x: e.clientX, y: e.clientY });
+            onDragStart(item, e);
           }}
         >
           <span className="lk-palette__label">{item.label}</span>

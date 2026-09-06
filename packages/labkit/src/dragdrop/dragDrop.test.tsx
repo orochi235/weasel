@@ -83,19 +83,23 @@ afterEach(() => {
 });
 
 function pointerDown(el: Element, x: number, y: number) {
-  fireEvent.pointerDown(el, { clientX: x, clientY: y });
+  fireEvent.pointerDown(el, { pointerId: 1, buttons: 1, clientX: x, clientY: y });
 }
 
-function windowPointerMove(x: number, y: number) {
+/** The session listens on the document, so that is where the rest of the
+ *  gesture has to arrive — a dispatch on `window` reaches nothing. */
+function dispatchOnDocument(type: string, init: PointerEventInit) {
   act(() => {
-    window.dispatchEvent(new MouseEvent('pointermove', { clientX: x, clientY: y, bubbles: true }));
+    document.dispatchEvent(new PointerEvent(type, { pointerId: 1, bubbles: true, ...init }));
   });
 }
 
-function windowPointerUp(x: number, y: number) {
-  act(() => {
-    window.dispatchEvent(new MouseEvent('pointerup', { clientX: x, clientY: y, bubbles: true }));
-  });
+function pointerMove(x: number, y: number) {
+  dispatchOnDocument('pointermove', { buttons: 1, clientX: x, clientY: y });
+}
+
+function pointerUp(x: number, y: number) {
+  dispatchOnDocument('pointerup', { clientX: x, clientY: y });
 }
 
 describe('DragDrop integration', () => {
@@ -114,7 +118,7 @@ describe('DragDrop integration', () => {
     act(() => {
       pointerDown(palette, 0, 0);
     });
-    windowPointerUp(250, 250);
+    pointerUp(250, 250);
 
     expect(latest.items).toHaveLength(1);
     expect(latest.items[0]?.id).toBe('a');
@@ -130,8 +134,8 @@ describe('DragDrop integration', () => {
     act(() => {
       pointerDown(palette, 0, 0);
     });
-    windowPointerMove(10, 10);
-    windowPointerUp(10, 10);
+    pointerMove(10, 10);
+    pointerUp(10, 10);
 
     expect(latest.items).toHaveLength(0);
     expect(document.querySelector('.lk-drag-ghost')).toBeNull();
@@ -146,7 +150,26 @@ describe('DragDrop integration', () => {
     });
     expect(document.querySelector('.lk-drag-ghost')).not.toBeNull();
 
-    windowPointerUp(250, 250);
+    pointerUp(250, 250);
+    expect(document.querySelector('.lk-drag-ghost')).toBeNull();
+  });
+
+  it('a cancelled gesture drops nothing and clears the ghost', () => {
+    let latest: DropState = { items: [] };
+    renderLab((s) => {
+      latest = s;
+    });
+    const palette = screen.getByRole('button', { name: 'Item A' });
+
+    act(() => {
+      pointerDown(palette, 0, 0);
+    });
+    pointerMove(250, 250);
+    expect(document.querySelector('.lk-drag-ghost')).not.toBeNull();
+
+    dispatchOnDocument('pointercancel', {});
+
+    expect(latest.items).toHaveLength(0);
     expect(document.querySelector('.lk-drag-ghost')).toBeNull();
   });
 
@@ -162,7 +185,7 @@ describe('DragDrop integration', () => {
     });
     // The host spans (100,100)-(500,500), so its centre is at (300,300).
     // Dropping 50px right of centre and 50px above it, at zoom 1, y up.
-    windowPointerUp(350, 250);
+    pointerUp(350, 250);
 
     expect(latest.items[0]).toMatchObject({ x: 50, y: 50 });
   });

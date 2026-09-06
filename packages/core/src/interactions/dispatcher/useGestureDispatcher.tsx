@@ -21,7 +21,7 @@ import type { ActionsRegistry } from '../actions/registry';
 import type { AffordanceHit } from '../actions/invoker';
 import type { Tool, ToolCtx } from '../../tools/types';
 import { createDispatcher, pointerGestureId, type Dispatcher, type DispatcherContext } from './dispatcher';
-import { LOST_CAPTURE_EVENT, isMissedRelease, reportsButtons } from '../gestures/pointerSession';
+import { openPointerSession, type PointerSession } from '../gestures/pointerSession';
 import { clientToCanvasRect } from 'core/viewport/clientToCanvas';
 import { itemsFromDataTransfer, itemsFromClipboardData } from 'features/ingestion/ingestItems';
 import type { InputEvent } from './matcher';
@@ -303,15 +303,44 @@ export interface UseGestureDispatcherOptions {
 // Internal helpers
 // ---------------------------------------------------------------------------
 
+/** A pointer held on the canvas, and everything a press is synthesized from. */
+interface HeldPointer {
+  session: PointerSession;
+  /** Latest screen position, for the multitouch centroid and spread. */
+  pos: { x: number; y: number };
+  /** The press, withheld from the dispatcher until movement crosses
+   *  `DRAG_THRESHOLD_PX`. Null once forwarded, or once multitouch claimed
+   *  the pointer — see the multi-pointer policy in `onPointerDown`. */
+  buffered: { ev: InputEvent; clientX: number; clientY: number } | null;
+  /** Press-time state replayed onto a synthesized click, long-press or
+   *  contextmenu, whose matchers resolve targets against it. */
+  down: {
+    target: unknown;
+    clientX: number;
+    clientY: number;
+    /** World-space press point, forwarded onto the synthesized click as
+     *  `pressX`/`pressY` — see `ClickEvent`. */
+    worldX: number;
+    worldY: number;
+    affordance?: unknown;
+    bodyTarget?: BodyTarget;
+    bodyKind?: string;
+    altKey: boolean;
+    ctrlKey: boolean;
+    metaKey: boolean;
+    shiftKey: boolean;
+  };
+}
+
 /**
  * Compute centroid and spread (distance between first two pointers) from
- * the active pointer positions map. Returns a centroid of (0, 0) and spread
+ * the active pointer positions. Returns a centroid of (0, 0) and spread
  * of 0 when fewer than 2 pointers are present.
  */
 function computeMultiTouchGeometry(
-  positions: Map<number, { x: number; y: number }>,
+  positions: Iterable<{ x: number; y: number }>,
 ): { centroid: { x: number; y: number }; spread: number } {
-  const pts = [...positions.values()];
+  const pts = [...positions];
   if (pts.length < 2) {
     return { centroid: { x: 0, y: 0 }, spread: 0 };
   }
@@ -521,15 +550,13 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // phase only when warranted.
     const heldKeys = new Set<string>();
 
-    // Tracks active pointer IDs for multi-touch synthesis.
-    const activePointers = new Set<number>();
-    // Pointers whose press reported button state, so the missed-release rule
-    // can tell a real "nothing held" from a source that never reports buttons.
-    const buttonsReportedFor = new Set<number>();
-
-    // Tracks latest screen-space position per pointer ID.
-    // Used to compute centroid + spread for pinch-zoom pump events.
-    const pointerPositions = new Map<number, { x: number; y: number }>();
+    // Every pointer currently held on the canvas, one `openPointerSession`
+    // each. The session owns capture, pointer identity, teardown and the
+    // three recovery rules; the record owns what the dispatcher synthesizes.
+    const held = new Map<number, HeldPointer>();
+    const heldGeometry = () => computeMultiTouchGeometry(
+      [...held.values()].map((p) => p.pos),
+    );
 
     // Tracks the start state of an active multitouch episode so we can
     // synthesize a `multitouchtap` event on release when the centroid hasn't
@@ -543,37 +570,6 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // click — no drag handle is ever opened, so `moveAction` (and other
     // ongoing drag actions) don't fire on a stationary press-and-release.
     const DRAG_THRESHOLD_PX = 4;
-
-    // Per-pointer buffered pointerdown InputEvents waiting on the drag
-    // threshold. The InputEvent is built eagerly (so `affordance` /
-    // `bodyTarget` reflect down-time classification) but withheld from the
-    // dispatcher until movement crosses the threshold. On sub-threshold
-    // pointerup the buffer is discarded.
-    const bufferedDown = new Map<number, { ev: InputEvent; clientX: number; clientY: number }>();
-
-    // Tracks the last pointerdown info for click synthesis:
-    // a pointerup with no in-flight drag handle is promoted to a click event.
-    // `bodyTarget` from the pointerdown is carried forward so click specs that
-    // use string-form targets ('empty', 'selected-body') match correctly.
-    const lastPointerDown = new Map<number, {
-      /** DOM event target of the press. Replayed onto a synthesized
-       *  `contextmenu`, whose matcher resolves targets against it. */
-      target: unknown;
-      clientX: number;
-      clientY: number;
-      /** World-space press point, forwarded onto the synthesized click as
-       *  `pressX`/`pressY` — see `ClickEvent`. */
-      worldX: number;
-      worldY: number;
-      /** Affordance the press landed on, replayed onto the click. */
-      affordance?: unknown;
-      bodyTarget?: BodyTarget;
-      bodyKind?: string;
-      altKey: boolean;
-      ctrlKey: boolean;
-      metaKey: boolean;
-      shiftKey: boolean;
-    }>();
 
     // Long-press synthesis. Armed on pointerdown for touch/pen, cancelled by
     // movement past DRAG_THRESHOLD_PX, by release, by cancel, or by a second
@@ -598,7 +594,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
      *  long-press matched nothing. The fallback is what makes existing
      *  `contextMenu` bindings reachable by touch with no consumer change. */
     const fireLongPress = (pointerId: number): void => {
-      const down = lastPointerDown.get(pointerId);
+      const down = held.get(pointerId)?.down;
       if (!down) return;
 
       const shared = {
@@ -785,26 +781,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // instead of letting an ambient pan tool claim it. An absent `button`
       // (synthetic / programmatic events) counts as primary.
       if ((e.button ?? 0) !== 0) return;
-      // A press on a pointer the canvas still thinks is down: the previous
-      // release landed somewhere that never told us. End it before this one
-      // starts, or the stale gesture steers with the new press.
-      if (activePointers.has(e.pointerId)) onPointerUp(e);
+      if (!canvas) return;
       routeDown(e.pointerId, e.clientX, e.clientY);
-      activePointers.add(e.pointerId);
-      if (reportsButtons(e)) buttonsReportedFor.add(e.pointerId);
-      pointerPositions.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-      // Capture the pointer so pointermove/pointerup keep firing on the
-      // canvas after the cursor leaves its rect — critical for drag actions
-      // that continue past the canvas edge (resize handles, area-select,
-      // viewport pan). Browser auto-releases on pointerup/cancel. Wrapped
-      // in try/catch because some test environments (jsdom) don't implement
-      // setPointerCapture; never block the dispatcher path on a missing API.
-      try {
-        canvas?.setPointerCapture?.(e.pointerId);
-      } catch {
-        // ignore — best-effort capture
-      }
 
       // Classify the affordance at the pointerdown world-space position.
       // The thunk is optional — when absent, affordance is undefined (no-op).
@@ -834,38 +812,48 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         ...(bodyTarget !== undefined ? { bodyTarget } : {}),
         ...(bodyKind !== undefined ? { bodyKind } : {}),
       };
-      // Defer dispatch until the first past-threshold pointermove. A bare
-      // press-and-release should fire `click`, not start a drag action.
-      bufferedDown.set(e.pointerId, { ev, clientX: e.clientX, clientY: e.clientY });
-
-      // ...but dispatch a `stage: 'press'` copy right now, for bindings that
-      // must act while the button is still down and before the gesture is
-      // classified (select highlights the pressed node here). `matchSpec`
-      // routes the two copies to disjoint spec kinds — `pointerDown` matches
-      // only this one, `drag` only the buffered one — so a single press never
-      // fires both.
-      dispatch({ ...ev, stage: 'press' });
-
-      // Store pointerdown info for click synthesis (see onPointerUp).
-      lastPointerDown.set(e.pointerId, {
-        target: e.target,
-        clientX: e.clientX,
-        clientY: e.clientY,
-        worldX: w.x,
-        worldY: w.y,
-        affordance,
-        bodyTarget,
-        bodyKind,
-        altKey: e.altKey,
-        ctrlKey: e.ctrlKey,
-        metaKey: e.metaKey,
-        shiftKey: e.shiftKey,
+      // The session owns the rest of this pointer: capture, the moves and the
+      // release, and the three recovery rules for a release that never
+      // arrives. A press on a pointer one is already open for cancels that
+      // stale gesture before this handler runs — its `pointerdown` listener is
+      // on the document, in the capture phase, ahead of this one on the canvas.
+      held.set(e.pointerId, {
+        session: openPointerSession(canvas, e, {
+          onMove: onPointerMove,
+          onEnd: onPointerUp,
+          onCancel: () => { onPointerCancel(e.pointerId); },
+        }),
+        pos: { x: e.clientX, y: e.clientY },
+        // Deferred until the first past-threshold pointermove: a bare
+        // press-and-release should fire `click`, not start a drag action.
+        buffered: { ev, clientX: e.clientX, clientY: e.clientY },
+        down: {
+          target: e.target,
+          clientX: e.clientX,
+          clientY: e.clientY,
+          worldX: w.x,
+          worldY: w.y,
+          affordance,
+          bodyTarget,
+          bodyKind,
+          altKey: e.altKey,
+          ctrlKey: e.ctrlKey,
+          metaKey: e.metaKey,
+          shiftKey: e.shiftKey,
+        },
       });
+
+      // The press itself dispatches now, for bindings that must act while the
+      // button is still down and before the gesture is classified (select
+      // highlights the pressed node here). `matchSpec` routes the two copies
+      // to disjoint spec kinds — `pointerDown` matches only this one, `drag`
+      // only the buffered one — so a single press never fires both.
+      dispatch({ ...ev, stage: 'press' });
 
       // Arm long-press for touch / pen only, and only for a lone pointer —
       // a second finger means a multi-touch gesture, not a long-press.
       if ((e.pointerType === 'touch' || e.pointerType === 'pen')
-          && activePointers.size === 1) {
+          && held.size === 1) {
         cancelLongPress(e.pointerId);
         longPressTimers.set(
           e.pointerId,
@@ -878,10 +866,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       }
 
       // Synthesize a multi-touch event when >= 2 pointers are active.
-      if (activePointers.size >= 2) {
+      if (held.size >= 2) {
         cancelAllLongPress();
         // MULTI-POINTER POLICY: the multitouch channel takes ownership of
-        // every pointer that hasn't already committed to a gesture. Dropping
+        // every pointer that hasn't already committed to a gesture. Clearing
         // the buffered press is what enforces it — a claimed pointer opens no
         // drag handle on the next move, and synthesizes no click on release
         // (both of those read the buffer). The `multitouch-<fingers>` handle
@@ -897,20 +885,20 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         // buffer left to claim, so its gesture survives the second finger
         // landing. Yanking a drag out from under someone who rested a palm is
         // worse than letting it finish.
-        for (const id of activePointers) bufferedDown.delete(id);
+        for (const p of held.values()) p.buffered = null;
 
-        const { centroid, spread } = computeMultiTouchGeometry(pointerPositions);
+        const { centroid, spread } = heldGeometry();
         // Capture start state for tap synthesis. On the first 1→2 transition
         // we record the centroid; subsequent pointerdowns at higher finger
         // counts only bump the recorded peak fingers count.
         if (!multiTouchStart) {
-          multiTouchStart = { fingers: activePointers.size, centroid: { ...centroid } };
+          multiTouchStart = { fingers: held.size, centroid: { ...centroid } };
         } else {
-          multiTouchStart.fingers = activePointers.size;
+          multiTouchStart.fingers = held.size;
         }
         const mt: InputEvent = {
           kind: 'multitouch',
-          fingers: activePointers.size,
+          fingers: held.size,
           altKey: e.altKey,
           ctrlKey: e.ctrlKey,
           metaKey: e.metaKey,
@@ -923,20 +911,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     };
 
     const onPointerMove = (e: PointerEvent) => {
-      // The release that never arrived: this pointer is still down as far as
-      // the canvas knows, but it is moving with nothing held. Without this a
-      // drag whose pointerup landed on another window hangs in flight.
-      if (activePointers.has(e.pointerId)
-        && buttonsReportedFor.has(e.pointerId)
-        && isMissedRelease(e)) {
-        onPointerUp(e);
-        return;
-      }
       routeAt(e.pointerId, e.clientX, e.clientY);
-      // Update this pointer's tracked position.
-      if (activePointers.has(e.pointerId)) {
-        pointerPositions.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      }
+      const rec = held.get(e.pointerId);
+      if (rec) rec.pos = { x: e.clientX, y: e.clientY };
 
       // Threshold gate: if a pointerdown is buffered for this pointer and
       // the movement crossed the drag threshold, forward the buffered
@@ -946,12 +923,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // pointermoves are still forwarded so existing pump paths (e.g. other
       // in-flight handles) keep working, but they're no-ops when no handle
       // exists.
-      const buffered = bufferedDown.get(e.pointerId);
-      if (buffered) {
+      const buffered = rec?.buffered;
+      if (rec && buffered) {
         const dx = e.clientX - buffered.clientX;
         const dy = e.clientY - buffered.clientY;
         if (Math.hypot(dx, dy) >= DRAG_THRESHOLD_PX) {
-          bufferedDown.delete(e.pointerId);
+          rec.buffered = null;
           cancelLongPress(e.pointerId);
           dispatch(buffered.ev);
         }
@@ -960,12 +937,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // If a multitouch handle is in flight, synthesize a multitouch pump event
       // with the updated centroid + spread. The dispatcher routes this to the
       // handle's onMove (because the event carries centroid data).
-      const mtGestureId = `multitouch-${activePointers.size}`;
-      if (activePointers.size >= 2 && dispatcherNow().inFlight().has(mtGestureId)) {
-        const { centroid, spread } = computeMultiTouchGeometry(pointerPositions);
+      const mtGestureId = `multitouch-${held.size}`;
+      if (held.size >= 2 && dispatcherNow().inFlight().has(mtGestureId)) {
+        const { centroid, spread } = heldGeometry();
         const mtEv: InputEvent = {
           kind: 'multitouch',
-          fingers: activePointers.size,
+          fingers: held.size,
           altKey: e.altKey,
           ctrlKey: e.ctrlKey,
           metaKey: e.metaKey,
@@ -1084,7 +1061,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // gesture IS. An in-flight action's `activeCursor` wins; with none
       // declared the override clears and the active tool's `Tool.cursor`
       // shows through, as before.
-      if (activePointers.size > 0 || dispatcherNow().inFlight().size > 0) {
+      if (held.size > 0 || dispatcherNow().inFlight().size > 0) {
         applyHoverCursor(dispatcherNow().inFlightCursor());
         return;
       }
@@ -1134,6 +1111,14 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         if (!disposed) refreshHoverCursor();
       }, 0);
     };
+    // A held pointer's moves arrive through its session, which keeps seeing
+    // them once the pointer has left the canvas or the canvas is gone. The
+    // canvas listener is left with the hover half.
+    const onHoverMove = (e: PointerEvent) => {
+      if (held.has(e.pointerId)) return;
+      onPointerMove(e);
+    };
+
     const onHoverPointerLeave = () => {
       lastHover = null;
       paintedCursorRef.current?.()?.clearPointer();
@@ -1143,31 +1128,33 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     const onPointerUp = (e: PointerEvent) => {
       routeAt(e.pointerId, e.clientX, e.clientY);
       cancelLongPress(e.pointerId);
-      const prevSize = activePointers.size;
-      activePointers.delete(e.pointerId);
-      buttonsReportedFor.delete(e.pointerId);
-      pointerPositions.delete(e.pointerId);
+      const prevSize = held.size;
+      // The record outlives the map entry: everything below is synthesized
+      // from the press, and reads it after this pointer has stopped counting
+      // towards `held.size`.
+      const rec = held.get(e.pointerId);
+      held.delete(e.pointerId);
 
-      // If pointerdown was still buffered, the pointer never crossed the drag
-      // threshold — the dispatcher never saw the press, so no drag handle is
-      // in flight and this release is a click. Crossing the threshold deletes
-      // the buffer whether or not a drag binding matched, which makes this the
-      // authoritative "did the pointer move?" signal for click synthesis.
-      const staysUnderThreshold = bufferedDown.delete(e.pointerId);
+      // A press still buffered never crossed the drag threshold — the
+      // dispatcher never saw it, so no drag handle is in flight and this
+      // release is a click. Crossing the threshold clears the buffer whether
+      // or not a drag binding matched, which makes this the authoritative
+      // "did the pointer move?" signal for click synthesis.
+      const staysUnderThreshold = rec?.buffered != null;
 
       // When pointer count drops below 2, commit any in-flight multitouch handle
       // and (if the centroid never moved past the tap threshold) synthesize a
       // `multitouchtap` event carrying the peak fingers count.
       // The gestureId is keyed by the PREVIOUS size (before this pointer was removed)
       // because that was the handle's finger count when it was opened.
-      if (prevSize >= 2 && activePointers.size < 2) {
+      if (prevSize >= 2 && held.size < 2) {
         const mtGestureId = `multitouch-${prevSize}`;
         if (dispatcherNow().inFlight().has(mtGestureId)) {
           // Synthesize a pointerup for the multitouch gesture — dispatcher needs
           // a pointerup to route to onEnd, but multitouch handles are keyed by
           // finger count, not by pointer. We use cancelAll to safely commit all
           // in-flight handles of this gesture; only the multitouch handle
-          // should be active (see the multi-pointer policy in onPointerMove).
+          // should be active (see the multi-pointer policy in onPointerDown).
           // Use 'commit' because this is a natural lift (not a cancel).
           dispatcherNow().cancelAll('commit');
         }
@@ -1175,10 +1162,11 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         const start = multiTouchStart;
         if (start) {
           // Final centroid uses the pointer positions BEFORE this pointer was
-          // removed — we already deleted it above, so reconstruct it.
-          const finalPositions = new Map(pointerPositions);
-          finalPositions.set(e.pointerId, { x: e.clientX, y: e.clientY });
-          const { centroid } = computeMultiTouchGeometry(finalPositions);
+          // removed — it is already out of `held`, so add it back in.
+          const { centroid } = computeMultiTouchGeometry([
+            ...[...held.values()].map((p) => p.pos),
+            { x: e.clientX, y: e.clientY },
+          ]);
           const dx = centroid.x - start.centroid.x;
           const dy = centroid.y - start.centroid.y;
           if (Math.hypot(dx, dy) <= TAP_THRESHOLD_PX) {
@@ -1203,9 +1191,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // opened but the pointer never moved (sub-threshold "tap" that an
       // over-broad ambient drag binding accepted), we still synthesize a
       // click so click-specific bindings (e.g. clearSelection on empty) fire.
-      const downForClick = lastPointerDown.get(e.pointerId);
-      const movedDuringDrag = downForClick
-        ? (downForClick.clientX !== e.clientX || downForClick.clientY !== e.clientY)
+      const movedDuringDrag = rec
+        ? (rec.down.clientX !== e.clientX || rec.down.clientY !== e.clientY)
         : true;
       const hadDragInFlight =
         dispatcherNow().inFlight().has(pointerGestureId(e.pointerId)) && movedDuringDrag;
@@ -1225,8 +1212,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       };
       dispatch(ev);
 
-      const down = lastPointerDown.get(e.pointerId);
-      lastPointerDown.delete(e.pointerId);
+      const down = rec?.down;
 
       // Synthesize a click when the pointer neither opened a drag handle nor
       // travelled past the drag threshold. Carry the `bodyTarget` from the
@@ -1307,38 +1293,33 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       }, 0);
     };
 
-    const onPointerCancel = (e: PointerEvent) => {
-      routeAt(e.pointerId, e.clientX, e.clientY);
-      cancelLongPress(e.pointerId);
-      activePointers.delete(e.pointerId);
-      buttonsReportedFor.delete(e.pointerId);
-      pointerPositions.delete(e.pointerId);
-      lastPointerDown.delete(e.pointerId);
-      bufferedDown.delete(e.pointerId);
+    // Every way a gesture ends without a release: the browser cancelling the
+    // pointer, capture going away, a press proving the tracked one had already
+    // ended. The session decides which of those happened; the dispatcher
+    // treats them alike, and reads the press's own modifiers because a cancel
+    // carries none of its own.
+    const onPointerCancel = (pointerId: number) => {
+      // On teardown every session is cancelled at once; `cancelAll` ends those
+      // gestures, so re-entering dispatch here would end them twice.
+      if (disposed) return;
+      const rec = held.get(pointerId);
+      if (!rec) return;
+      held.delete(pointerId);
+      routeAt(pointerId, rec.pos.x, rec.pos.y);
+      cancelLongPress(pointerId);
       // Drop any pending multitouch-tap start state — a cancel means we should
       // not synthesize a tap on the subsequent up.
       multiTouchStart = null;
       const ev: InputEvent = {
         kind: 'pointercancel',
-        pointerId: e.pointerId,
-        altKey: e.altKey,
-        ctrlKey: e.ctrlKey,
-        metaKey: e.metaKey,
-        shiftKey: e.shiftKey,
+        pointerId,
+        altKey: rec.down.altKey,
+        ctrlKey: rec.down.ctrlKey,
+        metaKey: rec.down.metaKey,
+        shiftKey: rec.down.shiftKey,
       };
       dispatch(ev);
-      routeRelease(e.pointerId);
-    };
-
-    // The canvas captured this pointer at press. Losing that capture
-    // mid-gesture — the canvas removed, another element claiming it — means no
-    // further move or up is coming, so the gesture is over whether or not the
-    // finger is still down. A normal release fires this too, after pointerup
-    // has already cleared the pointer, so the guard makes that a no-op.
-    const onLostCapture = (e: Event) => {
-      const pe = e as PointerEvent;
-      if (!activePointers.has(pe.pointerId)) return;
-      onPointerCancel(pe);
+      routeRelease(pointerId);
     };
 
     // -----------------------------------------------------------------------
@@ -1458,10 +1439,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     canvas?.addEventListener('pointerleave', onHoverPointerLeave);
     canvas?.addEventListener('wheel', onWheel, { passive: false });
     canvas?.addEventListener('pointerdown', onPointerDown);
-    canvas?.addEventListener('pointermove', onPointerMove);
-    canvas?.addEventListener('pointerup', onPointerUp);
-    canvas?.addEventListener('pointercancel', onPointerCancel);
-    canvas?.addEventListener(LOST_CAPTURE_EVENT, onLostCapture);
+    canvas?.addEventListener('pointermove', onHoverMove);
     canvas?.addEventListener('contextmenu', onContextMenu);
     canvas?.addEventListener('dragenter', onDragOver);
     canvas?.addEventListener('dragover', onDragOver);
@@ -1484,10 +1462,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       canvas?.removeEventListener('pointerleave', onHoverPointerLeave);
       canvas?.removeEventListener('wheel', onWheel);
       canvas?.removeEventListener('pointerdown', onPointerDown);
-      canvas?.removeEventListener('pointermove', onPointerMove);
-      canvas?.removeEventListener('pointerup', onPointerUp);
-      canvas?.removeEventListener('pointercancel', onPointerCancel);
-      canvas?.removeEventListener(LOST_CAPTURE_EVENT, onLostCapture);
+      canvas?.removeEventListener('pointermove', onHoverMove);
       canvas?.removeEventListener('contextmenu', onContextMenu);
       canvas?.removeEventListener('dragenter', onDragOver);
       canvas?.removeEventListener('dragover', onDragOver);
@@ -1498,6 +1473,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       clearHoverCursor();
       cancelAllLongPress();
       disposed = true;
+      // `disposed` first: the sessions' cancels must not re-enter dispatch on
+      // the way out, and `cancelAll` below is what ends the gestures.
+      for (const p of held.values()) p.session.cancel();
+      held.clear();
       for (const d of allDispatchers()) d.cancelAll('cancel');
     };
   }, [enabled, keyboard, canvasRef]);

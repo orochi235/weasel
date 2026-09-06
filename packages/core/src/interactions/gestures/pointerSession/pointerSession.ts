@@ -8,13 +8,34 @@
  * its caller.
  */
 
-import { LOST_CAPTURE_EVENT, isMissedRelease, reportsButtons } from './recovery';
+/** The DOM event that says capture went away mid-gesture. */
+const LOST_CAPTURE_EVENT = 'lostpointercapture';
+
+/**
+ * Does the press report button state at all?
+ *
+ * Synthesized events routinely carry `buttons: 0`, or nothing. Reading a
+ * missed release out of those would end every such drag on its first move, so
+ * a press that reports no buttons disarms {@link isMissedRelease} entirely.
+ */
+function reportsButtons(down: { buttons?: number }): boolean {
+  return !!down.buttons;
+}
+
+/**
+ * A move with nothing held is the release the document never saw — the pointer
+ * came up over another window, a native drag, or an element that swallowed it.
+ * Only ask this when {@link reportsButtons} was true for the press.
+ */
+function isMissedRelease(move: { buttons?: number }): boolean {
+  return move.buttons === 0;
+}
 
 /** Why a session ended without the pointer being released. */
 export type PointerSessionCancelReason =
   /** The browser cancelled the pointer (touch interrupted, palm rejection). */
   | 'pointercancel'
-  /** Capture went away mid-gesture — usually the origin element was removed. */
+  /** The origin left the document mid-gesture, taking capture with it. */
   | 'lostcapture'
   /** `cancel()` — an unmount, a window blur, Escape, a consumer's own rule. */
   | 'aborted'
@@ -51,9 +72,10 @@ export interface PointerSession {
  * Listens on the origin's document rather than on the element: a captured
  * element that is removed mid-drag stops receiving events, and every listener
  * hung on it goes with it. Three recovery rules close the gaps a plain
- * pointerup/pointercancel pair leaves — `lostpointercapture` cancels, a move
- * reporting no held button is read as the release that never arrived, and a
- * fresh press on the same pointer says the tracked one had already ended.
+ * pointerup/pointercancel pair leaves — losing capture cancels only once the
+ * origin has left the document, a move reporting no held button is read as
+ * the release that never arrived, and a fresh press on the same pointer says
+ * the tracked one had already ended.
  */
 export function openPointerSession(
   origin: Element,
@@ -109,8 +131,15 @@ export function openPointerSession(
   function onRepress(e: PointerEvent) {
     if (mine(e)) abort('superseded');
   }
+  // Losing capture only ends the gesture when the origin is gone, because
+  // then nothing more is coming. While it is still in the document the
+  // session keeps tracking: it listens there, not on the origin, so it needs
+  // capture for retargeting and not for delivery. Chrome releases capture
+  // implicitly a beat *before* it delivers `pointerup`, so cancelling here
+  // unconditionally threw away releases that had already been dispatched.
   function onLostCapture(e: Event) {
-    if ((e as PointerEvent).pointerId === pointerId) abort('lostcapture');
+    if ((e as PointerEvent).pointerId !== pointerId) return;
+    if (!origin.isConnected) abort('lostcapture');
   }
 
   if (opts.capture !== false) {

@@ -17,13 +17,16 @@
  * cross-scene event injection (no clean API) or four mutually-coordinated
  * `selectTool` instances. Both fight the kit's design.
  *
- * **Chosen mechanism:** the demo OWNS the gesture. A parent `PointerDown`
- * handler hit-tests corner handles, captures the start state for all four
- * scenes, and on each `PointerMove` computes a proposed pose per scene by
- * running the same math the kit's `resizeAction` runs — `computeProposedBounds`
- * + `geometry.remapBounds` + the rotation-pin correction — using each scene's
- * own `PoseProjection`. Each scene's `setPose` is called per frame; on
- * `PointerUp` the scenes' batched history captures the gesture.
+ * **Chosen mechanism:** the demo owns the *routing* of one gesture to four
+ * scenes; the gesture itself runs on the kit's `useHandleDrag`. A parent
+ * pointerdown handler hit-tests corner handles and captures the start state
+ * for all four scenes, then hands the press to `useHandleDrag`, which owns
+ * capture, pointer identity and teardown. Each move computes a proposed pose
+ * per scene by running the same math the kit's `resizeAction` runs —
+ * `computeProposedBounds` + `geometry.remapBounds` + the rotation-pin
+ * correction — using each scene's own `PoseProjection`, and calls that
+ * scene's `setPose`. On release the scenes' batched history captures the
+ * gesture.
  *
  * This bypasses `SceneCanvas`'s built-in dispatcher entirely
  * (`enableGestureDispatcher={false}`); the four canvases are pure renderers.
@@ -34,16 +37,20 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   DEFAULT_HANDLE_SIZE,
   SceneCanvas,
+  clientToCanvas,
   pointInRotatedRect,
   ROTATED_POSE_DESCRIPTOR,
   RECT_POSE_DESCRIPTOR,
   rotatePoint,
+  useHandleDrag,
   useScene,
   cornerResizeHandles,
   hitCornerHandle,
   asNodeId,
 } from '@weasel-js/core';
 import type {
+  HandleDragEnd,
+  HandleDragPoint,
   PoseProjection,
   RotatedPose,
   ResizeAnchor,
@@ -435,12 +442,9 @@ function MedianPanel({
 // ─── Root demo ───
 
 interface DragState {
-  pointerId: number;
-  wrapper: Element;
   anchor: ResizeAnchor | null;  // null = body-translate
   startPt: { x: number; y: number };
   startPoses: Record<PanelId, Rect>;
-  panelId: PanelId;
 }
 
 const PROJECTIONS: Record<PanelId, PoseProjection<Rect>> = {
@@ -462,14 +466,13 @@ export function RotatedResizeMathDemo() {
     green: greenScene, orange: orangeScene, purple: purpleScene, teal: tealScene,
   }), [greenScene, orangeScene, purpleScene, tealScene]);
 
-  // Active drag state — refs to keep handler identity stable across renders.
+  // Start state of the gesture in flight, in a ref so the drag callbacks read
+  // the current value rather than the render they were created in.
   const dragRef = useRef<DragState | null>(null);
 
   // Per-panel in-flight pose for the active gesture (null when idle). Lives
-  // in React state so panels + overlays re-render on each pointermove, and
-  // is mirrored into a ref so the pointerup commit reads the CURRENT value:
-  // the window listeners are registered once per gesture, so any state they
-  // close over is frozen at pointerdown time.
+  // in React state so panels + overlays re-render on each move, and is
+  // mirrored into a ref so the commit reads the CURRENT value.
   const [live, setLive] = useState<Record<PanelId, Rect> | null>(null);
   const liveRef = useRef<Record<PanelId, Rect> | null>(null);
   const updateLive = useCallback((v: Record<PanelId, Rect> | null) => {
@@ -489,21 +492,22 @@ export function RotatedResizeMathDemo() {
   const ghostColorFor = (panel: PanelId): string =>
     activePanel ? COLORS[activePanel] : COLORS[panel];
 
-  const localCoords = (e: React.PointerEvent | PointerEvent, wrapper: Element): { x: number; y: number } | null => {
+  /** Canvas-local coords of a press, or null if it landed outside the canvas. */
+  const pressCoords = (
+    e: React.PointerEvent,
+    wrapper: Element,
+  ): { x: number; y: number } | null => {
     const canvas = wrapper.querySelector('canvas');
     if (!canvas) return null;
+    const [x, y] = clientToCanvas(canvas, e.clientX, e.clientY);
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
     if (x < 0 || y < 0 || x > rect.width || y > rect.height) return null;
     return { x, y };
   };
 
-  const handlePointerMove = useCallback((e: PointerEvent) => {
+  const handleMove = useCallback((pt: HandleDragPoint) => {
     const drag = dragRef.current;
     if (!drag) return;
-    const pt = localCoords(e, drag.wrapper);
-    if (!pt) return;
     const dx = pt.x - drag.startPt.x;
     const dy = pt.y - drag.startPt.y;
     const next: Record<PanelId, Rect> = { ...drag.startPoses };
@@ -520,41 +524,20 @@ export function RotatedResizeMathDemo() {
     updateLive(next);
   }, [updateLive]);
 
-  // The window listeners must be the SAME function identities at add and
-  // remove time, and must see the latest handler closures when they fire —
-  // so register stable wrappers that delegate through refs. (Registering
-  // `ref.current` directly snapshots one render's closure and breaks both:
-  // the commit read a stale `live`, and the remove call never matched.)
-  const handlePointerUpRef = useRef<() => void>(() => {});
-  const handlePointerCancelRef = useRef<() => void>(() => {});
-  const onWindowPointerUp = useCallback(() => handlePointerUpRef.current(), []);
-  const onWindowPointerCancel = useCallback(() => handlePointerCancelRef.current(), []);
-
-  const releaseCapture = useCallback(() => {
-    const drag = dragRef.current;
-    if (drag) {
-      const target = drag.wrapper as Element & { hasPointerCapture?: (id: number) => boolean; releasePointerCapture?: (id: number) => void };
-      if (target.hasPointerCapture?.(drag.pointerId)) {
-        target.releasePointerCapture?.(drag.pointerId);
-      }
-    }
+  const clearDrag = useCallback(() => {
     dragRef.current = null;
     setActivePanel(null);
     setOriginFixed(null);
     setActiveAnchor(null);
-    window.removeEventListener('pointermove', handlePointerMove);
-    window.removeEventListener('pointerup', onWindowPointerUp);
-    window.removeEventListener('pointercancel', onWindowPointerCancel);
-  }, [handlePointerMove, onWindowPointerUp, onWindowPointerCancel]);
+    updateLive(null);
+  }, [updateLive]);
 
-  const handlePointerUp = useCallback(() => {
-    const drag = dragRef.current;
-    if (!drag) return;
-    // Commit each scene's live pose as the new committed pose via batch.
-    // Read through the ref, not the `live` state: this runs from a window
-    // listener whose closure predates every pointermove of the gesture.
+  const handleEnd = useCallback(({ moved }: HandleDragEnd) => {
+    // Commit each scene's live pose as the new committed pose via batch. Read
+    // through the ref, not the `live` state: this closure predates every move
+    // of the gesture.
     const finalPoses = liveRef.current;
-    if (finalPoses) {
+    if (moved && finalPoses) {
       for (const panel of PANEL_IDS) {
         const scene = scenes[panel];
         const finalPose = finalPoses[panel];
@@ -563,21 +546,20 @@ export function RotatedResizeMathDemo() {
         });
       }
     }
-    updateLive(null);
-    releaseCapture();
-  }, [releaseCapture, scenes, updateLive]);
+    clearDrag();
+  }, [clearDrag, scenes]);
 
-  const handlePointerCancel = useCallback(() => {
-    updateLive(null);
-    releaseCapture();
-  }, [releaseCapture, updateLive]);
-
-  handlePointerUpRef.current = handlePointerUp;
-  handlePointerCancelRef.current = handlePointerCancel;
+  const handleDrag = useHandleDrag<HTMLDivElement>({
+    // Coords are canvas-local; the wrapper also holds the caption and ghosts.
+    getRect: (wrapper) => wrapper.querySelector('canvas') ?? wrapper,
+    onMove: handleMove,
+    onEnd: handleEnd,
+    onCancel: clearDrag,
+  });
 
   const handlePointerDown = useCallback((panel: PanelId, e: React.PointerEvent<HTMLDivElement>) => {
     const wrapper = e.currentTarget;
-    const pt = localCoords(e, wrapper);
+    const pt = pressCoords(e, wrapper);
     if (!pt) return;
     // Hit-test handles against the GREEN canonical pose. The four panels
     // start with the same initial pose, so the hit is meaningful even when
@@ -615,24 +597,17 @@ export function RotatedResizeMathDemo() {
       if (!pointInRotatedRect(refPose, pt.x, pt.y)) return;
     }
 
-    dragRef.current = {
-      pointerId: e.pointerId,
-      wrapper,
-      anchor: hitAnchor,
-      startPt: pt,
-      startPoses,
-      panelId: panel,
-    };
+    // Opened before the state below is written: a session still live from a
+    // release this page never saw is cancelled here, and its `onCancel` runs
+    // `clearDrag` — which would wipe the gesture we are starting.
+    handleDrag.onPointerDown(e);
+
+    dragRef.current = { anchor: hitAnchor, startPt: pt, startPoses };
     setActivePanel(panel);
     if (hitAnchor) setActiveAnchor(hitAnchor);
     if (hitAnchor) setOriginFixed(fixedCornerWorld(refPose, hitAnchor));
     updateLive(startPoses);
-
-    (wrapper as Element & { setPointerCapture?: (id: number) => void }).setPointerCapture?.(e.pointerId);
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', onWindowPointerUp);
-    window.addEventListener('pointercancel', onWindowPointerCancel);
-  }, [greenScene, orangeScene, purpleScene, tealScene, handlePointerMove, onWindowPointerUp, onWindowPointerCancel, updateLive]);
+  }, [greenScene, orangeScene, purpleScene, tealScene, handleDrag, updateLive]);
 
   const livePose = (panel: PanelId): Rect | null => live?.[panel] ?? null;
   const displayedPose = (panel: PanelId): Rect => live?.[panel]

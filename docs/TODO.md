@@ -55,7 +55,6 @@ Priority tags:
 - react-hooks v7 compiler rules, evaluated per rule → [Lint](#lint)
 
 **Tools & gestures**
-- `useDragDrop` still rolls its own pointer lifecycle → [Tools & gestures](#tools--gestures)
 - `ToolCtx` hard-codes 2D, blocking tool reuse by another kernel → [Tools & gestures](#tools--gestures)
 
 **Viewport**
@@ -79,37 +78,6 @@ Priority tags:
 ---
 
 ## Tools & gestures
-
-- **(P2) `useDragDrop` still rolls its own pointer lifecycle.** Every other
-  pointerdown-to-pointerup lifecycle in the kit now runs on
-  `openPointerSession`. This one cannot yet: its drag begins at
-  `packages/labkit/src/dragdrop/DragDropRuntime.tsx:145` via
-  `startDrag(item, originScreenPos)`, whose signature carries a `Point` and no
-  event, and its `window` listeners are attached by an effect keyed on the drag
-  *state*, not on a press — by then the originating event is gone. The press
-  itself lives in `packages/labkit/src/dragdrop/Palette.tsx:17`. Migrating it
-  means `startDrag` takes the React pointerdown and `Palette` passes it, so it
-  is an API change across two files rather than a swap.
-
-- **(P3) `startThresholdDrag` hardcodes its session origin.** It opens on
-  `e.currentTarget`, which is right for a handle and wrong for a list: rows come
-  and go as a list re-renders, and a browser fires `lostpointercapture` the
-  moment the grabbed row unmounts. `useReorderDragList` therefore calls
-  `openPointerSession` directly with the container as origin, duplicating the
-  threshold logic `startThresholdDrag` already has. An `origin` option on
-  `ThresholdDragOptions` would let the hook collapse onto it.
-
-- **(P3) The dispatcher keeps its own multi-pointer lifecycle.** It listens once
-  on the canvas for every pointer and keys its state by `pointerId`, which is the
-  right shape for a multitouch surface and not what `openPointerSession` — one
-  pointer, one press — describes. It takes the two shared recovery rules from
-  `pointerSession/recovery.ts` so there is one implementation of each, states
-  the third (a fresh press on a pointer still believed held) itself because the
-  two lifecycles model "held" differently, and keeps its own capture and
-  teardown. Collapsing it onto a session per active
-  pointer would replace `activePointers` / `pointerPositions` / `bufferedDown` /
-  `lastPointerDown` with a map of sessions; worth doing, large, and squarely in
-  the most load-bearing file in the repo.
 
 - **(P2) No opt-out for individual standard actions.** `useStandardActions`
   registers a fixed descriptor list, so a consumer wanting its own align or

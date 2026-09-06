@@ -10,10 +10,15 @@ import { openPointerSession } from '../pointerSession';
  */
 export interface ThresholdDragOptions {
   threshold?: number;
+  /** Element the session opens on. Defaults to `e.currentTarget`; a list must
+   *  pass its container, since a grabbed row unmounting drops capture. */
+  origin?: Element;
   onActivate?: (e: PointerEvent) => void;
   onMove: (e: PointerEvent) => void;
   onCommit: (e: PointerEvent) => void;
-  /** Released below the threshold, or ended without a release at all. */
+  /** Released below the threshold — the click the press turned out to be. */
+  onClick?: (e: PointerEvent) => void;
+  /** Ended without a release: pointercancel, lost capture, or `cancel()`. */
   onCancel?: () => void;
 }
 
@@ -45,14 +50,14 @@ export function startThresholdDrag(
     opts.onActivate?.(ev);
   };
 
-  const session = openPointerSession(e.currentTarget as Element, e, {
+  const session = openPointerSession(opts.origin ?? (e.currentTarget as Element), e, {
     onMove: (ev) => {
       maybeActivate(ev);
       if (activated) opts.onMove(ev);
     },
     onEnd: (ev) => {
       if (activated) opts.onCommit(ev);
-      else opts.onCancel?.();
+      else opts.onClick?.(ev);
     },
     onCancel: () => { opts.onCancel?.(); },
   });

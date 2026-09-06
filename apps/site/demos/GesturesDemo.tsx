@@ -308,6 +308,7 @@ export function GesturesDemo() {
           draw();
         },
         onCommit: () => {},
+        onClick: () => setReadout(`threshold ${TH}px · released inside the dead-zone — that was a click, not a drag`),
       });
     }
   };

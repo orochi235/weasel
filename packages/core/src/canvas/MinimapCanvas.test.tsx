@@ -298,7 +298,9 @@ describe('<MinimapCanvas>', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it('ends the drag when capture is lost mid-gesture', () => {
+  it('keeps dragging when capture is lost but the canvas is still there', () => {
+    // Chrome releases capture implicitly just before pointerup. The session
+    // reads the document, so the drag neither needs capture nor ends with it.
     const { canvas, onChange } = mountMinimap();
 
     fireEvent(canvas, pointerEvent(canvas, 'pointerDown', { x: 10, y: 10 }));
@@ -306,7 +308,7 @@ describe('<MinimapCanvas>', () => {
 
     onChange.mockClear();
     fireEvent(canvas, pointerEvent(canvas, 'pointerMove', { x: 50, y: 50 }));
-    expect(onChange).not.toHaveBeenCalled();
+    expect(onChange).toHaveBeenCalled();
   });
 
   it('reads a move with no button held as the release that never arrived', () => {
