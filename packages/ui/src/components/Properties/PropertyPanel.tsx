@@ -6,8 +6,60 @@ import { Tooltip, TooltipTrigger } from '../Tooltip';
 import shared from '../range.module.css';
 import s from './Properties.module.css';
 
+/**
+ * How much room a container gives its rows — gaps, padding, and field height,
+ * moved together. Set on any container in the family; it reaches every
+ * descendant, so an inner group can differ from the panel around it.
+ */
+export type PropertyDensity = 'tight' | 'normal' | 'roomy';
+
+/** Where an inline row's label and control sit on the row's cross axis. Set on
+ *  a container to line a whole column of them up. */
+export type PropertyAlign = 'start' | 'center' | 'end' | 'baseline';
+
+/** Metric props every container in the family takes. Both reach descendants,
+ *  so the nearest container that states one wins. */
+export interface PropertyMetricProps {
+  /** Room the rows get. Unset inherits from an outer container, else `normal`. */
+  density?: PropertyDensity;
+  /**
+   * Cross-axis alignment of an inline row's label and control. `baseline` sits
+   * the control on the label's first-line baseline, which is what lines a
+   * column of swatches up against labels of different heights. Unset keeps each
+   * variant's own alignment — a color row centers its label and swatch and
+   * sinks the pair to the row's bottom edge, which keeps a paired alpha track
+   * level with its neighbour.
+   */
+  align?: PropertyAlign;
+}
+
+const DENSITY_CLASS: Record<PropertyDensity, string> = {
+  tight: s.densityTight,
+  normal: s.densityNormal,
+  roomy: s.densityRoomy,
+};
+
+const ALIGN_CLASS: Record<PropertyAlign, string> = {
+  start: s.alignStart,
+  center: s.alignCenter,
+  end: s.alignEnd,
+  baseline: s.alignBaseline,
+};
+
+/** Joins a container's base class with its metric classes and the consumer's.
+ *  Exported for the family's other files, which share the same two props. */
+export function propertyMetricClass(
+  base: string,
+  { density, align }: PropertyMetricProps,
+  className?: string,
+): string {
+  return [base, density && DENSITY_CLASS[density], align && ALIGN_CLASS[align], className]
+    .filter(Boolean)
+    .join(' ');
+}
+
 /** Props for `<PropertyPanel>`. */
-export interface PropertyPanelProps {
+export interface PropertyPanelProps extends PropertyMetricProps {
   title?: ReactNode;
   children: ReactNode;
   className?: string;
@@ -15,10 +67,15 @@ export interface PropertyPanelProps {
 
 /** A titled panel holding property rows — the sidebar container the rest of
  *  this module's components fill. */
-export function PropertyPanel({ title, children, className }: PropertyPanelProps) {
-  const cls = className ? `${s.panel} ${className}` : s.panel;
+export function PropertyPanel({
+  title,
+  children,
+  className,
+  density,
+  align,
+}: PropertyPanelProps) {
   return (
-    <div className={cls}>
+    <div className={propertyMetricClass(s.panel, { density, align }, className)}>
       {title != null && <h2 className={s.panelTitle}>{title}</h2>}
       {children}
     </div>
@@ -26,10 +83,10 @@ export function PropertyPanel({ title, children, className }: PropertyPanelProps
 }
 
 /** How a property list packs its rows into two columns. */
-export type PropertyListPack = 'auto-color' | 'pairs';
+export type PropertyListPack = 'auto-color' | 'pairs' | 'one-up';
 
 /** Props for `<PropertyList>`. */
-export interface PropertyListProps {
+export interface PropertyListProps extends PropertyMetricProps {
   children: ReactNode;
   className?: string;
   /**
@@ -39,6 +96,8 @@ export interface PropertyListProps {
    *   - `'pairs'`: every row auto-places into the 2-column grid two-per-row.
    *     Headers and subpanels still span the full width; wrap any other
    *     full-width child in `<PropertySpan>`. Right for dense effect bodies.
+   *   - `'one-up'`: every row spans the full width, color rows included. Right
+   *     for a palette — a column of swatches read as a group.
    */
   pack?: PropertyListPack;
 }
@@ -47,10 +106,15 @@ export interface PropertyListProps {
  * Grid container for PropertyRows. Use standalone for chrome-less layouts, or
  * nest inside <PropertyPanel/> for the standard glass card.
  */
-export function PropertyList({ children, className, pack = 'auto-color' }: PropertyListProps) {
-  const packClass = pack === 'pairs' ? ` ${s.listPairs}` : '';
-  const cls = `${s.list}${packClass}${className ? ` ${className}` : ''}`;
-  return <div className={cls}>{children}</div>;
+export function PropertyList({
+  children,
+  className,
+  pack = 'auto-color',
+  density,
+  align,
+}: PropertyListProps) {
+  const base = `${s.list}${pack === 'pairs' ? ` ${s.listPairs}` : pack === 'one-up' ? ` ${s.listOneUp}` : ''}`;
+  return <div className={propertyMetricClass(base, { density, align }, className)}>{children}</div>;
 }
 
 /** Props for `<PropertySpan>`. */
@@ -75,7 +139,7 @@ export type PropertyRowVariant = 'default' | 'color' | 'checkbox';
 export type PropertyRowLayout = 'block' | 'inline';
 
 /** Props for `<PropertyRow>`. */
-export interface PropertyRowProps {
+export interface PropertyRowProps extends PropertyMetricProps {
   label: ReactNode;
   /** Right-aligned readout shown next to the label (e.g. current value). */
   readout?: ReactNode;
@@ -86,9 +150,9 @@ export interface PropertyRowProps {
   description?: string;
   variant?: PropertyRowVariant;
   /**
-   * Label position relative to the control. "block" (default) stacks
-   * label above control; "inline" places the label to the left.
-   * Color and checkbox variants are always inline by their own nature.
+   * Label position relative to the control. Unset takes the variant's own
+   * orientation: `block` — label above control — for the default variant, and
+   * `inline` for the color and checkbox variants, which read as a row.
    */
   layout?: PropertyRowLayout;
   /**
@@ -109,18 +173,27 @@ export function PropertyRow({
   readout,
   description,
   variant = 'default',
-  layout = 'block',
+  layout,
   span,
   children,
   htmlFor,
   className,
+  density,
+  align,
 }: PropertyRowProps) {
-  const variantClass = variant === 'color' ? ` ${s.rowColor}` : variant === 'checkbox' ? ` ${s.rowCheckbox}` : '';
-  // Layout only meaningfully applies to the default variant; color and
-  // checkbox have their own intrinsic orientation.
-  const layoutClass = variant === 'default' && layout === 'inline' ? ` ${s.rowInline}` : '';
-  const spanClass = span ? ` ${s.span}` : '';
-  const cls = `${s.row}${variantClass}${layoutClass}${spanClass}${className ? ` ${className}` : ''}`;
+  const variantClass = variant === 'color' ? s.rowColor : variant === 'checkbox' ? s.rowCheckbox : '';
+  // Each variant already lays out one way; a class is only needed for the
+  // other one. The default variant stacks, so it needs `.rowInline`; color and
+  // checkbox read as a row, so they need `.rowBlock`.
+  const intrinsic: PropertyRowLayout = variant === 'default' ? 'block' : 'inline';
+  const resolved = layout ?? intrinsic;
+  const layoutClass =
+    resolved === intrinsic ? '' : resolved === 'inline' ? s.rowInline : s.rowBlock;
+  const cls = propertyMetricClass(
+    [s.row, variantClass, layoutClass, span && s.span].filter(Boolean).join(' '),
+    { density, align },
+    className,
+  );
   return (
     <label className={cls} htmlFor={htmlFor}>
       <span className={s.rowLabel}>
@@ -162,7 +235,7 @@ function PropertyRowHelp({ label, description }: { label: ReactNode; description
 // ── Row implementations ──────────────────────────────────────────────
 
 /** Props for `<SliderRow>`. */
-export interface SliderRowProps {
+export interface SliderRowProps extends PropertyMetricProps {
   label: ReactNode;
   value: number;
   min: number;
@@ -197,6 +270,8 @@ export function SliderRow({
   layout,
   description,
   span,
+  density,
+  align,
 }: SliderRowProps) {
   // Default readout precision tracks `step`: integer steps → 0 decimals,
   // 0.1 → 1 decimal, 0.05/0.02/0.01 → 2 decimals, 0.005 → 3, etc. Callers
@@ -227,6 +302,8 @@ export function SliderRow({
       }
       layout={layout}
       description={description}
+      density={density}
+      align={align}
     >
       <input
         type="range"
@@ -327,7 +404,7 @@ function EditableReadout({ value, min, max, format, unit, onCommit }: EditableRe
 }
 
 /** Props for `<ColorRow>`. */
-export interface ColorRowProps {
+export interface ColorRowProps extends PropertyMetricProps {
   label: ReactNode;
   value: string;
   onChange: (next: string) => void;
@@ -339,6 +416,8 @@ export interface ColorRowProps {
    * Use when the color's consumer drops alpha so the affordance reads dead.
    */
   alphaDisabled?: boolean;
+  /** Label beside the swatch (default) or above it. */
+  layout?: PropertyRowLayout;
   description?: string;
   /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
   span?: boolean;
@@ -352,12 +431,23 @@ export function ColorRow({
   alpha,
   onAlphaChange,
   alphaDisabled,
+  layout,
   description,
   span,
+  density,
+  align,
 }: ColorRowProps) {
   const showAlpha = alpha != null;
   return (
-    <PropertyRow span={span} label={label} variant="color" description={description}>
+    <PropertyRow
+      span={span}
+      label={label}
+      variant="color"
+      layout={layout}
+      description={description}
+      density={density}
+      align={align}
+    >
       <input type="color" value={value} onChange={(e) => onChange(e.target.value)} />
       {showAlpha && (
         <input
@@ -376,26 +466,45 @@ export function ColorRow({
 }
 
 /** Props for `<CheckboxRow>`. */
-export interface CheckboxRowProps {
+export interface CheckboxRowProps extends PropertyMetricProps {
   label: ReactNode;
   value: boolean;
   onChange: (next: boolean) => void;
+  /** Label beside the box (default) or above it. */
+  layout?: PropertyRowLayout;
   description?: string;
   /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
   span?: boolean;
 }
 
 /** A boolean checkbox. */
-export function CheckboxRow({ label, value, onChange, span, description }: CheckboxRowProps) {
+export function CheckboxRow({
+  label,
+  value,
+  onChange,
+  layout,
+  span,
+  description,
+  density,
+  align,
+}: CheckboxRowProps) {
   return (
-    <PropertyRow span={span} label={label} variant="checkbox" description={description}>
+    <PropertyRow
+      span={span}
+      label={label}
+      variant="checkbox"
+      layout={layout}
+      description={description}
+      density={density}
+      align={align}
+    >
       <input type="checkbox" checked={value} onChange={(e) => onChange(e.target.checked)} />
     </PropertyRow>
   );
 }
 
 /** Props for `<TextRow>`. */
-export interface TextRowProps {
+export interface TextRowProps extends PropertyMetricProps {
   label: ReactNode;
   value: string;
   onChange: (next: string) => void;
@@ -417,9 +526,18 @@ export function TextRow({
   layout,
   description,
   span,
+  density,
+  align,
 }: TextRowProps) {
   return (
-    <PropertyRow span={span} label={label} layout={layout} description={description}>
+    <PropertyRow
+      span={span}
+      label={label}
+      layout={layout}
+      description={description}
+      density={density}
+      align={align}
+    >
       <input
         type="text"
         value={value}
@@ -432,7 +550,7 @@ export function TextRow({
 }
 
 /** Props for `<NumberRow>`. */
-export interface NumberRowProps {
+export interface NumberRowProps extends PropertyMetricProps {
   label: ReactNode;
   value: number;
   onChange: (next: number) => void;
@@ -466,6 +584,8 @@ export function NumberRow({
   layout,
   description,
   span,
+  density,
+  align,
 }: NumberRowProps) {
   const input = (
     <input
@@ -484,7 +604,14 @@ export function NumberRow({
     />
   );
   return (
-    <PropertyRow span={span} label={label} layout={layout} description={description}>
+    <PropertyRow
+      span={span}
+      label={label}
+      layout={layout}
+      description={description}
+      density={density}
+      align={align}
+    >
       {unit == null ? (
         input
       ) : (
@@ -503,7 +630,7 @@ export interface PropertyOption<T extends string> {
 }
 
 /** Props for `<SelectRow>`. */
-export interface SelectRowProps<T extends string> {
+export interface SelectRowProps<T extends string> extends PropertyMetricProps {
   label: ReactNode;
   value: T;
   options: ReadonlyArray<PropertyOption<T>>;
@@ -524,9 +651,18 @@ export function SelectRow<T extends string>({
   layout,
   description,
   span,
+  density,
+  align,
 }: SelectRowProps<T>) {
   return (
-    <PropertyRow span={span} label={label} layout={layout} description={description}>
+    <PropertyRow
+      span={span}
+      label={label}
+      layout={layout}
+      description={description}
+      density={density}
+      align={align}
+    >
       <select
         value={value}
         onChange={(e) => {
@@ -547,7 +683,7 @@ export function SelectRow<T extends string>({
 }
 
 /** Props for `<ToggleRow>`. */
-export interface ToggleRowProps<T extends string> {
+export interface ToggleRowProps<T extends string> extends PropertyMetricProps {
   label: ReactNode;
   value: T;
   options: ReadonlyArray<PropertyOption<T>>;
@@ -568,9 +704,18 @@ export function ToggleRow<T extends string>({
   layout,
   description,
   span,
+  density,
+  align,
 }: ToggleRowProps<T>) {
   return (
-    <PropertyRow span={span} label={label} layout={layout} description={description}>
+    <PropertyRow
+      span={span}
+      label={label}
+      layout={layout}
+      description={description}
+      density={density}
+      align={align}
+    >
       <div className={s.toggle}>
         {options.map((opt) => {
           const selected = opt.value === value;

@@ -1,5 +1,6 @@
 import { type CSSProperties, type ReactNode, useState } from 'react';
 import s from './Properties.module.css';
+import { type PropertyMetricProps, propertyMetricClass } from './PropertyPanel';
 
 // ── Subpanel ─────────────────────────────────────────────────────────
 // Headered group of controls inside a wider panel/list. The header is a
@@ -7,7 +8,7 @@ import s from './Properties.module.css';
 // purely a typographic divider. Ported from speech-balloons styles.css:277-313.
 
 /** Props for `<Subpanel>`. */
-export interface SubpanelProps {
+export interface SubpanelProps extends PropertyMetricProps {
   title: ReactNode;
   children: ReactNode;
   className?: string;
@@ -15,8 +16,8 @@ export interface SubpanelProps {
 
 /** A typographic divider inside a property list: a small title flanked by a
  *  rule. Purely a heading — use `<PropertyGroup>` for a bordered section. */
-export function Subpanel({ title, children, className }: SubpanelProps) {
-  const cls = className ? `${s.subpanel} ${className}` : s.subpanel;
+export function Subpanel({ title, children, className, density, align }: SubpanelProps) {
+  const cls = propertyMetricClass(s.subpanel, { density, align }, className);
   return (
     <div className={cls}>
       <h4 className={s.subpanelTitle}>

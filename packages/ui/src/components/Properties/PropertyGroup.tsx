@@ -1,21 +1,21 @@
 import type { ReactNode } from 'react';
 import s from './Properties.module.css';
+import {
+  type PropertyListPack,
+  type PropertyMetricProps,
+  propertyMetricClass,
+} from './PropertyPanel';
 
 /** Props for `<PropertyGroup>`. */
-export interface PropertyGroupProps {
+export interface PropertyGroupProps extends PropertyMetricProps {
   /** Title rendered between two rules at the top of the group. */
   title: ReactNode;
   /** When true the group renders nothing — useful for conditional sections. */
   hidden?: boolean;
   children: ReactNode;
   className?: string;
-  /**
-   * How rows pack into the 2-column grid.
-   *   - `'auto-color'` (default): only color rows pair side-by-side; everything
-   *     else spans the full width.
-   *   - `'pairs'`: every row auto-places into the 2-column grid two-per-row.
-   */
-  pack?: 'auto-color' | 'pairs';
+  /** How rows pack into the 2-column grid — see `<PropertyList pack>`. */
+  pack?: PropertyListPack;
 }
 
 /**
@@ -29,10 +29,12 @@ export function PropertyGroup({
   children,
   className,
   pack = 'auto-color',
+  density,
+  align,
 }: PropertyGroupProps) {
   if (hidden) return null;
-  const packClass = pack === 'pairs' ? ` ${s.groupPairs}` : '';
-  const cls = `${s.group}${packClass}${className ? ` ${className}` : ''}`;
+  const base = `${s.group}${pack === 'pairs' ? ` ${s.groupPairs}` : pack === 'one-up' ? ` ${s.groupOneUp}` : ''}`;
+  const cls = propertyMetricClass(base, { density, align }, className);
   return (
     <div className={cls}>
       <h3 className={s.groupTitle}>

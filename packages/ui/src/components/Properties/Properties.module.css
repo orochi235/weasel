@@ -23,11 +23,18 @@
   box-sizing: border-box;
 }
 
+/* ── Container metrics ──────────────────────────────────────────────
+   Every spacing number the family lays out with is read from a `--wzl-prop-*`
+   custom property with its own value as the fallback, so a consumer can move
+   any of them from an ancestor without selector surgery. The `density` classes
+   below set them in preset bundles; nothing in this file declares one, so an
+   inherited value always reaches the use site. */
+
 .panel {
   background: var(--wzl-surface-raised);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-lg);
-  padding: 14px 16px;
+  padding: var(--wzl-prop-panel-pad, 14px 16px);
   backdrop-filter: blur(var(--wzl-glass-blur));
   -webkit-backdrop-filter: blur(var(--wzl-glass-blur));
 }
@@ -39,20 +46,21 @@
   line-height: var(--wzl-leading-snug);
   letter-spacing: 0.01em;
   color: var(--wzl-fg);
-  margin: 0 0 12px;
+  margin: 0 0 var(--wzl-prop-panel-title-gap, 12px);
 }
 
 .list {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  column-gap: 10px;
-  row-gap: 4px;
+  column-gap: var(--wzl-prop-column-gap, 10px);
+  row-gap: var(--wzl-prop-row-gap, 4px);
   align-items: stretch;
   /* A property panel is dense: its fields are shorter and tighter than a
-     standalone Input. Set here, on the container, so one declaration moves
-     every field in the panel. */
-  --wzl-field-h: 20px;
-  --wzl-field-pad-x: 6px;
+     standalone Input. Mapped here, on the container, so one declaration moves
+     every field in the panel — and read from the container-level name so a
+     density set further up is not shadowed by this declaration. */
+  --wzl-field-h: var(--wzl-prop-field-h, 20px);
+  --wzl-field-pad-x: var(--wzl-prop-field-pad-x, 6px);
 }
 
 /* Default packing: only color rows pair, everything else spans full width.
@@ -72,6 +80,85 @@
 .listPairs > .subpanel,
 .listPairs > h3 {
   grid-column: 1 / -1;
+}
+
+/* `pack="one-up"` gives every row the full width, color rows included — the
+   one packing a palette can be built from. */
+.listOneUp > * {
+  grid-column: 1 / -1;
+}
+
+/* ── density ────────────────────────────────────────────────────────
+   Preset bundles for the container metrics above. Set on whichever container
+   the consumer puts `density` on; every metric inherits down from there, so a
+   panel sets the whole family and a single group can still differ. `normal`
+   states its values rather than omitting them, so a group can go back to the
+   default inside a tighter panel. */
+
+.densityTight {
+  --wzl-prop-row-gap: 2px;
+  --wzl-prop-subpanel-row-gap: 2px;
+  --wzl-prop-column-gap: 8px;
+  --wzl-prop-panel-pad: 10px 12px;
+  --wzl-prop-panel-title-gap: 8px;
+  --wzl-prop-group-pad: 4px 8px 6px;
+  --wzl-prop-group-title-gap: 2px;
+  --wzl-prop-field-h: 18px;
+  --wzl-prop-field-pad-x: 5px;
+}
+
+.densityNormal {
+  --wzl-prop-row-gap: 4px;
+  --wzl-prop-subpanel-row-gap: 3px;
+  --wzl-prop-column-gap: 10px;
+  --wzl-prop-panel-pad: 14px 16px;
+  --wzl-prop-panel-title-gap: 12px;
+  --wzl-prop-group-pad: 6px 10px 8px;
+  --wzl-prop-group-title-gap: 4px;
+  --wzl-prop-field-h: 20px;
+  --wzl-prop-field-pad-x: 6px;
+}
+
+.densityRoomy {
+  --wzl-prop-row-gap: 8px;
+  --wzl-prop-subpanel-row-gap: 7px;
+  --wzl-prop-column-gap: 14px;
+  --wzl-prop-panel-pad: 18px 20px;
+  --wzl-prop-panel-title-gap: 16px;
+  --wzl-prop-group-pad: 10px 14px 12px;
+  --wzl-prop-group-title-gap: 6px;
+  --wzl-prop-field-h: 24px;
+  --wzl-prop-field-pad-x: 8px;
+}
+
+/* ── align ──────────────────────────────────────────────────────────
+   Where an inline row's label and control sit on the row's cross axis.
+   Inherits like density does, so a column of color rows lines its swatches up
+   on one edge from a single declaration on the list.
+
+   Two names, because a color row aligns twice: its items within their grid row,
+   and the whole grid within the row's box. They agree except at `baseline`,
+   which `align-content` does not take — there the grid goes to the top and the
+   items find the label's baseline inside it. */
+
+.alignStart {
+  --wzl-prop-row-align: start;
+  --wzl-prop-row-align-content: start;
+}
+
+.alignCenter {
+  --wzl-prop-row-align: center;
+  --wzl-prop-row-align-content: center;
+}
+
+.alignEnd {
+  --wzl-prop-row-align: end;
+  --wzl-prop-row-align-content: end;
+}
+
+.alignBaseline {
+  --wzl-prop-row-align: baseline;
+  --wzl-prop-row-align-content: start;
 }
 
 /* ── Row ────────────────────────────────────────────────────────
@@ -236,7 +323,7 @@
 /* ── Inline layout: label sits to the left of the control. ────── */
 .rowInline {
   flex-direction: row;
-  align-items: center;
+  align-items: var(--wzl-prop-row-align, center);
   /* Label on the left edge, field on the right: fields of different widths
      still line up as one rail down the column. */
   justify-content: space-between;
@@ -339,11 +426,15 @@
 
 /* ── Color variant: label and swatch side-by-side, two per row in the grid.
    Switches to a 2-row grid when an alpha slider is rendered beneath. */
+/* `align-content: end` sinks the whole grid so a color row paired with a
+   taller sibling keeps its alpha track on the neighbour's bottom edge. An
+   explicit `align` overrides both that and the per-item alignment below, which
+   is what a column of swatches read as a group needs. */
 .rowColor {
   display: grid;
   grid-template-columns: 1fr auto;
   grid-template-rows: auto;
-  align-content: end;
+  align-content: var(--wzl-prop-row-align-content, end);
   column-gap: 8px;
   row-gap: 0;
   min-width: 0;
@@ -352,7 +443,7 @@
 .rowColor .rowLabel {
   grid-column: 1;
   grid-row: 1;
-  align-self: center;
+  align-self: var(--wzl-prop-row-align, center);
   flex: initial;
   min-width: 0;
 }
@@ -364,7 +455,7 @@
 .rowColor input[type='color'] {
   grid-column: 2;
   grid-row: 1;
-  align-self: center;
+  align-self: var(--wzl-prop-row-align, center);
   box-sizing: border-box;
   width: 36px;
   height: 18px;
@@ -385,10 +476,30 @@
   margin: 0;
 }
 
+/* `layout="block"` stacks the color row: label, then swatch, then alpha. */
+.rowColor.rowBlock {
+  grid-template-columns: 1fr;
+}
+
+.rowColor.rowBlock .rowLabel {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.rowColor.rowBlock input[type='color'] {
+  grid-column: 1;
+  grid-row: 2;
+  justify-self: start;
+}
+
+.rowColor.rowBlock input[type='range'].alpha {
+  grid-row: 3;
+}
+
 /* ── Checkbox variant: control-first inline layout, no uppercase label. */
 .rowCheckbox {
   flex-direction: row;
-  align-items: center;
+  align-items: var(--wzl-prop-row-align, center);
   gap: 8px;
   cursor: pointer;
 }
@@ -407,6 +518,17 @@
   width: 14px;
   height: 14px;
   cursor: pointer;
+}
+
+/* `layout="block"` stacks the checkbox row: label above, box beneath, both on
+   the leading edge — a block row's cross axis is the horizontal one. */
+.rowCheckbox.rowBlock {
+  flex-direction: column;
+  align-items: var(--wzl-prop-row-align, start);
+}
+
+.rowCheckbox.rowBlock .rowLabel {
+  order: 0;
 }
 
 /* ── Segmented toggle group ───────────────────────────────────── */
@@ -460,7 +582,7 @@
   grid-column: 1 / -1;
   background: var(--wzl-surface-sunken);
   border-radius: var(--wzl-radius-md);
-  padding: 6px 10px 8px;
+  padding: var(--wzl-prop-group-pad, 6px 10px 8px);
 }
 
 .groupTitle {
@@ -468,7 +590,7 @@
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 8px;
-  margin: 0 0 4px;
+  margin: 0 0 var(--wzl-prop-group-title-gap, 4px);
   font-family: var(--wzl-font-display);
   font-weight: var(--wzl-font-weight-light);
   font-size: var(--wzl-font-size-sm);
@@ -486,8 +608,8 @@
 .groupBody {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  column-gap: 10px;
-  row-gap: 4px;
+  column-gap: var(--wzl-prop-column-gap, 10px);
+  row-gap: var(--wzl-prop-row-gap, 4px);
   /* Stretch so paired rows match in height — slider rows then bottom-align
      their tracks (via `margin-top: auto`) and stay lined up even when one
      sibling's label wraps to two lines. */
@@ -507,14 +629,18 @@
   grid-column: 1 / -1;
 }
 
+.groupOneUp .groupBody > * {
+  grid-column: 1 / -1;
+}
+
 /* ── Subpanel ────────────────────────────────────────────────────────
    Headered group of controls inside a list. The header is a typographic
    label flanked by a horizontal rule — no card chrome, just the divider. */
 .subpanel {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  column-gap: 10px;
-  row-gap: 3px;
+  column-gap: var(--wzl-prop-column-gap, 10px);
+  row-gap: var(--wzl-prop-subpanel-row-gap, 3px);
   align-items: stretch;
   background: transparent;
   border: 0;
