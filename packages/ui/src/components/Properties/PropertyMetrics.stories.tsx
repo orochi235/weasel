@@ -107,6 +107,29 @@ export const Density: Story = {
   ),
 };
 
+/**
+ * A typed number and its unit. The unit is a sibling of the input, not content
+ * inside it — the field's border ends at the digits.
+ */
+export const NumberUnits: Story = {
+  render: () => {
+    const [px, setPx] = useState(24);
+    const [ms, setMs] = useState(150);
+    const [deg, setDeg] = useState(45);
+    const [plain, setPlain] = useState(8);
+    return (
+      <PropertyPanel title="Units sit outside the field">
+        <PropertyList>
+          <NumberRow label="Radius" value={px} onChange={setPx} unit="px" />
+          <NumberRow label="Duration" value={ms} onChange={setMs} unit="ms" />
+          <NumberRow label="Angle" value={deg} onChange={setDeg} unit={<sup>°</sup>} />
+          <NumberRow label="Count" value={plain} onChange={setPlain} />
+        </PropertyList>
+      </PropertyPanel>
+    );
+  },
+};
+
 /** `layout` now reaches the color and checkbox rows, which used to ignore it. */
 export const VariantLayout: Story = {
   render: () => {
