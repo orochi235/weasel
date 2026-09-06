@@ -120,6 +120,14 @@ changed draws dashed and reports `isStale`. `meaning.statuses` is the optional
 vocabulary a mark can be labelled with — a status carries its own color, which
 the mark on the canvas follows.
 
+`targets` is declared once per instrument and called once per trial, with the
+asking trial as its third argument: `targets(state, config, trial)`. `trial.id`
+is the id `useTileId` scopes a surface tile under, so a consumer holding its own
+per-trial refs keys them by it and hands back the ones this trial owns; a
+module-level ref like the one above is one ref shared by every trial of the
+instrument, which only shows once a second trial is open. `trial.view` is that
+trial's camera.
+
 Marks live in the trial's record and survive a reload. An instrument that would
 rather keep them in a format it already owns declares `annotations.storage` with
 a `load`/`save` pair, and labkit never writes its own slot.

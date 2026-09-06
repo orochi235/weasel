@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { Children, isValidElement, type ReactNode } from 'react';
 import {
   Select as RACSelect,
   Label,
@@ -47,6 +47,12 @@ export type SelectProps<T extends Key = string> = Omit<RACSelectProps<object>, '
   selectedKey?: T | null;
   defaultSelectedKey?: T;
   onSelectionChange?: (key: T) => void;
+  /**
+   * `'fill'` (the default) takes the width of whatever row the select sits in.
+   * `'fit'` sizes the trigger to its widest option, so it neither swallows a
+   * toolbar's slack nor changes width as the selection moves.
+   */
+  width?: 'fill' | 'fit';
   className?: string;
 };
 
@@ -69,6 +75,7 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
     selectedKey,
     defaultSelectedKey,
     onSelectionChange,
+    width = 'fill',
     className,
     ...rest
   } = props;
@@ -79,7 +86,9 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
       selectedKey={selectedKey}
       defaultSelectedKey={defaultSelectedKey}
       onSelectionChange={onSelectionChange ? (k) => onSelectionChange(k as T) : undefined}
-      className={[s.field, fieldClasses.root, className].filter(Boolean).join(' ')}
+      className={[s.field, width === 'fit' && s.fit, fieldClasses.root, className]
+        .filter(Boolean)
+        .join(' ')}
     >
       {label !== undefined && <Label className={fieldClasses.label}>{label}</Label>}
       <RACButton className={s.trigger}>
@@ -88,6 +97,17 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
             isPlaceholder ? (placeholder ?? defaultChildren) : defaultChildren
           }
         </SelectValue>
+        {width === 'fit' && (
+          <span className={s.sizer} aria-hidden="true">
+            {placeholder !== undefined && <span>{placeholder}</span>}
+            {optionLabels(options, children).map((l, i) => (
+              <span key={i}>
+                <CheckMark />
+                {l}
+              </span>
+            ))}
+          </span>
+        )}
         <svg className={s.chevron} viewBox="0 0 10 10" aria-hidden="true">
           <path d="M2 4 L5 7 L8 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -124,6 +144,30 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
   );
 }
 
+/* A selected row's mark travels into the trigger with its label, so a
+   `width='fit'` sizer has to allow for it too. */
+function CheckMark() {
+  return (
+    <svg className={s.check} viewBox="0 0 10 10" aria-hidden="true">
+      <polyline points="1.5,5 4,7.5 8.5,3" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/**
+ * The labels a `width='fit'` trigger measures itself against. In the children
+ * form the label sits one element deep, inside a `SelectItem`.
+ */
+function optionLabels(
+  options: ReadonlyArray<SelectOption> | undefined,
+  children: ReactNode,
+): ReactNode[] {
+  if (options !== undefined) return options.map((o) => o.label);
+  return Children.toArray(children).map((c) =>
+    isValidElement<{ children?: ReactNode }>(c) ? c.props.children : c,
+  );
+}
+
 /** Props for {@link SelectItem}, on top of React Aria's `ListBoxItem` props. */
 export type SelectItemProps = Omit<RACListBoxItemProps, 'className' | 'children'> & {
   children?: ReactNode;
@@ -156,9 +200,7 @@ export function SelectItem({ children, className, textValue, ...rest }: SelectIt
       textValue={textValueOf(children, textValue)}
       className={[s.option, className].filter(Boolean).join(' ')}
     >
-      <svg className={s.check} viewBox="0 0 10 10" aria-hidden="true">
-        <polyline points="1.5,5 4,7.5 8.5,3" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
+      <CheckMark />
       {children}
     </RACListBoxItem>
   );

@@ -52,6 +52,13 @@ describe('<Lab>', () => {
     expect(screen.getAllByRole('region', { name: /trial/i })).toHaveLength(2);
   });
 
+  it('addTrial opens each trial on the config it was given', () => {
+    mountLab();
+    act(() => labRef?.addTrial('Stub', { config: { count: 7 } }));
+    expect(labRef?.trials.map((t) => (t.config as { count: number }).count)).toEqual([0, 7]);
+    expect(labRef?.trials.map((t) => (t.state as { value: number }).value)).toEqual([0, 7]);
+  });
+
   it('closeTrial removes one when more than one exists', () => {
     mountLab();
     act(() => labRef?.addTrial('Stub'));

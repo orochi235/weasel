@@ -130,7 +130,9 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
   const annotationsCap = instrument.annotations;
   const targetsRef = useRef<() => readonly AnnotationTargetInfo[]>(() => []);
   targetsRef.current = () =>
-    annotationsCap ? annotationsCap.targets(record.state, record.config) : [];
+    annotationsCap
+      ? annotationsCap.targets(record.state, record.config, { id: record.id, view: record.view })
+      : [];
 
   // One store for the trial's lifetime. Marks do not survive a reload yet —
   // the storage slot is 3d.
@@ -474,6 +476,7 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
       capability={annotationsCap}
       state={record.state}
       config={record.config}
+      trial={{ id: record.id, view: record.view }}
       annotations={annotations}
       activeToolId={resolvedToolId}
     />

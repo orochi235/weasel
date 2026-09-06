@@ -83,4 +83,18 @@ describe('ViewportRegion', () => {
     screen.getByRole('button', { name: 'Fit' }).click();
     expect(onActivate).toHaveBeenCalledOnce();
   });
+
+  it('hands onActivate the chrome context', () => {
+    const onActivate = vi.fn();
+    render(
+      <ViewportRegion
+        contributions={[
+          { id: 'fit', region: 'viewport', item: { icon: Glyph, label: 'Fit', onActivate } },
+        ]}
+        ctx={ctx}
+      />,
+    );
+    screen.getByRole('button', { name: 'Fit' }).click();
+    expect(onActivate).toHaveBeenCalledWith(ctx);
+  });
 });

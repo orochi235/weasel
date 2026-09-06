@@ -75,3 +75,19 @@
 .lk-layer-list input[type='checkbox'] {
   accent-color: var(--wzl-accent);
 }
+
+.lk-layer-list__children {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  // Indents by the twisty column, so a child's own twisty starts where its
+  // parent's label does.
+  padding-left: var(--wzl-space-md);
+}
+
+// Holds the twisty column open on rows that have nothing to expand, so labels
+// line up down the level.
+.lk-layer-list__twisty-gap {
+  flex: 0 0 auto;
+  width: var(--wzl-disclosure-target, 20px);
+}

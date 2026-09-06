@@ -42,6 +42,20 @@ describe('ToolbarRegion', () => {
     expect(onActivate).toHaveBeenCalledOnce();
   });
 
+  it('hands onActivate the chrome context', () => {
+    const onActivate = vi.fn();
+    render(
+      <ToolbarRegion
+        contributions={[
+          { id: 'snap', region: 'toolbar', item: { icon: Glyph, label: 'Snap', onActivate } },
+        ]}
+        ctx={ctx}
+      />,
+    );
+    screen.getByRole('button', { name: 'Snap' }).click();
+    expect(onActivate).toHaveBeenCalledWith(ctx);
+  });
+
   it('groups contributions sharing a group into one group element', () => {
     render(
       <ToolbarRegion

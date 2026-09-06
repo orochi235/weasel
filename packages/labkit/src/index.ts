@@ -202,7 +202,7 @@ export type { ValidationResult } from './instrument/validateConfigSchema';
 export { validateConfigSchema } from './instrument/validateConfigSchema';
 export * from './job';
 export * from './lab';
-export type { LayerListProps } from './layers';
+export type { LayerListProps, LayerTreeNode } from './layers';
 export { LayerList } from './layers';
 export * from './loupe';
 export * from './primitives';
@@ -230,6 +230,7 @@ export type {
   SavedSnapshot,
   SerializedTrial,
   StorageAdapter,
+  TrialInfo,
   TrialRecord,
   TrialStateHandle,
   UndoStack,

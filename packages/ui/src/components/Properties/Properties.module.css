@@ -619,6 +619,21 @@
   margin: 0;
 }
 
+/* A twisty leads the title, so the head takes over the title's bottom gap and
+   the two sit on one line. */
+.groupHead {
+  margin-bottom: var(--wzl-prop-group-title-gap, 4px);
+}
+
+.groupHead .groupTitle {
+  margin-bottom: 0;
+}
+
+/* `hidden` on its own loses to the body's `display: grid` below. */
+.groupBody[hidden] {
+  display: none;
+}
+
 .groupBody {
   display: grid;
   grid-template-columns: 1fr 1fr;

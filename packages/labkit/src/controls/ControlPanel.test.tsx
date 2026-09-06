@@ -443,3 +443,41 @@ describe('<ControlPanel> suffix', () => {
     expect(container.textContent).toContain('px');
   });
 });
+
+describe('<ControlPanel> collapsible sections', () => {
+  const schema = resolveConfigSchema(
+    f.schema({ showGrid: f.boolean(true), seed: f.number(0).section('Advanced') }),
+    [],
+  );
+  const config = { showGrid: true, seed: 0 };
+
+  it('draws no twisty by default', () => {
+    render(<ControlPanel schema={schema} config={config} setConfig={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: 'Advanced' })).toBeNull();
+    expect(screen.getByLabelText('Seed')).toBeVisible();
+  });
+
+  it('folds a section away when the panel starts closed', () => {
+    render(<ControlPanel schema={schema} config={config} setConfig={vi.fn()} collapse="closed" />);
+    expect(screen.getByLabelText('Seed')).not.toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Advanced' }));
+    expect(screen.getByLabelText('Seed')).toBeVisible();
+  });
+
+  it('hands a controlled panel its toggles instead of acting on them', () => {
+    const onCollapse = vi.fn();
+    render(
+      <ControlPanel
+        schema={schema}
+        config={config}
+        setConfig={vi.fn()}
+        collapsed={{ Advanced: true }}
+        onCollapse={onCollapse}
+      />,
+    );
+    expect(screen.getByLabelText('Seed')).not.toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Advanced' }));
+    expect(onCollapse).toHaveBeenCalledWith('Advanced', false);
+    expect(screen.getByLabelText('Seed')).not.toBeVisible();
+  });
+});

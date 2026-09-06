@@ -11,8 +11,12 @@ export interface LayerStackItem {
    *  common id-from-nextId conventions; string ids also work. */
   id: number | string;
   /** Short kind label rendered in the header when no primary select
-   *  is hoisted (e.g. "shadow", "stroke"). */
-  kind: string;
+   *  is hoisted (e.g. "shadow", "stroke"). Omit it for items that have no
+   *  kind; `label` then names the card. */
+  kind?: string;
+  /** Header text, when the item's name is not its kind. Falls back to
+   *  `kind`. */
+  label?: string;
   /** When present, hoist this select into the card header so the user
    *  can switch mode/shape without expanding. */
   primaryValue?: string;
@@ -31,16 +35,25 @@ export interface LayerStackItem {
 
 /** Props for `<LayerStack>`. */
 export interface LayerStackProps {
-  title: string;
+  /** Heading above the list. Omit it, along with the palette, for a stack
+   *  whose surroundings already name it. */
+  title?: string;
   items: LayerStackItem[];
-  /** Kinds the user can add via the header palette. */
-  paletteKinds: string[];
-  onAdd: (kind: string) => void;
-  onRemove: (id: number | string) => void;
+  /** Kinds the user can add via the header palette. Omit both this and
+   *  `onAdd` for a stack the user cannot add to. */
+  paletteKinds?: string[];
+  onAdd?: (kind: string) => void;
+  /** Omit for items the user cannot remove; the card then has no ✕. */
+  onRemove?: (id: number | string) => void;
   onReorder: (orderedIds: Array<number | string>) => void;
-  onPrimaryChange: (id: number | string, nextValue: string) => void;
+  /** Required for `primaryValue` to render as a select — without a handler
+   *  the control could not be changed. */
+  onPrimaryChange?: (id: number | string, nextValue: string) => void;
   /** Render the body controls for each item. */
   renderBody: (item: LayerStackItem) => ReactNode;
+  /** Shown in place of the list when `items` is empty. Defaults to a line
+   *  that points at the palette, or a bare one when there is no palette. */
+  emptyLabel?: ReactNode;
   /** Hide the title + palette row (used when an outer wrap renders its
    *  own head — see speech-balloons Tails panel). */
   hideHead?: boolean;
@@ -62,6 +75,7 @@ export function LayerStack({
   onReorder,
   onPrimaryChange,
   renderBody,
+  emptyLabel,
   hideHead,
 }: LayerStackProps) {
   const [expandedIds, setExpandedIds] = useState<Set<number | string>>(
@@ -81,7 +95,10 @@ export function LayerStack({
     });
   }, [items]);
 
-  const dragItems = items.map((it) => ({ id: String(it.id), label: it.kind }));
+  const dragItems = items.map((it) => ({
+    id: String(it.id),
+    label: it.label ?? it.kind ?? String(it.id),
+  }));
   const drag = useReorderDragList({
     items: dragItems,
     selectedIds: [],
@@ -111,20 +128,23 @@ export function LayerStack({
     });
   };
 
+  const palette = onAdd ? (paletteKinds ?? []) : [];
+  const showHead = !hideHead && (title !== undefined || palette.length > 0);
+
   return (
     <div className={className ? `${s.stack} ${className}` : s.stack}>
-      {!hideHead && (
+      {showHead && (
         <div className={s.head}>
-          <h2 className={s.title}>{title}</h2>
+          {title !== undefined && <h2 className={s.title}>{title}</h2>}
           <div className={s.palette}>
-            {paletteKinds.map((k) => (
+            {palette.map((k) => (
               <button
                 key={k}
                 type="button"
                 className={s.add}
                 onClick={() => {
                   dlog('layer-stack', 'onAdd', { kind: k });
-                  onAdd(k);
+                  onAdd?.(k);
                 }}
                 aria-label={`Add ${k}`}
               >
@@ -169,7 +189,7 @@ export function LayerStack({
                   >
                     {item.badge ?? <DragHandleGlyph />}
                   </button>
-                  {item.primaryValue !== undefined && item.primaryOptions ? (
+                  {item.primaryValue !== undefined && item.primaryOptions && onPrimaryChange ? (
                     <select
                       className={s.primary}
                       value={item.primaryValue}
@@ -184,19 +204,21 @@ export function LayerStack({
                       ))}
                     </select>
                   ) : (
-                    <span className={s.kind}>{item.kind}</span>
+                    <span className={s.kind}>{item.label ?? item.kind}</span>
                   )}
-                  <button
-                    type="button"
-                    className={s.remove}
-                    aria-label="Remove layer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRemove(item.id);
-                    }}
-                  >
-                    ✕
-                  </button>
+                  {onRemove && (
+                    <button
+                      type="button"
+                      className={s.remove}
+                      aria-label="Remove layer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemove(item.id);
+                      }}
+                    >
+                      ✕
+                    </button>
+                  )}
                 </div>
                 {expanded && <div className={s.cardBody}>{renderBody(item)}</div>}
               </div>
@@ -205,7 +227,9 @@ export function LayerStack({
           );
         })}
         {items.length === 0 && (
-          <div className={s.empty}>No layers — add one above.</div>
+          <div className={s.empty}>
+            {emptyLabel ?? (palette.length > 0 ? 'No layers — add one above.' : 'No layers.')}
+          </div>
         )}
       </div>
     </div>

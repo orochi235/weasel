@@ -2,6 +2,7 @@ import { createContext, useContext } from 'react';
 import type { ConfigRule, ControlRenderer } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
 import type { LabMode, SavedSnapshot, TrialRecord } from '../state/types';
+import type { AddTrialOptions } from '../trial/trialOps';
 
 /** Lab-wide state and commands: the available instruments, the open
  *  trials and the operations over them, saved snapshots, and the color
@@ -9,7 +10,10 @@ import type { LabMode, SavedSnapshot, TrialRecord } from '../state/types';
 export interface LabContextValue {
   instruments: InstrumentList;
   trials: TrialRecord[];
-  addTrial: (instrumentName: string) => void;
+  /** Open a trial running `instrumentName`. `options.config` is written over
+   *  that instrument's defaults, which is where a trial opened on a subject
+   *  says which subject. */
+  addTrial: (instrumentName: string, options?: AddTrialOptions) => void;
   cloneTrial: (id: string) => void;
   closeTrial: (id: string) => void;
   resetTrial: (id: string) => void;

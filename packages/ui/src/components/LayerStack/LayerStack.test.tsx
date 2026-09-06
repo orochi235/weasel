@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { LayerStack, type LayerStackItem } from './LayerStack';
+import { LayerStack, type LayerStackItem, type LayerStackProps } from './LayerStack';
 
 const items: LayerStackItem[] = [
   { id: 1, kind: 'fill', primaryValue: 'aqua', primaryOptions: ['aqua', 'bevel', 'dome'] },
@@ -165,5 +165,89 @@ describe('LayerStack', () => {
     const root = container.firstElementChild as HTMLElement;
     expect(root.classList.contains('host-stack')).toBe(true);
     expect(root.classList.length).toBeGreaterThan(1);
+  });
+});
+
+describe('LayerStack without a palette or kinds', () => {
+  const kindless: LayerStackItem[] = [
+    { id: 'top', label: 'Base coat' },
+    { id: 'mid', label: 'Wash' },
+  ];
+
+  function renderKindless(extra: Partial<LayerStackProps> = {}) {
+    return render(
+      <LayerStack
+        items={kindless}
+        onReorder={() => {}}
+        renderBody={(item) => <div data-testid={`body-${item.id}`} />}
+        {...extra}
+      />,
+    );
+  }
+
+  it('renders no head when there is neither a title nor a palette', () => {
+    const { container } = renderKindless();
+    expect(container.querySelector('h2')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^add /i })).toBeNull();
+  });
+
+  it('names each card from its label', () => {
+    renderKindless();
+    expect(screen.getByText('Base coat')).toBeInTheDocument();
+    expect(screen.getByText('Wash')).toBeInTheDocument();
+  });
+
+  it('omits the remove button when onRemove is not given', () => {
+    renderKindless();
+    expect(screen.queryByRole('button', { name: /remove layer/i })).toBeNull();
+  });
+
+  it('keeps the remove button when onRemove is given', () => {
+    const onRemove = vi.fn();
+    renderKindless({ onRemove });
+    fireEvent.click(screen.getAllByRole('button', { name: /remove layer/i })[1]);
+    expect(onRemove).toHaveBeenCalledWith('mid');
+  });
+
+  it('does not point at a palette that is not there when empty', () => {
+    render(<LayerStack items={[]} onReorder={() => {}} renderBody={() => null} />);
+    expect(screen.getByText('No layers.')).toBeInTheDocument();
+  });
+
+  it('points at the palette when one exists', () => {
+    render(
+      <LayerStack
+        items={[]}
+        paletteKinds={['fill']}
+        onAdd={() => {}}
+        onReorder={() => {}}
+        renderBody={() => null}
+      />,
+    );
+    expect(screen.getByText('No layers — add one above.')).toBeInTheDocument();
+  });
+
+  it('takes an emptyLabel over either default', () => {
+    render(
+      <LayerStack items={[]} onReorder={() => {}} renderBody={() => null} emptyLabel="Nothing yet" />,
+    );
+    expect(screen.getByText('Nothing yet')).toBeInTheDocument();
+  });
+
+  it('hides the palette when paletteKinds is given without a handler', () => {
+    renderKindless({ paletteKinds: ['fill'] });
+    expect(screen.queryByRole('button', { name: /add fill/i })).toBeNull();
+  });
+
+  it('shows the kind as text rather than a select when onPrimaryChange is absent', () => {
+    render(
+      <LayerStack
+        items={[{ id: 1, kind: 'fill', primaryValue: 'aqua', primaryOptions: ['aqua', 'dome'] }]}
+        onReorder={() => {}}
+        renderBody={() => null}
+      />,
+    );
+    expect(screen.queryByRole('combobox')).toBeNull();
+    expect(screen.getByText('fill')).toBeInTheDocument();
   });
 });

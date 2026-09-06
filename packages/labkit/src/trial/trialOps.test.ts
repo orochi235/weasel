@@ -26,7 +26,23 @@ const counterWithCanvas: Instrument<CounterState, CounterConfig> = {
   },
 };
 
-const instruments: Instrument[] = [counter as Instrument, counterWithCanvas as Instrument];
+interface SubjectConfig {
+  subject: string;
+  zoom: number;
+}
+
+const subjectInstrument: Instrument<{ label: string }, SubjectConfig> = {
+  name: 'Subject',
+  defaultConfig: () => ({ subject: 'none', zoom: 1 }),
+  initialState: (config) => ({ label: config.subject.toUpperCase() }),
+  render: () => null,
+};
+
+const instruments: Instrument[] = [
+  counter as Instrument,
+  counterWithCanvas as Instrument,
+  subjectInstrument as Instrument,
+];
 
 function head<T>(arr: T[]): T {
   const first = arr[0];
@@ -68,6 +84,28 @@ describe('addTrial', () => {
     const arr: TrialRecord[] = [];
     addTrial(arr, instruments, 'Counter');
     expect(arr).toHaveLength(0);
+  });
+
+  it('overlays a seed config on the instrument defaults', () => {
+    const out = addTrial([], instruments, 'Subject', { config: { subject: 'brick' } });
+    expect(out[0]?.config).toEqual({ subject: 'brick', zoom: 1 });
+  });
+
+  it('seeds the config before initialState reads it', () => {
+    const out = addTrial([], instruments, 'Subject', { config: { subject: 'brick' } });
+    expect(out[0]?.state).toEqual({ label: 'BRICK' });
+  });
+
+  it('gives each trial the seed it was opened with', () => {
+    const a = addTrial([], instruments, 'Subject', { config: { subject: 'one' } });
+    const b = addTrial(a, instruments, 'Subject', { config: { subject: 'two' } });
+    expect(b.map((t) => (t.config as SubjectConfig).subject)).toEqual(['one', 'two']);
+    expect(b.map((t) => (t.state as { label: string }).label)).toEqual(['ONE', 'TWO']);
+  });
+
+  it('ignores a seed key whose value is undefined', () => {
+    const out = addTrial([], instruments, 'Subject', { config: { subject: undefined } });
+    expect(out[0]?.config).toEqual({ subject: 'none', zoom: 1 });
   });
 });
 
@@ -138,6 +176,16 @@ describe('resetTrial', () => {
     head(arr).config = { step: 99 } as CounterConfig;
     resetTrial(arr, head(arr).id, instruments);
     expect((arr[0]?.config as CounterConfig).step).toBe(99);
+  });
+
+  it('restores the seed the trial was opened with, not the bare defaults', () => {
+    let arr = addTrial([], instruments, 'Subject', { config: { subject: 'one' } });
+    arr = addTrial(arr, instruments, 'Subject', { config: { subject: 'two' } });
+    head(arr).config = { subject: 'edited', zoom: 4 } as SubjectConfig;
+    const reset = resetTrial(arr, head(arr).id, instruments);
+    expect(reset[0]?.config).toEqual({ subject: 'one', zoom: 1 });
+    expect(reset[0]?.state).toEqual({ label: 'ONE' });
+    expect(reset[1]?.config).toEqual({ subject: 'two', zoom: 1 });
   });
 });
 

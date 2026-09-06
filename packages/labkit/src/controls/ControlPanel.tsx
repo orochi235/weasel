@@ -56,6 +56,18 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> {
   density?: PropertyDensity;
   /** Cross-axis alignment of an inline row's label and control. */
   align?: PropertyAlign;
+  /**
+   * Fold each section away behind a twisty, starting `'open'` or `'closed'`.
+   * Unset draws the heading alone, as the panel always has.
+   */
+  collapse?: 'open' | 'closed';
+  /**
+   * Which sections are folded, keyed by section label. Given, the panel keeps
+   * no state of its own: every toggle arrives at `onCollapse` instead, which
+   * is where a lab that remembers a trial's sections writes them.
+   */
+  collapsed?: Readonly<Record<string, boolean>>;
+  onCollapse?: (label: string, collapsed: boolean) => void;
   /** Draw leaves marked `hidden`. */
   showHidden?: boolean;
   className?: string;
@@ -74,6 +86,9 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   layout,
   density,
   align,
+  collapse,
+  collapsed,
+  onCollapse,
   showHidden = false,
   className,
 }: ControlPanelProps<TC>) {
@@ -98,6 +113,8 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   );
 
   const gridPack = pack === 'one-up' ? 'auto-color' : 'pairs';
+  const folds = collapse !== undefined || collapsed !== undefined || onCollapse !== undefined;
+  const startsFolded = collapse === 'closed';
   return (
     <PropertyList
       pack={gridPack}
@@ -107,7 +124,15 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     >
       {loose.map(row)}
       {resolved.sections.map((section) => (
-        <PropertyGroup key={section.label} title={section.label} pack={gridPack}>
+        <PropertyGroup
+          key={section.label}
+          title={section.label}
+          pack={gridPack}
+          collapsible={folds}
+          defaultCollapsed={startsFolded}
+          collapsed={collapsed ? (collapsed[section.label] ?? startsFolded) : undefined}
+          onCollapsedChange={onCollapse ? (next) => onCollapse(section.label, next) : undefined}
+        >
           {section.paths.map(row)}
         </PropertyGroup>
       ))}

@@ -12,6 +12,8 @@ const ctx: TrialChromeContext = {
   undockPanel: () => {},
   dockPanel: () => {},
   instrumentName: 'Stub',
+  title: 'Stub',
+  setTitle: () => {},
   isLastTrial: false,
   zoom: 1,
   setZoom: () => {},

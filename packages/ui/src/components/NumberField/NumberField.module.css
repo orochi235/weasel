@@ -116,3 +116,21 @@
   border-color: var(--wzl-focus-ring);
   box-shadow: none;
 }
+
+/* `width='fit'` states the field's width in characters: left alone an `<input>`
+   asks for its 20-character intrinsic width, wider than most rows it sits in. */
+.fit {
+  width: auto;
+  max-width: 100%;
+  align-items: flex-start;
+}
+
+.fit .frame {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.fit .frame input {
+  flex: 0 0 auto;
+  width: var(--wzl-number-field-width, 9ch);
+}

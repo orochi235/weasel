@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { LayerDescriptor } from '../instrument/types';
-import { LayerList } from './LayerList';
+import { LayerList, type LayerListProps, type LayerTreeNode } from './LayerList';
 
 describe('<LayerList>', () => {
   it('renders one row per layer', () => {
@@ -128,5 +128,105 @@ describe('<LayerList> reordering', () => {
     dispatchOn(document, 'pointermove', { pointerId: 2, buttons: 1, clientY: 40 });
     dispatchOn(document, 'pointerup', { pointerId: 1, clientY: 0 });
     expect(onReorder).not.toHaveBeenCalled();
+  });
+});
+
+const tree: LayerTreeNode[] = [
+  {
+    id: 'a',
+    label: 'A',
+    children: [
+      { id: 'a1', label: 'A1' },
+      { id: 'a2', label: 'A2' },
+    ],
+  },
+  { id: 'b', label: 'B' },
+];
+
+function renderTree(props: Partial<LayerListProps> = {}) {
+  return render(
+    <LayerList layers={tree} visibility={{}} onReorder={vi.fn()} onToggle={vi.fn()} {...props} />,
+  );
+}
+
+describe('<LayerList> nesting', () => {
+  it('renders a row for each descendant of an expanded node', () => {
+    const { container } = renderTree();
+    expect(container.querySelectorAll('.lk-layer-list__row')).toHaveLength(4);
+    expect(screen.getByText('A1')).toBeInTheDocument();
+  });
+
+  it('hides the children of a collapsed node', () => {
+    const { container } = renderTree();
+    fireEvent.click(screen.getByLabelText('A sublayers'));
+    expect(container.querySelectorAll('.lk-layer-list__row')).toHaveLength(2);
+    expect(screen.queryByText('A1')).toBeNull();
+  });
+
+  it('starts collapsed when the node says so', () => {
+    render(
+      <LayerList
+        layers={[{ ...tree[0], defaultCollapsed: true }, tree[1]]}
+        visibility={{}}
+        onReorder={vi.fn()}
+        onToggle={vi.fn()}
+      />,
+    );
+    expect(screen.queryByText('A1')).toBeNull();
+  });
+
+  it('takes collapse from collapsedIds and reports the next set', () => {
+    const onCollapsedChange = vi.fn();
+    renderTree({ collapsedIds: ['a'], onCollapsedChange });
+    expect(screen.queryByText('A1')).toBeNull();
+    fireEvent.click(screen.getByLabelText('A sublayers'));
+    expect(onCollapsedChange).toHaveBeenCalledWith([]);
+    // Controlled: the click alone does not open it.
+    expect(screen.queryByText('A1')).toBeNull();
+  });
+
+  it('ties the twisty to the subtree it reveals', () => {
+    const { container } = renderTree();
+    const controls = screen.getByLabelText('A sublayers').getAttribute('aria-controls');
+    expect(controls).toBeTruthy();
+    expect(container.querySelector(`[id="${controls}"]`)).toHaveClass('lk-layer-list__children');
+  });
+
+  it('spends no twisty column on a flat list', () => {
+    const { container } = render(
+      <LayerList layers={twoLayers} visibility={{}} onReorder={vi.fn()} onToggle={vi.fn()} />,
+    );
+    expect(container.querySelector('.lk-layer-list__twisty-gap')).toBeNull();
+    expect(screen.queryByLabelText(/sublayers$/)).toBeNull();
+  });
+
+  it('holds the twisty column open on childless siblings', () => {
+    const { container } = renderTree();
+    expect(container.querySelectorAll('.lk-layer-list__twisty-gap')).toHaveLength(3);
+  });
+
+  it('reorders within a subtree and leaves the rest of the tree alone', () => {
+    const onReorder = vi.fn();
+    renderTree({ onReorder });
+    const handle = screen.getByLabelText('Reorder A1');
+    fireEvent.pointerDown(handle, { pointerId: 1, buttons: 1, clientY: 0 });
+    dispatchOn(document, 'pointermove', { buttons: 1, clientY: 1 });
+    dispatchOn(document, 'pointerup', { clientY: 1 });
+    expect(onReorder).toHaveBeenCalledTimes(1);
+    const next = onReorder.mock.calls[0][0] as LayerTreeNode[];
+    expect(next.map((l) => l.id)).toEqual(['a', 'b']);
+    expect(next[0].children?.map((l) => l.id)).toEqual(['a2', 'a1']);
+  });
+
+  it('reorders the top level without disturbing a subtree', () => {
+    const onReorder = vi.fn();
+    renderTree({ onReorder });
+    const handle = screen.getByLabelText('Reorder A');
+    fireEvent.pointerDown(handle, { pointerId: 1, buttons: 1, clientY: 0 });
+    dispatchOn(document, 'pointermove', { buttons: 1, clientY: 1 });
+    dispatchOn(document, 'pointerup', { clientY: 1 });
+    const next = onReorder.mock.calls[0][0] as LayerTreeNode[];
+    expect(next.map((l) => l.id)).toEqual(['b', 'a']);
+    expect(next[1].children?.map((l) => l.id)).toEqual(['a1', 'a2']);
   });
 });

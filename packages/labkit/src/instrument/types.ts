@@ -6,6 +6,7 @@ import type { ConfigSchema } from '../config/types';
 import type { ConfigField } from '../controls/types';
 import type { JobCapability, JobHandle } from '../job/types';
 import type { LoupeDeclaration } from '../loupe/types';
+import type { TrialInfo } from '../state/types';
 import type { ToolCapability } from '../tools/types';
 
 /** What an instrument's `render` is handed: its state and config, the setters
@@ -15,11 +16,9 @@ export interface RenderContext<TS = unknown, TC = unknown> {
   config: TC;
   setState: (next: TS | ((prev: TS) => TS)) => void;
   setConfig: (key: keyof TC, value: unknown) => void;
-  trial: {
-    id: string;
-    /** The trial's view, in whatever shape this instrument chose. labkit persists
-     *  it and restores it on Reset without ever reading into it. */
-    view: unknown;
+  /** labkit persists `view` and restores it on Reset without ever reading
+   *  into it. */
+  trial: TrialInfo & {
     setView: (next: unknown) => void;
     /** 2D convenience over `view`. Reads 1 and writes nothing when the trial holds
      *  a view that is not the 2D one. */
