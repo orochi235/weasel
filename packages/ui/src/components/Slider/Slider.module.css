@@ -88,9 +88,12 @@
   z-index: 1;
 }
 
+/* The row holds absolutely-positioned labels, so it has to state its own
+   height: the text's, not the thumb's. It said 14px — the default thumb's
+   size — which left 4px of dead space under the labels at either density. */
 .readoutsBelow {
   position: relative;
-  height: 14px;
+  height: calc(var(--wzl-font-size-xs) * var(--wzl-leading-tight));
   margin-top: 4px;
 }
 

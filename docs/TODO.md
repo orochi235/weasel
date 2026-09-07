@@ -38,7 +38,6 @@ Priority tags:
 - Two implementations of an editable curve; the timeline built the second → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit's loupe drives itself with plain listeners, not bindings → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Accent-coloured readouts are illegible in dark mode → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- A slim Slider reserves the default thumb's height for below-thumb readouts → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Every React Aria overlay inside a lab renders unthemed → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit: nested config values — `f.schema` is flat because `setConfig` is → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Reconcile core's `ToolPrefLeaf` with weasel-ui's `PrefLeaf` — the `paint` kind has already drifted → [Selection, actions & UI panels](#selection-actions--ui-panels)
@@ -1220,16 +1219,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   inside `outer`. `within()` wants exactly that; a consumer reading the name gets
   it backwards.
 
-- **(P2) labkit exports `useOrbit` but not `usePanZoom`.** `useOrbit`'s own
-  docstring calls it "the 3D peer of `usePanZoom`", and `usePanZoom` is reachable
-  only by adopting `CanvasStack` — which a consumer hosting a foreign renderer
-  through `surface` has deliberately opted out of, so the opt-out silently costs
-  them the 2D camera. `ViewTransform` / `DEFAULT_VIEW` / `as2DView` are already
-  public; only the gesture hook is missing. Worth exporting rather than
-  reimplementing per consumer: it carries cursor-anchored zoom and captures the
-  opening zoom so the clamp widens to keep it reachable. Reported by the astv
-  spike.
-
 - **(P2) Every React Aria overlay inside a lab renders unthemed.** RAC portals a
   `Popover` / `Modal` to `document.body`, which is outside the element labkit
   paints its resolved tokens onto (`.lk-root`, via `applyTheme`). Every
@@ -1531,14 +1520,6 @@ derive from `--wzl-accent` rather than from the accent primitives.
 
 Predates the control-skin arc; visible in `weasel-ui-properties-gallery--all` with
 `data-wzl-mode="dark"`.
-
-### A slim Slider reserves the default thumb's height for below-thumb readouts
-
-`Slider.module.css`'s `.readoutsBelow` hardcodes `height: 14px`, which was the
-thumb size before `density="slim"` existed. A slim slider asking for
-`readoutPlacement="below-thumb"` reserves 14px for an 8px thumb. Harmless today —
-`ZoomControl`, the only slim caller, uses `readoutPlacement="none"` — so this is a
-trap for the next slim caller rather than a live defect.
 
 ## Plugins & packaging
 

@@ -88,6 +88,14 @@ export const SnapsToStops: Story = {
   render: (args) => <Wrapper {...args} initial={[{ value: 0.32 }]} />,
 };
 
+/** A slim slider with its values below the thumbs. The readout row is a row of
+ *  text, so it takes the text's height in both densities — it used to reserve
+ *  the default thumb's 14px, which left a slim slider a gap under it. */
+export const SlimWithReadoutsBelow: Story = {
+  args: { density: 'slim', readoutPlacement: 'below-thumb', step: 0.01 },
+  render: (args) => <Wrapper {...args} initial={[{ value: 0.32 }, { value: 0.75 }]} />,
+};
+
 /** The marks are the stops. Turning them off leaves the same snapping with
  *  nothing on screen to explain it — only worth it when the track's own paint
  *  already reads as the stops. */
