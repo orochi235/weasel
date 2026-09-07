@@ -459,15 +459,22 @@ Core five + Crop shipped. Remaining:
   `vertex-widths` mounts one shared `DepRegistryProvider` over two canvases and
   is the live instance.
 
-- **(P2) The text-edit overlay does not scale with the canvas.** `#text` at ~2x
-  renders the DOM overlay at 1x font size in a 240x80 box while the selection
-  frame around it is correctly zoomed — the text sits detached from the glyphs it
-  is editing (`fontSize: 16px, transform: none` at both 1x and 2x). The demo
+- **(P2) The text-edit overlay does not scale with the canvas, and scaling it
+  reveals a second problem.** `#text` at ~2x renders the DOM overlay at 1x font
+  size while the selection frame around it is correctly zoomed — the text sits
+  detached from the glyphs it is editing. The demo
   (`apps/site/demos/TextDemo.tsx:38`) calls `useSceneTextEdit(scene, container)`
-  with no `options.view`, so `getScreenPose` resolves `zoom = 1`. Documented hook
-  behavior, so this is a demo gap — but the demo enables Cmd+wheel zoom by
-  default, putting the broken state one gesture away. The live-view thunk added in
-  `99e2f969` is the surface that fixes it: pass the canvas handle's `getView`.
+  with no `options.view`, so `getScreenPose` resolves `zoom = 1`.
+
+  Passing the canvas handle's `getView` as the thunk does fix the scale —
+  measured 2026-09-07, the overlay's `transform` goes from `none` to the live
+  matrix. **But then the overlay paints outside the demo's 600×400 box**, across
+  the page around it, because at 2x a text node is already ~1150px wide. Neither
+  `overflow: hidden` nor `contain: paint` on the container clips it, though the
+  overlay is a `position: absolute` child of that container and the canvas
+  beside it clips fine. So the demo gap is not one line, and the question under
+  it belongs to the kit: whether `useTextEdit`'s overlay should clip itself to
+  the container it is handed. Reverted rather than shipped half-fixed.
 
 - **(P2) The canvas's repaint tripwire has a blind spot: `helpersForLayersRef`.**
   `Canvas` marks itself dirty from a `useEffect` whose dep array is meant to
