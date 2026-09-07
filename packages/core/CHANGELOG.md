@@ -1,5 +1,58 @@
 # Changelog
 
+## 1.4.2
+
+### Patch Changes
+
+- bfb0595: Run the last four drags in the kit on `openPointerSession`. Capture, pointer identity, teardown and recovery from a release that never arrives are now decided in one place for every pointerdown-to-pointerup lifecycle in the kit.
+  
+  Fix a drag that silently dropped its commit. `openPointerSession` treated `lostpointercapture` as the end of the gesture, and Chrome releases capture implicitly a beat *before* it delivers `pointerup` — so a release already on its way arrived after the session had torn down its listeners, and the gesture ended as a cancel instead of a commit. Roughly three drags in four were lost this way in one measured consumer. Losing capture now ends a session only once the origin has left the document, which is the case the rule was written for: the session listens on the document, so capture is what retargets events, not what delivers them.
+  
+  The gesture dispatcher opens a session per held pointer instead of tracking pointers itself. Two behavior changes come with that: a drag released outside the canvas now ends, where before only pointer capture made that work; and a fresh press on a pointer still believed held cancels the stale gesture rather than committing it at the new press's coordinates, since where it actually ended is unknown.
+  
+  Two small breaking changes. `ThresholdDragOptions.onCancel` now fires only when a gesture ends without a release — a release below the threshold calls the new `onClick`. And in labkit, `useDragDrop`'s `startDrag` and `Palette`'s `onDragStart` take the React pointerdown event in place of a `Point`; a cancelled palette drag now drops nothing, where before it had no cancel path at all.
+  
+  `startThresholdDrag` also takes an `origin` element, for a list whose grabbed row unmounts mid-drag and drops capture with it. `useReorderDragList` uses it and no longer carries its own copy of the threshold logic.
+- 3b07b13: A scene write repaints the canvas instead of re-rendering `SceneCanvas`.
+  
+  `SceneCanvas` held a `useSyncExternalStore` on the scene's version whose only
+  effect was to force a render — it discarded the value. Every mutation therefore
+  committed the whole canvas subtree, including for hosts that had asked not to
+  be re-rendered: `useScene(..., { subscribe: false })` gated the host's own
+  subscription but was invisible to `SceneCanvas`, which subscribed anyway. A
+  frame loop writing poses paid a React render per write.
+  
+  It now subscribes for a repaint, the way the pose-override channel beside it
+  already did. The layers read the scene at paint time and `contentVersion` is a
+  getter, so nothing about drawing the new content needed the commit.
+  
+  **This changes when scene-derived DOM updates.** DOM now lands on the render of
+  whoever subscribed for it, rather than riding along on the canvas's. In practice
+  every consumer already subscribes: `useScene` does by default, `SelectionPanel`
+  subscribes itself, and panels an app hangs beside the canvas re-render with the
+  host that owns the scene. A consumer that renders node data as DOM while
+  holding no subscription of its own — reading a `Scene` it got from somewhere
+  other than `useScene`, and relying on the canvas to re-render it — needs to
+  subscribe. Selection is unaffected: it reaches the render body through
+  `useSelection`'s own store subscription and still commits.
+  
+  `docs/concepts.md` said a scene change leads with DOM. It no longer does, and
+  that section is rewritten.
+- 8e9eb1d: Export `SpritesDrawCommand` and `SPRITE_STRIDE` from the main barrel.
+  
+  They shipped in 1.4.1 reachable only from the `@weasel-js/core/renderer` subpath, because `src/index.ts` re-exports the renderer by name rather than with a star and only the renderer's own barrel was updated. Every other `DrawCommand` variant is nameable from `@weasel-js/core`, and a consumer cannot pack a sprite run without the stride constant.
+  
+  `index.barrel.test.ts` now asserts that every `*DrawCommand` the renderer barrel names is named on the main barrel too, so the next variant cannot land half-exported.
+- Updated dependencies [c93aa91]
+  - @weasel-js/text@1.4.2
+  - @weasel-js/cursor@1.4.2
+  - @weasel-js/font@1.4.2
+  - @weasel-js/geom@1.4.2
+  - @weasel-js/gestures@1.4.2
+  - @weasel-js/history@1.4.2
+  - @weasel-js/modes@1.4.2
+  - @weasel-js/paint@1.4.2
+
 ## 1.4.1
 
 ### Patch Changes

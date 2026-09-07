@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/cursor",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Tool cursors as authored glyphs: bake one to a CSS url() cursor string, or paint it when it is too big to be one.",
   "license": "MIT",
   "type": "module",

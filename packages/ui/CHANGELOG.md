@@ -1,5 +1,174 @@
 # @weasel-js/ui
 
+## 1.4.2
+
+### Patch Changes
+
+- 8819237: Add `<Disclosure>`, and sit the lab header's controls on the title's baseline.
+  
+  **`Disclosure`** is the twisty on a collapsible section: a triangle that turns
+  as it opens. It holds no state and renders no children — the consumer owns both,
+  and `aria-expanded` ties the control to them. `DisclosureRow` puts one beside a
+  row of content.
+  
+  It settles three things every hand-rolled twisty gets wrong. The mark is drawn
+  rather than typed, because `--wzl-font-ui` carries no ▸/▾ and a text glyph falls
+  back to whatever the system offers at whatever size that font renders it —
+  around 6px against 13px body text. The hit target is at least 20px and grows
+  with the mark, rather than being the mark's size. And it sits outside the row's
+  label rather than inside it, so clicking to expand does not actuate the label's
+  own control.
+  
+  Like `DragHandleGlyph`, it stays out of the icon register: that register is
+  outline strokes at a fixed weight, and `icons/base.mjs` rejects a solid triangle
+  in it by name.
+  
+  **The lab header** aligned its controls to the center of the row, so every
+  control label sat off the title's baseline — 5px, for the `Add trial` button.
+  The header and its actions row now align on the baseline. The button needed one
+  more thing: a flex container reports its *first* item's baseline, and the
+  leading `<svg>` icon has none, so the button handed the header a baseline
+  synthesized from the icon's bottom edge. It aligns on the baseline internally
+  now, with the icon keeping its own centering through `align-self`.
+- bfb0595: Run the last four drags in the kit on `openPointerSession`. Capture, pointer identity, teardown and recovery from a release that never arrives are now decided in one place for every pointerdown-to-pointerup lifecycle in the kit.
+  
+  Fix a drag that silently dropped its commit. `openPointerSession` treated `lostpointercapture` as the end of the gesture, and Chrome releases capture implicitly a beat *before* it delivers `pointerup` — so a release already on its way arrived after the session had torn down its listeners, and the gesture ended as a cancel instead of a commit. Roughly three drags in four were lost this way in one measured consumer. Losing capture now ends a session only once the origin has left the document, which is the case the rule was written for: the session listens on the document, so capture is what retargets events, not what delivers them.
+  
+  The gesture dispatcher opens a session per held pointer instead of tracking pointers itself. Two behavior changes come with that: a drag released outside the canvas now ends, where before only pointer capture made that work; and a fresh press on a pointer still believed held cancels the stale gesture rather than committing it at the new press's coordinates, since where it actually ended is unknown.
+  
+  Two small breaking changes. `ThresholdDragOptions.onCancel` now fires only when a gesture ends without a release — a release below the threshold calls the new `onClick`. And in labkit, `useDragDrop`'s `startDrag` and `Palette`'s `onDragStart` take the React pointerdown event in place of a `Point`; a cancelled palette drag now drops nothing, where before it had no cancel path at all.
+  
+  `startThresholdDrag` also takes an `origin` element, for a list whose grabbed row unmounts mid-drag and drops capture with it. `useReorderDragList` uses it and no longer carries its own copy of the threshold logic.
+- 68556f5: `Select` and `NumberField` take `width='fit'`, sizing to their content instead
+  of to the row they sit in.
+  
+  Both are form fields and both drew at `width: 100%`, which is right in a form
+  column and wrong everywhere else: in a shrink-to-fit row — a toolbar, a header —
+  the field absorbs all the slack and pushes the row's other content to
+  min-content. The only fix available to a consumer was to pin a pixel width from
+  its own stylesheet, which is a number nobody can maintain against a font or a
+  label change.
+  
+  `width` defaults to `'fill'`, which is the behavior every existing caller has.
+  `'fit'` sizes the control to its content:
+  
+  - A `Select` measures its widest option, not its selected one. The trigger
+    becomes a grid, and a hidden stack of every option label (the placeholder
+    included) shares a cell with the value. So the control fits the longest thing
+    it can ever show and does not change width as the selection moves. The
+    children form is measured the same way, off each `SelectItem`'s label. Each
+    measured row carries the check mark too, because a selected row's mark
+    travels into the trigger alongside its label.
+  - A `NumberField` states a character count, `--wzl-number-field-width`,
+    defaulting to `9ch` — the width the property rows already use for a number.
+    A stated width is what this needs: left to size itself an `<input>` asks for
+    its 20-character intrinsic width, which is wider than most rows it sits in.
+  
+  This is the same affordance the property rows got through
+  `--wzl-prop-number-width` / `--wzl-prop-text-width`, offered as a prop because
+  these two are placed by consumers rather than by a panel.
+- 68556f5: Let a `LayerStack` have no palette, and let a `LayerList` nest.
+  
+  **`LayerStack`** required `kind` on every item plus `paletteKinds` and `onAdd`
+  on the stack, so a list whose items have no kind and nowhere to add from had to
+  pass three stubs to get a drag-reorderable set of expandable cards. All three
+  are optional now, as are `onRemove` and `onPrimaryChange`:
+  
+  - An item names itself with `label` when it has no `kind`.
+  - The head row renders only when there is a title or a palette to put in it.
+    Without `onAdd` there is no palette, whatever `paletteKinds` says.
+  - No `onRemove`, no ✕. No `onPrimaryChange`, no select — a `primaryValue` with
+    no handler would have been a control the user could not change.
+  - The empty state stops pointing at a palette that is not there, and
+    `emptyLabel` overrides it.
+  
+  **`LayerList`** took a flat array, so a nested set of layers had to be
+  rebuilt as a recursive component outside the kit. `layers` is now
+  `LayerTreeNode[]` — a `LayerDescriptor` with optional `children` — and a node
+  with children renders an expandable subtree behind `<Disclosure>`. A plain
+  `LayerDescriptor[]` still type-checks and renders exactly as before, twisty
+  column included: it appears only once some node in the tree has children.
+  
+  Reordering is scoped to siblings. A drag moves a row within its own parent's
+  child list and never reparents it; `onReorder` still hands back the whole tree,
+  with only that group's order changed. Collapse is uncontrolled by default,
+  seeded from each node's `defaultCollapsed`; pass `collapsedIds` to own it, and
+  `onCollapsedChange` fires either way.
+- b1cddc6: Property panels take `density` and `align`, and `layout` reaches every row kind.
+  
+  Three things a consumer could not do from outside `Properties.module.css`.
+  
+  **Spacing was four hard-coded numbers** — the list's row gap, the group's
+  padding, the group title's margin, the panel's padding — none of which read a
+  custom property. Every metric in the family now does: `--wzl-prop-row-gap`,
+  `--wzl-prop-column-gap`, `--wzl-prop-panel-pad`, `--wzl-prop-panel-title-gap`,
+  `--wzl-prop-group-pad`, `--wzl-prop-group-title-gap`,
+  `--wzl-prop-subpanel-row-gap`, `--wzl-prop-field-h`, `--wzl-prop-field-pad-x`.
+  A `density` of `'tight' | 'normal' | 'roomy'` on `PropertyPanel`,
+  `PropertyList`, `PropertyGroup`, `Subpanel` or `PropertyRow` sets them as a
+  bundle. Both props inherit, so the nearest container that states one wins and an
+  inner group can differ from the panel around it.
+  
+  **A color row centered its label and swatch and could not be told otherwise**,
+  so a palette panel — a column of swatches read as a group — had no way to line
+  them up. `align` takes `'start' | 'center' | 'end' | 'baseline'`; `baseline`
+  sits each swatch on its label's first-line baseline, which holds when labels
+  wrap to different heights. Left unset, a color row keeps sinking its content to
+  the row's bottom edge, so an alpha track stays level with the taller row beside
+  it.
+  
+  **`ColorRow` and `CheckboxRow` took no `layout`.** `PropertyRow` gated the
+  inline class on the default variant, so a panel asking for one orientation got
+  another for two row kinds out of six. `layout` is now unset by default and each
+  variant supplies its own — `block` for the default variant, `inline` for color
+  and checkbox — so passing it through a whole panel is safe, and `block` on a
+  color or checkbox row stacks it. `ControlPanel` forwards `layout` to those two
+  rows, and takes `density` and `align` of its own.
+  
+  `PropertyList` and `PropertyGroup` also take `pack="one-up"`, which gives every
+  row the full width, color rows included. `'auto-color'` pairs them two per row
+  and there was no way to opt out — which is the packing a palette needs.
+  
+  Nothing changes for a consumer that passes none of these.
+- 352f938: A property-row number field drops the browser's spin buttons.
+  
+  Chrome reserves the spin-button gutter at a number input's right edge whether or
+  not it paints the arrows. The field right-aligns its value, so the digits stopped
+  about 20px short of their own border and the row read as if something belonged in
+  that space — a unit, most obviously, which is exactly where a unit does not go:
+  `NumberRow` renders `unit` as a sibling of the input, outside its border.
+  
+  The panel drives numbers by typing and by dragging the paired slider, never by
+  the steppers, and the slider's own inline readout has always dropped them. The
+  typed field beside it now does too.
+- 68556f5: `SliderRow` gets a live/commit pair, and a `PropertyGroup` can fold away.
+  
+  **`SliderRow` now takes `onInput` alongside `onChange`** — the pair `<Slider>`
+  already spells. `onInput` fires through the drag, `onChange` once it ends, so a
+  control whose write is expensive (a re-simulation, a refetch) can say "on
+  release". The commit half is the platform's own: a range input fires `input`
+  continuously and `change` when the value settles. A typed readout reports to
+  both. A row given only `onChange` is unchanged — that one callback stays the
+  live write and there is no separate commit.
+  
+  **`PropertyGroup` collapses.** `collapsible` puts a `<Disclosure>` twisty
+  beside the title; `defaultCollapsed` starts it folded and leaves the state with
+  the group; `collapsed` + `onCollapsedChange` hand that state to the consumer.
+  Folded rows stay mounted and hidden, so a control's local state survives being
+  put away.
+  
+  `ControlPanel` passes it through to a schema's sections. `collapse="closed"`
+  folds them all; `collapsed` — a map keyed by section label — plus `onCollapse`
+  put the open/closed state somewhere a lab can keep it. A panel that sets
+  neither renders exactly as before.
+- Updated dependencies [bfb0595]
+- Updated dependencies [3b07b13]
+- Updated dependencies [8e9eb1d]
+  - @weasel-js/core@1.4.2
+  - @weasel-js/svg@1.4.2
+  - @weasel-js/font@1.4.2
+  - @weasel-js/modes@1.4.2
+
 ## 1.4.1
 
 ### Patch Changes
