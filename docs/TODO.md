@@ -30,7 +30,6 @@ Priority tags:
 - Small caps and text-transform have no run spelling → [Text](#text)
 
 **Scene, adapters & layout**
-- A stroke with no `paint` still throws outside the painters → [Rendering & paint](#rendering--paint)
 - `arrayAdapter` as default Canvas adapter — full unification → [Scene, adapters & layout](#scene-adapters--layout)
 - Layout strategies: drop rejection signal → [Scene, adapters & layout](#scene-adapters--layout)
 - Layout strategies: multi-select drag into a layout container → [Scene, adapters & layout](#scene-adapters--layout)
@@ -649,19 +648,6 @@ Core five + Crop shipped. Remaining:
   regex against the case it described.
 
 ---
-
-- **(P2) A stroke with no `paint` still throws outside the painters.** The
-  producer is fixed (`SelectionPanel`'s object leaf seeds from the leaf's
-  `default`, so a field written onto a node with no stroke materializes a
-  whole one) and the painters read such a stroke as no stroke. Documents
-  saved before that fix can still hold one, and four paths still dereference
-  `stroke.paint` unguarded: `packages/core/src/renderer/draw.ts:1066` and
-  `:1145` for any `DrawCommand` arriving from a consumer painter or overlay,
-  `apps/draw/src/svgExport.ts:103`, `apps/draw/src/svgInterop.ts:172`, and
-  `packages/svg/src/serialize.ts:272,294` — so exporting such a document
-  throws. Either normalize on load or make `Stroke.paint` optional in the type
-  and honest everywhere; a guard per call site is the version that rots.
-  Recorded 2026-08-30.
 
 ## Text
 

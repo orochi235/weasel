@@ -9,7 +9,7 @@ function alphas(out: ReturnType<typeof computeScrubbedPaints>) {
   const round = (n: number) => Math.round(n * 1000) / 1000;
   return {
     fill: out.fill ? round(out.fill.opacity ?? 1) : null,
-    stroke: out.stroke ? round(out.stroke.paint.opacity ?? 1) : null,
+    stroke: out.stroke?.paint ? round(out.stroke.paint.opacity ?? 1) : null,
   };
 }
 

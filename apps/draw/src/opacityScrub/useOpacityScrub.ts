@@ -55,7 +55,7 @@ export function useOpacityScrub({ scene, selection, hostRef }: UseOpacityScrubAr
     function brightestAlphaOf(snap: PaintSnapshot): number {
       return Math.max(
         snap.fill ? paintAlpha(snap.fill) : 0,
-        snap.stroke ? paintAlpha(snap.stroke.paint) : 0,
+        snap.stroke?.paint ? paintAlpha(snap.stroke.paint) : 0,
       );
     }
 

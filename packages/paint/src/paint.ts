@@ -148,7 +148,13 @@ export type MarkerRef = MarkerKey | { key: MarkerKey; size?: number | { px: numb
 
 /** Stroke style: a FillStyle plus structural line parameters. */
 export interface Stroke {
-  paint: FillStyle;
+  /**
+   * Omitted, the stroke paints nothing — the same "no paint" a `fill: null`
+   * says for a node's fill. Documents written before mid-2026 can hold a
+   * stroke whose other fields were seeded without one, and the type is
+   * optional so every reader has to answer for that rather than throw on it.
+   */
+  paint?: FillStyle;
   /** World units, or `{ px }` for screen pixels — resolved against the
    *  accumulated transform scale at draw time, so it holds its on-screen
    *  thickness as the view zooms. */

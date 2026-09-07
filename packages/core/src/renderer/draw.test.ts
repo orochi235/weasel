@@ -209,6 +209,19 @@ describe('WeaselRenderer.render — kind: path with stroke', () => {
     expect(draws.length).toBe(0);
   });
 
+  // A stroke whose fields were seeded one at a time onto a node that had none
+  // arrives with no `paint`. It paints nothing rather than throwing the frame
+  // away — commands reach here from consumer painters and overlays too.
+  it('skips a stroke that carries no paint, and still paints the fill', () => {
+    const path: RectPath = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
+    r.render([{ kind: 'path', path, stroke: { width: 2 } }]);
+    expect(recorder.calls.filter((c) => c.name === 'drawElements').length).toBe(0);
+
+    recorder.reset();
+    r.render([{ kind: 'path', path, fill: { color: '#f00' }, stroke: { width: 2 } }]);
+    expect(recorder.calls.filter((c) => c.name === 'drawElements').length).toBe(1);
+  });
+
   it('uses stencil two-pass when stroking a PolygonPath with align: inner', () => {
     const path: PolygonPath = {
       kind: 'polygon',

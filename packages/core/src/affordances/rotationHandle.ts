@@ -39,7 +39,12 @@ export interface RotationScratch extends CommonAffordanceScratch {
   fixedPoint: { x: number; y: number };
 }
 
-const DEFAULT_PAINT: { fill?: FillStyle; stroke?: Stroke; insetPx?: number } = {
+type AnnulusPaintForm = { fill?: FillStyle; stroke?: Stroke; insetPx?: number };
+
+const isAnnulusForm = (paint: Stroke | AnnulusPaintForm): paint is AnnulusPaintForm =>
+  'fill' in paint || 'stroke' in paint || 'insetPx' in paint;
+
+const DEFAULT_PAINT: AnnulusPaintForm = {
   fill: { fill: 'solid', color: 'rgba(26, 19, 13, 0.12)' },
   insetPx: 10,
 };
@@ -69,13 +74,14 @@ export function createRotationAffordance(
   // Normalize `paint` into the AnnulusPaint shape understood by
   // `composeAffordanceLayer`. Three input forms are accepted: a bare
   // `Stroke` (legacy outline form), the `{ fill, stroke, insetPx }`
-  // object form, or `null`/`false` for invisible.
+  // object form, or `null`/`false` for invisible. The object form is what
+  // carries these three keys; `Stroke` carries none of them, and cannot be
+  // told apart by its own `paint` since that is optional.
   const annulusPaint:
     | { kind: 'annulus'; fill?: FillStyle; stroke?: Stroke; insetPx?: number }
     | null = (() => {
       if (!paint) return null;
-      if ('paint' in paint) {
-        // Bare Stroke (has top-level `paint: PaintStyle`).
+      if (!isAnnulusForm(paint)) {
         return { kind: 'annulus' as const, stroke: paint };
       }
       return {

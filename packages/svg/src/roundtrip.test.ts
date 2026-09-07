@@ -366,6 +366,20 @@ describe('round-trip', () => {
     expect(out).not.toContain('stroke=');
   });
 
+  /**
+   * A panel that writes one stroke field onto a node with no stroke used to
+   * leave a whole stroke behind with no `paint`. The painters read that as no
+   * stroke; the serializer dereferenced it and took the export down with it.
+   */
+  it('a stroke carrying no paint serializes as no stroke', () => {
+    const node = parseSvg(F.TEXT_PLAIN_SVG).nodes[0];
+    if (node.kind !== 'text') throw new Error('expected a text node');
+    const unpainted: SvgNode = { ...node, stroke: { width: 2, cap: 'round' } };
+    const out = serializeSvg([unpainted], { viewBox: { x: 0, y: 0, width: 200, height: 100 } });
+    expect(out).not.toContain('stroke=');
+    expect(out).not.toContain('stroke-width=');
+  });
+
   it('generic namespace pass-through: two declared namespaces stay isolated', () => {
     const namespaces = {
       foo: 'https://example.com/foo',

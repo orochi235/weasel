@@ -282,23 +282,25 @@ function paintAttrs(
  * `TextStyle` / `StyledRun` rather than as a node-level `SvgStroke`, because
  * that is where the kit's text model puts them.
  *
- * Absent, or zero-width, emits nothing at all: unstroked text should not
- * carry a `stroke` attribute, and SVG's own default (`none`) already says so.
+ * Absent, unpainted, or zero-width emits nothing at all: unstroked text should
+ * not carry a `stroke` attribute, and SVG's own default (`none`) already says
+ * so.
  */
 function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServerRegistry): string[] {
-  if (!stroke) return [];
+  const paint = stroke?.paint;
+  if (!stroke || !paint) return [];
   // SVG has no accumulated-transform scale to resolve a `{ px }` width
   // against; its number is emitted as-is.
   const width = resolveStrokeWidth(stroke.width ?? 1, 1);
   if (!(width > 0)) return [];
   const attrs: string[] = [];
-  if ('color' in stroke.paint) {
-    attrs.push(`stroke="${stroke.paint.color}"`);
-    if (stroke.paint.opacity != null && stroke.paint.opacity !== 1) {
-      attrs.push(`stroke-opacity="${trimNumber(stroke.paint.opacity)}"`);
+  if ('color' in paint) {
+    attrs.push(`stroke="${paint.color}"`);
+    if (paint.opacity != null && paint.opacity !== 1) {
+      attrs.push(`stroke-opacity="${trimNumber(paint.opacity)}"`);
     }
   } else {
-    attrs.push(`stroke="url(#${registry.register(stroke.paint)})"`);
+    attrs.push(`stroke="url(#${registry.register(paint)})"`);
   }
   attrs.push(`stroke-width="${trimNumber(width)}"`);
   if (stroke.cap) attrs.push(`stroke-linecap="${stroke.cap}"`);

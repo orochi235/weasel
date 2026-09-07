@@ -542,16 +542,20 @@ function resolveNodeFill(
  *  takes the whole frame with it: the page and every other node vanish, and
  *  the canvas stays stale until something unrelated requests a redraw. One
  *  malformed node must not be able to blank the document. */
-function resolveNodeStroke(stroke: Stroke | null | undefined): Stroke | null {
-  if (stroke == null || stroke.paint == null) return null;
-  return stroke;
+function resolveNodeStroke(stroke: Stroke | null | undefined): PaintedStroke | null {
+  if (stroke?.paint == null) return null;
+  return stroke as PaintedStroke;
 }
+
+/** A stroke that paints — what everything downstream of `resolveNodeStroke`
+ *  works with. */
+type PaintedStroke = Stroke & { paint: FillStyle };
 
 /** Bake a bounds-relative stroke paint onto the given box, the way a fill is
  *  baked. The box is the frame the path was projected into, so a paint left in
  *  `'bounds'` units would reach the renderer describing a frame that never
  *  exists. `null` when a pattern spec fails to resolve. */
-function strokeInPoseFrame(stroke: Stroke, box: FillPoseBox): Stroke | null {
+function strokeInPoseFrame(stroke: PaintedStroke, box: FillPoseBox): Stroke | null {
   const paint = resolveFillPattern(fillInPoseFrame(stroke.paint, box));
   if (paint === null) return null;
   return paint === stroke.paint ? stroke : { ...stroke, paint };

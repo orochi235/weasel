@@ -344,12 +344,12 @@ function sameFill(a: FillStyle, b: FillStyle): boolean {
   return false;
 }
 
-/** Whether a stroke puts ink down — an omitted or zero-width one does not,
- *  and must not pull a run onto the outline tier for nothing. A screen-pixel
- *  width is positive on the same terms; what it resolves to in world units
- *  depends on a scale this layer does not have and does not need. */
-function strokePaints(s: Stroke | undefined): boolean {
-  if (s === undefined) return false;
+/** Whether a stroke puts ink down — an omitted, unpainted or zero-width one
+ *  does not, and must not pull a run onto the outline tier for nothing. A
+ *  screen-pixel width is positive on the same terms; what it resolves to in
+ *  world units depends on a scale this layer does not have and does not need. */
+function strokePaints(s: Stroke | undefined): s is Stroke & { paint: FillStyle } {
+  if (s?.paint === undefined) return false;
   const w = s.width ?? 1;
   return (typeof w === 'number' ? w : w.px) > 0;
 }
@@ -362,7 +362,7 @@ function strokePaints(s: Stroke | undefined): boolean {
  * does.
  */
 function strokeKey(s: Stroke | undefined): string {
-  if (!s) return '-';
+  if (!strokePaints(s)) return '-';
   const width = s.width ?? 1;
   return [
     // A screen-pixel width keys apart from the equal world-unit number: the two
@@ -415,7 +415,7 @@ function getOrCreateGroup(
     resolvedStyle,
     resolved.synthetic,
     run.fill,
-    source === 'outline' ? run.stroke : undefined,
+    source === 'outline' && strokePaints(run.stroke) ? run.stroke : undefined,
     source,
     page,
   );
@@ -431,7 +431,7 @@ function getOrCreateGroup(
       fill: run.fill,
       // Only the outline tier can paint it, and carrying it on an SDF group
       // would be a promise the renderer cannot keep.
-      ...(source === 'outline' && run.stroke !== undefined ? { stroke: run.stroke } : {}),
+      ...(source === 'outline' && strokePaints(run.stroke) ? { stroke: run.stroke } : {}),
       quads: [],
       glyphs: [],
     };

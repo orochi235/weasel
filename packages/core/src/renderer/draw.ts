@@ -444,9 +444,14 @@ export function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {
   ctx.state.pop();
 }
 
+/** A path command whose stroke actually paints something. */
+type StrokedPathCommand = PathDrawCommand & { stroke: Stroke & { paint: FillStyle } };
+
 function drawPath(ctx: DrawContext, cmd: PathDrawCommand): void {
   if (cmd.fill) drawPathFill(ctx, cmd);
-  if (cmd.stroke) drawPathStroke(ctx, cmd);
+  // A stroke with no `paint` paints nothing, the way a node's `fill: null`
+  // does. Commands arriving from a consumer painter or overlay can carry one.
+  if (cmd.stroke?.paint) drawPathStroke(ctx, cmd as StrokedPathCommand);
 }
 
 function drawPathFill(ctx: DrawContext, cmd: PathDrawCommand): void {
@@ -1156,16 +1161,16 @@ function drawPathFillStencil(ctx: DrawContext, fill: FillStyle, handle: GLMeshHa
 /** `cmd` with a `{ px }` stroke width resolved against the accumulated
  *  transform, so everything downstream — the ribbon cache key included — sees
  *  a world-unit number. */
-function withResolvedStrokeWidth(ctx: DrawContext, cmd: PathDrawCommand): PathDrawCommand {
-  const stroke = cmd.stroke!;
+function withResolvedStrokeWidth(ctx: DrawContext, cmd: StrokedPathCommand): StrokedPathCommand {
+  const stroke = cmd.stroke;
   if (typeof stroke.width !== 'object') return cmd;
   const width = resolveStrokeWidth(stroke.width, mat3.meanScaleOf(ctx.state.transform));
   return { ...cmd, stroke: { ...stroke, width } };
 }
 
-function drawPathStroke(ctx: DrawContext, rawCmd: PathDrawCommand): void {
+function drawPathStroke(ctx: DrawContext, rawCmd: StrokedPathCommand): void {
   const cmd = withResolvedStrokeWidth(ctx, rawCmd);
-  const stroke = cmd.stroke!;
+  const stroke = cmd.stroke;
   const align = stroke.align ?? 'center';
   if (cmd.path.kind === 'polygon' && align !== 'center') {
     flushBatches(ctx);
@@ -1176,8 +1181,8 @@ function drawPathStroke(ctx: DrawContext, rawCmd: PathDrawCommand): void {
   drawPathStrokeUnclipped(ctx, cmd);
 }
 
-function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
-  const stroke = cmd.stroke!;
+function drawPathStrokeUnclipped(ctx: DrawContext, cmd: StrokedPathCommand): void {
+  const stroke = cmd.stroke;
   const paint = stroke.paint;
   const isSolid = paint.fill === undefined || paint.fill === 'solid';
   const solid = paint as { color: string; opacity?: number };
@@ -1253,10 +1258,10 @@ function doubledVertexWidths(widths: number[]): number[] {
 
 function drawPathStrokeStenciled(
   ctx: DrawContext,
-  cmd: PathDrawCommand,
+  cmd: StrokedPathCommand,
   align: 'inner' | 'outer',
 ): void {
-  const stroke = cmd.stroke!;
+  const stroke = cmd.stroke;
   const paint = stroke.paint;
   const isSolid = paint.fill === undefined || paint.fill === 'solid';
   const solid = paint as { color: string; opacity?: number };
@@ -1473,10 +1478,11 @@ function drawTextOutlineGroup(ctx: DrawContext, group: LaidOutGroup, dx: number,
   // Stroke after fill — Canvas2D's fillText-then-strokeText convention, and
   // SVG's default paint-order. A second batched draw call over the same
   // group, not a call per glyph.
-  if (!group.stroke) return;
+  const strokePaint = group.stroke?.paint;
+  if (!strokePaint) return;
   const ribbon = outlineGroupStrokeMesh(group, dx, dy, mat3.meanScaleOf(ctx.state.transform));
   if (ribbon) {
-    drawPathFillByKind(ctx, group.stroke.paint, ctx.meshCache.uploadTransient(ribbon));
+    drawPathFillByKind(ctx, strokePaint, ctx.meshCache.uploadTransient(ribbon));
   }
 }
 

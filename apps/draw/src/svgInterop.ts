@@ -165,11 +165,12 @@ function objPaintToSvg(fill: FillStyle): SvgPaint {
 /** Lower an object's stroke onto an `SvgStroke`. SVG has no stroke
  *  alignment, so `align` is dropped. */
 function objStrokeToSvg(stroke: Stroke | null): SvgStroke | undefined {
-  if (stroke === null) return undefined;
+  const paint = stroke?.paint;
+  if (stroke === null || paint === undefined) return undefined;
   const width = resolveStrokeWidth(stroke.width ?? 1, 1);
   if (width <= 0) return undefined;
   return {
-    paint: objPaintToSvg(stroke.paint),
+    paint: objPaintToSvg(paint),
     width,
     ...(stroke.cap !== undefined ? { cap: stroke.cap } : {}),
     ...(stroke.join !== undefined ? { join: stroke.join } : {}),

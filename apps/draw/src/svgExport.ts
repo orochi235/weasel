@@ -98,7 +98,8 @@ function leafToObj(id: string, data: WeaselDrawData, pose: WeaselDrawPose): Obj 
     fill: data.fill == null ? EXPORT_FALLBACK_FILL : fillInPoseFrame(data.fill, pose),
     // A gradient stroke paint gets the same pose-frame resolution the fill
     // above gets, and for the same reason.
-    stroke: data.stroke == null
+    // A stroke with no paint draws nothing, and exports as no stroke.
+    stroke: data.stroke?.paint == null
       ? null
       : { ...data.stroke, paint: fillInPoseFrame(data.stroke.paint, pose) },
   };

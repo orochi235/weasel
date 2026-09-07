@@ -134,7 +134,8 @@ function paintKey(p: FillStyle): string {
 }
 
 function strokeKey(s: Stroke | undefined): string {
-  if (!s) return '-';
+  // A stroke with no paint draws nothing, so it keys as no stroke at all.
+  if (!s?.paint) return '-';
   const width = s.width ?? 1;
   return [
     paintKey(s.paint), typeof width === 'number' ? width : `px${width.px}`,
