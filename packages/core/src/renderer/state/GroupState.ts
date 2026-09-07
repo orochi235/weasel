@@ -77,6 +77,29 @@ export class GroupState {
     this.colorMatrixStack.push(nextCM);
   }
 
+  /**
+   * Push a frame whose children paint into a surface of their own.
+   *
+   * The transform still accumulates — the children draw where they would have
+   * drawn. Alpha and colour do not: they describe how the finished surface
+   * joins the frame, and applying them on the way in as well would fade the
+   * pixels an effect is about to read, then fade them again on the way out.
+   *
+   * Returns the pair the caller must apply at composite time — what `push`
+   * would have left on the stack — so the composition rules live here and not
+   * in the dispatcher.
+   */
+  pushIsolated(frame: GroupFrame): { alpha: number; colorMatrix: Float32Array } {
+    this.push(frame);
+    const composited = { alpha: this.alpha, colorMatrix: this.colorMatrix };
+    this.pop();
+    const current = this.transform;
+    this.transformStack.push(frame.transform ? mat3.multiply(current, frame.transform) : current);
+    this.alphaStack.push(1);
+    this.colorMatrixStack.push(IDENTITY_COLOR_MATRIX);
+    return composited;
+  }
+
   /** Drop every pushed frame, leaving the root. A frame that throws part-way
    *  down the tree never pops, and the next frame would draw under leftovers. */
   reset(): void {

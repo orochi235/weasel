@@ -475,6 +475,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/CustomShaderDemo.tsx',
   },
   {
+    id: 'effects',
+    title: 'Full-screen effect passes',
+    category: 'Rendering & paint',
+    description: 'A layer\'s pixels rendered into a texture, run through shader passes, then composited back. The world layer carries `effects: [...blur({ radius }), ...vignette({ amount })]`; the HUD layer above it carries none and stays sharp — which is the difference between a real pass and a CSS `filter` on the canvas, since the filter blurs the HUD too. Effects live on `GroupDrawCommand`, so the same field works on a container node or the whole tree; `RenderLayer.effects` is that field folded into the group a layer is already wrapped in. Nothing is allocated until a group declares one. Write your own with `registerEffect(id, frag)`.',
+    hint: 'drag the radius to 0 and back · the HUD never blurs',
+    load: () => import('./demos/EffectsDemo').then((m) => m.EffectsDemo),
+    path: 'apps/site/demos/EffectsDemo.tsx',
+  },
+  {
     id: 'render-to-pixels',
     title: 'Headless render-to-pixels',
     category: 'Rendering & paint',

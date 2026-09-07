@@ -287,10 +287,12 @@ a:hover { text-decoration: underline; }
   cursor: crosshair;
 }
 
-/* Cheap stand-in for a real full-screen blur pass — there is no
- * render-to-texture for a shader to sample yet. See docs/TODO.md's
- * "(P1) A full-screen effects pass". Two discrete steps, not a computed
- * value, so the concussion escalates without an inline style. */
+/* Still a CSS filter, and it still blurs the HUD along with the game. Real
+ * effect passes exist now (`RenderLayer.effects`), but they are per-layer and
+ * this demo has five world layers — one pass each is five buffers and the
+ * wrong composite. See docs/TODO.md's "Layers cannot share one effect pass".
+ * Two discrete steps, not a computed value, so the concussion escalates
+ * without an inline style. */
 .ckd-canvas { transition: filter 180ms ease-out; }
 .ckd-canvas--knocked { filter: blur(5px); }
 
@@ -298,6 +300,30 @@ a:hover { text-decoration: underline; }
   font-size: 11px;
   color: var(--ckd-faint);
   font-style: italic;
+}
+
+/* A row of inline controls under a canvas (EffectsDemo's blur slider). */
+.ckd-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+  margin-top: 12px;
+}
+
+.ckd-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ckd-faint);
+}
+
+.ckd-control output {
+  font-variant-numeric: tabular-nums;
+  min-width: 2ch;
+  text-align: right;
+  color: var(--ckd-text);
 }
 
 /* Canvas + side panel demos (e.g. SelectionPanelDemo). */

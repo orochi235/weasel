@@ -2,7 +2,8 @@
  * Renderer barrel. WeaselRenderer + DrawCommand types for
  * solid/pattern/gradient-fill paths, groups (with optional color matrix
  * and per-vertex color), strokes, MSDF text, images, plus an experimental
- * custom shader API (registerProgram, registerTexture, kind:'shader').
+ * custom shader API (registerProgram, registerTexture, kind:'shader'), and
+ * full-screen effect passes (registerEffect, blur/vignette, group `effects`).
  */
 
 export { WeaselRenderer, type WeaselRendererOptions, type RenderTarget } from './WeaselRenderer';
@@ -47,4 +48,7 @@ export {
   type ShaderUniform,
 } from './shaders/registerProgram';
 export { registerTexture, type TextureHandle } from './textures/registerTexture';
+export { registerEffect, type Effect } from './effects/types';
+export { blur, vignette } from './effects/builtins';
+export { EFFECT_VERT_SRC, EFFECT_KIT_UNIFORMS } from './effects/effectPrelude';
 export { ShaderCompileError } from './shaders/ShaderProgram';

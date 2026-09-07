@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { type LayerCommandCache, type RenderLayer, drawLayers } from './render';
+import { type LayerCommandCache, type RenderLayer, drawLayers, drawOneLayer } from './render';
 import type { DrawCommand } from '../../renderer';
 
 describe('drawLayers', () => {
@@ -270,5 +270,47 @@ describe('a layer that throws', () => {
     const out = drawLayers([layer], { v: 1 }, {}, undefined, undefined, dims, cache, onLayerError);
     expect(out).toEqual([PATH_CMD]);
     expect(onLayerError).toHaveBeenCalledTimes(1);
+  });
+});
+
+const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+
+describe('RenderLayer.effects', () => {
+  const cmds: DrawCommand[] = [
+    { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { color: '#f00' } },
+  ];
+  const fx = [{ program: { id: 'test:fx' } }];
+
+  it('rides on the group a world-space layer is already wrapped in', () => {
+    const layer: RenderLayer<undefined> = {
+      id: 'w', label: 'w', draw: () => cmds, effects: fx,
+    };
+    const out = drawOneLayer(layer, undefined, VIEW, DIMS);
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({ kind: 'group', effects: fx });
+  });
+
+  it('wraps a screen-space layer that would otherwise pass straight through', () => {
+    const layer: RenderLayer<undefined> = {
+      id: 's', label: 's', space: 'screen', draw: () => cmds, effects: fx,
+    };
+    const out = drawOneLayer(layer, undefined, VIEW, DIMS);
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({ kind: 'group', effects: fx });
+    // No view transform: a screen-space layer's commands are already placed.
+    expect((out[0] as { transform?: unknown }).transform).toBeUndefined();
+  });
+
+  it('leaves a screen-space layer unwrapped when the list is empty', () => {
+    const layer: RenderLayer<undefined> = {
+      id: 's', label: 's', space: 'screen', draw: () => cmds, effects: [],
+    };
+    expect(drawOneLayer(layer, undefined, VIEW, DIMS)).toEqual(cmds);
+  });
+
+  it('sets no `effects` key at all on a world layer that declares none', () => {
+    const layer: RenderLayer<undefined> = { id: 'w', label: 'w', draw: () => cmds };
+    const out = drawOneLayer(layer, undefined, VIEW, DIMS)[0] as unknown as Record<string, unknown>;
+    expect('effects' in out).toBe(false);
   });
 });

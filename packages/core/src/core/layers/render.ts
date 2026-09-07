@@ -1,4 +1,5 @@
 import { viewToMat3, type DrawCommand } from '../../renderer';
+import type { Effect } from '../../renderer/effects/types';
 import type { View } from 'core/viewport/view';
 
 const IDENTITY_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -104,6 +105,16 @@ export interface RenderLayer<TData> {
    *   the relevant subset with `viewToMat3(view)` manually.
    */
   space?: 'world' | 'screen';
+  /**
+   * Full-screen passes run over this layer's own pixels before it joins the
+   * frame — a blur here blurs the world and leaves the HUD drawn above it
+   * sharp, which is the thing a CSS `filter` on the `<canvas>` cannot do.
+   *
+   * Costs nothing while empty: the renderer allocates no offscreen buffer
+   * until a layer actually declares one. See `GroupDrawCommand.effects` for
+   * what a pass may read.
+   */
+  effects?: readonly Effect[];
   /**
    * Optional hit-test for **consumer-attached** layers.
    *
@@ -268,8 +279,11 @@ export function drawOneLayer<TData>(
     return [];
   }
   if (cmds.length === 0) return [];
-  if ((layer.space ?? 'world') === 'screen') return cmds;
-  return [{ kind: 'group', transform: viewToMat3(view), children: cmds }];
+  const effects = layer.effects && layer.effects.length > 0 ? layer.effects : undefined;
+  if ((layer.space ?? 'world') === 'screen') {
+    return effects ? [{ kind: 'group', effects, children: cmds }] : cmds;
+  }
+  return [{ kind: 'group', transform: viewToMat3(view), ...(effects ? { effects } : {}), children: cmds }];
 }
 
 /**

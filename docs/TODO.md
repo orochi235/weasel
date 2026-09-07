@@ -23,9 +23,6 @@ Priority tags:
 
 ### P1 — the kit can't do this today
 
-**Rendering & paint**
-- No render-to-texture, so no effect can read the frame it draws over → [Rendering & paint](#rendering--paint)
-
 **Animation**
 - `setPose` demands a fresh pose object per node per frame, and the GC bill is visible → [Animation](#animation)
 
@@ -36,6 +33,9 @@ Priority tags:
 - Cross-browser overlay alignment → [Text](#text)
 - `apps/draw` drops every run's styling on SVG export and copy → [Text](#text)
 - Small caps and text-transform have no run spelling → [Text](#text)
+
+**Rendering & paint**
+- Layers cannot share one effect pass, so the world and the HUD blur together → [Rendering & paint](#rendering--paint)
 
 **Scene, adapters & layout**
 - `arrayAdapter` as default Canvas adapter — full unification → [Scene, adapters & layout](#scene-adapters--layout)
@@ -536,49 +536,30 @@ Core five + Crop shipped. Remaining:
   which is the same trade as the entry above.
 
 
-- **(P1) A full-screen effects pass.** The renderer can draw over the frame but
-  never *transform* it: there is no render-to-texture anywhere in
-  `packages/core/src/renderer/` (`createFramebuffer` appears only in the test GL
-  recorder), so no pass can sample what has already been drawn. That closes off
-  a whole class of effect by construction. `ShaderDrawCommand`'s texture uniform
-  only ever comes from `registerTexture(image)`, so a fragment shader can shade
-  a rectangle but cannot read the scene under it; `GroupDrawCommand.colorMatrix`
-  is a per-pixel colour transform, which covers grading, tinting and desaturation
-  but can never express anything needing neighbouring pixels. A consumer wanting
-  to blur, bloom, or distort the whole scene has exactly one option today: a CSS
-  `filter` on the `<canvas>` element, which is the browser compositing on the
-  kit's behalf and is not something a canvas library should be recommending.
+- **(P2) Layers cannot share one effect pass.** Full-screen effect passes
+  shipped 2026-09-07: `GroupDrawCommand.effects` renders a group's children into
+  a texture with its own stencil, runs each registered program over it, and
+  composites the result back under the group's transform, alpha, colour matrix
+  and enclosing clip. `RenderLayer.effects` is that field folded in at
+  `drawOneLayer`, `blur` and `vignette` ship as built-ins, and `registerEffect`
+  registers a consumer's own. Nothing allocates until a group declares one.
+  Demo: `apps/site/demos/EffectsDemo.tsx`, with baselines both ways.
 
-  What is missing is a post-processing stage: render the scene into a texture,
-  then run one or more fullscreen shader passes over it before presenting. The
-  shape worth designing toward is a declarative `effects` list on the canvas —
-  each entry a registered program plus uniforms, composed in order, with
-  ping-pong buffers handled by the renderer — so a consumer writes
-  `effects={[blur({ radius }), vignette({ amount })]}` and never touches GL.
+  What it cannot do is give several layers *one* pass. `LayersMap`
+  (`canvas/Canvas.tsx:193`) is flat, so a consumer wanting the world blurred
+  and the HUD sharp has to put `effects` on each world layer — which is a
+  buffer and a pass pair per layer, and not even the same picture, since
+  `blur(A over B)` is not `blur(A) over blur(B)`.
 
-  It unlocks blur, bloom, vignette, chromatic aberration, colour grading, screen
-  transitions and damage/state feedback, none of which are reachable now. It also
-  wants a decision on cost: the pass is per-frame and the buffers are
-  device-resolution, so it should be inert when the list is empty.
+  That is what still blocks the side-scroller. `.ckd-canvas--knocked` in
+  `apps/site/canvas-kit-demo.css` is still a CSS `filter`, still blurs the HUD
+  along with the game, and now has a second reason to be there. The demo has
+  five world layers and four chrome ones.
 
-  Absorbs the former P3 "Layer effects framework", which described the same
-  feature from the layer's side: effects modify pixels rather than choosing a
-  colour, and under WebGL each is its own pass — drop-shadow needs a blurred
-  render-to-texture beneath, blur a separable kernel, blend modes framebuffer
-  compositing. Its open question stands and is the real design decision here:
-  per-layer `effects?: Effect[]` versus a wrapper (`withEffects(layer, effects)`)
-  versus one list on the canvas. Effects are consumed by the renderer, not the
-  layer, so each knows how to set up its own GL state.
-
-  Do not mistake `SceneSlotConfig.postProcess` for this. It is
-  `(cmds, view, dims) => DrawCommand[]` — a draw-command-tree transformer that
-  never touches a pixel.
-
-  Surfaced 2026-08-23 by the side-scroller demo, which blurs the canvas on a
-  head knock and took the CSS-filter route instead. That filter blurs the whole
-  canvas including the HUD drawn on it, which a real pass would not. The CSS is
-  tagged with a comment pointing here and should be replaced when this lands.
-
+  What it wants is a way to say those five share a group — a `group` key on a
+  layer slot, or a `SceneCanvas` prop naming an ordered set. The mechanism
+  underneath already exists and is tested; this is a surface question about
+  where a consumer declares the grouping.
 
 - **(P3) Pattern fills: what the tile picker left open.** The texture half of
   fill-mode expansion shipped 2026-08-12 — patterns tile, carry a serializable

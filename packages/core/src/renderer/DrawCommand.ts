@@ -9,6 +9,7 @@ import type { ResolvedRun } from '@weasel-js/text';
 import type { TextVerticalAlign } from '@weasel-js/text';
 import type { Mat3 } from './math/mat3';
 import type { ShaderProgramHandle, ShaderUniform } from './shaders/registerProgram';
+import type { Effect } from './effects/types';
 
 /**
  * Solid-fill paint variant (subset of the full `FillStyle` union from
@@ -75,6 +76,21 @@ export interface GroupDrawCommand {
    *  cannot escape an ancestor's clip. Max 7 nesting levels; the renderer
    *  throws if exceeded. */
   clip?: Path;
+  /**
+   * Full-screen passes run over this group's own pixels, in order, before it
+   * is composited into its parent.
+   *
+   * Unlike every other field here, this does not accumulate down the group
+   * stack — it is a render-target boundary. The children draw into a buffer of
+   * their own, each effect reads the previous one's output, and the result is
+   * composited back under this group's `transform`, `alpha`, `colorMatrix` and
+   * whatever clip encloses it. So a blur here blurs this group and nothing
+   * around it, which is what a CSS `filter` on the canvas cannot do.
+   *
+   * An empty or absent list costs nothing: no buffer is allocated until a
+   * group asks for one.
+   */
+  effects?: readonly Effect[];
   children: DrawCommand[];
 }
 

@@ -9,6 +9,23 @@ import { describe, it, expect } from 'vitest';
 import { makeGLRecorder } from './glRecorder';
 
 describe('makeGLRecorder', () => {
+  it('gives every framebuffer constant a real, distinct value', () => {
+    const { gl } = makeGLRecorder();
+    const names = [
+      'FRAMEBUFFER', 'RENDERBUFFER', 'COLOR_ATTACHMENT0',
+      'DEPTH_STENCIL_ATTACHMENT', 'DEPTH24_STENCIL8', 'RGBA8',
+      'FRAMEBUFFER_COMPLETE',
+    ] as const;
+    const seen = new Map<number, string>();
+    for (const name of names) {
+      const value = (gl as unknown as Record<string, number>)[name];
+      expect(value, `${name} reads as 0 — the proxy's answer for a constant it does not know`)
+        .not.toBe(0);
+      expect(seen.get(value), `${name} collides with ${seen.get(value)}`).toBeUndefined();
+      seen.set(value, name);
+    }
+  });
+
   it('gives SCISSOR_TEST a value distinct from the other capability flags', () => {
     const { gl } = makeGLRecorder();
     expect(gl.SCISSOR_TEST).toBe(0x0C11);

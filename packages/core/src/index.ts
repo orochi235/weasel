@@ -1182,6 +1182,7 @@ export type {
   ShaderDrawCommand,
   ShaderProgramHandle,
   ShaderUniform,
+  Effect,
   Mat3,
   ImageMinification,
   SpriteSheet,
@@ -1192,6 +1193,10 @@ export { frameRect } from './renderer';
 // Floats per sprite in a `SpritesDrawCommand.sprites` array — a consumer
 // cannot pack one without it.
 export { SPRITE_STRIDE } from './renderer';
+// Full-screen effect passes. Here rather than only on the `/renderer` subpath
+// because `RenderLayer.effects` is on this barrel, and a consumer typing that
+// field should not have to reach past it for the values that go in it.
+export { blur, vignette, registerEffect } from './renderer';
 // World-space RenderLayer draw functions wrap their commands in a
 // `kind: 'group'` whose transform is `viewToMat3(view)`. Exported here so
 // custom layers in consumer code can construct that wrapper without reaching

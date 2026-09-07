@@ -42,6 +42,8 @@ import { outlineStrokeMesh, quantizeEmWidth } from './cache/outlineStrokeMeshCac
 import { strokeMesh } from './cache/strokeMeshCache';
 import { SolidBatch } from './solidBatch';
 import { ImageBatch } from './imageBatch';
+import type { EffectTarget, EffectTargets } from './effects/EffectTargets';
+import { COMPOSITE_PROGRAM_ID } from './effects/composite';
 
 export interface DrawContext {
   gl: WebGL2RenderingContext;
@@ -99,6 +101,25 @@ export interface DrawContext {
    *  Only `units: 'world'` gradients read it; absent, they fall back to
    *  screen space. See `WeaselRenderer.render`. */
   viewMatrix?: Mat3;
+  /** Offscreen buffers for group effects. Absent when a caller drives
+   *  `dispatch` without a renderer behind it, in which case a group's
+   *  `effects` are skipped and its children draw straight through — the same
+   *  answer an unregistered effect program gets, and the one that keeps a
+   *  frame on screen. */
+  effectTargets?: EffectTargets;
+  /** Where this renderer is currently drawing. `null` is the default
+   *  framebuffer. Tracked here rather than read back with `getParameter`
+   *  because a group's effects nest, and each has to restore its parent's. */
+  renderTarget?: EffectTarget | null;
+  /** Device-pixel size of the drawing buffer, which is what an offscreen
+   *  target is sized to. */
+  deviceWidth?: number;
+  deviceHeight?: number;
+  /** Put the viewport and scissor back to the renderer's own rect after a
+   *  group's effects have borrowed them for a full-buffer pass. The renderer
+   *  owns that rect — see `WeaselRenderer.applyTarget` — and a second copy of
+   *  its y-flip here would be a second thing to keep in step. */
+  restoreTargetRect?(): void;
 }
 
 /**
@@ -299,7 +320,7 @@ function warnOnceUniform(programId: string, name: string): void {
  *   3. Array — uniform2fv / uniform3fv / uniform4fv based on length.
  *   4. number — uniform1f.
  */
-function setUniform(
+export function setUniform(
   gl: WebGL2RenderingContext,
   loc: WebGLUniformLocation,
   value: ShaderUniform,
@@ -417,7 +438,170 @@ function drawShader(ctx: DrawContext, cmd: ShaderDrawCommand): void {
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 }
 
+/**
+ * Draw a group's children into a buffer of their own, run its effects over
+ * that buffer, and composite the result back where the group sits.
+ *
+ * Three things are deliberately not inherited by the offscreen render:
+ *
+ * - **The clip.** A fresh buffer's stencil is empty, so a child drawn at the
+ *   enclosing clip depth would test against bits that were never written and
+ *   paint nothing. The enclosing clip belongs on the composite anyway — it
+ *   clips the group's result, not the pixels an effect reads — so `clipDepth`
+ *   restarts at 0 inside, which also hands nested clips a fresh budget.
+ * - **Alpha and colour**, for the same reason from the other end: fading on
+ *   the way in would give the effect faded pixels to read, and fade them
+ *   again on the way out. `pushIsolated` returns what the composite owes.
+ * - **The scissor**, which belongs to the renderer's sub-rect within the
+ *   default framebuffer and means nothing in a buffer sized to the whole
+ *   drawing buffer.
+ */
+function drawGroupWithEffects(
+  ctx: DrawContext,
+  cmd: GroupDrawCommand,
+  targets: EffectTargets,
+  width: number,
+  height: number,
+): void {
+  const gl = ctx.gl;
+  // Anything staged belongs to the parent's buffer, not this one.
+  flushBatches(ctx);
+
+  const parentTarget = ctx.renderTarget ?? null;
+  const parentClipDepth = ctx.clipDepth;
+  const scissorWasOn = gl.isEnabled(gl.SCISSOR_TEST);
+
+  let front = targets.acquire(width, height);
+  const composited = ctx.state.pushIsolated({ transform: cmd.transform });
+  ctx.clipDepth = 0;
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, front.fbo);
+  ctx.renderTarget = front;
+  gl.viewport(0, 0, width, height);
+  gl.disable(gl.SCISSOR_TEST);
+  gl.stencilMask(0xFF);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+
+  for (const child of cmd.children) dispatch(ctx, child);
+  flushBatches(ctx);
+
+  // Passes replace rather than blend: each writes every texel of its target
+  // from the whole of its source.
+  gl.disable(gl.BLEND);
+  for (const effect of cmd.effects!) {
+    const program = ctx.ensureProgram?.(effect.program.id) ?? null;
+    if (!program) {
+      warnOnceUniform(effect.program.id, '(program)');
+      continue;
+    }
+    const back = targets.acquire(width, height);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, back.fbo);
+    gl.viewport(0, 0, width, height);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    drawFullscreenQuad(ctx, program, front.texture, width, height, effect.uniforms,
+      undefined, effect.program.id);
+    targets.release(front);
+    front = back;
+  }
+  gl.enable(gl.BLEND);
+
+  // Back to the parent's buffer, and back under its rules.
+  ctx.state.pop();
+  ctx.clipDepth = parentClipDepth;
+  ctx.renderTarget = parentTarget;
+  gl.bindFramebuffer(gl.FRAMEBUFFER, parentTarget ? parentTarget.fbo : null);
+  if (parentTarget) {
+    gl.viewport(0, 0, width, height);
+  } else {
+    ctx.restoreTargetRect?.();
+    if (scissorWasOn) gl.enable(gl.SCISSOR_TEST);
+  }
+
+  const composite = ctx.ensureProgram?.(COMPOSITE_PROGRAM_ID) ?? null;
+  if (composite) {
+    applyClipTest(ctx);
+    drawFullscreenQuad(ctx, composite, front.texture, width, height, undefined, {
+      alpha: composited.alpha,
+      colorMatrix: composited.colorMatrix,
+    });
+  }
+  targets.release(front);
+}
+
+/** One pass: the kit quad, `u_source` bound to `texture`, and whatever else
+ *  the caller supplies. Leaves no attribute arrays or buffers bound. */
+function drawFullscreenQuad(
+  ctx: DrawContext,
+  program: ShaderProgram,
+  texture: WebGLTexture,
+  width: number,
+  height: number,
+  uniforms?: Record<string, ShaderUniform>,
+  composite?: { alpha: number; colorMatrix: Float32Array },
+  programId?: string,
+): void {
+  const gl = ctx.gl;
+  gl.useProgram(program.handle);
+
+  const aPos = program.attribute('a_position');
+  const aUv = program.attribute('a_uv');
+  gl.bindBuffer(gl.ARRAY_BUFFER, ctx.quadVbo);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ctx.quadIbo);
+  if (aPos !== undefined && aPos >= 0) {
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 16, 0);
+  }
+  if (aUv !== undefined && aUv >= 0) {
+    gl.enableVertexAttribArray(aUv);
+    gl.vertexAttribPointer(aUv, 2, gl.FLOAT, false, 16, 8);
+  }
+
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  const source = program.uniform('u_source');
+  if (source !== undefined) gl.uniform1i(source, 0);
+  const resolution = program.uniform('u_resolution');
+  if (resolution !== undefined) gl.uniform2f(resolution, width, height);
+  const texel = program.uniform('u_texel');
+  if (texel !== undefined) gl.uniform2f(texel, 1 / width, 1 / height);
+
+  if (composite) {
+    const alpha = program.uniform('u_alpha');
+    if (alpha !== undefined) gl.uniform1f(alpha, composite.alpha);
+    setColorMatrixUniforms(ctx, program, composite.colorMatrix);
+  }
+
+  if (uniforms) {
+    // Unit 0 is `u_source`; a consumer texture starts above it.
+    const nextTexUnit = { value: 1 };
+    for (const [name, value] of Object.entries(uniforms)) {
+      const loc = program.uniform(name);
+      if (loc === undefined) {
+        warnOnceUniform(programId ?? 'effect', name);
+        continue;
+      }
+      setUniform(gl, loc, value, ctx.textureCache, nextTexUnit);
+    }
+  }
+
+  gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+
+  if (aPos !== undefined && aPos >= 0) gl.disableVertexAttribArray(aPos);
+  if (aUv !== undefined && aUv >= 0) gl.disableVertexAttribArray(aUv);
+  gl.bindBuffer(gl.ARRAY_BUFFER, null);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+}
+
 export function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {
+  // A group with effects is a render-target boundary rather than another
+  // accumulating frame. Without a renderer's buffer pool behind the context
+  // there is nowhere to draw, so the effects are skipped and the children
+  // paint straight through — a frame missing its blur, not a frame missing.
+  if (cmd.effects && cmd.effects.length > 0 && ctx.effectTargets
+      && ctx.deviceWidth && ctx.deviceHeight) {
+    drawGroupWithEffects(ctx, cmd, ctx.effectTargets, ctx.deviceWidth, ctx.deviceHeight);
+    return;
+  }
   ctx.state.push({
     transform: cmd.transform,
     alpha: cmd.alpha,

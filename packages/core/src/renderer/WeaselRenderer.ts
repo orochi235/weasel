@@ -57,6 +57,7 @@ import {
   QUAD_VERTICES, QUAD_INDICES,
 } from './shaders/customPrelude';
 import { getProgramSource, type ShaderProgramHandle } from './shaders/registerProgram';
+import { EffectTargets } from './effects/EffectTargets';
 
 /** Qualifiers GLSL allows between `uniform` and the type name. Skipping them
  *  is not cosmetic: `uniform highp float u_t;` used to match nothing at all,
@@ -190,6 +191,9 @@ export class WeaselRenderer {
   private dpr: number;
   private canvas: HTMLCanvasElement | null = null;
   private target: RenderTarget | null = null;
+  /** Offscreen buffers for group effects. Allocates nothing until a group
+   *  with effects asks, so a canvas without them pays no memory. */
+  private readonly effectTargets: EffectTargets;
   private readonly imageMinification: ImageMinification;
   private readonly flattenTolerance?: number;
   private readonly bakeBudget: number;
@@ -208,6 +212,7 @@ export class WeaselRenderer {
     const gl = opts.gl ?? opts.canvas!.getContext('webgl2', { stencil: true });
     if (!gl) throw new Error('WeaselRenderer: WebGL2 not available');
     this.gl = gl as WebGL2RenderingContext;
+    this.effectTargets = new EffectTargets(this.gl);
 
     // Bits 0-7 are load-bearing: bit 0 for even-odd fills and stenciled
     // strokes, bits 1-7 for clip depth (`renderer/draw.ts`). Without a stencil
@@ -411,6 +416,11 @@ export class WeaselRenderer {
     this.contextLost = false;
     this.applyGlState();
     this.applyTarget();
+    // Every framebuffer, texture and renderbuffer the pool held died with the
+    // context. `releaseAll` deletes handles that are already gone, which is a
+    // no-op, and drops the bookkeeping that would otherwise hand a dead FBO to
+    // the next group with effects.
+    this.effectTargets.releaseAll();
     this.pathFill = new ShaderProgram(this.gl, VERT_SRC, FRAG_SRC);
     this.pathFill.lookupUniforms(PATH_FILL_UNIFORMS);
     this.pathFill.lookupAttributes(PATH_FILL_ATTRIBUTES);
@@ -513,6 +523,7 @@ export class WeaselRenderer {
     for (const prog of [this.textSdf, this.textSdfR8, this.pathFill]) disposeTextQuads(gl, prog);
     this.solidBatch.dispose();
     this.imageBatch.dispose();
+    this.effectTargets.releaseAll();
   }
 
   /**
@@ -569,6 +580,11 @@ export class WeaselRenderer {
       flattenTolerance: this.flattenTolerance,
       textOutlineMinScreenSize: this.textOutlineMinScreenSize,
       viewMatrix,
+      effectTargets: this.effectTargets,
+      renderTarget: null,
+      deviceWidth: Math.round(this.widthCss * this.dpr),
+      deviceHeight: Math.round(this.heightCss * this.dpr),
+      restoreTargetRect: () => this.applyTarget(),
     };
     for (const cmd of commands) dispatch(ctx, cmd);
     // The stream ended, so whatever is still staged has nothing left that

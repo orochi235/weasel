@@ -93,6 +93,19 @@ const GL_CONSTANTS: Readonly<Record<string, number>> = {
   MIRRORED_REPEAT: 0x8370,
   // Mipmap minification filter
   LINEAR_MIPMAP_LINEAR: 0x2703,
+  // Framebuffers and renderbuffers (offscreen effect passes). Every one of
+  // these has to be here before a test names it: an absent ALL-CAPS property
+  // reads as 0 through the proxy, so `expect(args[0]).toBe(gl.FRAMEBUFFER)`
+  // would compare 0 against 0 and pass over a renderer that bound nothing.
+  FRAMEBUFFER: 0x8D40,
+  RENDERBUFFER: 0x8D41,
+  FRAMEBUFFER_BINDING: 0x8CA6,
+  RENDERBUFFER_BINDING: 0x8CA7,
+  COLOR_ATTACHMENT0: 0x8CE0,
+  DEPTH_STENCIL_ATTACHMENT: 0x821A,
+  DEPTH24_STENCIL8: 0x88F0,
+  RGBA8: 0x8058,
+  FRAMEBUFFER_COMPLETE: 0x8CD5,
 };
 
 function syntheticHandle(name: string, seq: number): { __id: string } {
