@@ -10,7 +10,9 @@ interface Empty { id: string }
 
 export function HudDemo() {
   const ref = useRef<SceneCanvasApi>(null);
-  const hud = useHud(ref);
+  // The app registers Inter as `sans-serif` in main.tsx; without this the
+  // HUD fetches its own byte-identical copy of the same atlas.
+  const hud = useHud(ref, { font: 'sans-serif' });
   // The HUD's input routing rides an ambient tool: its bindings gate on the
   // affordance its own layer hit-test produces, so they never compete with
   // whatever tool is active.

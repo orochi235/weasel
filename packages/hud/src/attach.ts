@@ -3,7 +3,11 @@ import type { CanvasExtensionApi, RenderLayer, LayerHit, View } from '@weasel-js
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { viewToTransform } from '@weasel-js/core';
 import { worldToScreen } from '@weasel-js/core';
-import { DEFAULT_FONT_FAMILY, registerDefaultFont } from './fonts/registerDefaultFont';
+import {
+  DEFAULT_FONT_FAMILY,
+  registerDefaultFont,
+  type FontAtlasUrls,
+} from './fonts/registerDefaultFont';
 import { claimsOf, cursorOf, type Widget, type HudPointerEvent } from './widget';
 import type { HudHitPayload } from './tool';
 import { resolveTheme, weaselTheme, type ResolvedTheme } from '@weasel-js/theme';
@@ -12,6 +16,19 @@ export interface AttachHudOptions {
   /** Resolved theme the widgets draw with. Defaults to the built-in theme's
    *  default mode; pass `useTheme().resolved` to follow a live theme. */
   readonly theme?: ResolvedTheme;
+  /**
+   * Where the text a widget draws without naming a family comes from.
+   *
+   * - A family name: that family, already registered by the host. The HUD
+   *   fetches nothing, which is the point — an app that has registered Inter
+   *   as `'sans-serif'` was downloading the HUD's byte-identical copy of it a
+   *   second time.
+   * - A `{ metricsUrl, atlasUrl }` pair: the HUD's own family, registered from
+   *   the host's copy of the atlas rather than the bundled one.
+   *
+   * Unset, the bundled atlas is fetched and registered.
+   */
+  readonly font?: string | FontAtlasUrls;
 }
 
 /**
@@ -33,12 +50,18 @@ export function attachHud(
   }
 
   // Kick off default-font registration. Widgets that draw text before this
-  // resolves render via the renderer's existing fallback (warn + skip).
-  registerDefaultFont()
-    .then(() => api.requestRedraw())
-    .catch((err) => {
-      console.warn('weasel-hud: failed to register default font', err);
-    });
+  // resolves render via the renderer's existing fallback (warn + skip). A
+  // named family is the host's to have registered, so there is nothing to
+  // fetch and nothing to wait for.
+  const font = options.font;
+  const defaultFont = typeof font === 'string' ? font : DEFAULT_FONT_FAMILY;
+  if (typeof font !== 'string') {
+    registerDefaultFont(font)
+      .then(() => api.requestRedraw())
+      .catch((err) => {
+        console.warn('weasel-hud: failed to register default font', err);
+      });
+  }
 
   // Track the currently-hovered widget at the closure level.
   let lastHovered: Widget | null = null;
@@ -61,7 +84,7 @@ export function attachHud(
     label: 'HUD',
     space: 'screen',
     draw: (data, view, dims): DrawCommand[] => {
-      const ctx = { dims, defaultFont: DEFAULT_FONT_FAMILY, tokens: theme };
+      const ctx = { dims, defaultFont, tokens: theme };
       const out: DrawCommand[] = [];
       // Pass 1: interiors. All content precedes all frames so one window's
       // content can never paint over another window's border.
@@ -70,7 +93,7 @@ export function attachHud(
         const rect = w.contentRect;
         if (rect.w <= 0 || rect.h <= 0) continue;
         const children = w.content({
-          data, view, dims, rect, defaultFont: DEFAULT_FONT_FAMILY, tokens: theme,
+          data, view, dims, rect, defaultFont, tokens: theme,
         });
         if (children.length === 0) continue;
         out.push({

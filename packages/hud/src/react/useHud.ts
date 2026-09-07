@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useThemeOptional } from '@weasel-js/theme/react';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 import { createHud, type Hud } from '../hud';
-import { attachHud } from '../attach';
+import { attachHud, type AttachHudOptions } from '../attach';
 import type { CanvasExtensionApi, Contribution } from '@weasel-js/core';
 import { createHudContribution } from '../tool';
 
@@ -16,8 +16,15 @@ import { createHudContribution } from '../tool';
  *   const hud = useHud(ref);
  *   // ... later
  *   const btn = hud.button({ ... });
+ *
+ * An app that has already registered a bitmap family should say so —
+ * `useHud(ref, { font: 'sans-serif' })` — or the HUD fetches its own copy of
+ * the same atlas.
  */
-export function useHud(canvasRef: { current: CanvasExtensionApi | null }): Hud {
+export function useHud(
+  canvasRef: { current: CanvasExtensionApi | null },
+  options: Pick<AttachHudOptions, 'font'> = {},
+): Hud {
   const [hud] = useState(() => createHud());
 
   // Follow the app's theme when there is one. Widgets are drawn into the
@@ -29,17 +36,18 @@ export function useHud(canvasRef: { current: CanvasExtensionApi | null }): Hud {
     [provided],
   );
 
+  const font = options.font;
   useEffect(() => {
     const api = canvasRef.current;
     if (!api) return;
-    const detach = attachHud(api, hud, { theme });
+    const detach = attachHud(api, hud, { theme, ...(font !== undefined ? { font } : {}) });
     api.requestRedraw();
     return detach;
     // canvasRef.current changing during component lifetime is unusual for
     // canvas refs; treat as effectively-stable in v1. The dep on `hud` is
     // also stable (it comes from useState's initializer, never changes).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hud, theme]);
+  }, [hud, theme, font]);
 
   return hud;
 }

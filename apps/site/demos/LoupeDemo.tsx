@@ -77,7 +77,7 @@ function detailLayer(): RenderLayer<unknown> {
 
 export function LoupeDemo() {
   const ref = useRef<SceneCanvasApi>(null);
-  const hud = useHud(ref);
+  const hud = useHud(ref, { font: 'sans-serif' });
   const hudTool = useHudContribution();
   const loupeRef = useRef<LoupeHandle | null>(null);
   const [mode, setMode] = useState<LoupeMode>('vector');

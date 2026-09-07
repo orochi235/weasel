@@ -51,6 +51,38 @@ describe('attachHud', () => {
     expect(api._layer?.space).toBe('screen');
   });
 
+  // Every weasel app already registers this same Inter atlas for its own text,
+  // and the HUD was fetching a byte-identical second copy of it.
+  it('fetches no atlas when the host names a family it has registered', () => {
+    attachHud(makeApi(), createHud(), { font: 'sans-serif' });
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('draws with the named family rather than the bundled one', () => {
+    const hud = createHud();
+    const api = makeApi();
+    let seen: string | undefined;
+    hud.add({
+      id: 'w', bounds: { x: 0, y: 0, w: 10, h: 10 }, hidden: false,
+      hitTest: () => false, dispose: () => {}, onPointer: () => {},
+      draw: (ctx) => {
+        seen = ctx.defaultFont;
+        return [];
+      },
+    });
+    attachHud(api, hud, { font: 'sans-serif' });
+    api._layer?.draw(null, IDENTITY_VIEW, { width: 10, height: 10 });
+    expect(seen).toBe('sans-serif');
+  });
+
+  it('fetches the host\'s own copy when given atlas urls', () => {
+    attachHud(makeApi(), createHud(), {
+      font: { metricsUrl: '/app/inter.json', atlasUrl: '/app/inter.png' },
+    });
+    expect(global.fetch).toHaveBeenCalledWith('/app/inter.json');
+    expect(global.fetch).toHaveBeenCalledWith('/app/inter.png');
+  });
+
   it('binds the HUD (hud.attached is true after attach)', () => {
     const hud = createHud();
     const api = makeApi();

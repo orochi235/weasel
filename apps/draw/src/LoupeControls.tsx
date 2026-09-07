@@ -26,7 +26,7 @@ export interface LoupeControlsProps {
  * `useHud` and `createLoupe` read it in a mount effect and neither retries.
  */
 export function LoupeControls({ canvasRef, source }: LoupeControlsProps): ReactElement {
-  const hud = useHud(canvasRef);
+  const hud = useHud(canvasRef, { font: 'sans-serif' });
   const colors = useColorContext();
   const actions = useActionsRegistry();
 

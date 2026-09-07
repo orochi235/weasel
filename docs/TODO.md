@@ -1726,14 +1726,6 @@ failure is silent and reads as a clean result.
 
 Still open, measured 2026-08-23 and not addressed by the two fixes above:
 
-- **(P2) The Inter atlas is downloaded twice, byte-identically.**
-  `inter/inter.{png,json}` from the app's publicDir and
-  `packages/hud/src/fonts/inter.{png,json}?url` via `registerDefaultFont()` are
-  the same files (matching md5s): **211,472 raw, 152,162 wasted transfer bytes,
-  2 wasted requests, 1 wasted `createImageBitmap`**. `@weasel-js/hud` should
-  accept an atlas URL or reuse an already-registered family rather than shipping
-  its own copy.
-
 - **(P3) Re-measure cold dev startup for `apps/draw`.** The two inspector-only
   Vite plugins that dominated it — together, **6,852 ms to 3,556 ms (−48%)** when
   removed — have both moved since. `callbackSourcePlugin` is now opt-in behind
