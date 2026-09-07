@@ -224,7 +224,7 @@ its own.
 
 ### Testing
 
-Arc A runs under `npx vitest run --project=kit`: name and bezier resolution against sampled
+Arc A runs under `npx vitest run --project=core`: name and bezier resolution against sampled
 endpoints and monotonicity, and `setLoop` asserted at `duration`, mid-play, and across a wrap.
 Arc B runs under `npx vitest run --project=weasel-ui`.
 

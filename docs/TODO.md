@@ -1900,16 +1900,6 @@ one dead `const` and four stale disable directives.
   648ms. Same cause, and the same fix reaches it — the throttle is timed off
   `performance.now()` against real elapsed time.
 
-- **(P2) `test:kit` covers `packages/core` only, and its name says otherwise.**
-  The `kit` vitest project globs `packages/core` plus `apps/site`; `svg`,
-  `font`, `geom`, `history`, `gestures`, `modes`, `ui` and `hud` all run under
-  the `weasel-ui` project, and `labkit` under its own. Default `npm test` does
-  reach every package, so this is a naming trap rather than a coverage hole —
-  but two separate agents in the 2026-08-22 review pass read a green
-  `test:kit` as "the kit passes", and one nearly wrote tests that would never
-  have run. Rename the project, or add a check that every package directory is
-  reachable by some project's include glob.
-
 - **(P2) Benchmark HUD text against a transparent DOM overlay.** Two ways to
   put text over the canvas: `@weasel-js/hud` draws it as canvas commands, or a
   transparent `@weasel-js/ui` layer sits above the canvas and lets the browser

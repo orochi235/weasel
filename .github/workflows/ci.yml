@@ -61,7 +61,11 @@ jobs:
       # spin up headless Chromium and render every CSF story as a browser test on every
       # push — pulls Playwright + ~250 MB of browser, adds wall-clock time, and exists
       # only to validate that stories can mount. Run the real test projects only.
-      - run: npx vitest run --project=kit --project=weasel-ui --project=draw --project=labkit
+      # A test file no project's include glob reaches is collected by nobody
+      # and says nothing about it. Runs before the suite so an orphan surfaces
+      # as its own failure rather than as a suspiciously small pass count.
+      - run: npm run check:test-projects
+      - run: npx vitest run --project=core --project=weasel-ui --project=draw --project=labkit
       - run: npm run build
       # labkit bundles the (private) weasel packages into a self-contained dist;
       # build it after the core so its esbuild alias resolves the built core.

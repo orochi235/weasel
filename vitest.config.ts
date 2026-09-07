@@ -11,8 +11,9 @@ const storybookDir = dirname(fileURLToPath(new URL('./.storybook/main.ts', impor
 
 // One vitest config; named projects per surface. Each project owns its
 // include glob so suites can run independently (`vitest --project=weasel-ui`).
-// Default `npm test` runs the jsdom projects (kit, weasel-ui, WeaselDraw,
-// smoke). Heavy projects (storybook browser tests) are opt-in via
+// Default `npm test` runs the jsdom projects (core, weasel-ui, WeaselDraw,
+// smoke). `npm run check:test-projects` fails the build on a test file no
+// project's glob reaches. Heavy projects (storybook browser tests) are opt-in via
 // `npm run test:stories`. Shared concerns (jsdom env, setup, alias map) live
 // in the per-project block — vitest doesn't currently inherit `resolve` or
 // `test` keys from the top-level config when `projects` is set.
@@ -34,7 +35,7 @@ export default defineConfig({
       {
         ...shared,
         test: {
-          name: 'kit',
+          name: 'core',
           environment: 'jsdom',
           globals: true,
           setupFiles: ['./vitest.setup.ts'],
@@ -71,7 +72,7 @@ export default defineConfig({
           setupFiles: ['./vitest.setup.ts'],
           include: ['packages/**/*.test.{ts,tsx}'],
           // labkit runs in its own project below (own setup + css handling).
-          // core runs in the `kit` project above — it lived at the repo root
+          // core runs in the `core` project above — it lived at the repo root
           // until the move into packages/, and this glob would otherwise
           // swallow its entire suite and run it twice.
           exclude: ['packages/labkit/**', 'packages/core/**', '**/node_modules/**'],
