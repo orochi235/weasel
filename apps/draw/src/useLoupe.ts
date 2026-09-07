@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { drawOneLayer } from '@weasel-js/core';
 import type { RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import type { Hud } from '@weasel-js/hud';
 import { createLoupe, type LoupeHandle, type LoupeMode } from '@weasel-js/hud';
@@ -46,7 +47,11 @@ export function useLoupe(
     id: 'loupe-source',
     label: 'Loupe source',
     space: 'screen',
-    draw: (data, view, dims) => sourceRef.current.flatMap((l) => l.draw(data, view, dims)),
+    // Through `drawOneLayer`, not `l.draw`: a source layer's `space` is its
+    // own to declare, and calling `draw` directly drops a world layer's view
+    // transform on the floor. The shim stays `'screen'` because its children
+    // now carry their own.
+    draw: (data, view, dims) => sourceRef.current.flatMap((l) => drawOneLayer(l, data, view, dims)),
   }]).current;
 
   useEffect(() => {

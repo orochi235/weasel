@@ -64,8 +64,23 @@ describe('createParallaxLayer', () => {
     const l = createParallaxLayer({ id: 'p', label: 'P', source: [a, b], pan: 1 });
     const out = l.draw(undefined, outer, dims);
     expect(out).toHaveLength(2);
-    expect((out[0]! as { path: { x: number } }).path.x).toBe(1);
-    expect((out[1]! as { path: { x: number } }).path.x).toBe(2);
+    // A world-space source arrives wrapped in the plane's inner view, which is
+    // what makes its `space` mean anything. The plane itself is `'screen'`, so
+    // the outer canvas adds nothing on top.
+    const inner = out.map((c) => (c as { children: { path: { x: number } }[] }).children[0]!);
+    expect(inner[0]!.path.x).toBe(1);
+    expect(inner[1]!.path.x).toBe(2);
+  });
+
+  it('leaves a screen-space source unwrapped, and wraps a world-space one', () => {
+    const cmd = { kind: 'path' as const, path: { kind: 'rect' as const, x: 1, y: 1, width: 1, height: 1 } };
+    const screen: RenderLayer<unknown> = { id: 's', label: 's', space: 'screen', draw: () => [cmd] };
+    const world: RenderLayer<unknown> = { id: 'w', label: 'w', space: 'world', draw: () => [cmd] };
+    const l = createParallaxLayer({ id: 'p', label: 'P', source: [screen, world], pan: 0.5 });
+    const out = l.draw(undefined, outer, dims);
+    expect(out[0]!.kind).toBe('path');
+    expect(out[1]!.kind).toBe('group');
+    expect((out[1]! as { transform: unknown }).transform).toBeDefined();
   });
 
   it('forwards dims to source layers', () => {

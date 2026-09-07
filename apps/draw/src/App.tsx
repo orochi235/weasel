@@ -87,7 +87,6 @@ import {
   type SceneCanvasApi,
   buildSceneViewCommands,
   defaultDrawOne,
-  viewToMat3,
 } from '@weasel-js/core';
 import { useHudContribution } from '@weasel-js/hud/react';
 import {
@@ -1435,20 +1434,12 @@ function EditorWithSharedScene({
   }), [paper.width, paper.height, backgroundColor]);
 
   // What the loupe magnifies: the page and the scene on top of it, the same
-  // two the canvas paints. Screen space with a self-applied view —
-  // `createViewportLayer` hands source layers its inner view and applies no
-  // transform of its own, so a world-space layer would come out unmagnified.
+  // two the canvas paints. The page layer goes in as itself — the loupe draws
+  // its sources through `drawOneLayer`, so a world-space one gets the lens's
+  // inner view. The scene half projects inside `buildSceneViewCommands`, which
+  // is what `space: 'screen'` says about it.
   const loupeSource = useMemo<RenderLayer<unknown>[]>(() => [
-    {
-      id: 'loupe-paper',
-      label: 'Loupe paper',
-      space: 'screen',
-      draw: (data, v, dims) => [{
-        kind: 'group',
-        transform: viewToMat3(v),
-        children: paperLayer.draw(data, v, dims),
-      }],
-    },
+    paperLayer,
     {
       id: 'loupe-scene',
       label: 'Loupe scene',

@@ -441,16 +441,6 @@ Core five + Crop shipped. Remaining:
   costs an O(nodes) bounds sweep every frame. Revisit only if a consumer wants
   framing that tracks a simulation.
 
-- **(P2) `createParallaxLayer` bypasses `drawOneLayer`, so a source layer's
-  `space` is silently ignored.** `packages/core/src/features/parallax/createParallaxLayer.ts:36`
-  calls `layer.draw(...)` directly where `viewportLayer.ts` calls `drawOneLayer(...)`.
-  ParallaxDemo's four layers therefore declare `space: 'world'` while their bodies
-  pre-project — harmless today because nothing applies the transform, but the
-  labels are lies, and changing that one line to `drawOneLayer` converts all four
-  into a double-applied view transform (the bug fixed in `6eec0d88`).
-  `apps/draw/src/useLoupe.ts:49` has the same shape. Fix the bypass and the
-  demos together, or neither.
-
 - **(P2) An action a canvas suppresses is suppressed for every canvas.**
   `useViewportActions.ts` answers `pinchZoom: false` with
   `reg.unregister('viewport.pinchZoom')`, which now drops every registrant of

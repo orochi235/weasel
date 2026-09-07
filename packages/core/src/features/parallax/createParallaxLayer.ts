@@ -1,4 +1,4 @@
-import type { RenderLayer } from '../../core/layers/render';
+import { drawOneLayer, type RenderLayer } from '../../core/layers/render';
 import type { View } from '../../core/viewport/view';
 import { deriveParallaxView, type ParallaxOpts } from './deriveParallaxView';
 
@@ -17,9 +17,11 @@ export interface CreateParallaxLayerOpts<TData> extends ParallaxOpts {
 
 /**
  * Wrap source RenderLayers in a parallax plane. The plane's inner view is
- * derived from the camera view per {@link deriveParallaxView}; source layers
- * run under that inner view and the result is emitted as `space: 'screen'`
- * so the outer Canvas applies no further transform.
+ * derived from the camera view per {@link deriveParallaxView}; each source
+ * layer is drawn through it by `drawOneLayer`, so a `space: 'world'` source
+ * gets the inner view's transform and a `space: 'screen'` one does not. The
+ * plane itself is emitted as `space: 'screen'` — its children already carry
+ * whatever transform they need, and the outer Canvas must add none.
  *
  * **Cosmetic only (v1):** pointer events still target the outer view.
  * Objects on parallax planes are paint, not clickable scene nodes. Use the
@@ -39,7 +41,7 @@ export function createParallaxLayer<TData>(
     space: 'screen',
     draw: (data, outer, dims) => {
       const inner = deriveParallaxView(getOuterView?.() ?? outer, { pan, zoom, anchor });
-      return source.flatMap((layer) => layer.draw(data, inner, dims));
+      return source.flatMap((layer) => drawOneLayer(layer, data, inner, dims));
     },
   };
 }
