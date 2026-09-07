@@ -13,6 +13,27 @@ export interface Dims {
   height: number;
 }
 
+/**
+ * What a layer's `draw` threw, and which layer threw it.
+ *
+ * A `draw` runs on the frame loop, so a throw that escapes it surfaces as an
+ * uncaught `requestAnimationFrame` error on the window and takes the whole
+ * frame with it — every other layer included. One broken layer painting
+ * nothing, named in the console, is the lesser wrong.
+ */
+export interface LayerDrawFailure {
+  layerId: string;
+  error: unknown;
+}
+
+/** Default report: name the layer, keep the frame. */
+function reportLayerFailure({ layerId, error }: LayerDrawFailure): void {
+  console.error(
+    `[weasel] layer "${layerId}" threw while drawing; it painted nothing this frame.`,
+    error,
+  );
+}
+
 /** One layer's memoized output, keyed by layer id. Owned by the canvas that
  *  calls `drawLayers`, not by `drawLayers` itself — the function is pure. */
 export type LayerCommandCache = Map<
@@ -146,6 +167,9 @@ export interface RenderLayer<TData> {
  * `'world'`) have their commands wrapped in a `kind: 'group'` with
  * `viewToMat3(view)` before they reach the renderer. Screen-space layers
  * (`space: 'screen'`) pass through unchanged.
+ *
+ * A layer whose `draw` throws is dropped for the frame and reported through
+ * `onLayerError` — the rest of the frame still paints.
  */
 export function drawLayers<TData>(
   layers: RenderLayer<TData>[],
@@ -155,6 +179,7 @@ export function drawLayers<TData>(
   view: View | undefined,
   dims: Dims,
   cache?: LayerCommandCache,
+  onLayerError: (failure: LayerDrawFailure) => void = reportLayerFailure,
 ): DrawCommand[] {
   const layerById = new Map(layers.map((l) => [l.id, l]));
   const sequence = order
@@ -174,7 +199,7 @@ export function drawLayers<TData>(
     // second, redundant lookup for the same answer.
     if (!isLayerVisible(layer, visibility)) continue;
 
-    for (const c of drawOneLayer(layer, data, v, dims, cache)) out.push(c);
+    for (const c of drawOneLayer(layer, data, v, dims, cache, onLayerError)) out.push(c);
   }
 
   return out;
@@ -221,6 +246,10 @@ export function isLayerPainted<TData>(
  * node's inner pass — goes through here. A second copy of this rule that
  * forgets the wrap draws world content at raw world coords, which looks
  * plausible at the identity view and wrong everywhere else.
+ *
+ * A `draw` that throws yields no commands, and `onLayerError` is told which
+ * layer it was. The layer's cache entry goes with it, so the next frame is a
+ * real re-attempt rather than a stale tree served under fresh deps.
  */
 export function drawOneLayer<TData>(
   layer: RenderLayer<TData>,
@@ -228,8 +257,16 @@ export function drawOneLayer<TData>(
   view: View,
   dims: Dims,
   cache?: LayerCommandCache,
+  onLayerError: (failure: LayerDrawFailure) => void = reportLayerFailure,
 ): DrawCommand[] {
-  const cmds = layerCommands(layer, data, view, dims, cache);
+  let cmds: DrawCommand[];
+  try {
+    cmds = layerCommands(layer, data, view, dims, cache);
+  } catch (error) {
+    cache?.delete(layer.id);
+    onLayerError({ layerId: layer.id, error });
+    return [];
+  }
   if (cmds.length === 0) return [];
   if ((layer.space ?? 'world') === 'screen') return cmds;
   return [{ kind: 'group', transform: viewToMat3(view), children: cmds }];

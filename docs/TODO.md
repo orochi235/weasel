@@ -495,21 +495,6 @@ Core five + Crop shipped. Remaining:
   helpers into the tripwire or make the comment tell the truth about who owns
   the redraw.
 
-- **(P2) A throwing layer takes down the whole frame, as an uncaught error.**
-  Since the paint moved onto the frame loop, a `draw` that throws surfaces as an
-  uncaught `requestAnimationFrame` error on the window; before, it ran inside a
-  `useEffect` and reached the nearest React error boundary. Neither is the
-  behavior worth wanting. `drawLayers` is the place that can do better — it
-  already iterates layers holding the layer id, the debug sink and the command
-  cache, so a per-layer `try`/`catch` can drop that layer's commands, report
-  `{ layerId, error }` to the sink, and paint the rest. A canvas visibly missing
-  one layer, with a console error naming it, beats both a blank canvas and a
-  silently-vanished layer. Open questions: whether a throwing layer stays
-  evicted until its `deps` change, whether the sink grows an error channel, and
-  what the headless `renderSceneToPixels` path does with a failure. Do **not**
-  put the `catch` in `useFrameLoop` — scheduling has no information about what a
-  draw failure means, and the granularity is wrong there.
-
 - **(P3) The loupe's colour sample is still read off an unlanded frame.** The
   region readback now waits for a paint, but `readHex`
   (`packages/hud/src/loupe/createLoupe.ts`) still calls `readbackRegion` inline

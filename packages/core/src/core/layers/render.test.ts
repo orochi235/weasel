@@ -218,3 +218,57 @@ describe('drawLayers command caching', () => {
     expect(calls.n).toBe(1);
   });
 });
+
+describe('a layer that throws', () => {
+  const PATH_CMD: DrawCommand = {
+    kind: 'path',
+    path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
+    fill: { fill: 'solid', color: '#fff' },
+  };
+  const boom = (): DrawCommand[] => {
+    throw new Error('layer is broken');
+  };
+
+  it('drops its own commands and lets the rest of the frame paint', () => {
+    const bad: RenderLayer<unknown> = { id: 'bad', label: 'Bad', space: 'screen', draw: boom };
+    const good: RenderLayer<unknown> = {
+      id: 'good', label: 'Good', space: 'screen', draw: () => [PATH_CMD],
+    };
+    const onLayerError = vi.fn();
+    const out = drawLayers(
+      [bad, good], null, {}, undefined, undefined, { width: 10, height: 10 },
+      undefined, onLayerError,
+    );
+    expect(out).toEqual([PATH_CMD]);
+    expect(onLayerError).toHaveBeenCalledTimes(1);
+    expect(onLayerError.mock.calls[0][0].layerId).toBe('bad');
+    expect((onLayerError.mock.calls[0][0].error as Error).message).toBe('layer is broken');
+  });
+
+  // Otherwise the last good tree is served back under deps that have since
+  // moved on, which is a stale layer wearing a working one's face.
+  it('drops its cache entry, so the next frame is a real re-attempt', () => {
+    let broken = true;
+    const layer: RenderLayer<{ v: number }> = {
+      id: 'a',
+      label: 'A',
+      space: 'screen',
+      deps: (d) => [d.v],
+      draw: () => {
+        if (broken) throw new Error('layer is broken');
+        return [PATH_CMD];
+      },
+    };
+    const cache: LayerCommandCache = new Map();
+    const onLayerError = vi.fn();
+    const dims = { width: 10, height: 10 };
+
+    drawLayers([layer], { v: 1 }, {}, undefined, undefined, dims, cache, onLayerError);
+    expect(cache.has('a')).toBe(false);
+
+    broken = false;
+    const out = drawLayers([layer], { v: 1 }, {}, undefined, undefined, dims, cache, onLayerError);
+    expect(out).toEqual([PATH_CMD]);
+    expect(onLayerError).toHaveBeenCalledTimes(1);
+  });
+});
