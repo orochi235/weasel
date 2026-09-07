@@ -21,11 +21,6 @@ Priority tags:
 
 ### Next up
 
-### P1 — the kit can't do this today
-
-**Animation**
-- `setPose` demands a fresh pose object per node per frame, and the GC bill is visible → [Animation](#animation)
-
 ### P2 — broad reuse / friction-likely
 
 **Text**
@@ -1032,20 +1027,32 @@ What it surfaced:
   `syncScene` to isolate the camera; it no longer has to, and the mock can go
   when someone next touches that file.
 
-- **(P1) `setPose` demands a fresh pose object per node per frame, and the GC
-  bill is visible.** `nodeMemo` keys painter output on pose *reference*
-  (`nodeMemo.ts:1-28`), so mutating `node.pose.x` in place silently serves a
-  stale cached draw. Correct code therefore allocates one object per moving node
-  per frame — ~27 × 120/s here — and major GC went from 57 ms to 549 ms over a
-  ten-second window, nearly 10×. A pose-write path that can take scalars, or an
-  explicit generation bump that lets a caller mutate in place, would remove the
-  churn without giving up the memo.
-
 - **(P2) A 60 Hz loop has no non-recording way to write.** Every mutation is an
   undo entry; `scene.batch` reduces a frame to one entry, which is still 120 per
   second. The only real escape is `getActiveJournal` plus periodic `cancel()`,
   and that journal's inner history is itself unbounded. The demo caps
   `historyLimit` at 60 and calls that a workaround, not an answer.
+
+  **This is the whole of the cost, and it absorbs the former P1 about `setPose`
+  allocating a pose object per node per frame.** That entry proposed a scalar
+  setter or an in-place write to remove the churn. Measured — `npm run bench`,
+  "per-frame pose write — one node, three paths" — minting the object is under a
+  tenth of what `setPose` costs (34.4 M/s bare against 3.23 M/s through
+  `setPose`), so neither remedy would have moved the number. The recording is
+  the bill.
+
+  The in-place write the entry asked for also already exists for the ephemeral
+  case: `PoseOverrides` is set once and mutated per frame, and `commit()` drops
+  the pose-keyed memo slots that the reference key cannot see
+  (`nodeMemo.dropPoseKeyedMemoSlots`). It measures 11.2 M/s, 3.5× `setPose`,
+  and allocates nothing per frame. What has no answer is a write to the
+  *document* pose that does not record — and it cannot simply mutate in place
+  either, because `kit:setPose` keeps `from` and `to` in history and recycling
+  those objects rewrites entries that already happened.
+
+  `apps/site/demos/platformer/sceneWorld.ts` writes ~27 document poses at 120 Hz
+  through `setPose`, which is the retained twin's whole thesis, so it pays this
+  deliberately.
 
 - **(P2) The scene tree is not a transform hierarchy, so a rig cannot be one.**
   Default composition is `IDENTITY_POSE_COMPOSITION` — "parents are

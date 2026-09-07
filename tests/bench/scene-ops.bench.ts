@@ -72,6 +72,41 @@ describe('scene.setPose — by tree depth', () => {
   }
 });
 
+/**
+ * The three ways a 60 Hz loop can move a node, against each other.
+ *
+ * `docs/TODO.md` carried a P1 saying the fresh pose object `setPose` demands
+ * per node per frame was the GC bill, and proposed a scalar setter or an
+ * in-place write to remove it. The bare-allocation row is what settles that:
+ * minting the object is a rounding error next to recording the step, so
+ * neither remedy would have moved the number. The override row is the write
+ * that actually costs nothing — `PoseOverrides` is set once and mutated in
+ * place, and `commit()` drops the pose-keyed memo slots the reference key can
+ * no longer see.
+ */
+describe('per-frame pose write — one node, three paths', () => {
+  const scene = emptyScene(60);
+  const id = scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { n: 0 } });
+
+  let i = 0;
+  bench('setPose, fresh object — records a step', () => {
+    scene.setPose(id, { x: i++, y: 0, width: 3, height: 4 });
+  }, FIXED);
+
+  const entry = { pose: { x: 0, y: 0, width: 3, height: 4 } };
+  scene.overrides.set(id, entry);
+  bench('override, mutated in place — records nothing', () => {
+    entry.pose.x = i++;
+    scene.overrides.commit();
+  }, FIXED);
+
+  // No scene at all: the cost the two remedies above would have removed.
+  const sink: { x: number; y: number; width: number; height: number }[] = [];
+  bench('the pose object alone', () => {
+    sink[0] = { x: i++, y: 0, width: 3, height: 4 };
+  }, FIXED);
+});
+
 describe('scene.setPose — 10k-node scene, one node', () => {
   // Isolates "does scene size cost anything per mutation" from tree depth.
   const scene = deepScene(10000, 0);
