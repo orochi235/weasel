@@ -20,6 +20,7 @@ function makeStubScene(ids: string[]) {
       get: (id: NodeId) => nodes.get(id),
       childrenOf: () => [],
       get roots() { return [...nodes.keys()].map(asNodeId); },
+      removalClosure: (want: readonly NodeId[]) => [...want],
       remove: vi.fn(),
       applyBatch: vi.fn((ops: Op[], label: string) => { applyBatchLog.push({ ops, label }); }),
     },
@@ -107,6 +108,17 @@ describe('buildDeleteOps subtree collapsing (shared by delete + cut)', () => {
       get: (id: NodeId) => nodes.get(id),
       childrenOf: (id: NodeId) => [...nodes.values()].filter((n) => n.parent === id).map((n) => n.id),
       get roots() { return [...nodes.values()].filter((n) => n.parent == null).map((n) => n.id); },
+      // Subtree only — the stub has no `dependsOn`.
+      removalClosure: (want: readonly NodeId[]): NodeId[] => {
+        const out: NodeId[] = [];
+        const walk = (id: NodeId): void => {
+          if (out.includes(id)) return;
+          out.push(id);
+          for (const n of nodes.values()) if (n.parent === id) walk(n.id);
+        };
+        for (const id of want) walk(id);
+        return out;
+      },
     };
     const ops = buildDeleteOps(scene as never, ['g', 'a', 'b', 'loose'], 'Cut');
     expect(ops).toHaveLength(2);

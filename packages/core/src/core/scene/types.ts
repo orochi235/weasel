@@ -384,6 +384,15 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
    *  which is what makes it safe to pass a whole selection. Throws if any id is
    *  not in the scene; an empty list does nothing and records no step. */
   removeMany(ids: readonly NodeId[]): void;
+  /** Every node {@link removeMany} would take if given `ids`: each id, its
+   *  subtree, everything deriving from any of those, and those nodes' subtrees
+   *  in turn. The authoritative answer — the cascade relations live here, and
+   *  a caller reconstructing them from `dependsOn` and `children` drifts the
+   *  moment a third one is added. Ids not in the scene come back unchanged.
+   *
+   *  A set, not a restore order: a dependent can be reached before the parent
+   *  it sits under, which is also in the closure. */
+  removalClosure(ids: readonly NodeId[]): readonly NodeId[];
   update(id: NodeId, patch: { data: TData }): void;
   setPose(id: NodeId, pose: TPose): void;
   /** Retag `id` to `layer`. On a **container this cascades**: every descendant

@@ -350,10 +350,9 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
    *  reachability walk; `ids` grows as it runs, which is what carries the
    *  cascade transitively and upward through a dependent's own ancestors.
    *
-   *  `coveredByEmitted` in `interactions/actions/defaults/delete.ts` computes
-   *  this same closure from the other end, walking up from each candidate,
-   *  because no public surface exposes the reverse `dependsOn` index. A third
-   *  cascade relation has to be added to both or they silently disagree. */
+   *  Published as {@link Scene.removalClosure}, which is what the delete op and
+   *  `buildDeleteOps` ask instead of rebuilding the walk from `dependsOn` and
+   *  `children` — a third cascade relation is then added here alone. */
   function removalClosure(rootIds: readonly NodeId[]): {
     ids: NodeId[];
     removing: Set<NodeId>;
@@ -925,6 +924,10 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
     remove(id) {
       scene.removeMany([id]);
+    },
+
+    removalClosure(rootIds) {
+      return removalClosure(rootIds).ids;
     },
 
     removeMany(rootIds) {

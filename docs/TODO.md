@@ -21,6 +21,14 @@ Priority tags:
 
 ### Next up
 
+### P1 — the kit can't do this today
+
+**Rendering & paint**
+- No render-to-texture, so no effect can read the frame it draws over → [Rendering & paint](#rendering--paint)
+
+**Animation**
+- `setPose` demands a fresh pose object per node per frame, and the GC bill is visible → [Animation](#animation)
+
 ### P2 — broad reuse / friction-likely
 
 **Text**
@@ -817,34 +825,6 @@ here is smaller than the connect gesture that comes next.
   its own placeholder pose. Closing it means giving the adapter surface a
   dependency read, which is a bigger decision than picking.
 
-- **(P1) Undo after a Delete loses a node's dependents.** The container half of
-  this closed with the subtree snapshot in `createDeleteOp` (covered by
-  `defaults/delete.test.ts:190`); the `dependsOn` half did not.
-  `captureDescendants` (`core/ops/delete.ts:47`) walks `getChildren` only, and a
-  dependent is not a descendant — so deleting an endpoint cascades its edge away
-  through `removalClosure`, and `invert()` re-inserts the endpoint alone. The
-  rich `kit:remove` snapshot that *would* restore the whole closure never reaches
-  history, because `applyBatch` suppresses recording (`scene.ts:1134`) and logs
-  the external ops instead. The arc's promise that "undo cannot restore the
-  halves separately" rests on this.
-
-  `defaults/delete.test.ts:447` reads like it covers this and does not: it
-  destructures only the endpoint from its fixture, so the edge is never asserted
-  on. Adding that assertion fails today.
-
-  **Arc 1 ships with this hole.** The fix is two parts and neither is a bugfix:
-  make the `insertNode` adapters carry `dependsOn` / `derivePath` (below), then add a
-  multi-node delete op carrying the closure snapshot plus an `insertNodes` that
-  re-attaches by parent and ascending index. That is a second implementation of
-  the detach-root reasoning in `kit:remove`, and the two rotting apart is the
-  argument for designing it rather than patching it.
-
-  Routing `deleteAction` through `scene.removeMany` does **not** fix this and was
-  rejected: `removeMany` goes through `executeAndLog`, which does not consult
-  `getActiveJournal()`, so it would silently move deletes out of a consumer's
-  active journal into the scene's own history. `apps/draw` wires that for real
-  and no in-tree test would have caught it.
-
 - **(P2) Derived pose.** Arc 1b of
   `docs/superpowers/specs/2026-08-28-diagram-plugin-design.md` — the same
   dependency machinery driving a node's pose rather than its path. Unblocks the
@@ -869,12 +849,6 @@ here is smaller than the connect gesture that comes next.
   survives the JSON round-trip and repopulates the index, but the node will never
   paint. `kit:add` already solves this with `derivePathKey` plus registry
   re-resolution; `kit:remove` should mirror it.
-
-- **(P2) The `insertNode` adapters drop `dependsOn` and `derivePath`.**
-  `canvas/sceneAdapter.ts` forwards `clipFromPose` and neither of these;
-  `interactions/actions/defaultCommitAdapter.ts` forwards none of the three. A
-  derived node round-tripped through either comes back inert. Gates the undo hole
-  above.
 
 - **(P3) `setDependsOn` op.** `dependsOn` is fixed at add time, so retargeting an
   edge is remove plus add. Design it with the connect gesture rather than ahead
@@ -1300,16 +1274,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   no in-repo caller. They are a legitimate Canvas2D measuring utility for consumers
   drawing to a 2D context, but nothing in the kit measures that way any more, so
   the question is whether they are public API or residue.
-
-- **(P2) The removal closure is computed twice.** Post-dates the 2026-08-29
-  audit and is the same pattern it was hunting. `removalClosure` in
-  `core/scene/scene.ts` walks down from the roots; `coveredByEmitted` in
-  `interactions/actions/defaults/delete.ts` walks up from each candidate,
-  because no public surface exposes the reverse `dependsOn` index. It has
-  already drifted once, in the arc that created it: adding the dependents
-  relation to the scene without adding it to `delete.ts` made the built-in
-  Delete key throw mid-batch on a selection holding a node and its edge.
-  Exposing the reverse index is what collapses it.
 
 - **(P2) Safari's `gesturestart` / `gesturechange` / `gestureend` are unhandled.** They are the second trackpad pinch channel on macOS Safari, alongside the ctrl+wheel one `viewportZoom` reads. Nothing in the repo listens for them, so Safari trackpad pinch gets whatever the wheel path synthesizes. Worth deciding deliberately rather than by omission. Note before adding a listener: `viewportZoom` now claims bare ctrl+wheel, so a `gesturechange` handler becomes a *second* channel for the same physical gesture — the double-apply `.changeset/mac-trackpad-pinch-zoom.md` just removed. Consolidate it into `makeViewportZoomAction` behind one scale-delta seam, not as a fourth listener.
 

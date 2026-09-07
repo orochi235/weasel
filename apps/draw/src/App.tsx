@@ -1111,18 +1111,10 @@ function BooleansAdapterPublisher({
         return { parentId: node?.parent ?? null, index: idx };
       },
       setSelection: (ids) => selection.set(ids),
-      insertNode: (node, index?: number) => {
-        const n = node as { id: string; kind: 'leaf' | 'container'; layer: WeaselDrawLayer; pose: WeaselDrawPose; data: WeaselDrawData; parent?: NodeId | null };
-        scene.add({
-          kind: n.kind,
-          layer: n.layer,
-          pose: n.pose,
-          data: n.data,
-          id: asNodeId(n.id),
-          ...(index !== undefined ? { index } : {}),
-          ...(n.parent != null ? { parent: n.parent } : {}),
-        });
-      },
+      // No `insertNode` here on purpose: `applyOps` below spreads
+      // `defaultCommitAdapter`, whose own is what the ops reach, and a copy
+      // here would shadow it — silently dropping whatever the kit's learns to
+      // carry next. The booleans hook never calls it directly.
       removeNode: (id) => { scene.remove(asNodeId(id)); },
       // Hand the batch to the scene rather than re-applying it here: the
       // entry then holds the real ops, so undo replays the reorder and the

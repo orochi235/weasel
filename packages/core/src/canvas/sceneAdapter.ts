@@ -85,6 +85,7 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
       setSelection(ids: string[]): void;
       insertNode(node: Node<TData, TLayer, TPose>, index?: number): void;
       removeNode(id: string): void;
+      getRemovalClosure(ids: readonly string[]): string[];
       applyOps(ops: Op[], label?: string): void;
       snapshotSelection(ids: string[]): ClipboardSnapshot;
       commitPaste(
@@ -366,10 +367,17 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         ...(node.kind === 'container' && node.clipFromPose
           ? { clipFromPose: node.clipFromPose }
           : {}),
+        // Derivation travels with the node, or undo of a delete brings an
+        // edge back as a static path that never follows its endpoints again.
+        ...(node.dependsOn !== undefined ? { dependsOn: node.dependsOn } : {}),
+        ...(node.derivePath !== undefined ? { derivePath: node.derivePath } : {}),
       });
     },
     removeNode(id: string) {
       scene.remove(asNodeId(id));
+    },
+    getRemovalClosure(ids: readonly string[]): string[] {
+      return [...scene.removalClosure(ids.map(asNodeId))];
     },
     // AreaSelectAdapter surface — included unconditionally so plain
     // `useSelectTool(sceneToAdapter(scene, { selection }))` Just Works for the

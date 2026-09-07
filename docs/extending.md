@@ -307,6 +307,13 @@ nodes on other layers. `scene.removeMany(ids)` does the same for several roots
 in one entry, absorbing ids that another root's cascade already covers, which
 is what makes it safe to hand a whole selection.
 
+`scene.removalClosure(ids)` answers what that would take, without taking it.
+Ask it rather than rebuilding the walk from `dependsOn` and `children`: the
+cascade relations live in the scene, and a caller with its own copy is a copy
+that goes stale. The built-in Delete uses it twice — to drop selected ids an
+earlier op already covers, and to snapshot the whole set so undo brings all of
+it back.
+
 `dependsOn` is fixed when the node is added; retargeting is remove plus add.
 Reparenting a node out from under its dependents is legal and intended: the
 geometry keeps recomputing across the new frame, because `derivePath` reads world

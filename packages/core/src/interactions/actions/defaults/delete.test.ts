@@ -4,11 +4,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { buildDeleteOps, deleteAction } from './delete';
 import { createScene } from 'core/scene/scene';
-import type { RectPose, Scene } from 'core/scene/types';
+import type { ContainerNode, RectPose, Scene } from 'core/scene/types';
 import type { ImmediateInvoker } from '../invoker';
 import type { NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
+import { PATH_M, type PolygonPath } from 'core/geometry/path';
 
 // ---------------------------------------------------------------------------
 // Stub scene — tracks removals, roots/children for index capture, and an
@@ -51,6 +52,17 @@ function makeStubScene(
     childrenOf: (id: NodeId) =>
       [...nodes.values()].filter((n) => n.parent === id).map((n) => n.id),
     get roots() { return roots(); },
+    // The stub cascades along the subtree only — it has no `dependsOn`.
+    removalClosure: (ids: readonly NodeId[]): NodeId[] => {
+      const out: NodeId[] = [];
+      const walk = (id: NodeId): void => {
+        if (out.includes(id)) return;
+        out.push(id);
+        for (const n of nodes.values()) if (n.parent === id) walk(n.id);
+      };
+      for (const id of ids) walk(id);
+      return out;
+    },
     remove: vi.fn((id: NodeId) => {
       if (!nodes.has(id)) throw new Error(`no node ${id}`);
       removed.push(id);
@@ -450,5 +462,131 @@ describe('deleteAction over a real scene', () => {
     expect(scene.canUndo()).toBe(true);
     scene.undo();
     expect(scene.get(a)).toBeDefined();
+  });
+
+  it('undo restores the edge the delete cascaded, not just the endpoint', () => {
+    const { scene, a, edge } = makeEdgeScene();
+    runDelete({ selection: makeSelection([a]), scene });
+    expect(scene.get(edge)).toBeUndefined();
+    scene.undo();
+    expect(scene.get(a)).toBeDefined();
+    expect(scene.get(edge)).toBeDefined();
+    expect(scene.get(edge)!.dependsOn).toEqual([a, expect.any(String)]);
+  });
+
+  // Built through `initial` rather than `scene.add`, because construction
+  // specs deliberately do not prime the scene's redo-side `derivePath` cache.
+  // A node added at runtime is restored from that cache whatever the op hands
+  // over, so the same assertion there passes against an `insertNode` that
+  // drops the function.
+  it('a restored edge still derives from its endpoints', () => {
+    const [a, b, edge] = [asNodeId('a'), asNodeId('b'), asNodeId('edge')];
+    const derivePath = (
+      _n: unknown,
+      deps: readonly (RectPose | undefined)[],
+    ): PolygonPath => ({
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M]),
+      coords: new Float32Array([deps[0]?.x ?? -1, 0]),
+      fillRule: 'nonzero',
+    });
+    const scene = createScene<object, 'main', RectPose>({
+      systemLayers: LAYERS,
+      initial: [
+        { ...leaf, id: a },
+        { ...leaf, id: b },
+        { ...leaf, id: edge, dependsOn: [a, b], derivePath },
+      ],
+    });
+
+    runDelete({ selection: makeSelection([a]), scene });
+    scene.undo();
+
+    // A restored edge that lost `derivePath` reads as a static path forever;
+    // re-deriving against a moved endpoint is what tells the two apart.
+    scene.setPose(a, { x: 42, y: 0, width: 10, height: 10 });
+    expect(scene.get(edge)!.derivePath).toBe(derivePath);
+    const derived = scene.get(edge)!.derivePath!(scene.get(edge)!, [scene.get(a)!.pose]);
+    expect((derived as PolygonPath).coords).toEqual(new Float32Array([42, 0]));
+  });
+
+  it('a restored container still clips', () => {
+    const [box, kid] = [asNodeId('box'), asNodeId('kid')];
+    const clipFromPose = (pose: RectPose) => ({
+      kind: 'rect' as const, x: pose.x, y: pose.y, width: 1, height: 1,
+    });
+    const scene = createScene<object, 'main', RectPose>({
+      systemLayers: LAYERS,
+      initial: [
+        { ...leaf, kind: 'container', id: box, clipFromPose },
+        { ...leaf, id: kid, parent: box },
+      ],
+    });
+
+    runDelete({ selection: makeSelection([box]), scene });
+    scene.undo();
+
+    const restored = scene.get(box) as ContainerNode<object, 'main', RectPose>;
+    expect(restored.clipFromPose).toBe(clipFromPose);
+  });
+
+  it('undo restores a cascaded edge with its own children, in order', () => {
+    const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
+    const a = scene.add(leaf);
+    const edge = scene.add({ ...leaf, kind: 'container', dependsOn: [a] });
+    const [c1, c2] = [
+      scene.add({ ...leaf, parent: edge }),
+      scene.add({ ...leaf, parent: edge }),
+    ];
+
+    runDelete({ selection: makeSelection([a]), scene });
+    expect(scene.get(c1)).toBeUndefined();
+
+    scene.undo();
+    expect([...scene.childrenOf(edge)]).toEqual([c1, c2]);
+  });
+
+  it('restores a cascaded node to its own slot among live siblings', () => {
+    const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
+    const box = scene.add({ ...leaf, kind: 'container' });
+    const a = scene.add(leaf);
+    const [x, edge, y] = [
+      scene.add({ ...leaf, parent: box }),
+      scene.add({ ...leaf, parent: box, dependsOn: [a] }),
+      scene.add({ ...leaf, parent: box }),
+    ];
+
+    runDelete({ selection: makeSelection([a]), scene });
+    expect([...scene.childrenOf(box)]).toEqual([x, y]);
+
+    scene.undo();
+    expect([...scene.childrenOf(box)]).toEqual([x, edge, y]);
+  });
+
+  it('redo takes the whole cascade away again', () => {
+    const { scene, a, edge } = makeEdgeScene();
+    runDelete({ selection: makeSelection([a]), scene });
+    scene.undo();
+    scene.redo();
+    expect(scene.get(a)).toBeUndefined();
+    expect(scene.get(edge)).toBeUndefined();
+  });
+});
+
+describe('Scene.removalClosure', () => {
+  it('takes the subtree, the dependents, and the dependents\' subtrees', () => {
+    const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
+    const a = scene.add(leaf);
+    const kid = scene.add({ ...leaf, parent: scene.add({ ...leaf, kind: 'container' }) });
+    const edge = scene.add({ ...leaf, kind: 'container', dependsOn: [a] });
+    const edgeKid = scene.add({ ...leaf, parent: edge });
+
+    expect([...scene.removalClosure([a])].sort()).toEqual([a, edge, edgeKid].sort());
+    expect(scene.removalClosure([a])).not.toContain(kid);
+  });
+
+  it('answers for an id that is not in the scene rather than throwing', () => {
+    const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
+    expect([...scene.removalClosure([asNodeId('ghost')])]).toEqual([asNodeId('ghost')]);
   });
 });

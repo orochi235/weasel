@@ -49,6 +49,11 @@ export function moveGestureAdapter<TPose>(
         id: node.id,
         ...(index !== undefined ? { index } : {}),
         ...(node.parent !== null ? { parent: node.parent } : {}),
+        ...(node.dependsOn !== undefined ? { dependsOn: node.dependsOn } : {}),
+        ...(node.derivePath !== undefined ? { derivePath: node.derivePath } : {}),
+        ...(node.kind === 'container' && node.clipFromPose !== undefined
+          ? { clipFromPose: node.clipFromPose }
+          : {}),
       }),
     getChildren: (parentId) =>
       parentId === null ? [...scene.roots] : [...scene.childrenOf(asNodeId(parentId))],

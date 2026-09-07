@@ -33,6 +33,8 @@ export function defaultCommitAdapter<TPose>(scene: Scene<unknown, string, TPose>
     getSelection: (): string[] => [...scene.getSelection()],
     setSelection: (ids: string[]) => scene.setSelection(ids.map(asNodeId)),
     getParent: (id: string) => (scene.get(asNodeId(id))?.parent ?? null) as string | null,
+    getRemovalClosure: (ids: readonly string[]): string[] =>
+      [...scene.removalClosure(ids.map(asNodeId))],
     getChildren: (parentId: string | null): string[] =>
       (parentId === null
         ? [...scene.roots]
@@ -69,6 +71,14 @@ export function defaultCommitAdapter<TPose>(scene: Scene<unknown, string, TPose>
         // source removal) re-inserts at the recorded z-order slot instead
         // of appending at the end.
         ...(index !== undefined ? { index } : {}),
+        // The function-valued fields travel with the node, or undo of a delete
+        // brings an edge back as a static path that never follows its endpoints
+        // again, and a clipped container back with nothing clipped.
+        ...(node.dependsOn !== undefined ? { dependsOn: node.dependsOn } : {}),
+        ...(node.derivePath !== undefined ? { derivePath: node.derivePath } : {}),
+        ...(node.kind === 'container' && node.clipFromPose !== undefined
+          ? { clipFromPose: node.clipFromPose }
+          : {}),
       }),
   };
 }
