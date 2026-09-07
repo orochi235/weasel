@@ -1,8 +1,8 @@
 # Overnight pass through docs/TODO.md
 
-**State at hand-off:** nine commits on `main`, **unpushed**, working tree clean.
-Mike has not seen any of it and has not approved a push. `git log --oneline
-@{u}..HEAD` lists what is waiting.
+**State at hand-off:** a run of commits on `main`, **unpushed**, working tree
+clean. Mike has not seen any of it and has not approved a push. `git log
+--oneline @{u}..HEAD` lists what is waiting.
 
 Every commit closes or corrects one `docs/TODO.md` entry, retires that entry in
 the same commit, and carries a `patch` changeset where it touches a published
@@ -11,16 +11,18 @@ package.
 ## Verified after the last of them
 
 The whole `prepublishOnly` gate, run on the tree as it stands: `tsc --noEmit`,
-`npm run lint`, `npm run lint -w @weasel-js/labkit`, `npm test` (865 files,
-9429 passed, 0 failed), `npm run test:stories` (337 passed), `npm run build` +
-`build -w @weasel-js/labkit`, `check:manifests`, `check:bumps`,
-`check:frame-loops`, `check:test-projects`, `test:smoke:consumer`. All green.
+`npm run lint`, `npm run lint -w @weasel-js/labkit`, `npm test` (865 files, 0
+failed), `npm run test:stories` (337 passed), `npm run build` + `build -w
+@weasel-js/labkit`, `check:manifests`, `check:bumps`, `check:frame-loops`,
+`check:test-projects`, `test:smoke:consumer`. All green.
 
-**Not run: `npm run test:visual`.** Every baseline in `tests/visual/baselines/`
-is a `<canvas>` capture, and tonight's visual changes are all DOM — the Slider's
-readout row, the ComboBox's `fit` width, labkit's zoom field. The one canvas
-change (the HUD drawing from the host's font) was checked by capturing the HUD
-demo's canvas before and after: byte-identical.
+**Of the visual suite, only `parallax` was run** — it passes against its
+committed baseline, which is the one that could have moved. The rest were not:
+every baseline in `tests/visual/baselines/` is a `<canvas>` capture, and the
+other visual changes are DOM (the Slider's readout row, the ComboBox's `fit`
+width, labkit's zoom field). Two canvas changes were checked by capturing the
+canvas before and after instead — the HUD drawing from the host's font, and
+WeaselDraw's loupe taking its page layer unwrapped. Both byte-identical.
 
 ## Decisions made here that are not in the code
 
@@ -55,11 +57,28 @@ theme decision, and it changes what external consumers who override
 `--wzl-accent` (speech-balloons, `apps/draw`) get. The entry carries the numbers
 now.
 
+**A parallax plane's sources go through `drawOneLayer`.** They were drawn with
+a bare `layer.draw`, so a `space: 'world'` source came out unprojected and the
+only way to see anything was to pre-project by hand while declaring a space you
+did not draw in — which all four ParallaxDemo layers did. The demo now emits
+world coordinates and its `project` helper is gone. `apps/draw`'s loupe shim had
+the same shape; fixing it let the page layer go into the lens as itself rather
+than hand-wrapped in `viewToMat3`.
+
 **A unit leaf converts only its *declared* bounds.** An omitted bound has no
 stored counterpart to convert, and its fallback (0..100 for a slider's track, a
 step of 1) is a display-space number already. Converting an undeclared step
 turned the rotation field's 1° into 57.3° and broke the existing round-trip
 test — that is what the rule is protecting against.
+
+**The text-edit overlay was left alone on purpose.** The entry said the fix is
+to pass the canvas handle's `getView`. That does scale the overlay — measured,
+its `transform` goes from `none` to the live matrix — and then the overlay
+paints across the page around the demo, because a text node at 2x is already
+twice the container's width. Neither `overflow: hidden` nor `contain: paint` on
+the container clips it, though it is a `position: absolute` child of that
+container and the canvas beside it clips fine. Reverted rather than shipped
+half-fixed; the entry carries the measurement and the kit question under it.
 
 ## What to do next
 
