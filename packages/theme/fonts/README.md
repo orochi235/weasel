@@ -11,6 +11,12 @@ third-party host at runtime.
 Loading them is opt-in: `import '@weasel-js/theme/fonts.css'`. Skip it and the
 token font stacks fall back to `system-ui`.
 
+**Not opt-in through labkit.** `@weasel-js/labkit` concatenates these
+`@font-face` rules into its one `dist/styles.css` and copies both `.woff2`
+files to `dist/fonts/`, so a lab renders in them without importing anything
+here. Renaming or dropping a face changes what a consumer's text looks like
+with no error anywhere.
+
 ## Tooling
 
 Both commands need `fontTools` **with the Brotli extension** — without it,
