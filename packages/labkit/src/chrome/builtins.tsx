@@ -24,6 +24,22 @@ import type { TrialChromeContext, TrialContribution } from './types';
 
 const ZOOM_STEP = 1.25;
 
+/** The property groups inside a contribution are folded under keys prefixed
+ *  with that contribution's id, so a group called `marks` cannot fold the
+ *  sidebar section of the same name. `ControlPanel` keys by bare label, so the
+ *  prefix goes on here and comes off again. */
+function groupFolds(
+  collapsedSections: Readonly<Record<string, boolean>>,
+  id: string,
+): Record<string, boolean> {
+  const prefix = `${id}/`;
+  const out: Record<string, boolean> = {};
+  for (const [key, value] of Object.entries(collapsedSections)) {
+    if (key.startsWith(prefix)) out[key.slice(prefix.length)] = value;
+  }
+  return out;
+}
+
 /**
  * The contributions a trial gets from what its instrument declared. This is
  * the whole "declaring a capability provides the chrome" rule — it replaces
@@ -180,6 +196,8 @@ export function builtinContributions(
             config={ctx.config as Record<string, unknown>}
             setConfig={(key, value) => ctx.setConfig(String(key), value)}
             renderers={controls}
+            collapsed={groupFolds(ctx.collapsedSections, 'settings')}
+            onCollapse={(label, next) => ctx.setSectionCollapsed(`settings/${label}`, next)}
           />
         ),
       },

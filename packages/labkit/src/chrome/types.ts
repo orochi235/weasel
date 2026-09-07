@@ -41,7 +41,7 @@ export interface ToolItem {
 /** A titled block in the sidebar. */
 export interface SidebarSection {
   title: string;
-  /** Starts collapsed. The open/closed state itself is the region's. */
+  /** Starts collapsed, until the trial remembers a fold of its own. */
   defaultCollapsed?: boolean;
   /** Offer the tear-out control. On by default; a section that only makes
    *  sense beside its trial sets this false. */
@@ -107,8 +107,8 @@ export interface TrialChromeContext {
   /** What the title bar reads, which is the instrument's name until something
    *  calls `setTitle`. */
   title: string;
-  /** Retitle this trial; `null` restores the instrument name. The title is the
-   *  chrome's, not the trial record's, so it does not survive a reload. */
+  /** Retitle this trial; `null` restores the instrument name. Persisted with
+   *  the trial, so a title survives a reload. */
   setTitle: (title: string | null) => void;
   isLastTrial: boolean;
 
@@ -134,6 +134,14 @@ export interface TrialChromeContext {
   configFields: ConfigField[];
   config: unknown;
   setConfig: (key: string, value: unknown) => void;
+
+  /** Which of this trial's collapsible sections are folded. A sidebar
+   *  section's key is its contribution id; a section *inside* a contribution —
+   *  a control panel's property group — is keyed `<contribution id>/<label>`.
+   *  A section absent here is at its own default. Persisted with the trial. */
+  collapsedSections: Readonly<Record<string, boolean>>;
+  /** Fold or unfold one section, keyed as `collapsedSections` is. */
+  setSectionCollapsed: (key: string, collapsed: boolean) => void;
 
   /** Section ids this trial currently has torn out of its sidebar. */
   undockedPanels: readonly string[];
