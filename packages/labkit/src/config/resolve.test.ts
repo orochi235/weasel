@@ -93,6 +93,21 @@ describe('resolveConfigSchema', () => {
     ]);
   });
 
+  it('takes `collapsed` from any one leaf under the heading', () => {
+    const r = resolveConfigSchema(
+      f.schema({
+        a: f.number(1).section('Advanced'),
+        b: f.number(1).section('Advanced', { collapsed: true }),
+        c: f.number(1).section('Plain'),
+      }),
+      [],
+    );
+    expect(r.sections).toEqual([
+      { label: 'Advanced', paths: ['a', 'b'], collapsed: true },
+      { label: 'Plain', paths: ['c'] },
+    ]);
+  });
+
   it('collects showIf and node renderers by path', () => {
     const r = resolveConfigSchema(
       f.schema({

@@ -58,7 +58,9 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> {
   align?: PropertyAlign;
   /**
    * Fold each section away behind a twisty, starting `'open'` or `'closed'`.
-   * Unset draws the heading alone, as the panel always has.
+   * Unset draws the heading alone, as the panel always has — unless a section
+   * in the schema declares how it opens, which makes that section foldable on
+   * its own and outranks this for that one section.
    */
   collapse?: 'open' | 'closed';
   /**
@@ -113,7 +115,13 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   );
 
   const gridPack = pack === 'one-up' ? 'auto-color' : 'pairs';
-  const folds = collapse !== undefined || collapsed !== undefined || onCollapse !== undefined;
+  // A section that declares how it opens is foldable whether or not the lab
+  // asked for folds — there is nothing else for the declaration to mean.
+  const folds =
+    collapse !== undefined ||
+    collapsed !== undefined ||
+    onCollapse !== undefined ||
+    resolved.sections.some((s) => s.collapsed !== undefined);
   const startsFolded = collapse === 'closed';
   return (
     <PropertyList
@@ -129,8 +137,10 @@ export function ControlPanel<TC extends Record<string, unknown>>({
           title={section.label}
           pack={gridPack}
           collapsible={folds}
-          defaultCollapsed={startsFolded}
-          collapsed={collapsed ? (collapsed[section.label] ?? startsFolded) : undefined}
+          defaultCollapsed={section.collapsed ?? startsFolded}
+          collapsed={
+            collapsed ? (collapsed[section.label] ?? section.collapsed ?? startsFolded) : undefined
+          }
           onCollapsedChange={onCollapse ? (next) => onCollapse(section.label, next) : undefined}
         >
           {section.paths.map(row)}

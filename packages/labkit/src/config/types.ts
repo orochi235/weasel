@@ -61,6 +61,10 @@ export type ConfigRule = (ctx: ConfigRuleContext) => LeafPatch | null;
 export interface SectionSpec {
   label: string;
   paths: readonly string[];
+  /** Whether the section opens folded. Set, the panel folds this section
+   *  whether or not it was given a panel-wide `collapse`; a fold the reader
+   *  has since toggled outranks it. */
+  collapsed?: boolean;
 }
 
 /** A schema resolved against a set of rules: the vocabulary weasel-ui renders,
@@ -75,9 +79,17 @@ export interface ResolvedConfig {
   renderers: Readonly<Record<string, ControlRenderer>>;
 }
 
+/** How a node names the section it belongs to: the heading, and how that
+ *  section opens. Every node in one section repeats the heading; only one of
+ *  them has to say `collapsed`. */
+export interface SectionOption {
+  label: string;
+  collapsed?: boolean;
+}
+
 /** Per-node extras that do not belong on a `PrefLeaf`. */
 export interface NodeOptions {
-  section?: string;
+  section?: SectionOption;
   showIf?: (config: Record<string, unknown>) => boolean;
   render?: ControlRenderer;
   validate?: (leaf: PrefLeaf) => string[];

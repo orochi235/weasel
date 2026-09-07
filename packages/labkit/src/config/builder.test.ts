@@ -63,7 +63,7 @@ describe('builder', () => {
       .section('Advanced')
       .showIf((c) => c.showGrid === true)
       .render(() => null);
-    expect(n.options.section).toBe('Advanced');
+    expect(n.options.section).toEqual({ label: 'Advanced' });
     expect(n.options.showIf?.({ showGrid: true })).toBe(true);
     expect(n.options.render).toBeTypeOf('function');
     expect(n.annotations).toEqual({});
@@ -91,7 +91,7 @@ describe('builder / node option collisions', () => {
     ];
     for (const node of nodes) {
       expect(typeof node.options).toBe('object');
-      expect(node.section('S').options.section).toBe('S');
+      expect(node.section('S').options.section).toEqual({ label: 'S' });
       expect(node.render(() => null).options.render).toBeTypeOf('function');
     }
   });

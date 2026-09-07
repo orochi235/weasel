@@ -61,9 +61,10 @@ abstract class BaseNode<T> implements ConfigNode<T> {
     return this.ann({ pair });
   }
 
-  /** Render under a named section heading. */
-  section(section: string): this {
-    return this.opt({ section });
+  /** Render under a named section heading. `collapsed` opens the section
+   *  folded — say it on any one of the section's leaves. */
+  section(label: string, opts: { collapsed?: boolean } = {}): this {
+    return this.opt({ section: { label, ...opts } });
   }
 
   /** Show this row only while the predicate holds. Presentational — the value

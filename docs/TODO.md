@@ -44,7 +44,6 @@ Priority tags:
 - labkit: nested config values — `f.schema` is flat because `setConfig` is → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Reconcile core's `ToolPrefLeaf` with weasel-ui's `PrefLeaf` — the `paint` kind has already drifted → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - A number leaf's unit conversion is one leaf deep → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- A section cannot declare "start closed" from the schema → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - `LabShell` is the only thing that applies labkit's style scope → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 **Lint**
@@ -1472,16 +1471,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `"12mm"`, and the conversion tables that would answer one (`UnitSystem`,
   `IMPERIAL_INCHES` / `METRIC_MM` / `PIXELS`) belong to a separate mechanism
   wired only to grid snapping, whose `formatUnit` has no callers.
-
-- **(P2) A section cannot declare "start closed" from the schema.**
-  `PropertyGroup` folds now — `collapsible` / `defaultCollapsed` uncontrolled,
-  `collapsed` / `onCollapsedChange` controlled, drawn with `<Disclosure>` — and
-  `ControlPanel` passes it through as `collapse` and `collapsed` / `onCollapse`.
-  What a schema still cannot say is that a section opens closed: `SectionSpec`
-  (`packages/labkit/src/config/types.ts`) has no field for it and `resolve.ts`
-  builds it. The fold itself is remembered: `TrialRecord.collapsedSections`
-  holds it, keyed `settings/<label>` for a control panel's groups. Asked for by
-  klieg, precioussss and brick-icons.
 
 - **(P2) `LabShell` is the only thing that applies labkit's style scope.**
   `.lk-root` carries the tokens, the fonts, the box-sizing reset and every

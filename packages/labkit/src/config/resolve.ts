@@ -31,6 +31,7 @@ export function resolveConfigSchema<TC>(
   const children: Record<string, PrefLeaf> = {};
   const sectionOrder: string[] = [];
   const sectionPaths = new Map<string, string[]>();
+  const sectionCollapsed = new Map<string, boolean>();
   const showIf = new Map<string, (config: Record<string, unknown>) => boolean>();
   const renderers: Record<string, ControlRenderer> = {};
 
@@ -47,11 +48,17 @@ export function resolveConfigSchema<TC>(
 
     const { section, showIf: predicate, render } = node.options;
     if (section !== undefined) {
-      if (!sectionPaths.has(section)) {
-        sectionOrder.push(section);
-        sectionPaths.set(section, []);
+      const { label, collapsed } = section;
+      if (!sectionPaths.has(label)) {
+        sectionOrder.push(label);
+        sectionPaths.set(label, []);
       }
-      sectionPaths.get(section)?.push(key);
+      sectionPaths.get(label)?.push(key);
+      // One leaf saying `collapsed` settles the section, so a schema does not
+      // have to repeat it on every leaf under the heading.
+      if (collapsed !== undefined) {
+        sectionCollapsed.set(label, (sectionCollapsed.get(label) ?? false) || collapsed);
+      }
     }
     if (predicate) showIf.set(key, predicate);
     if (render) renderers[key] = render;
@@ -61,6 +68,7 @@ export function resolveConfigSchema<TC>(
   const sections: SectionSpec[] = sectionOrder.map((label) => ({
     label,
     paths: sectionPaths.get(label) ?? [],
+    ...(sectionCollapsed.has(label) ? { collapsed: sectionCollapsed.get(label) } : {}),
   }));
 
   return { group, sections, showIf, renderers };

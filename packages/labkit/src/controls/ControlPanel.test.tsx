@@ -480,4 +480,34 @@ describe('<ControlPanel> collapsible sections', () => {
     expect(onCollapse).toHaveBeenCalledWith('Advanced', false);
     expect(screen.getByLabelText('Seed')).not.toBeVisible();
   });
+
+  describe('a section the schema declares closed', () => {
+    const closedSchema = resolveConfigSchema(
+      f.schema({
+        showGrid: f.boolean(true),
+        seed: f.number(0).section('Advanced', { collapsed: true }),
+      }),
+      [],
+    );
+
+    it('opens folded, and is foldable, with no collapse props at all', () => {
+      render(<ControlPanel schema={closedSchema} config={config} setConfig={vi.fn()} />);
+      expect(screen.getByLabelText('Seed')).not.toBeVisible();
+      fireEvent.click(screen.getByRole('button', { name: 'Advanced' }));
+      expect(screen.getByLabelText('Seed')).toBeVisible();
+    });
+
+    it('yields to a remembered fold, so a toggle the reader made survives', () => {
+      render(
+        <ControlPanel
+          schema={closedSchema}
+          config={config}
+          setConfig={vi.fn()}
+          collapsed={{ Advanced: false }}
+          onCollapse={vi.fn()}
+        />,
+      );
+      expect(screen.getByLabelText('Seed')).toBeVisible();
+    });
+  });
 });
