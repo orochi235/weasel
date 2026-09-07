@@ -37,7 +37,7 @@ Priority tags:
 **Selection, actions & UI panels**
 - Two implementations of an editable curve; the timeline built the second → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit's loupe drives itself with plain listeners, not bindings → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- Accent-coloured readouts are illegible in dark mode → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- The accent ramp has no member that passes AA as text, in either mode → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Every React Aria overlay inside a lab renders unthemed → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit: nested config values — `f.schema` is flat because `setConfig` is → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Reconcile core's `ToolPrefLeaf` with weasel-ui's `PrefLeaf` — the `paint` kind has already drifted → [Selection, actions & UI panels](#selection-actions--ui-panels)
@@ -1504,22 +1504,28 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ---
 
-### Accent-coloured readouts are illegible in dark mode
+### Accent-coloured readouts are illegible in dark mode, and no accent token fixes it
 
 `.readout` and `.readoutInput` in `Properties.module.css` paint text with
 `var(--wzl-accent)`, which is mode-invariant `#2e1f7a` — a very dark violet. On
-the dark theme's `--wzl-surface` that is near-invisible; a slider's value reads as
-a smudge. `--wzl-accent-fg` exists for exactly this and resolves to
-`--wzl-accent-strong` in dark, `--wzl-accent-base` in light.
+the dark theme's surface (`#25272c`) that measures **1.13:1**, against the 4.5:1
+AA needs for normal text: a slider's value reads as a smudge.
 
-Not a one-line swap, which is why it is here rather than done: consumer apps theme
-their panels by overriding `--wzl-accent` (speech-balloons to gold, `apps/draw`
-likewise). Moving the readouts to `--wzl-accent-fg` would make those overrides stop
-reaching the readouts, so the fix has to decide whether `--wzl-accent-fg` should
-derive from `--wzl-accent` rather than from the accent primitives.
+**Swapping to `--wzl-accent-fg` does not fix it.** It resolves to
+`--wzl-accent-strong` `#5841b8` in dark, which is **2.04:1** on the same surface —
+visible, still failing. Measured 2026-09-07 in
+`weasel-ui-properties-gallery--all` with `data-wzl-mode="dark"`; `--wzl-fg-muted`
+on that surface is 5.35:1 for comparison.
 
-Predates the control-skin arc; visible in `weasel-ui-properties-gallery--all` with
-`data-wzl-mode="dark"`.
+So this is the same problem as "The light accent sits below AA for text drawn on
+it" (3.85:1) above, from the other end: **the accent ramp has no member that
+passes AA as text, on either surface.** Deciding one of them decides both, and
+neither is patchable at a call site.
+
+The consumer question stands on top of that: apps theme their panels by
+overriding `--wzl-accent` (speech-balloons to gold, `apps/draw` likewise), so
+whatever the readouts read has to either follow that override or be documented
+as a second thing to override.
 
 ## Plugins & packaging
 
