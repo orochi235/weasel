@@ -58,7 +58,7 @@ export function deserializeTrials(
     const d = deserializers[r.instrumentName];
     return {
       ...r,
-      state: d?.deserialize ? d.deserialize(r.state) : r.state,
+      state: d?.deserialize ? d.deserialize(r.state, r.config) : r.state,
       undoStack: emptyUndoStack(),
     };
   });

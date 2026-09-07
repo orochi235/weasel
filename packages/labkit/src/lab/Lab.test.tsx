@@ -1,7 +1,9 @@
 import { act, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { Instrument } from '../instrument/types';
+import { createMemoryAdapter } from '../state/adapters';
+import { labDocumentKey } from '../state/document';
 import { Lab } from './Lab';
 import { LabContext, type LabContextValue } from './LabContext';
 
@@ -134,5 +136,31 @@ describe('<Lab>', () => {
     expect(() => render(<Lab instruments={[stub]} defaultInstrument="Missing" />)).toThrow(
       /Unknown instrument/,
     );
+  });
+
+  // The store reads its serializers while it is being built, so `<Lab>` is
+  // the only thing positioned to collect them off the instruments. They went
+  // uncollected for months, and an instrument holding anything JSON drops
+  // lost it with no error.
+  it('gives the store the serializers its instruments declare', () => {
+    vi.useFakeTimers();
+    const storage = createMemoryAdapter();
+    const mapped: Instrument = {
+      ...stub,
+      name: 'Mapped',
+      initialState: () => ({ seen: new Set(['a']) }),
+      serialize: (state) => ({ seen: [...(state as { seen: Set<string> }).seen] }),
+      deserialize: (data) => ({ seen: new Set((data as { seen: string[] }).seen) }),
+    };
+
+    render(
+      <Lab instruments={[mapped]} defaultInstrument="Mapped" storage={storage} storageKey="s" />,
+    );
+    act(() => vi.advanceTimersByTime(500));
+    expect(storage.read(labDocumentKey('s')) ?? '').toContain('"seen":["a"]');
+    vi.useRealTimers();
+
+    mountLab({ instruments: [mapped], defaultInstrument: 'Mapped', storage, storageKey: 's' });
+    expect((labRef?.trials[0]?.state as { seen: Set<string> }).seen).toEqual(new Set(['a']));
   });
 });

@@ -13,7 +13,6 @@ import {
 import { deserializeTrials, emptyUndoStack, serializeTrials } from './helpers';
 import type {
   CreateLabStoreOptions,
-  InstrumentSerializers,
   LabDocument,
   LabMode,
   LabStoreState,
@@ -59,16 +58,14 @@ export interface LabStoreActions {
   dockPanel: (trialId: string, sectionId?: string) => void;
 }
 
-/** A lab's store: its state and actions, plus the hook instruments use to
- *  register how their state is serialized. */
-export type LabStore = StoreApi<LabStoreState & LabStoreActions> & {
-  registerSerializers: (s: InstrumentSerializers) => void;
-};
+/** A lab's store: its state and its actions. How each instrument's state is
+ *  serialized comes in through `CreateLabStoreOptions.serializers`. */
+export type LabStore = StoreApi<LabStoreState & LabStoreActions>;
 
 /** Build a lab store, hydrating from storage if anything was saved under the
  *  same key. Writes back are debounced. */
 export function createLabStore(options: CreateLabStoreOptions): LabStore {
-  let serializers: InstrumentSerializers = {};
+  const serializers = options.serializers ?? {};
   let flushTimer: ReturnType<typeof setTimeout> | null = null;
 
   const hydration = hydrateDocument(options);
@@ -237,7 +234,9 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
         return;
       }
       const reg = serializers[snapshot.instrumentName];
-      const restoredState = reg?.deserialize ? reg.deserialize(snapshot.state) : snapshot.state;
+      const restoredState = reg?.deserialize
+        ? reg.deserialize(snapshot.state, snapshot.config)
+        : snapshot.state;
       set((s) => ({
         trials: s.trials.map((w) =>
           w.id === trialId ? { ...w, state: restoredState, config: snapshot.config } : w,
@@ -313,11 +312,7 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
   // fold; the flush is what removes the legacy keys.
   if (foldedFromLegacy) scheduleFlush();
 
-  return Object.assign(store, {
-    registerSerializers(s: InstrumentSerializers) {
-      serializers = s;
-    },
-  });
+  return store;
 }
 
 interface HydrateResult {

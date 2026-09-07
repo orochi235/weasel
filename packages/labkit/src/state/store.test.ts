@@ -222,6 +222,56 @@ describe('persistence — hydration', () => {
     expect(hydrated.getState().trials).toHaveLength(1);
     expect((hydrated.getState().trials[0]?.state as { n: number }).n).toBe(7);
   });
+
+  // An instrument holding a Map, a Set or anything else JSON drops needs these
+  // to run at both ends. They are read while the store is being built, which
+  // is why they arrive as an option rather than being registered afterwards.
+  it("runs an instrument's serializers at flush and at hydrate", () => {
+    vi.useFakeTimers();
+    const mem = createMemoryAdapter();
+    const serializers = {
+      T: {
+        serialize: (state: unknown) => [...(state as Map<string, number>)],
+        deserialize: (data: unknown) => new Map(data as [string, number][]),
+      },
+    };
+
+    const seed = createLabStore({ storageKey: 'test', storage: mem, serializers });
+    seed.getState().addTrial({
+      id: 'w1',
+      instrumentName: 'T',
+      config: {},
+      state: new Map([['a', 1]]),
+      view: { zoom: 1, pan: { x: 0, y: 0 } },
+    });
+    vi.advanceTimersByTime(500);
+    vi.useRealTimers();
+
+    const written = mem.read(labDocumentKey('test')) ?? '';
+    expect(written).toContain('[["a",1]]');
+
+    const hydrated = createLabStore({ storageKey: 'test', storage: mem, serializers });
+    expect(hydrated.getState().trials[0]?.state).toEqual(new Map([['a', 1]]));
+  });
+
+  it('hands `deserialize` the config the state was saved against', () => {
+    vi.useFakeTimers();
+    const mem = createMemoryAdapter();
+    const deserialize = vi.fn((data: unknown) => data);
+    const seed = createLabStore({ storageKey: 'test', storage: mem });
+    seed.getState().addTrial({
+      id: 'w1',
+      instrumentName: 'T',
+      config: { scale: 4 },
+      state: { n: 1 },
+      view: { zoom: 1, pan: { x: 0, y: 0 } },
+    });
+    vi.advanceTimersByTime(500);
+    vi.useRealTimers();
+
+    createLabStore({ storageKey: 'test', storage: mem, serializers: { T: { deserialize } } });
+    expect(deserialize).toHaveBeenCalledWith({ n: 1 }, { scale: 4 });
+  });
 });
 
 describe('persistence — debounced writes', () => {

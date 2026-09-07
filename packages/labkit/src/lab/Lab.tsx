@@ -11,6 +11,7 @@ import {
 import { useStore } from 'zustand/react';
 import type { TrialContribution } from '../chrome/types';
 import type { ConfigRule, ControlRenderer } from '../config/types';
+import { serializersOf } from '../instrument/serializers';
 import type { InstrumentList } from '../instrument/types';
 import { noneAdapter } from '../state/adapters';
 import { LabStoreContext } from '../state/context';
@@ -78,7 +79,14 @@ function buildStore(
   storageKey: string,
   initialMode: LabMode,
 ): LabStore {
-  const store = createLabStore({ storageKey, storage, initialMode });
+  // Hydration reads the serializers, so they go in with the store rather than
+  // being registered onto it afterwards.
+  const store = createLabStore({
+    storageKey,
+    storage,
+    initialMode,
+    serializers: serializersOf(instruments),
+  });
   if (store.getState().trials.length === 0) {
     const seeded = addTrialOp([], instruments, defaultInstrument);
     const record = seeded[0];

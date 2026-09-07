@@ -40,7 +40,6 @@ Priority tags:
 - Accent-coloured readouts are illegible in dark mode → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - A slim Slider reserves the default thumb's height for below-thumb readouts → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Every React Aria overlay inside a lab renders unthemed → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- labkit `registerSerializers` has no callers; instrument serializers never run → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit: nested config values — `f.schema` is flat because `setConfig` is → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Reconcile core's `ToolPrefLeaf` with weasel-ui's `PrefLeaf` — the `paint` kind has already drifted → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - A number leaf's unit conversion is one leaf deep → [Selection, actions & UI panels](#selection-actions--ui-panels)
@@ -1387,8 +1386,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   as a separate 0..1 value, so an `#rrggbbaa` default truncates on first edit).
   Honoring those two means teaching `ControlPanel` a hex-alpha split and a unit
   conversion.
-
-- **(P2) labkit: `registerSerializers` has no callers, so instrument serializers never run.** `LabStore.registerSerializers` exists and nothing in the repo calls it, leaving `serializers` permanently `{}` — `Instrument.serialize` / `deserialize` are dead at flush, at hydrate and around snapshots, and an instrument whose state is not JSON-safe silently loses it. Not a one-liner: `createLabStore` runs before any React provider mounts, so a late registration cannot reach hydration. The fix is probably to take serializers as a `CreateLabStoreOptions` field instead, which also gives the hook a place to be typed. Document migrations are unaffected — they operate on already-serialized JSON.
 
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 

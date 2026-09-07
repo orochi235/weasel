@@ -104,13 +104,25 @@ export interface CreateLabStoreOptions {
   storageKey: string;
   storage: StorageAdapter;
   initialMode?: LabMode;
+  /** How each instrument's state survives a reload. Hydration is the first
+   *  thing `createLabStore` does, so these have to arrive with the store —
+   *  anything registered afterwards is already too late to read the document
+   *  it was built from. `<Lab>` collects them off its `instruments`. */
+  serializers?: InstrumentSerializers;
 }
 
 /** Per-instrument serialize/deserialize hooks, keyed by instrument name. An
- *  instrument whose state is already JSON-safe needs no entry. */
+ *  instrument whose state is already JSON-safe needs no entry. `deserialize`
+ *  is handed the config the state was saved against — a trial's own for a
+ *  reload, the snapshot's for a load — since a state rebuilt without it can
+ *  disagree with the settings sitting next to it. */
 export type InstrumentSerializers = Record<
   string,
-  { serialize?: (state: unknown) => unknown; deserialize?: (data: unknown) => unknown } | undefined
+  | {
+      serialize?: (state: unknown) => unknown;
+      deserialize?: (data: unknown, config: unknown) => unknown;
+    }
+  | undefined
 >;
 
 /** A trial as it is persisted: everything but the undo history, which is
