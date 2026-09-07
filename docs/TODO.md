@@ -1447,17 +1447,16 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   is no `--wzl-handle-*` token: Timeline's `.key` (9px) and CurveEditor's
   endpoint (10px) are both 45°-rotated squares that arrived there independently.
 
-- **(P2) A number leaf's unit conversion is one leaf deep.** `ToolPrefNumberUnit`
+- **(P2) A number leaf's unit conversion is one panel deep.** `ToolPrefNumberUnit`
   (`toDisplay` / `fromDisplay` / `suffix`) is the only display-unit mechanism
   wired end to end, and exactly one leaf uses it — `pose.rotation`, radians
-  stored, degrees shown. `SelectionPanel` converts the value and passes `min`,
-  `max` and `step` through unconverted, so a unit leaf that declares bounds
-  clamps display-space input against canonical-space limits. `PrefLeaf` has no
-  `unit` field at all, so `PrefsForm` renders the same leaf raw — the reconcile
-  entry above is where that half lives. Nothing anywhere parses a typed
-  `"12mm"`, and the conversion tables that would answer one (`UnitSystem`,
-  `IMPERIAL_INCHES` / `METRIC_MM` / `PIXELS`) belong to a separate mechanism
-  wired only to grid snapping, whose `formatUnit` has no callers.
+  stored, degrees shown. `SelectionPanel` converts the value and its declared
+  bounds; `PrefLeaf` has no `unit` field at all, so `PrefsForm` renders the same
+  leaf raw — the reconcile entry above is where that half lives. Nothing
+  anywhere parses a typed `"12mm"`, and the conversion tables that would answer
+  one (`UnitSystem`, `IMPERIAL_INCHES` / `METRIC_MM` / `PIXELS`) belong to a
+  separate mechanism wired only to grid snapping, whose `formatUnit` has no
+  callers.
 
 - **(P2) `LabShell` is the only thing that applies labkit's style scope.**
   `.lk-root` carries the tokens, the fonts, the box-sizing reset and every

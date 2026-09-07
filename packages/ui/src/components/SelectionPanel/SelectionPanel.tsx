@@ -406,6 +406,29 @@ function FlagBar({ run, ariaLabel }: { run: readonly LeafCell[]; ariaLabel: stri
   );
 }
 
+/**
+ * A number leaf's bounds in the unit it is displayed in.
+ *
+ * Only what the leaf declares converts: an omitted bound has no stored
+ * counterpart to put through the conversion, and its fallback — 0..100 for a
+ * slider's track, a step of 1 — is a display-space number already. `min` and
+ * `max` are points, so they convert the way the value does; `step` is a
+ * distance, and a unit with an offset maps zero somewhere else, so converting
+ * it as a point would scale it wrong. A decreasing conversion swaps which end
+ * is the lower one.
+ */
+function displayBounds(p: ToolPrefNumber): { min?: number; max?: number; step: number } {
+  if (!p.unit) return { min: p.min, max: p.max, step: p.step ?? 1 };
+  const { toDisplay } = p.unit;
+  const lo = p.min === undefined ? undefined : toDisplay(p.min);
+  const hi = p.max === undefined ? undefined : toDisplay(p.max);
+  const flipped = lo !== undefined && hi !== undefined && lo > hi;
+  const step = p.step === undefined
+    ? 1
+    : Math.abs(toDisplay(p.step) - toDisplay(0)) || p.step;
+  return { min: flipped ? hi : lo, max: flipped ? lo : hi, step };
+}
+
 function renderBuiltin(
   ctx: PropertyRenderContext,
   ariaLabel: string,
@@ -449,16 +472,22 @@ function renderBuiltin(
       const p = pref as ToolPrefNumber;
       const stored = typeof value === 'number' && Number.isFinite(value) ? value : undefined;
       const display = stored !== undefined ? (p.unit ? p.unit.toDisplay(stored) : stored) : NaN;
+      // `min`/`max`/`step` are declared in the stored unit, like the value, so
+      // they convert with it — a leaf storing radians and showing degrees was
+      // clamping typed degrees against 0..6.28. Only declared bounds convert:
+      // the slider's 0..100 fallback is a display-space number with no stored
+      // counterpart to put through the conversion.
+      const bounds = displayBounds(p);
       if (p.control === 'slider') {
-        const min = p.min ?? 0;
-        const max = p.max ?? 100;
+        const min = bounds.min ?? 0;
+        const max = bounds.max ?? 100;
         const known = !mixed && stored !== undefined;
         return (
           <>
             <InlineRange
               min={min}
               max={max}
-              step={p.step ?? 1}
+              step={bounds.step}
               // The thumb clamps to the track; the readout beside it does not,
               // so a value past `max` is still reported as what it is.
               value={known ? Math.min(Math.max(display, min), max) : min}
@@ -481,9 +510,9 @@ function renderBuiltin(
           className={s.number}
           value={mixed || stored === undefined ? NaN : display}
           placeholder={mixed ? 'Mixed' : undefined}
-          minValue={p.min}
-          maxValue={p.max}
-          step={p.step ?? 1}
+          minValue={bounds.min}
+          maxValue={bounds.max}
+          step={bounds.step}
           hideSteppers
           aria-label={ariaLabel}
           onChange={(n) => {

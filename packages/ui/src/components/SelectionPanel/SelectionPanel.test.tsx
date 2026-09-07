@@ -8,6 +8,7 @@ import {
   strokeDashStyleOf,
   type NodePropertiesEntry,
   type NodeRoutingEntry,
+  type ToolPrefGroup,
   type SelectionApi,
 } from '@weasel-js/core';
 import { SelectionPanel } from './SelectionPanel';
@@ -187,6 +188,53 @@ describe('SelectionPanel', () => {
     );
     const rotation = screen.getByLabelText('Rotation');
     expect(rotation).toHaveValue('45'); // Math.PI / 4 stored
+    fireEvent.change(rotation, { target: { value: '90' } });
+    fireEvent.blur(rotation);
+    expect((scene.get(asNodeId('a')) as { pose: Pose }).pose.rotation).toBeCloseTo(Math.PI / 2);
+  });
+
+  // A leaf's bounds are written in the unit it stores, like its value. Passed
+  // through raw they clamped typed degrees against a radian range: 90 came
+  // back as 6.283 (2π), the max.
+  it('converts a unit leaf\'s bounds into the unit it displays', () => {
+    const scene = makeScene();
+    const layout = properties[0]!.schema.children.layout as ToolPrefGroup;
+    const bounded: NodePropertiesEntry[] = [
+      {
+        ...properties[0]!,
+        schema: {
+          ...properties[0]!.schema,
+          children: {
+            ...properties[0]!.schema.children,
+            layout: {
+              ...layout,
+              children: {
+                ...layout.children,
+                'pose.rotation': {
+                  kind: 'number',
+                  name: 'Rotation',
+                  description: 'r',
+                  default: 0,
+                  min: 0,
+                  max: Math.PI * 2,
+                  step: Math.PI / 180,
+                  unit: rotationDegreesUnit,
+                },
+              },
+            },
+          },
+        },
+      },
+    ];
+    render(
+      <SelectionPanel
+        scene={scene}
+        selection={selectionOf(['a'])}
+        properties={bounded}
+        routing={routing}
+      />,
+    );
+    const rotation = screen.getByLabelText('Rotation');
     fireEvent.change(rotation, { target: { value: '90' } });
     fireEvent.blur(rotation);
     expect((scene.get(asNodeId('a')) as { pose: Pose }).pose.rotation).toBeCloseTo(Math.PI / 2);
