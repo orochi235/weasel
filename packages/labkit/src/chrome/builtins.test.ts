@@ -9,6 +9,8 @@ import type { TrialChromeContext } from './types';
 const ctx: TrialChromeContext = {
   trialId: 't1',
   undockedPanels: [],
+  collapsedSections: {},
+  setSectionCollapsed: () => {},
   undockPanel: () => {},
   dockPanel: () => {},
   instrumentName: 'Stub',

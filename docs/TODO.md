@@ -45,7 +45,6 @@ Priority tags:
 - labkit: nested config values — `f.schema` is flat because `setConfig` is → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Reconcile core's `ToolPrefLeaf` with weasel-ui's `PrefLeaf` — the `paint` kind has already drifted → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - A number leaf's unit conversion is one leaf deep → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- labkit UI state that should outlive a remount has nowhere to live → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - A section cannot declare "start closed" from the schema → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - `LabShell` is the only thing that applies labkit's style scope → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
@@ -1503,27 +1502,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `IMPERIAL_INCHES` / `METRIC_MM` / `PIXELS`) belong to a separate mechanism
   wired only to grid snapping, whose `formatUnit` has no callers.
 
-- **(P2) labkit UI state that should outlive a remount has nowhere to live.**
-  Two panel affordances shipped with only their in-memory half: a
-  `PropertyGroup`'s fold, held by `ControlPanel` behind `collapsed` /
-  `onCollapse`, and a trial's title, held by `TrialChrome` behind `title` /
-  `setTitle` on `TrialChromeContext`. A fold reopens on remount; a title does
-  not survive a reload. Both pairs are the seam a store plugs into, and the
-  durable half belongs in `packages/labkit/src/state/**` — either per-trial on
-  `TrialRecord`, mirroring `sidebarWidth` and costing a document migration, or
-  lab-level, mirroring the `undockedPanels` map. `TrialRecord.configSeed` took
-  the per-trial route and is the precedent to copy. The fold needs one thing
-  more: `SidebarRegion` gets `ctx` and no store access, so the setter has to be
-  threaded onto `TrialChromeContext`.
-
 - **(P2) A section cannot declare "start closed" from the schema.**
   `PropertyGroup` folds now — `collapsible` / `defaultCollapsed` uncontrolled,
   `collapsed` / `onCollapsedChange` controlled, drawn with `<Disclosure>` — and
   `ControlPanel` passes it through as `collapse` and `collapsed` / `onCollapse`.
   What a schema still cannot say is that a section opens closed: `SectionSpec`
   (`packages/labkit/src/config/types.ts`) has no field for it and `resolve.ts`
-  builds it. Remembering the fold across a remount is the persistence entry
-  above. Asked for by klieg, precioussss and brick-icons.
+  builds it. The fold itself is remembered: `TrialRecord.collapsedSections`
+  holds it, keyed `settings/<label>` for a control panel's groups. Asked for by
+  klieg, precioussss and brick-icons.
 
 - **(P2) `LabShell` is the only thing that applies labkit's style scope.**
   `.lk-root` carries the tokens, the fonts, the box-sizing reset and every
@@ -1540,8 +1527,8 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   trial's `aria-label` follows — and `TitleBarRegion` takes
   `placement: 'lead' | 'actions'`, so a contribution without `end` leads the
   bar. A `title` on the instrument spec was not added; it wants
-  `packages/labkit/src/instrument/types.ts`. Holding a title across a reload is
-  the persistence entry above.
+  `packages/labkit/src/instrument/types.ts`. A title set through `setTitle`
+  already survives a reload, on `TrialRecord.title`.
 
 - **(P3) ToggleBar's selected segment is the Aqua glass ramp, not a colour of
   its own.** Asked for: move the default treatment off "the aqua" and save it

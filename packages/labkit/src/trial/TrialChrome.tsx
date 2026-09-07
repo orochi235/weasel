@@ -1,4 +1,4 @@
-import { type KeyboardEvent, type ReactNode, useContext, useMemo, useState } from 'react';
+import { type KeyboardEvent, type ReactNode, useContext, useMemo } from 'react';
 import { useStore } from 'zustand/react';
 import { builtinContributions } from '../chrome/builtins';
 import { mergeContributions, suppressContributions } from '../chrome/merge';
@@ -62,6 +62,10 @@ export interface TrialChromeProps {
 
 const NO_OP = (): void => {};
 
+/** One frozen empty map, so a trial that has folded nothing keeps a stable
+ *  context identity across renders. */
+const NO_SECTIONS: Readonly<Record<string, boolean>> = Object.freeze({});
+
 /** The frame around a running instrument. Builds one chrome context, assembles
  *  the contributions the instrument, the runtime and the lab declare, and hands
  *  each region its slice. */
@@ -85,6 +89,8 @@ export function TrialChrome({
   if (!storeCtx) throw new Error('[labkit] TrialChrome requires <LabStoreProvider>');
   const updateTrialView = useStore(storeCtx.store, (s) => s.updateTrialView);
   const updateTrialSidebarWidth = useStore(storeCtx.store, (s) => s.updateTrialSidebarWidth);
+  const setTrialTitle = useStore(storeCtx.store, (s) => s.setTrialTitle);
+  const setTrialSectionCollapsed = useStore(storeCtx.store, (s) => s.setTrialSectionCollapsed);
   const updateTrialConfig = useStore(storeCtx.store, (s) => s.updateTrialConfig);
   const updateTrialState = useStore(storeCtx.store, (s) => s.updateTrialState);
   const undockPanelAction = useStore(storeCtx.store, (s) => s.undockPanel);
@@ -104,8 +110,8 @@ export function TrialChrome({
 
   const configSchema = useConfigSchema(instrument);
 
-  const [ownTitle, setTitle] = useState<string | null>(null);
-  const title = ownTitle ?? record.instrumentName;
+  const title = record.title ?? record.instrumentName;
+  const collapsedSections = record.collapsedSections ?? NO_SECTIONS;
 
   const ctx = useMemo<TrialChromeContext>(() => {
     const setZoom = (z: number): void => {
@@ -116,7 +122,7 @@ export function TrialChrome({
       trialId,
       instrumentName: record.instrumentName,
       title,
-      setTitle,
+      setTitle: (next) => setTrialTitle(trialId, next),
       isLastTrial,
       zoom: view2d ? view2d.zoom : null,
       setZoom,
@@ -143,6 +149,8 @@ export function TrialChrome({
           updateTrialState(trialId, nextState as never);
         }
       },
+      collapsedSections,
+      setSectionCollapsed: (key, collapsed) => setTrialSectionCollapsed(trialId, key, collapsed),
       undockedPanels: undockedIds,
       undockPanel: (sectionId, as) => undockPanelAction(trialId, sectionId, as),
       dockPanel: (sectionId) => dockPanelAction(trialId, sectionId),
@@ -174,6 +182,9 @@ export function TrialChrome({
     undockedIds,
     undockPanelAction,
     dockPanelAction,
+    setTrialTitle,
+    setTrialSectionCollapsed,
+    collapsedSections,
   ]);
 
   const contributions = useMemo(

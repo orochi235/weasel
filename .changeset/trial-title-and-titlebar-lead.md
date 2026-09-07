@@ -9,8 +9,7 @@ A trial can be retitled, its title bar has a leading end, and a chrome item's
 instrument's name until something calls `setTitle`, so a lab running one
 instrument over many subjects can say which subject a trial holds instead of
 repeating the instrument's name down the column; `setTitle(null)` puts the name
-back. The title belongs to the chrome rather than the trial record, so it does
-not survive a reload.
+back.
 
 The title bar now honors `end` the way the toolbar does. A `titlebar`
 contribution that sets `end` joins the actions cluster — clone, reset, snapshot,

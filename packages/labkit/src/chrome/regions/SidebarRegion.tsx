@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { useState } from 'react';
 import type { SidebarSection, TrialChromeContext, TrialContribution } from '../types';
 
 /** Props for `<SidebarRegion>`. */
@@ -10,16 +9,17 @@ export interface SidebarRegionProps {
 
 function Section({
   title,
-  defaultCollapsed,
+  collapsed,
+  onCollapsedChange,
   onUndock,
   children,
 }: {
   title: string;
-  defaultCollapsed: boolean;
+  collapsed: boolean;
+  onCollapsedChange: (collapsed: boolean) => void;
   onUndock?: () => void;
   children: ReactNode;
 }) {
-  const [collapsed, setCollapsed] = useState(defaultCollapsed);
   return (
     <section className="lk-sidebar-section">
       <div className="lk-sidebar-section__bar">
@@ -27,7 +27,7 @@ function Section({
           type="button"
           className="lk-sidebar-section__head"
           aria-expanded={!collapsed}
-          onClick={() => setCollapsed((c) => !c)}
+          onClick={() => onCollapsedChange(!collapsed)}
         >
           {title}
         </button>
@@ -64,7 +64,8 @@ export function SidebarRegion({ contributions, ctx }: SidebarRegionProps) {
           <Section
             key={c.id}
             title={item.title}
-            defaultCollapsed={item.defaultCollapsed ?? false}
+            collapsed={ctx.collapsedSections[c.id] ?? item.defaultCollapsed ?? false}
+            onCollapsedChange={(next) => ctx.setSectionCollapsed(c.id, next)}
             onUndock={
               item.undockable === false
                 ? undefined

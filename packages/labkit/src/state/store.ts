@@ -35,6 +35,10 @@ export interface LabStoreActions {
   updateTrialConfig: <TC>(id: string, key: keyof TC, value: TC[keyof TC]) => void;
   updateTrialView: (id: string, view: unknown) => void;
   updateTrialSidebarWidth: (id: string, width: number) => void;
+  /** Retitle a trial. `null` returns it to its instrument's name. */
+  setTrialTitle: (id: string, title: string | null) => void;
+  /** Fold or unfold one of a trial's sections. */
+  setTrialSectionCollapsed: (id: string, key: string, collapsed: boolean) => void;
   updateTrialAnnotations: (id: string, doc: unknown) => void;
   updateTrialUndoStack: (
     id: string,
@@ -142,6 +146,29 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
         trials: s.trials.map((w) =>
           w.id === id && w.sidebarWidth !== width ? { ...w, sidebarWidth: width } : w,
         ),
+      }));
+      scheduleFlush();
+    },
+
+    setTrialTitle: (id, title) => {
+      set((s) => ({
+        trials: s.trials.map((w) => {
+          if (w.id !== id) return w;
+          const next = title === null ? undefined : title;
+          if ((w.title ?? undefined) === next) return w;
+          return { ...w, title: next };
+        }),
+      }));
+      scheduleFlush();
+    },
+
+    setTrialSectionCollapsed: (id, key, collapsed) => {
+      set((s) => ({
+        trials: s.trials.map((w) => {
+          if (w.id !== id) return w;
+          if (w.collapsedSections?.[key] === collapsed) return w;
+          return { ...w, collapsedSections: { ...w.collapsedSections, [key]: collapsed } };
+        }),
       }));
       scheduleFlush();
     },

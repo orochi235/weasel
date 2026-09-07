@@ -673,3 +673,81 @@ describe('undocking a sidebar panel', () => {
     expect(s.getState().undockedPanels).toEqual({});
   });
 });
+
+describe('setTrialTitle', () => {
+  it('holds a title and returns to the instrument name on null', () => {
+    const s = makeStore();
+    s.getState().addTrial({ id: 'w1', instrumentName: 'T', config: {}, state: {}, view: VIEW });
+    s.getState().setTrialTitle('w1', 'Sprocket 7');
+    expect(s.getState().trials[0]?.title).toBe('Sprocket 7');
+    s.getState().setTrialTitle('w1', null);
+    expect(s.getState().trials[0]?.title).toBeUndefined();
+  });
+
+  it('leaves the record alone when the title is unchanged', () => {
+    const s = makeStore();
+    s.getState().addTrial({ id: 'w1', instrumentName: 'T', config: {}, state: {}, view: VIEW });
+    s.getState().setTrialTitle('w1', 'Sprocket 7');
+    const before = s.getState().trials[0];
+    s.getState().setTrialTitle('w1', 'Sprocket 7');
+    expect(s.getState().trials[0]).toBe(before);
+  });
+
+  it('round-trips through storage', () => {
+    vi.useFakeTimers();
+    const storage = createMemoryAdapter();
+    const first = makeStore({ storage });
+    first.getState().addTrial({ id: 'w1', instrumentName: 'T', config: {}, state: {}, view: VIEW });
+    first.getState().setTrialTitle('w1', 'Sprocket 7');
+    vi.advanceTimersByTime(400);
+    vi.useRealTimers();
+
+    expect(makeStore({ storage }).getState().trials[0]?.title).toBe('Sprocket 7');
+  });
+});
+
+describe('setTrialSectionCollapsed', () => {
+  it('folds one section without touching the others', () => {
+    const s = makeStore();
+    s.getState().addTrial({ id: 'w1', instrumentName: 'T', config: {}, state: {}, view: VIEW });
+    s.getState().setTrialSectionCollapsed('w1', 'settings', true);
+    s.getState().setTrialSectionCollapsed('w1', 'marks', false);
+    expect(s.getState().trials[0]?.collapsedSections).toEqual({ settings: true, marks: false });
+  });
+
+  it('leaves the record alone when the fold is unchanged', () => {
+    const s = makeStore();
+    s.getState().addTrial({ id: 'w1', instrumentName: 'T', config: {}, state: {}, view: VIEW });
+    s.getState().setTrialSectionCollapsed('w1', 'settings', true);
+    const before = s.getState().trials[0];
+    s.getState().setTrialSectionCollapsed('w1', 'settings', true);
+    expect(s.getState().trials[0]).toBe(before);
+  });
+
+  it('round-trips through storage', () => {
+    vi.useFakeTimers();
+    const storage = createMemoryAdapter();
+    const first = makeStore({ storage });
+    first.getState().addTrial({ id: 'w1', instrumentName: 'T', config: {}, state: {}, view: VIEW });
+    first.getState().setTrialSectionCollapsed('w1', 'settings/Shape', true);
+    vi.advanceTimersByTime(400);
+    vi.useRealTimers();
+
+    expect(makeStore({ storage }).getState().trials[0]?.collapsedSections).toEqual({
+      'settings/Shape': true,
+    });
+  });
+
+  it('hydrates a version-3 trial, which carries neither field', () => {
+    const storage = createMemoryAdapter();
+    writeDocument(storage, {
+      trials: [{ id: 'w1', instrumentName: 'T', config: {}, state: {}, view: VIEW }],
+      saves: [],
+      layout: {},
+      mode: 'auto',
+    });
+    const trial = makeStore({ storage }).getState().trials[0];
+    expect(trial?.title).toBeUndefined();
+    expect(trial?.collapsedSections).toBeUndefined();
+  });
+});

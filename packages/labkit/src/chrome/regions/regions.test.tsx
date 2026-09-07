@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { TrialChromeContext, TrialContribution } from '../types';
 import { SidebarRegion } from './SidebarRegion';
@@ -9,6 +9,8 @@ const Glyph = () => <svg />;
 const ctx = {
   trialId: 't1',
   undockedPanels: [],
+  collapsedSections: {},
+  setSectionCollapsed: () => {},
   undockPanel: () => {},
   dockPanel: () => {},
 } as unknown as TrialChromeContext;
@@ -44,6 +46,34 @@ describe('SidebarRegion', () => {
       />,
     );
     expect(screen.queryByText('hidden')).not.toBeInTheDocument();
+  });
+
+  it('takes the trial’s remembered fold over the section’s default', () => {
+    render(
+      <SidebarRegion
+        contributions={[
+          {
+            id: 's',
+            region: 'sidebar',
+            item: { title: 'S', defaultCollapsed: true, body: <p>shown</p> },
+          },
+        ]}
+        ctx={{ ...ctx, collapsedSections: { s: false } }}
+      />,
+    );
+    expect(screen.getByText('shown')).toBeInTheDocument();
+  });
+
+  it('reports a toggle rather than keeping the fold itself', () => {
+    const setSectionCollapsed = vi.fn();
+    render(
+      <SidebarRegion
+        contributions={[{ id: 's', region: 'sidebar', item: { title: 'S', body: <p>body</p> } }]}
+        ctx={{ ...ctx, setSectionCollapsed }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'S' }));
+    expect(setSectionCollapsed).toHaveBeenCalledWith('s', true);
   });
 });
 

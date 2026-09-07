@@ -34,6 +34,13 @@ export interface TrialRecord<TS = unknown, TC = unknown, TV = unknown> {
   /** The extent the trial's sidebar was last dragged to, in pixels. Undefined
    *  until someone moves the seam. */
   sidebarWidth?: number;
+  /** What the title bar reads. Undefined — the state a trial opens in, and the
+   *  one `setTitle(null)` returns it to — means the instrument's name. */
+  title?: string | null;
+  /** Which of the trial's collapsible sections are folded, keyed as
+   *  `TrialChromeContext.collapsedSections` describes. A key that is absent
+   *  takes the section's own default. */
+  collapsedSections?: Record<string, boolean>;
   /** The marks on this trial's annotation targets, as `AnnotationsApi.toJSON`
    *  wrote them. Opaque here, and absent for a trial whose instrument declares
    *  no `annotations` — or declares its own `storage`. Not in `state`, which
