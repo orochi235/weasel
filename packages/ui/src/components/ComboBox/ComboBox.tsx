@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { Children, isValidElement, type ReactNode } from 'react';
 import {
   ComboBox as RACComboBox,
   Label,
@@ -45,6 +45,12 @@ export type ComboBoxProps<T extends Key = string> = Omit<RACComboBoxProps<object
   defaultSelectedKey?: T;
   onSelectionChange?: (key: T | null) => void;
   emptyLabel?: ReactNode;
+  /**
+   * `'fill'` (the default) takes the width of whatever row the combo box sits
+   * in. `'fit'` sizes the input to its widest option, so it neither swallows a
+   * toolbar's slack nor cuts a selection off once one is made.
+   */
+  width?: 'fill' | 'fit';
   className?: string;
 };
 
@@ -65,6 +71,7 @@ export function ComboBox<T extends Key = string>(props: ComboBoxProps<T>) {
     defaultSelectedKey,
     onSelectionChange,
     emptyLabel = 'No matches',
+    width = 'fill',
     className,
     ...rest
   } = props;
@@ -75,11 +82,21 @@ export function ComboBox<T extends Key = string>(props: ComboBoxProps<T>) {
       selectedKey={selectedKey}
       defaultSelectedKey={defaultSelectedKey}
       onSelectionChange={onSelectionChange ? (k) => onSelectionChange(k as T | null) : undefined}
-      className={[s.field, fieldClasses.root, className].filter(Boolean).join(' ')}
+      className={[s.field, width === 'fit' && s.fit, fieldClasses.root, className]
+        .filter(Boolean)
+        .join(' ')}
     >
       {label !== undefined && <Label className={fieldClasses.label}>{label}</Label>}
       <div className={s.frame}>
         <RACInput placeholder={placeholder} />
+        {width === 'fit' && (
+          <span className={s.sizer} aria-hidden="true">
+            {placeholder !== undefined && <span>{placeholder}</span>}
+            {optionLabels(options, children).map((l, i) => (
+              <span key={i}>{l}</span>
+            ))}
+          </span>
+        )}
         <RACButton className={s.openButton} aria-label="Show options">
           <svg viewBox="0 0 10 10" aria-hidden="true">
             <path d="M2 4 L5 7 L8 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -104,6 +121,20 @@ export function ComboBox<T extends Key = string>(props: ComboBoxProps<T>) {
         </RACListBox>
       </RACPopover>
     </RACComboBox>
+  );
+}
+
+/**
+ * The labels a `width='fit'` input measures itself against. In the children
+ * form the label sits one element deep, inside a `ComboBoxItem`.
+ */
+function optionLabels(
+  options: ReadonlyArray<ComboBoxOption> | undefined,
+  children: ReactNode,
+): ReactNode[] {
+  if (options !== undefined) return options.map((o) => o.label);
+  return Children.toArray(children).map((c) =>
+    isValidElement<{ children?: ReactNode }>(c) ? c.props.children : c,
   );
 }
 

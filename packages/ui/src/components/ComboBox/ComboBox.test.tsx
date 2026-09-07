@@ -35,6 +35,22 @@ describe('ComboBox', () => {
     expect((screen.getByRole('combobox') as HTMLInputElement).value).toBe('');
   });
 
+  // Only that the sizer is there and carries every label: the CSS that turns
+  // it into a width is not something jsdom resolves, and the module proxy
+  // answers to any class name. The story is where the width is checked.
+  it('measures itself against every option under width="fit"', () => {
+    const { container } = render(
+      <ComboBox label="Color" options={OPTIONS} placeholder="Pick" width="fit" />,
+    );
+    const sizer = container.querySelector('[aria-hidden="true"]:not(svg)');
+    expect(sizer?.textContent).toBe('PickRedGreenBlue');
+  });
+
+  it('renders no sizer under the default width', () => {
+    const { container } = render(<ComboBox label="Color" options={OPTIONS} placeholder="Pick" />);
+    expect(container.querySelector('[aria-hidden="true"]:not(svg)')).toBeNull();
+  });
+
   it('supports the children form with explicit items', () => {
     render(
       <ComboBox label="Color">

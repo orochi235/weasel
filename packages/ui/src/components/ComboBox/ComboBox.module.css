@@ -118,3 +118,48 @@
   color: var(--wzl-fg-subtle);
   font-size: var(--wzl-font-size-sm);
 }
+
+/* `width='fit'`: a hidden stack of every option label shares the input's grid
+   cell, so the field is wide enough for whichever option is chosen and takes
+   no more of the row than that. */
+.fit {
+  width: auto;
+  max-width: 100%;
+}
+
+.fit .frame {
+  display: grid;
+  grid-template-columns: auto auto;
+  width: fit-content;
+  max-width: 100%;
+}
+
+/* `width: 0` keeps the input's 20-character intrinsic width out of the track
+   sizing — the sizer is what the column measures — and `min-width` then
+   stretches it back across whatever that came to. */
+.fit .frame input {
+  grid-area: 1 / 1;
+  width: 0;
+  min-width: 100%;
+}
+
+.fit .sizer {
+  grid-area: 1 / 1;
+}
+
+.fit .openButton {
+  grid-area: 1 / 2;
+}
+
+.sizer {
+  display: grid;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  white-space: nowrap;
+  padding: 0 var(--wzl-field-pad-x);
+}
+
+.sizer > * {
+  grid-area: 1 / 1;
+}

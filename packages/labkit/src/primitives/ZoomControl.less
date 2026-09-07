@@ -13,7 +13,7 @@
   }
 }
 
-// Both children are weasel-ui components whose module classes set `width`.
+// The slider is a weasel-ui component whose module class sets `width`.
 // See the `.lk-root` prefix convention in theme/base.less.
 .lk-root {
   .lk-zoom {
@@ -24,8 +24,12 @@
       min-width: 64px;
     }
 
+    // `width: fit` sizes the field from this rather than from the input's
+    // 20-character intrinsic width. "800%" measures 33px against the 35px a
+    // 5ch box gives, which is no margin at all in another UI font; 6ch also
+    // holds the "1600%" a consumer raising `max` can reach.
     &__field {
-      width: 62px;
+      --wzl-number-field-width: 6ch;
     }
   }
 }

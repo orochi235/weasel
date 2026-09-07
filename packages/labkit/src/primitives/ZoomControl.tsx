@@ -60,6 +60,7 @@ export function ZoomControl({
           factor itself and renders 0.5 as "50%". */}
       <NumberField
         className="lk-zoom__field"
+        width="fit"
         aria-label="Zoom"
         value={zoom}
         minValue={min}
