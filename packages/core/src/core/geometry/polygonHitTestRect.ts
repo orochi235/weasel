@@ -2,8 +2,9 @@
  * Polygon-vs-axis-aligned-rect tests. Pure functions; no React/kit deps.
  *
  * `polygon` is a closed polyline given as an ordered vertex array; the
- * closing edge from `polygon[N-1]` to `polygon[0]` is implicit. Even-odd
- * fill rule (matches `pointInPath`).
+ * closing edge from `polygon[N-1]` to `polygon[0]` is implicit. Even-odd fill
+ * rule, and one contour only — a path with holes or curves goes through
+ * `pathHitTest`, which reads its `fillRule`.
  */
 
 import { pointInPolygon, segmentsCross, type Rect } from '@weasel-js/geom';

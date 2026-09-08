@@ -7,6 +7,8 @@ import {
   pathIntersectsPolygon,
 } from './pathHitTest';
 import { rectPath, polygonFromPoints } from './builder';
+import { pathFromD } from './pathFromD';
+import type { PolygonPath } from './types';
 
 const rect = rectPath(0, 0, 10, 10);
 const tri = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 5, y: 10 }]);
@@ -112,5 +114,66 @@ describe('pathIntersectsPolygon', () => {
   });
   it('pathIntersectsPolygon returns false for empty polygon argument', () => {
     expect(pathIntersectsPolygon(rect, [])).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Curves and multi-contour paths
+// ---------------------------------------------------------------------------
+
+const curved = pathFromD('M0 0 C 0 10 10 10 10 0 Z');
+
+/** Outer square 0..10 with a square hole 3..7, both wound the same way. */
+const donutD = 'M0 0 H10 V10 H0 Z M3 3 H7 V7 H3 Z';
+const donutEvenOdd: PolygonPath = { ...pathFromD(donutD), fillRule: 'evenodd' };
+const donutNonzero: PolygonPath = { ...pathFromD(donutD), fillRule: 'nonzero' };
+
+describe('curved subpaths', () => {
+  it('pathIntersectsRect does not throw on a bezier command', () => {
+    expect(pathIntersectsRect(curved, { x: 4, y: 1, width: 2, height: 2 })).toBe(true);
+  });
+  it('pathIntersectsRect answers false for a rect clear of the curve', () => {
+    expect(pathIntersectsRect(curved, { x: 40, y: 40, width: 2, height: 2 })).toBe(false);
+  });
+  it('pathContainsRect does not throw on a bezier command', () => {
+    expect(pathContainsRect(curved, { x: 4, y: 1, width: 2, height: 2 })).toBe(true);
+  });
+  it('pathContainsPolygon does not throw on a bezier command', () => {
+    const poly = [{ x: 4, y: 1 }, { x: 6, y: 1 }, { x: 6, y: 3 }, { x: 4, y: 3 }];
+    expect(pathContainsPolygon(curved, poly)).toBe(true);
+  });
+  it('pathIntersectsPolygon does not throw on a bezier command', () => {
+    const poly = [{ x: 4, y: 1 }, { x: 6, y: 1 }, { x: 6, y: 3 }, { x: 4, y: 3 }];
+    expect(pathIntersectsPolygon(curved, poly)).toBe(true);
+  });
+});
+
+describe('multi-contour paths', () => {
+  const inHole = { x: 4, y: 4, width: 2, height: 2 };
+  const spanningHole = { x: 1, y: 1, width: 8, height: 8 };
+
+  it('a rect inside an even-odd hole is not contained', () => {
+    expect(pathContainsRect(donutEvenOdd, inHole)).toBe(false);
+  });
+  it('a rect inside an even-odd hole does not intersect', () => {
+    expect(pathIntersectsRect(donutEvenOdd, inHole)).toBe(false);
+  });
+  it('a rect enclosing the hole is not contained', () => {
+    expect(pathContainsRect(donutEvenOdd, spanningHole)).toBe(false);
+  });
+  it('the same hole is filled under nonzero, so the rect is contained', () => {
+    expect(pathContainsRect(donutNonzero, inHole)).toBe(true);
+  });
+  it('pathContainsRect and pathContainsPoint agree on the fill rule', () => {
+    const center = { x: 5, y: 5 };
+    expect(pathContainsRect(donutEvenOdd, inHole))
+      .toBe(pathContainsPoint(donutEvenOdd, center.x, center.y));
+    expect(pathContainsRect(donutNonzero, inHole))
+      .toBe(pathContainsPoint(donutNonzero, center.x, center.y));
+  });
+  it('a polygon inside an even-odd hole is not contained', () => {
+    const poly = [{ x: 4, y: 4 }, { x: 6, y: 4 }, { x: 6, y: 6 }, { x: 4, y: 6 }];
+    expect(pathContainsPolygon(donutEvenOdd, poly)).toBe(false);
+    expect(pathIntersectsPolygon(donutEvenOdd, poly)).toBe(false);
   });
 });

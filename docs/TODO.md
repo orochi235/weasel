@@ -378,21 +378,6 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
 
 ## Paths & booleans
 
-- **(P2) `pathHitTest`'s rect/polygon kernel throws on curves and treats a
-  donut as solid.** `extractVertices` walks only `M`/`L` and `throw`s on any
-  bezier command, and it stops at the first `Z`, so only the first subpath is
-  ever considered. `pathContainsRect` / `pathIntersectsRect` /
-  `pathContainsPolygon` / `pathIntersectsPolygon` all inherit both. The throw
-  is reachable in ordinary use: `sceneAdapter`'s `nodeBoundsPassClips` calls
-  `pathIntersectsRect` on every ancestor clip, so a container with a curved
-  `clipFromPose` crashes the hit-test walk. Separately,
-  `polygonHitTestRect.ts` always answers even-odd while documenting that it
-  matches `pointInPath`, so `pathContainsPoint` and `pathContainsRect`
-  disagree on the same `nonzero` path. Fixing this wants a decision about the
-  kernel's contract — flatten curves and honor `fillRule`, or narrow the
-  functions to polygons and make callers promote — not a patch. Found by the
-  2026-08-22 review; see `docs/reviews/2026-08-22-core-geom-dupes.md`.
-
 - **(P2) `packages/core` re-implements much of `@weasel-js/geom`, and the
   copies have drifted.** Roughly two thirds of geom's public surface has no
   importer in core. `forEachSegment` is written about a dozen times; the two
