@@ -575,9 +575,18 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     },
   });
 
+  // `derivePath` is handed its dependencies' nodes, not only their poses, so a
+  // connector reading `data` or `layer` goes stale on these two exactly as it
+  // does on a move.
   registerKitOp<{ id: NodeId; from: TData; to: TData }>('kit:setData', {
-    apply: (p) => { (requireNode(p.id) as { data: TData }).data = p.to; },
-    revert: (p) => { (requireNode(p.id) as { data: TData }).data = p.from; },
+    apply: (p) => {
+      (requireNode(p.id) as { data: TData }).data = p.to;
+      invalidateDependents(p.id);
+    },
+    revert: (p) => {
+      (requireNode(p.id) as { data: TData }).data = p.from;
+      invalidateDependents(p.id);
+    },
   });
 
   registerKitOp<{ id: NodeId; from: TLayer; to: TLayer }>('kit:setLayer', {
@@ -585,10 +594,12 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       requireLayerIndex(p.to);
       (requireNode(p.id) as { layer: TLayer }).layer = p.to;
       invalidateOrder();
+      invalidateDependents(p.id);
     },
     revert: (p) => {
       (requireNode(p.id) as { layer: TLayer }).layer = p.from;
       invalidateOrder();
+      invalidateDependents(p.id);
     },
   });
 

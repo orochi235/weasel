@@ -257,6 +257,58 @@ describe('derived geometry — invalidation', () => {
     expect(counter.n).toBe(2);
   });
 
+  // A `derivePath` reads its dependencies' nodes, not only their poses — a
+  // connector that thickens with a node's weight, or draws only for nodes on a
+  // given layer, is answering off `data` and `layer`. Both ops used to leave the
+  // dependent's memo standing, so the geometry kept the old answer with nothing
+  // to show it was stale.
+  it("drops the dependent memo when a dependency's data is set", () => {
+    const { scene, a, edge } = setup();
+    const counter = { n: 0 };
+    derivedCount(scene, edge, counter);
+    expect(counter.n).toBe(1);
+
+    scene.update(a, { data: { weight: 3 } });
+    derivedCount(scene, edge, counter);
+    expect(counter.n).toBe(2);
+  });
+
+  it('drops it again when a data change is undone', () => {
+    const { scene, a, edge } = setup();
+    const counter = { n: 0 };
+    scene.update(a, { data: { weight: 3 } });
+    derivedCount(scene, edge, counter);
+    expect(counter.n).toBe(1);
+
+    scene.undo();
+    derivedCount(scene, edge, counter);
+    expect(counter.n).toBe(2);
+  });
+
+  it("drops the dependent memo when a dependency's layer is set", () => {
+    const scene = createScene<object, 'main' | 'other', RectPose>({
+      systemLayers: [{ id: 'main' as const }, { id: 'other' as const }],
+      registry,
+    });
+    const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 100, y: 0, width: 10, height: 10 }, data: {} });
+    const edge = scene.add({
+      kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
+      dependsOn: [a, b], derivePath: connectCenters,
+    });
+    const counter = { n: 0 };
+    const count = () => {
+      const node = scene.get(edge)!;
+      return nodeMemo(node, 'test:derived', node.pose, () => ++counter.n);
+    };
+    count();
+    expect(counter.n).toBe(1);
+
+    scene.setLayer(a, 'other');
+    count();
+    expect(counter.n).toBe(2);
+  });
+
   it('invalidates transitively — a label on an edge on a node', () => {
     const { scene, a, edge } = setup();
     const label = scene.add({
