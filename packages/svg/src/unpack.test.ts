@@ -88,6 +88,48 @@ describe('svgNodesToKitDrafts', () => {
     expect(d.pose).toEqual({ x: 5, y: 6, width: 100, height: 20 });
   });
 
+  it("carries a text node's fill, stroke and runs onto the leaf", () => {
+    const drafts = svgNodesToKitDrafts([{
+      kind: 'text', x: 5, y: 6, width: 100, height: 20,
+      text: 'hi there',
+      fill: { fill: 'solid', color: '#ff00ff' },
+      stroke: { paint: { fill: 'solid', color: '#0000ff' }, width: 2 },
+      runs: [{ text: 'hi ' }, { text: 'there', bold: true }],
+    } as SvgNode], seq());
+    const d = drafts[0];
+    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    expect(d.data.fill).toEqual({ fill: 'solid', color: '#ff00ff' });
+    expect(d.data.stroke).toEqual({ paint: { fill: 'solid', color: '#0000ff' }, width: 2 });
+    expect(d.data.runs).toEqual([{ text: 'hi ' }, { text: 'there', bold: true }]);
+  });
+
+  it("keeps a text node's fill=none as an explicit null", () => {
+    const drafts = svgNodesToKitDrafts([{
+      kind: 'text', x: 0, y: 0, width: 100, height: 20, text: 'hi', fill: null,
+      stroke: { paint: { fill: 'solid', color: '#000' }, width: 1 },
+    } as SvgNode], seq());
+    const d = drafts[0];
+    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    expect(d.data.fill).toBeNull();
+  });
+
+  it("rebases a text node's userSpaceOnUse gradient onto its own box", () => {
+    const drafts = svgNodesToKitDrafts([{
+      kind: 'text', x: 10, y: 20, width: 100, height: 40, text: 'hi',
+      fill: {
+        fill: 'linear-gradient', units: 'world',
+        from: { x: 10, y: 20 }, to: { x: 110, y: 20 },
+        stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
+      },
+    } as SvgNode], seq());
+    const d = drafts[0];
+    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    const fill = d.data.fill as { units: string; from: { x: number }; to: { x: number } };
+    expect(fill.units).toBe('bounds');
+    expect(fill.from.x).toBeCloseTo(0);
+    expect(fill.to.x).toBeCloseTo(1);
+  });
+
   it("maps an image node to the kit:image painter's {image:{src}} data", () => {
     const drafts = svgNodesToKitDrafts([{
       kind: 'image', href: 'data:image/png;base64,AA==',

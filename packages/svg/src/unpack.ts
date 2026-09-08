@@ -7,7 +7,7 @@
  *
  * Leaf data targets the kit's built-in painters (`NodeShape.ts`): paths as
  * `{ path, fill?, stroke? }` (the `kit:path` contract), text
- * as `{ text, style? }` (`kit:text`). Poses are absolute AABBs; the
+ * as `{ text, style?, runs?, fill?, stroke? }` (`kit:text`). Poses are absolute AABBs; the
  * renderer's `pathInPoseFrame` rebases stored geometry into the pose box,
  * so placement and fit-clamping operate on poses alone and never rewrite
  * path coordinates.
@@ -38,6 +38,7 @@ import {
   type IngestCtx,
   type Op,
   type Stroke,
+  type StyledRun,
   type TextStyle,
 } from '@weasel-js/core';
 
@@ -130,6 +131,32 @@ export function strokeDataFromSvg(
   };
 }
 
+/** A text node's paint arrives already lowered to a kit `FillStyle`, not as
+ *  the `SvgPaint` a path carries, so it skips `fillFromPaint` — but a
+ *  `userSpaceOnUse` gradient still needs the same rebase onto the leaf's own
+ *  box, or it survives neither the fit-clamp nor the drop-point placement. */
+function fillInBoxFrame(fill: FillStyle, box: SvgDraftBounds): FillStyle {
+  const units = 'units' in fill ? fill.units : undefined;
+  return units === 'world' ? fillToBoundsFrame(fill, box) : fill;
+}
+
+/** The same rebase for a run's own overrides, which `<tspan fill="url(#g)">`
+ *  puts on the run rather than on the node. */
+function runInBoxFrame(run: StyledRun, box: SvgDraftBounds): StyledRun {
+  const fill = run.fill ? fillInBoxFrame(run.fill, box) : run.fill;
+  const stroke = run.stroke ? strokeInBoxFrame(run.stroke, box) : run.stroke;
+  if (fill === run.fill && stroke === run.stroke) return run;
+  return { ...run, ...(fill ? { fill } : {}), ...(stroke ? { stroke } : {}) };
+}
+
+/** The same rebase for a `Stroke`'s paint. A stroke with no paint of its own
+ *  passes through — there is nothing to rebase. */
+function strokeInBoxFrame(stroke: Stroke, box: SvgDraftBounds): Stroke {
+  if (!stroke.paint) return stroke;
+  const paint = fillInBoxFrame(stroke.paint, box);
+  return paint === stroke.paint ? stroke : { ...stroke, paint };
+}
+
 
 /**
  * Walk an `SvgNode[]` tree and emit a flat, parent-before-child list of
@@ -172,12 +199,25 @@ export function svgNodesToKitDrafts(
         x: n.x, y: n.y, width: textBoxWidth(n), height: n.height,
       };
       if (n.rotation) pose.rotation = n.rotation;
+      const box: SvgDraftBounds = {
+        x: pose.x, y: pose.y, width: pose.width, height: pose.height,
+      };
       drafts.push({
         kind: 'leaf',
         id: nextId(),
         parentId,
         pose,
-        data: { text: n.text, ...(n.style ? { style: n.style } : {}) },
+        data: {
+          text: n.text,
+          ...(n.style ? { style: n.style } : {}),
+          ...(n.runs ? { runs: n.runs.map((r) => runInBoxFrame(r, box)) } : {}),
+          // `!== undefined`, not a truthiness test: `null` is the document
+          // saying `fill="none"`, and absent takes the painter's default.
+          ...(n.fill !== undefined
+            ? { fill: n.fill === null ? null : fillInBoxFrame(n.fill, box) }
+            : {}),
+          ...(n.stroke !== undefined ? { stroke: strokeInBoxFrame(n.stroke, box) } : {}),
+        },
       });
       return pose;
     }
@@ -262,8 +302,18 @@ function scaleTextData(
 ): Record<string, unknown> {
   if (scale === 1 || typeof data.text !== 'string') return data;
   const style = (data.style ?? {}) as TextStyle;
+  // A run's own `fontSize` is absolute and overrides the node's, so it needs
+  // the same scale. `fontScale` is relative and rides the node's for free.
+  const runs = data.runs as StyledRun[] | undefined;
   return {
     ...data,
+    ...(runs
+      ? {
+        runs: runs.map((r) => (r.fontSize !== undefined
+          ? { ...r, fontSize: r.fontSize * scale }
+          : r)),
+      }
+      : {}),
     style: { ...style, fontSize: resolveTextStyle(style).fontSize * scale },
   };
 }

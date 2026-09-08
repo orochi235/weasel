@@ -547,11 +547,6 @@ Core five + Crop shipped. Remaining:
   directions. The engine and `@weasel-js/svg` carry it now; the no-fill chip in
   the character panel is app work.
 
-- **(P3) `svgNodesToKitDrafts` drops a text node's paint.**
-  `packages/svg/src/unpack.ts` builds a text draft as `{ text, style }` and
-  leaves `fill`, `stroke` and `runs` behind, so an imported `<text>` loses its
-  color whether or not it is outlined.
-
 - **(P2) Cross-browser overlay alignment.** `placeOverlay` uses an empirical `(+1, -1)` CSS-px nudge to compensate for canvas/CSS rasterization disagreement. Works on the dev setup; not universally correct across browsers/fonts/DPRs. A self-correcting probe was attempted and rejected.
 
 - **(P3) `rangeStyle` reports the runs alone; consumers merge the node style.**
