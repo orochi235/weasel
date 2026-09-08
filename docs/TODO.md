@@ -1085,6 +1085,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   directly risks a second copy whose context the overlays never read — which
   fails silently, as an unthemed overlay. Switch `useOverlayPortal`
   (`packages/ui/src/overlays/portalHost.tsx`) to the provider once RAC exports it.
+  Still absent from RAC's index at 1.21.1, checked 2026-09-08.
 
 - **(P2) labkit's loupe drives itself with plain listeners, not bindings.** The
   gesture grammar already has every gesture it needs — `keyHeld` with a free key
@@ -1847,6 +1848,15 @@ one dead `const` and four stale disable directives.
   dropped their `CanvasRenderingContext2D` on 2026-08-29) are corrected, but the
   file is a hand-maintained snapshot and will drift again. Decide whether it is
   meant to be re-runnable; if so the thing to build is the generator.
+
+  It has already drifted much further than those two signatures. Of the 202
+  source files it names, 111 are not where it says: 82 moved to a sibling
+  package in the decoupling, and 29 are gone from the tree. Its `File` column
+  is written relative to core's old root, which predates the move into
+  `packages/core`. So the standing question is really whether the snapshot is
+  worth regenerating at all — `npm run audit:jsdoc` already walks every
+  package's published entry points and resolves each export to its definition
+  site, which is most of what a generator would need.
 
 - **(P2) README pitch sweep.** Initial draft landed; the `docs/` long-form sweep was completed (all hook names and import paths match the post-extraction surface). The re-pass it was waiting on named 0.1.0 as its trigger, which the packages passed long ago — they are at 1.4.2. So it is due, and nothing gates it.
 
