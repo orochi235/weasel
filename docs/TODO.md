@@ -397,16 +397,6 @@ Core five + Crop shipped. Remaining:
   costs an O(nodes) bounds sweep every frame. Revisit only if a consumer wants
   framing that tracks a simulation.
 
-- **(P2) An action a canvas suppresses is suppressed for every canvas.**
-  `useViewportActions.ts` answers `pinchZoom: false` with
-  `reg.unregister('viewport.pinchZoom')`, which now drops every registrant of
-  that id — so one canvas opting out takes pinch-zoom off a sibling that asked
-  for it, and nothing puts it back when the opting-out canvas unmounts. The same
-  door is open to `useActionsPropResolver`'s `actions={{ id: null }}`. Registration
-  is per-registrant since the stack landed; suppression is not, and a shared
-  registry has nowhere to hang "not for me". `<WeaselProvider isolate>` is the
-  only answer today and costs all cross-canvas sharing.
-
 - **(P3) The registry's dep slot has no identity guard.**
   `DepRegistryProvider.register` (`depRegistry.tsx:41-44`) sets by name and its
   release does a bare `delete`, so two canvases sharing a dep registry lose
@@ -1155,16 +1145,21 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   round-trip through SVG 1.1, but the exporter does not say so out loud, and
   silently dropping them is the part worth fixing.
 
-- **(P2) Nine defects the cascade audit turned up outside its own pattern.** All
-  found 2026-08-29 while collapsing, none of them an instance of the duplication
-  the audit was hunting, so each wants its own decision.
+- **(P2) What the cascade audit turned up outside its own pattern.** All found
+  2026-08-29 while collapsing, none of them an instance of the duplication the
+  audit was hunting, so each wants its own decision.
 
-  `selectAll` has no visibility filter, so Cmd+A then Delete removes nodes the user
-  cannot see. SVG export ignores `layer.visible` while pixel export honors it.
-  `LayerRecord.locked` is written in five places and read by nothing. User layers
-  lose their `name` through `toJSON`. `<image>` flip and source-rect never
-  serialize. `packages/{svg,hud,ui,labkit,modes,d3,paint}` never import `geom` at
-  all, and three incompatible matrix-singularity policies coexist.
+  Three are closed: `selectAll` now skips hidden layers, SVG export honors
+  `layer.visible` through `SceneSource.isPainted`, and `toJSON` carries a user
+  layer's `kind` and `name`.
+
+  Open: `LayerRecord.locked` is written in five places and read by nothing —
+  either it gates selection, hit-testing and mutation, or the field goes.
+  `<image>` flip and source-rect never serialize; they live on the renderer's
+  `ImageCommand`, and expressing them wants a wider `SvgImageNode` on both the
+  write and the parse side. `packages/{svg,hud,ui,labkit,modes,d3,paint}` never
+  import `geom` at all, and three incompatible matrix-singularity policies
+  coexist.
 
   Text has one left: `measureText` / `measuredWidth` in `@weasel-js/text` now have
   no in-repo caller. They are a legitimate Canvas2D measuring utility for consumers
