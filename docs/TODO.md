@@ -30,7 +30,7 @@ Priority tags:
 
 **Scene, adapters & layout**
 - `arrayAdapter` as default Canvas adapter — full unification → [Scene, adapters & layout](#scene-adapters--layout)
-- Layout strategies: multi-select drag into a layout container → [Scene, adapters & layout](#scene-adapters--layout)
+- Layout strategies: `tileGrid` cell collisions → [Scene, adapters & layout](#scene-adapters--layout)
 
 **Selection, actions & UI panels**
 - Two implementations of an editable curve; the timeline built the second → [Selection, actions & UI panels](#selection-actions--ui-panels)
@@ -788,7 +788,7 @@ here is smaller than the connect gesture that comes next.
 ### Container layout strategies (deferred from `docs/specs/2026-05-03-container-layout-strategies-design.md`)
 
 - **(P3) Reparent-on-layout-drop lives in `moveAction`, not the strategies' `commitDrop`** (which are pose-only). If a strategy ever needs container-specific reparent semantics, revisit whether `commitDrop` should own it.
-- **(P2) Multi-select drag into a layout container.** Currently falls through to the per-id transform batch (no `commitDrop` invocation, no sibling reflow). Layout-aware reflow + commit only fire when `scratch.ids.length === 1` in `moveAction`. Decide multi-select-into-layout semantics (sequential commitDrops? grouped layout API?) before lifting the guard.
+- **(P3) `tileGrid` lets two children snap into the same cell.** `cellAt` returns whichever cell contains the probe point, and `computeSwap` displaces an occupant only on a same-container drag — so a multi-select drop whose children probe into one cell stacks them there, and a cross-container drop onto an occupied cell overlaps it. Occupancy-aware target enumeration is the fix; the drop pipeline already hands each placement the container state the previous one produced.
 - **(P3) Z-order walk doesn't cross non-container ancestors.** Open question: when a deep layout container is BELOW (in z) a shallow layout container that shares the dragged point, today the deepest wins — debate whether real z-order across the whole tree (flat painter's order) should win instead.
 - **(P3) Tile-grid overflow policy.** Children beyond `cols * rows` are skipped from `childPoses`. Scroll, grow-grid, and rejection are the three policies worth designing between.
 - **(P3) Strategy-aware drop regions.** A layout could expose `dropRegion(container) → Bounds` extending beyond visible bounds for forgiveness (e.g. row layouts catching pointers slightly past the row's end).
