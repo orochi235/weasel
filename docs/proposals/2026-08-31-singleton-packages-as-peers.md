@@ -1,8 +1,7 @@
 # Singleton-bearing packages belong in `peerDependencies`
 
 **Shipped.** `font` is a peer of `core`, `hud` and `text`; `core` is a peer of
-`svg`, and the `d3` / `hud` / `ui` ranges are exact. What is left is the
-`labkit` row in `docs/TODO.md`.
+`svg` and `labkit`, and the `d3` / `hud` / `ui` ranges are exact.
 
 For whoever picks up weasel's packaging next. It assumes you know what a
 module-global registry is and nothing else about this arc.
@@ -77,9 +76,13 @@ verifies that advertised export paths exist in the tarball.
 - **Peer ranges are exact.** Changesets rewrites an exact peer range in the
   same pass that bumps the group, so a dependent never sees an out-of-range
   peer and no release escalates to a major on its account.
-- **`labkit` keeps an ordinary dependency.** Its build inlines core, so it has
-  nothing to resolve at the consumer and nothing to peer. It ships a second
-  copy of core's registries as a result — the open row in `docs/TODO.md`.
+- **`labkit` externalizes core rather than inlining it.** Its `tsup` and `.d.ts`
+  builds keep every other weasel sibling bundled and let `@weasel-js/core`
+  through as an external specifier, so there is something to peer and a consumer
+  resolves one copy. Its own smoke test checks both directions: no sibling
+  specifier in `dist`, and core's specifier present — an inlined core resolves,
+  bundles and renders against its own registries, which is the state no other
+  gate can see.
 - **No devDependency pairing.** npm links workspace siblings regardless; the
   three pre-existing peers build today without one.
 - **The umbrella `weasel-js`** is private and unpublished, so its `core`

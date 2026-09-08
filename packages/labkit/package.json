@@ -110,11 +110,11 @@
     "dev:annotate": "LABKIT_EXAMPLE=annotate-lab vite"
   },
   "peerDependencies": {
+    "@weasel-js/core": "1.4.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "dependencies": {
-    "@weasel-js/core": "1.4.2",
     "@weasel-js/loupe": "1.4.2",
     "@weasel-js/svg": "1.4.2",
     "@weasel-js/theme": "1.4.2",

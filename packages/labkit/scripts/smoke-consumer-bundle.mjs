@@ -2,28 +2,35 @@
 
 // labkit consumer-bundle smoke test.
 //
-// labkit's entire premise is a SELF-CONTAINED `dist`: tsup bundles every
-// transitively-used `@weasel-js/*` package into the output (`noExternal:
-// [/^@weasel-js\//]` in tsup.config.ts) and the dts pipeline inlines their types
-// (scripts/build-dts.mts). A downstream consumer therefore installs only the
-// third-party deps (react*, zustand, earcut, …) — never any `@weasel-js`
-// runtime/type package. This guards that promise.
+// labkit's `dist` bundles its weasel siblings — with ONE deliberate exception.
+// tsup inlines every transitively-used `@weasel-js/*` package (`noExternal` in
+// tsup.config.ts) and the dts pipeline inlines their types (scripts/build-dts.mts),
+// so a downstream consumer installs only the third-party deps (react*, zustand,
+// earcut, …). `@weasel-js/core` is the exception: it is an exact PEER, kept as an
+// external specifier, because it owns module-global registries and a second copy
+// of them is a blank canvas with no diagnostic. See
+// docs/proposals/2026-08-31-singleton-packages-as-peers.md.
 //
-// Two independent checks, because they catch different regressions:
+// So this guards a promise with two halves — everything but core is inlined, and
+// core never is:
 //
 //   1. Bundle resolves. Relocate the built `dist` OUTSIDE the repo into a temp
 //      `node_modules/@weasel-js/labkit`, then esbuild-bundle a consumer that
-//      imports every package entry. Outside the monorepo, neither the repo
-//      tsconfig `paths` nor the workspace-linked sub-packages are discoverable —
-//      exactly a third party's situation. If a `@weasel-js/*` specifier leaked
-//      into the emitted JS, esbuild fails to resolve it and this exits non-zero.
-//      (Mirrors the core's scripts/smoke-consumer-bundle.mjs.)
+//      imports every package entry, with labkit's declared deps and peers marked
+//      external the way a real install satisfies them. Outside the monorepo,
+//      neither the repo tsconfig `paths` nor the workspace-linked sub-packages
+//      are discoverable — exactly a third party's situation. If a bundled
+//      sibling's specifier leaked into the emitted JS, esbuild fails to resolve
+//      it and this exits non-zero. (Mirrors the core's
+//      scripts/smoke-consumer-bundle.mjs.)
 //
-//   2. No `@weasel-js` specifier survives in dist — in `.js` OR `.d.ts`. The
-//      bundle check (1) only exercises runtime JS; labkit also promises
-//      self-contained TYPES, so we statically grep every dist file for a leaked
-//      import/export/require/import() targeting `@weasel-js`. This is the
-//      automation of the manual "grep for leaked imports" done during absorption.
+//   2. No `@weasel-js` specifier other than core survives in dist — in `.js` OR
+//      `.d.ts` — and core's DOES, in both. The bundle check (1) only exercises
+//      runtime JS, and it marks core external, so neither half of this is
+//      reachable from it: a leaked sibling would resolve inside the smoke tree if
+//      it were merely mismarked, and an INLINED core resolves perfectly while
+//      shipping the duplicate registries this whole arrangement exists to
+//      prevent. Both directions are therefore checked statically here.
 //
 //   3. Every scoped class name the bundle paints with is defined in the shipped
 //      stylesheet. Self-contained JS is not self-contained UI: the passed-through
@@ -56,9 +63,11 @@ try {
   process.exit(1);
 }
 
-// --- Check 2: no leaked @weasel-js specifier in any dist file (js + d.ts) ---
+// --- Check 2: dist externalizes core and nothing else under @weasel-js ---
 // Matches `from '@weasel-js/…'`, `require('@weasel-js/…')`, `import('@weasel-js/…')`.
-const LEAK_RE = /(?:from|require\(|import\()\s*['"]@weasel-js\/[^'"]+['"]/;
+const LEAK_RE = /(?:from|require\(|import\()\s*['"](@weasel-js\/[^'"]+)['"]/;
+// The one specifier dist is supposed to carry, bare or subpath.
+const CORE_RE = /^@weasel-js\/core(?:\/|$)/;
 async function walk(dir) {
   const out = [];
   for (const ent of await readdir(dir, { withFileTypes: true })) {
@@ -116,18 +125,48 @@ function stripComments(text) {
 }
 
 const leaks = [];
+let coreInJs = 0;
+let coreInDts = 0;
 for (const file of await walk(distDir)) {
   const text = await readFile(file, 'utf8');
   stripComments(text).forEach((line, i) => {
-    if (LEAK_RE.test(line))
-      leaks.push(`${file.slice(pkgRoot.length + 1)}:${i + 1}: ${line.trim()}`);
+    const m = LEAK_RE.exec(line);
+    if (!m) return;
+    if (CORE_RE.test(m[1])) {
+      if (file.endsWith('.d.ts')) coreInDts += 1;
+      else coreInJs += 1;
+      return;
+    }
+    leaks.push(`${file.slice(pkgRoot.length + 1)}:${i + 1}: ${line.trim()}`);
   });
 }
 if (leaks.length) {
-  console.error('[smoke] dist leaks @weasel-js specifiers (dist is NOT self-contained):\n');
+  console.error(
+    '[smoke] dist leaks @weasel-js specifiers other than the core peer (these should be inlined):\n',
+  );
   console.error(leaks.join('\n'));
   console.error(
     '\n[smoke] Check `noExternal` in tsup.config.ts and the alias table in scripts/build-dts.mts.',
+  );
+  process.exit(1);
+}
+
+// The inverse, and the one that matters more: core INLINED is the silent
+// failure. It resolves, it bundles, it renders — against its own second copy of
+// the registries. Tracked separately for JS and `.d.ts` because the two
+// pipelines externalize independently (tsup.config.ts vs scripts/build-dts.mts),
+// and a bundle that duplicates core at runtime while emitting correct-looking
+// types is the worst of the states to be in.
+if (coreInJs === 0 || coreInDts === 0) {
+  console.error(
+    '[smoke] dist does not import @weasel-js/core — it was INLINED, so a consumer\n' +
+      "holding both labkit and core gets two copies of core's registries (content\n" +
+      'handlers, paint kinds, shape painters, markers, programs). Registering into\n' +
+      'one and reading the other paints nothing, with no error.\n',
+  );
+  console.error(
+    `  dist JS   : ${coreInJs} external core specifier(s) — check \`noExternal\`/\`external\` in tsup.config.ts\n` +
+      `  dist .d.ts: ${coreInDts} external core specifier(s) — check DTS_EXCLUDE/\`external\` in scripts/build-dts.mts`,
   );
   process.exit(1);
 }
@@ -142,17 +181,24 @@ const jsEntries = Object.entries(pkg.exports)
   .filter(Boolean);
 
 /**
- * A real consumer installs labkit's own deps and peers, so they are external
- * here — every `@weasel-js/*` is not, since a self-contained `dist` is the
- * thing under test. Read off package.json rather than listed: this array was
- * hand-maintained until `windease` was added as a dependency without being
- * added here, and the check failed on a bundle that was correct.
+ * A real consumer installs labkit's declared deps and peers, so they are
+ * external here. The weasel siblings in `dependencies` are NOT: they are
+ * bundled, and their absence from dist is the thing under test. `@weasel-js/core`
+ * is external because it is a peer the consumer installs — check 2 above is what
+ * holds it to that.
+ *
+ * Read off package.json rather than listed: this array was hand-maintained until
+ * `windease` was added as a dependency without being added here, and the check
+ * failed on a bundle that was correct.
  */
+const bundledSiblings = new Set(
+  Object.keys(pkg.dependencies ?? {}).filter((dep) => dep.startsWith('@weasel-js/')),
+);
 const thirdPartyExternals = Object.keys({
   ...pkg.dependencies,
   ...pkg.peerDependencies,
 })
-  .filter((dep) => !dep.startsWith('@weasel-js/') && dep !== 'weasel-js')
+  .filter((dep) => dep !== 'weasel-js' && !bundledSiblings.has(dep))
   .flatMap((dep) => [dep, `${dep}/*`]);
 
 const workDir = await mkdtemp(join(tmpdir(), 'labkit-smoke-'));
@@ -231,5 +277,7 @@ if (missing.size) {
 }
 
 console.log(
-  `[smoke] OK — ${jsEntries.length} labkit entries bundle self-contained; no @weasel-js specifiers in dist (js+dts); every CSS module's stylesheet shipped.`,
+  `[smoke] OK — ${jsEntries.length} labkit entries bundle against the core peer alone; ` +
+    'no other @weasel-js specifiers in dist (js+dts); core stays external ' +
+    `(${coreInJs} js, ${coreInDts} dts); every CSS module's stylesheet shipped.`,
 );

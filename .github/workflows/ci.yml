@@ -67,8 +67,9 @@ jobs:
       - run: npm run check:test-projects
       - run: npx vitest run --project=core --project=weasel-ui --project=draw --project=labkit
       - run: npm run build
-      # labkit bundles the (private) weasel packages into a self-contained dist;
-      # build it after the core so its esbuild alias resolves the built core.
+      # labkit bundles its weasel siblings into its dist; build it after them so
+      # their built output is what it inlines. `@weasel-js/core` is the one it
+      # does not inline — it is an exact peer, resolved at the consumer.
       - run: npm run build -w @weasel-js/labkit
       # Every path a publishable package advertises in `main`/`module`/`types`/
       # `exports` must actually be in its tarball. See scripts/check-publish-manifests.mjs.
@@ -82,9 +83,11 @@ jobs:
       # skip them — silently, exit 0. Cheap insurance; these two builds are seconds.
       - run: npm run build -w @weasel-js/ui -w @weasel-js/hud
       - run: npm run check:manifests
-      # labkit's premise is a self-contained dist with ZERO @weasel-js runtime/type
-      # imports. Bundle every labkit entry from outside the monorepo + grep dist
-      # (js+dts) for leaked @weasel-js specifiers. Runs after the build above.
+      # labkit's dist inlines its weasel siblings and externalizes @weasel-js/core
+      # alone. Bundle every labkit entry from outside the monorepo + grep dist
+      # (js+dts) both ways: no sibling specifier leaked, and core's IS there. An
+      # inlined core is the silent failure — it resolves and renders, against a
+      # second copy of core's registries. Runs after the build above.
       # See packages/labkit/scripts/smoke-consumer-bundle.mjs.
       - run: npm run test:smoke:consumer -w @weasel-js/labkit
       # `npm pack` every published @weasel-js package, extract them into a tree

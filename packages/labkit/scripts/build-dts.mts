@@ -7,8 +7,7 @@
  * `never`. This script runs rollup-plugin-dts directly against an explicit
  * table instead.
  *
- * That table points at each dependency's BUILT declarations, mirroring the way
- * `tsup.config.ts` aliases core to its built JS. Pointing it at source instead
+ * That table points at each dependency's BUILT declarations. Pointing it at source instead
  * — as this script once did — pulls the whole weasel graph into one TypeScript
  * program and roughly doubles both the heap and the wall time, to re-derive
  * declarations the earlier build tiers have already emitted. The emitted types
@@ -58,8 +57,10 @@ const input = Object.fromEntries(
 
 // Third-party libs are declared labkit deps (and react* are peers): keep them as
 // external `import` statements in the emitted types instead of inlining them.
-// Everything under @weasel-js/* is redirected to source by the alias plugin and
-// therefore inlined, matching the self-contained JS bundle.
+// @weasel-js/core is external for the same reason it is in tsup.config.ts — it
+// is an exact peer, resolved once at the consumer. The rest of @weasel-js/* is
+// redirected to built declarations by the alias plugin and inlined, matching
+// the JS bundle.
 const external = [
   /^react($|\/)/,
   /^react-dom($|\/)/,
@@ -67,6 +68,7 @@ const external = [
   'earcut',
   'polygon-clipping',
   /^zustand($|\/)/,
+  /^@weasel-js\/core($|\/)/,
 ];
 
 /**
@@ -87,7 +89,12 @@ function requireBuilt(entries: ReturnType<typeof weaselDtsAliases>): void {
   process.exit(1);
 }
 
-const aliases = weaselDtsAliases(weaselRoot, ['@weasel-js/labkit']);
+// labkit's own modules must reach each other through source, not through the
+// `.d.ts` this build is producing; core is excluded because it stays an
+// external specifier in the output rather than being inlined.
+const DTS_EXCLUDE = ['@weasel-js/labkit', '@weasel-js/core'];
+
+const aliases = weaselDtsAliases(weaselRoot, DTS_EXCLUDE);
 
 async function main(): Promise<void> {
   requireBuilt(aliases);
@@ -110,7 +117,7 @@ async function main(): Promise<void> {
       },
       dts({
         tsconfig: resolve(pkgRoot, 'tsconfig.dts.json'),
-        compilerOptions: { paths: weaselDtsPaths(weaselRoot, ['@weasel-js/labkit']) },
+        compilerOptions: { paths: weaselDtsPaths(weaselRoot, DTS_EXCLUDE) },
         // Don't follow into node_modules; third-party types stay external.
         respectExternal: false,
       }),

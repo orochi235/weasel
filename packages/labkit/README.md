@@ -13,10 +13,16 @@ algorithm and would rather not build the page around it.
 ## Install
 
 ```bash
-npm i @weasel-js/labkit
+npm i @weasel-js/labkit @weasel-js/core
 ```
 
-React 19 is a peer dependency (`react` and `react-dom`, `^19.0.0`). One
+`@weasel-js/core` is a peer dependency, pinned to the matching version. labkit
+does not ship its own copy: core keeps its content handlers, paint kinds, shape
+painters and markers in module-global registries, and two copies means anything
+registered through one is invisible to the other — a blank canvas with no error.
+Installing it alongside is what guarantees there is exactly one.
+
+React 19 is a peer dependency too (`react` and `react-dom`, `^19.0.0`). One
 stylesheet import covers everything labkit draws, including the theme tokens and
 the `@weasel-js/ui` components it passes through:
 
