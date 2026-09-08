@@ -7,56 +7,12 @@ for cross-app reuse, not consumer-app value.
 For history of completed work, see `git log` and the dated specs under
 `docs/superpowers/specs/`. Plans are deleted when their work merges.
 
-When work merges, retire its entry here in the same change. The index below is a
-hand-maintained copy of claims made further down; fix both or fix neither.
+When work merges, retire its entry here in the same change.
 
 Priority tags:
 - **(P1)** — foundational genericity gap; the kit can't do this today
 - **(P2)** — broad reuse, or friction-likely
 - **(P3)** — specialized, or resting on a foundation not built yet
-
----
-
-## High-priority index
-
-### P2 — broad reuse / friction-likely
-
-**Text**
-- Cross-browser overlay alignment → [Text](#text)
-- `apps/draw` drops every run's styling on SVG export and copy → [Text](#text)
-- Small caps and text-transform have no run spelling → [Text](#text)
-
-**Scene, adapters & layout**
-- `arrayAdapter` as default Canvas adapter — full unification → [Scene, adapters & layout](#scene-adapters--layout)
-- Layout strategies: `tileGrid` cell collisions → [Scene, adapters & layout](#scene-adapters--layout)
-
-**Selection, actions & UI panels**
-- Two implementations of an editable curve; the timeline built the second → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- labkit's loupe drives itself with plain listeners, not bindings → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- An instrument that renames a config key has no way to move the stored value → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- A `paint` leaf in `PrefsForm` degrades a gradient to a solid → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- No control parses a typed unit, and the conversion tables answer only grid snapping → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- `LabShell` is the only thing that applies labkit's style scope → [Selection, actions & UI panels](#selection-actions--ui-panels)
-
-**Lint**
-- react-hooks v7 compiler rules, evaluated per rule → [Lint](#lint)
-
-**Tools & gestures**
-- `ToolCtx` hard-codes 2D, blocking tool reuse by another kernel → [Tools & gestures](#tools--gestures)
-
-**Plugins & packaging**
-- Barrel-hygiene: selection (pending design review) → [Plugins & packaging](#plugins--packaging)
-- `weasel-js` unscoped alias is unpublishable under that name → [Plugins & packaging](#plugins--packaging)
-
-**Performance**
-- A clipped group costs ~10 us to enter, half of it the stencil → [Release-gate & build hygiene](#release-gate--build-hygiene)
-- A solid boundary costs 2.5 us where every other kind costs under one → [Release-gate & build hygiene](#release-gate--build-hygiene)
-- Benchmark HUD text against a transparent DOM overlay → [Release-gate & build hygiene](#release-gate--build-hygiene)
-- Decide where benchmarks live and how their results are kept → [Release-gate & build hygiene](#release-gate--build-hygiene)
-
-**Documentation**
-- Surface a changelog on the site → [Documentation](#documentation)
-- README pitch sweep → [Documentation](#documentation)
 
 ---
 

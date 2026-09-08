@@ -32,9 +32,10 @@ Active todos live in `docs/TODO.md`. Consult it when planning new work or pickin
 
 When work merges, update `docs/TODO.md` in the same change — retire the entry, or
 rewrite it around what is actually left. An entry describing work that shipped is
-worse than no entry: a reader plans against it. The index at the top of the file
-is a hand-maintained copy of claims that live further down, so fix both or fix
-neither.
+worse than no entry: a reader plans against it. Don't reintroduce a summary index
+at the top: the one that used to live there drifted to listing 21 of 41 P2s, three
+of them P3s, because nothing recomputes a hand-maintained copy. `grep '(P2)'` is
+the index.
 
 ## Plans
 
