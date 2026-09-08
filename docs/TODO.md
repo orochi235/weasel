@@ -645,15 +645,6 @@ here is smaller than the connect gesture that comes next.
   `{ pose?, alpha? }`. Decide whether overrides grow a `data` field or the two
   channels stay split by what they carry rather than by who writes them.
 
-- **(P3) `createPoseOverrides` is not public, but implementing `Scene` requires
-  one.** `Scene` is public and its `overrides: PoseOverrides<TPose>` is
-  mandatory — and now genuinely load-bearing, since every ongoing gesture writes
-  a frame to it. A consumer building a scene-like object by hand therefore has
-  to reimplement the table from the type, which `apps/draw`'s geometry-contract
-  test does (`stubOverrides`) precisely because it may only touch the published
-  surface. Either export the factory or say in the docs that hand-rolling one is
-  expected.
-
 - **(P3) A derived node is unpickable through a bare adapter.** The
   scene-backed half of this landed: `NodeShapeEntry.silhouette` takes a `NodeSilhouetteCtx`
   carrying `derivedPath`, `kit:derived` reports it plus its `ink`, and
@@ -696,11 +687,6 @@ here is smaller than the connect gesture that comes next.
   action-facing `Scene<unknown, string, unknown>`. Pre-dates `derivePath` —
   `clipFromPose` has the same shape — and the action layer already reaches its
   scene through a cast everywhere, so nothing is blocked today.
-
-- **(P3) `kit:setData` and `kit:setLayer` do not invalidate dependents.** Matters
-  only if a `derivePath` reads a dependency's `data`. `kit:move` and `kit:setLayer`
-  also never drop a node's own pose-keyed slots, which is a `nodeMemo` question
-  rather than a dependents one.
 
 ### `useScene` follow-ups
 

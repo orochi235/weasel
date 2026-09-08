@@ -836,7 +836,10 @@ export { useArrayAdapter } from './core/adapters/useArrayAdapter';
 export type { UseArrayAdapterOptions } from './core/adapters/useArrayAdapter';
 
 // ─── Scene primitive (kit-owned tree of leaves and containers) ──────────────
-export { createScene, sceneFromJSON, sceneSelectionStore, useScene, asNodeId } from './core/scene';
+export {
+  createScene, sceneFromJSON, sceneSelectionStore, useScene, asNodeId,
+  createPoseOverrides,
+} from './core/scene';
 export type {
   AddLayerSpec,
   AddNodeSpec,

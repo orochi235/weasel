@@ -21,3 +21,4 @@ export type {
   UserLayerRecord,
   UseSceneOptions,
 } from './types';
+export { createPoseOverrides } from './poseOverrides';
