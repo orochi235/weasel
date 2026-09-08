@@ -145,25 +145,40 @@ export {
   zoomAt,
 } from './canvas';
 export * from './chrome';
-export { f } from './config/builder';
+export { f, isConfigBranch } from './config/builder';
 export { fromConfigFields } from './config/fromConfigField';
+export {
+  fillConfigDefaults,
+  hasConfigPath,
+  schemaNodeAtPath,
+  valueAtPath,
+  withValueAtPath,
+} from './config/path';
 export { resolveConfigSchema } from './config/resolve';
 export { applyRules, builtinRules, titleCase } from './config/rules';
 export type {
   Annotations,
+  BranchAnnotations,
+  BranchOptions,
+  ConfigBranch,
+  ConfigEntry,
   ConfigNode,
   ConfigOf,
   ConfigOption,
+  ConfigPath,
   ConfigRule,
   ConfigRuleContext,
   ConfigSchema,
+  ConfigShape,
   ControlRenderer,
+  EntryValue,
   InferConfig,
   LeafPatch,
   NodeOptions,
   NodeValue,
   ResolvedConfig,
   SectionSpec,
+  ValueAtPath,
 } from './config/types';
 export { useConfigSchema } from './config/useConfigSchema';
 export { isLeafVisible } from './config/visible';

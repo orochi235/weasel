@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { PropertyRow } from '@weasel-js/ui';
 import { useState } from 'react';
 import { f } from '../config/builder';
+import { withValueAtPath } from '../config/path';
 import { resolveConfigSchema } from '../config/resolve';
 import type { ConfigRule, ControlRenderer } from '../config/types';
 import { ControlPanel } from './ControlPanel';
@@ -60,7 +61,7 @@ function Harness({ fields }: { fields: ConfigField[] }) {
     <ControlPanel
       fields={fields}
       config={config}
-      setConfig={(key, value) => setConfig((prev) => ({ ...prev, [key as string]: value }))}
+      setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
     />
   );
 }
@@ -102,7 +103,7 @@ function SchemaHarness({
     <ControlPanel
       schema={schema}
       config={config}
-      setConfig={(key, value) => setConfig((prev) => ({ ...prev, [key as string]: value }))}
+      setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
       renderers={renderers}
     />
   );
@@ -169,7 +170,7 @@ export const Described: Story = {
       <ControlPanel
         schema={schema}
         config={config}
-        setConfig={(key, value) => setConfig((prev) => ({ ...prev, [key as string]: value }))}
+        setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
       />
     );
   },
@@ -195,8 +196,41 @@ export const Conditional: Story = {
       <ControlPanel
         schema={schema}
         config={config}
-        setConfig={(key, value) => setConfig((prev) => ({ ...prev, [key as string]: value }))}
+        setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
       />
+    );
+  },
+};
+
+const nested = f.schema({
+  showGrid: f.boolean(true),
+  grid: f
+    .group({
+      size: f.number(20).range(5, 80).step(5).label('Cell size'),
+      color: f.color('#3a86ff'),
+    })
+    .describe('Written at config.grid.size and config.grid.color.'),
+  export: f.group({
+    format: f.enum('png', ['png', 'svg']),
+    scale: f.number(2).range(1, 4).step(1),
+  }),
+});
+
+/** `f.group` nests the value as well as the heading: these rows write to
+ *  `grid.size` and `export.scale`, not to `size` and `scale`. */
+export const Nested: Story = {
+  render: () => {
+    const schema = resolveConfigSchema(nested, []);
+    const [config, setConfig] = useState<Record<string, unknown>>(nested.defaults());
+    return (
+      <>
+        <ControlPanel
+          schema={schema}
+          config={config}
+          setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
+        />
+        <pre>{JSON.stringify(config, null, 2)}</pre>
+      </>
     );
   },
 };

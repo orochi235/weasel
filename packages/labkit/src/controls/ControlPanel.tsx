@@ -2,12 +2,15 @@ import { isBuiltinToolPref } from '@weasel-js/core';
 import {
   CheckboxRow,
   ColorRow,
+  isPrefLeaf,
   NumberRow,
+  type PrefGroup,
   type PrefLeaf,
   type PropertyAlign,
   type PropertyDensity,
   PropertyGroup,
   PropertyList,
+  type PropertyListPack,
   PropertyRow,
   type PropertyRowLayout,
   SelectRow,
@@ -15,9 +18,10 @@ import {
   TextRow,
   ToggleRow,
 } from '@weasel-js/ui';
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { fromConfigFields } from '../config/fromConfigField';
-import type { ControlRenderer, ResolvedConfig } from '../config/types';
+import { schemaNodeAtPath, valueAtPath } from '../config/path';
+import type { ControlRenderer, ResolvedConfig, SectionSpec } from '../config/types';
 import { isLeafVisible } from '../config/visible';
 import type { ConfigField } from './types';
 
@@ -37,7 +41,9 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> {
   /** @deprecated Pass `schema`. A field list is adapted into one internally. */
   fields?: ConfigField[];
   config: TC;
-  setConfig: (key: keyof TC, value: unknown) => void;
+  /** Writes one value. The path is dotted for a leaf inside an `f.group`, and
+   *  the bare key for one at the root. */
+  setConfig: (path: string, value: unknown) => void;
   /**
    * Control overrides and app-defined kinds, PrefsForm-style. Keys are config
    * paths (checked first) or leaf kinds. A renderer returning `null` collapses
@@ -64,12 +70,15 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> {
    */
   collapse?: 'open' | 'closed';
   /**
-   * Which sections are folded, keyed by section label. Given, the panel keeps
-   * no state of its own: every toggle arrives at `onCollapse` instead, which
-   * is where a lab that remembers a trial's sections writes them.
+   * Which sections are folded, keyed as `onCollapse` reports them. Given, the
+   * panel keeps no state of its own: every toggle arrives at `onCollapse`
+   * instead, which is where a lab that remembers a trial's sections writes
+   * them.
    */
   collapsed?: Readonly<Record<string, boolean>>;
-  onCollapse?: (label: string, collapsed: boolean) => void;
+  /** A fold moved. The key is a section's label — prefixed by its group's
+   *  dotted path when the section sits inside one — or a group's own path. */
+  onCollapse?: (key: string, collapsed: boolean) => void;
   /** Draw leaves marked `hidden`. */
   showHidden?: boolean;
   className?: string;
@@ -96,25 +105,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
 }: ControlPanelProps<TC>) {
   const resolved = useMemo(() => schema ?? fromConfigFields(fields ?? []), [schema, fields]);
 
-  const paths = Object.keys(resolved.group.children);
-  const sectioned = new Set(resolved.sections.flatMap((s) => s.paths));
-  const loose = paths.filter((p) => !sectioned.has(p));
-
-  const row = (path: string): ReactNode => (
-    <ControlRow
-      key={path}
-      path={path}
-      resolved={resolved}
-      config={config}
-      setConfig={setConfig}
-      renderers={renderers}
-      pack={pack}
-      layout={layout}
-      showHidden={showHidden}
-    />
-  );
-
-  const gridPack = pack === 'one-up' ? 'auto-color' : 'pairs';
+  const gridPack: PropertyListPack = pack === 'one-up' ? 'auto-color' : 'pairs';
   // A section that declares how it opens is foldable whether or not the lab
   // asked for folds — there is nothing else for the declaration to mean.
   const folds =
@@ -123,6 +114,66 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     onCollapse !== undefined ||
     resolved.sections.some((s) => s.collapsed !== undefined);
   const startsFolded = collapse === 'closed';
+
+  const fold = (key: string, declared?: boolean) => ({
+    pack: gridPack,
+    collapsible: folds,
+    defaultCollapsed: declared ?? startsFolded,
+    collapsed: collapsed ? (collapsed[key] ?? declared ?? startsFolded) : undefined,
+    onCollapsedChange: onCollapse ? (next: boolean) => onCollapse(key, next) : undefined,
+  });
+
+  /** One node, which is either a group to recurse into or a row to draw. */
+  const node = (path: string): ReactNode => {
+    const found = schemaNodeAtPath(resolved.group, path);
+    if (!found) return null;
+    if (!isLeafVisible(resolved, path, config as Record<string, unknown>, showHidden)) return null;
+    if (isPrefLeaf(found)) {
+      return (
+        <ControlRow
+          key={path}
+          path={path}
+          leaf={found}
+          resolved={resolved}
+          config={config}
+          setConfig={setConfig}
+          renderers={renderers}
+          pack={pack}
+          layout={layout}
+        />
+      );
+    }
+    // A group with no name organizes without heading it — core's rule for an
+    // empty `PrefGroup.name` — so it contributes its rows and no chrome.
+    if (found.name === '') return <Fragment key={path}>{body(found, path)}</Fragment>;
+    return (
+      <PropertyGroup key={path} title={found.name} {...fold(path)}>
+        {body(found, path)}
+      </PropertyGroup>
+    );
+  };
+
+  /** One group's children: its loose nodes, then its sections. */
+  const body = (group: PrefGroup, at: string): ReactNode => {
+    const sections = resolved.sections.filter((s) => s.at === at);
+    const sectioned = new Set(sections.flatMap((s) => s.paths));
+    const paths = Object.keys(group.children).map((key) => (at === '' ? key : `${at}.${key}`));
+    return (
+      <>
+        {paths.filter((p) => !sectioned.has(p)).map(node)}
+        {sections.map((section) => (
+          <PropertyGroup
+            key={sectionKey(section)}
+            title={section.label}
+            {...fold(sectionKey(section), section.collapsed)}
+          >
+            {section.paths.map(node)}
+          </PropertyGroup>
+        ))}
+      </>
+    );
+  };
+
   return (
     <PropertyList
       pack={gridPack}
@@ -130,35 +181,27 @@ export function ControlPanel<TC extends Record<string, unknown>>({
       align={align}
       className={className ? `lk-control-panel ${className}` : 'lk-control-panel'}
     >
-      {loose.map(row)}
-      {resolved.sections.map((section) => (
-        <PropertyGroup
-          key={section.label}
-          title={section.label}
-          pack={gridPack}
-          collapsible={folds}
-          defaultCollapsed={section.collapsed ?? startsFolded}
-          collapsed={
-            collapsed ? (collapsed[section.label] ?? section.collapsed ?? startsFolded) : undefined
-          }
-          onCollapsedChange={onCollapse ? (next) => onCollapse(section.label, next) : undefined}
-        >
-          {section.paths.map(row)}
-        </PropertyGroup>
-      ))}
+      {body(resolved.group, '')}
     </PropertyList>
   );
 }
 
+/** How a section is keyed for folding: its label at the root, and its group's
+ *  path in front of it anywhere else, so two groups may both have an
+ *  `Advanced`. */
+function sectionKey(section: SectionSpec): string {
+  return section.at === '' ? section.label : `${section.at}.${section.label}`;
+}
+
 interface ControlRowProps<TC extends Record<string, unknown>> {
   path: string;
+  leaf: PrefLeaf;
   resolved: ResolvedConfig;
   config: TC;
-  setConfig: (key: keyof TC, value: unknown) => void;
+  setConfig: (path: string, value: unknown) => void;
   renderers?: Record<string, ControlRenderer>;
   pack: ControlPack;
   layout?: PropertyRowLayout;
-  showHidden: boolean;
 }
 
 /** Reads a labkit-only extra off a leaf. `PrefLeaf` has no field for these,
@@ -169,21 +212,17 @@ function extra<T>(leaf: PrefLeaf, key: string): T | undefined {
 
 function ControlRow<TC extends Record<string, unknown>>({
   path,
+  leaf,
   resolved,
   config,
   setConfig,
   renderers,
   pack,
   layout,
-  showHidden,
 }: ControlRowProps<TC>) {
-  const leaf = resolved.group.children[path] as PrefLeaf | undefined;
-  if (!leaf || !('kind' in leaf)) return null;
-  if (!isLeafVisible(resolved, path, config as Record<string, unknown>, showHidden)) return null;
-
-  const write = (value: unknown): void => setConfig(path as keyof TC, value);
+  const write = (value: unknown): void => setConfig(path, value);
   const fallback = extra<unknown>(leaf, 'default');
-  const value = config[path] ?? fallback;
+  const value = valueAtPath(config, path) ?? fallback;
 
   // Most specific wins, and within a tier the lab's entry beats the
   // instrument's: controls[path] -> node .render -> controls[kind] -> built-in.

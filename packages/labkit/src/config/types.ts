@@ -39,9 +39,11 @@ export type LeafPatch = Annotations & { kind?: string };
 
 /** What a rule is given for the leaf it is deciding about. */
 export interface ConfigRuleContext {
-  /** The config key this leaf writes. */
+  /** The leaf's own key — its last path segment, and what a label is titled
+   *  from. */
   key: string;
-  /** Dotted path within the schema. Equal to `key` while schemas are flat. */
+  /** Dotted path within the schema, which is the path the value is written
+   *  at. Equal to `key` for a leaf sitting at the root. */
   path: string;
   /** The leaf's default value. A rule may read it but never change it. */
   default: unknown;
@@ -57,9 +59,16 @@ export interface ConfigRuleContext {
  */
 export type ConfigRule = (ctx: ConfigRuleContext) => LeafPatch | null;
 
-/** A presentational bucket of leaves, rendered under one heading. */
+/** A presentational bucket of nodes, rendered under one heading. Buckets
+ *  siblings: a section never nests a value, which is what separates it from
+ *  `f.group`. */
 export interface SectionSpec {
+  /** Dotted path of the group whose children this buckets. `''` is the root,
+   *  which is where every section of a flat schema sits. */
+  at: string;
   label: string;
+  /** Full dotted paths, so a section under a group names its children the way
+   *  everything else does. */
   paths: readonly string[];
   /** Whether the section opens folded. Set, the panel folds this section
    *  whether or not it was given a panel-wide `collapse`; a fold the reader
@@ -71,7 +80,8 @@ export interface SectionSpec {
  *  plus the three things labkit keeps on the side because `PrefLeaf` has no
  *  field for them. */
 export interface ResolvedConfig {
-  /** Flat: every leaf is a direct child, so a leaf's path is its config key. */
+  /** The schema as a `PrefGroup` tree: an `f.group` is a nested group, so a
+   *  leaf's dotted path within it is the path its value is written at. */
   group: PrefGroup;
   sections: readonly SectionSpec[];
   showIf: ReadonlyMap<string, (config: Record<string, unknown>) => boolean>;
@@ -88,11 +98,23 @@ export interface SectionOption {
 }
 
 /** Per-node extras that do not belong on a `PrefLeaf`. */
-export interface NodeOptions {
-  section?: SectionOption;
-  showIf?: (config: Record<string, unknown>) => boolean;
+export interface NodeOptions extends BranchOptions {
   render?: ControlRenderer;
   validate?: (leaf: PrefLeaf) => string[];
+}
+
+/** What a branch can say about itself, beyond its children. */
+export interface BranchOptions {
+  section?: SectionOption;
+  /** Show this node only while the predicate holds. On a group it hides the
+   *  whole subtree; the values stay in config either way. */
+  showIf?: (config: Record<string, unknown>) => boolean;
+}
+
+/** A group's own annotations: what it is called and, optionally, why. */
+export interface BranchAnnotations {
+  name?: string;
+  description?: string;
 }
 
 /** The builder's leaf: a kind (or null, to be decided by rules), a default,
@@ -104,15 +126,71 @@ export interface ConfigNode<T = unknown> {
   readonly options: Readonly<NodeOptions>;
 }
 
+/** The builder's branch: named children, nested as deeply as the schema
+ *  wants. A branch nests the value too — `grid: f.group({ size })` puts the
+ *  value at `grid.size`, where `.section('Grid')` would have left it at
+ *  `size`. */
+export interface ConfigBranch<S extends ConfigShape = ConfigShape> {
+  readonly children: S;
+  readonly annotations: Readonly<BranchAnnotations>;
+  readonly options: Readonly<BranchOptions>;
+}
+
+/** Either half of a schema tree. */
+export type ConfigEntry = ConfigNode | ConfigBranch;
+
+/** The children of a schema or a group. */
+export type ConfigShape = { readonly [key: string]: ConfigEntry };
+
 /** The value type a node produces. */
 export type NodeValue<N> = N extends ConfigNode<infer T> ? T : never;
 
+/** The value type a schema entry produces — a leaf's own, or a branch's
+ *  nested record. */
+export type EntryValue<E> =
+  E extends ConfigBranch<infer S> ? InferConfig<S> : E extends ConfigNode<infer T> ? T : never;
+
 /** The config type a builder shape produces. */
-export type InferConfig<S> = { [K in keyof S]: NodeValue<S[K]> };
+export type InferConfig<S> = { [K in keyof S]: EntryValue<S[K]> };
+
+/** Whether a config value has children a path can descend into. Arrays and
+ *  functions are values, not branches. */
+type Branching<V> = V extends readonly unknown[]
+  ? false
+  : V extends (...args: never[]) => unknown
+    ? false
+    : V extends object
+      ? true
+      : false;
+
+/**
+ * Every dotted path a config offers, a group's own path included. A config
+ * whose shape is not known — `unknown`, or a bare record — gives `string`,
+ * which is what keeps a generic instrument writable.
+ */
+export type ConfigPath<T> = unknown extends T
+  ? string
+  : T extends object
+    ? {
+        [K in keyof T & string]: Branching<T[K]> extends true ? K | `${K}.${ConfigPath<T[K]>}` : K;
+      }[keyof T & string]
+    : never;
+
+/** The type at a dotted path, or `unknown` where the path is not one the
+ *  config's type spells out. */
+export type ValueAtPath<T, P extends string> = unknown extends T
+  ? unknown
+  : P extends `${infer Head}.${infer Rest}`
+    ? Head extends keyof T
+      ? ValueAtPath<T[Head], Rest>
+      : unknown
+    : P extends keyof T
+      ? T[P]
+      : unknown;
 
 /** An instrument's config, declared once. */
 export interface ConfigSchema<TC> {
-  readonly nodes: Readonly<Record<string, ConfigNode>>;
+  readonly nodes: ConfigShape;
   /** The starting config — what `defaultConfig()` would have returned. */
   defaults(): TC;
 }

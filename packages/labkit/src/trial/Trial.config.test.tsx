@@ -106,3 +106,47 @@ describe('lab-wide config seams', () => {
     expect(screen.queryByText('Settings')).not.toBeInTheDocument();
   });
 });
+
+describe('a nested config value, end to end', () => {
+  const nestedInstrument = () => {
+    const seen: { config: unknown; prev: unknown }[] = [];
+    const instrument = defineInstrument({
+      name: 'Nested',
+      config: f.schema({
+        showGrid: f.boolean(true),
+        grid: f.group({ size: f.number(20).label('Cell size'), color: f.color('#ffffff') }),
+      }),
+      initialState: () => ({}),
+      onConfigChange: (config, prev, state) => {
+        seen.push({ config, prev });
+        return state;
+      },
+      render: (ctx) => (
+        <output>{String((ctx.config as { grid: { size: number } }).grid.size)}</output>
+      ),
+    });
+    return { instrument, seen };
+  };
+
+  it('renders a nested leaf and writes the change back into the tree', () => {
+    const { instrument } = nestedInstrument();
+    render(<Lab instruments={[instrument]} defaultInstrument="Nested" />);
+    expect(screen.getByText('20')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Cell size'), { target: { value: '40' } });
+    expect(screen.getByText('40')).toBeInTheDocument();
+  });
+
+  it('hands onConfigChange the whole tree, with the sibling branch intact', () => {
+    const { instrument, seen } = nestedInstrument();
+    render(<Lab instruments={[instrument]} defaultInstrument="Nested" />);
+    fireEvent.change(screen.getByLabelText('Cell size'), { target: { value: '40' } });
+    expect(seen.at(-1)?.config).toEqual({
+      showGrid: true,
+      grid: { size: 40, color: '#ffffff' },
+    });
+    expect(seen.at(-1)?.prev).toEqual({
+      showGrid: true,
+      grid: { size: 20, color: '#ffffff' },
+    });
+  });
+});

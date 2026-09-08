@@ -100,9 +100,113 @@ describe('updateTrialConfig', () => {
       state: {},
       view: { zoom: 1, pan: { x: 0, y: 0 } },
     });
-    s.getState().updateTrialConfig('w1', 'x' as never, 99 as never);
+    s.getState().updateTrialConfig('w1', 'x', 99);
     expect((s.getState().trials[0]?.config as { x: number }).x).toBe(99);
     expect((s.getState().trials[0]?.config as { y: number }).y).toBe(2);
+  });
+
+  it('writes down a dotted path without disturbing its siblings', () => {
+    const s = makeStore();
+    const config = { grid: { size: 20, color: '#fff' }, showGrid: true };
+    s.getState().addTrial({
+      id: 'w1',
+      instrumentName: 'T',
+      config,
+      state: {},
+      view: { zoom: 1, pan: { x: 0, y: 0 } },
+    });
+    s.getState().updateTrialConfig('w1', 'grid.size', 40);
+    expect(s.getState().trials[0]?.config).toEqual({
+      grid: { size: 40, color: '#fff' },
+      showGrid: true,
+    });
+    // The record handed in is never mutated: a trial re-renders on identity.
+    expect(config.grid.size).toBe(20);
+  });
+});
+
+describe('createLabStore - config defaults', () => {
+  const stored = (config: unknown) =>
+    JSON.stringify({
+      version: CURRENT_DOCUMENT_VERSION,
+      trials: [
+        {
+          id: 'w1',
+          instrumentName: 'T',
+          config,
+          state: {},
+          view: { zoom: 1, pan: { x: 0, y: 0 } },
+        },
+      ],
+      saves: [
+        {
+          id: 's1',
+          name: 'saved',
+          trialId: 'w1',
+          instrumentName: 'T',
+          config,
+          state: {},
+          savedAt: 1,
+        },
+      ],
+      layout: {},
+      undockedPanels: {},
+      mode: 'auto',
+    });
+
+  it('fills a branch a config stored before the schema nested it never had', () => {
+    const storage = createMemoryAdapter();
+    storage.write(labDocumentKey('test'), stored({ showGrid: false, gridSize: 40 }));
+    const s = createLabStore({
+      storageKey: 'test',
+      storage,
+      configDefaults: { T: () => ({ showGrid: true, grid: { size: 20, color: '#fff' } }) },
+    });
+    expect(s.getState().trials[0]?.config).toEqual({
+      showGrid: false,
+      gridSize: 40,
+      grid: { size: 20, color: '#fff' },
+    });
+  });
+
+  it('fills the config on a saved snapshot the same way', () => {
+    const storage = createMemoryAdapter();
+    storage.write(labDocumentKey('test'), stored({ grid: { size: 40 } }));
+    const s = createLabStore({
+      storageKey: 'test',
+      storage,
+      configDefaults: { T: () => ({ grid: { size: 20, color: '#fff' } }) },
+    });
+    expect(s.getState().savedSnapshots[0]?.config).toEqual({
+      grid: { size: 40, color: '#fff' },
+    });
+  });
+
+  it('hands a deserializer the filled config, not the stored one', () => {
+    const storage = createMemoryAdapter();
+    storage.write(labDocumentKey('test'), stored({ grid: { size: 40 } }));
+    const seen: unknown[] = [];
+    createLabStore({
+      storageKey: 'test',
+      storage,
+      configDefaults: { T: () => ({ grid: { size: 20, color: '#fff' } }) },
+      serializers: {
+        T: {
+          deserialize: (state, config) => {
+            seen.push(config);
+            return state;
+          },
+        },
+      },
+    });
+    expect(seen).toEqual([{ grid: { size: 40, color: '#fff' } }]);
+  });
+
+  it('leaves a config alone when no defaults are registered for its instrument', () => {
+    const storage = createMemoryAdapter();
+    storage.write(labDocumentKey('test'), stored({ only: 1 }));
+    const s = createLabStore({ storageKey: 'test', storage });
+    expect(s.getState().trials[0]?.config).toEqual({ only: 1 });
   });
 });
 

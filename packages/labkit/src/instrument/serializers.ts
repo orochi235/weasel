@@ -2,6 +2,17 @@ import type { InstrumentSerializers } from '../state/types';
 import type { InstrumentList } from './types';
 
 /**
+ * Each instrument's default config, keyed by name — what `createLabStore`
+ * fills a stored config's gaps from, so one saved before its schema grew a
+ * branch still loads.
+ */
+export function configDefaultsOf(instruments: InstrumentList): Record<string, () => unknown> {
+  const out: Record<string, () => unknown> = {};
+  for (const instrument of instruments) out[instrument.name] = () => instrument.defaultConfig();
+  return out;
+}
+
+/**
  * The `serialize` / `deserialize` an instrument list declares, keyed by
  * instrument name — what `createLabStore` needs to rebuild a trial's state
  * from storage.

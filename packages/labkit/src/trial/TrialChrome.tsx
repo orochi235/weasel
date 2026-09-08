@@ -9,6 +9,7 @@ import { TitleBarRegion } from '../chrome/regions/TitleBarRegion';
 import { ToolbarRegion } from '../chrome/regions/ToolbarRegion';
 import { ViewportRegion } from '../chrome/regions/ViewportRegion';
 import type { TrialChromeContext, TrialContribution, TrialRegion } from '../chrome/types';
+import { hasConfigPath, schemaNodeAtPath, withValueAtPath } from '../config/path';
 import { useConfigSchema } from '../config/useConfigSchema';
 import type { Instrument } from '../instrument/types';
 import type { JobHandle } from '../job/types';
@@ -135,16 +136,20 @@ export function TrialChrome({
       configSchema,
       configFields: instrument.config ? [] : (instrument.configSchema?.() ?? []),
       config: record.config,
-      setConfig: (key, value) => {
+      setConfig: (path, value) => {
         const prevConfig = record.config as Record<string, unknown>;
-        if (process.env.NODE_ENV !== 'production' && !(key in prevConfig)) {
+        if (
+          process.env.NODE_ENV !== 'production' &&
+          !hasConfigPath(prevConfig, path) &&
+          schemaNodeAtPath(configSchema.group, path) === undefined
+        ) {
           console.warn(
-            `[labkit] setConfig: unknown key "${key}" for instrument "${record.instrumentName}"`,
+            `[labkit] setConfig: unknown path "${path}" for instrument "${record.instrumentName}"`,
           );
         }
-        updateTrialConfig(trialId, key as never, value as never);
+        updateTrialConfig(trialId, path, value);
         if (instrument.onConfigChange) {
-          const nextConfig = { ...prevConfig, [key]: value };
+          const nextConfig = withValueAtPath(prevConfig, path, value);
           const nextState = instrument.onConfigChange(nextConfig, prevConfig, record.state);
           updateTrialState(trialId, nextState as never);
         }

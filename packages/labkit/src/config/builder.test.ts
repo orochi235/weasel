@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { f } from './builder';
+import type { ConfigOf, ConfigPath, ValueAtPath } from './types';
 
 describe('builder', () => {
   it('carries kind and default', () => {
@@ -94,5 +95,58 @@ describe('builder / node option collisions', () => {
       expect(node.section('S').options.section).toEqual({ label: 'S' });
       expect(node.render(() => null).options.render).toBeTypeOf('function');
     }
+  });
+});
+
+describe('builder / groups', () => {
+  it('f.group nests its children under the key', () => {
+    const s = f.schema({
+      showGrid: f.boolean(true),
+      grid: f.group({ size: f.number(20), color: f.color('#fff') }),
+    });
+    expect(s.defaults()).toEqual({
+      showGrid: true,
+      grid: { size: 20, color: '#fff' },
+    });
+  });
+
+  it('nests groups within groups', () => {
+    const s = f.schema({ a: f.group({ b: f.group({ c: f.number(1) }) }) });
+    expect(s.defaults()).toEqual({ a: { b: { c: 1 } } });
+  });
+
+  it('chains a group label and description immutably', () => {
+    const base = f.group({ size: f.number(20) });
+    const a = base.label('Grid').describe('How the grid is drawn');
+    expect(a.annotations.name).toBe('Grid');
+    expect(a.annotations.description).toBe('How the grid is drawn');
+    expect(base.annotations.name).toBeUndefined();
+  });
+
+  it('holds a group section and showIf off the annotation bag', () => {
+    const g = f
+      .group({ size: f.number(20) })
+      .section('Advanced')
+      .showIf((c) => c.showGrid === true);
+    expect(g.options.section).toEqual({ label: 'Advanced' });
+    expect(g.options.showIf?.({ showGrid: true })).toBe(true);
+    expect(g.annotations).toEqual({});
+  });
+});
+
+describe('builder / nested types', () => {
+  // Compile-level: these annotations are the assertion, and tsc is what runs
+  // it. A flat `InferConfig` would not give `c.grid.size` a type at all.
+  it('infers a nested config type and the paths into it', () => {
+    const schema = f.schema({
+      showGrid: f.boolean(true),
+      grid: f.group({ size: f.number(20), color: f.color('#fff') }),
+    });
+    type Config = ConfigOf<typeof schema>;
+    const c: Config = schema.defaults();
+    const size: number = c.grid.size;
+    const path: ConfigPath<Config> = 'grid.size';
+    const value: ValueAtPath<Config, 'grid.size'> = 40;
+    expect([size, path, value]).toEqual([20, 'grid.size', 40]);
   });
 });

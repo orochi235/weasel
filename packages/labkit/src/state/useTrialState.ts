@@ -24,6 +24,6 @@ export function useTrialState<TS = unknown, TC = unknown>(): TrialStateHandle<TS
     state: record.state as TS,
     config: record.config as TC,
     setState: (next) => updateTrialState(trialId, next as Parameters<typeof updateTrialState>[1]),
-    setConfig: (key, value) => updateTrialConfig(trialId, key as never, value as never),
+    setConfig: (path, value) => updateTrialConfig(trialId, path, value),
   };
 }

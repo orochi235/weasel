@@ -76,6 +76,18 @@ renders the settings panel from it. `render` returns the instrument's own DOM;
 returning `null` alongside `canvas` means the canvas layers are the whole
 picture. `storage` keeps open trials and their state across reloads.
 
+A value is addressed by its path: `bins` above sits at `config.bins` and is
+written as `setConfig('bins', 40)`. `f.group` nests one —
+`paper: f.group({ width: f.number(210) })` puts the value at
+`config.paper.width` and addresses it as `'paper.width'`, in `setConfig`, in a
+control override, and anywhere else a path is taken. `.section('Advanced')` is
+the other thing and only looks like it: it puts a heading over sibling rows and
+leaves their paths alone.
+
+A stored config missing something its schema has since gained — a whole nested
+group included — is filled from the instrument's defaults as it loads, so
+growing a schema never strands a saved trial or a snapshot.
+
 ## Capabilities
 
 A capability is a field on the instrument. Declaring it is what makes the trial

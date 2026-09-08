@@ -1,13 +1,23 @@
 import type { PrefLeaf } from '@weasel-js/ui';
 import type {
   Annotations,
+  BranchAnnotations,
+  BranchOptions,
+  ConfigBranch,
+  ConfigEntry,
   ConfigNode,
   ConfigOption,
   ConfigSchema,
+  ConfigShape,
   ControlRenderer,
   InferConfig,
   NodeOptions,
 } from './types';
+
+/** Whether a schema entry is a branch rather than a leaf. */
+export function isConfigBranch(entry: ConfigEntry): entry is ConfigBranch {
+  return 'children' in entry;
+}
 
 /** Shared chaining surface. Every method clones, so a node can be reused as a
  *  base for several leaves without one bleeding into the next. */
@@ -175,6 +185,55 @@ class CustomNode<T> extends BaseNode<T> {
   }
 }
 
+/**
+ * A branch of the schema: its children nest under its key, so a leaf inside
+ * one is read and written at a dotted path. Distinct from `.section()`, which
+ * puts a heading over sibling leaves and leaves their paths alone.
+ */
+class GroupNode<S extends ConfigShape> implements ConfigBranch<S> {
+  constructor(
+    readonly children: S,
+    readonly annotations: Readonly<BranchAnnotations> = {},
+    readonly options: Readonly<BranchOptions> = {},
+  ) {}
+
+  private with(annotations: BranchAnnotations, options: BranchOptions): GroupNode<S> {
+    return new GroupNode(this.children, annotations, options);
+  }
+
+  /** Heading for the group's rows. Defaults to the key, title-cased. */
+  label(name: string): GroupNode<S> {
+    return this.with({ ...this.annotations, name }, this.options);
+  }
+
+  /** Longer help text. Carried on the resolved `PrefGroup`, where weasel-ui's
+   *  `PrefsForm` draws it under the heading; `ControlPanel` has no place for
+   *  it yet and shows the heading alone. */
+  describe(description: string): GroupNode<S> {
+    return this.with({ ...this.annotations, description }, this.options);
+  }
+
+  /** Render this whole group under a named section heading. */
+  section(label: string, opts: { collapsed?: boolean } = {}): GroupNode<S> {
+    return this.with(this.annotations, { ...this.options, section: { label, ...opts } });
+  }
+
+  /** Show this group only while the predicate holds. Presentational — every
+   *  value beneath it stays in config and the instrument still reads it. */
+  showIf(predicate: (config: Record<string, unknown>) => boolean): GroupNode<S> {
+    return this.with(this.annotations, { ...this.options, showIf: predicate });
+  }
+}
+
+/** Every default in a shape, nested the way the shape is. */
+function shapeDefaults(shape: ConfigShape): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, entry] of Object.entries(shape)) {
+    out[key] = isConfigBranch(entry) ? shapeDefaults(entry.children) : entry.default;
+  }
+  return out;
+}
+
 const expand = <T extends string>(
   options: readonly T[] | readonly ConfigOption[],
 ): readonly ConfigOption[] =>
@@ -188,6 +247,8 @@ const expand = <T extends string>(
  * const config = f.schema({
  *   showGrid: f.boolean(true),
  *   cellSize: f.number(20).range(5, 80).step(5).label('Grid spacing'),
+ *   // Nested: read and written at `grid.color`.
+ *   grid: f.group({ color: f.color('#ffffff') }),
  * })
  * ```
  */
@@ -209,19 +270,17 @@ export const f = {
    *  states a convention like "every `*Color` key is a color picker". */
   value: <T>(def: T): ValueNode<T> => new ValueNode(def),
 
+  /** A branch: its children nest under this key, so `grid: f.group({ size })`
+   *  puts the value at `config.grid.size` and addresses it as `'grid.size'`.
+   *  Groups nest as deeply as the schema wants. */
+  group: <const S extends ConfigShape>(children: S): GroupNode<S> => new GroupNode(children),
+
   /** A leaf of a kind a lab supplies the control for, through `controls`. */
   custom: <T>(kind: string, def: T, validate?: (leaf: PrefLeaf) => string[]): CustomNode<T> =>
     new CustomNode(kind, def, {}, validate ? { validate } : {}),
 
-  /** Collect leaves into an instrument's config. */
-  schema<S extends Record<string, ConfigNode>>(nodes: S): ConfigSchema<InferConfig<S>> {
-    return {
-      nodes,
-      defaults: () => {
-        const out: Record<string, unknown> = {};
-        for (const [key, node] of Object.entries(nodes)) out[key] = node.default;
-        return out as InferConfig<S>;
-      },
-    };
+  /** Collect leaves and groups into an instrument's config. */
+  schema<S extends ConfigShape>(nodes: S): ConfigSchema<InferConfig<S>> {
+    return { nodes, defaults: () => shapeDefaults(nodes) as InferConfig<S> };
   },
 };

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { AnnotationsCapability } from '../annotations/types';
 import type { ViewportSize, WorldSpec } from '../canvas/worldSpec';
 import type { TrialContribution } from '../chrome/types';
-import type { ConfigSchema } from '../config/types';
+import type { ConfigPath, ConfigSchema } from '../config/types';
 import type { ConfigField } from '../controls/types';
 import type { JobCapability, JobHandle } from '../job/types';
 import type { LoupeDeclaration } from '../loupe/types';
@@ -15,7 +15,9 @@ export interface RenderContext<TS = unknown, TC = unknown> {
   state: TS;
   config: TC;
   setState: (next: TS | ((prev: TS) => TS)) => void;
-  setConfig: (key: keyof TC, value: unknown) => void;
+  /** Write one config value, by dotted path — `'grid.size'` for a leaf under
+   *  an `f.group`, `'cellSize'` for one at the root. */
+  setConfig: (path: ConfigPath<TC>, value: unknown) => void;
   /** labkit persists `view` and restores it on Reset without ever reading
    *  into it. */
   trial: TrialInfo & {

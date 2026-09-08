@@ -1,8 +1,11 @@
 import type { PrefGroup, PrefLeaf } from '@weasel-js/ui';
-import { applyRules, builtinRules } from './rules';
+import { isConfigBranch } from './builder';
+import { applyRules, builtinRules, titleCase } from './rules';
 import type {
+  ConfigEntry,
   ConfigRule,
   ConfigSchema,
+  ConfigShape,
   ControlRenderer,
   LeafPatch,
   ResolvedConfig,
@@ -17,59 +20,91 @@ function defined(annotations: Record<string, unknown>): LeafPatch {
   return out as LeafPatch;
 }
 
+/** What the walk collects on the side of the `PrefGroup` tree. */
+interface Sink {
+  sections: SectionSpec[];
+  showIf: Map<string, (config: Record<string, unknown>) => boolean>;
+  renderers: Record<string, ControlRenderer>;
+  chain: readonly ConfigRule[];
+}
+
 /**
  * Resolve a schema into the vocabulary weasel-ui renders, running each leaf
  * through the consumer's rules and then labkit's own.
  *
- * The group is flat — every leaf is a direct child — so a leaf's path is its
- * config key and both `ControlPanel` and `PrefsForm` address it identically.
+ * The group mirrors the schema's own nesting: an `f.group` becomes a nested
+ * `PrefGroup`, so a leaf's dotted path within the tree is the path its value
+ * is written at, and both `ControlPanel` and `PrefsForm` address it
+ * identically.
  */
 export function resolveConfigSchema<TC>(
   schema: ConfigSchema<TC>,
   rules: readonly ConfigRule[] = [],
 ): ResolvedConfig {
-  const children: Record<string, PrefLeaf> = {};
-  const sectionOrder: string[] = [];
-  const sectionPaths = new Map<string, string[]>();
-  const sectionCollapsed = new Map<string, boolean>();
-  const showIf = new Map<string, (config: Record<string, unknown>) => boolean>();
-  const renderers: Record<string, ControlRenderer> = {};
+  const sink: Sink = {
+    sections: [],
+    showIf: new Map(),
+    renderers: {},
+    chain: [...rules, ...builtinRules],
+  };
+  const group = resolveShape(schema.nodes, '', '', sink);
+  return { group, sections: sink.sections, showIf: sink.showIf, renderers: sink.renderers };
+}
 
-  const chain = [...rules, ...builtinRules];
+/** A section while it is still being filled. */
+type OpenSection = Omit<SectionSpec, 'paths'> & { paths: string[] };
 
-  for (const [key, node] of Object.entries(schema.nodes)) {
-    const seed: LeafPatch = defined({
-      ...node.annotations,
-      ...(node.kind === null ? {} : { kind: node.kind }),
-    });
+function resolveShape(shape: ConfigShape, at: string, name: string, sink: Sink): PrefGroup {
+  const children: Record<string, PrefLeaf | PrefGroup> = {};
+  const sections = new Map<string, OpenSection>();
 
-    const patch = applyRules(seed, { key, path: key, default: node.default }, chain);
-    children[key] = { ...patch, default: node.default } as PrefLeaf;
+  for (const [key, entry] of Object.entries(shape)) {
+    const path = at === '' ? key : `${at}.${key}`;
+    children[key] = resolveEntry(entry, key, path, sink);
 
-    const { section, showIf: predicate, render } = node.options;
+    const { section, showIf: predicate } = entry.options;
     if (section !== undefined) {
-      const { label, collapsed } = section;
-      if (!sectionPaths.has(label)) {
-        sectionOrder.push(label);
-        sectionPaths.set(label, []);
+      let spec = sections.get(section.label);
+      if (!spec) {
+        spec = { at, label: section.label, paths: [] };
+        sections.set(section.label, spec);
+        sink.sections.push(spec);
       }
-      sectionPaths.get(label)?.push(key);
-      // One leaf saying `collapsed` settles the section, so a schema does not
-      // have to repeat it on every leaf under the heading.
-      if (collapsed !== undefined) {
-        sectionCollapsed.set(label, (sectionCollapsed.get(label) ?? false) || collapsed);
+      spec.paths.push(path);
+      // One node saying `collapsed` settles the section, so a schema does not
+      // have to repeat it on every node under the heading.
+      if (section.collapsed !== undefined) {
+        spec.collapsed = (spec.collapsed ?? false) || section.collapsed;
       }
     }
-    if (predicate) showIf.set(key, predicate);
-    if (render) renderers[key] = render;
+    if (predicate) sink.showIf.set(path, predicate);
+    if (!isConfigBranch(entry) && entry.options.render) sink.renderers[path] = entry.options.render;
   }
 
-  const group: PrefGroup = { name: '', children };
-  const sections: SectionSpec[] = sectionOrder.map((label) => ({
-    label,
-    paths: sectionPaths.get(label) ?? [],
-    ...(sectionCollapsed.has(label) ? { collapsed: sectionCollapsed.get(label) } : {}),
-  }));
+  return { name, children };
+}
 
-  return { group, sections, showIf, renderers };
+function resolveEntry(
+  entry: ConfigEntry,
+  key: string,
+  path: string,
+  sink: Sink,
+): PrefLeaf | PrefGroup {
+  if (isConfigBranch(entry)) {
+    const group = resolveShape(
+      entry.children,
+      path,
+      entry.annotations.name ?? titleCase(key),
+      sink,
+    );
+    return entry.annotations.description === undefined
+      ? group
+      : { ...group, description: entry.annotations.description };
+  }
+  const seed: LeafPatch = defined({
+    ...entry.annotations,
+    ...(entry.kind === null ? {} : { kind: entry.kind }),
+  });
+  const patch = applyRules(seed, { key, path, default: entry.default }, sink.chain);
+  return { ...patch, default: entry.default } as PrefLeaf;
 }

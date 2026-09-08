@@ -511,3 +511,87 @@ describe('<ControlPanel> collapsible sections', () => {
     });
   });
 });
+
+describe('<ControlPanel> nested groups', () => {
+  const nested = () =>
+    resolveConfigSchema(
+      f.schema({
+        showGrid: f.boolean(true),
+        grid: f.group({ size: f.number(20).label('Cell size'), color: f.color('#ffffff') }),
+      }),
+      [],
+    );
+
+  it('renders a nested group under its own heading', () => {
+    render(
+      <ControlPanel
+        schema={nested()}
+        config={{ showGrid: true, grid: { size: 20, color: '#ffffff' } }}
+        setConfig={vi.fn()}
+      />,
+    );
+    const group = screen.getByRole('heading', { name: 'Grid' }).parentElement;
+    expect(group?.textContent).toContain('Cell size');
+  });
+
+  it('reads a nested leaf value out of the config tree', () => {
+    render(
+      <ControlPanel
+        schema={nested()}
+        config={{ showGrid: true, grid: { size: 44, color: '#ffffff' } }}
+        setConfig={vi.fn()}
+      />,
+    );
+    expect((screen.getByLabelText('Cell size') as HTMLInputElement).value).toBe('44');
+  });
+
+  it('falls back to the leaf default when the branch is missing', () => {
+    render(<ControlPanel schema={nested()} config={{ showGrid: true }} setConfig={vi.fn()} />);
+    expect((screen.getByLabelText('Cell size') as HTMLInputElement).value).toBe('20');
+  });
+
+  it('writes back with the full dotted path', () => {
+    const setConfig = vi.fn();
+    render(
+      <ControlPanel
+        schema={nested()}
+        config={{ showGrid: true, grid: { size: 20, color: '#ffffff' } }}
+        setConfig={setConfig}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText('Cell size'), { target: { value: '40' } });
+    expect(setConfig).toHaveBeenCalledWith('grid.size', 40);
+  });
+
+  it('hides a whole group whose showIf is false', () => {
+    const schema = resolveConfigSchema(
+      f.schema({
+        showGrid: f.boolean(true),
+        grid: f.group({ size: f.number(20).label('Cell size') }).showIf((c) => c.showGrid === true),
+      }),
+      [],
+    );
+    render(
+      <ControlPanel
+        schema={schema}
+        config={{ showGrid: false, grid: { size: 20 } }}
+        setConfig={vi.fn()}
+      />,
+    );
+    expect(screen.queryByLabelText('Cell size')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Grid' })).not.toBeInTheDocument();
+  });
+
+  it('takes a renderer keyed by the nested path', () => {
+    const schema = nested();
+    render(
+      <ControlPanel
+        schema={schema}
+        config={{ showGrid: true, grid: { size: 44, color: '#ffffff' } }}
+        setConfig={vi.fn()}
+        renderers={{ 'grid.size': (ctx) => <span>size:{String(ctx.value)}</span> }}
+      />,
+    );
+    expect(screen.getByText('size:44')).toBeInTheDocument();
+  });
+});

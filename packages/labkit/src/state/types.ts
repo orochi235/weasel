@@ -1,3 +1,4 @@
+import type { ConfigPath, ValueAtPath } from '../config/types';
 import type { UndockedPanels } from './undock';
 /** A trial's undo history, as snapshots of its state either side of the
  *  present. */
@@ -95,7 +96,9 @@ export interface TrialStateHandle<TS, TC> {
   state: TS;
   setState: (next: TS | ((prev: TS) => TS)) => void;
   config: TC;
-  setConfig: (key: keyof TC, value: TC[keyof TC]) => void;
+  /** Write one config value, by dotted path — `'grid.size'` for a leaf under
+   *  an `f.group`, `'cellSize'` for one at the root. */
+  setConfig: <P extends ConfigPath<TC> & string>(path: P, value: ValueAtPath<TC, P>) => void;
 }
 
 /** Options for `createLabStore`. `storageKey` namespaces the keys written, so
@@ -104,6 +107,12 @@ export interface CreateLabStoreOptions {
   storageKey: string;
   storage: StorageAdapter;
   initialMode?: LabMode;
+  /** Each instrument's default config, keyed by instrument name, used to fill
+   *  the gaps in a stored one. A config saved before its schema grew a branch
+   *  arrives holding that branch's defaults rather than `undefined`, and keeps
+   *  whatever keys the schema has since stopped naming. `<Lab>` collects these
+   *  off its `instruments`. */
+  configDefaults?: Record<string, () => unknown>;
   /** How each instrument's state survives a reload. Hydration is the first
    *  thing `createLabStore` does, so these have to arrive with the store —
    *  anything registered afterwards is already too late to read the document

@@ -1,3 +1,4 @@
+import type { PrefGroup } from '@weasel-js/ui';
 import { describe, expect, it } from 'vitest';
 import { f } from './builder';
 import { resolveConfigSchema } from './resolve';
@@ -88,8 +89,8 @@ describe('resolveConfigSchema', () => {
       [],
     );
     expect(r.sections).toEqual([
-      { label: 'Two', paths: ['b', 'c'] },
-      { label: 'One', paths: ['a'] },
+      { at: '', label: 'Two', paths: ['b', 'c'] },
+      { at: '', label: 'One', paths: ['a'] },
     ]);
   });
 
@@ -103,8 +104,8 @@ describe('resolveConfigSchema', () => {
       [],
     );
     expect(r.sections).toEqual([
-      { label: 'Advanced', paths: ['a', 'b'], collapsed: true },
-      { label: 'Plain', paths: ['c'] },
+      { at: '', label: 'Advanced', paths: ['a', 'b'], collapsed: true },
+      { at: '', label: 'Plain', paths: ['c'] },
     ]);
   });
 
@@ -130,5 +131,80 @@ describe('resolveConfigSchema', () => {
   it('preserves declaration order', () => {
     const r = resolveConfigSchema(f.schema({ z: f.number(1), a: f.number(1) }), []);
     expect(Object.keys(r.group.children)).toEqual(['z', 'a']);
+  });
+});
+
+describe('resolveConfigSchema / nested groups', () => {
+  const nested = () =>
+    resolveConfigSchema(
+      f.schema({
+        showGrid: f.boolean(true),
+        grid: f
+          .group({
+            size: f.number(20).range(5, 80),
+            color: f.color('#ffffff').showIf((c) => c.showGrid === true),
+          })
+          .label('Grid'),
+      }),
+      [],
+    );
+
+  it('emits a nested PrefGroup, not a flattened child', () => {
+    const r = nested();
+    const grid = r.group.children.grid as PrefGroup;
+    expect('children' in grid).toBe(true);
+    expect(Object.keys(grid.children)).toEqual(['size', 'color']);
+    expect(grid.name).toBe('Grid');
+  });
+
+  it('titleCases a group with no label', () => {
+    const r = resolveConfigSchema(f.schema({ gridStyle: f.group({ a: f.number(1) }) }), []);
+    expect((r.group.children.gridStyle as PrefGroup).name).toBe('Grid style');
+  });
+
+  it('runs the rule chain on a nested leaf, keyed by its own segment', () => {
+    const r = nested();
+    const grid = r.group.children.grid as PrefGroup;
+    const size = grid.children.size as unknown as Record<string, unknown>;
+    expect(size.name).toBe('Size');
+    expect(size.control).toBe('slider');
+  });
+
+  it('gives a rule the full dotted path alongside the key', () => {
+    const seen: { key: string; path: string }[] = [];
+    const spy: ConfigRule = (ctx) => {
+      seen.push({ key: ctx.key, path: ctx.path });
+      return null;
+    };
+    resolveConfigSchema(f.schema({ grid: f.group({ size: f.number(1) }) }), [spy]);
+    expect(seen).toContainEqual({ key: 'size', path: 'grid.size' });
+  });
+
+  it('keys showIf and renderers by the full dotted path', () => {
+    const r = nested();
+    expect(r.showIf.get('grid.color')?.({ showGrid: false })).toBe(false);
+    expect(r.showIf.get('color')).toBeUndefined();
+  });
+
+  it('a section inside a group buckets the children of that group', () => {
+    const r = resolveConfigSchema(
+      f.schema({
+        top: f.number(1).section('Outer'),
+        grid: f.group({ size: f.number(1).section('Inner'), color: f.color('#fff') }),
+      }),
+      [],
+    );
+    expect(r.sections).toEqual([
+      { at: '', label: 'Outer', paths: ['top'] },
+      { at: 'grid', label: 'Inner', paths: ['grid.size'] },
+    ]);
+  });
+
+  it('a group can itself sit under a section heading', () => {
+    const r = resolveConfigSchema(
+      f.schema({ grid: f.group({ size: f.number(1) }).section('Advanced') }),
+      [],
+    );
+    expect(r.sections).toEqual([{ at: '', label: 'Advanced', paths: ['grid'] }]);
   });
 });

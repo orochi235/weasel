@@ -11,7 +11,7 @@ import {
 import { useStore } from 'zustand/react';
 import type { TrialContribution } from '../chrome/types';
 import type { ConfigRule, ControlRenderer } from '../config/types';
-import { serializersOf } from '../instrument/serializers';
+import { configDefaultsOf, serializersOf } from '../instrument/serializers';
 import type { InstrumentList } from '../instrument/types';
 import { noneAdapter } from '../state/adapters';
 import { LabStoreContext } from '../state/context';
@@ -86,6 +86,7 @@ function buildStore(
     storage,
     initialMode,
     serializers: serializersOf(instruments),
+    configDefaults: configDefaultsOf(instruments),
   });
   if (store.getState().trials.length === 0) {
     const seeded = addTrialOp([], instruments, defaultInstrument);

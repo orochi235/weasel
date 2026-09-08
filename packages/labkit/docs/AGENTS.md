@@ -40,6 +40,7 @@ A map of the library so agents can find what they need quickly.
 | Config builder (`f.schema`, `f.number`, ...) | `src/config/builder.ts` |
 | Rule chain + labkit's own inference | `src/config/rules.ts` |
 | Schema -> weasel-ui `PrefGroup` | `src/config/resolve.ts` |
+| Config paths (read, write, fill defaults) | `src/config/path.ts` |
 | Legacy `ConfigField[]` adapter | `src/config/fromConfigField.ts` |
 | Config schema validator | `src/instrument/validateConfigSchema.ts` |
 | Config field types (`ConfigField`, deprecated) | `src/controls/types.ts` |

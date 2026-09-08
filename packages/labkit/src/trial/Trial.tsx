@@ -239,11 +239,11 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
       updateTrialState(record.id, next);
       bus.emit('state.change');
     },
-    setConfig: (key, value) => {
-      const evt = `config.change:${String(key)}`;
+    setConfig: (path, value) => {
+      const evt = `config.change:${path}`;
       snapshotIfNeeded('config.change');
       snapshotIfNeeded(evt);
-      updateTrialConfig(record.id, key as never, value as never);
+      updateTrialConfig(record.id, path, value);
       bus.emit('config.change');
       bus.emit(evt);
     },

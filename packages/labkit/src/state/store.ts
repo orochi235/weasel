@@ -1,4 +1,5 @@
 import { createStore, type StoreApi } from 'zustand/vanilla';
+import { fillConfigDefaults, withValueAtPath } from '../config/path';
 import {
   CURRENT_DOCUMENT_VERSION,
   deleteLegacyKeys,
@@ -31,7 +32,9 @@ export interface LabStoreActions {
   addTrial: (record: Omit<TrialRecord, 'undoStack'>) => void;
   removeTrial: (id: string) => void;
   updateTrialState: <TS>(id: string, next: TS | ((prev: TS) => TS)) => void;
-  updateTrialConfig: <TC>(id: string, key: keyof TC, value: TC[keyof TC]) => void;
+  /** Write one config value. `path` is dotted for a value nested under an
+   *  `f.group`, and the bare key for one at the root. */
+  updateTrialConfig: (id: string, path: string, value: unknown) => void;
   updateTrialView: (id: string, view: unknown) => void;
   updateTrialSidebarWidth: (id: string, width: number) => void;
   /** Retitle a trial. `null` returns it to its instrument's name. */
@@ -74,8 +77,20 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
   // Cleared once the legacy keys are actually gone; see the flush.
   let foldedFromLegacy = hydration.foldedFromLegacy;
 
-  const hydratedTrials = deserializeTrials(hydrated.trials, serializers);
-  const hydratedSnapshots = hydrated.saves;
+  const configDefaults = options.configDefaults ?? {};
+  const filled = (instrumentName: string, config: unknown): unknown => {
+    const defaults = configDefaults[instrumentName];
+    return defaults ? fillConfigDefaults(config, defaults()) : config;
+  };
+
+  const hydratedTrials = deserializeTrials(
+    hydrated.trials.map((t) => ({ ...t, config: filled(t.instrumentName, t.config) })),
+    serializers,
+  );
+  const hydratedSnapshots = hydrated.saves.map((sn) => ({
+    ...sn,
+    config: filled(sn.instrumentName, sn.config),
+  }));
   const hydratedLayout = hydrated.layout;
   const hydratedMode = hydrated.mode;
 
@@ -118,15 +133,11 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
       scheduleFlush();
     },
 
-    updateTrialConfig: (id, key, value) => {
+    updateTrialConfig: (id, path, value) => {
       set((s) => ({
-        trials: s.trials.map((w) => {
-          if (w.id !== id) return w;
-          return {
-            ...w,
-            config: { ...(w.config as Record<string, unknown>), [key as string]: value },
-          };
-        }),
+        trials: s.trials.map((w) =>
+          w.id === id ? { ...w, config: withValueAtPath(w.config, path, value) } : w,
+        ),
       }));
       scheduleFlush();
     },

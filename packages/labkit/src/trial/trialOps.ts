@@ -1,3 +1,4 @@
+import { fillConfigDefaults } from '../config/path';
 import type { Instrument, InstrumentList } from '../instrument/types';
 import type { TrialRecord } from '../state/types';
 
@@ -27,15 +28,10 @@ export interface AddTrialOptions<TC = Record<string, unknown>> {
   config?: Partial<TC>;
 }
 
-/** `defaultConfig()` with `seed` written over it. Config is flat — a leaf's
- *  path is its config key — so this is the whole merge. */
+/** `defaultConfig()` with `seed` written over it, down the tree: a seed naming
+ *  one leaf of a group leaves that group's other leaves at their defaults. */
 function seedConfig<TC>(defaults: TC, seed: Partial<TC> | undefined): TC {
-  if (!seed) return defaults;
-  const out = { ...defaults };
-  for (const [key, value] of Object.entries(seed)) {
-    if (value !== undefined) (out as Record<string, unknown>)[key] = value;
-  }
-  return out;
+  return seed ? fillConfigDefaults(seed, defaults) : defaults;
 }
 
 /** Append a new trial running `instrumentName`, at that instrument's default
