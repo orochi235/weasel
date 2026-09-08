@@ -35,7 +35,7 @@ Priority tags:
 **Selection, actions & UI panels**
 - Two implementations of an editable curve; the timeline built the second → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit's loupe drives itself with plain listeners, not bindings → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- labkit: nested config values — `f.schema` is flat because `setConfig` is → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- An instrument that renames a config key has no way to move the stored value → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - A `paint` leaf in `PrefsForm` degrades a gradient to a solid → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - No control parses a typed unit, and the conversion tables answer only grid snapping → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - `LabShell` is the only thing that applies labkit's style scope → [Selection, actions & UI panels](#selection-actions--ui-panels)
@@ -1193,13 +1193,18 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   below that it will overflow. Fixing it properly means changing how `ZoomControl` sizes its
   slider.
 
-- **(P2) labkit: nested config values.** `f.schema` emits a flat `PrefGroup` —
-  every leaf a direct child, so a leaf's path is its config key and both
-  `ControlPanel` and weasel-ui's `PrefsForm` address it identically. `.section()`
-  buckets leaves under a heading without nesting the value. Real nesting needs
-  path writes through `setConfig` / `updateTrialConfig` (both flat today),
-  `onConfigChange` diffing over a tree, and a storage migration. `PrefGroup`
-  already nests, so the vocabulary is not the blocker.
+- **(P2) An instrument that renames a config key has no way to move the stored
+  value.** Nesting landed — `f.group` makes a branch, paths are dotted, and a
+  config stored before a branch existed loads because `createLabStore` fills it
+  from the instrument's defaults. Filling makes an old config *load*; it cannot
+  *move* a value, so renaming `gridSize` to `grid.size` leaves the old key
+  preserved and the new one at its default. What is missing is a per-instrument
+  `migrateConfig(stored) => TC`, run on hydration ahead of the fill.
+
+- **(P3) A config group's `.describe()` reaches `PrefsForm` and not
+  `ControlPanel`.** `PropertyGroup` has no description slot, and its heading
+  sits in a two-column grid with nowhere obvious to put a paragraph. Wants a
+  browser to decide the shape, not a guess.
 
 - **(P3) `ControlPanel` ignores three `Pref*` presentation fields.** `control:
   'switch'` draws a checkbox and `control: 'radio'` draws a segmented
