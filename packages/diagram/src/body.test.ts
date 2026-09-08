@@ -41,6 +41,14 @@ describe('measureBody', () => {
     expect(measureBody(spec([{ kind: 'slot', height: 33 }]), measure).minHeight).toBe(33);
   });
 
+  it('grows the floor so a shape that does not fill its box still fits', () => {
+    const rows: BodySpec['rows'] = [{ kind: 'label', text: 'abcdef' }];
+    const rect = measureBody(spec(rows), measure);
+    const diamond = measureBody(spec(rows, { outline: 'diamond' }), measure);
+    expect(diamond.minWidth).toBe(rect.minWidth * 2);
+    expect(diamond.minHeight).toBe(rect.minHeight * 2);
+  });
+
   it('is empty for a body with no rows', () => {
     expect(measureBody(spec([]), measure)).toEqual({ minWidth: 0, minHeight: 0 });
   });
@@ -108,6 +116,17 @@ describe('layoutBody', () => {
     const boxes = layoutBody(spec(rows), BOUNDS, measure);
     expect(boxes.map((b) => b.index)).toEqual([0, 1]);
     expect(boxes[1]!.row).toBe(rows[1]);
+  });
+
+  it('insets rows to the shape, not to the bounding box', () => {
+    // A diamond's inscribed rect is the middle quarter; a row placed against
+    // the bounding box lands outside the diamond and the silhouette clips it
+    // away, which reads as "the label vanished".
+    const boxes = layoutBody(spec([{ kind: 'label', text: 'a' }], { outline: 'diamond' }),
+      { x: 0, y: 0, width: 200, height: 100 }, measure);
+    expect(boxes[0]!.x).toBe(50);
+    expect(boxes[0]!.y).toBe(25);
+    expect(boxes[0]!.width).toBe(100);
   });
 
   it('claims no width from a box narrower than its padding', () => {

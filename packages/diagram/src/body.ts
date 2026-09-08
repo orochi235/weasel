@@ -14,7 +14,7 @@
  * context, which a geometry module has no business owning. `canvasMeasure`
  * adapts the kit's own `measureText` for a caller that has one.
  */
-import { outlinePath, type Bounds, type Outline } from './outline';
+import { boxForContent, contentBox, outlinePath, type Bounds, type Outline } from './outline';
 import { COMPASS } from './ports';
 import type { DiagramNode, PortSpec } from './types';
 
@@ -135,7 +135,13 @@ export function measureBody(spec: BodySpec, measure?: MeasureRowText): BodyFloor
     width = Math.max(width, m.width);
     height += m.height + (i > 0 ? gap : 0);
   }
-  return { minWidth: width + padding * 2, minHeight: height + padding * 2 };
+  // The rows fit the *content* box; the node's own box has to be whatever
+  // contains that, or a diamond's label lands outside the diamond.
+  const box = boxForContent(spec.outline, {
+    width: width + padding * 2,
+    height: height + padding * 2,
+  });
+  return { minWidth: box.width, minHeight: box.height };
 }
 
 /**
@@ -160,11 +166,12 @@ export function layoutBody(
 ): RowBox[] {
   const padding = spec.padding ?? DEFAULT_PADDING;
   const gap = spec.gap ?? DEFAULT_GAP;
-  const width = Math.max(bounds.width - padding * 2, 0);
-  let y = bounds.y + padding;
+  const inner = contentBox(spec.outline, bounds);
+  const width = Math.max(inner.width - padding * 2, 0);
+  let y = inner.y + padding;
   return spec.rows.map((row, index) => {
     const h = measureRow(row, measure).height;
-    const box: RowBox = { row, index, x: bounds.x + padding, y, width, height: h };
+    const box: RowBox = { row, index, x: inner.x + padding, y, width, height: h };
     y += h + gap;
     return box;
   });
@@ -179,13 +186,14 @@ export function layoutBody(
  * resized — which is the whole reason `PortAnchor` is normalized.
  */
 export function bodyTrait(spec: BodySpec, bounds: Bounds, measure?: MeasureRowText): DiagramNode {
+  const outline = spec.outline;
   const ports: PortSpec[] = [
     { id: 'n', at: COMPASS.n },
     { id: 'e', at: COMPASS.e },
     { id: 's', at: COMPASS.s },
     { id: 'w', at: COMPASS.w },
   ];
-  if (bounds.height <= 0) return { ports };
+  if (bounds.height <= 0) return { outline, ports };
 
   for (const box of layoutBody(spec, bounds, measure)) {
     if (box.row.kind !== 'ports') continue;
@@ -197,7 +205,7 @@ export function bodyTrait(spec: BodySpec, bounds: Bounds, measure?: MeasureRowTe
       ports.push(withType({ id: p.id, at: { u: 1, v } }, p.type));
     }
   }
-  return { ports };
+  return { outline, ports };
 }
 
 function withType(spec: PortSpec, type: string | undefined): PortSpec {

@@ -30,6 +30,19 @@ a node, nothing shrinks one back — which is what keeps resize, align,
 distribute, guides, snapping and undo free of a special case. Text measurement
 is a seam rather than an import; `canvasMeasure` adapts a 2D context.
 
+Rows lay out in the shape's **content box**, not its bounding box.
+`contentBox` reports the largest axis-aligned box inside an outline — a
+diamond's inscribed rect, a parallelogram minus its lean, the flat span between
+a stadium's ends — and `boxForContent` inverts it so the floor grows to suit.
+Without it a diamond's label is placed against the bounding box, lands outside
+the diamond, and the silhouette clip removes it: the label simply vanishes.
+
+`registerDiagramShape` paints a node whose trait names an outline, and reports
+the outline as its silhouette so picking and clipping follow the diamond rather
+than its box. Rows are not painted there — a built body's rows are ordinary
+scene nodes, so the kit's own text painter draws them and text editing,
+selection and styling work on them unchanged.
+
 Core exports `AUTO_POSE_DESCRIPTOR` and `isPathLike`, which were already
 general-purpose but reachable only from inside the package. A peer package
 computing a node's bounds needs the kit's own default descriptor rather than a

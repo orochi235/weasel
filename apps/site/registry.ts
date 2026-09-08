@@ -557,6 +557,15 @@ const DEMO_META: DemoMeta[] = [
 
   // ─── weasel-hud ───────────────────────────────────────────────────────────
   {
+    id: 'diagram-nodes',
+    title: 'Diagram nodes and ports',
+    category: 'weasel-diagram',
+    description: "Any scene node becomes a diagram participant by carrying the DiagramNode trait. Each box here is a container whose trait names an outline — stadium, diamond, rect, parallelogram — painted by registerDiagramShape, with its rows as ordinary child text nodes so the kit's own text painter draws them. The body measures a floor and the authored pose is grown to clear it, never set to it, so resize and align need no special case. Orange squares are the ports: four perimeter anchors by default, plus one per port-row entry anchored to its own row. They are painted and not yet grabbable — the connect gesture lands with edges in the next arc.",
+    hint: 'Drag a box: its ports move with it, because portsOf resolves against the pose the node is painted at rather than the one the document stores.',
+    load: () => import('./demos/DiagramNodesDemo').then((m) => m.DiagramNodesDemo),
+    path: 'apps/site/demos/DiagramNodesDemo.tsx',
+  },
+  {
     id: 'hud',
     title: 'HUD widgets',
     category: 'weasel-hud',

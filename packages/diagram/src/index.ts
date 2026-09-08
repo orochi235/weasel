@@ -23,7 +23,9 @@ export type {
   RowPort,
   RowTextStyle,
 } from './body';
-export { outlinePath } from './outline';
+export { boxForContent, contentBox, outlinePath } from './outline';
+export { diagramShape, registerDiagramShape } from './shape';
+export type { DiagramShapeOptions } from './shape';
 export type { Bounds, Outline } from './outline';
 export { COMPASS, DEFAULT_PORTS, portOf, portsOf } from './ports';
 export type { PortsOptions } from './ports';

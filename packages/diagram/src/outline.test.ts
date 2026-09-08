@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { boundsOfPath, rectPath } from '@weasel-js/core';
-import { outlinePath, type Bounds } from './outline';
+import { boxForContent, contentBox, outlinePath, type Bounds } from './outline';
 
 const BOX: Bounds = { x: 10, y: 20, width: 100, height: 40 };
 
@@ -82,4 +82,44 @@ describe('outlinePath', () => {
     expect(Math.min(...xs)).toBeCloseTo(0, 3);
     expect(Math.max(...xs)).toBeCloseTo(40, 3);
   });
+});
+
+describe('contentBox', () => {
+  it('is the bounds themselves for a rect', () => {
+    expect(contentBox('rect', BOX)).toEqual(BOX);
+  });
+
+  it("is a diamond's inscribed rect — the middle quarter", () => {
+    expect(contentBox('diamond', { x: 0, y: 0, width: 200, height: 100 }))
+      .toEqual({ x: 50, y: 25, width: 100, height: 50 });
+  });
+
+  it("gives up a parallelogram's lean on both sides", () => {
+    expect(contentBox('parallelogram', { x: 0, y: 0, width: 100, height: 40 }))
+      .toEqual({ x: 20, y: 0, width: 60, height: 40 });
+  });
+
+  it("is the flat span between a wide stadium's ends", () => {
+    expect(contentBox('stadium', { x: 0, y: 0, width: 100, height: 40 }))
+      .toEqual({ x: 20, y: 0, width: 60, height: 40 });
+  });
+
+  it('turns with a tall stadium', () => {
+    expect(contentBox('stadium', { x: 0, y: 0, width: 40, height: 100 }))
+      .toEqual({ x: 0, y: 20, width: 40, height: 60 });
+  });
+
+  it('takes a custom path at its bounds, having no shape opinion to offer', () => {
+    expect(contentBox(rectPath(0, 0, 1, 1), BOX)).toEqual(BOX);
+  });
+
+  for (const outline of ['rect', 'diamond', 'parallelogram'] as const) {
+    it(`boxForContent inverts contentBox for a ${outline}`, () => {
+      const want = { width: 60, height: 40 };
+      const box = boxForContent(outline, want);
+      const got = contentBox(outline, { x: 0, y: 0, ...box });
+      expect(got.width).toBeCloseTo(want.width, 6);
+      expect(got.height).toBeCloseTo(want.height, 6);
+    });
+  }
 });

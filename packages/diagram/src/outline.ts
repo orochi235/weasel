@@ -105,3 +105,60 @@ function stadiumPath(x: number, y: number, w: number, h: number): Path {
     .close()
     .build();
 }
+
+/**
+ * The largest axis-aligned box a shape's content can occupy without leaving
+ * the shape. Rows lay out in here, not in the bounds — a diamond's corners and
+ * a parallelogram's lean are outside its own box, and a label placed against
+ * the bounding box lands there and gets clipped away by the silhouette.
+ *
+ * Conservative rather than exact: the inscribed rect of a rhombus is exact,
+ * and a stadium reports the flat span between its rounded ends, which gives up
+ * a little height near them.
+ */
+export function contentBox(outline: Outline, bounds: Bounds): Bounds {
+  if (typeof outline !== 'string') return bounds;
+  const { x, y, width: w, height: h } = bounds;
+  switch (outline) {
+    case 'rect':
+      return bounds;
+    case 'diamond':
+      // Half the width and half the height, centered — the inscribed rect.
+      return { x: x + w / 4, y: y + h / 4, width: w / 2, height: h / 2 };
+    case 'parallelogram': {
+      const lean = Math.min(w * LEAN, w / 2);
+      return { x: x + lean, y, width: Math.max(w - lean * 2, 0), height: h };
+    }
+    case 'stadium': {
+      const r = Math.min(w, h) / 2;
+      return w >= h
+        ? { x: x + r, y, width: Math.max(w - r * 2, 0), height: h }
+        : { x, y: y + r, width: w, height: Math.max(h - r * 2, 0) };
+    }
+  }
+}
+
+/**
+ * The box whose {@link contentBox} is at least `content` — the inverse, for
+ * sizing a node to what its rows measured.
+ *
+ * The stadium case is the only inexact one: its inset depends on the height it
+ * is solving for, so it assumes the wide orientation and adds one height's
+ * worth of end caps.
+ */
+export function boxForContent(
+  outline: Outline,
+  content: { width: number; height: number },
+): { width: number; height: number } {
+  if (typeof outline !== 'string') return content;
+  switch (outline) {
+    case 'rect':
+      return content;
+    case 'diamond':
+      return { width: content.width * 2, height: content.height * 2 };
+    case 'parallelogram':
+      return { width: content.width / (1 - LEAN * 2), height: content.height };
+    case 'stadium':
+      return { width: content.width + content.height, height: content.height };
+  }
+}

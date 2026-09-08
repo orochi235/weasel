@@ -1,4 +1,5 @@
 import type { Vec2 } from '@weasel-js/core';
+import type { Outline } from './outline';
 
 /**
  * Where a port sits on its node, in **normalized bounds coordinates**:
@@ -40,6 +41,10 @@ export interface DiagramNode {
   ports?: readonly PortSpec[];
   /** Layout must not move this node. */
   pinned?: boolean;
+  /** What the node is *drawn* as. Present on a built body; absent on a
+   *  participant that already had a look of its own — a text block, an image,
+   *  a path — which keeps whatever painter it already matched. */
+  outline?: Outline;
 }
 
 /** A port resolved against a node's current pose: where it is in world
