@@ -206,6 +206,18 @@ describe('kit:text painter — rich runs', () => {
       expect(text.runs.map((r) => r.fill)).toEqual([solid('#7fb069'), solid('#d4a574')]);
     });
 
+    it('forwards data.verticalAlign onto the command, alongside the box height', () => {
+      const [cmd] = paintText({ text: 'hi', verticalAlign: 'center' });
+      const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
+      expect(text.verticalAlign).toBe('center');
+      expect(text.height).toBe(pose.height);
+    });
+
+    it('leaves verticalAlign unset when the node does not name one', () => {
+      const [cmd] = paintText({ text: 'hi' });
+      expect((cmd as Extract<DrawCommand, { kind: 'text' }>).verticalAlign).toBeUndefined();
+    });
+
     it('lifts data.stroke onto the runs whole', () => {
       const stroke = { paint: { color: '#f00' }, width: 3, cap: 'round' as const };
       const [cmd] = paintText({ text: 'hi', stroke });
@@ -309,6 +321,20 @@ describe('kit:text painter — silhouette', () => {
     expect(pathContainsPoint(sil, 5, 5)).toBe(true);   // line 1
     expect(pathContainsPoint(sil, 5, 30)).toBe(true);  // line 2
     expect(pathContainsPoint(sil, 5, 70)).toBe(false); // past the last line
+  });
+
+  // Picking has to follow the paint: a centered glyph that draws halfway down
+  // its box but silhouettes at the top is grabbable off its own ink.
+  it('shifts by the same verticalAlign offset the paint applies', () => {
+    const top = findShapeSilhouette(textNode({ text: 'AB', style: { fontSize: 20 } }), wide) as PolygonPath;
+    const centered = findShapeSilhouette(
+      textNode({ text: 'AB', style: { fontSize: 20 }, verticalAlign: 'center' }),
+      wide,
+    ) as PolygonPath;
+    // The 100-tall box holds one ~24-unit line, so centering drops it ~38 down.
+    expect(centered.coords[1] - top.coords[1]).toBeGreaterThan(20);
+    expect(pathContainsPoint(centered, 5, 5)).toBe(false);
+    expect(pathContainsPoint(centered, 5, 50)).toBe(true);
   });
 
   it('returns null for a node with no visible text, so it stays pickable', () => {

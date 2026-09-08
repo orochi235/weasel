@@ -35,7 +35,7 @@ import type { View } from 'core/viewport/view';
 import type { DrawCommand } from '../renderer';
 import { textCommand, textCommandFromRuns } from 'features/text/textCommand';
 import type { TextStyle } from '@weasel-js/text';
-import type { StyledRun } from '@weasel-js/text';
+import type { StyledRun, TextVerticalAlign } from '@weasel-js/text';
 import { textLineBoxes } from '@weasel-js/text';
 import type { FillStyle, Stroke } from '@weasel-js/paint';
 import { DEFAULT_SHAPE_FILL } from '../util/paint';
@@ -418,6 +418,7 @@ const TEXT_PAINTER: NodeShapeEntry = {
       runs?: readonly StyledRun[];
       fill?: FillStyle | null;
       stroke?: Stroke | null;
+      verticalAlign?: TextVerticalAlign;
     };
     const p = pose as RectPose;
     // `y` is the TOP of the first line box, not a baseline: `layoutRuns`
@@ -431,13 +432,13 @@ const TEXT_PAINTER: NodeShapeEntry = {
     // (`useSceneTextEdit.getScreenPose`), both of which anchor on `pose.y` —
     // so text jumped a full line the moment an edit was committed.
     //
-    // Forward the pose's box height so a future `verticalAlign` opt-in has
-    // something to align within. Default `verticalAlign` is 'top', which
-    // resolves to a zero offset regardless of `height` — so this is a no-op
-    // for every existing kit:text node. `maxWidth` (word-wrap) is
-    // deliberately NOT forwarded: generic kit:text nodes have no data/style
-    // slot for opting into wrap or box vertical-align yet, and forwarding
-    // maxWidth would silently start wrapping consumers' existing text.
+    // The pose's box height and `data.verticalAlign` travel together: the
+    // height is the box the alignment resolves within. Both default to the
+    // 'top' behavior — a zero offset regardless of height — so a node that
+    // names neither paints exactly where it always did. `maxWidth` (word-wrap)
+    // is deliberately NOT forwarded: kit:text has no slot for opting into
+    // wrap, and forwarding maxWidth would silently start wrapping consumers'
+    // existing text.
     //
     // `runs` wins over `text` when present. It is the richer form of the same
     // content — `useTextEdit` commits both, keeping `runsToPlainText(runs)`
@@ -452,8 +453,8 @@ const TEXT_PAINTER: NodeShapeEntry = {
     // rather than throwing once it reaches the renderer.
     const paint = { fill: d.fill, stroke: resolveNodeStroke(d.stroke) ?? undefined };
     return d.runs && d.runs.length > 0
-      ? [textCommandFromRuns(p.x, y, d.runs, d.style, undefined, p.height, undefined, paint)]
-      : [textCommand(p.x, y, d.text, d.style, undefined, p.height, undefined, paint)];
+      ? [textCommandFromRuns(p.x, y, d.runs, d.style, undefined, p.height, d.verticalAlign, paint)]
+      : [textCommand(p.x, y, d.text, d.style, undefined, p.height, d.verticalAlign, paint)];
   }),
   // The pose is a *wrap box*, not a bounding box — "Away" in a 300-unit box
   // leaves most of it empty, and a pose-rect silhouette claims all of it. The
@@ -467,12 +468,21 @@ const TEXT_PAINTER: NodeShapeEntry = {
   // "no silhouette" falls back to the pose rect, which is the behavior an
   // empty box wants.
   silhouette: (node, pose) => {
-    const d = node.data as { text: string; style?: TextStyle; runs?: readonly StyledRun[] };
+    const d = node.data as {
+      text: string;
+      style?: TextStyle;
+      runs?: readonly StyledRun[];
+      verticalAlign?: TextVerticalAlign;
+    };
     const p = pose as RectPose;
     const boxes = textLineBoxes(
       {
         x: p.x, y: p.y, width: p.width, height: p.height,
         text: d.text, runs: d.runs as StyledRun[] | undefined, style: d.style,
+        // `textLineBoxes` applies the same shift `drawText` does, so picking
+        // follows a centered or bottom-aligned block down its box instead of
+        // staying where a top-aligned one would have drawn.
+        verticalAlign: d.verticalAlign,
       },
       { maxWidth: Infinity },
     );

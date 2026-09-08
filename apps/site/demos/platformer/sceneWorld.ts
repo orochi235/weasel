@@ -1,6 +1,8 @@
 // apps/site/demos/platformer/sceneWorld.ts
 import { asNodeId, mat3, resolveSkeleton, solid } from '@weasel-js/core';
-import type { FillStyle, Mat3, NodeId, RectPose, Scene, TextStyle } from '@weasel-js/core';
+import type {
+  FillStyle, Mat3, NodeId, RectPose, Scene, TextStyle, TextVerticalAlign,
+} from '@weasel-js/core';
 import { resolvePose } from './animState';
 import { COIN_R, ENEMY_H, ENEMY_W, type Coin, type Enemy } from './entities';
 import { BALL_R, flagY, POLE_WIDTH, type Flagpole } from './flagpole';
@@ -14,7 +16,7 @@ import { POLE, type GameRefs } from './world';
 export type WorldData =
   | { shape: 'rect' | 'ellipse'; fill: FillStyle }
   | { shape: 'polygon'; fill: FillStyle; sides: number }
-  | { text: string; style: TextStyle; fill: FillStyle };
+  | { text: string; style: TextStyle; fill: FillStyle; verticalAlign?: TextVerticalAlign };
 
 export type WorldLayer = 'tiles' | 'entities' | 'player';
 
@@ -74,11 +76,12 @@ export function tileNodes(level: Level): WorldNodeSpec[] {
       } else if (t === QUESTION) {
         out.push(leaf(id, 'tiles', { x, y, width: TILE, height: TILE }, { shape: 'rect', fill: solid(COLORS.question) }));
         out.push(leaf(`${id}:mark`, 'tiles',
-          { x: x + TILE / 2, y: y + (TILE - QUESTION_FONT) / 2 - QUESTION_FONT * 0.12, width: TILE, height: TILE },
+          { x: x + TILE / 2, y, width: TILE, height: TILE },
           {
             text: '?',
             style: { fontFamily: 'sans-serif', fontSize: QUESTION_FONT, align: 'center' },
             fill: { fill: 'solid', color: COLORS.questionMark },
+            verticalAlign: 'center',
           },
         ));
       } else if (t === SPIKE) {
