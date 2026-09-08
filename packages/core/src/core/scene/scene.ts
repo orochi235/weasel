@@ -18,7 +18,7 @@ import {
   type SceneRegistry,
   type SerializedNode,
   type SerializedScene,
-  type SystemLayerSpec,
+  type SerializedLayer,
   type UseSceneOptions,
   type UserLayerRecord,
 } from './types';
@@ -37,6 +37,21 @@ const defaultGenerateId = (): NodeId =>
 /** Build a scene outside React. `useScene` is the usual entry point; reach for
  *  this in tests, in headless rendering, or wherever a scene must outlive a
  *  component. Throws if no system layers are declared. */
+/** One layer record from its snapshot form. A snapshot with no `kind` predates
+ *  user layers, so everything in it was a system layer. */
+function layerFromSerialized<TLayer extends string>(
+  spec: SerializedLayer<TLayer>,
+): LayerRecord<TLayer> {
+  const base = {
+    id: spec.id,
+    visible: spec.visible ?? true,
+    locked: spec.locked ?? false,
+  };
+  return spec.kind === 'user'
+    ? { ...base, kind: 'user', name: spec.name ?? spec.id }
+    : { ...base, kind: 'system' };
+}
+
 export function createScene<TData, TLayer extends string, TPose = import('../../features/groups/composePose').RectPose>(
   options: UseSceneOptions<TData, TLayer, TPose>,
 ): Scene<TData, TLayer, TPose> {
@@ -1347,9 +1362,13 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         nodes.push(out);
       }
       const systemLayers = state.layers.map((l) => {
-        const layer: SystemLayerSpec<TLayer> = { id: l.id };
+        const layer: SerializedLayer<TLayer> = { id: l.id };
         if (l.visible === false) layer.visible = false;
         if (l.locked === true) layer.locked = true;
+        if (l.kind === 'user') {
+          layer.kind = 'user';
+          layer.name = l.name;
+        }
         return layer;
       });
       return { version: 1, systemLayers, nodes };
@@ -1371,12 +1390,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         if (state.layerIndex.has(spec.id)) {
           throw new Error(`Scene.loadState: duplicate system layer id "${spec.id}"`);
         }
-        state.layers.push({
-          kind: 'system',
-          id: spec.id,
-          visible: spec.visible ?? true,
-          locked: spec.locked ?? false,
-        });
+        state.layers.push(layerFromSerialized(spec));
         state.layerIndex.set(spec.id, i);
       }
       // Clear history + transient batch/clip caches.
@@ -1529,14 +1543,16 @@ export function sceneFromJSON<TData, TLayer extends string, TPose>(
   },
 ): Scene<TData, TLayer, TPose> {
   const registry = options.registry ?? {};
-  const initial = specsFromSerialized(json, registry);
-  return createScene<TData, TLayer, TPose>({
-    systemLayers: json.systemLayers,
-    initial,
+  // Built empty and then loaded, so the snapshot's layer stack is rebuilt by
+  // the one reader that knows how — `createScene` mints system layers only.
+  const scene = createScene<TData, TLayer, TPose>({
+    systemLayers: json.systemLayers.map((l) => ({ id: l.id })),
     registry,
     ...(options.historyLimit !== undefined ? { historyLimit: options.historyLimit } : {}),
     ...(options.coalesceWindowMs !== undefined ? { coalesceWindowMs: options.coalesceWindowMs } : {}),
     ...(options.generateId !== undefined ? { generateId: options.generateId } : {}),
     ...(options.ops !== undefined ? { ops: options.ops } : {}),
   });
+  scene.loadState(json);
+  return scene;
 }

@@ -1607,3 +1607,50 @@ describe('removeMany', () => {
     expect(scene.get(a)).toBeDefined();
   });
 });
+
+describe('user layers survive a round-trip', () => {
+  const baseOpts = () => ({ systemLayers: [{ id: 'base' as const }] });
+  const withUserLayer = () => {
+    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>(baseOpts());
+    scene.addLayer({ id: 'fx', name: 'Effects' });
+    scene.setLayerVisible('fx', false);
+    scene.setLayerLocked('fx', true);
+    return scene;
+  };
+
+  it('loadState restores a user layer as a user layer, with its name', () => {
+    const scene = withUserLayer();
+    const json = scene.toJSON();
+    scene.loadState(json);
+    const fx = scene.layers.find((l) => l.id === 'fx')!;
+    expect(fx.kind).toBe('user');
+    expect(fx.kind === 'user' && fx.name).toBe('Effects');
+    expect(fx.visible).toBe(false);
+    expect(fx.locked).toBe(true);
+  });
+
+  it('sceneFromJSON restores a user layer as a user layer, with its name', () => {
+    const json = withUserLayer().toJSON();
+    const loaded = sceneFromJSON<{ v: number }, 'base' | 'fx', { x: number }>(json, {});
+    const fx = loaded.layers.find((l) => l.id === 'fx')!;
+    expect(fx.kind).toBe('user');
+    expect(fx.kind === 'user' && fx.name).toBe('Effects');
+  });
+
+  it('a restored user layer can still be renamed', () => {
+    const scene = withUserLayer();
+    scene.loadState(scene.toJSON());
+    expect(() => scene.renameLayer('fx', 'Glow')).not.toThrow();
+  });
+
+  it('a snapshot written before layer kind was serialized loads as system layers', () => {
+    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>(baseOpts());
+    scene.loadState({
+      version: 1,
+      systemLayers: [{ id: 'base' }, { id: 'fx', visible: false }],
+      nodes: [],
+    });
+    expect(scene.layers.map((l) => l.kind)).toEqual(['system', 'system']);
+    expect(scene.layers[1].visible).toBe(false);
+  });
+});

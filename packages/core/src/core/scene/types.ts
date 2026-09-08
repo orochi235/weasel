@@ -204,13 +204,25 @@ export interface AddLayerSpec<TLayer extends string> {
   index?: number;
 }
 
+/** One layer as it appears in a snapshot. A snapshot written before layer
+ *  kind was serialized carries neither field, and loads as a system layer —
+ *  which is what every layer in such a snapshot was. */
+export interface SerializedLayer<TLayer extends string>
+  extends SystemLayerSpec<TLayer> {
+  kind?: 'system' | 'user';
+  /** Present on a user layer, absent on a system one. */
+  name?: string;
+}
+
 /** JSON-serializable shape of a Scene's current state. Produced by
  *  `scene.toJSON()`; consumed by `sceneFromJSON()`. Function fields
  *  (e.g., `clipFromPose`) appear as string keys (`clipFromPoseKey`) and
  *  are resolved through `SceneRegistry` at load time. */
 export interface SerializedScene<TData, TLayer extends string, TPose> {
   version: 1;
-  systemLayers: readonly SystemLayerSpec<TLayer>[];
+  /** The whole layer stack, system and user alike — the name predates user
+   *  layers and is kept so existing snapshots still parse. */
+  systemLayers: readonly SerializedLayer<TLayer>[];
   nodes: readonly SerializedNode<TData, TLayer, TPose>[];
 }
 
