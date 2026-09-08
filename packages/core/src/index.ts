@@ -165,7 +165,7 @@ export {
 export type { ClipboardDep } from './interactions/actions/defaults/clipboard';
 export { enterTextEditAction } from './interactions/actions/defaults/enterTextEdit';
 export type { TextEditDep } from './interactions/actions/defaults/enterTextEdit';
-export { useStandardActions } from './interactions/actions/useStandardActions';
+export { useStandardActions, KIT_STANDARD_ACTION_IDS } from './interactions/actions/useStandardActions';
 export type { UseStandardActionsOptions } from './interactions/actions/useStandardActions';
 // Scene-backed op applier for the consumer `applyOps` commit hook — applies a
 // default action's committed ops directly to the scene in its native (local)

@@ -7,7 +7,7 @@ import {
   type Action,
 } from './registry';
 import { DepRegistryProvider, useDepRegistry } from './depRegistry';
-import { useStandardActions } from './useStandardActions';
+import { useStandardActions, KIT_STANDARD_ACTION_IDS } from './useStandardActions';
 import type { UseStandardActionsOptions } from './useStandardActions';
 
 // Import depSchema augmentation so DepSchema entries are typed
@@ -110,6 +110,61 @@ describe('useStandardActions', () => {
       expect(last, `expected "${id}" to be registered`).toContain(id);
     }
     expect(last).toHaveLength(KIT_IDS.length);
+  });
+
+  it('KIT_STANDARD_ACTION_IDS names exactly what the hook registers', () => {
+    const seen: string[][] = [];
+    render(
+      <Providers>
+        <Host />
+        <ProbeIds onIds={(ids) => seen.push(ids)} />
+      </Providers>,
+    );
+    expect([...KIT_STANDARD_ACTION_IDS].sort()).toEqual([...seen.at(-1)!].sort());
+  });
+
+  it('does not register an action named in `exclude`', () => {
+    const seen: string[][] = [];
+    render(
+      <Providers>
+        <Host opts={{ exclude: ['align.left', 'distribute.horizontal'] }} />
+        <ProbeIds onIds={(ids) => seen.push(ids)} />
+      </Providers>,
+    );
+    const last = seen.at(-1)!;
+    expect(last).not.toContain('align.left');
+    expect(last).not.toContain('distribute.horizontal');
+    expect(last).toContain('align.right');
+    expect(last).toHaveLength(KIT_IDS.length - 2);
+  });
+
+  it('an id in `exclude` that names no kit action is ignored', () => {
+    const seen: string[][] = [];
+    render(
+      <Providers>
+        <Host opts={{ exclude: ['nothing.registers.this'] }} />
+        <ProbeIds onIds={(ids) => seen.push(ids)} />
+      </Providers>,
+    );
+    expect(seen.at(-1)!).toHaveLength(KIT_IDS.length);
+  });
+
+  it('re-registers when `exclude` changes between renders', () => {
+    const seen: string[][] = [];
+    const { rerender } = render(
+      <Providers>
+        <Host opts={{ exclude: ['align.left'] }} />
+        <ProbeIds onIds={(ids) => seen.push(ids)} />
+      </Providers>,
+    );
+    expect(seen.at(-1)!).not.toContain('align.left');
+    rerender(
+      <Providers>
+        <Host opts={{ exclude: [] }} />
+        <ProbeIds onIds={(ids) => seen.push(ids)} />
+      </Providers>,
+    );
+    expect(seen.at(-1)!).toContain('align.left');
   });
 
   it('every descriptor gated on `requiresSelection` declares the `selection` dep', () => {

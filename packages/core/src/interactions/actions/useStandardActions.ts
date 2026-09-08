@@ -97,6 +97,12 @@ export interface UseStandardActionsOptions {
   pointer?: DepSchema['pointer'];
   /** Currently active tool id + hotkey-hold stack. */
   activeTool?: DepSchema['activeTool'];
+  /**
+   * Ids of kit-standard actions to leave unregistered, so a consumer can bind
+   * its own. Ids that name no kit action are ignored;
+   * `KIT_STANDARD_ACTION_IDS` is the full list.
+   */
+  exclude?: Iterable<string>;
 }
 
 /**
@@ -171,6 +177,10 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   clipboardCutAction,
 ];
 
+/** Every id `useStandardActions` registers, in registration order. */
+export const KIT_STANDARD_ACTION_IDS: readonly string[] =
+  KIT_STANDARD_DESCRIPTORS.map((a) => a.id);
+
 /**
  * @experimental
  * Register each kit-standard dep source and action descriptor into the
@@ -230,13 +240,19 @@ export function useStandardActions(opts: UseStandardActionsOptions): void {
   const regRef = useRef(reg);
   regRef.current = reg;
 
+  // Joined so a fresh array of the same ids does not re-register every render.
+  const excludeKey = opts.exclude ? [...opts.exclude].join('\u0000') : '';
+
   useEffect(() => {
     if (!reg || !depReg) return;
     // `withLegacyRunBridge` is gone. Kit-standard descriptors
     // register their `invoker` directly. `registry.trigger(id)` reads from the
     // dep registry to build deps when calling `invoker.run` (so ActionBar /
     // palette callers still work without a per-action `run` thunk).
-    const unregisters = KIT_STANDARD_DESCRIPTORS.map((a) => reg.register(a));
+    const excluded = new Set(excludeKey ? excludeKey.split('\u0000') : []);
+    const unregisters = KIT_STANDARD_DESCRIPTORS
+      .filter((a) => !excluded.has(a.id))
+      .map((a) => reg.register(a));
     return () => { for (const u of unregisters) u(); };
-  }, [reg, depReg]);
+  }, [reg, depReg, excludeKey]);
 }
