@@ -82,6 +82,15 @@ If a change is genuinely breaking or genuinely additive, say so in the
 changeset *prose*. The words are what a reader acts on; the number can always
 be raised deliberately later. Don't otherwise discuss the number.
 
+**Don't trust what a publish says it did.** `changeset publish` has twice
+listed a package under "Successfully published" that never reached npm, with no
+error anywhere in the log. `npm run check:published` asks the registry whether
+every workspace's current version is really there, and `npm run
+test:smoke:registry` installs the whole set into an empty tree to catch the
+consumer-facing half — one missing sibling breaks `npm i @weasel-js/core` while
+seventeen versions are perfectly present. Both run in the release workflow after
+the publish; run either by hand to answer "did the last release land?".
+
 ## Package manager
 
 npm is canonical: `package-lock.json` is the committed lockfile and `workspaces` lives in `package.json`. `pnpm install` is fine locally for speed (`.npmrc` has `link-workspace-packages=true` so it resolves the `*` workspace deps), but **never commit `pnpm-lock.yaml`** — it's gitignored on purpose. Don't introduce `pnpm-workspace.yaml`, `preinstall` hooks blocking npm, or `workspace:*` deps without an explicit decision to migrate.

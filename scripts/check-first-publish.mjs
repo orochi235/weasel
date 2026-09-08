@@ -17,29 +17,9 @@
 //
 // This asks the one question that predicts it, before anything ships.
 import { publishableWorkspaces } from './lib/workspaces.mjs';
+import { isPublished, registryBase } from './lib/registry.mjs';
 
-const REGISTRY = process.env.npm_config_registry ?? 'https://registry.npmjs.org';
 const warnOnly = process.argv.includes('--warn');
-
-/**
- * Whether the registry has heard of a package at all.
- *
- * A first publish takes a minute or two to reach the read replicas, so a 404
- * right after one is indistinguishable from a package that was never published.
- * Retrying costs seconds and removes a whole class of false alarm.
- */
-async function isPublished(name, { attempts = 3, delayMs = 4000 } = {}) {
-  const url = `${REGISTRY.replace(/\/$/, '')}/${name.replace('/', '%2f')}`;
-  for (let attempt = 1; ; attempt++) {
-    const res = await fetch(url, { method: 'GET', headers: { accept: 'application/json' } });
-    if (res.status === 200) return true;
-    if (res.status !== 404) {
-      throw new Error(`${name}: registry answered ${res.status} ${res.statusText}`);
-    }
-    if (attempt >= attempts) return false;
-    await new Promise((r) => setTimeout(r, delayMs));
-  }
-}
 
 const packages = publishableWorkspaces();
 const missing = [];
@@ -78,5 +58,5 @@ if (missing.length > 0) {
     process.exit(1);
   }
 } else {
-  console.log(`[first-publish] OK — all ${packages.length} publishable package(s) exist on ${REGISTRY}.`);
+  console.log(`[first-publish] OK — all ${packages.length} publishable package(s) exist on ${registryBase()}.`);
 }

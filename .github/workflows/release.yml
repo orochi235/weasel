@@ -70,9 +70,31 @@ jobs:
       # `github.token`; v2 dropped the GITHUB_TOKEN environment variable, so
       # setting it again would read as configuration and do nothing.
       - name: Create Release Pull Request or Publish
+        id: changesets
         uses: changesets/action@v2
         with:
           publish-script: npm run release
           version-script: npx changeset version
           commit-message: "chore: version packages"
           pr-title: "chore: version packages"
+      # The first gate *after* anything ships. `changeset publish` has twice
+      # listed a package under "Successfully published" that never reached the
+      # registry, with no npm error anywhere in the log, so its report is not
+      # evidence. This asks npm instead, and fails the job naming what to
+      # re-dispatch for.
+      #
+      # The `published` guard is load-bearing, not caution. On the other path
+      # the action takes it runs `changeset version` in this same working tree
+      # and pushes the result to a branch without resetting, so the manifests
+      # here hold versions nothing has published yet and every run that opens a
+      # version PR would fail.
+      - name: Verify every version reached the registry
+        if: steps.changesets.outputs.published == 'true'
+        run: npm run check:published
+      # And the question a consumer actually asks. The group pins its siblings
+      # by range, so one missing package fails `npm i @weasel-js/core` while
+      # every other version is present — which is how 1.2.0 was found, by a
+      # person installing it days later.
+      - name: Install the release from the registry
+        if: steps.changesets.outputs.published == 'true'
+        run: npm run test:smoke:registry

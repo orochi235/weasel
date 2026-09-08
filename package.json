@@ -43,6 +43,8 @@
     "test:smoke:consumer": "node scripts/smoke-consumer-bundle.mjs",
     "check:first-publish": "node scripts/check-first-publish.mjs",
     "check:manifests": "node scripts/check-publish-manifests.mjs",
+    "check:published": "node scripts/check-published-versions.mjs",
+    "test:smoke:registry": "node scripts/smoke-registry-install.mjs",
     "check:bumps": "node scripts/check-changeset-bumps.mjs",
     "check:frame-loops": "node scripts/check-frame-loops.mjs",
     "check:test-projects": "node scripts/check-test-projects.mjs",

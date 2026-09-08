@@ -19,10 +19,6 @@ Priority tags:
 
 ## High-priority index
 
-### Next up
-
-- **(P1)** Nothing checks that a publish actually happened → [Release-gate & build hygiene](#release-gate--build-hygiene)
-
 ### P2 — broad reuse / friction-likely
 
 **Text**
@@ -1619,28 +1615,6 @@ one dead `const` and four stale disable directives.
 ---
 
 ## Release-gate & build hygiene
-
-- **(P1) Nothing checks that a publish actually happened.** `changeset publish`
-  has now twice printed packages under "Successfully published" that never
-  reached the registry: 1.2.0 shipped without `gestures`, and 1.4.3 shipped
-  without `hud` and `labkit` — the CLI's own progress counter stopped at 17/18
-  while its summary listed all 18, and no npm error appeared anywhere in the log
-  (`NPM_CONFIG_LOGLEVEL: error` was on, so nothing was suppressed). Both times a
-  re-dispatch of the same workflow published the stragglers with no other
-  change, so it is not a manifest or auth problem.
-
-  The release workflow gates everything *before* the publish —
-  `check:manifests`, `check:bumps`, `check:first-publish` — and nothing after
-  it. The check to build is a post-publish one: read every workspace's version
-  out of its manifest, ask `registry.npmjs.org` (not `npm view`, which serves a
-  cached packument — it reported `ETARGET` for a package that was already live)
-  whether that exact version exists, and fail the job listing what is missing.
-  A failing job is the whole point: it turns a silent partial release into one
-  that says which packages to re-dispatch for.
-
-  Worth pairing with a real install in a clean tree, which is what caught the
-  stale-cache confusion above; `test:smoke:consumer` already builds that
-  machinery against local tarballs and would need pointing at the registry.
 
 - **(P2) View-animation tests flake under a loaded parallel run.** Two full
   `npm test` runs on 2026-08-25 failed with *different* sets — first
