@@ -7,7 +7,7 @@ import {
 } from '@weasel-js/core';
 import { captureTarget } from './capture';
 import type { WorldRect } from './frac';
-import { fracContains, fracIntersects, fracToWorld, roundFrac, worldToFrac } from './frac';
+import { fracContains, fracEncloses, fracToWorld, roundFrac, worldToFrac } from './frac';
 import { MarkHistory } from './history';
 import { isStale as isStaleAgainst, seenFrom } from './staleness';
 import type {
@@ -197,7 +197,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
     },
 
     within(target, box: FracRect) {
-      return marksOn(target).filter((a) => fracIntersects(box, a.frac));
+      return marksOn(target).filter((a) => fracEncloses(box, a.frac));
     },
 
     isStale(a, config) {

@@ -76,7 +76,7 @@ export {
   createAnnotationScene,
   createAnnotationStore,
   fracContains,
-  fracIntersects,
+  fracEncloses,
   fracToWorld,
   isStale,
   roundFrac,

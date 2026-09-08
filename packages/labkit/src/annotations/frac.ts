@@ -55,8 +55,9 @@ export function fracContains(box: FracRect, pt: FracPoint, tol = 0): boolean {
 }
 
 /** Whether `outer` wholly encloses `inner`. A marquee takes what it encloses,
- *  not what it grazes — brushing selection is a different gesture. */
-export function fracIntersects(outer: FracRect, inner: FracRect): boolean {
+ *  not what it grazes — brushing selection is a different gesture, and this
+ *  answers false for two rects that merely overlap. */
+export function fracEncloses(outer: FracRect, inner: FracRect): boolean {
   return (
     inner.x >= outer.x &&
     inner.y >= outer.y &&

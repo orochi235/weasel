@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fracContains, fracIntersects, fracToWorld, roundFrac, worldToFrac } from './frac';
+import { fracContains, fracEncloses, fracToWorld, roundFrac, worldToFrac } from './frac';
 import type { FracRect } from './types';
 
 const CONTENT = { w: 256, h: 170 };
@@ -51,9 +51,9 @@ describe('fraction hit geometry', () => {
     expect(fracContains(box, { x: 0.18, y: 0.3 }, 0.05)).toBe(true);
   });
 
-  it('intersects only a box that wholly contains it', () => {
-    expect(fracIntersects({ x: 0, y: 0, w: 1, h: 1 }, box)).toBe(true);
+  it('encloses only a box that lies wholly inside', () => {
+    expect(fracEncloses({ x: 0, y: 0, w: 1, h: 1 }, box)).toBe(true);
     // Overlapping is not containing: a marquee takes what it encloses.
-    expect(fracIntersects({ x: 0.4, y: 0.4, w: 0.4, h: 0.4 }, box)).toBe(false);
+    expect(fracEncloses({ x: 0.4, y: 0.4, w: 0.4, h: 0.4 }, box)).toBe(false);
   });
 });

@@ -1079,11 +1079,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   standing in another. `selection()` reports both. A host can enforce exclusivity
   from `subscribe`, awkwardly.
 
-- **(P3) `fracIntersects` is containment, not intersection.** It is public and
-  its name says the opposite of what it does — true only when `inner` is wholly
-  inside `outer`. `within()` wants exactly that; a consumer reading the name gets
-  it backwards.
-
 - **(P3) Overlays still set React Aria's deprecated `UNSTABLE_portalContainer`.**
   Its replacement, `UNSAFE_PortalProvider`, is exported by `react-aria` but not
   re-exported by `react-aria-components` 1.18, and depending on `react-aria`
