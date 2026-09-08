@@ -113,4 +113,18 @@ export interface LayoutStrategy<TPose> {
     container: LayoutContainer,
     dragged: LayoutDragged<TPose>,
   ): boolean;
+
+  /** Optional: what this container does about a child of its own that was
+   *  released outside every layout container. Returning ops replaces the
+   *  free-space commit — put the child back in its slot, reflow the gap
+   *  closed — and an empty array leaves the container unchanged, which snaps
+   *  the child home because the drag only ever wrote previews. `null` lets
+   *  the drop stand where the pointer left it, which is also what a strategy
+   *  without this method gets. The drag preview follows the pointer either
+   *  way; this decides the release. */
+  releaseDrop?(
+    container: LayoutContainer,
+    children: ReadonlyArray<LayoutChild<TPose>>,
+    dragged: LayoutDragged<TPose>,
+  ): Op[] | null;
 }

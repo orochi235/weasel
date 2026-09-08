@@ -752,6 +752,64 @@ export const moveAction: Action & { requires: string[] } = {
             return;
           }
 
+          // No container accepted the drop. The source layout gets a say
+          // before the child is left wherever the pointer stopped.
+          if (scratch.layout && scratch.ids.length === 1 && !scratch.layoutPass) {
+            const draggedId = scratch.ids[0];
+            const sourceContainerId = scratch.scene.get(draggedId)?.parent ?? null;
+            const srcLayout = sourceContainerId
+              ? scratch.layout.getLayout(sourceContainerId) as LayoutStrategy<unknown> | null
+              : null;
+            const releaseOps = srcLayout?.releaseDrop
+              ? (() => {
+                const pc = scratch.pc as PoseComposition<RectPose>;
+                const commitAdapter = scenePoseAdapter(scratch.scene);
+                const boundsOf = scratch.projection?.getBounds ?? AUTO_POSE_DESCRIPTOR.getBounds;
+                const startWorld = composeWorldPose(commitAdapter, draggedId as string, pc.compose);
+                const srcContainer: LayoutContainer = {
+                  id: sourceContainerId!,
+                  bounds: boundsOf(
+                    composeWorldPose(commitAdapter, sourceContainerId!, pc.compose),
+                  ) as { x: number; y: number; width: number; height: number },
+                };
+                const srcChildren: LayoutChild<unknown>[] =
+                  scratch.scene.childrenOf(asNodeId(sourceContainerId!))
+                    .filter((cid) => cid !== draggedId)
+                    .map((cid) => ({
+                      id: cid as string,
+                      pose: composeWorldPose(commitAdapter, cid as string, pc.compose),
+                    }));
+                return srcLayout.releaseDrop!(srcContainer, srcChildren, {
+                  id: draggedId as string,
+                  originPose: startWorld,
+                  pose: { ...startWorld, x: startWorld.x + dx, y: startWorld.y + dy },
+                  sourceContainerId,
+                });
+              })()
+              : null;
+            if (releaseOps !== null) {
+              const pc = scratch.pc as PoseComposition<RectPose>;
+              const commitAdapter = scenePoseAdapter(scratch.scene);
+              // Released children keep their parent, so both ends of a
+              // transform rebase under the same frame.
+              const ops = releaseOps.map((op): Op => {
+                if (op.name !== 'transform') return op;
+                const a = op.args as { id: string; from: RectPose; to: RectPose; label?: string; coalesceKey?: string };
+                const parent = scratch.scene.get(asNodeId(a.id))?.parent ?? null;
+                return createTransformOp<RectPose>({
+                  id: a.id,
+                  from: rebaseLocalPose(commitAdapter, a.from, parent, pc.compose, pc.decompose),
+                  to: rebaseLocalPose(commitAdapter, a.to, parent, pc.compose, pc.decompose),
+                  label: a.label,
+                  coalesceKey: a.coalesceKey,
+                });
+              });
+              if (ops.length > 0) commitOps(ops, ops[0].label ?? 'Move');
+              scratch.previews.clear();
+              return;
+            }
+          }
+
           // Reparent-on-drop, when opted in via `opts.params.reparentOnDrop`.
           // Resolves the drop target via the `nodeAtPoint` dep (sourced by
           // `<SceneCanvas>`) and reparents each moved root under it, then

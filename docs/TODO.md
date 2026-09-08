@@ -31,7 +31,6 @@ Priority tags:
 
 **Scene, adapters & layout**
 - `arrayAdapter` as default Canvas adapter — full unification → [Scene, adapters & layout](#scene-adapters--layout)
-- Layout strategies: drop rejection signal → [Scene, adapters & layout](#scene-adapters--layout)
 - Layout strategies: multi-select drag into a layout container → [Scene, adapters & layout](#scene-adapters--layout)
 
 **Selection, actions & UI panels**
@@ -782,7 +781,6 @@ here is smaller than the connect gesture that comes next.
 ### Container layout strategies (deferred from `docs/specs/2026-05-03-container-layout-strategies-design.md`)
 
 - **(P3) Reparent-on-layout-drop lives in `moveAction`, not the strategies' `commitDrop`** (which are pose-only). If a strategy ever needs container-specific reparent semantics, revisit whether `commitDrop` should own it.
-- **(P2) Drop rejection signal.** v1 layout commits a free-space `setPose` when no container accepted a drag. Needs a cleaner semantic — candidates: a dedicated cancel op, a snap-back-to-source-pose path, or having the source layout's `commitDrop` re-place the child at its origin slot.
 - **(P2) Multi-select drag into a layout container.** Currently falls through to the per-id transform batch (no `commitDrop` invocation, no sibling reflow). Layout-aware reflow + commit only fire when `scratch.ids.length === 1` in `moveAction`. Decide multi-select-into-layout semantics (sequential commitDrops? grouped layout API?) before lifting the guard.
 - **(P3) Z-order walk doesn't cross non-container ancestors.** Open question: when a deep layout container is BELOW (in z) a shallow layout container that shares the dragged point, today the deepest wins — debate whether real z-order across the whole tree (flat painter's order) should win instead.
 - **(P3) Tile-grid overflow policy.** Children beyond `cols * rows` are skipped from `childPoses`. Scroll, grow-grid, and rejection are the three policies worth designing between.

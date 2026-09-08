@@ -4,6 +4,7 @@ import type { PoseOverrides } from 'core/scene/types';
 import { moveAction } from './move';
 import type { InvocationCtx } from '../invoker';
 import { tileGrid } from '../../../layout/strategies';
+import { createTransformOp } from 'core/ops/transform';
 import type { LayoutDep } from '../depSchema';
 import type { NodeId } from 'core/scene/types';
 import { composeRectPose, decomposeRectPose } from 'features/groups/composePose';
@@ -227,6 +228,69 @@ describe('moveAction layout reflow', () => {
     const batch = scene.appliedBatches[0];
     expect(batch.ops.length).toBeGreaterThan(0);
     expect(batch.ops.some((o) => o.args?.id === 'a')).toBe(true);
+  });
+
+  it('lets the source layout re-place a child dropped outside every container', () => {
+    const scene = makeScene(
+      {
+        C: { x: 0, y: 0, width: 100, height: 100 },
+        a: { x: 0, y: 0, width: 50, height: 100 },
+        b: { x: 50, y: 0, width: 50, height: 100 },
+      },
+      { C: null, a: 'C', b: 'C' },
+      { C: ['a', 'b'] },
+      ['C'],
+    );
+    const released: string[] = [];
+    const homing = {
+      ...tileGrid<P>({ cols: 2, rows: 1 }),
+      releaseDrop: (
+        container: { id: string },
+        _children: unknown,
+        dragged: { id: string; originPose: P; pose: P },
+      ) => {
+        released.push(`${container.id}:${dragged.id}`);
+        return [createTransformOp<P>({
+          id: dragged.id, from: dragged.pose, to: dragged.originPose, label: 'Release',
+        })];
+      },
+    };
+    const invoker = moveAction.invoker;
+    if (!invoker || invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const handle = invoker.start(makeCtx(scene, ['a'], undefined, { C: homing }));
+    // Well clear of C, so no container accepts and there is no layout pass.
+    const drag = { start: { x: 25, y: 50 }, current: { x: 525, y: 550 }, delta: { x: 500, y: 500 } };
+    handle.onMove!(makeCtx(scene, ['a'], drag, { C: homing }) as InvocationCtx);
+    handle.onEnd!(makeCtx(scene, ['a'], drag, { C: homing }) as InvocationCtx, 'commit');
+
+    expect(released).toEqual(['C:a']);
+    expect(scene.appliedBatches.length).toBe(1);
+    const ops = scene.appliedBatches[0].ops;
+    expect(ops.some((o) => o.args?.id === 'a' && o.args?.to?.x === 0 && o.args?.to?.y === 0)).toBe(true);
+  });
+
+  it('falls through to the free-space commit when releaseDrop returns null', () => {
+    const scene = makeScene(
+      {
+        C: { x: 0, y: 0, width: 100, height: 100 },
+        a: { x: 0, y: 0, width: 50, height: 100 },
+        b: { x: 50, y: 0, width: 50, height: 100 },
+      },
+      { C: null, a: 'C', b: 'C' },
+      { C: ['a', 'b'] },
+      ['C'],
+    );
+    const letGo = { ...tileGrid<P>({ cols: 2, rows: 1 }), releaseDrop: () => null };
+    const invoker = moveAction.invoker;
+    if (!invoker || invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const handle = invoker.start(makeCtx(scene, ['a'], undefined, { C: letGo }));
+    const drag = { start: { x: 25, y: 50 }, current: { x: 525, y: 550 }, delta: { x: 500, y: 500 } };
+    handle.onMove!(makeCtx(scene, ['a'], drag, { C: letGo }) as InvocationCtx);
+    handle.onEnd!(makeCtx(scene, ['a'], drag, { C: letGo }) as InvocationCtx, 'commit');
+
+    // Today's behavior: the child stays where the pointer left it.
+    const ops = scene.appliedBatches[0].ops;
+    expect(ops.some((o) => o.args?.id === 'a' && o.args?.to?.x === 500 && o.args?.to?.y === 500)).toBe(true);
   });
 
   it('emits a reparent op before the drop on a cross-container grid drag', () => {
