@@ -1,5 +1,4 @@
 import type { DrawCommand, FillStyle, Stroke } from '@weasel-js/core';
-import { resolveStrokeWidth } from '@weasel-js/core';
 import type { SvgNode, SvgPaint, SvgStroke } from '@weasel-js/svg';
 import { type MarkStyle, markCommands, type PaintableMark } from './paint';
 
@@ -23,7 +22,7 @@ function toSvgPaint(paint: FillStyle | undefined): SvgPaint {
 function toSvgStroke(stroke: Stroke): SvgStroke {
   return {
     paint: toSvgPaint(stroke.paint),
-    width: resolveStrokeWidth(stroke.width ?? 1, 1),
+    width: stroke.width ?? 1,
     ...(stroke.cap ? { cap: stroke.cap } : {}),
     ...(stroke.join ? { join: stroke.join } : {}),
     ...(stroke.dash ? { dash: [...stroke.dash] } : {}),

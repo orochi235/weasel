@@ -71,7 +71,10 @@ export type SvgPaint =
 /** Stroke description: a paint plus structural line parameters. */
 export interface SvgStroke {
   paint: SvgPaint;
-  width: number;
+  /** World units, or `{ px }` for a width that holds its rendered thickness
+   *  however the document is scaled — SVG's `vector-effect="non-scaling-stroke"`,
+   *  and the same unit system as the kit's `Stroke.width`. */
+  width: number | { px: number };
   opacity?: number;
   /** `stroke-linecap`. Default per SVG spec is `'butt'`. */
   cap?: 'butt' | 'round' | 'square';

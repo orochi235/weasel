@@ -6,7 +6,7 @@
  */
 
 import type { Path, Stroke } from '@weasel-js/core';
-import { boundsOfPath, resolveStrokeWidth, SCRIPT_METRICS } from '@weasel-js/core';
+import { boundsOfPath, SCRIPT_METRICS } from '@weasel-js/core';
 import type {
   Matrix, NamespaceMeta, NamespacedElement, SerializeOptions, SvgGroupNode,
   SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode, SvgImageNode,
@@ -286,13 +286,25 @@ function paintAttrs(
  * not carry a `stroke` attribute, and SVG's own default (`none`) already says
  * so.
  */
+/**
+ * `stroke-width`, plus `vector-effect` when the width is in screen pixels.
+ *
+ * A `{ px }` width means "this thickness once rendered, whatever the view is
+ * doing", which is exactly what `non-scaling-stroke` says — so the number goes
+ * out unresolved and the attribute carries the unit. There is no accumulated
+ * transform scale here to resolve it against, and picking one would bake a
+ * single zoom level into the document.
+ */
+function strokeWidthAttrs(width: number | { px: number }): string[] {
+  if (typeof width === 'number') return [`stroke-width="${trimNumber(width)}"`];
+  return [`stroke-width="${trimNumber(width.px)}"`, 'vector-effect="non-scaling-stroke"'];
+}
+
 function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServerRegistry): string[] {
   const paint = stroke?.paint;
   if (!stroke || !paint) return [];
-  // SVG has no accumulated-transform scale to resolve a `{ px }` width
-  // against; its number is emitted as-is.
-  const width = resolveStrokeWidth(stroke.width ?? 1, 1);
-  if (!(width > 0)) return [];
+  const width = stroke.width ?? 1;
+  if (!((typeof width === 'object' ? width.px : width) > 0)) return [];
   const attrs: string[] = [];
   if ('color' in paint) {
     attrs.push(`stroke="${paint.color}"`);
@@ -302,7 +314,7 @@ function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServerRegist
   } else {
     attrs.push(`stroke="url(#${registry.register(paint)})"`);
   }
-  attrs.push(`stroke-width="${trimNumber(width)}"`);
+  attrs.push(...strokeWidthAttrs(width));
   if (stroke.cap) attrs.push(`stroke-linecap="${stroke.cap}"`);
   if (stroke.join) attrs.push(`stroke-linejoin="${stroke.join}"`);
   if (stroke.dash && stroke.dash.length > 0) {
@@ -329,7 +341,7 @@ function strokeAttrsFor(stroke: SvgStroke, registry: PaintServerRegistry): strin
   // SVG attribute, and parse fills in both. Emitting each would write
   // `stroke-opacity` twice, which is not well-formed XML at all.
   const attrs = paintAttrs(stroke.paint, 'stroke', registry, false);
-  attrs.push(`stroke-width="${trimNumber(stroke.width)}"`);
+  attrs.push(...strokeWidthAttrs(stroke.width));
   const opacity = stroke.opacity
     ?? (stroke.paint.kind === 'solid' ? stroke.paint.opacity : undefined);
   if (opacity != null && opacity !== 1) {

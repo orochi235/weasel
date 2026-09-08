@@ -338,7 +338,7 @@ function parseElement(
   }
   const leafStyle = deriveStyle(style, el);
   const fill = readPaint(leafStyle, 'fill', '#000000', gradients, onWarn);
-  const stroke = readStroke(leafStyle, gradients, onWarn);
+  const stroke = readStroke(leafStyle, gradients, onWarn, isNonScalingStroke(el));
   const opacity = readOpacityAttr(el, 'opacity');
   // `fill-rule` defaults to `nonzero`; only stamp when explicitly `evenodd`
   // and the lowered geometry is a PolygonPath (RectPath has no fillRule slot).
@@ -485,14 +485,15 @@ function readStroke(
   style: StyleContext,
   gradients: GradientTable,
   onWarn: (msg: string) => void,
+  nonScaling = false,
 ): SvgStroke | undefined {
   const inheritedStroke = style['stroke'] ?? null;
   const inheritedWidth = style['stroke-width'] ?? null;
   if (inheritedStroke == null && inheritedWidth == null) return undefined;
   const paint = readPaint(style, 'stroke', '#000000', gradients, onWarn);
   if (paint.kind === 'none') return undefined;
-  const width = inheritedWidth != null ? parseFloat(inheritedWidth) : 1;
-  const stroke: SvgStroke = { paint, width };
+  const n = inheritedWidth != null ? parseFloat(inheritedWidth) : 1;
+  const stroke: SvgStroke = { paint, width: nonScaling ? { px: n } : n };
   const opacityRaw = style['stroke-opacity'] ?? null;
   if (opacityRaw != null) {
     const a = clamp01(parseFloat(opacityRaw));
@@ -564,6 +565,15 @@ const STROKE_KEYS = [
   'stroke-linejoin', 'stroke-dasharray', 'stroke-miterlimit',
   'marker-start', 'marker-mid', 'marker-end',
 ] as const;
+
+/** Whether this element pins its stroke width to rendered pixels.
+ *
+ *  Read off the element rather than the cascade: `vector-effect` is one of the
+ *  few presentation attributes SVG does not inherit, so a `<g>` carrying it
+ *  must not hand it to its children. */
+function isNonScalingStroke(el: Element): boolean {
+  return ownProp(el, 'vector-effect') === 'non-scaling-stroke';
+}
 
 function ownStrokeStyle(el: Element): StyleContext {
   const out: Record<string, string> = {};
@@ -870,7 +880,7 @@ function parseTextElement(
 
   const leafStyle = deriveStyle(style, el);
   const textStyle = readTextStyle(leafStyle, onWarn);
-  const textPaint = readTextPaint(leafStyle, gradients, onWarn);
+  const textPaint = readTextPaint(leafStyle, gradients, onWarn, isNonScalingStroke(el));
   const fontSize = textStyle.fontSize ?? 16;
   const lineHeight = textStyle.lineHeight ?? 1.2;
 
@@ -1016,7 +1026,7 @@ function readTspanRun(
     }
   }
   // Own attributes only — see `ownStrokeStyle`.
-  const stroke = coreStroke(readStroke(ownStrokeStyle(el), gradients, onWarn));
+  const stroke = coreStroke(readStroke(ownStrokeStyle(el), gradients, onWarn, isNonScalingStroke(el)));
   if (stroke) run.stroke = stroke;
   return run;
 }
@@ -1079,6 +1089,7 @@ function readTextPaint(
   style: StyleContext,
   gradients: GradientTable,
   onWarn: (m: string) => void,
+  nonScalingStroke = false,
 ): TextPaint {
   const out: TextPaint = {};
   const fillRaw = resolveCurrentColor(style['fill'] ?? null, style);
@@ -1097,7 +1108,7 @@ function readTextPaint(
   // sampled field, with no geometry to stroke. The outline tier gave large
   // text real contours, so a stroke is now a paint like any other — and one
   // that stays in the document even at sizes that render it unstroked.
-  const stroke = coreStroke(readStroke(style, gradients, onWarn));
+  const stroke = coreStroke(readStroke(style, gradients, onWarn, nonScalingStroke));
   if (stroke) out.stroke = stroke;
   return out;
 }

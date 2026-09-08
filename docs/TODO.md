@@ -1730,10 +1730,7 @@ one dead `const` and four stale disable directives.
   frames evicts that path's sibling configurations too. Quantizing the
   resolved width before it hits the cache key — `quantizeEmWidth` is the
   existing precedent, used for glyph outline widths in
-  `outlineStrokeMeshCache.ts` — would likely fix it. Separately,
-  `packages/svg/src/serialize.ts` has no accumulated scale available at
-  serialize time, so it emits a `{ px }` width's raw number as `stroke-width`
-  rather than resolving it.
+  `outlineStrokeMeshCache.ts` — would likely fix it.
 
 - **(P3) Whether the benchmarks gate CI.** `tests/bench/` holds 62 vitest
   benchmarks with a committed baseline (`tests/bench/results/`); nothing gates

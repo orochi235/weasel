@@ -12,7 +12,7 @@
  * path-then-rect detector fired, else `tool: 'imported'`.
  */
 
-import { boundsOfPath, fillToBoundsFrame, resolveStrokeWidth, solid } from '@weasel-js/core';
+import { boundsOfPath, fillToBoundsFrame, solid } from '@weasel-js/core';
 import type { FillStyle, PolygonPath, Stroke, TextStyle } from '@weasel-js/core';
 import { strokeDataFromSvg } from '@weasel-js/svg';
 import type {
@@ -167,8 +167,8 @@ function objPaintToSvg(fill: FillStyle): SvgPaint {
 function objStrokeToSvg(stroke: Stroke | null): SvgStroke | undefined {
   const paint = stroke?.paint;
   if (stroke === null || paint === undefined) return undefined;
-  const width = resolveStrokeWidth(stroke.width ?? 1, 1);
-  if (width <= 0) return undefined;
+  const width = stroke.width ?? 1;
+  if ((typeof width === 'object' ? width.px : width) <= 0) return undefined;
   return {
     paint: objPaintToSvg(paint),
     width,
