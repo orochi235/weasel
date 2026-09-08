@@ -8,7 +8,7 @@ import {
   Heading,
   type PopoverProps as RACPopoverProps,
 } from 'react-aria-components';
-import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
+import { useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
 import s from './Callout.module.css';
 
 /** Accent color of a {@link Callout}'s border and arrow. */
@@ -26,8 +26,8 @@ export { DialogTrigger as CalloutTrigger };
 
 /** Props for {@link Callout}, on top of React Aria's `Popover` props. */
 export type CalloutProps = Omit<
-  RACPopoverProps,
-  'children' | 'className' | 'isNonModal' | 'triggerRef' | 'UNSTABLE_portalContainer'
+  WithoutPortalTarget<RACPopoverProps>,
+  'children' | 'className' | 'isNonModal' | 'triggerRef'
 > &
   OverlayPortalProps & {
   children?: ReactNode;
@@ -107,7 +107,7 @@ export function Callout(props: CalloutProps) {
     ...rest
   } = props;
   const anchorRef = useRef<HTMLSpanElement>(null);
-  const { anchor: portalAnchor, portalContainer: container } = useOverlayPortal(portalContainer);
+  const { anchor: portalAnchor, portalProps } = useOverlayPortal(portalContainer);
   const showClose = showCloseButton ?? !modal;
   // Escape is a dismissal like the × is. It can't ride on a React `onKeyDown`:
   // RAC's Dialog runs its props through filterDOMProps, which drops handlers
@@ -177,7 +177,7 @@ export function Callout(props: CalloutProps) {
         aria-labelledby={popoverAriaLabelledby}
         className={[s.popover, toneClass[tone], className].filter(Boolean).join(' ')}
         data-weasel-overlay=""
-        UNSTABLE_portalContainer={container}
+        {...portalProps}
       >
         <OverlayArrow className={s.arrow}>
           <svg width={12} height={12} viewBox="0 0 12 12" aria-hidden="true">

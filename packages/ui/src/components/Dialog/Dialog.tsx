@@ -7,13 +7,13 @@ import {
   type ModalOverlayProps,
   type DialogProps as RACDialogProps,
 } from 'react-aria-components';
-import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
+import { useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
 import s from './Dialog.module.css';
 
 /** Props for {@link Dialog}, on top of React Aria's `ModalOverlay` props. */
 export type DialogProps = Omit<
-  ModalOverlayProps,
-  'children' | 'className' | 'UNSTABLE_portalContainer'
+  WithoutPortalTarget<ModalOverlayProps>,
+  'children' | 'className'
 > &
   OverlayPortalProps & {
     /** Heading rendered in the dialog's default header. Omit when supplying
@@ -56,7 +56,7 @@ export function Dialog(props: DialogProps) {
   } = props;
 
   const showClose = showCloseButton ?? Boolean(onOpenChange);
-  const { anchor, portalContainer: container } = useOverlayPortal(portalContainer);
+  const { anchor, portalProps } = useOverlayPortal(portalContainer);
 
   return (
     <>
@@ -67,7 +67,7 @@ export function Dialog(props: DialogProps) {
         onOpenChange={onOpenChange}
         className={s.overlay}
         data-weasel-overlay=""
-        UNSTABLE_portalContainer={container}
+        {...portalProps}
       >
         <RACModal className={[s.modal, className].filter(Boolean).join(' ')}>
           <RACDialog role={role} className={s.dialog}>

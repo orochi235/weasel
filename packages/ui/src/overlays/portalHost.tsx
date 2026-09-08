@@ -49,6 +49,15 @@ export interface OverlayPortalProps {
   portalContainer?: Element | null;
 }
 
+/** React Aria props minus the portal key a weasel overlay owns. */
+export type WithoutPortalTarget<T> = Omit<T, 'UNSTABLE_portalContainer'>;
+
+/** Spread onto the React Aria overlay. The unstable key is spelled here and
+ *  nowhere else in the package, so an upstream rename lands in one file. */
+export interface OverlayPortalTarget {
+  UNSTABLE_portalContainer: Element | undefined;
+}
+
 /**
  * Resolves where an overlay should portal, and the anchor that answers it.
  *
@@ -59,14 +68,14 @@ export interface OverlayPortalProps {
  * never read — a failure that shows up as an unthemed overlay, not an error.
  *
  * Render `anchor` at the component's own position in the tree — outside the
- * portal — and hand `portalContainer` to the React Aria overlay. The anchor
+ * portal — and spread `portalProps` onto the React Aria overlay. The anchor
  * is what "nearest themed ancestor" is measured from; the first render has
  * none yet, so an overlay that mounts already open lands in its host on the
  * following render, before paint.
  */
 export function useOverlayPortal(explicit?: Element | null): {
   anchor: ReactElement;
-  portalContainer: Element | undefined;
+  portalProps: OverlayPortalTarget;
 } {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const fromProvider = useContext(OverlayPortalContext);
@@ -80,6 +89,6 @@ export function useOverlayPortal(explicit?: Element | null): {
 
   return {
     anchor: <span hidden ref={setAnchorEl} />,
-    portalContainer: resolved ?? undefined,
+    portalProps: { UNSTABLE_portalContainer: resolved ?? undefined },
   };
 }

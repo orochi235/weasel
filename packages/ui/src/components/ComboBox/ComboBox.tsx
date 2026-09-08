@@ -78,7 +78,7 @@ export function ComboBox<T extends Key = string>(props: ComboBoxProps<T>) {
     ...rest
   } = props;
 
-  const { anchor, portalContainer: container } = useOverlayPortal(portalContainer);
+  const { anchor, portalProps } = useOverlayPortal(portalContainer);
 
   return (
     <RACComboBox
@@ -114,7 +114,7 @@ export function ComboBox<T extends Key = string>(props: ComboBoxProps<T>) {
         </Text>
       )}
       <FieldError className={fieldClasses.error}>{errorMessage}</FieldError>
-      <RACPopover className={s.popover} data-weasel-overlay="" UNSTABLE_portalContainer={container}>
+      <RACPopover className={s.popover} data-weasel-overlay="" {...portalProps}>
         <RACListBox className={s.listbox} renderEmptyState={() => <div className={s.empty}>{emptyLabel}</div>}>
           {options !== undefined
             ? options.map((o) => (

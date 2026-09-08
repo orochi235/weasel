@@ -82,7 +82,7 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
     ...rest
   } = props;
 
-  const { anchor, portalContainer: container } = useOverlayPortal(portalContainer);
+  const { anchor, portalProps } = useOverlayPortal(portalContainer);
 
   return (
     <RACSelect
@@ -129,7 +129,7 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
           `closest()` gets the wrong answer without it — a text editor whose
           font menu lives here would end its session the moment the menu is
           clicked. */}
-      <RACPopover className={s.popover} data-weasel-overlay="" UNSTABLE_portalContainer={container}>
+      <RACPopover className={s.popover} data-weasel-overlay="" {...portalProps}>
         <RACListBox className={s.listbox}>
           {options !== undefined
             ? options.map((o) => (

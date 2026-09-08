@@ -6,7 +6,7 @@ import {
   type TooltipProps as RACTooltipProps,
   type TooltipTriggerComponentProps,
 } from 'react-aria-components';
-import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
+import { useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
 import s from './Tooltip.module.css';
 
 /**
@@ -31,7 +31,7 @@ export function TooltipTrigger(props: TooltipTriggerProps) {
 }
 
 /** Props for {@link Tooltip}, on top of React Aria's `Tooltip` props. */
-export type TooltipProps = Omit<RACTooltipProps, 'children' | 'className' | 'UNSTABLE_portalContainer'> &
+export type TooltipProps = Omit<WithoutPortalTarget<RACTooltipProps>, 'children' | 'className'> &
   OverlayPortalProps & {
     children?: ReactNode;
     className?: string;
@@ -43,7 +43,7 @@ export type TooltipProps = Omit<RACTooltipProps, 'children' | 'className' | 'UNS
  */
 export function Tooltip(props: TooltipProps) {
   const { children, className, placement = 'top', offset = 8, portalContainer, ...rest } = props;
-  const { anchor, portalContainer: container } = useOverlayPortal(portalContainer);
+  const { anchor, portalProps } = useOverlayPortal(portalContainer);
   return (
     <>
       {anchor}
@@ -53,7 +53,7 @@ export function Tooltip(props: TooltipProps) {
         offset={offset}
         className={[s.tooltip, className].filter(Boolean).join(' ')}
         data-weasel-overlay=""
-        UNSTABLE_portalContainer={container}
+        {...portalProps}
       >
         <OverlayArrow className={s.arrow}>
           <svg width={8} height={8} viewBox="0 0 8 8" aria-hidden="true">

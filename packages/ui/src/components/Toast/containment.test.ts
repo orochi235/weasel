@@ -13,10 +13,14 @@ function* walk(dir: string): Generator<string> {
   }
 }
 
+/** The two modules allowed to name React Aria's unstable surface, so an
+ *  upstream rename lands in a known place rather than across the package. */
+const QUARANTINE = ['/components/Toast/', '/overlays/portalHost.tsx'];
+
 describe('RAC unstable containment', () => {
-  it('UNSTABLE_ imports appear only under components/Toast/', () => {
+  it('UNSTABLE_ imports appear only in the quarantined modules', () => {
     const offenders = [...walk(uiSrc)].filter(
-      (f) => !f.includes('/components/Toast/') && readFileSync(f, 'utf8').includes('UNSTABLE_'),
+      (f) => !QUARANTINE.some((q) => f.includes(q)) && readFileSync(f, 'utf8').includes('UNSTABLE_'),
     );
     expect(offenders).toEqual([]);
   });
