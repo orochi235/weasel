@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, act } from '@testing-library/react';
 import { WeaselProvider } from './WeaselProvider';
-import { useActionsRegistry } from './interactions/actions/registry';
+import { useActionsRegistry, type Action } from './interactions/actions/registry';
 import { useSelectionContext } from './features/selection/SelectionContext';
 
 /** Reports the registry identities visible at this point in the tree. */
@@ -23,8 +23,19 @@ describe('WeaselProvider', () => {
       </WeaselProvider>,
     );
     expect(seen.actions[0]).not.toBeNull();
-    expect(seen.actions[1]).toBe(seen.actions[0]);
+    expect(seen.actions[1]).not.toBeNull();
     expect(seen.selection[1]).toBe(seen.selection[0]);
+    // Not the same object: the inner provider is its own <ActionsScope>, so
+    // what it mutes stays its own. The store beneath is one, which is what
+    // deferring means — a registration crosses in both directions.
+    const outer = seen.actions[0] as ReturnType<typeof useActionsRegistry>;
+    const inner = seen.actions[1] as ReturnType<typeof useActionsRegistry>;
+    const fromOuter: Action = {
+      id: 'outer.only', label: 'Outer only',
+      invoker: { timing: 'immediate', run: vi.fn() },
+    };
+    act(() => { outer!.register(fromOuter); });
+    expect(inner!.list().map((a) => a.id)).toContain('outer.only');
   });
 
   // Two canvases cannot share one actions registry — the second to mount takes
