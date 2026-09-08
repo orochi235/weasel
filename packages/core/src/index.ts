@@ -956,6 +956,8 @@ export type {
 // ─── Drag-action hooks: move / resize / rotate / insert / area-select / etc. ─
 export type { UseMoveOptions } from './interactions/actions/move';
 export {
+  AUTO_POSE_DESCRIPTOR,
+  isPathLike,
   RECT_POSE_DESCRIPTOR,
   ROTATED_POSE_DESCRIPTOR,
   cornerResizeHandles,

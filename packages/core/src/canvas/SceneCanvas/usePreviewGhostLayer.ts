@@ -109,7 +109,7 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
           const clip = findShapeSilhouette(
             effNode as unknown as Node<unknown, string, TPose>,
             effPose,
-            { derivedPath: resolveDerivedPath(effNode, poseOf, (id) => scene.childrenOf(id)) },
+            { derivedPath: resolveDerivedPath(effNode, poseOf, (nid) => sc.childrenOf(nid)) },
           );
           if (clip) group.clip = clip;
         }

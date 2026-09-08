@@ -223,11 +223,13 @@ retired when this lands.
    than its path, resolved at `effectivePose` so every reader sees it. `dependsOn: 'children'`
    is the form a container hugging its contents needs, and `groupAction` uses it, which is what
    fixed the group-bounds defect.
-2. **Stroke markers in core**, including the stroke inset and SVG `<marker>` round-trip in
-   `@weasel-js/svg`. Independent of arc 1; the two can run in parallel.
-3. **`packages/diagram` skeleton.** The `DiagramNode` trait and default perimeter ports on
-   arbitrary scene nodes. The body builder — outline, measured rows, sizing floor — comes with
-   it but is not what makes a node connectable.
+2. **Stroke markers in core — landed**, including the stroke inset and SVG `<marker>`
+   round-trip in `@weasel-js/svg`.
+3. **`packages/diagram` skeleton — landed.** The `DiagramNode` trait (on a node's own
+   `data.diagram`, or declared by kind through `createDiagramNodes`), default perimeter ports
+   resolved through the pose descriptor, and the body builder — outline, measured rows, sizing
+   floor. Ports sit on the node's **bounds**, not on its drawn boundary; hugging the outline is
+   `findShapeSilhouette`'s job and waits for a router that needs it.
 4. **Edges and routing.**
 5. **Ports, the connect gesture, and typed connection validity.**
 6. **Layout.**

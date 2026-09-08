@@ -612,9 +612,11 @@ Core five + Crop shipped. Remaining:
 
 Left open by the derived-path and derived-pose arcs (`dependsOn` / `derivePath` /
 `derivePose` / `SceneRegistry`; the seam is documented in `docs/extending.md`).
-Arcs 1 and 1b of the diagram plugin design are both in — a derived node is picked
-and clipped where it paints, follows a live drag, and can drive its own pose.
-What is left here is smaller than the connect gesture that comes next.
+Arcs 1, 1b, 2 and 3 of the diagram plugin design are in — a derived node is
+picked and clipped where it paints, follows a live drag, and can drive its own
+pose; stroke markers ship; and `@weasel-js/diagram` holds the `DiagramNode`
+trait, perimeter ports and the body builder. Arc 4 (edges and routing) is next.
+What is left here is smaller than the connect gesture that follows it.
 
 - **(P3) The preview channel still carries pose twice.** `move` / `resize` /
   `rotate` publish each frame to the scene's pose overrides *and* keep their own

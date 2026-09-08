@@ -1,6 +1,6 @@
 /**
  * Shared tsup configuration for the pure-TypeScript weasel packages
- * (Tier A leaves: geom, gestures, history, modes; Tier B: svg, d3).
+ * (Tier A leaves: geom, gestures, history, modes; Tier B: svg, d3, diagram).
  *
  * Packages that ship assets — theme (raw CSS), ui (41 CSS Modules), hud
  * (`?url` font imports) — deliberately do NOT use this. esbuild can't handle

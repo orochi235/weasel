@@ -16,6 +16,7 @@
       "@weasel-js/modes",
       "@weasel-js/svg",
       "@weasel-js/d3",
+      "@weasel-js/diagram",
       "@weasel-js/theme",
       "@weasel-js/ui",
       "@weasel-js/hud",
