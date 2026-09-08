@@ -47,6 +47,7 @@
 import type { Action } from '../registry';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '../invoker';
 import { resolveParams } from '../invoker';
+import { documentPose } from 'core/scene/effectivePose';
 import type { Scene, NodeId } from 'core/scene/types';
 import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides';
 import { asNodeId } from 'core/scene/types';
@@ -396,7 +397,7 @@ function scenePoseAdapter(
   scene: Scene<unknown, string, unknown>,
 ): PoseAdapter<RectPose> {
   return {
-    getPose: (id) => scene.get(id as NodeId)!.pose as RectPose,
+    getPose: (id) => documentPose(scene, scene.get(id as NodeId)!) as RectPose,
     getParent: (id) => scene.get(id as NodeId)?.parent ?? null,
   };
 }

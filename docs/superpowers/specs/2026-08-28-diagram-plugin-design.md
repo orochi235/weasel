@@ -219,11 +219,10 @@ retired when this lands.
    and goes green alone; it touches the hot render path and the serialization format, and nothing
    diagram-shaped should be built on an unproven seam.
 
-   **1b. Derived pose.** The same dependency machinery driving a node's pose rather than its
-   path, which is what the group-bounds defect at
-   `core/src/interactions/actions/defaults/group.ts:68` needs. Behind arc 1 because pose feeds
-   bounds, hit-testing, selection chrome and layout, so it reaches much further into the frame
-   than painting does.
+   **1b. Derived pose — landed.** The same dependency machinery driving a node's pose rather
+   than its path, resolved at `effectivePose` so every reader sees it. `dependsOn: 'children'`
+   is the form a container hugging its contents needs, and `groupAction` uses it, which is what
+   fixed the group-bounds defect.
 2. **Stroke markers in core**, including the stroke inset and SVG `<marker>` round-trip in
    `@weasel-js/svg`. Independent of arc 1; the two can run in parallel.
 3. **`packages/diagram` skeleton.** The `DiagramNode` trait and default perimeter ports on

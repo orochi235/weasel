@@ -610,10 +610,11 @@ Core five + Crop shipped. Remaining:
 
 ### Derived geometry follow-ups
 
-Left open by the derived-path arc (`dependsOn` / `derivePath` / `SceneRegistry.derivePath`;
-the seam is documented in `docs/extending.md`). Both P1s closed — a derived node
-is picked and clipped where it paints, and it follows a live drag. What is left
-here is smaller than the connect gesture that comes next.
+Left open by the derived-path and derived-pose arcs (`dependsOn` / `derivePath` /
+`derivePose` / `SceneRegistry`; the seam is documented in `docs/extending.md`).
+Arcs 1 and 1b of the diagram plugin design are both in — a derived node is picked
+and clipped where it paints, follows a live drag, and can drive its own pose.
+What is left here is smaller than the connect gesture that comes next.
 
 - **(P3) The preview channel still carries pose twice.** `move` / `resize` /
   `rotate` publish each frame to the scene's pose overrides *and* keep their own
@@ -636,13 +637,15 @@ here is smaller than the connect gesture that comes next.
   its own placeholder pose. Closing it means giving the adapter surface a
   dependency read, which is a bigger decision than picking.
 
-- **(P2) Derived pose.** Arc 1b of
-  `docs/superpowers/specs/2026-08-28-diagram-plugin-design.md` — the same
-  dependency machinery driving a node's pose rather than its path. Unblocks the
-  group-bounds defect (`interactions/actions/defaults/group.ts:68`), where a
-  container's union AABB is computed once at creation and never re-derived.
-  Reaches much further than derived path did: pose feeds bounds, which feeds
-  hit-testing, selection chrome, snapping and layout.
+- **(P3) Poses read outside `effectivePose`.** Arc 1b routed the three render
+  walks, the pick walk and the scene/commit/gesture adapters through
+  `effectivePose` (or `documentPose`, which skips the override), so a derived
+  pose reaches everything a user sees or clicks. Three readers still take
+  `node.pose` raw and would answer from a derived node's placeholder:
+  `canvas/minimapMath.ts`'s `sceneLeafBounds`, `features/text/useSceneTextEdit`'s
+  own top-most-first hit test, and `SceneCanvas/useSceneSelectTool`'s
+  `cascadeWorldPose`. None is reachable with a derived node today; each is a
+  one-line change when one is.
 
 - **(P2) Value-compare the resolved poses in `resolveDerivedPath`.**
   Invalidation is pushed by the scene today, which is closed only under the
@@ -656,12 +659,14 @@ here is smaller than the connect gesture that comes next.
   before taking it.
 
 - **(P3) `setDependsOn` op.** `dependsOn` is fixed at add time, so retargeting an
-  edge is remove plus add. Design it with the connect gesture rather than ahead
+  edge is remove plus add — and switching a node between an id list and
+  `'children'` is the same. Design it with the connect gesture rather than ahead
   of it.
 
 - **(P3) `scenePoseLookup` does not honor `SceneSlotConfig.toPose`**, which
   `buildSceneLayer` shims onto the live adapter's `getPose`. A consumer using it
-  would paint dependencies at poses `derivePath` never saw.
+  would paint dependencies at poses `derivePath` never saw. (It does now resolve
+  overrides and derived poses — it is `effectivePose` against the scene.)
 
 - **(P3) `Scene<TData, TLayer, TPose>` is contravariant in `TPose`** via
   `clipFromPose` and `derivePath`, so no concretely-typed scene satisfies the

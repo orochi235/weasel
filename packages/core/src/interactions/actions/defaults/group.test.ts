@@ -4,6 +4,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { groupAction, ungroupAction } from './group';
 import { createScene } from 'core/scene/scene';
+import { effectivePose } from 'core/scene/effectivePose';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { ImmediateInvoker } from '../invoker';
@@ -75,6 +76,21 @@ describe('groupAction.run', () => {
     expect(container.kind).toBe('container');
     expect(scene.childrenOf(containerId)).toEqual([a, b]);
     expect(container.pose).toEqual({ x: 0, y: 0, width: 30, height: 40 });
+  });
+
+  it('re-derives the container bounds when a member moves afterwards', () => {
+    const scene = makeScene();
+    const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 20, y: 30, width: 10, height: 10 }, data: {} });
+    const selection = makeSelection([a, b]);
+
+    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    const containerId = selection.get()[0]!;
+
+    scene.setPose(b, { x: 90, y: 30, width: 10, height: 10 });
+
+    expect(effectivePose(scene, scene.get(containerId)!))
+      .toEqual({ x: 0, y: 0, width: 100, height: 40 });
   });
 
   it('leaves member poses unchanged (absolute-pose model)', () => {

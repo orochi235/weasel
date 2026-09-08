@@ -3,7 +3,17 @@ import type { Op } from 'core/ops/types';
 import { rebuildOp as rebuildGlobalOp } from 'core/ops/registry';
 import { dwarn } from 'debug/flag';
 import { createDependentsIndex } from './dependents';
+import { withKitRegistry } from './kitRegistry';
 import { dropPoseKeyedMemoSlots } from './nodeMemo';
+import {
+  createNodeFnFields,
+  fnKeysOf,
+  restoreFn,
+  NODE_FN_FIELDS,
+  type FnBearingNode,
+  type NodeFn,
+  type NodeFnField,
+} from './nodeFnFields';
 import { createPoseOverrides } from './poseOverrides';
 import {
   asNodeId,
@@ -67,35 +77,20 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     layerIndex: new Map(),
   };
 
-  // Per-scene registry for non-serializable function fields. The forward map
-  // (key -> function) is used by sceneFromJSON; the reverse map (function ->
-  // key) is used by toJSON to identify which factory a container is using.
-  const registry = options.registry ?? {};
-  const reverseClipFromPose = new Map<
-    NonNullable<ContainerNode<TData, TLayer, TPose>['clipFromPose']>,
-    string
-  >();
-  if (registry.clipFromPose) {
-    for (const [key, fn] of Object.entries(registry.clipFromPose)) {
-      reverseClipFromPose.set(fn, key);
-    }
-  }
-  const reverseDerivePath = new Map<NonNullable<Node<TData, TLayer, TPose>['derivePath']>, string>();
-  if (registry.derivePath) {
-    for (const [key, fn] of Object.entries(registry.derivePath)) {
-      reverseDerivePath.set(fn, key);
-    }
-  }
+  // The kit's own registry entries sit under the consumer's, so a snapshot
+  // carrying a kit-attached function (a grouped container's derived pose)
+  // reloads in any scene, not only one whose consumer registered the key.
+  const registry = withKitRegistry(options.registry ?? {});
 
   /**
-   * Side-channel cache of `clipFromPose` functions keyed by node id.
-   * Because `clipFromPose` is a function it cannot travel through the
-   * serializable op payload. When `scene.add` or the `initial` loader calls
-   * `patchClipFromPose`, we also store the function here so the `kit:add`
-   * redo path can re-attach it after replaying the op.
+   * The registry-keyed function fields — `clipFromPose`, `derivePath`,
+   * `derivePose` — each with its key maps and the side-channel cache the
+   * `kit:add` redo path re-attaches from. A function cannot travel through a
+   * serializable op payload, so `scene.add` and the `initial` loader stash it
+   * here and the replayed op reads it back.
    *
-   * Entries are pruned at two natural hook points — both delivered via the
-   * history engine's `onEvict` callback — to prevent unbounded growth:
+   * Those caches are pruned at two hook points, both delivered via the history
+   * engine's `onEvict`, to prevent unbounded growth:
    *   1. When the redo stack is cleared by a new op (branch-on-edit): any
    *      kit:add in the discarded entries that references a node absent from
    *      `state.nodes` is permanently unreachable — its cache entry is dropped.
@@ -104,20 +99,26 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
    * Invariant: after pruning, no entry remains for a node that is both absent
    * from `state.nodes` AND unreachable via any remaining undo/redo log entry.
    */
-  const pendingClipPatches = new Map<NodeId, NonNullable<ContainerNode<TData, TLayer, TPose>['clipFromPose']>>();
-
-  /** The same side-channel as `pendingClipPatches`, for `derivePath`. Pruned by
-   *  the same `onEvict` scan; see that comment for the invariant. */
-  const pendingDerivePathPatches = new Map<NodeId, NonNullable<Node<TData, TLayer, TPose>['derivePath']>>();
+  const fnFields = createNodeFnFields<TPose>(registry);
+  const fnField = (name: 'clipFromPose' | 'derivePath' | 'derivePose'): NodeFnField =>
+    fnFields.find((f) => f.spec.field === name)!;
 
   /** Maintained from `kit:add` / `kit:remove` — the only two places a node is
-   *  created or destroyed, and unlike `add`/`remove` they replay on undo/redo. */
+   *  created or destroyed, and unlike `add`/`remove` they replay on undo/redo.
+   *  Only explicit `dependsOn` id lists are registered here; `'children'` is
+   *  the ancestor walk in `invalidateDependents` instead. */
   const dependents = createDependentsIndex();
+
+  /** Nodes carrying `dependsOn: 'children'`. Empty in every scene that has no
+   *  container hugging its contents, which is what keeps the ancestor walk off
+   *  the hot path. */
+  const childDerived = new Set<NodeId>();
 
   /** Walks `id`'s whole subtree. Not required while `Scene` stores absolute
    *  poses and the render walks compose nothing; it is here so `derivePath`'s
    *  world-pose contract still holds if they ever do. */
   function invalidateDependents(id: NodeId): void {
+    invalidateChildDerivedFrom(state.nodes.get(id)?.parent ?? null);
     if (dependents.isEmpty()) return;
     const subtree: NodeId[] = [id];
     descendants(id, subtree);
@@ -127,6 +128,36 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         if (node !== undefined) dropPoseKeyedMemoSlots(node);
       }
     }
+  }
+
+  /** A `dependsOn: 'children'` container derives from nodes the reverse index
+   *  never sees, so its invalidation runs the other way: up the parent chain
+   *  from `start` inclusive, and on to each such ancestor's own dependents.
+   *
+   *  Callers that removed or reparented a node pass the parent explicitly —
+   *  a gone node cannot say who its parent was. */
+  function invalidateChildDerivedFrom(start: NodeId | null): void {
+    if (childDerived.size === 0) return;
+    let cursor = start;
+    while (cursor !== null) {
+      const node = state.nodes.get(cursor);
+      if (node === undefined) return;
+      if (childDerived.has(cursor)) {
+        dropPoseKeyedMemoSlots(node);
+        for (const dep of dependents.transitiveDependentsOf(cursor)) {
+          const d = state.nodes.get(dep);
+          if (d !== undefined) dropPoseKeyedMemoSlots(d);
+        }
+      }
+      cursor = node.parent;
+    }
+  }
+
+  /** Track (or forget) a node whose `dependsOn` is `'children'`. Paired with
+   *  `dependents.add` / `.remove` at every site a node is created or destroyed. */
+  function trackChildDerived(id: NodeId, dependsOn: Node<TData, TLayer, TPose>['dependsOn']): void {
+    if (dependsOn === 'children') childDerived.add(id);
+    else childDerived.delete(id);
   }
 
   for (let i = 0; i < options.systemLayers.length; i++) {
@@ -198,7 +229,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   );
 
   // wrappers close over their payloads). Eviction (branch-edit redo-clears
-  // + historyLimit overflow) drives pendingClipPatches pruning via onEvict.
+  // + historyLimit overflow) drives function-field cache pruning via onEvict.
   const history = createHistory(undefined, {
     selection: {
       get: () => selection,
@@ -256,21 +287,20 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   }
 
   /**
-   * Prune `pendingClipPatches` / `pendingDerivePathPatches` entries for nodes
-   * referenced only by ops in entries that just became permanently unreachable
-   * (redo entries dropped by a branch edit, or undo entries evicted by
-   * `historyLimit`) — wired to the engine's `onEvict`. An entry is safe to drop
-   * when the node is absent from `state.nodes`: its only path back into the
-   * scene was through these now-unreachable ops.
+   * Prune the function-field caches of nodes referenced only by ops in entries
+   * that just became permanently unreachable (redo entries dropped by a branch
+   * edit, or undo entries evicted by `historyLimit`) — wired to the engine's
+   * `onEvict`. An entry is safe to drop when the node is absent from
+   * `state.nodes`: its only path back into the scene was through these
+   * now-unreachable ops.
    */
   function pruneCacheForDroppedOps(ops: readonly Op[]): void {
-    if (pendingClipPatches.size === 0 && pendingDerivePathPatches.size === 0) return;
+    if (fnFields.every((f) => f.pending.size === 0)) return;
     for (const op of ops) {
       if (op.name !== 'kit:add') continue;
       const id = (op.args as { id?: NodeId } | null)?.id;
       if (id && !state.nodes.has(id)) {
-        pendingClipPatches.delete(id);
-        pendingDerivePathPatches.delete(id);
+        for (const field of fnFields) field.pending.delete(id);
       }
     }
   }
@@ -393,63 +423,42 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     return { ids, removing };
   }
 
-  /** Post-patch `clipFromPose` onto a container node after its `kit:add` op
-   *  runs. The function cannot travel through the serializable op payload, so
-   *  we attach it directly to the live node here. `cacheForRedo` also keeps the
-   *  reference in `pendingClipPatches`, which is where the `kit:add` redo path
-   *  reads it from — redo replays the op without a spec.
-   *  No-op for leaves or when the spec has no `clipFromPose`. */
-  function patchClipFromPose(
+  /** Post-patch the registry-keyed function fields onto a node after its
+   *  `kit:add` op runs. A function cannot travel through the serializable op
+   *  payload, so it is attached to the live node here. `cacheForRedo` also
+   *  keeps the reference in the field's pending map, which is where the
+   *  `kit:add` redo path reads it from — redo replays the op without a spec.
+   *  `dependsOn` is plain data and rides the payload instead. */
+  function patchNodeFunctions(
     spec: AddNodeSpec<TData, TLayer, TPose>,
     id: NodeId,
     { cacheForRedo }: { cacheForRedo: boolean },
   ): void {
-    if (spec.kind === 'container' && spec.clipFromPose !== undefined) {
-      (state.nodes.get(id) as ContainerNode<TData, TLayer, TPose>).clipFromPose = spec.clipFromPose;
-      if (cacheForRedo) {
-        pendingClipPatches.set(id, spec.clipFromPose as NonNullable<ContainerNode<TData, TLayer, TPose>['clipFromPose']>);
-      }
+    const node = state.nodes.get(id) as FnBearingNode | undefined;
+    if (node === undefined) return;
+    for (const field of fnFields) {
+      const fn = (spec as unknown as Record<string, unknown>)[field.spec.field] as NodeFn | undefined;
+      if (fn === undefined) continue;
+      if (field.spec.containersOnly && spec.kind !== 'container') continue;
+      field.write(node, fn);
+      if (cacheForRedo) field.pending.set(id, fn);
     }
   }
 
-  /** `patchClipFromPose` for `derivePath`, on nodes of any kind. `dependsOn` is
-   *  plain data and rides the `kit:add` payload instead. */
-  function patchDerivePath(
-    spec: AddNodeSpec<TData, TLayer, TPose>,
-    id: NodeId,
-    { cacheForRedo }: { cacheForRedo: boolean },
-  ): void {
-    if (spec.derivePath === undefined) return;
-    state.nodes.get(id)!.derivePath = spec.derivePath;
-    if (cacheForRedo) pendingDerivePathPatches.set(id, spec.derivePath);
-  }
-
-  /** Re-attach `derivePath` / `clipFromPose` to a node restored from a
-   *  `kit:remove` snapshot. In-session the clone already carries them; a
-   *  persisted history does not, so the registry keys are what is left. */
+  /** Re-attach those fields to a node restored from a `kit:remove` snapshot.
+   *  In-session the clone already carries them; a persisted history does not,
+   *  so the registry keys are what is left. */
   function restoreNodeFunctions(
     node: Node<TData, TLayer, TPose>,
-    keys: { derivePathKey?: string; clipKey?: string } | undefined,
+    keys: Record<string, string | undefined> | undefined,
   ): void {
     if (!keys) return;
-    if (node.derivePath === undefined && keys.derivePathKey !== undefined) {
-      const fn = registry.derivePath?.[keys.derivePathKey];
-      if (fn) {
-        node.derivePath = fn;
-        pendingDerivePathPatches.set(node.id, fn);
-      } else {
-        dwarn('scene', `kit:remove: derivePathKey "${keys.derivePathKey}" not in this scene's registry — node "${node.id}" restored without derived geometry. Register a function with this key in the registry option to restore it.`);
-      }
-    }
-    if (node.kind !== 'container' || keys.clipKey === undefined) return;
-    const container = node as ContainerNode<TData, TLayer, TPose>;
-    if (container.clipFromPose !== undefined) return;
-    const clip = registry.clipFromPose?.[keys.clipKey];
-    if (clip) {
-      container.clipFromPose = clip;
-      pendingClipPatches.set(node.id, clip as NonNullable<ContainerNode<TData, TLayer, TPose>['clipFromPose']>);
-    } else {
-      dwarn('scene', `kit:remove: clipKey "${keys.clipKey}" not in this scene's registry — container "${node.id}" restored without clip. Register a function with this key in the registry option to restore the clip.`);
+    const target = node as unknown as FnBearingNode;
+    for (const field of fnFields) {
+      if (field.read(target) !== undefined) continue;
+      const key = keys[field.spec.opKey];
+      if (key === undefined) continue;
+      restoreFn(field, target, key, 'kit:remove', dwarn);
     }
   }
 
@@ -462,9 +471,9 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
   registerKitOp<{
     id: NodeId; kind: 'leaf' | 'container'; layer: TLayer; pose: TPose; data: TData;
-    parent: NodeId | null; index: number; clipKey?: string;
-    dependsOn?: readonly NodeId[]; derivePathKey?: string;
-  }>('kit:add', {
+    parent: NodeId | null; index: number;
+    dependsOn?: readonly NodeId[] | 'children';
+  } & Record<string, unknown>>('kit:add', {
     apply: (p) => {
       if (state.nodes.has(p.id)) {
         throw new Error(`Scene: id collision on "${p.id}"`);
@@ -474,41 +483,23 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         : ({ kind: 'leaf', id: p.id, layer: p.layer, pose: p.pose, data: p.data, parent: p.parent } as LeafNode<TData, TLayer, TPose>);
       state.nodes.set(p.id, node);
       attach(p.id, p.parent, p.index);
-      // Re-attach clipFromPose from the side-channel cache. This is the redo
-      // path: the original apply (via scene.add) calls patchClipFromPose which
-      // stores the function; redo replays kit:add without a spec, so we restore
-      // from the cache instead.
-      if (p.kind === 'container') {
-        const cached = pendingClipPatches.get(p.id);
-        if (cached) {
-          (node as ContainerNode<TData, TLayer, TPose>).clipFromPose = cached;
-        } else if (p.clipKey !== undefined) {
-          // Restore path: a fresh session has an empty cache, but the payload
-          // carries the registry key the function was registered under. Seed
-          // the cache so later undo/redo cycles behave like the live path.
-          const fn = registry.clipFromPose?.[p.clipKey];
-          if (fn) {
-            (node as ContainerNode<TData, TLayer, TPose>).clipFromPose = fn;
-            pendingClipPatches.set(p.id, fn as NonNullable<ContainerNode<TData, TLayer, TPose>['clipFromPose']>);
-          } else {
-            dwarn('scene', `kit:add: clipKey "${p.clipKey}" not in this scene's registry — container "${p.id}" restored without clip. Register a function with this key in the registry option to restore the clip.`);
-          }
-        }
-      }
       if (p.dependsOn !== undefined) node.dependsOn = p.dependsOn;
-      dependents.add(p.id, p.dependsOn ?? []);
-      // Same redo/restore pair as clipFromPose above, minus the container guard.
-      const cachedDerivePath = pendingDerivePathPatches.get(p.id);
-      if (cachedDerivePath) {
-        node.derivePath = cachedDerivePath;
-      } else if (p.derivePathKey !== undefined) {
-        const fn = registry.derivePath?.[p.derivePathKey];
-        if (fn) {
-          node.derivePath = fn;
-          pendingDerivePathPatches.set(p.id, fn);
-        } else {
-          dwarn('scene', `kit:add: derivePathKey "${p.derivePathKey}" not in this scene's registry — node "${p.id}" restored without derived geometry. Register a function with this key in the registry option to restore it.`);
+      dependents.add(p.id, p.dependsOn === 'children' ? [] : p.dependsOn ?? []);
+      trackChildDerived(p.id, p.dependsOn);
+      // Two ways a function field comes back. The redo path reads the
+      // side-channel cache the original `scene.add` filled, because redo
+      // replays the op without a spec. The restore path — a fresh session,
+      // empty cache — resolves the registry key the payload carries, and
+      // seeds the cache so later undo/redo cycles behave like the live one.
+      const target = node as unknown as FnBearingNode;
+      for (const field of fnFields) {
+        const cached = field.pending.get(p.id);
+        if (cached !== undefined) {
+          field.write(target, cached);
+          continue;
         }
+        const key = p[field.spec.opKey] as string | undefined;
+        if (key !== undefined) restoreFn(field, target, key, 'kit:add', dwarn);
       }
       invalidateDependents(p.id);
     },
@@ -516,9 +507,11 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       detach(p.id);
       state.nodes.delete(p.id);
       dependents.remove(p.id);
+      childDerived.delete(p.id);
+      invalidateChildDerivedFrom(p.parent);
       invalidateDependents(p.id);
-      // Note: we intentionally do NOT delete the pendingClipPatches entry —
-      // redo will re-apply the node and re-attach clipFromPose from it.
+      // Note: we intentionally do NOT delete the pending function-field
+      // entries — redo re-applies the node and re-attaches from them.
     },
   });
 
@@ -538,7 +531,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     /** Registry keys for the function-valued fields on `nodes`. The functions
      *  themselves do not survive a persisted history, so revert re-resolves
      *  them the way `kit:add` does. */
-    fnKeys?: { id: NodeId; derivePathKey?: string; clipKey?: string }[];
+    fnKeys?: ({ id: NodeId } & Record<string, string | undefined>)[];
   }
   // Neither half invalidates dependents: removal's closure takes every live one.
   registerKitOp<RemoveSnapshot>('kit:remove', {
@@ -547,7 +540,11 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       for (const n of p.nodes) {
         state.nodes.delete(n.id);
         dependents.remove(n.id);
+        childDerived.delete(n.id);
       }
+      // A `dependsOn: 'children'` container the removal did not take is now
+      // hugging a smaller set.
+      for (const d of p.detached) invalidateChildDerivedFrom(d.parent);
     },
     revert: (p) => {
       const keys = new Map((p.fnKeys ?? []).map((k) => [k.id, k]));
@@ -558,9 +555,11 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
           : { ...n };
         restoreNodeFunctions(clone, keys.get(n.id));
         state.nodes.set(n.id, clone);
-        dependents.add(n.id, clone.dependsOn ?? []);
+        dependents.add(n.id, clone.dependsOn === 'children' ? [] : clone.dependsOn ?? []);
+        trackChildDerived(n.id, clone.dependsOn);
       }
       for (const d of p.detached) attach(d.id, d.parent, d.index);
+      for (const d of p.detached) invalidateChildDerivedFrom(d.parent);
     },
   });
 
@@ -610,11 +609,15 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     apply: (p) => {
       detach(p.id);
       attach(p.id, p.toParent, p.toIndex);
+      // Both ends: the container it left no longer hugs it, and the one it
+      // joined now does.
+      invalidateChildDerivedFrom(p.fromParent);
       invalidateDependents(p.id);
     },
     revert: (p) => {
       detach(p.id);
       attach(p.id, p.fromParent, p.fromIndex);
+      invalidateChildDerivedFrom(p.toParent);
       invalidateDependents(p.id);
     },
   });
@@ -965,21 +968,15 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       }
       const sibs = siblingsOf(parent);
       const index = spec.index ?? sibs.length;
-      const clipKey = spec.kind === 'container' && spec.clipFromPose !== undefined
-        ? reverseClipFromPose.get(spec.clipFromPose as NonNullable<ContainerNode<TData, TLayer, TPose>['clipFromPose']>)
-        : undefined;
-      const derivePathKey = spec.derivePath !== undefined ? reverseDerivePath.get(spec.derivePath) : undefined;
       executeAndLog('kit:add', {
         id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
         parent, index,
-        ...(clipKey !== undefined ? { clipKey } : {}),
         ...(spec.dependsOn !== undefined ? { dependsOn: spec.dependsOn } : {}),
-        ...(derivePathKey !== undefined ? { derivePathKey } : {}),
+        ...fnKeysOf(fnFields, { ...spec, id, kind: spec.kind } as unknown as FnBearingNode, 'opKey'),
       }, `add ${spec.kind}`);
-      // clipFromPose is a function and cannot travel through the serializable
-      // op payload. Patch it directly onto the live node after the op applies.
-      patchClipFromPose(spec, id, { cacheForRedo: true });
-      patchDerivePath(spec, id, { cacheForRedo: true });
+      // A function cannot travel through the serializable op payload. Patch it
+      // directly onto the live node after the op applies.
+      patchNodeFunctions(spec, id, { cacheForRedo: true });
       return id;
     },
 
@@ -1011,16 +1008,8 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       // reattach itself to whatever is added under this id next.
       for (const nid of ids) overrides.clear(nid);
       const fnKeys = snapshot.flatMap((n) => {
-        const derivePathKey = n.derivePath !== undefined
-          ? reverseDerivePath.get(n.derivePath) : undefined;
-        const clipKey = n.kind === 'container' && n.clipFromPose !== undefined
-          ? reverseClipFromPose.get(n.clipFromPose as NonNullable<ContainerNode<TData, TLayer, TPose>['clipFromPose']>)
-          : undefined;
-        return derivePathKey === undefined && clipKey === undefined ? [] : [{
-          id: n.id,
-          ...(derivePathKey !== undefined ? { derivePathKey } : {}),
-          ...(clipKey !== undefined ? { clipKey } : {}),
-        }];
+        const keys = fnKeysOf(fnFields, n as unknown as FnBearingNode, 'opKey');
+        return Object.keys(keys).length === 0 ? [] : [{ id: n.id, ...keys }];
       });
       const payload: RemoveSnapshot = {
         nodes: snapshot, detached,
@@ -1349,27 +1338,17 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
           data: n.data,
         };
         if (n.parent != null) out.parent = n.parent;
-        if (n.kind === 'container' && n.clipFromPose) {
-          const key = reverseClipFromPose.get(n.clipFromPose);
-          if (!key) {
+        if (n.dependsOn === 'children') out.dependsOn = 'children';
+        else if (n.dependsOn && n.dependsOn.length > 0) out.dependsOn = n.dependsOn;
+        Object.assign(
+          out,
+          fnKeysOf(fnFields, n as unknown as FnBearingNode, 'jsonKey', (field) => {
             throw new Error(
-              `Scene.toJSON: container '${id}' has clipFromPose but no matching registry key. ` +
+              `Scene.toJSON: node '${id}' has ${field.spec.field} but no matching registry key. ` +
               `The function must be registered via createScene's registry option to round-trip.`
             );
-          }
-          out.clipFromPoseKey = key;
-        }
-        if (n.dependsOn && n.dependsOn.length > 0) out.dependsOn = n.dependsOn;
-        if (n.derivePath) {
-          const key = reverseDerivePath.get(n.derivePath);
-          if (!key) {
-            throw new Error(
-              `Scene.toJSON: node '${id}' has derivePath but no matching registry key. ` +
-              `The function must be registered via createScene's registry option to round-trip.`
-            );
-          }
-          out.derivePathKey = key;
-        }
+          }),
+        );
         nodes.push(out);
       }
       const systemLayers = state.layers.map((l) => {
@@ -1404,10 +1383,9 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         state.layers.push(layerFromSerialized(spec));
         state.layerIndex.set(spec.id, i);
       }
-      // Clear history + transient batch/clip caches.
+      // Clear history + the transient batch and function-field caches.
       history.clear();
-      pendingClipPatches.clear();
-      pendingDerivePathPatches.clear();
+      for (const field of fnFields) field.pending.clear();
       currentBatch = null;
       batchDepth = 0;
       batchDirty = false;
@@ -1454,9 +1432,8 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       // No `kit:add` reaches history here, so nothing ever replays these and
       // `pruneCacheForDroppedOps` — which only scans `kit:add` — could never
       // drop the entries. A restore after `remove` comes from `kit:remove`'s
-      // revert, which clones the whole node and carries both fields along.
-      patchClipFromPose(spec, id, { cacheForRedo: false });
-      patchDerivePath(spec, id, { cacheForRedo: false });
+      // revert, which clones the whole node and carries every field along.
+      patchNodeFunctions(spec, id, { cacheForRedo: false });
     }
   }
 
@@ -1472,16 +1449,18 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   // __clipCacheSize / __derivePathCacheSize: used only by test files to assert
   // prune behaviour.
   (scene as unknown as { __clipCacheSize: () => number }).__clipCacheSize =
-    () => pendingClipPatches.size;
+    () => fnField('clipFromPose').pending.size;
   (scene as unknown as { __derivePathCacheSize: () => number }).__derivePathCacheSize =
-    () => pendingDerivePathPatches.size;
+    () => fnField('derivePath').pending.size;
+  (scene as unknown as { __derivePoseCacheSize: () => number }).__derivePoseCacheSize =
+    () => fnField('derivePose').pending.size;
 
   return scene;
 }
 
 /** Map a `SerializedScene` to construction specs. Shared by `sceneFromJSON`
  *  (new instance) and `Scene.loadState` (in-place). Validates version and
- *  resolves `clipFromPoseKey` / `derivePathKey` → function via the registry;
+ *  resolves every `NODE_FN_FIELDS` key → function via the registry;
  *  throws on an unsupported version or an unknown registry key. */
 function specsFromSerialized<TData, TLayer extends string, TPose>(
   json: SerializedScene<TData, TLayer, TPose>,
@@ -1499,26 +1478,23 @@ function specsFromSerialized<TData, TLayer extends string, TPose>(
       data: n.data,
     };
     if (n.parent !== undefined) spec.parent = n.parent as NodeId;
-    if (n.clipFromPoseKey !== undefined) {
-      const fn = registry.clipFromPose?.[n.clipFromPoseKey];
-      if (!fn) {
-        throw new Error(
-          `Scene: unknown clipFromPose key '${n.clipFromPoseKey}'. ` +
-          `Register a function with this key in the registry option.`,
-        );
-      }
-      (spec as { clipFromPose?: typeof fn }).clipFromPose = fn;
+    if (n.dependsOn !== undefined) {
+      spec.dependsOn = n.dependsOn === 'children'
+        ? 'children'
+        : (n.dependsOn as readonly NodeId[]);
     }
-    if (n.dependsOn !== undefined) spec.dependsOn = n.dependsOn as readonly NodeId[];
-    if (n.derivePathKey !== undefined) {
-      const fn = registry.derivePath?.[n.derivePathKey];
+    const serialized = n as unknown as Record<string, string | undefined>;
+    for (const field of NODE_FN_FIELDS) {
+      const key = serialized[field.jsonKey];
+      if (key === undefined) continue;
+      const fn = (registry[field.field] as Record<string, unknown> | undefined)?.[key];
       if (!fn) {
         throw new Error(
-          `Scene: unknown derivePath key '${n.derivePathKey}'. ` +
+          `Scene: unknown ${field.field} key '${key}'. ` +
           `Register a function with this key in the registry option.`,
         );
       }
-      spec.derivePath = fn;
+      (spec as unknown as Record<string, unknown>)[field.field] = fn;
     }
     return spec;
   });

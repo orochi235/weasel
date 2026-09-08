@@ -22,3 +22,6 @@ export type {
   UseSceneOptions,
 } from './types';
 export { createPoseOverrides } from './poseOverrides';
+export { derivedPose, documentPose, effectivePose } from './effectivePose';
+export type { PoseSource, PosedNode } from './effectivePose';
+export { UNION_OF_CHILDREN, unionOfChildren } from './kitRegistry';

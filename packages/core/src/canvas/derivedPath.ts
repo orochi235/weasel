@@ -6,6 +6,8 @@
  */
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import type { Path } from 'core/geometry/path';
+import { dependencyIdsOf } from 'core/scene/dependents';
+import { effectivePose } from 'core/scene/effectivePose';
 import { nodeMemo } from 'core/scene/nodeMemo';
 import type { SceneViewDrawOne } from './NodeShape';
 
@@ -16,23 +18,26 @@ const SLOT = 'kit:derivedPath';
  * derives from nothing (the normal case) or its `derivePath` has nothing to draw.
  *
  * `poseOf` supplies each dependency's painted pose; one it cannot resolve
- * reaches `derivePath` as `undefined`.
+ * reaches `derivePath` as `undefined`. `childrenOf` answers a node whose
+ * `dependsOn` is `'children'`.
  */
 export function resolveDerivedPath<TData, TLayer extends string, TPose>(
   node: Node<TData, TLayer, TPose>,
   poseOf: (id: NodeId) => TPose | undefined,
+  childrenOf: (id: NodeId) => readonly NodeId[],
 ): Path | null {
-  const deps = node.dependsOn;
   const derivePath = node.derivePath;
-  if (deps === undefined || deps.length === 0 || derivePath === undefined) return null;
+  if (derivePath === undefined) return null;
+  const ids = dependencyIdsOf(node, childrenOf);
+  if (ids.length === 0) return null;
   return nodeMemo(node, SLOT, node.pose, () =>
-    derivePath(node as Node<unknown, string, TPose>, deps.map((id) => poseOf(id))),
+    derivePath(node as Node<unknown, string, TPose>, ids.map((id) => poseOf(id))),
   );
 }
 
 /**
- * `(id) => the pose that node is painted at` — its ephemeral override when it
- * has one, else the pose the scene stores.
+ * `(id) => the pose that node is painted at` — {@link effectivePose} against
+ * the scene, so a dependency that is itself derived resolves before it is read.
  *
  * `Scene` stores absolute poses and the render walks hand `getPose` straight to
  * `drawOne`, composing nothing, so this has to read exactly what the render
@@ -45,7 +50,7 @@ export function scenePoseLookup<TData, TLayer extends string, TPose>(
   return (id) => {
     const node = scene.get(id);
     if (node === undefined) return undefined;
-    return scene.overrides.get(id)?.pose ?? node.pose;
+    return effectivePose(scene, node);
   };
 }
 
@@ -63,9 +68,12 @@ export function withDerivedPaths<TData, TLayer extends string, TPose>(
   drawOne: SceneViewDrawOne<TData, TLayer, TPose>,
 ): SceneViewDrawOne<TData, TLayer, TPose> {
   const poseOf = scenePoseLookup(scene);
+  const childrenOf = (id: NodeId): readonly NodeId[] => scene.childrenOf(id);
   return (node, pose, view, ctx) => {
-    const deps = node.dependsOn;
-    if (deps === undefined || deps.length === 0) return drawOne(node, pose, view, ctx);
-    return drawOne(node, pose, view, { ...ctx, derivedPath: resolveDerivedPath(node, poseOf) });
+    if (node.dependsOn === undefined) return drawOne(node, pose, view, ctx);
+    return drawOne(node, pose, view, {
+      ...ctx,
+      derivedPath: resolveDerivedPath(node, poseOf, childrenOf),
+    });
   };
 }

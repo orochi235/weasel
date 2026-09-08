@@ -28,7 +28,8 @@ import type {
 import type { LayoutStrategy } from '../layout/types';
 import type { Op } from 'core/ops/types';
 import type { Node, NodeId, Scene } from 'core/scene/types';
-import { effectivePose } from 'core/scene/poseOverrides';
+import { effectivePose } from 'core/scene/effectivePose';
+import { fnFieldsOfNode } from 'core/scene/nodeFnFields';
 import { asNodeId } from 'core/scene/types';
 import { applyOpsTo } from 'core/applyOps';
 import {
@@ -257,7 +258,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       const nid = asNodeId(id);
       const n = scene.get(nid);
       if (!n) throw new Error(`sceneToAdapter: unknown node "${id}"`);
-      return effectivePose(scene.overrides, { id: nid, pose: n.pose });
+      return effectivePose(scene, n);
     },
     getParent(id) {
       const n = scene.get(asNodeId(id));
@@ -364,13 +365,10 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         id: node.id,
         ...(index !== undefined ? { index } : {}),
         ...(node.parent !== null ? { parent: node.parent } : {}),
-        ...(node.kind === 'container' && node.clipFromPose
-          ? { clipFromPose: node.clipFromPose }
-          : {}),
         // Derivation travels with the node, or undo of a delete brings an
         // edge back as a static path that never follows its endpoints again.
         ...(node.dependsOn !== undefined ? { dependsOn: node.dependsOn } : {}),
-        ...(node.derivePath !== undefined ? { derivePath: node.derivePath } : {}),
+        ...fnFieldsOfNode(node),
       });
     },
     removeNode(id: string) {

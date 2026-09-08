@@ -82,8 +82,15 @@ interface NodeBase<TData, TLayer extends string, TPose> {
   parent: NodeId | null;
   /** Nodes whose poses this node's geometry is computed from. Fixed at add
    *  time. Absent or empty means the node's geometry is authored, which is the
-   *  normal case. */
-  dependsOn?: readonly NodeId[];
+   *  normal case.
+   *
+   *  `'children'` means "my own children, in child order" — a container that
+   *  hugs its contents, which a fixed id list cannot express because
+   *  reparenting would have to maintain it. The two forms differ in lifetime
+   *  as well as in membership: deleting a node deletes everything that names
+   *  it in `dependsOn`, but a container outlives the children it derives
+   *  from — an emptied group is still a group. */
+  dependsOn?: readonly NodeId[] | 'children';
   /** Computes this node's path from its dependencies' poses, in `dependsOn`
    *  order. A dependency that has been removed arrives as `undefined`.
    *  Returning `null` means "nothing to draw right now". Re-evaluated when a
@@ -97,6 +104,23 @@ interface NodeBase<TData, TLayer extends string, TPose> {
     node: Node<unknown, string, TPose>,
     deps: readonly (TPose | undefined)[],
   ) => Path | null;
+  /** Computes this node's pose from its dependencies' poses, the same way
+   *  `derivePath` computes its path — same `dependsOn` list, same widened
+   *  `node`, same registry-keyed serialization.
+   *
+   *  Where a derived path is resolved at paint time and reaches only the
+   *  painter, a derived pose is what the node *is* at: it feeds bounds,
+   *  hit-testing, selection chrome, snapping and layout, and every reader
+   *  gets it through `effectivePose`. A pose override still wins over it —
+   *  that is what lets a drag preview a node the document says is elsewhere.
+   *
+   *  Returning `null` means "I have nothing to derive from right now", and
+   *  the node falls back to its authored `pose`. `setPose` on a derived node
+   *  still writes that authored pose; it is simply not what anything reads. */
+  derivePose?: (
+    node: Node<unknown, string, TPose>,
+    deps: readonly (TPose | undefined)[],
+  ) => TPose | null;
 }
 
 /** A node with no children — a shape, a label, an image. */
@@ -168,13 +192,18 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
    *  to the node; ignored for leaves. Mirrors `ContainerNode.clipFromPose`. */
   clipFromPose?: (pose: TPose) => Path | null;
   /** Mirrors `SceneNode.dependsOn`. */
-  dependsOn?: readonly NodeId[];
+  dependsOn?: readonly NodeId[] | 'children';
   /** Mirrors `SceneNode.derivePath`. Taken as a live function; its registry key is
    *  looked up from it, never passed in. */
   derivePath?: (
     node: Node<unknown, string, TPose>,
     deps: readonly (TPose | undefined)[],
   ) => Path | null;
+  /** Mirrors `SceneNode.derivePose`, on the same terms as `derivePath`. */
+  derivePose?: (
+    node: Node<unknown, string, TPose>,
+    deps: readonly (TPose | undefined)[],
+  ) => TPose | null;
 }
 
 /** A custom scene mutation registered with `Scene.registerOp`: how to apply
@@ -239,13 +268,13 @@ export interface SerializedNode<TData, TLayer extends string, TPose> {
   /** Registry key for the container's clip-path factory.
    *  Containers only; omitted when the container has no clip. */
   clipFromPoseKey?: string;
-  /** Ids this node's geometry derives from. Omitted when it derives from nothing. */
-  dependsOn?: readonly string[];
+  /** Ids this node's geometry derives from, or `'children'`. Omitted when it
+   *  derives from nothing. */
+  dependsOn?: readonly string[] | 'children';
   /** Registry key for the node's `derivePath` function. Omitted when it has none. */
   derivePathKey?: string;
-  // Future function-field keys (drawOneKey, layoutStrategyKey, etc.) will live
-  // here; a third one should be the point this stops being copied per field and
-  // becomes one shared registry-keyed-function-field helper.
+  /** Registry key for the node's `derivePose` function. Omitted when it has none. */
+  derivePoseKey?: string;
 }
 
 /** Per-scene registry mapping string keys to live function references.
@@ -259,7 +288,13 @@ export interface SceneRegistry<TPose> {
     node: Node<unknown, string, TPose>,
     deps: readonly (TPose | undefined)[],
   ) => Path | null>>;
-  // Reserved for future function fields.
+  /** Maps registry keys to `derivePose` functions for nodes with `dependsOn`. */
+  derivePose?: Readonly<Record<string, (
+    node: Node<unknown, string, TPose>,
+    deps: readonly (TPose | undefined)[],
+  ) => TPose | null>>;
+  // A new function field is a row in `NODE_FN_FIELDS` (core/scene/nodeFnFields.ts)
+  // plus its entry here; the field name is the registry key by construction.
 }
 
 /** Options for `useScene` — the layers the scene has, what it starts out
@@ -314,9 +349,10 @@ export interface UseSceneOptions<TData, TLayer extends string, TPose = RectPose>
  */
 export interface PoseOverride<TPose> {
   /** Replaces the node's document pose everywhere the render and hit-test
-   *  paths read one, including the clip a container derives from its pose.
-   *  Resolved by `effectivePose` — reading `node.pose` directly is how those
-   *  paths came to disagree about where a node is. */
+   *  paths read one, including the clip a container derives from its pose, and
+   *  winning over a `derivePose`. Resolved by `effectivePose` — reading
+   *  `node.pose` directly is how those paths came to disagree about where a
+   *  node is. */
   pose?: TPose;
   /** Multiplied into the node's painted alpha, on top of any `alphaFor`. */
   alpha?: number;

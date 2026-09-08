@@ -319,12 +319,39 @@ Reparenting a node out from under its dependents is legal and intended: the
 geometry keeps recomputing across the new frame, because `derivePath` reads world
 poses and `Scene` stores them absolutely.
 
-**Two gaps to know about before building on this** — both in `docs/TODO.md`
-under "Derived geometry follow-ups": a derived node has no silhouette, so a
-zero-sized edge is effectively unpickable; and the built-in move, resize and
-rotate actions publish previews on a channel the derived lookup does not read,
-so an edge stays anchored during a drag and jumps on drop. Driving the pose
-overrides directly is unaffected.
+### Deriving a pose
+
+`derivePose` is the same machinery driving a node's **pose** rather than its
+path — same `dependsOn`, same registry-keyed serialization, same push
+invalidation. The difference is reach: a derived path is resolved at paint time
+and reaches only the painter, while a derived pose is what the node *is* at, so
+it feeds bounds, hit-testing, selection chrome, snapping and layout.
+
+`dependsOn: 'children'` is the second form of the dependency list: "my own
+children, in child order", which a fixed id list cannot express because
+reparenting would have to maintain it. It is what a container hugging its
+contents wants, and `groupAction` uses it — a group's bounds track its members
+instead of freezing at the moment it was made. The kit registers the union
+function it needs under `kit:unionOfChildren`, so a grouped document round-trips
+through `toJSON` in any scene.
+
+The two forms differ in lifetime as well as in membership. Deleting a node
+deletes everything that names it in `dependsOn`; a container outlives the
+children it derives from, because an emptied group is still a group. A container
+with nothing left falls back to its authored pose rather than collapsing to a
+zero box.
+
+Everything reads a pose through `effectivePose(scene, node)` — override, else
+derived, else authored — which is why one change reached all three render walks,
+the pick walk and the adapters at once. `documentPose` is the same answer minus
+the override step, for a reader that must not see an in-flight gesture: an
+action capturing the `from` of a transform op. Writing a derived node's pose
+still succeeds; it is simply not what anything reads.
+
+`derivePose` may return `null`, meaning "nothing to derive from right now", and
+the node falls back to its authored pose. A dependency cycle terminates at
+whichever node closes it, answering from its authored pose, and the result is
+not cached.
 
 ## Custom actions
 

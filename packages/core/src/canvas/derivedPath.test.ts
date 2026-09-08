@@ -15,6 +15,9 @@ import type { View } from 'core/viewport/view';
 import type { DrawCommand } from '../renderer';
 import { linePath } from 'features/paths/builder';
 
+/** No node in these fixtures uses `dependsOn: 'children'`. */
+const NO_CHILDREN = (): readonly NodeId[] => [];
+
 const pose = (x: number): RectPose => ({ x, y: 0, width: 10, height: 10 });
 
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -87,14 +90,14 @@ describe('resolveDerivedPath', () => {
     const plain: Node<Data, 'main', RectPose> = {
       id: asNodeId('n'), kind: 'leaf', layer: 'main', data: {}, parent: null, pose: pose(0),
     };
-    expect(resolveDerivedPath(plain, () => undefined)).toBeNull();
+    expect(resolveDerivedPath(plain, () => undefined, NO_CHILDREN)).toBeNull();
   });
 
   it('calls derivePath with dependency poses in dependsOn order', () => {
     const derivePath = vi.fn(() => linePath({ x: 0, y: 0 }, { x: 1, y: 1 }));
     const node = makeNode(derivePath);
     const poses = new Map([[asNodeId('a'), pose(0)], [asNodeId('b'), pose(100)]]);
-    resolveDerivedPath(node, (id) => poses.get(id));
+    resolveDerivedPath(node, (id) => poses.get(id), NO_CHILDREN);
     expect(derivePath).toHaveBeenCalledWith(node, [pose(0), pose(100)]);
   });
 
@@ -102,7 +105,7 @@ describe('resolveDerivedPath', () => {
     const derivePath = vi.fn(() => null);
     const node = makeNode(derivePath);
     const poses = new Map([[asNodeId('a'), pose(0)]]);
-    resolveDerivedPath(node, (id) => poses.get(id));
+    resolveDerivedPath(node, (id) => poses.get(id), NO_CHILDREN);
     expect(derivePath).toHaveBeenCalledWith(node, [pose(0), undefined]);
   });
 
@@ -111,8 +114,8 @@ describe('resolveDerivedPath', () => {
     const node = makeNode(derivePath);
     const poses = new Map([[asNodeId('a'), pose(0)], [asNodeId('b'), pose(100)]]);
     const lookup = (id: NodeId) => poses.get(id);
-    resolveDerivedPath(node, lookup);
-    resolveDerivedPath(node, lookup);
+    resolveDerivedPath(node, lookup, NO_CHILDREN);
+    resolveDerivedPath(node, lookup, NO_CHILDREN);
     expect(derivePath).toHaveBeenCalledTimes(1);
   });
 
@@ -122,9 +125,9 @@ describe('resolveDerivedPath', () => {
     const node = makeNode(derivePath);
     const poses = new Map([[asNodeId('a'), pose(0)], [asNodeId('b'), pose(100)]]);
     const lookup = (id: NodeId) => poses.get(id);
-    resolveDerivedPath(node, lookup);
+    resolveDerivedPath(node, lookup, NO_CHILDREN);
     dropPoseKeyedMemoSlots(node);
-    resolveDerivedPath(node, lookup);
+    resolveDerivedPath(node, lookup, NO_CHILDREN);
     expect(derivePath).toHaveBeenCalledTimes(2);
   });
 });
@@ -354,7 +357,7 @@ describe('picking a derived node', () => {
   function edgeParts() {
     const { scene, a, b, edge } = makeEdgeScene();
     const node = scene.get(edge)!;
-    const path = resolveDerivedPath(node, scenePoseLookup(scene))!;
+    const path = resolveDerivedPath(node, scenePoseLookup(scene), NO_CHILDREN)!;
     return { scene, a, b, edge, node, path };
   }
 
@@ -393,12 +396,12 @@ describe('picking a derived node', () => {
     const { scene, b, node } = edgeParts();
     const lookup = scenePoseLookup(scene);
     findShapeSilhouette(node, node.pose, {
-      derivedPath: resolveDerivedPath(node, lookup),
+      derivedPath: resolveDerivedPath(node, lookup, NO_CHILDREN),
     });
 
     scene.setPose(b, pose(40));
 
-    const moved = resolveDerivedPath(scene.get(node.id)!, lookup);
+    const moved = resolveDerivedPath(scene.get(node.id)!, lookup, NO_CHILDREN);
     expect(findShapeSilhouette(node, node.pose, { derivedPath: moved }))
       .toEqual(linePath({ x: 0, y: 0 }, { x: 40, y: 0 }));
   });

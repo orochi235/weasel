@@ -36,7 +36,7 @@ export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
   return {
     ...slot,
     drawOne: withDerivedPaths(scene, slot.drawOne),
-    derivedPathOf: (node) => resolveDerivedPath(node, poseOf),
+    derivedPathOf: (node) => resolveDerivedPath(node, poseOf, (id) => scene.childrenOf(id)),
     alphaFor: composeAlphaFor(scene, alphaFor),
   };
 }

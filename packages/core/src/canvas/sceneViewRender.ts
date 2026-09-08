@@ -24,6 +24,7 @@ import type { View } from '../core/viewport/view';
 import type { Node, NodeId, Scene } from '../core/scene/types';
 import { wrapNodeOutput } from './wrapNodeOutput';
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
+import { effectivePose } from 'core/scene/effectivePose';
 import { withDerivedPaths, resolveDerivedPath, scenePoseLookup } from './derivedPath';
 import type { SceneViewDrawOne } from './NodeShape';
 
@@ -109,7 +110,7 @@ function sceneAsHierarchy<TData, TLayer extends string, TPose>(
       const node = scene.get(parentId as NodeId);
       return node && node.kind === 'container' ? (node.children as readonly string[]) : [];
     },
-    getPose: (id) => scene.overrides.get(id as NodeId)?.pose ?? scene.get(id as NodeId)!.pose,
+    getPose: (id) => effectivePose(scene, scene.get(id as NodeId)!),
   } as HierarchicalAdapter<Node<TData, TLayer, TPose>, TPose>;
 }
 
@@ -168,7 +169,7 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
     undefined,
     ((node: unknown) =>
       resolveDerivedPath(
-        node as Node<TData, TLayer, TPose>, poseLookup,
+        node as Node<TData, TLayer, TPose>, poseLookup, (id) => scene.childrenOf(id),
       )) as Parameters<typeof buildSceneTree>[4],
   );
   if (extraCommands && extraCommands.length > 0) {

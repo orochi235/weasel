@@ -1,10 +1,28 @@
 /**
- * Reverse index for derived geometry: which nodes must recompute when a given
- * node's pose changes.
+ * Which nodes must recompute when a given node's pose changes — the reverse
+ * index, plus {@link dependencyIdsOf}, the forward read it is built from.
  */
 import type { NodeId } from './types';
 
 const NONE: readonly NodeId[] = Object.freeze([]);
+
+/**
+ * The nodes `node`'s geometry derives from: the ids it named, or its own
+ * children when it named `'children'`.
+ *
+ * The `'children'` form is deliberately absent from the reverse index — a
+ * container is not a dependent of the children it hugs, or deleting one child
+ * would cascade the whole group away. Its invalidation is the ancestor walk in
+ * `scene.ts` instead.
+ */
+export function dependencyIdsOf(
+  node: { id: NodeId; dependsOn?: readonly NodeId[] | 'children' },
+  childrenOf: (id: NodeId) => readonly NodeId[],
+): readonly NodeId[] {
+  const deps = node.dependsOn;
+  if (deps === undefined) return NONE;
+  return deps === 'children' ? childrenOf(node.id) : deps;
+}
 
 export interface DependentsIndex {
   add(id: NodeId, deps: readonly NodeId[]): void;

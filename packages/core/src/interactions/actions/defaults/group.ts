@@ -5,6 +5,7 @@ import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import { createReparentOp } from 'core/ops/reparent';
 import { unionBounds, type RectPose } from 'core/geometry/unionBounds';
+import { unionOfChildren } from 'core/scene/kitRegistry';
 import type { Action } from '../registry';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 
@@ -30,7 +31,10 @@ function freshContainerId(): NodeId {
  *
  * Child poses are absolute by default (the container-pose cascade is opt-in),
  * so reparenting does NOT move the members visually. The container's own pose
- * is purely bounds/selection metadata: the union AABB of its members.
+ * is bounds/selection metadata — the union AABB of its members — and it is
+ * *derived*, so it tracks a member that moves later instead of freezing at
+ * the moment the group was made. The authored pose it also carries is the
+ * fallback for an emptied group and for a scene whose registry lost the key.
  */
 export const groupAction: Action & { requires: string[] } = {
   id: 'group',
@@ -88,6 +92,8 @@ export const groupAction: Action & { requires: string[] } = {
             pose: pose as unknown,
             data: {} as unknown,
             parent: parent ?? null,
+            dependsOn: 'children',
+            derivePose: unionOfChildren,
           } as Node<unknown, string, unknown>,
           label: 'Group',
         }),

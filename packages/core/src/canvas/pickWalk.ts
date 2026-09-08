@@ -23,7 +23,7 @@ import type { Path } from 'features/paths/types';
 import { findShapeSilhouette } from 'canvas/NodeShape';
 import type { Node, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
-import { effectivePose } from 'core/scene/poseOverrides';
+import { effectivePose } from 'core/scene/effectivePose';
 import { resolveDerivedPath } from './derivedPath';
 
 /** Shared, never mutated: most scenes are flat and every node returns it. */
@@ -215,17 +215,21 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
 
   const poseOf = getPose
     ? (node: PickCandidate<TPose>) => getPose(node.id)
-    : (node: PickCandidate<TPose>) => effectivePose(scene.overrides, node as never);
+    : (node: PickCandidate<TPose>) => effectivePose(scene, node as never);
 
   // Through `poseOf`, not the document pose: a derived node has to be tested
   // where the renderer draws its dependencies, which is what an override says.
   const derivedPathOf = (node: PickCandidate<TPose>): Path | null => {
     const n = node as unknown as Node<TData, TLayer, TPose>;
-    if (n.dependsOn === undefined || n.dependsOn.length === 0) return null;
-    return resolveDerivedPath(n, (id) => {
-      const dep = scene.get(id);
-      return dep === undefined ? undefined : poseOf(dep as never);
-    });
+    if (n.dependsOn === undefined) return null;
+    return resolveDerivedPath(
+      n,
+      (id) => {
+        const dep = scene.get(id);
+        return dep === undefined ? undefined : poseOf(dep as never);
+      },
+      (id) => scene.childrenOf(id),
+    );
   };
 
   return {

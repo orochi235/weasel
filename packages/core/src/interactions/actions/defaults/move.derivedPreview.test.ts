@@ -60,7 +60,7 @@ function fixture() {
 
 /** The path the renderer would paint for the edge right now. */
 function paintedEdge(scene: ReturnType<typeof createScene<D, L, P>>, edge: NodeId) {
-  return resolveDerivedPath(scene.get(edge)!, scenePoseLookup(scene));
+  return resolveDerivedPath(scene.get(edge)!, scenePoseLookup(scene), (id) => scene.childrenOf(id));
 }
 
 const DRAG = { start: { x: 5, y: 5 }, current: { x: 5, y: 105 }, delta: { x: 0, y: 100 } };

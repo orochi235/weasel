@@ -16,6 +16,8 @@
  * `interactions → canvas → interactions` cycle. Mirrors `moveGestureAdapter`,
  * widened to all op-apply methods.
  */
+import { fnFieldsOfNode } from 'core/scene/nodeFnFields';
+import { documentPose } from 'core/scene/effectivePose';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 
@@ -29,7 +31,7 @@ export function defaultCommitAdapter<TPose>(scene: Scene<unknown, string, TPose>
     getNodes: () => {
       return [...scene.renderOrderNodes()] as Node<unknown, string, TPose>[];
     },
-    getPose: (id: string) => scene.get(asNodeId(id))!.pose,
+    getPose: (id: string) => documentPose(scene, scene.get(asNodeId(id))!),
     getSelection: (): string[] => [...scene.getSelection()],
     setSelection: (ids: string[]) => scene.setSelection(ids.map(asNodeId)),
     getParent: (id: string) => (scene.get(asNodeId(id))?.parent ?? null) as string | null,
@@ -71,14 +73,8 @@ export function defaultCommitAdapter<TPose>(scene: Scene<unknown, string, TPose>
         // source removal) re-inserts at the recorded z-order slot instead
         // of appending at the end.
         ...(index !== undefined ? { index } : {}),
-        // The function-valued fields travel with the node, or undo of a delete
-        // brings an edge back as a static path that never follows its endpoints
-        // again, and a clipped container back with nothing clipped.
         ...(node.dependsOn !== undefined ? { dependsOn: node.dependsOn } : {}),
-        ...(node.derivePath !== undefined ? { derivePath: node.derivePath } : {}),
-        ...(node.kind === 'container' && node.clipFromPose !== undefined
-          ? { clipFromPose: node.clipFromPose }
-          : {}),
+        ...fnFieldsOfNode(node),
       }),
   };
 }

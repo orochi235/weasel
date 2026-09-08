@@ -10,6 +10,8 @@
  * geometryProjection seam's data-sync op) and the sibling-order seam
  * (`getChildren` / `setChildOrder`) those ops read to restore a node's slot.
  */
+import { documentPose } from 'core/scene/effectivePose';
+import { fnFieldsOfNode } from 'core/scene/nodeFnFields';
 import type { Node, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { MoveAdapter } from 'core/adapters/types';
@@ -33,7 +35,7 @@ export function moveGestureAdapter<TPose>(
     getNodes: () => {
       return [...scene.renderOrderNodes()] as Node<unknown, string, TPose>[];
     },
-    getPose: (id) => scene.get(asNodeId(id))!.pose,
+    getPose: (id) => documentPose(scene, scene.get(asNodeId(id))!),
     getParent: (id) => scene.get(asNodeId(id))?.parent ?? null,
     setPose: (id, pose) => scene.setPose(asNodeId(id), pose),
     setParent: (id, parentId) =>
@@ -50,10 +52,7 @@ export function moveGestureAdapter<TPose>(
         ...(index !== undefined ? { index } : {}),
         ...(node.parent !== null ? { parent: node.parent } : {}),
         ...(node.dependsOn !== undefined ? { dependsOn: node.dependsOn } : {}),
-        ...(node.derivePath !== undefined ? { derivePath: node.derivePath } : {}),
-        ...(node.kind === 'container' && node.clipFromPose !== undefined
-          ? { clipFromPose: node.clipFromPose }
-          : {}),
+        ...fnFieldsOfNode(node),
       }),
     getChildren: (parentId) =>
       parentId === null ? [...scene.roots] : [...scene.childrenOf(asNodeId(parentId))],
