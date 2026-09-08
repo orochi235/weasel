@@ -409,6 +409,35 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     if (cacheForRedo) pendingDerivePathPatches.set(id, spec.derivePath);
   }
 
+  /** Re-attach `derivePath` / `clipFromPose` to a node restored from a
+   *  `kit:remove` snapshot. In-session the clone already carries them; a
+   *  persisted history does not, so the registry keys are what is left. */
+  function restoreNodeFunctions(
+    node: Node<TData, TLayer, TPose>,
+    keys: { derivePathKey?: string; clipKey?: string } | undefined,
+  ): void {
+    if (!keys) return;
+    if (node.derivePath === undefined && keys.derivePathKey !== undefined) {
+      const fn = registry.derivePath?.[keys.derivePathKey];
+      if (fn) {
+        node.derivePath = fn;
+        pendingDerivePathPatches.set(node.id, fn);
+      } else {
+        dwarn('scene', `kit:remove: derivePathKey "${keys.derivePathKey}" not in this scene's registry — node "${node.id}" restored without derived geometry. Register a function with this key in the registry option to restore it.`);
+      }
+    }
+    if (node.kind !== 'container' || keys.clipKey === undefined) return;
+    const container = node as ContainerNode<TData, TLayer, TPose>;
+    if (container.clipFromPose !== undefined) return;
+    const clip = registry.clipFromPose?.[keys.clipKey];
+    if (clip) {
+      container.clipFromPose = clip;
+      pendingClipPatches.set(node.id, clip as NonNullable<ContainerNode<TData, TLayer, TPose>['clipFromPose']>);
+    } else {
+      dwarn('scene', `kit:remove: clipKey "${keys.clipKey}" not in this scene's registry — container "${node.id}" restored without clip. Register a function with this key in the registry option to restore the clip.`);
+    }
+  }
+
   // ── Internal kit op kinds ──────────────────────────────────────────────
   // These are registered like any other op; the kit's mutation methods build
   // serializable payloads and route through the same log/replay machinery.
@@ -491,6 +520,10 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   interface RemoveSnapshot {
     nodes: Node<TData, TLayer, TPose>[];
     detached: { id: NodeId; parent: NodeId | null; index: number }[];
+    /** Registry keys for the function-valued fields on `nodes`. The functions
+     *  themselves do not survive a persisted history, so revert re-resolves
+     *  them the way `kit:add` does. */
+    fnKeys?: { id: NodeId; derivePathKey?: string; clipKey?: string }[];
   }
   // Neither half invalidates dependents: removal's closure takes every live one.
   registerKitOp<RemoveSnapshot>('kit:remove', {
@@ -502,11 +535,13 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       }
     },
     revert: (p) => {
+      const keys = new Map((p.fnKeys ?? []).map((k) => [k.id, k]));
       // Order-independent: every clone carries its own parent and children.
       for (const n of p.nodes) {
         const clone: Node<TData, TLayer, TPose> = n.kind === 'container'
           ? { ...n, children: [...n.children] }
           : { ...n };
+        restoreNodeFunctions(clone, keys.get(n.id));
         state.nodes.set(n.id, clone);
         dependents.add(n.id, clone.dependsOn ?? []);
       }
@@ -949,7 +984,22 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       // Ephemeral, and ids are reusable: an override left behind would
       // reattach itself to whatever is added under this id next.
       for (const nid of ids) overrides.clear(nid);
-      const payload: RemoveSnapshot = { nodes: snapshot, detached };
+      const fnKeys = snapshot.flatMap((n) => {
+        const derivePathKey = n.derivePath !== undefined
+          ? reverseDerivePath.get(n.derivePath) : undefined;
+        const clipKey = n.kind === 'container' && n.clipFromPose !== undefined
+          ? reverseClipFromPose.get(n.clipFromPose as NonNullable<ContainerNode<TData, TLayer, TPose>['clipFromPose']>)
+          : undefined;
+        return derivePathKey === undefined && clipKey === undefined ? [] : [{
+          id: n.id,
+          ...(derivePathKey !== undefined ? { derivePathKey } : {}),
+          ...(clipKey !== undefined ? { clipKey } : {}),
+        }];
+      });
+      const payload: RemoveSnapshot = {
+        nodes: snapshot, detached,
+        ...(fnKeys.length > 0 ? { fnKeys } : {}),
+      };
       executeAndLog('kit:remove', payload, 'remove');
     },
 

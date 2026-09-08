@@ -114,6 +114,47 @@ describe('derived geometry — serialization', () => {
     expect(node.derivePath).toBeUndefined();
   });
 
+  it('restores derivePath from the registry when a persisted remove is undone', () => {
+    const a = createScene<object, 'main', RectPose>({ systemLayers: LAYERS, registry });
+    const dep = a.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    a.add({
+      id: asNodeId('edge'), kind: 'leaf', layer: 'main',
+      pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
+      dependsOn: [dep], derivePath: connectCenters,
+    });
+    a.remove(asNodeId('edge'));
+
+    // The round-trip is the point: JSON drops the function off the snapshot,
+    // which is what leaves a restored node inert.
+    const snap = JSON.parse(JSON.stringify(a.serializeHistory()));
+    const b = createScene<object, 'main', RectPose>({ systemLayers: LAYERS, registry });
+    b.loadState(JSON.parse(JSON.stringify(a.toJSON())));
+    b.restoreHistory(snap);
+    b.undo();
+
+    const node = b.get(asNodeId('edge'))!;
+    expect(node.dependsOn).toEqual([dep]);
+    expect(node.derivePath).toBe(connectCenters);
+  });
+
+  it('warns rather than throwing when a removed node\'s derivePath key is unregistered', () => {
+    const a = createScene<object, 'main', RectPose>({ systemLayers: LAYERS, registry });
+    const dep = a.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    a.add({
+      id: asNodeId('edge'), kind: 'leaf', layer: 'main',
+      pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
+      dependsOn: [dep], derivePath: connectCenters,
+    });
+    a.remove(asNodeId('edge'));
+    const snap = JSON.parse(JSON.stringify(a.serializeHistory()));
+
+    const b = createScene<object, 'main', RectPose>({ systemLayers: LAYERS, registry: {} });
+    b.loadState(JSON.parse(JSON.stringify(a.toJSON())));
+    b.restoreHistory(snap);
+    expect(() => b.undo()).not.toThrow();
+    expect(b.get(asNodeId('edge'))!.derivePath).toBeUndefined();
+  });
+
   it('throws from toJSON when derivePath is not in the registry', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS, registry });
     const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });

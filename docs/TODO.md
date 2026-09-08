@@ -795,12 +795,6 @@ here is smaller than the connect gesture that comes next.
   resolves every dependency's pose on every frame. Measure against a real diagram
   before taking it.
 
-- **(P2) `kit:remove`'s snapshot carries `derivePath` as a live function**, so a
-  persisted-then-restored history brings derived nodes back inert: `dependsOn`
-  survives the JSON round-trip and repopulates the index, but the node will never
-  paint. `kit:add` already solves this with `derivePathKey` plus registry
-  re-resolution; `kit:remove` should mirror it.
-
 - **(P3) `setDependsOn` op.** `dependsOn` is fixed at add time, so retargeting an
   edge is remove plus add. Design it with the connect gesture rather than ahead
   of it.
