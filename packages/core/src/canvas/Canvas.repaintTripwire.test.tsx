@@ -14,6 +14,7 @@ import { render, act, cleanup } from '@testing-library/react';
 import { useMemo, useState } from 'react';
 import { Canvas } from './Canvas';
 import type { SelectionApi } from '../core/selection/useSelection';
+import { asNodeId, type NodeId } from '../core/scene/types';
 import type { RenderLayer } from '../core/layers/render';
 import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
 
@@ -42,7 +43,7 @@ function probeLayer(draw: () => void): RenderLayer<unknown> {
   };
 }
 
-function selectionOf(ids: readonly string[]): SelectionApi {
+function selectionOf(ids: readonly NodeId[]): SelectionApi {
   const noop = (): void => {};
   return {
     current: ids,
@@ -64,9 +65,9 @@ function Host({ draw, control }: {
   draw: () => void;
   control: { setSelection?: (ids: string[]) => void; bumpUnrelated?: () => void };
 }) {
-  const [ids, setIds] = useState<string[]>([]);
+  const [ids, setIds] = useState<NodeId[]>([]);
   const [, setUnrelated] = useState(0);
-  control.setSelection = setIds;
+  control.setSelection = (next: string[]) => setIds(next.map(asNodeId));
   control.bumpUnrelated = () => setUnrelated((n) => n + 1);
 
   const layer = useMemo(() => probeLayer(draw), [draw]);

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { selectAllAction } from './selectAll';
 import { createScene } from 'core/scene/scene';
+import { asNodeId } from 'core/scene/types';
 
 describe('selectAllAction (descriptor)', () => {
   it('id="selectAll", label="Select All"', () => {
@@ -20,7 +21,7 @@ describe('selectAllAction (descriptor)', () => {
 describe('selectAllAction (behavior)', () => {
   const run = (scene: unknown): string[] => {
     const picked: string[][] = [];
-    selectAllAction.invoker!.run!(
+    (selectAllAction.invoker as { run(deps: never, params: never): void }).run(
       { scene, selection: { set: (ids: string[]) => picked.push(ids) } } as never,
       undefined as never,
     );
@@ -32,8 +33,8 @@ describe('selectAllAction (behavior)', () => {
       systemLayers: [{ id: 'base' as const }],
     });
     scene.addLayer({ id: 'fx', name: 'Effects' });
-    scene.add({ id: 'shown', layer: 'base', data: { v: 1 }, pose: { x: 0 } });
-    scene.add({ id: 'hidden', layer: 'fx', data: { v: 2 }, pose: { x: 0 } });
+    scene.add({ kind: 'leaf', id: asNodeId('shown'), layer: 'base', data: { v: 1 }, pose: { x: 0 } });
+    scene.add({ kind: 'leaf', id: asNodeId('hidden'), layer: 'fx', data: { v: 2 }, pose: { x: 0 } });
     return scene;
   };
 
