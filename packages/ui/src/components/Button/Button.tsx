@@ -9,6 +9,11 @@ export type ButtonSize = 'sm' | 'md';
 type ButtonBase = {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  /** A button that stays down: renders `aria-pressed` and holds the active
+   *  treatment while it is on. For a control that reports a state rather than
+   *  firing an action -- a panel toggle, a mode switch. Left off, the button
+   *  announces no pressed state at all, which is what an action button wants. */
+  pressed?: boolean;
   disabled?: boolean;
   loading?: boolean;
   leadingIcon?: ReactNode;
@@ -76,6 +81,7 @@ export const Button = forwardRef(function Button(
   const {
     variant = 'secondary',
     size = 'md',
+    pressed,
     disabled,
     loading,
     leadingIcon,
@@ -95,6 +101,7 @@ export const Button = forwardRef(function Button(
     s[`variant_${variant}`],
     s[`size_${size}`],
     fullWidth && s.fullWidth,
+    pressed && s.pressed,
     iconOnly && s.iconOnly,
     loading && s.loading,
     className,
@@ -112,6 +119,7 @@ export const Button = forwardRef(function Button(
       style={style}
       disabled={disabled}
       aria-busy={loading ? true : undefined}
+      aria-pressed={pressed}
       aria-label={ariaLabel}
       onClick={onClick}
     >

@@ -98,4 +98,15 @@ describe('Button', () => {
     const { getByRole } = render(<Button fullWidth>X</Button>);
     expect(getByRole('button').className).toMatch(/fullWidth/);
   });
+
+  it('reports a pressed state only when it is a toggle', () => {
+    const { getByRole, rerender } = render(<Button pressed={false}>Legend</Button>);
+    expect(getByRole('button').getAttribute('aria-pressed')).toBe('false');
+    rerender(<Button pressed>Legend</Button>);
+    expect(getByRole('button').getAttribute('aria-pressed')).toBe('true');
+    // An action button must announce none at all -- `false` reads as a toggle
+    // that happens to be off.
+    rerender(<Button>Save</Button>);
+    expect(getByRole('button').getAttribute('aria-pressed')).toBeNull();
+  });
 });
