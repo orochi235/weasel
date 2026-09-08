@@ -36,8 +36,7 @@ Priority tags:
 - Two implementations of an editable curve; the timeline built the second → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit's loupe drives itself with plain listeners, not bindings → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit: nested config values — `f.schema` is flat because `setConfig` is → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- Reconcile core's `ToolPrefLeaf` with weasel-ui's `PrefLeaf` — the `paint` kind has already drifted → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- A number leaf's unit conversion is one leaf deep → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- No control parses a typed unit, and the conversion tables answer only grid snapping → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - `LabShell` is the only thing that applies labkit's style scope → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 **Lint**
@@ -432,19 +431,6 @@ Core five + Crop shipped. Remaining:
   beside it clips fine. So the demo gap is not one line, and the question under
   it belongs to the kit: whether `useTextEdit`'s overlay should clip itself to
   the container it is handed. Reverted rather than shipped half-fixed.
-
-- **(P2) The canvas's repaint tripwire has a blind spot: `helpersForLayersRef`.**
-  `Canvas` marks itself dirty from a `useEffect` whose dep array is meant to
-  name every input the paint reads. `helpersForLayersRef` — selection, preview
-  poses, chrome state, `getIsVisible` — is written during render and appears in
-  neither that array nor an imperative redraw of its own. It works today only
-  because `SceneCanvas` calls `requestRedraw()` by hand at six sites
-  (`SceneCanvas.tsx:936, 946, 952, 1082, 1087, 1622`), which means the primitive
-  is trusting its wrapper to remember. A bare `<Canvas>` consumer changing
-  selection gets no repaint, and the comment above the dep array claims the
-  opposite ("every input the paint reads must appear here"). Either fold the
-  helpers into the tripwire or make the comment tell the truth about who owns
-  the redraw.
 
 - **(P3) The loupe's colour sample is still read off an unlanded frame.** The
   region readback now waits for a paint, but `readHex`
@@ -1219,18 +1205,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `onConfigChange` diffing over a tree, and a storage migration. `PrefGroup`
   already nests, so the vocabulary is not the blocker.
 
-- **(P2) Reconcile core's `ToolPrefLeaf` with weasel-ui's `PrefLeaf`.**
-  `packages/ui/src/components/Prefs/schema.ts` avoids importing
-  `@weasel-js/core` on purpose so a `ToolPrefGroup` assigns into `PrefGroup`
-  with no cast, and its header says "Keep the two in sync field-for-field."
-  They are not: core has `paint` (`ToolPrefPaint`) and ui has no equivalent, so
-  `defaultNodeProperties` emits `kind: 'paint'` and `kind: 'font-family'` leaves
-  that `PrefsForm` can only render as placeholders. Core carries a compile-time
-  exhaustiveness tie (`_BuiltinKindsExact`, `prefs.ts:118`); there is no
-  cross-package counterpart and there cannot be one while the contract is
-  structural, so the invariant is a comment. labkit now builds on `PrefLeaf`
-  (2026-08-26), which stopped a third dialect but did not close this.
-
 - **(P3) `ControlPanel` ignores three `Pref*` presentation fields.** `control:
   'switch'` draws a checkbox and `control: 'radio'` draws a segmented
   `ToggleRow`; both are reasonable renderings, and `PrefsForm` honors the
@@ -1313,16 +1287,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   is no `--wzl-handle-*` token: Timeline's `.key` (9px) and CurveEditor's
   endpoint (10px) are both 45°-rotated squares that arrived there independently.
 
-- **(P2) A number leaf's unit conversion is one panel deep.** `ToolPrefNumberUnit`
-  (`toDisplay` / `fromDisplay` / `suffix`) is the only display-unit mechanism
-  wired end to end, and exactly one leaf uses it — `pose.rotation`, radians
-  stored, degrees shown. `SelectionPanel` converts the value and its declared
-  bounds; `PrefLeaf` has no `unit` field at all, so `PrefsForm` renders the same
-  leaf raw — the reconcile entry above is where that half lives. Nothing
-  anywhere parses a typed `"12mm"`, and the conversion tables that would answer
-  one (`UnitSystem`, `IMPERIAL_INCHES` / `METRIC_MM` / `PIXELS`) belong to a
-  separate mechanism wired only to grid snapping, whose `formatUnit` has no
-  callers.
+- **(P2) No control parses a typed unit, and the conversion tables answer only
+  grid snapping.** `ToolPrefNumberUnit` (`toDisplay` / `fromDisplay` /
+  `suffix`) is honored by `SelectionPanel` and `PrefsForm` alike, value and
+  declared bounds both, through the shared `prefDisplayBounds`. What is missing
+  sits either side of it: nothing anywhere parses a typed `"12mm"`, and the
+  tables that would answer one (`UnitSystem`, `IMPERIAL_INCHES` / `METRIC_MM` /
+  `PIXELS`) belong to a separate mechanism wired only to grid snapping, whose
+  `formatUnit` has no callers. One leaf declares a unit today —
+  `pose.rotation`, radians stored, degrees shown.
 
 - **(P2) `LabShell` is the only thing that applies labkit's style scope.**
   `.lk-root` carries the tokens, the fonts, the box-sizing reset and every
