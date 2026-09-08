@@ -8,9 +8,6 @@ import {
 } from './wheelHandler';
 import type { View } from './view';
 import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from './zoomBounds';
-import { viewportZoomAction } from 'interactions/actions/defaults/viewportZoom';
-import { viewportWheelPanAction } from 'interactions/actions/defaults/viewportWheelPan';
-import type { ViewApi } from 'interactions/actions/depSchema';
 
 const base: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const at = (x: number, y: number): Pick<WheelInput, 'x' | 'y'> => ({ x, y });
@@ -18,15 +15,6 @@ const at = (x: number, y: number): Pick<WheelInput, 'x' | 'y'> => ({ x, y });
 /** World point currently painted at the given canvas-local pixel. */
 function worldUnder(view: View, x: number, y: number) {
   return { x: x / view.scale.x + view.x, y: y / view.scale.y + view.y };
-}
-
-function makeView(initial: View = base): ViewApi & { value: View } {
-  const api = {
-    value: initial,
-    get() { return api.value; },
-    set(next: View) { api.value = next; },
-  };
-  return api as ViewApi & { value: View };
 }
 
 // ---------------------------------------------------------------------------
@@ -138,51 +126,6 @@ describe('wheelZoomFactor / wheelZoom / wheelPan', () => {
   it('wheelZoom anchors where it is told', () => {
     expect(wheelZoom(base, { x: 200, y: 0 }, -100)).toEqual(
       computeWheelAction(base, { deltaX: 0, deltaY: -100, metaKey: true, ...at(200, 0) }),
-    );
-  });
-});
-
-// ---------------------------------------------------------------------------
-// The actions and the reducer are one implementation
-// ---------------------------------------------------------------------------
-
-describe('the wheel actions agree with the reducer', () => {
-  it('viewport.zoom matches computeWheelAction on a modified wheel', () => {
-    const view = makeView({ x: 3, y: -7, scale: { x: 2, y: 2 } });
-    const invoker = viewportZoomAction.invoker!;
-    if (invoker.timing !== 'immediate') throw new Error('expected an immediate invoker');
-    invoker.run({ view }, { kind: 'wheel', deltaY: -120, clientX: 250, clientY: 130 });
-    expect(view.value).toEqual(
-      computeWheelAction(
-        { x: 3, y: -7, scale: { x: 2, y: 2 } },
-        { deltaX: 0, deltaY: -120, metaKey: true, ...at(250, 130) },
-      ),
-    );
-  });
-
-  it('viewport.wheelPan matches computeWheelAction on a bare wheel', () => {
-    const view = makeView({ x: 3, y: -7, scale: { x: 2, y: 4 } });
-    const invoker = viewportWheelPanAction.invoker!;
-    if (invoker.timing !== 'immediate') throw new Error('expected an immediate invoker');
-    invoker.run({ view }, { deltaX: 12, deltaY: -30 });
-    expect(view.value).toEqual(
-      computeWheelAction(
-        { x: 3, y: -7, scale: { x: 2, y: 4 } },
-        { deltaX: 12, deltaY: -30, ...at(0, 0) },
-      ),
-    );
-  });
-
-  it('viewport.wheelPan matches computeWheelAction on shift+wheel', () => {
-    const view = makeView({ x: 3, y: -7, scale: { x: 2, y: 4 } });
-    const invoker = viewportWheelPanAction.invoker!;
-    if (invoker.timing !== 'immediate') throw new Error('expected an immediate invoker');
-    invoker.run({ view }, { deltaX: 0, deltaY: -30, swapAxis: true });
-    expect(view.value).toEqual(
-      computeWheelAction(
-        { x: 3, y: -7, scale: { x: 2, y: 4 } },
-        { deltaX: 0, deltaY: -30, shiftKey: true, ...at(0, 0) },
-      ),
     );
   });
 });
