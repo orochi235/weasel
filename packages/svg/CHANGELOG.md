@@ -1,5 +1,79 @@
 # @weasel-js/svg
 
+## 1.4.3
+
+### Patch Changes
+
+- fc16cac: `Stroke.paint` is optional, and a stroke without one paints nothing everywhere
+  rather than throwing.
+  
+  Such a stroke is real: a property panel that writes one field onto a node with
+  no stroke — a width, a cap — materializes a whole stroke around it, and
+  documents written before that was fixed still hold them. The painters already
+  read one as no stroke. Every other reader dereferenced `paint` unguarded, so a
+  document holding one threw on SVG export, on copy, and out of any consumer
+  painter or overlay whose command reached the renderer directly.
+  
+  The type says so now, which is what stops the next reader from assuming
+  otherwise. What each one does with an unpainted stroke:
+  
+  - The renderer skips the stroke pass and paints the fill.
+  - The SVG serializer emits no `stroke` attributes at all, the way it already
+    does for an absent or zero-width stroke.
+  - Text layout keys it as no stroke, so an unpainted run groups with unstroked
+    ones instead of splitting a draw call, and does not get pulled onto the
+    outline tier to stroke nothing.
+  - `setStrokeOpacity` seeds the default stroke color to have something to set an
+    opacity on, keeping the width and joins already there.
+- 995fde2: A text node's `data.fill: null` is now an explicit no-fill, so stroked-but-
+  unfilled text — outline-only display type — renders as such.
+  
+  Every other node kind already read `null` that way. Text resolved it back to the
+  default black, because a `ResolvedRun` had to name a concrete `FillStyle` and
+  nothing downstream could skip the fill pass. `ResolvedRun.fill`,
+  `ResolvedTextStyle.fill` and `LaidOutGroup.fill` are now `FillStyle | null`, and
+  `TextPaint.fill: null` carries through to all three. Absent still means the
+  default black.
+  
+  An unfilled run paints through its stroke alone, which only the outline tier can
+  lay down, so layout emits no atlas quads for one and the renderer skips the
+  glyph-fill mesh — an unfilled, unstroked run emits nothing at all, not even its
+  outline geometry. Underline, strikethrough and overline follow the fill: a rule
+  is a solid rect with no stroked counterpart, so an unfilled run draws none.
+  Nothing changes for text that has a fill.
+  
+  Picking deliberately does not follow. `kit:text` still reports `filled: true`
+  for `fill: null`, because a text node's silhouette is its line boxes rather than
+  its glyph ink — reporting it unfilled would leave a word grabbable within a
+  stroke width of a box edge and nowhere near the letters.
+  
+  `@weasel-js/svg` reads and writes SVG's own spelling of this: `<text
+  fill="none">` parses to `fill: null` instead of being dropped as absent, and a
+  text node with `fill: null` serializes as `fill="none"` rather than as SVG's
+  default black. `SvgTextNode.fill` widens to `FillStyle | null`.
+  
+  The "Text outlines" demo has a Fill checkbox alongside its Stroke one; the two
+  off together is a node with no glyph paint at all.
+- Updated dependencies [2de5a37]
+- Updated dependencies [10e1ab6]
+- Updated dependencies [eb0d6ce]
+- Updated dependencies [75969f6]
+- Updated dependencies [0d40f94]
+- Updated dependencies [713f98a]
+- Updated dependencies [85f4a21]
+- Updated dependencies [4bb0341]
+- Updated dependencies [e0d5580]
+- Updated dependencies [edf99d5]
+- Updated dependencies [2723cc7]
+- Updated dependencies [0ca0aca]
+- Updated dependencies [3583ca3]
+- Updated dependencies [fc16cac]
+- Updated dependencies [6d4bbeb]
+- Updated dependencies [995fde2]
+- Updated dependencies [6e4fb4d]
+- Updated dependencies [b0fba6a]
+  - @weasel-js/core@1.4.3
+
 ## 1.4.2
 
 ### Patch Changes

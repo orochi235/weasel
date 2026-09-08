@@ -1,5 +1,380 @@
 # Changelog
 
+## 1.4.3
+
+### Patch Changes
+
+- 2de5a37: A canvas opting out of an action no longer takes it away from its siblings.
+  
+  `useViewportActions` answered `pinchZoom: false` with
+  `reg.unregister('viewport.pinchZoom')`, which drops *every* registrant of that
+  id — so one canvas opting out killed pinch-zoom on a sibling that asked for it,
+  and nothing put it back when the opting-out canvas unmounted.
+  `actions={{ id: null }}` went through the same door. Registration has been
+  per-registrant since the registrant stack landed; suppression was not, and a
+  shared registry had nowhere to hang "not for me".
+  
+  `ActionsScope` is that place. It is a view of the registry in scope with its own
+  mute set: `register`, `unregister` and the dispatcher / dep-registry slots pass
+  straight through to the shared store, so cross-canvas sharing is untouched,
+  while `list`, `trigger` and `begin` skip what this scope muted. Scopes nest.
+  `<ActionsProvider>` is itself a scope, so a lone canvas needs no wrapper, and a
+  `<SceneCanvas>` deferring to a host provider now mounts one.
+  
+  `ActionsRegistry.mute(id)` returns a release; a scope drops everything it muted
+  when it unmounts. `unregister` keeps its old meaning — "this action should not
+  exist" — and is unchanged.
+  
+  Breaking for anyone implementing `ActionsRegistry` themselves: `mute` is a new
+  required method.
+- 10e1ab6: A bare `<Canvas>` now repaints when its selection changes, without a wrapper
+  asking it to.
+  
+  The redraw tripwire — the layout effect whose dep array is meant to name every
+  paint input that arrives on a render — did not name the overlay-aware state the
+  layer helpers expose. Selection, preview poses and the chrome derived from them
+  were written during render into a ref, so changing the selection prop repainted
+  nothing. It looked correct only because `<SceneCanvas>` calls `requestRedraw()`
+  by hand for its own data sources.
+  
+  The tripwire now carries the memoized chrome state, which re-derives on exactly
+  the selection, bounds and preview inputs the helpers read, plus the chrome-caps
+  predicate. A render that changed none of them still paints nothing.
+- eb0d6ce: Undo of a Delete now brings back everything the delete cascaded — a node's
+  dependents, and their own subtrees — not just the node that was named.
+  
+  Deleting a node takes everything deriving from it, so deleting a box takes the
+  edges drawn from it. The delete op only ever snapshotted the subtree, so undo
+  re-inserted the box alone and the edges stayed gone. The op now snapshots the
+  whole set before removing, and re-inserts it parent-first, each node at the slot
+  it held.
+  
+  New public read: `scene.removalClosure(ids)` answers what `removeMany(ids)`
+  would take, without taking it. The scene owns the cascade relations, so a caller
+  that rebuilds the walk from `dependsOn` and `children` goes stale the moment a
+  relation is added — `buildDeleteOps` asked its own copy of that question and is
+  now on this one.
+  
+  The delete op reads it through an optional `getRemovalClosure(ids)` on the
+  adapter, alongside `getChildren`. An adapter that cascades along nothing but the
+  subtree can leave it out and behaves as before; one that cascades further has to
+  answer, or the nodes it takes are absent from the snapshot. The scene-backed
+  adapters answer it.
+  
+  `insertNode` on the scene-backed adapters now forwards the function-valued
+  fields — `dependsOn`, `derivePath` and `clipFromPose` — so a restored edge
+  derives again instead of coming back as a static path, and a restored container
+  still clips. The delete op's serialized `descendants` argument is now
+  `cascaded`, and carries the node itself alongside what went with it.
+- 75969f6: Full-screen effect passes: a group's children render into a texture, shader
+  passes run over it, and the result composites back where the group sits.
+  
+  Until now the renderer could draw over the frame but never transform it —
+  nothing sampled what had already been drawn, so blur, bloom and distortion were
+  unreachable and the only recourse was a CSS `filter` on the `<canvas>`, which is
+  the browser compositing on the kit's behalf.
+  
+  `GroupDrawCommand.effects` is the primitive. It is the one field there that does
+  not accumulate down the group stack: it is a render-target boundary. The
+  children draw into a buffer with a stencil of its own, each effect reads the
+  previous one's output, and the composite applies the group's `transform`,
+  `alpha` and `colorMatrix` plus whatever clip encloses it — so the enclosing clip
+  clips the result rather than the pixels an effect reads, and nested clips inside
+  start from a fresh depth budget.
+  
+  `RenderLayer.effects` is that field folded in at `drawOneLayer`, which is where
+  every layer already gets wrapped in a group. A blur there blurs one layer and
+  leaves the chrome drawn above it sharp, which is the thing the CSS filter cannot
+  do.
+  
+  `blur({ radius })` and `vignette({ amount })` ship as built-ins; both return
+  `Effect[]` because a separable blur is honestly two passes.
+  `registerEffect(id, frag)` registers your own — it is `registerProgram` with the
+  effect vertex shader, and using the custom-shader one instead compiles, runs,
+  and samples the source upside down.
+  
+  Nothing is allocated until a group declares an effect, so a canvas without them
+  carries no offscreen buffer. Buffers are drawing-buffer sized, pooled per
+  renderer, and dropped on resize, dispose and context loss.
+  
+  Demo: "Full-screen effect passes", with visual baselines blurred and sharp.
+- 0d40f94: A layer whose `draw` throws now paints nothing and names itself in the console,
+  instead of taking the frame down with it.
+  
+  The paint runs on the frame loop, so a throw out of `draw` surfaced as an
+  uncaught `requestAnimationFrame` error on the window: the canvas went blank and
+  stayed stale until something unrelated asked for a redraw. `drawOneLayer` — the
+  one path both the canvas and a viewport's inner pass go through — catches it,
+  drops that layer for the frame, and paints the rest.
+  
+  `drawLayers` and `drawOneLayer` take an `onLayerError` callback for a consumer
+  that wants to route the failure somewhere of its own; the default reports the
+  layer id and the error to `console.error`. The layer's cached commands are
+  dropped with it, so the next frame is a real re-attempt rather than a stale tree
+  served under fresh deps.
+- 713f98a: A layout strategy decides what happens to a child released outside every
+  container.
+  
+  When no container accepted a drag, the move action committed the child wherever
+  the pointer stopped, and the source layout had no say — a grid could not close
+  the gap, and a container that only means to arrange its own children could not
+  take one back.
+  
+  `LayoutStrategy.releaseDrop` is that say. It sees the source container, its
+  remaining children and the dragged child in world coordinates, and returns ops
+  that replace the free-space commit. An empty array leaves the container alone,
+  which snaps the child home, since the drag only ever wrote previews. `null` —
+  and a strategy that does not implement the method — leaves the drop where the
+  pointer left it, exactly as before.
+- 85f4a21: Dragging several selected nodes into a layout container now runs the layout,
+  instead of falling through to a plain translate. Three nodes dropped on a grid
+  fill three cells.
+  
+  The selection lands as a unit. One container is chosen, from the center of the
+  whole dragged group rather than each child's own — hit-testing per child would
+  scatter a selection straddling two containers — and it has to accept every
+  member: `acceptsDrop` is asked once per dragged child, and one refusal takes the
+  container out of the running. The children are then placed one at a time, in
+  selection order, and each placement sees the container state the previous one
+  produced. A strategy that packs, stacks or displaces therefore sees the group
+  arrive the same way it would see three separate drags. If any child has no
+  target, the whole drop is refused rather than split between two homes.
+  
+  Each child is snapped at its own position, displaced by however far the pointer
+  sits from the selection's center, so the group keeps its shape as it lands. A
+  single-node drag still probes at the pointer exactly as before.
+  
+  The rest follows the selection: the live preview reflows the destination and
+  every source container the selection left, one pass per container with all of
+  its departing children withdrawn at once; and the commit emits a reparent op per
+  child that changed parent, every reparent before every drop.
+  
+  `releaseDrop` — a container's say over its own child released into open space —
+  is now per source container too, so a mixed selection resolves per child: the
+  grid's own child goes home, and a free node in the same selection keeps the
+  translate it would have had on its own.
+- 4bb0341: A parallax plane draws its source layers through `drawOneLayer`, so their
+  `space` means something.
+  
+  `createParallaxLayer` called `layer.draw(...)` directly where every other path
+  through a view — the canvas itself, a viewport node's inner pass — goes through
+  `drawOneLayer`. A `space: 'world'` source therefore came out unprojected, and the
+  only way to see anything was for the source to pre-project by hand while
+  declaring a space it did not draw in. ParallaxDemo's four layers did exactly
+  that, and their labels were lies.
+  
+  Now a world-space source is wrapped in the plane's inner view and a screen-space
+  one is passed through, the same rule that holds everywhere else. The plane
+  itself stays `space: 'screen'` — its children carry whatever transform they
+  need, and the outer canvas must add none.
+  
+  The demo drops its `project` helper and emits world coordinates; the committed
+  `parallax` visual baseline passes unchanged.
+- e0d5580: `pathHitTest` reads curves and holes instead of throwing on one and ignoring
+  the other.
+  
+  Its vertex extractor walked `M` and `L` only and threw on any bezier command,
+  and it stopped at the first `Z`, so a path's second contour was never
+  considered. The throw was reachable in ordinary use: `sceneAdapter`'s
+  `nodeBoundsPassClips` calls `pathIntersectsRect` on every ancestor clip, so a
+  container with a curved `clipFromPose` crashed the hit-test walk.
+  
+  `pathContainsRect`, `pathIntersectsRect`, `pathContainsPolygon` and
+  `pathIntersectsPolygon` now treat a `PolygonPath` as its filled region. Whether
+  a point is inside comes from `pointInPath`, so beziers flatten and `fillRule`
+  decides — a donut's hole is outside the shape under `evenodd` and inside it
+  under `nonzero`, and the four predicates agree with `pathContainsPoint` on
+  which. Each takes the same optional flattening tolerance `pointInPath` does.
+  
+  Two answers change for paths that already worked. A rect sitting in a hole is
+  no longer reported as contained or intersecting, and containment now fails when
+  a contour reaches into the rect at all rather than only when it crosses an
+  edge.
+- edf99d5: Undoing a removal from a persisted history brings `derivePath` and
+  `clipFromPose` back.
+  
+  `kit:remove`'s snapshot cloned each node with its function-valued fields
+  attached, which works in-session and disappears the moment the history is
+  serialized. `dependsOn` survived the round-trip and repopulated the dependency
+  index, so a restored derived node looked wired up and never painted; a
+  container came back unclipped the same way.
+  
+  The snapshot now carries the registry keys beside the nodes, and revert
+  re-resolves them exactly as `kit:add` does — warning, not throwing, when a key
+  is absent from the scene's registry.
+- 2723cc7: `selectAll` no longer selects nodes on a hidden layer, so Cmd+A then Delete
+  cannot take content the user cannot see.
+  
+  It walked `renderOrder()`, which is every node in the scene regardless of what
+  its layer's `visible` flag says. It now walks `renderOrderNodes()` when any
+  layer is hidden — the same sequence, carrying the layer each node sits on — and
+  keeps the cheaper id walk when every layer is visible.
+  
+  A `scene` dep that answers neither `layers` nor `renderOrderNodes` behaves
+  exactly as before.
+- 0ca0aca: Layer groups: several consecutive layers render into one buffer and share one
+  effect pass.
+  
+  `RenderLayer.effects` runs over a single layer, which is the wrong picture as
+  soon as a pass reads neighboring pixels — `blur(A over B)` is not `blur(A) over
+  blur(B)` — and it costs a buffer and a pass chain per layer. A consumer wanting
+  the world blurred and the HUD sharp had no way to say that the world was more
+  than one layer.
+  
+  `LayerGroup` is that surface: `{ id, layers, effects?, alpha?, colorMatrix? }`,
+  passed to `<Canvas>` / `<SceneCanvas>` as `layerGroups`. Members are named by
+  `RenderLayer.id`, the same names `layerOrder` and `layerVisibility` use, so a
+  group can take in kit-built layers as readily as consumer ones. `drawLayers`
+  brackets each run of consecutive members in one `kind: 'group'` command; the
+  renderer's existing offscreen path does the rest.
+  
+  Only consecutive members share a buffer, because anything drawn between two of
+  them has to land between them. A group split across the render order is drawn as
+  one bracket per run, with a warning — the picture is right, the declaration
+  probably is not. A hidden member, and a member that paints nothing this frame,
+  break no run.
+  
+  `effects` also accepts a thunk, re-read on every frame the canvas paints, so an
+  animating radius costs no React render. A group that declares no effects, alpha
+  or color matrix emits no wrapper at all, and a frame with no groups allocates
+  nothing.
+  
+  The side-scroller load test now blurs its six world layers on a head knock and
+  leaves its HUD, callouts and ending card sharp; the CSS `filter` it used to
+  reach for is gone.
+- 3583ca3: `useStandardActions` takes an `exclude` list, so a consumer can bind its own.
+  
+  The hook registered a fixed descriptor list, which left no way to suppress an
+  individual kit action. A consumer wanting its own align or distribute
+  keybindings got the kit's as well, and the two competed for the same keys.
+  
+  `exclude` names ids to leave unregistered; an id naming no kit action is
+  ignored, and changing the list re-registers. `KIT_STANDARD_ACTION_IDS` is the
+  full list in registration order, so the ids are discoverable rather than
+  something to read out of the source.
+- fc16cac: `Stroke.paint` is optional, and a stroke without one paints nothing everywhere
+  rather than throwing.
+  
+  Such a stroke is real: a property panel that writes one field onto a node with
+  no stroke — a width, a cap — materializes a whole stroke around it, and
+  documents written before that was fixed still hold them. The painters already
+  read one as no stroke. Every other reader dereferenced `paint` unguarded, so a
+  document holding one threw on SVG export, on copy, and out of any consumer
+  painter or overlay whose command reached the renderer directly.
+  
+  The type says so now, which is what stops the next reader from assuming
+  otherwise. What each one does with an unpainted stroke:
+  
+  - The renderer skips the stroke pass and paints the fill.
+  - The SVG serializer emits no `stroke` attributes at all, the way it already
+    does for an absent or zero-width stroke.
+  - Text layout keys it as no stroke, so an unpainted run groups with unstroked
+    ones instead of splitting a draw call, and does not get pulled onto the
+    outline tier to stroke nothing.
+  - `setStrokeOpacity` seeds the default stroke color to have something to set an
+    opacity on, keeping the width and joins already there.
+- 6d4bbeb: WeaselDraw's SVG export drops what a hidden layer holds, matching what the
+  pixel path draws. It walked the whole container tree with no visibility gate,
+  so hiding a layer and exporting produced a file with the hidden content in it.
+  
+  `SceneSource` gains an optional `isPainted(id)`; a node it refuses is skipped
+  along with everything under it, under an explicit `roots` override too — a
+  selection naming a hidden node still must not export it. A source that omits
+  the predicate emits everything, exactly as before.
+- 995fde2: A text node's `data.fill: null` is now an explicit no-fill, so stroked-but-
+  unfilled text — outline-only display type — renders as such.
+  
+  Every other node kind already read `null` that way. Text resolved it back to the
+  default black, because a `ResolvedRun` had to name a concrete `FillStyle` and
+  nothing downstream could skip the fill pass. `ResolvedRun.fill`,
+  `ResolvedTextStyle.fill` and `LaidOutGroup.fill` are now `FillStyle | null`, and
+  `TextPaint.fill: null` carries through to all three. Absent still means the
+  default black.
+  
+  An unfilled run paints through its stroke alone, which only the outline tier can
+  lay down, so layout emits no atlas quads for one and the renderer skips the
+  glyph-fill mesh — an unfilled, unstroked run emits nothing at all, not even its
+  outline geometry. Underline, strikethrough and overline follow the fill: a rule
+  is a solid rect with no stroked counterpart, so an unfilled run draws none.
+  Nothing changes for text that has a fill.
+  
+  Picking deliberately does not follow. `kit:text` still reports `filled: true`
+  for `fill: null`, because a text node's silhouette is its line boxes rather than
+  its glyph ink — reporting it unfilled would leave a word grabbable within a
+  stroke width of a box edge and nowhere near the letters.
+  
+  `@weasel-js/svg` reads and writes SVG's own spelling of this: `<text
+  fill="none">` parses to `fill: null` instead of being dropped as absent, and a
+  text node with `fill: null` serializes as `fill="none"` rather than as SVG's
+  default black. `SvgTextNode.fill` widens to `FillStyle | null`.
+  
+  The "Text outlines" demo has a Fill checkbox alongside its Stroke one; the two
+  off together is a node with no glyph paint at all.
+- 6e4fb4d: A user layer survives `toJSON()` — its name, and the fact that it is a user
+  layer at all.
+  
+  Every layer was written to a snapshot as `{ id, visible, locked }` and read back
+  as `kind: 'system'`, so reloading a document renamed nothing, showed nothing in
+  a layer list, and made `renameLayer` throw "cannot rename system layer" on a
+  layer the user had just created.
+  
+  `SerializedLayer` is the snapshot's layer shape: the fields it always had, plus
+  an optional `kind` and `name`. A snapshot written before this carries neither
+  and loads as system layers, which is what every layer in it was.
+  
+  `sceneFromJSON` now builds an empty scene and calls `loadState`, so the layer
+  stack is rebuilt by the one reader that knows how instead of by `createScene`,
+  which mints system layers only.
+- b0fba6a: One wheel convention across the kit. Breaking: `computeWheelAction` changes
+  shape, and `useZoom` / `usePinchZoomTool` are gone.
+  
+  Three public entry points answered the wheel and disagreed with each other.
+  `viewport.wheelPan` + `viewport.zoom` panned on a bare wheel and zoomed on
+  Cmd/Ctrl+wheel; `computeWheelAction` did the opposite, zooming on a bare wheel
+  and treating Cmd+wheel as a vertical scroll; `useZoom` zoomed on a bare wheel
+  and never panned. The two reducers also panned in screen pixels against a
+  `{ zoom, panX, panY }` state that is not a `View` and cannot be handed to
+  `view.set`.
+  
+  The surviving convention is the one the dispatcher already ships: bare wheel
+  pans, shift+wheel pans horizontally, Cmd/Ctrl+wheel zooms under the pointer,
+  and a trackpad pinch (which browsers deliver as ctrl+wheel) zooms. Coordinates
+  are `View` throughout — a pan delta arrives in screen pixels and is divided by
+  `View.scale` before it lands, and a zoom anchor is canvas-local.
+  
+  `computeWheelAction(view, input, clamp?)` now takes and returns a `View`. Its
+  halves, `wheelPan` and `wheelZoom`, are exported alongside `wheelZoomFactor`,
+  and `viewport.wheelPan` / `viewport.zoom` call them rather than restating the
+  math — so the wired path and the pure one cannot drift again. `WheelState` and
+  `ZoomBounds` are removed; `WheelInput` names its anchor `x`/`y` instead of
+  `mouseX`/`mouseY` and reads `ctrlKey`. Zoom is now `1.1^(-deltaY/100)` on
+  every path, which is reciprocal: scrolling a distance and back returns to the
+  scale you started from, where the old `1.1`/`0.9` pair did not.
+  
+  A pinch anchors under the fingers in canvas-local coordinates. The dispatcher
+  converts the multitouch centroid the same way it already converted the wheel
+  anchor; on a canvas offset from the viewport top-left, `viewport.pinchZoom`
+  was anchoring on raw client coordinates and drifting by that offset.
+  
+  `useZoom`, `UseZoomOptions` and `UseZoomReturn` are removed. They were
+  deprecated, had no consumer, and were the third convention.
+  
+  `usePinchZoomTool` and `PinchZoomToolOpts` are removed, with the `viewport`
+  prop on the unexported `<Canvas>` primitive and the `ViewportConfig` type that
+  typed it. `viewport.pinchZoom` on `<SceneCanvas>` is unaffected — it is the
+  action, and it is now the kit's only pinch path. `usePinchGesture`, the raw
+  two-finger listener underneath, stays.
+- Updated dependencies [fc16cac]
+- Updated dependencies [995fde2]
+  - @weasel-js/paint@1.4.3
+  - @weasel-js/text@1.4.3
+  - @weasel-js/cursor@1.4.3
+  - @weasel-js/font@1.4.3
+  - @weasel-js/geom@1.4.3
+  - @weasel-js/gestures@1.4.3
+  - @weasel-js/history@1.4.3
+  - @weasel-js/modes@1.4.3
+
 ## 1.4.2
 
 ### Patch Changes
