@@ -1,5 +1,161 @@
 # @weasel-js/labkit
 
+## 1.4.3
+
+### Patch Changes
+
+- 24896fb: `ComboBox` takes `width='fit'`, and labkit's zoom field stops pinning pixels.
+  
+  `Select` and `NumberField` already had it; `ComboBox`'s text input did not, so
+  the only way to keep one out of a toolbar's slack was a pixel width from the
+  consumer's own stylesheet. At `fit` the input measures a hidden stack of every
+  option label — the same mechanism `Select` uses — so the field is wide enough
+  for whichever option is chosen and takes no more of the row than that.
+  
+  labkit's `ZoomControl` states `--wzl-number-field-width: 6ch` instead of pinning
+  its field at 62px. Measured in a browser: "800%" is 33px against the 35px a 5ch
+  box gives, which is no margin at all in another UI font, and 6ch also holds the
+  "1600%" a consumer raising `max` can reach.
+- ddb6ef3: An instrument's `serialize` / `deserialize` actually run.
+  
+  `LabStore.registerSerializers` had no callers, so the map stayed empty: an
+  instrument whose state is a `Map`, a `Set`, or anything else JSON drops lost it
+  on reload, on snapshot save and on snapshot load, silently and with no error.
+  Late registration could never have fixed it either — the store hydrates as it is
+  built, which is before any provider mounts.
+  
+  `createLabStore` takes them as `serializers`, and `<Lab>` collects them off its
+  `instruments`, which is the only place that knows both. `registerSerializers` is
+  gone with the hole it left; `LabStore` is now the plain store type.
+  
+  `deserialize` is handed the config the state was saved against — a trial's own
+  on reload, the snapshot's on load — matching what `Instrument.deserialize`
+  already declared and never received.
+- f8a1d3a: An instrument's config can nest. `f.group({ … })` is a branch:
+  `grid: f.group({ size: f.number(20) })` puts the value at `config.grid.size`
+  and addresses it as `'grid.size'`. Groups nest arbitrarily and chain
+  `.label()`, `.describe()`, `.section()` and `.showIf()`, which hides the whole
+  subtree. `.section()` is unchanged — a heading over sibling rows that leaves
+  their paths alone.
+  
+  `resolveConfigSchema` emits a nested `PrefGroup` whose dotted paths *are* the
+  config paths, which is what weasel-ui's `PrefsForm` already walks, so both
+  renderers address a schema identically. `ControlPanel` renders a nested group
+  as a `PropertyGroup` under its own heading; fold state keys stay bare labels at
+  the root, so stored folds still match.
+  
+  Writes go through a path write that copies the spine and leaves untouched
+  branches at their old identity. `onConfigChange` receives a `nextConfig` built
+  the same way, so a nested change arrives with its sibling branch intact.
+  
+  A config stored before its schema grew a branch loads: `createLabStore` takes
+  `configDefaults` and deep-fills every hydrated trial and saved snapshot before
+  deserialization, so an instrument's `deserialize` always sees a complete
+  config. Filling is idempotent, never rewrites storage on its own, and keeps
+  keys the schema no longer names. It makes an old config load; it cannot move a
+  value, so an author renaming `gridSize` to `grid.size` keeps the old key and
+  gets the new one at its default. A per-instrument `migrateConfig` is the
+  separate piece that would close that.
+  
+  `seedConfig` uses the same merge, which fixes `addTrial({ config })` and Reset
+  replacing a whole branch when the seed named one leaf of it.
+  
+  The config setters take a path now: `ControlPanelProps.setConfig` and
+  `RenderContext.setConfig` are `(path: string, value: unknown)`,
+  `updateTrialConfig` lost its phantom generic, and `SectionSpec` gained a
+  required `at` naming the group that owns it.
+  
+  A group's `.describe()` reaches `PrefsForm` but not `ControlPanel`, which has
+  nowhere to put it.
+- 696e506: **Breaking:** `@weasel-js/labkit` no longer ships its own copy of
+  `@weasel-js/core`. Install core alongside it, at the matching version:
+  
+  ```bash
+  npm i @weasel-js/labkit @weasel-js/core
+  ```
+  
+  Core is now an exact `peerDependency`, and labkit's `dist` imports it rather
+  than inlining it. npm reports a version mismatch at install time instead of
+  nesting a second copy.
+  
+  The second copy was the problem. Core keeps its content handlers, paint kinds,
+  shape painters, markers and program registry in module globals, so two copies
+  are two sets of registries: an app using labkit *and* core registered a face or
+  a paint kind into one and read the other, and got a blank canvas with no
+  diagnostic beyond `layoutRuns`' duplication warning. The same failure
+  `@weasel-js/svg` and `@weasel-js/font` were peered to close, reached by another
+  route.
+  
+  labkit's other weasel siblings — `ui`, `loupe`, `svg`, `theme` — are still
+  bundled; only core changes. Removing it also drops what it pulled in behind it,
+  taking labkit's JS from 1.99 MB to 0.97 MB.
+- 8b7ee84: Overlays portal into the nearest themed ancestor instead of `document.body`.
+  
+  Every overlay this package portals — `Select`'s and `ComboBox`'s popovers,
+  `Dialog`, `Callout`, `Tooltip` — used to mount on `document.body`. That is
+  outside the element `applyTheme` / `<ThemeProvider>` stamps, so every `--wzl-*`
+  the overlay read resolved to the empty string and the panel fell back to browser
+  defaults: a light box with unreadable text in a dark app.
+  
+  Each of them now mounts inside the nearest ancestor of its own position
+  carrying `data-wzl-theme` / `data-wzl-mode`, so it resolves the same tokens as
+  the control it belongs to. **This is a behavior change**: an overlay's DOM
+  position moves from the body into the app's tree. Anything reading the document
+  for overlay content by walking down from `document.body` will find it one place
+  deeper; anything using the `data-weasel-overlay` marker is unaffected.
+  
+  Two ways to override it. `portalContainer` on any of the five components names
+  an element for that overlay alone, and `null` sends it back to
+  `document.body`. `<OverlayPortalProvider container={…}>` sets it for a whole
+  subtree. A styling root below the themed element can claim the overlays instead
+  by carrying `data-wzl-portal-host` — which is how labkit's `.lk-root`, whose
+  element defaults the themed wrapper above it does not have, now gets them. The
+  per-call-site container the labkit export panel was passing is gone.
+- 5a74393: A schema can say a section opens folded: `.section('Advanced', { collapsed: true })`.
+  
+  The fold itself already worked and already persisted per trial; what a schema
+  could not do was start a section closed, which is what an "Advanced" heading
+  full of knobs nobody opens on the first run wants. Say `collapsed` on any one
+  leaf under the heading — the section it names takes it, and the rest of the
+  leaves keep saying `.section('Advanced')`.
+  
+  A section that declares how it opens is foldable on its own, with no
+  `collapse` / `collapsed` / `onCollapse` on the panel. A fold the reader has
+  since toggled still wins, so a lab that remembers a trial's sections is
+  unaffected.
+  
+  `NodeOptions.section` is now `{ label, collapsed? }` rather than a bare string.
+  The builder's `.section()` is the way this is written; a schema that reaches
+  into `options.section` directly reads `.label`.
+- Updated dependencies [2de5a37]
+- Updated dependencies [10e1ab6]
+- Updated dependencies [24896fb]
+- Updated dependencies [eb0d6ce]
+- Updated dependencies [75969f6]
+- Updated dependencies [0d40f94]
+- Updated dependencies [713f98a]
+- Updated dependencies [85f4a21]
+- Updated dependencies [8b7ee84]
+- Updated dependencies [4bb0341]
+- Updated dependencies [e0d5580]
+- Updated dependencies [591ef38]
+- Updated dependencies [edf99d5]
+- Updated dependencies [2723cc7]
+- Updated dependencies [0ca0aca]
+- Updated dependencies [af6234c]
+- Updated dependencies [3583ca3]
+- Updated dependencies [fc16cac]
+- Updated dependencies [6d4bbeb]
+- Updated dependencies [995fde2]
+- Updated dependencies [4f45bd0]
+- Updated dependencies [6e4fb4d]
+- Updated dependencies [b0fba6a]
+  - @weasel-js/core@1.4.3
+  - @weasel-js/ui@1.4.3
+  - @weasel-js/svg@1.4.3
+  - @weasel-js/loupe@1.4.3
+  - @weasel-js/theme@1.4.3
+
 ## 1.4.2
 
 ### Patch Changes

@@ -1,5 +1,51 @@
 # @weasel-js/hud
 
+## 1.4.3
+
+### Patch Changes
+
+- 4e5fd95: A HUD can draw with a family the host already registered, instead of fetching
+  its own copy of the same atlas.
+  
+  Every weasel app registers Inter for its own text; `@weasel-js/hud` registered a
+  byte-identical second copy for its widgets. Measured on the demo site: 152,162
+  wasted transfer bytes, two wasted requests and a second `createImageBitmap` over
+  bytes already in memory.
+  
+  `attachHud` and `useHud` take `font`:
+  
+  - a family name — that family, already registered by the host. Nothing is
+    fetched.
+  - a `{ metricsUrl, atlasUrl }` pair — the HUD's own family, registered from the
+    host's copy of the atlas.
+  
+  Unset, the bundled atlas is fetched as before. The demos and WeaselDraw pass
+  `font: 'sans-serif'`; their HUD canvases render pixel-identically with the atlas
+  fetch gone.
+- Updated dependencies [2de5a37]
+- Updated dependencies [10e1ab6]
+- Updated dependencies [eb0d6ce]
+- Updated dependencies [75969f6]
+- Updated dependencies [0d40f94]
+- Updated dependencies [713f98a]
+- Updated dependencies [85f4a21]
+- Updated dependencies [4bb0341]
+- Updated dependencies [e0d5580]
+- Updated dependencies [edf99d5]
+- Updated dependencies [2723cc7]
+- Updated dependencies [0ca0aca]
+- Updated dependencies [3583ca3]
+- Updated dependencies [fc16cac]
+- Updated dependencies [6d4bbeb]
+- Updated dependencies [995fde2]
+- Updated dependencies [6e4fb4d]
+- Updated dependencies [b0fba6a]
+  - @weasel-js/core@1.4.3
+  - @weasel-js/loupe@1.4.3
+  - @weasel-js/font@1.4.3
+  - @weasel-js/geom@1.4.3
+  - @weasel-js/theme@1.4.3
+
 ## 1.4.2
 
 ### Patch Changes

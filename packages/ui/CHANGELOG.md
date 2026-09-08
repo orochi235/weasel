@@ -1,5 +1,103 @@
 # @weasel-js/ui
 
+## 1.4.3
+
+### Patch Changes
+
+- 24896fb: `ComboBox` takes `width='fit'`, and labkit's zoom field stops pinning pixels.
+  
+  `Select` and `NumberField` already had it; `ComboBox`'s text input did not, so
+  the only way to keep one out of a toolbar's slack was a pixel width from the
+  consumer's own stylesheet. At `fit` the input measures a hidden stack of every
+  option label — the same mechanism `Select` uses — so the field is wide enough
+  for whichever option is chosen and takes no more of the row than that.
+  
+  labkit's `ZoomControl` states `--wzl-number-field-width: 6ch` instead of pinning
+  its field at 62px. Measured in a browser: "800%" is 33px against the 35px a 5ch
+  box gives, which is no margin at all in another UI font, and 6ch also holds the
+  "1600%" a consumer raising `max` can reach.
+- 8b7ee84: Overlays portal into the nearest themed ancestor instead of `document.body`.
+  
+  Every overlay this package portals — `Select`'s and `ComboBox`'s popovers,
+  `Dialog`, `Callout`, `Tooltip` — used to mount on `document.body`. That is
+  outside the element `applyTheme` / `<ThemeProvider>` stamps, so every `--wzl-*`
+  the overlay read resolved to the empty string and the panel fell back to browser
+  defaults: a light box with unreadable text in a dark app.
+  
+  Each of them now mounts inside the nearest ancestor of its own position
+  carrying `data-wzl-theme` / `data-wzl-mode`, so it resolves the same tokens as
+  the control it belongs to. **This is a behavior change**: an overlay's DOM
+  position moves from the body into the app's tree. Anything reading the document
+  for overlay content by walking down from `document.body` will find it one place
+  deeper; anything using the `data-weasel-overlay` marker is unaffected.
+  
+  Two ways to override it. `portalContainer` on any of the five components names
+  an element for that overlay alone, and `null` sends it back to
+  `document.body`. `<OverlayPortalProvider container={…}>` sets it for a whole
+  subtree. A styling root below the themed element can claim the overlays instead
+  by carrying `data-wzl-portal-host` — which is how labkit's `.lk-root`, whose
+  element defaults the themed wrapper above it does not have, now gets them. The
+  per-call-site container the labkit export panel was passing is gone.
+- 591ef38: `PrefsForm` honors a number leaf's display unit, and renders `font-family` as a
+  real control.
+  
+  A leaf declaring `unit` — `pose.rotation` stores radians and shows degrees —
+  was rendered raw: the field showed radians against a degree suffix that was not
+  drawn, and typing a number wrote it straight through. Both the input and the
+  slider now convert the value with `toDisplay`, convert back with `fromDisplay`
+  on every write, convert the leaf's declared `min` / `max` / `step`, and draw the
+  suffix beside the field. A leaf with no `unit` takes the untouched path.
+  
+  `prefDisplayBounds` is the bounds conversion, exported from the Prefs schema
+  module. `SelectionPanel` held a private copy and now imports this one.
+  
+  A `font-family` leaf drew "no renderer" text. It now renders a
+  `FontFamilySelect` over the live font registry, keeping an unregistered family
+  visible and labeled with what actually paints. A consumer-supplied
+  `renderers['font-family']` still wins.
+- af6234c: A Slider's below-thumb readout row takes the readout text's height, not the
+  default thumb's.
+  
+  `.readoutsBelow` held `height: 14px` — what the thumb measured before
+  `density="slim"` existed. The row contains absolutely-positioned labels, which
+  are 10px tall, so every slider drawing its values below the thumb carried 4px of
+  dead space under them, and a slim slider's 8px thumb made the mismatch a third
+  of the control.
+- 4f45bd0: A number leaf that declares a display unit converts its bounds too.
+  
+  `SelectionPanel` converted the value through `toDisplay` and passed `min`, `max`
+  and `step` straight through, so a leaf storing radians and showing degrees
+  clamped typed degrees against a radian range: 90 came back as 6.283 — 2π, the
+  max — and the field silently stored 0.11 rad.
+  
+  Only declared bounds convert. An omitted one has no stored counterpart to put
+  through the conversion, and its fallback (0..100 for a slider's track, a step of
+  1) is a display-space number already. `min` and `max` are points, so they
+  convert the way the value does; `step` is a distance, so it converts as a span —
+  a unit with an offset maps zero somewhere else.
+- Updated dependencies [2de5a37]
+- Updated dependencies [10e1ab6]
+- Updated dependencies [eb0d6ce]
+- Updated dependencies [75969f6]
+- Updated dependencies [0d40f94]
+- Updated dependencies [713f98a]
+- Updated dependencies [85f4a21]
+- Updated dependencies [4bb0341]
+- Updated dependencies [e0d5580]
+- Updated dependencies [edf99d5]
+- Updated dependencies [2723cc7]
+- Updated dependencies [0ca0aca]
+- Updated dependencies [3583ca3]
+- Updated dependencies [fc16cac]
+- Updated dependencies [6d4bbeb]
+- Updated dependencies [995fde2]
+- Updated dependencies [6e4fb4d]
+- Updated dependencies [b0fba6a]
+  - @weasel-js/core@1.4.3
+  - @weasel-js/svg@1.4.3
+  - @weasel-js/font@1.4.3
+  - @weasel-js/modes@1.4.3
+
 ## 1.4.2
 
 ### Patch Changes
