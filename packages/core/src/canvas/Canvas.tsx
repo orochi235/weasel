@@ -1121,6 +1121,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // calling it once — not a loop in this body.
   const {
     helpers: viewHelpers,
+    chromeState: viewChromeState,
     effectiveBoundsOf,
     previewExtraRef,
   } = useViewHelpers<TPose>({
@@ -1424,13 +1425,19 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   }, []);
   paintRef.current = paint;
 
-  // A tripwire, not a list of values this effect uses: every input the paint
-  // reads must appear here, or changing it paints stale. Layout, not passive,
-  // so a `syncPaint` surface lands its pixels in the same commit as the DOM.
+  // A tripwire, not a list of values this effect uses: every paint input that
+  // arrives on a render must appear here, or changing it paints stale.
+  // `viewChromeState` stands in for the whole overlay-aware set the layer
+  // helpers expose — it re-memoizes on exactly the selection, bounds and
+  // preview inputs they read. What moves between renders instead (a scene
+  // write, a gesture pump, a late image decode) pushes its own redraw.
+  // Layout, not passive, so a `syncPaint` surface lands its pixels in the same
+  // commit as the DOM.
   useLayoutEffect(() => {
     requestRedraw();
   }, [layersWithDebug, width, height, viewProp, debugSink, dprProp,
-      layerVisibility, layerOrder, layerGroups, shaderIdKey, syncPaint, requestRedraw]);
+      layerVisibility, layerOrder, layerGroups, shaderIdKey, syncPaint,
+      viewChromeState, getIsVisible, requestRedraw]);
 
   // The GL context and everything it owns (programs, texture caches, VBOs)
   // outlive React state, so unmount has to free them explicitly or a
