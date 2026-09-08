@@ -554,9 +554,22 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // each. The session owns capture, pointer identity, teardown and the
     // three recovery rules; the record owns what the dispatcher synthesizes.
     const held = new Map<number, HeldPointer>();
-    const heldGeometry = () => computeMultiTouchGeometry(
-      [...held.values()].map((p) => p.pos),
-    );
+    // Pinch anchors land in `zoomAt`, which measures from the canvas top-left,
+    // so the centroid is converted here — the same step the wheel listener
+    // takes for its own anchor. Client coords would drift the zoom by the
+    // canvas's offset from the viewport.
+    const toCanvasLocal = (p: { x: number; y: number }): { x: number; y: number } => {
+      const rect = canvas?.getBoundingClientRect();
+      if (!rect) return p;
+      const [x, y] = clientToCanvasRect(rect, p.x, p.y);
+      return { x, y };
+    };
+    const heldGeometry = () => {
+      const { centroid, spread } = computeMultiTouchGeometry(
+        [...held.values()].map((p) => p.pos),
+      );
+      return { centroid: toCanvasLocal(centroid), spread };
+    };
 
     // Tracks the start state of an active multitouch episode so we can
     // synthesize a `multitouchtap` event on release when the centroid hasn't
@@ -1163,10 +1176,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         if (start) {
           // Final centroid uses the pointer positions BEFORE this pointer was
           // removed — it is already out of `held`, so add it back in.
-          const { centroid } = computeMultiTouchGeometry([
-            ...[...held.values()].map((p) => p.pos),
-            { x: e.clientX, y: e.clientY },
-          ]);
+          const centroid = toCanvasLocal(
+            computeMultiTouchGeometry([
+              ...[...held.values()].map((p) => p.pos),
+              { x: e.clientX, y: e.clientY },
+            ]).centroid,
+          );
           const dx = centroid.x - start.centroid.x;
           const dy = centroid.y - start.centroid.y;
           if (Math.hypot(dx, dy) <= TAP_THRESHOLD_PX) {

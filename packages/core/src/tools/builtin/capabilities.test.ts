@@ -10,11 +10,6 @@ import * as builtins from './index';
 // satisfies the type — the test only checks the tag string. If a hook's
 // signature changes later, this test will fail at the renderHook call
 // site and the engineer updates the option literal.
-//
-// NOTE: usePinchZoomTool is intentionally excluded. It is NOT a Tool factory
-// — it is a side-effect hook with signature (canvasRef, view, setView, opts)
-// that returns void. There is no Tool literal to attach capabilities to.
-// It is tracked as DONE_WITH_CONCERNS in the implementation notes.
 
 describe('built-in tool capabilities', () => {
   const cases: Array<[string, () => { eligibility?: { capabilities?: readonly string[] } } | null, readonly string[]]> = [

@@ -20,7 +20,6 @@ const HOOK_NAMES = [
   'useLassoTool',
   'useTextTool',
   'useEyedropperTool',
-  'usePinchZoomTool',
 ] as const;
 
 describe('builtin tool hookName parity', () => {

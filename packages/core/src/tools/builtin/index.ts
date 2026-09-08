@@ -15,7 +15,6 @@ export { useTextTool } from './text';
 // useWheelZoomTool, useWheelPanTool, useKeyboardZoomTool are dissolved.
 // Viewport zoom and pan are now handled by the viewport.zoom and viewport.pan
 // action descriptors registered via useStandardActions + useGestureDispatcher.
-export { usePinchZoomTool, type PinchZoomToolOpts } from './pinchZoom';
 export {
   usePenTool,
   type UsePenToolOptions,

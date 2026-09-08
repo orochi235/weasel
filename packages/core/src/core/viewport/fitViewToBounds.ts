@@ -28,12 +28,12 @@ export interface FitViewToBoundsOptions {
   padding?: number;
   /**
    * Override the kit's system max scale. Defaults to the kit-wide max zoom
-   * used by `computeWheelAction` / `useZoom` (currently `10`).
+   * used by `computeWheelAction` (`DEFAULT_MAX_ZOOM`).
    */
   maxScale?: number;
   /**
    * Override the kit's system min scale. Defaults to the kit-wide min zoom
-   * used by `computeWheelAction` / `useZoom` (currently `0.1`).
+   * used by `computeWheelAction` (`DEFAULT_MIN_ZOOM`).
    */
   minScale?: number;
   /**

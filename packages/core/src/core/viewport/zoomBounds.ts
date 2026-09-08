@@ -3,7 +3,7 @@
  * unit): `1` is 100%, `0.1` is 10%, `8` is 800%.
  *
  * Every zoom path defaults from these — `zoomAt`, the `viewport.zoom` and
- * pinch actions, `fitViewToBounds`, `computeWheelAction`, `useZoom`. They
+ * pinch actions, `fitViewToBounds`, `computeWheelAction`. They
  * used to carry two disagreeing pairs, so a fit could legally land at 10x
  * and the next pinch frame would clamp it back to 8x.
  */

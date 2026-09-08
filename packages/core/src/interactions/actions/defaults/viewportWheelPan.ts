@@ -9,11 +9,10 @@
  *
  * ## Design notes
  * The dispatcher merges wheel event data (deltaX, deltaY, clientX, clientY)
- * into params at dispatch time. The invoker
- * reads them from the params bag.
- *
- * Pan delta is divided by view.scale so that one screen-pixel scroll equals
- * one screen-pixel pan at any zoom level.
+ * into params at dispatch time. The invoker reads them from the params bag
+ * and defers to `wheelPan` (`core/viewport/wheelHandler`), the kit's one
+ * statement of the wheel convention — which divides the delta by `view.scale`
+ * so one screen-pixel scroll is one screen-pixel pan at any zoom.
  *
  * `axis` locks the pan to one axis, matching `viewport.dragPan`'s param of
  * the same name, so a consumer that wants a single-axis viewport can say so
@@ -23,6 +22,7 @@
 
 import type { Action } from '../registry';
 import type { ViewApi } from '../depSchema';
+import { wheelPan } from 'core/viewport/wheelHandler';
 
 // ---------------------------------------------------------------------------
 // Descriptor
@@ -62,19 +62,9 @@ export const viewportWheelPanAction: Action & { requires: string[] } = {
       const axis = (params?.axis as 'both' | 'x' | 'y' | undefined) ?? 'both';
       const deltaX = (params?.deltaX as number | undefined) ?? 0;
       const deltaY = (params?.deltaY as number | undefined) ?? 0;
-      const current = view.get();
-      // Divide by scale so one screen-pixel scroll = one screen-pixel pan.
-      // For shift+wheel, route deltaY into the x axis so mouse-wheel users
-      // (who only emit deltaY) get a horizontal pan. Fall back to deltaX
-      // when present so the binding still behaves on trackpad horizontal swipes.
-      const swap = params?.swapAxis === true;
-      const dx = swap ? (deltaX !== 0 ? deltaX : deltaY) / current.scale.x : deltaX / current.scale.x;
-      const dy = swap ? 0 : deltaY / current.scale.y;
-      view.set({
-        ...current,
-        x: current.x + (axis === 'y' ? 0 : dx),
-        y: current.y + (axis === 'x' ? 0 : dy),
-      });
+      view.set(
+        wheelPan(view.get(), { deltaX, deltaY }, { axis, swapAxis: params?.swapAxis === true }),
+      );
     },
   },
   enabled: () => true,

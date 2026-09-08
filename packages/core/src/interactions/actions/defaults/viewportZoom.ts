@@ -13,7 +13,8 @@
  *
  * ## Design notes
  * The invoker switches on `params.kind`:
- * - `'wheel'`: computes factor from deltaY, anchors zoom at (clientX, clientY).
+ * - `'wheel'`: defers to `wheelZoom` (`core/viewport/wheelHandler`), the kit's
+ *   one statement of the wheel convention, anchored at (clientX, clientY).
  *   The dispatcher merges wheel event data into params at dispatch time, and
  *   converts the wheel event's client coords to canvas-local (subtracting the
  *   canvas's bounding rect) before merging — `zoomAt` expects canvas-local.
@@ -36,6 +37,7 @@
 import type { Action } from '../registry';
 import type { ViewApi } from '../depSchema';
 import { zoomAt } from 'core/viewport/zoomAt';
+import { wheelZoom } from 'core/viewport/wheelHandler';
 import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from 'core/viewport/zoomBounds';
 import type { View } from 'core/viewport/view';
 import type { ViewAnimationOptions } from 'core/viewport/useViewAnimation';
@@ -49,9 +51,6 @@ function keyAnchor(view: ViewApi): { x: number; y: number } {
   const size = view.hostSize?.();
   return size ? { x: size.width / 2, y: size.height / 2 } : { x: 0, y: 0 };
 }
-// Wheel step per 100 px of deltaY (matches useWheelZoomTool default).
-const WHEEL_STEP = 1.1;
-
 // ---------------------------------------------------------------------------
 // Descriptor
 // ---------------------------------------------------------------------------
@@ -172,8 +171,7 @@ export function makeViewportZoomAction(
             const deltaY = (params?.deltaY as number | undefined) ?? 0;
             const clientX = (params?.clientX as number | undefined) ?? 0;
             const clientY = (params?.clientY as number | undefined) ?? 0;
-            const factor = Math.pow(WHEEL_STEP, -deltaY / 100);
-            view.set(zoomAt(current, { x: clientX, y: clientY }, factor, clamp));
+            view.set(wheelZoom(current, { x: clientX, y: clientY }, deltaY, clamp));
             break;
           }
           case 'in':

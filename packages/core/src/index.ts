@@ -8,7 +8,7 @@
  * Surface map (broad strokes — see per-symbol JSDoc for detail):
  *   - View transform & viewport: `ViewTransform`, `worldToScreen`,
  *     `screenToWorld`, `fitZoom`, `useCanvasSize`,
- *     `useZoom`, `useAutoCenter`, `zoomAt`,
+ *     `useAutoCenter`, `zoomAt`,
  *     `wheelHandler`.
  *   - Layer composition: `RenderLayer`,
  *     `createGridLayer`, `createCellHighlightLayer`, `createChildrenLayer`,
@@ -113,7 +113,6 @@ export { clampView } from './core/viewport/clampView';
 export type { ClampBounds, CanvasSize } from './core/viewport/clampView';
 export { sceneNodeClientRect } from './core/viewport/sceneNodeClientRect';
 export type { SceneNodeClientRectOpts, NodeClientRect } from './core/viewport/sceneNodeClientRect';
-export * from './core/viewport/useZoom';
 export * from './core/viewport/useAutoCenter';
 // ─── Keybindings: low-level key → action wiring ─────────────────────────────
 export { isEditableTarget, matchesKeyBinding } from './interactions/keyHelpers';
@@ -278,7 +277,6 @@ export { useViewAnimation, VIEW_ANIMATION_KEY } from './core/viewport/useViewAni
 
 // ─── Tools: dispatcher, registry, declarative routing, built-ins ────────────
 export * from './tools';
-export { usePinchZoomTool, type PinchZoomToolOpts } from './tools/builtin/pinchZoom';
 // Route *reflection* — the route grammar, registry, and conflict checker —
 // is the `@weasel-js/core/routing` subpath. Tool authoring (`defineTool`,
 // `ToolDef`) is on this barrel, via `./tools` above.
@@ -1280,7 +1278,6 @@ export { BUNDLE_TOOLS, rotateAroundAABBCenter } from './canvas/SceneCanvas';
 export { KIT_SHAPE_KINDS } from './core/shapeKinds';
 export type { BuiltinShapeToolId } from './core/shapeKinds';
 export type { BuiltinToolOptions } from './canvas/SceneCanvas/useBuiltinShapeTools';
-export type { ViewportConfig } from './canvas/SceneCanvas/viewportConfig';
 export type { InsertNodeFactory } from './canvas/deps';
 export type {
   SceneToAdapterOptions,

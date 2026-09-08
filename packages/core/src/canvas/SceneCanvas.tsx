@@ -923,11 +923,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const scene = bakedScene ?? (sceneInput as Scene<TData, TLayer, TPose>);
 
   // Extract view-related props from rest so we can intercept them for the
-  // pinch-zoom hook (which needs the current view) without breaking the
-  // controlled/uncontrolled pattern Canvas exposes.
+  // controlled/uncontrolled pattern Canvas exposes without breaking it.
   const { view: viewProp, onViewChange: onViewChangeProp, defaultView, ...restProps } = rest;
 
-  // Internal canvas ref so usePinchZoomTool can attach pointer listeners
+  // Internal canvas ref so the dispatcher can attach its input listeners
   // even when the consumer passes their own forwarded ref.
   const internalCanvasRef = useRef<HTMLElement | null>(null);
   // Holds the full `CanvasExtensionApi` so we can call `requestRedraw` after
@@ -1919,8 +1918,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [],
   );
 
-  // Merge the forwarded ref with our internalCanvasRef so usePinchZoomTool
-  // can read the canvas element even when the consumer also forwards a ref.
+  // Merge the forwarded ref with our internalCanvasRef so the dispatcher can
+  // read the canvas element even when the consumer also forwards a ref.
   // The handle exposed to consumers extends the primitive's with `ingest`
   // (SceneCanvas-only — it needs the action stack).
   const mergedRef = useCallback(
@@ -1973,9 +1972,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       // `subscribeGestures()` — Canvas has no dispatcher of its own.
       gestureSource={gestureSource}
       previewPoseExtra={previewPoseExtra}
-      // No `viewport`: Canvas reads it only to attach `usePinchZoomTool`, which
-      // predates the `viewport.pinchZoom` action wired above. Both applied the
-      // same gesture's factor. The hook stays the bare-`<Canvas>` pinch path.
       backgroundFill={backgroundFill}
       cursorCoordsHud={cursorCoordsHud}
       pickHud={pickHud}

@@ -35,7 +35,7 @@ import type { ToolsApi } from 'tools/useTools';
 import { aggregatePreviewIds } from './toolPreview';
 import type { GestureSource } from './gestureBounds';
 import { useViewHelpers } from './useViewHelpers';
-import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
+import { useOptionalViewRegistry } from './viewRegistry';
 import { useFrameLoop } from './useFrameLoop';
 import type { CanvasHelpers, CanvasSurfaceHelpers } from './useViewHelpers';
 
@@ -102,8 +102,6 @@ type CanvasAdapter<TNode extends { id: string }, TPose> = MoveAdapter<TNode, TPo
   OptionalSceneHierarchy<TNode, TPose>;
 import { wrapNodeOutput } from './wrapNodeOutput';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { usePinchZoomTool } from 'tools/builtin/pinchZoom';
-import type { ViewportConfig } from './SceneCanvas/viewportConfig';
 import { CursorCoordsHud } from './CursorCoordsHud';
 import { PickHud } from './PickHud';
 import { ModalityHud } from './ModalityHud';
@@ -382,7 +380,7 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * `setView` call passes through `clampView(next, viewBounds, {width, height})`
    * before commit, keeping the visible rect inside `viewBounds`. If the visible
    * rect is larger than the bounds along an axis (zoomed out past extent), that
-   * axis is centered. Has no effect on `scale` — wire `useZoom` bounds for that.
+   * axis is centered. Has no effect on `scale`.
    *
    * A viewport concern, not scene-shaped. Consumers that want the pan to stay
    * inside a document page boundary should wire this with the page dimensions.
@@ -453,22 +451,6 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * report "no gesture in flight" and never fire.
    */
   gestureSource?: GestureSource;
-
-  /**
-   * Pinch-zoom DOM listener attachment for the canvas surface. When supplied,
-   * `<Canvas>` calls `usePinchZoomTool` with `canvasRef` so two-finger pinch
-   * events are handled directly on the canvas element.
-   *
-   * Hand tool registration, wheel pan/zoom action descriptors, and keyboard
-   * zoom shortcuts are SceneCanvas-level concerns and are NOT owned by Canvas.
-   * Those belong with the tool registry and gesture dispatcher that live in
-   * SceneCanvas — which is also why SceneCanvas does not pass this prop: it
-   * drives pinch through the `viewport.pinchZoom` action instead, and both
-   * paths at once would apply one gesture's zoom factor twice.
-   *
-   * When omitted, no pinch-zoom listener is attached.
-   */
-  viewport?: ViewportConfig;
 
   /**
    * FillStyle applied to the full canvas surface behind the scene. Accepts the
@@ -799,7 +781,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     previewIdsExtra,
     previewPoseExtra,
     gestureSource,
-    viewport,
     backgroundFill,
     cursorCoordsHud,
     pickHud,
@@ -1006,38 +987,10 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const layerCacheRef = useRef<LayerCommandCache>(new Map());
   const lastResizeRef = useRef<{ w: number; h: number; dpr: number } | null>(null);
 
-  // Pinch-zoom: Canvas owns the DOM listener because it needs canvasRef.
-  // usePinchZoomTool is a no-op when viewport?.pinchZoom is falsy. Hand tool,
-  // wheel pan/zoom, and keyboard zoom are SceneCanvas-level concerns (they
-  // register into the tool registry / gesture dispatcher that lives there).
-  const pinchConfig: { min?: number; max?: number } | null =
-    viewport?.pinchZoom === true ? {} : (viewport?.pinchZoom || null);
   // Views registered on this surface — declared as `views` descriptors or
   // mounted as `<CanvasView>` children. Null outside a surface that mounts a
   // registry, which is the single-view case.
   const viewRegistry = useOptionalViewRegistry();
-
-  // A pinch inside a view zooms that view. The registry is the same authority
-  // the dispatcher routes against, so pinch and drag cannot disagree about
-  // which panel the fingers are on.
-  const viewRegistryRef = useRef<ViewRegistry | null>(viewRegistry);
-  viewRegistryRef.current = viewRegistry;
-  const resolvePinchTarget = useCallback((clientX: number, clientY: number) => {
-    const reg = viewRegistryRef.current;
-    if (!reg) return null;
-    const target = reg.resolver.at(null, clientX, clientY);
-    if (target.id === null) return null;
-    const api = reg.list().find((r) => r.id === target.id)?.target.deps?.().view;
-    if (!api) return null;
-    return { view: api.get(), setView: api.set, origin: target.origin };
-  }, []);
-
-  usePinchZoomTool(
-    canvasRef,
-    getView,
-    setView,
-    { ...(pinchConfig ?? {}), enabled: pinchConfig !== null, resolveTarget: resolvePinchTarget },
-  );
 
   // Internal hooks always run (rules of hooks). They consult a noop adapter
   // when none is supplied; their controllers are then unused because the

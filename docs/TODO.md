@@ -52,9 +52,6 @@ Priority tags:
 **Tools & gestures**
 - `ToolCtx` hard-codes 2D, blocking tool reuse by another kernel → [Tools & gestures](#tools--gestures)
 
-**Viewport**
-- The wheel is answered three times, with inverted modifier meanings → [Viewport](#viewport)
-
 **Plugins & packaging**
 - Barrel-hygiene: selection (pending design review) → [Plugins & packaging](#plugins--packaging)
 - `labkit` inlines `core`, so a consumer using both holds two registries → [Plugins & packaging](#plugins--packaging)
@@ -301,17 +298,6 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
 ---
 
 ## Viewport
-
-- **(P2) The wheel is answered three times, with inverted modifier meanings.**
-  `viewportZoom` (plain wheel = pan, mod = zoom), `computeWheelAction` (plain =
-  zoom, meta = scroll) and `useZoom` disagree; the latter two pan in screen
-  pixels, which cannot be fed to `view.set` at all, and all three are public.
-  `usePinchZoomTool` is now dead surface — `SceneCanvas` drives pinch through
-  the action alone — but is still exported, and it is the only one of the two
-  that routes an anchor to the view under the fingers. Found by the 2026-08-29
-  cascade audit. The clamp half of this entry is closed: `DEFAULT_MIN_ZOOM` /
-  `DEFAULT_MAX_ZOOM` (`core/viewport/zoomBounds.ts`) are now the one source for
-  all seven defaults, at `0.1`–`8`.
 
 - **(P3) `useViewAnimation` builds an animator it never uses.** The hook calls
   `useAnimator()` unconditionally so it can fall back to its own animator when
