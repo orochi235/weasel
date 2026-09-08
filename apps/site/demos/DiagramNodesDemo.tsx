@@ -1,20 +1,19 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
   SceneCanvas,
   WeaselProvider,
-  effectivePose,
   useScene,
   type AddNodeSpec,
-  type DrawCommand,
-  type RenderLayer,
+  type SceneCanvasApi,
 } from '@weasel-js/core';
 import {
   EDGE_DERIVE_PATH,
   bodyTrait,
+  diagramPorts,
   layoutBody,
   measureBody,
-  portsOf,
   registerDiagramShape,
+  sceneParticipants,
   sizeToBody,
   withDiagramRegistry,
   type BodySpec,
@@ -35,7 +34,6 @@ interface Data {
 }
 interface Pose { x: number; y: number; width: number; height: number }
 
-/** One participant: the outline and rows it is built from, and where it sits. */
 /** Each edge names its two ends and how it wants to be routed. */
 const EDGES: { from: string; to: string; router: string }[] = [
   { from: 'start', to: 'check', router: 'straight' },
@@ -142,35 +140,31 @@ function DiagramNodesInner() {
     systemLayers: [{ id: 'main' }], initial, registry,
   });
 
-  // Ports are painted here and hit-tested nowhere: making them grabbable is
-  // the connect gesture's job, and it lands with edges in the next arc.
-  const ports: RenderLayer<unknown> = useMemo(() => ({
-    id: 'diagram-ports',
-    label: 'Ports',
-    draw: (): DrawCommand[] => {
-      const cmds: DrawCommand[] = [];
-      for (const node of scene.renderOrderNodes()) {
-        // The pose the node is *painted* at, so a port keeps up with a drag.
-        if (node.dependsOn !== undefined) continue;   // edges have no ports
-        for (const p of portsOf(node, effectivePose(scene, node))) {
-          cmds.push({
-            kind: 'path',
-            path: { kind: 'rect', x: p.point.x - 3.5, y: p.point.y - 3.5, width: 7, height: 7 },
-            fill: { color: PORT },
-          });
-        }
-      }
-      return cmds;
-    },
+  // The ports are declared as affordances, so the kit's own region walk gives
+  // them hover, a hit-test and an exclusive claim on the press. `diagramPorts`
+  // returns both halves because either alone fails silently: the layer without
+  // the contribution paints ports that start no gesture, and the contribution
+  // without the layer binds a hit nothing reports.
+  const { layer, contribution } = useMemo(() => diagramPorts({
+    participants: sceneParticipants(scene),
+    fill: { color: PORT },
+    cursor: 'crosshair',
+    router: 'bezier',
   }), [scene]);
+
+  // `registerLayer` is the only attach route that is hit-tested — the `layers`
+  // prop and a `Contribution.overlay` are painted and never hit.
+  const canvasRef = useRef<SceneCanvasApi | null>(null);
+  useEffect(() => canvasRef.current?.registerLayer(layer), [layer]);
 
   return (
     <SceneCanvas
+      ref={canvasRef}
       width={W}
       height={H}
       className="ckd-canvas"
       scene={scene}
-      layers={{ ports: { layer: ports, after: 'scene' } }}
+      ambient={[contribution]}
     />
   );
 }

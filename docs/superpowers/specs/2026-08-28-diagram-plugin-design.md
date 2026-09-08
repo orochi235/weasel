@@ -237,7 +237,15 @@ retired when this lands.
    meets the shape rather than its bounding box. **Edge labels are not built** — a node with
    `dependsOn: [edge]` positioned along the routed path needs the path, which a derivation is
    not handed; deciding how it gets one is the open piece.
-5. **Ports, the connect gesture, and typed connection validity.**
+5. **Ports, the connect gesture, and typed connection validity — landed.** The plugin
+   contributes a port affordance layer (`portLayer`, attached with `registerLayer`, which is
+   the only route that is hit-tested), and connect is a drag binding gated on
+   `affordance:layer:diagram-ports` dispatching `diagram.connect`. The preview is an
+   ephemeral routed edge emitted as overlay `commands`; the commit is one `add`. Typed
+   validity is `canConnect` filtering the **candidate set**, so an illegal port is never
+   snapped to and never landed on. A port claims the whole `'pointer'` protocol, so the
+   bundle also binds `pointerDown` and `click` — a claim that bars a gesture nothing else
+   consults drops the press and the drag never starts.
 6. **Layout.**
 7. **A demo per `docs/CLAUDE.md`'s demo conventions** — terse, single-purpose, on the platform
    systems rather than around them.

@@ -94,6 +94,8 @@ Every layer's `hitTest` is consulted on pointerdown, and the result rides the ge
 
 A layer that owns its chrome outright returns `strength: 'exclusive'` from its `hitTest`. That bars every binding whose `target` doesn't consult the affordance — a `kindOf` predicate or the `affordance:<kind>` form — so a tool needs no predicate of its own to keep its hands off; a bare `{ kind: 'drag' }` simply doesn't compete for a claimed press. The default, `'shared'`, competes on scope and specificity as bindings always have.
 
+**A claim bars a whole gesture protocol, so bind every gesture in it.** `claimedKinds: ['pointer']` is one token covering `pointerDown`, `click` and `drag` — at the event level the first two are the same press told apart by stage. Claim it and bind only `drag`, and the pointerdown matches nothing that consults the affordance: the dispatcher drops the press, and the drag it would have grown into never happens. The kit says so — `exclusive claim by "<layer>" matched no binding` — and the chrome looks simply dead. Bind all three, even when two of them do nothing but absorb the press.
+
 A tool can still decline hits explicitly (`target: { kindOf: (hit) => hit == null }` matches only presses that landed on the scene), but that is now for cases the claim doesn't cover, not the general defense against chrome.
 
 ### Naming a target

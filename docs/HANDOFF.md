@@ -9,28 +9,23 @@ whose arc list is the plan. That spec is marked up with what landed — read its
 
 ## Where it stands
 
-Arcs 1, 1b, 2, 3 and most of 4 are in. `@weasel-js/diagram` exists, is
-published at 1.4.3, and has a demo at `#diagram-nodes`
-(`apps/site/demos/DiagramNodesDemo.tsx`).
+Arcs 1, 1b, 2, 3, 5 and most of 4 are in. `@weasel-js/diagram` is published at
+1.4.3 and has a demo at `#diagram-nodes`
+(`apps/site/demos/DiagramNodesDemo.tsx`) where ports are grabbable and dragging
+one onto another authors an edge.
 
-## Next: arc 5 — ports as affordances, and the connect gesture
+## Next: arc 6 — layout
 
-Ports are painted today and hit-tested nowhere. Arc 5 makes them grabbable:
+`layout(graph, currentPoses, opts) => Map<NodeId, Pose>`, as one undoable batch
+of pose ops. `layered`, `tree` and `force`, the last reusing `useSimulation`
+seeded from current positions rather than adding a second integrator. The three
+rules that keep re-layout non-destructive — deterministic tiebreaks, within-rank
+order seeded from the existing cross-axis order, a `pin` set nothing moves — are
+in the spec. **Running layout twice on an unchanged graph produces zero ops, and
+that is a test.**
 
-- The plugin contributes an affordance layer supplying `port` regions, and the
-  kit's "visible chrome is always hittable" rule then gives hover and
-  hit-testing. `composeAffordanceLayer` builds the layer;
-  **`CanvasExtensionApi.registerLayer` is the only attach route that gets
-  hit-tested** — a `Contribution.overlay` is painted and never hit. Hits arrive
-  stamped `layer:<RenderLayer.id>`, the way `@weasel-js/hud` matches its own.
-- Connect is an ordinary binding gated on `affordance.kind === 'port'`,
-  dispatching a `diagram.connect` ongoing action. Preview during the drag is an
-  ephemeral edge; commit is one op batch.
-- **Invalid targets are declined in the binding spec, not in the action body** —
-  the repo learned that one the hard way (see the phase-tables memory).
-
-The demo's port-painting render layer should become that affordance layer; it
-exists in the demo only because arc 5 had not happened.
+`Graph` — the adjacency index — is rebuilt per layout invocation until
+measurement says otherwise.
 
 ## Decisions made in conversation that the code does not explain
 
@@ -58,8 +53,32 @@ anchor stays normalized against the bounds because that is what survives a
 resize; `rayHit` moves it onto the shape. Do not store outline-relative
 anchors.
 
+**Connect declines in two different places on purpose.** Which presses start a
+connect is routing, and lives in the binding's `target`. Which ports a live
+connect may land on cannot be routing — the dispatcher never re-reads the
+affordance under a moving pointer — so it is `canConnect` filtering the
+candidate set instead. Neither is an action body inspecting a hit and bailing.
+
+**Retargeting an existing edge was left for arc 6's neighborhood, not skipped.**
+It needs a `setDependsOn` op, which `docs/TODO.md` now carries at P2. Authoring
+a *new* edge needed none, which is why connect landed without it.
+
 ## Traps this work hit
 
+- **A registered layer's hit reports `layer:<RenderLayer.id>`, not the region's
+  `hitKind`.** `AffordanceRegion.hitKind` is dropped on that route and the
+  region's `initialScratch` arrives as `AffordanceHit.payload`. A binding
+  written against a `hitKind` matches nothing.
+- **An exclusive claim bars a whole gesture protocol.** `claimedKinds:
+  ['pointer']` covers `pointerDown`, `click` and `drag`; binding only `drag`
+  leaves the press with nowhere to go and the dispatcher drops it, so the drag
+  never starts. `grabPortAction` exists to absorb the other two. The kit warns
+  — `exclusive claim by "<layer>" matched no binding` — and the chrome
+  otherwise just looks dead.
+- **The deps bag is built once, at `start`.** Every later pump event carries
+  `deps: {}`, so an action reading a dep in `onEnd` reads nothing and commits
+  nothing, silently. Capture deps into the scratch. A unit test that hand-builds
+  an end ctx *with* deps will not catch this; only the browser did.
 - **Two test fixtures cast `derivePath` to its old signature**, so widening it
   typechecked clean and failed at runtime. Any `as` around a derive callback is
   hiding something.
@@ -69,8 +88,21 @@ anchors.
 - **`useScene` builds its scene once into a ref**, so editing a demo's `initial`
   nodes and saving leaves the old scene live under HMR. Hard-reload (a
   cache-busting query works) before trusting a before/after in the browser.
+- **A test asserting a snapped position is worthless if the cursor sits on the
+  port.** "Snapped to the port" and "still following the pointer" are then the
+  same coordinate, and the test passes against an implementation with the
+  filter deleted. Offset the pointer.
 
 ## Verifying
 
 `npm test` is the gate; `npx vitest run --project=weasel-ui packages/diagram`
-is the fast loop for this package. The site dev server is `npm run dev:kit`.
+is the fast loop for this package. The site dev server is `npm run dev:kit`,
+which binds `::` — reach it at `http://localhost:5173/weasel/`, not
+`127.0.0.1`.
+
+The connect gesture cannot be verified in jsdom: `setPointerCapture` there
+records the call and does nothing, so the press protocol it depends on is not
+emulated. Drive it in a real browser with synthetic `PointerEvent`s, stubbing
+`setPointerCapture` (a synthetic pointer is not "active", so the real one
+throws), and read the console — the kit's claim and route-conflict warnings say
+precisely what is unwired.

@@ -24,6 +24,19 @@ export type {
   RowTextStyle,
 } from './body';
 export {
+  CONNECT_ACTION_ID,
+  GRAB_PORT_ACTION_ID,
+  commitEdgeToScene,
+  connectBinding,
+  createConnectAction,
+  defaultCanConnect,
+  grabPortAction,
+  grabPortBindings,
+} from './connect';
+export type { CanConnect, ConnectActionOptions, PendingEdge } from './connect';
+export { createDiagramContribution, diagramPorts } from './contribution';
+export type { DiagramContributionOptions } from './contribution';
+export {
   DIAGRAM_EDGE,
   EDGE_DERIVE_PATH,
   ROUTERS,
@@ -37,6 +50,20 @@ export {
 } from './edge';
 export type { DiagramEdge, EdgeEnd, EdgeRouteOptions, RouteRequest, Router } from './edge';
 export { outlinePolyline, portsOnOutline, rayHit } from './onOutline';
+export {
+  PORT_AFFORDANCE_KIND,
+  PORT_LAYER_ID,
+  createPortAffordance,
+  portScratchOf,
+} from './portAffordance';
+export type {
+  ParticipantPose,
+  ParticipantSource,
+  PortAffordanceOptions,
+  PortScratch,
+} from './portAffordance';
+export { portLayer, sceneParticipants } from './portLayer';
+export type { ParticipantScene } from './portLayer';
 export { boxForContent, contentBox, outlinePath } from './outline';
 export { diagramShape, registerDiagramShape } from './shape';
 export type { DiagramShapeOptions } from './shape';

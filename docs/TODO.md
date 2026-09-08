@@ -615,8 +615,8 @@ Left open by the derived-path and derived-pose arcs (`dependsOn` / `derivePath` 
 Arcs 1, 1b, 2, 3 and most of 4 are in — a derived node is picked and clipped
 where it paints, follows a live drag, and can drive its own pose; stroke markers
 ship; and `@weasel-js/diagram` holds the `DiagramNode` trait, ports on the
-outline, the body builder, and edges routed by `straight` / `orthogonal` /
-`bezier`. The connect gesture is next.
+outline, the body builder, edges routed by `straight` / `orthogonal` / `bezier`,
+and the connect gesture. Layout is the next arc.
 
 - **(P2) Edge labels.** The one piece of arc 4 left. A label is a node with
   `dependsOn: [edge]` positioned at a parameter along the routed path — but a
@@ -668,10 +668,19 @@ outline, the body builder, and edges routed by `straight` / `orthogonal` /
   resolves every dependency's pose on every frame. Measure against a real diagram
   before taking it.
 
-- **(P3) `setDependsOn` op.** `dependsOn` is fixed at add time, so retargeting an
+- **(P2) `setDependsOn` op.** `dependsOn` is fixed at add time, so retargeting an
   edge is remove plus add — and switching a node between an id list and
-  `'children'` is the same. Design it with the connect gesture rather than ahead
-  of it.
+  `'children'` is the same. The connect gesture landed without needing it: a new
+  edge is one `add`. Dragging an *existing* edge's end onto a different node is
+  what needs it, and that is the next thing anyone will ask for after connect.
+
+- **(P2) Two ports can land on the same point, and one of them is unreachable.**
+  `bodyTrait` anchors a `ports` row's own ports at `u: 0` and `u: 1`, which for a
+  row near the vertical middle puts them exactly where the `w` and `e` compass
+  ports already are. The demo's `scale` node paints six ports and shows four.
+  Whichever region is declared later wins the hit, so the other is grabbable
+  nowhere. Either the compass defaults should stand aside for a row port, or a
+  body carrying port rows should not also get the four defaults.
 
 - **(P3) `scenePoseLookup` does not honor `SceneSlotConfig.toPose`**, which
   `buildSceneLayer` shims onto the live adapter's `getPose`. A consumer using it
