@@ -264,6 +264,32 @@ were different experiments. Use one probe across the whole range.
 the old data with no error and no warning. A hard reload is the only way to trust a
 before/after taken in the browser.
 
+**opentype.js runs 2.0.0 and is typed by `@types/opentype.js@1.3.10`.** 2.0.0 ships
+no typings, so TS resolves the module to the DefinitelyTyped package for the 1.x API.
+Harmless while `outline/opentypeParser.ts` keeps its narrow surface — every point it
+touches exists in both majors — but the failure would be silent: the 1.x typings
+declare `load()` and `loadSync()` as working, and in 2.0.0 they are deprecation stubs
+that `console.error` and return `undefined`. A call to either typechecks clean and
+fails at runtime. If that surface ever widens, hand-write a local `.d.ts` covering
+only what the kit calls.
+
+**`import.meta.glob`'s two arguments must be inline literals.** Vite resolves it by
+static analysis, so hoisting the patterns or the options object into a `const` leaves
+it unable to read them — it silently drops `eager` and every matched file becomes its
+own dynamic chunk. That turned one modulepreload into 87 in `apps/draw` and, measured
+cold on Slow 4G, looked exactly like "lazy-loading the dev surfaces caused a 6x FCP
+regression". Bisect before believing a chunk-count regression.
+
+**Keep a real file extension off a virtual module id, or add `.js`.** A virtual id
+ending in a real extension gets claimed by vite's css/json/jsx transforms — postcss
+will try to parse a JS module as CSS. `virtual:demo-source:<path>.js` is the shape
+that survives.
+
+**A single-threaded static server invents load regressions.** `python3 -m http.server`
+handles one request at a time, which serializes a many-chunk build into a slowdown no
+real host would show. Use a threaded server, and quote build-output byte counts rather
+than emulated FCP — the timings vary too much between runs to compare.
+
 **labkit bundles its siblings** (`noExternal` in `packages/labkit/tsup.config.ts`), so a
 source edit in `packages/text` or `packages/ui` does not reach labkit's `dist` until the
 whole workspace is rebuilt. A smoke test run before that reports the previous build's

@@ -149,8 +149,6 @@ Priority tags:
   result is known while the default can still be suppressed, and a paste no
   binding wanted stays the page's.
 
-- **(P3) Reshape `selectionOverlay` into a thin override hook.** The chrome-affordances spec shipped (2026-06-13): the multi-resize union now has a single owner — `ChromeState.unionBounds` — which both the affordance hit-tester (`affordanceAt` / `composeAffordanceLayer`) and the overlay layer read at draw time. The inline `poseById` re-derivations in `Canvas`/`SceneCanvas` are deleted, `createSelectionOverlayLayer` resolves the synthetic union from the draw-time chromeState envelope, and `MULTI_RESIZE_TARGET_ID` moved to `core/selection/` (fixing the backwards `affordances→tools` import). Residual: the synthetic-id plumbing (`getSelection` → `[MULTI_RESIZE_TARGET_ID]`, `getOutlineIds` → real members) still lives in the Canvas/SceneCanvas wiring rather than inside `createSelectionOverlayLayer`. Fold it into the layer so the slot is purely a consumer override hook.
-
 - **(P3) The ambient rotate-tool mount is near-vestigial.** Left standing when
   the two affordance hit-test mechanisms were consolidated onto
   `hitAffordanceRegions` (2026-08-01): the rotate tool now has no bindings, and
@@ -169,11 +167,7 @@ Priority tags:
   keeps carrying the tier. Retiring `engagedIds` means changing
   `tool.offhand`'s contract. Recorded 2026-08-10.
 
-- **(P3) Other drag-insert tools.** Deferred from `docs/specs/2026-05-05-drag-insert-primitive-design.md`. The consolidated `useDragRect` + `useInsert` + `defineDragInsertTool` stack makes a new drag-insert tool a thin Tool veneer. Polygon, star, ellipse, line, and image tools have landed (`packages/core/src/tools/builtin/{polygon,star,ellipse,line,image}/`); each further type is its own task.
-
 - **(P3) Promote `hitExistingGate` to gate select-tool's move/resize paths.** Deferred from `docs/specs/2026-05-05-drag-insert-primitive-design.md`. Different responsibility (gating mutation gestures rather than insertion), different gesture surface, so it wants its own design pass rather than an extension of this one.
-
-- **(P3) Evaluate `useResize`/`useRotate` against `useDragGesture`.** Deferred from `docs/specs/2026-05-05-drag-gesture-base-design.md`. After the dragRect/move migration landed, evaluate whether resize and rotate fit cleanly on the new base. Their state shapes (per-id pose map keyed by handle/center, multi-target union AABB) are different from move's flat pose map and may not benefit. Revisit only if/when their scaffolding diverges from the base in a way that costs maintenance.
 
 - **(P2) `ToolCtx` hard-codes 2D, so tool authoring can't be reused by another
   kernel.** `worldX: number` / `worldY: number` are flat scalars rather than a
@@ -611,19 +605,6 @@ Core five + Crop shipped. Remaining:
 ## Scene, adapters & layout
 
 - **(P2) `arrayAdapter` as the default Canvas adapter — full unification.** The Canvas-level synthesis tier this entry used to describe is gone — `Canvas.tsx` no longer takes `items`/`setItems`/`createDefault`/`poseBounds`/`intersectsRect`, and only `toPose` survives as a layer-config override. `arrayAdapter`, `useArrayAdapter` and `sceneToAdapter` are still three separate wirings. The deeper move — every scene is a tree rooted at one container — was taken by `useScene` (kit-owned tree with leaf/container) but the inline-props and explicit-adapter tiers still sit alongside rather than collapsed. Full unification (one adapter contract, one default wiring) remains an option for later.
-
-- **(P3) The group's union box ignores child rotation.** Per-leaf scaling
-  landed 2026-08-12 (`remapRotatedLeaf`): a rotated leaf in a group now scales
-  along its own axes. What is still unrotated is the *box*. `aabbOfPose`
-  returns a rect pose's own `x/y/width/height` rather than its rotated
-  footprint, so both the drawn multi-selection union (`ChromeState.unionBounds`
-  in `SceneCanvas`, which reads `boundsOf` and ignores the `rotation` it
-  carries) and the resize origin (`unionBounds` over `geometry.getBounds`)
-  exclude the corners a rotated child actually covers. The two agree with each
-  other, so nothing looks broken mid-drag — the group box is just smaller than
-  its contents. Fixing it changes what is painted, so it wants eyes on the
-  render, and both sites must move together or the visible box and the
-  grabbable one diverge.
 
 - **(P3) SceneCanvas → useSceneAdapter for adapter construction.** Surfaced 2026-05-21 during the node-kind registry landing. Today `SceneCanvas` constructs its synthesized adapter inside `useSceneSelectTool` (the select-tool hook), which means every new `SceneToAdapterOptions` field (`layouts`, `cascadeContainerPose`, `kindOf`, …) has to be drilled through the hook's surface. `useSceneAdapter` already exposes the full options shape; lifting adapter construction to `SceneCanvas` and handing the result down would stop the drill-through and shrink `useSceneSelectTool`'s API. Out of scope for the registry work; file when next refactoring the SceneCanvas internals.
 
@@ -1112,11 +1093,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   stops, the dialog scrim) for which the theme ships no shadow, gloss or scrim token. Each needs
   a semantic name before it can become one.
 
-- **(P3) `ZoomControl`'s slider fixes its own width, so the viewport cluster can only wrap.**
-  `.lk-root .lk-zoom__slider { width: 108px }` pins the slider's min-content contribution, so no
-  flex pressure compresses the zoom row — under about a 168px well it wraps to two rows, and
-  below that it will overflow. Fixing it properly means changing how `ZoomControl` sizes its
-  slider.
+- **(P3) `ZoomControl`'s row may still wrap under a narrow toolbar — confirm
+  before fixing.** The slider already shrinks: `ZoomControl.less` gives it
+  `flex: 0 1 108px` and a `min-width: 64px` floor, so this entry's original
+  diagnosis — that its width pins the row's min-content contribution — was
+  wrong. If the row still wraps, the fixed `--wzl-number-field-width: 6ch` on
+  the field beside it is the likelier cause. Reproduce in a browser before
+  scoping a fix.
 
 - **(P2) An instrument that renames a config key has no way to move the stored
   value.** Nesting landed — `f.group` makes a branch, paths are dotted, and a
@@ -1315,10 +1298,10 @@ Rollback path is small: split `layers` into `layers: FooLayers` (provider) + `wr
 From `docs/specs/2026-05-03-weasel-den-design.md`. **Read `packages/den/README.md` first** — the spec's `{ registry, alwaysOn, keybindings }` pack shape was superseded by core's `Contribution` + `mergeContributions`, and its convenience layer shipped inside core as `ToolBundle`. The items below are what survives that.
 
 - **(P3) Additional domain bundles.** `useWhiteboardPack` (sticky notes, freeform pen, text), `usePresentationPack` (frame tools, slide nav). Each is its own arc, and each is a `Contribution` bundle rather than a den pack. The diagram one is superseded — it has its own design in `docs/superpowers/specs/2026-08-28-diagram-plugin-design.md`, shipping as `@weasel-js/diagram`.
-- **(P3) Migrate `useSelectTool` / `useInsertTool` / `useTextTool` / `useUserPenTool` to weasel-den.** Defer until each is stable post-overlay-channel work and any further Tool API iteration. They're staying in core to keep being canonical examples for primitive design.
-- **(P3) Runtime plugin discovery.** Explicit non-goal in v1 — tools register statically via `useTools({ registry })`. Add when external authors want to ship tools without app rebuild.
-- **(P3) Public third-party extension SDK.** Deliberate exports happen during the split, but no marketing or stability guarantees yet.
-- **(P3) Per-workspace pre-commit narrowing.** Pre-commit hook should run only the workspace whose files changed (lint-staged dispatcher).
+- **(P3) Migrate `useSelectTool` / `useTextTool` / `usePenTool` /
+  `usePencilTool` to weasel-den.** Defer until each is stable post-overlay-chrome
+  work. (`useInsertTool` was removed as a duplicate of `useRectTool`, and
+  `useUserPenTool` never existed — this entry named both for months.)
 
 ### d3 integration plugin
 
@@ -1330,11 +1313,10 @@ Open, from `docs/superpowers/specs/2026-05-17-d3-plugin-design.md`:
 - **(P3) Chained transitions.** `.transition().transition()`; the animator's loop primitive already sequences, the chain just needs to thread it.
 - **(P3) Typed `data` payload.** `.data(fn)` returns `Record<string, unknown>`; the binding could carry the data type through the chain for autocompletion.
 - **(P3) Indexed diff.** `join()` walks the scene O(n) per call; a key map is faster on large datasets.
-- **(P3) `d3-zoom` / `d3-drag` adapters.** Both duplicate kit systems (`useWheelZoomTool` / `useHandTool` / `useViewAnimation`; `useDragGesture`). A bridge is worth building only for d3 semantics the kit lacks, not for parity.
-
-`d3-scale` needs no bridge — consumers import `scaleLinear` and call it. Axis *rendering* (ticks, labels) is data-visualization surface and belongs to the reserved `chart` package, not to this one; see `docs/superpowers/specs/2026-08-28-diagram-plugin-design.md` for that split.
-
-Simulation primitive open follow-ups (all still open — no built-in forces, pin helper, or seeded RNG in `packages/core/src/features/simulation/`): drag-to-pin helper hook, sugar wrapper that hides the d3-shaped nodes array, built-in forces (center/collide/x/y/drag), history-bypass adapter wrapper, worker offload mode, seedable RNG.
+- **(P3) `d3-zoom` / `d3-drag` adapters — parked.** Both duplicate kit systems
+  (`useWheelZoomTool` / `useHandTool` / `useViewAnimation`; `useDragGesture`).
+  Worth building only for d3 semantics the kit genuinely lacks, not for parity —
+  none identified yet.
 
 ### Parallax follow-ups
 
@@ -1359,93 +1341,18 @@ last, which is not always the one you think. Check the entry chunk's hash
 against the build you mean to inspect before believing a grep over it — the
 failure is silent and reads as a clean result.
 
-- [x] **Demo site — fixed 2026-08-23.** `apps/site/registry.ts` held 105 eager
-  static imports (55 of them `?raw`) and, at the bottom, an eager
-  `import.meta.glob` over `apps/site/demos`, `apps/draw/src` and
-  `packages/*/src`. That glob alone inlined **1,880 files — about 9.3 MB, 82%
-  of the bundle — to produce 11 companion source tabs**, and 642 of them were
-  kit test files. Opening one demo downloaded all fifty plus everyone's source.
-
-  **Total emitted JS fell 11.20 MB → 2.20 MB across 148 chunks.** That is the
-  number to read first: the 9 MB was not deferred to a later fetch, it was
-  deleted, because nothing ever needed it. Deferring it — a non-eager glob —
-  would instead have emitted 1,880 one-file chunks to serve 11, which is why
-  the resolution moved to build time rather than to a lazy glob.
-
-  Production build, first paint on `#scene`, cold cache over loopback:
-
-  | | JS bytes | JS requests | DOMContentLoaded |
-  |---|---|---|---|
-  | before | 10,962,344 | 2 | 386 ms |
-  | after the registry split | 1,014,631 | 10 | 175 ms |
-  | after the four below | 798,308 | 9 | 63 ms |
-
-  The entry chunk went 10,961 kB → 559 kB → 291 kB (2,795 → 178 → 91 kB gzip).
-
-  The registry literal now carries metadata and a `load()` per demo;
-  `React.lazy` fetches the component, and the code panel fetches a tab's text
-  when it scrolls into view. `scripts/vite-demo-sources.ts` resolves companion
-  tabs at build time and serves each file as its own chunk. Test files are
-  excluded by construction, not by a filter: the plugin emits a chunk only for
-  a file some demo's relative import actually names, so there is no
-  all-files-minus-tests rule that can drift. Switching demos fetches two chunks
-  (component + its source); clicking a companion tab fetches one.
-
-  Ordering matters if any of this is revisited: `React.lazy` on the demos alone,
-  with the glob left in, buys only ~9% — top-level registry code consumes those
-  strings and keeps them eager.
-
-  Four smaller wins landed on top of that split, all measured the same way:
-  `Releases` is lazy so `virtual:changelogs` leaves the entry bundle (214 kB
-  chunk), `prism-react-renderer` moved into a lazy `SourceView` (86 kB chunk),
-  the sidebar logo became a 40 kB webp (was a 181,607-byte PNG for a 449×496
-  image), and `main.tsx` no longer `await`s `registerFont` before rendering —
-  `<SceneCanvas>` subscribes to `subscribeGlyphReady`, which `registerFont`
-  fires, so text repaints when the atlas lands instead of first paint waiting
-  on it. That last one is latency rather than bytes; it is most of the
-  175 ms → 63 ms.
-
-  What is left in the 291 kB entry chunk is `WeaselRenderer` and the kit
-  surface the nav itself pulls in. That weight is genuine; see the tree-shaking note below.
-
-- [x] **WeaselDraw — fixed 2026-08-24.** `apps/draw/src/dev/sourceLookup.ts`
-  embedded this app's own source as string literals, eager because `main.tsx`
-  statically imported the two `#/dev/*` surfaces that read it. Both are now
-  `React.lazy`, tests and stories are excluded from the glob, and `main.tsx`
-  no longer `await`s `registerFont` (same reasoning as the site).
-
-  Entry chunk **2,116.31 kB → 1,212.36 kB** (623.86 → 382.80 kB gzip), one
-  modulepreload, 6 chunks.
-
-  **The trap, if you touch that glob: `import.meta.glob` is resolved by static
-  analysis, so both arguments must be inline literals.** Hoisting the patterns
-  or the options object into a `const` leaves vite unable to read them — it
-  silently drops `eager` and every matched file becomes its own dynamic chunk.
-  That turned one modulepreload into 87 and, measured cold on Slow 4G, looked
-  exactly like "lazy-loading the dev surfaces caused a 6× FCP regression".
-  It did not; the glob did. Bisect before believing a chunk-count regression.
-
-  Measuring this needs care beyond the usual: `python3 -m http.server` handles
-  one request at a time, which serializes a many-chunk build and invents a
-  regression no real host would show — use a threaded server. Emulated FCP also
-  varies enough between runs that only the build-output numbers above are worth
-  quoting; treat the timings as directional.
-
-  The reusable piece from the site fix is the per-file source module, not the
-  demo-tab plugin wrapped around it. **If you lift it, keep the `.js` suffix on
-  the virtual id** (`virtual:demo-source:<path>.js`): a virtual id ending in a
-  real extension gets claimed by vite's css/json/jsx transforms, and postcss
-  will try to parse the JS module as CSS.
-
-  Still open for draw: it fetches the Inter atlas (`inter.json` + `inter.png`,
-  212 kB together) on every load, and now on the critical path for text rather
-  than for first paint. On the duplicate-atlas item below — draw's production
-  first load fetches each of those two files exactly once, so whatever pulls
-  the `@weasel-js/hud` copy is not on that path; scope it before fixing it.
-
 ---
 
-Still open, measured 2026-08-23 and not addressed by the two fixes above:
+Still open, measured 2026-08-23. The two big load-cost fixes it sat beside —
+the demo site's eager `import.meta.glob` and `apps/draw`'s embedded source —
+shipped 2026-08-23/24; `git log` has their numbers, and their traps are in
+`CLAUDE.md`.
+
+- **(P3) `apps/draw` fetches the Inter atlas on the critical path for text.**
+  `inter.json` + `inter.png`, 212 kB together, on every load. Production's first
+  load fetches each file exactly once, so a suspected second `@weasel-js/hud`
+  copy is not reachable on that path — unconfirmed either way. Scope where, if
+  anywhere, a duplicate fetch happens before treating it as a problem.
 
 - **(P3) Re-measure cold dev startup for `apps/draw`.** The two inspector-only
   Vite plugins that dominated it — together, **6,852 ms to 3,556 ms (−48%)** when
@@ -1746,29 +1653,6 @@ one dead `const` and four stale disable directives.
 
   What is left is the vertex upload, 1.84 us and the one thing a flush exists
   to do. Text is the larger target now — see the boundary entry above.
-
-- **(P3) opentype.js is typed a major version behind what it runs.**
-  `packages/font` depends on `opentype.js@2.0.0`, which ships no typings, so TS
-  walks past `packages/font/node_modules` and resolves the module to the root
-  `@types/opentype.js@1.3.10` — the DefinitelyTyped package for the 1.x API.
-  (Confirmed with `tsc --traceResolution`. The other `opentype.js` in the tree,
-  1.3.4, is unrelated: `dev: true`, pulled in by `msdf-bmfont-xml`, and that is
-  plausibly what the `@types` pin was added for.)
-
-  **Not broken, and deliberately left alone.** All six points
-  `outline/opentypeParser.ts` touches — `parse`, `unitsPerEm`,
-  `charToGlyphIndex`, `glyphs.get`, `getPath`, `toPathData` — exist in both
-  majors; the narrow surface that file keeps is what makes the mismatch
-  harmless.
-
-  What to watch for, since the failure would be silent: the 1.x typings declare
-  `load()` and `loadSync()` as working, and in 2.0.0 they are deprecation stubs
-  that `console.error` and return `undefined`. A call to either typechecks
-  clean and fails at runtime. In the other direction 2.0.0's additions
-  (`PaletteManager`, `font.palettes`, `font.metas`) are invisible, so reaching
-  for them fails to compile. DefinitelyTyped has no 2.x package; the fix, if
-  the surface ever widens, is a hand-written local `.d.ts` covering only what
-  the kit calls — which would make that surface explicit and enforced.
 
 ---
 

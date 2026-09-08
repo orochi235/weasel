@@ -331,8 +331,7 @@ export const resizeAction: Action & { requires: string[] } = {
         : unionBounds(leafBounds)!;
 
       // Rotation captured only for the single-write-id path; group-resize
-      // takes the AABB-frame (unrotated) path even if leaves have rotation
-      // (matches `useResize` behavior).
+      // takes the AABB-frame (unrotated) path even if leaves have rotation.
       const originPose = !isGroupPath && writeIds.length === 1
         ? startPoses.get(writeIds[0])
         : (originBounds as unknown);
