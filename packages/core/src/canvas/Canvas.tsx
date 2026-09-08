@@ -49,7 +49,7 @@ import { clampView } from 'core/viewport/clampView';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
 import {
   drawLayers, isLayerPainted,
-  type Dims, type LayerCommandCache, type RenderLayer,
+  type Dims, type LayerCommandCache, type LayerGroup, type RenderLayer,
 } from 'core/layers/render';
 import { WeaselRenderer, viewToMat3, type DrawCommand, type ShaderProgramHandle } from '../renderer';
 import {
@@ -547,6 +547,14 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * it is not drawn. Reordering two layers means naming all of them.
    */
   layerOrder?: string[];
+
+  /**
+   * Runs of consecutive layers that composite as one — the surface for
+   * blurring the world while the chrome above it stays sharp. Members are
+   * named by layer id, and a layer in no group draws exactly as it did
+   * before. See {@link LayerGroup}.
+   */
+  layerGroups?: readonly LayerGroup[];
 }
 
 export type {
@@ -790,6 +798,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     getIsVisible,
     layerVisibility,
     layerOrder,
+    layerGroups,
   } = props;
 
   // Resolve debug config: explicit prop wins; `undefined` falls back to URL;
@@ -1331,11 +1340,11 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // render, not commit: an abandoned render still leaves its inputs here.
   const paintInputsRef = useRef({
     layers: layersWithDebug, width, height, debugSink,
-    dpr: dprProp, layerVisibility, layerOrder, shaders,
+    dpr: dprProp, layerVisibility, layerOrder, layerGroups, shaders,
   });
   paintInputsRef.current = {
     layers: layersWithDebug, width, height, debugSink,
-    dpr: dprProp, layerVisibility, layerOrder, shaders,
+    dpr: dprProp, layerVisibility, layerOrder, layerGroups, shaders,
   };
 
   const paint = useCallback((): boolean => {
@@ -1345,7 +1354,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     const {
       layers: paintLayers, width: w, height: h, debugSink: sink,
       dpr: dprIn, layerVisibility: vis, layerOrder: order,
-      shaders: paintShaders,
+      layerGroups: groups, shaders: paintShaders,
     } = paintInputsRef.current;
 
     // Clear sink at the top of every paint so per-frame records don't leak.
@@ -1406,6 +1415,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       view,
       { width: w, height: h },
       layerCacheRef.current,
+      undefined,
+      groups,
     );
     renderer.render(commands, viewToMat3(view));
     paintedVersionRef.current = contentVersionRef.current?.() ?? 0;
@@ -1419,7 +1430,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   useLayoutEffect(() => {
     requestRedraw();
   }, [layersWithDebug, width, height, viewProp, debugSink, dprProp,
-      layerVisibility, layerOrder, shaderIdKey, syncPaint, requestRedraw]);
+      layerVisibility, layerOrder, layerGroups, shaderIdKey, syncPaint, requestRedraw]);
 
   // The GL context and everything it owns (programs, texture caches, VBOs)
   // outlive React state, so unmount has to free them explicitly or a

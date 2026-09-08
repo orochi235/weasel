@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { type LayerCommandCache, type RenderLayer, drawLayers, drawOneLayer } from './render';
+import { type LayerCommandCache, type LayerGroup, type RenderLayer, drawLayers, drawOneLayer } from './render';
 import type { DrawCommand } from '../../renderer';
 
 describe('drawLayers', () => {
@@ -312,5 +312,140 @@ describe('RenderLayer.effects', () => {
     const layer: RenderLayer<undefined> = { id: 'w', label: 'w', draw: () => cmds };
     const out = drawOneLayer(layer, undefined, VIEW, DIMS)[0] as unknown as Record<string, unknown>;
     expect('effects' in out).toBe(false);
+  });
+});
+
+describe('layer groups', () => {
+  const fx = [{ program: { id: 'test:fx' } }];
+  const cmd = (color: string): DrawCommand =>
+    ({ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { color } });
+
+  /** Screen-space so a layer's own commands pass through unwrapped and the
+   *  only group in the output is the one under test. */
+  const screenLayer = (id: string, cmds: DrawCommand[] = [cmd('#f00')]): RenderLayer<unknown> =>
+    ({ id, label: id, space: 'screen', draw: () => cmds });
+
+  const run = (
+    layers: RenderLayer<unknown>[],
+    groups: LayerGroup[],
+    visibility: Record<string, boolean> = {},
+  ): DrawCommand[] =>
+    drawLayers(layers, null, visibility, undefined, VIEW, DIMS, undefined, undefined, groups);
+
+  it('renders consecutive members as one group carrying the shared chain', () => {
+    const a = cmd('#a'), b = cmd('#b'), c = cmd('#c');
+    const out = run(
+      [screenLayer('a', [a]), screenLayer('b', [b]), screenLayer('c', [c])],
+      [{ id: 'world', layers: ['a', 'b', 'c'], effects: fx }],
+    );
+    expect(out).toEqual([{ kind: 'group', effects: fx, children: [a, b, c] }]);
+  });
+
+  it('leaves layers outside every group untouched', () => {
+    const a = cmd('#a'), hud = cmd('#h');
+    const out = run(
+      [screenLayer('a', [a]), screenLayer('hud', [hud])],
+      [{ id: 'world', layers: ['a'], effects: fx }],
+    );
+    expect(out).toEqual([{ kind: 'group', effects: fx, children: [a] }, hud]);
+  });
+
+  it('adds no wrapper for a group that composites plainly', () => {
+    const a = cmd('#a'), b = cmd('#b');
+    const out = run(
+      [screenLayer('a', [a]), screenLayer('b', [b])],
+      [{ id: 'world', layers: ['a', 'b'] }],
+    );
+    expect(out).toEqual([a, b]);
+  });
+
+  it('carries the group alpha and color matrix onto the wrapper', () => {
+    const cm = [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
+    const out = run(
+      [screenLayer('a')],
+      [{ id: 'world', layers: ['a'], alpha: 0.5, colorMatrix: cm }],
+    );
+    expect(out[0]).toMatchObject({ kind: 'group', alpha: 0.5, colorMatrix: cm });
+  });
+
+  it('sets no transform: each member already carries its own view wrap', () => {
+    const worldLayer: RenderLayer<unknown> = { id: 'a', label: 'a', draw: () => [cmd('#a')] };
+    const out = run([worldLayer], [{ id: 'world', layers: ['a'], effects: fx }]);
+    expect('transform' in (out[0] as unknown as Record<string, unknown>)).toBe(false);
+    // The member's own view group is still there, one level down.
+    expect((out[0] as { children: DrawCommand[] }).children[0]).toMatchObject({ kind: 'group' });
+  });
+
+  it('re-reads a thunked chain every frame, with the view and dims', () => {
+    const effects = vi.fn(() => fx);
+    const groups: LayerGroup[] = [{ id: 'world', layers: ['a'], effects }];
+    run([screenLayer('a')], groups);
+    run([screenLayer('a')], groups);
+    expect(effects).toHaveBeenCalledTimes(2);
+    expect(effects).toHaveBeenLastCalledWith(VIEW, DIMS);
+  });
+
+  it('keeps the run whole across a hidden member', () => {
+    const a = cmd('#a'), c = cmd('#c');
+    const out = run(
+      [screenLayer('a', [a]), screenLayer('b'), screenLayer('c', [c])],
+      [{ id: 'world', layers: ['a', 'c'], effects: fx }],
+      { b: false },
+    );
+    expect(out).toEqual([{ kind: 'group', effects: fx, children: [a, c] }]);
+  });
+
+  it('keeps the run whole across a visible layer that draws nothing', () => {
+    const a = cmd('#a'), c = cmd('#c');
+    const out = run(
+      [screenLayer('a', [a]), screenLayer('empty', []), screenLayer('c', [c])],
+      [{ id: 'world', layers: ['a', 'c'], effects: fx }],
+    );
+    expect(out).toEqual([{ kind: 'group', effects: fx, children: [a, c] }]);
+  });
+
+  it('ignores a named layer that is not in the stack', () => {
+    const a = cmd('#a');
+    const out = run([screenLayer('a', [a])], [{ id: 'world', layers: ['a', 'ghost'], effects: fx }]);
+    expect(out).toEqual([{ kind: 'group', effects: fx, children: [a] }]);
+  });
+
+  it('brackets each run separately and warns when a group is not consecutive', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const a = cmd('#a'), hud = cmd('#h'), c = cmd('#c');
+    const out = run(
+      [screenLayer('a', [a]), screenLayer('hud', [hud]), screenLayer('c', [c])],
+      [{ id: 'world', layers: ['a', 'c'], effects: fx }],
+    );
+    expect(out).toEqual([
+      { kind: 'group', effects: fx, children: [a] },
+      hud,
+      { kind: 'group', effects: fx, children: [c] },
+    ]);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toContain('world');
+    warn.mockRestore();
+  });
+
+  it('keeps a layer in the first group that claims it, and warns', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const a = cmd('#a');
+    const out = run([screenLayer('a', [a])], [
+      { id: 'world', layers: ['a'], effects: fx },
+      { id: 'other', layers: ['a'], effects: [{ program: { id: 'test:other' } }] },
+    ]);
+    expect(out).toEqual([{ kind: 'group', effects: fx, children: [a] }]);
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+
+  it('nests a member layer\'s own effects inside the group\'s', () => {
+    const own = [{ program: { id: 'test:own' } }];
+    const layer: RenderLayer<unknown> = {
+      id: 'a', label: 'a', space: 'screen', effects: own, draw: () => [cmd('#a')],
+    };
+    const out = run([layer], [{ id: 'world', layers: ['a'], effects: fx }]);
+    expect(out[0]).toMatchObject({ kind: 'group', effects: fx });
+    expect((out[0] as { children: DrawCommand[] }).children[0]).toMatchObject({ effects: own });
   });
 });

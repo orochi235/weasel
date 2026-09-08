@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   SceneCanvas,
   WeaselProvider,
+  blur,
   deriveParallaxView,
   rectPath,
   resolveSkeleton,
@@ -9,7 +10,7 @@ import {
   useAnimator,
   useScene,
 } from '@weasel-js/core';
-import type { Dims, DrawCommand, RenderLayer, TimelineHandle, View } from '@weasel-js/core';
+import type { Dims, DrawCommand, Effect, LayerGroup, RenderLayer, TimelineHandle, View } from '@weasel-js/core';
 import { createAudioEngine } from '@weasel-js/audio';
 import type { AudioEngine, SoundHandle, VoiceHandle } from '@weasel-js/audio';
 import { CAM_SCALE, cameraView, followCamera, worldToScreen } from './platformer/camera';
@@ -48,8 +49,25 @@ const JITTER_SCALE_TOLERANCE = 0.02;
  *  happened to notice a contact stops deciding when it sounds. */
 const STEP_SCHEDULE_BUDGET_MS = 16;
 
-/** How long the blur holds after a head knock before fading back out. */
-const BONK_BLUR_MS = 260;
+/** The concussion blur's envelope, in ms, and the radius it peaks at. Rise and
+ *  fall rather than a step: a blur that snaps on reads as a dropped frame. */
+const BONK_BLUR = { rise: 120, hold: 260, fall: 200, radius: 6 };
+
+/** Peak radius `hold` ms after the knock, nothing before it or long after. */
+function bonkBlurRadius(since: number): number {
+  const { rise, hold, fall, radius } = BONK_BLUR;
+  if (since < 0 || since > rise + hold + fall) return 0;
+  if (since < rise) return radius * (since / rise);
+  const out = since - rise - hold;
+  return out <= 0 ? radius : radius * (1 - out / fall);
+}
+
+/** The layers the blur runs over: everything the camera frames, and nothing
+ *  the player reads. They are consecutive in the stack below, so the kit draws
+ *  them into one buffer and blurs that — `blur(world)`, not six blurs stacked. */
+const WORLD_LAYERS = [
+  'backdrop-far', 'backdrop-mid', 'backdrop-near', 'tiles', 'entities', 'player',
+];
 
 /**
  * `usePlatformerInput` registers its action via `useAction`, which no-ops
@@ -90,16 +108,22 @@ function SideScrollerDemoInner() {
     showBoxesRef.current = showBoxes;
   }, [showBoxes]);
 
-  // A class toggle rather than a computed filter value; the CSS transition does
-  // the fade in both directions, so this only has to say when to let go.
-  const [blurred, setBlurred] = useState(false);
-  const blurTimer = useRef(0);
+  // When the last head knock landed. A ref, not state: the effect chain is
+  // re-read on every frame the canvas paints, so the fade costs no render.
+  const bonkAt = useRef(-Infinity);
   const pulseBlur = () => {
-    setBlurred(true);
-    window.clearTimeout(blurTimer.current);
-    blurTimer.current = window.setTimeout(() => setBlurred(false), BONK_BLUR_MS);
+    bonkAt.current = performance.now();
   };
-  useEffect(() => () => window.clearTimeout(blurTimer.current), []);
+
+  const layerGroups = useMemo<LayerGroup[]>(() => [{
+    id: 'world',
+    layers: WORLD_LAYERS,
+    effects: (): Effect[] => {
+      const radius = bonkBlurRadius(performance.now() - bonkAt.current);
+      // No passes between knocks, so the offscreen buffer is never allocated.
+      return radius > 0 ? blur({ radius }) : [];
+    },
+  }], []);
 
   // The run cycle's own timeline — its playhead is what fires footsteps, not
   // the fixed-step loop. `runScale` is what the loop writes and the footstep
@@ -453,8 +477,6 @@ function SideScrollerDemoInner() {
     }
   };
 
-  const canvasClassName = blurred ? 'ckd-canvas ckd-canvas--knocked' : 'ckd-canvas';
-
   return (
     // `SceneCanvas` forwards no `onFocus`, but focus events bubble — so catch it
     // here and filter to the canvas, or tabbing to a toolbar button would start
@@ -481,11 +503,12 @@ function SideScrollerDemoInner() {
       <SceneCanvas
         width={W}
         height={H}
-        className={canvasClassName}
+        className="ckd-canvas"
         scene={scene}
         selectionMode="none"
         animator={animator}
         view={IDENTITY_VIEW}
+        layerGroups={layerGroups}
         layers={{
           backdropFar: { layer: layers.bands[0], after: 'grid' },
           backdropMid: { layer: layers.bands[1], after: 'backdropFar' },

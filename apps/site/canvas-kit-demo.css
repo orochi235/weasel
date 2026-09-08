@@ -287,15 +287,6 @@ a:hover { text-decoration: underline; }
   cursor: crosshair;
 }
 
-/* Still a CSS filter, and it still blurs the HUD along with the game. Real
- * effect passes exist now (`RenderLayer.effects`), but they are per-layer and
- * this demo has five world layers — one pass each is five buffers and the
- * wrong composite. See docs/TODO.md's "Layers cannot share one effect pass".
- * Two discrete steps, not a computed value, so the concussion escalates
- * without an inline style. */
-.ckd-canvas { transition: filter 180ms ease-out; }
-.ckd-canvas--knocked { filter: blur(5px); }
-
 .ckd-hint {
   font-size: 11px;
   color: var(--ckd-faint);

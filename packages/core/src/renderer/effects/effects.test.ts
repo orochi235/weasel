@@ -15,6 +15,8 @@ import { WeaselRenderer } from '../WeaselRenderer';
 import { registerEffect } from './types';
 import { _resetProgramRegistryForTests, registerProgram } from '../shaders/registerProgram';
 import type { DrawCommand } from '../DrawCommand';
+import { drawLayers, type LayerGroup } from '../../core/layers/render';
+import type { RenderLayer } from '../../core/layers/render';
 
 const TINT_FRAG = /* glsl */ `#version 300 es
 precision highp float;
@@ -138,6 +140,79 @@ describe('group effects', () => {
     renderer.render([{ kind: 'group', effects: [{ program }], children: [RECT] }]);
     // The rect still reached the buffer, and the frame ended on the default one.
     expect(recorder.calls.some((c) => c.name === 'drawElements')).toBe(true);
+    const binds = recorder.calls.filter((c) => c.name === 'bindFramebuffer');
+    expect(binds[binds.length - 1].args[1]).toBeNull();
+  });
+});
+
+/**
+ * What a shared pass costs, counted rather than described.
+ *
+ * A return to the default framebuffer is one composite, so counting those
+ * counts brackets: three layers sharing a group come back once, the same three
+ * carrying `effects` each come back three times. The first frame is discarded
+ * because allocating a target also unbinds, and that is not a composite.
+ */
+describe('a group shared by several layers', () => {
+  const CMD: DrawCommand = {
+    kind: 'path',
+    path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+    fill: { color: '#f00' },
+  };
+  const IDS = ['a', 'b', 'c'];
+
+  function compositesOnSecondFrame(
+    layers: RenderLayer<unknown>[],
+    groups?: LayerGroup[],
+  ): number {
+    const { recorder, renderer, effects } = setup(['fx-shared']);
+    renderer.registerProgram(effects[0].program);
+    const withFx = layers.map((l) => (l.effects ? { ...l, effects } : l));
+    const withGroups = groups?.map((g) => ({ ...g, effects }));
+    const draw = () => drawLayers(
+      withFx, null, {}, undefined, undefined,
+      { width: 100, height: 50 }, undefined, undefined, withGroups,
+    );
+    renderer.render(draw());
+    recorder.reset();
+    renderer.render(draw());
+    return recorder.calls.filter(
+      (c) => c.name === 'bindFramebuffer' && c.args[1] === null,
+    ).length;
+  }
+
+  const plain = (id: string): RenderLayer<unknown> =>
+    ({ id, label: id, space: 'screen', draw: () => [CMD] });
+  // `effects` is a marker here; `compositesOnSecondFrame` swaps in the real one.
+  const own = (id: string): RenderLayer<unknown> =>
+    ({ ...plain(id), effects: [] as never });
+
+  it('composites once for the whole run', () => {
+    expect(compositesOnSecondFrame(
+      IDS.map(plain),
+      [{ id: 'world', layers: IDS }],
+    )).toBe(1);
+  });
+
+  it('composites once per layer without one — the cost the group removes', () => {
+    expect(compositesOnSecondFrame(IDS.map(own))).toBe(3);
+  });
+
+  it('leaves a layer outside the group out of the shared buffer', () => {
+    // The HUD is drawn after the composite, so it is not among the group's
+    // pixels — the one thing a CSS filter on the canvas cannot arrange.
+    const { recorder, renderer, effects } = setup(['fx-outside']);
+    renderer.registerProgram(effects[0].program);
+    const layers = [...IDS.map(plain), plain('hud')];
+    const groups = [{ id: 'world', layers: IDS, effects }];
+    const cmds = drawLayers(
+      layers, null, {}, undefined, undefined,
+      { width: 100, height: 50 }, undefined, undefined, groups,
+    );
+    expect(cmds).toHaveLength(2);
+    expect(cmds[0]).toMatchObject({ kind: 'group', effects });
+    expect(cmds[1]).toBe(CMD);
+    renderer.render(cmds);
     const binds = recorder.calls.filter((c) => c.name === 'bindFramebuffer');
     expect(binds[binds.length - 1].args[1]).toBeNull();
   });

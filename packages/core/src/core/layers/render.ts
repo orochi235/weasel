@@ -35,6 +35,44 @@ function reportLayerFailure({ layerId, error }: LayerDrawFailure): void {
   );
 }
 
+/**
+ * Several consecutive layers composited as one.
+ *
+ * A layer's own `effects` run over that layer alone, which is the wrong
+ * picture whenever a pass reads neighboring pixels: `blur(A over B)` is not
+ * `blur(A) over blur(B)`, and it costs a buffer and a pass chain per layer. A
+ * group draws its members into one buffer, runs one chain over it, and
+ * composites the result back once.
+ *
+ * Membership is by `RenderLayer.id` — the same names `layerOrder` and
+ * `layerVisibility` use, not the `layers` map's slot keys.
+ *
+ * Only *consecutive* members share a buffer, because anything drawn between
+ * two members has to land between them. A group whose members are separated in
+ * the render order is drawn as one bracket per run, with a warning: the
+ * picture is right, the declaration almost certainly is not.
+ *
+ * This is a render-stack bracket, not a scene `ContainerNode` — it holds no
+ * ids, survives no reload, and nothing in the scene knows about it.
+ */
+export interface LayerGroup {
+  /** Names the group in warnings; not a layer id and never drawn. */
+  id: string;
+  /** Member layer ids. Order here is ignored — the render order decides. */
+  layers: readonly string[];
+  /**
+   * Passes over the group's combined pixels, in order. A thunk is re-read on
+   * every frame, so an animating radius costs no React render; an array is
+   * read once per frame either way.
+   */
+  effects?: readonly Effect[] | ((view: View, dims: Dims) => readonly Effect[]);
+  /** Opacity applied to the group's composited result, not to each member. */
+  alpha?: number;
+  /** 4×5 color matrix (row-major, 20 numbers) applied to the composited
+   *  result. See `GroupDrawCommand.colorMatrix`. */
+  colorMatrix?: number[];
+}
+
 /** One layer's memoized output, keyed by layer id. Owned by the canvas that
  *  calls `drawLayers`, not by `drawLayers` itself — the function is pure. */
 export type LayerCommandCache = Map<
@@ -112,7 +150,8 @@ export interface RenderLayer<TData> {
    *
    * Costs nothing while empty: the renderer allocates no offscreen buffer
    * until a layer actually declares one. See `GroupDrawCommand.effects` for
-   * what a pass may read.
+   * what a pass may read, and {@link LayerGroup} to run one chain over
+   * several layers at once instead of one chain each.
    */
   effects?: readonly Effect[];
   /**
@@ -181,6 +220,10 @@ export interface RenderLayer<TData> {
  *
  * A layer whose `draw` throws is dropped for the frame and reported through
  * `onLayerError` — the rest of the frame still paints.
+ *
+ * `groups` brackets runs of consecutive layers so they composite as one — see
+ * `LayerGroup`. A layer named by no group is emitted exactly as it was before
+ * groups existed, and a frame that declares none allocates nothing.
  */
 export function drawLayers<TData>(
   layers: RenderLayer<TData>[],
@@ -191,6 +234,7 @@ export function drawLayers<TData>(
   dims: Dims,
   cache?: LayerCommandCache,
   onLayerError: (failure: LayerDrawFailure) => void = reportLayerFailure,
+  groups?: readonly LayerGroup[],
 ): DrawCommand[] {
   const layerById = new Map(layers.map((l) => [l.id, l]));
   const sequence = order
@@ -205,15 +249,100 @@ export function drawLayers<TData>(
     }
   }
 
+  const groupOf = groupMembership(groups);
+  const bracketed = new Set<LayerGroup>();
+  let run: { group: LayerGroup; children: DrawCommand[] } | null = null;
+
+  const closeRun = () => {
+    if (!run) return;
+    for (const c of wrapGroup(run.group, run.children, v, dims)) out.push(c);
+    run = null;
+  };
+
   for (const layer of sequence) {
     // `order` is already applied by `sequence`; passing it again would be a
     // second, redundant lookup for the same answer.
     if (!isLayerVisible(layer, visibility)) continue;
 
-    for (const c of drawOneLayer(layer, data, v, dims, cache, onLayerError)) out.push(c);
+    const cmds = drawOneLayer(layer, data, v, dims, cache, onLayerError);
+    // A layer that painted nothing neither joins a run nor breaks one. Letting
+    // it break one would split a group over a debug overlay that is switched
+    // on but currently empty.
+    if (cmds.length === 0) continue;
+
+    const group = groupOf?.get(layer.id);
+    if (run && run.group !== group) closeRun();
+    if (!group) {
+      for (const c of cmds) out.push(c);
+      continue;
+    }
+    if (!run) {
+      if (bracketed.has(group)) {
+        console.warn(
+          `[weasel] layer group "${group.id}" is not one run — another layer is drawn ` +
+          'between its members, so it composites as more than one pass over more than ' +
+          'one buffer. Move its members together in the layer order.',
+        );
+      }
+      bracketed.add(group);
+      run = { group, children: [] };
+    }
+    for (const c of cmds) run.children.push(c);
   }
+  closeRun();
 
   return out;
+}
+
+/** Layer id → the group that owns it. First claim wins, so a second one is a
+ *  declaration bug rather than a silent reassignment. */
+function groupMembership(
+  groups: readonly LayerGroup[] | undefined,
+): Map<string, LayerGroup> | null {
+  if (!groups || groups.length === 0) return null;
+  const byLayer = new Map<string, LayerGroup>();
+  for (const group of groups) {
+    for (const id of group.layers) {
+      const claimed = byLayer.get(id);
+      if (claimed) {
+        console.warn(
+          `[weasel] layer "${id}" is claimed by layer groups "${claimed.id}" and ` +
+          `"${group.id}"; it stays in "${claimed.id}".`,
+        );
+        continue;
+      }
+      byLayer.set(id, group);
+    }
+  }
+  return byLayer;
+}
+
+/**
+ * Put one run of a group's commands under its shared compositing.
+ *
+ * No transform: every member already carries its own space wrap, so a second
+ * one here would apply the view twice to world layers and once to screen ones.
+ * A group that composites plainly gets no wrapper at all — an extra group
+ * command that changes nothing is still a push and a pop per frame.
+ */
+function wrapGroup(
+  group: LayerGroup,
+  children: DrawCommand[],
+  view: View,
+  dims: Dims,
+): DrawCommand[] {
+  const declared = typeof group.effects === 'function'
+    ? group.effects(view, dims)
+    : group.effects;
+  const effects = declared && declared.length > 0 ? declared : undefined;
+  if (!effects && group.alpha === undefined && group.colorMatrix === undefined) return children;
+  return [{
+    kind: 'group',
+    ...(effects ? { effects } : {}),
+    ...(group.alpha !== undefined ? { alpha: group.alpha } : {}),
+    ...(group.colorMatrix !== undefined ? { colorMatrix: group.colorMatrix } : {}),
+    children,
+  }];
 }
 
 /**

@@ -29,9 +29,6 @@ Priority tags:
 - `apps/draw` drops every run's styling on SVG export and copy → [Text](#text)
 - Small caps and text-transform have no run spelling → [Text](#text)
 
-**Rendering & paint**
-- Layers cannot share one effect pass, so the world and the HUD blur together → [Rendering & paint](#rendering--paint)
-
 **Scene, adapters & layout**
 - `arrayAdapter` as default Canvas adapter — full unification → [Scene, adapters & layout](#scene-adapters--layout)
 - Layout strategies: drop rejection signal → [Scene, adapters & layout](#scene-adapters--layout)
@@ -491,31 +488,6 @@ Core five + Crop shipped. Remaining:
   from a layout effect instead would fix it and cost the sync-paint ordering,
   which is the same trade as the entry above.
 
-
-- **(P2) Layers cannot share one effect pass.** Full-screen effect passes
-  shipped 2026-09-07: `GroupDrawCommand.effects` renders a group's children into
-  a texture with its own stencil, runs each registered program over it, and
-  composites the result back under the group's transform, alpha, colour matrix
-  and enclosing clip. `RenderLayer.effects` is that field folded in at
-  `drawOneLayer`, `blur` and `vignette` ship as built-ins, and `registerEffect`
-  registers a consumer's own. Nothing allocates until a group declares one.
-  Demo: `apps/site/demos/EffectsDemo.tsx`, with baselines both ways.
-
-  What it cannot do is give several layers *one* pass. `LayersMap`
-  (`canvas/Canvas.tsx:193`) is flat, so a consumer wanting the world blurred
-  and the HUD sharp has to put `effects` on each world layer — which is a
-  buffer and a pass pair per layer, and not even the same picture, since
-  `blur(A over B)` is not `blur(A) over blur(B)`.
-
-  That is what still blocks the side-scroller. `.ckd-canvas--knocked` in
-  `apps/site/canvas-kit-demo.css` is still a CSS `filter`, still blurs the HUD
-  along with the game, and now has a second reason to be there. The demo has
-  five world layers and four chrome ones.
-
-  What it wants is a way to say those five share a group — a `group` key on a
-  layer slot, or a `SceneCanvas` prop naming an ordered set. The mechanism
-  underneath already exists and is tested; this is a surface question about
-  where a consumer declares the grouping.
 
 - **(P3) Pattern fills: what the tile picker left open.** The texture half of
   fill-mode expansion shipped 2026-08-12 — patterns tile, carry a serializable
