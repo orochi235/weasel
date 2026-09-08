@@ -144,6 +144,13 @@
   resize: vertical;
 }
 
+/* Names the unit a number leaf displays in, beside the field showing it. */
+.unitSuffix {
+  flex: none;
+  font-size: var(--wzl-font-size-sm);
+  opacity: 0.6;
+}
+
 .unrenderable {
   font-family: var(--wzl-font-mono);
   font-size: var(--wzl-font-size-sm);

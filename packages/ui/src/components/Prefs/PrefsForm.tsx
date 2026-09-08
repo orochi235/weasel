@@ -2,6 +2,7 @@ import { useMemo, type ReactNode } from 'react';
 import { Focusable } from 'react-aria-components';
 import { Checkbox } from '../Checkbox';
 import { ColorField } from '../ColorField';
+import { FontFamilySelect } from '../FontFamilySelect';
 import { solidColorOf } from '../paintValue';
 import { Input } from '../Input';
 import { NumberField } from '../NumberField';
@@ -13,6 +14,7 @@ import { Tooltip, TooltipTrigger } from '../Tooltip';
 import { isBuiltinToolPref } from '@weasel-js/core';
 import {
   isPrefLeaf,
+  prefDisplayBounds,
   prefValueAtPath,
   visiblePrefSubtree,
   type PrefGroup,
@@ -173,6 +175,26 @@ function renderBuiltin(
   siblings?: Record<string, unknown>,
 ): ReactNode {
   const { pref, value, setValue } = ctx;
+  if (pref.kind === 'font-family') {
+    // Not a `ToolPref` kind: its options are the live font registry, which no
+    // static schema can carry. Core's own text schema still declares it, so
+    // the form ships the control rather than leaving every consumer to.
+    //
+    // The substitution probe runs at the weight and slant the family is stored
+    // beside — fields of the same `TextStyle` object leaf — so the label names
+    // the variant that will actually paint.
+    const weight = siblings?.fontWeight;
+    const slant = siblings?.fontStyle;
+    return (
+      <FontFamilySelect
+        value={typeof value === 'string' ? value : undefined}
+        onChange={setValue}
+        weight={typeof weight === 'number' ? weight : undefined}
+        fontStyle={slant === 'italic' ? 'italic' : undefined}
+        aria-label={pref.name}
+      />
+    );
+  }
   if (!isBuiltinToolPref(pref)) {
     // App-defined kind with no `renderers` entry: labeled placeholder, not a
     // crash — a missing wiring should be visible and recoverable.
@@ -188,28 +210,42 @@ function renderBuiltin(
       );
     }
     case 'number': {
-      const n = typeof value === 'number' && Number.isFinite(value) ? value : 0;
+      const stored = typeof value === 'number' && Number.isFinite(value) ? value : 0;
+      const unit = pref.unit;
+      const display = unit ? unit.toDisplay(stored) : stored;
+      // `min`/`max`/`step` are declared in the stored unit, like the value, so
+      // they convert with it — a leaf storing radians and showing degrees was
+      // clamping typed degrees against 0..6.28.
+      const bounds = prefDisplayBounds(pref);
+      const store = (v: number): void => setValue(unit ? unit.fromDisplay(v) : v);
       if (pref.control === 'slider') {
         return (
           <RangeSlider
-            value={n}
-            onChange={(v) => setValue(typeof v === 'number' ? v : v[0])}
-            minValue={pref.min}
-            maxValue={pref.max}
-            step={pref.step ?? 1}
+            value={display}
+            onChange={(v) => store(typeof v === 'number' ? v : v[0])}
+            minValue={bounds.min}
+            maxValue={bounds.max}
+            step={bounds.step}
             aria-label={pref.name}
           />
         );
       }
-      return (
+      const field = (
         <NumberField
-          value={n}
-          onChange={setValue}
-          minValue={pref.min}
-          maxValue={pref.max}
-          step={pref.step ?? 1}
+          value={display}
+          onChange={store}
+          minValue={bounds.min}
+          maxValue={bounds.max}
+          step={bounds.step}
           aria-label={pref.name}
         />
+      );
+      if (unit?.suffix === undefined) return field;
+      return (
+        <>
+          {field}
+          <span className={s.unitSuffix} aria-hidden="true">{unit.suffix}</span>
+        </>
       );
     }
     case 'string': {

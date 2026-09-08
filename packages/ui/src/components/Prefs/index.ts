@@ -2,6 +2,7 @@ export { PrefsForm, type PrefsFormProps, type PrefRenderer, type PrefRenderConte
 export { PrefsDialog, type PrefsDialogProps } from './PrefsDialog';
 export {
   isPrefLeaf,
+  prefDisplayBounds,
   prefValueAtPath,
   visiblePrefSubtree,
   type BuiltinPref,

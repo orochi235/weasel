@@ -1,8 +1,15 @@
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { PrefsForm, type PrefRenderContext } from './PrefsForm';
-import { visiblePrefSubtree, type PrefEnumEncoding, type PrefGroup } from './schema';
-import { TOOL_PREF_KINDS, type ToolPrefKind } from '@weasel-js/core';
+import {
+  prefDisplayBounds,
+  visiblePrefSubtree,
+  type PrefEnumEncoding,
+  type PrefGroup,
+  type PrefNumber,
+  type PrefNumberUnit,
+} from './schema';
+import { rotationDegreesUnit, TOOL_PREF_KINDS, type ToolPrefKind } from '@weasel-js/core';
 
 const SCHEMA: PrefGroup = {
   name: 'Preferences',
@@ -396,5 +403,151 @@ describe('PrefsForm — exhaustiveness over built-in kinds', () => {
     expect(() =>
       render(<PrefsForm schema={schemaWith(KIND)} onChange={() => {}} />),
     ).toThrow(/spline/);
+  });
+});
+
+describe('PrefsForm — number leaves with a display unit', () => {
+  const rotationLeaf = (extra: Record<string, unknown>): PrefGroup => ({
+    name: 'root',
+    children: {
+      layout: {
+        name: 'Layout',
+        children: {
+          rotation: {
+            kind: 'number',
+            name: 'Rotation',
+            description: '',
+            default: 0,
+            unit: rotationDegreesUnit,
+            ...extra,
+          } as PrefNumber,
+        },
+      },
+    },
+  });
+
+  const renderRotation = (extra: Record<string, unknown>, stored: number, onChange = vi.fn()) => {
+    render(
+      <PrefsForm
+        schema={rotationLeaf(extra)}
+        values={{ layout: { rotation: stored } }}
+        onChange={onChange}
+      />,
+    );
+    return onChange;
+  };
+
+  it('shows the stored value in the unit the leaf displays', () => {
+    renderRotation({}, Math.PI / 4);
+    expect(screen.getByRole('textbox', { name: 'Rotation' })).toHaveValue('45');
+  });
+
+  it('stores what a typed display value converts back to', () => {
+    const onChange = renderRotation({}, Math.PI / 4);
+    const field = screen.getByRole('textbox', { name: 'Rotation' });
+    fireEvent.change(field, { target: { value: '90' } });
+    fireEvent.blur(field);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0][0]).toBe('layout.rotation');
+    expect(onChange.mock.calls[0][1]).toBeCloseTo(Math.PI / 2);
+  });
+
+  // Bounds are declared in the stored unit, like the value. Passed through
+  // raw they clamp a typed degree count against a radian range: 90 came back
+  // as 6.283 (2π), the max.
+  it('converts declared bounds into the unit it displays', () => {
+    const onChange = renderRotation(
+      { min: 0, max: Math.PI * 2, step: Math.PI / 180 },
+      Math.PI / 4,
+    );
+    const field = screen.getByRole('textbox', { name: 'Rotation' });
+    fireEvent.change(field, { target: { value: '90' } });
+    fireEvent.blur(field);
+    expect(onChange.mock.calls[0][1]).toBeCloseTo(Math.PI / 2);
+  });
+
+  it('names the unit beside the field', () => {
+    renderRotation({}, Math.PI / 4);
+    expect(screen.getByText('°')).toBeInTheDocument();
+  });
+
+  it('gives a slider the display range and converts what it reports back', () => {
+    const onChange = renderRotation(
+      { control: 'slider', min: 0, max: Math.PI * 2, step: Math.PI / 180 },
+      Math.PI / 4,
+    );
+    const slider = screen.getByRole('slider', { name: 'Rotation' });
+    expect(slider).toHaveAttribute('min', '0');
+    expect(slider).toHaveAttribute('max', '360');
+    expect(slider).toHaveAttribute('step', '1');
+    expect(slider).toHaveValue('45');
+    fireEvent.change(slider, { target: { value: '90' } });
+    expect(onChange.mock.calls[0][1]).toBeCloseTo(Math.PI / 2);
+  });
+
+  it('leaves a unitless number leaf in the unit it stores', () => {
+    const onChange = vi.fn();
+    render(
+      <PrefsForm
+        schema={{
+          name: 'root',
+          children: {
+            layout: {
+              name: 'Layout',
+              children: {
+                width: { kind: 'number', name: 'Width', description: '', default: 0, min: 0, max: 100 },
+              },
+            },
+          },
+        }}
+        values={{ layout: { width: 12 } }}
+        onChange={onChange}
+      />,
+    );
+    const field = screen.getByRole('textbox', { name: 'Width' });
+    expect(field).toHaveValue('12');
+    fireEvent.change(field, { target: { value: '34' } });
+    fireEvent.blur(field);
+    expect(onChange).toHaveBeenCalledWith('layout.width', 34);
+    expect(screen.queryByText('°')).toBeNull();
+  });
+});
+
+describe('prefDisplayBounds', () => {
+  it('passes a unitless leaf\'s bounds through, defaulting only the step', () => {
+    const leaf: PrefNumber = { kind: 'number', name: 'W', description: '', default: 0, min: 2, max: 8 };
+    expect(prefDisplayBounds(leaf)).toEqual({ min: 2, max: 8, step: 1 });
+  });
+
+  it('converts min and max as points and step as a distance', () => {
+    const leaf: PrefNumber = {
+      kind: 'number', name: 'R', description: '', default: 0,
+      min: 0, max: Math.PI, step: Math.PI / 180, unit: rotationDegreesUnit,
+    };
+    const b = prefDisplayBounds(leaf);
+    expect(b.min).toBe(0);
+    expect(b.max).toBe(180);
+    expect(b.step).toBe(1);
+  });
+
+  // An offset unit is why `step` converts as a distance rather than a point:
+  // read as a point it would come back as 98 rather than 2.
+  it('swaps the ends when the conversion decreases, and keeps step a distance', () => {
+    const remaining: PrefNumberUnit = {
+      toDisplay: (v) => 100 - v,
+      fromDisplay: (v) => 100 - v,
+    };
+    const leaf: PrefNumber = {
+      kind: 'number', name: 'D', description: '', default: 0,
+      min: 0, max: 10, step: 2, unit: remaining,
+    };
+    expect(prefDisplayBounds(leaf)).toEqual({ min: 90, max: 100, step: 2 });
+  });
+
+  it('leaves an omitted bound omitted', () => {
+    const leaf: PrefNumber = {
+      kind: 'number', name: 'R', description: '', default: 0, unit: rotationDegreesUnit,
+    };
+    expect(prefDisplayBounds(leaf)).toEqual({ min: undefined, max: undefined, step: 1 });
   });
 });

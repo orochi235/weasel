@@ -24,7 +24,32 @@ export type {
   ToolPrefStringControl as PrefStringControl,
 } from '@weasel-js/core';
 
-import type { ToolPrefGroup, ToolPrefLeaf } from '@weasel-js/core';
+import type { ToolPrefGroup, ToolPrefLeaf, ToolPrefNumber } from '@weasel-js/core';
+
+/**
+ * A number leaf's bounds in the unit it is displayed in.
+ *
+ * Only what the leaf declares converts: an omitted bound has no stored
+ * counterpart to put through the conversion, and its fallback — 0..100 for a
+ * slider's track, a step of 1 — is a display-space number already. `min` and
+ * `max` are points, so they convert the way the value does; `step` is a
+ * distance, and a unit with an offset maps zero somewhere else, so converting
+ * it as a point would scale it wrong. A decreasing conversion swaps which end
+ * is the lower one.
+ */
+export function prefDisplayBounds(
+  p: ToolPrefNumber,
+): { min?: number; max?: number; step: number } {
+  if (!p.unit) return { min: p.min, max: p.max, step: p.step ?? 1 };
+  const { toDisplay } = p.unit;
+  const lo = p.min === undefined ? undefined : toDisplay(p.min);
+  const hi = p.max === undefined ? undefined : toDisplay(p.max);
+  const flipped = lo !== undefined && hi !== undefined && lo > hi;
+  const step = p.step === undefined
+    ? 1
+    : Math.abs(toDisplay(p.step) - toDisplay(0)) || p.step;
+  return { min: flipped ? hi : lo, max: flipped ? lo : hi, step };
+}
 
 /** Distinguishes a leaf from a group while walking a schema tree. */
 export function isPrefLeaf(node: ToolPrefLeaf | ToolPrefGroup): node is ToolPrefLeaf {
