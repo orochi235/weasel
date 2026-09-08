@@ -35,15 +35,36 @@ const DepRegistryContext = createContext<DepRegistry | null>(null);
 /** Provides the dep registry for a canvas. `<SceneCanvas>` mounts one; a
  *  consumer registering its own dep sources must be inside it. */
 export function DepRegistryProvider({ children }: { children: ReactNode }) {
-  const sourcesRef = useRef(new Map<DepName, () => unknown>() as Map<string, () => unknown>);
+  // A stack of sources per name, newest live — the same shape as
+  // `ActionsProvider`'s registrant stack, one layer down. Two canvases under
+  // one provider both register `view` / `scene` / `selection`; with a single
+  // slot the second displaced the first and either one's teardown then deleted
+  // the name outright, taking the dep away from the canvas still on screen.
+  const sourcesRef = useRef(new Map<string, (() => unknown)[]>());
 
   const registry = useMemo<DepRegistry>(() => ({
     register: <K extends DepName>(name: K, source: () => DepSchema[K]) => {
-      sourcesRef.current.set(name as string, source as () => unknown);
-      return () => { sourcesRef.current.delete(name as string); };
+      const key = name as string;
+      const entry = source as () => unknown;
+      const stack = sourcesRef.current.get(key);
+      if (stack) stack.push(entry);
+      else sourcesRef.current.set(key, [entry]);
+      let released = false;
+      return () => {
+        if (released) return;
+        released = true;
+        const cur = sourcesRef.current.get(key);
+        if (!cur) return;
+        // Our own entry, wherever it now sits: a source already displaced must
+        // take itself out without disturbing the one above it.
+        const i = cur.lastIndexOf(entry);
+        if (i === -1) return;
+        cur.splice(i, 1);
+        if (cur.length === 0) sourcesRef.current.delete(key);
+      };
     },
     get: <K extends DepName>(name: K) =>
-      sourcesRef.current.get(name as string)?.() as DepSchema[K] | undefined,
+      sourcesRef.current.get(name as string)?.at(-1)?.() as DepSchema[K] | undefined,
   }), []);
 
   return <DepRegistryContext.Provider value={registry}>{children}</DepRegistryContext.Provider>;

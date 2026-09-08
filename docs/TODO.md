@@ -396,14 +396,6 @@ Core five + Crop shipped. Remaining:
   costs an O(nodes) bounds sweep every frame. Revisit only if a consumer wants
   framing that tracks a simulation.
 
-- **(P3) The registry's dep slot has no identity guard.**
-  `DepRegistryProvider.register` (`depRegistry.tsx:41-44`) sets by name and its
-  release does a bare `delete`, so two canvases sharing a dep registry lose
-  `view` / `scene` / `selection` when either unmounts — the same shape as the
-  action-id collision fixed by stacking registrants, one layer down.
-  `vertex-widths` mounts one shared `DepRegistryProvider` over two canvases and
-  is the live instance.
-
 - **(P2) The text-edit overlay does not scale with the canvas, and scaling it
   reveals a second problem.** `#text` at ~2x renders the DOM overlay at 1x font
   size while the selection frame around it is correctly zoomed — the text sits
