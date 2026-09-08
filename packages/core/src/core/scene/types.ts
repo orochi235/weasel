@@ -74,6 +74,24 @@ export type NodeId = string & { readonly __brand: 'NodeId' };
 /** Brand a string as a NodeId. */
 export const asNodeId = (s: string): NodeId => s as NodeId;
 
+/**
+ * One dependency, as a derivation reads it: the node itself and the pose it is
+ * painted at.
+ *
+ * The node comes along because a connector legitimately reads more than a box
+ * — an edge that thickens with its endpoint's weight, or routes only to nodes
+ * on a given layer, is answering off `data` and `layer`. The scene already
+ * invalidates dependents on `kit:setData` and `kit:setLayer` for exactly that,
+ * so handing over only the pose made the invalidation pay for a read nothing
+ * could perform.
+ */
+export interface DerivedDep<TPose> {
+  node: Node<unknown, string, TPose>;
+  /** Its override when it has one, else its own derived pose, else the pose
+   *  the document stores — `effectivePose`, the same answer the renderer uses. */
+  pose: TPose;
+}
+
 interface NodeBase<TData, TLayer extends string, TPose> {
   id: NodeId;
   layer: TLayer;
@@ -91,8 +109,9 @@ interface NodeBase<TData, TLayer extends string, TPose> {
    *  it in `dependsOn`, but a container outlives the children it derives
    *  from — an emptied group is still a group. */
   dependsOn?: readonly NodeId[] | 'children';
-  /** Computes this node's path from its dependencies' poses, in `dependsOn`
-   *  order. A dependency that has been removed arrives as `undefined`.
+  /** Computes this node's path from its dependencies, in `dependsOn` order —
+   *  each one the node and the pose it is painted at.
+   *  A dependency that has been removed arrives as `undefined`.
    *  Returning `null` means "nothing to draw right now". Re-evaluated when a
    *  dependency's world pose changes, never authored. Absolute-pose `Scene`
    *  makes that the dependency's own pose, and an ancestor's move reaches it as
@@ -102,7 +121,7 @@ interface NodeBase<TData, TLayer extends string, TPose> {
    *  assignment kit-wide. The cost is that a `derivePath` casts to read `node.data`. */
   derivePath?: (
     node: Node<unknown, string, TPose>,
-    deps: readonly (TPose | undefined)[],
+    deps: readonly (DerivedDep<TPose> | undefined)[],
   ) => Path | null;
   /** Computes this node's pose from its dependencies' poses, the same way
    *  `derivePath` computes its path — same `dependsOn` list, same widened
@@ -119,7 +138,7 @@ interface NodeBase<TData, TLayer extends string, TPose> {
    *  still writes that authored pose; it is simply not what anything reads. */
   derivePose?: (
     node: Node<unknown, string, TPose>,
-    deps: readonly (TPose | undefined)[],
+    deps: readonly (DerivedDep<TPose> | undefined)[],
   ) => TPose | null;
 }
 
@@ -197,12 +216,12 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
    *  looked up from it, never passed in. */
   derivePath?: (
     node: Node<unknown, string, TPose>,
-    deps: readonly (TPose | undefined)[],
+    deps: readonly (DerivedDep<TPose> | undefined)[],
   ) => Path | null;
   /** Mirrors `SceneNode.derivePose`, on the same terms as `derivePath`. */
   derivePose?: (
     node: Node<unknown, string, TPose>,
-    deps: readonly (TPose | undefined)[],
+    deps: readonly (DerivedDep<TPose> | undefined)[],
   ) => TPose | null;
 }
 
@@ -286,12 +305,12 @@ export interface SceneRegistry<TPose> {
   /** Maps registry keys to `derivePath` functions for nodes with `dependsOn`. */
   derivePath?: Readonly<Record<string, (
     node: Node<unknown, string, TPose>,
-    deps: readonly (TPose | undefined)[],
+    deps: readonly (DerivedDep<TPose> | undefined)[],
   ) => Path | null>>;
   /** Maps registry keys to `derivePose` functions for nodes with `dependsOn`. */
   derivePose?: Readonly<Record<string, (
     node: Node<unknown, string, TPose>,
-    deps: readonly (TPose | undefined)[],
+    deps: readonly (DerivedDep<TPose> | undefined)[],
   ) => TPose | null>>;
   // A new function field is a row in `NODE_FN_FIELDS` (core/scene/nodeFnFields.ts)
   // plus its entry here; the field name is the registry key by construction.

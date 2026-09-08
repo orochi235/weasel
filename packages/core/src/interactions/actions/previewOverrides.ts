@@ -4,7 +4,7 @@
  * An ongoing action keeps its per-frame poses in its own scratch and exposes
  * them as `previewIds` / `previewPose`. That surface is enough to paint a
  * ghost and to size selection chrome, but it is invisible to anything that
- * asks the scene where a node is — `scenePoseLookup`, which resolves a derived
+ * asks the scene where a node is — `sceneDepLookup`, which resolves a derived
  * node's geometry, and the pick source, which decides what the pointer can
  * grab. A node deriving its path from a dragged one therefore stayed anchored
  * to the pre-drag position and jumped on drop.

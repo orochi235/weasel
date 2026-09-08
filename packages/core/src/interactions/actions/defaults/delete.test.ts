@@ -483,11 +483,11 @@ describe('deleteAction over a real scene', () => {
     const [a, b, edge] = [asNodeId('a'), asNodeId('b'), asNodeId('edge')];
     const derivePath = (
       _n: unknown,
-      deps: readonly (RectPose | undefined)[],
+      deps: readonly ({ pose: RectPose } | undefined)[],
     ): PolygonPath => ({
       kind: 'polygon',
       commands: new Uint8Array([PATH_M]),
-      coords: new Float32Array([deps[0]?.x ?? -1, 0]),
+      coords: new Float32Array([deps[0]?.pose.x ?? -1, 0]),
       fillRule: 'nonzero',
     });
     const scene = createScene<object, 'main', RectPose>({
@@ -506,7 +506,10 @@ describe('deleteAction over a real scene', () => {
     // re-deriving against a moved endpoint is what tells the two apart.
     scene.setPose(a, { x: 42, y: 0, width: 10, height: 10 });
     expect(scene.get(edge)!.derivePath).toBe(derivePath);
-    const derived = scene.get(edge)!.derivePath!(scene.get(edge)!, [scene.get(a)!.pose]);
+    const derived = scene.get(edge)!.derivePath!(
+      scene.get(edge)!,
+      [{ node: scene.get(a)!, pose: scene.get(a)!.pose }],
+    );
     expect((derived as PolygonPath).coords).toEqual(new Float32Array([42, 0]));
   });
 

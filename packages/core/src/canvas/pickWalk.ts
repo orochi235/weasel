@@ -226,7 +226,9 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
       n,
       (id) => {
         const dep = scene.get(id);
-        return dep === undefined ? undefined : poseOf(dep as never);
+        return dep === undefined
+          ? undefined
+          : { node: dep as Node<unknown, string, TPose>, pose: poseOf(dep as never) };
       },
       (id) => scene.childrenOf(id),
     );

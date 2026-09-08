@@ -230,7 +230,13 @@ retired when this lands.
    resolved through the pose descriptor, and the body builder — outline, measured rows, sizing
    floor. Ports sit on the node's **bounds**, not on its drawn boundary; hugging the outline is
    `findShapeSilhouette`'s job and waits for a router that needs it.
-4. **Edges and routing.**
+4. **Edges and routing — landed, except labels.** `DiagramEdge` is a leaf node with
+   `dependsOn: [from, to]` and a `derivePath` that runs a router; `straight`, `orthogonal` and
+   `bezier` ship, waypoints route through, and an end with no named port resolves to the one
+   facing the other end. Ports are cast from the node's bounds onto its outline, so an edge
+   meets the shape rather than its bounding box. **Edge labels are not built** — a node with
+   `dependsOn: [edge]` positioned along the routed path needs the path, which a derivation is
+   not handed; deciding how it gets one is the open piece.
 5. **Ports, the connect gesture, and typed connection validity.**
 6. **Layout.**
 7. **A demo per `docs/CLAUDE.md`'s demo conventions** — terse, single-purpose, on the platform

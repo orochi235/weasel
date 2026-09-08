@@ -845,6 +845,7 @@ export type { PoseSource, PosedNode } from './core/scene';
 export type {
   AddLayerSpec,
   AddNodeSpec,
+  DerivedDep,
   ContainerNode,
   LayerRecord,
   LeafNode,

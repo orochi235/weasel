@@ -7,8 +7,12 @@ import { PATH_L, PATH_M, type PolygonPath } from '../geometry/path';
 const LAYERS = [{ id: 'main' as const }];
 
 /** A derivePath that draws a line between the centers of its two dependencies. */
-const connectCenters = (_node: unknown, deps: readonly (RectPose | undefined)[]): PolygonPath | null => {
-  const [from, to] = deps;
+const connectCenters = (
+  _node: unknown,
+  deps: readonly ({ pose: RectPose } | undefined)[],
+): PolygonPath | null => {
+  const from = deps[0]?.pose;
+  const to = deps[1]?.pose;
   if (!from || !to) return null;
   return {
     kind: 'polygon',

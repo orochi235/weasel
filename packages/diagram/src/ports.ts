@@ -13,6 +13,7 @@ import {
   type PoseProjection,
   type Vec2,
 } from '@weasel-js/core';
+import { outlinePolyline, rayHit } from './onOutline';
 import { diagramNodeOf, type DiagramNodeLike, type DiagramNodeReader } from './trait';
 import type { Port, PortAnchor, PortSpec } from './types';
 
@@ -84,12 +85,20 @@ export function portsOf<TPose>(
   const rotation = geometry.getRotation?.(pose) ?? 0;
   const cx = bounds.x + bounds.width / 2;
   const cy = bounds.y + bounds.height / 2;
+  // A port is anchored in the bounds so it survives a resize, but it has to
+  // *sit* on the shape: a parallelogram's west anchor is in the gap beside its
+  // leaning edge, and an edge ending there ends in empty space. Flattened once
+  // per call, not once per port.
+  const poly = trait.outline === undefined || bounds.width <= 0 || bounds.height <= 0
+    ? null
+    : outlinePolyline(trait.outline, bounds);
 
   return (trait.ports ?? DEFAULT_PORTS).map((spec) => {
-    const flat: Vec2 = {
+    const anchored: Vec2 = {
       x: bounds.x + spec.at.u * bounds.width,
       y: bounds.y + spec.at.v * bounds.height,
     };
+    const flat = (poly === null ? null : rayHit(poly, { x: cx, y: cy }, anchored)) ?? anchored;
     const normal = spec.normal === undefined ? normalOf(spec.at) : spec.normal;
     if (rotation === 0) {
       return { id: spec.id, nodeId: node.id, point: flat, normal, ...typeOf(spec) };

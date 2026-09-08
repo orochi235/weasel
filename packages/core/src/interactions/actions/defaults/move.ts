@@ -23,7 +23,7 @@
  *
  * The per-frame poses still go *somewhere* the scene can see: the ephemeral
  * override table, which bypasses history entirely. That is what lets a node
- * deriving its geometry from a dragged one follow the drag — `scenePoseLookup`
+ * deriving its geometry from a dragged one follow the drag — `sceneDepLookup`
  * and the pick source both read overrides, and neither can see this action's
  * scratch. Keeping the frame in scratch alone is why the edge used to stay
  * anchored to the old endpoint and jump on drop.

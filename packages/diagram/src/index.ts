@@ -23,6 +23,20 @@ export type {
   RowPort,
   RowTextStyle,
 } from './body';
+export {
+  DIAGRAM_EDGE,
+  EDGE_DERIVE_PATH,
+  ROUTERS,
+  bezier,
+  diagramEdgeOf,
+  edgeDerivePath,
+  orthogonal,
+  resolveEnd,
+  straight,
+  withDiagramRegistry,
+} from './edge';
+export type { DiagramEdge, EdgeEnd, EdgeRouteOptions, RouteRequest, Router } from './edge';
+export { outlinePolyline, portsOnOutline, rayHit } from './onOutline';
 export { boxForContent, contentBox, outlinePath } from './outline';
 export { diagramShape, registerDiagramShape } from './shape';
 export type { DiagramShapeOptions } from './shape';

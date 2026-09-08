@@ -25,11 +25,11 @@ export const UNION_OF_CHILDREN = 'kit:unionOfChildren';
  */
 export function unionOfChildren<TPose>(
   _node: unknown,
-  deps: readonly (TPose | undefined)[],
+  deps: readonly ({ pose: TPose } | undefined)[],
 ): TPose | null {
   const poses: RectPose[] = [];
-  for (const p of deps) {
-    if (p !== undefined) poses.push(p as unknown as RectPose);
+  for (const d of deps) {
+    if (d !== undefined) poses.push(d.pose as unknown as RectPose);
   }
   if (poses.length === 0) return null;
   return unionAABB(poses) as unknown as TPose;

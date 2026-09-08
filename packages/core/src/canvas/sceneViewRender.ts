@@ -25,7 +25,7 @@ import type { Node, NodeId, Scene } from '../core/scene/types';
 import { wrapNodeOutput } from './wrapNodeOutput';
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
 import { effectivePose } from 'core/scene/effectivePose';
-import { withDerivedPaths, resolveDerivedPath, scenePoseLookup } from './derivedPath';
+import { withDerivedPaths, resolveDerivedPath, sceneDepLookup } from './derivedPath';
 import type { SceneViewDrawOne } from './NodeShape';
 
 export type { SceneViewDrawOne } from './NodeShape';
@@ -148,7 +148,7 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
   // derived paths are applied on the headless path; `SceneCanvas` does the same
   // for the live one. `Canvas` itself never sees a scene, so it can't and doesn't.
   const derived = withDerivedPaths(scene, drawOne);
-  const poseLookup = scenePoseLookup(scene);
+  const depLookup = sceneDepLookup(scene);
   const wrappedDrawOne = (
     node: Node<TData, TLayer, TPose>,
     pose: TPose,
@@ -169,7 +169,7 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
     undefined,
     ((node: unknown) =>
       resolveDerivedPath(
-        node as Node<TData, TLayer, TPose>, poseLookup, (id) => scene.childrenOf(id),
+        node as Node<TData, TLayer, TPose>, depLookup, (id) => scene.childrenOf(id),
       )) as Parameters<typeof buildSceneTree>[4],
   );
   if (extraCommands && extraCommands.length > 0) {

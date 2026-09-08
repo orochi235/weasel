@@ -17,11 +17,15 @@ const SLOT = 'kit:derivedPose';
  *  it without importing the full generic shape. */
 export interface PosedNode<TPose> {
   id: NodeId;
+  kind?: 'leaf' | 'container';
   pose: TPose;
   /** Read only by the memo, which keys on its reference alongside the pose. */
   data?: unknown;
   dependsOn?: readonly NodeId[] | 'children';
-  derivePose?: (node: never, deps: readonly (TPose | undefined)[]) => TPose | null;
+  derivePose?: (
+    node: never,
+    deps: readonly ({ node: never; pose: TPose } | undefined)[],
+  ) => TPose | null;
 }
 
 /** What resolving a pose needs: the overrides, and enough of the scene to
@@ -73,7 +77,9 @@ export function derivedPose<TPose>(
         node as never,
         ids.map((id) => {
           const dep = source.get(id);
-          return dep === undefined ? undefined : effectivePose(source, dep);
+          return dep === undefined
+            ? undefined
+            : { node: dep as never, pose: effectivePose(source, dep) };
         }),
       ),
     );

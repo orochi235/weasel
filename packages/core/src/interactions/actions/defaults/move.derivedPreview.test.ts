@@ -1,7 +1,7 @@
 /**
  * A derived edge has to follow the drag that moves its endpoint.
  *
- * The painted geometry comes from `scenePoseLookup`, which reads the scene's
+ * The painted geometry comes from `sceneDepLookup`, which reads the scene's
  * ephemeral pose overrides. An action that keeps its in-flight poses only in
  * its own scratch is invisible to that lookup, so the endpoint ghosts at its
  * new position while the edge stays anchored to the old one and jumps on drop.
@@ -12,7 +12,7 @@ import type { InvocationCtx, OngoingHandle, OngoingInvoker } from '../invoker';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
-import { resolveDerivedPath, scenePoseLookup } from 'canvas/derivedPath';
+import { resolveDerivedPath, sceneDepLookup } from 'canvas/derivedPath';
 import { linePath } from 'features/paths/builder';
 import type { Path } from 'features/paths/types';
 
@@ -50,7 +50,8 @@ function fixture() {
     pose: { x: 0, y: 0, width: 0, height: 0 },
     dependsOn: [a, b],
     derivePath: (_n, deps): Path | null => {
-      const [from, to] = deps as readonly (P | undefined)[];
+      const from = deps[0]?.pose;
+      const to = deps[1]?.pose;
       if (!from || !to) return null;
       return linePath({ x: from.x, y: from.y }, { x: to.x, y: to.y });
     },
@@ -60,7 +61,7 @@ function fixture() {
 
 /** The path the renderer would paint for the edge right now. */
 function paintedEdge(scene: ReturnType<typeof createScene<D, L, P>>, edge: NodeId) {
-  return resolveDerivedPath(scene.get(edge)!, scenePoseLookup(scene), (id) => scene.childrenOf(id));
+  return resolveDerivedPath(scene.get(edge)!, sceneDepLookup(scene), (id) => scene.childrenOf(id));
 }
 
 const DRAG = { start: { x: 5, y: 5 }, current: { x: 5, y: 105 }, delta: { x: 0, y: 100 } };

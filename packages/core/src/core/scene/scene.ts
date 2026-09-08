@@ -574,7 +574,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     },
   });
 
-  // `derivePath` is handed its dependencies' nodes, not only their poses, so a
+  // A derivation is handed its dependencies' nodes, not only their poses, so a
   // connector reading `data` or `layer` goes stale on these two exactly as it
   // does on a move.
   registerKitOp<{ id: NodeId; from: TData; to: TData }>('kit:setData', {

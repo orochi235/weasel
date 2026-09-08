@@ -3,6 +3,7 @@ export { useScene } from './useScene';
 export { asNodeId } from './types';
 export type {
   AddLayerSpec,
+  DerivedDep,
   AddNodeSpec,
   ContainerNode,
   LayerRecord,

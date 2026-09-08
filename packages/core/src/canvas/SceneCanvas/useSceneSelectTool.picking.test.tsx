@@ -254,8 +254,9 @@ describe('useSceneSelectTool — derived nodes', () => {
             pose: { x: 0, y: 0, width: 0, height: 0 },
             data: { stroke: { width: 2, paint: '#000' } },
             dependsOn: [asNodeId('a'), asNodeId('b')],
-            derivePath: (_n: unknown, deps: readonly (Pose | undefined)[]) => {
-              const [from, to] = deps;
+            derivePath: (_n: unknown, deps: readonly ({ pose: Pose } | undefined)[]) => {
+              const from = deps[0]?.pose;
+              const to = deps[1]?.pose;
               if (!from || !to) return null;
               return linePath({ x: from.x, y: from.y }, { x: to.x, y: to.y });
             },

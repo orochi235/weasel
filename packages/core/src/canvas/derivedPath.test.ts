@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { resolveDerivedPath, scenePoseLookup, withDerivedPaths } from './derivedPath';
+import { resolveDerivedPath, sceneDepLookup, withDerivedPaths } from './derivedPath';
 import { wireSceneSlotToScene } from './sceneSlotWiring';
 import { defaultDrawOne } from './defaultDrawOne';
 import {
@@ -8,7 +8,7 @@ import {
 import { buildSceneViewCommands } from './sceneViewRender';
 import { planPixelRender } from './renderSceneToPixels';
 import { createScene } from 'core/scene/scene';
-import { asNodeId, type Node, type NodeId, type RectPose } from 'core/scene/types';
+import { asNodeId, type DerivedDep, type Node, type NodeId, type RectPose } from 'core/scene/types';
 import type { Path } from 'core/geometry/path';
 import type { FillStyle } from '@weasel-js/paint';
 import type { View } from 'core/viewport/view';
@@ -24,8 +24,13 @@ const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 type DerivePath = (
   node: Node<unknown, string, RectPose>,
-  deps: readonly (RectPose | undefined)[],
+  deps: readonly (DerivedDep<RectPose> | undefined)[],
 ) => Path | null;
+
+/** A dependency as the derive callbacks now receive it. The node is a stand-in:
+ *  nothing in these fixtures reads it. */
+const dep = (p: RectPose | undefined): DerivedDep<RectPose> | undefined =>
+  p === undefined ? undefined : { node: {} as never, pose: p };
 
 type Data = { label?: string };
 type GradientData = { fill: FillStyle };
@@ -50,7 +55,8 @@ function makeEdgeScene() {
   const a = scene.add({ kind: 'leaf', layer: 'main', pose: pose(0), data: {} });
   const b = scene.add({ kind: 'leaf', layer: 'main', pose: pose(100), data: {} });
   const derivePath: DerivePath = (_node, deps) => {
-    const [from, to] = deps;
+    const from = deps[0]?.pose;
+    const to = deps[1]?.pose;
     if (!from || !to) return null;
     return linePath({ x: from.x, y: from.y }, { x: to.x, y: to.y });
   };
@@ -97,23 +103,23 @@ describe('resolveDerivedPath', () => {
     const derivePath = vi.fn(() => linePath({ x: 0, y: 0 }, { x: 1, y: 1 }));
     const node = makeNode(derivePath);
     const poses = new Map([[asNodeId('a'), pose(0)], [asNodeId('b'), pose(100)]]);
-    resolveDerivedPath(node, (id) => poses.get(id), NO_CHILDREN);
-    expect(derivePath).toHaveBeenCalledWith(node, [pose(0), pose(100)]);
+    resolveDerivedPath(node, (id) => dep(poses.get(id)), NO_CHILDREN);
+    expect(derivePath).toHaveBeenCalledWith(node, [dep(pose(0)), dep(pose(100))]);
   });
 
   it('passes undefined for a dependency that no longer resolves', () => {
     const derivePath = vi.fn(() => null);
     const node = makeNode(derivePath);
     const poses = new Map([[asNodeId('a'), pose(0)]]);
-    resolveDerivedPath(node, (id) => poses.get(id), NO_CHILDREN);
-    expect(derivePath).toHaveBeenCalledWith(node, [pose(0), undefined]);
+    resolveDerivedPath(node, (id) => dep(poses.get(id)), NO_CHILDREN);
+    expect(derivePath).toHaveBeenCalledWith(node, [dep(pose(0)), undefined]);
   });
 
   it('memoizes — a second call with unchanged poses does not re-derivePath', () => {
     const derivePath = vi.fn(() => linePath({ x: 0, y: 0 }, { x: 1, y: 1 }));
     const node = makeNode(derivePath);
     const poses = new Map([[asNodeId('a'), pose(0)], [asNodeId('b'), pose(100)]]);
-    const lookup = (id: NodeId) => poses.get(id);
+    const lookup = (id: NodeId) => dep(poses.get(id));
     resolveDerivedPath(node, lookup, NO_CHILDREN);
     resolveDerivedPath(node, lookup, NO_CHILDREN);
     expect(derivePath).toHaveBeenCalledTimes(1);
@@ -124,7 +130,7 @@ describe('resolveDerivedPath', () => {
     const derivePath = vi.fn(() => linePath({ x: 0, y: 0 }, { x: 1, y: 1 }));
     const node = makeNode(derivePath);
     const poses = new Map([[asNodeId('a'), pose(0)], [asNodeId('b'), pose(100)]]);
-    const lookup = (id: NodeId) => poses.get(id);
+    const lookup = (id: NodeId) => dep(poses.get(id));
     resolveDerivedPath(node, lookup, NO_CHILDREN);
     dropPoseKeyedMemoSlots(node);
     resolveDerivedPath(node, lookup, NO_CHILDREN);
@@ -132,21 +138,26 @@ describe('resolveDerivedPath', () => {
   });
 });
 
-describe('scenePoseLookup', () => {
+describe('sceneDepLookup', () => {
   it('reads the node\'s pose', () => {
     const { scene, a } = makeEdgeScene();
-    expect(scenePoseLookup(scene)(a)).toEqual(pose(0));
+    expect(sceneDepLookup(scene)(a)!.pose).toEqual(pose(0));
+  });
+
+  it('hands over the dependency node itself, not only its box', () => {
+    const { scene, a } = makeEdgeScene();
+    expect(sceneDepLookup(scene)(a)!.node).toBe(scene.get(a));
   });
 
   it('prefers an ephemeral pose override over the document pose', () => {
     const { scene, a } = makeEdgeScene();
     scene.overrides.set(a, { pose: pose(42) });
-    expect(scenePoseLookup(scene)(a)).toEqual(pose(42));
+    expect(sceneDepLookup(scene)(a)!.pose).toEqual(pose(42));
   });
 
   it('returns undefined for an id the scene no longer holds', () => {
     const { scene } = makeEdgeScene();
-    expect(scenePoseLookup(scene)(asNodeId('gone'))).toBeUndefined();
+    expect(sceneDepLookup(scene)(asNodeId('gone'))).toBeUndefined();
   });
 });
 
@@ -357,7 +368,7 @@ describe('picking a derived node', () => {
   function edgeParts() {
     const { scene, a, b, edge } = makeEdgeScene();
     const node = scene.get(edge)!;
-    const path = resolveDerivedPath(node, scenePoseLookup(scene), NO_CHILDREN)!;
+    const path = resolveDerivedPath(node, sceneDepLookup(scene), NO_CHILDREN)!;
     return { scene, a, b, edge, node, path };
   }
 
@@ -394,7 +405,7 @@ describe('picking a derived node', () => {
 
   it('follows a dependency move rather than serving a stale silhouette', () => {
     const { scene, b, node } = edgeParts();
-    const lookup = scenePoseLookup(scene);
+    const lookup = sceneDepLookup(scene);
     findShapeSilhouette(node, node.pose, {
       derivedPath: resolveDerivedPath(node, lookup, NO_CHILDREN),
     });

@@ -9,13 +9,16 @@ import {
   type RenderLayer,
 } from '@weasel-js/core';
 import {
+  EDGE_DERIVE_PATH,
   bodyTrait,
   layoutBody,
   measureBody,
   portsOf,
   registerDiagramShape,
   sizeToBody,
+  withDiagramRegistry,
   type BodySpec,
+  type DiagramEdge,
   type DiagramNode,
 } from '@weasel-js/diagram';
 
@@ -24,7 +27,7 @@ const INK = '#7ba7c7';
 const PORT = '#e0913f';
 
 interface Data {
-  diagram?: DiagramNode;
+  diagram?: DiagramNode | DiagramEdge;
   fill?: { color: string };
   stroke?: { paint: { color: string }; width: number };
   text?: string;
@@ -33,6 +36,13 @@ interface Data {
 interface Pose { x: number; y: number; width: number; height: number }
 
 /** One participant: the outline and rows it is built from, and where it sits. */
+/** Each edge names its two ends and how it wants to be routed. */
+const EDGES: { from: string; to: string; router: string }[] = [
+  { from: 'start', to: 'check', router: 'straight' },
+  { from: 'check', to: 'load', router: 'bezier' },
+  { from: 'scale', to: 'load', router: 'orthogonal' },
+];
+
 const BUILT: { id: string; at: Pose; spec: BodySpec }[] = [
   {
     id: 'start',
@@ -106,10 +116,31 @@ function DiagramNodesInner() {
         });
       }
     }
+    // An edge is an ordinary leaf node: `dependsOn` names its two ends, and
+    // `derivePath` re-routes whenever either of them moves. Nothing here draws
+    // it — the kit's own derived-path painter does.
+    for (const e of EDGES) {
+      specs.push({
+        kind: 'leaf',
+        layer: 'main',
+        pose: { x: 0, y: 0, width: 0, height: 0 },
+        data: {
+          diagram: { from: {}, to: {}, router: e.router },
+          stroke: { paint: { color: INK }, width: 2 },
+        },
+        dependsOn: [e.from as never, e.to as never],
+        derivePath: EDGE_DERIVE_PATH as never,
+      });
+    }
     return specs;
   }, []);
 
-  const scene = useScene<Data, 'main', Pose>({ systemLayers: [{ id: 'main' }], initial });
+  // `withDiagramRegistry` is what lets an edge round-trip through `toJSON`:
+  // a function cannot be serialized, so the scene stores the key instead.
+  const registry = useMemo(() => withDiagramRegistry<Pose>(), []);
+  const scene = useScene<Data, 'main', Pose>({
+    systemLayers: [{ id: 'main' }], initial, registry,
+  });
 
   // Ports are painted here and hit-tested nowhere: making them grabbable is
   // the connect gesture's job, and it lands with edges in the next arc.
@@ -120,6 +151,7 @@ function DiagramNodesInner() {
       const cmds: DrawCommand[] = [];
       for (const node of scene.renderOrderNodes()) {
         // The pose the node is *painted* at, so a port keeps up with a drag.
+        if (node.dependsOn !== undefined) continue;   // edges have no ports
         for (const p of portsOf(node, effectivePose(scene, node))) {
           cmds.push({
             kind: 'path',

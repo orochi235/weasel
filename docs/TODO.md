@@ -612,11 +612,19 @@ Core five + Crop shipped. Remaining:
 
 Left open by the derived-path and derived-pose arcs (`dependsOn` / `derivePath` /
 `derivePose` / `SceneRegistry`; the seam is documented in `docs/extending.md`).
-Arcs 1, 1b, 2 and 3 of the diagram plugin design are in — a derived node is
-picked and clipped where it paints, follows a live drag, and can drive its own
-pose; stroke markers ship; and `@weasel-js/diagram` holds the `DiagramNode`
-trait, perimeter ports and the body builder. Arc 4 (edges and routing) is next.
-What is left here is smaller than the connect gesture that follows it.
+Arcs 1, 1b, 2, 3 and most of 4 are in — a derived node is picked and clipped
+where it paints, follows a live drag, and can drive its own pose; stroke markers
+ship; and `@weasel-js/diagram` holds the `DiagramNode` trait, ports on the
+outline, the body builder, and edges routed by `straight` / `orthogonal` /
+`bezier`. The connect gesture is next.
+
+- **(P2) Edge labels.** The one piece of arc 4 left. A label is a node with
+  `dependsOn: [edge]` positioned at a parameter along the routed path — but a
+  derivation is handed its dependencies' nodes and poses, not their derived
+  *paths*, so the label has no way to read the route. Either a derivation gets
+  its dependencies' resolved geometry too, or the label re-runs the router from
+  the edge's own trait, which resolves the route twice per frame. Decide before
+  building.
 
 - **(P3) The preview channel still carries pose twice.** `move` / `resize` /
   `rotate` publish each frame to the scene's pose overrides *and* keep their own

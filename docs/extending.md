@@ -274,10 +274,15 @@ The built-in `kit:derived` painter draws whatever `derivePath` returns, reading
 placeholder, and all it still contributes is rotation. A bounds-relative fill
 resolves against the derived path's own box.
 
-`derivePath` receives each dependency's **effective** pose in `dependsOn` order —
-its ephemeral override when it has one, else the pose the scene stores — which
-is exactly what the render walks paint. A dependency the scene cannot resolve
-arrives as `undefined`; returning `null` means "nothing to draw right now".
+`derivePath` receives each dependency in `dependsOn` order as
+`{ node, pose }` — the node itself, and its **effective** pose: its ephemeral
+override when it has one, else its own derived pose, else the pose the scene
+stores, which is exactly what the render walks paint. The node comes along
+because a connector legitimately reads more than a box: one that thickens with
+its endpoint's weight, or routes only to nodes on a given layer, is answering
+off `data` and `layer`, and the scene already invalidates on both. A dependency
+the scene cannot resolve arrives as `undefined`; returning `null` means
+"nothing to draw right now".
 
 `node` arrives typed `SceneNode<unknown, string, TPose>`, so a `derivePath` that
 reads `node.data` casts. Naming `TData` and `TLayer` there would put them in a

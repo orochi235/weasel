@@ -555,16 +555,17 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/LayeredCurveDemo.tsx',
   },
 
-  // ─── weasel-hud ───────────────────────────────────────────────────────────
+  // ─── weasel-diagram ───────────────────────────────────────────────────────
   {
     id: 'diagram-nodes',
-    title: 'Diagram nodes and ports',
+    title: 'Diagram nodes and edges',
     category: 'weasel-diagram',
-    description: "Any scene node becomes a diagram participant by carrying the DiagramNode trait. Each box here is a container whose trait names an outline — stadium, diamond, rect, parallelogram — painted by registerDiagramShape, with its rows as ordinary child text nodes so the kit's own text painter draws them. The body measures a floor and the authored pose is grown to clear it, never set to it, so resize and align need no special case. Orange squares are the ports: four perimeter anchors by default, plus one per port-row entry anchored to its own row. They are painted and not yet grabbable — the connect gesture lands with edges in the next arc.",
-    hint: 'Drag a box: its ports move with it, because portsOf resolves against the pose the node is painted at rather than the one the document stores.',
+    description: "Any scene node becomes a diagram participant by carrying the DiagramNode trait. Each box here is a container whose trait names an outline — stadium, diamond, rect, parallelogram — painted by registerDiagramShape, with its rows as ordinary child text nodes so the kit's own text painter draws them. Every edge is an ordinary leaf node too: dependsOn names its two ends and derivePath runs a router, so an edge re-routes whenever either end moves and nothing has to keep a parallel graph in sync. The three shipped routers are all here — straight, bezier, orthogonal. Orange squares are the ports, cast from the node's bounds onto the outline so an edge meets the shape rather than its bounding box. They are painted and not yet grabbable; the connect gesture is the next arc.",
+    hint: 'Drag a box: its ports move with it and its edges re-route, because both resolve against the pose the node is painted at rather than the one the document stores.',
     load: () => import('./demos/DiagramNodesDemo').then((m) => m.DiagramNodesDemo),
     path: 'apps/site/demos/DiagramNodesDemo.tsx',
   },
+  // ─── weasel-hud ───────────────────────────────────────────────────────────
   {
     id: 'hud',
     title: 'HUD widgets',
