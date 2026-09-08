@@ -40,7 +40,6 @@ Priority tags:
 **Selection, actions & UI panels**
 - Two implementations of an editable curve; the timeline built the second → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit's loupe drives itself with plain listeners, not bindings → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- The accent ramp has no member that passes AA as text, in either mode → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Every React Aria overlay inside a lab renders unthemed → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit: nested config values — `f.schema` is flat because `setConfig` is → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Reconcile core's `ToolPrefLeaf` with weasel-ui's `PrefLeaf` — the `paint` kind has already drifted → [Selection, actions & UI panels](#selection-actions--ui-panels)
@@ -1275,11 +1274,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
   Versioning stays a caret range, not lockstep: windease is a separate repo with its own release cadence, and a changesets `fixed` group cannot span repos anyway. The risk a range carries is the one to watch — windease shipping a breaking major that labkit's `^` silently declines to follow.
 
-- **(P3) The light accent sits below AA for text drawn on it.** `--wzl-fg-on-accent` against the
-  interstellar light accent `#a86f3c` measures 3.85:1, under the 4.5 AA needs for normal text.
-  This is every accent-filled control in `@weasel-js/ui`, not one site — a theme-level call
-  about the accent, not something to patch with a local literal.
-
 - **(P3) The color literals with no token equivalent.** Arc 4 tokenized what had a token and
   left the rest rather than inventing a mapping — `check-design-tokens` covers size, weight,
   radius and the stray danger reds, but not color generally, for that reason. What remains is
@@ -1451,31 +1445,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) Richer text style controls** (font, size, weight pickers).
 
 ---
-
-### Accent-coloured readouts are illegible in dark mode, and no accent token fixes it
-
-`.readout` and `.readoutInput` in `Properties.module.css` paint text with
-`var(--wzl-accent)`, which is mode-invariant `#2e1f7a` — a very dark violet. On
-the dark theme's surface (`#25272c`) that measures **1.13:1**, against the 4.5:1
-AA needs for normal text: a slider's value reads as a smudge.
-
-**Swapping to `--wzl-accent-fg` does not fix it.** It resolves to
-`--wzl-accent-strong` `#5841b8` in dark, which is **2.04:1** on the same surface —
-visible, still failing. Measured 2026-09-07 in
-`weasel-ui-properties-gallery--all` with `data-wzl-mode="dark"`; `--wzl-fg-muted`
-on that surface is 5.35:1 for comparison.
-
-So this is the same problem as "The light accent sits below AA for text drawn on
-it" (3.85:1) above, from the other end: **the accent ramp has no member that
-passes AA as text, on either surface.** Deciding one of them decides both, and
-neither is patchable at a call site.
-
-The consumer question stands on top of that: apps theme their panels by
-overriding `--wzl-accent` (speech-balloons to gold, `apps/draw` likewise), so
-whatever the readouts read has to either follow that override or be documented
-as a second thing to override.
-
-## Plugins & packaging
 
 ### labkit inlines core, so a consumer using both holds two registries
 

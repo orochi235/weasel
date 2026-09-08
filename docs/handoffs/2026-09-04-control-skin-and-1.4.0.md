@@ -55,12 +55,6 @@ presentation vocabulary and was deliberately not renamed.
 belongs to the container. Every real panel composes the list, so this shows only in
 isolated per-row stories. Accepted rather than adding a second density mechanism.
 
-**The dark-mode readout contrast was found and deliberately not fixed.** Filed in
-`docs/TODO.md`. `.readout` uses `--wzl-accent`, mode-invariant `#2e1f7a`, so values
-are near-illegible on dark. `--wzl-accent-fg` is the right token, but consumer apps
-theme panels by overriding `--wzl-accent`, so the swap would break their theming.
-Needs a call on whether `--wzl-accent-fg` should derive from `--wzl-accent`.
-
 ## Also touched, outside the kit
 
 `~/src/experiments/speech-balloons` — two commits, since pushed. `f6889d9`

@@ -47,16 +47,6 @@ has typed. Neither is a select of a value; both are a button that opens a list
 and acts. The entry now says the fix is a menu-button component
 `@weasel-js/ui` does not have.
 
-**`--wzl-accent-fg` does not fix the illegible readouts.** Measured in
-`weasel-ui-properties-gallery--all` at `data-wzl-mode="dark"`: the readout's
-`--wzl-accent` is 1.13:1 on the dark surface, and `--wzl-accent-fg` — which the
-entry named as the fix — is 2.04:1, against AA's 4.5. It is the same problem as
-the light accent's 3.85:1 from the other end: **the accent ramp has no member
-that passes AA as text, in either mode.** Left undone deliberately — it is a
-theme decision, and it changes what external consumers who override
-`--wzl-accent` (speech-balloons, `apps/draw`) get. The entry carries the numbers
-now.
-
 **A parallax plane's sources go through `drawOneLayer`.** They were drawn with
 a bare `layer.draw`, so a `space: 'world'` source came out unprojected and the
 only way to see anything was to pre-project by hand while declaring a space you
@@ -85,9 +75,9 @@ half-fixed; the entry carries the measurement and the kit question under it.
 Nothing is half-finished; the tree is clean and every entry touched is either
 retired or rewritten. Pick the next item from `docs/TODO.md`.
 
-Two that are now sharper than they were, and both need Mike rather than code: the
-accent ramp above, and `weasel-js` being unpublishable under that name (pick a
-different unscoped name, or delete the alias).
+One that is now sharper than it was, and needs Mike rather than code: `weasel-js`
+being unpublishable under that name (pick a different unscoped name, or delete
+the alias).
 
 Before touching `docs/TODO.md`, note that its "High-priority index" at the top is
 a hand-maintained copy of claims made further down. Fix both or fix neither.
