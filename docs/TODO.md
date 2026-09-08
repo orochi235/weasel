@@ -36,6 +36,7 @@ Priority tags:
 - Two implementations of an editable curve; the timeline built the second → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit's loupe drives itself with plain listeners, not bindings → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - labkit: nested config values — `f.schema` is flat because `setConfig` is → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- A `paint` leaf in `PrefsForm` degrades a gradient to a solid → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - No control parses a typed unit, and the conversion tables answer only grid snapping → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - `LabShell` is the only thing that applies labkit's style scope → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
@@ -1281,6 +1282,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   consumer that needs one", which is reasoning this repo bans. Relatedly there
   is no `--wzl-handle-*` token: Timeline's `.key` (9px) and CurveEditor's
   endpoint (10px) are both 45°-rotated squares that arrived there independently.
+
+- **(P2) A `paint` leaf in `PrefsForm` edits through `ColorField`, so a gradient
+  degrades to a solid.** `SelectionPanel` renders the same leaf through
+  `PaintInput`, which edits a whole `FillStyle`; `PrefsForm` reads the color out
+  and writes a solid back, so opening the control on a gradient and touching it
+  loses the stops with no warning. Swapping in `PaintInput` is the obvious fix
+  and does not fit: it puts a six-segment kind bar and a gradient editor into a
+  `flex: 0 0 110px` control slot. So the question is the slot, not the control —
+  and jsdom cannot answer it, this needs proofing in a browser.
 
 - **(P2) No control parses a typed unit, and the conversion tables answer only
   grid snapping.** `ToolPrefNumberUnit` (`toDisplay` / `fromDisplay` /
