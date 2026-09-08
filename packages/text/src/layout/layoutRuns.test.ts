@@ -890,6 +890,68 @@ describe('layoutRuns — outline tier', () => {
     expect(out.groups[0].stroke).toMatchObject({ width: 2 });
   });
 
+  it('carries an unfilled run to the outline tier with its geometry and no fill', async () => {
+    await registerFixture('inter', [{}]);
+    await registerOutlines('inter');
+
+    const outlineOnly: ResolvedRun = {
+      ...RUN_PLAIN('AB'),
+      fill: null,
+      stroke: { paint: { fill: 'solid', color: '#f00' }, width: 2 },
+    };
+    const out = layoutRuns([outlineOnly], OPTS_OUT);
+
+    expect(out.groups).toHaveLength(1);
+    expect(out.groups[0].source).toBe('outline');
+    expect(out.groups[0].fill).toBeNull();
+    expect(out.groups[0].glyphs).toHaveLength(2);
+    expect(out.groups[0].stroke).toMatchObject({ width: 2 });
+  });
+
+  it('emits nothing for a run with neither fill nor stroke', async () => {
+    await registerFixture('inter', [{}]);
+    await registerOutlines('inter');
+
+    // Above the threshold there is geometry to be had, and below it there are
+    // quads — an unpainted run must allocate neither.
+    for (const opts of [OPTS_OUT, { ...OPTS_OUT, outlineMinSize: 48 }]) {
+      const out = layoutRuns([{ ...RUN_PLAIN('AB'), fill: null }], opts);
+      expect(out.groups).toEqual([]);
+      // The line still measures the same: paint does not move a glyph.
+      expect(out.bounds).toEqual(layoutRuns([RUN_PLAIN('AB')], opts).bounds);
+    }
+  });
+
+  it('emits no quads for an unfilled run the outline tier cannot serve', async () => {
+    await registerFixture('inter', [{}]);
+
+    // No outlines registered, so the stroke has no geometry to ride — and a
+    // textured quad would paint the fill that was refused.
+    const out = layoutRuns([{
+      ...RUN_PLAIN('AB'),
+      fill: null,
+      stroke: { paint: { fill: 'solid', color: '#f00' }, width: 2 },
+    }], OPTS_OUT);
+    expect(out.groups).toEqual([]);
+  });
+
+  it('drops an unfilled run\'s decoration rules, which have only a fill to paint', async () => {
+    await registerFixture('inter', [{}]);
+    await registerOutlines('inter');
+
+    const out = layoutRuns([{
+      ...RUN_PLAIN('AB'),
+      fill: null,
+      underline: true,
+      strikethrough: true,
+      stroke: { paint: { fill: 'solid', color: '#f00' }, width: 2 },
+    }], OPTS_OUT);
+    expect(out.decorations).toEqual([]);
+    // Still the same underlined-run shape otherwise: filled text keeps both.
+    expect(layoutRuns([{ ...RUN_PLAIN('AB'), underline: true }], OPTS_OUT).decorations)
+      .toHaveLength(1);
+  });
+
   it('leaves a zero-width stroke below the threshold on the SDF tier', async () => {
     await registerFixture('inter', [{}]);
     await registerOutlines('inter');

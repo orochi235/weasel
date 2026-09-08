@@ -922,7 +922,9 @@ function applyOverlayStyle(el: HTMLDivElement, style: ResolvedTextStyle): void {
   el.style.border = '0';
   el.style.outline = 'none';
   el.style.background = 'transparent';
-  el.style.color = 'color' in style.fill ? style.fill.color : '#000';
+  // Unfilled text still edits in black: the overlay has to be legible, and
+  // there is no CSS spelling of "no fill" that leaves the glyphs visible.
+  el.style.color = style.fill !== null && 'color' in style.fill ? style.fill.color : '#000';
   el.style.caretColor = style.caretColor;
   el.style.font = fontString(style);
   el.style.lineHeight = String(style.lineHeight);

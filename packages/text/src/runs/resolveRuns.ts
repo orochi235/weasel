@@ -33,7 +33,10 @@ export interface ResolvedRun {
   fontSize: number;
   fontWeight: number;
   fontStyle: 'normal' | 'italic';
-  fill: FillStyle;
+  /** `null` is an explicit no-fill: the glyphs are painted by `stroke` alone,
+   *  which only the outline tier can do. Nothing is emitted for a run with
+   *  neither. */
+  fill: FillStyle | null;
   /** Outline over this run's glyphs, or absent for none. Painted only on the
    *  outline tier — a distance field has no geometry to stroke. */
   stroke?: Stroke;

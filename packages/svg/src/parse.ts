@@ -944,7 +944,8 @@ function parseTextElement(
   );
   if (hasStyling) node.runs = runs;
   if (Object.keys(textStyle).length > 0) node.style = textStyle;
-  if (textPaint.fill != null) node.fill = textPaint.fill;
+  // `!== undefined`, not `!= null`: `null` is the document saying `fill="none"`.
+  if (textPaint.fill !== undefined) node.fill = textPaint.fill;
   if (textPaint.stroke != null) node.stroke = textPaint.stroke;
   if (opacity != null) node.opacity = opacity;
   // Try to extract the element-local transform as a pure rotation about
@@ -1088,8 +1089,9 @@ function readTextPaint(
     } else if (parsed?.kind === 'ref') {
       const paint = gradients.get(parsed.id);
       if (paint) out.fill = paint;
+    } else if (parsed?.kind === 'none') {
+      out.fill = null;
     }
-    // parsed.kind === 'none' → leave fill undefined (defaults to black downstream).
   }
   // Text strokes used to be dropped here with a warning: an SDF glyph is a
   // sampled field, with no geometry to stroke. The outline tier gave large

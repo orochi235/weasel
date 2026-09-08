@@ -479,10 +479,11 @@ const TEXT_PAINTER: NodeShapeEntry = {
     if (boxes.length === 0) return null;
     return rectsToPath(boxes);
   },
-  // `filled` is unconditional: a text node's `data.fill: null` still resolves
-  // to the default in `ResolvedRun`, so there is no outline-only text to
-  // report. The reach is the point — a heavily outlined glyph was unpickable
-  // across the width of its own outline.
+  // `filled` is unconditional, `data.fill: null` included: the silhouette
+  // above is line boxes, not glyph ink, so reporting outline-only text as
+  // unfilled would leave it grabbable within a stroke width of a box edge and
+  // nowhere near the letters. The reach still matters — a heavily outlined
+  // glyph was unpickable across the width of its own outline.
   ink: (node, _pose, ctx) => {
     const d = node.data as { stroke?: Stroke | null };
     return { filled: true, ...inkReach(resolveNodeStroke(d.stroke), ctx?.scale) };

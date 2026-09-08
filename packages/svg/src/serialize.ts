@@ -142,7 +142,7 @@ function registerPaintServers(nodes: SvgNode[], registry: PaintServerRegistry): 
 
 /** Register one text paint if it is a paint server rather than a colour. */
 function registerTextPaint(
-  paint: import('@weasel-js/core').FillStyle | undefined,
+  paint: import('@weasel-js/core').FillStyle | null | undefined,
   registry: PaintServerRegistry,
 ): void {
   if (paint && !('color' in paint)) registry.register(paint);
@@ -459,7 +459,9 @@ function textXml(node: SvgTextNode, registry: PaintServerRegistry, namespaces: R
   // below emits as `wd:line-height="..."`. There is no compat write of
   // `data-weasel-line-height` — per the SVG-native plan's Migration section,
   // no installed base exists to compat against.
-  if (node.fill) {
+  if (node.fill === null) {
+    attrs.push('fill="none"');
+  } else if (node.fill) {
     if ('color' in node.fill) {
       attrs.push(`fill="${node.fill.color}"`);
       if (node.fill.opacity != null && node.fill.opacity !== 1) {

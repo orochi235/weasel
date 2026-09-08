@@ -108,7 +108,10 @@ export interface LaidOutGroup {
   source: 'atlas' | 'canvas' | 'outline';
   /** Dynamic-atlas page index for 'canvas' groups; 0 for the others. */
   page: number;
-  fill: FillStyle;
+  /** `null` for an unfilled run: the group's glyphs are painted by `stroke`
+   *  alone. Only ever null on an `'outline'` group carrying a stroke, since
+   *  nothing else can put ink down without a fill. */
+  fill: FillStyle | null;
   /** Outline painted over the glyphs, or absent for none. Only ever set on
    *  an `'outline'` group — the SDF tiers have no geometry to stroke, which
    *  is why a stroke pulls its run onto the outline tier at any size. A run
@@ -321,7 +324,8 @@ interface LayoutContext {
   groups: Map<string, LaidOutGroup>;
 }
 
-function fillKey(p: FillStyle): string {
+function fillKey(p: FillStyle | null): string {
+  if (p === null) return 'none';
   if ('color' in p) return `s:${p.color}:${p.opacity ?? 1}`;
   // Non-solid paints (gradients/patterns) defeat grouping in this slice —
   // every occurrence gets its own group. Acceptable in v1 since per-run
@@ -336,9 +340,9 @@ function fillKey(p: FillStyle): string {
  * gradient/pattern has no cheap structural equality and a false positive
  * would paint one run's rule with another's paint.
  */
-function sameFill(a: FillStyle, b: FillStyle): boolean {
+function sameFill(a: FillStyle | null, b: FillStyle | null): boolean {
   if (a === b) return true;
-  if ('color' in a && 'color' in b) {
+  if (a !== null && b !== null && 'color' in a && 'color' in b) {
     return a.color === b.color && (a.opacity ?? 1) === (b.opacity ?? 1);
   }
   return false;
@@ -378,7 +382,7 @@ function groupKey(
   weight: number,
   style: 'normal' | 'italic',
   synthetic: { bold: boolean; italic: boolean },
-  fill: FillStyle,
+  fill: FillStyle | null,
   stroke: Stroke | undefined,
   source: 'atlas' | 'canvas' | 'outline',
   page: number,
@@ -1037,7 +1041,10 @@ export function layoutRuns(
       // below, so a decorated span's spaces stay under the rule. `step`
       // includes this glyph's trailing tracking, so the rule covers it — the
       // CSS rule, and the same span the line width already accounts for.
-      if (e.run.underline || e.run.strikethrough || e.run.overline) {
+      // An unfilled run's rules are dropped with its glyphs: a rule is a solid
+      // rect with only a fill to paint it, and no stroked counterpart.
+      const decoFill = e.run.fill;
+      if (decoFill !== null && (e.run.underline || e.run.strikethrough || e.run.overline)) {
         if (
           span !== null
           && span.underline === e.run.underline
@@ -1056,7 +1063,7 @@ export function layoutRuns(
             underline: e.run.underline,
             strikethrough: e.run.strikethrough,
             overline: e.run.overline,
-            fill: e.run.fill,
+            fill: decoFill,
             fontSize: e.fontSize,
             baselineY,
             x0: penX,
@@ -1073,6 +1080,14 @@ export function layoutRuns(
       // available right now — there is no reason to draw nothing while the
       // exact geometry is in hand.
       const outlineD = outlineFor(e);
+      // An unfilled run paints through its stroke, and only tessellated
+      // geometry can carry one — an atlas quad would paint the fill that was
+      // refused, so it is not emitted at all.
+      if (e.run.fill === null
+          && !(outlineD !== null && strokePaints(e.run.stroke))) {
+        penX += step;
+        continue;
+      }
       if (outlineD !== null) {
         const group = getOrCreateGroup(ctx, e.run, e.resolved, 0, 'outline');
         group.glyphs.push({

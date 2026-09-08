@@ -129,7 +129,8 @@ function refId(o: object): number {
  * `layoutRuns`'s own `fillKey` mints a fresh random string for the non-solid
  * case — fine for grouping within one layout, useless as a cache key.
  */
-function paintKey(p: FillStyle): string {
+function paintKey(p: FillStyle | null): string {
+  if (p === null) return 'none';
   return 'color' in p ? `s${p.color}:${p.opacity ?? 1}` : `#${refId(p)}`;
 }
 

@@ -47,6 +47,11 @@ describe('resolveRuns', () => {
     expect(r.fill).toEqual({ fill: 'solid', color: '#f00' });
   });
 
+  it('inherits an unfilled node style as `fill: null`, not as the default black', () => {
+    const style = resolveTextStyle({}, { fill: null });
+    expect(resolveRuns([{ text: 'a' }], style)[0].fill).toBeNull();
+  });
+
   it('bold flag wins over numeric fontWeight inheritance when both could apply (run.bold === true sets 700)', () => {
     const style = resolveTextStyle({ fontWeight: 300 });
     const runs: StyledRun[] = [{ text: 'a', bold: true }];

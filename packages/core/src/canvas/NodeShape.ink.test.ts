@@ -285,9 +285,17 @@ describe('findShapeInk — text', () => {
       .toEqual({ filled: true, outset: 2, inset: 2 });
   });
 
-  it('stays filled with no stroke — text has no outline-only form', () => {
+  it('stays filled when no fill is declared — undeclared text is black text', () => {
     expect(findShapeInk(textNode({}), POSE))
       .toEqual({ filled: true, outset: 0, inset: 0 });
+  });
+
+  it('keeps outline-only text filled, unlike every other kind', () => {
+    // `fill: null` paints no glyph fill, but the silhouette is line boxes
+    // rather than glyph ink: reporting it unfilled would leave a word
+    // grabbable at its line-box edge and nowhere near the letters.
+    expect(findShapeInk(textNode({ fill: null, stroke: strokeOf('#000', 4) }), POSE))
+      .toEqual({ filled: true, outset: 2, inset: 2 });
   });
 });
 

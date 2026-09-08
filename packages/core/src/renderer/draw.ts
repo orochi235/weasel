@@ -1656,8 +1656,11 @@ const SYNTHETIC_ITALIC_RADIANS = 0.2094;
  * so they need nothing from the text pipeline.
  */
 function drawTextOutlineGroup(ctx: DrawContext, group: LaidOutGroup, dx: number, dy: number): void {
-  const mesh = outlineGroupMesh(group, dx, dy);
-  if (mesh) drawPathFillByKind(ctx, group.fill, ctx.meshCache.uploadTransient(mesh));
+  const fill = group.fill;
+  if (fill !== null) {
+    const mesh = outlineGroupMesh(group, dx, dy);
+    if (mesh) drawPathFillByKind(ctx, fill, ctx.meshCache.uploadTransient(mesh));
+  }
 
   // Stroke after fill — Canvas2D's fillText-then-strokeText convention, and
   // SVG's default paint-order. A second batched draw call over the same
@@ -1876,7 +1879,7 @@ function drawTextGroup(ctx: DrawContext, group: LaidOutGroup, prog: ShaderProgra
 
   // Per-group fill (color uniform).
   let r = 0, g = 0, b = 0, a = 1;
-  if ('color' in group.fill) {
+  if (group.fill !== null && 'color' in group.fill) {
     [r, g, b, a] = resolveColor(group.fill.color);
   }
   setColorUniform(ctx, prog, r, g, b, a);

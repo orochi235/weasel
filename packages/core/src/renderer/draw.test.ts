@@ -1851,6 +1851,23 @@ describe('drawText — outline tier', () => {
       expect(calls.filter((c) => c.name === 'drawElements')).toHaveLength(1);
     });
 
+    it('paints only the ribbon for `fill: null` — outline-only text', () => {
+      const { ctx, calls } = createRecorderCtx();
+      dispatch(ctx, textCmd('AAAA', { fill: null, stroke: STROKE }));
+      // One draw, and it is the stroke: the glyph fill of four unit triangles
+      // would be 4 × 3 vertices, and the ribbon is larger than that.
+      expect(calls.filter((c) => c.name === 'drawElements')).toHaveLength(1);
+      const verts = uploads(calls);
+      expect(verts).toHaveLength(1);
+      expect(verts[0].length).toBeGreaterThan(4 * 3 * 2);
+    });
+
+    it('draws nothing at all for `fill: null` with no stroke', () => {
+      const { ctx, calls } = createRecorderCtx();
+      dispatch(ctx, textCmd('AAAA', { fill: null }));
+      expect(calls.filter((c) => c.name === 'drawElements')).toHaveLength(0);
+    });
+
     it('escalates small text to outlines rather than dropping its stroke', () => {
       const { ctx, calls } = createRecorderCtx();
       dispatch(ctx, textCmd('A', { fontSize: 12, stroke: STROKE }));

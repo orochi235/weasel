@@ -87,6 +87,15 @@ describe('resolveTextStyle', () => {
     expect(r.align).toBe('center');
     expect(r.lineHeight).toBe(1.5);
   });
+
+  it('keeps an explicit `fill: null` rather than defaulting it to black', () => {
+    expect(resolveTextStyle({}, { fill: null }).fill).toBeNull();
+    expect(resolveTextStyle(undefined, { fill: null }).fill).toBeNull();
+  });
+
+  it('caretColor falls back to #000 when there is no fill to derive it from', () => {
+    expect(resolveTextStyle({}, { fill: null }).caretColor).toBe('#000');
+  });
 });
 
 describe('fontString', () => {

@@ -360,6 +360,24 @@ describe('round-trip', () => {
     expect(out).toContain(`id="${ref![1]}"`);
   });
 
+  it('text fill="none" survives as an explicit no-fill, not as black', () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">'
+      + '<text x="10" y="20" fill="none" stroke="#c0392b" stroke-width="3"'
+      + ' data-weasel-width="180" data-weasel-height="40">Outline</text></svg>';
+    const first = parseSvg(svg);
+    const t = first.nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    // Absent would mean the default black — the one thing outline-only text
+    // must not resolve to.
+    expect(t.fill).toBeNull();
+
+    const out = serializeSvg(first.nodes, { viewBox: { x: 0, y: 0, width: 200, height: 100 } });
+    expect(out).toContain('fill="none"');
+    const t2 = parseSvg(out).nodes[0];
+    if (t2.kind !== 'text') throw new Error('expected text');
+    expect(t2.fill).toBeNull();
+  });
+
   it('unstroked text emits no stroke attribute at all', () => {
     const first = parseSvg(F.TEXT_PLAIN_SVG);
     const out = serializeSvg(first.nodes, { viewBox: { x: 0, y: 0, width: 200, height: 100 } });

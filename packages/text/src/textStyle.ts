@@ -86,7 +86,9 @@ export interface ResolvedTextStyle {
   align: TextAlign;
   direction: TextDirection;
   lineHeight: number;
-  fill: FillStyle;
+  /** `null` is an explicit no-fill, the way it is on every other node kind:
+   *  outline-only text, painted by its stroke alone. */
+  fill: FillStyle | null;
   caretColor: string;
   selectionBackground: string | null;
   selectionColor: string | null;
@@ -101,8 +103,8 @@ export interface ResolvedTextStyle {
 
 const DEFAULT_FILL: FillStyle = { fill: 'solid', color: '#000' };
 
-function paintColor(p: FillStyle): string {
-  return 'color' in p ? p.color : '#000';
+function paintColor(p: FillStyle | null): string {
+  return p !== null && 'color' in p ? p.color : '#000';
 }
 
 /**
@@ -136,12 +138,11 @@ export const DEFAULT_TEXT_STYLE: ResolvedTextStyle = {
  * The paint a text node hands its glyphs — `data.fill` and `data.stroke`,
  * read straight off the node. Runs inherit these when they name none of
  * their own.
- *
- * `fill: null` is not yet distinguishable from absent: a `ResolvedRun` must
- * name a concrete fill, so unfilled-but-stroked text has nowhere to say so
- * and falls back to the default black. See `docs/TODO.md`.
  */
 export interface TextPaint {
+  /** `null` is an explicit no-fill and absent takes the default black — the
+   *  reading every other node kind gives `data.fill`. Unfilled text paints
+   *  through its stroke and nothing else, so it needs one to be visible. */
   fill?: FillStyle | null;
   /**
    * Outline painted over the glyph fill. Absent means no outline — there is
@@ -164,7 +165,7 @@ export function resolveTextStyle(
   style?: TextStyle,
   paint?: TextPaint,
 ): ResolvedTextStyle {
-  const fill = paint?.fill ?? DEFAULT_TEXT_STYLE.fill;
+  const fill = paint?.fill === undefined ? DEFAULT_TEXT_STYLE.fill : paint.fill;
   const stroke = paint?.stroke ?? undefined;
   if (!style) {
     return fill === DEFAULT_TEXT_STYLE.fill && stroke === undefined

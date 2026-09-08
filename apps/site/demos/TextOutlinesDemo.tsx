@@ -70,16 +70,21 @@ const NODES = [
   data: { text: n.text, style: style(n.size), fill: TEXT_FILL },
 }));
 
-const makeDrawOne = (ready: boolean, stroked: boolean): SceneViewDrawOne<NodeData, LayerId, Pose> =>
+const makeDrawOne = (
+  ready: boolean,
+  stroked: boolean,
+  filled: boolean,
+): SceneViewDrawOne<NodeData, LayerId, Pose> =>
   (node, pose, view, ctx) => {
     if (!ready) return [];
     if (!node.data.text) return defaultDrawOne(node, pose, view, ctx);
     // Paint is the node's, not the style's — `data.fill` / `data.stroke`, the
-    // slots every node kind uses, handed to the command as its paint.
+    // slots every node kind uses, handed to the command as its paint. `null`
+    // is an explicit no-fill, the same value every other node kind reads.
     return [textCommand(
       pose.x, pose.y, node.data.text, node.data.style,
       undefined, undefined, undefined,
-      { fill: node.data.fill, stroke: stroked ? DEMO_STROKE : undefined },
+      { fill: filled ? node.data.fill : null, stroke: stroked ? DEMO_STROKE : undefined },
     )];
   };
 
@@ -109,6 +114,7 @@ export function TextOutlinesDemo() {
   const canvasRef = useRef<SceneCanvasApi | null>(null);
   const [outlines, setOutlines] = useState(true);
   const [stroked, setStroked] = useState(false);
+  const [filled, setFilled] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [status, setStatus] = useState('loading');
   // Nothing is drawn until the face is in the document. Not cosmetic: the
@@ -168,6 +174,20 @@ export function TextOutlinesDemo() {
           past the threshold
         </span>
       </label>
+      <label style={{ display: 'block', marginBottom: 6 }}>
+        <input
+          type="checkbox"
+          checked={filled}
+          data-testid="fill-toggle"
+          onChange={(e) => setFilled(e.target.checked)}
+        />
+        {' '}Fill
+        <span style={{ marginLeft: 12, opacity: 0.6 }}>
+          off is `data.fill: null` — the same explicit no-fill every other node
+          kind reads. Turn it off with the stroke on for outline-only display
+          type; with both off the glyphs have no paint at all and nothing draws
+        </span>
+      </label>
       <label style={{ display: 'block', marginBottom: 8 }}>
         Zoom{' '}
         <input
@@ -191,7 +211,7 @@ export function TextOutlinesDemo() {
         scene={scene}
         view={{ x: 0, y: 0, scale: { x: zoom, y: zoom } }}
         toolBundle="minimal"
-        layers={{ scene: { drawOne: makeDrawOne(faceReady, stroked) } }}
+        layers={{ scene: { drawOne: makeDrawOne(faceReady, stroked, filled) } }}
       />
     </div>
   );

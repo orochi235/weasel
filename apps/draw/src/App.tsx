@@ -453,7 +453,7 @@ function layerSwatch(data: WeaselDrawData): string | undefined {
   if (data.fill != null) return paintChipColor(data.fill);
   if (data.text === undefined) return undefined;
   const { fill } = resolveTextStyle(data.style, { fill: data.fill });
-  return 'color' in fill ? fill.color : undefined;
+  return fill !== null && 'color' in fill ? fill.color : undefined;
 }
 
 /** One representative color for a `FillStyle`, for a chip too small to draw

@@ -169,8 +169,11 @@ export interface SvgTextNode {
    * in `data.fill` / `data.stroke`. Not `SvgPaint`, which is the path
    * nodes' shape — a text paint reaches the renderer through the runs, and
    * `StyledRun.fill` / `.stroke` override these per range.
+   *
+   * `null` is SVG's `fill="none"`: outline-only text, painted by its stroke
+   * alone. Absent takes the default black.
    */
-  fill?: FillStyle;
+  fill?: FillStyle | null;
   stroke?: Stroke;
   /** Element-level opacity (`opacity="..."`), 0..1. */
   opacity?: number;
