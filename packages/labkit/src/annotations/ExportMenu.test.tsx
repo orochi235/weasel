@@ -75,6 +75,22 @@ describe('<ExportMenu>', () => {
     );
   });
 
+  // jsdom resolves neither var() nor color-mix(), so where the panel mounted
+  // is the proxy for whether it reads the lab's tokens at all.
+  it('opens inside the lab root, not on the body', () => {
+    const { store } = spied();
+    render(
+      <div className="lk-root" data-wzl-portal-host="" data-testid="lk-root">
+        <AnnotationsContext.Provider value={store}>
+          <ExportMenu />
+        </AnnotationsContext.Provider>
+      </div>,
+    );
+    open();
+    const panel = document.querySelector('.lk-export__panel');
+    expect(panel?.closest('[data-testid="lk-root"]')).toBe(screen.getByTestId('lk-root'));
+  });
+
   it('says so when a capture fails rather than doing nothing visible', async () => {
     const { store, capture } = spied();
     capture.mockRejectedValueOnce(new Error('the capture canvas is tainted'));

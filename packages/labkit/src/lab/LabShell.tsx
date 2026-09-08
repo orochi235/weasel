@@ -24,7 +24,9 @@ export function LabShell({ title, children, header, footer, mode = 'auto' }: Lab
   const outer = useThemeOptional();
 
   const shell = (
-    <div className="lk-root lk-shell">
+    // Overlays portal here rather than to the themed wrapper above: `.lk-root`
+    // carries the element defaults a lab's bare markup is styled by.
+    <div className="lk-root lk-shell" data-wzl-portal-host="">
       <header className="lk-shell-header">
         <h1 className="lk-shell-title">{title}</h1>
         {header && <div className="lk-shell-header-actions">{header}</div>}

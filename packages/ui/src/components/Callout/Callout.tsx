@@ -8,6 +8,7 @@ import {
   Heading,
   type PopoverProps as RACPopoverProps,
 } from 'react-aria-components';
+import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import s from './Callout.module.css';
 
 /** Accent color of a {@link Callout}'s border and arrow. */
@@ -26,8 +27,9 @@ export { DialogTrigger as CalloutTrigger };
 /** Props for {@link Callout}, on top of React Aria's `Popover` props. */
 export type CalloutProps = Omit<
   RACPopoverProps,
-  'children' | 'className' | 'isNonModal' | 'triggerRef'
-> & {
+  'children' | 'className' | 'isNonModal' | 'triggerRef' | 'UNSTABLE_portalContainer'
+> &
+  OverlayPortalProps & {
   children?: ReactNode;
   className?: string;
   /** Optional heading rendered above the body. */
@@ -67,8 +69,8 @@ export type CalloutProps = Omit<
    * recomputes it on pan, zoom, or scene edits keeps the arrow on its target.
    * Takes precedence over `triggerRef`.
    */
-  anchorRect?: { x: number; y: number; width: number; height: number };
-};
+    anchorRect?: { x: number; y: number; width: number; height: number };
+  };
 
 const toneClass: Record<CalloutTone, string> = {
   info: s.toneInfo,
@@ -101,9 +103,11 @@ export function Callout(props: CalloutProps) {
     shouldCloseOnInteractOutside,
     'aria-label': ariaLabel,
     'aria-labelledby': ariaLabelledby,
+    portalContainer,
     ...rest
   } = props;
   const anchorRef = useRef<HTMLSpanElement>(null);
+  const { anchor: portalAnchor, portalContainer: container } = useOverlayPortal(portalContainer);
   const showClose = showCloseButton ?? !modal;
   // Escape is a dismissal like the × is. It can't ride on a React `onKeyDown`:
   // RAC's Dialog runs its props through filterDOMProps, which drops handlers
@@ -139,6 +143,7 @@ export function Callout(props: CalloutProps) {
   const popoverAriaLabel = modal ? ariaLabel : undefined;
   return (
     <>
+      {portalAnchor}
       {/* Harmless while closed — RAC reads the ref only when the popover is open. */}
       {anchorRect !== undefined &&
         createPortal(
@@ -172,6 +177,7 @@ export function Callout(props: CalloutProps) {
         aria-labelledby={popoverAriaLabelledby}
         className={[s.popover, toneClass[tone], className].filter(Boolean).join(' ')}
         data-weasel-overlay=""
+        UNSTABLE_portalContainer={container}
       >
         <OverlayArrow className={s.arrow}>
           <svg width={12} height={12} viewBox="0 0 12 12" aria-hidden="true">

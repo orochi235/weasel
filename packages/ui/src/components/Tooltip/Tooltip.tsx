@@ -6,6 +6,7 @@ import {
   type TooltipProps as RACTooltipProps,
   type TooltipTriggerComponentProps,
 } from 'react-aria-components';
+import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import s from './Tooltip.module.css';
 
 /**
@@ -30,31 +31,37 @@ export function TooltipTrigger(props: TooltipTriggerProps) {
 }
 
 /** Props for {@link Tooltip}, on top of React Aria's `Tooltip` props. */
-export type TooltipProps = Omit<RACTooltipProps, 'children' | 'className'> & {
-  children?: ReactNode;
-  className?: string;
-};
+export type TooltipProps = Omit<RACTooltipProps, 'children' | 'className' | 'UNSTABLE_portalContainer'> &
+  OverlayPortalProps & {
+    children?: ReactNode;
+    className?: string;
+  };
 
 /**
  * Tooltip bubble with an arrow pointing at the trigger. Non-interactive
  * content only (ARIA tooltip semantics). Use inside `<TooltipTrigger>`.
  */
 export function Tooltip(props: TooltipProps) {
-  const { children, className, placement = 'top', offset = 8, ...rest } = props;
+  const { children, className, placement = 'top', offset = 8, portalContainer, ...rest } = props;
+  const { anchor, portalContainer: container } = useOverlayPortal(portalContainer);
   return (
-    <RACTooltip
-      {...rest}
-      placement={placement}
-      offset={offset}
-      className={[s.tooltip, className].filter(Boolean).join(' ')}
-      data-weasel-overlay=""
-    >
-      <OverlayArrow className={s.arrow}>
-        <svg width={8} height={8} viewBox="0 0 8 8" aria-hidden="true">
-          <path d="M0 0 L4 4 L8 0" />
-        </svg>
-      </OverlayArrow>
-      {children}
-    </RACTooltip>
+    <>
+      {anchor}
+      <RACTooltip
+        {...rest}
+        placement={placement}
+        offset={offset}
+        className={[s.tooltip, className].filter(Boolean).join(' ')}
+        data-weasel-overlay=""
+        UNSTABLE_portalContainer={container}
+      >
+        <OverlayArrow className={s.arrow}>
+          <svg width={8} height={8} viewBox="0 0 8 8" aria-hidden="true">
+            <path d="M0 0 L4 4 L8 0" />
+          </svg>
+        </OverlayArrow>
+        {children}
+      </RACTooltip>
+    </>
   );
 }

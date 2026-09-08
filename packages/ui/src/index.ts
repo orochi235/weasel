@@ -45,6 +45,7 @@ export * from './components/ComboBox';
 export * from './components/RangeSlider';
 export * from './components/DetentSlider';
 export * from './components/InlineRange';
+export * from './overlays/portalHost';
 export * from './components/Dialog';
 export * from './components/Tooltip';
 export * from './components/Callout';

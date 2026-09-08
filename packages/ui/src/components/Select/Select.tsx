@@ -14,6 +14,7 @@ import {
   type ValidationResult,
 } from 'react-aria-components';
 import { fieldClasses } from '../Field/Field';
+import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import s from './Select.module.css';
 
 /** One option in a {@link Select}'s `options` list. */
@@ -54,7 +55,7 @@ export type SelectProps<T extends Key = string> = Omit<RACSelectProps<object>, '
    */
   width?: 'fill' | 'fit';
   className?: string;
-};
+} & OverlayPortalProps;
 
 /**
  * Form select wrapping React Aria's Select. Pass either `options` for a
@@ -77,8 +78,11 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
     onSelectionChange,
     width = 'fill',
     className,
+    portalContainer,
     ...rest
   } = props;
+
+  const { anchor, portalContainer: container } = useOverlayPortal(portalContainer);
 
   return (
     <RACSelect
@@ -90,6 +94,7 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
         .filter(Boolean)
         .join(' ')}
     >
+      {anchor}
       {label !== undefined && <Label className={fieldClasses.label}>{label}</Label>}
       <RACButton className={s.trigger}>
         <SelectValue className={s.value}>
@@ -124,7 +129,7 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
           `closest()` gets the wrong answer without it — a text editor whose
           font menu lives here would end its session the moment the menu is
           clicked. */}
-      <RACPopover className={s.popover} data-weasel-overlay="">
+      <RACPopover className={s.popover} data-weasel-overlay="" UNSTABLE_portalContainer={container}>
         <RACListBox className={s.listbox}>
           {options !== undefined
             ? options.map((o) => (

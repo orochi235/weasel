@@ -7,25 +7,30 @@ import {
   type ModalOverlayProps,
   type DialogProps as RACDialogProps,
 } from 'react-aria-components';
+import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import s from './Dialog.module.css';
 
 /** Props for {@link Dialog}, on top of React Aria's `ModalOverlay` props. */
-export type DialogProps = Omit<ModalOverlayProps, 'children' | 'className'> & {
-  /** Heading rendered in the dialog's default header. Omit when supplying
-   *  a custom `header` slot via children. */
-  title?: ReactNode;
-  /** Show the built-in close button. Defaults to true when `onOpenChange`
-   *  is wired so the user has an escape hatch. */
-  showCloseButton?: boolean;
-  /** Body content. */
-  children?: ReactNode;
-  /** Footer slot — typically action buttons. */
-  footer?: ReactNode;
-  /** ARIA role. Defaults to `dialog`. Use `alertdialog` for confirms. */
-  role?: RACDialogProps['role'];
-  /** Class applied to the modal box (inside the overlay). */
-  className?: string;
-};
+export type DialogProps = Omit<
+  ModalOverlayProps,
+  'children' | 'className' | 'UNSTABLE_portalContainer'
+> &
+  OverlayPortalProps & {
+    /** Heading rendered in the dialog's default header. Omit when supplying
+     *  a custom `header` slot via children. */
+    title?: ReactNode;
+    /** Show the built-in close button. Defaults to true when `onOpenChange`
+     *  is wired so the user has an escape hatch. */
+    showCloseButton?: boolean;
+    /** Body content. */
+    children?: ReactNode;
+    /** Footer slot — typically action buttons. */
+    footer?: ReactNode;
+    /** ARIA role. Defaults to `dialog`. Use `alertdialog` for confirms. */
+    role?: RACDialogProps['role'];
+    /** Class applied to the modal box (inside the overlay). */
+    className?: string;
+  };
 
 /**
  * Modal dialog wrapping React Aria. Supplies a default header (title +
@@ -46,40 +51,52 @@ export function Dialog(props: DialogProps) {
     className,
     isOpen,
     onOpenChange,
+    portalContainer,
     ...rest
   } = props;
 
   const showClose = showCloseButton ?? Boolean(onOpenChange);
+  const { anchor, portalContainer: container } = useOverlayPortal(portalContainer);
 
   return (
-    <ModalOverlay {...rest} isOpen={isOpen} onOpenChange={onOpenChange} className={s.overlay} data-weasel-overlay="">
-      <RACModal className={[s.modal, className].filter(Boolean).join(' ')}>
-        <RACDialog role={role} className={s.dialog}>
-          {({ close }) => (
-            <>
-              {(title !== undefined || showClose) && (
-                <header className={s.header}>
-                  {title !== undefined && (
-                    <Heading slot="title" className={s.title}>{title}</Heading>
-                  )}
-                  {showClose && (
-                    <button
-                      type="button"
-                      className={s.close}
-                      onClick={close}
-                      aria-label="Close dialog"
-                    >
-                      ×
-                    </button>
-                  )}
-                </header>
-              )}
-              <div className={s.body}>{children}</div>
-              {footer !== undefined && <footer className={s.footer}>{footer}</footer>}
-            </>
-          )}
-        </RACDialog>
-      </RACModal>
-    </ModalOverlay>
+    <>
+      {anchor}
+      <ModalOverlay
+        {...rest}
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        className={s.overlay}
+        data-weasel-overlay=""
+        UNSTABLE_portalContainer={container}
+      >
+        <RACModal className={[s.modal, className].filter(Boolean).join(' ')}>
+          <RACDialog role={role} className={s.dialog}>
+            {({ close }) => (
+              <>
+                {(title !== undefined || showClose) && (
+                  <header className={s.header}>
+                    {title !== undefined && (
+                      <Heading slot="title" className={s.title}>{title}</Heading>
+                    )}
+                    {showClose && (
+                      <button
+                        type="button"
+                        className={s.close}
+                        onClick={close}
+                        aria-label="Close dialog"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </header>
+                )}
+                <div className={s.body}>{children}</div>
+                {footer !== undefined && <footer className={s.footer}>{footer}</footer>}
+              </>
+            )}
+          </RACDialog>
+        </RACModal>
+      </ModalOverlay>
+    </>
   );
 }

@@ -51,10 +51,6 @@ async function copy(result: CaptureResult): Promise<void> {
  */
 export function ExportMenu() {
   const marks = useAnnotationsOptional();
-  // The anchor doubles as the portal target lookup: a React Aria popover
-  // portals to `document.body` by default, which is outside the element
-  // labkit paints its theme tokens onto — `--wzl-surface` does not exist
-  // there and the panel renders unthemed.
   const [anchor, setAnchor] = useState<HTMLSpanElement | null>(null);
   const [open, setOpen] = useState(false);
   const [target, setTarget] = useState<string | null>(null);
@@ -99,7 +95,6 @@ export function ExportMenu() {
         onOpenChange={setOpen}
         onDismiss={() => setOpen(false)}
         placement="bottom end"
-        UNSTABLE_portalContainer={anchor?.closest('.lk-root') ?? undefined}
         aria-labelledby={titleId}
       >
         <div className="lk-export__panel">

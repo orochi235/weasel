@@ -39,6 +39,14 @@ describe('LabShell', () => {
     expect(root.getAttribute('data-wzl-mode')).toMatch(/^(light|dark)$/);
   });
 
+  // The overlays weasel-ui ships default to the nearest portal host, and
+  // `.lk-root` is where labkit's element defaults live — not the themed
+  // wrapper above it.
+  test('marks lk-root as the portal host for overlays', () => {
+    const { container } = render(<LabShell title="t">x</LabShell>);
+    expect(container.querySelector('.lk-root')?.hasAttribute('data-wzl-portal-host')).toBe(true);
+  });
+
   test('always applies lk-root class', () => {
     const { container } = render(<LabShell title="t">x</LabShell>);
     expect(container.querySelector('.lk-root')).not.toBeNull();
