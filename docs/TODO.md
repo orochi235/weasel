@@ -1853,7 +1853,7 @@ one dead `const` and four stale disable directives.
   file is a hand-maintained snapshot and will drift again. Decide whether it is
   meant to be re-runnable; if so the thing to build is the generator.
 
-- **(P2) README pitch sweep.** Initial draft landed; the `docs/` long-form sweep was completed (all hook names and import paths match the post-extraction surface). A re-pass before 0.1.0.
+- **(P2) README pitch sweep.** Initial draft landed; the `docs/` long-form sweep was completed (all hook names and import paths match the post-extraction surface). The re-pass it was waiting on named 0.1.0 as its trigger, which the packages passed long ago — they are at 1.4.2. So it is due, and nothing gates it.
 
 - **(P2) Surface a changelog on the site.** `changeset publish` writes a
   `CHANGELOG.md` per package on every release and nothing reads them — thirteen
