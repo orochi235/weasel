@@ -372,12 +372,15 @@ function unionRect(a: RectBounds, b: RectBounds): RectBounds {
  *   - `kindOf(id)` — `'container'` for `<g>`-bound nodes, else `'leaf'`.
  *   - `objOf(id)` — the leaf's `Obj`, or `undefined` to skip (e.g. a leaf
  *     with no drawable data).
+ *   - `isPainted(id)` — false for a node on a hidden layer, which is skipped
+ *     along with everything under it. Omit it and everything is emitted.
  */
 export interface SceneSource {
   roots: readonly string[];
   childrenOf(id: string): readonly string[];
   kindOf(id: string): 'leaf' | 'container';
   objOf(id: string): Obj | undefined;
+  isPainted?(id: string): boolean;
 }
 
 /**
@@ -390,10 +393,12 @@ export interface SceneSource {
  * `roots`, when supplied, walks exactly those ids (in the given order)
  * instead of `source.roots` — used for a selection-subset export (see
  * `selectionToSvgString` in `svgExport.ts`). Omitting it is byte-identical
- * to the whole-scene walk.
+ * to the whole-scene walk. A hidden node is skipped either way: a selection
+ * naming one still must not export it.
  */
 export function sceneToSvgNodes(source: SceneSource, roots?: readonly string[]): SvgNode[] {
   const emit = (id: string): SvgNode | null => {
+    if (source.isPainted && !source.isPainted(id)) return null;
     if (source.kindOf(id) === 'container') {
       const children: SvgNode[] = [];
       for (const childId of source.childrenOf(id)) {

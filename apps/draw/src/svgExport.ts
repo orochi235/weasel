@@ -124,16 +124,25 @@ export interface SceneToSvgOptions {
  * Build the `SceneSource` `sceneToSvgNodes` walks: `objOf` lowers a leaf's
  * stored `{data, pose}` to an `Obj` (pose baked into the path);
  * `sceneToSvgNodes` stamps each container's scene id onto `wd:group-id` so
- * groups round-trip. Shared by {@link sceneToSvgString} (whole scene) and
- * {@link selectionToSvgString} (selection subset, via the `roots` param).
+ * groups round-trip; `isPainted` drops what a hidden layer holds, so an export
+ * carries what the pixel path draws. Shared by {@link sceneToSvgString} (whole
+ * scene) and {@link selectionToSvgString} (selection subset, via the `roots`
+ * param).
  */
 function sceneSourceOf<TLayer extends string>(
   scene: Scene<WeaselDrawData, TLayer, WeaselDrawPose>,
 ): SceneSource {
+  const hidden = new Set(
+    (scene.layers ?? []).filter((l) => !l.visible).map((l) => String(l.id)),
+  );
   return {
     roots: scene.roots.map(String),
     childrenOf: (id) => scene.childrenOf(id as never).map(String),
     kindOf: (id) => (scene.get(id as never)?.kind === 'container' ? 'container' : 'leaf'),
+    isPainted: (id) => {
+      const layer = scene.get(id as never)?.layer;
+      return layer === undefined || !hidden.has(String(layer));
+    },
     objOf: (id) => {
       const node = scene.get(id as never);
       if (!node || node.kind !== 'leaf') return undefined;

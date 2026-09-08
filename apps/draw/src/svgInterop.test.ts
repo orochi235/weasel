@@ -294,6 +294,43 @@ describe('sceneToSvgNodes — scene container tree → <g>', () => {
   });
 });
 
+describe('sceneToSvgNodes — hidden layers', () => {
+  const rect = (id: string, x: number): RectObjT => ({
+    id, tool: 'rect', x, y: 0, width: 10, height: 10,
+    path: { kind: 'rect', x, y: 0, width: 10, height: 10 }, closed: true,
+    fill: solid('#fff'), stroke: null,
+  });
+
+  const sourceWith = (isPainted?: (id: string) => boolean): SceneSource => ({
+    roots: ['a', 'c1'],
+    childrenOf: (id) => (id === 'c1' ? ['b'] : []),
+    kindOf: (id) => (id === 'c1' ? 'container' : 'leaf'),
+    objOf: (id) => (id === 'a' ? (rect('a', 0) as never)
+      : id === 'b' ? (rect('b', 20) as never) : undefined),
+    ...(isPainted ? { isPainted } : {}),
+  });
+
+  it('emits everything when the source declares no visibility', () => {
+    expect(sceneToSvgNodes(sourceWith())).toHaveLength(2);
+  });
+
+  it('skips a leaf the source calls unpainted', () => {
+    const nodes = sceneToSvgNodes(sourceWith((id) => id !== 'a'));
+    expect(nodes).toHaveLength(1);
+    expect(nodes[0].kind).toBe('group');
+  });
+
+  it('skips a container and everything under it', () => {
+    const nodes = sceneToSvgNodes(sourceWith((id) => id !== 'c1'));
+    expect(nodes).toHaveLength(1);
+    expect(nodes[0].kind).toBe('path');
+  });
+
+  it('honors visibility under an explicit roots override too', () => {
+    expect(sceneToSvgNodes(sourceWith((id) => id !== 'a'), ['a'])).toHaveLength(0);
+  });
+});
+
 describe('sceneToSvgNodes — optional roots override', () => {
   const a: RectObjT = {
     id: 'a', tool: 'rect', x: 0, y: 0, width: 10, height: 10,
