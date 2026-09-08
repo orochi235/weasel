@@ -289,6 +289,20 @@ predicts the route via `Dispatcher.resolveOnly` (the same match walk a real
 pointerdown takes), so hint and behavior can't drift. See "Hover cursors
 predict the drag route" in `docs/concepts.md`.
 
+### Action scope
+
+`<ActionsScope>` — a view of the `ActionsRegistry` in scope that can declare an
+id **not for itself**: `mute(id)` leaves the action registered and every sibling
+scope still resolving it, while here it lists as absent and neither `trigger`
+nor `begin` fires it. The release comes back from `mute`, and a scope drops
+what it muted when it unmounts. `<SceneCanvas>` mounts one whenever it defers
+to a host's `<ActionsProvider>`, so `viewport={{ pinchZoom: false }}` and
+`actions={{ id: null }}` are opt-outs for that canvas alone. `unregister` is
+still the other door: it drops the action for everyone.
+
+Not a [`BindingScope`](#contribution) — that names the tier a binding matches
+at (hotkey / active / ambient), which this has nothing to do with.
+
 ### Interaction
 
 A [Gesture](#gesture) composed with an [Action](#action). The composition is the

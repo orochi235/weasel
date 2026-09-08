@@ -445,6 +445,7 @@ function stubActionsRegistry(actions: readonly Action[]): ActionsRegistry {
   return {
     register: () => () => {},
     unregister: () => {},
+    mute: () => () => {},
     list: () => actions,
     trigger: () => false,
     subscribe: () => () => {},

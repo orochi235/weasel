@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { useEffect } from 'react';
-import { render } from '@testing-library/react';
+import { render, act } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
 import { ActionsProvider, useActionsRegistry, type Action } from 'interactions/actions/registry';
 import { createScene } from 'core/scene/scene';
@@ -217,6 +217,8 @@ describe('SceneCanvas actions integration', () => {
     expect(saw).not.toBeNull();
   });
 
+  // The canvas gets its own <ActionsScope> so its opt-outs stay its own, but
+  // the store underneath is the host's: registrations cross in both directions.
   it('uses parent ActionsProvider when wrapped externally — no inner provider', () => {
     const scene = makeScene();
     let parentReg: ReturnType<typeof useActionsRegistry> = null;
@@ -232,7 +234,15 @@ describe('SceneCanvas actions integration', () => {
       </ActionsProvider>,
     );
     expect(parentReg).not.toBeNull();
-    expect(childReg).toBe(parentReg);
+    expect(childReg).not.toBeNull();
+    // The canvas's own defaults landed in the host's registry, not a shadow one.
+    expect(parentReg!.list().map((a) => a.id)).toContain('selectAll');
+    const fromHost: Action = {
+      id: 'host.only', label: 'Host only',
+      invoker: { timing: 'immediate', run: vi.fn() },
+    };
+    act(() => { parentReg!.register(fromHost); });
+    expect(childReg!.list().map((a) => a.id)).toContain('host.only');
   });
 
   it('unmount cleans up registered defaults', () => {

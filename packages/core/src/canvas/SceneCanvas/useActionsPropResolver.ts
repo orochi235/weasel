@@ -3,11 +3,15 @@
  * whatever `useStandardActions` registered. Runs after it (caller mounts this
  * hook last). Resolution rules:
  *
- *   actions === null           → unregister every currently-registered action
- *   actions[id] === null       → unregister that id
+ *   actions === null           → mute every currently-registered action
+ *   actions[id] === null       → mute that id
  *   actions[id] = partial      → merge onto the existing descriptor (slot wins
  *                                over entry.id; warns once on mismatch)
  *   actions[id] = full (new)   → register alongside defaults
+ *
+ * `null` mutes rather than unregisters: the opt-out belongs to this canvas, so
+ * a sibling sharing the registry keeps the action and this canvas's unmount
+ * gives it back.
  */
 import { useEffect, useRef } from 'react';
 import {
@@ -25,20 +29,20 @@ export function useActionsPropResolver(actions: ActionsProp | undefined): void {
     if (!reg) return;
     const prop = actionsRef.current;
 
+    const unregisters: Array<() => void> = [];
+
     if (prop === null) {
-      const ids = reg.list().map((a) => a.id);
-      for (const id of ids) reg.unregister(id);
-      return;
+      for (const id of reg.list().map((a) => a.id)) unregisters.push(reg.mute(id));
+      return () => { for (const u of unregisters) u(); };
     }
 
     if (!prop) return;
 
-    const unregisters: Array<() => void> = [];
     const warnedIds = new Set<string>();
 
     for (const [slotId, entry] of Object.entries(prop)) {
       if (entry === null) {
-        reg.unregister(slotId);
+        unregisters.push(reg.mute(slotId));
         continue;
       }
 

@@ -1,11 +1,13 @@
 /**
  * Conditional `<ActionsProvider>` wrapper. Mounts a provider only when no
- * parent registry is in scope — otherwise renders children unwrapped so
- * SceneCanvas defers to the host's existing scope.
+ * parent registry is in scope — otherwise wraps children in an
+ * `<ActionsScope>` so SceneCanvas shares the host's registry without its own
+ * opt-outs reaching a sibling canvas.
  */
 import type { ReactNode } from 'react';
 import {
   ActionsProvider,
+  ActionsScope,
   useActionsRegistry,
 } from 'interactions/actions/registry';
 
@@ -13,6 +15,6 @@ import {
  *  nesting canvases share one action registry instead of shadowing it. */
 export function ActionsProviderIfRoot({ children }: { children: ReactNode }) {
   const parent = useActionsRegistry();
-  if (parent) return <>{children}</>;
+  if (parent) return <ActionsScope>{children}</ActionsScope>;
   return <ActionsProvider>{children}</ActionsProvider>;
 }

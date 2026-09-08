@@ -284,6 +284,12 @@ export interface ActionsRegistry {
   /** Drop every registrant of `id`. This is the "this action should not exist"
    *  door, not a release — for that, call what `register` returned. */
   unregister(id: string): void;
+  /** Declare `id` not for this scope: it stays registered, and every other
+   *  scope over the same store still resolves it, but here it lists as absent
+   *  and neither `trigger` nor `begin` will fire it. Returns a release; an
+   *  `<ActionsScope>` drops what it muted when it unmounts. This is the
+   *  "not for me" door — `unregister` is the "should not exist" one. */
+  mute(id: string): () => void;
   list(): readonly Action[];
   /** Fire an immediate-invoker action by id. The optional `params` arg is
    *  forwarded to `ImmediateInvoker.run` as its second argument — use it for
@@ -395,6 +401,91 @@ function warnSharedScope(): void {
 
 const ActionsContext = createContext<ActionsRegistry | null>(null);
 
+/** Everything a registry does apart from muting, which is layered on top of it
+ *  once per scope by `useMuted`. */
+type ActionsStore = Omit<ActionsRegistry, 'mute'>;
+
+/**
+ * Layers a mute set over `base`. Registration, `unregister`, `trigger`'s
+ * effects, and the dispatcher / dep-registry slots all pass straight through,
+ * so what one scope registers every sibling still sees; only this scope's own
+ * reads and invocations skip what it muted.
+ */
+function useMuted(base: ActionsStore | null): ActionsRegistry | null {
+  const mutedRef = useRef<Map<string, number>>(new Map());
+  const listenersRef = useRef<Set<() => void>>(new Set());
+  const cacheRef = useRef<{ src: readonly Action[]; out: readonly Action[] } | null>(null);
+
+  return useMemo<ActionsRegistry | null>(() => {
+    if (!base) return null;
+    const isMuted = (id: string): boolean => mutedRef.current.has(id);
+    const notify = (): void => {
+      for (const l of listenersRef.current) {
+        try {
+          l();
+        } catch (err) {
+          console.error('weasel ActionsRegistry: subscriber threw', err);
+        }
+      }
+    };
+    return {
+      ...base,
+      list: () => {
+        const src = base.list();
+        if (mutedRef.current.size === 0) return src;
+        const cached = cacheRef.current;
+        if (cached && cached.src === src) return cached.out;
+        const out = Object.freeze(src.filter((a) => !mutedRef.current.has(a.id)));
+        cacheRef.current = { src, out };
+        return out;
+      },
+      trigger: (id, params) => (isMuted(id) ? false : base.trigger(id, params)),
+      begin: (id, params) => (isMuted(id) ? null : base.begin(id, params)),
+      subscribe: (listener) => {
+        const offBase = base.subscribe(listener);
+        listenersRef.current.add(listener);
+        return () => {
+          offBase();
+          listenersRef.current.delete(listener);
+        };
+      },
+      mute: (id: string) => {
+        mutedRef.current.set(id, (mutedRef.current.get(id) ?? 0) + 1);
+        cacheRef.current = null;
+        notify();
+        let released = false;
+        return () => {
+          if (released) return;
+          released = true;
+          const held = mutedRef.current.get(id);
+          if (held === undefined) return;
+          if (held > 1) mutedRef.current.set(id, held - 1);
+          else mutedRef.current.delete(id);
+          cacheRef.current = null;
+          notify();
+        };
+      },
+    };
+  }, [base]);
+}
+
+/**
+ * @experimental
+ * A view of the registry in scope that can declare ids not for itself. Wrap
+ * anything that should be able to opt out of an action — a second
+ * `<SceneCanvas>` sharing the host's `<ActionsProvider>` mounts one — and its
+ * `mute` calls stay inside it. Renders nothing of its own.
+ *
+ * Not a `BindingScope`: that names the tier a binding matches at (hotkey /
+ * active / ambient), which this has nothing to do with.
+ */
+export function ActionsScope({ children }: { children: ReactNode }): ReactElement {
+  const parent = useActionsRegistry();
+  const scoped = useMuted(parent);
+  if (!scoped) return <>{children}</>;
+  return <ActionsContext.Provider value={scoped}>{children}</ActionsContext.Provider>;
+}
+
 /**
  * @experimental
  * Mounts an `ActionsRegistry` for its lifetime. Children call
@@ -440,7 +531,7 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   // carried their own `useKeybinding` listener. Every kit-standard descriptor
   // now routes through the gesture dispatcher via `defaultBinding`.
 
-  const registry = useMemo<ActionsRegistry>(() => {
+  const store = useMemo<ActionsStore>(() => {
     const snapshot = (): readonly Action[] => {
       const v = versionRef.current;
       if (cachedVerRef.current === v) return cachedRef.current;
@@ -569,6 +660,10 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
       },
     };
   }, []);
+
+  // The provider is a scope in its own right, so a lone canvas can mute
+  // without one wrapped around it.
+  const registry = useMuted(store)!;
 
   return <ActionsContext.Provider value={registry}>{children}</ActionsContext.Provider>;
 }

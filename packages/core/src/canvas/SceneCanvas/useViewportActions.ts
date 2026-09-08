@@ -9,7 +9,8 @@
  * clamp-configured one over it, or takes it away.
  *
  * Defaults: all three ON when omitted. Pass `pan: false` / `zoom: false` /
- * `pinchZoom: false` on the `viewport` prop to disable.
+ * `pinchZoom: false` on the `viewport` prop to disable. Disabling mutes rather
+ * than unregisters, so a sibling canvas sharing the registry keeps its own.
  *
  * Runs after `useStandardActions` in the same component, so the registry's
  * last-writer-wins ordering resolves the `pinchZoom` overlap.
@@ -67,14 +68,12 @@ export function useViewportActions(args: {
         typeof zoom === 'object' ? makeViewportZoomAction(zoom) : makeViewportZoomAction();
       unregisters.push(r.register(zoomAction));
     }
-    // Registered even for a bare `true`, so toggling back on after a `false`
-    // restores it — the standard-descriptor entry it displaced is gone by then.
     if (pinchZoom) {
       unregisters.push(
         r.register(makePinchZoomAction(typeof pinchZoom === 'object' ? pinchZoom : {})),
       );
     } else {
-      r.unregister('viewport.pinchZoom');
+      unregisters.push(r.mute('viewport.pinchZoom'));
     }
     return () => { for (const u of unregisters) u(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- configs tracked via zoomKey / pinchKey
