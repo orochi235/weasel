@@ -230,13 +230,14 @@ retired when this lands.
    resolved through the pose descriptor, and the body builder — outline, measured rows, sizing
    floor. Ports sit on the node's **bounds**, not on its drawn boundary; hugging the outline is
    `findShapeSilhouette`'s job and waits for a router that needs it.
-4. **Edges and routing — landed, except labels.** `DiagramEdge` is a leaf node with
+4. **Edges, routing and labels — landed.** `DiagramEdge` is a leaf node with
    `dependsOn: [from, to]` and a `derivePath` that runs a router; `straight`, `orthogonal` and
    `bezier` ship, waypoints route through, and an end with no named port resolves to the one
    facing the other end. Ports are cast from the node's bounds onto its outline, so an edge
-   meets the shape rather than its bounding box. **Edge labels are not built** — a node with
-   `dependsOn: [edge]` positioned along the routed path needs the path, which a derivation is
-   not handed; deciding how it gets one is the open piece.
+   meets the shape rather than its bounding box. A label is an ordinary leaf with
+   `dependsOn: [edge]`, placed at `'start' | 'mid' | 'end'` or a fraction and offset
+   perpendicular to the route; it reads the edge's resolved path through `DerivedDep.path`
+   rather than routing again, so the label and the arrowhead cannot disagree.
 5. **Ports, the connect gesture, and typed connection validity — landed.** The plugin
    contributes a port affordance layer (`portLayer`, attached with `registerLayer`, which is
    the only route that is hit-tested), and connect is a drag binding gated on
@@ -255,11 +256,14 @@ retired when this lands.
    headless `createSimulation`, which `useSimulation` now wraps, rather than on a second
    integrator; its forces are local and naive O(n²), including a box-aware separation that
    charge alone cannot supply. **`force` is the one layout that is not idempotent** — a
-   relaxation re-run from its own output keeps relaxing.
+   relaxation re-run from its own output keeps relaxing. Any of the three also runs **live**
+   through `useLiveLayout`, publishing a frame of poses to the override channel; a drag pins
+   the node it takes, and the producer drops that node's whole subtree from the frame.
 7. **Demos — landed.** One demo had accumulated every arc's feature, which is the thing the
-   conventions forbid, so it is three: `#diagram-nodes` (the outline vocabulary, the row kinds,
+   conventions forbid, so it is four: `#diagram-nodes` (the outline vocabulary, the row kinds,
    the ports a body implies), `#diagram-edges` (derived paths and the three routers, no port
-   layer), `#diagram-layout` (the three layouts). Two kit changes came out of trimming them.
+   layer), `#diagram-layout` (the three layouts) and `#diagram-live` (any of them run live,
+   with a drag pinning a node). Two kit changes came out of trimming them.
    `buildBody` absorbs the `layoutBody` walk every consumer would otherwise write by hand to
    turn a `BodySpec` into scene nodes. And `bodyTrait` now drops the compass port on whichever
    side a row port claims — both sat on the same edge, so a row near the vertical middle put
