@@ -674,12 +674,6 @@ intercepting the press that drags the body.
   nothing to emit a text node from. Needs a `layoutRowPorts(row, box)` giving one
   label box per port, on the same terms `layoutBody` gives one box per row.
 
-- **(P2) `setDependsOn` op.** `dependsOn` is fixed at add time, so retargeting an
-  edge is remove plus add — and switching a node between an id list and
-  `'children'` is the same. The connect gesture landed without needing it: a new
-  edge is one `add`. Dragging an *existing* edge's end onto a different node is
-  what needs it, and that is the next thing anyone will ask for after connect.
-
 - **(P3) `scenePoseLookup` does not honor `SceneSlotConfig.toPose`**, which
   `buildSceneLayer` shims onto the live adapter's `getPose`. A consumer using it
   would paint dependencies at poses `derivePath` never saw. (It does now resolve

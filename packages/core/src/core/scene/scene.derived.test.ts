@@ -612,3 +612,112 @@ describe('derived geometry — cascade delete', () => {
     expect(scene.childrenOf(box)).toEqual([a]);
   });
 });
+
+describe('setDependsOn', () => {
+  /** Memoize against the node the way the paint path does, so a surviving
+   *  cache entry shows up as a call that did not happen. */
+  function countRecomputes(scene: Scene<object, 'main', RectPose>, id: NodeId) {
+    const counter = { n: 0 };
+    const read = () => {
+      const node = scene.get(id)!;
+      nodeMemo(node, 'test:derived', node.pose, () => ++counter.n);
+      return counter.n;
+    };
+    read();
+    return read;
+  }
+
+  it('retargets an edge from one node to another', () => {
+    const { scene, a, b, edge } = setup();
+    const c = scene.add({
+      kind: 'leaf', layer: 'main', pose: { x: 0, y: 200, width: 10, height: 10 }, data: {},
+    });
+    scene.setDependsOn(edge, [a, c]);
+    expect(scene.get(edge)!.dependsOn).toEqual([a, c]);
+
+    const recomputes = countRecomputes(scene, edge);
+    scene.setPose(b, { x: 500, y: 0, width: 10, height: 10 });
+    expect(recomputes()).toBe(1);        // dropped -> no longer a dependency
+    scene.setPose(c, { x: 0, y: 400, width: 10, height: 10 });
+    expect(recomputes()).toBe(2);        // named now, so it invalidates
+  });
+
+  it('drops the retargeted node\'s own memo', () => {
+    const { scene, a, edge } = setup();
+    const counter = { n: 0 };
+    const node = () => scene.get(edge)!;
+    nodeMemo(node(), 'test:derived', node().pose, () => ++counter.n);
+    expect(counter.n).toBe(1);
+    scene.setDependsOn(edge, [a]);
+    nodeMemo(node(), 'test:derived', node().pose, () => ++counter.n);
+    expect(counter.n).toBe(2);
+  });
+
+  it('invalidates what derives from the retargeted node', () => {
+    const { scene, a, edge } = setup();
+    const label = scene.add({
+      kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
+      dependsOn: [edge],
+    });
+    const counter = { n: 0 };
+    const node = () => scene.get(label)!;
+    nodeMemo(node(), 'test:derived', node().pose, () => ++counter.n);
+    expect(counter.n).toBe(1);
+    scene.setDependsOn(edge, [a]);
+    nodeMemo(node(), 'test:derived', node().pose, () => ++counter.n);
+    expect(counter.n).toBe(2);
+  });
+
+  it('moves the cascade with the dependency — the old one no longer takes it', () => {
+    const { scene, a, b, edge } = setup();
+    scene.setDependsOn(edge, [a]);
+    scene.remove(b);
+    expect(scene.get(edge)).toBeDefined();
+    scene.remove(a);
+    expect(scene.get(edge)).toBeUndefined();
+  });
+
+  it('undoes back to the original dependencies, cascade included', () => {
+    const { scene, a, b, edge } = setup();
+    scene.setDependsOn(edge, [a]);
+    scene.undo();
+    expect(scene.get(edge)!.dependsOn).toEqual([a, b]);
+    scene.remove(b);
+    expect(scene.get(edge)).toBeUndefined();
+  });
+
+  it('switches a container between an id list and \'children\'', () => {
+    const { scene, a, b } = setup();
+    const box = scene.add({
+      kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {},
+      dependsOn: [a, b],
+    });
+    scene.setDependsOn(box, 'children');
+    expect(scene.get(box)!.dependsOn).toBe('children');
+    // A 'children' container is not a dependent, so removing what it used to
+    // name no longer cascades it away.
+    scene.remove(a);
+    expect(scene.get(box)).toBeDefined();
+  });
+
+  it('elides a no-op and records no history entry', () => {
+    const { scene, a, b, edge } = setup();
+    const at = scene.historyIndex();
+    scene.setDependsOn(edge, [a, b]);
+    expect(scene.historyIndex()).toBe(at);
+  });
+
+  it('drops dependsOn entirely when given undefined', () => {
+    const { scene, a, edge } = setup();
+    scene.setDependsOn(edge, undefined);
+    expect(scene.get(edge)!.dependsOn).toBeUndefined();
+    scene.remove(a);
+    expect(scene.get(edge)).toBeDefined();
+  });
+
+  it('throws on an unknown id', () => {
+    const { scene } = setup();
+    expect(() => scene.setDependsOn(asNodeId('nope'), []))
+      .toThrow('Scene: unknown node id "nope"');
+  });
+});

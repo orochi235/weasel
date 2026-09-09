@@ -2,7 +2,7 @@ import { createHistory, type HistorySelection, type Journal, type SerializedHist
 import type { Op } from 'core/ops/types';
 import { rebuildOp as rebuildGlobalOp } from 'core/ops/registry';
 import { dwarn } from 'debug/flag';
-import { createDependentsIndex } from './dependents';
+import { createDependentsIndex, sameDependsOn } from './dependents';
 import { withKitRegistry } from './kitRegistry';
 import { dropPoseKeyedMemoSlots } from './nodeMemo';
 import {
@@ -158,6 +158,22 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   function trackChildDerived(id: NodeId, dependsOn: Node<TData, TLayer, TPose>['dependsOn']): void {
     if (dependsOn === 'children') childDerived.add(id);
     else childDerived.delete(id);
+  }
+
+  /** Point `id` at a different set of dependencies, keeping both indices and
+   *  every memo that reads them in step. Shared by `kit:setDependsOn`'s two
+   *  directions, which differ only in which value they install.
+   *
+   *  `id`'s own memo is dropped as well as its dependents': its derivation now
+   *  reads different sources, and nothing else would clear it. */
+  function retarget(id: NodeId, dependsOn: Node<TData, TLayer, TPose>['dependsOn']): void {
+    const node = requireNode(id) as { dependsOn?: readonly NodeId[] | 'children' };
+    if (dependsOn === undefined) delete node.dependsOn;
+    else node.dependsOn = dependsOn;
+    dependents.add(id, dependsOn === undefined || dependsOn === 'children' ? [] : dependsOn);
+    trackChildDerived(id, dependsOn);
+    dropPoseKeyedMemoSlots(requireNode(id));
+    invalidateDependents(id);
   }
 
   for (let i = 0; i < options.systemLayers.length; i++) {
@@ -602,6 +618,15 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       invalidateOrder();
       invalidateDependents(p.id);
     },
+  });
+
+  registerKitOp<{
+    id: NodeId;
+    from: Node<TData, TLayer, TPose>['dependsOn'];
+    to: Node<TData, TLayer, TPose>['dependsOn'];
+  }>('kit:setDependsOn', {
+    apply: (p) => { retarget(p.id, p.to); },
+    revert: (p) => { retarget(p.id, p.from); },
   });
 
   registerKitOp<{
@@ -1065,6 +1090,16 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
           }
         });
       }
+    },
+
+    setDependsOn(id, dependsOn) {
+      const node = requireNode(id);
+      if (sameDependsOn(node.dependsOn, dependsOn)) return;
+      executeAndLog(
+        'kit:setDependsOn',
+        { id, from: node.dependsOn, to: dependsOn },
+        'setDependsOn',
+      );
     },
 
     move(id, parent, index) {

@@ -105,3 +105,20 @@ export function createDependentsIndex(): DependentsIndex {
     },
   };
 }
+
+/**
+ * Whether two `dependsOn` values name the same thing, so a retarget to what a
+ * node already declares can be elided. Order is part of it: a router reads its
+ * ends positionally, and swapping them reverses the edge.
+ */
+export function sameDependsOn(
+  a: readonly NodeId[] | 'children' | undefined,
+  b: readonly NodeId[] | 'children' | undefined,
+): boolean {
+  if (a === b) return true;
+  if (a === undefined || b === undefined) return false;
+  if (a === 'children' || b === 'children') return false;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}

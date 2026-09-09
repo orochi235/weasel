@@ -321,7 +321,11 @@ that goes stale. The built-in Delete uses it twice — to drop selected ids an
 earlier op already covers, and to snapshot the whole set so undo brings all of
 it back.
 
-`dependsOn` is fixed when the node is added; retargeting is remove plus add.
+`scene.setDependsOn(id, dependsOn)` retargets a node's dependencies as one
+undoable step — dragging an existing edge's end onto a different node, or
+switching a container between an id list and `'children'`. Order is significant
+and declaring what a node already declares records nothing.
+
 Reparenting a node out from under its dependents is legal and intended: the
 geometry keeps recomputing across the new frame, because `derivePath` reads world
 poses and `Scene` stores them absolutely.

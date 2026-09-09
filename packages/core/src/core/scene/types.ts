@@ -495,6 +495,19 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
    *  - **No-op elision** — setting the layer a node already has does nothing
    *    and pushes **no** history entry. */
   setLayer(id: NodeId, layer: TLayer): void;
+  /** Point `id` at a different set of dependencies — retargeting an edge's end
+   *  onto another node, or switching a container between an id list and
+   *  `'children'`. Recorded as one undoable step.
+   *
+   *  Order is significant: a derivation reads its dependencies positionally,
+   *  so `[b, a]` is not `[a, b]`. Ids need not be in the scene — a declared
+   *  dependency that appears later invalidates the node when it does, the same
+   *  as one declared at `add`. Passing `undefined` drops the declaration, after
+   *  which nothing cascades the node away.
+   *
+   *  **No-op elision** — declaring what the node already declares does nothing
+   *  and pushes no history entry. */
+  setDependsOn(id: NodeId, dependsOn: readonly NodeId[] | 'children' | undefined): void;
   /** Reparent `id` under `parent` (or to a root when `parent` is `null`) at
    *  `index` within the new sibling list, appending when `index` is omitted.
    *  Siblings are reindexed. Recorded as one undoable step.
