@@ -58,6 +58,21 @@ describe('orthogonal', () => {
     }
   });
 
+  it('arrives along the receiving port, turning twice when both face the same axis', () => {
+    expect(orthogonal(req(port('a', 0, 0, { x: 1, y: 0 }), port('b', 100, 50, { x: -1, y: 0 }))))
+      .toEqual([{ x: 0, y: 0 }, { x: 50, y: 0 }, { x: 50, y: 50 }, { x: 100, y: 50 }]);
+  });
+
+  it('turns twice on a shared vertical axis too', () => {
+    expect(orthogonal(req(port('a', 0, 0, { x: 0, y: 1 }), port('b', 100, 50, { x: 0, y: -1 }))))
+      .toEqual([{ x: 0, y: 0 }, { x: 0, y: 25 }, { x: 100, y: 25 }, { x: 100, y: 50 }]);
+  });
+
+  it('keeps the single elbow when the two ends face different axes', () => {
+    expect(orthogonal(req(port('a', 0, 0, { x: 1, y: 0 }), port('b', 100, 50, { x: 0, y: -1 }))))
+      .toEqual([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 50 }]);
+  });
+
   it('leaves horizontally when the port has no facing at all', () => {
     expect(orthogonal(req(port('a', 0, 0, null), port('b', 100, 50))))
       .toEqual([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 50 }]);

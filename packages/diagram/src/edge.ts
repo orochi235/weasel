@@ -67,11 +67,14 @@ export type Router = (req: RouteRequest) => readonly Vec2[];
 export const straight: Router = (req) => [req.from.point, ...req.waypoints, req.to.point];
 
 /**
- * An axis-aligned route: leave along each end's normal, then turn.
+ * An axis-aligned route: leave along the departing end's normal and arrive
+ * against the receiving one's.
  *
- * Between two consecutive points it makes a single elbow, choosing the axis
- * from the *departing* end's normal so an edge leaves a port the way the port
- * faces rather than cutting back across its own node.
+ * A leg is one elbow where the two ends face different axes and two where they
+ * face the same one, turning at the midpoint of the axis they share. Arriving
+ * along the port's own facing is what makes the arrowhead point *into* the
+ * shape — a route that lands on a west-facing port from above puts its marker
+ * across the corner, which reads as aimed at nothing.
  */
 export const orthogonal: Router = (req) => {
   const stops = [req.from.point, ...req.waypoints, req.to.point];
@@ -85,14 +88,34 @@ export const orthogonal: Router = (req) => {
     }
     // Only the first leg has a port to leave along; later legs follow the
     // one before them so the route does not alternate for no reason.
-    const horizontalFirst = i === 1
-      ? Math.abs(req.from.normal?.x ?? 1) >= Math.abs(req.from.normal?.y ?? 0)
+    const leaveHorizontal = i === 1
+      ? isHorizontal(req.from.normal)
       : out.length > 1 && out[out.length - 2]!.y === a.y;
-    out.push(horizontalFirst ? { x: b.x, y: a.y } : { x: a.x, y: b.y });
-    out.push(b);
+    // Likewise only the last leg has a port to arrive against. Without a
+    // facing there is nothing to satisfy, so it keeps the single elbow.
+    const arriving = i === stops.length - 1 ? req.to.normal : null;
+    const arriveHorizontal = arriving == null ? !leaveHorizontal : isHorizontal(arriving);
+    if (leaveHorizontal !== arriveHorizontal) {
+      out.push(leaveHorizontal ? { x: b.x, y: a.y } : { x: a.x, y: b.y });
+      out.push(b);
+      continue;
+    }
+    if (leaveHorizontal) {
+      const mid = (a.x + b.x) / 2;
+      out.push({ x: mid, y: a.y }, { x: mid, y: b.y }, b);
+    } else {
+      const mid = (a.y + b.y) / 2;
+      out.push({ x: a.x, y: mid }, { x: b.x, y: mid }, b);
+    }
   }
   return out;
 };
+
+/** Which axis a port faces. A port with no facing counts as horizontal, which
+ *  is the leave-rightward default the router has always taken. */
+function isHorizontal(normal: Vec2 | null | undefined): boolean {
+  return Math.abs(normal?.x ?? 1) >= Math.abs(normal?.y ?? 0);
+}
 
 /** How far a bezier reaches along each end's normal, as a fraction of the
  *  straight-line distance between the two points it joins. */
