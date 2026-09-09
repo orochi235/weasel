@@ -12,6 +12,9 @@ import { BODY_FILL, INK, LABEL, PORT, TEXT, type Data, type Pose, type Spec } fr
 
 const W = 640, H = 360;
 
+/** Smaller than a row's own text: a port name sits inside the row beside it. */
+const PORT_TEXT = { ...TEXT, fontSize: 10 } as const;
+
 /** One per outline in the vocabulary, plus the row kinds a body can carry. */
 const BUILT: { id: string; at: Pose; spec: BodySpec }[] = [
   {
@@ -65,6 +68,7 @@ function DiagramNodesInner() {
         stroke: { paint: { color: INK }, width: 2 },
       }),
       row: (text) => (text === '' ? null : { text, style: TEXT, fill: { color: LABEL } }),
+      portLabel: (text) => ({ text, style: PORT_TEXT, fill: { color: LABEL } }),
     }).specs as Spec[]), []);
 
   const registry = useMemo(() => withDiagramRegistry<Pose>(), []);

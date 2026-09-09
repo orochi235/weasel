@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { bodyOutline, bodyTrait, buildBody, layoutBody, measureBody, sizeToBody } from './body';
+import { bodyOutline, bodyTrait, buildBody, layoutBody, layoutRowPorts, measureBody, sizeToBody } from './body';
 import { outlinePath } from './outline';
 import { portsOf } from './ports';
-import type { BodySpec, MeasureRowText } from './body';
+import type { BodySpec, MeasureRowText, Row } from './body';
 import type { Bounds } from './outline';
 
 /** Every glyph 10 wide, every line 20 tall. Makes a floor arithmetic. */
@@ -254,5 +254,133 @@ describe('buildBody', () => {
     ).specs;
     const trait = (specs[0]!.data as { diagram: { ports: { id: string }[] } }).diagram;
     expect(trait.ports.map((p) => p.id)).toEqual(['n', 'e', 's', 'in']);
+  });
+});
+
+describe('layoutRowPorts', () => {
+  const BOX: Bounds = { x: 0, y: 100, width: 100, height: 40 };
+
+  it('stacks a side\'s ports into one slot each, top to bottom', () => {
+    const boxes = layoutRowPorts(
+      { kind: 'ports', left: [{ id: 'a' }, { id: 'b' }] }, BOX, measure);
+    expect(boxes.map((b) => ({ id: b.port.id, y: b.y, height: b.height })))
+      .toEqual([{ id: 'a', y: 100, height: 20 }, { id: 'b', y: 120, height: 20 }]);
+  });
+
+  it('keeps the two sides on the same slots, so port i faces port i', () => {
+    const boxes = layoutRowPorts(
+      { kind: 'ports', left: [{ id: 'a' }, { id: 'b' }], right: [{ id: 'x' }] }, BOX, measure);
+    const y = (id: string) => boxes.find((b) => b.port.id === id)!.y;
+    expect(y('x')).toBe(y('a'));
+  });
+
+  it('sizes a label box to its own text and pins it to its own edge', () => {
+    const boxes = layoutRowPorts(
+      { kind: 'ports', left: [{ id: 'a', label: 'in' }], right: [{ id: 'x', label: 'outp' }] },
+      BOX, measure);
+    expect(boxes.find((b) => b.port.id === 'a')).toMatchObject({ x: 0, width: 20, side: 'left' });
+    expect(boxes.find((b) => b.port.id === 'x')).toMatchObject({ x: 60, width: 40, side: 'right' });
+  });
+
+  it('gives an unlabeled port a zero-width box on its edge', () => {
+    const boxes = layoutRowPorts({ kind: 'ports', right: [{ id: 'x' }] }, BOX, measure);
+    expect(boxes[0]).toMatchObject({ x: 100, width: 0, side: 'right' });
+  });
+
+  it('lists every left port before every right one', () => {
+    const boxes = layoutRowPorts(
+      { kind: 'ports', left: [{ id: 'a' }], right: [{ id: 'x' }] }, BOX, measure);
+    expect(boxes.map((b) => b.port.id)).toEqual(['a', 'x']);
+  });
+});
+
+describe('bodyTrait — a row with several ports on one side', () => {
+  const BOUNDS: Bounds = { x: 0, y: 0, width: 100, height: 100 };
+
+  it('anchors each to its own slot rather than stacking them all at the row center', () => {
+    const trait = bodyTrait(spec([
+      { kind: 'ports', left: [{ id: 'a' }, { id: 'b' }], height: 40 },
+    ]), BOUNDS, measure);
+    const v = (id: string) => trait.ports!.find((p) => p.id === id)!.at.v;
+    expect(v('a')).toBe(0.1);
+    expect(v('b')).toBe(0.3);
+  });
+
+  it('still puts a lone port at its row\'s center', () => {
+    const trait = bodyTrait(spec([
+      { kind: 'ports', left: [{ id: 'in' }], height: 40 },
+    ]), BOUNDS, measure);
+    expect(trait.ports!.find((p) => p.id === 'in')!.at).toEqual({ u: 0, v: 0.2 });
+  });
+});
+
+describe('buildBody — row port labels', () => {
+  const at: Bounds = { x: 0, y: 0, width: 100, height: 0 };
+  const rows: BodySpec['rows'] = [
+    { kind: 'ports', left: [{ id: 'in', label: 'in' }], right: [{ id: 'out', label: 'out' }], height: 40 },
+  ];
+
+  it('emits a leaf per labeled port when the consumer wants one', () => {
+    const { specs } = buildBody<{ text: string }, 'main', Bounds>(spec(rows), at, {
+      layer: 'main', id: 'op', measure,
+      body: () => ({ text: '' }),
+      row: () => null,
+      portLabel: (text) => ({ text }),
+    });
+    expect(specs.map((n) => (n.data as { text: string }).text)).toEqual(['', 'in', 'out']);
+    expect(specs[1]).toMatchObject({ kind: 'leaf', parent: 'op' });
+  });
+
+  it('places each label at the box layoutRowPorts gives it', () => {
+    const { pose, specs } = buildBody<{ text: string }, 'main', Bounds>(spec(rows), at, {
+      layer: 'main', id: 'op', measure,
+      body: () => ({ text: '' }),
+      row: () => null,
+      portLabel: (text) => ({ text }),
+    });
+    const rowBox = layoutBody(spec(rows), pose, measure)[0]!;
+    const portBoxes = layoutRowPorts(rows[0] as Extract<Row, { kind: 'ports' }>, rowBox, measure);
+    expect(specs[1]!.pose).toMatchObject({ x: portBoxes[0]!.x, y: portBoxes[0]!.y });
+  });
+
+  it('skips a port with no label, and one the consumer declines', () => {
+    const { specs } = buildBody<{ text: string }, 'main', Bounds>(
+      spec([{ kind: 'ports', left: [{ id: 'in' }], right: [{ id: 'out', label: 'out' }], height: 40 }]),
+      at,
+      {
+        layer: 'main', measure,
+        body: () => ({ text: '' }),
+        row: () => null,
+        portLabel: (text) => (text === 'out' ? null : { text }),
+      },
+    );
+    expect(specs).toHaveLength(1);
+  });
+
+  it('emits nothing for port labels when the consumer asks for none', () => {
+    const { specs } = buildBody<{ text: string }, 'main', Bounds>(spec(rows), at, {
+      layer: 'main', measure, body: () => ({ text: '' }), row: () => null,
+    });
+    expect(specs).toHaveLength(1);
+  });
+});
+
+describe('buildBody — content the container owns', () => {
+  it('makes every leaf unpickable, so a press anywhere grabs the body', () => {
+    const { specs } = buildBody<{ text: string }, 'main', Bounds>(
+      spec([
+        { kind: 'label', text: 'op' },
+        { kind: 'ports', left: [{ id: 'in', label: 'in' }], height: 40 },
+      ]),
+      { x: 0, y: 0, width: 100, height: 0 },
+      {
+        layer: 'main', id: 'op', measure,
+        body: () => ({ text: '' }),
+        row: (text) => (text === '' ? null : { text }),
+        portLabel: (text) => ({ text }),
+      },
+    );
+    expect(specs[0]!.pickable).toBeUndefined();          // the body itself stays pickable
+    expect(specs.slice(1).map((n) => n.pickable)).toEqual([false, false]);
   });
 });

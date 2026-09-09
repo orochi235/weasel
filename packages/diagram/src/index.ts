@@ -12,6 +12,7 @@ export {
   buildBody,
   canvasMeasure,
   layoutBody,
+  layoutRowPorts,
   measureBody,
   sizeToBody,
 } from './body';
@@ -25,6 +26,7 @@ export type {
   RowBox,
   RowNodeData,
   RowPort,
+  RowPortBox,
   RowTextStyle,
 } from './body';
 export {

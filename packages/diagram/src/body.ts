@@ -68,6 +68,9 @@ export interface BodyNodeSpec<TData, TLayer extends string, TPose> {
   data: TData;
   id?: string;
   parent?: string;
+  /** Set `false` on every leaf the builder emits: the innermost hit wins, so a
+   *  row that answers a press is a body that cannot be dragged. */
+  pickable?: boolean;
 }
 
 /** The floor a body's content puts under its node's size. */
@@ -80,6 +83,16 @@ export interface BodyFloor {
  *  A `ports` row's own ports anchor to this box. */
 export interface RowBox extends Bounds {
   row: Row;
+  index: number;
+}
+
+/** Where one row port's label sits, in the same frame as the row box it was
+ *  laid out in. Its vertical center is also where the port itself attaches, so
+ *  a label and the port it names cannot drift apart. */
+export interface RowPortBox extends Bounds {
+  port: RowPort;
+  side: 'left' | 'right';
+  /** Position within its own side, top to bottom. */
   index: number;
 }
 
@@ -190,6 +203,44 @@ export function layoutBody(
 }
 
 /**
+ * Where each of a `ports` row's ports goes inside `box`, on the same terms
+ * `layoutBody` gives one box per row.
+ *
+ * Both sides are cut into the same number of slots — the longer side's count —
+ * so the nth input faces the nth output whichever side has more. A label box
+ * is as wide as its own text and pinned to its own edge of the row; an
+ * unlabeled port gets a zero-width box there, which is still where it attaches.
+ */
+export function layoutRowPorts(
+  row: Extract<Row, { kind: 'ports' }>,
+  box: Bounds,
+  measure?: MeasureRowText,
+): RowPortBox[] {
+  const width = (label: string | undefined): number =>
+    label === undefined ? 0 : measureRow({ kind: 'label', text: label }, measure).width;
+  const slots = Math.max(row.left?.length ?? 0, row.right?.length ?? 0, 1);
+  const slotHeight = box.height / slots;
+  const out: RowPortBox[] = [];
+  const side = (ports: readonly RowPort[] | undefined, which: 'left' | 'right'): void => {
+    for (const [index, port] of (ports ?? []).entries()) {
+      const w = width(port.label);
+      out.push({
+        port,
+        side: which,
+        index,
+        x: which === 'left' ? box.x : box.x + box.width - w,
+        y: box.y + index * slotHeight,
+        width: w,
+        height: slotHeight,
+      });
+    }
+  };
+  side(row.left, 'left');
+  side(row.right, 'right');
+  return out;
+}
+
+/**
  * The `DiagramNode` trait a built body implies: perimeter ports for the
  * outline, plus one port per `ports`-row entry, anchored to that row's own
  * left or right edge.
@@ -218,14 +269,14 @@ export function bodyTrait(spec: BodySpec, bounds: Bounds, measure?: MeasureRowTe
   let hasRight = false;
   for (const box of layoutBody(spec, bounds, measure)) {
     if (box.row.kind !== 'ports') continue;
-    const v = (box.y + box.height / 2 - bounds.y) / bounds.height;
-    for (const p of box.row.left ?? []) {
-      hasLeft = true;
-      rowPorts.push(withType({ id: p.id, at: { u: 0, v } }, p.type));
-    }
-    for (const p of box.row.right ?? []) {
-      hasRight = true;
-      rowPorts.push(withType({ id: p.id, at: { u: 1, v } }, p.type));
+    for (const pb of layoutRowPorts(box.row, box, measure)) {
+      if (pb.side === 'left') hasLeft = true;
+      else hasRight = true;
+      const v = (pb.y + pb.height / 2 - bounds.y) / bounds.height;
+      rowPorts.push(withType(
+        { id: pb.port.id, at: { u: pb.side === 'left' ? 0 : 1, v } },
+        pb.port.type,
+      ));
     }
   }
   const kept = compass.filter((p) =>
@@ -262,6 +313,10 @@ export interface BuildBodyOptions<TData, TLayer extends string, TPose extends Bo
   body: (trait: DiagramNode, pose: TPose) => TData;
   /** One row's data, or `null` to leave that row undrawn. */
   row: RowNodeData<TData>;
+  /** One row port's label, or `null` to leave it undrawn. Ports with no
+   *  `label` are never offered. Omit to draw none — a body whose ports are
+   *  named only for the width they claim needs nothing here. */
+  portLabel?: (text: string, box: RowPortBox) => TData | null;
 }
 
 /**
@@ -291,16 +346,27 @@ export function buildBody<TData, TLayer extends string, TPose extends Bounds>(
     ...(opts.id === undefined ? {} : { id: opts.id }),
   }];
 
-  for (const box of layoutBody(spec, pose, opts.measure)) {
-    const data = opts.row(rowText(box.row), box);
-    if (data === null) continue;
+  const leaf = (box: Bounds, data: TData): void => {
     specs.push({
       kind: 'leaf',
       layer: opts.layer,
       pose: { ...pose, x: box.x, y: box.y, width: box.width, height: box.height },
       data,
+      pickable: false,
       ...(opts.id === undefined ? {} : { parent: opts.id }),
     });
+  };
+
+  const portLabel = opts.portLabel;
+  for (const box of layoutBody(spec, pose, opts.measure)) {
+    const data = opts.row(rowText(box.row), box);
+    if (data !== null) leaf(box, data);
+    if (portLabel === undefined || box.row.kind !== 'ports') continue;
+    for (const pb of layoutRowPorts(box.row, box, opts.measure)) {
+      if (pb.port.label === undefined) continue;
+      const labelData = portLabel(pb.port.label, pb);
+      if (labelData !== null) leaf(pb, labelData);
+    }
   }
   return { pose, specs };
 }

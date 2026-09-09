@@ -667,13 +667,6 @@ intercepting the press that drags the body.
   resolves every dependency's pose on every frame. Measure against a real diagram
   before taking it.
 
-- **(P3) A row port's label is measured but never drawn.** `RowPort.label` feeds
-  `measureBody`'s floor, so a row of named ports makes its node wide enough for
-  them — and then nothing paints them. `layoutBody` returns the row's box; where
-  each port's label sits inside it is not computed anywhere, so `buildBody` has
-  nothing to emit a text node from. Needs a `layoutRowPorts(row, box)` giving one
-  label box per port, on the same terms `layoutBody` gives one box per row.
-
 - **(P3) `scenePoseLookup` does not honor `SceneSlotConfig.toPose`**, which
   `buildSceneLayer` shims onto the live adapter's `getPose`. A consumer using it
   would paint dependencies at poses `derivePath` never saw. (It does now resolve
