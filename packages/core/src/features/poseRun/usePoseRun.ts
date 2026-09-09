@@ -83,18 +83,11 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
   const frame = useRef(0);
   const mounted = useRef(true);
 
-  const clock = useRef<{
-    requestFrame: (cb: (t: number) => void) => number;
-    cancelFrame: (handle: number) => void;
-  } | null>(null);
-  clock.current ??= {
-    requestFrame: opts.requestFrame ?? ((cb) => requestAnimationFrame(cb)),
-    cancelFrame: opts.cancelFrame ?? ((h) => cancelAnimationFrame(h)),
-  };
-
+  // The gate defaults an absent clock to `requestAnimationFrame` itself, so
+  // these pass straight through rather than being defaulted twice.
   const loop = useVisibleRaf(() => { tick(); }, {
-    requestFrame: clock.current.requestFrame,
-    cancelFrame: clock.current.cancelFrame,
+    requestFrame: opts.requestFrame,
+    cancelFrame: opts.cancelFrame,
   });
 
   /** The scene as the previous frame left it, for `syncPreviewOverrides`. */

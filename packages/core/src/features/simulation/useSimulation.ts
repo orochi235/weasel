@@ -32,26 +32,16 @@ export function useSimulation<TNode extends SimulationNode>(
   const endedRef = useRef(false);
   const mountedRef = useRef(true);
 
-  // Stable clock — captured once on first render; tests inject via opts.
-  const clockRef = useRef<{
-    requestFrame: (cb: (t: number) => void) => number;
-    cancelFrame: (handle: number) => void;
-  } | null>(null);
-  if (clockRef.current === null) {
-    clockRef.current = {
-      requestFrame: opts.requestFrame ?? ((cb) => requestAnimationFrame(cb)),
-      cancelFrame: opts.cancelFrame ?? ((h) => cancelAnimationFrame(h)),
-    };
-  }
-
   // The loop runs behind the visibility gate: a settling simulation stops
   // integrating on a page nobody is looking at, and picks up where it left off.
   // Its step is fixed rather than time-based, so there is no clock to rebase.
+  // The gate defaults an absent clock to `requestAnimationFrame`, so an
+  // injected one passes straight through rather than being defaulted twice.
   const frameLoop = useVisibleRaf(
     () => { rafTick(); },
     {
-      requestFrame: clockRef.current.requestFrame,
-      cancelFrame: clockRef.current.cancelFrame,
+      requestFrame: opts.requestFrame,
+      cancelFrame: opts.cancelFrame,
     },
   );
 

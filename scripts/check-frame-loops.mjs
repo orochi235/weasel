@@ -20,10 +20,6 @@ const PACKAGES = join(ROOT, 'packages');
 /** Paths that may name `requestAnimationFrame`, and why. */
 const ALLOWED = new Map([
   ['packages/core/src/scheduling/useVisibleRaf.ts', 'the gate itself'],
-  [
-    'packages/core/src/features/simulation/useSimulation.ts',
-    'default for the injectable clock it hands to the gate',
-  ],
 ]);
 
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'dist-examples', 'storybook-static', 'examples']);
