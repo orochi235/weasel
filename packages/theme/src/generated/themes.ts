@@ -72,10 +72,10 @@ export type TokenName =
   | '--wzl-radius-pill'
   | '--wzl-radius-sm'
   | '--wzl-shadow'
+  | '--wzl-slider-thumb-mix'
   | '--wzl-slider-thumb-size'
-  | '--wzl-slider-thumb-tint'
   | '--wzl-slider-track-h'
-  | '--wzl-slider-track-tint'
+  | '--wzl-slider-track-mix'
   | '--wzl-space-lg'
   | '--wzl-space-md'
   | '--wzl-space-sm'
@@ -175,8 +175,8 @@ export const THEMES = {
       '--wzl-control-h': "24px",
       '--wzl-slider-track-h': "4px",
       '--wzl-slider-thumb-size': "8px",
-      '--wzl-slider-track-tint': "18%",
-      '--wzl-slider-thumb-tint': "70%",
+      '--wzl-slider-track-mix': "18%",
+      '--wzl-slider-thumb-mix': "70%",
       '--wzl-field-pad-x': "8px",
       '--wzl-glass-blur': "3px",
       '--wzl-font-size-2xs': "9px",
@@ -278,8 +278,8 @@ export const THEMES = {
       '--wzl-control-h': "24px",
       '--wzl-slider-track-h': "4px",
       '--wzl-slider-thumb-size': "8px",
-      '--wzl-slider-track-tint': "18%",
-      '--wzl-slider-thumb-tint': "70%",
+      '--wzl-slider-track-mix': "18%",
+      '--wzl-slider-thumb-mix': "70%",
       '--wzl-field-pad-x': "8px",
       '--wzl-glass-blur': "3px",
       '--wzl-font-size-2xs': "9px",
@@ -569,15 +569,15 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         "value": "8px",
         "description": "Diameter of a linear range thumb."
       },
-      "slider-track-tint": {
+      "slider-track-mix": {
         "type": "dimension",
         "value": "18%",
-        "description": "Accent proportion in a range track. Mixed into a real property, never into another custom property."
+        "description": "Accent proportion in a range track, as a color-mix percentage — not a color. Mixed into a real property, never into another custom property."
       },
-      "slider-thumb-tint": {
+      "slider-thumb-mix": {
         "type": "dimension",
         "value": "70%",
-        "description": "Accent proportion in a range thumb."
+        "description": "Accent proportion in a range thumb, as a color-mix percentage — not a color."
       },
       "field-pad-x": {
         "type": "dimension",

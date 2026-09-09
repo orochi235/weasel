@@ -1,6 +1,7 @@
 import { fillConfigDefaults } from '../config/path';
 import type { Instrument, InstrumentList } from '../instrument/types';
 import type { TrialRecord } from '../state/types';
+import { newId } from '../state/helpers';
 
 const DEFAULT_VIEW = { zoom: 1, pan: { x: 0, y: 0 } } as const;
 
@@ -47,7 +48,7 @@ export function addTrial(
   const config = seedConfig(instrument.defaultConfig(), options.config);
   const state = instrument.initialState(config);
   const record: TrialRecord = {
-    id: crypto.randomUUID(),
+    id: newId(),
     instrumentName,
     config,
     state,
@@ -66,7 +67,7 @@ export function cloneTrial(trials: TrialRecord[], id: string): TrialRecord[] {
   if (!source) return trials;
   const clone: TrialRecord = {
     ...source,
-    id: crypto.randomUUID(),
+    id: newId(),
     config: structuredClone(source.config),
     state: structuredClone(source.state),
     view: structuredClone(source.view),

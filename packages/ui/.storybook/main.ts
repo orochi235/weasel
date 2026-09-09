@@ -23,6 +23,10 @@ const config: StorybookConfig = {
             replacement: resolve(repoRoot, 'packages/theme/src/generated/tokens.css'),
           },
           {
+            find: '@weasel-js/theme/fonts.css',
+            replacement: resolve(repoRoot, 'packages/theme/src/fonts.css'),
+          },
+          {
             find: '@weasel-js/theme',
             replacement: resolve(repoRoot, 'packages/theme/src/index.ts'),
           },

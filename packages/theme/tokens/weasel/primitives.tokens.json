@@ -64,8 +64,8 @@
     "control-h":   { "$value": "24px", "$description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in." },
     "slider-track-h":    { "$value": "4px", "$description": "Height of a linear range track. The kit's single-thumb ranges all wear this; Slider's default 24px canvas track does not." },
     "slider-thumb-size": { "$value": "8px", "$description": "Diameter of a linear range thumb." },
-    "slider-track-tint": { "$value": "18%", "$description": "Accent proportion in a range track. Mixed into a real property, never into another custom property." },
-    "slider-thumb-tint": { "$value": "70%", "$description": "Accent proportion in a range thumb." },
+    "slider-track-mix": { "$value": "18%", "$description": "Accent proportion in a range track, as a color-mix percentage — not a color. Mixed into a real property, never into another custom property." },
+    "slider-thumb-mix": { "$value": "70%", "$description": "Accent proportion in a range thumb, as a color-mix percentage — not a color." },
     "field-pad-x":       { "$value": "8px", "$description": "Horizontal padding inside a boxed field. Pairs with --wzl-field-h, which is a container override and has no :root default." },
     "glass-blur":  { "$value": "3px", "$description": "Backdrop blur radius for frosted surfaces. Pairs with glass-tint." },
 

@@ -51,8 +51,8 @@ Add to `packages/theme/tokens/weasel/`:
 ```
 --wzl-slider-track-h: 4px
 --wzl-slider-thumb-size: 8px
---wzl-slider-track-tint: 18%
---wzl-slider-thumb-tint: 70%
+--wzl-slider-track-mix: 18%
+--wzl-slider-thumb-mix: 70%
 --wzl-field-pad-x: 8px
 ```
 
@@ -70,7 +70,7 @@ there. Consumers write the `color-mix()` in a real property, where it resolves p
 element:
 
 ```css
-background: color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-track-tint), transparent);
+background: color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-track-mix), transparent);
 ```
 
 This would not bite today — `--wzl-accent` resolves to `--wzl-accent-base` at `:root`

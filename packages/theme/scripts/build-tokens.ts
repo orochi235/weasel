@@ -107,11 +107,6 @@ function emitCss(themes: LoadedTheme[]): string {
     }
     lines.push('}', '');
 
-    lines.push(':root {');
-    lines.push('  font-family: var(--wzl-font-ui);');
-    lines.push('  font-weight: var(--wzl-font-weight-normal);');
-    lines.push('}', '');
-
     for (const [mode, cfg] of Object.entries(manifest.modes)) {
       const merged = mergeTokens(primitives, modes[mode]);
       lines.push(`[data-wzl-theme='${manifest.name}'][data-wzl-mode='${mode}'],`);

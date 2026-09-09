@@ -261,7 +261,10 @@
   border-radius: var(--wzl-radius-sm);
   padding: 1px 0;
   margin: 0;
-  width: calc(5em - 24px);
+  /* The subtraction is the unit and its gap at the kit's own font size, so the
+     default is wrong against a much smaller or larger one — override the hook
+     rather than reaching for the hashed class name. */
+  width: var(--wzl-property-readout-w, calc(5em - 24px));
   text-align: right;
   cursor: text;
   outline: none;

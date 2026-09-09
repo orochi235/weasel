@@ -25,6 +25,22 @@ export function decodeUrlHash(hash: string): string | null {
   }
 }
 
+/**
+ * An id for a trial or a snapshot.
+ *
+ * `crypto.randomUUID` exists only in a secure context, and a LAN address is
+ * not one — so a lab opened on a phone or a tablet by IP throws on its first
+ * render and shows a blank page with nothing in reach to say why. The counter
+ * is per page load, which is all these ids have to survive: they name records
+ * inside one session's store, and a saved snapshot carries its own name.
+ */
+let idCounter = 0;
+export function newId(): string {
+  const c = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+  if (c && typeof c.randomUUID === 'function') return c.randomUUID();
+  return `lk-${Date.now().toString(36)}-${idCounter++}`;
+}
+
 /** A fresh, empty undo history. */
 export function emptyUndoStack(): UndoStack {
   return { past: [], future: [] };

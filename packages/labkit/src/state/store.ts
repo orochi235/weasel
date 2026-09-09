@@ -11,7 +11,7 @@ import {
   readLegacyDocument,
   runMigrations,
 } from './document';
-import { deserializeTrials, emptyUndoStack, serializeTrials } from './helpers';
+import { deserializeTrials, emptyUndoStack, newId, serializeTrials } from './helpers';
 import type {
   CreateLabStoreOptions,
   LabDocument,
@@ -221,7 +221,7 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
       const lastAt = get().savedSnapshots.reduce((m, sn) => (sn.savedAt > m ? sn.savedAt : m), 0);
       const savedAt = Math.max(Date.now(), lastAt + 1);
       const snapshot: SavedSnapshot = {
-        id: crypto.randomUUID(),
+        id: newId(),
         name,
         trialId,
         instrumentName: trial.instrumentName,

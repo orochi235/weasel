@@ -1275,74 +1275,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   outside it via the `flat` variant. Doing this generally is a theme decision
   about the glass, not a component change.
 
-- **(P2) `tokens.css` re-types the document, which is the only thing stopping a
-  consumer importing it.** `packages/theme/src/generated/tokens.css` is custom
-  properties throughout except for one rule near the end, where `:root` takes
-  `font-family: var(--wzl-font-ui)` and `font-weight`. Custom properties are
-  inert until something reads them, so every other line is safe to drop into a
-  host app; those two are not, and an app with its own typography cannot import
-  the file at all. It then hand-writes the `--wzl-*` bridge instead, and falls
-  silently behind whenever a component starts reading a token the list does not
-  carry — the failure is a control with correct geometry and transparent paint,
-  which reads as a component that failed to mount. `fonts.css` is beside it and
-  is where a rule like that belongs; `build-tokens.ts:111` emits it.
-
-- **(P2) Some `--wzl-*` are percentages wearing color names.**
-  `--wzl-slider-track-tint` and `--wzl-slider-thumb-tint` are the second
-  argument of a `color-mix` against `--wzl-accent`
-  (`ui/src/components/range.module.css`), so they must be percentages. Setting
-  one to a color invalidates the whole declaration and the thumb renders
-  unpainted, with no error. Rename them (`--wzl-slider-thumb-mix`?) or take a
-  color and mix inside.
-
-- **(P2) Size tokens with no fallback fail to nothing rather than to a
-  default.** `--wzl-slider-track-h` and `--wzl-slider-thumb-size` are used bare
-  in `range.module.css`; unset, the declaration is invalid and the track has no
-  height, so the control is present, focusable, operable and invisible.
-  `--wzl-range-box-h` on the same element has a `12px` fallback, so the
-  inconsistency is inside one file. A fallback on every size token makes an
-  incomplete bridge degrade to "wrong size" instead of "gone".
-
-- **(P2) `ColorRow`'s alpha slider commits on every tick.** `Slider` splits
-  `onInput` from `onChange` and says why — one fires through a drag, the other
-  once at the end and is the one to write to history — and `SliderRow` carries
-  the pair. `ColorRow` has `onChange` and `onAlphaChange` only, with no note
-  saying which semantics they have, so a consumer with an undo stack either
-  reads the source or drops to the primitive and rebuilds the row's layout.
-  `NumberRow` has the same single callback. Give both the pair.
-
-- **(P2) `PropertyGroup` has no collapsed state.** It takes `title`, `hidden`,
-  `pack` and children; `hidden` removes the group, which is a different thing.
-  A panel with enough groups to want folding therefore brings its own
-  `<details>` and puts a bare `<PropertyList>` inside each, which means
-  `PropertyGroup`'s title-between-rules treatment is unavailable to exactly the
-  panels big enough to need it. An `open` / `onOpenChange` pair, or a
-  `collapsible` flag.
-
-- **(P3) The property row readout is sized with a hardcoded pixel subtraction.**
-  `.readoutInput` is `width: calc(5em - 24px)` with `overflow: clip`
-  (`Properties.module.css:264`). The `-24px` assumes a base font near weasel's
-  own; against an 11px monospace it leaves 31px and clips a four-decimal value
-  mid-digit. A consumer's only way out is matching `[class*='readout']`, which
-  works only because CSS modules hash around the base name. Wants a token.
-
-- **(P3) `.track { min-width: 80px }` turns a consumer's layout mistake into a
-  plausible control.** `RangeSlider.module.css:39`. `.slider` is a column flex
-  container, so `align-items` on a wrapper governs the horizontal axis there and
-  the track stops stretching — it falls back to the floor instead, and an 82px
-  slider centered over a 520px histogram looks like a small slider someone chose
-  rather than a broken one. A zero-width track would have been found in seconds.
-  Either drop the floor or say in `Slider`'s docs that the root owns its
-  flex-direction and restyling it breaks track stretch.
-
-- **(P2) `crypto.randomUUID` is called unguarded in labkit, and it is absent off
-  localhost.** It exists only in a secure context; `http://localhost` is one and
-  a LAN address is not, so a lab reached by IP — a phone, a tablet, another
-  machine — throws on its first render and shows a blank page with nothing in
-  reach to say why. `state/store.ts:224`, `trial/trialOps.ts:50` and `:69` all
-  call it bare. Core already has the answer: `arrayAdapter.ts`'s `defaultNextId`
-  checks for the function and falls back to a counter. Give labkit's three sites
-  the same treatment, or a shared helper both reach for.
+- **(P3) The `-24px` in the property readout's width is still a magic number.**
+  `.readoutInput` now takes `var(--wzl-property-readout-w, calc(5em - 24px))`
+  (`Properties.module.css`), so a consumer at a very different base font has a
+  hook instead of a hashed class name — but the default still bakes in the unit
+  and its gap at the kit's own size. Expressing it in `em`, or measuring the
+  unit, would make the default right everywhere rather than overridable.
 
 ### Align/distribute/flip follow-ups
 

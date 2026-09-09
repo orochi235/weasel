@@ -4,6 +4,7 @@ import {
   deserializeTrials,
   emptyUndoStack,
   encodeUrlHash,
+  newId,
   labStorageKey,
   serializeTrials,
 } from './helpers';
@@ -113,5 +114,24 @@ describe('deserializeTrials', () => {
 
   it('returns an empty list when given something that is not an array', () => {
     expect(deserializeTrials(undefined as never, {})).toEqual([]);
+  });
+
+  describe('newId', () => {
+    it('mints distinct ids', () => {
+      expect(newId()).not.toBe(newId());
+    });
+
+    it('falls back where crypto.randomUUID is absent', () => {
+      // What a lab reached by LAN IP gets: not a secure context, so the
+      // function is not there. It used to throw on the first render and show a
+      // blank page.
+      const real = globalThis.crypto;
+      Object.defineProperty(globalThis, 'crypto', { value: {}, configurable: true });
+      try {
+        expect(newId()).not.toBe(newId());
+      } finally {
+        Object.defineProperty(globalThis, 'crypto', { value: real, configurable: true });
+      }
+    });
   });
 });

@@ -24,6 +24,11 @@ export type RangeSliderProps = Omit<RACSliderProps, 'children' | 'className'> & 
  * Linear range slider on React Aria. Single-value by default; pass an array
  * to `value` / `defaultValue` for multi-thumb. Distinct from `Slider`, which
  * is fully controlled and gives each thumb its own bounds and readout.
+ *
+ * The root is a column flex container and the track stretches to it, so
+ * `align-items` on the root or on a wrapper that replaces it governs the
+ * *horizontal* axis here and collapses the track to its content width. Style
+ * the wrapper around one, not the root.
  */
 export function RangeSlider(props: RangeSliderProps) {
   const { label, showOutput, formatOutput, className, ...rest } = props;

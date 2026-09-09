@@ -1,6 +1,13 @@
-/* Opt-in webfont loading. Import this only if you want the kit's intended
- * faces; the token font stacks fall back to system-ui without it.
+/* Opt-in typography: the kit's intended faces, and the document set in them.
+ * Import this only if you want both — the token font stacks fall back to
+ * system-ui without the faces, and `tokens.css` sets no font of its own, so an
+ * app with its own typography can import the tokens and skip this file.
  * Licenses: ../fonts/OFL-Oswald.txt, ../fonts/OFL-Inter.txt */
+
+:root {
+  font-family: var(--wzl-font-ui);
+  font-weight: var(--wzl-font-weight-normal);
+}
 
 @font-face {
   font-family: 'Oswald';

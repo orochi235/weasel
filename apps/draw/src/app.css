@@ -9,6 +9,7 @@ html, body, #root {
   background: var(--wzl-surface-sunken);
   color: var(--wzl-fg);
   font-family: var(--wzl-font-ui, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+  font-weight: var(--wzl-font-weight-normal, 400);
   overflow: hidden;
 }
 

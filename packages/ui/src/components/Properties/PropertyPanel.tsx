@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react';
 import { Focusable } from 'react-aria-components';
 import { dlog } from '../../dlog';
 import { formatNumber, parseSignedNumber } from '../../format/number';
@@ -234,6 +234,36 @@ function PropertyRowHelp({ label, description }: { label: ReactNode; description
 
 // ── Row implementations ──────────────────────────────────────────────
 
+/**
+ * A ref for an input whose commit half has to come off a real listener.
+ *
+ * A native `range`, `color` or `number` input fires `input` through the
+ * interaction and `change` once at the end, but React's synthetic `onChange`
+ * sees only the first: its value tracker drops the unchanged second. So a row
+ * offering the live/committed split reads the live half from React and the
+ * committed half from here.
+ *
+ * `commit` is `undefined` on a row given one callback, which then fires
+ * continuously — what a row with one callback has always done.
+ */
+function useCommitListener(
+  commit: ((raw: string) => void) | undefined,
+): RefObject<HTMLInputElement | null> {
+  const ref = useRef<HTMLInputElement>(null);
+  const latest = useRef(commit);
+  useEffect(() => {
+    latest.current = commit;
+  });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const onCommit = () => latest.current?.(el.value);
+    el.addEventListener('change', onCommit);
+    return () => el.removeEventListener('change', onCommit);
+  }, []);
+  return ref;
+}
+
 /** Props for `<SliderRow>`. */
 export interface SliderRowProps extends PropertyMetricProps {
   label: ReactNode;
@@ -292,21 +322,7 @@ export function SliderRow({
   const decimals = step >= 1 ? 0 : Math.min(6, Math.max(0, Math.ceil(-Math.log10(step))));
   const live = onInput ?? onChange;
   const commit = onInput ? onChange : undefined;
-  const range = useRef<HTMLInputElement>(null);
-  const latestCommit = useRef(commit);
-  useEffect(() => {
-    latestCommit.current = commit;
-  });
-  useEffect(() => {
-    const el = range.current;
-    if (!el) return;
-    // The commit half is the platform's: a range input fires `input` through
-    // the drag and `change` once, on release. React's synthetic onChange sees
-    // only the first, since its value tracker drops the unchanged second.
-    const onCommit = () => latestCommit.current?.(Number(el.value));
-    el.addEventListener('change', onCommit);
-    return () => el.removeEventListener('change', onCommit);
-  }, []);
+  const range = useCommitListener(commit && ((raw) => commit(Number(raw))));
   const effectiveFormat =
     format ??
     ((n: number) =>
@@ -440,10 +456,24 @@ function EditableReadout({ value, min, max, format, unit, onCommit }: EditableRe
 export interface ColorRowProps extends PropertyMetricProps {
   label: ReactNode;
   value: string;
+  /**
+   * The committed color. Given `onInput` as well, it fires once the picker
+   * closes; on its own it fires on every move inside it, which is what a row
+   * with one callback has always done.
+   */
   onChange: (next: string) => void;
+  /**
+   * The live color, fired continuously while the picker is open. Pass it
+   * alongside `onChange` when the write is expensive — cheap state here, the
+   * costly work there. Mirrors `<Slider>`'s `onInput` / `onChange` pair.
+   */
+  onInput?: (next: string) => void;
   /** 0..1 alpha. When provided, a translucent slider renders beneath the swatch. */
   alpha?: number;
+  /** The committed alpha, on the same terms as `onChange`. */
   onAlphaChange?: (next: number) => void;
+  /** The live alpha, on the same terms as `onInput`. */
+  onAlphaInput?: (next: number) => void;
   /**
    * Render the alpha track as inert (dimmed, no thumb, not-allowed cursor).
    * Use when the color's consumer drops alpha so the affordance reads dead.
@@ -461,8 +491,10 @@ export function ColorRow({
   label,
   value,
   onChange,
+  onInput,
   alpha,
   onAlphaChange,
+  onAlphaInput,
   alphaDisabled,
   layout,
   description,
@@ -471,6 +503,12 @@ export function ColorRow({
   align,
 }: ColorRowProps) {
   const showAlpha = alpha != null;
+  const liveColor = onInput ?? onChange;
+  const color = useCommitListener(onInput && ((raw) => onChange(raw)));
+  const liveAlpha = onAlphaInput ?? onAlphaChange;
+  const alphaRange = useCommitListener(
+    onAlphaInput && onAlphaChange && ((raw) => onAlphaChange(Number(raw))),
+  );
   return (
     <PropertyRow
       span={span}
@@ -481,9 +519,15 @@ export function ColorRow({
       density={density}
       align={align}
     >
-      <input type="color" value={value} onChange={(e) => onChange(e.target.value)} />
+      <input
+        ref={color}
+        type="color"
+        value={value}
+        onChange={(e) => liveColor(e.target.value)}
+      />
       {showAlpha && (
         <input
+          ref={alphaRange}
           type="range"
           className={`${shared.range} ${shared.alpha} ${s.alpha}`}
           min={0}
@@ -491,7 +535,7 @@ export function ColorRow({
           step={0.01}
           value={alpha}
           disabled={alphaDisabled}
-          onChange={(e) => onAlphaChange?.(Number(e.target.value))}
+          onChange={(e) => liveAlpha?.(Number(e.target.value))}
         />
       )}
     </PropertyRow>
@@ -586,7 +630,18 @@ export function TextRow({
 export interface NumberRowProps extends PropertyMetricProps {
   label: ReactNode;
   value: number;
+  /**
+   * The committed value. Given `onInput` as well, it fires on blur or Enter;
+   * on its own it fires on every keystroke, which is what a row with one
+   * callback has always done.
+   */
   onChange: (next: number) => void;
+  /**
+   * The live value, fired per keystroke. Pass it alongside `onChange` when the
+   * write is expensive — cheap state here, the costly work there. Mirrors
+   * `<Slider>`'s `onInput` / `onChange` pair.
+   */
+  onInput?: (next: number) => void;
   min?: number;
   max?: number;
   step?: number;
@@ -609,6 +664,7 @@ export function NumberRow({
   label,
   value,
   onChange,
+  onInput,
   min,
   max,
   step,
@@ -620,8 +676,15 @@ export function NumberRow({
   density,
   align,
 }: NumberRowProps) {
+  const live = onInput ?? onChange;
+  const field = useCommitListener(onInput && ((raw) => {
+    if (raw === '') return;
+    const n = Number(raw);
+    if (Number.isFinite(n)) onChange(n);
+  }));
   const input = (
     <input
+      ref={field}
       type="number"
       value={value}
       min={min}
@@ -632,7 +695,7 @@ export function NumberRow({
         const raw = e.target.value;
         if (raw === '') return;
         const n = Number(raw);
-        if (Number.isFinite(n)) onChange(n);
+        if (Number.isFinite(n)) live(n);
       }}
     />
   );
