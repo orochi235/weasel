@@ -14,20 +14,6 @@ import { CAM_SCALE } from '../platformer/camera';
 // captures those views without touching the demo.
 const paintedViews: View[] = [];
 
-// The scene's own store subscription inside SceneCanvas commits once per
-// mutation, which would mask the camera entirely. Freezing the per-frame sync
-// leaves the camera as the only thing that could commit.
-const flags = vi.hoisted(() => ({ freezeScene: false }));
-vi.mock('../platformer/sceneWorld', async (importOriginal) => {
-  const real = await importOriginal<typeof import('../platformer/sceneWorld')>();
-  return {
-    ...real,
-    syncScene: (...args: Parameters<typeof real.syncScene>) => {
-      if (!flags.freezeScene) real.syncScene(...args);
-    },
-  };
-});
-
 vi.mock('../platformer/skin', async (importOriginal) => {
   const real = await importOriginal<typeof import('../platformer/skin')>();
   return {
@@ -54,7 +40,6 @@ beforeAll(() => {
 afterEach(() => {
   vi.useRealTimers();
   paintedViews.length = 0;
-  flags.freezeScene = false;
 });
 
 // jsdom drives rAF off a setInterval, so faking intervals puts the frame clock
@@ -109,7 +94,6 @@ describe('SceneScrollerDemo', () => {
     // On a real clock the seven frames below can outlast the demo's 200 ms
     // stats readout, whose commit then lands on this count.
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
-    flags.freezeScene = true;
     let commits = 0;
     render(
       <Profiler id="scroller" onRender={() => { commits++; }}>

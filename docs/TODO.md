@@ -868,9 +868,8 @@ What it surfaced:
   out — closed 2026-09-05.** Those were the ~100–110 commits/s in the table
   above. The scene subscription now calls `requestRedraw()` instead of
   committing, so the twin pays no render per frame write.
-  `apps/site/demos/__tests__/SceneScrollerDemo.test.tsx` still freezes
-  `syncScene` to isolate the camera; it no longer has to, and the mock can go
-  when someone next touches that file.
+  `apps/site/demos/__tests__/SceneScrollerDemo.test.tsx` asserts it: the demo
+  writes 27 poses a frame and the Profiler counts no commit.
 
 - **(P2) A 60 Hz loop has no non-recording way to write.** Every mutation is an
   undo entry; `scene.batch` reduces a frame to one entry, which is still 120 per
