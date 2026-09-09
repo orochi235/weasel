@@ -13,7 +13,7 @@ import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import {
   MAX_VERTICES_PER_BATCH, SOLID_LARGE_RING_SIZE, SOLID_RING_SIZE,
-  SOLID_RING_SLOT_VERTICES,
+  SOLID_RING_SLOT_VERTICES, FLOATS_PER_VERTEX,
 } from './drawBatch';
 
 const ARRAY_BUFFER = 0x8892;
@@ -113,12 +113,12 @@ describe('renderer — consecutive solid-fill batching', () => {
       (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
     )!;
     const verts = upload.args[2] as Float32Array;
-    expect(upload.args[4]).toBe(72); // 2 rects × 4 verts × 9 floats
+    expect(upload.args[4]).toBe(2 * 4 * FLOATS_PER_VERTEX); // 2 rects × 4 verts
     // First rect's four corners, position pairs only.
     const positions = (rectIndex: number): number[] => {
       const out: number[] = [];
       for (let v = 0; v < 4; v++) {
-        const at = rectIndex * 36 + v * 9;
+        const at = (rectIndex * 4 + v) * FLOATS_PER_VERTEX;
         out.push(verts[at], verts[at + 1]);
       }
       return out;
@@ -133,7 +133,7 @@ describe('renderer — consecutive solid-fill batching', () => {
       (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
     )!.args[2] as Float32Array;
     expect(Array.from(verts.slice(2, 6))).toEqual([1, 0, 0, 1]);
-    expect(Array.from(verts.slice(4 * 9 + 2, 4 * 9 + 6))).toEqual([0, 0, 1, 1]);
+    expect(Array.from(verts.slice(4 * FLOATS_PER_VERTEX + 2, 4 * FLOATS_PER_VERTEX + 6))).toEqual([0, 0, 1, 1]);
     // Anything but white here would tint the whole batch.
     const uColor = r._batchFill().uniform('u_color');
     const sent = recorder.calls.filter((c) => c.name === 'uniform4f' && c.args[0] === uColor);
@@ -181,8 +181,9 @@ describe('renderer — consecutive solid-fill batching', () => {
     )!;
     const verts = upload.args[2] as Float32Array;
     const runs: string[] = [];
-    for (let v = 0; v < (upload.args[4] as number) / 9; v++) {
-      const color = `${verts[v * 9 + 2]},${verts[v * 9 + 3]},${verts[v * 9 + 4]}`;
+    for (let v = 0; v < (upload.args[4] as number) / FLOATS_PER_VERTEX; v++) {
+      const at = v * FLOATS_PER_VERTEX;
+      const color = `${verts[at + 2]},${verts[at + 3]},${verts[at + 4]}`;
       if (runs[runs.length - 1] !== color) runs.push(color);
     }
     expect(runs).toEqual(['1,0,0', '0,0,0', '1,0,0']);
@@ -225,10 +226,10 @@ describe('renderer — consecutive solid-fill batching', () => {
       (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
     )!.args[2] as Float32Array;
     // Middle rect: x 20 + tx 30, y 0 + ty 40.
-    expect(Array.from(verts.slice(4 * 9, 4 * 9 + 2))).toEqual([50, 40]);
+    expect(Array.from(verts.slice(4 * FLOATS_PER_VERTEX, 4 * FLOATS_PER_VERTEX + 2))).toEqual([50, 40]);
     // ...and its neighbours are untransformed in the same buffer.
     expect(Array.from(verts.slice(0, 2))).toEqual([0, 0]);
-    expect(Array.from(verts.slice(8 * 9, 8 * 9 + 2))).toEqual([40, 0]);
+    expect(Array.from(verts.slice(8 * FLOATS_PER_VERTEX, 8 * FLOATS_PER_VERTEX + 2))).toEqual([40, 0]);
   });
 
   it('rotates each corner rather than the batch', () => {
@@ -242,7 +243,9 @@ describe('renderer — consecutive solid-fill batching', () => {
       (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
     )!.args[2] as Float32Array;
     const corners: number[] = [];
-    for (let v = 0; v < 4; v++) corners.push(verts[v * 9], verts[v * 9 + 1]);
+    for (let v = 0; v < 4; v++) {
+      corners.push(verts[v * FLOATS_PER_VERTEX], verts[v * FLOATS_PER_VERTEX + 1]);
+    }
     expect(corners).toEqual([0, 0, 0, 10, -10, 10, -10, 0]);
   });
 
@@ -257,8 +260,8 @@ describe('renderer — consecutive solid-fill batching', () => {
       (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
     )!.args[2] as Float32Array;
     expect(verts[5]).toBe(1);
-    expect(verts[4 * 9 + 5]).toBeCloseTo(0.5, 6);
-    expect(verts[8 * 9 + 5]).toBe(1);
+    expect(verts[4 * FLOATS_PER_VERTEX + 5]).toBeCloseTo(0.5, 6);
+    expect(verts[8 * FLOATS_PER_VERTEX + 5]).toBe(1);
     // Folded means the uniform must not apply it a second time.
     const uAlpha = r._batchFill().uniform('u_alpha');
     const sent = recorder.calls.filter((c) => c.name === 'uniform1f' && c.args[0] === uAlpha);

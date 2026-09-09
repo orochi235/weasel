@@ -16,25 +16,33 @@
  * Colors ride the vertices because shapes in a run differ in color and a merged
  * draw has one set of uniforms — and so does the model transform, applied here
  * rather than uploaded, so shapes under different transforms still share a
- * draw. What the run cannot absorb is the texture: it samples one, which is why
- * an atlas is what makes a wall coalesce at all.
+ * draw. The texture rides them too, as a slot index into the units the flush
+ * binds: slot 0 is the white texel every solid samples, and `draw.ts` hands out
+ * the rest per bitmap. A run holds as many bitmaps as there are slots, so an
+ * atlas is what makes a wall of one sheet coalesce and a handful of loose
+ * bitmaps no longer breaks a run per command.
  */
 
 import type { Mesh } from './cache/mesh';
 import type { Mat3 } from './math/mat3';
 import type { ShaderProgram } from './shaders/ShaderProgram';
+import { WHITE_SLOT } from './shaders/batchFill';
 
 /** Vertices per flush. Caps staging memory; a longer run flushes in chunks,
  *  which stays correct because painter's order survives a flush. */
 export const MAX_VERTICES_PER_BATCH = 32768;
 
-const FLOATS_PER_VERTEX = 9; // vec2 a_position + vec4 a_vertexColor + vec2 a_uv + float a_post
+/** vec2 a_position + vec4 a_vertexColor + vec2 a_uv + float a_post + float
+ *  a_texSlot. Exported so the buffer-replay tests read fields by name rather
+ *  than by a stride they repeat — a hard-coded one silently reads a different
+ *  field when the vertex grows, instead of failing. */
+export const FLOATS_PER_VERTEX = 10;
 const INITIAL_VERTICES = 256;
 const INITIAL_INDICES = 384;
 
-/** UV of the white texel `draw.ts` binds when a run samples no image. Its
- *  texture is 1x1, so any coordinate lands on it; the center is the one that
- *  stays on it under either filter. */
+/** UV of the white texel bound at slot 0. Its texture is 1x1, so any
+ *  coordinate lands on it; the center is the one that stays on it under either
+ *  filter. */
 export const WHITE_U = 0.5;
 export const WHITE_V = 0.5;
 
@@ -122,6 +130,7 @@ export class DrawBatch {
   private readonly aColor: number;
   private readonly aUv: number;
   private readonly aPost: number;
+  private readonly aSlot: number;
 
   /** One ring per tier, cycled per flush. Slots are created on first use, so a
    *  renderer that flushes rarely allocates as few as it flushes. */
@@ -146,9 +155,12 @@ export class DrawBatch {
     const aColor = prog.attribute('a_vertexColor');
     const aUv = prog.attribute('a_uv');
     const aPost = prog.attribute('a_post');
-    if (aPos === undefined || aColor === undefined || aUv === undefined || aPost === undefined) {
+    const aSlot = prog.attribute('a_texSlot');
+    if (aPos === undefined || aColor === undefined || aUv === undefined
+        || aPost === undefined || aSlot === undefined) {
       throw new Error(
-        'DrawBatch: batch program is missing a_position / a_vertexColor / a_uv / a_post',
+        'DrawBatch: batch program is missing a_position / a_vertexColor / a_uv / '
+        + 'a_post / a_texSlot',
       );
     }
     this.gl = gl;
@@ -156,6 +168,7 @@ export class DrawBatch {
     this.aColor = aColor;
     this.aUv = aUv;
     this.aPost = aPost;
+    this.aSlot = aSlot;
   }
 
   get length(): number {
@@ -185,10 +198,10 @@ export class DrawBatch {
     const bx = ma * x1 + mc * y + mtx,  by = mb * x1 + md * y + mty;
     const cx = ma * x1 + mc * y1 + mtx, cy = mb * x1 + md * y1 + mty;
     const dx = ma * x + mc * y1 + mtx,  dy = mb * x + md * y1 + mty;
-    i = this.writeVertex(i, ax, ay, r, g, b, a, WHITE_U, WHITE_V, 1);
-    i = this.writeVertex(i, bx, by, r, g, b, a, WHITE_U, WHITE_V, 1);
-    i = this.writeVertex(i, cx, cy, r, g, b, a, WHITE_U, WHITE_V, 1);
-    this.writeVertex(i, dx, dy, r, g, b, a, WHITE_U, WHITE_V, 1);
+    i = this.writeVertex(i, ax, ay, r, g, b, a, WHITE_U, WHITE_V, 1, WHITE_SLOT);
+    i = this.writeVertex(i, bx, by, r, g, b, a, WHITE_U, WHITE_V, 1, WHITE_SLOT);
+    i = this.writeVertex(i, cx, cy, r, g, b, a, WHITE_U, WHITE_V, 1, WHITE_SLOT);
+    this.writeVertex(i, dx, dy, r, g, b, a, WHITE_U, WHITE_V, 1, WHITE_SLOT);
     this.pushQuadIndices();
   }
 
@@ -201,11 +214,14 @@ export class DrawBatch {
    * following — the same winding `pushRect` uses, which is what lets a run of
    * mixed rects and quads keep the canonical index pattern. The flips a command
    * asks for are already in the `u` / `v` the caller passes.
+   *
+   * `slot` is the texture unit the corners sample, which `draw.ts` assigns per
+   * bitmap within the run.
    */
   pushQuad(
     x: number, y: number, w: number, h: number, m: Mat3,
     u0: number, v0: number, u1: number, v1: number,
-    post: number,
+    post: number, slot: number,
   ): void {
     this.reserve(4, 6);
     let i = this.nVerts * FLOATS_PER_VERTEX;
@@ -216,10 +232,10 @@ export class DrawBatch {
     const bx = ma * x1 + mc * y + mtx,  by = mb * x1 + md * y + mty;
     const cx = ma * x1 + mc * y1 + mtx, cy = mb * x1 + md * y1 + mty;
     const dx = ma * x + mc * y1 + mtx,  dy = mb * x + md * y1 + mty;
-    i = this.writeVertex(i, ax, ay, 1, 1, 1, 1, u0, v0, post);
-    i = this.writeVertex(i, bx, by, 1, 1, 1, 1, u1, v0, post);
-    i = this.writeVertex(i, cx, cy, 1, 1, 1, 1, u1, v1, post);
-    this.writeVertex(i, dx, dy, 1, 1, 1, 1, u0, v1, post);
+    i = this.writeVertex(i, ax, ay, 1, 1, 1, 1, u0, v0, post, slot);
+    i = this.writeVertex(i, bx, by, 1, 1, 1, 1, u1, v0, post, slot);
+    i = this.writeVertex(i, cx, cy, 1, 1, 1, 1, u1, v1, post, slot);
+    this.writeVertex(i, dx, dy, 1, 1, 1, 1, u0, v1, post, slot);
     this.pushQuadIndices();
   }
 
@@ -246,7 +262,7 @@ export class DrawBatch {
       v[i++] = ma * x + mc * y + mtx;
       v[i++] = mb * x + md * y + mty;
       v[i++] = r; v[i++] = g; v[i++] = b; v[i++] = a;
-      v[i++] = WHITE_U; v[i++] = WHITE_V; v[i++] = 1;
+      v[i++] = WHITE_U; v[i++] = WHITE_V; v[i++] = 1; v[i++] = WHITE_SLOT;
     }
     const base = this.nVerts;
     const out = this.idx;
@@ -298,12 +314,12 @@ export class DrawBatch {
     i: number,
     x: number, y: number,
     r: number, g: number, b: number, a: number,
-    u: number, v: number, post: number,
+    u: number, v: number, post: number, slot: number,
   ): number {
     const out = this.verts;
     out[i] = x; out[i + 1] = y;
     out[i + 2] = r; out[i + 3] = g; out[i + 4] = b; out[i + 5] = a;
-    out[i + 6] = u; out[i + 7] = v; out[i + 8] = post;
+    out[i + 6] = u; out[i + 7] = v; out[i + 8] = post; out[i + 9] = slot;
     return i + FLOATS_PER_VERTEX;
   }
 
@@ -392,6 +408,8 @@ export class DrawBatch {
     gl.vertexAttribPointer(this.aUv, 2, gl.FLOAT, false, stride, 24);
     gl.enableVertexAttribArray(this.aPost);
     gl.vertexAttribPointer(this.aPost, 1, gl.FLOAT, false, stride, 32);
+    gl.enableVertexAttribArray(this.aSlot);
+    gl.vertexAttribPointer(this.aSlot, 1, gl.FLOAT, false, stride, 36);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices * 4, gl.DYNAMIC_DRAW);
     gl.bindVertexArray(null);

@@ -4,7 +4,7 @@ import { WeaselRenderer } from './WeaselRenderer';
 import { mat3 } from './math/mat3';
 import type { DrawCommand } from './DrawCommand';
 import { pushClip, popClip, drawGroup, dispatch, tryStageSolid, type DrawContext } from './draw';
-import { SOLID_RING_SIZE as IMAGE_RING_SIZE } from './drawBatch';
+import { SOLID_RING_SIZE as IMAGE_RING_SIZE, FLOATS_PER_VERTEX } from './drawBatch';
 
 /**
  * Build a DrawContext backed by a GL recorder. Mirrors what WeaselRenderer.render
@@ -199,7 +199,8 @@ describe('WeaselRenderer.render — kind: path with stroke', () => {
       (c) => c.name === 'bufferSubData' && c.args[0] === recorder.gl.ARRAY_BUFFER,
     )!.args[2] as Float32Array;
     expect(Array.from(verts.slice(2, 5))).toEqual([1, 0, 0]);   // fill red, first
-    expect(Array.from(verts.slice(4 * 9 + 2, 4 * 9 + 5))).toEqual([0, 0, 0]); // stroke black, after
+    expect(Array.from(verts.slice(4 * FLOATS_PER_VERTEX + 2, 4 * FLOATS_PER_VERTEX + 5)))
+      .toEqual([0, 0, 0]); // stroke black, after
   });
 
   it('skips when neither fill nor stroke is set', () => {
@@ -472,12 +473,13 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
   });
 
   it('gives each flush its own ring slot', () => {
-    // Two bitmaps, so the second cannot join the first's run.
+    // One bitmap at two filters, which is the break a second bitmap is not:
+    // MAG_FILTER is state on the texture object, so one draw cannot have it
+    // both ways however many slots the run has left.
     const a = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
-    const b = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
     r.render([
-      { kind: 'image', image: a, x: 0, y: 0, w: 16, h: 16 },
-      { kind: 'image', image: b, x: 0, y: 0, w: 16, h: 16 },
+      { kind: 'image', image: a, x: 0, y: 0, w: 16, h: 16, sampling: 'nearest' },
+      { kind: 'image', image: a, x: 0, y: 0, w: 16, h: 16, sampling: 'linear' },
     ]);
     // Replayed rather than counted: creating a slot binds its VAO too, so the
     // bind that matters is whichever was live when the draw went out.
@@ -513,10 +515,9 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
 
   it('frees the ring slots it took on dispose', () => {
     const a = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
-    const b = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
     r.render([
-      { kind: 'image', image: a, x: 0, y: 0, w: 16, h: 16 },
-      { kind: 'image', image: b, x: 0, y: 0, w: 16, h: 16 },
+      { kind: 'image', image: a, x: 0, y: 0, w: 16, h: 16, sampling: 'nearest' },
+      { kind: 'image', image: a, x: 0, y: 0, w: 16, h: 16, sampling: 'linear' },
     ]);
     recorder.reset();
 
@@ -2104,7 +2105,6 @@ describe('WeaselRenderer.render — kind: image, source rect and flip', () => {
    *  top-right, bottom-right, bottom-left. The batch stages into an array
    *  sized past the run and uploads a prefix of it, so this reads the first
    *  upload's first quad — one quad per render throughout. */
-  const FLOATS_PER_VERTEX = 9;
   const UV = 6;
 
   function imageQuad(): Float32Array {
