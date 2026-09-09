@@ -34,3 +34,6 @@ CLAUDE.local.md
 
 # Compiled helper for the cursor probe (macOS only)
 packages/cursor/scripts/probe/warp
+
+# Output collected from onto jobs run on other machines
+/.onto-out/

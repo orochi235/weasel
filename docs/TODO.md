@@ -668,12 +668,30 @@ intercepting the press that drags the body.
   Invalidation is pushed by the scene today, which is closed only under the
   triggers someone enumerated — the arc's reviews found three rounds of misses
   (ancestor moves, removal, a dependency appearing). Comparing the resolved
-  poses by *value* is instead closed under whatever `derivePath` actually read, and
-  needs no push at all for the existence cases. Not the reference comparison the
-  seam rejects: an override mutates its buffer in place, which defeats reference
-  equality but not value equality. Deferred because its cost is unmeasured — it
-  resolves every dependency's pose on every frame. Measure against a real diagram
-  before taking it.
+  poses by *value* needs no push at all for those cases. Not the reference
+  comparison the seam rejects: an override mutates its buffer in place, which
+  defeats reference equality but not value equality.
+
+  **Measured, and the cost is not the obstacle.** `tests/bench/derived-path.bench.ts`
+  runs a frame of derived paths against the diagram shapes a hand-authored
+  document reaches, then the same frame plus the resolve-and-compare pass a
+  value check needs before it can decide to skip:
+
+  | diagram            | frame now | with value compare |     added |
+  | ------------------ | --------: | -----------------: | --------: |
+  | 20 nodes, 30 edges |  0.0042ms |           0.0056ms |  0.0014ms |
+  | 100 nodes, 150 e.  |  0.0189ms |           0.0236ms |  0.0047ms |
+  | 500 nodes, 750 e.  |  0.0918ms |           0.1168ms |  0.0250ms |
+
+  A quarter more of a pass that is itself well under a tenth of a 16.7ms frame,
+  so "unmeasured cost" is no longer the reason to wait.
+
+  **What is left is that it cannot replace push invalidation, only back it
+  up.** A derivation is handed `DerivedDep`, so it can read a dependency's
+  `data`, its `layer` and its resolved `path` — which is why the scene
+  invalidates on `kit:setData` and `kit:setLayer` at all. A pose-only value
+  compare is not closed over any of those. Deciding this means deciding what a
+  derivation is allowed to read, not just how a pose is compared.
 
 - **(P3) `scenePoseLookup` does not honor `SceneSlotConfig.toPose`**, which
   `buildSceneLayer` shims onto the live adapter's `getPose`. A consumer using it

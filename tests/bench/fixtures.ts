@@ -295,3 +295,62 @@ export function alternatingRuns(count: number, glyphsPerRun: number, seed = 13):
   }
   return out;
 }
+
+/**
+ * A diagram: `nodes` boxes scattered over a `span`-square world, plus `edges`
+ * leaves whose path derives from two of them. The shape the derived-geometry
+ * questions are about — a per-frame `resolveDerivedPath` per edge, each
+ * reading two dependency poses.
+ *
+ * Edges name their ends by id, so the reverse dependents index carries a real
+ * fan-out: a box that several edges meet invalidates all of them.
+ */
+export function diagramScene(
+  nodes: number,
+  edges: number,
+  opts: { span?: number; seed?: number } = {},
+): { scene: BenchScene; edgeIds: NodeId[] } {
+  const { span = 2000, seed = 23 } = opts;
+  const rnd = mulberry32(seed);
+  const scene = emptyScene();
+  const boxes: NodeId[] = [];
+  for (let i = 0; i < nodes; i++) {
+    boxes.push(scene.add({
+      kind: 'leaf', layer: 'main', data: { n: i },
+      pose: { x: rnd() * span, y: rnd() * span, width: 120, height: 48 },
+    }));
+  }
+  const edgeIds: NodeId[] = [];
+  for (let i = 0; i < edges; i++) {
+    const from = boxes[Math.floor(rnd() * nodes)];
+    const to = boxes[Math.floor(rnd() * nodes)];
+    edgeIds.push(scene.add({
+      kind: 'leaf', layer: 'main', data: { n: nodes + i },
+      pose: { x: 0, y: 0, width: 0, height: 0 },
+      dependsOn: [from, to],
+      derivePath: benchConnect,
+    }));
+  }
+  return { scene, edgeIds };
+}
+
+/** A two-point route between its dependencies' centers. Deliberately the
+ *  cheapest plausible router, so a bench reports the machinery around it
+ *  rather than the geometry inside it. */
+export function benchConnect(
+  _node: unknown,
+  deps: readonly ({ pose: unknown } | undefined)[],
+): PolygonPath | null {
+  const a = deps[0]?.pose as BenchPose | undefined;
+  const b = deps[1]?.pose as BenchPose | undefined;
+  if (a === undefined || b === undefined) return null;
+  return {
+    kind: 'polygon',
+    commands: new Uint8Array([PATH_M, PATH_L]),
+    coords: new Float32Array([
+      a.x + a.width / 2, a.y + a.height / 2,
+      b.x + b.width / 2, b.y + b.height / 2,
+    ]),
+    fillRule: 'nonzero',
+  };
+}

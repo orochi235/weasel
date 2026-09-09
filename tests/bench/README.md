@@ -34,6 +34,7 @@ pull them into a correctness run.
 | `text-layout.bench.ts` | `layoutRuns` over glyph count, wrapped and unwrapped, and over run count at fixed glyph count; `cachedLayoutRuns` hit vs miss vs moving origin |
 | `scene-ops.bench.ts` | `add` / `add`+`remove` / `setPose` over container-chain depth; `renderOrder()` over node count, over depth, and over layer count at 10k nodes |
 | `hit-test.bench.ts` | `hitTestArea` over node count and query-rect size, for rect poses and for 24-gon silhouettes; `aabbOfPose`; `pointInPath` over vertex count |
+| `derived-path.bench.ts` | a frame of `resolveDerivedPath` over diagram size, as it runs now (memo hit) and with the resolve-and-value-compare pass a pull-invalidation scheme would need |
 
 Fixtures are in `fixtures.ts`, all seeded through `mulberry32` — no bare
 `Math.random()`, so two runs on the same machine are comparable.
