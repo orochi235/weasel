@@ -40,8 +40,7 @@ import type { Mesh } from './cache/mesh';
 import { outlineMesh } from './cache/outlineMeshCache';
 import { outlineStrokeMesh, quantizeEmWidth } from './cache/outlineStrokeMeshCache';
 import { strokeMesh } from './cache/strokeMeshCache';
-import { SolidBatch } from './solidBatch';
-import { ImageBatch } from './imageBatch';
+import { DrawBatch } from './drawBatch';
 import type { EffectTarget, EffectTargets } from './effects/EffectTargets';
 import { COMPOSITE_PROGRAM_ID } from './effects/composite';
 
@@ -52,8 +51,8 @@ export interface DrawContext {
   textSdf: ShaderProgram;
   textSdfR8: ShaderProgram;
   imageFill: ShaderProgram;
-  /** The `a_opacity` variant `flushImages` draws with. */
-  imageFillVOpacity: ShaderProgram;
+  /** The one program a batch flush draws with — `shaders/batchFill.ts`. */
+  batchFill: ShaderProgram;
   gradFill: ShaderProgram;
   patternFill: ShaderProgram;
   meshCache: GLMeshCache;
@@ -66,19 +65,16 @@ export interface DrawContext {
   ensureProgram?(id: string): ShaderProgram | null;
   quadVbo: WebGLBuffer | null;
   quadIbo: WebGLBuffer | null;
-  /** Staging for the consecutive-rect batch. Draws are deferred into it, so a
-   *  caller driving `dispatch` itself must `flushSolids` when the stream ends. */
-  solidBatch: SolidBatch;
-  /** Group state the staged rects were built under; `undefined` while nothing
-   *  is staged. Written only by `pushRect` / `flushSolids`. */
-  solidState?: StagedSolidState;
-  /** Staging for the consecutive-image batch. Deferred the same way, and
-   *  drained by the same `flushBatches`. */
-  imageBatch: ImageBatch;
-  /** What the staged quads sample and the state they were built under;
-   *  `undefined` while nothing is staged. At most one of `solidState` and this
-   *  is set: staging into either batch drains the other first. */
-  imageState?: StagedImageState;
+  /** Staging for the batch. Draws are deferred into it, so a caller driving
+   *  `dispatch` itself must `flushBatch` when the stream ends. */
+  drawBatch: DrawBatch;
+  /** Group state the staged run was built under, and what it samples;
+   *  `undefined` while nothing is staged. Written only by the push helpers
+   *  and `flushBatch`. */
+  batchState?: StagedBatchState;
+  /** 1x1 white texture, bound for a flush that samples no image so a solid
+   *  vertex's `texture() * color` is its color. */
+  whiteTexture: WebGLTexture | null;
   state: GroupState;
   widthCss: number;
   heightCss: number;
@@ -292,10 +288,10 @@ export function dispatch(ctx: DrawContext, cmd: DrawCommand): void {
   switch (cmd.kind) {
     case 'group':  return drawGroup(ctx, cmd);
     case 'path':   return drawPath(ctx, cmd);
-    case 'text':   flushBatches(ctx); return drawText(ctx, cmd);
+    case 'text':   flushBatch(ctx); return drawText(ctx, cmd);
     case 'image':  return drawImage(ctx, cmd);
     case 'sprites': return drawSprites(ctx, cmd);
-    case 'shader': flushBatches(ctx); return drawShader(ctx, cmd);
+    case 'shader': flushBatch(ctx); return drawShader(ctx, cmd);
   }
 }
 
@@ -465,7 +461,7 @@ function drawGroupWithEffects(
 ): void {
   const gl = ctx.gl;
   // Anything staged belongs to the parent's buffer, not this one.
-  flushBatches(ctx);
+  flushBatch(ctx);
 
   const parentTarget = ctx.renderTarget ?? null;
   const parentClipDepth = ctx.clipDepth;
@@ -483,7 +479,7 @@ function drawGroupWithEffects(
   gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
 
   for (const child of cmd.children) dispatch(ctx, child);
-  flushBatches(ctx);
+  flushBatch(ctx);
 
   // Passes replace rather than blend: each writes every texel of its target
   // from the whole of its source.
@@ -674,12 +670,21 @@ function drawPathFill(ctx: DrawContext, cmd: PathDrawCommand): void {
  * values instead. Transform is absent because it rides the vertices; `alpha`
  * is 1 whenever it rode them too.
  */
-interface StagedSolidState {
+interface StagedBatchState {
   alpha: number;
   colorMatrix: Float32Array;
   clipDepth: number;
   /** Whether group alpha folded into the vertex colors. */
   foldsAlpha: boolean;
+  /**
+   * What the run samples, by identity — `GLImageCache` keys textures by the
+   * bitmap. Absent until an image quad joins: solid geometry samples the white
+   * texel and so can start, continue or end a run of anything.
+   */
+  image?: ImageBitmap;
+  /** MAG_FILTER the run's texture is drawn under, set per flush because the
+   *  same bitmap can be drawn at both filters in one frame. */
+  sampling?: 'linear' | 'nearest';
 }
 
 /** Identity in row-major 4×5 leaves `src` untouched *and* leaves the shader's
@@ -695,9 +700,16 @@ function isIdentityColorMatrix(cm: Float32Array): boolean {
  * goes through `compose4x5`, which allocates a new array holding equal numbers.
  * Twenty float compares are nothing against the draw call they save.
  */
-function stagedStateIsLive(ctx: DrawContext, staged: StagedSolidState): boolean {
+function stagedStateIsLive(
+  ctx: DrawContext, staged: StagedBatchState,
+  image?: ImageBitmap, sampling?: 'linear' | 'nearest',
+): boolean {
   if (staged.clipDepth !== ctx.clipDepth) return false;
   if (!staged.foldsAlpha && staged.alpha !== ctx.state.alpha) return false;
+  if (image !== undefined && staged.image !== undefined
+      && (staged.image !== image || staged.sampling !== sampling)) {
+    return false;
+  }
   const colorMatrix = ctx.state.colorMatrix;
   return staged.colorMatrix === colorMatrix || sameValues(staged.colorMatrix, colorMatrix);
 }
@@ -734,26 +746,53 @@ function canBatchMesh(mesh: Mesh): boolean {
  * different number. There it stays a uniform, and a differing alpha breaks the
  * run as before.
  */
-function stageSolid(ctx: DrawContext, vertices: number): StagedSolidState {
-  flushImages(ctx);
-  if (ctx.solidState !== undefined && !stagedStateIsLive(ctx, ctx.solidState)) flushSolids(ctx);
-  if (ctx.solidBatch.wouldOverflow(vertices)) flushSolids(ctx);
-  if (ctx.solidState === undefined) {
+function stageSolid(ctx: DrawContext, vertices: number): StagedBatchState {
+  if (ctx.batchState !== undefined && !stagedStateIsLive(ctx, ctx.batchState)) flushBatch(ctx);
+  if (ctx.drawBatch.wouldOverflow(vertices)) flushBatch(ctx);
+  return openRun(ctx);
+}
+
+/** The staged state, opening a run under the live group state if none is. */
+function openRun(ctx: DrawContext): StagedBatchState {
+  if (ctx.batchState === undefined) {
     const colorMatrix = ctx.state.colorMatrix;
     const foldsAlpha = isIdentityColorMatrix(colorMatrix);
-    ctx.solidState = {
+    ctx.batchState = {
       alpha: foldsAlpha ? 1 : ctx.state.alpha,
       colorMatrix,
       clipDepth: ctx.clipDepth,
       foldsAlpha,
     };
   }
-  return ctx.solidState;
+  return ctx.batchState;
+}
+
+/**
+ * Open or continue a run for one more image quad, flushing first if the run
+ * would overflow or already samples a different bitmap.
+ *
+ * A run that has sampled nothing yet adopts this bitmap rather than breaking:
+ * that is what lets a wall's ground rect and its atlas quad share a draw.
+ */
+function stageImage(
+  ctx: DrawContext, image: ImageBitmap, sampling: 'linear' | 'nearest',
+): StagedBatchState {
+  if (ctx.batchState !== undefined
+      && !stagedStateIsLive(ctx, ctx.batchState, image, sampling)) {
+    flushBatch(ctx);
+  }
+  if (ctx.drawBatch.wouldOverflow(4)) flushBatch(ctx);
+  const staged = openRun(ctx);
+  if (staged.image === undefined) {
+    staged.image = image;
+    staged.sampling = sampling;
+  }
+  return staged;
 }
 
 /** Straight-alpha rgba for a solid paint under the staged state. */
 function stagedColor(
-  ctx: DrawContext, staged: StagedSolidState,
+  ctx: DrawContext, staged: StagedBatchState,
   paint: { color: string; opacity?: number },
 ): [number, number, number, number] {
   const [r, g, b, a] = resolveColor(paint.color);
@@ -767,7 +806,7 @@ function pushRect(
 ): void {
   const staged = stageSolid(ctx, 4);
   const [r, g, b, a] = stagedColor(ctx, staged, fill);
-  ctx.solidBatch.pushRect(
+  ctx.drawBatch.pushRect(
     rect.x, rect.y, rect.width, rect.height, ctx.state.transform, r, g, b, a,
   );
 }
@@ -779,7 +818,7 @@ function pushMesh(
 ): void {
   const staged = stageSolid(ctx, mesh.vertices.length >> 1);
   const [r, g, b, a] = stagedColor(ctx, staged, paint);
-  ctx.solidBatch.pushMesh(mesh, ctx.state.transform, r, g, b, a);
+  ctx.drawBatch.pushMesh(mesh, ctx.state.transform, r, g, b, a);
 }
 
 /**
@@ -800,7 +839,7 @@ export function tryStageSolid(
     pushMesh(ctx, mesh, paint);
     return true;
   }
-  flushBatches(ctx);
+  flushBatch(ctx);
   return false;
 }
 
@@ -820,111 +859,31 @@ export function tryStageSolid(
  * program's `u_color`-only math. `u_model` stays identity for the same reason —
  * the corners arrive already transformed.
  */
-export function flushSolids(ctx: DrawContext): void {
-  const batch = ctx.solidBatch;
-  const staged = ctx.solidState;
+export function flushBatch(ctx: DrawContext): void {
+  const batch = ctx.drawBatch;
+  const staged = ctx.batchState;
   if (batch.length === 0 || staged === undefined) return;
   const gl = ctx.gl;
-  const prog = ctx.pathFillVColor;
+  const prog = ctx.batchFill;
   gl.useProgram(prog.handle);
   const indexCount = batch.uploadAndBind();
   setProjAndModel(ctx, prog, BATCH_MODEL);
   setColorUniform(ctx, prog, 1, 1, 1, 1);
   setAlphaUniform(ctx, prog, staged.alpha);
   setColorMatrixUniforms(ctx, prog, staged.colorMatrix);
-  applyClipTest(ctx, staged.clipDepth);
-  gl.drawElements(gl.TRIANGLES, indexCount, gl.UNSIGNED_INT, 0);
-  // Not redundant: `drawShader` binds no VAO and points attributes at whatever
-  // is current, so a slot left bound here comes back corrupted a ring later.
-  gl.bindVertexArray(null);
-  batch.reset();
-  ctx.solidState = undefined;
-}
-
-/**
- * What the staged image quads sample, and the state they were built under.
- *
- * Deliberately short. Position, the group transform, per-command opacity and
- * group alpha all ride the vertices, so none of them breaks a run — which is
- * what lets a wall of sprites under one atlas coalesce into a single draw.
- * What is left is the state a batch genuinely cannot carry: one texture per
- * draw, one MAG_FILTER per texture, one stencil configuration, and a color
- * matrix that applies to the sampled texel and so cannot be folded into a
- * factor applied after it.
- */
-interface StagedImageState {
-  /** Identity, not contents: `GLImageCache` keys textures by the bitmap. */
-  image: ImageBitmap;
-  sampling: 'linear' | 'nearest';
-  colorMatrix: Float32Array;
-  clipDepth: number;
-}
-
-/** Whether the live state would draw the staged run identically. By value for
- *  the color matrix, for the reason `stagedStateIsLive` gives. */
-function stagedImageStateIsLive(
-  ctx: DrawContext, staged: StagedImageState,
-  image: ImageBitmap, sampling: 'linear' | 'nearest',
-): boolean {
-  if (staged.image !== image) return false;
-  if (staged.sampling !== sampling) return false;
-  if (staged.clipDepth !== ctx.clipDepth) return false;
-  const colorMatrix = ctx.state.colorMatrix;
-  return staged.colorMatrix === colorMatrix || sameValues(staged.colorMatrix, colorMatrix);
-}
-
-/**
- * Open or continue a run for one more quad, flushing first if the run would
- * overflow or if `cmd` cannot join what is staged.
- *
- * Drains the solid batch before opening a run of its own. Only one of the two
- * is ever live, so a flush of both is a flush of whichever had anything, and
- * painter's order across the two kinds is the ordinary consequence.
- */
-function stageImage(
-  ctx: DrawContext, image: ImageBitmap, sampling: 'linear' | 'nearest',
-): void {
-  flushSolids(ctx);
-  if (ctx.imageState !== undefined && !stagedImageStateIsLive(ctx, ctx.imageState, image, sampling)) {
-    flushImages(ctx);
+  if (staged.image !== undefined) {
+    ctx.imageCache.bind(staged.image, 0);
+    // Set per flush, not at upload: `GLImageCache` keys textures by bitmap
+    // identity, so the same bitmap can be drawn at both filters in one frame.
+    gl.texParameteri(
+      gl.TEXTURE_2D,
+      gl.TEXTURE_MAG_FILTER,
+      staged.sampling === 'nearest' ? gl.NEAREST : gl.LINEAR,
+    );
+  } else {
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, ctx.whiteTexture);
   }
-  if (ctx.imageBatch.wouldOverflow()) flushImages(ctx);
-  if (ctx.imageState === undefined) {
-    ctx.imageState = {
-      image, sampling,
-      colorMatrix: ctx.state.colorMatrix,
-      clipDepth: ctx.clipDepth,
-    };
-  }
-}
-
-/**
- * Draw the staged image run as one `drawElements`, under the state it was
- * staged under.
- *
- * `u_alpha` stays 1 and `u_model` identity: group alpha folded into
- * `a_opacity` and the transform into the corners, so re-applying either here
- * would apply it twice.
- */
-export function flushImages(ctx: DrawContext): void {
-  const batch = ctx.imageBatch;
-  const staged = ctx.imageState;
-  if (batch.length === 0 || staged === undefined) return;
-  const gl = ctx.gl;
-  const prog = ctx.imageFillVOpacity;
-  gl.useProgram(prog.handle);
-  const indexCount = batch.uploadAndBind();
-  setProjAndModel(ctx, prog, BATCH_MODEL);
-  setAlphaUniform(ctx, prog, 1);
-  setColorMatrixUniforms(ctx, prog, staged.colorMatrix);
-  ctx.imageCache.bind(staged.image, 0);
-  // Set per-flush, not at upload: GLImageCache keys textures by bitmap
-  // identity, so the same bitmap can be drawn at both filters in one frame.
-  gl.texParameteri(
-    gl.TEXTURE_2D,
-    gl.TEXTURE_MAG_FILTER,
-    staged.sampling === 'nearest' ? gl.NEAREST : gl.LINEAR,
-  );
   gl.uniform1i(prog.uniform('u_sampler')!, 0);
   applyClipTest(ctx, staged.clipDepth);
   gl.drawElements(gl.TRIANGLES, indexCount, gl.UNSIGNED_INT, 0);
@@ -932,14 +891,7 @@ export function flushImages(ctx: DrawContext): void {
   // is current, so a slot left bound here comes back corrupted a ring later.
   gl.bindVertexArray(null);
   batch.reset();
-  ctx.imageState = undefined;
-}
-
-/** Drain both batches. What every caller wants that is about to bind another
- *  program, paint something that must land on top, or end the stream. */
-export function flushBatches(ctx: DrawContext): void {
-  flushSolids(ctx);
-  flushImages(ctx);
+  ctx.batchState = undefined;
 }
 
 function expandAnchorColors(perAnchor: number[], handle: GLMeshHandle): Float32Array {
@@ -1253,7 +1205,7 @@ function rasterizePathToStencil(ctx: DrawContext, path: Path): void {
 export function pushClip(ctx: DrawContext, path: Path, newDepth: number): void {
   // First, not last: a run staged outside the clip would otherwise draw under
   // a mask it never had.
-  flushBatches(ctx);
+  flushBatch(ctx);
   const gl = ctx.gl;
   const ancestors = ancestorMask(newDepth - 1);
   const newBit = 1 << newDepth;
@@ -1287,7 +1239,7 @@ export function pushClip(ctx: DrawContext, path: Path, newDepth: number): void {
 export function popClip(ctx: DrawContext, path: Path, oldDepth: number): void {
   // First, not last: past here the mask is gone, and these pixels belonged
   // inside it.
-  flushBatches(ctx);
+  flushBatch(ctx);
   const gl = ctx.gl;
   // Re-enable stencil: child draw functions (evenodd/stenciled-stroke) disable
   // it at their end; we must set it before writing the clear pass.
@@ -1357,7 +1309,7 @@ function drawPathStroke(ctx: DrawContext, rawCmd: StrokedPathCommand): void {
   const stroke = cmd.stroke;
   const align = stroke.align ?? 'center';
   if (cmd.path.kind === 'polygon' && align !== 'center') {
-    flushBatches(ctx);
+    flushBatch(ctx);
     drawPathStrokeStenciled(ctx, cmd, align);
     return;
   }
@@ -2048,15 +2000,15 @@ export function disposeTextQuads(gl: WebGL2RenderingContext, prog: ShaderProgram
 }
 
 /**
- * Stage one image quad. Nothing reaches the GPU here — `flushImages` draws the
+ * Stage one image quad. Nothing reaches the GPU here — `flushBatch` draws the
  * run this joins.
  *
  * The upload has to happen now rather than at flush: a run is keyed on bitmap
- * identity, and `flushImages` binds a texture it assumes already exists.
+ * identity, and `flushBatch` binds a texture it assumes already exists.
  */
 function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
   ctx.imageCache.upload(cmd.image, cmd.image);
-  stageImage(ctx, cmd.image, cmd.sampling ?? 'linear');
+  const staged = stageImage(ctx, cmd.image, cmd.sampling ?? 'linear');
 
   // Sampling window: the whole bitmap unless `source` narrows it, with the
   // flips applied by swapping the ends rather than moving the quad.
@@ -2070,10 +2022,13 @@ function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
   if (cmd.flipX) { const t = u0; u0 = u1; u1 = t; }
   if (cmd.flipY) { const t = v0; v0 = v1; v1 = t; }
 
-  ctx.imageBatch.pushQuad(
+  ctx.drawBatch.pushQuad(
     cmd.x, cmd.y, cmd.w, cmd.h, ctx.state.transform,
     u0, v0, u1, v1,
-    (cmd.opacity ?? 1) * ctx.state.alpha,
+    // Group alpha rides the vertices only where it rode the solid colors too:
+    // with a real color matrix in the run it is `u_alpha`, and folding it here
+    // as well would apply it twice.
+    (cmd.opacity ?? 1) * (staged.foldsAlpha ? ctx.state.alpha : 1),
   );
 }
 
@@ -2092,18 +2047,19 @@ function drawSprites(ctx: DrawContext, cmd: SpritesDrawCommand): void {
 
   ctx.imageCache.upload(cmd.image, cmd.image);
   const sampling = cmd.sampling ?? 'linear';
-  stageImage(ctx, cmd.image, sampling);
+  let staged = stageImage(ctx, cmd.image, sampling);
 
-  const batch = ctx.imageBatch;
+  const batch = ctx.drawBatch;
   const m = ctx.state.transform;
-  const groupAlpha = ctx.state.alpha;
+  let groupAlpha = staged.foldsAlpha ? ctx.state.alpha : 1;
   const tw = cmd.image.width;
   const th = cmd.image.height;
 
   for (let s = 0, i = 0; s < count; s++, i += SPRITE_STRIDE) {
-    if (batch.wouldOverflow()) {
-      flushImages(ctx);
-      stageImage(ctx, cmd.image, sampling);
+    if (batch.wouldOverflow(4)) {
+      flushBatch(ctx);
+      staged = stageImage(ctx, cmd.image, sampling);
+      groupAlpha = staged.foldsAlpha ? ctx.state.alpha : 1;
     }
     const sx = data[i + 4], sy = data[i + 5], sw = data[i + 6], sh = data[i + 7];
     batch.pushQuad(

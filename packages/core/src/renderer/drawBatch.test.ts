@@ -14,7 +14,7 @@ import type { DrawCommand } from './DrawCommand';
 import {
   MAX_VERTICES_PER_BATCH, SOLID_LARGE_RING_SIZE, SOLID_RING_SIZE,
   SOLID_RING_SLOT_VERTICES,
-} from './solidBatch';
+} from './drawBatch';
 
 const ARRAY_BUFFER = 0x8892;
 const ELEMENT_ARRAY_BUFFER = 0x8893;
@@ -75,7 +75,7 @@ describe('renderer — consecutive solid-fill batching', () => {
   it('merges a run of solid rects into one draw', () => {
     r.render([rect(0), rect(20), rect(40)]);
     expect(draws()).toEqual([18]); // 3 rects × 6 indices
-    expect(drawPrograms()).toEqual([r._pathFillVColor().handle]);
+    expect(drawPrograms()).toEqual([r._batchFill().handle]);
   });
 
   it('merges across the no-op wrapper groups the scene emits', () => {
@@ -96,7 +96,7 @@ describe('renderer — consecutive solid-fill batching', () => {
     // The group's run is still staged when the group pops. What breaks it is
     // the rect that follows, by which point the group's color matrix is off the
     // stack — the flush has to use it anyway or the rect draws untinted.
-    const uBias = r._pathFillVColor().uniform('u_colorBias');
+    const uBias = r._batchFill().uniform('u_colorBias');
     const biasAtDraw: number[] = [];
     let pending = 0;
     for (const c of recorder.calls) {
@@ -113,12 +113,12 @@ describe('renderer — consecutive solid-fill batching', () => {
       (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
     )!;
     const verts = upload.args[2] as Float32Array;
-    expect(upload.args[4]).toBe(48); // 2 rects × 4 verts × 6 floats
+    expect(upload.args[4]).toBe(72); // 2 rects × 4 verts × 9 floats
     // First rect's four corners, position pairs only.
     const positions = (rectIndex: number): number[] => {
       const out: number[] = [];
       for (let v = 0; v < 4; v++) {
-        const at = rectIndex * 24 + v * 6;
+        const at = rectIndex * 36 + v * 9;
         out.push(verts[at], verts[at + 1]);
       }
       return out;
@@ -133,9 +133,9 @@ describe('renderer — consecutive solid-fill batching', () => {
       (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
     )!.args[2] as Float32Array;
     expect(Array.from(verts.slice(2, 6))).toEqual([1, 0, 0, 1]);
-    expect(Array.from(verts.slice(26, 30))).toEqual([0, 0, 1, 1]);
+    expect(Array.from(verts.slice(4 * 9 + 2, 4 * 9 + 6))).toEqual([0, 0, 1, 1]);
     // Anything but white here would tint the whole batch.
-    const uColor = r._pathFillVColor().uniform('u_color');
+    const uColor = r._batchFill().uniform('u_color');
     const sent = recorder.calls.filter((c) => c.name === 'uniform4f' && c.args[0] === uColor);
     expect(sent).toHaveLength(1);
     expect(sent[0].args.slice(1)).toEqual([1, 1, 1, 1]);
@@ -157,9 +157,9 @@ describe('renderer — consecutive solid-fill batching', () => {
     r.render([rect(0), gradientRect(20), rect(40)]);
     const progs = drawPrograms();
     expect(progs).toHaveLength(3);
-    expect(progs[0]).toBe(r._pathFillVColor().handle);
+    expect(progs[0]).toBe(r._batchFill().handle);
     expect(progs[1]).toBe(r._gradFill().handle);
-    expect(progs[2]).toBe(r._pathFillVColor().handle);
+    expect(progs[2]).toBe(r._batchFill().handle);
     expect(draws()).toEqual([6, 6, 6]);
   });
 
@@ -181,8 +181,8 @@ describe('renderer — consecutive solid-fill batching', () => {
     )!;
     const verts = upload.args[2] as Float32Array;
     const runs: string[] = [];
-    for (let v = 0; v < (upload.args[4] as number) / 6; v++) {
-      const color = `${verts[v * 6 + 2]},${verts[v * 6 + 3]},${verts[v * 6 + 4]}`;
+    for (let v = 0; v < (upload.args[4] as number) / 9; v++) {
+      const color = `${verts[v * 9 + 2]},${verts[v * 9 + 3]},${verts[v * 9 + 4]}`;
       if (runs[runs.length - 1] !== color) runs.push(color);
     }
     expect(runs).toEqual(['1,0,0', '0,0,0', '1,0,0']);
@@ -225,10 +225,10 @@ describe('renderer — consecutive solid-fill batching', () => {
       (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
     )!.args[2] as Float32Array;
     // Middle rect: x 20 + tx 30, y 0 + ty 40.
-    expect(Array.from(verts.slice(24, 26))).toEqual([50, 40]);
+    expect(Array.from(verts.slice(4 * 9, 4 * 9 + 2))).toEqual([50, 40]);
     // ...and its neighbours are untransformed in the same buffer.
     expect(Array.from(verts.slice(0, 2))).toEqual([0, 0]);
-    expect(Array.from(verts.slice(48, 50))).toEqual([40, 0]);
+    expect(Array.from(verts.slice(8 * 9, 8 * 9 + 2))).toEqual([40, 0]);
   });
 
   it('rotates each corner rather than the batch', () => {
@@ -242,7 +242,7 @@ describe('renderer — consecutive solid-fill batching', () => {
       (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
     )!.args[2] as Float32Array;
     const corners: number[] = [];
-    for (let v = 0; v < 4; v++) corners.push(verts[v * 6], verts[v * 6 + 1]);
+    for (let v = 0; v < 4; v++) corners.push(verts[v * 9], verts[v * 9 + 1]);
     expect(corners).toEqual([0, 0, 0, 10, -10, 10, -10, 0]);
   });
 
@@ -257,10 +257,10 @@ describe('renderer — consecutive solid-fill batching', () => {
       (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
     )!.args[2] as Float32Array;
     expect(verts[5]).toBe(1);
-    expect(verts[29]).toBeCloseTo(0.5, 6);
-    expect(verts[53]).toBe(1);
+    expect(verts[4 * 9 + 5]).toBeCloseTo(0.5, 6);
+    expect(verts[8 * 9 + 5]).toBe(1);
     // Folded means the uniform must not apply it a second time.
-    const uAlpha = r._pathFillVColor().uniform('u_alpha');
+    const uAlpha = r._batchFill().uniform('u_alpha');
     const sent = recorder.calls.filter((c) => c.name === 'uniform1f' && c.args[0] === uAlpha);
     expect(sent).toHaveLength(1);
     expect(sent[0].args[1]).toBe(1);
@@ -278,7 +278,7 @@ describe('renderer — consecutive solid-fill batching', () => {
       ],
     } as unknown as DrawCommand]);
     expect(draws()).toEqual([6, 6]);
-    const uAlpha = r._pathFillVColor().uniform('u_alpha');
+    const uAlpha = r._batchFill().uniform('u_alpha');
     const sent = recorder.calls
       .filter((c) => c.name === 'uniform1f' && c.args[0] === uAlpha)
       .map((c) => c.args[1]);
@@ -394,7 +394,7 @@ describe('renderer — consecutive solid-fill batching', () => {
       for (const c of recorder.calls) {
         if (c.name === 'bindVertexArray') vao = c.args[0];
         if (c.name === 'useProgram') prog = c.args[0];
-        if (c.name === 'drawElements' && prog === r._pathFillVColor().handle) {
+        if (c.name === 'drawElements' && prog === r._batchFill().handle) {
           boundAtBatchDraw.push(vao);
         }
       }
@@ -500,16 +500,15 @@ describe('renderer — consecutive solid-fill batching', () => {
       expect(indexUploads()).toHaveLength(SOLID_RING_SIZE);
     });
 
-    it('uploads again when the slot comes round holding a different count', () => {
-      // A full turn of one-rect flushes, then slot 0 again with two rects.
+    it('serves any quad count from the pattern a slot already holds', () => {
+      // A slot is written to its capacity, not to the flush that first used
+      // it, and the pattern for N quads is a prefix of the pattern for any
+      // larger N — so slot 0 coming round with two rects needs nothing.
       r.render([
         ...alternating(SOLID_RING_SIZE),
         rect(0), rect(20), gradientRect(40),
       ]);
-      const uploads = indexUploads();
-      expect(uploads).toHaveLength(SOLID_RING_SIZE + 1);
-      // Twelve indices, where the slot held the six of a single rect.
-      expect(uploads[uploads.length - 1].args[4]).toBe(12);
+      expect(indexUploads()).toHaveLength(SOLID_RING_SIZE);
     });
 
     it('uploads for a flush carrying a mesh, whose indices no count describes', () => {
@@ -550,13 +549,14 @@ describe('renderer — consecutive solid-fill batching', () => {
       const alternating = (flushes: number): DrawCommand[] =>
         Array.from({ length: flushes }, (_, i) => [rect(i * 20), gradientRect(i * 20 + 10)]).flat();
       r.render(alternating(4));
-      expect(colorWrites(r._pathFillVColor())).toEqual([[1, 1, 1, 1]]);
+      expect(colorWrites(r._batchFill())).toEqual([[1, 1, 1, 1]]);
     });
 
-    it('sends the batch its white back after another draw moves the uniform', () => {
-      // A per-anchor-colored stroke is the other writer of u_color on this
-      // program. The batch runs either side of it, so a cache that skipped on
-      // "written once" would paint the second run in the stroke's blue.
+    it('is the only writer of u_color on its own program', () => {
+      // What makes one write a frame safe. A per-anchor-colored stroke sends a
+      // real color, and it has to land on a different program — the same one
+      // would leave the batch's cache holding a white GL no longer has, and
+      // the next run would paint in the stroke's blue.
       const vcolorStroke = {
         kind: 'path',
         path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 },
@@ -568,11 +568,8 @@ describe('renderer — consecutive solid-fill batching', () => {
         },
       } as unknown as DrawCommand;
       r.render([rect(0), vcolorStroke, rect(40)]);
-      const writes = colorWrites(r._pathFillVColor());
-      expect(writes[0]).toEqual([1, 1, 1, 1]);
-      expect(writes[writes.length - 1]).toEqual([1, 1, 1, 1]);
-      // Something in between moved it, or this test is not exercising the seam.
-      expect(writes.length).toBeGreaterThan(2);
+      expect(colorWrites(r._batchFill())).toEqual([[1, 1, 1, 1]]);
+      expect(colorWrites(r._pathFillVColor()).length).toBeGreaterThan(0);
     });
 
     it('does not carry a cached color into the next frame', () => {
@@ -581,7 +578,7 @@ describe('renderer — consecutive solid-fill batching', () => {
       r.render([rect(0)]);
       // GL state survives the frame, but the cache is keyed on a DrawContext
       // built fresh per render, so it re-sends rather than assume.
-      expect(colorWrites(r._pathFillVColor())).toEqual([[1, 1, 1, 1]]);
+      expect(colorWrites(r._batchFill())).toEqual([[1, 1, 1, 1]]);
     });
   });
 });
