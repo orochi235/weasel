@@ -47,3 +47,41 @@ describe('markers on a path node', () => {
     expect(inkOf(marked)!.outset).toBeGreaterThan(inkOf(plain)!.outset);
   });
 });
+
+/** A derived node paints the path handed to it on the paint context rather
+ *  than one on its own data — an edge in a diagram, whose geometry is computed
+ *  from the two nodes it joins. */
+function derivedNodeWith(stroke: unknown) {
+  return {
+    id: 'e1',
+    data: { fill: null, stroke },
+    dependsOn: ['a', 'b'],
+    derivePath: () => LINE,
+  } as never;
+}
+
+describe('markers on a derived path', () => {
+  const STROKE = { paint: { fill: 'solid', color: '#000' }, width: 2 };
+  const paint = (node: unknown) =>
+    findNodeShape(node as never)!.paint!(node as never, POSE as never, { derivedPath: LINE } as never);
+
+  it('is painted by the derived painter, not the path one', () => {
+    expect(findNodeShape(derivedNodeWith(STROKE) as never)!.id).toBe('kit:derived');
+  });
+
+  it('emits only the stroke command when no marker is set', () => {
+    expect(paint(derivedNodeWith(STROKE))).toHaveLength(1);
+  });
+
+  // The hit-test already reserves room for a marker on a derived node, so a
+  // dropped one is a stroke the pointer can reach past and nothing to see.
+  it('appends a command for the marker', () => {
+    expect(paint(derivedNodeWith({ ...STROKE, markerEnd: 'arrow' }))).toHaveLength(2);
+  });
+
+  it('draws the marker after the stroke, so it sits on top', () => {
+    const cmds = paint(derivedNodeWith({ ...STROKE, markerStart: 'arrow', markerEnd: 'arrow' }));
+    expect(cmds).toHaveLength(3);
+    expect((cmds[0] as { stroke?: unknown }).stroke).toBeDefined();
+  });
+});

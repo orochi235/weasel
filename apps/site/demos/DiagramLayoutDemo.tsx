@@ -60,7 +60,7 @@ function DiagramLayoutInner() {
         pose: { x: 0, y: 0, width: 0, height: 0 },
         data: {
           diagram: { from: {}, to: {}, router: 'orthogonal' },
-          stroke: { paint: { color: INK }, width: 2 },
+          stroke: { paint: { color: INK }, width: 2, markerEnd: 'arrow' },
         },
         dependsOn: [from as never, to as never],
         derivePath: EDGE_DERIVE_PATH as never,

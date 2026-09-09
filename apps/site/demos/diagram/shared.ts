@@ -7,7 +7,7 @@
  * default to the four edge midpoints of the node's own bounds, so a node has
  * to say nothing to be connectable.
  */
-import type { AddNodeSpec } from '@weasel-js/core';
+import type { AddNodeSpec, Stroke } from '@weasel-js/core';
 import type { DiagramEdge, DiagramNode } from '@weasel-js/diagram';
 
 export const INK = '#7ba7c7';
@@ -18,7 +18,7 @@ export const LABEL = '#dbe7f2';
 export interface Data {
   diagram?: DiagramNode | DiagramEdge;
   fill?: { color: string };
-  stroke?: { paint: { color: string }; width: number };
+  stroke?: Stroke;
   text?: string;
   style?: { fontFamily: string; fontSize: number };
 }

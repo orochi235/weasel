@@ -105,6 +105,13 @@ export interface ConnectActionOptions<TPose> {
 }
 
 const DEFAULT_SNAP = 16;
+/** What a connect-authored edge is drawn with, when the consumer overrides
+ *  nothing. */
+export const DEFAULT_EDGE_STROKE: Stroke = {
+  paint: { color: '#7ba7c7' },
+  width: 2,
+  markerEnd: 'arrow',
+};
 const DEFAULT_ROUTER = 'straight';
 const PREVIEW_STROKE: Stroke = { paint: { color: '#7ba7c7' }, width: 2, dash: [4, 4] };
 
@@ -187,7 +194,10 @@ export function commitEdgeToScene(edge: PendingEdge, ctx: InvocationCtx): void {
     kind: 'leaf',
     layer: source?.layer ?? scene.layers[0]!.id,
     pose: { x: 0, y: 0, width: 0, height: 0 } as never,
-    data: { diagram: trait, stroke: { paint: { color: '#7ba7c7' }, width: 2 } } as never,
+    // An edge runs *from* one node *to* another, and a plain line does not say
+    // so. The arrowhead is an ordinary stroke marker, which is why nothing in
+    // this package draws one.
+    data: { diagram: trait, stroke: DEFAULT_EDGE_STROKE } as never,
     dependsOn: [edge.from.nodeId as never, edge.to.nodeId as never],
     // Without this the edge re-resolves on every dependency move and paints
     // nothing. `EDGE_DERIVE_PATH` rather than a fresh `edgeDerivePath()` so the

@@ -29,6 +29,7 @@ export type {
 } from './body';
 export {
   CONNECT_ACTION_ID,
+  DEFAULT_EDGE_STROKE,
   GRAB_PORT_ACTION_ID,
   commitEdgeToScene,
   connectBinding,

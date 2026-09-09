@@ -811,12 +811,18 @@ const DERIVED_PAINTER: NodeShapeEntry = {
     const declared = resolveNodeFill(d?.fill, strokeSpec === null ? DEFAULT_SHAPE_FILL : null);
     const fill = declared && resolveFillPattern(fillInPoseFrame(declared, box));
     const stroke = strokeSpec && strokeInPoseFrame(strokeSpec, box);
-    return [{
+    const cmd: DrawCommand = {
       kind: 'path',
       path,
       ...(fill ? { fill } : {}),
       ...(stroke ? { stroke } : {}),
-    }];
+    };
+    if (!stroke) return [cmd];
+    // The same marker pass `kit:path` runs, and for the same reason a diagram
+    // edge is a stroke like any other: an arrowhead is `markerEnd`, not
+    // geometry the router appends. `ink` already reserves the reach for one.
+    const width = resolveStrokeWidth(stroke.width ?? 1, 1);
+    return [cmd, ...markerDrawCommands(path, stroke, width, undefined)];
   },
   // The derived path *is* the silhouette, and it is already absolute — the
   // pose is a placeholder, so nothing here can be recovered from it. Without

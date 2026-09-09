@@ -58,7 +58,16 @@ all — so arc 6 went by without closing it either.
 
 ## Traps this work hit
 
-Arc 7's, first:
+Arrowheads:
+
+- **A stroke marker on a derived path was dropped by the painter, not by the
+  edge.** `kit:derived` emitted its stroke command and returned; `kit:path`
+  follows with a `markerDrawCommands` pass and it did not. Nothing warned, and
+  the derived painter's own `ink` had been reserving hit-test reach for a marker
+  it never drew. Markers and derived geometry landed in the same release and the
+  combination of the two was never rendered until now.
+
+Arc 7's:
 
 - **A demo that cannot show the feature it is about is a kit defect, not a demo
   problem.** `bodyTrait` put a row port at `u: 0` and the `w` compass port at
