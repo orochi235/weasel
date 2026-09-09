@@ -9,6 +9,7 @@
 export {
   bodyOutline,
   bodyTrait,
+  buildBody,
   canvasMeasure,
   layoutBody,
   measureBody,
@@ -16,10 +17,13 @@ export {
 } from './body';
 export type {
   BodyFloor,
+  BodyNodeSpec,
   BodySpec,
+  BuildBodyOptions,
   MeasureRowText,
   Row,
   RowBox,
+  RowNodeData,
   RowPort,
   RowTextStyle,
 } from './body';

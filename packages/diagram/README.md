@@ -27,6 +27,28 @@ npm install @weasel-js/diagram
 import { portsOf, COMPASS } from '@weasel-js/diagram';
 ```
 
+### Building a body
+
+A participant that should read as a flowchart box gets one from `buildBody`:
+the container carrying the trait, plus an ordinary text node per row, so the
+kit's own text painter draws them and editing and styling work unchanged.
+
+```ts
+const { specs } = buildBody<Data, 'main', Pose>(
+  { outline: 'diamond', rows: [{ kind: 'label', text: 'ready?' }] },
+  { x: 40, y: 40, width: 150, height: 56 },
+  {
+    id: 'check',
+    layer: 'main',
+    body: (trait) => ({ diagram: trait, stroke }),
+    row: (text) => (text === '' ? null : { text }),
+  },
+);
+```
+
+The rows measure a floor and the authored pose is grown to clear it, never
+shrunk — so resize, align, distribute, snapping and undo need no special case.
+
 ### Making ports grabbable
 
 `diagramPorts` returns the two halves of the connect gesture. Attach the layer

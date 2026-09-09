@@ -669,19 +669,18 @@ labels are what is left.
   resolves every dependency's pose on every frame. Measure against a real diagram
   before taking it.
 
+- **(P3) A row port's label is measured but never drawn.** `RowPort.label` feeds
+  `measureBody`'s floor, so a row of named ports makes its node wide enough for
+  them — and then nothing paints them. `layoutBody` returns the row's box; where
+  each port's label sits inside it is not computed anywhere, so `buildBody` has
+  nothing to emit a text node from. Needs a `layoutRowPorts(row, box)` giving one
+  label box per port, on the same terms `layoutBody` gives one box per row.
+
 - **(P2) `setDependsOn` op.** `dependsOn` is fixed at add time, so retargeting an
   edge is remove plus add — and switching a node between an id list and
   `'children'` is the same. The connect gesture landed without needing it: a new
   edge is one `add`. Dragging an *existing* edge's end onto a different node is
   what needs it, and that is the next thing anyone will ask for after connect.
-
-- **(P2) Two ports can land on the same point, and one of them is unreachable.**
-  `bodyTrait` anchors a `ports` row's own ports at `u: 0` and `u: 1`, which for a
-  row near the vertical middle puts them exactly where the `w` and `e` compass
-  ports already are. The demo's `scale` node paints six ports and shows four.
-  Whichever region is declared later wins the hit, so the other is grabbable
-  nowhere. Either the compass defaults should stand aside for a row port, or a
-  body carrying port rows should not also get the four defaults.
 
 - **(P3) `scenePoseLookup` does not honor `SceneSlotConfig.toPose`**, which
   `buildSceneLayer` shims onto the live adapter's `getPose`. A consumer using it

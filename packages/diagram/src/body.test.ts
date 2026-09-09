@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { bodyOutline, bodyTrait, layoutBody, measureBody, sizeToBody } from './body';
+import { bodyOutline, bodyTrait, buildBody, layoutBody, measureBody, sizeToBody } from './body';
 import { outlinePath } from './outline';
 import { portsOf } from './ports';
 import type { BodySpec, MeasureRowText } from './body';
@@ -162,6 +162,26 @@ describe('bodyTrait', () => {
     expect(large.at).toEqual(small.at);
   });
 
+  // Both sit on the same edge, and a row near the vertical middle puts one
+  // exactly on top of the other — where the later region wins the hit and the
+  // first is grabbable nowhere.
+  it('drops the compass port on whichever side a row port claims', () => {
+    const both = bodyTrait(spec([
+      { kind: 'ports', left: [{ id: 'in' }], right: [{ id: 'out' }], height: 40 },
+    ]), BOUNDS, measure);
+    expect(both.ports!.map((p) => p.id)).toEqual(['n', 's', 'in', 'out']);
+
+    const rightOnly = bodyTrait(spec([
+      { kind: 'ports', right: [{ id: 'out' }], height: 40 },
+    ]), BOUNDS, measure);
+    expect(rightOnly.ports!.map((p) => p.id)).toEqual(['n', 's', 'w', 'out']);
+  });
+
+  it('keeps all four when no row declares a port', () => {
+    const trait = bodyTrait(spec([{ kind: 'label', text: 'plain' }]), BOUNDS, measure);
+    expect(trait.ports!.map((p) => p.id)).toEqual(['n', 'e', 's', 'w']);
+  });
+
   it('carries a row port type through', () => {
     const trait = bodyTrait(spec([{ kind: 'ports', left: [{ id: 'in', type: 'num' }] }]), BOUNDS, measure);
     expect(trait.ports!.find((p) => p.id === 'in')!.type).toBe('num');
@@ -185,5 +205,54 @@ describe('bodyOutline', () => {
     const bounds: Bounds = { x: 0, y: 0, width: 10, height: 10 };
     expect(bodyOutline(spec([], { outline: 'diamond' }), bounds))
       .toEqual(outlinePath('diamond', bounds));
+  });
+});
+
+describe('buildBody', () => {
+  const at = { x: 10, y: 20, width: 40, height: 10 };
+  const body = (rows: BodySpec['rows'] = [{ kind: 'label', text: 'step' }]) =>
+    buildBody<{ text?: string }, 'main', typeof at>(spec(rows), at, {
+      layer: 'main',
+      id: 'step',
+      measure,
+      body: () => ({}),
+      row: (text) => (text === '' ? null : { text }),
+    });
+
+  it('grows the authored pose to the floor its rows measure', () => {
+    const { pose, specs } = body();
+    expect(pose).toEqual({ x: 10, y: 20, width: 40, height: 20 });
+    expect(specs[0]!.pose).toEqual(pose);
+  });
+
+  it('parents each row under the container, at the box `layoutBody` gives it', () => {
+    const { pose, specs } = body();
+    const boxes = layoutBody(spec([{ kind: 'label', text: 'step' }]), pose, measure);
+    expect(specs[1]).toMatchObject({
+      kind: 'leaf', parent: 'step', data: { text: 'step' },
+      pose: { x: boxes[0]!.x, y: boxes[0]!.y, width: boxes[0]!.width, height: boxes[0]!.height },
+    });
+  });
+
+  it('formats a field row as one string', () => {
+    const { specs } = body([{ kind: 'field', label: 'by', value: '2.0' }]);
+    expect(specs[1]!.data).toEqual({ text: 'by: 2.0' });
+  });
+
+  it('leaves out a row the consumer declines', () => {
+    const { specs } = body([
+      { kind: 'label', text: 'op' },
+      { kind: 'ports', left: [{ id: 'in' }] },
+    ]);
+    expect(specs.map((n) => n.kind)).toEqual(['container', 'leaf']);
+  });
+
+  it('hands the container the trait its rows imply', () => {
+    const specs = buildBody<{ diagram: unknown }, 'main', typeof at>(
+      spec([{ kind: 'ports', left: [{ id: 'in' }], height: 40 }]), at,
+      { layer: 'main', measure, body: (trait) => ({ diagram: trait }), row: () => null },
+    ).specs;
+    const trait = (specs[0]!.data as { diagram: { ports: { id: string }[] } }).diagram;
+    expect(trait.ports.map((p) => p.id)).toEqual(['n', 'e', 's', 'in']);
   });
 });

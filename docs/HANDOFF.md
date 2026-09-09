@@ -9,20 +9,15 @@ whose arc list is the plan. That spec is marked up with what landed — read its
 
 ## Where it stands
 
-Arcs 1, 1b, 2, 3, 5, 6 and most of 4 are in. `@weasel-js/diagram` is published
-at 1.4.3 and has a demo at `#diagram-nodes`
-(`apps/site/demos/DiagramNodesDemo.tsx`) where ports are grabbable, dragging one
-onto another authors an edge, and three buttons run `layered` / `tree` /
-`force`.
+Every arc is in except edge labels. `@weasel-js/diagram` is published at 1.4.3
+and has three demos — `#diagram-nodes` (bodies and ports), `#diagram-edges`
+(derived paths and the three routers) and `#diagram-layout` — sharing
+`apps/site/demos/diagram/shared.ts`.
 
-## Next: arc 7 — the demo, and edge labels
+## Next: edge labels
 
-Arc 7 is a demo per `docs/CLAUDE.md`'s demo conventions. `#diagram-nodes` now
-covers ports, edges, routers and layout in one; decide whether arc 7 is a second
-single-purpose demo or a trim of that one.
-
-Edge labels are the last piece of arc 4 and the one open design fork — see
-below.
+The last piece of arc 4, and the one open design fork — see below. Nothing else
+in the spec is outstanding.
 
 ## Decisions made in conversation that the code does not explain
 
@@ -63,7 +58,16 @@ all — so arc 6 went by without closing it either.
 
 ## Traps this work hit
 
-Arc 6's, first:
+Arc 7's, first:
+
+- **A demo that cannot show the feature it is about is a kit defect, not a demo
+  problem.** `bodyTrait` put a row port at `u: 0` and the `w` compass port at
+  `u: 0, v: 0.5`, so a ports row near the vertical middle stacked them — the
+  later region won the hit and the other was grabbable nowhere. The demo showed
+  four ports where six were declared, and looked correct. A row port on a side
+  now takes that side's compass default with it.
+
+Arc 6's:
 
 - **`Scene.setPose` does not cascade to children.** Poses are absolute, so
   moving a container leaves its subtree where it was — a built body walks out

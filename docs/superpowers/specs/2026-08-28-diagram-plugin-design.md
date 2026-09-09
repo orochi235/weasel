@@ -256,8 +256,15 @@ retired when this lands.
    integrator; its forces are local and naive O(n²), including a box-aware separation that
    charge alone cannot supply. **`force` is the one layout that is not idempotent** — a
    relaxation re-run from its own output keeps relaxing.
-7. **A demo per `docs/CLAUDE.md`'s demo conventions** — terse, single-purpose, on the platform
-   systems rather than around them.
+7. **Demos — landed.** One demo had accumulated every arc's feature, which is the thing the
+   conventions forbid, so it is three: `#diagram-nodes` (the outline vocabulary, the row kinds,
+   the ports a body implies), `#diagram-edges` (derived paths and the three routers, no port
+   layer), `#diagram-layout` (the three layouts). Two kit changes came out of trimming them.
+   `buildBody` absorbs the `layoutBody` walk every consumer would otherwise write by hand to
+   turn a `BodySpec` into scene nodes. And `bodyTrait` now drops the compass port on whichever
+   side a row port claims — both sat on the same edge, so a row near the vertical middle put
+   one exactly on top of `w` or `e` and the demo could not show the feature it was built to
+   show.
 
 ## Open question
 

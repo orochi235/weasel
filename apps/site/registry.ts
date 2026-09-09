@@ -558,12 +558,30 @@ const DEMO_META: DemoMeta[] = [
   // ─── weasel-diagram ───────────────────────────────────────────────────────
   {
     id: 'diagram-nodes',
-    title: 'Diagram nodes and edges',
+    title: 'Diagram node bodies',
     category: 'weasel-diagram',
-    description: "Any scene node becomes a diagram participant by carrying the DiagramNode trait. Each box here is a container whose trait names an outline — stadium, diamond, rect, parallelogram — painted by registerDiagramShape, with its rows as ordinary child text nodes so the kit's own text painter draws them. Every edge is an ordinary leaf node too: dependsOn names its two ends and derivePath runs a router, so an edge re-routes whenever either end moves and nothing has to keep a parallel graph in sync. The three shipped routers are all here — straight, bezier, orthogonal. Orange squares are the ports, cast from the node's bounds onto the outline so an edge meets the shape rather than its bounding box. They are declared as affordances rather than merely painted, so the kit's own region walk gives them their cursor, their hit-test, and an exclusive claim on the press — which is what makes dragging one a connect instead of a move of the node underneath. The three buttons run a layout: layered ranks a pipeline, tree centers a parent over its children, force relaxes a graph with no direction to read it in. Each is a plain function of the graph that returns only the nodes that move, so re-running one on an arrangement it already produced writes nothing and pushes no undo entry — and within a rank, boxes keep the left-to-right order you dragged them into.",
-    hint: 'Drag from one orange port to another to author an edge: the dashed line follows your pointer and snaps when a port is in reach. Drag a box instead and its ports move with it while its edges re-route, because both resolve against the pose the node is painted at rather than the one the document stores. Press Layered, Tree or Force to rearrange, then undo it in one step — and press the same one twice to watch the second press do nothing at all.',
+    description: "Any scene node becomes a diagram participant by carrying the DiagramNode trait — nothing has to be authored through @weasel-js/diagram to take part. These four came from the optional body builder, which is what a node uses when it should read as a flowchart box: buildBody measures the rows, grows the authored pose to clear them, and returns the container carrying the trait plus one ordinary text node per row, so the kit's own text painter draws them and editing and styling work unchanged. The outline vocabulary is stadium, diamond, rect and parallelogram, painted by registerDiagramShape. The 'scale' box carries a port row, whose ports anchor to the row's own edges rather than to the node's perimeter — the visual-programming shape, where an operator's inputs line up with the rows they feed. Orange squares are the ports, cast from the node's bounds onto the outline so an edge meets the shape rather than its bounding box; they are declared as affordances rather than merely painted, so the kit's region walk gives them their cursor and their hit-test.",
+    hint: 'Drag a box to move it, or drag one orange port onto another to author an edge between them — the dashed line follows your pointer and snaps when a port is in reach.',
     load: () => import('./demos/DiagramNodesDemo').then((m) => m.DiagramNodesDemo),
     path: 'apps/site/demos/DiagramNodesDemo.tsx',
+  },
+  {
+    id: 'diagram-edges',
+    title: 'Diagram edges and routers',
+    category: 'weasel-diagram',
+    description: "An edge is an ordinary leaf scene node, not something the plugin paints: dependsOn names the two participants it joins and derivePath runs a router over them, so the path recomputes whenever either end moves and nothing has to keep a parallel graph in sync. Making it a scene node is what buys selection, hit-testing, styling, z-order, SVG export, undo and copy/paste without implementing any of them. The three shipped routers are one per row here — straight goes there directly, orthogonal leaves along each port's normal and turns once, and bezier leaves and arrives along them so the edge reads as plugged into its port rather than aimed at it. An end that names no port resolves to whichever one faces the other end.",
+    hint: 'Drag either box in a row. The path re-routes as you go, and the end it attaches to changes when the other box crosses to the far side.',
+    load: () => import('./demos/DiagramEdgesDemo').then((m) => m.DiagramEdgesDemo),
+    path: 'apps/site/demos/DiagramEdgesDemo.tsx',
+  },
+  {
+    id: 'diagram-layout',
+    title: 'Diagram layout',
+    category: 'weasel-diagram',
+    description: "layered ranks a pipeline by longest path, tree centers a parent over its children's block, and force relaxes a graph that has no direction to read it in. Each is a plain function of the graph — no scene, no ops — that returns the new top-left for only the nodes that move, so pressing the same button twice writes nothing the second time and pushes no undo entry. Three rules keep a re-layout from scrambling an arrangement someone made: no RNG anywhere, order within a rank seeded from where the boxes already sit rather than from crossing-minimization, and a node marked pinned that nothing moves. The whole rearrangement is one scene.batch, so it undoes in one step.",
+    hint: 'Press a button, then press the same one again — nothing moves, and Cmd+Z takes the whole rearrangement back in one step. Drag two boxes past each other first and the layout keeps the order you put them in.',
+    load: () => import('./demos/DiagramLayoutDemo').then((m) => m.DiagramLayoutDemo),
+    path: 'apps/site/demos/DiagramLayoutDemo.tsx',
   },
   // ─── weasel-hud ───────────────────────────────────────────────────────────
   {

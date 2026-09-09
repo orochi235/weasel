@@ -58,6 +58,18 @@ export interface BodySpec {
   gap?: number;
 }
 
+/** What {@link buildBody} emits: the `AddNodeSpec` fields it fills in. Named
+ *  structurally rather than imported so a consumer whose scene is typed
+ *  differently can still spread one. */
+export interface BodyNodeSpec<TData, TLayer extends string, TPose> {
+  kind: 'container' | 'leaf';
+  layer: TLayer;
+  pose: TPose;
+  data: TData;
+  id?: string;
+  parent?: string;
+}
+
 /** The floor a body's content puts under its node's size. */
 export interface BodyFloor {
   minWidth: number;
@@ -184,28 +196,41 @@ export function layoutBody(
  *
  * Anchors are normalized against `bounds`, so they survive the node being
  * resized — which is the whole reason `PortAnchor` is normalized.
+ *
+ * **A row port on a side takes that side's compass default with it.** Both sit
+ * on the same edge, and a row near the vertical middle puts one exactly on top
+ * of `w` or `e` — where the later region wins the hit and the other is
+ * grabbable nowhere. A body that declares where its inputs attach has said what
+ * that side is for.
  */
 export function bodyTrait(spec: BodySpec, bounds: Bounds, measure?: MeasureRowText): DiagramNode {
   const outline = spec.outline;
-  const ports: PortSpec[] = [
+  const compass: PortSpec[] = [
     { id: 'n', at: COMPASS.n },
     { id: 'e', at: COMPASS.e },
     { id: 's', at: COMPASS.s },
     { id: 'w', at: COMPASS.w },
   ];
-  if (bounds.height <= 0) return { outline, ports };
+  if (bounds.height <= 0) return { outline, ports: compass };
 
+  const rowPorts: PortSpec[] = [];
+  let hasLeft = false;
+  let hasRight = false;
   for (const box of layoutBody(spec, bounds, measure)) {
     if (box.row.kind !== 'ports') continue;
     const v = (box.y + box.height / 2 - bounds.y) / bounds.height;
     for (const p of box.row.left ?? []) {
-      ports.push(withType({ id: p.id, at: { u: 0, v } }, p.type));
+      hasLeft = true;
+      rowPorts.push(withType({ id: p.id, at: { u: 0, v } }, p.type));
     }
     for (const p of box.row.right ?? []) {
-      ports.push(withType({ id: p.id, at: { u: 1, v } }, p.type));
+      hasRight = true;
+      rowPorts.push(withType({ id: p.id, at: { u: 1, v } }, p.type));
     }
   }
-  return { outline, ports };
+  const kept = compass.filter((p) =>
+    !(p.id === 'w' && hasLeft) && !(p.id === 'e' && hasRight));
+  return { outline, ports: [...kept, ...rowPorts] };
 }
 
 function withType(spec: PortSpec, type: string | undefined): PortSpec {
@@ -216,4 +241,73 @@ function withType(spec: PortSpec, type: string | undefined): PortSpec {
  *  perimeter-hugging port will eventually be placed on. */
 export function bodyOutline(spec: BodySpec, bounds: Bounds) {
   return outlinePath(spec.outline, bounds);
+}
+
+/** What a built body's rows are handed to, one call per row.
+ *
+ *  `text` is the row's content already formatted — a `label`'s own text, or a
+ *  `field`'s `"label: value"` — so the common case needs no discrimination.
+ *  Return `null` for a row the consumer paints itself; `ports` and `slot` rows
+ *  arrive with `text` empty and are the usual ones to decline. */
+export type RowNodeData<TData> = (text: string, box: RowBox) => TData | null;
+
+export interface BuildBodyOptions<TData, TLayer extends string, TPose extends Bounds> {
+  layer: TLayer;
+  /** The container's id. Edges name it, so pass one for anything an edge or a
+   *  layout `pin` will refer to. */
+  id?: string;
+  measure?: MeasureRowText;
+  /** The container's own data, given the trait the builder computed and the
+   *  pose it was computed against. */
+  body: (trait: DiagramNode, pose: TPose) => TData;
+  /** One row's data, or `null` to leave that row undrawn. */
+  row: RowNodeData<TData>;
+}
+
+/**
+ * The scene nodes a built body is: one container carrying the trait, and one
+ * leaf per row that wants drawing.
+ *
+ * Rows are ordinary scene nodes rather than something this package paints, so
+ * the kit's own text painter draws them and text editing, styling and
+ * selection work on them unchanged. The walk that places them is
+ * `layoutBody` — the same one `bodyTrait` anchors its row ports against, which
+ * is why a label and its ports cannot drift apart.
+ *
+ * The pose is `sizeToBody(at, measureBody(spec))`: the body measures a floor
+ * and the authored size is grown to clear it, never shrunk.
+ */
+export function buildBody<TData, TLayer extends string, TPose extends Bounds>(
+  spec: BodySpec,
+  at: TPose,
+  opts: BuildBodyOptions<TData, TLayer, TPose>,
+): { pose: TPose; specs: BodyNodeSpec<TData, TLayer, TPose>[] } {
+  const pose = sizeToBody(at, measureBody(spec, opts.measure));
+  const specs: BodyNodeSpec<TData, TLayer, TPose>[] = [{
+    kind: 'container',
+    layer: opts.layer,
+    pose,
+    data: opts.body(bodyTrait(spec, pose, opts.measure), pose),
+    ...(opts.id === undefined ? {} : { id: opts.id }),
+  }];
+
+  for (const box of layoutBody(spec, pose, opts.measure)) {
+    const data = opts.row(rowText(box.row), box);
+    if (data === null) continue;
+    specs.push({
+      kind: 'leaf',
+      layer: opts.layer,
+      pose: { ...pose, x: box.x, y: box.y, width: box.width, height: box.height },
+      data,
+      ...(opts.id === undefined ? {} : { parent: opts.id }),
+    });
+  }
+  return { pose, specs };
+}
+
+/** A row's content as one string: empty for a row that carries no text. */
+function rowText(row: Row): string {
+  if (row.kind === 'label') return row.text;
+  if (row.kind === 'field') return `${row.label}: ${row.value}`;
+  return '';
 }
