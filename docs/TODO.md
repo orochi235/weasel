@@ -1275,6 +1275,75 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   outside it via the `flat` variant. Doing this generally is a theme decision
   about the glass, not a component change.
 
+- **(P2) `tokens.css` re-types the document, which is the only thing stopping a
+  consumer importing it.** `packages/theme/src/generated/tokens.css` is custom
+  properties throughout except for one rule near the end, where `:root` takes
+  `font-family: var(--wzl-font-ui)` and `font-weight`. Custom properties are
+  inert until something reads them, so every other line is safe to drop into a
+  host app; those two are not, and an app with its own typography cannot import
+  the file at all. It then hand-writes the `--wzl-*` bridge instead, and falls
+  silently behind whenever a component starts reading a token the list does not
+  carry — the failure is a control with correct geometry and transparent paint,
+  which reads as a component that failed to mount. `fonts.css` is beside it and
+  is where a rule like that belongs; `build-tokens.ts:111` emits it.
+
+- **(P2) Some `--wzl-*` are percentages wearing color names.**
+  `--wzl-slider-track-tint` and `--wzl-slider-thumb-tint` are the second
+  argument of a `color-mix` against `--wzl-accent`
+  (`ui/src/components/range.module.css`), so they must be percentages. Setting
+  one to a color invalidates the whole declaration and the thumb renders
+  unpainted, with no error. Rename them (`--wzl-slider-thumb-mix`?) or take a
+  color and mix inside.
+
+- **(P2) Size tokens with no fallback fail to nothing rather than to a
+  default.** `--wzl-slider-track-h` and `--wzl-slider-thumb-size` are used bare
+  in `range.module.css`; unset, the declaration is invalid and the track has no
+  height, so the control is present, focusable, operable and invisible.
+  `--wzl-range-box-h` on the same element has a `12px` fallback, so the
+  inconsistency is inside one file. A fallback on every size token makes an
+  incomplete bridge degrade to "wrong size" instead of "gone".
+
+- **(P2) `ColorRow`'s alpha slider commits on every tick.** `Slider` splits
+  `onInput` from `onChange` and says why — one fires through a drag, the other
+  once at the end and is the one to write to history — and `SliderRow` carries
+  the pair. `ColorRow` has `onChange` and `onAlphaChange` only, with no note
+  saying which semantics they have, so a consumer with an undo stack either
+  reads the source or drops to the primitive and rebuilds the row's layout.
+  `NumberRow` has the same single callback. Give both the pair.
+
+- **(P2) `PropertyGroup` has no collapsed state.** It takes `title`, `hidden`,
+  `pack` and children; `hidden` removes the group, which is a different thing.
+  A panel with enough groups to want folding therefore brings its own
+  `<details>` and puts a bare `<PropertyList>` inside each, which means
+  `PropertyGroup`'s title-between-rules treatment is unavailable to exactly the
+  panels big enough to need it. An `open` / `onOpenChange` pair, or a
+  `collapsible` flag.
+
+- **(P3) The property row readout is sized with a hardcoded pixel subtraction.**
+  `.readoutInput` is `width: calc(5em - 24px)` with `overflow: clip`
+  (`Properties.module.css:264`). The `-24px` assumes a base font near weasel's
+  own; against an 11px monospace it leaves 31px and clips a four-decimal value
+  mid-digit. A consumer's only way out is matching `[class*='readout']`, which
+  works only because CSS modules hash around the base name. Wants a token.
+
+- **(P3) `.track { min-width: 80px }` turns a consumer's layout mistake into a
+  plausible control.** `RangeSlider.module.css:39`. `.slider` is a column flex
+  container, so `align-items` on a wrapper governs the horizontal axis there and
+  the track stops stretching — it falls back to the floor instead, and an 82px
+  slider centered over a 520px histogram looks like a small slider someone chose
+  rather than a broken one. A zero-width track would have been found in seconds.
+  Either drop the floor or say in `Slider`'s docs that the root owns its
+  flex-direction and restyling it breaks track stretch.
+
+- **(P2) `crypto.randomUUID` is called unguarded in labkit, and it is absent off
+  localhost.** It exists only in a secure context; `http://localhost` is one and
+  a LAN address is not, so a lab reached by IP — a phone, a tablet, another
+  machine — throws on its first render and shows a blank page with nothing in
+  reach to say why. `state/store.ts:224`, `trial/trialOps.ts:50` and `:69` all
+  call it bare. Core already has the answer: `arrayAdapter.ts`'s `defaultNextId`
+  checks for the function and falls back to a counter. Give labkit's three sites
+  the same treatment, or a shared helper both reach for.
+
 ### Align/distribute/flip follow-ups
 
 - **(P3) Cursor-relative align** (e.g. align to mouse position rather than union).
@@ -1571,13 +1640,39 @@ one dead `const` and four stale disable directives.
   above are otherwise unchanged.
 
   Images stopped paying per command on 2026-09-05. Consecutive image quads
-  coalesce into one `drawElements` (`renderer/imageBatch.ts`), and
-  `kind: 'sprites'` hands a run over as a `Float32Array` rather than a command
-  object each. Over one atlas at 20,000 quads: 51.3 -> 10.6 ms coalescing, ->
-  0.79 ms packed. A run breaks on a different bitmap, MAG_FILTER, clip depth or
-  color matrix; transform, group alpha and per-command opacity ride the
-  vertices. The unmerged case — a document with a handful of distinct bitmaps —
-  is unchanged, which is what a multi-texture batch would still be worth.
+  coalesce into one `drawElements`, and `kind: 'sprites'` hands a run over as a
+  `Float32Array` rather than a command object each. Over one atlas at 20,000
+  quads: 51.3 -> 10.6 ms coalescing, -> 0.79 ms packed. A run breaks on a
+  different bitmap, MAG_FILTER, clip depth or color matrix; transform, group
+  alpha and per-command opacity ride the vertices. The unmerged case — a
+  document with a handful of distinct bitmaps — is unchanged, which is what a
+  multi-texture batch would still be worth.
+
+  Solid geometry and image quads share that batch as of 2026-09-09
+  (`renderer/drawBatch.ts`). They used to be exclusive — staging a solid
+  drained the image run and staging an image drained the solid one — so a wall
+  of thumbnails, which is a ground rect under an atlas quad per cell, paid a
+  flush per command however well each half batched on its own. Solid vertices
+  now carry the UV of a 1x1 white texel, so `texture() * a_vertexColor` is the
+  vertex color exactly and the shader branches on nothing. Measured over a
+  viewport-filling grid of those cells (`tests/perf/atlas-wall.spec.ts`): 600
+  commands 2.83 -> 0.10 ms, 1,650 11.37 -> 0.20, 5,400 40.50 -> 0.58, 15,000
+  126.15 -> 1.50. Draw calls 15,000 -> 2, the second only because the run
+  crosses the per-flush vertex cap.
+
+  **There is no step in this at a thousand commands.** A consumer measuring the
+  same wall found per-command cost flat at ~1.3 us up to ~800 and flat at ~7.3
+  past ~1,400, and read the step as a batch or cache limit being crossed. It
+  was the ladder: the rungs below it drew cells the atlas had no tile for,
+  which are solid fills and batched, and the rungs above drew sprites, which
+  interleaved with their grounds and did not. The two regimes weasel had are
+  exactly those two numbers. `atlas-wall.spec.ts` walks the same cell sizes with
+  the sampling held fixed and is flat across the whole ladder.
+
+  `sampling: 'nearest'` costs nothing next to `'linear'` on this path, at any
+  rung, magnified or minified — the same spec prices both. `GLImageCache` sets
+  MIN_FILTER to LINEAR and generates no mipmaps on the screen path, so
+  `sampling` moves MAG_FILTER alone and a minified draw never reads it.
 
   The rest of the plan — one program plus atlases — is in
   `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`, with the traps, and a
