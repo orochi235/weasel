@@ -11,7 +11,7 @@
 What this is: the plan for getting the renderer's draw loop from one GL draw
 call per command down to roughly one per frame, and the record of the steps that
 have landed. Read it before touching `renderer/draw.ts`,
-`renderer/solidBatch.ts`, or `canvas/buildSceneTree.ts`.
+`renderer/drawBatch.ts`, or `canvas/buildSceneTree.ts`.
 
 ---
 
@@ -22,6 +22,8 @@ flush work it describes as open was finished afterwards — the solid batch cycl
 a buffer ring instead of rewriting one pair (`12303bc0`) and skips uploads the
 GPU already has (`da7c1505`), taking a solid boundary from 27 us to 2.5 us.
 `docs/TODO.md` under "Release-gate & build hygiene" carries what is left.
+Image quads joined the solid batch on 2026-09-09 and `solidBatch.ts` is now
+`drawBatch.ts`; step 4 below is the only part of this plan still open.
 
 Steps 0–3 as landed: Consecutive solid-fill geometry — rects, tessellated fills,
 stroke ribbons — merges into one `drawElements` through the existing
@@ -210,7 +212,7 @@ than a pressure one, and step 4 is where it starts paying.
 
 - `npm run test:visual` — 35 baselines. Order and clipping regressions show up
   as pixels; this is the gate that matters for every step here.
-- `packages/core/src/renderer/solidBatch.test.ts` — 24 tests pinning each flush
+- `packages/core/src/renderer/drawBatch.test.ts` — 32 tests pinning each flush
   boundary, and the buffers a flush writes, against a GL recorder. Extend it per step rather than trusting the
   visual gate to catch an ordering slip.
 - `npm run test:perf` — the draw-loop sweep, whose `scene` and `rotated`

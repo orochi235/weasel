@@ -27,7 +27,7 @@ range — there is no zoom level at which more work is required than at any othe
   `LINEAR_MIPMAP_LINEAR`. It was added for the print/export path because
   "bilinear-only minification undersamples and produces moiré" — the same
   problem a wall of shrunken thumbnails has.
-- **`spriteSheet.ts` and `solidBatch.ts`** are in `packages/core/src/renderer/`.
+- **`spriteSheet.ts` and `drawBatch.ts`** are in `packages/core/src/renderer/`.
   A sprite sheet is the atlas this design needs.
 - **`labkit/src/surface/`** hosts a renderer labkit does not own: it publishes
   rects, dirtiness, DPR and one rAF, and its guide already notes that browsers

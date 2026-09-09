@@ -6,7 +6,7 @@
  * file is about the breaks rather than the merge: the merge is one test, and
  * every other one is a way of getting it wrong silently.
  *
- * The counterpart to `solidBatch.test.ts`, and deliberately a separate file:
+ * The counterpart to `drawBatch.test.ts`, and deliberately a separate file:
  * that one's buffer-replay helpers assume nothing else writes
  * `bufferSubData(ARRAY_BUFFER)` in the frames it renders.
  */
