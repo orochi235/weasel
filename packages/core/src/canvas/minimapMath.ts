@@ -11,6 +11,7 @@
  *
  * See `docs/superpowers/specs/2026-05-31-detached-minimap-design.md`.
  */
+import { documentPose } from '../core/scene';
 import type { Scene } from '../core/scene';
 import type { View } from '../core/viewport/view';
 import type { Bounds, ViewportDims } from '../core/viewport/fitViewToBounds';
@@ -93,7 +94,7 @@ function sceneLeafBounds<TData, TLayer extends string, TPose>(
   let any = false;
   for (const node of scene.nodes.values()) {
     if (node.kind !== 'leaf') continue;
-    const b = poseBounds(node.pose);
+    const b = poseBounds(documentPose(scene, node));
     if (b.x < minX) minX = b.x;
     if (b.y < minY) minY = b.y;
     const right = b.x + b.width;

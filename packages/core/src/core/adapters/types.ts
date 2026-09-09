@@ -98,12 +98,7 @@ export interface MoveAdapter<TNode extends { id: string }, TPose> {
    *  One contract with {@link OrderedAdapter.getChildren} — the two land on
    *  the same adapter object, and an implementation that answers only node
    *  ids returns `[]` for the root, which the ops read as "no siblings".
-   *
-   *  When present (alongside the `cascadeWorldPose` option on `useMove`),
-   *  dragging a node auto-cascades its descendants in the live overlay so
-   *  structurally-grouped children visually follow the parent during the
-   *  drag. No additional ops are generated — children's local poses don't
-   *  change when the parent's local pose moves. */
+   */
   getChildren?(parentId: string | null): string[];
   /** Optional: layout strategy attached to a container, or null if the
    *  container uses absolute positioning (default behavior). When present,

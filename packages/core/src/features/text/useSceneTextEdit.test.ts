@@ -215,3 +215,72 @@ describe('useSceneTextEdit — view thunk', () => {
     expect(hook.result.current.editingId).toBe('a');
   });
 });
+
+/**
+ * A derived pose is where the node actually is; its authored pose is a
+ * placeholder. Both the double-click hit test and the overlay's own
+ * projection have to answer from the derivation, or the editor opens on the
+ * wrong node and then sits somewhere the text is not.
+ */
+describe('useSceneTextEdit — a derived pose', () => {
+  interface Data { text?: string; style?: { fontSize?: number } }
+  interface Pose { x: number; y: number; width: number; height: number }
+
+  /** Places the node 300 right of its dependency. */
+  const derive = (_n: unknown, deps: readonly ({ pose: Pose } | undefined)[]): Pose | null => {
+    const d = deps[0]?.pose;
+    return d === undefined ? null : { x: d.x + 300, y: d.y, width: 200, height: 40 };
+  };
+
+  function renderDerived() {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const hook = renderHook(() => {
+      const scene = useScene<Data, 'main', Pose>({
+        systemLayers: [{ id: 'main' }],
+        registry: { derivePose: { 'test:shift': derive } },
+        initial: [
+          {
+            id: asNodeId('anchor'), kind: 'leaf', layer: 'main',
+            pose: { x: 0, y: 0, width: 10, height: 10 }, data: {},
+          },
+          {
+            id: asNodeId('label'), kind: 'leaf', layer: 'main',
+            pose: { x: 0, y: 0, width: 200, height: 40 },
+            data: { text: 'hello', style: { fontSize: 16 } },
+            dependsOn: [asNodeId('anchor')], derivePose: derive,
+          },
+        ],
+      });
+      return useSceneTextEdit(scene, container, {});
+    });
+    return { hook, container };
+  }
+
+  it('hit-tests a double-click against the derived pose', () => {
+    const { hook, container } = renderDerived();
+    const canvas = document.createElement('canvas');
+    container.appendChild(canvas);
+    // x 300..500 once derived; the authored pose claims x 0..200.
+    act(() => hook.result.current.onDoubleClick({
+      target: canvas, clientX: 320, clientY: 10,
+    } as unknown as MouseEvent<HTMLElement>));
+    expect(hook.result.current.editingId).toBe('label');
+  });
+
+  it('does not hit-test against the authored placeholder', () => {
+    const { hook, container } = renderDerived();
+    const canvas = document.createElement('canvas');
+    container.appendChild(canvas);
+    act(() => hook.result.current.onDoubleClick({
+      target: canvas, clientX: 20, clientY: 10,
+    } as unknown as MouseEvent<HTMLElement>));
+    expect(hook.result.current.editingId).toBeNull();
+  });
+
+  it('places the overlay at the derived pose', () => {
+    const { hook, container } = renderDerived();
+    act(() => hook.result.current.startEdit('label'));
+    expect(overlayOf(container).style.left).toBe('301px');
+  });
+});

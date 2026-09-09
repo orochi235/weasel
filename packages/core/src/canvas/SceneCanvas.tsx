@@ -12,11 +12,10 @@
  * `tools={useTools(...)}` directly and SceneCanvas forwards it as-is — the
  * internal default tool is ignored in that case.
  *
- * Cascade defaults: Scene v1 stores absolute poses, so dragging a container
- * needs (a) the live overlay to translate descendants and (b) commit-time
- * setPose to translate descendants too. SceneCanvas wires both by default
- * from `scene` knowledge (children-of-id + absolute pose lookup); consumers
- * can override either by passing their own `moveOptions.cascadeWorldPose`.
+ * Cascade: `Scene` stores absolute poses, so dragging a container has to
+ * translate its descendants in the live overlay and again at commit. The move
+ * action walks `scene.childrenOf` for both — see `cascadeIds` in
+ * `interactions/actions/defaults/move.ts`.
  */
 import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { dwarn } from '../debug';

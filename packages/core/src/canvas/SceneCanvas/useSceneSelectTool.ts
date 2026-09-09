@@ -9,7 +9,6 @@
  * Returns both the synthesized `adapter` (forwarded to `<Canvas>`) and the
  * `selectTool` record (registered into `useTools`). Caller-supplied
  * `pickEvery` / `boundsOf` overrides via the `geometry` arg take precedence;
- * caller-supplied `move.cascadeWorldPose` wins over the default lookup.
  */
 import { useMemo } from 'react';
 import { sceneToAdapter, type SceneToAdapterOptions } from '../sceneAdapter';
@@ -195,23 +194,14 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     };
   }, [scene, commitInsert, insertLayer, layouts, selection]);
 
-  // Default cascade lookup for the move overlay — reads live world pose from
-  // the scene. Caller's `moveOptions.cascadeWorldPose` (if any) wins.
   const wiredMoveOptions = useMemo<UseMoveOptions<TPose>>(() => {
-    const defaultCascade = (id: string): TPose | null => {
-      const n = scene.get(asNodeId(id));
-      return n ? n.pose : null;
-    };
-    const merged: UseMoveOptions<TPose> = {
-      cascadeWorldPose: defaultCascade,
-      ...(moveOptions ?? {}),
-    };
+    const merged: UseMoveOptions<TPose> = { ...(moveOptions ?? {}) };
     if (snap) {
       const existing = merged.behaviors ?? [];
       merged.behaviors = [snapBehavior(snap), ...existing];
     }
     return merged;
-  }, [scene, moveOptions, snap]);
+  }, [moveOptions, snap]);
 
   // Default pickEvery: walk renderOrder() forward (back-to-front) and collect
   // every node whose pose contains the world point. Order matches the

@@ -20,6 +20,44 @@ function makeScene(): S {
 
 const identityPoseBounds = (p: Pose): Bounds => p;
 
+describe('computeFitView — a derived pose', () => {
+  /** A node whose pose is its dependency's, shifted 500 right. Its authored
+   *  pose is a placeholder no reader should ever frame on. */
+  const derive = (_n: unknown, deps: readonly ({ pose: Pose } | undefined)[]): Pose | null => {
+    const d = deps[0]?.pose;
+    return d === undefined ? null : { ...d, x: d.x + 500 };
+  };
+
+  function derivedScene() {
+    const scene = createScene<Data, 'bg', Pose>({
+      systemLayers: [{ id: 'bg' }],
+      registry: { derivePose: { 'test:shift': derive } },
+    });
+    const a = scene.add({
+      kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'a' },
+    });
+    scene.add({
+      kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'd' },
+      dependsOn: [a], derivePose: derive,
+    });
+    return scene;
+  }
+
+  it('frames the derived node where it actually is, not at its placeholder', () => {
+    const scene = derivedScene();
+    const dims = { width: 200, height: 200 };
+    // Framed on the span the derivation puts the content across, rather than
+    // the 10x10 both authored poses claim.
+    expect(computeFitView(scene, dims, 'scene', identityPoseBounds)).toEqual(
+      computeFitView(
+        scene, dims,
+        { kind: 'world', rect: { x: 0, y: 0, width: 510, height: 10 } },
+        identityPoseBounds,
+      ),
+    );
+  });
+});
+
 describe('computeFitView — fit="scene"', () => {
   it('empty scene returns fallback view', () => {
     const scene = makeScene();

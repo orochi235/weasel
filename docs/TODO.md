@@ -646,15 +646,23 @@ intercepting the press that drags the body.
   its own placeholder pose. Closing it means giving the adapter surface a
   dependency read, which is a bigger decision than picking.
 
-- **(P3) Poses read outside `effectivePose`.** Arc 1b routed the three render
-  walks, the pick walk and the scene/commit/gesture adapters through
-  `effectivePose` (or `documentPose`, which skips the override), so a derived
-  pose reaches everything a user sees or clicks. Three readers still take
-  `node.pose` raw and would answer from a derived node's placeholder:
-  `canvas/minimapMath.ts`'s `sceneLeafBounds`, `features/text/useSceneTextEdit`'s
-  own top-most-first hit test, and `SceneCanvas/useSceneSelectTool`'s
-  `cascadeWorldPose`. None is reachable with a derived node today; each is a
-  one-line change when one is.
+- **(P3) `documentPose` skips only the node's *own* override.** Its
+  dependencies still resolve through `effectivePose`, so a derived node's
+  "document" pose moves while something it derives from is being dragged. The
+  minimap is the reader that cares — it frames on `documentPose` precisely so a
+  drag does not thrash the framing, and that guarantee holds only in a scene
+  with no derived poses. Either `documentPose` needs to resolve its whole
+  dependency chain override-free, or the two readers that want that have to say
+  so. Found while routing `sceneLeafBounds` through it.
+
+- **(P3) The move action captures origin poses raw.** One reader is left taking
+  `node.pose` instead of `effectivePose`: the `startPoses` walk in
+  `interactions/actions/defaults/move.ts`, which snapshots each dragged id and
+  every descendant at drag start. A derived-pose child inside a dragged
+  container would be captured at its placeholder and preview from there. Not a
+  one-line change like the others were — origin capture is what every behavior
+  and the commit delta measure against, so it wants a test that drags a
+  container holding a derived child before it moves.
 
 - **(P2) Value-compare the resolved poses in `resolveDerivedPath`.**
   Invalidation is pushed by the scene today, which is closed only under the

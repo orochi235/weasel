@@ -30,17 +30,4 @@ export interface UseMoveOptions<TPose> {
    *  generation. Returning `[]` aborts the gesture cleanly.
    *  Default: identity. */
   expandIds?: (ids: string[]) => string[];
-  /** Optional: lookup a world-space pose by id. When supplied alongside
-   *  `adapter.getChildren`, the hook walks each dragged id's descendants and
-   *  includes them in the live overlay (translated by the same drag delta
-   *  and added to `overlay.hideIds`) so structurally-grouped children visually
-   *  follow the parent during the gesture. No transform ops are generated
-   *  for cascaded ids — under local-pose semantics, a child's local pose is
-   *  unchanged when its parent's local pose moves, so the post-commit scene
-   *  is already correct.
-   *
-   *  Pair with `worldPoseLookup(adapter, composeRectPose)` from
-   *  `@weasel-js/core/transforms` for the standard rect case. Returning
-   *  `null` for an id (e.g., one removed mid-render) skips it. */
-  cascadeWorldPose?: (id: string) => TPose | null;
 }

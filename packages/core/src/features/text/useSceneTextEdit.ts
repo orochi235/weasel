@@ -23,6 +23,7 @@
  */
 import { useCallback, useRef, type MouseEvent } from 'react';
 import { asNodeId } from '../../core/scene/types';
+import { effectivePose } from '../../core/scene/effectivePose';
 import type { Scene } from '../../core/scene/types';
 import type { FillStyle, Stroke } from '@weasel-js/paint';
 import { clientToCanvas } from '../../core/viewport/clientToCanvas';
@@ -151,9 +152,10 @@ export function useSceneTextEdit<
       return get ? get(node.data) : { fill: node.data.fill, stroke: node.data.stroke };
     },
     getScreenPose: (id) => {
-      const node = sceneRef.current.get(asNodeId(id));
+      const scene = sceneRef.current;
+      const node = scene.get(asNodeId(id));
       if (!node) return null;
-      const pose = node.pose;
+      const pose = effectivePose(scene, node);
       const style = optsRef.current.getStyle
         ? optsRef.current.getStyle(node.data)
         : node.data.style;
@@ -228,11 +230,12 @@ export function useSceneTextEdit<
     for (let i = order.length - 1; i >= 0; i--) {
       const node = order[i];
       const text = readText(node.data);
+      const at = effectivePose(sceneRef.current, node);
       const pose = {
-        x: node.pose.x,
-        y: node.pose.y,
-        width: node.pose.width,
-        height: node.pose.height,
+        x: at.x,
+        y: at.y,
+        width: at.width,
+        height: at.height,
         text,
         runs: readRuns(node.data) as StyledRun[] | undefined,
         style: readStyle(node.data),
