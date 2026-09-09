@@ -123,7 +123,11 @@ describe('diagramEdgeOf', () => {
 describe('edgeDerivePath', () => {
   const box = (x: number, y: number): RectPose => ({ x, y, width: 40, height: 40 });
   const dep = (pose: RectPose, data: unknown = { diagram: {} }): DerivedDep<RectPose> =>
-    ({ node: { id: asNodeId('n'), kind: 'leaf', layer: 'main', parent: null, pose, data } as never, pose });
+    ({
+      node: { id: asNodeId('n'), kind: 'leaf', layer: 'main', parent: null, pose, data } as never,
+      pose,
+      path: null,
+    });
 
   const edgeNode = (edge: unknown) => ({ data: { diagram: edge } });
   const derive = edgeDerivePath<RectPose>();

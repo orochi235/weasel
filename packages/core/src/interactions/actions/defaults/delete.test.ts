@@ -508,7 +508,7 @@ describe('deleteAction over a real scene', () => {
     expect(scene.get(edge)!.derivePath).toBe(derivePath);
     const derived = scene.get(edge)!.derivePath!(
       scene.get(edge)!,
-      [{ node: scene.get(a)!, pose: scene.get(a)!.pose }],
+      [{ node: scene.get(a)!, pose: scene.get(a)!.pose, path: null }],
     );
     expect((derived as PolygonPath).coords).toEqual(new Float32Array([42, 0]));
   });

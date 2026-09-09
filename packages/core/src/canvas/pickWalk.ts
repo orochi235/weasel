@@ -21,7 +21,7 @@
 
 import type { Path } from 'features/paths/types';
 import { findShapeSilhouette } from 'canvas/NodeShape';
-import type { Node, Scene } from 'core/scene/types';
+import type { DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import { effectivePose } from 'core/scene/effectivePose';
 import { resolveDerivedPath } from './derivedPath';
@@ -219,19 +219,23 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
 
   // Through `poseOf`, not the document pose: a derived node has to be tested
   // where the renderer draws its dependencies, which is what an override says.
+  const childrenOf = (id: NodeId): readonly NodeId[] => scene.childrenOf(id);
+  const depOf = (id: NodeId): DerivedDep<TPose> | undefined => {
+    const dep = scene.get(id);
+    if (dep === undefined) return undefined;
+    return {
+      node: dep as Node<unknown, string, TPose>,
+      pose: poseOf(dep as never),
+      get path(): Path | null {
+        return resolveDerivedPath(dep as never, depOf, childrenOf);
+      },
+    };
+  };
+
   const derivedPathOf = (node: PickCandidate<TPose>): Path | null => {
     const n = node as unknown as Node<TData, TLayer, TPose>;
     if (n.dependsOn === undefined) return null;
-    return resolveDerivedPath(
-      n,
-      (id) => {
-        const dep = scene.get(id);
-        return dep === undefined
-          ? undefined
-          : { node: dep as Node<unknown, string, TPose>, pose: poseOf(dep as never) };
-      },
-      (id) => scene.childrenOf(id),
-    );
+    return resolveDerivedPath(n, depOf, childrenOf);
   };
 
   return {

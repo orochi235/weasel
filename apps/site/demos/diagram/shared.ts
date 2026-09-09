@@ -8,7 +8,7 @@
  * to say nothing to be connectable.
  */
 import type { AddNodeSpec, Stroke } from '@weasel-js/core';
-import type { DiagramEdge, DiagramNode } from '@weasel-js/diagram';
+import type { DiagramEdge, DiagramLabel, DiagramNode } from '@weasel-js/diagram';
 
 export const INK = '#7ba7c7';
 export const PORT = '#e0913f';
@@ -16,7 +16,7 @@ export const BODY_FILL = '#16222c';
 export const LABEL = '#dbe7f2';
 
 export interface Data {
-  diagram?: DiagramNode | DiagramEdge;
+  diagram?: DiagramNode | DiagramEdge | { label: DiagramLabel };
   fill?: { color: string };
   stroke?: Stroke;
   text?: string;

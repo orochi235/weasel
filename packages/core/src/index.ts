@@ -735,6 +735,7 @@ export {
   pathContainsPolygon,
   pathIntersectsPolygon,
   pathDistanceToPoint,
+  pointAlongPath,
   splitPathByLine,
   transformPath,
 } from './features/paths';
@@ -751,6 +752,8 @@ export type {
   CreatePathEditingOverlayLayerOptions,
   PathEditingOverlayStyle,
   PathInWorldPose,
+  PathStation,
+  PointAlongPathOptions,
   SplitByLineOptions,
   PoseRotation,
 } from './features/paths';
@@ -838,7 +841,7 @@ export type { UseArrayAdapterOptions } from './core/adapters/useArrayAdapter';
 // ─── Scene primitive (kit-owned tree of leaves and containers) ──────────────
 export {
   createScene, sceneFromJSON, sceneSelectionStore, useScene, asNodeId,
-  createPoseOverrides, derivedPose, documentPose, effectivePose,
+  createPoseOverrides, derivedDepOf, derivedPose, documentPose, effectivePose,
   UNION_OF_CHILDREN, unionOfChildren,
 } from './core/scene';
 export type { PoseSource, PosedNode } from './core/scene';

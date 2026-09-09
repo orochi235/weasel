@@ -63,6 +63,8 @@ export type {
   GraphNodeLike,
   GraphSource,
 } from './graph';
+export { DIAGRAM_LABEL, LABEL_DERIVE_POSE, diagramLabelOf, labelDerivePose } from './label';
+export type { DiagramLabel, LabelPoseOptions } from './label';
 export { force } from './force';
 export type { ForceOptions } from './force';
 export { backEdges, layered, ranksOf } from './layered';

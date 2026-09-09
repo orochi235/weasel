@@ -27,6 +27,7 @@ import {
   type SceneRegistry,
   type Vec2,
 } from '@weasel-js/core';
+import { DIAGRAM_LABEL, LABEL_DERIVE_POSE } from './label';
 import { portOf, portsOf, type PortsOptions } from './ports';
 import type { Port } from './types';
 
@@ -282,6 +283,10 @@ export function withDiagramRegistry<TPose>(
     derivePath: {
       [DIAGRAM_EDGE]: EDGE_DERIVE_PATH as NonNullable<SceneRegistry<TPose>['derivePath']>[string],
       ...registry.derivePath,
+    },
+    derivePose: {
+      [DIAGRAM_LABEL]: LABEL_DERIVE_POSE as NonNullable<SceneRegistry<TPose>['derivePose']>[string],
+      ...registry.derivePose,
     },
   };
 }

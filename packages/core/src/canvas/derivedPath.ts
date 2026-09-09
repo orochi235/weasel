@@ -1,44 +1,22 @@
 /**
- * Invalidation here is *pushed* by the scene, never pulled: a pose override
- * mutates its buffer in place, so no comparison this module could make would
- * see a dependency move. The memo is keyed on the node's own pose because that
- * is the slot `dropPoseKeyedMemoSlots` clears.
+ * The render walk's half of derived paths: resolving one against a scene, and
+ * handing it to the painter.
+ *
+ * The resolver itself lives in `core/scene/derivedPath.ts`, beside
+ * `derivedPose` — a *pose* can derive from a dependency's path, so
+ * `effectivePose` has to be able to reach it.
  */
 import type { DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
-import type { Path } from 'core/geometry/path';
-import { dependencyIdsOf } from 'core/scene/dependents';
-import { effectivePose } from 'core/scene/effectivePose';
-import { nodeMemo } from 'core/scene/nodeMemo';
+import { derivedDepOf } from 'core/scene/effectivePose';
+import { resolveDerivedPath } from 'core/scene/derivedPath';
 import type { SceneViewDrawOne } from './NodeShape';
 
-const SLOT = 'kit:derivedPath';
+export { resolveDerivedPath } from 'core/scene/derivedPath';
 
 /**
- * The path `node` computes from its dependencies' poses, or `null` when it
- * derives from nothing (the normal case) or its `derivePath` has nothing to draw.
- *
- * `depOf` supplies each dependency — its node and the pose it is painted at;
- * one it cannot resolve reaches `derivePath` as `undefined`. `childrenOf`
- * answers a node whose `dependsOn` is `'children'`.
- */
-export function resolveDerivedPath<TData, TLayer extends string, TPose>(
-  node: Node<TData, TLayer, TPose>,
-  depOf: (id: NodeId) => DerivedDep<TPose> | undefined,
-  childrenOf: (id: NodeId) => readonly NodeId[],
-): Path | null {
-  const derivePath = node.derivePath;
-  if (derivePath === undefined) return null;
-  const ids = dependencyIdsOf(node, childrenOf);
-  if (ids.length === 0) return null;
-  return nodeMemo(node, SLOT, node.pose, () =>
-    derivePath(node as Node<unknown, string, TPose>, ids.map((id) => depOf(id))),
-  );
-}
-
-/**
- * `(id) => that node and the pose it is painted at` — {@link effectivePose}
- * against the scene, so a dependency that is itself derived resolves before it
- * is read.
+ * `(id) => that node, the pose it is painted at, and the path it derives` —
+ * resolved against the scene, so a dependency that is itself derived resolves
+ * before it is read.
  *
  * `Scene` stores absolute poses and the render walks hand `getPose` straight to
  * `drawOne`, composing nothing, so this has to read exactly what the render
@@ -48,11 +26,7 @@ export function resolveDerivedPath<TData, TLayer extends string, TPose>(
 export function sceneDepLookup<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
 ): (id: NodeId) => DerivedDep<TPose> | undefined {
-  return (id) => {
-    const node = scene.get(id);
-    if (node === undefined) return undefined;
-    return { node: node as Node<unknown, string, TPose>, pose: effectivePose(scene, node) };
-  };
+  return (id) => derivedDepOf(scene, id);
 }
 
 /**
@@ -74,7 +48,11 @@ export function withDerivedPaths<TData, TLayer extends string, TPose>(
     if (node.dependsOn === undefined) return drawOne(node, pose, view, ctx);
     return drawOne(node, pose, view, {
       ...ctx,
-      derivedPath: resolveDerivedPath(node, depOf, childrenOf),
+      derivedPath: resolveDerivedPath(
+        node as Node<TData, TLayer, TPose>,
+        depOf,
+        childrenOf,
+      ),
     });
   };
 }

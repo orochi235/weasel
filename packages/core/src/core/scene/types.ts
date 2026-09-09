@@ -90,6 +90,14 @@ export interface DerivedDep<TPose> {
   /** Its override when it has one, else its own derived pose, else the pose
    *  the document stores — `effectivePose`, the same answer the renderer uses. */
   pose: TPose;
+  /** The path it derives, or `null` when it derives none. Read it to place
+   *  something *along* a dependency rather than beside it — a label on a
+   *  routed edge, a tick on a curve.
+   *
+   *  Resolved on first read and memoized on the dependency, so a route costs
+   *  the same whether one node reads it or five, and a dependency nobody asks
+   *  about costs nothing. */
+  readonly path: Path | null;
 }
 
 interface NodeBase<TData, TLayer extends string, TPose> {

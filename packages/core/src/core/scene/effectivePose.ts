@@ -8,8 +8,10 @@
  * from "mid-drag" to "always".
  */
 import { dependencyIdsOf } from './dependents';
+import { resolveDerivedPath } from './derivedPath';
 import { dropPoseKeyedMemoSlots, nodeMemo } from './nodeMemo';
-import type { NodeId, PoseOverrides } from './types';
+import type { Path } from '../geometry/path';
+import type { DerivedDep, Node, NodeId, PoseOverrides } from './types';
 
 const SLOT = 'kit:derivedPose';
 
@@ -24,8 +26,13 @@ export interface PosedNode<TPose> {
   dependsOn?: readonly NodeId[] | 'children';
   derivePose?: (
     node: never,
-    deps: readonly ({ node: never; pose: TPose } | undefined)[],
+    deps: readonly (DerivedDep<TPose> | undefined)[],
   ) => TPose | null;
+  /** Read only when something asks a dependency for its `path`. */
+  derivePath?: (
+    node: never,
+    deps: readonly (DerivedDep<TPose> | undefined)[],
+  ) => Path | null;
 }
 
 /** What resolving a pose needs: the overrides, and enough of the scene to
@@ -73,21 +80,41 @@ export function derivedPose<TPose>(
     // Keyed on the authored pose, which is what `dropPoseKeyedMemoSlots`
     // clears — the same push-invalidation the derived path rides on.
     const value = nodeMemo(node, SLOT, node.pose, () =>
-      derive(
-        node as never,
-        ids.map((id) => {
-          const dep = source.get(id);
-          return dep === undefined
-            ? undefined
-            : { node: dep as never, pose: effectivePose(source, dep) };
-        }),
-      ),
+      derive(node as never, ids.map((id) => derivedDepOf(source, id))),
     );
     if (cycleHits !== hitsBefore) dropPoseKeyedMemoSlots(node);
     return value;
   } finally {
     resolving.delete(node.id);
   }
+}
+
+/**
+ * `id` as a derivation sees it: the node, the pose it is painted at, and the
+ * path it derives.
+ *
+ * The pose is resolved eagerly — every derivation reads it — and the path
+ * lazily, because most do not and resolving a route costs a router run. Both
+ * resolve *through* this function, so a dependency that is itself derived is
+ * resolved before it is read.
+ */
+export function derivedDepOf<TPose>(
+  source: PoseSource<TPose>,
+  id: NodeId,
+): DerivedDep<TPose> | undefined {
+  const node = source.get(id);
+  if (node === undefined) return undefined;
+  return {
+    node: node as unknown as Node<unknown, string, TPose>,
+    pose: effectivePose(source, node),
+    get path(): Path | null {
+      return resolveDerivedPath(
+        node,
+        (depId) => derivedDepOf(source, depId),
+        (depId) => source.childrenOf(depId),
+      );
+    },
+  };
 }
 
 /**

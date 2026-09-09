@@ -53,6 +53,7 @@ export {
   pathIntersectsPolygon,
 } from './pathHitTest';
 export { pathDistanceToPoint } from './pathDistance';
+export { pointAlongPath, type PathStation, type PointAlongPathOptions } from './pathAt';
 export {
   polygonContainsRectCenter,
   polygonContainsRect,

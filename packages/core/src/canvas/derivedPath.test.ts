@@ -30,7 +30,7 @@ type DerivePath = (
 /** A dependency as the derive callbacks now receive it. The node is a stand-in:
  *  nothing in these fixtures reads it. */
 const dep = (p: RectPose | undefined): DerivedDep<RectPose> | undefined =>
-  p === undefined ? undefined : { node: {} as never, pose: p };
+  p === undefined ? undefined : { node: {} as never, pose: p, path: null };
 
 type Data = { label?: string };
 type GradientData = { fill: FillStyle };
