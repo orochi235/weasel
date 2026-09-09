@@ -65,8 +65,18 @@ export type {
 } from './graph';
 export { DIAGRAM_LABEL, LABEL_DERIVE_POSE, diagramLabelOf, labelDerivePose } from './label';
 export type { DiagramLabel, LabelPoseOptions } from './label';
-export { force } from './force';
-export type { ForceOptions } from './force';
+export { force, forceRelaxation } from './force';
+export type { ForceOptions, ForceRelaxation } from './force';
+export { EASED_LAYOUTS, easedProducer, forceProducer, useLiveLayout } from './live';
+export type {
+  EasedProducerOptions,
+  ForceProducerOptions,
+  LiveLayout,
+  LiveLayoutCtx,
+  LiveLayoutFrame,
+  LiveLayoutProducer,
+  UseLiveLayoutOptions,
+} from './live';
 export { backEdges, layered, ranksOf } from './layered';
 export {
   DEFAULT_NODE_GAP,
@@ -91,6 +101,7 @@ export {
   LAYOUTS,
   LAYOUT_ACTION_ID,
   applyLayout,
+  layoutPoses,
   createLayoutAction,
 } from './layoutAction';
 export type { ApplyLayoutOptions, LayoutActionOptions } from './layoutAction';

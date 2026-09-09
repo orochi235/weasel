@@ -51,6 +51,9 @@ export function participant(id: string, at: Pose, text: string): Spec[] {
       kind: 'leaf',
       layer: 'main',
       parent: id as never,
+      // Transparent to picking, so a press anywhere on the box grabs the box.
+      // Without it the innermost hit wins and a drag pulls the label out.
+      pickable: false,
       pose: { x: at.x + 12, y: at.y + at.height / 2 - 8, width: at.width - 24, height: 16 },
       data: { text, style: TEXT, fill: { color: LABEL } },
     },

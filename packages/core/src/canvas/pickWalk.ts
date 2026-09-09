@@ -36,6 +36,8 @@ export interface PickCandidate<TPose> {
   kind?: string;
   layer?: string;
   pose: TPose;
+  /** `false` makes the node transparent to the walk — see `SceneNode.pickable`. */
+  pickable?: boolean;
   clipFromPose?: (pose: TPose) => Path | null;
 }
 
@@ -139,6 +141,9 @@ export function pickWalk<TPose>(
 
   for (const node of src.order()) {
     if (!includeContainers && node.kind === 'container') continue;
+    // Transparent to picking: the click belongs to whatever is behind it,
+    // which for a label inside a box is the box.
+    if (node.pickable === false) continue;
     if (node.layer !== undefined && src.layerIsPainted?.(node.layer) === false) continue;
     if (src.alphaOf !== undefined && src.alphaOf(node.id) <= 0) continue;
 

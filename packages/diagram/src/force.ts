@@ -159,16 +159,31 @@ function gravity(bodies: readonly Body[], at: { x: number; y: number }, strength
   };
 }
 
-export const force = (graph: Graph, opts: ForceOptions = {}): LayoutResult => {
+/**
+ * The bodies and the force list, wound up and ready to tick.
+ *
+ * Shared by the one-shot `force` below and the live relaxation in `live.ts`,
+ * which ticks it a frame at a time. Two copies of a force list drift, and the
+ * only thing that would say so is the arrangement they produce.
+ */
+export interface ForceRelaxation {
+  bodies: Body[];
+  byId: Map<string, Body>;
+  /** Ids the caller must not move: declared pins, held as `fx`/`fy`. */
+  pinned: ReadonlySet<string>;
+  sim: ReturnType<typeof createSimulation<Body>>;
+  /** Where a body's node's top-left sits, given the body's center. */
+  placed(): Map<string, { x: number; y: number }>;
+}
+
+export function forceRelaxation(graph: Graph, opts: ForceOptions = {}): ForceRelaxation {
   const {
-    iterations = DEFAULTS.iterations,
     linkDistance = DEFAULTS.linkDistance,
     linkStrength = DEFAULTS.linkStrength,
     charge: chargeStrength = DEFAULTS.charge,
     gravity: gravityStrength = DEFAULTS.gravity,
     padding = DEFAULTS.padding,
   } = opts;
-  if (graph.nodes.length === 0) return new Map();
 
   const pinned = pinnedSet(graph, opts);
   const bodies: Body[] = graph.nodes.map((node) => {
@@ -196,7 +211,7 @@ export const force = (graph: Graph, opts: ForceOptions = {}): LayoutResult => {
     y: bodies.reduce((sum, b) => sum + b.y, 0) / bodies.length,
   };
 
-  createSimulation<Body>({
+  const sim = createSimulation<Body>({
     nodes: bodies,
     forces: [
       charge(bodies, chargeStrength),
@@ -204,17 +219,32 @@ export const force = (graph: Graph, opts: ForceOptions = {}): LayoutResult => {
       gravity(bodies, centroid, gravityStrength),
       separateBoxes(bodies, padding),
     ],
-  }).tick(iterations);
+  });
 
-  const placed = new Map<string, { x: number; y: number }>();
-  for (const node of graph.nodes) {
-    const body = byId.get(node.id)!;
-    placed.set(node.id, {
-      x: body.x - node.bounds.width / 2,
-      y: body.y - node.bounds.height / 2,
-    });
-  }
-  return translated(graph, placed, pinned, opts.tolerance);
+  return {
+    bodies,
+    byId,
+    pinned,
+    sim,
+    placed() {
+      const placed = new Map<string, { x: number; y: number }>();
+      for (const node of graph.nodes) {
+        const body = byId.get(node.id)!;
+        placed.set(node.id, {
+          x: body.x - node.bounds.width / 2,
+          y: body.y - node.bounds.height / 2,
+        });
+      }
+      return placed;
+    },
+  };
+}
+
+export const force = (graph: Graph, opts: ForceOptions = {}): LayoutResult => {
+  if (graph.nodes.length === 0) return new Map();
+  const relaxation = forceRelaxation(graph, opts);
+  relaxation.sim.tick(opts.iterations ?? DEFAULTS.iterations);
+  return translated(graph, relaxation.placed(), relaxation.pinned, opts.tolerance);
 };
 
 /** `ForceOptions` only widens `LayoutOptions`, so this is a `LayoutFn` — but

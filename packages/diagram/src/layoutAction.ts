@@ -53,29 +53,48 @@ export function applyLayout<TPose>(
   result: LayoutResult,
   opts: ApplyLayoutOptions<TPose> = {},
 ): number {
-  if (result.size === 0) return 0;
-  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseProjection<TPose>);
-  let moved = 0;
+  const poses = layoutPoses(scene, result, opts.geometry);
+  if (poses.size === 0) return 0;
   scene.batch(opts.label ?? 'Layout', () => {
-    for (const [id, at] of result) {
-      const node = scene.get(id as never);
-      if (node === undefined) continue;
-      const bounds = geometry.getBounds(node.pose);
-      const dx = at.x - bounds.x;
-      const dy = at.y - bounds.y;
-      scene.setPose(id as never, translatePoseViaDescriptor(node.pose, dx, dy, geometry));
-      moved++;
-      for (const descendant of subtreeOf(scene, id)) {
-        const child = scene.get(descendant as never);
-        if (child === undefined) continue;
-        scene.setPose(
-          descendant as never,
-          translatePoseViaDescriptor(child.pose, dx, dy, geometry),
-        );
-      }
-    }
+    for (const [id, pose] of poses) scene.setPose(id as never, pose);
   });
+  // Participants, not the descendants they carried along: a caller asking how
+  // much a layout did means the nodes it placed.
+  let moved = 0;
+  for (const id of result.keys()) if (poses.has(id)) moved++;
   return moved;
+}
+
+/**
+ * The poses a layout result implies, without writing any of them: each moved
+ * node translated to its new top-left, and its subtree translated with it.
+ *
+ * Split out because a *live* layout needs the same answer every frame and must
+ * not write it — it publishes to the override channel and commits once. The
+ * translation is measured from the node's document pose, which a run in flight
+ * never changes, so a frame's answer does not depend on the frame before it.
+ */
+export function layoutPoses<TPose>(
+  scene: Scene<unknown, string, TPose>,
+  result: LayoutResult,
+  geometry: PoseProjection<TPose> = AUTO_POSE_DESCRIPTOR as PoseProjection<TPose>,
+): Map<string, TPose> {
+  const out = new Map<string, TPose>();
+  for (const [id, at] of result) {
+    const node = scene.get(id as never);
+    if (node === undefined) continue;
+    const bounds = geometry.getBounds(node.pose);
+    const dx = at.x - bounds.x;
+    const dy = at.y - bounds.y;
+    if (dx === 0 && dy === 0) continue;
+    out.set(id, translatePoseViaDescriptor(node.pose, dx, dy, geometry));
+    for (const descendant of subtreeOf(scene, id)) {
+      const child = scene.get(descendant as never);
+      if (child === undefined) continue;
+      out.set(descendant, translatePoseViaDescriptor(child.pose, dx, dy, geometry));
+    }
+  }
+  return out;
 }
 
 function subtreeOf<TPose>(scene: Scene<unknown, string, TPose>, id: string): string[] {

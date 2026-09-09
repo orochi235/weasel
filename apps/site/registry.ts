@@ -583,6 +583,15 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/DiagramLayoutDemo').then((m) => m.DiagramLayoutDemo),
     path: 'apps/site/demos/DiagramLayoutDemo.tsx',
   },
+  {
+    id: 'diagram-live',
+    title: 'Live diagram layout',
+    category: 'weasel-diagram',
+    description: "The same relaxation the Force button runs, a tick a frame instead of all at once. Each frame goes to the scene's ephemeral override channel — the one a drag already publishes to — so the edges follow the boxes as they move and the document is untouched until the run settles, at which point the whole arrangement lands as one undo entry. Dragging a box mid-run needs no gesture from the plugin: the move tool publishes an override, and a node carrying an override the run did not put there is a pin, held with fx/fy while its neighbors relax around it. The loop runs behind useVisibleRaf, so a tab nobody is looking at stops relaxing and picks up where it left off.",
+    hint: 'Press Relax, then grab a box and drag it while the graph is still moving — the rest answers, and lets go when you do. Cmd+Z takes the whole settled arrangement back in one step.',
+    load: () => import('./demos/DiagramLiveDemo').then((m) => m.DiagramLiveDemo),
+    path: 'apps/site/demos/DiagramLiveDemo.tsx',
+  },
   // ─── weasel-hud ───────────────────────────────────────────────────────────
   {
     id: 'hud',

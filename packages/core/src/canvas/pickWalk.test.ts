@@ -7,7 +7,7 @@
  * missing test; it is the reason the collapse is worth keeping.
  */
 import { describe, it, expect } from 'vitest';
-import { createScene } from 'core/scene/scene';
+import { createScene, sceneFromJSON } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import { pickWalk, scenePickSource, hiddenLayerIds, type ScenePickSourceOptions } from './pickWalk';
 import { hitTestArea } from './deps/hitTestArea';
@@ -76,6 +76,43 @@ describe('pickWalk — alpha', () => {
     expect(pickAt(scene, 5, 5, {
       alphaOf: (id) => 1 * (scene.overrides.get(asNodeId(id))?.alpha ?? 1),
     })).toEqual([]);
+  });
+});
+
+describe('pickWalk — pickable', () => {
+  it('skips a node marked unpickable, leaving what is behind it', () => {
+    const scene = rectScene();
+    // A label sitting inside a box: overlapping, above it, and not the thing
+    // the user means to grab.
+    scene.add({
+      kind: 'leaf', layer: 'main', id: asNodeId('label'), pickable: false,
+      pose: { x: 4, y: 4, width: 30, height: 10 }, data: { kind: 'rect' },
+    });
+    expect(pickAt(scene, 8, 8)).toEqual(['a']);
+  });
+
+  it('picks it when nothing says otherwise', () => {
+    const scene = rectScene();
+    scene.add({
+      kind: 'leaf', layer: 'main', id: asNodeId('label'),
+      pose: { x: 4, y: 4, width: 30, height: 10 }, data: { kind: 'rect' },
+    });
+    expect(pickAt(scene, 8, 8)).toEqual(['a', 'label']);
+  });
+
+  it('round-trips through toJSON', () => {
+    const scene = rectScene();
+    scene.add({
+      kind: 'leaf', layer: 'main', id: asNodeId('label'), pickable: false,
+      pose: { x: 4, y: 4, width: 30, height: 10 }, data: { kind: 'rect' },
+    });
+    const json = scene.toJSON();
+    expect(json.nodes.find((n) => n.id === 'label')?.pickable).toBe(false);
+    expect(json.nodes.find((n) => n.id === 'a')?.pickable).toBeUndefined();
+
+    const restored = sceneFromJSON(json, {});
+    expect(restored.get(asNodeId('label'))!.pickable).toBe(false);
+    expect(pickAt(restored as never, 8, 8)).toEqual(['a']);
   });
 });
 

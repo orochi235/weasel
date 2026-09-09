@@ -473,6 +473,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     id: NodeId; kind: 'leaf' | 'container'; layer: TLayer; pose: TPose; data: TData;
     parent: NodeId | null; index: number;
     dependsOn?: readonly NodeId[] | 'children';
+    pickable?: boolean;
   } & Record<string, unknown>>('kit:add', {
     apply: (p) => {
       if (state.nodes.has(p.id)) {
@@ -484,6 +485,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       state.nodes.set(p.id, node);
       attach(p.id, p.parent, p.index);
       if (p.dependsOn !== undefined) node.dependsOn = p.dependsOn;
+      if (p.pickable !== undefined) node.pickable = p.pickable;
       dependents.add(p.id, p.dependsOn === 'children' ? [] : p.dependsOn ?? []);
       trackChildDerived(p.id, p.dependsOn);
       // Two ways a function field comes back. The redo path reads the
@@ -972,6 +974,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
         parent, index,
         ...(spec.dependsOn !== undefined ? { dependsOn: spec.dependsOn } : {}),
+        ...(spec.pickable !== undefined ? { pickable: spec.pickable } : {}),
         ...fnKeysOf(fnFields, { ...spec, id, kind: spec.kind } as unknown as FnBearingNode, 'opKey'),
       }, `add ${spec.kind}`);
       // A function cannot travel through the serializable op payload. Patch it
@@ -1340,6 +1343,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         if (n.parent != null) out.parent = n.parent;
         if (n.dependsOn === 'children') out.dependsOn = 'children';
         else if (n.dependsOn && n.dependsOn.length > 0) out.dependsOn = n.dependsOn;
+        if (n.pickable === false) out.pickable = false;
         Object.assign(
           out,
           fnKeysOf(fnFields, n as unknown as FnBearingNode, 'jsonKey', (field) => {
@@ -1428,6 +1432,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
         parent, index,
         ...(spec.dependsOn !== undefined ? { dependsOn: spec.dependsOn } : {}),
+        ...(spec.pickable !== undefined ? { pickable: spec.pickable } : {}),
       });
       // No `kit:add` reaches history here, so nothing ever replays these and
       // `pruneCacheForDroppedOps` — which only scans `kit:add` — could never
@@ -1478,6 +1483,7 @@ function specsFromSerialized<TData, TLayer extends string, TPose>(
       data: n.data,
     };
     if (n.parent !== undefined) spec.parent = n.parent as NodeId;
+    if (n.pickable !== undefined) spec.pickable = n.pickable;
     if (n.dependsOn !== undefined) {
       spec.dependsOn = n.dependsOn === 'children'
         ? 'children'

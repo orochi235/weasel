@@ -117,6 +117,16 @@ interface NodeBase<TData, TLayer extends string, TPose> {
    *  it in `dependsOn`, but a container outlives the children it derives
    *  from — an emptied group is still a group. */
   dependsOn?: readonly NodeId[] | 'children';
+  /** Whether the hit-test walk can return this node. Default `true`; `false`
+   *  makes it transparent to picking, so a click on it lands on whatever is
+   *  behind — normally its own container.
+   *
+   *  For content a container owns rather than content the user selects on its
+   *  own: the label inside a box, a body's rows. Without it the innermost hit
+   *  wins, and dragging a labeled box moves the label out of the box. It does
+   *  not hide the node from anything else — it still paints, still clips, and
+   *  a consumer can still select it by id. */
+  pickable?: boolean;
   /** Computes this node's path from its dependencies, in `dependsOn` order —
    *  each one the node and the pose it is painted at.
    *  A dependency that has been removed arrives as `undefined`.
@@ -215,6 +225,8 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   index?: number;
   /** Explicit id wins over the Scene's `generateId` and the kit default. */
   id?: NodeId;
+  /** Mirrors `SceneNode.pickable`. Omit for the default, which is pickable. */
+  pickable?: boolean;
   /** Only meaningful when `kind === 'container'`. Attach a clip-path function
    *  to the node; ignored for leaves. Mirrors `ContainerNode.clipFromPose`. */
   clipFromPose?: (pose: TPose) => Path | null;
@@ -298,6 +310,8 @@ export interface SerializedNode<TData, TLayer extends string, TPose> {
   /** Ids this node's geometry derives from, or `'children'`. Omitted when it
    *  derives from nothing. */
   dependsOn?: readonly string[] | 'children';
+  /** Mirrors `SceneNode.pickable`. Omitted when the node is pickable. */
+  pickable?: boolean;
   /** Registry key for the node's `derivePath` function. Omitted when it has none. */
   derivePathKey?: string;
   /** Registry key for the node's `derivePose` function. Omitted when it has none. */
