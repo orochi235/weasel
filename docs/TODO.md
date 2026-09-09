@@ -616,16 +616,14 @@ Arcs 1, 1b, 2, 3, 5, 6 and most of 4 are in — a derived node is picked and
 clipped where it paints, follows a live drag, and can drive its own pose; stroke
 markers ship; and `@weasel-js/diagram` holds the `DiagramNode` trait, ports on
 the outline, the body builder, edges routed by `straight` / `orthogonal` /
-`bezier`, the connect gesture, and `layered` / `tree` / `force` layout. Edge
-labels are what is left.
+`bezier`, the connect gesture, `layered` / `tree` / `force` layout, edge labels,
+and a live run of any of them.
 
-- **(P2) Edge labels.** The one piece of arc 4 left. A label is a node with
-  `dependsOn: [edge]` positioned at a parameter along the routed path — but a
-  derivation is handed its dependencies' nodes and poses, not their derived
-  *paths*, so the label has no way to read the route. Either a derivation gets
-  its dependencies' resolved geometry too, or the label re-runs the router from
-  the edge's own trait, which resolves the route twice per frame. Decide before
-  building.
+A derivation is handed its dependencies' resolved paths as well as their poses
+(`DerivedDep.path`, lazy and memoized), which is what an edge label reads;
+`usePoseRun` publishes a frame of poses to the override channel and commits the
+run as one batch; and `SceneNode.pickable: false` keeps a body's own label from
+intercepting the press that drags the body.
 
 - **(P3) The preview channel still carries pose twice.** `move` / `resize` /
   `rotate` publish each frame to the scene's pose overrides *and* keep their own
