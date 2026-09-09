@@ -49,6 +49,45 @@ export {
   withDiagramRegistry,
 } from './edge';
 export type { DiagramEdge, EdgeEnd, EdgeRouteOptions, RouteRequest, Router } from './edge';
+export { buildGraph } from './graph';
+export type {
+  BuildGraphOptions,
+  Graph,
+  GraphEdge,
+  GraphNode,
+  GraphNodeLike,
+  GraphSource,
+} from './graph';
+export { force } from './force';
+export type { ForceOptions } from './force';
+export { backEdges, layered, ranksOf } from './layered';
+export {
+  DEFAULT_NODE_GAP,
+  DEFAULT_RANK_GAP,
+  axesFor,
+  graphOrder,
+  packAcross,
+  pinnedSet,
+  seededOrder,
+  settle,
+  translated,
+} from './layout';
+export type {
+  LayoutAxes,
+  LayoutDirection,
+  LayoutFn,
+  LayoutOptions,
+  LayoutResult,
+  Slot,
+} from './layout';
+export {
+  LAYOUTS,
+  LAYOUT_ACTION_ID,
+  applyLayout,
+  createLayoutAction,
+} from './layoutAction';
+export type { ApplyLayoutOptions, LayoutActionOptions } from './layoutAction';
+export { forestOf, tree } from './tree';
 export { outlinePolyline, portsOnOutline, rayHit } from './onOutline';
 export {
   PORT_AFFORDANCE_KIND,

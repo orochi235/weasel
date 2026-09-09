@@ -15,12 +15,18 @@ import {
   type ParticipantSource,
   type PortAffordanceOptions,
 } from './portAffordance';
-import type { DiagramNodeLike } from './trait';
+import type { GraphNodeLike, GraphSource } from './graph';
 
 /** The minimum a participant source needs from a scene. Narrower than `Scene`
  *  so a consumer can pass anything that answers these two. */
 export interface ParticipantScene<TPose> {
-  renderOrderNodes(): readonly { id: string; kind: 'leaf' | 'container'; data: unknown; pose: TPose }[];
+  renderOrderNodes(): readonly {
+    id: string;
+    kind: 'leaf' | 'container';
+    data: unknown;
+    pose: TPose;
+    dependsOn?: readonly string[] | 'children';
+  }[];
   readonly overrides: { get(id: string): { pose?: TPose } | undefined };
   get(id: string): unknown;
   childrenOf(id: string): readonly string[];
@@ -33,14 +39,18 @@ export interface ParticipantScene<TPose> {
  * showing, and a port that answers from the document pose while its node is
  * mid-drag sits somewhere the user can see the node is not. Nodes that carry no
  * participant trait cost one reader call each and contribute no regions.
+ *
+ * One source answers both the ports and the graph — `GraphSource` is a
+ * `ParticipantSource` that also carries `dependsOn`, which is where an edge's
+ * two endpoints live.
  */
 export function sceneParticipants<TPose>(
   scene: ParticipantScene<TPose>,
-): ParticipantSource<TPose> {
+): GraphSource<TPose> {
   return function* () {
     for (const node of scene.renderOrderNodes()) {
       yield {
-        node: node as DiagramNodeLike,
+        node: node as GraphNodeLike,
         pose: effectivePose(scene as never, node as never) as TPose,
       };
     }

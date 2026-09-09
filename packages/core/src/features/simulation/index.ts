@@ -1,8 +1,11 @@
+export { createSimulation } from './createSimulation';
 export { useSimulation } from './useSimulation';
 export type {
   Simulation,
-  SimulationNode,
+  SimulationCore,
   SimulationForce,
+  SimulationNode,
+  SimulationOptions,
   UseSimulationOptions,
 } from './types';
 export {

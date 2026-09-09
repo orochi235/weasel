@@ -2,26 +2,46 @@ import { useEffect, useMemo, useRef } from 'react';
 import {
   SceneCanvas,
   WeaselProvider,
+  useAction,
+  useActionsRegistry,
   useScene,
+  type Action,
   type AddNodeSpec,
   type SceneCanvasApi,
 } from '@weasel-js/core';
 import {
   EDGE_DERIVE_PATH,
   bodyTrait,
+  createLayoutAction,
   diagramPorts,
+  force,
+  layered,
   layoutBody,
   measureBody,
   registerDiagramShape,
   sceneParticipants,
   sizeToBody,
+  tree,
   withDiagramRegistry,
   type BodySpec,
   type DiagramEdge,
   type DiagramNode,
+  type LayoutFn,
 } from '@weasel-js/diagram';
 
 const W = 640, H = 360;
+/** Tighter than the layout defaults, so three ranks fit a 360px demo canvas. */
+const GAPS = { nodeGap: 32, rankGap: 40 };
+
+/** A layout is a plain function of the graph, so a consumer tunes one by
+ *  wrapping it rather than by configuring the action. Force is turned down
+ *  here for the same reason the gaps are: the shipped numbers are sized for a
+ *  page, not for 640×360. */
+const CHOICES: { name: string; run: LayoutFn }[] = [
+  { name: 'Layered', run: layered },
+  { name: 'Tree', run: tree },
+  { name: 'Force', run: (graph, opts) => force(graph, { ...opts, linkDistance: 80, charge: -400, gravity: 0.08, padding: 16 }) },
+];
 const INK = '#7ba7c7';
 const PORT = '#e0913f';
 
@@ -157,15 +177,46 @@ function DiagramNodesInner() {
   const canvasRef = useRef<SceneCanvasApi | null>(null);
   useEffect(() => canvasRef.current?.registerLayer(layer), [layer]);
 
+  // One action per algorithm, over the same participant source the ports read.
+  // The graph is rebuilt from the scene on each press, so nothing here has to
+  // be kept in sync with what the author has since connected or dragged, and a
+  // node the author dragged keeps the order it was dragged into.
+  const source = useMemo(() => sceneParticipants(scene), [scene]);
+  const layouts = useMemo(() => CHOICES.map(({ name, run }) => createLayoutAction<Pose>({
+    id: `diagram.layout.${name.toLowerCase()}`,
+    label: name,
+    source,
+    algorithm: run,
+    layout: GAPS,
+  })), [source]);
+
   return (
-    <SceneCanvas
-      ref={canvasRef}
-      width={W}
-      height={H}
-      className="ckd-canvas"
-      scene={scene}
-      ambient={[contribution]}
-    />
+    <div className="ckd-stack">
+      <div className="ckd-row">
+        {layouts.map((action) => <LayoutButton key={action.id} action={action} />)}
+      </div>
+      <SceneCanvas
+        ref={canvasRef}
+        width={W}
+        height={H}
+        className="ckd-canvas"
+        scene={scene}
+        ambient={[contribution]}
+      />
+    </div>
+  );
+}
+
+/** Registers one layout action and gives it a press. Dispatched through the
+ *  registry rather than called directly, so the button runs the same path a
+ *  keybinding would. */
+function LayoutButton({ action }: { action: Action }) {
+  useAction(action);
+  const actions = useActionsRegistry();
+  return (
+    <button type="button" className="ckd-btn" onClick={() => actions?.trigger(action.id)}>
+      {action.label}
+    </button>
   );
 }
 

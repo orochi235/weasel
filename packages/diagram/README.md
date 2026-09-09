@@ -48,6 +48,28 @@ Dragging one port onto another authors an edge. Which pairs may be joined is
 `canConnect`, which defaults to "a port may not join itself, and two ports that
 both declare a `type` must declare the same one".
 
+### Laying it out
+
+`layered`, `tree` and `force` are plain functions of the graph. Each hands back
+the new top-left for every node that **moves** — a node already standing where
+the layout wants it is absent, so re-running a layout on an unchanged diagram
+writes nothing at all.
+
+```tsx
+useAction(useMemo(() => createLayoutAction<Pose>({
+  source: sceneParticipants(scene),
+  algorithm: 'layered',
+}), [scene]));
+```
+
+The action rebuilds the graph from the scene on each press and writes the whole
+move as one undo entry. Three rules keep a re-layout from scrambling a diagram
+someone has arranged: no RNG anywhere, within-rank order seeded from where the
+nodes already sit, and a node carrying `pinned: true` that nothing moves.
+
+`force` is the exception to the second half of that: it is an iterative
+relaxation seeded from the current positions, so re-running it keeps relaxing.
+
 ## License
 
 MIT

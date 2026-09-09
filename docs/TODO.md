@@ -612,11 +612,12 @@ Core five + Crop shipped. Remaining:
 
 Left open by the derived-path and derived-pose arcs (`dependsOn` / `derivePath` /
 `derivePose` / `SceneRegistry`; the seam is documented in `docs/extending.md`).
-Arcs 1, 1b, 2, 3 and most of 4 are in — a derived node is picked and clipped
-where it paints, follows a live drag, and can drive its own pose; stroke markers
-ship; and `@weasel-js/diagram` holds the `DiagramNode` trait, ports on the
-outline, the body builder, edges routed by `straight` / `orthogonal` / `bezier`,
-and the connect gesture. Layout is the next arc.
+Arcs 1, 1b, 2, 3, 5, 6 and most of 4 are in — a derived node is picked and
+clipped where it paints, follows a live drag, and can drive its own pose; stroke
+markers ship; and `@weasel-js/diagram` holds the `DiagramNode` trait, ports on
+the outline, the body builder, edges routed by `straight` / `orthogonal` /
+`bezier`, the connect gesture, and `layered` / `tree` / `force` layout. Edge
+labels are what is left.
 
 - **(P2) Edge labels.** The one piece of arc 4 left. A label is a node with
   `dependsOn: [edge]` positioned at a parameter along the routed path — but a

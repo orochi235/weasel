@@ -26,25 +26,10 @@ export interface SimulationForce<TNode extends SimulationNode = SimulationNode> 
   initialize?(nodes: TNode[], random?: () => number): void;
 }
 
-/** Options for `useSimulation`: the nodes to move, the forces acting on them,
- *  and the cooling schedule that decides when the simulation settles. */
-export interface UseSimulationOptions<TNode extends SimulationNode> {
-  /** Mutable array of nodes. Kit + forces mutate vx/vy/x/y in place. */
-  nodes: TNode[];
-  /** Forces applied per tick. Each may implement `initialize` for setup. */
-  forces?: SimulationForce<TNode>[];
-
-  /** Initial alpha. Default 1. */
-  alpha?: number;
-  /** Settle threshold. When alpha drops below and alphaTarget is 0, onEnd fires. Default 0.001. */
-  alphaMin?: number;
-  /** Per-tick decay rate toward alphaTarget. Default 1 - 0.001^(1/300) ≈ 0.0228. */
-  alphaDecay?: number;
-  /** Target alpha. Set above alphaMin to keep sim warm (e.g. during drag). Default 0. */
-  alphaTarget?: number;
-  /** Friction multiplier on velocity per tick: vx *= (1 - velocityDecay). Default 0.4. */
-  velocityDecay?: number;
-
+/** Options for `useSimulation`: everything {@link SimulationOptions} carries,
+ *  plus the loop's own callbacks and clock. */
+export interface UseSimulationOptions<TNode extends SimulationNode>
+  extends SimulationOptions<TNode> {
   /** Fired after each integration step. */
   onTick?: (nodes: TNode[]) => void;
   /** Fired once when the sim settles (alpha < alphaMin && alphaTarget === 0). */
@@ -57,7 +42,7 @@ export interface UseSimulationOptions<TNode extends SimulationNode> {
 }
 
 /**
- * A running force simulation over a set of nodes.
+ * A force simulation over a set of nodes, with no clock of its own.
  *
  * Each tick applies every force and then integrates velocities, scaled by
  * `alpha` — a temperature that decays toward `alphaTarget` so the layout
@@ -65,8 +50,12 @@ export interface UseSimulationOptions<TNode extends SimulationNode> {
  * which is what a drag does.
  *
  * Nodes are mutated in place; the simulation holds the array, not a copy.
+ *
+ * Nothing here advances time. {@link Simulation} adds the frame loop; a caller
+ * that wants the whole relaxation at once — a layout pass, a pre-warm, a test
+ * — drives {@link SimulationCore.tick} itself.
  */
-export interface Simulation<TNode extends SimulationNode> {
+export interface SimulationCore<TNode extends SimulationNode> {
   readonly nodes: TNode[];
 
   setNodes(nodes: TNode[]): this;
@@ -83,10 +72,6 @@ export interface Simulation<TNode extends SimulationNode> {
   velocityDecay(): number;
   velocityDecay(value: number): this;
 
-  /** Resume the RAF loop. If alpha < alphaMin, reset alpha to 1. */
-  restart(): this;
-  /** Cancel the RAF loop. Does not change alpha. */
-  stop(): this;
   /**
    * Run the tick body synchronously `iterations` times. Does NOT fire
    * onTick or onEnd (matches d3-force). Used for offscreen pre-warm and tests.
@@ -94,6 +79,37 @@ export interface Simulation<TNode extends SimulationNode> {
   tick(iterations?: number): this;
 
   isSettled(): boolean;
+}
+
+/** A {@link SimulationCore} running on a frame loop. */
+export interface Simulation<TNode extends SimulationNode> extends SimulationCore<TNode> {
+  /** Resume the RAF loop. If alpha < alphaMin, reset alpha to 1. */
+  restart(): this;
+  /** Cancel the RAF loop. Does not change alpha. */
+  stop(): this;
+}
+
+/** What {@link SimulationCore} needs: the nodes, the forces acting on them,
+ *  and the cooling schedule. {@link UseSimulationOptions} adds the loop's. */
+export interface SimulationOptions<TNode extends SimulationNode> {
+  /** Mutable array of nodes. Kit + forces mutate vx/vy/x/y in place. */
+  nodes: TNode[];
+  /** Forces applied per tick. Each may implement `initialize` for setup. */
+  forces?: SimulationForce<TNode>[];
+
+  /** Initial alpha. Default 1. */
+  alpha?: number;
+  /** Settle threshold. When alpha drops below and alphaTarget is 0, onEnd fires. Default 0.001. */
+  alphaMin?: number;
+  /** Per-tick decay rate toward alphaTarget. Default 1 - 0.001^(1/300) ≈ 0.0228. */
+  alphaDecay?: number;
+  /** Target alpha. Set above alphaMin to keep sim warm (e.g. during drag). Default 0. */
+  alphaTarget?: number;
+  /** Friction multiplier on velocity per tick: vx *= (1 - velocityDecay). Default 0.4. */
+  velocityDecay?: number;
+  /** Handed to each force's `initialize`. Default `Math.random`; pass a seeded
+   *  source to make a run reproducible. */
+  random?: () => number;
 }
 
 /** Default alpha decay: such that alpha drops from 1 to alphaMin (0.001) in 300 ticks. */

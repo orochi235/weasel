@@ -9,23 +9,20 @@ whose arc list is the plan. That spec is marked up with what landed — read its
 
 ## Where it stands
 
-Arcs 1, 1b, 2, 3, 5 and most of 4 are in. `@weasel-js/diagram` is published at
-1.4.3 and has a demo at `#diagram-nodes`
-(`apps/site/demos/DiagramNodesDemo.tsx`) where ports are grabbable and dragging
-one onto another authors an edge.
+Arcs 1, 1b, 2, 3, 5, 6 and most of 4 are in. `@weasel-js/diagram` is published
+at 1.4.3 and has a demo at `#diagram-nodes`
+(`apps/site/demos/DiagramNodesDemo.tsx`) where ports are grabbable, dragging one
+onto another authors an edge, and three buttons run `layered` / `tree` /
+`force`.
 
-## Next: arc 6 — layout
+## Next: arc 7 — the demo, and edge labels
 
-`layout(graph, currentPoses, opts) => Map<NodeId, Pose>`, as one undoable batch
-of pose ops. `layered`, `tree` and `force`, the last reusing `useSimulation`
-seeded from current positions rather than adding a second integrator. The three
-rules that keep re-layout non-destructive — deterministic tiebreaks, within-rank
-order seeded from the existing cross-axis order, a `pin` set nothing moves — are
-in the spec. **Running layout twice on an unchanged graph produces zero ops, and
-that is a test.**
+Arc 7 is a demo per `docs/CLAUDE.md`'s demo conventions. `#diagram-nodes` now
+covers ports, edges, routers and layout in one; decide whether arc 7 is a second
+single-purpose demo or a trim of that one.
 
-`Graph` — the adjacency index — is rebuilt per layout invocation until
-measurement says otherwise.
+Edge labels are the last piece of arc 4 and the one open design fork — see
+below.
 
 ## Decisions made in conversation that the code does not explain
 
@@ -59,11 +56,35 @@ connect may land on cannot be routing — the dispatcher never re-reads the
 affordance under a moving pointer — so it is `canConnect` filtering the
 candidate set instead. Neither is an action body inspecting a hit and bailing.
 
-**Retargeting an existing edge was left for arc 6's neighborhood, not skipped.**
-It needs a `setDependsOn` op, which `docs/TODO.md` now carries at P2. Authoring
-a *new* edge needed none, which is why connect landed without it.
+**Retargeting an existing edge is still unbuilt.** It needs a `setDependsOn`
+op, which `docs/TODO.md` carries at P2. Authoring a *new* edge needed none,
+which is why connect landed without it, and layout never touches `dependsOn` at
+all — so arc 6 went by without closing it either.
 
 ## Traps this work hit
+
+Arc 6's, first:
+
+- **`Scene.setPose` does not cascade to children.** Poses are absolute, so
+  moving a container leaves its subtree where it was — a built body walks out
+  from under its own label rows with every test green. `applyLayout` translates
+  the subtree itself; `sceneToAdapter` has the same walk behind
+  `cascadeContainerPose`, and it is not exported.
+- **Idempotence and anchoring are different properties, and an idempotence test
+  catches only one.** A layout that dumps everything at the origin is perfectly
+  idempotent — the second run reads what the first wrote and agrees with it.
+  Deleting the anchor left all 20 layout tests green until one asserted the
+  result's bounding box still starts where the graph's did.
+- **A charge force treats a node as a point,** so two wide boxes a comfortable
+  center-to-center distance apart still cover each other. `separateBoxes` is a
+  second force working on the box, and it is deliberately not alpha-scaled — an
+  overlap at the end of the run is exactly as wrong as one at the start.
+- **Declaring `force` as `LayoutFn` hid `ForceOptions` from every caller.**
+  `ForceOptions` only widens `LayoutOptions`, so the annotation typechecked and
+  silently made `linkDistance` an excess property at every call site. It carries
+  its own signature and a `satisfies LayoutFn` instead.
+
+And arc 5's:
 
 - **A registered layer's hit reports `layer:<RenderLayer.id>`, not the region's
   `hitKind`.** `AffordanceRegion.hitKind` is dropped on that route and the

@@ -2,11 +2,15 @@
 
 Continuous N-body simulation — force-directed layout, physics-ish motion.
 
-`useSimulation` owns a RAF loop and a velocity-Verlet integrator. Forces are
-pluggable functions matching **d3-force's protocol**, so d3-force's bundled
-forces (`forceManyBody`, `forceLink`, `forceCenter`, …) work here without
-translation. That compatibility is deliberate — don't invent a parallel force
-signature.
+`createSimulation` is the velocity-Verlet integrator and nothing else: `tick()`
+is the only thing that moves a node, so a caller wanting the whole relaxation at
+once — a layout pass, a pre-warm — runs it to settle and reads the answer.
+`useSimulation` is that integrator on a frame loop.
+
+Forces are pluggable functions matching **d3-force's protocol**, so d3-force's
+bundled forces (`forceManyBody`, `forceLink`, `forceCenter`, …) work here
+without translation. That compatibility is deliberate — don't invent a parallel
+force signature.
 
 ## The kit doesn't write to your scene
 

@@ -246,7 +246,16 @@ retired when this lands.
    snapped to and never landed on. A port claims the whole `'pointer'` protocol, so the
    bundle also binds `pointerDown` and `click` — a claim that bars a gesture nothing else
    consults drops the press and the drag never starts.
-6. **Layout.**
+6. **Layout — landed.** `layered`, `tree` and `force` are plain functions of the graph,
+   each returning the new top-left for every node that **moves**; a node already where the
+   layout wants it is absent, which is what makes a re-layout free and the idempotence test
+   one line. `createLayoutAction` rebuilds the `Graph` per press and writes the whole move
+   as one `scene.batch`, cascading a container's subtree — `setPose` does not, and a built
+   body would otherwise walk out from under its own label rows. `force` runs on core's new
+   headless `createSimulation`, which `useSimulation` now wraps, rather than on a second
+   integrator; its forces are local and naive O(n²), including a box-aware separation that
+   charge alone cannot supply. **`force` is the one layout that is not idempotent** — a
+   relaxation re-run from its own output keeps relaxing.
 7. **A demo per `docs/CLAUDE.md`'s demo conventions** — terse, single-purpose, on the platform
    systems rather than around them.
 
