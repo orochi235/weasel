@@ -4,7 +4,7 @@ import { WeaselRenderer } from './WeaselRenderer';
 import { mat3 } from './math/mat3';
 import type { DrawCommand } from './DrawCommand';
 import { pushClip, popClip, drawGroup, dispatch, tryStageSolid, type DrawContext } from './draw';
-import { IMAGE_RING_SIZE } from './imageBatch';
+import { SOLID_RING_SIZE as IMAGE_RING_SIZE } from './drawBatch';
 
 /**
  * Build a DrawContext backed by a GL recorder. Mirrors what WeaselRenderer.render
@@ -21,7 +21,7 @@ function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeof makeG
     textSdf: r._textSdf(),
     textSdfR8: r._textSdfR8(),
     imageFill: r._imageFill(),
-    imageFillVOpacity: r._imageFillVOpacity(),
+    batchFill: r._batchFill(),
     gradFill: r._gradFill(),
     patternFill: r._patternFill(),
     meshCache: r._meshCache(),
@@ -31,8 +31,8 @@ function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeof makeG
     programRegistry: new Map(),
     quadVbo: null,
     quadIbo: null,
-    solidBatch: r._solidBatch(),
-    imageBatch: r._imageBatch(),
+    drawBatch: r._drawBatch(),
+    whiteTexture: null,
     state: r._groupState(),
     widthCss: r._widthCss(),
     heightCss: r._heightCss(),
@@ -199,7 +199,7 @@ describe('WeaselRenderer.render — kind: path with stroke', () => {
       (c) => c.name === 'bufferSubData' && c.args[0] === recorder.gl.ARRAY_BUFFER,
     )!.args[2] as Float32Array;
     expect(Array.from(verts.slice(2, 5))).toEqual([1, 0, 0]);   // fill red, first
-    expect(Array.from(verts.slice(26, 29))).toEqual([0, 0, 0]); // stroke black, after
+    expect(Array.from(verts.slice(4 * 9 + 2, 4 * 9 + 5))).toEqual([0, 0, 0]); // stroke black, after
   });
 
   it('skips when neither fill nor stroke is set', () => {
@@ -2100,24 +2100,29 @@ describe('WeaselRenderer.render — kind: image, source rect and flip', () => {
   const bitmap = (width: number, height: number) =>
     ({ width, height, close: () => {} }) as unknown as ImageBitmap;
 
-  /** One staged image quad: four vertices of `x, y, u, v, opacity`, wound
-   *  top-left, top-right, bottom-right, bottom-left. The batch stages into an
-   *  array sized for 64 quads and uploads a prefix of it, so this reads the
-   *  first upload's first 20 floats — one quad per render throughout. */
+  /** One staged image quad: four `drawBatch.ts` vertices, wound top-left,
+   *  top-right, bottom-right, bottom-left. The batch stages into an array
+   *  sized past the run and uploads a prefix of it, so this reads the first
+   *  upload's first quad — one quad per render throughout. */
+  const FLOATS_PER_VERTEX = 9;
+  const UV = 6;
+
   function imageQuad(): Float32Array {
     const call = recorder.calls.find(
       (c) => c.name === 'bufferSubData'
         && c.args[2] instanceof Float32Array
-        && (c.args[2] as Float32Array).length >= 20,
+        && (c.args[2] as Float32Array).length >= FLOATS_PER_VERTEX * 4,
     );
     if (!call) throw new Error('no image quad upload recorded');
-    return Float32Array.from((call.args[2] as Float32Array).subarray(0, 20));
+    return Float32Array.from(
+      (call.args[2] as Float32Array).subarray(0, FLOATS_PER_VERTEX * 4),
+    );
   }
 
   /** [u0, v0, u1, v1] — the UVs of the top-left and bottom-right corners. */
   function uvs(): [number, number, number, number] {
     const v = imageQuad();
-    return [v[2], v[3], v[12], v[13]];
+    return [v[UV], v[UV + 1], v[2 * FLOATS_PER_VERTEX + UV], v[2 * FLOATS_PER_VERTEX + UV + 1]];
   }
 
   it('samples the whole bitmap when no source rect is given', () => {
@@ -2172,9 +2177,10 @@ describe('WeaselRenderer.render — kind: image, source rect and flip', () => {
       flipX: true, flipY: true,
     }]);
     const flipped = imageQuad();
-    // Positions are interleaved at 0,1 / 5,6 / 10,11 / 15,16.
-    for (const i of [0, 1, 5, 6, 10, 11, 15, 16]) {
-      expect(flipped[i]).toBe(plain[i]);
+    // Positions are the first two floats of each interleaved vertex.
+    for (let v = 0; v < 4; v++) {
+      const at = v * FLOATS_PER_VERTEX;
+      expect([flipped[at], flipped[at + 1]]).toEqual([plain[at], plain[at + 1]]);
     }
   });
 

@@ -23,11 +23,13 @@ import {
   IMAGE_FRAG_SRC,
   IMAGE_FILL_UNIFORMS,
   IMAGE_FILL_ATTRIBUTES,
-  IMAGE_VOPACITY_VERT_SRC,
-  IMAGE_VOPACITY_FRAG_SRC,
-  IMAGE_VOPACITY_UNIFORMS,
-  IMAGE_VOPACITY_ATTRIBUTES,
 } from './shaders/imageFill';
+import {
+  BATCH_VERT_SRC,
+  BATCH_FRAG_SRC,
+  BATCH_FILL_UNIFORMS,
+  BATCH_FILL_ATTRIBUTES,
+} from './shaders/batchFill';
 import {
   GRAD_VERT_SRC,
   GRAD_FRAG_SRC,
@@ -48,10 +50,9 @@ import { GroupState } from './state/GroupState';
 import type { DrawCommand } from './DrawCommand';
 import type { Mat3 } from './math/mat3';
 import {
-  dispatch, flushBatches, disposeTextQuads, OUTLINE_MIN_SCREEN_PX, type DrawContext,
+  dispatch, flushBatch, disposeTextQuads, OUTLINE_MIN_SCREEN_PX, type DrawContext,
 } from './draw';
-import { SolidBatch } from './solidBatch';
-import { ImageBatch } from './imageBatch';
+import { DrawBatch } from './drawBatch';
 import {
   CUSTOM_VERT_SRC, CUSTOM_ATTRIBUTES, CUSTOM_KIT_UNIFORMS,
   QUAD_VERTICES, QUAD_INDICES,
@@ -173,7 +174,7 @@ export class WeaselRenderer {
   private textSdf: ShaderProgram;
   private textSdfR8: ShaderProgram;
   private imageFill: ShaderProgram;
-  private imageFillVOpacity: ShaderProgram;
+  private batchFill: ShaderProgram;
   private gradFill: ShaderProgram;
   private patternFill: ShaderProgram;
   private meshCache: GLMeshCache;
@@ -183,8 +184,10 @@ export class WeaselRenderer {
   private programRegistry = new Map<string, ShaderProgram>();
   private quadVbo: WebGLBuffer | null = null;
   private quadIbo: WebGLBuffer | null = null;
-  private solidBatch: SolidBatch;
-  private imageBatch: ImageBatch;
+  private drawBatch: DrawBatch;
+  /** 1x1 white, so a batch flush sampling no image still samples something —
+   *  see `shaders/batchFill.ts`. */
+  private whiteTexture: WebGLTexture | null = null;
   private readonly groupState = new GroupState();
   private widthCss: number;
   private heightCss: number;
@@ -272,11 +275,9 @@ export class WeaselRenderer {
     this.imageFill.lookupUniforms(IMAGE_FILL_UNIFORMS);
     this.imageFill.lookupAttributes(IMAGE_FILL_ATTRIBUTES);
 
-    this.imageFillVOpacity = new ShaderProgram(
-      this.gl, IMAGE_VOPACITY_VERT_SRC, IMAGE_VOPACITY_FRAG_SRC,
-    );
-    this.imageFillVOpacity.lookupUniforms(IMAGE_VOPACITY_UNIFORMS);
-    this.imageFillVOpacity.lookupAttributes(IMAGE_VOPACITY_ATTRIBUTES);
+    this.batchFill = new ShaderProgram(this.gl, BATCH_VERT_SRC, BATCH_FRAG_SRC);
+    this.batchFill.lookupUniforms(BATCH_FILL_UNIFORMS);
+    this.batchFill.lookupAttributes(BATCH_FILL_ATTRIBUTES);
 
     this.gradFill = new ShaderProgram(this.gl, GRAD_VERT_SRC, GRAD_FRAG_SRC);
     this.gradFill.lookupUniforms(GRAD_FILL_UNIFORMS);
@@ -293,8 +294,8 @@ export class WeaselRenderer {
     this.imageCache = new GLImageCache(this.gl, this.imageMinification);
     this.gradRampCache = new GradientRampCache(this.gl);
     this.uploadQuadGeometry();
-    this.solidBatch = new SolidBatch(this.gl, this.pathFillVColor);
-    this.imageBatch = new ImageBatch(this.gl, this.imageFillVOpacity);
+    this.drawBatch = new DrawBatch(this.gl, this.batchFill);
+    this.whiteTexture = createWhiteTexture(this.gl);
   }
 
   private uploadQuadGeometry(): void {
@@ -437,11 +438,9 @@ export class WeaselRenderer {
     this.imageFill.lookupUniforms(IMAGE_FILL_UNIFORMS);
     this.imageFill.lookupAttributes(IMAGE_FILL_ATTRIBUTES);
 
-    this.imageFillVOpacity = new ShaderProgram(
-      this.gl, IMAGE_VOPACITY_VERT_SRC, IMAGE_VOPACITY_FRAG_SRC,
-    );
-    this.imageFillVOpacity.lookupUniforms(IMAGE_VOPACITY_UNIFORMS);
-    this.imageFillVOpacity.lookupAttributes(IMAGE_VOPACITY_ATTRIBUTES);
+    this.batchFill = new ShaderProgram(this.gl, BATCH_VERT_SRC, BATCH_FRAG_SRC);
+    this.batchFill.lookupUniforms(BATCH_FILL_UNIFORMS);
+    this.batchFill.lookupAttributes(BATCH_FILL_ATTRIBUTES);
     this.gradFill = new ShaderProgram(this.gl, GRAD_VERT_SRC, GRAD_FRAG_SRC);
     this.gradFill.lookupUniforms(GRAD_FILL_UNIFORMS);
     this.gradFill.lookupAttributes(GRAD_FILL_ATTRIBUTES);
@@ -458,8 +457,8 @@ export class WeaselRenderer {
     markAllFontsNotUploaded();
 
     this.uploadQuadGeometry();
-    this.solidBatch = new SolidBatch(this.gl, this.pathFillVColor);
-    this.imageBatch = new ImageBatch(this.gl, this.imageFillVOpacity);
+    this.drawBatch = new DrawBatch(this.gl, this.batchFill);
+    this.whiteTexture = createWhiteTexture(this.gl);
     for (const id of this.programRegistry.keys()) {
       const src = getProgramSource(id);
       if (!src) continue;
@@ -509,7 +508,7 @@ export class WeaselRenderer {
     }
     this.meshCache.freeTransient();
     this.meshCache.drainPendingDeletes();
-    for (const prog of [this.pathFill, this.pathFillVColor, this.textSdf, this.textSdfR8, this.imageFill, this.imageFillVOpacity, this.gradFill, this.patternFill]) {
+    for (const prog of [this.pathFill, this.pathFillVColor, this.textSdf, this.textSdfR8, this.imageFill, this.batchFill, this.gradFill, this.patternFill]) {
       gl.deleteProgram(prog.handle);
     }
     for (const prog of this.programRegistry.values()) {
@@ -521,8 +520,9 @@ export class WeaselRenderer {
     if (this.quadVbo) gl.deleteBuffer(this.quadVbo);
     if (this.quadIbo) gl.deleteBuffer(this.quadIbo);
     for (const prog of [this.textSdf, this.textSdfR8, this.pathFill]) disposeTextQuads(gl, prog);
-    this.solidBatch.dispose();
-    this.imageBatch.dispose();
+    this.drawBatch.dispose();
+    if (this.whiteTexture) gl.deleteTexture(this.whiteTexture);
+    this.whiteTexture = null;
     this.effectTargets.releaseAll();
   }
 
@@ -560,7 +560,7 @@ export class WeaselRenderer {
       textSdf: this.textSdf,
       textSdfR8: this.textSdfR8,
       imageFill: this.imageFill,
-      imageFillVOpacity: this.imageFillVOpacity,
+      batchFill: this.batchFill,
       gradFill: this.gradFill,
       patternFill: this.patternFill,
       meshCache: this.meshCache,
@@ -571,8 +571,8 @@ export class WeaselRenderer {
       ensureProgram: (id) => this.ensureProgram(id),
       quadVbo: this.quadVbo,
       quadIbo: this.quadIbo,
-      solidBatch: this.solidBatch,
-      imageBatch: this.imageBatch,
+      drawBatch: this.drawBatch,
+      whiteTexture: this.whiteTexture,
       state: this.groupState,
       widthCss: this.widthCss,
       heightCss: this.heightCss,
@@ -589,7 +589,7 @@ export class WeaselRenderer {
     for (const cmd of commands) dispatch(ctx, cmd);
     // The stream ended, so whatever is still staged has nothing left that
     // could merge with it.
-    flushBatches(ctx);
+    flushBatch(ctx);
     // Free transient resources allocated during this frame (e.g. per-frame
     // stroke ribbons from tessellateStroke). Done after all draws complete
     // so we never delete a buffer that's still bound to a pending draw.
@@ -614,12 +614,11 @@ export class WeaselRenderer {
   /** @internal */ _gl(): WebGL2RenderingContext { return this.gl; }
   /** @internal */ _pathFill(): ShaderProgram { return this.pathFill; }
   /** @internal */ _pathFillVColor(): ShaderProgram { return this.pathFillVColor; }
-  /** @internal */ _solidBatch(): SolidBatch { return this.solidBatch; }
-  /** @internal */ _imageBatch(): ImageBatch { return this.imageBatch; }
+  /** @internal */ _drawBatch(): DrawBatch { return this.drawBatch; }
   /** @internal */ _textSdf(): ShaderProgram { return this.textSdf; }
   /** @internal */ _textSdfR8(): ShaderProgram { return this.textSdfR8; }
   /** @internal */ _imageFill(): ShaderProgram { return this.imageFill; }
-  /** @internal */ _imageFillVOpacity(): ShaderProgram { return this.imageFillVOpacity; }
+  /** @internal */ _batchFill(): ShaderProgram { return this.batchFill; }
   /** @internal */ _gradFill(): ShaderProgram { return this.gradFill; }
   /** @internal */ _patternFill(): ShaderProgram { return this.patternFill; }
   /** @internal */ _meshCache(): GLMeshCache { return this.meshCache; }
@@ -630,4 +629,23 @@ export class WeaselRenderer {
   /** @internal */ _widthCss(): number { return this.widthCss; }
   /** @internal */ _heightCss(): number { return this.heightCss; }
   /** @internal */ _dpr(): number { return this.dpr; }
+}
+
+/** The 1x1 opaque white texture a batch flush binds when its run samples no
+ *  image. NEAREST both ways: one texel, so there is nothing to filter, and a
+ *  mipmap filter on a texture with no mipmaps is incomplete. */
+function createWhiteTexture(gl: WebGL2RenderingContext): WebGLTexture | null {
+  const tex = gl.createTexture();
+  if (!tex) return null;
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(
+    gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+    new Uint8Array([255, 255, 255, 255]),
+  );
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.bindTexture(gl.TEXTURE_2D, null);
+  return tex;
 }
