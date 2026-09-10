@@ -1,4 +1,13 @@
+import { cubicEvalAt } from '@weasel-js/geom';
+
 export interface Point { x: number; y: number; }
+
+/** Point on the cubic Bezier (p0, p1, p2, p3) at parameter t. The point-shaped
+ *  face of geom's `cubicEvalAt`. */
+export function cubicPointAt(p0: Point, p1: Point, p2: Point, p3: Point, t: number): Point {
+  const [x, y] = cubicEvalAt(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, t);
+  return { x, y };
+}
 
 interface AnchorRef {
   x: number; y: number;

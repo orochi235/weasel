@@ -10,6 +10,7 @@
  */
 
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, type Path, type PolygonPath } from './types';
+import { cubicPointAt } from './cubicMath';
 import { PathBuilder } from './builder';
 
 /** One anchor of an editable path: its on-curve point plus the two control
@@ -198,11 +199,9 @@ export function nearestSegmentT(
       const p3 = b;
       for (let k = 1; k < SAMPLES; k++) {
         const t = k / SAMPLES;
-        const u = 1 - t;
-        const px = u * u * u * p0.x + 3 * u * u * t * p1.x + 3 * u * t * t * p2.x + t * t * t * p3.x;
-        const py = u * u * u * p0.y + 3 * u * u * t * p1.y + 3 * u * t * t * p2.y + t * t * t * p3.y;
-        const dx = px - wx;
-        const dy = py - wy;
+        const q = cubicPointAt(p0, p1, p2, p3, t);
+        const dx = q.x - wx;
+        const dy = q.y - wy;
         const d2 = dx * dx + dy * dy;
         if (d2 < bestD2) {
           bestD2 = d2;

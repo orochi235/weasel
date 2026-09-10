@@ -5,6 +5,7 @@
 // Spiro in behind this same module surface.
 import type { CurveRepresentation, Discriminator, SharedAnchor } from './types';
 import { PATH_C, PATH_M } from '../types';
+import { cubicPointAt } from '../cubicMath';
 
 const TANGENT_SCALE = 1 / 3;
 
@@ -74,24 +75,6 @@ function segmentAt(anchors: SharedAnchor[], t: number): { segIdx: number; localT
   return { segIdx, localT };
 }
 
-function cubicEval(
-  p0: { x: number; y: number },
-  p1: { x: number; y: number },
-  p2: { x: number; y: number },
-  p3: { x: number; y: number },
-  t: number,
-): { x: number; y: number } {
-  const u = 1 - t;
-  const b0 = u * u * u;
-  const b1 = 3 * u * u * t;
-  const b2 = 3 * u * t * t;
-  const b3 = t * t * t;
-  return {
-    x: b0 * p0.x + b1 * p1.x + b2 * p2.x + b3 * p3.x,
-    y: b0 * p0.y + b1 * p1.y + b2 * p2.y + b3 * p3.y,
-  };
-}
-
 /** Spiro (κ-curves): curvature-continuous through each anchor, so joins stay visually smooth without hand-tuned handles. Approximated as cubics when converted to a path. */
 export const spiro: CurveRepresentation = {
   kind: 'spiro',
@@ -102,7 +85,7 @@ export const spiro: CurveRepresentation = {
     const a = anchors[segIdx];
     const b = anchors[segIdx + 1];
     const { c1, c2 } = controlsFor(anchors, segIdx);
-    return cubicEval(a, c1, c2, b, localT);
+    return cubicPointAt(a, c1, c2, b, localT);
   },
   toPath(anchors) {
     if (anchors.length < 2) {
