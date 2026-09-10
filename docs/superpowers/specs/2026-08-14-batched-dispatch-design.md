@@ -186,7 +186,14 @@ smoothstep — on *every* fragment, because `fwidth` inside non-uniform control
 flow is undefined and the derivative must be taken before anything selects on
 paint mode. Priced head to head at 432M fragments a frame
 (`tests/perf/fill-rate.spec.ts`), that costs **1.4%** of a fragment that is not
-a glyph, and fill is not what a wall is bound by. So the cost of folding text in
+a glyph, and fill is not what a wall is bound by.
+
+Treat that as an upper bound of the right order rather than a figure. It is the
+ratio of the two variants' fastest samples, taken on a box carrying a load
+average around 8 — which is what the 45% spread and the steady downward drift
+across the run actually were. The decision only needs the cost to be small, and
+a contended box inflates both variants, so the direction is safe; re-run it on
+an idle machine before quoting the number anywhere it matters. So the cost of folding text in
 is not the fragment; it is the vertex, which grows by a paint mode and a bold
 threshold.
 

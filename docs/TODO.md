@@ -1625,10 +1625,22 @@ one dead `const` and four stale disable directives.
   exactly those two numbers. `atlas-wall.spec.ts` walks the same cell sizes with
   the sampling held fixed and is flat across the whole ladder.
 
-  `sampling: 'nearest'` costs nothing next to `'linear'` on this path, at any
-  rung, magnified or minified — the same spec prices both. `GLImageCache` sets
-  MIN_FILTER to LINEAR and generates no mipmaps on the screen path, so
-  `sampling` moves MAG_FILTER alone and a minified draw never reads it.
+  **`sampling: 'nearest'` is free on our sheets and is not free on a big one.**
+  `atlas-wall.spec.ts` prices both filters at every rung and finds no
+  difference, which agrees with the reasoning: `GLImageCache` pins MIN_FILTER
+  to LINEAR and generates no mipmaps on the screen path, so `sampling` moves
+  MAG_FILTER alone and a minified draw should never read it. A consumer
+  measuring the same shape on a 12MB sheet gets nearest costing up to 8x
+  linear, and the ratio tracks minification exactly — 8.11 at 2:1, 5.98 at
+  1.33:1, 1.08 at 1:1, 1.14 magnified — vanishing the moment the draw stops
+  minifying, and inverting to the ordinary expectation on their small sheet.
+
+  Our sheets are 16x16 tiles, so the largest is about 3MB; theirs is four times
+  that. Sheet size is the obvious difference and the untested one. Something is
+  wrong in either the reasoning above or one of the two measurements, and it
+  matters because "nearest is free" is advice we give consumers. Widening this
+  spec's sheet until it matches theirs is the experiment; single runs per rung
+  on their side, so believe the direction and not the second digit.
 
   The rest of the plan — one program plus atlases — is in
   `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`, with the traps, and a

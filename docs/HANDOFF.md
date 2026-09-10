@@ -20,7 +20,9 @@ run the glyph math on every fragment, because `fwidth` inside non-uniform
 control flow is undefined and the derivative has to be taken before anything
 selects on paint mode. That costs 1.4% of a fragment that is not a glyph,
 measured head to head at 432M fragments a frame by
-`tests/perf/fill-rate.spec.ts`. So the cost is not the fragment; it is the
+`tests/perf/fill-rate.spec.ts` — an upper bound of the right order, not a
+figure: the box was carrying a load average around 8, which is what that run's
+45% spread was. The decision needs only that the cost is small. So the cost is not the fragment; it is the
 vertex, which grows a paint mode and a bold threshold.
 
 **Then: gradients**, via a ramp atlas — ramps are 1D and atlas into rows of one
