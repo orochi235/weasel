@@ -200,24 +200,39 @@ geometry already staged. `wouldReshape` is asked before the bake and the run is
 flushed if the answer is yes; asking afterwards is too late, because neither can
 be undone.
 
-**Radial and conic are what is left.** Their ramp position is not affine, but
-the *coordinate* they need is, so the shape of their arm is the same: stage the
-gradient-space coordinate in `a_uv`, put the row somewhere a plain vertex is not
-using, and compute `length` or `atan` in the shader. The open question is where
-that computation goes. `fwidth` forced the glyph math to run unconditionally on
-every fragment; an `atan` for conic gradients is dearer than that and rarer, so
-this one wants measuring against a branch — which is legal here only if the
-sample stops being `texture()`, since the ramp atlas has no mipmaps and
-`textureLod` would do.
+**Radial and conic followed the same day, and step 4 is closed.** Their ramp
+position is not affine, but the *coordinate* they need is, so a vertex carries a
+gradient-space point in `a_uv` and its atlas row in `a_post`, and the shader
+takes a `length` or an `atan` of it.
+
+Both sit behind a branch on the paint mode. That is legal where a branch around
+the glyph math is not: the mode is a flat varying, so every fragment of a quad
+takes the same arm, and neither arm holds a derivative — which is the only thing
+non-uniform control flow breaks.
+
+**The branch has to carry the sample, not just the coordinate.** Selecting a uv
+and then sampling once leaves every fragment in the program reading a texture at
+a coordinate the shader computed, which the hardware cannot schedule the way it
+schedules a read from a varying. Against the same shader with no branch at all,
+that costs 65.1% of a fragment; splitting the fetch across the two arms, so the
+common one still reads `v_uv`, costs 4.9%. Both from
+`tests/perf/fill-rate.spec.ts` in one sitting.
 
 **Text branched, and landed on 2026-09-09.** It does not stay separate: the
 batch shader runs the glyph math — a median across three channels, `fwidth`, a
 smoothstep — on *every* fragment, because `fwidth` inside non-uniform control
 flow is undefined and the derivative must be taken before anything selects on
 paint mode. Priced head to head at 432M fragments a frame
-(`tests/perf/fill-rate.spec.ts`) that is 1.4% of a fragment that is not a glyph,
-on a box carrying a load average around 8 — an upper bound of the right order
-rather than a figure, and the decision only needed the cost to be small.
+(`tests/perf/fill-rate.spec.ts`) that roughly *doubles* a fragment that is not
+a glyph.
+
+**That figure was first recorded as 1.4%, and it was wrong.** The variant meant
+to carry the glyph math gated it on `u_color.a * 0.0`, which a compiler folds
+to zero and then deletes every line feeding — so the measurement compared
+`plain` against `plain`. A runtime zero that is not a compile-time one is what
+keeps the code alive. The conclusion survives the correction, because a wall is
+draw-bound and not fill-bound, but a fill-heavy scene pays more for text than
+this plan said it did.
 
 The cost that turned out to matter was the vertex, and it is paid rather than
 absorbed: a paint mode carried as a float of its own measured 9% slower at the

@@ -1125,13 +1125,12 @@ const POLYGON_CURVED: PolygonPath = {
 };
 
 describe('flattenTolerance option', () => {
-  /** A radial gradient takes its own draw, so the mesh reaches GL as a buffer
+  /** Per-vertex colors take their own draw, so the mesh reaches GL as a buffer
    *  rather than as staged vertices — which is where the pool choice is
-   *  observable. Linear would not: it batches. */
-  const GRADIENT = {
-    fill: 'radial-gradient' as const,
-    center: { x: 50, y: 50 }, radius: 50,
-    stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
+   *  observable. A gradient would not: every kind of one batches. */
+  const UNBATCHABLE = {
+    fill: { fill: 'solid' as const, color: '#ffffff' },
+    vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
   };
 
   const stagedVertexFloats = (rec: ReturnType<typeof makeGLRecorder>): number =>
@@ -1155,7 +1154,7 @@ describe('flattenTolerance option', () => {
   it('routes a mesh that takes its own draw through the transient pool', () => {
     const rec = makeGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1, flattenTolerance: 0.01 });
-    r.render([{ kind: 'path', path: POLYGON_CURVED, fill: GRADIENT }]);
+    r.render([{ kind: 'path', path: POLYGON_CURVED, ...UNBATCHABLE } as DrawCommand]);
     // Transient meshes are freed at end of render(): deleteVertexArray proves
     // the fill did NOT come from the persistent cache.
     expect(rec.calls.map((c) => c.name)).toContain('deleteVertexArray');
@@ -1164,7 +1163,7 @@ describe('flattenTolerance option', () => {
   it('default path (no option) keeps the persistent cache route', () => {
     const rec = makeGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
-    r.render([{ kind: 'path', path: POLYGON_CURVED, fill: GRADIENT }]);
+    r.render([{ kind: 'path', path: POLYGON_CURVED, ...UNBATCHABLE } as DrawCommand]);
     expect(rec.calls.map((c) => c.name)).not.toContain('deleteVertexArray');
   });
 });
@@ -2010,18 +2009,22 @@ describe('gradient units — which space a gradient measures its geometry in', (
   const STOPS = [{ offset: 0, color: '#000000' }, { offset: 1, color: '#ffffff' }];
   const PATH: RectPath = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
 
+  /**
+   * The same square, even-odd — which tessellates to `requiresStencil` and so
+   * takes the two-pass stencil fill through `gradFill` rather than the batch.
+   * That is the only route left to that program for an ordinary fill, and it is
+   * how these tests reach `u_worldInv` at all.
+   */
+  const EVEN_ODD: PolygonPath = {
+    kind: 'polygon',
+    commands: new Uint8Array([M, L, L, L, Z]),
+    coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
+    fillRule: 'evenodd',
+  };
+
   /** Uniform locations are resolved at link time, inside the constructor —
    *  captured before `reset()` clears the log the assertions read. */
   let worldInvLocs: unknown[];
-
-  /** The matrix uploaded to `u_worldInv` on the last gradient draw. */
-  function worldInv(): number[] {
-    const upload = recorder.calls
-      .filter((c) => c.name === 'uniformMatrix3fv' && worldInvLocs.includes(c.args[0]))
-      .pop();
-    expect(upload, 'expected a u_worldInv upload').toBeDefined();
-    return Array.from(upload!.args[2] as Float32Array);
-  }
 
   beforeEach(() => {
     recorder = makeGLRecorder();
@@ -2033,35 +2036,25 @@ describe('gradient units — which space a gradient measures its geometry in', (
     recorder.reset();
   });
 
-  it('defaults to screen space, leaving the mapping identity', () => {
-    r.render([{ kind: 'path', path: PATH, fill: { fill: 'radial-gradient', center: { x: 0, y: 0 }, radius: 5, stops: STOPS } }]);
-    expect(worldInv()).toEqual(Array.from(mat3.identity()));
-  });
-
-  it("units: 'local' inverts the enclosing transform, so the paint rides the geometry", () => {
-    const transform = mat3.translate(mat3.identity(), 100, 40);
-    r.render([{
-      kind: 'group',
-      transform,
-      children: [{ kind: 'path', path: PATH, fill: { fill: 'radial-gradient', center: { x: 0, y: 0 }, radius: 5, stops: STOPS, units: 'local' } }],
-    }]);
-    // A fragment at screen (100, 40) is the group's local origin.
-    expect(mat3.apply(new Float32Array(worldInv()), 100, 40)).toEqual([0, 0]);
-  });
-
   /**
-   * A linear gradient takes the same question through the vertices instead: its
-   * ramp position is folded to one affine row before staging, so `units` shows
-   * up as what the corners carry rather than as a matrix. These are the tests
-   * that catch that fold composing its two matrices the wrong way round.
+   * Every gradient rides the vertices now, so `units` shows up as what the
+   * corners carry rather than as a matrix. These are the tests that catch the
+   * fold composing its two matrices the wrong way round, or turning a conic the
+   * wrong way.
    */
-  describe('a linear gradient, which carries it on the vertices', () => {
-    /** `a_uv.x` — the ramp position — at each staged corner. */
-    function rampAtCorners(): number[] {
-      const verts = recorder.calls
-        .find((c) => c.name === 'bufferSubData' && c.args[0] === recorder.gl.ARRAY_BUFFER)!
-        .args[2] as Float32Array;
-      return [0, 1, 2, 3].map((corner) => verts[corner * FLOATS_PER_VERTEX + 6]);
+  describe('what the corners carry', () => {
+    /** `a_uv` at each staged corner, and the paint mode they share. */
+    function stagedUV(): { uv: [number, number][]; post: number[]; mode: number } {
+      const call = recorder.calls.find(
+        (c) => c.name === 'bufferSubData' && c.args[0] === recorder.gl.ARRAY_BUFFER,
+      )!;
+      const v = call.args[2] as Float32Array;
+      const corners = [0, 1, 2, 3];
+      return {
+        uv: corners.map((i) => [v[i * FLOATS_PER_VERTEX + 6], v[i * FLOATS_PER_VERTEX + 7]]),
+        post: corners.map((i) => v[i * FLOATS_PER_VERTEX + 8]),
+        mode: paintModeOf(v[TEX_SLOT_OFFSET]),
+      };
     }
 
     const LINEAR = {
@@ -2069,23 +2062,26 @@ describe('gradient units — which space a gradient measures its geometry in', (
       from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, stops: STOPS,
     };
 
-    it('defaults to screen space, so a translated shape starts partway along', () => {
+    const shifted = (fill: unknown, view?: Float32Array): void => {
       r.render([{
         kind: 'group',
         transform: mat3.translate(mat3.identity(), 100, 40),
-        children: [{ kind: 'path', path: PATH, fill: LINEAR }],
-      }]);
-      // Screen x 100..110 over a ramp spanning screen x 0..10.
-      expect(rampAtCorners()).toEqual([10, 11, 11, 10]);
+        children: [{ kind: 'path', path: PATH, fill }],
+      }] as DrawCommand[], view);
+    };
+
+    it('a linear gradient defaults to screen space, so a shape starts partway along', () => {
+      shifted(LINEAR);
+      // Screen x 100..110 over a ramp spanning screen x 0..10, and no paint
+      // mode of its own — the plain path already samples (position, row).
+      expect(stagedUV().uv.map(([u]) => u)).toEqual([10, 11, 11, 10]);
+      expect(stagedUV().mode).toBe(0);
+      expect(stagedUV().post).toEqual([1, 1, 1, 1]);
     });
 
     it("units: 'local' measures the shape's own coordinates, so the ramp rides it", () => {
-      r.render([{
-        kind: 'group',
-        transform: mat3.translate(mat3.identity(), 100, 40),
-        children: [{ kind: 'path', path: PATH, fill: { ...LINEAR, units: 'local' } }],
-      }]);
-      expect(rampAtCorners()).toEqual([0, 1, 1, 0]);
+      shifted({ ...LINEAR, units: 'local' });
+      expect(stagedUV().uv.map(([u]) => u)).toEqual([0, 1, 1, 0]);
     });
 
     // Scaled, because the fold composes two matrices and two translations
@@ -2095,47 +2091,112 @@ describe('gradient units — which space a gradient measures its geometry in', (
         kind: 'group',
         transform: mat3.scale(mat3.translate(mat3.identity(), 100, 40), 2, 2),
         children: [{ kind: 'path', path: PATH, fill: { ...LINEAR, units: 'world' } }],
-      }], mat3.translate(mat3.identity(), 25, 75));
+      }] as DrawCommand[], mat3.translate(mat3.identity(), 25, 75));
       // World x 75..95: the shape's own 0..10 doubled and moved to 100..120,
       // less the view's 25.
-      expect(rampAtCorners()).toEqual([7.5, 9.5, 9.5, 7.5]);
+      expect(stagedUV().uv.map(([u]) => u)).toEqual([7.5, 9.5, 9.5, 7.5]);
+    });
+
+    it('a radial gradient carries the point its own radius scales to 1', () => {
+      shifted({
+        fill: 'radial-gradient', center: { x: 100, y: 40 }, radius: 10, stops: STOPS,
+        units: 'local',
+      });
+      // Local (0,0)..(10,10) against a center at (100,40) in that same space:
+      // the corners sit 10 units of a 10-unit radius away in each axis.
+      expect(stagedUV().uv).toEqual([[-10, -4], [-9, -4], [-9, -3], [-10, -3]]);
+      expect(stagedUV().mode).toBe(3);
+    });
+
+    it('a conic gradient turns its coordinate by the angle rather than the shader', () => {
+      shifted({
+        fill: 'conic-gradient', center: { x: 0, y: 0 }, angle: Math.PI / 2, stops: STOPS,
+        units: 'local',
+      });
+      // A quarter turn takes (x, y) to (y, -x), so the corner at local (10, 0)
+      // reads as (0, -10).
+      const [, topRight] = stagedUV().uv;
+      expect(topRight[0]).toBeCloseTo(0, 5);
+      expect(topRight[1]).toBeCloseTo(-10, 5);
+      expect(stagedUV().mode).toBe(4);
+    });
+
+    it('a radial gradient puts its atlas row where a plain vertex keeps its alpha', () => {
+      shifted({ fill: 'radial-gradient', center: { x: 5, y: 5 }, radius: 5, stops: STOPS });
+      // One ramp in a 16-row atlas: the center of row 0, and the same on every
+      // corner — the row does not vary across a shape.
+      expect(new Set(stagedUV().post)).toEqual(new Set([0.5 / 16]));
     });
   });
 
-  // Every other paint program applies the group's color matrix; the gradient
-  // one did not, and a linear gradient going through the batch made that a
-  // disagreement between two gradients rather than a gap.
-  it('applies the color matrix a group carries', () => {
-    const cm = new Array(20).fill(0);
-    cm[0] = 0.5; cm[6] = 0.5; cm[12] = 0.5; cm[18] = 1;
-    r.render([{
-      kind: 'group',
-      colorMatrix: cm,
-      children: [{ kind: 'path', path: PATH, fill: { fill: 'radial-gradient', center: { x: 0, y: 0 }, radius: 5, stops: STOPS } }],
-    }] as DrawCommand[]);
-    const loc = r._gradFill().uniform('u_colorMatrix');
-    expect(loc, 'gradient program should expose u_colorMatrix').toBeDefined();
-    const upload = recorder.calls.find(
-      (c) => c.name === 'uniformMatrix4fv' && c.args[0] === loc,
-    );
-    expect(upload, 'expected the matrix to reach the gradient program').toBeDefined();
-    expect(Array.from(upload!.args[2] as Float32Array)[0]).toBe(0.5);
-  });
+  /**
+   * `gradFill` still paints an even-odd gradient, which cannot join a run: its
+   * mesh needs a stencil pass of its own. These pin the uniforms that route
+   * takes.
+   */
+  describe('the stencil route, which still binds gradFill', () => {
+    /** The matrix uploaded to `u_worldInv` on the last gradient draw. */
+    function worldInv(): number[] {
+      const upload = recorder.calls
+        .filter((c) => c.name === 'uniformMatrix3fv' && worldInvLocs.includes(c.args[0]))
+        .pop();
+      expect(upload, 'expected a u_worldInv upload').toBeDefined();
+      return Array.from(upload!.args[2] as Float32Array);
+    }
 
-  it("units: 'world' inverts the frame's view matrix, pinning the paint to the scene", () => {
-    const view = mat3.translate(mat3.identity(), 25, 75);
-    r.render([{
-      kind: 'group',
-      transform: mat3.translate(mat3.identity(), 100, 40),
-      children: [{ kind: 'path', path: PATH, fill: { fill: 'radial-gradient', center: { x: 0, y: 0 }, radius: 5, stops: STOPS, units: 'world' } }],
-    }], view);
-    // Screen (25, 75) is world origin — independent of the group transform.
-    expect(mat3.apply(new Float32Array(worldInv()), 25, 75)).toEqual([0, 0]);
-  });
+    const evenOdd = (fill: unknown, view?: Float32Array): void => {
+      r.render([{ kind: 'path', path: EVEN_ODD, fill }] as DrawCommand[], view);
+    };
 
-  it("units: 'world' degrades to screen space when the caller passed no view", () => {
-    r.render([{ kind: 'path', path: PATH, fill: { fill: 'conic-gradient', center: { x: 0, y: 0 }, angle: 0, stops: STOPS, units: 'world' } }]);
-    expect(worldInv()).toEqual(Array.from(mat3.identity()));
+    const RADIAL = {
+      fill: 'radial-gradient' as const, center: { x: 0, y: 0 }, radius: 5, stops: STOPS,
+    };
+
+    it('defaults to screen space, leaving the mapping identity', () => {
+      evenOdd(RADIAL);
+      expect(worldInv()).toEqual(Array.from(mat3.identity()));
+    });
+
+    it("units: 'local' inverts the enclosing transform, so the paint rides the geometry", () => {
+      r.render([{
+        kind: 'group',
+        transform: mat3.translate(mat3.identity(), 100, 40),
+        children: [{ kind: 'path', path: EVEN_ODD, fill: { ...RADIAL, units: 'local' } }],
+      }] as DrawCommand[]);
+      // A fragment at screen (100, 40) is the group's local origin.
+      expect(mat3.apply(new Float32Array(worldInv()), 100, 40)).toEqual([0, 0]);
+    });
+
+    it("units: 'world' inverts the frame's view matrix, pinning the paint to the scene", () => {
+      evenOdd({ ...RADIAL, units: 'world' }, mat3.translate(mat3.identity(), 25, 75));
+      // Screen (25, 75) is world origin.
+      expect(mat3.apply(new Float32Array(worldInv()), 25, 75)).toEqual([0, 0]);
+    });
+
+    it("units: 'world' degrades to screen space when the caller passed no view", () => {
+      evenOdd({ fill: 'conic-gradient', center: { x: 0, y: 0 }, angle: 0, stops: STOPS, units: 'world' });
+      expect(worldInv()).toEqual(Array.from(mat3.identity()));
+    });
+
+    // Every other paint program applies the group's color matrix; the gradient
+    // one did not, and a batched gradient made that a disagreement between two
+    // routes to the same paint rather than a gap.
+    it('applies the color matrix a group carries', () => {
+      const cm = new Array(20).fill(0);
+      cm[0] = 0.5; cm[6] = 0.5; cm[12] = 0.5; cm[18] = 1;
+      r.render([{
+        kind: 'group',
+        colorMatrix: cm,
+        children: [{ kind: 'path', path: EVEN_ODD, fill: RADIAL }],
+      }] as DrawCommand[]);
+      const loc = r._gradFill().uniform('u_colorMatrix');
+      expect(loc, 'gradient program should expose u_colorMatrix').toBeDefined();
+      const upload = recorder.calls.find(
+        (c) => c.name === 'uniformMatrix4fv' && c.args[0] === loc,
+      );
+      expect(upload, 'expected the matrix to reach the gradient program').toBeDefined();
+      expect(Array.from(upload!.args[2] as Float32Array)[0]).toBe(0.5);
+    });
   });
 });
 

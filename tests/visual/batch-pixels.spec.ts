@@ -17,8 +17,11 @@
  * Glyphs are in the same run as of the text merge, and they widen the class
  * rather than adding one: a font atlas is a texture in a slot like any other,
  * so a ground rect beside a label is exactly the pixel that drew olive. A
- * linear gradient widens it again: its texture is the ramp atlas, and two
- * gradients in one run are told apart only by the row each vertex names.
+ * gradient widens it again: its texture is the ramp atlas, and two gradients in
+ * one run are told apart only by the row each vertex names. The radial and
+ * conic cases go further than the rest of this file and check the arithmetic
+ * too — no baseline covers either kind, and the demo they would come from
+ * shows one variant at a time.
  */
 import { test, expect } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
@@ -137,6 +140,29 @@ test('batched runs paint their own colors', async ({ page }) => {
           from: { x: x0, y: 0 }, to: { x: x1, y: 0 },
           stops: ramp,
         },
+      });
+
+      /** The gradients that carry a coordinate rather than a ramp position.
+       *  Centers sit on a half-pixel so a probe lands exactly on an axis: at
+       *  `dy = 0` a conic gradient is on its own seam, where `fract` sends one
+       *  side to 0 and the other to 1. */
+      const radialRect = (
+        x: number, y: number, size: number,
+        cx: number, cy: number, radius: number,
+        ramp: { offset: number; color: string }[],
+      ) => ({
+        kind: 'path',
+        path: { kind: 'rect', x, y, width: size, height: size },
+        fill: { fill: 'radial-gradient', center: { x: cx, y: cy }, radius, stops: ramp },
+      });
+      const conicRect = (
+        x: number, y: number, size: number,
+        cx: number, cy: number, angle: number,
+        ramp: { offset: number; color: string }[],
+      ) => ({
+        kind: 'path',
+        path: { kind: 'rect', x, y, width: size, height: size },
+        fill: { fill: 'conic-gradient', center: { x: cx, y: cy }, angle, stops: ramp },
       });
 
       const label = (text: string, x: number, y: number, size: number, color: string) => ({
@@ -296,6 +322,42 @@ test('batched runs paint their own colors', async ({ page }) => {
         // ends cannot catch a fold that rescaled the ramp; this one can.
         { name: 'just past halfway', x: 40, y: 24, want: [124, 0, 131] },
         { name: 'past the ramp', x: 68, y: 24, want: [0, 0, 255] },
+      ]);
+
+      // Radial and conic gradients carry a gradient-space coordinate the shader
+      // turns into a ramp position, so unlike the flat cases above these read
+      // the arithmetic as well as the composition. The white ground is still
+      // the pixel that matters most: two more paint modes, one more chance for
+      // a solid to sample somebody else's texture.
+      frame('a radial and a conic beside a ground', [
+        rect(8, 8, 32, '#ffffff'),
+        radialRect(56, 8, 32, 72.5, 24.5, 8, stops('#ff0000', '#0000ff')),
+        conicRect(104, 8, 32, 120.5, 24.5, 0, stops('#ff0000', '#0000ff')),
+      ], [
+        { name: 'white ground', x: 20, y: 24, want: [255, 255, 255] },
+        // Dead center: no distance at all, so the ramp's first texel.
+        { name: 'radial center', x: 72, y: 24, want: [255, 0, 0] },
+        // Four of eight units out.
+        { name: 'radial halfway', x: 72, y: 28, want: [128, 0, 127] },
+        // Twelve of eight, which the atlas clamps to the last texel.
+        { name: 'radial past its edge', x: 72, y: 36, want: [0, 0, 255] },
+        // A quarter turn from the seam, screen y being down.
+        { name: 'conic quarter turn', x: 120, y: 36, want: [191, 0, 64] },
+        { name: 'conic three quarters', x: 120, y: 12, want: [64, 0, 191] },
+      ]);
+
+      // The angle is folded into the coordinate on the CPU rather than
+      // subtracted from an arctangent in the shader, so these are what catch a
+      // turn going the wrong way. Two angles, because at a quarter turn the
+      // cosine terms vanish and at none the sine terms do — a wrong
+      // coefficient hides in whichever one it is not in.
+      frame('a conic turned by its angle', [
+        conicRect(8, 8, 32, 24.5, 24.5, Math.PI / 2, stops('#ff0000', '#0000ff')),
+        conicRect(56, 8, 32, 72.5, 24.5, Math.PI / 4, stops('#ff0000', '#0000ff')),
+      ], [
+        { name: 'quarter: right', x: 36, y: 24, want: [64, 0, 191] },
+        { name: 'quarter: left', x: 12, y: 24, want: [191, 0, 64] },
+        { name: 'eighth: right', x: 84, y: 24, want: [32, 0, 223] },
       ]);
 
       return { cases, glRenderer };

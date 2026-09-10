@@ -13,10 +13,11 @@
  * fits in the same vertex: solids carry the UV of a 1x1 white texel and are
  * their own color, quads carry their atlas UV and a white color, glyphs carry
  * a font atlas UV, their text color, and a paint mode saying the texel is a
- * distance field rather than a color. A linear gradient joins as a fourth
- * without a mode of its own: its texture is the ramp atlas and its UV is
- * (ramp position, row), which is what the plain mode already samples. See
- * `shaders/batchFill.ts`.
+ * distance field rather than a color. Gradients join as a fourth off the ramp
+ * atlas — a linear one without a mode of its own, since (ramp position, row) is
+ * what the plain mode already samples, and a radial or conic one with a mode
+ * that says its UV is a gradient-space coordinate to take a `length` or an
+ * `atan` of. See `shaders/batchFill.ts`.
  *
  * Colors ride the vertices because shapes in a run differ in color and a merged
  * draw has one set of uniforms — and so does the model transform, applied here
@@ -54,6 +55,19 @@ const INITIAL_INDICES = 384;
  *  filter. */
 export const WHITE_U = 0.5;
 export const WHITE_V = 0.5;
+
+/**
+ * A gradient vertex's `a_uv`, each channel affine in the coordinates the
+ * geometry arrives in: `u = ux*x + uy*y + u0`, and the same for `v`.
+ *
+ * One shape for all three gradients. A linear one's `v` row is the constant
+ * atlas row and its `u` row is the ramp position; a radial or conic one's two
+ * rows are the gradient-space coordinate, and the row rides `a_post` instead.
+ */
+export interface GradientUV {
+  ux: number; uy: number; u0: number;
+  vx: number; vy: number; v0: number;
+}
 
 /** What `a_texSlot` carries on a vertex that is its own color: the white texel
  *  at the plain paint mode. */
@@ -303,21 +317,24 @@ export class DrawBatch {
   }
 
   /**
-   * Append one rect filled by a linear gradient: the corners of
-   * `(x, y, w, h)` mapped through `m`, sampling row `rowV` of the ramp atlas
-   * at `slot`.
+   * Append one rect filled by a gradient: the corners of `(x, y, w, h)` mapped
+   * through `m`, sampling the ramp atlas at `slot`.
    *
-   * `tA`, `tB`, `tC` give the ramp position at a vertex as
-   * `tA * x + tB * y + tC`, in the coordinates the corners arrive in. A linear
-   * gradient's ramp position is affine in position, so carrying it per vertex
-   * and letting the rasterizer interpolate is exact — which is why such a fill
-   * needs no shader arm of its own: it is a textured quad whose texture is the
-   * ramp. Values outside 0..1 are the sampler's business; the atlas clamps to
-   * the edge texel, which is what the gradient shader's own `clamp` did.
+   * `uv` gives each channel of `a_uv` as an affine function of the coordinates
+   * the corners arrive in, which is what lets a gradient ride the vertices at
+   * all: a linear one's ramp position is affine in position outright, and a
+   * radial or conic one's gradient-space *coordinate* is, even though the ramp
+   * position it yields is not. Either way the rasterizer's interpolation across
+   * a triangle is exact. `mode` says which of the two the fragment shader is
+   * looking at, and `post` carries the atlas row for the modes that read it —
+   * see `shaders/batchFill.ts`.
+   *
+   * Values outside 0..1 are the sampler's business; the atlas clamps to the
+   * edge texel, which is what the gradient shader's own `clamp` did.
    */
   pushGradientRect(
     x: number, y: number, w: number, h: number, m: Mat3,
-    tA: number, tB: number, tC: number, rowV: number, slot: number,
+    uv: GradientUV, post: number, slot: number, mode: number,
     r: number, g: number, b: number, a: number,
   ): void {
     this.reserve(4, 6);
@@ -325,35 +342,30 @@ export class DrawBatch {
     const ma = m[0], mb = m[1], mc = m[3], md = m[4], mtx = m[6], mty = m[7];
     const x1 = x + w;
     const y1 = y + h;
-    const P = packSlot(slot, PAINT_MODE_PLAIN);
-    const t00 = tA * x + tB * y + tC;
-    const t10 = tA * x1 + tB * y + tC;
-    const t11 = tA * x1 + tB * y1 + tC;
-    const t01 = tA * x + tB * y1 + tC;
-    i = this.writeVertex(
-      i, ma * x + mc * y + mtx, mb * x + md * y + mty,
-      r, g, b, a, t00, rowV, 1, P,
-    );
-    i = this.writeVertex(
-      i, ma * x1 + mc * y + mtx, mb * x1 + md * y + mty,
-      r, g, b, a, t10, rowV, 1, P,
-    );
-    i = this.writeVertex(
-      i, ma * x1 + mc * y1 + mtx, mb * x1 + md * y1 + mty,
-      r, g, b, a, t11, rowV, 1, P,
-    );
-    this.writeVertex(
-      i, ma * x + mc * y1 + mtx, mb * x + md * y1 + mty,
-      r, g, b, a, t01, rowV, 1, P,
-    );
+    const P = packSlot(slot, mode);
+    const corner = (cx: number, cy: number): number => {
+      const at = i;
+      i = this.writeVertex(
+        at, ma * cx + mc * cy + mtx, mb * cx + md * cy + mty,
+        r, g, b, a,
+        uv.ux * cx + uv.uy * cy + uv.u0,
+        uv.vx * cx + uv.vy * cy + uv.v0,
+        post, P,
+      );
+      return i;
+    };
+    corner(x, y);
+    corner(x1, y);
+    corner(x1, y1);
+    corner(x, y1);
     this.pushQuadIndices();
   }
 
-  /** `pushMesh` for a mesh filled by a linear gradient — see
-   *  `pushGradientRect` for what `tA` / `tB` / `tC` and `rowV` carry. */
+  /** `pushMesh` for a mesh filled by a gradient — see `pushGradientRect` for
+   *  what `uv`, `post` and `mode` carry. */
   pushGradientMesh(
     mesh: Mesh, m: Mat3,
-    tA: number, tB: number, tC: number, rowV: number, slot: number,
+    uv: GradientUV, post: number, slot: number, mode: number,
     r: number, g: number, b: number, a: number,
   ): void {
     const src = mesh.vertices;
@@ -364,14 +376,16 @@ export class DrawBatch {
     const v = this.verts;
     let i = this.nVerts * FLOATS_PER_VERTEX;
     const ma = m[0], mb = m[1], mc = m[3], md = m[4], mtx = m[6], mty = m[7];
-    const P = packSlot(slot, PAINT_MODE_PLAIN);
+    const P = packSlot(slot, mode);
     for (let k = 0; k < n; k++) {
       const x = src[k * 2];
       const y = src[k * 2 + 1];
       v[i++] = ma * x + mc * y + mtx;
       v[i++] = mb * x + md * y + mty;
       v[i++] = r; v[i++] = g; v[i++] = b; v[i++] = a;
-      v[i++] = tA * x + tB * y + tC; v[i++] = rowV; v[i++] = 1; v[i++] = P;
+      v[i++] = uv.ux * x + uv.uy * y + uv.u0;
+      v[i++] = uv.vx * x + uv.vy * y + uv.v0;
+      v[i++] = post; v[i++] = P;
     }
     const base = this.nVerts;
     const out = this.idx;

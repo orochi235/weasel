@@ -234,6 +234,22 @@ crushed a 16px glyph to 2px and forced 28px ToggleBar segments into a 17px track
 worktree can pop another session's work into it. Use a throwaway worktree for a baseline instead;
 if you must stash, `push -u -m <tag>`, `apply` by SHA, and drop your own entry by tag.
 
+**A backtick in a GLSL comment ends the shader.** Every shader in this repo is
+a template literal, so a comment written the way the surrounding TypeScript is
+— `like this` — closes it and reopens it, and what was between becomes
+JavaScript. It does not always fail the typecheck: an even number of them
+re-balances into something that parses and then dies at runtime with
+`SyntaxError: Expected a semicolon` from an `eval` frame, naming no file. Write
+GLSL comments with no backticks at all.
+
+**A shader variant a compiler can fold measures nothing.** `fill-rate.spec.ts`
+gated its glyph math on `mix(..., u_color.a * 0.0)`, which folds to zero — so
+every line feeding that arm was dead and the variant timed the same shader as
+its control, reporting the glyph math as free (and sometimes negative). A
+runtime zero that is not a compile-time zero (`u_color.a - 0.5` where the
+uniform is 0.5) is what keeps the code alive. The same trap waits for any
+"with and without" shader pair.
+
 **A linear gradient is not a run-breaker any more.** A test reaching for "a
 paint the batch cannot express" wants a radial or conic one; a linear gradient's
 ramp position is affine in position, so it rides the vertices off the ramp atlas

@@ -38,7 +38,7 @@ interface Row { run: number; variant: string; msPerFrame: number }
 
 test.setTimeout(600_000);
 
-test('fill rate: what glyph math costs a fragment that is not a glyph', async ({ page }) => {
+test('fill rate: what the batch shader costs a fragment it is not for', async ({ page }) => {
   const errors: string[] = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
@@ -99,7 +99,83 @@ void main() {
   float aaW = max(0.5 * fwidth(sdfVal), 0.0005);
   float sdfAlpha = smoothstep(0.5 - aaW, 0.5 + aaW, sdfVal);
   // Selected between, the way a paint-mode vertex attribute would select.
-  vec4 src = mix(texel * u_color, vec4(u_color.rgb, u_color.a * sdfAlpha), u_color.a * 0.0);
+  // u_color.a - 0.5, not u_color.a * 0.0: both are zero at runtime, but a
+  // compiler folds the second and then deletes every line above that feeds
+  // sdfAlpha — which made this variant measure the same shader as plain.
+  vec4 src = mix(texel * u_color, vec4(u_color.rgb, u_color.a * sdfAlpha), u_color.a - 0.5);
+  float a = src.a * 0.5;
+  outColor = vec4(src.rgb * a, a);
+}`;
+
+      /**
+       * The same again, plus the one thing the coordinate-carrying gradients
+       * add to a fragment that is not one: the sample's coordinate stops being
+       * a varying and becomes a value the shader computed.
+       *
+       * The branch is never taken here — that is the point. What is being
+       * priced is not the `atan` inside it, which a non-gradient never runs,
+       * but whether a texture read the hardware can no longer schedule against
+       * a plain varying costs anything on its own.
+       */
+      const WITH_GRADIENT_UV = `#version 300 es
+precision highp float;
+in vec2 v_uv;
+uniform sampler2D u_tex;
+uniform vec4 u_color;
+out vec4 outColor;
+float median3(float r, float g, float b) {
+  return max(min(r, g), min(max(r, g), b));
+}
+void main() {
+  // u_color.a is 0.5, so the mode is negative and the branch never runs.
+  float mode = u_color.a - 1.0;
+  float isGrad = step(2.5, mode);
+  vec2 uv = v_uv;
+  if (isGrad > 0.5) {
+    float t = mode > 3.5 ? fract(atan(v_uv.y, v_uv.x) * 0.1591549431) : length(v_uv);
+    uv = vec2(t, 0.5);
+  }
+  vec4 texel = texture(u_tex, uv);
+  float sdfVal = median3(texel.r, texel.g, texel.b);
+  float aaW = max(0.5 * fwidth(sdfVal), 0.0005);
+  float sdfAlpha = smoothstep(0.5 - aaW, 0.5 + aaW, sdfVal);
+  vec4 src = mix(texel * u_color, vec4(u_color.rgb, u_color.a * sdfAlpha), u_color.a - 0.5);
+  float a = src.a * 0.5;
+  outColor = vec4(src.rgb * a, a);
+}`;
+
+      /**
+       * The same again with the sample split across the branch instead: the
+       * gradient arm reads its computed coordinate, and every other fragment
+       * reads the varying it always did.
+       *
+       * The shipping shader is written this way. What it buys over
+       * `gradient-uv` is the whole difference between the two here — a texture
+       * read the hardware can schedule against a varying, and one it cannot.
+       */
+      const WITH_SPLIT_SAMPLE = `#version 300 es
+precision highp float;
+in vec2 v_uv;
+uniform sampler2D u_tex;
+uniform vec4 u_color;
+out vec4 outColor;
+float median3(float r, float g, float b) {
+  return max(min(r, g), min(max(r, g), b));
+}
+void main() {
+  float mode = u_color.a - 1.0;
+  float isGrad = step(2.5, mode);
+  vec4 texel;
+  if (isGrad > 0.5) {
+    float t = mode > 3.5 ? fract(atan(v_uv.y, v_uv.x) * 0.1591549431) : length(v_uv);
+    texel = texture(u_tex, vec2(t, 0.5));
+  } else {
+    texel = texture(u_tex, v_uv);
+  }
+  float sdfVal = median3(texel.r, texel.g, texel.b);
+  float aaW = max(0.5 * fwidth(sdfVal), 0.0005);
+  float sdfAlpha = smoothstep(0.5 - aaW, 0.5 + aaW, sdfVal);
+  vec4 src = mix(texel * u_color, vec4(u_color.rgb, u_color.a * sdfAlpha), u_color.a - 0.5);
   float a = src.a * 0.5;
   outColor = vec4(src.rgb * a, a);
 }`;
@@ -145,6 +221,8 @@ void main() {
       const variants: { name: string; prog: WebGLProgram }[] = [
         { name: 'plain', prog: build(PLAIN) },
         { name: 'glyph-math', prog: build(WITH_GLYPH_MATH) },
+        { name: 'gradient-uv', prog: build(WITH_GRADIENT_UV) },
+        { name: 'split-sample', prog: build(WITH_SPLIT_SAMPLE) },
       ];
 
       for (const v of variants) {
@@ -193,8 +271,13 @@ void main() {
       // so, and under ABAB whichever variant is measured second sits later on
       // that ramp every single time — which reads as that variant being faster
       // early and slower late, and is entirely an artifact of the order.
+      // Forward then mirrored — ABBA for two variants, ABCCBA for three. Each
+      // one sits once early and once late within a run, so no variant is the
+      // one always measured last as the clock ramps.
+      const forward = variants.map((_, i) => i);
+      const abba = [...forward, ...[...forward].reverse()];
       for (let run = 1; run <= runs; run++) {
-        const order = run % 2 === 1 ? [0, 1, 1, 0] : [1, 0, 0, 1];
+        const order = run % 2 === 1 ? abba : [...abba].reverse();
         for (const i of order) {
           const v = variants[i];
           rows.push({ run, variant: v.name, msPerFrame: timeVariant(v.prog) });
@@ -236,7 +319,17 @@ void main() {
     + `   spread ${spread('plain').toFixed(1)}%`);
   console.log(`  fastest  glyph-math  ${glyph.toFixed(3).padStart(7)} ms/frame`
     + `   spread ${spread('glyph-math').toFixed(1)}%`);
+  const grad = Math.min(...settled('gradient-uv'));
+  console.log(`  fastest  gradient-uv ${grad.toFixed(3).padStart(7)} ms/frame`
+    + `   spread ${spread('gradient-uv').toFixed(1)}%`);
   console.log(`  glyph math costs    ${(((glyph / plain) - 1) * 100).toFixed(1)}% of a fragment`);
+  const split = Math.min(...settled('split-sample'));
+  console.log(`  fastest  split-sample ${split.toFixed(3).padStart(7)} ms/frame`
+    + `  spread ${spread('split-sample').toFixed(1)}%`);
+  console.log(`  a computed uv costs ${(((grad / glyph) - 1) * 100).toFixed(1)}% more`
+    + `  (against glyph-math, its only difference)`);
+  console.log(`  splitting the sample ${(((split / glyph) - 1) * 100).toFixed(1)}% more`
+    + `  (the form that ships)`);
   console.log('');
 
   expect(errors, errors.join('\n')).toEqual([]);

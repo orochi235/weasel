@@ -54,16 +54,13 @@ describe('renderer — consecutive image batching', () => {
   });
 
   /** A fill the run cannot express, for tests that need a break they choose.
-   *  Radial rather than linear: a linear gradient's ramp position is affine in
-   *  position, so it rides the vertices and joins the run instead. */
-  const gradientRect = (x: number) => ({
+   *  Not a gradient: every gradient rides the vertices off the ramp atlas and
+   *  joins the run. Per-vertex colors are their own program. */
+  const breakerRect = (x: number) => ({
     kind: 'path' as const,
     path: { kind: 'rect' as const, x, y: 0, width: 16, height: 16 },
-    fill: {
-      fill: 'radial-gradient' as const,
-      center: { x: 8, y: 8 }, radius: 8,
-      stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
-    },
+    fill: { fill: 'solid' as const, color: '#ffffff' },
+    vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1],
   }) as unknown as DrawCommand;
 
   /** Index count of every `drawElements`, in order. */
@@ -151,13 +148,13 @@ describe('renderer — consecutive image batching', () => {
   });
 
   it('folds group alpha into the same attribute and leaves u_alpha at 1', () => {
-    // The gradient forces the flush to happen *inside* the group, while alpha
-    // is still 0.5. Flushing after it pops would read 1 off the live state and
+    // The vertex-colored fill forces the flush to happen *inside* the group,
+    // while alpha is still 0.5. Flushing after it pops would read 1 off the live state and
     // hide a second application of it — the subtlest bug this design has. A
     // solid rect will not do it any more: it joins the run.
     r.render([{
       kind: 'group', alpha: 0.5,
-      children: [img(0), img(20), gradientRect(40)],
+      children: [img(0), img(20), breakerRect(40)],
     }]);
     expect(draws()).toEqual([12, 6]);
     expect(quadUploads()[0][POST]).toBeCloseTo(0.5);

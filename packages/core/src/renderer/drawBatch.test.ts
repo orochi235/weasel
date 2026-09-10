@@ -42,15 +42,14 @@ describe('renderer — consecutive solid-fill batching', () => {
 
   const STOPS = [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }];
 
-  /** A paint no run can carry, and the one these tests break a run with. A
-   *  radial gradient's ramp position is not affine in position, so it cannot
-   *  ride the vertices the way the linear one below does. */
-  const radialRect = (x: number): DrawCommand => ({
+  /** A paint no run can carry, and the one these tests break a run with. Every
+   *  gradient batches now; per-vertex colors are their own program and a color
+   *  VBO minted per draw, so they cannot join one. */
+  const vcolorRect = (x: number): DrawCommand => ({
     kind: 'path',
     path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
-    fill: {
-      fill: 'radial-gradient', center: { x: 5, y: 5 }, radius: 5, stops: STOPS,
-    },
+    fill: { fill: 'solid', color: '#ffffff' },
+    vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1],
   } as DrawCommand);
 
   const linearRect = (x: number): DrawCommand => ({
@@ -170,11 +169,11 @@ describe('renderer — consecutive solid-fill batching', () => {
   });
 
   it('flushes for a fill kind it cannot express, keeping painter\'s order', () => {
-    r.render([rect(0), radialRect(20), rect(40)]);
+    r.render([rect(0), vcolorRect(20), rect(40)]);
     const progs = drawPrograms();
     expect(progs).toHaveLength(3);
     expect(progs[0]).toBe(r._batchFill().handle);
-    expect(progs[1]).toBe(r._gradFill().handle);
+    expect(progs[1]).toBe(r._pathFillVColor().handle);
     expect(progs[2]).toBe(r._batchFill().handle);
     expect(draws()).toEqual([6, 6, 6]);
   });
@@ -437,10 +436,10 @@ describe('renderer — consecutive solid-fill batching', () => {
   });
 
   describe('which buffers a flush writes', () => {
-    /** One flush each: a radial gradient never joins the run, so it drains what is
+    /** One flush each: a vertex-colored fill never joins the run, so it drains what is
      *  staged before drawing itself. */
     const alternating = (flushes: number): DrawCommand[] =>
-      Array.from({ length: flushes }, (_, i) => [rect(i * 20), radialRect(i * 20 + 10)]).flat();
+      Array.from({ length: flushes }, (_, i) => [rect(i * 20), vcolorRect(i * 20 + 10)]).flat();
 
     /** The buffer bound at each solid-flush vertex upload, in issue order.
      *  `drawImage` is the only other `bufferSubData(ARRAY_BUFFER)` writer and
@@ -531,7 +530,7 @@ describe('renderer — consecutive solid-fill batching', () => {
       const perSlot = SOLID_RING_SLOT_VERTICES / 4;
       const big = (n: number): DrawCommand[] => [
         ...Array.from({ length: perSlot + 1 }, (_, i) => rect(n * 10000 + i)),
-        radialRect(0),
+        vcolorRect(0),
       ];
       const bigFlushes = SOLID_LARGE_RING_SIZE + 1;
       r.render([
@@ -575,7 +574,7 @@ describe('renderer — consecutive solid-fill batching', () => {
    */
   describe('which flushes re-upload their indices', () => {
     const alternating = (flushes: number): DrawCommand[] =>
-      Array.from({ length: flushes }, (_, i) => [rect(i * 20), radialRect(i * 20 + 10)]).flat();
+      Array.from({ length: flushes }, (_, i) => [rect(i * 20), vcolorRect(i * 20 + 10)]).flat();
 
     /** Solid-batch index uploads. Nothing else here writes indices this way:
      *  the text and image paths respecify with `bufferData` instead. */
@@ -614,13 +613,13 @@ describe('renderer — consecutive solid-fill batching', () => {
       // larger N — so slot 0 coming round with two rects needs nothing.
       r.render([
         ...alternating(SOLID_RING_SIZE),
-        rect(0), rect(20), radialRect(40),
+        rect(0), rect(20), vcolorRect(40),
       ]);
       expect(indexUploads()).toHaveLength(SOLID_RING_SIZE);
     });
 
     it('uploads for a flush carrying a mesh, whose indices no count describes', () => {
-      r.render([triangle(0), radialRect(20), triangle(40)]);
+      r.render([triangle(0), vcolorRect(20), triangle(40)]);
       expect(indexUploads()).toHaveLength(2);
     });
 
@@ -630,9 +629,9 @@ describe('renderer — consecutive solid-fill batching', () => {
       // still a different pattern. One full turn puts a one-rect flush back on
       // the mesh's slot.
       r.render([
-        triangle(0), radialRect(10),
+        triangle(0), vcolorRect(10),
         ...alternating(SOLID_RING_SIZE - 1),
-        rect(0), radialRect(30),
+        rect(0), vcolorRect(30),
       ]);
       // Every one of the 65 flushes writes: 64 filling the ring, and the last
       // because the slot it lands on held a mesh.
@@ -655,7 +654,7 @@ describe('renderer — consecutive solid-fill batching', () => {
 
     it('sends the batch its white once a frame, not once a flush', () => {
       const alternating = (flushes: number): DrawCommand[] =>
-        Array.from({ length: flushes }, (_, i) => [rect(i * 20), radialRect(i * 20 + 10)]).flat();
+        Array.from({ length: flushes }, (_, i) => [rect(i * 20), vcolorRect(i * 20 + 10)]).flat();
       r.render(alternating(4));
       expect(colorWrites(r._batchFill())).toEqual([[1, 1, 1, 1]]);
     });

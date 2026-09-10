@@ -42,8 +42,10 @@ import type { Mesh } from './cache/mesh';
 import { outlineMesh } from './cache/outlineMeshCache';
 import { outlineStrokeMesh, quantizeEmWidth } from './cache/outlineStrokeMeshCache';
 import { strokeMesh } from './cache/strokeMeshCache';
-import { DrawBatch } from './drawBatch';
-import { BATCH_TEXTURE_SLOTS } from './shaders/batchFill';
+import { DrawBatch, type GradientUV } from './drawBatch';
+import {
+  BATCH_TEXTURE_SLOTS, PAINT_MODE_PLAIN, PAINT_MODE_RADIAL, PAINT_MODE_CONIC,
+} from './shaders/batchFill';
 import type { EffectTarget, EffectTargets } from './effects/EffectTargets';
 import { COMPOSITE_PROGRAM_ID } from './effects/composite';
 
@@ -970,25 +972,28 @@ function pushMesh(
   ctx.drawBatch.pushMesh(mesh, ctx.state.transform, r, g, b, a);
 }
 
-/** Ramp position at a vertex as `a * x + b * y + c`, in the coordinates the
- *  geometry arrives in. */
-interface RampT { a: number; b: number; c: number }
-
 /** A paint a run can express, resolved from a `FillStyle` by `batchPaint`. */
 type BatchPaint =
   | { kind: 'solid'; color: string; opacity?: number }
-  | { kind: 'ramp'; stops: GradStop[]; opacity?: number; t: RampT };
+  | {
+      kind: 'ramp'; stops: GradStop[]; opacity?: number;
+      /** `PAINT_MODE_PLAIN` for a linear gradient, whose ramp position a vertex
+       *  carries outright; `PAINT_MODE_RADIAL` / `PAINT_MODE_CONIC` otherwise. */
+      mode: number;
+      uv: GradientUV;
+    };
 
 /**
  * `fill` as something a run can carry, or `undefined` for a paint no run can
- * express — a pattern, a radial or conic gradient, a shader, per-vertex colors.
+ * express — a pattern, a shader, per-vertex colors.
  *
- * **A linear gradient qualifies and the other two do not, for one reason:** its
- * ramp position is affine in position, so a vertex can carry it and the
- * rasterizer's interpolation across a triangle is exact. That makes such a fill
- * a textured quad off the ramp atlas and nothing more — no paint mode of its
- * own, no vertex float of its own. Radial and conic are not affine in the ramp
- * position and still take their own draw.
+ * **All three gradients qualify, and for the same reason,** which is not that
+ * their ramp position is affine in position — only a linear gradient's is. It
+ * is that the *coordinate* the ramp position is computed from is affine in all
+ * three, so a vertex can carry that and the rasterizer's interpolation across a
+ * triangle is exact. A linear gradient's coordinate is the ramp position
+ * itself, which is why it needs no paint mode; the other two carry a
+ * gradient-space point and the shader takes a `length` or an `atan` of it.
  */
 function batchPaint(
   ctx: DrawContext, fill: FillStyle, hasVColors: boolean,
@@ -999,35 +1004,117 @@ function batchPaint(
     const solid = fill as { color: string; opacity?: number };
     return { kind: 'solid', color: solid.color, opacity: solid.opacity };
   }
-  if (kind !== 'linear-gradient') return undefined;
-  const grad = fill as Extract<FillStyle, { fill: 'linear-gradient' }>;
-  return {
-    kind: 'ramp', stops: grad.stops, opacity: grad.opacity, t: linearRampT(ctx, grad),
-  };
+  if (kind === 'linear-gradient') {
+    const grad = fill as Extract<FillStyle, { fill: 'linear-gradient' }>;
+    return ramp(grad, PAINT_MODE_PLAIN, linearRampUV(ctx, grad));
+  }
+  if (kind === 'radial-gradient') {
+    const grad = fill as Extract<FillStyle, { fill: 'radial-gradient' }>;
+    return ramp(grad, PAINT_MODE_RADIAL, radialRampUV(ctx, grad));
+  }
+  if (kind === 'conic-gradient') {
+    const grad = fill as Extract<FillStyle, { fill: 'conic-gradient' }>;
+    return ramp(grad, PAINT_MODE_CONIC, conicRampUV(ctx, grad));
+  }
+  return undefined;
+}
+
+function ramp(
+  fill: { stops: GradStop[]; opacity?: number }, mode: number, uv: GradientUV,
+): BatchPaint {
+  return { kind: 'ramp', stops: fill.stops, opacity: fill.opacity, mode, uv };
 }
 
 /**
- * The gradient shader's `dot(p - from, dir) / len` folded into one affine row,
- * in the space the geometry's own coordinates are in.
+ * Geometry-space → gradient-space, as the one matrix a vertex is measured
+ * through.
  *
- * `gradientSpaceInverse` maps a screen position back into the gradient's space,
- * and the batch's vertices arrive before the model transform — so the two
- * compose into the one matrix a vertex is measured through.
+ * `gradientSpaceInverse` maps a screen position back into the gradient's space
+ * and the batch's vertices arrive before the model transform, so the two
+ * compose. This is the composition `gradFill`'s vertex shader does in two
+ * steps, and the pair have to agree: a radial gradient goes through that one
+ * and a linear one through this.
  */
-function linearRampT(
+function gradientMap(ctx: DrawContext, units: GradientUnits | undefined): Mat3 {
+  return mat3.multiply(gradientSpaceInverse(ctx, units), ctx.state.transform);
+}
+
+/**
+ * The gradient shader's `dot(p - from, dir) / len` folded into `u`, with `v`
+ * left for the atlas row `stageRamps` fills in.
+ */
+function linearRampUV(
   ctx: DrawContext, fill: Extract<FillStyle, { fill: 'linear-gradient' }>,
-): RampT {
-  const g = mat3.multiply(gradientSpaceInverse(ctx, fill.units), ctx.state.transform);
+): GradientUV {
+  const g = gradientMap(ctx, fill.units);
   const dx = fill.to.x - fill.from.x;
   const dy = fill.to.y - fill.from.y;
   const len = Math.hypot(dx, dy) || 1;
   // dir is (dx, dy)/len and the divisor is len, so the pair is 1/len².
   const k = 1 / (len * len);
   return {
-    a: (g[0] * dx + g[1] * dy) * k,
-    b: (g[3] * dx + g[4] * dy) * k,
-    c: ((g[6] - fill.from.x) * dx + (g[7] - fill.from.y) * dy) * k,
+    ux: (g[0] * dx + g[1] * dy) * k,
+    uy: (g[3] * dx + g[4] * dy) * k,
+    u0: ((g[6] - fill.from.x) * dx + (g[7] - fill.from.y) * dy) * k,
+    vx: 0, vy: 0, v0: 0,
   };
+}
+
+/** The gradient-space point scaled so its distance from the center *is* the
+ *  ramp position, which is what makes the shader's half a `length`. */
+function radialRampUV(
+  ctx: DrawContext, fill: Extract<FillStyle, { fill: 'radial-gradient' }>,
+): GradientUV {
+  const g = gradientMap(ctx, fill.units);
+  // The floor is `gradFill`'s own `max(u_gradRadius, 0.0001)`.
+  const k = 1 / Math.max(fill.radius, 1e-4);
+  return {
+    ux: g[0] * k, uy: g[3] * k, u0: (g[6] - fill.center.x) * k,
+    vx: g[1] * k, vy: g[4] * k, v0: (g[7] - fill.center.y) * k,
+  };
+}
+
+/**
+ * The gradient-space point about the center, turned by `-angle` so the shader's
+ * half is an `atan` of it and nothing else.
+ *
+ * `gradFill` subtracts the angle from the arctangent instead. The two agree
+ * because rotating a point turns its arctangent by the same amount, and the
+ * `fract` that follows takes care of the wrap either way.
+ */
+function conicRampUV(
+  ctx: DrawContext, fill: Extract<FillStyle, { fill: 'conic-gradient' }>,
+): GradientUV {
+  const g = gradientMap(ctx, fill.units);
+  const cos = Math.cos(fill.angle);
+  const sin = Math.sin(fill.angle);
+  const dx0 = g[6] - fill.center.x;
+  const dy0 = g[7] - fill.center.y;
+  return {
+    ux: cos * g[0] + sin * g[1],
+    uy: cos * g[3] + sin * g[4],
+    u0: cos * dx0 + sin * dy0,
+    vx: cos * g[1] - sin * g[0],
+    vy: cos * g[4] - sin * g[3],
+    v0: cos * dy0 - sin * dx0,
+  };
+}
+
+/**
+ * What a gradient's vertices carry once its row is known.
+ *
+ * A linear gradient's `a_uv` is (ramp position, row) and its `a_post` is the
+ * plain 1, because that is what the plain paint mode already samples. A radial
+ * or conic one needs both `a_uv` channels for its coordinate, so its row goes
+ * in `a_post` — which no gradient uses for alpha, its opacity riding the vertex
+ * color instead.
+ */
+function rampVertices(
+  paint: Extract<BatchPaint, { kind: 'ramp' }>, rowV: number,
+): { uv: GradientUV; post: number } {
+  return paint.mode === PAINT_MODE_PLAIN
+    ? { uv: { ...paint.uv, v0: rowV }, post: 1 }
+    : { uv: paint.uv, post: rowV };
 }
 
 function pushRampRect(
@@ -1036,12 +1123,12 @@ function pushRampRect(
   paint: Extract<BatchPaint, { kind: 'ramp' }>,
 ): void {
   const { staged, slot, rowV } = stageRamps(ctx, paint.stops, 4);
-  const { a, b, c } = paint.t;
+  const { uv, post } = rampVertices(paint, rowV);
   // White vertices, so the ramp texel passes through as its own color and the
   // alpha channel carries what `u_opacity` and `u_alpha` used to.
   ctx.drawBatch.pushGradientRect(
     rect.x, rect.y, rect.width, rect.height, ctx.state.transform,
-    a, b, c, rowV, slot, 1, 1, 1, stagedAlpha(ctx, staged, paint.opacity),
+    uv, post, slot, paint.mode, 1, 1, 1, stagedAlpha(ctx, staged, paint.opacity),
   );
 }
 
@@ -1049,10 +1136,10 @@ function pushRampMesh(
   ctx: DrawContext, mesh: Mesh, paint: Extract<BatchPaint, { kind: 'ramp' }>,
 ): void {
   const { staged, slot, rowV } = stageRamps(ctx, paint.stops, mesh.vertices.length >> 1);
-  const { a, b, c } = paint.t;
+  const { uv, post } = rampVertices(paint, rowV);
   ctx.drawBatch.pushGradientMesh(
     mesh, ctx.state.transform,
-    a, b, c, rowV, slot, 1, 1, 1, stagedAlpha(ctx, staged, paint.opacity),
+    uv, post, slot, paint.mode, 1, 1, 1, stagedAlpha(ctx, staged, paint.opacity),
   );
 }
 

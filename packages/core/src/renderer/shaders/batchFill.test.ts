@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   BATCH_VERT_SRC, BATCH_FRAG_SRC, BATCH_FILL_UNIFORMS, BATCH_FILL_ATTRIBUTES,
-  BATCH_TEXTURE_SLOTS, WHITE_SLOT, PAINT_MODE_PLAIN,
+  BATCH_TEXTURE_SLOTS, WHITE_SLOT, PAINT_MODE_PLAIN, PAINT_MODE_RADIAL,
+  PAINT_MODE_CONIC,
 } from './batchFill';
 import { FLOATS_PER_VERTEX } from '../drawBatch';
 
@@ -79,14 +80,38 @@ describe('batch program — glyph coverage is unconditional', () => {
   /**
    * The one thing that cannot be checked by reading `GLYPH_COVERAGE_GLSL`
    * alone: that the *caller* runs it on every fragment. `fwidth` inside
-   * non-uniform control flow is undefined, so a branch here would compile,
+   * non-uniform control flow is undefined, so a branch around it would compile,
    * pass, and produce driver-dependent glyph edges.
+   *
+   * Depth, not "no `if` appears earlier in the text": the gradient uv selection
+   * *is* a branch, and a legal one — it computes no derivative, and what
+   * matters is only that this call is not inside it.
    */
-  it('calls glyphCoverage outside any conditional', () => {
+  it('calls glyphCoverage at the top level of main', () => {
     const body = BATCH_FRAG_SRC.slice(BATCH_FRAG_SRC.indexOf('void main()'));
     const call = body.indexOf('glyphCoverage(');
     expect(call).toBeGreaterThan(0);
-    expect(body.slice(0, call)).not.toMatch(/\bif\s*\(|\bfor\s*\(|\bwhile\s*\(/);
+    let depth = 0;
+    for (let i = 0; i < call; i++) {
+      if (body[i] === '{') depth++;
+      else if (body[i] === '}') depth--;
+    }
+    expect(depth, 'glyphCoverage is nested inside a block').toBe(1);
+  });
+
+  /** The other half of the same rule: nothing the shader branches on may
+   *  contain a derivative, whatever the reason for the branch. */
+  it('takes no derivative inside a conditional', () => {
+    const body = BATCH_FRAG_SRC.slice(BATCH_FRAG_SRC.indexOf('void main()'));
+    let depth = 0;
+    for (let i = 0; i < body.length; i++) {
+      if (body[i] === '{') depth++;
+      else if (body[i] === '}') depth--;
+      else if (depth > 1 && /^(fwidth|dFdx|dFdy)\s*\(/.test(body.slice(i))) {
+        throw new Error(`derivative inside a block: ${body.slice(i, i + 40)}`);
+      }
+    }
+    expect(depth).toBe(0);
   });
 
   it('discards that coverage on a fragment that is not a glyph', () => {
@@ -96,6 +121,17 @@ describe('batch program — glyph coverage is unconditional', () => {
     expect(PAINT_MODE_PLAIN).toBe(0);
     expect(BATCH_FRAG_SRC).toMatch(/isGlyph\s*=\s*step\(0\.5,\s*v_paintMode\)/);
     expect(BATCH_FRAG_SRC).toMatch(/mix\(1\.0,\s*coverage,\s*isGlyph\)/);
+  });
+
+  it('excludes the gradient modes, which sit above the glyph ones', () => {
+    // `step(0.5, mode)` alone would call a radial gradient a glyph, paint it in
+    // the coverage of a distance field it never sampled, and throw its color
+    // away for `vec4(1.0)`. The upper bound is what stops that.
+    expect(PAINT_MODE_RADIAL).toBeGreaterThan(2);
+    expect(PAINT_MODE_CONIC).toBeGreaterThan(2);
+    expect(BATCH_FRAG_SRC).toMatch(
+      /isGlyph\s*=\s*step\(0\.5,\s*v_paintMode\)\s*\*\s*step\(v_paintMode,\s*2\.5\)/,
+    );
   });
 
   it('keeps a glyph texel out of the color', () => {

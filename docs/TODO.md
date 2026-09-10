@@ -1592,8 +1592,12 @@ one dead `const` and four stale disable directives.
   draws anything. The batch shader carries the glyph math behind a paint mode
   and runs it on *every* fragment, glyph or not: `fwidth` in non-uniform control
   flow is undefined, so the derivative has to be taken before anything selects
-  on the mode. That is 1.4% of a fragment that is not a glyph
-  (`tests/perf/fill-rate.spec.ts`), and fill is not what a wall is bound by.
+  on the mode. That roughly doubles a fragment that is not a glyph
+  (`tests/perf/fill-rate.spec.ts`) — recorded here as 1.4% when text landed,
+  which was the instrument and not the shader: the control gated its glyph math
+  on a factor the compiler folds to zero and then deletes the math behind, so it
+  timed `plain` against `plain`. Fill is not what a wall is bound by, so the
+  decision stands; a fill-heavy scene pays more for text than this entry said.
 
   **The cost of folding text in was the vertex, and packing is what paid it.**
   The first cut gave the vertex a paint mode and a bold threshold of its own,
@@ -1647,14 +1651,20 @@ one dead `const` and four stale disable directives.
   in a run, so without this a linear gradient and a radial one under the same
   group would have disagreed.
 
-  **Radial and conic are what is left.** Their ramp position is not affine,
-  though the coordinate they need is, so the arm has the same shape: the
-  gradient-space coordinate in `a_uv`, the row somewhere a plain vertex is not
-  using, and a `length` or an `atan` in the shader. Where that computation goes
-  is the open question — the glyph math had to run unconditionally because
-  `fwidth` demanded it, and an `atan` is dearer and rarer than that, so this one
-  wants measuring against a branch. Step 4 of
-  `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`.
+  **Radial and conic followed the same day.** Their ramp position is not affine,
+  but the coordinate they need is, so a vertex carries a gradient-space point in
+  `a_uv` and its atlas row in `a_post`, and the shader takes a `length` or an
+  `atan` of it. Both sit behind a branch on the paint mode, which is legal where
+  it would not be around the glyph math: the mode is a flat varying, so every
+  fragment of a quad takes the same arm, and neither arm holds a derivative.
+
+  **The branch carries the sample, not just the coordinate, and that is worth
+  65% of a fragment.** Selecting a coordinate and then sampling once is a
+  texture read the hardware cannot schedule against a varying; splitting the
+  fetch across the two arms gives every non-gradient fragment its plain read
+  back. Measured against the same shader without the branch at all: +65.1% one
+  way, +4.9% the other (`tests/perf/fill-rate.spec.ts`). Step 4 of
+  `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md` is now closed.
 
   Solid geometry and image quads share that batch as of 2026-09-09
   (`renderer/drawBatch.ts`). They used to be exclusive — staging a solid
