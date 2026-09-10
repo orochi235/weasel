@@ -80,6 +80,8 @@ Priority tags:
   compose, or `PoseComposition` is documented as interaction-only and the render
   path is pinned to absolute poses. Verified 2026-08-13 by diffing the two walks
   against the same nested scene; both placed the child identically.
+  **Settled 2026-09-10: a container's pose defines a frame.** Design (not yet
+  built): `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`.
 
 - **(P3) Unconfirmed: resize grabs the node under the handle, not the selected one.**
   Reported 2026-07-28 against **lbx-editor**, which consumes `@weasel-js/core@0.6.0`
@@ -918,7 +920,11 @@ What it surfaced:
   translation and nothing else. So `resolveSkeleton` is resolved to world
   matrices and flattened onto eleven independent bone nodes every frame. Rotation-
   aware pose composition would let the rig be expressed as parenting, which is
-  what it already is everywhere except the scene.
+  what it already is everywhere except the scene. Covered for rigid and
+  uniformly scaled rigs by the frame design (not yet built):
+  `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`. A rig using
+  `scaleX`/`scaleY` separately stays flattened — anisotropic scale is outside
+  what a `RectPose` can hold.
 
 - **(P3) No view-bounds culling.** All 254 nodes paint every frame regardless of
   the viewport; the immediate twin windows tiles to visible rows and columns.
