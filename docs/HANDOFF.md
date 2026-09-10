@@ -1,41 +1,57 @@
-# Handoff — gradients into the shared batch
+# Handoff — radial and conic gradients into the shared batch
 
 **Branch:** `main`. Everything is committed and unpushed; run
 `git log --oneline @{u}..HEAD` to see what has not left the machine.
 
 ## Where it stands
 
-The renderer's draw-coalescing arc has one paint left.
-`docs/TODO.md`'s **"(P2) Per-command draw cost"** entry is the live record of
-the whole arc — read it first, not this file, for what has landed.
+The renderer's draw-coalescing arc has two paints left, and they are the same
+paint twice. `docs/TODO.md`'s **"(P2) Per-command draw cost"** entry is the live
+record of the whole arc — read it first, not this file, for what has landed.
 
-Solid geometry, image quads, up to seven distinct textures, and text now share
-one draw. Gradients still bind a ramp per draw, and so still break a run at
-every gradient fill.
+Solid geometry, image quads, up to seven distinct textures, text and linear
+gradients now share one draw. **Radial and conic gradients still bind
+`gradFill` per draw and still break a run.**
 
-**Next: gradients**, via a ramp atlas — ramps are 1D and atlas into rows of one
-texture, which is what would let a gradient take a slot the way a bitmap and a
-font atlas already do. Step 4 of
-`docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`.
+**Next: their arm in the batch shader.** Step 4 of
+`docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`, which carries
+the shape of it.
 
 ## Decisions made in conversation that the code does not explain
 
-**The batch vertex is the thing to protect, and it is full.** Text's paint mode
-only fits because it packs into `a_texSlot` beside the slot index; carrying it
-as a float of its own measured 9% slower at the densest rung of the atlas wall,
-on the pure-rect column as much as anywhere. Anything gradients want per vertex
-has to earn its width the same way, and a uniform that breaks the run is the
-cheaper answer whenever the thing that varies is rare — which is why the
-synthetic-bold threshold stayed one.
+**A linear gradient needed no shader arm because its ramp position is affine in
+position.** Interpolating an affine function across a triangle is exact, so the
+fill is a textured quad off the ramp atlas and the plain paint mode already
+samples it. Radial and conic are not affine in the ramp position — but the
+*coordinate* they need is, which is why their arm stages a gradient-space
+coordinate in `a_uv` and computes `length` or `atan` from it.
 
-**The measurement instrument was the hard part, and its corrections are in
-`fill-rate.spec.ts`'s comments because they will be re-derived otherwise.**
-`gl.finish()` does not block in Chrome — commands go to the GPU process and the
-call returns, which timed 43M fragments at 0.003 ms and read as free; a
-one-pixel `readPixels` is the real sync point. Samples must be long enough that
-the GPU clock is not still ramping through them. And variants must alternate
-ABBA: under ABAB whichever runs second sits later on that ramp every time, which
-reads as that variant being faster.
+**Where that computation goes is the open question, and it is not the same
+question text faced.** The glyph math runs unconditionally because `fwidth` in
+non-uniform control flow is undefined; a conic's `atan` is dearer than that and
+far rarer, so it wants measuring against a branch. A branch is legal here only
+if the sample stops being `texture()` — the ramp atlas has no mipmaps, so
+`textureLod(..., 0.0)` is exactly equivalent and derivative-free.
+
+**The batch vertex is full, and gradients did not widen it.** Text's paint mode
+only fits because it packs into `a_texSlot` beside the slot index; a float of
+its own measured 9% slower at the densest rung of the atlas wall. Radial and
+conic need a row per vertex, and `a_post` is the place to look — a gradient
+leaves it at 1, the way a solid does.
+
+**A row index is a stable name; the `v` computed from it is not.** Growing the
+atlas moves every row's `v`, and recycling one rewrites its texels. Both are
+irreversible, so `GradientRampAtlas.wouldReshape` is asked *before* the bake and
+the run flushed if the answer is yes. Growth from an empty atlas is exempt —
+there is no row for anyone to be holding — and that exemption is load-bearing:
+without it the first gradient of a renderer's life breaks whatever run it lands
+in, which is a wart, and `drawBatch.image.test.ts` was passing on it.
+
+**The timing instrument cannot resolve this change.** Three runs of
+`transition-matrix` in one sitting spread ~50% on an unchanged fixture. The
+within-sitting comparison that does hold is that mixing costs nothing: 512
+alternating solids and gradients came in *below* 512 gradients alone. Draw
+counts, not milliseconds, are what the tests assert.
 
 **Do not compare a perf number against one recorded on another day.** The same
 unchanged tree measured 1.85 ms where `docs/TODO.md` records 1.50 for the same
@@ -43,30 +59,39 @@ rung. Always take the A/B back to back in one sitting, and quote the pair. A
 worktree at the parent commit is how: `git worktree add <dir> HEAD~1`, then run
 the same spec in each.
 
+**The measurement instrument's corrections are in `fill-rate.spec.ts`'s
+comments because they will be re-derived otherwise.** `gl.finish()` does not
+block in Chrome — commands go to the GPU process and the call returns, which
+timed 43M fragments at 0.003 ms and read as free; a one-pixel `readPixels` is
+the real sync point. Samples must be long enough that the GPU clock is not still
+ramping through them. And variants must alternate ABBA: under ABAB whichever
+runs second sits later on that ramp every time, which reads as that variant
+being faster.
+
 **`tests/visual/batch-pixels.spec.ts` exists because no screenshot can see a
 batched run's composition** — the atlas quad covers the ground rect it
 corrupted. Anything that changes what shares a draw needs a probe on a pixel
-the covering command does *not* cover. Its label cases fail on a shader that
-multiplies a glyph's distance-field texel into its color, which is the naive
-version of the merge and was checked by writing it. This is also in
-`CLAUDE.md`'s Traps.
+the covering command does *not* cover. Its gradient cases are flat ramps on
+purpose: composition is what it guards, and a flat ramp reads as a color rather
+than as a plausible neighbouring texel. This is also in `CLAUDE.md`'s Traps.
 
 **Seven textures, not more, and the white texel owns slot 0.** WebGL2 guarantees
 16 fragment texture units, so eight is safe without a `getParameter` — which
 the GL recorder would answer with a recording function rather than a number.
 Slot 0 is reserved so a solid's `texture() * a_vertexColor` is exactly the
 vertex color whatever else joins its run; that is the invariant the tint bug
-broke. Bitmaps and font atlases share the seven above it.
+broke. Bitmaps, font atlases and the one ramp atlas share the seven above it.
 
 **A bitmap wanted at two MAG_FILTERs still breaks the run.** That is state on
 the texture object, not on the unit, so no number of slots fixes it. A font
 atlas has no such quarrel — `GLTextureCache` owns its filtering, and must keep
-owning it, since filtering a distance field destroys it.
+owning it, since filtering a distance field destroys it. The ramp atlas filters
+LINEAR in both axes and each ramp is sampled at its row's center, where the
+neighbouring row's weight is exactly zero.
 
-**`useProgram` no longer names a tier.** One program draws every tier, so the
-tests that used to ask which was bound read the paint mode off the staged
-vertices instead. That is the better proxy anyway: it says what the shader will
-do rather than which object was bound.
+**A test written against a gradient as its run-breaker now measures nothing.**
+Four files used a linear gradient for exactly that; they take a radial one now.
+Anything reaching for "a paint the batch cannot express" should too.
 
 ## Verifying
 
@@ -78,6 +103,9 @@ do rather than which object was bound.
   the wall ladder. Draw-bound, so it cannot see fragment cost.
 - `npx playwright test --config=tests/perf/playwright.config.ts fill-rate` —
   fragment cost, and nothing else.
+- A perf spec against a dev server left running from an earlier session fails
+  as `Failed to fetch dynamically imported module`, not as anything about the
+  code. Kill whatever holds port 5176 first.
 
 ---
 

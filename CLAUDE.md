@@ -234,6 +234,12 @@ crushed a 16px glyph to 2px and forced 28px ToggleBar segments into a 17px track
 worktree can pop another session's work into it. Use a throwaway worktree for a baseline instead;
 if you must stash, `push -u -m <tag>`, `apply` by SHA, and drop your own entry by tag.
 
+**A linear gradient is not a run-breaker any more.** A test reaching for "a
+paint the batch cannot express" wants a radial or conic one; a linear gradient's
+ramp position is affine in position, so it rides the vertices off the ramp atlas
+and joins the run. Four test files were written against the old behavior and
+went on passing for the wrong reason until they were swapped.
+
 **A path-fill painter's bind half and draw half must stay split.** `applyClipTest`
 disables the stencil test at clip depth 0 and overwrites `stencilFunc` otherwise, so any
 function owning its own stencil state — `drawPathStrokeStenciled`, `drawPathFillStencil` —
