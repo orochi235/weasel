@@ -15,10 +15,12 @@ import type { AreaSelectDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { hitTestArea as hitTestAreaShared } from './hitTestArea';
+import type { PoseComposition } from 'features/groups/composePose';
 
 export function useAreaSelectDepSource(
   scene: Scene<unknown, string, unknown>,
   selection: SelectionApi,
+  poseComposition?: PoseComposition<unknown>,
 ): void {
   const sceneRef = useRef(scene);
   sceneRef.current = scene;
@@ -29,7 +31,7 @@ export function useAreaSelectDepSource(
     const sc = sceneRef.current;
     const s = selectionRef.current;
     return {
-      hitTestArea: (bounds) => hitTestAreaShared(sc, bounds),
+      hitTestArea: (bounds) => hitTestAreaShared(sc, bounds, poseComposition ? { poseComposition } : undefined),
       getSelection: () => s.current as NodeId[],
       setSelection: (ids) => s.set(ids),
     };

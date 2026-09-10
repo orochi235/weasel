@@ -166,8 +166,9 @@ function walkClipAware<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   poseBounds: (pose: TPose) => Bounds,
   nodeTest: (node: Node<TData, TLayer, TPose>, pose: TPose) => boolean,
+  poseComposition?: PoseComposition<TPose>,
 ): string[] {
-  return pickWalk<TPose>(scenePickSource(scene), {
+  return pickWalk<TPose>(scenePickSource(scene, poseComposition ? { poseComposition } : {}), {
     hits: (node, pose) => nodeTest(node as unknown as Node<TData, TLayer, TPose>, pose),
     clipAdmits: (clip, _node, pose) => pathIntersectsRect(clip, poseBounds(pose)),
   });
@@ -423,7 +424,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
           b.y < rect.y + rect.height &&
           b.y + b.height > rect.y
         );
-      });
+      }, composition);
     },
     hitTestLasso(polygon, mode: LassoHitMode) {
       if (polygon.length < 3) return [];
@@ -434,7 +435,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
           mode === 'enclosed' ? polygonContainsRect(polygon, b) :
           polygonIntersectsRect(polygon, b)
         );
-      });
+      }, composition);
     },
     // commitInsert (gesture-time leaf insert) is opt-in: present only when
     // `options.commitInsert` is. The full insertNode/removeNode mutators

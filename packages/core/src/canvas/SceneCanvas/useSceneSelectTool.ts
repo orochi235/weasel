@@ -225,9 +225,11 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       const scale = meanScale((camera ?? getView?.())?.scale ?? { x: 1, y: 1 });
       const tolerance = pickTolerancePx / scale;
       // Through the adapter, not `n.pose`: an ephemeral override is the pose
-      // the renderer draws, so it has to be the one picking tests.
+      // the renderer draws, so it has to be the one picking tests. World, not
+      // local, for the same reason — a framed child is drawn in its parent's
+      // frame, not where its own pose says.
       const src = scenePickSource<TData, TLayer, TPose>(scene, {
-        getPose: (id) => adapter.getPose(id),
+        getPose: (id) => adapter.getWorldPose(id),
         ...(alphaOf ? { alphaOf } : {}),
         ...(layerIsPainted ? { layerIsPainted } : {}),
       });
@@ -267,7 +269,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       if (boundsOfProp) return boundsOfProp(id);
       const n = scene.get(asNodeId(id));
       if (!n) return null;
-      const pose = adapter.getPose(id);
+      const pose = adapter.getWorldPose(id);
       const b = aabbOfPose(pose);
       // Surface rotation to the overlay directly from the pose. Independent
       // of any gesture-side descriptor (notably `selectTool.resize.geometry`,
