@@ -1,4 +1,15 @@
-import { chromaCap, contrast, deltaE, hueGap, toHex, toLch, vividAt, type Lch } from './oklch';
+import {
+  chromaCap,
+  contrast,
+  CHROMA_WEIGHT,
+  deltaE,
+  hueGap,
+  toHex,
+  toLab,
+  toLch,
+  vividAt,
+  type Lch,
+} from './oklch';
 
 /**
  * A hue pinned into the palette with its own lightness.
@@ -216,10 +227,23 @@ function searchHues(c: Constraints): number[] | null {
 
   // Hue is an integer 0-359 and the constraints are fixed for one call, so the
   // placed color, its realized hue and its contrast are each computed once.
-  const placed = new Map<
-    number,
-    { hex: string; hue: number; contrast: number; chroma: number; surfaceDistance: number }
-  >();
+  interface Placed {
+    hex: string;
+    hue: number;
+    contrast: number;
+    chroma: number;
+    surfaceDistance: number;
+    /** OKLab coordinates, chroma pre-weighted, so a pairwise distance in the
+     *  search is three subtractions rather than two color conversions. */
+    lab: readonly [number, number, number];
+  }
+  const weighted = (hex: string): readonly [number, number, number] => {
+    const [L, a, b] = toLab(hex);
+    return [L, CHROMA_WEIGHT * a, CHROMA_WEIGHT * b];
+  };
+  const between = (p: readonly [number, number, number], q: readonly [number, number, number]) =>
+    Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
+  const placed = new Map<number, Placed>();
   const at = (H: number) => {
     const key = ((Math.round(H) % 360) + 360) % 360;
     let v = placed.get(key);
@@ -232,6 +256,7 @@ function searchHues(c: Constraints): number[] | null {
         contrast: contrast(hex, c.surface),
         chroma: lch.C,
         surfaceDistance: deltaE(hex, c.surface),
+        lab: weighted(hex),
       };
       placed.set(key, v);
     }
@@ -245,6 +270,7 @@ function searchHues(c: Constraints): number[] | null {
       contrast: contrast(hex, c.surface),
       chroma: lch.C,
       surfaceDistance: deltaE(hex, c.surface),
+      lab: weighted(hex),
     };
   });
   const metaFor = (free: number[]) => [...anchorMeta, ...free.map(at)];
@@ -283,7 +309,7 @@ function searchHues(c: Constraints): number[] | null {
     if (c.minDistance > 0) {
       for (let i = 0; i < m.length; i += 1) {
         for (let j = i + 1; j < m.length; j += 1) {
-          const short = c.minDistance - deltaE(m[i].hex, m[j].hex);
+          const short = c.minDistance - between(m[i].lab, m[j].lab);
           if (short > 0) p += short * 400;
         }
       }
@@ -296,7 +322,8 @@ function searchHues(c: Constraints): number[] | null {
   };
 
   const seeds: number[][] = [];
-  for (let start = 0; start < 360; start += 6) {
+  const seedStep = Math.max(6, Math.round(freeCount * 1.6));
+  for (let start = 0; start < 360; start += seedStep) {
     seeds.push(Array.from({ length: freeCount }, (_, i) => Math.round((start + (i * 360) / freeCount) % 360)));
   }
   if (anchorHues.length > 0) {
@@ -316,22 +343,66 @@ function searchHues(c: Constraints): number[] | null {
   }
 
   const STEPS = [-16, -8, -4, -2, -1, 1, 2, 4, 8, 16];
-  const descend = (hues: number[], cost: (h: number[]) => number, gate?: (h: number[]) => boolean) => {
-    let current = [...hues];
-    let currentCost = cost(current);
+
+  /**
+   * Everything one position contributes to the penalty: its own shortfalls plus
+   * the pairs it takes part in.
+   *
+   * `descend` moves exactly one hue at a time, so recomputing the whole set for
+   * each candidate costs O(n^2) to learn about O(n) changed terms. Scoring the
+   * moved position alone is what keeps the count slider live at 16 colors.
+   */
+  const penaltyAt = (m: readonly Placed[], i: number): number => {
+    let p = 0;
+    const x = m[i];
+    if (c.minContrast > 0) {
+      const short = c.minContrast - x.contrast;
+      if (short > 0) p += short * 40;
+    }
+    if (c.minSurfaceDistance > 0) {
+      const short = c.minSurfaceDistance - x.surfaceDistance;
+      if (short > 0) p += short * 400;
+    }
+    for (let j = 0; j < m.length; j += 1) {
+      if (j === i) continue;
+      if (minGapDeg > 0) {
+        const short = minGapDeg - hueGap(x.hue, m[j].hue);
+        if (short > 0) p += short;
+      }
+      if (c.minDistance > 0) {
+        const short = c.minDistance - between(x.lab, m[j].lab);
+        if (short > 0) p += short * 400;
+      }
+    }
+    return p;
+  };
+
+  const descend = (hues: number[], useChroma: boolean, keepLegal: boolean) => {
+    const current = [...hues];
+    let meta = metaFor(current);
+    const offset = anchorMeta.length;
     for (let iteration = 0; iteration < 120; iteration += 1) {
       let improved = false;
       for (let i = 0; i < freeCount; i += 1) {
+        const slot = offset + i;
+        const beforeP = penaltyAt(meta, slot);
+        const beforeC = meta[slot].chroma;
         for (const delta of STEPS) {
-          const trial = [...current];
-          trial[i] = (((trial[i] + delta) % 360) + 360) % 360;
-          if (gate && !gate(trial)) continue;
-          const trialCost = cost(trial);
-          if (trialCost < currentCost) {
-            current = trial;
-            currentCost = trialCost;
-            improved = true;
-          }
+          const next = (((current[i] + delta) % 360) + 360) % 360;
+          if (next === current[i]) continue;
+          const candidate = at(next);
+          const trialMeta = meta.slice();
+          trialMeta[slot] = candidate;
+          const afterP = penaltyAt(trialMeta, slot);
+          const better = useChroma
+            ? (keepLegal ? afterP <= beforeP : true) && candidate.chroma > beforeC
+            : afterP < beforeP;
+          if (!better) continue;
+          if (keepLegal && afterP > beforeP) continue;
+          current[i] = next;
+          meta = trialMeta;
+          improved = true;
+          break;
         }
       }
       if (!improved) break;
@@ -342,9 +413,10 @@ function searchHues(c: Constraints): number[] | null {
   let best: number[] | null = null;
   let bestScore = -1;
   for (const seed of seeds) {
-    const repaired = penalty(seed) > 0 ? descend(seed, penalty) : seed;
+    const repaired = penalty(seed) > 0 ? descend(seed, false, false) : seed;
     if (penalty(repaired) > 0) continue;
-    const tuned = descend(repaired, (h) => -score(h), (h) => penalty(h) === 0);
+    const tuned = descend(repaired, true, true);
+    if (penalty(tuned) > 0) continue;
     const s = score(tuned);
     if (s > bestScore) {
       bestScore = s;

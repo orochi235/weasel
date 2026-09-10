@@ -79,7 +79,7 @@ export function toLab(hex: string): [number, number, number] {
  * Rough calibration in the weighted space: 0.17 is a pale wash against paper,
  * 0.25 is a real color, 0.5 is unmistakable.
  */
-const CHROMA_WEIGHT = 3;
+export const CHROMA_WEIGHT = 3;
 
 export function deltaE(a: string, b: string): number {
   const [l1, a1, b1] = toLab(a);
