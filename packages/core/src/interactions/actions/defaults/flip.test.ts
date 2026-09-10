@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { flipAction } from './flip';
 import { asNodeId } from 'core/scene/types';
+import { createPoseOverrides } from 'core/scene/poseOverrides';
 import type { NodeId } from 'core/scene/types';
 import type { BoundGesture } from '../registry';
 import { rotatedRectCorners } from '../rotate/geometry';
@@ -30,6 +31,7 @@ function makeStubScene(initial: Record<string, Pose>) {
   return {
     poses,
     batchLog,
+    overrides: createPoseOverrides<Pose>(() => undefined),
     renderOrder: () => [...poses.keys()].map((id) => asNodeId(id)),
     get(id: string) {
       if (!poses.has(id as string)) return undefined;

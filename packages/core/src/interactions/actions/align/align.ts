@@ -6,6 +6,8 @@ import type { NodeId } from 'core/scene/types';
 import { RECT_POSE_DESCRIPTOR, type PoseProjection } from '../resize/geometry';
 import type { ResizePose } from '../../gestures/types';
 import { axisAlignedBounds, unionAABB } from 'core/geometry/unionBounds';
+import { poseFrame } from '../poseFrame';
+import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'features/groups/composePose';
 
 /** Edge or center the selection should align to within the selection's visual
  *  union AABB (rotated members contribute their ink extent). */
@@ -14,7 +16,11 @@ export type AlignEdge = 'left' | 'right' | 'top' | 'bottom' | 'center-x' | 'cent
 /** Adapter for `useAlign`. */
 export interface AlignAdapter<TPose> {
   getSelection(): NodeId[];
+  /** The pose as stored — local to the node's parent. */
   getPose(id: NodeId): TPose;
+  /** The parent chain, for a scene whose container poses define a frame.
+   *  Omit it (or leave `composition` unset) for an absolute-pose scene. */
+  getParent?(id: NodeId): NodeId | null;
   applyOps?(ops: Op[], label?: string): void;
 }
 
@@ -26,6 +32,9 @@ export interface UseAlignOptions<TPose> {
   geometry?: PoseProjection<TPose>;
   /** Label passed to applyOps. Default 'Align'. */
   label?: string;
+  /** How local poses fold up to world. Default IDENTITY, where the two are
+   *  the same value and the alignment runs entirely in stored coordinates. */
+  composition?: PoseComposition<TPose>;
 }
 
 /** Return shape of `useAlign`. */
@@ -83,7 +92,10 @@ export function translatePoseViaDescriptor<TPose>(
 
 /** Align the current multi-selection to a shared edge or center of the
  *  selection's union AABB. No-op when fewer than 2 items selected.
- *  Single batch — one undo step. */
+ *  Single batch — one undo step.
+ *
+ *  The edge is a world edge: bounds are measured and translated in world, and
+ *  each result is stored back in its own parent's frame. */
 export function useAlign<TPose>(
   adapter: AlignAdapter<TPose>,
   options: UseAlignOptions<TPose> = {},
@@ -101,7 +113,14 @@ export function useAlign<TPose>(
     const geom =
       o.geometry ??
       (RECT_POSE_DESCRIPTOR as unknown as PoseProjection<TPose>);
-    const poses = sel.map((id) => a.getPose(id));
+    const frame = poseFrame<TPose>(
+      {
+        getPose: (id) => a.getPose(id as NodeId),
+        getParent: (id) => (a.getParent?.(id as NodeId) ?? null) as string | null,
+      },
+      o.composition ?? (IDENTITY_POSE_COMPOSITION as PoseComposition<TPose>),
+    );
+    const poses = sel.map((id) => frame.world(id));
     const bounds = poses.map((p) => visualBoundsViaDescriptor(p, geom));
     // Guarded non-empty by `sel.length < 2` above → `!` is safe.
     const union = unionAABB(bounds)!;
@@ -109,9 +128,12 @@ export function useAlign<TPose>(
     for (let i = 0; i < sel.length; i++) {
       const { dx, dy } = alignDeltaFor(bounds[i], union, edge);
       if (dx === 0 && dy === 0) continue;
-      const from = poses[i];
-      const to = translatePoseViaDescriptor(from, dx, dy, geom);
-      ops.push(createTransformOp<TPose>({ id: sel[i], from, to }));
+      const to = translatePoseViaDescriptor(poses[i], dx, dy, geom);
+      ops.push(createTransformOp<TPose>({
+        id: sel[i],
+        from: a.getPose(sel[i]),
+        to: frame.local(sel[i], to),
+      }));
     }
     if (ops.length === 0) return;
     dispatchApplyBatch(a, ops, o.label ?? 'Align');

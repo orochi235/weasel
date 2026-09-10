@@ -6,6 +6,8 @@ import type { NodeId } from 'core/scene/types';
 import { RECT_POSE_DESCRIPTOR, type PoseProjection } from '../resize/geometry';
 import { translatePoseViaDescriptor, visualBoundsViaDescriptor } from '../align/align';
 import { planDistribute } from './plan';
+import { poseFrame } from '../poseFrame';
+import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'features/groups/composePose';
 
 /** Axis along which selection is distributed. `'x'` spreads horizontally. */
 export type DistributeAxis = 'x' | 'y';
@@ -18,7 +20,11 @@ export type DistributeMode = 'centers' | 'gaps';
 /** Adapter for `useDistribute`. */
 export interface DistributeAdapter<TPose> {
   getSelection(): NodeId[];
+  /** The pose as stored — local to the node's parent. */
   getPose(id: NodeId): TPose;
+  /** The parent chain, for a scene whose container poses define a frame.
+   *  Omit it (or leave `composition` unset) for an absolute-pose scene. */
+  getParent?(id: NodeId): NodeId | null;
   applyOps?(ops: Op[], label?: string): void;
 }
 
@@ -31,6 +37,9 @@ export interface UseDistributeOptions<TPose> {
   defaultMode?: DistributeMode;
   /** Label passed to applyOps. Default 'Distribute'. */
   label?: string;
+  /** How local poses fold up to world. Default IDENTITY, where the two are
+   *  the same value and the spread runs entirely in stored coordinates. */
+  composition?: PoseComposition<TPose>;
 }
 
 /** Return shape of `useDistribute`. */
@@ -41,7 +50,10 @@ export interface UseDistributeReturn {
 
 /** Distribute the current multi-selection along `axis`. Requires ≥3 items;
  *  no-op otherwise. Endpoints (min and max along the axis) stay put; the
- *  remaining items are repositioned. Single batch — one undo step. */
+ *  remaining items are repositioned. Single batch — one undo step.
+ *
+ *  The span being divided is a world span: bounds are measured and translated
+ *  in world, and each result is stored back in its own parent's frame. */
 export function useDistribute<TPose>(
   adapter: DistributeAdapter<TPose>,
   options: UseDistributeOptions<TPose> = {},
@@ -61,8 +73,15 @@ export function useDistribute<TPose>(
       (RECT_POSE_DESCRIPTOR as unknown as PoseProjection<TPose>);
     const m = mode ?? o.defaultMode ?? 'centers';
 
+    const frame = poseFrame<TPose>(
+      {
+        getPose: (id) => a.getPose(id as NodeId),
+        getParent: (id) => (a.getParent?.(id as NodeId) ?? null) as string | null,
+      },
+      o.composition ?? (IDENTITY_POSE_COMPOSITION as PoseComposition<TPose>),
+    );
     const items = sel.map((id) => {
-      const pose = a.getPose(id);
+      const pose = frame.world(id);
       return { id, pose, b: visualBoundsViaDescriptor(pose, geom) };
     });
     const targets = planDistribute(items.map((it) => it.b), axis, m);
@@ -75,7 +94,11 @@ export function useDistribute<TPose>(
       const dx = axis === 'x' ? delta : 0;
       const dy = axis === 'y' ? delta : 0;
       const to = translatePoseViaDescriptor(it.pose, dx, dy, geom);
-      ops.push(createTransformOp<TPose>({ id: it.id, from: it.pose, to }));
+      ops.push(createTransformOp<TPose>({
+        id: it.id,
+        from: a.getPose(it.id),
+        to: frame.local(it.id, to),
+      }));
     }
     if (ops.length === 0) return;
     dispatchApplyBatch(a, ops, o.label ?? 'Distribute');

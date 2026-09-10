@@ -36,6 +36,7 @@ import { createTransformOp } from 'core/ops/transform';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { unionAABB, type RectPose } from 'core/geometry/unionBounds';
+import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -88,8 +89,12 @@ function applyRotationDelta(
 interface RotateScratch {
   ids: NodeId[];
   scene: Scene<unknown, string, unknown>;
-  /** Origin pose for each selected node, captured at drag start. */
+  /** World reads and local writes over the scene's composition strategy. */
+  frame: PoseFrame<unknown>;
+  /** Origin pose for each selected node as stored — the `from` of its op. */
   originPoses: Map<NodeId, unknown>;
+  /** Origin pose for each selected node in world — what the gesture turns. */
+  originWorlds: Map<NodeId, unknown>;
   /** AABB center for each selected node (from origin pose). */
   originCenters: Map<NodeId, { x: number; y: number }>;
   /** Per-node origin rotation (radians). */
@@ -132,7 +137,7 @@ export const rotateAction: Action & { requires: string[] } = {
   label: 'Rotate',
   defaultBinding: { kind: 'drag' },
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'applyOps'],
+  requires: ['selection', 'scene', 'applyOps', 'poseComposition'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {
@@ -145,7 +150,12 @@ export const rotateAction: Action & { requires: string[] } = {
       const ids = selection.get() as NodeId[];
       if (ids.length === 0) return {};
 
+      // The pivot the pointer orbits is a world point, so every pose the
+      // gesture turns is a world pose. Each turned result is stored back in
+      // the node's own parent frame at preview and commit alike.
+      const frame = scenePoseFrame(scene, ctx.deps.poseComposition);
       const originPoses = new Map<NodeId, unknown>();
+      const originWorlds = new Map<NodeId, unknown>();
       const originCenters = new Map<NodeId, { x: number; y: number }>();
       const originRotations = new Map<NodeId, number>();
       const originRects: RectPose[] = [];
@@ -154,7 +164,9 @@ export const rotateAction: Action & { requires: string[] } = {
         const node = scene.get(id);
         if (!node) continue;
         originPoses.set(id, node.pose);
-        const pr = getPoseRect(node.pose);
+        const world = frame.world(id);
+        originWorlds.set(id, world);
+        const pr = getPoseRect(world);
         const cx = pr.x + pr.width / 2;
         const cy = pr.y + pr.height / 2;
         originCenters.set(id, { x: cx, y: cy });
@@ -174,7 +186,9 @@ export const rotateAction: Action & { requires: string[] } = {
       const scratch: RotateScratch = {
         ids,
         scene,
+        frame,
         originPoses,
+        originWorlds,
         originCenters,
         originRotations,
         unionCenter,
@@ -190,21 +204,19 @@ export const rotateAction: Action & { requires: string[] } = {
         scratch.previews.clear();
         if (delta === 0) { syncPreviewOverrides(scratch); return; }
         for (const id of scratch.ids) {
-          const origin = scratch.originPoses.get(id);
+          const origin = scratch.originWorlds.get(id);
           if (origin === undefined) continue;
           const originRotation = scratch.originRotations.get(id) ?? 0;
           const originCenter = scratch.originCenters.get(id) ?? { x: 0, y: 0 };
-          scratch.previews.set(
-            id,
-            applyRotationDelta(
-              origin,
-              originRotation,
-              delta,
-              originCenter,
-              scratch.unionCenter,
-              scratch.useUnionPivot,
-            ),
+          const turned = applyRotationDelta(
+            origin,
+            originRotation,
+            delta,
+            originCenter,
+            scratch.unionCenter,
+            scratch.useUnionPivot,
           );
+          scratch.previews.set(id, scratch.frame.local(id, turned));
         }
         syncPreviewOverrides(scratch);
       };
