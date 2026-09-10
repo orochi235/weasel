@@ -5,9 +5,7 @@
  *
  * `scalePathToBounds` is for the resize interaction: given the path's
  * current AABB and the desired new AABB, scales every coordinate
- * proportionally. Degenerate source bounds (zero width/height) collapse
- * the corresponding axis to the new origin — preferable to dividing by
- * zero or refusing to resize.
+ * proportionally.
  */
 
 import { boxToBox, forEachSegment, pathCommandCoordCount } from '@weasel-js/geom';
@@ -59,9 +57,9 @@ export function translatePolygonInPlace(path: PolygonPath, dx: number, dy: numbe
  * Scale a path's coords so its current AABB maps to `target`. Resize
  * interactions use this to make a polygon follow a corner-handle drag.
  *
- * Degenerate source axes (width or height == 0) collapse to `target.x` /
- * `target.y` — every coord on that axis becomes the new origin. Avoids
- * division by zero without throwing.
+ * A degenerate source axis (zero width or height) has no ratio to scale by,
+ * so `boxToBox` translates that axis instead — a zero scale is not
+ * invertible and would discard what is left on it.
  */
 export function scalePathToBounds(path: Path, target: RectPath): Path {
   if (path.kind === 'rect') {
