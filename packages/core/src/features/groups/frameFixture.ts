@@ -12,8 +12,8 @@
  * every expected coordinate an integer, so a wrong answer is obvious rather
  * than nearly right.
  */
-import { createScene, type Scene } from 'core/scene/scene';
-import type { RectPose } from 'core/scene/types';
+import { createScene } from 'core/scene/scene';
+import { asNodeId, type RectPose, type Scene } from 'core/scene/types';
 
 export interface FrameFixtureData {
   label: string;
@@ -22,9 +22,9 @@ export interface FrameFixtureData {
 export type FrameFixtureLayer = 'main';
 
 export const FRAME_FIXTURE_IDS = {
-  group: 'g',
-  upright: 'a',
-  turned: 'b',
+  group: asNodeId('g'),
+  upright: asNodeId('a'),
+  turned: asNodeId('b'),
 } as const;
 
 /**

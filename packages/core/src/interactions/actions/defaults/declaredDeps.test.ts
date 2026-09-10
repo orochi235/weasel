@@ -12,6 +12,7 @@ import type { DepRegistry } from '../depRegistry';
 import type { Action } from '../registry';
 import type { ImmediateInvoker } from '../invoker';
 import { asNodeId } from 'core/scene/types';
+import { createPoseOverrides } from 'core/scene/poseOverrides';
 import { reorderForwardAction, reorderBackwardAction } from './reorder';
 import { alignLeftAction, alignCenterYAction } from './align';
 import { distributeHorizontalAction, distributeVerticalAction } from './distribute';
@@ -29,6 +30,7 @@ function makeDeps() {
   };
   const scene = {
     get: (id: string) => ({ id: asNodeId(id), pose: { x: 0, y: 0, width: 10, height: 10 }, parent: null }),
+    overrides: createPoseOverrides<unknown>(() => undefined),
     roots: IDS.map(asNodeId),
     childrenOf: () => [],
     setPose: vi.fn(),
