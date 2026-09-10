@@ -19,6 +19,35 @@ import { floorDegrees, generate, type Anchor, type Constraints } from './palette
 
 const SURFACES: Record<SurfaceKey, string> = { dark: '#181a1e', light: '#f5f5f6' };
 
+/**
+ * Which gates the best attempt still misses, and by how much.
+ *
+ * "Infeasible" on its own leaves you dragging sliders to find out which one
+ * bound — and past about twenty colors more than one usually does.
+ */
+function unmetGates(c: Constraints, stats: ReturnType<typeof generate>['stats']): string[] {
+  const out: string[] = [];
+  const floor = floorDegrees(c);
+  if (floor > 0 && stats.minHueGap < floor - 0.01) {
+    out.push(`hue gap reaches ${stats.minHueGap.toFixed(0)}° of the ${floor.toFixed(0)}° asked for`);
+  }
+  if (c.minContrast > 0 && stats.minContrast < c.minContrast) {
+    out.push(`contrast reaches ${stats.minContrast.toFixed(2)} of ${c.minContrast.toFixed(1)}`);
+  }
+  if (c.minDistance > 0 && stats.minDistance < c.minDistance - 0.005) {
+    out.push(`distance between colors reaches ${stats.minDistance.toFixed(3)} of ${c.minDistance.toFixed(2)}`);
+  }
+  if (c.minSurfaceDistance > 0 && stats.minSurfaceDistance < c.minSurfaceDistance - 0.005) {
+    out.push(
+      `distance from the surface reaches ${stats.minSurfaceDistance.toFixed(3)} of ${c.minSurfaceDistance.toFixed(2)}`,
+    );
+  }
+  if (out.length > 0 && c.count * floor > 360) {
+    out.push(`${c.count} hues ${floor.toFixed(0)}° apart would need ${(c.count * floor).toFixed(0)}° of circle`);
+  }
+  return out;
+}
+
 export function PaletteLab() {
   // Restored once, at mount: an HMR bounce or a reload should not cost the
   // configuration someone was in the middle of building.
@@ -77,8 +106,8 @@ export function PaletteLab() {
               <SliderRow
                 label="Colors"
                 value={c.count}
-                min={3}
-                max={16}
+                min={5}
+                max={32}
                 step={1}
                 onChange={(v) => set('count', v)}
               />
@@ -199,11 +228,7 @@ export function PaletteLab() {
           {!palette.feasible && (
             <p className={styles.infeasible} role="status">
               <strong>No arrangement satisfies these gates.</strong> Showing the closest attempt.{' '}
-              {constraints.count * floorDegrees(constraints) > 360
-                ? `${constraints.count} hues ${floorDegrees(constraints).toFixed(0)}\u00b0 apart would need ${(
-                    constraints.count * floorDegrees(constraints)
-                  ).toFixed(0)}\u00b0 of circle.`
-                : 'Loosen the contrast floor or the hue gap, or ask for fewer colors.'}
+              {unmetGates(constraints, palette.stats).join('; ') || 'Loosen a gate or ask for fewer colors.'}
             </p>
           )}
           <PalettePreview palette={palette} surface={constraints.surface} />

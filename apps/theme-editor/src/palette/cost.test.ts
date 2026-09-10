@@ -8,12 +8,12 @@ import { DEFAULT_CONSTRAINTS, generate } from './generate';
  */
 describe('generate stays inside a frame budget', () => {
   it('regenerates the largest set fast enough to drag', () => {
-    generate({ ...DEFAULT_CONSTRAINTS, count: 16 }); // warm the module-level tables
+    generate({ ...DEFAULT_CONSTRAINTS, count: 32 }); // warm the module-level tables
     const t = performance.now();
-    generate({ ...DEFAULT_CONSTRAINTS, count: 16 });
-    // Generous against a loaded CI box; the real figure is an order of
-    // magnitude under this, and the regression it guards was 1700ms.
-    expect(performance.now() - t).toBeLessThan(300);
+    generate({ ...DEFAULT_CONSTRAINTS, count: 32 });
+    // Generous against a loaded CI box; the real figure is well under this,
+    // and the regression it guards was 1700ms at half this cardinality.
+    expect(performance.now() - t).toBeLessThan(400);
   });
 
   it('does not degrade the palette to get there', () => {
