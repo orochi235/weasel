@@ -55,16 +55,16 @@ const ACCENT_TOKENS: Swatch[] = [
 ];
 
 const PALETTE_TOKENS: Swatch[] = [
+  { name: 'fuchsia', cssVar: '--wzl-swatch-fuchsia' },
   { name: 'green', cssVar: '--wzl-swatch-green' },
-  { name: 'pink', cssVar: '--wzl-swatch-pink' },
-  { name: 'cyan', cssVar: '--wzl-swatch-cyan' },
-  { name: 'gold', cssVar: '--wzl-swatch-gold' },
-  { name: 'amber', cssVar: '--wzl-swatch-amber' },
-  { name: 'violet', cssVar: '--wzl-swatch-violet' },
-  { name: 'mint', cssVar: '--wzl-swatch-mint' },
   { name: 'sky', cssVar: '--wzl-swatch-sky' },
-  { name: 'orange', cssVar: '--wzl-swatch-orange' },
-  { name: 'magenta', cssVar: '--wzl-swatch-magenta' },
+  { name: 'amber', cssVar: '--wzl-swatch-amber' },
+  { name: 'teal', cssVar: '--wzl-swatch-teal' },
+  { name: 'red', cssVar: '--wzl-swatch-red' },
+  { name: 'blue', cssVar: '--wzl-swatch-blue' },
+  { name: 'citron', cssVar: '--wzl-swatch-citron' },
+  { name: 'rose', cssVar: '--wzl-swatch-rose' },
+  { name: 'violet', cssVar: '--wzl-swatch-violet' },
 ];
 
 function SwatchGrid({ tokens, title }: { tokens: readonly Swatch[]; title: string }) {

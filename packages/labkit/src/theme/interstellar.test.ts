@@ -15,7 +15,7 @@ describe('interstellarTheme', () => {
 
     // Inherited from weasel — interstellar overrides values, not the token set.
     expect(dark['--wzl-space-md']).toBe('12px');
-    expect(dark['--wzl-swatch-cyan']).toBe('#00dfff');
+    expect(dark['--wzl-swatch-teal']).toBe('#3ee1cb');
 
     // Deliberate divergences from the base.
     expect(dark['--wzl-radius-md']).toBe('6px');

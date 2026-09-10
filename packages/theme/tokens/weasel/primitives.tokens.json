@@ -39,16 +39,16 @@
     "surface-hover":   { "$value": "{color.fg}", "$extensions": { "com.weasel.alpha": 0.10 }, "$description": "Hover wash over a raised surface. Same formula as line-subtle, different job — do not collapse them." },
     "surface-pressed": { "$value": "{color.fg}", "$extensions": { "com.weasel.alpha": 0.18 }, "$description": "Pressed wash over a raised surface." },
 
-    "swatch-green":   { "$value": "#2fdd18", "$description": "First of ten categorical spot colors for plotting, status and data viz. Ordered — take them in sequence. Mode-invariant on purpose: a series keeps its color when the mode flips." },
-    "swatch-pink":    { "$value": "#ff5885" },
-    "swatch-cyan":    { "$value": "#00dfff" },
-    "swatch-gold":    { "$value": "#dcb700" },
-    "swatch-amber":   { "$value": "#ff8c00" },
-    "swatch-violet":  { "$value": "#a497ff" },
-    "swatch-mint":    { "$value": "#00e7af" },
-    "swatch-sky":     { "$value": "#00b8ff" },
-    "swatch-orange":  { "$value": "#ff6b00" },
-    "swatch-magenta": { "$value": "#ff6eff" }
+    "swatch-fuchsia": { "$value": "#f641f7", "$description": "First of ten categorical spot colors for plotting, status and data viz. Take them in sequence: the order is farthest-point over hue, so the first N are as separated as N colors can be (first three 87\u00b0 apart, all ten 32\u00b0). Mode-invariant on purpose \u2014 a series keeps its color when the mode flips, which is why they are tuned for a dark surface and clear only 1.5:1 on a light one." },
+    "swatch-green":   { "$value": "#48e628" },
+    "swatch-sky":     { "$value": "#36bff2" },
+    "swatch-amber":   { "$value": "#e69628" },
+    "swatch-teal":    { "$value": "#3ee1cb" },
+    "swatch-red":     { "$value": "#f75034" },
+    "swatch-blue":    { "$value": "#407ef7" },
+    "swatch-citron":  { "$value": "#d5d23a" },
+    "swatch-rose":    { "$value": "#fa4590" },
+    "swatch-violet":  { "$value": "#955cf9" }
   },
 
   "dimension": {
