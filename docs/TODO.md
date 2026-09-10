@@ -1634,6 +1634,31 @@ one dead `const` and four stale disable directives.
   `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`, with the traps, and a
   two-phase dispatch split that would make it tractable.
 
+- **(P3) Whether the batch's buffer ring costs a co-tenant on the same page.**
+  Unverified, and reported rather than measured here. A consumer benchmarking
+  its wall against a canvas2d control found that at one rung — the one where its
+  atlas grows to 12MB — the *canvas2d* side went from ~8.8 ms to 102-113 ms, and
+  only when the page also held a build with the merged batch. Reproducible in
+  both directions, and nothing about its canvas2d path changed between runs.
+
+  Our numbers are unaffected; what it makes unusable is that rung's ratio. It is
+  worth chasing because a real app is a co-tenant too: weasel next to a chart
+  library, or two surfaces on one page.
+
+  The suspect is what the ring costs in GPU memory. `SOLID_RING_SIZE` is 64
+  slot-sized buffer sets per tier plus `SOLID_LARGE_RING_SIZE` growable ones
+  that `doubledTo` up to the largest flush they have seen and never shrink —
+  deliberately, because the write hazard those avoid is worth far more (see the
+  flush entries above). Against a 12MB atlas and a 2D canvas's own backing
+  store, an eviction and per-frame re-upload would look exactly like this: one
+  rung, large, reproducible.
+
+  What would separate it: hold the command count fixed and shrink the atlas. If
+  the co-tenant's cost tracks the atlas, it is memory pressure and the ring
+  sizes are the knob. If it tracks the command count, it is scheduling — the
+  batched build submits a frame in 3 ms instead of 90, so it contends for the
+  GPU far more densely, and that is not a defect to fix.
+
 - **(P3) Per-layer GPU dispatch skipping.** `RenderLayer.deps` (shipped
   2026-08-22, `packages/core/src/core/layers/render.ts`) skips rebuilding a
   layer's command tree, not submitting it — every layer is still dispatched
