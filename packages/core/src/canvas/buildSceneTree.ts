@@ -15,6 +15,10 @@ export interface HierarchicalAdapter<TNode, TPose> {
   getNode(id: string): TNode | undefined;
   getChildren(parentId: string | null): readonly string[];
   getPose(id: string): TPose;
+  /** Folds a child's local pose into its parent's frame. Absent means the
+   *  scene stores absolute poses and a parent contributes no transform —
+   *  see `PoseComposition`. */
+  composePose?(parent: TPose, child: TPose): TPose;
 }
 
 /** Wrap `cmds` in one nested group per clip so the renderer intersects them.
@@ -41,12 +45,15 @@ function wrapInClips(
  * Output is one group per visible layer, in adapter (`getLayers`) order.
  *
  * **Positioning** is world-space: `drawOne` returns world-coord commands (the
- * caller wraps the whole thing in the view transform). The tree nesting is NOT
- * used for geometry — only to accumulate the **clip chain**. Because a node may
- * be drawn outside its parent's group, each node's commands are wrapped in the
- * clips of all its ancestor containers (and its own, if it is a container), so
- * container clipping survives the per-layer regrouping. Clips therefore must be
- * world-space too — `clipFromPose` consumers should return world silhouettes.
+ * caller wraps the whole thing in the view transform). Because a node may be
+ * drawn outside its parent's group, the tree nesting cannot carry geometry as
+ * renderer state; instead the walk folds each node's pose into its parent's
+ * frame on the way down and hands the painter a **world** pose. Clips are
+ * accumulated the same way and are world-space for the same reason.
+ *
+ * With no `composePose` on the adapter the fold is the identity, every node
+ * paints at its stored pose, and this is the absolute-pose behavior the kit
+ * shipped before frames existed.
  */
 export function buildSceneTree<
   TNode extends { id: string; layer: string },
@@ -69,10 +76,19 @@ export function buildSceneTree<
   const buckets = new Map<string, DrawCommand[]>();
   for (const l of layers) buckets.set(l.id, []);
 
-  function visit(id: string, ancestorClips: readonly GroupDrawCommand['clip'][]): void {
+  const compose = adapter.composePose?.bind(adapter);
+
+  function visit(
+    id: string,
+    ancestorClips: readonly GroupDrawCommand['clip'][],
+    parentWorld: TPose | null,
+  ): void {
     const node = adapter.getNode(id);
     if (!node) return;
-    const pose = adapter.getPose(id);
+    const local = adapter.getPose(id);
+    // Fold once, on the way down: O(1) per node where walking the parent chain
+    // per node would be O(depth).
+    const pose = compose && parentWorld !== null ? compose(parentWorld, local) : local;
     // Skip the (potentially expensive) painter for nodes we won't emit; their
     // clip still extends the chain for descendants below.
     const paints = forLayer === undefined || node.layer === forLayer;
@@ -110,10 +126,10 @@ export function buildSceneTree<
       }
     }
 
-    for (const cid of adapter.getChildren(id)) visit(cid, ownClips);
+    for (const cid of adapter.getChildren(id)) visit(cid, ownClips, pose);
   }
 
-  for (const rootId of adapter.getChildren(null)) visit(rootId, []);
+  for (const rootId of adapter.getChildren(null)) visit(rootId, [], null);
 
   const out: DrawCommand[] = [];
   for (const layer of layers) {

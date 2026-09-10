@@ -32,9 +32,10 @@ export interface SnapTarget<TPose = unknown> {
  *
  * **Pose semantics:** `getPose` / `setPose` work in **local** coordinates —
  * relative to the node's direct parent (or world, for root-parented nodes).
- * The kit composes world poses via `composeWorldPose` when it needs to
- * render, hit-test, or snap. For the common axis-aligned rect pose,
- * `composeRectPose` / `decomposeRectPose` ship as the canonical compose pair.
+ * `getWorldPose` is the composed reading, and is what the render walk, picking
+ * and chrome consume. For the common axis-aligned rect pose, `composeRectPose`
+ * (translation only) and `composeRigidPose` (a container's pose is a frame, so
+ * its rotation reaches its children) ship as the two canonical strategies.
  */
 export interface SceneAdapter<TNode extends { id: string }, TPose> {
   // Pull (gesture-time queries)
@@ -43,6 +44,11 @@ export interface SceneAdapter<TNode extends { id: string }, TPose> {
   getSelection(): string[];
   hitTest(worldX: number, worldY: number): string | null;
   getPose(id: string): TPose;
+  /** The node's pose in world coordinates, with every ancestor's frame folded
+   *  in. Equal to `getPose` under the absolute-pose model; anything reasoning
+   *  about where a node actually is — picking, chrome, snapping, export —
+   *  wants this rather than `getPose`. */
+  getWorldPose?(id: string): TPose;
   getParent(id: string): string | null;
 
   // Mutators (called by op apply methods)

@@ -41,7 +41,7 @@ import { pathIntersectsRect } from 'features/paths/pathHitTest';
 import { pickWalk, scenePickSource } from 'canvas/pickWalk';
 import { aabbOfPose } from 'canvas/SceneCanvas/poseGeometry';
 import { axisAlignedBounds } from 'core/geometry/unionBounds';
-import { translateRectPose } from 'features/groups/composePose';
+import { composeWorldPose, translateRectPose, type PoseComposition } from 'features/groups/composePose';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
 
 /** Minimal selection contract `sceneToAdapter` needs to wire `getSelection` /
@@ -82,6 +82,12 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
   // hooks like useNest, etc.) can rely on these being present.
   & {
       getParent(id: string): string | null;
+      /** The node's pose with every ancestor's frame folded in. Equal to
+       *  `getPose` unless a `poseComposition` is configured. */
+      getWorldPose(id: string): TPose;
+      /** Present only when a composing strategy is configured; the render
+       *  walk feature-detects it. */
+      composePose?(parent: TPose, child: TPose): TPose;
       getSelection(): string[];
       setSelection(ids: string[]): void;
       insertNode(node: Node<TData, TLayer, TPose>, index?: number): void;
@@ -136,6 +142,12 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
    *  `(pose, dx, dy) => pose` for non-rect pose shapes. Omit to leave setPose
    *  primitive — containers move but their descendants don't follow. */
   cascadeContainerPose?: 'rect' | ((pose: TPose, dx: number, dy: number) => TPose);
+  /** How a child's stored pose folds into its parent's frame. Omit for the
+   *  absolute-pose model, where a parent contributes no transform. Supplying a
+   *  composing strategy makes a container's pose a **frame**: rotating the
+   *  container rotates its contents, and `setPose` on it must not also
+   *  translate them, so it cannot be combined with `cascadeContainerPose`. */
+  poseComposition?: PoseComposition<TPose>;
 }
 
 // ─── Clip-aware hierarchical walk ────────────────────────────────────────────
@@ -242,6 +254,16 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     return pose;
   };
 
+  const composition = options.poseComposition;
+  const composes = composition !== undefined && composition.closure !== 'identity';
+  if (composes && cascadeTranslate !== null) {
+    throw new Error(
+      'sceneToAdapter: poseComposition and cascadeContainerPose contradict each other. ' +
+      'Under a composing strategy a child\'s pose is already relative to its parent, so ' +
+      'the cascade would move every descendant twice. Drop cascadeContainerPose.',
+    );
+  }
+
   const adapter: SceneCanvasAdapter<TData, TLayer, TPose> = {
     getNode(id) {
       return scene.get(asNodeId(id));
@@ -264,6 +286,13 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       const n = scene.get(asNodeId(id));
       return n?.parent ?? null;
     },
+    getWorldPose(id) {
+      if (!composes) return adapter.getPose(id);
+      return composeWorldPose(adapter, id, composition!.compose);
+    },
+    // Only present when it would do something: the render walk skips the fold
+    // entirely when this is absent, which is the absolute-pose path.
+    ...(composes ? { composePose: composition!.compose } : {}),
     setPose(id, pose) {
       // Container cascade (opt-in): under scene v1's absolute-pose semantics,
       // moving a container needs to translate every descendant by the same
