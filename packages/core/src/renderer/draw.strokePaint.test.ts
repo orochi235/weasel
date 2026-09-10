@@ -24,11 +24,23 @@ function horizontalLine(): PolygonPath {
   };
 }
 
+const STOPS = [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }];
+
+/** Radial rather than linear, because a linear gradient batches now and these
+ *  tests are about the paint programs a stencil pass binds for itself. */
 const GRADIENT: FillStyle = {
+  fill: 'radial-gradient',
+  center: { x: 100, y: 0 },
+  radius: 100,
+  stops: STOPS,
+  units: 'local',
+};
+
+const LINEAR_GRADIENT: FillStyle = {
   fill: 'linear-gradient',
   from: { x: 0, y: 0 },
   to: { x: 200, y: 0 },
-  stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }],
+  stops: STOPS,
   units: 'local',
 };
 
@@ -159,6 +171,17 @@ describe('renderer — non-solid even-odd fill', () => {
     // Parity into stencil bit 0, then the paint pass over the odd-covered pixels.
     expect(draws).toHaveLength(2);
     expect(draws[1].program).toBe(reference[0].program);
+  });
+
+  // A linear gradient has a batch route now, and an even-odd fill must not take
+  // it: the batch draws with the stencil test off at clip depth 0, which paints
+  // the holes the parity pass exists to leave empty.
+  it('keeps an even-odd linear gradient out of the batch', () => {
+    renderFill('evenodd', LINEAR_GRADIENT);
+    const draws = statesAtDraws(recorder);
+    expect(draws).toHaveLength(2);
+    expect(draws[1].program).toBe(r._gradFill().handle);
+    expect(draws[1].stencilFunc).toEqual([EQUAL, 0x01, 0x01]);
   });
 
   /** The parity pass writes bit 0 under a false colour mask and the paint pass

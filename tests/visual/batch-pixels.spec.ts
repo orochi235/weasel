@@ -16,7 +16,9 @@
  *
  * Glyphs are in the same run as of the text merge, and they widen the class
  * rather than adding one: a font atlas is a texture in a slot like any other,
- * so a ground rect beside a label is exactly the pixel that drew olive.
+ * so a ground rect beside a label is exactly the pixel that drew olive. A
+ * linear gradient widens it again: its texture is the ramp atlas, and two
+ * gradients in one run are told apart only by the row each vertex names.
  */
 import { test, expect } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
@@ -118,6 +120,24 @@ test('batched runs paint their own colors', async ({ page }) => {
           Math.round(out[0] / a), Math.round(out[1] / a), Math.round(out[2] / a),
         ];
       }
+
+      const stops = (a: string, b: string) =>
+        [{ offset: 0, color: a }, { offset: 1, color: b }];
+      /** A rect filled left-to-right by a linear gradient between `x0` and
+       *  `x1` — screen coordinates, the renderer having been handed an
+       *  identity view. */
+      const gradRect = (
+        x: number, y: number, size: number,
+        x0: number, x1: number, ramp: { offset: number; color: string }[],
+      ) => ({
+        kind: 'path',
+        path: { kind: 'rect', x, y, width: size, height: size },
+        fill: {
+          fill: 'linear-gradient',
+          from: { x: x0, y: 0 }, to: { x: x1, y: 0 },
+          stops: ramp,
+        },
+      });
 
       const label = (text: string, x: number, y: number, size: number, color: string) => ({
         kind: 'text', x, y,
@@ -236,6 +256,47 @@ test('batched runs paint their own colors', async ({ page }) => {
       cases[cases.length - 1].probes.push({
         name: 'red glyph', x: 4, y: 4, want: [255, 0, 0], got: inkIn(0, 4, 56, 72),
       });
+
+      // A gradient joins the run as a quad off the ramp atlas, so the atlas is
+      // a texture in a slot exactly as a bitmap is — and the ground beside it
+      // is the pixel that drew olive when a slot went wrong. Flat ramps here:
+      // the composition is what this file guards, and a flat one reads as a
+      // color rather than as a plausible neighbouring texel.
+      frame('solid and quad beside a gradient', [
+        rect(8, 8, 32, '#ffffff'),
+        gradRect(56, 8, 32, 56, 88, stops('#00ff00', '#00ff00')),
+        quad(blue, 104, 8, 32),
+      ], [
+        { name: 'white ground', x: 24, y: 24, want: [255, 255, 255] },
+        { name: 'green gradient', x: 72, y: 24, want: [0, 255, 0] },
+        { name: 'blue quad', x: 120, y: 24, want: [0, 0, 255] },
+      ]);
+
+      // Two ramps in one run, which is the atlas's own hazard: they share a
+      // texture slot and are told apart only by the row each vertex names.
+      frame('two gradients and a ground in one run', [
+        gradRect(8, 8, 32, 8, 40, stops('#00ff00', '#00ff00')),
+        rect(56, 8, 32, '#ffffff'),
+        gradRect(104, 8, 32, 104, 136, stops('#ff00ff', '#ff00ff')),
+      ], [
+        { name: 'green gradient', x: 24, y: 24, want: [0, 255, 0] },
+        { name: 'white ground', x: 72, y: 24, want: [255, 255, 255] },
+        { name: 'magenta gradient', x: 120, y: 24, want: [255, 0, 255] },
+      ]);
+
+      // The ramp position rides the vertices now, so this is where a fold that
+      // reversed or rescaled it shows up. The rect runs past both ends of the
+      // ramp, and those clamp to the end texels exactly.
+      frame('a gradient runs the way it was pointed', [
+        gradRect(8, 8, 64, 24, 56, stops('#ff0000', '#0000ff')),
+      ], [
+        { name: 'before the ramp', x: 12, y: 24, want: [255, 0, 0] },
+        // A pixel is sampled at its center, so x=40 is 16.5 of the way along a
+        // ramp 32 wide — 0.5156, and 255 × (1 − 0.5156) is 123.5. The clamped
+        // ends cannot catch a fold that rescaled the ramp; this one can.
+        { name: 'just past halfway', x: 40, y: 24, want: [124, 0, 131] },
+        { name: 'past the ramp', x: 68, y: 24, want: [0, 0, 255] },
+      ]);
 
       return { cases, glRenderer };
     },

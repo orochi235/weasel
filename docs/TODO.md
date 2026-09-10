@@ -1614,15 +1614,46 @@ one dead `const` and four stale disable directives.
   slot in the same list bitmaps take, so seven textures in a run is now seven of
   either kind.
 
-  **Gradients are what is left, and the ramp atlas is the half that landed.**
-  Every baked ramp is a row of one texture now (`cache/GradientRampAtlas.ts`)
-  rather than a texture of its own, so every gradient in a frame samples the
-  same unit — which is what a gradient needs before it can take a batch texture
-  slot the way a bitmap does. It does not batch yet: a gradient fill still binds
-  `gradFill` and still breaks the run. The atlas doubles from 16 rows to 1024
-  and recycles the least recently used row past that, which also bounds an
-  animating gradient — the old cache grew a texture per frame for one and freed
-  none. Step 4 of
+  **Linear gradients joined the batch on 2026-09-10, on a ramp atlas.** Every
+  baked ramp is a row of one texture (`cache/GradientRampAtlas.ts`) rather than
+  a texture of its own, so every gradient in a frame shares one texture slot
+  instead of taking one each — which is the thing that made a gradient
+  unbatchable at all. The atlas doubles from 16 rows to 1024 and recycles the
+  least recently used row past that, which also bounds an animating gradient:
+  the old cache grew a GL texture per frame for one and freed none.
+
+  A linear gradient's ramp position is affine in position, so a vertex carries
+  it and the rasterizer's interpolation across a triangle is exact. That makes
+  such a fill a textured quad off the atlas — the plain paint mode, `a_uv =
+  (ramp position, row)`, white vertices carrying its opacity — and it cost no
+  paint mode, no vertex float and no line of shader. Fills, stroke ribbons and
+  glyph-outline meshes all take it.
+
+  The trap it carries: a staged vertex names its row by where the row sits, so
+  an atlas that grows or recycles a row repaints geometry already staged.
+  `wouldReshape` is asked before the bake and the run flushed if the answer is
+  yes — asking afterwards is too late.
+
+  **The measurement to quote is the mixing, not the per-command cost.** Three
+  runs of `tests/perf/transition-matrix.spec.ts` in one sitting put 512
+  alternating solids and gradients at 0.35 / 0.40 / 0.50 ms a frame against
+  0.51 / 0.75 / 0.78 for 512 gradients alone — so a solid beside a gradient
+  costs nothing, which is the claim. That spread is ~50% on an unchanged
+  fixture, wide enough that a per-command before-and-after does not resolve
+  against it; the draw counts in `drawBatch.test.ts` are the exact evidence.
+
+  Gradient fills also pick up the group color matrix, which `gradFill` was the
+  only paint program not to apply. The batch program applies it to everything
+  in a run, so without this a linear gradient and a radial one under the same
+  group would have disagreed.
+
+  **Radial and conic are what is left.** Their ramp position is not affine,
+  though the coordinate they need is, so the arm has the same shape: the
+  gradient-space coordinate in `a_uv`, the row somewhere a plain vertex is not
+  using, and a `length` or an `atan` in the shader. Where that computation goes
+  is the open question — the glyph math had to run unconditionally because
+  `fwidth` demanded it, and an `atan` is dearer and rarer than that, so this one
+  wants measuring against a branch. Step 4 of
   `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`.
 
   Solid geometry and image quads share that batch as of 2026-09-09

@@ -13,7 +13,10 @@
  * fits in the same vertex: solids carry the UV of a 1x1 white texel and are
  * their own color, quads carry their atlas UV and a white color, glyphs carry
  * a font atlas UV, their text color, and a paint mode saying the texel is a
- * distance field rather than a color. See `shaders/batchFill.ts`.
+ * distance field rather than a color. A linear gradient joins as a fourth
+ * without a mode of its own: its texture is the ramp atlas and its UV is
+ * (ramp position, row), which is what the plain mode already samples. See
+ * `shaders/batchFill.ts`.
  *
  * Colors ride the vertices because shapes in a run differ in color and a merged
  * draw has one set of uniforms — and so does the model transform, applied here
@@ -297,6 +300,85 @@ export class DrawBatch {
     i = this.writeVertex(i, cx, cy, r, g, b, a, u1, v1, 1, P);
     this.writeVertex(i, dx, dy, r, g, b, a, u0, v1, 1, P);
     this.pushQuadIndices();
+  }
+
+  /**
+   * Append one rect filled by a linear gradient: the corners of
+   * `(x, y, w, h)` mapped through `m`, sampling row `rowV` of the ramp atlas
+   * at `slot`.
+   *
+   * `tA`, `tB`, `tC` give the ramp position at a vertex as
+   * `tA * x + tB * y + tC`, in the coordinates the corners arrive in. A linear
+   * gradient's ramp position is affine in position, so carrying it per vertex
+   * and letting the rasterizer interpolate is exact — which is why such a fill
+   * needs no shader arm of its own: it is a textured quad whose texture is the
+   * ramp. Values outside 0..1 are the sampler's business; the atlas clamps to
+   * the edge texel, which is what the gradient shader's own `clamp` did.
+   */
+  pushGradientRect(
+    x: number, y: number, w: number, h: number, m: Mat3,
+    tA: number, tB: number, tC: number, rowV: number, slot: number,
+    r: number, g: number, b: number, a: number,
+  ): void {
+    this.reserve(4, 6);
+    let i = this.nVerts * FLOATS_PER_VERTEX;
+    const ma = m[0], mb = m[1], mc = m[3], md = m[4], mtx = m[6], mty = m[7];
+    const x1 = x + w;
+    const y1 = y + h;
+    const P = packSlot(slot, PAINT_MODE_PLAIN);
+    const t00 = tA * x + tB * y + tC;
+    const t10 = tA * x1 + tB * y + tC;
+    const t11 = tA * x1 + tB * y1 + tC;
+    const t01 = tA * x + tB * y1 + tC;
+    i = this.writeVertex(
+      i, ma * x + mc * y + mtx, mb * x + md * y + mty,
+      r, g, b, a, t00, rowV, 1, P,
+    );
+    i = this.writeVertex(
+      i, ma * x1 + mc * y + mtx, mb * x1 + md * y + mty,
+      r, g, b, a, t10, rowV, 1, P,
+    );
+    i = this.writeVertex(
+      i, ma * x1 + mc * y1 + mtx, mb * x1 + md * y1 + mty,
+      r, g, b, a, t11, rowV, 1, P,
+    );
+    this.writeVertex(
+      i, ma * x + mc * y1 + mtx, mb * x + md * y1 + mty,
+      r, g, b, a, t01, rowV, 1, P,
+    );
+    this.pushQuadIndices();
+  }
+
+  /** `pushMesh` for a mesh filled by a linear gradient — see
+   *  `pushGradientRect` for what `tA` / `tB` / `tC` and `rowV` carry. */
+  pushGradientMesh(
+    mesh: Mesh, m: Mat3,
+    tA: number, tB: number, tC: number, rowV: number, slot: number,
+    r: number, g: number, b: number, a: number,
+  ): void {
+    const src = mesh.vertices;
+    const srcIdx = mesh.indices;
+    const n = src.length >> 1;
+    this.reserve(n, srcIdx.length);
+    this.pureRects = false;
+    const v = this.verts;
+    let i = this.nVerts * FLOATS_PER_VERTEX;
+    const ma = m[0], mb = m[1], mc = m[3], md = m[4], mtx = m[6], mty = m[7];
+    const P = packSlot(slot, PAINT_MODE_PLAIN);
+    for (let k = 0; k < n; k++) {
+      const x = src[k * 2];
+      const y = src[k * 2 + 1];
+      v[i++] = ma * x + mc * y + mtx;
+      v[i++] = mb * x + md * y + mty;
+      v[i++] = r; v[i++] = g; v[i++] = b; v[i++] = a;
+      v[i++] = tA * x + tB * y + tC; v[i++] = rowV; v[i++] = 1; v[i++] = P;
+    }
+    const base = this.nVerts;
+    const out = this.idx;
+    let j = this.nIdx;
+    for (let k = 0; k < srcIdx.length; k++) out[j++] = base + srcIdx[k];
+    this.nVerts += n;
+    this.nIdx += srcIdx.length;
   }
 
   /**

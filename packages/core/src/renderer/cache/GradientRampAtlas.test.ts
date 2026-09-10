@@ -180,6 +180,33 @@ describe('GradientRampAtlas', () => {
     expect(atlas.height).toBe(RAMP_ATLAS_MAX_ROWS);
   });
 
+  describe('wouldReshape()', () => {
+    it('is false on an empty atlas, whose first growth moves nothing', () => {
+      const { gl } = makeGLRecorder();
+      expect(new GradientRampAtlas(gl).wouldReshape(BLACK_WHITE)).toBe(false);
+    });
+
+    it('is false for a stop list already in a row', () => {
+      const { gl } = makeGLRecorder();
+      const atlas = new GradientRampAtlas(gl);
+      atlas.upload(BLACK_WHITE);
+      expect(atlas.wouldReshape([...BLACK_WHITE])).toBe(false);
+    });
+
+    it('is false while there are rows left, and true for the one that grows it', () => {
+      const { gl } = makeGLRecorder();
+      const atlas = new GradientRampAtlas(gl);
+      const ramps = distinctRamps(RAMP_ATLAS_MAX_ROWS);
+      atlas.upload(ramps[0]);
+      const rows = atlas.height;
+      for (let i = 1; i < rows; i++) {
+        expect(atlas.wouldReshape(ramps[i]), `row ${i} of ${rows}`).toBe(false);
+        atlas.upload(ramps[i]);
+      }
+      expect(atlas.wouldReshape(ramps[rows])).toBe(true);
+    });
+  });
+
   it('bind() selects the unit and binds the atlas', () => {
     const { gl, calls, reset } = makeGLRecorder();
     const atlas = new GradientRampAtlas(gl);

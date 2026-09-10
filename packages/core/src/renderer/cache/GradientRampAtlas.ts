@@ -98,6 +98,21 @@ export class GradientRampAtlas {
   }
 
   /**
+   * Whether uploading `stops` would move where existing rows sit — by growing
+   * the atlas, which changes every row's `v`, or by recycling one, which
+   * rewrites its texels.
+   *
+   * Anything holding a row past this call asks first and gets itself out of
+   * the way, because neither can be undone once it has happened.
+   */
+  wouldReshape(stops: GradStop[]): boolean {
+    // An atlas holding nothing has no row to move, so its first growth is free.
+    if (this.rowByKey.size === 0) return false;
+    return !this.rowByKey.has(JSON.stringify(stops))
+      && this.rowByKey.size >= this.rows;
+  }
+
+  /**
    * The `v` a row is sampled at — its center.
    *
    * The center is load-bearing: the atlas filters LINEAR, so a `v` anywhere

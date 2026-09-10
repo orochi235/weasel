@@ -53,13 +53,15 @@ describe('renderer — consecutive image batching', () => {
     fill: { color: '#f00' },
   });
 
-  /** A fill the run cannot express, for tests that need a break they choose. */
+  /** A fill the run cannot express, for tests that need a break they choose.
+   *  Radial rather than linear: a linear gradient's ramp position is affine in
+   *  position, so it rides the vertices and joins the run instead. */
   const gradientRect = (x: number) => ({
     kind: 'path' as const,
     path: { kind: 'rect' as const, x, y: 0, width: 16, height: 16 },
     fill: {
-      fill: 'linear-gradient' as const,
-      from: { x: 0, y: 0 }, to: { x: 16, y: 16 },
+      fill: 'radial-gradient' as const,
+      center: { x: 8, y: 8 }, radius: 8,
       stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
     },
   }) as unknown as DrawCommand;

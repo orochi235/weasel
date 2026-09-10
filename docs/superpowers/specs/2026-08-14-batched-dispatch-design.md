@@ -186,15 +186,29 @@ every baked ramp in rows of one texture and `gradFill` picks its row with
 own program and still break the run — what the atlas buys is that when they
 stop, all of them fit in one slot instead of one slot each.
 
-Two things that constrain the half still open. A row index is a stable name
-across growth, but the `v` computed from it is not — the atlas gets taller and
-every `v` handed out before that points somewhere else — so a run staging a `v`
-into its vertices has to be flushed before the atlas grows or recycles a row,
-not after. And a linear gradient's `t` is affine in position, so interpolating
-it across a triangle is exact: such a fill can ride the existing plain paint
-mode with `a_uv = (t, rowV)` and needs no shader arm of its own. Radial and
-conic are not affine in `t`, but the *coordinate* they need is, which is the
-shape of their arm.
+**Linear gradients joined the batch the same day.** A linear gradient's ramp
+position is affine in position, so a vertex can carry it and the rasterizer's
+interpolation across a triangle is exact — which makes such a fill a textured
+quad off the ramp atlas and nothing else. It rides the plain paint mode with
+`a_uv = (ramp position, row)`, white vertices carrying its opacity, and adds no
+paint mode, no vertex float and no line of shader. The atlas takes one slot for
+every gradient in the run, so a page of them is one draw.
+
+The trap that shape carries: a staged vertex names its row by where the row
+sits, so an atlas that grows — every `v` moves — or recycles a row repaints
+geometry already staged. `wouldReshape` is asked before the bake and the run is
+flushed if the answer is yes; asking afterwards is too late, because neither can
+be undone.
+
+**Radial and conic are what is left.** Their ramp position is not affine, but
+the *coordinate* they need is, so the shape of their arm is the same: stage the
+gradient-space coordinate in `a_uv`, put the row somewhere a plain vertex is not
+using, and compute `length` or `atan` in the shader. The open question is where
+that computation goes. `fwidth` forced the glyph math to run unconditionally on
+every fragment; an `atan` for conic gradients is dearer than that and rarer, so
+this one wants measuring against a branch — which is legal here only if the
+sample stops being `texture()`, since the ramp atlas has no mipmaps and
+`textureLod` would do.
 
 **Text branched, and landed on 2026-09-09.** It does not stay separate: the
 batch shader runs the glyph math — a median across three channels, `fwidth`, a

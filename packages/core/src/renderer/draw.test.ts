@@ -4,7 +4,7 @@ import { WeaselRenderer } from './WeaselRenderer';
 import { mat3 } from './math/mat3';
 import type { DrawCommand } from './DrawCommand';
 import {
-  pushClip, popClip, drawGroup, dispatch, tryStageSolid, flushBatch, type DrawContext,
+  pushClip, popClip, drawGroup, dispatch, tryStageFill, flushBatch, type DrawContext,
 } from './draw';
 import {
   SOLID_RING_SIZE as IMAGE_RING_SIZE, FLOATS_PER_VERTEX, TEX_SLOT_OFFSET,
@@ -725,7 +725,7 @@ import type { Mesh } from './cache/mesh';
  * gets to draw for itself when this said `false`, and `false` is only returned
  * after the staged run has been drawn.
  */
-describe('tryStageSolid', () => {
+describe('tryStageFill', () => {
   const stagedRect: DrawCommand = {
     kind: 'path',
     path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
@@ -748,25 +748,25 @@ describe('tryStageSolid', () => {
 
   it('stages a batchable mesh, leaving the run undrawn', () => {
     const { ctx, drawCount } = withStagedRun();
-    expect(tryStageSolid(ctx, triangle(), { color: '#0000ff' })).toBe(true);
+    expect(tryStageFill(ctx, triangle(), { kind: 'solid', color: '#0000ff' })).toBe(true);
     expect(drawCount()).toBe(0);
   });
 
   it('flushes before answering false for a paint a run cannot carry', () => {
     const { ctx, drawCount } = withStagedRun();
-    expect(tryStageSolid(ctx, triangle(), undefined)).toBe(false);
+    expect(tryStageFill(ctx, triangle(), undefined)).toBe(false);
     expect(drawCount()).toBe(1);
   });
 
   it('flushes before answering false for a mesh past the vertex cap', () => {
     const { ctx, drawCount } = withStagedRun();
-    expect(tryStageSolid(ctx, triangle(1024), { color: '#0000ff' })).toBe(false);
+    expect(tryStageFill(ctx, triangle(1024), { kind: 'solid', color: '#0000ff' })).toBe(false);
     expect(drawCount()).toBe(1);
   });
 
   it('flushes before answering false for a mesh needing its own stencil pass', () => {
     const { ctx, drawCount } = withStagedRun();
-    expect(tryStageSolid(ctx, triangle(3, { requiresStencil: true }), { color: '#0000ff' })).toBe(false);
+    expect(tryStageFill(ctx, triangle(3, { requiresStencil: true }), { kind: 'solid', color: '#0000ff' })).toBe(false);
     expect(drawCount()).toBe(1);
   });
 });
@@ -1125,11 +1125,12 @@ const POLYGON_CURVED: PolygonPath = {
 };
 
 describe('flattenTolerance option', () => {
-  /** A gradient takes its own draw, so the mesh reaches GL as a buffer rather
-   *  than as staged vertices — which is where the pool choice is observable. */
+  /** A radial gradient takes its own draw, so the mesh reaches GL as a buffer
+   *  rather than as staged vertices — which is where the pool choice is
+   *  observable. Linear would not: it batches. */
   const GRADIENT = {
-    fill: 'linear-gradient' as const,
-    from: { x: 0, y: 0 }, to: { x: 100, y: 100 },
+    fill: 'radial-gradient' as const,
+    center: { x: 50, y: 50 }, radius: 50,
     stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
   };
 
@@ -2002,7 +2003,7 @@ describe('drawText — outline tier', () => {
   });
 });
 
-describe('gradient units — which space u_worldInv maps fragments into', () => {
+describe('gradient units — which space a gradient measures its geometry in', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
   let r: WeaselRenderer;
 
@@ -2033,7 +2034,7 @@ describe('gradient units — which space u_worldInv maps fragments into', () => 
   });
 
   it('defaults to screen space, leaving the mapping identity', () => {
-    r.render([{ kind: 'path', path: PATH, fill: { fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, stops: STOPS } }]);
+    r.render([{ kind: 'path', path: PATH, fill: { fill: 'radial-gradient', center: { x: 0, y: 0 }, radius: 5, stops: STOPS } }]);
     expect(worldInv()).toEqual(Array.from(mat3.identity()));
   });
 
@@ -2042,10 +2043,83 @@ describe('gradient units — which space u_worldInv maps fragments into', () => 
     r.render([{
       kind: 'group',
       transform,
-      children: [{ kind: 'path', path: PATH, fill: { fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, stops: STOPS, units: 'local' } }],
+      children: [{ kind: 'path', path: PATH, fill: { fill: 'radial-gradient', center: { x: 0, y: 0 }, radius: 5, stops: STOPS, units: 'local' } }],
     }]);
     // A fragment at screen (100, 40) is the group's local origin.
     expect(mat3.apply(new Float32Array(worldInv()), 100, 40)).toEqual([0, 0]);
+  });
+
+  /**
+   * A linear gradient takes the same question through the vertices instead: its
+   * ramp position is folded to one affine row before staging, so `units` shows
+   * up as what the corners carry rather than as a matrix. These are the tests
+   * that catch that fold composing its two matrices the wrong way round.
+   */
+  describe('a linear gradient, which carries it on the vertices', () => {
+    /** `a_uv.x` — the ramp position — at each staged corner. */
+    function rampAtCorners(): number[] {
+      const verts = recorder.calls
+        .find((c) => c.name === 'bufferSubData' && c.args[0] === recorder.gl.ARRAY_BUFFER)!
+        .args[2] as Float32Array;
+      return [0, 1, 2, 3].map((corner) => verts[corner * FLOATS_PER_VERTEX + 6]);
+    }
+
+    const LINEAR = {
+      fill: 'linear-gradient' as const,
+      from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, stops: STOPS,
+    };
+
+    it('defaults to screen space, so a translated shape starts partway along', () => {
+      r.render([{
+        kind: 'group',
+        transform: mat3.translate(mat3.identity(), 100, 40),
+        children: [{ kind: 'path', path: PATH, fill: LINEAR }],
+      }]);
+      // Screen x 100..110 over a ramp spanning screen x 0..10.
+      expect(rampAtCorners()).toEqual([10, 11, 11, 10]);
+    });
+
+    it("units: 'local' measures the shape's own coordinates, so the ramp rides it", () => {
+      r.render([{
+        kind: 'group',
+        transform: mat3.translate(mat3.identity(), 100, 40),
+        children: [{ kind: 'path', path: PATH, fill: { ...LINEAR, units: 'local' } }],
+      }]);
+      expect(rampAtCorners()).toEqual([0, 1, 1, 0]);
+    });
+
+    // Scaled, because the fold composes two matrices and two translations
+    // commute — under a translate-only group this passes either way round.
+    it("units: 'world' measures the scene, so panning the view moves the ramp", () => {
+      r.render([{
+        kind: 'group',
+        transform: mat3.scale(mat3.translate(mat3.identity(), 100, 40), 2, 2),
+        children: [{ kind: 'path', path: PATH, fill: { ...LINEAR, units: 'world' } }],
+      }], mat3.translate(mat3.identity(), 25, 75));
+      // World x 75..95: the shape's own 0..10 doubled and moved to 100..120,
+      // less the view's 25.
+      expect(rampAtCorners()).toEqual([7.5, 9.5, 9.5, 7.5]);
+    });
+  });
+
+  // Every other paint program applies the group's color matrix; the gradient
+  // one did not, and a linear gradient going through the batch made that a
+  // disagreement between two gradients rather than a gap.
+  it('applies the color matrix a group carries', () => {
+    const cm = new Array(20).fill(0);
+    cm[0] = 0.5; cm[6] = 0.5; cm[12] = 0.5; cm[18] = 1;
+    r.render([{
+      kind: 'group',
+      colorMatrix: cm,
+      children: [{ kind: 'path', path: PATH, fill: { fill: 'radial-gradient', center: { x: 0, y: 0 }, radius: 5, stops: STOPS } }],
+    }] as DrawCommand[]);
+    const loc = r._gradFill().uniform('u_colorMatrix');
+    expect(loc, 'gradient program should expose u_colorMatrix').toBeDefined();
+    const upload = recorder.calls.find(
+      (c) => c.name === 'uniformMatrix4fv' && c.args[0] === loc,
+    );
+    expect(upload, 'expected the matrix to reach the gradient program').toBeDefined();
+    expect(Array.from(upload!.args[2] as Float32Array)[0]).toBe(0.5);
   });
 
   it("units: 'world' inverts the frame's view matrix, pinning the paint to the scene", () => {

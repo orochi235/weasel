@@ -36,6 +36,8 @@ in vec2 v_world;
 uniform sampler2D u_ramp;
 uniform float u_rampV;
 uniform float u_alpha;
+uniform mat4  u_colorMatrix;
+uniform vec4  u_colorBias;
 uniform float u_opacity;
 uniform int   u_gradKind;
 uniform vec2  u_gradP0;
@@ -60,14 +62,19 @@ void main() {
   }
   t = clamp(t, 0.0, 1.0);
   vec4 rampColor = texture(u_ramp, vec2(t, u_rampV));
-  float a = rampColor.a * u_opacity * u_alpha;
-  outColor = vec4(rampColor.rgb * a, a);
+  // Fill opacity into the alpha channel before the matrix, which is where the
+  // batch program's vertex alpha sits — the two have to agree, since a linear
+  // gradient goes through that one and a radial through this.
+  vec4 src = vec4(rampColor.rgb, rampColor.a * u_opacity);
+  vec4 mapped = clamp(u_colorMatrix * src + u_colorBias, 0.0, 1.0);
+  float a = mapped.a * u_alpha;
+  outColor = vec4(mapped.rgb * a, a);
 }
 `;
 
 export const GRAD_FILL_UNIFORMS = [
   'u_proj', 'u_model', 'u_worldInv', 'u_ramp', 'u_rampV',
-  'u_alpha', 'u_opacity',
+  'u_alpha', 'u_opacity', 'u_colorMatrix', 'u_colorBias',
   'u_gradKind', 'u_gradP0', 'u_gradDir', 'u_gradLen', 'u_gradRadius', 'u_gradAngle',
 ] as const;
 

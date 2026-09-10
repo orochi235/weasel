@@ -40,13 +40,26 @@ describe('renderer — consecutive solid-fill batching', () => {
     ...extra,
   } as DrawCommand);
 
-  const gradientRect = (x: number): DrawCommand => ({
+  const STOPS = [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }];
+
+  /** A paint no run can carry, and the one these tests break a run with. A
+   *  radial gradient's ramp position is not affine in position, so it cannot
+   *  ride the vertices the way the linear one below does. */
+  const radialRect = (x: number): DrawCommand => ({
+    kind: 'path',
+    path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
+    fill: {
+      fill: 'radial-gradient', center: { x: 5, y: 5 }, radius: 5, stops: STOPS,
+    },
+  } as DrawCommand);
+
+  const linearRect = (x: number): DrawCommand => ({
     kind: 'path',
     path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
     fill: {
       fill: 'linear-gradient',
       from: { x: 0, y: 0 }, to: { x: 10, y: 10 },
-      stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
+      stops: STOPS,
     },
   } as DrawCommand);
 
@@ -157,13 +170,102 @@ describe('renderer — consecutive solid-fill batching', () => {
   });
 
   it('flushes for a fill kind it cannot express, keeping painter\'s order', () => {
-    r.render([rect(0), gradientRect(20), rect(40)]);
+    r.render([rect(0), radialRect(20), rect(40)]);
     const progs = drawPrograms();
     expect(progs).toHaveLength(3);
     expect(progs[0]).toBe(r._batchFill().handle);
     expect(progs[1]).toBe(r._gradFill().handle);
     expect(progs[2]).toBe(r._batchFill().handle);
     expect(draws()).toEqual([6, 6, 6]);
+  });
+
+  describe('a linear gradient, which the ramp atlas lets join a run', () => {
+    /** Every vertex the first flush wrote, as [ramp position, atlas row v,
+     *  packed slot]. Bounded by the call's own length: `bufferSubData` records
+     *  the whole staging array, most of which is the part it did not upload. */
+    const rampVertices = (): number[][] => {
+      const call = recorder.calls.find(
+        (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
+      )!;
+      const verts = call.args[2] as Float32Array;
+      const out: number[][] = [];
+      for (let i = 0; i < (call.args[4] as number); i += FLOATS_PER_VERTEX) {
+        out.push([verts[i + 6], verts[i + 7], verts[i + TEX_SLOT_OFFSET]]);
+      }
+      return out;
+    };
+
+    /** A rect at `x`, filled by a gradient running left to right over x 0..10 —
+     *  so the ramp position at a corner is just its x tenth. */
+    const acrossRect = (x: number): DrawCommand => ({
+      kind: 'path',
+      path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
+      fill: {
+        fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, stops: STOPS,
+      },
+    } as DrawCommand);
+
+    /** `n` gradients no two of which bake to the same row. */
+    const distinctLinears = (n: number): DrawCommand[] =>
+      Array.from({ length: n }, (_, i) => ({
+        kind: 'path',
+        path: { kind: 'rect', x: i * 2, y: 0, width: 1, height: 1 },
+        fill: {
+          fill: 'linear-gradient',
+          from: { x: 0, y: 0 }, to: { x: 10, y: 0 },
+          stops: [{ offset: 0, color: `rgb(${i}, 0, 0)` }, { offset: 1, color: '#fff' }],
+        },
+      } as DrawCommand));
+
+    it('joins a run of solids rather than breaking it', () => {
+      r.render([rect(0), linearRect(20), rect(40)]);
+      expect(draws()).toEqual([18]);
+      expect(drawPrograms()).toEqual([r._batchFill().handle]);
+    });
+
+    it('carries the ramp position on the corners and the row on the v', () => {
+      r.render([acrossRect(20)]);
+      const verts = rampVertices();
+      // The gradient spans x 0..10 and the rect sits at x 20..30.
+      expect(verts.map((v) => v[0])).toEqual([2, 3, 3, 2]);
+      // One ramp in a 16-row atlas: the center of row 0.
+      expect(new Set(verts.map((v) => v[1]))).toEqual(new Set([0.5 / 16]));
+      // Slot 1 at the plain paint mode — no mode of its own.
+      expect(new Set(verts.map((v) => v[2]))).toEqual(new Set([1]));
+    });
+
+    it('gives every gradient in a run the same slot and a row of its own', () => {
+      r.render(distinctLinears(4));
+      expect(draws()).toEqual([24]);
+      const verts = rampVertices();
+      expect(new Set(verts.map((v) => v[2]))).toEqual(new Set([1]));
+      expect(new Set(verts.map((v) => v[1])).size).toBe(4);
+      expect(verts.every((v) => paintModeOf(v[2]) === 0)).toBe(true);
+    });
+
+    // Growing the atlas moves every row's v, and the staged vertices name their
+    // row by where it sits — so the run has to be drawn before that happens or
+    // it paints with somebody else's gradient.
+    it('breaks the run rather than let the atlas grow under it', () => {
+      r.render(distinctLinears(16));
+      expect(draws()).toEqual([96]);
+
+      recorder.reset();
+      r.render(distinctLinears(17));
+      // 16 of them, then the one whose bake grew the atlas.
+      expect(draws()).toEqual([96, 6]);
+    });
+
+    it('shares the run with a bitmap, taking one slot beside it', () => {
+      const image = { width: 4, height: 4, close() {} } as unknown as ImageBitmap;
+      r.render([
+        linearRect(0),
+        { kind: 'image', image, x: 0, y: 0, w: 4, h: 4 } as DrawCommand,
+        linearRect(20),
+      ]);
+      expect(draws()).toEqual([18]);
+      expect(drawPrograms()).toEqual([r._batchFill().handle]);
+    });
   });
 
   it('stages a solid stroke into the run behind its own fill', () => {
@@ -335,10 +437,10 @@ describe('renderer — consecutive solid-fill batching', () => {
   });
 
   describe('which buffers a flush writes', () => {
-    /** One flush each: a gradient never joins the run, so it drains what is
+    /** One flush each: a radial gradient never joins the run, so it drains what is
      *  staged before drawing itself. */
     const alternating = (flushes: number): DrawCommand[] =>
-      Array.from({ length: flushes }, (_, i) => [rect(i * 20), gradientRect(i * 20 + 10)]).flat();
+      Array.from({ length: flushes }, (_, i) => [rect(i * 20), radialRect(i * 20 + 10)]).flat();
 
     /** The buffer bound at each solid-flush vertex upload, in issue order.
      *  `drawImage` is the only other `bufferSubData(ARRAY_BUFFER)` writer and
@@ -429,7 +531,7 @@ describe('renderer — consecutive solid-fill batching', () => {
       const perSlot = SOLID_RING_SLOT_VERTICES / 4;
       const big = (n: number): DrawCommand[] => [
         ...Array.from({ length: perSlot + 1 }, (_, i) => rect(n * 10000 + i)),
-        gradientRect(0),
+        radialRect(0),
       ];
       const bigFlushes = SOLID_LARGE_RING_SIZE + 1;
       r.render([
@@ -473,7 +575,7 @@ describe('renderer — consecutive solid-fill batching', () => {
    */
   describe('which flushes re-upload their indices', () => {
     const alternating = (flushes: number): DrawCommand[] =>
-      Array.from({ length: flushes }, (_, i) => [rect(i * 20), gradientRect(i * 20 + 10)]).flat();
+      Array.from({ length: flushes }, (_, i) => [rect(i * 20), radialRect(i * 20 + 10)]).flat();
 
     /** Solid-batch index uploads. Nothing else here writes indices this way:
      *  the text and image paths respecify with `bufferData` instead. */
@@ -512,13 +614,13 @@ describe('renderer — consecutive solid-fill batching', () => {
       // larger N — so slot 0 coming round with two rects needs nothing.
       r.render([
         ...alternating(SOLID_RING_SIZE),
-        rect(0), rect(20), gradientRect(40),
+        rect(0), rect(20), radialRect(40),
       ]);
       expect(indexUploads()).toHaveLength(SOLID_RING_SIZE);
     });
 
     it('uploads for a flush carrying a mesh, whose indices no count describes', () => {
-      r.render([triangle(0), gradientRect(20), triangle(40)]);
+      r.render([triangle(0), radialRect(20), triangle(40)]);
       expect(indexUploads()).toHaveLength(2);
     });
 
@@ -528,9 +630,9 @@ describe('renderer — consecutive solid-fill batching', () => {
       // still a different pattern. One full turn puts a one-rect flush back on
       // the mesh's slot.
       r.render([
-        triangle(0), gradientRect(10),
+        triangle(0), radialRect(10),
         ...alternating(SOLID_RING_SIZE - 1),
-        rect(0), gradientRect(30),
+        rect(0), radialRect(30),
       ]);
       // Every one of the 65 flushes writes: 64 filling the ring, and the last
       // because the slot it lands on held a mesh.
@@ -553,7 +655,7 @@ describe('renderer — consecutive solid-fill batching', () => {
 
     it('sends the batch its white once a frame, not once a flush', () => {
       const alternating = (flushes: number): DrawCommand[] =>
-        Array.from({ length: flushes }, (_, i) => [rect(i * 20), gradientRect(i * 20 + 10)]).flat();
+        Array.from({ length: flushes }, (_, i) => [rect(i * 20), radialRect(i * 20 + 10)]).flat();
       r.render(alternating(4));
       expect(colorWrites(r._batchFill())).toEqual([[1, 1, 1, 1]]);
     });

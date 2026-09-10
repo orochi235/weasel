@@ -1,4 +1,4 @@
-import type { Stroke, FillStyle, GradientUnits } from '@weasel-js/paint';
+import type { Stroke, FillStyle, GradientUnits, GradStop } from '@weasel-js/paint';
 import type { Path } from '@weasel-js/core';
 import { getPaintKind } from 'core/paintKinds';
 import type { PaintBindContext } from 'core/paintKinds';
@@ -637,21 +637,22 @@ function drawPath(ctx: DrawContext, cmd: PathDrawCommand): void {
 
 function drawPathFill(ctx: DrawContext, cmd: PathDrawCommand): void {
   const fill = cmd.fill!;
-  // Batchable: a solid paint with no per-vertex colors. A rect skips
-  // tessellation entirely; anything else stages its mesh. Both also keep
-  // animated demos that mint a fresh Path every frame from allocating a GL
-  // buffer per frame.
+  // Batchable: see `batchPaint`. A rect skips tessellation entirely; anything
+  // else stages its mesh. Both also keep animated demos that mint a fresh Path
+  // every frame from allocating a GL buffer per frame.
   const isSolid = fill.fill === undefined || fill.fill === 'solid';
   const hasVColors = !!(cmd.vertexColors && cmd.vertexColors.length > 0);
   const solid = fill as { color: string; opacity?: number };
+  const paint = batchPaint(ctx, fill, hasVColors);
 
-  if (isSolid && !hasVColors && cmd.path.kind === 'rect') {
-    pushRect(ctx, cmd.path, solid);
+  if (paint !== undefined && cmd.path.kind === 'rect') {
+    if (paint.kind === 'ramp') pushRampRect(ctx, cmd.path, paint);
+    else pushRect(ctx, cmd.path, paint);
     return;
   }
 
   const mesh = fillMesh(ctx, cmd.path);
-  if (tryStageSolid(ctx, mesh, isSolid && !hasVColors ? solid : undefined)) return;
+  if (tryStageFill(ctx, mesh, paint)) return;
 
   const handle = meshHandle(ctx, mesh);
   if (isSolid && hasVColors) {
@@ -717,7 +718,8 @@ interface StagedBatchState {
 /** One entry in a run's slot list. */
 type BatchTexture =
   | { kind: 'bitmap'; image: ImageBitmap; sampling: 'linear' | 'nearest' }
-  | { kind: 'atlas'; id: string };
+  | { kind: 'atlas'; id: string }
+  | { kind: 'ramps' };
 
 /** Identity in row-major 4×5 leaves `src` untouched *and* leaves the shader's
  *  clamp with nothing to do, which is what makes the alpha fold exact. */
@@ -762,6 +764,15 @@ function slotForBitmap(
     const entry = staged.textures[i];
     if (entry.kind !== 'bitmap' || entry.image !== image) continue;
     return entry.sampling === sampling ? i + 1 : -1;
+  }
+  return nextFreeSlot(staged);
+}
+
+/** The same for the ramp atlas, of which there is one — so every gradient in a
+ *  run shares the slot, however many distinct ramps they are. */
+function slotForRamps(staged: StagedBatchState): number {
+  for (let i = 0; i < staged.textures.length; i++) {
+    if (staged.textures[i].kind === 'ramps') return i + 1;
   }
   return nextFreeSlot(staged);
 }
@@ -891,13 +902,50 @@ function stageGlyphs(
   return { staged, slot };
 }
 
+/**
+ * Open or continue a run for geometry filled from the ramp atlas, flushing
+ * first if the run would overflow, has no slot left, or if baking `stops` would
+ * move the rows already staged.
+ *
+ * **That last one is the trap.** A staged vertex names its ramp by where the
+ * row sits, so growing the atlas — which changes every row's `v` — or recycling
+ * a row repaints geometry already staged with somebody else's gradient. Both
+ * are irreversible once done, so the question is asked before the bake, not
+ * after.
+ */
+function stageRamps(
+  ctx: DrawContext, stops: GradStop[], vertices: number,
+): { staged: StagedBatchState; slot: number; rowV: number } {
+  if (ctx.gradRamps.wouldReshape(stops)) flushBatch(ctx);
+  if (ctx.batchState !== undefined
+      && (!stagedStateIsLive(ctx, ctx.batchState) || slotForRamps(ctx.batchState) < 0)) {
+    flushBatch(ctx);
+  }
+  if (ctx.drawBatch.wouldOverflow(vertices)) flushBatch(ctx);
+  const staged = openRun(ctx);
+  let slot = slotForRamps(staged);
+  if (slot > staged.textures.length) {
+    staged.textures.push({ kind: 'ramps' });
+    slot = staged.textures.length;
+  }
+  return { staged, slot, rowV: ctx.gradRamps.rowV(ctx.gradRamps.upload(stops)) };
+}
+
+/** Alpha a batched paint's vertices carry: its own opacity, and the group's
+ *  under an identity color matrix. */
+function stagedAlpha(
+  ctx: DrawContext, staged: StagedBatchState, opacity: number | undefined,
+): number {
+  return (opacity ?? 1) * (staged.foldsAlpha ? ctx.state.alpha : 1);
+}
+
 /** Straight-alpha rgba for a solid paint under the staged state. */
 function stagedColor(
   ctx: DrawContext, staged: StagedBatchState,
   paint: { color: string; opacity?: number },
 ): [number, number, number, number] {
   const [r, g, b, a] = resolveColor(paint.color);
-  return [r, g, b, a * (paint.opacity ?? 1) * (staged.foldsAlpha ? ctx.state.alpha : 1)];
+  return [r, g, b, a * stagedAlpha(ctx, staged, paint.opacity)];
 }
 
 function pushRect(
@@ -922,22 +970,108 @@ function pushMesh(
   ctx.drawBatch.pushMesh(mesh, ctx.state.transform, r, g, b, a);
 }
 
+/** Ramp position at a vertex as `a * x + b * y + c`, in the coordinates the
+ *  geometry arrives in. */
+interface RampT { a: number; b: number; c: number }
+
+/** A paint a run can express, resolved from a `FillStyle` by `batchPaint`. */
+type BatchPaint =
+  | { kind: 'solid'; color: string; opacity?: number }
+  | { kind: 'ramp'; stops: GradStop[]; opacity?: number; t: RampT };
+
+/**
+ * `fill` as something a run can carry, or `undefined` for a paint no run can
+ * express — a pattern, a radial or conic gradient, a shader, per-vertex colors.
+ *
+ * **A linear gradient qualifies and the other two do not, for one reason:** its
+ * ramp position is affine in position, so a vertex can carry it and the
+ * rasterizer's interpolation across a triangle is exact. That makes such a fill
+ * a textured quad off the ramp atlas and nothing more — no paint mode of its
+ * own, no vertex float of its own. Radial and conic are not affine in the ramp
+ * position and still take their own draw.
+ */
+function batchPaint(
+  ctx: DrawContext, fill: FillStyle, hasVColors: boolean,
+): BatchPaint | undefined {
+  if (hasVColors) return undefined;
+  const kind = fill.fill ?? 'solid';
+  if (kind === 'solid') {
+    const solid = fill as { color: string; opacity?: number };
+    return { kind: 'solid', color: solid.color, opacity: solid.opacity };
+  }
+  if (kind !== 'linear-gradient') return undefined;
+  const grad = fill as Extract<FillStyle, { fill: 'linear-gradient' }>;
+  return {
+    kind: 'ramp', stops: grad.stops, opacity: grad.opacity, t: linearRampT(ctx, grad),
+  };
+}
+
+/**
+ * The gradient shader's `dot(p - from, dir) / len` folded into one affine row,
+ * in the space the geometry's own coordinates are in.
+ *
+ * `gradientSpaceInverse` maps a screen position back into the gradient's space,
+ * and the batch's vertices arrive before the model transform — so the two
+ * compose into the one matrix a vertex is measured through.
+ */
+function linearRampT(
+  ctx: DrawContext, fill: Extract<FillStyle, { fill: 'linear-gradient' }>,
+): RampT {
+  const g = mat3.multiply(gradientSpaceInverse(ctx, fill.units), ctx.state.transform);
+  const dx = fill.to.x - fill.from.x;
+  const dy = fill.to.y - fill.from.y;
+  const len = Math.hypot(dx, dy) || 1;
+  // dir is (dx, dy)/len and the divisor is len, so the pair is 1/len².
+  const k = 1 / (len * len);
+  return {
+    a: (g[0] * dx + g[1] * dy) * k,
+    b: (g[3] * dx + g[4] * dy) * k,
+    c: ((g[6] - fill.from.x) * dx + (g[7] - fill.from.y) * dy) * k,
+  };
+}
+
+function pushRampRect(
+  ctx: DrawContext,
+  rect: { x: number; y: number; width: number; height: number },
+  paint: Extract<BatchPaint, { kind: 'ramp' }>,
+): void {
+  const { staged, slot, rowV } = stageRamps(ctx, paint.stops, 4);
+  const { a, b, c } = paint.t;
+  // White vertices, so the ramp texel passes through as its own color and the
+  // alpha channel carries what `u_opacity` and `u_alpha` used to.
+  ctx.drawBatch.pushGradientRect(
+    rect.x, rect.y, rect.width, rect.height, ctx.state.transform,
+    a, b, c, rowV, slot, 1, 1, 1, stagedAlpha(ctx, staged, paint.opacity),
+  );
+}
+
+function pushRampMesh(
+  ctx: DrawContext, mesh: Mesh, paint: Extract<BatchPaint, { kind: 'ramp' }>,
+): void {
+  const { staged, slot, rowV } = stageRamps(ctx, paint.stops, mesh.vertices.length >> 1);
+  const { a, b, c } = paint.t;
+  ctx.drawBatch.pushGradientMesh(
+    mesh, ctx.state.transform,
+    a, b, c, rowV, slot, 1, 1, 1, stagedAlpha(ctx, staged, paint.opacity),
+  );
+}
+
 /**
  * Stage `mesh` into the run, or drain the run so the caller can draw it itself.
  *
  * `true` means the mesh is in the batch and the caller is done. `false` comes
  * back only *after* a flush, so an emitter cannot earn permission to draw for
- * itself without also draining the batch. `paint` is `undefined` when the paint
- * is not a plain solid (gradient, pattern, per-vertex colors), which no run can
- * express.
+ * itself without also draining the batch. `paint` is `undefined` when it is one
+ * no run can express — see `batchPaint`.
  */
-export function tryStageSolid(
+export function tryStageFill(
   ctx: DrawContext,
   mesh: Mesh,
-  paint: { color: string; opacity?: number } | undefined,
+  paint: BatchPaint | undefined,
 ): boolean {
   if (paint !== undefined && canBatchMesh(mesh)) {
-    pushMesh(ctx, mesh, paint);
+    if (paint.kind === 'ramp') pushRampMesh(ctx, mesh, paint);
+    else pushMesh(ctx, mesh, paint);
     return true;
   }
   flushBatch(ctx);
@@ -979,6 +1113,10 @@ export function flushBatch(ctx: DrawContext): void {
     const entry = staged.textures[i];
     if (entry.kind === 'atlas') {
       ctx.textureCache.bind(entry.id, i + 1);
+      continue;
+    }
+    if (entry.kind === 'ramps') {
+      ctx.gradRamps.bind(i + 1);
       continue;
     }
     ctx.imageCache.bind(entry.image, i + 1);
@@ -1219,6 +1357,7 @@ function bindPathFillGradient(
   setProjAndModel(ctx, ctx.gradFill);
 
   gl.uniformMatrix3fv(ctx.gradFill.uniform('u_worldInv')!, false, gradientSpaceInverse(ctx, fill.units));
+  setColorMatrixUniforms(ctx, ctx.gradFill);
 
   ctx.gradRamps.bind(0);
   gl.uniform1i(ctx.gradFill.uniform('u_ramp')!, 0);
@@ -1439,7 +1578,7 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: StrokedPathCommand): voi
 
   // Staged, a ribbon allocates nothing and joins the fill it sits on.
   const hasVColors = !!(stroke.vertexColors && stroke.vertexColors.length > 0);
-  if (tryStageSolid(ctx, mesh, isSolid && !hasVColors ? solid : undefined)) return;
+  if (tryStageFill(ctx, mesh, batchPaint(ctx, paint, hasVColors))) return;
 
   // The VAO records the per-draw color attribute, so a vertex-colored draw
   // cannot share a persistent one with a draw that has no vertex colors.
@@ -1712,16 +1851,14 @@ function drawTextOutlineGroup(ctx: DrawContext, group: LaidOutGroup, dx: number,
 /**
  * Paint one merged glyph-outline mesh, staging it where it fits.
  *
- * Through `tryStageSolid` rather than straight to `drawPathFillByKind`,
+ * Through `tryStageFill` rather than straight to `drawPathFillByKind`,
  * because a paragraph can mix tiers: a heading drawn as outlines and a caption
  * drawn from the atlas are groups of one command, and the atlas half now
  * stages. An outline that painted itself while glyphs sat staged behind it
  * would come out under them.
  */
 function drawOutlineMesh(ctx: DrawContext, fill: FillStyle, mesh: Mesh): void {
-  const isSolid = fill.fill === undefined || fill.fill === 'solid';
-  const solid = isSolid ? (fill as { color: string; opacity?: number }) : undefined;
-  if (tryStageSolid(ctx, mesh, solid)) return;
+  if (tryStageFill(ctx, mesh, batchPaint(ctx, fill, false))) return;
   drawPathFillByKind(ctx, fill, ctx.meshCache.uploadTransient(mesh));
 }
 
