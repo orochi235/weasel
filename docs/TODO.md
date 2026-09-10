@@ -1580,23 +1580,41 @@ one dead `const` and four stale disable directives.
   Images stopped paying per command on 2026-09-05. Consecutive image quads
   coalesce into one `drawElements`, and `kind: 'sprites'` hands a run over as a
   `Float32Array` rather than a command object each. Over one atlas at 20,000
-  quads: 51.3 -> 10.6 ms coalescing, -> 0.79 ms packed. A run breaks on a
-  different bitmap, MAG_FILTER, clip depth or color matrix; transform, group
-  alpha and per-command opacity ride the vertices. The unmerged case — a
-  document with a handful of distinct bitmaps — is unchanged, which is what a
-  multi-texture batch would still be worth.
+  quads: 51.3 -> 10.6 ms coalescing, -> 0.79 ms packed. A run breaks on
+  MAG_FILTER, clip depth or color matrix; transform, group alpha and
+  per-command opacity ride the vertices, and as of the slot work below so does
+  the bitmap, up to seven of them.
 
   Solid geometry and image quads share that batch as of 2026-09-09
   (`renderer/drawBatch.ts`). They used to be exclusive — staging a solid
   drained the image run and staging an image drained the solid one — so a wall
   of thumbnails, which is a ground rect under an atlas quad per cell, paid a
-  flush per command however well each half batched on its own. Solid vertices
-  now carry the UV of a 1x1 white texel, so `texture() * a_vertexColor` is the
-  vertex color exactly and the shader branches on nothing. Measured over a
+  flush per command however well each half batched on its own. Measured over a
   viewport-filling grid of those cells (`tests/perf/atlas-wall.spec.ts`): 600
   commands 2.83 -> 0.10 ms, 1,650 11.37 -> 0.20, 5,400 40.50 -> 0.58, 15,000
   126.15 -> 1.50. Draw calls 15,000 -> 2, the second only because the run
   crosses the per-flush vertex cap.
+
+  **Every vertex names the texture it samples** (`a_texSlot`, slot 0 the white
+  texel). The first cut had solids carrying the white texel's *UV* while the
+  flush bound the run's bitmap, so every ground rect beside an atlas quad drew
+  multiplied by that atlas's middle texel — white grounds came out olive, and
+  no baseline saw it because in every demo the quad covers its ground.
+  `tests/visual/batch-pixels.spec.ts` reads the framebuffer channel by channel
+  and is the gate for that whole class.
+
+  Slots also let one run hold seven bitmaps rather than one, so a document with
+  a handful of loose images stops breaking its run per bitmap. The run still
+  breaks on an eighth, and on one bitmap wanted at two MAG_FILTERs — texture
+  state, not unit state. The fragment shader unrolls a compare per slot because
+  GLSL ES 3.0 will not index a sampler array with a variable, and the arms cost
+  nothing measurable: at 15,000 commands a two-slot chain and an eight-slot one
+  are the same, and the whole change measures 1.85 -> 1.95 ms against its own
+  parent run back to back.
+
+  Read those two against each other, not against the 1.50 above: the same
+  unchanged tree measured 1.85 on the later day. These absolutes drift by
+  around a quarter between sessions on one machine.
 
   **There is no step in this at a thousand commands.** A consumer measuring the
   same wall found per-command cost flat at ~1.3 us up to ~800 and flat at ~7.3
