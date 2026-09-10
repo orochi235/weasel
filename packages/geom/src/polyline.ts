@@ -2,14 +2,21 @@ import { sign, dot, len2 } from './scalar';
 
 /**
  * Even-odd ray-cast point-in-polygon over an interleaved, unclosed contour
- * [x0,y0,x1,y1,…]. The closing edge (last→first) is implicit. Flat rewrite of
- * features/paths/polygonHitTestRect.ts pointInPolygon — same algorithm.
+ * [x0,y0,x1,y1,…]. The closing edge (last→first) is implicit.
+ *
+ * `start`/`end` are vertex indices, not float offsets, and bound one contour
+ * inside a buffer holding several.
  */
-export function pointInPolygon(coords: ArrayLike<number>, px: number, py: number): boolean {
-  const n = coords.length >> 1;
-  if (n < 3) return false;
+export function pointInPolygon(
+  coords: ArrayLike<number>,
+  px: number,
+  py: number,
+  start = 0,
+  end = coords.length >> 1,
+): boolean {
+  if (end - start < 3) return false;
   let inside = false;
-  for (let i = 0, j = n - 1; i < n; j = i++) {
+  for (let i = start, j = end - 1; i < end; j = i++) {
     const xi = coords[i * 2], yi = coords[i * 2 + 1];
     const xj = coords[j * 2], yj = coords[j * 2 + 1];
     const crosses =

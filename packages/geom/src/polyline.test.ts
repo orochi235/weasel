@@ -58,3 +58,22 @@ describe('pointSegmentDist2 degenerate segment', () => {
     expect(pointSegmentDist2(3, 4, 0, 0, 0, 0)).toBe(25);
   });
 });
+
+describe('pointInPolygon over a vertex range', () => {
+  // Two contours in one buffer: a 0..10 square, then a 20..30 square.
+  const coords = [
+    0, 0, 10, 0, 10, 10, 0, 10,
+    20, 20, 30, 20, 30, 30, 20, 30,
+  ];
+
+  it('tests only the requested contour', () => {
+    expect(pointInPolygon(coords, 5, 5, 0, 4)).toBe(true);
+    expect(pointInPolygon(coords, 25, 25, 0, 4)).toBe(false);
+    expect(pointInPolygon(coords, 25, 25, 4, 8)).toBe(true);
+    expect(pointInPolygon(coords, 5, 5, 4, 8)).toBe(false);
+  });
+
+  it('rejects a range of fewer than three vertices', () => {
+    expect(pointInPolygon(coords, 5, 5, 0, 2)).toBe(false);
+  });
+});
