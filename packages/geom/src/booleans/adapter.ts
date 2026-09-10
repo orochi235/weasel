@@ -18,7 +18,8 @@
  * rule is suspended — it is the third-party clipper's required API.
  */
 import { PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z } from '../commands';
-import { flattenCubic, elevateQuadraticToCubic } from '../curve';
+import { elevateQuadraticToCubic } from '../curve';
+import { flattenCubic } from '../flatten';
 
 /** Minimal path input: a rect or a polygon command stream. geom does not
  *  import @weasel-js/core's `Path`; the kit maps `Path` onto this shape. */
@@ -130,27 +131,38 @@ export function pathToMultiPolygon(
   finalizeCurrent();
 
   if (rings.length === 0) return [];
-  return nestRings(rings, path.fillRule ?? 'nonzero');
+  return groupRings(rings, path.fillRule ?? 'nonzero');
 }
 
-/** Twice the signed area of a closed ring. Positive and negative encode the
- *  two winding directions; the factor of two is irrelevant to both uses
- *  (sign, and comparison against zero). */
-function doubleSignedArea(ring: Ring): number {
+/** Shoelace area of a closed ring. Sign gives the winding direction. */
+function ringSignedArea(ring: Ring): number {
   let a = 0;
   for (let i = 0, n = ring.length - 1; i < n; i++) {
     a += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1];
   }
-  return a;
+  return a * 0.5;
 }
 
-/** Even-odd ray cast of `(px, py)` against a closed ring. */
+type RingBox = [number, number, number, number];
+
+function ringBox(ring: Ring): RingBox {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const [x, y] of ring) {
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
+  }
+  return [minX, minY, maxX, maxY];
+}
+
+/** Even-odd ray cast; used only to decide ring nesting, never to fill. */
 function pointInRing(ring: Ring, px: number, py: number): boolean {
   let inside = false;
-  for (let i = 0, j = ring.length - 2, n = ring.length - 1; i < n; j = i++) {
-    const [xi, yi] = ring[i];
-    const [xj, yj] = ring[j];
-    if ((yi > py) !== (yj > py) && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) {
+  for (let i = 0, n = ring.length - 1; i < n; i++) {
+    const [ax, ay] = ring[i];
+    const [bx, by] = ring[i + 1];
+    if ((ay > py) !== (by > py) && px < ((bx - ax) * (py - ay)) / (by - ay) + ax) {
       inside = !inside;
     }
   }
@@ -158,48 +170,77 @@ function pointInRing(ring: Ring, px: number, py: number): boolean {
 }
 
 /**
- * Group a path's rings into `polygon-clipping` polygons — one filled outer
- * ring followed by the hole rings immediately inside it.
+ * Nesting test by majority vote over three sample vertices — a single sample
+ * gives the wrong answer whenever it lands exactly on the outer ring.
+ */
+function ringContains(outer: Ring, outerBox: RingBox, inner: Ring, innerBox: RingBox): boolean {
+  if (innerBox[0] < outerBox[0] || innerBox[1] < outerBox[1]
+    || innerBox[2] > outerBox[2] || innerBox[3] > outerBox[3]) return false;
+  const n = inner.length - 1;
+  let votes = 0;
+  for (const k of [0, Math.floor(n / 3), Math.floor((2 * n) / 3)]) {
+    if (pointInRing(outer, inner[k][0], inner[k][1])) votes++;
+  }
+  return votes >= 2;
+}
+
+/**
+ * Resolve rings into `polygon-clipping` polygons (outer ring first, hole
+ * rings after) by nesting depth and `fillRule`.
  *
  * Without this a path's own holes are lost: separate polygons in a
  * MultiPolygon are unioned, so a donut arrives at the clipper as a solid disc.
  *
- * Containment is probed from the midpoint of each ring's first edge rather
- * than from a vertex — a shared vertex between a hole and its container is
- * common, and a probe point sitting exactly on the tested boundary answers
- * arbitrarily.
+ * Rings that bound no boundary of the filled region — a same-winding ring
+ * nested inside a nonzero fill — are dropped; they contribute nothing.
  */
-function nestRings(rings: Ring[], fillRule: 'nonzero' | 'evenodd'): MultiPolygon {
+function groupRings(rings: Ring[], fillRule: 'nonzero' | 'evenodd'): MultiPolygon {
   const n = rings.length;
   if (n === 1) return [[rings[0]]];
 
-  const areas = rings.map(doubleSignedArea);
-  const probes = rings.map((r): Pair => [(r[0][0] + r[1][0]) / 2, (r[0][1] + r[1][1]) / 2]);
+  const boxes = rings.map(ringBox);
+  const orient = rings.map((r) => (ringSignedArea(r) >= 0 ? 1 : -1));
+  const parent = new Array<number>(n).fill(-1);
+  const children: number[][] = rings.map(() => []);
 
-  // containers[i] — indices of the rings that enclose ring i.
-  const containers: number[][] = rings.map(() => []);
   for (let i = 0; i < n; i++) {
+    let best = -1;
+    let bestArea = Infinity;
     for (let j = 0; j < n; j++) {
-      if (i !== j && pointInRing(rings[j], probes[i][0], probes[i][1])) containers[i].push(j);
+      if (i === j) continue;
+      if (!ringContains(rings[j], boxes[j], rings[i], boxes[i])) continue;
+      const area = (boxes[j][2] - boxes[j][0]) * (boxes[j][3] - boxes[j][1]);
+      if (area < bestArea) { bestArea = area; best = j; }
     }
+    parent[i] = best;
   }
+  for (let i = 0; i < n; i++) if (parent[i] >= 0) children[parent[i]].push(i);
 
-  const filled = rings.map((_, i) => {
-    if (fillRule === 'evenodd') return containers[i].length % 2 === 0;
-    let winding = Math.sign(areas[i]);
-    for (const j of containers[i]) winding += Math.sign(areas[j]);
-    return winding !== 0;
-  });
+  const filled = new Array<boolean>(n);
+  for (let i = 0; i < n; i++) {
+    let depth = 0;
+    let winding = 0;
+    for (let a: number = i; a >= 0; a = parent[a]) {
+      winding += orient[a];
+      if (a !== i) depth++;
+    }
+    filled[i] = fillRule === 'evenodd' ? depth % 2 === 0 : winding !== 0;
+  }
 
   const out: MultiPolygon = [];
   for (let i = 0; i < n; i++) {
     if (!filled[i]) continue;
-    const poly: Polygon = [rings[i]];
-    for (let k = 0; k < n; k++) {
-      if (filled[k] || containers[k].length !== containers[i].length + 1) continue;
-      if (containers[k].includes(i)) poly.push(rings[k]);
+    if (parent[i] >= 0 && filled[parent[i]]) continue;
+    const polygon: Polygon = [rings[i]];
+    const queue = [...children[i]];
+    while (queue.length > 0) {
+      const c = queue.pop() as number;
+      // An unfilled child bounds a hole; a filled one merges into this
+      // region, so its own children are what may punch holes in it.
+      if (filled[c]) queue.push(...children[c]);
+      else polygon.push(rings[c]);
     }
-    out.push(poly);
+    out.push(polygon);
   }
   return out;
 }

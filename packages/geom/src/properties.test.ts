@@ -3,7 +3,8 @@
  * cheap; the seed is fixed so a failure reproduces exactly.
  */
 import { describe, it, expect } from 'vitest';
-import { cubicBounds, cubicEvalAt, flattenCubic, elevateQuadraticToCubic } from './curve';
+import { cubicBounds, cubicEvalAt, elevateQuadraticToCubic } from './curve';
+import { flattenCubic } from './flatten';
 import { identity, invert, multiply, applyToPoint, rotateAboutPoint, boxToBox } from './mat3';
 import { approxEq } from './scalar';
 import { boundsOfCoords, boxContainsPoint } from './box';
