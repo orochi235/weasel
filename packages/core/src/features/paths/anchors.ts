@@ -10,6 +10,7 @@
  */
 
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, type Path, type PolygonPath } from './types';
+import { forEachSegment } from '@weasel-js/geom';
 import { cubicPointAt } from './cubicMath';
 import { PathBuilder } from './builder';
 
@@ -39,43 +40,36 @@ export function pathToAnchors(
   const anchors: PenAnchor[][] = [];
   const closed: boolean[] = [];
   let current: PenAnchor[] | null = null;
-  let ci = 0;
 
-  for (let i = 0; i < commands.length; i++) {
-    const cmd = commands[i];
+  forEachSegment(commands, coords, (cmd, ci) => {
     switch (cmd) {
       case PATH_M: {
         if (current) { anchors.push(current); closed.push(false); }
         current = [{ x: coords[ci], y: coords[ci + 1] }];
-        ci += 2;
         break;
       }
       case PATH_L: {
         if (!current) throw new Error('pathToAnchors: L without prior M');
         current.push({ x: coords[ci], y: coords[ci + 1] });
-        ci += 2;
         break;
       }
       case PATH_C: {
         if (!current) throw new Error('pathToAnchors: C without prior M');
-        const x1 = coords[ci],     y1 = coords[ci + 1];
-        const x2 = coords[ci + 2], y2 = coords[ci + 3];
-        const x3 = coords[ci + 4], y3 = coords[ci + 5];
         const prev = current[current.length - 1];
-        prev.outHandle = { x: x1, y: y1 };
-        current.push({ x: x3, y: y3, inHandle: { x: x2, y: y2 } });
-        ci += 6;
+        prev.outHandle = { x: coords[ci], y: coords[ci + 1] };
+        current.push({
+          x: coords[ci + 4], y: coords[ci + 5],
+          inHandle: { x: coords[ci + 2], y: coords[ci + 3] },
+        });
         break;
       }
       case PATH_Q: {
         if (!current) throw new Error('pathToAnchors: Q without prior M');
-        const x1 = coords[ci],     y1 = coords[ci + 1];
-        const x2 = coords[ci + 2], y2 = coords[ci + 3];
         // Quadratic → cubic: handle is the same control point on both sides.
+        const handle = { x: coords[ci], y: coords[ci + 1] };
         const prev = current[current.length - 1];
-        prev.outHandle = { x: x1, y: y1 };
-        current.push({ x: x2, y: y2, inHandle: { x: x1, y: y1 } });
-        ci += 4;
+        prev.outHandle = handle;
+        current.push({ x: coords[ci + 2], y: coords[ci + 3], inHandle: { ...handle } });
         break;
       }
       case PATH_Z: {
@@ -85,7 +79,7 @@ export function pathToAnchors(
       default:
         throw new Error(`pathToAnchors: unknown command ${cmd}`);
     }
-  }
+  });
   if (current) { anchors.push(current); closed.push(false); }
   return { anchors, closed };
 }
