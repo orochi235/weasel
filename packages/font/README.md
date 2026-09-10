@@ -15,7 +15,7 @@ no glyphs at all.
 | `registerFont` | The registry, variant resolution, texture upload |
 | `dynamic/` | Runtime canvas-SDF rasterization for glyphs with no baked atlas |
 | `textureSink` | The `GlyphTextureSink` seam — the renderer injects GL texture upload, so this package never imports one |
-| `textSdf` | Shader source for the SDF text program |
+| `textSdf` | The GLSL that turns an atlas sample into glyph coverage, for the renderer's batch program to paste in |
 
 ## Fallback
 

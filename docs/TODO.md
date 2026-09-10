@@ -1585,6 +1585,40 @@ one dead `const` and four stale disable directives.
   per-command opacity ride the vertices, and as of the slot work below so does
   the bitmap, up to seven of them.
 
+  Text joined that batch on 2026-09-09. Glyphs, the rules under underlined
+  words and tessellated glyph outlines all stage alongside the geometry around
+  them, so a captioned thumbnail is one draw where the caption used to cost two
+  — and `dispatch` no longer flushes ahead of a text command whether or not it
+  draws anything. The batch shader carries the glyph math behind a paint mode
+  and runs it on *every* fragment, glyph or not: `fwidth` in non-uniform control
+  flow is undefined, so the derivative has to be taken before anything selects
+  on the mode. That is 1.4% of a fragment that is not a glyph
+  (`tests/perf/fill-rate.spec.ts`), and fill is not what a wall is bound by.
+
+  **The cost of folding text in was the vertex, and packing is what paid it.**
+  The first cut gave the vertex a paint mode and a bold threshold of its own,
+  and that measured 9% slower at the densest wall rung — 1.78 ms against 1.63
+  for 7,500 commands, ABBA in one sitting, with the pure-rect column showing the
+  same shape. The batch exists to make one buffer write a frame cheap, so a
+  float only glyphs read still widens the write for every rect and quad beside
+  them. Slot and mode are both small enumerations, so `slot + 8 * mode` fits in
+  the float `a_texSlot` already was; the threshold went back to a uniform, which
+  breaks a run where a faked bold meets text that is not. Re-measured the same
+  way, the rect column is at parity (0.56 / 0.57 against 0.53 / 0.57) and
+  wall-1x sits a few percent above baseline, inside the spread each variant
+  showed against itself.
+
+  What a run no longer breaks on: a second text color in a paragraph, a
+  decoration whose fill differs from its glyphs, and the difference between a
+  baked MSDF atlas and the runtime canvas bake. A font atlas takes a texture
+  slot in the same list bitmaps take, so seven textures in a run is now seven of
+  either kind.
+
+  **Gradients are what is left.** They still bind a ramp per draw and still
+  break a run at every gradient fill. Ramps are 1D and atlas into rows of one
+  texture — step 4 of
+  `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`.
+
   Solid geometry and image quads share that batch as of 2026-09-09
   (`renderer/drawBatch.ts`). They used to be exclusive — staging a solid
   drained the image run and staging an image drained the solid one — so a wall

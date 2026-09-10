@@ -1,34 +1,32 @@
-# Handoff — text and gradients into the shared batch
+# Handoff — gradients into the shared batch
 
 **Branch:** `main`. Everything is committed and unpushed; run
 `git log --oneline @{u}..HEAD` to see what has not left the machine.
 
 ## Where it stands
 
-The renderer's draw-coalescing arc has one piece left in each of two paints.
+The renderer's draw-coalescing arc has one paint left.
 `docs/TODO.md`'s **"(P2) Per-command draw cost"** entry is the live record of
 the whole arc — read it first, not this file, for what has landed.
 
-Solid geometry, image quads and up to seven distinct bitmaps now share one
-draw. Text and gradients still take their own program, and so still break a run
-at every label and every gradient fill.
+Solid geometry, image quads, up to seven distinct textures, and text now share
+one draw. Gradients still bind a ramp per draw, and so still break a run at
+every gradient fill.
 
-**Next: text.** The question of whether it can share the batch program was open
-in `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md` and is now
-answered there — it branches, it does not stay separate. A merged program must
-run the glyph math on every fragment, because `fwidth` inside non-uniform
-control flow is undefined and the derivative has to be taken before anything
-selects on paint mode. That costs 1.4% of a fragment that is not a glyph,
-measured head to head at 432M fragments a frame by
-`tests/perf/fill-rate.spec.ts` — an upper bound of the right order, not a
-figure: the box was carrying a load average around 8, which is what that run's
-45% spread was. The decision needs only that the cost is small. So the cost is not the fragment; it is the
-vertex, which grows a paint mode and a bold threshold.
-
-**Then: gradients**, via a ramp atlas — ramps are 1D and atlas into rows of one
-texture. Step 4 of the same spec.
+**Next: gradients**, via a ramp atlas — ramps are 1D and atlas into rows of one
+texture, which is what would let a gradient take a slot the way a bitmap and a
+font atlas already do. Step 4 of
+`docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`.
 
 ## Decisions made in conversation that the code does not explain
+
+**The batch vertex is the thing to protect, and it is full.** Text's paint mode
+only fits because it packs into `a_texSlot` beside the slot index; carrying it
+as a float of its own measured 9% slower at the densest rung of the atlas wall,
+on the pure-rect column as much as anywhere. Anything gradients want per vertex
+has to earn its width the same way, and a uniform that breaks the run is the
+cheaper answer whenever the thing that varies is rare — which is why the
+synthetic-bold threshold stayed one.
 
 **The measurement instrument was the hard part, and its corrections are in
 `fill-rate.spec.ts`'s comments because they will be re-derived otherwise.**
@@ -41,22 +39,34 @@ reads as that variant being faster.
 
 **Do not compare a perf number against one recorded on another day.** The same
 unchanged tree measured 1.85 ms where `docs/TODO.md` records 1.50 for the same
-rung. Always take the A/B back to back in one sitting, and quote the pair.
+rung. Always take the A/B back to back in one sitting, and quote the pair. A
+worktree at the parent commit is how: `git worktree add <dir> HEAD~1`, then run
+the same spec in each.
 
 **`tests/visual/batch-pixels.spec.ts` exists because no screenshot can see a
 batched run's composition** — the atlas quad covers the ground rect it
 corrupted. Anything that changes what shares a draw needs a probe on a pixel
-the covering command does not cover. This is also in `CLAUDE.md`'s Traps.
+the covering command does *not* cover. Its label cases fail on a shader that
+multiplies a glyph's distance-field texel into its color, which is the naive
+version of the merge and was checked by writing it. This is also in
+`CLAUDE.md`'s Traps.
 
-**Seven bitmaps, not more, and the white texel owns slot 0.** WebGL2 guarantees
+**Seven textures, not more, and the white texel owns slot 0.** WebGL2 guarantees
 16 fragment texture units, so eight is safe without a `getParameter` — which
 the GL recorder would answer with a recording function rather than a number.
 Slot 0 is reserved so a solid's `texture() * a_vertexColor` is exactly the
 vertex color whatever else joins its run; that is the invariant the tint bug
-broke.
+broke. Bitmaps and font atlases share the seven above it.
 
 **A bitmap wanted at two MAG_FILTERs still breaks the run.** That is state on
-the texture object, not on the unit, so no number of slots fixes it.
+the texture object, not on the unit, so no number of slots fixes it. A font
+atlas has no such quarrel — `GLTextureCache` owns its filtering, and must keep
+owning it, since filtering a distance field destroys it.
+
+**`useProgram` no longer names a tier.** One program draws every tier, so the
+tests that used to ask which was bound read the paint mode off the staged
+vertices instead. That is the better proxy anyway: it says what the shader will
+do rather than which object was bound.
 
 ## Verifying
 

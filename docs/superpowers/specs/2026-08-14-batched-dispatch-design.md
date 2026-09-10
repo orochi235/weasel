@@ -17,7 +17,8 @@ have landed. Read it before touching `renderer/draw.ts`,
 
 ## Status
 
-Steps 0–3 landed. **This file stops there and is not the current record.** The
+Steps 0–3 landed, and step 4's text half with them; gradients are what is left
+of it. **This file stops there and is not the current record.** The
 flush work it describes as open was finished afterwards — the solid batch cycles
 a buffer ring instead of rewriting one pair (`12303bc0`) and skips uploads the
 GPU already has (`da7c1505`), taking a solid boundary from 27 us to 2.5 us.
@@ -179,36 +180,34 @@ Ramps are 1D and atlas into rows of one texture; images go in a texture array;
 paint parameters ride per-vertex. Then a frame is one program and near-one draw.
 This is a paint-path rewrite — the direction, not a next step.
 
-**Text branches; it does not stay separate.** That was the open question here,
-and it is now answered by measurement rather than by argument. A merged program
-has to run the glyph math — a median across three channels, `fwidth`, a
+**Text branched, and landed on 2026-09-09.** It does not stay separate: the
+batch shader runs the glyph math — a median across three channels, `fwidth`, a
 smoothstep — on *every* fragment, because `fwidth` inside non-uniform control
 flow is undefined and the derivative must be taken before anything selects on
 paint mode. Priced head to head at 432M fragments a frame
-(`tests/perf/fill-rate.spec.ts`), that costs **1.4%** of a fragment that is not
-a glyph, and fill is not what a wall is bound by.
+(`tests/perf/fill-rate.spec.ts`) that is 1.4% of a fragment that is not a glyph,
+on a box carrying a load average around 8 — an upper bound of the right order
+rather than a figure, and the decision only needed the cost to be small.
 
-Treat that as an upper bound of the right order rather than a figure. It is the
-ratio of the two variants' fastest samples, taken on a box carrying a load
-average around 8 — which is what the 45% spread and the steady downward drift
-across the run actually were. The decision only needs the cost to be small, and
-a contended box inflates both variants, so the direction is safe; re-run it on
-an idle machine before quoting the number anywhere it matters. So the cost of folding text in
-is not the fragment; it is the vertex, which grows by a paint mode and a bold
-threshold.
+The cost that turned out to matter was the vertex, and it is paid rather than
+absorbed: a paint mode carried as a float of its own measured 9% slower at the
+densest rung of `tests/perf/atlas-wall.spec.ts`. Slot and mode are both small
+enumerations, so they share `a_texSlot` as `slot + 8 * mode`, and the
+synthetic-bold threshold stayed a uniform — which breaks a run where a faked
+bold meets text that is not. `docs/TODO.md` carries the numbers.
 
-Traps:
+Traps, all of which held:
 
 - **Never mipmap the MSDF atlas.** Filtering a distance field destroys it. Keep
   the text atlas out of any shared image atlas rather than trusting a flag on
   `GLTextureCache`.
-- Two sampling maths, not one: `textSdf` takes the median of RGB and
-  `textSdfR8` reads `.r`. Both are cheap and both are derivative-dependent, so
-  a merged shader computes the one its paint mode names and takes `fwidth` of
-  the result — outside any branch.
+- Two sampling maths, not one: an MSDF atlas takes the median of RGB and the
+  runtime canvas bake reads `.r`. Both are cheap and both are
+  derivative-dependent, so the merged shader selects between them with a `mix`
+  and takes `fwidth` of the result — outside any branch.
 - Synthetic italic already skews on the CPU in `drawText`, and the batch places
-  its own corners, so the skew rides the vertices for free. `u_synthBold`
-  shifts the SDF threshold and has to become a vertex attribute.
+  its own corners, so the skew rides the vertices for free — `pushGlyph` shears
+  them as it places them.
 
 ## Deliberately out of scope
 

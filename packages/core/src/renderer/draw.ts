@@ -123,8 +123,8 @@ export interface DrawContext {
  * Upload the cumulative color matrix from GroupState to a shader's
  * `u_colorMatrix` (mat4) and `u_colorBias` (vec4) uniforms. Splits the 4×5
  * row-major form into a column-major mat4 + vec4 bias. Used by every shader
- * that accepts the group color matrix: pathFill, pathFillVColor, textSdf,
- * imageFill.
+ * that accepts the group color matrix: pathFill, pathFillVColor, imageFill,
+ * batchFill.
  */
 /**
  * Uniform values a program already holds this frame.
