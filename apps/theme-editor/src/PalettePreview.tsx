@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import styles from './PaletteLab.module.css';
+import { PinIcon } from './PinIcon';
 import type { Palette } from './palette/generate';
+import { toLch } from './palette/oklch';
 
 const BAR_HEIGHTS = [0.62, 0.4, 0.78, 0.3, 0.55, 0.72, 0.46, 0.66, 0.35, 0.58, 0.5, 0.7, 0.42, 0.6, 0.33, 0.68];
 
@@ -67,11 +69,27 @@ export function PalettePreview({ palette, surface }: { palette: Palette; surface
         <Stat label="mean chroma" value={stats.meanChroma.toFixed(3)} note="Tailwind 500 is 0.187" />
         <Stat label="chroma spread" value={stats.chromaSpread.toFixed(3)} />
         <Stat label="lightness spread" value={stats.lightnessSpread.toFixed(3)} note="working palettes run 0.14–0.26" />
-        <Stat label="min hue gap" value={`${stats.minHueGap.toFixed(0)}°`} />
+        <Stat
+          label="min hue gap"
+          value={`${stats.minHueGap.toFixed(0)}°`}
+          note={`${(stats.hueFloorShare * 100).toFixed(0)}% of even`}
+        />
         <Stat
           label="min contrast"
           value={stats.minContrast.toFixed(2)}
           tone={stats.minContrast >= 3 ? 'ok' : 'bad'}
+          note="WCAG, lightness only"
+        />
+        <Stat
+          label="min distance"
+          value={stats.minDistance.toFixed(3)}
+          tone={stats.minDistance >= 0.22 ? 'ok' : 'bad'}
+          note="0.22 reads as two colors"
+        />
+        <Stat
+          label="from surface"
+          value={stats.minSurfaceDistance.toFixed(3)}
+          tone={stats.minSurfaceDistance >= 0.25 ? 'ok' : 'bad'}
         />
       </div>
 
@@ -88,11 +106,19 @@ export function PalettePreview({ palette, surface }: { palette: Palette; surface
           <div className={styles.swatches}>
             {swatches.map((s, i) => (
               <div key={s.hex + i} className={styles.swatch}>
-                <div className={styles.chip} style={{ background: s.hex }} title={`${s.name} ${s.hex}`} />
-                <span className={styles.chipName}>
-                  {s.anchored ? '◆ ' : ''}
-                  {s.name}
-                </span>
+                <div
+                  className={s.anchored ? styles.chipPinned : styles.chip}
+                  style={{ background: s.hex }}
+                  title={`${s.name} ${s.hex}${s.anchored ? ' (pinned)' : ''}`}
+                >
+                  {s.anchored && (
+                    <PinIcon
+                      size={12}
+                      className={toLch(s.hex).L > 0.6 ? styles.pinOnLight : styles.pinOnDark}
+                    />
+                  )}
+                </div>
+                <span className={styles.chipName}>{s.name}</span>
               </div>
             ))}
           </div>

@@ -1,4 +1,4 @@
-import { chromaCap, contrast, hueGap, toHex, toLch, type Lch } from './oklch';
+import { chromaCap, contrast, deltaE, hueGap, toHex, toLch, vividAt, type Lch } from './oklch';
 
 /**
  * A hue pinned into the palette with its own lightness.
@@ -12,15 +12,41 @@ export interface Anchor {
   readonly name: string;
   readonly hue: number;
   readonly lightness: number;
+  /**
+   * Absolute chroma. Omitted means "as much as the gamut allows here", which is
+   * what a bright color wants. A muted color has to say so: hue and lightness
+   * alone can only describe vivid colors, so a tan asked for at max chroma
+   * comes back as an amber.
+   */
+  readonly chroma?: number;
 }
 
 /** Every constraint the generator honors. A zero disables the ones that gate. */
 export interface Constraints {
   readonly count: number;
-  /** Minimum degrees between any two hues. 0 disables the check. */
-  readonly minHueGap: number;
-  /** Minimum contrast every swatch must clear against `surface`. 0 disables. */
+  /**
+   * Minimum hue separation, as a share of the even `360 / count` spacing an
+   * ideal set would have. 0 disables the check.
+   *
+   * A share rather than degrees, because absolute degrees mean different things
+   * at different cardinalities: 30 degrees is generous for 8 colors and
+   * impossible for 16, so a floor in degrees silently becomes unsatisfiable as
+   * the set grows.
+   */
+  readonly hueFloor: number;
+  /** Minimum WCAG contrast every swatch must clear against `surface`. 0 disables. */
   readonly minContrast: number;
+  /**
+   * Minimum perceptual distance from `surface`. 0 disables.
+   *
+   * The gate WCAG contrast cannot express. Contrast reads only lightness, so it
+   * scores a vivid yellow on white at 1.2:1 and calls it illegible, when what
+   * separates them is chroma. Gate on this instead of on lightness and a yellow
+   * can be a yellow; gate on contrast alone and the search quietly returns gold.
+   */
+  readonly minSurfaceDistance: number;
+  /** Minimum perceptual distance between any two swatches. 0 disables. */
+  readonly minDistance: number;
   readonly surface: string;
   /** Where `lightnessPull` drags each hue, away from its own chroma peak. */
   readonly lightnessTarget: number;
@@ -47,7 +73,11 @@ export interface Stats {
   readonly chromaSpread: number;
   readonly lightnessSpread: number;
   readonly minHueGap: number;
+  /** The realized floor as a share of even spacing, comparable across sizes. */
+  readonly hueFloorShare: number;
   readonly minContrast: number;
+  readonly minSurfaceDistance: number;
+  readonly minDistance: number;
 }
 
 export interface Palette {
@@ -171,30 +201,51 @@ function farthestFirst(hues: number[]): number[] {
  * around a pinned hue, so with anchors the seeds spread across the arc the
  * anchors leave free instead.
  */
+/** The share-of-even floor, in degrees, for a set of this size. */
+export function floorDegrees(c: Pick<Constraints, 'hueFloor' | 'count'>): number {
+  return c.hueFloor <= 0 ? 0 : (c.hueFloor * 360) / Math.max(1, c.count);
+}
+
 function searchHues(c: Constraints): number[] | null {
+  const minGapDeg = floorDegrees(c);
   const anchorHues = c.anchors.map((a) => a.hue);
-  const anchorHexes = c.anchors.map((a) => toHex(a.lightness, chromaCap(a.lightness, a.hue), a.hue));
+  const anchorHexes = c.anchors.map(toHexPreview);
   const freeCount = c.count - c.anchors.length;
   if (freeCount < 0) return null;
   if (freeCount === 0) return [];
 
   // Hue is an integer 0-359 and the constraints are fixed for one call, so the
   // placed color, its realized hue and its contrast are each computed once.
-  const placed = new Map<number, { hex: string; hue: number; contrast: number; chroma: number }>();
+  const placed = new Map<
+    number,
+    { hex: string; hue: number; contrast: number; chroma: number; surfaceDistance: number }
+  >();
   const at = (H: number) => {
     const key = ((Math.round(H) % 360) + 360) % 360;
     let v = placed.get(key);
     if (!v) {
       const hex = place(key, c);
       const lch = toLch(hex);
-      v = { hex, hue: lch.H, contrast: contrast(hex, c.surface), chroma: lch.C };
+      v = {
+        hex,
+        hue: lch.H,
+        contrast: contrast(hex, c.surface),
+        chroma: lch.C,
+        surfaceDistance: deltaE(hex, c.surface),
+      };
       placed.set(key, v);
     }
     return v;
   };
   const anchorMeta = anchorHexes.map((hex) => {
     const lch = toLch(hex);
-    return { hex, hue: lch.H, contrast: contrast(hex, c.surface), chroma: lch.C };
+    return {
+      hex,
+      hue: lch.H,
+      contrast: contrast(hex, c.surface),
+      chroma: lch.C,
+      surfaceDistance: deltaE(hex, c.surface),
+    };
   });
   const metaFor = (free: number[]) => [...anchorMeta, ...free.map(at)];
 
@@ -207,10 +258,10 @@ function searchHues(c: Constraints): number[] | null {
   const penalty = (free: number[]): number => {
     const m = metaFor(free);
     let p = 0;
-    if (c.minHueGap > 0) {
+    if (minGapDeg > 0) {
       for (let i = 0; i < m.length; i += 1) {
         for (let j = i + 1; j < m.length; j += 1) {
-          const short = c.minHueGap - hueGap(m[i].hue, m[j].hue);
+          const short = minGapDeg - hueGap(m[i].hue, m[j].hue);
           if (short > 0) p += short;
         }
       }
@@ -219,6 +270,22 @@ function searchHues(c: Constraints): number[] | null {
       for (const x of m) {
         const short = c.minContrast - x.contrast;
         if (short > 0) p += short * 40;
+      }
+    }
+    // Distances are small numbers in OKLab (0.10 already reads as two colors),
+    // so they are weighted up to sit on the same scale as degrees of crowding.
+    if (c.minSurfaceDistance > 0) {
+      for (const x of m) {
+        const short = c.minSurfaceDistance - x.surfaceDistance;
+        if (short > 0) p += short * 400;
+      }
+    }
+    if (c.minDistance > 0) {
+      for (let i = 0; i < m.length; i += 1) {
+        for (let j = i + 1; j < m.length; j += 1) {
+          const short = c.minDistance - deltaE(m[i].hex, m[j].hex);
+          if (short > 0) p += short * 400;
+        }
       }
     }
     return p;
@@ -236,12 +303,12 @@ function searchHues(c: Constraints): number[] | null {
     // A uniform ring can never open a 2 * minHueGap hole around a pinned hue,
     // so also seed across the arc the anchors leave free.
     const base = anchorHues[0];
-    const span = 360 - 2 * Math.max(c.minHueGap, 1);
+    const span = 360 - 2 * Math.max(minGapDeg, 1);
     for (let jitter = -8; jitter <= 8; jitter += 2) {
       for (const divisor of [Math.max(1, freeCount - 1), freeCount]) {
         seeds.push(
           Array.from({ length: freeCount }, (_, i) =>
-            Math.round((((base + c.minHueGap + jitter + (i * span) / divisor) % 360) + 360) % 360),
+            Math.round((((base + minGapDeg + jitter + (i * span) / divisor) % 360) + 360) % 360),
           ),
         );
       }
@@ -287,6 +354,16 @@ function searchHues(c: Constraints): number[] | null {
   return best;
 }
 
+/** Closest any two colors in the set look. */
+function pairwiseMin(hexes: string[]): number {
+  if (hexes.length < 2) return 1;
+  let min = Infinity;
+  for (let i = 0; i < hexes.length; i += 1) {
+    for (let j = i + 1; j < hexes.length; j += 1) min = Math.min(min, deltaE(hexes[i], hexes[j]));
+  }
+  return min;
+}
+
 function summarize(swatches: Swatch[], surface: string): Stats {
   const cs = swatches.map((s) => s.lch.C);
   const ls = swatches.map((s) => s.lch.L);
@@ -301,7 +378,10 @@ function summarize(swatches: Swatch[], surface: string): Stats {
     chromaSpread: Math.max(...cs) - Math.min(...cs),
     lightnessSpread: Math.max(...ls) - Math.min(...ls),
     minHueGap: swatches.length > 1 ? gap : 360,
+    hueFloorShare: swatches.length > 1 ? (gap * swatches.length) / 360 : 1,
     minContrast: Math.min(...swatches.map((s) => contrast(s.hex, surface))),
+    minSurfaceDistance: Math.min(...swatches.map((s) => deltaE(s.hex, surface))),
+    minDistance: pairwiseMin(swatches.map((s) => s.hex)),
   };
 }
 
@@ -318,7 +398,7 @@ export function generate(c: Constraints): Palette {
   const hues = [...c.anchors.map((a) => a.hue), ...free];
   const anchoredFlags = [...c.anchors.map(() => true), ...free.map(() => false)];
   const raw = [
-    ...c.anchors.map((a) => toHex(a.lightness, chromaCap(a.lightness, a.hue), a.hue)),
+    ...c.anchors.map(toHexPreview),
     ...free.map((h) => place(h, c)),
   ];
   const hexes = equalizeChroma(raw, c.equalize, anchoredFlags);
@@ -343,13 +423,15 @@ export function generate(c: Constraints): Palette {
 /** What the lab opens with: the set this palette work landed on. */
 export const DEFAULT_CONSTRAINTS: Constraints = {
   count: 10,
-  minHueGap: 32,
+  hueFloor: 0.9,
   minContrast: 4,
   surface: '#181a1e',
   lightnessTarget: 0.72,
   lightnessPull: 0.4,
   chromaFraction: 0.95,
   equalize: 0,
+  minSurfaceDistance: 0.25,
+  minDistance: 0.22,
   anchors: [],
   order: 'farthest',
 };
@@ -361,29 +443,129 @@ export const DEFAULT_CONSTRAINTS: Constraints = {
  * have chosen its lightness.
  */
 /** The color an anchor will actually contribute, for a swatch beside its controls. */
-export function toHexPreview(a: Pick<Anchor, 'hue' | 'lightness'>): string {
-  return toHex(a.lightness, chromaCap(a.lightness, a.hue), a.hue);
+export function toHexPreview(a: Pick<Anchor, 'hue' | 'lightness' | 'chroma'>): string {
+  const cap = chromaCap(a.lightness, a.hue);
+  return toHex(a.lightness, a.chroma === undefined ? cap : Math.min(a.chroma, cap), a.hue);
 }
 
 export function anchorFromHex(hex: string, name?: string): Anchor {
-  const { L, H } = toLch(hex);
-  return { name: name ?? hueName(H), hue: Math.round(H), lightness: Number(L.toFixed(3)) };
+  const { L, C, H } = toLch(hex);
+  return {
+    name: name ?? hueName(H),
+    hue: Math.round(H),
+    lightness: Number(L.toFixed(3)),
+    chroma: Number(C.toFixed(4)),
+  };
 }
 
 /**
- * Anchors worth reaching for, and why each one needs pinning.
+ * Named colors, each declared as a hue and a lightness — never as a hex.
  *
- * Yellow is the sharpest case — its chroma peaks at L 0.95, higher than any
- * other hue, so a lightness law chosen for legibility yields gold and reports
- * nothing. The others are hues whose peak sits far enough from a mid-range
- * target that the law meaningfully changes what you get.
+ * The color is the most chroma the sRGB gamut allows at that hue and lightness,
+ * which is what "a bright crayon" means. So the two numbers in the row are the
+ * two numbers worth arguing about, and nothing can be typed slightly wrong.
+ *
+ * Names matter because a palette's job is to identify things to a person:
+ * "the turquoise one" is something one person can say to another about a
+ * picture, and `#3ee1cb` is not.
  */
-export const SUGGESTED_ANCHORS: readonly (Anchor & { note: string })[] = [
-  { name: 'yellow', hue: 110, lightness: 0.88, note: 'Only reads as yellow above L 0.86.' },
-  { name: 'lime', hue: 128, lightness: 0.86, note: 'Peaks at L 0.91; a mid-range law gives olive.' },
-  { name: 'red', hue: 25, lightness: 0.63, note: 'Peaks low, at L 0.64.' },
-  { name: 'violet', hue: 292, lightness: 0.53, note: 'Peaks lowest of all, at L 0.51.' },
-  { name: 'cyan', hue: 205, lightness: 0.83, note: 'Thin gamut; wants its peak or it goes gray.' },
+export const CRAYONS: Readonly<
+  Record<string, readonly [hue: number, lightness: number, chromaFraction?: number]>
+> = {
+  // reds and pinks
+  crimson: [18, 0.58],
+  red: [28, 0.63],
+  coral: [24, 0.72, 0.75],
+  salmon: [26, 0.78, 0.55],
+  rose: [0, 0.66],
+  pink: [354, 0.75, 0.55],
+  magenta: [340, 0.68],
+  fuchsia: [328, 0.70],
+
+  // oranges and yellows
+  vermilion: [40, 0.66],
+  orange: [55, 0.72],
+  tangerine: [62, 0.76],
+  amber: [72, 0.78],
+  gold: [88, 0.82],
+  yellow: [110, 0.90],
+
+  // greens
+  lime: [128, 0.88],
+  green: [145, 0.80],
+  grass: [150, 0.72],
+  forest: [152, 0.55],
+  emerald: [162, 0.74],
+  mint: [168, 0.88, 0.55],
+  teal: [182, 0.78],
+
+  // blues and cyans
+  turquoise: [192, 0.82],
+  cyan: [205, 0.83],
+  sky: [228, 0.80, 0.70],
+  azure: [240, 0.72],
+  blue: [258, 0.62],
+  cobalt: [264, 0.55],
+  navy: [266, 0.42, 0.85],
+  periwinkle: [274, 0.76, 0.55],
+
+  // purples
+  indigo: [284, 0.48],
+  violet: [292, 0.55],
+  purple: [305, 0.52],
+  orchid: [312, 0.72],
+  lavender: [300, 0.82, 0.45],
+  plum: [330, 0.50, 0.60],
+
+  // browns and earth
+  maroon: [20, 0.42, 0.70],
+  brick: [30, 0.50, 0.65],
+  rust: [44, 0.55, 0.70],
+  brown: [55, 0.48, 0.50],
+  cocoa: [58, 0.38, 0.45],
+  tan: [70, 0.74, 0.30],
+  khaki: [96, 0.72, 0.32],
+  olive: [110, 0.55, 0.55],
+  moss: [130, 0.58, 0.45],
+  slate: [240, 0.58, 0.18],
+};
+
+export type CrayonName = keyof typeof CRAYONS;
+
+/** The color a named crayon resolves to. */
+export function crayonHex(name: string): string {
+  const row = CRAYONS[name];
+  if (!row) return '#000000';
+  const [hue, lightness, fraction] = row;
+  return fraction === undefined
+    ? vividAt(lightness, hue)
+    : toHex(lightness, chromaCap(lightness, hue) * fraction, hue);
+}
+
+export function crayonAnchor(name: string): Anchor {
+  const row = CRAYONS[name];
+  if (!row) return { name, hue: 0, lightness: 0.6 };
+  const [hue, lightness, fraction] = row;
+  return {
+    name,
+    hue,
+    lightness,
+    chroma: fraction === undefined ? undefined : chromaCap(lightness, hue) * fraction,
+  };
+}
+
+/**
+ * The handful worth reaching for first, and why each needs pinning at all:
+ * every one of these sits far enough from a mid-range lightness target that the
+ * law would otherwise hand back a different color than its name.
+ */
+export const SUGGESTED_ANCHORS: readonly { name: CrayonName; note: string }[] = [
+  { name: 'yellow', note: 'Chroma peaks near L 0.95 — below 0.86 it reads gold.' },
+  { name: 'lime', note: 'Peaks around L 0.91; a mid-range law gives olive.' },
+  { name: 'red', note: 'Peaks low, near L 0.64.' },
+  { name: 'violet', note: 'Peaks lowest of all, near L 0.51.' },
+  { name: 'cyan', note: 'Thin gamut — wants its peak or it goes gray.' },
+  { name: 'navy', note: 'Dark by definition; any lightness law lifts it.' },
 ];
 
-export const YELLOW_ANCHOR: Anchor = SUGGESTED_ANCHORS[0];
+export const YELLOW_ANCHOR: Anchor = crayonAnchor('yellow');

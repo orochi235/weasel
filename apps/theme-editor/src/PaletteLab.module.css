@@ -196,7 +196,11 @@
 
 .anchorName {
   flex: 1;
+  min-width: 0;
   font-size: var(--wzl-font-size-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .anchorRemove {
@@ -291,4 +295,102 @@
   color: var(--wzl-fg);
   font-size: var(--wzl-font-size-sm);
   line-height: var(--wzl-leading);
+}
+
+/* A pinned swatch squares off; the generated ones stay rounded. The corner is
+   the difference you can see across the whole row without reading anything. */
+.chipPinned {
+  composes: chip;
+  border-radius: 0;
+}
+
+.pinOnLight {
+  color: rgb(0 0 0 / 0.62);
+}
+
+.pinOnDark {
+  color: rgb(255 255 255 / 0.78);
+}
+
+.chip,
+.chipPinned {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 3px;
+}
+
+.anchorRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-xs);
+  padding: 2px 0;
+}
+
+.anchorField {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.anchorFieldLabel {
+  font-size: var(--wzl-font-size-2xs);
+  color: var(--wzl-fg-subtle);
+}
+
+.anchorNumber {
+  width: 4.4em;
+  appearance: textfield;
+  height: var(--wzl-control-h);
+  padding: 0 var(--wzl-space-xs);
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-sm);
+  font-variant-numeric: tabular-nums;
+  background: var(--wzl-surface-sunken);
+  color: var(--wzl-fg);
+  border: var(--wzl-border-w) solid var(--wzl-border-raised);
+  border-radius: var(--wzl-radius-sm);
+}
+
+/* The spinners cost more width than they buy in a row this tight. */
+.anchorNumber::-webkit-outer-spin-button,
+.anchorNumber::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.anchorX {
+  display: grid;
+  place-items: center;
+  width: var(--wzl-control-h);
+  height: var(--wzl-control-h);
+  flex: none;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: var(--wzl-radius-sm);
+  color: var(--wzl-fg-muted);
+  cursor: pointer;
+}
+
+.anchorX:hover {
+  background: var(--wzl-surface-hover);
+  color: var(--wzl-danger);
+}
+
+.anchorSearch {
+  height: var(--wzl-control-h);
+  padding: 0 var(--wzl-field-pad-x);
+  font: inherit;
+  font-size: var(--wzl-font-size-sm);
+  background: var(--wzl-surface-sunken);
+  color: var(--wzl-fg);
+  border: var(--wzl-border-w) solid var(--wzl-border-raised);
+  border-radius: var(--wzl-radius-sm);
+}
+
+.copy {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-xs);
 }

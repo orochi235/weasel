@@ -4,7 +4,13 @@ import { useMemo, useState } from 'react';
 import styles from './PaletteLab.module.css';
 import { PalettePreview } from './PalettePreview';
 import { AnchorList } from './AnchorList';
-import { DEFAULT_CONSTRAINTS, generate, type Anchor, type Constraints } from './palette/generate';
+import {
+  DEFAULT_CONSTRAINTS,
+  floorDegrees,
+  generate,
+  type Anchor,
+  type Constraints,
+} from './palette/generate';
 
 const SURFACES = { dark: '#181a1e', light: '#f5f5f6' } as const;
 type SurfaceKey = keyof typeof SURFACES;
@@ -77,12 +83,14 @@ export function PaletteLab() {
             <PropertyGroup title="Gates">
               <SliderRow
                 label="Min hue gap"
-                value={c.minHueGap}
+                value={c.hueFloor}
                 min={0}
-                max={45}
-                step={1}
-                onChange={(v) => set('minHueGap', v)}
-                description="0 turns the gate off. Legend matching gets unreliable below 30°."
+                max={1}
+                step={0.01}
+                onChange={(v) => set('hueFloor', v)}
+                format={(v) => ((v * 360) / Math.max(1, c.count)).toFixed(0)}
+                unit={<sup>°</sup>}
+                description={`A share of the even ${(360 / Math.max(1, c.count)).toFixed(1)}° this many colors would get. Held as a share so the floor means the same thing at any count. 0 turns it off.`}
               />
               <SliderRow
                 label="Min contrast"
@@ -91,7 +99,25 @@ export function PaletteLab() {
                 max={7}
                 step={0.1}
                 onChange={(v) => set('minContrast', v)}
-                description="0 turns the gate off. 3:1 is the WCAG floor for graphical objects."
+                description="WCAG, which reads lightness only. 3:1 is its floor for graphical objects. 0 turns it off."
+              />
+              <SliderRow
+                label="From surface"
+                value={c.minSurfaceDistance}
+                min={0}
+                max={0.6}
+                step={0.01}
+                onChange={(v) => set('minSurfaceDistance', v)}
+                description="Perceptual distance from the surface — the gate contrast cannot express, because it counts chroma. This is what lets a yellow stay yellow on paper. 0 turns it off."
+              />
+              <SliderRow
+                label="Between colors"
+                value={c.minDistance}
+                min={0}
+                max={0.4}
+                step={0.01}
+                onChange={(v) => set('minDistance', v)}
+                description="Perceptual distance between any two swatches. Catches the pair that shares a hue gap but still reads alike. 0 turns it off."
               />
             </PropertyGroup>
 
@@ -143,10 +169,10 @@ export function PaletteLab() {
           {!palette.feasible && (
             <p className={styles.infeasible} role="status">
               <strong>No arrangement satisfies these gates.</strong> Showing the closest attempt.{' '}
-              {constraints.count * constraints.minHueGap > 360
-                ? `${constraints.count} hues ${constraints.minHueGap}\u00b0 apart would need ${
-                    constraints.count * constraints.minHueGap
-                  }\u00b0 of circle.`
+              {constraints.count * floorDegrees(constraints) > 360
+                ? `${constraints.count} hues ${floorDegrees(constraints).toFixed(0)}\u00b0 apart would need ${(
+                    constraints.count * floorDegrees(constraints)
+                  ).toFixed(0)}\u00b0 of circle.`
                 : 'Loosen the contrast floor or the hue gap, or ask for fewer colors.'}
             </p>
           )}
