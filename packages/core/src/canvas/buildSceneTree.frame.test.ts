@@ -126,3 +126,24 @@ describe('a frame and the absolute-pose cascade contradict', () => {
     ).not.toThrow();
   });
 });
+
+describe('the clipboard captures a framed root in world coordinates', () => {
+  it('a copied child does not jump by its old parent frame', () => {
+    const scene = makeFrameFixture();
+    const adapter = sceneToAdapter<FrameFixtureData, FrameFixtureLayer, RectPose>(
+      scene, { poseComposition: RIGID_POSE_COMPOSITION },
+    );
+    const snap = adapter.snapshotSelection([FRAME_FIXTURE_IDS.upright]);
+    const item = (snap.items as { id: string; pose: RectPose }[])[0];
+    // Pasting re-roots it, so the captured pose has to be where it was drawn.
+    expectSamePose(item.pose, FRAME_FIXTURE_WORLD.a);
+  });
+
+  it('keeps the stored pose when nothing composes', () => {
+    const scene = makeFrameFixture();
+    const adapter = sceneToAdapter<FrameFixtureData, FrameFixtureLayer, RectPose>(scene, {});
+    const snap = adapter.snapshotSelection([FRAME_FIXTURE_IDS.upright]);
+    const item = (snap.items as { id: string; pose: RectPose }[])[0];
+    expectSamePose(item.pose, FRAME_FIXTURE_LOCAL.a);
+  });
+});

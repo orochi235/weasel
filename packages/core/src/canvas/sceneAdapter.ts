@@ -479,7 +479,14 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       const items: Node<TData, TLayer, TPose>[] = [];
       // DFS from one snapshot root: push the node, then its subtree —
       // parents-before-children, so paste can re-insert in array order.
-      const capture = (id: string): void => {
+      // A snapshot root loses its parent on paste, so under a frame its stored
+      // pose — which is relative to that parent — would land it somewhere else
+      // entirely. Capture roots in world coordinates; descendants keep their
+      // parent, so theirs stay local.
+      const poseFor = (n: Node<TData, TLayer, TPose>, isRoot: boolean): TPose =>
+        isRoot && composes ? adapter.getWorldPose(n.id) : n.pose;
+
+      const capture = (id: string, isRoot = false): void => {
         if (taken.has(id)) return;
         const n = scene.get(asNodeId(id));
         if (!n) return;
@@ -490,7 +497,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
             id: n.id,
             layer: n.layer,
             parent: n.parent,
-            pose: copyField(n.pose),
+            pose: copyField(poseFor(n, isRoot)),
             data: copyField(n.data),
             children: [...n.children],
             ...(n.clipFromPose ? { clipFromPose: n.clipFromPose } : {}),
@@ -502,7 +509,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
             id: n.id,
             layer: n.layer,
             parent: n.parent,
-            pose: copyField(n.pose),
+            pose: copyField(poseFor(n, isRoot)),
             data: copyField(n.data),
           });
         }
@@ -511,7 +518,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         // Dedupe: an id whose ancestor is also selected is already covered
         // by that ancestor's subtree walk.
         if (scene.ancestorsOf(asNodeId(id)).some((a) => idSet.has(a))) continue;
-        capture(id);
+        capture(id, true);
       }
       return { items };
     },
