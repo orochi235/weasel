@@ -455,3 +455,63 @@
   outline: 2px solid var(--wzl-focus-ring);
   outline-offset: 1px;
 }
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wzl-space-sm);
+  padding: var(--wzl-space-sm) var(--wzl-space-md);
+  background: var(--wzl-surface);
+  border: var(--wzl-border-w) solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+}
+
+.presetList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wzl-space-xs);
+  flex: 1;
+  min-width: 0;
+}
+
+.presetChip {
+  display: inline-flex;
+  align-items: stretch;
+  border: var(--wzl-border-w) solid var(--wzl-border-raised);
+  border-radius: var(--wzl-radius-pill);
+  overflow: hidden;
+  background: var(--wzl-surface-raised);
+}
+
+.presetLoad,
+.presetCopy {
+  height: var(--wzl-control-h);
+  border: 0;
+  background: none;
+  color: var(--wzl-fg);
+  font: inherit;
+  font-size: var(--wzl-font-size-sm);
+  cursor: pointer;
+}
+
+.presetLoad {
+  padding: 0 var(--wzl-space-sm);
+}
+
+.presetCopy {
+  width: var(--wzl-control-h);
+  padding: 0;
+  color: var(--wzl-fg-muted);
+  border-left: var(--wzl-border-w) solid var(--wzl-border);
+}
+
+.presetLoad:hover,
+.presetCopy:hover {
+  background: var(--wzl-surface-hover);
+}
+
+.presetSave {
+  display: flex;
+  gap: var(--wzl-space-xs);
+}

@@ -1,32 +1,30 @@
 import { LabShell } from '@weasel-js/labkit';
 import { PropertyPanel, PropertyGroup, SliderRow, ToggleRow } from '@weasel-js/ui';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { PresetBar } from './PresetBar';
+import {
+  INITIAL,
+  loadLive,
+  loadSaved,
+  persistLive,
+  type LabState,
+  type Preset,
+  type SurfaceKey,
+} from './presets';
 import { useLabHistory } from './useLabHistory';
 import styles from './PaletteLab.module.css';
 import { PalettePreview } from './PalettePreview';
 import { AnchorList } from './AnchorList';
-import {
-  DEFAULT_CONSTRAINTS,
-  floorDegrees,
-  generate,
-  type Anchor,
-  type Constraints,
-} from './palette/generate';
+import { floorDegrees, generate, type Anchor, type Constraints } from './palette/generate';
 
-const SURFACES = { dark: '#181a1e', light: '#f5f5f6' } as const;
-type SurfaceKey = keyof typeof SURFACES;
-
-/** Everything one undo step covers. */
-interface LabState {
-  readonly c: Constraints;
-  readonly surfaceKey: SurfaceKey;
-  readonly anchors: readonly Anchor[];
-}
-
-const INITIAL: LabState = { c: DEFAULT_CONSTRAINTS, surfaceKey: 'dark', anchors: [] };
+const SURFACES: Record<SurfaceKey, string> = { dark: '#181a1e', light: '#f5f5f6' };
 
 export function PaletteLab() {
-  const { state, update, undo, redo, canUndo, canRedo } = useLabHistory<LabState>(INITIAL);
+  // Restored once, at mount: an HMR bounce or a reload should not cost the
+  // configuration someone was in the middle of building.
+  const [initial] = useState<LabState>(() => loadLive() ?? INITIAL);
+  const { state, update, undo, redo, canUndo, canRedo } = useLabHistory<LabState>(initial);
+  const [saved, setSaved] = useState<readonly Preset[]>(loadSaved);
   const { c, surfaceKey, anchors } = state;
 
   const set = <K extends keyof Constraints>(key: K, value: Constraints[K]) =>
@@ -40,6 +38,8 @@ export function PaletteLab() {
   );
 
   const palette = useMemo(() => generate(constraints), [constraints]);
+
+  useEffect(() => persistLive(state), [state]);
 
   return (
     <LabShell
@@ -190,6 +190,12 @@ export function PaletteLab() {
         </aside>
 
         <main className={styles.preview}>
+          <PresetBar
+            state={state}
+            saved={saved}
+            onSavedChange={setSaved}
+            onLoad={(next, name) => update(next, `preset:${name}`, `load ${name}`)}
+          />
           {!palette.feasible && (
             <p className={styles.infeasible} role="status">
               <strong>No arrangement satisfies these gates.</strong> Showing the closest attempt.{' '}

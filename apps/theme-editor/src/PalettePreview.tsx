@@ -4,6 +4,31 @@ import { PinIcon } from './PinIcon';
 import type { Palette } from './palette/generate';
 import { toLch } from './palette/oklch';
 
+type Point = readonly [x: number, y: number];
+
+/**
+ * A smooth path through every point, as cubic Béziers.
+ *
+ * Catmull-Rom picks each segment's control points from its neighbours, so the
+ * curve passes through the samples rather than near them and the joins stay
+ * continuous. Endpoints are duplicated to give the first and last segments the
+ * neighbour they lack.
+ */
+function smoothPath(points: readonly Point[]): string {
+  if (points.length < 2) return '';
+  const at = (i: number) => points[Math.max(0, Math.min(points.length - 1, i))];
+  let d = `M${at(0)[0].toFixed(1)},${at(0)[1].toFixed(1)}`;
+  for (let i = 0; i < points.length - 1; i += 1) {
+    const [p0, p1, p2, p3] = [at(i - 1), at(i), at(i + 1), at(i + 2)];
+    const c1x = p1[0] + (p2[0] - p0[0]) / 6;
+    const c1y = p1[1] + (p2[1] - p0[1]) / 6;
+    const c2x = p2[0] - (p3[0] - p1[0]) / 6;
+    const c2y = p2[1] - (p3[1] - p1[1]) / 6;
+    d += ` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
+  return d;
+}
+
 const BAR_HEIGHTS = [0.62, 0.4, 0.78, 0.3, 0.55, 0.72, 0.46, 0.66, 0.35, 0.58, 0.5, 0.7, 0.42, 0.6, 0.33, 0.68];
 
 function Marks({ palette, background }: { palette: Palette; background: string }) {
@@ -30,25 +55,27 @@ function Marks({ palette, background }: { palette: Palette; background: string }
         })}
       </svg>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label="Lines in every palette color">
-        {palette.swatches.map((s, i) => (
-          <polyline
-            key={s.hex + i}
-            points={Array.from({ length: 9 }, (_, k) => {
-              const x = 10 + (k * (W - 20)) / 8;
-              // Phase by i/n, not a fixed step: a constant offset wraps past 2*PI
-              // once the set is large and series start drawing on top of each other.
-              const phase = (i / n) * Math.PI * 2;
-              const amplitude = (H / 2 - 9) * (0.72 + 0.28 * ((i % 3) / 2));
-              const y = H / 2 - amplitude * Math.sin(k * 0.7 + phase);
-              return `${x.toFixed(1)},${y.toFixed(1)}`;
-            }).join(' ')}
-            fill="none"
-            stroke={s.hex}
-            strokeWidth={2}
-            strokeLinecap="round"
-            vectorEffect="non-scaling-stroke"
-          />
-        ))}
+        {palette.swatches.map((s, i) => {
+          // Phase by i/n, not a fixed step: a constant offset wraps past 2*PI
+          // once the set is large and series start drawing on top of each other.
+          const phase = (i / n) * Math.PI * 2;
+          const amplitude = (H / 2 - 9) * (0.72 + 0.28 * ((i % 3) / 2));
+          const points: Point[] = Array.from({ length: 9 }, (_, k) => [
+            10 + (k * (W - 20)) / 8,
+            H / 2 - amplitude * Math.sin(k * 0.7 + phase),
+          ]);
+          return (
+            <path
+              key={s.hex + i}
+              d={smoothPath(points)}
+              fill="none"
+              stroke={s.hex}
+              strokeWidth={2}
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          );
+        })}
       </svg>
     </div>
   );
