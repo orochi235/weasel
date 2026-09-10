@@ -1,20 +1,33 @@
+/* `.lk-shell` is 100vh and `.lk-shell-body` is a bounded block container, so
+   this takes `height: 100%` rather than `flex: 1` — a flex value here resolves
+   against a block parent and collapses. Everything below scrolls in its own
+   pane so the page itself never does. */
+.page {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-md);
+}
+
 .layout {
   display: grid;
   grid-template-columns: 320px minmax(0, 1fr);
   gap: var(--wzl-space-lg);
-  align-items: start;
-  padding: var(--wzl-space-lg);
-  min-height: 100%;
-  overflow: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .controls {
-  position: sticky;
-  top: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .preview {
   min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .previewBody {
@@ -370,6 +383,8 @@
 /* A grid you scan, not a field you type into: 45 colors you would recognize on
    sight, in the table's own family order. */
 .crayonGrid {
+  min-height: 0;
+  overflow-y: auto;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
   gap: 4px;
@@ -514,4 +529,97 @@
 .presetSave {
   display: flex;
   gap: var(--wzl-space-xs);
+}
+
+.swatchPanel {
+  flex: none;
+  max-height: 32vh;
+  display: flex;
+  flex-direction: column;
+  padding: var(--wzl-space-md);
+  background: var(--wzl-surface);
+  border: var(--wzl-border-w) solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+}
+
+.swatchHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-md);
+  margin-bottom: var(--wzl-space-sm);
+  flex-wrap: wrap;
+}
+
+.swatchTabs {
+  display: flex;
+  gap: 2px;
+}
+
+.swatchTab,
+.swatchTabOn {
+  height: var(--wzl-control-h);
+  padding: 0 var(--wzl-space-md);
+  font: inherit;
+  font-size: var(--wzl-font-size-sm);
+  border: var(--wzl-border-w) solid var(--wzl-border-raised);
+  border-radius: var(--wzl-radius-sm);
+  background: var(--wzl-surface-raised);
+  color: var(--wzl-fg-muted);
+  cursor: pointer;
+}
+
+.swatchTabOn {
+  background: var(--wzl-accent);
+  border-color: var(--wzl-accent);
+  color: var(--wzl-fg-on-accent);
+}
+
+.bandControl {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-xs);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+}
+
+.bandControl input {
+  width: 110px;
+}
+
+.bandControl output {
+  font-variant-numeric: tabular-nums;
+  min-width: 2.2em;
+}
+
+.swatchHover {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-subtle);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stub {
+  max-width: 60ch;
+  margin: 0 auto;
+  padding: calc(var(--wzl-space-lg) * 3) var(--wzl-space-lg);
+  color: var(--wzl-fg);
+}
+
+.stub h1 {
+  font-family: var(--wzl-font-display);
+  font-size: var(--wzl-font-size-xl);
+  margin: 0 0 var(--wzl-space-md);
+}
+
+.stub p {
+  color: var(--wzl-fg-muted);
+  line-height: var(--wzl-leading);
+}
+
+.stub a {
+  color: var(--wzl-accent-fg);
 }

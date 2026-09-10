@@ -2,6 +2,7 @@ import { LabShell } from '@weasel-js/labkit';
 import { PropertyPanel, PropertyGroup, SliderRow, ToggleRow } from '@weasel-js/ui';
 import { useEffect, useMemo, useState } from 'react';
 import { PresetBar } from './PresetBar';
+import { SwatchPanel } from './SwatchPanel';
 import {
   INITIAL,
   loadLive,
@@ -99,6 +100,7 @@ export function PaletteLab() {
         </div>
       }
     >
+      <div className={styles.page}>
       <div className={styles.layout}>
         <aside className={styles.controls}>
           <PropertyPanel title="Constraints">
@@ -214,7 +216,7 @@ export function PaletteLab() {
               />
             </PropertyGroup>
 
-            <AnchorList anchors={anchors} onChange={setAnchors} count={c.count} />
+            <AnchorList anchors={anchors} onChange={setAnchors} />
           </PropertyPanel>
         </aside>
 
@@ -233,6 +235,8 @@ export function PaletteLab() {
           )}
           <PalettePreview palette={palette} surface={constraints.surface} />
         </main>
+      </div>
+      <SwatchPanel anchors={anchors} onChange={setAnchors} count={c.count} />
       </div>
     </LabShell>
   );
