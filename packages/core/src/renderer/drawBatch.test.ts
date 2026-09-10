@@ -15,9 +15,9 @@ import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import {
   MAX_VERTICES_PER_BATCH, SOLID_LARGE_RING_SIZE, SOLID_RING_SIZE,
-  SOLID_RING_SLOT_VERTICES, FLOATS_PER_VERTEX,
-  PAINT_MODE_OFFSET, SYNTH_BOLD_OFFSET,
+  SOLID_RING_SLOT_VERTICES, FLOATS_PER_VERTEX, TEX_SLOT_OFFSET,
 } from './drawBatch';
+import { paintModeOf } from './shaders/batchFill';
 
 const ARRAY_BUFFER = 0x8892;
 const ELEMENT_ARRAY_BUFFER = 0x8893;
@@ -668,18 +668,21 @@ describe('renderer — text in the batch', () => {
   it('marks a glyph vertex with a paint mode a solid does not carry', () => {
     r.render([rect(0), label('A')]);
     const buf = staged();
-    const solidMode = vertex(buf, 0)[PAINT_MODE_OFFSET];
-    const glyphMode = vertex(buf, 4)[PAINT_MODE_OFFSET];
-    expect(solidMode).toBe(0);
-    expect(glyphMode).toBeGreaterThan(0);
+    expect(paintModeOf(vertex(buf, 0)[TEX_SLOT_OFFSET])).toBe(0);
+    expect(paintModeOf(vertex(buf, 4)[TEX_SLOT_OFFSET])).toBeGreaterThan(0);
   });
 
-  it('carries the synthetic-bold threshold per vertex, so a bold label joins a regular one', () => {
+  it('breaks the run where a faked bold meets text that is not', () => {
+    // The SDF threshold is a uniform, not a vertex attribute — see
+    // `StagedBatchState.synthBold`. This is the break that buys back, and the
+    // face here registers only weight 400, so asking for 700 fakes it.
     r.render([label('A'), label('B', { fontWeight: 700 })]);
+    expect(draws()).toEqual([6, 6]);
+  });
+
+  it('keeps one run across labels that agree about it', () => {
+    r.render([label('A'), label('B')]);
     expect(draws()).toEqual([12]);
-    const buf = staged();
-    expect(vertex(buf, 0)[SYNTH_BOLD_OFFSET]).toBe(0);
-    expect(vertex(buf, 4)[SYNTH_BOLD_OFFSET]).toBeCloseTo(0.08, 6);
   });
 
   it('keeps an underline in the run with the glyphs it underlines', () => {

@@ -27,7 +27,8 @@ import { WeaselRenderer } from './WeaselRenderer';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import type { DrawCommand } from './DrawCommand';
 import type { ResolvedRun } from '@weasel-js/text';
-import { FLOATS_PER_VERTEX, PAINT_MODE_OFFSET } from './drawBatch';
+import { FLOATS_PER_VERTEX, TEX_SLOT_OFFSET } from './drawBatch';
+import { paintModeOf } from './shaders/batchFill';
 
 let recorder: ReturnType<typeof makeGLRecorder>;
 let tracker: UploadTracker;
@@ -215,7 +216,7 @@ describe('drawText places the layout rather than baking it', () => {
     const modes = new Set(
       base.flatMap((b) => Array.from(
         { length: b.data.length / b.stride },
-        (_, k) => (b.stride === FLOATS_PER_VERTEX ? b.data[k * b.stride + PAINT_MODE_OFFSET] : 0),
+        (_, k) => (b.stride === FLOATS_PER_VERTEX ? paintModeOf(b.data[k * b.stride + TEX_SLOT_OFFSET]) : 0),
       )),
     );
     expect(base.length).toBeGreaterThan(0);

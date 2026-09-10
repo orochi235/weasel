@@ -7,9 +7,9 @@ import {
   pushClip, popClip, drawGroup, dispatch, tryStageSolid, flushBatch, type DrawContext,
 } from './draw';
 import {
-  SOLID_RING_SIZE as IMAGE_RING_SIZE, FLOATS_PER_VERTEX, PAINT_MODE_OFFSET,
-  SYNTH_BOLD_OFFSET,
+  SOLID_RING_SIZE as IMAGE_RING_SIZE, FLOATS_PER_VERTEX, TEX_SLOT_OFFSET,
 } from './drawBatch';
+import { paintModeOf } from './shaders/batchFill';
 import { GLYPH_MODE_MSDF, GLYPH_MODE_R8 } from '@weasel-js/font';
 
 /**
@@ -106,7 +106,7 @@ function paintModes(ctx: DrawContext, calls: readonly { name: string; args: read
   const verts = stagedVertices(ctx, calls);
   const modes = new Set<number>();
   for (let i = 0; i < verts.length; i += FLOATS_PER_VERTEX) {
-    modes.add(verts[i + PAINT_MODE_OFFSET]);
+    modes.add(paintModeOf(verts[i + TEX_SLOT_OFFSET]));
   }
   return modes;
 }
@@ -120,7 +120,7 @@ function positionsOfMode(
   const verts = stagedVertices(ctx, calls);
   const out: number[] = [];
   for (let i = 0; i < verts.length; i += FLOATS_PER_VERTEX) {
-    if (verts[i + PAINT_MODE_OFFSET] === mode) out.push(verts[i], verts[i + 1]);
+    if (paintModeOf(verts[i + TEX_SLOT_OFFSET]) === mode) out.push(verts[i], verts[i + 1]);
   }
   return out;
 }
@@ -1046,12 +1046,16 @@ describe('C2: frame-start stencilMask(0xFF) before clear', () => {
 });
 
 describe('drawText synthetic-bold', () => {
-  /** The `a_synthBold` every staged vertex carries, deduplicated. */
+  /** Every `u_synthBold` the batch program was given, in issue order. */
   const boldValues = (ctx: DrawContext, calls: readonly { name: string; args: readonly unknown[] }[]): number[] => {
-    const verts = stagedVertices(ctx, calls);
-    const out = new Set<number>();
-    for (let i = 0; i < verts.length; i += FLOATS_PER_VERTEX) out.add(verts[i + SYNTH_BOLD_OFFSET]);
-    return [...out];
+    flushBatch(ctx);
+    const out: number[] = [];
+    let bound: unknown = null;
+    for (const c of calls) {
+      if (c.name === 'useProgram') bound = c.args[0];
+      if (c.name === 'uniform1f' && bound === ctx.batchFill.handle) out.push(c.args[1] as number);
+    }
+    return out;
   };
 
   beforeEach(() => {
@@ -1542,7 +1546,7 @@ describe('drawText — decoration reaches the GPU', () => {
     const v = stagedVertices(ctx, calls);
     const out: Array<{ corners: number[]; rgba: number[] }> = [];
     for (let i = 0; i < v.length; i += 4 * FLOATS_PER_VERTEX) {
-      if (v[i + PAINT_MODE_OFFSET] !== mode) continue;
+      if (paintModeOf(v[i + TEX_SLOT_OFFSET]) !== mode) continue;
       const corners: number[] = [];
       for (let k = 0; k < 4; k++) {
         corners.push(v[i + k * FLOATS_PER_VERTEX], v[i + k * FLOATS_PER_VERTEX + 1]);

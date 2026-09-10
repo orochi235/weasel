@@ -681,6 +681,18 @@ interface StagedBatchState {
   alpha: number;
   colorMatrix: Float32Array;
   clipDepth: number;
+  /**
+   * The SDF threshold shift `u_synthBold` draws this run under.
+   *
+   * A uniform rather than a vertex attribute, and so a thing that breaks a run.
+   * Carrying it per vertex measured 9% slower at the densest rung of
+   * `tests/perf/atlas-wall.spec.ts` — the batch's whole point is one cheap
+   * buffer write a frame, and a float only glyphs read still widens the write
+   * for every rect and quad beside them. What it costs instead is a break
+   * wherever faked-bold text meets text that is not, which is a fallback path:
+   * a registered bold face never sets this at all.
+   */
+  synthBold: number;
   /** Whether group alpha folded into the vertex colors. */
   foldsAlpha: boolean;
   /**
@@ -723,8 +735,12 @@ function isIdentityColorMatrix(cm: Float32Array): boolean {
 function stagedStateIsLive(
   ctx: DrawContext, staged: StagedBatchState,
   image?: ImageBitmap, sampling?: 'linear' | 'nearest',
+  synthBold = 0,
 ): boolean {
   if (staged.clipDepth !== ctx.clipDepth) return false;
+  // Solids and image quads ask with 0, which is what a run of them carries, so
+  // this only ever breaks between two kinds of glyph.
+  if (staged.synthBold !== synthBold) return false;
   if (!staged.foldsAlpha && staged.alpha !== ctx.state.alpha) return false;
   if (image !== undefined && slotForBitmap(staged, image, sampling!) < 0) return false;
   const colorMatrix = ctx.state.colorMatrix;
@@ -811,6 +827,7 @@ function openRun(ctx: DrawContext): StagedBatchState {
       alpha: foldsAlpha ? 1 : ctx.state.alpha,
       colorMatrix,
       clipDepth: ctx.clipDepth,
+      synthBold: 0,
       foldsAlpha,
       textures: [],
     };
@@ -854,15 +871,18 @@ function stageImage(
  * a flush per word.
  */
 function stageGlyphs(
-  ctx: DrawContext, atlasId: string,
+  ctx: DrawContext, atlasId: string, synthBold: number,
 ): { staged: StagedBatchState; slot: number } {
   if (ctx.batchState !== undefined
-      && (!stagedStateIsLive(ctx, ctx.batchState)
+      && (!stagedStateIsLive(ctx, ctx.batchState, undefined, undefined, synthBold)
           || slotForAtlas(ctx.batchState, atlasId) < 0)) {
     flushBatch(ctx);
   }
   if (ctx.drawBatch.wouldOverflow(4)) flushBatch(ctx);
   const staged = openRun(ctx);
+  // An empty run adopts the threshold; one that already has vertices agreed to
+  // it above, since a mismatch flushed.
+  staged.synthBold = synthBold;
   let slot = slotForAtlas(staged, atlasId);
   if (slot > staged.textures.length) {
     staged.textures.push({ kind: 'atlas', id: atlasId });
@@ -951,6 +971,7 @@ export function flushBatch(ctx: DrawContext): void {
   setProjAndModel(ctx, prog, BATCH_MODEL);
   setColorUniform(ctx, prog, 1, 1, 1, 1);
   setAlphaUniform(ctx, prog, staged.alpha);
+  gl.uniform1f(prog.uniform('u_synthBold')!, staged.synthBold);
   setColorMatrixUniforms(ctx, prog, staged.colorMatrix);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, ctx.whiteTexture);
@@ -1836,11 +1857,12 @@ const SYNTH_BOLD_AMOUNT = 0.08;
 /**
  * Stage one group of atlas glyphs into the batch.
  *
- * Everything that used to be a uniform here rides the vertices instead — the
- * text color, the bold threshold, and the atlas as a slot index — so a bold
- * word, a regular one, a run off a baked MSDF atlas and a run off the runtime
- * canvas bake all belong to the same draw, and so does whatever else the page
- * put around them.
+ * Everything that used to be a uniform per group rides the vertices instead —
+ * the text color, and the atlas as a slot index packed with the paint mode — so
+ * a run off a baked MSDF atlas and one off the runtime canvas bake belong to
+ * the same draw, and so does whatever else the page put around them. The
+ * synthetic-bold threshold is the exception, and `StagedBatchState.synthBold`
+ * says why.
  *
  * The synthetic oblique is the one that changes shape rather than home: the
  * old program skewed in the vertex stage against `u_synthItalic`, and the
@@ -1868,20 +1890,20 @@ function drawTextGroup(
 
   const batch = ctx.drawBatch;
   const m = ctx.state.transform;
-  let { staged, slot } = stageGlyphs(ctx, atlasId);
+  let { staged, slot } = stageGlyphs(ctx, atlasId, bold);
   let alpha = color[3] * (staged.foldsAlpha ? ctx.state.alpha : 1);
 
   for (const q of group.quads) {
     if (batch.wouldOverflow(4)) {
       flushBatch(ctx);
-      ({ staged, slot } = stageGlyphs(ctx, atlasId));
+      ({ staged, slot } = stageGlyphs(ctx, atlasId, bold));
       alpha = color[3] * (staged.foldsAlpha ? ctx.state.alpha : 1);
     }
     batch.pushGlyph(
       q.x0 + dx, q.y0 + dy, q.x1 + dx, q.y1 + dy, q.baselineY + dy, tanItalic, m,
       q.u0, q.v0, q.u1, q.v1,
       color[0], color[1], color[2], alpha,
-      slot, mode, bold,
+      slot, mode,
     );
   }
 }
