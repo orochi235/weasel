@@ -1,111 +1,125 @@
-# Handoff — radial and conic gradients into the shared batch
+# Handoff — the draw-coalescing arc is finished
 
 **Branch:** `main`. Everything is committed and unpushed; run
 `git log --oneline @{u}..HEAD` to see what has not left the machine.
 
 ## Where it stands
 
-The renderer's draw-coalescing arc has two paints left, and they are the same
-paint twice. `docs/TODO.md`'s **"(P2) Per-command draw cost"** entry is the live
-record of the whole arc — read it first, not this file, for what has landed.
+Solid geometry, image quads, up to seven distinct textures, text and all three
+gradients share one draw. **Nothing is left of step 4**, and
+`docs/superpowers/specs/2026-08-14-batched-dispatch-design.md` is now a record
+rather than a plan. `docs/TODO.md`'s **"(P2) Per-command draw cost"** entry is
+the live account of the whole arc.
 
-Solid geometry, image quads, up to seven distinct textures, text and linear
-gradients now share one draw. **Radial and conic gradients still bind
-`gradFill` per draw and still break a run.**
+What still takes its own draw is what no run can express: per-vertex colors,
+even-odd and inner/outer-aligned strokes (their own stencil passes), patterns,
+registered shaders, and meshes past the batch's vertex cap.
 
-**Next: their arm in the batch shader.** Step 4 of
-`docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`, which carries
-the shape of it.
+**There is no obvious next step here.** The plan's own remaining item is the
+"one thing to fix along the way" — dispatch is half-deferred, walking the tree
+and emitting GL inline except for the batch, so every mutator has to remember to
+flush first. That is a clarity argument, not a pressure one.
 
 ## Decisions made in conversation that the code does not explain
 
-**A linear gradient needed no shader arm because its ramp position is affine in
-position.** Interpolating an affine function across a triangle is exact, so the
-fill is a textured quad off the ramp atlas and the plain paint mode already
-samples it. Radial and conic are not affine in the ramp position — but the
-*coordinate* they need is, which is why their arm stages a gradient-space
-coordinate in `a_uv` and computes `length` or `atan` from it.
+**All three gradients batch for one reason, and it is not the obvious one.**
+Only a linear gradient's ramp position is affine in position. What is affine in
+all three is the *coordinate* the ramp position is computed from — so a vertex
+carries that, and interpolation across a triangle is exact. A linear gradient's
+coordinate is the ramp position itself, which is why it needs no paint mode; the
+other two carry a gradient-space point and the shader takes a `length` or an
+`atan` of it.
 
-**Where that computation goes is the open question, and it is not the same
-question text faced.** The glyph math runs unconditionally because `fwidth` in
-non-uniform control flow is undefined; a conic's `atan` is dearer than that and
-far rarer, so it wants measuring against a branch. A branch is legal here only
-if the sample stops being `texture()` — the ramp atlas has no mipmaps, so
-`textureLod(..., 0.0)` is exactly equivalent and derivative-free.
+**A branch in this shader is safe; a branch around a derivative is not.** The
+paint mode is a flat varying, so every fragment of a quad takes the same arm.
+`batchFill.test.ts` now guards the thing that actually matters — the brace depth
+of the `glyphCoverage` call, and no `fwidth`/`dFdx`/`dFdy` inside any block —
+instead of forbidding the token `if`, which the gradient arm would have tripped
+for no reason.
 
-**The batch vertex is full, and gradients did not widen it.** Text's paint mode
-only fits because it packs into `a_texSlot` beside the slot index; a float of
-its own measured 9% slower at the densest rung of the atlas wall. Radial and
-conic need a row per vertex, and `a_post` is the place to look — a gradient
-leaves it at 1, the way a solid does.
+**The branch has to carry the sample, not just the coordinate.** Selecting a uv
+and sampling once afterwards makes every fragment in the program read a texture
+at a coordinate the shader computed, which the hardware cannot schedule the way
+it schedules a read from a varying. 65.1% of a fragment that way against 4.9%
+splitting the fetch across the arms. This is the single most surprising number
+the arc produced, and it is invisible to every test but `fill-rate.spec.ts`.
 
 **A row index is a stable name; the `v` computed from it is not.** Growing the
-atlas moves every row's `v`, and recycling one rewrites its texels. Both are
-irreversible, so `GradientRampAtlas.wouldReshape` is asked *before* the bake and
-the run flushed if the answer is yes. Growth from an empty atlas is exempt —
-there is no row for anyone to be holding — and that exemption is load-bearing:
-without it the first gradient of a renderer's life breaks whatever run it lands
-in, which is a wart, and `drawBatch.image.test.ts` was passing on it.
+ramp atlas moves every row's `v` and recycling one rewrites its texels, both
+irreversibly — so `GradientRampAtlas.wouldReshape` is asked *before* the bake
+and the run flushed if the answer is yes. Growth from an empty atlas is exempt,
+and that exemption is load-bearing: without it the first gradient of a
+renderer's life breaks whatever run it lands in, and `drawBatch.image.test.ts`
+was passing on that wart.
 
-**The timing instrument cannot resolve this change.** Three runs of
-`transition-matrix` in one sitting spread ~50% on an unchanged fixture. The
-within-sitting comparison that does hold is that mixing costs nothing: 512
-alternating solids and gradients came in *below* 512 gradients alone. Draw
-counts, not milliseconds, are what the tests assert.
+**`gradFill` had never applied the group color matrix.** Every other paint
+program did. It only became visible because a batched gradient does, which would
+have made the same paint differ by which route it took.
+
+**A test reaching for "a paint the batch cannot express" wants per-vertex
+colors now.** Five files used a gradient for that; all of them go on passing for
+the wrong reason otherwise. Also in `CLAUDE.md`'s Traps.
+
+## The measurement instrument, which is the part that misleads
+
+**A shader variant a compiler can fold measures nothing.** `fill-rate.spec.ts`
+gated its glyph-math variant on `u_color.a * 0.0` — folded to zero, and every
+line feeding that arm deleted with it, so the variant timed the control. The
+glyph math costs about 100% of a fragment that is not a glyph, not the 1.4%
+recorded when text landed. A runtime zero that is not a compile-time zero
+(`u_color.a - 0.5` where the uniform is 0.5) is what keeps the code alive. The
+text decision survives the correction because a wall is draw-bound, but every
+"with and without" shader pair has this trap in it.
+
+**`gl.finish()` does not block in Chrome** — commands go to the GPU process and
+the call returns, which timed 43M fragments at 0.003 ms and read as free; a
+one-pixel `readPixels` is the real sync point. Samples must be long enough that
+the GPU clock is not still ramping through them, and variants must run forward
+then mirrored (ABBA, or ABCCBA for three) — under ABAB whichever runs second
+sits later on that ramp every time.
 
 **Do not compare a perf number against one recorded on another day.** The same
 unchanged tree measured 1.85 ms where `docs/TODO.md` records 1.50 for the same
 rung. Always take the A/B back to back in one sitting, and quote the pair. A
-worktree at the parent commit is how: `git worktree add <dir> HEAD~1`, then run
-the same spec in each.
+worktree at the parent commit is how: `git worktree add <dir> HEAD~1`.
 
-**The measurement instrument's corrections are in `fill-rate.spec.ts`'s
-comments because they will be re-derived otherwise.** `gl.finish()` does not
-block in Chrome — commands go to the GPU process and the call returns, which
-timed 43M fragments at 0.003 ms and read as free; a one-pixel `readPixels` is
-the real sync point. Samples must be long enough that the GPU clock is not still
-ramping through them. And variants must alternate ABBA: under ABAB whichever
-runs second sits later on that ramp every time, which reads as that variant
-being faster.
+**`transition-matrix` cannot resolve a change of this size.** Three runs in one
+sitting spread ~50% on an unchanged fixture. What it can say within a sitting is
+that mixing is free: 512 alternating solids and gradients came in below 512
+gradients alone. Draw counts, not milliseconds, are what the tests assert.
 
 **`tests/visual/batch-pixels.spec.ts` exists because no screenshot can see a
 batched run's composition** — the atlas quad covers the ground rect it
-corrupted. Anything that changes what shares a draw needs a probe on a pixel
-the covering command does *not* cover. Its gradient cases are flat ramps on
-purpose: composition is what it guards, and a flat ramp reads as a color rather
-than as a plausible neighbouring texel. This is also in `CLAUDE.md`'s Traps.
+corrupted. Its gradient cases go further and check arithmetic too, because no
+baseline covers a radial or conic gradient at all. Two lessons are built into
+them: a conic probe on the `dy = 0` axis sits on the seam, where `fract` sends
+one side to 0 and the other to 1; and a conic at a right angle or none cannot
+catch a rotation going the wrong way, because one of `sin`/`cos` vanishes.
 
 **Seven textures, not more, and the white texel owns slot 0.** WebGL2 guarantees
-16 fragment texture units, so eight is safe without a `getParameter` — which
-the GL recorder would answer with a recording function rather than a number.
-Slot 0 is reserved so a solid's `texture() * a_vertexColor` is exactly the
-vertex color whatever else joins its run; that is the invariant the tint bug
-broke. Bitmaps, font atlases and the one ramp atlas share the seven above it.
+16 fragment texture units, so eight is safe without a `getParameter` — which the
+GL recorder would answer with a recording function rather than a number. Bitmaps,
+font atlases and the one ramp atlas share the seven above it.
 
 **A bitmap wanted at two MAG_FILTERs still breaks the run.** That is state on
-the texture object, not on the unit, so no number of slots fixes it. A font
-atlas has no such quarrel — `GLTextureCache` owns its filtering, and must keep
-owning it, since filtering a distance field destroys it. The ramp atlas filters
-LINEAR in both axes and each ramp is sampled at its row's center, where the
-neighbouring row's weight is exactly zero.
-
-**A test written against a gradient as its run-breaker now measures nothing.**
-Four files used a linear gradient for exactly that; they take a radial one now.
-Anything reaching for "a paint the batch cannot express" should too.
+the texture object, not on the unit. A font atlas has no such quarrel, and must
+not: filtering a distance field destroys it. The ramp atlas filters LINEAR in
+both axes and each ramp is sampled at its row's center, where the neighbouring
+row's weight is exactly zero.
 
 ## Verifying
 
 - `npx vitest run --project=core packages/core/src/renderer/` — the batch's
   buffer-replay tests.
-- `npx playwright test --config=tests/visual/playwright.config.ts` — the
+- `npx playwright test --config=tests/visual/playwright.config.ts` — the 51
   baselines plus `batch-pixels`.
-- `npx playwright test --config=tests/perf/playwright.config.ts atlas-wall` —
-  the wall ladder. Draw-bound, so it cannot see fragment cost.
 - `npx playwright test --config=tests/perf/playwright.config.ts fill-rate` —
   fragment cost, and nothing else.
-- A perf spec against a dev server left running from an earlier session fails
-  as `Failed to fetch dynamically imported module`, not as anything about the
-  code. Kill whatever holds port 5176 first.
+- `npx playwright test --config=tests/perf/playwright.config.ts atlas-wall` —
+  the wall ladder. Draw-bound, so it cannot see fragment cost.
+- A perf spec against a dev server left running from an earlier session fails as
+  `Failed to fetch dynamically imported module`, not as anything about the code.
+  Kill whatever holds port 5176 first.
 
 ---
 
