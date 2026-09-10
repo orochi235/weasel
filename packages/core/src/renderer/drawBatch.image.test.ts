@@ -262,12 +262,12 @@ describe('renderer — consecutive image batching', () => {
     expect(colorRun(quadUploads()[0])).toEqual(['1,0,0', '1,1,1', '1,0,0']);
   });
 
-  it('flushes before text, so a sprite behind a label stays behind it', () => {
+  it('keeps a run open across a label, which now stages into it', () => {
     const text = {
       kind: 'text', x: 0, y: 0, runs: [], maxWidth: Infinity, align: 'left', style: {},
     } as unknown as DrawCommand;
     r.render([img(0), text, img(20)]);
-    expect(draws()).toEqual([6, 6]);
+    expect(draws()).toEqual([12]);
   });
 
   describe('kind: sprites — the same run, handed over packed', () => {

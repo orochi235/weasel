@@ -1,6 +1,6 @@
 /**
  * GLSL ES 3.0 source for the batch program — the one shader a run of solid
- * geometry and image quads shares.
+ * geometry, image quads and glyphs shares.
  *
  * **Every vertex names the texture it samples.** `a_texSlot` is an index into
  * `u_samplers`, and slot 0 is always the 1x1 white texel, so a solid's
@@ -8,7 +8,7 @@
  * exact: an 8-bit white texel samples to 1.0, and 1.0 * x is x.
  *
  * The slot is per vertex rather than per flush because the run holds several
- * bitmaps at once. Reserving slot 0 for white is what makes a solid's promise
+ * textures at once. Reserving slot 0 for white is what makes a solid's promise
  * true no matter what else joins its run: before this, a solid carried the
  * white texel's UV but the flush bound the run's *image*, so every ground rect
  * beside an atlas quad came out multiplied by whatever texel sat at the middle
@@ -21,21 +21,36 @@
  * triangle; the coordinate it samples is a varying computed before the branch,
  * which is what keeps the implicit derivatives well defined.
  *
+ * **`a_paintMode` picks what the sample means, and the glyph math runs either
+ * way.** A glyph vertex names a font atlas whose texel is a distance field
+ * rather than a color, so its coverage comes from `glyphCoverage` and its color
+ * comes from the vertex alone. That coverage is computed on every fragment,
+ * glyph or not, because `fwidth` in non-uniform control flow is undefined and
+ * the derivative has to be taken before anything selects on the mode — see
+ * `GLYPH_COVERAGE_GLSL`. Priced head to head at 432M fragments a frame
+ * (`tests/perf/fill-rate.spec.ts`), that costs about 1.4% of a fragment that is
+ * not a glyph.
+ *
  * `a_post` is the alpha factor applied *after* the color matrix. An image quad
  * puts its opacity there, where `u_opacity` used to be — the fold is exact for
  * the same reason the old image shader's was, the matrix cannot see it. Solid
- * geometry leaves it at 1 and folds its own alpha into `a_vertexColor`, which
- * is only sound under an identity matrix; `draw.ts` owns that condition.
+ * geometry and glyphs leave it at 1 and fold their own alpha into
+ * `a_vertexColor`, which is only sound under an identity matrix; `draw.ts` owns
+ * that condition.
  *
  * Inputs:
  *   a_position     vec2   screen-space x,y of the corner
- *   a_vertexColor  vec4   straight-alpha color; (1,1,1,1) on a textured vertex
+ *   a_vertexColor  vec4   straight-alpha color; (1,1,1,1) on an image vertex
  *   a_uv           vec2   texture coordinate 0..1; the white texel for solids
  *   a_post         float  alpha factor applied after the color matrix
  *   a_texSlot      float  index into u_samplers; 0 is the white texel
+ *   a_paintMode    float  0 plain, or a GLYPH_MODE_* saying which field to read
+ *   a_synthBold    float  SDF threshold shift; 0 on everything but a faked bold
  *
  * Output: PREMULTIPLIED alpha. Blend: `gl.blendFunc(ONE, ONE_MINUS_SRC_ALPHA)`.
  */
+
+import { GLYPH_COVERAGE_GLSL } from '@weasel-js/font';
 
 /**
  * Texture units the batch program samples, slot 0 being the white texel.
@@ -43,14 +58,17 @@
  * Fixed rather than queried: WebGL2 guarantees at least 16 fragment texture
  * units, so 8 is available everywhere without asking, and asking would mean a
  * `getParameter` the GL recorder answers with a recording function rather than
- * a number. Seven bitmaps in one run is what "a document with a handful of
- * distinct images" needs; past that the run breaks as it always did, and every
- * extra slot is another compare in the fragment chain.
+ * a number. Seven textures in one run is what "a document with a handful of
+ * distinct images, and a font or two" needs; past that the run breaks as it
+ * always did, and every extra slot is another compare in the fragment chain.
  */
 export const BATCH_TEXTURE_SLOTS = 8;
 
 /** Slot every solid vertex carries — the white texel, bound by `flushBatch`. */
 export const WHITE_SLOT = 0;
+
+/** `a_paintMode` value for everything whose texel is a color, not a field. */
+export const PAINT_MODE_PLAIN = 0;
 
 function sampleChain(slots: number): string {
   const arms: string[] = [];
@@ -66,12 +84,16 @@ in vec4 a_vertexColor;
 in vec2 a_uv;
 in float a_post;
 in float a_texSlot;
+in float a_paintMode;
+in float a_synthBold;
 uniform mat3 u_proj;
 uniform mat3 u_model;
 out vec4 v_vertexColor;
 out vec2 v_uv;
 out float v_post;
 flat out int v_texSlot;
+flat out float v_paintMode;
+flat out float v_synthBold;
 void main() {
   vec3 screen = u_model * vec3(a_position, 1.0);
   vec3 clip = u_proj * vec3(screen.xy, 1.0);
@@ -80,6 +102,8 @@ void main() {
   v_uv = a_uv;
   v_post = a_post;
   v_texSlot = int(a_texSlot + 0.5);
+  v_paintMode = a_paintMode;
+  v_synthBold = a_synthBold;
 }
 `;
 
@@ -89,6 +113,8 @@ in vec4 v_vertexColor;
 in vec2 v_uv;
 in float v_post;
 flat in int v_texSlot;
+flat in float v_paintMode;
+flat in float v_synthBold;
 uniform sampler2D u_samplers[${BATCH_TEXTURE_SLOTS}];
 uniform vec4 u_color;
 uniform float u_alpha;
@@ -100,11 +126,18 @@ vec4 sampleSlot(int slot, vec2 uv) {
 ${sampleChain(BATCH_TEXTURE_SLOTS)}
   return texture(u_samplers[0], uv);
 }
-
+${GLYPH_COVERAGE_GLSL}
 void main() {
-  vec4 src = sampleSlot(v_texSlot, v_uv) * u_color * v_vertexColor;
+  vec4 texel = sampleSlot(v_texSlot, v_uv);
+  float isGlyph = step(0.5, v_paintMode);
+  // Unconditional, and multiplied out afterwards rather than branched around:
+  // see the file header.
+  float coverage = glyphCoverage(texel, v_paintMode, v_synthBold);
+  // A glyph's texel is a distance field, so it takes no part in the color; a
+  // plain vertex multiplies its texel in as it always did.
+  vec4 src = mix(texel, vec4(1.0), isGlyph) * u_color * v_vertexColor;
   vec4 mapped = clamp(u_colorMatrix * src + u_colorBias, 0.0, 1.0);
-  float a = mapped.a * u_alpha * v_post;
+  float a = mapped.a * u_alpha * v_post * mix(1.0, coverage, isGlyph);
   outColor = vec4(mapped.rgb * a, a);
 }
 `;
@@ -116,4 +149,5 @@ export const BATCH_FILL_UNIFORMS = [
 
 export const BATCH_FILL_ATTRIBUTES = [
   'a_position', 'a_vertexColor', 'a_uv', 'a_post', 'a_texSlot',
+  'a_paintMode', 'a_synthBold',
 ] as const;

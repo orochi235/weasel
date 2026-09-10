@@ -13,6 +13,10 @@
  * shares its draw, and a quad samples its own bitmap and no other. Both hold
  * however `draw.ts` decides to break runs, which is what makes them a gate on
  * the invariant rather than on the current run-breaking rules.
+ *
+ * Glyphs are in the same run as of the text merge, and they widen the class
+ * rather than adding one: a font atlas is a texture in a slot like any other,
+ * so a ground rect beside a label is exactly the pixel that drew olive.
  */
 import { test, expect } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
@@ -52,8 +56,14 @@ test('batched runs paint their own colors', async ({ page }) => {
   const { cases, glRenderer } = await page.evaluate(
     async ({ root, w, h }) => {
       const base = `/weasel/@fs${root}`;
-      const { WeaselRenderer } = await import(
+      const { WeaselRenderer, registerFont } = await import(
         /* @vite-ignore */ `${base}/packages/core/src/renderer/index.ts`
+      );
+      // Awaited, unlike the site's own registration: a probe that renders
+      // before the atlas lands reads an empty box and passes.
+      await registerFont(
+        'probe', { weight: 400, style: 'normal' },
+        '/weasel/inter/inter.json', '/weasel/inter/inter.png',
       );
 
       const identity = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
@@ -106,6 +116,39 @@ test('batched runs paint their own colors', async ({ page }) => {
         if (a === 0) return [0, 0, 0];
         return [
           Math.round(out[0] / a), Math.round(out[1] / a), Math.round(out[2] / a),
+        ];
+      }
+
+      const label = (text: string, x: number, y: number, size: number, color: string) => ({
+        kind: 'text', x, y,
+        runs: [{
+          text, fontFamily: 'probe', fontSize: size, fontWeight: 400,
+          fontStyle: 'normal', fill: { fill: 'solid', color },
+          letterSpacing: 0,
+          underline: false, strikethrough: false, overline: false, baselineShift: 0,
+        }],
+        maxWidth: Infinity, align: 'left', style: {},
+      });
+
+      /**
+       * The straight-alpha color of the most opaque pixel in a box.
+       *
+       * Where a glyph's ink lands inside its box depends on the face, so a
+       * fixed probe point is a coin flip; the darkest pixel is the one the
+       * glyph definitely painted, and its color is the assertion.
+       */
+      function inkIn(x0: number, y0: number, x1: number, y1: number): [number, number, number] {
+        const box = new Uint8Array((x1 - x0) * (y1 - y0) * 4);
+        gl!.readPixels(x0, h - y1, x1 - x0, y1 - y0, gl!.RGBA, gl!.UNSIGNED_BYTE, box);
+        let best = -1;
+        let at = 0;
+        for (let p = 0; p < box.length; p += 4) {
+          if (box[p + 3] > best) { best = box[p + 3]; at = p; }
+        }
+        if (best <= 0) return [0, 0, 0];
+        const a = best / 255;
+        return [
+          Math.round(box[at] / a), Math.round(box[at + 1] / a), Math.round(box[at + 2] / a),
         ];
       }
 
@@ -167,6 +210,32 @@ test('batched runs paint their own colors', async ({ page }) => {
         { name: 'ground', x: 72, y: 24, want: [255, 255, 255] },
         { name: 'second quad', x: 120, y: 24, want: [0, 0, 255] },
       ]);
+
+      // A label between a ground and a bitmap, all in one run. The glyph's
+      // atlas takes a slot, and neither neighbour may sample it.
+      frame('solid and quad beside a label', [
+        rect(4, 8, 32, '#ffffff'),
+        label('H', 44, 4, 64, '#ff0000'),
+        quad(blue, 100, 8, 32),
+      ], [
+        { name: 'white ground', x: 20, y: 24, want: [255, 255, 255] },
+        { name: 'blue quad', x: 116, y: 24, want: [0, 0, 255] },
+      ]);
+      cases[cases.length - 1].probes.push({
+        name: 'red glyph', x: 44, y: 4, want: [255, 0, 0], got: inkIn(40, 4, 96, 72),
+      });
+
+      // The label first, so the run adopts the atlas before anything else
+      // joins — the order that broke the ground when a quad did it.
+      frame('label before a solid', [
+        label('H', 4, 4, 64, '#ff0000'),
+        rect(60, 8, 32, '#ffffff'),
+      ], [
+        { name: 'white ground', x: 76, y: 24, want: [255, 255, 255] },
+      ]);
+      cases[cases.length - 1].probes.push({
+        name: 'red glyph', x: 4, y: 4, want: [255, 0, 0], got: inkIn(0, 4, 56, 72),
+      });
 
       return { cases, glRenderer };
     },

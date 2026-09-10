@@ -31,6 +31,8 @@ import {
   textureCacheKey,
   syncDynamicPageTexture,
   dynamicPageTextureId,
+  GLYPH_MODE_MSDF,
+  GLYPH_MODE_R8,
 } from '@weasel-js/font';
 import {
   type LaidOutGroup, type LaidOutDecoration, type LaidOutOutlineGlyph,
@@ -49,8 +51,6 @@ export interface DrawContext {
   gl: WebGL2RenderingContext;
   pathFill: ShaderProgram;
   pathFillVColor: ShaderProgram;
-  textSdf: ShaderProgram;
-  textSdfR8: ShaderProgram;
   imageFill: ShaderProgram;
   /** The one program a batch flush draws with — `shaders/batchFill.ts`. */
   batchFill: ShaderProgram;
@@ -289,7 +289,7 @@ export function dispatch(ctx: DrawContext, cmd: DrawCommand): void {
   switch (cmd.kind) {
     case 'group':  return drawGroup(ctx, cmd);
     case 'path':   return drawPath(ctx, cmd);
-    case 'text':   flushBatch(ctx); return drawText(ctx, cmd);
+    case 'text':   return drawText(ctx, cmd);
     case 'image':  return drawImage(ctx, cmd);
     case 'sprites': return drawSprites(ctx, cmd);
     case 'shader': flushBatch(ctx); return drawShader(ctx, cmd);
@@ -446,7 +446,7 @@ function drawShader(ctx: DrawContext, cmd: ShaderDrawCommand): void {
  *   paint nothing. The enclosing clip belongs on the composite anyway — it
  *   clips the group's result, not the pixels an effect reads — so `clipDepth`
  *   restarts at 0 inside, which also hands nested clips a fresh budget.
- * - **Alpha and colour**, for the same reason from the other end: fading on
+ * - **Alpha and color**, for the same reason from the other end: fading on
  *   the way in would give the effect faded pixels to read, and fade them
  *   again on the way out. `pushIsolated` returns what the composite owes.
  * - **The scissor**, which belongs to the renderer's sub-rect within the
@@ -684,16 +684,28 @@ interface StagedBatchState {
   /** Whether group alpha folded into the vertex colors. */
   foldsAlpha: boolean;
   /**
-   * The bitmaps this run samples, in the order they joined. A quad's vertices
+   * The textures this run samples, in the order they joined. A quad's vertices
    * carry `index + 1`, because slot 0 is the white texel every solid samples.
    *
-   * Identity, because `GLImageCache` keys textures by the bitmap. `sampling` is
-   * per entry and set per flush rather than at upload: MAG_FILTER is state on
-   * the texture object, so the same bitmap drawn at both filters in one frame
-   * needs two flushes, not two slots.
+   * Two kinds, because two caches own them: an image quad names an
+   * `ImageBitmap` that `GLImageCache` keys by identity, a glyph names the
+   * string id of a font atlas in `GLTextureCache`. They share the slot list so
+   * a caption and the thumbnail above it share a draw.
+   *
+   * A bitmap's `sampling` is per entry and set per flush rather than at upload:
+   * MAG_FILTER is state on the texture object, so the same bitmap drawn at both
+   * filters in one frame needs two flushes, not two slots. An atlas carries no
+   * sampling because `GLTextureCache` owns its filtering — and must keep
+   * owning it: filtering a distance field destroys it, so a font atlas is
+   * never mipmapped and never joins a shared image atlas.
    */
-  images: { image: ImageBitmap; sampling: 'linear' | 'nearest' }[];
+  textures: BatchTexture[];
 }
+
+/** One entry in a run's slot list. */
+type BatchTexture =
+  | { kind: 'bitmap'; image: ImageBitmap; sampling: 'linear' | 'nearest' }
+  | { kind: 'atlas'; id: string };
 
 /** Identity in row-major 4×5 leaves `src` untouched *and* leaves the shader's
  *  clamp with nothing to do, which is what makes the alpha fold exact. */
@@ -714,7 +726,7 @@ function stagedStateIsLive(
 ): boolean {
   if (staged.clipDepth !== ctx.clipDepth) return false;
   if (!staged.foldsAlpha && staged.alpha !== ctx.state.alpha) return false;
-  if (image !== undefined && slotFor(staged, image, sampling!) < 0) return false;
+  if (image !== undefined && slotForBitmap(staged, image, sampling!) < 0) return false;
   const colorMatrix = ctx.state.colorMatrix;
   return staged.colorMatrix === colorMatrix || sameValues(staged.colorMatrix, colorMatrix);
 }
@@ -727,15 +739,29 @@ function stagedStateIsLive(
  * have it both ways. Otherwise it takes the next free slot, and a run with none
  * left is a run this quad has to break.
  */
-function slotFor(
+function slotForBitmap(
   staged: StagedBatchState, image: ImageBitmap, sampling: 'linear' | 'nearest',
 ): number {
-  for (let i = 0; i < staged.images.length; i++) {
-    const entry = staged.images[i];
-    if (entry.image !== image) continue;
+  for (let i = 0; i < staged.textures.length; i++) {
+    const entry = staged.textures[i];
+    if (entry.kind !== 'bitmap' || entry.image !== image) continue;
     return entry.sampling === sampling ? i + 1 : -1;
   }
-  return staged.images.length + 1 < BATCH_TEXTURE_SLOTS ? staged.images.length + 1 : -1;
+  return nextFreeSlot(staged);
+}
+
+/** The same for a font atlas, which has no filter to disagree about. */
+function slotForAtlas(staged: StagedBatchState, id: string): number {
+  for (let i = 0; i < staged.textures.length; i++) {
+    const entry = staged.textures[i];
+    if (entry.kind === 'atlas' && entry.id === id) return i + 1;
+  }
+  return nextFreeSlot(staged);
+}
+
+/** The slot a texture new to this run would take, or -1 if it is full. */
+function nextFreeSlot(staged: StagedBatchState): number {
+  return staged.textures.length + 1 < BATCH_TEXTURE_SLOTS ? staged.textures.length + 1 : -1;
 }
 
 /**
@@ -786,7 +812,7 @@ function openRun(ctx: DrawContext): StagedBatchState {
       colorMatrix,
       clipDepth: ctx.clipDepth,
       foldsAlpha,
-      images: [],
+      textures: [],
     };
   }
   return ctx.batchState;
@@ -810,10 +836,37 @@ function stageImage(
   }
   if (ctx.drawBatch.wouldOverflow(4)) flushBatch(ctx);
   const staged = openRun(ctx);
-  let slot = slotFor(staged, image, sampling);
-  if (slot > staged.images.length) {
-    staged.images.push({ image, sampling });
-    slot = staged.images.length;
+  let slot = slotForBitmap(staged, image, sampling);
+  if (slot > staged.textures.length) {
+    staged.textures.push({ kind: 'bitmap', image, sampling });
+    slot = staged.textures.length;
+  }
+  return { staged, slot };
+}
+
+/**
+ * Open or continue a run for a glyph off the font atlas `atlasId`, flushing
+ * first if the run would overflow or has no slot left for it.
+ *
+ * The atlas is the unit of coalescing the way a sprite sheet is: every glyph a
+ * face contributes to a frame shares one texture, so a paragraph is one run
+ * however many glyphs it is, and a second face costs one more slot rather than
+ * a flush per word.
+ */
+function stageGlyphs(
+  ctx: DrawContext, atlasId: string,
+): { staged: StagedBatchState; slot: number } {
+  if (ctx.batchState !== undefined
+      && (!stagedStateIsLive(ctx, ctx.batchState)
+          || slotForAtlas(ctx.batchState, atlasId) < 0)) {
+    flushBatch(ctx);
+  }
+  if (ctx.drawBatch.wouldOverflow(4)) flushBatch(ctx);
+  const staged = openRun(ctx);
+  let slot = slotForAtlas(staged, atlasId);
+  if (slot > staged.textures.length) {
+    staged.textures.push({ kind: 'atlas', id: atlasId });
+    slot = staged.textures.length;
   }
   return { staged, slot };
 }
@@ -901,8 +954,12 @@ export function flushBatch(ctx: DrawContext): void {
   setColorMatrixUniforms(ctx, prog, staged.colorMatrix);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, ctx.whiteTexture);
-  for (let i = 0; i < staged.images.length; i++) {
-    const entry = staged.images[i];
+  for (let i = 0; i < staged.textures.length; i++) {
+    const entry = staged.textures[i];
+    if (entry.kind === 'atlas') {
+      ctx.textureCache.bind(entry.id, i + 1);
+      continue;
+    }
     ctx.imageCache.bind(entry.image, i + 1);
     // Per flush, not at upload: the same bitmap can be drawn at both filters in
     // one frame. The cache skips the write when the texture already carries the
@@ -1581,35 +1638,9 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
   const dx = cmd.x;
   const dy = cmd.y + verticalAlignOffset(cmd.verticalAlign, cmd.height, laid.bounds.height);
 
-  const gl = ctx.gl;
-  applyClipTest(ctx);
-  const preparedPrograms = new Set<ShaderProgram>();
-  let currentProg: ShaderProgram | null = null;
   for (const group of laid.groups) {
-    if (group.source === 'outline') {
-      drawTextOutlineGroup(ctx, group, dx, dy);
-      // Outline groups go through the path-fill programs, which bind their
-      // own. The next SDF group has to `useProgram` again; its uniforms
-      // survive (they live on the program object), so `preparedPrograms`
-      // stays as it is.
-      currentProg = null;
-      continue;
-    }
-    const prog = group.source === 'canvas' ? ctx.textSdfR8 : ctx.textSdf;
-    if (prog !== currentProg) {
-      gl.useProgram(prog.handle);
-      currentProg = prog;
-    }
-    if (!preparedPrograms.has(prog)) {
-      preparedPrograms.add(prog);
-      setProjAndModel(ctx, prog);
-      setColorMatrixUniforms(ctx, prog);
-      setAlphaUniform(ctx, prog, ctx.state.alpha);
-      // No AA-width uniform: the text shaders derive their smoothstep band
-      // from fwidth() per fragment. A CPU-side constant cannot be right at
-      // more than one scale — see the textSdf.ts header.
-    }
-    drawTextGroup(ctx, group, prog, dx, dy);
+    if (group.source === 'outline') drawTextOutlineGroup(ctx, group, dx, dy);
+    else drawTextGroup(ctx, group, dx, dy);
   }
 
   drawTextDecorations(ctx, laid.decorations, dx, dy);
@@ -1630,7 +1661,7 @@ const SYNTHETIC_ITALIC_RADIANS = 0.2094;
  *
  * The whole group becomes a single mesh: cached em-space triangles are
  * transformed on the CPU into world space and appended to one buffer, so a
- * paragraph set in one face and colour is one draw call — the same batching
+ * paragraph set in one face and color is one draw call — the same batching
  * the atlas tier gets from packing glyphs into one texture. The alternative,
  * a model matrix per glyph, would be a draw call per glyph.
  *
@@ -1643,7 +1674,7 @@ function drawTextOutlineGroup(ctx: DrawContext, group: LaidOutGroup, dx: number,
   const fill = group.fill;
   if (fill !== null) {
     const mesh = outlineGroupMesh(group, dx, dy);
-    if (mesh) drawPathFillByKind(ctx, fill, ctx.meshCache.uploadTransient(mesh));
+    if (mesh) drawOutlineMesh(ctx, fill, mesh);
   }
 
   // Stroke after fill — Canvas2D's fillText-then-strokeText convention, and
@@ -1652,9 +1683,23 @@ function drawTextOutlineGroup(ctx: DrawContext, group: LaidOutGroup, dx: number,
   const strokePaint = group.stroke?.paint;
   if (!strokePaint) return;
   const ribbon = outlineGroupStrokeMesh(group, dx, dy, mat3.meanScaleOf(ctx.state.transform));
-  if (ribbon) {
-    drawPathFillByKind(ctx, strokePaint, ctx.meshCache.uploadTransient(ribbon));
-  }
+  if (ribbon) drawOutlineMesh(ctx, strokePaint, ribbon);
+}
+
+/**
+ * Paint one merged glyph-outline mesh, staging it where it fits.
+ *
+ * Through `tryStageSolid` rather than straight to `drawPathFillByKind`,
+ * because a paragraph can mix tiers: a heading drawn as outlines and a caption
+ * drawn from the atlas are groups of one command, and the atlas half now
+ * stages. An outline that painted itself while glyphs sat staged behind it
+ * would come out under them.
+ */
+function drawOutlineMesh(ctx: DrawContext, fill: FillStyle, mesh: Mesh): void {
+  const isSolid = fill.fill === undefined || fill.fill === 'solid';
+  const solid = isSolid ? (fill as { color: string; opacity?: number }) : undefined;
+  if (tryStageSolid(ctx, mesh, solid)) return;
+  drawPathFillByKind(ctx, fill, ctx.meshCache.uploadTransient(mesh));
 }
 
 /**
@@ -1754,71 +1799,56 @@ function mergeGlyphMeshes(
  * Paint underline / strikethrough rules. These are untextured solid rects, so
  * they cannot ride in a `LaidOutGroup`'s quads — those upload a 5-float
  * stride with atlas UVs into an MSDF program. They go through `pathFill`
- * instead, batched by resolved colour so a whole decorated paragraph costs
- * one draw call per distinct rule colour.
+ * instead, batched by resolved color so a whole decorated paragraph costs
+ * one draw call per distinct rule color.
  *
  * Drawn after the glyphs, so a rule sits on top of glyph ink where they
  * overlap (the CSS spec allows either order).
  */
-function drawTextDecorations(ctx: DrawContext, decorations: readonly LaidOutDecoration[], dx: number, dy: number): void {
-  if (decorations.length === 0) return;
-
-  // Colour resolution matches drawTextGroup exactly — including its ignoring
-  // of `fill.opacity` — so a rule can never disagree with the glyphs it
-  // underlines.
-  const batches = new Map<string, { rgba: readonly number[]; rects: LaidOutDecoration[] }>();
+/**
+ * Stage the rules an underline, strikethrough or overline asks for.
+ *
+ * Color resolution matches `drawTextGroup` exactly — including its ignoring
+ * of `fill.opacity` — so a rule can never disagree with the glyphs it
+ * underlines. They stage as ordinary rects, which is what keeps them in the
+ * run their glyphs are in.
+ */
+function drawTextDecorations(
+  ctx: DrawContext, decorations: readonly LaidOutDecoration[], dx: number, dy: number,
+): void {
   for (const d of decorations) {
-    const rgba = 'color' in d.fill ? resolveColor(d.fill.color) : [0, 0, 0, 1];
-    const key = rgba.join(',');
-    let batch = batches.get(key);
-    if (!batch) { batch = { rgba, rects: [] }; batches.set(key, batch); }
-    batch.rects.push(d);
-  }
-
-  const gl = ctx.gl;
-  const prog = ctx.pathFill;
-  gl.useProgram(prog.handle);
-  setProjAndModel(ctx, prog);
-  setColorMatrixUniforms(ctx, prog);
-  // Redundant in the current code — drawText applied this before the glyph
-  // loop and nothing in between touches stencil state — but every other
-  // pathFill entry point sets it here, and relying on a caller invariant this
-  // signature doesn't express is worth less than one stencilFunc.
-  applyClipTest(ctx);
-
-  for (const { rgba, rects } of batches.values()) {
-    // pathFill takes a_position only: stride 8, no UVs, no baselineY.
-    const floats = rects.length * 4 * 2;
-    if (TEXT_RULE_VERTICES.length < floats) TEXT_RULE_VERTICES = new Float32Array(grownTo(floats));
-    const vertices = TEXT_RULE_VERTICES;
-    let vi = 0;
-    for (const d of rects) {
-      const dx0 = d.x0 + dx, dx1 = d.x1 + dx;
-      const dy0 = d.y0 + dy, dy1 = d.y1 + dy;
-      vertices[vi++] = dx0; vertices[vi++] = dy0;
-      vertices[vi++] = dx1; vertices[vi++] = dy0;
-      vertices[vi++] = dx0; vertices[vi++] = dy1;
-      vertices[vi++] = dx1; vertices[vi++] = dy1;
-    }
-    const ring = textQuadRing(gl, prog, TEXT_RULE_STRIDE, (loc) => {
-      const aPos = loc('a_position');
-      if (aPos !== undefined) {
-        gl.enableVertexAttribArray(aPos);
-        gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, TEXT_RULE_STRIDE, 0);
-      }
-    });
-    ensureQuadIndices(gl, ring, rects.length);
-    bindTextQuadSlot(gl, ring, vertices.subarray(0, floats));
-
-    setColorUniform(ctx, prog, rgba[0], rgba[1], rgba[2], rgba[3]);
-    setAlphaUniform(ctx, prog, ctx.state.alpha);
-
-    gl.drawElements(gl.TRIANGLES, rects.length * 6, gl.UNSIGNED_INT, 0);
-    gl.bindVertexArray(null);
+    const [r, g, b, a] = 'color' in d.fill ? resolveColor(d.fill.color) : [0, 0, 0, 1];
+    const staged = stageSolid(ctx, 4);
+    ctx.drawBatch.pushRect(
+      d.x0 + dx, d.y0 + dy, d.x1 - d.x0, d.y1 - d.y0, ctx.state.transform,
+      r, g, b, a * (staged.foldsAlpha ? ctx.state.alpha : 1),
+    );
   }
 }
 
-function drawTextGroup(ctx: DrawContext, group: LaidOutGroup, prog: ShaderProgram, dx: number, dy: number): void {
+/**
+ * Amount `a_synthBold` shifts the SDF threshold by when the resolver fell back
+ * from a missing bold variant to the regular atlas. Tuned on Inter: it
+ * thickens strokes about a pixel at 16px without breaking glyph topology.
+ */
+const SYNTH_BOLD_AMOUNT = 0.08;
+
+/**
+ * Stage one group of atlas glyphs into the batch.
+ *
+ * Everything that used to be a uniform here rides the vertices instead — the
+ * text color, the bold threshold, and the atlas as a slot index — so a bold
+ * word, a regular one, a run off a baked MSDF atlas and a run off the runtime
+ * canvas bake all belong to the same draw, and so does whatever else the page
+ * put around them.
+ *
+ * The synthetic oblique is the one that changes shape rather than home: the
+ * old program skewed in the vertex stage against `u_synthItalic`, and the
+ * batch places its own corners, so `pushGlyph` shears them as it places them.
+ */
+function drawTextGroup(
+  ctx: DrawContext, group: LaidOutGroup, dx: number, dy: number,
+): void {
   if (group.source === 'canvas') {
     if (!syncDynamicPageTexture(ctx.textureCache, group.page)) return;
   } else {
@@ -1826,209 +1856,34 @@ function drawTextGroup(ctx: DrawContext, group: LaidOutGroup, prog: ShaderProgra
   }
   if (group.quads.length === 0) return;
 
-  const gl = ctx.gl;
-
-  // Pack quads into a vertex buffer (stride 20 bytes: x, y, u, v, baselineY floats).
-  const floats = group.quads.length * 4 * 5;
-  if (TEXT_GROUP_VERTICES.length < floats) TEXT_GROUP_VERTICES = new Float32Array(grownTo(floats));
-  const vertices = TEXT_GROUP_VERTICES;
-  let vi = 0;
-  for (const q of group.quads) {
-    const x0 = q.x0 + dx, x1 = q.x1 + dx;
-    const y0 = q.y0 + dy, y1 = q.y1 + dy, by = q.baselineY + dy;
-    vertices[vi++] = x0; vertices[vi++] = y0; vertices[vi++] = q.u0; vertices[vi++] = q.v0; vertices[vi++] = by;
-    vertices[vi++] = x1; vertices[vi++] = y0; vertices[vi++] = q.u1; vertices[vi++] = q.v0; vertices[vi++] = by;
-    vertices[vi++] = x0; vertices[vi++] = y1; vertices[vi++] = q.u0; vertices[vi++] = q.v1; vertices[vi++] = by;
-    vertices[vi++] = x1; vertices[vi++] = y1; vertices[vi++] = q.u1; vertices[vi++] = q.v1; vertices[vi++] = by;
-  }
-  const ring = textQuadRing(gl, prog, TEXT_GROUP_STRIDE, (loc) => {
-    const aPos = loc('a_position');
-    const aUv = loc('a_uv');
-    const aBase = loc('a_baselineY');
-    if (aPos !== undefined) {
-      gl.enableVertexAttribArray(aPos);
-      gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, TEXT_GROUP_STRIDE, 0);
-    }
-    if (aUv !== undefined) {
-      gl.enableVertexAttribArray(aUv);
-      gl.vertexAttribPointer(aUv, 2, gl.FLOAT, false, TEXT_GROUP_STRIDE, 8);
-    }
-    if (aBase !== undefined) {
-      gl.enableVertexAttribArray(aBase);
-      gl.vertexAttribPointer(aBase, 1, gl.FLOAT, false, TEXT_GROUP_STRIDE, 16);
-    }
-  });
-  ensureQuadIndices(gl, ring, group.quads.length);
-  bindTextQuadSlot(gl, ring, vertices.subarray(0, floats));
-
-  // Per-group fill (color uniform).
-  let r = 0, g = 0, b = 0, a = 1;
-  if (group.fill !== null && 'color' in group.fill) {
-    [r, g, b, a] = resolveColor(group.fill.color);
-  }
-  setColorUniform(ctx, prog, r, g, b, a);
-
-  // u_synthBold: SDF threshold shift when the resolver fell back from a
-  // missing bold variant to the regular atlas. 0.08 was tuned empirically
-  // to thicken Inter strokes ~1px at 16px size without breaking topology.
-  const synthBoldAmount = group.synthetic.bold ? 0.08 : 0;
-  const uSynthBold = prog.uniform('u_synthBold');
-  if (uSynthBold !== undefined) gl.uniform1f(uSynthBold, synthBoldAmount);
-
-  // u_synthItalic: vertex-shader skew angle (radians) applied when the
-  // resolver fell back from a missing italic variant to the upright atlas.
-  // See SYNTHETIC_ITALIC_RADIANS — shared with the outline tier's CPU shear.
-  const synthItalicAmount = group.synthetic.italic ? SYNTHETIC_ITALIC_RADIANS : 0;
-  const uSynthItalic = prog.uniform('u_synthItalic');
-  if (uSynthItalic !== undefined) gl.uniform1f(uSynthItalic, synthItalicAmount);
-
-  const texId = group.source === 'canvas'
+  const atlasId = group.source === 'canvas'
     ? dynamicPageTextureId(group.page)
     : textureCacheKey(group.family, group.weight, group.style);
-  ctx.textureCache.bind(texId, 0);
-  gl.uniform1i(prog.uniform('u_atlas')!, 0);
+  const mode = group.source === 'canvas' ? GLYPH_MODE_R8 : GLYPH_MODE_MSDF;
+  const bold = group.synthetic.bold ? SYNTH_BOLD_AMOUNT : 0;
+  const tanItalic = group.synthetic.italic ? Math.tan(SYNTHETIC_ITALIC_RADIANS) : 0;
+  const color = group.fill !== null && 'color' in group.fill
+    ? resolveColor(group.fill.color)
+    : [0, 0, 0, 1];
 
-  gl.drawElements(gl.TRIANGLES, group.quads.length * 6, gl.UNSIGNED_INT, 0);
-  gl.bindVertexArray(null);
-}
+  const batch = ctx.drawBatch;
+  const m = ctx.state.transform;
+  let { staged, slot } = stageGlyphs(ctx, atlasId);
+  let alpha = color[3] * (staged.foldsAlpha ? ctx.state.alpha : 1);
 
-/**
- * A ring of VAOs and vertex buffers for the two text paths, whose geometry is
- * variable-length — a group is as many quads as it has glyphs — so a slot's
- * vertex buffer grows to the largest run it has seen instead of being fixed at
- * four vertices. Growth is `bufferData`, which reallocates and therefore does
- * wait on draws still reading the old store; it happens on the way up to a
- * high-water mark and then stops, so it is not a per-draw cost.
- *
- * The index buffer is shared by every slot and grown the same way. Quad indices
- * are a pure function of the quad count — the pattern for N quads is a prefix
- * of the pattern for any larger N — so one buffer serves every slot and every
- * draw, and nothing writes it except a growth.
- *
- * A ring rather than one buffer because the driver tracks a write hazard per
- * buffer object, so rewriting one before every draw makes each write wait on
- * the draw still reading it. Keyed on the program because a VAO name belongs to
- * the context that created it.
- */
-const TEXT_QUAD_RING_SIZE = 64;
-
-interface TextQuadSlot {
-  vao: WebGLVertexArrayObject;
-  vbo: WebGLBuffer;
-  /** Allocated size of `vbo`, in bytes. */
-  bytes: number;
-}
-
-interface TextQuadRing {
-  slots: TextQuadSlot[];
-  ibo: WebGLBuffer;
-  /** How many quads' worth of indices `ibo` currently holds. */
-  quads: number;
-  next: number;
-}
-
-const TEXT_QUAD_RINGS = new WeakMap<ShaderProgram, TextQuadRing>();
-
-/** Round up to the next power of two, so a run that keeps growing by a glyph
- *  reallocates a logarithmic number of times rather than every draw. */
-function grownTo(need: number): number {
-  let n = 256;
-  while (n < need) n *= 2;
-  return n;
-}
-
-function textQuadRing(
-  gl: WebGL2RenderingContext,
-  prog: ShaderProgram,
-  stride: number,
-  configureAttribs: (loc: (name: string) => number | undefined) => void,
-): TextQuadRing {
-  const existing = TEXT_QUAD_RINGS.get(prog);
-  if (existing) return existing;
-
-  const ibo = gl.createBuffer();
-  if (!ibo) throw new Error('textQuadRing: createBuffer (IBO) returned null');
-
-  const slots: TextQuadSlot[] = [];
-  for (let i = 0; i < TEXT_QUAD_RING_SIZE; i++) {
-    const vao = gl.createVertexArray();
-    const vbo = gl.createBuffer();
-    if (!vao) throw new Error('textQuadRing: createVertexArray returned null');
-    if (!vbo) throw new Error('textQuadRing: createBuffer returned null');
-    const bytes = grownTo(64 * 4 * stride);
-    gl.bindVertexArray(vao);
-    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-    gl.bufferData(gl.ARRAY_BUFFER, bytes, gl.DYNAMIC_DRAW);
-    configureAttribs((name) => prog.attribute(name));
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-    gl.bindVertexArray(null);
-    slots.push({ vao, vbo, bytes });
+  for (const q of group.quads) {
+    if (batch.wouldOverflow(4)) {
+      flushBatch(ctx);
+      ({ staged, slot } = stageGlyphs(ctx, atlasId));
+      alpha = color[3] * (staged.foldsAlpha ? ctx.state.alpha : 1);
+    }
+    batch.pushGlyph(
+      q.x0 + dx, q.y0 + dy, q.x1 + dx, q.y1 + dy, q.baselineY + dy, tanItalic, m,
+      q.u0, q.v0, q.u1, q.v1,
+      color[0], color[1], color[2], alpha,
+      slot, mode, bold,
+    );
   }
-
-  const ring: TextQuadRing = { slots, ibo, quads: 0, next: 0 };
-  TEXT_QUAD_RINGS.set(prog, ring);
-  return ring;
-}
-
-/** Scratch for the quad index pattern, grown alongside the ring's IBO. */
-let TEXT_QUAD_INDICES = new Uint32Array(0);
-
-/** vec2 a_position + vec2 a_uv + float a_baselineY. */
-const TEXT_GROUP_STRIDE = 20;
-/** vec2 a_position only — what `pathFill` takes. */
-const TEXT_RULE_STRIDE = 8;
-
-/** Packing scratch, reused per draw so a group's geometry costs no allocation. */
-let TEXT_GROUP_VERTICES = new Float32Array(0);
-let TEXT_RULE_VERTICES = new Float32Array(0);
-
-/** Make sure the ring's shared index buffer covers `quads` quads. Rewrites it
- *  only when it has to grow, so the steady state writes no index data at all. */
-function ensureQuadIndices(gl: WebGL2RenderingContext, ring: TextQuadRing, quads: number): void {
-  if (quads <= ring.quads) return;
-  const grown = grownTo(quads);
-  if (TEXT_QUAD_INDICES.length < grown * 6) TEXT_QUAD_INDICES = new Uint32Array(grown * 6);
-  const idx = TEXT_QUAD_INDICES;
-  let ii = ring.quads * 6;
-  for (let q = ring.quads; q < grown; q++) {
-    const base = q * 4;
-    idx[ii++] = base;     idx[ii++] = base + 1; idx[ii++] = base + 2;
-    idx[ii++] = base + 1; idx[ii++] = base + 3; idx[ii++] = base + 2;
-  }
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ring.ibo);
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, idx.subarray(0, grown * 6), gl.STATIC_DRAW);
-  ring.quads = grown;
-}
-
-/** Take the next slot, sized to hold `bytes`, with `vertices` uploaded into it
- *  and its VAO bound. Returns nothing — the caller draws immediately. */
-function bindTextQuadSlot(
-  gl: WebGL2RenderingContext,
-  ring: TextQuadRing,
-  vertices: Float32Array,
-): void {
-  const slot = ring.slots[ring.next];
-  ring.next = (ring.next + 1) % TEXT_QUAD_RING_SIZE;
-  gl.bindVertexArray(slot.vao);
-  gl.bindBuffer(gl.ARRAY_BUFFER, slot.vbo);
-  const bytes = vertices.byteLength;
-  if (bytes > slot.bytes) {
-    slot.bytes = grownTo(bytes);
-    gl.bufferData(gl.ARRAY_BUFFER, slot.bytes, gl.DYNAMIC_DRAW);
-  }
-  gl.bufferSubData(gl.ARRAY_BUFFER, 0, vertices);
-}
-
-/** Release the text-quad ring `prog` owns. Called by `WeaselRenderer.dispose`. */
-export function disposeTextQuads(gl: WebGL2RenderingContext, prog: ShaderProgram): void {
-  const ring = TEXT_QUAD_RINGS.get(prog);
-  if (!ring) return;
-  for (const slot of ring.slots) {
-    gl.deleteVertexArray(slot.vao);
-    gl.deleteBuffer(slot.vbo);
-  }
-  gl.deleteBuffer(ring.ibo);
-  TEXT_QUAD_RINGS.delete(prog);
 }
 
 /**

@@ -9,11 +9,6 @@ import {
   PATH_FILL_VCOLOR_ATTRIBUTES,
 } from './shaders/pathFill';
 import {
-  TEXT_VERT_SRC,
-  TEXT_FRAG_SRC,
-  TEXT_FRAG_R8_SRC,
-  TEXT_SDF_UNIFORMS,
-  TEXT_SDF_ATTRIBUTES,
   markAllFontsNotUploaded,
   resetBakeBudget,
   DEFAULT_BAKE_BUDGET,
@@ -50,7 +45,7 @@ import { GroupState } from './state/GroupState';
 import type { DrawCommand } from './DrawCommand';
 import type { Mat3 } from './math/mat3';
 import {
-  dispatch, flushBatch, disposeTextQuads, OUTLINE_MIN_SCREEN_PX, type DrawContext,
+  dispatch, flushBatch, OUTLINE_MIN_SCREEN_PX, type DrawContext,
 } from './draw';
 import { DrawBatch } from './drawBatch';
 import {
@@ -171,8 +166,6 @@ export class WeaselRenderer {
   private readonly gl: WebGL2RenderingContext;
   private pathFill: ShaderProgram;
   private pathFillVColor: ShaderProgram;
-  private textSdf: ShaderProgram;
-  private textSdfR8: ShaderProgram;
   private imageFill: ShaderProgram;
   private batchFill: ShaderProgram;
   private gradFill: ShaderProgram;
@@ -262,14 +255,6 @@ export class WeaselRenderer {
     this.pathFillVColor = new ShaderProgram(this.gl, VCOLOR_VERT_SRC, VCOLOR_FRAG_SRC);
     this.pathFillVColor.lookupUniforms(PATH_FILL_UNIFORMS);
     this.pathFillVColor.lookupAttributes(PATH_FILL_VCOLOR_ATTRIBUTES);
-
-    this.textSdf = new ShaderProgram(this.gl, TEXT_VERT_SRC, TEXT_FRAG_SRC);
-    this.textSdf.lookupUniforms(TEXT_SDF_UNIFORMS);
-    this.textSdf.lookupAttributes(TEXT_SDF_ATTRIBUTES);
-
-    this.textSdfR8 = new ShaderProgram(this.gl, TEXT_VERT_SRC, TEXT_FRAG_R8_SRC);
-    this.textSdfR8.lookupUniforms(TEXT_SDF_UNIFORMS);
-    this.textSdfR8.lookupAttributes(TEXT_SDF_ATTRIBUTES);
 
     this.imageFill = new ShaderProgram(this.gl, IMAGE_VERT_SRC, IMAGE_FRAG_SRC);
     this.imageFill.lookupUniforms(IMAGE_FILL_UNIFORMS);
@@ -427,14 +412,7 @@ export class WeaselRenderer {
     this.pathFill.lookupAttributes(PATH_FILL_ATTRIBUTES);
     this.pathFillVColor = new ShaderProgram(this.gl, VCOLOR_VERT_SRC, VCOLOR_FRAG_SRC);
     this.pathFillVColor.lookupUniforms(PATH_FILL_UNIFORMS);
-    this.pathFillVColor.lookupAttributes(PATH_FILL_VCOLOR_ATTRIBUTES);
-    this.textSdf = new ShaderProgram(this.gl, TEXT_VERT_SRC, TEXT_FRAG_SRC);
-    this.textSdf.lookupUniforms(TEXT_SDF_UNIFORMS);
-    this.textSdf.lookupAttributes(TEXT_SDF_ATTRIBUTES);
-    this.textSdfR8 = new ShaderProgram(this.gl, TEXT_VERT_SRC, TEXT_FRAG_R8_SRC);
-    this.textSdfR8.lookupUniforms(TEXT_SDF_UNIFORMS);
-    this.textSdfR8.lookupAttributes(TEXT_SDF_ATTRIBUTES);
-    this.imageFill = new ShaderProgram(this.gl, IMAGE_VERT_SRC, IMAGE_FRAG_SRC);
+    this.pathFillVColor.lookupAttributes(PATH_FILL_VCOLOR_ATTRIBUTES);    this.imageFill = new ShaderProgram(this.gl, IMAGE_VERT_SRC, IMAGE_FRAG_SRC);
     this.imageFill.lookupUniforms(IMAGE_FILL_UNIFORMS);
     this.imageFill.lookupAttributes(IMAGE_FILL_ATTRIBUTES);
 
@@ -508,7 +486,7 @@ export class WeaselRenderer {
     }
     this.meshCache.freeTransient();
     this.meshCache.drainPendingDeletes();
-    for (const prog of [this.pathFill, this.pathFillVColor, this.textSdf, this.textSdfR8, this.imageFill, this.batchFill, this.gradFill, this.patternFill]) {
+    for (const prog of [this.pathFill, this.pathFillVColor, this.imageFill, this.batchFill, this.gradFill, this.patternFill]) {
       gl.deleteProgram(prog.handle);
     }
     for (const prog of this.programRegistry.values()) {
@@ -519,7 +497,6 @@ export class WeaselRenderer {
     this.gradRampCache.free();
     if (this.quadVbo) gl.deleteBuffer(this.quadVbo);
     if (this.quadIbo) gl.deleteBuffer(this.quadIbo);
-    for (const prog of [this.textSdf, this.textSdfR8, this.pathFill]) disposeTextQuads(gl, prog);
     this.drawBatch.dispose();
     if (this.whiteTexture) gl.deleteTexture(this.whiteTexture);
     this.whiteTexture = null;
@@ -557,8 +534,6 @@ export class WeaselRenderer {
       gl,
       pathFill: this.pathFill,
       pathFillVColor: this.pathFillVColor,
-      textSdf: this.textSdf,
-      textSdfR8: this.textSdfR8,
       imageFill: this.imageFill,
       batchFill: this.batchFill,
       gradFill: this.gradFill,
@@ -615,8 +590,6 @@ export class WeaselRenderer {
   /** @internal */ _pathFill(): ShaderProgram { return this.pathFill; }
   /** @internal */ _pathFillVColor(): ShaderProgram { return this.pathFillVColor; }
   /** @internal */ _drawBatch(): DrawBatch { return this.drawBatch; }
-  /** @internal */ _textSdf(): ShaderProgram { return this.textSdf; }
-  /** @internal */ _textSdfR8(): ShaderProgram { return this.textSdfR8; }
   /** @internal */ _imageFill(): ShaderProgram { return this.imageFill; }
   /** @internal */ _batchFill(): ShaderProgram { return this.batchFill; }
   /** @internal */ _gradFill(): ShaderProgram { return this.gradFill; }

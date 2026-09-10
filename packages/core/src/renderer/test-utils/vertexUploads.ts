@@ -26,9 +26,22 @@ export interface UploadTracker {
   uploads(): VertexUpload[];
 }
 
+/**
+ * The floats an upload actually sent.
+ *
+ * `bufferSubData(target, offset, src, srcOffset, length)` hands GL a *window*
+ * into a scratch array the batch reuses across frames, so the recorded
+ * argument is the whole scratch — the tail of it being whatever the last, and
+ * possibly longer, run left there. Reading it whole compares live vertices
+ * against stale ones.
+ */
 function payload(call: GLCall): Float32Array | null {
   const data = call.name === 'bufferData' ? call.args[1] : call.args[2];
-  return data instanceof Float32Array ? data : null;
+  if (!(data instanceof Float32Array)) return null;
+  if (call.name !== 'bufferSubData') return data;
+  const srcOffset = typeof call.args[3] === 'number' ? call.args[3] : 0;
+  const length = typeof call.args[4] === 'number' ? call.args[4] : data.length - srcOffset;
+  return data.subarray(srcOffset, srcOffset + length);
 }
 
 export function makeUploadTracker(recorder: GLRecorder): UploadTracker {

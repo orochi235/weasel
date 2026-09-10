@@ -7,13 +7,16 @@
  * throw or drop pixels — it paints them in the wrong order, or under the wrong
  * group state, which only a test like these or a visual diff catches.
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
+import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { makeGLRecorder, type GLCall } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import {
   MAX_VERTICES_PER_BATCH, SOLID_LARGE_RING_SIZE, SOLID_RING_SIZE,
   SOLID_RING_SLOT_VERTICES, FLOATS_PER_VERTEX,
+  PAINT_MODE_OFFSET, SYNTH_BOLD_OFFSET,
 } from './drawBatch';
 
 const ARRAY_BUFFER = 0x8892;
@@ -209,9 +212,9 @@ describe('renderer — consecutive solid-fill batching', () => {
     expect(draws()).toHaveLength(4);
   });
 
-  it('flushes before text, so a rect behind a label stays behind it', () => {
+  it('keeps a run open across a label, which now stages into it', () => {
     r.render([rect(0), { kind: 'text', x: 0, y: 0, runs: [], maxWidth: Infinity, align: 'left', style: {} } as unknown as DrawCommand, rect(20)]);
-    expect(draws().filter((n) => n === 6)).toHaveLength(2);
+    expect(draws()).toEqual([12]);
   });
 
   it('merges across a group transform, placing corners itself', () => {
@@ -583,5 +586,104 @@ describe('renderer — consecutive solid-fill batching', () => {
       // built fresh per render, so it re-sends rather than assume.
       expect(colorWrites(r._batchFill())).toEqual([[1, 1, 1, 1]]);
     });
+  });
+});
+
+/**
+ * Text in the batch.
+ *
+ * A label used to break every run it sat in, because glyphs took the MSDF
+ * program and a run is one program. The batch shader now carries the glyph
+ * math behind a per-vertex paint mode, so a caption under a thumbnail, a
+ * badge over a card, and the rules under an underlined word all belong to the
+ * run around them.
+ */
+describe('renderer — text in the batch', () => {
+  let recorder: ReturnType<typeof makeGLRecorder>;
+  let r: WeaselRenderer;
+
+  beforeEach(async () => {
+    _resetFontRegistryForTests();
+    const encoder = new TextEncoder();
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.endsWith('.json')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(FIXTURE_FONT) });
+      }
+      return Promise.resolve({
+        ok: true,
+        blob: () => Promise.resolve(new Blob([encoder.encode('PNG')], { type: 'image/png' })),
+      });
+    }) as typeof fetch;
+    global.createImageBitmap = vi.fn().mockResolvedValue({
+      width: 512, height: 512, close: vi.fn(),
+    } as unknown as ImageBitmap);
+    await registerFont('inter', {}, '/fonts/inter.json', '/fonts/inter.png');
+
+    recorder = makeGLRecorder();
+    r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
+    recorder.reset();
+  });
+
+  const rect = (x: number, color = '#ff0000'): DrawCommand => ({
+    kind: 'path',
+    path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
+    fill: { color },
+  } as DrawCommand);
+
+  const label = (text: string, extra: object = {}): DrawCommand => ({
+    kind: 'text', x: 0, y: 0,
+    runs: [{
+      text, fontFamily: 'inter', fontSize: 16, fontWeight: 400,
+      fontStyle: 'normal', fill: { fill: 'solid', color: '#0000ff' },
+      letterSpacing: 0,
+      underline: false, strikethrough: false, overline: false, baselineShift: 0,
+      ...extra,
+    }],
+    maxWidth: Infinity, align: 'left', style: {},
+  } as unknown as DrawCommand);
+
+  const draws = (): number[] =>
+    recorder.calls.filter((c) => c.name === 'drawElements').map((c) => c.args[1] as number);
+
+  /** The one staged vertex buffer a merged frame uploads. */
+  const staged = (): Float32Array =>
+    recorder.calls.find(
+      (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
+    )!.args[2] as Float32Array;
+
+  const vertex = (buf: Float32Array, i: number): number[] =>
+    Array.from(buf.slice(i * FLOATS_PER_VERTEX, (i + 1) * FLOATS_PER_VERTEX));
+
+  it('merges a label into the run around it', () => {
+    r.render([rect(0), label('A'), rect(20)]);
+    expect(draws()).toEqual([18]); // 2 rects + 1 glyph, 6 indices each
+  });
+
+  it('gives a glyph the text color on its vertices', () => {
+    r.render([label('A')]);
+    // Blue, opaque — where a solid rect carries its own fill.
+    expect(vertex(staged(), 0).slice(2, 6)).toEqual([0, 0, 1, 1]);
+  });
+
+  it('marks a glyph vertex with a paint mode a solid does not carry', () => {
+    r.render([rect(0), label('A')]);
+    const buf = staged();
+    const solidMode = vertex(buf, 0)[PAINT_MODE_OFFSET];
+    const glyphMode = vertex(buf, 4)[PAINT_MODE_OFFSET];
+    expect(solidMode).toBe(0);
+    expect(glyphMode).toBeGreaterThan(0);
+  });
+
+  it('carries the synthetic-bold threshold per vertex, so a bold label joins a regular one', () => {
+    r.render([label('A'), label('B', { fontWeight: 700 })]);
+    expect(draws()).toEqual([12]);
+    const buf = staged();
+    expect(vertex(buf, 0)[SYNTH_BOLD_OFFSET]).toBe(0);
+    expect(vertex(buf, 4)[SYNTH_BOLD_OFFSET]).toBeCloseTo(0.08, 6);
+  });
+
+  it('keeps an underline in the run with the glyphs it underlines', () => {
+    r.render([rect(0), label('A', { underline: true })]);
+    expect(draws()).toEqual([18]); // rect + glyph + rule
   });
 });

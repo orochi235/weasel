@@ -69,9 +69,7 @@ export type {
 
 export type { GlyphTextureSink, TexSource } from './textureSink';
 export {
-  TEXT_VERT_SRC,
-  TEXT_FRAG_SRC,
-  TEXT_FRAG_R8_SRC,
-  TEXT_SDF_UNIFORMS,
-  TEXT_SDF_ATTRIBUTES,
+  GLYPH_COVERAGE_GLSL,
+  GLYPH_MODE_MSDF,
+  GLYPH_MODE_R8,
 } from './textSdf';

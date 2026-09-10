@@ -3,8 +3,14 @@ import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { mat3 } from './math/mat3';
 import type { DrawCommand } from './DrawCommand';
-import { pushClip, popClip, drawGroup, dispatch, tryStageSolid, type DrawContext } from './draw';
-import { SOLID_RING_SIZE as IMAGE_RING_SIZE, FLOATS_PER_VERTEX } from './drawBatch';
+import {
+  pushClip, popClip, drawGroup, dispatch, tryStageSolid, flushBatch, type DrawContext,
+} from './draw';
+import {
+  SOLID_RING_SIZE as IMAGE_RING_SIZE, FLOATS_PER_VERTEX, PAINT_MODE_OFFSET,
+  SYNTH_BOLD_OFFSET,
+} from './drawBatch';
+import { GLYPH_MODE_MSDF, GLYPH_MODE_R8 } from '@weasel-js/font';
 
 /**
  * Build a DrawContext backed by a GL recorder. Mirrors what WeaselRenderer.render
@@ -18,8 +24,6 @@ function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeof makeG
     gl: recorder.gl,
     pathFill: r._pathFill(),
     pathFillVColor: r._pathFillVColor(),
-    textSdf: r._textSdf(),
-    textSdfR8: r._textSdfR8(),
     imageFill: r._imageFill(),
     batchFill: r._batchFill(),
     gradFill: r._gradFill(),
@@ -51,9 +55,75 @@ const isVertexUpload = (c: { name: string; args: readonly unknown[] }): boolean 
   (c.name === 'bufferData' && c.args[1] instanceof Float32Array)
   || (c.name === 'bufferSubData' && c.args[2] instanceof Float32Array);
 
-/** The floats an upload carried. */
-const uploadFloats = (c: { name: string; args: readonly unknown[] }): Float32Array =>
-  (c.name === 'bufferData' ? c.args[1] : c.args[2]) as Float32Array;
+/**
+ * The floats an upload actually sent.
+ *
+ * A `bufferSubData` from the batch names a window into a scratch array it
+ * reuses across frames, so the recorded argument is the whole scratch with the
+ * previous run's tail still in it.
+ */
+const uploadFloats = (c: { name: string; args: readonly unknown[] }): Float32Array => {
+  const data = (c.name === 'bufferData' ? c.args[1] : c.args[2]) as Float32Array;
+  if (c.name !== 'bufferSubData') return data;
+  const srcOffset = typeof c.args[3] === 'number' ? c.args[3] : 0;
+  const length = typeof c.args[4] === 'number' ? c.args[4] : data.length - srcOffset;
+  return data.subarray(srcOffset, srcOffset + length);
+};
+
+/**
+ * Every vertex the batch staged this frame, concatenated, after draining
+ * whatever run is still open.
+ *
+ * `dispatch` alone leaves a run staged — only a flush uploads it — so a test
+ * reading geometry has to close the frame the way `render` would.
+ */
+function stagedVertices(ctx: DrawContext, calls: readonly { name: string; args: readonly unknown[] }[]): Float32Array {
+  flushBatch(ctx);
+  const runs: Float32Array[] = [];
+  let bound: unknown = null;
+  for (const c of calls) {
+    if (c.name === 'useProgram') bound = c.args[0];
+    if (bound === ctx.batchFill.handle && isVertexUpload(c) && c.args[0] === 0x8892) {
+      runs.push(uploadFloats(c));
+    }
+  }
+  const total = runs.reduce((n, r) => n + r.length, 0);
+  const out = new Float32Array(total);
+  let at = 0;
+  for (const r of runs) { out.set(r, at); at += r.length; }
+  return out;
+}
+
+/**
+ * Which tiers painted, read off the staged vertices.
+ *
+ * One program draws everything now, so `useProgram` no longer names a tier and
+ * the per-vertex paint mode is what does: 0 is solid geometry — a rect, a
+ * tessellated glyph outline, a decoration rule — `GLYPH_MODE_MSDF` a glyph off
+ * a baked atlas, `GLYPH_MODE_R8` one off the runtime canvas bake.
+ */
+function paintModes(ctx: DrawContext, calls: readonly { name: string; args: readonly unknown[] }[]): Set<number> {
+  const verts = stagedVertices(ctx, calls);
+  const modes = new Set<number>();
+  for (let i = 0; i < verts.length; i += FLOATS_PER_VERTEX) {
+    modes.add(verts[i + PAINT_MODE_OFFSET]);
+  }
+  return modes;
+}
+
+/** The `(x, y)` of every staged vertex carrying `mode`, in staging order. */
+function positionsOfMode(
+  ctx: DrawContext,
+  calls: readonly { name: string; args: readonly unknown[] }[],
+  mode: number,
+): number[] {
+  const verts = stagedVertices(ctx, calls);
+  const out: number[] = [];
+  for (let i = 0; i < verts.length; i += FLOATS_PER_VERTEX) {
+    if (verts[i + PAINT_MODE_OFFSET] === mode) out.push(verts[i], verts[i + 1]);
+  }
+  return out;
+}
 
 describe('WeaselRenderer.render — kind: group', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
@@ -498,7 +568,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
     expect(magFilters).toEqual([recorder.gl.NEAREST]);
   });
 
-  it('merges neighbouring images sharing a bitmap into one draw', () => {
+  it('merges neighboring images sharing a bitmap into one draw', () => {
     const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
     const img = { kind: 'image' as const, image: fakeBitmap, x: 0, y: 0, w: 16, h: 16 };
     r.render([img, img, img]);
@@ -976,6 +1046,14 @@ describe('C2: frame-start stencilMask(0xFF) before clear', () => {
 });
 
 describe('drawText synthetic-bold', () => {
+  /** The `a_synthBold` every staged vertex carries, deduplicated. */
+  const boldValues = (ctx: DrawContext, calls: readonly { name: string; args: readonly unknown[] }[]): number[] => {
+    const verts = stagedVertices(ctx, calls);
+    const out = new Set<number>();
+    for (let i = 0; i < verts.length; i += FLOATS_PER_VERTEX) out.add(verts[i + SYNTH_BOLD_OFFSET]);
+    return [...out];
+  };
+
   beforeEach(() => {
     const encoder = new TextEncoder();
     global.fetch = vi.fn().mockImplementation((url: string) => {
@@ -992,7 +1070,7 @@ describe('drawText synthetic-bold', () => {
     } as unknown as ImageBitmap);
   });
 
-  it('sets u_synthBold to ~0.08 when a group has synthetic.bold=true', async () => {
+  it('shifts the SDF threshold by ~0.08 when a group has synthetic.bold=true', async () => {
     _resetFontRegistryForTests();
     // Register only the regular weight; request bold via a run → synthetic.bold=true
     await registerFont('inter', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
@@ -1007,16 +1085,10 @@ describe('drawText synthetic-bold', () => {
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
-    // Find u_synthBold uniform sets via uniform1f calls. The exact location
-    // (which arg index is the value) is calls.find by uniform location: the
-    // recorder tracks uniform1f as `{ name: 'uniform1f', args: [loc, value] }`.
-    const synthBoldVals = calls
-      .filter((c) => c.name === 'uniform1f')
-      .map((c) => c.args[1] as number);
-    expect(synthBoldVals.some((v) => Math.abs(v - 0.08) < 1e-6)).toBe(true);
+    expect(boldValues(ctx, calls).some((v) => Math.abs(v - 0.08) < 1e-6)).toBe(true);
   });
 
-  it('sets u_synthBold to 0 for an exact-match variant', async () => {
+  it('leaves the threshold alone for an exact-match variant', async () => {
     _resetFontRegistryForTests();
     await registerFont('inter', { weight: 700, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
     const { ctx, calls } = createRecorderCtx();
@@ -1030,10 +1102,7 @@ describe('drawText synthetic-bold', () => {
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
-    const synthBoldVals = calls
-      .filter((c) => c.name === 'uniform1f')
-      .map((c) => c.args[1] as number);
-    expect(synthBoldVals.some((v) => Math.abs(v - 0.08) < 1e-6)).toBe(false);
+    expect(boldValues(ctx, calls).some((v) => Math.abs(v - 0.08) < 1e-6)).toBe(false);
   });
 });
 
@@ -1096,6 +1165,22 @@ describe('flattenTolerance option', () => {
 });
 
 describe('drawText synthetic-italic', () => {
+  /**
+   * How far the top of a staged glyph quad leans right of its bottom, as a
+   * fraction of the quad's height.
+   *
+   * The shear moved from the vertex shader to `pushGlyph`, which places the
+   * corners itself: `x += (baselineY - y) * tan(angle)`, so top minus bottom is
+   * the quad's height times the tangent whatever the baseline is. Corners wind
+   * top-left, top-right, bottom-right, bottom-left.
+   */
+  const leanPerHeight = (ctx: DrawContext, calls: readonly { name: string; args: readonly unknown[] }[]): number => {
+    const v = stagedVertices(ctx, calls);
+    const topLeftX = v[0], topLeftY = v[1];
+    const bottomLeftX = v[3 * FLOATS_PER_VERTEX], bottomLeftY = v[3 * FLOATS_PER_VERTEX + 1];
+    return (topLeftX - bottomLeftX) / (bottomLeftY - topLeftY);
+  };
+
   beforeEach(() => {
     const encoder = new TextEncoder();
     global.fetch = vi.fn().mockImplementation((url: string) => {
@@ -1112,7 +1197,7 @@ describe('drawText synthetic-italic', () => {
     } as unknown as ImageBitmap);
   });
 
-  it('sets u_synthItalic to ~0.2094 when a group has synthetic.italic=true', async () => {
+  it('leans a glyph by tan(12°) when a group has synthetic.italic=true', async () => {
     _resetFontRegistryForTests();
     await registerFont('inter', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
     const { ctx, calls } = createRecorderCtx();
@@ -1126,13 +1211,10 @@ describe('drawText synthetic-italic', () => {
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
-    const uniform1fVals = calls
-      .filter((c) => c.name === 'uniform1f')
-      .map((c) => c.args[1] as number);
-    expect(uniform1fVals.some((v) => Math.abs(v - 0.2094) < 1e-3)).toBe(true);
+    expect(leanPerHeight(ctx, calls)).toBeCloseTo(Math.tan(0.2094), 4);
   });
 
-  it('sets u_synthItalic to 0 for an exact-match italic variant', async () => {
+  it('leaves an exact-match italic variant upright, the face doing the leaning', async () => {
     _resetFontRegistryForTests();
     await registerFont('inter', { weight: 400, style: 'italic' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
     const { ctx, calls } = createRecorderCtx();
@@ -1146,10 +1228,7 @@ describe('drawText synthetic-italic', () => {
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
-    const uniform1fVals = calls
-      .filter((c) => c.name === 'uniform1f')
-      .map((c) => c.args[1] as number);
-    expect(uniform1fVals.some((v) => Math.abs(v - 0.2094) < 1e-3)).toBe(false);
+    expect(leanPerHeight(ctx, calls)).toBe(0);
   });
 });
 
@@ -1170,15 +1249,11 @@ describe('drawText verticalAlign', () => {
     } as unknown as ImageBitmap);
   });
 
-  // First vertex of the first quad in the first (and only, for this fixture
-  // font/text) vertex upload of the text VBO: stride is [x, y, u, v,
-  // baselineY], so index 1 is y0.
-  function firstQuadY0(calls: ReturnType<typeof makeGLRecorder>['calls']): number {
-    const upload = calls.find(
-      isVertexUpload,
-    );
-    if (!upload) throw new Error('no text vertex upload recorded');
-    return uploadFloats(upload)[1];
+  /** Top-left y of the first glyph quad the run staged. */
+  function firstQuadY0(ctx: DrawContext, calls: ReturnType<typeof makeGLRecorder>['calls']): number {
+    const verts = stagedVertices(ctx, calls);
+    if (verts.length === 0) throw new Error('no text vertex upload recorded');
+    return verts[1];
   }
 
   it('shifts emitted quad y-coordinates by verticalAlignOffset(verticalAlign, height, textHeight)', async () => {
@@ -1195,7 +1270,7 @@ describe('drawText verticalAlign', () => {
 
     const { ctx: ctxTop, calls: callsTop } = createRecorderCtx();
     dispatch(ctxTop, { kind: 'text', x: 0, y: 0, runs, maxWidth: Infinity, align: 'left', style });
-    const y0Top = firstQuadY0(callsTop);
+    const y0Top = firstQuadY0(ctxTop, callsTop);
 
     const boxHeight = 100;
     const { ctx: ctxCentered, calls: callsCentered } = createRecorderCtx();
@@ -1203,7 +1278,7 @@ describe('drawText verticalAlign', () => {
       kind: 'text', x: 0, y: 0, runs, maxWidth: Infinity, align: 'left', style,
       height: boxHeight, verticalAlign: 'center',
     });
-    const y0Centered = firstQuadY0(callsCentered);
+    const y0Centered = firstQuadY0(ctxCentered, callsCentered);
 
     const resolved = resolveTextStyle(style);
     const laid = layoutRuns(runs, { maxWidth: Infinity, lineHeight: resolved.lineHeight, align: 'left' });
@@ -1230,7 +1305,7 @@ describe('drawText verticalAlign', () => {
     const { ctx: ctxB, calls: callsB } = createRecorderCtx();
     dispatch(ctxB, { kind: 'text', x: 0, y: 0, runs, maxWidth: Infinity, align: 'left', style: {}, verticalAlign: 'top' });
 
-    expect(firstQuadY0(callsB)).toBe(firstQuadY0(callsA));
+    expect(firstQuadY0(ctxB, callsB)).toBe(firstQuadY0(ctxA, callsA));
   });
 });
 
@@ -1250,7 +1325,7 @@ describe('drawText — canvas-dynamic routing', () => {
     registerCanvasFont('Dyn');
   });
 
-  it('binds the R8 program and dynamic page texture for a canvas group', () => {
+  it('paints a canvas group in the single-channel mode, off the dynamic page', () => {
     const { ctx, calls } = createRecorderCtx();
     const cmd: DrawCommand = {
       kind: 'text',
@@ -1262,9 +1337,8 @@ describe('drawText — canvas-dynamic routing', () => {
       maxWidth: Infinity, align: 'left', style: {},
     } as DrawCommand;
     dispatch(ctx, cmd);
-    const used = calls.filter((c) => c.name === 'useProgram').map((c) => c.args[0]);
-    expect(used).toContain(ctx.textSdfR8.handle);
-    expect(used).not.toContain(ctx.textSdf.handle);
+    expect(paintModes(ctx, calls)).toContain(GLYPH_MODE_R8);
+    expect(paintModes(ctx, calls)).not.toContain(GLYPH_MODE_MSDF);
     // Full page upload happened (texImage2D — the recorder can't see the R8 format args).
     expect(calls.some((c) => c.name === 'texImage2D')).toBe(true);
   });
@@ -1328,12 +1402,10 @@ describe('drawText — substituted family reaches the GPU', () => {
   it('draws quads for text in an unregistered family', () => {
     const { ctx, calls } = createRecorderCtx();
     dispatch(ctx, ghostText());
-    const draws = calls.filter((c) => c.name === 'drawElements');
-    expect(draws).toHaveLength(1);
-    // 1 glyph → 2 triangles → 6 indices.
-    expect(draws[0].args[1]).toBe(6);
-    const vbo = calls.find(isVertexUpload);
-    expect(vbo).toBeDefined();
+    // 1 glyph → 4 corners, and the substituted atlas is what it samples.
+    expect(stagedVertices(ctx, calls)).toHaveLength(4 * FLOATS_PER_VERTEX);
+    expect(paintModes(ctx, calls)).toEqual(new Set([GLYPH_MODE_MSDF]));
+    expect(calls.filter((c) => c.name === 'drawElements')).toHaveLength(1);
   });
 
   it('renders nothing for an unregistered family under the "none" policy', () => {
@@ -1357,6 +1429,7 @@ describe('drawText — substituted family reaches the GPU', () => {
       maxWidth: Infinity, align: 'left', style: {},
     });
     expect(calls.some((c) => c.name === 'texImage2D')).toBe(true);
+    flushBatch(ctx);
     expect(calls.filter((c) => c.name === 'drawElements')).toHaveLength(1);
   });
 });
@@ -1385,13 +1458,12 @@ describe('drawText — letterSpacing reaches the GPU', () => {
     await registerFont('inter', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
   });
 
-  // x of each quad's first vertex in the text VBO (stride 5 floats, 4 verts/quad).
-  function quadX0s(calls: ReturnType<typeof makeGLRecorder>['calls']): number[] {
-    const upload = calls.find(isVertexUpload);
-    if (!upload) throw new Error('no text vertex upload recorded');
-    const data = uploadFloats(upload);
+  /** x of each staged quad's first corner. */
+  function quadX0s(ctx: DrawContext, calls: ReturnType<typeof makeGLRecorder>['calls']): number[] {
+    const data = stagedVertices(ctx, calls);
+    if (data.length === 0) throw new Error('no text vertex upload recorded');
     const out: number[] = [];
-    for (let i = 0; i < data.length; i += 20) out.push(data[i]);
+    for (let i = 0; i < data.length; i += 4 * FLOATS_PER_VERTEX) out.push(data[i]);
     return out;
   }
 
@@ -1407,7 +1479,7 @@ describe('drawText — letterSpacing reaches the GPU', () => {
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
-    return quadX0s(calls);
+    return quadX0s(ctx, calls);
   }
 
   it('shifts uploaded glyph x-coordinates by N * letterSpacing', () => {
@@ -1448,38 +1520,36 @@ describe('drawText — decoration reaches the GPU', () => {
     await registerFont('inter', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
   });
 
-  const ARRAY_BUFFER = 0x8892;
-
-  /**
-   * Every drawElements issued while `prog` was the bound program, paired with
-   * the ARRAY_BUFFER upload and `u_color` that fed it. The recorder is a flat
-   * call log, so attribution means replaying the state it records.
-   */
-  function drawsWithProgram(
-    calls: ReturnType<typeof makeGLRecorder>['calls'],
-    prog: { handle: unknown },
-  ): Array<{ vertices: Float32Array; indexCount: number; color: number[] }> {
-    const out: Array<{ vertices: Float32Array; indexCount: number; color: number[] }> = [];
-    let bound: unknown = null;
-    let vertices: Float32Array | null = null;
-    let color: number[] = [];
-    for (const c of calls) {
-      if (c.name === 'useProgram') bound = c.args[0];
-      if (isVertexUpload(c) && c.args[0] === ARRAY_BUFFER) {
-        vertices = uploadFloats(c);
-      }
-      if (c.name === 'uniform4f') color = c.args.slice(1) as number[];
-      if (c.name === 'drawElements' && bound === prog.handle) {
-        out.push({ vertices: vertices!, indexCount: c.args[1] as number, color });
-      }
-    }
-    return out;
-  }
-
   /** Float32Array truncation means an exact `toEqual` on decimals fails. */
-  function expectVertices(actual: Float32Array, expected: number[]): void {
+  function expectVertices(actual: number[], expected: number[]): void {
     expect(actual).toHaveLength(expected.length);
     for (let i = 0; i < expected.length; i++) expect(actual[i]).toBeCloseTo(expected[i], 4);
+  }
+
+  /**
+   * The staged quads carrying `mode`, each as its four corners and the color
+   * its vertices carry.
+   *
+   * Reads the run four vertices at a time, which holds for text: glyphs and
+   * rules are quads. A tessellated mesh in the same run would break the
+   * stride, and nothing here stages one.
+   */
+  function quadsOfMode(
+    ctx: DrawContext,
+    calls: ReturnType<typeof makeGLRecorder>['calls'],
+    mode: number,
+  ): Array<{ corners: number[]; rgba: number[] }> {
+    const v = stagedVertices(ctx, calls);
+    const out: Array<{ corners: number[]; rgba: number[] }> = [];
+    for (let i = 0; i < v.length; i += 4 * FLOATS_PER_VERTEX) {
+      if (v[i + PAINT_MODE_OFFSET] !== mode) continue;
+      const corners: number[] = [];
+      for (let k = 0; k < 4; k++) {
+        corners.push(v[i + k * FLOATS_PER_VERTEX], v[i + k * FLOATS_PER_VERTEX + 1]);
+      }
+      out.push({ corners, rgba: [v[i + 2], v[i + 3], v[i + 4], v[i + 5]] });
+    }
+    return out;
   }
 
   const decoratedRun = (extra: Record<string, unknown>) => ({
@@ -1491,7 +1561,7 @@ describe('drawText — decoration reaches the GPU', () => {
 
   // FIXTURE_FONT at fontSize 32 → scale 1: 'A' advances 23, baseline is at
   // common.base = 29. Underline top = 29 + 0.10*32 = 32.2, 0.05*32 = 1.6 thick.
-  it('emits the underline rect through the path-fill program', () => {
+  it('stages the underline rect with the glyphs it underlines', () => {
     const { ctx, calls } = createRecorderCtx();
     dispatch(ctx, {
       kind: 'text', x: 0, y: 0,
@@ -1499,11 +1569,12 @@ describe('drawText — decoration reaches the GPU', () => {
       maxWidth: Infinity, align: 'left', style: {},
     } as DrawCommand);
 
-    const draws = drawsWithProgram(calls, ctx.pathFill);
-    expect(draws).toHaveLength(1);
-    expect(draws[0].indexCount).toBe(6);
-    // 4 vertices, 2 floats each (pathFill takes a_position only — no UVs).
-    expectVertices(draws[0].vertices, [0, 32.2, 23, 32.2, 0, 33.8, 23, 33.8]);
+    const rules = quadsOfMode(ctx, calls, 0);
+    expect(rules).toHaveLength(1);
+    // Corners wind top-left, top-right, bottom-right, bottom-left.
+    expectVertices(rules[0].corners, [0, 32.2, 23, 32.2, 23, 33.8, 0, 33.8]);
+    // The glyph and its rule are one draw.
+    expect(calls.filter((c) => c.name === 'drawElements')).toHaveLength(1);
   });
 
   it('emits nothing through the path-fill program when decoration is off', () => {
@@ -1513,9 +1584,9 @@ describe('drawText — decoration reaches the GPU', () => {
       runs: [decoratedRun({})],
       maxWidth: Infinity, align: 'left', style: {},
     } as DrawCommand);
-    expect(drawsWithProgram(calls, ctx.pathFill)).toHaveLength(0);
-    // ...but the glyph itself still drew.
-    expect(drawsWithProgram(calls, ctx.textSdf)).toHaveLength(1);
+    // No rule staged — the glyph is the only thing in the run.
+    expect(positionsOfMode(ctx, calls, 0)).toHaveLength(0);
+    expect(positionsOfMode(ctx, calls, GLYPH_MODE_MSDF)).toHaveLength(8);
   });
 
   it('emits the strikethrough rect above the baseline', () => {
@@ -1525,26 +1596,27 @@ describe('drawText — decoration reaches the GPU', () => {
       runs: [decoratedRun({ strikethrough: true })],
       maxWidth: Infinity, align: 'left', style: {},
     } as DrawCommand);
-    const draws = drawsWithProgram(calls, ctx.pathFill);
-    expect(draws).toHaveLength(1);
+    const rules = quadsOfMode(ctx, calls, 0);
+    expect(rules).toHaveLength(1);
     // Top = 29 - 0.30*32 = 19.4, bottom = 21.
-    expectVertices(draws[0].vertices, [0, 19.4, 23, 19.4, 0, 21, 23, 21]);
+    expectVertices(rules[0].corners, [0, 19.4, 23, 19.4, 23, 21, 0, 21]);
   });
 
-  it('batches both rules of a doubly-decorated run into one draw', () => {
+  it('puts both rules of a doubly-decorated run in the glyph\'s own draw', () => {
     const { ctx, calls } = createRecorderCtx();
     dispatch(ctx, {
       kind: 'text', x: 0, y: 0,
       runs: [decoratedRun({ underline: true, strikethrough: true })],
       maxWidth: Infinity, align: 'left', style: {},
     } as DrawCommand);
-    const draws = drawsWithProgram(calls, ctx.pathFill);
+    expect(quadsOfMode(ctx, calls, 0)).toHaveLength(2);
+    // One glyph and two rules: 3 quads, 18 indices, one draw.
+    const draws = calls.filter((c) => c.name === 'drawElements');
     expect(draws).toHaveLength(1);
-    expect(draws[0].indexCount).toBe(12);
-    expect(draws[0].vertices).toHaveLength(16);
+    expect(draws[0].args[1]).toBe(18);
   });
 
-  it('paints the rule in the run fill, and splits the draw when fills differ', () => {
+  it('paints each rule in its own run\'s fill, without splitting the draw', () => {
     const { ctx, calls } = createRecorderCtx();
     dispatch(ctx, {
       kind: 'text', x: 0, y: 0,
@@ -1554,9 +1626,10 @@ describe('drawText — decoration reaches the GPU', () => {
       ],
       maxWidth: Infinity, align: 'left', style: {},
     } as DrawCommand);
-    const draws = drawsWithProgram(calls, ctx.pathFill);
-    expect(draws).toHaveLength(2);
-    expect(draws.map((d) => d.color)).toEqual([[0, 0, 0, 1], [1, 0, 0, 1]]);
+    // The color rides the vertices, so two colors are one draw — where the
+    // rule used to be a `u_color` uniform and a second color cost a draw.
+    expect(quadsOfMode(ctx, calls, 0).map((q) => q.rgba)).toEqual([[0, 0, 0, 1], [1, 0, 0, 1]]);
+    expect(calls.filter((c) => c.name === 'drawElements')).toHaveLength(1);
   });
 
   it('shifts the rule by the verticalAlign offset, with the glyphs', () => {
@@ -1568,10 +1641,10 @@ describe('drawText — decoration reaches the GPU', () => {
     const { ctx: ctxB, calls: callsB } = createRecorderCtx();
     dispatch(ctxB, { ...cmd, height: 100, verticalAlign: 'center' } as DrawCommand);
 
-    const yA = drawsWithProgram(callsA, ctxA.pathFill)[0].vertices[1];
-    const yB = drawsWithProgram(callsB, ctxB.pathFill)[0].vertices[1];
-    const glyphYA = drawsWithProgram(callsA, ctxA.textSdf)[0].vertices[1];
-    const glyphYB = drawsWithProgram(callsB, ctxB.textSdf)[0].vertices[1];
+    const yA = positionsOfMode(ctxA, callsA, 0)[1];
+    const yB = positionsOfMode(ctxB, callsB, 0)[1];
+    const glyphYA = positionsOfMode(ctxA, callsA, GLYPH_MODE_MSDF)[1];
+    const glyphYB = positionsOfMode(ctxB, callsB, GLYPH_MODE_MSDF)[1];
     expect(yB - yA).not.toBe(0);
     // The rule must move by exactly what the glyphs moved by, or it detaches.
     expect(yB - yA).toBeCloseTo(glyphYB - glyphYA, 6);
@@ -1599,9 +1672,9 @@ describe('drawText — decoration reaches the GPU', () => {
         runs: [decoratedRun({ fontFamily: 'Dyn', underline: true })],
         maxWidth: Infinity, align: 'left', style: {},
       } as DrawCommand);
-      expect(drawsWithProgram(calls, ctx.textSdfR8)).toHaveLength(0);
-      expect(drawsWithProgram(calls, ctx.textSdf)).toHaveLength(0);
-      expect(drawsWithProgram(calls, ctx.pathFill)).toHaveLength(1);
+      expect(paintModes(ctx, calls)).toEqual(new Set([0]));
+      // One rule, four corners, and no glyph to sit under.
+      expect(positionsOfMode(ctx, calls, 0)).toHaveLength(8);
     } finally {
       resetBakeBudget();
       _resetDynamicFontsForTests();
@@ -1620,15 +1693,15 @@ describe('drawText — decoration reaches the GPU', () => {
       }],
     } as never);
     // The rule's draw must be issued with the clip stencil live, or it spills
-    // past the group's clip rect. Anchor on the decoration VBO upload — the
-    // clip's own rasterization also binds pathFill, so the program alone
-    // can't identify our draw.
-    // (The clip rect's own mesh is also 8 floats, so match on the rule's y.)
-    const at = calls.findIndex(
-      (c) => isVertexUpload(c)
-        && uploadFloats(c).length === 8
-        && Math.abs(uploadFloats(c)[1] - 32.2) < 1e-3,
-    );
+    // past the group's clip rect. The rule stages into the batch now, so the
+    // anchor is the batch's own draw — which `popClip` forces before it lifts
+    // the mask.
+    let bound: unknown = null;
+    let at = -1;
+    for (let i = 0; i < calls.length; i++) {
+      if (calls[i].name === 'useProgram') bound = calls[i].args[0];
+      if (calls[i].name === 'drawElements' && bound === ctx.batchFill.handle) { at = i; break; }
+    }
     expect(at).toBeGreaterThanOrEqual(0);
     let enabled = false;
     let func: unknown[] | null = null;
@@ -1660,8 +1733,9 @@ describe('drawText — decoration reaches the GPU', () => {
         maxWidth: Infinity, align: 'left', style: {},
       }],
     } as DrawCommand);
-    // Look only at what was uploaded after pathFill was bound for the rule.
-    const from = calls.findIndex((c) => c.name === 'useProgram' && c.args[0] === ctx.pathFill.handle);
+    flushBatch(ctx);
+    // Look only at what was uploaded after the batch was bound to flush.
+    const from = calls.findIndex((c) => c.name === 'useProgram' && c.args[0] === ctx.batchFill.handle);
     expect(from).toBeGreaterThanOrEqual(0);
     const after = calls.slice(from);
     // Group alpha reaches u_alpha, and the group color matrix reaches
@@ -1733,18 +1807,39 @@ describe('drawText — outline tier', () => {
     maxWidth: Infinity, align: 'left', style: {},
   } as DrawCommand);
 
-  /** Vertex buffers uploaded this frame, in upload order. */
-  const uploads = (calls: readonly { name: string; args: readonly unknown[] }[]): Float32Array[] =>
-    calls.filter(isVertexUpload)
-      .map(uploadFloats);
+  /** The (x, y) of every vertex this frame staged, in staging order. */
+  const outlineXY = (ctx: DrawContext, calls: ReturnType<typeof makeGLRecorder>['calls']): number[] =>
+    positionsOfMode(ctx, calls, 0);
 
-  it('draws outline glyphs through pathFill, not the SDF programs', () => {
+  /**
+   * The staged vertex indices painted in `rgba`.
+   *
+   * A glyph's fill and its stroke ribbon share one draw now, so the color is
+   * what tells them apart inside the buffer — and where they sit in it is the
+   * paint order: everything the fill staged comes before everything the stroke
+   * did.
+   */
+  const indicesColored = (
+    ctx: DrawContext,
+    calls: ReturnType<typeof makeGLRecorder>['calls'],
+    rgba: number[],
+  ): number[] => {
+    const v = stagedVertices(ctx, calls);
+    const out: number[] = [];
+    for (let i = 0; i < v.length; i += FLOATS_PER_VERTEX) {
+      if (rgba.every((want, k) => Math.abs(v[i + 2 + k] - want) < 1e-6)) out.push(i / FLOATS_PER_VERTEX);
+    }
+    return out;
+  };
+  const BLACK = [0, 0, 0, 1];
+  const RED = [1, 0, 0, 1];
+
+  it('draws outline glyphs as geometry, not off an atlas', () => {
     const { ctx, calls } = createRecorderCtx();
     dispatch(ctx, textCmd('A'));
-    const used = calls.filter((c) => c.name === 'useProgram').map((c) => c.args[0]);
-    expect(used).toContain(ctx.pathFill.handle);
-    expect(used).not.toContain(ctx.textSdf.handle);
-    expect(used).not.toContain(ctx.textSdfR8.handle);
+    // Tessellated triangles are solid geometry like any other, so the run
+    // carries them at paint mode 0 and no glyph mode appears at all.
+    expect(paintModes(ctx, calls)).toEqual(new Set([0]));
   });
 
   it('batches a whole group into one draw call', () => {
@@ -1753,16 +1848,14 @@ describe('drawText — outline tier', () => {
     // Four glyphs, one buffer, one draw — the batching the atlas tier gets
     // from packing glyphs into a texture. A model matrix per glyph would have
     // traded that away.
+    expect(outlineXY(ctx, calls)).toHaveLength(4 * 3 * 2); // 4 glyphs × 3 vertices × (x, y)
     expect(calls.filter((c) => c.name === 'drawElements')).toHaveLength(1);
-    const verts = uploads(calls);
-    expect(verts).toHaveLength(1);
-    expect(verts[0].length).toBe(4 * 3 * 2); // 4 glyphs × 3 vertices × (x, y)
   });
 
   it('places em-space geometry at the pen and baseline, scaled by fontSize', () => {
     const { ctx, calls } = createRecorderCtx();
     dispatch(ctx, textCmd('A'));
-    const v = uploads(calls)[0];
+    const v = outlineXY(ctx, calls);
 
     const ys = [v[1], v[3], v[5]];
     const xs = [v[0], v[2], v[4]];
@@ -1775,10 +1868,10 @@ describe('drawText — outline tier', () => {
     expect(Math.max(...xs)).toBeCloseTo(SIZE, 4);
   });
 
-  it('shears synthetic obliques the same way the SDF vertex shader does', () => {
+  it('shears synthetic obliques the same way the atlas tier does', () => {
     const { ctx, calls } = createRecorderCtx();
     dispatch(ctx, textCmd('A', { fontStyle: 'italic' }));
-    const v = uploads(calls)[0];
+    const v = outlineXY(ctx, calls);
 
     const ys = [v[1], v[3], v[5]];
     const xs = [v[0], v[2], v[4]];
@@ -1792,8 +1885,7 @@ describe('drawText — outline tier', () => {
   it('leaves small text on the atlas tier', () => {
     const { ctx, calls } = createRecorderCtx();
     dispatch(ctx, textCmd('A', { fontSize: 12 }));
-    const used = calls.filter((c) => c.name === 'useProgram').map((c) => c.args[0]);
-    expect(used).toContain(ctx.textSdf.handle);
+    expect(paintModes(ctx, calls)).toContain(GLYPH_MODE_MSDF);
   });
 
   it('pulls small text across the threshold once the view is zoomed in', () => {
@@ -1803,18 +1895,14 @@ describe('drawText — outline tier', () => {
     ctx.state.push({ transform: new Float32Array([8, 0, 0, 0, 8, 0, 0, 0, 1]) });
     dispatch(ctx, textCmd('A', { fontSize: 12 }));
     ctx.state.pop();
-    const used = calls.filter((c) => c.name === 'useProgram').map((c) => c.args[0]);
-    expect(used).toContain(ctx.pathFill.handle);
-    expect(used).not.toContain(ctx.textSdf.handle);
+    expect(paintModes(ctx, calls)).toEqual(new Set([0]));
   });
 
   it('honours a renderer that turns the tier off', () => {
     const { ctx, calls } = createRecorderCtx();
     ctx.textOutlineMinScreenSize = Infinity;
     dispatch(ctx, textCmd('A'));
-    const used = calls.filter((c) => c.name === 'useProgram').map((c) => c.args[0]);
-    expect(used).toContain(ctx.textSdf.handle);
-    expect(used).not.toContain(ctx.pathFill.handle);
+    expect(paintModes(ctx, calls)).toEqual(new Set([GLYPH_MODE_MSDF]));
   });
 
   it('moves outline glyphs with verticalAlign, like the quads', () => {
@@ -1823,8 +1911,8 @@ describe('drawText — outline tier', () => {
     const bottom = createRecorderCtx();
     dispatch(bottom.ctx, { ...textCmd('A'), height: 400, verticalAlign: 'bottom' } as DrawCommand);
 
-    const yOf = (calls: readonly { name: string; args: readonly unknown[] }[]) => uploads(calls)[0][1];
-    expect(yOf(bottom.calls)).toBeGreaterThan(yOf(top.calls));
+    expect(outlineXY(bottom.ctx, bottom.calls)[1])
+      .toBeGreaterThan(outlineXY(top.ctx, top.calls)[1]);
   });
 
   /**
@@ -1835,30 +1923,27 @@ describe('drawText — outline tier', () => {
   describe('stroke', () => {
     const STROKE = { paint: { fill: 'solid' as const, color: '#f00' }, width: 4 };
 
-    it('adds a second draw call for the stroke, batched like the fill', () => {
-      const plain = createRecorderCtx();
-      dispatch(plain.ctx, textCmd('AAAA'));
-      expect(plain.calls.filter((c) => c.name === 'drawElements')).toHaveLength(1);
-
+    it('batches the stroke over the group, as the fill is', () => {
       const stroked = createRecorderCtx();
       dispatch(stroked.ctx, textCmd('AAAA', { stroke: STROKE }));
-      // One for the four glyphs' fill, one for the four glyphs' stroke — the
-      // stroke batches over the group exactly as the fill does.
-      expect(stroked.calls.filter((c) => c.name === 'drawElements')).toHaveLength(2);
-      expect(uploads(stroked.calls)).toHaveLength(2);
+      // Four glyphs' fill and four glyphs' stroke, each batched over the whole
+      // group — and both in the one run, which is why this is a single draw.
+      expect(indicesColored(stroked.ctx, stroked.calls, BLACK)).toHaveLength(4 * 3);
+      expect(indicesColored(stroked.ctx, stroked.calls, RED).length).toBeGreaterThan(4 * 3);
+      expect(stroked.calls.filter((c) => c.name === 'drawElements')).toHaveLength(1);
     });
 
     it('paints the stroke over the fill', () => {
       const { ctx, calls } = createRecorderCtx();
       dispatch(ctx, textCmd('A', { stroke: STROKE }));
-      const order = calls.filter(isVertexUpload);
-      const [fillVerts, strokeVerts] = order.map(uploadFloats);
-      // The fill is the glyph's 3 vertices; the stroke ribbon is larger. That
-      // asymmetry is what identifies which upload is which, and the order is
-      // the assertion: fill first, stroke on top, as Canvas2D and SVG's
-      // default paint-order both do it.
-      expect(fillVerts.length).toBe(3 * 2);
-      expect(strokeVerts.length).toBeGreaterThan(fillVerts.length);
+      const fill = indicesColored(ctx, calls, BLACK);
+      const stroke = indicesColored(ctx, calls, RED);
+      // The fill is the glyph's 3 vertices; the ribbon is larger. Order in the
+      // buffer is order on screen: fill first, stroke on top, as Canvas2D and
+      // SVG's default paint-order both do it.
+      expect(fill).toHaveLength(3);
+      expect(stroke.length).toBeGreaterThan(fill.length);
+      expect(Math.max(...fill)).toBeLessThan(Math.min(...stroke));
     });
 
     it('straddles the glyph edge by half the stroke width', () => {
@@ -1869,9 +1954,8 @@ describe('drawText — outline tier', () => {
       // that legitimately, which would make the assertion about the join
       // rather than about the width.
       dispatch(ctx, textCmd('A', { stroke: { ...STROKE, join: 'round', cap: 'round' } }));
-      const strokeVerts = uploads(calls)[1];
-      const xs: number[] = [];
-      for (let i = 0; i < strokeVerts.length; i += 2) xs.push(strokeVerts[i]);
+      const xy = outlineXY(ctx, calls);
+      const xs = indicesColored(ctx, calls, RED).map((v) => xy[v * 2]);
       // The glyph spans x ∈ [0, SIZE]. A centred 4-unit stroke reaches half a
       // width outside it on each side, in world units — the stroke width is
       // not scaled by the font size. Precision 1 because the join arcs are
@@ -1884,18 +1968,17 @@ describe('drawText — outline tier', () => {
     it('draws nothing extra for a zero-width stroke', () => {
       const { ctx, calls } = createRecorderCtx();
       dispatch(ctx, textCmd('A', { stroke: { ...STROKE, width: 0 } }));
+      expect(indicesColored(ctx, calls, RED)).toHaveLength(0);
       expect(calls.filter((c) => c.name === 'drawElements')).toHaveLength(1);
     });
 
     it('paints only the ribbon for `fill: null` — outline-only text', () => {
       const { ctx, calls } = createRecorderCtx();
       dispatch(ctx, textCmd('AAAA', { fill: null, stroke: STROKE }));
-      // One draw, and it is the stroke: the glyph fill of four unit triangles
-      // would be 4 × 3 vertices, and the ribbon is larger than that.
+      // One draw, and nothing in it is the fill.
+      expect(indicesColored(ctx, calls, BLACK)).toHaveLength(0);
+      expect(indicesColored(ctx, calls, RED).length).toBeGreaterThan(4 * 3);
       expect(calls.filter((c) => c.name === 'drawElements')).toHaveLength(1);
-      const verts = uploads(calls);
-      expect(verts).toHaveLength(1);
-      expect(verts[0].length).toBeGreaterThan(4 * 3 * 2);
     });
 
     it('draws nothing at all for `fill: null` with no stroke', () => {
@@ -1907,12 +1990,10 @@ describe('drawText — outline tier', () => {
     it('escalates small text to outlines rather than dropping its stroke', () => {
       const { ctx, calls } = createRecorderCtx();
       dispatch(ctx, textCmd('A', { fontSize: 12, stroke: STROKE }));
-      const used = calls.filter((c) => c.name === 'useProgram').map((c) => c.args[0]);
       // The size threshold picks between two correct renderings of unstroked
       // text. For a stroked run it would pick between a stroke and none, so
-      // the run escalates at any size and the SDF tier never sees it.
-      expect(used).toContain(ctx.pathFill.handle);
-      expect(used).not.toContain(ctx.textSdf.handle);
+      // the run escalates at any size and the atlas tier never sees it.
+      expect(paintModes(ctx, calls)).toEqual(new Set([0]));
     });
   });
 });

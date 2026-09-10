@@ -1,17 +1,19 @@
 /**
- * Growable vertex staging for a run of solid-fill geometry and image quads.
+ * Growable vertex staging for a run of solid-fill geometry, image quads and
+ * glyphs.
  *
  * Geometry only: `draw.ts` owns when a run starts, what breaks it, and the
  * uniforms the flush draws under.
  *
- * **One batch for both, because a wall interleaves them.** A grid of
- * thumbnails is a ground rect under an atlas quad, per cell, and while solid
- * geometry and image quads staged separately each one had to drain the other
- * before it could stage — so a shape that batches perfectly in either half
+ * **One batch for all three, because a page interleaves them.** A grid of
+ * thumbnails is a ground rect under an atlas quad under a caption, per cell,
+ * and while each kind staged separately every one had to drain the others
+ * before it could stage — so a shape that batches perfectly in any one half
  * alone paid a flush per command. Everything a vertex needs to say which it is
  * fits in the same vertex: solids carry the UV of a 1x1 white texel and are
- * their own color, quads carry their atlas UV and a white color. See
- * `shaders/batchFill.ts`.
+ * their own color, quads carry their atlas UV and a white color, glyphs carry
+ * a font atlas UV, their text color, and a paint mode saying the texel is a
+ * distance field rather than a color. See `shaders/batchFill.ts`.
  *
  * Colors ride the vertices because shapes in a run differ in color and a merged
  * draw has one set of uniforms — and so does the model transform, applied here
@@ -26,17 +28,23 @@
 import type { Mesh } from './cache/mesh';
 import type { Mat3 } from './math/mat3';
 import type { ShaderProgram } from './shaders/ShaderProgram';
-import { WHITE_SLOT } from './shaders/batchFill';
+import { PAINT_MODE_PLAIN, WHITE_SLOT } from './shaders/batchFill';
 
 /** Vertices per flush. Caps staging memory; a longer run flushes in chunks,
  *  which stays correct because painter's order survives a flush. */
 export const MAX_VERTICES_PER_BATCH = 32768;
 
 /** vec2 a_position + vec4 a_vertexColor + vec2 a_uv + float a_post + float
- *  a_texSlot. Exported so the buffer-replay tests read fields by name rather
- *  than by a stride they repeat — a hard-coded one silently reads a different
- *  field when the vertex grows, instead of failing. */
-export const FLOATS_PER_VERTEX = 10;
+ *  a_texSlot + float a_paintMode + float a_synthBold. Exported so the
+ *  buffer-replay tests read fields by name rather than by a stride they repeat
+ *  — a hard-coded one silently reads a different field when the vertex grows,
+ *  instead of failing. */
+export const FLOATS_PER_VERTEX = 12;
+
+/** Float offset of `a_paintMode` within a vertex, for the same reason. */
+export const PAINT_MODE_OFFSET = 10;
+/** Float offset of `a_synthBold` within a vertex. */
+export const SYNTH_BOLD_OFFSET = 11;
 const INITIAL_VERTICES = 256;
 const INITIAL_INDICES = 384;
 
@@ -131,6 +139,8 @@ export class DrawBatch {
   private readonly aUv: number;
   private readonly aPost: number;
   private readonly aSlot: number;
+  private readonly aMode: number;
+  private readonly aBold: number;
 
   /** One ring per tier, cycled per flush. Slots are created on first use, so a
    *  renderer that flushes rarely allocates as few as it flushes. */
@@ -156,11 +166,14 @@ export class DrawBatch {
     const aUv = prog.attribute('a_uv');
     const aPost = prog.attribute('a_post');
     const aSlot = prog.attribute('a_texSlot');
+    const aMode = prog.attribute('a_paintMode');
+    const aBold = prog.attribute('a_synthBold');
     if (aPos === undefined || aColor === undefined || aUv === undefined
-        || aPost === undefined || aSlot === undefined) {
+        || aPost === undefined || aSlot === undefined || aMode === undefined
+        || aBold === undefined) {
       throw new Error(
         'DrawBatch: batch program is missing a_position / a_vertexColor / a_uv / '
-        + 'a_post / a_texSlot',
+        + 'a_post / a_texSlot / a_paintMode / a_synthBold',
       );
     }
     this.gl = gl;
@@ -169,6 +182,8 @@ export class DrawBatch {
     this.aUv = aUv;
     this.aPost = aPost;
     this.aSlot = aSlot;
+    this.aMode = aMode;
+    this.aBold = aBold;
   }
 
   get length(): number {
@@ -198,10 +213,11 @@ export class DrawBatch {
     const bx = ma * x1 + mc * y + mtx,  by = mb * x1 + md * y + mty;
     const cx = ma * x1 + mc * y1 + mtx, cy = mb * x1 + md * y1 + mty;
     const dx = ma * x + mc * y1 + mtx,  dy = mb * x + md * y1 + mty;
-    i = this.writeVertex(i, ax, ay, r, g, b, a, WHITE_U, WHITE_V, 1, WHITE_SLOT);
-    i = this.writeVertex(i, bx, by, r, g, b, a, WHITE_U, WHITE_V, 1, WHITE_SLOT);
-    i = this.writeVertex(i, cx, cy, r, g, b, a, WHITE_U, WHITE_V, 1, WHITE_SLOT);
-    this.writeVertex(i, dx, dy, r, g, b, a, WHITE_U, WHITE_V, 1, WHITE_SLOT);
+    const P = PAINT_MODE_PLAIN;
+    i = this.writeVertex(i, ax, ay, r, g, b, a, WHITE_U, WHITE_V, 1, WHITE_SLOT, P, 0);
+    i = this.writeVertex(i, bx, by, r, g, b, a, WHITE_U, WHITE_V, 1, WHITE_SLOT, P, 0);
+    i = this.writeVertex(i, cx, cy, r, g, b, a, WHITE_U, WHITE_V, 1, WHITE_SLOT, P, 0);
+    this.writeVertex(i, dx, dy, r, g, b, a, WHITE_U, WHITE_V, 1, WHITE_SLOT, P, 0);
     this.pushQuadIndices();
   }
 
@@ -232,10 +248,57 @@ export class DrawBatch {
     const bx = ma * x1 + mc * y + mtx,  by = mb * x1 + md * y + mty;
     const cx = ma * x1 + mc * y1 + mtx, cy = mb * x1 + md * y1 + mty;
     const dx = ma * x + mc * y1 + mtx,  dy = mb * x + md * y1 + mty;
-    i = this.writeVertex(i, ax, ay, 1, 1, 1, 1, u0, v0, post, slot);
-    i = this.writeVertex(i, bx, by, 1, 1, 1, 1, u1, v0, post, slot);
-    i = this.writeVertex(i, cx, cy, 1, 1, 1, 1, u1, v1, post, slot);
-    this.writeVertex(i, dx, dy, 1, 1, 1, 1, u0, v1, post, slot);
+    const P = PAINT_MODE_PLAIN;
+    i = this.writeVertex(i, ax, ay, 1, 1, 1, 1, u0, v0, post, slot, P, 0);
+    i = this.writeVertex(i, bx, by, 1, 1, 1, 1, u1, v0, post, slot, P, 0);
+    i = this.writeVertex(i, cx, cy, 1, 1, 1, 1, u1, v1, post, slot, P, 0);
+    this.writeVertex(i, dx, dy, 1, 1, 1, 1, u0, v1, post, slot, P, 0);
+    this.pushQuadIndices();
+  }
+
+  /**
+   * Append one glyph quad: the box `(x0, y0)`-`(x1, y1)` mapped through `m`,
+   * sampling `(u0, v0)`-`(u1, v1)` of the font atlas at `slot`, painted in
+   * `rgba`.
+   *
+   * `mode` says which channels of that atlas carry the distance field, and
+   * `bold` shifts the threshold the shader compares it against; both ride the
+   * vertices so a bold word and a regular one, or a baked atlas and a runtime
+   * one, still share a draw.
+   *
+   * **A synthetic oblique is sheared here rather than in the shader.** The old
+   * text program carried the baseline per vertex and skewed against
+   * `u_synthItalic`; the batch places its own corners, so the shear is one
+   * multiply while they are being placed, and `tanItalic` is 0 for an upright
+   * face. It has to happen before `m`, which is where the shader had it too.
+   *
+   * Corners wind top-left, top-right, bottom-right, bottom-left — `pushQuad`'s
+   * winding, which is what lets a run of mixed rects, image quads and glyphs
+   * keep the canonical index pattern.
+   */
+  pushGlyph(
+    x0: number, y0: number, x1: number, y1: number,
+    baselineY: number, tanItalic: number, m: Mat3,
+    u0: number, v0: number, u1: number, v1: number,
+    r: number, g: number, b: number, a: number,
+    slot: number, mode: number, bold: number,
+  ): void {
+    this.reserve(4, 6);
+    let i = this.nVerts * FLOATS_PER_VERTEX;
+    const ma = m[0], mb = m[1], mc = m[3], md = m[4], mtx = m[6], mty = m[7];
+    // Above-baseline corners (lower y in screen coords) lean further right.
+    const topShift = (baselineY - y0) * tanItalic;
+    const botShift = (baselineY - y1) * tanItalic;
+    const tx0 = x0 + topShift, tx1 = x1 + topShift;
+    const bx0 = x0 + botShift, bx1 = x1 + botShift;
+    const ax = ma * tx0 + mc * y0 + mtx, ay = mb * tx0 + md * y0 + mty;
+    const bx = ma * tx1 + mc * y0 + mtx, by = mb * tx1 + md * y0 + mty;
+    const cx = ma * bx1 + mc * y1 + mtx, cy = mb * bx1 + md * y1 + mty;
+    const dx = ma * bx0 + mc * y1 + mtx, dy = mb * bx0 + md * y1 + mty;
+    i = this.writeVertex(i, ax, ay, r, g, b, a, u0, v0, 1, slot, mode, bold);
+    i = this.writeVertex(i, bx, by, r, g, b, a, u1, v0, 1, slot, mode, bold);
+    i = this.writeVertex(i, cx, cy, r, g, b, a, u1, v1, 1, slot, mode, bold);
+    this.writeVertex(i, dx, dy, r, g, b, a, u0, v1, 1, slot, mode, bold);
     this.pushQuadIndices();
   }
 
@@ -263,6 +326,7 @@ export class DrawBatch {
       v[i++] = mb * x + md * y + mty;
       v[i++] = r; v[i++] = g; v[i++] = b; v[i++] = a;
       v[i++] = WHITE_U; v[i++] = WHITE_V; v[i++] = 1; v[i++] = WHITE_SLOT;
+      v[i++] = PAINT_MODE_PLAIN; v[i++] = 0;
     }
     const base = this.nVerts;
     const out = this.idx;
@@ -315,11 +379,13 @@ export class DrawBatch {
     x: number, y: number,
     r: number, g: number, b: number, a: number,
     u: number, v: number, post: number, slot: number,
+    mode: number, bold: number,
   ): number {
     const out = this.verts;
     out[i] = x; out[i + 1] = y;
     out[i + 2] = r; out[i + 3] = g; out[i + 4] = b; out[i + 5] = a;
     out[i + 6] = u; out[i + 7] = v; out[i + 8] = post; out[i + 9] = slot;
+    out[i + 10] = mode; out[i + 11] = bold;
     return i + FLOATS_PER_VERTEX;
   }
 
@@ -410,6 +476,10 @@ export class DrawBatch {
     gl.vertexAttribPointer(this.aPost, 1, gl.FLOAT, false, stride, 32);
     gl.enableVertexAttribArray(this.aSlot);
     gl.vertexAttribPointer(this.aSlot, 1, gl.FLOAT, false, stride, 36);
+    gl.enableVertexAttribArray(this.aMode);
+    gl.vertexAttribPointer(this.aMode, 1, gl.FLOAT, false, stride, 40);
+    gl.enableVertexAttribArray(this.aBold);
+    gl.vertexAttribPointer(this.aBold, 1, gl.FLOAT, false, stride, 44);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices * 4, gl.DYNAMIC_DRAW);
     gl.bindVertexArray(null);

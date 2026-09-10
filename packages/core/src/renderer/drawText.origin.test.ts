@@ -27,6 +27,7 @@ import { WeaselRenderer } from './WeaselRenderer';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import type { DrawCommand } from './DrawCommand';
 import type { ResolvedRun } from '@weasel-js/text';
+import { FLOATS_PER_VERTEX, PAINT_MODE_OFFSET } from './drawBatch';
 
 let recorder: ReturnType<typeof makeGLRecorder>;
 let tracker: UploadTracker;
@@ -67,8 +68,9 @@ const RUN = (text: string, over: Partial<ResolvedRun> = {}): ResolvedRun => ({
 /**
  * Every vertex buffer uploaded this frame, with its floats-per-vertex read off
  * the `vertexAttribPointer` recorded for that buffer rather than guessed from
- * the length — text quads are 5 (x, y, u, v, baselineY), decoration rects and
- * outline meshes are 2, and several lengths are consistent with either.
+ * the length. Glyphs, rules and outline meshes all stage into the batch now,
+ * so these are the batch's vertices; a paint that takes its own draw still
+ * arrives at whatever stride its own program declares.
  */
 function uploaded(): { stride: number; data: Float32Array }[] {
   return tracker.uploads();
@@ -86,8 +88,11 @@ function ulp32(...vs: number[]): number {
  * Assert the frame just recorded is `base` translated by `(dx, dy)`.
  *
  * `u`/`v` must be untouched — a translate that leaked into a UV would sample
- * the wrong corner of the atlas — and `baselineY` must move with `y`, or the
- * synthetic-italic shear (which reads their difference) skews by the offset.
+ * the wrong corner of the atlas. The synthetic-italic shear is checked by the
+ * `x` comparison rather than by a channel of its own: `pushGlyph` folds it into
+ * the corner it places, and it reads `baselineY - y`, which a translate leaves
+ * alone. A shear applied against an untranslated baseline would show up here as
+ * an x that moved by the wrong amount.
  */
 function expectTranslated(
   base: { stride: number; data: Float32Array }[],
@@ -114,10 +119,9 @@ function expectTranslated(
       const at = `buffer ${b} vertex ${i / stride}`;
       shifted(g[i], a[i], dx, `${at} x`);
       shifted(g[i + 1], a[i + 1], dy, `${at} y`);
-      if (stride === 5) {
-        expect(g[i + 2], `${label}: ${at} u`).toBe(a[i + 2]);
-        expect(g[i + 3], `${label}: ${at} v`).toBe(a[i + 3]);
-        shifted(g[i + 4], a[i + 4], dy, `${at} baselineY`);
+      if (stride === FLOATS_PER_VERTEX) {
+        expect(g[i + 6], `${label}: ${at} u`).toBe(a[i + 6]);
+        expect(g[i + 7], `${label}: ${at} v`).toBe(a[i + 7]);
       }
     }
   }
@@ -206,10 +210,16 @@ describe('drawText places the layout rather than baking it', () => {
     recorder.reset();
     r.render([cmd(0, 0)]);
     const base = uploaded();
-    // Nothing here is decorated, so a stride-2 buffer can only be outline
-    // geometry — without this the test would pass on the atlas tier.
-    expect(base.some((b) => b.stride === 2)).toBe(true);
-    expect(base.every((b) => b.stride === 2)).toBe(true);
+    // Every vertex at paint mode 0 means tessellated triangles rather than
+    // atlas samples — without this the test would pass on the atlas tier.
+    const modes = new Set(
+      base.flatMap((b) => Array.from(
+        { length: b.data.length / b.stride },
+        (_, k) => (b.stride === FLOATS_PER_VERTEX ? b.data[k * b.stride + PAINT_MODE_OFFSET] : 0),
+      )),
+    );
+    expect(base.length).toBeGreaterThan(0);
+    expect(modes).toEqual(new Set([0]));
     for (const o of ORIGINS) {
       recorder.reset();
       r.render([cmd(o.x, o.y)]);
