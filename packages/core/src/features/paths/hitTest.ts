@@ -10,7 +10,7 @@
  * polyline and returns true within a configurable threshold.
  */
 
-import { pointSegmentDist2 } from '@weasel-js/geom';
+import { forEachSegment, pointSegmentDist2 } from '@weasel-js/geom';
 import { flattenCubic, flattenQuadratic, DEFAULT_FLATTEN_TOLERANCE } from './flatten';
 import {
   PATH_C,
@@ -51,7 +51,6 @@ function pointInPolygonPath(path: PolygonPath, x: number, y: number, tolerance: 
   let winding = 0;
 
   let subStartX = 0, subStartY = 0;
-  let curX = 0, curY = 0;
   let subVerts: number[] = []; // flat [x, y, x, y, ...] for current subpath
   let subOpen = false;
 
@@ -74,51 +73,42 @@ function pointInPolygonPath(path: PolygonPath, x: number, y: number, tolerance: 
     subOpen = false;
   };
 
-  let ci = 0;
-  for (let i = 0; i < commands.length; i++) {
-    const cmd = commands[i];
+  forEachSegment(commands, coords, (cmd, ci, curX, curY) => {
     switch (cmd) {
       case PATH_M: {
         if (subOpen) flushSubpath(false);
         subStartX = coords[ci]; subStartY = coords[ci + 1];
-        curX = subStartX; curY = subStartY;
-        subVerts.push(curX, curY);
+        subVerts.push(subStartX, subStartY);
         subOpen = true;
-        ci += 2;
         break;
       }
-      case PATH_L: {
-        curX = coords[ci]; curY = coords[ci + 1];
-        subVerts.push(curX, curY);
-        ci += 2;
+      case PATH_L:
+        subVerts.push(coords[ci], coords[ci + 1]);
         break;
-      }
-      case PATH_C: {
-        const x1 = coords[ci],     y1 = coords[ci + 1];
-        const x2 = coords[ci + 2], y2 = coords[ci + 3];
-        const x3 = coords[ci + 4], y3 = coords[ci + 5];
-        flattenCubic(curX, curY, x1, y1, x2, y2, x3, y3, tolerance, subVerts);
-        curX = x3; curY = y3;
-        ci += 6;
+      case PATH_C:
+        flattenCubic(
+          curX, curY,
+          coords[ci], coords[ci + 1],
+          coords[ci + 2], coords[ci + 3],
+          coords[ci + 4], coords[ci + 5],
+          tolerance, subVerts,
+        );
         break;
-      }
-      case PATH_Q: {
-        const x1 = coords[ci],     y1 = coords[ci + 1];
-        const x2 = coords[ci + 2], y2 = coords[ci + 3];
-        flattenQuadratic(curX, curY, x1, y1, x2, y2, tolerance, subVerts);
-        curX = x2; curY = y2;
-        ci += 4;
+      case PATH_Q:
+        flattenQuadratic(
+          curX, curY,
+          coords[ci], coords[ci + 1],
+          coords[ci + 2], coords[ci + 3],
+          tolerance, subVerts,
+        );
         break;
-      }
-      case PATH_Z: {
+      case PATH_Z:
         flushSubpath(true);
-        curX = subStartX; curY = subStartY;
         break;
-      }
       default:
         throw new Error(`pointInPath: unknown command ${cmd}`);
     }
-  }
+  });
   if (subOpen) flushSubpath(false);
 
   return fillRule === 'evenodd' ? (crossings & 1) === 1 : winding !== 0;
@@ -194,7 +184,6 @@ function polylineWithinThreshold(
   // Reuse pointInPath's command-stream + flatten walk; check distance from
   // (px, py) to each emitted segment instead of accumulating crossings.
   let subStartX = 0, subStartY = 0;
-  let curX = 0, curY = 0;
   let subVerts: number[] = [];
   let subOpen = false;
 
@@ -208,56 +197,50 @@ function polylineWithinThreshold(
     return false;
   };
 
-  let ci = 0;
-  for (let i = 0; i < commands.length; i++) {
-    const cmd = commands[i];
+  let hit = false;
+  forEachSegment(commands, coords, (cmd, ci, curX, curY) => {
     switch (cmd) {
       case PATH_M: {
         if (subOpen) {
-          if (checkSegments(false)) return true;
+          if (checkSegments(false)) { hit = true; return false; }
           subVerts = [];
         }
         subStartX = coords[ci]; subStartY = coords[ci + 1];
-        curX = subStartX; curY = subStartY;
-        subVerts.push(curX, curY);
+        subVerts.push(subStartX, subStartY);
         subOpen = true;
-        ci += 2;
         break;
       }
-      case PATH_L: {
-        curX = coords[ci]; curY = coords[ci + 1];
-        subVerts.push(curX, curY);
-        ci += 2;
+      case PATH_L:
+        subVerts.push(coords[ci], coords[ci + 1]);
         break;
-      }
-      case PATH_C: {
-        const x1 = coords[ci],     y1 = coords[ci + 1];
-        const x2 = coords[ci + 2], y2 = coords[ci + 3];
-        const x3 = coords[ci + 4], y3 = coords[ci + 5];
-        flattenCubic(curX, curY, x1, y1, x2, y2, x3, y3, tolerance, subVerts);
-        curX = x3; curY = y3;
-        ci += 6;
+      case PATH_C:
+        flattenCubic(
+          curX, curY,
+          coords[ci], coords[ci + 1],
+          coords[ci + 2], coords[ci + 3],
+          coords[ci + 4], coords[ci + 5],
+          tolerance, subVerts,
+        );
         break;
-      }
-      case PATH_Q: {
-        const x1 = coords[ci],     y1 = coords[ci + 1];
-        const x2 = coords[ci + 2], y2 = coords[ci + 3];
-        flattenQuadratic(curX, curY, x1, y1, x2, y2, tolerance, subVerts);
-        curX = x2; curY = y2;
-        ci += 4;
+      case PATH_Q:
+        flattenQuadratic(
+          curX, curY,
+          coords[ci], coords[ci + 1],
+          coords[ci + 2], coords[ci + 3],
+          tolerance, subVerts,
+        );
         break;
-      }
-      case PATH_Z: {
-        if (checkSegments(true)) return true;
+      case PATH_Z:
+        if (checkSegments(true)) { hit = true; return false; }
         subVerts = [];
         subOpen = false;
-        curX = subStartX; curY = subStartY;
         break;
-      }
       default:
         throw new Error(`strokeHitTest: unknown command ${cmd}`);
     }
-  }
+    return true;
+  });
+  if (hit) return true;
   if (subOpen && checkSegments(false)) return true;
   return false;
 }

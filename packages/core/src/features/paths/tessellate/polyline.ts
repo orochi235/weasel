@@ -1,3 +1,4 @@
+import { forEachSegment } from '@weasel-js/geom';
 import {
   type Path,
   type PolygonPath,
@@ -62,9 +63,6 @@ function extractPolygon(p: PolygonPath, opts: ExtractOptions): Polyline[] {
   let aT: number[] | null = null;
   let current: Polyline | null = null;
 
-  let coordIdx = 0;
-  let prevX = 0;
-  let prevY = 0;
   let prevAnchor = -1;
 
   const beginContour = (): Polyline => {
@@ -107,82 +105,66 @@ function extractPolygon(p: PolygonPath, opts: ExtractOptions): Polyline[] {
     target.anchorT = new Float32Array(aT);
   };
 
-  for (let cmdIdx = 0; cmdIdx < commands.length; cmdIdx++) {
-    const cmd = commands[cmdIdx];
+  // Fill anchorA/B/T for each point a curve just appended: interior points
+  // interpolate (prevAnchor → target), and the final point is pinned to the
+  // target so the draw-time lerp returns anchor B's color exactly.
+  const pushCurveAnchors = (segStart: number, arcAccum: number[], total: number, target: number): void => {
+    for (let k = 0; k < arcAccum.length; k++) {
+      aA!.push(prevAnchor);
+      aB!.push(target);
+      aT!.push(total > 0 ? arcAccum[k] / total : 0);
+    }
+    const lastIdx = (segStart + arcAccum.length) - 1;
+    aA![lastIdx] = target;
+    aB![lastIdx] = target;
+    aT![lastIdx] = 0;
+  };
+
+  forEachSegment(commands, coords, (cmd, coordIdx, prevX, prevY) => {
     switch (cmd) {
-      case PATH_M: {
-        if (current) commit(current);
-        current = beginContour();
-        prevX = coords[coordIdx];
-        prevY = coords[coordIdx + 1];
-        pts!.push(prevX, prevY);
-        aA!.push(anchorCounter);
-        aB!.push(anchorCounter);
-        aT!.push(0);
-        prevAnchor = anchorCounter;
-        anchorCounter++;
-        coordIdx += 2;
-        break;
-      }
+      case PATH_M:
       case PATH_L: {
-        prevX = coords[coordIdx];
-        prevY = coords[coordIdx + 1];
-        pts!.push(prevX, prevY);
+        if (cmd === PATH_M) {
+          if (current) commit(current);
+          current = beginContour();
+        }
+        pts!.push(coords[coordIdx], coords[coordIdx + 1]);
         aA!.push(anchorCounter);
         aB!.push(anchorCounter);
         aT!.push(0);
         prevAnchor = anchorCounter;
         anchorCounter++;
-        coordIdx += 2;
         break;
       }
       case PATH_Q: {
-        const cx = coords[coordIdx], cy = coords[coordIdx + 1];
-        const ex = coords[coordIdx + 2], ey = coords[coordIdx + 3];
-        const targetAnchor = anchorCounter;
+        const target = anchorCounter;
         const segStart = pts!.length / 2;
         const arcAccum: number[] = [];
-        const total = flattenQuadraticWithArcLen(prevX, prevY, cx, cy, ex, ey, tolerance, pts!, arcAccum);
-        // Fill anchorA/B/T for each newly-appended point (count = arcAccum.length).
-        // All interior + final points have A = prevAnchor, B = targetAnchor.
-        for (let k = 0; k < arcAccum.length; k++) {
-          aA!.push(prevAnchor);
-          aB!.push(targetAnchor);
-          aT!.push(total > 0 ? arcAccum[k] / total : 0);
-        }
-        // The final point is exactly the anchor — pin it (A === B, t = 0) so
-        // the lerp at draw time returns anchor B's color exactly.
-        const lastIdx = (segStart + arcAccum.length) - 1;
-        aA![lastIdx] = targetAnchor;
-        aB![lastIdx] = targetAnchor;
-        aT![lastIdx] = 0;
-        prevX = ex; prevY = ey;
-        prevAnchor = targetAnchor;
+        const total = flattenQuadraticWithArcLen(
+          prevX, prevY,
+          coords[coordIdx], coords[coordIdx + 1],
+          coords[coordIdx + 2], coords[coordIdx + 3],
+          tolerance, pts!, arcAccum,
+        );
+        pushCurveAnchors(segStart, arcAccum, total, target);
+        prevAnchor = target;
         anchorCounter++;
-        coordIdx += 4;
         break;
       }
       case PATH_C: {
-        const c1x = coords[coordIdx], c1y = coords[coordIdx + 1];
-        const c2x = coords[coordIdx + 2], c2y = coords[coordIdx + 3];
-        const ex = coords[coordIdx + 4], ey = coords[coordIdx + 5];
-        const targetAnchor = anchorCounter;
+        const target = anchorCounter;
         const segStart = pts!.length / 2;
         const arcAccum: number[] = [];
-        const total = flattenCubicWithArcLen(prevX, prevY, c1x, c1y, c2x, c2y, ex, ey, tolerance, pts!, arcAccum);
-        for (let k = 0; k < arcAccum.length; k++) {
-          aA!.push(prevAnchor);
-          aB!.push(targetAnchor);
-          aT!.push(total > 0 ? arcAccum[k] / total : 0);
-        }
-        const lastIdx = (segStart + arcAccum.length) - 1;
-        aA![lastIdx] = targetAnchor;
-        aB![lastIdx] = targetAnchor;
-        aT![lastIdx] = 0;
-        prevX = ex; prevY = ey;
-        prevAnchor = targetAnchor;
+        const total = flattenCubicWithArcLen(
+          prevX, prevY,
+          coords[coordIdx], coords[coordIdx + 1],
+          coords[coordIdx + 2], coords[coordIdx + 3],
+          coords[coordIdx + 4], coords[coordIdx + 5],
+          tolerance, pts!, arcAccum,
+        );
+        pushCurveAnchors(segStart, arcAccum, total, target);
+        prevAnchor = target;
         anchorCounter++;
-        coordIdx += 6;
         break;
       }
       case PATH_Z: {
@@ -195,7 +177,7 @@ function extractPolygon(p: PolygonPath, opts: ExtractOptions): Polyline[] {
       default:
         throw new Error(`extractPolylines: unknown command code ${cmd}`);
     }
-  }
+  });
 
   if (current) commit(current);
   return out;

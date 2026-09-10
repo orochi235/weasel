@@ -1,4 +1,5 @@
 import earcut from 'earcut';
+import { forEachSegment, pointInPolygon } from '@weasel-js/geom';
 import {
   type Path,
   type PolygonPath,
@@ -55,105 +56,81 @@ function flattenPolygon(p: PolygonPath, tolerance: number): FlattenedContours {
   const anchorB: number[] = [];
   const anchorT: number[] = [];
   const contourStarts: number[] = [];
-  let coordIdx = 0;
-  let prevX = 0;
-  let prevY = 0;
-  let startX = 0;
-  let startY = 0;
   let startAnchor = -1;
   let prevAnchor = -1;
   let anchorCounter = 0;
 
-  for (let cmdIdx = 0; cmdIdx < commands.length; cmdIdx++) {
-    const cmd = commands[cmdIdx];
+  // Anchor bookkeeping for the points a curve just appended: interior points
+  // interpolate (prevAnchor → target); the last is pinned anchor-exact.
+  const pushCurveAnchors = (anchorStart: number, arcAccum: number[], total: number, target: number): void => {
+    for (let k = 0; k < arcAccum.length; k++) {
+      anchorA.push(prevAnchor);
+      anchorB.push(target);
+      anchorT.push(total > 0 ? arcAccum[k] / total : 0);
+    }
+    const lastIdx = anchorStart + arcAccum.length - 1;
+    anchorA[lastIdx] = target;
+    anchorB[lastIdx] = target;
+    anchorT[lastIdx] = 0;
+  };
+
+  forEachSegment(commands, coords, (cmd, coordIdx, prevX, prevY) => {
     switch (cmd) {
-      case PATH_M: {
-        contourStarts.push(out.length / 2);
-        prevX = coords[coordIdx];
-        prevY = coords[coordIdx + 1];
-        startX = prevX;
-        startY = prevY;
-        startAnchor = anchorCounter;
-        out.push(prevX, prevY);
-        anchorA.push(anchorCounter);
-        anchorB.push(anchorCounter);
-        anchorT.push(0);
-        prevAnchor = anchorCounter;
-        anchorCounter++;
-        coordIdx += 2;
-        break;
-      }
+      case PATH_M:
       case PATH_L: {
-        prevX = coords[coordIdx];
-        prevY = coords[coordIdx + 1];
-        out.push(prevX, prevY);
+        if (cmd === PATH_M) {
+          contourStarts.push(out.length / 2);
+          startAnchor = anchorCounter;
+        }
+        out.push(coords[coordIdx], coords[coordIdx + 1]);
         anchorA.push(anchorCounter);
         anchorB.push(anchorCounter);
         anchorT.push(0);
         prevAnchor = anchorCounter;
         anchorCounter++;
-        coordIdx += 2;
         break;
       }
       case PATH_Q: {
-        const cx = coords[coordIdx], cy = coords[coordIdx + 1];
-        const ex = coords[coordIdx + 2], ey = coords[coordIdx + 3];
         const target = anchorCounter;
         const arcAccum: number[] = [];
         const anchorStart = anchorA.length;
-        const total = flattenQuadraticWithArcLen(prevX, prevY, cx, cy, ex, ey, tolerance, out, arcAccum);
-        for (let k = 0; k < arcAccum.length; k++) {
-          anchorA.push(prevAnchor);
-          anchorB.push(target);
-          anchorT.push(total > 0 ? arcAccum[k] / total : 0);
-        }
-        // Pin the last point (anchor-exact).
-        const lastIdx = anchorStart + arcAccum.length - 1;
-        anchorA[lastIdx] = target;
-        anchorB[lastIdx] = target;
-        anchorT[lastIdx] = 0;
-        prevX = ex; prevY = ey;
+        const total = flattenQuadraticWithArcLen(
+          prevX, prevY,
+          coords[coordIdx], coords[coordIdx + 1],
+          coords[coordIdx + 2], coords[coordIdx + 3],
+          tolerance, out, arcAccum,
+        );
+        pushCurveAnchors(anchorStart, arcAccum, total, target);
         prevAnchor = target;
         anchorCounter++;
-        coordIdx += 4;
         break;
       }
       case PATH_C: {
-        const c1x = coords[coordIdx], c1y = coords[coordIdx + 1];
-        const c2x = coords[coordIdx + 2], c2y = coords[coordIdx + 3];
-        const ex = coords[coordIdx + 4], ey = coords[coordIdx + 5];
         const target = anchorCounter;
         const arcAccum: number[] = [];
         const anchorStart = anchorA.length;
-        const total = flattenCubicWithArcLen(prevX, prevY, c1x, c1y, c2x, c2y, ex, ey, tolerance, out, arcAccum);
-        for (let k = 0; k < arcAccum.length; k++) {
-          anchorA.push(prevAnchor);
-          anchorB.push(target);
-          anchorT.push(total > 0 ? arcAccum[k] / total : 0);
-        }
-        const lastIdx = anchorStart + arcAccum.length - 1;
-        anchorA[lastIdx] = target;
-        anchorB[lastIdx] = target;
-        anchorT[lastIdx] = 0;
-        prevX = ex; prevY = ey;
+        const total = flattenCubicWithArcLen(
+          prevX, prevY,
+          coords[coordIdx], coords[coordIdx + 1],
+          coords[coordIdx + 2], coords[coordIdx + 3],
+          coords[coordIdx + 4], coords[coordIdx + 5],
+          tolerance, out, arcAccum,
+        );
+        pushCurveAnchors(anchorStart, arcAccum, total, target);
         prevAnchor = target;
         anchorCounter++;
-        coordIdx += 6;
         break;
       }
-      case PATH_Z: {
-        // Z returns the pen to the subpath start. It emits no vertex — the
-        // contour is closed implicitly — but a command after it must flatten
-        // from there, not from the last point drawn.
-        prevX = startX;
-        prevY = startY;
+      case PATH_Z:
+        // The pen returns to the subpath start (forEachSegment does that); the
+        // anchor it carries has to follow, or a curve after the Z interpolates
+        // from the wrong end.
         prevAnchor = startAnchor;
         break;
-      }
       default:
         throw new Error(`tessellate: unknown command code ${cmd}`);
     }
-  }
+  });
 
   return { coords: out, contourStarts, anchorA, anchorB, anchorT };
 }
@@ -232,7 +209,7 @@ function tessellatePolygon(p: PolygonPath, opts: TessellateOptions): Mesh {
     let bestAbsArea = Infinity;
     for (const pos of positives) {
       const absArea = Math.abs(areas[pos]);
-      if (absArea < bestAbsArea && pointInContour(coords, contourStarts[pos], contourEnd(pos), px, py)) {
+      if (absArea < bestAbsArea && pointInPolygon(coords, px, py, contourStarts[pos], contourEnd(pos))) {
         bestAbsArea = absArea;
         bestPos = pos;
       }
@@ -321,17 +298,3 @@ function signedArea(coords: number[], start: number, end: number): number {
   }
   return a * 0.5;
 }
-
-function pointInContour(coords: number[], start: number, end: number, x: number, y: number): boolean {
-  let inside = false;
-  for (let i = start, j = end - 1; i < end; j = i++) {
-    const xi = coords[i * 2], yi = coords[i * 2 + 1];
-    const xj = coords[j * 2], yj = coords[j * 2 + 1];
-    if (((yi > y) !== (yj > y)) && (x < ((xj - xi) * (y - yi)) / (yj - yi) + xi)) {
-      inside = !inside;
-    }
-  }
-  return inside;
-}
-
-

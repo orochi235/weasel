@@ -14,7 +14,7 @@
  * RectPath short-circuits to AABB-perimeter math: O(1).
  */
 
-import { pointSegmentDist2 } from '@weasel-js/geom';
+import { cubicEvalAt, elevateQuadraticToCubic, forEachSegment, pointSegmentDist2 } from '@weasel-js/geom';
 import {
   PATH_C,
   PATH_L,
@@ -40,10 +40,7 @@ function pointCubicDist2(
   let prevX = x0, prevY = y0;
   let best = Infinity;
   for (let i = 1; i <= BEZIER_SAMPLES; i++) {
-    const t = i / BEZIER_SAMPLES;
-    const u = 1 - t;
-    const sx = u*u*u*x0 + 3*u*u*t*x1 + 3*u*t*t*x2 + t*t*t*x3;
-    const sy = u*u*u*y0 + 3*u*u*t*y1 + 3*u*t*t*y2 + t*t*t*y3;
+    const [sx, sy] = cubicEvalAt(x0, y0, x1, y1, x2, y2, x3, y3, i / BEZIER_SAMPLES);
     const d2 = pointSegmentDist2(px, py, prevX, prevY, sx, sy);
     if (d2 < best) best = d2;
     prevX = sx; prevY = sy;
@@ -82,53 +79,39 @@ export function pathDistanceToPoint(path: Path, px: number, py: number): number 
 
 function polygonPathDistance(path: PolygonPath, px: number, py: number): number {
   const { commands, coords } = path;
-  let ci = 0;
-  // Per-subpath state: where the subpath started, current pen position.
   let startX = 0, startY = 0;
-  let curX = 0, curY = 0;
   let best = Infinity;
-  for (let i = 0; i < commands.length; i++) {
-    const cmd = commands[i];
-    if (cmd === PATH_M) {
-      startX = coords[ci]; startY = coords[ci + 1];
-      curX = startX; curY = startY;
-      ci += 2;
-    } else if (cmd === PATH_L) {
-      const x = coords[ci], y = coords[ci + 1];
-      const d2 = pointSegmentDist2(px, py, curX, curY, x, y);
-      if (d2 < best) best = d2;
-      curX = x; curY = y;
-      ci += 2;
-    } else if (cmd === PATH_C) {
-      const c1x = coords[ci], c1y = coords[ci + 1];
-      const c2x = coords[ci + 2], c2y = coords[ci + 3];
-      const x = coords[ci + 4], y = coords[ci + 5];
-      const d2 = pointCubicDist2(px, py, curX, curY, c1x, c1y, c2x, c2y, x, y);
-      if (d2 < best) best = d2;
-      curX = x; curY = y;
-      ci += 6;
-    } else if (cmd === PATH_Q) {
-      // Quadratic → cubic conversion: c1 = q1*2/3 + start*1/3, c2 = q1*2/3 + end*1/3
-      const qx = coords[ci], qy = coords[ci + 1];
-      const x = coords[ci + 2], y = coords[ci + 3];
-      const c1x = curX + (2 / 3) * (qx - curX);
-      const c1y = curY + (2 / 3) * (qy - curY);
-      const c2x = x + (2 / 3) * (qx - x);
-      const c2y = y + (2 / 3) * (qy - y);
-      const d2 = pointCubicDist2(px, py, curX, curY, c1x, c1y, c2x, c2y, x, y);
-      if (d2 < best) best = d2;
-      curX = x; curY = y;
-      ci += 4;
-    } else if (cmd === PATH_Z) {
-      // Closing line back to subpath start.
-      const d2 = pointSegmentDist2(px, py, curX, curY, startX, startY);
-      if (d2 < best) best = d2;
-      curX = startX; curY = startY;
-    } else {
-      // Falling through would leave `ci` unadvanced, silently misaligning
-      // every later coordinate read against its command.
-      throw new Error(`pathDistanceToPoint: unknown command code ${cmd}`);
+  const consider = (d2: number) => { if (d2 < best) best = d2; };
+
+  forEachSegment(commands, coords, (cmd, ci, curX, curY) => {
+    switch (cmd) {
+      case PATH_M:
+        startX = coords[ci]; startY = coords[ci + 1];
+        break;
+      case PATH_L:
+        consider(pointSegmentDist2(px, py, curX, curY, coords[ci], coords[ci + 1]));
+        break;
+      case PATH_C:
+        consider(pointCubicDist2(
+          px, py, curX, curY,
+          coords[ci], coords[ci + 1],
+          coords[ci + 2], coords[ci + 3],
+          coords[ci + 4], coords[ci + 5],
+        ));
+        break;
+      case PATH_Q: {
+        const x = coords[ci + 2], y = coords[ci + 3];
+        const [c1x, c1y, c2x, c2y] = elevateQuadraticToCubic(curX, curY, coords[ci], coords[ci + 1], x, y);
+        consider(pointCubicDist2(px, py, curX, curY, c1x, c1y, c2x, c2y, x, y));
+        break;
+      }
+      case PATH_Z:
+        consider(pointSegmentDist2(px, py, curX, curY, startX, startY));
+        break;
+      default:
+        throw new Error(`pathDistanceToPoint: unknown command code ${cmd}`);
     }
-  }
+  });
+
   return best === Infinity ? Infinity : Math.sqrt(best);
 }

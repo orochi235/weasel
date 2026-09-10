@@ -22,7 +22,7 @@ describe('forEachSegment', () => {
     const commands = Uint8Array.of(PATH_M, PATH_L, PATH_Z);
     const coords = Float64Array.of(0, 0, 10, 0);
     const seen: Array<[number, number, number, number]> = [];
-    forEachSegment(commands, coords, (cmd, ci, px, py) => seen.push([cmd, ci, px, py]));
+    forEachSegment(commands, coords, (cmd, ci, px, py) => { seen.push([cmd, ci, px, py]); });
     expect(seen).toEqual([
       [PATH_M, 0, 0, 0],   // pen at origin before M consumes
       [PATH_L, 2, 0, 0],   // pen still at 0,0 entering the L

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  PATH_M, PATH_L, PATH_Q, PATH_Z,
+  PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z,
   type PolygonPath,
   type RectPath,
 } from '@weasel-js/core';
@@ -164,5 +164,21 @@ describe('extractPolylines — anchor parameterization', () => {
     const [pl1, pl2] = extractPolylines(p);
     expect(Array.from(pl1.anchorA!)).toEqual([0, 1, 2]);
     expect(Array.from(pl2.anchorA!)).toEqual([3, 4]);
+  });
+});
+
+describe('extractPolylines pen bookkeeping', () => {
+  it('starts a curve after Z from the subpath start, not the last point drawn', () => {
+    // M 0,0  L 0,100  Z  C 50,0 50,0 100,0. From (0,0) the cubic is a straight
+    // run along y=0 and flattens to its endpoint alone; from (0,100) it is not.
+    const p: PolygonPath = {
+      kind: 'polygon',
+      commands: Uint8Array.of(PATH_M, PATH_L, PATH_Z, PATH_C),
+      coords: Float32Array.of(0, 0, 0, 100, 50, 0, 50, 0, 100, 0),
+      fillRule: 'nonzero',
+    };
+    const out = extractPolylines(p);
+    expect(out).toHaveLength(1);
+    expect(out[0].points).toEqual([0, 0, 0, 100, 100, 0]);
   });
 });
