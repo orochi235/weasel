@@ -71,24 +71,35 @@ The first two are float noise. The third is `|cos|` between adjacent edges of
 the child's transformed box: an anisotropic parent turns a rotated child into a
 parallelogram, and no `{x, y, width, height, rotation}` can hold one.
 
-**So composition is defined over the similarity group — translate, rotate,
-uniform scale — and anisotropic parent scale is out of the pose model.** This is
-not a new concession: `remapRotatedLeaf` already maps the local axes under a
-group affine, drops the shear, and recomputes `rotation = atan2(uy, ux)`, and
-its docstring says why.
+**So anisotropic parent scale is out of the pose model.** This is not a new
+concession: `remapRotatedLeaf` already maps the local axes under a group affine,
+drops the shear, and recomputes `rotation = atan2(uy, ux)`, and its docstring
+says why.
+
+`RectPose` carries no scale factor of its own — `width`/`height` are the size,
+not a multiplier — so the strategy this ships is **rigid**: translate and
+rotate. The uniform-scale row of the table is what a consumer whose `TPose` does
+carry a scale can rely on; it is not something the shipped strategy exercises.
 
 A `PoseComposition` declares its own closure so the limit is legible rather than
 discovered:
 
 ```ts
+type PoseClosure = 'identity' | 'translation' | 'rigid';
+
 interface PoseComposition<TPose> {
   compose: (parent: TPose, child: TPose) => TPose;
   decompose: (parent: TPose, world: TPose) => TPose;
   /** The transforms `compose` represents exactly. Anything wider is rounded
-   *  to the nearest pose, which for 'similarity' means shear is dropped. */
-  closure: 'identity' | 'similarity';
+   *  to the nearest pose, which for 'rigid' means shear is dropped. */
+  closure: PoseClosure;
 }
 ```
+
+`RECT_POSE_COMPOSITION` (`'translation'`, the existing behavior) and
+`RIGID_POSE_COMPOSITION` (`'rigid'`) both ship; `composeRigidPose` reduces to
+`composeRectPose` when the parent is upright, so a scene that never rotates a
+container behaves identically under either.
 
 ## The pose is the source of truth, not a matrix
 
@@ -177,7 +188,7 @@ Two further checks earn their place:
 
 - **The composition law.** For each shipped strategy, `compose` then `decompose`
   round-trips, and `compose` agrees with mapping the child's corners through the
-  parent's frame. This is what pins `closure: 'similarity'` as a true claim
+  parent's frame. This is what pins `closure: 'rigid'` as a true claim
   rather than a label.
 - **The two resolvers agree.** The walk's accumulator and `getWorldPose` must
   return the same pose for every node of the fixture. They are separate code
