@@ -4,6 +4,7 @@ import {
   distributeVerticalAction,
 } from './distribute';
 import { asNodeId } from 'core/scene/types';
+import { createPoseOverrides } from 'core/scene/poseOverrides';
 import type { NodeId } from 'core/scene/types';
 import { ActionDisabledReason } from '../registry';
 import type { ImmediateInvoker } from '../invoker';
@@ -15,6 +16,7 @@ function makeScene(poses: Record<string, Pose>) {
   const setPose = vi.fn((id: string, pose: Pose) => { current[id] = pose; });
   const scene = {
     get: (id: string) => ({ pose: current[id], id: asNodeId(id), children: [] }),
+    overrides: createPoseOverrides<Pose>(() => undefined),
     setPose,
     batch: vi.fn((_label: string, fn: () => void) => fn()),
     nodes: new Map(), roots: [], layers: [],

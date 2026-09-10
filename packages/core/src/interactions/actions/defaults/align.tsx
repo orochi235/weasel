@@ -10,6 +10,7 @@ import {
   type AlignEdge,
 } from '../align/align';
 import { unionAABB } from 'core/geometry/unionBounds';
+import { scenePoseFrame } from '../poseFrame';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -55,19 +56,22 @@ const ICON_FOR: Record<AlignEdge, ReactNode> = {
  * Apply an align operation to the current selection via the Scene API.
  * Uses the kit's default rect-pose geometry so the descriptor works for
  * any axis-aligned rect pose without consumer geometry config.
+ *
+ * The edge every member lines up on is a world edge, so the bounds are read
+ * and translated in world and each result is stored back in its own parent's
+ * frame.
  */
 function alignSelection(
   selection: SelectionApi,
   scene: Scene<unknown, string, unknown>,
   edge: AlignEdge,
+  poseComposition: unknown,
 ): void {
   const ids = selection.get();
   if (ids.length < 2) return;
   const geom = RECT_POSE_DESCRIPTOR as unknown as PoseProjection<unknown>;
-  const poses = ids.map((id) => {
-    const node = scene.get(id);
-    return node?.pose ?? { x: 0, y: 0, width: 0, height: 0 };
-  });
+  const frame = scenePoseFrame(scene, poseComposition);
+  const poses = ids.map((id) => frame.world(id));
   const bounds = poses.map((p) => visualBoundsViaDescriptor(p, geom) as ResizePose);
   // Guarded non-empty by `ids.length < 2` above → `!` is safe.
   const union = unionAABB(bounds)!;
@@ -76,7 +80,7 @@ function alignSelection(
       const { dx, dy } = alignDeltaFor(bounds[i], union, edge);
       if (dx === 0 && dy === 0) continue;
       const to = translatePoseViaDescriptor(poses[i], dx, dy, geom);
-      scene.setPose(ids[i], to);
+      scene.setPose(ids[i], frame.local(ids[i], to));
     }
   });
 }
@@ -92,7 +96,7 @@ function makeAlignAction(edge: AlignEdge): Action {
     icon: ICON_FOR[edge],
     group: 'align',
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene'],
+    requires: ['selection', 'scene', 'poseComposition'],
     // No default keybindings — six edges/centers don't fit a clean default
     // chord set. Wire bindings explicitly via the actions registry override map.
     invoker: {
@@ -101,7 +105,7 @@ function makeAlignAction(edge: AlignEdge): Action {
         const selection = deps.selection as SelectionApi | undefined;
         const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
         if (!selection || !scene) return;
-        alignSelection(selection, scene, edge);
+        alignSelection(selection, scene, edge, deps.poseComposition);
       },
     } satisfies ImmediateInvoker,
     // Deps-aware, matching `alignSelection`'s own `ids.length < 2` guard: a
