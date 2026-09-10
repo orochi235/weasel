@@ -19,7 +19,7 @@ import { IDENTITY_COLOR_MATRIX, type GroupState } from './state/GroupState';
 import type { GLMeshCache, GLMeshHandle } from './cache/GLMeshCache';
 import type { GLTextureCache } from './cache/GLTextureCache';
 import type { GLImageCache } from './cache/GLImageCache';
-import type { GradientRampCache } from './cache/GradientRampCache';
+import type { GradientRampAtlas } from './cache/GradientRampAtlas';
 import type { ShaderProgram } from './shaders/ShaderProgram';
 import { mat3, type Mat3 } from './math/mat3';
 import { getMesh } from './cache/cache';
@@ -59,7 +59,7 @@ export interface DrawContext {
   meshCache: GLMeshCache;
   textureCache: GLTextureCache;
   imageCache: GLImageCache;
-  gradRampCache: GradientRampCache;
+  gradRamps: GradientRampAtlas;
   programRegistry: Map<string, ShaderProgram>;
   /** Compile-on-first-use for a registered paint kind's program. Absent when
    *  a caller drives `dispatch` without a renderer behind it. */
@@ -1119,8 +1119,9 @@ function paintBindContext(ctx: DrawContext): PaintBindContext {
     setProjAndModel: (prog) => setProjAndModel(ctx, prog),
     spaceInverse: (units) => gradientSpaceInverse(ctx, units),
     bindRamp: (stops, unit) => {
-      const key = ctx.gradRampCache.upload(stops);
-      ctx.gradRampCache.bind(key, unit);
+      const row = ctx.gradRamps.upload(stops);
+      ctx.gradRamps.bind(unit);
+      return ctx.gradRamps.rowV(row);
     },
   };
   BIND_CONTEXTS.set(ctx, made);
@@ -1212,15 +1213,16 @@ function bindPathFillGradient(
   fill: Extract<FillStyle, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>,
 ): ShaderProgram {
   const gl = ctx.gl;
-  const key = ctx.gradRampCache.upload(fill.stops);
+  const row = ctx.gradRamps.upload(fill.stops);
 
   gl.useProgram(ctx.gradFill.handle);
   setProjAndModel(ctx, ctx.gradFill);
 
   gl.uniformMatrix3fv(ctx.gradFill.uniform('u_worldInv')!, false, gradientSpaceInverse(ctx, fill.units));
 
-  ctx.gradRampCache.bind(key, 0);
+  ctx.gradRamps.bind(0);
   gl.uniform1i(ctx.gradFill.uniform('u_ramp')!, 0);
+  gl.uniform1f(ctx.gradFill.uniform('u_rampV')!, ctx.gradRamps.rowV(row));
   setAlphaUniform(ctx, ctx.gradFill, ctx.state.alpha);
   gl.uniform1f(ctx.gradFill.uniform('u_opacity')!, fill.opacity ?? 1);
 

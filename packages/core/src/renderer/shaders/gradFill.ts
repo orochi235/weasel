@@ -7,6 +7,9 @@
  *
  * Output convention §2: PREMULTIPLIED alpha.
  *
+ * `u_ramp` is `GradientRampAtlas`'s texture, which holds every baked ramp in
+ * the frame, one per row; `u_rampV` picks this fill's row.
+ *
  * Step-4 limitation: u_worldInv is identity in v1 since draw.ts doesn't yet
  * receive a view matrix. Gradient coords therefore render in screen space.
  * Step 7 (port createPathLayer) wires the actual view-inverse through layers.
@@ -31,6 +34,7 @@ export const GRAD_FRAG_SRC = /* glsl */ `#version 300 es
 precision highp float;
 in vec2 v_world;
 uniform sampler2D u_ramp;
+uniform float u_rampV;
 uniform float u_alpha;
 uniform float u_opacity;
 uniform int   u_gradKind;
@@ -55,14 +59,14 @@ void main() {
     t = fract(a / (2.0 * PI));
   }
   t = clamp(t, 0.0, 1.0);
-  vec4 rampColor = texture(u_ramp, vec2(t, 0.5));
+  vec4 rampColor = texture(u_ramp, vec2(t, u_rampV));
   float a = rampColor.a * u_opacity * u_alpha;
   outColor = vec4(rampColor.rgb * a, a);
 }
 `;
 
 export const GRAD_FILL_UNIFORMS = [
-  'u_proj', 'u_model', 'u_worldInv', 'u_ramp',
+  'u_proj', 'u_model', 'u_worldInv', 'u_ramp', 'u_rampV',
   'u_alpha', 'u_opacity',
   'u_gradKind', 'u_gradP0', 'u_gradDir', 'u_gradLen', 'u_gradRadius', 'u_gradAngle',
 ] as const;

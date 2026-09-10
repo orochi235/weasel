@@ -64,8 +64,13 @@ export interface PaintBindContext {
    * convention; it is not gradient-specific.
    */
   spaceInverse(units: GradientUnits | undefined): Mat3;
-  /** Upload a stop ramp and bind it to a texture unit. */
-  bindRamp(stops: GradStop[], unit: number): void;
+  /**
+   * Bake a stop ramp into the frame's ramp atlas, bind that atlas to a texture
+   * unit, and return the `v` the ramp's own row sits at — every ramp in a
+   * frame shares one texture, so a paint must sample at the returned `v` and
+   * not at a constant.
+   */
+  bindRamp(stops: GradStop[], unit: number): number;
 }
 
 /**

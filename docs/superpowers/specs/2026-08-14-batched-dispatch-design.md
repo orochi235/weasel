@@ -180,6 +180,22 @@ Ramps are 1D and atlas into rows of one texture; images go in a texture array;
 paint parameters ride per-vertex. Then a frame is one program and near-one draw.
 This is a paint-path rewrite — the direction, not a next step.
 
+**The ramp atlas landed on 2026-09-10.** `cache/GradientRampAtlas.ts` holds
+every baked ramp in rows of one texture and `gradFill` picks its row with
+`u_rampV`, so a gradient no longer owns a texture. Gradients still bind their
+own program and still break the run — what the atlas buys is that when they
+stop, all of them fit in one slot instead of one slot each.
+
+Two things that constrain the half still open. A row index is a stable name
+across growth, but the `v` computed from it is not — the atlas gets taller and
+every `v` handed out before that points somewhere else — so a run staging a `v`
+into its vertices has to be flushed before the atlas grows or recycles a row,
+not after. And a linear gradient's `t` is affine in position, so interpolating
+it across a triangle is exact: such a fill can ride the existing plain paint
+mode with `a_uv = (t, rowV)` and needs no shader arm of its own. Radial and
+conic are not affine in `t`, but the *coordinate* they need is, which is the
+shape of their arm.
+
 **Text branched, and landed on 2026-09-09.** It does not stay separate: the
 batch shader runs the glyph math — a median across three channels, `fwidth`, a
 smoothstep — on *every* fragment, because `fwidth` inside non-uniform control

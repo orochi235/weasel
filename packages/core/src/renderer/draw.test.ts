@@ -31,7 +31,7 @@ function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeof makeG
     meshCache: r._meshCache(),
     textureCache: r._textureCache(),
     imageCache: r._imageCache(),
-    gradRampCache: r._gradRampCache(),
+    gradRamps: r._gradRamps(),
     programRegistry: new Map(),
     quadVbo: null,
     quadIbo: null,

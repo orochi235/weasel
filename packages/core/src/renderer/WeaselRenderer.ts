@@ -40,7 +40,7 @@ import {
 import { GLMeshCache } from './cache/GLMeshCache';
 import { GLTextureCache } from './cache/GLTextureCache';
 import { GLImageCache, type ImageMinification } from './cache/GLImageCache';
-import { GradientRampCache } from './cache/GradientRampCache';
+import { GradientRampAtlas } from './cache/GradientRampAtlas';
 import { GroupState } from './state/GroupState';
 import type { DrawCommand } from './DrawCommand';
 import type { Mat3 } from './math/mat3';
@@ -173,7 +173,7 @@ export class WeaselRenderer {
   private meshCache: GLMeshCache;
   private textureCache: GLTextureCache;
   private imageCache: GLImageCache;
-  private gradRampCache: GradientRampCache;
+  private gradRamps: GradientRampAtlas;
   private programRegistry = new Map<string, ShaderProgram>();
   private quadVbo: WebGLBuffer | null = null;
   private quadIbo: WebGLBuffer | null = null;
@@ -277,7 +277,7 @@ export class WeaselRenderer {
     this.meshCache = new GLMeshCache(this.gl, aPos);
     this.textureCache = new GLTextureCache(this.gl);
     this.imageCache = new GLImageCache(this.gl, this.imageMinification);
-    this.gradRampCache = new GradientRampCache(this.gl);
+    this.gradRamps = new GradientRampAtlas(this.gl);
     this.uploadQuadGeometry();
     this.drawBatch = new DrawBatch(this.gl, this.batchFill);
     this.whiteTexture = createWhiteTexture(this.gl);
@@ -431,7 +431,7 @@ export class WeaselRenderer {
     this.meshCache = new GLMeshCache(this.gl, aPos);
     this.textureCache = new GLTextureCache(this.gl);
     this.imageCache = new GLImageCache(this.gl, this.imageMinification);
-    this.gradRampCache = new GradientRampCache(this.gl);
+    this.gradRamps = new GradientRampAtlas(this.gl);
     markAllFontsNotUploaded();
 
     this.uploadQuadGeometry();
@@ -458,7 +458,7 @@ export class WeaselRenderer {
    *  Scope: built-in shader programs, any consumer-registered programs, the
    *  shared quad/rect geometry, any in-flight transient meshes, and the
    *  enumerable Map-keyed caches (`GLTextureCache` atlas/image textures,
-   *  `GradientRampCache` ramp textures) ARE freed.
+   *  `GradientRampAtlas`'s ramp texture) ARE freed.
    *
    *  NOT freed: `GLImageCache` (bitmap/pattern textures) and `GLMeshCache`'s
    *  persistent per-Path mesh cache are keyed by `WeakMap`, not enumerable,
@@ -494,7 +494,7 @@ export class WeaselRenderer {
     }
     this.programRegistry.clear();
     this.textureCache.free();
-    this.gradRampCache.free();
+    this.gradRamps.free();
     if (this.quadVbo) gl.deleteBuffer(this.quadVbo);
     if (this.quadIbo) gl.deleteBuffer(this.quadIbo);
     this.drawBatch.dispose();
@@ -541,7 +541,7 @@ export class WeaselRenderer {
       meshCache: this.meshCache,
       textureCache: this.textureCache,
       imageCache: this.imageCache,
-      gradRampCache: this.gradRampCache,
+      gradRamps: this.gradRamps,
       programRegistry: this.programRegistry,
       ensureProgram: (id) => this.ensureProgram(id),
       quadVbo: this.quadVbo,
@@ -597,7 +597,7 @@ export class WeaselRenderer {
   /** @internal */ _meshCache(): GLMeshCache { return this.meshCache; }
   /** @internal */ _textureCache(): GLTextureCache { return this.textureCache; }
   /** @internal */ _imageCache(): GLImageCache { return this.imageCache; }
-  /** @internal */ _gradRampCache(): GradientRampCache { return this.gradRampCache; }
+  /** @internal */ _gradRamps(): GradientRampAtlas { return this.gradRamps; }
   /** @internal */ _groupState(): GroupState { return this.groupState; }
   /** @internal */ _widthCss(): number { return this.widthCss; }
   /** @internal */ _heightCss(): number { return this.heightCss; }

@@ -1614,9 +1614,15 @@ one dead `const` and four stale disable directives.
   slot in the same list bitmaps take, so seven textures in a run is now seven of
   either kind.
 
-  **Gradients are what is left.** They still bind a ramp per draw and still
-  break a run at every gradient fill. Ramps are 1D and atlas into rows of one
-  texture — step 4 of
+  **Gradients are what is left, and the ramp atlas is the half that landed.**
+  Every baked ramp is a row of one texture now (`cache/GradientRampAtlas.ts`)
+  rather than a texture of its own, so every gradient in a frame samples the
+  same unit — which is what a gradient needs before it can take a batch texture
+  slot the way a bitmap does. It does not batch yet: a gradient fill still binds
+  `gradFill` and still breaks the run. The atlas doubles from 16 rows to 1024
+  and recycles the least recently used row past that, which also bounds an
+  animating gradient — the old cache grew a texture per frame for one and freed
+  none. Step 4 of
   `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`.
 
   Solid geometry and image quads share that batch as of 2026-09-09

@@ -39,7 +39,7 @@ export {
   canQueryLocalFonts,
 } from '@weasel-js/font';
 export { OUTLINE_MIN_SCREEN_PX } from './draw';
-export { buildGradientRamp } from './cache/GradientRampCache';
+export { buildGradientRamp } from './cache/GradientRampAtlas';
 export { IDENTITY_COLOR_MATRIX } from './state/GroupState';
 export type { Mesh } from './cache/mesh';
 export {

@@ -108,11 +108,11 @@ describe('renderer — non-solid stroke paint', () => {
   });
 });
 
-/** A 1×256 RGBA upload — `GradientRampCache` bakes the stops into one, and it
- *  is the only texture in these frames. */
+/** A one-row, 256-texel RGBA write — `GradientRampAtlas` bakes the stops into
+ *  one and puts it in a row of the frame's atlas. */
 function uploadedRamps(rec: Recorder): readonly unknown[][] {
   return rec.calls
-    .filter((c) => c.name === 'texImage2D' && c.args[3] === 256 && c.args[4] === 1)
+    .filter((c) => c.name === 'texSubImage2D' && c.args[4] === 256 && c.args[5] === 1)
     .map((c) => c.args as unknown[]);
 }
 
