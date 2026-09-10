@@ -463,6 +463,41 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
     expect(magFilters).toEqual([recorder.gl.NEAREST, recorder.gl.LINEAR]);
   });
 
+  it('does not re-assert a MAG_FILTER the texture already carries', () => {
+    // Filtering is state on the texture object, and re-writing it is a write to
+    // a live texture. A consumer's 122MB sheet is where that stops being free.
+    const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
+
+    // Four flushes at one filter: the gradients break the run each time, so the
+    // count is flushes and not commands.
+    const gradient = {
+      kind: 'path' as const,
+      path: { kind: 'rect' as const, x: 0, y: 0, width: 8, height: 8 },
+      fill: {
+        fill: 'linear-gradient' as const,
+        from: { x: 0, y: 0 }, to: { x: 8, y: 8 },
+        stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
+      },
+    } as unknown as DrawCommand;
+    const img = {
+      kind: 'image' as const, image: fakeBitmap, x: 0, y: 0, w: 64, h: 64,
+      sampling: 'nearest' as const,
+    };
+    // Warm both caches first. Each upload writes its own MAG_FILTER — the
+    // bitmap's and the gradient ramp's — and this test counts every write, so
+    // an unwarmed ramp shows up as a phantom second filter change.
+    r.render([{ kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 64, h: 64 }, gradient]);
+    recorder.reset();
+
+    r.render([img, gradient, img, gradient, img, gradient, img]);
+
+    const magFilters = recorder.calls
+      .filter((c) => c.name === 'texParameteri' && c.args[1] === recorder.gl.TEXTURE_MAG_FILTER)
+      .map((c) => c.args[2]);
+    // Once, on the first flush that wanted NEAREST — not once per flush.
+    expect(magFilters).toEqual([recorder.gl.NEAREST]);
+  });
+
   it('merges neighbouring images sharing a bitmap into one draw', () => {
     const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
     const img = { kind: 'image' as const, image: fakeBitmap, x: 0, y: 0, w: 16, h: 16 };

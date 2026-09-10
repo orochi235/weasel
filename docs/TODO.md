@@ -1635,12 +1635,27 @@ one dead `const` and four stale disable directives.
   1.33:1, 1.08 at 1:1, 1.14 magnified — vanishing the moment the draw stops
   minifying, and inverting to the ordinary expectation on their small sheet.
 
-  Our sheets are 16x16 tiles, so the largest is about 3MB; theirs is four times
-  that. Sheet size is the obvious difference and the untested one. Something is
-  wrong in either the reasoning above or one of the two measurements, and it
-  matters because "nearest is free" is advice we give consumers. Widening this
-  spec's sheet until it matches theirs is the experiment; single runs per rung
-  on their side, so believe the direction and not the second digit.
+  Our sheets are 16x16 tiles, so the largest is about 3MB. Theirs is 5652px
+  square — **122MB resident**, forty times ours, not four; the 12MB first
+  reported was the compressed webp on the wire. A texture that size against a
+  cache hierarchy is why 3MB may see nothing where 122MB does not fit.
+
+  **One redundant write is already gone.** `flushBatch` re-asserted MAG_FILTER
+  on every flush for every slot, and filtering is state on the texture object,
+  so most of those were writes to a live texture for no reason.
+  `GLImageCache.setMagFilter` now skips a value the texture already carries.
+  That fits the shape of their measurement — their linear pass re-asserted the
+  upload default while their nearest pass changed state on every draw — but it
+  does not explain it: their control is the pre-batch build, which set the
+  filter per *command*, and the ratio they see tracks minification rather than
+  command count. So it is a fix, not the answer.
+
+  What is left of the fork: either MIN_FILTER is not what a draw at 2:1 on a
+  122MB texture actually reads, or something else in the renderer still varies
+  with `sampling`. Widening this spec's sheet toward theirs is the experiment.
+  Their column is single runs per rung on a box that had a fleet job on it all
+  evening — believe the shape, which lands exactly at 1:1 and is not something
+  contention produces, and not the second digit.
 
   The rest of the plan — one program plus atlases — is in
   `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`, with the traps, and a

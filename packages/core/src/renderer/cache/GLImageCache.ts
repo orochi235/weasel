@@ -23,6 +23,23 @@ type TexSource = ImageBitmap | ImageData | HTMLCanvasElement | HTMLImageElement;
 
 export class GLImageCache {
   private readonly map = new WeakMap<object, WebGLTexture>();
+  /**
+   * MAG_FILTER each texture currently carries, so a redundant write can be
+   * skipped.
+   *
+   * The batch sets this per flush — the same bitmap can be drawn at both
+   * filters in one frame, and the value has to be right at the draw rather than
+   * at upload. Filtering is state on the *texture object*, though, not on the
+   * unit, so re-asserting a value it already has is a write to a live texture
+   * for no reason. On a large sheet that is not free: a consumer's wall samples
+   * a 5652px-square atlas, 122MB resident, and measured `sampling: 'nearest'`
+   * costing up to 8x `'linear'` there — where the linear pass re-asserts the
+   * upload default and the nearest pass changes state on every draw.
+   *
+   * Whether that is the cause is unproven (see `docs/TODO.md`), but the write
+   * was redundant either way.
+   */
+  private readonly magFilters = new WeakMap<object, number>();
 
   /** `minification` selects the MIN_FILTER strategy for uploaded textures.
    *  `'linear'` (default) is the screen path's existing behavior. `'mipmap'`
@@ -55,6 +72,7 @@ export class GLImageCache {
       this.minification === 'mipmap' ? gl.LINEAR_MIPMAP_LINEAR : gl.LINEAR,
     );
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    this.magFilters.set(key, gl.LINEAR);
 
     const [wrapS, wrapT] = wrapModes(gl, repetition);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrapS);
@@ -72,6 +90,15 @@ export class GLImageCache {
     const gl = this.gl;
     gl.activeTexture(gl.TEXTURE0 + unit);
     gl.bindTexture(gl.TEXTURE_2D, tex);
+  }
+
+  /** Set `key`'s MAG_FILTER, skipping the call when it already holds that
+   *  value. Its texture must be bound to the active unit — callers pair this
+   *  with `bind`. */
+  setMagFilter(key: object, filter: number): void {
+    if (this.magFilters.get(key) === filter) return;
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, filter);
+    this.magFilters.set(key, filter);
   }
 }
 

@@ -904,11 +904,11 @@ export function flushBatch(ctx: DrawContext): void {
   for (let i = 0; i < staged.images.length; i++) {
     const entry = staged.images[i];
     ctx.imageCache.bind(entry.image, i + 1);
-    // Set per flush, not at upload: `GLImageCache` keys textures by bitmap
-    // identity, so the same bitmap can be drawn at both filters in one frame.
-    gl.texParameteri(
-      gl.TEXTURE_2D,
-      gl.TEXTURE_MAG_FILTER,
+    // Per flush, not at upload: the same bitmap can be drawn at both filters in
+    // one frame. The cache skips the write when the texture already carries the
+    // value, which is most flushes.
+    ctx.imageCache.setMagFilter(
+      entry.image,
       entry.sampling === 'nearest' ? gl.NEAREST : gl.LINEAR,
     );
   }
