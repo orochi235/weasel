@@ -626,18 +626,5 @@ export function crayonAnchor(name: string): Anchor {
   };
 }
 
-/**
- * The handful worth reaching for first, and why each needs pinning at all:
- * every one of these sits far enough from a mid-range lightness target that the
- * law would otherwise hand back a different color than its name.
- */
-export const SUGGESTED_ANCHORS: readonly { name: CrayonName; note: string }[] = [
-  { name: 'yellow', note: 'Chroma peaks near L 0.95 — below 0.86 it reads gold.' },
-  { name: 'lime', note: 'Peaks around L 0.91; a mid-range law gives olive.' },
-  { name: 'red', note: 'Peaks low, near L 0.64.' },
-  { name: 'violet', note: 'Peaks lowest of all, near L 0.51.' },
-  { name: 'cyan', note: 'Thin gamut — wants its peak or it goes gray.' },
-  { name: 'navy', note: 'Dark by definition; any lightness law lifts it.' },
-];
-
+/** The sharpest case for pinning, and what the anchor tests use. */
 export const YELLOW_ANCHOR: Anchor = crayonAnchor('yellow');

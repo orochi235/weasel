@@ -255,30 +255,11 @@
   cursor: pointer;
 }
 
-.anchorPresets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--wzl-space-xs);
-}
 
-.anchorPreset {
-  display: flex;
-  align-items: center;
-  gap: var(--wzl-space-xs);
-  height: var(--wzl-control-h);
-  padding: 0 var(--wzl-space-sm);
-  font: inherit;
-  font-size: var(--wzl-font-size-sm);
-  background: var(--wzl-surface-raised);
-  color: var(--wzl-fg);
-  border: var(--wzl-border-w) solid var(--wzl-border);
-  border-radius: var(--wzl-radius-pill);
-  cursor: pointer;
-}
 
-.anchorPreset:hover:not(:disabled) {
-  background: var(--wzl-surface-hover);
-}
+
+
+
 
 .anchorPreset:disabled,
 .copy:disabled {
@@ -378,19 +359,63 @@
   color: var(--wzl-danger);
 }
 
-.anchorSearch {
-  height: var(--wzl-control-h);
-  padding: 0 var(--wzl-field-pad-x);
-  font: inherit;
-  font-size: var(--wzl-font-size-sm);
-  background: var(--wzl-surface-sunken);
-  color: var(--wzl-fg);
-  border: var(--wzl-border-w) solid var(--wzl-border-raised);
-  border-radius: var(--wzl-radius-sm);
-}
+
 
 .copy {
   display: inline-flex;
   align-items: center;
   gap: var(--wzl-space-xs);
+}
+
+/* A grid you scan, not a field you type into: 45 colors you would recognize on
+   sight, in the table's own family order. */
+.crayonGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18px, 1fr));
+  gap: 3px;
+}
+
+.crayon {
+  aspect-ratio: 1;
+  width: 100%;
+  padding: 0;
+  border: var(--wzl-border-w) solid rgb(0 0 0 / 0.25);
+  border-radius: var(--wzl-radius-sm);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.crayon:hover:not(:disabled),
+.crayon:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: 1px;
+}
+
+/* Square, matching a pinned swatch in the main row. */
+.crayonPinned {
+  composes: crayon;
+  border-radius: 0;
+  cursor: default;
+}
+
+.crayonPin {
+  color: rgb(0 0 0 / 0.55);
+  mix-blend-mode: hard-light;
+}
+
+.crayon:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.crayonPinned:disabled {
+  opacity: 1;
+}
+
+.crayonCaption {
+  margin: 2px 0 0;
+  min-height: 1.2em;
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
 }

@@ -7,10 +7,10 @@ import {
   CRAYONS,
   crayonAnchor,
   crayonHex,
-  SUGGESTED_ANCHORS,
   toHexPreview,
   type Anchor,
 } from './palette/generate';
+import { toLch } from './palette/oklch';
 
 export interface AnchorListProps {
   anchors: readonly Anchor[];
@@ -26,7 +26,7 @@ export interface AnchorListProps {
  */
 export function AnchorList({ anchors, onChange, count }: AnchorListProps) {
   const [hex, setHex] = useState('#e0e11c');
-  const [query, setQuery] = useState('');
+  const [hovered, setHovered] = useState<string | null>(null);
 
   const replace = (i: number, next: Partial<Anchor>) =>
     onChange(anchors.map((a, j) => (j === i ? { ...a, ...next } : a)));
@@ -42,15 +42,13 @@ export function AnchorList({ anchors, onChange, count }: AnchorListProps) {
   const full = anchors.length >= count;
   const pinned = new Set(anchors.map((a) => a.name));
 
-  const matches = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const names = Object.keys(CRAYONS);
-    if (!q) return SUGGESTED_ANCHORS.map((sa) => ({ name: sa.name as string, note: sa.note }));
-    return names
-      .filter((n) => n.includes(q))
-      .slice(0, 12)
-      .map((n) => ({ name: n, note: '' }));
-  }, [query]);
+  // Chroma descending: the vivid end is what a palette reaches for first, and
+  // the muted names fall to the tail where they read as a group.
+  const names = useMemo(
+    () =>
+      Object.keys(CRAYONS).sort((a, b) => toLch(crayonHex(b)).C - toLch(crayonHex(a)).C),
+    [],
+  );
 
   return (
     <PropertyGroup title="Anchors">
@@ -143,34 +141,34 @@ export function AnchorList({ anchors, onChange, count }: AnchorListProps) {
           </button>
         </label>
 
-        <input
-          type="search"
-          value={query}
-          placeholder={`Search ${Object.keys(CRAYONS).length} named colors`}
-          onChange={(e) => setQuery(e.target.value)}
-          className={styles.anchorSearch}
-          aria-label="Search named colors"
-        />
-
-        <div className={styles.anchorPresets}>
-          {matches.map((m) => (
-            <button
-              key={m.name}
-              type="button"
-              className={styles.anchorPreset}
-              disabled={full || pinned.has(m.name)}
-              title={m.note || m.name}
-              onClick={() => add(crayonAnchor(m.name))}
-            >
-              <span
-                className={styles.anchorChip}
-                style={{ background: crayonHex(m.name) }}
-                aria-hidden="true"
-              />
-              {m.name}
-            </button>
-          ))}
+        <div
+          className={styles.crayonGrid}
+          onMouseLeave={() => setHovered(null)}
+          role="group"
+          aria-label="Named colors"
+        >
+          {names.map((name) => {
+            const isPinned = pinned.has(name);
+            return (
+              <button
+                key={name}
+                type="button"
+                className={isPinned ? styles.crayonPinned : styles.crayon}
+                style={{ background: crayonHex(name) }}
+                disabled={full || isPinned}
+                title={name}
+                aria-label={isPinned ? `${name}, already pinned` : `Pin ${name}`}
+                onMouseEnter={() => setHovered(name)}
+                onFocus={() => setHovered(name)}
+                onClick={() => add(crayonAnchor(name))}
+              >
+                {isPinned && <PinIcon size={9} className={styles.crayonPin} />}
+              </button>
+            );
+          })}
         </div>
+        <p className={styles.crayonCaption}>{hovered ?? `${names.length} named colors`}</p>
+
         {full && (
           <p className={styles.anchorHint}>Every slot is pinned — raise the color count to add more.</p>
         )}
