@@ -1634,30 +1634,37 @@ one dead `const` and four stale disable directives.
   `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`, with the traps, and a
   two-phase dispatch split that would make it tractable.
 
-- **(P3) Whether the batch's buffer ring costs a co-tenant on the same page.**
-  Unverified, and reported rather than measured here. A consumer benchmarking
-  its wall against a canvas2d control found that at one rung — the one where its
-  atlas grows to 12MB — the *canvas2d* side went from ~8.8 ms to 102-113 ms, and
-  only when the page also held a build with the merged batch. Reproducible in
-  both directions, and nothing about its canvas2d path changed between runs.
+- **(P3) Whether the batched path costs a co-tenant on the same page.**
+  Unverified here, and reported rather than measured. A consumer benchmarking
+  its wall against a canvas2d control found that at one rung the *canvas2d*
+  side went from ~8.8 ms to 102-160 ms, and only when the page also held a
+  build with the merged batch. Reproducible in both directions.
 
-  Our numbers are unaffected; what it makes unusable is that rung's ratio. It is
-  worth chasing because a real app is a co-tenant too: weasel next to a chart
+  Its seven rungs narrow it to an interaction rather than to either cause
+  alone. Five rungs share one byte-identical 12MB atlas, and only the densest
+  of them is anomalous — canvas2d costs 160.4 ms at 16px / 2,700 commands
+  against 5.2 at 24px / 1,419, on the same sheet. So it is not residency. The
+  two rungs with *more* commands, 8px at 7,500 and 12px at 4,275, are fine on a
+  smaller sheet, so it is not command count. What is unique is the pair: the
+  most commands anyone draws against the large texture.
+
+  Two axes move together across that ladder and want separating. Holding the
+  cell at 16px and drawing fewer of them varies command count at a fixed 2:1
+  minification; drawing 24px cells until the count reaches 2,700 varies the
+  sampling ratio at a fixed count. Density of access to a large texture is a
+  texture-cache story, not a memory-pressure one, and 16px is where a 32px tile
+  is minified hardest by anything drawing that many of them — `GLImageCache`
+  sets MIN_FILTER to LINEAR and generates no mipmaps on the screen path, so a
+  minified draw scatters its taps.
+
+  **Run the control first.** Every number in it is canvas2d on a page that also
+  holds a WebGL2 context. Nobody has measured that rung with no GL context at
+  all, so "the batch costs its co-tenant" and "this rung is expensive whenever
+  GL is resident, and the batch only changes the timing" are not yet separated.
+  That is one run and it could retire the entry.
+
+  Worth chasing because a real app is a co-tenant too: weasel beside a chart
   library, or two surfaces on one page.
-
-  The suspect is what the ring costs in GPU memory. `SOLID_RING_SIZE` is 64
-  slot-sized buffer sets per tier plus `SOLID_LARGE_RING_SIZE` growable ones
-  that `doubledTo` up to the largest flush they have seen and never shrink —
-  deliberately, because the write hazard those avoid is worth far more (see the
-  flush entries above). Against a 12MB atlas and a 2D canvas's own backing
-  store, an eviction and per-frame re-upload would look exactly like this: one
-  rung, large, reproducible.
-
-  What would separate it: hold the command count fixed and shrink the atlas. If
-  the co-tenant's cost tracks the atlas, it is memory pressure and the ring
-  sizes are the knob. If it tracks the command count, it is scheduling — the
-  batched build submits a frame in 3 ms instead of 90, so it contends for the
-  GPU far more densely, and that is not a defect to fix.
 
 - **(P3) Per-layer GPU dispatch skipping.** `RenderLayer.deps` (shipped
   2026-08-22, `packages/core/src/core/layers/render.ts`) skips rebuilding a
