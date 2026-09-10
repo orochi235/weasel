@@ -179,14 +179,29 @@ Ramps are 1D and atlas into rows of one texture; images go in a texture array;
 paint parameters ride per-vertex. Then a frame is one program and near-one draw.
 This is a paint-path rewrite — the direction, not a next step.
 
+**Text branches; it does not stay separate.** That was the open question here,
+and it is now answered by measurement rather than by argument. A merged program
+has to run the glyph math — a median across three channels, `fwidth`, a
+smoothstep — on *every* fragment, because `fwidth` inside non-uniform control
+flow is undefined and the derivative must be taken before anything selects on
+paint mode. Priced head to head at 432M fragments a frame
+(`tests/perf/fill-rate.spec.ts`), that costs **1.4%** of a fragment that is not
+a glyph, and fill is not what a wall is bound by. So the cost of folding text in
+is not the fragment; it is the vertex, which grows by a paint mode and a bold
+threshold.
+
 Traps:
 
 - **Never mipmap the MSDF atlas.** Filtering a distance field destroys it. Keep
   the text atlas out of any shared image atlas rather than trusting a flag on
   `GLTextureCache`.
-- Text needs its own sampling math and already has two variants (`textSdf`,
-  `textSdfR8`). "One program" either branches or leaves the text tier separate;
-  decide that before atlasing anything.
+- Two sampling maths, not one: `textSdf` takes the median of RGB and
+  `textSdfR8` reads `.r`. Both are cheap and both are derivative-dependent, so
+  a merged shader computes the one its paint mode names and takes `fwidth` of
+  the result — outside any branch.
+- Synthetic italic already skews on the CPU in `drawText`, and the batch places
+  its own corners, so the skew rides the vertices for free. `u_synthBold`
+  shifts the SDF threshold and has to become a vertex attribute.
 
 ## Deliberately out of scope
 
