@@ -45,6 +45,7 @@ import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { freshNodeId } from './freshNodeId';
+import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -67,7 +68,11 @@ function translatePose(pose: unknown, dx: number, dy: number): unknown {
 interface CloneScratch {
   ids: NodeId[];
   scene: Scene<unknown, string, unknown>;
-  /** Origin poses captured at drag start. */
+  /** World reads and local writes over the scene's composition strategy. */
+  frame: PoseFrame<unknown>;
+  /** Origin poses captured at drag start, in world — the frame the drag
+   *  delta is expressed in. The copy keeps its source's parent, so each
+   *  translated result is stored back in that same frame. */
   originPoses: Map<NodeId, unknown>;
   /** Running drag delta — updated each onMove, applied once at commit. */
   currentDelta: { dx: number; dy: number };
@@ -108,7 +113,7 @@ export const cloneAction: Action & { requires: string[] } = {
   cursor: 'copy',
   activeCursor: 'copy',
   eligible: { capability: ['edits-page', 'creates-selection'] },
-  requires: ['selection', 'scene', 'applyOps'],
+  requires: ['selection', 'scene', 'applyOps', 'poseComposition'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {
@@ -122,10 +127,10 @@ export const cloneAction: Action & { requires: string[] } = {
       if (ids.length === 0) return {};
 
       // Capture origin poses once at drag start.
+      const frame = scenePoseFrame(scene, ctx.deps.poseComposition);
       const originPoses = new Map<NodeId, unknown>();
       for (const id of ids) {
-        const node = scene.get(id);
-        if (node) originPoses.set(id, node.pose);
+        if (scene.get(id) !== undefined) originPoses.set(id, frame.world(id));
       }
 
       if (originPoses.size === 0) return {};
@@ -133,6 +138,7 @@ export const cloneAction: Action & { requires: string[] } = {
       const scratch: CloneScratch = {
         ids,
         scene,
+        frame,
         originPoses,
         currentDelta: { dx: 0, dy: 0 },
         previews: new Map<NodeId, unknown>(),
@@ -159,7 +165,7 @@ export const cloneAction: Action & { requires: string[] } = {
           const { dx, dy } = scratch.currentDelta;
           if (dx === 0 && dy === 0) return;
           for (const [id, origin] of scratch.originPoses) {
-            scratch.previews.set(id, translatePose(origin, dx, dy));
+            scratch.previews.set(id, scratch.frame.local(id, translatePose(origin, dx, dy)));
           }
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
@@ -186,7 +192,7 @@ export const cloneAction: Action & { requires: string[] } = {
             const origin = scratch.originPoses.get(id);
             const originNode = scratch.scene.get(id);
             if (origin === undefined || !originNode) continue;
-            const newPose = translatePose(origin, dx, dy);
+            const newPose = scratch.frame.local(id, translatePose(origin, dx, dy));
             // The old `scene.add` (no explicit id) minted a random id; we
             // pre-generate one so the insert op carries a full node. Id value
             // was never observable, so behavior is preserved.

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { createPoseOverrides } from 'core/scene/poseOverrides';
 import { cloneAction } from './clone';
 import type { InvocationCtx } from '../invoker';
 import type { NodeId, AddNodeSpec } from 'core/scene/types';
@@ -25,6 +26,7 @@ interface StubScene {
   get roots(): readonly NodeId[];
   childrenOf(id: NodeId): readonly NodeId[];
   applyBatch(ops: Op[], label: string, adapter: unknown): void;
+  overrides: ReturnType<typeof createPoseOverrides<unknown>>;
 }
 
 function makeStubScene(
@@ -43,6 +45,7 @@ function makeStubScene(
   const scene: StubScene = {
     poses,
     nodes,
+    overrides: createPoseOverrides<unknown>(() => undefined),
     addLog,
     applyBatchLog,
     get(id: NodeId) {
