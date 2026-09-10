@@ -533,6 +533,11 @@
 
 .swatchPanel {
   flex: none;
+  /* Left-aligned rather than centred: it lines up with the constraints column
+     above it, and a grid of small squares stretched to a wide screen puts the
+     two ends too far apart to compare. */
+  width: 100%;
+  max-width: 1000px;
   max-height: 32vh;
   display: flex;
   flex-direction: column;

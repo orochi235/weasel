@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import styles from './PaletteLab.module.css';
 import { PinIcon } from './PinIcon';
+import { COPIC_COLORS } from './palette/copicColors';
 import { LEGO_COLORS } from './palette/legoColors';
 import { anchorFromHex, CRAYONS, crayonAnchor, crayonHex, type Anchor } from './palette/generate';
 import { toLch } from './palette/oklch';
@@ -62,14 +63,22 @@ export function SwatchPanel({ anchors, onChange, count }: SwatchPanelProps) {
       ),
       lego: ordered(
         LEGO_COLORS.map((c) => ({
-          key: `lego-${c.code}`,
-          label: `${c.name} · ${c.code}`,
+          key: `lego-${c.name}`,
+          label: c.name,
           hex: c.hex,
           anchor: () => anchorFromHex(c.hex, c.name.toLowerCase().replace(/\s+/g, '-')),
         })),
         bands,
       ),
-      copic: [],
+      copic: ordered(
+        COPIC_COLORS.map((c) => ({
+          key: `copic-${c.code}`,
+          label: `${c.code} ${c.name}`,
+          hex: c.hex,
+          anchor: () => anchorFromHex(c.hex, c.code.toLowerCase()),
+        })),
+        bands,
+      ),
     }),
     [bands],
   );
@@ -91,7 +100,7 @@ export function SwatchPanel({ anchors, onChange, count }: SwatchPanelProps) {
   const TABS: readonly { id: SourceId; label: string }[] = [
     { id: 'named', label: `Named · ${sets.named.length}` },
     { id: 'lego', label: `LEGO · ${sets.lego.length}` },
-    { id: 'copic', label: 'Copic' },
+    { id: 'copic', label: `Copic · ${sets.copic.length}` },
   ];
 
   return (
@@ -152,14 +161,7 @@ export function SwatchPanel({ anchors, onChange, count }: SwatchPanelProps) {
         </label>
       </header>
 
-      {swatches.length === 0 ? (
-        <p className={styles.anchorHint}>
-          No source for Copic values yet. They are not derivable — each marker's color is a
-          measurement, and guessing 358 of them would put wrong hexes behind real names. Drop a
-          list in and this fills itself.
-        </p>
-      ) : (
-        <div className={styles.crayonGrid} onMouseLeave={() => setHovered(null)} role="group">
+      <div className={styles.crayonGrid} onMouseLeave={() => setHovered(null)} role="group">
           {swatches.map((s) => {
             const isPinned = pinnedHexes.has(s.key) || anchors.some((a) => a.name === s.label);
             return (
@@ -180,8 +182,7 @@ export function SwatchPanel({ anchors, onChange, count }: SwatchPanelProps) {
               </button>
             );
           })}
-        </div>
-      )}
+      </div>
       {full && <p className={styles.anchorHint}>Every slot is pinned — raise the color count to add more.</p>}
     </section>
   );
