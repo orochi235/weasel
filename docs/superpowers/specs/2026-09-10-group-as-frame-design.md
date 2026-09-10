@@ -210,9 +210,19 @@ Two further checks earn their place:
   return the same pose for every node of the fixture. They are separate code
   paths answering one question, which is the shape of bug this design is meant
   to avoid rather than introduce.
-- **Pixels, not just poses.** `tests/visual/` gets a rotated-container case. A
-  composed pose that is right in the walk and wrong in the wrap produces correct
-  numbers and a visibly wrong picture.
+- **Pixels, not just poses.** A composed pose that is right in the walk and
+  wrong in the wrap produces correct numbers and a visibly wrong picture.
+  `sceneViewRender.frame.test.ts` reads the emitted draw commands and their
+  accumulated transform, and fails when the wrap is removed. It is a proxy: a
+  framebuffer check needs a browser, and `tests/visual/` has no
+  rotated-container case yet.
+
+**A same-gesture-twice drift test does not catch this class of bug on the way
+in.** The un-migrated actions were consistently local-in and local-out, so they
+were self-consistent and drifted no more than the fixed ones. Those tests are
+worth keeping as guards against a fix that reads world and writes world, but
+what actually found the defects was a paired correctness assertion against a
+hand-derived world value.
 
 ## What this does not fix
 
@@ -225,10 +235,14 @@ Stated so nobody plans against it:
   `scaleY` separately (`animation/rig/types.ts:8`), so a bone chain using them
   stays flattened onto independent nodes. A rigid or uniformly scaled rig
   becomes expressible as parenting, which is what TODO 914 asks for.
-- **`kitRegistry.ts:32`'s `unionOfChildren`.** A container whose pose is derived
-  from its children's poses, which are expressed in the container's frame, is
-  circular. It works today only because the frame is identity. It needs its own
-  decision and is not in this arc.
+- **`kitRegistry.ts:32`'s `unionOfChildren`** is circular under a frame: it
+  derives a container's pose from children whose poses are expressed in that
+  container's frame. This was meant to be deferred, but `groupAction` attaches
+  it to every container it mints, so grouping forced the decision. It is now
+  attached only when the strategy's closure is `'identity'`; under any other
+  strategy a new container keeps its authored envelope. Whether a framed
+  container should track its contents at all — and by what rule — is still
+  open.
 - **`nestedHit`**, which composes correctly and has no caller. Either it gets
   one or it goes; not decided here.
 - **`apps/draw`'s SVG export.** It bakes each leaf's stored pose into the
