@@ -1,9 +1,81 @@
-# Handoff — the diagram plugin
+# Handoff — text and gradients into the shared batch
 
-**Branch:** `main`. Everything below is committed and **unpushed**; run
+**Branch:** `main`. Everything is committed and unpushed; run
 `git log --oneline @{u}..HEAD` to see what has not left the machine.
 
 ## Where it stands
+
+The renderer's draw-coalescing arc has one piece left in each of two paints.
+`docs/TODO.md`'s **"(P2) Per-command draw cost"** entry is the live record of
+the whole arc — read it first, not this file, for what has landed.
+
+Solid geometry, image quads and up to seven distinct bitmaps now share one
+draw. Text and gradients still take their own program, and so still break a run
+at every label and every gradient fill.
+
+**Next: text.** The question of whether it can share the batch program was open
+in `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md` and is now
+answered there — it branches, it does not stay separate. A merged program must
+run the glyph math on every fragment, because `fwidth` inside non-uniform
+control flow is undefined and the derivative has to be taken before anything
+selects on paint mode. That costs 1.4% of a fragment that is not a glyph,
+measured head to head at 432M fragments a frame by
+`tests/perf/fill-rate.spec.ts`. So the cost is not the fragment; it is the
+vertex, which grows a paint mode and a bold threshold.
+
+**Then: gradients**, via a ramp atlas — ramps are 1D and atlas into rows of one
+texture. Step 4 of the same spec.
+
+## Decisions made in conversation that the code does not explain
+
+**The measurement instrument was the hard part, and its corrections are in
+`fill-rate.spec.ts`'s comments because they will be re-derived otherwise.**
+`gl.finish()` does not block in Chrome — commands go to the GPU process and the
+call returns, which timed 43M fragments at 0.003 ms and read as free; a
+one-pixel `readPixels` is the real sync point. Samples must be long enough that
+the GPU clock is not still ramping through them. And variants must alternate
+ABBA: under ABAB whichever runs second sits later on that ramp every time, which
+reads as that variant being faster.
+
+**Do not compare a perf number against one recorded on another day.** The same
+unchanged tree measured 1.85 ms where `docs/TODO.md` records 1.50 for the same
+rung. Always take the A/B back to back in one sitting, and quote the pair.
+
+**`tests/visual/batch-pixels.spec.ts` exists because no screenshot can see a
+batched run's composition** — the atlas quad covers the ground rect it
+corrupted. Anything that changes what shares a draw needs a probe on a pixel
+the covering command does not cover. This is also in `CLAUDE.md`'s Traps.
+
+**Seven bitmaps, not more, and the white texel owns slot 0.** WebGL2 guarantees
+16 fragment texture units, so eight is safe without a `getParameter` — which
+the GL recorder would answer with a recording function rather than a number.
+Slot 0 is reserved so a solid's `texture() * a_vertexColor` is exactly the
+vertex color whatever else joins its run; that is the invariant the tint bug
+broke.
+
+**A bitmap wanted at two MAG_FILTERs still breaks the run.** That is state on
+the texture object, not on the unit, so no number of slots fixes it.
+
+## Verifying
+
+- `npx vitest run --project=core packages/core/src/renderer/` — the batch's
+  buffer-replay tests.
+- `npx playwright test --config=tests/visual/playwright.config.ts` — the
+  baselines plus `batch-pixels`.
+- `npx playwright test --config=tests/perf/playwright.config.ts atlas-wall` —
+  the wall ladder. Draw-bound, so it cannot see fragment cost.
+- `npx playwright test --config=tests/perf/playwright.config.ts fill-rate` —
+  fragment cost, and nothing else.
+
+---
+
+# Retained from completed work — the diagram plugin
+
+That work is finished and merged. These notes are kept because nothing else
+records them; **they belong in `packages/diagram/`, and moving them there is an
+open chore.** Do not read the section below as open work.
+
+## Where it stood
 
 The plugin is complete. `@weasel-js/diagram` holds the `DiagramNode` trait,
 ports on the outline, the body builder, edges routed by `straight` /
