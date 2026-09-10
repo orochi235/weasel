@@ -14,16 +14,18 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
-import { SOLID_RING_SIZE, MAX_VERTICES_PER_BATCH } from './drawBatch';
+import { SOLID_RING_SIZE, MAX_VERTICES_PER_BATCH, FLOATS_PER_VERTEX } from './drawBatch';
+import { BATCH_TEXTURE_SLOTS } from './shaders/batchFill';
 import type { DrawCommand } from './DrawCommand';
 import { SPRITE_STRIDE } from './DrawCommand';
 
-/** `drawBatch.ts`'s vertex: vec2 position, vec4 color, vec2 uv, float post. */
-const FLOATS_PER_VERTEX = 9;
+/** `drawBatch.ts`'s vertex: vec2 position, vec4 color, vec2 uv, float post,
+ *  float texSlot. */
 const FLOATS_PER_QUAD = FLOATS_PER_VERTEX * 4;
 /** Offsets within a vertex. */
 const UV = 6;
 const POST = 8;
+const SLOT = 9;
 
 describe('renderer — consecutive image batching', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
@@ -104,10 +106,37 @@ describe('renderer — consecutive image batching', () => {
     expect(drawPrograms()).toEqual([r._batchFill().handle]);
   });
 
-  it('does not merge across bitmaps — a batch samples one texture', () => {
+  it('merges across bitmaps, each quad naming its own texture slot', () => {
     const other = bitmap();
     r.render([img(0), { ...img(20), image: other }, img(40)]);
-    expect(draws()).toEqual([6, 6, 6]);
+    // One draw over three quads, not one per bitmap change.
+    expect(draws()).toEqual([18]);
+    const v = quadUploads()[0];
+    const slot = (vertex: number) => v[vertex * FLOATS_PER_VERTEX + SLOT];
+    // Slot 0 is the white texel, so the first bitmap is 1 and the second 2 —
+    // and the third quad returns to the first bitmap's slot rather than taking
+    // a third.
+    expect([slot(0), slot(4), slot(8)]).toEqual([1, 2, 1]);
+  });
+
+  it('binds the white texel at slot 0 and each bitmap above it', () => {
+    const other = bitmap();
+    r.render([img(0), { ...img(20), image: other }]);
+    const units = recorder.calls
+      .filter((c) => c.name === 'activeTexture')
+      .map((c) => (c.args[0] as number) - recorder.gl.TEXTURE0);
+    // Unit 0 for white, then one per bitmap, then back to 0 for whoever draws
+    // next — a bind left on a high unit is one the next program never samples.
+    expect(units).toEqual([0, 1, 2, 0]);
+  });
+
+  it('breaks the run when every texture slot is taken', () => {
+    // One more bitmap than the run has slots for. `BATCH_TEXTURE_SLOTS`
+    // includes the white texel, so the run holds one fewer bitmap than that.
+    const sheets = Array.from({ length: BATCH_TEXTURE_SLOTS }, () => bitmap());
+    r.render(sheets.map((image, i) => ({ ...img(i * 20), image })));
+    // The first slots-minus-one fill the run; the last opens a second.
+    expect(draws()).toEqual([(BATCH_TEXTURE_SLOTS - 1) * 6, 6]);
   });
 
   it('folds per-command opacity into the vertices rather than breaking the run', () => {
@@ -289,10 +318,15 @@ describe('renderer — consecutive image batching', () => {
       expect(draws()).toEqual([24]);
     });
 
-    it('breaks the run for a different bitmap, like any other image', () => {
+    it('takes its own texture slot, like any other image', () => {
       const other = bitmap();
       r.render([img(0), sprites(packed(2), { image: other }), img(60)]);
-      expect(draws()).toEqual([6, 12, 6]);
+      expect(draws()).toEqual([24]);
+      const v = quadUploads()[0];
+      const slot = (vertex: number) => v[vertex * FLOATS_PER_VERTEX + SLOT];
+      // Both packed sprites carry the sheet's slot, and the quad after them
+      // returns to the first bitmap's.
+      expect([slot(0), slot(4), slot(8), slot(12)]).toEqual([1, 2, 2, 1]);
     });
 
     it('chunks past the per-flush cap and keeps drawing', () => {

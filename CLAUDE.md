@@ -178,6 +178,16 @@ exits 1 with 31 pre-existing `TS6059` errors on a clean tree — core's `outDir`
 
 Things that pass every test and are still wrong.
 
+**A visual baseline cannot see a batched run's composition.** The renderer merges
+neighbouring commands into one draw, and what a screenshot shows is the topmost
+thing drawn — so a wall of thumbnails, whose atlas quad covers its own ground
+rect, hides whatever the ground painted. Solid fills spent a day drawing
+multiplied by the atlas texel beside them with all 51 baselines green; an outside
+consumer found it against a canvas2d reference in an afternoon. Anything that
+changes what shares a draw needs `tests/visual/batch-pixels.spec.ts`'s kind of
+check — build the command list, read the framebuffer channel by channel, and
+probe a pixel the covering command does *not* cover.
+
 **jsdom cannot catch a layout collapse.** Arc 3 of the labkit pass wrapped the workspace in a
 row whose `flex: 1` resolved to nothing inside a block container, so the lab rendered as an empty
 page — with all 7903 tests green. Screenshot anything that changes a container's box.

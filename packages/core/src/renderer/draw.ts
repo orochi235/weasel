@@ -41,6 +41,7 @@ import { outlineMesh } from './cache/outlineMeshCache';
 import { outlineStrokeMesh, quantizeEmWidth } from './cache/outlineStrokeMeshCache';
 import { strokeMesh } from './cache/strokeMeshCache';
 import { DrawBatch } from './drawBatch';
+import { BATCH_TEXTURE_SLOTS } from './shaders/batchFill';
 import type { EffectTarget, EffectTargets } from './effects/EffectTargets';
 import { COMPOSITE_PROGRAM_ID } from './effects/composite';
 
@@ -662,6 +663,12 @@ function drawPathFill(ctx: DrawContext, cmd: PathDrawCommand): void {
   }
 }
 
+/** `u_samplers[i] = i`, uploaded whole per flush. Built once: the mapping from
+ *  slot to texture unit is the identity and never varies. */
+const SAMPLER_UNITS = new Int32Array(
+  Array.from({ length: BATCH_TEXTURE_SLOTS }, (_, i) => i),
+);
+
 /**
  * The group state a staged run was built under.
  *
@@ -677,14 +684,15 @@ interface StagedBatchState {
   /** Whether group alpha folded into the vertex colors. */
   foldsAlpha: boolean;
   /**
-   * What the run samples, by identity — `GLImageCache` keys textures by the
-   * bitmap. Absent until an image quad joins: solid geometry samples the white
-   * texel and so can start, continue or end a run of anything.
+   * The bitmaps this run samples, in the order they joined. A quad's vertices
+   * carry `index + 1`, because slot 0 is the white texel every solid samples.
+   *
+   * Identity, because `GLImageCache` keys textures by the bitmap. `sampling` is
+   * per entry and set per flush rather than at upload: MAG_FILTER is state on
+   * the texture object, so the same bitmap drawn at both filters in one frame
+   * needs two flushes, not two slots.
    */
-  image?: ImageBitmap;
-  /** MAG_FILTER the run's texture is drawn under, set per flush because the
-   *  same bitmap can be drawn at both filters in one frame. */
-  sampling?: 'linear' | 'nearest';
+  images: { image: ImageBitmap; sampling: 'linear' | 'nearest' }[];
 }
 
 /** Identity in row-major 4×5 leaves `src` untouched *and* leaves the shader's
@@ -706,12 +714,28 @@ function stagedStateIsLive(
 ): boolean {
   if (staged.clipDepth !== ctx.clipDepth) return false;
   if (!staged.foldsAlpha && staged.alpha !== ctx.state.alpha) return false;
-  if (image !== undefined && staged.image !== undefined
-      && (staged.image !== image || staged.sampling !== sampling)) {
-    return false;
-  }
+  if (image !== undefined && slotFor(staged, image, sampling!) < 0) return false;
   const colorMatrix = ctx.state.colorMatrix;
   return staged.colorMatrix === colorMatrix || sameValues(staged.colorMatrix, colorMatrix);
+}
+
+/**
+ * The slot `image` would sample from in this run, or -1 if it cannot join.
+ *
+ * A bitmap already in the run reuses its slot — but only at the filter it went
+ * in under, since MAG_FILTER belongs to the texture object and one draw cannot
+ * have it both ways. Otherwise it takes the next free slot, and a run with none
+ * left is a run this quad has to break.
+ */
+function slotFor(
+  staged: StagedBatchState, image: ImageBitmap, sampling: 'linear' | 'nearest',
+): number {
+  for (let i = 0; i < staged.images.length; i++) {
+    const entry = staged.images[i];
+    if (entry.image !== image) continue;
+    return entry.sampling === sampling ? i + 1 : -1;
+  }
+  return staged.images.length + 1 < BATCH_TEXTURE_SLOTS ? staged.images.length + 1 : -1;
 }
 
 /**
@@ -762,6 +786,7 @@ function openRun(ctx: DrawContext): StagedBatchState {
       colorMatrix,
       clipDepth: ctx.clipDepth,
       foldsAlpha,
+      images: [],
     };
   }
   return ctx.batchState;
@@ -769,25 +794,28 @@ function openRun(ctx: DrawContext): StagedBatchState {
 
 /**
  * Open or continue a run for one more image quad, flushing first if the run
- * would overflow or already samples a different bitmap.
+ * would overflow or cannot give this bitmap a slot.
  *
- * A run that has sampled nothing yet adopts this bitmap rather than breaking:
- * that is what lets a wall's ground rect and its atlas quad share a draw.
+ * A run adopts a bitmap it has not seen rather than breaking, which is what
+ * lets a wall's ground rect and its atlas quad share a draw, and what lets a
+ * cell's art and its badge share one too. Returns the staged state and the slot
+ * the quad's vertices must carry.
  */
 function stageImage(
   ctx: DrawContext, image: ImageBitmap, sampling: 'linear' | 'nearest',
-): StagedBatchState {
+): { staged: StagedBatchState; slot: number } {
   if (ctx.batchState !== undefined
       && !stagedStateIsLive(ctx, ctx.batchState, image, sampling)) {
     flushBatch(ctx);
   }
   if (ctx.drawBatch.wouldOverflow(4)) flushBatch(ctx);
   const staged = openRun(ctx);
-  if (staged.image === undefined) {
-    staged.image = image;
-    staged.sampling = sampling;
+  let slot = slotFor(staged, image, sampling);
+  if (slot > staged.images.length) {
+    staged.images.push({ image, sampling });
+    slot = staged.images.length;
   }
-  return staged;
+  return { staged, slot };
 }
 
 /** Straight-alpha rgba for a solid paint under the staged state. */
@@ -871,22 +899,26 @@ export function flushBatch(ctx: DrawContext): void {
   setColorUniform(ctx, prog, 1, 1, 1, 1);
   setAlphaUniform(ctx, prog, staged.alpha);
   setColorMatrixUniforms(ctx, prog, staged.colorMatrix);
-  if (staged.image !== undefined) {
-    ctx.imageCache.bind(staged.image, 0);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, ctx.whiteTexture);
+  for (let i = 0; i < staged.images.length; i++) {
+    const entry = staged.images[i];
+    ctx.imageCache.bind(entry.image, i + 1);
     // Set per flush, not at upload: `GLImageCache` keys textures by bitmap
     // identity, so the same bitmap can be drawn at both filters in one frame.
     gl.texParameteri(
       gl.TEXTURE_2D,
       gl.TEXTURE_MAG_FILTER,
-      staged.sampling === 'nearest' ? gl.NEAREST : gl.LINEAR,
+      entry.sampling === 'nearest' ? gl.NEAREST : gl.LINEAR,
     );
-  } else {
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, ctx.whiteTexture);
   }
-  gl.uniform1i(prog.uniform('u_sampler')!, 0);
+  gl.uniform1iv(prog.uniform('u_samplers')!, SAMPLER_UNITS);
   applyClipTest(ctx, staged.clipDepth);
   gl.drawElements(gl.TRIANGLES, indexCount, gl.UNSIGNED_INT, 0);
+  // Everything else in the renderer binds its texture to unit 0 and some of it
+  // does so without an `activeTexture` of its own, so leaving unit 6 selected
+  // sends the next such bind to a unit nothing samples.
+  gl.activeTexture(gl.TEXTURE0);
   // Not redundant: `drawShader` binds no VAO and points attributes at whatever
   // is current, so a slot left bound here comes back corrupted a ring later.
   gl.bindVertexArray(null);
@@ -2008,7 +2040,7 @@ export function disposeTextQuads(gl: WebGL2RenderingContext, prog: ShaderProgram
  */
 function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
   ctx.imageCache.upload(cmd.image, cmd.image);
-  const staged = stageImage(ctx, cmd.image, cmd.sampling ?? 'linear');
+  const { staged, slot } = stageImage(ctx, cmd.image, cmd.sampling ?? 'linear');
 
   // Sampling window: the whole bitmap unless `source` narrows it, with the
   // flips applied by swapping the ends rather than moving the quad.
@@ -2029,6 +2061,7 @@ function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
     // with a real color matrix in the run it is `u_alpha`, and folding it here
     // as well would apply it twice.
     (cmd.opacity ?? 1) * (staged.foldsAlpha ? ctx.state.alpha : 1),
+    slot,
   );
 }
 
@@ -2047,7 +2080,7 @@ function drawSprites(ctx: DrawContext, cmd: SpritesDrawCommand): void {
 
   ctx.imageCache.upload(cmd.image, cmd.image);
   const sampling = cmd.sampling ?? 'linear';
-  let staged = stageImage(ctx, cmd.image, sampling);
+  let { staged, slot } = stageImage(ctx, cmd.image, sampling);
 
   const batch = ctx.drawBatch;
   const m = ctx.state.transform;
@@ -2058,14 +2091,14 @@ function drawSprites(ctx: DrawContext, cmd: SpritesDrawCommand): void {
   for (let s = 0, i = 0; s < count; s++, i += SPRITE_STRIDE) {
     if (batch.wouldOverflow(4)) {
       flushBatch(ctx);
-      staged = stageImage(ctx, cmd.image, sampling);
+      ({ staged, slot } = stageImage(ctx, cmd.image, sampling));
       groupAlpha = staged.foldsAlpha ? ctx.state.alpha : 1;
     }
     const sx = data[i + 4], sy = data[i + 5], sw = data[i + 6], sh = data[i + 7];
     batch.pushQuad(
       data[i], data[i + 1], data[i + 2], data[i + 3], m,
       sx / tw, sy / th, (sx + sw) / tw, (sy + sh) / th,
-      data[i + 8] * groupAlpha,
+      data[i + 8] * groupAlpha, slot,
     );
   }
 }
