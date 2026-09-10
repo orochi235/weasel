@@ -1,6 +1,9 @@
 # A group is a frame
 
-**Status: designed, not built.** Nothing in this document is in the tree yet.
+**Status: built**, except where "What this does not fix" says otherwise. Turn
+it on with `<SceneCanvas poseComposition={RIGID_POSE_COMPOSITION}>`, or
+`sceneToAdapter(scene, { poseComposition })` for a hand-built adapter. Omitting
+it leaves the absolute-pose behavior the kit shipped before, unchanged.
 
 **What this is:** the design for making a container's pose mean something to
 its children. Today nesting contributes a clip chain and nothing else, so a
@@ -162,15 +165,28 @@ uses it.
 Each step is separately shippable and each is a no-op under the identity
 default.
 
-1. `closure` on `PoseComposition`; `composeSimilarityPose` / `decomposeSimilarityPose`
-   beside the existing rect pair. Nothing consumes them yet.
-2. `getWorldPose` on the scene adapter; the accumulator in both render walks.
-3. Pick and hit-testing — both pick sources, `hitTestArea`, `getNodeAtPoint`.
-4. Selection chrome — `useViewHelpers`, `chromeState`, `overlay.ts`'s
-   `makeContainerAwareBoundsResolver`, which walks the tree today and composes
-   nothing.
+1. `closure` on `PoseComposition`; `composeRigidPose` / `decomposeRigidPose`
+   beside the existing rect pair.
+2. `getWorldPose` on the scene adapter; the accumulator in `buildSceneTree`.
+   `buildSceneViewCommands` delegates there, so the detached surfaces come with
+   it — the "two render walks" are one walk.
+3. Pick and hit-testing — both pick sources, the adapter's area and lasso
+   walks, the marquee and lasso deps, `getNodeAtPoint`.
+4. Selection chrome — `useViewHelpers`, which feeds `chromeState` — plus the
+   `poseComposition` prop on `SceneCanvas`, which is what lets a consumer turn
+   any of this on.
 5. Actions — `resize`, `rotate`, `group`, `clone`, `flip`, align, distribute.
-6. Export and clipboard — `svgExport`, `snapshotSelection` / `commitPaste`.
+6. Clipboard — `snapshotSelection` captures roots composed, because a root
+   loses its parent on paste.
+
+Two guards were needed that this design did not anticipate, both because the
+absolute-pose model bakes a *cascade* into moving a container: dragging one
+translates every descendant so they stay attached. Under a frame the
+descendants ride the frame and the cascade moves them twice. `sceneToAdapter`
+refuses `poseComposition` together with `cascadeContainerPose`, and
+`useSceneSelectTool` — which writes the same cascade inline rather than through
+that option — skips it when a strategy is configured.
+
 
 ## Testing: the identity trap
 
@@ -215,3 +231,9 @@ Stated so nobody plans against it:
   decision and is not in this arc.
 - **`nestedHit`**, which composes correctly and has no caller. Either it gets
   one or it goes; not decided here.
+- **`apps/draw`'s SVG export.** It bakes each leaf's stored pose into the
+  emitted path and gives a container a `<g>` with no transform, which is right
+  for the absolute-pose model that app uses and would need world poses under a
+  frame. It does not opt in, so nothing there is wrong today.
+- **The `poseById` fallback on the selection overlay**, which a consumer
+  supplies. The chrome path that matters reads `chromeState`, which composes.
