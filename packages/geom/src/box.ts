@@ -34,7 +34,10 @@ export function boxContainsPoint(b: Box, x: number, y: number): boolean {
   return x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3];
 }
 
-/** Closed interleaved ring (first vertex repeated) for a rect at (x,y,w,h). */
+/** Interleaved corner ring for a rect at (x,y,w,h), wound clockwise from the
+ *  origin corner. The closing edge is implicit — the same unclosed shape
+ *  `pointInPolygon` takes, and what a repeated first vertex would leave as a
+ *  zero-length segment for anything that strokes it. */
 export function rectToContour(x: number, y: number, w: number, h: number): Float64Array {
-  return Float64Array.of(x, y, x + w, y, x + w, y + h, x, y + h, x, y);
+  return Float64Array.of(x, y, x + w, y, x + w, y + h, x, y + h);
 }

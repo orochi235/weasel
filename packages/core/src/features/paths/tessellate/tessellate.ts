@@ -1,5 +1,5 @@
 import earcut from 'earcut';
-import { forEachSegment, pointInPolygon } from '@weasel-js/geom';
+import { forEachSegment, pointInPolygon, rectToContour } from '@weasel-js/geom';
 import {
   type Path,
   type PolygonPath,
@@ -33,7 +33,7 @@ export function tessellate(path: Path, opts: TessellateOptions = {}): Mesh {
 function tessellateRect(p: RectPath): Mesh {
   const { x, y, width: w, height: h } = p;
   return {
-    vertices: new Float32Array([x, y, x + w, y, x + w, y + h, x, y + h]),
+    vertices: Float32Array.from(rectToContour(x, y, w, h)),
     indices: new Uint32Array([0, 1, 2, 0, 2, 3]),
     anchorA: new Uint32Array([0, 1, 2, 3]),
     anchorB: new Uint32Array([0, 1, 2, 3]),

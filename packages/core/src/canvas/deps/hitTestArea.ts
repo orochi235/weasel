@@ -37,7 +37,7 @@ import {
 
 export { hiddenLayerIds } from 'canvas/pickWalk';
 import { aabbOfPose } from 'canvas/SceneCanvas/poseGeometry';
-import { pointInPolygon, segmentsCross } from '@weasel-js/geom';
+import { pointInPolygon, rectToContour, segmentsCross } from '@weasel-js/geom';
 import { findShapeSilhouette } from 'canvas/NodeShape';
 import type { Path, PolygonPath } from 'features/paths/types';
 
@@ -63,7 +63,7 @@ export function hitTestArea(
   opts?: ScenePickSourceOptions<unknown>,
 ): NodeId[] {
   const { x, y, width: w, height: h } = bounds;
-  const area = [x, y, x + w, y, x + w, y + h, x, y + h];
+  const area = Array.from(rectToContour(x, y, w, h));
   return hitTestAreaPolygon(scene, area, { x, y, width: w, height: h }, true, opts);
 }
 

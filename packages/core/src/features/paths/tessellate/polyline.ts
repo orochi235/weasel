@@ -1,4 +1,4 @@
-import { forEachSegment } from '@weasel-js/geom';
+import { forEachSegment, rectToContour } from '@weasel-js/geom';
 import {
   type Path,
   type PolygonPath,
@@ -41,7 +41,7 @@ export function extractPolylines(path: Path, opts: ExtractOptions = {}): Polylin
 function extractRect(p: RectPath): Polyline {
   const { x, y, width: w, height: h } = p;
   return {
-    points: [x, y, x + w, y, x + w, y + h, x, y + h],
+    points: Array.from(rectToContour(x, y, w, h)),
     closed: true,
     anchorA: new Uint32Array([0, 1, 2, 3]),
     anchorB: new Uint32Array([0, 1, 2, 3]),
