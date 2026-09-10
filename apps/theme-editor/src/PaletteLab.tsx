@@ -1,6 +1,7 @@
 import { LabShell } from '@weasel-js/labkit';
 import { PropertyPanel, PropertyGroup, SliderRow, ToggleRow } from '@weasel-js/ui';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useLabHistory } from './useLabHistory';
 import styles from './PaletteLab.module.css';
 import { PalettePreview } from './PalettePreview';
 import { AnchorList } from './AnchorList';
@@ -15,13 +16,23 @@ import {
 const SURFACES = { dark: '#181a1e', light: '#f5f5f6' } as const;
 type SurfaceKey = keyof typeof SURFACES;
 
+/** Everything one undo step covers. */
+interface LabState {
+  readonly c: Constraints;
+  readonly surfaceKey: SurfaceKey;
+  readonly anchors: readonly Anchor[];
+}
+
+const INITIAL: LabState = { c: DEFAULT_CONSTRAINTS, surfaceKey: 'dark', anchors: [] };
+
 export function PaletteLab() {
-  const [c, setC] = useState<Constraints>(DEFAULT_CONSTRAINTS);
-  const [surfaceKey, setSurfaceKey] = useState<SurfaceKey>('dark');
-  const [anchors, setAnchors] = useState<readonly Anchor[]>([]);
+  const { state, update, undo, redo, canUndo, canRedo } = useLabHistory<LabState>(INITIAL);
+  const { c, surfaceKey, anchors } = state;
 
   const set = <K extends keyof Constraints>(key: K, value: Constraints[K]) =>
-    setC((prev) => ({ ...prev, [key]: value }));
+    update({ ...state, c: { ...state.c, [key]: value } }, `c.${String(key)}`);
+  const setSurfaceKey = (next: SurfaceKey) => update({ ...state, surfaceKey: next }, 'surface');
+  const setAnchors = (next: readonly Anchor[]) => update({ ...state, anchors: next }, 'anchors');
 
   const constraints = useMemo<Constraints>(
     () => ({ ...c, surface: SURFACES[surfaceKey], anchors }),
@@ -34,16 +45,29 @@ export function PaletteLab() {
     <LabShell
       title="Palette lab"
       header={
-        <button
-          type="button"
-          className={styles.reset}
-          onClick={() => {
-            setC(DEFAULT_CONSTRAINTS);
-            setAnchors([]);
-          }}
-        >
-          Reset
-        </button>
+        <div className={styles.headerActions}>
+          <button
+            type="button"
+            className={styles.reset}
+            onClick={undo}
+            disabled={!canUndo}
+            title="Undo (⌘Z)"
+          >
+            Undo
+          </button>
+          <button
+            type="button"
+            className={styles.reset}
+            onClick={redo}
+            disabled={!canRedo}
+            title="Redo (⇧⌘Z)"
+          >
+            Redo
+          </button>
+          <button type="button" className={styles.reset} onClick={() => update(INITIAL, 'reset')}>
+            Reset
+          </button>
+        </div>
       }
     >
       <div className={styles.layout}>

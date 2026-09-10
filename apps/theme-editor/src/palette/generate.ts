@@ -552,28 +552,35 @@ export const CRAYONS: Readonly<
   rose: [0, 0.66],
   pink: [354, 0.75, 0.55],
   magenta: [340, 0.68],
+  flamingo: [349, 0.79],
   fuchsia: [328, 0.70],
 
   // oranges and yellows
   vermilion: [40, 0.66],
+  tangelo: [48, 0.70],
   orange: [55, 0.72],
   tangerine: [62, 0.76],
   amber: [72, 0.78],
   gold: [88, 0.82],
+  citron: [99, 0.86],
   yellow: [110, 0.90],
+  chartreuse: [119, 0.84],
 
   // greens
   lime: [128, 0.88],
+  spring: [138, 0.84],
   green: [145, 0.80],
   grass: [150, 0.72],
   forest: [152, 0.55],
   emerald: [162, 0.74],
+  seafoam: [172, 0.86],
   mint: [168, 0.88, 0.55],
   teal: [182, 0.78],
 
   // blues and cyans
   turquoise: [192, 0.82],
   cyan: [205, 0.83],
+  cerulean: [222, 0.78],
   sky: [228, 0.80, 0.70],
   azure: [240, 0.72],
   blue: [258, 0.62],
@@ -584,6 +591,7 @@ export const CRAYONS: Readonly<
   // purples
   indigo: [284, 0.48],
   violet: [292, 0.55],
+  amethyst: [299, 0.68],
   purple: [305, 0.52],
   orchid: [312, 0.72],
   lavender: [300, 0.82, 0.45],

@@ -31,6 +31,7 @@ export function AnchorList({ anchors, onChange, count }: AnchorListProps) {
   const replace = (i: number, next: Partial<Anchor>) =>
     onChange(anchors.map((a, j) => (j === i ? { ...a, ...next } : a)));
   const remove = (i: number) => onChange(anchors.filter((_, j) => j !== i));
+  const unpinByName = (name: string) => onChange(anchors.filter((a) => a.name !== name));
   const add = (a: Anchor) => {
     if (anchors.length >= count) return;
     const taken = new Set(anchors.map((x) => x.name));
@@ -42,13 +43,23 @@ export function AnchorList({ anchors, onChange, count }: AnchorListProps) {
   const full = anchors.length >= count;
   const pinned = new Set(anchors.map((a) => a.name));
 
-  // Chroma descending: the vivid end is what a palette reaches for first, and
-  // the muted names fall to the tail where they read as a group.
-  const names = useMemo(
-    () =>
-      Object.keys(CRAYONS).sort((a, b) => toLch(crayonHex(b)).C - toLch(crayonHex(a)).C),
-    [],
-  );
+  /**
+   * Banded by chroma, then hue within the band.
+   *
+   * Sorting by chroma alone scrambles the hues, and sorting by hue alone mixes
+   * a vivid red next to a tan. Quantizing chroma first puts each band on its own
+   * run of rows, and the hue sort makes that run a rainbow you can point into.
+   */
+  const names = useMemo(() => {
+    const BAND = 0.04;
+    return Object.keys(CRAYONS)
+      .map((name) => {
+        const { C, H } = toLch(crayonHex(name));
+        return { name, band: Math.round(C / BAND), hue: H };
+      })
+      .sort((a, b) => b.band - a.band || a.hue - b.hue)
+      .map((x) => x.name);
+  }, []);
 
   return (
     <PropertyGroup title="Anchors">
@@ -61,11 +72,15 @@ export function AnchorList({ anchors, onChange, count }: AnchorListProps) {
 
       {anchors.map((a, i) => (
         <div key={`${a.name}-${i}`} className={styles.anchorRow}>
-          <span
-            className={styles.anchorChip}
-            style={{ background: toHexPreview(a) }}
-            aria-hidden="true"
-          />
+          <label className={styles.anchorChipEdit} title={`Edit ${a.name}`}>
+            <span className={styles.anchorChip} style={{ background: toHexPreview(a) }} />
+            <input
+              type="color"
+              value={toHexPreview(a)}
+              onChange={(e) => replace(i, anchorFromHex(e.target.value, a.name))}
+              aria-label={`Edit ${a.name}`}
+            />
+          </label>
           <span className={styles.anchorName} title={a.name}>
             {a.name}
           </span>
@@ -155,14 +170,15 @@ export function AnchorList({ anchors, onChange, count }: AnchorListProps) {
                 type="button"
                 className={isPinned ? styles.crayonPinned : styles.crayon}
                 style={{ background: crayonHex(name) }}
-                disabled={full || isPinned}
-                title={name}
-                aria-label={isPinned ? `${name}, already pinned` : `Pin ${name}`}
+                disabled={!isPinned && full}
+                title={isPinned ? `Unpin ${name}` : name}
+                aria-label={isPinned ? `Unpin ${name}` : `Pin ${name}`}
+                aria-pressed={isPinned}
                 onMouseEnter={() => setHovered(name)}
                 onFocus={() => setHovered(name)}
-                onClick={() => add(crayonAnchor(name))}
+                onClick={() => (isPinned ? unpinByName(name) : add(crayonAnchor(name)))}
               >
-                {isPinned && <PinIcon size={9} className={styles.crayonPin} />}
+                {isPinned && <PinIcon size={13} className={styles.crayonPin} />}
               </button>
             );
           })}
