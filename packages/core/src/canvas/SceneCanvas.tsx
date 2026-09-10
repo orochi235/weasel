@@ -337,6 +337,13 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  containers (reflow on enter, reparent + reflow on commit). */
     layouts?: SceneToAdapterOptions<TData, TLayer, TPose>['layouts'];
 
+    /** How a child's stored pose folds into its parent's frame. Omit for the
+     *  absolute-pose model, where a container groups its children but imposes
+     *  no transform. Pass `RIGID_POSE_COMPOSITION` to make a container's pose
+     *  a frame, so rotating it rotates its contents and moving it carries them
+     *  without touching their poses. */
+    poseComposition?: SceneToAdapterOptions<TData, TLayer, TPose>['poseComposition'];
+
     /**
      * Optional consumer seam for eager geometry sync: lets pose-transform
      * actions (move, resize, nudge, flip — NOT rotate) also rewrite a node's
@@ -854,6 +861,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     insertNodeFactories,
     ingestion,
     layouts,
+    poseComposition,
     geometryProjection,
     routing,
     selection: selectionProp,
@@ -1238,6 +1246,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     selectTool: selectToolWithDefaults,
     ...(insertTool ? { insertTool } : {}),
     ...(layouts ? { layouts } : {}),
+    ...(poseComposition ? { poseComposition } : {}),
   });
 
   // Build getNodeAtPoint from the adapter + internalPickEvery. Canvas no longer
@@ -1254,7 +1263,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     const nodeResolver = (id: string) => {
       const node = adapter.getNode(id);
       const kind = node && kindClassifier ? kindClassifier(node.data) : 'unknown';
-      const pose = adapter.getPose(id);
+      const pose = adapter.getWorldPose(id);
       const data = node ?? { id };
       return { kind, pose, data };
     };
@@ -2046,6 +2055,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 editAnchorsExternalState={editAnchorsExternalState}
                 anchorEditingAllowed={anchorEditingAllowed}
                 layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
+                poseComposition={poseComposition as SceneCanvasProps<unknown, string, unknown>['poseComposition']}
                 insertNodeFactories={insertNodeFactories}
                 snapPoint={toolOptions?.snapPoint}
                 canvasRef={internalCanvasRef}
@@ -2421,6 +2431,7 @@ function StandardActionsRegistrar({
   viewAnimation,
   editAnchorsExternalState,
   anchorEditingAllowed,
+  poseComposition,
   layouts,
   insertNodeFactories,
   snapPoint,
@@ -2482,6 +2493,9 @@ function StandardActionsRegistrar({
   /** Forwarded from `SceneCanvasProps` so the `layout` dep source can wire
    *  the per-container layout strategy lookup consumed by `moveAction`. */
   layouts?: SceneCanvasProps<unknown, string, unknown>['layouts'];
+  /** Forwarded from `SceneCanvasProps` so the marquee and lasso dep sources
+   *  test where a node is drawn rather than where its pose is stored. */
+  poseComposition?: SceneCanvasProps<unknown, string, unknown>['poseComposition'];
   /** Forwarded from `SceneCanvasProps` so `useInsertDepSource` can wire the
    *  consumer's per-kind node factories into the `insert` dep. */
   insertNodeFactories?: Record<string, InsertNodeFactory>;
@@ -2577,13 +2591,13 @@ function StandardActionsRegistrar({
 
   // Per-dep wiring modules under `src/canvas/deps/`. See each file for the
   // dep's contract and trade-offs.
-  useAreaSelectDepSource(scene, selection);
+  useAreaSelectDepSource(scene, selection, poseComposition);
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(layouts);
   useInsertDepSource(scene, adapter, insertNodeFactories);
   useSnapDepSource(snapPoint);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestionResolveSrc, ingestionSvg, ingestionClipboard);
-  useLassoSelectDepSource(scene, selection);
+  useLassoSelectDepSource(scene, selection, poseComposition);
   useTextEditDepSource(scene);
   useEditAnchorsDepSource(scene, selection, adapter, editAnchorsExternalState, {
     anchorEditingAllowed,

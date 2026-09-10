@@ -92,7 +92,7 @@ describe('the adapter area walk composes', () => {
       scene, { poseComposition: RIGID_POSE_COMPOSITION },
     );
     // A box around the world center of `a`, nowhere near its local center.
-    const hits = adapter.hitTestArea({ x: 70, y: 15, width: 12, height: 12 });
+    const hits = adapter.hitTestArea!({ x: 70, y: 15, width: 12, height: 12 });
     expect(hits).toContain(FRAME_FIXTURE_IDS.upright);
   });
 });

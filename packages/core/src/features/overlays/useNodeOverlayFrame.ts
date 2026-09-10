@@ -20,6 +20,7 @@ import type { Node, RectPose, Scene } from '../../core/scene/types';
 import { useCanvasSize } from '../../core/viewport/useCanvasSize';
 import type { View } from '../../core/viewport/view';
 import { composeRectPose, composeWorldPose } from '../groups/composePose';
+import { effectivePose } from 'core/scene/effectivePose';
 import { poseRotationOf } from '../paths/poseRotation';
 
 /** Structural point, matching every other `{ x, y }` the kit passes across a
@@ -116,8 +117,10 @@ function worldBoxOf<TData, TLayer extends string, TPose extends RectPose>(
   if (nodeId == null) return null;
   const nodes = scene.nodes as ReadonlyMap<string, Node<TData, TLayer, TPose>>;
   if (!nodes.has(nodeId)) return null;
+  // `effectivePose`, not `node.pose`: an overlay tracks what the renderer
+  // draws, and a gesture override or a derived pose is exactly the difference.
   const adapter = {
-    getPose: (id: string) => nodes.get(id)!.pose,
+    getPose: (id: string) => effectivePose(scene, nodes.get(id)!),
     getParent: (id: string) => nodes.get(id)?.parent ?? null,
   };
   return composeWorldPose(adapter, nodeId, compose ?? composeRectPose);

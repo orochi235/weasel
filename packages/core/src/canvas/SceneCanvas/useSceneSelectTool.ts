@@ -96,6 +96,10 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
     layer?: TLayer;
   };
   layouts?: SceneToAdapterOptions<TData, TLayer, TPose>['layouts'];
+  /** How a child's stored pose folds into its parent's frame. Supplying one
+   *  makes a container's pose a frame, which also means moving a container
+   *  must not translate its descendants — they ride the frame. */
+  poseComposition?: SceneToAdapterOptions<TData, TLayer, TPose>['poseComposition'];
 }
 
 export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
@@ -129,7 +133,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   args: UseSceneSelectToolArgs<TData, TLayer, TPose>,
 ): UseSceneSelectToolReturn<TData, TLayer, TPose> {
   const {
-    scene, selection, geometry, selectTool: opts, insertTool, layouts, getView,
+    scene, selection, geometry, selectTool: opts, insertTool, layouts, poseComposition, getView,
     alphaOf, layerIsPainted,
   } = args;
 
@@ -149,7 +153,13 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   const insertLayer = insertTool?.layer;
 
   const adapter = useMemo(() => {
-    const base = sceneToAdapter(scene, { commitInsert, insertLayer, layouts });
+    const base = sceneToAdapter(scene, {
+      commitInsert, insertLayer, layouts,
+      ...(poseComposition ? { poseComposition } : {}),
+    });
+    // Under a frame a child's pose is already relative, so the container
+    // cascade below would move every descendant a second time.
+    const framed = poseComposition !== undefined && poseComposition.closure !== 'identity';
     const collectDescendants = (id: string, out: string[]): void => {
       for (const cid of scene.childrenOf(asNodeId(id))) {
         out.push(cid);
@@ -160,7 +170,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       ...base,
       setPose(id: string, pose: TPose) {
         const n = scene.get(asNodeId(id));
-        if (!n || n.kind !== 'container') {
+        if (framed || !n || n.kind !== 'container') {
           base.setPose(id, pose);
           return;
         }
@@ -192,7 +202,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       getSelection: (): string[] => [...selection.adapterMethods.getSelection()],
       setSelection: (ids: string[]) => selection.adapterMethods.setSelection(ids as NodeId[]),
     };
-  }, [scene, commitInsert, insertLayer, layouts, selection]);
+  }, [scene, commitInsert, insertLayer, layouts, selection, poseComposition]);
 
   const wiredMoveOptions = useMemo<UseMoveOptions<TPose>>(() => {
     const merged: UseMoveOptions<TPose> = { ...(moveOptions ?? {}) };
