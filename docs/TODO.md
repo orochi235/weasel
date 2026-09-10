@@ -305,20 +305,6 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
 
 ## Paths & booleans
 
-- **(P2) `packages/core` re-implements much of `@weasel-js/geom`, and the
-  copies have drifted.** Roughly two thirds of geom's public surface has no
-  importer in core. `forEachSegment` is written about a dozen times; the two
-  wrong copies are fixed (`tessellate.ts` now restores the pen on `PATH_Z`,
-  `pathDistance.ts` throws on an unrecognized command instead of leaving `ci`
-  unadvanced), and the `PATH_CMD_LENGTHS` copies are gone — `packages/geom`
-  holds the only definition and core imports it. Six independent
-  `cubicEvalAt`s remain.
-  `poseDescriptor.ts`'s hand-rolled `boxToBox` disagrees with geom's on the
-  degenerate axis. The unification should carry `pathCrop`,
-  `flattenQuadratic` and the arc-length flatteners into geom rather than
-  leaving core a rump copy. Full inventory in
-  `docs/reviews/2026-08-22-core-geom-dupes.md`.
-
 - **(P3) `<style>`-element and class-selector support for `@weasel-js/svg`.** The presentation-attribute cascade now threads a resolved `StyleContext` through the recursive parse (`packages/svg/src/cascade.ts`, shipped 2026-07-25; spec `docs/superpowers/specs/2026-07-25-svg-cascade-context-design.md`). Inheritance, the `inherit` keyword, `style=""`, text/`<tspan>` cascade, and `currentColor` all resolve without per-attribute DOM walks (`readInheritedAttr` deleted). Still unsupported: `<style>` elements and class/selector matching — the cascade handles inheritance, not selector specificity. `style=""` remains a regex scan, not a full CSS parser (`!important` unsupported). Selector matching is the missing piece; the threaded-context fast path could compute the per-element cascade from `getComputedStyle` against a hidden DOM node in the browser.
 
 ### Pathfinder follow-ups (post-v1)
@@ -337,6 +323,26 @@ Core five + Crop shipped. Remaining:
 ---
 
 ## Rendering & paint
+
+- **(P2) The renderer's `mat3` and geom's disagree in ways that survive a
+  copy-paste between them.** The two *representations* are deliberate and both
+  files say so — geom keeps a 6-element f64 affine, `renderer/math/mat3.ts` a
+  9-element column-major `Float32Array` shaped for `uniformMatrix3fv`. Two
+  behaviors are the open question.
+
+  `invert` returns identity when the determinant is exactly zero, where geom
+  returns `null` below a conditioning ratio of `1e-12`. A near-singular matrix
+  therefore passes the renderer's test and produces entries around `1e16`,
+  which a `Float32Array` cannot hold — `gradientSpaceInverse` feeds that
+  straight to `u_worldInv`. Settling it means saying what a caller should get
+  for a collapsed transform: an unmapped space (identity), nothing (`null`),
+  or a throw.
+
+  And `translate`/`scale` share names with geom's but post-multiply an
+  existing matrix where geom's construct a fresh one, so code moved between
+  the layers compiles and misbehaves. Renaming the renderer's pair
+  (`translated`, `scaledBy`) or giving geom composing forms would both close
+  it.
 
 - **(P3) A minimap's framing ignores pose overrides.** `<SceneViewCanvas>` and
   `<MinimapCanvas>` paint override poses as of 2026-08-25, but `computeFitView`
