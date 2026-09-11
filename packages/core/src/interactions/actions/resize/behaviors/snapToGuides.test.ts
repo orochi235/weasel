@@ -5,11 +5,11 @@ import type {
   GestureContext,
   ModifierState,
   ResizeAnchor,
-  ResizePose,
   ResizeProposed,
 } from '../../../gestures/types';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 
-type P = ResizePose;
+type P = Bounds;
 
 function ctx(origin: P, mods: Partial<ModifierState> = {}): GestureContext<P> {
   return {

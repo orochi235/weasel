@@ -44,9 +44,9 @@ import type { ClipboardDep } from './defaults/clipboard';
 import type {
   PointSnapBehavior,
   BoundsConstraint,
-  ResizePose,
 } from '../gestures/types';
-import type { PoseProjection } from './resize/geometry';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
+import type { PoseDescriptor } from './resize/geometry';
 import type { GeometryProjection } from './geometryProjection';
 import type { DragSample } from './invoker';
 
@@ -364,18 +364,18 @@ export interface InsertDep {
  * the call site (mirrors the `scene` entry's convention).
  */
 export interface ResizePolicy<TPose> {
-  /** Bounds-frame constraints. Constrained to `TPose extends ResizePose` since
+  /** Bounds-frame constraints. Constrained to `TPose extends Bounds` since
    *  constraints read/write `{x,y,width,height}`. For non-rect TPose pass `[]`. */
-  constraints: TPose extends ResizePose ? BoundsConstraint<TPose>[] : never[];
+  constraints: TPose extends Bounds ? BoundsConstraint<TPose>[] : never[];
   /** World-space anchor-point snap behaviors. Same TPose constraint as
    *  `constraints`. */
-  pointSnap: TPose extends ResizePose ? PointSnapBehavior<TPose>[] : never[];
+  pointSnap: TPose extends Bounds ? PointSnapBehavior<TPose>[] : never[];
   /** Group-expansion at gesture start. Identity (`ids => ids`) when group
    *  resize isn't wanted. */
   expandIds: (ids: string[]) => string[];
   /** Projection from `TPose` to bounds and back. Use `RECT_POSE_DESCRIPTOR`
    *  for plain rect poses. */
-  projection: PoseProjection<TPose>;
+  projection: PoseDescriptor<TPose>;
 }
 
 /**

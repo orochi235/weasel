@@ -10,7 +10,7 @@
 import {
   AUTO_POSE_DESCRIPTOR,
   rotatePoint,
-  type PoseProjection,
+  type PoseDescriptor,
   type Vec2,
 } from '@weasel-js/core';
 import { outlinePolyline, rayHit } from './onOutline';
@@ -44,7 +44,7 @@ export const DEFAULT_PORTS: readonly PortSpec[] = Object.freeze([
 export interface PortsOptions<TPose> {
   /** Reads the AABB a port is placed in, and the node's rotation. Defaults to
    *  the kit's `AUTO_POSE_DESCRIPTOR`, which handles rect and path poses. */
-  geometry?: PoseProjection<TPose>;
+  geometry?: PoseDescriptor<TPose>;
   /** How the `DiagramNode` trait is read off a node. */
   read?: DiagramNodeReader;
 }
@@ -80,7 +80,7 @@ export function portsOf<TPose>(
 ): Port[] {
   const trait = diagramNodeOf(node, opts.read);
   if (trait === null) return [];
-  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseProjection<TPose>);
+  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   const bounds = geometry.getBounds(pose);
   const rotation = geometry.getRotation?.(pose) ?? 0;
   const cx = bounds.x + bounds.width / 2;

@@ -3,13 +3,12 @@ import type {
   BoundsConstraint,
   InsertBehavior,
   MoveBehavior,
-  ResizePose,
 } from 'interactions/gestures/types';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { pxExtent } from 'core/viewport/pxExtent';
 import { unionBounds } from 'core/geometry/unionBounds';
 import type {
   AlignAnchor,
-  AlignBounds,
   AlignBoundsProjection,
   AlignmentBehaviorBase,
 } from './types';
@@ -40,7 +39,7 @@ export function alignMoveBehavior<TPose>(args: AlignMoveArgs<TPose>): MoveBehavi
       if (args.bypassKey && ctx.modifiers[args.bypassKey]) { args.setActiveGuides([]); return; }
       if (transform.kind !== 'translate') return;
       // Union of every dragged id's visual box at its proposed position.
-      const boxes: AlignBounds[] = [];
+      const boxes: Bounds[] = [];
       for (const id of ctx.draggedIds) {
         const originPose = ctx.origin.get(id);
         if (originPose === undefined) continue;
@@ -76,7 +75,7 @@ export function alignInsertBehavior<TPose>(args: AlignmentBehaviorBase): InsertB
 
 /** Resize constraint: snap the moving edge(s) of the dragged rect to
  *  candidates. The pinned (anchor) edge stays fixed. Publishes the line(s). */
-export function alignResizeBehavior<TPose extends ResizePose>(
+export function alignResizeBehavior<TPose extends Bounds>(
   args: AlignmentBehaviorBase,
 ): BoundsConstraint<TPose> {
   return {

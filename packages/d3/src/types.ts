@@ -1,4 +1,4 @@
-import type { Animator, NodeId, PoseProjection } from '@weasel-js/core';
+import type { Animator, NodeId, PoseDescriptor } from '@weasel-js/core';
 
 /**
  * Configuration for a `d3Bind` binding: how data keys map to scene nodes, and
@@ -15,7 +15,7 @@ export interface BindOptions<TData, TPose> {
   /** Pose descriptor with `lerp(from, to, t)`. Default `RECT_POSE_DESCRIPTOR`
    *  (interpolates x/y/width/height linearly). Override for non-rect poses
    *  (e.g. `pathPoseDescriptor`). */
-  geometry?: PoseProjection<TPose>;
+  geometry?: PoseDescriptor<TPose>;
 }
 
 /**

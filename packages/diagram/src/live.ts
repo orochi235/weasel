@@ -21,7 +21,7 @@ import {
   usePoseRun,
   type EasingFn,
   type NodeId,
-  type PoseProjection,
+  type PoseDescriptor,
   type PoseRunCtx,
   type PoseRunStep,
   type Scene,
@@ -61,7 +61,7 @@ const EASE_FRAMES = 24;
 const easeInOut: EasingFn = (t) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
 
 export interface ForceProducerOptions<TPose> extends ForceOptions {
-  geometry?: PoseProjection<TPose>;
+  geometry?: PoseDescriptor<TPose>;
   /** Alpha held while something is pinned, so the graph keeps answering a drag
    *  instead of freezing under it. Default 0.3. */
   dragAlpha?: number;
@@ -84,7 +84,7 @@ export function forceProducer<TPose>(
   graph: Graph,
   opts: ForceProducerOptions<TPose> = {},
 ): LiveLayoutProducer<TPose> {
-  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseProjection<TPose>);
+  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   const relaxation = forceRelaxation(graph, opts);
   const dragAlpha = opts.dragAlpha ?? 0.3;
 
@@ -168,7 +168,7 @@ export interface UseLiveLayoutOptions<TPose> {
   frames?: number;
   easing?: EasingFn;
   read?: DiagramNodeReader;
-  geometry?: PoseProjection<TPose>;
+  geometry?: PoseDescriptor<TPose>;
   /** The undo entry's name. Default `'Layout'`. */
   label?: string;
   /** Fires once the run has settled or been stopped and its poses are in the

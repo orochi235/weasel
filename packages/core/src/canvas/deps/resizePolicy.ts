@@ -5,7 +5,7 @@
  *   - `constraints`   — bounds-frame constraints (e.g. `lockAspectWithModifier`).
  *   - `pointSnap`     — world-space anchor-point snap behaviors.
  *   - `expandIds`     — group-expansion at gesture start.
- *   - `projection`    — pose↔bounds projection (`PoseProjection`).
+ *   - `projection`    — pose↔bounds projection (`PoseDescriptor`).
  *
  * Every field is optional; omitted fields fall back to kit defaults
  * (`DEFAULT_RESIZE_BEHAVIORS` — shift = aspect lock; pass `[]` to disable —
@@ -27,19 +27,19 @@ import type { ResizePolicy } from 'interactions/actions/depSchema';
 import type {
   PointSnapBehavior,
   BoundsConstraint,
-  ResizePose,
 } from 'interactions/gestures/types';
-import { type PoseProjection } from 'interactions/actions/resize/geometry';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
+import { type PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 import { DEFAULT_RESIZE_BEHAVIORS } from 'interactions/actions/resize/behaviors';
 
 /** Options for `useResizePolicy`. Each omitted field falls back to the kit
  *  default. */
 export interface UseResizePolicyOptions<TPose> {
-  constraints?: TPose extends ResizePose ? BoundsConstraint<TPose>[] : never[];
-  pointSnap?: TPose extends ResizePose ? PointSnapBehavior<TPose>[] : never[];
+  constraints?: TPose extends Bounds ? BoundsConstraint<TPose>[] : never[];
+  pointSnap?: TPose extends Bounds ? PointSnapBehavior<TPose>[] : never[];
   expandIds?: (ids: string[]) => string[];
-  projection?: PoseProjection<TPose>;
+  projection?: PoseDescriptor<TPose>;
 }
 
 const IDENTITY_EXPAND = (ids: string[]) => ids;
@@ -59,7 +59,7 @@ export function useResizePolicy<TPose>(
       constraints: (o.constraints ?? DEFAULT_RESIZE_BEHAVIORS) as ResizePolicy<unknown>['constraints'],
       pointSnap: (o.pointSnap ?? (EMPTY as unknown[])) as ResizePolicy<unknown>['pointSnap'],
       expandIds: o.expandIds ?? IDENTITY_EXPAND,
-      projection: (o.projection ?? AUTO_POSE_DESCRIPTOR) as PoseProjection<unknown>,
+      projection: (o.projection ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<unknown>,
     };
   });
 }

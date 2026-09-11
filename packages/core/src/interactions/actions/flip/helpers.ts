@@ -3,9 +3,9 @@
  *
  * These were extracted from the legacy `useFlip` hook when it was removed —
  * they remain because the descriptor-style `flipAction` still needs to reflect
- * arbitrary `TPose` values through a `PoseProjection`.
+ * arbitrary `TPose` values through a `PoseDescriptor`.
  */
-import type { PoseProjection } from '../resize/geometry';
+import type { PoseDescriptor } from '../resize/geometry';
 
 /** Axis for flip. `'x'` mirrors horizontally (left↔right); `'y'` mirrors vertically (top↔bottom). */
 export type FlipAxis = 'x' | 'y';
@@ -27,7 +27,7 @@ export type FlipPivot = 'each' | 'union';
 export function flipPoseAboutBounds<TPose>(
   pose: TPose,
   axis: FlipAxis,
-  geometry: PoseProjection<TPose>,
+  geometry: PoseDescriptor<TPose>,
   pivotBounds: { x: number; y: number; width: number; height: number },
 ): TPose {
   const src = geometry.getBounds(pose);
@@ -45,12 +45,12 @@ export function flipPoseAboutBounds<TPose>(
 export function flipPoseViaDescriptor<TPose>(
   pose: TPose,
   axis: FlipAxis,
-  geometry: PoseProjection<TPose>,
+  geometry: PoseDescriptor<TPose>,
 ): TPose {
   return flipPoseAboutBounds(pose, axis, geometry, geometry.getBounds(pose));
 }
 
-/** `PoseProjection` reads rotation but has no writer, so the mirrored angle
+/** `PoseDescriptor` reads rotation but has no writer, so the mirrored angle
  *  goes back onto `RectPose.rotation` — the kit's only writable rotation. A
  *  pose model without that field (Path) reports 0 and is left alone. */
 function negateRotation<TPose>(pose: TPose, rotation: number): TPose {

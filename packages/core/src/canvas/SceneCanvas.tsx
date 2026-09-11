@@ -138,7 +138,7 @@ import {
 } from 'features/chrome-caps';
 import type { RuleCtx } from 'features/chrome-caps';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
-import type { PoseProjection } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 export { rotateAroundAABBCenter } from './poseRotation';
 
 /**
@@ -1946,7 +1946,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // so the two cannot diverge.
   const viewInputs = useMemo<SurfaceViewInputs>(() => ({
     adapter: adapter as unknown as { getPose(id: string): unknown },
-    geometry: AUTO_POSE_DESCRIPTOR as unknown as PoseProjection<unknown>,
+    geometry: AUTO_POSE_DESCRIPTOR as unknown as PoseDescriptor<unknown>,
     boundsOf: internalBoundsOf,
     tools,
     pickEvery: internalPickEvery,

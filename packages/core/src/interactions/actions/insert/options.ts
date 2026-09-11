@@ -6,7 +6,8 @@
  *  same symbol for back-compat. */
 
 import type { Op } from 'core/ops/types';
-import type { InsertBehavior, ResizePose } from '../../gestures/types';
+import type { InsertBehavior } from '../../gestures/types';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 /** Options for the `insert` action: what the drag bounds become, what a click
  *  with no drag does, and the behaviors that shape the pose along the way. */
@@ -20,7 +21,7 @@ export interface UseInsertOptions<TPose, TNode extends { id: string } = { id: st
   /** Construct the in-flight pose from the drag bounds. Defaults to the
    *  identity cast (treat bounds as TPose). Override for non-rect TPose
    *  (e.g. `(b) => rectPath(b)` or a polygon factory). */
-  posefromBounds?: (bounds: ResizePose) => TPose;
+  posefromBounds?: (bounds: Bounds) => TPose;
   /** Click / sub-threshold-drag fallback. When provided, a release whose
    *  bounds fall <= minBounds calls `pointInsert(start)` instead of aborting.
    *  Returning null aborts. The created object is dispatched as an InsertOp

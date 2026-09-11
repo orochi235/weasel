@@ -1,5 +1,6 @@
 import type { Guide } from '../types';
-import type { AlignBounds, AlignBoundsProjection, DeriveAlignmentGuidesOptions } from './types';
+import type { AlignBoundsProjection, DeriveAlignmentGuidesOptions } from './types';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { RECT_ALIGN_PROJECTION } from './match';
 
 const EPS = 1e-3;
@@ -9,7 +10,7 @@ const EPS = 1e-3;
  *  edges and the center. Overlapping offsets collapse to one candidate.
  *  Poses go through the same projection `alignMoveBehavior` matches with, so
  *  a rotated sibling advertises its ink edges rather than its stored box. */
-export function deriveAlignmentGuides<TPose = AlignBounds>(
+export function deriveAlignmentGuides<TPose = Bounds>(
   targets: readonly TPose[],
   opts: DeriveAlignmentGuidesOptions<TPose> = {},
 ): Guide[] {
@@ -28,7 +29,7 @@ export function deriveAlignmentGuides<TPose = AlignBounds>(
     seen.set(key, { id: `align:${axis}:${offset.toFixed(3)}`, axis, offset });
   };
 
-  const emit = (b: AlignBounds): void => {
+  const emit = (b: Bounds): void => {
     if (edges) {
       add('x', b.x);
       add('x', b.x + b.width);

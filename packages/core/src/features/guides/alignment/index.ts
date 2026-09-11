@@ -1,5 +1,4 @@
 export type {
-  AlignBounds,
   AlignAnchor,
   AlignMatchResult,
   AlignBoundsProjection,

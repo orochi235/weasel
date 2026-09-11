@@ -17,7 +17,7 @@
  *
  *  - Calls `expandIds([id])` at start. When the result expands beyond the
  *    starting id, takes the group path (union-AABB origin, per-leaf remap).
- *  - Projects poses through the supplied `geometry: PoseProjection<TPose>`
+ *  - Projects poses through the supplied `geometry: PoseDescriptor<TPose>`
  *    instead of the rect-shaped `RECT_POSE_DESCRIPTOR` default.
  *  - Runs `behaviors[]` after the raw anchor-math bounds are computed.
  *    Behaviors return `{ pose? }` and rewrite the proposed bounds before
@@ -32,7 +32,7 @@
  * implemented.
  *
  * @see useResize — the React hook this descriptor mirrors.
- * @see src/interactions/actions/resize/geometry.ts — `PoseProjection`.
+ * @see src/interactions/actions/resize/geometry.ts — `PoseDescriptor`.
  */
 
 import type { Action } from '../registry';
@@ -48,12 +48,12 @@ import type {
   PointSnapResult,
   ResizeAnchor,
   BoundsConstraint,
-  ResizePose,
   RotatedPose,
 } from '../../gestures/types';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { ResizePolicy } from '../depSchema';
 import { DEFAULT_RESIZE_BEHAVIORS } from '../resize/behaviors';
-import { remapRotatedLeaf, type PoseProjection } from '../resize/geometry';
+import { remapRotatedLeaf, type PoseDescriptor } from '../resize/geometry';
 import { poseRotationOf } from 'features/paths/poseRotation';
 import { AUTO_POSE_DESCRIPTOR } from '../resize/autoPoseDescriptor';
 import { fixedCornerOf } from '../resize/cornerHandles';
@@ -72,31 +72,31 @@ import { unionBounds } from 'core/geometry/unionBounds';
 // ---------------------------------------------------------------------------
 
 const IDENTITY_EXPAND = (ids: string[]) => ids;
-const EMPTY_POINT_SNAP: PointSnapBehavior<ResizePose>[] = [];
+const EMPTY_POINT_SNAP: PointSnapBehavior<Bounds>[] = [];
 
 function resolveDeps(ctx: InvocationCtx): {
-  behaviors: BoundsConstraint<ResizePose>[];
-  pointSnap: PointSnapBehavior<ResizePose>[];
+  behaviors: BoundsConstraint<Bounds>[];
+  pointSnap: PointSnapBehavior<Bounds>[];
   expandIds: (ids: string[]) => string[];
-  geometry: PoseProjection<unknown>;
+  geometry: PoseDescriptor<unknown>;
 } {
   const dep = ctx.deps.resizePolicy as ResizePolicy<unknown> | undefined;
   if (!dep) {
     return {
       // Standard kit behaviors (shift = aspect lock) apply even with no
       // policy wired; consumers opt out via an explicit `behaviors: []`.
-      behaviors: DEFAULT_RESIZE_BEHAVIORS as BoundsConstraint<ResizePose>[],
+      behaviors: DEFAULT_RESIZE_BEHAVIORS as BoundsConstraint<Bounds>[],
       pointSnap: EMPTY_POINT_SNAP,
       expandIds: IDENTITY_EXPAND,
       // AUTO dispatches per-call to pathPoseDescriptor for Path-shaped
       // poses and RECT for everything else, so resize works on both
       // shapes without the consumer wiring a `geometry` explicitly.
-      geometry: AUTO_POSE_DESCRIPTOR as PoseProjection<unknown>,
+      geometry: AUTO_POSE_DESCRIPTOR as PoseDescriptor<unknown>,
     };
   }
   return {
-    behaviors: dep.constraints as unknown as BoundsConstraint<ResizePose>[],
-    pointSnap: dep.pointSnap as unknown as PointSnapBehavior<ResizePose>[],
+    behaviors: dep.constraints as unknown as BoundsConstraint<Bounds>[],
+    pointSnap: dep.pointSnap as unknown as PointSnapBehavior<Bounds>[],
     expandIds: dep.expandIds,
     geometry: dep.projection,
   };
@@ -114,7 +114,7 @@ function defaultTranslate<TPose>(p: TPose, dx: number, dy: number): TPose {
 // Point-snap math (lifted from `useResize`).
 // ---------------------------------------------------------------------------
 
-function buildPointSnapContext<TPose extends ResizePose>(
+function buildPointSnapContext<TPose extends Bounds>(
   pose: TPose,
   rotation: number,
   anchor: ResizeAnchor,
@@ -156,7 +156,7 @@ function buildPointSnapContext<TPose extends ResizePose>(
   };
 }
 
-function applyPointSnap<TPose extends ResizePose>(
+function applyPointSnap<TPose extends Bounds>(
   pose: TPose,
   rotation: number,
   result: PointSnapResult,
@@ -192,12 +192,12 @@ function applyPointSnap<TPose extends ResizePose>(
 // ---------------------------------------------------------------------------
 
 function computeProposedBounds(
-  ob: ResizePose,
+  ob: Bounds,
   anchor: ResizeAnchor,
   dx: number,
   dy: number,
   rotation: number,
-): ResizePose {
+): Bounds {
   if (rotation !== 0) {
     const cs = Math.cos(-rotation);
     const sn = Math.sin(-rotation);
@@ -238,7 +238,7 @@ interface ResizeScratch {
   startPoses: Map<NodeId, unknown>;
   /** Shared origin bounds (union for group/multi-select, own bounds for
    *  single). Used as the `src` rect for `geometry.remapBounds`. */
-  originBounds: ResizePose;
+  originBounds: Bounds;
   anchor: ResizeAnchor;
   startWorld: { x: number; y: number };
   /** Rotation captured at gesture start (from `geometry.getRotation?`). */
@@ -249,9 +249,9 @@ interface ResizeScratch {
   /** In-flight preview poses buffered during drag. */
   previews: Map<NodeId, unknown>;
   overrideEntries: Map<NodeId, { pose: unknown }>;
-  geometry: PoseProjection<unknown>;
-  behaviors: BoundsConstraint<ResizePose>[];
-  pointSnap: PointSnapBehavior<ResizePose>[];
+  geometry: PoseDescriptor<unknown>;
+  behaviors: BoundsConstraint<Bounds>[];
+  pointSnap: PointSnapBehavior<Bounds>[];
   /** Gesture context handed to behaviors. Reused across move/end. */
   gestureCtx: GestureContext<unknown>;
   /** Optional consumer commit hook captured at gesture start. When present,
@@ -315,7 +315,7 @@ export const resizeAction: Action & { requires: string[] } = {
 
       // Capture start poses + per-leaf bounds.
       const startPoses = new Map<NodeId, unknown>();
-      const leafBounds: ResizePose[] = [];
+      const leafBounds: Bounds[] = [];
       for (const id of writeIds) {
         const node = scene.get(id);
         if (!node) continue;
@@ -366,7 +366,7 @@ export const resizeAction: Action & { requires: string[] } = {
       };
 
       // Fire behavior onStart hooks (parity with `useResize`).
-      const ctxAsRect = gestureCtx as unknown as GestureContext<ResizePose>;
+      const ctxAsRect = gestureCtx as unknown as GestureContext<Bounds>;
       for (const b of behaviors) b.onStart?.(ctxAsRect);
 
       const scratch: ResizeScratch = {
@@ -413,7 +413,7 @@ export const resizeAction: Action & { requires: string[] } = {
           );
 
           // Behaviors run in bounds-space.
-          const behaviorCtx = scratch.gestureCtx as unknown as GestureContext<ResizePose>;
+          const behaviorCtx = scratch.gestureCtx as unknown as GestureContext<Bounds>;
           for (const b of scratch.behaviors) {
             const r = b.onMove?.(behaviorCtx, {
               pose: proposedBounds,
@@ -472,7 +472,7 @@ export const resizeAction: Action & { requires: string[] } = {
 
             if (scratch.pointSnap.length > 0) {
               const rotation = scratch.originRotation;
-              const poseAsRect = proposedPose as ResizePose;
+              const poseAsRect = proposedPose as Bounds;
               const psCtx = buildPointSnapContext(
                 poseAsRect,
                 rotation,
@@ -515,7 +515,7 @@ export const resizeAction: Action & { requires: string[] } = {
           // return null/undefined. Document if a future behavior needs op
           // injection.
           for (const b of scratch.behaviors) {
-            const r = b.onEnd?.(scratch.gestureCtx as unknown as GestureContext<ResizePose>);
+            const r = b.onEnd?.(scratch.gestureCtx as unknown as GestureContext<Bounds>);
             if (r === null) {
               dropPreviewOverrides(scratch);
               scratch.previews.clear();

@@ -1,7 +1,7 @@
 /**
  * RotatedResizeMathDemo — pedagogical "what can go wrong with rotated-resize
  * math" explainer. Four parallel rect panels each apply a different
- * `PoseProjection` to the SAME drag input, so one corner-drag drives four
+ * `PoseDescriptor` to the SAME drag input, so one corner-drag drives four
  * diverging poses. A fifth panel stacks them at 60% opacity; a sixth panel
  * shows the per-component median of the three broken poses (triple modular
  * redundancy → recovers the correct green pose, frame-by-frame).
@@ -24,7 +24,7 @@
  * capture, pointer identity and teardown. Each move computes a proposed pose
  * per scene by running the same math the kit's `resizeAction` runs —
  * `computeProposedBounds` + `geometry.remapBounds` + the rotation-pin
- * correction — using each scene's own `PoseProjection`, and calls that
+ * correction — using each scene's own `PoseDescriptor`, and calls that
  * scene's `setPose`. On release the scenes' batched history captures the
  * gesture.
  *
@@ -51,10 +51,10 @@ import {
 import type {
   HandleDragEnd,
   HandleDragPoint,
-  PoseProjection,
+  PoseDescriptor,
   RotatedPose,
   ResizeAnchor,
-  ResizePose,
+  Bounds,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 
@@ -87,8 +87,8 @@ function drawRect(_node: unknown, p: Rect): DrawCommand[] {
  *  returns 0 → kit's resize math takes the unrotated path; drag delta is
  *  applied in world frame instead of being projected by `R(-θ)`. Visible
  *  failure: rect distorts as world-axis scale fights the rotation. */
-const NO_PROJECTION_DESCRIPTOR: PoseProjection<Rect> = {
-  ...(RECT_POSE_DESCRIPTOR as unknown as PoseProjection<Rect>),
+const NO_PROJECTION_DESCRIPTOR: PoseDescriptor<Rect> = {
+  ...(RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<Rect>),
   getRotation: () => 0,
 };
 
@@ -96,8 +96,8 @@ const NO_PROJECTION_DESCRIPTOR: PoseProjection<Rect> = {
  *  `translate` is a no-op. Visible failure: rect scales correctly in local
  *  frame, but the post-remap fixed-corner correction never lands, so the
  *  AABB center stays anchored and the perceived "fixed corner" drifts. */
-const NO_CORRECTION_DESCRIPTOR: PoseProjection<Rect> = {
-  ...(ROTATED_POSE_DESCRIPTOR as unknown as PoseProjection<Rect>),
+const NO_CORRECTION_DESCRIPTOR: PoseDescriptor<Rect> = {
+  ...(ROTATED_POSE_DESCRIPTOR as unknown as PoseDescriptor<Rect>),
   translate: (p) => p,
 };
 
@@ -107,10 +107,10 @@ const NO_CORRECTION_DESCRIPTOR: PoseProjection<Rect> = {
  *  rotates — the rotation pivot effectively follows the diagonal. The correct
  *  behavior keeps rotation orthogonal to bounds so the gesture only changes
  *  shape. */
-const COUPLED_ROTATION_DESCRIPTOR: PoseProjection<Rect> = {
-  ...(ROTATED_POSE_DESCRIPTOR as unknown as PoseProjection<Rect>),
-  remapBounds: (origin: Rect, originBounds: ResizePose, newBounds: ResizePose): Rect => {
-    const base = (ROTATED_POSE_DESCRIPTOR as unknown as PoseProjection<Rect>)
+const COUPLED_ROTATION_DESCRIPTOR: PoseDescriptor<Rect> = {
+  ...(ROTATED_POSE_DESCRIPTOR as unknown as PoseDescriptor<Rect>),
+  remapBounds: (origin: Rect, originBounds: Bounds, newBounds: Bounds): Rect => {
+    const base = (ROTATED_POSE_DESCRIPTOR as unknown as PoseDescriptor<Rect>)
       .remapBounds(origin, originBounds, newBounds);
     const originDiag = Math.atan2(originBounds.height, originBounds.width);
     const newDiag = Math.atan2(newBounds.height, newBounds.width);
@@ -130,12 +130,12 @@ const GRID = {
  *  bounds math applied in the local frame. Matches `computeProposedBounds` in
  *  the kit's `resizeAction` invoker. */
 function computeProposedBounds(
-  ob: ResizePose,
+  ob: Bounds,
   anchor: ResizeAnchor,
   dx: number,
   dy: number,
   rotation: number,
-): ResizePose {
+): Bounds {
   if (rotation !== 0) {
     const cs = Math.cos(-rotation);
     const sn = Math.sin(-rotation);
@@ -152,7 +152,7 @@ function computeProposedBounds(
   return { x: nx, y: ny, width: nw, height: nh };
 }
 
-function fixedCorner(bounds: ResizePose, anchor: ResizeAnchor): { x: number; y: number } {
+function fixedCorner(bounds: Bounds, anchor: ResizeAnchor): { x: number; y: number } {
   return {
     x: anchor.x === 'max' ? bounds.x + bounds.width : bounds.x,
     y: anchor.y === 'max' ? bounds.y + bounds.height : bounds.y,
@@ -170,7 +170,7 @@ function fixedCornerWorld(pose: Rect, anchor: ResizeAnchor): { x: number; y: num
 /** Apply one frame of resize to `startPose` through `geometry`. Mirrors the
  *  kit's resizeAction invoker `onMove` path for the single-id case. */
 function runResize(
-  geometry: PoseProjection<Rect>,
+  geometry: PoseDescriptor<Rect>,
   startPose: Rect,
   anchor: ResizeAnchor,
   dx: number,
@@ -447,8 +447,8 @@ interface DragState {
   startPoses: Record<PanelId, Rect>;
 }
 
-const PROJECTIONS: Record<PanelId, PoseProjection<Rect>> = {
-  green: ROTATED_POSE_DESCRIPTOR as unknown as PoseProjection<Rect>,
+const PROJECTIONS: Record<PanelId, PoseDescriptor<Rect>> = {
+  green: ROTATED_POSE_DESCRIPTOR as unknown as PoseDescriptor<Rect>,
   orange: NO_PROJECTION_DESCRIPTOR,
   purple: NO_CORRECTION_DESCRIPTOR,
   teal: COUPLED_ROTATION_DESCRIPTOR,
@@ -635,7 +635,7 @@ export function RotatedResizeMathDemo() {
           Resizing a rotated rect requires three coordinated steps, and a
           fourth discipline: keep the rotation property orthogonal to the
           resize. Each panel below runs the same drag against its own
-          starting pose, but uses a different <code>PoseProjection</code> &mdash;
+          starting pose, but uses a different <code>PoseDescriptor</code> &mdash;
           three are subverted. Drag any corner handle in the green panel
           and all four rects resize in lockstep, each through its own
           projection, so one input drives four diverging outputs. The

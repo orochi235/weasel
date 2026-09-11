@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Scene } from 'core/scene/types';
-import type { PoseProjection } from '../resize/geometry';
+import type { PoseDescriptor } from '../resize/geometry';
 import { RECT_POSE_DESCRIPTOR } from '../resize/geometry';
 import { translatePoseViaDescriptor, visualBoundsViaDescriptor } from '../align/align';
 import type { DistributeAxis, DistributeMode } from '../distribute/distribute';
@@ -26,7 +26,7 @@ const ICON_FOR: Record<DistributeAxis, ReactNode> = {
  * Apply a distribute operation to the current selection via the Scene API.
  * Uses the kit's default rect-pose geometry; `mode` comes from the binding's
  * `params.mode`. Consumers needing custom geometry use the `useDistribute`
- * hook with their own `PoseProjection`.
+ * hook with their own `PoseDescriptor`.
  */
 function distributeSelection(
   selection: SelectionApi,
@@ -36,7 +36,7 @@ function distributeSelection(
 ): void {
   const ids = selection.get();
   if (ids.length < 3) return;
-  const geom = RECT_POSE_DESCRIPTOR as unknown as PoseProjection<unknown>;
+  const geom = RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<unknown>;
 
   const items = ids.map((id) => {
     const pose = scene.get(id)?.pose ?? { x: 0, y: 0, width: 0, height: 0 };

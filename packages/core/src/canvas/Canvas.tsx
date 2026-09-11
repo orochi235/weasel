@@ -70,7 +70,7 @@ import {
   type SelectionOverlayLayerOpts,
 } from 'features/selection/overlay';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
-import type { PoseProjection } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { DebugConfig, DebugSink, DebugSnapshot } from '../debug/types';
 import { parseDebugFlags } from '../debug/parseDebugFlags';
 import { createDebugSink } from '../debug/createDebugSink';
@@ -294,7 +294,7 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * value to an AABB and extracts rotation for the selection chrome. Bare-
    * Canvas consumers that use a non-rect pose type should supply this.
    */
-  geometry?: PoseProjection<TPose>;
+  geometry?: PoseDescriptor<TPose>;
 
   // --- Gesture overrides (escape hatches for non-rect / group-aware apps) ---
   /**
@@ -770,7 +770,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     clientToWorld,
     paintInto,
     inputElement,
-    geometry = AUTO_POSE_DESCRIPTOR as unknown as PoseProjection<TPose>,
+    geometry = AUTO_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>,
     className,
     style,
     tabIndex = 0,

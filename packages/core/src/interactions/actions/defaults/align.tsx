@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import type { Scene } from 'core/scene/types';
-import type { PoseProjection } from '../resize/geometry';
+import type { PoseDescriptor } from '../resize/geometry';
 import { RECT_POSE_DESCRIPTOR } from '../resize/geometry';
-import type { ResizePose } from '../../gestures/types';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 import {
   alignDeltaFor,
   translatePoseViaDescriptor,
@@ -63,12 +63,12 @@ function alignSelection(
 ): void {
   const ids = selection.get();
   if (ids.length < 2) return;
-  const geom = RECT_POSE_DESCRIPTOR as unknown as PoseProjection<unknown>;
+  const geom = RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<unknown>;
   const poses = ids.map((id) => {
     const node = scene.get(id);
     return node?.pose ?? { x: 0, y: 0, width: 0, height: 0 };
   });
-  const bounds = poses.map((p) => visualBoundsViaDescriptor(p, geom) as ResizePose);
+  const bounds = poses.map((p) => visualBoundsViaDescriptor(p, geom) as Bounds);
   // Guarded non-empty by `ids.length < 2` above → `!` is safe.
   const union = unionAABB(bounds)!;
   scene.batch('Align', () => {

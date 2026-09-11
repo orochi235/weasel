@@ -2,7 +2,7 @@ import type { Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { Mat3 } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
-import type { PoseProjection } from '../resize/geometry';
+import type { PoseDescriptor } from '../resize/geometry';
 import { AUTO_POSE_DESCRIPTOR } from '../resize/autoPoseDescriptor';
 import {
   flipPoseAboutBounds,
@@ -47,7 +47,7 @@ function flipSelection(
 ): void {
   const ids = selection.get();
   if (ids.length === 0) return;
-  const geom = AUTO_POSE_DESCRIPTOR as unknown as PoseProjection<unknown>;
+  const geom = AUTO_POSE_DESCRIPTOR as unknown as PoseDescriptor<unknown>;
 
   const nodes = ids.map((id) => scene.get(id)).filter((n) => n != null);
   const unionPivot = pivot === 'union'

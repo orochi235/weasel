@@ -1,12 +1,12 @@
 import type {
   ModifierState,
   BoundsConstraint,
-  ResizePose,
 } from '../../../gestures/types';
 import type { Guide } from 'features/guides/types';
 import type { View } from 'core/viewport/view';
 import { pxExtent } from 'core/viewport/pxExtent';
 import { DEFAULT_GUIDE_TOLERANCE_PX } from '../../../gestures/shared/strategies/guides';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 type ModKey = keyof ModifierState;
 
@@ -32,7 +32,7 @@ export interface SnapToGuidesResizeArgs {
  * edge — east when `anchor.x === 'min'` (west pinned), west when `'max'`.
  * Likewise on Y for horizontal guides.
  */
-export function snapToGuides<TPose extends ResizePose>(
+export function snapToGuides<TPose extends Bounds>(
   args: SnapToGuidesResizeArgs,
 ): BoundsConstraint<TPose> {
   const tolerance = args.tolerance ?? DEFAULT_GUIDE_TOLERANCE_PX;

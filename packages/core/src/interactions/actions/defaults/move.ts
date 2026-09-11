@@ -65,7 +65,7 @@ import type {
   LayoutDragged,
   DropTarget as LayoutDropTarget,
 } from '../../../layout/types';
-import { type PoseProjection } from '../resize/geometry';
+import { type PoseDescriptor } from '../resize/geometry';
 import { AUTO_POSE_DESCRIPTOR } from '../resize/autoPoseDescriptor';
 import type { ResizePolicy } from '../depSchema';
 import type { MoveBehavior, GroupTransform, GestureContext, BehaviorResult } from '../../gestures/types';
@@ -92,7 +92,7 @@ function translatePoseGeneric(
   pose: unknown,
   dx: number,
   dy: number,
-  projection?: PoseProjection<unknown>,
+  projection?: PoseDescriptor<unknown>,
 ): unknown {
   const fn = projection?.translate ?? AUTO_POSE_DESCRIPTOR.translate;
   return (fn as (p: unknown, dx: number, dy: number) => unknown)(pose, dx, dy);
@@ -458,7 +458,7 @@ interface MoveScratch {
    *  so non-rect poses (e.g. polygon Paths) translate via the consumer's
    *  descriptor instead of the rect-pose default. Undefined when the
    *  `resizePolicy` dep wasn't sourced. */
-  projection?: PoseProjection<unknown>;
+  projection?: PoseDescriptor<unknown>;
   /** Behaviors from `opts.behaviors`; empty array when none supplied. */
   behaviors: MoveBehavior<unknown>[];
   /** Reused gesture context handed to behaviors across the drag. */

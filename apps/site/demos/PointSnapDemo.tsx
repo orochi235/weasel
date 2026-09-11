@@ -13,7 +13,7 @@ import {
   ROTATED_POSE_DESCRIPTOR,
   useResizePolicy,
 } from '@weasel-js/core';
-import type { RotatedPose, PoseProjection, SceneCanvasApi } from '@weasel-js/core';
+import type { RotatedPose, PoseDescriptor, SceneCanvasApi } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 
 interface Rect extends RotatedPose {
@@ -47,7 +47,7 @@ function PointSnapDemoInner() {
   // `<DepRegistryProvider>` is in scope.
   function ResizePolicyBridge() {
     useResizePolicy<Rect>({
-      projection: ROTATED_POSE_DESCRIPTOR as PoseProjection<Rect>,
+      projection: ROTATED_POSE_DESCRIPTOR as PoseDescriptor<Rect>,
       pointSnap: [pointSnapToGrid({ spacing: SNAP_GRID })],
     });
     return null;

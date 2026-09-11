@@ -1,5 +1,5 @@
 export type { UseResizeOptions } from './options';
-export { RECT_POSE_DESCRIPTOR, ROTATED_POSE_DESCRIPTOR, type PoseProjection } from './geometry';
+export { RECT_POSE_DESCRIPTOR, ROTATED_POSE_DESCRIPTOR, type PoseDescriptor } from './geometry';
 export {
   cornerResizeHandles,
   hitCornerHandle,

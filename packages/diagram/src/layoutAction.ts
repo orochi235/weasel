@@ -11,7 +11,7 @@ import {
   translatePoseViaDescriptor,
   AUTO_POSE_DESCRIPTOR,
   type Action,
-  type PoseProjection,
+  type PoseDescriptor,
   type Scene,
 } from '@weasel-js/core';
 import { force } from './force';
@@ -29,7 +29,7 @@ export const LAYOUTS: Readonly<Record<string, LayoutFn>> = Object.freeze({
 });
 
 export interface ApplyLayoutOptions<TPose> {
-  geometry?: PoseProjection<TPose>;
+  geometry?: PoseDescriptor<TPose>;
   /** The undo entry's name. Default `'Layout'`. */
   label?: string;
 }
@@ -77,7 +77,7 @@ export function applyLayout<TPose>(
 export function layoutPoses<TPose>(
   scene: Scene<unknown, string, TPose>,
   result: LayoutResult,
-  geometry: PoseProjection<TPose> = AUTO_POSE_DESCRIPTOR as PoseProjection<TPose>,
+  geometry: PoseDescriptor<TPose> = AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>,
 ): Map<string, TPose> {
   const out = new Map<string, TPose>();
   for (const [id, at] of result) {
@@ -125,7 +125,7 @@ export interface LayoutActionOptions<TPose> {
   algorithm?: string | LayoutFn;
   layout?: LayoutOptions;
   read?: DiagramNodeReader;
-  geometry?: PoseProjection<TPose>;
+  geometry?: PoseDescriptor<TPose>;
 }
 
 /**

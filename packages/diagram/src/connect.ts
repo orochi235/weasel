@@ -32,7 +32,7 @@ import {
   type InvocationCtx,
   type OngoingHandle,
   type OngoingOverlay,
-  type PoseProjection,
+  type PoseDescriptor,
   type Scene,
   type Stroke,
   type Vec2,
@@ -81,7 +81,7 @@ export interface ConnectActionOptions<TPose> {
   /** Default {@link CONNECT_ACTION_ID}. */
   id?: string;
   read?: DiagramNodeReader;
-  geometry?: PoseProjection<TPose>;
+  geometry?: PoseDescriptor<TPose>;
   /** Default {@link defaultCanConnect}. */
   canConnect?: CanConnect;
   /** How near the pointer must come to a port, in world units, before the

@@ -57,7 +57,7 @@ Rationale: geometry-in-data is what apps/draw, the renderer's `PATH_PAINTER`, an
 
 **Concrete changes for polygon-content nodes to resize/move/rotate uniformly:**
 
-1. **Provide a geometry-in-data `PoseProjection`** that reads/writes `data.path`. Today `AUTO_POSE_DESCRIPTOR` inspects only the pose; it has no access to `data`. Two viable shapes:
+1. **Provide a geometry-in-data `PoseDescriptor`** that reads/writes `data.path`. Today `AUTO_POSE_DESCRIPTOR` inspects only the pose; it has no access to `data`. Two viable shapes:
    - **(a) App-side projection** — apps/draw wires a `resizePolicy.projection` (and the equivalent for nudge/flip/move once they accept a `geometry` dep) whose `remapBounds`/`translate` operate on the node's `data.path` via `pathPoseDescriptor` + `scalePathToBounds`/`translatePath`, with rotation handled about the AABB center. This is the targeted fix and keeps the kit's pose-only model intact.
    - **(b) Kit-level data-aware descriptor** — give the kit a first-class "geometry-in-data" mode where the resize action, when the pose is a bare AABB and the node carries `data.path`, remaps the path. This is the deeper fix and removes the foot-gun for all future consumers.
 

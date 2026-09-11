@@ -4,7 +4,7 @@ import {
   ROTATED_POSE_DESCRIPTOR,
   SceneCanvas,
 } from '@weasel-js/core';
-import type { PoseProjection, RotatedPose, UnitSystem } from '@weasel-js/core';
+import type { PoseDescriptor, RotatedPose, UnitSystem } from '@weasel-js/core';
 import sceneJson from './data/transform.scene.json';
 
 const W = 400, H = 300;
@@ -33,7 +33,7 @@ export function TransformDemo() {
       toolBundle="exhaustive"
       selectTool={{
         snap: gridSnapStrategy<RotatedPose>(CELL, UNITS),
-        resize: { geometry: ROTATED_POSE_DESCRIPTOR as PoseProjection<RotatedPose> },
+        resize: { geometry: ROTATED_POSE_DESCRIPTOR as PoseDescriptor<RotatedPose> },
       }}
       selectionOptions={{ initial: [asNodeId('b')] }}
       layers={{

@@ -34,7 +34,7 @@
  * Non-rect poses (Path, polygon, custom): the kit is generic over `TPose`.
  * Plug in two small projections so the rect-flavored machinery works on any
  * shape:
- *   - `PoseProjection<TPose>` — read AABB + remap on resize. Default
+ *   - `PoseDescriptor<TPose>` — read AABB + remap on resize. Default
  *     `RECT_POSE_DESCRIPTOR` for `{x,y,width,height}`; `pathPoseDescriptor` for
  *     `Path`. Pass via the `resizePolicy` dep (`useResizePolicy({
  *     projection })`).
@@ -879,7 +879,6 @@ export type {
   GroupTransform,
   MoveBehavior,
   ResizeAnchor,
-  ResizePose,
   ResizeProposed,
   ResizeMoveResult,
   BoundsConstraint,
@@ -949,7 +948,6 @@ export type {
   Guide,
   UseGuidesReturn,
   GuidesLayerOpts,
-  AlignBounds,
   AlignAnchor,
   AlignMatchResult,
   AlignBoundsProjection,
@@ -971,7 +969,7 @@ export {
 } from './interactions/actions/resize';
 export type {
   UseResizeOptions,
-  PoseProjection,
+  PoseDescriptor,
   CornerHandle,
 } from './interactions/actions/resize';
 export {

@@ -1,4 +1,5 @@
-import type { ResizePose, RotatedPose } from '../../gestures/types';
+import type { RotatedPose } from '../../gestures/types';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 /**
  * Bridges arbitrary `TPose` shapes into the resize hook's bounds-driven math.
@@ -12,9 +13,9 @@ import type { ResizePose, RotatedPose } from '../../gestures/types';
  * its own bounds; for Path or polygon poses the consumer supplies a
  * projection that knows how to read and rewrite the underlying geometry.
  */
-export interface PoseProjection<TPose> {
-  getBounds(pose: TPose): ResizePose;
-  remapBounds(pose: TPose, src: ResizePose, dst: ResizePose): TPose;
+export interface PoseDescriptor<TPose> {
+  getBounds(pose: TPose): Bounds;
+  remapBounds(pose: TPose, src: Bounds, dst: Bounds): TPose;
   /** Translate the pose by (dx, dy). Optional — when omitted, callers fall
    *  back to a translation derived from `remapBounds` (origin shifted, no
    *  scale). Path-shaped poses should provide this for performance. */
@@ -22,7 +23,7 @@ export interface PoseProjection<TPose> {
   /** True iff any portion of the pose's geometry intersects `rect`. Optional
    *  — when omitted, area-select and similar callers test against `getBounds`
    *  AABB (looser, but correct for axis-aligned rect poses). */
-  intersectsRect?(pose: TPose, rect: ResizePose): boolean;
+  intersectsRect?(pose: TPose, rect: Bounds): boolean;
   /** Interpolate between two poses. Optional — animation helpers fall back to
    *  rect-shape lerp when omitted (which fails for non-rect poses). */
   lerp?(a: TPose, b: TPose, t: number): TPose;
@@ -44,13 +45,13 @@ export interface PoseProjection<TPose> {
 
 /** AABB-vs-AABB overlap. Exported for callers building a default
  *  `intersectsRect` from `getBounds`. */
-export function aabbIntersectsRect(b: ResizePose, r: ResizePose): boolean {
+export function aabbIntersectsRect(b: Bounds, r: Bounds): boolean {
   return b.x < r.x + r.width && b.x + b.width > r.x && b.y < r.y + r.height && b.y + b.height > r.y;
 }
 
-/** Identity geometry for `TPose extends ResizePose`. Treats the pose as its
+/** Identity geometry for `TPose extends Bounds`. Treats the pose as its
  *  own bounds and remaps via affine scale against `src`/`dst`. */
-export const RECT_POSE_DESCRIPTOR: PoseProjection<ResizePose> = {
+export const RECT_POSE_DESCRIPTOR: PoseDescriptor<Bounds> = {
   getBounds: (p) => p,
   remapBounds: (p, src, dst) => {
     const sx = src.width === 0 ? 1 : dst.width / src.width;
@@ -75,16 +76,16 @@ export const RECT_POSE_DESCRIPTOR: PoseProjection<ResizePose> = {
 };
 
 /** Identity geometry for `RotatedPose`. Inherits rect-shape projection
- *  from `RECT_POSE_DESCRIPTOR` (the `RotatedPose extends ResizePose`
+ *  from `RECT_POSE_DESCRIPTOR` (the `RotatedPose extends Bounds`
  *  subtype lets the rect descriptor's methods apply directly; `remapBounds`
  *  preserves the `rotation` field via `...p` spread). Adds `getRotation` so
  *  `useResize` knows to take the rotation-aware math path. */
-export const ROTATED_POSE_DESCRIPTOR: PoseProjection<RotatedPose> = {
-  getBounds: RECT_POSE_DESCRIPTOR.getBounds as PoseProjection<RotatedPose>['getBounds'],
-  remapBounds: RECT_POSE_DESCRIPTOR.remapBounds as PoseProjection<RotatedPose>['remapBounds'],
-  translate: RECT_POSE_DESCRIPTOR.translate as PoseProjection<RotatedPose>['translate'],
-  intersectsRect: RECT_POSE_DESCRIPTOR.intersectsRect as PoseProjection<RotatedPose>['intersectsRect'],
-  lerp: RECT_POSE_DESCRIPTOR.lerp as PoseProjection<RotatedPose>['lerp'],
+export const ROTATED_POSE_DESCRIPTOR: PoseDescriptor<RotatedPose> = {
+  getBounds: RECT_POSE_DESCRIPTOR.getBounds as PoseDescriptor<RotatedPose>['getBounds'],
+  remapBounds: RECT_POSE_DESCRIPTOR.remapBounds as PoseDescriptor<RotatedPose>['remapBounds'],
+  translate: RECT_POSE_DESCRIPTOR.translate as PoseDescriptor<RotatedPose>['translate'],
+  intersectsRect: RECT_POSE_DESCRIPTOR.intersectsRect as PoseDescriptor<RotatedPose>['intersectsRect'],
+  lerp: RECT_POSE_DESCRIPTOR.lerp as PoseDescriptor<RotatedPose>['lerp'],
   getRotation: (p) => p.rotation,
 };
 
@@ -111,8 +112,8 @@ export const ROTATED_POSE_DESCRIPTOR: PoseProjection<RotatedPose> = {
  */
 export function remapRotatedLeaf<TPose extends RotatedPose>(
   pose: TPose,
-  src: ResizePose,
-  dst: ResizePose,
+  src: Bounds,
+  dst: Bounds,
 ): TPose {
   const sx = src.width === 0 ? 1 : dst.width / src.width;
   const sy = src.height === 0 ? 1 : dst.height / src.height;

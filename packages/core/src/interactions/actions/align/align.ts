@@ -3,8 +3,8 @@ import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import { dispatchApplyBatch } from 'core/applyOps';
 import type { NodeId } from 'core/scene/types';
-import { RECT_POSE_DESCRIPTOR, type PoseProjection } from '../resize/geometry';
-import type { ResizePose } from '../../gestures/types';
+import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../resize/geometry';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { axisAlignedBounds, unionAABB } from 'core/geometry/unionBounds';
 
 /** Edge or center the selection should align to within the selection's visual
@@ -23,7 +23,7 @@ export interface UseAlignOptions<TPose> {
   /** Projection between `TPose` and bounds. Defaults to `RECT_POSE_DESCRIPTOR`
    *  for `{x,y,width,height}` poses. Pass `pathPoseDescriptor` for `Path`
    *  poses so polygon coords translate correctly. */
-  geometry?: PoseProjection<TPose>;
+  geometry?: PoseDescriptor<TPose>;
   /** Label passed to applyOps. Default 'Align'. */
   label?: string;
 }
@@ -46,8 +46,8 @@ export interface UseAlignReturn {
  */
 export function visualBoundsViaDescriptor<TPose>(
   pose: TPose,
-  geometry: PoseProjection<TPose>,
-): ResizePose {
+  geometry: PoseDescriptor<TPose>,
+): Bounds {
   const b = geometry.getBounds(pose);
   const rotation =
     geometry.getRotation?.(pose) ?? (b as { rotation?: number }).rotation ?? 0;
@@ -56,7 +56,7 @@ export function visualBoundsViaDescriptor<TPose>(
 
 /** Compute the (dx, dy) translation that moves AABB `b` so that the requested
  *  `edge`/center matches the corresponding feature of the union AABB `u`. */
-export function alignDeltaFor(b: ResizePose, u: ResizePose, edge: AlignEdge): { dx: number; dy: number } {
+export function alignDeltaFor(b: Bounds, u: Bounds, edge: AlignEdge): { dx: number; dy: number } {
   switch (edge) {
     case 'left':     return { dx: u.x - b.x, dy: 0 };
     case 'right':    return { dx: (u.x + u.width) - (b.x + b.width), dy: 0 };
@@ -73,7 +73,7 @@ export function translatePoseViaDescriptor<TPose>(
   pose: TPose,
   dx: number,
   dy: number,
-  geometry: PoseProjection<TPose>,
+  geometry: PoseDescriptor<TPose>,
 ): TPose {
   if (geometry.translate) return geometry.translate(pose, dx, dy);
   const src = geometry.getBounds(pose);
@@ -100,7 +100,7 @@ export function useAlign<TPose>(
     if (sel.length < 2) return;
     const geom =
       o.geometry ??
-      (RECT_POSE_DESCRIPTOR as unknown as PoseProjection<TPose>);
+      (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>);
     const poses = sel.map((id) => a.getPose(id));
     const bounds = poses.map((p) => visualBoundsViaDescriptor(p, geom));
     // Guarded non-empty by `sel.length < 2` above → `!` is safe.

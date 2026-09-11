@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { RECT_POSE_DESCRIPTOR, type PoseProjection } from '@weasel-js/core';
+import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '@weasel-js/core';
 import { COMPASS, DEFAULT_PORTS, portOf, portsOf } from './ports';
 import { createDiagramNodes } from './trait';
 import type { DiagramNodeLike } from './trait';
@@ -109,7 +109,7 @@ describe('portsOf — rotation', () => {
 describe('portsOf — the geometry seam', () => {
   it('reads bounds through the descriptor it is given', () => {
     const ports = portsOf(node({ diagram: {} }), POSE, {
-      geometry: RECT_POSE_DESCRIPTOR as PoseProjection<Rect>,
+      geometry: RECT_POSE_DESCRIPTOR as PoseDescriptor<Rect>,
     });
     expect(ports[0]!.point).toEqual({ x: 50, y: 0 });
   });
@@ -117,7 +117,7 @@ describe('portsOf — the geometry seam', () => {
   it('takes a descriptor that reports no rotation at face value', () => {
     const turned: Rect = { ...POSE, rotation: Math.PI / 2 };
     const ports = portsOf(node({ diagram: {} }), turned, {
-      geometry: RECT_POSE_DESCRIPTOR as PoseProjection<Rect>,
+      geometry: RECT_POSE_DESCRIPTOR as PoseDescriptor<Rect>,
     });
     expect(ports[0]!.point).toEqual({ x: 50, y: 0 });
   });

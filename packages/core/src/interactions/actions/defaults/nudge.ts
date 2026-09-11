@@ -3,7 +3,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
 import type { Mat3 } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
-import type { PoseProjection } from '../resize/geometry';
+import type { PoseDescriptor } from '../resize/geometry';
 import { AUTO_POSE_DESCRIPTOR } from '../resize/autoPoseDescriptor';
 import type { Action } from '../registry';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
@@ -54,7 +54,7 @@ function nudgeSelection(
 ): void {
   const ids = selection.get();
   if (ids.length === 0) return;
-  const translate = (AUTO_POSE_DESCRIPTOR as PoseProjection<unknown>).translate!;
+  const translate = (AUTO_POSE_DESCRIPTOR as PoseDescriptor<unknown>).translate!;
   // Pure translation by the nudge step. Pushed alongside each transform op so
   // a wired geometryProjection mirrors the node's data-held geometry too.
   const m: Mat3 = [1, 0, 0, 1, dx, dy];

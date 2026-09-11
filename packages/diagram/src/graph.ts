@@ -11,7 +11,7 @@
  * sits is here too, because a re-layout that ignores where things already are
  * scrambles a diagram the author has arranged.
  */
-import { AUTO_POSE_DESCRIPTOR, type PoseProjection } from '@weasel-js/core';
+import { AUTO_POSE_DESCRIPTOR, type PoseDescriptor } from '@weasel-js/core';
 import { diagramEdgeOf } from './edge';
 import type { Bounds } from './outline';
 import { diagramNodeOf, type DiagramNodeLike, type DiagramNodeReader } from './trait';
@@ -63,7 +63,7 @@ export interface Graph {
 
 export interface BuildGraphOptions<TPose> {
   read?: DiagramNodeReader;
-  geometry?: PoseProjection<TPose>;
+  geometry?: PoseDescriptor<TPose>;
 }
 
 /**
@@ -79,7 +79,7 @@ export function buildGraph<TPose>(
   source: GraphSource<TPose>,
   opts: BuildGraphOptions<TPose> = {},
 ): Graph {
-  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseProjection<TPose>);
+  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   const nodes: GraphNode[] = [];
   const byId = new Map<string, GraphNode>();
   const candidates: GraphEdge[] = [];
