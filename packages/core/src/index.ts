@@ -676,6 +676,7 @@ export {
 } from './features/groups/composePose';
 export type { PoseAdapter, PoseComposition } from './features/groups/composePose';
 export { nestedHitTester } from './features/groups/nestedHit';
+export { unionOfChildrenVia } from './features/groups/unionOfChildren';
 export type {
   NestedHitOpts,
   NestedHitTester,
@@ -843,7 +844,7 @@ export type { UseArrayAdapterOptions } from './core/adapters/useArrayAdapter';
 export {
   createScene, sceneFromJSON, sceneSelectionStore, useScene, asNodeId,
   createPoseOverrides, derivedDepOf, derivedPose, documentPose, effectivePose,
-  UNION_OF_CHILDREN, unionOfChildren, unionOfChildrenVia,
+  UNION_OF_CHILDREN, unionOfChildren,
 } from './core/scene';
 export type { PoseSource, PosedNode } from './core/scene';
 export type {

@@ -5,7 +5,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { groupAction, ungroupAction } from './group';
 import { createScene } from 'core/scene/scene';
 import { effectivePose } from 'core/scene/effectivePose';
-import { UNION_OF_CHILDREN, unionOfChildrenVia } from 'core/scene/kitRegistry';
+import { UNION_OF_CHILDREN } from 'core/scene/kitRegistry';
+import { unionOfChildrenVia } from 'features/groups/unionOfChildren';
 import {
   circle,
   CIRCLE_POSE_DESCRIPTOR,
