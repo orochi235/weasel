@@ -151,11 +151,7 @@ export interface ResizeOverlay<TPose> {
 
 // ----- rotate -----
 
-/** `Bounds` with a required rotation angle (radians). Pivot is the AABB
- *  center of the unrotated `{x, y, width, height}`. */
-export interface RotatedPose extends Bounds {
-  rotation: number;
-}
+export type { RotatedPose } from 'core/geometry/poseDescriptor';
 
 /** Per-frame proposed rotation: pose plus the candidate angle in radians. */
 export interface RotateProposed<TPose> {
