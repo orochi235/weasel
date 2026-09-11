@@ -419,3 +419,22 @@ describe('data.stroke is a whole Stroke', () => {
     expect(strokeCmdOf({ path: RECT, fill: solid('#fff'), stroke: null })).toBeUndefined();
   });
 });
+
+describe('built-in painters need a rect pose', () => {
+  const circleNode = <TData>(data: TData) =>
+    ({ id: 'c', kind: 'leaf', layer: 'default', pose: { cx: 0, cy: 0, r: 5 }, data, parent: null }) as never;
+
+  it('does not hand a circle-posed text node to the text painter', () => {
+    expect(findNodeShape(circleNode({ text: 'hi' }))?.id).not.toBe('kit:text');
+  });
+
+  it('does not fall back to the rect painter for a circle', () => {
+    expect(findNodeShape(circleNode({}))).toBeUndefined();
+  });
+
+  it('re-matches when the same data gets a different kind of pose', () => {
+    const data = { text: 'hi' };
+    expect(findNodeShape(node(data))?.id).toBe('kit:text');
+    expect(findNodeShape(circleNode(data))?.id).not.toBe('kit:text');
+  });
+});

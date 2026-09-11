@@ -14,7 +14,10 @@
  * Built-in entries (`kit:text`, `kit:path`, `kit:rect-fallback`) are
  * registered at module load. Consumer entries added via
  * `registerNodeShape` join the chain; the first entry whose
- * `matches` predicate returns true paints the node.
+ * `matches` predicate returns true paints the node. Every built-in but
+ * `kit:derived` additionally requires a rect-shaped pose — a scene whose
+ * poses are some other shape matches none of them, and paints through a
+ * consumer painter or not at all.
  *
  * Two priority tiers:
  *   - `'high'` — checked before all `'normal'` entries. Use this to
@@ -30,8 +33,9 @@
  * See `docs/superpowers/specs/2026-05-24-node-traits-reframe-design.md`
  * for the trait taxonomy.
  */
-import type { Node } from 'core/scene/types';
+import type { Node, RectPose } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
+import { isRectPose } from 'interactions/actions/resize/autoPoseDescriptor';
 import type { DrawCommand } from '../renderer';
 import { textCommand, textCommandFromRuns } from 'features/text/textCommand';
 import type { TextStyle } from '@weasel-js/text';
@@ -98,7 +102,9 @@ export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
    *  something descriptive: `'kit:text'`, `'app:image'`, etc. */
   id: string;
   /** Returns true when this painter renders the node. The first matching
-   *  painter (`'high'` tier first, then `'normal'`) wins. */
+   *  painter (`'high'` tier first, then `'normal'`) wins. The kit's own
+   *  painters also require a rect-shaped pose, since their geometry reads
+   *  `x`/`y`/`width`/`height` off it. */
   matches(node: Node<TData, string, TPose>): boolean;
   /** Emits the draw commands for the node's primary visual. `ctx` is an
    *  optional per-call paint context (see `NodePaintCtx`); painters that
@@ -218,6 +224,7 @@ export function registerNodeShape<TData, TPose>(
  * not always, and a shared entry would force the stricter key on both.
  */
 const PAINTER_SLOT = 'shape:painter';
+const PAINTER_SLOT_NONRECT = 'shape:painter:nonrect';
 const SILHOUETTE_SLOT = 'shape:silhouette';
 
 /**
@@ -244,8 +251,9 @@ const PAINT_SLOT = 'shape:paint';
 export function findNodeShape<TData, TPose>(
   node: Node<TData, string, TPose>,
 ): NodeShapeEntry<TData, TPose> | undefined {
-  // No pose in the key: `matches` predicates read `node.data`, never the pose.
-  return nodeMemo(node as { data?: unknown }, PAINTER_SLOT, undefined, () =>
+  // Built-in painters also gate on pose shape, so the key carries it too.
+  const slot = isRectPose(node.pose) ? PAINTER_SLOT : PAINTER_SLOT_NONRECT;
+  return nodeMemo(node as { data?: unknown }, slot, undefined, () =>
     matchNodeShape(node),
   );
 }
@@ -395,11 +403,10 @@ export function _resetShapePaintersForTests(): void {
 
 // ─── Built-in painters ─────────────────────────────────────────────────
 
-interface RectPose { x: number; y: number; width: number; height: number }
-
-const TEXT_PAINTER: NodeShapeEntry = {
+const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   id: 'kit:text',
   matches: (node) => {
+    if (!isRectPose(node.pose)) return false;
     const d = node.data as { text?: string } | null;
     return d?.text != null;
   },
@@ -420,7 +427,7 @@ const TEXT_PAINTER: NodeShapeEntry = {
       stroke?: Stroke | null;
       verticalAlign?: TextVerticalAlign;
     };
-    const p = pose as RectPose;
+    const p = pose;
     // `y` is the TOP of the first line box, not a baseline: `layoutRuns`
     // walks down from it by `common.base * scale` to reach the baseline, and
     // `verticalAlign` aligns the laid-out block within `[y, y + height]`.
@@ -474,7 +481,7 @@ const TEXT_PAINTER: NodeShapeEntry = {
       runs?: readonly StyledRun[];
       verticalAlign?: TextVerticalAlign;
     };
-    const p = pose as RectPose;
+    const p = pose;
     const boxes = textLineBoxes(
       {
         x: p.x, y: p.y, width: p.width, height: p.height,
@@ -596,9 +603,10 @@ function inkReach(
   }
 }
 
-const PATH_PAINTER: NodeShapeEntry = {
+const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   id: 'kit:path',
   matches: (node) => {
+    if (!isRectPose(node.pose)) return false;
     const d = node.data as { path?: Path } | null;
     return d?.path != null;
   },
@@ -611,7 +619,7 @@ const PATH_PAINTER: NodeShapeEntry = {
       fill?: FillStyle | null;
       stroke?: Stroke | null;
     };
-    const projected = pathInPoseFrame(d.path, pose as RectPose);
+    const projected = pathInPoseFrame(d.path, pose);
     const strokeSpec = resolveNodeStroke(d.stroke);
     const hasStroke = strokeSpec !== null;
     // An undeclared fill falls back to the default one only if there's no
@@ -621,8 +629,8 @@ const PATH_PAINTER: NodeShapeEntry = {
     // The pose is baked into `projected` rather than emitted as a transform,
     // so a box-relative gradient has to be baked onto the same box here or
     // it would arrive in the renderer referring to a frame that never exists.
-    const fill = declared && resolveFillPattern(fillInPoseFrame(declared, pose as RectPose));
-    const stroke = strokeSpec && strokeInPoseFrame(strokeSpec, pose as RectPose);
+    const fill = declared && resolveFillPattern(fillInPoseFrame(declared, pose));
+    const stroke = strokeSpec && strokeInPoseFrame(strokeSpec, pose);
     const cmd: DrawCommand = {
       kind: 'path',
       path: projected,
@@ -636,7 +644,7 @@ const PATH_PAINTER: NodeShapeEntry = {
   }),
   silhouette: (node, pose) => {
     const d = node.data as { path: Path };
-    return pathInPoseFrame(d.path, pose as RectPose);
+    return pathInPoseFrame(d.path, pose);
   },
   // Mirrors the fill/stroke decisions `paint` makes above — same reads, same
   // 'none' handling, same "no fill declared and a stroke present means
@@ -660,9 +668,10 @@ const PATH_PAINTER: NodeShapeEntry = {
  *  shape kind. Computes both paint and silhouette from the pose so consumer
  *  scenes can declare clipping/rendering directly in JSON without
  *  registering a custom painter. */
-const SHAPE_PAINTER: NodeShapeEntry = {
+const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   id: 'kit:shape',
   matches: (node) => {
+    if (!isRectPose(node.pose)) return false;
     const s = (node.data as { shape?: string } | null)?.shape;
     return s != null && SHAPE_KINDS.has(s);
   },
@@ -671,11 +680,11 @@ const SHAPE_PAINTER: NodeShapeEntry = {
   // See PAINT_SLOT.
   paint: (node, pose) => nodeMemo(node, PAINT_SLOT, pose, () => {
     const d = node.data as { shape: string; fill?: FillStyle | null; stroke?: Stroke | null; sides?: number; points?: number };
-    const path = pathForShape(d, pose as RectPose);
+    const path = pathForShape(d, pose);
     const declaredFill = resolveNodeFill(d.fill, DEFAULT_SHAPE_FILL);
-    const shapeFill = declaredFill && resolveFillPattern(fillInPoseFrame(declaredFill, pose as RectPose));
+    const shapeFill = declaredFill && resolveFillPattern(fillInPoseFrame(declaredFill, pose));
     const strokeSpec = resolveNodeStroke(d.stroke);
-    const stroke = strokeSpec && strokeInPoseFrame(strokeSpec, pose as RectPose);
+    const stroke = strokeSpec && strokeInPoseFrame(strokeSpec, pose);
     return [{
       kind: 'path',
       path,
@@ -685,7 +694,7 @@ const SHAPE_PAINTER: NodeShapeEntry = {
   }),
   silhouette: (node, pose) => {
     const d = node.data as { shape: string; sides?: number; points?: number };
-    return pathForShape(d, pose as RectPose);
+    return pathForShape(d, pose);
   },
   // `paint` above emits the default fill when none is declared, so a shape
   // is filled unless it declares `fill: null` — unlike `kit:path`, it has no
@@ -732,17 +741,18 @@ function pathForShape(
  *  reddish outline + slash marks a failed load). The decoded bitmap is owned
  *  by `imageCache`, keyed on `src`; the node holds only the serializable `src`.
  *  Registered before `kit:rect-fallback` so image nodes don't fall through. */
-const IMAGE_PAINTER: NodeShapeEntry = {
+const IMAGE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   id: 'kit:image',
   matches: (node) => {
+    if (!isRectPose(node.pose)) return false;
     const src = (node.data as { image?: { src?: unknown } } | null)?.image?.src;
     return typeof src === 'string' && src.length > 0;
   },
   paint: (node, pose, ctx) => {
     const d = node.data as { image: { src: string; opacity?: number } };
-    const p = pose as RectPose;
+    const p = pose;
     const bmp = ctx?.resolveImage
-      ? ctx.resolveImage(node)
+      ? ctx.resolveImage(node as unknown as Node<unknown, string, unknown>)
       : getImageBitmap(d.image.src);
     if (bmp) {
       return [{
@@ -772,7 +782,7 @@ const IMAGE_PAINTER: NodeShapeEntry = {
     return cmds;
   },
   silhouette: (_node, pose) => {
-    const p = pose as RectPose;
+    const p = pose;
     return { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height };
   },
 };
@@ -839,16 +849,16 @@ const DERIVED_PAINTER: NodeShapeEntry = {
   },
 };
 
-const RECT_FALLBACK_PAINTER: NodeShapeEntry = {
-  // Last-resort painter — always matches, so it must be registered last
-  // within `'normal'`. Consumers who want a different fallback should
-  // register their own painter at `'high'` priority and let this one
-  // never fire (or unregister it explicitly).
+const RECT_FALLBACK_PAINTER: NodeShapeEntry<unknown, RectPose> = {
+  // Last-resort painter — matches any rect-posed node, so it must be
+  // registered last within `'normal'`. Consumers who want a different
+  // fallback should register their own painter at `'high'` priority and let
+  // this one never fire (or unregister it explicitly).
   id: 'kit:rect-fallback',
-  matches: () => true,
+  matches: (node) => isRectPose(node.pose),
   paint: (node, pose) => {
     const d = node.data as { fill?: FillStyle | null } | null;
-    const p = pose as RectPose;
+    const p = pose;
     const fill = resolveNodeFill(d?.fill, DEFAULT_SHAPE_FILL);
     return [{
       kind: 'path',
@@ -857,7 +867,7 @@ const RECT_FALLBACK_PAINTER: NodeShapeEntry = {
     }];
   },
   silhouette: (_node, pose) => {
-    const p = pose as RectPose;
+    const p = pose;
     return { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height };
   },
 };
