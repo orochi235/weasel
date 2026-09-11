@@ -4,7 +4,8 @@ import type { Op } from 'core/ops/types';
 import type { Mat3 } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
 import type { PoseDescriptor } from '../resize/geometry';
-import { AUTO_POSE_DESCRIPTOR } from '../resize/autoPoseDescriptor';
+import { translatePoseViaDescriptor } from '../resize/geometry';
+import { poseDescriptorOf } from '../poseDescriptorDep';
 import type { Action } from '../registry';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { requiresSelection } from './requiresSelection';
@@ -33,9 +34,8 @@ const BIG_STEP = 10;
 /**
  * Apply a translation of (dx, dy) to all currently-selected nodes by building
  * one `createTransformOp` per node (from = pre-mutation pose, to = nudged
- * pose) and routing the batch through the consumer commit hook. Uses the kit's
- * default rect-pose `translate` so the descriptor works for any axis-aligned
- * rect pose without consumer geometry config.
+ * pose) and routing the batch through the consumer commit hook. Translates
+ * through the `poseDescriptor` dep, so any pose shape moves.
  *
  * Mirrors `moveAction`'s `commitOps` helper: when `deps.applyOps` is present
  * the ops route through the consumer's history (one undo entry there);
@@ -49,12 +49,12 @@ function nudgeSelection(
   scene: Scene<unknown, string, unknown>,
   dx: number,
   dy: number,
-  applyOps?: (ops: Op[], label: string) => void,
-  geometryProjection?: GeometryProjection,
+  applyOps: ((ops: Op[], label: string) => void) | undefined,
+  geometryProjection: GeometryProjection | undefined,
+  d: PoseDescriptor<unknown>,
 ): void {
   const ids = selection.get();
   if (ids.length === 0) return;
-  const translate = (AUTO_POSE_DESCRIPTOR as PoseDescriptor<unknown>).translate!;
   // Pure translation by the nudge step. Pushed alongside each transform op so
   // a wired geometryProjection mirrors the node's data-held geometry too.
   const m: Mat3 = [1, 0, 0, 1, dx, dy];
@@ -68,7 +68,7 @@ function nudgeSelection(
     ops.push(createTransformOp<unknown>({
       id: id as string,
       from: node.pose,
-      to: translate(node.pose, dx, dy),
+      to: translatePoseViaDescriptor(node.pose, dx, dy, d),
       label: 'Nudge',
     }));
     const dataOp = geometryDataOp(
@@ -103,7 +103,7 @@ function makeNudgeAction(dir: Direction): Action & { requires: string[] } {
       { spec: { kind: 'key', key: KEY_FOR[dir], mods: { shift: true } }, opts: { params: { magnitude: 'big' } } },
     ],
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'applyOps', 'geometryProjection'],
+    requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor'],
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
@@ -115,7 +115,7 @@ function makeNudgeAction(dir: Direction): Action & { requires: string[] } {
         const applyOps = deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
         const geometryProjection = deps.geometryProjection as GeometryProjection | undefined;
         if (!selection || !scene) return;
-        nudgeSelection(selection, scene, dx, dy, applyOps, geometryProjection);
+        nudgeSelection(selection, scene, dx, dy, applyOps, geometryProjection, poseDescriptorOf(deps.poseDescriptor));
       },
     },
     enabled: requiresSelection,

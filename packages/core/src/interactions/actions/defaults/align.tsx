@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Scene } from 'core/scene/types';
 import type { PoseDescriptor } from '../resize/geometry';
-import { RECT_POSE_DESCRIPTOR } from '../resize/geometry';
-import type { Bounds } from 'core/viewport/fitViewToBounds';
+import { poseDescriptorOf } from '../poseDescriptorDep';
 import {
   alignDeltaFor,
   translatePoseViaDescriptor,
@@ -53,22 +52,21 @@ const ICON_FOR: Record<AlignEdge, ReactNode> = {
 
 /**
  * Apply an align operation to the current selection via the Scene API.
- * Uses the kit's default rect-pose geometry so the descriptor works for
- * any axis-aligned rect pose without consumer geometry config.
+ * Reads poses through the `poseDescriptor` dep.
  */
 function alignSelection(
   selection: SelectionApi,
   scene: Scene<unknown, string, unknown>,
   edge: AlignEdge,
+  geom: PoseDescriptor<unknown>,
 ): void {
   const ids = selection.get();
   if (ids.length < 2) return;
-  const geom = RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<unknown>;
   const poses = ids.map((id) => {
     const node = scene.get(id);
     return node?.pose ?? { x: 0, y: 0, width: 0, height: 0 };
   });
-  const bounds = poses.map((p) => visualBoundsViaDescriptor(p, geom) as Bounds);
+  const bounds = poses.map((p) => visualBoundsViaDescriptor(p, geom));
   // Guarded non-empty by `ids.length < 2` above → `!` is safe.
   const union = unionAABB(bounds)!;
   scene.batch('Align', () => {
@@ -92,7 +90,7 @@ function makeAlignAction(edge: AlignEdge): Action {
     icon: ICON_FOR[edge],
     group: 'align',
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene'],
+    requires: ['selection', 'scene', 'poseDescriptor'],
     // No default keybindings — six edges/centers don't fit a clean default
     // chord set. Wire bindings explicitly via the actions registry override map.
     invoker: {
@@ -101,7 +99,7 @@ function makeAlignAction(edge: AlignEdge): Action {
         const selection = deps.selection as SelectionApi | undefined;
         const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
         if (!selection || !scene) return;
-        alignSelection(selection, scene, edge);
+        alignSelection(selection, scene, edge, poseDescriptorOf(deps.poseDescriptor));
       },
     } satisfies ImmediateInvoker,
     // Deps-aware, matching `alignSelection`'s own `ids.length < 2` guard: a

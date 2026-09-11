@@ -3,7 +3,7 @@ import type { Op } from 'core/ops/types';
 import type { Mat3 } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
 import type { PoseDescriptor } from '../resize/geometry';
-import { AUTO_POSE_DESCRIPTOR } from '../resize/autoPoseDescriptor';
+import { poseDescriptorOf } from '../poseDescriptorDep';
 import {
   flipPoseAboutBounds,
   flipPoseViaDescriptor,
@@ -19,8 +19,8 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
 
 /**
- * Flip the current selection in `scene` along `axis`, using the kit's default
- * rect geometry. Called from `flipAction.invoker.run`.
+ * Flip the current selection in `scene` along `axis`, using the
+ * `poseDescriptor` dep. Called from `flipAction.invoker.run`.
  *
  * Builds one `createTransformOp` per selected node (from = pre-flip pose,
  * to = flipped pose) and routes the batch through the consumer commit hook.
@@ -42,12 +42,12 @@ function flipSelection(
   scene: Scene<unknown, string, unknown>,
   axis: FlipAxis,
   pivot: FlipPivot,
-  applyOps?: (ops: Op[], label: string) => void,
-  geometryProjection?: GeometryProjection,
+  applyOps: ((ops: Op[], label: string) => void) | undefined,
+  geometryProjection: GeometryProjection | undefined,
+  geom: PoseDescriptor<unknown>,
 ): void {
   const ids = selection.get();
   if (ids.length === 0) return;
-  const geom = AUTO_POSE_DESCRIPTOR as unknown as PoseDescriptor<unknown>;
 
   const nodes = ids.map((id) => scene.get(id)).filter((n) => n != null);
   const unionPivot = pivot === 'union'
@@ -109,7 +109,7 @@ export const flipAction: Action & { requires: string[] } = {
     { spec: { kind: 'key', key: ['v', 'V'], mods: { shift: true } }, opts: { params: { axis: 'y' } } },
   ],
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'applyOps', 'geometryProjection'],
+  requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor'],
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
@@ -120,7 +120,7 @@ export const flipAction: Action & { requires: string[] } = {
       const applyOps = deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
       const geometryProjection = deps.geometryProjection as GeometryProjection | undefined;
       if (!selection || !scene) return;
-      flipSelection(selection, scene, axis, pivot, applyOps, geometryProjection);
+      flipSelection(selection, scene, axis, pivot, applyOps, geometryProjection, poseDescriptorOf(deps.poseDescriptor));
     },
   },
   enabled: requiresSelection,
