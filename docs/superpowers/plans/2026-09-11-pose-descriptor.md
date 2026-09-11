@@ -37,7 +37,8 @@
 | `packages/core/src/canvas/deps/poseDescriptor.ts` | **new** — `usePoseDescriptorDepSource` |
 | `packages/core/src/interactions/actions/depSchema.ts` | `poseDescriptor` entry; `ResizePolicy.projection` removed |
 | `packages/core/src/interactions/actions/defaults/{move,resize,rotate,flip,nudge,align,distribute,group,clone,duplicate}.ts(x)` | read the dep |
-| `packages/core/src/core/scene/{kitRegistry,scene,types}.ts` | `unionOfChildrenVia`, `Scene.registry` |
+| `packages/core/src/core/scene/{scene,types}.ts` | `Scene.registry` |
+| `packages/core/src/features/groups/unionOfChildren.ts` | **new** — `unionOfChildrenVia`, outside `core/` per the layering rule |
 | `packages/core/src/canvas/{Canvas,SceneCanvas,CanvasView,useViewHelpers,viewInputs,sceneAdapter,MinimapCanvas,minimapMath,NodeShape}.ts(x)` | prop, wiring, options |
 | `packages/core/src/canvas/SceneCanvas/{useSceneSelectTool,poseGeometry}.ts` | cascade, bounds, picking |
 | `packages/core/src/canvas/deps/{hitTestArea,areaSelect,lassoSelect,editAnchors,resizePolicy}.ts` | descriptor param |
@@ -1204,6 +1205,13 @@ Run: `npx vitest run --project=core packages/core/src/core/scene/derivedPose.tes
 Expected: FAIL — `unionOfChildrenVia` is not exported; `scene.registry` is undefined.
 
 - [ ] **Step 3: `unionOfChildrenVia` and the kit default**
+
+> **Landed differently, on purpose.** `core/` may not import `features/` or
+> `interactions/` (an enforced lint rule), so the factory lives at
+> `packages/core/src/features/groups/unionOfChildren.ts` and `kitRegistry.ts`
+> keeps its original rect-only `unionOfChildren` with no descriptor import.
+> The scene layer holds no descriptor, which is also what the 3D doc wants.
+> The code below is kept for its reasoning; read the two files for what shipped.
 
 Replace the body of `packages/core/src/core/scene/kitRegistry.ts` below the header doc with:
 
