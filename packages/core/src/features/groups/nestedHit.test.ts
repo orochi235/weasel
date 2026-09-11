@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { nestedHitTester } from './nestedHit';
 import { composeRectPose } from 'features/groups/composePose';
+import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
 
 interface Node {
   id: string;
@@ -72,10 +73,9 @@ describe('nestedHitTester', () => {
     expect(tester.pickBest(0, 0, true, ['g1'])).toBeNull();
   });
 
-  it('uses provided poseBounds for non-rect poses', () => {
-    interface CirclePose { cx: number; cy: number; r: number }
+  it('uses the supplied pose descriptor for non-rect poses', () => {
     const cnodes = [
-      { id: 'c', parent: null, pose: { cx: 100, cy: 100, r: 20 } },
+      { id: 'c', parent: null, pose: circle(100, 100, 20) },
     ];
     const t = nestedHitTester(
       {
@@ -86,7 +86,7 @@ describe('nestedHitTester', () => {
       },
       {
         composePose: (_parent: CirclePose, child: CirclePose) => child,
-        poseBounds: (p: CirclePose) => ({ x: p.cx - p.r, y: p.cy - p.r, width: p.r * 2, height: p.r * 2 }),
+        poseDescriptor: CIRCLE_POSE_DESCRIPTOR,
       },
     );
     expect(t.pickOutermost(100, 100)).toBe('c');

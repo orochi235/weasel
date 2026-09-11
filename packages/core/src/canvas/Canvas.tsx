@@ -1267,7 +1267,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
         // to project with; without one the layer reads bounds off the chrome
         // state and never calls either.
         ...(cfg.poseById
-          ? { getPose: cfg.poseById, getBounds: cfg.getBounds ?? ((p: TPose) => geometry.getBounds(p)) }
+          ? { getPose: cfg.poseById, poseDescriptor: cfg.poseDescriptor ?? geometry }
           : {}),
       });
     }

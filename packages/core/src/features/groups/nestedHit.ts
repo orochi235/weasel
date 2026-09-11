@@ -1,5 +1,6 @@
 import { worldPoseLookup } from './composePose';
-import type { Bounds as RectBounds } from '../../core/viewport/fitViewToBounds';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 
 /** @internal */
 interface HitAdapter<TNode extends { id: string }, TPose> {
@@ -14,10 +15,8 @@ export interface NestedHitOpts<TNode extends { id: string }, TPose> {
   /** Compose a child's local pose into world coords given its parent's world
    *  pose. Same shape as `composeRectPose` (the default expectation). */
   composePose: (parent: TPose, child: TPose) => TPose;
-  /** Derive an axis-aligned bounding rect from a (world-space) pose. Default
-   *  reads `x` / `y` / `width` / `height` straight off the pose (matches
-   *  `RectPose`). Override for non-rect poses (e.g. paths). */
-  poseBounds?: (pose: TPose) => RectBounds;
+  /** How to read world poses. Default `AUTO_POSE_DESCRIPTOR`. */
+  poseDescriptor?: PoseDescriptor<TPose>;
   /** Predicate for "this object is a nesting parent body". The leaf scan
    *  skips objects for which this returns true so a click on a parent's
    *  painted body resolves to a child leaf, not the parent itself. Default:
@@ -46,11 +45,6 @@ export interface NestedHitTester {
   ) => string | null;
 }
 
-const defaultPoseBounds = <TPose>(pose: TPose): RectBounds => {
-  const p = pose as unknown as RectBounds;
-  return { x: p.x, y: p.y, width: p.width, height: p.height };
-};
-
 /** Build hit-testers that respect containers: a plain click selects the
  *  top-level ancestor, and alt-clicking descends one level at a time toward
  *  the leaf actually under the pointer. */
@@ -58,7 +52,7 @@ export function nestedHitTester<TNode extends { id: string }, TPose>(
   adapter: HitAdapter<TNode, TPose>,
   opts: NestedHitOpts<TNode, TPose>,
 ): NestedHitTester {
-  const poseBounds = opts.poseBounds ?? defaultPoseBounds<TPose>;
+  const d = (opts.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   const isGroup = opts.isGroup ?? (() => false);
   const worldOf = worldPoseLookup(adapter, opts.composePose);
 
@@ -79,7 +73,7 @@ export function nestedHitTester<TNode extends { id: string }, TPose>(
       if (isGroup(o.id, o)) continue;
       const w = worldOf(o.id);
       if (!w) continue;
-      const b = poseBounds(w);
+      const b = d.getBounds(w);
       if (wx >= b.x && wx <= b.x + b.width && wy >= b.y && wy <= b.y + b.height) {
         return o.id;
       }

@@ -1858,7 +1858,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       ...(cfg.poseById
         ? {
             getPose: cfg.poseById,
-            getBounds: cfg.getBounds ?? ((p: TPose) => AUTO_POSE_DESCRIPTOR.getBounds(p) as Bounds),
+            poseDescriptor: cfg.poseDescriptor ?? (descriptor as PoseDescriptor<TPose>),
           }
         : {}),
     });
