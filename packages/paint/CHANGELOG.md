@@ -1,5 +1,7 @@
 # @weasel-js/paint
 
+## 1.4.4
+
 ## 1.4.3
 
 ### Patch Changes

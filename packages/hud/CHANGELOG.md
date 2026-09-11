@@ -1,5 +1,35 @@
 # @weasel-js/hud
 
+## 1.4.4
+
+### Patch Changes
+
+- Updated dependencies [9ce6f00]
+- Updated dependencies [d80a7eb]
+- Updated dependencies [6f876a7]
+- Updated dependencies [ed400a3]
+- Updated dependencies [fc00dae]
+- Updated dependencies [730da55]
+- Updated dependencies [60ba9d9]
+- Updated dependencies [5732951]
+- Updated dependencies [2ff4824]
+- Updated dependencies [3d89141]
+- Updated dependencies [4a128c4]
+- Updated dependencies [aee9d92]
+- Updated dependencies [c067221]
+- Updated dependencies [26d40bf]
+- Updated dependencies [b8d2940]
+- Updated dependencies [b5e2cd9]
+- Updated dependencies [89276ee]
+- Updated dependencies [36950d8]
+- Updated dependencies [4f8c6b2]
+- Updated dependencies [1240956]
+  - @weasel-js/core@1.4.4
+  - @weasel-js/theme@1.4.4
+  - @weasel-js/font@1.4.4
+  - @weasel-js/loupe@1.4.4
+  - @weasel-js/geom@1.4.4
+
 ## 1.4.3
 
 ### Patch Changes

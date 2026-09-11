@@ -1,5 +1,116 @@
 # @weasel-js/labkit
 
+## 1.4.4
+
+### Patch Changes
+
+- d80a7eb: **`tokens.css` no longer sets a document font.** It was the one rule in the
+  file that was not an inert custom property, and it re-typed the whole document
+  — so an app with its own typography could not import the stylesheet at all and
+  hand-wrote the `--wzl-*` bridge instead, which falls silently behind whenever a
+  component starts reading a token the list does not carry. The rule moved to
+  `fonts.css`, beside the `@font-face` declarations, which is the file that
+  already meant "give me the kit's typography". A surface that wants both now
+  imports both.
+  
+  **`--wzl-slider-track-tint` and `--wzl-slider-thumb-tint` are renamed to
+  `--wzl-slider-track-mix` and `--wzl-slider-thumb-mix`.** They are the second
+  argument of a `color-mix`, so they must be percentages; the old names read as
+  colors, and setting one to a color invalidated the declaration and left the
+  thumb unpainted with no error anywhere.
+  
+  **Slider size tokens carry their own defaults.** `--wzl-slider-track-h` and
+  `--wzl-slider-thumb-size` were used bare, so unset the track had no height and
+  the control was present, focusable, operable and invisible. An incomplete
+  bridge now degrades to the wrong size instead of to nothing.
+  
+  **`ColorRow` and `NumberRow` take `onInput`.** `Slider` and `SliderRow` split
+  the live value from the committed one; these rows had a single callback with
+  nothing saying which semantics it had, so a consumer with an undo stack got one
+  entry per tick. `ColorRow` also takes `onAlphaInput`. A row given one callback
+  still fires continuously, as before.
+  
+  **`RangeSlider`'s track has no `min-width` floor.** The root is a column flex
+  container, so `align-items` on it governs the horizontal axis and collapses the
+  track — and the 80px floor turned that into a small slider that looked
+  deliberate rather than a broken one that would have been found in seconds.
+  
+  **The property readout's width takes `--wzl-property-readout-w`,** rather than
+  leaving a consumer to match the hashed class name.
+  
+  **labkit mints ids through a helper that checks for `crypto.randomUUID`.** It
+  exists only in a secure context, and a LAN address is not one — so a lab opened
+  on a phone or a tablet by IP threw on its first render and showed a blank page
+  with nothing in reach to say why.
+- 69dadfb: `fracIntersects` is now `fracEncloses`.
+  
+  It never intersected: it answers true only when `inner` lies wholly inside
+  `outer`, which is what an annotation marquee wants — brushing selection is a
+  different gesture. Two rects that merely overlap got `false` from a function
+  whose name promised the opposite, so a consumer reading the name got it
+  backwards.
+  
+  Breaking: the old name is gone rather than aliased. `fracContains` is unchanged
+  and still takes a point.
+- 8f9b790: `<LabSwitcher>` turns a lab's title into the way to reach the project's other
+  labs. A project grows a wall, a dashboard, an ingest page, a bench; a tab strip
+  beside the title is the layout that stops working first, and every consumer was
+  writing its own.
+  
+  The menu holds real anchors, not a `<select>` and not buttons: these are
+  separate documents, so an `href` is what gets middle-click, cmd-click and the
+  back button for free. The open page stays in the list and is marked with
+  `aria-current` rather than filtered out, so entries do not shift position as you
+  move between pages. Given fewer than two pages it renders a plain heading — a
+  disclosure arrow promising a menu of the page you are already on is worse than
+  no control.
+  
+  `<LabShell>` takes `pages` and `path` and wires the same control into its own
+  title; without `pages` its title is unchanged. `currentPage(path, pages)` is
+  exported for consumers that mark the open page somewhere else — it matches on
+  the end of the path, so a query string, a trailing slash or a leftover `.html`
+  cannot lose it.
+- acaa71d: A `{ px }` stroke width survives SVG export as `vector-effect="non-scaling-stroke"`.
+  
+  `{ px }` means "this thickness once rendered, whatever the view is doing".
+  Serializing wrote its number as a plain `stroke-width`, which is a world-unit
+  length — so a hairline exported from a zoomed-out view came back a slab, and a
+  document had no way to say what the kit's own type says. SVG has the attribute
+  for exactly this, and it needs no accumulated transform scale to resolve
+  against.
+  
+  `SvgStroke.width` is now `number | { px: number }`, matching `Stroke.width`.
+  Parsing reads `vector-effect="non-scaling-stroke"` off the element rather than
+  the cascade, because SVG does not inherit it — a `<g>` carrying it does not
+  hand it to its children.
+- Updated dependencies [9ce6f00]
+- Updated dependencies [d80a7eb]
+- Updated dependencies [6f876a7]
+- Updated dependencies [ed400a3]
+- Updated dependencies [fc00dae]
+- Updated dependencies [730da55]
+- Updated dependencies [60ba9d9]
+- Updated dependencies [5732951]
+- Updated dependencies [2ff4824]
+- Updated dependencies [3d89141]
+- Updated dependencies [4a128c4]
+- Updated dependencies [aee9d92]
+- Updated dependencies [c067221]
+- Updated dependencies [26d40bf]
+- Updated dependencies [b8d2940]
+- Updated dependencies [acaa71d]
+- Updated dependencies [b5e2cd9]
+- Updated dependencies [89276ee]
+- Updated dependencies [36950d8]
+- Updated dependencies [4f8c6b2]
+- Updated dependencies [4d48493]
+- Updated dependencies [1240956]
+  - @weasel-js/core@1.4.4
+  - @weasel-js/theme@1.4.4
+  - @weasel-js/ui@1.4.4
+  - @weasel-js/svg@1.4.4
+  - @weasel-js/loupe@1.4.4
+
 ## 1.4.3
 
 ### Patch Changes
