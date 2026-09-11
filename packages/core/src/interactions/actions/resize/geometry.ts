@@ -1,5 +1,6 @@
 import type { RotatedPose } from '../../gestures/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
+import { axisAlignedBounds } from 'core/geometry/unionBounds';
 
 /**
  * Bridges arbitrary `TPose` shapes into the resize hook's bounds-driven math.
@@ -16,6 +17,9 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 export interface PoseDescriptor<TPose> {
   getBounds(pose: TPose): Bounds;
   remapBounds(pose: TPose, src: Bounds, dst: Bounds): TPose;
+  /** A pose occupying `bounds`, of the same kind as `template`. Unlike
+   *  `remapBounds`, the result carries none of the template's shape. */
+  fromBounds(bounds: Bounds, template: TPose): TPose;
   /** Translate the pose by (dx, dy). Optional — when omitted, callers fall
    *  back to a translation derived from `remapBounds` (origin shifted, no
    *  scale). Path-shaped poses should provide this for performance. */
@@ -41,6 +45,9 @@ export interface PoseDescriptor<TPose> {
    *  fields (e.g. polygon Paths) should return `false` so the affordance
    *  hides instead of exposing a non-functional rotate cursor. */
   supportsRotation?(pose: TPose): boolean;
+  /** Write a rotation (radians) into the pose, bounds unchanged. Absent means
+   *  the pose cannot carry one, and the rotate action leaves it alone. */
+  withRotation?(pose: TPose, rotation: number): TPose;
 }
 
 /** AABB-vs-AABB overlap. Exported for callers building a default
@@ -64,6 +71,7 @@ export const RECT_POSE_DESCRIPTOR: PoseDescriptor<Bounds> = {
       height: p.height * sy,
     };
   },
+  fromBounds: (b) => ({ x: b.x, y: b.y, width: b.width, height: b.height }),
   translate: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
   intersectsRect: (p, r) => aabbIntersectsRect(p, r),
   lerp: (a, b, t) => ({
@@ -73,6 +81,7 @@ export const RECT_POSE_DESCRIPTOR: PoseDescriptor<Bounds> = {
     width: a.width + (b.width - a.width) * t,
     height: a.height + (b.height - a.height) * t,
   }),
+  withRotation: (p, rotation) => ({ ...p, rotation }),
 };
 
 /** Identity geometry for `RotatedPose`. Inherits rect-shape projection
@@ -86,7 +95,9 @@ export const ROTATED_POSE_DESCRIPTOR: PoseDescriptor<RotatedPose> = {
   translate: RECT_POSE_DESCRIPTOR.translate as PoseDescriptor<RotatedPose>['translate'],
   intersectsRect: RECT_POSE_DESCRIPTOR.intersectsRect as PoseDescriptor<RotatedPose>['intersectsRect'],
   lerp: RECT_POSE_DESCRIPTOR.lerp as PoseDescriptor<RotatedPose>['lerp'],
+  fromBounds: (b) => ({ x: b.x, y: b.y, width: b.width, height: b.height, rotation: 0 }),
   getRotation: (p) => p.rotation,
+  withRotation: (p, rotation) => ({ ...p, rotation }),
 };
 
 /**
@@ -141,4 +152,30 @@ export function remapRotatedLeaf<TPose extends RotatedPose>(
     height,
     rotation,
   };
+}
+
+/** The pose's visual bounds: its frame expanded to cover the rotated
+ *  rectangle, so a turned shape reports the extent of its ink. */
+export function visualBoundsViaDescriptor<TPose>(
+  pose: TPose,
+  geometry: PoseDescriptor<TPose>,
+): Bounds {
+  const b = geometry.getBounds(pose);
+  const rotation =
+    geometry.getRotation?.(pose) ?? (b as { rotation?: number }).rotation ?? 0;
+  return axisAlignedBounds({ x: b.x, y: b.y, width: b.width, height: b.height, rotation });
+}
+
+/** Translate through `geometry.translate`, or via `remapBounds` onto a shifted
+ *  copy of the pose's own bounds when the descriptor has none. */
+export function translatePoseViaDescriptor<TPose>(
+  pose: TPose,
+  dx: number,
+  dy: number,
+  geometry: PoseDescriptor<TPose>,
+): TPose {
+  if (geometry.translate) return geometry.translate(pose, dx, dy);
+  const src = geometry.getBounds(pose);
+  const dst = { x: src.x + dx, y: src.y + dy, width: src.width, height: src.height };
+  return geometry.remapBounds(pose, src, dst);
 }

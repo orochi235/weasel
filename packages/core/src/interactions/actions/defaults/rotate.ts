@@ -18,8 +18,7 @@
  *
  * ## Constraints vs `useRotate`
  *
- * - Assumes rect-shaped poses `{ x, y, width, height, rotation? }`. Non-rect
- *   TPose consumers need a custom action with a typed `RotateGeometry`.
+ * - Assumes rect-shaped poses `{ x, y, width, height, rotation? }`.
  * - No behavior pipeline (snap, etc.). Behaviors wait for a later phase.
  * - No overlay rendering — deferred to Phase 7 overlay surface.
  * - Shift-snap (15° quantum) is NOT wired in this phase — omitted deliberately
@@ -122,8 +121,7 @@ interface RotateScratch {
  * Requires dep-schema entries: `selection`, `scene`.
  *
  * Implements the unrotated-pivot rotation path from `useRotate` for rect-
- * shaped poses. Non-rect or behavior-rich consumers should register a custom
- * `rotateAction` with a typed `RotateGeometry` dep.
+ * shaped poses.
  *
  * @see useRotate — the React hook this descriptor mirrors for the rect case.
  */

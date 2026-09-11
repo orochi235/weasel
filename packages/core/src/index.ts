@@ -961,6 +961,7 @@ export type { UseMoveOptions } from './interactions/actions/move';
 export {
   AUTO_POSE_DESCRIPTOR,
   isPathLike,
+  isRectPose,
   RECT_POSE_DESCRIPTOR,
   ROTATED_POSE_DESCRIPTOR,
   cornerResizeHandles,
@@ -984,7 +985,6 @@ export {
 } from './interactions/actions/rotate';
 export type {
   UseRotateOptions,
-  RotateGeometry,
   RotationHandle,
 } from './interactions/actions/rotate';
 export type { UseInsertOptions } from './interactions/actions/insert';

@@ -1,6 +1,7 @@
 import type { Path } from 'features/paths/types';
 import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from './geometry';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 /** True for Path-shaped poses (`{kind: 'polygon' | 'rect'}`). Useful for
  *  callers that need to fork between `pathPoseDescriptor` and
@@ -9,6 +10,15 @@ import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from './geometry';
 export function isPathLike(p: unknown): p is Path {
   return !!p && typeof p === 'object' && 'kind' in p
     && ((p as { kind: unknown }).kind === 'polygon' || (p as { kind: unknown }).kind === 'rect');
+}
+
+/** True for a pose with numeric top-level `x`/`y`/`width`/`height` — the only
+ *  shape the rect descriptor and the kit's built-in painters can read. */
+export function isRectPose(p: unknown): p is { x: number; y: number; width: number; height: number; rotation?: number } {
+  if (!p || typeof p !== 'object') return false;
+  const r = p as Record<string, unknown>;
+  return typeof r.x === 'number' && typeof r.y === 'number'
+    && typeof r.width === 'number' && typeof r.height === 'number';
 }
 
 /** Per-call dispatch: if the pose looks like a Path, route to
@@ -25,6 +35,9 @@ export const AUTO_POSE_DESCRIPTOR: PoseDescriptor<unknown> = {
   remapBounds: (p, src, dst) => isPathLike(p)
     ? pathPoseDescriptor.remapBounds(p, src, dst)
     : RECT_POSE_DESCRIPTOR.remapBounds(p as { x: number; y: number; width: number; height: number }, src, dst),
+  fromBounds: (b, template) => isPathLike(template)
+    ? pathPoseDescriptor.fromBounds(b, template)
+    : RECT_POSE_DESCRIPTOR.fromBounds(b, template as Bounds),
   translate: (p, dx, dy) => isPathLike(p)
     ? pathPoseDescriptor.translate!(p, dx, dy)
     : RECT_POSE_DESCRIPTOR.translate!(p as { x: number; y: number; width: number; height: number }, dx, dy),
@@ -41,4 +54,5 @@ export const AUTO_POSE_DESCRIPTOR: PoseDescriptor<unknown> = {
   // paint time, so report `true` and let the wrapper no-op for poses
   // missing AABB fields.
   supportsRotation: (p) => !isPathLike(p),
+  withRotation: (p, rotation) => isPathLike(p) ? p : { ...(p as object), rotation },
 };

@@ -170,3 +170,23 @@ describe('ROTATED_POSE_DESCRIPTOR', () => {
     expect(out.y).toBe(8);
   });
 });
+
+describe('fromBounds / withRotation', () => {
+  const box = { x: 1, y: 2, width: 30, height: 40 };
+
+  it('RECT builds a plain rect and drops the template rotation', () => {
+    expect(RECT_POSE_DESCRIPTOR.fromBounds(box, { x: 9, y: 9, width: 1, height: 1 }))
+      .toEqual(box);
+  });
+
+  it('ROTATED builds an unrotated rect', () => {
+    expect(ROTATED_POSE_DESCRIPTOR.fromBounds(box, { x: 0, y: 0, width: 1, height: 1, rotation: 1 }))
+      .toEqual({ ...box, rotation: 0 });
+  });
+
+  it('RECT and ROTATED write rotation', () => {
+    expect(RECT_POSE_DESCRIPTOR.withRotation!({ ...box }, 0.5)).toEqual({ ...box, rotation: 0.5 });
+    expect(ROTATED_POSE_DESCRIPTOR.withRotation!({ ...box, rotation: 0 }, 0.5))
+      .toEqual({ ...box, rotation: 0.5 });
+  });
+});

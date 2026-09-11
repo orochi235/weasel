@@ -33,6 +33,7 @@ export const pathPoseDescriptor: PoseDescriptor<Path> = {
     }
     return remapPolygon(path, src, dst, sx, sy);
   },
+  fromBounds: (b) => ({ kind: 'rect', x: b.x, y: b.y, width: b.width, height: b.height }),
   translate: (path, dx, dy) => translatePath(path, dx, dy),
   // WHY: AABB pre-test is cheap; only fall through to per-corner pointInPath
   //      when the rect is fully inside the AABB (silhouette test).

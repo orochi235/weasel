@@ -6,6 +6,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { isPathLike, AUTO_POSE_DESCRIPTOR } from './autoPoseDescriptor';
+import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
 import {
   PATH_M,
   PATH_L,
@@ -98,5 +99,30 @@ describe('AUTO_POSE_DESCRIPTOR', () => {
       { x: 0, y: 0, width: 10, height: 10 } as never,
       { x: 5, y: 5, width: 10, height: 10 },
     )).toBe(true);
+  });
+});
+
+describe('AUTO fromBounds / withRotation', () => {
+  const box = { x: 1, y: 2, width: 30, height: 40 };
+
+  it('matches a path template with a rect Path', () => {
+    const template = { kind: 'rect' as const, x: 0, y: 0, width: 1, height: 1 };
+    expect(AUTO_POSE_DESCRIPTOR.fromBounds(box, template)).toEqual({ kind: 'rect', ...box });
+  });
+
+  it('matches a rect template with a plain rect', () => {
+    expect(AUTO_POSE_DESCRIPTOR.fromBounds(box, { x: 0, y: 0, width: 1, height: 1, rotation: 2 }))
+      .toEqual(box);
+  });
+
+  it('rotates rects and refuses paths', () => {
+    expect(AUTO_POSE_DESCRIPTOR.withRotation!({ ...box }, 1)).toEqual({ ...box, rotation: 1 });
+    const path = { kind: 'rect' as const, ...box };
+    expect(AUTO_POSE_DESCRIPTOR.withRotation!(path, 1)).toBe(path);
+  });
+
+  it('pathPoseDescriptor.fromBounds returns a rect Path', () => {
+    expect(pathPoseDescriptor.fromBounds(box, { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }))
+      .toEqual({ kind: 'rect', ...box });
   });
 });
