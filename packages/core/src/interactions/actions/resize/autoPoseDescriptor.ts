@@ -5,8 +5,8 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 /** True for Path-shaped poses (`{kind: 'polygon' | 'rect'}`). Useful for
  *  callers that need to fork between `pathPoseDescriptor` and
- *  `RECT_POSE_DESCRIPTOR` without forcing the consumer to wire `geometry`
- *  explicitly. */
+ *  `RECT_POSE_DESCRIPTOR` without forcing the consumer to wire
+ *  `poseDescriptor` explicitly. */
 export function isPathLike(p: unknown): p is Path {
   return !!p && typeof p === 'object' && 'kind' in p
     && ((p as { kind: unknown }).kind === 'polygon' || (p as { kind: unknown }).kind === 'rect');
@@ -23,11 +23,11 @@ export function isRectPose(p: unknown): p is { x: number; y: number; width: numb
 
 /** Per-call dispatch: if the pose looks like a Path, route to
  *  `pathPoseDescriptor`; otherwise treat as a plain rect pose. Avoids forcing
- *  demos with Path TPose to wire `geometry={pathPoseDescriptor}` explicitly.
- *  `getRotation` surfaces a `pose.rotation` field on non-Path poses so demos
- *  using rect-with-rotation shapes (e.g. `RotatedPose`) don't have to wire
- *  `geometry={ROTATED_POSE_DESCRIPTOR}` just to get rotated selection chrome
- *  and rotation-aware corner hit-tests. */
+ *  demos with Path TPose to wire `poseDescriptor={pathPoseDescriptor}`
+ *  explicitly. `getRotation` surfaces a `pose.rotation` field on non-Path poses
+ *  so demos using rect-with-rotation shapes (e.g. `RotatedPose`) don't have to
+ *  wire `poseDescriptor={ROTATED_POSE_DESCRIPTOR}` just to get rotated
+ *  selection chrome and rotation-aware corner hit-tests. */
 export const AUTO_POSE_DESCRIPTOR: PoseDescriptor<unknown> = {
   getBounds: (p) => isPathLike(p)
     ? pathPoseDescriptor.getBounds(p)

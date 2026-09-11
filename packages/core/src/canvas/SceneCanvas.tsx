@@ -1862,7 +1862,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
           }
         : {}),
     });
-  }, [mergedLayers.selectionOverlay, getSuppressedSelectionIds]);
+  }, [mergedLayers.selectionOverlay, getSuppressedSelectionIds, descriptor]);
 
   const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => ({
     ...mergedLayers,

@@ -175,10 +175,13 @@ polygon, custom blob), supply a `PoseDescriptor<TPose>`:
 
 ```ts
 export interface PoseDescriptor<TPose> {
-  getBounds(pose: TPose): { x: number; y: number; width: number; height: number };
-  remapBounds(pose: TPose, src: ResizePose, dst: ResizePose): TPose;
+  getBounds(pose: TPose): Bounds;
+  remapBounds(pose: TPose, src: Bounds, dst: Bounds): TPose;
+  fromBounds(bounds: Bounds, template: TPose): TPose;
   translate?(pose: TPose, dx: number, dy: number): TPose;
-  intersectsRect?(pose: TPose, rect: ResizePose): boolean;
+  intersectsRect?(pose: TPose, rect: Bounds): boolean;
+  getRotation?(pose: TPose): number;
+  withRotation?(pose: TPose, rotation: number): TPose;
 }
 ```
 
@@ -186,14 +189,21 @@ export interface PoseDescriptor<TPose> {
 my AABB to dst") and group resize ("scale me as a leaf inside parent's
 src→dst rect") — they're the same affine map.
 
-Pass via `<SceneCanvas geometry={{ pickEvery, boundsOf }}>` for the hit-test
-and bounds overrides, and via the pose-descriptor seam for the math. The
-descriptor drives the default `pickEvery`, `boundsOf`, the selection-overlay
-bounds source, and the `resize` action's remap.
+`fromBounds` builds a pose from a bare box, using `template` for whatever the
+box does not carry. Group resize and the container union need it.
+
+Pass the descriptor once, as `<SceneCanvas poseDescriptor={…}>`. It reaches
+every built-in action, the selection chrome, picking and area select as the
+`poseDescriptor` dep, and supplies the default `pickEvery`, `boundsOf`, the
+selection-overlay bounds and the `resize` action's remap. The separate
+`geometry={{ pickEvery, boundsOf }}` prop overrides those two directly.
 
 The kit ships:
 
-- `RECT_POSE_DESCRIPTOR` — identity for `{x,y,width,height}`. Default.
+- `AUTO_POSE_DESCRIPTOR` — the default: rect poses and `Path` poses, chosen per
+  call from the pose's shape.
+- `RECT_POSE_DESCRIPTOR` — identity for `{x,y,width,height}`.
+- `ROTATED_POSE_DESCRIPTOR` — rect poses carrying a `rotation`.
 - `pathPoseDescriptor` — implementation for `Path`.
 
 For grid snapping on a non-rect pose, also pass an `OriginProjection`:
@@ -210,18 +220,11 @@ import { gridSnapStrategy, pathOriginProjection } from '@weasel-js/core';
 `<SceneCanvas>` folds `selectTool.snap` into the `move` action's behavior
 chain.
 
-**Translation is a separate question.** `moveAction`'s `scene` dep is typed
-`Scene<unknown, string, unknown>`, so poses are read and written as `unknown`
-and `translatePoseGeneric` falls back to `RECT_POSE_DESCRIPTOR.translate`,
-which treats any pose as `{ x, y, … }`. Two ways out for a non-rect pose:
+Move translates through the same descriptor. It reads the `poseDescriptor` dep
+and applies `translate` when the descriptor defines one, otherwise an origin
+shift derived from `remapBounds`.
 
-- wire the **`geometryProjection`** dep, which `translatePoseGeneric` consults
-  before the rect fallback; or
-- register your own descriptor under the `move` id with a typed
-  `translatePose`.
-
-For an end-to-end working demo of all of the above, see
-`apps/site/demos/CompoundPathsDemo.tsx`.
+For an end-to-end working demo, see `apps/site/demos/CompoundPathsDemo.tsx`.
 
 ## Derived geometry
 
