@@ -8,7 +8,7 @@
     "fg-muted":       { "$value": "{color.gray-600}" },
     "fg-subtle":      { "$value": "{color.gray-500}" },
     "border":         { "$value": "{color.gray-200}" },
-    "border-strong":  { "$value": "{color.gray-400}" },
+    "border-strong":  { "$value": "{color.gray-500}" },
     "accent-fg":      { "$value": "{color.accent-base}", "$description": "Flips to the deep base in light mode, where it is the legible one." },
     "fg-inverse":   { "$value": "{color.gray-50}", "$description": "Flips with the mode \u2014 see the dark layer." },
     "shadow":        { "$value": "rgba(0, 0, 0, 0.18)" }

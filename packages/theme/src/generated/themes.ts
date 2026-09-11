@@ -320,7 +320,7 @@ export const THEMES = {
       '--wzl-fg-muted': "#383b42",
       '--wzl-fg-subtle': "#4d5058",
       '--wzl-border': "#c9cbcf",
-      '--wzl-border-strong': "#6f737b",
+      '--wzl-border-strong': "#4d5058",
       '--wzl-accent-fg': "#2e1f7a",
       '--wzl-fg-inverse': "#f5f5f6",
       '--wzl-shadow': "rgba(0, 0, 0, 0.18)",
@@ -815,7 +815,7 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         "border-strong": {
           "type": "color",
           "value": "{color.gray-400}",
-          "description": "The line that has to be seen: a control's edge, a raised surface's outline. Clears WCAG 1.4.11's 3:1 against surface and surface-raised in both modes, and against surface-sunken in dark; light over sunken reaches only 2.9:1, so a panel on a sunken field needs its own answer."
+          "description": "The line that has to be seen: a control's edge, a raised surface's outline. Clears WCAG 1.4.11's 3:1 against every surface in both modes."
         },
         "accent-fg": {
           "type": "color",
@@ -864,7 +864,7 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         },
         "border-strong": {
           "type": "color",
-          "value": "{color.gray-400}"
+          "value": "{color.gray-500}"
         },
         "accent-fg": {
           "type": "color",

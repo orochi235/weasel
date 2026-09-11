@@ -84,12 +84,9 @@ conventional count, and the farthest-point order means a consumer who wants
 fewer takes the first N. A true yellow only exists near L 0.95 and would stand
 far brighter than the rest; `citron` holds that hue slot at the set's lightness.
 
-**`--wzl-border-strong` and `--wzl-border-raised` become one token,
-`border-strong`.** It failed WCAG 1.4.11's 3:1 everywhere (dark 1.55 / 1.33 /
-1.71, light 2.37 / 2.09 / 1.59) from sitting two ramp steps off `surface`; the
-~four it needs lands on `gray-400` in both modes, which was `border-raised`'s
-value. `border-raised` retires. Light-over-sunken still fails and needs its own
-answer.
+**`--wzl-border-strong` and `--wzl-border-raised` became one token,
+`border-strong`** — `gray-400` in dark, `gray-500` in light, clearing 3:1 against
+every surface. `border-raised` is gone.
 
 **The regenerated neutral ramp becomes the theme editor's worked example** — the
 ramp it generates for a new theme, shown beside weasel's pinned one. weasel's own

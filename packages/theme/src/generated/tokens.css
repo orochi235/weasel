@@ -135,7 +135,7 @@
   --wzl-fg-muted: var(--wzl-gray-300);
   --wzl-fg-subtle: var(--wzl-gray-400);
   --wzl-border: var(--wzl-gray-700);
-  /* The line that has to be seen: a control's edge, a raised surface's outline. Clears WCAG 1.4.11's 3:1 against surface and surface-raised in both modes, and against surface-sunken in dark; light over sunken reaches only 2.9:1, so a panel on a sunken field needs its own answer. */
+  /* The line that has to be seen: a control's edge, a raised surface's outline. Clears WCAG 1.4.11's 3:1 against every surface in both modes. */
   --wzl-border-strong: var(--wzl-gray-400);
   /* Accent for foreground use — text, icons, selected labels drawn on a surface. accent is a fill; the midnight base is too dim to read as text on dark surfaces. */
   --wzl-accent-fg: var(--wzl-accent-strong);
@@ -176,7 +176,7 @@
   --wzl-fg-muted: var(--wzl-gray-600);
   --wzl-fg-subtle: var(--wzl-gray-500);
   --wzl-border: var(--wzl-gray-200);
-  --wzl-border-strong: var(--wzl-gray-400);
+  --wzl-border-strong: var(--wzl-gray-500);
   --wzl-accent-fg: var(--wzl-accent-base);
   --wzl-fg-inverse: var(--wzl-gray-50);
   --wzl-shadow: rgba(0, 0, 0, 0.18);

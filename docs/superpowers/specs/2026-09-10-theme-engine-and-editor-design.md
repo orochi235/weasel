@@ -310,10 +310,3 @@ per-component table.
 - Root `npx tsc --noEmit` covers the breaking callers;
   `npm run check:test-projects` covers the moved tests.
 
-## Open
-
-**Light `border-strong`: gray-400 or gray-500?** The border merge put it on 400
-in both modes, which leaves light over `surface-sunken` at 2.93:1. A `contrast`
-rule over all three surfaces picks 500 in light (7.40 / 6.52 / 4.96) and passes
-everywhere, at the cost of darker control edges in light mode. It is weasel's
-value either way and does not block this work.

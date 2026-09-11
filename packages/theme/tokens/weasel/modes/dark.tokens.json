@@ -8,7 +8,7 @@
     "fg-muted":       { "$value": "{color.gray-300}" },
     "fg-subtle":      { "$value": "{color.gray-400}" },
     "border":         { "$value": "{color.gray-700}" },
-    "border-strong":  { "$value": "{color.gray-400}", "$description": "The line that has to be seen: a control's edge, a raised surface's outline. Clears WCAG 1.4.11's 3:1 against surface and surface-raised in both modes, and against surface-sunken in dark; light over sunken reaches only 2.9:1, so a panel on a sunken field needs its own answer." },
+    "border-strong":  { "$value": "{color.gray-400}", "$description": "The line that has to be seen: a control's edge, a raised surface's outline. Clears WCAG 1.4.11's 3:1 against every surface in both modes." },
     "accent-fg":      { "$value": "{color.accent-strong}", "$description": "Accent for foreground use — text, icons, selected labels drawn on a surface. accent is a fill; the midnight base is too dim to read as text on dark surfaces." },
     "fg-inverse":   { "$value": "{color.gray-900}", "$description": "Text drawn on a filled foreground-colored element (e.g. a slider thumb). Flips with the mode, so it is a semantic, not an alias to a primitive." },
     "shadow":        { "$value": "rgba(0, 0, 0, 0.6)", "$description": "Elevation. Always darker than any surface — never derived from fg, which is near-white on dark." }
