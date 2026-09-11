@@ -37,11 +37,8 @@
  *
  * ## Pose generics
  *
- * `scene` dep is typed `Scene<unknown, string, unknown>` (the erased DepSchema
- * entry). Poses are read and written as `unknown`; `translatePoseGeneric`
- * delegates to `RECT_POSE_DESCRIPTOR.translate` which treats any pose as
- * `{x, y, ...}`. Consumers with non-rect poses should register a custom
- * action with a typed translatePose.
+ * Poses are `unknown`; every read and write goes through the `poseDescriptor`
+ * dep (`AUTO_POSE_DESCRIPTOR` when unsourced).
  */
 
 import type { Action } from '../registry';
@@ -65,8 +62,7 @@ import type {
   LayoutDragged,
   DropTarget as LayoutDropTarget,
 } from '../../../layout/types';
-import { type PoseDescriptor } from '../resize/geometry';
-import { AUTO_POSE_DESCRIPTOR } from '../resize/autoPoseDescriptor';
+import { translatePoseViaDescriptor, type PoseDescriptor } from '../resize/geometry';
 import { poseDescriptorOf } from '../poseDescriptorDep';
 import type { MoveBehavior, GroupTransform, GestureContext, BehaviorResult } from '../../gestures/types';
 import { moveGestureAdapter, type MoveGestureAdapter } from '../move/gestureAdapter';
@@ -76,27 +72,11 @@ import {
   IDENTITY_POSE_COMPOSITION,
   type PoseAdapter,
   type PoseComposition,
-  type RectPose,
 } from 'features/groups/composePose';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
-
-/** Translate a pose by (dx, dy). Defers to the supplied projection's
- *  `translate` when present so non-rect poses (e.g. polygon Paths) move
- *  correctly; falls back to `AUTO_POSE_DESCRIPTOR.translate` so unwired
- *  Path consumers still drag correctly (AUTO dispatches per-call to the
- *  path or rect translator based on pose shape). */
-function translatePoseGeneric(
-  pose: unknown,
-  dx: number,
-  dy: number,
-  projection?: PoseDescriptor<unknown>,
-): unknown {
-  const fn = projection?.translate ?? AUTO_POSE_DESCRIPTOR.translate;
-  return (fn as (p: unknown, dx: number, dy: number) => unknown)(pose, dx, dy);
-}
 
 /** Drag-time layout pass. Walks containers for the deepest/topmost layout
  *  candidate under the *selection's* center, then places each dragged child in
@@ -108,7 +88,7 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
   const layoutDep = scratch.layout;
   if (!layoutDep || !moveCtx.drag) return;
   const scene = scratch.scene;
-  const pc = scratch.pc as PoseComposition<RectPose>;
+  const pc = scratch.pc;
   const poseAdapter = scenePoseAdapter(scene);
   const { dx, dy } = scratch.currentDelta;
 
@@ -122,12 +102,14 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
   // parent chain, then add the world drag delta (same math as `applyReparent`).
   // The LayoutStrategy contract is world-framed, so every pose handed to it
   // below is composed to world; reflow results are rebased back to local.
+  const d = scratch.projection;
   const dragged: DraggedChild[] = [];
   for (const id of scratch.ids) {
     const node = scene.get(id);
     if (!node) continue;
     const startWorld = composeWorldPose(poseAdapter, id as string, pc.compose);
-    const world: RectPose = { ...startWorld, x: startWorld.x + dx, y: startWorld.y + dy };
+    const world = translatePoseViaDescriptor(startWorld, dx, dy, d);
+    const b = d.getBounds(world);
     dragged.push({
       id,
       arg: {
@@ -136,11 +118,11 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
         pose: world,
         sourceContainerId: (node.parent ?? null) as string | null,
       },
-      center: { x: world.x + (world.width ?? 0) / 2, y: world.y + (world.height ?? 0) / 2 },
+      center: { x: b.x + b.width / 2, y: b.y + b.height / 2 },
     });
   }
   if (dragged.length === 0) return;
-  const draggedIds = new Set<NodeId>(dragged.map((d) => d.id));
+  const draggedIds = new Set<NodeId>(dragged.map((c) => c.id));
 
   // The selection lands as a unit, so one point decides the container: the
   // center of the whole dragged group. Hit-testing each child on its own
@@ -149,12 +131,12 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
   let minY = Infinity;
   let maxX = -Infinity;
   let maxY = -Infinity;
-  for (const d of dragged) {
-    const p = d.arg.pose as RectPose;
-    minX = Math.min(minX, p.x);
-    minY = Math.min(minY, p.y);
-    maxX = Math.max(maxX, p.x + (p.width ?? 0));
-    maxY = Math.max(maxY, p.y + (p.height ?? 0));
+  for (const c of dragged) {
+    const b = d.getBounds(c.arg.pose);
+    minX = Math.min(minX, b.x);
+    minY = Math.min(minY, b.y);
+    maxX = Math.max(maxX, b.x + b.width);
+    maxY = Math.max(maxY, b.y + b.height);
   }
   const selectionCenter = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
   // Each child is snapped at its own position, displaced by however far the
@@ -174,12 +156,6 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
     depth: number;
   }
   const candidates: Candidate[] = [];
-  // Derive a container's AABB from its (possibly non-rect) world pose. Mirrors
-  // `translatePoseGeneric`'s fallback: the consumer's projection when wired,
-  // else `AUTO_POSE_DESCRIPTOR` which dispatches on pose shape (Path → path
-  // bounds, else rect). Casting a non-rect pose (e.g. PolygonPath) straight to
-  // `{x,y,width,height}` yields NaN, so the container would never be found.
-  const boundsOf = scratch.projection?.getBounds ?? AUTO_POSE_DESCRIPTOR.getBounds;
   const testInside = (cPose: unknown, aabb: AABB, layout: Layout): boolean => {
     if (layout.contains) return layout.contains(cPose, selectionCenter);
     return selectionCenter.x >= aabb.x && selectionCenter.x < aabb.x + aabb.width
@@ -192,11 +168,11 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
     const node = scene.get(id);
     if (!node) return;
     const worldPose = composeWorldPose(poseAdapter, id as string, pc.compose);
-    const worldAABB = boundsOf(worldPose) as AABB;
+    const worldAABB = d.getBounds(worldPose);
     if (!testInside(worldPose, worldAABB, layout)) return;
     if (layout.acceptsDrop) {
       const arg: LayoutContainer = { id: id as string, bounds: worldAABB };
-      for (const d of dragged) if (!layout.acceptsDrop(arg, d.arg)) return;
+      for (const c of dragged) if (!layout.acceptsDrop(arg, c.arg)) return;
     }
     candidates.push({
       id,
@@ -246,23 +222,23 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
 
   const placements: LayoutPlacement[] = [];
   const destReflow = new Map<NodeId, unknown>();
-  for (const d of dragged) {
+  for (const dc of dragged) {
     const children = working.map((c) => ({ ...c }));
-    const targets = layout.getDropTargets(container, children, d.arg);
+    const targets = layout.getDropTargets(container, children, dc.arg);
     const target = layout.snap.pickTarget(targets, {
-      x: d.center.x + probeOffset.x,
-      y: d.center.y + probeOffset.y,
+      x: dc.center.x + probeOffset.x,
+      y: dc.center.y + probeOffset.y,
     });
     // All-or-nothing: a container that cannot take every member takes none
     // rather than splitting the selection between two homes.
     if (!target) return;
-    placements.push({ dragged: d.arg, children, target });
-    const poses = layout.reflowPoses(container, children, d.arg, target);
+    placements.push({ dragged: dc.arg, children, target });
+    const poses = layout.reflowPoses(container, children, dc.arg, target);
     for (const [cid, pose] of poses) {
       setWorking(cid, pose);
       if (!draggedIds.has(asNodeId(cid))) destReflow.set(asNodeId(cid), pose);
     }
-    setWorking(d.arg.id, poses.get(d.arg.id) ?? target.pose);
+    setWorking(dc.arg.id, poses.get(dc.arg.id) ?? target.pose);
   }
 
   // Destination reflow → fold into previews (the dragged children keep their
@@ -271,7 +247,7 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
   const reflowIds = new Set<NodeId>();
   for (const [cid, pose] of destReflow) {
     const parent = scene.get(cid)?.parent ?? null;
-    scratch.previews.set(cid, rebaseLocalPose(poseAdapter, pose as RectPose, parent, pc.compose, pc.decompose));
+    scratch.previews.set(cid, rebaseLocalPose(poseAdapter, pose, parent, pc.compose, pc.decompose));
     reflowIds.add(cid);
   }
 
@@ -279,16 +255,16 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
   // One pass per container the selection left behind, with everything that
   // left it withdrawn at once.
   const sourceReflow = new Map<string, unknown>();
-  for (const [srcId, leaving] of groupBySourceContainer(dragged.map((d) => ({
-    id: d.id,
-    sourceContainerId: d.arg.sourceContainerId,
+  for (const [srcId, leaving] of groupBySourceContainer(dragged.map((c) => ({
+    id: c.id,
+    sourceContainerId: c.arg.sourceContainerId,
   })), container.id)) {
     const srcLayout = layoutDep.getLayout(srcId);
     const srcNode = scene.get(asNodeId(srcId));
     if (!srcLayout || !srcNode) continue;
     const srcContainer: LayoutContainer = {
       id: srcId,
-      bounds: composeWorldPose(poseAdapter, srcId, pc.compose) as AABB,
+      bounds: d.getBounds(composeWorldPose(poseAdapter, srcId, pc.compose)),
     };
     const srcChildren: LayoutChild<unknown>[] = scene.childrenOf(asNodeId(srcId))
       .filter((cid) => !leaving.has(cid))
@@ -297,14 +273,14 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
         pose: composeWorldPose(poseAdapter, cid as string, pc.compose),
       }));
     for (const [cid, pose] of srcLayout.childPoses(srcContainer, srcChildren)) {
-      const cur = composeWorldPose(poseAdapter, cid, pc.compose) as unknown as Record<string, unknown>;
-      const next = pose as Record<string, unknown>;
+      const cur = d.getBounds(composeWorldPose(poseAdapter, cid, pc.compose));
+      const next = d.getBounds(pose);
       const same = cur.x === next.x && cur.y === next.y
         && cur.width === next.width && cur.height === next.height;
       if (same) continue;
       sourceReflow.set(cid, pose); // WORLD — rebased at each consumption point
       const parent = scene.get(asNodeId(cid))?.parent ?? null;
-      scratch.previews.set(asNodeId(cid), rebaseLocalPose(poseAdapter, pose as RectPose, parent, pc.compose, pc.decompose));
+      scratch.previews.set(asNodeId(cid), rebaseLocalPose(poseAdapter, pose, parent, pc.compose, pc.decompose));
       reflowIds.add(asNodeId(cid));
     }
   }
@@ -345,7 +321,7 @@ function translateCommitOps(
     ops.push(createTransformOp<unknown>({
       id: id as string,
       from: origin,
-      to: translatePoseGeneric(origin, dx, dy, scratch.projection),
+      to: translatePoseViaDescriptor(origin, dx, dy, scratch.projection),
       label: 'Move',
     }));
     if (scratch.geometryProjection) {
@@ -395,9 +371,9 @@ export type ReparentOnDrop = 'off' | 'top' | 'above';
  *  parent updates compose correctly. */
 function scenePoseAdapter(
   scene: Scene<unknown, string, unknown>,
-): PoseAdapter<RectPose> {
+): PoseAdapter<unknown> {
   return {
-    getPose: (id) => documentPose(scene, scene.get(id as NodeId)!) as RectPose,
+    getPose: (id) => documentPose(scene, scene.get(id as NodeId)!),
     getParent: (id) => scene.get(id as NodeId)?.parent ?? null,
   };
 }
@@ -454,10 +430,8 @@ interface MoveScratch {
   /** The override entry published to the scene for each previewed id, held by
    *  reference so a frame mutates it in place — see `PoseOverrides`. */
   overrideEntries: Map<NodeId, { pose: unknown }>;
-  /** Pose descriptor captured at drag start. Used by `translatePoseGeneric`
-   *  so non-rect poses (e.g. polygon Paths) translate via the consumer's
-   *  descriptor instead of the rect-pose default. */
-  projection?: PoseDescriptor<unknown>;
+  /** Pose descriptor captured at drag start. */
+  projection: PoseDescriptor<unknown>;
   /** Behaviors from `opts.behaviors`; empty array when none supplied. */
   behaviors: MoveBehavior<unknown>[];
   /** Reused gesture context handed to behaviors across the drag. */
@@ -535,7 +509,7 @@ function applyReparent(
   mode: ReparentOnDrop,
   dx: number,
   dy: number,
-  pc: PoseComposition<RectPose>,
+  pc: PoseComposition<unknown>,
 ): void {
   const scene = scratch.scene;
   const poseAdapter = scenePoseAdapter(scene);
@@ -550,11 +524,7 @@ function applyReparent(
     // unchanged from drag start because `moveAction` doesn't write
     // during `onMove`.
     const startWorld = composeWorldPose(poseAdapter, id, pc.compose);
-    const draggedWorld: RectPose = {
-      ...startWorld,
-      x: startWorld.x + dx,
-      y: startWorld.y + dy,
-    };
+    const draggedWorld = translatePoseViaDescriptor(startWorld, dx, dy, scratch.projection);
     const newLocal = rebaseLocalPose(
       poseAdapter,
       draggedWorld,
@@ -627,7 +597,7 @@ export const moveAction: Action & { requires: string[] } = {
   // is target-qualified instead of universal.
   defaultBinding: { kind: 'drag', target: 'selected-body' },
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'resizePolicy', 'poseDescriptor', 'layout', 'applyOps', 'poseComposition', 'geometryProjection', 'nodeAtPoint'],
+  requires: ['selection', 'scene', 'poseDescriptor', 'layout', 'applyOps', 'poseComposition', 'geometryProjection', 'nodeAtPoint'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
@@ -730,7 +700,7 @@ export const moveAction: Action & { requires: string[] } = {
             // GroupTransform arg, NOT from `ctx.current` (which reflects
             // the unmodified delta at this frame's start).
             for (const [id, ori] of scratch.startPoses) {
-              gctx.current.set(id as string, translatePoseGeneric(ori, dx, dy, scratch.projection));
+              gctx.current.set(id as string, translatePoseViaDescriptor(ori, dx, dy, scratch.projection));
             }
             let transform: GroupTransform = { kind: 'translate', dx, dy };
             const primary = scratch.ids[0] as NodeId | undefined;
@@ -740,9 +710,12 @@ export const moveAction: Action & { requires: string[] } = {
               if (r.transform && r.transform.kind === 'translate') {
                 transform = r.transform;
               } else if (r.pose !== undefined && primary !== undefined) {
-                const o = scratch.startPoses.get(primary) as { x: number; y: number } | undefined;
-                const p = r.pose as unknown as { x: number; y: number };
-                if (o) transform = { kind: 'translate', dx: p.x - o.x, dy: p.y - o.y };
+                const o = scratch.startPoses.get(primary);
+                if (o !== undefined) {
+                  const from = scratch.projection.getBounds(o);
+                  const to = scratch.projection.getBounds(r.pose);
+                  transform = { kind: 'translate', dx: to.x - from.x, dy: to.y - from.y };
+                }
               }
               if (r.snap !== undefined) gctx.snap = r.snap;
             }
@@ -755,7 +728,7 @@ export const moveAction: Action & { requires: string[] } = {
           // The preview-ghost layer reads these via `previewIds`/`previewPose`.
           scratch.previews.clear();
           for (const [id, ori] of scratch.startPoses) {
-            scratch.previews.set(id, translatePoseGeneric(ori, dx, dy, scratch.projection));
+            scratch.previews.set(id, translatePoseViaDescriptor(ori, dx, dy, scratch.projection));
           }
 
           // Layout reflow pass — no-op without a layout dep.
@@ -788,7 +761,7 @@ export const moveAction: Action & { requires: string[] } = {
           if (scratch.behaviors.length > 0) {
             const gctx = scratch.gestureCtx;
             for (const [id, ori] of scratch.startPoses) {
-              gctx.current.set(id as string, translatePoseGeneric(ori, dx, dy, scratch.projection));
+              gctx.current.set(id as string, translatePoseViaDescriptor(ori, dx, dy, scratch.projection));
             }
             for (const b of scratch.behaviors) {
               const r = b.onEnd?.(gctx);
@@ -823,7 +796,7 @@ export const moveAction: Action & { requires: string[] } = {
           // exercised by the geometry contract gate.
           if (scratch.layout && scratch.layoutPass) {
             const lp = scratch.layoutPass;
-            const pc = scratch.pc as PoseComposition<RectPose>;
+            const pc = scratch.pc;
             const commitAdapter = scenePoseAdapter(scratch.scene);
             const destId = lp.container.id;
             const draggedIds = new Set<string>(scratch.ids.map((id) => id as string));
@@ -833,10 +806,10 @@ export const moveAction: Action & { requires: string[] } = {
             // `from` rebases under the node's PRE-commit parent.
             const rebaseOpToLocal = (op: Op): Op => {
               if (op.name !== 'transform') return op;
-              const a = op.args as { id: string; from: RectPose; to: RectPose; label?: string; coalesceKey?: string };
+              const a = op.args as { id: string; from: unknown; to: unknown; label?: string; coalesceKey?: string };
               const curParent = scratch.scene.get(asNodeId(a.id))?.parent ?? null;
               const toParent = draggedIds.has(a.id) ? destId : curParent;
-              return createTransformOp<RectPose>({
+              return createTransformOp<unknown>({
                 id: a.id,
                 from: rebaseLocalPose(commitAdapter, a.from, curParent, pc.compose, pc.decompose),
                 to: rebaseLocalPose(commitAdapter, a.to, toParent, pc.compose, pc.decompose),
@@ -876,10 +849,10 @@ export const moveAction: Action & { requires: string[] } = {
               // in `lp.sourceReflow`) is rebased to local. This is the
               // intentional counterpart to the dropOps rebaser above, where
               // `from` comes from a world `commitDrop` op and so does rebase.
-              reflowOps.push(createTransformOp<RectPose>({
+              reflowOps.push(createTransformOp<unknown>({
                 id: cid,
-                from: scratch.scene.get(asNodeId(cid))!.pose as RectPose,
-                to: rebaseLocalPose(commitAdapter, worldPose as RectPose, parent, pc.compose, pc.decompose),
+                from: scratch.scene.get(asNodeId(cid))!.pose,
+                to: rebaseLocalPose(commitAdapter, worldPose, parent, pc.compose, pc.decompose),
                 label: 'Source reflow',
               }));
             }
@@ -897,16 +870,15 @@ export const moveAction: Action & { requires: string[] } = {
           const released = new Set<NodeId>();
           const releasedOps: Op[] = [];
           if (scratch.layout && !scratch.layoutPass) {
-            const pc = scratch.pc as PoseComposition<RectPose>;
+            const pc = scratch.pc;
             const commitAdapter = scenePoseAdapter(scratch.scene);
-            const boundsOf = scratch.projection?.getBounds ?? AUTO_POSE_DESCRIPTOR.getBounds;
             // Released children keep their parent, so both ends of a transform
             // rebase under the same frame.
             const rebaseReleased = (op: Op): Op => {
               if (op.name !== 'transform') return op;
-              const a = op.args as { id: string; from: RectPose; to: RectPose; label?: string; coalesceKey?: string };
+              const a = op.args as { id: string; from: unknown; to: unknown; label?: string; coalesceKey?: string };
               const parent = scratch.scene.get(asNodeId(a.id))?.parent ?? null;
-              return createTransformOp<RectPose>({
+              return createTransformOp<unknown>({
                 id: a.id,
                 from: rebaseLocalPose(commitAdapter, a.from, parent, pc.compose, pc.decompose),
                 to: rebaseLocalPose(commitAdapter, a.to, parent, pc.compose, pc.decompose),
@@ -926,9 +898,9 @@ export const moveAction: Action & { requires: string[] } = {
               if (!srcLayout?.releaseDrop) continue;
               const srcContainer: LayoutContainer = {
                 id: srcId,
-                bounds: boundsOf(
+                bounds: scratch.projection.getBounds(
                   composeWorldPose(commitAdapter, srcId, pc.compose),
-                ) as { x: number; y: number; width: number; height: number },
+                ),
               };
               // What the container is left holding — grown back as each
               // release puts one of its own home again.
@@ -944,7 +916,7 @@ export const moveAction: Action & { requires: string[] } = {
                 const ops = srcLayout.releaseDrop!(srcContainer, srcChildren, {
                   id: id as string,
                   originPose: startWorld,
-                  pose: { ...startWorld, x: startWorld.x + dx, y: startWorld.y + dy },
+                  pose: translatePoseViaDescriptor(startWorld, dx, dy, scratch.projection),
                   sourceContainerId: srcId,
                 });
                 if (ops === null) continue;
@@ -984,7 +956,7 @@ export const moveAction: Action & { requires: string[] } = {
             // Reparent-on-drop still commits directly to the scene. Routing
             // this path through `commitOps` is a separate later task.
             scratch.scene.batch('Move', () => {
-              applyReparent(scratch, dropTarget, reparentMode, dx, dy, scratch.pc as PoseComposition<RectPose>);
+              applyReparent(scratch, dropTarget, reparentMode, dx, dy, scratch.pc);
             });
           } else {
             // No reparent — translate-only commit, emitted as transform ops so
