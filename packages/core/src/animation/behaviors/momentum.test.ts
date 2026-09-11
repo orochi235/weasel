@@ -3,6 +3,7 @@ import { renderHook } from '@testing-library/react';
 import { useAnimator } from '../useAnimator';
 import { momentum } from './momentum';
 import type { GestureContext } from 'interactions/gestures/types';
+import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
 
 interface RectPose { x: number; y: number; width: number; height: number }
 
@@ -124,7 +125,34 @@ describe('momentum', () => {
     const lastCall = setPose.mock.calls[setPose.mock.calls.length - 1];
     const finalPose = lastCall[1] as RectPose;
     expect(finalPose.x).toBeLessThanOrEqual(100);
-    // Decay cancelled or finished — no animations active.
+    // Decay canceled or finished — no animations active.
     expect(result.current.isActive()).toBe(false);
+  });
+});
+
+describe('momentum — non-rect poses', () => {
+  it('flicks a circle through its descriptor', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const beh = momentum<CirclePose>({
+      animator: result.current, threshold: 0, now: clock.now,
+      poseDescriptor: CIRCLE_POSE_DESCRIPTOR,
+    });
+    const written: CirclePose[] = [];
+    const ctx = makeCtx(circle(0, 0, 5) as never, (_id, p) => { written.push(p as never); }) as unknown as GestureContext<CirclePose>;
+    beh.onStart?.(ctx);
+    ctx.pointer = { worldX: 0, worldY: 0, clientX: 0, clientY: 0 };
+    beh.onMove?.(ctx, { kind: 'translate', dx: 0, dy: 0 });
+    clock.advance(16);
+    ctx.pointer = { worldX: 10, worldY: 0, clientX: 10, clientY: 0 };
+    beh.onMove?.(ctx, { kind: 'translate', dx: 0, dy: 0 });
+    beh.onEnd?.(ctx);
+    // The decay's first tick emits `from` unmoved — it only seeds the clock —
+    // so the flick shows up from the second frame on.
+    clock.advance(16);
+    clock.advance(16);
+    expect(written.length).toBeGreaterThan(0);
+    expect(Object.keys(written[0]!).sort()).toEqual(['cx', 'cy', 'r']);
+    expect(written[written.length - 1]!.cx).toBeGreaterThan(0);
   });
 });

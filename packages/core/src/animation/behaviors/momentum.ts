@@ -2,6 +2,9 @@ import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import type { MoveBehavior, GestureContext } from 'interactions/gestures/types';
 import { scratchKey, getScratch, setScratch } from 'interactions/scratchKey';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
+import { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 import type { Animator } from '../types';
 
 /** Options for the `momentum` move behavior. */
@@ -35,6 +38,8 @@ export interface MomentumOptions {
    * decays the velocity). Default 'stop'.
    */
   boundary?: 'stop' | 'continue';
+  /** How to translate poses. Default `AUTO_POSE_DESCRIPTOR`. */
+  poseDescriptor?: PoseDescriptor<unknown>;
 }
 
 interface PointerSample {
@@ -63,6 +68,7 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
   const now = opts.now ?? (() => Date.now());
   const bounds = opts.bounds;
   const boundaryPolicy = opts.boundary ?? 'stop';
+  const d = (opts.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
 
   /** Apply bounds clamp to (sx + dx, sy + dy). Returns clamped (nx, ny) and
    *  whether either axis was clamped (signalling boundary hit). */
@@ -140,12 +146,13 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
           lastValue = delta;
           let allHit = bounds !== undefined;
           for (const id of ctx.draggedIds) {
-            const start = startPoses.get(id) as unknown as RectLike & TPose;
+            const start = startPoses.get(id);
             if (!start) continue;
-            const { nx, ny, hit } = clampToBounds(start.x, start.y, delta.x, delta.y);
+            const o = d.getBounds(start);
+            const { nx, ny, hit } = clampToBounds(o.x, o.y, delta.x, delta.y);
             if (!hit) allHit = false;
             finalPositions.set(id, { x: nx, y: ny });
-            adapter.setPose(id, { ...start, x: nx, y: ny } as TPose);
+            adapter.setPose(id, translatePoseViaDescriptor(start, nx - o.x, ny - o.y, d));
           }
           // If 'stop' policy and every dragged id's clamped position hit
           // the boundary, cancel the decay so the animation settles instantly
@@ -165,10 +172,11 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
         if (!adapter.applyOps) return;
         const ops: Op[] = [];
         for (const id of ctx.draggedIds) {
-          const start = startPoses.get(id) as unknown as RectLike & TPose;
+          const start = startPoses.get(id);
           if (!start) continue;
-          const fp = finalPositions.get(id) ?? { x: start.x + lastValue.x, y: start.y + lastValue.y };
-          const finalPose = { ...start, x: fp.x, y: fp.y } as TPose;
+          const o = d.getBounds(start);
+          const fp = finalPositions.get(id) ?? { x: o.x + lastValue.x, y: o.y + lastValue.y };
+          const finalPose = translatePoseViaDescriptor(start, fp.x - o.x, fp.y - o.y, d);
           ops.push(createTransformOp<TPose>({ id, from: start, to: finalPose, label: 'flick' }));
         }
         if (ops.length > 0) adapter.applyOps(ops, 'flick');
