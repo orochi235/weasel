@@ -1,5 +1,54 @@
 # @weasel-js/svg
 
+## 1.4.4
+
+### Patch Changes
+
+- acaa71d: A `{ px }` stroke width survives SVG export as `vector-effect="non-scaling-stroke"`.
+  
+  `{ px }` means "this thickness once rendered, whatever the view is doing".
+  Serializing wrote its number as a plain `stroke-width`, which is a world-unit
+  length — so a hairline exported from a zoomed-out view came back a slab, and a
+  document had no way to say what the kit's own type says. SVG has the attribute
+  for exactly this, and it needs no accumulated transform scale to resolve
+  against.
+  
+  `SvgStroke.width` is now `number | { px: number }`, matching `Stroke.width`.
+  Parsing reads `vector-effect="non-scaling-stroke"` off the element rather than
+  the cascade, because SVG does not inherit it — a `<g>` carrying it does not
+  hand it to its children.
+- 4d48493: An unpacked `<text>` keeps its color.
+  
+  `svgNodesToKitDrafts` built a text leaf as `{ text, style }` and left `fill`,
+  `stroke` and `runs` on the floor, so importing an SVG as native scene nodes
+  dropped every glyph to the painter's default black and flattened per-`<tspan>`
+  styling the parser had already read. All three now reach the leaf.
+  
+  A `userSpaceOnUse` gradient on a text node — or on one of its runs — is rebased
+  onto the leaf's own box, the way a path's already was, so it survives the
+  fit-clamp and the drop-point placement. A run carrying an absolute `fontSize`
+  takes the fit-clamp scale alongside the node's.
+- Updated dependencies [9ce6f00]
+- Updated dependencies [6f876a7]
+- Updated dependencies [ed400a3]
+- Updated dependencies [fc00dae]
+- Updated dependencies [730da55]
+- Updated dependencies [60ba9d9]
+- Updated dependencies [5732951]
+- Updated dependencies [2ff4824]
+- Updated dependencies [3d89141]
+- Updated dependencies [4a128c4]
+- Updated dependencies [aee9d92]
+- Updated dependencies [c067221]
+- Updated dependencies [26d40bf]
+- Updated dependencies [b8d2940]
+- Updated dependencies [b5e2cd9]
+- Updated dependencies [89276ee]
+- Updated dependencies [36950d8]
+- Updated dependencies [4f8c6b2]
+- Updated dependencies [1240956]
+  - @weasel-js/core@1.4.4
+
 ## 1.4.3
 
 ### Patch Changes

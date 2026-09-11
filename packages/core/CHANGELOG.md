@@ -1,5 +1,372 @@
 # Changelog
 
+## 1.4.4
+
+### Patch Changes
+
+- 9ce6f00: Fix solid fills coming out multiplied by whatever bitmap shared their batch.
+  A solid vertex carried the UV of a 1x1 white texel, but the flush bound the
+  run's *image*, so any solid staged alongside an image quad sampled that bitmap
+  at its middle texel instead. A wall of thumbnails is a ground rect under an
+  atlas quad per cell — the shape the merged batch exists for — so its grounds
+  came out tinted by the atlas: white drew olive. Reported from outside the repo
+  against a canvas2d reference; no visual baseline caught it, because in every
+  demo the quad covers its ground.
+  
+  Every batch vertex now names the texture slot it samples. Slot 0 is always the
+  white texel, so a solid's `texture() * a_vertexColor` is the vertex color
+  exactly whatever else joins its run, and bitmaps take the slots above it.
+  
+  That also lets one run hold up to seven distinct bitmaps. A document with a
+  handful of loose images used to break its run on every change of bitmap; now it
+  breaks only when the slots run out, or when one bitmap is drawn at two
+  MAG_FILTERs, which is state on the texture object and cannot be had both ways
+  in one draw.
+  
+  `tests/visual/batch-pixels.spec.ts` reads the framebuffer channel by channel
+  rather than diffing a screenshot, which is what it takes to see a run's
+  composition at all.
+- 6f876a7: Two canvases under one `DepRegistryProvider` no longer take each other's deps
+  down.
+  
+  `register` set one source per name and its release did a bare `delete`. Mount a
+  second canvas under a shared provider and it displaced the first's `view` /
+  `scene` / `selection`; unmount either one and the name went dark for the canvas
+  still on screen.
+  
+  Sources now stack per name, newest live, and a release removes its own entry
+  wherever it sits — so a displaced source comes back when the one above it
+  leaves, and a displaced source leaving disturbs nothing. Same shape as the
+  `ActionsProvider` registrant stack, one layer down.
+- ed400a3: A derivation now receives its dependencies as `{ node, pose }` rather than as
+  bare poses. Breaking for anything with a `derivePath` or `derivePose`: read
+  `deps[0]?.pose` where it read `deps[0]`.
+  
+  A connector legitimately reads more than a box — one that thickens with its
+  endpoint's weight, or routes only to nodes on a given layer, is answering off
+  `data` and `layer`. The scene has invalidated dependents on `kit:setData` and
+  `kit:setLayer` since those landed, and `scene.ts` said in a comment that a
+  derivation "is handed its dependencies' nodes, not only their poses". It was
+  not: the invalidation was paying for a read the signature could not perform.
+  
+  `scenePoseLookup` is now `sceneDepLookup` and answers `DerivedDep` for the same
+  reason. `DerivedDep` is exported.
+- fc00dae: Hand a derivation its dependencies' paths, and label an edge with one.
+  
+  `DerivedDep` is now `{ node, pose, path }`. The path resolves on first read and
+  memoizes, so a route costs the same whether one node reads it or five, and a
+  dependency nobody asks about costs nothing. `resolveDerivedPath` moves beside
+  `derivedPose` in `core/scene` — a pose can now derive from a dependency's path —
+  and picks up the cycle guard the pose side already had.
+  
+  `pointAlongPath(path, t)` is the new geometry primitive underneath: where a path
+  is at a fraction of its length, and which way it heads there, measured along the
+  flattened arc.
+  
+  In `@weasel-js/diagram`, an edge label is an ordinary leaf node with
+  `dependsOn: [edge]` and `LABEL_DERIVE_POSE`. Its trait says where it sits —
+  `at: 'start' | 'mid' | 'end'` or a fraction, plus an `offset` perpendicular to
+  the route — and it reads the edge's resolved path rather than routing again, so
+  a label and its arrowhead can never disagree about where the edge went.
+- 730da55: A derived node now recomputes when a dependency's `data` or `layer` changes.
+  
+  `derivePath` is handed its dependencies' nodes, not only their poses — so a
+  connector that thickens with a node's weight, or draws only for nodes on a given
+  layer, is answering off `data` and `layer`. `kit:setPose` and `kit:move`
+  invalidated the dependent's memo; `kit:setData` and `kit:setLayer` did not, so
+  the derived geometry kept the old answer with nothing on screen to show it was
+  stale. Undo and redo were wrong the same way.
+  
+  Both ops now invalidate dependents on `apply` and on `revert`, matching the two
+  that already did.
+- 60ba9d9: A stroke marker on a derived path is drawn.
+  
+  `markerStart` / `markerMid` / `markerEnd` reached the `kit:derived` painter
+  intact and were then dropped: the painter emitted its stroke command and
+  returned, where `kit:path` follows with a marker pass. So an arrowhead on a
+  diagram edge — the whole reason markers and derived geometry landed in the same
+  release — silently drew nothing. Its own `ink` had been reserving the hit-test
+  reach for the marker all along, which is the shape of the bug: the pointer could
+  already grab past the end of a line with no head on it.
+  
+  A connect-authored edge now carries `markerEnd: 'arrow'` by default. An edge
+  runs *from* one node *to* another and a plain line does not say so;
+  `DEFAULT_EDGE_STROKE` is exported for a consumer overriding `commit` who wants
+  the rest of it.
+- 5732951: The minimap's scene fit and the scene text editor read a derived pose rather
+  than the placeholder a derived node authors. `computeFitView`'s `'scene'` fit
+  frames on `documentPose`, so a derived node is framed where it actually is
+  while a drag still leaves the framing alone; `useSceneTextEdit` resolves both
+  its double-click hit test and the overlay's own projection through
+  `effectivePose`, so double-clicking a derived label opens the editor on it and
+  the box lands on the text.
+  
+  Removes `UseMoveOptions.cascadeWorldPose`. Nothing has read it since the move
+  action started walking `scene.childrenOf` for its own cascade — it was a
+  documented option that silently did nothing, and two doc comments described the
+  behavior it used to drive.
+- 2ff4824: A scene node can now derive its **pose** from its dependencies, the way it
+  already derived its path. New API; a group's bounds change behavior.
+  
+  `Node.derivePose` takes the same `dependsOn` list as `derivePath`, serializes
+  through `SceneRegistry.derivePose` by key, and rides the same push
+  invalidation. Where a derived path is resolved at paint time and reaches only
+  the painter, a derived pose is what the node *is* at — it feeds bounds,
+  hit-testing, selection chrome, snapping and layout.
+  
+  `dependsOn` gains a second form, `'children'`: "my own children, in child
+  order", which a fixed id list cannot express because reparenting would have to
+  maintain it. The two forms differ in lifetime as well as membership — deleting
+  a node still deletes everything that names it in `dependsOn`, but a container
+  outlives the children it derives from, because an emptied group is still a
+  group.
+  
+  `groupAction` uses it, which fixes the group-bounds defect: a container's union
+  AABB was computed once at creation and never re-derived, so moving a member
+  left the group's bounds, selection chrome and hit area behind. The kit
+  registers the union function under `kit:unionOfChildren` and merges its own
+  registry entries under the consumer's, so a grouped document round-trips
+  through `toJSON` in any scene.
+  
+  `effectivePose(scene, node)` is the one rule — override, else derived, else
+  authored — and now takes the scene rather than the override table alone. The
+  three render walks, the pick walk, and the scene, commit and gesture adapters
+  all resolve through it or through `documentPose`, the same answer minus the
+  override step for a reader that must not see an in-flight gesture. Both are
+  exported.
+  
+  `clipFromPose`, `derivePath` and `derivePose` now share one table-driven
+  serialization path (`core/scene/nodeFnFields.ts`) instead of a copy per field.
+- 3d89141: Layout: `layered`, `tree` and `force`, and the action that runs one.
+  
+  A layout is a plain function of the graph — no scene, no ops, no history. It
+  hands back the new top-left for every node that **moves**, and a node already
+  standing where the layout wants it is absent from the answer, so re-running a
+  layout on an arrangement it produced writes nothing and pushes no undo entry.
+  
+  Three rules keep a re-layout from scrambling a diagram someone has arranged.
+  There is no RNG anywhere in the path, so the same graph always lays out the same
+  way. Within-rank order is seeded from where the nodes already sit on the cross
+  axis rather than from crossing-minimization, so two branches an author dragged
+  into an order come back in it. And a node carrying `pinned: true` never moves,
+  with the rest of the layout translated to sit around it — with no pin, the
+  layout lands on the diagram's own bounding box rather than at the origin.
+  
+  `layered` ranks by longest path, breaking cycles with a depth-first walk in node
+  order so a loop draws as an edge running back up the page. `tree` centers a
+  parent over its children's block; a graph that is not a tree still lays out,
+  since roots are the nodes nothing points at and anything the walk cannot reach
+  becomes a root of its own. `force` is an iterative relaxation seeded from the
+  current positions — **the one layout that is not idempotent**, since re-running
+  it keeps relaxing.
+  
+  `buildGraph` reads the adjacency index from the same participant source the port
+  affordance takes, per invocation rather than maintaining one. `createLayoutAction`
+  rebuilds it on each press and writes the whole move as a single `scene.batch`,
+  carrying a container's whole subtree — `setPose` does not cascade, and a built
+  body would otherwise walk out from under its own label rows.
+  
+  In core, `createSimulation` is the velocity-Verlet integrator with no clock
+  attached: `tick()` is the only thing that moves a node, so a pure function can
+  run a whole relaxation and read the result. `useSimulation` is now that
+  integrator on a frame loop and is otherwise unchanged. `SimulationCore` and
+  `SimulationOptions` name the halves, and forces can be handed a seeded `random`
+  in place of `Math.random`.
+- 4a128c4: New package `@weasel-js/diagram` — the skeleton of weasel's node-link
+  diagramming: flowcharts, pipelines, code-flow diagrams, simple visual
+  programming. Arc 3 of the diagram design; edges, routing, the connect gesture
+  and layout are still to come.
+  
+  **`DiagramNode` is a trait on an existing scene node, not a node type the
+  package mints.** A text block, an image, a path, a group or a plain rect all
+  become participants by carrying it, and nothing has to be authored through this
+  package to take part. Two ways to attach it, both answered by the default
+  reader: on the node's own `data.diagram`, or by kind — `createDiagramNodes`
+  takes predicates over `data` the way `createNodeRouting` does, so a class of
+  node takes part without being stamped one at a time.
+  
+  **Ports default to the perimeter, so a node needs to say nothing to be
+  connectable.** `portsOf(node, pose)` resolves every port to a world point and
+  an outward normal, reading bounds through the pose descriptor and carrying the
+  node's rotation. Anchors are normalized against the bounds — `{ u, v }` from
+  the top-left — so a port stays where it was put when the node is resized.
+  
+  **The body builder is optional**, for nodes that should look like a flowchart
+  box: `rect`, `diamond`, `stadium` and `parallelogram` outlines plus a `Row[]`
+  body of labels, fields, port rows and slots. Rows measure a floor, and the
+  authored pose is maxed against it rather than set to it — adding a row can grow
+  a node, nothing shrinks one back — which is what keeps resize, align,
+  distribute, guides, snapping and undo free of a special case. Text measurement
+  is a seam rather than an import; `canvasMeasure` adapts a 2D context.
+  
+  Rows lay out in the shape's **content box**, not its bounding box.
+  `contentBox` reports the largest axis-aligned box inside an outline — a
+  diamond's inscribed rect, a parallelogram minus its lean, the flat span between
+  a stadium's ends — and `boxForContent` inverts it so the floor grows to suit.
+  Without it a diamond's label is placed against the bounding box, lands outside
+  the diamond, and the silhouette clip removes it: the label simply vanishes.
+  
+  `registerDiagramShape` paints a node whose trait names an outline, and reports
+  the outline as its silhouette so picking and clipping follow the diamond rather
+  than its box. Rows are not painted there — a built body's rows are ordinary
+  scene nodes, so the kit's own text painter draws them and text editing,
+  selection and styling work on them unchanged.
+  
+  Core exports `AUTO_POSE_DESCRIPTOR` and `isPathLike`, which were already
+  general-purpose but reachable only from inside the package. A peer package
+  computing a node's bounds needs the kit's own default descriptor rather than a
+  second copy of it.
+- aee9d92: `createPoseOverrides` is public.
+  
+  `Scene` is public and its `overrides: PoseOverrides<TPose>` is mandatory — and
+  load-bearing, since every ongoing gesture writes a frame to it. The factory that
+  builds one was internal, so a consumer assembling a scene-like object by hand
+  had to reimplement the table from its type. It is now exported alongside
+  `createScene`.
+- c067221: Put every baked gradient ramp in one texture, a row each, rather than a texture
+  each. `GradientRampAtlas` replaces `GradientRampCache`: a stop list is baked
+  once into a 256-texel strip and written to a row, and the fragment shader picks
+  its row with `u_rampV`. Every gradient in a frame now samples the same texture
+  unit, which is what a gradient needs before it can take a batch texture slot
+  the way a bitmap or a font atlas already does.
+  
+  The atlas doubles from 16 rows and stops at 1024, recycling the least recently
+  used row past that. An animating gradient mints a new stop list every frame, so
+  the old cache grew a GL texture per frame and freed none of them; the cap is
+  what bounds that.
+  
+  `PaintBindContext.bindRamp` now returns the `v` its ramp sits at. A registered
+  paint kind that samples the ramp at a constant `v` reads whatever gradient
+  happens to own that row, so it must sample at the returned value.
+- 26d40bf: Fold gradients into the shared batch. A gradient fill used to bind its own
+  program and break the run of solid geometry, image quads and glyphs around it;
+  now it stages alongside them, so a page of gradient-filled shapes is one draw
+  rather than one per shape.
+  
+  All three kinds go, and for the same reason — not that the ramp position is
+  affine in position, which is true only of a linear gradient, but that the
+  *coordinate* the ramp position is computed from is affine in all three. So a
+  vertex carries that and the rasterizer's interpolation across a triangle is
+  exact. A linear gradient's coordinate is the ramp position itself, which is why
+  it needs no paint mode of its own; a radial or conic one carries a
+  gradient-space point, with its atlas row where a plain vertex keeps its alpha,
+  and the shader takes a `length` or an `atan` of it behind a branch on the flat
+  paint mode. Fill opacity and group alpha ride the vertices the way a solid's
+  already did, and fills, stroke ribbons and glyph-outline meshes all take the
+  route.
+  
+  Per-vertex-colored and even-odd fills still take their own draw, as do patterns
+  and shaders.
+  
+  The ramp atlas is what makes the slot arithmetic work: every gradient in a run
+  shares one texture slot, so a document full of them costs the same one slot a
+  single gradient does. Growing the atlas moves every row, so a bake that would
+  grow it — or recycle a row — flushes the run first.
+  
+  Gradient fills now apply the group's color matrix. `gradFill` was the only
+  paint program that did not, and since the batch program applies it to
+  everything in a run, leaving it out would have made a linear gradient and a
+  radial one under the same group paint differently.
+- b8d2940: Layout you can watch, and push against.
+  
+  `usePoseRun` is the transport: each frame it asks a producer for poses,
+  publishes them to the scene's ephemeral override channel — the one a drag
+  already writes to, which `effectivePose`, derived geometry and the pick source
+  read — and commits the lot as one batch when the producer says it is done or
+  the consumer stops it. Cancel drops the frames and the document is untouched.
+  It runs behind `useVisibleRaf`, and it knows nothing about layout.
+  
+  A node carrying an override the run did not publish belongs to another gesture:
+  the run never writes it, never commits it, and reports it to the producer as
+  pinned. Dragging a box mid-run is therefore the consumer's ordinary move tool,
+  with no gesture contributed by the diagram package.
+  
+  `useLiveLayout` in `@weasel-js/diagram` drives it. `force` relaxes one tick a
+  frame off the same force list the one-shot `force` runs, holding a pinned node
+  with `fx`/`fy` while its neighbors answer; `layered` and `tree` ease into a
+  target computed once. A node or edge appearing or disappearing re-heats the run.
+  
+  `SceneNode.pickable: false` makes a node transparent to the hit-test walk, so a
+  press lands on what is behind it. Without it the innermost hit wins and dragging
+  a labeled box pulls the label out of the box.
+- b5e2cd9: Solid geometry and image quads now share one batch, so a wall of thumbnails —
+  a ground rect under an atlas quad, per cell — draws in one call rather than
+  one per command. The two batches used to be exclusive: staging a solid drained
+  the image run and staging an image drained the solid one, so a shape that
+  batches perfectly in either half alone paid a flush per command. Solid vertices
+  carry the UV of a 1x1 white texel, which makes `texture() * a_vertexColor` the
+  vertex color exactly, so the merge is pixel-identical rather than close.
+  
+  Measured over a viewport-filling grid of those cells on an M2 Max via ANGLE
+  (`tests/perf/atlas-wall.spec.ts`): 600 draw commands 2.83 -> 0.10 ms, 1,650
+  11.37 -> 0.20, 5,400 40.50 -> 0.58, 15,000 126.15 -> 1.50. A run still breaks
+  on what a run cannot carry — a second bitmap, a different MAG_FILTER, a clip
+  depth, a color matrix.
+- 89276ee: `usePoseRun` and `useSimulation` hand their injected clock straight to
+  `useVisibleRaf` instead of defaulting it themselves. The gate already falls
+  back to `requestAnimationFrame`, so both were defaulting it twice — and the
+  copy in `usePoseRun` was a bare `requestAnimationFrame` in kit source, which
+  `check:frame-loops` fails the build on. The allowlist is back down to the gate
+  itself.
+- 36950d8: `scene.setDependsOn(id, dependsOn)` retargets a node's dependencies as one
+  undoable step, so dragging an existing edge's end onto a different node no
+  longer means removing the edge and adding another one. Switching a container
+  between an id list and `'children'` goes through the same call.
+  
+  Both indices move with it — the reverse dependents index that drives cascade
+  delete, and the `'children'` set that drives the ancestor walk — and the
+  retargeted node's own memo is dropped alongside its dependents', since its
+  derivation now reads different sources. Order is significant, because a
+  derivation reads its dependencies positionally; declaring what a node already
+  declares records no history entry.
+- 4f8c6b2: Text no longer breaks a batched run. Glyphs, the rules under underlined words,
+  and tessellated glyph outlines all stage into the same draw as the solid
+  geometry and image quads around them, so a wall of captioned thumbnails is one
+  draw where every label used to cost two.
+  
+  The batch shader carries the glyph math behind a paint mode, which packs into
+  the texture-slot attribute the vertex already had, so the vertex does not grow
+  and a wall of thumbnails costs what it did before. It runs that math on every
+  fragment, glyph or not, because `fwidth` in non-uniform control flow is
+  undefined and the derivative has to be taken before anything selects on the
+  mode — priced at about 1.4% of a fragment that is not a glyph. A synthetic
+  oblique now shears on the CPU as the batch places its corners, rather than in a
+  vertex shader that read the baseline from a vertex attribute.
+  
+  Three things a run used to break on are gone: a second text color in the same
+  paragraph, a decoration whose fill differs from the glyphs it sits under, and
+  the difference between a baked MSDF atlas and a runtime canvas bake. What still
+  breaks a run is a change of synthetic-bold threshold, which is a uniform — that
+  one is a fallback path, since a registered bold face never sets it.
+  
+  **Breaking for anyone importing the text shader sources.** `TEXT_VERT_SRC`,
+  `TEXT_FRAG_SRC`, `TEXT_FRAG_R8_SRC`, `TEXT_SDF_UNIFORMS` and
+  `TEXT_SDF_ATTRIBUTES` are removed from `@weasel-js/font`: text has no program of
+  its own any more. What replaces them is `GLYPH_COVERAGE_GLSL`, the snippet a
+  program pastes in to turn an atlas sample into coverage, alongside
+  `GLYPH_MODE_MSDF` and `GLYPH_MODE_R8` naming the two channel layouts.
+- 1240956: `kit:text` nodes take a `verticalAlign`, and picking follows it.
+  
+  Centering a glyph in its box meant nudging `pose.y` by hand and re-deriving the
+  nudge whenever the font size changed. The painter forwarded the pose's height
+  but never an alignment, so the box the renderer aligned within was always
+  resolved as `'top'`.
+  
+  `data.verticalAlign` — `'top' | 'center' | 'bottom'`, the same spelling the draw
+  command already took — now reaches both halves: the paint command and the
+  silhouette `textLineBoxes` builds, so a centered block is grabbable where it
+  draws rather than where a top-aligned one would have. A node that names none
+  paints exactly where it did before.
+- Updated dependencies [4f8c6b2]
+  - @weasel-js/font@1.4.4
+  - @weasel-js/text@1.4.4
+  - @weasel-js/cursor@1.4.4
+  - @weasel-js/geom@1.4.4
+  - @weasel-js/gestures@1.4.4
+  - @weasel-js/history@1.4.4
+  - @weasel-js/modes@1.4.4
+  - @weasel-js/paint@1.4.4
+
 ## 1.4.3
 
 ### Patch Changes
