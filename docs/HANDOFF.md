@@ -4,24 +4,12 @@
 Nothing is pushed. Another session shares the primary checkout — stage explicit
 paths, never `git add -A`.
 
-**The work is fully specified on disk. Read these two, in this order:**
+**The work is finished and gated** — `tsc` clean, 10,366 tests, the consumer
+smoke test, and all 51 visual baselines. `git log --oneline main..HEAD` is the
+arc; `.changeset/pose-descriptor.md` is what consumers read. The spec and plan
+are deleted, per this repo's rule that a merged plan is `git log`'s job.
 
-- `docs/superpowers/specs/2026-09-11-pose-descriptor-design.md` — what and why.
-- `docs/superpowers/plans/2026-09-11-pose-descriptor.md` — 15 tasks with the
-  code for each. Execute them in order with a fresh subagent per task; the
-  ground-rules section at the top is binding on every one of them.
-
-Where it stands: `git log --oneline main..HEAD`. Tasks 0 through 9 are
-committed — the rename, `fromBounds`/`withRotation`, the circle probe, the
-`poseDescriptor` dep and prop, and then every reader: resize, move, the other
-seven actions, group, picking, both container cascades, the hit tests, both
-adapters, the selection overlay, the minimap, nested hits and `useSelectTool`.
-Tasks 10 to 12 (alignment guides, momentum, painters) were in flight when this
-was written; Tasks 13 and 14 (consumer prose, the changeset, the full gate) are
-open. The plan's own checkboxes were never ticked, so go by the commit
-subjects, which name their task's work.
-
-## Decisions taken during execution that the plan does not carry
+## What a later session should know
 
 **The circle probe lives at** `packages/core/src/core/geometry/circlePose.fixture.ts`,
 and the plan's later tasks point there. `PoseDescriptor` itself moved to

@@ -43,12 +43,13 @@ What does not transfer, and is not close:
 
 ## Phases
 
-**Phase 0 — one pose descriptor.** Built-in actions, painters and chrome stop
-assuming a pose is `{x, y, width, height}` and read one consumer-supplied
-descriptor. Designed in `2026-09-11-pose-descriptor-design.md`; it pays off in
-2D on its own. `ToolCtx` is not part of it: since tools became bindings only,
-its sole reader is the function form of `Tool.cursor`, and the tool files carry
-no geometry.
+**Phase 0 — one pose descriptor. Built.** Built-in actions, painters and chrome
+read one consumer-supplied `PoseDescriptor` instead of assuming a pose is
+`{x, y, width, height}`; `<SceneCanvas poseDescriptor>` supplies it and the
+`poseDescriptor` dep carries it. It paid off in 2D on its own — a pose without
+top-level `x`/`y` used to take `NaN` when dragged into a container.
+`ToolCtx` was not part of it: since tools became bindings only, its sole reader
+is the function form of `Tool.cursor`, and the tool files carry no geometry.
 
 **Phase 1 — labkit `surface?` capability.** Built, as labkit's shared tiled
 surface (`packages/labkit/src/surface/`, `useTiledSurface`). Independent of Phase 0, and the
