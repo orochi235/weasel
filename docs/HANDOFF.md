@@ -1,8 +1,7 @@
 # Handoff — the palette lab, and the theme work behind it
 
-**Branch:** `theme-editor-palette-lab`. Nothing is pushed; run
-`git log --oneline @{u}..HEAD` for what has not left the machine, and
-`git status -s` for what is not committed.
+**Branch:** merged to `main`. Run `git log --oneline @{u}..HEAD` for what has
+not left the machine. The `#/theme` follow-up is a P2 in `docs/TODO.md`.
 
 **Another session shares this working directory.** Stage explicit paths, never
 `git add -A`, and confirm the branch before assuming it is still yours.
