@@ -2,6 +2,7 @@ import type { View } from 'core/viewport/view';
 import type { ModifierState } from 'interactions/gestures/types';
 import type { Guide } from '../types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 
 /** Which feature of a box to test against candidates, per axis.
  *  'min' = left/top edge, 'center' = centerline, 'max' = right/bottom edge. */
@@ -17,20 +18,6 @@ export interface AlignMatchResult {
   activeY: Guide | null;
 }
 
-/** Bounds analog of the gesture `OriginProjection`: reads an AABB from a pose
- *  and translates a pose. The rect default handles `{x,y,width,height}` poses;
- *  non-rect poses (Path, polygon) supply their own. */
-export interface AlignBoundsProjection<TPose> {
-  /** The pose's *visual* AABB — a rotated pose reports the extent of its ink,
-   *  not the box it was posed in. Guides and matching both read this, so an
-   *  implementation that returns the stored box makes a rotated shape snap to
-   *  lines nothing is drawn at. */
-  boundsOf(pose: TPose): Bounds;
-  /** Move the pose, preserving every other field it carries — nothing
-   *  downstream re-derives rotation or style from anywhere else. */
-  translate(pose: TPose, dx: number, dy: number): TPose;
-}
-
 /** Which candidate lines to derive from a set of poses — edges, centers, or
  *  both, and whether the page box contributes its own. */
 export interface DeriveAlignmentGuidesOptions<TPose = Bounds> {
@@ -40,9 +27,9 @@ export interface DeriveAlignmentGuidesOptions<TPose = Bounds> {
   edges?: boolean;
   /** Emit centerX (x) and centerY (y) guides. Default true. */
   centers?: boolean;
-  /** Reads each target's AABB. Defaults to `RECT_ALIGN_PROJECTION`. Pass the
-   *  same projection `alignMoveBehavior` gets, or the two sides disagree. */
-  projection?: AlignBoundsProjection<TPose>;
+  /** How to read each target. Pass the same descriptor `alignMoveBehavior`
+   *  gets, or the two sides disagree. Default `AUTO_POSE_DESCRIPTOR`. */
+  poseDescriptor?: PoseDescriptor<TPose>;
 }
 
 /** Common options shared by the three alignment behavior factories. */

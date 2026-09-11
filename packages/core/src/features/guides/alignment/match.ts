@@ -1,8 +1,6 @@
 import type { Guide } from '../types';
-import { axisAlignedBounds, type RectPose } from 'core/geometry/unionBounds';
 import type {
   AlignAnchor,
-  AlignBoundsProjection,
   AlignMatchResult,
 } from './types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -11,15 +9,6 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 export const MOVE_ANCHORS: { x: readonly AlignAnchor[]; y: readonly AlignAnchor[] } = {
   x: ['min', 'center', 'max'],
   y: ['min', 'center', 'max'],
-};
-
-/** Default projection for rect-shaped poses (`{x,y,width,height,rotation?}`).
- *  A rotated pose reports the AABB of its ink, so guides derived from a
- *  stationary sibling and the box a dragged selection matches with are the
- *  same measurement. */
-export const RECT_ALIGN_PROJECTION: AlignBoundsProjection<RectPose> = {
-  boundsOf: (p) => axisAlignedBounds(p),
-  translate: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
 };
 
 function featureOffset(b: Bounds, axis: 'x' | 'y', anchor: AlignAnchor): number {
