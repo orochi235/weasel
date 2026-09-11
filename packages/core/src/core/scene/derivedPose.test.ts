@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { createScene, sceneFromJSON } from './scene';
 import { documentPose, effectivePose } from './effectivePose';
-import { UNION_OF_CHILDREN, unionOfChildren } from './kitRegistry';
+import { UNION_OF_CHILDREN, unionOfChildren, unionOfChildrenVia } from './kitRegistry';
+import {
+  circle,
+  CIRCLE_POSE_DESCRIPTOR,
+  type CirclePose,
+} from 'interactions/actions/resize/circlePose.fixture';
 import { asNodeId, type NodeId, type RectPose } from './types';
 
 const LAYERS = [{ id: 'main' as const }];
@@ -208,5 +213,27 @@ describe('derived pose — serialization', () => {
     });
     expect(g).toBeDefined();
     expect(() => scene.toJSON()).toThrow(/no matching registry key/);
+  });
+});
+
+describe('derived pose — non-rect poses', () => {
+  it('unions circles through a descriptor', () => {
+    const union = unionOfChildrenVia(CIRCLE_POSE_DESCRIPTOR);
+    const scene = createScene<object, 'main', CirclePose>({
+      systemLayers: LAYERS,
+      registry: { derivePose: { [UNION_OF_CHILDREN]: union } },
+    });
+    const g = scene.add({
+      kind: 'container', layer: 'main', pose: circle(0, 0, 0), data: {},
+      dependsOn: 'children', derivePose: union,
+    });
+    scene.add({ kind: 'leaf', parent: g, layer: 'main', pose: circle(0, 0, 10), data: {} });
+    scene.add({ kind: 'leaf', parent: g, layer: 'main', pose: circle(40, 0, 10), data: {} });
+    expect(effectivePose(scene, scene.get(g)!)).toEqual(circle(20, 0, 10));
+  });
+
+  it('exposes the merged registry', () => {
+    const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
+    expect(scene.registry.derivePose?.[UNION_OF_CHILDREN]).toBe(unionOfChildren);
   });
 });

@@ -843,7 +843,7 @@ export type { UseArrayAdapterOptions } from './core/adapters/useArrayAdapter';
 export {
   createScene, sceneFromJSON, sceneSelectionStore, useScene, asNodeId,
   createPoseOverrides, derivedDepOf, derivedPose, documentPose, effectivePose,
-  UNION_OF_CHILDREN, unionOfChildren,
+  UNION_OF_CHILDREN, unionOfChildren, unionOfChildrenVia,
 } from './core/scene';
 export type { PoseSource, PosedNode } from './core/scene';
 export type {

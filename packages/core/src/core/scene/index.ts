@@ -27,4 +27,4 @@ export { derivedDepOf, derivedPose, documentPose, effectivePose } from './effect
 export { resolveDerivedPath } from './derivedPath';
 export type { PathDerivingNode } from './derivedPath';
 export type { PoseSource, PosedNode } from './effectivePose';
-export { UNION_OF_CHILDREN, unionOfChildren } from './kitRegistry';
+export { UNION_OF_CHILDREN, unionOfChildren, unionOfChildrenVia } from './kitRegistry';

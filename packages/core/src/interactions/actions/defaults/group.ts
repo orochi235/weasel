@@ -4,8 +4,9 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import { createReparentOp } from 'core/ops/reparent';
-import { unionBounds, type RectPose } from 'core/geometry/unionBounds';
-import { unionOfChildren } from 'core/scene/kitRegistry';
+import { unionBounds } from 'core/geometry/unionBounds';
+import { unionOfChildren, UNION_OF_CHILDREN } from 'core/scene/kitRegistry';
+import { poseDescriptorOf } from '../poseDescriptorDep';
 import type { Action } from '../registry';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 
@@ -41,7 +42,7 @@ export const groupAction: Action & { requires: string[] } = {
   label: 'Group',
   defaultBinding: { kind: 'key', key: 'g', mods: { mod: true } },
   eligible: { capability: 'edits-page' },
-  requires: ['scene', 'selection', 'applyOps'],
+  requires: ['scene', 'selection', 'applyOps', 'poseDescriptor'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
@@ -68,8 +69,12 @@ export const groupAction: Action & { requires: string[] } = {
       const parents = new Set(nodes.map((n) => n.parent));
       const parent = parents.size === 1 ? nodes[0]!.parent : null;
 
-      const pose =
-        unionBounds(nodes.map((n) => n.pose as RectPose)) ?? { x: 0, y: 0, width: 0, height: 0 };
+      // The authored pose is only the fallback (an emptied group, a lost
+      // registry key); the derived union is what the scene shows.
+      const d = poseDescriptorOf(deps.poseDescriptor);
+      const frame = unionBounds(nodes.map((n) => d.getBounds(n.pose)));
+      const pose = frame === null ? nodes[0]!.pose : d.fromBounds(frame, nodes[0]!.pose);
+      const derive = scene.registry.derivePose?.[UNION_OF_CHILDREN] ?? unionOfChildren;
 
       // Build ops mirroring the old direct mutations, in the same order the
       // `scene.batch('Group', …)` body produced them:
@@ -93,7 +98,7 @@ export const groupAction: Action & { requires: string[] } = {
             data: {} as unknown,
             parent: parent ?? null,
             dependsOn: 'children',
-            derivePose: unionOfChildren,
+            derivePose: derive,
           } as Node<unknown, string, unknown>,
           label: 'Group',
         }),

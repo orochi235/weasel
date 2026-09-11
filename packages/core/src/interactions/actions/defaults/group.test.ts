@@ -5,6 +5,12 @@ import { describe, it, expect, vi } from 'vitest';
 import { groupAction, ungroupAction } from './group';
 import { createScene } from 'core/scene/scene';
 import { effectivePose } from 'core/scene/effectivePose';
+import { UNION_OF_CHILDREN, unionOfChildrenVia } from 'core/scene/kitRegistry';
+import {
+  circle,
+  CIRCLE_POSE_DESCRIPTOR,
+  type CirclePose,
+} from 'interactions/actions/resize/circlePose.fixture';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { ImmediateInvoker } from '../invoker';
@@ -331,5 +337,25 @@ describe('groupAction.run — undo restores document order for a multi-node grou
     scene.undo();
 
     expect([...scene.roots]).toEqual([a, b, c, d, e]);
+  });
+});
+
+describe('groupAction — non-rect poses', () => {
+  it('groups circles into a circle-posed container that survives toJSON', () => {
+    const union = unionOfChildrenVia(CIRCLE_POSE_DESCRIPTOR);
+    const scene = createScene<object, 'main', CirclePose>({
+      systemLayers: [{ id: 'main' }],
+      registry: { derivePose: { [UNION_OF_CHILDREN]: union } },
+    });
+    const a = scene.add({ kind: 'leaf', layer: 'main', pose: circle(0, 0, 10), data: {} });
+    const b = scene.add({ kind: 'leaf', layer: 'main', pose: circle(40, 0, 10), data: {} });
+    const selection = makeSelection([a, b]);
+    (groupAction.invoker as ImmediateInvoker).run(
+      { scene, selection, poseDescriptor: CIRCLE_POSE_DESCRIPTOR } as never,
+      undefined as never,
+    );
+    const g = selection.get()[0]!;
+    expect(scene.get(g)!.pose).toEqual(circle(20, 0, 10));
+    expect(() => scene.toJSON()).not.toThrow();
   });
 });

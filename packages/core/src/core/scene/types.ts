@@ -446,6 +446,9 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   readonly nodes: ReadonlyMap<NodeId, Node<TData, TLayer, TPose>>;
   readonly roots: readonly NodeId[];
   readonly layers: readonly LayerRecord<TLayer>[];
+  /** The registry this scene resolves node functions against — the consumer's
+   *  entries over the kit's. */
+  readonly registry: SceneRegistry<TPose>;
   get(id: NodeId): Node<TData, TLayer, TPose> | undefined;
   childrenOf(id: NodeId): readonly NodeId[];
   ancestorsOf(id: NodeId): readonly NodeId[];
