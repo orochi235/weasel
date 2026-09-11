@@ -2,7 +2,8 @@
 
 Direction doc for a weasel maintainer deciding how 3D would enter the project.
 It answers one question: **where does the boundary go?** — and phases the work
-behind it. It is not an implementation plan; no phase past 0 is scheduled.
+behind it. It is not an implementation plan. Phase 1 is built, Phase 0 is
+designed, and Phase 2 is unscheduled.
 
 The constraint that shapes every choice below: **2D DX must not get worse.**
 That rules out the two obvious options and picks a third.
@@ -22,10 +23,10 @@ The sharing worth having already exists one level lower.
 
 `@weasel-js/gestures` and `@weasel-js/history` have **zero dependencies**, and
 the gesture grammar is about input, not geometry: wheel direction, key names,
-finger counts, modifiers, `channel:phase` tool routing. The only spatial thing
-in its public surface is `centroid?: {x, y}` on `inputEvent` — a screen-space
-pointer position, equally correct over a 3D scene. Pointers are 2D in any
-kernel.
+finger counts, modifiers, `channel:phase` tool routing. Its specs and target
+matching carry no coordinates. Its event types do: pointer events carry `x`/`y`
+and clicks carry `worldX`/`worldY` (`ui/inputEvent.ts`) — see Phase 2's
+prerequisite.
 
 So a 3D kernel is a **sibling** that depends on `gestures` + `history` and
 brings its own renderer, camera, and picking. Core takes no diff, which is the
@@ -42,12 +43,15 @@ What does not transfer, and is not close:
 
 ## Phases
 
-**Phase 0 — genericize `ToolCtx`.** The prerequisite, and the only phase with a
-standalone payoff. Tracked in `docs/TODO.md` under Tools & gestures. Until
-`worldX`/`worldY` and `view` are type parameters, a 3D kernel reuses routing
-and undo and then rewrites every tool.
+**Phase 0 — one pose descriptor.** Built-in actions, painters and chrome stop
+assuming a pose is `{x, y, width, height}` and read one consumer-supplied
+descriptor. Designed in `2026-09-11-pose-descriptor-design.md`; it pays off in
+2D on its own. `ToolCtx` is not part of it: since tools became bindings only,
+its sole reader is the function form of `Tool.cursor`, and the tool files carry
+no geometry.
 
-**Phase 1 — labkit `surface?` capability.** Independent of Phase 0, and the
+**Phase 1 — labkit `surface?` capability.** Built, as labkit's shared tiled
+surface (`packages/labkit/src/surface/`, `useTiledSurface`). Independent of Phase 0, and the
 phase that unblocks real 3D labs *without any 3D kernel at all*. labkit's
 `Instrument` is already a capability declaration (`canvas?`, `layers?`,
 `dragDrop?`, `undo?`). Add a third viewport backend alongside `canvas?`
@@ -64,7 +68,15 @@ same answer: labkit stays backend-agnostic and owns rects, dirtiness, and
 scheduling.
 
 **Phase 2 — a 3D kernel package.** Own renderer, camera, and ray picking;
-depends on `gestures` + `history`; reuses the tool authoring model from Phase 0.
+depends on `gestures` + `history`; reuses the tool authoring model.
+
+Its prerequisite is making the action pipeline generic over point, camera and
+box. World coordinates enter as `{x, y}` or flat scalars in `InvocationCtx`
+(`interactions/actions/invoker.ts`), in the dep payloads (`depSchema.ts`:
+`ViewApi`, `NodeAtPointDep`, `SnapDep`, `InsertDep.commit`, `AreaSelectDep`),
+in the pick functions, and in `@weasel-js/gestures`' pointer and click events.
+In 3D a pointer is a ray, so what replaces the world point is decided with the
+picking design, not ahead of it.
 The open build-vs-adopt question is whether the renderer is bespoke or three.js
 wearing a weasel-shaped adapter — the labs that motivated this are already on
 three.js, which argues for adopt.
@@ -112,40 +124,35 @@ function** at every site:
 - `composeWorldPose<TPose>(adapter, id, compose)` walks ancestry and folds; the
   pose math arrives as the `compose` callback. `composeRectPose` is a separate,
   swappable default.
-- `poseBounds?: (pose: TPose) => Bounds`, `boundsOf?: (id) => Bounds | null`,
-  `pickBest?`, `pickEvery?` — all consumer-supplied.
-- `resizePolicy.ts` gates 2D-only options behind conditional types
-  (`TPose extends ResizePose ? … : never[]`), so a non-2D pose already
-  type-errors its way out of them.
+- `boundsOf?: (id) => Bounds | null`, `pickBest?`, `pickEvery?`, and the pose
+  descriptor — all consumer-supplied.
+- `resizePolicy.ts` gates 2D-only options behind conditional types, so a
+  non-2D pose already type-errors its way out of them.
 
 So Phase 2 reuses the scene graph. It does not need a second one.
 
-### Where the real boundary is: `Bounds`
+### Where the real boundary is (re-audited 2026-09-11)
 
-`Bounds` is `{x, y, width, height, rotation?}` — a 2D AABB with a 2D rotation —
-and it appears in **92 non-test files**. It is the *output* type of every
-injected pose function above, so the injection seams stop at it: you can supply
-any `TPose` you like and still must return a 2D box.
+Two places, and they are separate problems.
 
-Two smaller leaks in the same family:
+**The pose seam leaks.** A consumer describes pose geometry in seven separate
+options, each with its own rect-assuming default, and built-in actions and
+painters bypass all of them by reading `x`/`y`/`width`/`height` directly.
+Phase 0 fixes this.
 
-- **Flat coordinate scalars.** `pickBest(worldX, worldY, alt, sel)` repeats
-  `ToolCtx`'s `worldX`/`worldY` shape — no point type to swap. Phase 0 should
-  fix both together; they are the same defect.
-- **23 hard casts to `RectPose`** across 5 non-test files
-  (`interactions/actions/defaults/move.ts`, `defaults/group.ts`,
-  `canvas/NodeShape.ts`, `canvas/deps/editAnchors.ts`,
-  `canvas/SceneCanvas/useSceneSelectTool.ts`). These bypass the generic seam
-  outright and would each need a policy hook or a conditional-type gate.
+**Coordinates are 2D across the action pipeline.** See Phase 2's prerequisite.
+`Bounds` (`{x, y, width, height, rotation?}`) is part of this, but smaller than
+first counted: 29 non-test files, all in core.
 
-**Revised Phase 0 scope:** genericize `ToolCtx`, `pickBest`/`pickEvery`, and
-`Bounds` together — `Bounds` is the widest of the three and the one that
-decides whether the rest is worth doing. Retire the 23 casts alongside it.
-
-## Remaining open question
+## Open questions
 
 **Does selection/overlay chrome transfer?** Handles are screen-space in both
 kernels, so the overlay may port further than expected. Untested.
+
+**Does the 3D kernel reuse core's dispatcher?** Binding-to-action routing and
+`InvocationCtx` live in core. Reusing them means Phase 2's prerequisite changes
+core in service of 3D, which the non-goal below rules out; the alternative is a
+3D dispatcher that reuses only the gesture grammar.
 
 ## Non-goals
 
