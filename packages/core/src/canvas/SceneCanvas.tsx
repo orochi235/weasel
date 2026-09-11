@@ -90,6 +90,7 @@ import {
   useTextEditDepSource,
   useEditAnchorsDepSource,
   useDispatcherDepSource,
+  usePoseDescriptorDepSource,
   useResizePolicy,
   useLayoutDepSource,
   useGeometryProjection,
@@ -303,7 +304,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     | 'adapter'
     | 'moveOptions' | 'resizeOptions' | 'rotateOptions'
     | 'snap' | 'pickEvery' | 'boundsOf' | 'handleHitRadius'
-    | 'selection' | 'selectionOptions' | 'tools' | 'geometry'
+    | 'selection' | 'selectionOptions' | 'tools'
     | 'layers'          // stripped so we can re-add as optional below
     | 'onBackgroundClick' // SceneCanvas synthesizes this; not a consumer prop
     | 'getIsVisible'    // SceneCanvas synthesizes this from chromeVisibility
@@ -374,6 +375,11 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * it with extras is what needs the memo.)
      */
     routing?: readonly NodeRoutingEntry[];
+
+    /** How to read and rewrite this scene's poses. Every built-in action,
+     *  the selection chrome and picking read it. Default `AUTO_POSE_DESCRIPTOR`
+     *  (rect poses and `Path` poses). */
+    poseDescriptor?: PoseDescriptor<TPose>;
 
     // --- Geometry: hit-test + bounds overrides consumed by the internal
     //     `useSelectTool`. Ignored if the consumer passes their own `tools`. ---
@@ -849,6 +855,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const {
     scene: sceneInput,
     geometry,
+    poseDescriptor,
     selectTool: selectToolOpts,
     insertTool,
     insertNodeFactories,
@@ -891,6 +898,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     device,
     ...rest
   } = props;
+
+  const descriptor = (poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<unknown>;
 
   // Resolved once here and provided to the subtree, so overlays, affordances
   // and consumer chrome all read the same object rather than each running
@@ -1942,11 +1951,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   );
 
   // What a view needs to build its own overlay-aware state. `geometry` is the
-  // same default `<Canvas>` resolves to — `SceneCanvasProps` strips the prop,
-  // so the two cannot diverge.
+  // same descriptor handed to `<Canvas>`, so the two cannot diverge.
   const viewInputs = useMemo<SurfaceViewInputs>(() => ({
     adapter: adapter as unknown as { getPose(id: string): unknown },
-    geometry: AUTO_POSE_DESCRIPTOR as unknown as PoseDescriptor<unknown>,
+    geometry: descriptor,
     boundsOf: internalBoundsOf,
     tools,
     pickEvery: internalPickEvery,
@@ -1954,7 +1962,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     kindOfNode,
     chromeCaps,
     selectionApi: selection,
-  }), [adapter, internalBoundsOf, tools, internalPickEvery, internalPickBest, kindOfNode,
+  }), [adapter, descriptor, internalBoundsOf, tools, internalPickEvery, internalPickBest, kindOfNode,
        chromeCaps, selection]);
 
   const canvas = (
@@ -1962,6 +1970,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       ref={mergedRef}
       adapter={adapter}
       selection={selection}
+      poseDescriptor={descriptor as PoseDescriptor<TPose>}
       tools={tools}
       layers={wiredLayers}
       pickEvery={internalPickEvery}
@@ -2034,6 +2043,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 currentViewRef={currentViewRef}
                 onViewChange={handleViewChange}
                 resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
+                poseDescriptor={descriptor}
                 geometryProjection={geometryProjection}
                 dispatcher={dispatcher}
                 getActionRef={getActionRef}
@@ -2410,6 +2420,7 @@ function StandardActionsRegistrar({
   currentViewRef,
   onViewChange,
   resizeOptions,
+  poseDescriptor,
   geometryProjection,
   dispatcher,
   getActionRef,
@@ -2442,6 +2453,9 @@ function StandardActionsRegistrar({
    *  `useResizeTool` consumes the same options separately (both paths run
    *  in parallel during the dispatcher migration). */
   resizeOptions?: UseResizeOptions<unknown>;
+  /** Forwarded from `SceneCanvasProps.poseDescriptor` — wires the
+   *  `poseDescriptor` dep every built-in pose-touching action reads. */
+  poseDescriptor: PoseDescriptor<unknown>;
   /** Forwarded from `SceneCanvasProps.geometryProjection` — wires the
    *  `geometryProjection` dep consumed by pose-transform actions (move,
    *  resize, nudge, flip). Conditionally mounted so absent → dep undefined. */
@@ -2589,6 +2603,7 @@ function StandardActionsRegistrar({
     anchorEditingAllowed,
   });
   useDispatcherDepSource(dispatcher);
+  usePoseDescriptorDepSource(poseDescriptor);
 
   useActionsPropResolver(actions);
 
@@ -2621,7 +2636,6 @@ function ResizePolicyRegistrar({
     constraints: options.behaviors as never[] | undefined,
     pointSnap: options.pointSnapBehaviors as never[] | undefined,
     expandIds: options.expandIds,
-    projection: options.geometry,
   });
   return null;
 }

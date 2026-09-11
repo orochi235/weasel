@@ -67,7 +67,7 @@ import type {
 } from '../../../layout/types';
 import { type PoseDescriptor } from '../resize/geometry';
 import { AUTO_POSE_DESCRIPTOR } from '../resize/autoPoseDescriptor';
-import type { ResizePolicy } from '../depSchema';
+import { poseDescriptorOf } from '../poseDescriptorDep';
 import type { MoveBehavior, GroupTransform, GestureContext, BehaviorResult } from '../../gestures/types';
 import { moveGestureAdapter, type MoveGestureAdapter } from '../move/gestureAdapter';
 import {
@@ -454,10 +454,9 @@ interface MoveScratch {
   /** The override entry published to the scene for each previewed id, held by
    *  reference so a frame mutates it in place — see `PoseOverrides`. */
   overrideEntries: Map<NodeId, { pose: unknown }>;
-  /** Pose projection captured at drag start. Used by `translatePoseGeneric`
+  /** Pose descriptor captured at drag start. Used by `translatePoseGeneric`
    *  so non-rect poses (e.g. polygon Paths) translate via the consumer's
-   *  descriptor instead of the rect-pose default. Undefined when the
-   *  `resizePolicy` dep wasn't sourced. */
+   *  descriptor instead of the rect-pose default. */
   projection?: PoseDescriptor<unknown>;
   /** Behaviors from `opts.behaviors`; empty array when none supplied. */
   behaviors: MoveBehavior<unknown>[];
@@ -628,18 +627,13 @@ export const moveAction: Action & { requires: string[] } = {
   // is target-qualified instead of universal.
   defaultBinding: { kind: 'drag', target: 'selected-body' },
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'resizePolicy', 'layout', 'applyOps', 'poseComposition', 'geometryProjection', 'nodeAtPoint'],
+  requires: ['selection', 'scene', 'resizePolicy', 'poseDescriptor', 'layout', 'applyOps', 'poseComposition', 'geometryProjection', 'nodeAtPoint'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
       const selection = ctx.deps.selection as SelectionApi | undefined;
       const scene = ctx.deps.scene as Scene<unknown, string, unknown> | undefined;
-      // `resizePolicy` is the shared pose-projection dep — moveAction reads
-      // its `projection.translate` so non-rect poses (polygon Paths, etc.)
-      // translate via the consumer's descriptor instead of silently
-      // falling back to the rect-pose `{x, y, width, height}` default.
-      const policy = ctx.deps.resizePolicy as ResizePolicy<unknown> | undefined;
-      const projection = policy?.projection;
+      const projection = poseDescriptorOf(ctx.deps.poseDescriptor);
       const layout = ctx.deps.layout as LayoutDep | undefined;
       const applyOps = ctx.deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
       const geometryProjection = ctx.deps.geometryProjection as GeometryProjection | undefined;

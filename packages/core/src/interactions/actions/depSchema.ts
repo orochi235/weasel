@@ -349,16 +349,15 @@ export interface InsertDep {
 /**
  * Adapter dep for `resizeAction`.
  *
- * Carries the four behavior-shaping options the legacy `useResize` hook
+ * Carries the behavior-shaping options the legacy `useResize` hook
  * exposed through `UseResizeOptions`: bounds-frame behaviors (e.g.
  * `lockAspectWithModifier`), world-space anchor-point snap behaviors (e.g.
- * `pointSnapToGrid`), group-expansion (`expandIds`), and pose↔bounds
- * projection (`geometry`).
+ * `pointSnapToGrid`), and group-expansion (`expandIds`).
  *
  * Optional in `DepSchema`: when absent, `resizeAction` falls back to
- * identity defaults (no behaviors, identity expandIds, `RECT_POSE_DESCRIPTOR`
- * geometry). Consumers wire the dep via `useDepSource('resizePolicy', ...)`
- * from any descendant of `<DepRegistryProvider>` / `<SceneCanvas>`.
+ * identity defaults (no behaviors, identity expandIds). Consumers wire the
+ * dep via `useDepSource('resizePolicy', ...)` from any descendant of
+ * `<DepRegistryProvider>` / `<SceneCanvas>`.
  *
  * The generic is erased to `unknown` at the schema entry; consumers cast at
  * the call site (mirrors the `scene` entry's convention).
@@ -373,9 +372,6 @@ export interface ResizePolicy<TPose> {
   /** Group-expansion at gesture start. Identity (`ids => ids`) when group
    *  resize isn't wanted. */
   expandIds: (ids: string[]) => string[];
-  /** Projection from `TPose` to bounds and back. Use `RECT_POSE_DESCRIPTOR`
-   *  for plain rect poses. */
-  projection: PoseDescriptor<TPose>;
 }
 
 /**
@@ -481,15 +477,21 @@ export interface DepSchema {
    */
   textEdit: TextEditDep;
   /**
-   * Resize-policy dep — bounds constraints, point-snap behaviors,
-   * group expansion, and pose↔bounds projection for `resizeAction`.
+   * Resize-policy dep — bounds constraints, point-snap behaviors and
+   * group expansion for `resizeAction`.
    *
    * Optional: when omitted, `resizeAction` falls back to identity defaults
-   * (no constraints, no snap, identity expandIds, `RECT_POSE_DESCRIPTOR`).
+   * (no constraints, no snap, identity expandIds).
    * Consumers wire via `useDepSource('resizePolicy', ...)` or the
    * `useResizePolicy` helper.
    */
   resizePolicy?: ResizePolicy<unknown>;
+  /**
+   * How to read and rewrite a pose — bounds, translate, remap, rotation. Every
+   * built-in action that touches a pose reads it. Sourced by `<SceneCanvas>`
+   * from its `poseDescriptor` prop; `AUTO_POSE_DESCRIPTOR` when absent.
+   */
+  poseDescriptor?: PoseDescriptor<unknown>;
   /**
    * Booleans adapter — read selection ids, fetch world-space `Path`s,
    * compare z-order, and mint result nodes for Pathfinder ops.

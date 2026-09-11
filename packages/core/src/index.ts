@@ -35,9 +35,8 @@
  * Plug in two small projections so the rect-flavored machinery works on any
  * shape:
  *   - `PoseDescriptor<TPose>` — read AABB + remap on resize. Default
- *     `RECT_POSE_DESCRIPTOR` for `{x,y,width,height}`; `pathPoseDescriptor` for
- *     `Path`. Pass via the `resizePolicy` dep (`useResizePolicy({
- *     projection })`).
+ *     `AUTO_POSE_DESCRIPTOR`, which handles both `{x,y,width,height}` and
+ *     `Path`. Pass via `<SceneCanvas poseDescriptor>`.
  *   - `OriginProjection<TPose>` — read snap-origin + translate by delta. Used
  *     by `gridSnapStrategy` and `snapBackOrDelete` for non-rect poses. Default
  *     `RECT_ORIGIN_PROJECTION`; `pathOriginProjection` for `Path`. Pass via
@@ -235,6 +234,7 @@ export {
   useResizePolicy,
   type UseResizePolicyOptions,
 } from './canvas/deps/resizePolicy';
+export { usePoseDescriptorDepSource } from './canvas/deps/poseDescriptor';
 export { CORNER_ANCHORS, cornerPoint } from './interactions/actions/resize/cornerHandles';
 export type { CornerAnchor, CornerEdge } from './interactions/actions/resize/cornerHandles';
 export { useSliceDep } from './canvas/deps/slice';

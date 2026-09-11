@@ -7,14 +7,9 @@
 
 import type { MoveBehavior } from '../../gestures/types';
 
-/** Options for the `move` action: how a translation is applied to the pose,
- *  and the behaviors (snapping, momentum) layered over the raw drag. */
+/** Options for the `move` action: the behaviors (snapping, momentum) layered
+ *  over the raw drag, and how a gesture expands a group into its leaves. */
 export interface UseMoveOptions<TPose> {
-  /** How to apply a `(dx, dy)` translation to a pose. Defaults to
-   *  `translateRectPose`, which assumes the pose carries top-level
-   *  `x`/`y` (the common rect-shaped case). Override for non-rect poses
-   *  (e.g. `Path` → `translatePath`). */
-  translatePose?: (pose: TPose, dx: number, dy: number) => TPose;
   behaviors?: MoveBehavior<TPose>[];
   dragThresholdPx?: number;
   moveLabel?: string;

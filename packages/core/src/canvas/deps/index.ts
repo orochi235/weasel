@@ -17,6 +17,7 @@ export {
   useResizePolicy,
   type UseResizePolicyOptions,
 } from './resizePolicy';
+export { usePoseDescriptorDepSource } from './poseDescriptor';
 export { useLayoutDepSource } from './layout';
 export { useGeometryProjection } from './geometryProjection';
 export { useIngestionDepSource } from './ingestion';
