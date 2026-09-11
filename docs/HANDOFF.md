@@ -1,4 +1,36 @@
-# Handoff — the palette lab, and the theme work behind it
+# Handoff — one pose descriptor (in flight)
+
+**Branch:** `pose-descriptor-build`, in the worktree `/Users/mike/src/weasel-pose`.
+Nothing is pushed. Another session shares the primary checkout — stage explicit
+paths, never `git add -A`.
+
+**The work is fully specified on disk. Read these two, in this order:**
+
+- `docs/superpowers/specs/2026-09-11-pose-descriptor-design.md` — what and why.
+- `docs/superpowers/plans/2026-09-11-pose-descriptor.md` — 15 tasks with the
+  code for each. Execute them in order with a fresh subagent per task; the
+  ground-rules section at the top is binding on every one of them.
+
+Where it stands: `git log --oneline main..HEAD`. Tasks 0 through 5 are
+committed (the rename, `fromBounds`/`withRotation`, the circle probe, the
+`poseDescriptor` dep and prop, resize, move). Task 6 onward is open. The plan's
+own task list is the checklist; nothing in it has been ticked, so go by the
+commit subjects, which name their task's work.
+
+## Decisions taken during execution that the plan does not carry
+
+**The circle probe moved** to `packages/core/src/interactions/actions/resize/circlePose.fixture.ts`.
+The plan first put it under `core/`, where the layering rule forbids importing
+`interactions/`. The plan's later tasks already point at the new path.
+
+**`npm run lint` fails on `main`**, with two errors this branch did not cause:
+`packages/diagram/src/live.ts:287` and
+`packages/core/src/core/scene/derivedDep.test.ts:9`. A third error is yours.
+
+**Task 4 had to reach into `move.ts`.** Deleting `ResizePolicy.projection` broke
+move's read of it, so that one line moved to the dep a task early.
+
+## The rest of this file is the previous arc, kept for its traps
 
 **Branch:** merged to `main`. Run `git log --oneline @{u}..HEAD` for what has
 not left the machine. The `#/theme` follow-up is a P2 in `docs/TODO.md`.
