@@ -171,28 +171,16 @@ Priority tags:
 
 - **(P3) Promote `hitExistingGate` to gate select-tool's move/resize paths.** Deferred from `docs/specs/2026-05-05-drag-insert-primitive-design.md`. Different responsibility (gating mutation gestures rather than insertion), different gesture surface, so it wants its own design pass rather than an extension of this one.
 
-- **(P2) `ToolCtx` hard-codes 2D, so tool authoring can't be reused by another
-  kernel.** `worldX: number` / `worldY: number` are flat scalars rather than a
-  point type, and `view: View` / `setView` are the 2D affine camera — so there
-  is no seam to swap. Everything else on the interface is already
-  dimension-neutral: `adapter: unknown` is opaque by design, `applyOps` takes
-  `Op` from `@weasel-js/history`, `selection` is id-based, and `canvasRect` /
-  `screenPoint` are screen space, which stays 2D in any kernel. Making
-  `ToolCtx` generic over its point and view types would make the tool
-  authoring model portable — a tool declares bindings and an action, and the
-  spatial types come from the kernel it is mounted in. `Scene<TData, TLayer,
-  TPose>` is already generic over pose, so the precedent exists. This is a
-  type-level change with no runtime behavior change for 2D; the payoff is
-  contingent on a second kernel existing, which is why it is P2 and not P1.
-  Scope is wider than `ToolCtx` alone: `pickBest`/`pickEvery` repeat the same
-  flat-scalar shape, and `Bounds` (`{x, y, width, height, rotation?}`, in 92
-  non-test files) is the type every injected pose function must return — it is
-  the widest of the three and decides whether the rest is worth doing. 23 hard
-  casts to `RectPose` across `interactions/actions/defaults/move.ts`,
-  `defaults/group.ts`, `canvas/NodeShape.ts`, `canvas/deps/editAnchors.ts` and
-  `canvas/SceneCanvas/useSceneSelectTool.ts` bypass the generic seam and would
-  retire with it. Audit findings and phasing in
-  `docs/superpowers/specs/2026-08-22-3d-kernel-design.md`.
+- **(P3) The action pipeline's coordinates are 2D, so another kernel can't
+  reuse it.** World points arrive as `{x, y}` or flat scalars in
+  `InvocationCtx`, the dep payloads, the pick functions and
+  `@weasel-js/gestures`' pointer events, and the camera is the 2D `View`. Tools
+  themselves carry no geometry. This is the 3D kernel's Phase 2 prerequisite and
+  waits on its picking design, because in 3D a pointer is a ray. Details in
+  `docs/superpowers/specs/2026-08-22-3d-kernel-design.md`. Unrelated latent bug
+  in the same place: `buildInvocationCtx` (`interactions/dispatcher/dispatcher.ts`)
+  fills `ctx.screen` and `ctx.world` from the same event coordinates, so one of
+  them is mislabeled.
 
 ### Pen tool follow-ups
 
