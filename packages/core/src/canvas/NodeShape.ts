@@ -36,6 +36,12 @@
 import type { Node, RectPose } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import { isRectPose } from 'interactions/actions/resize/autoPoseDescriptor';
+
+/** Whether a built-in painter can read this pose. A node that declares none
+ *  passes: the pose is then the caller's argument, not the node's. */
+function paintsPose(pose: unknown): boolean {
+  return pose === undefined || isRectPose(pose);
+}
 import type { DrawCommand } from '../renderer';
 import { textCommand, textCommandFromRuns } from 'features/text/textCommand';
 import type { TextStyle } from '@weasel-js/text';
@@ -252,7 +258,7 @@ export function findNodeShape<TData, TPose>(
   node: Node<TData, string, TPose>,
 ): NodeShapeEntry<TData, TPose> | undefined {
   // Built-in painters also gate on pose shape, so the key carries it too.
-  const slot = isRectPose(node.pose) ? PAINTER_SLOT : PAINTER_SLOT_NONRECT;
+  const slot = paintsPose(node.pose) ? PAINTER_SLOT : PAINTER_SLOT_NONRECT;
   return nodeMemo(node as { data?: unknown }, slot, undefined, () =>
     matchNodeShape(node),
   );
@@ -406,7 +412,7 @@ export function _resetShapePaintersForTests(): void {
 const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   id: 'kit:text',
   matches: (node) => {
-    if (!isRectPose(node.pose)) return false;
+    if (!paintsPose(node.pose)) return false;
     const d = node.data as { text?: string } | null;
     return d?.text != null;
   },
@@ -606,7 +612,7 @@ function inkReach(
 const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   id: 'kit:path',
   matches: (node) => {
-    if (!isRectPose(node.pose)) return false;
+    if (!paintsPose(node.pose)) return false;
     const d = node.data as { path?: Path } | null;
     return d?.path != null;
   },
@@ -671,7 +677,7 @@ const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
 const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   id: 'kit:shape',
   matches: (node) => {
-    if (!isRectPose(node.pose)) return false;
+    if (!paintsPose(node.pose)) return false;
     const s = (node.data as { shape?: string } | null)?.shape;
     return s != null && SHAPE_KINDS.has(s);
   },
@@ -744,7 +750,7 @@ function pathForShape(
 const IMAGE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   id: 'kit:image',
   matches: (node) => {
-    if (!isRectPose(node.pose)) return false;
+    if (!paintsPose(node.pose)) return false;
     const src = (node.data as { image?: { src?: unknown } } | null)?.image?.src;
     return typeof src === 'string' && src.length > 0;
   },
@@ -855,7 +861,7 @@ const RECT_FALLBACK_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // fallback should register their own painter at `'high'` priority and let
   // this one never fire (or unregister it explicitly).
   id: 'kit:rect-fallback',
-  matches: (node) => isRectPose(node.pose),
+  matches: (node) => paintsPose(node.pose),
   paint: (node, pose) => {
     const d = node.data as { fill?: FillStyle | null } | null;
     const p = pose;
