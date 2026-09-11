@@ -13,7 +13,9 @@ Mike asked for a theme editor. What got built first is one part of it: a
 **palette lab** at `apps/theme-editor`, `#/palette`, which generates a
 categorical color set from constraints instead of anyone hand-picking hexes.
 `#/theme` is a stub — the token editing, the ramps, the semantic layer — and is
-the actual next arc.
+the actual next arc. **It is designed but not built:**
+`docs/superpowers/specs/2026-09-10-theme-engine-and-editor-design.md` (engine
+first, then the editor). Next step is Mike's review of that spec, then a plan.
 
 Run it with `npm run dev:theme-editor` (port 5177). Tests are in the `draw`
 vitest project: `npx vitest run --project=draw apps/theme-editor`.
