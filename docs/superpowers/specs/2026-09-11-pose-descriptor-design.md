@@ -1,6 +1,6 @@
 # One pose descriptor — design
 
-**Status: designed 2026-09-11, not built.** Branch `pose-descriptor`; plan in
+**Status: designed 2026-09-11, not built.** Branch `pose-descriptor-build`; plan in
 `docs/superpowers/plans/2026-09-11-pose-descriptor.md`. Delete both files when
 the work merges.
 

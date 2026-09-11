@@ -14,7 +14,7 @@
 
 ## Ground rules for every task
 
-- **Worktree:** everything happens in `/Users/mike/src/weasel-pose` on branch `pose-descriptor`. Use absolute paths. Never touch `/Users/mike/src/weasel`.
+- **Worktree:** everything happens in `/Users/mike/src/weasel-pose` on branch `pose-descriptor-build`. Use absolute paths. Never touch `/Users/mike/src/weasel`.
 - **Typecheck:** `npx tsc --noEmit` from `/Users/mike/src/weasel-pose`. Never `tsc -p packages/core` (31 pre-existing TS6059 errors).
 - **One test file:** `npx vitest run --project=core <path>`. `packages/d3` and `packages/diagram` tests run under `--project=weasel-ui`; `apps/*` tests under `--project=draw`.
 - **Never run the full suite while iterating.** Task 14 runs it once. Before any vitest run, `pgrep -fl vitest` — if another run is live, wait.
