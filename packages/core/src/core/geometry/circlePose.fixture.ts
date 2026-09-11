@@ -1,4 +1,4 @@
-import type { PoseDescriptor } from './geometry';
+import type { PoseDescriptor } from './poseDescriptor';
 
 /** Test-only pose that is neither a rect nor a Path, so nothing built in can
  *  read it except through its descriptor. */

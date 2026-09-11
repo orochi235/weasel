@@ -9,7 +9,7 @@ import { distributeHorizontalAction } from './distribute';
 import { duplicateAction } from './duplicate';
 import { cloneAction } from './clone';
 import { rotateAction } from './rotate';
-import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'interactions/actions/resize/circlePose.fixture';
+import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
 
 type S = Scene<object, 'main', CirclePose>;
 const scene = (): S => createScene<object, 'main', CirclePose>({ systemLayers: [{ id: 'main' }] });

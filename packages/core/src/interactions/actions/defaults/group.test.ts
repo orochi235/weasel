@@ -11,7 +11,7 @@ import {
   circle,
   CIRCLE_POSE_DESCRIPTOR,
   type CirclePose,
-} from 'interactions/actions/resize/circlePose.fixture';
+} from 'core/geometry/circlePose.fixture';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { ImmediateInvoker } from '../invoker';

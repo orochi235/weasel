@@ -32,7 +32,7 @@
 | `packages/core/src/interactions/actions/resize/geometry.ts` | `PoseDescriptor` (renamed), `fromBounds`, `withRotation`, plus `translatePoseViaDescriptor` / `visualBoundsViaDescriptor` moved in |
 | `packages/core/src/interactions/actions/resize/autoPoseDescriptor.ts` | `fromBounds`, `withRotation`; `isRectPose` |
 | `packages/core/src/features/paths/poseDescriptor.ts` | `fromBounds` |
-| `packages/core/src/interactions/actions/resize/circlePose.fixture.ts` | **new** — test-only circle pose + descriptor |
+| `packages/core/src/core/geometry/circlePose.fixture.ts` | **new** — test-only circle pose + descriptor |
 | `packages/core/src/interactions/actions/poseDescriptorDep.ts` | **new** — `poseDescriptorOf` |
 | `packages/core/src/canvas/deps/poseDescriptor.ts` | **new** — `usePoseDescriptorDepSource` |
 | `packages/core/src/interactions/actions/depSchema.ts` | `poseDescriptor` entry; `ResizePolicy.projection` removed |
@@ -388,13 +388,13 @@ git commit -m "add fromBounds and withRotation to PoseDescriptor and delete Rota
 ### Task 3: The circle probe
 
 **Files:**
-- Create: `packages/core/src/interactions/actions/resize/circlePose.fixture.ts`
-- Test: `packages/core/src/interactions/actions/resize/circlePose.fixture.test.ts`
+- Create: `packages/core/src/core/geometry/circlePose.fixture.ts`
+- Test: `packages/core/src/core/geometry/circlePose.fixture.test.ts`
 
 - [ ] **Step 1: Write the fixture**
 
 ```ts
-// packages/core/src/interactions/actions/resize/circlePose.fixture.ts
+// packages/core/src/core/geometry/circlePose.fixture.ts
 import type { PoseDescriptor } from './geometry';
 
 /** Test-only pose that is neither a rect nor a Path, so nothing built in can
@@ -427,7 +427,7 @@ export const CIRCLE_POSE_DESCRIPTOR: PoseDescriptor<CirclePose> = {
 - [ ] **Step 2: Write its test**
 
 ```ts
-// packages/core/src/interactions/actions/resize/circlePose.fixture.test.ts
+// packages/core/src/core/geometry/circlePose.fixture.test.ts
 import { describe, it, expect } from 'vitest';
 import { circle, CIRCLE_POSE_DESCRIPTOR as D } from './circlePose.fixture';
 
@@ -443,13 +443,13 @@ describe('circle probe', () => {
 
 - [ ] **Step 3: Run it**
 
-Run: `npx vitest run --project=core packages/core/src/interactions/actions/resize/circlePose.fixture.test.ts`
+Run: `npx vitest run --project=core packages/core/src/core/geometry/circlePose.fixture.test.ts`
 Expected: PASS. Also run `npm run check:test-projects` — expected: exits 0 (the fixture is not a test file; the test is collected by `core`).
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add packages/core/src/interactions/actions/resize/circlePose.fixture.ts packages/core/src/interactions/actions/resize/circlePose.fixture.test.ts
+git add packages/core/src/core/geometry/circlePose.fixture.ts packages/core/src/core/geometry/circlePose.fixture.test.ts
 git commit -m "add a test-only circle pose for probing descriptor bypasses"
 ```
 
@@ -511,7 +511,7 @@ describe('resizeAction — reads the poseDescriptor dep', () => {
 });
 ```
 
-Import `circle, CIRCLE_POSE_DESCRIPTOR` from `'interactions/actions/resize/circlePose.fixture'`.
+Import `circle, CIRCLE_POSE_DESCRIPTOR` from `'core/geometry/circlePose.fixture'`.
 
 - [ ] **Step 2: Run them to verify they fail**
 
@@ -702,7 +702,7 @@ import type { InvocationCtx, BindingOpts } from '../invoker';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { LayoutStrategy } from '../../../layout/types';
-import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'interactions/actions/resize/circlePose.fixture';
+import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
 
 type S = Scene<object, 'main', CirclePose>;
 
@@ -938,7 +938,7 @@ import { distributeHorizontalAction } from './distribute';
 import { duplicateAction } from './duplicate';
 import { cloneAction } from './clone';
 import { rotateAction } from './rotate';
-import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'interactions/actions/resize/circlePose.fixture';
+import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
 
 type S = Scene<object, 'main', CirclePose>;
 const scene = (): S => createScene<object, 'main', CirclePose>({ systemLayers: [{ id: 'main' }] });
@@ -1171,7 +1171,7 @@ describe('derived pose — non-rect poses', () => {
 });
 ```
 
-(imports: `unionOfChildrenVia` from `'./kitRegistry'`; `circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose` from `'interactions/actions/resize/circlePose.fixture'`.)
+(imports: `unionOfChildrenVia` from `'./kitRegistry'`; `circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose` from `'core/geometry/circlePose.fixture'`.)
 
 Append to `packages/core/src/interactions/actions/defaults/group.test.ts`:
 
@@ -1351,7 +1351,7 @@ import { useScene } from 'core/scene/useScene';
 import { useSelection } from 'core/selection/useSelection';
 import { asNodeId } from 'core/scene/types';
 import { useSceneSelectTool } from './useSceneSelectTool';
-import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'interactions/actions/resize/circlePose.fixture';
+import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
 
 function harness() {
   return renderHook(() => {
@@ -1623,7 +1623,7 @@ import { asNodeId } from 'core/scene/types';
 import { useSelectTool } from './useSelectTool';
 import type { Action } from '../../../interactions/actions/registry';
 import type { ActionDeps } from '../../../interactions/actions/invoker';
-import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'interactions/actions/resize/circlePose.fixture';
+import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
 
 describe('useSelectTool — default pickEvery reads the descriptor', () => {
   it('selects a circle pressed at its center', () => {
@@ -1798,7 +1798,7 @@ describe('momentum — non-rect poses', () => {
 });
 ```
 
-(imports: `circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose` from `'interactions/actions/resize/circlePose.fixture'`.)
+(imports: `circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose` from `'core/geometry/circlePose.fixture'`.)
 
 - [ ] **Step 2: Run it to verify it fails**
 

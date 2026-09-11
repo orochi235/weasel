@@ -3,7 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
 import { useClipboardOps } from 'interactions/actions/clipboard/clipboardOps';
-import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'interactions/actions/resize/circlePose.fixture';
+import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
 import { sceneToAdapter } from './sceneAdapter';
 
 interface Data { label: string; }

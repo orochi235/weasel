@@ -4,7 +4,7 @@ import type { InvocationCtx, BindingOpts } from '../invoker';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { LayoutStrategy } from '../../../layout/types';
-import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'interactions/actions/resize/circlePose.fixture';
+import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
 
 type S = Scene<object, 'main', CirclePose>;
 

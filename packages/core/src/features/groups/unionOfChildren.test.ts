@@ -7,7 +7,7 @@ import {
   circle,
   CIRCLE_POSE_DESCRIPTOR,
   type CirclePose,
-} from 'interactions/actions/resize/circlePose.fixture';
+} from 'core/geometry/circlePose.fixture';
 
 describe('unionOfChildrenVia', () => {
   it('unions circles through a descriptor', () => {

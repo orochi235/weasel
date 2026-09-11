@@ -19,9 +19,11 @@ commit subjects, which name their task's work.
 
 ## Decisions taken during execution that the plan does not carry
 
-**The circle probe moved** to `packages/core/src/interactions/actions/resize/circlePose.fixture.ts`.
-The plan first put it under `core/`, where the layering rule forbids importing
-`interactions/`. The plan's later tasks already point at the new path.
+**The circle probe lives at** `packages/core/src/core/geometry/circlePose.fixture.ts`,
+and the plan's later tasks point there. `PoseDescriptor` itself moved to
+`core/geometry/poseDescriptor.ts` for the same reason: `core/` may not import
+`features/` or `interactions/`, and the adapters and the scene registry under
+`core/` need the type. The old import path re-exports, so nothing else moved.
 
 **`npm run lint` fails on `main`**, with two errors this branch did not cause:
 `packages/diagram/src/live.ts:287` and

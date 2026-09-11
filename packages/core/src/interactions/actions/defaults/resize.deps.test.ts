@@ -30,7 +30,7 @@ import type { PoseDescriptor } from '../resize/geometry';
 import { ROTATED_POSE_DESCRIPTOR } from '../resize/geometry';
 import { clampMinSize } from '../resize/behaviors/clampMinSize';
 import { pointSnapToGrid } from '../resize/behaviors/pointSnapToGrid';
-import { circle, CIRCLE_POSE_DESCRIPTOR } from 'interactions/actions/resize/circlePose.fixture';
+import { circle, CIRCLE_POSE_DESCRIPTOR } from 'core/geometry/circlePose.fixture';
 
 type RectPose = Bounds;
 

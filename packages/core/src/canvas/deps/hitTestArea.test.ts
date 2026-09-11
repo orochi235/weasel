@@ -13,7 +13,7 @@ import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from 'features/paths/types';
 import { hitTestArea } from './hitTestArea';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
-import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'interactions/actions/resize/circlePose.fixture';
+import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
 
 /** The hand-rolled scenes below stand in for a real `Scene`, which always
  *  carries an overrides map; `hitTestArea` resolves poses through it. */
