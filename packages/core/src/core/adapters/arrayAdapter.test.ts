@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { arrayAdapter } from './arrayAdapter';
+import {
+  circle,
+  CIRCLE_POSE_DESCRIPTOR,
+  type CirclePose,
+} from 'interactions/actions/resize/circlePose.fixture';
 
 describe('arrayAdapter — hitTestLasso', () => {
   type Obj = { id: string; x: number; y: number; width: number; height: number };
@@ -20,7 +25,6 @@ describe('arrayAdapter — hitTestLasso', () => {
       setItems,
       toPose: (o) => o,
       fromPose: (o, p) => ({ ...o, ...p }),
-      poseBounds: (p) => p,
     });
   }
 
@@ -76,7 +80,6 @@ describe('arrayAdapter — commitPaste', () => {
       setItems,
       toPose: (o) => o,
       fromPose: (o, p) => ({ ...o, ...p }),
-      poseBounds: (p) => p,
       ...(opts.nextId ? { nextId: opts.nextId } : {}),
     });
     return { adapter, ref };
@@ -158,5 +161,22 @@ describe('arrayAdapter — getChildren answers the ordered contract', () => {
     // is the root. An adapter that answers [] there silently loses the slot
     // an op captured, and undo appends.
     expect(makeFixture().getChildren!(null)).toEqual(['root-a', 'root-b']);
+  });
+});
+
+describe('arrayAdapter — non-rect poses', () => {
+  it('area-selects a circle through the descriptor', () => {
+    type C = { id: string } & CirclePose;
+    const items: C[] = [{ id: 'a', ...circle(10, 10, 5) }];
+    const ref = { current: items };
+    const adapter = arrayAdapter<C, CirclePose>({
+      ref,
+      setItems: () => {},
+      toPose: (n) => ({ cx: n.cx, cy: n.cy, r: n.r }),
+      fromPose: (n, p) => ({ ...n, ...p }),
+      poseDescriptor: CIRCLE_POSE_DESCRIPTOR,
+    });
+    expect(adapter.hitTestArea!({ x: 0, y: 0, width: 20, height: 20 })).toEqual(['a']);
+    expect(adapter.hitTestArea!({ x: 30, y: 30, width: 5, height: 5 })).toEqual([]);
   });
 });
