@@ -37,7 +37,7 @@ const EXPECTED_NAMES = [
   'accent', 'accent-fg', 'accent-hover',
   'danger', 'warning', 'success', 'focus-ring', 'glass-tint',
   'fg-inverse', 'surface-hover', 'surface-pressed',
-  'shadow', 'border-raised',
+  'shadow',
 ].sort();
 
 describe('DTCG source', () => {

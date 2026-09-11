@@ -13,7 +13,6 @@ export type TokenName =
   | '--wzl-accent-strong'
   | '--wzl-backdrop'
   | '--wzl-border'
-  | '--wzl-border-raised'
   | '--wzl-border-strong'
   | '--wzl-border-w'
   | '--wzl-control-h'
@@ -219,11 +218,10 @@ export const THEMES = {
       '--wzl-fg-muted': "#9ea1a8",
       '--wzl-fg-subtle': "#6f737b",
       '--wzl-border': "#25272c",
-      '--wzl-border-strong': "#383b42",
+      '--wzl-border-strong': "#6f737b",
       '--wzl-accent-fg': "#5841b8",
       '--wzl-fg-inverse': "#0e0f12",
       '--wzl-shadow': "rgba(0, 0, 0, 0.6)",
-      '--wzl-border-raised': "#6f737b",
     },
     "light": {
       '--wzl-gray-50': "#f5f5f6",
@@ -322,11 +320,10 @@ export const THEMES = {
       '--wzl-fg-muted': "#383b42",
       '--wzl-fg-subtle': "#4d5058",
       '--wzl-border': "#c9cbcf",
-      '--wzl-border-strong': "#9ea1a8",
+      '--wzl-border-strong': "#6f737b",
       '--wzl-accent-fg': "#2e1f7a",
       '--wzl-fg-inverse': "#f5f5f6",
       '--wzl-shadow': "rgba(0, 0, 0, 0.18)",
-      '--wzl-border-raised': "#6f737b",
     },
     },
   },
@@ -817,7 +814,8 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         },
         "border-strong": {
           "type": "color",
-          "value": "{color.gray-600}"
+          "value": "{color.gray-400}",
+          "description": "The line that has to be seen: a control's edge, a raised surface's outline. Clears WCAG 1.4.11's 3:1 against surface and surface-raised in both modes, and against surface-sunken in dark; light over sunken reaches only 2.9:1, so a panel on a sunken field needs its own answer."
         },
         "accent-fg": {
           "type": "color",
@@ -833,11 +831,6 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
           "type": "color",
           "value": "rgba(0, 0, 0, 0.6)",
           "description": "Elevation. Always darker than any surface — never derived from fg, which is near-white on dark."
-        },
-        "border-raised": {
-          "type": "color",
-          "value": "{color.gray-400}",
-          "description": "The line around a raised surface. Clears 3:1 against surface and surface-raised in either mode, which the general-purpose border does not; over surface-sunken it does not, so a panel on a sunken field needs its own answer."
         }
       },
       "light": {
@@ -871,7 +864,7 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         },
         "border-strong": {
           "type": "color",
-          "value": "{color.gray-300}"
+          "value": "{color.gray-400}"
         },
         "accent-fg": {
           "type": "color",
@@ -886,10 +879,6 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         "shadow": {
           "type": "color",
           "value": "rgba(0, 0, 0, 0.18)"
-        },
-        "border-raised": {
-          "type": "color",
-          "value": "{color.gray-400}"
         }
       }
     }

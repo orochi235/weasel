@@ -164,7 +164,7 @@
   height: var(--wzl-control-h);
   padding: 0 var(--wzl-space-md);
   border-radius: var(--wzl-radius-sm);
-  border: var(--wzl-border-w) solid var(--wzl-border-raised);
+  border: var(--wzl-border-w) solid var(--wzl-border-strong);
   background: var(--wzl-surface-raised);
   color: var(--wzl-fg);
   font-family: inherit;
@@ -203,7 +203,7 @@
   width: 14px;
   height: 14px;
   border-radius: var(--wzl-radius-sm);
-  border: var(--wzl-border-w) solid var(--wzl-border-raised);
+  border: var(--wzl-border-w) solid var(--wzl-border-strong);
   flex: none;
 }
 
@@ -254,7 +254,7 @@
   font-size: var(--wzl-font-size-sm);
   background: var(--wzl-surface-sunken);
   color: var(--wzl-fg);
-  border: var(--wzl-border-w) solid var(--wzl-border-raised);
+  border: var(--wzl-border-w) solid var(--wzl-border-strong);
   border-radius: var(--wzl-radius-sm);
 }
 
@@ -262,7 +262,7 @@
   width: var(--wzl-control-h);
   height: var(--wzl-control-h);
   padding: 0;
-  border: var(--wzl-border-w) solid var(--wzl-border-raised);
+  border: var(--wzl-border-w) solid var(--wzl-border-strong);
   border-radius: var(--wzl-radius-sm);
   background: none;
   cursor: pointer;
@@ -342,7 +342,7 @@
   font-variant-numeric: tabular-nums;
   background: var(--wzl-surface-sunken);
   color: var(--wzl-fg);
-  border: var(--wzl-border-w) solid var(--wzl-border-raised);
+  border: var(--wzl-border-w) solid var(--wzl-border-strong);
   border-radius: var(--wzl-radius-sm);
 }
 
@@ -493,7 +493,7 @@
 .presetChip {
   display: inline-flex;
   align-items: stretch;
-  border: var(--wzl-border-w) solid var(--wzl-border-raised);
+  border: var(--wzl-border-w) solid var(--wzl-border-strong);
   border-radius: var(--wzl-radius-pill);
   overflow: hidden;
   background: var(--wzl-surface-raised);
@@ -566,7 +566,7 @@
   padding: 0 var(--wzl-space-md);
   font: inherit;
   font-size: var(--wzl-font-size-sm);
-  border: var(--wzl-border-w) solid var(--wzl-border-raised);
+  border: var(--wzl-border-w) solid var(--wzl-border-strong);
   border-radius: var(--wzl-radius-sm);
   background: var(--wzl-surface-raised);
   color: var(--wzl-fg-muted);

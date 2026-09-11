@@ -111,9 +111,8 @@ export const TOKEN_MANIFEST: readonly TokenManifestEntry[] = [
   { name: '--wzl-fg-muted', type: "color", group: "fg", defaultValue: "#9ea1a8", description: "" },
   { name: '--wzl-fg-subtle', type: "color", group: "fg", defaultValue: "#6f737b", description: "" },
   { name: '--wzl-border', type: "color", group: "border", defaultValue: "#25272c", description: "" },
-  { name: '--wzl-border-strong', type: "color", group: "border", defaultValue: "#383b42", description: "" },
+  { name: '--wzl-border-strong', type: "color", group: "border", defaultValue: "#6f737b", description: "The line that has to be seen: a control's edge, a raised surface's outline. Clears WCAG 1.4.11's 3:1 against surface and surface-raised in both modes, and against surface-sunken in dark; light over sunken reaches only 2.9:1, so a panel on a sunken field needs its own answer." },
   { name: '--wzl-accent-fg', type: "color", group: "accent", defaultValue: "#5841b8", description: "Accent for foreground use — text, icons, selected labels drawn on a surface. accent is a fill; the midnight base is too dim to read as text on dark surfaces." },
   { name: '--wzl-fg-inverse', type: "color", group: "fg", defaultValue: "#0e0f12", description: "Text drawn on a filled foreground-colored element (e.g. a slider thumb). Flips with the mode, so it is a semantic, not an alias to a primitive." },
   { name: '--wzl-shadow', type: "color", group: "shadow", defaultValue: "rgba(0, 0, 0, 0.6)", description: "Elevation. Always darker than any surface — never derived from fg, which is near-white on dark." },
-  { name: '--wzl-border-raised', type: "color", group: "border", defaultValue: "#6f737b", description: "The line around a raised surface. Clears 3:1 against surface and surface-raised in either mode, which the general-purpose border does not; over surface-sunken it does not, so a panel on a sunken field needs its own answer." },
 ];

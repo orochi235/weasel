@@ -30,7 +30,7 @@
         "accent-hover": { "$value": "#c6a3ee" },
         "focus-ring": { "$value": "rgba(176, 138, 219, 0.45)" },
         "shadow": { "$value": "rgba(0, 0, 0, 0.7)" },
-        "border-raised": { "$value": "rgba(255, 255, 255, 0.36)" }
+        "border-strong": { "$value": "rgba(255, 255, 255, 0.36)" }
       },
       "gradient": {
         "$type": "gradient",
@@ -54,7 +54,7 @@
         "accent-hover": { "$value": "#c2854f" },
         "focus-ring": { "$value": "rgba(168, 111, 60, 0.35)" },
         "shadow": { "$value": "rgba(80, 60, 40, 0.18)" },
-        "border-raised": { "$value": "#9e8b71" }
+        "border-strong": { "$value": "#9e8b71" }
       }
     }
   }
