@@ -1,30 +1,25 @@
 /**
  * Pose-shape helpers shared by `<SceneCanvas>` internals.
  *
- * Mirrors Canvas's `AUTO_POSE_DESCRIPTOR` resolution: dispatches between the
- * path descriptor (for `{kind:'polygon'|'rect'}` poses) and the rect descriptor
- * for everything else. Used by hit-test, marquee, and bounds extraction so the
- * SceneCanvas defaults work uniformly across rect-shaped and path-shaped poses.
+ * Every bounds read goes through a `PoseDescriptor`, defaulting to
+ * `AUTO_POSE_DESCRIPTOR` (path descriptor for `{kind:'polygon'|'rect'}` poses,
+ * rect descriptor for everything else). Used by hit-test, marquee and bounds
+ * extraction, so a consumer-supplied descriptor reaches all three.
  */
 import type { Bounds } from 'tools/builtin/select';
 import { applyToPoint, rotateAboutPoint } from '@weasel-js/geom';
-import { RECT_POSE_DESCRIPTOR } from 'interactions/actions/resize/geometry';
-import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
+import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import { AUTO_POSE_DESCRIPTOR, isPathLike } from 'interactions/actions/resize/autoPoseDescriptor';
 import { poseRotationOf } from 'features/paths/poseRotation';
 import { pointInPath, strokeHitTest } from 'features/paths/hitTest';
-import type { Path } from 'features/paths/types';
 
-export function isPathLike(p: unknown): p is Path {
-  if (!p || typeof p !== 'object') return false;
-  const k = (p as { kind?: unknown }).kind;
-  return k === 'polygon' || k === 'rect';
-}
+export { isPathLike };
 
-export function aabbOfPose<TPose>(pose: TPose): Bounds {
-  if (isPathLike(pose)) return pathPoseDescriptor.getBounds(pose);
-  return RECT_POSE_DESCRIPTOR.getBounds(
-    pose as { x: number; y: number; width: number; height: number },
-  );
+export function aabbOfPose<TPose>(
+  pose: TPose,
+  descriptor: PoseDescriptor<unknown> = AUTO_POSE_DESCRIPTOR,
+): Bounds {
+  return descriptor.getBounds(pose);
 }
 
 /** Screen-px slop applied to the stroke-distance hit-test for paths. Catches
@@ -43,6 +38,7 @@ export function poseContains<TPose>(
   wx: number,
   wy: number,
   tolerance?: number,
+  descriptor: PoseDescriptor<unknown> = AUTO_POSE_DESCRIPTOR,
 ): boolean {
   if (isPathLike(pose)) {
     // Precise inside-filled-region OR within-stroke-slop. Replaces the old
@@ -51,7 +47,7 @@ export function poseContains<TPose>(
     if (pointInPath(pose, wx, wy)) return true;
     return strokeHitTest(pose, wx, wy, tolerance ?? DEFAULT_PATH_STROKE_SLOP);
   }
-  const b = aabbOfPose(pose);
+  const b = aabbOfPose(pose, descriptor);
   // `tolerance` is the caller's whole budget for being at least as generous
   // as whatever refinement follows: pointer slop AND the stroke's outward
   // reach, which this function cannot see.
@@ -68,16 +64,19 @@ export function poseContains<TPose>(
  * This covers both rect-shaped poses and rotated `kind:'rect'`/polygon poses
  * that carry an AABB. Poses with no effective rotation test directly.
  *
- * Rotation is read from `pose.rotation` (the kit's one rotation convention),
- * not from an injected descriptor — the renderer reads it the same way.
+ * Rotation comes from the descriptor when one is supplied, and otherwise from
+ * `pose.rotation` — the convention the renderer reads.
  */
 export function poseContainsRotated<TPose>(
   pose: TPose,
   wx: number,
   wy: number,
   tolerance?: number,
+  descriptor: PoseDescriptor<unknown> = AUTO_POSE_DESCRIPTOR,
 ): boolean {
-  const r = poseRotationOf(pose);
+  const r = descriptor === AUTO_POSE_DESCRIPTOR
+    ? poseRotationOf(pose)
+    : rotationAboutCenter(pose, descriptor);
   if (r) {
     // Inverse of `rotateAboutPoint(cx, cy, θ)` is `rotateAboutPoint(cx, cy, -θ)`
     // (same pivot + negated angle) — composes on the kernel rather than the
@@ -87,7 +86,17 @@ export function poseContainsRotated<TPose>(
     const [lx, ly] = applyToPoint(rotateAboutPoint(r.cx, r.cy, -r.rotation), wx, wy);
     // Rotation is rigid, so a world-unit tolerance is the same distance in
     // the local frame — no rescaling needed.
-    return poseContains(pose, lx, ly, tolerance);
+    return poseContains(pose, lx, ly, tolerance, descriptor);
   }
-  return poseContains(pose, wx, wy, tolerance);
+  return poseContains(pose, wx, wy, tolerance, descriptor);
+}
+
+function rotationAboutCenter<TPose>(
+  pose: TPose,
+  descriptor: PoseDescriptor<unknown>,
+): { cx: number; cy: number; rotation: number } | null {
+  const rotation = descriptor.getRotation?.(pose) ?? 0;
+  if (!rotation) return null;
+  const b = descriptor.getBounds(pose);
+  return { cx: b.x + b.width / 2, cy: b.y + b.height / 2, rotation };
 }

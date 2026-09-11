@@ -1237,6 +1237,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const { adapter, selectTool: internalSelect, rotateTool, pickEvery: internalPickEvery, pickBest: internalPickBest, boundsOf: internalBoundsOf } = useSceneSelectTool({
     scene,
     selection,
+    poseDescriptor: descriptor as PoseDescriptor<TPose>,
     geometry,
     // The pick tolerance is declared in screen pixels; this is what converts it.
     getView: () => currentViewRef.current,
@@ -2591,13 +2592,13 @@ function StandardActionsRegistrar({
 
   // Per-dep wiring modules under `src/canvas/deps/`. See each file for the
   // dep's contract and trade-offs.
-  useAreaSelectDepSource(scene, selection);
+  useAreaSelectDepSource(scene, selection, poseDescriptor);
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(layouts);
   useInsertDepSource(scene, adapter, insertNodeFactories);
   useSnapDepSource(snapPoint);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestionResolveSrc, ingestionSvg, ingestionClipboard);
-  useLassoSelectDepSource(scene, selection);
+  useLassoSelectDepSource(scene, selection, poseDescriptor);
   useTextEditDepSource(scene);
   useEditAnchorsDepSource(scene, selection, adapter, editAnchorsExternalState, {
     anchorEditingAllowed,

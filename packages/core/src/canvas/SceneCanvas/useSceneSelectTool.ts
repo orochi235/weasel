@@ -26,8 +26,12 @@ import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
 import { snap as snapBehavior } from 'interactions/gestures/shared/snap';
-import { translateRectPose, type RectPose } from 'features/groups/composePose';
-import { aabbOfPose, poseContains, poseContainsRotated } from './poseGeometry';
+import {
+  translatePoseViaDescriptor,
+  type PoseDescriptor,
+} from 'interactions/actions/resize/geometry';
+import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import { poseContains, poseContainsRotated } from './poseGeometry';
 import { shapeCoversPoint, findShapeInk } from 'canvas/NodeShape';
 import { meanScale } from 'core/viewport/meanScale';
 
@@ -50,6 +54,8 @@ export interface PickCamera { scale: { x: number; y: number } }
 export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
   scene: Scene<TData, TLayer, TPose>;
   selection: SelectionApi;
+  /** How to read and rewrite this scene's poses. Default `AUTO_POSE_DESCRIPTOR`. */
+  poseDescriptor?: PoseDescriptor<TPose>;
   geometry?: {
     pickEvery?: (worldX: number, worldY: number) => string | string[] | null;
     boundsOf?: (id: string) => Bounds | null;
@@ -132,6 +138,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     scene, selection, geometry, selectTool: opts, insertTool, layouts, getView,
     alphaOf, layerIsPainted,
   } = args;
+  const d = (args.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
 
   const pickEveryProp = geometry?.pickEvery;
   const boundsOfProp = geometry?.boundsOf;
@@ -149,7 +156,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   const insertLayer = insertTool?.layer;
 
   const adapter = useMemo(() => {
-    const base = sceneToAdapter(scene, { commitInsert, insertLayer, layouts });
+    const base = sceneToAdapter(scene, { commitInsert, insertLayer, layouts, poseDescriptor: d });
     const collectDescendants = (id: string, out: string[]): void => {
       for (const cid of scene.childrenOf(asNodeId(id))) {
         out.push(cid);
@@ -164,8 +171,8 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
           base.setPose(id, pose);
           return;
         }
-        const prev = n.pose as unknown as { x: number; y: number };
-        const next = pose as unknown as { x: number; y: number };
+        const prev = d.getBounds(n.pose);
+        const next = d.getBounds(pose);
         const dx = next.x - prev.x;
         const dy = next.y - prev.y;
         if (dx === 0 && dy === 0) {
@@ -179,9 +186,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
           for (const cid of desc) {
             const cn = scene.get(asNodeId(cid));
             if (!cn) continue;
-            // Container cascade is rect-only: translate each descendant's
-            // top-level (x, y) by the same delta via the shared helper.
-            base.setPose(cid, translateRectPose(cn.pose as unknown as RectPose, dx, dy) as unknown as TPose);
+            base.setPose(cid, translatePoseViaDescriptor(cn.pose, dx, dy, d));
           }
         });
       },
@@ -192,7 +197,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       getSelection: (): string[] => [...selection.adapterMethods.getSelection()],
       setSelection: (ids: string[]) => selection.adapterMethods.setSelection(ids as NodeId[]),
     };
-  }, [scene, commitInsert, insertLayer, layouts, selection]);
+  }, [scene, commitInsert, insertLayer, layouts, selection, d]);
 
   const wiredMoveOptions = useMemo<UseMoveOptions<TPose>>(() => {
     const merged: UseMoveOptions<TPose> = { ...(moveOptions ?? {}) };
@@ -245,8 +250,8 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
           // The path is the region to test instead, and `poseContains` already
           // reads a path-like pose as one.
           const admitted = derived
-            ? poseContains(derived as never, wx, wy, tolerance + outset)
-            : poseContainsRotated(pose, wx, wy, tolerance + outset);
+            ? poseContains(derived as never, wx, wy, tolerance + outset, d as PoseDescriptor<unknown>)
+            : poseContainsRotated(pose, wx, wy, tolerance + outset, d as PoseDescriptor<unknown>);
           if (!admitted) return false;
           // `shapeCoversPoint` narrows the rect to the ink the painter actually
           // lays down (and answers `true` for painters that have no silhouette,
@@ -260,7 +265,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       });
     };
   }, [scene, adapter, pickEveryProp, shapePicking, pickTolerancePx, getView,
-      alphaOf, layerIsPainted]);
+      alphaOf, layerIsPainted, d]);
 
   const wiredBoundsOf = useMemo(() => {
     return (id: string): Bounds | null => {
@@ -268,16 +273,11 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       const n = scene.get(asNodeId(id));
       if (!n) return null;
       const pose = adapter.getPose(id);
-      const b = aabbOfPose(pose);
-      // Surface rotation to the overlay directly from the pose. Independent
-      // of any gesture-side descriptor (notably `selectTool.resize.geometry`,
-      // which the rotated-resize math demo deliberately subverts to
-      // demonstrate counterexamples — the overlay must keep showing the
-      // rect's true rotation regardless).
-      const rot = (pose as { rotation?: number }).rotation;
+      const b = d.getBounds(pose);
+      const rot = d.getRotation?.(pose) ?? (b as { rotation?: number }).rotation ?? 0;
       return rot ? { ...b, rotation: rot } : b;
     };
-  }, [scene, adapter, boundsOfProp]);
+  }, [scene, adapter, boundsOfProp, d]);
 
   const selectTool = useSelectTool<Node<TData, TLayer, TPose>, TPose>(adapter, {
     pickEvery: wiredHitBody,

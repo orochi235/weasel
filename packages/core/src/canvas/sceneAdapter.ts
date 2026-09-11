@@ -13,7 +13,6 @@
  * via `composeWorldPose`, not the adapter's.
  */
 import { useMemo } from 'react';
-import { dwarn } from '../debug';
 import type {
   AreaSelectAdapter,
   ClipboardSnapshot,
@@ -39,9 +38,12 @@ import {
 } from 'core/geometry/polygonHitTestRect';
 import { pathIntersectsRect } from 'features/paths/pathHitTest';
 import { pickWalk, scenePickSource } from 'canvas/pickWalk';
-import { aabbOfPose } from 'canvas/SceneCanvas/poseGeometry';
-import { axisAlignedBounds } from 'core/geometry/unionBounds';
-import { translateRectPose } from 'features/groups/composePose';
+import {
+  translatePoseViaDescriptor,
+  visualBoundsViaDescriptor,
+  type PoseDescriptor,
+} from 'interactions/actions/resize/geometry';
+import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
 
 /** Minimal selection contract `sceneToAdapter` needs to wire `getSelection` /
@@ -115,10 +117,8 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
    *  fine for read-only or selection-less canvases, but the marquee gesture
    *  won't update any external selection state. */
   selection?: SceneAdapterSelection;
-  /** Project a pose to an AABB for `hitTestArea`. Default: identity (works
-   *  when TPose carries top-level x/y/width/height). Override for non-rect
-   *  poses. */
-  poseBounds?: (pose: TPose) => Bounds;
+  /** How to read and rewrite this scene's poses. Default `AUTO_POSE_DESCRIPTOR`. */
+  poseDescriptor?: PoseDescriptor<TPose>;
   /** Layout strategies keyed by container node id. When a container is
    *  configured here, `move` runs its layout-aware pass on drag (reflow on
    *  enter, reflow leftovers on exit, reparent + write reflowed poses on
@@ -128,14 +128,10 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
   layouts?:
     | Record<string, LayoutStrategy<TPose>>
     | ((containerId: string) => LayoutStrategy<TPose> | null);
-  /** When set, `setPose(id, ...)` on a container node cascades the translation
-   *  to every descendant. Scene v1 stores absolute poses, so dragging a
-   *  container needs to translate its children to keep them visually attached
-   *  to their parent. Pass `'rect'` to use the built-in `translateRectPose`
-   *  (works for any `TPose extends { x: number; y: number }`); pass a custom
-   *  `(pose, dx, dy) => pose` for non-rect pose shapes. Omit to leave setPose
-   *  primitive — containers move but their descendants don't follow. */
-  cascadeContainerPose?: 'rect' | ((pose: TPose, dx: number, dy: number) => TPose);
+  /** When true, `setPose` on a container translates every descendant by the
+   *  same delta, through the pose descriptor. Scene v1 stores absolute poses,
+   *  so without it children stay behind. */
+  cascadeContainerPose?: boolean;
 }
 
 // ─── Clip-aware hierarchical walk ────────────────────────────────────────────
@@ -208,39 +204,10 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
   const sel = options.selection;
   const getSelection = sel?.getSelection ?? sel?.get ?? (() => [] as string[]);
   const setSelection = sel?.setSelection ?? sel?.set ?? (() => {});
-  // Not identity: a path pose has no top-level x/y/w/h, so an identity
-  // default answered NaN for one and every area query silently missed it.
-  const poseBounds = options.poseBounds
-    ?? ((p: TPose) => axisAlignedBounds(aabbOfPose(p)) as Bounds);
-
-  const cascadeTranslate: ((pose: TPose, dx: number, dy: number) => TPose) | null =
-    options.cascadeContainerPose === 'rect'
-      ? (translateRectPose as unknown as (pose: TPose, dx: number, dy: number) => TPose)
-      : options.cascadeContainerPose ?? null;
-
-  // Pose translator for `commitPaste`. Resolution chain:
-  //   1. the consumer's cascade translator, when configured (the same seam
-  //      non-rect pose shapes already use for container drags);
-  //   2. `translateRectPose`, but only when the pose actually carries
-  //      top-level numeric x/y (the default `poseBounds` shape assumption);
-  //   3. identity + dwarn — pasted nodes land untranslated (overlapping the
-  //      source) rather than having bogus/NaN x/y written into a pose shape
-  //      the kit doesn't understand. Mirrors `cascadeContainerPose`'s opt-in
-  //      posture: exotic poses must supply their own translator.
-  const pasteTranslatePose = (pose: TPose, dx: number, dy: number): TPose => {
-    if (cascadeTranslate !== null) return cascadeTranslate(pose, dx, dy);
-    const p = pose as unknown as { x?: unknown; y?: unknown };
-    if (typeof p.x === 'number' && typeof p.y === 'number') {
-      return (translateRectPose as unknown as (pose: TPose, dx: number, dy: number) => TPose)(
-        pose, dx, dy,
-      );
-    }
-    dwarn(
-      'scene-canvas',
-      'commitPaste: pose has no top-level numeric x/y and no cascadeContainerPose translator is configured — pasting untranslated',
-    );
-    return pose;
-  };
+  const d = (options.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
+  const poseBounds = (p: TPose): Bounds => visualBoundsViaDescriptor(p, d);
+  const translate = (p: TPose, dx: number, dy: number): TPose =>
+    translatePoseViaDescriptor(p, dx, dy, d);
 
   const adapter: SceneCanvasAdapter<TData, TLayer, TPose> = {
     getNode(id) {
@@ -267,16 +234,13 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     setPose(id, pose) {
       // Container cascade (opt-in): under scene v1's absolute-pose semantics,
       // moving a container needs to translate every descendant by the same
-      // delta so children visually stay attached. We compute dx/dy from the
-      // top-level (x, y) of before/after — the only shape contract the cascade
-      // requires of TPose; everything else flows through the supplied
-      // translatePose. The whole cascade lands as one scene.batch so undo
-      // collapses to a single step.
-      if (cascadeTranslate !== null) {
+      // delta so children visually stay attached. The whole cascade lands as
+      // one scene.batch so undo collapses to a single step.
+      if (options.cascadeContainerPose) {
         const node = scene.get(asNodeId(id));
         if (node && node.kind === 'container') {
-          const before = node.pose as unknown as { x: number; y: number };
-          const after = pose as unknown as { x: number; y: number };
+          const before = d.getBounds(node.pose);
+          const after = d.getBounds(pose);
           const dx = after.x - before.x;
           const dy = after.y - before.y;
           if (dx !== 0 || dy !== 0) {
@@ -293,7 +257,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
               for (const cid of descIds) {
                 const cn = scene.get(asNodeId(cid));
                 if (!cn) continue;
-                scene.setPose(asNodeId(cid), cascadeTranslate(cn.pose, dx, dy));
+                scene.setPose(asNodeId(cid), translate(cn.pose, dx, dy));
               }
             });
             return;
@@ -381,8 +345,8 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     // `useSelectTool(sceneToAdapter(scene, { selection }))` Just Works for the
     // marquee gesture. `applyOps` (above) dispatches transiently when called
     // without a label, matching the AreaSelectAdapter contract; `hitTestArea`
-    // does an AABB-vs-AABB scan over `scene.renderOrder()` via `poseBounds`
-    // (default identity for `{x,y,width,height}` poses).
+    // does an AABB-vs-AABB scan over `scene.renderOrder()`, reading bounds
+    // through the pose descriptor.
     getSelection,
     setSelection,
     hitTestArea(rect: Bounds) {
@@ -528,7 +492,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
           id: idMap.get(item.id)!,
           layer: item.layer,
           parent: isRoot(item) ? null : idMap.get(item.parent as string)!,
-          pose: pasteTranslatePose(copyField(item.pose), dx, dy),
+          pose: translate(copyField(item.pose), dx, dy),
           data: copyField(item.data),
         };
         if (item.kind === 'container') {
@@ -571,9 +535,9 @@ export function useSceneAdapter<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   options: SceneToAdapterOptions<TData, TLayer, TPose> = {},
 ): SceneCanvasAdapter<TData, TLayer, TPose> {
-  const { selection, commitInsert, insertLayer, layouts, poseBounds, cascadeContainerPose } = options;
+  const { selection, commitInsert, insertLayer, layouts, poseDescriptor, cascadeContainerPose } = options;
   return useMemo(
-    () => sceneToAdapter(scene, { selection, commitInsert, insertLayer, layouts, poseBounds, cascadeContainerPose }),
-    [scene, selection, commitInsert, insertLayer, layouts, poseBounds, cascadeContainerPose],
+    () => sceneToAdapter(scene, { selection, commitInsert, insertLayer, layouts, poseDescriptor, cascadeContainerPose }),
+    [scene, selection, commitInsert, insertLayer, layouts, poseDescriptor, cascadeContainerPose],
   );
 }

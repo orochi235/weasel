@@ -3,6 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
 import { useClipboardOps } from 'interactions/actions/clipboard/clipboardOps';
+import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'interactions/actions/resize/circlePose.fixture';
 import { sceneToAdapter } from './sceneAdapter';
 
 interface Data { label: string; }
@@ -479,15 +480,10 @@ describe('clipboard seam', () => {
     expect(created[1].pose).toMatchObject({ x: 102, y: 52 });
   });
 
-  it('commitPaste leaves non-rect poses untranslated instead of corrupting them', () => {
-    // No cascadeContainerPose translator and no top-level x/y on the pose:
-    // the fallback must NOT write bogus/NaN x/y into a shape it doesn't
-    // understand — overlap beats corruption.
-    const scene = createScene<Data, 'bg', { cx: number; cy: number; r: number }>({
-      systemLayers: [{ id: 'bg' }],
-    });
-    const id = scene.add({ kind: 'leaf', layer: 'bg', pose: { cx: 5, cy: 6, r: 7 }, data: { label: 'dot' } });
-    const adapter = sceneToAdapter(scene);
+  it('commitPaste translates a non-rect pose in its own fields, adding none', () => {
+    const scene = createScene<Data, 'bg', CirclePose>({ systemLayers: [{ id: 'bg' }] });
+    const id = scene.add({ kind: 'leaf', layer: 'bg', pose: circle(5, 6, 7), data: { label: 'dot' } });
+    const adapter = sceneToAdapter(scene, { poseDescriptor: CIRCLE_POSE_DESCRIPTOR });
     const snap = adapter.snapshotSelection!([id]);
     const created = adapter.commitPaste!(snap, { dx: 12, dy: 12 }) as unknown as Array<{
       id: string;
@@ -495,8 +491,8 @@ describe('clipboard seam', () => {
     }>;
     expect(created).toHaveLength(1);
     expect(created[0].id).toMatch(/^paste-/);
-    // Exact equality: fields unchanged, no extra x/y keys, no NaN.
-    expect(created[0].pose).toEqual({ cx: 5, cy: 6, r: 7 });
+    // Exact equality: no x/y grafted onto a shape that has none, no NaN.
+    expect(created[0].pose).toEqual({ cx: 17, cy: 18, r: 7 });
   });
 
   it('commitPaste filters container children refs that are absent from the snapshot', () => {
@@ -570,5 +566,25 @@ describe('clipboard seam', () => {
     scene.undo();
     expect(scene.nodes.size).toBe(nodeCountBefore);
     for (const id of newIds) expect(scene.nodes.has(id)).toBe(false);
+  });
+});
+
+describe('sceneToAdapter — non-rect poses', () => {
+  it('area-selects and pastes circles through the descriptor', () => {
+    const scene = createScene<object, 'bg', CirclePose>({ systemLayers: [{ id: 'bg' }] });
+    const id = scene.add({ kind: 'leaf', layer: 'bg', pose: circle(10, 10, 5), data: {} });
+    const adapter = sceneToAdapter(scene, { poseDescriptor: CIRCLE_POSE_DESCRIPTOR });
+    expect(adapter.hitTestArea!({ x: 0, y: 0, width: 20, height: 20 })).toEqual([id]);
+    const pasted = adapter.commitPaste(adapter.snapshotSelection([id]), { dx: 7, dy: 0 });
+    expect(pasted[0]!.pose).toEqual(circle(17, 10, 5));
+  });
+
+  it('cascades a container move to circle children', () => {
+    const scene = createScene<object, 'bg', CirclePose>({ systemLayers: [{ id: 'bg' }] });
+    const box = scene.add({ kind: 'container', layer: 'bg', pose: circle(50, 50, 50), data: {} });
+    const kid = scene.add({ kind: 'leaf', layer: 'bg', parent: box, pose: circle(40, 40, 5), data: {} });
+    const adapter = sceneToAdapter(scene, { poseDescriptor: CIRCLE_POSE_DESCRIPTOR, cascadeContainerPose: true });
+    adapter.setPose(box, circle(60, 50, 50));
+    expect(scene.get(kid)!.pose).toEqual(circle(50, 40, 5));
   });
 });
