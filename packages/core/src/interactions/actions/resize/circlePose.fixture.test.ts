@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { circle, CIRCLE_POSE_DESCRIPTOR as D } from './circlePose';
+import { circle, CIRCLE_POSE_DESCRIPTOR as D } from './circlePose.fixture';
 
 describe('circle probe', () => {
   it('round-trips through its own bounds', () => {
