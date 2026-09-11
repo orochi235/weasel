@@ -11,11 +11,15 @@ paths, never `git add -A`.
   code for each. Execute them in order with a fresh subagent per task; the
   ground-rules section at the top is binding on every one of them.
 
-Where it stands: `git log --oneline main..HEAD`. Tasks 0 through 5 are
-committed (the rename, `fromBounds`/`withRotation`, the circle probe, the
-`poseDescriptor` dep and prop, resize, move). Task 6 onward is open. The plan's
-own task list is the checklist; nothing in it has been ticked, so go by the
-commit subjects, which name their task's work.
+Where it stands: `git log --oneline main..HEAD`. Tasks 0 through 9 are
+committed — the rename, `fromBounds`/`withRotation`, the circle probe, the
+`poseDescriptor` dep and prop, and then every reader: resize, move, the other
+seven actions, group, picking, both container cascades, the hit tests, both
+adapters, the selection overlay, the minimap, nested hits and `useSelectTool`.
+Tasks 10 to 12 (alignment guides, momentum, painters) were in flight when this
+was written; Tasks 13 and 14 (consumer prose, the changeset, the full gate) are
+open. The plan's own checkboxes were never ticked, so go by the commit
+subjects, which name their task's work.
 
 ## Decisions taken during execution that the plan does not carry
 
