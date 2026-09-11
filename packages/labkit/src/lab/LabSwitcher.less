@@ -21,6 +21,10 @@
   border: 0;
   padding: 0;
   cursor: pointer;
+  // A title is a click target now, and a consumer's header is usually a
+  // crowded flex row -- left to wrap, `brick-icons corpus` breaks after the
+  // hyphen and the control becomes three ragged lines with a caret adrift.
+  white-space: nowrap;
 
   &:hover { color: var(--wzl-text-accent, var(--wzl-text)); }
 
@@ -55,7 +59,10 @@
   display: flex;
   flex-direction: column;
   padding: var(--wzl-space-xs);
-  background: var(--wzl-surface-raised);
+  // `--wzl-surface-raised` is translucent by design -- it is for panels that
+  // blur what sits behind them. A menu has to be read, so it takes the opaque
+  // surface, the way `FloatingPanel` does.
+  background: var(--wzl-surface);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-md, 6px);
   box-shadow: var(--wzl-shadow-md, 0 6px 20px rgb(0 0 0 / 35%));
