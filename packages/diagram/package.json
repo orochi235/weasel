@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/diagram",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "Node-link diagramming for weasel: any scene node becomes a diagram participant, with ports on its perimeter and an optional body builder for flowchart-shaped boxes.",
   "license": "MIT",
   "type": "module",
@@ -17,7 +17,7 @@
   },
   "peerDependencies": {
     "react": ">=18",
-    "@weasel-js/core": "1.4.3"
+    "@weasel-js/core": "1.4.4"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

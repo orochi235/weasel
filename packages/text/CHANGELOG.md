@@ -1,5 +1,14 @@
 # @weasel-js/text
 
+## 1.4.4
+
+### Patch Changes
+
+- Updated dependencies [4f8c6b2]
+  - @weasel-js/font@1.4.4
+  - @weasel-js/geom@1.4.4
+  - @weasel-js/paint@1.4.4
+
 ## 1.4.3
 
 ### Patch Changes

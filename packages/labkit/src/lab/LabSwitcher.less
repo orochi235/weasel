@@ -1,0 +1,85 @@
+.lk-switcher {
+  position: relative;
+  display: inline-block;
+}
+
+.lk-switcher-title {
+  margin: 0;
+  font-size: var(--wzl-font-size-xl);
+  line-height: var(--wzl-line-height-tight, 1.2);
+}
+
+.lk-switcher-trigger {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--wzl-space-xs);
+  // The title IS the control, so it keeps the title's type and gives up every
+  // other button affordance until it is pointed at.
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+
+  &:hover { color: var(--wzl-text-accent, var(--wzl-text)); }
+
+  &:focus-visible {
+    outline: 2px solid var(--wzl-focus-ring, currentColor);
+    outline-offset: 2px;
+    border-radius: var(--wzl-radius-sm, 2px);
+  }
+}
+
+.lk-switcher-caret {
+  // Sized in em so it tracks the title rather than needing a second rule per
+  // heading size.
+  width: 0.36em;
+  height: 0.36em;
+  border-right: 0.09em solid currentColor;
+  border-bottom: 0.09em solid currentColor;
+  transform: translateY(-0.18em) rotate(45deg);
+  opacity: 0.6;
+}
+
+.lk-switcher-trigger[aria-expanded='true'] .lk-switcher-caret {
+  transform: translateY(0.06em) rotate(-135deg);
+}
+
+.lk-switcher-menu {
+  position: absolute;
+  top: calc(100% + var(--wzl-space-xs));
+  left: 0;
+  z-index: var(--wzl-z-popover, 60);
+  min-width: max(100%, 11rem);
+  display: flex;
+  flex-direction: column;
+  padding: var(--wzl-space-xs);
+  background: var(--wzl-surface-raised);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md, 6px);
+  box-shadow: var(--wzl-shadow-md, 0 6px 20px rgb(0 0 0 / 35%));
+}
+
+.lk-switcher-item {
+  padding: var(--wzl-space-xs) var(--wzl-space-sm);
+  border-radius: var(--wzl-radius-sm, 3px);
+  color: var(--wzl-text);
+  font-size: var(--wzl-font-size-md);
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover { background: var(--wzl-surface-hover, var(--wzl-surface)); }
+
+  &:focus-visible {
+    outline: 2px solid var(--wzl-focus-ring, currentColor);
+    outline-offset: -2px;
+  }
+}
+
+// The open page stays in the list rather than being filtered out: a menu that
+// drops its current entry shifts every other one as you move between pages.
+.lk-switcher-item[aria-current='page'] {
+  color: var(--wzl-text-strong, var(--wzl-text));
+  font-weight: var(--wzl-font-weight-semibold, 600);
+}

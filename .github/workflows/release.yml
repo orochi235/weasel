@@ -28,10 +28,10 @@ jobs:
       # before a release does. See the note there.
       NPM_VERSION: 12.0.2
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
