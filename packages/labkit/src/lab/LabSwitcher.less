@@ -21,6 +21,10 @@
   border: 0;
   padding: 0;
   cursor: pointer;
+  // A title is a click target now, and a consumer's header is usually a
+  // crowded flex row -- left to wrap, `brick-icons corpus` breaks after the
+  // hyphen and the control becomes three ragged lines with a caret adrift.
+  white-space: nowrap;
 
   &:hover { color: var(--wzl-text-accent, var(--wzl-text)); }
 
