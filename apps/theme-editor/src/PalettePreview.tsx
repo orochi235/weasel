@@ -1,0 +1,194 @@
+import { useState } from 'react';
+import styles from './PaletteLab.module.css';
+import { PinIcon } from './PinIcon';
+import type { Palette } from './palette/generate';
+import { toLch } from './palette/oklch';
+
+type Point = readonly [x: number, y: number];
+
+/**
+ * A smooth path through every point, as cubic Béziers.
+ *
+ * Catmull-Rom picks each segment's control points from its neighbours, so the
+ * curve passes through the samples rather than near them and the joins stay
+ * continuous. Endpoints are duplicated to give the first and last segments the
+ * neighbour they lack.
+ */
+function smoothPath(points: readonly Point[]): string {
+  if (points.length < 2) return '';
+  const at = (i: number) => points[Math.max(0, Math.min(points.length - 1, i))];
+  let d = `M${at(0)[0].toFixed(1)},${at(0)[1].toFixed(1)}`;
+  for (let i = 0; i < points.length - 1; i += 1) {
+    const [p0, p1, p2, p3] = [at(i - 1), at(i), at(i + 1), at(i + 2)];
+    const c1x = p1[0] + (p2[0] - p0[0]) / 6;
+    const c1y = p1[1] + (p2[1] - p0[1]) / 6;
+    const c2x = p2[0] - (p3[0] - p1[0]) / 6;
+    const c2y = p2[1] - (p3[1] - p1[1]) / 6;
+    d += ` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
+  return d;
+}
+
+const BAR_HEIGHTS = [0.62, 0.4, 0.78, 0.3, 0.55, 0.72, 0.46, 0.66, 0.35, 0.58, 0.5, 0.7, 0.42, 0.6, 0.33, 0.68];
+
+function Marks({ palette, background }: { palette: Palette; background: string }) {
+  const n = palette.swatches.length;
+  const W = 700;
+  const H = 76;
+  const slot = (W - 20) / n;
+  return (
+    <div className={styles.marks} style={{ background }}>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label="Bars in every palette color">
+        {palette.swatches.map((s, i) => {
+          const h = BAR_HEIGHTS[i % BAR_HEIGHTS.length] * (H - 12);
+          return (
+            <rect
+              key={s.hex + i}
+              x={10 + i * slot}
+              y={H - 6 - h}
+              width={slot * 0.72}
+              height={h}
+              fill={s.hex}
+              rx={2}
+            />
+          );
+        })}
+      </svg>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label="Lines in every palette color">
+        {palette.swatches.map((s, i) => {
+          // Phase by i/n, not a fixed step: a constant offset wraps past 2*PI
+          // once the set is large and series start drawing on top of each other.
+          const phase = (i / n) * Math.PI * 2;
+          const amplitude = (H / 2 - 9) * (0.72 + 0.28 * ((i % 3) / 2));
+          const points: Point[] = Array.from({ length: 9 }, (_, k) => [
+            10 + (k * (W - 20)) / 8,
+            H / 2 - amplitude * Math.sin(k * 0.7 + phase),
+          ]);
+          return (
+            <path
+              key={s.hex + i}
+              d={smoothPath(points)}
+              fill="none"
+              stroke={s.hex}
+              strokeWidth={2}
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+export function PalettePreview({ palette, surface }: { palette: Palette; surface: string }) {
+  const [copied, setCopied] = useState(false);
+  const { stats, swatches } = palette;
+  const hexes = swatches.map((s) => s.hex).join(' ');
+
+  const tokenJson = swatches
+    .map((s, i) => `    "swatch-${s.name}":${' '.repeat(Math.max(1, 10 - s.name.length))}{ "$value": "${s.hex}" }${i === swatches.length - 1 ? '' : ','}`)
+    .join('\n');
+
+  return (
+    <div className={styles.previewBody}>
+      <div className={styles.stats}>
+        <Stat label="mean chroma" value={stats.meanChroma.toFixed(3)} note="Tailwind 500 is 0.187" />
+        <Stat label="chroma spread" value={stats.chromaSpread.toFixed(3)} />
+        <Stat label="lightness spread" value={stats.lightnessSpread.toFixed(3)} note="working palettes run 0.14–0.26" />
+        <Stat
+          label="min hue gap"
+          value={`${stats.minHueGap.toFixed(0)}°`}
+          note={`${(stats.hueFloorShare * 100).toFixed(0)}% of even`}
+        />
+        <Stat
+          label="min contrast"
+          value={stats.minContrast.toFixed(2)}
+          tone={stats.minContrast >= 3 ? 'ok' : 'bad'}
+          note="WCAG, lightness only"
+        />
+        <Stat
+          label="min distance"
+          value={stats.minDistance.toFixed(3)}
+          tone={stats.minDistance >= 0.22 ? 'ok' : 'bad'}
+          note="0.22 reads as two colors"
+        />
+        <Stat
+          label="from surface"
+          value={stats.minSurfaceDistance.toFixed(3)}
+          tone={stats.minSurfaceDistance >= 0.25 ? 'ok' : 'bad'}
+        />
+      </div>
+
+      {(['#181a1e', '#f5f5f6'] as const).map((bg) => (
+        <section
+          key={bg}
+          className={styles.pane}
+          style={{ background: bg, ['--pane-fg' as string]: bg === '#181a1e' ? '#e6e7e9' : '#25272c' }}
+        >
+          <header className={styles.paneTitle}>
+            {bg === '#181a1e' ? 'dark surface' : 'light surface'}
+            {bg === surface && <span className={styles.gated}>contrast gated here</span>}
+          </header>
+          <div className={styles.swatches}>
+            {swatches.map((s, i) => (
+              <div key={s.hex + i} className={styles.swatch}>
+                <div
+                  className={s.anchored ? styles.chipPinned : styles.chip}
+                  style={{ background: s.hex }}
+                  title={`${s.name} ${s.hex}${s.anchored ? ' (pinned)' : ''}`}
+                >
+                  {s.anchored && (
+                    <PinIcon
+                      size={12}
+                      className={toLch(s.hex).L > 0.6 ? styles.pinOnLight : styles.pinOnDark}
+                    />
+                  )}
+                </div>
+                <span className={styles.chipName}>{s.name}</span>
+              </div>
+            ))}
+          </div>
+          <Marks palette={palette} background={bg} />
+        </section>
+      ))}
+
+      <div className={styles.output}>
+        <code className={styles.hexes}>{hexes}</code>
+        <button
+          type="button"
+          className={styles.copy}
+          onClick={() => {
+            void navigator.clipboard?.writeText(tokenJson);
+            setCopied(true);
+            window.setTimeout(() => setCopied(false), 1400);
+          }}
+        >
+          {copied ? 'Copied' : 'Copy as tokens'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  note,
+  tone,
+}: {
+  label: string;
+  value: string;
+  note?: string;
+  tone?: 'ok' | 'bad';
+}) {
+  return (
+    <div className={styles.stat}>
+      <span className={styles.statLabel}>{label}</span>
+      <span className={tone === 'bad' ? styles.statBad : tone === 'ok' ? styles.statOk : styles.statValue}>
+        {value}
+      </span>
+      {note && <span className={styles.statNote}>{note}</span>}
+    </div>
+  );
+}

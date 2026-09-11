@@ -37,3 +37,4 @@ packages/cursor/scripts/probe/warp
 
 # Output collected from onto jobs run on other machines
 /.onto-out/
+dist-theme-editor

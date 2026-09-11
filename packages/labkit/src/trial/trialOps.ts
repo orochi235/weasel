@@ -1,7 +1,7 @@
 import { fillConfigDefaults } from '../config/path';
 import type { Instrument, InstrumentList } from '../instrument/types';
-import type { TrialRecord } from '../state/types';
 import { newId } from '../state/helpers';
+import type { TrialRecord } from '../state/types';
 
 const DEFAULT_VIEW = { zoom: 1, pan: { x: 0, y: 0 } } as const;
 

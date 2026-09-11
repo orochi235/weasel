@@ -42,17 +42,17 @@
   --wzl-surface-hover: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
   /* Pressed wash over a raised surface. */
   --wzl-surface-pressed: color-mix(in srgb, var(--wzl-fg) 18%, transparent);
-  /* First of ten categorical spot colors for plotting, status and data viz. Ordered — take them in sequence. Mode-invariant on purpose: a series keeps its color when the mode flips. */
-  --wzl-swatch-green: #2fdd18;
-  --wzl-swatch-pink: #ff5885;
-  --wzl-swatch-cyan: #00dfff;
-  --wzl-swatch-gold: #dcb700;
-  --wzl-swatch-amber: #ff8c00;
-  --wzl-swatch-violet: #a497ff;
-  --wzl-swatch-mint: #00e7af;
-  --wzl-swatch-sky: #00b8ff;
-  --wzl-swatch-orange: #ff6b00;
-  --wzl-swatch-magenta: #ff6eff;
+  /* First of ten categorical spot colors for plotting, status and data viz. Take them in sequence: the order is farthest-point over hue, so the first N are as separated as N colors can be (first three 87° apart, all ten 32°). Mode-invariant on purpose — a series keeps its color when the mode flips, which is why they are tuned for a dark surface and clear only 1.5:1 on a light one. */
+  --wzl-swatch-fuchsia: #f641f7;
+  --wzl-swatch-green: #48e628;
+  --wzl-swatch-sky: #36bff2;
+  --wzl-swatch-amber: #e69628;
+  --wzl-swatch-teal: #3ee1cb;
+  --wzl-swatch-red: #f75034;
+  --wzl-swatch-blue: #407ef7;
+  --wzl-swatch-citron: #d5d23a;
+  --wzl-swatch-rose: #fa4590;
+  --wzl-swatch-violet: #955cf9;
   --wzl-radius-sm: 3px;
   --wzl-radius-md: 5px;
   --wzl-radius-lg: 14px;
@@ -135,15 +135,14 @@
   --wzl-fg-muted: var(--wzl-gray-300);
   --wzl-fg-subtle: var(--wzl-gray-400);
   --wzl-border: var(--wzl-gray-700);
-  --wzl-border-strong: var(--wzl-gray-600);
+  /* The line that has to be seen: a control's edge, a raised surface's outline. Clears WCAG 1.4.11's 3:1 against every surface in both modes. */
+  --wzl-border-strong: var(--wzl-gray-400);
   /* Accent for foreground use — text, icons, selected labels drawn on a surface. accent is a fill; the midnight base is too dim to read as text on dark surfaces. */
   --wzl-accent-fg: var(--wzl-accent-strong);
   /* Text drawn on a filled foreground-colored element (e.g. a slider thumb). Flips with the mode, so it is a semantic, not an alias to a primitive. */
   --wzl-fg-inverse: var(--wzl-gray-900);
   /* Elevation. Always darker than any surface — never derived from fg, which is near-white on dark. */
   --wzl-shadow: rgba(0, 0, 0, 0.6);
-  /* The line around a raised surface. Clears 3:1 against surface and surface-raised in either mode, which the general-purpose border does not; over surface-sunken it does not, so a panel on a sunken field needs its own answer. */
-  --wzl-border-raised: var(--wzl-gray-400);
 }
 
 [data-wzl-theme='weasel'][data-wzl-mode='dark'],
@@ -156,11 +155,10 @@
   --wzl-fg-muted: var(--wzl-gray-300);
   --wzl-fg-subtle: var(--wzl-gray-400);
   --wzl-border: var(--wzl-gray-700);
-  --wzl-border-strong: var(--wzl-gray-600);
+  --wzl-border-strong: var(--wzl-gray-400);
   --wzl-accent-fg: var(--wzl-accent-strong);
   --wzl-fg-inverse: var(--wzl-gray-900);
   --wzl-shadow: rgba(0, 0, 0, 0.6);
-  --wzl-border-raised: var(--wzl-gray-400);
   --wzl-line-subtle: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
   --wzl-line: color-mix(in srgb, var(--wzl-fg) 20%, transparent);
   --wzl-line-strong: color-mix(in srgb, var(--wzl-fg) 40%, transparent);
@@ -178,11 +176,10 @@
   --wzl-fg-muted: var(--wzl-gray-600);
   --wzl-fg-subtle: var(--wzl-gray-500);
   --wzl-border: var(--wzl-gray-200);
-  --wzl-border-strong: var(--wzl-gray-300);
+  --wzl-border-strong: var(--wzl-gray-500);
   --wzl-accent-fg: var(--wzl-accent-base);
   --wzl-fg-inverse: var(--wzl-gray-50);
   --wzl-shadow: rgba(0, 0, 0, 0.18);
-  --wzl-border-raised: var(--wzl-gray-400);
   --wzl-line-subtle: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
   --wzl-line: color-mix(in srgb, var(--wzl-fg) 20%, transparent);
   --wzl-line-strong: color-mix(in srgb, var(--wzl-fg) 40%, transparent);

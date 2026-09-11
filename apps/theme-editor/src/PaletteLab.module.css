@@ -1,0 +1,630 @@
+/* `.lk-shell` is 100vh and `.lk-shell-body` is a bounded block container, so
+   this takes `height: 100%` rather than `flex: 1` — a flex value here resolves
+   against a block parent and collapses. Everything below scrolls in its own
+   pane so the page itself never does. */
+.page {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-md);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: var(--wzl-space-lg);
+  flex: 1;
+  min-height: 0;
+}
+
+.controls {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.preview {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.previewBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-md);
+}
+
+/* Figures are read down the column, so the digits have to line up. */
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wzl-space-lg);
+  padding: var(--wzl-space-sm) var(--wzl-space-md);
+  background: var(--wzl-surface);
+  border: var(--wzl-border-w) solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.statLabel {
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--wzl-tracking-wide);
+}
+
+.statValue,
+.statOk,
+.statBad {
+  font-size: var(--wzl-font-size-lg);
+  font-variant-numeric: tabular-nums;
+}
+
+.statOk {
+  color: var(--wzl-success);
+}
+
+.statBad {
+  color: var(--wzl-danger);
+}
+
+.statNote {
+  font-size: var(--wzl-font-size-2xs);
+  color: var(--wzl-fg-subtle);
+}
+
+.pane {
+  border-radius: var(--wzl-radius-md);
+  border: var(--wzl-border-w) solid var(--wzl-border);
+  padding: var(--wzl-space-md);
+}
+
+.paneTitle {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wzl-space-sm);
+  font-size: var(--wzl-font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: var(--wzl-tracking-wide);
+  color: var(--pane-fg);
+  opacity: 0.65;
+  margin-bottom: var(--wzl-space-sm);
+}
+
+.gated {
+  text-transform: none;
+  letter-spacing: var(--wzl-tracking-none);
+  opacity: 0.7;
+}
+
+.swatches {
+  display: flex;
+  gap: var(--wzl-space-xs);
+}
+
+.swatch {
+  flex: 1;
+  min-width: 0;
+}
+
+.chip {
+  height: 44px;
+  border-radius: var(--wzl-radius-sm);
+}
+
+.chipName {
+  display: block;
+  font-size: var(--wzl-font-size-2xs);
+  text-align: center;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--pane-fg);
+}
+
+.marks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--wzl-space-sm);
+  margin-top: var(--wzl-space-sm);
+}
+
+.marks svg {
+  width: 100%;
+  height: 76px;
+  display: block;
+}
+
+.output {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-md);
+}
+
+.hexes {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.copy,
+.reset {
+  height: var(--wzl-control-h);
+  padding: 0 var(--wzl-space-md);
+  border-radius: var(--wzl-radius-sm);
+  border: var(--wzl-border-w) solid var(--wzl-border-strong);
+  background: var(--wzl-surface-raised);
+  color: var(--wzl-fg);
+  font-family: inherit;
+  font-size: var(--wzl-font-size-sm);
+  cursor: pointer;
+}
+
+.copy:hover,
+.reset:hover {
+  background: var(--wzl-surface-hover);
+}
+
+.anchorHint {
+  margin: 0;
+  padding: var(--wzl-space-xs) 0;
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-subtle);
+  line-height: var(--wzl-leading);
+}
+
+.anchor {
+  border: var(--wzl-border-w) solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  padding: var(--wzl-space-xs) var(--wzl-space-sm) var(--wzl-space-sm);
+  margin-bottom: var(--wzl-space-xs);
+}
+
+.anchorHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-sm);
+  margin-bottom: var(--wzl-space-xs);
+}
+
+.anchorChip {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--wzl-radius-sm);
+  border: var(--wzl-border-w) solid var(--wzl-border-strong);
+  flex: none;
+}
+
+.anchorName {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--wzl-font-size-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.anchorRemove {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--wzl-fg-muted);
+  font: inherit;
+  font-size: var(--wzl-font-size-sm);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.anchorRemove:hover {
+  color: var(--wzl-danger);
+}
+
+.anchorAdd {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-sm);
+  padding-top: var(--wzl-space-xs);
+}
+
+.anchorFromHex {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-xs);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+}
+
+.anchorHexInput {
+  width: 5.5em;
+  height: var(--wzl-control-h);
+  padding: 0 var(--wzl-space-xs);
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-sm);
+  background: var(--wzl-surface-sunken);
+  color: var(--wzl-fg);
+  border: var(--wzl-border-w) solid var(--wzl-border-strong);
+  border-radius: var(--wzl-radius-sm);
+}
+
+.anchorSwatchInput {
+  width: var(--wzl-control-h);
+  height: var(--wzl-control-h);
+  padding: 0;
+  border: var(--wzl-border-w) solid var(--wzl-border-strong);
+  border-radius: var(--wzl-radius-sm);
+  background: none;
+  cursor: pointer;
+}
+
+
+
+
+
+
+
+.anchorPreset:disabled,
+.copy:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.infeasible {
+  margin: 0;
+  padding: var(--wzl-space-sm) var(--wzl-space-md);
+  border-radius: var(--wzl-radius-md);
+  border: var(--wzl-border-w) solid var(--wzl-warning);
+  background: color-mix(in oklab, var(--wzl-warning) 12%, transparent);
+  color: var(--wzl-fg);
+  font-size: var(--wzl-font-size-sm);
+  line-height: var(--wzl-leading);
+}
+
+/* A pinned swatch squares off; the generated ones stay rounded. The corner is
+   the difference you can see across the whole row without reading anything. */
+.chipPinned {
+  composes: chip;
+  border-radius: 0;
+}
+
+.pinOnLight {
+  color: rgb(0 0 0 / 0.62);
+}
+
+.pinOnDark {
+  color: rgb(255 255 255 / 0.78);
+}
+
+.chip,
+.chipPinned {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 3px;
+}
+
+.anchorRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-xs);
+  padding: 2px 0;
+}
+
+.anchorField {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.anchorFieldLabel {
+  font-size: var(--wzl-font-size-2xs);
+  color: var(--wzl-fg-subtle);
+}
+
+.anchorNumber {
+  width: 4.4em;
+  appearance: textfield;
+  height: var(--wzl-control-h);
+  padding: 0 var(--wzl-space-xs);
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-sm);
+  font-variant-numeric: tabular-nums;
+  background: var(--wzl-surface-sunken);
+  color: var(--wzl-fg);
+  border: var(--wzl-border-w) solid var(--wzl-border-strong);
+  border-radius: var(--wzl-radius-sm);
+}
+
+/* The spinners cost more width than they buy in a row this tight. */
+.anchorNumber::-webkit-outer-spin-button,
+.anchorNumber::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.anchorX {
+  display: grid;
+  place-items: center;
+  width: var(--wzl-control-h);
+  height: var(--wzl-control-h);
+  flex: none;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: var(--wzl-radius-sm);
+  color: var(--wzl-fg-muted);
+  cursor: pointer;
+}
+
+.anchorX:hover {
+  background: var(--wzl-surface-hover);
+  color: var(--wzl-danger);
+}
+
+
+
+.copy {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-xs);
+}
+
+/* A grid you scan, not a field you type into: 45 colors you would recognize on
+   sight, in the table's own family order. */
+.crayonGrid {
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
+  gap: 4px;
+}
+
+.crayon {
+  aspect-ratio: 1;
+  width: 100%;
+  padding: 0;
+  border: var(--wzl-border-w) solid rgb(0 0 0 / 0.25);
+  border-radius: var(--wzl-radius-sm);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.crayon:hover:not(:disabled),
+.crayon:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: 1px;
+}
+
+/* Square, matching a pinned swatch in the main row. */
+.crayonPinned {
+  composes: crayon;
+  border-radius: 0;
+}
+
+.crayonPin {
+  color: rgb(0 0 0 / 0.6);
+  filter: drop-shadow(0 0 1px rgb(255 255 255 / 0.7));
+}
+
+.crayon:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* A pinned swatch is never disabled — clicking it is how you unpin. */
+.crayonPin {
+  pointer-events: none;
+}
+
+.crayonCaption {
+  margin: 2px 0 0;
+  min-height: 1.2em;
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+}
+
+.headerActions {
+  display: flex;
+  gap: var(--wzl-space-xs);
+}
+
+.reset:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* The swatch is the control: a native color input sits over it, invisible,
+   so clicking the color opens a picker rather than hunting for a button. */
+.anchorChipEdit {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  cursor: pointer;
+}
+
+.anchorChipEdit input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+}
+
+.anchorChipEdit:hover .anchorChip,
+.anchorChipEdit:focus-within .anchorChip {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: 1px;
+}
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wzl-space-sm);
+  padding: var(--wzl-space-sm) var(--wzl-space-md);
+  background: var(--wzl-surface);
+  border: var(--wzl-border-w) solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+}
+
+.presetList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wzl-space-xs);
+  flex: 1;
+  min-width: 0;
+}
+
+.presetChip {
+  display: inline-flex;
+  align-items: stretch;
+  border: var(--wzl-border-w) solid var(--wzl-border-strong);
+  border-radius: var(--wzl-radius-pill);
+  overflow: hidden;
+  background: var(--wzl-surface-raised);
+}
+
+.presetLoad,
+.presetCopy {
+  height: var(--wzl-control-h);
+  border: 0;
+  background: none;
+  color: var(--wzl-fg);
+  font: inherit;
+  font-size: var(--wzl-font-size-sm);
+  cursor: pointer;
+}
+
+.presetLoad {
+  padding: 0 var(--wzl-space-sm);
+}
+
+.presetCopy {
+  width: var(--wzl-control-h);
+  padding: 0;
+  color: var(--wzl-fg-muted);
+  border-left: var(--wzl-border-w) solid var(--wzl-border);
+}
+
+.presetLoad:hover,
+.presetCopy:hover {
+  background: var(--wzl-surface-hover);
+}
+
+.presetSave {
+  display: flex;
+  gap: var(--wzl-space-xs);
+}
+
+.swatchPanel {
+  flex: none;
+  /* Left-aligned rather than centred: it lines up with the constraints column
+     above it, and a grid of small squares stretched to a wide screen puts the
+     two ends too far apart to compare. */
+  width: 100%;
+  max-width: 1000px;
+  max-height: 32vh;
+  display: flex;
+  flex-direction: column;
+  padding: var(--wzl-space-md);
+  background: var(--wzl-surface);
+  border: var(--wzl-border-w) solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+}
+
+.swatchHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-md);
+  margin-bottom: var(--wzl-space-sm);
+  flex-wrap: wrap;
+}
+
+.swatchTabs {
+  display: flex;
+  gap: 2px;
+}
+
+.swatchTab,
+.swatchTabOn {
+  height: var(--wzl-control-h);
+  padding: 0 var(--wzl-space-md);
+  font: inherit;
+  font-size: var(--wzl-font-size-sm);
+  border: var(--wzl-border-w) solid var(--wzl-border-strong);
+  border-radius: var(--wzl-radius-sm);
+  background: var(--wzl-surface-raised);
+  color: var(--wzl-fg-muted);
+  cursor: pointer;
+}
+
+.swatchTabOn {
+  background: var(--wzl-accent);
+  border-color: var(--wzl-accent);
+  color: var(--wzl-fg-on-accent);
+}
+
+.bandControl {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-xs);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+}
+
+.bandControl input {
+  width: 110px;
+}
+
+.bandControl output {
+  font-variant-numeric: tabular-nums;
+  min-width: 2.2em;
+}
+
+.swatchHover {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-subtle);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stub {
+  max-width: 60ch;
+  margin: 0 auto;
+  padding: calc(var(--wzl-space-lg) * 3) var(--wzl-space-lg);
+  color: var(--wzl-fg);
+}
+
+.stub h1 {
+  font-family: var(--wzl-font-display);
+  font-size: var(--wzl-font-size-xl);
+  margin: 0 0 var(--wzl-space-md);
+}
+
+.stub p {
+  color: var(--wzl-fg-muted);
+  line-height: var(--wzl-leading);
+}
+
+.stub a {
+  color: var(--wzl-accent-fg);
+}

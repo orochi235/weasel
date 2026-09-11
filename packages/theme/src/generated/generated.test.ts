@@ -37,10 +37,10 @@ describe('generated themes.ts', () => {
     const dark = THEMES.weasel.modes.dark;
     expect(dark['--wzl-space-md']).toBe('12px');
     expect(dark['--wzl-z-modal']).toBe('30');
-    expect(dark['--wzl-swatch-cyan']).toBe('#00dfff');
+    expect(dark['--wzl-swatch-fuchsia']).toBe('#f641f7');
     expect(dark['--wzl-backdrop']).toBe('none');
     // Mode-invariant: the swatch set does not flip.
-    expect(THEMES.weasel.modes.light['--wzl-swatch-cyan']).toBe('#00dfff');
+    expect(THEMES.weasel.modes.light['--wzl-swatch-fuchsia']).toBe('#f641f7');
     expect(THEME_SOURCES.weasel.primitives['backdrop'].type).toBe('gradient');
   });
 

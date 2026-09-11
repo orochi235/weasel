@@ -1025,6 +1025,14 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
+- **(P2) Build the theme editor's `#/theme` page, and the engine under it.**
+  `apps/theme-editor` ships only the palette lab (`#/palette`); `#/theme` is a
+  stub. The design is written and unbuilt:
+  `docs/superpowers/specs/2026-09-10-theme-engine-and-editor-design.md` — first
+  the engine in `@weasel-js/theme` (a layered definition format, derivation that
+  fills in unpinned values, emission, weasel's theme converted onto it), then the
+  editor on top. Next step is reviewing that spec, then a plan.
+
 - **(P3) A mark can be selected in two targets at once.** `AnnotationOverlay`
   leaves `selectionMode` at weasel's default `single`, and each canvas clears
   only its own scene, so clicking in one target does not clear a selection

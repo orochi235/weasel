@@ -13,7 +13,6 @@ export type TokenName =
   | '--wzl-accent-strong'
   | '--wzl-backdrop'
   | '--wzl-border'
-  | '--wzl-border-raised'
   | '--wzl-border-strong'
   | '--wzl-border-w'
   | '--wzl-control-h'
@@ -88,14 +87,14 @@ export type TokenName =
   | '--wzl-surface-raised'
   | '--wzl-surface-sunken'
   | '--wzl-swatch-amber'
-  | '--wzl-swatch-cyan'
-  | '--wzl-swatch-gold'
+  | '--wzl-swatch-blue'
+  | '--wzl-swatch-citron'
+  | '--wzl-swatch-fuchsia'
   | '--wzl-swatch-green'
-  | '--wzl-swatch-magenta'
-  | '--wzl-swatch-mint'
-  | '--wzl-swatch-orange'
-  | '--wzl-swatch-pink'
+  | '--wzl-swatch-red'
+  | '--wzl-swatch-rose'
   | '--wzl-swatch-sky'
+  | '--wzl-swatch-teal'
   | '--wzl-swatch-violet'
   | '--wzl-tb-height'
   | '--wzl-tracking-none'
@@ -154,16 +153,16 @@ export const THEMES = {
       '--wzl-glass-tint': "#2e1f7a",
       '--wzl-surface-hover': "rgba(230, 231, 233, 0.1)",
       '--wzl-surface-pressed': "rgba(230, 231, 233, 0.18)",
-      '--wzl-swatch-green': "#2fdd18",
-      '--wzl-swatch-pink': "#ff5885",
-      '--wzl-swatch-cyan': "#00dfff",
-      '--wzl-swatch-gold': "#dcb700",
-      '--wzl-swatch-amber': "#ff8c00",
-      '--wzl-swatch-violet': "#a497ff",
-      '--wzl-swatch-mint': "#00e7af",
-      '--wzl-swatch-sky': "#00b8ff",
-      '--wzl-swatch-orange': "#ff6b00",
-      '--wzl-swatch-magenta': "#ff6eff",
+      '--wzl-swatch-fuchsia': "#f641f7",
+      '--wzl-swatch-green': "#48e628",
+      '--wzl-swatch-sky': "#36bff2",
+      '--wzl-swatch-amber': "#e69628",
+      '--wzl-swatch-teal': "#3ee1cb",
+      '--wzl-swatch-red': "#f75034",
+      '--wzl-swatch-blue': "#407ef7",
+      '--wzl-swatch-citron': "#d5d23a",
+      '--wzl-swatch-rose': "#fa4590",
+      '--wzl-swatch-violet': "#955cf9",
       '--wzl-radius-sm': "3px",
       '--wzl-radius-md': "5px",
       '--wzl-radius-lg': "14px",
@@ -219,11 +218,10 @@ export const THEMES = {
       '--wzl-fg-muted': "#9ea1a8",
       '--wzl-fg-subtle': "#6f737b",
       '--wzl-border': "#25272c",
-      '--wzl-border-strong': "#383b42",
+      '--wzl-border-strong': "#6f737b",
       '--wzl-accent-fg': "#5841b8",
       '--wzl-fg-inverse': "#0e0f12",
       '--wzl-shadow': "rgba(0, 0, 0, 0.6)",
-      '--wzl-border-raised': "#6f737b",
     },
     "light": {
       '--wzl-gray-50': "#f5f5f6",
@@ -257,16 +255,16 @@ export const THEMES = {
       '--wzl-glass-tint': "#2e1f7a",
       '--wzl-surface-hover': "rgba(14, 15, 18, 0.1)",
       '--wzl-surface-pressed': "rgba(14, 15, 18, 0.18)",
-      '--wzl-swatch-green': "#2fdd18",
-      '--wzl-swatch-pink': "#ff5885",
-      '--wzl-swatch-cyan': "#00dfff",
-      '--wzl-swatch-gold': "#dcb700",
-      '--wzl-swatch-amber': "#ff8c00",
-      '--wzl-swatch-violet': "#a497ff",
-      '--wzl-swatch-mint': "#00e7af",
-      '--wzl-swatch-sky': "#00b8ff",
-      '--wzl-swatch-orange': "#ff6b00",
-      '--wzl-swatch-magenta': "#ff6eff",
+      '--wzl-swatch-fuchsia': "#f641f7",
+      '--wzl-swatch-green': "#48e628",
+      '--wzl-swatch-sky': "#36bff2",
+      '--wzl-swatch-amber': "#e69628",
+      '--wzl-swatch-teal': "#3ee1cb",
+      '--wzl-swatch-red': "#f75034",
+      '--wzl-swatch-blue': "#407ef7",
+      '--wzl-swatch-citron': "#d5d23a",
+      '--wzl-swatch-rose': "#fa4590",
+      '--wzl-swatch-violet': "#955cf9",
       '--wzl-radius-sm': "3px",
       '--wzl-radius-md': "5px",
       '--wzl-radius-lg': "14px",
@@ -322,11 +320,10 @@ export const THEMES = {
       '--wzl-fg-muted': "#383b42",
       '--wzl-fg-subtle': "#4d5058",
       '--wzl-border': "#c9cbcf",
-      '--wzl-border-strong': "#9ea1a8",
+      '--wzl-border-strong': "#4d5058",
       '--wzl-accent-fg': "#2e1f7a",
       '--wzl-fg-inverse': "#f5f5f6",
       '--wzl-shadow': "rgba(0, 0, 0, 0.18)",
-      '--wzl-border-raised': "#6f737b",
     },
     },
   },
@@ -477,46 +474,46 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         "alpha": 0.18,
         "description": "Pressed wash over a raised surface."
       },
+      "swatch-fuchsia": {
+        "type": "color",
+        "value": "#f641f7",
+        "description": "First of ten categorical spot colors for plotting, status and data viz. Take them in sequence: the order is farthest-point over hue, so the first N are as separated as N colors can be (first three 87° apart, all ten 32°). Mode-invariant on purpose — a series keeps its color when the mode flips, which is why they are tuned for a dark surface and clear only 1.5:1 on a light one."
+      },
       "swatch-green": {
         "type": "color",
-        "value": "#2fdd18",
-        "description": "First of ten categorical spot colors for plotting, status and data viz. Ordered — take them in sequence. Mode-invariant on purpose: a series keeps its color when the mode flips."
-      },
-      "swatch-pink": {
-        "type": "color",
-        "value": "#ff5885"
-      },
-      "swatch-cyan": {
-        "type": "color",
-        "value": "#00dfff"
-      },
-      "swatch-gold": {
-        "type": "color",
-        "value": "#dcb700"
-      },
-      "swatch-amber": {
-        "type": "color",
-        "value": "#ff8c00"
-      },
-      "swatch-violet": {
-        "type": "color",
-        "value": "#a497ff"
-      },
-      "swatch-mint": {
-        "type": "color",
-        "value": "#00e7af"
+        "value": "#48e628"
       },
       "swatch-sky": {
         "type": "color",
-        "value": "#00b8ff"
+        "value": "#36bff2"
       },
-      "swatch-orange": {
+      "swatch-amber": {
         "type": "color",
-        "value": "#ff6b00"
+        "value": "#e69628"
       },
-      "swatch-magenta": {
+      "swatch-teal": {
         "type": "color",
-        "value": "#ff6eff"
+        "value": "#3ee1cb"
+      },
+      "swatch-red": {
+        "type": "color",
+        "value": "#f75034"
+      },
+      "swatch-blue": {
+        "type": "color",
+        "value": "#407ef7"
+      },
+      "swatch-citron": {
+        "type": "color",
+        "value": "#d5d23a"
+      },
+      "swatch-rose": {
+        "type": "color",
+        "value": "#fa4590"
+      },
+      "swatch-violet": {
+        "type": "color",
+        "value": "#955cf9"
       },
       "radius-sm": {
         "type": "dimension",
@@ -817,7 +814,8 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         },
         "border-strong": {
           "type": "color",
-          "value": "{color.gray-600}"
+          "value": "{color.gray-400}",
+          "description": "The line that has to be seen: a control's edge, a raised surface's outline. Clears WCAG 1.4.11's 3:1 against every surface in both modes."
         },
         "accent-fg": {
           "type": "color",
@@ -833,11 +831,6 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
           "type": "color",
           "value": "rgba(0, 0, 0, 0.6)",
           "description": "Elevation. Always darker than any surface — never derived from fg, which is near-white on dark."
-        },
-        "border-raised": {
-          "type": "color",
-          "value": "{color.gray-400}",
-          "description": "The line around a raised surface. Clears 3:1 against surface and surface-raised in either mode, which the general-purpose border does not; over surface-sunken it does not, so a panel on a sunken field needs its own answer."
         }
       },
       "light": {
@@ -871,7 +864,7 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         },
         "border-strong": {
           "type": "color",
-          "value": "{color.gray-300}"
+          "value": "{color.gray-500}"
         },
         "accent-fg": {
           "type": "color",
@@ -886,10 +879,6 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         "shadow": {
           "type": "color",
           "value": "rgba(0, 0, 0, 0.18)"
-        },
-        "border-raised": {
-          "type": "color",
-          "value": "{color.gray-400}"
         }
       }
     }

@@ -27,8 +27,8 @@ const EXPECTED_NAMES = [
   'motion-fast', 'motion-medium',
   'ease-in-cubic', 'ease-out-cubic', 'ease-in-out-cubic', 'ease-out-back',
   'line-subtle', 'line', 'line-strong', 'curve-color',
-  'swatch-green', 'swatch-pink', 'swatch-cyan', 'swatch-gold', 'swatch-amber',
-  'swatch-violet', 'swatch-mint', 'swatch-sky', 'swatch-orange', 'swatch-magenta',
+  'swatch-fuchsia', 'swatch-green', 'swatch-sky', 'swatch-amber', 'swatch-teal',
+  'swatch-red', 'swatch-blue', 'swatch-citron', 'swatch-rose', 'swatch-violet',
   'font-ui', 'font-display', 'font-body', 'font-mono',
   'font-weight-light', 'font-weight-normal', 'font-weight-medium', 'font-weight-bold',
   'surface', 'surface-raised', 'surface-sunken',
@@ -37,7 +37,7 @@ const EXPECTED_NAMES = [
   'accent', 'accent-fg', 'accent-hover',
   'danger', 'warning', 'success', 'focus-ring', 'glass-tint',
   'fg-inverse', 'surface-hover', 'surface-pressed',
-  'shadow', 'border-raised',
+  'shadow',
 ].sort();
 
 describe('DTCG source', () => {

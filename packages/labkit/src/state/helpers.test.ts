@@ -4,8 +4,8 @@ import {
   deserializeTrials,
   emptyUndoStack,
   encodeUrlHash,
-  newId,
   labStorageKey,
+  newId,
   serializeTrials,
 } from './helpers';
 
