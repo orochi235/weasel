@@ -1,5 +1,5 @@
 ---
-'@weasel-js/labkit': minor
+'@weasel-js/labkit': patch
 ---
 
 `<LabSwitcher>` turns a lab's title into the way to reach the project's other
