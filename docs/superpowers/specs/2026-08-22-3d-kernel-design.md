@@ -206,13 +206,14 @@ A tool's own actions ride on its definition and something has to register them;
 which resolves through the `activeTool` dep. Miss either and clicks select nothing,
 with no error — the actions are simply never eligible.
 
-**`classifyTarget` is called in two different coordinate spaces.** Its option is
-documented as taking a world point. `useGestureDispatcher.tsx` passes `screenPoint`
-at :757, :1091 and :1352 and `worldPoint` at :806. A 2D canvas at identity view
-cannot tell the difference, which is why this has survived; with pan or zoom it
-misclassifies the press. In the lab it classified every press as empty canvas, so
-`clearSelection` fired immediately after `select.pick` and wiped the selection that
-had just been made. The lab works around it by keeping one space end to end.
+**`classifyTarget` says world and means client.** Re-checked at runtime on
+2026-09-12, which overturns what this section said before: the point does not
+arrive in two different spaces depending on the path. All four call sites pass
+the raw client point; it is the action's `ctx.world` that goes through
+`clientToWorld`, so a consumer hit-tests in two spaces and the option's type
+named the wrong one. `<SceneCanvas>` and `<CanvasView>` both convert inside
+their own thunk. The lab keeps `clientToWorld` identity, which collapses the two
+spaces into one and is why its deps can subtract the pane origin exactly once.
 
 **`Scene` owns a `History` and exposes no handle to it.** `undo()` and `redo()` are
 on the scene, but the kit's `undo`/`redo` *actions* want the `history` dep, and a

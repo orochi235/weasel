@@ -180,13 +180,20 @@ Priority tags:
   ordinary type hygiene, not a blocker. Findings in
   `docs/superpowers/specs/2026-08-22-3d-kernel-design.md`.
 
-- **(P2) `classifyTarget` is called in two coordinate spaces.** Its option in
-  `useGestureDispatcher` is documented as taking a world point;
-  `useGestureDispatcher.tsx` passes `screenPoint` at :757, :1091 and :1352 and
-  `worldPoint` at :806. A canvas at identity view cannot tell them apart, so this
-  has gone unnoticed — under pan or zoom the press misclassifies, and a click on a
-  body reads as a click on empty canvas. Found by the 3D lab, where it made
-  `clearSelection` fire immediately after `select.pick` and wipe every selection.
+- **(P2) One transform, applied in three places, because two options say
+  "world" and mean "client".** `classifyTarget` and `affordanceAt` were both
+  typed `(worldPoint)`; all four call sites pass `e.clientX`/`e.clientY`
+  untouched, while the same event's `InputEvent.x`/`y` go through
+  `clientToWorld`. Measured with a non-identity transform: the thunks get
+  (300, 250), the action's `ctx.world` gets (100, 100). `<SceneCanvas>` and
+  `<CanvasView>` each wrap their thunk in the very `clientToWorld` they also
+  hand the dispatcher. The types and comments now say client (2026-09-12); what
+  is left is to apply `toWorld` at the four sites and delete both wrappers —
+  behavior-identical for both consumers, since it is the same function, and
+  identity for a consumer that passes none.
+  **Corrects an earlier entry here claiming the point arrives in two different
+  spaces depending on the path. It does not; one path merely named its local
+  variable `worldPoint`.**
 
 - **(P3) `buildInvocationCtx` mislabels `ctx.screen`.**
   `interactions/dispatcher/dispatcher.ts:611-627` fills `ctx.screen` and

@@ -184,9 +184,12 @@ export interface UseGestureDispatcherOptions {
   keyboard?: boolean;
   /**
    * Optional affordance classifier. Called on every pointerdown with the
-   * world-space coordinates of the pointer. Returns an `AffordanceHit` when
-   * the pointer lands on a known affordance (resize handle, rotate handle, etc.)
-   * or `null` when the pointer hit open canvas.
+   * **client** coordinates of the pointer — this hook applies `clientToWorld`
+   * to `InputEvent.x`/`y`, never to this thunk, so a consumer working in world
+   * coordinates converts here with the same function it passes as
+   * `clientToWorld`. Returns an `AffordanceHit` when the pointer lands on a
+   * known affordance (resize handle, rotate handle, etc.) or `null` when the
+   * pointer hit open canvas.
    *
    * The hit is packed into `InputEvent.pointerdown.affordance` and flows
    * through into `InvocationCtx.drag.affordance`. Action invokers that require
@@ -197,7 +200,7 @@ export interface UseGestureDispatcherOptions {
    * that explicitly wire a classifier get affordance-gated behavior.
    * `<SceneCanvas>` wires the full chrome→dispatcher bridge.
    */
-  affordanceAt?: (worldPoint: { x: number; y: number }) => AffordanceHit | null;
+  affordanceAt?: (clientPoint: { x: number; y: number }) => AffordanceHit | null;
 
   /**
    * Optional body classifier. Called on every pointerdown with the world-space
@@ -214,8 +217,10 @@ export interface UseGestureDispatcherOptions {
    * `'selected-body'`, `'unselected-body'`, `kind:<k>`, `kind:<k>:selected`)
    * never matches — bindings using those specs are silently skipped.
    * `<SceneCanvas>` wires this.
+   *
+   * Client coordinates, on every path, for the same reason as `affordanceAt`.
    */
-  classifyTarget?: (worldPoint: { x: number; y: number }) => BodyClassification;
+  classifyTarget?: (clientPoint: { x: number; y: number }) => BodyClassification;
 
   /**
    * Optional pre-created `Dispatcher`. When provided, this hook pumps events
@@ -797,13 +802,11 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       if (!canvas) return;
       routeDown(e.pointerId, e.clientX, e.clientY);
 
-      // Classify the affordance at the pointerdown world-space position.
-      // The thunk is optional — when absent, affordance is undefined (no-op).
-      // Both thunks receive world-space coords; SceneCanvas supplies the
-      // client→world conversion internally via its canvas ref + view.
-      const worldPoint = { x: e.clientX, y: e.clientY };
-      const affordance = target().affordanceAt?.(worldPoint) ?? undefined;
-      const body = target().classifyTarget?.(worldPoint);
+      // Both thunks take the client point; `SceneCanvas` and `CanvasView` each
+      // convert with the `clientToWorld` they also pass here.
+      const clientPoint = { x: e.clientX, y: e.clientY };
+      const affordance = target().affordanceAt?.(clientPoint) ?? undefined;
+      const body = target().classifyTarget?.(clientPoint);
       const bodyTarget = body?.body;
       const bodyKind = body?.kind;
 

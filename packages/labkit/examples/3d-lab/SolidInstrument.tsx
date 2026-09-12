@@ -325,12 +325,11 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   );
 
   /**
-   * Identity, and it has to be: the dispatcher hands `classifyTarget` a client
-   * point on the pointer paths and a `clientToWorld`-transformed one on the
-   * click path (`useGestureDispatcher.tsx:757` against `:806`). Transforming
-   * here would put those two in different spaces, and a press would classify as
-   * empty canvas while the click that follows it picked a solid. One space from
-   * the event to the ray; the deps subtract the pane origin.
+   * Identity, and it has to be: `classifyTarget` is handed the client point
+   * while an action's `ctx.world` is handed `clientToWorld` of it. Transform
+   * here and the lab's deps, which subtract the pane origin themselves, would
+   * subtract it twice on one of those two paths. One space from the event to
+   * the ray.
    */
   const clientToWorld = useCallback((clientX: number, clientY: number) => ({
     x: clientX,
