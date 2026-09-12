@@ -1,0 +1,44 @@
+.td-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.td-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-xs);
+  padding: var(--wzl-space-xs) var(--wzl-space-sm);
+  border-bottom: 1px solid var(--wzl-border);
+}
+
+.td-tool {
+  font: inherit;
+  padding: 2px 10px;
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  background: var(--wzl-surface-raised);
+  color: var(--wzl-fg);
+  cursor: pointer;
+}
+
+.td-tool--on {
+  background: var(--wzl-accent);
+  color: var(--wzl-accent-fg);
+}
+
+.td-count {
+  margin-inline: auto;
+  color: var(--wzl-fg-muted);
+  font-size: var(--wzl-font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+// The shared GL buffer paints over this, so the pane is only a measured box
+// and an input target. Anything drawn in it would be hidden behind the tile.
+.td-pane {
+  flex: 1 1 auto;
+  min-height: 240px;
+  touch-action: none;
+}

@@ -173,12 +173,46 @@ Priority tags:
   reuse it.** World points arrive as `{x, y}` or flat scalars in
   `InvocationCtx`, the dep payloads, the pick functions and
   `@weasel-js/gestures`' pointer events, and the camera is the 2D `View`. Tools
-  themselves carry no geometry. This is the 3D kernel's Phase 2 prerequisite and
-  waits on its picking design, because in 3D a pointer is a ray. Details in
-  `docs/superpowers/specs/2026-08-22-3d-kernel-design.md`. Unrelated latent bug
-  in the same place: `buildInvocationCtx` (`interactions/dispatcher/dispatcher.ts`)
-  fills `ctx.screen` and `ctx.world` from the same event coordinates, so one of
-  them is mislabeled.
+  themselves carry no geometry. **No longer a Phase 2 prerequisite**: the 3D lab
+  (`packages/labkit/examples/3d-lab`) drives core's dispatcher over a WebGL
+  viewport with core unchanged, because the deps rebuild the ray from a camera
+  they close over and the pipeline keeps passing two numbers. What is left is
+  ordinary type hygiene, not a blocker. Findings in
+  `docs/superpowers/specs/2026-08-22-3d-kernel-design.md`.
+
+- **(P2) `classifyTarget` is called in two coordinate spaces.** Its option in
+  `useGestureDispatcher` is documented as taking a world point;
+  `useGestureDispatcher.tsx` passes `screenPoint` at :757, :1091 and :1352 and
+  `worldPoint` at :806. A canvas at identity view cannot tell them apart, so this
+  has gone unnoticed — under pan or zoom the press misclassifies, and a click on a
+  body reads as a click on empty canvas. Found by the 3D lab, where it made
+  `clearSelection` fire immediately after `select.pick` and wipe every selection.
+
+- **(P3) `buildInvocationCtx` mislabels `ctx.screen`.**
+  `interactions/dispatcher/dispatcher.ts:611-627` fills `ctx.screen` and
+  `ctx.world` from the same event coordinates, which gestures documents as
+  world-space — so `ctx.screen` has never been screen-space. Same family as the
+  entry above.
+
+- **(P3) `Scene` owns a `History` it does not expose.** `scene.undo()`/`redo()`
+  work, but the kit's `undo`/`redo` *actions* resolve the `history` dep, and a
+  consumer holding only a `Scene` has nothing to register. Surfaced by the 3D lab,
+  which drives undo from its own toolbar instead.
+
+- **(P3) Mounting tools outside `<SceneCanvas>` has an unstated contract.** A
+  tool's actions ride on its definition and something must register them, and
+  capability-gated actions such as `select.pick` resolve eligibility through the
+  `activeTool` dep. Miss either and clicks do nothing, silently. Worth either a
+  helper that mounts a tool set correctly or a line in `docs/extending.md`.
+
+- **(P3) A consumer that mounts the dispatcher itself has to draw its own
+  gesture previews.** `usePreviewGhostLayer` and `useDispatcherOverlayLayer` are
+  `<SceneCanvas>`-private — neither is exported from core's barrel — so the only
+  way to the ghost and overlay channels is to read
+  `Dispatcher.getInFlightHandles()` and render the poses by hand, which is what
+  the 3D lab does in `ghosts3d.ts`. The read seam is public and sufficient; what
+  is missing is a renderer-agnostic helper between a handle and a drawn ghost.
+  Surfaced by the 3D lab.
 
 ### Pen tool follow-ups
 
