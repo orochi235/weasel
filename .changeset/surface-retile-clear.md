@@ -22,3 +22,12 @@ Two smaller fixes ride along. An invalidation the owner makes from inside
 trailing clear, so a resize could leave tiles blank until something else
 dirtied them. And painters now see what the owner dirtied during the same
 frame rather than a frame later.
+
+It also measures until the layout stops moving. `node.placementChanged` fires
+when a move is ordered, not when it lands, and a panel whose size settles while
+its position is still animating gives `ResizeObserver` nothing more to report —
+so a tile painted for the rest of its life at wherever it was caught mid-flight,
+which is why cloning a few trials left viewports sitting between their panes.
+A measurement that finds anything moved now schedules another, and the run ends
+on the first one that finds nothing moved.
+

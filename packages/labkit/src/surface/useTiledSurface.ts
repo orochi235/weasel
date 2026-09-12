@@ -102,6 +102,13 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
         if (measure()) {
           retiled = true;
           for (const id of rects.current.keys()) dirty.current.add(id);
+          // Geometry that changed may still be moving: a panel whose size has
+          // settled while its position animates gives `ResizeObserver` nothing
+          // more to report, and the tile would hold the frame it was caught
+          // mid-flight at. Measure again next frame, and keep going until a
+          // measurement finds nothing moved.
+          needsMeasure.current = true;
+          schedule();
         }
       }
       const dpr = globalThis.devicePixelRatio ?? 1;

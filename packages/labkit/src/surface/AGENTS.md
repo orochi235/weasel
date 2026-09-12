@@ -74,9 +74,14 @@ one contributes a single rect, and a trial with nothing to draw contributes none
   the DOM trick that resets a 2D canvas is a no-op here. Only the context that
   drew the pixels can erase them, which is why the clear is a tenant's to
   register.
-- **A tile that moves without resizing** is already handled: `Workspace`
-  invalidates rects off the grid's own `node.placementChanged`. A host that moves
-  something the grid does not know about calls `invalidateRects()` itself.
+- **A tile that moves without resizing** is handled twice over, and it needs
+  both. `Workspace` invalidates rects off the grid's own `node.placementChanged`,
+  which catches the move being *ordered*; the surface then keeps measuring until
+  two measurements agree, which catches where it *lands*. Without the second, a
+  panel whose size settles while its position is still animating leaves
+  `ResizeObserver` with nothing to report, and the tile paints for the rest of
+  its life at the spot it was caught mid-flight. A host that moves something the
+  grid does not know about still calls `invalidateRects()` itself.
 
 ## Testing
 

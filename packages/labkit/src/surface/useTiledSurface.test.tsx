@@ -403,6 +403,41 @@ describe('useTiledSurface', () => {
       expect(clearA).toHaveBeenCalledWith({ width: 800, height: 600 }, expect.any(Number));
     });
 
+    it('keeps measuring while a tile is still moving, and stops when it settles', () => {
+      const frames: SurfaceFrame[] = [];
+      let handle: SurfaceHandle | null = null;
+      const { getByTestId } = render(
+        <Harness frames={frames} onHandle={(h) => { handle = h; }} />,
+      );
+      flushFrames();
+
+      const seen: number[] = [];
+      act(() => {
+        handle?.registerPainter('b', (rect) => seen.push(rect.x));
+      });
+
+      // A panel whose size is already final but whose position is still
+      // animating: `ResizeObserver` has nothing left to report, so the only
+      // thing that can catch the last 60px is the surface measuring again.
+      const b = getByTestId('b');
+      const stops = [340, 370, 400, 400, 400];
+      let call = 0;
+      vi.spyOn(b, 'getBoundingClientRect').mockImplementation(() => {
+        const left = stops[Math.min(call++, stops.length - 1)]!;
+        return { left, top: 0, width: 400, height: 600, right: left + 400, bottom: 600, x: left, y: 0, toJSON: () => ({}) } as DOMRect;
+      });
+
+      seen.length = 0;
+      act(() => handle?.invalidateRects());
+      // One flush per animation frame; nothing else invalidates in between.
+      flushFrames();
+      flushFrames();
+      flushFrames();
+      flushFrames();
+
+      expect(seen.at(-1)).toBe(400);
+    });
+
     it('stops calling a clear that unregisters', () => {
       const frames: SurfaceFrame[] = [];
       let handle: SurfaceHandle | null = null;
