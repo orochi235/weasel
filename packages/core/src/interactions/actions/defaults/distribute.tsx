@@ -5,6 +5,7 @@ import { poseDescriptorOf } from '../poseDescriptorDep';
 import { translatePoseViaDescriptor, visualBoundsViaDescriptor } from '../align/align';
 import type { DistributeAxis, DistributeMode } from '../distribute/distribute';
 import { planDistribute } from '../distribute/plan';
+import { scenePoseFrame } from '../poseFrame';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -26,6 +27,10 @@ const ICON_FOR: Record<DistributeAxis, ReactNode> = {
  * Apply a distribute operation to the current selection via the Scene API.
  * Reads poses through the `poseDescriptor` dep; `mode` comes from the
  * binding's `params.mode`.
+ *
+ * The span being divided is a world span, so the bounds are read and
+ * translated in world and each result is stored back in its own parent's
+ * frame.
  */
 function distributeSelection(
   selection: SelectionApi,
@@ -33,12 +38,14 @@ function distributeSelection(
   axis: DistributeAxis,
   mode: DistributeMode,
   geom: PoseDescriptor<unknown>,
+  poseComposition: unknown,
 ): void {
   const ids = selection.get();
   if (ids.length < 3) return;
+  const frame = scenePoseFrame(scene, poseComposition);
 
   const items = ids.map((id) => {
-    const pose = scene.get(id)?.pose ?? { x: 0, y: 0, width: 0, height: 0 };
+    const pose = frame.world(id);
     return { id, pose, b: visualBoundsViaDescriptor(pose, geom) };
   });
   const targets = planDistribute(items.map((it) => it.b), axis, mode);
@@ -51,7 +58,7 @@ function distributeSelection(
       const dx = axis === 'x' ? delta : 0;
       const dy = axis === 'y' ? delta : 0;
       const to = translatePoseViaDescriptor(it.pose, dx, dy, geom);
-      scene.setPose(it.id, to);
+      scene.setPose(it.id, frame.local(it.id, to));
     }
   });
 }
@@ -67,7 +74,7 @@ function makeDistributeAction(axis: DistributeAxis): Action {
     icon: ICON_FOR[axis],
     group: 'distribute',
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'poseDescriptor'],
+    requires: ['selection', 'scene', 'poseDescriptor', 'poseComposition'],
     // No default keybindings. Wire bindings explicitly via the actions registry.
     invoker: {
       timing: 'immediate',
@@ -76,7 +83,7 @@ function makeDistributeAction(axis: DistributeAxis): Action {
         const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
         if (!selection || !scene) return;
         const mode = (params?.mode as DistributeMode | undefined) ?? 'centers';
-        distributeSelection(selection, scene, axis, mode, poseDescriptorOf(deps.poseDescriptor));
+        distributeSelection(selection, scene, axis, mode, poseDescriptorOf(deps.poseDescriptor), deps.poseComposition);
       },
     } satisfies ImmediateInvoker,
     // Deps-aware, matching `distributeSelection`'s own `ids.length < 3` guard:

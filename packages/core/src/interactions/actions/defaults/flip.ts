@@ -1,6 +1,6 @@
 import type { Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
-import type { Mat3 } from '@weasel-js/geom';
+import { multiply, rotate, translate, type Mat3 } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
 import type { PoseDescriptor } from '../resize/geometry';
 import { poseDescriptorOf } from '../poseDescriptorDep';
@@ -12,11 +12,42 @@ import {
 } from '../flip/helpers';
 import { unionAABB } from 'core/geometry/unionBounds';
 import { visualBoundsViaDescriptor } from '../align/align';
+import { scenePoseFrame, type PoseFrame } from '../poseFrame';
+import type { RectPose } from 'core/scene/types';
 import type { Action } from '../registry';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { requiresSelection } from './requiresSelection';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
+
+/**
+ * The world mirror about `axis` through the center of `pivotWorld`, written in
+ * the frame `id` stores its data in. `geometryProjection.transform` is given
+ * the affine the node's own pose underwent, and data-held geometry is local —
+ * so a world mirror has to be conjugated by the frame or an asymmetric shape
+ * reflects across the wrong line while its pose lands correctly.
+ *
+ * The frame's turn comes back as the rotation on a rebased zero-size pose at
+ * the pivot point, so no composition strategy has to expose one.
+ */
+function localMirror(
+  axis: FlipAxis,
+  frame: PoseFrame<unknown>,
+  id: Parameters<PoseFrame<unknown>['local']>[0],
+  pivotWorld: { x: number; y: number; width: number; height: number },
+): Mat3 {
+  const at = frame.local(id, {
+    x: pivotWorld.x + pivotWorld.width / 2,
+    y: pivotWorld.y + pivotWorld.height / 2,
+    width: 0,
+    height: 0,
+    rotation: 0,
+  }) as RectPose;
+  const theta = at.rotation ?? 0;
+  const mirror: Mat3 = axis === 'x' ? [-1, 0, 0, 1, 0, 0] : [1, 0, 0, -1, 0, 0];
+  const turned = multiply(multiply(rotate(theta), mirror), rotate(-theta));
+  return multiply(translate(at.x, at.y), multiply(turned, translate(-at.x, -at.y)));
+}
 
 /**
  * Flip the current selection in `scene` along `axis`, using the
@@ -45,13 +76,18 @@ function flipSelection(
   applyOps: ((ops: Op[], label: string) => void) | undefined,
   geometryProjection: GeometryProjection | undefined,
   geom: PoseDescriptor<unknown>,
+  poseComposition: unknown,
 ): void {
   const ids = selection.get();
   if (ids.length === 0) return;
+  const frame = scenePoseFrame(scene, poseComposition);
 
-  const nodes = ids.map((id) => scene.get(id)).filter((n) => n != null);
+  const worlds = new Map<string, unknown>();
+  for (const id of ids) {
+    if (scene.get(id) !== undefined) worlds.set(id as string, frame.world(id));
+  }
   const unionPivot = pivot === 'union'
-    ? unionAABB(nodes.map((n) => visualBoundsViaDescriptor(n.pose, geom)))
+    ? unionAABB([...worlds.values()].map((p) => visualBoundsViaDescriptor(p, geom)))
     : null;
 
   // Read poses BEFORE building ops so each op's `from` is the pre-flip value
@@ -60,26 +96,25 @@ function flipSelection(
   for (const id of ids) {
     const node = scene.get(id);
     if (!node) continue;
+    const world = worlds.get(id as string)!;
+    const flipped = unionPivot
+      ? flipPoseAboutBounds(world, axis, geom, unionPivot)
+      : flipPoseViaDescriptor(world, axis, geom);
     ops.push(createTransformOp<unknown>({
       id: id as string,
       from: node.pose,
-      to: unionPivot
-        ? flipPoseAboutBounds(node.pose, axis, geom, unionPivot)
-        : flipPoseViaDescriptor(node.pose, axis, geom),
+      to: frame.local(id, flipped),
       label: 'Flip',
     }));
     // Mirror the data-held geometry about the SAME pivot the pose flip uses,
     // so a wired geometryProjection reflects the contents in lock-step with
     // the frame. A pose-only flip of a bare-AABB pose is identity, so this
     // data op is the only way an asymmetric shape actually mirrors.
-    const g = unionPivot ?? geom.getBounds(node.pose);
-    const cx = g.x + g.width / 2;
-    const cy = g.y + g.height / 2;
-    const m: Mat3 = axis === 'x' ? [-1, 0, 0, 1, 2 * cx, 0] : [1, 0, 0, -1, 0, 2 * cy];
+    const g = unionPivot ?? geom.getBounds(world);
     const dataOp = geometryDataOp(
       geometryProjection,
       { id: id as string, data: node.data, pose: node.pose },
-      m,
+      localMirror(axis, frame, id, g),
       'Flip',
     );
     if (dataOp) ops.push(dataOp);
@@ -109,7 +144,7 @@ export const flipAction: Action & { requires: string[] } = {
     { spec: { kind: 'key', key: ['v', 'V'], mods: { shift: true } }, opts: { params: { axis: 'y' } } },
   ],
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor'],
+  requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'poseComposition'],
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
@@ -120,7 +155,10 @@ export const flipAction: Action & { requires: string[] } = {
       const applyOps = deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
       const geometryProjection = deps.geometryProjection as GeometryProjection | undefined;
       if (!selection || !scene) return;
-      flipSelection(selection, scene, axis, pivot, applyOps, geometryProjection, poseDescriptorOf(deps.poseDescriptor));
+      flipSelection(
+        selection, scene, axis, pivot, applyOps, geometryProjection,
+        poseDescriptorOf(deps.poseDescriptor), deps.poseComposition,
+      );
     },
   },
   enabled: requiresSelection,

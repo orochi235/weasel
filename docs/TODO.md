@@ -68,20 +68,18 @@ Priority tags:
   prevent that. Wiring re-projection would let anchor placement happen *in* the
   magnified view, which is the point of a loupe for precision work.
 
-- **(P2) No render path composes world poses.** Every painter — `buildSceneTree`
-  (so `<SceneCanvas>`) and `buildSceneViewCommands` (so the detached surfaces) —
-  draws each node at `getPose(id)`, which is documented as **local**, relative to
-  the parent. Nesting contributes the clip chain and nothing else;
-  `composeWorldPose` is called only by `move`, `duplicate` and `nestedHit`. That
-  is consistent under the default `IDENTITY_POSE_COMPOSITION`, where every node
-  already stores world coords — but a consumer who supplies a real
-  `poseComposition` (say `composeRectPose`) gets children painted at their local
-  offsets on **every** surface, main canvas included. Either rendering learns to
-  compose, or `PoseComposition` is documented as interaction-only and the render
-  path is pinned to absolute poses. Verified 2026-08-13 by diffing the two walks
-  against the same nested scene; both placed the child identically.
-  **Settled 2026-09-10: a container's pose defines a frame.** Design (not yet
-  built): `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`.
+- **[x] (P2) The render path composes world poses.** A container's pose can
+  define a frame: `<SceneCanvas poseComposition={RIGID_POSE_COMPOSITION}>` makes
+  `buildSceneTree` fold each node's pose into its parent's on the way down, and
+  picking, chrome, `getNodeAtPoint` and the clipboard read `getWorldPose`.
+  Omitting the prop leaves the absolute-pose model untouched. Design and the
+  list of what it deliberately does not cover:
+  `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`.
+  Open follow-ups: `kitRegistry.ts`'s `unionOfChildren` derives a container's
+  pose from children expressed in that container's frame, which is circular and
+  only works because the default frame is identity; `nestedHit` composes
+  correctly and still has no caller inside the kit; `apps/draw`'s SVG export
+  bakes stored poses and would need world ones if that app ever opts in.
 
 - **(P3) Unconfirmed: resize grabs the node under the handle, not the selected one.**
   Reported 2026-07-28 against **lbx-editor**, which consumes `@weasel-js/core@0.6.0`
@@ -907,18 +905,15 @@ What it surfaced:
   through `setPose`, which is the retained twin's whole thesis, so it pays this
   deliberately.
 
-- **(P2) The scene tree is not a transform hierarchy, so a rig cannot be one.**
-  Default composition is `IDENTITY_POSE_COMPOSITION` — "parents are
-  grouping-only (no transform)" (`composePose.ts:45`) — and `buildSceneTree.ts:42`
-  uses nesting only for the clip chain. The opt-in `composeRectPose` adds
-  translation and nothing else. So `resolveSkeleton` is resolved to world
-  matrices and flattened onto eleven independent bone nodes every frame. Rotation-
-  aware pose composition would let the rig be expressed as parenting, which is
-  what it already is everywhere except the scene. Covered for rigid and
-  uniformly scaled rigs by the frame design (not yet built):
-  `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`. A rig using
-  `scaleX`/`scaleY` separately stays flattened — anisotropic scale is outside
-  what a `RectPose` can hold.
+- **[x] (P2) The scene tree can be a transform hierarchy.** Pose composition is
+  rigid — translate and rotate — so a rig built from those is expressible as
+  parenting rather than resolved to world matrices and flattened onto
+  independent bone nodes. What stays flattened is a rig using `scaleX`/`scaleY`
+  separately: an anisotropically scaled parent turns a rotated child into a
+  parallelogram, which `{x, y, width, height, rotation}` cannot hold. Measured
+  over 50,000 random parent/child pairs; the table is in
+  `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`. Converting the
+  platformer's eleven bones to parenting is not done.
 
 - **(P3) No view-bounds culling.** All 254 nodes paint every frame regardless of
   the viewport; the immediate twin windows tiles to visible rows and columns.

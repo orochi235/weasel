@@ -45,6 +45,7 @@ import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { freshNodeId } from './freshNodeId';
 import { poseDescriptorOf } from '../poseDescriptorDep';
 import { translatePoseViaDescriptor, type PoseDescriptor } from '../resize/geometry';
+import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 
 // ---------------------------------------------------------------------------
 // Internal scratch
@@ -54,7 +55,11 @@ interface CloneScratch {
   ids: NodeId[];
   scene: Scene<unknown, string, unknown>;
   descriptor: PoseDescriptor<unknown>;
-  /** Origin poses captured at drag start. */
+  /** World reads and local writes over the scene's composition strategy. */
+  frame: PoseFrame<unknown>;
+  /** Origin poses captured at drag start, in world — the frame the drag
+   *  delta is expressed in. The copy keeps its source's parent, so each
+   *  translated result is stored back in that same frame. */
   originPoses: Map<NodeId, unknown>;
   /** Running drag delta — updated each onMove, applied once at commit. */
   currentDelta: { dx: number; dy: number };
@@ -95,7 +100,7 @@ export const cloneAction: Action & { requires: string[] } = {
   cursor: 'copy',
   activeCursor: 'copy',
   eligible: { capability: ['edits-page', 'creates-selection'] },
-  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor'],
+  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'poseComposition'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {
@@ -109,10 +114,10 @@ export const cloneAction: Action & { requires: string[] } = {
       if (ids.length === 0) return {};
 
       // Capture origin poses once at drag start.
+      const frame = scenePoseFrame(scene, ctx.deps.poseComposition);
       const originPoses = new Map<NodeId, unknown>();
       for (const id of ids) {
-        const node = scene.get(id);
-        if (node) originPoses.set(id, node.pose);
+        if (scene.get(id) !== undefined) originPoses.set(id, frame.world(id));
       }
 
       if (originPoses.size === 0) return {};
@@ -121,6 +126,7 @@ export const cloneAction: Action & { requires: string[] } = {
         ids,
         scene,
         descriptor: poseDescriptorOf(ctx.deps.poseDescriptor),
+        frame,
         originPoses,
         currentDelta: { dx: 0, dy: 0 },
         previews: new Map<NodeId, unknown>(),
@@ -147,7 +153,10 @@ export const cloneAction: Action & { requires: string[] } = {
           const { dx, dy } = scratch.currentDelta;
           if (dx === 0 && dy === 0) return;
           for (const [id, origin] of scratch.originPoses) {
-            scratch.previews.set(id, translatePoseViaDescriptor(origin, dx, dy, scratch.descriptor));
+            scratch.previews.set(
+              id,
+              scratch.frame.local(id, translatePoseViaDescriptor(origin, dx, dy, scratch.descriptor)),
+            );
           }
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
@@ -174,7 +183,10 @@ export const cloneAction: Action & { requires: string[] } = {
             const origin = scratch.originPoses.get(id);
             const originNode = scratch.scene.get(id);
             if (origin === undefined || !originNode) continue;
-            const newPose = translatePoseViaDescriptor(origin, dx, dy, scratch.descriptor);
+            const newPose = scratch.frame.local(
+              id,
+              translatePoseViaDescriptor(origin, dx, dy, scratch.descriptor),
+            );
             // The old `scene.add` (no explicit id) minted a random id; we
             // pre-generate one so the insert op carries a full node. Id value
             // was never observable, so behavior is preserved.

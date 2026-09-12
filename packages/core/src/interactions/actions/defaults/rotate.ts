@@ -44,6 +44,7 @@ import {
   visualBoundsViaDescriptor,
   type PoseDescriptor,
 } from '../resize/geometry';
+import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -79,8 +80,12 @@ interface RotateScratch {
   ids: NodeId[];
   scene: Scene<unknown, string, unknown>;
   descriptor: PoseDescriptor<unknown>;
-  /** Origin pose for each selected node, captured at drag start. */
+  /** World reads and local writes over the scene's composition strategy. */
+  frame: PoseFrame<unknown>;
+  /** Origin pose for each selected node as stored — the `from` of its op. */
   originPoses: Map<NodeId, unknown>;
+  /** Origin pose for each selected node in world — what the gesture turns. */
+  originWorlds: Map<NodeId, unknown>;
   /** AABB center for each selected node (from origin pose). */
   originCenters: Map<NodeId, { x: number; y: number }>;
   /** Per-node origin rotation (radians). */
@@ -121,7 +126,7 @@ export const rotateAction: Action & { requires: string[] } = {
   label: 'Rotate',
   defaultBinding: { kind: 'drag' },
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor'],
+  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'poseComposition'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {
@@ -135,7 +140,12 @@ export const rotateAction: Action & { requires: string[] } = {
       if (ids.length === 0) return {};
 
       const descriptor = poseDescriptorOf(ctx.deps.poseDescriptor);
+      // The pivot the pointer orbits is a world point, so every pose the
+      // gesture turns is a world pose. Each turned result is stored back in
+      // the node's own parent frame at preview and commit alike.
+      const frame = scenePoseFrame(scene, ctx.deps.poseComposition);
       const originPoses = new Map<NodeId, unknown>();
+      const originWorlds = new Map<NodeId, unknown>();
       const originCenters = new Map<NodeId, { x: number; y: number }>();
       const originRotations = new Map<NodeId, number>();
       const visual: Bounds[] = [];
@@ -144,11 +154,15 @@ export const rotateAction: Action & { requires: string[] } = {
         const node = scene.get(id);
         if (!node) continue;
         if (!descriptor.withRotation || descriptor.supportsRotation?.(node.pose) === false) continue;
-        const b = descriptor.getBounds(node.pose);
         originPoses.set(id, node.pose);
+        // The pivot is a world point, so every measurement the gesture orbits
+        // is taken from the world pose, not the stored one.
+        const world = frame.world(id);
+        originWorlds.set(id, world);
+        const b = descriptor.getBounds(world);
         originCenters.set(id, { x: b.x + b.width / 2, y: b.y + b.height / 2 });
-        originRotations.set(id, descriptor.getRotation?.(node.pose) ?? 0);
-        visual.push(visualBoundsViaDescriptor(node.pose, descriptor));
+        originRotations.set(id, descriptor.getRotation?.(world) ?? 0);
+        visual.push(visualBoundsViaDescriptor(world, descriptor));
       }
 
       if (originPoses.size === 0) return {};
@@ -164,7 +178,9 @@ export const rotateAction: Action & { requires: string[] } = {
         ids,
         scene,
         descriptor,
+        frame,
         originPoses,
+        originWorlds,
         originCenters,
         originRotations,
         unionCenter,
@@ -179,23 +195,21 @@ export const rotateAction: Action & { requires: string[] } = {
       const recomputePreviews = (delta: number) => {
         scratch.previews.clear();
         if (delta === 0) { syncPreviewOverrides(scratch); return; }
-        for (const id of scratch.originPoses.keys()) {
-          const origin = scratch.originPoses.get(id);
+        for (const id of scratch.ids) {
+          const origin = scratch.originWorlds.get(id);
           if (origin === undefined) continue;
           const originRotation = scratch.originRotations.get(id) ?? 0;
           const originCenter = scratch.originCenters.get(id) ?? { x: 0, y: 0 };
-          scratch.previews.set(
-            id,
-            applyRotationDelta(
-              scratch.descriptor,
-              origin,
-              originRotation,
-              delta,
-              originCenter,
-              scratch.unionCenter,
-              scratch.useUnionPivot,
-            ),
+          const turned = applyRotationDelta(
+            scratch.descriptor,
+            origin,
+            originRotation,
+            delta,
+            originCenter,
+            scratch.unionCenter,
+            scratch.useUnionPivot,
           );
+          scratch.previews.set(id, scratch.frame.local(id, turned));
         }
         syncPreviewOverrides(scratch);
       };

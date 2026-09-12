@@ -28,6 +28,19 @@ export interface PoseAdapter<TPose> {
   getParent(id: string): string | null;
 }
 
+/**
+ * The transforms a `compose` represents **exactly**. A parent transform wider
+ * than its strategy's closure is rounded to the nearest pose — for `'rigid'`
+ * that means an anisotropically scaled parent turns a rotated child into a
+ * parallelogram, which `{x, y, width, height, rotation}` cannot hold, so the
+ * shear is dropped.
+ *
+ * Measured over 50,000 random parent/child pairs: rotation and translation
+ * compose to within 5.7e-13, anisotropic scale to a right-angle error of 0.99.
+ * See `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`.
+ */
+export type PoseClosure = 'identity' | 'translation' | 'rigid';
+
 /** Consumer's pose-composition strategy for hierarchical scenes. `compose`
  *  folds a child's pose (in parent's frame) up to the next frame; `decompose`
  *  is its inverse. Default is IDENTITY — an absolute-pose scene where every
@@ -35,6 +48,7 @@ export interface PoseAdapter<TPose> {
 export interface PoseComposition<TPose> {
   compose: (parent: TPose, child: TPose) => TPose;
   decompose: (parent: TPose, world: TPose) => TPose;
+  closure: PoseClosure;
 }
 
 /** Default pose-composition strategy: IDENTITY. Both `compose` and
@@ -45,6 +59,7 @@ export interface PoseComposition<TPose> {
 export const IDENTITY_POSE_COMPOSITION: PoseComposition<unknown> = {
   compose: (_parent, child) => child,
   decompose: (_parent, world) => world,
+  closure: 'identity',
 };
 
 /**
@@ -137,6 +152,76 @@ export function decomposeRectPose<TPose extends RectPose>(parent: TPose, world: 
     y: world.y - parent.y,
   };
 }
+
+/** Turn `(x, y)` about `(cx, cy)` by `r` radians. */
+function turn(cx: number, cy: number, r: number, x: number, y: number): [number, number] {
+  const c = Math.cos(r);
+  const s = Math.sin(r);
+  return [cx + (x - cx) * c - (y - cy) * s, cy + (x - cx) * s + (y - cy) * c];
+}
+
+/**
+ * `compose` for a container whose pose defines a **frame**: the child's local
+ * pose is offset into the parent's unrotated box, then the whole thing is
+ * turned about the parent's center. Rotations add; the child keeps its size.
+ *
+ * Reduces to `composeRectPose` when the parent is upright, so a scene that
+ * never rotates a container behaves identically under either strategy.
+ *
+ * Exact for translation and rotation. A parent carrying scale is outside what
+ * this can express — see `PoseClosure`.
+ */
+export function composeRigidPose<TPose extends RectPose>(parent: TPose, child: TPose): TPose {
+  const pr = parent.rotation ?? 0;
+  const [wcx, wcy] = turn(
+    parent.x + parent.width / 2,
+    parent.y + parent.height / 2,
+    pr,
+    parent.x + child.x + child.width / 2,
+    parent.y + child.y + child.height / 2,
+  );
+  return {
+    ...child,
+    x: wcx - child.width / 2,
+    y: wcy - child.height / 2,
+    rotation: (child.rotation ?? 0) + pr,
+  };
+}
+
+/** Inverse of `composeRigidPose` — un-turns about the parent's center, then
+ *  subtracts the parent's offset. */
+export function decomposeRigidPose<TPose extends RectPose>(parent: TPose, world: TPose): TPose {
+  const pr = parent.rotation ?? 0;
+  const [ux, uy] = turn(
+    parent.x + parent.width / 2,
+    parent.y + parent.height / 2,
+    -pr,
+    world.x + world.width / 2,
+    world.y + world.height / 2,
+  );
+  return {
+    ...world,
+    x: ux - parent.x - world.width / 2,
+    y: uy - parent.y - world.height / 2,
+    rotation: (world.rotation ?? 0) - pr,
+  };
+}
+
+/** Translation-only composition over `RectPose`. What a scene wants when a
+ *  container groups its children but never turns them. */
+export const RECT_POSE_COMPOSITION: PoseComposition<RectPose> = {
+  compose: composeRectPose,
+  decompose: decomposeRectPose,
+  closure: 'translation',
+};
+
+/** Composition over `RectPose` where a container's pose is a frame: rotating
+ *  the container rotates its contents. */
+export const RIGID_POSE_COMPOSITION: PoseComposition<RectPose> = {
+  compose: composeRigidPose,
+  decompose: decomposeRigidPose,
+  closure: 'rigid',
+};
 
 /**
  * Build a `(id) => world pose | null` callback over a `PoseAdapter`.

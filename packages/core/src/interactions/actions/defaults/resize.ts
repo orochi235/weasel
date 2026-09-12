@@ -67,6 +67,7 @@ import { createTransformOp } from 'core/ops/transform';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
 import { unionBounds } from 'core/geometry/unionBounds';
+import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 
 // ---------------------------------------------------------------------------
 // Defaults applied when `resizePolicy` dep is absent. Mirrors the
@@ -226,8 +227,12 @@ interface ResizeScratch {
    *  for the single-id path it's the original selection. */
   writeIds: NodeId[];
   scene: Scene<unknown, string, unknown>;
-  /** Start poses keyed by write id. */
+  /** World reads and local writes over the scene's composition strategy. */
+  frame: PoseFrame<unknown>;
+  /** Start poses keyed by write id, as stored — the `from` of each op. */
   startPoses: Map<NodeId, unknown>;
+  /** Start poses in world — the frame the anchor math and the drag share. */
+  startWorlds: Map<NodeId, unknown>;
   /** Shared origin bounds (union for group/multi-select, own bounds for
    *  single). Used as the `src` rect for `geometry.remapBounds`. */
   originBounds: Bounds;
@@ -273,7 +278,7 @@ export const resizeAction: Action & { requires: string[] } = {
   label: 'Resize',
   defaultBinding: { kind: 'drag' },
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'resizePolicy', 'poseDescriptor', 'applyOps', 'geometryProjection'],
+  requires: ['selection', 'scene', 'resizePolicy', 'poseDescriptor', 'applyOps', 'geometryProjection', 'poseComposition'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {
@@ -305,14 +310,20 @@ export const resizeAction: Action & { requires: string[] } = {
         ids.length === 1 && (expanded.length !== 1 || expanded[0] !== (ids[0] as string));
       const writeIds = (isGroupPath ? expanded : (ids as unknown as string[])) as NodeId[];
 
-      // Capture start poses + per-leaf bounds.
+      // Capture start poses + per-leaf bounds. The drag delta is world, so
+      // the anchor math runs on world poses; each frame's result is stored
+      // back in the node's own parent frame.
+      const frame = scenePoseFrame(scene, ctx.deps.poseComposition);
       const startPoses = new Map<NodeId, unknown>();
+      const startWorlds = new Map<NodeId, unknown>();
       const leafBounds: Bounds[] = [];
       for (const id of writeIds) {
         const node = scene.get(id);
         if (!node) continue;
         startPoses.set(id, node.pose);
-        leafBounds.push(geometry.getBounds(node.pose));
+        const world = frame.world(id);
+        startWorlds.set(id, world);
+        leafBounds.push(geometry.getBounds(world));
       }
       if (startPoses.size === 0) return {};
 
@@ -325,7 +336,7 @@ export const resizeAction: Action & { requires: string[] } = {
       // Rotation captured only for the single-write-id path; group-resize
       // takes the AABB-frame (unrotated) path even if leaves have rotation.
       const originPose = !isGroupPath && writeIds.length === 1
-        ? startPoses.get(writeIds[0])
+        ? startWorlds.get(writeIds[0])
         : (originBounds as unknown);
       const originRotation = !isGroupPath
         ? (geometry.getRotation?.(originPose) ?? 0)
@@ -364,7 +375,9 @@ export const resizeAction: Action & { requires: string[] } = {
       const scratch: ResizeScratch = {
         writeIds,
         scene,
+        frame,
         startPoses,
+        startWorlds,
         originBounds,
         anchor,
         startWorld,
@@ -427,7 +440,7 @@ export const resizeAction: Action & { requires: string[] } = {
           // already projected into the leaf's frame, so the naive affine
           // scales the wrong pair of extents. See `remapRotatedLeaf`.
           const computePose = (id: NodeId): unknown => {
-            const sp = scratch.startPoses.get(id);
+            const sp = scratch.startWorlds.get(id);
             if (sp === undefined) return undefined;
             if (isGroupPath && poseRotationOf(sp) !== null) {
               return remapRotatedLeaf(
@@ -479,14 +492,14 @@ export const resizeAction: Action & { requires: string[] } = {
               }
             }
 
-            scratch.previews.set(id, proposedPose);
+            scratch.previews.set(id, scratch.frame.local(id, proposedPose));
             scratch.gestureCtx.current = new Map<string, unknown>([[id as string, proposedPose]]);
           } else {
             // Group / multi path: remap each leaf and store.
             for (const id of scratch.writeIds) {
               const next = computePose(id);
               if (next === undefined) continue;
-              scratch.previews.set(id, next);
+              scratch.previews.set(id, scratch.frame.local(id, next));
             }
           }
 

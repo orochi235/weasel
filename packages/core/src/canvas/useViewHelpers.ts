@@ -174,6 +174,15 @@ export interface ViewHelpersBundle<TPose> {
  * cannot be a loop inside one component, but they can be N components each
  * calling this once.
  */
+/** The composed pose when the adapter resolves one, its stored pose otherwise.
+ *  Adapters predating `getWorldPose` are absolute-pose, where the two agree. */
+function worldPoseOf<TPose>(
+  adapter: { getPose(id: string): TPose; getWorldPose?(id: string): TPose },
+  id: string,
+): TPose {
+  return typeof adapter.getWorldPose === 'function' ? adapter.getWorldPose(id) : adapter.getPose(id);
+}
+
 export function useViewHelpers<TPose>(
   opts: UseViewHelpersOpts<TPose>,
 ): ViewHelpersBundle<TPose> {
@@ -187,7 +196,9 @@ export function useViewHelpers<TPose>(
     if (!adapter) return undefined;
     return (id: string): Bounds | null => {
       try {
-        const pose = adapter.getPose(id);
+        // World: chrome is drawn over the picture, so it has to agree with
+        // where the renderer put the node, not with where its pose is stored.
+        const pose = worldPoseOf(adapter, id);
         const b = geometry.getBounds(pose);
         const rot = geometry.getRotation?.(pose);
         return rot ? { ...b, rotation: rot } : b;
@@ -200,7 +211,7 @@ export function useViewHelpers<TPose>(
   const committedPoseOf = useCallback((id: string): TPose | null => {
     if (!adapter) return null;
     try {
-      return adapter.getPose(id);
+      return worldPoseOf(adapter, id);
     } catch {
       return null;
     }

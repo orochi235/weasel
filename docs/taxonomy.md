@@ -537,8 +537,10 @@ The snapshot of a scene object's geometry that the kit reads and writes.
 Shape is generic (`TPose`). Common shapes: rect (`{x, y, width, height}`),
 `RotatedPose` (rect + `rotation: number` in radians, pivot at AABB center),
 `Path` (polygon/bezier command stream), `TextPose`. Poses are **local-coordinate**
-— relative to the object's direct parent (world-frame for root objects). The
-kit composes world poses via `composeWorldPose` for rendering and hit-testing.
+— relative to the object's direct parent (world-frame for root objects). Under
+the default absolute-pose model a parent imposes no transform, so local and
+world coincide; configure a `poseComposition` and a container's pose becomes a
+frame its children are expressed in, which `getWorldPose` folds.
 See `packages/core/src/interactions/gestures/types.ts:108` (`ResizePose`, `RotatedPose`) and
 `packages/core/src/features/paths/types.ts` (`Path`).
 

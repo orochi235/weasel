@@ -7,7 +7,10 @@ import { createReparentOp } from 'core/ops/reparent';
 import { unionBounds } from 'core/geometry/unionBounds';
 import { unionOfChildren, UNION_OF_CHILDREN } from 'core/scene/kitRegistry';
 import { poseDescriptorOf } from '../poseDescriptorDep';
+import { visualBoundsViaDescriptor } from '../resize/geometry';
+import { createTransformOp } from 'core/ops/transform';
 import type { Action } from '../registry';
+import { scenePoseFrame } from '../poseFrame';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 
 /** Mint a fresh NodeId for a new container. The old `scene.add(spec)` path
@@ -30,19 +33,24 @@ function freshContainerId(): NodeId {
  * fresh container and reparents the current selection under it as a single
  * undoable batch.
  *
- * Child poses are absolute by default (the container-pose cascade is opt-in),
- * so reparenting does NOT move the members visually. The container's own pose
- * is bounds/selection metadata — the union AABB of its members — and it is
- * *derived*, so it tracks a member that moves later instead of freezing at
- * the moment the group was made. The authored pose it also carries is the
- * fallback for an emptied group and for a scene whose registry lost the key.
+ * Grouping never moves a member on screen. The container takes the world
+ * envelope of its members' ink; each member is then re-expressed in that
+ * container's frame, which is a no-op only when the scene composes poses by
+ * identity.
+ *
+ * Under identity the container's pose is also *derived* from its members, so
+ * it tracks one that moves later instead of freezing at the moment the group
+ * was made. Under any other composition that derivation is circular — the
+ * members' poses are expressed in the container's own frame — so the container
+ * keeps the authored envelope instead. Making it track its members again needs
+ * its own decision; see the group-as-frame design doc.
  */
 export const groupAction: Action & { requires: string[] } = {
   id: 'group',
   label: 'Group',
   defaultBinding: { kind: 'key', key: 'g', mods: { mod: true } },
   eligible: { capability: 'edits-page' },
-  requires: ['scene', 'selection', 'applyOps', 'poseDescriptor'],
+  requires: ['scene', 'selection', 'applyOps', 'poseDescriptor', 'poseComposition'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
@@ -69,11 +77,23 @@ export const groupAction: Action & { requires: string[] } = {
       const parents = new Set(nodes.map((n) => n.parent));
       const parent = parents.size === 1 ? nodes[0]!.parent : null;
 
-      // The authored pose is only the fallback (an emptied group, a lost
-      // registry key); the derived union is what the scene shows.
+      // The container takes the world envelope of its members' ink. The
+      // authored pose is only the fallback (an emptied group, a lost registry
+      // key); under identity the derived union is what the scene shows.
       const d = poseDescriptorOf(deps.poseDescriptor);
-      const frame = unionBounds(nodes.map((n) => d.getBounds(n.pose)));
-      const pose = frame === null ? nodes[0]!.pose : d.fromBounds(frame, nodes[0]!.pose);
+      const frame = scenePoseFrame(scene, deps.poseComposition);
+      const worlds = new Map<NodeId, unknown>();
+      for (const node of nodes) worlds.set(node.id, frame.world(node.id));
+      // Visual, not stored, bounds: a turned member's ink reaches outside its
+      // own box, and the container has to cover what is drawn.
+      const union = unionBounds([...worlds.values()].map((p) => visualBoundsViaDescriptor(p, d)));
+      const containerWorldPose = union === null
+        ? nodes[0]!.pose
+        : d.fromBounds(union, nodes[0]!.pose);
+      const pose = frame.localUnder(parent, containerWorldPose);
+      // An identity composition stores world coordinates, so there is no frame
+      // to re-express a member in and no circularity in deriving the container.
+      const absolutePoses = frame.pc.closure === 'identity';
       const derive = scene.registry.derivePose?.[UNION_OF_CHILDREN] ?? unionOfChildren;
 
       // Build ops mirroring the old direct mutations, in the same order the
@@ -85,8 +105,8 @@ export const groupAction: Action & { requires: string[] } = {
       //      order, capturing each node's PRE-mutation parent as `from`
       //      (the op captures the sibling slot itself, on apply).
       // The container must exist before any child reparents into it, so the
-      // insert op is emitted first. Member poses are intentionally untouched
-      // (absolute-pose model — reparenting alone doesn't move members).
+      // insert op is emitted first. A member's pose then follows its reparent,
+      // re-expressed in the container's frame so the member does not move.
       const containerId = freshContainerId();
       const ops: Op[] = [
         createInsertOp<Node<unknown, string, unknown>>({
@@ -97,8 +117,7 @@ export const groupAction: Action & { requires: string[] } = {
             pose: pose as unknown,
             data: {} as unknown,
             parent: parent ?? null,
-            dependsOn: 'children',
-            derivePose: derive,
+            ...(absolutePoses ? { dependsOn: 'children', derivePose: derive } : {}),
           } as Node<unknown, string, unknown>,
           label: 'Group',
         }),
@@ -108,6 +127,13 @@ export const groupAction: Action & { requires: string[] } = {
           id: node.id as string,
           fromParentId: (node.parent ?? null) as string | null,
           toParentId: containerId as string,
+          label: 'Group',
+        }));
+        if (absolutePoses) continue;
+        ops.push(createTransformOp<unknown>({
+          id: node.id as string,
+          from: node.pose,
+          to: frame.pc.decompose(containerWorldPose, worlds.get(node.id)!),
           label: 'Group',
         }));
       }
@@ -138,13 +164,16 @@ export const groupAction: Action & { requires: string[] } = {
  * parent (preserving z-order) and removing the now-empty container, as a single
  * undoable batch. Selected non-container nodes are ignored. The freed children
  * become the new selection.
+ *
+ * A child's pose is expressed in the container's frame, so each one is
+ * re-expressed in the frame it lands in and nothing moves on screen.
  */
 export const ungroupAction: Action & { requires: string[] } = {
   id: 'ungroup',
   label: 'Ungroup',
   defaultBinding: { kind: 'key', key: 'g', mods: { mod: true, shift: true } },
   eligible: { capability: 'edits-page' },
-  requires: ['scene', 'selection'],
+  requires: ['scene', 'selection', 'poseComposition'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
@@ -157,6 +186,9 @@ export const ungroupAction: Action & { requires: string[] } = {
 
       const containers = ids.filter((id) => scene.get(id as NodeId)?.kind === 'container');
       if (containers.length === 0) return;
+
+      const frame = scenePoseFrame(scene, deps.poseComposition);
+      const absolutePoses = frame.pc.closure === 'identity';
 
       scene.batch('Ungroup', () => {
         const freed: NodeId[] = [];
@@ -171,8 +203,17 @@ export const ungroupAction: Action & { requires: string[] } = {
               : scene.childrenOf(parent).indexOf(containerId as NodeId);
 
           const children = [...scene.childrenOf(containerId as NodeId)];
+          // Read every world pose before the first move: the frame resolves
+          // through the live scene, and the container is about to leave it.
+          const worlds = new Map<NodeId, unknown>();
+          if (!absolutePoses) {
+            for (const childId of children) worlds.set(childId, frame.world(childId));
+          }
           children.forEach((childId, i) => {
             scene.move(childId, parent, baseIndex < 0 ? undefined : baseIndex + i);
+            if (!absolutePoses) {
+              scene.setPose(childId, frame.localUnder(parent, worlds.get(childId)!) as never);
+            }
             freed.push(childId);
           });
 

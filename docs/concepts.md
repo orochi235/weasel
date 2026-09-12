@@ -168,8 +168,13 @@ a `PoseDescriptor<TPose>` (see [extending.md](./extending.md)) so the
 rect-flavored math (resize, area-select, snap origin) still works.
 
 `getPose` / `setPose` are **local-coordinate** — relative to the object's
-parent. Rendering and hit-testing use world coords; the kit composes via
-`composeWorldPose`.
+parent — and `getWorldPose` is the composed reading that rendering, picking and
+chrome consume. The two are the same value unless a `poseComposition` is
+configured: by default a parent groups its children and imposes no transform,
+so every node's stored pose is already world. Pass
+`<SceneCanvas poseComposition={RIGID_POSE_COMPOSITION}>` to make a container's
+pose a frame, so rotating it rotates its contents. See
+`docs/superpowers/specs/2026-09-10-group-as-frame-design.md`.
 
 ## Pose override
 

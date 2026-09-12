@@ -25,6 +25,7 @@ import type { DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import { effectivePose } from 'core/scene/effectivePose';
 import { resolveDerivedPath } from './derivedPath';
+import { composeWorldPose, type PoseAdapter, type PoseComposition } from 'features/groups/composePose';
 
 /** Shared, never mutated: most scenes are flat and every node returns it. */
 const EMPTY_PARENTS: readonly never[] = [];
@@ -191,6 +192,11 @@ export interface ScenePickSourceOptions<TPose> {
    *  which is `layerVisibility` and `layerOrder` on top of the scene's own
    *  `visible` flag. Consulted after the scene's flag, never instead of it. */
   layerIsPainted?: (layer: string) => boolean;
+  /** How a child's stored pose folds into its parent's frame. Needed because
+   *  picking tests where a node is drawn, and under a composing strategy that
+   *  is not where its own pose says. Ignored when `getPose` already answers in
+   *  world coordinates. */
+  poseComposition?: PoseComposition<TPose>;
 }
 
 export function scenePickSource<TData, TLayer extends string, TPose>(
@@ -218,9 +224,26 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
       ? (faded ? (id: string) => (faded.has(id) ? 0 : 1) : undefined)
       : (id: string) => scene.overrides.get(asNodeId(id))?.alpha ?? 1);
 
+  // A composing strategy makes a node's own pose local, so picking has to fold
+  // the parent chain the same way the render walk does or it tests where the
+  // node is stored rather than where it is drawn.
+  const composition = opts.poseComposition;
+  const chain: PoseAdapter<TPose> | null =
+    composition !== undefined && composition.closure !== 'identity'
+      ? {
+          getPose: (id: string) => {
+            const n = scene.get(asNodeId(id));
+            return n ? effectivePose(scene, n) : (undefined as unknown as TPose);
+          },
+          getParent: (id: string) => scene.get(asNodeId(id))?.parent ?? null,
+        }
+      : null;
+
   const poseOf = getPose
     ? (node: PickCandidate<TPose>) => getPose(node.id)
-    : (node: PickCandidate<TPose>) => effectivePose(scene, node as never);
+    : chain
+      ? (node: PickCandidate<TPose>) => composeWorldPose(chain, node.id, composition!.compose)
+      : (node: PickCandidate<TPose>) => effectivePose(scene, node as never);
 
   // Through `poseOf`, not the document pose: a derived node has to be tested
   // where the renderer draws its dependencies, which is what an override says.
@@ -275,6 +298,10 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
 
 /** The adapter surface the walk can reach without a `Scene`. */
 interface PickAdapter<TPose> {
+  /** Composed world pose, when the adapter has a composition strategy.
+   *  Falls back to `getPose`, which is the same value under the
+   *  absolute-pose model. */
+  getWorldPose?(id: string): TPose;
   getNodes(): readonly { id: string }[];
   getPose(id: string): TPose;
   getNode?: (id: string) => unknown;
@@ -298,9 +325,14 @@ export function adapterPickSource<TPose>(adapter: PickAdapter<TPose>): PickSourc
   // is the only thing that reads it.
   let parents = new Map<string, PickCandidate<TPose>>();
 
+  // The adapter composes if it has a strategy; `getPose` alone is the node's
+  // own pose, which is not where a framed child is drawn.
+  const worldPose = (id: string): TPose =>
+    (typeof adapter.getWorldPose === 'function' ? adapter.getWorldPose(id) : adapter.getPose(id));
+
   const nodeOf = (id: string): PickCandidate<TPose> => {
     const raw = hier.getNode(id) as Partial<PickCandidate<TPose>>;
-    return { ...raw, id, pose: adapter.getPose(id) } as PickCandidate<TPose>;
+    return { ...raw, id, pose: worldPose(id) } as PickCandidate<TPose>;
   };
 
   return {
@@ -308,7 +340,7 @@ export function adapterPickSource<TPose>(adapter: PickAdapter<TPose>): PickSourc
       if (!hierarchical) {
         parents = new Map();
         return adapter.getNodes().map((n) => ({
-          ...(n as object), id: n.id, pose: adapter.getPose(n.id),
+          ...(n as object), id: n.id, pose: worldPose(n.id),
         })) as PickCandidate<TPose>[];
       }
       const out: PickCandidate<TPose>[] = [];
@@ -325,7 +357,7 @@ export function adapterPickSource<TPose>(adapter: PickAdapter<TPose>): PickSourc
       parents = next;
       return out;
     },
-    poseOf: (node) => adapter.getPose(node.id),
+    poseOf: (node) => worldPose(node.id),
     parentsOf(node) {
       const chain: PickCandidate<TPose>[] = [];
       let cur = parents.get(node.id);

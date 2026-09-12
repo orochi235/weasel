@@ -1,6 +1,9 @@
 # A group is a frame
 
-**Status: designed, not built.** Nothing in this document is in the tree yet.
+**Status: built**, except where "What this does not fix" says otherwise. Turn
+it on with `<SceneCanvas poseComposition={RIGID_POSE_COMPOSITION}>`, or
+`sceneToAdapter(scene, { poseComposition })` for a hand-built adapter. Omitting
+it leaves the absolute-pose behavior the kit shipped before, unchanged.
 
 **What this is:** the design for making a container's pose mean something to
 its children. Today nesting contributes a clip chain and nothing else, so a
@@ -71,24 +74,35 @@ The first two are float noise. The third is `|cos|` between adjacent edges of
 the child's transformed box: an anisotropic parent turns a rotated child into a
 parallelogram, and no `{x, y, width, height, rotation}` can hold one.
 
-**So composition is defined over the similarity group — translate, rotate,
-uniform scale — and anisotropic parent scale is out of the pose model.** This is
-not a new concession: `remapRotatedLeaf` already maps the local axes under a
-group affine, drops the shear, and recomputes `rotation = atan2(uy, ux)`, and
-its docstring says why.
+**So anisotropic parent scale is out of the pose model.** This is not a new
+concession: `remapRotatedLeaf` already maps the local axes under a group affine,
+drops the shear, and recomputes `rotation = atan2(uy, ux)`, and its docstring
+says why.
+
+`RectPose` carries no scale factor of its own — `width`/`height` are the size,
+not a multiplier — so the strategy this ships is **rigid**: translate and
+rotate. The uniform-scale row of the table is what a consumer whose `TPose` does
+carry a scale can rely on; it is not something the shipped strategy exercises.
 
 A `PoseComposition` declares its own closure so the limit is legible rather than
 discovered:
 
 ```ts
+type PoseClosure = 'identity' | 'translation' | 'rigid';
+
 interface PoseComposition<TPose> {
   compose: (parent: TPose, child: TPose) => TPose;
   decompose: (parent: TPose, world: TPose) => TPose;
   /** The transforms `compose` represents exactly. Anything wider is rounded
-   *  to the nearest pose, which for 'similarity' means shear is dropped. */
-  closure: 'identity' | 'similarity';
+   *  to the nearest pose, which for 'rigid' means shear is dropped. */
+  closure: PoseClosure;
 }
 ```
+
+`RECT_POSE_COMPOSITION` (`'translation'`, the existing behavior) and
+`RIGID_POSE_COMPOSITION` (`'rigid'`) both ship; `composeRigidPose` reduces to
+`composeRectPose` when the parent is upright, so a scene that never rotates a
+container behaves identically under either.
 
 ## The pose is the source of truth, not a matrix
 
@@ -151,15 +165,28 @@ uses it.
 Each step is separately shippable and each is a no-op under the identity
 default.
 
-1. `closure` on `PoseComposition`; `composeSimilarityPose` / `decomposeSimilarityPose`
-   beside the existing rect pair. Nothing consumes them yet.
-2. `getWorldPose` on the scene adapter; the accumulator in both render walks.
-3. Pick and hit-testing — both pick sources, `hitTestArea`, `getNodeAtPoint`.
-4. Selection chrome — `useViewHelpers`, `chromeState`, `overlay.ts`'s
-   `makeContainerAwareBoundsResolver`, which walks the tree today and composes
-   nothing.
+1. `closure` on `PoseComposition`; `composeRigidPose` / `decomposeRigidPose`
+   beside the existing rect pair.
+2. `getWorldPose` on the scene adapter; the accumulator in `buildSceneTree`.
+   `buildSceneViewCommands` delegates there, so the detached surfaces come with
+   it — the "two render walks" are one walk.
+3. Pick and hit-testing — both pick sources, the adapter's area and lasso
+   walks, the marquee and lasso deps, `getNodeAtPoint`.
+4. Selection chrome — `useViewHelpers`, which feeds `chromeState` — plus the
+   `poseComposition` prop on `SceneCanvas`, which is what lets a consumer turn
+   any of this on.
 5. Actions — `resize`, `rotate`, `group`, `clone`, `flip`, align, distribute.
-6. Export and clipboard — `svgExport`, `snapshotSelection` / `commitPaste`.
+6. Clipboard — `snapshotSelection` captures roots composed, because a root
+   loses its parent on paste.
+
+Two guards were needed that this design did not anticipate, both because the
+absolute-pose model bakes a *cascade* into moving a container: dragging one
+translates every descendant so they stay attached. Under a frame the
+descendants ride the frame and the cascade moves them twice. `sceneToAdapter`
+refuses `poseComposition` together with `cascadeContainerPose`, and
+`useSceneSelectTool` — which writes the same cascade inline rather than through
+that option — skips it when a strategy is configured.
+
 
 ## Testing: the identity trap
 
@@ -177,15 +204,25 @@ Two further checks earn their place:
 
 - **The composition law.** For each shipped strategy, `compose` then `decompose`
   round-trips, and `compose` agrees with mapping the child's corners through the
-  parent's frame. This is what pins `closure: 'similarity'` as a true claim
+  parent's frame. This is what pins `closure: 'rigid'` as a true claim
   rather than a label.
 - **The two resolvers agree.** The walk's accumulator and `getWorldPose` must
   return the same pose for every node of the fixture. They are separate code
   paths answering one question, which is the shape of bug this design is meant
   to avoid rather than introduce.
-- **Pixels, not just poses.** `tests/visual/` gets a rotated-container case. A
-  composed pose that is right in the walk and wrong in the wrap produces correct
-  numbers and a visibly wrong picture.
+- **Pixels, not just poses.** A composed pose that is right in the walk and
+  wrong in the wrap produces correct numbers and a visibly wrong picture.
+  `sceneViewRender.frame.test.ts` reads the emitted draw commands and their
+  accumulated transform, and fails when the wrap is removed. It is a proxy: a
+  framebuffer check needs a browser, and `tests/visual/` has no
+  rotated-container case yet.
+
+**A same-gesture-twice drift test does not catch this class of bug on the way
+in.** The un-migrated actions were consistently local-in and local-out, so they
+were self-consistent and drifted no more than the fixed ones. Those tests are
+worth keeping as guards against a fix that reads world and writes world, but
+what actually found the defects was a paired correctness assertion against a
+hand-derived world value.
 
 ## What this does not fix
 
@@ -198,9 +235,19 @@ Stated so nobody plans against it:
   `scaleY` separately (`animation/rig/types.ts:8`), so a bone chain using them
   stays flattened onto independent nodes. A rigid or uniformly scaled rig
   becomes expressible as parenting, which is what TODO 914 asks for.
-- **`kitRegistry.ts:32`'s `unionOfChildren`.** A container whose pose is derived
-  from its children's poses, which are expressed in the container's frame, is
-  circular. It works today only because the frame is identity. It needs its own
-  decision and is not in this arc.
+- **`kitRegistry.ts:32`'s `unionOfChildren`** is circular under a frame: it
+  derives a container's pose from children whose poses are expressed in that
+  container's frame. This was meant to be deferred, but `groupAction` attaches
+  it to every container it mints, so grouping forced the decision. It is now
+  attached only when the strategy's closure is `'identity'`; under any other
+  strategy a new container keeps its authored envelope. Whether a framed
+  container should track its contents at all — and by what rule — is still
+  open.
 - **`nestedHit`**, which composes correctly and has no caller. Either it gets
   one or it goes; not decided here.
+- **`apps/draw`'s SVG export.** It bakes each leaf's stored pose into the
+  emitted path and gives a container a `<g>` with no transform, which is right
+  for the absolute-pose model that app uses and would need world poses under a
+  frame. It does not opt in, so nothing there is wrong today.
+- **The `poseById` fallback on the selection overlay**, which a consumer
+  supplies. The chrome path that matters reads `chromeState`, which composes.

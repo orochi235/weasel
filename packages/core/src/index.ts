@@ -235,6 +235,7 @@ export {
   type UseResizePolicyOptions,
 } from './canvas/deps/resizePolicy';
 export { usePoseDescriptorDepSource } from './canvas/deps/poseDescriptor';
+export { usePoseCompositionDepSource } from './canvas/deps/poseComposition';
 export { CORNER_ANCHORS, cornerPoint } from './interactions/actions/resize/cornerHandles';
 export type { CornerAnchor, CornerEdge } from './interactions/actions/resize/cornerHandles';
 export { useSliceDep } from './canvas/deps/slice';
@@ -669,12 +670,16 @@ export {
   composeWorldPose,
   composeRectPose,
   decomposeRectPose,
+  composeRigidPose,
+  decomposeRigidPose,
   rebaseLocalPose,
   translateRectPose,
   worldPoseLookup,
   IDENTITY_POSE_COMPOSITION,
+  RECT_POSE_COMPOSITION,
+  RIGID_POSE_COMPOSITION,
 } from './features/groups/composePose';
-export type { PoseAdapter, PoseComposition } from './features/groups/composePose';
+export type { PoseAdapter, PoseComposition, PoseClosure } from './features/groups/composePose';
 export { nestedHitTester } from './features/groups/nestedHit';
 export { unionOfChildrenVia } from './features/groups/unionOfChildren';
 export type {

@@ -44,6 +44,7 @@ import {
   type PoseDescriptor,
 } from 'interactions/actions/resize/geometry';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import { composeWorldPose, type PoseComposition } from 'features/groups/composePose';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
 
 /** Minimal selection contract `sceneToAdapter` needs to wire `getSelection` /
@@ -84,6 +85,12 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
   // hooks like useNest, etc.) can rely on these being present.
   & {
       getParent(id: string): string | null;
+      /** The node's pose with every ancestor's frame folded in. Equal to
+       *  `getPose` unless a `poseComposition` is configured. */
+      getWorldPose(id: string): TPose;
+      /** Present only when a composing strategy is configured; the render
+       *  walk feature-detects it. */
+      composePose?(parent: TPose, child: TPose): TPose;
       getSelection(): string[];
       setSelection(ids: string[]): void;
       insertNode(node: Node<TData, TLayer, TPose>, index?: number): void;
@@ -132,6 +139,12 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
    *  same delta, through the pose descriptor. Scene v1 stores absolute poses,
    *  so without it children stay behind. */
   cascadeContainerPose?: boolean;
+  /** How a child's stored pose folds into its parent's frame. Omit for the
+   *  absolute-pose model, where a parent contributes no transform. Supplying a
+   *  composing strategy makes a container's pose a **frame**: rotating the
+   *  container rotates its contents, and `setPose` on it must not also
+   *  translate them, so it cannot be combined with `cascadeContainerPose`. */
+  poseComposition?: PoseComposition<TPose>;
 }
 
 // ─── Clip-aware hierarchical walk ────────────────────────────────────────────
@@ -150,8 +163,9 @@ function walkClipAware<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   poseBounds: (pose: TPose) => Bounds,
   nodeTest: (node: Node<TData, TLayer, TPose>, pose: TPose) => boolean,
+  poseComposition?: PoseComposition<TPose>,
 ): string[] {
-  return pickWalk<TPose>(scenePickSource(scene), {
+  return pickWalk<TPose>(scenePickSource(scene, poseComposition ? { poseComposition } : {}), {
     hits: (node, pose) => nodeTest(node as unknown as Node<TData, TLayer, TPose>, pose),
     clipAdmits: (clip, _node, pose) => pathIntersectsRect(clip, poseBounds(pose)),
   });
@@ -209,6 +223,16 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
   const translate = (p: TPose, dx: number, dy: number): TPose =>
     translatePoseViaDescriptor(p, dx, dy, d);
 
+  const composition = options.poseComposition;
+  const composes = composition !== undefined && composition.closure !== 'identity';
+  if (composes && options.cascadeContainerPose) {
+    throw new Error(
+      'sceneToAdapter: poseComposition and cascadeContainerPose contradict each other. ' +
+      'Under a composing strategy a child\'s pose is already relative to its parent, so ' +
+      'the cascade would move every descendant twice. Drop cascadeContainerPose.',
+    );
+  }
+
   const adapter: SceneCanvasAdapter<TData, TLayer, TPose> = {
     getNode(id) {
       return scene.get(asNodeId(id));
@@ -231,6 +255,13 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       const n = scene.get(asNodeId(id));
       return n?.parent ?? null;
     },
+    getWorldPose(id) {
+      if (!composes) return adapter.getPose(id);
+      return composeWorldPose(adapter, id, composition!.compose);
+    },
+    // Only present when it would do something: the render walk skips the fold
+    // entirely when this is absent, which is the absolute-pose path.
+    ...(composes ? { composePose: composition!.compose } : {}),
     setPose(id, pose) {
       // Container cascade (opt-in): under scene v1's absolute-pose semantics,
       // moving a container needs to translate every descendant by the same
@@ -358,7 +389,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
           b.y < rect.y + rect.height &&
           b.y + b.height > rect.y
         );
-      });
+      }, composition);
     },
     hitTestLasso(polygon, mode: LassoHitMode) {
       if (polygon.length < 3) return [];
@@ -369,7 +400,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
           mode === 'enclosed' ? polygonContainsRect(polygon, b) :
           polygonIntersectsRect(polygon, b)
         );
-      });
+      }, composition);
     },
     // commitInsert (gesture-time leaf insert) is opt-in: present only when
     // `options.commitInsert` is. The full insertNode/removeNode mutators
@@ -413,7 +444,14 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       const items: Node<TData, TLayer, TPose>[] = [];
       // DFS from one snapshot root: push the node, then its subtree —
       // parents-before-children, so paste can re-insert in array order.
-      const capture = (id: string): void => {
+      // A snapshot root loses its parent on paste, so under a frame its stored
+      // pose — which is relative to that parent — would land it somewhere else
+      // entirely. Capture roots in world coordinates; descendants keep their
+      // parent, so theirs stay local.
+      const poseFor = (n: Node<TData, TLayer, TPose>, isRoot: boolean): TPose =>
+        isRoot && composes ? adapter.getWorldPose(n.id) : n.pose;
+
+      const capture = (id: string, isRoot = false): void => {
         if (taken.has(id)) return;
         const n = scene.get(asNodeId(id));
         if (!n) return;
@@ -424,7 +462,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
             id: n.id,
             layer: n.layer,
             parent: n.parent,
-            pose: copyField(n.pose),
+            pose: copyField(poseFor(n, isRoot)),
             data: copyField(n.data),
             children: [...n.children],
             ...(n.clipFromPose ? { clipFromPose: n.clipFromPose } : {}),
@@ -436,7 +474,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
             id: n.id,
             layer: n.layer,
             parent: n.parent,
-            pose: copyField(n.pose),
+            pose: copyField(poseFor(n, isRoot)),
             data: copyField(n.data),
           });
         }
@@ -445,7 +483,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         // Dedupe: an id whose ancestor is also selected is already covered
         // by that ancestor's subtree walk.
         if (scene.ancestorsOf(asNodeId(id)).some((a) => idSet.has(a))) continue;
-        capture(id);
+        capture(id, true);
       }
       return { items };
     },

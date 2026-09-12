@@ -11,11 +11,13 @@ import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { hitTestArea as hitTestAreaShared } from './hitTestArea';
+import type { PoseComposition } from 'features/groups/composePose';
 
 export function useLassoSelectDepSource(
   scene: Scene<unknown, string, unknown>,
   selection: SelectionApi,
   descriptor?: PoseDescriptor<unknown>,
+  poseComposition?: PoseComposition<unknown>,
 ): void {
   const sceneRef = useRef(scene);
   sceneRef.current = scene;
@@ -29,7 +31,8 @@ export function useLassoSelectDepSource(
     const s = selectionRef.current;
     const d = descriptorRef.current;
     return {
-      hitTestArea: (bounds) => hitTestAreaShared(sc, bounds, undefined, d),
+      hitTestArea: (bounds) =>
+        hitTestAreaShared(sc, bounds, poseComposition ? { poseComposition } : undefined, d),
       getSelection: () => s.current as NodeId[],
       setSelection: (ids) => s.set(ids as NodeId[]),
     };

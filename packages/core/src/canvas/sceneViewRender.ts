@@ -18,6 +18,7 @@
  */
 
 import { WeaselRenderer } from '../renderer/WeaselRenderer';
+import type { PoseComposition } from 'features/groups/composePose';
 import { viewToMat3 } from '../renderer/math/viewToMat3';
 import type { DrawCommand } from '../renderer/DrawCommand';
 import type { View } from '../core/viewport/view';
@@ -143,6 +144,9 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
   drawOne: SceneViewDrawOne<TData, TLayer, TPose>,
   extraCommands?: ReadonlyArray<DrawCommand>,
   alphaFor?: (id: string) => number,
+  /** How a child's stored pose folds into its parent's frame. Omit for the
+   *  absolute-pose model. */
+  poseComposition?: PoseComposition<TPose>,
 ): DrawCommand[] {
   // The scene is in scope here, so this is where the override's alpha and the
   // derived paths are applied on the headless path; `SceneCanvas` does the same
@@ -162,8 +166,13 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
     );
   };
 
+  const composes = poseComposition !== undefined && poseComposition.closure !== 'identity';
+  const hierarchy = composes
+    ? { ...sceneAsHierarchy(scene), composePose: poseComposition!.compose }
+    : sceneAsHierarchy(scene);
+
   const children: DrawCommand[] = buildSceneTree(
-    sceneAsHierarchy(scene) as Parameters<typeof buildSceneTree>[0],
+    hierarchy as Parameters<typeof buildSceneTree>[0],
     wrappedDrawOne as unknown as Parameters<typeof buildSceneTree>[1],
     view,
     undefined,

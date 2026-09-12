@@ -102,6 +102,10 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
     layer?: TLayer;
   };
   layouts?: SceneToAdapterOptions<TData, TLayer, TPose>['layouts'];
+  /** How a child's stored pose folds into its parent's frame. Supplying one
+   *  makes a container's pose a frame, which also means moving a container
+   *  must not translate its descendants — they ride the frame. */
+  poseComposition?: SceneToAdapterOptions<TData, TLayer, TPose>['poseComposition'];
 }
 
 export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
@@ -135,7 +139,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   args: UseSceneSelectToolArgs<TData, TLayer, TPose>,
 ): UseSceneSelectToolReturn<TData, TLayer, TPose> {
   const {
-    scene, selection, geometry, selectTool: opts, insertTool, layouts, getView,
+    scene, selection, geometry, selectTool: opts, insertTool, layouts, poseComposition, getView,
     alphaOf, layerIsPainted,
   } = args;
   const d = (args.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
@@ -156,7 +160,13 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   const insertLayer = insertTool?.layer;
 
   const adapter = useMemo(() => {
-    const base = sceneToAdapter(scene, { commitInsert, insertLayer, layouts, poseDescriptor: d });
+    const base = sceneToAdapter(scene, {
+      commitInsert, insertLayer, layouts, poseDescriptor: d,
+      ...(poseComposition ? { poseComposition } : {}),
+    });
+    // Under a frame a child's pose is already relative, so the container
+    // cascade below would move every descendant a second time.
+    const framed = poseComposition !== undefined && poseComposition.closure !== 'identity';
     const collectDescendants = (id: string, out: string[]): void => {
       for (const cid of scene.childrenOf(asNodeId(id))) {
         out.push(cid);
@@ -167,7 +177,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       ...base,
       setPose(id: string, pose: TPose) {
         const n = scene.get(asNodeId(id));
-        if (!n || n.kind !== 'container') {
+        if (framed || !n || n.kind !== 'container') {
           base.setPose(id, pose);
           return;
         }
@@ -197,7 +207,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       getSelection: (): string[] => [...selection.adapterMethods.getSelection()],
       setSelection: (ids: string[]) => selection.adapterMethods.setSelection(ids as NodeId[]),
     };
-  }, [scene, commitInsert, insertLayer, layouts, selection, d]);
+  }, [scene, commitInsert, insertLayer, layouts, selection, d, poseComposition]);
 
   const wiredMoveOptions = useMemo<UseMoveOptions<TPose>>(() => {
     const merged: UseMoveOptions<TPose> = { ...(moveOptions ?? {}) };
@@ -230,9 +240,11 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       const scale = meanScale((camera ?? getView?.())?.scale ?? { x: 1, y: 1 });
       const tolerance = pickTolerancePx / scale;
       // Through the adapter, not `n.pose`: an ephemeral override is the pose
-      // the renderer draws, so it has to be the one picking tests.
+      // the renderer draws, so it has to be the one picking tests. World, not
+      // local, for the same reason — a framed child is drawn in its parent's
+      // frame, not where its own pose says.
       const src = scenePickSource<TData, TLayer, TPose>(scene, {
-        getPose: (id) => adapter.getPose(id),
+        getPose: (id) => adapter.getWorldPose(id),
         ...(alphaOf ? { alphaOf } : {}),
         ...(layerIsPainted ? { layerIsPainted } : {}),
       });
@@ -272,7 +284,9 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       if (boundsOfProp) return boundsOfProp(id);
       const n = scene.get(asNodeId(id));
       if (!n) return null;
-      const pose = adapter.getPose(id);
+      // World, not local: a framed child is drawn in its parent's frame, and
+      // the chrome has to land on the ink.
+      const pose = adapter.getWorldPose(id);
       const b = d.getBounds(pose);
       const rot = d.getRotation?.(pose) ?? (b as { rotation?: number }).rotation ?? 0;
       return rot ? { ...b, rotation: rot } : b;
