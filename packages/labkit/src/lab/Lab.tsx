@@ -34,6 +34,7 @@ import { LabContext, type LabContextValue } from './LabContext';
 import { LabHeader } from './LabHeader';
 import { LabPalette } from './LabPalette';
 import { LabShell } from './LabShell';
+import type { LabPage } from './LabSwitcher';
 import { createPanelHostRegistry, PanelHostContext } from './panelHost';
 import { useResolvedMode } from './useSystemMode';
 import { type PanelDescriptor, type TrialLayout, Workspace } from './Workspace';
@@ -53,6 +54,12 @@ export interface LabProps {
    */
   nebula?: readonly string[];
   title?: string;
+  /** The project's other labs. Given two or more, the title becomes the way to
+   *  reach them — the same switcher `<LabShell>` renders, so a lab reached from
+   *  one is not a dead end. */
+  pages?: readonly LabPage[];
+  /** The path the switcher marks as open. Defaults to the current location. */
+  path?: string;
   /** Rendered in the shell's footer, below the workspace. */
   footer?: ReactNode;
   /** Contributions added to every trial's chrome, after the instrument's own. */
@@ -130,6 +137,8 @@ export function Lab({
   mode,
   nebula,
   title,
+  pages,
+  path,
   footer,
   chrome,
   suppress,
@@ -301,6 +310,8 @@ export function Lab({
           <LabShell
             title={title ?? 'Labkit'}
             mode={modeValue}
+            {...(pages ? { pages } : {})}
+            {...(path !== undefined ? { path } : {})}
             footer={footer}
             header={
               <>
