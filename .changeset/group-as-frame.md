@@ -34,4 +34,11 @@ child twice.
 `useNodeOverlayFrame` read the authored pose, so an overlay ignored gesture
 overrides and derived poses. It reads the effective pose now.
 
+The default actions — resize, rotate, group, clone, flip, align, distribute —
+read the strategy as a `poseComposition` dep alongside `poseDescriptor`, and
+`<SceneCanvas>` publishes it through the new `usePoseCompositionDepSource`.
+A consumer wiring actions without `SceneCanvas` has to publish that dep itself;
+without it the actions fall back to identity and write world poses into a
+framed scene.
+
 Design: `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`.
