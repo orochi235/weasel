@@ -51,24 +51,36 @@ export function pathCommandCoordCount(cmd: number): number {
 /**
  * Visit each command with its coord offset and the pen position BEFORE the
  * command consumes its coords (the segment start). The callback receives
- * (cmd, coordIndex, penX, penY). The pen advances to the command's last
- * coord pair afterward (Z leaves the pen unchanged).
+ * (cmd, coordIndex, penX, penY, commandIndex) and stops the walk by returning
+ * `false`. The pen advances to the command's last coord pair afterward; `Z`
+ * returns it to the subpath's opening `M`, so a command following a `Z`
+ * without an intervening `M` starts where SVG says it does.
  */
 export function forEachSegment(
   commands: ArrayLike<number>,
   coords: ArrayLike<number>,
-  visit: (cmd: number, coordIndex: number, penX: number, penY: number) => void,
+  visit: (
+    cmd: number,
+    coordIndex: number,
+    penX: number,
+    penY: number,
+    commandIndex: number,
+  ) => void | boolean,
 ): void {
   let ci = 0;
   let px = 0, py = 0;
+  let startX = 0, startY = 0;
   for (let i = 0; i < commands.length; i++) {
     const cmd = commands[i];
-    visit(cmd, ci, px, py);
+    if (visit(cmd, ci, px, py, i) === false) return;
     const len = pathCommandCoordCount(cmd);
     if (len > 0) {
       px = coords[ci + len - 2];
       py = coords[ci + len - 1];
       ci += len;
+      if (cmd === PATH_M) { startX = px; startY = py; }
+    } else if (cmd === PATH_Z) {
+      px = startX; py = startY;
     }
   }
 }

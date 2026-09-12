@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { boundsOfPath } from './bounds';
 import { PathBuilder, polygonFromPoints, rectPath } from './builder';
+import { PATH_C, PATH_M, PATH_L, PATH_Z, type PolygonPath } from './types';
 
 describe('boundsOfPath', () => {
   it('returns the rect itself for RectPath (O(1) fast path)', () => {
@@ -47,5 +48,19 @@ describe('boundsOfPath', () => {
   it('returns a zero rect for an empty polygon', () => {
     const p = polygonFromPoints([]);
     expect(boundsOfPath(p)).toEqual({ kind: 'rect', x: 0, y: 0, width: 0, height: 0 });
+  });
+
+  it('starts a curve after Z from the subpath start, not the last point drawn', () => {
+    // M 0,0  L 0,-1000  Z  C 0,100 0,100 0,0. Started from (0,0) the cubic
+    // peaks at y=75; started from (0,-1000) it only reaches ~41.
+    const p: PolygonPath = {
+      kind: 'polygon',
+      commands: Uint8Array.of(PATH_M, PATH_L, PATH_Z, PATH_C),
+      coords: Float32Array.of(0, 0, 0, -1000, 0, 100, 0, 100, 0, 0),
+      fillRule: 'nonzero',
+    };
+    const b = boundsOfPath(p);
+    expect(b.y).toBe(-1000);
+    expect(b.y + b.height).toBeCloseTo(75, 3);
   });
 });

@@ -12,7 +12,8 @@
  * one subpath is also returned as a single-element array — a trivial pass.
  */
 
-import { PATH_M, PATH_CMD_LENGTHS, type PolygonPath } from './types';
+import { forEachSegment } from '@weasel-js/geom';
+import { PATH_M, type PolygonPath } from './types';
 
 /** Split a path into one path per subpath, cutting at each `M`. A path with a
  *  single subpath comes back as a one-element array. */
@@ -24,22 +25,18 @@ export function splitSubpaths(path: PolygonPath): PolygonPath[] {
   // active subpath. On each subsequent `M`, slice out the previous subpath.
   let cmdStart = 0;
   let coordStart = 0;
-  let coordCursor = 0;
 
-  for (let i = 0; i < commands.length; i++) {
-    const c = commands[i];
-    if (c === PATH_M && i > cmdStart) {
-      out.push({
-        kind: 'polygon',
-        commands: commands.slice(cmdStart, i),
-        coords: coords.slice(coordStart, coordCursor),
-        fillRule,
-      });
-      cmdStart = i;
-      coordStart = coordCursor;
-    }
-    coordCursor += PATH_CMD_LENGTHS[c];
-  }
+  forEachSegment(commands, coords, (cmd, ci, _px, _py, i) => {
+    if (cmd !== PATH_M || i <= cmdStart) return;
+    out.push({
+      kind: 'polygon',
+      commands: commands.slice(cmdStart, i),
+      coords: coords.slice(coordStart, ci),
+      fillRule,
+    });
+    cmdStart = i;
+    coordStart = ci;
+  });
 
   out.push({
     kind: 'polygon',

@@ -16,7 +16,11 @@
 import polygonClipping from 'polygon-clipping';
 import { pathToMultiPolygon, multiPolygonToPath, type GeomPath, type GeomPolygonPath } from './adapter';
 
-export type { GeomPath, GeomPolygonPath } from './adapter';
+export { pathToMultiPolygon, multiPolygonToPath } from './adapter';
+export type {
+  GeomPath, GeomPolygonPath, Pair, Ring, Polygon, MultiPolygon,
+  PathToMultiPolygonOptions,
+} from './adapter';
 
 /** Union of N paths. Commutative. Returns an empty path if all inputs are empty. */
 export function pathUnion(...paths: GeomPath[]): GeomPolygonPath {
@@ -104,4 +108,24 @@ function popcount(n: number): number {
   let c = 0;
   while (n) { n &= n - 1; c++; }
   return c;
+}
+
+/**
+ * Clip each non-topmost path to the topmost path (Illustrator "Crop").
+ * Returns `N - 1` results, one per source-below-top, in input order.
+ * Discards the topmost path itself — it acts purely as the clipping mask.
+ *
+ * Empty results (a source that lies entirely outside the mask) are
+ * filtered. With `<2` inputs the result is empty.
+ */
+export function pathCrop(...paths: GeomPath[]): GeomPolygonPath[] {
+  if (paths.length < 2) return [];
+  const mps = paths.map((p) => pathToMultiPolygon(p));
+  const mask = mps[mps.length - 1];
+  const out: GeomPolygonPath[] = [];
+  for (let i = 0; i < mps.length - 1; i++) {
+    const clipped = polygonClipping.intersection(mps[i], mask);
+    if (clipped.length > 0) out.push(multiPolygonToPath(clipped));
+  }
+  return out;
 }

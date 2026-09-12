@@ -9,6 +9,7 @@
  */
 
 import { PathBuilder } from './builder';
+import { cubicPointAt } from './cubicMath';
 import type { PolygonPath } from './types';
 
 export interface SchneiderPoint {
@@ -77,11 +78,9 @@ function measureError(
   const a = samples[0];
   for (let i = 1; i < samples.length - 1; i++) {
     const t = i / (samples.length - 1);
-    const u = 1 - t;
-    const qx = u*u*u*a.x + 3*u*u*t*fit.cp1.x + 3*u*t*t*fit.cp2.x + t*t*t*fit.end.x;
-    const qy = u*u*u*a.y + 3*u*u*t*fit.cp1.y + 3*u*t*t*fit.cp2.y + t*t*t*fit.end.y;
-    const dx = samples[i].x - qx;
-    const dy = samples[i].y - qy;
+    const q = cubicPointAt(a, fit.cp1, fit.cp2, fit.end, t);
+    const dx = samples[i].x - q.x;
+    const dy = samples[i].y - q.y;
     const sq = dx * dx + dy * dy;
     if (sq > worstError) {
       worstError = sq;
@@ -203,8 +202,7 @@ function newtonRefineT(
   // Q(t) - p, where Q is the cubic. Newton step uses Q'(t)·(Q(t)-p) and
   // a second-derivative correction.
   const u = 1 - t;
-  const qx = u*u*u*p0.x + 3*u*u*t*p1.x + 3*u*t*t*p2.x + t*t*t*p3.x;
-  const qy = u*u*u*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + t*t*t*p3.y;
+  const { x: qx, y: qy } = cubicPointAt(p0, p1, p2, p3, t);
   const qpx = 3*u*u*(p1.x - p0.x) + 6*u*t*(p2.x - p1.x) + 3*t*t*(p3.x - p2.x);
   const qpy = 3*u*u*(p1.y - p0.y) + 6*u*t*(p2.y - p1.y) + 3*t*t*(p3.y - p2.y);
   const qppx = 6*u*(p2.x - 2*p1.x + p0.x) + 6*t*(p3.x - 2*p2.x + p1.x);

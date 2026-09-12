@@ -9,7 +9,7 @@
  * subpaths enclose no area and are ignored, matching `pointInPath`.
  */
 
-import { pointInPolygon, segmentsCross } from '@weasel-js/geom';
+import { forEachSegment, pointInPolygon, segmentsCross } from '@weasel-js/geom';
 import { pointInPath, type PointInPathOptions } from './hitTest';
 import { flattenCubic, flattenQuadratic, DEFAULT_FLATTEN_TOLERANCE } from './flatten';
 import type { Vec2, Rect } from 'core/geometry/polygonHitTestRect';
@@ -31,54 +31,40 @@ function closedSubpaths(path: PolygonPath, tolerance: number): number[][] {
   const { commands, coords } = path;
   const out: number[][] = [];
   let sub: number[] = [];
-  let subStartX = 0, subStartY = 0;
-  let curX = 0, curY = 0;
-  let ci = 0;
 
-  for (let i = 0; i < commands.length; i++) {
-    const cmd = commands[i];
+  forEachSegment(commands, coords, (cmd, ci, curX, curY) => {
     switch (cmd) {
-      case PATH_M: {
-        sub = [];
-        subStartX = coords[ci]; subStartY = coords[ci + 1];
-        curX = subStartX; curY = subStartY;
-        sub.push(curX, curY);
-        ci += 2;
+      case PATH_M:
+        sub = [coords[ci], coords[ci + 1]];
         break;
-      }
-      case PATH_L: {
-        curX = coords[ci]; curY = coords[ci + 1];
-        sub.push(curX, curY);
-        ci += 2;
+      case PATH_L:
+        sub.push(coords[ci], coords[ci + 1]);
         break;
-      }
-      case PATH_C: {
-        const x1 = coords[ci],     y1 = coords[ci + 1];
-        const x2 = coords[ci + 2], y2 = coords[ci + 3];
-        const x3 = coords[ci + 4], y3 = coords[ci + 5];
-        flattenCubic(curX, curY, x1, y1, x2, y2, x3, y3, tolerance, sub);
-        curX = x3; curY = y3;
-        ci += 6;
+      case PATH_C:
+        flattenCubic(
+          curX, curY,
+          coords[ci], coords[ci + 1],
+          coords[ci + 2], coords[ci + 3],
+          coords[ci + 4], coords[ci + 5],
+          tolerance, sub,
+        );
         break;
-      }
-      case PATH_Q: {
-        const x1 = coords[ci],     y1 = coords[ci + 1];
-        const x2 = coords[ci + 2], y2 = coords[ci + 3];
-        flattenQuadratic(curX, curY, x1, y1, x2, y2, tolerance, sub);
-        curX = x2; curY = y2;
-        ci += 4;
+      case PATH_Q:
+        flattenQuadratic(
+          curX, curY,
+          coords[ci], coords[ci + 1],
+          coords[ci + 2], coords[ci + 3],
+          tolerance, sub,
+        );
         break;
-      }
-      case PATH_Z: {
+      case PATH_Z:
         if (sub.length >= 6) out.push(sub);
         sub = [];
-        curX = subStartX; curY = subStartY;
         break;
-      }
       default:
         throw new Error(`pathHitTest: unknown command ${cmd}`);
     }
-  }
+  });
   return out;
 }
 

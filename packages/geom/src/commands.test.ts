@@ -22,11 +22,46 @@ describe('forEachSegment', () => {
     const commands = Uint8Array.of(PATH_M, PATH_L, PATH_Z);
     const coords = Float64Array.of(0, 0, 10, 0);
     const seen: Array<[number, number, number, number]> = [];
-    forEachSegment(commands, coords, (cmd, ci, px, py) => seen.push([cmd, ci, px, py]));
+    forEachSegment(commands, coords, (cmd, ci, px, py) => { seen.push([cmd, ci, px, py]); });
     expect(seen).toEqual([
       [PATH_M, 0, 0, 0],   // pen at origin before M consumes
       [PATH_L, 2, 0, 0],   // pen still at 0,0 entering the L
       [PATH_Z, 4, 10, 0],  // pen at 10,0 entering the Z
     ]);
+  });
+});
+
+describe('forEachSegment pen bookkeeping', () => {
+  it('returns the pen to the subpath start after Z', () => {
+    // M 0,0  L 10,0  Z  L 5,5 — the trailing L starts from the subpath start.
+    const commands = Uint8Array.of(PATH_M, PATH_L, PATH_Z, PATH_L);
+    const coords = Float64Array.of(0, 0, 10, 0, 5, 5);
+    const seen: Array<[number, number, number]> = [];
+    forEachSegment(commands, coords, (cmd, _ci, px, py) => { seen.push([cmd, px, py]); });
+    expect(seen).toEqual([
+      [PATH_M, 0, 0],
+      [PATH_L, 0, 0],
+      [PATH_Z, 10, 0],
+      [PATH_L, 0, 0],
+    ]);
+  });
+
+  it('reports the command index alongside the coord index', () => {
+    const commands = Uint8Array.of(PATH_M, PATH_C, PATH_Z);
+    const coords = Float64Array.of(0, 0, 1, 1, 2, 2, 3, 3);
+    const seen: Array<[number, number]> = [];
+    forEachSegment(commands, coords, (_cmd, ci, _px, _py, i) => { seen.push([i, ci]); });
+    expect(seen).toEqual([[0, 0], [1, 2], [2, 8]]);
+  });
+
+  it('stops when the visitor returns false', () => {
+    const commands = Uint8Array.of(PATH_M, PATH_L, PATH_L);
+    const coords = Float64Array.of(0, 0, 1, 1, 2, 2);
+    const seen: number[] = [];
+    forEachSegment(commands, coords, (_cmd, ci) => {
+      seen.push(ci);
+      return ci < 2;
+    });
+    expect(seen).toEqual([0, 2]);
   });
 });

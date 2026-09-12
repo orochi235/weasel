@@ -1,3 +1,4 @@
+import { forEachSegment } from '@weasel-js/geom';
 import {
   PATH_C,
   PATH_L,
@@ -32,76 +33,45 @@ export interface PathAnchor {
 export function enumerateAnchors(path: PolygonPath): PathAnchor[] {
   const { commands, coords } = path;
   const anchors: PathAnchor[] = [];
-  let ci = 0;
   let lastAnchor: PathAnchor | null = null;
 
-  for (let i = 0; i < commands.length; i++) {
-    const cmd = commands[i];
+  const push = (coordIndex: number, controlIn?: PathAnchor['controlIn']): void => {
+    const a: PathAnchor = {
+      anchorIndex: anchors.length,
+      x: coords[coordIndex],
+      y: coords[coordIndex + 1],
+      coordIndex,
+      ...(controlIn ? { controlIn } : {}),
+    };
+    anchors.push(a);
+    lastAnchor = a;
+  };
+
+  forEachSegment(commands, coords, (cmd, ci) => {
     switch (cmd) {
-      case PATH_M: {
-        const a: PathAnchor = {
-          anchorIndex: anchors.length,
-          x: coords[ci],
-          y: coords[ci + 1],
-          coordIndex: ci,
-        };
-        anchors.push(a);
-        lastAnchor = a;
-        ci += 2;
+      case PATH_M:
+      case PATH_L:
+        push(ci);
         break;
-      }
-      case PATH_L: {
-        const a: PathAnchor = {
-          anchorIndex: anchors.length,
-          x: coords[ci],
-          y: coords[ci + 1],
-          coordIndex: ci,
-        };
-        anchors.push(a);
-        lastAnchor = a;
-        ci += 2;
-        break;
-      }
-      case PATH_C: {
+      case PATH_C:
         if (lastAnchor) {
           lastAnchor.controlOut = { x: coords[ci], y: coords[ci + 1], coordIndex: ci };
         }
-        const a: PathAnchor = {
-          anchorIndex: anchors.length,
-          x: coords[ci + 4],
-          y: coords[ci + 5],
-          coordIndex: ci + 4,
-          controlIn: { x: coords[ci + 2], y: coords[ci + 3], coordIndex: ci + 2 },
-        };
-        anchors.push(a);
-        lastAnchor = a;
-        ci += 6;
+        push(ci + 4, { x: coords[ci + 2], y: coords[ci + 3], coordIndex: ci + 2 });
         break;
-      }
-      case PATH_Q: {
+      case PATH_Q:
         if (lastAnchor) {
           lastAnchor.controlOut = { x: coords[ci], y: coords[ci + 1], coordIndex: ci };
         }
-        const a: PathAnchor = {
-          anchorIndex: anchors.length,
-          x: coords[ci + 2],
-          y: coords[ci + 3],
-          coordIndex: ci + 2,
-          controlIn: { x: coords[ci], y: coords[ci + 1], coordIndex: ci },
-        };
-        anchors.push(a);
-        lastAnchor = a;
-        ci += 4;
+        push(ci + 2, { x: coords[ci], y: coords[ci + 1], coordIndex: ci });
         break;
-      }
-      case PATH_Z: {
+      case PATH_Z:
         lastAnchor = null;
         break;
-      }
       default:
         throw new Error(`enumerateAnchors: unknown command ${cmd}`);
     }
-  }
+  });
   return anchors;
 }
 

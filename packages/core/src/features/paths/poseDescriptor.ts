@@ -1,38 +1,27 @@
-import { forEachSegment, pathCommandCoordCount } from '@weasel-js/geom';
+import { boxToBox } from '@weasel-js/geom';
 import { boundsOfPath } from './bounds';
 import { pointInPath } from './hitTest';
 import { translatePath } from './transform';
-import type { Path, PolygonPath } from './types';
+import { transformPath } from './transformPath';
+import type { Path } from './types';
 import { aabbIntersectsRect, type PoseDescriptor } from 'interactions/actions/resize/geometry';
-import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 /**
  * `PoseDescriptor` for `Path` poses — wires `useResize` to operate
  * on `Path` directly. `getBounds` defers to the same `boundsOfPath` kernel
- * the rest of the kit uses; `remapBounds` does an affine scale of every
- * coord against `src`/`dst`. Degenerate axes (zero src extent) collapse to
- * the new origin so resize from a flat edge doesn't produce NaN.
+ * the rest of the kit uses.
  *
- * Mirrors `scalePathToBounds` but takes `src` explicitly: the resize hook
- * knows the group's origin AABB and uses it for every leaf, instead of
- * each leaf scaling against its own AABB (which would ignore group context).
+ * `remapBounds` mirrors `scalePathToBounds` but takes `src` explicitly: the
+ * resize hook knows the group's origin AABB and uses it for every leaf,
+ * instead of each leaf scaling against its own AABB (which would ignore
+ * group context).
  */
 export const pathPoseDescriptor: PoseDescriptor<Path> = {
   getBounds: (path) => boundsOfPath(path),
-  remapBounds: (path, src, dst) => {
-    const sx = src.width === 0 ? 0 : dst.width / src.width;
-    const sy = src.height === 0 ? 0 : dst.height / src.height;
-    if (path.kind === 'rect') {
-      return {
-        kind: 'rect',
-        x: dst.x + (path.x - src.x) * sx,
-        y: dst.y + (path.y - src.y) * sy,
-        width: path.width * sx,
-        height: path.height * sy,
-      };
-    }
-    return remapPolygon(path, src, dst, sx, sy);
-  },
+  remapBounds: (path, src, dst) => transformPath(
+    path,
+    boxToBox(src.x, src.y, src.width, src.height, dst.x, dst.y, dst.width, dst.height),
+  ),
   fromBounds: (b) => ({ kind: 'rect', x: b.x, y: b.y, width: b.width, height: b.height }),
   translate: (path, dx, dy) => translatePath(path, dx, dy),
   // WHY: AABB pre-test is cheap; only fall through to per-corner pointInPath
@@ -78,15 +67,3 @@ export const pathPoseDescriptor: PoseDescriptor<Path> = {
   // so the rotate cursor doesn't appear without a working interaction.
   supportsRotation: () => false,
 };
-
-function remapPolygon(path: PolygonPath, src: Bounds, dst: Bounds, sx: number, sy: number): PolygonPath {
-  const next = new Float32Array(path.coords.length);
-  const { commands, coords } = path;
-  forEachSegment(commands, coords, (cmd, ci) => {
-    for (let k = 0, len = pathCommandCoordCount(cmd); k < len; k += 2) {
-      next[ci + k] = dst.x + (coords[ci + k] - src.x) * sx;
-      next[ci + k + 1] = dst.y + (coords[ci + k + 1] - src.y) * sy;
-    }
-  });
-  return { kind: 'polygon', commands: path.commands, coords: next, fillRule: path.fillRule };
-}

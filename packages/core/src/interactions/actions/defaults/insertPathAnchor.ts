@@ -26,7 +26,7 @@ import type { ImmediateInvoker } from '../invoker';
 import type { EditAnchorsDep } from '../depSchema';
 import type { PolygonPath } from 'features/paths/types';
 import { pathToAnchors, anchorsToPath, nearestSegmentT } from 'features/paths/anchors';
-import { splitCubicAtT } from 'features/paths/cubicMath';
+import { cubicPointAt, splitCubicAtT } from 'features/paths/cubicMath';
 
 // World-unit slop. If the click is farther than this from the nearest
 // curve point, the action no-ops — the user probably wasn't trying to
@@ -67,9 +67,7 @@ export const insertPathAnchorAction: Action & { requires: string[] } = {
       const p2 = b.inHandle ?? b;
       const p3 = b;
       const t = hit.t;
-      const u = 1 - t;
-      const px = u * u * u * p0.x + 3 * u * u * t * p1.x + 3 * u * t * t * p2.x + t * t * t * p3.x;
-      const py = u * u * u * p0.y + 3 * u * u * t * p1.y + 3 * u * t * t * p2.y + t * t * t * p3.y;
+      const { x: px, y: py } = cubicPointAt(p0, p1, p2, p3, t);
       const dx = wx - px;
       const dy = wy - py;
       if (dx * dx + dy * dy > INSERT_SLOP_PX * INSERT_SLOP_PX) return;

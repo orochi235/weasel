@@ -19,7 +19,7 @@ describe('box', () => {
     expect(boxContainsPoint(b, 0, 10)).toBe(true);
     expect(boxContainsPoint(b, 11, 5)).toBe(false);
   });
-  it('rectToContour emits a closed 5-vertex interleaved ring', () => {
-    expect(Array.from(rectToContour(0, 0, 2, 3))).toEqual([0, 0, 2, 0, 2, 3, 0, 3, 0, 0]);
+  it('rectToContour emits the four corners with the closing edge implicit', () => {
+    expect(Array.from(rectToContour(0, 0, 2, 3))).toEqual([0, 0, 2, 0, 2, 3, 0, 3]);
   });
 });

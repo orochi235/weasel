@@ -14,6 +14,7 @@
  */
 
 import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from './types';
+import { rectToContour } from '@weasel-js/geom';
 
 /**
  * N-segment polygon approximation of a circle. Default 32 segments → max
@@ -55,7 +56,7 @@ export function rectMarkerPath(x: number, y: number, width: number, height: numb
   return {
     kind: 'polygon',
     commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
-    coords: new Float32Array([x, y, x + width, y, x + width, y + height, x, y + height]),
+    coords: Float32Array.from(rectToContour(x, y, width, height)),
     fillRule: 'nonzero',
   };
 }

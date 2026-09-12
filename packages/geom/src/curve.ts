@@ -29,68 +29,6 @@ export function elevateQuadraticToCubic(
   ];
 }
 
-/** Distance from point P to line AB (perpendicular). Ported verbatim from
- *  features/paths/flatten.ts (helper for flattenCubic's flatness predicate). */
-function distPointToLine(px: number, py: number, ax: number, ay: number, bx: number, by: number): number {
-  const dx = bx - ax;
-  const dy = by - ay;
-  const len2 = dx * dx + dy * dy;
-  if (len2 === 0) {
-    const ex = px - ax;
-    const ey = py - ay;
-    return Math.sqrt(ex * ex + ey * ey);
-  }
-  const cross = (px - ax) * dy - (py - ay) * dx;
-  return Math.abs(cross) / Math.sqrt(len2);
-}
-
-/**
- * Subdivision ceiling for {@link flattenCubic}. Error falls roughly 4× per
- * level, so 16 levels is ~4e9 times tighter than the starting chord — far
- * beyond any tolerance a caller can mean, and reached only by input that
- * would otherwise never terminate (a non-finite coordinate, `tolerance <= 0`).
- */
-const MAX_FLATTEN_DEPTH = 16;
-
-/**
- * Adaptive flatten of a cubic into interleaved points appended to `out`
- * (excludes the start point, includes the endpoint).
- *
- * Always terminates: a non-finite coordinate makes the flatness test
- * unsatisfiable and `tolerance <= 0` makes it unreachable, so subdivision is
- * capped at {@link MAX_FLATTEN_DEPTH}.
- */
-export function flattenCubic(
-  x0: number, y0: number, x1: number, y1: number,
-  x2: number, y2: number, x3: number, y3: number,
-  tolerance: number, out: number[],
-): void {
-  flattenCubicRec(x0, y0, x1, y1, x2, y2, x3, y3, tolerance, out, 0);
-}
-
-function flattenCubicRec(
-  x0: number, y0: number, x1: number, y1: number,
-  x2: number, y2: number, x3: number, y3: number,
-  tolerance: number, out: number[], depth: number,
-): void {
-  const d1 = distPointToLine(x1, y1, x0, y0, x3, y3);
-  const d2 = distPointToLine(x2, y2, x0, y0, x3, y3);
-  // Negated so a NaN deviation reads as flat rather than as "keep splitting".
-  if (!(Math.max(d1, d2) > tolerance) || depth >= MAX_FLATTEN_DEPTH) {
-    out.push(x3, y3);
-    return;
-  }
-  // De Casteljau split at t=0.5
-  const x01 = (x0 + x1) * 0.5, y01 = (y0 + y1) * 0.5;
-  const x12 = (x1 + x2) * 0.5, y12 = (y1 + y2) * 0.5;
-  const x23 = (x2 + x3) * 0.5, y23 = (y2 + y3) * 0.5;
-  const x012 = (x01 + x12) * 0.5, y012 = (y01 + y12) * 0.5;
-  const x123 = (x12 + x23) * 0.5, y123 = (y12 + y23) * 0.5;
-  const x0123 = (x012 + x123) * 0.5, y0123 = (y012 + y123) * 0.5;
-  flattenCubicRec(x0, y0, x01, y01, x012, y012, x0123, y0123, tolerance, out, depth + 1);
-  flattenCubicRec(x0123, y0123, x123, y123, x23, y23, x3, y3, tolerance, out, depth + 1);
-}
-
 /** Axis-aligned extrema parameters of one cubic component (the 0,1 ends plus
  *  any derivative roots in (0,1)). Used by cubicBounds. */
 function componentExtremaTs(p0: number, p1: number, p2: number, p3: number): number[] {
