@@ -9,13 +9,22 @@
 
 import { cameraViewProjection, type Camera3d } from './camera3d';
 import { compose, identity, multiply, type Mat4 } from './math3d';
-import type { Pose3, SolidKind } from './scene3d';
+import { aabbOfSolid, type Pose3, type SolidKind } from './scene3d';
+
+/** Translucency of an uncommitted pose. The 2D ghost layer uses 0.85; a lit
+ *  solid needs more of the ground showing through to read as not-yet-there. */
+const GHOST_ALPHA = 0.4;
+
+/** Just clear of the grid at y=0, which would otherwise z-fight it. */
+const FOOTPRINT_Y = 0.004;
 
 export interface SolidDraw {
   pose: Pose3;
   kind: SolidKind;
   color: string;
   selected: boolean;
+  /** An uncommitted pose: drawn translucent, over a footprint on the ground. */
+  ghost?: boolean;
 }
 
 export interface DeviceRect {
@@ -62,6 +71,7 @@ precision highp float;
 in vec3 v_normal;
 uniform vec3 u_color;
 uniform float u_selected;
+uniform float u_alpha;
 out vec4 outColor;
 void main() {
   vec3 n = normalize(v_normal);
@@ -69,7 +79,7 @@ void main() {
   float lambert = max(dot(n, lightDir), 0.0);
   vec3 lit = u_color * (0.35 + 0.65 * lambert);
   vec3 highlight = mix(lit, vec3(1.0, 0.85, 0.3), u_selected * 0.45);
-  outColor = vec4(highlight, 1.0);
+  outColor = vec4(highlight, u_alpha);
 }`;
 
 const LINE_VERTEX_SRC = `#version 300 es
@@ -226,7 +236,7 @@ export function createRenderer3d(gl: WebGL2RenderingContext): Renderer3d {
     return makeMesh(gl, positions, normals, gl.TRIANGLES);
   })();
   const grid = makeMesh(gl, gridData(), null, gl.LINES);
-  const chromeMesh = (() => {
+  const dynamicLines = (() => {
     const vao = gl.createVertexArray()!;
     gl.bindVertexArray(vao);
     const buffer = gl.createBuffer()!;
@@ -242,6 +252,7 @@ export function createRenderer3d(gl: WebGL2RenderingContext): Renderer3d {
     model: gl.getUniformLocation(solidProgram, 'u_model'),
     color: gl.getUniformLocation(solidProgram, 'u_color'),
     selected: gl.getUniformLocation(solidProgram, 'u_selected'),
+    alpha: gl.getUniformLocation(solidProgram, 'u_alpha'),
   };
   const lineUniforms = {
     mvp: gl.getUniformLocation(lineProgram, 'u_mvp'),
@@ -285,8 +296,7 @@ export function createRenderer3d(gl: WebGL2RenderingContext): Renderer3d {
       gl.bindVertexArray(grid.vao);
       gl.drawArrays(grid.mode, 0, grid.count);
 
-      gl.useProgram(solidProgram);
-      for (const solid of solids) {
+      const drawSolid = (solid: SolidDraw) => {
         const model: Mat4 = compose(solid.pose.position, solid.pose.rotation, solid.pose.scale);
         gl.uniformMatrix4fv(uniforms.mvp, false, new Float32Array(multiply(viewProjection, model)));
         gl.uniformMatrix4fv(uniforms.model, false, new Float32Array(model));
@@ -296,6 +306,52 @@ export function createRenderer3d(gl: WebGL2RenderingContext): Renderer3d {
         const mesh = solid.kind === 'sphere' ? sphere : cube;
         gl.bindVertexArray(mesh.vao);
         gl.drawArrays(mesh.mode, 0, mesh.count);
+      };
+
+      gl.useProgram(solidProgram);
+      gl.uniform1f(uniforms.alpha, 1);
+      const ghosts: SolidDraw[] = [];
+      for (const solid of solids) {
+        if (solid.ghost) ghosts.push(solid);
+        else drawSolid(solid);
+      }
+
+      if (ghosts.length > 0) {
+        // The footprint goes down first, opaque, so the translucent body reads
+        // as sitting over it rather than tinting it.
+        gl.useProgram(lineProgram);
+        gl.uniformMatrix4fv(lineUniforms.mvp, false, new Float32Array(viewProjection));
+        gl.uniform3f(lineUniforms.color, 0.85, 0.72, 0.32);
+        const verts: number[] = [];
+        for (const ghost of ghosts) {
+          const { min, max } = aabbOfSolid(ghost.pose, ghost.kind);
+          const corners = [
+            [min[0], max[2]],
+            [max[0], max[2]],
+            [max[0], min[2]],
+            [min[0], min[2]],
+          ];
+          for (let i = 0; i < 4; i++) {
+            const a = corners[i];
+            const b = corners[(i + 1) % 4];
+            verts.push(a[0], FOOTPRINT_Y, a[1], b[0], FOOTPRINT_Y, b[1]);
+          }
+        }
+        gl.bindVertexArray(dynamicLines.vao);
+        gl.bindBuffer(gl.ARRAY_BUFFER, dynamicLines.buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.DYNAMIC_DRAW);
+        gl.drawArrays(gl.LINES, 0, verts.length / 3);
+
+        // Depth writes off: a ghost is depth-tested against the committed
+        // solids, but two ghosts must not punch holes in each other.
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        gl.depthMask(false);
+        gl.useProgram(solidProgram);
+        gl.uniform1f(uniforms.alpha, GHOST_ALPHA);
+        for (const ghost of ghosts) drawSolid(ghost);
+        gl.depthMask(true);
+        gl.disable(gl.BLEND);
       }
 
       if (chrome.length > 0) {
@@ -316,8 +372,8 @@ export function createRenderer3d(gl: WebGL2RenderingContext): Renderer3d {
             verts.push(a[0], a[1], 0, b[0], b[1], 0);
           }
         }
-        gl.bindVertexArray(chromeMesh.vao);
-        gl.bindBuffer(gl.ARRAY_BUFFER, chromeMesh.buffer);
+        gl.bindVertexArray(dynamicLines.vao);
+        gl.bindBuffer(gl.ARRAY_BUFFER, dynamicLines.buffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.DYNAMIC_DRAW);
         gl.drawArrays(gl.LINES, 0, verts.length / 3);
       }
@@ -330,8 +386,8 @@ export function createRenderer3d(gl: WebGL2RenderingContext): Renderer3d {
       gl.deleteProgram(solidProgram);
       gl.deleteProgram(lineProgram);
       for (const mesh of [cube, sphere, grid]) gl.deleteVertexArray(mesh.vao);
-      gl.deleteVertexArray(chromeMesh.vao);
-      gl.deleteBuffer(chromeMesh.buffer);
+      gl.deleteVertexArray(dynamicLines.vao);
+      gl.deleteBuffer(dynamicLines.buffer);
     },
   };
 }

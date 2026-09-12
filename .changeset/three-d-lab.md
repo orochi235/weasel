@@ -12,3 +12,8 @@ one — nothing about the dispatcher changes shape. Findings are in
 Two bits of infrastructure came with it, because `examples/` reached neither
 before: the lab is in the root `tsconfig.json` include list, and the `labkit`
 vitest project's glob now covers `examples/` as well as `src` and `scripts`.
+
+Dragging a solid paints a ghost. `moveAction` keeps the interim pose on its
+handle and commits one op on drop, so the lab reads those poses off the
+dispatcher's in-flight handles and draws them translucent over a footprint on
+the ground plane, while the solid stays at its committed pose until the drop.

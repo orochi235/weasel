@@ -205,6 +205,15 @@ Priority tags:
   `activeTool` dep. Miss either and clicks do nothing, silently. Worth either a
   helper that mounts a tool set correctly or a line in `docs/extending.md`.
 
+- **(P3) A consumer that mounts the dispatcher itself has to draw its own
+  gesture previews.** `usePreviewGhostLayer` and `useDispatcherOverlayLayer` are
+  `<SceneCanvas>`-private — neither is exported from core's barrel — so the only
+  way to the ghost and overlay channels is to read
+  `Dispatcher.getInFlightHandles()` and render the poses by hand, which is what
+  the 3D lab does in `ghosts3d.ts`. The read seam is public and sufficient; what
+  is missing is a renderer-agnostic helper between a handle and a drawn ghost.
+  Surfaced by the 3D lab.
+
 ### Pen tool follow-ups
 
 From `docs/specs/2026-05-03-pen-tool-design.md`:

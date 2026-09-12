@@ -9,6 +9,7 @@ import {
 } from 'react';
 import {
   WeaselProvider,
+  createDispatcher,
   useAction,
   useActionsRegistry,
   useActiveToolContext,
@@ -16,6 +17,7 @@ import {
   useGestureDispatcher,
   useSelectTool,
   useStandardActions,
+  type Dispatcher,
   type NodeId,
   type Tool,
 } from '@weasel-js/core';
@@ -34,6 +36,7 @@ import {
   screenBoxOf,
   type Viewport3d,
 } from './deps3d';
+import { collectGhosts } from './ghosts3d';
 import { createRenderer3d, type ChromeBox, type Renderer3d, type SolidDraw } from './renderer3d';
 import { createSolidScene, type Pose3, type SolidScene } from './scene3d';
 import { dollyAction, orbitAction, useBoxTool, useOrbitTool } from './tools3d';
@@ -67,6 +70,13 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   if (!sceneRef.current) sceneRef.current = createSolidScene();
   const scene = sceneRef.current;
 
+  // The dispatcher is normally `<SceneCanvas>`'s to own and share with its
+  // preview-ghost layer. Mounting the hook directly means creating it here so
+  // the painter can read the same in-flight handles.
+  const dispatcherRef = useRef<Dispatcher | null>(null);
+  if (!dispatcherRef.current) dispatcherRef.current = createDispatcher();
+  const dispatcher = dispatcherRef.current;
+
   const [camera, setCamera] = useState<Camera3d>(() =>
     createCamera({ distance: 14, pitch: 0.45, yaw: 0.6, target: [0, 0.5, 0] }),
   );
@@ -97,6 +107,10 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
 
   useEffect(() => scene.subscribe(bumpScene), [scene]);
 
+  // Preview poses mutate inside the handle without a React render, so the
+  // dispatcher's own pump is what drives a ghost frame.
+  useEffect(() => dispatcher.subscribe(repaint), [dispatcher, repaint]);
+
   // ── Painting ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (!glCanvas) return;
@@ -124,6 +138,19 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
         color: node.data.color,
         selected: selected.has(node.id),
       }));
+
+      // `moveAction` declares the kit's default `previewHidesSource: true`,
+      // where the ghost replaces the solid. The lab keeps the solid drawn at
+      // its committed pose instead, so a drag shows what moved and from where.
+      for (const ghost of collectGhosts(dispatcher.getInFlightHandles(), scene)) {
+        solids.push({
+          pose: ghost.pose,
+          kind: ghost.kind,
+          color: ghost.color,
+          selected: false,
+          ghost: true,
+        });
+      }
 
       // The chrome is drawn here rather than in the DOM because the shared
       // buffer paints above the instrument, so anything inside the pane would
@@ -159,7 +186,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       renderer.dispose();
       rendererRef.current = null;
     };
-  }, [glCanvas, surface, tileId, scene]);
+  }, [glCanvas, surface, tileId, scene, dispatcher]);
 
   // ── Deps ───────────────────────────────────────────────────────────────
   const selectionApi = useMemo(
@@ -312,6 +339,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
 
   useGestureDispatcher({
     canvasRef: paneRef,
+    dispatcher,
     actions: actions!,
     toolsById,
     clientToWorld,
