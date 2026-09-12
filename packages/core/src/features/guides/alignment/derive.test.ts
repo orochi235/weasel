@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { deriveAlignmentGuides } from './derive';
+import { circle, CIRCLE_POSE_DESCRIPTOR } from 'core/geometry/circlePose.fixture';
 
 const box = { x: 10, y: 20, width: 100, height: 40 }; // L=10 cx=60 R=110 / T=20 cy=40 B=60
 
@@ -48,5 +49,13 @@ describe('deriveAlignmentGuides', () => {
     const g = deriveAlignmentGuides([box]);
     const left = g.find((q) => q.axis === 'x' && q.offset === 10)!;
     expect(left.id).toBe('align:x:10.000');
+  });
+
+  it('derives guides from circles through a descriptor', () => {
+    const guides = deriveAlignmentGuides([circle(10, 10, 5)], {
+      poseDescriptor: CIRCLE_POSE_DESCRIPTOR,
+      centers: false,
+    });
+    expect(guides.map((g) => `${g.axis}:${g.offset}`).sort()).toEqual(['x:15', 'x:5', 'y:15', 'y:5']);
   });
 });

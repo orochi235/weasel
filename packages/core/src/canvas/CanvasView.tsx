@@ -17,7 +17,7 @@ import type { IngestionDep, ViewApi } from 'interactions/actions/depSchema';
 import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/selection/useSelection';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
-import type { PoseProjection } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { useViewHelpers } from './useViewHelpers';
 import { anchorStateFrom, buildAffordanceAt, buildClassifyTarget } from './affordanceAt';
 import { useOptionalDepRegistry } from 'interactions/actions/depRegistry';
@@ -80,7 +80,7 @@ export interface CanvasViewProps {
 // so it falls back to owning one.
 const NO_INPUTS: Omit<SurfaceViewInputs, 'selectionApi'> = {
   adapter: undefined,
-  geometry: AUTO_POSE_DESCRIPTOR as unknown as PoseProjection<unknown>,
+  geometry: AUTO_POSE_DESCRIPTOR as unknown as PoseDescriptor<unknown>,
   boundsOf: undefined,
   tools: undefined,
 };

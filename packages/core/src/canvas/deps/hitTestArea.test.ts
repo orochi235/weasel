@@ -13,6 +13,7 @@ import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from 'features/paths/types';
 import { hitTestArea } from './hitTestArea';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
+import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
 
 /** The hand-rolled scenes below stand in for a real `Scene`, which always
  *  carries an overrides map; `hitTestArea` resolves poses through it. */
@@ -242,5 +243,15 @@ describe('hitTestArea — rotation and overrides', () => {
 
     expect(hitTestArea(scene, { x: 195, y: 195, width: 20, height: 20 })).toEqual(['o']);
     expect(hitTestArea(scene, { x: -5, y: -5, width: 20, height: 20 })).toEqual([]);
+  });
+});
+
+describe('hitTestArea — non-rect poses', () => {
+  it('fast-rejects and admits circles through a descriptor', () => {
+    const scene = createScene<object, 'main', CirclePose>({ systemLayers: [{ id: 'main' }] });
+    const id = scene.add({ kind: 'leaf', layer: 'main', pose: circle(10, 10, 5), data: {} });
+    const s = scene as unknown as Scene<unknown, string, unknown>;
+    expect(hitTestArea(s, { x: 0, y: 0, width: 20, height: 20 }, undefined, CIRCLE_POSE_DESCRIPTOR as never)).toEqual([id]);
+    expect(hitTestArea(s, { x: 30, y: 30, width: 5, height: 5 }, undefined, CIRCLE_POSE_DESCRIPTOR as never)).toEqual([]);
   });
 });

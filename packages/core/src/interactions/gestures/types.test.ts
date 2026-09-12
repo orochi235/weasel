@@ -3,14 +3,14 @@ import type {
   BoundsConstraint,
   InsertBehavior,
   ResizeAnchor,
-  ResizePose,
   ResizeOverlay,
   InsertOverlay,
 } from './types';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 describe('type shapes', () => {
   it('BoundsConstraint.onMove receives proposed.pose and proposed.anchor', () => {
-    const b: BoundsConstraint<ResizePose> = {
+    const b: BoundsConstraint<Bounds> = {
       onMove(_ctx, proposed) {
         // Compile probe: these field accesses must type-check.
         const _x: number = proposed.pose.x;
@@ -36,7 +36,7 @@ describe('type shapes', () => {
   });
 
   it('ResizeOverlay carries currentPose, targetPose, anchor', () => {
-    const o: ResizeOverlay<ResizePose> = {
+    const o: ResizeOverlay<Bounds> = {
       id: 'a',
       currentPose: { x: 0, y: 0, width: 1, height: 1 },
       targetPose: { x: 0, y: 0, width: 1, height: 1 },

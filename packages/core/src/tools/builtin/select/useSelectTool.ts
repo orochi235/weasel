@@ -16,6 +16,8 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { Tool } from '../../types';
 import type { DebugSink } from '../../../debug/types';
 import { pickTopMostHit } from '../pickTopMostHit';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 // Shared affordance predicates — the single source of truth for "what does
 // this affordance kind mean" (`interactions/dispatcher/predicates.ts`). The
 // action descriptors these bindings route to read the same functions, so a
@@ -34,10 +36,9 @@ export { MULTI_RESIZE_TARGET_ID };
 export interface UseSelectToolOptions<TPose> {
   /** Return ids of all objects whose painted body covers (worldX, worldY).
    *  Order doesn't matter — the tool collapses parent/child overlap via
-   *  `pickTopMostHit`. When omitted, defaults to a rect AABB-vs-point scan
-   *  over `adapter.getNodes()` using `poseBounds` (identity by default,
-   *  works for `{x,y,width,height}` poses). Override for tighter shapes
-   *  (path / polygon hit-tests). */
+   *  `pickTopMostHit`. When omitted, defaults to an AABB-vs-point scan over
+   *  `adapter.getNodes()` using the pose descriptor. Override for tighter
+   *  shapes (path / polygon hit-tests). */
   pickEvery?: (worldX: number, worldY: number) => string[];
   /** Optional alt-aware selection-update hit returning the single id the
    *  click should act on. */
@@ -47,8 +48,9 @@ export interface UseSelectToolOptions<TPose> {
     alt: boolean,
     selection: readonly string[],
   ) => string | null;
-  /** Project a pose to its AABB. Default: identity. */
-  poseBounds?: (pose: TPose) => Bounds;
+  /** How to read poses for the default `pickEvery`. Default
+   *  `AUTO_POSE_DESCRIPTOR`. */
+  poseDescriptor?: PoseDescriptor<TPose>;
   /**
    * How the default `pickEvery` decides a **leaf** node covers the pointer.
    * Ignored when `pickEvery` is supplied.
@@ -156,10 +158,9 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   options: UseSelectToolOptions<TPose>,
 ): Tool<null> {
 
-  // pickEvery / boundsOf defaults — for any rect-pose adapter the kit can
-  // derive both from `adapter.getNodes()` + `adapter.getPose(id)` +
-  // poseBounds (identity by default).
-  const poseBoundsFn = options.poseBounds ?? ((p: TPose) => p as unknown as Bounds);
+  // pickEvery / boundsOf defaults — for any adapter the kit can derive both
+  // from `adapter.getNodes()` + `adapter.getPose(id)` + the descriptor.
+  const d = (options.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   const preciseLeaves = options.leafPicking === 'silhouette';
   // World units here, not screen: this hook has no view. `<SceneCanvas>`
   // converts from screen px on its own pick path; a bare `useSelectTool`
@@ -188,7 +189,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
 
     return pickWalk<TPose>(adapterPickSource(adapter as never), {
       hits: (node, pose) => {
-        const b = poseBoundsFn(pose);
+        const b = d.getBounds(pose);
         if (node.kind !== 'container') return covers(node, pose, b);
         // A container's own clip *is* its hit shape — it is picked where it
         // paints, and it paints only inside its clip. Ancestor clips are the

@@ -12,7 +12,7 @@ import {
   pointAlongPath,
   translatePoseViaDescriptor,
   type DerivedDep,
-  type PoseProjection,
+  type PoseDescriptor,
 } from '@weasel-js/core';
 
 /** Where along an edge a label sits. */
@@ -40,7 +40,7 @@ export function diagramLabelOf(node: { data: unknown }): DiagramLabel | null {
 }
 
 export interface LabelPoseOptions<TPose> {
-  geometry?: PoseProjection<TPose>;
+  geometry?: PoseDescriptor<TPose>;
 }
 
 /**
@@ -54,7 +54,7 @@ export interface LabelPoseOptions<TPose> {
 export function labelDerivePose<TPose>(
   opts: LabelPoseOptions<TPose> = {},
 ): (node: { pose: TPose; data: unknown }, deps: readonly (DerivedDep<TPose> | undefined)[]) => TPose | null {
-  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseProjection<TPose>);
+  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
 
   return (node, deps) => {
     const label = diagramLabelOf(node);

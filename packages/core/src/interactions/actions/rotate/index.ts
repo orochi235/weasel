@@ -1,4 +1,4 @@
-export type { UseRotateOptions, RotateGeometry } from './options';
+export type { UseRotateOptions } from './options';
 export {
   aabbCenter,
   rotatePoint,

@@ -158,6 +158,11 @@ Plus the per-feature deps: `insert`, `areaSelect`, `lassoSelect`,
 `resizePolicy`, `geometryProjection`, `poseComposition`, `booleansAdapter`,
 `nodeAtPoint`, `dispatcher`.
 
+And `poseDescriptor` — how to read and rewrite this scene's poses. Every
+built-in action that touches a pose consults it. `<SceneCanvas poseDescriptor>`
+publishes it; absent, it is `AUTO_POSE_DESCRIPTOR`, which reads rect poses and
+`Path` poses.
+
 This is why there is no `DeleteAdapter` / `NudgeAdapter` / `UndoRedoAdapter` to
 implement: `delete` declares `requires: ['scene', 'selection', 'applyOps']` and
 gets them.

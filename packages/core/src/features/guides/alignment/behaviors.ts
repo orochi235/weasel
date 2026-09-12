@@ -3,21 +3,25 @@ import type {
   BoundsConstraint,
   InsertBehavior,
   MoveBehavior,
-  ResizePose,
 } from 'interactions/gestures/types';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { pxExtent } from 'core/viewport/pxExtent';
 import { unionBounds } from 'core/geometry/unionBounds';
 import type {
   AlignAnchor,
-  AlignBounds,
-  AlignBoundsProjection,
   AlignmentBehaviorBase,
 } from './types';
-import { MOVE_ANCHORS, RECT_ALIGN_PROJECTION, matchAlignment } from './match';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
+import {
+  translatePoseViaDescriptor,
+  visualBoundsViaDescriptor,
+} from 'core/geometry/poseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import { MOVE_ANCHORS, matchAlignment } from './match';
 
-/** Options for move/insert — adds the bounds projection for non-rect poses. */
+/** Options for move/insert — adds the pose descriptor for non-rect poses. */
 export interface AlignMoveArgs<TPose> extends AlignmentBehaviorBase {
-  projection?: AlignBoundsProjection<TPose>;
+  poseDescriptor?: PoseDescriptor<TPose>;
 }
 
 const activeList = (m: { activeX: Guide | null; activeY: Guide | null }): Guide[] =>
@@ -34,17 +38,20 @@ function worldTol(base: AlignmentBehaviorBase): { x: number; y: number } {
  *  and stays rigid. Single-select is the degenerate one-box union. Publishes
  *  the matched line(s); clears on miss/end. */
 export function alignMoveBehavior<TPose>(args: AlignMoveArgs<TPose>): MoveBehavior<TPose> {
-  const proj = args.projection ?? (RECT_ALIGN_PROJECTION as unknown as AlignBoundsProjection<TPose>);
+  const d = (args.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   return {
     onMove(ctx, transform) {
       if (args.bypassKey && ctx.modifiers[args.bypassKey]) { args.setActiveGuides([]); return; }
       if (transform.kind !== 'translate') return;
       // Union of every dragged id's visual box at its proposed position.
-      const boxes: AlignBounds[] = [];
+      const boxes: Bounds[] = [];
       for (const id of ctx.draggedIds) {
         const originPose = ctx.origin.get(id);
         if (originPose === undefined) continue;
-        boxes.push(proj.boundsOf(proj.translate(originPose, transform.dx, transform.dy)));
+        boxes.push(visualBoundsViaDescriptor(
+          translatePoseViaDescriptor(originPose, transform.dx, transform.dy, d),
+          d,
+        ));
       }
       const union = unionBounds(boxes);
       if (union === null) return;
@@ -76,7 +83,7 @@ export function alignInsertBehavior<TPose>(args: AlignmentBehaviorBase): InsertB
 
 /** Resize constraint: snap the moving edge(s) of the dragged rect to
  *  candidates. The pinned (anchor) edge stays fixed. Publishes the line(s). */
-export function alignResizeBehavior<TPose extends ResizePose>(
+export function alignResizeBehavior<TPose extends Bounds>(
   args: AlignmentBehaviorBase,
 ): BoundsConstraint<TPose> {
   return {

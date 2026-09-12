@@ -16,11 +16,9 @@
  * `createSelectionOverlayLayer` is a thin convenience that returns a single
  * `RenderLayer` whose draw runs the outline pass then the handles pass.
  *
- * **Pose shape:** TPose is generic; callers must supply `getBounds(pose)`
- * to project any pose into the AABB the renderer needs. For rect-shaped
- * poses (`{x, y, width, height}`) pass the identity. For `Path` poses pass
- * `boundsOfPath`. Container ids reduce via `unionAABB` over the projected
- * AABBs.
+ * **Pose shape:** TPose is generic; callers pass `poseDescriptor` for poses
+ * `AUTO_POSE_DESCRIPTOR` can't read. Container ids reduce via `unionAABB`
+ * over the projected AABBs.
  */
 
 import type { DrawCommand } from '../../renderer';
@@ -28,6 +26,11 @@ import { mat3, type Mat3 } from '../../renderer';
 import type { NodeId } from 'core/scene/types';
 import type { RenderLayer } from 'core/layers/render';
 import { unionAABB } from 'core/geometry/unionBounds';
+import {
+  visualBoundsViaDescriptor,
+  type PoseDescriptor,
+} from 'core/geometry/poseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 import { alignedStrokeRect, type FillStyle, type Stroke } from '@weasel-js/paint';
 import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import {
@@ -92,19 +95,8 @@ export interface ComposeSelectionPoseOpts<TPose> {
   } | null;
   /** Fallback pose lookup (typically the stored/committed pose). */
   getStoredPose: (id: string) => TPose;
-  /**
-   * Project a pose into its AABB. Used when reducing a group of leaf poses
-   * into a single union AABB. Defaults to the identity — rect-shaped poses
-   * (`{x, y, width, height}`) need no override. For `Path` poses pass
-   * `boundsOfPath`.
-   */
-  getBounds?: (pose: TPose) => Bounds;
-  /**
-   * Wrap an AABB back into a TPose. Called only when the resolver collapses
-   * a container's leaves into a single union AABB. Defaults to the identity —
-   * for `Path` poses pass `(b) => ({ kind: 'rect', ...b })`.
-   */
-  fromBounds?: (bounds: Bounds) => TPose;
+  /** How to read poses. Default `AUTO_POSE_DESCRIPTOR`. */
+  poseDescriptor?: PoseDescriptor<TPose>;
   /** Walk a container's direct children (e.g. `scene.childrenOf`). With
    *  `isContainer`, a selected container resolves to the union AABB of its
    *  transitive leaf poses instead of its own stored pose. */
@@ -124,8 +116,7 @@ export function composeSelectionPose<TPose>(
   opts: ComposeSelectionPoseOpts<TPose>,
 ): (id: string) => TPose | null {
   const { moveOverlay, resizeOverlay, getStoredPose, getChildren, isContainer } = opts;
-  const getBounds = opts.getBounds ?? ((pose: TPose) => pose as unknown as Bounds);
-  const fromBounds = opts.fromBounds ?? ((bounds: Bounds) => bounds as unknown as TPose);
+  const d = (opts.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
 
   const selectionLeaves = (id: string): string[] =>
     getChildren && isContainer ? leavesOf(id, getChildren, isContainer) : [id];
@@ -147,19 +138,19 @@ export function composeSelectionPose<TPose>(
       for (const leafId of leaves) {
         const moved = moveOverlay?.poses.get(leafId);
         if (moved !== undefined) {
-          leafBounds.push(getBounds(moved));
+          leafBounds.push(visualBoundsViaDescriptor(moved, d));
           continue;
         }
         const overlayLeaf = containerResizeLeafPoses?.get(leafId);
         if (overlayLeaf !== undefined) {
-          leafBounds.push(getBounds(overlayLeaf));
+          leafBounds.push(visualBoundsViaDescriptor(overlayLeaf, d));
           continue;
         }
-        leafBounds.push(getBounds(getStoredPose(leafId)));
+        leafBounds.push(visualBoundsViaDescriptor(getStoredPose(leafId), d));
       }
       const u = unionAABB(leafBounds);
       if (u === null) return null;
-      return fromBounds(u);
+      return d.fromBounds(u, getStoredPose(leaves[0]!));
     }
     return resolveLeaf(id);
   };
@@ -172,27 +163,32 @@ export function composeSelectionPose<TPose>(
  */
 function makeContainerAwareBoundsResolver<TPose>(
   getPose: (id: string) => TPose | null,
-  getBounds: (pose: TPose) => Bounds,
+  d: PoseDescriptor<TPose>,
   getChildren?: (id: string) => readonly string[],
   isContainer?: (id: string) => boolean,
 ): (id: string) => Bounds | null {
+  const oriented = (p: TPose): Bounds => {
+    const b = d.getBounds(p);
+    const r = d.getRotation?.(p);
+    return r ? { ...b, rotation: r } : b;
+  };
   if (getChildren === undefined || isContainer === undefined) {
     return (id: string) => {
       const p = getPose(id);
-      return p === null ? null : getBounds(p);
+      return p === null ? null : oriented(p);
     };
   }
   return (id: string): Bounds | null => {
     if (!isContainer(id)) {
       const p = getPose(id);
-      return p === null ? null : getBounds(p);
+      return p === null ? null : oriented(p);
     }
     const leaves = leavesOf(id, getChildren, isContainer);
     if (leaves.length === 0) return null;
     const leafBounds: Bounds[] = [];
     for (const leafId of leaves) {
       const p = getPose(leafId);
-      if (p !== null) leafBounds.push(getBounds(p));
+      if (p !== null) leafBounds.push(visualBoundsViaDescriptor(p, d));
     }
     if (leafBounds.length === 0) return null;
     return unionAABB(leafBounds);
@@ -203,12 +199,8 @@ function makeContainerAwareBoundsResolver<TPose>(
  *  declared on {@link SelectionOverlayLayerOpts}, which makes both optional —
  *  omitted, they come off the draw envelope. */
 interface SelectionLayerCommon<TPose> {
-  /**
-   * Project a pose into its AABB. Defaults to the identity — rect-shaped
-   * poses (`{x, y, width, height}`) need no override. For `Path` poses pass
-   * `boundsOfPath`.
-   */
-  getBounds?: (pose: TPose) => Bounds;
+  /** How to read poses. Default `AUTO_POSE_DESCRIPTOR`. */
+  poseDescriptor?: PoseDescriptor<TPose>;
   /** Walk a container's direct children (e.g. `scene.childrenOf`). When
    *  supplied with `isContainer`, any id that resolves to a container is
    *  rendered using the union bounds of all its transitive leaves. */
@@ -599,10 +591,10 @@ function buildSelectionLayer<TPose>(
   const handlesEnabled = passes.handles && opts.handles !== false;
   const handles = handlesEnabled ? resolveHandles(opts.handles || undefined) : null;
   const handlesOf = opts.handlesOf ?? defaultHandlesOf;
-  const getBounds = opts.getBounds ?? ((pose: TPose) => pose as unknown as Bounds);
+  const d = (opts.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   const getPose = opts.getPose;
   const poseBounds = getPose
-    ? makeContainerAwareBoundsResolver(getPose, getBounds, opts.getChildren, opts.isContainer)
+    ? makeContainerAwareBoundsResolver(getPose, d, opts.getChildren, opts.isContainer)
     : null;
   const rotationHandleDistance = passes.handles
     ? resolveRotationHandleDistance(opts.rotationHandle)

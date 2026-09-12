@@ -4,7 +4,7 @@ import type { GestureSource, GesturePreviewSource } from './gestureBounds';
 import type { OngoingOverlay } from 'interactions/actions/invoker';
 import { unionAABB } from 'core/geometry/unionBounds';
 import { buildChromeState, type ChromeState } from 'core/selection/chromeState';
-import type { PoseProjection } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { NodeId } from 'core/scene/types';
 import type { ToolsApi } from 'tools/useTools';
 import type { DebugSink } from '../debug/types';
@@ -136,7 +136,7 @@ export interface UseViewHelpersOpts<TPose> {
   /** Only `getPose` is read here — the narrow slice keeps this hook off the
    *  full adapter contract. */
   adapter: { getPose(id: string): TPose } | undefined;
-  geometry: PoseProjection<TPose>;
+  geometry: PoseDescriptor<TPose>;
   /** Consumer-supplied bounds resolver. Falls back to the adapter's pose. */
   boundsOf: ((id: string) => Bounds | null) | undefined;
   selection: readonly NodeId[];

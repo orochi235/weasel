@@ -7,15 +7,12 @@ import { createInsertOp } from 'core/ops/create';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { freshNodeId } from './freshNodeId';
 import { requiresSelection } from './requiresSelection';
+import { poseDescriptorOf } from '../poseDescriptorDep';
+import { translatePoseViaDescriptor, type PoseDescriptor } from '../resize/geometry';
 
 /** Same nudge `sceneToAdapter.getPasteOffset` gives a paste, so duplicate and
  *  paste land in the same place rather than disagreeing by a few units. */
 const DUPLICATE_OFFSET = 12;
-
-function translatePose(pose: unknown, dx: number, dy: number): unknown {
-  const p = pose as Record<string, unknown>;
-  return { ...p, x: ((p['x'] as number) ?? 0) + dx, y: ((p['y'] as number) ?? 0) + dy };
-}
 
 /** True when any ancestor of `id` is also in `set` — that ancestor's copy
  *  already brings this node along, so duplicating it again would double it. */
@@ -50,6 +47,7 @@ function copySubtree(
   offset: { dx: number; dy: number },
   offsetDescendants: boolean,
   ops: Op[],
+  d: PoseDescriptor<unknown>,
 ): NodeId | null {
   const node = scene.get(id);
   if (!node) return null;
@@ -57,13 +55,13 @@ function copySubtree(
   const copy = {
     ...node,
     id: newId,
-    pose: translatePose(node.pose, offset.dx, offset.dy),
+    pose: translatePoseViaDescriptor(node.pose, offset.dx, offset.dy, d),
     parent,
   } as Node<unknown, string, unknown>;
   ops.push(createInsertOp<Node<unknown, string, unknown>>({ node: copy, label: 'Duplicate' }));
   const childOffset = offsetDescendants ? offset : { dx: 0, dy: 0 };
   for (const child of scene.childrenOf(id)) {
-    copySubtree(scene, child, newId, childOffset, offsetDescendants, ops);
+    copySubtree(scene, child, newId, childOffset, offsetDescendants, ops, d);
   }
   return newId;
 }
@@ -82,7 +80,7 @@ export const duplicateAction: Action & { requires: string[] } = {
   // `selection` is read by the `enabled` gate as well as the invoker. An
   // undeclared read throws inside the dev-build deps Proxy before the gate can
   // answer, which is how this action spent a while doing nothing at all.
-  requires: ['scene', 'selection', 'applyOps', 'poseComposition'],
+  requires: ['scene', 'selection', 'applyOps', 'poseComposition', 'poseDescriptor'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
@@ -94,6 +92,7 @@ export const duplicateAction: Action & { requires: string[] } = {
       if (ids.length === 0) return;
 
       const set = new Set<string>(ids);
+      const descriptor = poseDescriptorOf(deps.poseDescriptor);
       const offset = { dx: DUPLICATE_OFFSET, dy: DUPLICATE_OFFSET };
       const ops: Op[] = [];
       const newIds: NodeId[] = [];
@@ -102,7 +101,7 @@ export const duplicateAction: Action & { requires: string[] } = {
         const node = scene.get(nid);
         if (!node) continue;
         if (hasSelectedAncestor(scene, nid, set)) continue;
-        const newId = copySubtree(scene, nid, node.parent ?? null, offset, deps.poseComposition === undefined, ops);
+        const newId = copySubtree(scene, nid, node.parent ?? null, offset, deps.poseComposition === undefined, ops, descriptor);
         if (newId) newIds.push(newId);
       }
 

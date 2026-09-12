@@ -1,20 +1,22 @@
 import type { Guide } from '../types';
-import type { AlignBounds, AlignBoundsProjection, DeriveAlignmentGuidesOptions } from './types';
-import { RECT_ALIGN_PROJECTION } from './match';
+import type { DeriveAlignmentGuidesOptions } from './types';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
+import { visualBoundsViaDescriptor } from 'core/geometry/poseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 
 const EPS = 1e-3;
 
 /** Derive candidate alignment lines from a set of sibling poses plus an
  *  optional page box. Each box contributes up to 3 guides per axis: the two
  *  edges and the center. Overlapping offsets collapse to one candidate.
- *  Poses go through the same projection `alignMoveBehavior` matches with, so
+ *  Poses go through the same descriptor `alignMoveBehavior` matches with, so
  *  a rotated sibling advertises its ink edges rather than its stored box. */
-export function deriveAlignmentGuides<TPose = AlignBounds>(
+export function deriveAlignmentGuides<TPose = Bounds>(
   targets: readonly TPose[],
   opts: DeriveAlignmentGuidesOptions<TPose> = {},
 ): Guide[] {
-  const proj = opts.projection
-    ?? (RECT_ALIGN_PROJECTION as unknown as AlignBoundsProjection<TPose>);
+  const d = (opts.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   const edges = opts.edges ?? true;
   const centers = opts.centers ?? true;
   // Dedup per axis: key = rounded offset. First writer wins (stable id).
@@ -28,7 +30,7 @@ export function deriveAlignmentGuides<TPose = AlignBounds>(
     seen.set(key, { id: `align:${axis}:${offset.toFixed(3)}`, axis, offset });
   };
 
-  const emit = (b: AlignBounds): void => {
+  const emit = (b: Bounds): void => {
     if (edges) {
       add('x', b.x);
       add('x', b.x + b.width);
@@ -41,7 +43,7 @@ export function deriveAlignmentGuides<TPose = AlignBounds>(
     }
   };
 
-  for (const t of targets) emit(proj.boundsOf(t));
+  for (const t of targets) emit(visualBoundsViaDescriptor(t, d));
   if (opts.page) emit(opts.page);
 
   return [...seenX.values(), ...seenY.values()];

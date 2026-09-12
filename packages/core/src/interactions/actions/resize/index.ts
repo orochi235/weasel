@@ -1,5 +1,5 @@
 export type { UseResizeOptions } from './options';
-export { RECT_POSE_DESCRIPTOR, ROTATED_POSE_DESCRIPTOR, type PoseProjection } from './geometry';
+export { RECT_POSE_DESCRIPTOR, ROTATED_POSE_DESCRIPTOR, type PoseDescriptor } from './geometry';
 export {
   cornerResizeHandles,
   hitCornerHandle,
@@ -11,4 +11,4 @@ export {
 } from './cornerHandles';
 export * from './behaviors';
 
-export { AUTO_POSE_DESCRIPTOR, isPathLike } from './autoPoseDescriptor';
+export { AUTO_POSE_DESCRIPTOR, isPathLike, isRectPose } from './autoPoseDescriptor';

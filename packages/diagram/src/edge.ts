@@ -23,7 +23,7 @@ import {
   polylineFromPoints,
   type DerivedDep,
   type Path,
-  type PoseProjection,
+  type PoseDescriptor,
   type SceneRegistry,
   type Vec2,
 } from '@weasel-js/core';
@@ -237,7 +237,7 @@ export interface EdgeRouteOptions<TPose> extends PortsOptions<TPose> {
 export function edgeDerivePath<TPose>(
   opts: EdgeRouteOptions<TPose> = {},
 ): (node: { data: unknown }, deps: readonly (DerivedDep<TPose> | undefined)[]) => Path | null {
-  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseProjection<TPose>);
+  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   const portOpts: PortsOptions<TPose> = { geometry, ...(opts.read ? { read: opts.read } : {}) };
   const allPorts = (d: DerivedDep<TPose>): Port[] =>
     portsOf(d.node as never, d.pose, portOpts);

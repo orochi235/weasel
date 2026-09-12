@@ -1,11 +1,9 @@
 import type { Guide } from '../types';
-import { axisAlignedBounds, type RectPose } from 'core/geometry/unionBounds';
 import type {
   AlignAnchor,
-  AlignBounds,
-  AlignBoundsProjection,
   AlignMatchResult,
 } from './types';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 /** Move/insert test all three features per axis. */
 export const MOVE_ANCHORS: { x: readonly AlignAnchor[]; y: readonly AlignAnchor[] } = {
@@ -13,16 +11,7 @@ export const MOVE_ANCHORS: { x: readonly AlignAnchor[]; y: readonly AlignAnchor[
   y: ['min', 'center', 'max'],
 };
 
-/** Default projection for rect-shaped poses (`{x,y,width,height,rotation?}`).
- *  A rotated pose reports the AABB of its ink, so guides derived from a
- *  stationary sibling and the box a dragged selection matches with are the
- *  same measurement. */
-export const RECT_ALIGN_PROJECTION: AlignBoundsProjection<RectPose> = {
-  boundsOf: (p) => axisAlignedBounds(p),
-  translate: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
-};
-
-function featureOffset(b: AlignBounds, axis: 'x' | 'y', anchor: AlignAnchor): number {
+function featureOffset(b: Bounds, axis: 'x' | 'y', anchor: AlignAnchor): number {
   if (axis === 'x') {
     if (anchor === 'min') return b.x;
     if (anchor === 'center') return b.x + b.width / 2;
@@ -35,7 +24,7 @@ function featureOffset(b: AlignBounds, axis: 'x' | 'y', anchor: AlignAnchor): nu
 
 /** Best (feature, candidate) match on one axis, within tolerance. */
 function bestAxis(
-  b: AlignBounds,
+  b: Bounds,
   axis: 'x' | 'y',
   anchors: readonly AlignAnchor[],
   candidates: readonly Guide[],
@@ -72,7 +61,7 @@ function bestAxis(
  * approximation. Pass the same number twice for a world-space tolerance.
  */
 export function matchAlignment(
-  bounds: AlignBounds,
+  bounds: Bounds,
   candidates: readonly Guide[],
   worldTolerance: { x: number; y: number },
   anchors: { x: readonly AlignAnchor[]; y: readonly AlignAnchor[] },

@@ -34,10 +34,9 @@
  * Non-rect poses (Path, polygon, custom): the kit is generic over `TPose`.
  * Plug in two small projections so the rect-flavored machinery works on any
  * shape:
- *   - `PoseProjection<TPose>` — read AABB + remap on resize. Default
- *     `RECT_POSE_DESCRIPTOR` for `{x,y,width,height}`; `pathPoseDescriptor` for
- *     `Path`. Pass via the `resizePolicy` dep (`useResizePolicy({
- *     projection })`).
+ *   - `PoseDescriptor<TPose>` — read AABB + remap on resize. Default
+ *     `AUTO_POSE_DESCRIPTOR`, which handles both `{x,y,width,height}` and
+ *     `Path`. Pass via `<SceneCanvas poseDescriptor>`.
  *   - `OriginProjection<TPose>` — read snap-origin + translate by delta. Used
  *     by `gridSnapStrategy` and `snapBackOrDelete` for non-rect poses. Default
  *     `RECT_ORIGIN_PROJECTION`; `pathOriginProjection` for `Path`. Pass via
@@ -235,6 +234,7 @@ export {
   useResizePolicy,
   type UseResizePolicyOptions,
 } from './canvas/deps/resizePolicy';
+export { usePoseDescriptorDepSource } from './canvas/deps/poseDescriptor';
 export { CORNER_ANCHORS, cornerPoint } from './interactions/actions/resize/cornerHandles';
 export type { CornerAnchor, CornerEdge } from './interactions/actions/resize/cornerHandles';
 export { useSliceDep } from './canvas/deps/slice';
@@ -676,6 +676,7 @@ export {
 } from './features/groups/composePose';
 export type { PoseAdapter, PoseComposition } from './features/groups/composePose';
 export { nestedHitTester } from './features/groups/nestedHit';
+export { unionOfChildrenVia } from './features/groups/unionOfChildren';
 export type {
   NestedHitOpts,
   NestedHitTester,
@@ -879,7 +880,6 @@ export type {
   GroupTransform,
   MoveBehavior,
   ResizeAnchor,
-  ResizePose,
   ResizeProposed,
   ResizeMoveResult,
   BoundsConstraint,
@@ -940,7 +940,6 @@ export {
   deriveAlignmentGuides,
   matchAlignment,
   MOVE_ANCHORS,
-  RECT_ALIGN_PROJECTION,
   alignMoveBehavior,
   alignInsertBehavior,
   alignResizeBehavior,
@@ -949,10 +948,8 @@ export type {
   Guide,
   UseGuidesReturn,
   GuidesLayerOpts,
-  AlignBounds,
   AlignAnchor,
   AlignMatchResult,
-  AlignBoundsProjection,
   DeriveAlignmentGuidesOptions,
   AlignmentBehaviorBase,
   AlignMoveArgs,
@@ -963,6 +960,7 @@ export type { UseMoveOptions } from './interactions/actions/move';
 export {
   AUTO_POSE_DESCRIPTOR,
   isPathLike,
+  isRectPose,
   RECT_POSE_DESCRIPTOR,
   ROTATED_POSE_DESCRIPTOR,
   cornerResizeHandles,
@@ -971,7 +969,7 @@ export {
 } from './interactions/actions/resize';
 export type {
   UseResizeOptions,
-  PoseProjection,
+  PoseDescriptor,
   CornerHandle,
 } from './interactions/actions/resize';
 export {
@@ -986,7 +984,6 @@ export {
 } from './interactions/actions/rotate';
 export type {
   UseRotateOptions,
-  RotateGeometry,
   RotationHandle,
 } from './interactions/actions/rotate';
 export type { UseInsertOptions } from './interactions/actions/insert';

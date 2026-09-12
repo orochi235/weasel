@@ -3,7 +3,7 @@ import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import { dispatchApplyBatch } from 'core/applyOps';
 import type { NodeId } from 'core/scene/types';
-import { RECT_POSE_DESCRIPTOR, type PoseProjection } from '../resize/geometry';
+import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../resize/geometry';
 import { translatePoseViaDescriptor, visualBoundsViaDescriptor } from '../align/align';
 import { planDistribute } from './plan';
 
@@ -26,7 +26,7 @@ export interface DistributeAdapter<TPose> {
 export interface UseDistributeOptions<TPose> {
   /** Projection between `TPose` and bounds. Defaults to `RECT_POSE_DESCRIPTOR`
    *  for `{x,y,width,height}` poses. */
-  geometry?: PoseProjection<TPose>;
+  geometry?: PoseDescriptor<TPose>;
   /** Default mode when `distribute(axis)` is called without one. Default 'centers'. */
   defaultMode?: DistributeMode;
   /** Label passed to applyOps. Default 'Distribute'. */
@@ -58,7 +58,7 @@ export function useDistribute<TPose>(
     if (sel.length < 3) return;
     const geom =
       o.geometry ??
-      (RECT_POSE_DESCRIPTOR as unknown as PoseProjection<TPose>);
+      (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>);
     const m = mode ?? o.defaultMode ?? 'centers';
 
     const items = sel.map((id) => {

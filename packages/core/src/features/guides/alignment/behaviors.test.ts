@@ -8,8 +8,8 @@ import type {
   InsertProposed,
   ModifierState,
   ResizeAnchor,
-  ResizePose,
 } from 'interactions/gestures/types';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 interface Pose { x: number; y: number; width: number; height: number; rotation?: number }
 
@@ -152,12 +152,12 @@ describe('alignResizeBehavior', () => {
   it('snaps the moving east edge and pins the west edge', () => {
     const cands: Guide[] = [{ id: 'r', axis: 'x', offset: 152 }];
     let active: readonly Guide[] = [];
-    const b = alignResizeBehavior<ResizePose>({
+    const b = alignResizeBehavior<Bounds>({
       getCandidates: () => cands,
       setActiveGuides: (g) => { active = g; },
       tolerance: 5,
     });
-    const pose: ResizePose = { x: 100, y: 100, width: 50, height: 50 }; // R=150
+    const pose: Bounds = { x: 100, y: 100, width: 50, height: 50 }; // R=150
     const anchor: ResizeAnchor = { x: 'min', y: 'free' }; // west pinned, east moves
     const res = b.onMove!(ctx(), { pose, anchor });
     // east edge 150 -> 152: width 50 -> 52, x unchanged.

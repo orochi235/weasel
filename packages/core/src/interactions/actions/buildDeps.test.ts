@@ -16,6 +16,12 @@ import type { Action } from './registry';
 import { moveAction } from './defaults/move';
 import { resizeAction } from './defaults/resize';
 import { flipAction } from './defaults/flip';
+import { rotateAction } from './defaults/rotate';
+import { groupAction } from './defaults/group';
+import { cloneAction } from './defaults/clone';
+import { duplicateAction } from './defaults/duplicate';
+import { alignLeftAction } from './defaults/align';
+import { distributeHorizontalAction } from './defaults/distribute';
 import {
   nudgeUpAction,
   nudgeDownAction,
@@ -51,6 +57,15 @@ describe('builtin transform actions declare geometryProjection', () => {
   it.each(actions)('%s receives the dep through buildDepsFromRequires', (_name, action) => {
     const deps = buildDepsFromRequires(action, stubRegistry());
     expect(deps.geometryProjection).toBe(PROJECTION);
+  });
+
+  it.each([
+    ['move', moveAction], ['resize', resizeAction], ['rotate', rotateAction],
+    ['flip', flipAction], ['nudge-left', nudgeLeftAction], ['group', groupAction],
+    ['clone', cloneAction], ['duplicate', duplicateAction],
+    ['align-left', alignLeftAction], ['distribute-x', distributeHorizontalAction],
+  ])('%s declares poseDescriptor', (_name, action) => {
+    expect((action as { requires?: string[] }).requires).toContain('poseDescriptor');
   });
 });
 

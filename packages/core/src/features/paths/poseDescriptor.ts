@@ -3,11 +3,11 @@ import { boundsOfPath } from './bounds';
 import { pointInPath } from './hitTest';
 import { translatePath } from './transform';
 import type { Path, PolygonPath } from './types';
-import { aabbIntersectsRect, type PoseProjection } from 'interactions/actions/resize/geometry';
-import type { ResizePose } from 'interactions/gestures/types';
+import { aabbIntersectsRect, type PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 /**
- * `PoseProjection` for `Path` poses — wires `useResize` to operate
+ * `PoseDescriptor` for `Path` poses — wires `useResize` to operate
  * on `Path` directly. `getBounds` defers to the same `boundsOfPath` kernel
  * the rest of the kit uses; `remapBounds` does an affine scale of every
  * coord against `src`/`dst`. Degenerate axes (zero src extent) collapse to
@@ -17,7 +17,7 @@ import type { ResizePose } from 'interactions/gestures/types';
  * knows the group's origin AABB and uses it for every leaf, instead of
  * each leaf scaling against its own AABB (which would ignore group context).
  */
-export const pathPoseDescriptor: PoseProjection<Path> = {
+export const pathPoseDescriptor: PoseDescriptor<Path> = {
   getBounds: (path) => boundsOfPath(path),
   remapBounds: (path, src, dst) => {
     const sx = src.width === 0 ? 0 : dst.width / src.width;
@@ -33,6 +33,7 @@ export const pathPoseDescriptor: PoseProjection<Path> = {
     }
     return remapPolygon(path, src, dst, sx, sy);
   },
+  fromBounds: (b) => ({ kind: 'rect', x: b.x, y: b.y, width: b.width, height: b.height }),
   translate: (path, dx, dy) => translatePath(path, dx, dy),
   // WHY: AABB pre-test is cheap; only fall through to per-corner pointInPath
   //      when the rect is fully inside the AABB (silhouette test).
@@ -78,7 +79,7 @@ export const pathPoseDescriptor: PoseProjection<Path> = {
   supportsRotation: () => false,
 };
 
-function remapPolygon(path: PolygonPath, src: ResizePose, dst: ResizePose, sx: number, sy: number): PolygonPath {
+function remapPolygon(path: PolygonPath, src: Bounds, dst: Bounds, sx: number, sy: number): PolygonPath {
   const next = new Float32Array(path.coords.length);
   const { commands, coords } = path;
   forEachSegment(commands, coords, (cmd, ci) => {

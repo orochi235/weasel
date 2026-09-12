@@ -210,3 +210,10 @@ describe('derived pose — serialization', () => {
     expect(() => scene.toJSON()).toThrow(/no matching registry key/);
   });
 });
+
+describe('derived pose — the merged registry', () => {
+  it('exposes the merged registry', () => {
+    const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
+    expect(scene.registry.derivePose?.[UNION_OF_CHILDREN]).toBe(unionOfChildren);
+  });
+});

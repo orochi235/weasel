@@ -649,7 +649,7 @@ describe('Canvas shaders prop', () => {
 describe('Canvas baseBoundsOf synthesis', () => {
   it('synthesized boundsOf folds rotation from descriptor.getRotation', () => {
     // Adapter holds a rotated pose; Canvas should synthesize boundsOf that
-    // includes the rotation field when geometry={ROTATED_POSE_DESCRIPTOR}.
+    // includes the rotation field when poseDescriptor={ROTATED_POSE_DESCRIPTOR}.
     type RotPose = { id: string; x: number; y: number; width: number; height: number; rotation: number };
     const item: RotPose = { id: 'a', x: 0, y: 0, width: 100, height: 60, rotation: Math.PI / 4 };
 
@@ -671,7 +671,7 @@ describe('Canvas baseBoundsOf synthesis', () => {
           height={200}
           layers={{}}
           adapter={adapter as never}
-          geometry={ROTATED_POSE_DESCRIPTOR as never}
+          poseDescriptor={ROTATED_POSE_DESCRIPTOR as never}
           helpersRef={helpersRef as never}
         />
       );

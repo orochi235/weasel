@@ -1,8 +1,8 @@
 import type {
   ModifierState,
   BoundsConstraint,
-  ResizePose,
 } from '../../../gestures/types';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 type ModKey = keyof ModifierState;
 
@@ -10,7 +10,7 @@ type ModKey = keyof ModifierState;
  *  anchored ones where they are. By default a node already smaller than one
  *  grid cell on an axis is left unsnapped on that axis, so it stays resizable
  *  at sub-grid sizes. */
-export function snapToGrid<TPose extends ResizePose>(args: {
+export function snapToGrid<TPose extends Bounds>(args: {
   spacing: number;
   bypassKey?: ModKey;
   suspendBelowDim?: boolean;

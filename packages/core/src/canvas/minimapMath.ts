@@ -15,6 +15,7 @@ import { documentPose } from '../core/scene';
 import type { Scene } from '../core/scene';
 import type { View } from '../core/viewport/view';
 import type { Bounds, ViewportDims } from '../core/viewport/fitViewToBounds';
+import type { PoseDescriptor } from '../core/geometry/poseDescriptor';
 import type { PathDrawCommand } from '../renderer/DrawCommand';
 
 /** Inset (CSS px) around the fit rect on each side. Matches the spec note. */
@@ -29,7 +30,7 @@ export const FALLBACK_FIT_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 /**
  * Fit policy for `<MinimapCanvas>` / `computeFitView`.
  *
- * - `"scene"` — union of leaf-node pose AABBs (via `poseBounds`).
+ * - `"scene"` — union of leaf-node pose AABBs (via the pose descriptor).
  * - `{ kind: "world", rect }` — caller-supplied world rect.
  * - `(scene, dims) => View` — caller derives the view directly.
  */
@@ -79,13 +80,13 @@ function fitRectInto(rect: Bounds, dims: ViewportDims, padding: number): View {
 
 /**
  * Compute the AABB union of all leaf-node poses in the scene, via
- * `poseBounds`. Container nodes are skipped — their effective bounds come
+ * `descriptor`. Container nodes are skipped — their effective bounds come
  * from their descendant leaves. Returns `null` when the scene has no
  * leaves.
  */
 function sceneLeafBounds<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
-  poseBounds: (pose: TPose) => Bounds,
+  descriptor: PoseDescriptor<TPose>,
 ): Bounds | null {
   let minX = Infinity;
   let minY = Infinity;
@@ -94,7 +95,7 @@ function sceneLeafBounds<TData, TLayer extends string, TPose>(
   let any = false;
   for (const node of scene.nodes.values()) {
     if (node.kind !== 'leaf') continue;
-    const b = poseBounds(documentPose(scene, node));
+    const b = descriptor.getBounds(documentPose(scene, node));
     if (b.x < minX) minX = b.x;
     if (b.y < minY) minY = b.y;
     const right = b.x + b.width;
@@ -119,7 +120,7 @@ export interface ComputeFitViewOptions {
  * is centered with `padding` (default 8) on each side. The smaller-axis
  * fit ratio wins, so the whole rect is visible.
  *
- * - `fit === "scene"`: union AABB of leaf-node poses via `poseBounds`.
+ * - `fit === "scene"`: union AABB of leaf-node poses via `descriptor`.
  *   Empty scene → {@link FALLBACK_FIT_VIEW}.
  * - `fit` is `{ kind: "world", rect }`: fit `rect`. A degenerate rect
  *   (zero or negative area) falls back to identity scale centered on the
@@ -131,7 +132,7 @@ export function computeFitView<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   dims: ViewportDims,
   fit: MinimapFit<TData, TLayer, TPose>,
-  poseBounds: (pose: TPose) => Bounds,
+  descriptor: PoseDescriptor<TPose>,
   opts: ComputeFitViewOptions = {},
 ): View {
   const padding = opts.padding ?? DEFAULT_FIT_PADDING;
@@ -140,7 +141,7 @@ export function computeFitView<TData, TLayer extends string, TPose>(
     return fit(scene, dims);
   }
   if (fit === 'scene') {
-    const rect = sceneLeafBounds(scene, poseBounds);
+    const rect = sceneLeafBounds(scene, descriptor);
     if (rect === null) return FALLBACK_FIT_VIEW;
     return fitRectInto(rect, dims, padding);
   }

@@ -8,6 +8,7 @@ import {
 } from './overlay';
 import { asNodeId } from 'core/scene/types';
 import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
+import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
 
 /**
  * Build `getChildren`/`isContainer` accessors from a flat `id -> direct
@@ -104,8 +105,6 @@ describe('composeSelectionPose with containers', () => {
       getStoredPose: (id) => stale[id],
       getChildren,
       isContainer,
-      getBounds: (p) => p,
-      fromBounds: (b) => ({ ...b }),
     });
     // Container resolves to the union envelope of a+b, not its stale own pose.
     expect(resolve('c')).toEqual({ x: 0, y: 0, width: 30, height: 40 });
@@ -123,8 +122,6 @@ describe('composeSelectionPose with containers', () => {
       getStoredPose: (id) => leaf[id],
       getChildren,
       isContainer,
-      getBounds: (p) => p,
-      fromBounds: (b) => ({ ...b }),
     });
     // b turned a quarter turn spans y -15..25, past both edges of its own box.
     const out = resolve('c') as Pose;
@@ -469,5 +466,18 @@ describe('createSelectionOverlayLayer.draw', () => {
     const group = tree[0] as GroupDrawCommand;
     expect(group.transform).toBeDefined();
     expect(group.children[0].kind).toBe('path');
+  });
+});
+
+describe('composeSelectionPose — non-rect poses', () => {
+  it('collapses a circle container to a circle through the descriptor', () => {
+    const poses: Record<string, CirclePose> = { a: circle(0, 0, 10), b: circle(40, 0, 10) };
+    const resolve = composeSelectionPose<CirclePose>({
+      getStoredPose: (id) => poses[id]!,
+      getChildren: (id) => (id === 'g' ? ['a', 'b'] : []),
+      isContainer: (id) => id === 'g',
+      poseDescriptor: CIRCLE_POSE_DESCRIPTOR,
+    });
+    expect(resolve('g')).toEqual(circle(20, 0, 10));
   });
 });

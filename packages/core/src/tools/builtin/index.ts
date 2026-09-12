@@ -4,10 +4,9 @@
 // insert tool now declares its gesture via `Tool.bindings` and delegates
 // to the dispatcher's `insertAction`.
 export { useSelectTool, type UseSelectToolOptions } from './select';
-// `useResizeTool` and the legacy `useResize` hook are
-// deleted. Resize is dispatcher-driven via `resizeAction` + the
-// `resizePolicy` dep — consumers wire options through
-// `useResizePolicy(...)` instead of constructing an ambient tool.
+// `useResizeTool` and the legacy `useResize` hook are deleted. Resize is
+// dispatcher-driven via `resizeAction` + the `resizePolicy` dep (constraints,
+// point snap, group expansion); pose geometry comes from `poseDescriptor`.
 export { useRotateTool, type UseRotateToolOptions } from './rotate';
 export { pickTopMostHit, type PickTopMostHitAdapter } from './pickTopMostHit';
 export { useHandTool } from './hand';

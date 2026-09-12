@@ -2,12 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
-import type { Bounds } from 'core/viewport/fitViewToBounds';
+import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import {
   computeFitView,
   computeIndicatorCommand,
   FALLBACK_FIT_VIEW,
 } from './minimapMath';
+import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
 
 interface Data { label: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -18,7 +19,7 @@ function makeScene(): S {
   return createScene<Data, 'bg', Pose>({ systemLayers: [{ id: 'bg' }] });
 }
 
-const identityPoseBounds = (p: Pose): Bounds => p;
+const identityPoseBounds = RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<Pose>;
 
 describe('computeFitView — a derived pose', () => {
   /** A node whose pose is its dependency's, shifted 500 right. Its authored
@@ -312,4 +313,11 @@ describe('computeIndicatorCommand', () => {
     expect(cmd.stroke?.width).toBe(2.5);
     expect(cmd.stroke?.dash).toEqual([4, 1, 2, 1]);
   });
+});
+
+it('frames circles through the descriptor', () => {
+  const scene = createScene<object, 'main', CirclePose>({ systemLayers: [{ id: 'main' }] });
+  scene.add({ kind: 'leaf', layer: 'main', pose: circle(50, 50, 50), data: {} });
+  const view = computeFitView(scene, { width: 100, height: 100 }, 'scene', CIRCLE_POSE_DESCRIPTOR);
+  expect(Number.isFinite(view.x) && Number.isFinite(view.scale.x)).toBe(true);
 });

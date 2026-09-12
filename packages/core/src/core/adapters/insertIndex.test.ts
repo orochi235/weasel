@@ -14,7 +14,7 @@ function fixture() {
   const ref = { current: items };
   const setItems = (u: (i: Obj[]) => Obj[]): void => { ref.current = u(ref.current); };
   const adapter = arrayAdapter<Obj, Obj>({
-    ref, setItems, toPose: (o) => o, fromPose: (o, p) => ({ ...o, ...p }), poseBounds: (p) => p,
+    ref, setItems, toPose: (o) => o, fromPose: (o, p) => ({ ...o, ...p }),
   });
   return { adapter, order: () => ref.current.map((o) => o.id) };
 }

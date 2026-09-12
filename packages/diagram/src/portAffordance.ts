@@ -25,7 +25,7 @@ import type {
   ChromeState,
   CursorSpec,
   FillStyle,
-  PoseProjection,
+  PoseDescriptor,
   Stroke,
 } from '@weasel-js/core';
 import { portsOf } from './ports';
@@ -68,7 +68,7 @@ export interface PortAffordanceOptions<TPose> {
   /** Also the chrome-caps visibility id. Default {@link PORT_LAYER_ID}. */
   id?: string;
   read?: DiagramNodeReader;
-  geometry?: PoseProjection<TPose>;
+  geometry?: PoseDescriptor<TPose>;
   /** Which participants show their ports. Default: all of them. Gate on
    *  selection or hover by reading `state`. */
   shows?: (node: DiagramNodeLike, state: ChromeState) => boolean;

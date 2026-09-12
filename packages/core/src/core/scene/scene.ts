@@ -951,6 +951,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     get nodes() { return state.nodes; },
     get roots() { return state.roots; },
     get layers() { return state.layers; },
+    registry,
 
     get(id) { return state.nodes.get(id); },
 

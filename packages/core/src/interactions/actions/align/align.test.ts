@@ -188,6 +188,7 @@ describe('useAlign', () => {
         x: dst.x + (p.x - src.x),
         y: dst.y + (p.y - src.y),
       }),
+      fromBounds: (b: RectPose) => ({ ...b }),
     };
     const out = translatePoseViaDescriptor({ x: 5, y: 6, width: 1, height: 1 }, 10, 20, geom);
     expect(out).toMatchObject({ x: 15, y: 26 });

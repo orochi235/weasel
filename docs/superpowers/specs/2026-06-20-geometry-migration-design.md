@@ -58,7 +58,7 @@ scoping factor; expose the foundation, not a half-measure), (b) is the target.
 **Open blocker, resolved first in the plan:** whether the resize action has the node's `data`
 in scope at the projection call site. Verify in `src/interactions/actions/resize/resize.ts`
 (and the move/nudge/flip equivalents) before committing to (b).
-- If `data` is reachable → implement (b): a kit data-aware `PoseProjection` that reads/writes
+- If `data` is reachable → implement (b): a kit data-aware `PoseDescriptor` that reads/writes
   `data.path` via `boxToBox`+`transformCoords` (resize), `translate` (move/nudge), and
   rotation about the AABB center (rotate), with the flip mirror across the centerline.
 - If `data` is *not* reachable without a larger refactor → implement (a) as the interim
@@ -72,7 +72,7 @@ Either way the *math* is identical and lives in the kernel; only the wiring site
 
 **Verdict: kit-level (b) is not possible with the current action signature, and (b) is the chosen direction — implemented via a new generic geometry seam.**
 
-Phase 1 proved the resize/move/nudge/flip actions operate purely on poses: `PoseProjection<TPose>` has no `data` parameter (`resize/geometry.ts:15-43`), and the action only reads `node.pose`, never the node body (`defaults/resize.ts:314,319,428`). So there is no existing seam to remap data-held geometry.
+Phase 1 proved the resize/move/nudge/flip actions operate purely on poses: `PoseDescriptor<TPose>` has no `data` parameter (`resize/geometry.ts:15-43`), and the action only reads `node.pose`, never the node body (`defaults/resize.ts:314,319,428`). So there is no existing seam to remap data-held geometry.
 
 Critically, the kit is **generic over `TData`** (`Scene<TData, TLayer, TPose>`) — it cannot reach into `data.path` directly, because `data` is consumer-defined. So (b) is **not** "thread `data.path` through the projection." (b) is: **add a generic, consumer-supplied geometry-projection seam** — a real public hook, not an internal reach — that the actions invoke.
 

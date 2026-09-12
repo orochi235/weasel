@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { remapRotatedLeaf, RECT_POSE_DESCRIPTOR } from './geometry';
-import type { ResizePose } from '../../gestures/types';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 
-const SRC: ResizePose = { x: 0, y: 0, width: 100, height: 100 };
-const leaf = (over: Partial<ResizePose & { rotation: number }> = {}) => ({
+const SRC: Bounds = { x: 0, y: 0, width: 100, height: 100 };
+const leaf = (over: Partial<Bounds & { rotation: number }> = {}) => ({
   x: 40, y: 40, width: 20, height: 10, rotation: 0, ...over,
 });
 
@@ -19,7 +19,7 @@ function footprint(p: { width: number; height: number; rotation: number }) {
 
 describe('remapRotatedLeaf', () => {
   it('matches the naive remap when the leaf is unrotated', () => {
-    const dst: ResizePose = { x: 10, y: 20, width: 200, height: 50 };
+    const dst: Bounds = { x: 10, y: 20, width: 200, height: 50 };
     const p = leaf();
     const naive = RECT_POSE_DESCRIPTOR.remapBounds(p, SRC, dst) as typeof p;
     const rotated = remapRotatedLeaf(p, SRC, dst);
@@ -31,7 +31,7 @@ describe('remapRotatedLeaf', () => {
   });
 
   it('is a plain uniform scale when the group scales uniformly', () => {
-    const dst: ResizePose = { x: 0, y: 0, width: 300, height: 300 };
+    const dst: Bounds = { x: 0, y: 0, width: 300, height: 300 };
     const p = leaf({ rotation: Math.PI / 7 });
     const out = remapRotatedLeaf(p, SRC, dst);
     expect(out.width).toBeCloseTo(60);
@@ -42,7 +42,7 @@ describe('remapRotatedLeaf', () => {
   it('grows the height, not the width, when a 90° leaf is stretched sideways', () => {
     // This is the defect: at 90° the leaf's world-x extent is its `height`,
     // so doubling the group's width must double `height`.
-    const dst: ResizePose = { x: 0, y: 0, width: 200, height: 100 };
+    const dst: Bounds = { x: 0, y: 0, width: 200, height: 100 };
     const p = leaf({ rotation: Math.PI / 2 });
     const out = remapRotatedLeaf(p, SRC, dst);
     expect(out.height).toBeCloseTo(20);
@@ -54,7 +54,7 @@ describe('remapRotatedLeaf', () => {
   });
 
   it('keeps the leaf footprint scaling with the group, axis by axis', () => {
-    const dst: ResizePose = { x: 0, y: 0, width: 200, height: 100 };
+    const dst: Bounds = { x: 0, y: 0, width: 200, height: 100 };
     const p = leaf({ rotation: Math.PI / 2 });
     const before = footprint(p);
     const after = footprint(remapRotatedLeaf(p, SRC, dst));
@@ -63,7 +63,7 @@ describe('remapRotatedLeaf', () => {
   });
 
   it('moves the centre by the group affine exactly', () => {
-    const dst: ResizePose = { x: 5, y: -10, width: 200, height: 50 };
+    const dst: Bounds = { x: 5, y: -10, width: 200, height: 50 };
     const p = leaf({ rotation: 0.7 });
     const out = remapRotatedLeaf(p, SRC, dst);
     expect(out.x + out.width / 2).toBeCloseTo(5 + 50 * 2);
@@ -72,7 +72,7 @@ describe('remapRotatedLeaf', () => {
 
   it('rotates the leaf toward the stretched axis', () => {
     // A 45° leaf in a group stretched 4:1 horizontally leans toward horizontal.
-    const dst: ResizePose = { x: 0, y: 0, width: 400, height: 100 };
+    const dst: Bounds = { x: 0, y: 0, width: 400, height: 100 };
     const p = leaf({ rotation: Math.PI / 4 });
     const out = remapRotatedLeaf(p, SRC, dst);
     expect(out.rotation).toBeLessThan(Math.PI / 4);
@@ -80,13 +80,13 @@ describe('remapRotatedLeaf', () => {
   });
 
   it('preserves fields it does not own', () => {
-    const dst: ResizePose = { x: 0, y: 0, width: 200, height: 100 };
+    const dst: Bounds = { x: 0, y: 0, width: 200, height: 100 };
     const p = { ...leaf({ rotation: 0.3 }), kind: 'rect' as const, id: 'leaf-1' };
     expect(remapRotatedLeaf(p, SRC, dst)).toMatchObject({ kind: 'rect', id: 'leaf-1' });
   });
 
   it('survives a degenerate source axis', () => {
-    const flat: ResizePose = { x: 0, y: 0, width: 0, height: 100 };
+    const flat: Bounds = { x: 0, y: 0, width: 0, height: 100 };
     const out = remapRotatedLeaf(leaf({ rotation: 0.3 }), flat, { x: 0, y: 0, width: 50, height: 100 });
     expect(Number.isFinite(out.x)).toBe(true);
     expect(Number.isFinite(out.width)).toBe(true);
@@ -100,8 +100,8 @@ describe('remapRotatedLeaf', () => {
     // perpendicular of the mapped axis is not the image of the perpendicular:
     // that gap IS the shear. It is the only thing that drifts.
     const p = leaf({ rotation: 0.4 });
-    const mid: ResizePose = { x: 0, y: 0, width: 150, height: 100 };
-    const end: ResizePose = { x: 0, y: 0, width: 300, height: 100 };
+    const mid: Bounds = { x: 0, y: 0, width: 150, height: 100 };
+    const end: Bounds = { x: 0, y: 0, width: 300, height: 100 };
     const once = remapRotatedLeaf(p, SRC, end);
     const twice = remapRotatedLeaf(remapRotatedLeaf(p, SRC, mid), mid, end);
 
@@ -115,7 +115,7 @@ describe('remapRotatedLeaf', () => {
     // from the previous preview, so the one approximate quantity is computed
     // once from the origin however many times the pointer moves.
     const p = leaf({ rotation: 0.4 });
-    const end: ResizePose = { x: 0, y: 0, width: 300, height: 100 };
+    const end: Bounds = { x: 0, y: 0, width: 300, height: 100 };
     const frames = [150, 200, 260, 300].map(
       (width) => remapRotatedLeaf(p, SRC, { x: 0, y: 0, width, height: 100 }),
     );

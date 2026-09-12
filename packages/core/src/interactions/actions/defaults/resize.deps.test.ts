@@ -1,12 +1,13 @@
 /**
- * Coverage for the four `resizePolicy` dep code paths in `resizeAction`:
+ * Coverage for the three `resizePolicy` dep code paths in `resizeAction`,
+ * plus the `poseDescriptor` dep:
  *
- *   1. `behaviors[]` — bounds-frame rewrite (test via `clampMinSize`).
- *   2. `pointSnap[]` — world-space anchor-point snap back-solve.
- *   3. `expandIds`   — group expansion of a single id into multiple leaves.
- *   4. `geometry`    — pose↔bounds projection through a non-identity
- *                       descriptor (rotation field passthrough via
- *                       `ROTATED_POSE_DESCRIPTOR`).
+ *   1. `behaviors[]`    — bounds-frame rewrite (test via `clampMinSize`).
+ *   2. `pointSnap[]`    — world-space anchor-point snap back-solve.
+ *   3. `expandIds`      — group expansion of a single id into multiple leaves.
+ *   4. `poseDescriptor` — pose↔bounds through a non-identity descriptor
+ *                         (rotation passthrough via `ROTATED_POSE_DESCRIPTOR`,
+ *                         a non-rect pose via `CIRCLE_POSE_DESCRIPTOR`).
  *
  * Mirrors the helper shape from `resize.test.ts`: a stub scene with a
  * Map-backed pose store + a hand-rolled `InvocationCtx`. Behaviors are taken
@@ -22,15 +23,16 @@ import type {
   PointSnapBehavior,
   ResizeAnchor,
   BoundsConstraint,
-  ResizePose,
   RotatedPose,
 } from '../../gestures/types';
-import type { PoseProjection } from '../resize/geometry';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
+import type { PoseDescriptor } from '../resize/geometry';
 import { ROTATED_POSE_DESCRIPTOR } from '../resize/geometry';
 import { clampMinSize } from '../resize/behaviors/clampMinSize';
 import { pointSnapToGrid } from '../resize/behaviors/pointSnapToGrid';
+import { circle, CIRCLE_POSE_DESCRIPTOR } from 'core/geometry/circlePose.fixture';
 
-type RectPose = ResizePose;
+type RectPose = Bounds;
 
 const ANCHOR_BR: ResizeAnchor = { x: 'min', y: 'min' };
 
@@ -106,11 +108,11 @@ describe('resizeAction — behaviors[] via resizePolicy dep', () => {
       start: { x: 100, y: 100 },
       deps: {
         resizePolicy: {
-          constraints: [clampMinSize<RectPose>({ minWidth: 40, minHeight: 40 })] as BoundsConstraint<ResizePose>[],
+          constraints: [clampMinSize<RectPose>({ minWidth: 40, minHeight: 40 })] as BoundsConstraint<Bounds>[],
           pointSnap: [],
           expandIds: (ids: string[]) => ids,
-          projection: { getBounds: (p) => p, remapBounds: (_p, _s, d) => d } as PoseProjection<unknown>,
         },
+        poseDescriptor: { getBounds: (p) => p, remapBounds: (_p, _s, d) => d } as PoseDescriptor<unknown>,
       },
     });
 
@@ -132,7 +134,7 @@ describe('resizeAction — behaviors[] via resizePolicy dep', () => {
   it('fires behavior onStart at gesture start', () => {
     const invoker = getOngoing(resizeAction);
     const onStart = vi_fn();
-    const behavior: BoundsConstraint<ResizePose> = { onStart };
+    const behavior: BoundsConstraint<Bounds> = { onStart };
     const ctx = makeCtx({
       selectionIds: ['a'],
       sceneNodes: { a: { pose: { x: 0, y: 0, width: 100, height: 100 } } },
@@ -143,8 +145,8 @@ describe('resizeAction — behaviors[] via resizePolicy dep', () => {
           constraints: [behavior],
           pointSnap: [],
           expandIds: (ids: string[]) => ids,
-          projection: { getBounds: (p: ResizePose) => p, remapBounds: (_p, _s, d) => d } as PoseProjection<unknown>,
         },
+        poseDescriptor: { getBounds: (p: Bounds) => p, remapBounds: (_p, _s, d) => d } as PoseDescriptor<unknown>,
       },
     });
     invoker.start(ctx, undefined);
@@ -163,8 +165,8 @@ describe('resizeAction — behaviors[] via resizePolicy dep', () => {
           constraints: [{ onEnd: () => null }],
           pointSnap: [],
           expandIds: (ids: string[]) => ids,
-          projection: { getBounds: (p: ResizePose) => p, remapBounds: (_p, _s, d) => d } as PoseProjection<unknown>,
         },
+        poseDescriptor: { getBounds: (p: Bounds) => p, remapBounds: (_p, _s, d) => d } as PoseDescriptor<unknown>,
       },
     });
     const handle = invoker.start(ctx, undefined);
@@ -195,10 +197,10 @@ describe('resizeAction — pointSnap[] via resizePolicy dep', () => {
       deps: {
         resizePolicy: {
           constraints: [],
-          pointSnap: [pointSnapToGrid({ spacing: 20 })] as PointSnapBehavior<ResizePose>[],
+          pointSnap: [pointSnapToGrid({ spacing: 20 })] as PointSnapBehavior<Bounds>[],
           expandIds: (ids: string[]) => ids,
-          projection: { getBounds: (p: ResizePose) => p, remapBounds: (_p, _s, d) => d } as PoseProjection<unknown>,
         },
+        poseDescriptor: { getBounds: (p: Bounds) => p, remapBounds: (_p, _s, d) => d } as PoseDescriptor<unknown>,
       },
     });
     const handle = invoker.start(ctx, undefined);
@@ -237,18 +239,18 @@ describe('resizeAction — expandIds via resizePolicy dep', () => {
           pointSnap: [],
           // Map group id 'g' → leaf set.
           expandIds: (ids: string[]) => ids[0] === 'g' ? ['leaf1', 'leaf2'] : ids,
-          projection: { getBounds: (p: ResizePose) => p, remapBounds: (pose: ResizePose, s: ResizePose, d: ResizePose) => {
-            const sx = s.width === 0 ? 1 : d.width / s.width;
-            const sy = s.height === 0 ? 1 : d.height / s.height;
-            return {
-              ...pose,
-              x: d.x + (pose.x - s.x) * sx,
-              y: d.y + (pose.y - s.y) * sy,
-              width: pose.width * sx,
-              height: pose.height * sy,
-            } as ResizePose;
-          } } as PoseProjection<unknown>,
         },
+        poseDescriptor: { getBounds: (p: Bounds) => p, remapBounds: (pose: Bounds, s: Bounds, d: Bounds) => {
+          const sx = s.width === 0 ? 1 : d.width / s.width;
+          const sy = s.height === 0 ? 1 : d.height / s.height;
+          return {
+            ...pose,
+            x: d.x + (pose.x - s.x) * sx,
+            y: d.y + (pose.y - s.y) * sy,
+            width: pose.width * sx,
+            height: pose.height * sy,
+          } as Bounds;
+        } } as PoseDescriptor<unknown>,
       },
     });
     const handle = invoker.start(ctx, undefined);
@@ -284,7 +286,7 @@ describe('resizeAction — expandIds via resizePolicy dep', () => {
 // 4. geometry — non-identity descriptor (rotated pose passthrough).
 // ---------------------------------------------------------------------------
 
-describe('resizeAction — geometry via resizePolicy dep', () => {
+describe('resizeAction — geometry via poseDescriptor dep', () => {
   it('uses geometry.getBounds + remapBounds when projecting poses', () => {
     const invoker = getOngoing(resizeAction);
     const initial: RotatedPose = { x: 0, y: 0, width: 100, height: 100, rotation: 0 };
@@ -298,11 +300,11 @@ describe('resizeAction — geometry via resizePolicy dep', () => {
           constraints: [],
           pointSnap: [],
           expandIds: (ids: string[]) => ids,
-          // `ROTATED_POSE_DESCRIPTOR` preserves the `rotation` field on
-          // `remapBounds` via `...p` spread; the proposed pose should still
-          // carry rotation=0 (proves the descriptor was actually consulted).
-          projection: ROTATED_POSE_DESCRIPTOR as PoseProjection<unknown>,
         },
+        // `ROTATED_POSE_DESCRIPTOR` preserves the `rotation` field on
+        // `remapBounds` via `...p` spread; the proposed pose should still
+        // carry rotation=0 (proves the descriptor was actually consulted).
+        poseDescriptor: ROTATED_POSE_DESCRIPTOR as PoseDescriptor<unknown>,
       },
     });
     const handle = invoker.start(ctx, undefined);
@@ -336,6 +338,29 @@ describe('resizeAction — geometry via resizePolicy dep', () => {
   });
 });
 
+describe('resizeAction — reads the poseDescriptor dep', () => {
+  it('resizes a circle through its descriptor', () => {
+    const invoker = getOngoing(resizeAction);
+    const ctx = makeCtx({
+      selectionIds: ['a'],
+      sceneNodes: { a: { pose: circle(50, 50, 50) } },
+      anchor: ANCHOR_BR,
+      start: { x: 100, y: 100 },
+      deps: { poseDescriptor: CIRCLE_POSE_DESCRIPTOR as never },
+    });
+    const handle = invoker.start(ctx, undefined);
+    handle.onMove!({
+      ...ctx,
+      drag: { start: { x: 100, y: 100 }, current: { x: 100, y: 100 }, delta: { x: 0, y: 0 } },
+    });
+    handle.onMove!({
+      ...ctx,
+      drag: { start: { x: 100, y: 100 }, current: { x: 200, y: 200 }, delta: { x: 100, y: 100 } },
+    });
+    expect(handle.previewPose!('a')).toEqual(circle(100, 100, 100));
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Tiny test spy — Vitest's `vi.fn()` would do this, but a local one keeps
 // the test self-contained and avoids a Vitest import widening.
@@ -355,8 +380,8 @@ function vi_fn() {
 describe('resizeAction — a rotated leaf inside a group', () => {
   /** The naive projection: what the group path used for every leaf. */
   const naiveProjection = {
-    getBounds: (p: ResizePose) => p,
-    remapBounds: (pose: ResizePose, s: ResizePose, d: ResizePose) => {
+    getBounds: (p: Bounds) => p,
+    remapBounds: (pose: Bounds, s: Bounds, d: Bounds) => {
       const sx = s.width === 0 ? 1 : d.width / s.width;
       const sy = s.height === 0 ? 1 : d.height / s.height;
       return {
@@ -365,9 +390,9 @@ describe('resizeAction — a rotated leaf inside a group', () => {
         y: d.y + (pose.y - s.y) * sy,
         width: pose.width * sx,
         height: pose.height * sy,
-      } as ResizePose;
+      } as Bounds;
     },
-  } as PoseProjection<unknown>;
+  } as PoseDescriptor<unknown>;
 
   function dragGroup(leafPose: RotatedPose, to: { x: number; y: number }) {
     const invoker = getOngoing(resizeAction);
@@ -385,8 +410,8 @@ describe('resizeAction — a rotated leaf inside a group', () => {
           constraints: [],
           pointSnap: [],
           expandIds: (ids: string[]) => (ids[0] === 'g' ? ['upright', 'turned'] : ids),
-          projection: naiveProjection,
         },
+        poseDescriptor: naiveProjection,
       },
     });
     const handle = invoker.start(ctx, undefined);

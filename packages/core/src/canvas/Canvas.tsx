@@ -70,7 +70,7 @@ import {
   type SelectionOverlayLayerOpts,
 } from 'features/selection/overlay';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
-import type { PoseProjection } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { DebugConfig, DebugSink, DebugSnapshot } from '../debug/types';
 import { parseDebugFlags } from '../debug/parseDebugFlags';
 import { createDebugSink } from '../debug/createDebugSink';
@@ -285,16 +285,15 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
 
 
   /**
-   * Pose↔bounds projection for non-rect `TPose` types. When supplied, drives
-   * the default `boundsOf` fallback and the selection-overlay bounds source so
-   * non-rect poses (e.g. `Path`) don't require per-prop overrides.
+   * How to read and rewrite a pose. Drives the default `boundsOf` fallback and
+   * the selection-overlay bounds.
    * Defaults to the rect identity (`AUTO_POSE_DESCRIPTOR`).
    *
    * This is a math helper, not a scene-shaped concern — it converts a pose
    * value to an AABB and extracts rotation for the selection chrome. Bare-
    * Canvas consumers that use a non-rect pose type should supply this.
    */
-  geometry?: PoseProjection<TPose>;
+  poseDescriptor?: PoseDescriptor<TPose>;
 
   // --- Gesture overrides (escape hatches for non-rect / group-aware apps) ---
   /**
@@ -306,7 +305,7 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   pickEvery?: (worldX: number, worldY: number) => string | string[] | null;
   /**
    * Override for committed bounds lookup. When supplied, takes precedence over
-   * the `geometry`-derived fallback. Used by the selection overlay, the
+   * the `poseDescriptor`-derived fallback. Used by the selection overlay, the
    * multi-select union AABB, and `helpersRef.getEffectiveBounds`. Optional —
    * bare-Canvas consumers that use a custom bounds shape should supply this;
    * `<SceneCanvas>` derives it from its scene adapter and passes it via the
@@ -770,7 +769,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     clientToWorld,
     paintInto,
     inputElement,
-    geometry = AUTO_POSE_DESCRIPTOR as unknown as PoseProjection<TPose>,
+    poseDescriptor: geometry = AUTO_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>,
     className,
     style,
     tabIndex = 0,
@@ -1268,7 +1267,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
         // to project with; without one the layer reads bounds off the chrome
         // state and never calls either.
         ...(cfg.poseById
-          ? { getPose: cfg.poseById, getBounds: cfg.getBounds ?? ((p: TPose) => geometry.getBounds(p)) }
+          ? { getPose: cfg.poseById, poseDescriptor: cfg.poseDescriptor ?? geometry }
           : {}),
       });
     }

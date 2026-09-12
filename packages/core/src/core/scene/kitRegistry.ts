@@ -22,6 +22,10 @@ export const UNION_OF_CHILDREN = 'kit:unionOfChildren';
  * Returns `null` for an emptied container, which falls back to its authored
  * pose — the group stays where the last member left it rather than collapsing
  * to a zero box at the origin.
+ *
+ * Reads members as rect poses. A scene whose poses are shaped otherwise
+ * registers `unionOfChildrenVia(itsDescriptor)` under {@link UNION_OF_CHILDREN};
+ * the scene layer holds no descriptor of its own.
  */
 export function unionOfChildren<TPose>(
   _node: unknown,

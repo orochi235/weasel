@@ -16,7 +16,7 @@ import {
   registerNodeShape,
   type FillStyle,
   type NodeShapeEntry,
-  type PoseProjection,
+  type PoseDescriptor,
   type Stroke,
 } from '@weasel-js/core';
 import { outlinePath } from './outline';
@@ -29,7 +29,7 @@ export interface DiagramShapeOptions<TPose> {
   /** How the trait is read. Default: the node's own `data.diagram`. */
   read?: DiagramNodeReader;
   /** Reads the box the outline is built in. Default `RECT_POSE_DESCRIPTOR`. */
-  geometry?: PoseProjection<TPose>;
+  geometry?: PoseDescriptor<TPose>;
   /** Painted when the node's data declares neither. */
   defaultFill?: FillStyle | null;
   defaultStroke?: Stroke | null;
@@ -39,7 +39,7 @@ export interface DiagramShapeOptions<TPose> {
 export function diagramShape<TPose>(
   opts: DiagramShapeOptions<TPose> = {},
 ): NodeShapeEntry<unknown, TPose> {
-  const geometry = opts.geometry ?? (RECT_POSE_DESCRIPTOR as PoseProjection<TPose>);
+  const geometry = opts.geometry ?? (RECT_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   const outlineOf = (node: { id: string; kind: 'leaf' | 'container'; data: unknown }) =>
     diagramNodeOf(node, opts.read)?.outline;
 

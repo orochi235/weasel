@@ -33,7 +33,8 @@ import type { SceneViewDrawOne } from './sceneViewRender';
 import type { DrawCommand } from '../renderer/DrawCommand';
 import type { View } from '../core/viewport/view';
 import type { Scene } from '../core/scene/types';
-import type { Bounds } from '../core/viewport/fitViewToBounds';
+import type { PoseDescriptor } from '../core/geometry/poseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from '../interactions/actions/resize/autoPoseDescriptor';
 
 /** Props for `<MinimapCanvas>`. */
 export interface MinimapCanvasProps<TData, TLayer extends string, TPose> {
@@ -65,9 +66,8 @@ export interface MinimapCanvasProps<TData, TLayer extends string, TPose> {
    *  frame if it goes there, rather than making the whole minimap rescale on
    *  every frame of a drag or a settle. */
   fit?: MinimapFit<TData, TLayer, TPose>;
-  /** Pose → AABB. Defaults to identity (`pose as Bounds`), matching
-   *  `sceneAdapter` / `useSelectTool`. */
-  poseBounds?: (pose: TPose) => Bounds;
+  /** How to read poses. Default `AUTO_POSE_DESCRIPTOR`. */
+  poseDescriptor?: PoseDescriptor<TPose>;
   /** Optional per-id alpha multiplier, mirroring `<SceneCanvas>`'s scene-slot
    *  `alphaFor`. Pass the same function the main canvas uses so a
    *  scoping-dim treatment shows up in the minimap too. */
@@ -79,8 +79,6 @@ export interface MinimapCanvasProps<TData, TLayer extends string, TPose> {
   /** Forwarded ref to the underlying `<canvas>`. */
   canvasRef?: Ref<HTMLCanvasElement>;
 }
-
-const IDENTITY_POSE_BOUNDS = (p: unknown): Bounds => p as Bounds;
 
 function MinimapCanvasInner<TData, TLayer extends string, TPose>(
   props: MinimapCanvasProps<TData, TLayer, TPose>,
@@ -95,7 +93,7 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
     drawOne,
     alphaFor,
     fit = 'scene',
-    poseBounds,
+    poseDescriptor,
     indicatorStyle,
     className,
     canvasRef,
@@ -110,14 +108,14 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
     scene.getVersion,
   );
 
-  const effectivePoseBounds = poseBounds ?? (IDENTITY_POSE_BOUNDS as (p: TPose) => Bounds);
+  const descriptor = (poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
 
   const fitView = useMemo<View>(() => {
-    return computeFitView(scene, { width, height }, fit, effectivePoseBounds);
+    return computeFitView(scene, { width, height }, fit, descriptor);
     // `sceneVersion` participates so the memo re-evaluates after scene mutations.
-    // `effectivePoseBounds` is stable when the prop is omitted.
+    // `descriptor` is stable when the prop is omitted.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, sceneVersion, width, height, fit, effectivePoseBounds]);
+  }, [scene, sceneVersion, width, height, fit, descriptor]);
 
   const indicatorCmd = useMemo<DrawCommand>(() => {
     return computeIndicatorCommand(mainView, mainViewDims, indicatorStyle);

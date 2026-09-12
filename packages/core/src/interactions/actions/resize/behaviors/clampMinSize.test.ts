@@ -3,11 +3,11 @@ import { clampMinSize } from './clampMinSize';
 import type {
   GestureContext,
   ResizeAnchor,
-  ResizePose,
   ResizeProposed,
 } from '../../../gestures/types';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 
-type P = ResizePose;
+type P = Bounds;
 
 function ctx(): GestureContext<P> {
   return {

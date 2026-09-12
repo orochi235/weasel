@@ -27,8 +27,12 @@
  */
 import type { Scene, NodeId } from 'core/scene/types';
 import { nodeMemo } from 'core/scene/nodeMemo';
-import { axisAlignedBounds } from 'core/geometry/unionBounds';
 import { pathIntersectsRect } from 'features/paths/pathHitTest';
+import {
+  visualBoundsViaDescriptor,
+  type PoseDescriptor,
+} from 'interactions/actions/resize/geometry';
+import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 import {
   pickWalk,
   scenePickSource,
@@ -61,10 +65,11 @@ export function hitTestArea(
   scene: Scene<unknown, string, unknown>,
   bounds: AABBBounds,
   opts?: ScenePickSourceOptions<unknown>,
+  descriptor: PoseDescriptor<unknown> = AUTO_POSE_DESCRIPTOR,
 ): NodeId[] {
   const { x, y, width: w, height: h } = bounds;
   const area = [x, y, x + w, y, x + w, y + h, x, y + h];
-  return hitTestAreaPolygon(scene, area, { x, y, width: w, height: h }, true, opts);
+  return hitTestAreaPolygon(scene, area, { x, y, width: w, height: h }, true, opts, descriptor);
 }
 
 /**
@@ -84,6 +89,8 @@ export function hitTestAreaPolygon(
   /** The asking view's alpha and layer accessors. A bare scene answers for
    *  itself; a view that dims or reorders layers has to supply its own. */
   opts?: ScenePickSourceOptions<unknown>,
+  /** How to read this scene's poses. Default `AUTO_POSE_DESCRIPTOR`. */
+  descriptor: PoseDescriptor<unknown> = AUTO_POSE_DESCRIPTOR,
 ): NodeId[] {
   const ab = areaBounds ?? boundsOf(area);
   if (!ab) return [];
@@ -93,7 +100,7 @@ export function hitTestAreaPolygon(
     // parent-folding instead.
     includeContainers: false,
     clipAdmits: (clip, _node, pose) =>
-      pathIntersectsRect(clip, axisAlignedBounds(aabbOfPose(pose)))
+      pathIntersectsRect(clip, visualBoundsViaDescriptor(pose, descriptor))
       && pathIntersectsRect(clip, ab),
     hits: (node, pose) => {
       // `isPathLike(pose) && pose.kind !== 'rect'` inlined: this runs per node
@@ -108,8 +115,8 @@ export function hitTestAreaPolygon(
       // spans far outside its own box, and an un-expanded fast-reject drops the
       // marquee before the silhouette test can claim it.
       const b = silhouette
-        ? nodeMemo(node as never, 'aabb', pose, () => aabbOfPose(pose))
-        : axisAlignedBounds(aabbOfPose(pose));
+        ? nodeMemo(node as never, 'aabb', pose, () => aabbOfPose(pose, descriptor))
+        : visualBoundsViaDescriptor(pose, descriptor);
       // Match the historical hitTestAABB skip: a pose without finite numeric
       // bounds (neither path-like nor a plain x/y/w/h rect) is not hit-tested.
       if (

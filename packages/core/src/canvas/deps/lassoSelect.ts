@@ -9,22 +9,27 @@ import { useDepSource } from 'interactions/actions/depRegistry';
 import type { LassoSelectDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
+import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { hitTestArea as hitTestAreaShared } from './hitTestArea';
 
 export function useLassoSelectDepSource(
   scene: Scene<unknown, string, unknown>,
   selection: SelectionApi,
+  descriptor?: PoseDescriptor<unknown>,
 ): void {
   const sceneRef = useRef(scene);
   sceneRef.current = scene;
   const selectionRef = useRef(selection);
   selectionRef.current = selection;
+  const descriptorRef = useRef(descriptor);
+  descriptorRef.current = descriptor;
 
   useDepSource('lassoSelect', (): LassoSelectDep => {
     const sc = sceneRef.current;
     const s = selectionRef.current;
+    const d = descriptorRef.current;
     return {
-      hitTestArea: (bounds) => hitTestAreaShared(sc, bounds),
+      hitTestArea: (bounds) => hitTestAreaShared(sc, bounds, undefined, d),
       getSelection: () => s.current as NodeId[],
       setSelection: (ids) => s.set(ids as NodeId[]),
     };

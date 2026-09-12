@@ -9,7 +9,7 @@
  */
 import { PathBuilder, polygonFromPoints, rectPath, type Path } from '@weasel-js/core';
 
-/** An axis-aligned box, in the shape `PoseProjection.getBounds` returns. */
+/** An axis-aligned box, in the shape `PoseDescriptor.getBounds` returns. */
 export interface Bounds {
   x: number;
   y: number;

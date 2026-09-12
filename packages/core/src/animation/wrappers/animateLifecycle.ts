@@ -1,5 +1,5 @@
 import { tweenPose } from '../poseHelpers';
-import type { PoseProjection } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { SceneAdapter } from 'core/adapters/types';
 import type { Animator, EasingSpec } from '../types';
 
@@ -14,7 +14,7 @@ export interface LifecycleAnimation<TPose> {
   exitTo?: (current: TPose) => TPose;
   ms?: number;
   easing?: EasingSpec;
-  geometry?: PoseProjection<TPose>;
+  geometry?: PoseDescriptor<TPose>;
 }
 
 /** Wrap an adapter so inserts and removals animate — the scene-graph

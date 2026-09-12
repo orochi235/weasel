@@ -1,5 +1,6 @@
 import type { Op } from 'core/ops/types';
 import type { InsertAdapter, MoveAdapter, SnapTarget } from 'core/adapters/types';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 import type { ModifierState } from 'core/modifierState';
 export type { ModifierState };
@@ -114,29 +115,21 @@ export type ResizeAnchor = {
   y: 'min' | 'max' | 'free';
 };
 
-/** Minimum rect-shaped pose required by the resize machinery. */
-export interface ResizePose {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
 /** Per-frame proposed resize: pose plus the anchor pinning the opposite corner. */
-export interface ResizeProposed<TPose extends ResizePose> {
+export interface ResizeProposed<TPose extends Bounds> {
   pose: TPose;
   anchor: ResizeAnchor;
 }
 
 /** Per-frame result a `BoundsConstraint.onMove` can return to override the proposed pose. */
-export interface ResizeMoveResult<TPose extends ResizePose> {
+export interface ResizeMoveResult<TPose extends Bounds> {
   pose?: TPose;
 }
 
 /** A bounds-frame constraint plugged into `useResize` / `resizeAction`.
  *  Reads/writes `{x,y,width,height}` and can override the proposed pose
  *  on each frame (e.g. lock-aspect, clamp-min-size, snap-to-grid). */
-export type BoundsConstraint<TPose extends ResizePose> = ActionBehavior<
+export type BoundsConstraint<TPose extends Bounds> = ActionBehavior<
   TPose,
   ResizeProposed<TPose>,
   ResizeMoveResult<TPose>
@@ -158,11 +151,7 @@ export interface ResizeOverlay<TPose> {
 
 // ----- rotate -----
 
-/** ResizePose extended with a rotation angle (radians). Pivot is the AABB
- *  center of the unrotated `{x, y, width, height}`. */
-export interface RotatedPose extends ResizePose {
-  rotation: number;
-}
+export type { RotatedPose } from 'core/geometry/poseDescriptor';
 
 /** Per-frame proposed rotation: pose plus the candidate angle in radians. */
 export interface RotateProposed<TPose> {
@@ -205,7 +194,7 @@ export interface InsertPoint {
 export interface InsertProposed<TPose> {
   start: InsertPoint;
   current: InsertPoint;
-  bounds: ResizePose;
+  bounds: Bounds;
   pose: TPose;
 }
 
@@ -230,7 +219,7 @@ export interface InsertOverlay<TPose> {
   start: InsertPoint;
   current: InsertPoint;
   /** Axis-aligned bounding rect derived from `start`/`current`. */
-  bounds: ResizePose;
+  bounds: Bounds;
   /** TPose constructed from `bounds` via the hook's `posefromBounds`. */
   pose: TPose;
 }
@@ -286,7 +275,7 @@ export type PointSnapFrame = 'dragged-corner' | 'fixed-corner' | 'center' | 'ori
  *  `draggedCorner` and `fixedCorner` are `null` for edge drags
  *  (`anchor.x === 'free'` or `anchor.y === 'free'`). `center` and
  *  `origin` are always present. */
-export interface PointSnapContext<TPose extends ResizePose> {
+export interface PointSnapContext<TPose extends Bounds> {
   draggedCorner: { worldX: number; worldY: number } | null;
   fixedCorner: { worldX: number; worldY: number } | null;
   center: { worldX: number; worldY: number };
@@ -305,7 +294,7 @@ export interface PointSnapResult {
 }
 
 /** A point-snap behavior plugged into `useResize`'s `pointSnapBehaviors`. */
-export interface PointSnapBehavior<TPose extends ResizePose> {
+export interface PointSnapBehavior<TPose extends Bounds> {
   id?: string;
   onMove(ctx: PointSnapContext<TPose>): PointSnapResult | null | undefined;
 }

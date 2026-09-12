@@ -15,7 +15,7 @@ import { createRef } from 'react';
 import { createScene } from 'core/scene/scene';
 import type { Node, Scene } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
-import type { Bounds } from 'core/viewport/fitViewToBounds';
+import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type {
   DrawCommand,
   GroupDrawCommand,
@@ -76,7 +76,7 @@ const drawOne = (node: Node<D, L, P>, pose: P, _view: View): DrawCommand[] => [{
   fill: { fill: 'solid', color: node.data.color },
 }];
 
-const identityPoseBounds = (p: P): Bounds => p;
+const identityPoseBounds = RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<P>;
 
 function pointerEvent(
   target: HTMLElement | Document,
@@ -457,7 +457,7 @@ describe('<MinimapCanvas> — pose overrides', () => {
     renderMinimap(scene);
     const fitBefore = computeFitView(
       scene, { width: 100, height: 100 }, 'scene',
-      (p: P) => ({ x: p.x, y: p.y, width: p.width, height: p.height }) as Bounds,
+      identityPoseBounds,
     );
 
     await act(async () => {
@@ -468,7 +468,7 @@ describe('<MinimapCanvas> — pose overrides', () => {
 
     const fitAfter = computeFitView(
       scene, { width: 100, height: 100 }, 'scene',
-      (p: P) => ({ x: p.x, y: p.y, width: p.width, height: p.height }) as Bounds,
+      identityPoseBounds,
     );
     expect(fitAfter).toEqual(fitBefore);
   });

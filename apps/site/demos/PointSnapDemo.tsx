@@ -13,7 +13,7 @@ import {
   ROTATED_POSE_DESCRIPTOR,
   useResizePolicy,
 } from '@weasel-js/core';
-import type { RotatedPose, PoseProjection, SceneCanvasApi } from '@weasel-js/core';
+import type { RotatedPose, PoseDescriptor, SceneCanvasApi } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 
 interface Rect extends RotatedPose {
@@ -42,12 +42,12 @@ function PointSnapDemoInner() {
   };
 
   const select = useSelectTool(adapter, { leafPicking: 'silhouette' });
-  // Resize is dispatcher-driven via the `resizePolicy` dep — see
+  // Point snapping is dispatcher-driven via the `resizePolicy` dep — see
   // `ResizePolicyBridge` below, mounted as a child of `<SceneCanvas>` so
-  // `<DepRegistryProvider>` is in scope.
+  // `<DepRegistryProvider>` is in scope. The pose shape itself comes from
+  // `<SceneCanvas poseDescriptor>`.
   function ResizePolicyBridge() {
     useResizePolicy<Rect>({
-      projection: ROTATED_POSE_DESCRIPTOR as PoseProjection<Rect>,
       pointSnap: [pointSnapToGrid({ spacing: SNAP_GRID })],
     });
     return null;
@@ -79,6 +79,7 @@ function PointSnapDemoInner() {
       className="ckd-canvas"
       scene={scene}
       selection={selection}
+      poseDescriptor={ROTATED_POSE_DESCRIPTOR as PoseDescriptor<Rect>}
       selectionMode="multi"
       tools={tools}
       layers={{

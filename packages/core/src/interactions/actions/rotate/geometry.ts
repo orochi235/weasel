@@ -1,7 +1,8 @@
-import type { ResizePose, RotatedPose } from '../../gestures/types';
+import type { RotatedPose } from '../../gestures/types';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 /** AABB center of an unrotated rect — the canonical rotation pivot. */
-export function aabbCenter(bounds: ResizePose): { x: number; y: number } {
+export function aabbCenter(bounds: Bounds): { x: number; y: number } {
   return { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
 }
 
@@ -21,7 +22,7 @@ export function rotatePoint(
 }
 
 /** Four corners of an unrotated rect, in TL/TR/BR/BL order. */
-export function rectCorners(bounds: ResizePose): { x: number; y: number }[] {
+export function rectCorners(bounds: Bounds): { x: number; y: number }[] {
   return [
     { x: bounds.x, y: bounds.y },
     { x: bounds.x + bounds.width, y: bounds.y },

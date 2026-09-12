@@ -1,8 +1,8 @@
 import type {
   ModifierState,
   BoundsConstraint,
-  ResizePose,
 } from '../../../gestures/types';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 type ModKey = keyof ModifierState;
 
@@ -27,7 +27,7 @@ type ModKey = keyof ModifierState;
  *  anchoring at the origin's top edge (`y` stays at `origin.y`). Symmetric
  *  for `n` / `s`.
  */
-export function lockAspectWithModifier<TPose extends ResizePose>(opts: {
+export function lockAspectWithModifier<TPose extends Bounds>(opts: {
   key?: ModKey;
 } = {}): BoundsConstraint<TPose> {
   const { key = 'shift' } = opts;
@@ -35,7 +35,7 @@ export function lockAspectWithModifier<TPose extends ResizePose>(opts: {
   return {
     onMove(ctx, { pose, anchor }) {
       if (!ctx.modifiers[key]) return;
-      const origin = ctx.origin.get(ctx.draggedIds[0]) as ResizePose | undefined;
+      const origin = ctx.origin.get(ctx.draggedIds[0]) as Bounds | undefined;
       if (!origin) return;
       if (origin.width === 0 || origin.height === 0) return;
       const ratio = origin.width / origin.height; // w / h

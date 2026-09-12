@@ -33,7 +33,7 @@ into view.
 | File | Role |
 | --- | --- |
 | `derive.ts` | `deriveAlignmentGuides` — candidate lines from sibling AABBs plus an optional page box. Each box contributes up to 3 guides per axis (two edges + center); overlapping offsets collapse to one candidate, first writer wins for a stable id. |
-| `match.ts` | `matchAlignment` — which candidate the dragged bounds is close enough to. `MOVE_ANCHORS`, `RECT_ALIGN_PROJECTION`. |
+| `match.ts` | `matchAlignment` — which candidate the dragged bounds is close enough to. `MOVE_ANCHORS`. Poses are read through the caller's `poseDescriptor`. |
 | `behaviors.ts` | `alignMoveBehavior` / `alignInsertBehavior` / `alignResizeBehavior` — plugs the above into the move / insert / resize gestures. |
 
 Because both halves produce `Guide`s, `createGuidesLayer` draws user-placed and

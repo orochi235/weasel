@@ -1,5 +1,5 @@
 /**
- * Geometry contract test — apps/draw mirror (Spec 1 §4 / Spec 2 — RED gate).
+ * Geometry contract test — apps/draw mirror.
  *
  * Where the kit-level mirror (`src/interactions/actions/__tests__/
  * geometryContract.test.ts`) drives the action descriptors directly, this
@@ -11,14 +11,12 @@
  *   - geometry lives in `WeaselDrawData.path` (`App.tsx:118`).
  *   - the SceneCanvas geometry source is `pathInWorld(data.path, node.pose)`
  *     (`App.tsx:939-940`).
- *   - apps/draw wires NO `resizePolicy`/`projection` on `<SceneCanvas>`
- *     (`App.tsx:1401`), so resize falls back to the kit's `AUTO_POSE_DESCRIPTOR`
- *     — which, because the pose has no `kind`, takes the RECT branch and scales
- *     the pose AABB without touching `data.path`. That is the anchor bug.
+ *   - apps/draw wires NO `poseDescriptor` on `<SceneCanvas>` (`App.tsx:1401`),
+ *     so the actions read the kit's `AUTO_POSE_DESCRIPTOR` — which, because the
+ *     pose has no `kind`, takes the rect branch and rewrites the pose AABB.
  *
- * EXPECTED RED for polygon-content nodes under resize (and flip-x for
- * asymmetric shapes). Turns green when Spec 2's data-aware projection lands.
- * Do NOT weaken assertions; do NOT implement the fix.
+ * Each case asserts the content follows the frame: resize, move and rotate map
+ * `pathInWorld(data.path, pose)` the same way they map the pose itself.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -144,9 +142,8 @@ function ongoing(action: Action): OngoingInvoker {
 }
 
 function baseDeps(scene: StubScene, id: string) {
-  // NOTE: no `resizePolicy` dep — matches apps/draw's <SceneCanvas> wiring
-  // (App.tsx:1401 supplies no projection). The action falls back to
-  // AUTO_POSE_DESCRIPTOR → RECT branch for the kind-less WeaselDrawPose.
+  // No `poseDescriptor` dep, matching apps/draw's <SceneCanvas> (App.tsx:1401):
+  // the actions fall back to AUTO_POSE_DESCRIPTOR's rect branch.
   return {
     selection: { get: () => [id] },
     scene,

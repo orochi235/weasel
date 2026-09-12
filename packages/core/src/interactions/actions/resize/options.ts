@@ -8,19 +8,17 @@
 import type {
   PointSnapBehavior,
   BoundsConstraint,
-  ResizePose,
 } from '../../gestures/types';
-import type { PoseProjection } from './geometry';
 import type { DebugSink } from '../../../debug/types';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 
-/** Options for the `resize` action: how the pose projects to and from a
- *  bounding box, and the constraints applied to that box during the drag. */
+/** Options for the `resize` action: the constraints applied to the dragged
+ *  bounding box, and how a gesture expands a group into its leaves. */
 export interface UseResizeOptions<TPose> {
-  /** Behaviors are rect-typed: they read/write `{x,y,width,height}`. When
-   *  `TPose` is non-rect, pass `geometry` to project pose↔bounds; behaviors
-   *  in that case are typed `never` because none in the kit's library would
-   *  understand the pose shape. */
-  behaviors?: TPose extends ResizePose ? BoundsConstraint<TPose>[] : never;
+  /** Behaviors are rect-typed: they read/write `{x,y,width,height}`. For a
+   *  non-rect `TPose`, constraints are typed `never`; the pose descriptor
+   *  comes from `<SceneCanvas poseDescriptor>`. */
+  behaviors?: TPose extends Bounds ? BoundsConstraint<TPose>[] : never;
   resizeLabel?: string;
   /** Reserved; resize is never transient in practice. Ignored. */
   transient?: boolean;
@@ -40,16 +38,12 @@ export interface UseResizeOptions<TPose> {
    *
    *  Called once at `start()`. Returning `[]` aborts the gesture cleanly. */
   expandIds?: (ids: string[]) => string[];
-  /** Projection from `TPose` to bounds and back. Defaults to rect identity
-   *  when `TPose extends ResizePose`. Required for non-rect TPose (Path,
-   *  polygon, etc.). */
-  geometry?: PoseProjection<TPose>;
   /** Behaviors that operate on world-space anchor points. Fire after
    *  `behaviors[]` (bounds-frame). Each behavior receives a `PointSnapContext`
    *  with world-space frame points and returns at most one `PointSnapResult`;
    *  the hook back-solves the local pose so the chosen frame's world point
    *  lands on the snap target. First non-null result wins. */
-  pointSnapBehaviors?: TPose extends ResizePose ? PointSnapBehavior<TPose>[] : never;
+  pointSnapBehaviors?: TPose extends Bounds ? PointSnapBehavior<TPose>[] : never;
   /** Optional debug sink. When supplied, records corner-handle positions +
    *  circular hitboxes when the gesture starts (covers the on-screen
    *  handles for the resized target). Tree-shakes via optional-chain

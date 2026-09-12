@@ -32,7 +32,8 @@
 import { useCallback, useRef, useState } from 'react';
 import { useDepSource } from 'interactions/actions/depRegistry';
 import type { EditAnchorsDep } from 'interactions/actions/depSchema';
-import type { Scene, NodeId } from 'core/scene/types';
+import type { Scene, NodeId, RectPose } from 'core/scene/types';
+import { isRectPose } from 'interactions/actions/resize/autoPoseDescriptor';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Path, PolygonPath } from 'features/paths/types';
 import { pathInWorld, worldEditToStorage } from 'features/paths/pathInWorld';
@@ -81,21 +82,19 @@ export interface EditAnchorsDepOptions {
   anchorEditingAllowed?: () => boolean;
 }
 
-interface RectPoseShape { x: number; y: number; width: number; height: number }
-
 /** Resolve where a node's editable polygon lives. Returns null when the
  *  node has neither a polygon pose nor a polygon on `data.path`. */
 function classifyStorage(
   node: { pose: unknown; data: unknown } | undefined | null,
-): { kind: 'pose' } | { kind: 'data'; pose: RectPoseShape; data: { path: PolygonPath } } | null {
+): { kind: 'pose' } | { kind: 'data'; pose: RectPose; data: { path: PolygonPath } } | null {
   if (!node) return null;
   const pose = node.pose as { kind?: string } | undefined;
   if (pose?.kind === 'polygon') return { kind: 'pose' };
   const data = node.data as { path?: Path } | null;
-  if (data?.path && (data.path as { kind?: string }).kind === 'polygon') {
+  if (data?.path && (data.path as { kind?: string }).kind === 'polygon' && isRectPose(node.pose)) {
     return {
       kind: 'data',
-      pose: node.pose as RectPoseShape,
+      pose: node.pose,
       data: data as { path: PolygonPath },
     };
   }

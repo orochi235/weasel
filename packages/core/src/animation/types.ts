@@ -343,7 +343,7 @@ export interface StaggerSpringPoseOptions<TPose> {
   stiffness?: number;
   damping?: number;
   mass?: number;
-  geometry?: import('interactions/actions/resize/geometry').PoseProjection<TPose>;
+  geometry?: import('interactions/actions/resize/geometry').PoseDescriptor<TPose>;
   recordOp?: boolean;
   opLabel?: string;
 }

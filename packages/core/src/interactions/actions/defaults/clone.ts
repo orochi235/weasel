@@ -32,9 +32,7 @@
  *
  * ## Pose generics
  *
- * Poses are translated using the same `{x, y, ...}` generic spread as
- * `moveAction`. Non-rect poses with custom layout (e.g. paths) should register
- * a custom clone action with a typed geometry dep.
+ * Poses are translated through the `poseDescriptor` dep, as `moveAction` does.
  */
 
 import type { Action } from '../registry';
@@ -45,20 +43,8 @@ import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { freshNodeId } from './freshNodeId';
-
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
-
-/** Translate a rect-shaped pose by (dx, dy). */
-function translatePose(pose: unknown, dx: number, dy: number): unknown {
-  const p = pose as Record<string, unknown>;
-  return {
-    ...p,
-    x: ((p['x'] as number) ?? 0) + dx,
-    y: ((p['y'] as number) ?? 0) + dy,
-  };
-}
+import { poseDescriptorOf } from '../poseDescriptorDep';
+import { translatePoseViaDescriptor, type PoseDescriptor } from '../resize/geometry';
 
 // ---------------------------------------------------------------------------
 // Internal scratch
@@ -67,6 +53,7 @@ function translatePose(pose: unknown, dx: number, dy: number): unknown {
 interface CloneScratch {
   ids: NodeId[];
   scene: Scene<unknown, string, unknown>;
+  descriptor: PoseDescriptor<unknown>;
   /** Origin poses captured at drag start. */
   originPoses: Map<NodeId, unknown>;
   /** Running drag delta — updated each onMove, applied once at commit. */
@@ -108,7 +95,7 @@ export const cloneAction: Action & { requires: string[] } = {
   cursor: 'copy',
   activeCursor: 'copy',
   eligible: { capability: ['edits-page', 'creates-selection'] },
-  requires: ['selection', 'scene', 'applyOps'],
+  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {
@@ -133,6 +120,7 @@ export const cloneAction: Action & { requires: string[] } = {
       const scratch: CloneScratch = {
         ids,
         scene,
+        descriptor: poseDescriptorOf(ctx.deps.poseDescriptor),
         originPoses,
         currentDelta: { dx: 0, dy: 0 },
         previews: new Map<NodeId, unknown>(),
@@ -159,7 +147,7 @@ export const cloneAction: Action & { requires: string[] } = {
           const { dx, dy } = scratch.currentDelta;
           if (dx === 0 && dy === 0) return;
           for (const [id, origin] of scratch.originPoses) {
-            scratch.previews.set(id, translatePose(origin, dx, dy));
+            scratch.previews.set(id, translatePoseViaDescriptor(origin, dx, dy, scratch.descriptor));
           }
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
@@ -186,7 +174,7 @@ export const cloneAction: Action & { requires: string[] } = {
             const origin = scratch.originPoses.get(id);
             const originNode = scratch.scene.get(id);
             if (origin === undefined || !originNode) continue;
-            const newPose = translatePose(origin, dx, dy);
+            const newPose = translatePoseViaDescriptor(origin, dx, dy, scratch.descriptor);
             // The old `scene.add` (no explicit id) minted a random id; we
             // pre-generate one so the insert op carries a full node. Id value
             // was never observable, so behavior is preserved.
