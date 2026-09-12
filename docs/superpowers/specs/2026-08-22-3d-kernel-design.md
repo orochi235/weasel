@@ -2,8 +2,8 @@
 
 Direction doc for a weasel maintainer deciding how 3D would enter the project.
 It answers one question: **where does the boundary go?** — and phases the work
-behind it. It is not an implementation plan. Phase 1 is built, Phase 0 is
-designed, and Phase 2 is unscheduled.
+behind it. It is not an implementation plan. Phases 0 and 1 are built; Phase 2
+is unscheduled, and a lab is being built to settle its open questions.
 
 The constraint that shapes every choice below: **2D DX must not get worse.**
 That rules out the two obvious options and picks a third.
@@ -51,14 +51,18 @@ top-level `x`/`y` used to take `NaN` when dragged into a container.
 `ToolCtx` was not part of it: since tools became bindings only, its sole reader
 is the function form of `Tool.cursor`, and the tool files carry no geometry.
 
-**Phase 1 — labkit `surface?` capability.** Built, as labkit's shared tiled
-surface (`packages/labkit/src/surface/`, `useTiledSurface`). Independent of Phase 0, and the
-phase that unblocks real 3D labs *without any 3D kernel at all*. labkit's
-`Instrument` is already a capability declaration (`canvas?`, `layers?`,
-`dragDrop?`, `undo?`). Add a third viewport backend alongside `canvas?`
-(imperative 2D) and `scene?` (weasel `SceneCanvas`): `surface?`, where the
-instrument owns the GL context and labkit supplies rect, DPR, dirty-marking,
-and scheduling. One `Workspace`, one set of chrome, three backends.
+**Phase 1 — labkit's shared tiled surface. Built.** `packages/labkit/src/surface/`:
+`useTiledSurface` for the host that owns the renderer, `useSurfaceTile` for each
+pane that wants a rect on it. The instrument owns the GL context; labkit supplies
+rect, DPR, dirty-marking and one `useVisibleRaf`. Independent of Phase 0, and the
+phase that unblocks real 3D labs *without any 3D kernel at all*.
+
+It is reached by hooks, not by a declared capability. An earlier draft of this
+doc called it a `surface?` capability sitting beside `canvas?` and `scene?` —
+neither exists. `Instrument` declares `canvas`, `layers`, `dragDrop`, `undo`,
+`tools`, `annotations`, `loupe`, `chrome` and `job`; a surface tenant calls the
+hooks from inside `render`, and a host that wants to own the buffer mounts
+`useTiledSurface` above `<Lab>`, which then mounts none of its own.
 
 This is what klieg's tube lab needs — sixteen panels from one `WebGLRenderer`
 with scissor rects and `preserveDrawingBuffer`, because sixteen canvases would
@@ -78,6 +82,14 @@ box. World coordinates enter as `{x, y}` or flat scalars in `InvocationCtx`
 in the pick functions, and in `@weasel-js/gestures`' pointer and click events.
 In 3D a pointer is a ray, so what replaces the world point is decided with the
 picking design, not ahead of it.
+
+The working hypothesis, being tested by the 3D lab
+(`docs/superpowers/specs/2026-09-12-3d-lab-design.md`): nothing replaces it.
+`useGestureDispatcher` takes a `clientToWorld` hook, and `<SceneCanvas>` passes
+a function that inverts the 2D view transform. A 3D host passes identity, so
+`ctx.world` carries the screen point, and each dep rebuilds the ray from the
+camera it already closes over. If that holds, `InvocationCtx` needs no point
+type parameter at all and the prerequisite shrinks to the deps.
 The open build-vs-adopt question is whether the renderer is bespoke or three.js
 wearing a weasel-shaped adapter — the labs that motivated this are already on
 three.js, which argues for adopt.
@@ -142,18 +154,85 @@ painters bypass all of them by reading `x`/`y`/`width`/`height` directly.
 Phase 0 fixes this.
 
 **Coordinates are 2D across the action pipeline.** See Phase 2's prerequisite.
-`Bounds` (`{x, y, width, height, rotation?}`) is part of this, but smaller than
-first counted: 29 non-test files, all in core.
+`Bounds` (`{x, y, width, height, rotation?}`) is part of this, and larger than
+an earlier count in this doc claimed: 70 non-test files reference it, 52 of them
+in core, and 49 import it as a type.
 
-## Open questions
+## What the 3D lab found (2026-09-12)
 
-**Does selection/overlay chrome transfer?** Handles are screen-space in both
-kernels, so the overlay may port further than expected. Untested.
+`packages/labkit/examples/3d-lab` runs a WebGL viewport on core's dispatcher,
+actions and select tool. Orbit, ray-pick, select, move across the ground plane,
+drag-to-insert and undo all work, and **core took no diff**. What follows is
+measured, not argued.
 
-**Does the 3D kernel reuse core's dispatcher?** Binding-to-action routing and
-`InvocationCtx` live in core. Reusing them means Phase 2's prerequisite changes
-core in service of 3D, which the non-goal below rules out; the alternative is a
-3D dispatcher that reuses only the gesture grammar.
+**The world point needs no replacement.** This was the question Phase 2 was
+parked behind, and the answer is that nothing changes shape. `useGestureDispatcher`
+takes a `clientToWorld` hook; the lab passes identity, so `ctx.world` carries the
+screen point, and each dep rebuilds the ray from the camera it already closes
+over. Picking, marquee, insert and move are all driven by two numbers. There is
+no `Ray` in `InvocationCtx` and no point type parameter.
+
+**`Scene` really is dimension-neutral.** It holds `Pose3` — position, quaternion,
+scale — and `setPose` plus undo round-trip it. Previously audited, now run.
+
+**`InsertDep.commit(bounds, extras)` survives.** A screen rectangle plus a ground
+plane determines a box: the depth the 2D contract cannot express comes from the
+scene, not the caller.
+
+**`PoseDescriptor` half-fits.** Read `Bounds` as the screen box a solid covers and
+`getBounds` and `intersectsRect` work — that is what drives the lab's chrome, and it
+tracks the camera through an orbit. Two things do not. `remapBounds` and
+`fromBounds` run the other way, and a screen rectangle does not name a 3D pose
+without a depth, so the lab throws rather than guess. And the descriptor is handed
+a *pose*, never the node, so it cannot tell a sphere from a box and bounds
+everything as a box.
+
+**`ViewApi` is the one real dead end.** Pan and scale with no orientation; an orbit
+camera does not fit. The lab declares a `camera3d` dep of its own by augmenting
+`DepSchema`. This is the viewport-tool exception this doc predicted, and it stayed
+the only one.
+
+**Chrome transfers as geometry, not as paint.** The projected-AABB math is right and
+the outline tracks the camera. But labkit's shared buffer is `z-index: 1` — above
+the instrument's DOM — so an opaque 3D tile buries anything drawn in the pane, and
+the lab paints its own outline in GL. Whether core's overlay *code* ports is still
+untested.
+
+### Three things that cost the most time, none of them about dimensions
+
+**Mounting tools outside `<SceneCanvas>` is a registration contract nobody states.**
+A tool's own actions ride on its definition and something has to register them;
+`select.pick` is additionally gated on `eligible: { capability: 'creates-selection' }`,
+which resolves through the `activeTool` dep. Miss either and clicks select nothing,
+with no error — the actions are simply never eligible.
+
+**`classifyTarget` is called in two different coordinate spaces.** Its option is
+documented as taking a world point. `useGestureDispatcher.tsx` passes `screenPoint`
+at :757, :1091 and :1352 and `worldPoint` at :806. A 2D canvas at identity view
+cannot tell the difference, which is why this has survived; with pan or zoom it
+misclassifies the press. In the lab it classified every press as empty canvas, so
+`clearSelection` fired immediately after `select.pick` and wiped the selection that
+had just been made. The lab works around it by keeping one space end to end.
+
+**`Scene` owns a `History` and exposes no handle to it.** `undo()` and `redo()` are
+on the scene, but the kit's `undo`/`redo` *actions* want the `history` dep, and a
+consumer has nothing to give them.
+
+### What this says about the fork
+
+The routing layer never fought. Every failure above was a dep contract, a
+registration step, or a coordinate-space bug — not binding-to-action routing, and
+not `InvocationCtx`. That is the case for extracting routing into a package beside
+`gestures` and `history` rather than giving a 3D kernel its own dispatcher, and it
+puts the seam at `depSchema.ts`: the mechanism is portable, the schema is 2D.
+
+## Still open
+
+**Does core's selection overlay port?** The lab answered the geometry and not the
+painting.
+
+**Bespoke or three.js.** Untouched. The lab wrote its own picking to learn what a
+kernel would owe, and that debt turns out to be small.
 
 ## Non-goals
 

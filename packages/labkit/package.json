@@ -107,7 +107,8 @@
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",
     "dev:schema": "LABKIT_EXAMPLE=schema-lab vite",
-    "dev:annotate": "LABKIT_EXAMPLE=annotate-lab vite"
+    "dev:annotate": "LABKIT_EXAMPLE=annotate-lab vite",
+    "dev:3d": "LABKIT_EXAMPLE=3d-lab vite"
   },
   "peerDependencies": {
     "@weasel-js/core": "1.4.4",
