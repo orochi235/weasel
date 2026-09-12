@@ -43,6 +43,9 @@ export interface ChromeBox {
 }
 
 export interface Renderer3d {
+  /** Erase the whole shared buffer, gutters included. The surface calls this
+   *  through `registerClear` when the tile geometry changed. */
+  clearAll(width: number, height: number): void;
   draw(
     solids: readonly SolidDraw[],
     camera: Camera3d,
@@ -50,7 +53,6 @@ export interface Renderer3d {
     chrome: readonly ChromeBox[],
     cssSize: { width: number; height: number },
   ): void;
-  clearAll(width: number, height: number): void;
   dispose(): void;
 }
 
@@ -260,11 +262,6 @@ export function createRenderer3d(gl: WebGL2RenderingContext): Renderer3d {
   };
 
   return {
-    /**
-     * Gutters sit outside every tile's scissor, so a surface whose tile set
-     * changed keeps whatever was last drawn there until something clears the
-     * whole buffer. That is this.
-     */
     clearAll(width, height) {
       gl.disable(gl.SCISSOR_TEST);
       gl.viewport(0, 0, width, height);

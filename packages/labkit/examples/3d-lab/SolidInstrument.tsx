@@ -120,6 +120,10 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     const renderer = createRenderer3d(gl);
     rendererRef.current = renderer;
 
+    const unregisterClear = surface.registerClear(tileId, (size, dpr) => {
+      renderer.clearAll(Math.round(size.width * dpr), Math.round(size.height * dpr));
+    });
+
     const unregister = surface.registerPainter(tileId, (rect, frame) => {
       sizeRef.current = { width: rect.w, height: rect.h };
       const paneRect = paneRef.current?.getBoundingClientRect();
@@ -183,6 +187,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
 
     return () => {
       unregister();
+      unregisterClear();
       renderer.dispose();
       rendererRef.current = null;
     };

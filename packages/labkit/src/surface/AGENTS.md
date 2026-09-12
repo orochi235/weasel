@@ -15,7 +15,7 @@ than a few 3D tiles have to share one surface.
 | `rect.ts` | The `Rect` and `Box` types |
 | `composeRects.ts` | Tile boxes into surface-relative rects; both are viewport-relative, so it is a subtraction |
 | `deviceRect.ts` | `toDeviceRect` — y-flip and device-grid snapping for a GL viewport |
-| `useTiledSurface.ts` | ResizeObserver, dirty set, rAF coalescing, DPR |
+| `useTiledSurface.ts` | ResizeObserver, dirty set, rAF coalescing, DPR, re-tile clears |
 | `SurfaceContext.ts` | Carries the handle down |
 | `useSurfaceTile.ts` | `useSurfaceTile(id)`, `useTileId(id)`, `useSurface()`, `useSurfaceOptional()` |
 
@@ -38,7 +38,9 @@ const surface = useTiledSurface({
 
 `onFrame` carries **every** tile's rect, not only the dirty ones — a scissored
 draw has to know where it is drawing relative to a surface that may have resized
-under it.
+under it. It runs before this frame's painters, and what it invalidates paints
+in the same frame: a buffer the owner just resized is blank, and every tile owes
+a repaint.
 
 ## A tile id is scoped to its trial
 
@@ -61,8 +63,17 @@ one contributes a single rect, and a trial with nothing to draw contributes none
 - **`preserveDrawingBuffer` is the consumer's job and is usually required.** A
   partial redraw touches one tile; without it the default framebuffer's contents
   are undefined after the page composites, and every other tile goes black.
-- **Gutters lie outside every scissor.** Clear the whole surface when the tile set
-  changes, or a re-tile strands the old tiles' pixels between the new ones.
+- **Gutters lie outside every scissor**, so a tile that moves leaves its old
+  picture where nothing will paint over it — a cloned trial strands the whole
+  previous layout in the gap. Register a `registerClear(id, fn)` beside the
+  painter: every registered clear runs, before any painter, on a frame where
+  `frame.retiled` is true. A tenant must not clear from its own painter, because
+  tenants paint in sequence and the second would wipe the first.
+- **The owner cannot clear for you.** labkit owns the canvas, never the context,
+  and `canvas.width = <its own value>` resizes nothing, so it clears nothing —
+  the DOM trick that resets a 2D canvas is a no-op here. Only the context that
+  drew the pixels can erase them, which is why the clear is a tenant's to
+  register.
 - **A tile that moves without resizing** is already handled: `Workspace`
   invalidates rects off the grid's own `node.placementChanged`. A host that moves
   something the grid does not know about calls `invalidateRects()` itself.

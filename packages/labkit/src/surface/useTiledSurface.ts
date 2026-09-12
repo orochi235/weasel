@@ -14,6 +14,11 @@ export interface SurfaceFrame {
   rects: ReadonlyMap<string, Rect>;
   dpr: number;
   size: { width: number; height: number };
+  /** The tile geometry changed this frame — a tile moved, resized, appeared or
+   *  went away, or the dpr did. Every tile is dirty on such a frame, but the
+   *  pixels a tile vacated are in no tile's scissor now, so the owner clears
+   *  the whole buffer. `<Lab>` does; a host owning its own surface must too. */
+  retiled: boolean;
 }
 
 /** The invalidators and the two ref callbacks that publish geometry. */
@@ -26,6 +31,12 @@ export interface SurfaceHandle {
    *  moved something a ResizeObserver cannot see. */
   invalidateRects: () => void;
   registerTile: (id: string, el: HTMLElement | null) => void;
+  /** Register a tenant's whole-buffer clear. Every one registered runs, before
+   *  any painter, on a frame where the tile geometry changed — the pixels a
+   *  tile vacated are in no scissor now, and only the context that drew them
+   *  can erase them. Backend-agnostic by necessity: labkit owns the canvas,
+   *  never the context. */
+  registerClear: (id: string, clear: SurfaceClear) => () => void;
   /** Subscribe a tile to the frames it is dirty on. A tile paints on its own
    *  loop, so this is how the surface wakes one: a resize of the shared buffer
    *  clears every tile, not only the one that moved. */
@@ -40,6 +51,10 @@ export interface SurfaceHandle {
  *  frame that dirtied it. */
 export type TilePainter = (rect: Rect, frame: SurfaceFrame) => void;
 
+/** Erase the whole shared buffer. Device pixels, because that is what a GL
+ *  viewport takes. */
+export type SurfaceClear = (size: { width: number; height: number }, dpr: number) => void;
+
 export interface UseTiledSurfaceOptions {
   onFrame: (frame: SurfaceFrame) => void;
 }
@@ -50,6 +65,7 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
   const rects = useRef(new Map<string, Rect>());
   const dirty = useRef(new Set<string>());
   const painters = useRef(new Map<string, TilePainter>());
+  const clears = useRef(new Map<string, SurfaceClear>());
   const needsMeasure = useRef(true);
   const observer = useRef<ResizeObserver | null>(null);
   const lastDpr = useRef(0);
@@ -80,13 +96,18 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
         dirty.current.clear();
         return;
       }
+      let retiled = false;
       if (needsMeasure.current) {
         needsMeasure.current = false;
-        if (measure()) for (const id of rects.current.keys()) dirty.current.add(id);
+        if (measure()) {
+          retiled = true;
+          for (const id of rects.current.keys()) dirty.current.add(id);
+        }
       }
       const dpr = globalThis.devicePixelRatio ?? 1;
       if (dpr !== lastDpr.current) {
         lastDpr.current = dpr;
+        retiled = true;
         for (const id of rects.current.keys()) dirty.current.add(id);
       }
       if (dirty.current.size === 0) return;
@@ -96,14 +117,27 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
         rects: new Map(rects.current),
         dpr,
         size: { width: box.width, height: box.height },
+        retiled,
       };
-      onFrameRef.current(frame);
-      // After the owner, which is what resized the buffer this frame.
-      for (const id of frame.dirty) {
-        const rect = frame.rects.get(id);
-        if (rect) painters.current.get(id)?.(rect, frame);
-      }
+      // Cleared before the owner runs, not after the painters: sizing the
+      // buffer blanks every tile, so the owner answers with `invalidateAll`,
+      // and a set cleared at the end of the frame would swallow it.
       dirty.current.clear();
+      onFrameRef.current(frame);
+      // After the owner sized the buffer, before anything paints into it.
+      if (retiled) {
+        for (const clear of clears.current.values()) clear(frame.size, dpr);
+      }
+      // After the owner, which is what resized the buffer this frame — and
+      // whatever it just dirtied paints now rather than a frame later.
+      const painting = new Set(frame.dirty);
+      for (const id of dirty.current) painting.add(id);
+      dirty.current.clear();
+      const paintFrame: SurfaceFrame = { ...frame, dirty: painting };
+      for (const id of painting) {
+        const rect = frame.rects.get(id);
+        if (rect) painters.current.get(id)?.(rect, paintFrame);
+      }
     },
     // The host attaches its container through `containerRef`, which may land
     // well after this hook's first effect; the gate re-resolves it per request.
@@ -151,6 +185,13 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
     [schedule],
   );
 
+  const registerClear = useCallback((id: string, clear: SurfaceClear) => {
+    clears.current.set(id, clear);
+    return () => {
+      if (clears.current.get(id) === clear) clears.current.delete(id);
+    };
+  }, []);
+
   const registerPainter = useCallback((id: string, paint: TilePainter) => {
     painters.current.set(id, paint);
     return () => {
@@ -192,6 +233,7 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
     invalidateAll,
     invalidateRects,
     registerTile,
+    registerClear,
     registerPainter,
     containerRef,
     getContainer,

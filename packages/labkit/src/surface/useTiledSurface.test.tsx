@@ -286,4 +286,144 @@ describe('useTiledSurface', () => {
     flushFrames();
     expect(paint).toHaveBeenCalledTimes(1);
   });
+
+  /**
+   * The surface owner resizes the shared buffer from inside `onFrame`, which
+   * costs every tile its pixels. Both tests below are about the two ways that
+   * loss goes unrepaired.
+   */
+  describe('when the buffer loses its contents', () => {
+    it('keeps an invalidation the owner makes from inside onFrame', () => {
+      let handle: SurfaceHandle | null = null;
+      let claimAll = false;
+      function Owner() {
+        const surface = useTiledSurface({
+          onFrame: () => {
+            if (!claimAll) return;
+            claimAll = false;
+            // What `Lab` does after sizing the canvas: the buffer is blank, so
+            // every tile owes a repaint, not only the one that moved.
+            surface.invalidateAll();
+          },
+        });
+        handle = surface;
+        return (
+          <div
+            ref={(el) => {
+              if (!el) return;
+              stubBox(el, 0, 0, 800, 600);
+              surface.containerRef(el);
+            }}
+          >
+            <div ref={(el) => { if (!el) return; stubBox(el, 0, 0, 400, 600); surface.registerTile('a', el); }} />
+            <div ref={(el) => { if (!el) return; stubBox(el, 400, 0, 400, 600); surface.registerTile('b', el); }} />
+          </div>
+        );
+      }
+      render(<Owner />);
+      flushFrames();
+
+      const paintA = vi.fn();
+      act(() => {
+        handle?.registerPainter('a', paintA);
+        handle?.registerPainter('b', vi.fn());
+      });
+      flushFrames();
+      paintA.mockClear();
+
+      // Only b is dirty; the owner resizes the buffer during the frame, which
+      // blanks a as well.
+      claimAll = true;
+      act(() => handle?.invalidate('b'));
+      flushFrames();
+      flushFrames();
+
+      expect(paintA).toHaveBeenCalled();
+    });
+
+    it('tells the owner when the tile geometry changed, so it can clear', () => {
+      const frames: SurfaceFrame[] = [];
+      let handle: SurfaceHandle | null = null;
+      const { getByTestId } = render(
+        <Harness frames={frames} onHandle={(h) => { handle = h; }} />,
+      );
+      flushFrames();
+      frames.length = 0;
+
+      // A plain repaint leaves every tile where it was.
+      act(() => handle?.invalidate('a'));
+      flushFrames();
+      expect(frames[0]?.retiled).toBe(false);
+      frames.length = 0;
+
+      // A tile moving strands its old pixels in the gutter; nothing but the
+      // owner can clear those, and this is how it hears about it.
+      stubBox(getByTestId('b'), 300, 0, 400, 600);
+      act(() => handle?.invalidateRects());
+      flushFrames();
+      expect(frames[0]?.retiled).toBe(true);
+    });
+
+    it('runs every registered clear before any painter, and only on a re-tile', () => {
+      const frames: SurfaceFrame[] = [];
+      let handle: SurfaceHandle | null = null;
+      const { getByTestId } = render(
+        <Harness frames={frames} onHandle={(h) => { handle = h; }} />,
+      );
+      flushFrames();
+
+      const order: string[] = [];
+      const clearA = vi.fn(() => order.push('clearA'));
+      const clearB = vi.fn(() => order.push('clearB'));
+      act(() => {
+        handle?.registerClear('a', clearA);
+        handle?.registerClear('b', clearB);
+        handle?.registerPainter('a', () => order.push('paintA'));
+        handle?.registerPainter('b', () => order.push('paintB'));
+      });
+      flushFrames();
+      order.length = 0;
+      clearA.mockClear();
+
+      // A repaint of one tile leaves every other tile's pixels valid.
+      act(() => handle?.invalidate('a'));
+      flushFrames();
+      expect(clearA).not.toHaveBeenCalled();
+      expect(order).toEqual(['paintA']);
+      order.length = 0;
+
+      stubBox(getByTestId('b'), 300, 0, 400, 600);
+      act(() => handle?.invalidateRects());
+      flushFrames();
+
+      // Both tenants share the buffer, so both clears run — and a clear after
+      // a painter would erase the tile that just drew.
+      expect(order.slice(0, 2).sort()).toEqual(['clearA', 'clearB']);
+      expect(order.slice(2).sort()).toEqual(['paintA', 'paintB']);
+      expect(clearA).toHaveBeenCalledWith({ width: 800, height: 600 }, expect.any(Number));
+    });
+
+    it('stops calling a clear that unregisters', () => {
+      const frames: SurfaceFrame[] = [];
+      let handle: SurfaceHandle | null = null;
+      const { getByTestId } = render(
+        <Harness frames={frames} onHandle={(h) => { handle = h; }} />,
+      );
+      flushFrames();
+
+      const clear = vi.fn();
+      let off: (() => void) | undefined;
+      act(() => { off = handle?.registerClear('a', clear); });
+      stubBox(getByTestId('b'), 310, 0, 400, 600);
+      act(() => handle?.invalidateRects());
+      flushFrames();
+      expect(clear).toHaveBeenCalledTimes(1);
+
+      act(() => off?.());
+      stubBox(getByTestId('b'), 320, 0, 400, 600);
+      act(() => handle?.invalidateRects());
+      flushFrames();
+      expect(clear).toHaveBeenCalledTimes(1);
+    });
+  });
 });
