@@ -1,5 +1,8 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createMemoryAdapter } from '../state/adapters';
+import { labPrefix } from '../state/labRecords';
+import { Persistence } from '../state/Persistence';
 import { FloatingPanel } from './FloatingPanel';
 
 // The shared stub reports one size for every element, which makes the panel and
@@ -219,34 +222,62 @@ describe('FloatingPanel dragging', () => {
 });
 
 describe('FloatingPanel persistence', () => {
-  it('writes its placement under the given key once dragged', () => {
-    const { panel } = renderPanel(<FloatingPanel storageKey="k">x</FloatingPanel>);
+  const PLACE = `${labPrefix('fp')}value:lab:legend`;
+
+  function persisted(backing: Map<string, unknown>, ui: React.ReactElement) {
+    return render(
+      <Persistence storageKey="fp" storage={createMemoryAdapter(backing)}>
+        <div>{ui}</div>
+      </Persistence>,
+    );
+  }
+
+  it('writes its placement under its persist name once dragged', async () => {
+    const backing = new Map<string, unknown>();
+    const { container } = persisted(backing, <FloatingPanel persist="legend">x</FloatingPanel>);
+    await waitFor(() => expect(container.querySelector('.lk-floating-panel')).not.toBeNull());
+    const panel = container.querySelector('.lk-floating-panel') as HTMLElement;
     fireEvent.pointerDown(panel, { clientX: 100, clientY: 100 });
     fireEvent.pointerMove(panel, { clientX: 140, clientY: 160 });
     fireEvent.pointerUp(panel);
-    const stored = JSON.parse(localStorage.getItem('k') ?? 'null');
-    expect(stored).toMatchObject({ x: expect.any(Number), y: expect.any(Number) });
-    expect(stored).toHaveProperty('anchor');
+    await waitFor(() =>
+      expect(backing.get(PLACE)).toMatchObject({ x: expect.any(Number), y: expect.any(Number) }),
+    );
+    expect(backing.get(PLACE)).toHaveProperty('anchor');
   });
 
-  it('restores what it stored on a later mount', () => {
-    localStorage.setItem('k', JSON.stringify({ x: 140, y: 90, anchor: null }));
-    const { panel } = renderPanel(<FloatingPanel storageKey="k">x</FloatingPanel>);
-    expect(panel.style.left).toBe('140px');
+  it('restores what it stored on a later mount', async () => {
+    const backing = new Map<string, unknown>([[PLACE, { x: 140, y: 90, anchor: null }]]);
+    const { container } = persisted(backing, <FloatingPanel persist="legend">x</FloatingPanel>);
+    // Placed only once both boxes are measured, which can land a render later.
+    await waitFor(() =>
+      expect(
+        (container.querySelector('.lk-floating-panel') as HTMLElement | null)?.style.left,
+      ).toBe('140px'),
+    );
+    const panel = container.querySelector('.lk-floating-panel') as HTMLElement;
     expect(panel.style.top).toBe('90px');
   });
 
-  it('writes nothing when no key is given', () => {
-    const { panel } = renderPanel(<FloatingPanel>x</FloatingPanel>);
+  it('writes nothing without a persist name', async () => {
+    const backing = new Map<string, unknown>();
+    const { container, unmount } = persisted(backing, <FloatingPanel>x</FloatingPanel>);
+    await waitFor(() => expect(container.querySelector('.lk-floating-panel')).not.toBeNull());
+    const panel = container.querySelector('.lk-floating-panel') as HTMLElement;
+    fireEvent.pointerDown(panel, { clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(panel, { clientX: 140, clientY: 160 });
+    fireEvent.pointerUp(panel);
+    unmount();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(backing.size).toBe(0);
+  });
+
+  it('forgets its placement with no provider above it', () => {
+    const { panel } = renderPanel(<FloatingPanel persist="legend">x</FloatingPanel>);
     fireEvent.pointerDown(panel, { clientX: 100, clientY: 100 });
     fireEvent.pointerMove(panel, { clientX: 140, clientY: 160 });
     fireEvent.pointerUp(panel);
     expect(localStorage.length).toBe(0);
-  });
-
-  it('survives a corrupt stored value rather than throwing', () => {
-    localStorage.setItem('k', '{{{');
-    expect(() => renderPanel(<FloatingPanel storageKey="k">x</FloatingPanel>)).not.toThrow();
   });
 });
 

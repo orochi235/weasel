@@ -1,5 +1,8 @@
 export {
+  createIndexedDbAdapter,
   createMemoryAdapter,
+  type IndexedDbAdapterOptions,
+  indexedDbAdapter,
   localStorageAdapter,
   noneAdapter,
   sessionStorageAdapter,
@@ -26,6 +29,9 @@ export {
   labStorageKey,
   serializeTrials,
 } from './helpers';
+export { type OpenedLabStore, type OpenLabStoreOptions, openLabStore } from './openLabStore';
+export { Persistence, type PersistenceProps } from './Persistence';
+export type { RecordCache, RecordChange } from './records';
 export {
   SingletonExperimentProvider,
   type SingletonExperimentProviderProps,
@@ -41,10 +47,12 @@ export type {
   SavedSnapshot,
   SerializedTrial,
   StorageAdapter,
+  StorageChange,
   TrialRecord,
   TrialStateHandle,
   UndoStack,
 } from './types';
 export type { UndockedPanel, UndockedPanels } from './undock';
 export { dockPanel, panelKey, undockPanel } from './undock';
+export { type PersistedStateOptions, usePersistedState } from './usePersistedState';
 export { useTrialState } from './useTrialState';

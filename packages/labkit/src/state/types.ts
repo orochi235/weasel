@@ -81,13 +81,23 @@ export interface LabStoreState {
   undockedPanels: UndockedPanels;
 }
 
-/** Where a lab persists itself. Implementations are keyed string storage and
- *  nothing more, so the same store works against localStorage, the URL hash,
- *  or memory. */
+/** A change someone else made to one record: its new value, or `undefined`
+ *  when it was deleted. */
+export type StorageChange = [key: string, value: unknown];
+
+/** Where a lab persists itself: asynchronous keyed storage of
+ *  structured-clone values, so IndexedDB, the URL, memory or a server can all
+ *  back one. */
 export interface StorageAdapter {
-  read(key: string): string | null;
-  write(key: string, value: string): void;
-  delete?(key: string): void;
+  /** `undefined` when the key is absent. */
+  get(key: string): Promise<unknown>;
+  list(prefix: string): Promise<[string, unknown][]>;
+  /** Rejects when the value did not land. */
+  set(key: string, value: unknown): Promise<void>;
+  delete(key: string): Promise<void>;
+  /** Reports writes under `prefix` made by anyone but this adapter — another
+   *  tab, another instance, a server. Omit when the substrate cannot tell. */
+  subscribe?(prefix: string, on: (changes: StorageChange[]) => void): () => void;
 }
 
 /** What `useTrialState` hands an instrument: its state and config, with
@@ -101,11 +111,10 @@ export interface TrialStateHandle<TS, TC> {
   setConfig: <P extends ConfigPath<TC> & string>(path: P, value: ValueAtPath<TC, P>) => void;
 }
 
-/** Options for `createLabStore`. `storageKey` namespaces the keys written, so
- *  two labs on one origin do not collide. */
+/** Options for `createLabStore`, which knows nothing about storage. */
 export interface CreateLabStoreOptions {
-  storageKey: string;
-  storage: StorageAdapter;
+  /** A document already read and migrated — what `openLabStore` hands over. */
+  initial?: LabDocument;
   initialMode?: LabMode;
   /** Each instrument's default config, keyed by instrument name, used to fill
    *  the gaps in a stored one. A config saved before its schema grew a branch

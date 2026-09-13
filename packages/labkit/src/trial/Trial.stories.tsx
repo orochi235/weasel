@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { Instrument } from '../instrument/types';
 import { LabContext, type LabContextValue } from '../lab/LabContext';
-import { noneAdapter } from '../state/adapters';
 import { LabStoreContext } from '../state/context';
 import { createLabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
@@ -27,7 +26,7 @@ const record: TrialRecord = {
 };
 
 function Harness() {
-  const store = createLabStore({ storageKey: 'sb', storage: noneAdapter });
+  const store = createLabStore();
   const lab: LabContextValue = {
     instruments: [stub],
     trials: [record],

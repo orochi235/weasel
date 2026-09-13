@@ -1,14 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createMemoryAdapter } from './adapters';
 import {
   CURRENT_DOCUMENT_VERSION,
-  deleteLegacyKeys,
+  deleteConfirmed,
   emptyDocument,
   labDocumentKey,
   MIGRATIONS,
   migrateV0toV1,
   migrateV1toV2,
   migrateV2toV3,
+  migrateV3toV4,
   normalizeDocument,
   quarantineDocument,
   quarantineKey,
@@ -83,19 +84,24 @@ describe('runMigrations', () => {
   });
 });
 
+function reader(entries: Record<string, unknown>) {
+  const map = new Map(Object.entries(entries));
+  return async (key: string) => map.get(key);
+}
+
 describe('readLegacyDocument', () => {
-  it('returns null when no legacy key is present', () => {
-    expect(readLegacyDocument(createMemoryAdapter(), 'lab', 'auto')).toBeNull();
+  it('returns null when no legacy key is present', async () => {
+    expect(await readLegacyDocument(reader({}), 'lab', 'auto')).toBeNull();
   });
 
-  it('assembles a version-0 document from the four buckets', () => {
-    const storage = createMemoryAdapter();
-    storage.write(labStorageKey('lab', 'workspaces'), JSON.stringify([{ id: 'w1' }]));
-    storage.write(labStorageKey('lab', 'saves'), JSON.stringify([{ id: 's1' }]));
-    storage.write(labStorageKey('lab', 'layout'), JSON.stringify({ w1: { h: 4 } }));
-    storage.write(labStorageKey('lab', 'theme'), 'dark');
-
-    expect(readLegacyDocument(storage, 'lab', 'auto')).toEqual({
+  it('assembles a version-0 document from the four buckets, parsed or not', async () => {
+    const read = reader({
+      [labStorageKey('lab', 'workspaces')]: JSON.stringify([{ id: 'w1' }]),
+      [labStorageKey('lab', 'saves')]: [{ id: 's1' }],
+      [labStorageKey('lab', 'layout')]: JSON.stringify({ w1: { h: 4 } }),
+      [labStorageKey('lab', 'theme')]: 'dark',
+    });
+    expect(await readLegacyDocument(read, 'lab', 'auto')).toEqual({
       version: 0,
       workspaces: [{ id: 'w1' }],
       saves: [{ id: 's1' }],
@@ -104,97 +110,54 @@ describe('readLegacyDocument', () => {
     });
   });
 
-  it('survives one unparseable bucket without losing the others', () => {
-    const storage = createMemoryAdapter();
-    storage.write(labStorageKey('lab', 'workspaces'), '{{{not json');
-    storage.write(labStorageKey('lab', 'saves'), JSON.stringify([{ id: 's1' }]));
-
-    const doc = readLegacyDocument(storage, 'lab', 'auto');
+  it('survives one unparseable bucket without losing the others', async () => {
+    const read = reader({
+      [labStorageKey('lab', 'workspaces')]: '{{{not json',
+      [labStorageKey('lab', 'saves')]: JSON.stringify([{ id: 's1' }]),
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const doc = await readLegacyDocument(read, 'lab', 'auto');
     expect(doc?.workspaces).toEqual([]);
     expect(doc?.saves).toEqual([{ id: 's1' }]);
+    warn.mockRestore();
   });
 
-  it('falls back to fallbackMode when the theme key is absent', () => {
-    const storage = createMemoryAdapter();
-    storage.write(labStorageKey('lab', 'workspaces'), JSON.stringify([]));
-
-    expect(readLegacyDocument(storage, 'lab', 'dark')?.mode).toBe('dark');
+  it('falls back to fallbackMode when the theme key is absent', async () => {
+    const read = reader({ [labStorageKey('lab', 'workspaces')]: '[]' });
+    expect((await readLegacyDocument(read, 'lab', 'dark'))?.mode).toBe('dark');
   });
 
-  it('falls back to fallbackMode when the theme value is unrecognized', () => {
-    const storage = createMemoryAdapter();
-    storage.write(labStorageKey('lab', 'theme'), 'chartreuse');
-
-    expect(readLegacyDocument(storage, 'lab', 'dark')?.mode).toBe('dark');
+  it('falls back to fallbackMode when the theme value is unrecognized', async () => {
+    const read = reader({ [labStorageKey('lab', 'theme')]: 'chartreuse' });
+    expect((await readLegacyDocument(read, 'lab', 'dark'))?.mode).toBe('dark');
   });
 
-  it('a valid theme value beats the fallback', () => {
-    const storage = createMemoryAdapter();
-    storage.write(labStorageKey('lab', 'theme'), 'light');
-
-    expect(readLegacyDocument(storage, 'lab', 'dark')?.mode).toBe('light');
+  it('a valid theme value beats the fallback', async () => {
+    const read = reader({ [labStorageKey('lab', 'theme')]: 'light' });
+    expect((await readLegacyDocument(read, 'lab', 'dark'))?.mode).toBe('light');
   });
 
-  it('passes interstellar through untouched for migrateV0toV1 to coerce', () => {
-    const storage = createMemoryAdapter();
-    storage.write(labStorageKey('lab', 'theme'), 'interstellar');
-
-    expect(readLegacyDocument(storage, 'lab', 'dark')?.mode).toBe('interstellar');
+  it('passes interstellar through untouched for migrateV0toV1 to coerce', async () => {
+    const read = reader({ [labStorageKey('lab', 'theme')]: 'interstellar' });
+    expect((await readLegacyDocument(read, 'lab', 'dark'))?.mode).toBe('interstellar');
   });
 });
 
-describe('deleteLegacyKeys', () => {
-  it('deletes all four legacy buckets when the document matches', () => {
+describe('deleteConfirmed', () => {
+  it('deletes the keys and confirms they are gone', async () => {
     const storage = createMemoryAdapter();
-    storage.write(labStorageKey('lab', 'workspaces'), JSON.stringify([{ id: 'w1' }]));
-    storage.write(labStorageKey('lab', 'saves'), JSON.stringify([{ id: 's1' }]));
-    storage.write(labStorageKey('lab', 'layout'), JSON.stringify({ w1: { h: 4 } }));
-    storage.write(labStorageKey('lab', 'theme'), 'dark');
-    storage.write(labDocumentKey('lab'), 'the-document');
-
-    expect(deleteLegacyKeys(storage, 'lab', 'the-document')).toBe(true);
-
-    expect(storage.read(labStorageKey('lab', 'workspaces'))).toBeNull();
-    expect(storage.read(labStorageKey('lab', 'saves'))).toBeNull();
-    expect(storage.read(labStorageKey('lab', 'layout'))).toBeNull();
-    expect(storage.read(labStorageKey('lab', 'theme'))).toBeNull();
+    await storage.set('a', 1);
+    await storage.set('b', 2);
+    expect(await deleteConfirmed(storage, ['a', 'b'])).toBe(true);
+    expect(await storage.get('a')).toBeUndefined();
   });
 
-  it('the document key itself survives deletion', () => {
-    const storage = createMemoryAdapter();
-    storage.write(labStorageKey('lab', 'workspaces'), JSON.stringify([{ id: 'w1' }]));
-    storage.write(labDocumentKey('lab'), 'the-document');
-
-    deleteLegacyKeys(storage, 'lab', 'the-document');
-
-    expect(storage.read(labDocumentKey('lab'))).toBe('the-document');
-  });
-
-  it('deletes nothing and returns false when the document key is absent', () => {
-    const storage = createMemoryAdapter();
-    storage.write(labStorageKey('lab', 'workspaces'), JSON.stringify([{ id: 'w1' }]));
-
-    expect(deleteLegacyKeys(storage, 'lab', 'the-document')).toBe(false);
-    expect(storage.read(labStorageKey('lab', 'workspaces'))).not.toBeNull();
-  });
-
-  it('returns false when the adapter cannot delete, and the keys survive', () => {
-    const mem = createMemoryAdapter();
-    const storage = { read: mem.read, write: mem.write };
-    storage.write(labStorageKey('lab', 'workspaces'), JSON.stringify([{ id: 'w1' }]));
-    storage.write(labDocumentKey('lab'), 'the-document');
-
-    expect(deleteLegacyKeys(storage, 'lab', 'the-document')).toBe(false);
-    expect(storage.read(labStorageKey('lab', 'workspaces'))).not.toBeNull();
-  });
-
-  it('deletes nothing and returns false when the document key holds different content', () => {
-    const storage = createMemoryAdapter();
-    storage.write(labStorageKey('lab', 'workspaces'), JSON.stringify([{ id: 'w1' }]));
-    storage.write(labDocumentKey('lab'), 'something-else');
-
-    expect(deleteLegacyKeys(storage, 'lab', 'the-document')).toBe(false);
-    expect(storage.read(labStorageKey('lab', 'workspaces'))).not.toBeNull();
+  it('returns false when a delete silently does nothing', async () => {
+    const memory = createMemoryAdapter();
+    await memory.set('a', 1);
+    const storage = { ...memory, delete: async () => {} };
+    expect(await deleteConfirmed(storage, ['a'])).toBe(false);
+    expect(await memory.get('a')).toBe(1);
   });
 });
 
@@ -303,18 +266,15 @@ describe('MIGRATIONS', () => {
 });
 
 describe('quarantineDocument', () => {
-  it('copies the document aside and confirms it landed', () => {
+  it('copies the document aside and confirms it landed', async () => {
     const storage = createMemoryAdapter();
-
-    expect(quarantineDocument(storage, 'lab', 'the-bytes')).toBe(true);
-    expect(storage.read(quarantineKey('lab'))).toBe('the-bytes');
+    expect(await quarantineDocument(storage, 'lab', 'the-bytes')).toBe(true);
+    expect(await storage.get(quarantineKey('lab'))).toBe('the-bytes');
   });
 
-  it('returns false when the quarantine write silently fails', () => {
-    const storage = createMemoryAdapter();
-    storage.write = () => {};
-
-    expect(quarantineDocument(storage, 'lab', 'the-bytes')).toBe(false);
+  it('returns false when the quarantine write silently fails', async () => {
+    const storage = { ...createMemoryAdapter(), set: async () => {} };
+    expect(await quarantineDocument(storage, 'lab', 'the-bytes')).toBe(false);
   });
 });
 
@@ -388,5 +348,20 @@ describe('version 2 to version 3', () => {
     expect(out.trials).toEqual([{ id: 'a' }]);
     expect(out.layout).toEqual({ a: 1 });
     expect(out.mode).toBe('dark');
+  });
+});
+
+describe('version 3 to version 4', () => {
+  it('only restamps the document, whose shape does not change', () => {
+    const doc = {
+      version: 3,
+      trials: [{ id: 'w1' }],
+      saves: [],
+      layout: {},
+      undockedPanels: {},
+      mode: 'auto',
+    };
+    expect(migrateV3toV4(doc)).toEqual({ ...doc, version: 4 });
+    expect(MIGRATIONS[3]).toBe(migrateV3toV4);
   });
 });

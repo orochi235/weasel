@@ -10,11 +10,10 @@ import type {
 import type { UndockedPanels } from './undock';
 
 /** Bumped whenever the persisted shape changes; every bump needs a migration. */
-export const CURRENT_DOCUMENT_VERSION = 3;
+export const CURRENT_DOCUMENT_VERSION = 4;
 
-/** The one key a lab persists under. The `:doc` suffix keeps it out of the
- *  legacy bucket namespace, where a lab named `a:saves` would otherwise write
- *  its document over lab `a`'s saves bucket. */
+/** Where a version-3 lab kept its one document. Read once, to fold it into
+ *  records, then deleted. */
 export function labDocumentKey(storageKey: string): string {
   return `lk:${storageKey}:doc`;
 }
@@ -69,83 +68,92 @@ export function runMigrations(
 
 const LEGACY_BUCKETS = ['workspaces', 'saves', 'layout', 'theme'] as const;
 
-function parseOr<T>(raw: string | null, fallback: T, bucket: string): T {
-  if (raw === null) return fallback;
+/** The four keys a lab used before it was one document. */
+export function legacyKeys(storageKey: string): string[] {
+  return LEGACY_BUCKETS.map((bucket) => labStorageKey(storageKey, bucket));
+}
+
+/** A value some substrate returned for an old key: already parsed, or a JSON
+ *  string from a store that does not parse. `undefined` when it is neither. */
+export function parseStored(value: unknown): unknown {
+  if (typeof value !== 'string') return value;
   try {
-    return JSON.parse(raw) as T;
+    return JSON.parse(value);
   } catch {
-    console.warn(`[labkit] unparseable legacy bucket "${bucket}", dropping it`);
-    return fallback;
+    return undefined;
   }
+}
+
+function bucketOr<T>(value: unknown, fallback: T, bucket: string, shape: 'array' | 'object'): T {
+  if (value === undefined) return fallback;
+  const parsed = parseStored(value);
+  const fits = shape === 'array' ? Array.isArray(parsed) : !!parsed && typeof parsed === 'object';
+  if (fits) return parsed as T;
+  console.warn(`[labkit] unparseable legacy bucket "${bucket}", dropping it`);
+  return fallback;
 }
 
 /** Assemble a version-0 document out of the four pre-document keys, or null
  *  if none of them is present. `fallbackMode` is used when the theme key is
  *  absent or holds something unrecognized; `interstellar` passes through
  *  untouched for `migrateV0toV1` to coerce. */
-export function readLegacyDocument(
-  storage: StorageAdapter,
+export async function readLegacyDocument(
+  read: (key: string) => Promise<unknown>,
   storageKey: string,
   fallbackMode: LabMode,
-): Record<string, unknown> | null {
-  const present = LEGACY_BUCKETS.some((b) => storage.read(labStorageKey(storageKey, b)) !== null);
-  if (!present) return null;
+): Promise<Record<string, unknown> | null> {
+  const [workspaces, saves, layout, theme] = await Promise.all(
+    LEGACY_BUCKETS.map((bucket) => read(labStorageKey(storageKey, bucket))),
+  );
+  if ([workspaces, saves, layout, theme].every((v) => v === undefined)) return null;
 
-  const rawMode = storage.read(labStorageKey(storageKey, 'theme'));
   const mode =
-    rawMode === 'light' || rawMode === 'dark' || rawMode === 'auto' || rawMode === 'interstellar'
-      ? rawMode
+    theme === 'light' || theme === 'dark' || theme === 'auto' || theme === 'interstellar'
+      ? theme
       : fallbackMode;
 
   return {
     version: 0,
-    workspaces: parseOr(storage.read(labStorageKey(storageKey, 'workspaces')), [], 'workspaces'),
-    saves: parseOr(storage.read(labStorageKey(storageKey, 'saves')), [], 'saves'),
-    layout: parseOr(storage.read(labStorageKey(storageKey, 'layout')), {}, 'layout'),
+    workspaces: bucketOr(workspaces, [], 'workspaces', 'array'),
+    saves: bucketOr(saves, [], 'saves', 'array'),
+    layout: bucketOr(layout, {}, 'layout', 'object'),
     mode,
   };
 }
 
-/** Delete the four pre-document keys, but only once `expectedDocument` is
- *  confirmed to be exactly what is stored under the document key — a
- *  read-back, not a trust of the write that produced it. On any mismatch
- *  (write failed, landed partially, or never happened) it deletes nothing,
- *  warns, and returns `false` so the legacy buckets stay as a recoverable
- *  copy. Deletion itself is read back too — `StorageAdapter.delete` is
- *  optional, so an adapter without it leaves the keys in place — and `true`
- *  is returned only once all four are actually gone. */
-export function deleteLegacyKeys(
-  storage: StorageAdapter,
-  storageKey: string,
-  expectedDocument: string,
-): boolean {
-  const actual = storage.read(labDocumentKey(storageKey));
-  if (actual !== expectedDocument) {
-    console.warn(
-      `[labkit] keeping legacy keys for "${storageKey}": could not confirm the migrated document was written`,
-    );
-    return false;
-  }
-  let allGone = true;
-  for (const bucket of LEGACY_BUCKETS) {
-    const key = labStorageKey(storageKey, bucket);
-    storage.delete?.(key);
-    if (storage.read(key) !== null) allGone = false;
-  }
-  return allGone;
+/** Whether two stored values hold the same data. Stored values are
+ *  structured-clone copies, so identity says nothing. */
+export function sameStored(a: unknown, b: unknown): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
 }
 
-/** Set `raw` aside under the quarantine key, reading it back to confirm it
+/** Delete `keys` and read each back, so an adapter whose delete silently did
+ *  nothing is caught. `true` only once all of them are gone. */
+export async function deleteConfirmed(storage: StorageAdapter, keys: string[]): Promise<boolean> {
+  try {
+    await Promise.all(keys.map((key) => storage.delete(key)));
+    const left = await Promise.all(keys.map((key) => storage.get(key)));
+    return left.every((v) => v === undefined);
+  } catch {
+    return false;
+  }
+}
+
+/** Set `value` aside under the quarantine key, reading it back to confirm it
  *  landed. Returns `false` when it did not — a full disk is exactly when a
  *  document goes unreadable — so the caller can leave the original alone
  *  rather than overwrite the only copy of it. */
-export function quarantineDocument(
+export async function quarantineDocument(
   storage: StorageAdapter,
   storageKey: string,
-  raw: string,
-): boolean {
-  storage.write(quarantineKey(storageKey), raw);
-  return storage.read(quarantineKey(storageKey)) === raw;
+  value: unknown,
+): Promise<boolean> {
+  try {
+    await storage.set(quarantineKey(storageKey), value);
+    return sameStored(await storage.get(quarantineKey(storageKey)), value);
+  } catch {
+    return false;
+  }
 }
 
 /** Fill in whatever a document is missing or holds the wrong shape of, so a
@@ -202,5 +210,11 @@ export function migrateV2toV3(doc: Record<string, unknown>): Record<string, unkn
   return { ...doc, undockedPanels: {}, version: 3 };
 }
 
+/** Version 3 to version 4: a lab is stored as records under one prefix
+ *  instead of one document. The joined shape does not change. */
+export function migrateV3toV4(doc: Record<string, unknown>): Record<string, unknown> {
+  return { ...doc, version: 4 };
+}
+
 /** Index `i` migrates a version-`i` document to version `i + 1`. */
-export const MIGRATIONS: Migration[] = [migrateV0toV1, migrateV1toV2, migrateV2toV3];
+export const MIGRATIONS: Migration[] = [migrateV0toV1, migrateV1toV2, migrateV2toV3, migrateV3toV4];

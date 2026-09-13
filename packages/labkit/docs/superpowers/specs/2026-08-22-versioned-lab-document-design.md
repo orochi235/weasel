@@ -1,5 +1,7 @@
 # One versioned lab document — design spec
 
+> **Storage superseded (2026-09-12):** a lab is now stored as records through an async adapter — see `2026-09-12-async-storage-design.md`. What this doc says about `StorageAdapter`, the single document and the flush no longer describes the code.
+
 **Date:** 2026-08-22
 **Status:** Draft
 **Package paths:** `src/state/`

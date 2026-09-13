@@ -7,7 +7,7 @@
  * it is the point of the demo: a lab driving `annotations.capture()` itself
  * and doing what it likes with the blob.
  */
-import { defineInstrument, f, Lab, noneAdapter, useAnnotations } from '@weasel-js/labkit';
+import { defineInstrument, f, Lab, useAnnotations } from '@weasel-js/labkit';
 // In-repo, so the source stylesheet: a consumer imports the built
 // `@weasel-js/labkit/styles.css` instead.
 import '@weasel-js/labkit/styles.less';
@@ -140,7 +140,6 @@ export function AnnotationCaptureDemo() {
         title="Annotation capture"
         instruments={[inspector]}
         defaultInstrument="Quadrants"
-        storage={noneAdapter}
       />
     </div>
   );

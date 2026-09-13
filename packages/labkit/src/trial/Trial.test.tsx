@@ -35,10 +35,7 @@ type ChromeProps = Parameters<typeof TrialChrome>[0];
  *  and section folds live on the record, so a test that outlives one mount
  *  keeps its own store and hands it to both. */
 function makeChromeStore() {
-  const store = createLabStore({
-    storageKey: 'test',
-    storage: { read: () => null, write: () => {} },
-  });
+  const store = createLabStore();
   const { undoStack: _undo, ...seed } = stubRecord;
   store.getState().addTrial(seed);
   return store;

@@ -9,6 +9,7 @@ import {
   type FloatingPlacement,
   floatingStrategy,
 } from 'windease';
+import { usePersistedState } from '../state/usePersistedState';
 
 /** The strategy holds a map keyed by item id; a panel is always a lone item. */
 const ITEM_ID = 'panel';
@@ -22,8 +23,10 @@ export interface FloatingPanelProps {
   snapCorners?: readonly Corner[];
   /** Pixels in from a corner when snapped. Default 12. */
   inset?: number;
-  /** localStorage key to remember its position under. Omit to forget on reload. */
-  storageKey?: string;
+  /** Name to remember its position under, through `usePersistedState` — so it
+   *  is remembered only inside a lab or a `<Persistence>`. Omit to forget on
+   *  reload. */
+  persist?: string;
   className?: string;
 }
 
@@ -47,16 +50,6 @@ function isInteractive(target: EventTarget | null): boolean {
   return target.closest('input, button, a, select, textarea, [data-no-drag]') !== null;
 }
 
-function readStored(key: string | undefined): FloatingPlacement | null {
-  if (!key) return null;
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as FloatingPlacement) : null;
-  } catch {
-    return null;
-  }
-}
-
 /**
  * A draggable box that floats over its offset parent and snaps to its corners.
  *
@@ -70,7 +63,7 @@ export function FloatingPanel({
   anchor = DEFAULT_ANCHOR,
   snapCorners,
   inset = DEFAULT_INSET,
-  storageKey,
+  persist,
   className,
 }: FloatingPanelProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -79,18 +72,11 @@ export function FloatingPanel({
 
   const [container, setContainer] = useState({ w: 0, h: 0 });
   const [size, setSize] = useState({ w: 0, h: 0 });
-  const [place, setPlace] = useState<FloatingPlacement>(
-    () => readStored(storageKey) ?? { x: 0, y: 0, anchor },
-  );
-
-  useEffect(() => {
-    if (!storageKey) return;
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(place));
-    } catch {
-      // A full or disabled store is not worth failing a lab over.
-    }
-  }, [place, storageKey]);
+  const [place, setPlace] = usePersistedState<FloatingPlacement>(persist, () => ({
+    x: 0,
+    y: 0,
+    anchor,
+  }));
 
   const item = useMemo(
     () => ({

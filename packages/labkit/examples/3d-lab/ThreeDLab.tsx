@@ -1,4 +1,4 @@
-import { Lab, localStorageAdapter } from '@weasel-js/labkit';
+import { Lab } from '@weasel-js/labkit';
 import { SolidInstrument } from './SolidInstrument';
 
 export function ThreeDLab() {
@@ -6,7 +6,6 @@ export function ThreeDLab() {
     <Lab
       instruments={[SolidInstrument]}
       defaultInstrument="Solids"
-      storage={localStorageAdapter}
       storageKey="3d-lab"
       mode="dark"
       title="3D Lab"

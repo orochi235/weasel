@@ -1,6 +1,6 @@
 # Async, record-based lab storage
 
-**Status: in progress on branch `labkit-async-storage`.** Nothing below exists on `main` yet.
+**Status: built on branch `labkit-async-storage`, not yet merged to `main`.**
 
 For whoever works on labkit's persistence next. It answers: how a lab persists
 itself to any substrate — IndexedDB, localStorage, the URL, a server — and how
@@ -38,7 +38,7 @@ else — another tab, another adapter instance, a server — never the caller's 
 | Adapter | Values | `subscribe` |
 |---|---|---|
 | `createIndexedDbAdapter()` / `indexedDbAdapter` | native | `BroadcastChannel` |
-| `localStorageAdapter` | JSON per record; rejects non-JSON-safe values | `storage` event |
+| `localStorageAdapter` | JSON per record; warns once per key when JSON would change a value | `storage` event |
 | `sessionStorageAdapter` | JSON per record | none |
 | `urlHashAdapter` | JSON | `hashchange` |
 | `createMemoryAdapter(backing?)` | structured clone | adapters sharing one `backing` see each other |
@@ -76,7 +76,8 @@ not its shape: the joined records form the same `LabDocument` as version 3, and
 in memory. It is the only thing that talks to the adapter.
 
 - **Writes** update memory at once, notify local listeners, and reach the
-  adapter on a per-record 300 ms debounce. Queued writes go out immediately on
+  adapter on a 300 ms debounce that never holds a write more than 1 s, so a
+  long drag still saves as it goes. Queued writes go out immediately on
   `pagehide` and when the document becomes hidden.
 - **Conflicts:** the newest write to a record wins. A change arriving through
   `subscribe` for a record with a write still queued here is ignored — the
@@ -92,7 +93,7 @@ in memory. It is the only thing that talks to the adapter.
 - `createLabStore({ initial?, initialMode?, serializers?, configDefaults? })`
   is synchronous and knows nothing about storage. Tests and unpersisted labs use
   it.
-- `openLabStore({ storageKey, storage, ...same }): Promise<{ store, close }>`
+- `openLabStore({ storageKey, storage, ...same }): Promise<{ store, records, close }>`
   opens the record cache, joins the records into a document, migrates it, fills
   config defaults, builds the store, and binds the two:
   - **store → records:** a store subscription diffs each slice by reference and

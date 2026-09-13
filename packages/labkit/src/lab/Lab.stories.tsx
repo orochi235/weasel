@@ -27,7 +27,6 @@ export const Default: Story = {
     instruments: [StubInstrument],
     defaultInstrument: 'Stub',
     title: 'Default Lab',
-    storage: null,
   },
 };
 
@@ -44,7 +43,6 @@ export const TwoTrials: Story = {
     instruments: [StubInstrument],
     defaultInstrument: 'Stub',
     title: 'Two Trials',
-    storage: null,
     children: <AddSecondTrial />,
   },
 };

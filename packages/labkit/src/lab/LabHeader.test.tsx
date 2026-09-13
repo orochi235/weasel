@@ -13,12 +13,12 @@ const Other: Instrument = { ...Stub, name: 'Other' };
 
 describe('<LabHeader>', () => {
   it('offers an add-trial button when the lab has one instrument', () => {
-    render(<Lab instruments={[Stub]} defaultInstrument="Stub" storage={null} />);
+    render(<Lab instruments={[Stub]} defaultInstrument="Stub" />);
     expect(screen.getByRole('button', { name: /add trial/i })).toBeInTheDocument();
   });
 
   it('offers a picker instead when the lab has several', () => {
-    render(<Lab instruments={[Stub, Other]} defaultInstrument="Stub" storage={null} />);
+    render(<Lab instruments={[Stub, Other]} defaultInstrument="Stub" />);
     // A picker, not a button — which instrument to add is now a choice.
     expect(screen.queryByRole('button', { name: /^add trial$/i })).toBeNull();
     expect(screen.getByLabelText(/add trial/i)).toBeInTheDocument();
@@ -27,14 +27,14 @@ describe('<LabHeader>', () => {
   it('adds a trial when the button is used', async () => {
     const { default: userEvent } = await import('@testing-library/user-event');
     const user = userEvent.setup();
-    render(<Lab instruments={[Stub]} defaultInstrument="Stub" storage={null} />);
+    render(<Lab instruments={[Stub]} defaultInstrument="Stub" />);
     expect(screen.getAllByLabelText(/^Trial Stub$/)).toHaveLength(1);
     await user.click(screen.getByRole('button', { name: /add trial/i }));
     expect(screen.getAllByLabelText(/^Trial Stub$/)).toHaveLength(2);
   });
 
   it('exposes the color mode as a three-way choice', () => {
-    render(<Lab instruments={[Stub]} defaultInstrument="Stub" storage={null} />);
+    render(<Lab instruments={[Stub]} defaultInstrument="Stub" />);
     for (const label of ['Auto', 'Light', 'Dark']) {
       expect(screen.getByRole('radio', { name: label })).toBeInTheDocument();
     }
@@ -44,7 +44,7 @@ describe('<LabHeader>', () => {
     // The assertion above passes whether the segment holds text or an icon,
     // because both routes produce the same accessible name. This is the one
     // that can tell them apart.
-    render(<Lab instruments={[Stub]} defaultInstrument="Stub" storage={null} />);
+    render(<Lab instruments={[Stub]} defaultInstrument="Stub" />);
     for (const label of ['Auto', 'Light', 'Dark']) {
       const segment = screen.getByRole('radio', { name: label });
       expect(segment.querySelector('svg')).not.toBeNull();

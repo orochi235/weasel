@@ -104,6 +104,7 @@
     "d3-force": "^3.0.0",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.1.1",
+    "fake-indexeddb": "^6.2.5",
     "jsdom": "^26.1.0",
     "marked": "^18.0.10",
     "msdf-bmfont-xml": "2.8.0",

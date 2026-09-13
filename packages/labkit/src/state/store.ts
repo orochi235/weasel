@@ -1,23 +1,14 @@
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import { fillConfigDefaults, withValueAtPath } from '../config/path';
-import {
-  CURRENT_DOCUMENT_VERSION,
-  deleteLegacyKeys,
-  emptyDocument,
-  labDocumentKey,
-  MIGRATIONS,
-  normalizeDocument,
-  quarantineDocument,
-  readLegacyDocument,
-  runMigrations,
-} from './document';
-import { deserializeTrials, emptyUndoStack, newId, serializeTrials } from './helpers';
+import { emptyDocument } from './document';
+import { deserializeTrials, emptyUndoStack, newId } from './helpers';
 import type {
   CreateLabStoreOptions,
-  LabDocument,
+  InstrumentSerializers,
   LabMode,
   LabStoreState,
   SavedSnapshot,
+  SerializedTrial,
   TrialRecord,
 } from './types';
 import {
@@ -65,48 +56,25 @@ export interface LabStoreActions {
  *  serialized comes in through `CreateLabStoreOptions.serializers`. */
 export type LabStore = StoreApi<LabStoreState & LabStoreActions>;
 
-/** Build a lab store, hydrating from storage if anything was saved under the
- *  same key. Writes back are debounced. */
-export function createLabStore(options: CreateLabStoreOptions): LabStore {
+/** Build a lab store holding `initial`, or an empty lab. It knows nothing
+ *  about storage; `openLabStore` reads a stored lab and binds one of these to
+ *  it. */
+export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
   const serializers = options.serializers ?? {};
-  let flushTimer: ReturnType<typeof setTimeout> | null = null;
-
-  const hydration = hydrateDocument(options);
-  const hydrated = hydration.document;
-  const persistDisabled = hydration.persistDisabled;
-  // Cleared once the legacy keys are actually gone; see the flush.
-  let foldedFromLegacy = hydration.foldedFromLegacy;
-
-  const configDefaults = options.configDefaults ?? {};
-  const filled = (instrumentName: string, config: unknown): unknown => {
-    const defaults = configDefaults[instrumentName];
-    return defaults ? fillConfigDefaults(config, defaults()) : config;
-  };
-
-  const hydratedTrials = deserializeTrials(
-    hydrated.trials.map((t) => ({ ...t, config: filled(t.instrumentName, t.config) })),
-    serializers,
-  );
-  const hydratedSnapshots = hydrated.saves.map((sn) => ({
-    ...sn,
-    config: filled(sn.instrumentName, sn.config),
-  }));
-  const hydratedLayout = hydrated.layout;
-  const hydratedMode = hydrated.mode;
+  const initial = options.initial ?? emptyDocument(options.initialMode ?? 'auto');
 
   const store = createStore<LabStoreState & LabStoreActions>()((set, get) => ({
-    trials: hydratedTrials,
-    savedSnapshots: hydratedSnapshots,
-    mode: hydratedMode,
-    layout: hydratedLayout,
-    undockedPanels: hydrated.undockedPanels,
+    trials: hydrateTrials(initial.trials, serializers, options.configDefaults),
+    savedSnapshots: hydrateSnapshots(initial.saves, options.configDefaults),
+    mode: initial.mode,
+    layout: initial.layout,
+    undockedPanels: initial.undockedPanels,
     activeToolId: null,
 
     addTrial: (record) => {
       set((s) => ({
         trials: [...s.trials, { ...record, undoStack: emptyUndoStack() }],
       }));
-      scheduleFlush();
     },
 
     removeTrial: (id) => {
@@ -114,7 +82,6 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
         trials: s.trials.filter((w) => w.id !== id),
         undockedPanels: dockPanelIn(s.undockedPanels, id),
       }));
-      scheduleFlush();
     },
 
     updateTrialState: (id, next) => {
@@ -130,7 +97,6 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
           return { ...w, state: nextState };
         }),
       }));
-      scheduleFlush();
     },
 
     updateTrialConfig: (id, path, value) => {
@@ -139,14 +105,12 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
           w.id === id ? { ...w, config: withValueAtPath(w.config, path, value) } : w,
         ),
       }));
-      scheduleFlush();
     },
 
     updateTrialView: (id, view) => {
       set((s) => ({
         trials: s.trials.map((w) => (w.id === id && !Object.is(view, w.view) ? { ...w, view } : w)),
       }));
-      scheduleFlush();
     },
 
     updateTrialSidebarWidth: (id, width) => {
@@ -155,7 +119,6 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
           w.id === id && w.sidebarWidth !== width ? { ...w, sidebarWidth: width } : w,
         ),
       }));
-      scheduleFlush();
     },
 
     setTrialTitle: (id, title) => {
@@ -167,7 +130,6 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
           return { ...w, title: next };
         }),
       }));
-      scheduleFlush();
     },
 
     setTrialSectionCollapsed: (id, key, collapsed) => {
@@ -178,7 +140,6 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
           return { ...w, collapsedSections: { ...w.collapsedSections, [key]: collapsed } };
         }),
       }));
-      scheduleFlush();
     },
 
     updateTrialAnnotations: (id, doc) => {
@@ -187,7 +148,6 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
           w.id === id && !Object.is(doc, w.annotations) ? { ...w, annotations: doc } : w,
         ),
       }));
-      scheduleFlush();
     },
 
     updateTrialUndoStack: (id, next) => {
@@ -207,7 +167,6 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
       set((s) => ({
         trials: s.trials.map((w) => (w.id === id ? { ...w, instrumentName } : w)),
       }));
-      scheduleFlush();
     },
 
     saveSnapshot: (trialId, name) => {
@@ -230,7 +189,6 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
         savedAt,
       };
       set((s) => ({ savedSnapshots: [...s.savedSnapshots, snapshot] }));
-      scheduleFlush();
     },
 
     loadSnapshot: (snapshotId, trialId) => {
@@ -253,14 +211,12 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
           w.id === trialId ? { ...w, state: restoredState, config: snapshot.config } : w,
         ),
       }));
-      scheduleFlush();
     },
 
     deleteSnapshot: (snapshotId) => {
       set((s) => ({
         savedSnapshots: s.savedSnapshots.filter((sn) => sn.id !== snapshotId),
       }));
-      scheduleFlush();
     },
 
     listSnapshots: (trialId) => {
@@ -271,7 +227,6 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
 
     setMode: (mode) => {
       set({ mode });
-      scheduleFlush();
     },
 
     setLabTool: (id) => set({ activeToolId: id }),
@@ -283,119 +238,49 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
 
     undockPanel: (trialId, sectionId, as) => {
       set((s) => ({ undockedPanels: undockPanelIn(s.undockedPanels, trialId, sectionId, as) }));
-      scheduleFlush();
     },
 
     dockPanel: (trialId, sectionId) => {
       set((s) => ({ undockedPanels: dockPanelIn(s.undockedPanels, trialId, sectionId) }));
-      scheduleFlush();
     },
 
     setLayout: (layout) => {
       set({ layout });
-      scheduleFlush();
     },
   }));
-
-  function scheduleFlush(): void {
-    if (persistDisabled) return;
-    if (flushTimer) clearTimeout(flushTimer);
-    flushTimer = setTimeout(() => {
-      const s = store.getState();
-      const document: LabDocument = {
-        version: CURRENT_DOCUMENT_VERSION,
-        trials: serializeTrials(s.trials, serializers),
-        saves: s.savedSnapshots,
-        layout: s.layout,
-        undockedPanels: s.undockedPanels,
-        mode: s.mode,
-      };
-      const serialized = JSON.stringify(document);
-      options.storage.write(labDocumentKey(options.storageKey), serialized);
-      if (foldedFromLegacy && deleteLegacyKeys(options.storage, options.storageKey, serialized)) {
-        foldedFromLegacy = false;
-      }
-      flushTimer = null;
-    }, 300);
-  }
-
-  // A lab opened and closed without a single mutation still completes its
-  // fold; the flush is what removes the legacy keys.
-  if (foldedFromLegacy) scheduleFlush();
 
   return store;
 }
 
-interface HydrateResult {
-  document: LabDocument;
-  /** True when flushing would destroy the only copy of something: a document
-   *  newer than this code understands, or an unusable one whose quarantine
-   *  copy did not land. */
-  persistDisabled: boolean;
-  foldedFromLegacy: boolean;
+function filledConfig(
+  configDefaults: Record<string, () => unknown>,
+  instrumentName: string,
+  config: unknown,
+): unknown {
+  const defaults = configDefaults[instrumentName];
+  return defaults ? fillConfigDefaults(config, defaults()) : config;
 }
 
-/** Copy an unusable document aside, and report whether the store may go on
- *  persisting. A failed quarantine write means the copy in storage is the only
- *  one there is, so the store must not overwrite it. */
-function setAside(
-  options: CreateLabStoreOptions,
-  raw: string,
-  why: string,
-  error?: unknown,
-): boolean {
-  const quarantined = quarantineDocument(options.storage, options.storageKey, raw);
-  const message = quarantined
-    ? `[labkit] ${why}; quarantined it and starting empty`
-    : `[labkit] ${why} and could not be quarantined; leaving it in place and not persisting`;
-  if (error === undefined) console.warn(message);
-  else console.warn(message, error);
-  return quarantined;
+/** Rebuild stored trials: fill each config's gaps from its instrument's
+ *  defaults, then run the deserializer against the filled config. */
+export function hydrateTrials(
+  trials: SerializedTrial[],
+  serializers: InstrumentSerializers,
+  configDefaults: Record<string, () => unknown> = {},
+): TrialRecord[] {
+  return deserializeTrials(
+    trials.map((t) => ({ ...t, config: filledConfig(configDefaults, t.instrumentName, t.config) })),
+    serializers,
+  );
 }
 
-function hydrateDocument(options: CreateLabStoreOptions): HydrateResult {
-  const fallback = emptyDocument(options.initialMode ?? 'auto');
-  const raw = options.storage.read(labDocumentKey(options.storageKey));
-
-  let parsed: Record<string, unknown> | null = null;
-  if (raw !== null) {
-    try {
-      parsed = JSON.parse(raw) as Record<string, unknown>;
-    } catch {
-      const persistDisabled = !setAside(options, raw, 'lab document is unparseable');
-      return { document: fallback, persistDisabled, foldedFromLegacy: false };
-    }
-  } else {
-    parsed = readLegacyDocument(options.storage, options.storageKey, options.initialMode ?? 'auto');
-  }
-
-  if (parsed === null) {
-    return { document: fallback, persistDisabled: false, foldedFromLegacy: false };
-  }
-
-  const foldedFromLegacy = raw === null;
-  const outcome = runMigrations(parsed, MIGRATIONS, CURRENT_DOCUMENT_VERSION);
-
-  if (!outcome.ok) {
-    if (outcome.reason === 'future') {
-      console.warn(
-        '[labkit] lab document is from a newer version of labkit; starting empty and leaving it alone',
-      );
-      return { document: fallback, persistDisabled: true, foldedFromLegacy: false };
-    }
-    const stored = JSON.stringify(parsed);
-    const persistDisabled = !setAside(
-      options,
-      stored,
-      'lab document failed to migrate',
-      outcome.error,
-    );
-    return { document: fallback, persistDisabled, foldedFromLegacy: false };
-  }
-
-  return {
-    document: normalizeDocument(outcome.doc, options.initialMode ?? 'auto'),
-    persistDisabled: false,
-    foldedFromLegacy,
-  };
+/** Fill each stored snapshot's config the way `hydrateTrials` fills a trial's. */
+export function hydrateSnapshots(
+  saves: SavedSnapshot[],
+  configDefaults: Record<string, () => unknown> = {},
+): SavedSnapshot[] {
+  return saves.map((sn) => ({
+    ...sn,
+    config: filledConfig(configDefaults, sn.instrumentName, sn.config),
+  }));
 }

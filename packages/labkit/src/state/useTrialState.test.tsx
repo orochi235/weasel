@@ -1,7 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
-import { createMemoryAdapter } from './adapters';
 import { LabStoreProvider, TrialIdProvider } from './context';
 import { createLabStore } from './store';
 import { useTrialState } from './useTrialState';
@@ -10,7 +9,7 @@ type TestState = { count: number };
 type TestConfig = { step: number };
 
 function makeWrapper(trialId: string) {
-  const store = createLabStore({ storageKey: 'test', storage: createMemoryAdapter() });
+  const store = createLabStore();
   store.getState().addTrial({
     id: trialId,
     instrumentName: 'Counter',
@@ -59,7 +58,7 @@ describe('useTrialState', () => {
   });
 
   it('sibling trial does not re-render on unrelated trial changes', () => {
-    const store = createLabStore({ storageKey: 'test', storage: createMemoryAdapter() });
+    const store = createLabStore();
     store.getState().addTrial({
       id: 'w1',
       instrumentName: 'T',

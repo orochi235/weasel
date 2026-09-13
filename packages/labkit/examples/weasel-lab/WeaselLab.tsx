@@ -1,4 +1,4 @@
-import { Lab, localStorageAdapter } from '@weasel-js/labkit';
+import { Lab } from '@weasel-js/labkit';
 import { SceneInstrument } from './SceneInstrument';
 
 export function WeaselLab() {
@@ -6,7 +6,6 @@ export function WeaselLab() {
     <Lab
       instruments={[SceneInstrument]}
       defaultInstrument="WeaselScene"
-      storage={localStorageAdapter}
       storageKey="weasel-lab"
       mode="dark"
       title="Weasel Lab"

@@ -36,7 +36,7 @@ Annotations are on the `pre` tag until the next stable release:
 ## A lab
 
 ```tsx
-import { type ConfigOf, defineInstrument, f, Lab, localStorageAdapter } from '@weasel-js/labkit';
+import { type ConfigOf, defineInstrument, f, Lab } from '@weasel-js/labkit';
 import '@weasel-js/labkit/styles.css';
 
 const config = f.schema({
@@ -64,12 +64,23 @@ export function App() {
       instruments={[Histogram]}
       defaultInstrument="Histogram"
       title="Histogram"
-      storage={localStorageAdapter}
       storageKey="histogram-lab"
     />
   );
 }
 ```
+
+`storageKey` makes the lab persist: its trials, snapshots, layout and mode
+survive a reload and stay in step across tabs. It persists to IndexedDB — or
+localStorage, with a warning, where IndexedDB will not open — and `storage`
+names another substrate: `localStorageAdapter`, `sessionStorageAdapter`,
+`urlHashAdapter`, or your own `StorageAdapter` over a server. The lab renders
+`fallback` while it loads. Leave `storageKey` off and nothing persists.
+
+A widget's own state persists the same way through `usePersistedState(name,
+initial)`, which is `useState` whose value survives a reload — kept per trial
+inside one, and plain `useState` wherever no `<Lab>` or `<Persistence>` is
+above it.
 
 `f.schema` states the config once — values, types and controls — and the trial
 renders the settings panel from it. `render` returns the instrument's own DOM;

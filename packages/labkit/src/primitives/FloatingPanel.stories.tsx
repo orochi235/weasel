@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { localStorageAdapter } from '../state/adapters';
+import { Persistence } from '../state/Persistence';
 import { FloatingPanel } from './FloatingPanel';
 import { Legend } from './Legend';
 
@@ -43,4 +45,14 @@ export const HoldingALegend: Story = {
   },
 };
 
-export const Remembered: Story = { args: { storageKey: 'labkit.story.panel' } };
+// Remembered only under a provider; this one keeps it across story reloads.
+export const Remembered: Story = {
+  args: { persist: 'story-panel' },
+  decorators: [
+    (Story) => (
+      <Persistence storageKey="labkit-story" storage={localStorageAdapter}>
+        <Story />
+      </Persistence>
+    ),
+  ],
+};

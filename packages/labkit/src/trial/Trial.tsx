@@ -2,8 +2,9 @@ import { type ReactNode, useContext, useEffect, useMemo, useRef, useState } from
 import { useStore } from 'zustand/react';
 import { AnnotationsContext } from '../annotations/AnnotationsContext';
 import { AnnotationTargets } from '../annotations/AnnotationTargets';
+import { AnnotationPreloadContext } from '../annotations/preload';
 import { annotationsFromJSON } from '../annotations/store';
-import type { AnnotationTargetInfo } from '../annotations/types';
+import type { AnnotationStorage, AnnotationTargetInfo } from '../annotations/types';
 import { CanvasStack } from '../canvas/CanvasStack';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import { applyCamera, type ViewportSize } from '../canvas/worldSpec';
@@ -42,17 +43,22 @@ export function Trial({ id, chrome, suppress }: TrialProps) {
   const storeCtx = useContext(LabStoreContext);
   if (!storeCtx) throw new Error('[labkit] <Trial> requires <LabStoreProvider>');
   const record = useStore(storeCtx.store, (s) => s.trials.find((w) => w.id === id));
+  const instrument = record
+    ? lab.instruments.find((i) => i.name === record.instrumentName)
+    : undefined;
+  const kept = useKeptMarks(instrument?.annotations?.storage, id);
   if (!record) {
     return <div className="lk-trial lk-trial--unknown">Trial not found: {id}</div>;
   }
-  const instrument = lab.instruments.find((i) => i.name === record.instrumentName);
   if (!instrument) {
     return (
       <div className="lk-trial lk-trial--unknown">Unknown instrument: {record.instrumentName}</div>
     );
   }
+  if (!kept.ready) return <div className="lk-trial lk-trial--loading" />;
   return (
     <TrialRuntime
+      keptMarks={kept.value}
       record={record}
       instrument={instrument}
       store={storeCtx.store}
@@ -63,7 +69,39 @@ export function Trial({ id, chrome, suppress }: TrialProps) {
   );
 }
 
+/** The marks an instrument keeps in its own storage: preloaded by the lab for
+ *  the trials it opened with, loaded here for any added since. */
+function useKeptMarks(
+  storage: AnnotationStorage | undefined,
+  trialId: string,
+): { ready: boolean; value: unknown } {
+  const preload = useContext(AnnotationPreloadContext);
+  const [loaded, setLoaded] = useState<{ value: unknown } | null>(() =>
+    storage && preload?.has(trialId) ? { value: preload.get(trialId) } : null,
+  );
+  useEffect(() => {
+    if (!storage || loaded) return;
+    let live = true;
+    storage.load().then(
+      (value) => {
+        if (live) setLoaded({ value });
+      },
+      (error) => {
+        console.warn(`[labkit] could not load the marks of trial "${trialId}"`, error);
+        if (live) setLoaded({ value: null });
+      },
+    );
+    return () => {
+      live = false;
+    };
+  }, [storage, loaded, trialId]);
+  if (!storage) return { ready: true, value: undefined };
+  return loaded ? { ready: true, value: loaded.value } : { ready: false, value: undefined };
+}
+
 interface TrialRuntimeProps {
+  /** The marks an instrument's own `AnnotationStorage` loaded. */
+  keptMarks: unknown;
   record: TrialRecord;
   instrument: Instrument;
   store: LabStore;
@@ -72,7 +110,15 @@ interface TrialRuntimeProps {
   suppress?: readonly string[];
 }
 
-function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: TrialRuntimeProps) {
+function TrialRuntime({
+  keptMarks,
+  record,
+  instrument,
+  store,
+  isLast,
+  chrome,
+  suppress,
+}: TrialRuntimeProps) {
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const loupeHostRef = useRef<HTMLDivElement | null>(null);
   const updateTrialState = useStore(store, (s) => s.updateTrialState);
@@ -134,8 +180,7 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
       ? annotationsCap.targets(record.state, record.config, { id: record.id, view: record.view })
       : [];
 
-  // One store for the trial's lifetime. Marks do not survive a reload yet —
-  // the storage slot is 3d.
+  // One store for the trial's lifetime.
   const annotationsRef = useRef<ReturnType<typeof annotationsFromJSON> | null>(null);
   // Read through refs for the same reason `targets` is: the store is built
   // once, and an export must draw against the config the trial holds now.
@@ -144,7 +189,7 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
   if (annotationsRef.current === null) {
     // Seeded from wherever the marks were kept: the instrument's own store if
     // it declared one, else this trial's slot.
-    const kept = annotationsCap?.storage ? annotationsCap.storage.load() : record.annotations;
+    const kept = annotationsCap?.storage ? keptMarks : record.annotations;
     annotationsRef.current = annotationsFromJSON(kept, () => targetsRef.current(), {
       meaning: annotationsCap?.meaning,
       config: () => configRef.current,

@@ -26,7 +26,11 @@ A map of the library so agents can find what they need quickly.
 | Concept | Source |
 |---|---|
 | Zustand store factory | `src/state/store.ts` |
-| Storage adapters (none/local) | `src/state/adapters.ts` |
+| Storage adapters (IndexedDB, local, session, URL hash, memory, none) | `src/state/adapters.ts` |
+| Record cache: debounced writes, other writers, conflicts | `src/state/records.ts` |
+| Record names, and a document split into records | `src/state/labRecords.ts` |
+| Opening a stored lab; store ↔ records binding | `src/state/openLabStore.ts` |
+| `usePersistedState`, `<Persistence>` | `src/state/usePersistedState.ts`, `src/state/Persistence.tsx` |
 | State / trial types | `src/state/types.ts` |
 | Store + trial-id React contexts | `src/state/context.tsx` |
 | Versioned lab document + migrations | `src/state/document.ts` |
