@@ -180,19 +180,32 @@ Priority tags:
   ordinary type hygiene, not a blocker. Findings in
   `docs/superpowers/specs/2026-08-22-3d-kernel-design.md`.
 
-- **(P3) Two overlay producers bake paint inside the action.** `slice`
-  (`interactions/actions/defaults/slice.ts`) and `@weasel-js/diagram`'s
-  `connect` both build a `PathDrawCommand` before returning, so they publish
-  `OngoingOverlay`'s `'commands'` variant and their geometry is gone at the
-  source. `resolveOverlays` passes that variant through marked `opaque` and a
-  foreign renderer skips it; recovering the two means having each action return
-  geometry and moving the styling into the layer. Both were written before
-  there was anywhere else to put the shape.
+- **(P3) A `'polyline'` overlay is drawn in world coordinates; every other one
+  is projected.** A cut line and a connector thicken with the zoom, while
+  marquee and lasso chrome holds its CSS-pixel weight. That is what both did
+  before the layer owned their paint, and it survived the move unchanged rather
+  than being decided. One place to fix it now instead of two:
+  `useDispatcherOverlayLayer`'s `'polyline'` branch.
 
-- **(P3) `apps/theme-editor` still hand-rolls a lab-level rail.**
-  `PaletteLab.tsx` renders `<LabShell>` bare and hand-builds an undo/redo/reset
-  rail into its `header` prop with its own CSS module. `<Lab labChrome>` is what
-  that wants now. Its tests run in the `draw` vitest project.
+- **(P3) A `<LabShell>`-only consumer has no authoring type for chrome.**
+  `LabContribution`'s header variant hard-codes `ToolbarItem<LabChromeContext>`,
+  and `LabChromeContext` can only come from `useLabChromeContext()`, which
+  throws without `<Lab>`. The generic fallback `RegionContribution<TCtx>` types
+  `item` as `unknown`. So a consumer rendering `LabShell` bare either composes
+  `ContributionBase` and `ToolbarItem<T>` by hand — which is what
+  `apps/theme-editor`'s rail now does — or fabricates a context, which is the
+  cast this arc removed. Surfaced by migrating that rail.
+
+- **(P3) `apps/theme-editor` cannot become a `<Lab>` without being rebuilt.**
+  Not a stale consumer: `<Lab>` is the trial runtime — it requires a non-empty
+  `instruments` list, seeds a trial, and renders `children` into the header
+  while its body is fixed as the surface buffers plus a `Workspace` of trials.
+  PaletteLab's page *is* the shell body, sized `height: 100%` against
+  `.lk-shell-body`. Moving it in means making it an instrument and running it in
+  a trial pane, with labkit's per-trial store and persistence beside its own,
+  and a trial titlebar beside its own `PropertyPanel`. Worth doing only as its
+  own arc, and worth asking first whether labkit should support a lab with no
+  trials at all.
 
 - **(P2) Routing is portable; the dep schema is not.** Every fight the 3D lab
   had was a dep contract, a registration step or a coordinate-space bug — never

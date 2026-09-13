@@ -1,9 +1,10 @@
 ---
 "@weasel-js/core": patch
+"@weasel-js/diagram": patch
 "@weasel-js/labkit": patch
 ---
 
-Six follow-ups a 3D lab turned up while driving core's dispatcher over a WebGL
+Follow-ups a 3D lab turned up while driving core's dispatcher over a WebGL
 viewport. Each one is a place the kit assumed its own 2D renderer.
 
 **`classifyTarget` and `affordanceAt` now take the world point their types
@@ -33,9 +34,22 @@ wrappers, so an action-driven undo bumps the version and notifies subscribers.
 `resolvePreviews` already answered for the ghosts a gesture displaces; this
 answers for the chrome it draws that is no node at all — a marquee rect, a lasso
 trail, an insert outline — in world geometry, with every degenerate case
-dropped. `insertPreviewExtent` is exported alongside it. The `'commands'`
-variant does not resolve and says so: `slice` and `@weasel-js/diagram`'s
-`connect` bake a `PathDrawCommand` inside the action.
+dropped. `insertPreviewExtent` is exported alongside it.
+
+**Every overlay variant is now geometry, and the layer owns the paint.**
+`OngoingOverlay`'s `'commands'` variant — arbitrary `DrawCommand[]`, which only
+core's own 2D renderer could execute — **is gone**, along with the `opaque` flag
+on the resolved form and the `action.commands` chrome id. Its two producers
+publish the new `'polyline'` variant instead: a run of world points plus a
+one-word `OverlayRole` (`'cut'` for `slice`, `'connector'` for
+`@weasel-js/diagram`'s `connect`) that a painter maps to a stroke, falling back
+to plain chrome for a role it does not know. `useDispatcherOverlayLayer` draws
+both exactly as they were drawn before, and
+`DispatcherOverlayStyle.roles` is where a consumer restyles one.
+**`ConnectActionOptions.stroke` is removed** — an action no longer names a
+paint; use `roles: { connector: … }` on the layer's style.
+**If you produced a `'commands'` overlay**, publish a `'polyline'` for a line,
+or paint it from a render layer of your own.
 
 **labkit stacks two surface buffers around the trial DOM.** The shared buffer
 sat over the trials, which is right for a mark annotating an instrument and

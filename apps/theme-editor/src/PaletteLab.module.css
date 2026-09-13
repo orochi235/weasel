@@ -159,8 +159,7 @@
   white-space: nowrap;
 }
 
-.copy,
-.reset {
+.copy {
   height: var(--wzl-control-h);
   padding: 0 var(--wzl-space-md);
   border-radius: var(--wzl-radius-sm);
@@ -172,8 +171,7 @@
   cursor: pointer;
 }
 
-.copy:hover,
-.reset:hover {
+.copy:hover {
   background: var(--wzl-surface-hover);
 }
 
@@ -433,16 +431,6 @@
   min-height: 1.2em;
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-muted);
-}
-
-.headerActions {
-  display: flex;
-  gap: var(--wzl-space-xs);
-}
-
-.reset:disabled {
-  opacity: 0.4;
-  cursor: default;
 }
 
 /* The swatch is the control: a native color input sits over it, invisible,

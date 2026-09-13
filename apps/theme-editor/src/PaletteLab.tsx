@@ -1,5 +1,13 @@
-import { LabShell } from '@weasel-js/labkit';
-import { PropertyPanel, PropertyGroup, SliderRow, ToggleRow } from '@weasel-js/ui';
+import { LabShell, ToolbarRegion, type ContributionBase, type ToolbarItem } from '@weasel-js/labkit';
+import {
+  PropertyPanel,
+  PropertyGroup,
+  RedoIcon,
+  ResetIcon,
+  SliderRow,
+  ToggleRow,
+  UndoIcon,
+} from '@weasel-js/ui';
 import { useEffect, useMemo, useState } from 'react';
 import { PresetBar } from './PresetBar';
 import { SwatchPanel } from './SwatchPanel';
@@ -12,7 +20,7 @@ import {
   type Preset,
   type SurfaceKey,
 } from './presets';
-import { useLabHistory } from './useLabHistory';
+import { useLabHistory, type LabHistory } from './useLabHistory';
 import styles from './PaletteLab.module.css';
 import { PalettePreview } from './PalettePreview';
 import { AnchorList } from './AnchorList';
@@ -49,11 +57,25 @@ function unmetGates(c: Constraints, stats: ReturnType<typeof generate>['stats'])
   return out;
 }
 
+/**
+ * One control in the lab's action rail, contributed rather than hand-built.
+ *
+ * Not a `LabContribution`: that one's context is `LabChromeContext`, which
+ * only exists inside `<Lab>` — the trial runtime this lab does not use. The
+ * shape is otherwise the same, so the list moves to `<Lab labChrome>` if this
+ * ever becomes a trial lab.
+ */
+type RailAction = ContributionBase & {
+  region: 'header';
+  item: ToolbarItem<LabHistory<LabState>>;
+};
+
 export function PaletteLab() {
   // Restored once, at mount: an HMR bounce or a reload should not cost the
   // configuration someone was in the middle of building.
   const [initial] = useState<LabState>(() => loadLive() ?? INITIAL);
-  const { state, update, undo, redo, canUndo, canRedo } = useLabHistory<LabState>(initial);
+  const history = useLabHistory<LabState>(initial);
+  const { state, update, canUndo, canRedo } = history;
   const [saved, setSaved] = useState<readonly Preset[]>(loadSaved);
   const { c, surfaceKey, anchors } = state;
 
@@ -71,33 +93,53 @@ export function PaletteLab() {
 
   useEffect(() => persistLive(state), [state]);
 
+  const rail = useMemo<readonly RailAction[]>(
+    () => [
+      {
+        id: 'undo',
+        group: 'history',
+        region: 'header',
+        item: {
+          icon: UndoIcon,
+          label: 'Undo',
+          shortcut: '⌘Z',
+          showLabel: true,
+          disabled: !canUndo,
+          onActivate: (h) => h.undo(),
+        },
+      },
+      {
+        id: 'redo',
+        group: 'history',
+        region: 'header',
+        item: {
+          icon: RedoIcon,
+          label: 'Redo',
+          shortcut: '⇧⌘Z',
+          showLabel: true,
+          disabled: !canRedo,
+          onActivate: (h) => h.redo(),
+        },
+      },
+      {
+        id: 'reset',
+        region: 'header',
+        item: {
+          icon: ResetIcon,
+          label: 'Reset',
+          showLabel: true,
+          onActivate: (h) => h.update(INITIAL, 'reset'),
+        },
+      },
+    ],
+    [canUndo, canRedo],
+  );
+
   return (
     <LabShell
       title="Palette lab"
       header={
-        <div className={styles.headerActions}>
-          <button
-            type="button"
-            className={styles.reset}
-            onClick={undo}
-            disabled={!canUndo}
-            title="Undo (⌘Z)"
-          >
-            Undo
-          </button>
-          <button
-            type="button"
-            className={styles.reset}
-            onClick={redo}
-            disabled={!canRedo}
-            title="Redo (⇧⌘Z)"
-          >
-            Redo
-          </button>
-          <button type="button" className={styles.reset} onClick={() => update(INITIAL, 'reset')}>
-            Reset
-          </button>
-        </div>
+        <ToolbarRegion region="header" label="Lab actions" contributions={rail} ctx={history} />
       }
     >
       <div className={styles.page}>
