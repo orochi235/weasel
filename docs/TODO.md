@@ -1373,8 +1373,6 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 - **(P2) SVG `text-anchor` and the text box disagree.** `packages/svg/src/serialize.ts` writes `x` as the box's left edge beside `text-anchor="middle"` / `"end"`, so any other SVG reader centers or right-aligns the text on that edge. `parse.ts` reads the anchor point back into `x`, so an external file's centered text imports with its anchor as the box's left edge and `kit:text`, which aligns within the box, paints it half a box width right of where the file drew it. Weasel-to-weasel round trips are unaffected because neither side shifts. Fixing it changes the meaning of files already written.
 
-- **(P3) No demo exercises non-modal path editing.** `enterPathEdit` / `editAnchors` only run under apps/draw's mode registry — `apps/site/demos/curveLab/RepresentationPanel.tsx:167` disables them and installs its own drag action. The `getActiveMode === undefined` fall-throughs (`SceneCanvas.tsx:1593`, `:1632`) are exercised by tests alone; a small site demo entering anchor editing with no mode registry would give both branches a live home.
-
 - **(P2) Consolidate the paint demos into one "stroke and fill" demo.** `gradients`,
   `pattern-playground`, `vertex-colors` and `vertex-widths` are four cards each
   showing one corner of the same subject. The pieces a combined demo should be

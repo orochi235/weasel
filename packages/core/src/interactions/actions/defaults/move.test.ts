@@ -167,6 +167,19 @@ describe('moveAction descriptor', () => {
     expect(handle).toEqual({});
   });
 
+  it.each(['anchor:1', 'controlOut:0'])(
+    'start returns empty handle when the press hit %s, so editAnchors can take the drag',
+    (kind) => {
+      const invoker = getOngoingInvoker(moveAction);
+      const ctx = makeCtx({
+        selectionIds: ['a'],
+        sceneNodes: { a: { pose: { x: 10, y: 20, width: 50, height: 50 } } },
+      });
+      ctx.drag = { start: { x: 0, y: 0 }, current: { x: 0, y: 0 }, delta: { x: 0, y: 0 }, affordance: { kind } };
+      expect(invoker.start(ctx, undefined)).toEqual({});
+    },
+  );
+
   it('start returns a handle with onMove and onEnd when selection is non-empty', () => {
     const invoker = getOngoingInvoker(moveAction);
     const ctx = makeCtx({
