@@ -37,6 +37,7 @@ import {
   type Viewport3d,
 } from './deps3d';
 import { collectGhosts } from './ghosts3d';
+import { collectOverlayBoxes } from './overlays3d';
 import { createRenderer3d, type ChromeBox, type Renderer3d, type SolidDraw } from './renderer3d';
 import { createSolidScene, type Pose3, type SolidScene } from './scene3d';
 import { dollyAction, orbitAction, useBoxTool, useOrbitTool } from './tools3d';
@@ -176,8 +177,14 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
               ...box,
               x: box.x - originRef.current.x,
               y: box.y - originRef.current.y,
+              tint: 'selection' as const,
             }))
         : [];
+
+      // A marquee sweep and a box-drag, read off the same handles the ghosts
+      // come from. `resolveOverlays` hands back world geometry, which this
+      // lab's identity `clientToWorld` leaves as the client rect.
+      chrome.push(...collectOverlayBoxes(dispatcher.getInFlightHandles(), originRef.current));
 
       renderer.draw(solids, cameraRef.current, device, chrome, {
         width: rect.w,
@@ -241,9 +248,9 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     [],
   );
 
-  // No `history`: `Scene` owns one and exposes no handle to it, so the kit's
-  // undo/redo actions have nothing to drive. The toolbar calls scene.undo directly.
-  useStandardActions({ selection: selectionApi, scene: scene as never });
+  // `scene.history` is the same handle `<SceneCanvas>` registers, so Cmd+Z
+  // runs the kit's own undo action here rather than a lab-local button.
+  useStandardActions({ selection: selectionApi, scene: scene as never, history: scene.history });
   useDepSource('camera3d', () => camera3d);
   useDepSource('nodeAtPoint', () => nodeAtPoint);
   useDepSource('areaSelect', () => areaSelect);
@@ -375,10 +382,10 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
         <span className="td-count">
           {scene.renderOrderNodes().length} solids · {selection.length} selected
         </span>
-        <button type="button" className="td-tool" onClick={() => scene.undo()}>
+        <button type="button" className="td-tool" onClick={() => scene.history.undo()}>
           undo
         </button>
-        <button type="button" className="td-tool" onClick={() => scene.redo()}>
+        <button type="button" className="td-tool" onClick={() => scene.history.redo()}>
           redo
         </button>
       </div>

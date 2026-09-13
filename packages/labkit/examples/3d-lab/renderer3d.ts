@@ -18,6 +18,13 @@ const GHOST_ALPHA = 0.4;
 /** Just clear of the grid at y=0, which would otherwise z-fight it. */
 const FOOTPRINT_Y = 0.004;
 
+/** Warm for what is selected, cool for what a gesture is proposing — so a
+ *  marquee sweeping across a selected solid stays two readable outlines. */
+const CHROME_COLORS: ReadonlyArray<readonly ['selection' | 'gesture', readonly [number, number, number]]> = [
+  ['selection', [1, 0.85, 0.3]],
+  ['gesture', [0.45, 0.8, 1]],
+];
+
 export interface SolidDraw {
   pose: Pose3;
   kind: SolidKind;
@@ -34,12 +41,15 @@ export interface DeviceRect {
   h: number;
 }
 
-/** A selection outline, in CSS pixels relative to the tile's top-left. */
+/** An outline, in CSS pixels relative to the tile's top-left. */
 export interface ChromeBox {
   x: number;
   y: number;
   width: number;
   height: number;
+  /** What the outline is: what the user has selected, or what the gesture in
+   *  their hand is proposing. Drawn in different colors, one pass each. */
+  tint?: 'selection' | 'gesture';
 }
 
 export interface Renderer3d {
@@ -355,24 +365,28 @@ export function createRenderer3d(gl: WebGL2RenderingContext): Renderer3d {
         gl.disable(gl.DEPTH_TEST);
         gl.useProgram(lineProgram);
         gl.uniformMatrix4fv(lineUniforms.mvp, false, new Float32Array(identity()));
-        gl.uniform3f(lineUniforms.color, 1, 0.85, 0.3);
-        const verts: number[] = [];
-        for (const box of chrome) {
-          const x0 = (box.x / cssSize.width) * 2 - 1;
-          const x1 = ((box.x + box.width) / cssSize.width) * 2 - 1;
-          const y0 = 1 - (box.y / cssSize.height) * 2;
-          const y1 = 1 - ((box.y + box.height) / cssSize.height) * 2;
-          const corners = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
-          for (let i = 0; i < 4; i++) {
-            const a = corners[i];
-            const b = corners[(i + 1) % 4];
-            verts.push(a[0], a[1], 0, b[0], b[1], 0);
-          }
-        }
         gl.bindVertexArray(dynamicLines.vao);
         gl.bindBuffer(gl.ARRAY_BUFFER, dynamicLines.buffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.DYNAMIC_DRAW);
-        gl.drawArrays(gl.LINES, 0, verts.length / 3);
+        for (const [tint, rgb] of CHROME_COLORS) {
+          const verts: number[] = [];
+          for (const box of chrome) {
+            if ((box.tint ?? 'selection') !== tint) continue;
+            const x0 = (box.x / cssSize.width) * 2 - 1;
+            const x1 = ((box.x + box.width) / cssSize.width) * 2 - 1;
+            const y0 = 1 - (box.y / cssSize.height) * 2;
+            const y1 = 1 - ((box.y + box.height) / cssSize.height) * 2;
+            const corners = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+            for (let i = 0; i < 4; i++) {
+              const a = corners[i];
+              const b = corners[(i + 1) % 4];
+              verts.push(a[0], a[1], 0, b[0], b[1], 0);
+            }
+          }
+          if (verts.length === 0) continue;
+          gl.uniform3f(lineUniforms.color, rgb[0], rgb[1], rgb[2]);
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.DYNAMIC_DRAW);
+          gl.drawArrays(gl.LINES, 0, verts.length / 3);
+        }
       }
 
       gl.bindVertexArray(null);
