@@ -308,8 +308,7 @@ map.
 coordinate-space bug — never binding-to-action routing. So routing moved into
 `@weasel-js/routing`, beside `gestures` and `history`, rather than a 3D kernel
 getting its own dispatcher; the seam is `depSchema.ts`, and `@weasel-js/core`
-depends on the package. Costed in `2026-09-13-routing-extraction-costing.md`
-before the move: 6,302 lines across 31 files.
+depends on the package — 6,302 lines across 31 files.
 
 ## Non-goals
 
