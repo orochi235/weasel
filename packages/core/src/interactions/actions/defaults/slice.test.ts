@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { sliceAction } from './slice';
-import type { SliceDep } from './slice';
+import type { SliceDep } from '../depSchema';
 import type { InvocationCtx, OngoingInvoker } from '../invoker';
 import { ActionDisabledReason } from '../action';
 

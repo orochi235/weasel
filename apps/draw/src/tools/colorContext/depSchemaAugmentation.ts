@@ -13,7 +13,7 @@ import type { ColorContextValue } from './ColorContextProvider';
 
 declare module '@weasel-js/core' {
   interface DepSchema {
-    color: ColorContextValue;
+    color?: ColorContextValue;
   }
 }
 

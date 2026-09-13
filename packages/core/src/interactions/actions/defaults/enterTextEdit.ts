@@ -65,41 +65,12 @@
  */
 
 import type { Action } from '../action';
+import type { TextEditDep } from '../depSchema';
 import type { NodeId } from 'core/scene/types';
 
 // ---------------------------------------------------------------------------
 // TextEditDep
 // ---------------------------------------------------------------------------
-
-/**
- * Dep for `enterTextEditAction`.
- *
- * Wrap the return value of `useTextEdit` / `useSceneTextEdit` to source this
- * dep. The `isTextNode` predicate is optional — when absent the action fires
- * unconditionally (the binding spec acts as the gate).
- *
- * @example
- * ```ts
- * const textEdit = useSceneTextEdit({ scene, container });
- * useDepSource('textEdit', () => ({
- *   startEdit: textEdit.startEdit,
- *   isTextNode: (id) => scene.get(id as NodeId)?.data?.kind === 'text',
- * }));
- * ```
- */
-export interface TextEditDep {
-  /**
-   * Begin editing the node with `id`. Activates the contenteditable overlay
-   * managed by `useTextEdit` / `useSceneTextEdit`.
-   */
-  startEdit(id: string, opts?: { caret?: number | 'all' }): void;
-  /**
-   * Optional predicate: returns `true` when the node with `id` is a text node.
-   * When absent the action fires on any selected node (binding spec is the gate).
-   * When present and returning `false`, the invocation is a no-op.
-   */
-  isTextNode?(id: string): boolean;
-}
 
 // ---------------------------------------------------------------------------
 // Descriptor

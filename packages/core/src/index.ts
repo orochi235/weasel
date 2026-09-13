@@ -155,7 +155,6 @@ export {
 export { editAnchorsAction } from './interactions/actions/defaults/editAnchors';
 export { lassoSelectAction } from './interactions/actions/defaults/lassoSelect';
 export { sliceAction } from './interactions/actions/defaults/slice';
-export type { SliceDep } from './interactions/actions/defaults/slice';
 export {
   pinchZoomAction,
   makePinchZoomAction,
@@ -165,9 +164,8 @@ export {
   clipboardCopyAction,
   clipboardCutAction,
 } from './interactions/actions/defaults/clipboard';
-export type { ClipboardDep } from './interactions/actions/defaults/clipboard';
 export { enterTextEditAction } from './interactions/actions/defaults/enterTextEdit';
-export type { TextEditDep } from './interactions/actions/defaults/enterTextEdit';
+export type { SliceDep, ClipboardDep, TextEditDep } from './interactions/actions/depSchema';
 export { useStandardActions, KIT_STANDARD_ACTION_IDS } from './interactions/actions/useStandardActions';
 export type { UseStandardActionsOptions } from './interactions/actions/useStandardActions';
 // Scene-backed op applier for the consumer `applyOps` commit hook — applies a

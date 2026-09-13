@@ -11,7 +11,7 @@
  */
 import { useRef } from 'react';
 import { useDepSource } from 'interactions/actions/depRegistry';
-import type { SliceDep } from 'interactions/actions/defaults/slice';
+import type { SliceDep } from 'interactions/actions/depSchema';
 
 /** Publish how a slice (knife cut) is performed, so the `slice` action can
  *  run against the consumer's geometry. */

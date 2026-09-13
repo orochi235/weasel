@@ -23,7 +23,7 @@ export {
   deleteAnchorsAction, cutPathAtAnchorAction, marqueeAnchorsAction, selectAnchorAction,
 } from './anchorEditing';
 export { undoAction, redoAction } from './undoRedo';
-export { clipboardCopyAction, clipboardCutAction, type ClipboardDep } from './clipboard';
+export { clipboardCopyAction, clipboardCutAction } from './clipboard';
 export {
   makeToolOffhandAction,
   buildToolOffhandBindings,
@@ -49,4 +49,4 @@ export { pinchZoomAction } from './pinchZoom';
 export { viewportWheelPanAction } from './viewportWheelPan';
 export { viewportZoomAction, makeViewportZoomAction, type ViewportZoomOptions } from './viewportZoom';
 export { viewportDragPanAction } from './viewportDragPan';
-export { enterTextEditAction, type TextEditDep } from './enterTextEdit';
+export { enterTextEditAction } from './enterTextEdit';

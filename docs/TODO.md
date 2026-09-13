@@ -198,15 +198,21 @@ Priority tags:
   own arc, and worth asking first whether labkit should support a lab with no
   trials at all.
 
-- **(P2) Routing is portable; the dep schema is not.** Every fight the 3D lab
-  had was a dep contract, a registration step or a coordinate-space bug — never
-  binding-to-action routing and never `InvocationCtx`. So a second kernel wants
-  core's dispatcher, not one of its own, which argues for extracting routing
-  into a package beside `gestures` and `history` and puts the seam at
-  `depSchema.ts`: `ViewApi` has no orientation, `SnapDep`/`AreaSelectDep`/
-  `NodeAtPointDep`/`InsertDep.commit` are typed in 2D points and `Bounds`.
-  Concluded in `docs/superpowers/specs/2026-08-22-3d-kernel-design.md` and
-  recorded nowhere else until now.
+- **(P2) Routing has not moved into a package yet.** Every fight the 3D lab had
+  was a dep contract, a registration step or a coordinate-space bug — never
+  binding-to-action routing and never `InvocationCtx` — so a second kernel wants
+  core's dispatcher rather than one of its own, which argues for a package
+  beside `gestures` and `history`. The untangling that had to come first is
+  done (2026-09-13): `Action` and `Contribution` each split into a routing half
+  and a chrome half, the actions provider is out of the registry contract, the
+  dispatcher takes `ActionSource` instead of `ActionsRegistry`, and nothing in
+  routing, tools or contributions is in an import cycle. What is left is the
+  move itself — package scaffold, file moves, core's re-exports — plus the
+  correctness pass the `gestures`/`history` extraction says to budget for.
+  The seam is still `depSchema.ts`: `ViewApi` has no orientation, and
+  `SnapDep`/`AreaSelectDep`/`NodeAtPointDep`/`InsertDep.commit` are typed in 2D
+  points and `Bounds`. Costed and measured in
+  `docs/superpowers/specs/2026-09-13-routing-extraction-costing.md`.
 
 - **(P3) `PoseDescriptor` only runs one way for a non-2D pose.** `getBounds`
   and `intersectsRect` read fine as a screen-projected AABB — that is what

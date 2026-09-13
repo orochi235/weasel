@@ -13,13 +13,9 @@ is, which parts are cheap, and which one thing is genuinely hard.
 
 ## The headline
 
-**6,302 lines across 31 files**, and the cycles mean almost none of it can go
-alone. A routing package cannot take "just the dispatcher": `dispatcher.ts`
-imports `actionBindings` from `registry.tsx` as a value while `registry.tsx`
-imports `Dispatcher` back, `tools/types.ts` and `tools/routeTypes.ts` import
-each other, and `tools/*` and `contributions/*` form a three-way knot. The
-actions registry, the tool-declaration types and the contributions layer all
-move together or none of them do.
+**6,302 lines across 31 files.** The cycles this doc costed as the blocking
+problem are gone — see "Arc 1 is done" below — so the question left is the
+package, not the untangling.
 
 | Group | Lines |
 |---|---:|
@@ -33,6 +29,37 @@ move together or none of them do.
 
 For scale, what stays behind: the actions themselves are 9,770 lines, builtin
 tools 2,215, affordances 1,658, the chrome-caps rule engine 957.
+
+## Arc 1 is done (2026-09-13)
+
+Everything this doc filed under Arc 1 has landed on `main`. What the work
+measured, against what this doc predicted:
+
+**The knot was one component, not three cycles, and it was bigger than
+counted.** A Tarjan pass over core's non-test imports found a single 15-file
+strongly connected component spanning `contributions/`, `tools/`,
+`interactions/actions/`, `depSchema.ts` and `dispatcher.ts`, closed by 10 value
+edges. It is gone. Nothing in routing, tools or contributions is in a cycle now;
+the only one left anywhere near is `distribute.ts` ↔ `plan.ts`, which is
+unrelated.
+
+**It came apart at the type level, not by moving files.** Four splits did it:
+`Action` into `ActionDispatch` (what routing consults) and `ActionPresentation`
+(what a palette renders); `Contribution` into `ContributionRouting` and
+`ContributionChrome` the same way; `HotkeyTrigger` and `ToolPresentation` moved
+from `tools/types.ts` to `contributions/types.ts`, where the fields that use
+them already lived; and the dispatcher narrowed from `ActionsRegistry` to
+`ActionSource`, the one method — `list()` — it ever called.
+
+**The god-object is two files.** `registry.ts` is the store contract and the
+registration validators, in plain TypeScript; `ActionsProvider.tsx` is the
+context, the provider, the mute scope and the hooks. `actionBindings` and
+`BoundGesture` went down to `binding.ts`, which already owned `GestureBinding`;
+`evaluateEnabled` went to `actionEnabled.ts`, because the dispatcher calls
+`action.enabled(deps)` raw and never used the wrapper.
+
+**`ClaimableGesture` is in `@weasel-js/gestures`.** Its type closure was empty —
+five string literals — so the zero-dependency package stayed that way.
 
 ## Two things are already done
 
@@ -64,15 +91,27 @@ it from outside exactly as the two consumers already do. Far cheaper, uses a
 seam the repo has exercised twice, and needs no generic. The concrete dep
 interfaces — all 24 — stay in core, which becomes just another consumer.
 
-**The second design is the recommendation, with one landmine stated plainly.**
-TypeScript declaration merging targets the module where an interface is
-*declared*, not one that re-exports the type. An augmentation still aimed at
-`'@weasel-js/core'` after the declaration moves silently stops merging: no
-runtime error, no build error, the dep simply type-checks as absent. Both
-augmentation sites are a two-line retarget and nothing catches a missed one.
-This failure has already happened here once — `depRegistry.tsx` carries a
-comment recording that `rollup-plugin-dts` flattening two files into one `.d.ts`
-chunk emptied `DepSchema` for consumers.
+**The second design is the recommendation, and the landmine this doc named is
+not real.** It claimed declaration merging targets the module where an interface
+is *declared*, so an augmentation still aimed at `'@weasel-js/core'` after the
+declaration moved would silently stop merging. Measured 2026-09-13 against
+`tsc` under `moduleResolution: bundler`, in both shapes that matter — the
+interface re-exported from a sibling file, and re-exported from a sibling
+*package* — the augmentation merges through the alias and both the consumer's
+key and the built-in keys resolve. A negative control aimed at a module with no
+`DepSchema` fails with TS2339 and TS2322, so the check has teeth.
+
+What did happen here once was narrower: `depRegistry.tsx` records a
+*self*-augmentation — core's own `declare module './depRegistry'` — dying when
+`rollup-plugin-dts` flattened both files into one `.d.ts` chunk, at which point
+the augmented module no longer existed separately. That is a build-shape
+failure, not an aliasing one, and `dts: true` is still how core emits
+declarations.
+
+The hand-run experiment is now a standing check: `smoke-consumer-bundle.mjs`
+declares a `smokeDep` against the *published* `.d.ts` and asserts both it and
+the kit's own keys resolve. That covers the flattening path the experiment could
+not.
 
 ### The schema is less 2D than the phrase suggests
 
@@ -103,22 +142,13 @@ already builds `@weasel-js/core/routing` as a second target, so the shape is not
 new. Keeping the seam in core instead would leave any second kernel pulling core
 back in to drive routing at all, which defeats the point.
 
-## Three smaller obstructions
+## Three smaller obstructions (resolved)
 
-**`registry.tsx` is a god-object.** 712 lines that are simultaneously the
-`Action` policy-authoring type — `icon`, `group`, `shortcut`, `enabled` — and the
-dispatch runtime. Either split the file, or accept that the new package's central
-public type carries palette fields with nothing to do with dispatch.
-
-**`ClaimableGesture` leaks in from affordances.** `matcher.ts` and `invoker.ts`
-both import it from `affordances/types`, a subsystem that is otherwise rendering
-and hit-test geometry and stays in core. The type wants to move to
-`@weasel-js/gestures` first.
-
-**`Tool` and `Contribution` mix concerns.** Both bundle routing fields
-(`bindings`, `eligibility`) with non-routing ones (`overlay`, `presentation`,
-`ToolCtx`) in one interface, so the boundary runs through the types rather than
-between them.
+All three are resolved — see "Arc 1 is done" above. They were: `registry.tsx`
+as a god-object holding both the `Action` authoring type and the dispatch
+runtime; `ClaimableGesture` leaking into `matcher.ts` and `invoker.ts` from
+affordances; and `Tool`/`Contribution` bundling routing fields with chrome ones,
+so the boundary ran through the types rather than between them.
 
 ## What the last extraction actually cost
 
@@ -164,19 +194,12 @@ would re-export the moved symbols, none of these break. Only the two
 
 ## The shape of the work
 
-**Arc 1 — untangle, inside core, no package.** Split `registry.tsx`'s authoring
-type from its runtime. Break the `dispatcher.ts` ↔ `registry.tsx` cycle. Move
-`ClaimableGesture` to `@weasel-js/gestures`. Separate the React providers from
-the plain data types they share a file with. Settle the `DepSchema` shape. This
-is the bulk of the thinking, it carries no packaging risk, and it leaves the tree
-better whether or not the package ever ships.
+**Arc 1 — untangle, inside core, no package. Done.** See above.
 
-**Arc 2 — move it.** Mechanical once Arc 1 lands: the package scaffold, the file
-moves, core's re-exports, and retargeting the two augmentation sites.
+**Arc 2 — move it.** The package scaffold, the file moves, core's re-exports,
+and retargeting the two augmentation sites. Arc 1 removed the reason this could
+not be done piecemeal, and the augmentation retarget turns out not to be
+load-bearing: the sites can keep naming `'@weasel-js/core'` and still merge.
 
-**Arc 3 — the correctness pass.** On the precedent above, expect it to find real
-bugs that predate the move.
-
-The honest summary: **Arc 1 is the whole question.** If the untangling is worth
-doing on its own terms — and the god-object and the two cycles argue it is — the
-package is a cheap step afterwards. If it is not, the extraction is not either.
+**Arc 3 — the correctness pass.** On the `gestures`/`history` precedent, expect
+it to find real bugs that predate the move. It does not appear in any diffstat.

@@ -1,13 +1,11 @@
 /**
- * Kit-standard DepSchema augmentation.
+ * `DepSchema` and every dep value type it names.
  *
- * Adds the named entries the kit's default actions consume. Consumer apps
- * add their own entries (e.g. `color`) via the same declaration-merging
- * pattern in their own files.
- *
- * Side-effect import: importing this file augments the shared DepSchema
- * type. Re-exported from `src/index.ts` so consumers get the entries
- * automatically.
+ * The schema is a plain `export interface` declared here, not an
+ * augmentation — see `depRegistry.tsx` for why. Consumer apps add their own
+ * entries by declaration-merging against `'@weasel-js/core'` in their own
+ * files; `apps/draw`'s `color` and the 3D lab's `camera3d` are the two
+ * worked examples.
  *
  * ## Improvisation notes
  *
@@ -38,9 +36,6 @@ import type { InsertAdapter } from 'core/adapters/types';
 import type { History } from '@weasel-js/history';
 import type { PointerContextValue } from 'features/pointer/PointerContext';
 import type { ActiveToolContextValue } from './activeToolContext';
-import type { TextEditDep } from './defaults/enterTextEdit';
-import type { SliceDep } from './defaults/slice';
-import type { ClipboardDep } from './defaults/clipboard';
 import type {
   PointSnapBehavior,
   BoundsConstraint,
@@ -48,7 +43,7 @@ import type {
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PoseDescriptor } from './resize/geometry';
 import type { GeometryProjection } from './geometryProjection';
-import type { DragSample } from './invoker';
+import type { Point2, DragSample } from './invoker';
 
 /** Minimal view API the action layer consumes. */
 export interface ViewApi {
@@ -392,6 +387,59 @@ export interface LayoutDep {
  * augmenting the interface (`declare module '@weasel-js/core'`), which is what
  * makes a custom dep name type-check in `requires` and in the deps bag.
  */
+/**
+ * Dep for `enterTextEditAction`.
+ *
+ * Wrap the return value of `useTextEdit` / `useSceneTextEdit` to source this
+ * dep. The `isTextNode` predicate is optional — when absent the action fires
+ * unconditionally (the binding spec acts as the gate).
+ *
+ * @example
+ * ```ts
+ * const textEdit = useSceneTextEdit({ scene, container });
+ * useDepSource('textEdit', () => ({
+ *   startEdit: textEdit.startEdit,
+ *   isTextNode: (id) => scene.get(id as NodeId)?.data?.kind === 'text',
+ * }));
+ * ```
+ */
+export interface TextEditDep {
+  /**
+   * Begin editing the node with `id`. Activates the contenteditable overlay
+   * managed by `useTextEdit` / `useSceneTextEdit`.
+   */
+  startEdit(id: string, opts?: { caret?: number | 'all' }): void;
+  /**
+   * Optional predicate: returns `true` when the node with `id` is a text node.
+   * When absent the action fires on any selected node (binding spec is the gate).
+   * When present and returning `false`, the invocation is a no-op.
+   */
+  isTextNode?(id: string): boolean;
+}
+
+/**
+ * Clipboard dep — the imperative surface `useClipboardOps` returns.
+ *
+ * Consumers publish their live clipboard through `useDepSource('clipboard',
+ * …)` from inside the `<DepRegistryProvider>` (i.e. under `<SceneCanvas>`).
+ * The kit deliberately does not build one for them: `useClipboardOps` needs
+ * an adapter and a selection reader that only the consumer can supply.
+ */
+export interface ClipboardDep {
+  copy(): void;
+  paste(): void;
+  isEmpty(): boolean;
+}
+
+/**
+ * Consumer-supplied commit for the Slice action. `commit` receives the finite
+ * slice segment (world coords); the consumer scans the scene, splits crossed
+ * paths via `splitPathByLine`, and applies the result as one undoable batch.
+ */
+export interface SliceDep {
+  commit(a: Point2, b: Point2): void;
+}
+
 export interface DepSchema {
   /** Kit selection state — ids of currently selected nodes. */
   selection: SelectionApi;

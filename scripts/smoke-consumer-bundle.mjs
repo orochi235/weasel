@@ -101,7 +101,11 @@ for (const file of distFiles) {
     if (REPO_ALIASES.test(spec)) aliasLeaks.add(`${spec}  (in ${file})`);
     if (!spec.startsWith('@weasel-js/')) continue;
     bucket.add(spec);
-    if (!declared.has(spec)) undeclared.add(`${spec}  (in ${file})`);
+    // A subpath is not a package: `@weasel-js/geom/booleans` is declared by
+    // `@weasel-js/geom`. Compare the package name, or every subpath import
+    // reads as undeclared.
+    const pkgName = spec.split('/').slice(0, 2).join('/');
+    if (!declared.has(pkgName)) undeclared.add(`${spec}  (in ${file})`);
   }
 }
 const seen = new Set([...seenJs, ...seenDts]);
@@ -410,7 +414,7 @@ await writeFile(
   // (a) DepSchema must be the populated, merged interface, not the empty base;
   // (b) types re-exported across the package boundary must resolve to their
   //     real declarations in the sibling package, not to `any`/`never`.
-  `import type { DepSchema, History, GestureSpec, SelectionApi, Op } from '@weasel-js/core';\n` +
+  `import type { Action, DepName, DepSchema, History, GestureSpec, SelectionApi, Op } from '@weasel-js/core';\n` +
     `import type { Mat3 } from '@weasel-js/geom';\n` +
     `import type { History as HistoryDirect } from '@weasel-js/history';\n` +
     `type _Sel = DepSchema['selection'];\n` +
@@ -442,8 +446,25 @@ await writeFile(
     // `types` condition points into the tsc-emitted tree, which is laid out to
     // mirror the Vite entry keys; if those two ever drift, this is TS7016.
     `type _UiSubpath = typeof import('@weasel-js/ui/components/Toast');\n` +
-    `export type { _Sel, _View, _Scene, _Hist, _Ptr, _M, _G, _S, _O, _Ui, _Hud, _UiSubpath };\n` +
+    // A consumer's own dep must merge into DepSchema. Declaration merging
+    // targets the module where the interface is DECLARED, not one that
+    // re-exports the type — so if DepSchema's declaration ever moves out of
+    // core into a sibling package, this augmentation silently stops merging
+    // and `requires: ['smokeDep']` type-checks as an absent name with no
+    // error anywhere. `apps/draw` and the 3D lab both augment exactly like
+    // this, and both typecheck against core's SOURCE in-repo, so neither can
+    // catch it. Only a pass over the published .d.ts can.
+    `declare module '@weasel-js/core' {\n` +
+    `  interface DepSchema { smokeDep?: { ping(): number } }\n` +
+    `}\n` +
+    `type _Augmented = DepSchema['smokeDep'];\n` +
+    `const _augKey: keyof DepSchema = 'smokeDep';\n` +
+    `declare const _augAction: Action;\n` +
+    `const _augRequires: readonly DepName[] = ['smokeDep', ..._augAction.requires ?? []];\n` +
+    `export type { _Sel, _View, _Scene, _Hist, _Ptr, _M, _G, _S, _O, _Ui, _Hud, _UiSubpath, _Augmented };\n` +
     `export const _key = _k;\n` +
+    `export const _augK = _augKey;\n` +
+    `export const _augR = _augRequires;\n` +
     `export const _h = _viaDirect;\n`,
 );
 await writeFile(
@@ -485,6 +506,9 @@ try {
       '    declaration build step silently emitted nothing; see npm run check:manifests\n' +
       '  • DepSchema came back empty (its fields must be a plain `export interface`\n' +
       "    in depSchema.ts, not a `declare module './depRegistry'` augmentation)\n" +
+      "  • a consumer's `declare module '@weasel-js/core'` no longer merges into\n" +
+      '    DepSchema — the interface must be DECLARED in the module the\n' +
+      '    augmentation names, not merely re-exported from it\n' +
       '  • core inlined a sibling\'s declarations instead of importing them, so the\n' +
       '    re-exported type is no longer identical to the sibling\'s own.',
   );

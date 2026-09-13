@@ -2,7 +2,8 @@
  * Tests for the `clipboard.copy` / `clipboard.cut` descriptors.
  */
 import { describe, it, expect, vi } from 'vitest';
-import { clipboardCopyAction, clipboardCutAction, type ClipboardDep } from './clipboard';
+import { clipboardCopyAction, clipboardCutAction } from './clipboard';
+import type { ClipboardDep } from '../depSchema';
 import type { ImmediateInvoker } from '../invoker';
 import type { NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
