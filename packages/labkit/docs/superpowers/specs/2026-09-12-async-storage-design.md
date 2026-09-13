@@ -1,7 +1,5 @@
 # Async, record-based lab storage
 
-**Status: built on branch `labkit-async-storage`, not yet merged to `main`.**
-
 For whoever works on labkit's persistence next. It answers: how a lab persists
 itself to any substrate — IndexedDB, localStorage, the URL, a server — and how
 two writers (two tabs, or a tab and a server) share one lab without one
