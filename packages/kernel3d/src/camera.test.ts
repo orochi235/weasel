@@ -7,8 +7,9 @@ import {
   dollyBy,
   MAX_PITCH,
   type Camera3d,
-} from './camera3d';
-import { rayThroughScreenPoint, normalize, sub, type Vec3 } from './math3d';
+} from './camera';
+import { normalize, sub, type Vec3 } from '@weasel-js/geom/3d';
+import { rayThroughScreenPoint } from './screen';
 
 const RECT = { x: 0, y: 0, w: 800, h: 600 };
 

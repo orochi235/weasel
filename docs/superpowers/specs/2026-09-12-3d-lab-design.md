@@ -17,6 +17,12 @@ The lab is the instrument, not the product. What ships past it is a log of every
 place a 2D assumption forced a cast, a stub or a reinterpretation, folded back
 into the kernel doc.
 
+**Its kernel material shipped on 2026-09-13.** The math is `@weasel-js/geom/3d`
+and the camera, picking, deps, chrome geometry and viewport tools are
+`@weasel-js/kernel3d`. What stayed is what a lab is: the WebGL renderer, the
+instrument shell, the three colored solids, the box tool, and the ghost
+collector the pose feed is meant to replace.
+
 ## What it does
 
 Orbit and dolly a camera over a handful of solids. Click one to select it. Drag

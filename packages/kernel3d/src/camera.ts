@@ -2,8 +2,8 @@
  * An orbit camera: a target, two angles and a distance. Immutable — every
  * gesture returns a new one, so it can live in instrument state.
  *
- * This is the shape `ViewApi` cannot hold, and the reason the lab registers a
- * `camera3d` dep of its own rather than the kit's `view`.
+ * This is the shape `ViewApi` cannot hold, and the reason the kernel declares a
+ * `camera3d` dep of its own rather than reusing the kit's `view`.
  */
 
 import {
@@ -12,7 +12,7 @@ import {
   perspective,
   type Mat4,
   type Vec3,
-} from './math3d';
+} from '@weasel-js/geom/3d';
 
 export interface Camera3d {
   target: Vec3;
