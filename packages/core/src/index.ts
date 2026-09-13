@@ -1323,9 +1323,9 @@ export type {
   SceneAdapterSelection,
 } from './canvas/sceneAdapter';
 export type {
-  ToolPresentation,
-} from './tools/types';
-export type { Contribution, Eligibility, EligibilityState, OverlayPosition } from './contributions';
+  Contribution, ContributionRouting, ContributionChrome, Eligibility, EligibilityState,
+  HotkeyTrigger, OverlayPosition, ToolPresentation,
+} from './contributions';
 export { liveScope, mergeContributions, scopeBindings } from './contributions';
 export type { InsertOverlayStyle } from './tools/builtin/marquee';
 export type { InsertPoint } from './interactions/gestures/types';

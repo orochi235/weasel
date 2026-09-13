@@ -1,4 +1,7 @@
-export type { Contribution, Eligibility, OverlayPosition } from './types';
+export type {
+  Contribution, ContributionRouting, ContributionChrome, Eligibility,
+  OverlayPosition, HotkeyTrigger, ToolPresentation,
+} from './types';
 export { liveScope } from './eligibility';
 export type { EligibilityState } from './eligibility';
 export { scopeBindings } from './assemble';

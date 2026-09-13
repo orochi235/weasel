@@ -3,10 +3,31 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
 import type { View } from 'core/viewport/view';
 import type { DebugSink } from '../debug/types';
-import type { ToolKeybinding } from './routeTypes';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { Contribution } from '../contributions/types';
 import type { CursorSpec } from '@weasel-js/cursor';
+
+/**
+ * Configurable activation-key descriptor for tools that expose their
+ * keybinding to the host (currently Lasso and Eyedropper). Captures
+ * only the fields meaningful to a caller-supplied tool-select key —
+ * dispatcher-internal fields (`skipInEditable`, `enabled`,
+ * `preventDefault`) live on `KeyBinding` in keyHelpers.ts and are
+ * not part of the configurable surface.
+ */
+export interface ToolKeybinding {
+  /** Key or list of keys to match (case-insensitive against `event.key`). */
+  key: string | readonly string[];
+  /** Require Cmd (mac) / Ctrl (others). Default `false`. */
+  mod?: boolean;
+  /** Require Alt. Default `false`. */
+  alt?: boolean;
+  /**
+   * Shift policy. `undefined`/`false` forbids shift, `true` requires
+   * shift, `'optional'` allows either.
+   */
+  shift?: boolean | 'optional';
+}
 
 /** Modifier-key snapshot at event dispatch time. */
 export interface ToolModifiers {
@@ -53,36 +74,10 @@ export interface ToolCtx<TScratch = unknown> {
   scratch: TScratch;
 }
 
-/** Hotkey-slot trigger key. The slot is engaged while this key is held —
- *  hence "hotkey": active as long as the key is hot. `null` (or omitted)
- *  means the tool is not eligible for the hotkey slot. */
-export type HotkeyTrigger = 'space' | 'alt' | 'ctrl' | 'meta' | 'shift';
-
 /** World-space AABB shape used by `previewBounds`. Alias of the kit-wide
  *  `Bounds` type — the optional `rotation` field carries through so a tool
  *  can report an oriented preview rect (e.g. mid-rotate). */
 export type ToolBounds = Bounds;
-
-/** Presentation metadata for tool palettes / menus. Optional on every
- *  tool — consumers that render a palette (`<ToolPalette>`) read these
- *  fields to display the tool; consumers that don't can ignore them.
- *
- *  Note: cursor is NOT here. `Tool.cursor` (inherited from `Contribution`)
- *  is already plumbed through `<Canvas>` to `style.cursor` on the host. */
-export interface ToolPresentation<TScratch = unknown> {
-  /** Human-readable label, distinct from the `id`. Falls back to `id`. */
-  label?: string;
-  /** Inline-SVG icon component output. May be a static `ReactNode` or a
-   *  function of scratch state (rare; useful for shape-aware affordances). */
-  icon?: import('react').ReactNode | ((scratch?: TScratch) => import('react').ReactNode);
-  /** Palette grouping key. Tools sharing a group render contiguously
-   *  with separators between groups. Free-form string; the kit
-   *  recommends 'select' | 'shape' | 'draw' | 'type' | 'view'. */
-  group?: string;
-  /** Display override for the keyboard shortcut. When omitted the palette
-   *  derives one from `Tool.keybinding` via its own formatter. */
-  shortcut?: string;
-}
 
 /**
  * The focus-declaring case of a `Contribution`: a mode the user switches

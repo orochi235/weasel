@@ -1,31 +1,10 @@
-import type { ToolCtx, ToolPresentation, HotkeyTrigger } from './types';
+import type { ToolCtx, ToolKeybinding } from './types';
+import type { HotkeyTrigger, ToolPresentation } from '../contributions/types';
 import type { RenderLayer } from '../core/layers/render';
 import type { GestureBinding } from '../interactions/actions/binding';
 import type { CapabilityTag } from '@weasel-js/modes';
 import type { OverlayPosition } from '../contributions/types';
 import type { CursorSpec } from '@weasel-js/cursor';
-
-/**
- * Configurable activation-key descriptor for tools that expose their
- * keybinding to the host (currently Lasso and Eyedropper). Captures
- * only the fields meaningful to a caller-supplied tool-select key —
- * dispatcher-internal fields (`skipInEditable`, `enabled`,
- * `preventDefault`) live on `KeyBinding` in keyHelpers.ts and are
- * not part of the configurable surface.
- */
-export interface ToolKeybinding {
-  /** Key or list of keys to match (case-insensitive against `event.key`). */
-  key: string | readonly string[];
-  /** Require Cmd (mac) / Ctrl (others). Default `false`. */
-  mod?: boolean;
-  /** Require Alt. Default `false`. */
-  alt?: boolean;
-  /**
-   * Shift policy. `undefined`/`false` forbids shift, `true` requires
-   * shift, `'optional'` allows either.
-   */
-  shift?: boolean | 'optional';
-}
 
 /**
  * What a tool declares.

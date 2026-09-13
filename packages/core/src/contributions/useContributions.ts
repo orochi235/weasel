@@ -11,7 +11,8 @@ import {
   type ToolOffhandBindingSpec,
 } from '../interactions/actions/defaults/toolOffhand';
 import { reportRouteConflicts } from '../tools/routing/reflection/conflicts';
-import type { HotkeyTrigger, Tool } from '../tools/types';
+import type { Tool } from '../tools/types';
+import type { HotkeyTrigger } from './types';
 import { scopeBindings } from './assemble';
 import { liveScope } from './eligibility';
 import type { Contribution, OverlayPosition } from './types';

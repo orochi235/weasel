@@ -5,7 +5,7 @@ import type { Tool } from '../../types';
 import type { UseLassoSelectOptions } from 'interactions/actions/lasso-select/options';
 import { selectFromLasso } from 'interactions/actions/lasso-select/behaviors/selectFromLasso';
 import type { LassoHitMode, LassoSelectAdapter } from 'core/adapters/types';
-import type { ToolKeybinding } from '../../routeTypes';
+import type { ToolKeybinding } from '../../types';
 
 /** Options for `useLassoTool` — the lasso-select action's options plus the
  *  tool's own hit mode and activation key. */

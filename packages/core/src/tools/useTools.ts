@@ -1,7 +1,8 @@
 // src/tools/useTools.ts
 import { useCallback, useMemo, useRef } from 'react';
 import { dlog } from '../debug/flag';
-import type { AnyTool, HotkeyTrigger } from './types';
+import type { AnyTool } from './types';
+import type { HotkeyTrigger } from '../contributions/types';
 import type { RenderLayer } from 'core/layers/render';
 import { useActiveToolContext } from '../interactions/actions/activeToolContext';
 import { useContributions } from '../contributions/useContributions';
