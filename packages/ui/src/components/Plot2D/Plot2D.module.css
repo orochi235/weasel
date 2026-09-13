@@ -7,6 +7,10 @@
   /* Axes get full foreground contrast — they're the plot frame, the
    * most prominent structural element after caller-rendered content. */
   --plot-axis: var(--wzl-fg);
+  --plot-tick: var(--wzl-line-subtle);
+  --plot-tick-label: var(--wzl-fg-muted);
+  /* Knocks the tick line out from behind an inside label. */
+  --plot-tick-label-halo: var(--plot-bg);
 
   display: block;
   /* Caller-rendered marks at the very edge (e.g. CurveEditor anchors)
@@ -35,4 +39,25 @@
   stroke: var(--plot-axis);
   stroke-width: var(--wzl-line-width);
   fill: none;
+}
+
+.tick {
+  stroke: var(--plot-tick);
+  stroke-width: 1;
+  fill: none;
+}
+
+.tickLabels { pointer-events: none; }
+
+.tickLabel {
+  fill: var(--plot-tick-label);
+  font-size: var(--wzl-font-size-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.tickLabel[data-placement='inside'] {
+  stroke: var(--plot-tick-label-halo);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  paint-order: stroke;
 }

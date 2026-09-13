@@ -11,6 +11,7 @@ import {
   type Plot2DHandle,
   type GridSettings,
   type AxesSettings,
+  type TickSettings,
 } from '../Plot2D';
 import {
   modelToPlot, plotToModel,
@@ -54,6 +55,10 @@ export interface LayeredCurveEditorProps {
   yRange?: readonly [number, number];
   grid?: GridSettings | false | null;
   axes?: AxesSettings | false | null;
+  /** Ticks at x values. See `Plot2D.xTicks`. */
+  xTicks?: TickSettings | false | null;
+  /** Ticks at y values. See `Plot2D.yTicks`. */
+  yTicks?: TickSettings | false | null;
 
   /** Built-in undo/redo via Cmd/Ctrl+Z (Shift+Z or Y for redo) on the
    *  focused SVG. Snapshots every layer's state on each commit; undo
@@ -107,7 +112,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     layers, onLayerChange, onLayerCommit,
     width, height,
     xRange = [0, 1], yRange = [0, 1],
-    grid, axes,
+    grid, axes, xTicks, yTicks,
     className, style, children,
   } = props;
 
@@ -426,6 +431,8 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
       yRange={yRange}
       grid={grid}
       axes={axes}
+      xTicks={xTicks}
+      yTicks={yTicks}
       tabIndex={historyEnabled ? 0 : undefined}
       role="group"
       aria-label={props['aria-label']}

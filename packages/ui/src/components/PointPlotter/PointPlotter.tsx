@@ -5,7 +5,7 @@ import {
   type ControlPoint,
   type CurveEditorProps,
 } from '../CurveEditor';
-import type { GridSettings, AxesSettings } from '../Plot2D';
+import type { GridSettings, AxesSettings, TickSettings } from '../Plot2D';
 
 /** Props for {@link PointPlotter}. */
 export interface PointPlotterProps {
@@ -24,6 +24,8 @@ export interface PointPlotterProps {
   height: number;
   grid?: GridSettings | false | null;
   axes?: AxesSettings | false | null;
+  xTicks?: TickSettings | false | null;
+  yTicks?: TickSettings | false | null;
   /** Minimum allowed point count. User-initiated deletion is refused
    *  while `value.length <= minPoints`. */
   minPoints?: number;
