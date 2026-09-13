@@ -242,6 +242,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/BezierEditDemo.tsx',
   },
   {
+    id: 'path-anchor-edit',
+    title: 'Path anchor editing',
+    category: 'Geometry',
+    description: 'Anchor editing on a canvas with no mode registry: the demo passes no `getActiveMode`, so the kit\'s standard bindings alone route every step. Double-clicking a path runs `enterPathEdit`, which draws that node\'s anchors. Dragging an anchor or a control handle runs `editAnchors` and rewrites the node\'s `data.path`. Escape runs `exitPathEdit`, after which a drag moves the shape again. The nodes use the same `{ path, fill }` data the built-in shape tools create, so the default painter draws them.',
+    hint: 'Double-click a shape, then drag its anchors. Esc to finish.',
+    load: () => import('./demos/PathAnchorEditDemo').then((m) => m.PathAnchorEditDemo),
+    path: 'apps/site/demos/PathAnchorEditDemo.tsx',
+  },
+  {
     id: 'curve-lab',
     title: 'Curve representations lab',
     category: 'Geometry',
