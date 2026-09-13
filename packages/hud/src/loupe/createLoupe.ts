@@ -24,6 +24,11 @@ export interface LoupeBaseOptions {
    *  the rect client coords are measured against. Defaults to `canvas`, which
    *  is right whenever the canvas is also the thing under the pointer. */
   input?: HTMLElement;
+  /** The rect of `canvas` the magnified picture occupies, in its CSS px — the
+   *  one the aim is relative to. Pass `CanvasExtensionApi.getSurfaceRect` for
+   *  a pane painted into a shared canvas. Defaults to `views.getSurfaceRect`
+   *  when the lens is a view, and to the whole canvas otherwise. */
+  region?: () => { x: number; y: number; width: number; height: number };
   requestRedraw: () => void;
   mode?: LoupeMode;
   factor?: number;
@@ -66,7 +71,7 @@ export type LoupeOptions = LoupeBaseOptions & (
        * the lens can take input. It magnifies the canvas's own camera; aimed
        * over another view, it shows the canvas's world, not that view's.
        */
-      views: Pick<SceneCanvasApi, 'addView'>;
+      views: Pick<SceneCanvasApi, 'addView' | 'getSurfaceRect'>;
       /** Narrows what vector mode paints. Defaults to the canvas's stack. */
       source?: RenderLayer<unknown>[];
       /**
@@ -90,8 +95,9 @@ export interface LoupeHandle {
   readonly factor: number;
   /** Last aimed point, in screen-space CSS px relative to the canvas. */
   readonly aim: { x: number; y: number };
-  /** Hex color under the aim point, read off the framebuffer. `null` before
-   *  the first aim, or when the GL context is unavailable. */
+  /** Hex color under the aim point, read off the framebuffer on the first
+   *  frame to land after the aim. `null` until then, or when the GL context
+   *  is unavailable. */
   readonly color: string | null;
   setMode(mode: LoupeMode): void;
   setFactor(factor: number): void;
@@ -101,7 +107,8 @@ export interface LoupeHandle {
   /** Sample the color the lens is showing at `p` — a screen point inside the
    *  lens — and report it to `onPick`. Omit `p` to pick at the aim point.
    *  Returns the hex, or `null` when the framebuffer cannot answer for that
-   *  point. Leaves the aim, and `color`, alone. */
+   *  point, including before any frame has landed. Leaves the aim, and
+   *  `color`, alone. */
   pick(p?: { x: number; y: number }): string | null;
   dispose(): void;
 }
@@ -124,6 +131,9 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   let pixelsPending = false;
   let refreshWanted = false;
   let disposed = false;
+  // Until a paint lands, the context on a shared canvas may not exist yet, and
+  // opening it here would give every tenant one with no stencil buffer.
+  let landed = false;
 
   const b = opts.bounds ?? { x: 24, y: 24, w: 220, h: 200 };
 
@@ -184,19 +194,40 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     refreshWanted = true;
   };
 
+  /** Read device px of the loupe's region around `at`, sized for the
+   *  canvas's pixel ratio, or `null` when the framebuffer cannot answer. */
+  const read = (
+    at: { x: number; y: number },
+    rw: (dpr: number) => number,
+    rh: (dpr: number) => number,
+  ): ImageData | null => {
+    if (!landed) return null;
+    const gl = element.getContext('webgl2');
+    if (!gl) return null;
+    const cssRect = element.getBoundingClientRect();
+    if (cssRect.width === 0) return null;
+    const dpr = element.width / cssRect.width;
+    // A view-backed lens knows its canvas, so over a detached pane it reads
+    // that pane's pixels without being told where the pane is.
+    const r = (opts.region ?? host?.getSurfaceRect)?.();
+    const target = r
+      ? {
+          x: Math.round(r.x * dpr), y: Math.round(r.y * dpr),
+          width: Math.round(r.width * dpr), height: Math.round(r.height * dpr),
+        }
+      : { x: 0, y: 0, width: element.width, height: element.height };
+    return readbackRegion(gl, element.height, target, at, dpr, rw(dpr), rh(dpr));
+  };
+
   const refreshPixels = () => {
     if (disposed || model.mode !== 'pixel') return;
-    const gl = element.getContext('webgl2');
-    if (!gl) return;
-    const cssRect = element.getBoundingClientRect();
-    if (cssRect.width === 0) return;
-    const dpr = element.width / cssRect.width;
     const rect = win.contentRect;
-    const rw = Math.max(1, Math.round((rect.w * dpr) / model.factor));
-    const rh = Math.max(1, Math.round((rect.h * dpr) / model.factor));
-    const data = readbackRegion(
-      gl, { width: element.width, height: element.height }, model.aim, dpr, rw, rh,
+    const data = read(
+      model.aim,
+      (dpr) => Math.max(1, Math.round((rect.w * dpr) / model.factor)),
+      (dpr) => Math.max(1, Math.round((rect.h * dpr) / model.factor)),
     );
+    if (!data) return;
     pixelsPending = true;
     createImageBitmap(data)
       .then((bmp) => {
@@ -213,14 +244,8 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   };
 
   const readHex = (at: { x: number; y: number }): string | null => {
-    const gl = element.getContext('webgl2');
-    if (!gl) return null;
-    const cssRect = element.getBoundingClientRect();
-    if (cssRect.width === 0) return null;
-    const dpr = element.width / cssRect.width;
-    const px = readbackRegion(
-      gl, { width: element.width, height: element.height }, at, dpr, 1, 1,
-    );
+    const px = read(at, () => 1, () => 1);
+    if (!px) return null;
     return '#' + [px.data[0], px.data[1], px.data[2]]
       .map((c) => c.toString(16).padStart(2, '0')).join('');
   };
@@ -244,7 +269,20 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     hidden: () => win.hidden,
     gone: () => win.disposed === true,
     changed: () => { scheduleRefresh(); requestRedraw(); },
+    subscribeFrame: hud.subscribeFrame,
   };
+
+  // Subscribed ahead of the model, so the frame that lands first is already
+  // readable by the time the model samples on it.
+  const unsubscribeFrame = hud.subscribeFrame(() => {
+    landed = true;
+    // A refresh wanted while a bitmap is in flight is remembered rather than
+    // dropped: the flag survives until a frame finds it settled, so the aim
+    // the user ends a fast drag on is the one that gets read.
+    if (!refreshWanted || pixelsPending) return;
+    refreshWanted = false;
+    refreshPixels();
+  });
 
   const model: LoupeModel = createLoupeModel({
     surface,
@@ -281,15 +319,6 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   };
   const onPointerEnd = () => { holding = false; };
   const pointerEnds = ['pointerup', 'pointercancel', 'lostpointercapture'] as const;
-
-  const unsubscribeFrame = hud.subscribeFrame(() => {
-    // A refresh wanted while a bitmap is in flight is remembered rather than
-    // dropped: the flag survives until a frame finds it settled, so the aim
-    // the user ends a fast drag on is the one that gets read.
-    if (!refreshWanted || pixelsPending) return;
-    refreshWanted = false;
-    refreshPixels();
-  });
 
   const teardown = () => {
     disposed = true;

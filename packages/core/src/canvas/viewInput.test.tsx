@@ -193,3 +193,28 @@ describe('registered layers and views', () => {
     expect(scene.getSelection()).toEqual([inLens]);
   });
 });
+
+describe('a view on a detached pane', () => {
+  it('routes a press measured against the pane’s input box', () => {
+    const { scene, inLens } = makeScene();
+    const shared = document.createElement('canvas');
+    const input = document.createElement('div');
+    document.body.append(shared, input);
+    // The pane sits at client (420, 20); the view's rect is pane-local.
+    vi.spyOn(input, 'getBoundingClientRect').mockReturnValue(
+      { left: 420, top: 20, width: 400, height: 300, right: 820, bottom: 320, x: 420, y: 20, toJSON: () => ({}) } as DOMRect,
+    );
+    const ref = createRef<SceneCanvasApi>();
+    render(
+      <SceneCanvas
+        ref={ref} scene={scene} layers={{}} width={400} height={300}
+        paintInto={{ canvas: shared, x: 420, y: 20 }} inputElement={input}
+      />,
+    );
+    act(() => { ref.current!.addView({ id: 'lens', bounds: () => LENS, view: () => LENS_VIEW }); });
+    click(input, { x: 420 + PRESS.x, y: 20 + PRESS.y });
+    expect(scene.getSelection()).toEqual([inLens]);
+    shared.remove();
+    input.remove();
+  });
+});

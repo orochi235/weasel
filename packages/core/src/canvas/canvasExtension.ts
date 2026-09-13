@@ -54,8 +54,18 @@ export interface CanvasExtensionApi {
    *
    *  Under `paintInto` this is the caller's shared canvas, which co-tenant
    *  panes also paint into: its rect is the whole surface, not this pane's, so
-   *  read geometry off {@link element} rather than off this. */
+   *  read geometry off {@link element} rather than off this, and find this
+   *  pane's pixels on it with {@link getSurfaceRect}. */
   readonly surface: HTMLCanvasElement | null;
+  /**
+   * The rect of {@link surface} this canvas paints into, in the surface's CSS
+   * px — the rect the renderer is confined to. Under `paintInto` that is the
+   * pane's `x`/`y` and this canvas's size; otherwise the whole canvas at the
+   * origin. A point measured against {@link element} sits at
+   * `(x + px, y + py)` on the surface, which is where a readback must look.
+   * Read live: the value is the one the next paint uses.
+   */
+  getSurfaceRect(): { x: number; y: number; width: number; height: number };
   requestRedraw(): void;
   /**
    * Run `fn` after every paint, on the frame that painted — for chrome that

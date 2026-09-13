@@ -54,6 +54,7 @@ vi.mock('./Canvas', async (importOriginal) => {
       const api = {
         element: elRef.current,
         surface: elRef.current,
+        getSurfaceRect: () => ({ x: 0, y: 0, width: 0, height: 0 }),
         requestRedraw: () => {},
         subscribeFrame: () => () => {},
         getView: () => VIEW,

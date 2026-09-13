@@ -393,25 +393,6 @@ Core five + Crop shipped. Remaining:
   costs an O(nodes) bounds sweep every frame. Revisit only if a consumer wants
   framing that tracks a simulation.
 
-- **(P3) The loupe's colour sample is still read off an unlanded frame.** The
-  region readback now waits for a paint, but `readHex`
-  (`packages/hud/src/loupe/createLoupe.ts`) still calls `readbackRegion` inline
-  from `LoupeSurface.sample`, so `loupe.color` and `onColorChange` report the
-  frame before the aim. `pick()` cannot move — an eyedropper has to answer
-  synchronously, and at click time the last landed frame *is* what the user
-  clicked on, so that caller is already right. Only the aim-driven sample is
-  wrong, and fixing it means letting `model.color` settle a frame later.
-
-- **(P3) The loupe cannot aim at a detached pane.** `createLoupe` takes `canvas`
-  and `input` separately, so a pane's aim is measured against the pane box — but
-  `readbackRegion` still reads that aim as an offset into the *whole* drawing
-  buffer (`packages/hud/src/loupe/createLoupe.ts`). Over a `paintInto` surface
-  the two disagree by the pane's origin, so the lens shows the wrong region.
-  Fix shape: carry the target rect into the readback, which means either
-  `createLoupe` takes the pane origin or `CanvasExtensionApi` exposes the rect
-  it hands `WeaselRenderer.setTarget`. Nothing hits this yet — the
-  `tiled-surface` demo mounts no loupe.
-
 - **(P3) Sync paints do not coalesce.** `CanvasProps.syncPaint`
   (`Canvas.tsx:234-242`) promises "a synchronous paint per commit", singular,
   but the loop paints per *request*: one commit carrying a sibling

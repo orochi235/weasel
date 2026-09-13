@@ -980,11 +980,18 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // painted is actually on screen.
   useEffect(() => paintedCursor.subscribe(() => { requestRedraw(); }), [paintedCursor, requestRedraw]);
 
+  const getSurfaceRect = useCallback(() => {
+    const origin = paintRectRef.current;
+    const { width: w, height: h } = dimsRef.current;
+    return { x: origin?.x ?? 0, y: origin?.y ?? 0, width: w, height: h };
+  }, []);
+
   useImperativeHandle(ref, () => ({
     // Named rather than read off `canvasRef` so the handle rebuilds when a
     // detached surface's input element arrives, which is a render later.
     element: detached ? inputElement ?? null : canvasRef.current,
     surface: detached ? paintInto?.canvas ?? null : ownCanvasRef.current,
+    getSurfaceRect,
     requestRedraw,
     subscribeFrame,
     registerLayer,
@@ -995,7 +1002,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     getPaintedVersion,
     paintedCursor,
   }), [canvasRef, ownCanvasRef, detached, inputElement, paintInto?.canvas,
-       requestRedraw, subscribeFrame, registerLayer,
+       getSurfaceRect, requestRedraw, subscribeFrame, registerLayer,
        hitTestExtras, getView, setView, subscribeView, getPaintedVersion,
        paintedCursor]);
 
