@@ -32,7 +32,7 @@ import type { FillStyle } from '@weasel-js/paint';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap, CanvasSelectionMode, SceneSlotConfig, SelectionOverlaySlotConfig } from './Canvas';
 import { wireSceneSlotToScene, composeAlphaFor } from './sceneSlotWiring';
-import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';
+import type { CanvasExtensionApi, CanvasViewHandle, SceneCanvasApi } from './canvasExtension';
 import type { Animator } from '../animation/types';
 import { useAnimator } from '../animation/useAnimator';
 import { useViewAnimation } from 'core/viewport/useViewAnimation';
@@ -1939,6 +1939,18 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [],
   );
 
+  // Views added through the handle rather than declared as props or children.
+  const [addedViews, setAddedViews] = useState<readonly CanvasViewProps[]>([]);
+  const addView = useCallback((props: CanvasViewProps): CanvasViewHandle => {
+    setAddedViews((list) => [...list.filter((v) => v.id !== props.id), props]);
+    return {
+      id: props.id,
+      draw: (data, outer, dims) =>
+        surfaceViewRegistry?.list().find((r) => r.id === props.id)?.layer.draw(data, outer, dims) ?? [],
+      remove: () => setAddedViews((list) => list.filter((v) => v !== props)),
+    };
+  }, [surfaceViewRegistry]);
+
   // Merge the forwarded ref with our internalCanvasRef so the dispatcher can
   // read the canvas element even when the consumer also forwards a ref.
   // The handle exposed to consumers extends the primitive's with `ingest`
@@ -1953,6 +1965,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             animateView: viewAnimation.animate,
             stopViewAnimation: viewAnimation.stop,
             isViewAnimating: viewAnimation.isAnimating,
+            addView,
           }
         : null;
       canvasApiRef.current = extended;
@@ -1960,7 +1973,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       if (typeof ref === 'function') ref(extended);
       else if (ref) (ref as React.MutableRefObject<SceneCanvasApi | null>).current = extended;
     },
-    [ref, ingestImpl, viewAnimation],
+    [ref, ingestImpl, viewAnimation, addView],
   );
 
   // What a view needs to build its own overlay-aware state. `geometry` is the
@@ -2106,6 +2119,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
               {viewDescriptors?.map((v, i) => (
                 <CanvasView key={v.id} {...v} order={v.order ?? i} />
               ))}
+              {addedViews.map((v) => <CanvasView key={`added:${v.id}`} {...v} />)}
               {children}
             </ActionsProviderIfRoot>
           </PointerProviderIfRoot>

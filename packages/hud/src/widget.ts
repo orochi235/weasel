@@ -109,6 +109,11 @@ export interface Widget {
   /** Region `content` is clipped to. Required when `content` is set. */
   readonly contentRect?: WidgetBounds;
   hitTest(x: number, y: number): boolean;
+  /** True where the widget covers a point but hands its input to what it
+   *  shows — a window whose interior is a view on the canvas. The hit walk
+   *  stops there without claiming, so neither a widget beneath nor the HUD
+   *  takes the press. */
+  passes?(x: number, y: number): boolean;
   /** Which gestures this widget consumes. Absent means
    *  {@link DEFAULT_WIDGET_CLAIMS}; `[]` is decoration, and the hit-test walk
    *  descends past it to whatever lies beneath. Anything not listed falls

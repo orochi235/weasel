@@ -351,7 +351,7 @@ export type {
   CustomLayerEntry,
   GridSlotConfig,
 } from './canvas/Canvas';
-export type { CanvasExtensionApi, SceneCanvasApi } from './canvas/canvasExtension';
+export type { CanvasExtensionApi, CanvasViewHandle, SceneCanvasApi } from './canvas/canvasExtension';
 // The in-flight gesture seam behind `CanvasHelpers.getGestureBounds()` /
 // `subscribeGestures()`. `<SceneCanvas>` wires it from its dispatcher; bare
 // `<Canvas>` consumers can supply their own.

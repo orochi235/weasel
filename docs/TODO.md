@@ -61,13 +61,6 @@ Priority tags:
   the declaration, or have `TargetSpec` carry the answer instead of the
   predicate.
 
-- **(P3) Interacting through a viewport.** `createViewportLayer` has no
-  hit-test re-projection, so a press inside a loupe or minimap targets the outer
-  view — it would act on whatever sits under the window on the real canvas, not
-  on what the user sees magnified. `hud.window()` claims every interior press to
-  prevent that. Wiring re-projection would let anchor placement happen *in* the
-  magnified view, which is the point of a loupe for precision work.
-
 - **[x] (P2) The render path composes world poses.** A container's pose can
   define a frame: `<SceneCanvas poseComposition={RIGID_POSE_COMPOSITION}>` makes
   `buildSceneTree` fold each node's pose into its parent's on the way down, and
@@ -318,11 +311,25 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
   (`726f85e0`), selection is per-view (`7c202d28`). Tests:
   `packages/core/src/canvas/CanvasView.test.tsx`.
 
-- **(P3) The raw `createViewportLayer` path has no input wiring.**
-  `<CanvasView>` above is the supported answer; the older re-projection
-  prototype (`layer.reproject(outer, dims, screen)`, `viewportsAt`) still
-  renders without hit-testing, as `apps/site/registry.ts` says in its blurb.
-  Either retrofit it onto the resolver or retire it in favor of `<CanvasView>`.
+- **(P3) The raw `createViewportLayer` path still carries a re-projection
+  prototype.** Views are the input answer — `<CanvasView>`, the `views` prop,
+  `SceneCanvasApi.addView` — and `<CanvasView interactive={false}>` is the
+  paint-only viewport. `layer.reproject` and `viewportsAt` are left over from
+  before, and `apps/site/demos/ViewportLayerDemo.tsx` still hand-rolls a click
+  probe on them. Retire both and rebuild the demo on views, or keep the raw
+  layer as the paint primitive and drop only the prototype.
+
+- **(P3) Views do not nest.** A view paints and routes the surface's own stack,
+  never another view, and a loupe magnifies the canvas's camera — aimed over a
+  `<CanvasView>` panel it shows and edits the canvas's world, not the panel's.
+  Composing would mean a view's camera derived from the view under its aim, and
+  a resolver that descends rather than picking one rect.
+
+- **(P3) A bare HUD window with a passing interior cannot be moved.**
+  `hud.window({ titlebar: false, interior: 'pass' })` gives the interior away,
+  and the interior is a bare window's only move handle, so it resizes from its
+  edges but never translates. The loupe demo turns the titlebar on while
+  editing; the window itself should offer a handle instead.
 
 - **(P3) Two `meanScale` residuals under non-uniform zoom.** The hit-test half
   shipped 2026-08-12: `core/viewport/pxExtent` (`pxExtent` / `withinPxBox` /
@@ -399,25 +406,6 @@ Core five + Crop shipped. Remaining:
   fit per frame would rescale the whole minimap through a drag or a settle, and
   costs an O(nodes) bounds sweep every frame. Revisit only if a consumer wants
   framing that tracks a simulation.
-
-- **(P3) The loupe's colour sample is still read off an unlanded frame.** The
-  region readback now waits for a paint, but `readHex`
-  (`packages/hud/src/loupe/createLoupe.ts`) still calls `readbackRegion` inline
-  from `LoupeSurface.sample`, so `loupe.color` and `onColorChange` report the
-  frame before the aim. `pick()` cannot move — an eyedropper has to answer
-  synchronously, and at click time the last landed frame *is* what the user
-  clicked on, so that caller is already right. Only the aim-driven sample is
-  wrong, and fixing it means letting `model.color` settle a frame later.
-
-- **(P3) The loupe cannot aim at a detached pane.** `createLoupe` takes `canvas`
-  and `input` separately, so a pane's aim is measured against the pane box — but
-  `readbackRegion` still reads that aim as an offset into the *whole* drawing
-  buffer (`packages/hud/src/loupe/createLoupe.ts`). Over a `paintInto` surface
-  the two disagree by the pane's origin, so the lens shows the wrong region.
-  Fix shape: carry the target rect into the readback, which means either
-  `createLoupe` takes the pane origin or `CanvasExtensionApi` exposes the rect
-  it hands `WeaselRenderer.setTarget`. Nothing hits this yet — the
-  `tiled-surface` demo mounts no loupe.
 
 - **(P3) Sync paints do not coalesce.** `CanvasProps.syncPaint`
   (`Canvas.tsx:234-242`) promises "a synchronous paint per commit", singular,

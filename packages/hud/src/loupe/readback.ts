@@ -1,23 +1,26 @@
 /**
  * Read a `rw × rh` device-pixel region of the drawing buffer centered on
- * `pointer` (CSS px relative to the canvas), returned top-down.
+ * `pointer`, returned top-down. `pointer` is in CSS px relative to `target`,
+ * the rect of the buffer the canvas paints into (device px, top-left origin),
+ * and the read is clamped to stay inside that rect.
  *
  * GL reports rows bottom-up; every consumer here wants top-down, so both the
  * read origin and the returned rows are flipped.
  */
 export function readbackRegion(
   gl: WebGL2RenderingContext,
-  buffer: { width: number; height: number },
+  bufferHeight: number,
+  target: { x: number; y: number; width: number; height: number },
   pointer: { x: number; y: number },
   dpr: number,
   rw: number,
   rh: number,
 ): ImageData {
-  const cx = Math.round(pointer.x * dpr);
-  const cy = Math.round(pointer.y * dpr);
-  const gx = clamp(cx - Math.floor(rw / 2), 0, Math.max(0, buffer.width - rw));
-  const gyTop = clamp(cy - Math.floor(rh / 2), 0, Math.max(0, buffer.height - rh));
-  const gy = buffer.height - gyTop - rh;
+  const cx = target.x + Math.round(pointer.x * dpr);
+  const cy = target.y + Math.round(pointer.y * dpr);
+  const gx = clamp(cx - Math.floor(rw / 2), target.x, target.x + Math.max(0, target.width - rw));
+  const gyTop = clamp(cy - Math.floor(rh / 2), target.y, target.y + Math.max(0, target.height - rh));
+  const gy = bufferHeight - gyTop - rh;
 
   const raw = new Uint8Array(rw * rh * 4);
   gl.readPixels(gx, gy, rw, rh, gl.RGBA, gl.UNSIGNED_BYTE, raw);

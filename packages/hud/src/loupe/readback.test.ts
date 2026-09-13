@@ -11,7 +11,7 @@ function fakeGl(calls: unknown[][]) {
 describe('readbackRegion', () => {
   it('centers the read on the pointer, in device pixels, y-flipped', () => {
     const calls: unknown[][] = [];
-    readbackRegion(fakeGl(calls), { width: 800, height: 600 }, { x: 100, y: 50 }, 2, 40, 20);
+    readbackRegion(fakeGl(calls), 600, { x: 0, y: 0, width: 800, height: 600 }, { x: 100, y: 50 }, 2, 40, 20);
     // device center = (200, 100); region 40x20 → gx = 180
     // top-down y = 90, so gy = 600 - 90 - 20 = 490
     expect(calls[0].slice(0, 4)).toEqual([180, 490, 40, 20]);
@@ -19,9 +19,20 @@ describe('readbackRegion', () => {
 
   it('clamps the region to the drawing buffer', () => {
     const calls: unknown[][] = [];
-    readbackRegion(fakeGl(calls), { width: 800, height: 600 }, { x: 0, y: 0 }, 1, 40, 20);
+    readbackRegion(fakeGl(calls), 600, { x: 0, y: 0, width: 800, height: 600 }, { x: 0, y: 0 }, 1, 40, 20);
     expect(calls[0][0]).toBe(0);
     expect(calls[0][1]).toBe(580);
+  });
+
+  it('offsets the read by the target rect and clamps inside it', () => {
+    const calls: unknown[][] = [];
+    const pane = { x: 420, y: 20, width: 380, height: 360 };
+    readbackRegion(fakeGl(calls), 400, pane, { x: 100, y: 50 }, 1, 40, 20);
+    // center (520, 70) → gx 500, top-down y 60 → gy 400 - 60 - 20
+    expect(calls[0].slice(0, 2)).toEqual([500, 320]);
+    readbackRegion(fakeGl(calls), 400, pane, { x: 370, y: 355 }, 1, 40, 20);
+    // pinned to the pane's far corner: gx 800 - 40, top-down y 380 - 20
+    expect(calls[1].slice(0, 2)).toEqual([760, 400 - 360 - 20]);
   });
 
   it('returns ImageData whose rows are flipped back to top-down', () => {
@@ -39,7 +50,7 @@ describe('readbackRegion', () => {
         }
       },
     } as unknown as WebGL2RenderingContext;
-    const img = readbackRegion(gl, { width: 8, height: 8 }, { x: 4, y: 4 }, 1, 2, 2);
+    const img = readbackRegion(gl, 8, { x: 0, y: 0, width: 8, height: 8 }, { x: 4, y: 4 }, 1, 2, 2);
     // ImageData row 0 must be GL row h-1 → blue.
     expect(img.data[2]).toBe(255);
     expect(img.data[0]).toBe(0);
