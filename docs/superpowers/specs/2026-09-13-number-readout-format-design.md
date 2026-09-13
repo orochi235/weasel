@@ -41,16 +41,15 @@ today. An empty entry now reverts too, where it used to commit `0`.
    on the input. The stylesheet takes the larger of that and the existing width,
    `var(--wzl-property-readout-w, calc(5em - 24px))`, so a row whose values fit
    is unchanged and a consumer's own width setting still holds.
-5. **`@weasel-js/ui` `PrefsForm`:** a slider leaf declaring `compact` shows it
-   through `RangeSlider`'s `formatOutput`.
-6. **`@weasel-js/labkit`:** `NumberNode.format(name)`, and `ControlPanel`
+5. **`@weasel-js/labkit`:** `NumberNode.format(name)`, and `ControlPanel`
    passes a leaf's format to `SliderRow` as `notation`.
 
 ### Out of scope
 
 `NumberRow` ignores `format`. It edits through a native `type="number"` input,
 which cannot display `2.0M`; a compact typed number would need a text input and
-its own stepping.
+its own stepping. `PrefsForm` ignores it too: its sliders show no value at all,
+so there is nothing for a format to reach.
 
 ## Tests
 
