@@ -199,3 +199,17 @@ describe('viewport draw', () => {
     expect(back.y).toBeCloseTo(world.y);
   });
 });
+
+describe('viewport zoom invariant', () => {
+  it('reprojects through a thunked inner view with a zero scale to a finite point', () => {
+    const layer = createViewportLayer<unknown>({
+      id: 'z',
+      label: 'z',
+      source: [EMPTY_SOURCE],
+      view: () => ({ x: 0, y: 0, scale: { x: 0, y: 0 } }),
+      bounds: () => ({ x: 0, y: 0, w: 100, h: 100 }),
+    });
+    const p = layer.reproject(OUTER, DIMS, { x: 10, y: 10 })!;
+    expect(Number.isFinite(p.x) && Number.isFinite(p.y)).toBe(true);
+  });
+});

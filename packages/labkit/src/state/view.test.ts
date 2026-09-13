@@ -1,8 +1,9 @@
+import { ZOOM_FLOOR } from '@weasel-js/core';
 import { describe, expect, it } from 'vitest';
 import { createMemoryAdapter } from './adapters';
 import { openLabStore } from './openLabStore';
 import { createLabStore } from './store';
-import { as2DView, DEFAULT_VIEW } from './view';
+import { as2DView, DEFAULT_VIEW, normalize2DView, withZoom } from './view';
 
 interface OrbitView {
   yaw: number;
@@ -128,5 +129,33 @@ describe('an unchanged write costs no new record', () => {
     store.getState().updateTrialView('w1', orbit);
 
     expect(store.getState().trials[0]).toBe(before);
+  });
+});
+
+describe('2D view zoom invariant', () => {
+  it('reads a stored zoom of 0 back as the floor', () => {
+    expect(as2DView({ zoom: 0, pan: { x: 1, y: 2 } })).toEqual({
+      zoom: ZOOM_FLOOR,
+      pan: { x: 1, y: 2 },
+    });
+  });
+
+  it('normalizes a NaN zoom and a non-finite pan', () => {
+    expect(normalize2DView({ zoom: Number.NaN, pan: { x: Infinity, y: 3 } })).toEqual({
+      zoom: ZOOM_FLOOR,
+      pan: { x: 0, y: 3 },
+    });
+  });
+
+  it('returns a valid view unchanged', () => {
+    const v = { zoom: 2, pan: { x: 1, y: 1 } };
+    expect(normalize2DView(v)).toBe(v);
+  });
+
+  it('writes a new zoom through the same rule', () => {
+    expect(withZoom({ zoom: 2, pan: { x: 4, y: 5 } }, 0)).toEqual({
+      zoom: ZOOM_FLOOR,
+      pan: { x: 4, y: 5 },
+    });
   });
 });

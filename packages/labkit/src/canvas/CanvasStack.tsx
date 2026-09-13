@@ -8,6 +8,7 @@ import {
   useState,
 } from 'react';
 import type { Point, ViewTransform } from '../instrument/types';
+import { normalize2DView } from '../state/view';
 import { CameraWheelContext } from './CameraWheelContext';
 import { CanvasStackContext } from './CanvasStackContext';
 import { screenToWorld } from './canvasCoords';
@@ -40,7 +41,7 @@ export interface CanvasStackProps {
  *  Handles sizing, device pixel ratio, and pan/zoom. */
 export function CanvasStack({
   layers,
-  view,
+  view: viewProp,
   onViewChange,
   worldSpec,
   minZoom,
@@ -52,6 +53,7 @@ export function CanvasStack({
   onHitTest,
   children,
 }: CanvasStackProps) {
+  const view = normalize2DView(viewProp);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasMap = useRef<Map<string, HTMLCanvasElement>>(new Map());
   const [size, setSize] = useState({ width: 0, height: 0, dpr: 1 });
@@ -97,7 +99,7 @@ export function CanvasStack({
     onHitTest(screenToWorld({ x: e.clientX - rect.left, y: e.clientY - rect.top }, view, frame));
   };
 
-  const handlers = usePanZoom({ view, onViewChange, minZoom, maxZoom, frame, onTap });
+  const handlers = usePanZoom({ view: viewProp, onViewChange, minZoom, maxZoom, frame, onTap });
   const onWheelRef = useRef(handlers.onWheel);
   onWheelRef.current = handlers.onWheel;
   const wheelSlot = useContext(CameraWheelContext);

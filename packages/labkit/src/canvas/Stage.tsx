@@ -1,5 +1,6 @@
 import { type CSSProperties, type ReactNode, useContext, useEffect, useRef } from 'react';
 import type { ViewTransform } from '../instrument/types';
+import { normalize2DView } from '../state/view';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { CameraWheelContext } from './CameraWheelContext';
 import { usePanZoom } from './usePanZoom';
@@ -48,7 +49,7 @@ export function fitStage(size: ViewportSize, viewport: ViewportSize): ViewTransf
  */
 export function Stage({
   size,
-  view,
+  view: viewProp,
   onViewChange,
   minZoom,
   maxZoom,
@@ -57,9 +58,10 @@ export function Stage({
   overlay,
   children,
 }: StageProps) {
+  const view = normalize2DView(viewProp);
   const host = useRef<HTMLDivElement | null>(null);
   const surface = useSurfaceOptional();
-  const handlers = usePanZoom({ view, onViewChange, minZoom, maxZoom });
+  const handlers = usePanZoom({ view: viewProp, onViewChange, minZoom, maxZoom });
   const onWheelRef = useRef(handlers.onWheel);
   onWheelRef.current = handlers.onWheel;
   const wheelSlot = useContext(CameraWheelContext);

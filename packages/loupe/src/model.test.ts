@@ -214,3 +214,19 @@ describe('loupe model: picking', () => {
     expect(onPick).not.toHaveBeenCalled();
   });
 });
+
+describe('loupe model: magnification invariant', () => {
+  const finitePositive = (n: number) => Number.isFinite(n) && n > 0;
+
+  it('opens at a positive finite factor when handed 0', () => {
+    const { surface } = stubSurface();
+    expect(finitePositive(createLoupeModel({ surface, factor: 0 }).factor)).toBe(true);
+  });
+
+  it.each([0, -3, Number.NaN, Infinity])('keeps setFactor(%s) positive and finite', (f) => {
+    const { surface } = stubSurface();
+    const loupe = createLoupeModel({ surface, minFactor: 0 });
+    loupe.setFactor(f);
+    expect(finitePositive(loupe.factor)).toBe(true);
+  });
+});

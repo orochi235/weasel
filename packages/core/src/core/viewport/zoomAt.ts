@@ -1,5 +1,5 @@
-import type { View, ZoomFactor, ZoomBound } from './view';
-import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from './zoomBounds';
+import { normalizeView, type View, type ZoomFactor, type ZoomBound } from './view';
+import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM, normalizeZoom } from './zoomBounds';
 
 /** Optional clamp bounds for `zoomAt`. Defaults: {@link DEFAULT_MIN_ZOOM} /
  *  {@link DEFAULT_MAX_ZOOM} (per axis). */
@@ -22,16 +22,17 @@ export interface ZoomClampOpts {
  *  `View` spells a y-up camera, so clamping the signed value against positive
  *  bounds would flip the axis and collapse the zoom rather than limit it. */
 function clampScale(scale: number, min: number, max: number): number {
-  const magnitude = Math.min(max, Math.max(min, Math.abs(scale)));
+  const magnitude = normalizeZoom(Math.min(max, Math.max(min, Math.abs(scale))));
   return scale < 0 ? -magnitude : magnitude;
 }
 
 export function zoomAt(
-  view: View,
+  input: View,
   anchor: { x: number; y: number },
   factor: ZoomFactor,
   opts?: ZoomClampOpts,
 ): View {
+  const view = normalizeView(input);
   const fx = typeof factor === 'number' ? factor : factor.x;
   const fy = typeof factor === 'number' ? factor : factor.y;
   const minX = typeof opts?.min === 'number' ? opts.min : opts?.min?.x ?? DEFAULT_MIN_ZOOM;

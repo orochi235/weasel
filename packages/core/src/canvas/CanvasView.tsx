@@ -7,7 +7,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Dims, RenderLayer } from 'core/layers/render';
-import type { View } from 'core/viewport/view';
+import { normalizeView, type View } from 'core/viewport/view';
 import { clientToWorld } from 'core/viewport/clientToWorld';
 import { clampView } from 'core/viewport/clampView';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -138,7 +138,7 @@ export function CanvasView(props: CanvasViewProps): null {
   const ownSelection = useSelection(selectionOptions);
   const viewSelection = selectionProp ?? (selectionOptions ? ownSelection : undefined);
 
-  const [internalView, setInternalView] = useState<View>(defaultView ?? IDENTITY_VIEW);
+  const [internalView, setInternalView] = useState<View>(() => normalizeView(defaultView ?? IDENTITY_VIEW));
   const effectiveView = viewProp ?? internalView;
 
   // Everything the registration reads is behind a ref: the registration object
@@ -170,7 +170,7 @@ export function CanvasView(props: CanvasViewProps): null {
 
   const cameraAt = useCallback((outer: View, dims: Dims): View => {
     const v = live.current.view;
-    return typeof v === 'function' ? v(outer, dims) : v;
+    return normalizeView(typeof v === 'function' ? v(outer, dims) : v);
   }, []);
 
   /** The camera for the surface's current frame. */
@@ -182,7 +182,8 @@ export function CanvasView(props: CanvasViewProps): null {
   const setView = useCallback((next: View) => {
     const { viewBounds: vb, onViewChange: cb, viewProp: controlled } = live.current;
     const rect = rectNow();
-    const clamped = vb ? clampView(next, vb, { width: rect.w, height: rect.h }) : next;
+    const valid = normalizeView(next);
+    const clamped = vb ? clampView(valid, vb, { width: rect.w, height: rect.h }) : valid;
     if (controlled === undefined) setInternalView(clamped);
     cb?.(clamped);
     registry?.surface()?.requestRedraw();

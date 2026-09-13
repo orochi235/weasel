@@ -22,7 +22,7 @@ import { resolveLoupe } from '../loupe/types';
 import { LabStoreContext, TrialIdProvider } from '../state/context';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
-import { as2DView, DEFAULT_VIEW } from '../state/view';
+import { as2DView, DEFAULT_VIEW, withZoom } from '../state/view';
 import { resolveLabTool } from '../tools/labTool';
 import { createEventBus, type EventBus } from '../undo/eventBus';
 import { pushSnapshot, redo as undoRedo, undo as undoUndo } from '../undo/undoStack';
@@ -306,7 +306,7 @@ function TrialRuntime({
       zoom: view2d?.zoom ?? 1,
       setZoom: (z) => {
         if (!view2d) return;
-        updateTrialView(record.id, { ...view2d, zoom: z });
+        updateTrialView(record.id, withZoom(view2d, z));
       },
       activeToolId: resolvedToolId,
       visibleLayers,

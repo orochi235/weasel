@@ -44,7 +44,7 @@ import type { ToolCtx } from 'tools/types';
 import type { Op } from 'core/ops/types';
 import type { Path } from 'features/paths/types';
 import { dispatchApplyBatch } from 'core/applyOps';
-import type { View } from 'core/viewport/view';
+import { normalizeView, type View } from 'core/viewport/view';
 import type { NodePaintCtx } from './NodeShape';
 import { clampView } from 'core/viewport/clampView';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
@@ -918,9 +918,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   // The uncontrolled view lives in a ref, not `useState`, so a camera moving
   // at 60 Hz costs no React render; DOM that mirrors it subscribes instead.
-  const viewRef = useRef<View>(viewProp ?? defaultView ?? { x: 0, y: 0, scale: { x: 1, y: 1 } });
+  const viewRef = useRef<View>(normalizeView(viewProp ?? defaultView ?? { x: 0, y: 0, scale: { x: 1, y: 1 } }));
   const isControlled = viewProp !== undefined;
-  if (isControlled) viewRef.current = viewProp;
+  if (isControlled) viewRef.current = normalizeView(viewProp);
   const viewSubsRef = useRef<Set<(v: View) => void>>(new Set());
   const onViewChangeRef = useRef(onViewChange);
   onViewChangeRef.current = onViewChange;
@@ -931,7 +931,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const controlledWarnedRef = useRef(false);
 
   const setView = useCallback((next: View | ((current: View) => View)) => {
-    const resolved = typeof next === 'function' ? next(viewRef.current) : next;
+    const resolved = normalizeView(typeof next === 'function' ? next(viewRef.current) : next);
     const bounds = viewBoundsRef.current;
     const clamped = bounds ? clampView(resolved, bounds, dimsRef.current) : resolved;
     if (isControlledRef.current) {

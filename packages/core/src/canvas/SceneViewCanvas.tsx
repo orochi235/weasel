@@ -37,7 +37,7 @@ import { useFrameLoop } from './useFrameLoop';
 import { renderSceneToCanvas } from './sceneViewRender';
 import type { SceneViewDrawOne } from './sceneViewRender';
 import type { DrawCommand } from '../renderer/DrawCommand';
-import type { View } from '../core/viewport/view';
+import { normalizeView, type View } from '../core/viewport/view';
 import type { Scene } from '../core/scene/types';
 
 /** Props for `<SceneViewCanvas>`. */
@@ -77,7 +77,8 @@ export interface SceneViewCanvasProps<TData, TLayer extends string, TPose> {
 function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
   props: SceneViewCanvasProps<TData, TLayer, TPose>,
 ) {
-  const { scene, view, width, height, drawOne, extraCommands, alphaFor, className, canvasRef } = props;
+  const { scene, width, height, drawOne, extraCommands, alphaFor, className, canvasRef } = props;
+  const view = normalizeView(props.view);
 
   // Subscribe to scene version. The snapshot value isn't used directly —
   // we only need React to re-render the component when the scene mutates.

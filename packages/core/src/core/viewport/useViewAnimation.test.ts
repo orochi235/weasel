@@ -199,3 +199,17 @@ describe('useViewAnimation', () => {
     expect(result.current.isAnimating()).toBe(true);
   });
 });
+
+describe('useViewAnimation zoom invariant', () => {
+  it('never targets or lands on a zero scale', () => {
+    const clock = makeClock();
+    const { channel, current } = makeChannel(HOME);
+    const { result } = mount(channel, clock);
+    act(() => { result.current.animate({ x: 0, y: 0, scale: { x: 0, y: 0 } }, { ms: 100, easing: linear }); });
+    const target = result.current.target()!;
+    expect(target.scale.x > 0 && Number.isFinite(target.scale.x)).toBe(true);
+    act(() => { clock.advance(100); });
+    expect(current().scale.x > 0 && Number.isFinite(current().scale.x)).toBe(true);
+    expect(Number.isFinite(current().x)).toBe(true);
+  });
+});

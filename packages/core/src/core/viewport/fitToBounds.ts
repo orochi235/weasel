@@ -1,3 +1,5 @@
+import { normalizeZoom } from './zoomBounds';
+
 /**
  * Compute the largest uniform zoom (px per content-unit) that fits a content
  * rect of `contentW x contentH` (in content units) into a viewport rect of
@@ -15,7 +17,7 @@ export function fitZoom(
   const raw = Math.min(availW / contentW, availH / contentH);
   const min = clamp?.min ?? -Infinity;
   const max = clamp?.max ?? Infinity;
-  return Math.min(max, Math.max(min, raw));
+  return normalizeZoom(Math.min(max, Math.max(min, raw)));
 }
 
 /**
