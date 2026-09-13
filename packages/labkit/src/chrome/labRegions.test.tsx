@@ -2,7 +2,9 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { Lab } from '../lab/Lab';
+import { LabShell } from '../lab/LabShell';
 import type { LabChromeContext, LabContribution } from './labTypes';
+import { ToolbarRegion } from './regions/ToolbarRegion';
 
 const Glyph = () => <svg />;
 const bare: Instrument = {
@@ -122,5 +124,37 @@ describe('lab-level chrome', () => {
         />,
       ),
     ).toThrow(/duplicate contribution id "pick"/);
+  });
+});
+
+describe('lab chrome without <Lab>', () => {
+  // The rail `apps/theme-editor` mounts: `<LabShell>` with no trial runtime
+  // above it, so the context handed to `onActivate` is the consumer's own.
+  interface RailCtx {
+    undo: () => void;
+  }
+
+  it('renders a contribution typed against a consumer context and hands it back', () => {
+    const undo = vi.fn();
+    const ctx: RailCtx = { undo };
+    const rail: readonly LabContribution<RailCtx>[] = [
+      {
+        id: 'undo',
+        region: 'header',
+        item: { icon: Glyph, label: 'Undo', showLabel: true, onActivate: (c) => c.undo() },
+      },
+    ];
+    render(
+      <LabShell
+        title="Palette lab"
+        header={
+          <ToolbarRegion region="header" label="Lab actions" contributions={rail} ctx={ctx} />
+        }
+      >
+        <div />
+      </LabShell>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(undo).toHaveBeenCalledTimes(1);
   });
 });

@@ -187,15 +187,6 @@ Priority tags:
   than being decided. One place to fix it now instead of two:
   `useDispatcherOverlayLayer`'s `'polyline'` branch.
 
-- **(P3) A `<LabShell>`-only consumer has no authoring type for chrome.**
-  `LabContribution`'s header variant hard-codes `ToolbarItem<LabChromeContext>`,
-  and `LabChromeContext` can only come from `useLabChromeContext()`, which
-  throws without `<Lab>`. The generic fallback `RegionContribution<TCtx>` types
-  `item` as `unknown`. So a consumer rendering `LabShell` bare either composes
-  `ContributionBase` and `ToolbarItem<T>` by hand — which is what
-  `apps/theme-editor`'s rail now does — or fabricates a context, which is the
-  cast this arc removed. Surfaced by migrating that rail.
-
 - **(P3) `apps/theme-editor` cannot become a `<Lab>` without being rebuilt.**
   Not a stale consumer: `<Lab>` is the trial runtime — it requires a non-empty
   `instruments` list, seeds a trial, and renders `children` into the header

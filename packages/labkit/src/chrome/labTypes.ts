@@ -28,11 +28,15 @@ export interface LabChromeContext extends LabContextValue, ToolSlotContext {}
  * merged and suppressed by the same rules, but keyed to the lab's regions and
  * rendered with the lab's context. Supplying `render` instead of `item` opts
  * out of the region's layout.
+ *
+ * `TCtx` is what the chrome hands a handler. It defaults to `LabChromeContext`,
+ * which is what `<Lab>` renders its regions with; a consumer mounting the
+ * regions under a bare `<LabShell>` names whatever it passes as `ctx` instead.
  */
-export type LabContribution =
+export type LabContribution<TCtx = LabChromeContext> =
   | (ContributionBase & {
       region: 'header';
-      item: ToolbarItem<LabChromeContext>;
+      item: ToolbarItem<TCtx>;
       render?: never;
     })
   | (ContributionBase & { region: 'palette'; item: ToolItem; render?: never })
@@ -40,5 +44,5 @@ export type LabContribution =
   | (ContributionBase & {
       region: LabRegion;
       item?: never;
-      render: (ctx: LabChromeContext) => ReactNode;
+      render: (ctx: TCtx) => ReactNode;
     });

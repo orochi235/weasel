@@ -1,4 +1,4 @@
-import { LabShell, ToolbarRegion, type ContributionBase, type ToolbarItem } from '@weasel-js/labkit';
+import { LabShell, ToolbarRegion, type LabContribution } from '@weasel-js/labkit';
 import {
   PropertyPanel,
   PropertyGroup,
@@ -57,19 +57,6 @@ function unmetGates(c: Constraints, stats: ReturnType<typeof generate>['stats'])
   return out;
 }
 
-/**
- * One control in the lab's action rail, contributed rather than hand-built.
- *
- * Not a `LabContribution`: that one's context is `LabChromeContext`, which
- * only exists inside `<Lab>` — the trial runtime this lab does not use. The
- * shape is otherwise the same, so the list moves to `<Lab labChrome>` if this
- * ever becomes a trial lab.
- */
-type RailAction = ContributionBase & {
-  region: 'header';
-  item: ToolbarItem<LabHistory<LabState>>;
-};
-
 export function PaletteLab() {
   // Restored once, at mount: an HMR bounce or a reload should not cost the
   // configuration someone was in the middle of building.
@@ -93,7 +80,7 @@ export function PaletteLab() {
 
   useEffect(() => persistLive(state), [state]);
 
-  const rail = useMemo<readonly RailAction[]>(
+  const rail = useMemo<readonly LabContribution<LabHistory<LabState>>[]>(
     () => [
       {
         id: 'undo',
