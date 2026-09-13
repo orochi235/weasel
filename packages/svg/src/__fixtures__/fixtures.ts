@@ -109,7 +109,7 @@ export const WEASELDRAW_PAPERS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xm
 </svg>`;
 
 export const TEXT_STYLE_FULL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:wd="https://weaseldraw.app/svg-ext" viewBox="0 0 200 100">
-  <text x="10" y="20" dominant-baseline="text-before-edge" data-weasel-width="180" data-weasel-height="60" font-size="18" font-family="Inter, sans-serif" font-weight="700" font-style="italic" text-anchor="middle" fill="#b03030" letter-spacing="1.5" text-decoration="underline line-through" wd:line-height="1.4">Styled</text>
+  <text x="100" y="20" dominant-baseline="text-before-edge" data-weasel-width="180" data-weasel-height="60" font-size="18" font-family="Inter, sans-serif" font-weight="700" font-style="italic" text-anchor="middle" fill="#b03030" letter-spacing="1.5" text-decoration="underline line-through" wd:line-height="1.4">Styled</text>
 </svg>`;
 
 /** Stroked text: node-level stroke plus a differently-stroked run. Text

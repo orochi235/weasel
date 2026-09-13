@@ -112,11 +112,7 @@ Priority tags:
   batch per file). weaseldraw runs with `unpack` on. Remaining:
   (a) **embedded SVG blurs under zoom** — `imageCache` rasterizes once at
   natural size; re-rasterize at view scale (or draw from the live `Image`
-  element) if crispness matters; (b) **text box width is estimated** on the
-  unpack path — external `<text>` carries `UNBOUNDED_TEXT_WIDTH` rather than a
-  measurement, and unpack has no text-measure context, so it guesses from the
-  longest line at 0.6 em per glyph (closed 2026-08-16, along with `fontSize`
-  joining the fit-clamp); a real measure would want the atlas; (c) weaseldraw's
+  element) if crispness matters; (b) weaseldraw's
   file-menu import still uses its own app-local `svgInterop` mapping (richer:
   `wd:` tool metadata, paper size) — fold the shared walk if they drift, and
   note it now *drops* `<image>` nodes, since the app's `Obj` union is path/text
@@ -1364,8 +1360,6 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 ## Demos & visual regression
 
 - **(P2) The text edit overlay wraps where `kit:text` does not.** `useTextEdit`'s overlay is `white-space: pre-wrap` at `pose.width`, and `useSceneTextEdit` maps the double-click through `caretIndexAt(cx, cy, pose)`, which wraps at `pose.width` too — while `kit:text` never wraps. A `kit:text` line longer than its box reflows onto extra lines when an edit opens, and the caret can land on a line the paint never drew. `createTextLayer` does wrap, so the overlay has to know which painter it stands in for rather than switch to `pre`.
-
-- **(P2) SVG `text-anchor` and the text box disagree.** `packages/svg/src/serialize.ts` writes `x` as the box's left edge beside `text-anchor="middle"` / `"end"`, so any other SVG reader centers or right-aligns the text on that edge. `parse.ts` reads the anchor point back into `x`, so an external file's centered text imports with its anchor as the box's left edge and `kit:text`, which aligns within the box, paints it half a box width right of where the file drew it. Weasel-to-weasel round trips are unaffected because neither side shifts. Fixing it changes the meaning of files already written.
 
 - **(P3) No demo exercises non-modal path editing.** `enterPathEdit` / `editAnchors` only run under apps/draw's mode registry — `apps/site/demos/curveLab/RepresentationPanel.tsx:167` disables them and installs its own drag action. The `getActiveMode === undefined` fall-throughs (`SceneCanvas.tsx:1593`, `:1632`) are exercised by tests alone; a small site demo entering anchor editing with no mode registry would give both branches a live home.
 
