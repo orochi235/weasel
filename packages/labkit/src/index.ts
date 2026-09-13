@@ -148,18 +148,19 @@ export {
   zoomAt,
 } from './canvas';
 export * from './chrome';
-export type {
+export {
   BaseNode,
   BooleanNode,
   ColorNode,
   CustomNode,
   EnumNode,
+  f,
   GroupNode,
+  isConfigBranch,
   NumberNode,
   StringNode,
   ValueNode,
 } from './config/builder';
-export { f, isConfigBranch } from './config/builder';
 export { fromConfigFields } from './config/fromConfigField';
 export {
   fillConfigDefaults,
