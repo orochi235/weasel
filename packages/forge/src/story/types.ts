@@ -52,3 +52,13 @@ export interface LoadedStory {
   viewport: Viewport | null;
   play: ((ctx: PlayContext) => void | Promise<void>) | null;
 }
+
+/** One story as the index knows it, before its module is loaded. */
+export interface IndexEntry {
+  id: string;
+  title: string;
+  name: string;
+  exportName: string;
+  /** Absolute path of the story file. */
+  file: string;
+}
