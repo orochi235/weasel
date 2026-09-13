@@ -83,6 +83,31 @@ describe('Split', () => {
     expect(container.querySelector('.lk-x__main')?.textContent).toBe('main');
   });
 
+  it('puts the sidebar after the content on the end side, where dragging the seam left widens it', () => {
+    const onWidthChange = vi.fn();
+    const { container } = render(
+      <Split
+        viewport={VIEWPORT}
+        side="end"
+        width={320}
+        sidebarClassName="lk-x__side"
+        contentClassName="lk-x__main"
+        sidebar={<p>side</p>}
+        onWidthChange={onWidthChange}
+      >
+        <p>main</p>
+      </Split>,
+    );
+    const side = container.querySelector('.lk-x__side') as HTMLElement;
+    const main = container.querySelector('.lk-x__main') as HTMLElement;
+    expect(main.compareDocumentPosition(side) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const seam = screen.getByRole('separator');
+    fireEvent.pointerDown(seam, { clientX: 480, clientY: 100 });
+    fireEvent.pointerMove(seam, { clientX: 420, clientY: 100 });
+    fireEvent.pointerUp(seam, { clientX: 420, clientY: 100 });
+    expect(onWidthChange).toHaveBeenLastCalledWith(380);
+  });
+
   it('names its seam after the sidebar label', () => {
     render(
       <Split viewport={VIEWPORT} label="Stories" sidebar={<p>side</p>}>

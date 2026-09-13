@@ -4,8 +4,10 @@ import {
   PropertyList,
   TextRow,
   ToggleBar,
+  type LabContribution,
   type ToggleBarItem,
-  type TrialContribution,
+  TrialIdContext,
+  useLabContext,
   useTrialId,
 } from '@weasel-js/labkit';
 import { TOKEN_MANIFEST } from '@weasel-js/theme';
@@ -113,8 +115,24 @@ export function CssVarsPanel() {
   );
 }
 
-export const CSS_VARS_SECTION: TrialContribution = {
+/** The panel for the lab's focused trial, rendered as though inside that trial. */
+function FocusedCssVars() {
+  const { focusedTrialId, trials, instruments } = useLabContext();
+  const record = trials.find((trial) => trial.id === focusedTrialId);
+  if (!record) return null;
+  const instrument = instruments.find((i) => i.name === record.instrumentName);
+  return (
+    <section className="fg-css-vars-focus" aria-label="CSS Vars">
+      <p className="fg-css-vars__trial">{record.title ?? instrument?.title ?? record.instrumentName}</p>
+      <TrialIdContext.Provider value={record.id}>
+        <CssVarsPanel />
+      </TrialIdContext.Provider>
+    </section>
+  );
+}
+
+export const CSS_VARS_SECTION: LabContribution = {
   id: 'fg-css-vars',
-  region: 'sidebar',
-  item: { title: 'CSS Vars', body: <CssVarsPanel /> },
+  region: 'aside',
+  item: { title: 'CSS Vars', body: <FocusedCssVars /> },
 };

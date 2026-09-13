@@ -15,7 +15,7 @@ import type {
  * `<LabShell>` names them; `palette` is the tool rail down the side of the
  * workspace; `sidebar` is a column of sections left of the tool rail.
  */
-export type LabRegion = 'header' | 'palette' | 'sidebar' | 'footer';
+export type LabRegion = 'header' | 'palette' | 'sidebar' | 'aside' | 'footer';
 
 /**
  * Everything a lab-level contribution can read and command: the lab's own
@@ -41,7 +41,7 @@ export type LabContribution<TCtx = LabChromeContext> =
       render?: never;
     })
   | (ContributionBase & { region: 'palette'; item: ToolItem; render?: never })
-  | (ContributionBase & { region: 'sidebar'; item: SidebarSection; render?: never })
+  | (ContributionBase & { region: 'sidebar' | 'aside'; item: SidebarSection; render?: never })
   | (ContributionBase & { region: 'footer'; item: StatusReadout; render?: never })
   | (ContributionBase & {
       region: LabRegion;

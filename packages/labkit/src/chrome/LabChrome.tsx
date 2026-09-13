@@ -80,12 +80,10 @@ export function LabHeaderRegion({ contributions }: LabRegionProps) {
   );
 }
 
-/** The lab's sidebar sections. Fold state is a lab-scoped persisted value, so it
- *  survives a reload in a stored lab and lasts the session in an unstored one. */
-export function LabSidebarRegion({ contributions }: LabRegionProps) {
+function LabSections({ contributions, region }: LabRegionProps & { region: 'sidebar' | 'aside' }) {
   const lab = useLabChromeContext();
   const [collapsedSections, setFolds] = usePersistedState<Record<string, boolean>>(
-    'lk-lab-sidebar-folds',
+    `lk-lab-${region}-folds`,
     {},
     { scope: 'lab' },
   );
@@ -98,7 +96,25 @@ export function LabSidebarRegion({ contributions }: LabRegionProps) {
     }),
     [lab, collapsedSections, setFolds],
   );
-  return <SidebarRegion contributions={contributionsIn(contributions, 'sidebar')} ctx={ctx} />;
+  return (
+    <SidebarRegion
+      contributions={contributionsIn(contributions, region)}
+      ctx={ctx}
+      region={region}
+    />
+  );
+}
+
+/** The lab's sidebar sections. Fold state is a lab-scoped persisted value, so it
+ *  survives a reload in a stored lab and lasts the session in an unstored one. */
+export function LabSidebarRegion({ contributions }: LabRegionProps) {
+  return <LabSections contributions={contributions} region="sidebar" />;
+}
+
+/** The lab's aside sections, on the far side of the workspace from the sidebar.
+ *  Fold state persists the way the sidebar's does. */
+export function LabAsideRegion({ contributions }: LabRegionProps) {
+  return <LabSections contributions={contributions} region="aside" />;
 }
 
 /** The lab's readouts, in the shell footer below the workspace. */

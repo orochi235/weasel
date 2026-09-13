@@ -13,6 +13,7 @@ import { useStore } from 'zustand/react';
 import { AnnotationPreloadContext } from '../annotations/preload';
 import { ANNOTATION_TOOLS } from '../annotations/toolMap';
 import {
+  LabAsideRegion,
   LabFooterRegion,
   LabHeaderRegion,
   LabSidebarRegion,
@@ -229,6 +230,32 @@ function LabPanes({
     undefined,
     { scope: 'lab' },
   );
+  const [asideWidth, setAsideWidth] = usePersistedState<number | undefined>(
+    'lk-lab-aside-width',
+    undefined,
+    { scope: 'lab' },
+  );
+  const main = contributions.some((c) => c.region === 'aside') ? (
+    <Split
+      className="lk-lab__panes"
+      side="end"
+      sidebarClassName="lk-lab__aside"
+      contentClassName="lk-lab__main"
+      label="Lab aside"
+      defaultWidth={320}
+      width={asideWidth}
+      onWidthChange={(w) => {
+        setAsideWidth(w);
+        surface?.invalidateRects();
+      }}
+      sidebar={<LabAsideRegion contributions={contributions} />}
+    >
+      {children}
+    </Split>
+  ) : (
+    children
+  );
+  if (!contributions.some((c) => c.region === 'sidebar')) return main;
   return (
     <Split
       className="lk-lab__panes"
@@ -243,7 +270,7 @@ function LabPanes({
       }}
       sidebar={<LabSidebarRegion contributions={contributions} />}
     >
-      {children}
+      {main}
     </Split>
   );
 }
@@ -426,7 +453,7 @@ function LabRuntime({
     [annotates, tools, labChrome],
   );
   const hasFooterChrome = labChromeAll.some((c) => c.region === 'footer');
-  const hasSidebarChrome = labChromeAll.some((c) => c.region === 'sidebar');
+  const hasPaneChrome = labChromeAll.some((c) => c.region === 'sidebar' || c.region === 'aside');
 
   useEffect(() => {
     if (mode && mode !== store.getState().mode) {
@@ -603,7 +630,7 @@ function LabRuntime({
                             />
                           </>
                         )}
-                        {hasSidebarChrome ? (
+                        {hasPaneChrome ? (
                           <LabPanes contributions={labChromeAll}>
                             <LabPalette contributions={labChromeAll} />
                             {workspace}

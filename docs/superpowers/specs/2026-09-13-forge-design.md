@@ -219,8 +219,8 @@ layout survive a reload.
   pinned value gets undo, snapshots and persistence through labkit's own config
   path. The lab's Auto/Light/Dark buttons theme the chrome only; stories follow
   the lab's mode unless their globals say otherwise.
-- **CSS Vars panel**, ported from `.storybook/addons/css-vars/`, as a trial
-  sidebar section (undockable, as labkit sections already are). The Theme tab
+- **CSS Vars panel**, ported from `.storybook/addons/css-vars/`, in the lab's
+  aside on the right. It shows the focused trial, and names it. The Theme tab
   reads `@weasel-js/theme`'s token manifest (`TOKEN_MANIFEST`) directly, so the
   generated `tokens.generated.ts` copy goes away with Storybook's addon. The Story tab's `var()` scan runs in the
   frame and arrives as `vars`. An override is sent into that trial's frame

@@ -11,6 +11,8 @@ const STRATEGIES = { strip: stripStrategy as never };
 export interface SplitProps {
   /** The sidebar pane's contents. */
   sidebar: ReactNode;
+  /** The edge the sidebar sits on. Read once, when the strip mounts. Default `'start'`. */
+  side?: 'start' | 'end';
   /** The content pane's contents. */
   children: ReactNode;
   /** Names the sidebar pane, and through it the seam. Default `'Sidebar'`. */
@@ -51,6 +53,7 @@ export interface SplitProps {
 export function Split({
   sidebar,
   children,
+  side = 'start',
   label = 'Sidebar',
   className,
   sidebarClassName,
@@ -72,28 +75,37 @@ export function Split({
       createNode({
         kind: 'zone',
         id: ZONE_ID,
-        container: { strategyId: 'strip', config: { axis: 'x', resizable: true } },
+        // A strip's seam resizes the pane before it, which on the end side is the
+        // content; 'neighbor' has the seam size the sidebar after it too.
+        container: {
+          strategyId: 'strip',
+          config: {
+            axis: 'x',
+            resizable: true,
+            ...(side === 'end' ? { resizeMode: 'neighbor' } : {}),
+          },
+        },
       }),
     );
-    store.registerNode(
-      createNode({
-        kind: 'sidebar',
-        id: SIDEBAR_ID,
-        parentId: ZONE_ID,
-        meta: { title: label },
-        placement: { size: { w: width ?? defaultWidth } },
-        hints: { minSize: { w: minWidth, h: 0 }, maxSize: { w: maxWidth, h: 0 } },
-      }),
-    );
-    store.registerNode(
-      createNode({
-        kind: 'content',
-        id: CONTENT_ID,
-        parentId: ZONE_ID,
-        meta: { title: 'Content' },
-        hints: { minSize: { w: contentMinWidth, h: 0 } },
-      }),
-    );
+    const sidebarNode = createNode({
+      kind: 'sidebar',
+      id: SIDEBAR_ID,
+      parentId: ZONE_ID,
+      meta: { title: label },
+      placement: { size: { w: width ?? defaultWidth } },
+      hints: { minSize: { w: minWidth, h: 0 }, maxSize: { w: maxWidth, h: 0 } },
+    });
+    const contentNode = createNode({
+      kind: 'content',
+      id: CONTENT_ID,
+      parentId: ZONE_ID,
+      meta: { title: 'Content' },
+      hints: { minSize: { w: contentMinWidth, h: 0 } },
+    });
+    // A strip lays its children out in registration order.
+    for (const node of side === 'end' ? [contentNode, sidebarNode] : [sidebarNode, contentNode]) {
+      store.registerNode(node);
+    }
     store.showNode(SIDEBAR_ID);
     store.showNode(CONTENT_ID);
     storeRef.current = store;
@@ -127,6 +139,10 @@ export function Split({
   useEffect(
     () =>
       store.events.on('node.placementChanged', () => {
+        // A neighbor drag pins the content's width too; unpinned, it goes on filling the strip.
+        if ((store.getPlacement(CONTENT_ID)?.size as { w?: number } | undefined)?.w !== undefined) {
+          store.patchPlacement(CONTENT_ID, { size: {} });
+        }
         const next = (store.getPlacement(SIDEBAR_ID)?.size as { w?: number } | undefined)?.w;
         if (typeof next !== 'number' || next === widthRef.current) return;
         widthRef.current = next;

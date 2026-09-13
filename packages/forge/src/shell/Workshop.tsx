@@ -23,7 +23,6 @@ export interface WorkshopProps {
 }
 
 const NO_DECLARATIONS: GlobalDeclarations = {};
-const TRIAL_CHROME = [CSS_VARS_SECTION];
 
 /** The story `#/<id>` names, when it is indexed; otherwise the first story. Read when the lab mounts. */
 function initialStory(index: readonly IndexEntry[], fallback: string): string {
@@ -56,6 +55,7 @@ export function Workshop({ index, frameUrl, config, stories = [], storageKey, st
   const labChrome = useMemo<readonly LabContribution[]>(
     () => [
       { id: 'fg-stories', region: 'sidebar', render: (ctx) => <StoryTree ctx={ctx} index={index} /> },
+      CSS_VARS_SECTION,
       ...(Object.keys(declarations).length > 0
         ? [{ id: 'fg-globals', region: 'header', render: () => <GlobalsToolbar declarations={declarations} /> } as const]
         : []),
@@ -90,7 +90,6 @@ export function Workshop({ index, frameUrl, config, stories = [], storageKey, st
           storageKey={storageKey ?? 'weaselforge'}
           {...(storage ? { storage } : {})}
           labChrome={labChrome}
-          chrome={TRIAL_CHROME}
           addTrial={false}
           {...(config?.controls ? { controls: config.controls } : {})}
         >
