@@ -5,13 +5,11 @@ type Args = Record<string, unknown>;
 export interface ArgsScope {
   /** The args the story renders with: its own, then config, then the frame-local ones. */
   args: Args;
-  /** `args` without the frame-local ones. */
-  configArgs: Args;
-  /** The story's args before any config was merged over them. */
-  initialArgs: Args;
+  /** The trial's config as it stands. An `undefined` key means the story's own arg. */
+  config: Args;
   defaults: Args;
   setConfig: (path: string, value: unknown) => void;
-  /** Args that cannot be structured-cloned, kept in the frame because config crosses a MessagePort. */
+  /** Args a MessagePort would not deliver intact, kept in the frame because config crosses one. */
   setLocal: Dispatch<SetStateAction<Args>>;
 }
 

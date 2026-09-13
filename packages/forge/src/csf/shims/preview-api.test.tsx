@@ -10,10 +10,12 @@ describe('useArgs with values that cannot cross the port', () => {
   const original = () => 'original';
 
   /** A frame whose setConfig clones like a MessagePort, with decorators applied innermost first. */
-  function mount(story: LoadedStory) {
+  function mount(story: LoadedStory, persisted: Args = story.config.defaults() as Args) {
     const sent: [string, unknown][] = [];
+    const port = { config: persisted };
     function Host(): ReactNode {
-      const [config, setAll] = useState(() => story.config.defaults() as Args);
+      const [config, setAll] = useState(persisted);
+      port.config = config;
       const ctx: StoryContext = {
         config,
         setConfig: (key, value) => {
@@ -34,8 +36,8 @@ describe('useArgs with values that cannot cross the port', () => {
       }
       return inner();
     }
-    render(<Host />);
-    return sent;
+    const { unmount } = render(<Host />);
+    return { sent, port, unmount };
   }
 
   const load = (annotations: Args) =>
@@ -47,7 +49,7 @@ describe('useArgs with values that cannot cross the port', () => {
 
   it('sends cloneable values and keeps the rest in the frame', () => {
     let captured: ReturnType<typeof useArgs> | undefined;
-    const sent = mount(
+    const { sent } = mount(
       load({
         render: function Read() {
           captured = useArgs();
@@ -64,7 +66,7 @@ describe('useArgs with values that cannot cross the port', () => {
 
   it('resets frame-local values back to the original args', () => {
     let captured: ReturnType<typeof useArgs> | undefined;
-    const sent = mount(
+    const { sent } = mount(
       load({
         render: function Read() {
           captured = useArgs();
@@ -75,18 +77,81 @@ describe('useArgs with values that cannot cross the port', () => {
     act(() => captured?.[1]({ onClick: () => 'next', extra: () => 'extra', n: 2 }));
     act(() => captured?.[2]());
     expect(captured?.[0]).toEqual({ n: 1, label: 'x', onClick: original });
+    expect(sent).toContainEqual(['n', 1]);
+  });
 
+  it('resets a sent value over an unsendable original, and the original survives a reload', () => {
+    let captured: ReturnType<typeof useArgs> | undefined;
+    const story = load({
+      render: function Read() {
+        captured = useArgs();
+        return null;
+      },
+    });
+    const first = mount(story);
     act(() => captured?.[1]({ onClick: 'a string' }));
-    expect(captured?.[0].onClick).toBe('a string');
-    sent.length = 0;
+    expect(first.sent).toEqual([['onClick', 'a string']]);
+    first.sent.length = 0;
     act(() => captured?.[2](['onClick']));
-    expect(sent).toEqual([]);
+    expect(first.sent).toEqual([['onClick', undefined]]);
     expect(captured?.[0].onClick).toBe(original);
+    first.unmount();
+
+    captured = undefined as typeof captured;
+    expect(first.port.config).toEqual({ n: 1, label: 'x', onClick: undefined });
+    mount(story, first.port.config);
+    expect(captured?.[0].onClick).toBe(original);
+  });
+
+  it('leaves a reset key with no original arg out of the args', () => {
+    let captured: ReturnType<typeof useArgs> | undefined;
+    const story = loadCsfModule(
+      {
+        default: { title: 'ui/Button', args: { n: 1 }, argTypes: { showStops: { control: 'boolean' } } },
+        A: {
+          render: function Read() {
+            captured = useArgs();
+            return null;
+          },
+        },
+      },
+      '/repo/Button.stories.tsx',
+      '/repo',
+    )[0] as LoadedStory;
+    const { sent } = mount(story);
+    act(() => captured?.[1]({ showStops: true, extra: 7 }));
+    sent.length = 0;
+    act(() => captured?.[2](['showStops', 'extra']));
+    expect(sent).toEqual([
+      ['showStops', undefined],
+      ['extra', undefined],
+    ]);
+    expect(captured?.[0]).toEqual({ n: 1 });
+  });
+
+  it('keeps a class instance in the frame with its methods', () => {
+    class Color {
+      hex() {
+        return '#fff';
+      }
+    }
+    let captured: ReturnType<typeof useArgs> | undefined;
+    const { sent } = mount(
+      load({
+        render: function Read() {
+          captured = useArgs();
+          return null;
+        },
+      }),
+    );
+    act(() => captured?.[1]({ color: new Color() }));
+    expect(sent).toEqual([]);
+    expect((captured?.[0].color as Color).hex()).toBe('#fff');
   });
 
   it('keeps a React element in the frame and renders it', () => {
     let captured: ReturnType<typeof useArgs> | undefined;
-    const sent = mount(
+    const { sent } = mount(
       load({
         render: function Read() {
           captured = useArgs();
@@ -213,7 +278,7 @@ describe('useArgs shim', () => {
     act(() => captured?.[2]());
     expect(setConfig.mock.calls).toEqual([
       ['label', 'x'],
-      ['separator', null],
+      ['separator', undefined],
       ['extra', undefined],
     ]);
 

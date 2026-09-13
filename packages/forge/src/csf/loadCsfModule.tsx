@@ -147,7 +147,7 @@ export function loadCsfModule(mod: Record<string, unknown>, file: string, root: 
       spec.render ?? meta.render ?? (component ? (a) => createElement(component, a) : undefined);
 
     const csfContext = (config: unknown, globals: Globals, local: Args = {}): CsfContext => ({
-      args: withoutUndefined({ ...args, ...(config as Args), ...local }),
+      args: withoutUndefined({ ...args, ...withoutUndefined(config as Args), ...local }),
       globals,
       parameters,
       title,
@@ -162,8 +162,7 @@ export function loadCsfModule(mod: Record<string, unknown>, file: string, root: 
           const context = csfContext(ctx.config, ctx.globals, local);
           const scope: ArgsScope = {
             args: context.args,
-            configArgs: withoutUndefined({ ...args, ...(ctx.config as Args) }),
-            initialArgs: args,
+            config: ctx.config as Args,
             defaults,
             setConfig: ctx.setConfig,
             setLocal,
