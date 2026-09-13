@@ -7,7 +7,8 @@ Playback is lookahead-scheduled on the engine's own timer rather than triggered
 from an animation frame: `AudioContext.currentTime` is driven by the audio
 hardware, ticks independently of `requestAnimationFrame`, and cannot be paused
 or time-scaled. Triggering a sound *on* a frame inherits frame jitter, which is
-audible.
+audible. A `play()` whose `when` is already inside the window does not wait for
+the next pass: it is booked at the end of the task that called it.
 
 A hidden tab clamps main-thread `setTimeout` to at least a second, far too late
 for a 100 ms lookahead, so the engine wakes each pass from a timer inside a
