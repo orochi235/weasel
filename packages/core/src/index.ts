@@ -501,11 +501,11 @@ export {
   type CornerResizeScratch,
   type CustomPaintContext,
   type LayerHit,
-  type ClaimableGesture,
   type PathAnchorAffordanceOptions,
   type RotationAffordanceOptions,
   type RotationScratch,
 } from './affordances';
+export type { ClaimableGesture } from '@weasel-js/gestures';
 export type { ChromeState } from './core/selection/chromeState';
 
 // ─── chrome-caps: declarative chrome-visibility rules ──────────────────────

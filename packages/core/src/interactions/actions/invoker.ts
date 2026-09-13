@@ -10,7 +10,7 @@
  */
 
 import type { ActionBehavior, ModifierState, ResizeAnchor } from '../gestures/types';
-import type { ClaimableGesture } from '../../affordances/types';
+import type { ClaimableGesture } from '@weasel-js/gestures';
 import type { KitInsertShape } from 'core/shapeKinds';
 import type { CursorSpec } from '@weasel-js/cursor';
 

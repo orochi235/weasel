@@ -5,7 +5,6 @@ export type {
   CommonAffordanceScratch,
   CustomPaintContext,
   LayerHit,
-  ClaimableGesture,
 } from './types';
 export { composeAffordanceLayer } from './composeAffordanceLayer';
 export {
