@@ -23,6 +23,14 @@ import type {
 } from '../renderer/DrawCommand';
 import { MinimapCanvas } from './MinimapCanvas';
 import { computeFitView } from './minimapMath';
+import { defaultDrawOne } from './defaultDrawOne';
+import { ColorOverrideRegistry } from '../animation/colorRegistry';
+import type { Animator } from '../animation/types';
+import { pathFromD } from 'features/paths/pathFromD';
+import { strokeOf } from '../util/paint';
+
+const RAINBOW = [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1];
+const RED = [1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1];
 
 // ---------------------------------------------------------------------------
 // Mock WeaselRenderer
@@ -471,5 +479,43 @@ describe('<MinimapCanvas> — pose overrides', () => {
       identityPoseBounds,
     );
     expect(fitAfter).toEqual(fitBefore);
+  });
+});
+
+describe('<MinimapCanvas> — animator', () => {
+  it('paints its animator\'s vertex-color overrides', () => {
+    const scene = createScene<Record<string, unknown>, 'main'>({ systemLayers: [{ id: 'main' }] });
+    const id = scene.add({
+      kind: 'leaf',
+      layer: 'main',
+      pose: { x: 0, y: 0, width: 100, height: 40 },
+      data: { path: pathFromD('M0 20 L50 0 L100 20'), stroke: { ...strokeOf('#fff', 4), vertexColors: RAINBOW } },
+    });
+    const colorOverrides = new ColorOverrideRegistry();
+    colorOverrides.set(id, 'stroke', RED);
+    const onTick = vi.fn(() => () => {});
+    const animator = { colorOverrides, onTick } as unknown as Animator;
+
+    render(
+      <MinimapCanvas
+        scene={scene}
+        mainView={{ x: 0, y: 0, scale: { x: 1, y: 1 } }}
+        mainViewDims={{ width: 200, height: 200 }}
+        onMainViewChange={() => {}}
+        width={100}
+        height={100}
+        drawOne={defaultDrawOne}
+        animator={animator}
+      />,
+    );
+
+    const strokes: unknown[] = [];
+    const walk = (cmd: DrawCommand): void => {
+      if (cmd.kind === 'path' && cmd.stroke?.vertexColors) strokes.push(cmd.stroke.vertexColors);
+      if (cmd.kind === 'group') cmd.children.forEach(walk);
+    };
+    renderMock.mock.calls.at(-1)![0].forEach(walk);
+    expect(strokes).toEqual([RED]);
+    expect(onTick).toHaveBeenCalled();
   });
 });
