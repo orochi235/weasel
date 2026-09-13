@@ -112,11 +112,11 @@ If that holds, `InvocationCtx` needs no point type parameter: two numbers are
 enough in both kernels, and only their meaning differs. If it does not, the lab
 records exactly where it broke.
 
-Two coordinate bugs in the same neighborhood, both recorded in `docs/TODO.md`
-rather than fixed here: `buildInvocationCtx` (`dispatcher.ts:611-627`) fills
-`ctx.screen` and `ctx.world` from the same event coordinates, and `classifyTarget`
-is called in two different spaces depending on the path. The lab is unaffected by
-the first and works around the second.
+The lab turned up two coordinate bugs in the same neighborhood, both since
+fixed: `buildInvocationCtx` filled `ctx.screen` and `ctx.world` from the same
+event coordinates, and `classifyTarget` was handed the raw client point at every
+dispatcher call site while its type promised a world point. Both now convert
+once, where the event arrives.
 
 ## Deps
 

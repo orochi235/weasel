@@ -302,22 +302,14 @@ in core rather than the kernel, publishes added / removed / changed with
 effective poses, and reads the scene's two clocks so a drag never walks the node
 map.
 
-## Still open
+## Settled
 
 **Where routing lives.** Every fight was a dep contract, a registration step or a
-coordinate-space bug — never binding-to-action routing. That is the case for
-extracting routing into a package beside `gestures` and `history` rather than giving
-a 3D kernel its own dispatcher, and it puts the seam at `depSchema.ts`.
-
-Costed 2026-09-13 in `2026-09-13-routing-extraction-costing.md`: 6,302 lines
-across 31 files. The cycles it costed as the blocking problem turned out to be
-one 15-file component closed by 10 value edges, and it is now gone — `Action`
-and `Contribution` each split into a routing half and a chrome half, and the
-dispatcher takes the one method it ever called. The `DepSchema` landmine the
-doc named is not real either: an augmentation aimed at a module that re-exports
-the interface, from a sibling file or a sibling package, merges through the
-alias, and the smoke test now asserts that against the published `.d.ts`.
-What is left open is the decision to move it, and the move.
+coordinate-space bug — never binding-to-action routing. So routing moved into
+`@weasel-js/routing`, beside `gestures` and `history`, rather than a 3D kernel
+getting its own dispatcher; the seam is `depSchema.ts`, and `@weasel-js/core`
+depends on the package. Costed in `2026-09-13-routing-extraction-costing.md`
+before the move: 6,302 lines across 31 files.
 
 ## Non-goals
 
