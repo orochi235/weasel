@@ -50,6 +50,19 @@ export function viewToTransform(view: View): ViewTransform {
 }
 
 /**
+ * How far `view` is zoomed in, as one number — the geometric mean of its two
+ * axes, so a uniform view reports its own scale and a stretched one reports
+ * the scale that covers the same area.
+ *
+ * What a `RuleCtx` carries, because the only rule that asks about the
+ * viewport asks for a threshold rather than a camera.
+ */
+export function viewZoom(view: View): number {
+  const { x, y } = view.scale;
+  return x === y ? x : Math.sqrt(x * y);
+}
+
+/**
  * `view` inside the invariant {@link View} documents: a zero or non-finite
  * scale axis becomes `ZOOM_FLOOR`, a negative one keeps its sign, and a
  * non-finite translation becomes 0. Returns `view` itself when it already

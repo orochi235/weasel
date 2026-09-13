@@ -3,6 +3,7 @@ import type { RuleCtx } from '@weasel-js/routing';
 import { DEFAULT_ALLOWED_CAPABILITIES } from '@weasel-js/routing';
 import { evaluate } from '@weasel-js/routing';
 import { defaultVisibilityRules } from './defaults';
+import { viewZoom } from 'core/viewport/view';
 
 /**
  * Build the per-frame visibility check. Merges consumer rules on top
@@ -28,7 +29,12 @@ export function resolveVisibility(
     : defaultVisibilityRules;
   const ruleCtx: RuleCtx = 'mode' in ctx
     ? ctx
-    : { ...ctx, mode: 'normal', allowedCapabilities: DEFAULT_ALLOWED_CAPABILITIES };
+    : {
+      ...ctx,
+      zoom: viewZoom(ctx.view),
+      mode: 'normal',
+      allowedCapabilities: DEFAULT_ALLOWED_CAPABILITIES,
+    };
   return (id) => {
     const entry = merged[id];
     if (entry === undefined) return true;

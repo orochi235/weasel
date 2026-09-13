@@ -187,18 +187,34 @@ Priority tags:
   own arc, and worth asking first whether labkit should support a lab with no
   trials at all.
 
-- **(P2) The routing package is still typed in 2D.** `@weasel-js/routing` exists
-  (2026-09-13) and core consumes it, but the seam the 3D lab keeps hitting is
-  unchanged: `ViewApi` has no orientation, and
-  `SnapDep`/`AreaSelectDep`/`NodeAtPointDep`/`InsertDep.commit` are typed in 2D
-  points and `Bounds`. Ten of the 24 deps are genuine obstructions —
-  `view`, `pointer`, `snap`, `lassoSelect`, `editAnchors`, `poseDescriptor`,
-  `booleansAdapter`, `slice`, `ingestion`, `geometryProjection`. `view` is the
-  outright dead end; a `View` is `{x, y, scale}` and names no camera. The deps
-  themselves stay in core and merge into routing's `DepSchema` from outside, so
-  a second kernel can already declare its own — what it cannot do is reuse the
-  ten that assume a plane. Measured in
-  `docs/superpowers/specs/2026-09-13-routing-extraction-costing.md`.
+- **(P3) One dep still names a plane, not ten.** The count came from reading
+  signatures for 2D-looking types; read for what a camera-bearing host can
+  actually implement, the ten are: `geometryProjection` alone, whose
+  `transform(node, m: Mat3)` has no 3D form (its own entry below, and core
+  builds the `Mat3` at four call sites before the dep is consulted, so widening
+  the type does not free it). `view` is not an obstruction but the design —
+  viewport deps are per-kernel, and `kernel3d` declares `camera3d`.
+  `editAnchors` and `booleansAdapter` are 2D *features* — anchor editing and
+  path booleans — that a 3D kernel simply does not declare. The remaining six —
+  `pointer`, `snap`, `lassoSelect`, `poseDescriptor`, `slice`, `ingestion` —
+  are satisfiable as typed, because every coordinate in them is a screen point
+  under the identity `clientToWorld` a 3D host passes. Re-measured 2026-09-13,
+  dep by dep.
+
+  The routing package itself declares `View` in `tools/types.ts` (`ToolCtx`) and
+  in its barrel. `RuleCtx` no longer does: it carries `zoom?: number`, so a host
+  whose viewport is a camera can supply eligibility instead of leaving
+  `getRuleCtx` unset and silently skipping every rule — which is what the 3D lab
+  was doing. What is left is `ToolCtx`, and only `<Canvas>` ever builds one.
+  `Point2` is orientation-free, and none of `dispatcher.ts`, `matcher.ts`,
+  `invoker.ts`, `action.ts`, `buildDeps.ts` or `depRegistry.tsx` names a 2D type
+  at all.
+
+- **(P3) Nothing declares the `pointer` dep.** No `requires:` anywhere in
+  `packages/` or `apps/` names it; it survives in the two legacy fixed bags in
+  `ActionsProvider.tsx` and is registered unconditionally by
+  `useStandardActions`. Removing it is a public-API change, so it wants its own
+  decision. Found while re-measuring the dep schema, 2026-09-13.
 
 - **(P3) `geometryProjection` cannot hold a 3D transform.** `transform(node,
   m: Mat3)` names a plane in its signature, so a kernel with a camera has

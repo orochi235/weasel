@@ -83,7 +83,7 @@ export type {
 // ─── Viewport: ViewTransform + helpers ──────────────────────────────────────
 export * from './core/viewport/viewTransform';
 export type { View, ZoomFactor, ZoomBound } from './core/viewport/view';
-export { viewToTransform, normalizeView } from './core/viewport/view';
+export { viewToTransform, normalizeView, viewZoom } from './core/viewport/view';
 export { meanScale } from './core/viewport/meanScale';
 export { pxExtent, scaleDelta, withinPxBox, withinPxRadius } from './core/viewport/pxExtent';
 export * from './interactions/gestures/handleDrag';
@@ -499,6 +499,7 @@ export {
   ALWAYS,
   NEVER,
   buildRuleCtx,
+  DEFAULT_ALLOWED_CAPABILITIES,
   defaultVisibilityRules,
   resolveVisibility,
   buildChromeCtx,

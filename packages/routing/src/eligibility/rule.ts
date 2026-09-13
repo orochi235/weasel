@@ -116,9 +116,8 @@ function evaluateSelector(s: Selector, ctx: RuleCtx): boolean {
   }
   if (s.editingAnchors !== undefined && (ctx.editingAnchors ?? false) !== s.editingAnchors) return false;
   if (s.zoomAtLeast !== undefined) {
-    const sx = ctx.view.scale.x, sy = ctx.view.scale.y;
-    const z = sx === sy ? sx : Math.sqrt(sx * sy);
-    if (z < s.zoomAtLeast) return false;
+    // A host that reports no zoom has no threshold to clear.
+    if (ctx.zoom === undefined || ctx.zoom < s.zoomAtLeast) return false;
   }
   if (s.resizable !== undefined) {
     // Absent flag === resizable (back-compat for ctx builders that don't

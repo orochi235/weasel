@@ -1,4 +1,4 @@
-import type { NodeId, View, DeviceProfile, ModifierState } from '../vocabulary';
+import type { NodeId, DeviceProfile, ModifierState } from '../vocabulary';
 import { IMPLICIT_TAGS, NORMAL, type CapabilityTag } from '@weasel-js/modes';
 
 /**
@@ -16,7 +16,16 @@ export interface RuleCtx {
   readonly modifiers: ModifierState;
   readonly action: { readonly kind: string | null; readonly id: string | null };
   readonly hover: NodeId | null;
-  readonly view: View;
+  /**
+   * How far the viewport is zoomed in, as one number — `1` at native scale.
+   *
+   * A scalar rather than the `View` this used to carry, because `zoomAtLeast`
+   * is the only selector that ever read one and a number is all it needs. A
+   * host whose viewport is a camera has no `View` to hand over and would
+   * otherwise have to invent one to use eligibility at all; it omits this
+   * instead, and `zoomAtLeast` declines rather than matching on a fiction.
+   */
+  readonly zoom?: number;
   /** Active mode id. `'normal'` when no non-default mode is engaged. */
   readonly mode: string;
   /** Capability tags allowed by the active mode (the union of
@@ -57,7 +66,8 @@ export interface BuildRuleCtxArgs {
   modifiers: ModifierState;
   action: { kind: string | null; id: string | null };
   hover: NodeId | null;
-  view: View;
+  /** See {@link RuleCtx.zoom}. */
+  zoom?: number;
   mode: string;
   allowedCapabilities: ReadonlySet<CapabilityTag>;
   /** Optional — omitted means "resizable" (handles show). See {@link RuleCtx}. */
@@ -94,7 +104,7 @@ export function buildRuleCtx(args: BuildRuleCtxArgs): RuleCtx {
     modifiers: args.modifiers,
     action: args.action,
     hover: args.hover,
-    view: args.view,
+    zoom: args.zoom,
     mode: args.mode,
     allowedCapabilities: args.allowedCapabilities,
     selectionResizable: args.selectionResizable,

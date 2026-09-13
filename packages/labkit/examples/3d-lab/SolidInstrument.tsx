@@ -8,7 +8,9 @@ import {
   type ReactNode,
 } from 'react';
 import {
+  DEFAULT_ALLOWED_CAPABILITIES,
   WeaselProvider,
+  buildRuleCtx,
   createDispatcher,
   createPoseFeed,
   useAction,
@@ -377,6 +379,25 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     y: clientY,
   }), []);
 
+  /**
+   * Eligibility, which a 3D host can supply now that a `RuleCtx` asks for a
+   * zoom rather than a `View`. Left unset — as it was — the dispatcher skips
+   * every rule and each action fires unconditionally, so the lab was not
+   * exercising the gate it claims to share with `<SceneCanvas>`.
+   *
+   * No zoom: this viewport is a camera, and `zoomAtLeast` has no answer here.
+   */
+  const getRuleCtx = useCallback(() => buildRuleCtx({
+    focused: true,
+    selection: selectionRef.current,
+    multiActive: selectionRef.current.length > 1,
+    modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+    action: dispatcher.getActiveAction(),
+    hover: null,
+    mode: 'normal',
+    allowedCapabilities: DEFAULT_ALLOWED_CAPABILITIES,
+  }), [dispatcher]);
+
   useGestureDispatcher({
     canvasRef: paneRef,
     dispatcher,
@@ -384,6 +405,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     toolsById,
     clientToWorld,
     classifyTarget,
+    getRuleCtx,
     requestRedraw: repaint,
   });
 
