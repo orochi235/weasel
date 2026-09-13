@@ -4,7 +4,18 @@ import { isPortSafe } from '../portSafe';
 
 type Args = Record<string, unknown>;
 
-const without = (args: Args, keys: string[]): Args =>
+/** A Proxy passes `isPortSafe` and still makes `structuredClone` throw. */
+const sendable = (value: unknown): boolean => {
+  if (!isPortSafe(value)) return false;
+  try {
+    structuredClone(value);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const without =(args: Args, keys: string[]): Args =>
   Object.fromEntries(Object.entries(args).filter(([key]) => !keys.includes(key)));
 
 /**
@@ -15,23 +26,30 @@ const without = (args: Args, keys: string[]): Args =>
 export function useArgs(): [Args, (patch: Args) => void, (argNames?: string[]) => void] {
   const scope = useContext(ArgsContext);
   if (!scope) throw new Error('useArgs must be called inside a CSF story loaded by forge');
-  const { args, config, defaults, setConfig, setLocal } = scope;
+  const { args, config, defaults, original, setConfig, setLocal } = scope;
   const updateArgs = (patch: Args) => {
     const sent: [string, unknown][] = [];
     const kept: Args = {};
     for (const [key, value] of Object.entries(patch)) {
-      if (isPortSafe(value)) sent.push([key, value]);
+      if (sendable(value)) sent.push([key, value]);
       else kept[key] = value;
     }
     setLocal((prev) => ({ ...without(prev, Object.keys(patch)), ...kept }));
     for (const [key, value] of sent) setConfig(key, value);
   };
   const resetArgs = (argNames?: string[]) => {
-    for (const key of argNames ?? [...new Set([...Object.keys(defaults), ...Object.keys(args)])]) {
-      if (key in defaults) setConfig(key, defaults[key]);
-      else if (config[key] !== undefined) setConfig(key, undefined);
+    const keys = argNames ?? [...new Set([...Object.keys(defaults), ...Object.keys(args)])];
+    // A key with no control shows its original from the frame, so the render does not wait on the port.
+    const overlay: Args = {};
+    for (const key of keys) {
+      if (key in defaults) {
+        setConfig(key, defaults[key]);
+        continue;
+      }
+      overlay[key] = original[key];
+      if (config[key] !== undefined) setConfig(key, undefined);
     }
-    setLocal((prev) => (argNames ? without(prev, argNames) : {}));
+    setLocal((prev) => ({ ...(argNames ? without(prev, keys) : {}), ...overlay }));
   };
   return [args, updateArgs, resetArgs];
 }

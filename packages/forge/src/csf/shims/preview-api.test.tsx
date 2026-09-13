@@ -9,8 +9,12 @@ describe('useArgs with values that cannot cross the port', () => {
   type Args = Record<string, unknown>;
   const original = () => 'original';
 
-  /** A frame whose setConfig clones like a MessagePort, with decorators applied innermost first. */
-  function mount(story: LoadedStory, persisted: Args = story.config.defaults() as Args) {
+  /**
+   * A frame whose setConfig clones like a MessagePort, with decorators applied innermost first. The
+   * config update lands synchronously, or in a later macrotask when `async` is set, as it does
+   * across a real port.
+   */
+  function mount(story: LoadedStory, persisted: Args = story.config.defaults() as Args, { async = false } = {}) {
     const sent: [string, unknown][] = [];
     const port = { config: persisted };
     function Host(): ReactNode {
@@ -21,7 +25,9 @@ describe('useArgs with values that cannot cross the port', () => {
         setConfig: (key, value) => {
           const copy = structuredClone(value);
           sent.push([key, value]);
-          setAll((prev) => ({ ...prev, [key]: copy }));
+          const apply = () => setAll((prev) => ({ ...prev, [key]: copy }));
+          if (async) setTimeout(apply, 0);
+          else apply();
         },
         state: null,
         setState: () => {},
@@ -127,6 +133,52 @@ describe('useArgs with values that cannot cross the port', () => {
       ['extra', undefined],
     ]);
     expect(captured?.[0]).toEqual({ n: 1 });
+  });
+
+  it('keeps values the port cannot clone in the frame, and still sends the rest of the patch', () => {
+    let captured: ReturnType<typeof useArgs> | undefined;
+    const { sent } = mount(
+      load({
+        render: function Read() {
+          captured = useArgs();
+          return null;
+        },
+      }),
+    );
+    const proxy = new Proxy({ a: 1 }, {});
+    const withFn = Object.assign([1, 2], { fn: () => 1 });
+    expect(() => act(() => captured?.[1]({ proxy, withFn, n: 2 }))).not.toThrow();
+    expect(sent).toEqual([['n', 2]]);
+    expect(captured?.[0]).toMatchObject({ n: 2 });
+    expect(captured?.[0].proxy).toBe(proxy);
+    expect(captured?.[0].withFn).toBe(withFn);
+  });
+
+  it('shows the original the moment a key with no control resets, before the port answers', async () => {
+    let captured: ReturnType<typeof useArgs> | undefined;
+    const shown: string[] = [];
+    const flush = () => act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+    mount(
+      load({
+        render: function Read() {
+          captured = useArgs();
+          const [args] = captured;
+          shown.push(`${args.onClick === original ? 'original' : String(args.onClick)}|${String(args.extra)}`);
+          return null;
+        },
+      }),
+      undefined,
+      { async: true },
+    );
+    act(() => captured?.[1]({ onClick: 'stale', extra: 7 }));
+    await flush();
+    expect(shown.at(-1)).toBe('stale|7');
+    const from = shown.length;
+    act(() => captured?.[2](['onClick', 'extra']));
+    expect(shown.at(-1)).toBe('original|undefined');
+    expect('extra' in (captured?.[0] ?? {})).toBe(false);
+    await flush();
+    expect(shown.slice(from)).toEqual(shown.slice(from).map(() => 'original|undefined'));
   });
 
   it('keeps a class instance in the frame with its methods', () => {

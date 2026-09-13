@@ -1,3 +1,35 @@
+const g = globalThis as Record<string, unknown>;
+const CLONED_WHOLE = new Set<unknown>(
+  [
+    'Date',
+    'RegExp',
+    'ArrayBuffer',
+    'DataView',
+    'Int8Array',
+    'Uint8Array',
+    'Uint8ClampedArray',
+    'Int16Array',
+    'Uint16Array',
+    'Int32Array',
+    'Uint32Array',
+    'Float16Array',
+    'Float32Array',
+    'Float64Array',
+    'BigInt64Array',
+    'BigUint64Array',
+  ]
+    .map((name) => (g[name] as { prototype?: object } | undefined)?.prototype)
+    .filter(Boolean),
+);
+
+/** Own keys a clone keeps: enumerable string keys, plus an array's `length`. */
+const hasOnlyClonedKeys = (v: object): boolean =>
+  Reflect.ownKeys(v).every(
+    (key) =>
+      typeof key === 'string' &&
+      (Object.prototype.propertyIsEnumerable.call(v, key) || (Array.isArray(v) && key === 'length')),
+  );
+
 /**
  * Whether a MessagePort delivers `value` as the same thing it was. `structuredClone` succeeding is
  * not enough: it copies a class instance's fields onto a plain object and drops its methods.
@@ -9,12 +41,17 @@ export function isPortSafe(value: unknown): boolean {
     if (typeof v !== 'object') return typeof v !== 'function' && typeof v !== 'symbol';
     if (seen.has(v)) return true;
     seen.add(v);
-    if (v instanceof Date || v instanceof RegExp || v instanceof ArrayBuffer || ArrayBuffer.isView(v)) return true;
-    if (v instanceof Map) return [...v].every(([key, member]) => safe(key) && safe(member));
-    if (v instanceof Set) return [...v].every(safe);
-    if (Array.isArray(v)) return v.every(safe);
     const proto = Object.getPrototypeOf(v);
-    return (proto === Object.prototype || proto === null) && Object.values(v).every(safe);
+    if (CLONED_WHOLE.has(proto)) return true;
+    if (proto === Map.prototype)
+      return hasOnlyClonedKeys(v) && [...(v as Map<unknown, unknown>)].every(([key, member]) => safe(key) && safe(member));
+    if (proto === Set.prototype) return hasOnlyClonedKeys(v) && [...(v as Set<unknown>)].every(safe);
+    if (proto !== Array.prototype && proto !== Object.prototype && proto !== null) return false;
+    return hasOnlyClonedKeys(v) && Object.values(v).every(safe);
   };
-  return safe(value);
+  try {
+    return safe(value);
+  } catch {
+    return false;
+  }
 }

@@ -8,6 +8,8 @@ export interface ArgsScope {
   /** The trial's config as it stands. An `undefined` key means the story's own arg. */
   config: Args;
   defaults: Args;
+  /** The story's own args, before config and the frame-local ones. */
+  original: Args;
   setConfig: (path: string, value: unknown) => void;
   /** Args a MessagePort would not deliver intact, kept in the frame because config crosses one. */
   setLocal: Dispatch<SetStateAction<Args>>;

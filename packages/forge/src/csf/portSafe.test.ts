@@ -44,6 +44,34 @@ describe('isPortSafe', () => {
     expect(isPortSafe(new Set([() => 1]))).toBe(false);
   });
 
+  it('rejects subclasses of the built-ins, which a clone turns back into the base class', () => {
+    class Registry extends Map {}
+    class Stops extends Array {}
+    const registry = new Registry();
+    registry.set(1, 2);
+    expect(isPortSafe(registry)).toBe(false);
+    const stops = new Stops();
+    stops.push(1);
+    expect(isPortSafe(stops)).toBe(false);
+  });
+
+  it('rejects own properties a clone drops', () => {
+    const hidden = { a: 1 };
+    Object.defineProperty(hidden, 'b', { value: 2, enumerable: false });
+    expect(isPortSafe(hidden)).toBe(false);
+    expect(isPortSafe({ a: 1, [Symbol('s')]: 2 })).toBe(false);
+    expect(isPortSafe(Object.assign([1], { [Symbol('s')]: 2 }))).toBe(false);
+  });
+
+  it('rejects a value whose walk throws instead of throwing', () => {
+    const value = {
+      get x() {
+        throw new Error('boom');
+      },
+    };
+    expect(isPortSafe(value)).toBe(false);
+  });
+
   it('terminates on a cycle', () => {
     const a: Record<string, unknown> = { n: 1 };
     a.self = a;

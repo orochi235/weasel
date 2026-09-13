@@ -164,6 +164,7 @@ export function loadCsfModule(mod: Record<string, unknown>, file: string, root: 
             args: context.args,
             config: ctx.config as Args,
             defaults,
+            original: args,
             setConfig: ctx.setConfig,
             setLocal,
           };
