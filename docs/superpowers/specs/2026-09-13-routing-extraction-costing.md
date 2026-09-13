@@ -1,15 +1,13 @@
 # Costing the routing extraction
 
-**What this is:** a measurement of what it would take to lift weasel's routing
-layer — binding-to-action dispatch — out of `@weasel-js/core` into its own
-package beside `gestures` and `history`. Measured 2026-09-13 against `main`.
+**What this is:** the costing that preceded lifting weasel's routing layer —
+binding-to-action dispatch — out of `@weasel-js/core` into `@weasel-js/routing`.
+**All three arcs are done (2026-09-13); the package exists.** What is left here
+is the measurement, kept for the parts that are still true about the boundary,
+and corrected where the work disagreed with the prediction.
 
-**Who it is for:** whoever decides whether to do it, and then whoever does.
-
-**What it answers:** `2026-08-22-3d-kernel-design.md` concluded that routing is
-portable and the dep schema is not, and recorded that nobody had costed it.
-This is that costing. It does not recommend a schedule; it says what the work
-is, which parts are cheap, and which one thing is genuinely hard.
+**Who it is for:** whoever next changes the routing boundary, or wonders why a
+type sits where it does.
 
 ## The headline
 
@@ -91,15 +89,26 @@ it from outside exactly as the two consumers already do. Far cheaper, uses a
 seam the repo has exercised twice, and needs no generic. The concrete dep
 interfaces — all 24 — stay in core, which becomes just another consumer.
 
-**The second design is the recommendation, and the landmine this doc named is
-not real.** It claimed declaration merging targets the module where an interface
-is *declared*, so an augmentation still aimed at `'@weasel-js/core'` after the
-declaration moved would silently stop merging. Measured 2026-09-13 against
-`tsc` under `moduleResolution: bundler`, in both shapes that matter — the
-interface re-exported from a sibling file, and re-exported from a sibling
-*package* — the augmentation merges through the alias and both the consumer's
-key and the built-in keys resolve. A negative control aimed at a module with no
-`DepSchema` fails with TS2339 and TS2322, so the check has teeth.
+**The second design is what shipped, and the landmine this doc called unreal is
+half real.** The claim was that declaration merging targets the module where an
+interface is *declared*, so an augmentation still aimed at `'@weasel-js/core'`
+after the declaration moved would silently stop merging. The first measurement
+said it merges fine through one re-export hop, and that much holds. What it did
+not try was two hops, which is the shape the extraction actually produces:
+consumer augments `'@weasel-js/core'`, core re-exports from `'@weasel-js/routing'`,
+and routing's barrel re-exports from a submodule where the interface is declared.
+
+At two hops TS declares a *fresh* interface in the shadowed alias's scope rather
+than merging, and the failure surfaces nowhere near the augmentation: every
+`DepSchema[K]` inside routing's own source fails with TS2536, "Type 'K' cannot be
+used to index type 'DepSchema'". Nine errors, all in files nobody had touched.
+
+**The fix is one hop: declare `DepSchema` in routing's own `index.ts`,** the
+module core re-exports from, not in a module that barrel re-exports. Consumers
+keep naming `'@weasel-js/core'` and never learn the package exists. The standing
+check is `scripts/smoke-consumer-bundle.mjs`'s `smokeDep` augmentation, which now
+guards this against the *published* `.d.ts` — the only place the flattening is
+visible.
 
 What did happen here once was narrower: `depRegistry.tsx` records a
 *self*-augmentation — core's own `declare module './depRegistry'` — dying when
@@ -196,10 +205,9 @@ would re-export the moved symbols, none of these break. Only the two
 
 **Arc 1 — untangle, inside core, no package. Done.** See above.
 
-**Arc 2 — move it.** The package scaffold, the file moves, core's re-exports,
-and retargeting the two augmentation sites. Arc 1 removed the reason this could
-not be done piecemeal, and the augmentation retarget turns out not to be
-load-bearing: the sites can keep naming `'@weasel-js/core'` and still merge.
+**Arc 2 — move it. Done (2026-09-13).** Both augmentation sites were left naming
+`'@weasel-js/core'` and merge unchanged, as predicted — but only because
+`DepSchema` is declared at the right depth; see the DepSchema section.
 
-**Arc 3 — the correctness pass.** On the `gestures`/`history` precedent, expect
-it to find real bugs that predate the move. It does not appear in any diffstat.
+**Arc 3 — the correctness pass. Done (2026-09-13).** See
+"What arc 3 found" below.

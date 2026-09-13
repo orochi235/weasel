@@ -79,7 +79,6 @@
     "@weasel-js/geom": "1.4.4",
     "@weasel-js/gestures": "1.4.4",
     "@weasel-js/history": "1.4.4",
-    "@weasel-js/modes": "1.4.4",
     "@weasel-js/paint": "1.4.4",
     "@weasel-js/routing": "1.4.4",
     "@weasel-js/text": "1.4.4",
@@ -98,5 +97,8 @@
     "resize",
     "viewport",
     "2d"
-  ]
+  ],
+  "devDependencies": {
+    "@weasel-js/modes": "1.4.4"
+  }
 }

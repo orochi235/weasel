@@ -24,7 +24,7 @@ export default defineConfig({
     clone: 'src/import-shims/clone.ts',
     'patterns-builtin': 'src/import-shims/patterns-builtin.ts',
     renderer: 'src/import-shims/renderer.ts',
-    routing: 'src/tools/routing/index.ts',
+    routing: 'src/import-shims/routing.ts',
   },
   format: ['esm'],
   dts: true,

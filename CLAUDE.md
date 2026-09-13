@@ -275,6 +275,23 @@ to enumerate the names. Re-export from another workspace package by name, the
 way core already does for `@weasel-js/font`. Only `npm run test:smoke:consumer`
 catches it.
 
+**A `declare module` augmentation merges through one re-export hop, not two.** TS merges into
+the module where the interface is *declared*; aimed at a module that only re-exports it, it
+declares a fresh one in that module's scope instead. One hop survives — a consumer augmenting
+`'@weasel-js/core'` reaches `DepSchema` declared in `@weasel-js/routing`'s barrel. Two does not:
+put the declaration in a submodule the barrel re-exports and the shadowed alias poisons every
+`DepSchema[K]`, reported as TS2536 inside routing's own source, nowhere near the augmentation
+that caused it. So the interface has to sit in the barrel core re-exports from.
+`scripts/smoke-consumer-bundle.mjs`'s `smokeDep` check is the guard, and it has to run against
+the *published* `.d.ts` — in-repo typechecks resolve to source and cannot see the flattening.
+
+**A bare `export type { X } from '…'` does not bring `X` into the file's own scope.** Replacing a
+local declaration with a re-export leaves every use of the name in that same file unresolved — and
+if a DOM global answers to it, silently wrong rather than an error. `SelectionMode` is one:
+lib.dom declares `"select" | "start" | "end" | "preserve"`, so `mode: 'multi'` started failing in
+eleven demos while the file that lost the declaration compiled clean. Write `import type { X } …`
+then `export type { X };`.
+
 **The consumer smoke test cannot catch an undeclared dependency.** It packs every `@weasel-js`
 package into the tree, so a bare specifier resolves whether or not the importer declared it.
 `npm run check:manifests` is the check that works.
