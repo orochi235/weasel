@@ -17,9 +17,11 @@ describe('useArgs with values that cannot cross the port', () => {
   function mount(story: LoadedStory, persisted: Args = story.config.defaults() as Args, { async = false } = {}) {
     const sent: [string, unknown][] = [];
     const port = { config: persisted };
+    let setHost: (next: Args) => void = () => {};
     function Host(): ReactNode {
       const [config, setAll] = useState(persisted);
       port.config = config;
+      setHost = setAll;
       const ctx: StoryContext = {
         config,
         setConfig: (key, value) => {
@@ -43,7 +45,9 @@ describe('useArgs with values that cannot cross the port', () => {
       return inner();
     }
     const { unmount } = render(<Host />);
-    return { sent, port, unmount };
+    /** Writes the whole config from the host side, as a snapshot load or Reset trial does. */
+    const replace = (next: Args) => act(() => setHost(next));
+    return { sent, port, unmount, replace };
   }
 
   const load = (annotations: Args) =>
@@ -157,7 +161,6 @@ describe('useArgs with values that cannot cross the port', () => {
   it('shows the original the moment a key with no control resets, before the port answers', async () => {
     let captured: ReturnType<typeof useArgs> | undefined;
     const shown: string[] = [];
-    const flush = () => act(() => new Promise((resolve) => setTimeout(resolve, 0)));
     mount(
       load({
         render: function Read() {
@@ -179,6 +182,75 @@ describe('useArgs with values that cannot cross the port', () => {
     expect('extra' in (captured?.[0] ?? {})).toBe(false);
     await flush();
     expect(shown.slice(from)).toEqual(shown.slice(from).map(() => 'original|undefined'));
+  });
+
+  const flush = () => act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+  const label = (value: unknown) =>
+    value === original ? 'original' : typeof value === 'function' ? 'fn' : String(value);
+
+  it('shows a config load that follows a reset, for a key with an original arg', async () => {
+    let captured: ReturnType<typeof useArgs> | undefined;
+    const shown: string[] = [];
+    const story = load({
+      render: function Read() {
+        captured = useArgs();
+        shown.push(label(captured[0].onClick));
+        return null;
+      },
+    });
+    const defaults = story.config.defaults() as Args;
+    const { replace } = mount(story, undefined, { async: true });
+    act(() => captured?.[1]({ onClick: 'armed' }));
+    await flush();
+    expect(shown.at(-1)).toBe('armed');
+    const from = shown.length;
+    act(() => captured?.[2](['onClick']));
+    await flush();
+    expect(shown.slice(from).every((entry) => entry === 'original')).toBe(true);
+    replace({ ...defaults, onClick: 'other' });
+    expect(shown.at(-1)).toBe('other');
+    replace({ ...defaults, onClick: 'armed' });
+    expect(shown.at(-1)).toBe('armed');
+  });
+
+  it('shows a config load that follows a reset, for a key with no original arg', async () => {
+    let captured: ReturnType<typeof useArgs> | undefined;
+    const story = load({
+      render: function Read() {
+        captured = useArgs();
+        return null;
+      },
+    });
+    const defaults = story.config.defaults() as Args;
+    const { replace } = mount(story, undefined, { async: true });
+    act(() => captured?.[1]({ extra: 7 }));
+    await flush();
+    act(() => captured?.[2](['extra']));
+    await flush();
+    expect('extra' in (captured?.[0] ?? {})).toBe(false);
+    replace({ ...defaults, extra: 9 });
+    expect(captured?.[0].extra).toBe(9);
+  });
+
+  it('keeps a frame-local value only while config holds what it held when the value was set', () => {
+    let captured: ReturnType<typeof useArgs> | undefined;
+    const story = load({
+      render: function Read() {
+        captured = useArgs();
+        return null;
+      },
+    });
+    const defaults = story.config.defaults() as Args;
+    const { replace } = mount(story);
+    const fn2 = () => 'fn2';
+    act(() => captured?.[1]({ onClick: fn2 }));
+    expect(captured?.[0].onClick).toBe(fn2);
+    replace({ ...defaults });
+    expect(captured?.[0].onClick).toBe(fn2);
+    replace({ ...defaults, onClick: 'x' });
+    expect(captured?.[0].onClick).toBe('x');
+    replace({ ...defaults });
+    expect(captured?.[0].onClick).toBe(original);
   });
 
   it('keeps a class instance in the frame with its methods', () => {

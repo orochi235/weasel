@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { ArgsContext } from '../argsContext';
+import { ArgsContext, coverOf, type LocalArgs } from '../argsContext';
 import { isPortSafe } from '../portSafe';
 
 type Args = Record<string, unknown>;
@@ -15,8 +15,8 @@ const sendable = (value: unknown): boolean => {
   }
 };
 
-const without =(args: Args, keys: string[]): Args =>
-  Object.fromEntries(Object.entries(args).filter(([key]) => !keys.includes(key)));
+const without = (local: LocalArgs, keys: string[]): LocalArgs =>
+  Object.fromEntries(Object.entries(local).filter(([key]) => !keys.includes(key)));
 
 /**
  * Storybook's `useArgs`, writing through the trial's config. Stands in for `storybook/preview-api`.
@@ -29,10 +29,10 @@ export function useArgs(): [Args, (patch: Args) => void, (argNames?: string[]) =
   const { args, config, defaults, original, setConfig, setLocal } = scope;
   const updateArgs = (patch: Args) => {
     const sent: [string, unknown][] = [];
-    const kept: Args = {};
+    const kept: LocalArgs = {};
     for (const [key, value] of Object.entries(patch)) {
       if (sendable(value)) sent.push([key, value]);
-      else kept[key] = value;
+      else kept[key] = { value, over: coverOf(config[key]) };
     }
     setLocal((prev) => ({ ...without(prev, Object.keys(patch)), ...kept }));
     for (const [key, value] of sent) setConfig(key, value);
@@ -40,14 +40,15 @@ export function useArgs(): [Args, (patch: Args) => void, (argNames?: string[]) =
   const resetArgs = (argNames?: string[]) => {
     const keys = argNames ?? [...new Set([...Object.keys(defaults), ...Object.keys(args)])];
     // A key with no control shows its original from the frame, so the render does not wait on the port.
-    const overlay: Args = {};
+    const overlay: LocalArgs = {};
     for (const key of keys) {
       if (key in defaults) {
         setConfig(key, defaults[key]);
         continue;
       }
-      overlay[key] = original[key];
-      if (config[key] !== undefined) setConfig(key, undefined);
+      if (config[key] === undefined) continue;
+      overlay[key] = { value: original[key], over: coverOf(config[key]) };
+      setConfig(key, undefined);
     }
     setLocal((prev) => ({ ...(argNames ? without(prev, keys) : {}), ...overlay }));
   };

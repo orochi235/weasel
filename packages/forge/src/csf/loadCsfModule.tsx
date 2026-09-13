@@ -6,12 +6,13 @@ import {
   type ReactNode,
   type SetStateAction,
   useContext,
+  useEffect,
   useState,
 } from 'react';
 import type { Globals, Layout, Viewport } from '../protocol/messages';
 import { storyId, storyNameFromExport, titleFromFile } from '../story/ids';
 import type { Decorator, LoadedStory, PlayContext, StoryContext } from '../story/types';
-import { type ArgsScope, ArgsContext } from './argsContext';
+import { type ArgsScope, ArgsContext, appliedLocal, coverOf, type LocalArgs } from './argsContext';
 import { type ArgType, argsToSchema } from './argsToSchema';
 import { isPlainObject } from './isPlainObject';
 
@@ -92,13 +93,13 @@ function Call({ fn }: { fn: () => ReactNode }): ReactNode {
   return fn();
 }
 
-interface LocalArgs {
+interface StoryLocals {
   story: string;
-  local: Args;
-  setLocal: Dispatch<SetStateAction<Args>>;
+  local: LocalArgs;
+  setLocal: Dispatch<SetStateAction<LocalArgs>>;
 }
 
-const LocalArgsContext = createContext<LocalArgs | null>(null);
+const LocalArgsContext = createContext<StoryLocals | null>(null);
 
 /** The outermost scope of a story holds its frame-local args, so its decorators and render share them. */
 function Scoped({
@@ -107,13 +108,22 @@ function Scoped({
   fn,
 }: {
   id: string;
-  build: (local: LocalArgs) => [ArgsScope, CsfContext];
+  build: (local: StoryLocals) => [ArgsScope, CsfContext];
   fn: (context: CsfContext) => ReactNode;
 }): ReactNode {
   const outer = useContext(LocalArgsContext);
-  const [local, setLocal] = useState<Args>({});
+  const [local, setLocal] = useState<LocalArgs>({});
   const shared = outer?.story === id ? outer : { story: id, local, setLocal };
   const [scope, context] = build(shared);
+  const { config } = scope;
+  const prune = shared.setLocal;
+  // An entry config has moved past must not come back if config later returns to the value it covered.
+  useEffect(() => {
+    prune((prev) => {
+      const kept = Object.entries(prev).filter(([key, entry]) => coverOf(config[key]) === entry.over);
+      return kept.length === Object.keys(prev).length ? prev : Object.fromEntries(kept);
+    });
+  }, [config, prune]);
   return createElement(
     LocalArgsContext.Provider,
     { value: shared },
@@ -146,8 +156,8 @@ export function loadCsfModule(mod: Record<string, unknown>, file: string, root: 
     const renderFn: CsfRender | undefined =
       spec.render ?? meta.render ?? (component ? (a) => createElement(component, a) : undefined);
 
-    const csfContext = (config: unknown, globals: Globals, local: Args = {}): CsfContext => ({
-      args: withoutUndefined({ ...args, ...withoutUndefined(config as Args), ...local }),
+    const csfContext = (config: unknown, globals: Globals, local: LocalArgs = {}): CsfContext => ({
+      args: withoutUndefined({ ...args, ...withoutUndefined(config as Args), ...appliedLocal(local, config as Args) }),
       globals,
       parameters,
       title,
@@ -158,7 +168,7 @@ export function loadCsfModule(mod: Record<string, unknown>, file: string, root: 
     const scoped = (ctx: StoryContext, fn: (context: CsfContext) => ReactNode): ReactNode =>
       createElement(Scoped, {
         id,
-        build: ({ local, setLocal }: LocalArgs): [ArgsScope, CsfContext] => {
+        build: ({ local, setLocal }: StoryLocals): [ArgsScope, CsfContext] => {
           const context = csfContext(ctx.config, ctx.globals, local);
           const scope: ArgsScope = {
             args: context.args,
