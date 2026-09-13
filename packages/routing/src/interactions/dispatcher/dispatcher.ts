@@ -701,9 +701,14 @@ export function createDispatcher(opts?: {
   /** Assemble the ScopedBinding list: every registered entry, tiered by what
    *  it declares about its own eligibility, then the actions registry. */
   function assembleScopedBindings(ctx: DispatcherContext): ScopedBinding[] {
-    // Hotkey-engaged entries lead, so stack order breaks ties within that tier.
+    // Hotkey-engaged entries lead, so stack order breaks ties within that tier
+    // — newest hold first. `pushHotkey` appends and every other reader takes
+    // the top as the engaged one (`ToolsApi.hotkeyEngaged` is `.at(-1)`), so
+    // walking the stack bottom-first handed ties to the oldest hold and routed
+    // a drag to a tool the rest of the kit did not consider engaged.
     const ordered: Tool[] = [];
-    for (const id of ctx.hotkeyStack) {
+    for (let i = ctx.hotkeyStack.length - 1; i >= 0; i--) {
+      const id = ctx.hotkeyStack[i]!;
       const tool = ctx.toolsById.get(id);
       if (tool && !ordered.includes(tool)) ordered.push(tool);
     }
@@ -1215,11 +1220,16 @@ export function createDispatcher(opts?: {
   }
 
   function inFlightCursor(): string | null {
+    // Latest start wins, matching `getActiveAction` — with a mouse and a pen
+    // in flight together the cursor belongs to the gesture the user just
+    // began, not the one they began first. Map iteration is insertion order
+    // and each gestureId is set exactly once, so the last entry is the newest.
+    let cursor: string | null = null;
     for (const action of inFlightActions.values()) {
-      const cursor = resolveCursor(action.activeCursor ?? action.cursor);
-      if (cursor) return cursor;
+      const c = resolveCursor(action.activeCursor ?? action.cursor);
+      if (c) cursor = c;
     }
-    return null;
+    return cursor;
   }
 
   function getInFlightHandles(): Iterable<OngoingHandle> {
