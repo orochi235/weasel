@@ -73,7 +73,7 @@
     "react": ">=18"
   },
   "dependencies": {
-    "@weasel-js/core": "1.4.4"
+    "@weasel-js/core": "1.4.5"
   },
   "publishConfig": {
     "access": "public",

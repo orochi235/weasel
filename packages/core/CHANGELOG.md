@@ -1,5 +1,164 @@
 # Changelog
 
+## 1.4.5
+
+### Patch Changes
+
+- a2feeb0: The default actions now work in a scene where a container's pose is a frame.
+  Each one read a stored pose as though it were world, which is right only under
+  the identity composition every consumer ships today; under any other one a
+  selection inside a rotated container aligned to the wrong edge, orbited the
+  wrong pivot, and grew along the wrong axis.
+  
+  `resize`, `rotate`, `flip`, `align`, `distribute` and `clone` now compose the
+  poses they measure up to world, and rebase every pose they write — preview,
+  override and committed op alike — into the frame the node stores it in. An
+  action that reads world and writes world looks right for one gesture and drifts
+  on the next, so `scenePoseFrame` pairs the two directions and each action's
+  tests run against a rotated-container fixture where local and world differ.
+  
+  `align`, `distribute` and `flip` also read through `effectivePose` now, so they
+  see a gesture's in-flight override instead of the pose underneath it.
+  
+  `group` and `ungroup` re-express every member across the change of frame, so
+  neither moves anything on screen. The container takes the world envelope of its
+  members' ink (`unionAABB`, so a turned member contributes what it covers rather
+  than the box it was posed in). Its pose is derived from its members only under
+  an identity composition: anywhere else that derivation reads poses expressed in
+  the container's own frame to compute that frame, which is circular, so the
+  container keeps the authored envelope until that has its own answer.
+  
+  `useAlign` and `useDistribute` take the same seam — an optional `getParent` on
+  the adapter and an optional `composition` in the options. Both default to the
+  absolute-pose behavior they have today.
+- 7586835: `@weasel-js/geom` is now the single definition of the geometry both packages
+  were carrying, and `@weasel-js/core` imports it.
+  
+  Two of core's command-stream walks had the pen wrong after a `Z`: `boundsOfPath`
+  measured a following curve from the last point drawn rather than the subpath
+  start, and `extractPolylines` flattened one from there. Both are fixed by
+  `forEachSegment`, which now returns the pen where SVG says `Z` leaves it, and
+  which also reports the command index and stops when its visitor returns `false`
+  — the three things core's own walks needed. Ten walks, six Bernstein
+  evaluations, an even-odd ray cast and four rect-corner literals now go through
+  geom.
+  
+  `pathPoseDescriptor.remapBounds` scaled a zero-extent source axis by `0`, which
+  collapsed a flat path onto the destination origin and left a transform that
+  could not be inverted. It uses geom's `boxToBox`, which translates that axis, as
+  `scalePathToBounds` already did.
+  
+  Moved into geom so core no longer keeps a second copy: bezier flattening
+  (`flattenQuadratic` and both arc-length variants included) and `pathCrop`.
+  geom's boolean adapter picks up core's ring nesting, which pre-tests bounding
+  boxes and votes over three sample vertices where geom probed one — a hole
+  sharing a vertex with its container was misclassified.
+  
+  `rectToContour` now emits the four corners with the closing edge implicit,
+  matching what `pointInPolygon` documents and what every call site wants. The
+  repeated first vertex it used to emit is a zero-length closing segment for
+  anything that strokes the result.
+- 6385c68: A container's pose can now define a **frame**: a child's stored pose is
+  expressed in it, so rotating a container rotates its contents and moving one
+  carries them without touching their poses. Opt in with
+  `<SceneCanvas poseComposition={RIGID_POSE_COMPOSITION}>` or
+  `sceneToAdapter(scene, { poseComposition })`. Omit it and nothing changes —
+  poses stay absolute, exactly as before.
+  
+  Before this, nesting contributed a clip chain and nothing else. `getPose` was
+  documented as returning a local pose while every render walk, both pick
+  sources, all selection chrome and the clipboard treated it as world, which
+  agreed only because no consumer ever supplied a composition.
+  
+  `getPose` still returns the stored pose. `getWorldPose` on the scene adapter is
+  the composed reading, and is what picking, chrome, `getNodeAtPoint` and the
+  clipboard consume. `composeRigidPose` / `decomposeRigidPose` and the
+  `RECT_POSE_COMPOSITION` / `RIGID_POSE_COMPOSITION` strategies are exported.
+  
+  `PoseComposition` gains a required `closure` field naming the transforms it
+  represents exactly. This is a breaking change to that interface for anyone
+  constructing one by hand; nothing in the repo did. `RectPose` carries no scale
+  factor, so the strategy that ships is rigid — translate and rotate — and an
+  anisotropically scaled parent is outside what a pose can hold, since it turns a
+  rotated child into a parallelogram.
+  
+  `sceneToAdapter` throws when given both `poseComposition` and
+  `cascadeContainerPose`. The cascade translates every descendant when a
+  container moves, which is what absolute poses need and would move a framed
+  child twice.
+  
+  `useNodeOverlayFrame` read the authored pose, so an overlay ignored gesture
+  overrides and derived poses. It reads the effective pose now.
+  
+  The default actions — resize, rotate, group, clone, flip, align, distribute —
+  read the strategy as a `poseComposition` dep alongside `poseDescriptor`, and
+  `<SceneCanvas>` publishes it through the new `usePoseCompositionDepSource`.
+  A consumer wiring actions without `SceneCanvas` has to publish that dep itself;
+  without it the actions fall back to identity and write world poses into a
+  framed scene.
+  
+  Design: `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`.
+- 6f5ff46: Pose geometry is supplied once. `<SceneCanvas poseDescriptor={…}>` tells every
+  built-in action, the selection chrome, picking and area select how to read and
+  rewrite this scene's poses; it defaults to `AUTO_POSE_DESCRIPTOR` (rect and
+  `Path` poses). A pose of any other shape now works end to end — before, dragging
+  one into a container wrote `NaN` into it.
+  
+  Breaking:
+  
+  - `PoseProjection` is renamed `PoseDescriptor`, and gains a required
+    `fromBounds(bounds, template)` and an optional `withRotation(pose, rotation)`.
+  - `ResizePose` and `AlignBounds` are removed; use `Bounds`.
+  - `RotateGeometry`, `AlignBoundsProjection` and `RECT_ALIGN_PROJECTION` are
+    removed.
+  - Removed options, replaced by the descriptor: `selectTool.resize.geometry` and
+    `useResizePolicy({ projection })` (use `<SceneCanvas poseDescriptor>`);
+    `UseRotateOptions.geometry` and `UseMoveOptions.translatePose` (both were
+    unread); `poseBounds` on `useSelectTool`, `arrayAdapter`, `sceneToAdapter`,
+    `MinimapCanvas` and `nestedHitTester` (use their `poseDescriptor` option);
+    `arrayAdapter`'s `intersectsRect` and `translatePose`; the selection overlay's
+    `getBounds` and `fromBounds`; the alignment behaviors' `projection`.
+  - `Canvas`'s `geometry` prop is renamed `poseDescriptor`. `SceneCanvas`'s own
+    `geometry` prop — the `pickEvery` / `boundsOf` hit-test overrides — is a
+    different prop and keeps its name.
+  - `computeFitView`'s fourth argument is a `PoseDescriptor`, not a bounds
+    function.
+  - `sceneToAdapter`'s `cascadeContainerPose` is a boolean; the cascade translates
+    through the descriptor.
+  - The kit's built-in painters only draw rect poses. A node with any other pose
+    needs its own painter.
+  - `Scene` has a read-only `registry`. For a custom pose kind,
+    `unionOfChildrenVia(descriptor)` builds the container-union function to
+    register under `UNION_OF_CHILDREN`.
+- 2e2041b: `resolvePreviews(sources, scene)` reads what an in-flight gesture is proposing,
+  with no renderer in it.
+  
+  An ongoing action publishes interim poses on its handle rather than writing them
+  to the scene, and until now `<SceneCanvas>`'s ghost layer was the only thing that
+  knew how to read them: which ids are in flight, whose preview wins when two
+  sources name the same id, which previewed nodes are roots and which are their
+  previewed children, and which are merely displaced rather than dragged. None of
+  that is about drawing. A consumer with its own renderer needed all of it and had
+  to rebuild it from `Dispatcher.getInFlightHandles()`.
+  
+  It returns the previewing subtrees as roots, each carrying the committed node
+  beside the interim pose and data; `flattenPreviews` walks them parents-first.
+  `usePreviewGhostLayer` now draws from it, and the 3D lab under
+  `packages/labkit/examples/3d-lab` reads its drag ghosts through it instead of
+  its own copy.
+  
+  The overlay channel — marquee, lasso, insert preview — is not covered: those
+  arrive as `DrawCommand[]`, which is core's own 2D renderer vocabulary.
+- Updated dependencies [7586835]
+  - @weasel-js/geom@1.4.5
+  - @weasel-js/text@1.4.5
+  - @weasel-js/cursor@1.4.5
+  - @weasel-js/font@1.4.5
+  - @weasel-js/gestures@1.4.5
+  - @weasel-js/history@1.4.5
+  - @weasel-js/modes@1.4.5
+  - @weasel-js/paint@1.4.5
+
 ## 1.4.4
 
 ### Patch Changes
