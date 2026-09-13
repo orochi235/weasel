@@ -29,6 +29,7 @@ import type { Scene, NodeId } from 'core/scene/types';
 import { nodeMemo } from 'core/scene/nodeMemo';
 import { pathIntersectsRect } from 'features/paths/pathHitTest';
 import {
+  poseDescriptorForNode,
   visualBoundsViaDescriptor,
   type PoseDescriptor,
 } from 'interactions/actions/resize/geometry';
@@ -99,10 +100,15 @@ export function hitTestAreaPolygon(
     // ink twice; the container comes back through the selection's own
     // parent-folding instead.
     includeContainers: false,
-    clipAdmits: (clip, _node, pose) =>
-      pathIntersectsRect(clip, visualBoundsViaDescriptor(pose, descriptor))
-      && pathIntersectsRect(clip, ab),
+    clipAdmits: (clip, node, pose) => {
+      const g = poseDescriptorForNode(descriptor, node);
+      return pathIntersectsRect(clip, visualBoundsViaDescriptor(pose, g))
+        && pathIntersectsRect(clip, ab);
+    },
     hits: (node, pose) => {
+      // The descriptor sees the node here, so a pose shape whose extent
+      // depends on `node.data` bounds itself rather than its pose's default.
+      const g = poseDescriptorForNode(descriptor, node);
       // `isPathLike(pose) && pose.kind !== 'rect'` inlined: this runs per node
       // and the predicate call cost 16% of the scan over a 10,000-rect scene.
       const silhouette = pose !== null && typeof pose === 'object'
@@ -115,8 +121,8 @@ export function hitTestAreaPolygon(
       // spans far outside its own box, and an un-expanded fast-reject drops the
       // marquee before the silhouette test can claim it.
       const b = silhouette
-        ? nodeMemo(node as never, 'aabb', pose, () => aabbOfPose(pose, descriptor))
-        : visualBoundsViaDescriptor(pose, descriptor);
+        ? nodeMemo(node as never, 'aabb', pose, () => aabbOfPose(pose, g))
+        : visualBoundsViaDescriptor(pose, g);
       // Match the historical hitTestAABB skip: a pose without finite numeric
       // bounds (neither path-like nor a plain x/y/w/h rect) is not hit-tested.
       if (

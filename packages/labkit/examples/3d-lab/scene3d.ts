@@ -6,7 +6,7 @@
  */
 
 import { createScene } from '@weasel-js/core';
-import type { Scene } from '@weasel-js/core';
+import type { Scene, SceneNode } from '@weasel-js/core';
 import { compose, quatIdentity, transformPoint, type Quat, type Vec3 } from './math3d';
 
 export type SolidKind = 'box' | 'sphere';
@@ -24,6 +24,7 @@ export interface SolidData {
 
 export type SolidLayer = 'solids';
 export type SolidScene = Scene<SolidData, SolidLayer, Pose3>;
+export type SolidNode = SceneNode<SolidData, SolidLayer, Pose3>;
 
 export interface Aabb {
   min: Vec3;

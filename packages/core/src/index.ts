@@ -987,6 +987,7 @@ export {
   isRectPose,
   RECT_POSE_DESCRIPTOR,
   ROTATED_POSE_DESCRIPTOR,
+  poseDescriptorForNode,
   cornerResizeHandles,
   hitCornerHandle,
   pointSnapToGrid,

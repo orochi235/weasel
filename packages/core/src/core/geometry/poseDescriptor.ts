@@ -19,7 +19,7 @@ export interface RotatedPose extends Bounds {
  * its own bounds; for Path or polygon poses the consumer supplies a
  * projection that knows how to read and rewrite the underlying geometry.
  */
-export interface PoseDescriptor<TPose> {
+export interface PoseDescriptor<TPose, TNode = unknown> {
   getBounds(pose: TPose): Bounds;
   remapBounds(pose: TPose, src: Bounds, dst: Bounds): TPose;
   /** A pose occupying `bounds`, of the same kind as `template`. Unlike
@@ -53,6 +53,28 @@ export interface PoseDescriptor<TPose> {
   /** Write a rotation (radians) into the pose, bounds unchanged. Absent means
    *  the pose cannot carry one, and the rotate action leaves it alone. */
   withRotation?(pose: TPose, rotation: number): TPose;
+  /**
+   * A descriptor specialized to one node. Every other method here sees only
+   * the pose, so shapes sharing a pose type — a sphere and a box both posed by
+   * position/rotation/scale — are indistinguishable to them. Implement this to
+   * read `node.data` once and hand back a descriptor that knows which shape it
+   * is describing.
+   *
+   * Callers reach it through {@link poseDescriptorForNode}, at whichever site
+   * holds the node; the specialized descriptor then travels into the bounds and
+   * hit-test helpers in place of this one. Sites with only an id keep using the
+   * unspecialized descriptor, which is why this is optional on both ends.
+   */
+  forNode?(node: TNode): PoseDescriptor<TPose, TNode>;
+}
+
+/** The descriptor `node` should be read through: its own specialization when
+ *  it declares one, and otherwise the descriptor unchanged. */
+export function poseDescriptorForNode<TPose, TNode>(
+  descriptor: PoseDescriptor<TPose, TNode>,
+  node: TNode,
+): PoseDescriptor<TPose, TNode> {
+  return descriptor.forNode?.(node) ?? descriptor;
 }
 
 /** AABB-vs-AABB overlap. Exported for callers building a default

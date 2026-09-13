@@ -27,6 +27,7 @@ import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
 import { snap as snapBehavior } from 'interactions/gestures/shared/snap';
 import {
+  poseDescriptorForNode,
   translatePoseViaDescriptor,
   type PoseDescriptor,
 } from 'interactions/actions/resize/geometry';
@@ -181,8 +182,9 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
           base.setPose(id, pose);
           return;
         }
-        const prev = d.getBounds(n.pose);
-        const next = d.getBounds(pose);
+        const g = poseDescriptorForNode(d, n);
+        const prev = g.getBounds(n.pose);
+        const next = g.getBounds(pose);
         const dx = next.x - prev.x;
         const dy = next.y - prev.y;
         if (dx === 0 && dy === 0) {
@@ -196,7 +198,10 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
           for (const cid of desc) {
             const cn = scene.get(asNodeId(cid));
             if (!cn) continue;
-            base.setPose(cid, translatePoseViaDescriptor(cn.pose, dx, dy, d));
+            base.setPose(
+              cid,
+              translatePoseViaDescriptor(cn.pose, dx, dy, poseDescriptorForNode(d, cn)),
+            );
           }
         });
       },
@@ -287,8 +292,9 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       // World, not local: a framed child is drawn in its parent's frame, and
       // the chrome has to land on the ink.
       const pose = adapter.getWorldPose(id);
-      const b = d.getBounds(pose);
-      const rot = d.getRotation?.(pose) ?? (b as { rotation?: number }).rotation ?? 0;
+      const g = poseDescriptorForNode(d, n);
+      const b = g.getBounds(pose);
+      const rot = g.getRotation?.(pose) ?? (b as { rotation?: number }).rotation ?? 0;
       return rot ? { ...b, rotation: rot } : b;
     };
   }, [scene, adapter, boundsOfProp, d]);

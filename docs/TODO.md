@@ -213,10 +213,12 @@ Priority tags:
   drove the 3D lab's chrome through an orbit. `remapBounds` and `fromBounds`
   run the other way, and a screen rect does not name a 3D pose without a depth
   choice, so the lab throws rather than guess and every action needing them is
-  recorded as not transferring. Two separate gaps: the interchange currency is
-  `Bounds`, and the descriptor is handed a *pose* rather than the node, so it
-  cannot tell a sphere from a box. `geometryProjection` is the same family and
-  further gone — `transform(node, m: Mat3)` cannot hold a 3D transform.
+  recorded as not transferring. That depth choice is what is left here: the
+  interchange currency is `Bounds`, and picking one is a design decision, not
+  hygiene. The descriptor's other gap is closed — `forNode` hands it the node,
+  so the lab's sphere now bounds itself as a sphere. `geometryProjection` is the
+  same family and further gone — `transform(node, m: Mat3)` cannot hold a 3D
+  transform.
 
 ### Pen tool follow-ups
 

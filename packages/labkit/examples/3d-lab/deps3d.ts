@@ -28,7 +28,14 @@ import {
   type Rect,
   type Vec3,
 } from './math3d';
-import { aabbOfSolid, pose3, type Pose3, type SolidScene } from './scene3d';
+import {
+  aabbOfSolid,
+  pose3,
+  type Pose3,
+  type SolidKind,
+  type SolidNode,
+  type SolidScene,
+} from './scene3d';
 
 export interface Viewport3d {
   camera: Camera3d;
@@ -199,85 +206,107 @@ export function createInsert(scene: SolidScene, viewport: ViewportSource): Inser
  * solid covers. Chrome and marquee math work unchanged; the two methods that
  * run the other way cannot.
  *
- * Two contract mismatches worth naming, both recorded in the kernel doc:
- *   - it is handed a pose and never the node, so it cannot see which primitive
- *     it is describing and bounds every solid as a box;
- *   - a screen rectangle does not name a 3D pose without a depth, so
- *     `remapBounds` and `fromBounds` have no honest answer.
+ * `forNode` is what lets a sphere bound itself as a sphere: both primitives are
+ * `Pose3`, so the shape lives on `node.data` and nothing but the node can say
+ * which one this is. Unspecialized — the kit calling with only an id in hand —
+ * it answers as a box, which is the looser of the two.
+ *
+ * The contract mismatch that remains, recorded in the kernel doc: a screen
+ * rectangle does not name a 3D pose without a depth, so `remapBounds` and
+ * `fromBounds` have no honest answer.
  */
-export function createPoseDescriptor(viewport: ViewportSource): PoseDescriptor<Pose3> {
-  const boundsOf = (pose: Pose3) => {
-    const vp = viewport();
-    const { min, max } = aabbOfSolid(pose, 'box');
-    return projectAabbToScreen(min, max, viewProjectionOf(vp), rectOf(vp));
-  };
+export function createPoseDescriptor(viewport: ViewportSource): PoseDescriptor<Pose3, SolidNode> {
+  const byKind = new Map<SolidKind, PoseDescriptor<Pose3, SolidNode>>();
 
-  return {
-    getBounds(pose) {
-      return boundsOf(pose) ?? { x: 0, y: 0, width: 0, height: 0 };
-    },
+  function forKind(kind: SolidKind): PoseDescriptor<Pose3, SolidNode> {
+    let d = byKind.get(kind);
+    if (!d) {
+      d = build(kind);
+      byKind.set(kind, d);
+    }
+    return d;
+  }
 
-    remapBounds() {
-      throw new Error(
-        '3d-lab: remapBounds has no 3D answer — a screen rectangle does not name a pose without a depth.',
-      );
-    },
-
-    fromBounds() {
-      throw new Error(
-        '3d-lab: fromBounds has no 3D answer — a screen rectangle does not name a pose without a depth.',
-      );
-    },
-
-    /**
-     * Screen-space deltas resolve against the horizontal plane the solid already
-     * sits on, so the two numbers the kit passes are enough: the camera that
-     * turns them into a world position is the one this dep closed over.
-     */
-    translate(pose, dx, dy) {
+  function build(kind: SolidKind): PoseDescriptor<Pose3, SolidNode> {
+    const boundsOf = (pose: Pose3) => {
       const vp = viewport();
-      const box = boundsOf(pose);
-      if (!box) return pose;
-      const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-      const to = { x: from.x + dx, y: from.y + dy };
+      const { min, max } = aabbOfSolid(pose, kind);
+      return projectAabbToScreen(min, max, viewProjectionOf(vp), rectOf(vp));
+    };
 
-      const ray = rayAt(vp, to);
-      const t = intersectRayPlane(ray, [0, 1, 0], pose.position[1]);
-      if (t === null) return pose;
+    return {
+      forNode(node) {
+        return forKind(node.data.kind);
+      },
 
-      const anchorRay = rayAt(vp, from);
-      const anchorT = intersectRayPlane(anchorRay, [0, 1, 0], pose.position[1]);
-      if (anchorT === null) return pose;
+      getBounds(pose) {
+        return boundsOf(pose) ?? { x: 0, y: 0, width: 0, height: 0 };
+      },
 
-      const hit: Vec3 = [
-        ray.origin[0] + ray.direction[0] * t,
-        ray.origin[1] + ray.direction[1] * t,
-        ray.origin[2] + ray.direction[2] * t,
-      ];
-      const anchor: Vec3 = [
-        anchorRay.origin[0] + anchorRay.direction[0] * anchorT,
-        anchorRay.origin[1] + anchorRay.direction[1] * anchorT,
-        anchorRay.origin[2] + anchorRay.direction[2] * anchorT,
-      ];
-      const delta = sub(hit, anchor);
+      remapBounds() {
+        throw new Error(
+          '3d-lab: remapBounds has no 3D answer — a screen rectangle does not name a pose without a depth.',
+        );
+      },
 
-      return {
-        ...pose,
-        position: [
-          pose.position[0] + delta[0],
-          pose.position[1],
-          pose.position[2] + delta[2],
-        ],
-      };
-    },
+      fromBounds() {
+        throw new Error(
+          '3d-lab: fromBounds has no 3D answer — a screen rectangle does not name a pose without a depth.',
+        );
+      },
 
-    intersectsRect(pose, rect) {
-      const box = boundsOf(pose);
-      return box ? overlaps(box, rect) : false;
-    },
+      /**
+       * Screen-space deltas resolve against the horizontal plane the solid already
+       * sits on, so the two numbers the kit passes are enough: the camera that
+       * turns them into a world position is the one this dep closed over.
+       */
+      translate(pose, dx, dy) {
+        const vp = viewport();
+        const box = boundsOf(pose);
+        if (!box) return pose;
+        const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+        const to = { x: from.x + dx, y: from.y + dy };
 
-    supportsRotation() {
-      return false;
-    },
-  };
+        const ray = rayAt(vp, to);
+        const t = intersectRayPlane(ray, [0, 1, 0], pose.position[1]);
+        if (t === null) return pose;
+
+        const anchorRay = rayAt(vp, from);
+        const anchorT = intersectRayPlane(anchorRay, [0, 1, 0], pose.position[1]);
+        if (anchorT === null) return pose;
+
+        const hit: Vec3 = [
+          ray.origin[0] + ray.direction[0] * t,
+          ray.origin[1] + ray.direction[1] * t,
+          ray.origin[2] + ray.direction[2] * t,
+        ];
+        const anchor: Vec3 = [
+          anchorRay.origin[0] + anchorRay.direction[0] * anchorT,
+          anchorRay.origin[1] + anchorRay.direction[1] * anchorT,
+          anchorRay.origin[2] + anchorRay.direction[2] * anchorT,
+        ];
+        const delta = sub(hit, anchor);
+
+        return {
+          ...pose,
+          position: [
+            pose.position[0] + delta[0],
+            pose.position[1],
+            pose.position[2] + delta[2],
+          ],
+        };
+      },
+
+      intersectsRect(pose, rect) {
+        const box = boundsOf(pose);
+        return box ? overlaps(box, rect) : false;
+      },
+
+      supportsRotation() {
+        return false;
+      },
+    };
+  }
+
+  return forKind('box');
 }

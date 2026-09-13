@@ -15,7 +15,7 @@ import { documentPose } from '../core/scene';
 import type { Scene } from '../core/scene';
 import type { View } from '../core/viewport/view';
 import type { Bounds, ViewportDims } from '../core/viewport/fitViewToBounds';
-import type { PoseDescriptor } from '../core/geometry/poseDescriptor';
+import { poseDescriptorForNode, type PoseDescriptor } from '../core/geometry/poseDescriptor';
 import type { PathDrawCommand } from '../renderer/DrawCommand';
 
 /** Inset (CSS px) around the fit rect on each side. Matches the spec note. */
@@ -95,7 +95,7 @@ function sceneLeafBounds<TData, TLayer extends string, TPose>(
   let any = false;
   for (const node of scene.nodes.values()) {
     if (node.kind !== 'leaf') continue;
-    const b = descriptor.getBounds(documentPose(scene, node));
+    const b = poseDescriptorForNode(descriptor, node).getBounds(documentPose(scene, node));
     if (b.x < minX) minX = b.x;
     if (b.y < minY) minY = b.y;
     const right = b.x + b.width;
