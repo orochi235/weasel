@@ -922,6 +922,7 @@ function Toolbar({
                       fill: o.fill ?? solid('#000000'),
                       ...(o.stroke ? { stroke: o.stroke } : {}),
                       ...(o.style ? { style: o.style } : {}),
+                      ...(o.runs ? { runs: o.runs } : {}),
                     }
                   : { path: o.path, fill: o.fill, stroke: o.stroke };
                 const sceneId = scene.add({

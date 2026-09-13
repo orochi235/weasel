@@ -618,18 +618,6 @@ Core five + Crop shipped. Remaining:
   reads the `smcp` OpenType feature, which needs shaping. Real small caps is
   a face, not a synthesis, and would fall out of the HarfBuzz entry below.
 
-- **(P2) `apps/draw` drops every run's styling on SVG export and copy.**
-  `packages/svg` serializes and parses `<tspan>` run styling in full, but the
-  app never hands it any: `TextObj` (`apps/draw/src/poseUpdate.ts`) has no
-  `runs` field, and neither `leafToObj` (`svgExport.ts`) nor `objToSvgNode` /
-  `svgLeafToObj` (`svgInterop.ts`) reads `data.runs`. So "Export SVG" and the
-  clipboard's SVG flavor — both routed through `sceneSourceOf` → `leafToObj` —
-  flatten bold, italic, per-run size, per-run fill and every decoration to the
-  node style. Canvas-to-canvas paste is unaffected: it goes through the
-  `application/x-weasel-clipboard+json` flavor, a structural clone with no
-  field list to fall behind. Predates the superscript work, which the new run
-  fields simply inherit. Recorded 2026-08-30.
-
 - **(P3) `layoutMarkdown` ignores the run fields it cannot paint.**
   `packages/text/src/markdownText.ts` is the 2D-canvas path behind
   `renderLabel` (chrome pills), and it reads `segRun.fontSize` while knowing

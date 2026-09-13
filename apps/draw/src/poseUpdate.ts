@@ -1,4 +1,4 @@
-import type { BooleanOp, FillStyle, Path, Stroke, TextStyle } from '@weasel-js/core';
+import type { BooleanOp, FillStyle, Path, Stroke, StyledRun, TextStyle } from '@weasel-js/core';
 
 export type ToolKind =
   | 'rect' | 'ellipse' | 'polygon' | 'star' | 'line'
@@ -38,6 +38,8 @@ export interface TextObj extends BaseObj {
   tool: 'text';
   text: string;
   style?: TextStyle;
+  /** Inline styling over `text`; `runsToPlainText(runs) === text`. */
+  runs?: StyledRun[];
   /** Glyph paint. Not part of `style` — a text node paints from the same
    *  `data.fill` / `data.stroke` every other node kind paints from. */
   fill?: FillStyle;
