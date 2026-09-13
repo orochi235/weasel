@@ -1660,7 +1660,7 @@ export function sceneFromJSON<TData, TLayer extends string, TPose>(
     coalesceWindowMs?: number;
     generateId?: () => NodeId;
     ops?: Readonly<Record<string, RegisteredOp<unknown>>>;
-  },
+  } = {},
 ): Scene<TData, TLayer, TPose> {
   const registry = options.registry ?? {};
   // Built empty and then loaded, so the snapshot's layer stack is rebuilt by

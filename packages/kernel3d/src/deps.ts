@@ -1,0 +1,370 @@
+/**
+ * The kit's deps, implemented against a 3D world.
+ *
+ * Every one of these takes its camera from a thunk rather than an argument.
+ * That is the kernel's central claim in code: the dispatcher keeps handing
+ * actions two numbers, and what makes them mean something in 3D is the camera
+ * each dep already closes over. `InvocationCtx` needs no widening, and none of
+ * these needs a ray passed in.
+ *
+ * Where a kit contract cannot be honored, the implementation throws rather than
+ * guessing. A guess would report a fit the kernel does not have.
+ */
+
+import type {
+  AreaSelectDep,
+  InsertDep,
+  InsertExtras,
+  NodeAtPointDep,
+  NodeId,
+  PoseDescriptor,
+  Scene,
+  SceneNode,
+  SnapDep,
+} from '@weasel-js/core';
+import {
+  intersectRayAabb,
+  intersectRayPlane,
+  sub,
+  type Aabb,
+  type Ray,
+  type Vec3,
+} from '@weasel-js/geom/3d';
+import { cameraEye, cameraViewProjection, type Camera3d } from './camera';
+import { aabbOfPose, type Pose3 } from './pose3';
+import {
+  projectAabbToScreen,
+  rayThroughScreenPoint,
+  type ScreenBox,
+  type ViewportRect,
+} from './screen';
+
+export interface Viewport3d {
+  camera: Camera3d;
+  width: number;
+  height: number;
+  /**
+   * Where the pane sits in client coordinates. A 3D host works in one space
+   * from the event to the ray — it passes the dispatcher an identity
+   * `clientToWorld` — so the deps subtract this rather than the dispatcher.
+   */
+  originX?: number;
+  originY?: number;
+}
+
+export type ViewportSource = () => Viewport3d;
+
+/** A 3D scene is core's scene with a `Pose3`. Nothing wraps it. */
+export type Scene3d<TData, TLayer extends string> = Scene<TData, TLayer, Pose3>;
+export type Node3d<TData, TLayer extends string> = SceneNode<TData, TLayer, Pose3>;
+
+/**
+ * The world box a node occupies. The kernel cannot answer this, and the reason
+ * is sharper than "it does not know the mesh": a sphere's box is the same under
+ * every rotation, and no transform of a local box reproduces that — rotate a
+ * cube and it widens. Asking for the world box directly is what lets a
+ * primitive answer for its own symmetry.
+ *
+ * Omitted, a node is a unit cube carried by its pose.
+ */
+export type NodeBounds<TData, TLayer extends string> = (
+  node: Node3d<TData, TLayer>,
+) => Aabb;
+
+export interface World3d<TData, TLayer extends string> {
+  scene: Scene3d<TData, TLayer>;
+  viewport: ViewportSource;
+  bounds?: NodeBounds<TData, TLayer>;
+  /** The axis gestures resolve against. Default `+y`. */
+  up?: Vec3;
+}
+
+const DEFAULT_UP: Vec3 = [0, 1, 0];
+
+function boundsOfNode<TData, TLayer extends string>(
+  world: World3d<TData, TLayer>,
+  node: Node3d<TData, TLayer>,
+): Aabb {
+  return world.bounds ? world.bounds(node) : aabbOfPose(node.pose);
+}
+
+/** The pane, in the coordinate space the host's points arrive in. */
+function rectOf(viewport: Viewport3d): ViewportRect {
+  return {
+    x: viewport.originX ?? 0,
+    y: viewport.originY ?? 0,
+    w: viewport.width,
+    h: viewport.height,
+  };
+}
+
+function viewProjectionOf(viewport: Viewport3d) {
+  return cameraViewProjection(viewport.camera, viewport.width / Math.max(1, viewport.height));
+}
+
+function rayAt(viewport: Viewport3d, point: { x: number; y: number }): Ray {
+  return rayThroughScreenPoint(
+    point,
+    rectOf(viewport),
+    viewProjectionOf(viewport),
+    cameraEye(viewport.camera),
+  );
+}
+
+function pointOnRay(ray: Ray, t: number): Vec3 {
+  return [
+    ray.origin[0] + ray.direction[0] * t,
+    ray.origin[1] + ray.direction[1] * t,
+    ray.origin[2] + ray.direction[2] * t,
+  ];
+}
+
+function overlaps(a: ScreenBox, b: ScreenBox): boolean {
+  return (
+    a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y
+  );
+}
+
+/** The screen box a node covers, or null when it projects to nothing visible. */
+export function screenBoxOf<TData, TLayer extends string>(
+  world: World3d<TData, TLayer>,
+  id: NodeId,
+  viewport: Viewport3d,
+): ScreenBox | null {
+  const node = world.scene.get(id) as Node3d<TData, TLayer> | undefined;
+  if (!node) return null;
+  return projectAabbToScreen(
+    boundsOfNode(world, node),
+    viewProjectionOf(viewport),
+    rectOf(viewport),
+  );
+}
+
+/**
+ * Nearest node along the ray the screen point names.
+ *
+ * The kit calls this with what it believes is a world point; a 3D host feeds
+ * the dispatcher an identity `clientToWorld`, so it is the pane-relative screen
+ * point, which is exactly what a ray needs.
+ */
+export function createNodeAtPoint<TData, TLayer extends string>(
+  world: World3d<TData, TLayer>,
+): NodeAtPointDep {
+  return (point, exclude) => {
+    const excluded = exclude ? new Set(exclude) : null;
+    const vp = world.viewport();
+    const ray = rayAt(vp, point);
+    let best: NodeId | null = null;
+    let bestT = Infinity;
+    for (const node of world.scene.renderOrderNodes() as readonly Node3d<TData, TLayer>[]) {
+      if (excluded?.has(node.id)) continue;
+      const { min, max } = boundsOfNode(world, node);
+      const t = intersectRayAabb(ray, min, max);
+      if (t !== null && t < bestT) {
+        bestT = t;
+        best = node.id;
+      }
+    }
+    return best;
+  };
+}
+
+/** Marquee: the nodes whose projected box the screen rectangle touches. */
+export function createAreaSelect<TData, TLayer extends string>(
+  world: World3d<TData, TLayer>,
+  selection: { get(): readonly NodeId[]; set(ids: NodeId[]): void },
+): AreaSelectDep {
+  return {
+    hitTestArea(bounds) {
+      const vp = world.viewport();
+      const hits: NodeId[] = [];
+      for (const node of world.scene.renderOrderNodes()) {
+        const box = screenBoxOf(world, node.id, vp);
+        if (box && overlaps(box, bounds)) hits.push(node.id);
+      }
+      return hits;
+    },
+    getSelection: () => [...selection.get()],
+    setSelection: (ids) => selection.set([...ids]),
+  };
+}
+
+/** No grid in 3D yet; the identity keeps `insertAction` happy without lying. */
+export function createSnap(): SnapDep {
+  return { point: (p) => p };
+}
+
+/** The ground-plane rectangle a drag swept out, in world units. */
+export interface Footprint {
+  /** Centre of the swept rectangle, on the ground plane. */
+  center: Vec3;
+  /** Extent along the two axes the up axis is not. */
+  width: number;
+  depth: number;
+}
+
+/**
+ * A drag rectangle becomes a footprint on the ground plane: its four corners
+ * are cast onto the plane and the hit points give the extent. What node that
+ * implies is the consumer's answer — the kernel does not know what it is
+ * inserting.
+ *
+ * The kit's `InsertDep.commit` hands over a screen-space AABB and nothing else,
+ * which turns out to be enough: the depth the 2D contract cannot express comes
+ * from the plane, not from the caller.
+ */
+export function createInsert(opts: {
+  viewport: ViewportSource;
+  up?: Vec3;
+  /** Smallest footprint a click-sized drag produces. Default 0.25. */
+  minExtent?: number;
+  mint(footprint: Footprint, extras: InsertExtras): NodeId | null;
+}): InsertDep {
+  const up = opts.up ?? DEFAULT_UP;
+  const minExtent = opts.minExtent ?? 0.25;
+  // The two axes the up axis is not, so a footprint reads the same whichever
+  // way up the world is.
+  const axes: [number, number] = up[1] !== 0 ? [0, 2] : up[0] !== 0 ? [1, 2] : [0, 1];
+
+  return {
+    commit(bounds, extras) {
+      const vp = opts.viewport();
+      const corners = [
+        { x: bounds.x, y: bounds.y },
+        { x: bounds.x + bounds.width, y: bounds.y },
+        { x: bounds.x, y: bounds.y + bounds.height },
+        { x: bounds.x + bounds.width, y: bounds.y + bounds.height },
+      ];
+
+      const hits: Vec3[] = [];
+      for (const corner of corners) {
+        const ray = rayAt(vp, corner);
+        const t = intersectRayPlane(ray, up, 0);
+        if (t !== null) hits.push(pointOnRay(ray, t));
+      }
+      if (hits.length === 0) return null;
+
+      const [u, v] = axes;
+      let minU = Infinity, maxU = -Infinity, minV = Infinity, maxV = -Infinity;
+      for (const h of hits) {
+        minU = Math.min(minU, h[u]); maxU = Math.max(maxU, h[u]);
+        minV = Math.min(minV, h[v]); maxV = Math.max(maxV, h[v]);
+      }
+
+      const center: [number, number, number] = [0, 0, 0];
+      center[u] = (minU + maxU) / 2;
+      center[v] = (minV + maxV) / 2;
+      return opts.mint(
+        {
+          center,
+          width: Math.max(minExtent, maxU - minU),
+          depth: Math.max(minExtent, maxV - minV),
+        },
+        extras,
+      );
+    },
+  };
+}
+
+/**
+ * `PoseDescriptor` over a 3D pose, with `Bounds` read as the screen box the
+ * node covers. Chrome and marquee math work unchanged; the two methods that
+ * run the other way cannot.
+ *
+ * `forNode` is what lets a sphere bound itself as a sphere: every node is a
+ * `Pose3`, so the shape lives on `node.data` and nothing but the node can say
+ * which one this is. Unspecialized — the kit calling with only a pose in hand —
+ * it answers with the default local box, which is the looser of the two.
+ *
+ * The contract mismatch that remains, recorded in the kernel doc: a screen
+ * rectangle does not name a 3D pose without a depth, so `remapBounds` and
+ * `fromBounds` have no honest answer.
+ */
+export function createPoseDescriptor<TData, TLayer extends string>(
+  world: World3d<TData, TLayer>,
+): PoseDescriptor<Pose3, Node3d<TData, TLayer>> {
+  const up = world.up ?? DEFAULT_UP;
+  const upAxis = up[1] !== 0 ? 1 : up[0] !== 0 ? 0 : 2;
+  const specialized = new WeakMap<object, PoseDescriptor<Pose3, Node3d<TData, TLayer>>>();
+
+  function build(worldBox: (pose: Pose3) => Aabb): PoseDescriptor<Pose3, Node3d<TData, TLayer>> {
+    const boundsOf = (pose: Pose3) => {
+      const vp = world.viewport();
+      return projectAabbToScreen(worldBox(pose), viewProjectionOf(vp), rectOf(vp));
+    };
+
+    const descriptor: PoseDescriptor<Pose3, Node3d<TData, TLayer>> = {
+      forNode(node) {
+        let d = specialized.get(node);
+        if (!d) {
+          // The pose arriving here is often an in-flight override rather than
+          // `node.pose`, so the consumer is asked about that pose on this node
+          // rather than about the node as committed.
+          d = build((pose) => boundsOfNode(world, { ...node, pose }));
+          specialized.set(node, d);
+        }
+        return d;
+      },
+
+      getBounds(pose) {
+        return boundsOf(pose) ?? { x: 0, y: 0, width: 0, height: 0 };
+      },
+
+      remapBounds() {
+        throw new Error(
+          'kernel3d: remapBounds has no 3D answer — a screen rectangle does not name a pose without a depth.',
+        );
+      },
+
+      fromBounds() {
+        throw new Error(
+          'kernel3d: fromBounds has no 3D answer — a screen rectangle does not name a pose without a depth.',
+        );
+      },
+
+      /**
+       * Screen-space deltas resolve against the plane the node already sits on,
+       * so the two numbers the kit passes are enough: the camera that turns
+       * them into a world position is the one this dep closed over.
+       */
+      translate(pose, dx, dy) {
+        const vp = world.viewport();
+        const box = boundsOf(pose);
+        if (!box) return pose;
+        const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+        const to = { x: from.x + dx, y: from.y + dy };
+        const offset = pose.position[upAxis];
+
+        const ray = rayAt(vp, to);
+        const t = intersectRayPlane(ray, up, offset);
+        if (t === null) return pose;
+
+        const anchorRay = rayAt(vp, from);
+        const anchorT = intersectRayPlane(anchorRay, up, offset);
+        if (anchorT === null) return pose;
+
+        const delta = sub(pointOnRay(ray, t), pointOnRay(anchorRay, anchorT));
+        const position: [number, number, number] = [
+          pose.position[0] + delta[0],
+          pose.position[1] + delta[1],
+          pose.position[2] + delta[2],
+        ];
+        position[upAxis] = pose.position[upAxis];
+        return { ...pose, position };
+      },
+
+      intersectsRect(pose, rect) {
+        const box = boundsOf(pose);
+        return box ? overlaps(box, rect) : false;
+      },
+
+      supportsRotation() {
+        return false;
+      },
+    };
+
+    return descriptor;
+  }
+
+  return build((pose) => aabbOfPose(pose));
+}

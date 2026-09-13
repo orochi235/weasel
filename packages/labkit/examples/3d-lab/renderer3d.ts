@@ -7,8 +7,8 @@
  * measures, and they would make what it does measure harder to read.
  */
 
-import { cameraViewProjection, type Camera3d } from './camera3d';
-import { compose, identity, multiply, type Mat4 } from './math3d';
+import { cameraViewProjection, type Camera3d, type ChromeBox } from '@weasel-js/kernel3d';
+import { compose, identity, multiply, type Mat4 } from '@weasel-js/geom/3d';
 import { aabbOfSolid, type Pose3, type SolidKind } from './scene3d';
 
 /** Translucency of an uncommitted pose. The 2D ghost layer uses 0.85; a lit
@@ -39,17 +39,6 @@ export interface DeviceRect {
   y: number;
   w: number;
   h: number;
-}
-
-/** An outline, in CSS pixels relative to the tile's top-left. */
-export interface ChromeBox {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  /** What the outline is: what the user has selected, or what the gesture in
-   *  their hand is proposing. Drawn in different colors, one pass each. */
-  tint?: 'selection' | 'gesture';
 }
 
 export interface Renderer3d {

@@ -26,11 +26,10 @@ import {
   type NodeId,
   type Tool,
 } from '@weasel-js/core';
-import { createCamera } from './camera3d';
-import { createNodeAtPoint, type Viewport3d } from './deps3d';
-import { createSolidScene, type SolidScene } from './scene3d';
-import { orbitAction, useOrbitTool } from './tools3d';
-import './depSchemaAugmentation';
+import {
+  createCamera, createNodeAtPoint, orbitAction, useOrbitTool, type Viewport3d,
+} from '@weasel-js/kernel3d';
+import { aabbOfSolid, createSolidScene, type SolidNode, type SolidScene } from './scene3d';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -54,10 +53,11 @@ function mount(harness: Harness, toolId: string) {
     useDepSource('activeTool', () => activeTool);
 
     const nodeAtPoint = useMemo(() => {
-      const pick = createNodeAtPoint(harness.scene, () => ({
-        ...harness.viewport,
-        camera: harness.camera.current,
-      }));
+      const pick = createNodeAtPoint({
+        scene: harness.scene,
+        viewport: () => ({ ...harness.viewport, camera: harness.camera.current }),
+        bounds: (node: SolidNode) => aabbOfSolid(node.pose, node.data.kind),
+      });
       return (point: { x: number; y: number }, exclude?: Iterable<NodeId>) => {
         harness.picks.push({ x: point.x, y: point.y });
         return pick(point, exclude);

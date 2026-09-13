@@ -65,6 +65,7 @@
       "@weasel-js/modes": ["./packages/modes/src/index.ts"],
       "@weasel-js/modes/presets/default": ["./packages/modes/src/presets/default.ts"],
       "@weasel-js/audio": ["./packages/audio/src/index.ts"],
+      "@weasel-js/kernel3d": ["./packages/kernel3d/src/index.ts"],
       "@weasel-js/labkit": ["./packages/labkit/src/index.ts"],
       // The two passthrough entries don't sit where their specifier says, so
       // they need explicit mappings ahead of the wildcard.
@@ -81,14 +82,14 @@
       "debug/*": ["./packages/core/src/debug/*"]
     }
   },
-  // Only `schema-lab` of packages/labkit/examples is enrolled: its pref
+  // Two of packages/labkit/examples are enrolled: `schema-lab`, whose pref
   // renderer carries an exhaustiveness guard that nothing would compile
-  // otherwise. The other examples do not typecheck clean yet.
+  // otherwise, and `3d-lab`. The rest do not typecheck clean yet.
   // `tests/bench` is in here and the rest of `tests/` is not: the benches
   // import kit internals through the path mappings above, so a rename in
   // core silently breaks them otherwise. The Playwright suites under
   // tests/e2e, tests/perf and tests/visual drive the app over a wire and
   // don't.
-  "include": ["apps", "tests/bench", "packages/core/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/paint/src", "packages/text/src", "packages/history/src", "packages/modes/src", "packages/gestures/src", "packages/d3/src", "packages/diagram/src", "packages/labkit/src", "packages/labkit/examples/schema-lab", "packages/labkit/examples/3d-lab", "packages/audio/src"],
+  "include": ["apps", "tests/bench", "packages/core/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/paint/src", "packages/text/src", "packages/history/src", "packages/modes/src", "packages/gestures/src", "packages/d3/src", "packages/diagram/src", "packages/labkit/src", "packages/labkit/examples/schema-lab", "packages/labkit/examples/3d-lab", "packages/audio/src", "packages/kernel3d/src"],
   "exclude": ["node_modules", "dist"]
 }

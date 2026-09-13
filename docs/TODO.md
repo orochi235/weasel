@@ -198,6 +198,24 @@ Priority tags:
   own arc, and worth asking first whether labkit should support a lab with no
   trials at all.
 
+- **(P3) `Scene`'s kit registry carries a 2D `unionOfChildren` into every
+  scene.** `core/scene/kitRegistry.ts` registers it unconditionally, and it
+  casts twice through `as unknown as RectPose` to reach `unionAABB`. A non-rect
+  scene that opts a node into `derivePoseKey: UNION_OF_CHILDREN` gets garbage
+  rather than an error. `unionOfChildrenVia(descriptor)` shadows it under the
+  same key and is the intended escape, so the fix is to stop registering a
+  pose-shaped default rather than to add a guard. Found while promoting the 3D
+  lab's kernel material, 2026-09-13.
+
+- **(P3) The 3D lab still collects ghosts from dispatcher handles.**
+  `ghosts3d.ts` reads `dispatcher.getInFlightHandles()` because `moveAction`
+  declares `previewHidesSource: true` and the lab wants the source solid drawn.
+  `2026-09-13-pose-feed-design.md` says a `FeedNode` carries both the committed
+  and the effective pose, so the feed gets the same picture without a second
+  channel — which is why the ghost collector stayed in the lab rather than being
+  promoted into `@weasel-js/kernel3d`. Migrating it is what would retire the
+  file.
+
 - **(P2) Routing has not moved into a package yet.** Every fight the 3D lab had
   was a dep contract, a registration step or a coordinate-space bug — never
   binding-to-action routing and never `InvocationCtx` — so a second kernel wants
@@ -1103,18 +1121,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `layer.visible` through `SceneSource.isPainted`, and `toJSON` carries a user
   layer's `kind` and `name`.
 
-  Open: `LayerRecord.locked` is written in five places and read by nothing —
-  either it gates selection, hit-testing and mutation, or the field goes.
-  `<image>` flip and source-rect never serialize; they live on the renderer's
+  Open: `LayerRecord.locked` is written in five places and read by nothing.
+  Decided 2026-09-13: the field stays and gates selection, hit-testing and
+  mutation — unbuilt. `<image>` flip and source-rect never serialize; they live on the renderer's
   `ImageCommand`, and expressing them wants a wider `SvgImageNode` on both the
   write and the parse side. `packages/{svg,hud,ui,labkit,modes,d3,paint}` never
   import `geom` at all, and three incompatible matrix-singularity policies
   coexist.
-
-  Text has one left: `measureText` / `measuredWidth` in `@weasel-js/text` now have
-  no in-repo caller. They are a legitimate Canvas2D measuring utility for consumers
-  drawing to a 2D context, but nothing in the kit measures that way any more, so
-  the question is whether they are public API or residue.
 
 - **(P2) Safari's `gesturestart` / `gesturechange` / `gestureend` are unhandled.** They are the second trackpad pinch channel on macOS Safari, alongside the ctrl+wheel one `viewportZoom` reads. Nothing in the repo listens for them, so Safari trackpad pinch gets whatever the wheel path synthesizes. Worth deciding deliberately rather than by omission. Note before adding a listener: `viewportZoom` now claims bare ctrl+wheel, so a `gesturechange` handler becomes a *second* channel for the same physical gesture — the double-apply `.changeset/mac-trackpad-pinch-zoom.md` just removed. Consolidate it into `makeViewportZoomAction` behind one scale-delta seam, not as a fourth listener.
 
