@@ -14,16 +14,23 @@ export interface Channel<In, Out> {
   close(): void;
 }
 
+export type Mismatch = { reason: 'not-an-envelope' } | { reason: 'version'; version: unknown };
+
 export interface ChannelOptions {
-  onMismatch?: (version: unknown) => void;
+  onMismatch?: (mismatch: Mismatch) => void;
 }
 
 export function openChannel<In, Out>(port: PortLike, options: ChannelOptions = {}): Channel<In, Out> {
   const listeners = new Set<(msg: In) => void>();
   const onMessage = (event: MessageEvent) => {
-    const envelope = event.data as Partial<Envelope<In>> | null;
-    if (!envelope || envelope.v !== PROTOCOL_VERSION) {
-      options.onMismatch?.(envelope?.v);
+    const data: unknown = event.data;
+    if (typeof data !== 'object' || data === null || !('msg' in data)) {
+      options.onMismatch?.({ reason: 'not-an-envelope' });
+      return;
+    }
+    const envelope = data as Partial<Envelope<In>>;
+    if (envelope.v !== PROTOCOL_VERSION) {
+      options.onMismatch?.({ reason: 'version', version: envelope.v });
       return;
     }
     for (const fn of listeners) fn(envelope.msg as In);

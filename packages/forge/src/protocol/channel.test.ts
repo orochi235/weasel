@@ -32,7 +32,20 @@ describe('openChannel', () => {
     port2.start();
     await tick();
     expect(received).not.toHaveBeenCalled();
-    expect(onMismatch).toHaveBeenCalledWith(999);
+    expect(onMismatch).toHaveBeenCalledWith({ reason: 'version', version: 999 });
+  });
+
+  it('reports data that is not an envelope instead of delivering it', async () => {
+    const { port1, port2 } = new MessageChannel();
+    const onMismatch = vi.fn();
+    const received = vi.fn();
+    openChannel(port1, { onMismatch }).on(received);
+    port2.postMessage({ v: 1 });
+    port2.postMessage('hello');
+    port2.start();
+    await tick();
+    expect(received).not.toHaveBeenCalled();
+    expect(onMismatch.mock.calls).toEqual([[{ reason: 'not-an-envelope' }], [{ reason: 'not-an-envelope' }]]);
   });
 
   it('stops delivering after an unsubscribe', async () => {
