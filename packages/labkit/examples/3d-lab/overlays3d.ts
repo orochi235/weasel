@@ -8,8 +8,9 @@
  *
  * The lab's `clientToWorld` is identity, so an overlay's world bounds are the
  * client rect the deps already work in, and the pane origin comes off exactly
- * once. Only the rectangular variants are drawn: the lab mounts neither a
- * lasso nor a pencil, so a polyline renderer here would be for nothing.
+ * once. Only the rectangular variants are drawn: the lab mounts no tool that
+ * publishes a lasso, a pencil or a run of points, so a path renderer here
+ * would be for nothing.
  */
 
 import { resolveOverlays, type OngoingHandle } from '@weasel-js/core';

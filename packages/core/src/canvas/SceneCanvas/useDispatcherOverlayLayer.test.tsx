@@ -7,7 +7,14 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import type { View } from 'core/viewport/view';
-import type { DrawCommand, ImageDrawCommand, PathDrawCommand } from '../../renderer';
+import type {
+  DrawCommand,
+  GroupDrawCommand,
+  ImageDrawCommand,
+  PathDrawCommand,
+} from '../../renderer';
+import { viewToMat3 } from '../../renderer';
+import { linePath, polylineFromPoints } from 'features/paths/builder';
 import {
   __setImageLoaderForTests,
   _resetImageCacheForTests,
@@ -46,6 +53,13 @@ function env(dispatcher: Dispatcher, isVisible?: (id: string) => boolean) {
     getGestureOverlays: () => source.overlays(),
     ...(isVisible ? { getIsVisible: () => isVisible } : {}),
   };
+}
+
+/** Pull all top-level group commands out of the layer's draw output. */
+function collectGroups(cmds: DrawCommand[]): GroupDrawCommand[] {
+  const out: GroupDrawCommand[] = [];
+  for (const c of cmds) if (c.kind === 'group') out.push(c);
+  return out;
 }
 
 /** Pull all top-level path commands out of the layer's draw output. */
@@ -229,6 +243,94 @@ describe('useDispatcherOverlayLayer', () => {
       const cmds = drawWith({ kind: 'image', src: 'photo.png', preview: 'outline' });
       expect(cmds.filter((c) => c.kind === 'image')).toHaveLength(0);
       expect(collectPaths(cmds)).toHaveLength(1);
+    });
+  });
+
+  describe('polyline overlay', () => {
+    const CUT = [{ x: 0, y: 0 }, { x: 30, y: 0 }];
+    const polylineHandle = (points: { x: number; y: number }[], role?: string): OngoingHandle => ({
+      overlay: (): OngoingOverlay =>
+        ({ kind: 'polyline', points, ...(role ? { role } : {}) }) as OngoingOverlay,
+    });
+
+    const drawRun = (
+      points: { x: number; y: number }[],
+      role?: string,
+      style?: Parameters<typeof useDispatcherOverlayLayer>[0]['style'],
+      view: View = VIEW,
+    ): DrawCommand[] => {
+      const dispatcher = makeDispatcher([polylineHandle(points, role)]);
+      const { result } = renderHook(() =>
+        useDispatcherOverlayLayer({ dispatcher, ...(style ? { style } : {}) }),
+      );
+      return result.current.draw(env(dispatcher), view, DIMS);
+    };
+
+    it('paints a cut exactly as the slice action used to paint it itself', () => {
+      // The guard on this whole change: geometry moved out of the action, and
+      // the command the layer emits is the one the action emitted before.
+      const zoomed: View = { x: 5, y: 7, scale: { x: 2, y: 2 } };
+      expect(drawRun(CUT, 'cut', undefined, zoomed)).toEqual([
+        {
+          kind: 'group',
+          transform: viewToMat3(zoomed),
+          children: [
+            {
+              kind: 'path',
+              path: linePath(CUT[0], CUT[1]),
+              stroke: { paint: { color: '#e23b3b' }, width: 1, dash: [6, 4] },
+            },
+          ],
+        },
+      ]);
+    });
+
+    it('paints a connector exactly as the connect action used to paint it itself', () => {
+      const routed = [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 20 }];
+      expect(drawRun(routed, 'connector')).toEqual([
+        {
+          kind: 'group',
+          transform: viewToMat3(VIEW),
+          children: [
+            {
+              kind: 'path',
+              path: polylineFromPoints(routed),
+              stroke: { paint: { color: '#7ba7c7' }, width: 2, dash: [4, 4] },
+            },
+          ],
+        },
+      ]);
+    });
+
+    it('falls back to the layer chrome stroke for a role it has no style for', () => {
+      const groups = collectGroups(drawRun(CUT, 'tether'));
+      expect(groups).toHaveLength(1);
+      const path = groups[0].children[0] as PathDrawCommand;
+      expect(path.stroke).toEqual({ paint: { color: '#a48bd4' }, width: 1, dash: [3, 3] });
+      // Chrome, not content: an open run is never filled.
+      expect(path.fill).toBeUndefined();
+    });
+
+    it('takes a per-role stroke from the layer style', () => {
+      const groups = collectGroups(
+        drawRun(CUT, 'cut', { roles: { cut: { paint: { color: '#00ff00' }, width: 3 } } }),
+      );
+      const path = groups[0].children[0] as PathDrawCommand;
+      expect(path.stroke).toEqual({ paint: { color: '#00ff00' }, width: 3 });
+    });
+
+    it('drops a run under two points', () => {
+      expect(drawRun([{ x: 1, y: 1 }], 'cut')).toEqual([]);
+    });
+
+    it('hides the run when action.polyline reports false', () => {
+      const dispatcher = makeDispatcher([polylineHandle(CUT, 'cut')]);
+      const { result } = renderHook(() => useDispatcherOverlayLayer({ dispatcher }));
+      const deny = (id: string) => id !== 'action.polyline';
+      expect(result.current.draw(env(dispatcher, deny), VIEW, DIMS)).toEqual([]);
+      expect(
+        collectGroups(result.current.draw(env(dispatcher, () => true), VIEW, DIMS)),
+      ).toHaveLength(1);
     });
   });
 

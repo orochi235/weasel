@@ -183,6 +183,7 @@ export type {
   AffordanceHit,
   OngoingHandle,
   OngoingOverlay,
+  OverlayRole,
   ImmediateInvoker,
   OngoingInvoker,
   Invoker,
@@ -356,8 +357,9 @@ export type { GestureSource, GesturePreviewSource } from './canvas/gestureBounds
 export { resolvePreviews, flattenPreviews } from './interactions/actions/resolvePreviews';
 export type { PreviewNode } from './interactions/actions/resolvePreviews';
 // The overlay half of the same seam: what an in-flight gesture paints beside
-// the scene, resolved to world geometry. `'commands'` is the one variant that
-// stays in core's 2D vocabulary — see `ResolvedOverlay`.
+// the scene, resolved to world geometry — every variant of it, with no
+// `DrawCommand` and no style, so a renderer that is not core's can read them
+// all. `OverlayRole` is the whole of what an action says about appearance.
 export { resolveOverlays } from './interactions/actions/resolveOverlays';
 export type { ResolvedOverlay, OverlayVisibilityId } from './interactions/actions/resolveOverlays';
 export { insertPreviewExtent } from './canvas/insertPreviewExtent';

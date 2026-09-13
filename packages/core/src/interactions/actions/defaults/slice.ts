@@ -1,8 +1,6 @@
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '../invoker';
-import type { DrawCommand } from '../../../renderer';
-import { linePath } from '../../../features/paths/builder';
 
 /**
  * Consumer-supplied commit for the Slice action. `commit` receives the finite
@@ -13,16 +11,12 @@ export interface SliceDep {
   commit(a: Point2, b: Point2): void;
 }
 
-const SLICE_STROKE = '#e23b3b';
-const SLICE_WIDTH = 1;
-const SLICE_DASH = [6, 4];
-
 /**
  * @experimental
  * Static descriptor for the `slice` Action.
  *
  * Ongoing drag invoker: tracks a slice line from drag start to current
- * pointer, renders a live line overlay while the gesture is in flight,
+ * pointer, publishes it as a `'cut'` overlay while the gesture is in flight,
  * and on commit calls `SliceDep.commit(a, b)`. No-ops gracefully when
  * the `slice` dep is absent.
  */
@@ -48,12 +42,7 @@ export const sliceAction: Action & { requires: string[] } = {
         },
         overlay(): OngoingOverlay | null {
           if (!open) return null;
-          const cmd: DrawCommand = {
-            kind: 'path',
-            path: linePath(a, current),
-            stroke: { paint: { color: SLICE_STROKE }, width: SLICE_WIDTH, dash: SLICE_DASH },
-          };
-          return { kind: 'commands', commands: [cmd], space: 'world' };
+          return { kind: 'polyline', points: [a, current], role: 'cut' };
         },
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           open = false;

@@ -79,7 +79,7 @@ export type ChromeId =
   | 'action.lasso'
   | 'action.move-ghosts'
   | 'action.insert-preview'
-  | 'action.commands'
+  | 'action.polyline'
   | 'snap.guides'
   | 'snap.targets'
   | 'grid'

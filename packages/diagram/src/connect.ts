@@ -25,9 +25,7 @@
  * is a preview that can lie about what releasing will do.
  */
 import {
-  polylineFromPoints,
   type Action,
-  type DrawCommand,
   type GestureBinding,
   type InvocationCtx,
   type OngoingHandle,
@@ -91,8 +89,6 @@ export interface ConnectActionOptions<TPose> {
    *  Default `'straight'`. */
   router?: string;
   routers?: Readonly<Record<string, Router>>;
-  /** How the in-flight edge is painted. */
-  stroke?: Stroke;
   /**
    * Mints and commits the edge. Called once, on release over a valid port.
    *
@@ -113,7 +109,6 @@ export const DEFAULT_EDGE_STROKE: Stroke = {
   markerEnd: 'arrow',
 };
 const DEFAULT_ROUTER = 'straight';
-const PREVIEW_STROKE: Stroke = { paint: { color: '#7ba7c7' }, width: 2, dash: [4, 4] };
 
 interface ConnectScratch {
   from: Port;
@@ -222,7 +217,6 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
     snapRadius = DEFAULT_SNAP,
     router: routerKey = DEFAULT_ROUTER,
     commit = commitEdgeToScene,
-    stroke = PREVIEW_STROKE,
   } = opts;
   const routers = opts.routers ?? ROUTERS;
   const portOpts = {
@@ -292,12 +286,11 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
             const { end } = endAt(scratch.from, scratch.current);
             const points = route({ from: scratch.from, to: end, waypoints: [] });
             if (points.length < 2) return null;
-            const cmd: DrawCommand = {
-              kind: 'path',
-              path: polylineFromPoints(points as { x: number; y: number }[]),
-              stroke,
-            };
-            return { kind: 'commands', commands: [cmd], space: 'world' };
+            // The route, and the word for what it is. How a connector reads —
+            // color, weight, dash — belongs to whatever surface paints it;
+            // core's own is `useDispatcherOverlayLayer`, whose
+            // `DispatcherOverlayStyle.roles` is where a consumer restyles it.
+            return { kind: 'polyline', points, role: 'connector' };
           },
           onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
             scratch.open = false;

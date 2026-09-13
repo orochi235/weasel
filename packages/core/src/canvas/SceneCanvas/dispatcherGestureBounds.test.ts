@@ -100,7 +100,7 @@ describe('dispatcherInsertBounds', () => {
     expect(dispatcherInsertBounds(makeDispatcher([marquee]))).toEqual([]);
   });
 
-  it('ignores lasso and commands overlays', () => {
+  it('ignores lasso and polyline overlays', () => {
     const lasso: OngoingHandle = {
       overlay: (): OngoingOverlay => ({
         kind: 'lasso',
@@ -109,10 +109,14 @@ describe('dispatcherInsertBounds', () => {
         shiftHeld: false,
       }),
     };
-    const commands: OngoingHandle = {
-      overlay: (): OngoingOverlay => ({ kind: 'commands', commands: [] }),
+    const polyline: OngoingHandle = {
+      overlay: (): OngoingOverlay => ({
+        kind: 'polyline',
+        points: [{ x: 0, y: 0 }, { x: 40, y: 40 }],
+        role: 'cut',
+      }),
     };
-    expect(dispatcherInsertBounds(makeDispatcher([lasso, commands]))).toEqual([]);
+    expect(dispatcherInsertBounds(makeDispatcher([lasso, polyline]))).toEqual([]);
   });
 
   it('skips a zero-area preview (pointerdown before the first move)', () => {

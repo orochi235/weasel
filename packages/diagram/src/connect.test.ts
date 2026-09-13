@@ -71,11 +71,19 @@ describe('createConnectAction', () => {
   ];
   const A_EAST_NUM: Port = { ...A_EAST, type: 'num' };
 
+  /** The routed run the handle is publishing, in world coordinates. */
+  function previewPoints(handle: OngoingHandle): Vec2[] {
+    const overlay = handle.overlay!();
+    if (overlay === null || overlay.kind !== 'polyline') {
+      throw new Error(`expected a polyline overlay, got ${String(overlay && overlay.kind)}`);
+    }
+    return overlay.points.map((p) => ({ x: p.x, y: p.y }));
+  }
+
   /** The last point of the previewed edge — where releasing would land it. */
   function previewEnd(handle: OngoingHandle): Vec2 {
-    const overlay = handle.overlay!() as unknown as { commands: { path: unknown }[] };
-    const path = overlay.commands[0]!.path as { coords: Float32Array };
-    return { x: path.coords[path.coords.length - 2]!, y: path.coords[path.coords.length - 1]! };
+    const points = previewPoints(handle);
+    return points[points.length - 1]!;
   }
 
   function open(opts: Parameters<typeof createConnectAction<Rect>>[0], port = A_EAST) {
@@ -148,6 +156,18 @@ describe('createConnectAction', () => {
     const handle = open({ participants: PARTICIPANTS, commit });
     handle.onEnd!(ctxAt(100, 20), 'commit');
     expect(commit).not.toHaveBeenCalled();
+  });
+
+  it('publishes the routed edge as world geometry, tagged for the painter', () => {
+    // No DrawCommand: what a connect proposes is a run of world points, and
+    // `role` is the whole of what it says about how that run should read.
+    const handle = open({ participants: PARTICIPANTS, commit: vi.fn() });
+    handle.onMove!(ctxAt(300, 20));
+    expect(handle.overlay!()).toEqual({
+      kind: 'polyline',
+      points: [{ x: 100, y: 20 }, { x: 300, y: 20 }],
+      role: 'connector',
+    });
   });
 
   it('stops previewing once the gesture has ended', () => {

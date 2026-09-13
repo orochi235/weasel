@@ -51,8 +51,8 @@ export function dispatcherGestureIds(dispatcher: Dispatcher | null | undefined):
  * Only `insertPreview`. `marquee` and `lasso` are in-flight gestures with
  * geometry too, but they *select* rather than *propose content*: a consumer
  * sizing itself to the gesture (lbx-editor's live auto-length) must not grow
- * because the user swept a selection rectangle. `commands` is an opaque
- * draw-command escape hatch with no bounds to read.
+ * because the user swept a selection rectangle. A `polyline` — a slice's cut
+ * line, a connector being routed — proposes no content either.
  */
 export function dispatcherInsertBounds(dispatcher: Dispatcher | null | undefined): Bounds[] {
   const out: Bounds[] = [];

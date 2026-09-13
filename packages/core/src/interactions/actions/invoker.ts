@@ -215,19 +215,33 @@ export interface ActionDeps {
 }
 
 /**
- * Discriminated overlay shape returned by `OngoingHandle.overlay()`.
- * Dispatcher-side chrome surface for in-flight
- * gestures that paint non-ghost visuals. The canvas's
- * `useDispatcherOverlayLayer` walks every in-flight handle, calls
- * `overlay()`, and dispatches on `kind` to draw the appropriate shape.
+ * What a `polyline` overlay is, in a word — the narrowest thing an action can
+ * say about how its run should look without naming a paint.
  *
- * `marquee` mirrors `AreaSelectOverlay`; `lasso` mirrors `LassoSelectOverlay`.
- * `commands` is the generic escape hatch — actions emit arbitrary
- * `DrawCommand[]` for previews the typed variants can't express (insert
- * shape outlines, paste ghosts of synthetic nodes, custom chrome). World-
- * space is the default; the layer wraps in `viewToMat3` so commands track
- * the camera. Set `space: 'screen'` for projections you've already done
- * yourself (rare).
+ * The named roles are the kit's; a painter maps each to a style and falls back
+ * to plain chrome for one it does not know, so a package outside core can coin
+ * its own and still be drawn.
+ */
+export type OverlayRole =
+  /** Generic in-flight chrome — the marquee/lasso paint. */
+  | 'chrome'
+  /** A cut the gesture would make. */
+  | 'cut'
+  /** An edge the gesture would author between two points. */
+  | 'connector'
+  | (string & {});
+
+/**
+ * What an in-flight gesture proposes to paint *beside* the scene, returned by
+ * `OngoingHandle.overlay()` — a marquee rect, a lasso trail, the outline of a
+ * shape being dragged out, the line a slice would cut along.
+ *
+ * Every variant is world geometry and nothing else. No `DrawCommand`, no
+ * color, no coordinate space to choose: an action that reached for any of
+ * those would be publishing core's own 2D vocabulary, and a surface rendering
+ * the same gesture some other way could not read it. `resolveOverlays`
+ * normalizes this into `ResolvedOverlay`, which is what a painter consumes —
+ * `useDispatcherOverlayLayer` is core's, and it owns every style decision.
  */
 export type OngoingOverlay =
   | {
@@ -243,12 +257,20 @@ export type OngoingOverlay =
       shiftHeld: boolean;
     }
   | {
-      kind: 'commands';
-      commands: readonly import('../../renderer').DrawCommand[];
-      /** Coordinate space the commands are authored in. Default `'world'`
-       *  — the layer wraps them in `viewToMat3(view)` so they track the
-       *  camera. `'screen'` emits them as-is (CSS pixels). */
-      space?: 'world' | 'screen';
+      /**
+       * An open run of world points the gesture is proposing — the slice
+       * action's cut line, `@weasel-js/diagram`'s routed connector.
+       *
+       * Geometry only, like every other variant: `role` is the whole of what
+       * an action says about appearance, and the painting surface is what
+       * turns it into a stroke. An action that picked its own color would be
+       * unpaintable by any renderer but the one it had in mind.
+       */
+      kind: 'polyline';
+      /** At least two points. Anything shorter is dropped in resolution. */
+      points: ReadonlyArray<{ x: number; y: number }>;
+      /** What the run means. Omitted reads as {@link OverlayRole} `'chrome'`. */
+      role?: OverlayRole;
     }
   | {
       /**

@@ -47,9 +47,9 @@ describe('collectOverlayBoxes', () => {
     expect(collectOverlayBoxes([handle(null), { } as OngoingHandle], ORIGIN)).toEqual([]);
   });
 
-  it('skips the variant a foreign renderer cannot execute', () => {
+  it('skips a run of points, which this renderer draws no path for', () => {
     const boxes = collectOverlayBoxes(
-      [handle({ kind: 'commands', commands: [{ kind: 'path' }] } as unknown as OngoingOverlay)],
+      [handle({ kind: 'polyline', points: [{ x: 100, y: 60 }, { x: 140, y: 90 }], role: 'cut' })],
       ORIGIN,
     );
     expect(boxes).toEqual([]);

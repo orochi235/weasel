@@ -18,8 +18,7 @@ import type { InsertPreviewGeometry } from '../../canvas/insertPreviewExtent';
 import { insertPreviewExtent } from '../../canvas/insertPreviewExtent';
 import type { Bounds } from '../../core/viewport/fitViewToBounds';
 import type { KitInsertShape } from '../../core/shapeKinds';
-import type { DrawCommand } from '../../renderer';
-import type { OngoingOverlay } from './invoker';
+import type { OngoingOverlay, OverlayRole } from './invoker';
 
 type Point = { x: number; y: number };
 
@@ -33,15 +32,15 @@ export type OverlayVisibilityId =
   | 'action.marquee'
   | 'action.lasso'
   | 'action.insert-preview'
-  | 'action.commands';
+  | 'action.polyline';
 
 /**
  * One in-flight overlay, in world coordinates.
  *
  * Every degenerate overlay is already gone: a marquee of zero size, a lasso
  * under two vertices, a zero-area insert of anything but a pencil, a pencil
- * under two samples, an empty command list. Whatever is in this list is worth
- * painting.
+ * under two samples, a run of fewer than two points. Whatever is in this list
+ * is worth painting.
  */
 export type ResolvedOverlay =
   | {
@@ -78,19 +77,15 @@ export type ResolvedOverlay =
       extras: unknown;
     }
   | {
-      /**
-       * The one variant that does not resolve. `slice` and `@weasel-js/diagram`'s
-       * connect both bake a `PathDrawCommand` inside the action, so the geometry
-       * is destroyed at the source and no resolver can recover it — this is not
-       * an oversight to be fixed here. A renderer that is not core's must skip
-       * this variant; `opaque` is the flag to skip on.
-       */
-      kind: 'commands';
-      visibilityId: 'action.commands';
-      opaque: true;
-      commands: readonly DrawCommand[];
-      /** Never defaulted away: `'world'` when the action said nothing. */
-      space: 'world' | 'screen';
+      kind: 'polyline';
+      visibilityId: 'action.polyline';
+      /** The run, at least two long, open — the last point does not join the
+       *  first. A closed sweep is a `lasso`. */
+      points: ReadonlyArray<Point>;
+      /** What the run is, for a painter choosing a style. Never defaulted
+       *  away: `'chrome'` when the action named none. A role the painter has
+       *  no style for is drawn as plain chrome, not dropped. */
+      role: OverlayRole;
     };
 
 /** The overlays worth painting, in the order the handles published them. */
@@ -140,14 +135,13 @@ export function resolveOverlays(overlays: Iterable<OngoingOverlay>): ResolvedOve
         });
         break;
       }
-      case 'commands': {
-        if (ov.commands.length === 0) break;
+      case 'polyline': {
+        if (ov.points.length < 2) break;
         out.push({
-          kind: 'commands',
-          visibilityId: 'action.commands',
-          opaque: true,
-          commands: ov.commands,
-          space: ov.space ?? 'world',
+          kind: 'polyline',
+          visibilityId: 'action.polyline',
+          points: ov.points,
+          role: ov.role ?? 'chrome',
         });
         break;
       }

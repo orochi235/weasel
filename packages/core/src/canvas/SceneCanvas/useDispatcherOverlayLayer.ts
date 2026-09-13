@@ -6,7 +6,8 @@
  * the surface's. `resolveOverlays` does the reading — normalizing the drag,
  * sizing the nascent shape, dropping what is degenerate — and everything left
  * here is painting: projection into screen coordinates, the chrome-caps gate,
- * fill/stroke policy, the anchor dot's size, and the image bitmap.
+ * fill/stroke policy, the stroke each overlay role reads as, the anchor dot's
+ * size, and the image bitmap.
  *
  * Distinct from `usePreviewGhostLayer`, which paints displaced scene-node
  * silhouettes via `previewIds()` / `previewPose(id)`. The dispatcher
@@ -21,6 +22,7 @@
  */
 import { useEffect, useMemo, useReducer, useRef } from 'react';
 import { viewToMat3, type DrawCommand, type PathDrawCommand } from '../../renderer';
+import type { Stroke } from '@weasel-js/paint';
 import type { RenderLayer } from 'core/layers/render';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
@@ -46,9 +48,13 @@ export interface DispatcherOverlayStyle {
   stroke?: string;
   dash?: number[];
   lineWidth?: number;
+  /** Stroke per `polyline` overlay role, merged over the kit's. A role with
+   *  no entry here and none of the kit's paints as plain chrome — the
+   *  `stroke` / `lineWidth` / `dash` above. */
+  roles?: Readonly<Record<string, Stroke>>;
 }
 
-const DEFAULT_STYLE: Required<DispatcherOverlayStyle> = {
+const DEFAULT_STYLE: Required<Omit<DispatcherOverlayStyle, 'roles'>> = {
   fill: 'rgba(164, 139, 212, 0.18)',
   stroke: '#a48bd4',
   dash: [3, 3],
@@ -59,6 +65,13 @@ const DEFAULT_STYLE: Required<DispatcherOverlayStyle> = {
  *  preview-ghost layer, so a dragged node and an uncommitted insert read as
  *  equally provisional. */
 const PREVIEW_CONTENT_OPACITY = 0.85;
+
+/** How each `polyline` overlay role reads. The action publishes the run and
+ *  the word; this table is the whole of the paint. */
+const ROLE_STROKES: Readonly<Record<string, Stroke>> = {
+  cut: { paint: { color: '#e23b3b' }, width: 1, dash: [6, 4] },
+  connector: { paint: { color: '#7ba7c7' }, width: 2, dash: [4, 4] },
+};
 
 export function useDispatcherOverlayLayer(args: {
   /** The surface's dispatcher, subscribed to only so a pump repaints. What
@@ -86,6 +99,9 @@ export function useDispatcherOverlayLayer(args: {
       space: 'screen',
       draw: (data, view) => {
         const cfg = { ...DEFAULT_STYLE, ...(styleRef.current ?? {}) };
+        // Merged rather than replaced: naming one role must not delete the
+        // kit's others.
+        const roles = { ...ROLE_STROKES, ...(styleRef.current?.roles ?? {}) };
         const t = viewToTransform(view);
         const out: DrawCommand[] = [];
 
@@ -239,15 +255,25 @@ export function useDispatcherOverlayLayer(args: {
             continue;
           }
 
-          if (ov.kind === 'commands') {
-            // Generic escape hatch — actions emit arbitrary DrawCommands.
-            // World-space (default) wraps in viewToMat3 so the commands
-            // track the camera; screen-space goes through untouched.
-            if (ov.space === 'world') {
-              out.push({ kind: 'group', transform: viewToMat3(view), children: [...ov.commands] });
-            } else {
-              for (const cmd of ov.commands) out.push(cmd);
-            }
+          if (ov.kind === 'polyline') {
+            // The one overlay drawn in world coordinates rather than projected
+            // here: a cut line and a connector both thicken with the zoom,
+            // which is how they read before this layer owned their paint.
+            // Marquee and lasso chrome holds its CSS-pixel weight instead.
+            const stroke =
+              roles[ov.role] ??
+              { paint: { color: cfg.stroke }, width: cfg.lineWidth, dash: cfg.dash };
+            out.push({
+              kind: 'group',
+              transform: viewToMat3(view),
+              children: [
+                {
+                  kind: 'path',
+                  path: polylineFromPoints(ov.points),
+                  stroke,
+                } satisfies PathDrawCommand,
+              ],
+            });
             continue;
           }
         }

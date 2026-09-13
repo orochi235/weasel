@@ -53,20 +53,23 @@ describe('sliceAction', () => {
     expect(commit).not.toHaveBeenCalled();
   });
 
-  it('overlay returns a world-space line command while dragging', () => {
+  it('overlay publishes the cut as a world-space segment, not a paint', () => {
     const dep: SliceDep = { commit: vi.fn() };
     const startCtx: InvocationCtx = { ...ctxAt(0, 0), deps: { slice: dep } as never };
     const handle = (sliceAction.invoker as OngoingInvoker).start(startCtx);
     handle.onMove?.({ ...ctxAt(30, 0), deps: { slice: dep } as never });
-    const ov = handle.overlay?.();
-    expect(ov?.kind).toBe('commands');
-    const commandsOv = ov?.kind === 'commands' ? ov : undefined;
-    expect(commandsOv?.space).toBe('world');
-    const cmds = commandsOv?.commands ?? [];
-    expect(cmds).toHaveLength(1);
-    const cmd = cmds[0];
-    expect(cmd?.kind).toBe('path');
-    const paint = cmd?.kind === 'path' ? (cmd.stroke?.paint as { color?: string } | undefined) : undefined;
-    expect(paint?.color).toBe('#e23b3b');
+    expect(handle.overlay?.()).toEqual({
+      kind: 'polyline',
+      points: [{ x: 0, y: 0 }, { x: 30, y: 0 }],
+      role: 'cut',
+    });
+  });
+
+  it('stops publishing an overlay once the gesture has ended', () => {
+    const dep: SliceDep = { commit: vi.fn() };
+    const startCtx: InvocationCtx = { ...ctxAt(0, 0), deps: { slice: dep } as never };
+    const handle = (sliceAction.invoker as OngoingInvoker).start(startCtx);
+    handle.onEnd?.({ ...ctxAt(5, 5), deps: { slice: dep } as never }, 'commit');
+    expect(handle.overlay?.()).toBeNull();
   });
 });

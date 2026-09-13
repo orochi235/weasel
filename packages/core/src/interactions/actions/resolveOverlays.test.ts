@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { DrawCommand } from '../../renderer';
 import type { OngoingOverlay } from './invoker';
 import { resolveOverlays, type ResolvedOverlay } from './resolveOverlays';
-
-const CMD: DrawCommand = {
-  kind: 'path',
-  path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
-  fill: { color: '#000' },
-};
 
 function only(overlays: OngoingOverlay[]): ResolvedOverlay | undefined {
   const out = resolveOverlays(overlays);
@@ -155,25 +148,47 @@ describe('resolveOverlays — insertPreview', () => {
   });
 });
 
-describe('resolveOverlays — commands', () => {
-  it('passes the command list through, marked opaque, defaulting to world space', () => {
-    expect(only([{ kind: 'commands', commands: [CMD] }])).toEqual({
-      kind: 'commands',
-      visibilityId: 'action.commands',
-      opaque: true,
-      commands: [CMD],
-      space: 'world',
+describe('resolveOverlays — polyline', () => {
+  const run = (
+    points: { x: number; y: number }[],
+    role?: string,
+  ): OngoingOverlay => ({ kind: 'polyline', points, ...(role ? { role } : {}) });
+
+  const SEG = [
+    { x: 0, y: 0 },
+    { x: 30, y: 0 },
+  ];
+
+  it('passes the world points through under the chrome-caps id for the variant', () => {
+    expect(only([run(SEG, 'cut')])).toEqual({
+      kind: 'polyline',
+      visibilityId: 'action.polyline',
+      points: SEG,
+      role: 'cut',
     });
   });
 
-  it('keeps an explicit screen space', () => {
-    expect(only([{ kind: 'commands', commands: [CMD], space: 'screen' }])).toMatchObject({
-      space: 'screen',
-    });
+  it('names the role `chrome` when the action named none', () => {
+    expect(only([run(SEG)])).toMatchObject({ role: 'chrome' });
   });
 
-  it('drops an empty command list', () => {
-    expect(resolveOverlays([{ kind: 'commands', commands: [] }])).toEqual([]);
+  it('carries a role the kit does not know, for a painter that does', () => {
+    expect(only([run(SEG, 'tether')])).toMatchObject({ role: 'tether' });
+  });
+
+  it('drops a run under two points — nothing to draw between', () => {
+    expect(resolveOverlays([run([{ x: 1, y: 1 }])])).toEqual([]);
+    expect(resolveOverlays([run([])])).toEqual([]);
+  });
+
+  it('keeps a routed run of many points in order', () => {
+    const routed = [
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+      { x: 10, y: 20 },
+      { x: 30, y: 20 },
+    ];
+    expect(only([run(routed, 'connector')])).toMatchObject({ points: routed });
   });
 });
 
@@ -191,23 +206,23 @@ describe('resolveOverlays', () => {
         shiftHeld: false,
       },
       { kind: 'insertPreview', shape: 'rect', bounds: { x: 0, y: 0, width: 1, height: 1 }, extras: {} },
-      { kind: 'commands', commands: [CMD] },
+      { kind: 'polyline', points: [{ x: 0, y: 0 }, { x: 1, y: 1 }], role: 'cut' },
     ]);
     expect(resolved.map((r) => r.visibilityId)).toEqual([
       'action.marquee',
       'action.lasso',
       'action.insert-preview',
-      'action.commands',
+      'action.polyline',
     ]);
   });
 
   it('preserves source order and skips only the degenerate entries', () => {
     const resolved = resolveOverlays([
       marquee({ x: 0, y: 0 }, { x: 0, y: 0 }),
-      { kind: 'commands', commands: [CMD] },
+      { kind: 'polyline', points: [{ x: 0, y: 0 }, { x: 1, y: 1 }] },
       marquee({ x: 0, y: 0 }, { x: 4, y: 4 }),
     ]);
-    expect(resolved.map((r) => r.kind)).toEqual(['commands', 'marquee']);
+    expect(resolved.map((r) => r.kind)).toEqual(['polyline', 'marquee']);
   });
 
   it('accepts any iterable, and answers with nothing for an empty one', () => {
