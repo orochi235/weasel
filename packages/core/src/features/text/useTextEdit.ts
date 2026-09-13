@@ -359,6 +359,14 @@ export interface TextEditScreenPose {
   zoom?: number;
 }
 
+/** A box in CSS pixels relative to `useTextEdit`'s `container`. */
+export interface TextEditClipRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 /** Options for `useTextEdit`. */
 export interface UseTextEditOptions {
   /** Element the overlay is appended to. Must be `position: relative`/absolute. */
@@ -385,6 +393,15 @@ export interface UseTextEditOptions {
   setStyle?: (id: string, style: TextStyle) => void;
   /** Read screen-space pose for `id`. Called per frame while editing. */
   getScreenPose: (id: string) => TextEditScreenPose | null;
+  /**
+   * The box, in CSS pixels relative to `container`, the overlay is visible
+   * within — where the canvas clips the glyphs the overlay stands in for.
+   * Re-read every frame. Omit it, or return `null`, to clip nothing.
+   *
+   * The clip cannot scroll, so a caret moving past its edge leaves the page
+   * where it is; a scrollable container would drag the canvas after the caret.
+   */
+  getClipRect?: () => TextEditClipRect | null;
   /** Commit text. Caller wraps in op/undo. */
   setText: (id: string, text: string) => void;
   /**
@@ -725,7 +742,7 @@ export function useTextEdit(
 
   useEffect(() => {
     if (editingId == null) return;
-    const { container, getText, getStyle, getPaint, getScreenPose } = optsRef.current;
+    const { container, getText, getStyle, getPaint } = optsRef.current;
     if (!container) return;
 
     const style = resolveTextStyle(getStyle(editingId), getPaint?.(editingId));
@@ -742,10 +759,16 @@ export function useTextEdit(
     }
     applyOverlayStyle(overlay, style);
     const styleEl = installSelectionStyle(overlayClass, style);
-    container.appendChild(overlay);
+    const clipBox = createClipBox();
+    clipBox.appendChild(overlay);
+    container.appendChild(clipBox);
     overlayRef.current = overlay;
 
-    placeOverlay(overlay, getScreenPose(editingId), style);
+    const place = () => {
+      const clip = optsRef.current.getClipRect?.() ?? null;
+      placeOverlay(overlay, clipBox, optsRef.current.getScreenPose(editingId), clip, style);
+    };
+    place();
 
     const range = document.createRange();
     const initial = initialCaretRef.current;
@@ -858,8 +881,7 @@ export function useTextEdit(
     // Follows the node's screen pose every frame — behind the visibility gate,
     // so an overlay left open in a background tab costs nothing.
     tickRef.current = () => {
-      const pose = optsRef.current.getScreenPose(editingId);
-      placeOverlay(overlay, pose, style);
+      place();
       frameLoop.request();
     };
     frameLoop.request();
@@ -872,7 +894,7 @@ export function useTextEdit(
       overlay.removeEventListener('beforeinput', onBeforeInput);
       document.removeEventListener('pointerdown', onPointerDownOutside, true);
       document.removeEventListener('selectionchange', syncSelection);
-      overlay.remove();
+      clipBox.remove();
       styleEl?.remove();
       overlayRef.current = null;
       clearSelection();
@@ -914,8 +936,21 @@ function placeCaretAt(root: HTMLElement, range: Range, offset: number): void {
   range.collapse(false);
 }
 
+/** The overlay's positioning parent. Passes pointer input through everywhere
+ *  but the overlay itself, which spans no more than the canvas it covers. */
+function createClipBox(): HTMLDivElement {
+  const el = document.createElement('div');
+  el.style.position = 'absolute';
+  el.style.margin = '0';
+  el.style.padding = '0';
+  el.style.border = '0';
+  el.style.pointerEvents = 'none';
+  return el;
+}
+
 function applyOverlayStyle(el: HTMLDivElement, style: ResolvedTextStyle): void {
   el.style.position = 'absolute';
+  el.style.pointerEvents = 'auto';
   el.style.boxSizing = 'border-box';
   el.style.margin = '0';
   el.style.padding = '0';
@@ -968,20 +1003,29 @@ function installSelectionStyle(
 
 function placeOverlay(
   el: HTMLDivElement,
+  clipBox: HTMLDivElement,
   pose: TextEditScreenPose | null,
+  clip: TextEditClipRect | null,
   style: ResolvedTextStyle,
 ): void {
   if (!pose) {
     el.style.display = 'none';
     return;
   }
+  // `clip` rather than `hidden`: a `hidden` box is still scrollable, and the
+  // browser scrolls it to keep the caret in view.
+  clipBox.style.overflow = clip ? 'clip' : 'visible';
+  clipBox.style.left = `${clip?.x ?? 0}px`;
+  clipBox.style.top = `${clip?.y ?? 0}px`;
+  clipBox.style.width = `${clip?.width ?? 0}px`;
+  clipBox.style.height = `${clip?.height ?? 0}px`;
   // CSS lays out a contenteditable's first glyph one CSS pixel below and one
   // CSS pixel right of where canvas's `textBaseline = 'top'` rasterizes the
   // same glyph (empirically; varies by browser/font/DPR — the constant is a
   // pragmatic fix for the dev setup, not universally correct).
   el.style.display = '';
-  el.style.left = `${pose.x + 1}px`;
-  el.style.top = `${pose.y - 1}px`;
+  el.style.left = `${pose.x + 1 - (clip?.x ?? 0)}px`;
+  el.style.top = `${pose.y - 1 - (clip?.y ?? 0)}px`;
   el.style.width = `${pose.width}px`;
   el.style.minHeight = `${pose.height}px`;
   el.style.fontSize = `${pose.fontSize}px`;

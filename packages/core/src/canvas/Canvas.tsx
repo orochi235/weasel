@@ -31,6 +31,7 @@ import {
 export { STANDARD_SLOTS, isCustomEntry } from './layerSlots';
 export type { StandardSlotName, CustomLayerEntry } from './layerSlots';
 import type { CanvasExtensionApi } from './canvasExtension';
+import { registerMountedCanvas } from './mountedCanvases';
 import type { ToolsApi } from 'tools/useTools';
 import { aggregatePreviewIds } from './toolPreview';
 import type { GestureSource } from './gestureBounds';
@@ -957,6 +958,12 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     viewSubsRef.current.add(fn);
     return () => { viewSubsRef.current.delete(fn); };
   }, []);
+
+  useLayoutEffect(() => {
+    const element = canvasRef.current;
+    if (!element) return;
+    return registerMountedCanvas({ element, getView });
+  }, [detached, inputElement, getView]);
 
   // The painted tier's channel. `<Canvas>` owns it because it owns both ends:
   // the tool cursor that feeds it and the frame loop that has to repaint when
