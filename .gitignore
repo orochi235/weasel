@@ -16,6 +16,9 @@ coverage
 .playwright-mcp/
 playwright-report/
 test-results/
+# Failure artifacts from vitest browser runs.
+.vitest-attachments/
+__screenshots__/
 storybook-static/
 debug-storybook.log
 # Materialized at Storybook start by .storybook/addons/css-vars/preset.ts
