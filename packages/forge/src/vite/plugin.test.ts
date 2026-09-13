@@ -1,10 +1,10 @@
 // @vitest-environment node
-import { globSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, globSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer as createHttpServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createLogger, createServer, type InlineConfig, type ViteDevServer } from 'vite';
+import { build, createLogger, createServer, type InlineConfig, type Plugin, type ViteDevServer } from 'vite';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { IndexEntry } from '../story/types';
 import { forge } from './plugin';
@@ -172,5 +172,63 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
     expect(await at('/x')).toContain('virtual:forge/shell-entry.js');
     expect(await at('/x/')).toContain('virtual:forge/shell-entry.js');
     expect(await at('/x/frame.html')).toContain('virtual:forge/frame-entry.js');
+  });
+});
+
+describe('forge vite plugin, built', () => {
+  let root: string | undefined;
+  afterEach(() => {
+    if (root) rmSync(root, { recursive: true, force: true });
+    root = undefined;
+  });
+
+  // The entries import forge's and labkit's published modules, which a temp root cannot resolve.
+  const stubs: Plugin = {
+    name: 'stub-weasel',
+    enforce: 'pre',
+    resolveId: (id) => (id.startsWith('@weasel-js/') ? `\0stub:${id}.js` : undefined),
+    load: (id) =>
+      id.startsWith('\0stub:') ? 'export const mountWorkshop = () => ({ setIndex() {} });\nexport const mountFrame = () => {};\n' : undefined,
+  };
+
+  it('writes the workshop and frame documents at the output root, loading bundles under base', async () => {
+    const dir = realpathSync(mkdtempSync(join(tmpdir(), 'forge-build-')));
+    root = dir;
+    writeFileSync(join(dir, 'a.stories.tsx'), story('ui/A', 'First'));
+    const out = join(dir, 'out');
+    await build({
+      root: dir,
+      base: '/x/',
+      configFile: false,
+      logLevel: 'silent',
+      plugins: [stubs, forge({ stories: ['*.stories.tsx'] })],
+      build: { outDir: out },
+    });
+    expect(existsSync(join(out, 'node_modules'))).toBe(false);
+    const index = readFileSync(join(out, 'index.html'), 'utf8');
+    const frame = readFileSync(join(out, 'frame.html'), 'utf8');
+    expect(index).toMatch(/<script type="module"[^>]* src="\/x\/assets\/[^"]+\.js"/);
+    expect(frame).toMatch(/<script type="module"[^>]* src="\/x\/assets\/[^"]+\.js"/);
+    expect(index).not.toContain('virtual:forge');
+    const shell = readFileSync(join(out, index.match(/src="\/x\/([^"]+)"/)![1]!), 'utf8');
+    expect(shell).toContain('/x/frame.html');
+  });
+
+  it('keeps a relative base relative to the documents at the output root', async () => {
+    const dir = realpathSync(mkdtempSync(join(tmpdir(), 'forge-build-')));
+    root = dir;
+    writeFileSync(join(dir, 'a.stories.tsx'), story('ui/A', 'First'));
+    const out = join(dir, 'out');
+    await build({
+      root: dir,
+      base: './',
+      configFile: false,
+      logLevel: 'silent',
+      plugins: [stubs, forge({ stories: ['*.stories.tsx'] })],
+      build: { outDir: out },
+    });
+    const index = readFileSync(join(out, 'index.html'), 'utf8');
+    const src = index.match(/<script type="module"[^>]* src="([^"]+)"/)![1]!;
+    expect(existsSync(join(out, src))).toBe(true);
   });
 });

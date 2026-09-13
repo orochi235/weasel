@@ -3,6 +3,7 @@ import { basename, matchesGlob, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Logger, Plugin, ViteDevServer } from 'vite';
 import type { IndexEntry } from '../story/types';
+import { hoistPages, writePages } from './build';
 import { html } from './html';
 import { indexFile } from './indexFile';
 
@@ -135,6 +136,17 @@ mountFrame({ index, importers, root: ${JSON.stringify(root)}, setup: config.fram
     ...(options.storybookShims === false ? [] : [shims]),
     {
       name: 'weaselforge',
+      config(config, { command }) {
+        if (command !== 'build') return undefined;
+        const input = writePages(resolve(config.root ?? process.cwd()));
+        return { build: { rolldownOptions: { input } } };
+      },
+      generateBundle: {
+        order: 'post',
+        handler(_, bundle) {
+          hoistPages(bundle, (file) => this.emitFile(file));
+        },
+      },
       configResolved(config) {
         root = config.root;
         base = config.base;

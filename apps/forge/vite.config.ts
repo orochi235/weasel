@@ -15,8 +15,9 @@ const stories = [
   'packages/labkit/src/**/*.stories.{ts,tsx}',
 ];
 
-export default defineConfig({
+export default defineConfig(({ command, isPreview }) => ({
   root: repoRoot,
+  base: command === 'build' || isPreview ? '/weasel/docs/ui/forge/' : '/',
   cacheDir: resolve(repoRoot, 'node_modules/.vite-forge'),
   resolve: {
     alias: weaselAliases(repoRoot, [
@@ -49,4 +50,5 @@ export default defineConfig({
     forge({ stories, config: 'apps/forge/forge.config.tsx' }),
   ],
   server: { port: 5178, host: '::' },
-});
+  build: { outDir: resolve(repoRoot, 'dist-forge'), emptyOutDir: true },
+}));

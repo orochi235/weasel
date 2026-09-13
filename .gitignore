@@ -4,6 +4,7 @@ pnpm-lock.yaml
 dist
 dist-demo
 dist-draw
+dist-forge
 coverage
 .DS_Store
 *.tsbuildinfo
