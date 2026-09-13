@@ -15,7 +15,7 @@ import { LabFooterRegion, LabHeaderRegion, labContributions } from '../chrome/La
 import type { LabContribution } from '../chrome/labTypes';
 import type { TrialContribution } from '../chrome/types';
 import type { ConfigRule, ControlRenderer } from '../config/types';
-import { configDefaultsOf, serializersOf } from '../instrument/serializers';
+import { configDefaultsOf, configMigrationsOf, serializersOf } from '../instrument/serializers';
 import type { InstrumentList } from '../instrument/types';
 import { defaultStorage, noneAdapter } from '../state/adapters';
 import { LabStoreContext } from '../state/context';
@@ -124,6 +124,7 @@ function openUnstoredLab({ instruments, defaultInstrument, mode }: LabProps): Op
     initialMode: mode ?? 'auto',
     serializers: serializersOf(instruments),
     configDefaults: configDefaultsOf(instruments),
+    configMigrations: configMigrationsOf(instruments),
   });
   seedDefaultTrial(store, instruments, defaultInstrument);
   const records = createRecordCache({ storage: noneAdapter, prefix: '', writable: false });
@@ -143,6 +144,7 @@ async function openStoredLab(
     initialMode: mode ?? 'auto',
     serializers: serializersOf(instruments),
     configDefaults: configDefaultsOf(instruments),
+    configMigrations: configMigrationsOf(instruments),
   });
   seedDefaultTrial(opened.store, instruments, defaultInstrument);
   const marks = new Map<string, unknown>();

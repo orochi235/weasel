@@ -12,6 +12,17 @@ export function configDefaultsOf(instruments: InstrumentList): Record<string, ()
   return out;
 }
 
+/** Each instrument's `migrateConfig`, keyed by name, for those that declare one. */
+export function configMigrationsOf(
+  instruments: InstrumentList,
+): Record<string, (stored: unknown) => unknown> {
+  const out: Record<string, (stored: unknown) => unknown> = {};
+  for (const { name, migrateConfig } of instruments) {
+    if (migrateConfig) out[name] = (stored) => migrateConfig(stored);
+  }
+  return out;
+}
+
 /**
  * The `serialize` / `deserialize` an instrument list declares, keyed by
  * instrument name — what `createLabStore` needs to rebuild a trial's state

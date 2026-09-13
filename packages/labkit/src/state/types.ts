@@ -122,6 +122,10 @@ export interface CreateLabStoreOptions {
    *  whatever keys the schema has since stopped naming. `<Lab>` collects these
    *  off its `instruments`. */
   configDefaults?: Record<string, () => unknown>;
+  /** Each instrument's `migrateConfig`, keyed by instrument name, run on a
+   *  stored config before its defaults fill it. `<Lab>` collects these off its
+   *  `instruments`. */
+  configMigrations?: Record<string, (stored: unknown) => unknown>;
   /** How each instrument's state survives a reload. Hydration is the first
    *  thing `createLabStore` does, so these have to arrive with the store —
    *  anything registered afterwards is already too late to read the document
