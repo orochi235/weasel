@@ -1,5 +1,5 @@
 import './shell.css';
-import type { RenderContext } from '@weasel-js/labkit';
+import { type RenderContext, TrialIdContext } from '@weasel-js/labkit';
 import { type RefObject, useContext, useEffect, useRef, useState } from 'react';
 import { type Channel, type Mismatch, openChannel } from '../protocol/channel';
 import {
@@ -12,6 +12,8 @@ import {
 } from '../protocol/messages';
 import type { IndexEntry } from '../story/types';
 import type { AnswerBook } from './answers';
+import { useCssOverrides } from './cssVars/overrides';
+import { TrialFramesContext } from './cssVars/trialFrames';
 import { type Ready, readyKey } from './readyKey';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 
@@ -42,11 +44,14 @@ interface Link {
   sent: { config: unknown; state: unknown; globals: Globals } | null;
   /** `init`, `config`, `state` and `globals` messages sent; a render fault's `seq` counts the same messages. */
   inputs: number;
+  /** Takes this link's channel out of the trial's frame registry. */
+  disconnect: () => void;
 }
 
 function closeLink(link: RefObject<Link | null>): void {
   if (!link.current) return;
   clearTimeout(link.current.timer);
+  link.current.disconnect();
   link.current.channel.close();
   link.current = null;
 }
@@ -60,11 +65,14 @@ function mismatchMessage(mismatch: Mismatch): string {
 export function FrameView(props: FrameViewProps) {
   const { entry, frameUrl, descriptionKey, ctx } = props;
   const globals = useContext(StoryGlobalsContext);
+  const trialId = useContext(TrialIdContext);
+  const frames = useContext(TrialFramesContext);
+  const [overrides] = useCssOverrides();
   const src = `${frameUrl}#${entry.id}`;
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const link = useRef<Link | null>(null);
-  const latest = useRef({ ...props, globals });
-  latest.current = { ...props, globals };
+  const latest = useRef({ ...props, globals, overrides });
+  latest.current = { ...props, globals, overrides };
   const [fault, setFault] = useState<Fault | null>(null);
 
   const init = (current: Link): void => {
@@ -81,6 +89,9 @@ export function FrameView(props: FrameViewProps) {
       case 'ready': {
         clearTimeout(current.timer);
         setFault(null);
+        for (const [name, value] of Object.entries(latest.current.overrides)) {
+          current.channel.send({ type: 'vars.set', name, value });
+        }
         const key = readyKey(msg);
         current.awaiting = key;
         onReady(latest.current.entry, msg);
@@ -96,6 +107,9 @@ export function FrameView(props: FrameViewProps) {
         break;
       case 'answers':
         answers.record(msg.answers);
+        break;
+      case 'vars':
+        if (trialId) frames?.report(trialId, msg.vars);
         break;
       case 'fault':
         // A newer input is already on its way to the frame, which faults again if it still throws.
@@ -118,7 +132,8 @@ export function FrameView(props: FrameViewProps) {
         setFault({ phase: 'protocol', message: mismatchMessage(mismatch) });
       },
     });
-    const current: Link = { channel, timer, awaiting: null, sent: null, inputs: 0 };
+    const disconnect = frames && trialId ? frames.connect(trialId, channel.send) : () => {};
+    const current: Link = { channel, timer, awaiting: null, sent: null, inputs: 0, disconnect };
     link.current = current;
     channel.on((msg) => receive(current, msg));
     target.postMessage({ type: PORT_HANDOFF }, location.origin, [port2]);

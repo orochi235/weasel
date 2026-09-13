@@ -171,3 +171,35 @@
     animation: none;
   }
 }
+
+.fg-css-vars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-xs);
+}
+
+.fg-css-vars__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-xs);
+  max-height: 60vh;
+  overflow: auto;
+}
+
+.fg-css-vars__empty {
+  margin: 0;
+  color: var(--wzl-fg-muted);
+  font-size: var(--wzl-font-size-sm);
+}
+
+.fg-css-var {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--wzl-space-xs);
+  font-family: var(--wzl-font-mono);
+}
+
+.fg-css-var__rows {
+  flex: 1;
+  min-width: 0;
+}

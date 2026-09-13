@@ -1,0 +1,106 @@
+import { ColorRow, PropertyList, TextRow, type TrialContribution, useTrialId } from '@weasel-js/labkit';
+import { TOKEN_MANIFEST } from '@weasel-js/theme';
+import { Button, ToggleBar, type ToggleBarItem } from '@weasel-js/ui';
+import { useMemo, useState } from 'react';
+import { parsesAsColor, toHex } from './color';
+import { useCssOverrides } from './overrides';
+import { useTrialFrame } from './trialFrames';
+
+type Tab = 'theme' | 'story';
+
+const TABS: readonly ToggleBarItem<Tab>[] = [
+  { value: 'theme', label: 'Theme' },
+  { value: 'story', label: 'Story' },
+];
+
+interface VarRowProps {
+  name: string;
+  value: string;
+  overridden: boolean;
+  onChange: (value: string | null) => void;
+}
+
+function VarRow({ name, value, overridden, onChange }: VarRowProps) {
+  const hex = parsesAsColor(value) ? toHex(value) : null;
+  return (
+    <div className="fg-css-var" role="group" aria-label={name}>
+      <PropertyList className="fg-css-var__rows" pack="one-up" density="tight">
+        <TextRow label={name} value={value} onChange={onChange} />
+        {hex ? <ColorRow label="Color" value={hex} onChange={onChange} /> : null}
+      </PropertyList>
+      {overridden ? (
+        <Button variant="ghost" size="sm" ariaLabel={`Reset ${name}`} onClick={() => onChange(null)}>
+          Reset
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
+/** Shows and overrides the CSS variables of the trial it is rendered inside: the theme's tokens, or what its frame reports. */
+export function CssVarsPanel() {
+  const trialId = useTrialId();
+  const frame = useTrialFrame(trialId);
+  const [overrides, setOverrides] = useCssOverrides();
+  const [tab, setTab] = useState<Tab>('theme');
+  const [filter, setFilter] = useState('');
+
+  const rows = useMemo(() => {
+    if (tab === 'story') return frame.vars.map(({ name, value }) => ({ name, value }));
+    const reported = new Map(frame.vars.map((v) => [v.name, v.value]));
+    return TOKEN_MANIFEST.map((token) => ({ name: token.name, value: reported.get(token.name) ?? token.defaultValue }));
+  }, [tab, frame.vars]);
+
+  const query = filter.trim().toLowerCase();
+  const shown = rows
+    .map((row) => ({ ...row, value: overrides[row.name] ?? row.value }))
+    .filter((row) => !query || row.name.toLowerCase().includes(query) || row.value.toLowerCase().includes(query));
+
+  const write = (name: string, value: string | null) => {
+    setOverrides((prev) => {
+      const { [name]: _dropped, ...rest } = prev;
+      return value === null ? rest : { ...rest, [name]: value };
+    });
+    frame.send?.({ type: 'vars.set', name, value });
+  };
+
+  return (
+    <div className="fg-css-vars">
+      <ToggleBar
+        ariaLabel="Variables"
+        size="sm"
+        items={TABS}
+        value={tab}
+        onChange={(next) => {
+          if (next) setTab(next);
+        }}
+      />
+      <PropertyList pack="one-up" density="tight">
+        <TextRow label="Filter" value={filter} placeholder="Name or value" onChange={setFilter} />
+      </PropertyList>
+      {shown.length === 0 ? (
+        <p className="fg-css-vars__empty">
+          {rows.length === 0 ? 'The story’s frame has reported no variables.' : 'No variables match.'}
+        </p>
+      ) : (
+        <div className="fg-css-vars__list">
+          {shown.map((row) => (
+            <VarRow
+              key={row.name}
+              name={row.name}
+              value={row.value}
+              overridden={row.name in overrides}
+              onChange={(value) => write(row.name, value)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export const CSS_VARS_SECTION: TrialContribution = {
+  id: 'fg-css-vars',
+  region: 'sidebar',
+  item: { title: 'CSS Vars', body: <CssVarsPanel /> },
+};
