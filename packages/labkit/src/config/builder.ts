@@ -1,4 +1,4 @@
-import type { PrefLeaf } from '@weasel-js/ui';
+import type { PrefLeaf, PrefNumberFormat } from '@weasel-js/ui';
 import type {
   Annotations,
   BranchAnnotations,
@@ -105,6 +105,12 @@ class NumberNode extends BaseNode<number> {
    *  it is never parsed, and the stored value stays a plain number. */
   suffix(suffix: string): this {
     return this.ann({ suffix });
+  }
+
+  /** Show the value in a named format — `'compact'` reads `2.0M`. Presentation
+   *  only: the stored value stays a plain number, and a typed `2.5m` reads back. */
+  format(format: PrefNumberFormat): this {
+    return this.ann({ format });
   }
 
   /** Force a slider even without both bounds. */

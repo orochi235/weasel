@@ -35,6 +35,10 @@ describe('builder', () => {
     expect(n.annotations.suffix).toBe('px');
   });
 
+  it('annotates a number with a display format', () => {
+    expect(f.number(0).format('compact').annotations.format).toBe('compact');
+  });
+
   it('keeps a custom node kind across a chain', () => {
     const n = f.custom('vector2', { x: 0 }).label('Offset');
     expect(n.kind).toBe('vector2');
