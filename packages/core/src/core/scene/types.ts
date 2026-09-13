@@ -69,7 +69,8 @@ export interface RectPose {
  */
 
 /** Opaque branded id. Treat as opaque outside the kit. */
-export type NodeId = string & { readonly __brand: 'NodeId' };
+import type { NodeId } from '@weasel-js/routing';
+export type { NodeId };
 
 /** Brand a string as a NodeId. */
 export const asNodeId = (s: string): NodeId => s as NodeId;

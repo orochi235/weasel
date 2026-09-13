@@ -10,17 +10,13 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, renderHook } from '@testing-library/react';
 import type { View } from 'core/viewport/view';
 import type { DrawCommand, PathDrawCommand } from '../renderer';
-import type { Dispatcher } from 'interactions/dispatcher/dispatcher';
-import type { OngoingHandle, OngoingOverlay } from 'interactions/actions/invoker';
+import type { Dispatcher } from '@weasel-js/routing';
+import type { OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
 import { createGestureSource, dispatcherInsertBounds } from './SceneCanvas/dispatcherGestureBounds';
 import { insertPreviewExtent } from './insertPreviewExtent';
 import { useInsertDepSource } from './deps/insert';
-import {
-  DepRegistryProvider,
-  useDepRegistry,
-  type DepRegistry,
-} from 'interactions/actions/depRegistry';
+import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import type { Scene } from 'core/scene/types';
 
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };

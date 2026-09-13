@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { areaSelectAction } from './areaSelect';
-import type { InvocationCtx } from '../invoker';
+import type { InvocationCtx } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import type { AreaSelectDep } from '../depSchema';
 

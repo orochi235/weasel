@@ -7,7 +7,7 @@ import { useScene } from 'core/scene/useScene';
 import { useSelection } from 'core/selection/useSelection';
 import { arrayAdapter } from 'core/adapters/arrayAdapter';
 import { useSelectTool } from 'tools/builtin/select';
-import { useTools } from 'tools/useTools';
+import { useTools } from '../tools/overlayBinding';
 import { WeaselProvider } from '../WeaselProvider';
 import type { RenderLayer } from 'core/layers/render';
 import { registerProgram } from '../renderer';
@@ -222,7 +222,7 @@ describe('<Canvas>', () => {
   });
 });
 
-import { defineTool } from 'tools/defineTool';
+import { defineTool } from '../tools/overlayBinding';
 import { ROTATED_POSE_DESCRIPTOR } from 'interactions/actions/resize/geometry';
 
 describe('Canvas tools mode', () => {

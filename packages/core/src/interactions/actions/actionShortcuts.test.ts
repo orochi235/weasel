@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { Action } from './action';
+import type { Action } from '@weasel-js/routing';
 import type { GestureSpec } from '../gestures/spec';
 import { actionShortcuts, keySpecShortcut } from './actionShortcuts';
 

@@ -10,7 +10,7 @@
  * inline style for the CSS tier.
  */
 
-import type { ResolvedCursor } from '@weasel-js/cursor';
+import type { ResolvedCursor } from './resolve';
 
 /** The painted arm of `ResolvedCursor` — what this module stores. */
 export type PaintedCursor = Extract<ResolvedCursor, { kind: 'painted' }>;

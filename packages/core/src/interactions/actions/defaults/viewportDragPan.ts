@@ -31,8 +31,8 @@
  * @see useHandTool — the React hook this descriptor parallels.
  */
 
-import type { Action } from '../action';
-import { resolveParams, type InvocationCtx, type OngoingHandle, type BindingOpts } from '../invoker';
+import type { Action } from '@weasel-js/routing';
+import { resolveParams, type InvocationCtx, type OngoingHandle, type BindingOpts } from '@weasel-js/routing';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
 import type { InertiaConfig } from 'core/viewport/useDecayLoop';

@@ -1,13 +1,13 @@
 // src/tools/useKeybindings.ts
 import { useEffect, useRef } from 'react';
-import { useActionsRegistry } from 'interactions/actions/ActionsProvider';
+import { useActionsRegistry } from '@weasel-js/routing/react';
 import {
   makeToolActivateAction,
   buildToolActivateBindings,
   type ToolActivateBindingSpec,
 } from 'interactions/actions/defaults/toolActivate';
 import { makeToolResetToDefaultAction } from 'interactions/actions/defaults/toolResetToDefault';
-import type { ToolsApi } from './useTools';
+import type { ToolsApi } from './overlayBinding';
 
 /** Options for `useKeybindings`. */
 export interface UseKeybindingsOptions {

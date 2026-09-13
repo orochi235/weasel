@@ -22,7 +22,7 @@ import {
   useSyncExternalStore,
 } from 'react';
 import type { Ref } from 'react';
-import { openPointerSession, type PointerSession } from '../interactions/gestures/pointerSession';
+import { openPointerSession, type PointerSession } from '@weasel-js/routing';
 import { SceneViewCanvas } from './SceneViewCanvas';
 import {
   computeFitView,

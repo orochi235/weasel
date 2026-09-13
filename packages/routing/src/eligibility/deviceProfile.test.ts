@@ -3,7 +3,7 @@ import {
   resolveDeviceProfile,
   DEFAULT_DEVICE_PROFILE,
   COARSE_TARGET_SCALE,
-} from './profile';
+} from './deviceProfile';
 
 describe('resolveDeviceProfile', () => {
   const fine = { coarsePointer: false, canHover: true, dpr: 1 };

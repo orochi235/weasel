@@ -9,7 +9,7 @@ import type { ReactNode } from 'react';
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { ActionDeps, Invoker } from './invoker';
 import type { BindingSource } from './binding';
-import type { DepName } from './depSchema';
+import type { DepName } from '../../index';
 
 /**
  * @experimental
@@ -114,8 +114,8 @@ export interface ActionDispatch extends BindingSource {
    * that allow the same capability.
    */
   eligible?:
-    | import('../../features/chrome-caps').Rule
-    | import('../../features/chrome-caps').Condition;
+    | import('../../eligibility').Rule
+    | import('../../eligibility').Condition;
   /**
    * CSS cursor shown while the pointer hovers a spot where this action
    * would win the drag. The hover-cursor pump (in `useGestureDispatcher`)

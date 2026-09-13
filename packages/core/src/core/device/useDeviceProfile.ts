@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { DetectedDeviceFacts, DeviceProfile } from './types';
-import { DEFAULT_DEVICE_PROFILE, resolveDeviceProfile } from './profile';
+import { DEFAULT_DEVICE_PROFILE, resolveDeviceProfile } from '@weasel-js/routing';
 
 const COARSE_QUERY = '(pointer: coarse)';
 const HOVER_QUERY = '(hover: hover)';

@@ -6,7 +6,7 @@ import type {
   LassoSelectAdapter,
 } from 'core/adapters/types';
 import type { LassoSelectBehavior } from '../../../gestures/types';
-import { scratchKey, getScratch } from '../../../scratchKey';
+import { scratchKey, getScratch } from '@weasel-js/routing';
 
 /** Typed scratch slot the lasso tool's gesture writes into for this behavior
  *  to consume. Shared identity: tools producing the polygon for a lasso

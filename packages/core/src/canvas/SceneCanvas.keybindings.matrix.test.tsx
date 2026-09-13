@@ -27,7 +27,7 @@ import { render, act } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
-import { ActiveToolContextProvider, useActiveToolContext } from 'interactions/actions/activeToolContext';
+import { ActiveToolContextProvider, useActiveToolContext } from '@weasel-js/routing/react';
 
 type D = { kind: 'rect' };
 type L = 'main';

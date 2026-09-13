@@ -40,9 +40,9 @@ function validateId(id: string, kind: 'tool' | 'action'): void {
  * and the `initScratch` / `cursor` defaults are worth applying uniformly, and
  * because `Tool.def` gives reflection a handle on the authored form.
  */
-export function defineTool<TScratch = void>(
-  def: ToolDef<TScratch>,
-): Tool<TScratch> {
+export function defineTool<TScratch = void, TOverlay = unknown>(
+  def: ToolDef<TScratch, TOverlay>,
+): Tool<TScratch, TOverlay> {
   validateId(def.id, 'tool');
 
   // Normalize `CursorSpec | ((ctx) => CursorSpec)` to the function form so

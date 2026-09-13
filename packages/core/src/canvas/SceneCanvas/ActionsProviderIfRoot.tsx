@@ -5,7 +5,7 @@
  * opt-outs reaching a sibling canvas.
  */
 import type { ReactNode } from 'react';
-import { ActionsProvider, ActionsScope, useActionsRegistry } from 'interactions/actions/ActionsProvider';
+import { ActionsProvider, ActionsScope, useActionsRegistry } from '@weasel-js/routing/react';
 
 /** Mount an `<ActionsProvider>` only when none is already in scope, so
  *  nesting canvases share one action registry instead of shadowing it. */

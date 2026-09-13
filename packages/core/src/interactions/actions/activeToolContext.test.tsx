@@ -1,10 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
-import {
-  ActiveToolContextProvider,
-  useActiveToolContext,
-  type ActiveToolContextValue,
-} from './activeToolContext';
+import { ActiveToolContextProvider, useActiveToolContext, type ActiveToolContextValue } from '@weasel-js/routing/react';
 
 describe('ActiveToolContext', () => {
   function Probe({ onValue }: { onValue: (v: ActiveToolContextValue) => void }) {

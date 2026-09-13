@@ -20,16 +20,13 @@ import type { ComponentType, ReactNode } from 'react';
 import { DepRegistryProviderIfRoot } from './canvas/SceneCanvas/DepRegistryProviderIfRoot';
 import { ActionsProviderIfRoot } from './canvas/SceneCanvas/ActionsProviderIfRoot';
 import { PointerProviderIfRoot } from './canvas/SceneCanvas/PointerProviderIfRoot';
-import {
-  ActiveToolContextProvider,
-  ActiveToolContextProviderIfRoot,
-} from './interactions/actions/activeToolContext';
+import { ActiveToolContextProvider, ActiveToolContextProviderIfRoot } from '@weasel-js/routing/react';
 import {
   SelectionContextProvider,
   SelectionContextProviderIfRoot,
 } from './features/selection/SelectionContext';
-import { DepRegistryProvider } from './interactions/actions/depRegistry';
-import { ActionsProvider } from './interactions/actions/ActionsProvider';
+import { DepRegistryProvider } from '@weasel-js/routing/react';
+import { ActionsProvider } from '@weasel-js/routing/react';
 import { PointerContextProvider } from './features/pointer/PointerContext';
 
 type Wrapper = ComponentType<{ children: ReactNode }>;

@@ -8,7 +8,7 @@ import {
   _resetContentHandlersForTests,
   type IngestCtx,
 } from './contentHandlers';
-import type { IngestItem } from './ingestItems';
+import type { IngestItem } from '@weasel-js/routing';
 import {
   WEASEL_CLIPBOARD_MIME,
   WEASEL_CLIPBOARD_MIME_WEB,

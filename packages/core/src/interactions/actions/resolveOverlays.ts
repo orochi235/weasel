@@ -18,7 +18,7 @@ import type { InsertPreviewGeometry } from '../../canvas/insertPreviewExtent';
 import { insertPreviewExtent } from '../../canvas/insertPreviewExtent';
 import type { Bounds } from '../../core/viewport/fitViewToBounds';
 import type { KitInsertShape } from '../../core/shapeKinds';
-import type { OngoingOverlay, OverlayRole } from './invoker';
+import type { OngoingOverlay, OverlayRole } from '@weasel-js/routing';
 
 type Point = { x: number; y: number };
 
@@ -127,7 +127,11 @@ export function resolveOverlays(overlays: Iterable<OngoingOverlay>): ResolvedOve
         out.push({
           kind: 'insertPreview',
           visibilityId: 'action.insert-preview',
-          shape: ov.shape,
+          // Routing types the insert shape as an open string: a
+          // consumer-defined kind is legal there and simply gets no live
+          // preview. This narrows to the kinds the kit's overlay draws —
+          // the `break` above has already rejected everything else.
+          shape: ov.shape as KitInsertShape,
           bounds,
           geometry,
           extras: ov.extras,

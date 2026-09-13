@@ -1,9 +1,6 @@
 // src/tools/types.ts
-import type { SelectionApi } from 'core/selection/useSelection';
-import type { Op } from 'core/ops/types';
-import type { View } from 'core/viewport/view';
-import type { DebugSink } from '../debug/types';
-import type { Bounds } from 'core/viewport/fitViewToBounds';
+import type { Op } from '@weasel-js/history';
+import type { SelectionApi, View, Bounds, DebugSink, ModifierState } from '../vocabulary';
 import type { Contribution } from '../contributions/types';
 import type { CursorSpec } from '@weasel-js/cursor';
 
@@ -30,12 +27,7 @@ export interface ToolKeybinding {
 }
 
 /** Modifier-key snapshot at event dispatch time. */
-export interface ToolModifiers {
-  alt: boolean;
-  shift: boolean;
-  meta: boolean;
-  ctrl: boolean;
-}
+export type ToolModifiers = ModifierState;
 
 /** Per-event context passed to every channel handler. `scratch` is typed
  *  via the tool's `TScratch` parameter; it survives across a single
@@ -85,7 +77,7 @@ export type ToolBounds = Bounds;
  * activate/deactivate, live preview, `cursor`). Everything else — bindings,
  * actions, overlay, presentation — is inherited.
  */
-export interface Tool<TScratch = unknown> extends Contribution {
+export interface Tool<TScratch = unknown, TOverlay = unknown> extends Contribution<TOverlay> {
   /** Optional caller-supplied key. Most built-in tools have their activation
    *  key declared in `BUILTIN_SELECT_KEYS` in `useKeybindings.ts`; this field
    *  is for tools that want their activation key to be configurable by the
@@ -125,4 +117,9 @@ export type ToolSlot = 'hotkey' | 'active' | 'ambient';
  *  intentional: `Tool<TScratch>` is invariant in TScratch, so `Tool<unknown>`
  *  is too strict for containers that accept any concrete `Tool<T>`. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyTool = Tool<any>;
+export type AnyTool = Tool<any, any>;
+
+/** "A tool of any scratch type that draws `TOverlay`" — the container form for
+ *  registries that hold heterogeneous scratch shapes but one overlay type. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyToolOf<TOverlay> = Tool<any, TOverlay>;

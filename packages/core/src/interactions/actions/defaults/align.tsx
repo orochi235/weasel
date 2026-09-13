@@ -10,10 +10,10 @@ import {
 } from '../align/align';
 import { unionAABB } from 'core/geometry/unionBounds';
 import { scenePoseFrame } from '../poseFrame';
-import type { Action } from '../action';
-import { ActionDisabledReason } from '../action';
+import type { Action } from '@weasel-js/routing';
+import { ActionDisabledReason } from '@weasel-js/routing';
 import type { SelectionApi } from 'core/selection/useSelection';
-import type { ImmediateInvoker } from '../invoker';
+import type { ImmediateInvoker } from '@weasel-js/routing';
 import {
   AlignLeftIcon,
   AlignRightIcon,

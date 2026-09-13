@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { clientToCanvasRect } from 'core/viewport/clientToCanvas';
-import {
-  openPointerSession,
-  type PointerSession,
-  type PointerSessionCancelReason,
-} from '../pointerSession';
+import { clientToCanvasRect } from '@weasel-js/routing';
+import { openPointerSession, type PointerSession, type PointerSessionCancelReason } from '@weasel-js/routing';
 
 /** A 2D point in the rect element's local coordinate space. */
 export interface HandleDragPoint {

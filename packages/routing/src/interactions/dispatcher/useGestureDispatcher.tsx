@@ -16,18 +16,18 @@ import type { RefObject } from 'react';
 import { isEditableTarget } from '../keyHelpers';
 import { useActiveToolContext } from '../actions/activeToolContext';
 import { useDepRegistry, type DepRegistry } from '../actions/depRegistry';
-import type { DepName, DepSchema } from '../actions/depSchema';
+import type { DepName, DepSchema } from '../../index';
 import type { ActionsRegistry } from '../actions/registry';
 import type { AffordanceHit } from '../actions/invoker';
 import type { Tool, ToolCtx } from '../../tools/types';
 import { createDispatcher, pointerGestureId, type Dispatcher, type DispatcherContext } from './dispatcher';
-import { openPointerSession, type PointerSession } from '../gestures/pointerSession';
-import { clientToCanvasRect } from 'core/viewport/clientToCanvas';
-import { itemsFromDataTransfer, itemsFromClipboardData } from 'features/ingestion/ingestItems';
+import { openPointerSession, type PointerSession } from '../pointerSession';
+import { clientToCanvasRect } from '../../viewport/clientToCanvas';
+import { itemsFromDataTransfer, itemsFromClipboardData } from '../../ingestion/ingestItems';
 import type { InputEvent } from './matcher';
 import type { BodyTarget, BodyClassification } from '@weasel-js/gestures';
 import type { CursorSpec } from '@weasel-js/cursor';
-import type { PaintedCursorState } from '../../features/cursor/paintedCursorState';
+import type { PaintedCursorState } from '@weasel-js/cursor';
 import { resolveCursorTier } from '@weasel-js/cursor';
 
 // ---------------------------------------------------------------------------
@@ -113,7 +113,7 @@ export interface DispatcherViewTarget {
    * decline a gesture in another. `undefined` means "nothing gates here", the
    * same answer a surface with no mode registry gives.
    */
-  getRuleCtx?: () => import('../../features/chrome-caps').RuleCtx | undefined;
+  getRuleCtx?: () => import('../../eligibility').RuleCtx | undefined;
 }
 
 /**
@@ -281,7 +281,7 @@ export interface UseGestureDispatcherOptions {
    * `Action.eligible` rule (omitted => always eligible). `<SceneCanvas>`
    * wires this; tests / harnesses without chrome-caps state can omit it.
    */
-  getRuleCtx?: () => import('../../features/chrome-caps').RuleCtx | undefined;
+  getRuleCtx?: () => import('../../eligibility').RuleCtx | undefined;
 
   /**
    * Routing for a canvas hosting more than one view: the non-root dispatch

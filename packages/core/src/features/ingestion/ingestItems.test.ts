@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { itemsFromDataTransfer, itemsFromClipboardData, itemsFromFiles } from './ingestItems';
+import { itemsFromDataTransfer, itemsFromClipboardData, itemsFromFiles } from '@weasel-js/routing';
 
 /** Minimal DataTransferItem stand-in (jsdom has no DataTransfer constructor). */
 function fileItem(name: string, type: string) {

@@ -6,7 +6,7 @@
  * See `docs/superpowers/specs/2026-05-16-registry-unification-design.md`.
  */
 
-import type { GestureSpec } from '../gestures/spec';
+import type { GestureSpec } from '@weasel-js/gestures';
 import type { BindingOpts } from './invoker';
 
 /** An interaction: a gesture spec composed with the id of the action it

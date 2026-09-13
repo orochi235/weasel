@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import type { UiOngoingControl } from './registry';
-import { ActionsProvider, useActionsRegistry } from './ActionsProvider';
-import type { Action } from './action';
-import { createDispatcher } from '../dispatcher/dispatcher';
+import type { UiOngoingControl } from '@weasel-js/routing';
+import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
+import type { Action } from '@weasel-js/routing';
+import { createDispatcher } from '@weasel-js/routing';
 
 function wrap({ children }: { children: ReactNode }) {
   return <ActionsProvider>{children}</ActionsProvider>;

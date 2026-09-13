@@ -6,7 +6,7 @@ import {
   nudgeRightAction,
 } from './nudge';
 import { asNodeId } from 'core/scene/types';
-import { ActionDisabledReason } from '../action';
+import { ActionDisabledReason } from '@weasel-js/routing';
 
 type Pose = { x: number; y: number; width: number; height: number };
 

@@ -7,10 +7,10 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { buildDepsFromRequires } from '../buildDeps';
-import type { DepRegistry } from '../depRegistry';
-import type { Action } from '../action';
-import type { ImmediateInvoker } from '../invoker';
+import { buildDepsFromRequires } from '@weasel-js/routing';
+import type { DepRegistry } from '@weasel-js/routing/react';
+import type { Action } from '@weasel-js/routing';
+import type { ImmediateInvoker } from '@weasel-js/routing';
 import { asNodeId } from 'core/scene/types';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import { reorderForwardAction, reorderBackwardAction } from './reorder';

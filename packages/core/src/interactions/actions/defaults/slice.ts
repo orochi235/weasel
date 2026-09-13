@@ -1,7 +1,7 @@
-import type { Action } from '../action';
+import type { Action } from '@weasel-js/routing';
 import type { SliceDep } from '../depSchema';
-import { ActionDisabledReason } from '../action';
-import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '../invoker';
+import { ActionDisabledReason } from '@weasel-js/routing';
+import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '@weasel-js/routing';
 
 /**
  * @experimental

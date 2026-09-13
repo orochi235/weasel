@@ -11,7 +11,7 @@
  * @see GeometryProjection — the dep schema entry.
  */
 import { useRef } from 'react';
-import { useDepSource } from 'interactions/actions/depRegistry';
+import { useDepSource } from '@weasel-js/routing/react';
 import type { GeometryProjection } from 'interactions/actions/geometryProjection';
 
 export function useGeometryProjection(

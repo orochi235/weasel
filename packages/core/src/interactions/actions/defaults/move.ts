@@ -41,9 +41,9 @@
  * dep (`AUTO_POSE_DESCRIPTOR` when unsourced).
  */
 
-import type { Action } from '../action';
-import type { InvocationCtx, OngoingHandle, BindingOpts } from '../invoker';
-import { resolveParams } from '../invoker';
+import type { Action } from '@weasel-js/routing';
+import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routing';
+import { resolveParams } from '@weasel-js/routing';
 import { documentPose } from 'core/scene/effectivePose';
 import type { Scene, NodeId } from 'core/scene/types';
 import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides';

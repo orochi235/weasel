@@ -1,6 +1,5 @@
 // src/contributions/useContributions.ts
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import type { RenderLayer } from 'core/layers/render';
 import type { ScopedBinding } from '../interactions/dispatcher/matcher';
 import { useActiveToolContext } from '../interactions/actions/activeToolContext';
 import { useActionsRegistry } from '../interactions/actions/ActionsProvider';
@@ -9,7 +8,7 @@ import {
   makeToolOffhandAction,
   offhandKeyFor,
   type ToolOffhandBindingSpec,
-} from '../interactions/actions/defaults/toolOffhand';
+} from '../interactions/actions/toolOffhand';
 import { reportRouteConflicts } from '../tools/routing/reflection/conflicts';
 import type { Tool } from '../tools/types';
 import type { HotkeyTrigger } from './types';
@@ -19,18 +18,18 @@ import type { Contribution, OverlayPosition } from './types';
 
 const NO_TRIGGERS: ReadonlySet<string> = new Set<string>();
 
-export interface UseContributionsOptions {
+export interface UseContributionsOptions<TOverlay = unknown> {
   /** Every registry entry, in declaration order. Order decides which of two
    *  same-specificity bindings in one scope tier wins. */
-  entries: readonly Contribution[];
+  entries: readonly Contribution<TOverlay>[];
   /** Desired focused entry id. First-mount-wins against the shared
    *  `ActiveToolContext` — see `useTools` for the full semantics. */
   focused: string;
 }
 
-export interface ContributionsApi {
+export interface ContributionsApi<TOverlay = unknown> {
   /** Every entry, as passed in. */
-  entries: readonly Contribution[];
+  entries: readonly Contribution<TOverlay>[];
   /** Currently focused entry id. */
   focused: string;
   /** Focus an entry. Writes through to the shared `ActiveToolContext`. */
@@ -39,7 +38,7 @@ export interface ContributionsApi {
   scopedBindings(): ScopedBinding[];
   /** Overlays of every live entry declaring `position`, ordered active, then
    *  hotkey, then ambient. */
-  overlays(position?: OverlayPosition): RenderLayer<unknown>[];
+  overlays(position?: OverlayPosition): TOverlay[];
 }
 
 /**
@@ -52,7 +51,9 @@ export interface ContributionsApi {
  * in the context so the gesture dispatcher and every sibling caller read the
  * same source of truth.
  */
-export function useContributions(opts: UseContributionsOptions): ContributionsApi {
+export function useContributions<TOverlay = unknown>(
+  opts: UseContributionsOptions<TOverlay>,
+): ContributionsApi<TOverlay> {
   const ctx = useActiveToolContext();
   const actionsRegistry = useActionsRegistry();
 
@@ -94,7 +95,7 @@ export function useContributions(opts: UseContributionsOptions): ContributionsAp
   const snapshot = useCallback(() => {
     const engaged = engagedRef.current;
     const engagedIds = new Set(engaged);
-    const ordered: Contribution[] = [];
+    const ordered: Contribution<TOverlay>[] = [];
     for (const id of engaged) {
       const entry = entriesRef.current.find((e) => e.id === id);
       if (entry && !ordered.includes(entry)) ordered.push(entry);
@@ -113,11 +114,11 @@ export function useContributions(opts: UseContributionsOptions): ContributionsAp
     return scopeBindings(ordered, state);
   }, [snapshot]);
 
-  const overlays = useCallback((position: OverlayPosition = 'top'): RenderLayer<unknown>[] => {
+  const overlays = useCallback((position: OverlayPosition = 'top'): TOverlay[] => {
     const { ordered, state } = snapshot();
-    const active: RenderLayer<unknown>[] = [];
-    const hotkey: RenderLayer<unknown>[] = [];
-    const ambient: RenderLayer<unknown>[] = [];
+    const active: TOverlay[] = [];
+    const hotkey: TOverlay[] = [];
+    const ambient: TOverlay[] = [];
     for (const entry of ordered) {
       if (!entry.overlay) continue;
       if ((entry.overlayPosition ?? 'top') !== position) continue;
@@ -161,8 +162,8 @@ export function useContributions(opts: UseContributionsOptions): ContributionsAp
     if (process.env.NODE_ENV === 'production') return;
     if (lastConflictSigRef.current === entrySig) return;
     lastConflictSigRef.current = entrySig;
-    const registry: Tool<unknown>[] = [];
-    const ambient: Tool<unknown>[] = [];
+    const registry: Tool<unknown, TOverlay>[] = [];
+    const ambient: Tool<unknown, TOverlay>[] = [];
     for (const entry of entriesRef.current) {
       (entry.eligibility?.focus ? registry : ambient).push(entry);
     }

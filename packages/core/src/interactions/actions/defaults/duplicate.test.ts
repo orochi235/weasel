@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { duplicateAction } from './duplicate';
-import type { ImmediateInvoker } from '../invoker';
+import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';

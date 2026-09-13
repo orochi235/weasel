@@ -5,9 +5,9 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
-import type { ActionsRegistry } from './registry';
-import { ActionsProvider, ActionsScope, useActionsRegistry } from './ActionsProvider';
-import type { Action } from './action';
+import type { ActionsRegistry } from '@weasel-js/routing';
+import { ActionsProvider, ActionsScope, useActionsRegistry } from '@weasel-js/routing/react';
+import type { Action } from '@weasel-js/routing';
 
 const immediate = (id: string, run: () => void = () => {}): Action => ({
   id,

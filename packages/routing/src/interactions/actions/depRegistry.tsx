@@ -18,7 +18,7 @@ import {
   createContext, useContext, useEffect, useMemo, useRef,
   type ReactNode,
 } from 'react';
-import type { DepSchema, DepName } from './depSchema';
+import type { DepSchema, DepName } from '../../index';
 
 export type { DepSchema, DepName };
 

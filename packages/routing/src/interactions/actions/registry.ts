@@ -5,7 +5,7 @@
  * touches React.
  * Spec: docs/superpowers/specs/2026-05-09-actions-registry-design.md
  */
-import type { GestureSpec, PhaseSpec } from '../gestures/spec';
+import type { GestureSpec, PhaseSpec } from '@weasel-js/gestures';
 import type { BoundGesture } from './binding';
 import type { Action } from './action';
 import type { DepRegistry } from './depRegistry';

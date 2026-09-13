@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import { moveAction } from './move';
-import type { InvocationCtx, BindingOpts } from '../invoker';
+import type { InvocationCtx, BindingOpts } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, PoseOverrides, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { NodeAtPointDep } from '../depSchema';
-import { buildDepsFromRequires } from '../buildDeps';
-import type { DepRegistry } from '../depRegistry';
+import { buildDepsFromRequires } from '@weasel-js/routing';
+import type { DepRegistry } from '@weasel-js/routing/react';
 import { composeRectPose, decomposeRectPose } from 'features/groups/composePose';
 
 /** Local-pose composition strategy. The reparentOnDrop tests below assert

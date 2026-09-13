@@ -4,7 +4,7 @@ import { targetSizesPx } from 'core/device/targets';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { ChromeState } from 'core/selection/chromeState';
 import { asNodeId } from 'core/scene/types';
-import { COARSE_TARGET_SCALE } from 'core/device/profile';
+import { COARSE_TARGET_SCALE } from '@weasel-js/routing';
 
 function layerFor(targetScale?: number) {
   return createSlopsDebugLayer({

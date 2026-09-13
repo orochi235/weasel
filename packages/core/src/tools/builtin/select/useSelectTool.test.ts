@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useSelectTool } from './useSelectTool';
-import { ActionDisabledReason } from '../../../interactions/actions/action';
-import type { Action } from '../../../interactions/actions/action';
-import type { ActionDeps } from '../../../interactions/actions/invoker';
+import { ActionDisabledReason } from '@weasel-js/routing';
+import type { Action } from '@weasel-js/routing';
+import type { ActionDeps } from '@weasel-js/routing';
 
 type Mods = { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean };
 const NO_MODS: Mods = { alt: false, ctrl: false, meta: false, shift: false };
@@ -238,7 +238,7 @@ describe('useSelectTool', () => {
   });
 });
 
-import { matchSorted, type ScopedBinding } from '../../../interactions/dispatcher/matcher';
+import { matchSorted, type ScopedBinding } from '@weasel-js/routing';
 
 describe('useSelectTool — press and drag bindings do not collide', () => {
   function pressEvent(bodyTarget: 'selected-body' | 'unselected-body' | 'empty') {

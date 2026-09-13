@@ -3,7 +3,7 @@ import { createReparentOp } from 'core/ops/reparent';
 import type { Op } from 'core/ops/types';
 import type { SnapTarget } from 'core/adapters/types';
 import type { MoveBehavior, GestureContext } from '../../../gestures/types';
-import { scratchKey, getScratch, setScratch } from '../../../scratchKey';
+import { scratchKey, getScratch, setScratch } from '@weasel-js/routing';
 
 interface SnapState<TPose> {
   pendingTargetId: string | null;

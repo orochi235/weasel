@@ -26,7 +26,7 @@ import { asNodeId } from '../../core/scene/types';
 import { effectivePose } from '../../core/scene/effectivePose';
 import type { Scene } from '../../core/scene/types';
 import type { FillStyle, Stroke } from '@weasel-js/paint';
-import { clientToCanvas } from '../../core/viewport/clientToCanvas';
+import { clientToCanvas } from '@weasel-js/routing';
 import { findMountedCanvas, type MountedCanvas } from '../../canvas/mountedCanvases';
 import type { View } from '../../core/viewport/view';
 import type { RectPose } from 'core/geometry/unionBounds';

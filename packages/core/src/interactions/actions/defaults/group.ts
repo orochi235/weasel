@@ -9,7 +9,7 @@ import { unionOfChildren, UNION_OF_CHILDREN } from 'core/scene/kitRegistry';
 import { poseDescriptorOf } from '../poseDescriptorDep';
 import { visualBoundsViaDescriptor } from '../resize/geometry';
 import { createTransformOp } from 'core/ops/transform';
-import type { Action } from '../action';
+import type { Action } from '@weasel-js/routing';
 import { scenePoseFrame } from '../poseFrame';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 

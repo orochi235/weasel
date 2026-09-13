@@ -9,12 +9,12 @@
  * § "Types" for the full design.
  */
 
-import type { ActionBehavior, ModifierState, ResizeAnchor } from '../gestures/types';
+import type { ModifierState, ResizeAnchor } from '../../vocabulary';
 import type { ClaimableGesture } from '@weasel-js/gestures';
-import type { KitInsertShape } from 'core/shapeKinds';
+
 import type { CursorSpec } from '@weasel-js/cursor';
 
-export type { ModifierState } from '../gestures/types';
+export type { ModifierState } from '../../vocabulary';
 
 /** A 2D point in either world or screen coordinates. */
 export interface Point2 {
@@ -176,7 +176,11 @@ export interface InvocationCtx {
  *  `opts` field and passes to `OngoingInvoker.start`. Today carries
  *  behaviors; extensible. */
 export interface BindingOpts {
-  behaviors?: ActionBehavior<unknown, unknown, unknown>[];
+  /** Gesture behaviors the action's own invoker runs. Routing carries the
+   *  array to the action and never reads an element, so the element type is
+   *  open here; `@weasel-js/core` narrows it to `ActionBehavior<unknown,
+   *  unknown, unknown>[]`, which is what a behavior is authored against. */
+  behaviors?: unknown[];
   /** Per-binding action parameters. The action's invoker reads
    *  these via the second arg to `run` (or via InvocationCtx for ongoing
    *  invokers, when needed). Loose typing (Record<string, unknown>) for
@@ -289,7 +293,10 @@ export type OngoingOverlay =
        * renderer narrows on `shape` and casts the field shape it expects.
        */
       kind: 'insertPreview';
-      shape: KitInsertShape;
+      /** Which preview the dispatcher's overlay draws. The kit's own shape
+       *  kinds are the ones it knows how to render; a consumer-defined kind
+       *  is legal and simply gets no live preview. */
+      shape: string;
       bounds: { x: number; y: number; width: number; height: number };
       extras: unknown;
       /** World-space point to paint a small "anchor" dot at. Sells the

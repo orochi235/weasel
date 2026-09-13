@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { composeOrderedLayers, placeToolOverlays } from './layerOrder';
 import type { RenderLayer } from '../core/layers/render';
 import type { LayerSlotValue } from './Canvas';
-import type { OverlayPosition } from '../contributions/types';
+import type { OverlayPosition } from '@weasel-js/routing';
 
 function L(id: string): RenderLayer<unknown> {
   return { id, label: id, space: 'screen', draw: () => [] };

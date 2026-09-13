@@ -9,10 +9,7 @@
  * the dep registry, so the registry must live somewhere both can see it.
  */
 import type { ReactNode } from 'react';
-import {
-  DepRegistryProvider,
-  useOptionalDepRegistry,
-} from 'interactions/actions/depRegistry';
+import { DepRegistryProvider, useOptionalDepRegistry } from '@weasel-js/routing/react';
 
 /** Mount a `<DepRegistryProvider>` only when none is already in scope, so a
  *  consumer's dep sources are not shadowed by a nested canvas. */

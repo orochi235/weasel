@@ -10,7 +10,7 @@
  * @see SliceDep — the dep contract (`commit(a, b)` in world coords).
  */
 import { useRef } from 'react';
-import { useDepSource } from 'interactions/actions/depRegistry';
+import { useDepSource } from '@weasel-js/routing/react';
 import type { SliceDep } from 'interactions/actions/depSchema';
 
 /** Publish how a slice (knife cut) is performed, so the `slice` action can

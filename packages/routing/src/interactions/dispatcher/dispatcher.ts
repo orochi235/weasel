@@ -48,7 +48,7 @@ import type { Tool } from '../../tools/types';
 import { scopeBindings } from '../../contributions/assemble';
 import type { InputEvent, BindingScope, ScopedBinding } from './matcher';
 import { matchSorted, specificity } from './matcher';
-import { evaluate, describeRule, type Rule, type RuleCtx, type Condition } from '../../features/chrome-caps';
+import { evaluate, describeRule, type Rule, type RuleCtx, type Condition } from '../../eligibility';
 import { resolveCursor } from '@weasel-js/cursor';
 
 /**

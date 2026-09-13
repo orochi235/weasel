@@ -24,7 +24,7 @@ import type { BodyClassification } from '@weasel-js/gestures';
 import type { ChromeState } from 'core/selection/chromeState';
 import type { EditAnchorsDep } from 'interactions/actions/depSchema';
 import type { View } from 'core/viewport/view';
-import type { AffordanceHit } from 'interactions/actions/invoker';
+import type { AffordanceHit } from '@weasel-js/routing';
 import type { Affordance, CommonAffordanceScratch } from 'affordances/types';
 import { hitAffordanceRegions, type AffordanceRegionHit } from 'affordances/hitAffordanceRegions';
 import { createCornerResizeAffordance } from 'affordances/cornerResize';

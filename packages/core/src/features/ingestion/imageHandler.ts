@@ -14,7 +14,7 @@
  * image files first.
  */
 import type { ContentHandlerEntry, IngestCtx } from './contentHandlers';
-import type { IngestItem } from './ingestItems';
+import type { IngestItem } from '@weasel-js/routing';
 
 const CASCADE_OFFSET_PX = 24;
 const VIEWPORT_FIT = 0.9;

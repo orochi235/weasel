@@ -1,10 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
-import {
-  DepRegistryProvider,
-  useDepRegistry,
-  type DepRegistry,
-} from 'interactions/actions/depRegistry';
+import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import { useInsertDepSource } from './insert';
 import type { Scene } from 'core/scene/types';
 

@@ -4,14 +4,14 @@
  * keeps the two methods from drifting.
  */
 import { describe, it, expect, vi } from 'vitest';
-import { createDispatcher } from './dispatcher';
-import type { DispatcherContext } from './dispatcher';
-import type { ActionsRegistry } from '../actions/registry';
-import type { Action } from '../actions/action';
-import type { DepRegistry } from '../actions/depRegistry';
-import type { InputEvent } from './matcher';
-import type { Tool } from '../../tools/types';
-import type { Eligibility } from '../../contributions/types';
+import { createDispatcher } from '@weasel-js/routing';
+import type { DispatcherContext } from '@weasel-js/routing';
+import type { ActionsRegistry } from '@weasel-js/routing';
+import type { Action } from '@weasel-js/routing';
+import type { DepRegistry } from '@weasel-js/routing/react';
+import type { InputEvent } from '@weasel-js/routing';
+import type { Tool } from '../../tools/overlayBinding';
+import type { Eligibility } from '@weasel-js/routing';
 import type { RuleCtx } from '../../features/chrome-caps';
 
 function makeRegistry(actions: Action[]): ActionsRegistry {

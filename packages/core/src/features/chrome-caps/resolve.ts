@@ -1,7 +1,7 @@
 import type { ChromeCtx, ChromeId, VisibilityRules } from './types';
-import type { RuleCtx } from './ruleCtx';
-import { DEFAULT_ALLOWED_CAPABILITIES } from './ruleCtx';
-import { evaluate } from './rule';
+import type { RuleCtx } from '@weasel-js/routing';
+import { DEFAULT_ALLOWED_CAPABILITIES } from '@weasel-js/routing';
+import { evaluate } from '@weasel-js/routing';
 import { defaultVisibilityRules } from './defaults';
 
 /**

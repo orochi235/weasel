@@ -15,7 +15,7 @@ import { SceneCanvas, type SceneCanvasProps } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { SceneCanvasApi } from './canvasExtension';
 import type { View } from 'core/viewport/view';
-import { useDepRegistry, type DepRegistry } from 'interactions/actions/depRegistry';
+import { useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
 
 type D = { kind: 'rect' };

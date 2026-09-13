@@ -1,6 +1,6 @@
 import type { ToolCtx, ToolKeybinding } from './types';
 import type { HotkeyTrigger, ToolPresentation } from '../contributions/types';
-import type { RenderLayer } from '../core/layers/render';
+
 import type { GestureBinding } from '../interactions/actions/binding';
 import type { CapabilityTag } from '@weasel-js/modes';
 import type { OverlayPosition } from '../contributions/types';
@@ -15,7 +15,7 @@ import type { CursorSpec } from '@weasel-js/cursor';
  * definition is mostly `bindings`, plus presentation and any actions the tool
  * itself introduces.
  */
-export interface ToolDef<TScratch = void> {
+export interface ToolDef<TScratch = void, TOverlay = unknown> {
   id: string;
   /** Capability tags for modality eligibility. Forwarded onto `Tool.capabilities`. */
   capabilities?: CapabilityTag[];
@@ -34,7 +34,7 @@ export interface ToolDef<TScratch = void> {
    * selection instead). `<ToolActionsMounter>` registers these from inside
    * the provider.
    */
-  actions?: import('interactions/actions/action').Action[];
+  actions?: import('../interactions/actions/action').Action[];
 
   /** Hook name as exported from the kit barrel (e.g. `'useHandTool'`).
    *  Set by built-in hooks for inspector / debugging. Consumer-authored
@@ -82,7 +82,7 @@ export interface ToolDef<TScratch = void> {
    *  swap layers as the gesture progresses.
    *
    *  Pass an array to contribute several layers; they render in order. */
-  overlay?: RenderLayer<unknown> | RenderLayer<unknown>[];
+  overlay?: TOverlay | TOverlay[];
   /** Where `overlay` sits relative to the selection chrome. Defaults to
    *  `'top'`, above everything. */
   overlayPosition?: OverlayPosition;
@@ -91,4 +91,4 @@ export interface ToolDef<TScratch = void> {
 /** Viewport-tool spec. Once phase tables went away this stopped differing
  *  from `ToolDef` in any structural way; `defineViewportTool` survives as the
  *  authoring signal that a tool pans/zooms the view rather than the scene. */
-export type ViewportToolDef<TScratch = void> = ToolDef<TScratch>;
+export type ViewportToolDef<TScratch = void, TOverlay = unknown> = ToolDef<TScratch, TOverlay>;

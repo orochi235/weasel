@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { PathBuilder } from 'features/paths/builder';
 import { pathToAnchors } from 'features/paths/anchors';
 import type { PolygonPath } from 'features/paths/types';
-import type { InvocationCtx, OngoingInvoker, ImmediateInvoker } from '../invoker';
+import type { InvocationCtx, OngoingInvoker, ImmediateInvoker } from '@weasel-js/routing';
 import { makeEditAnchorsDep } from '../testUtils';
 import { areaSelectAction } from './areaSelect';
 import { clearSelectionAction } from './clearSelection';

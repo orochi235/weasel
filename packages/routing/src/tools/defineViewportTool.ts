@@ -15,8 +15,8 @@ import { defineTool } from './defineTool';
  * hook says "this tool moves the camera, not the drawing", which is worth
  * more than the type gymnastics it replaced.
  */
-export function defineViewportTool<TScratch = void>(
-  def: ViewportToolDef<TScratch>,
-): Tool<TScratch> {
-  return defineTool<TScratch>(def);
+export function defineViewportTool<TScratch = void, TOverlay = unknown>(
+  def: ViewportToolDef<TScratch, TOverlay>,
+): Tool<TScratch, TOverlay> {
+  return defineTool<TScratch, TOverlay>(def);
 }

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { pinchZoomAction } from './pinchZoom';
-import type { InvocationCtx } from '../invoker';
+import type { InvocationCtx } from '@weasel-js/routing';
 import type { ViewApi } from '../depSchema';
 import type { View } from 'core/viewport/view';
 

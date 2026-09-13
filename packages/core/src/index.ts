@@ -115,21 +115,17 @@ export { sceneNodeClientRect } from './core/viewport/sceneNodeClientRect';
 export type { SceneNodeClientRectOpts, NodeClientRect } from './core/viewport/sceneNodeClientRect';
 export * from './core/viewport/useAutoCenter';
 // ─── Keybindings: low-level key → action wiring ─────────────────────────────
-export { isEditableTarget, matchesKeyBinding } from './interactions/keyHelpers';
+export { isEditableTarget, matchesKeyBinding } from '@weasel-js/routing';
 
 // --- @experimental Actions Registry (2026-05-09) ----------------------------
-export {
-  ActionsProvider, ActionsScope, useActionsRegistry, useAction,
-} from './interactions/actions/ActionsProvider';
-export type {
-  ActionEntry, ActionsProp, ActionsRegistry, UiOngoingControl,
-} from './interactions/actions/registry';
-export { ActionDisabledReason } from './interactions/actions/action';
-export type { Action, ActionDispatch, ActionPresentation } from './interactions/actions/action';
-export { actionBindings } from './interactions/actions/binding';
-export type { BoundGesture, BindingSource } from './interactions/actions/binding';
-export { evaluateEnabled } from './interactions/actions/actionEnabled';
-export type { ActionEnabledResult } from './interactions/actions/actionEnabled';
+export { ActionsProvider, ActionsScope, useActionsRegistry, useAction } from '@weasel-js/routing/react';
+export type { ActionEntry, ActionsProp, ActionsRegistry, UiOngoingControl } from '@weasel-js/routing';
+export { ActionDisabledReason } from '@weasel-js/routing';
+export type { Action, ActionDispatch, ActionPresentation } from '@weasel-js/routing';
+export { actionBindings } from '@weasel-js/routing';
+export type { BoundGesture, BindingSource } from '@weasel-js/routing';
+export { evaluateEnabled } from '@weasel-js/routing';
+export type { ActionEnabledResult } from '@weasel-js/routing';
 export { actionShortcuts, keySpecShortcut } from './interactions/actions/actionShortcuts';
 export type { ActionShortcut } from './interactions/actions/actionShortcuts';
 export { moveAction } from './interactions/actions/defaults/move';
@@ -175,44 +171,16 @@ export type { UseStandardActionsOptions } from './interactions/actions/useStanda
 export { defaultCommitAdapter } from './interactions/actions/defaultCommitAdapter';
 
 // ─── Invoker / GestureBinding / ActiveToolContext ───
-export { resolveParams } from './interactions/actions/invoker';
-export type {
-  Point2,
-  DragSample,
-  InvocationCtx,
-  BindingOpts,
-  ActionDeps,
-  AffordanceHit,
-  OngoingHandle,
-  OngoingOverlay,
-  OverlayRole,
-  ImmediateInvoker,
-  OngoingInvoker,
-  Invoker,
-} from './interactions/actions/invoker';
-export type { GestureBinding } from './interactions/actions/binding';
-export {
-  ActiveToolContextProvider,
-  ActiveToolContextProviderIfRoot,
-  useActiveToolContext,
-  useOptionalActiveToolContext,
-} from './interactions/actions/activeToolContext';
-export type {
-  ActiveToolContextValue,
-  ActiveToolContextProviderProps,
-} from './interactions/actions/activeToolContext';
+export { resolveParams } from '@weasel-js/routing';
+export type { Point2, DragSample, InvocationCtx, BindingOpts, ActionDeps, AffordanceHit, OngoingHandle, OngoingOverlay, OverlayRole, ImmediateInvoker, OngoingInvoker, Invoker } from '@weasel-js/routing';
+export type { GestureBinding } from '@weasel-js/routing';
+export { ActiveToolContextProvider, ActiveToolContextProviderIfRoot, useActiveToolContext, useOptionalActiveToolContext } from '@weasel-js/routing/react';
+export type { ActiveToolContextValue, ActiveToolContextProviderProps } from '@weasel-js/routing/react';
 
 // ─── Dep registry ───
-export {
-  DepRegistryProvider,
-  useDepRegistry,
-  useOptionalDepRegistry,
-  useDepSource,
-} from './interactions/actions/depRegistry';
-export type {
-  DepName,
-  DepRegistry,
-} from './interactions/actions/depRegistry';
+export { DepRegistryProvider, useDepRegistry, useOptionalDepRegistry, useDepSource } from '@weasel-js/routing/react';
+export type { DepName } from '@weasel-js/routing';
+export type { DepRegistry } from '@weasel-js/routing/react';
 // Exported from its defining module rather than through depRegistry's
 // re-export, so `DepName = keyof DepSchema` resolves to a documented symbol.
 export type { DepSchema } from './interactions/actions/depSchema';
@@ -244,25 +212,12 @@ export type { CornerAnchor, CornerEdge } from './interactions/actions/resize/cor
 export { useSliceDep } from './canvas/deps/slice';
 
 // ─── Gesture dispatcher ───
-export {
-  useGestureDispatcher,
-  createDispatcher,
-  // The precedence rule itself, so reflection surfaces can show WHY one
+export { createDispatcher, // The precedence rule itself, so reflection surfaces can show WHY one
   // binding outranks another instead of re-deriving the tuple.
-  specificity,
-} from './interactions/dispatcher';
-export type {
-  Dispatcher,
-  DispatcherContext,
-  InputEvent,
-  BindingScope,
-  ScopedBinding,
-  MatchResult,
-  ResolveOnlyResult,
-  ResolvedCandidate,
-  ResolveAllOptions,
-  UseGestureDispatcherOptions,
-} from './interactions/dispatcher';
+  specificity } from '@weasel-js/routing';
+export { useGestureDispatcher } from '@weasel-js/routing/react';
+export type { Dispatcher, DispatcherContext, InputEvent, BindingScope, ScopedBinding, MatchResult, ResolveOnlyResult, ResolvedCandidate, ResolveAllOptions } from '@weasel-js/routing';
+export type { UseGestureDispatcherOptions } from '@weasel-js/routing/react';
 
 // ─── Scheduling: the visibility gate every weasel frame loop runs behind ────
 export { useVisibleRaf } from './scheduling/useVisibleRaf';
@@ -270,7 +225,7 @@ export type { VisibleRaf, VisibleRafOptions, VisibleRafTarget } from './scheduli
 
 // ─── Viewport: wheel / velocity / decay / pinch / camera animation ──────────
 export * from './core/viewport/wheelHandler';
-export { clientToCanvas } from './core/viewport/clientToCanvas';
+export { clientToCanvas } from '@weasel-js/routing';
 export { useVelocityTracker } from './core/viewport/useVelocityTracker';
 export { createVelocityTracker } from './core/viewport/createVelocityTracker';
 export type { VelocityTracker } from './core/viewport/createVelocityTracker';
@@ -1042,13 +997,8 @@ export type {
   UseDragRadialOptions,
   DragRadialController,
 } from './interactions/gestures/dragRadial';
-export { openPointerSession } from './interactions/gestures/pointerSession';
-export type {
-  PointerSession,
-  PointerSessionCallbacks,
-  PointerSessionCancelReason,
-  PointerSessionOptions,
-} from './interactions/gestures/pointerSession';
+export { openPointerSession } from '@weasel-js/routing';
+export type { PointerSession, PointerSessionCallbacks, PointerSessionCancelReason, PointerSessionOptions } from '@weasel-js/routing';
 export { useHandleDrag } from './interactions/gestures/handleDrag';
 export type {
   HandleDragPoint,
@@ -1071,14 +1021,7 @@ export type {
   PathAnchor,
 } from './interactions/actions/edit-anchors';
 // ─── Typed scratch keys: shared typed access to ctx.scratch (behaviors) ─────
-export {
-  scratchKey,
-  getScratch,
-  setScratch,
-  deleteScratch,
-  type ScratchKey,
-  type ScratchStore,
-} from './interactions/scratchKey';
+export { scratchKey, getScratch, setScratch, deleteScratch, type ScratchKey, type ScratchStore } from '@weasel-js/routing';
 export type { UseLassoSelectOptions } from './interactions/actions/lasso-select';
 export {
   selectFromLasso,
@@ -1296,12 +1239,12 @@ export type {
   ResolvedCursor,
   BakeOptions,
 } from '@weasel-js/cursor';
-export { createPaintedCursorState } from './features/cursor/paintedCursorState';
+export { createPaintedCursorState } from '@weasel-js/cursor';
 export type {
   PaintedCursor,
   PaintedCursorFrame,
   PaintedCursorState,
-} from './features/cursor/paintedCursorState';
+} from '@weasel-js/cursor';
 export { createPaintedCursorLayer, PAINTED_CURSOR_LAYER_ID } from './features/cursor/paintedCursorLayer';
 export type {
   LayersMap,
@@ -1320,11 +1263,9 @@ export type {
   SceneToAdapterOptions,
   SceneAdapterSelection,
 } from './canvas/sceneAdapter';
-export type {
-  Contribution, ContributionRouting, ContributionChrome, Eligibility, EligibilityState,
-  HotkeyTrigger, OverlayPosition, ToolPresentation,
-} from './contributions';
-export { liveScope, mergeContributions, scopeBindings } from './contributions';
+export type { ContributionRouting, Eligibility, EligibilityState, HotkeyTrigger, OverlayPosition, ToolPresentation } from '@weasel-js/routing';
+export type { Contribution, ContributionChrome } from './tools/overlayBinding';
+export { liveScope, mergeContributions, scopeBindings } from '@weasel-js/routing';
 export type { InsertOverlayStyle } from './tools/builtin/marquee';
 export type { InsertPoint } from './interactions/gestures/types';
 export type {

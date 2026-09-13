@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, type Mock } from 'vitest';
 import { reorderForwardAction, reorderBackwardAction } from './reorder';
 import { asNodeId, type NodeId } from 'core/scene/types';
-import type { BoundGesture } from '../binding';
-import type { ImmediateInvoker } from '../invoker';
+import type { BoundGesture } from '@weasel-js/routing';
+import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import { matchSpec } from '@weasel-js/gestures';
 import type { InputEvent, ModifiersEvent } from '@weasel-js/gestures';
@@ -116,7 +116,7 @@ describe('reorderForwardAction (descriptor)', () => {
     const selection = makeSelection(['b']);
 
     (reorderForwardAction.invoker as ImmediateInvoker).run(
-      { selection, scene } as import('../invoker').ActionDeps,
+      { selection, scene } as import('@weasel-js/routing').ActionDeps,
       { distance: 'adjacent' },
     );
 
@@ -135,7 +135,7 @@ describe('reorderForwardAction (descriptor)', () => {
     const selection = makeSelection(['b']);
 
     (reorderForwardAction.invoker as ImmediateInvoker).run(
-      { selection, scene } as import('../invoker').ActionDeps,
+      { selection, scene } as import('@weasel-js/routing').ActionDeps,
       { distance: 'extreme' },
     );
 
@@ -151,7 +151,7 @@ describe('reorderForwardAction (descriptor)', () => {
     const selection = makeSelection(['b']);
 
     (reorderForwardAction.invoker as ImmediateInvoker).run(
-      { selection, scene } as import('../invoker').ActionDeps,
+      { selection, scene } as import('@weasel-js/routing').ActionDeps,
       undefined,
     );
 
@@ -163,7 +163,7 @@ describe('reorderForwardAction (descriptor)', () => {
     const selection = makeSelection([]);
 
     (reorderForwardAction.invoker as ImmediateInvoker).run(
-      { selection, scene } as import('../invoker').ActionDeps,
+      { selection, scene } as import('@weasel-js/routing').ActionDeps,
       { distance: 'adjacent' },
     );
 
@@ -236,7 +236,7 @@ describe('reorderBackwardAction (descriptor)', () => {
     const selection = makeSelection(['b']);
 
     (reorderBackwardAction.invoker as ImmediateInvoker).run(
-      { selection, scene } as import('../invoker').ActionDeps,
+      { selection, scene } as import('@weasel-js/routing').ActionDeps,
       { distance: 'adjacent' },
     );
 
@@ -253,7 +253,7 @@ describe('reorderBackwardAction (descriptor)', () => {
     const selection = makeSelection(['b']);
 
     (reorderBackwardAction.invoker as ImmediateInvoker).run(
-      { selection, scene } as import('../invoker').ActionDeps,
+      { selection, scene } as import('@weasel-js/routing').ActionDeps,
       { distance: 'extreme' },
     );
 
@@ -266,7 +266,7 @@ describe('reorderBackwardAction (descriptor)', () => {
     const selection = makeSelection(['b']);
 
     (reorderBackwardAction.invoker as ImmediateInvoker).run(
-      { selection, scene } as import('../invoker').ActionDeps,
+      { selection, scene } as import('@weasel-js/routing').ActionDeps,
       undefined,
     );
 
@@ -278,7 +278,7 @@ describe('reorderBackwardAction (descriptor)', () => {
     const selection = makeSelection([]);
 
     (reorderBackwardAction.invoker as ImmediateInvoker).run(
-      { selection, scene } as import('../invoker').ActionDeps,
+      { selection, scene } as import('@weasel-js/routing').ActionDeps,
       { distance: 'adjacent' },
     );
 
@@ -315,7 +315,7 @@ describe('reorder commit routing', () => {
     const applyOps = vi.fn<(ops: Op[], label: string) => void>();
 
     (reorderForwardAction.invoker as ImmediateInvoker).run(
-      { selection, scene, applyOps } as import('../invoker').ActionDeps,
+      { selection, scene, applyOps } as import('@weasel-js/routing').ActionDeps,
       { distance: 'adjacent' },
     );
 
@@ -335,7 +335,7 @@ describe('reorder commit routing', () => {
     const applyOps = vi.fn<(ops: Op[], label: string) => void>();
 
     (reorderBackwardAction.invoker as ImmediateInvoker).run(
-      { selection, scene, applyOps } as import('../invoker').ActionDeps,
+      { selection, scene, applyOps } as import('@weasel-js/routing').ActionDeps,
       { distance: 'adjacent' },
     );
 
@@ -349,7 +349,7 @@ describe('reorder commit routing', () => {
     const selection = makeSelection(['b']);
 
     (reorderForwardAction.invoker as ImmediateInvoker).run(
-      { selection, scene } as import('../invoker').ActionDeps,
+      { selection, scene } as import('@weasel-js/routing').ActionDeps,
       { distance: 'adjacent' },
     );
 
@@ -370,7 +370,7 @@ describe('reorder commit routing', () => {
     const applyOps = vi.fn<(ops: Op[], label: string) => void>();
 
     (reorderForwardAction.invoker as ImmediateInvoker).run(
-      { selection, scene, applyOps } as import('../invoker').ActionDeps,
+      { selection, scene, applyOps } as import('@weasel-js/routing').ActionDeps,
       { distance: 'adjacent' },
     );
 

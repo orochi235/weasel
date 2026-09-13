@@ -35,8 +35,8 @@
  * Poses are translated through the `poseDescriptor` dep, as `moveAction` does.
  */
 
-import type { Action } from '../action';
-import type { InvocationCtx, OngoingHandle } from '../invoker';
+import type { Action } from '@weasel-js/routing';
+import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { Node, Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';

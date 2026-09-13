@@ -1,9 +1,9 @@
 import { describe, it, expectTypeOf } from 'vitest';
-import type { DepSchema } from './depRegistry';
+import type { DepSchema } from '@weasel-js/routing';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { History } from '@weasel-js/history';
 import type { PointerContextValue } from 'features/pointer/PointerContext';
-import type { ActiveToolContextValue } from './activeToolContext';
+import type { ActiveToolContextValue } from '@weasel-js/routing/react';
 import './depSchema';
 
 describe('DepSchema', () => {

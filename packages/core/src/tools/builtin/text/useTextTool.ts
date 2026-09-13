@@ -1,6 +1,6 @@
 import { useMemo, createElement } from 'react';
-import { defineTool } from '../../defineTool';
-import type { Tool } from '../../types';
+import { defineTool } from '../../overlayBinding';
+import type { Tool } from '../../overlayBinding';
 import { TextIcon } from '../../../icons';
 
 const PRESENTATION = {

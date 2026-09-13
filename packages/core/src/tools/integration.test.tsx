@@ -1,15 +1,15 @@
 // src/tools/integration.test.tsx
 import { describe, it, expect, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
-import { useTools } from './useTools';
+import { useTools } from './overlayBinding';
 import { useKeybindings } from './useKeybindings';
-import { defineTool } from './defineTool';
-import { ActiveToolContextProvider, useActiveToolContext } from '../interactions/actions/activeToolContext';
-import { ActionsProvider, useActionsRegistry } from '../interactions/actions/ActionsProvider';
-import { DepRegistryProvider, useDepSource } from '../interactions/actions/depRegistry';
-import { useGestureDispatcher } from '../interactions/dispatcher/useGestureDispatcher';
-import type { Action } from '../interactions/actions/action';
-import type { Tool } from './types';
+import { defineTool } from './overlayBinding';
+import { ActiveToolContextProvider, useActiveToolContext } from '@weasel-js/routing/react';
+import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
+import { DepRegistryProvider, useDepSource } from '@weasel-js/routing/react';
+import { useGestureDispatcher } from '@weasel-js/routing/react';
+import type { Action } from '@weasel-js/routing';
+import type { Tool } from './overlayBinding';
 import { useRef } from 'react';
 
 function fire(el: Element, type: string, init: PointerEventInit = {}) {

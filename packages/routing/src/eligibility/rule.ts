@@ -1,7 +1,7 @@
-import type { ModifierState } from '../../interactions/gestures/types';
+import type { ModifierState } from '../vocabulary';
 import type { CapabilityTag } from '@weasel-js/modes';
 import type { RuleCtx } from './ruleCtx';
-import { DEFAULT_DEVICE_PROFILE } from '../../core/device/profile';
+import { DEFAULT_DEVICE_PROFILE } from './deviceProfile';
 
 /**
  * A selector is a conjunction of key/value tests. Multiple keys at the same
@@ -208,4 +208,30 @@ export function evaluate(rule: Rule, ctx: RuleCtx): boolean {
   if (isNotRule(rule)) return !evaluate(rule.not, ctx);
   if (isWhenRule(rule)) return rule.when(ctx);
   return evaluateSelector(rule, ctx);
+}
+
+/**
+ * Composable eligibility predicate with a fluent surface. Carries its
+ * underlying `Rule` tree at `.rule` so the dispatcher's eligibility filter and
+ * the chrome resolver can introspect and share trees.
+ *
+ * Callable form `cond(ctx)` evaluates the tree against ctx. The fluent methods
+ * return new Conditions wrapping new trees.
+ *
+ * **Chain semantics: strict left-to-right, no precedence.** `a.and(b).or(c)` is
+ * `(a && b) || c`; `a.or(b).and(c)` is `(a || b) && c`. Mix `.and` and `.or`
+ * only when you mean left-to-right evaluation. For grouped disjunction, name
+ * the subexpression or use the top-level `or(...)`.
+ */
+export interface Condition {
+  (ctx: RuleCtx): boolean;
+  readonly rule: Rule;
+  /** `this && other` */
+  and(other: Condition | Rule): Condition;
+  /** `this || other` */
+  or(other: Condition | Rule): Condition;
+  /** `this && !other` */
+  andNot(other: Condition | Rule): Condition;
+  /** `this || !other` */
+  orNot(other: Condition | Rule): Condition;
 }

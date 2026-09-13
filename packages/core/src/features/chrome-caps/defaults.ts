@@ -1,5 +1,5 @@
 import type { VisibilityRules } from './types';
-import type { Rule } from './rule';
+import type { Rule } from '@weasel-js/routing';
 
 /**
  * Kit-shipped defaults. Merged with the consumer's `chromeVisibility` map

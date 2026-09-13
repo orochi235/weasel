@@ -4,7 +4,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { clipboardCopyAction, clipboardCutAction } from './clipboard';
 import type { ClipboardDep } from '../depSchema';
-import type { ImmediateInvoker } from '../invoker';
+import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';

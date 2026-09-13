@@ -15,8 +15,8 @@ export type {
   VisibilityRules,
 } from './types';
 
-export type { Rule, Selector } from './rule';
-export type { RuleCtx, BuildRuleCtxArgs } from './ruleCtx';
+export type { Rule, Selector } from '@weasel-js/routing';
+export type { RuleCtx, BuildRuleCtxArgs } from '@weasel-js/routing';
 
 export {
   cond,
@@ -50,8 +50,8 @@ export {
   capabilityNot,
 } from './conditions';
 
-export { evaluate, describeRule, ALWAYS, NEVER } from './rule';
-export { buildRuleCtx, DEFAULT_ALLOWED_CAPABILITIES } from './ruleCtx';
+export { evaluate, describeRule, ALWAYS, NEVER } from '@weasel-js/routing';
+export { buildRuleCtx, DEFAULT_ALLOWED_CAPABILITIES } from '@weasel-js/routing';
 export { defaultVisibilityRules } from './defaults';
 export { resolveVisibility } from './resolve';
 export { buildChromeCtx, type BuildChromeCtxArgs } from './buildChromeCtx';

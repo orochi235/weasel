@@ -12,7 +12,7 @@ import { createScene } from 'core/scene/scene';
 import type { View } from 'core/viewport/view';
 import type { DrawCommand, GroupDrawCommand } from '../renderer';
 import type { Node } from 'core/scene/types';
-import type { OngoingOverlay } from 'interactions/actions/invoker';
+import type { OngoingOverlay } from '@weasel-js/routing';
 import type { ChromeState } from 'core/selection/chromeState';
 import type { GesturePreviewSource } from './gestureBounds';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';

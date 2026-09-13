@@ -1,3 +1,11 @@
+/**
+ * `DebugSink`, `HitShape` and `HandleKind` are declared in
+ * `@weasel-js/routing` — `ToolCtx.debug` carries a sink, so routing has to
+ * name the type. Re-exported here, beside the overlay that reads one.
+ */
+import type { DebugSink, HitShape, HandleKind } from '@weasel-js/routing';
+export type { DebugSink, HitShape, HandleKind };
+
 /** One bit per debug feature; absent keys are off. */
 export interface DebugConfig {
   hitboxes?: boolean;
@@ -60,15 +68,7 @@ export interface DebugStrokes {
   snap: DebugStroke;
 }
 
-/** Which kind of handle a recorded handle marker represents. */
-export type HandleKind = 'corner' | 'rotation' | 'anchor';
 
-/** The geometry a hit region actually tests against, as reported to the debug
- *  sink so the overlay can draw the real shape rather than its bounding box. */
-export type HitShape =
-  | { kind: 'rect'; x: number; y: number; width: number; height: number; rotation?: number }
-  | { kind: 'circle'; cx: number; cy: number; r: number }
-  | { kind: 'path'; d: Path2D };
 
 /** A hit region tested during the current frame. */
 export interface RecordedHitbox {
@@ -130,15 +130,3 @@ export interface DebugSnapshot {
  * Nothing here affects behavior — a sink that discards everything is a valid
  * sink.
  */
-export interface DebugSink {
-  recordHitbox(id: string, kind: 'body' | 'handle' | 'rotation' | 'anchor', shape: HitShape): void;
-  recordHandle(id: string, position: { x: number; y: number }, kind: HandleKind): void;
-  recordBounds(id: string, bounds: { x: number; y: number; width: number; height: number }): void;
-  recordOrigin(id: string, point: { x: number; y: number }): void;
-  recordSnapCandidate(point: { x: number; y: number }, accepted: boolean): void;
-  recordLayer(id: string, label: string, space: 'world' | 'screen', index: number): void;
-  /** Clears every non-snap array. Called at the start of each Canvas render. */
-  beginFrame(): void;
-  /** Clears the snap array. Called at gesture end. */
-  clearSnap(): void;
-}

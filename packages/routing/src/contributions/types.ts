@@ -1,4 +1,3 @@
-import type { RenderLayer } from 'core/layers/render';
 import type { GestureBinding } from '../interactions/actions/binding';
 import type { Action } from '../interactions/actions/action';
 import type { CapabilityTag } from '@weasel-js/modes';
@@ -70,9 +69,13 @@ export interface ContributionRouting {
  * What an entry draws and how a palette shows it. None of it reaches the
  * dispatcher.
  */
-export interface ContributionChrome {
-  /** One layer, or several composed in the given order. */
-  overlay?: RenderLayer<unknown> | RenderLayer<unknown>[];
+export interface ContributionChrome<TOverlay = unknown> {
+  /** One layer, or several composed in the given order.
+   *
+   *  Routing never reads a layer — it collects the live ones and hands them
+   *  back in scope order. `TOverlay` is what the consuming kernel draws;
+   *  `@weasel-js/core` binds it to `RenderLayer<unknown>`. */
+  overlay?: TOverlay | TOverlay[];
   /** Defaults to `'top'`. Applies to every layer in `overlay`. */
   overlayPosition?: OverlayPosition;
   presentation?: ToolPresentation;
@@ -83,7 +86,8 @@ export interface ContributionChrome {
  * is optional and independent — an entry that only routes input declares only
  * `bindings` and `actions`.
  */
-export interface Contribution extends ContributionRouting, ContributionChrome {
+export interface Contribution<TOverlay = unknown>
+  extends ContributionRouting, ContributionChrome<TOverlay> {
   /** Reflection escape hatch — the authored form, when there was one. */
   def?: unknown;
 }

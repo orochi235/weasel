@@ -13,8 +13,8 @@ import { render } from '@testing-library/react';
 import React from 'react';
 import { Canvas, type CanvasHelpers } from './Canvas';
 import type { GestureSource } from './gestureBounds';
-import type { AnyTool } from 'tools/types';
-import type { ToolsApi } from 'tools/useTools';
+import type { AnyTool } from '../tools/overlayBinding';
+import type { ToolsApi } from '../tools/overlayBinding';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {

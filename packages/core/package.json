@@ -81,6 +81,7 @@
     "@weasel-js/history": "1.4.4",
     "@weasel-js/modes": "1.4.4",
     "@weasel-js/paint": "1.4.4",
+    "@weasel-js/routing": "1.4.4",
     "@weasel-js/text": "1.4.4",
     "earcut": "2.2.4",
     "polygon-clipping": "^0.15.7"

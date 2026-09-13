@@ -3,8 +3,8 @@ import { render, createEvent, act } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { asNodeId } from 'core/scene/types';
-import { useTools } from 'tools/useTools';
-import { defineTool } from 'tools/defineTool';
+import { useTools } from '../tools/overlayBinding';
+import { defineTool } from '../tools/overlayBinding';
 import { WeaselProvider } from '../WeaselProvider';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.

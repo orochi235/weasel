@@ -7,13 +7,13 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useRef } from 'react';
-import { ActionsProvider, useActionsRegistry, useAction } from 'interactions/actions/ActionsProvider';
-import { DepRegistryProvider, useDepSource } from 'interactions/actions/depRegistry';
+import { ActionsProvider, useActionsRegistry, useAction } from '@weasel-js/routing/react';
+import { DepRegistryProvider, useDepSource } from '@weasel-js/routing/react';
 import 'interactions/actions/depSchema';
-import { ActiveToolContextProvider } from 'interactions/actions/activeToolContext';
-import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
+import { ActiveToolContextProvider } from '@weasel-js/routing/react';
+import { useGestureDispatcher } from '@weasel-js/routing/react';
 import { viewportDragPanAction } from 'interactions/actions/defaults/viewportDragPan';
-import { useTools } from '../../useTools';
+import { useTools } from '../../overlayBinding';
 import { useHandTool } from './useHandTool';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from 'interactions/actions/depSchema';

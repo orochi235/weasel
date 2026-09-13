@@ -1,24 +1,11 @@
 import type { ViewTransform } from './viewTransform';
+import type { View } from '@weasel-js/routing';
 
-/**
- * Viewport state. `(view.x, view.y)` is the **world point currently
- * rendered at the canvas top-left**; `view.scale.x` / `view.scale.y` is
- * pixels per world unit on each axis (default `{ x: 1, y: 1 }`). So:
- *
- *   screenX = (worldX - view.x) * view.scale.x
- *   screenY = (worldY - view.y) * view.scale.y
- *   worldX  = screenX / view.scale.x + view.x
- *   worldY  = screenY / view.scale.y + view.y
- *
- * `scale` is always a 2-vector. Input convenience types
- * {@link ZoomFactor} and {@link ZoomBound} let callers pass a scalar
- * when they want both axes treated the same.
- */
-export interface View {
-  x: number;
-  y: number;
-  scale: { x: number; y: number };
-}
+/** `View` is declared in `@weasel-js/routing` — the dispatcher and every
+ *  viewport action are typed in it. Re-exported here, where core's own call
+ *  sites have always named it. */
+export type { View };
+
 
 /**
  * Input convenience for zoom primitives. A `number` is treated as a

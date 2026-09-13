@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import type { ToolCtx } from '../types';
+import type { ToolCtx } from '@weasel-js/routing';
 
 /** Build a minimal ToolCtx for tool-hook unit tests. Override individual
  *  fields via the partial argument; defaults are inert (vi.fn() / no-op). */

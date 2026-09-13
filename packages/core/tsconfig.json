@@ -20,6 +20,8 @@
       "@weasel-js/gestures": ["../gestures/src/index.ts"],
       "@weasel-js/history": ["../history/src/index.ts"],
       "@weasel-js/modes": ["../modes/src/index.ts"],
+      "@weasel-js/routing": ["../routing/src/index.ts"],
+      "@weasel-js/routing/react": ["../routing/src/react.ts"],
       "@weasel-js/modes/presets/default": ["../modes/src/presets/default.ts"],
       "@weasel-js/svg": ["../svg/src/index.ts"],
       "core/*": ["./src/core/*"],

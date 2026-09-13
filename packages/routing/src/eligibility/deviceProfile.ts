@@ -1,4 +1,7 @@
-import type { DetectedDeviceFacts, DeviceProfile } from './types';
+import type { DeviceProfile } from '../vocabulary';
+
+/** The detected half of a profile — everything except the derived scale. */
+export type DetectedDeviceFacts = Omit<DeviceProfile, 'targetScale'>;
 
 /**
  * Handle/hit multiplier applied on a coarse pointer.

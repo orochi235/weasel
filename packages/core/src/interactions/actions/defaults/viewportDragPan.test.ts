@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { viewportDragPanAction } from './viewportDragPan';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
-import type { InvocationCtx } from '../invoker';
+import type { InvocationCtx } from '@weasel-js/routing';
 import type { DecayLoopConfig } from 'core/viewport/useDecayLoop';
 
 // ---------------------------------------------------------------------------

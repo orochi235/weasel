@@ -5,16 +5,17 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useRef } from 'react';
-import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider';
-import { DepRegistryProvider, useDepSource } from '../actions/depRegistry';
-import { ActiveToolContextProvider } from '../actions/activeToolContext';
-import { useGestureDispatcher, type DispatcherViewTarget } from './useGestureDispatcher';
-import { createDispatcher, type Dispatcher } from './dispatcher';
+import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
+import { DepRegistryProvider, useDepSource } from '@weasel-js/routing/react';
+import { ActiveToolContextProvider } from '@weasel-js/routing/react';
+import { type DispatcherViewTarget } from '@weasel-js/routing/react';
+import { useGestureDispatcher } from '@weasel-js/routing/react';
+import { createDispatcher, type Dispatcher } from '@weasel-js/routing';
 import { createViewResolver } from 'features/viewports/viewResolver';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../actions/depSchema';
 import { viewportDragPanAction } from '../actions/defaults/viewportDragPan';
-import type { InputEvent } from './matcher';
+import type { InputEvent } from '@weasel-js/routing';
 
 /** The panel occupies x ∈ [100, 200) of a canvas whose origin is (0, 0). */
 const PANEL_RECT = { x: 100, y: 0, w: 100, h: 100 };

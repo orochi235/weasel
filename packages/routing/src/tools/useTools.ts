@@ -1,29 +1,28 @@
 // src/tools/useTools.ts
 import { useCallback, useMemo, useRef } from 'react';
-import { dlog } from '../debug/flag';
-import type { AnyTool } from './types';
+import { dlog } from '../dlog';
+import type { AnyTool, AnyToolOf } from './types';
 import type { HotkeyTrigger } from '../contributions/types';
-import type { RenderLayer } from 'core/layers/render';
 import { useActiveToolContext } from '../interactions/actions/activeToolContext';
 import { useContributions } from '../contributions/useContributions';
 import type { Contribution, Eligibility, OverlayPosition } from '../contributions/types';
 
 /** Options for `useTools`: which tools exist, which one starts active, and
  *  which run continuously regardless of the active one. */
-export interface UseToolsOptions {
+export interface UseToolsOptions<TOverlay = unknown> {
   /** Initial active-slot tool id. Must exist in `registry`. */
   active: string;
   /** Tools eligible for the active slot or hotkey slot. The keys are the
    *  tool ids; the values are the tool records. A tool with `hotkey` set
    *  is wired into the hotkey slot whenever the engagement state matches. */
-  registry: Record<string, AnyTool>;
+  registry: Record<string, AnyToolOf<TOverlay>>;
   /** Always-on tools — listen continuously regardless of active slot. */
-  ambient?: AnyTool[];
+  ambient?: AnyToolOf<TOverlay>[];
 }
 
 /** The tool registry's runtime surface: which tool is active, which is
  *  temporarily held by a hotkey, and how to change either. */
-export interface ToolsApi {
+export interface ToolsApi<TOverlay = unknown> {
   /** Current active-slot tool id. */
   active: string;
   /** Set the active-slot tool. The gesture dispatcher watches the active
@@ -37,16 +36,16 @@ export interface ToolsApi {
   /** Disengage the hotkey-slot tool, if any. */
   disengageHotkey: () => void;
   /** All always-on tools, in registration order. */
-  ambient: readonly AnyTool[];
+  ambient: readonly AnyToolOf<TOverlay>[];
   /** Full registry — for userland UI (palette buttons, etc.). */
-  registry: Readonly<Record<string, AnyTool>>;
+  registry: Readonly<Record<string, AnyToolOf<TOverlay>>>;
   /** Returns true if a tool with the given id is in the registry or ambient list. */
   has(id: string): boolean;
   /** All overlay layers from currently-engaged tools (active slot, hotkey
    *  slot if engaged, all ambient slot tools) that declare `position`.
    *  Filters out tools with no `overlay` field. Order: active, then hotkey
    *  (if engaged), then ambient (registration order). */
-  getActiveOverlays(position?: OverlayPosition): RenderLayer<unknown>[];
+  getActiveOverlays(position?: OverlayPosition): TOverlay[];
 }
 
 /** The slot a caller passed a tool in, restated as declared eligibility.
@@ -54,7 +53,7 @@ export interface ToolsApi {
  *  the authored form via the `def` reflection handle. A tool that already
  *  declares what its slot implies is returned as-is: `ToolsApi.registry`
  *  hands back the objects the caller passed, and consumers compare identity. */
-function declareSlot(tool: AnyTool, slot: 'focus' | 'always'): AnyTool {
+function declareSlot<T extends AnyTool>(tool: T, slot: 'focus' | 'always'): T {
   const hotkey = (tool.def as { hotkey?: HotkeyTrigger } | undefined)?.hotkey;
   const eligibility: Eligibility = {
     ...tool.eligibility,
@@ -88,7 +87,9 @@ function sameEligibility(a: Eligibility | undefined, b: Eligibility): boolean {
  * the context. Subsequent mounts respect whatever the context currently
  * holds (the first caller wins).
  */
-export function useTools(opts: UseToolsOptions): ToolsApi {
+export function useTools<TOverlay = unknown>(
+  opts: UseToolsOptions<TOverlay>,
+): ToolsApi<TOverlay> {
   if (!(opts.active in opts.registry)) {
     throw new Error(`useTools: active "${opts.active}" not in registry`);
   }
@@ -96,12 +97,12 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
   const ctx = useActiveToolContext();
 
   const slotted = useMemo(() => {
-    const registry: Record<string, AnyTool> = {};
+    const registry: Record<string, AnyToolOf<TOverlay>> = {};
     for (const [id, tool] of Object.entries(opts.registry)) {
       registry[id] = declareSlot(tool, 'focus');
     }
     const ambient = (opts.ambient ?? []).map((t) => declareSlot(t, 'always'));
-    const byId = new Map<string, Contribution>();
+    const byId = new Map<string, Contribution<TOverlay>>();
     for (const tool of [...Object.values(registry), ...ambient]) {
       const prior = byId.get(tool.id);
       if (prior) byId.set(tool.id, { ...tool, eligibility: { ...prior.eligibility, ...tool.eligibility } });
@@ -110,7 +111,7 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
     return { registry, ambient, entries: [...byId.values()] };
   }, [opts.registry, opts.ambient]);
 
-  const contributions = useContributions({ entries: slotted.entries, focused: opts.active });
+  const contributions = useContributions<TOverlay>({ entries: slotted.entries, focused: opts.active });
 
   const hotkeyEngaged = ctx.hotkeyStack.at(-1) ?? null;
 

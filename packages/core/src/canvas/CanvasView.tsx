@@ -12,7 +12,7 @@ import { clientToWorld } from 'core/viewport/clientToWorld';
 import { clampView } from 'core/viewport/clampView';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { createViewportLayer } from 'features/viewports/viewportLayer';
-import { createDispatcher } from 'interactions/dispatcher/dispatcher';
+import { createDispatcher } from '@weasel-js/routing';
 import type { IngestionDep, ViewApi } from 'interactions/actions/depSchema';
 import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/selection/useSelection';
@@ -20,7 +20,7 @@ import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescri
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { useViewHelpers } from './useViewHelpers';
 import { anchorStateFrom, buildAffordanceAt, buildClassifyTarget } from './affordanceAt';
-import { useOptionalDepRegistry } from 'interactions/actions/depRegistry';
+import { useOptionalDepRegistry } from '@weasel-js/routing/react';
 import { useDeviceProfile } from 'core/device/useDeviceProfile';
 import {
   createGestureSource,

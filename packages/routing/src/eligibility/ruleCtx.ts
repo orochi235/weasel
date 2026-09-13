@@ -1,7 +1,4 @@
-import type { NodeId } from '../../core/scene/types';
-import type { ModifierState } from '../../interactions/gestures/types';
-import type { View } from '../../core/viewport/view';
-import type { DeviceProfile } from '../../core/device/types';
+import type { NodeId, View, DeviceProfile, ModifierState } from '../vocabulary';
 import { IMPLICIT_TAGS, NORMAL, type CapabilityTag } from '@weasel-js/modes';
 
 /**

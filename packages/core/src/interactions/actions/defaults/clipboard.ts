@@ -2,7 +2,7 @@ import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
-import type { Action } from '../action';
+import type { Action } from '@weasel-js/routing';
 import type { ClipboardDep } from '../depSchema';
 import { buildDeleteOps } from './delete';
 import { requiresSelection } from './requiresSelection';

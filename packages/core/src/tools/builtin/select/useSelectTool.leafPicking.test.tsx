@@ -16,8 +16,8 @@ import type { UseSceneOptions } from 'core/scene/types';
 import { useSelection } from 'core/selection/useSelection';
 import { useSelectTool, type UseSelectToolOptions } from './useSelectTool';
 import { asNodeId } from 'core/scene/types';
-import type { Action } from '../../../interactions/actions/action';
-import type { ActionDeps } from '../../../interactions/actions/invoker';
+import type { Action } from '@weasel-js/routing';
+import type { ActionDeps } from '@weasel-js/routing';
 
 interface Item { shape?: string; fill?: string; color?: string }
 type Pose = { x: number; y: number; width: number; height: number };
