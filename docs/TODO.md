@@ -1103,18 +1103,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `layer.visible` through `SceneSource.isPainted`, and `toJSON` carries a user
   layer's `kind` and `name`.
 
-  Open: `LayerRecord.locked` is written in five places and read by nothing —
-  either it gates selection, hit-testing and mutation, or the field goes.
-  `<image>` flip and source-rect never serialize; they live on the renderer's
+  Open: `LayerRecord.locked` is written in five places and read by nothing.
+  Decided 2026-09-13: the field stays and gates selection, hit-testing and
+  mutation — unbuilt. `<image>` flip and source-rect never serialize; they live on the renderer's
   `ImageCommand`, and expressing them wants a wider `SvgImageNode` on both the
   write and the parse side. `packages/{svg,hud,ui,labkit,modes,d3,paint}` never
   import `geom` at all, and three incompatible matrix-singularity policies
   coexist.
-
-  Text has one left: `measureText` / `measuredWidth` in `@weasel-js/text` now have
-  no in-repo caller. They are a legitimate Canvas2D measuring utility for consumers
-  drawing to a 2D context, but nothing in the kit measures that way any more, so
-  the question is whether they are public API or residue.
 
 - **(P2) Safari's `gesturestart` / `gesturechange` / `gestureend` are unhandled.** They are the second trackpad pinch channel on macOS Safari, alongside the ctrl+wheel one `viewportZoom` reads. Nothing in the repo listens for them, so Safari trackpad pinch gets whatever the wheel path synthesizes. Worth deciding deliberately rather than by omission. Note before adding a listener: `viewportZoom` now claims bare ctrl+wheel, so a `gesturechange` handler becomes a *second* channel for the same physical gesture — the double-apply `.changeset/mac-trackpad-pinch-zoom.md` just removed. Consolidate it into `makeViewportZoomAction` behind one scale-delta seam, not as a fourth listener.
 
