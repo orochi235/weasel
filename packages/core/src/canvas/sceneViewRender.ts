@@ -27,6 +27,8 @@ import { wrapNodeOutput } from './wrapNodeOutput';
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
 import { effectivePose } from 'core/scene/effectivePose';
 import { withDerivedPaths, resolveDerivedPath, sceneDepLookup } from './derivedPath';
+import { withColorOverrides } from './colorOverrides';
+import type { ColorOverrideRegistry } from '../animation/colorRegistry';
 import type { SceneViewDrawOne } from './NodeShape';
 import { paintedSceneLayers } from './sceneLayerPaint';
 
@@ -78,6 +80,9 @@ export interface RenderSceneToCanvasArgs<TData, TLayer extends string, TPose> {
   layerVisibility?: SceneViewLayers['layerVisibility'];
   /** Per-view layer order. See {@link SceneViewLayers}. */
   layerOrder?: SceneViewLayers['layerOrder'];
+  /** Animated vertex colors to paint, typically an animator's
+   *  `colorOverrides` — see `NodePaintCtx.vertexColors`. */
+  colorOverrides?: ColorOverrideRegistry;
   /** Optional device-pixel ratio. Defaults to `window.devicePixelRatio || 1`
    *  when available, otherwise 1. Tests typically pin this to 1 or 2. */
   dpr?: number;
@@ -170,11 +175,14 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
   poseComposition?: PoseComposition<TPose>,
   /** This view's own layer visibility and order. */
   layers?: SceneViewLayers,
+  /** Animated vertex colors to paint, typically an animator's `colorOverrides`. */
+  colorOverrides?: ColorOverrideRegistry,
 ): DrawCommand[] {
   // The scene is in scope here, so this is where the override's alpha and the
   // derived paths are applied on the headless path; `SceneCanvas` does the same
   // for the live one. `Canvas` itself never sees a scene, so it can't and doesn't.
-  const derived = withDerivedPaths(scene, drawOne);
+  const derivedOnly = withDerivedPaths(scene, drawOne);
+  const derived = colorOverrides ? withColorOverrides(colorOverrides, derivedOnly) : derivedOnly;
   const depLookup = sceneDepLookup(scene);
   const wrappedDrawOne = (
     node: Node<TData, TLayer, TPose>,
@@ -234,6 +242,7 @@ export function renderSceneToCanvas<TData, TLayer extends string, TPose>(
 ): void {
   const {
     canvas, scene, view, width, height, drawOne, extraCommands, alphaFor, layerVisibility, layerOrder,
+    colorOverrides,
   } = args;
   const dpr = args.dpr
     ?? (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1);
@@ -268,7 +277,7 @@ export function renderSceneToCanvas<TData, TLayer extends string, TPose>(
   }
 
   const commands = buildSceneViewCommands(
-    scene, view, drawOne, extraCommands, alphaFor, undefined, { layerVisibility, layerOrder },
+    scene, view, drawOne, extraCommands, alphaFor, undefined, { layerVisibility, layerOrder }, colorOverrides,
   );
   entry.renderer.render(commands, viewToMat3(view));
 }

@@ -9,8 +9,7 @@
  *
  * `getEditablePath(id)` returns the COMMITTED polygon in **world coords**,
  * regardless of where it's stored:
- *   - `node.pose.kind === 'polygon'` → pose IS the polygon (bezier-edit
- *     demo and similar pose-as-polygon consumers).
+ *   - `node.pose.kind === 'polygon'` → pose IS the polygon.
  *   - `node.data.path` is a polygon → kit pen-tool default. Polygon's
  *     stored coords are pose-local (aligned to pose origin); we project
  *     to world via `pathInWorld` (translate + bake `pose.rotation`).

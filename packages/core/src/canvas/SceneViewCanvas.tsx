@@ -39,6 +39,7 @@ import type { SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';
 import type { DrawCommand } from '../renderer/DrawCommand';
 import type { View } from '../core/viewport/view';
 import type { Scene } from '../core/scene/types';
+import type { Animator } from '../animation/types';
 
 /** Props for `<SceneViewCanvas>`. */
 export interface SceneViewCanvasProps<TData, TLayer extends string, TPose> {
@@ -71,6 +72,10 @@ export interface SceneViewCanvasProps<TData, TLayer extends string, TPose> {
   layerVisibility?: SceneViewLayers['layerVisibility'];
   /** Paint order for this view, keyed as `layerVisibility`. */
   layerOrder?: SceneViewLayers['layerOrder'];
+  /** Optional animator, as on `<SceneCanvas>`: the view repaints on its ticks
+   *  and paints its `colorOverrides`. Pass the main canvas's animator so both
+   *  show the same colors. */
+  animator?: Animator;
   /** Optional CSS class for sizing / positioning the `<canvas>`. The kit
    *  does not emit inline styles for layout — use a class. */
   className?: string;
@@ -84,7 +89,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
 ) {
   const {
     scene, view, width, height, drawOne, extraCommands, alphaFor, layerVisibility, layerOrder,
-    className, canvasRef,
+    animator, className, canvasRef,
   } = props;
 
   // Subscribe to scene version. The snapshot value isn't used directly —
@@ -124,6 +129,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
       alphaFor,
       layerVisibility,
       layerOrder,
+      colorOverrides: animator?.colorOverrides,
     });
     return true;
   };
@@ -145,6 +151,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
   // Override writes never bump the scene version, so the version subscription
   // above cannot see them.
   useEffect(() => scene.overrides.subscribe(requestRedraw), [scene, requestRedraw]);
+  useEffect(() => animator?.onTick(requestRedraw), [animator, requestRedraw]);
 
   return (
     <canvas

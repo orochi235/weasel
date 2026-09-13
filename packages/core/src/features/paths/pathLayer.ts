@@ -11,25 +11,11 @@ import { type FillStyle, type Stroke } from '@weasel-js/paint';
 import type { RenderLayer } from 'core/layers/render';
 import type { Path } from './types';
 import { countPathAnchors } from './anchors';
-import type { ColorOverride, ColorOverrideRegistry } from '../../animation/colorRegistry';
+import type { ColorOverrideRegistry } from '../../animation/colorRegistry';
 
 const PLACEHOLDER_FILL: FillStyle = { color: '#ffffff' };
 const PLACEHOLDER_STROKE: Stroke = { paint: { color: '#ffffff' }, width: 1 };
 
-function resolveOverride(
-  base: readonly number[] | null | undefined,
-  override: ColorOverride | undefined,
-  tMs: number,
-): readonly number[] | null | undefined {
-  if (!override) return base;
-  if (typeof override === 'function') {
-    if (!base) return base;
-    const result = override(base, tMs);
-    if (result.length !== base.length) return base;
-    return result;
-  }
-  return override;
-}
 
 /** Options for `createPathLayer`. */
 export interface CreatePathLayerOpts<T> {
@@ -112,11 +98,12 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
         const nodeId = (node as { id?: string }).id ?? String(idx);
         const tMs = colorOverrides ? now() : 0;
 
-        const fillOverride = colorOverrides?.get(nodeId, 'fill');
-        const strokeOverride = colorOverrides?.get(nodeId, 'stroke');
-
-        const vColors = resolveOverride(baseVColors, fillOverride, tMs);
-        const strokeVColors = resolveOverride(baseStrokeVColors, strokeOverride, tMs);
+        const vColors = colorOverrides
+          ? colorOverrides.resolve(nodeId, 'fill', baseVColors ?? undefined, tMs)
+          : baseVColors;
+        const strokeVColors = colorOverrides
+          ? colorOverrides.resolve(nodeId, 'stroke', baseStrokeVColors ?? undefined, tMs)
+          : baseStrokeVColors;
 
         const nodeKey = nodeId;
         const anchorCount = countPathAnchors(path);

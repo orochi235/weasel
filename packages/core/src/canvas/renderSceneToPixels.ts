@@ -46,6 +46,7 @@ import type { DrawCommand } from '../renderer/DrawCommand';
 import type { View } from '../core/viewport/view';
 import type { Node, Scene } from 'core/scene/types';
 import { buildSceneViewCommands, type SceneViewDrawOne } from './sceneViewRender';
+import type { ColorOverrideRegistry } from '../animation/colorRegistry';
 import { defaultDrawOne } from './defaultDrawOne';
 
 /** Plain RGBA raster — structurally `ImageData`-compatible ({ width, height,
@@ -87,6 +88,9 @@ export interface RenderSceneToPixelsArgs<TData, TLayer extends string, TPose> {
    *  `alphaFor`. Pass the same function the on-screen canvas uses so an
    *  export matches what the user is looking at. Defaults to `() => 1`. */
   alphaFor?: (id: string) => number;
+  /** Animated vertex colors to paint, typically an animator's
+   *  `colorOverrides`, so an export shows the frame on screen. */
+  colorOverrides?: ColorOverrideRegistry;
   /** Background fill (any CSS color accepted by the renderer). Default:
    *  fully transparent. Passing a color is always valid. */
   background?: string;
@@ -152,7 +156,9 @@ export function planPixelRender<TData, TLayer extends string, TPose>(
       fill: { fill: 'solid', color: args.background },
     });
   }
-  commands.push(...buildSceneViewCommands(args.scene, view, drawOne, undefined, args.alphaFor));
+  commands.push(...buildSceneViewCommands(
+    args.scene, view, drawOne, undefined, args.alphaFor, undefined, undefined, args.colorOverrides,
+  ));
   return { width, height, view, commands };
 }
 

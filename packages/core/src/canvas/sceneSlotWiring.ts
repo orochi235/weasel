@@ -1,15 +1,17 @@
 /**
  * What the scene slot needs from the `Scene` that `<Canvas>` cannot see.
  *
- * `<Canvas>` is scene-agnostic: it walks an adapter. Two things a node carries
- * are therefore invisible to it — an ephemeral override's alpha, and a derived
- * path, which needs other nodes' poses to resolve. `<SceneCanvas>` folds both
- * into the slot here; `buildSceneViewCommands` does the same for the headless
- * walk.
+ * `<Canvas>` is scene-agnostic: it walks an adapter. Three things a node is
+ * painted with are therefore invisible to it — an ephemeral override's alpha, a
+ * derived path, which needs other nodes' poses to resolve, and animated vertex
+ * colors, which live in an animator. `<SceneCanvas>` folds them into the slot
+ * here; `buildSceneViewCommands` does the same for the headless walk.
  */
 import type { SceneSlotConfig } from './Canvas';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { withDerivedPaths, resolveDerivedPath, sceneDepLookup } from './derivedPath';
+import { withColorOverrides } from './colorOverrides';
+import type { ColorOverrideRegistry } from '../animation/colorRegistry';
 
 /**
  * The alpha a view paints a node at: the view's own `alphaFor` times any
@@ -31,11 +33,13 @@ export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
   slot: SceneSlotConfig<Node<TData, TLayer, TPose>, TPose>,
   scene: Scene<TData, TLayer, TPose>,
   alphaFor?: (id: string) => number,
+  colorOverrides?: ColorOverrideRegistry,
 ): SceneSlotConfig<Node<TData, TLayer, TPose>, TPose> {
   const depOf = sceneDepLookup(scene);
+  const derived = withDerivedPaths(scene, slot.drawOne);
   return {
     ...slot,
-    drawOne: withDerivedPaths(scene, slot.drawOne),
+    drawOne: colorOverrides ? withColorOverrides(colorOverrides, derived) : derived,
     derivedPathOf: (node) => resolveDerivedPath(node, depOf, (id) => scene.childrenOf(id)),
     alphaFor: composeAlphaFor(scene, alphaFor),
   };

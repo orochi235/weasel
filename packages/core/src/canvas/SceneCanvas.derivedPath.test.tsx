@@ -20,6 +20,9 @@ import { createScene } from 'core/scene/scene';
 import { linePath } from 'features/paths/builder';
 import type { GesturePreviewSource } from './gestureBounds';
 import { createPaintedCursorState } from '../features/cursor/paintedCursorState';
+import { ColorOverrideRegistry } from '../animation/colorRegistry';
+import type { Animator } from '../animation/types';
+import { strokeOf } from '../util/paint';
 
 type Data = Record<string, never>;
 
@@ -114,13 +117,14 @@ function pathCommands(cmds: readonly DrawCommand[]): Path[] {
   return out;
 }
 
-function mount(scene: Scene<Data, 'main', RectPose>): CapturedLayers {
+function mount(scene: Scene<Data, 'main', RectPose>, animator?: Animator): CapturedLayers {
   captured.layers = null;
   render(
     <SceneCanvas<Data, 'main', RectPose>
       scene={scene}
       width={300}
       height={300}
+      animator={animator}
     />,
   );
   if (!captured.layers) throw new Error('SceneCanvas rendered no <Canvas> layers');
@@ -140,6 +144,24 @@ describe('<SceneCanvas> installs the scene wiring', () => {
     scene.overrides.set(a, { alpha: 0.25 });
     const slot = mount(scene).scene;
     expect(slot.alphaFor?.(a)).toBeCloseTo(0.25);
+  });
+
+  it('paints its animator\'s vertex-color overrides through the scene slot', () => {
+    const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const id = scene.add({
+      kind: 'leaf',
+      layer: 'main',
+      pose: pose(0),
+      data: { path: linePath({ x: 0, y: 0 }, { x: 10, y: 0 }), stroke: strokeOf('#fff', 2) } as unknown as Data,
+    });
+    const colorOverrides = new ColorOverrideRegistry();
+    colorOverrides.set(id, 'stroke', [1, 0, 0, 1, 0, 0, 1, 1]);
+    const animator = { colorOverrides, onTick: () => () => {} } as unknown as Animator;
+
+    const slot = mount(scene, animator).scene;
+    const node = scene.get(id)!;
+    const body = slot.drawOne(node, node.pose, VIEW).find((c) => c.kind === 'path');
+    expect(body?.kind === 'path' && body.stroke?.vertexColors).toEqual([1, 0, 0, 1, 0, 0, 1, 1]);
   });
 
   it('paints the derived path in a preview ghost', () => {

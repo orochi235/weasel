@@ -233,15 +233,6 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/CompoundPathsDemo.tsx',
   },
   {
-    id: 'bezier-edit',
-    title: 'Bezier edit',
-    category: 'Geometry',
-    description: 'Control-point editing on a polygon path. Click to select (selection AABB shows), double-click the curve to enter anchor-edit mode (selection AABB hides; anchor + control-handle circles + tangent lines render), drag any anchor or control to mutate the curve, Esc to exit. v1 corner-only behavior: dragging an anchor moves only its on-curve coord — adjacent controls stay put in world space (Illustrator "Convert Anchor Point" semantics). Smoothing (Figma\'s default move-anchor-moves-controls) plugs in next iteration; insert/delete anchors and marquee-select are deferred.',
-    hint: 'Click to select. Double-click to edit anchors. Drag anchors or control handles. Esc to exit edit mode.',
-    load: () => import('./demos/BezierEditDemo').then((m) => m.BezierEditDemo),
-    path: 'apps/site/demos/BezierEditDemo.tsx',
-  },
-  {
     id: 'path-anchor-edit',
     title: 'Path anchor editing',
     category: 'Geometry',
@@ -306,6 +297,15 @@ const DEMO_META: DemoMeta[] = [
     hint: 'Click a Tween button, click Add card, drag-and-flick a card, or flick the block on the grid.',
     load: () => import('./demos/AnimationDemo').then((m) => m.AnimationDemo),
     path: 'apps/site/demos/AnimationDemo.tsx',
+  },
+  {
+    id: 'vertex-color-animation',
+    title: 'Vertex-color animation',
+    category: 'Animation',
+    description: 'Three strokes colored one RGBA per anchor, each animated by one helper. `cycleVertexColors` rotates the top stroke\'s colors along its anchors for as long as it runs; with OKLCh ticked it blends neighboring hues in a perceptual space instead of RGB. `tweenVertexColors` changes every anchor of the middle stroke at once, and `staggerVertexColors` runs the same change down the bottom stroke one anchor after another. The helpers write to `animator.colorOverrides`, and passing the animator to `<SceneCanvas>` paints those colors onto the scene\'s own path nodes, so no frame touches the scene. When a tween or stagger ends, the demo writes its final colors into the node so the stroke keeps them.',
+    hint: 'Click tween or stagger, and again to go back. Pause the cycle or tick OKLCh.',
+    load: () => import('./demos/VertexColorAnimationDemo').then((m) => m.VertexColorAnimationDemo),
+    path: 'apps/site/demos/VertexColorAnimationDemo.tsx',
   },
   {
     id: 'easings',

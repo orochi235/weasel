@@ -692,9 +692,9 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     /**
      * Optional animator to bind for per-frame redraws. When supplied,
      * SceneCanvas subscribes to `animator.onTick` and requests a redraw on
-     * every active animation frame. This is the supported way to drive
-     * repaints when an animation's effect is read from a non-scene channel
-     * (e.g. a custom `drawOne` consults `animator.colorOverrides`) — scene
+     * every active animation frame, and paints `animator.colorOverrides`
+     * onto the scene's nodes: the kit's path and shape painters apply them,
+     * and a custom `drawOne` receives them as `ctx.vertexColors`. Scene
      * mutations trigger repaints automatically, but `colorOverrides` writes
      * do not.
      *
@@ -1607,8 +1607,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       slot as SceneSlotConfig<Node<TData, TLayer, TPose>, TPose>,
       scene,
       alphaFor,
+      animator?.colorOverrides,
     );
-  }, [mergedLayers.scene, alphaFor, scene]);
+  }, [mergedLayers.scene, alphaFor, scene, animator]);
 
   // Preview-ghost layer: renders in-flight gesture poses on top of the
   // committed scene using the scene slot's `drawOne`, from whichever view's
