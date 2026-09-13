@@ -1211,19 +1211,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 
-- **(P2) Two labkit width pins are still in place, and `fit` is the wrong tool
-  for both.** `ComboBox` has `width='fit'` now, and `ZoomControl`'s field states
-  `--wzl-number-field-width` rather than 62px. What is left is the two
-  placeholder-only Selects — `LabHeader.tsx`'s "Add trial…"
-  (`.lk-lab-header__add-select`, 160px) and `chrome/builtins.tsx` plus
-  `Trial.less`'s "Load…" (`.lk-toolbar__load-select`, 88px). Both hold
-  `selectedKey={null}` permanently, so they only ever display their
-  placeholder — but `width='fit'` measures every option, which would size the
-  header to the longest instrument name and the toolbar to the longest snapshot
-  name a user has typed. Neither is a select of a value; both are a button that
-  opens a list and acts. The fix is a menu-button component, which
-  `@weasel-js/ui` does not have.
-
 - **(P3) `.lk-shell` is `height: 100vh`.** A lab mounted anywhere but the viewport top overflows by its own offset. Harmless on the dev page, wrong in general.
 
 - **(P2) Two implementations of an editable curve, and the timeline built the

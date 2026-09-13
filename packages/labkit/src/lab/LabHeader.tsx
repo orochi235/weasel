@@ -1,5 +1,5 @@
 import { AddIcon, ModeAutoIcon, ModeDarkIcon, ModeLightIcon } from '@weasel-js/ui';
-import { Select, ToggleBar } from '../passthrough/weasel-ui';
+import { MenuButton, ToggleBar } from '../passthrough/weasel-ui';
 import type { LabMode } from '../state/types';
 import { useLabContext } from './LabContext';
 
@@ -37,17 +37,11 @@ export function LabHeader() {
           <span>Add trial</span>
         </button>
       ) : (
-        // Held at null so the control stays an "add one" action rather than
-        // reading as the current instrument.
-        <Select
-          className="lk-lab-header__add-select"
+        <MenuButton
           aria-label="Add trial"
-          placeholder="Add trial…"
-          selectedKey={null}
-          options={lab.instruments.map((i) => ({ value: i.name, label: i.name }))}
-          onSelectionChange={(name) => {
-            if (name != null) lab.addTrial(String(name));
-          }}
+          label="Add trial…"
+          items={lab.instruments.map((i) => ({ value: i.name, label: i.name }))}
+          onAction={(name) => lab.addTrial(name)}
         />
       )}
 

@@ -17,11 +17,20 @@ describe('<LabHeader>', () => {
     expect(screen.getByRole('button', { name: /add trial/i })).toBeInTheDocument();
   });
 
-  it('offers a picker instead when the lab has several', () => {
+  it('offers a menu instead when the lab has several', () => {
     render(<Lab instruments={[Stub, Other]} defaultInstrument="Stub" />);
-    // A picker, not a button — which instrument to add is now a choice.
-    expect(screen.queryByRole('button', { name: /^add trial$/i })).toBeNull();
-    expect(screen.getByLabelText(/add trial/i)).toBeInTheDocument();
+    // Which instrument to add is now a choice, so the button opens a list.
+    expect(screen.getByRole('button', { name: 'Add trial' })).toHaveAttribute('aria-haspopup');
+  });
+
+  it('adds a trial of the instrument chosen from the menu', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    render(<Lab instruments={[Stub, Other]} defaultInstrument="Stub" />);
+    expect(screen.queryAllByLabelText(/^Trial Other$/)).toHaveLength(0);
+    await user.click(screen.getByRole('button', { name: 'Add trial' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Other' }));
+    expect(screen.getAllByLabelText(/^Trial Other$/)).toHaveLength(1);
   });
 
   it('adds a trial when the button is used', async () => {
