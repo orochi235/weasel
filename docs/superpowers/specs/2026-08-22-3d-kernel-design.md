@@ -276,13 +276,12 @@ The line where adopting three stops being cheap is picking, not math.
 it walks `Object3D`s, so using it puts three in charge of the scene graph, which
 is the one thing `Scene` owns.
 
-## Still open
+Its pose feed is specified in `2026-09-13-pose-feed-design.md`: the feed lives
+in core rather than the kernel, publishes added / removed / changed with
+effective poses, and reads the scene's two clocks so a drag never walks the node
+map.
 
-**How a hosted renderer is handed the scene.** Decided that the consumer brings
-one; not decided what the kernel offers it. labkit's surface layer supplies the
-rect, the DPR and the scheduling, and `resolveOverlays` supplies chrome as
-geometry, so the missing piece is only the per-frame pose feed — a pull the
-renderer makes each frame, or a subscription the scene pushes.
+## Still open
 
 **Where routing lives.** Every fight was a dep contract, a registration step or a
 coordinate-space bug — never binding-to-action routing. That is the case for
