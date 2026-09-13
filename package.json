@@ -21,9 +21,10 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently -n kit,draw,storybook -c green,blue,magenta \"npm:dev:kit\" \"npm:dev:draw\" \"npm:dev:storybook\"",
+    "dev": "concurrently -n kit,draw,storybook,forge -c green,blue,magenta,yellow \"npm:dev:kit\" \"npm:dev:draw\" \"npm:dev:storybook\" \"npm:dev:forge\"",
     "dev:kit": "vite",
     "dev:draw": "vite --config apps/draw/vite.config.ts",
+    "dev:forge": "vite --config apps/forge/vite.config.ts",
     "dev:theme-editor": "vite --config apps/theme-editor/vite.config.ts",
     "dev:storybook": "storybook dev -p 6010 --no-open",
     "build": "npm run build:leaves && npm run build:core && npm run build:downstream",

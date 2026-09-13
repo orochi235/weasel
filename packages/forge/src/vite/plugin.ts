@@ -69,6 +69,7 @@ export function forge(options: ForgeOptions): Plugin[] {
         ? `export { default } from ${JSON.stringify(resolve(root, options.config))};\n`
         : 'export default {};\n',
     'shell-entry.js': () => `import { mountWorkshop } from '@weasel-js/forge/shell';
+import '@weasel-js/labkit/styles.css';
 import '@weasel-js/forge/shell.css';
 import index from 'virtual:forge/index.js';
 import config from 'virtual:forge/config.js';

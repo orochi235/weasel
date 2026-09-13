@@ -82,6 +82,7 @@ describe('forge vite plugin', () => {
     const code = await entry('shell-entry.js');
     expect(code).toContain('frameUrl: "/frame.html"');
     expect(code).toContain('stories: ["*.stories.tsx"]');
+    expect(code).toContain(`import '@weasel-js/labkit/styles.css';`);
     expect(code).toContain(`import '@weasel-js/forge/shell.css';`);
   });
 
