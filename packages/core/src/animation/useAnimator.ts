@@ -26,8 +26,9 @@ interface ActiveAnimation {
   timeScale: number;
   virtualNow: number;
   lastRealNow: number | null;
-  /** Returns true when finished. Called once per frame with the current virtual-ms timestamp. */
-  tick(virtualNow: number): boolean;
+  /** Returns true when finished. Called once per frame with the current
+   *  virtual-ms timestamp and the effective scale it advanced at this frame. */
+  tick(virtualNow: number, scale: number): boolean;
   /** Called when the animation is cancelled. Skips onDone. */
   onCancel?(): void;
 }
@@ -190,7 +191,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         // skip scheduling a new wrap-tween that would fight the caller.
         tickDepth.current += 1;
         try {
-          if (anim.tick(anim.virtualNow)) finished.push(anim.id);
+          if (anim.tick(anim.virtualNow, scale)) finished.push(anim.id);
         } finally {
           tickDepth.current -= 1;
         }

@@ -26,7 +26,7 @@ export type MakeTimelineOptions = Omit<TimelineOptions, 'tracks'> & {
 /** Drives a `createTimeline` instance through a fake `register`, standing in
  *  for the animator. The one clock driver shared by every timeline test. */
 export function makeTimeline(opts: MakeTimelineOptions): TimelineTestHandle {
-  let tick: ((virtualNow: number) => boolean) | null = null;
+  let tick: ((virtualNow: number, scale?: number) => boolean) | null = null;
   let onCancel: (() => void) | undefined;
   let active = false;
   let lastFinished = false;
@@ -58,7 +58,7 @@ export function makeTimeline(opts: MakeTimelineOptions): TimelineTestHandle {
     handle,
     advance: (virtualNow: number): boolean => {
       if (!active) return lastFinished;
-      lastFinished = tick!(virtualNow);
+      lastFinished = tick!(virtualNow, paused ? 0 : scale);
       if (lastFinished) active = false;
       return lastFinished;
     },

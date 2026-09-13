@@ -1,22 +1,22 @@
-import type { EventTrack } from '@weasel-js/core';
+import type { EventBookingHandle, EventTrack } from '@weasel-js/core';
 import { CLIPS } from './clips';
 
 /** The two contacts in one run cycle, in milliseconds. */
 export const FOOTFALLS = [0, CLIPS.run.duration / 2];
 
 /**
- * An `EventTrack` firing at each footfall.
+ * An `EventTrack` booking each footfall ahead of its frame.
  *
- * The handler is told which contact this is (its authored time) and how far
- * behind the frame the contact was crossed, so it can place the sound against
- * the instant the foot landed rather than the frame that noticed.
+ * The handler is told which contact this is (its authored time) and the time on
+ * the timeline's booking clock the foot lands at. Returning the voice lets a
+ * pause or a change of run speed retract a step that has not sounded yet.
  */
 export function footstepTrack(
-  onStep: (authoredT: number, lateBy: number) => void,
+  onStep: (authoredT: number, when: number) => EventBookingHandle | void,
 ): EventTrack {
   return {
     kind: 'event',
     label: 'footsteps',
-    events: FOOTFALLS.map((t) => ({ t, fire: (lateBy) => onStep(t, lateBy) })),
+    events: FOOTFALLS.map((t) => ({ t, book: (when) => onStep(t, when) })),
   };
 }

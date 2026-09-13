@@ -45,9 +45,6 @@ const IDENTITY_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 /** A footfall pair spanning a time-scale change is still accelerating, not
  *  steady — the gap would measure speed change, not scheduling jitter. */
 const JITTER_SCALE_TOLERANCE = 0.02;
-/** Footfalls are placed this far after their true crossing, so the frame that
- *  happened to notice a contact stops deciding when it sounds. */
-const STEP_SCHEDULE_BUDGET_MS = 16;
 
 /** The concussion blur's envelope, in ms, and the radius it peaks at. Rise and
  *  fall rather than a step: a blur that snaps on reads as a dropped frame. */
@@ -125,7 +122,7 @@ function SideScrollerDemoInner() {
     },
   }], []);
 
-  // The run cycle's own timeline — its playhead is what fires footsteps, not
+  // The run cycle's own timeline — its playhead is what books footsteps, not
   // the fixed-step loop. `runScale` is what the loop writes and the footstep
   // handler reads back to know the interval a given tick implies.
   /** Frames left before the music stops; -1 once it has. */
@@ -186,34 +183,39 @@ function SideScrollerDemoInner() {
     const handle = animator.timeline({
       loop: true,
       autoplay: true,
+      // Steps book against the engine's clock once there is one. Before the
+      // unlock gesture nothing sounds, and the timeline resyncs when it swaps.
+      booking: { clock: { now: () => audio.current?.engine.now() ?? performance.now() } },
       tracks: [
-        footstepTrack((_authoredT, lateBy) => {
+        footstepTrack((_authoredT, when) => {
           const a = audio.current;
           const s = stepStats.current;
           const scale = runScale.current;
-          // `lateBy` is timeline ms; the wall-clock span it stands for shrinks
-          // as the run cycle speeds up.
-          const lateWall = lateBy / Math.max(scale, 0.01);
-          const crossedAt = performance.now() - lateWall;
+          s.count++;
+          if (!a || a.engine.state() !== 'running') {
+            s.lastAt = 0;
+            return;
+          }
           // While the player is still accelerating, the scale at this footfall
           // differs from the one recorded at the last — skip those pairs so the
           // spread reflects steady-state scheduling, not a changing run speed.
           if (s.lastAt && Math.abs(scale - s.lastScale) <= JITTER_SCALE_TOLERANCE) {
-            const gap = crossedAt - s.lastAt;
             const expected = (CLIPS.run.duration / 2) / Math.max(scale, 0.01);
-            s.spread = Math.max(s.spread, Math.abs(gap - expected));
+            s.spread = Math.max(s.spread, Math.abs(when - s.lastAt - expected));
           }
-          s.lastAt = crossedAt;
+          const prev = { lastAt: s.lastAt, lastScale: s.lastScale };
+          s.lastAt = when;
           s.lastScale = scale;
-          s.count++;
-          if (!a || a.engine.state() !== 'running') return;
-          // A frame longer than the budget lands in the past and plays at once,
-          // which is what every footfall did before `lateBy` existed.
-          a.engine.play(a.sounds.step, {
-            bus: 'sfx',
-            gain: 0.35,
-            when: a.engine.now() + STEP_SCHEDULE_BUDGET_MS - lateWall,
-          });
+          const voice = a.engine.play(a.sounds.step, { bus: 'sfx', gain: 0.35, when });
+          // A jump or a change of run speed retracts a step that has not
+          // sounded; it is booked again wherever the cycle next reaches it.
+          return {
+            stop: () => {
+              voice.stop();
+              s.count--;
+              Object.assign(s, prev);
+            },
+          };
         }),
       ],
       duration: CLIPS.run.duration,

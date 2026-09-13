@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAnimator } from '../useAnimator';
-import type { SampledTrack, TimelineHandle } from './types';
+import type { EventTrack, SampledTrack, TimelineHandle } from './types';
 
 /** Manual frame pump so the test owns virtual time. `now` tracks the last
  *  frame, so an animation registered mid-run gets a zero first dt rather than
@@ -112,5 +112,30 @@ describe('animator.timeline', () => {
     act(() => { result.current.pause(); });
     act(() => { p.frame(80); });
     expect(seen.at(-1)).toBe(20);
+  });
+});
+
+describe('animator.timeline event booking', () => {
+  it('retracts a pending booking when the whole animator pauses', () => {
+    const p = pump();
+    let clock = 5000;
+    const stopped: number[] = [];
+    const whens: number[] = [];
+    const { result } = renderHook(() =>
+      useAnimator({ requestFrame: p.requestFrame, cancelFrame: p.cancelFrame, now: p.now }),
+    );
+    const track: EventTrack = {
+      kind: 'event',
+      events: [{ t: 80, book: (when) => { whens.push(when); return { stop: () => stopped.push(when) }; } }],
+    };
+    act(() => {
+      result.current.timeline({ tracks: [track], duration: 1000, booking: { clock: { now: () => clock } } });
+    });
+    act(() => { p.frame(0); });
+    expect(whens).toEqual([5080]);
+    act(() => { result.current.pause(); });
+    clock = 5016;
+    act(() => { p.frame(16); });
+    expect(stopped).toEqual([5080]);
   });
 });

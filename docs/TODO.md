@@ -1018,10 +1018,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   reusing it — minting only the `AudioBufferSourceNode`, which is single-use by
   specification — is the optimization the design assumed was already there.
   Worth measuring before building: node construction may not be the cost.
-- **(P2) Timeline audio bridge** — an `EventTrack` firing `engine.play()` with
-  `when: engine.now() + (event.t - playhead)`, so the sound lands at its true
-  sub-frame time instead of inheriting frame jitter. Neither package imports the
-  other; they meet at a number.
 - **(P3) AudioWorklet scheduling** — immune to main-thread jank; costs a worklet
   module, cross-thread messaging and a bundling story. Revisit if jank proves
   audible.
