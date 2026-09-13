@@ -15,7 +15,7 @@ import { MarkList } from '../annotations/MarkList';
 import type { ControlRenderer } from '../config/types';
 import { ControlPanel } from '../controls/ControlPanel';
 import type { Instrument } from '../instrument/types';
-import { Select } from '../passthrough/weasel-ui';
+import { MenuButton } from '../passthrough/weasel-ui';
 import { FpsMeter } from '../primitives/FpsMeter';
 import { ScaleIndicator } from '../primitives/ScaleIndicator';
 import { ZoomControl } from '../primitives/ZoomControl';
@@ -200,24 +200,18 @@ export function builtinContributions(
   }
 
   if (ctx.savedSnapshots.length > 0) {
-    // A picker is not an icon button, so it takes the render escape. Held at
-    // `selectedKey={null}` so it stays a "load one" action rather than
-    // drifting into a display of what was loaded last.
+    // A menu is not an icon button, so it takes the render escape.
     out.push({
       id: 'snapshot-load',
       region: 'toolbar',
       group: 'trial',
       end: true,
       render: (c) => (
-        <Select
-          className="lk-toolbar__load-select"
+        <MenuButton
           aria-label="Load snapshot"
-          placeholder="Load…"
-          selectedKey={null}
-          options={c.savedSnapshots.map((sn) => ({ value: sn.id, label: sn.name }))}
-          onSelectionChange={(id) => {
-            if (id != null) c.loadSnapshot(String(id));
-          }}
+          label="Load…"
+          items={c.savedSnapshots.map((sn) => ({ value: sn.id, label: sn.name }))}
+          onAction={(id) => c.loadSnapshot(id)}
         />
       ),
     });

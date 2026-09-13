@@ -41,6 +41,7 @@ export * from './components/Tabs';
 export * from './components/RadioGroup';
 export * from './components/NumberField';
 export * from './components/Select';
+export * from './components/MenuButton';
 export * from './components/ComboBox';
 export * from './components/RangeSlider';
 export * from './components/DetentSlider';
