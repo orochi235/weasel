@@ -98,6 +98,24 @@ sibling reorder can change render order without changing any node, and two
 which is insertion order. A host that cares about draw order re-reads
 `renderOrderNodes()`, and `reset` is the signal telling it to.
 
+## The feed does not coalesce
+
+`subscribe` says "something moved, consider repainting" and nothing more. It
+forwards both clocks verbatim, so one gesture step can notify more than once —
+`PoseOverrides.set()` and `commit()` each publish
+(`packages/core/src/core/scene/poseOverrides.ts`), and a `setPose` plus a staged
+override plus its commit reaches a listener three times.
+
+That is the host scheduler's problem, and it already solves it: labkit's
+listener is `surface.invalidate(tileId)`, which is idempotent and collapses to
+one paint per rAF. A feed that collapsed the burst itself would be taking on
+timing semantics it has no business owning, and `read()` would still need to see
+every generation bump to compute its delta.
+
+The same reasoning applies to tests: asserting an exact notification count
+couples the feed to a neighbouring module's publish cadence. Assert that each
+clock reaches the listener.
+
 ## What the feed is not
 
 Non-node chrome does not travel here. A marquee rect, a lasso trail and an
