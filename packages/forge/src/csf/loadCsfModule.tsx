@@ -1,4 +1,13 @@
-import { type ComponentType, createContext, createElement, type ReactNode, useContext } from 'react';
+import {
+  type ComponentType,
+  createContext,
+  createElement,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+  useContext,
+  useState,
+} from 'react';
 import type { Globals, Layout, Viewport } from '../protocol/messages';
 import { storyId, storyNameFromExport, titleFromFile } from '../story/ids';
 import type { Decorator, LoadedStory, PlayContext, StoryContext } from '../story/types';
@@ -83,8 +92,33 @@ function Call({ fn }: { fn: () => ReactNode }): ReactNode {
   return fn();
 }
 
-function Scoped({ scope, fn }: { scope: ArgsScope; fn: () => ReactNode }): ReactNode {
-  return createElement(ArgsContext.Provider, { value: scope }, createElement(Call, { fn }));
+interface LocalArgs {
+  story: string;
+  local: Args;
+  setLocal: Dispatch<SetStateAction<Args>>;
+}
+
+const LocalArgsContext = createContext<LocalArgs | null>(null);
+
+/** The outermost scope of a story holds its frame-local args, so its decorators and render share them. */
+function Scoped({
+  id,
+  build,
+  fn,
+}: {
+  id: string;
+  build: (local: LocalArgs) => [ArgsScope, CsfContext];
+  fn: (context: CsfContext) => ReactNode;
+}): ReactNode {
+  const outer = useContext(LocalArgsContext);
+  const [local, setLocal] = useState<Args>({});
+  const shared = outer?.story === id ? outer : { story: id, local, setLocal };
+  const [scope, context] = build(shared);
+  return createElement(
+    LocalArgsContext.Provider,
+    { value: shared },
+    createElement(ArgsContext.Provider, { value: scope }, createElement(Call, { fn: () => fn(context) })),
+  );
 }
 
 /** Normalizes a Component Story Format module. */
@@ -112,8 +146,8 @@ export function loadCsfModule(mod: Record<string, unknown>, file: string, root: 
     const renderFn: CsfRender | undefined =
       spec.render ?? meta.render ?? (component ? (a) => createElement(component, a) : undefined);
 
-    const csfContext = (config: unknown, globals: Globals): CsfContext => ({
-      args: withoutUndefined({ ...args, ...(config as Args) }),
+    const csfContext = (config: unknown, globals: Globals, local: Args = {}): CsfContext => ({
+      args: withoutUndefined({ ...args, ...(config as Args), ...local }),
       globals,
       parameters,
       title,
@@ -121,23 +155,32 @@ export function loadCsfModule(mod: Record<string, unknown>, file: string, root: 
       id,
       viewMode: 'story',
     });
-    const scopeFor = (context: CsfContext, ctx: StoryContext): ArgsScope => ({
-      args: context.args,
-      initialArgs: args,
-      defaults,
-      setConfig: ctx.setConfig,
-    });
+    const scoped = (ctx: StoryContext, fn: (context: CsfContext) => ReactNode): ReactNode =>
+      createElement(Scoped, {
+        id,
+        build: ({ local, setLocal }: LocalArgs): [ArgsScope, CsfContext] => {
+          const context = csfContext(ctx.config, ctx.globals, local);
+          const scope: ArgsScope = {
+            args: context.args,
+            configArgs: withoutUndefined({ ...args, ...(ctx.config as Args) }),
+            initialArgs: args,
+            defaults,
+            setConfig: ctx.setConfig,
+            setLocal,
+          };
+          return [scope, context];
+        },
+        fn,
+      });
 
     const adapt =
       (decorator: CsfDecorator): Decorator =>
-      (inner, ctx) => {
-        const context = csfContext(ctx.config, ctx.globals);
-        return createElement(
+      (inner, ctx) =>
+        createElement(
           InnerStory.Provider,
           { value: inner },
-          createElement(Scoped, { scope: scopeFor(context, ctx), fn: () => decorator(Story, context) }),
+          scoped(ctx, (context) => decorator(Story, context)),
         );
-      };
 
     const layout = parameters.layout as Layout | undefined;
     const play = spec.play ?? meta.play;
@@ -151,8 +194,7 @@ export function loadCsfModule(mod: Record<string, unknown>, file: string, root: 
       initialState: null,
       render: (ctx) => {
         if (!renderFn) return null;
-        const context = csfContext(ctx.config, ctx.globals);
-        return createElement(Scoped, { scope: scopeFor(context, ctx), fn: () => renderFn(context.args, context) });
+        return scoped(ctx, (context) => renderFn(context.args, context));
       },
       decorators: [...asArray(spec.decorators), ...asArray(meta.decorators)].map(adapt),
       layout: layout && LAYOUTS.includes(layout) ? layout : 'padded',
