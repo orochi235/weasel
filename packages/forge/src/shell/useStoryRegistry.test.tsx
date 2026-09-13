@@ -51,6 +51,15 @@ describe('useStoryRegistry', () => {
     expect(result.current.instruments).toBe(list);
   });
 
+  it('appends the declared globals to every story’s schema, provisional or described', () => {
+    const globals = { mode: { label: 'Mode', default: 'auto', options: [{ value: 'dark', label: 'Dark' }] } };
+    const { result } = renderHook(() => useStoryRegistry(index, { ...options, globals }));
+    expect(result.current.instruments[0]?.config?.defaults()).toEqual({ $globals: { mode: 'lab' } });
+    act(() => result.current.onReady(a, readyWith('hi')));
+    expect(result.current.instruments[0]?.config?.defaults()).toEqual({ label: 'hi', $globals: { mode: 'lab' } });
+    expect(result.current.instruments[1]?.config?.defaults()).toEqual({ $globals: { mode: 'lab' } });
+  });
+
   it('forgets a story that leaves the index, so its return starts provisional', () => {
     const { result, rerender } = mount();
     act(() => result.current.onReady(a, readyWith('hi')));

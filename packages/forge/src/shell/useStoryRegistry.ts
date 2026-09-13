@@ -3,6 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { stableStringify } from '../protocol/messages';
 import type { IndexEntry } from '../story/types';
 import { type AnswerBook, createAnswerBook } from './answers';
+import type { GlobalDeclarations } from './globals';
 import { type Ready, readyKey } from './readyKey';
 import { storyInstrument } from './storyInstrument';
 
@@ -16,6 +17,7 @@ interface Built {
   entryKey: string;
   ready: Ready | undefined;
   frameUrl: string;
+  globals: GlobalDeclarations;
   revision: number;
   instrument: Instrument<unknown, unknown>;
 }
@@ -26,12 +28,20 @@ interface Cache {
   list: InstrumentList;
 }
 
+const NO_GLOBALS: GlobalDeclarations = {};
+
 const pruned = <V>(map: ReadonlyMap<string, V>, ids: Set<string>): ReadonlyMap<string, V> =>
   [...map.keys()].every((id) => ids.has(id)) ? map : new Map([...map].filter(([id]) => ids.has(id)));
 
-/** One instrument per story in `index`. Globals reach the frames through `StoryGlobalsContext`, not through here. */
-export function useStoryRegistry(index: readonly IndexEntry[], options: { frameUrl: string }): StoryRegistry {
-  const { frameUrl } = options;
+/**
+ * One instrument per story in `index`, each schema holding a `$globals` group for `globals`. The lab's global values
+ * reach the frames through `StoryGlobalsContext`, not through here.
+ */
+export function useStoryRegistry(
+  index: readonly IndexEntry[],
+  options: { frameUrl: string; globals?: GlobalDeclarations },
+): StoryRegistry {
+  const { frameUrl, globals = NO_GLOBALS } = options;
   const [readies, setReadies] = useState<ReadonlyMap<string, Ready>>(() => new Map());
   // Bumped when a story's frame answers something new. labkit's panel re-reads the answer book only when
   // the trial's config changes, and replacing the instrument is what refills it.
@@ -69,21 +79,23 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: { frameU
         held.entryKey === entryKey &&
         held.ready === ready &&
         held.frameUrl === frameUrl &&
+        held.globals === globals &&
         held.revision === revision
           ? held
           : {
               entryKey,
               ready,
               frameUrl,
+              globals,
               revision,
-              instrument: storyInstrument({ entry, ready, answers, frameUrl, onReady }),
+              instrument: storyInstrument({ entry, ready, answers, frameUrl, onReady, globals }),
             };
       built.set(entry.id, kept);
       return kept.instrument;
     });
     const unchanged = list.length === previous.list.length && list.every((i, n) => i === previous.list[n]);
     return { built, books, list: unchanged ? previous.list : list };
-  }, [index, readies, revisions, frameUrl, onReady]);
+  }, [index, readies, revisions, frameUrl, globals, onReady]);
 
   useLayoutEffect(() => {
     committed.current = cache;

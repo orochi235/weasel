@@ -385,6 +385,82 @@ describe('FrameView', () => {
   });
 });
 
+describe('FrameView with declared globals', () => {
+  const declarations = {
+    theme: {
+      label: 'Theme',
+      default: 'dark',
+      options: [
+        { value: 'dark', label: 'Dark' },
+        { value: 'light', label: 'Light' },
+      ],
+    },
+  };
+
+  function mountGlobals() {
+    lab = null;
+    ctx = null;
+    const instrument = storyInstrument({
+      entry,
+      ready,
+      answers: createAnswerBook(),
+      frameUrl: '/frame.html',
+      onReady: vi.fn(),
+      globals: declarations,
+    });
+    const capturing = {
+      ...instrument,
+      render: (renderCtx: RenderContext<unknown, unknown>) => {
+        ctx = renderCtx;
+        return instrument.render(renderCtx);
+      },
+    };
+    const view = render(
+      <StoryGlobalsContext.Provider value={globals}>
+        <Lab instruments={[capturing]} defaultInstrument={entry.id}>
+          {captureLab()}
+        </Lab>
+      </StoryGlobalsContext.Provider>,
+    );
+    return { view, ...connect(view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement) };
+  }
+
+  it('sends init with the story’s config alone and the lab’s globals', async () => {
+    const { frame, received } = mountGlobals();
+    frame.send(ready);
+    await flush();
+    expect(config()).toEqual({ label: 'clicks', $globals: { theme: 'lab' } });
+    expect(received).toEqual([{ type: 'init', config: { label: 'clicks' }, state: null, globals }]);
+  });
+
+  it('sends a pinned global as globals, and no config, until the pin follows the lab again', async () => {
+    const { frame, received } = mountGlobals();
+    frame.send(ready);
+    await flush();
+    act(() => ctx?.setConfig('$globals.theme', 'light'));
+    await flush();
+    expect(received.slice(1)).toEqual([{ type: 'globals', globals: { theme: 'light' } }]);
+    act(() => ctx?.setConfig('label', 'renamed'));
+    await flush();
+    expect(received.at(-1)).toEqual({ type: 'config', config: { label: 'renamed' } });
+    act(() => ctx?.setConfig('$globals.theme', 'lab'));
+    await flush();
+    expect(received.at(-1)).toEqual({ type: 'globals', globals });
+    expect(received.map((m) => m.type)).toEqual(['init', 'globals', 'config', 'globals']);
+  });
+
+  it('drops a frame setConfig aimed at the pins', async () => {
+    const { frame, received } = mountGlobals();
+    frame.send(ready);
+    await flush();
+    frame.send({ type: 'setConfig', path: '$globals.theme', value: 'light' });
+    frame.send({ type: 'setConfig', path: '$globals', value: { theme: 'light' } });
+    await flush();
+    expect(config()).toEqual({ label: 'clicks', $globals: { theme: 'lab' } });
+    expect(received.map((m) => m.type)).toEqual(['init']);
+  });
+});
+
 describe('FrameView under a story registry', () => {
   function RegistryLab({ labGlobals, lists }: { labGlobals: Globals; lists: InstrumentList[] }) {
     const registry = useStoryRegistry([entry], { frameUrl: '/frame.html' });

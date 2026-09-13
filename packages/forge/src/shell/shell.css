@@ -220,3 +220,13 @@
   flex: 1;
   min-width: 0;
 }
+
+.fg-globals {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-xs);
+}
+
+.fg-globals__select {
+  font-size: var(--wzl-font-size-sm);
+}

@@ -1,8 +1,10 @@
 import { createMemoryAdapter } from '@weasel-js/labkit';
+import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
+import { describeSchema } from '../protocol/schema';
 import type { IndexEntry } from '../story/types';
-import { installResizeObserver } from './labHarness';
+import { connectFrame, flush, installResizeObserver } from './labHarness';
 import { Workshop } from './Workshop';
 
 installResizeObserver();
@@ -72,6 +74,51 @@ describe('Workshop', () => {
     render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     const trial = await screen.findByRole('region', { name: 'Trial X / A' });
     expect(trial.querySelector('.lk-status-bar')).toBeNull();
+  });
+
+  it('sends a lab-wide global chosen in the toolbar to every open frame, and keeps a trial’s pin over it', async () => {
+    const globals = {
+      mode: {
+        label: 'Mode',
+        default: 'auto',
+        options: [
+          { value: 'auto', label: 'Auto' },
+          { value: 'light', label: 'Light' },
+          { value: 'dark', label: 'Dark' },
+        ],
+      },
+    };
+    location.hash = '#/x--a';
+    const { container } = render(
+      <Workshop index={[a, b]} frameUrl="/frame.html" config={{ globals }} storage={createMemoryAdapter()} />,
+    );
+    await waitFor(() => expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(1));
+    act(() => {
+      location.hash = '#/x--b';
+    });
+    await waitFor(() => expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(2));
+    const frames = [...container.querySelectorAll<HTMLIFrameElement>('iframe.fg-frame-view')].map(connectFrame);
+    expect(frames).toHaveLength(2);
+    const ready = { type: 'ready', schema: describeSchema(f.schema({})), layout: 'centered', viewport: null } as const;
+    for (const { frame } of frames) frame.send(ready);
+    await flush();
+    for (const { received } of frames) expect(received).toEqual([expect.objectContaining({ type: 'init', globals: { mode: 'auto' } })]);
+
+    const trialB = screen.getByRole('region', { name: 'Trial X / B' });
+    fireEvent.change(within(trialB).getByLabelText('Mode'), { target: { value: 'dark' } });
+    await flush();
+
+    const toolbar = screen.getByRole('toolbar', { name: 'Globals' });
+    fireEvent.change(within(toolbar).getByLabelText('Mode'), { target: { value: 'light' } });
+    await flush();
+    const byTrial = Object.fromEntries(
+      frames.map(({ received }, i) => [container.querySelectorAll('iframe.fg-frame-view')[i]!.getAttribute('src'), received.at(-1)]),
+    );
+    expect(byTrial).toEqual({
+      '/frame.html#x--a': { type: 'globals', globals: { mode: 'light' } },
+      '/frame.html#x--b': { type: 'globals', globals: { mode: 'dark' } },
+    });
+    for (const { frame } of frames) frame.close();
   });
 
   it('opens the first story when the hash names none that is indexed', async () => {

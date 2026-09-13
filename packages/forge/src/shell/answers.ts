@@ -1,5 +1,6 @@
 import { type ConfigAnswers, stableStringify } from '../protocol/messages';
 import type { SchemaAnswers } from '../protocol/schema';
+import { storyConfig } from './globals';
 
 export interface AnswerBook extends SchemaAnswers {
   record(answers: ConfigAnswers): void;
@@ -32,7 +33,7 @@ export function createAnswerBook(): AnswerBook {
       if (changed) for (const fn of listeners) fn();
     },
     hidden(path, config) {
-      const hidden = byConfig.get(stableStringify(config))?.hidden;
+      const hidden = byConfig.get(stableStringify(storyConfig(config)))?.hidden;
       return hidden?.some((h) => path === h || path.startsWith(`${h}.`)) ?? false;
     },
     errors: (path) => errors[path] ?? [],

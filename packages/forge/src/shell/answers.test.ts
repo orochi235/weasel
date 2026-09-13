@@ -22,6 +22,12 @@ describe('createAnswerBook', () => {
     expect(book.hidden('a.b', { ...config, d: 3 })).toBe(false);
   });
 
+  it('reads a trial config’s answers without its $globals pins, which the frame never sees', () => {
+    const book = createAnswerBook();
+    book.record({ configKey: key, hidden: ['d'], errors: {} });
+    expect(book.hidden('d', { ...config, $globals: { mode: 'dark' } })).toBe(true);
+  });
+
   it('keeps the latest errors per path', () => {
     const book = createAnswerBook();
     book.record({ configKey: key, hidden: [], errors: { d: ['too big'] } });

@@ -1,6 +1,6 @@
 import './shell.css';
 import { type RenderContext, TrialIdContext } from '@weasel-js/labkit';
-import { type RefObject, useContext, useEffect, useRef, useState } from 'react';
+import { type RefObject, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { type Channel, type Mismatch, openChannel } from '../protocol/channel';
 import {
   type FaultPhase,
@@ -8,12 +8,14 @@ import {
   type Globals,
   PORT_HANDOFF,
   PROTOCOL_VERSION,
+  stableStringify,
   type ToFrame,
 } from '../protocol/messages';
 import type { IndexEntry } from '../story/types';
 import type { AnswerBook } from './answers';
 import { useCssOverrides } from './cssVars/overrides';
 import { TrialFramesContext } from './cssVars/trialFrames';
+import { effectiveGlobals, GLOBALS_KEY, isGlobalsPath, storyConfig } from './globals';
 import { type Ready, readyKey } from './readyKey';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 
@@ -40,7 +42,7 @@ interface Link {
   timer: ReturnType<typeof setTimeout>;
   /** The key of a `ready` whose `init` waits for an instrument built from it. */
   awaiting: string | null;
-  /** What the frame holds, from `init` on; null until then. */
+  /** What the frame holds, from `init` on — the story's config without the trial's pins; null until then. */
   sent: { config: unknown; state: unknown; globals: Globals } | null;
   /** `init`, `config`, `state` and `globals` messages sent; a render fault's `seq` counts the same messages. */
   inputs: number;
@@ -64,7 +66,9 @@ function mismatchMessage(mismatch: Mismatch): string {
 
 export function FrameView(props: FrameViewProps) {
   const { entry, frameUrl, descriptionKey, ctx } = props;
-  const globals = useContext(StoryGlobalsContext);
+  const labGlobals = useContext(StoryGlobalsContext);
+  const pins = (ctx.config as Record<string, unknown> | null | undefined)?.[GLOBALS_KEY];
+  const globals = useMemo(() => effectiveGlobals(labGlobals, pins), [labGlobals, pins]);
   const trialId = useContext(TrialIdContext);
   const frames = useContext(TrialFramesContext);
   const [overrides] = useCssOverrides();
@@ -78,7 +82,7 @@ export function FrameView(props: FrameViewProps) {
   const init = (current: Link): void => {
     const { ctx: live, globals: liveGlobals } = latest.current;
     current.awaiting = null;
-    current.sent = { config: live.config, state: live.state, globals: liveGlobals };
+    current.sent = { config: storyConfig(live.config), state: live.state, globals: liveGlobals };
     current.inputs += 1;
     current.channel.send({ type: 'init', ...current.sent });
   };
@@ -99,7 +103,8 @@ export function FrameView(props: FrameViewProps) {
         break;
       }
       case 'setConfig':
-        live.setConfig(msg.path, msg.value);
+        // The pins belong to the trial; a story cannot see them, so it cannot set them either.
+        if (!isGlobalsPath(msg.path)) live.setConfig(msg.path, msg.value);
         break;
       case 'setState':
         if (current.sent) current.sent.state = msg.state;
@@ -151,9 +156,10 @@ export function FrameView(props: FrameViewProps) {
     const sent = current.sent;
     if (!sent) return;
     let input = false;
-    if (ctx.config !== sent.config) {
-      sent.config = ctx.config;
-      current.channel.send({ type: 'config', config: ctx.config });
+    const config = storyConfig(ctx.config, sent.config);
+    if (config !== sent.config) {
+      sent.config = config;
+      current.channel.send({ type: 'config', config });
       current.inputs += 1;
       input = true;
     }
@@ -163,7 +169,7 @@ export function FrameView(props: FrameViewProps) {
       current.inputs += 1;
       input = true;
     }
-    if (globals !== sent.globals) {
+    if (globals !== sent.globals && stableStringify(globals) !== stableStringify(sent.globals)) {
       sent.globals = globals;
       current.channel.send({ type: 'globals', globals });
       current.inputs += 1;

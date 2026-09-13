@@ -1,10 +1,12 @@
 import { Lab, type LabContribution, type StorageAdapter, useLabContext } from '@weasel-js/labkit';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ShellConfig } from '../config';
-import type { Globals } from '../protocol/messages';
+import { type Globals, stableStringify } from '../protocol/messages';
 import type { IndexEntry } from '../story/types';
 import { CSS_VARS_SECTION } from './cssVars/CssVarsPanel';
 import { createTrialFrames, TrialFramesContext } from './cssVars/trialFrames';
+import { type GlobalDeclarations, labGlobals } from './globals';
+import { GlobalsToolbar, LabGlobals } from './GlobalsToolbar';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 import { StoryTree } from './tree/StoryTree';
 import { readRoute, useRoute } from './useRoute';
@@ -20,7 +22,7 @@ export interface WorkshopProps {
   storage?: StorageAdapter;
 }
 
-const NO_GLOBALS: Globals = {};
+const NO_DECLARATIONS: GlobalDeclarations = {};
 const TRIAL_CHROME = [CSS_VARS_SECTION];
 
 /** The story `#/<id>` names, when it is indexed; otherwise the first story. Read when the lab mounts. */
@@ -43,15 +45,23 @@ function RouteOpener({ index }: { index: readonly IndexEntry[] }) {
 }
 
 export function Workshop({ index, frameUrl, config, stories = [], storageKey, storage }: WorkshopProps) {
-  const registry = useStoryRegistry(index, { frameUrl });
+  const declarations = config?.globals ?? NO_DECLARATIONS;
+  const registry = useStoryRegistry(index, { frameUrl, globals: declarations });
   const [frames] = useState(createTrialFrames);
-  const shell = config;
+  const [labValues, setLabValues] = useState<Globals>(() => labGlobals(declarations, undefined));
+  const reportLabValues = useCallback(
+    (next: Globals) => setLabValues((prev) => (stableStringify(prev) === stableStringify(next) ? prev : next)),
+    [],
+  );
   const labChrome = useMemo<readonly LabContribution[]>(
     () => [
       { id: 'fg-stories', region: 'sidebar', render: (ctx) => <StoryTree ctx={ctx} index={index} /> },
-      ...(shell?.labChrome ?? []),
+      ...(Object.keys(declarations).length > 0
+        ? [{ id: 'fg-globals', region: 'header', render: () => <GlobalsToolbar declarations={declarations} /> } as const]
+        : []),
+      ...(config?.labChrome ?? []),
     ],
-    [index, shell?.labChrome],
+    [index, declarations, config?.labChrome],
   );
   const first = index[0];
   if (!first) {
@@ -71,7 +81,7 @@ export function Workshop({ index, frameUrl, config, stories = [], storageKey, st
     );
   }
   return (
-    <StoryGlobalsContext.Provider value={NO_GLOBALS}>
+    <StoryGlobalsContext.Provider value={labValues}>
       <TrialFramesContext.Provider value={frames}>
         <Lab
           title="weaselforge"
@@ -82,9 +92,10 @@ export function Workshop({ index, frameUrl, config, stories = [], storageKey, st
           labChrome={labChrome}
           chrome={TRIAL_CHROME}
           addTrial={false}
-          {...(shell?.controls ? { controls: shell.controls } : {})}
+          {...(config?.controls ? { controls: config.controls } : {})}
         >
           <RouteOpener index={index} />
+          <LabGlobals declarations={declarations} onChange={reportLabValues} />
         </Lab>
       </TrialFramesContext.Provider>
     </StoryGlobalsContext.Provider>

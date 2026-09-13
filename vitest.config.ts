@@ -103,7 +103,7 @@ export default defineConfig({
           environment: 'jsdom',
           globals: true,
           setupFiles: ['./vitest.setup.ts'],
-          include: ['packages/forge/src/**/*.test.{ts,tsx}'],
+          include: ['packages/forge/src/**/*.test.{ts,tsx}', 'apps/forge/*.test.{ts,tsx}'],
           exclude: ['**/node_modules/**'],
         },
       },
