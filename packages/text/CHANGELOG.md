@@ -111,23 +111,6 @@
   - @weasel-js/font@1.4.0
   - @weasel-js/paint@1.4.0
 
-## 1.4.0-pre.1
-
-### Patch Changes
-
-- @weasel-js/font@1.4.0-pre.1
-  - @weasel-js/geom@1.4.0-pre.1
-  - @weasel-js/paint@1.4.0-pre.1
-
-## 1.4.0-pre.0
-
-### Patch Changes
-
-- Updated dependencies [a7fa697]
-  - @weasel-js/geom@1.4.0-pre.0
-  - @weasel-js/font@1.4.0-pre.0
-  - @weasel-js/paint@1.4.0-pre.0
-
 ## 1.3.0
 
 ### Patch Changes
