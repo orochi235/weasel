@@ -4,9 +4,12 @@
  * `state.allows &&`, and the dispatcher never supplied `allows`, so a tool
  * declaring a capability the active mode forbids kept routing input.
  *
- * The kit's own tools were covered by accident: each *action* repeats the tag
- * in its own `eligible` rule, a separate gate that does fire. A tool whose
- * action carries no rule — WeaselDraw's slice is one — was not covered at all.
+ * Most tools were covered by accident: the action a binding points at repeats
+ * the tag in its own `eligible` rule, a separate gate that does fire. What the
+ * tool-level gate reaches is a binding whose action carries no rule —
+ * `polygon.adjustSides` and `star.adjustPoints`, the wheel and arrow-key
+ * bindings a shape tool owns, which kept routing in a mode that forbids
+ * `creates-shapes` while the same tool's `insert` binding was stripped.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createDispatcher } from './dispatcher';

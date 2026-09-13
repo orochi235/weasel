@@ -144,7 +144,7 @@ import { OpacityHud } from './opacityScrub/OpacityHud';
 import { useSceneAdapter } from '@weasel-js/core';
 import { sliceAction } from '@weasel-js/core';
 import type { SerializedHistory } from '@weasel-js/history';
-import { serializeReplacer, reviveTypedArrays, clipboardJsonReviver, nodeSpecsFromSnapshot } from './persistence';
+import { serializeReplacer, reviveSnapshot, clipboardJsonReviver, nodeSpecsFromSnapshot } from './persistence';
 import { useSliceTool } from './tools/slice/useSliceTool';
 import { SliceDepPublisher } from './tools/slice/SliceDepPublisher';
 import { parseSvg, unpackSvgFiles } from '@weasel-js/svg';
@@ -218,7 +218,7 @@ const DEFAULT_BG_COLOR = '#ffffff';
 // unpacked nodes render and edit like any other object. `clipboard.reviver`
 // revives typed-array node data (Uint8Array/Float32Array path commands)
 // carried by weasel-JSON clipboard payloads — via `clipboardJsonReviver`,
-// the JSON-reviver adapter over the same `reviveTypedArrays` walk that scene
+// the JSON-reviver adapter over the same `reviveSnapshot` walk that scene
 // persistence uses (the walker itself is NOT `(key, value)`-shaped; see
 // persistence.ts). Module const: SceneCanvas keys its dep wiring off the
 // prop identity.
@@ -1015,7 +1015,7 @@ function loadHistory(): SerializedHistory | null {
     const raw = localStorage.getItem(HISTORY_KEY);
     if (!raw) return null;
     const snap = JSON.parse(raw) as SerializedHistory;
-    if (snap && snap.version === 1) return reviveTypedArrays(snap);
+    if (snap && snap.version === 1) return reviveSnapshot(snap);
   } catch {
     // fall through to no-history
   }
@@ -1033,7 +1033,7 @@ function loadSceneHistory(): SerializedHistory | null {
     const raw = localStorage.getItem(SCENE_HISTORY_KEY);
     if (raw) {
       const snap = JSON.parse(raw) as SerializedHistory;
-      if (snap && snap.version === 1) return reviveTypedArrays(snap);
+      if (snap && snap.version === 1) return reviveSnapshot(snap);
     }
   } catch {
     // fall through to wipe

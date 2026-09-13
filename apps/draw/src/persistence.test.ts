@@ -3,7 +3,7 @@ import { createHistory } from '@weasel-js/history';
 import type { SerializedHistory } from '@weasel-js/history';
 import type { Op, SerializedScene } from '@weasel-js/core';
 import { asNodeId, buildWeaselClipboardText, parseWeaselClipboardText } from '@weasel-js/core';
-import { clipboardJsonReviver, nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer } from './persistence';
+import { clipboardJsonReviver, nodeSpecsFromSnapshot, reviveSnapshot, reviveTypedArrays, serializeReplacer } from './persistence';
 
 // These cover the new bit of App's localStorage autosave: the undo history is
 // now persisted alongside the scene. The risk is that a history snapshot's
@@ -101,11 +101,20 @@ describe('persistence — clipboard JSON reviver', () => {
   });
 
   it('preserves plain values untouched at non-root keys', () => {
-    const parsed = JSON.parse('{"weaselClipboard":1,"nodes":[{"id":"a","fill":"#fff"}]}', clipboardJsonReviver) as {
-      weaselClipboard: number; nodes: Array<{ id: string; fill: string }>;
+    const parsed = JSON.parse('{"weaselClipboard":1,"nodes":[{"id":"a","label":"box"}]}', clipboardJsonReviver) as {
+      weaselClipboard: number; nodes: Array<{ id: string; label: string }>;
     };
     expect(parsed.weaselClipboard).toBe(1);
-    expect(parsed.nodes[0]).toEqual({ id: 'a', fill: '#fff' });
+    expect(parsed.nodes[0]).toEqual({ id: 'a', label: 'box' });
+  });
+
+  // A copy made in a tab running the pre-2026-08-26 build is the other way
+  // legacy string paint reaches a current scene.
+  it('migrates legacy string paint on paste', () => {
+    const parsed = JSON.parse('{"weaselClipboard":1,"nodes":[{"id":"a","fill":"#fff"}]}', clipboardJsonReviver) as {
+      nodes: Array<{ fill: unknown }>;
+    };
+    expect(parsed.nodes[0].fill).toEqual({ color: '#fff' });
   });
 });
 
@@ -155,5 +164,87 @@ describe('persistence — scene snapshot → node specs', () => {
     const specs = nodeSpecsFromSnapshot(json);
     const coords = (specs[0].data as { coords: unknown }).coords;
     expect(coords).toBeInstanceOf(Float32Array);
+  });
+});
+
+// `collapse WeaselDraw's own fill and stroke onto the kit shapes` (7af35c53,
+// 2026-08-26) dropped `WeaselDrawData`'s `fill?: string` / `stroke?: string` /
+// `strokeWidth?: number` in favor of the kit's `FillStyle` and `Stroke`
+// objects, and took every reader's tolerance for the string forms with them.
+// Nothing converted the documents already in localStorage, so a scene saved
+// before that date reached the renderer with `fill: '#7ab8d4'` and threw
+// `parseColor: unrecognized color undefined` on every frame — a blank node,
+// per-frame, with no way back.
+describe('persistence — legacy string paint migration', () => {
+  type Data = Record<string, unknown>;
+  type Layer = 'default';
+  type Pose = { x: number; y: number; width: number; height: number };
+
+  const sceneOf = (data: Data): SerializedScene<Data, Layer, Pose> => ({
+    version: 1,
+    systemLayers: [{ id: 'default' }],
+    nodes: [{ id: 'a', kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data }],
+  });
+  const dataOf = (data: Data): Data => nodeSpecsFromSnapshot(sceneOf(data))[0].data as Data;
+
+  it('turns a string fill into a solid FillStyle', () => {
+    expect(dataOf({ fill: '#7ab8d4' }).fill).toEqual({ color: '#7ab8d4' });
+  });
+
+  it('moves a string fill\'s hex alpha to opacity, as `solid` does', () => {
+    expect(dataOf({ fill: '#7ab8d480' }).fill).toEqual({ color: '#7ab8d4', opacity: 128 / 255 });
+  });
+
+  it('turns a string stroke and its sibling strokeWidth into one Stroke', () => {
+    const data = dataOf({ stroke: '#0a3654', strokeWidth: 2 });
+    expect(data.stroke).toEqual({ paint: { color: '#0a3654' }, width: 2 });
+    expect('strokeWidth' in data).toBe(false);
+  });
+
+  it('defaults a string stroke with no strokeWidth to width 1', () => {
+    expect(dataOf({ stroke: '#0a3654' }).stroke).toEqual({ paint: { color: '#0a3654' }, width: 1 });
+  });
+
+  it('reads "none" as an explicit no-paint', () => {
+    expect(dataOf({ fill: 'none', stroke: 'none' })).toMatchObject({ fill: null, stroke: null });
+  });
+
+  // The trap: `FillStyle` discriminates on a `fill` key whose value is the
+  // string `'solid'` / `'linear-gradient'` / …, so "a string under `fill`"
+  // alone would mangle every current paint into `{ color: 'solid' }`.
+  it('leaves a current object paint alone, discriminant and all', () => {
+    const fill = { fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops: [{ offset: 0, color: '#fff' }] };
+    expect(dataOf({ fill: structuredClone(fill) }).fill).toEqual(fill);
+    expect(dataOf({ fill: { fill: 'solid', color: '#abc' } }).fill).toEqual({ fill: 'solid', color: '#abc' });
+  });
+
+  it('migrates a text node\'s style fill, which carried the same string', () => {
+    expect(dataOf({ text: 'hi', style: { fill: '#112233' } }).style).toEqual({ fill: { color: '#112233' } });
+  });
+
+  // The scene is only half of it: the undo stack persists its own copies of
+  // node data inside `setData` op payloads, so an undo after a reload would
+  // otherwise write a legacy string straight back into a migrated scene.
+  it('migrates the node data carried inside a persisted history snapshot', () => {
+    const snap = reviveSnapshot({
+      version: 1,
+      undoStack: [{
+        id: 1, label: 'Nudge',
+        forwardOps: [{ name: 'setData', args: { id: 'a', from: { fill: '#7ab8d4', stroke: '#0a3654', strokeWidth: 2 }, to: { fill: '#ff0000' } } }],
+        inverseOps: [],
+      }],
+      redoStack: [], nextEntryId: 2, droppedEntries: 0,
+    } as unknown as SerializedHistory) as unknown as {
+      undoStack: { forwardOps: { args: { from: Data; to: Data } }[] }[];
+    };
+    const args = snap.undoStack[0].forwardOps[0].args;
+    expect(args.from).toEqual({ fill: { color: '#7ab8d4' }, stroke: { paint: { color: '#0a3654' }, width: 2 } });
+    expect(args.to).toEqual({ fill: { color: '#ff0000' } });
+  });
+
+  it('still revives typed arrays — both passes run', () => {
+    const data = dataOf({ fill: '#7ab8d4', coords: [1.5, 2.5] });
+    expect(data.coords).toBeInstanceOf(Float32Array);
+    expect(data.fill).toEqual({ color: '#7ab8d4' });
   });
 });
