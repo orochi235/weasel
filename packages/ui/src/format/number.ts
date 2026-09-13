@@ -30,6 +30,38 @@ export function parseSignedNumber(text: string): number {
   return Number(text.replace(MINUS_SIGN, '-'));
 }
 
+/** Powers of ten a typed magnitude suffix stands for. */
+const EXPONENTS: Record<string, number> = { k: 3, m: 6, b: 9, t: 12 };
+
+/**
+ * Formats a number the way a `compact` readout shows it: below 1,000 at
+ * `decimals` places, from 1,000 up at one decimal with a magnitude suffix
+ * (`40.0K`, `2.0M`). Always `en-US`, so {@link parseNumber} reads it back.
+ */
+export function formatCompact(value: number, decimals = 0): string {
+  if (!Number.isFinite(value)) return formatNumber(value);
+  const options: Intl.NumberFormatOptions =
+    Math.abs(value) < 1000
+      ? { useGrouping: false, minimumFractionDigits: decimals, maximumFractionDigits: decimals }
+      : { notation: 'compact', minimumFractionDigits: 1, maximumFractionDigits: 1 };
+  return value.toLocaleString('en-US', options).replace(/^-/, MINUS_SIGN);
+}
+
+/**
+ * Reads a typed number: anything {@link parseSignedNumber} reads, plus
+ * thousands commas in the `40,000` shape and a `k`/`m`/`b`/`t` suffix in either
+ * case (`2.5m` is 2,500,000). Empty text is NaN rather than zero.
+ */
+export function parseNumber(text: string): number {
+  let t = text.trim().replace(MINUS_SIGN, '-');
+  const exponent = EXPONENTS[t.slice(-1).toLowerCase()];
+  if (exponent !== undefined) t = t.slice(0, -1).trimEnd();
+  if (/^[-+]?\d{1,3}(,\d{3})+(\.\d*)?$/.test(t)) t = t.replace(/,/g, '');
+  if (!/\d/.test(t)) return Number.NaN;
+  // Scaled through the exponent rather than by multiplying: 1.1 * 1000 is 1100.0000000000002.
+  return Number(exponent === undefined ? t : `${t}e${exponent}`);
+}
+
 /** {@link String} with the leading ASCII hyphen swapped for {@link MINUS_SIGN}.
  *  Locale-independent, unlike `toLocaleString`. */
 function signedString(value: number): string {

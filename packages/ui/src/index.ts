@@ -64,7 +64,14 @@ export type { ChromaCurve, ChromaCurvePoint } from './color/oklch';
 export { useReorderDragList } from './useReorderDragList';
 export { useRovingTabIndex } from './useRovingTabIndex';
 export type { RovingItem, RovingTabIndex, UseRovingTabIndexOptions } from './useRovingTabIndex';
-export { formatNumber, formatZoom, MINUS_SIGN, parseSignedNumber } from './format/number';
+export {
+  formatCompact,
+  formatNumber,
+  formatZoom,
+  MINUS_SIGN,
+  parseNumber,
+  parseSignedNumber,
+} from './format/number';
 export type {
   LayerListItem,
   UseReorderDragListOptions,
