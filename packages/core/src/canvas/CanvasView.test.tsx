@@ -162,6 +162,7 @@ function Harness({ layers, onReady }: {
       layers: () => layers,
       requestRedraw: () => {},
       hitTestExtras: () => null,
+      claimsAbove: () => false,
       chromeState: () => ({
         selection: [], multiActive: false, boundsOf: () => null, unionBounds: null,
         modifiers: { alt: false, shift: false, meta: false, ctrl: false },

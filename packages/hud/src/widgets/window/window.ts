@@ -32,6 +32,15 @@ export interface WindowOptions {
   onMove?: (b: WidgetBounds) => void;
   onResize?: (b: WidgetBounds) => void;
   onClose?: () => void;
+  /**
+   * Who takes input over the interior. `'claim'`, the default, keeps it: the
+   * content is a picture, and a press on it must not act on whatever sits
+   * under the window on the canvas. `'pass'` gives it up to a view the
+   * interior shows — `createLoupe`'s `interactive` lens — while widgets
+   * beneath still stay unreachable through it. A passing interior is never a
+   * move handle and never reports `onContentClick`.
+   */
+  interior?: 'claim' | 'pass';
   /** A press and release inside the interior that never became a drag,
    *  reported at the release point in screen-space CSS px. Fires whether or
    *  not the interior doubles as the move handle. */
@@ -57,6 +66,7 @@ export interface WindowWidget extends Widget {
 
 export function createWindow(opts: WindowOptions): WindowWidget {
   const chrome = opts.titlebar ?? true;
+  const passing = opts.interior === 'pass';
   const configured: WindowMetrics = { ...DEFAULT_WINDOW_METRICS, ...opts.metrics };
   // Without a titlebar the top inset is just the resize band, which keeps the
   // content clear of it and makes `zoneAt`'s titlebar branch unreachable.
@@ -98,7 +108,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
   // otherwise, and a window you cannot move is worse than one you cannot
   // click through.
   const asDrag = (z: WindowZone | null): WindowZone | null =>
-    !chrome && z === 'content' ? 'title' : z;
+    !chrome && !passing && z === 'content' ? 'title' : z;
 
   const closeBox = (): WidgetBounds => ({
     x: bounds.x + bounds.w - m.edge - m.closeSize,
@@ -184,7 +194,12 @@ export function createWindow(opts: WindowOptions): WindowWidget {
 
     hitTest(px, py) {
       if (hidden) return false;
-      return zoneAt(bounds, m, px, py) !== null;
+      const z = zoneAt(bounds, m, px, py);
+      return z !== null && !(passing && z === 'content');
+    },
+
+    passes(px, py) {
+      return passing && !hidden && zoneAt(bounds, m, px, py) === 'content';
     },
 
     onPointer(evt: HudPointerEvent): void {

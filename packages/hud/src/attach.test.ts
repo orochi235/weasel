@@ -282,6 +282,15 @@ describe('attachHud claims', () => {
     expect(hitAt(api)?.initialScratch?.widget.id).toBe('under');
   });
 
+  it('the hit walk stops at an interior that passes, claiming nothing', () => {
+    const hud = createHud();
+    const api = makeApi();
+    attachHud(api, hud);
+    hud.add(widgetAt('under'));
+    hud.add({ ...widgetAt('lens'), hitTest: () => false, passes: () => true });
+    expect(hitAt(api)).toBeNull();
+  });
+
   it('the layer hit carries the widget claim set', () => {
     const hud = createHud();
     const api = makeApi();

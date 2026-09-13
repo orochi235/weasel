@@ -46,8 +46,13 @@ export interface CanvasViewProps {
    *  outer camera. A plain rect is accepted for a fixed panel. */
   bounds: ViewRect | ((outer: View, dims: Dims) => ViewRect);
   /** Camera. Supply this to control it; otherwise the view keeps its own,
-   *  seeded from `defaultView`. `onViewChange` fires either way. */
-  view?: View;
+   *  seeded from `defaultView`. `onViewChange` fires either way.
+   *
+   *  A thunk is a camera derived from the canvas's — a loupe following the
+   *  pointer — read fresh at every paint and every event, so the two cannot
+   *  disagree mid-gesture. It is controlled: a pan inside the view reaches
+   *  only `onViewChange`. */
+  view?: View | ((outer: View, dims: Dims) => View);
   defaultView?: View;
   onViewChange?: (v: View) => void;
   /** Pan limits, applied to every camera change the same way `<Canvas>`
@@ -64,6 +69,23 @@ export interface CanvasViewProps {
   order?: number;
   /** Label for debug overlays. Defaults to the id. */
   label?: string;
+  /**
+   * Whether input over the view resolves through its camera. Default `true`:
+   * a press selects what the view shows, and a drag moves it in the view's
+   * world units. `false` paints only, and input over it reaches the canvas
+   * beneath as though the view were not there.
+   *
+   * Views do not nest. A view paints and routes the surface's own stack,
+   * never another view; overlapping views are hit in paint order.
+   */
+  interactive?: boolean;
+  /**
+   * Whether the surface paints the view. Default `true`. `false` is for a
+   * host that draws the view inside chrome of its own — a HUD window's
+   * interior — through `SceneCanvasApi.addView`'s `draw`, so it lands in
+   * that chrome's z-order rather than the surface's.
+   */
+  paint?: boolean;
   /** A selection of this view's own, which actions dispatched inside it read
    *  and write instead of the surface's. Omit both this and
    *  `selectionOptions` and the view shares the surface's selection — the
@@ -103,7 +125,7 @@ export function CanvasView(props: CanvasViewProps): null {
   const {
     id, bounds, view: viewProp, defaultView, onViewChange, viewBounds,
     layers = ALL_LAYERS, background, order = Infinity, label,
-    selection: selectionProp, selectionOptions,
+    selection: selectionProp, selectionOptions, interactive = true, paint = true,
   } = props;
 
   const registry = useOptionalViewRegistry();
@@ -146,6 +168,17 @@ export function CanvasView(props: CanvasViewProps): null {
     return rectAt(surface?.view() ?? IDENTITY_VIEW, surface?.dims() ?? UNMEASURED_DIMS);
   }, [registry, rectAt]);
 
+  const cameraAt = useCallback((outer: View, dims: Dims): View => {
+    const v = live.current.view;
+    return typeof v === 'function' ? v(outer, dims) : v;
+  }, []);
+
+  /** The camera for the surface's current frame. */
+  const camera = useCallback((): View => {
+    const surface = registry?.surface();
+    return cameraAt(surface?.view() ?? IDENTITY_VIEW, surface?.dims() ?? UNMEASURED_DIMS);
+  }, [registry, cameraAt]);
+
   const setView = useCallback((next: View) => {
     const { viewBounds: vb, onViewChange: cb, viewProp: controlled } = live.current;
     const rect = rectNow();
@@ -156,13 +189,13 @@ export function CanvasView(props: CanvasViewProps): null {
   }, [registry, rectNow]);
 
   const viewApi = useMemo<ViewApi>(() => ({
-    get: () => live.current.view,
+    get: camera,
     set: setView,
     hostSize: () => {
       const rect = rectNow();
       return { width: rect.w, height: rect.h };
     },
-  }), [rectNow, setView]);
+  }), [camera, rectNow, setView]);
 
   // Paste placement is a camera question, so it is this view's when the paste
   // routed here. The rest of the dep — `resolveSrc`, `svg`, `clipboard` — is
@@ -172,13 +205,13 @@ export function CanvasView(props: CanvasViewProps): null {
     return {
       viewportWorldRect: () => {
         const rect = rectNow();
-        return viewportWorldRect(live.current.view, { width: rect.w, height: rect.h });
+        return viewportWorldRect(camera(), { width: rect.w, height: rect.h });
       },
       get resolveSrc() { return base()?.resolveSrc; },
       get svg() { return base()?.svg; },
       get clipboard() { return base()?.clipboard; },
     };
-  }, [rectNow]);
+  }, [camera, rectNow]);
 
   // One dispatcher per view: in-flight handles are per-view state, and two
   // views must not be able to see each other's.
@@ -203,9 +236,9 @@ export function CanvasView(props: CanvasViewProps): null {
    *  its dispatcher's in-flight action. */
   const ruleInputs = useCallback((): ViewRuleInputs => ({
     selection: live.current.selection.get(),
-    view: live.current.view,
+    view: camera(),
     action: dispatcherRef.current!.getActiveAction(),
-  }), []);
+  }), [camera]);
 
   const { helpers } = useViewHelpers<unknown>({
     ...(inputs ?? NO_INPUTS),
@@ -225,10 +258,10 @@ export function CanvasView(props: CanvasViewProps): null {
     const [x, y] = clientToWorld(
       cx, cy,
       { left: canvas.left + rect.x, top: canvas.top + rect.y },
-      live.current.view,
+      camera(),
     );
     return { x, y };
-  }, [registry, rectNow]);
+  }, [registry, rectNow, camera]);
 
   const getAnchorState = useMemo(() => anchorStateFrom(() => depRegistryRef.current), []);
 
@@ -239,19 +272,20 @@ export function CanvasView(props: CanvasViewProps): null {
   const affordanceAt = useMemo(() => {
     const inner = buildAffordanceAt({
       getChromeState: () => helpersRef.current.getChromeState(),
-      getView: () => live.current.view,
+      getView: camera,
       targetScale,
       getAnchorState,
       getIsVisible: () => helpersRef.current.getIsVisible(),
     });
     return (world: { x: number; y: number }) => {
-      // Registered layers draw over the kit's chrome, so they get first
-      // refusal — hit-tested against this view's frame and envelope, not the
-      // canvas's.
+      // A registered layer this view paints gets first refusal, on this
+      // view's frame and envelope. One painted over the surface already had
+      // its chance: it occludes the view before routing reaches here.
       const rect = rectNow();
-      const extra = registry?.surface()?.hitTestExtras(
-        world.x, world.y, live.current.view, { width: rect.w, height: rect.h },
-        helpersRef.current,
+      const surface = registry?.surface();
+      const extra = surface?.hitTestExtras(
+        world.x, world.y, camera(), { width: rect.w, height: rect.h },
+        helpersRef.current, live.current.layers(surface.layers()),
       );
       if (extra) {
         const claim = extra.hit;
@@ -266,7 +300,7 @@ export function CanvasView(props: CanvasViewProps): null {
       }
       return inner(world);
     };
-  }, [getAnchorState, rectNow, registry, targetScale]);
+  }, [getAnchorState, rectNow, registry, targetScale, camera]);
 
   const classifyTarget = useMemo(() => {
     const inner = buildClassifyTarget(
@@ -275,24 +309,26 @@ export function CanvasView(props: CanvasViewProps): null {
         const i = inputsRef.current;
         // This view's camera: the dispatcher converted with `clientToWorldHere`,
         // and a screen-pixel tolerance needs the scale that produced it.
-        const camera = live.current.view;
-        if (i?.pickBest) return i.pickBest(wx, wy, camera);
-        const ids = i?.pickEvery?.(wx, wy, camera) ?? [];
+        const frame = camera();
+        if (i?.pickBest) return i.pickBest(wx, wy, frame);
+        const ids = i?.pickEvery?.(wx, wy, frame) ?? [];
         return ids.length > 0 ? ids[ids.length - 1]! : null;
       },
       (id) => inputsRef.current?.kindOfNode?.(id),
     );
     return (world: { x: number; y: number }) => inner(world);
-  }, []);
+  }, [camera]);
 
   const registration = useMemo<ViewRegistration>(() => ({
     id,
     order,
+    interactive,
+    paint,
     layer: createViewportLayer<unknown, unknown>({
       id,
       label: label ?? id,
       source: () => live.current.layers(registry?.surface()?.layers() ?? []),
-      view: () => live.current.view,
+      view: cameraAt,
       bounds: (outer, dims) => rectAt(outer, dims),
       // The surface half of the envelope passes through; the view half is
       // this view's, so its layers paint its chrome rather than the
@@ -319,7 +355,7 @@ export function CanvasView(props: CanvasViewProps): null {
       // another.
       getRuleCtx: () => inputsRef.current?.chromeCaps?.ruleCtx(ruleInputs()),
     },
-  }), [id, order, label, background, registry, rectAt, viewApi,
+  }), [id, order, interactive, paint, label, background, registry, rectAt, cameraAt, viewApi,
        affordanceAt, classifyTarget, clientToWorldHere, ruleInputs, ingestionApi]);
 
   useEffect(() => {

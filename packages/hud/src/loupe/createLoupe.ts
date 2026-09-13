@@ -1,6 +1,6 @@
 import {
   createViewportLayer, screenToWorld, viewToTransform,
-  type RenderLayer, type View,
+  type CanvasViewHandle, type RenderLayer, type SceneCanvasApi, type View,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import {
@@ -14,8 +14,8 @@ import { readbackRegion } from './readback';
 
 export type { LoupeMode };
 
-/** Options for `createLoupe`. */
-export interface LoupeOptions {
+/** Options for `createLoupe` shared by a plain lens and an interactive one. */
+export interface LoupeBaseOptions {
   hud: Hud;
   /** The canvas pixel mode reads back from. Supplies the GL context and the
    *  drawing-buffer dimensions. */
@@ -24,8 +24,6 @@ export interface LoupeOptions {
    *  the rect client coords are measured against. Defaults to `canvas`, which
    *  is right whenever the canvas is also the thing under the pointer. */
   input?: HTMLElement;
-  /** Layers re-rendered through the magnified inner view in vector mode. */
-  source: RenderLayer<unknown>[];
   requestRedraw: () => void;
   mode?: LoupeMode;
   factor?: number;
@@ -41,7 +39,8 @@ export interface LoupeOptions {
   onColorChange?: (hex: string) => void;
   /** Fired when a click inside the lens picks a color — an eyedropper on the
    *  magnified surface. Where the color goes is the consumer's: the loupe
-   *  reports the pick and nothing else. */
+   *  reports the pick and nothing else. An `interactive` lens gives its clicks
+   *  to the canvas, so only `pick()` reaches this. */
   onPick?: (hex: string) => void;
   /** Fired by the window's close box. The window does not hide itself —
    *  whoever owns the loupe's visibility decides what closing means. */
@@ -51,6 +50,37 @@ export interface LoupeOptions {
    *  the theme's surface color. */
   background?: string;
 }
+
+/** Options for `createLoupe`. */
+export type LoupeOptions = LoupeBaseOptions & (
+  | {
+      /** Layers re-rendered through the magnified inner view in vector mode. */
+      source: RenderLayer<unknown>[];
+      views?: undefined;
+      interactive?: false;
+    }
+  | {
+      /**
+       * The canvas, as a host for views. The lens becomes a view on it: vector
+       * mode paints the canvas's own stack — scene and selection chrome — and
+       * the lens can take input. It magnifies the canvas's own camera; aimed
+       * over another view, it shows the canvas's world, not that view's.
+       */
+      views: Pick<SceneCanvasApi, 'addView'>;
+      /** Narrows what vector mode paints. Defaults to the canvas's stack. */
+      source?: RenderLayer<unknown>[];
+      /**
+       * Route input inside the lens to what it shows: a press selects the node
+       * magnified under the pointer, and a drag moves it by the pointer travel
+       * divided by the magnification. Default `false` — the window keeps its
+       * interior, and a click there picks a color.
+       */
+      interactive?: boolean;
+    }
+);
+
+/** Where an interactive lens routes while its window is hidden: nowhere. */
+const NO_RECT = { x: 0, y: 0, w: 0, h: 0 };
 
 /** Control surface for a live loupe: where it is aimed, how it magnifies,
  *  what color it is over, and the window it lives in. */
@@ -82,8 +112,14 @@ export interface LoupeHandle {
  * pointer; `dispose` removes it again.
  */
 export function createLoupe(opts: LoupeOptions): LoupeHandle {
-  const { hud, canvas: element, source, requestRedraw } = opts;
+  const { hud, canvas: element, requestRedraw } = opts;
+  const host = opts.views;
+  const interactive = host !== undefined && opts.interactive === true;
   const input = opts.input ?? element;
+  let lens: CanvasViewHandle | null = null;
+  // Set while a gesture that began over the window is held: the lens camera
+  // follows the aim, so re-aiming mid-drag would move the world under it.
+  let holding = false;
   let pixels: ImageBitmap | null = null;
   let pixelsPending = false;
   let refreshWanted = false;
@@ -97,22 +133,30 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   const backdropColor = (ctx: HudContentCtx): string =>
     opts.background ?? ctx.tokens['--wzl-surface'];
 
+  const backdrop = (ctx: HudContentCtx): DrawCommand => ({
+    kind: 'path',
+    path: { kind: 'rect', x: ctx.rect.x, y: ctx.rect.y, width: ctx.rect.w, height: ctx.rect.h },
+    fill: { fill: 'solid', color: backdropColor(ctx) },
+  });
+
+  const innerView = (outer: View, rect: WidgetBounds): View => {
+    const world = screenToWorld(model.aim.x, model.aim.y, viewToTransform(outer));
+    return loupeInnerView({ x: world[0], y: world[1] }, outer, rect, model.factor);
+  };
+
   const drawVector = (ctx: HudContentCtx): DrawCommand[] => {
-    const world = screenToWorld(model.aim.x, model.aim.y, viewToTransform(ctx.view));
-    const inner: View = loupeInnerView(
-      { x: world[0], y: world[1] }, ctx.view, ctx.rect, model.factor,
-    );
+    if (host) return lens ? [backdrop(ctx), ...lens.draw(ctx.data, ctx.view, ctx.dims)] : [backdrop(ctx)];
     // A fresh lens per frame: CreateViewportLayerOpts.view is static, and the
     // inner view moves with the pointer.
-    const lens = createViewportLayer<unknown>({
+    const picture = createViewportLayer<unknown>({
       id: `${win.id}:lens`,
       label: 'Loupe content',
-      source,
-      view: inner,
+      source: opts.source ?? [],
+      view: innerView(ctx.view, ctx.rect),
       bounds: () => ctx.rect,
       background: backdropColor(ctx),
     });
-    return lens.draw(ctx.data, ctx.view, ctx.dims);
+    return picture.draw(ctx.data, ctx.view, ctx.dims);
   };
 
   const drawPixels = (ctx: HudContentCtx): DrawCommand[] => {
@@ -120,11 +164,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     // transparent framebuffer is transparent, and before the first one
     // settles there is nothing at all, either of which leaves the lens a
     // hole onto the unmagnified canvas.
-    const out: DrawCommand[] = [{
-      kind: 'path',
-      path: { kind: 'rect', x: ctx.rect.x, y: ctx.rect.y, width: ctx.rect.w, height: ctx.rect.h },
-      fill: { fill: 'solid', color: backdropColor(ctx) },
-    }];
+    const out: DrawCommand[] = [backdrop(ctx)];
     if (pixels) {
       out.push({
         kind: 'image',
@@ -191,14 +231,15 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     title: opts.title ?? 'Loupe',
     titlebar: opts.titlebar,
     content,
+    interior: interactive ? 'pass' : 'claim',
     onResize: () => { scheduleRefresh(); },
-    onContentClick: (p) => { model.pick(p); },
+    ...(interactive ? {} : { onContentClick: (p: { x: number; y: number }) => { model.pick(p); } }),
     ...(opts.onClose ? { onClose: opts.onClose } : {}),
   });
 
   const surface: LoupeSurface = {
     lens: () => win.contentRect,
-    covers: (p) => win.hitTest(p.x, p.y),
+    covers: (p) => win.hitTest(p.x, p.y) || (win.passes?.(p.x, p.y) ?? false),
     sample: readHex,
     hidden: () => win.hidden,
     gone: () => win.disposed === true,
@@ -214,10 +255,32 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     onDispose: () => teardown(),
   });
 
-  const onPointerMove = (evt: PointerEvent) => {
+  if (host) {
+    lens = host.addView({
+      id: `${win.id}:lens`,
+      label: 'Loupe',
+      bounds: () => (win.hidden ? NO_RECT : win.contentRect),
+      view: (outer) => innerView(outer, win.contentRect),
+      paint: false,
+      interactive,
+      ...(opts.source ? { layers: () => opts.source! } : {}),
+    });
+  }
+
+  const local = (evt: PointerEvent): { x: number; y: number } => {
     const r = input.getBoundingClientRect();
-    model.aimAt({ x: evt.clientX - r.left, y: evt.clientY - r.top });
+    return { x: evt.clientX - r.left, y: evt.clientY - r.top };
   };
+
+  const onPointerMove = (evt: PointerEvent) => {
+    if (holding) return;
+    model.aimAt(local(evt));
+  };
+  const onPointerDown = (evt: PointerEvent) => {
+    if (interactive && surface.covers(local(evt))) holding = true;
+  };
+  const onPointerEnd = () => { holding = false; };
+  const pointerEnds = ['pointerup', 'pointercancel', 'lostpointercapture'] as const;
 
   const unsubscribeFrame = hud.subscribeFrame(() => {
     // A refresh wanted while a bitmap is in flight is remembered rather than
@@ -232,11 +295,17 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     disposed = true;
     unsubscribeFrame();
     input.removeEventListener('pointermove', onPointerMove);
+    input.removeEventListener('pointerdown', onPointerDown);
+    for (const type of pointerEnds) input.removeEventListener(type, onPointerEnd);
+    lens?.remove();
+    lens = null;
     pixels?.close();
     pixels = null;
   };
 
   input.addEventListener('pointermove', onPointerMove);
+  input.addEventListener('pointerdown', onPointerDown);
+  for (const type of pointerEnds) input.addEventListener(type, onPointerEnd);
 
   return {
     window: win,

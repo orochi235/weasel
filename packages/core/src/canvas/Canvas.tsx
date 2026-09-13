@@ -888,6 +888,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     view: View,
     dims: Dims,
     data: unknown,
+    only?: readonly RenderLayer<unknown>[],
   ) => {
     const layers = [...extrasRef.current].reverse();
     const isVisible = getIsVisibleRef.current?.() ?? alwaysVisible;
@@ -895,6 +896,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     const order = layerOrderRef.current;
     for (const layer of layers) {
       if (!layer.hitTest) continue;
+      if (only && !only.includes(layer)) continue;
       if (!isLayerPainted(layer, visibility, order)) continue;
       const hit = layer.hitTest(worldX, worldY, data, view, dims, isVisible);
       if (hit) return { layerId: layer.id, hit };
@@ -1317,6 +1319,13 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       requestRedraw,
       chromeState: () => helpersForLayersRef.current!.getChromeState(),
       hitTestExtras: hitTestExtrasIn,
+      claimsAbove: (x, y) => {
+        const view = viewRef.current;
+        return hitTestExtrasIn(
+          view.x + x / view.scale.x, view.y + y / view.scale.y,
+          view, dimsRef.current, helpersForLayersRef.current,
+        ) !== null;
+      },
     });
   }, [viewRegistry, canvasRef, requestRedraw, hitTestExtrasIn]);
 
@@ -1327,7 +1336,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     // Views paint through the surface's own stack, so they sit above it and
     // below both the debug overlay and externally-registered layers.
     const withViews = viewRegistry
-      ? [...layers, ...viewRegistry.list().map((r) => r.layer as RenderLayer<unknown>)]
+      ? [...layers, ...viewRegistry.list().filter((r) => r.paint).map((r) => r.layer as RenderLayer<unknown>)]
       : layers;
     const base = debugSink && resolvedDebugConfig
       ? [...withViews, createDebugOverlayLayer({ sink: debugSink, config: resolvedDebugConfig })]

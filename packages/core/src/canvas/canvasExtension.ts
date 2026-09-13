@@ -4,6 +4,22 @@ import type { View } from '../core/viewport/view';
 import type { IngestItem } from '../features/ingestion/ingestItems';
 import type { ViewAnimationOptions } from '../core/viewport/useViewAnimation';
 import type { PaintedCursorState } from '../features/cursor/paintedCursorState';
+import type { DrawCommand } from '../renderer';
+import type { CanvasViewProps } from './CanvasView';
+
+/**
+ * A view added through {@link SceneCanvasApi.addView}.
+ * @experimental
+ */
+export interface CanvasViewHandle {
+  readonly id: string;
+  /** Paint the view for one frame of the canvas: its layers through its own
+   *  camera, clipped to its rect. For a view added with `paint: false`, whose
+   *  host draws it; empty until the view has mounted. */
+  draw(data: unknown, outer: View, dims: Dims): DrawCommand[];
+  /** Stop painting and routing the view. */
+  remove(): void;
+}
 
 /**
  * The **base imperative ref handle** shared by the canvas components. For
@@ -119,6 +135,10 @@ export interface CanvasExtensionApi {
    *  handle is always populated on `<SceneCanvas>` refs, absent on the
    *  bare-primitive handle. */
   ingest?(input: File[] | IngestItem[], point?: { x: number; y: number }): void;
+  /** Add a view to the canvas from outside React. See
+   *  {@link SceneCanvasApi.addView}; absent on the bare-primitive handle,
+   *  which hosts no views. */
+  addView?(props: CanvasViewProps): CanvasViewHandle;
 }
 
 /**
@@ -140,4 +160,14 @@ export interface SceneCanvasApi extends CanvasExtensionApi {
   /** Cancel a camera animation. The view stays where it is. */
   stopViewAnimation(): void;
   isViewAnimating(): boolean;
+  /**
+   * Add a view — the same declaration as a `<CanvasView>` child, for code
+   * outside React: chrome that opens a lens, a panel a plugin owns. Input over
+   * it resolves through its camera unless `interactive` is `false`.
+   *
+   * Pass thunks for `bounds` and `view` rather than re-adding to move it.
+   * Adding an id already present replaces that view.
+   * @experimental
+   */
+  addView(props: CanvasViewProps): CanvasViewHandle;
 }
