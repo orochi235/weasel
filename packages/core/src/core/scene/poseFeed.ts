@@ -23,15 +23,45 @@ export interface PoseFeed<TData, TLayer extends string, TPose> {
 
 const EMPTY = Object.freeze([]) as readonly never[];
 
+/** The three references a node carries that a renderer cares about. The node
+ *  object is mutated in place, so it is these — not the node — that move. */
+interface Snapshot<TData, TLayer extends string, TPose> {
+  pose: TPose;
+  data: TData;
+  layer: TLayer;
+}
+
 export function createPoseFeed<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
 ): PoseFeed<TData, TLayer, TPose> {
-  let seen: Map<NodeId, Node<TData, TLayer, TPose>> | null = null;
+  let seen: Map<NodeId, Snapshot<TData, TLayer, TPose>> | null = null;
+  let seenVersion = -1;
 
-  const posed = (node: Node<TData, TLayer, TPose>): FeedNode<TData, TLayer, TPose> => ({
-    node,
-    pose: effectivePose(scene, node),
-  });
+  const walk = (): {
+    added: FeedNode<TData, TLayer, TPose>[];
+    removed: NodeId[];
+    changed: FeedNode<TData, TLayer, TPose>[];
+  } => {
+    const prev = seen!;
+    const added: FeedNode<TData, TLayer, TPose>[] = [];
+    const changed: FeedNode<TData, TLayer, TPose>[] = [];
+    const removed: NodeId[] = [];
+    const next = new Map<NodeId, Snapshot<TData, TLayer, TPose>>();
+
+    for (const [id, node] of scene.nodes) {
+      const pose = effectivePose(scene, node);
+      next.set(id, { pose, data: node.data, layer: node.layer });
+      const before = prev.get(id);
+      if (before === undefined) added.push({ node, pose });
+      else if (before.pose !== pose || before.data !== node.data || before.layer !== node.layer) {
+        changed.push({ node, pose });
+      }
+    }
+    for (const id of prev.keys()) if (!next.has(id)) removed.push(id);
+
+    seen = next;
+    return { added, removed, changed };
+  };
 
   return {
     subscribe() {
@@ -39,15 +69,19 @@ export function createPoseFeed<TData, TLayer extends string, TPose>(
     },
     read() {
       if (seen === null) {
-        seen = new Map(scene.nodes);
-        return {
-          added: [...seen.values()].map(posed),
-          removed: EMPTY,
-          changed: EMPTY,
-          reset: true,
-        };
+        // An empty `seen` makes the walk report every node as added, and fills
+        // the snapshot map in the same pass.
+        seen = new Map();
+        seenVersion = scene.getVersion();
+        return { ...walk(), removed: EMPTY, changed: EMPTY, reset: true };
       }
-      return { added: EMPTY, removed: EMPTY, changed: EMPTY, reset: false };
+
+      const version = scene.getVersion();
+      if (version === seenVersion) {
+        return { added: EMPTY, removed: EMPTY, changed: EMPTY, reset: false };
+      }
+      seenVersion = version;
+      return { ...walk(), reset: false };
     },
   };
 }
