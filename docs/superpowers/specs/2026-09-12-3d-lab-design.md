@@ -130,16 +130,17 @@ fight goes in the log and the lab supplies its own.
 | `snap` | identity |
 | `insert` | screen rect → ray through its center → ground plane → a box sized by the rect |
 | `scene`, `selection`, `applyOps`, `history`, `poseComposition` | expected to need nothing 3D-specific |
-| `poseDescriptor` | `getBounds` as the screen-projected AABB; `remapBounds` and `fromBounds` throw |
+| `poseDescriptor` | `getBounds` as the screen-projected AABB; `remapBounds` and `fromBounds` at the pose's own depth |
 | `camera3d` (new, lab-local) | orbit camera; `view` cannot hold one |
 
 `poseDescriptor` is the interesting half-fit. Its whole interface is expressed in
 `Bounds`, so a pose can be any shape but the interchange currency is a 2D rect.
 Read as a *screen-projected* AABB that is meaningful — it is what chrome needs —
-and `getBounds`/`intersectsRect` work. Going the other way does not: a screen
-rect does not determine a 3D pose without a depth choice, so `remapBounds` and
-`fromBounds` throw rather than guess, and every action requiring them is recorded
-as not transferring.
+and `getBounds`/`intersectsRect` work. Going the other way takes a depth the
+rectangle does not carry; the kernel's answer, decided 2026-09-13, is the depth
+the pose already has, so `remapBounds` and `fromBounds` resolve the rectangle on
+a camera-facing plane through it and nothing they produce moves nearer or
+further.
 
 `geometryProjection` is the other outright fight: `transform(node, m: Mat3)`
 cannot hold a 3D transform.

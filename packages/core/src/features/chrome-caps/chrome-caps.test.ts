@@ -9,6 +9,7 @@ import {
   modifierHeld, zoomAtLeast,
 } from './conditions';
 import { defaultVisibilityRules } from './defaults';
+import { viewZoom } from '../../core/viewport/view';
 import { resolveVisibility } from './resolve';
 import { byId, DEFAULT_MODES, IMPLICIT_TAGS, type CapabilityTag } from '@weasel-js/modes';
 
@@ -34,7 +35,7 @@ function ctx(over: Partial<RuleCtx> = {}): RuleCtx {
     modifiers: { alt: false, shift: false, meta: false, ctrl: false },
     action: { kind: null, id: null },
     hover: null,
-    view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
+    zoom: 1,
     mode,
     allowedCapabilities: capsFor(mode),
     ...over,
@@ -93,13 +94,13 @@ describe('chrome-caps / atoms', () => {
   it('zoomAtLeast (uniform)', () => {
     expect(zoomAtLeast(1)(ctx())).toBe(true);
     expect(zoomAtLeast(2)(ctx())).toBe(false);
-    expect(zoomAtLeast(0.5)(ctx({ view: { x: 0, y: 0, scale: { x: 0.5, y: 0.5 } } }))).toBe(true);
+    expect(zoomAtLeast(0.5)(ctx({ zoom: 0.5 }))).toBe(true);
   });
 
   it('zoomAtLeast (non-uniform uses geometric mean)', () => {
     // sqrt(4 * 1) = 2
-    expect(zoomAtLeast(2)(ctx({ view: { x: 0, y: 0, scale: { x: 4, y: 1 } } }))).toBe(true);
-    expect(zoomAtLeast(2.5)(ctx({ view: { x: 0, y: 0, scale: { x: 4, y: 1 } } }))).toBe(false);
+    expect(zoomAtLeast(2)(ctx({ zoom: viewZoom({ x: 0, y: 0, scale: { x: 4, y: 1 } }) }))).toBe(true);
+    expect(zoomAtLeast(2.5)(ctx({ zoom: viewZoom({ x: 0, y: 0, scale: { x: 4, y: 1 } }) }))).toBe(false);
   });
 
   it('always / never', () => {

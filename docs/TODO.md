@@ -187,48 +187,41 @@ Priority tags:
   own arc, and worth asking first whether labkit should support a lab with no
   trials at all.
 
-- **(P3) `Scene`'s kit registry carries a 2D `unionOfChildren` into every
-  scene.** `core/scene/kitRegistry.ts` registers it unconditionally, and it
-  casts twice through `as unknown as RectPose` to reach `unionAABB`. A non-rect
-  scene that opts a node into `derivePoseKey: UNION_OF_CHILDREN` gets garbage
-  rather than an error. `unionOfChildrenVia(descriptor)` shadows it under the
-  same key and is the intended escape, so the fix is to stop registering a
-  pose-shaped default rather than to add a guard. Found while promoting the 3D
-  lab's kernel material, 2026-09-13.
+- **(P3) One dep still names a plane, not ten.** The count came from reading
+  signatures for 2D-looking types; read for what a camera-bearing host can
+  actually implement, the ten are: `geometryProjection` alone, whose
+  `transform(node, m: Mat3)` has no 3D form (its own entry below, and core
+  builds the `Mat3` at four call sites before the dep is consulted, so widening
+  the type does not free it). `view` is not an obstruction but the design —
+  viewport deps are per-kernel, and `kernel3d` declares `camera3d`.
+  `editAnchors` and `booleansAdapter` are 2D *features* — anchor editing and
+  path booleans — that a 3D kernel simply does not declare. The remaining six —
+  `pointer`, `snap`, `lassoSelect`, `poseDescriptor`, `slice`, `ingestion` —
+  are satisfiable as typed, because every coordinate in them is a screen point
+  under the identity `clientToWorld` a 3D host passes. Re-measured 2026-09-13,
+  dep by dep.
 
-- **(P3) The 3D lab still collects ghosts from dispatcher handles.**
-  `ghosts3d.ts` reads `dispatcher.getInFlightHandles()` because `moveAction`
-  declares `previewHidesSource: true` and the lab wants the source solid drawn.
-  `2026-09-13-pose-feed-design.md` says a `FeedNode` carries both the committed
-  and the effective pose, so the feed gets the same picture without a second
-  channel — which is why the ghost collector stayed in the lab rather than being
-  promoted into `@weasel-js/kernel3d`. Migrating it is what would retire the
-  file.
+  The routing package itself declares `View` in `tools/types.ts` (`ToolCtx`) and
+  in its barrel. `RuleCtx` no longer does: it carries `zoom?: number`, so a host
+  whose viewport is a camera can supply eligibility instead of leaving
+  `getRuleCtx` unset and silently skipping every rule — which is what the 3D lab
+  was doing. What is left is `ToolCtx`, and only `<Canvas>` ever builds one.
+  `Point2` is orientation-free, and none of `dispatcher.ts`, `matcher.ts`,
+  `invoker.ts`, `action.ts`, `buildDeps.ts` or `depRegistry.tsx` names a 2D type
+  at all.
 
-- **(P2) The routing package is still typed in 2D.** `@weasel-js/routing` exists
-  (2026-09-13) and core consumes it, but the seam the 3D lab keeps hitting is
-  unchanged: `ViewApi` has no orientation, and
-  `SnapDep`/`AreaSelectDep`/`NodeAtPointDep`/`InsertDep.commit` are typed in 2D
-  points and `Bounds`. Ten of the 24 deps are genuine obstructions —
-  `view`, `pointer`, `snap`, `lassoSelect`, `editAnchors`, `poseDescriptor`,
-  `booleansAdapter`, `slice`, `ingestion`, `geometryProjection`. `view` is the
-  outright dead end; a `View` is `{x, y, scale}` and names no camera. The deps
-  themselves stay in core and merge into routing's `DepSchema` from outside, so
-  a second kernel can already declare its own — what it cannot do is reuse the
-  ten that assume a plane. Measured in
-  `docs/superpowers/specs/2026-09-13-routing-extraction-costing.md`.
+- **(P3) Nothing declares the `pointer` dep.** No `requires:` anywhere in
+  `packages/` or `apps/` names it; it survives in the two legacy fixed bags in
+  `ActionsProvider.tsx` and is registered unconditionally by
+  `useStandardActions`. Removing it is a public-API change, so it wants its own
+  decision. Found while re-measuring the dep schema, 2026-09-13.
 
-- **(P3) `PoseDescriptor` only runs one way for a non-2D pose.** `getBounds`
-  and `intersectsRect` read fine as a screen-projected AABB — that is what
-  drove the 3D lab's chrome through an orbit. `remapBounds` and `fromBounds`
-  run the other way, and a screen rect does not name a 3D pose without a depth
-  choice, so the lab throws rather than guess and every action needing them is
-  recorded as not transferring. That depth choice is what is left here: the
-  interchange currency is `Bounds`, and picking one is a design decision, not
-  hygiene. The descriptor's other gap is closed — `forNode` hands it the node,
-  so the lab's sphere now bounds itself as a sphere. `geometryProjection` is the
-  same family and further gone — `transform(node, m: Mat3)` cannot hold a 3D
-  transform.
+- **(P3) `geometryProjection` cannot hold a 3D transform.** `transform(node,
+  m: Mat3)` names a plane in its signature, so a kernel with a camera has
+  nothing to implement it with. `PoseDescriptor`, which was the same complaint,
+  is closed: `forNode` hands it the node, and `remapBounds`/`fromBounds` resolve
+  a screen rectangle at the pose's own depth (2026-09-13) rather than throwing.
+  Whatever replaces `Mat3` here is the remaining piece of that family.
 
 ### Pen tool follow-ups
 

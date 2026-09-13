@@ -45,7 +45,7 @@ function makeRuleCtx(overrides: Partial<RuleCtx> = {}): RuleCtx {
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
     action: { kind: null, id: null },
     hover: null,
-    view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
+    zoom: 1,
     mode: 'normal',
     allowedCapabilities: new Set(),
     ...overrides,

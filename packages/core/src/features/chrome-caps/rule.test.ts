@@ -10,7 +10,7 @@ function baseCtx(overrides: Partial<RuleCtx> = {}): RuleCtx {
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
     action: { kind: null, id: null },
     hover: null,
-    view: { x: 0, y: 0, scale: { x: 1, y: 1 } } as unknown as RuleCtx['view'],
+    zoom: 1,
     mode: 'normal',
     allowedCapabilities: new Set(['navigation', 'creates-selection']),
     ...overrides,
@@ -87,9 +87,10 @@ describe('evaluate — Selector keys', () => {
     expect(evaluate({ hoveringSelected: true }, baseCtx({ hover: 'n2' as never, selection: sel }))).toBe(false);
   });
   it('zoomAtLeast', () => {
-    const view = { x: 0, y: 0, scale: { x: 2, y: 2 } } as unknown as RuleCtx['view'];
-    expect(evaluate({ zoomAtLeast: 1.5 }, baseCtx({ view }))).toBe(true);
-    expect(evaluate({ zoomAtLeast: 3 }, baseCtx({ view }))).toBe(false);
+    expect(evaluate({ zoomAtLeast: 1.5 }, baseCtx({ zoom: 2 }))).toBe(true);
+    expect(evaluate({ zoomAtLeast: 3 }, baseCtx({ zoom: 2 }))).toBe(false);
+    // A host that reports no zoom cannot clear a threshold.
+    expect(evaluate({ zoomAtLeast: 1 }, baseCtx({ zoom: undefined }))).toBe(false);
   });
   it('multiple keys AND together', () => {
     const ctx = baseCtx({ selection: ['n1', 'n2'] as never, mode: 'normal' });

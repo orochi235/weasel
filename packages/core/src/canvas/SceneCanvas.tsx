@@ -40,7 +40,7 @@ import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
 import type { SceneToAdapterOptions } from './sceneAdapter';
 import { useDecayLoop, type PanBounds } from 'core/viewport/useDecayLoop';
 import type { WheelPanOptions } from 'interactions/actions/defaults/viewportWheelPan';
-import { normalizeView, type View } from 'core/viewport/view';
+import { normalizeView, viewZoom, type View } from 'core/viewport/view';
 import type { Node, Scene, SerializedScene } from 'core/scene/types';
 import type { NodeId } from 'core/scene/types';
 import { sceneFromJSON } from 'core/scene/scene';
@@ -1735,6 +1735,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       : undefined;
     return {
       ...ctx,
+      zoom: viewZoom(inputs.view),
       mode: modeInfo.id,
       allowedCapabilities: modeInfo.allowedCapabilities,
       selectionResizable,

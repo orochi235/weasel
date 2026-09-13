@@ -198,13 +198,15 @@ scale — and `setPose` plus undo round-trip it. Previously audited, now run.
 plane determines a box: the depth the 2D contract cannot express comes from the
 scene, not the caller.
 
-**`PoseDescriptor` half-fits.** Read `Bounds` as the screen box a solid covers and
-`getBounds` and `intersectsRect` work — that is what drives the lab's chrome, and it
-tracks the camera through an orbit. Two things do not. `remapBounds` and
-`fromBounds` run the other way, and a screen rectangle does not name a 3D pose
-without a depth, so the lab throws rather than guess. And the descriptor is handed
-a *pose*, never the node, so it cannot tell a sphere from a box and bounds
-everything as a box.
+**`PoseDescriptor` fits, once a depth is chosen.** Read `Bounds` as the screen box
+a solid covers and `getBounds` and `intersectsRect` work — that is what drives the
+lab's chrome, and it tracks the camera through an orbit. `remapBounds` and
+`fromBounds` run the other way and named no depth, so they threw. **Decided
+2026-09-13: the depth is the pose's own** — both resolve the rectangle on the
+plane through the pose they were handed, facing the camera, so neither changes
+depth, and a resize scales uniformly because two screen extents cannot name
+three. The descriptor's other gap is closed: `forNode` hands it the node, so a
+sphere bounds itself as a sphere.
 
 **`ViewApi` is the one real dead end.** Pan and scale with no orientation; an orbit
 camera does not fit. The lab declares a `camera3d` dep of its own by augmenting

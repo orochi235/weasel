@@ -124,14 +124,33 @@ not.
 
 ### The schema is less 2D than the phrase suggests
 
-Of 24 deps: 8 neutral, 3 already generic over the pose, 13 nominally 2D-bound —
-but only **10 are genuine obstructions**. `areaSelect`, `nodeAtPoint` and
-`insert` look planar and port unchanged, because they are screen-space
-operations whatever sits behind the screen; the 3D lab implements all three by
-rebuilding the ray from the camera the dep closes over. The real residue is
-`view` (no orientation — the one outright dead end), `pointer`, `snap`,
-`lassoSelect`, `editAnchors`, `poseDescriptor`, `booleansAdapter`, `slice`,
-`ingestion` and `geometryProjection`.
+Of 24 deps: 8 neutral, 3 already generic over the pose, 13 nominally 2D-bound.
+This doc then called ten of those thirteen "genuine obstructions", which was a
+count of 2D-looking *types*. Re-measured dep by dep on 2026-09-13 against what a
+camera-bearing host can implement, **one is**: `geometryProjection`, whose
+`transform(node, m: Mat3)` has no 3D form — and core builds that `Mat3` at four
+call sites (`move`, `nudge`, `resize`, `flip`) before the dep is consulted, so
+parametrizing its type moves the obstruction into the actions rather than
+removing it.
+
+The other nine divide three ways. `view` is not an obstruction but the design:
+viewport deps are per-kernel, and `kernel3d` declares `camera3d`. `editAnchors`
+and `booleansAdapter` are 2D *features* — anchor editing, path booleans — that a
+3D kernel does not declare; neither names a 2D type in its signature (paths there
+are `unknown`), and every reader guards. And `pointer`, `snap`, `lassoSelect`,
+`poseDescriptor`, `slice` and `ingestion` are satisfiable as typed: every
+coordinate in them is a screen point under the identity `clientToWorld` a 3D host
+passes, which is how the lab already implements `snap` and `poseDescriptor`.
+`ingestion`'s 2D content is confined to its optional `svg` member.
+
+In the package itself, `View` is declared in `vocabulary.ts` and used by
+`ToolCtx` (`tools/types.ts`) — which only `<Canvas>` ever builds. `RuleCtx` used
+to be the other user, and a host with no `View` therefore could not supply
+eligibility at all: the 3D lab left `getRuleCtx` unset, which skips every rule
+silently. It now carries `zoom?: number`, the one thing `zoomAtLeast` ever read,
+and the lab supplies a rule context. `Point2` is orientation-free, and
+`dispatcher.ts`, `matcher.ts`, `invoker.ts`, `action.ts`, `buildDeps.ts` and
+`depRegistry.tsx` name no 2D type at all.
 
 ## React makes this a different animal from its siblings
 

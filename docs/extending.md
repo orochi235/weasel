@@ -505,6 +505,10 @@ before its `enabled` gate, silently — a rule context that omits
 `creates-selection` is a click that selects nothing. The rule reads that set
 and nothing else: not the active tool, not the tool's own `capabilities` list.
 
+A rule context asks for a `zoom` — one number, `1` at native scale, from
+`viewZoom(view)` on a 2D surface — rather than for a view, so a host whose
+viewport is a camera can supply one. Omit it and `zoomAtLeast` declines.
+
 **Mount the providers around all of it.** `<WeaselProvider>` puts the five the
 kit expects — deps, actions, active tool, selection, pointer — in scope in one
 wrap; call the tool hooks and `useGestureDispatcher` inside it. That hook
