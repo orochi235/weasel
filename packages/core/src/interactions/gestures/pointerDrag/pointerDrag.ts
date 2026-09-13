@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { openPointerSession, type PointerSession } from '../pointerSession';
+import { openPointerSession, type PointerSession } from '@weasel-js/routing';
 
 /** Payload carried by an in-flight pointer drag — `kind` routes to drop zones, `ids` lists the dragged items. */
 export interface DragPayload {

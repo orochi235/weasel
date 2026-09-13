@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { useDepSource } from 'interactions/actions/depRegistry';
+import { useDepSource } from '@weasel-js/routing/react';
 import type { PoseComposition } from 'features/groups/composePose';
 
 /** Publish the scene's pose-composition strategy to the built-in actions.

@@ -19,10 +19,10 @@
 import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
-import type { Action } from '../action';
+import type { Action } from '@weasel-js/routing';
 import type { InsertDep, IngestionDep } from '../depSchema';
 import { runIngest, type IngestCtx } from 'features/ingestion/contentHandlers';
-import type { IngestItem } from 'features/ingestion/ingestItems';
+import type { IngestItem } from '@weasel-js/routing';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 
 const ANY_MODS = {

@@ -1,3 +1,4 @@
+import { normalizeZoom } from '@weasel-js/core';
 import type { Point, ViewTransform } from '../instrument/types';
 import { DEFAULT_FRAME, type ViewportSize, type WorldFrame } from './worldSpec';
 
@@ -8,10 +9,6 @@ export interface ZoomAtOptions {
   frame?: WorldFrame;
   min?: number;
   max?: number;
-}
-
-function usableZoom(zoom: number): number {
-  return Number.isFinite(zoom) && zoom > 0 ? zoom : 1;
 }
 
 /**
@@ -32,8 +29,10 @@ export function zoomAt(
   // drifts by `(1 - ratio) * originPx` per step on any frame that moves it.
   const anchorX = at.x - frame.originPx.x;
   const anchorY = at.y - frame.originPx.y;
-  const current = usableZoom(view.zoom);
-  const zoom = Math.min(max ?? Number.POSITIVE_INFINITY, Math.max(min ?? 0, current * factor));
+  const current = normalizeZoom(view.zoom);
+  const zoom = normalizeZoom(
+    Math.min(max ?? Number.POSITIVE_INFINITY, Math.max(min ?? 0, current * factor)),
+  );
   const ratio = zoom / current;
   return {
     zoom,
@@ -52,11 +51,12 @@ export function centerOn(
   size: ViewportSize,
   frame: WorldFrame = DEFAULT_FRAME,
 ): ViewTransform {
+  const z = normalizeZoom(zoom);
   return {
-    zoom,
+    zoom: z,
     pan: {
-      x: size.width / 2 - frame.originPx.x - world.x * zoom,
-      y: size.height / 2 - frame.originPx.y - world.y * zoom * frame.yDir,
+      x: size.width / 2 - frame.originPx.x - world.x * z,
+      y: size.height / 2 - frame.originPx.y - world.y * z * frame.yDir,
     },
   };
 }

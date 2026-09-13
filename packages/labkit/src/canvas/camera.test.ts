@@ -41,10 +41,17 @@ describe('zoomAt', () => {
     expect(screenToWorld(at, next).x).toBeCloseTo(before.x, 10);
   });
 
-  it('treats a non-finite zoom as 1 rather than propagating NaN', () => {
+  it('keeps a view that arrived with a non-finite zoom finite', () => {
     const next = zoomAt({ zoom: Number.NaN, pan: { x: 0, y: 0 } }, 2, { x: 10, y: 10 });
-    expect(next.zoom).toBe(2);
+    expect(next.zoom > 0 && Number.isFinite(next.zoom)).toBe(true);
     expect(Number.isFinite(next.pan.x)).toBe(true);
+  });
+
+  it('keeps the zoom positive when a factor and bound would drive it to 0', () => {
+    const at = { x: 10, y: 10 };
+    const next = zoomAt(view, 0, at, { min: 0 });
+    expect(next.zoom > 0 && Number.isFinite(next.zoom)).toBe(true);
+    expect(Number.isFinite(screenToWorld(at, next).x)).toBe(true);
   });
 });
 
@@ -74,5 +81,13 @@ describe('centerOn', () => {
 
   it('carries the zoom it was given', () => {
     expect(centerOn({ x: 0, y: 0 }, 6, { width: 10, height: 10 }, DEFAULT_FRAME).zoom).toBe(6);
+  });
+});
+
+describe('centerOn zoom invariant', () => {
+  it('builds a camera with a positive zoom from a zoom of 0', () => {
+    const v = centerOn({ x: 1, y: 1 }, 0, { width: 100, height: 100 });
+    expect(v.zoom > 0 && Number.isFinite(v.zoom)).toBe(true);
+    expect(Number.isFinite(screenToWorld({ x: 5, y: 5 }, v).x)).toBe(true);
   });
 });

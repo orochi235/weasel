@@ -237,3 +237,41 @@ describe('window widget stays on the host', () => {
     expect(win.bounds.w).toBeGreaterThan(200);
   });
 });
+
+describe('window interior', () => {
+  const at = (win: ReturnType<typeof createWindow>) => {
+    const cr = win.contentRect;
+    return { x: cr.x + cr.w / 2, y: cr.y + cr.h / 2 };
+  };
+
+  it('claims its interior by default', () => {
+    const win = createWindow(opts);
+    const p = at(win);
+    expect(win.hitTest(p.x, p.y)).toBe(true);
+    expect(win.passes?.(p.x, p.y)).toBe(false);
+  });
+
+  it('passes its interior on when asked, and keeps its frame', () => {
+    const win = createWindow({ ...opts, interior: 'pass' });
+    const p = at(win);
+    expect(win.hitTest(p.x, p.y)).toBe(false);
+    expect(win.passes?.(p.x, p.y)).toBe(true);
+    expect(win.hitTest(150, 100 + M.titleH / 2)).toBe(true);
+    expect(win.passes?.(150, 100 + M.titleH / 2)).toBe(false);
+  });
+
+  it('a bare passing interior is not a move handle', () => {
+    const win = createWindow({ ...opts, titlebar: false, interior: 'pass' });
+    const p = at(win);
+    win.onPointer({ type: 'down', x: p.x, y: p.y, native: null });
+    win.onPointer({ type: 'move', x: p.x + 30, y: p.y, native: null });
+    expect(win.bounds.x).toBe(opts.x);
+  });
+
+  it('a hidden window passes nothing', () => {
+    const win = createWindow({ ...opts, interior: 'pass' });
+    win.setHidden(true);
+    const p = at(win);
+    expect(win.passes?.(p.x, p.y)).toBe(false);
+  });
+});

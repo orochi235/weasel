@@ -17,7 +17,7 @@ import {
   type FrameFixtureLayer,
 } from 'features/groups/frameFixture';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
-import type { ImmediateInvoker } from '../invoker';
+import type { ImmediateInvoker } from '@weasel-js/routing';
 
 const { group, upright, turned } = FRAME_FIXTURE_IDS;
 const third = asNodeId('c');

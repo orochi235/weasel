@@ -1,6 +1,6 @@
 /**
  * Tests for `enumerateAnchors` + `withCoord`. The enumerator is the
- * load-bearing primitive behind the bezier-edit overlay; misclassifying
+ * load-bearing primitive behind the anchor-edit overlay; misclassifying
  * adjacent C/Q controls or missing a subpath boundary silently corrupts
  * what the user sees as draggable handles.
  */

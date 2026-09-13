@@ -5,8 +5,8 @@ import { useScene } from 'core/scene/useScene';
 import { useSelection } from 'core/selection/useSelection';
 import { asNodeId } from 'core/scene/types';
 import { useSelectTool } from './useSelectTool';
-import type { Action } from '../../../interactions/actions/action';
-import type { ActionDeps } from '../../../interactions/actions/invoker';
+import type { Action } from '@weasel-js/routing';
+import type { ActionDeps } from '@weasel-js/routing';
 import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
 
 describe('useSelectTool — default pickEvery reads the descriptor', () => {

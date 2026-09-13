@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { setFillAction } from './setFill';
-import type { InvocationCtx } from '../invoker';
+import type { InvocationCtx } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { FillStyle } from '@weasel-js/paint';

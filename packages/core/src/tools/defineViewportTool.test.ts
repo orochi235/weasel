@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { defineViewportTool } from './defineViewportTool';
-import type { ToolCtx } from './types';
+import { defineViewportTool } from './overlayBinding';
+import type { ToolCtx } from '@weasel-js/routing';
 
 const CTX = { scratch: null } as unknown as ToolCtx<null>;
 

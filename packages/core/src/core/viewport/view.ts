@@ -1,24 +1,24 @@
 import type { ViewTransform } from './viewTransform';
+import type { View } from '@weasel-js/routing';
+import { normalizeZoom, warnInvalidView } from './zoomBounds';
 
 /**
- * Viewport state. `(view.x, view.y)` is the **world point currently
- * rendered at the canvas top-left**; `view.scale.x` / `view.scale.y` is
- * pixels per world unit on each axis (default `{ x: 1, y: 1 }`). So:
+ * `View` is declared in `@weasel-js/routing` — the dispatcher and every
+ * viewport action are typed in it. Re-exported here, where core's own call
+ * sites have always named it.
  *
- *   screenX = (worldX - view.x) * view.scale.x
- *   screenY = (worldY - view.y) * view.scale.y
- *   worldX  = screenX / view.scale.x + view.x
- *   worldY  = screenY / view.scale.y + view.y
+ * Core holds the invariant behind the shape: every view the kit keeps is
+ * total, so each `scale` axis is finite with a magnitude of at least
+ * `ZOOM_FLOOR` and `x` / `y` are finite. A negative axis is a flipped one
+ * (y-up), not a degenerate one, and keeps its sign. Canvases, views and
+ * animations pass what they are given through {@link normalizeView}, so
+ * screen/world conversion never divides by zero.
  *
- * `scale` is always a 2-vector. Input convenience types
- * {@link ZoomFactor} and {@link ZoomBound} let callers pass a scalar
- * when they want both axes treated the same.
+ * `scale` is always a 2-vector. Input convenience types {@link ZoomFactor}
+ * and {@link ZoomBound} let callers pass a scalar when they want both axes
+ * treated the same.
  */
-export interface View {
-  x: number;
-  y: number;
-  scale: { x: number; y: number };
-}
+export type { View };
 
 /**
  * Input convenience for zoom primitives. A `number` is treated as a
@@ -47,4 +47,29 @@ export function viewToTransform(view: View): ViewTransform {
     panY: -view.y * view.scale.y + 0,
     zoom: { x: view.scale.x, y: view.scale.y },
   };
+}
+
+/**
+ * `view` inside the invariant {@link View} documents: a zero or non-finite
+ * scale axis becomes `ZOOM_FLOOR`, a negative one keeps its sign, and a
+ * non-finite translation becomes 0. Returns `view` itself when it already
+ * holds, so a valid view keeps its identity.
+ */
+export function normalizeView(view: View): View {
+  const sx = normalizeAxis(view.scale.x);
+  const sy = normalizeAxis(view.scale.y);
+  const x = finiteTranslation(view.x);
+  const y = finiteTranslation(view.y);
+  if (sx === view.scale.x && sy === view.scale.y && x === view.x && y === view.y) return view;
+  return { x, y, scale: { x: sx, y: sy } };
+}
+
+function normalizeAxis(s: number): number {
+  return s < 0 && s > -Infinity ? -normalizeZoom(-s) : normalizeZoom(s);
+}
+
+function finiteTranslation(v: number): number {
+  if (Number.isFinite(v)) return v;
+  warnInvalidView(`a position of ${v}`);
+  return 0;
 }

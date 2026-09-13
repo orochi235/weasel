@@ -16,7 +16,7 @@
  * swept the page.
  */
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import type { OngoingOverlay } from 'interactions/actions/invoker';
+import type { OngoingOverlay } from '@weasel-js/routing';
 
 type Point = { x: number; y: number };
 

@@ -121,6 +121,34 @@ describe('loupe model: colour', () => {
     loupe.aimAt({ x: 2, y: 2 });
     expect(loupe.color).toBe('#abcdef');
   });
+
+  it('samples a surface whose pixels land later on the frame after the aim', () => {
+    const subs = new Set<() => void>();
+    const frame = () => { for (const fn of [...subs]) fn(); };
+    const sample = vi.fn(() => '#445566');
+    const onColorChange = vi.fn();
+    const { surface } = stubSurface({
+      sample,
+      subscribeFrame: (fn) => { subs.add(fn); return () => { subs.delete(fn); }; },
+    });
+    const loupe = createLoupeModel({ surface, onColorChange });
+
+    loupe.aimAt({ x: 5, y: 6 });
+    expect(sample).not.toHaveBeenCalled();
+    expect(loupe.color).toBeNull();
+
+    frame();
+    expect(sample).toHaveBeenCalledWith({ x: 5, y: 6 });
+    expect(loupe.color).toBe('#445566');
+    expect(onColorChange).toHaveBeenCalledWith('#445566');
+
+    // A frame with no aim behind it reads nothing.
+    frame();
+    expect(sample).toHaveBeenCalledTimes(1);
+
+    loupe.dispose();
+    expect(subs.size).toBe(0);
+  });
 });
 
 describe('loupe model: picking', () => {
@@ -184,5 +212,21 @@ describe('loupe model: picking', () => {
     const loupe = createLoupeModel({ surface, onPick });
     expect(loupe.pick({ x: 10, y: 10 })).toBeNull();
     expect(onPick).not.toHaveBeenCalled();
+  });
+});
+
+describe('loupe model: magnification invariant', () => {
+  const finitePositive = (n: number) => Number.isFinite(n) && n > 0;
+
+  it('opens at a positive finite factor when handed 0', () => {
+    const { surface } = stubSurface();
+    expect(finitePositive(createLoupeModel({ surface, factor: 0 }).factor)).toBe(true);
+  });
+
+  it.each([0, -3, Number.NaN, Infinity])('keeps setFactor(%s) positive and finite', (f) => {
+    const { surface } = stubSurface();
+    const loupe = createLoupeModel({ surface, minFactor: 0 });
+    loupe.setFactor(f);
+    expect(finitePositive(loupe.factor)).toBe(true);
   });
 });

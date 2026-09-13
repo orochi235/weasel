@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import { useDeviceProfile, DeviceProfileProvider } from './useDeviceProfile';
-import { COARSE_TARGET_SCALE } from './profile';
+import { COARSE_TARGET_SCALE } from '@weasel-js/routing';
 import { makeMatchMedia } from './testing/matchMedia';
 
 function Probe() {

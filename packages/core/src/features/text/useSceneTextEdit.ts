@@ -26,13 +26,13 @@ import { asNodeId } from '../../core/scene/types';
 import { effectivePose } from '../../core/scene/effectivePose';
 import type { Scene } from '../../core/scene/types';
 import type { FillStyle, Stroke } from '@weasel-js/paint';
-import { clientToCanvas } from '../../core/viewport/clientToCanvas';
+import { clientToCanvas } from '@weasel-js/routing';
 import { findMountedCanvas, type MountedCanvas } from '../../canvas/mountedCanvases';
 import type { View } from '../../core/viewport/view';
 import type { RectPose } from 'core/geometry/unionBounds';
 import { caretIndexAt, pointInTextPose } from './hitTest';
 import type { StyledRun } from '@weasel-js/text';
-import type { TextPaint, TextStyle } from '@weasel-js/text';
+import type { TextPaint, TextStyle, TextVerticalAlign } from '@weasel-js/text';
 import { useTextEdit, type TextEditClipRect, type UseTextEditReturn } from './useTextEdit';
 
 /** Shape the default projections expect `data` to satisfy. All fields
@@ -44,6 +44,7 @@ export interface DefaultTextData {
   runs?: readonly StyledRun[];
   fill?: FillStyle | null;
   stroke?: Stroke | null;
+  verticalAlign?: TextVerticalAlign;
 }
 
 /** All-optional projections + fontSize fallback. */
@@ -56,6 +57,8 @@ export interface UseSceneTextEditOptions<TData> {
   getPaint?: (data: TData) => TextPaint | undefined;
   /** Read rich-text runs from `data`. Default: `data.runs`. */
   getRuns?: (data: TData) => readonly StyledRun[] | undefined;
+  /** Read the box vertical alignment from `data`. Default: `data.verticalAlign`. */
+  getVerticalAlign?: (data: TData) => TextVerticalAlign | undefined;
   /** Produce updated data with new text. Default: `{ ...data, text }`. */
   setText?: (data: TData, text: string) => TData;
   /** Produce updated data with new runs. Default: `{ ...data, runs }`. */
@@ -257,12 +260,15 @@ export function useSceneTextEdit<
       optsRef.current.getStyle ? optsRef.current.getStyle(data) : data.style;
     const readRuns = (data: TData): readonly StyledRun[] | undefined =>
       optsRef.current.getRuns ? optsRef.current.getRuns(data) : data.runs;
+    const readVerticalAlign = (data: TData): TextVerticalAlign | undefined =>
+      optsRef.current.getVerticalAlign ? optsRef.current.getVerticalAlign(data) : data.verticalAlign;
 
     // Top-most-first hit test: renderOrder() is back-to-front, so iterate
     // in reverse and break on the first hit.
     const order = sceneRef.current.renderOrderNodes();
     for (let i = order.length - 1; i >= 0; i--) {
       const node = order[i];
+      if (sceneRef.current.isLocked(node.id)) continue;
       const text = readText(node.data);
       const at = effectivePose(sceneRef.current, node);
       const pose = {
@@ -273,6 +279,7 @@ export function useSceneTextEdit<
         text,
         runs: readRuns(node.data) as StyledRun[] | undefined,
         style: readStyle(node.data),
+        verticalAlign: readVerticalAlign(node.data),
       };
       if (!pointInTextPose(cx, cy, pose)) continue;
 

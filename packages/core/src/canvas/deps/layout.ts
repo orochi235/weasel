@@ -6,7 +6,7 @@
  * reflow pass is a no-op without churning dep registration on prop changes.
  */
 import { useRef } from 'react';
-import { useDepSource } from 'interactions/actions/depRegistry';
+import { useDepSource } from '@weasel-js/routing/react';
 import type { LayoutDep } from 'interactions/actions/depSchema';
 import type { SceneToAdapterOptions } from '../sceneAdapter';
 

@@ -25,9 +25,10 @@
  * `mixed-doc` is the row that measures that, and it is the one to quote when
  * the question is whether a real scene will hold its frame rate.
  *
- * This reports; it does not gate. See `tests/bench/README.md`.
+ * This reports; it does not gate. See `tests/perf/README.md`.
  */
 import { test, expect } from '@playwright/test';
+import { metric, rounds, startRun } from './lib/result';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -39,7 +40,7 @@ const BUDGETS = [
 ];
 
 /** Full independent searches per row. The spread across them is the report. */
-const RUNS = 3;
+const RUNS = rounds(3);
 
 /** Upper bound on the search. A row that reaches it reports `>=` rather than a
  *  number: past this, building the command array costs more than rendering it,
@@ -99,7 +100,8 @@ function band(values: Array<{ n: number; capped: boolean }>): string {
 
 test.setTimeout(1_800_000);
 
-test('frame budget: commands per kind that fit one frame', async ({ page }) => {
+test('frame budget: commands per kind that fit one frame', async ({ page, browser, browserName }) => {
+  const run = startRun('frame-budget', { viewport: '800x600', dpr: 1, budgets: BUDGETS, cap: CAP, kinds: KINDS.map((k) => k.id), runs: RUNS });
   const errors: string[] = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
@@ -117,6 +119,7 @@ test('frame budget: commands per kind that fit one frame', async ({ page }) => {
       return;
     }
     if (m.type === 'header') {
+      run.params({ gcAvailable: Boolean(m.gcAvailable) });
       console.log('');
       console.log(`Frame budget — 800x600, dpr 1, on ${String(m.glRenderer)}`);
       console.log(`collected between measurements: ${String(m.gcAvailable)}`);
@@ -640,4 +643,17 @@ void main() {
     expect(median('120 Hz'), `${id}: half the budget fit more commands`)
       .toBeLessThanOrEqual(Math.round(median('60 Hz') * 1.15));
   }
+
+  run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
+  for (const { id, unit } of KINDS) {
+    for (const b of BUDGETS) {
+      const caps = rows.filter((r) => r.kind === id).map((r) => r.caps.find((c) => c.label === b.label)!);
+      const ns = caps.map((c) => c.n);
+      const mid = [...ns].sort((x, y) => x - y)[Math.floor(ns.length / 2)];
+      run.item(`${id} @ ${b.label}`, {
+        capacity: metric(mid, 'count', `median of ${RUNS} independent searches`, ns),
+      }, { kind: id, unit, budgetMs: b.ms, capped: caps.some((c) => c.capped) });
+    }
+  }
+  run.write();
 });

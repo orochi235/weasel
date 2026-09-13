@@ -14,7 +14,7 @@ import {
 } from 'core/geometry/circlePose.fixture';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
-import type { ImmediateInvoker } from '../invoker';
+import type { ImmediateInvoker } from '@weasel-js/routing';
 
 describe('groupAction (descriptor)', () => {
   it('id="group", label="Group"', () => {

@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useVisibleRaf } from '../../scheduling/useVisibleRaf';
 import type { ResolvedTextStyle, TextStyle } from '@weasel-js/text';
-import { fontString, resolveTextStyle } from '@weasel-js/text';
+import { fontString, resolveAlign, resolveTextStyle } from '@weasel-js/text';
 import type { TextPaint } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
 import { runsToPlainText } from '@weasel-js/text';
@@ -963,7 +963,7 @@ function applyOverlayStyle(el: HTMLDivElement, style: ResolvedTextStyle): void {
   el.style.caretColor = style.caretColor;
   el.style.font = fontString(style);
   el.style.lineHeight = String(style.lineHeight);
-  el.style.textAlign = style.align;
+  el.style.textAlign = resolveAlign(style.align, style.direction);
   // Node-level decoration, so the overlay looks like the canvas the moment
   // editing starts. Runs are additive over the node style (a run can't un-set
   // a flag), which is exactly how CSS decoration propagates to descendants —
@@ -972,8 +972,10 @@ function applyOverlayStyle(el: HTMLDivElement, style: ResolvedTextStyle): void {
   if (style.underline) decorations.push('underline');
   if (style.strikethrough) decorations.push('line-through');
   el.style.textDecoration = decorations.length > 0 ? decorations.join(' ') : 'none';
-  el.style.whiteSpace = 'pre-wrap';
-  el.style.overflowWrap = 'break-word';
+  // Line breaks follow the node's declared `wrap`, as the canvas's do. Layout
+  // breaks only between words, never inside one.
+  el.style.whiteSpace = style.wrap ? 'pre-wrap' : 'pre';
+  el.style.overflowWrap = 'normal';
   el.style.wordBreak = 'normal';
 }
 
@@ -1001,6 +1003,8 @@ function installSelectionStyle(
   return el;
 }
 
+const ALIGN_ANCHOR = { left: 0, center: 0.5, right: 1 } as const;
+
 function placeOverlay(
   el: HTMLDivElement,
   clipBox: HTMLDivElement,
@@ -1024,9 +1028,16 @@ function placeOverlay(
   // same glyph (empirically; varies by browser/font/DPR — the constant is a
   // pragmatic fix for the dev setup, not universally correct).
   el.style.display = '';
-  el.style.left = `${pose.x + 1 - (clip?.x ?? 0)}px`;
+  // An unwrapped line can be wider than its box, and the canvas aligns it
+  // about the box's left edge, center or right edge regardless. The overlay
+  // sizes to its text and grows from that same anchor: `left` puts the anchor
+  // there and a trailing translate pulls the box back by that fraction of its
+  // own width.
+  const anchor = style.wrap ? 0 : ALIGN_ANCHOR[resolveAlign(style.align, style.direction)];
+  el.style.left = `${pose.x + pose.width * (pose.zoom ?? 1) * anchor + 1 - (clip?.x ?? 0)}px`;
   el.style.top = `${pose.y - 1 - (clip?.y ?? 0)}px`;
-  el.style.width = `${pose.width}px`;
+  el.style.width = style.wrap ? `${pose.width}px` : 'max-content';
+  el.style.minWidth = style.wrap ? '' : `${pose.width}px`;
   el.style.minHeight = `${pose.height}px`;
   el.style.fontSize = `${pose.fontSize}px`;
   el.style.lineHeight = String(pose.lineHeight ?? style.lineHeight);
@@ -1037,7 +1048,10 @@ function placeOverlay(
   // view. Written unconditionally (`none` at zoom 1) because the overlay
   // element outlives an edit session and would otherwise keep a stale scale.
   el.style.transformOrigin = '0 0';
-  el.style.transform = pose.zoom !== undefined && pose.zoom !== 1 ? `scale(${pose.zoom})` : 'none';
+  const transforms: string[] = [];
+  if (pose.zoom !== undefined && pose.zoom !== 1) transforms.push(`scale(${pose.zoom})`);
+  if (anchor !== 0) transforms.push(`translateX(${-anchor * 100}%)`);
+  el.style.transform = transforms.length > 0 ? transforms.join(' ') : 'none';
   // `letter-spacing` is not part of the CSS `font` shorthand, so
   // `applyOverlayStyle`'s `el.style.font` never carries it — it needs its own
   // assignment. It also lives here rather than there because without a

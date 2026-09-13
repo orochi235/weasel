@@ -27,9 +27,25 @@ import { wrapNodeOutput } from './wrapNodeOutput';
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
 import { effectivePose } from 'core/scene/effectivePose';
 import { withDerivedPaths, resolveDerivedPath, sceneDepLookup } from './derivedPath';
+import { withColorOverrides } from './colorOverrides';
+import type { ColorOverrideRegistry } from '../animation/colorRegistry';
 import type { SceneViewDrawOne } from './NodeShape';
+import { paintedSceneLayers } from './sceneLayerPaint';
 
 export type { SceneViewDrawOne } from './NodeShape';
+
+/**
+ * Which scene layers a detached view paints, on top of each layer's own
+ * `visible` flag. Keyed the way `<SceneCanvas>` keys its scene layers —
+ * `scene:<layerId>` — so the map a main canvas takes serves its minimap too.
+ */
+export interface SceneViewLayers {
+  /** `false` hides that layer in this view. It cannot show one the scene hides. */
+  layerVisibility?: Record<string, boolean>;
+  /** Paint order, bottom first. A listed order is the whole list: a scene
+   *  layer left out of it is not painted. */
+  layerOrder?: readonly string[];
+}
 
 /** What to draw into an existing canvas: the scene, the view, and the same
  *  painting hooks `<SceneCanvas>` takes. */
@@ -60,6 +76,13 @@ export interface RenderSceneToCanvasArgs<TData, TLayer extends string, TPose> {
    *  `alphaFor`. Pass the same function the main canvas uses to keep a
    *  scoping-dim treatment consistent across both. Defaults to `() => 1`. */
   alphaFor?: (id: string) => number;
+  /** Per-view layer visibility. See {@link SceneViewLayers}. */
+  layerVisibility?: SceneViewLayers['layerVisibility'];
+  /** Per-view layer order. See {@link SceneViewLayers}. */
+  layerOrder?: SceneViewLayers['layerOrder'];
+  /** Animated vertex colors to paint, typically an animator's
+   *  `colorOverrides` — see `NodePaintCtx.vertexColors`. */
+  colorOverrides?: ColorOverrideRegistry;
   /** Optional device-pixel ratio. Defaults to `window.devicePixelRatio || 1`
    *  when available, otherwise 1. Tests typically pin this to 1 or 2. */
   dpr?: number;
@@ -102,9 +125,11 @@ export function __getCachedRendererForTest(
  */
 function sceneAsHierarchy<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
+  layers: SceneViewLayers = {},
 ): HierarchicalAdapter<Node<TData, TLayer, TPose>, TPose> {
   return {
-    getLayers: () => scene.layers.map((l) => ({ id: l.id, visible: l.visible })),
+    getLayers: () =>
+      paintedSceneLayers(scene.layers, layers).map((l) => ({ id: l.id, visible: l.visible })),
     getNode: (id) => scene.get(id as NodeId),
     getChildren: (parentId) => {
       if (parentId === null) return scene.roots as readonly string[];
@@ -132,7 +157,8 @@ function sceneAsHierarchy<TData, TLayer extends string, TPose>(
  * emit unrotated geometry and let the pose drive it.
  *
  * Output shape follows `buildSceneTree`: one group per **visible** layer, in
- * scene-layer order, each holding one group per node on that layer.
+ * scene-layer order (or `layers.layerOrder`), each holding one group per node
+ * on that layer.
  *
  * Exported for tests and for callers that want to render into something
  * other than a real `<canvas>` (e.g. an offscreen renderer or a
@@ -147,11 +173,16 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
   /** How a child's stored pose folds into its parent's frame. Omit for the
    *  absolute-pose model. */
   poseComposition?: PoseComposition<TPose>,
+  /** This view's own layer visibility and order. */
+  layers?: SceneViewLayers,
+  /** Animated vertex colors to paint, typically an animator's `colorOverrides`. */
+  colorOverrides?: ColorOverrideRegistry,
 ): DrawCommand[] {
   // The scene is in scope here, so this is where the override's alpha and the
   // derived paths are applied on the headless path; `SceneCanvas` does the same
   // for the live one. `Canvas` itself never sees a scene, so it can't and doesn't.
-  const derived = withDerivedPaths(scene, drawOne);
+  const derivedOnly = withDerivedPaths(scene, drawOne);
+  const derived = colorOverrides ? withColorOverrides(colorOverrides, derivedOnly) : derivedOnly;
   const depLookup = sceneDepLookup(scene);
   const wrappedDrawOne = (
     node: Node<TData, TLayer, TPose>,
@@ -168,8 +199,8 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
 
   const composes = poseComposition !== undefined && poseComposition.closure !== 'identity';
   const hierarchy = composes
-    ? { ...sceneAsHierarchy(scene), composePose: poseComposition!.compose }
-    : sceneAsHierarchy(scene);
+    ? { ...sceneAsHierarchy(scene, layers), composePose: poseComposition!.compose }
+    : sceneAsHierarchy(scene, layers);
 
   const children: DrawCommand[] = buildSceneTree(
     hierarchy as Parameters<typeof buildSceneTree>[0],
@@ -209,7 +240,10 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
 export function renderSceneToCanvas<TData, TLayer extends string, TPose>(
   args: RenderSceneToCanvasArgs<TData, TLayer, TPose>,
 ): void {
-  const { canvas, scene, view, width, height, drawOne, extraCommands, alphaFor } = args;
+  const {
+    canvas, scene, view, width, height, drawOne, extraCommands, alphaFor, layerVisibility, layerOrder,
+    colorOverrides,
+  } = args;
   const dpr = args.dpr
     ?? (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1);
 
@@ -242,6 +276,8 @@ export function renderSceneToCanvas<TData, TLayer extends string, TPose>(
     entry.dpr = dpr;
   }
 
-  const commands = buildSceneViewCommands(scene, view, drawOne, extraCommands, alphaFor);
+  const commands = buildSceneViewCommands(
+    scene, view, drawOne, extraCommands, alphaFor, undefined, { layerVisibility, layerOrder }, colorOverrides,
+  );
   entry.renderer.render(commands, viewToMat3(view));
 }

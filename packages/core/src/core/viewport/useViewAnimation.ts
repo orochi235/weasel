@@ -5,7 +5,7 @@ import type { Animator, EasingSpec, InterpolatorFactory } from '../../animation/
 import { interpolateView } from './interpolateView';
 import { fitViewToBounds } from './fitViewToBounds';
 import type { Bounds, FitViewToBoundsOptions, ViewportDims } from './fitViewToBounds';
-import type { View } from './view';
+import { normalizeView, type View } from './view';
 
 /** Cancel-key prefix. Each hook instance appends its own id, so two runners
  *  sharing an animator do not cancel each other. */
@@ -82,7 +82,7 @@ export function useViewAnimation(view: ViewChannel, animator?: Animator): ViewAn
 
     const animate: ViewAnimationApi['animate'] = (to, opts = {}) => {
       const from = viewRef.current.get();
-      const resolved = typeof to === 'function' ? to(target() ?? from) : to;
+      const resolved = normalizeView(typeof to === 'function' ? to(target() ?? from) : to);
       stop();
       targetRef.current = resolved;
       animatorRef.current.tween<View>({

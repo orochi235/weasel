@@ -1,3 +1,4 @@
+import { normalizeZoom } from '@weasel-js/core';
 import { NumberField, Slider } from '../passthrough/weasel-ui';
 
 /** Props for `<ZoomControl>`. */
@@ -30,10 +31,12 @@ export function ZoomControl({
   zoom,
   onZoomChange,
   onZoomCommit,
-  min = 0.1,
-  max = 8,
+  min: minProp = 0.1,
+  max: maxProp = 8,
   className,
 }: ZoomControlProps) {
+  const min = normalizeZoom(minProp);
+  const max = normalizeZoom(maxProp);
   const commit = onZoomCommit ?? onZoomChange;
   const emit = (track: number, done: boolean): void => {
     const next = clamp(fromTrack(track), min, max);

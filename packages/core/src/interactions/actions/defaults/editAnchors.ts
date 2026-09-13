@@ -34,10 +34,10 @@
  * @see anchorEdits — the pure geometry these handlers drive.
  */
 
-import type { Action } from '../action';
-import type { InvocationCtx, OngoingHandle } from '../invoker';
+import type { Action } from '@weasel-js/routing';
+import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { EditAnchorsDep } from '../depSchema';
-import { isAnchorOrControl } from '../../dispatcher/predicates';
+import { isAnchorOrControl } from '@weasel-js/routing';
 import {
   anchorAt,
   editAnchorSet,
@@ -138,11 +138,9 @@ export const editAnchorsAction: Action & { requires: string[] } = {
   label: 'Edit Anchors',
   defaultBinding: {
     kind: 'drag',
-    // Target predicate: this binding only matches drags whose pointerdown
-    // hit an anchor or control-handle affordance. Higher specificity than
-    // bare `{ kind: 'drag' }` of moveAction et al, so editAnchors wins on
-    // anchor drags via matchSorted's specificity ordering — no opt-out
-    // needed in the general-drag actions.
+    // Only matches drags whose pointerdown hit an anchor or control handle.
+    // Ties moveAction's `selected-body` on specificity and registers after
+    // it, so move declines these presses in `start`.
     target: { kindOf: isAnchorOrControl },
   },
   eligible: { capability: 'edits-anchors' },

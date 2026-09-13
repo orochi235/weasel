@@ -16,7 +16,7 @@ import {
 } from 'features/groups/frameFixture';
 import { scenePoseFrame } from '../poseFrame';
 import type { NodeId, RectPose, Scene } from 'core/scene/types';
-import type { ImmediateInvoker } from '../invoker';
+import type { ImmediateInvoker } from '@weasel-js/routing';
 
 const { group, upright, turned } = FRAME_FIXTURE_IDS;
 

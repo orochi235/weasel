@@ -12,7 +12,7 @@ import {
   FRAME_FIXTURE_LOCAL,
 } from 'features/groups/frameFixture';
 import type { NodeId, RectPose, Scene } from 'core/scene/types';
-import type { InvocationCtx } from '../invoker';
+import type { InvocationCtx } from '@weasel-js/routing';
 
 const { upright, turned } = FRAME_FIXTURE_IDS;
 const IDS: NodeId[] = [upright, turned];

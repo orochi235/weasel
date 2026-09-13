@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { sliceAction } from './slice';
 import type { SliceDep } from '../depSchema';
-import type { InvocationCtx, OngoingInvoker } from '../invoker';
-import { ActionDisabledReason } from '../action';
+import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
+import { ActionDisabledReason } from '@weasel-js/routing';
 
 const ctxAt = (x: number, y: number, start = { x: 0, y: 0 }): InvocationCtx => ({
   world: { x, y },

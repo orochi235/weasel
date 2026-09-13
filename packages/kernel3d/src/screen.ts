@@ -39,8 +39,6 @@ export interface ChromeBox extends ScreenBox {
   tint?: 'selection' | 'gesture';
 }
 
-const EPS = 1e-9;
-
 /** Screen point (y down, rect-relative) to normalized device coordinates (y up). */
 export function screenToNdc(
   point: { x: number; y: number },
@@ -66,19 +64,25 @@ export function ndcToScreen(
  * The ray a screen point names, given the camera that drew the rect. This is
  * the whole of what 3D picking needs from a pointer — which is why the world
  * point the dispatcher carries stays two numbers.
+ *
+ * `null` when the point names no ray: the view-projection has no inverse (a
+ * camera on its own target, a degenerate projection) or the pane has no area.
  */
 export function rayThroughScreenPoint(
   point: { x: number; y: number },
   rect: ViewportRect,
   viewProjection: Mat4,
   eye: Vec3,
-): Ray {
+): Ray | null {
   const inv = invert(viewProjection);
-  if (!inv) return { origin: eye, direction: [0, 0, -1] };
+  if (!inv) return null;
   const ndc = screenToNdc(point, rect);
   const near = transformPoint(inv, [ndc.x, ndc.y, -1]);
   const far = transformPoint(inv, [ndc.x, ndc.y, 1]);
-  return { origin: eye, direction: normalize(sub(far, near)) };
+  const direction = normalize(sub(far, near));
+  // normalize answers zero for a non-finite difference, which is no direction.
+  if (direction[0] === 0 && direction[1] === 0 && direction[2] === 0) return null;
+  return { origin: eye, direction };
 }
 
 type Clip = readonly [number, number, number, number];
@@ -134,7 +138,7 @@ export function projectAabbToScreen(
   let any = false;
 
   const extend = (p: Clip): void => {
-    if (p[3] <= EPS) return;
+    if (!(p[3] > 0)) return;
     const screen = ndcToScreen({ x: p[0] / p[3], y: p[1] / p[3] }, rect);
     minX = Math.min(minX, screen.x);
     minY = Math.min(minY, screen.y);

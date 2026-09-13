@@ -2,7 +2,8 @@
  *  `m[c * 4 + r]`, which is the layout `gl.uniformMatrix4fv` reads without a
  *  transpose and the one three.js `toArray()` emits. */
 
-import { cross, dot, normalize, sub, EPS3, type Quat, type Vec3 } from './vec3';
+import { SINGULAR_RATIO } from '../scalar';
+import { cross, dot, len, normalize, sub, type Quat, type Vec3 } from './vec3';
 
 /** 16 numbers, column-major. */
 export type Mat4 = readonly number[];
@@ -37,12 +38,16 @@ export function transformPoint4(
   ];
 }
 
+/** `transformPoint4` divided through by w, however small. A point on the eye
+ *  plane (w = 0) comes back non-finite. */
 export function transformPoint(m: Mat4, p: Vec3): Vec3 {
   const [x, y, z, w] = transformPoint4(m, p);
-  if (Math.abs(w) < EPS3 || w === 1) return [x, y, z];
+  if (w === 1) return [x, y, z];
   return [x / w, y / w, z / w];
 }
 
+/** Inverse, or null when the matrix is singular, non-finite, or too
+ *  ill-conditioned to invert meaningfully at its own scale. */
 export function invert(m: Mat4): Mat4 | null {
   const [
     m00, m01, m02, m03,
@@ -65,7 +70,15 @@ export function invert(m: Mat4): Mat4 | null {
   const b11 = m22 * m33 - m23 * m32;
 
   const det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
-  if (Math.abs(det) < EPS3) return null;
+  // Hadamard: |det| never exceeds the product of the column lengths, so the
+  // ratio is a volume in [0, 1] that no per-column scale can shrink.
+  const scale =
+    Math.sqrt(m00 * m00 + m01 * m01 + m02 * m02 + m03 * m03) *
+    Math.sqrt(m10 * m10 + m11 * m11 + m12 * m12 + m13 * m13) *
+    Math.sqrt(m20 * m20 + m21 * m21 + m22 * m22 + m23 * m23) *
+    Math.sqrt(m30 * m30 + m31 * m31 + m32 * m32 + m33 * m33);
+  // Negated so a non-finite determinant falls out as singular.
+  if (!(Math.abs(det) > SINGULAR_RATIO * scale)) return null;
   const d = 1 / det;
 
   return [
@@ -123,9 +136,14 @@ export function perspective(fovY: number, aspect: number, near: number, far: num
   ];
 }
 
+/** A view from `eye` toward `target`. With the eye on its target, or `up`
+ *  parallel to the view to within rounding, the view has no orientation and
+ *  the result is singular. */
 export function lookAt(eye: Vec3, target: Vec3, up: Vec3): Mat4 {
   const back = normalize(sub(eye, target));
-  const right = normalize(cross(up, back));
+  const side = cross(up, back);
+  // |side| is |up| times the sine of the angle between up and the view.
+  const right = len(side) > SINGULAR_RATIO * len(up) ? normalize(side) : ([0, 0, 0] as const);
   const trueUp = cross(back, right);
   return [
     right[0], trueUp[0], back[0], 0,

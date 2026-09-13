@@ -45,8 +45,6 @@ const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
  * and `bidi` were both missing this way.
  *
  * Order does not matter — every package is packed before anything is bundled.
- * The private `weasel-js` alias is included on purpose; the alias audit reads
- * it.
  */
 const PACKAGES = (await readdir(join(repoRoot, 'packages'), { withFileTypes: true }))
   .filter((e) => e.isDirectory() && existsSync(join(repoRoot, 'packages', e.name, 'package.json')))
@@ -187,7 +185,12 @@ console.log(
 // @weasel-js/labkit shipped `@weasel-js/ui` as a devDependency while
 // re-exporting it from a published subpath, and every gate stayed green.
 {
-  const IMPORTS = /^\s*(import|export)\b([\s\S]*?)from\s*['"](@weasel-js\/[^'"]+)['"]/gm;
+  // The clause may wrap across lines but never contains `;` or `*`. Without
+  // that bound the lazy scan walks out of a non-import `export` — an
+  // `export interface` with no `from` of its own — and on through thousands of
+  // characters until it hits a quoted specifier inside a JSDoc `@example`,
+  // reporting the documented import as a real one.
+  const IMPORTS = /^[ \t]*(import|export)\b([^;*]*?)from\s*['"](@weasel-js\/[^'"]+)['"]/gm;
   const problems = [];
 
   for (const name of PACKAGES) {
@@ -248,36 +251,6 @@ console.log(
   console.log(`[smoke] declaration audit OK — ${PACKAGES.length} packages declare what they import.`);
 }
 
-// The `weasel-js` alias must stay a thin re-export of core, never a second
-// bundled copy of the kit — two copies means two React hook instances and two
-// font registries for anyone holding both names. Checked statically: esbuild
-// runs with write:false below and never executes the bundle, so a runtime
-// identity assertion would silently never fire.
-const aliasDist = join(repoRoot, 'packages', 'weasel-js', 'dist');
-try {
-  const aliasFiles = (await readdir(aliasDist)).filter((f) => f.endsWith('.js'));
-  const fat = [];
-  for (const file of aliasFiles) {
-    const text = await readFile(join(aliasDist, file), 'utf8');
-    const reexports = /from\s*['"]@weasel-js\/core(?:\/[\w-]+)?['"]/.test(text);
-    // A re-export shim is a few hundred bytes; an inlined copy is orders more.
-    if (!reexports || text.length > 4096) {
-      fat.push(`${file}  (${text.length} bytes, re-exports core: ${reexports})`);
-    }
-  }
-  if (fat.length) {
-    fail(
-      'the weasel-js alias is not a thin re-export of @weasel-js/core — it looks\n' +
-        'like it INLINED the kit, which gives anyone holding both names two copies:',
-      fat.join('\n'),
-    );
-  }
-  console.log(`[smoke] alias audit OK — weasel-js re-exports core across ${aliasFiles.length} entries.`);
-} catch (err) {
-  if (err?.code === 'ENOENT') fail(`${aliasDist} not found — run \`npm run build\` first.`);
-  throw err;
-}
-
 // ── Phase 2: pack + extract into a node_modules tree outside the repo ──────
 const workDir = await mkdtemp(join(tmpdir(), 'weasel-smoke-'));
 const tarballDir = join(workDir, 'tarballs');
@@ -307,15 +280,14 @@ for (const name of PACKAGES) {
     { cwd: pkgDir, encoding: 'utf8' },
   );
   const tarball = out.trim().split('\n').pop();
-  // Install under the package's REAL name, which is not always
-  // `@weasel-js/<dir>` — the `weasel-js` alias is unscoped.
+  // Install under the package's REAL name, not its directory name.
   const realName = JSON.parse(await readFile(join(pkgDir, 'package.json'), 'utf8')).name;
   const dest = join(nodeModules, ...realName.split('/'));
   await mkdir(dest, { recursive: true });
   // --strip-components=1 drops npm's `package/` wrapper directory.
   execFileSync('tar', ['-xzf', join(tarballDir, tarball), '-C', dest, '--strip-components=1']);
   for (const dep of Object.keys({ ...JSON.parse(await readFile(join(pkgDir, 'package.json'), 'utf8')).dependencies })) {
-    if (!dep.startsWith('@weasel-js/') && dep !== 'weasel-js') thirdPartyDeps.add(dep);
+    if (!dep.startsWith('@weasel-js/')) thirdPartyDeps.add(dep);
   }
 }
 console.log(`[smoke] packed + extracted ${PACKAGES.length} packages into a clean tree.`);
@@ -357,18 +329,10 @@ await writeFile(
     `import * as toastSub from '@weasel-js/ui/components/Toast';\n` +
     `import * as hud from '@weasel-js/hud';\n` +
     `import '@weasel-js/theme/tokens.css';\n` +
-    // The unscoped alias resolves through the same specifiers as core. Note
-    // these imports prove RESOLUTION only — esbuild runs with write:false and
-    // never executes the bundle, so a runtime `!==` assertion here would be
-    // dead code. The no-second-copy property is checked statically below.
-    `import * as alias from 'weasel-js';\n` +
-    `import { SceneCanvas as AliasCanvas } from 'weasel-js';\n` +
-    `import { SceneCanvas as CoreCanvas } from '@weasel-js/core';\n` +
-    `import { registerFont as aliasFont } from 'weasel-js/renderer';\n` +
     `import { registerFont as coreFont } from '@weasel-js/core/renderer';\n` +
     `import { registerFont as directFont } from '@weasel-js/font';\n` +
-    `void AliasCanvas; void CoreCanvas; void aliasFont; void coreFont; void directFont;\n` +
-    `const mods = { weasel, geom, booleans, history, svg, theme, ui, hud, alias,\n` +
+    `void coreFont; void directFont;\n` +
+    `const mods = { weasel, geom, booleans, history, svg, theme, ui, hud,\n` +
     `  toolPalette, prefs, callout, toastSub };\n` +
     `for (const [n, m] of Object.entries(mods)) {\n` +
     `  if (!m || typeof m !== 'object') throw new Error('empty namespace: ' + n);\n` +
@@ -448,12 +412,21 @@ await writeFile(
     `type _UiSubpath = typeof import('@weasel-js/ui/components/Toast');\n` +
     // A consumer's own dep must merge into DepSchema. Declaration merging
     // targets the module where the interface is DECLARED, not one that
-    // re-exports the type — so if DepSchema's declaration ever moves out of
-    // core into a sibling package, this augmentation silently stops merging
-    // and `requires: ['smokeDep']` type-checks as an absent name with no
-    // error anywhere. `apps/draw` and the 3D lab both augment exactly like
-    // this, and both typecheck against core's SOURCE in-repo, so neither can
-    // catch it. Only a pass over the published .d.ts can.
+    // re-exports the type. DepSchema now lives in `@weasel-js/routing` and
+    // core re-exports it, so this check is load-bearing: it is what says the
+    // merge still reaches through that hop in the PUBLISHED .d.ts, where
+    // rollup-plugin-dts has flattened the chunks. When it does not, the
+    // augmentation silently stops merging and `requires: ['smokeDep']`
+    // type-checks as an absent name with no error anywhere. `apps/draw` and
+    // the 3D lab both augment exactly like this, and both typecheck against
+    // SOURCE in-repo, so neither can catch it.
+    //
+    // The declaration has to sit in routing's own barrel — the module core
+    // re-exports from — and not in a module that barrel re-exports. One hop
+    // further and TS declares a fresh interface in the shadowed alias's scope
+    // instead of merging, which surfaces as TS2536 on every `DepSchema[K]`
+    // back inside routing rather than as anything a reader would connect to
+    // an augmentation.
     `declare module '@weasel-js/core' {\n` +
     `  interface DepSchema { smokeDep?: { ping(): number } }\n` +
     `}\n` +

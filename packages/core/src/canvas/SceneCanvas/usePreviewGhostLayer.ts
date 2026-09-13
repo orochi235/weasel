@@ -15,7 +15,7 @@ import type { LayersMap } from '../Canvas';
 import type { Node, Scene } from 'core/scene/types';
 import { findShapeSilhouette } from '../NodeShape';
 import { wrapWithPoseRotation } from '../poseRotation';
-import type { Dispatcher } from 'interactions/dispatcher/dispatcher';
+import type { Dispatcher } from '@weasel-js/routing';
 import { previewSourcesFrom } from '../drawEnvelope';
 import { resolvePreviews, type PreviewNode } from 'interactions/actions/resolvePreviews';
 import { resolveDerivedPath, sceneDepLookup } from '../derivedPath';

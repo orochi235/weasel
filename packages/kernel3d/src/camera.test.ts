@@ -88,7 +88,7 @@ describe('cameraViewProjection', () => {
     const cam: Camera3d = createCamera({ distance: 5, yaw: 0.7, pitch: 0.4, target: [1, 0, -2] });
     const eye = cameraEye(cam);
     const vp = cameraViewProjection(cam, RECT.w / RECT.h);
-    const ray = rayThroughScreenPoint({ x: 400, y: 300 }, RECT, vp, eye);
+    const ray = rayThroughScreenPoint({ x: 400, y: 300 }, RECT, vp, eye)!;
     expectVecClose(ray.direction, normalize(sub(cam.target, eye)), 4);
   });
 });

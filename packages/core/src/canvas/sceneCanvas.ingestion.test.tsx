@@ -9,7 +9,7 @@ import { render, act } from '@testing-library/react';
 import { createRef } from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import type { SceneCanvasApi } from './canvasExtension';
-import { ActionsProvider } from 'interactions/actions/ActionsProvider';
+import { ActionsProvider } from '@weasel-js/routing/react';
 // The real unpacker, to keep this an end-to-end check of the injected seam.
 import { unpackSvgFiles } from '@weasel-js/svg';
 import { createScene } from 'core/scene/scene';

@@ -1,20 +1,11 @@
 import type { View } from './view';
-import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from './zoomBounds';
+import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM, normalizeZoom } from './zoomBounds';
 
-/**
- * Axis-aligned rectangle in world space. Kit-wide `Bounds` shape used by
- * selection, group, and viewport helpers. The optional `rotation` field
- * (radians, around the AABB center) lets selection chrome attach a rotated
- * orientation to an otherwise axis-aligned rect without needing a parallel
- * type.
- */
-export interface Bounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  rotation?: number;
-}
+/** `Bounds` is declared in `@weasel-js/routing`, which is typed in it
+ *  throughout — every area-select, resize and preview surface names one.
+ *  Re-exported here, where core's call sites have always looked. */
+import type { Bounds } from '@weasel-js/routing';
+export type { Bounds };
 
 /** Pixel dimensions of the canvas viewport. */
 export interface ViewportDims {
@@ -104,8 +95,8 @@ export function fitViewToBounds(
       break;
     }
   }
-  const scaleX = Math.min(maxScale, Math.max(minScale, rawX));
-  const scaleY = Math.min(maxScale, Math.max(minScale, rawY));
+  const scaleX = normalizeZoom(Math.min(maxScale, Math.max(minScale, rawX)));
+  const scaleY = normalizeZoom(Math.min(maxScale, Math.max(minScale, rawY)));
 
   // Center bounds in the viewport. With view-as-camera semantics:
   //   screenCenter = (worldCenter - view.x) * scale

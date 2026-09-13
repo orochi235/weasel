@@ -21,8 +21,9 @@ import type {
 } from './types';
 import type { StyledRun, TextStyle, TextPaint, FillStyle, Stroke } from '@weasel-js/core';
 import { multiply, parseTransform, decomposeRotation, rebaseTransform, rotationComponent, isIdentity } from './transform';
-import { boundsOfPath } from '@weasel-js/core';
-import { IDENTITY_MATRIX, UNBOUNDED_TEXT_WIDTH } from './types';
+import { boundsOfPath, layoutRuns, resolveRuns, resolveTextStyle } from '@weasel-js/core';
+import { IDENTITY_MATRIX } from './types';
+import { anchorOffset } from './textAnchor';
 import { parsePaintAttr } from './color';
 import { collectGradients, type GradientTable } from './gradients';
 import { collectPatterns } from './patterns';
@@ -324,8 +325,10 @@ function parseElement(
     const bounds = pathAabb(path);
     const cx = bounds.x + bounds.width / 2;
     const cy = bounds.y + bounds.height / 2;
-    const angle = decomposeRotation(worldLocal, cx, cy);
-    if (angle != null) {
+    const angle = worldLocal && decomposeRotation(worldLocal, cx, cy);
+    if (!worldLocal) {
+      onWarn('leaf transform sits under a singular parent transform; dropped');
+    } else if (angle != null) {
       rotation = angle;
     } else {
       // Bake the matrix in — match legacy behavior.
@@ -779,8 +782,10 @@ function parseImageElement(
     const worldLocal = rebaseTransform(ctm, localTransform);
     const cx = node.x + node.width / 2;
     const cy = node.y + node.height / 2;
-    const angle = decomposeRotation(worldLocal, cx, cy);
-    if (angle != null) {
+    const angle = worldLocal && decomposeRotation(worldLocal, cx, cy);
+    if (!worldLocal) {
+      onWarn('<image> transform sits under a singular parent transform; dropped');
+    } else if (angle != null) {
       node.rotation = angle;
     } else {
       const rotComp = rotationComponent(worldLocal);
@@ -849,6 +854,28 @@ function collapseRunWhitespace(runs: StyledRun[]): void {
   for (let i = runs.length - 1; i >= 0; i--) {
     if (runs[i].text === '') runs.splice(i, 1);
   }
+}
+
+/** Average glyph advance as a fraction of the em. Sans-serif Latin runs
+ *  0.5–0.6; erring wide is the safer miss. */
+const ESTIMATED_GLYPH_ADVANCE_EM = 0.6;
+
+/**
+ * Width of an external `<text>`'s longest line, through the same layout
+ * `kit:text` paints with. With no registered font able to measure it, the
+ * layout reports nothing, and the width is estimated from the em instead.
+ */
+function laidOutWidth(runs: readonly StyledRun[], style: TextStyle, plain: string): number {
+  const resolved = resolveTextStyle(style);
+  const { bounds } = layoutRuns(resolveRuns(runs.length > 0 ? runs : [{ text: plain }], resolved), {
+    maxWidth: Infinity,
+    lineHeight: resolved.lineHeight,
+    align: resolved.align,
+    direction: resolved.direction,
+  });
+  if (bounds.width > 0) return bounds.width;
+  const longest = plain.split('\n').reduce((max, line) => Math.max(max, line.length), 0);
+  return longest * resolved.fontSize * ESTIMATED_GLYPH_ADVANCE_EM;
 }
 
 function parseTextElement(
@@ -923,10 +950,10 @@ function parseTextElement(
   if (!preservesSpace(el)) collapseRunWhitespace(runs);
   const plain = runs.map((r) => r.text).join('');
 
-  // Estimate dimensions: data-weasel-* attrs win, else heuristic.
+  // data-weasel-* attrs win; otherwise the box is what the text lays out to.
   const dataW = num(el.getAttribute('data-weasel-width'), NaN);
   const dataH = num(el.getAttribute('data-weasel-height'), NaN);
-  const width = Number.isFinite(dataW) ? dataW : UNBOUNDED_TEXT_WIDTH;
+  const width = Number.isFinite(dataW) ? dataW : laidOutWidth(runs, textStyle, plain);
   // Newlines in the text drive line count for height estimation.
   const lines = (plain.match(/\n/g)?.length ?? 0) + 1;
   const height = Number.isFinite(dataH) ? dataH : fontSize * lineHeight * lines;
@@ -934,7 +961,7 @@ function parseTextElement(
   const opacity = readOpacityAttr(el, 'opacity');
   const node: SvgTextNode = {
     kind: 'text',
-    x: ax,
+    x: ax - anchorOffset(textStyle, width),
     y: topY,
     width,
     height,
@@ -953,6 +980,7 @@ function parseTextElement(
     (r) => Object.entries(r).some(([k, v]) => k !== 'text' && v !== undefined),
   );
   if (hasStyling) node.runs = runs;
+  if (el.getAttribute('data-weasel-wrap') === 'true') textStyle.wrap = true;
   if (Object.keys(textStyle).length > 0) node.style = textStyle;
   // `!== undefined`, not `!= null`: `null` is the document saying `fill="none"`.
   if (textPaint.fill !== undefined) node.fill = textPaint.fill;
@@ -966,8 +994,10 @@ function parseTextElement(
     const worldLocal = rebaseTransform(ctm, localTransform);
     const cx = node.x + node.width / 2;
     const cy = node.y + node.height / 2;
-    const angle = decomposeRotation(worldLocal, cx, cy);
-    if (angle != null) {
+    const angle = worldLocal && decomposeRotation(worldLocal, cx, cy);
+    if (!worldLocal) {
+      onWarn('<text> transform sits under a singular parent transform; dropped');
+    } else if (angle != null) {
       node.rotation = angle;
     } else {
       const rotComp = rotationComponent(worldLocal);

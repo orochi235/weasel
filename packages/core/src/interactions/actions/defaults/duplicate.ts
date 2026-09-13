@@ -1,4 +1,4 @@
-import type { Action } from '../action';
+import type { Action } from '@weasel-js/routing';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';

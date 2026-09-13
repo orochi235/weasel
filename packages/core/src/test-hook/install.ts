@@ -12,7 +12,7 @@ export function installTestHookIfRequested(refs: TestHookRefs): WeaselTestHook |
   if (typeof window === 'undefined') return null;
   // Defense in depth: even if the call-site gate is bypassed, never expose
   // the hook in production.
-  if (process.env.NODE_ENV === 'production') return null;
+  if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'production') return null;
   const params = new URLSearchParams(window.location.search);
   if (params.get('test') !== '1') return null;
   // If a hook is already installed (HMR), keep it.

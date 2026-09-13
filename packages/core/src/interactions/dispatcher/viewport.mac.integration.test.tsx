@@ -22,11 +22,11 @@ vi.hoisted(() => {
 
 import { render, act } from '@testing-library/react';
 import { useRef } from 'react';
-import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider';
-import { DepRegistryProvider, useDepRegistry } from '../actions/depRegistry';
+import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
+import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
 import '../actions/depSchema';
-import { ActiveToolContextProvider } from '../actions/activeToolContext';
-import { useGestureDispatcher } from './useGestureDispatcher';
+import { ActiveToolContextProvider } from '@weasel-js/routing/react';
+import { useGestureDispatcher } from '@weasel-js/routing/react';
 import { viewportWheelPanAction } from '../actions/defaults/viewportWheelPan';
 import { viewportZoomAction } from '../actions/defaults/viewportZoom';
 import type { View } from 'core/viewport/view';

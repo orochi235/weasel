@@ -6,7 +6,7 @@
  *  subpath is the namespace; import one or the other, or alias at the call
  *  site. */
 export {
-  EPS3, add, sub, scale, dot, cross, len, len2, normalize,
+  add, sub, scale, dot, cross, len, len2, normalize,
   quatIdentity, quatFromAxisAngle,
   type Vec3, type Quat,
 } from './vec3';

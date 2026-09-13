@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import { moveAction } from './move';
-import type { InvocationCtx, BindingOpts } from '../invoker';
+import type { InvocationCtx, BindingOpts } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, PoseOverrides, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { NodeAtPointDep } from '../depSchema';
-import { buildDepsFromRequires } from '../buildDeps';
-import type { DepRegistry } from '../depRegistry';
+import { buildDepsFromRequires } from '@weasel-js/routing';
+import type { DepRegistry } from '@weasel-js/routing/react';
 import { composeRectPose, decomposeRectPose } from 'features/groups/composePose';
 
 /** Local-pose composition strategy. The reparentOnDrop tests below assert
@@ -166,6 +166,19 @@ describe('moveAction descriptor', () => {
     const handle = invoker.start(ctx, undefined);
     expect(handle).toEqual({});
   });
+
+  it.each(['anchor:1', 'controlOut:0'])(
+    'start returns empty handle when the press hit %s, so editAnchors can take the drag',
+    (kind) => {
+      const invoker = getOngoingInvoker(moveAction);
+      const ctx = makeCtx({
+        selectionIds: ['a'],
+        sceneNodes: { a: { pose: { x: 10, y: 20, width: 50, height: 50 } } },
+      });
+      ctx.drag = { start: { x: 0, y: 0 }, current: { x: 0, y: 0 }, delta: { x: 0, y: 0 }, affordance: { kind } };
+      expect(invoker.start(ctx, undefined)).toEqual({});
+    },
+  );
 
   it('start returns a handle with onMove and onEnd when selection is non-empty', () => {
     const invoker = getOngoingInvoker(moveAction);

@@ -15,6 +15,7 @@ import { IDENTITY_MATRIX } from './types';
 import { serializePathD } from './path-serializer';
 import { formatMatrix, multiply, trimNumber } from './transform';
 import { PaintServerRegistry } from './gradients';
+import { anchorOffset } from './textAnchor';
 
 /**
  * Walk the tree and produce an SVG document string. The root `<svg>`'s
@@ -425,14 +426,16 @@ function rotateAboutCenter(
 }
 
 /**
- * Emit a `<text>` element. Uses `dominant-baseline="text-before-edge"` so
- * the `y` attribute matches weasel's top-of-box pose; stashes the explicit
- * width/height (which native SVG text doesn't model) in `data-weasel-*`
- * attributes so they round-trip through the parser losslessly.
+ * Emit a `<text>` element. `x` is the `text-anchor` point, per the SVG spec:
+ * the box's left edge, center or right edge as its alignment resolves. Uses
+ * `dominant-baseline="text-before-edge"` so `y` matches weasel's top-of-box
+ * pose; stashes the explicit width/height (which native SVG text doesn't
+ * model) in `data-weasel-*` attributes so they round-trip through the parser
+ * losslessly.
  */
 function textXml(node: SvgTextNode, registry: PaintServerRegistry, namespaces: Record<string, string>): string {
   const attrs: string[] = [
-    `x="${trimNumber(node.x)}"`,
+    `x="${trimNumber(node.x + anchorOffset(node.style, node.width))}"`,
     `y="${trimNumber(node.y)}"`,
     `dominant-baseline="text-before-edge"`,
     // The runs model stores real line breaks; SVG's default whitespace
@@ -466,6 +469,9 @@ function textXml(node: SvgTextNode, registry: PaintServerRegistry, namespaces: R
   }
   const decoration = textDecorationValue(style?.underline, style?.strikethrough, style?.overline);
   if (decoration) attrs.push(`text-decoration="${decoration}"`);
+  // SVG text never wraps, so this is for weasel's own reader, beside the box
+  // width it wraps at.
+  if (style?.wrap) attrs.push('data-weasel-wrap="true"');
   // Note: `lineHeight` is NOT emitted here. The bridge layer (svgInterop)
   // lifts it into `meta.wd.attrs['line-height']`, which `metaAttrsXml`
   // below emits as `wd:line-height="..."`. There is no compat write of

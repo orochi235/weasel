@@ -17,7 +17,7 @@ import { useLabContext } from '../lab/LabContext';
 import { JobProgress } from '../primitives/JobProgress';
 import { LabStoreContext } from '../state/context';
 import type { TrialRecord } from '../state/types';
-import { as2DView } from '../state/view';
+import { as2DView, withZoom } from '../state/view';
 import { TrialBody } from './TrialBody';
 import { TrialTitleBar } from './TrialTitleBar';
 import { UndockedSections } from './UndockedSections';
@@ -117,7 +117,7 @@ export function TrialChrome({
   const ctx = useMemo<TrialChromeContext>(() => {
     const setZoom = (z: number): void => {
       if (!view2d) return;
-      updateTrialView(trialId, { ...view2d, zoom: z });
+      updateTrialView(trialId, withZoom(view2d, z));
     };
     return {
       trialId,

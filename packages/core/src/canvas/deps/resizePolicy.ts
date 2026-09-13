@@ -17,7 +17,7 @@
  * @see ResizePolicy — the dep schema entry.
  */
 import { useRef } from 'react';
-import { useDepSource } from 'interactions/actions/depRegistry';
+import { useDepSource } from '@weasel-js/routing/react';
 import type { ResizePolicy } from 'interactions/actions/depSchema';
 import type {
   PointSnapBehavior,

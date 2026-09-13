@@ -2,9 +2,9 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { usePenTool, type PenScratch } from './usePenTool';
 import type { PolygonPath } from 'features/paths/types';
-import type { Action } from 'interactions/actions/action';
-import { ActionDisabledReason } from 'interactions/actions/action';
-import type { ActionDeps, InvocationCtx, OngoingHandle } from 'interactions/actions/invoker';
+import type { Action } from '@weasel-js/routing';
+import { ActionDisabledReason } from '@weasel-js/routing';
+import type { ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { ModifierState } from 'core/modifierState';
 
 interface Pose { kind: 'path'; path: PolygonPath; closed: boolean }

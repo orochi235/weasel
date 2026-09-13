@@ -10,12 +10,12 @@
  * triggering re-registration.
  */
 import { useRef } from 'react';
-import { useDepSource } from 'interactions/actions/depRegistry';
+import { useDepSource } from '@weasel-js/routing/react';
 import type { AreaSelectDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
-import { hitTestArea as hitTestAreaShared } from './hitTestArea';
+import { hitTestArea as hitTestAreaShared, regionPickOptions } from './hitTestArea';
 import type { PoseComposition } from 'features/groups/composePose';
 
 export function useAreaSelectDepSource(
@@ -23,6 +23,8 @@ export function useAreaSelectDepSource(
   selection: SelectionApi,
   descriptor?: PoseDescriptor<unknown>,
   poseComposition?: PoseComposition<unknown>,
+  /** The painted alpha the surface's layers apply, which every view shares. */
+  alphaOf?: (id: string) => number,
 ): void {
   const sceneRef = useRef(scene);
   sceneRef.current = scene;
@@ -30,14 +32,17 @@ export function useAreaSelectDepSource(
   selectionRef.current = selection;
   const descriptorRef = useRef(descriptor);
   descriptorRef.current = descriptor;
+  const alphaOfRef = useRef(alphaOf);
+  alphaOfRef.current = alphaOf;
 
   useDepSource('areaSelect', (): AreaSelectDep => {
     const sc = sceneRef.current;
     const s = selectionRef.current;
     const d = descriptorRef.current;
+    const a = alphaOfRef.current;
     return {
-      hitTestArea: (bounds) =>
-        hitTestAreaShared(sc, bounds, poseComposition ? { poseComposition } : undefined, d),
+      hitTestArea: (bounds, view) =>
+        hitTestAreaShared(sc, bounds, regionPickOptions(view, a, poseComposition), d),
       getSelection: () => s.current as NodeId[],
       setSelection: (ids) => s.set(ids),
     };

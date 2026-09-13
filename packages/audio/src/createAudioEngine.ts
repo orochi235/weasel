@@ -280,7 +280,8 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
 
       const busName = playOpts.bus ?? busNames[0];
       const slots = slotsFor(busName);
-      const when = playOpts.when ?? now();
+      const bookedAt = now();
+      const when = playOpts.when ?? bookedAt;
       const baseGain = playOpts.gain ?? 1;
 
       const spatial = playOpts.position
@@ -301,8 +302,9 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       scheduler.schedule(when, (scheduledWhen) => {
         if (voice.cancelled) return;
         // Came due while the context was suspended: starting it now would play
-        // a backlog at once, which is what dropping a locked play avoids.
-        if (scheduledWhen < staleFloor) {
+        // a backlog at once, which is what dropping a locked play avoids. A voice
+        // played since the resume is no backlog, however early its `when`.
+        if (bookedAt < staleFloor && scheduledWhen < staleFloor) {
           teardown(voice);
           return;
         }

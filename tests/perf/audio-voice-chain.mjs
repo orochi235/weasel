@@ -20,14 +20,15 @@
  * Run: node tests/perf/audio-voice-chain.mjs [--rounds 5] [--frames 60]
  *        [--modes fresh,engine] [--base main] [--out results.json]
  *
- * This reports; it does not gate.
+ * Writes one result file (see tests/perf/README.md). This reports; it does not gate.
  */
 import { createRequire } from 'node:module';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { metric, startRun } from './lib/result.ts';
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const require = createRequire(join(ROOT, 'package.json'));
@@ -44,6 +45,11 @@ const OUT = arg('out', null);
 const BASE = arg('base', null);
 const ALL_MODES = ['fresh', 'pooled', 'detached', 'source', 'engine', ...(BASE ? ['engine@base'] : [])];
 const MODES = arg('modes', ALL_MODES.join(',')).split(',');
+
+const baseSha = BASE ? execFileSync('git', ['-C', ROOT, 'rev-parse', BASE], { encoding: 'utf8' }).trim() : null;
+const run = startRun('audio-voice-chain', {
+  rounds: ROUNDS, frames: FRAMES, modes: MODES, base: BASE ? { ref: BASE, sha: baseSha } : null,
+});
 
 const bundleFrom = (srcDir, globalName) => esbuild.buildSync({
   entryPoints: [join(srcDir, 'index.ts')],
@@ -272,6 +278,7 @@ try {
   await page.goto('http://localhost:9/');
   for (const content of bundles) await page.addScriptTag({ content });
   await page.evaluate(`(${pageSetup.toString()})()`);
+  run.machine({ browser: `chromium ${browser.version()}` });
   console.log(`chromium ${browser.version()}, crossOriginIsolated=${await page.evaluate('crossOriginIsolated')}`);
 
   const realtime = [];
@@ -334,4 +341,24 @@ for (const xs of pick('offline')) {
     `${num(median(xs.map((x) => x.mainMs)), 7, 1)}`,
   );
 }
-if (OUT) writeFileSync(OUT, JSON.stringify(results, null, 2));
+const stat = (what) => `median of ${ROUNDS} rounds${what}`;
+for (const xs of pick('realtime')) {
+  const { m, V, B } = xs[0];
+  const col = (k) => xs.map((x) => x[k]);
+  const over = `, each over ${FRAMES} frames`;
+  run.item(`realtime ${m} V=${V} B=${B}`, {
+    perPlay: metric(median(col('usPerPlay')), 'us', stat(over), col('usPerPlay')),
+    worstFrame: metric(median(col('worstFrameMs')), 'ms', stat(`, each the worst of ${FRAMES} frames`), col('worstFrameMs')),
+    heapPerPlay: metric(median(col('heapBytesPerPlay')), 'bytes', stat(over), col('heapBytesPerPlay')),
+    gc: metric(median(col('gcMs')), 'ms', stat(over), col('gcMs')),
+  }, { kind: 'realtime', mode: m, voices: V, playsPerFrame: B });
+}
+for (const xs of pick('offline')) {
+  const { m, V, B } = xs[0];
+  const col = (k) => xs.map((x) => x[k]);
+  run.item(`offline ${m} V=${V} B=${B}`, {
+    render: metric(median(col('renderMs')), 'ms', stat(', each rendering 20 s'), col('renderMs')),
+    main: metric(median(col('mainMs')), 'ms', stat(', each rendering 20 s'), col('mainMs')),
+  }, { kind: 'offline', mode: m, voices: V, playsPerFrame: B });
+}
+run.write({ out: OUT ?? undefined });

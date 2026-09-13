@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import type { Op } from 'core/ops/types';
 import { resizeAction } from './resize';
-import type { InvocationCtx } from '../invoker';
+import type { InvocationCtx } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import type { ResizeAnchor } from '../../gestures/types';
 

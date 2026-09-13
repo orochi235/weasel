@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { useEffect, type ReactNode } from 'react';
 import { render } from '@testing-library/react';
-import { ActionsProvider, useActionsRegistry } from './ActionsProvider';
-import type { Action } from './action';
-import { DepRegistryProvider, useDepRegistry } from './depRegistry';
+import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
+import type { Action } from '@weasel-js/routing';
+import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
 import { useStandardActions, KIT_STANDARD_ACTION_IDS } from './useStandardActions';
 import type { UseStandardActionsOptions } from './useStandardActions';
 

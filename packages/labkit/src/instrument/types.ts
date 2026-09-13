@@ -112,7 +112,8 @@ export type SystemEvent = string;
 export type Point = { x: number; y: number };
 /** What a hit-test found, and where. */
 export type HitResult = { hit: boolean; layerId?: string; pointId?: string };
-/** A trial's camera. */
+/** A trial's camera. `zoom` is always positive and finite once labkit holds
+ *  it — see `normalize2DView`. */
 export type ViewTransform = { zoom: number; pan: Point };
 /** A layer as the layer list shows it. `alwaysOn` layers cannot be hidden. */
 export type LayerDescriptor = { id: string; label: string; alwaysOn?: boolean };

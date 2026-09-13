@@ -109,4 +109,11 @@ describe('compareVersions', () => {
     expect(compareVersions('0.8.0', '0.10.0')).toBeLessThan(0);
     expect(compareVersions('1.0.0', '1.0.0')).toBe(0);
   });
+
+  it('orders a prerelease below its release and above the version before', () => {
+    expect(compareVersions('1.4.0-pre.1', '1.4.0')).toBeLessThan(0);
+    expect(compareVersions('1.4.0', '1.4.0-pre.1')).toBeGreaterThan(0);
+    expect(compareVersions('1.4.0-pre.0', '1.3.0')).toBeGreaterThan(0);
+    expect(compareVersions('1.4.0-pre.10', '1.4.0-pre.9')).toBeGreaterThan(0);
+  });
 });

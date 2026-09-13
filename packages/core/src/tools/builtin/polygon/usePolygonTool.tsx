@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { defineTool } from '../../defineTool';
+import { defineTool } from '../../overlayBinding';
 import { PolygonIcon } from '../../../icons';
-import type { Tool } from '../../types';
-import type { Action } from 'interactions/actions/action';
+import type { Tool } from '../../overlayBinding';
+import type { Action } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 
 /** A point in world coordinates. */

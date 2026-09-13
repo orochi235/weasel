@@ -13,7 +13,7 @@ import type { Mat3 } from '@weasel-js/geom';
 import { transformPath, rectPath, boundsOfPath } from 'features/paths';
 import type { Path } from 'features/paths/types';
 import { nudgeRightAction } from '../defaults/nudge';
-import type { ImmediateInvoker } from '../invoker';
+import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 
 function setup(path: Path) {

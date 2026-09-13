@@ -20,10 +20,6 @@ describe('pxExtent', () => {
   it('uses magnitude, so a flipped axis keeps a positive extent', () => {
     expect(pxExtent(8, { x: -4, y: 1 })).toEqual({ x: 2, y: 8 });
   });
-
-  it('does not blow up on a zero axis', () => {
-    expect(Number.isFinite(pxExtent(8, { x: 0, y: 1 }).x)).toBe(true);
-  });
 });
 
 describe('withinPxBox', () => {

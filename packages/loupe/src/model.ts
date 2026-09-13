@@ -1,3 +1,4 @@
+import { normalizeZoom } from '@weasel-js/core';
 import { type LoupePoint, type LoupeRect, loupeSourcePoint } from './geometry';
 
 /** How a loupe magnifies. `'vector'` re-renders the source through a zoomed-in
@@ -27,15 +28,24 @@ export interface LoupeSurface {
   gone(): boolean;
   /** Something the painter must redraw for has changed. */
   changed(): void;
+  /**
+   * Run `fn` after each frame the surface lands; returns an unsubscribe.
+   * Implement it when `sample` reads pixels that only show an aim once a
+   * frame has painted — a framebuffer read back. The model then samples the
+   * aim on the next landed frame, so `color` settles a frame after the aim.
+   * Omit it when `sample` can answer for a fresh aim right away.
+   */
+  subscribeFrame?(fn: () => void): () => void;
 }
 
 /** Options for {@link createLoupeModel}. */
 export interface LoupeModelOptions {
   surface: LoupeSurface;
   mode?: LoupeMode;
-  /** Magnification. Default 8. */
+  /** Magnification. Default 8. Always positive and finite: a factor that is
+   *  not becomes `ZOOM_FLOOR`, the same rule a view's zoom follows. */
   factor?: number;
-  /** Bounds `setFactor` clamps to. Unset means unclamped. */
+  /** Bounds `setFactor` clamps to. Unset means bounded only by that rule. */
   minFactor?: number;
   maxFactor?: number;
   /** Called with the hex colour under the aim point whenever it changes. */
@@ -75,26 +85,34 @@ export interface LoupeModel {
 export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
   const { surface } = opts;
   let mode: LoupeMode = opts.mode ?? 'vector';
-  let factor = opts.factor ?? 8;
+  let factor = normalizeZoom(opts.factor ?? 8);
   let aim: LoupePoint = { x: 0, y: 0 };
   let color: string | null = null;
   let disposed = false;
+  let aimUnsampled = false;
 
   const clamp = (n: number): number =>
-    Math.min(opts.maxFactor ?? Number.POSITIVE_INFINITY,
-             Math.max(opts.minFactor ?? Number.NEGATIVE_INFINITY, n));
-
-  const teardown = () => {
-    if (disposed) return;
-    disposed = true;
-    opts.onDispose?.();
-  };
+    normalizeZoom(Math.min(opts.maxFactor ?? Number.POSITIVE_INFINITY,
+                           Math.max(opts.minFactor ?? Number.NEGATIVE_INFINITY, n)));
 
   const sampleColor = () => {
     const hex = surface.sample(aim);
     if (hex === null || hex === color) return;
     color = hex;
     opts.onColorChange?.(hex);
+  };
+
+  const unsubscribeFrame = surface.subscribeFrame?.(() => {
+    if (!aimUnsampled) return;
+    aimUnsampled = false;
+    sampleColor();
+  });
+
+  const teardown = () => {
+    if (disposed) return;
+    disposed = true;
+    unsubscribeFrame?.();
+    opts.onDispose?.();
   };
 
   return {
@@ -124,7 +142,8 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
       if (surface.hidden()) return;
       if (surface.covers(p)) return;
       aim = p;
-      sampleColor();
+      if (unsubscribeFrame) aimUnsampled = true;
+      else sampleColor();
       surface.changed();
     },
 

@@ -2,14 +2,14 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
-import { useTools } from './useTools';
+import { useTools } from './overlayBinding';
 import { useKeybindings } from './useKeybindings';
-import { defineTool } from './defineTool';
-import { ActiveToolContextProvider, useActiveToolContext } from '../interactions/actions/activeToolContext';
-import { ActionsProvider } from '../interactions/actions/ActionsProvider';
-import { useActionsRegistry } from '../interactions/actions/ActionsProvider';
-import { DepRegistryProvider, useDepSource } from '../interactions/actions/depRegistry';
-import { useGestureDispatcher } from '../interactions/dispatcher/useGestureDispatcher';
+import { defineTool } from './overlayBinding';
+import { ActiveToolContextProvider, useActiveToolContext } from '@weasel-js/routing/react';
+import { ActionsProvider } from '@weasel-js/routing/react';
+import { useActionsRegistry } from '@weasel-js/routing/react';
+import { DepRegistryProvider, useDepSource } from '@weasel-js/routing/react';
+import { useGestureDispatcher } from '@weasel-js/routing/react';
 import { useRef } from 'react';
 
 function press(key: string, type: 'keydown' | 'keyup' = 'keydown'): void {

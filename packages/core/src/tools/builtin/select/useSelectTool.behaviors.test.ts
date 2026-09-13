@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useSelectTool } from './useSelectTool';
 import { snapToContainer } from '../../../interactions/actions/move/behaviors/snapToContainer';
-import type { GestureBinding } from '../../../interactions/actions/binding';
+import type { GestureBinding } from '@weasel-js/routing';
 
 const minimalAdapter = {
   getNode: (id: string) => ({ id }),

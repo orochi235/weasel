@@ -1,4 +1,4 @@
-import type { Action } from '../action';
+import type { Action } from '@weasel-js/routing';
 import type { FillStyle } from '@weasel-js/paint';
 import { createPaintAction } from './createPaintAction';
 import { paintWithColor, DEFAULT_FILL_COLOR } from '../../../util/paint';

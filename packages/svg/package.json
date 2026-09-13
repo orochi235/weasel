@@ -41,6 +41,9 @@
     "access": "public",
     "provenance": true
   },
+  "dependencies": {
+    "@weasel-js/geom": "1.4.4"
+  },
   "peerDependencies": {
     "@weasel-js/core": "1.4.4"
   }

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import { defineTool } from '../../defineTool';
+import { defineTool } from '../../overlayBinding';
 import { ImageIcon } from '../../../icons';
-import type { Tool } from '../../types';
+import type { Tool } from '../../overlayBinding';
 
 /** Options for `useImageTool`. */
 export interface UseImageToolOptions {

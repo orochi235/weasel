@@ -1,13 +1,5 @@
 import { describe, it, expectTypeOf, expect } from 'vitest';
-import type {
-  Invoker,
-  ImmediateInvoker,
-  OngoingInvoker,
-  OngoingHandle,
-  InvocationCtx,
-  BindingOpts,
-  ActionDeps,
-} from './invoker';
+import type { Invoker, ImmediateInvoker, OngoingInvoker, OngoingHandle, InvocationCtx, BindingOpts, ActionDeps } from '@weasel-js/routing';
 
 describe('Invoker', () => {
   it('ImmediateInvoker has timing "immediate" and run', () => {

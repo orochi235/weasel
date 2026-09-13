@@ -5,8 +5,8 @@ import {
 } from 'affordances/rotationHandle';
 import type { RotateAdapter } from 'core/adapters/types';
 import { ROTATION_HANDLE_BASE_PX } from 'core/device/targets';
-import { defineTool } from '../../defineTool';
-import type { Tool } from '../../types';
+import { defineTool } from '../../overlayBinding';
+import type { Tool } from '../../overlayBinding';
 import type { RenderLayer } from 'core/layers/render';
 import type { ChromeState } from 'core/selection/chromeState';
 import type { Bounds } from '../shared/selectionTarget';

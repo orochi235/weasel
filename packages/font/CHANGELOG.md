@@ -39,10 +39,6 @@
 
 ## 1.4.0
 
-## 1.4.0-pre.1
-
-## 1.4.0-pre.0
-
 ## 1.3.0
 
 ### Patch Changes
@@ -68,8 +64,6 @@
   This was latent until the layout cache gained a structural key. Before that
   it was keyed on run-array identity alone, and callers that rebuilt their runs
   each frame missed on every lookup and re-derived the tier by accident.
-
-## 2.0.0-pre.0
 
 ## 1.2.0
 

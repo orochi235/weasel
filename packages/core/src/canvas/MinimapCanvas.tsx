@@ -22,18 +22,19 @@ import {
   useSyncExternalStore,
 } from 'react';
 import type { Ref } from 'react';
-import { openPointerSession, type PointerSession } from '../interactions/gestures/pointerSession';
+import { openPointerSession, type PointerSession } from '@weasel-js/routing';
 import { SceneViewCanvas } from './SceneViewCanvas';
 import {
   computeFitView,
   computeIndicatorCommand,
 } from './minimapMath';
 import type { IndicatorStyle, MinimapFit } from './minimapMath';
-import type { SceneViewDrawOne } from './sceneViewRender';
+import type { SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';
 import type { DrawCommand } from '../renderer/DrawCommand';
-import type { View } from '../core/viewport/view';
+import { normalizeView, type View } from '../core/viewport/view';
 import type { Scene } from '../core/scene/types';
 import type { PoseDescriptor } from '../core/geometry/poseDescriptor';
+import type { Animator } from '../animation/types';
 import { AUTO_POSE_DESCRIPTOR } from '../interactions/actions/resize/autoPoseDescriptor';
 
 /** Props for `<MinimapCanvas>`. */
@@ -72,6 +73,15 @@ export interface MinimapCanvasProps<TData, TLayer extends string, TPose> {
    *  `alphaFor`. Pass the same function the main canvas uses so a
    *  scoping-dim treatment shows up in the minimap too. */
   alphaFor?: (id: string) => number;
+  /** Hide scene layers in the minimap, keyed `scene:<layerId>` as on
+   *  `<SceneCanvas>` — pass the main canvas's map so both show the same set. */
+  layerVisibility?: SceneViewLayers['layerVisibility'];
+  /** Paint order for the minimap, keyed as `layerVisibility`. */
+  layerOrder?: SceneViewLayers['layerOrder'];
+  /** Optional animator: the minimap repaints on its ticks and paints its
+   *  `colorOverrides`. Pass the main canvas's animator so both show the same
+   *  colors. */
+  animator?: Animator;
   /** Visual tuning of the indicator stroke. */
   indicatorStyle?: IndicatorStyle;
   /** CSS class for sizing / positioning the canvas. */
@@ -85,19 +95,23 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
 ) {
   const {
     scene,
-    mainView,
+    mainView: mainViewProp,
     mainViewDims,
     onMainViewChange,
     width,
     height,
     drawOne,
     alphaFor,
+    layerVisibility,
+    layerOrder,
+    animator,
     fit = 'scene',
     poseDescriptor,
     indicatorStyle,
     className,
     canvasRef,
   } = props;
+  const mainView = normalizeView(mainViewProp);
 
   // Subscribe to scene version so the fit view recomputes when the scene
   // mutates. `<SceneViewCanvas>` also subscribes, but it owns its own
@@ -210,6 +224,9 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
       drawOne={drawOne}
       extraCommands={extraCommands}
       alphaFor={alphaFor}
+      layerVisibility={layerVisibility}
+      layerOrder={layerOrder}
+      animator={animator}
       className={className}
       canvasRef={setCanvasRef}
     />

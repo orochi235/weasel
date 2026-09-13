@@ -1,11 +1,11 @@
 import { useMemo, createElement } from 'react';
-import { defineTool } from '../../defineTool';
+import { defineTool } from '../../overlayBinding';
 import { LassoIcon } from '../../../icons';
-import type { Tool } from '../../types';
+import type { Tool } from '../../overlayBinding';
 import type { UseLassoSelectOptions } from 'interactions/actions/lasso-select/options';
 import { selectFromLasso } from 'interactions/actions/lasso-select/behaviors/selectFromLasso';
 import type { LassoHitMode, LassoSelectAdapter } from 'core/adapters/types';
-import type { ToolKeybinding } from '../../types';
+import type { ToolKeybinding } from '@weasel-js/routing';
 
 /** Options for `useLassoTool` — the lasso-select action's options plus the
  *  tool's own hit mode and activation key. */

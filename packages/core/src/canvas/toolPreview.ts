@@ -4,8 +4,8 @@
  * constructing scene-aware layers (selection overlay, etc.) without
  * going through Canvas's internal render closure.
  */
-import type { ToolsApi } from 'tools/useTools';
-import type { AnyTool } from 'tools/types';
+import type { ToolsApi } from '../tools/overlayBinding';
+import type { AnyTool } from '../tools/overlayBinding';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { GesturePreviewSource } from './gestureBounds';
 

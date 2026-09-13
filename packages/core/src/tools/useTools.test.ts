@@ -2,10 +2,10 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
-import { useTools } from './useTools';
-import { defineTool } from './defineTool';
+import { useTools } from './overlayBinding';
+import { defineTool } from './overlayBinding';
 import type { RenderLayer } from 'core/layers/render';
-import { ActiveToolContextProvider, useActiveToolContext } from '../interactions/actions/activeToolContext';
+import { ActiveToolContextProvider, useActiveToolContext } from '@weasel-js/routing/react';
 
 const mkLayer = (id: string): RenderLayer<unknown> => ({
   id, label: id, space: 'screen', draw: () => [],

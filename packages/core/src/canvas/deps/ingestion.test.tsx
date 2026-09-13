@@ -1,10 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
-import {
-  DepRegistryProvider,
-  useDepRegistry,
-  type DepRegistry,
-} from 'interactions/actions/depRegistry';
+import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import { useIngestionDepSource } from './ingestion';
 import type { View } from 'core/viewport/view';
 

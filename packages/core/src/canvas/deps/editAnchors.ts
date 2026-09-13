@@ -9,8 +9,7 @@
  *
  * `getEditablePath(id)` returns the COMMITTED polygon in **world coords**,
  * regardless of where it's stored:
- *   - `node.pose.kind === 'polygon'` → pose IS the polygon (bezier-edit
- *     demo and similar pose-as-polygon consumers).
+ *   - `node.pose.kind === 'polygon'` → pose IS the polygon.
  *   - `node.data.path` is a polygon → kit pen-tool default. Polygon's
  *     stored coords are pose-local (aligned to pose origin); we project
  *     to world via `pathInWorld` (translate + bake `pose.rotation`).
@@ -30,14 +29,14 @@
  * triple — this dep doesn't own preview state.
  */
 import { useCallback, useRef, useState } from 'react';
-import { useDepSource } from 'interactions/actions/depRegistry';
+import { useDepSource } from '@weasel-js/routing/react';
 import type { EditAnchorsDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId, RectPose } from 'core/scene/types';
 import { isRectPose } from 'interactions/actions/resize/autoPoseDescriptor';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Path, PolygonPath } from 'features/paths/types';
 import { pathInWorld, worldEditToStorage } from 'features/paths/pathInWorld';
-import { recordModeSwitch } from 'interactions/dispatcher/dispatcher';
+import { recordModeSwitch } from '@weasel-js/routing';
 
 interface OpsApplier {
   applyOps(ops: { apply(adapter: unknown): void }[], label?: string): void;

@@ -14,7 +14,7 @@
  * one `pathInPoseFrame` projects geometry into. Rotation lives in this hook,
  * not in those: a node's stored geometry is pre-rotation by definition.
  */
-import { useCallback, type RefObject } from 'react';
+import { useCallback, useRef, type RefObject } from 'react';
 import { applyToPoint, invert, multiply, type Mat3 } from '@weasel-js/geom';
 import type { Node, RectPose, Scene } from '../../core/scene/types';
 import { useCanvasSize } from '../../core/viewport/useCanvasSize';
@@ -38,7 +38,8 @@ export interface NodeOverlayFrame {
   box: { x: number; y: number; width: number; height: number };
   /** Node box frame → overlay pixels, rotation and view included. */
   toScreen: (p: OverlayPoint) => OverlayPoint;
-  /** Overlay pixels → node box frame. Inverts `toScreen`. */
+  /** Overlay pixels → node box frame. Inverts `toScreen`; while a live view
+   *  flattens an axis, it keeps the last mapping that had an inverse. */
   toLocal: (p: OverlayPoint) => OverlayPoint;
   /** The container's size in CSS pixels — the overlay's own box. */
   width: number;
@@ -89,18 +90,23 @@ export function useNodeOverlayFrame<TData, TLayer extends string, TPose extends 
     return { x, y };
   }, [project]);
 
+  const lastInverse = useRef<Mat3 | null>(null);
+
   const toLocal = useCallback((p: OverlayPoint): OverlayPoint => {
     const m = project();
-    const inverse = m ? invert(m) : null;
-    if (!inverse) return p;
-    const [x, y] = applyToPoint(inverse, p.x, p.y);
+    const inverse = m && invert(m);
+    if (inverse) lastInverse.current = inverse;
+    // Set before any frame is returned, so a handed-out toLocal always has one.
+    const [x, y] = applyToPoint(inverse ?? lastInverse.current!, p.x, p.y);
     return { x, y };
   }, [project]);
 
   const box = worldBoxOf(scene, nodeId, compose);
   if (!box || width === 0 || height === 0) return null;
   const m = project();
-  if (!m || !invert(m)) return null;
+  const inverse = m && invert(m);
+  if (!inverse) return null;
+  lastInverse.current = inverse;
 
   return { box: { x: box.x, y: box.y, width: box.width, height: box.height }, toScreen, toLocal, width, height };
 }

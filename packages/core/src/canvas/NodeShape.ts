@@ -42,9 +42,11 @@ import { isRectPose } from 'interactions/actions/resize/autoPoseDescriptor';
 function paintsPose(pose: unknown): boolean {
   return pose === undefined || isRectPose(pose);
 }
-import type { DrawCommand } from '../renderer';
-import { textCommand, textCommandFromRuns } from 'features/text/textCommand';
-import type { TextStyle } from '@weasel-js/text';
+import type { DrawCommand, PathDrawCommand } from '../renderer';
+import type { VertexColorChannel } from '../animation/colorRegistry';
+import { countPathAnchors } from 'features/paths/anchors';
+import { textCommandFromPose } from 'features/text/textCommand';
+import type { TextPose, TextStyle } from '@weasel-js/text';
 import type { StyledRun, TextVerticalAlign } from '@weasel-js/text';
 import { textLineBoxes } from '@weasel-js/text';
 import type { FillStyle, Stroke } from '@weasel-js/paint';
@@ -82,6 +84,13 @@ export interface NodePaintCtx {
    *  the wrapper hands such a node the caller's own ctx untouched. `null`
    *  means the node derives but has nothing to draw. */
   derivedPath?: Path | null;
+  /** A node's animated per-anchor colors: given the colors a painter would paint
+   *  on `channel`, the colors to paint instead. **Absent** when nothing animates
+   *  the node. The kit's path painters apply it; see `withColorOverrides`. */
+  vertexColors?: (
+    channel: VertexColorChannel,
+    base: readonly number[] | undefined,
+  ) => readonly number[] | undefined;
 }
 
 /**
@@ -409,6 +418,31 @@ export function _resetShapePaintersForTests(): void {
 
 // ─── Built-in painters ─────────────────────────────────────────────────
 
+/** The `data` a `kit:text` node carries. */
+interface TextNodeData {
+  text: string;
+  style?: TextStyle;
+  runs?: readonly StyledRun[];
+  fill?: FillStyle | null;
+  stroke?: Stroke | null;
+  verticalAlign?: TextVerticalAlign;
+}
+
+/** A `kit:text` node as the `TextPose` every text consumer reads. The stroke
+ *  goes through the same resolver every other node kind's does, so one
+ *  carrying no paint is dropped here rather than throwing in the renderer. */
+function textPoseOf(d: TextNodeData, p: RectPose): TextPose {
+  return {
+    x: p.x, y: p.y, width: p.width, height: p.height,
+    text: d.text,
+    runs: d.runs as StyledRun[] | undefined,
+    style: d.style,
+    fill: d.fill,
+    stroke: resolveNodeStroke(d.stroke) ?? undefined,
+    verticalAlign: d.verticalAlign,
+  };
+}
+
 const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   id: 'kit:text',
   matches: (node) => {
@@ -424,82 +458,25 @@ const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // draw, exactly as a fresh `Path` per frame defeated the mesh cache. Both
   // resolvers are pure style merging — no font reads — so `(data, pose)` is
   // the whole key. See PAINT_SLOT.
-  paint: (node, pose) => nodeMemo(node, PAINT_SLOT, pose, () => {
-    const d = node.data as {
-      text: string;
-      style?: TextStyle;
-      runs?: readonly StyledRun[];
-      fill?: FillStyle | null;
-      stroke?: Stroke | null;
-      verticalAlign?: TextVerticalAlign;
-    };
-    const p = pose;
-    // `y` is the TOP of the first line box, not a baseline: `layoutRuns`
-    // walks down from it by `common.base * scale` to reach the baseline, and
-    // `verticalAlign` aligns the laid-out block within `[y, y + height]`.
-    // This used to pass `p.y + fontSize`, which is the canvas-2D
-    // `fillText` convention and wrong here — it put the baseline nearly two
-    // ems below the box top, hung descenders outside the pose, and made the
-    // box handed to `verticalAlign` a different box from the node's own. It
-    // also disagreed with `createTextLayer` and with the DOM editing overlay
-    // (`useSceneTextEdit.getScreenPose`), both of which anchor on `pose.y` —
-    // so text jumped a full line the moment an edit was committed.
-    //
-    // The pose's box height and `data.verticalAlign` travel together: the
-    // height is the box the alignment resolves within. Both default to the
-    // 'top' behavior — a zero offset regardless of height — so a node that
-    // names neither paints exactly where it always did. The pose width goes
-    // over as the alignment box, not as `maxWidth`: kit:text has no slot for
-    // opting into wrap, and forwarding maxWidth would silently start wrapping
-    // consumers' existing text.
-    //
-    // `runs` wins over `text` when present. It is the richer form of the same
-    // content — `useTextEdit` commits both, keeping `runsToPlainText(runs)`
-    // equal to `text` — so re-flattening the string here would make the whole
-    // run algebra write-only for anything painted by the default scene layer.
-    // Empty runs are not a styling, so they fall back rather than paint
-    // nothing.
-    const y = p.y;
-    // Text reads the same `data.fill` / `data.stroke` every other node kind
-    // reads, so one set of paint controls writes all of them — and through
-    // the same resolver, so a stroke carrying no paint is dropped here too
-    // rather than throwing once it reaches the renderer.
-    const paint = { fill: d.fill, stroke: resolveNodeStroke(d.stroke) ?? undefined };
-    return d.runs && d.runs.length > 0
-      ? [textCommandFromRuns(p.x, y, d.runs, d.style, undefined, p.height, d.verticalAlign, paint, p.width)]
-      : [textCommand(p.x, y, d.text, d.style, undefined, p.height, d.verticalAlign, paint, p.width)];
-  }),
-  // The pose is a *wrap box*, not a bounding box — "Away" in a 300-unit box
+  //
+  // `y` is the top of the first line box, not a baseline — see
+  // `TextDrawCommand.y`. Wrap, alignment and run resolution are
+  // `textCommandFromPose`'s, which `createTextLayer`, picking, the caret and
+  // the edit overlay all share.
+  paint: (node, pose) => nodeMemo(node, PAINT_SLOT, pose, () => [
+    textCommandFromPose(textPoseOf(node.data as TextNodeData, pose)),
+  ]),
+  // The pose is a layout box, not a bounding box — "Away" in a 300-unit box
   // leaves most of it empty, and a pose-rect silhouette claims all of it. The
   // union of the line boxes is what the node actually covers, so picking,
-  // lasso and clipping stop grabbing blank space. `Infinity` because `paint`
-  // above deliberately does not forward `maxWidth`: this text does not wrap,
-  // and boxes measured against `p.width` would wrap where the paint did not.
-  // Alignment still resolves within `p.width`, as it does in `paint`.
+  // lasso and clipping stop grabbing blank space.
   //
   // `null` rather than an empty path when there are no non-blank lines: an
   // empty text node would otherwise become unpickable, and a caller reading
   // "no silhouette" falls back to the pose rect, which is the behavior an
   // empty box wants.
   silhouette: (node, pose) => {
-    const d = node.data as {
-      text: string;
-      style?: TextStyle;
-      runs?: readonly StyledRun[];
-      verticalAlign?: TextVerticalAlign;
-    };
-    const p = pose;
-    const boxes = textLineBoxes(
-      {
-        x: p.x, y: p.y, width: p.width, height: p.height,
-        text: d.text, runs: d.runs as StyledRun[] | undefined, style: d.style,
-        // `textLineBoxes` applies the same shift `drawText` does, so picking
-        // follows a centered or bottom-aligned block down its box instead of
-        // staying where a top-aligned one would have drawn.
-        verticalAlign: d.verticalAlign,
-      },
-      { maxWidth: Infinity },
-    );
+    const boxes = textLineBoxes(textPoseOf(node.data as TextNodeData, pose));
     if (boxes.length === 0) return null;
     return rectsToPath(boxes);
   },
@@ -610,6 +587,29 @@ function inkReach(
   }
 }
 
+/** Apply {@link NodePaintCtx.vertexColors} to a path painter's body — its first
+ *  command, ahead of any markers. Applied outside the paint memo, whose key
+ *  cannot see an override: `cmds` comes back as-is when nothing changes, and
+ *  otherwise as a copy, since a memoized list is not ours to edit. Colors whose
+ *  length does not match the path's anchors are dropped. */
+function withAnimatedVertexColors(cmds: DrawCommand[], ctx: NodePaintCtx | undefined): DrawCommand[] {
+  const resolve = ctx?.vertexColors;
+  const body = cmds[0];
+  if (resolve === undefined || body?.kind !== 'path') return cmds;
+  const expected = 4 * countPathAnchors(body.path);
+  const fill = body.fill ? resolve('fill', body.vertexColors) : undefined;
+  const stroke = body.stroke ? resolve('stroke', body.stroke.vertexColors) : undefined;
+  const fillChanged = fill?.length === expected && fill !== body.vertexColors;
+  const strokeChanged = stroke?.length === expected && stroke !== body.stroke?.vertexColors;
+  if (!fillChanged && !strokeChanged) return cmds;
+  const next: PathDrawCommand = {
+    ...body,
+    ...(fillChanged ? { vertexColors: fill as number[] } : {}),
+    ...(strokeChanged ? { stroke: { ...body.stroke!, vertexColors: stroke as number[] } } : {}),
+  };
+  return [next, ...cmds.slice(1)];
+}
+
 const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   id: 'kit:path',
   matches: (node) => {
@@ -620,11 +620,12 @@ const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // Memoized: a pure function of `(data, pose)`, and `pathInPoseFrame`
   // allocates on every call but the identity (`kind: 'rect'`) branch. See
   // PAINT_SLOT.
-  paint: (node, pose) => nodeMemo(node, PAINT_SLOT, pose, () => {
+  paint: (node, pose, ctx) => withAnimatedVertexColors(nodeMemo(node, PAINT_SLOT, pose, () => {
     const d = node.data as {
       path: Path;
       fill?: FillStyle | null;
       stroke?: Stroke | null;
+      vertexColors?: number[];
     };
     const projected = pathInPoseFrame(d.path, pose);
     const strokeSpec = resolveNodeStroke(d.stroke);
@@ -642,13 +643,14 @@ const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
       kind: 'path',
       path: projected,
       ...(fill ? { fill } : {}),
+      ...(fill && d.vertexColors ? { vertexColors: d.vertexColors } : {}),
       ...(stroke ? { stroke } : {}),
     };
     if (!stroke) return [cmd];
     // Markers paint after the ribbon so they sit on top of it.
     const width = resolveStrokeWidth(stroke.width ?? 1, 1);
     return [cmd, ...markerDrawCommands(projected, stroke, width, undefined)];
-  }),
+  }), ctx),
   silhouette: (node, pose) => {
     const d = node.data as { path: Path };
     return pathInPoseFrame(d.path, pose);
@@ -685,7 +687,7 @@ const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // Memoized: a pure function of `(data, pose)`, and `pathForShape` builds a
   // fresh `Uint8Array` + `Float32Array` for every ellipse, polygon and star.
   // See PAINT_SLOT.
-  paint: (node, pose) => nodeMemo(node, PAINT_SLOT, pose, () => {
+  paint: (node, pose, ctx) => withAnimatedVertexColors(nodeMemo(node, PAINT_SLOT, pose, () => {
     const d = node.data as { shape: string; fill?: FillStyle | null; stroke?: Stroke | null; sides?: number; points?: number };
     const path = pathForShape(d, pose);
     const declaredFill = resolveNodeFill(d.fill, DEFAULT_SHAPE_FILL);
@@ -698,7 +700,7 @@ const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
       ...(shapeFill ? { fill: shapeFill } : {}),
       ...(stroke ? { stroke } : {}),
     }];
-  }),
+  }), ctx),
   silhouette: (node, pose) => {
     const d = node.data as { shape: string; sides?: number; points?: number };
     return pathForShape(d, pose);
@@ -823,7 +825,7 @@ const DERIVED_PAINTER: NodeShapeEntry = {
     const path = ctx?.derivedPath;
     if (path == null) return [];
     const box = boundsOfPath(path);
-    const d = node.data as { fill?: FillStyle | null; stroke?: Stroke | null } | null;
+    const d = node.data as { fill?: FillStyle | null; stroke?: Stroke | null; vertexColors?: number[] } | null;
     const strokeSpec = resolveNodeStroke(d?.stroke);
     const declared = resolveNodeFill(d?.fill, strokeSpec === null ? DEFAULT_SHAPE_FILL : null);
     const fill = declared && resolveFillPattern(fillInPoseFrame(declared, box));
@@ -832,14 +834,15 @@ const DERIVED_PAINTER: NodeShapeEntry = {
       kind: 'path',
       path,
       ...(fill ? { fill } : {}),
+      ...(fill && d?.vertexColors ? { vertexColors: d.vertexColors } : {}),
       ...(stroke ? { stroke } : {}),
     };
-    if (!stroke) return [cmd];
+    if (!stroke) return withAnimatedVertexColors([cmd], ctx);
     // The same marker pass `kit:path` runs, and for the same reason a diagram
     // edge is a stroke like any other: an arrowhead is `markerEnd`, not
     // geometry the router appends. `ink` already reserves the reach for one.
     const width = resolveStrokeWidth(stroke.width ?? 1, 1);
-    return [cmd, ...markerDrawCommands(path, stroke, width, undefined)];
+    return withAnimatedVertexColors([cmd, ...markerDrawCommands(path, stroke, width, undefined)], ctx);
   },
   // The derived path *is* the silhouette, and it is already absolute — the
   // pose is a placeholder, so nothing here can be recovered from it. Without

@@ -27,9 +27,10 @@
  * Draw calls are counted in an untimed pass, so a variant whose run stopped
  * coalescing is visible as a count rather than inferred from a time.
  *
- * This reports; it does not gate. See `tests/bench/README.md`.
+ * This reports; it does not gate. See `tests/perf/README.md`.
  */
 import { test, expect } from '@playwright/test';
+import { metric, rounds, startRun } from './lib/result';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -43,7 +44,7 @@ const GAP = 4;
 /** On-screen cell sizes, largest first — the ladder the consumer walked. */
 const CELLS = [56, 48, 32, 24, 16, 12, 8];
 
-const RUNS = 3;
+const RUNS = rounds(3);
 
 const VARIANTS = [
   'rect', 'img-1x', 'wall-1x',
@@ -65,7 +66,8 @@ interface Counts { cellPx: number; variant: Variant; commands: number; calls: Re
 
 test.setTimeout(1_800_000);
 
-test('atlas wall: where per-command cost steps', async ({ page }) => {
+test('atlas wall: where per-command cost steps', async ({ page, browser, browserName }) => {
+  const run = startRun('atlas-wall', { viewport: `${W}x${H}`, dpr: 1, gap: GAP, cells: CELLS, variants: [...VARIANTS], runs: RUNS });
   const errors: string[] = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
@@ -78,6 +80,7 @@ test('atlas wall: where per-command cost steps', async ({ page }) => {
   await page.exposeFunction('__wallReport', (msg: unknown) => {
     const m = msg as { type: string } & Record<string, unknown>;
     if (m.type === 'header') {
+      run.params({ gcAvailable: Boolean(m.gcAvailable) });
       console.log('');
       console.log(`Atlas wall — ${W}x${H}, dpr 1, on ${String(m.glRenderer)}`);
       console.log(`collected between measurements: ${String(m.gcAvailable)}`);
@@ -372,4 +375,23 @@ test('atlas wall: where per-command cost steps', async ({ page }) => {
 
   expect(errors, `page errors:\n${errors.join('\n')}`).toEqual([]);
   for (const v of VARIANTS) expect(paints[v], `${v} painted nothing`).toBe(true);
+
+  run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
+  for (const cellPx of CELLS) {
+    for (const v of VARIANTS) {
+      const cs = at(cellPx, v);
+      const c = counts.find((x) => x.cellPx === cellPx && x.variant === v);
+      if (!cs.length || !c) continue;
+      const frame = cs.map((x) => x.perFrameMs);
+      const stat = `median of ${RUNS} runs`;
+      run.item(`${v} ${cellPx}px`, {
+        perFrame: metric(med(frame), 'ms', stat, frame),
+        perCommand: metric((med(frame) * 1000) / cs[0].commands, 'us', stat),
+        commands: metric(cs[0].commands, 'count', 'commands in the frame'),
+        drawCalls: metric((c.calls.drawElements ?? 0) + (c.calls.drawArrays ?? 0), 'count', 'one untimed frame'),
+        bufferWrites: metric((c.calls.bufferSubData ?? 0) + (c.calls.bufferData ?? 0), 'count', 'one untimed frame'),
+      }, { variant: v, cellPx });
+    }
+  }
+  run.write();
 });

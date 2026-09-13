@@ -11,13 +11,16 @@
  * "nothing painted". Draw calls are counted for exactly that reason: they are
  * the proof the frames being timed are real.
  *
- * Reports; does not gate. See tests/bench/README.md.
+ * Reports; does not gate. See tests/perf/README.md.
  */
 import { test } from '@playwright/test';
+import { browserFingerprint } from './lib/fingerprint';
+import { metric, startRun } from './lib/result';
 
 const FRAMES = 120;
 
-test('tiled-surface — uploads and frame time, two renderers on one context', async ({ page }) => {
+test('tiled-surface — uploads and frame time, two renderers on one context', async ({ page, browser, browserName }) => {
+  const run = startRun('tiled-surface', { pointerMoves: FRAMES });
   await page.addInitScript(() => {
     const w = window as unknown as { __glStats: Record<string, number> };
     w.__glStats = { buffers: 0, uploads: 0, uploadedBytes: 0, textures: 0, texBytes: 0, draws: 0 };
@@ -95,4 +98,24 @@ test('tiled-surface — uploads and frame time, two renderers on one context', a
   console.log(`  GL buffers created     ${steady.buffers}`);
   console.log(`  bufferData calls       ${steady.uploads}`);
   console.log(`  bytes uploaded         ${steady.uploadedBytes}`);
+
+  run.machine(await browserFingerprint(page, browser, browserName));
+  const built = 'total while both renderers are built';
+  run.item('warm-up', {
+    buffersCreated: metric(warmup.buffers, 'count', built),
+    bufferDataCalls: metric(warmup.uploads, 'count', built),
+    uploadedBytes: metric(warmup.uploadedBytes, 'bytes', built),
+    texturesCreated: metric(warmup.textures, 'count', built),
+    drawCalls: metric(warmup.draws, 'count', built),
+  });
+  const drag = `total over one drag of ${FRAMES} pointer moves`;
+  run.item('drag in one pane', {
+    wallClock: metric(steady.elapsed, 'ms', drag),
+    drawCalls: metric(steady.draws, 'count', drag),
+    perDraw: metric(steady.elapsed / Math.max(steady.draws, 1), 'ms', 'wall clock / draw calls'),
+    buffersCreated: metric(steady.buffers, 'count', drag),
+    bufferDataCalls: metric(steady.uploads, 'count', drag),
+    uploadedBytes: metric(steady.uploadedBytes, 'bytes', drag),
+  });
+  run.write();
 });

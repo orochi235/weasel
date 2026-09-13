@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act, render } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import type { ActionsRegistry } from './registry';
-import { ActionsProvider, useActionsRegistry } from './ActionsProvider';
-import type { Action } from './action';
-import { DepRegistryProvider, useDepSource } from './depRegistry';
+import type { ActionsRegistry } from '@weasel-js/routing';
+import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
+import type { Action } from '@weasel-js/routing';
+import { DepRegistryProvider, useDepSource } from '@weasel-js/routing/react';
 import type { GestureSpec } from '../gestures/spec';
 
 function wrap({ children }: { children: ReactNode }) {

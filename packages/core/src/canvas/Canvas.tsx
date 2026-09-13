@@ -23,6 +23,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffec
 import type React from 'react';
 import type { FillStyle } from '@weasel-js/paint';
 import { composeOrderedLayers, placeToolOverlays } from './layerOrder';
+import { sceneLayerKey } from './sceneLayerPaint';
 import {
   STANDARD_SLOTS,
   isCustomEntry,
@@ -32,7 +33,7 @@ export { STANDARD_SLOTS, isCustomEntry } from './layerSlots';
 export type { StandardSlotName, CustomLayerEntry } from './layerSlots';
 import type { CanvasExtensionApi } from './canvasExtension';
 import { registerMountedCanvas } from './mountedCanvases';
-import type { ToolsApi } from 'tools/useTools';
+import type { ToolsApi } from '../tools/overlayBinding';
 import { aggregatePreviewIds } from './toolPreview';
 import type { GestureSource } from './gestureBounds';
 import { useViewHelpers } from './useViewHelpers';
@@ -40,11 +41,11 @@ import { useOptionalViewRegistry } from './viewRegistry';
 import { useFrameLoop } from './useFrameLoop';
 import type { CanvasHelpers, CanvasSurfaceHelpers } from './useViewHelpers';
 
-import type { ToolCtx } from 'tools/types';
+import type { ToolCtx } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import type { Path } from 'features/paths/types';
 import { dispatchApplyBatch } from 'core/applyOps';
-import type { View } from 'core/viewport/view';
+import { normalizeView, type View } from 'core/viewport/view';
 import type { NodePaintCtx } from './NodeShape';
 import { clampView } from 'core/viewport/clampView';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
@@ -81,8 +82,8 @@ const alwaysVisible = (_id: string): boolean => true;
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
 import { resolveCursorTier } from '@weasel-js/cursor';
 import type { ResolvedCursor } from '@weasel-js/cursor';
-import { createPaintedCursorState } from '../features/cursor/paintedCursorState';
-import type { PaintedCursor, PaintedCursorState } from '../features/cursor/paintedCursorState';
+import { createPaintedCursorState } from '@weasel-js/cursor';
+import type { PaintedCursor, PaintedCursorState } from '@weasel-js/cursor';
 import { createPaintedCursorLayer } from '../features/cursor/paintedCursorLayer';
 
 /**
@@ -364,7 +365,7 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    *  or a config dict. Omitting a key leaves the action unbound. */
   /** Tool primitive substrate. Pointer/keyboard/wheel events are routed
    *  through `tools.dispatcher`. */
-  tools?: import('../tools/useTools').ToolsApi;
+  tools?: import('../tools/overlayBinding').ToolsApi;
 
   /** Controlled viewport. When supplied, Canvas does not own the value —
    *  the consumer must supply `onViewChange` and re-render with the new
@@ -701,9 +702,9 @@ export function buildSceneLayers<TNode extends { id: string }, TPose>(
     return [{ key: 'scene', layer: buildSceneLayer(cfg, adapter, debugSink, boundsOfFn, hideIds) }];
   }
   return sceneLayerIds.map((id) => ({
-    key: `scene:${id}`,
+    key: sceneLayerKey(id),
     layer: buildSceneLayer(cfg, adapter, debugSink, boundsOfFn, hideIds, {
-      id: `scene:${id}`,
+      id: sceneLayerKey(id),
       forLayer: id,
     }),
   }));
@@ -888,6 +889,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     view: View,
     dims: Dims,
     data: unknown,
+    only?: readonly RenderLayer<unknown>[],
   ) => {
     const layers = [...extrasRef.current].reverse();
     const isVisible = getIsVisibleRef.current?.() ?? alwaysVisible;
@@ -895,6 +897,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     const order = layerOrderRef.current;
     for (const layer of layers) {
       if (!layer.hitTest) continue;
+      if (only && !only.includes(layer)) continue;
       if (!isLayerPainted(layer, visibility, order)) continue;
       const hit = layer.hitTest(worldX, worldY, data, view, dims, isVisible);
       if (hit) return { layerId: layer.id, hit };
@@ -916,9 +919,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   // The uncontrolled view lives in a ref, not `useState`, so a camera moving
   // at 60 Hz costs no React render; DOM that mirrors it subscribes instead.
-  const viewRef = useRef<View>(viewProp ?? defaultView ?? { x: 0, y: 0, scale: { x: 1, y: 1 } });
+  const viewRef = useRef<View>(normalizeView(viewProp ?? defaultView ?? { x: 0, y: 0, scale: { x: 1, y: 1 } }));
   const isControlled = viewProp !== undefined;
-  if (isControlled) viewRef.current = viewProp;
+  if (isControlled) viewRef.current = normalizeView(viewProp);
   const viewSubsRef = useRef<Set<(v: View) => void>>(new Set());
   const onViewChangeRef = useRef(onViewChange);
   onViewChangeRef.current = onViewChange;
@@ -929,7 +932,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const controlledWarnedRef = useRef(false);
 
   const setView = useCallback((next: View | ((current: View) => View)) => {
-    const resolved = typeof next === 'function' ? next(viewRef.current) : next;
+    const resolved = normalizeView(typeof next === 'function' ? next(viewRef.current) : next);
     const bounds = viewBoundsRef.current;
     const clamped = bounds ? clampView(resolved, bounds, dimsRef.current) : resolved;
     if (isControlledRef.current) {
@@ -978,11 +981,18 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // painted is actually on screen.
   useEffect(() => paintedCursor.subscribe(() => { requestRedraw(); }), [paintedCursor, requestRedraw]);
 
+  const getSurfaceRect = useCallback(() => {
+    const origin = paintRectRef.current;
+    const { width: w, height: h } = dimsRef.current;
+    return { x: origin?.x ?? 0, y: origin?.y ?? 0, width: w, height: h };
+  }, []);
+
   useImperativeHandle(ref, () => ({
     // Named rather than read off `canvasRef` so the handle rebuilds when a
     // detached surface's input element arrives, which is a render later.
     element: detached ? inputElement ?? null : canvasRef.current,
     surface: detached ? paintInto?.canvas ?? null : ownCanvasRef.current,
+    getSurfaceRect,
     requestRedraw,
     subscribeFrame,
     registerLayer,
@@ -993,7 +1003,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     getPaintedVersion,
     paintedCursor,
   }), [canvasRef, ownCanvasRef, detached, inputElement, paintInto?.canvas,
-       requestRedraw, subscribeFrame, registerLayer,
+       getSurfaceRect, requestRedraw, subscribeFrame, registerLayer,
        hitTestExtras, getView, setView, subscribeView, getPaintedVersion,
        paintedCursor]);
 
@@ -1317,6 +1327,13 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       requestRedraw,
       chromeState: () => helpersForLayersRef.current!.getChromeState(),
       hitTestExtras: hitTestExtrasIn,
+      claimsAbove: (x, y) => {
+        const view = viewRef.current;
+        return hitTestExtrasIn(
+          view.x + x / view.scale.x, view.y + y / view.scale.y,
+          view, dimsRef.current, helpersForLayersRef.current,
+        ) !== null;
+      },
     });
   }, [viewRegistry, canvasRef, requestRedraw, hitTestExtrasIn]);
 
@@ -1327,7 +1344,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     // Views paint through the surface's own stack, so they sit above it and
     // below both the debug overlay and externally-registered layers.
     const withViews = viewRegistry
-      ? [...layers, ...viewRegistry.list().map((r) => r.layer as RenderLayer<unknown>)]
+      ? [...layers, ...viewRegistry.list().filter((r) => r.paint).map((r) => r.layer as RenderLayer<unknown>)]
       : layers;
     const base = debugSink && resolvedDebugConfig
       ? [...withViews, createDebugOverlayLayer({ sink: debugSink, config: resolvedDebugConfig })]

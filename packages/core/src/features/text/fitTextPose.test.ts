@@ -19,6 +19,7 @@ import type { TextPose } from '@weasel-js/text';
 
 const SIZE = 32;
 const STYLE = { fontFamily: 'inter', fontSize: SIZE };
+const WRAP = { ...STYLE, wrap: true };
 /** `fontSize * lineHeight` at the 1.2 default. */
 const LINE = SIZE * 1.2;
 
@@ -57,8 +58,13 @@ describe('fitTextPose', () => {
 
   it('grows height to fit wrapped content', () => {
     // 'AB AB' is 44 + 8 + 44 = 96 unwrapped; at width 60 it wraps to 2 lines.
-    const fit = fitTextPose(textPose({ width: 60, text: 'AB AB' }));
+    const fit = fitTextPose(textPose({ width: 60, text: 'AB AB', style: WRAP }));
     expect(fit.height).toBe(2 * LINE);
+  });
+
+  it('does not wrap a node whose style declares no wrap', () => {
+    const fit = fitTextPose(textPose({ width: 60, text: 'AB AB' }));
+    expect(fit.height).toBe(LINE);
   });
 
   it('respects vertical padding when growing height', () => {
@@ -68,9 +74,9 @@ describe('fitTextPose', () => {
 
   it('subtracts horizontal padding from the wrap width', () => {
     // 'AB AB' fits on one line at 96 wide, but not once padding takes 40 of it.
-    const wide = fitTextPose(textPose({ width: 100, text: 'AB AB' }));
+    const wide = fitTextPose(textPose({ width: 100, text: 'AB AB', style: WRAP }));
     expect(wide.height).toBe(LINE);
-    const padded = fitTextPose(textPose({ width: 100, text: 'AB AB' }), { padding: { x: 20 } });
+    const padded = fitTextPose(textPose({ width: 100, text: 'AB AB', style: WRAP }), { padding: { x: 20 } });
     expect(padded.height).toBe(2 * LINE);
   });
 

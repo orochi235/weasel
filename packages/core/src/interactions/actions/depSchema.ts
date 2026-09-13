@@ -35,7 +35,7 @@ import type { Op } from 'core/ops/types';
 import type { InsertAdapter } from 'core/adapters/types';
 import type { History } from '@weasel-js/history';
 import type { PointerContextValue } from 'features/pointer/PointerContext';
-import type { ActiveToolContextValue } from './activeToolContext';
+import type { ActiveToolContextValue } from '@weasel-js/routing/react';
 import type {
   PointSnapBehavior,
   BoundsConstraint,
@@ -43,7 +43,7 @@ import type {
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PoseDescriptor } from './resize/geometry';
 import type { GeometryProjection } from './geometryProjection';
-import type { Point2, DragSample } from './invoker';
+import type { Point2, DragSample } from '@weasel-js/routing';
 
 /** Minimal view API the action layer consumes. */
 export interface ViewApi {
@@ -72,7 +72,15 @@ export interface ViewApi {
    *  simply lands the pan without coasting. */
   decay?(config: DecayLoopConfig): void;
   stopDecay?(): void;
+  /** Whether a scene layer reaches the screen in this view — its own
+   *  `layerVisibility` / `layerOrder`, on top of the scene's `visible` flag.
+   *  Absent: this view paints every layer the scene shows. Selecting actions
+   *  pass over what the asking view does not paint. */
+  layerIsPainted?(layerId: string): boolean;
 }
+
+/** The part of the asking view a region hit-test consults. */
+export type HitTestView = Pick<ViewApi, 'layerIsPainted'>;
 
 /**
  * Adapter dep for `areaSelectAction`.
@@ -100,8 +108,12 @@ export type NodeAtPointDep = (
 /** What an area-selecting action needs: a way to ask what a region covers,
  *  and a way to read and replace the selection. */
 export interface AreaSelectDep {
-  /** Return ids of all scene nodes whose AABB overlaps `bounds`. */
-  hitTestArea(bounds: { x: number; y: number; width: number; height: number }): NodeId[];
+  /** Return ids of all scene nodes whose AABB overlaps `bounds`, skipping any
+   *  on a layer `view` — the view the gesture ran in — does not paint. */
+  hitTestArea(
+    bounds: { x: number; y: number; width: number; height: number },
+    view?: HitTestView,
+  ): NodeId[];
   /** Return the current selection id list. */
   getSelection(): NodeId[];
   /** Replace the current selection. */
@@ -198,9 +210,13 @@ export interface LassoSelectDep {
   hitTestLasso?(
     polygon: ReadonlyArray<{ x: number; y: number }>,
     mode: 'centers' | 'intersect' | 'enclosed',
+    view?: HitTestView,
   ): string[];
   /** Return ids of nodes whose AABB overlaps the given rect (fallback). */
-  hitTestArea(bounds: { x: number; y: number; width: number; height: number }): string[];
+  hitTestArea(
+    bounds: { x: number; y: number; width: number; height: number },
+    view?: HitTestView,
+  ): string[];
   /** Return the current selection id list. */
   getSelection(): string[];
   /** Replace the current selection. */
@@ -380,14 +396,6 @@ export interface LayoutDep {
 }
 
 /**
- * The names an action may declare in `requires`, and what each resolves to.
- *
- * This is the whole vocabulary of things an action can reach — selection,
- * scene, view, history, and the rest. Consumers add their own entries by
- * augmenting the interface (`declare module '@weasel-js/core'`), which is what
- * makes a custom dep name type-check in `requires` and in the deps bag.
- */
-/**
  * Dep for `enterTextEditAction`.
  *
  * Wrap the return value of `useTextEdit` / `useSceneTextEdit` to source this
@@ -440,193 +448,201 @@ export interface SliceDep {
   commit(a: Point2, b: Point2): void;
 }
 
-export interface DepSchema {
-  /** Kit selection state — ids of currently selected nodes. */
-  selection: SelectionApi;
-  /** Current viewport — camera position + scale. */
-  view: ViewApi;
-  /**
-   * Scene tree — structural reads + undoable mutations.
-   *
-   * The entry uses the fully-erased form `Scene<unknown, string, unknown>`
-   * because `DepSchema` must be concrete. Actions that need a typed scene
-   * should cast: `deps.scene as Scene<MyData, MyLayer, MyPose>`.
-   */
-  scene: Scene<unknown, string, unknown>;
-  /** Undo/redo history bound to the current scene. */
-  history: History;
-  /**
-   * Canvas pointer position in world space.
-   *
-   * Exposes `pointerRef` (mutable live ref) and `getDropPoint()` thunk.
-   * Marked `@experimental` in the source.
-   */
-  pointer: PointerContextValue;
-  /** Currently active tool id + hotkey-hold stack. */
-  activeTool: ActiveToolContextValue;
-  /**
-   * Area-select dep — AABB hit-test + selection read/write.
-   *
-   * Sourced from `<SceneCanvas>` via AABB overlap over all scene
-   * nodes. Override per-consumer for custom hit-testing (e.g. contain-mode,
-   * lock-aware filtering).
-   */
-  areaSelect: AreaSelectDep;
-  /**
-   * Topmost node at a world-space point. Sourced by `<SceneCanvas>` from
-   * the same picker that feeds the tool dispatcher's `getNodeAtPoint`.
-   * Optional: actions that read this (e.g. `moveAction` reparent-on-drop)
-   * fall back to a no-op when the dep isn't registered.
-   */
-  nodeAtPoint?: NodeAtPointDep;
-  /**
-   * Insert dep — node factory for drag-to-insert.
-   *
-   * Sourced from `<SceneCanvas>`. The `kind` param comes from
-   * the active binding's `opts.params.kind`. Override per-consumer to
-   * provide a typed node factory (e.g. with custom data payloads).
-   */
-  insert: InsertDep;
-  /**
-   * Snap dep — world-space point snapping (grid / guides).
-   *
-   * Sourced by `<SceneCanvas>` from `toolOptions.snapPoint`. Optional:
-   * absent means no snapping (identity).
-   */
-  snap?: SnapDep;
-  /**
-   * Lasso-select dep — polygon hit-test + selection read/write.
-   *
-   * Sourced from `<SceneCanvas>` / `<StandardActionsRegistrar>`.
-   * Falls back to AABB hit-test when `hitTestLasso` is absent.
-   */
-  lassoSelect: LassoSelectDep;
-  /**
-   * Edit-anchors dep — narrow read/write of one polygon's path pose.
-   *
-   * Sourced from consumer. Wraps `getPose`/`setPose`/`applyOps`
-   * for the currently-being-edited polygon node.
-   *
-   * The `editAnchorsAction` requires this dep to be registered when anchor
-   * editing is active. If absent, `start` returns an empty handle (no-op).
-   */
-  editAnchors: EditAnchorsDep;
-  /**
-   * Text-edit dep — activates the in-place text editing overlay.
-   *
-   * Sourced from consumer via `useTextEdit` / `useSceneTextEdit`.
-   * The `enterTextEditAction` requires this dep to be registered by the text
-   * tool when text editing is available.
-   *
-   * The optional `isTextNode` predicate guards against entering edit mode on
-   * non-text nodes. A binding can pre-filter instead with a
-   * `target: 'kind:text:selected'` spec; the guard remains for consumers who
-   * bind the broader `'selected-body'` target or opted out of routing.
-   */
-  textEdit: TextEditDep;
-  /**
-   * Resize-policy dep — bounds constraints, point-snap behaviors and
-   * group expansion for `resizeAction`.
-   *
-   * Optional: when omitted, `resizeAction` falls back to identity defaults
-   * (no constraints, no snap, identity expandIds).
-   * Consumers wire via `useDepSource('resizePolicy', ...)` or the
-   * `useResizePolicy` helper.
-   */
-  resizePolicy?: ResizePolicy<unknown>;
-  /**
-   * How to read and rewrite a pose — bounds, translate, remap, rotation. Every
-   * built-in action that touches a pose reads it. Sourced by `<SceneCanvas>`
-   * from its `poseDescriptor` prop; `AUTO_POSE_DESCRIPTOR` when absent.
-   */
-  poseDescriptor?: PoseDescriptor<unknown>;
-  /**
-   * Booleans adapter — read selection ids, fetch world-space `Path`s,
-   * compare z-order, and mint result nodes for Pathfinder ops.
-   *
-   * Consumers wire via `useBooleansAdapter(adapter)` (a thin wrapper
-   * around `useDepSource('booleansAdapter', ...)`). The descriptor's
-   * `enabled` predicate reads `deps.selection` for the count check; the
-   * invoker reads `deps.booleansAdapter` to execute the op.
-   */
-  booleansAdapter?: import('./booleans/booleans').BooleansAdapter;
-  /**
-   * Gesture dispatcher control surface — exposes `cancelAll(reason)` so
-   * actions that need to abort an in-flight handle (Escape cancels a
-   * drag, etc.) can do so. Sourced by `<SceneCanvas>` from the
-   * dispatcher instance it already owns.
-   */
-  dispatcher?: { cancelAll(reason: 'commit' | 'cancel'): void };
-  /**
-   * Layout-strategy lookup. Sourced by `<SceneCanvas>` from `layouts`.
-   * Optional: absent (or all-null) → `moveAction` skips reflow.
-   */
-  layout?: LayoutDep;
-  /**
-   * Slice dep — consumer-supplied commit for the Slice action.
-   *
-   * Receives the finite slice segment in world coordinates; the consumer
-   * scans the scene, splits crossed paths via `splitPathByLine`, and
-   * applies the result as one undoable batch.
-   *
-   * Optional: when absent, `sliceAction` is a no-op.
-   */
-  slice?: SliceDep;
-  /**
-   * Clipboard dep — the imperative surface `useClipboardOps` returns.
-   *
-   * Published by the consumer (`useDepSource('clipboard', …)` from under
-   * `<SceneCanvas>`), because `useClipboardOps` needs an adapter and a
-   * selection reader only the consumer has. Feeds `clipboard.copy` /
-   * `clipboard.cut`; both no-op when the dep is absent.
-   */
-  clipboard?: ClipboardDep;
-  /**
-   * Optional consumer commit hook. When present, `moveAction` (and other
-   * default actions) submit their committed ops through it instead of
-   * `scene.applyBatch`, so apps with their own history integration
-   * (checkpoint + push entry) capture the gesture as one undo entry.
-   * When absent, commits fall back to `scene.applyBatch`.
-   */
-  applyOps?: (ops: Op[], label: string) => void;
-  /** Optional pose-composition strategy for hierarchical (local-pose) scenes.
-   *  When absent, defaults to IDENTITY (absolute-pose: nodes store world
-   *  coords). Local-pose consumers supply { compose: composeRectPose,
-   *  decompose: decomposeRectPose } (or their pose shape's equivalent). */
-  poseComposition?: import('../../features/groups/composePose').PoseComposition<unknown>;
-  /**
-   * Ingestion dep — canvas viewport rect + consumer file→src resolver.
-   *
-   * Sourced from `<SceneCanvas>` / `<StandardActionsRegistrar>` via
-   * `useIngestionDepSource`. Feeds `ingestAction` with the world-space
-   * viewport rect for paste-placement and image fit-clamping, and forwards
-   * the consumer's optional `resolveSrc` seam.
-   *
-   * Optional: when absent, the `ingest` action no-ops (there is no
-   * placement geometry to work with).
-   */
-  ingestion?: IngestionDep;
-  /**
-   * Optional consumer seam for the eager-sync layer: lets pose-transform
-   * actions (resize/move/nudge/flip — NOT rotate) ALSO rewrite a node's
-   * data-held geometry. Given a node and the affine `m` applied to its pose,
-   * `transform(node, m)` returns updated `data` (geometry mapped by `m`) or
-   * `null` for nodes with no data-held geometry.
-   *
-   * Strictly opt-in: when absent (or when `transform` returns null), the kit
-   * emits only the pose op and leaves `data` untouched. apps/draw wires this
-   * to mirror `data.path` through `transformPath`. Rotate intentionally never
-   * consults this seam (rotation lives on the pose, baked at render).
-   */
-  geometryProjection?: GeometryProjection;
+/**
+ * The names an action may declare in `requires`, and what each resolves to.
+ *
+ * This is the whole vocabulary of things an action can reach — selection,
+ * scene, view, history, and the rest. The interface itself is declared empty
+ * in `@weasel-js/routing`, which knows that an action names its dependencies
+ * but not what any of them are; these 24 entries are the kit's, merged in from
+ * outside exactly the way a consumer merges its own
+ * (`declare module '@weasel-js/core'`).
+ */
+declare module '@weasel-js/routing' {
+  interface DepSchema {
+    /** Kit selection state — ids of currently selected nodes. */
+    selection: SelectionApi;
+    /** Current viewport — camera position + scale. */
+    view: ViewApi;
+    /**
+     * Scene tree — structural reads + undoable mutations.
+     *
+     * The entry uses the fully-erased form `Scene<unknown, string, unknown>`
+     * because `DepSchema` must be concrete. Actions that need a typed scene
+     * should cast: `deps.scene as Scene<MyData, MyLayer, MyPose>`.
+     */
+    scene: Scene<unknown, string, unknown>;
+    /** Undo/redo history bound to the current scene. */
+    history: History;
+    /**
+     * Canvas pointer position in world space.
+     *
+     * Exposes `pointerRef` (mutable live ref) and `getDropPoint()` thunk.
+     * Marked `@experimental` in the source.
+     */
+    pointer: PointerContextValue;
+    /** Currently active tool id + hotkey-hold stack. */
+    activeTool: ActiveToolContextValue;
+    /**
+     * Area-select dep — AABB hit-test + selection read/write.
+     *
+     * Sourced from `<SceneCanvas>` via AABB overlap over all scene
+     * nodes. Override per-consumer for custom hit-testing (e.g. contain-mode,
+     * lock-aware filtering).
+     */
+    areaSelect: AreaSelectDep;
+    /**
+     * Topmost node at a world-space point. Sourced by `<SceneCanvas>` from
+     * the same picker that feeds the tool dispatcher's `getNodeAtPoint`.
+     * Optional: actions that read this (e.g. `moveAction` reparent-on-drop)
+     * fall back to a no-op when the dep isn't registered.
+     */
+    nodeAtPoint?: NodeAtPointDep;
+    /**
+     * Insert dep — node factory for drag-to-insert.
+     *
+     * Sourced from `<SceneCanvas>`. The `kind` param comes from
+     * the active binding's `opts.params.kind`. Override per-consumer to
+     * provide a typed node factory (e.g. with custom data payloads).
+     */
+    insert: InsertDep;
+    /**
+     * Snap dep — world-space point snapping (grid / guides).
+     *
+     * Sourced by `<SceneCanvas>` from `toolOptions.snapPoint`. Optional:
+     * absent means no snapping (identity).
+     */
+    snap?: SnapDep;
+    /**
+     * Lasso-select dep — polygon hit-test + selection read/write.
+     *
+     * Sourced from `<SceneCanvas>` / `<StandardActionsRegistrar>`.
+     * Falls back to AABB hit-test when `hitTestLasso` is absent.
+     */
+    lassoSelect: LassoSelectDep;
+    /**
+     * Edit-anchors dep — narrow read/write of one polygon's path pose.
+     *
+     * Sourced from consumer. Wraps `getPose`/`setPose`/`applyOps`
+     * for the currently-being-edited polygon node.
+     *
+     * The `editAnchorsAction` requires this dep to be registered when anchor
+     * editing is active. If absent, `start` returns an empty handle (no-op).
+     */
+    editAnchors: EditAnchorsDep;
+    /**
+     * Text-edit dep — activates the in-place text editing overlay.
+     *
+     * Sourced from consumer via `useTextEdit` / `useSceneTextEdit`.
+     * The `enterTextEditAction` requires this dep to be registered by the text
+     * tool when text editing is available.
+     *
+     * The optional `isTextNode` predicate guards against entering edit mode on
+     * non-text nodes. A binding can pre-filter instead with a
+     * `target: 'kind:text:selected'` spec; the guard remains for consumers who
+     * bind the broader `'selected-body'` target or opted out of routing.
+     */
+    textEdit: TextEditDep;
+    /**
+     * Resize-policy dep — bounds constraints, point-snap behaviors and
+     * group expansion for `resizeAction`.
+     *
+     * Optional: when omitted, `resizeAction` falls back to identity defaults
+     * (no constraints, no snap, identity expandIds).
+     * Consumers wire via `useDepSource('resizePolicy', ...)` or the
+     * `useResizePolicy` helper.
+     */
+    resizePolicy?: ResizePolicy<unknown>;
+    /**
+     * How to read and rewrite a pose — bounds, translate, remap, rotation. Every
+     * built-in action that touches a pose reads it. Sourced by `<SceneCanvas>`
+     * from its `poseDescriptor` prop; `AUTO_POSE_DESCRIPTOR` when absent.
+     */
+    poseDescriptor?: PoseDescriptor<unknown>;
+    /**
+     * Booleans adapter — read selection ids, fetch world-space `Path`s,
+     * compare z-order, and mint result nodes for Pathfinder ops.
+     *
+     * Consumers wire via `useBooleansAdapter(adapter)` (a thin wrapper
+     * around `useDepSource('booleansAdapter', ...)`). The descriptor's
+     * `enabled` predicate reads `deps.selection` for the count check; the
+     * invoker reads `deps.booleansAdapter` to execute the op.
+     */
+    booleansAdapter?: import('./booleans/booleans').BooleansAdapter;
+    /**
+     * Gesture dispatcher control surface — exposes `cancelAll(reason)` so
+     * actions that need to abort an in-flight handle (Escape cancels a
+     * drag, etc.) can do so. Sourced by `<SceneCanvas>` from the
+     * dispatcher instance it already owns.
+     */
+    dispatcher?: { cancelAll(reason: 'commit' | 'cancel'): void };
+    /**
+     * Layout-strategy lookup. Sourced by `<SceneCanvas>` from `layouts`.
+     * Optional: absent (or all-null) → `moveAction` skips reflow.
+     */
+    layout?: LayoutDep;
+    /**
+     * Slice dep — consumer-supplied commit for the Slice action.
+     *
+     * Receives the finite slice segment in world coordinates; the consumer
+     * scans the scene, splits crossed paths via `splitPathByLine`, and
+     * applies the result as one undoable batch.
+     *
+     * Optional: when absent, `sliceAction` is a no-op.
+     */
+    slice?: SliceDep;
+    /**
+     * Clipboard dep — the imperative surface `useClipboardOps` returns.
+     *
+     * Published by the consumer (`useDepSource('clipboard', …)` from under
+     * `<SceneCanvas>`), because `useClipboardOps` needs an adapter and a
+     * selection reader only the consumer has. Feeds `clipboard.copy` /
+     * `clipboard.cut`; both no-op when the dep is absent.
+     */
+    clipboard?: ClipboardDep;
+    /**
+     * Optional consumer commit hook. When present, `moveAction` (and other
+     * default actions) submit their committed ops through it instead of
+     * `scene.applyBatch`, so apps with their own history integration
+     * (checkpoint + push entry) capture the gesture as one undo entry.
+     * When absent, commits fall back to `scene.applyBatch`.
+     */
+    applyOps?: (ops: Op[], label: string) => void;
+    /** Optional pose-composition strategy for hierarchical (local-pose) scenes.
+     *  When absent, defaults to IDENTITY (absolute-pose: nodes store world
+     *  coords). Local-pose consumers supply { compose: composeRectPose,
+     *  decompose: decomposeRectPose } (or their pose shape's equivalent). */
+    poseComposition?: import('../../features/groups/composePose').PoseComposition<unknown>;
+    /**
+     * Ingestion dep — canvas viewport rect + consumer file→src resolver.
+     *
+     * Sourced from `<SceneCanvas>` / `<StandardActionsRegistrar>` via
+     * `useIngestionDepSource`. Feeds `ingestAction` with the world-space
+     * viewport rect for paste-placement and image fit-clamping, and forwards
+     * the consumer's optional `resolveSrc` seam.
+     *
+     * Optional: when absent, the `ingest` action no-ops (there is no
+     * placement geometry to work with).
+     */
+    ingestion?: IngestionDep;
+    /**
+     * Optional consumer seam for the eager-sync layer: lets pose-transform
+     * actions (resize/move/nudge/flip — NOT rotate) ALSO rewrite a node's
+     * data-held geometry. Given a node and the affine `m` applied to its pose,
+     * `transform(node, m)` returns updated `data` (geometry mapped by `m`) or
+     * `null` for nodes with no data-held geometry.
+     *
+     * Strictly opt-in: when absent (or when `transform` returns null), the kit
+     * emits only the pose op and leaves `data` untouched. apps/draw wires this
+     * to mirror `data.path` through `transformPath`. Rotate intentionally never
+     * consults this seam (rotation lives on the pose, baked at render).
+     */
+    geometryProjection?: GeometryProjection;
+  }
 }
 
 /**
- * Every dep name the registry knows about — derived from {@link DepSchema} so
- * the two can't drift.
- *
- * Declared here rather than beside the registry so that this `keyof` reference
- * resolves to the exported `DepSchema` declaration; from another module it
- * resolves to that module's import alias, which the API docs can't link.
+ * Re-exported so core's own call sites and every consumer name the merged
+ * interface, not the empty one routing declares.
  */
-export type DepName = keyof DepSchema;
+export type { DepSchema, DepName } from '@weasel-js/routing';

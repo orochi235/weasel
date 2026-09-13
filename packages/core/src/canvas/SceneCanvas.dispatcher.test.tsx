@@ -17,9 +17,9 @@ import { useEffect, useRef } from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
-import { useActionsRegistry } from 'interactions/actions/ActionsProvider';
-import type { Action } from 'interactions/actions/action';
-import { useDepRegistry } from 'interactions/actions/depRegistry';
+import { useActionsRegistry } from '@weasel-js/routing/react';
+import type { Action } from '@weasel-js/routing';
+import { useDepRegistry } from '@weasel-js/routing/react';
 import type { InsertDep } from 'interactions/actions/depSchema';
 
 type D = { kind: 'rect' };

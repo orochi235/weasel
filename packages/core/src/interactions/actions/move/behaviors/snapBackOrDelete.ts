@@ -5,7 +5,7 @@ import {
   RECT_ORIGIN_PROJECTION,
   type OriginProjection,
 } from '../../../gestures/shared/strategies';
-import { scratchKey, getScratch, setScratch } from '../../../scratchKey';
+import { scratchKey, getScratch, setScratch } from '@weasel-js/routing';
 
 const SNAPSHOTS = scratchKey<Map<string, { id: string }>>('snapBackOrDelete.snapshots');
 const INDEXES = scratchKey<Map<string, number>>('snapBackOrDelete.indexes');

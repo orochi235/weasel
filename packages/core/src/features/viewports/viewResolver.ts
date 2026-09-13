@@ -62,10 +62,16 @@ export interface CreateViewResolverOpts {
   root: () => View;
   /** Client-space origin of the canvas element. */
   canvasOrigin: () => { left: number; top: number };
+  /**
+   * Whether something painted over every view claims a canvas-local point —
+   * chrome on the surface's own frame. Such a point resolves to the root even
+   * inside a view's rect. Asked only where a view would otherwise win.
+   */
+  occluded?: (x: number, y: number) => boolean;
 }
 
 export function createViewResolver(opts: CreateViewResolverOpts): ViewResolver {
-  const { views, root, canvasOrigin } = opts;
+  const { views, root, canvasOrigin, occluded } = opts;
   const pinned = new Map<number, string | null>();
 
   function rootTarget(): ViewTarget {
@@ -90,7 +96,9 @@ export function createViewResolver(opts: CreateViewResolverOpts): ViewResolver {
     const list = views();
     for (let i = list.length - 1; i >= 0; i--) {
       const { rect } = list[i]!;
-      if (x >= rect.x && x < rect.x + rect.w && y >= rect.y && y < rect.y + rect.h) return list[i];
+      if (x >= rect.x && x < rect.x + rect.w && y >= rect.y && y < rect.y + rect.h) {
+        return occluded?.(x, y) ? undefined : list[i];
+      }
     }
     return undefined;
   }

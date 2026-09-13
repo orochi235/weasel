@@ -7,8 +7,8 @@
  * Always enabled — calling it when no path is being edited is a no-op.
  */
 
-import type { Action } from '../action';
-import type { ImmediateInvoker } from '../invoker';
+import type { Action } from '@weasel-js/routing';
+import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { EditAnchorsDep } from '../depSchema';
 
 export const exitPathEditAction: Action & { requires: string[] } = {

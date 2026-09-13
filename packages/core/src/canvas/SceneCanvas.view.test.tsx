@@ -15,7 +15,7 @@ import { SceneCanvas, type SceneCanvasProps } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { SceneCanvasApi } from './canvasExtension';
 import type { View } from 'core/viewport/view';
-import { useDepRegistry, type DepRegistry } from 'interactions/actions/depRegistry';
+import { useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
 
 type D = { kind: 'rect' };
@@ -231,5 +231,47 @@ describe('SceneCanvas view', () => {
       contentVersion: () => 7,
     };
     expect(props.width).toBe(200);
+  });
+});
+
+describe('SceneCanvas view zoom invariant', () => {
+  const finitePositive = (n: number) => Number.isFinite(n) && n > 0;
+
+  it('a controlled canvas reports a zero-scale view write with the scale clamped', async () => {
+    const depsRef = { current: null as DepRegistry | null };
+    const onViewChange = vi.fn();
+    render(
+      <SceneCanvas<D, L, P>
+        scene={newScene()}
+        width={200}
+        height={150}
+        view={{ x: 0, y: 0, scale: { x: 1, y: 1 } }}
+        onViewChange={onViewChange}
+      >
+        <DepGrabber out={depsRef} />
+      </SceneCanvas>,
+    );
+    await frame();
+    act(() => { depsRef.current!.get('view')!.set({ x: 0, y: 0, scale: { x: 0, y: 0 } }); });
+    const reported = onViewChange.mock.calls.at(-1)![0] as View;
+    expect(finitePositive(reported.scale.x) && finitePositive(reported.scale.y)).toBe(true);
+  });
+
+  it('the view mirror never holds a NaN scale from a controlled prop', async () => {
+    const depsRef = { current: null as DepRegistry | null };
+    render(
+      <SceneCanvas<D, L, P>
+        scene={newScene()}
+        width={200}
+        height={150}
+        view={{ x: 0, y: 0, scale: { x: Number.NaN, y: Number.NaN } }}
+        onViewChange={() => {}}
+      >
+        <DepGrabber out={depsRef} />
+      </SceneCanvas>,
+    );
+    await frame();
+    const mirrored = depsRef.current!.get('view')!.get();
+    expect(finitePositive(mirrored.scale.x) && finitePositive(mirrored.scale.y)).toBe(true);
   });
 });

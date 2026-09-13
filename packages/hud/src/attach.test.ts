@@ -18,6 +18,7 @@ function makeApi(): CanvasExtensionApi & { _layer?: RenderLayer<unknown> } {
   const api: CanvasExtensionApi & { _layer?: RenderLayer<unknown> } = {
     element: null,
     surface: null,
+    getSurfaceRect: () => ({ x: 0, y: 0, width: 0, height: 0 }),
     requestRedraw: vi.fn(),
     subscribeFrame: vi.fn(() => () => {}),
     hitTestExtras: vi.fn(() => null),
@@ -163,6 +164,7 @@ describe('attachHud', () => {
       const api: CanvasExtensionApi = {
         element: canvas,
         surface: canvas,
+        getSurfaceRect: () => ({ x: 0, y: 0, width: 0, height: 0 }),
         requestRedraw: vi.fn(),
         subscribeFrame: vi.fn(() => () => {}),
         hitTestExtras: vi.fn(() => null),
@@ -280,6 +282,15 @@ describe('attachHud claims', () => {
     hud.add(widgetAt('under'));
     hud.add(widgetAt('decoration', []));
     expect(hitAt(api)?.initialScratch?.widget.id).toBe('under');
+  });
+
+  it('the hit walk stops at an interior that passes, claiming nothing', () => {
+    const hud = createHud();
+    const api = makeApi();
+    attachHud(api, hud);
+    hud.add(widgetAt('under'));
+    hud.add({ ...widgetAt('lens'), hitTest: () => false, passes: () => true });
+    expect(hitAt(api)).toBeNull();
   });
 
   it('the layer hit carries the widget claim set', () => {

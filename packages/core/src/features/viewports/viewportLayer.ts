@@ -1,6 +1,6 @@
 import type { DrawCommand, GroupDrawCommand } from '../../renderer';
 import { drawOneLayer, type Dims, type RenderLayer } from 'core/layers/render';
-import type { View } from 'core/viewport/view';
+import { normalizeView, type View } from 'core/viewport/view';
 import { mat3, type Mat3 } from '../../renderer/math/mat3';
 import type { ResolvableView } from './viewResolver';
 
@@ -111,7 +111,9 @@ export function createViewportLayer<TData, TSource = TData>(
   opts: CreateViewportLayerOpts<TData, TSource>,
 ): ViewportLayer<TData> {
   const { id, label, source, view, bounds, background, data: sourceData } = opts;
-  const viewAt = typeof view === 'function' ? view : () => view;
+  const fixedView = typeof view === 'function' ? null : normalizeView(view);
+  const viewAt = (outer: View, dims: Dims): View =>
+    fixedView ?? normalizeView((view as (outer: View, dims: Dims) => View)(outer, dims));
   const sourceAt = typeof source === 'function' ? source : () => source;
   return {
     id,

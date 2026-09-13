@@ -41,6 +41,8 @@ import {
 } from 'canvas/pickWalk';
 
 export { hiddenLayerIds } from 'canvas/pickWalk';
+import type { HitTestView } from 'interactions/actions/depSchema';
+import type { PoseComposition } from 'features/groups/composePose';
 import { aabbOfPose } from 'canvas/SceneCanvas/poseGeometry';
 import { pointInPolygon, rectToContour, segmentsCross } from '@weasel-js/geom';
 import { findShapeSilhouette } from 'canvas/NodeShape';
@@ -56,6 +58,20 @@ export interface AABBBounds {
 /** Closed area polygon as interleaved [x0,y0,x1,y1,…]; closing edge implicit. */
 type AreaCoords = ArrayLike<number>;
 
+
+/** The pick options a region dep hands the shared walk: the asking view's
+ *  layer gate, the surface's alpha, and the scene's pose composition. */
+export function regionPickOptions(
+  view: HitTestView | undefined,
+  alphaOf: ((id: string) => number) | undefined,
+  poseComposition: PoseComposition<unknown> | undefined,
+): ScenePickSourceOptions<unknown> {
+  return {
+    ...(poseComposition ? { poseComposition } : {}),
+    ...(alphaOf ? { alphaOf } : {}),
+    ...(view?.layerIsPainted ? { layerIsPainted: (layer: string) => view.layerIsPainted!(layer) } : {}),
+  };
+}
 
 /**
  * Marquee entry point: rect bounds. Converts the rect to its four corners and

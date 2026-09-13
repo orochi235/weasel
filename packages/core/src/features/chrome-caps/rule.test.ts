@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { describeRule, evaluate, ALWAYS, NEVER, type Rule } from './rule';
-import type { RuleCtx } from './ruleCtx';
+import { describeRule, evaluate, ALWAYS, NEVER, type Rule } from '@weasel-js/routing';
+import type { RuleCtx } from '@weasel-js/routing';
 
 function baseCtx(overrides: Partial<RuleCtx> = {}): RuleCtx {
   return {

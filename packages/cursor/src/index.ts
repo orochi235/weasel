@@ -22,3 +22,8 @@ export {
   rotationFitsInBox,
 } from './types';
 export type { CursorGlyph, CursorPath } from './types';
+
+// Painted-cursor store — the slot a surface's painted cursor lives in, shared
+// between whoever decides it and the layer that draws it.
+export { createPaintedCursorState } from './paintedCursorState';
+export type { PaintedCursor, PaintedCursorFrame, PaintedCursorState } from './paintedCursorState';

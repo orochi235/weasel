@@ -59,6 +59,7 @@
     "provenance": true
   },
   "devDependencies": {
-    "@weasel-js/cursor": "1.4.4"
+    "@weasel-js/cursor": "1.4.4",
+    "@weasel-js/geom": "1.4.4"
   }
 }

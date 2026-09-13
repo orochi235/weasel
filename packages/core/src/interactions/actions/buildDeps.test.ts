@@ -10,9 +10,9 @@
  * that the action unit tests bypass with hand-rolled `ctx.deps`.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { buildDepsFromRequires } from './buildDeps';
-import type { DepRegistry } from './depRegistry';
-import type { Action } from './action';
+import { buildDepsFromRequires } from '@weasel-js/routing';
+import type { DepRegistry } from '@weasel-js/routing/react';
+import type { Action } from '@weasel-js/routing';
 import { moveAction } from './defaults/move';
 import { resizeAction } from './defaults/resize';
 import { flipAction } from './defaults/flip';

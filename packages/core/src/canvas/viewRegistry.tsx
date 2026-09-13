@@ -13,7 +13,7 @@ import type { LayerHit } from 'affordances/types';
 import type { ChromeState } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
 import type { ViewportLayer } from 'features/viewports/viewportLayer';
-import type { DispatcherViewTarget } from 'interactions/dispatcher/useGestureDispatcher';
+import type { DispatcherViewTarget } from '@weasel-js/routing/react';
 import { createViewResolver, type ViewResolver } from 'features/viewports/viewResolver';
 
 /**
@@ -43,7 +43,14 @@ export interface SurfaceHandle {
     view: View,
     dims: Dims,
     data: unknown,
+    /** Consider only these layers — the ones the asking view paints. A layer
+     *  asked on a frame it was not drawn in answers for the wrong pixels. */
+    only?: readonly RenderLayer<unknown>[],
   ): { layerId: string; hit: LayerHit } | null;
+  /** Whether a registered layer claims a canvas-local point on the surface's
+   *  own frame. Registered layers paint over every view, so such a point is
+   *  theirs even inside a view's rect. */
+  claimsAbove(x: number, y: number): boolean;
 }
 
 /**
@@ -63,8 +70,17 @@ export interface ViewRegistration {
   /** The viewport node this view paints into. Its `resolvable` is what routes
    *  input here. */
   layer: ViewportLayer<unknown>;
+  /** `false` keeps input over the view on the canvas beneath it. */
+  interactive: boolean;
+  /** `false` leaves `layer` for a host to draw — a HUD window's interior — so
+   *  the surface does not paint it too. */
+  paint: boolean;
   /** Everything about dispatching to this view except its id. */
   target: Omit<DispatcherViewTarget, 'id'>;
+  /** Whether a scene layer reaches the screen in this view. For input that
+   *  reaches a view without a dispatch — hover — so it judges this view's
+   *  paint rather than the surface's. */
+  layerIsPainted(layerId: string): boolean;
 }
 
 /** @internal */
@@ -110,10 +126,11 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
         const surface = surfaceRef.current;
         const view = surface?.view() ?? IDENTITY_VIEW;
         const dims = surface?.dims() ?? UNMEASURED_DIMS;
-        return ordered().map((r) => r.layer.resolvable(view, dims));
+        return ordered().filter((r) => r.interactive).map((r) => r.layer.resolvable(view, dims));
       },
       root: () => surfaceRef.current?.view() ?? IDENTITY_VIEW,
       canvasOrigin: () => surfaceRef.current?.origin() ?? { left: 0, top: 0 },
+      occluded: (x, y) => surfaceRef.current?.claimsAbove(x, y) ?? false,
     });
     return {
       resolver,

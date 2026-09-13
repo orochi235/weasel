@@ -35,9 +35,10 @@
  * caches key on object identity, so reusing the leaves is what makes every cell
  * a steady-state frame rather than a document load.
  *
- * This reports; it does not gate. See `tests/bench/README.md`.
+ * This reports; it does not gate. See `tests/perf/README.md`.
  */
 import { test, expect } from '@playwright/test';
+import { metric, rounds, startRun } from './lib/result';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { KIND_IDS, type KindId } from './lib/kinds';
@@ -49,7 +50,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const N = 512;
 
 /** Full passes over the matrix. The spread across them is the report. */
-const RUNS = 3;
+const RUNS = rounds(3);
 
 interface Cell {
   run: number;
@@ -62,7 +63,8 @@ interface Cell {
 
 test.setTimeout(1_800_000);
 
-test('transition matrix: what a neighbour of a different kind costs', async ({ page }) => {
+test('transition matrix: what a neighbour of a different kind costs', async ({ page, browser, browserName }) => {
+  const run = startRun('transition-matrix', { viewport: '800x600', dpr: 1, commands: N, kinds: [...KIND_IDS], runs: RUNS });
   const errors: string[] = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
@@ -76,6 +78,7 @@ test('transition matrix: what a neighbour of a different kind costs', async ({ p
   await page.exposeFunction('__matrixReport', (msg: unknown) => {
     const m = msg as { type: string } & Record<string, unknown>;
     if (m.type === 'header') {
+      run.params({ gcAvailable: Boolean(m.gcAvailable) });
       console.log('');
       console.log(`Transition matrix — 800x600, dpr 1, on ${String(m.glRenderer)}`);
       console.log(`collected between measurements: ${String(m.gcAvailable)}`);
@@ -367,4 +370,27 @@ test('transition matrix: what a neighbour of a different kind costs', async ({ p
     expect(paints[k], `${k}: rendered nothing, so every cell holding it is meaningless`).toBe(true);
   }
   expect(cells.length).toBe(total);
+
+  run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
+  const stat = `median of ${RUNS} runs`;
+  for (const k of KIND_IDS) {
+    const samples = runs.map((r) => (homMean(r, k) * 1000) / N);
+    run.item(`kind ${k}`, {
+      perCommand: metric(med(samples), 'us', `${stat}, each the mean of the two bracketing passes`, samples),
+      stateCost: metric(f[k], 'us', 'least-squares fit of S(A,B) = f(A) + f(B), per boundary'),
+      noise: metric(noise.find((x) => x.kind === k)!.us, 'us', `${stat} of |hom1 - hom2|, per boundary`),
+    }, { kind: k });
+  }
+  for (let i = 0; i < KIND_IDS.length; i++) {
+    for (let j = i + 1; j < KIND_IDS.length; j++) {
+      const a = KIND_IDS[i];
+      const b = KIND_IDS[j];
+      run.item(`pair ${a}+${b}`, {
+        surcharge: metric(S[key(a, b)], 'us', `${stat}, per boundary`, runs.map((r) => surcharge(r, a, b))),
+        residual: metric(S[key(a, b)] - f[a] - f[b], 'us', 'surcharge minus the additive fit'),
+        spread: metric(Sspread[key(a, b)], 'us', `max - min across ${RUNS} runs`),
+      }, { a, b });
+    }
+  }
+  run.write();
 });

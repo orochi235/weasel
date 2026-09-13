@@ -7,7 +7,7 @@
  * `useSceneTextEdit` instance.
  */
 import { useRef } from 'react';
-import { useDepSource } from 'interactions/actions/depRegistry';
+import { useDepSource } from '@weasel-js/routing/react';
 import type { TextEditDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
 

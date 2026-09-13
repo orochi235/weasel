@@ -17,12 +17,12 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useRef } from 'react';
-import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider';
-import type { Action } from '../actions/action';
-import { DepRegistryProvider } from '../actions/depRegistry';
+import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
+import type { Action } from '@weasel-js/routing';
+import { DepRegistryProvider } from '@weasel-js/routing/react';
 import '../actions/depSchema';
-import { ActiveToolContextProvider } from '../actions/activeToolContext';
-import { useGestureDispatcher } from './useGestureDispatcher';
+import { ActiveToolContextProvider } from '@weasel-js/routing/react';
+import { useGestureDispatcher } from '@weasel-js/routing/react';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {

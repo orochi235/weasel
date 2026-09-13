@@ -56,6 +56,9 @@ describe('invert singularity test', () => {
     expect(invert([1e6, 2e6, 2e6, 4e6, 0, 0])).toBeNull();
     expect(invert([0, 0, 0, 0, 5, 5])).toBeNull();
   });
+  it('rejects a large matrix whose determinant is cancellation', () => {
+    expect(invert([1e6, 1e6, 1e6, 1e6 + 1e-7, 0, 0])).toBeNull();
+  });
   it('rejects a non-finite matrix rather than returning NaNs', () => {
     expect(invert([NaN, 0, 0, 1, 0, 0])).toBeNull();
   });

@@ -14,17 +14,13 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useRef } from 'react';
-import { ActionsProvider, useActionsRegistry } from 'interactions/actions/ActionsProvider';
-import { DepRegistryProvider, useDepRegistry } from 'interactions/actions/depRegistry';
+import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
+import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
 import 'interactions/actions/depSchema';
-import {
-  ActiveToolContextProvider,
-  useActiveToolContext,
-  type ActiveToolContextValue,
-} from 'interactions/actions/activeToolContext';
-import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
+import { ActiveToolContextProvider, useActiveToolContext, type ActiveToolContextValue } from '@weasel-js/routing/react';
+import { useGestureDispatcher } from '@weasel-js/routing/react';
 import { useEyedropperTool, type UseEyedropperToolOptions } from './useEyedropperTool';
-import type { Tool } from '../../types';
+import type { Tool } from '../../overlayBinding';
 import type { NodeId } from 'core/scene/types';
 
 beforeAll(() => {

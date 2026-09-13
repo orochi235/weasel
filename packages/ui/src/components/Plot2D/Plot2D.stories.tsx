@@ -87,3 +87,27 @@ export const WithChildMarks: StoryObj<typeof WithChildren> = {
     ],
   },
 };
+
+/** Ticks at round values, sized to the plot: a short plot gets two or three,
+ *  a tall one more, and every label in a column shares its decimal places. */
+function WithTicks(props: { width: number; height: number; yMin: number; yMax: number; labels: 'inside' | 'outside' }) {
+  return (
+    <Plot2D
+      width={props.width}
+      height={props.height}
+      xRange={[0, 2000]}
+      yRange={[props.yMin, props.yMax]}
+      xTicks={{ labels: props.labels }}
+      yTicks={{ labels: props.labels }}
+    />
+  );
+}
+
+export const Ticks: StoryObj<typeof WithTicks> = {
+  render: (args) => <WithTicks {...args} />,
+  argTypes: {
+    height: { control: { type: 'number', min: 40, max: 600, step: 8 } },
+    labels: { control: 'inline-radio', options: ['inside', 'outside'] },
+  },
+  args: { width: 400, height: 200, yMin: -0.35, yMax: 1.2, labels: 'inside' },
+};

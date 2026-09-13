@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useReducer, useRef, createElement } from 'react';
-import { defineTool } from '../../defineTool';
-import type { Tool } from '../../types';
+import { defineTool } from '../../overlayBinding';
+import type { Tool } from '../../overlayBinding';
 import type { ToolPrefGroup } from '../../prefs';
-import type { Action } from 'interactions/actions/action';
-import { ActionDisabledReason } from 'interactions/actions/action';
-import type { ActionDeps, InvocationCtx } from 'interactions/actions/invoker';
+import type { Action } from '@weasel-js/routing';
+import { ActionDisabledReason } from '@weasel-js/routing';
+import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import type { ViewApi } from 'interactions/actions/depSchema';
 import { withinPxRadius } from 'core/viewport/pxExtent';
 import { PenIcon } from '../../../icons';

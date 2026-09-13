@@ -10,7 +10,7 @@
  * behavior actions fall back to when the dep is absent entirely.
  */
 import { useRef } from 'react';
-import { useDepSource } from 'interactions/actions/depRegistry';
+import { useDepSource } from '@weasel-js/routing/react';
 import type { SnapDep } from 'interactions/actions/depSchema';
 
 export function useSnapDepSource(

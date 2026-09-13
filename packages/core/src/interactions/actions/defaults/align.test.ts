@@ -10,8 +10,8 @@ import {
 import { asNodeId } from 'core/scene/types';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import type { NodeId } from 'core/scene/types';
-import { ActionDisabledReason } from '../action';
-import type { ImmediateInvoker } from '../invoker';
+import { ActionDisabledReason } from '@weasel-js/routing';
+import type { ImmediateInvoker } from '@weasel-js/routing';
 
 interface Pose { x: number; y: number; width: number; height: number; rotation?: number }
 

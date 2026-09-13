@@ -94,6 +94,15 @@ describe('createNodeAtPoint', () => {
     const after = pick({ x: WIDTH / 2, y: HEIGHT - 20 });
     expect(before).not.toBe(after);
   });
+
+  it('picks nothing when the camera casts no ray', () => {
+    const scene = createTestScene();
+    // Sitting on its target, inside the middle solid: a fabricated ray from the
+    // eye would start inside it and report a hit.
+    const flat = viewport({ camera: createCamera({ distance: 0, target: [0, 0.5, 0] }) });
+    const pick = createNodeAtPoint(world(scene, () => flat));
+    expect(pick(CENTER)).toBeNull();
+  });
 });
 
 describe('createAreaSelect', () => {
@@ -161,6 +170,15 @@ describe('createInsert', () => {
       insert.commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'rect' } as never),
     ).toBeNull();
   });
+
+  it('inserts nothing when the camera casts no ray', () => {
+    const scene = createTestScene();
+    const flat = viewport({ camera: createCamera({ distance: 0, target: [0, 0.5, 0] }) });
+    const insert = createInsert({ viewport: () => flat, mint: mintBox(scene) });
+    expect(
+      insert.commit({ x: 300, y: 300, width: 120, height: 120 }, { kind: 'rect' } as never),
+    ).toBeNull();
+  });
 });
 
 describe('createPoseDescriptor', () => {
@@ -223,6 +241,23 @@ describe('createPoseDescriptor', () => {
     const nearMoved = near.translate!(start, 100, 0).position[0];
     const farMoved = far.translate!(start, 100, 0).position[0];
     expect(Math.abs(farMoved)).toBeGreaterThan(Math.abs(nearMoved));
+  });
+
+  it('keeps dragging through the last camera that cast a ray', () => {
+    let vp = viewport();
+    const descriptor = createPoseDescriptor(world(scene, () => vp));
+    const start = pose3([0, 0.5, 0]);
+    const moved = descriptor.translate!(start, 120, 0);
+
+    vp = viewport({ camera: createCamera({ distance: 0, target: [0, 0.5, 0] }) });
+    expect(descriptor.translate!(start, 120, 0)).toEqual(moved);
+  });
+
+  it('leaves a pose where it is when no camera has cast a ray yet', () => {
+    const flat = viewport({ camera: createCamera({ distance: 0, target: [0, 0.5, 0] }) });
+    const descriptor = createPoseDescriptor(world(scene, () => flat));
+    const start = pose3([0, 0.5, 0]);
+    expect(descriptor.translate!(start, 120, 0)).toBe(start);
   });
 
   it('says it cannot rotate', () => {

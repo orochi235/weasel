@@ -1,8 +1,6 @@
 // The set of packages `changeset publish` would push, read from the workspace
-// globs so nothing has to be listed twice.
-//
-// `weasel-js` is private on purpose: npm rejects the unscoped name as too
-// similar to an existing package. Private workspaces are skipped throughout.
+// globs so nothing has to be listed twice. Private workspaces are skipped
+// throughout.
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';

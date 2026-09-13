@@ -852,13 +852,25 @@ describe('useTextEdit — zoom-scaled overlay', () => {
   });
 
   it('leaves width / height / fontSize pre-scale — the transform does the scaling', () => {
-    const h = makeZoomedHarness([{ text: 'abc' }], { fontSize: 16 }, 2);
+    const h = makeZoomedHarness([{ text: 'abc' }], { fontSize: 16, wrap: true }, 2);
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
     expect(overlay.style.width).toBe('200px');
     expect(overlay.style.minHeight).toBe('40px');
     expect(overlay.style.fontSize).toBe('16px');
+  });
+
+  it('anchors an unwrapped right-aligned overlay on the scaled box edge', () => {
+    const h = makeZoomedHarness([{ text: 'abc' }], { fontSize: 16, align: 'right' }, 2);
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    // 10 + 200 * 2, plus the nudge; the translate is pre-scale, so it moves
+    // the box back by its own scaled width.
+    expect(overlay.style.left).toBe('411px');
+    expect(overlay.style.minWidth).toBe('200px');
+    expect(overlay.style.transform).toBe('scale(2) translateX(-100%)');
   });
 
   it('does not pre-scale letterSpacing when the pose declares a zoom', () => {

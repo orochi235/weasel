@@ -1,10 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
-import {
-  ActiveToolContextProvider,
-  useActiveToolContext,
-  type ActiveToolContextValue,
-} from './activeToolContext';
+import { ActiveToolContextProvider, useActiveToolContext, type ActiveToolContextValue } from '@weasel-js/routing/react';
 
 describe('ActiveToolContext', () => {
   function Probe({ onValue }: { onValue: (v: ActiveToolContextValue) => void }) {
@@ -64,6 +60,35 @@ describe('ActiveToolContext', () => {
     expect(captured!.hotkeyStack).toEqual(['hand']);
     act(() => { captured!.popHotkey(); });
     expect(captured!.hotkeyStack).toEqual([]);
+  });
+
+  // Releases do not have to arrive in stack order: each offhand hold is its own
+  // in-flight handle, keyed per held key, so whichever key comes up first ends
+  // its own handle. Popping the top instead disengages the wrong tool and
+  // leaves the released one engaged with its key up.
+  it('popHotkey(id) removes that entry, not whatever is on top', () => {
+    let captured: ActiveToolContextValue | null = null;
+    render(
+      <ActiveToolContextProvider>
+        <Probe onValue={(v) => { captured = v; }} />
+      </ActiveToolContextProvider>,
+    );
+    act(() => { captured!.pushHotkey('hand'); });
+    act(() => { captured!.pushHotkey('eyedropper'); });
+    act(() => { captured!.popHotkey('hand'); });
+    expect(captured!.hotkeyStack).toEqual(['eyedropper']);
+  });
+
+  it('popHotkey(id) for an id not held leaves the stack alone', () => {
+    let captured: ActiveToolContextValue | null = null;
+    render(
+      <ActiveToolContextProvider>
+        <Probe onValue={(v) => { captured = v; }} />
+      </ActiveToolContextProvider>,
+    );
+    act(() => { captured!.pushHotkey('hand'); });
+    act(() => { captured!.popHotkey('eyedropper'); });
+    expect(captured!.hotkeyStack).toEqual(['hand']);
   });
 
   it('popHotkey on empty stack is a safe no-op', () => {

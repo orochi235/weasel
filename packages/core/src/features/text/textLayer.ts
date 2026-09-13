@@ -1,7 +1,7 @@
 /**
- * Text RenderLayer. Emits one TextDrawCommand per text node carrying the
- * node's resolved runs and bounding rect. Word wrap and multi-line layout
- * happen downstream in `drawText` / `layoutRuns`, not here.
+ * Text RenderLayer for text that is not in a scene: one `textCommandFromPose`
+ * command per item, the same command the `kit:text` node painter emits, so an
+ * item lays out — and wraps, or doesn't, per its style — as a node would.
  *
  * The GL renderer uses MSDF text. The resolved style's `fontFamily` must
  * be registered via `registerFont(family, variant, metricsUrl, atlasUrl)`
@@ -14,8 +14,8 @@ import { type DrawCommand } from '../../renderer';
 import type { TextPose } from '@weasel-js/text';
 
 import type { RenderLayer } from 'core/layers/render';
-import { textCommandFromRuns } from './textCommand';
-import { runsToPlainText, toRuns } from '@weasel-js/text';
+import { textCommandFromPose } from './textCommand';
+import { runsToPlainText } from '@weasel-js/text';
 
 
 /** Options for `createTextLayer`. */
@@ -44,23 +44,14 @@ export function createTextLayer<T>(opts: CreateTextLayerOpts<T>): RenderLayer<un
       for (const node of getTexts()) {
         if (isHidden?.(node)) continue;
         const pose = getPose(node);
-        if (pose.runs && runsToPlainText(pose.runs) !== pose.text) {
+        if (pose.runs && pose.runs.length > 0 && runsToPlainText(pose.runs) !== pose.text) {
           throw new Error(
             `weasel createTextLayer: TextPose invariant violated — ` +
             `runsToPlainText(runs) !== text. Either omit \`runs\` or keep it ` +
             `synchronized with \`text\`.`,
           );
         }
-        const textCmd = textCommandFromRuns(
-          pose.x,
-          pose.y,
-          toRuns(pose.runs ?? pose.text),
-          pose.style,
-          pose.width,
-          pose.height,
-          pose.verticalAlign,
-          { fill: pose.fill, stroke: pose.stroke },
-        );
+        const textCmd = textCommandFromPose(pose);
         if (clipToBounds) {
           children.push({
             kind: 'group',

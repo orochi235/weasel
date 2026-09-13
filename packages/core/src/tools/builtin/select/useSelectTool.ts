@@ -7,13 +7,13 @@ import type { Node } from 'core/scene/types';
 import type { MoveAdapter } from 'core/adapters/types';
 import type { AreaSelectAdapter } from 'core/adapters/types';
 import type { NodeId } from 'core/scene/types';
-import { defineTool } from '../../defineTool';
+import { defineTool } from '../../overlayBinding';
 import type { UseMoveOptions } from '../../../interactions/actions/move/options';
-import type { BindingOpts } from '../../../interactions/actions/invoker';
-import type { Action } from '../../../interactions/actions/action';
-import { ActionDisabledReason } from '../../../interactions/actions/action';
+import type { BindingOpts } from '@weasel-js/routing';
+import type { Action } from '@weasel-js/routing';
+import { ActionDisabledReason } from '@weasel-js/routing';
 import type { SelectionApi } from 'core/selection/useSelection';
-import type { Tool } from '../../types';
+import type { Tool } from '../../overlayBinding';
 import type { DebugSink } from '../../../debug/types';
 import { pickTopMostHit } from '../pickTopMostHit';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
@@ -22,11 +22,7 @@ import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescri
 // this affordance kind mean" (`interactions/dispatcher/predicates.ts`). The
 // action descriptors these bindings route to read the same functions, so a
 // tool binding and its action can't disagree about what a hit is.
-import {
-  isResizeHandle,
-  isRotateHandle,
-  isAnchorOrControl,
-} from '../../../interactions/dispatcher/predicates';
+import { isResizeHandle, isRotateHandle, isAnchorOrControl } from '@weasel-js/routing';
 import { MULTI_RESIZE_TARGET_ID, type Bounds } from '../shared/selectionTarget';
 export type { Bounds };
 export { MULTI_RESIZE_TARGET_ID };
@@ -81,6 +77,13 @@ export interface UseSelectToolOptions<TPose> {
    * Without some slop a hairline outline is an unhittable target.
    */
   pickTolerance?: number;
+  /** Painted alpha per node in the view this tool picks for. A node painted
+   *  at alpha 0 is not under the pointer. Ignored when `pickEvery` is
+   *  supplied. */
+  alphaOf?: (id: string) => number;
+  /** Whether a node's `layer` reaches the screen in the view this tool picks
+   *  for. Ignored when `pickEvery` is supplied. */
+  layerIsPainted?: (layer: string) => boolean;
   /** Move-action options. The move gesture is dispatcher-routed,
    *  so only `behaviors` is consumed here — threaded into the move binding's
    *  `opts.behaviors`. Other `UseMoveOptions` fields are accepted for API shape
@@ -187,7 +190,10 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
       );
     };
 
-    return pickWalk<TPose>(adapterPickSource(adapter as never), {
+    return pickWalk<TPose>(adapterPickSource(adapter as never, {
+      ...(options.alphaOf ? { alphaOf: options.alphaOf } : {}),
+      ...(options.layerIsPainted ? { layerIsPainted: options.layerIsPainted } : {}),
+    }), {
       hits: (node, pose) => {
         const b = poseDescriptorForNode(d, node).getBounds(pose);
         if (node.kind !== 'container') return covers(node, pose, b);

@@ -395,3 +395,33 @@ describe('painted content version', () => {
     expect(apiRef.current!.getPaintedVersion()).toBe(2);
   });
 });
+
+describe('view zoom invariant', () => {
+  const finitePositive = (n: number) => Number.isFinite(n) && n > 0;
+
+  it('setView with a zero scale lands a positive finite one, for getView and subscribers alike', () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    render(<Canvas ref={apiRef} width={100} height={80} layers={{}} defaultView={IDENTITY} />);
+    const seen: Array<{ x: number; y: number }> = [];
+    apiRef.current!.subscribeView((v) => { seen.push(v.scale); });
+    apiRef.current!.setView({ x: 0, y: 0, scale: { x: 0, y: 0 } });
+    const { scale } = apiRef.current!.getView();
+    expect(finitePositive(scale.x) && finitePositive(scale.y)).toBe(true);
+    expect(seen.every((s) => finitePositive(s.x) && finitePositive(s.y))).toBe(true);
+  });
+
+  it('a controlled view prop with a NaN scale reads back positive and finite', () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    render(
+      <Canvas
+        ref={apiRef}
+        width={100}
+        height={80}
+        layers={{}}
+        view={{ x: 0, y: 0, scale: { x: Number.NaN, y: 1 } }}
+        onViewChange={() => {}}
+      />,
+    );
+    expect(finitePositive(apiRef.current!.getView().scale.x)).toBe(true);
+  });
+});

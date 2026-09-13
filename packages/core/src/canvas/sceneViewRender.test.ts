@@ -479,3 +479,29 @@ describe('renderSceneToCanvas', () => {
     expect(__getCachedRendererForTest(canvas)).toBeUndefined();
   });
 });
+
+describe('buildSceneViewCommands — per-view layer visibility', () => {
+  // Keyed as `<SceneCanvas>` keys its scene layers, so one map serves both.
+  const build = (
+    scene: ReturnType<typeof makeNestedScene>['scene'],
+    layers: { layerVisibility?: Record<string, boolean>; layerOrder?: readonly string[] },
+  ) => paintedColors(
+    buildSceneViewCommands(scene, identityView, nestedDrawOne, undefined, undefined, undefined, layers),
+  );
+
+  it('skips a layer this view hides', () => {
+    const { scene } = makeNestedScene();
+    expect(build(scene, { layerVisibility: { 'scene:aux': false } })).toEqual(['#ccc', '#f00']);
+  });
+
+  it('cannot show a layer the scene hides', () => {
+    const { scene } = makeNestedScene();
+    scene.setLayerVisible('aux', false);
+    expect(build(scene, { layerVisibility: { 'scene:aux': true } })).not.toContain('#00f');
+  });
+
+  it('drops a scene layer a listed order leaves out', () => {
+    const { scene } = makeNestedScene();
+    expect(build(scene, { layerOrder: ['scene:main'] })).toEqual(['#ccc', '#f00']);
+  });
+});

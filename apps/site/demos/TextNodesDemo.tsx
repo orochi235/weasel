@@ -1,4 +1,5 @@
-import { SceneCanvas, asNodeId, solid, useScene } from '@weasel-js/core';
+import { useState } from 'react';
+import { SceneCanvas, asNodeId, solid, useScene, useSceneTextEdit } from '@weasel-js/core';
 import type {
   FillStyle, StyledRun, TextStyle, TextVerticalAlign,
 } from '@weasel-js/core';
@@ -99,10 +100,12 @@ export function TextNodesDemo() {
     systemLayers: [{ id: 'default' }],
     initial: NODES,
   });
+  const [frame, setFrame] = useState<HTMLDivElement | null>(null);
+  const edit = useSceneTextEdit(scene, frame);
 
   return (
     <div className="ckd-stack">
-      <div className="ckd-canvas-frame">
+      <div className="ckd-canvas-frame" ref={setFrame} onDoubleClick={edit.onDoubleClick}>
         <SceneCanvas
           width={W}
           height={H}
@@ -110,6 +113,8 @@ export function TextNodesDemo() {
           backgroundFill={{ color: '#ffffff' }}
           scene={scene}
           selectionMode="none"
+          // The overlay stands in for the node while it is edited.
+          alphaFor={(id) => (id === edit.editingId ? 0 : 1)}
         />
       </div>
     </div>

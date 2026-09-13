@@ -41,9 +41,9 @@
  * dep (`AUTO_POSE_DESCRIPTOR` when unsourced).
  */
 
-import type { Action } from '../action';
-import type { InvocationCtx, OngoingHandle, BindingOpts } from '../invoker';
-import { resolveParams } from '../invoker';
+import type { Action } from '@weasel-js/routing';
+import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routing';
+import { resolveParams } from '@weasel-js/routing';
 import { documentPose } from 'core/scene/effectivePose';
 import type { Scene, NodeId } from 'core/scene/types';
 import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides';
@@ -68,6 +68,7 @@ import {
   type PoseDescriptor,
 } from '../resize/geometry';
 import { poseDescriptorOf } from '../poseDescriptorDep';
+import { isAnchorOrControl } from '@weasel-js/routing';
 import type { MoveBehavior, GroupTransform, GestureContext, BehaviorResult } from '../../gestures/types';
 import { moveGestureAdapter, type MoveGestureAdapter } from '../move/gestureAdapter';
 import {
@@ -620,6 +621,9 @@ export const moveAction: Action & { requires: string[] } = {
         ?? IDENTITY_POSE_COMPOSITION;
 
       if (!selection || !scene) return {};
+      // Anchors sit on the selected body, and this binding ties editAnchors' on
+      // specificity; with no mode registry to filter move out, declining is what lets it through.
+      if (isAnchorOrControl(ctx.drag?.affordance)) return {};
 
       const ids = selection.get() as NodeId[];
       if (ids.length === 0) return {};

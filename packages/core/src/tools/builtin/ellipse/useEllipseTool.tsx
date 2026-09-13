@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import { defineTool } from '../../defineTool';
+import { defineTool } from '../../overlayBinding';
 import { EllipseIcon } from '../../../icons';
-import type { Tool } from '../../types';
+import type { Tool } from '../../overlayBinding';
 import { cursorFor } from '@weasel-js/cursor';
 
 /**

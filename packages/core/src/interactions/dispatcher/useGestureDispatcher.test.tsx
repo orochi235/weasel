@@ -1,21 +1,18 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useRef } from 'react';
-import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider';
-import type { Action } from '../actions/action';
-import { DepRegistryProvider, useDepSource } from '../actions/depRegistry';
-import { ActiveToolContextProvider, useActiveToolContext, type ActiveToolContextValue } from '../actions/activeToolContext';
-import { useGestureDispatcher } from './useGestureDispatcher';
-import {
-  makeToolOffhandAction,
-  buildToolOffhandBindings,
-} from '../actions/defaults/toolOffhand';
+import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
+import type { Action } from '@weasel-js/routing';
+import { DepRegistryProvider, useDepSource } from '@weasel-js/routing/react';
+import { ActiveToolContextProvider, useActiveToolContext, type ActiveToolContextValue } from '@weasel-js/routing/react';
+import { useGestureDispatcher } from '@weasel-js/routing/react';
+import { makeToolOffhandAction, buildToolOffhandBindings } from '@weasel-js/routing';
 
 function Probe({ actionDef, enabled = true, keyboard, affordanceAt, classifyTarget }: {
   actionDef: Action;
   enabled?: boolean;
   keyboard?: boolean;
-  affordanceAt?: (p: { x: number; y: number }) => import('../actions/invoker').AffordanceHit | null;
+  affordanceAt?: (p: { x: number; y: number }) => import('@weasel-js/routing').AffordanceHit | null;
   classifyTarget?: (p: { x: number; y: number }) => import('@weasel-js/gestures').BodyClassification;
 }) {
   const registry = useActionsRegistry();
