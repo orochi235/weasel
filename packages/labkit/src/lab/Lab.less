@@ -1,6 +1,7 @@
 // A fullscreen lab's page is the viewport, and body's default margin would
-// scroll it. `:has` leaves a page that mounts no lab untouched.
-body:has(.lk-lab) {
+// scroll it. `<LabShell>` alone fills the viewport too. `:has` leaves a page
+// that mounts neither untouched.
+body:has(.lk-lab, .lk-shell) {
   margin: 0;
 }
 
