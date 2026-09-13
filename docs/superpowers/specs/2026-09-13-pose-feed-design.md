@@ -90,13 +90,25 @@ streams frames and touches only overrides, so it costs `O(changed)`. The walk
 runs on the frames where committed content changed — a commit, an undo, a paste
 — which arrive one at a time.
 
-`reset` is also set when `scene.roots` or `scene.layers` changed identity. A
-sibling reorder can change render order without changing any node, and two
-`!==` comparisons buy correctness more cheaply than modelling order in the delta.
+`reset` is set on the first read and nowhere else.
 
-**The delta carries no order.** `added` and `changed` follow `scene.nodes`,
-which is insertion order. A host that cares about draw order re-reads
-`renderOrderNodes()`, and `reset` is the signal telling it to.
+**The delta carries no order, and does not try to signal one.** `added` and
+`changed` follow `scene.nodes`, which is insertion order. A host that draws in
+order calls `renderOrderNodes()` itself — it is cached until a structural edit
+and hands back the same array, so re-reading it every frame costs nothing.
+
+An earlier draft made a reorder force a `reset`. It was wrong three times over,
+and the reasoning is worth keeping because the idea is an easy one to have
+again. `scene.roots` and `scene.layers` are spliced in place, so an identity
+comparison on them can never fire. Keying off `renderOrderNodes()` identity does
+fire, but then every ordinary insert resets the whole scene unless it is gated
+on the walk finding an empty diff — and that gate drops the frame where a node
+moved *and* something reordered, leaving the host painting new poses in the old
+sequence. And none of it is needed, because the host can read the order
+directly.
+
+What the feed does still guarantee is that a structural edit never reports a
+live node as `removed`. A host told that would delete a real object.
 
 ## The feed does not coalesce
 
