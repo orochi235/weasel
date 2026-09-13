@@ -127,6 +127,24 @@ export const Basic = {};
     expect(ids(`export const Basic = {};`)).toEqual([]);
   });
 
+  it('reads an angle-bracket cast in a .stories.ts file', () => {
+    const code = `
+export default <any>{ title: 'ui/Cast' };
+export const Basic = <any>{};
+`;
+    expect(ids(code, '/repo/packages/ui/src/Cast.stories.ts')).toEqual([['ui-cast--basic', 'Basic']]);
+  });
+
+  it('parses JSX in a .tsx file and legacy decorators anywhere', () => {
+    const code = `
+@sealed
+class Helper {}
+export default { title: 'ui/Jsx' };
+export const Basic = { render: () => <div /> };
+`;
+    expect(ids(code)).toEqual([['ui-jsx--basic', 'Basic']]);
+  });
+
   it('names the file when a title cannot make an id', () => {
     const code = `
 export default { title: '!!!' };

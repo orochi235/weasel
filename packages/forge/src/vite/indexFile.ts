@@ -1,4 +1,4 @@
-import { parse } from '@babel/parser';
+import { type ParserPlugin, parse } from '@babel/parser';
 import type * as t from '@babel/types';
 import { storyId, storyNameFromExport, titleFromFile } from '../story/ids';
 import type { IndexEntry } from '../story/types';
@@ -8,7 +8,8 @@ type Bindings = Map<string, t.Node>;
 /** The stories `code` declares, in source order, without running it. `file` is absolute. */
 export function indexFile(code: string, file: string, root: string): IndexEntry[] {
   try {
-    return indexProgram(parse(code, { sourceType: 'module', plugins: ['typescript', 'jsx'] }).program, file, root);
+    const plugins: ParserPlugin[] = ['typescript', 'decorators-legacy', ...(/\.[jt]sx$/.test(file) ? (['jsx'] as const) : [])];
+    return indexProgram(parse(code, { sourceType: 'module', plugins }).program, file, root);
   } catch (err) {
     throw new Error(`${file}: ${err instanceof Error ? err.message : String(err)}`, { cause: err });
   }
@@ -94,6 +95,7 @@ function objectOf(node: t.Node | undefined, bindings: Bindings, wrappers: Set<st
       return node;
     case 'TSSatisfiesExpression':
     case 'TSAsExpression':
+    case 'TSTypeAssertion':
     case 'TSNonNullExpression':
     case 'ParenthesizedExpression':
       return objectOf(node.expression, bindings, wrappers, depth + 1);
