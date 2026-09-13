@@ -1,4 +1,4 @@
-import { defineInstrument, f, Lab, noneAdapter, type ViewTransform } from '@weasel-js/labkit';
+import { defineInstrument, f, Lab, type ViewTransform } from '@weasel-js/labkit';
 // In-repo, so the source stylesheet: a consumer imports the built
 // `@weasel-js/labkit/styles.css` instead.
 import '@weasel-js/labkit/styles.less';
@@ -105,7 +105,6 @@ export function LabLoupeDemo() {
         title="Loupe"
         instruments={[drawn, written]}
         defaultInstrument="Drawn detail"
-        storage={noneAdapter}
       />
     </div>
   );

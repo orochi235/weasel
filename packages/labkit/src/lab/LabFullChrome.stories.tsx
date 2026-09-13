@@ -268,7 +268,6 @@ export const AllChrome: Story = {
     instruments: [spectrometer, beamProfile, thermalDrift],
     defaultInstrument: 'Spectrometer',
     title: 'Optics bench',
-    storage: null,
     mode: 'dark',
     nebula: ['#3b5bdb', '#7048e8', '#0ca678'],
     children: (
@@ -309,7 +308,6 @@ export const SingleInstrument: Story = {
     instruments: [runLog],
     defaultInstrument: 'Run log',
     title: 'Run log',
-    storage: null,
   },
 };
 
@@ -321,7 +319,6 @@ export const WithFooter: Story = {
     instruments: [spectrometer, beamProfile],
     defaultInstrument: 'Spectrometer',
     title: 'With footer',
-    storage: null,
     mode: 'dark',
     footer: <span className="lk-run-tag">Footer — reached through LabProps.footer</span>,
   },

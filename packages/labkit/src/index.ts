@@ -222,7 +222,10 @@ export { LayerList } from './layers';
 export * from './loupe';
 export * from './primitives';
 export {
+  createIndexedDbAdapter,
   createMemoryAdapter,
+  type IndexedDbAdapterOptions,
+  indexedDbAdapter,
   localStorageAdapter,
   noneAdapter,
   sessionStorageAdapter,
@@ -237,6 +240,9 @@ export {
   useTrialId,
 } from './state/context';
 export { CURRENT_DOCUMENT_VERSION, labDocumentKey, quarantineKey } from './state/document';
+export { type OpenedLabStore, type OpenLabStoreOptions, openLabStore } from './state/openLabStore';
+export { Persistence, type PersistenceProps } from './state/Persistence';
+export type { RecordCache, RecordChange } from './state/records';
 export type {
   CreateLabStoreOptions,
   LabDocument,
@@ -245,6 +251,7 @@ export type {
   SavedSnapshot,
   SerializedTrial,
   StorageAdapter,
+  StorageChange,
   TrialInfo,
   TrialRecord,
   TrialStateHandle,
@@ -252,6 +259,7 @@ export type {
 } from './state/types';
 export type { UndockedPanel, UndockedPanels } from './state/undock';
 export { dockPanel, panelKey, undockPanel } from './state/undock';
+export { type PersistedStateOptions, usePersistedState } from './state/usePersistedState';
 export { useTrialState } from './state/useTrialState';
 export type { ViewTransform2D } from './state/view';
 export { as2DView, DEFAULT_VIEW } from './state/view';

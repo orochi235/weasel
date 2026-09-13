@@ -76,7 +76,6 @@ export const EveryRegion: Story = {
     instruments: [FullInstrument],
     defaultInstrument: 'Every Region',
     title: 'Chrome Regions',
-    storage: null,
   },
 };
 
@@ -86,7 +85,6 @@ export const SuppressedAndReplaced: Story = {
     instruments: [FullInstrument],
     defaultInstrument: 'Every Region',
     title: 'Suppress + Replace',
-    storage: null,
     suppress: ['snapshot'],
     chrome: [
       {
@@ -116,7 +114,6 @@ export const SubjectTitleAndLead: Story = {
     instruments: [FullInstrument],
     defaultInstrument: 'Every Region',
     title: 'Title Bar Lead',
-    storage: null,
     suppress: ['snapshot'],
     chrome: [
       {

@@ -1,5 +1,7 @@
 # State Runtime — Design Spec
 
+> **Storage superseded (2026-09-12):** a lab is now stored as records through an async adapter — see `2026-09-12-async-storage-design.md`. What this doc says about `StorageAdapter`, the single document and the flush no longer describes the code.
+
 **Date:** 2026-04-27
 **Status:** Draft (unattended Claude default — review before implementation)
 **Depends on:** Plan 1 (Foundation) — shipped and tagged `plan-1-foundation`

@@ -9,19 +9,24 @@ import {
   useState,
 } from 'react';
 import { useStore } from 'zustand/react';
+import { AnnotationPreloadContext } from '../annotations/preload';
 import { LabFooterRegion, LabHeaderRegion, labContributions } from '../chrome/LabChrome';
 import type { LabContribution } from '../chrome/labTypes';
 import type { TrialContribution } from '../chrome/types';
 import type { ConfigRule, ControlRenderer } from '../config/types';
 import { configDefaultsOf, serializersOf } from '../instrument/serializers';
 import type { InstrumentList } from '../instrument/types';
-import { noneAdapter } from '../state/adapters';
+import { defaultStorage, noneAdapter } from '../state/adapters';
 import { LabStoreContext } from '../state/context';
+import { type OpenedLabStore, openLabStore } from '../state/openLabStore';
+import { PersistenceContext } from '../state/Persistence';
+import { createRecordCache } from '../state/records';
 import { createLabStore, type LabStore } from '../state/store';
 import type { LabMode, StorageAdapter, TrialRecord } from '../state/types';
+import { useOpenOnce, useWarnIgnoredChange } from '../state/useOpenOnce';
 import { SurfaceCanvasContext, SurfaceContext } from '../surface/SurfaceContext';
 import { useSurfaceCanvas, useSurfaceOptional } from '../surface/useSurfaceTile';
-import { useTiledSurface, type SurfaceFrame } from '../surface/useTiledSurface';
+import { type SurfaceFrame, useTiledSurface } from '../surface/useTiledSurface';
 import { interstellarTheme } from '../theme/interstellar';
 import type { TrialTool } from '../tools/types';
 import { Trial } from '../trial/Trial';
@@ -32,6 +37,7 @@ import {
   reorderTrials as reorderTrialsOp,
   resetTrial as resetTrialOp,
 } from '../trial/trialOps';
+import { useLabFitWarning } from './fitCheck';
 import { LabContext, type LabContextValue } from './LabContext';
 import { LabHeader } from './LabHeader';
 import { LabPalette } from './LabPalette';
@@ -41,13 +47,12 @@ import { createPanelHostRegistry, PanelHostContext } from './panelHost';
 import { useResolvedMode } from './useSystemMode';
 import { type PanelDescriptor, type TrialLayout, Workspace } from './Workspace';
 
-/** Props for `<Lab>`. */
-export interface LabProps {
+interface LabBaseProps {
   instruments: InstrumentList;
   defaultInstrument: string;
-  storage?: StorageAdapter | null;
-  storageKey?: string;
   mode?: LabMode;
+  /** Rendered while a stored lab loads. Default: the lab's empty shell. */
+  fallback?: ReactNode;
   /**
    * Optional list of CSS colors used to compose the interstellar theme's
    * cosmic backdrop. Each color becomes one radial-gradient blob on the
@@ -86,31 +91,94 @@ export interface LabProps {
   children?: ReactNode;
 }
 
-function buildStore(
+/** Props for `<Lab>`. With a `storageKey` the lab persists — to IndexedDB
+ *  unless `storage` names another substrate — and both are read once, at
+ *  mount. Without one, nothing persists. */
+export type LabProps = LabBaseProps &
+  (
+    | { storageKey?: undefined; storage?: undefined }
+    | { storageKey: string; storage?: StorageAdapter }
+  );
+
+interface OpenedLab extends OpenedLabStore {
+  marks: ReadonlyMap<string, unknown>;
+}
+
+function seedDefaultTrial(
+  store: LabStore,
   instruments: InstrumentList,
   defaultInstrument: string,
-  storage: StorageAdapter,
-  storageKey: string,
-  initialMode: LabMode,
-): LabStore {
-  // Hydration reads the serializers, so they go in with the store rather than
-  // being registered onto it afterwards.
+): void {
+  if (store.getState().trials.length > 0) return;
+  const record = addTrialOp([], instruments, defaultInstrument)[0];
+  if (!record) return;
+  const { undoStack: _undoStack, ...rest } = record;
+  store.getState().addTrial(rest);
+}
+
+/** A lab with nothing to load renders at once. Its records hold
+ *  `usePersistedState` values for the session and write nothing. */
+function openUnstoredLab({ instruments, defaultInstrument, mode }: LabProps): OpenedLab {
   const store = createLabStore({
-    storageKey,
-    storage,
-    initialMode,
+    initialMode: mode ?? 'auto',
     serializers: serializersOf(instruments),
     configDefaults: configDefaultsOf(instruments),
   });
-  if (store.getState().trials.length === 0) {
-    const seeded = addTrialOp([], instruments, defaultInstrument);
-    const record = seeded[0];
-    if (record) {
-      const { undoStack: _undoStack, ...rest } = record;
-      store.getState().addTrial(rest);
-    }
-  }
-  return store;
+  seedDefaultTrial(store, instruments, defaultInstrument);
+  const records = createRecordCache({ storage: noneAdapter, prefix: '', writable: false });
+  return { store, records, close: () => records.close(), marks: new Map() };
+}
+
+async function openStoredLab(
+  { instruments, defaultInstrument, mode }: LabProps,
+  storageKey: string,
+  storage: StorageAdapter | undefined,
+): Promise<OpenedLab> {
+  // The store reads the serializers and defaults while it is being built, so
+  // they go in with it rather than being registered onto it afterwards.
+  const opened = await openLabStore({
+    storageKey,
+    storage: storage ?? (await defaultStorage()),
+    initialMode: mode ?? 'auto',
+    serializers: serializersOf(instruments),
+    configDefaults: configDefaultsOf(instruments),
+  });
+  seedDefaultTrial(opened.store, instruments, defaultInstrument);
+  const marks = new Map<string, unknown>();
+  await Promise.all(
+    opened.store.getState().trials.map(async (trial) => {
+      const kept = instruments.find((i) => i.name === trial.instrumentName)?.annotations?.storage;
+      if (!kept) return;
+      try {
+        marks.set(trial.id, await kept.load());
+      } catch (error) {
+        console.warn(`[labkit] could not load the marks of trial "${trial.id}"`, error);
+        marks.set(trial.id, null);
+      }
+    }),
+  );
+  return { ...opened, marks };
+}
+
+function LabFallback({
+  title,
+  mode,
+  pages,
+  path,
+}: Pick<LabBaseProps, 'title' | 'mode' | 'pages' | 'path'>) {
+  const resolvedMode = useResolvedMode(mode ?? 'auto');
+  return (
+    <ThemeProvider theme={interstellarTheme} mode={resolvedMode} className="lk-lab">
+      <LabShell
+        title={title ?? 'Labkit'}
+        mode={mode}
+        {...(pages ? { pages } : {})}
+        {...(path !== undefined ? { path } : {})}
+      >
+        {null}
+      </LabShell>
+    </ThemeProvider>
+  );
 }
 
 // Fixed spread of nebula blob positions / sizes / fall-off stops. Colors
@@ -134,13 +202,29 @@ function buildNebula(colors: readonly string[]): string {
   return blobs.join(', ');
 }
 
-/** The lab runtime: creates the store, provides it, and renders one trial
+/** The lab runtime: opens the store, provides it, and renders one trial
  *  per record in a grid. Each trial runs one of `instruments`. */
-export function Lab({
+export function Lab(props: LabProps) {
+  if (process.env.NODE_ENV !== 'production' && props.instruments.length === 0) {
+    throw new Error('[labkit] <Lab> requires a non-empty `instruments` array');
+  }
+  const { storageKey, storage } = props;
+  useWarnIgnoredChange('<Lab>', { storageKey, storage });
+  const opened = useOpenOnce<OpenedLab>(() =>
+    storageKey === undefined ? openUnstoredLab(props) : openStoredLab(props, storageKey, storage),
+  );
+  if (!opened) {
+    return props.fallback !== undefined ? (
+      <>{props.fallback}</>
+    ) : (
+      <LabFallback title={props.title} mode={props.mode} pages={props.pages} path={props.path} />
+    );
+  }
+  return <LabRuntime {...props} opened={opened} />;
+}
+
+function LabRuntime({
   instruments,
-  defaultInstrument,
-  storage,
-  storageKey,
   mode,
   nebula,
   title,
@@ -154,22 +238,9 @@ export function Lab({
   configRules,
   controls,
   children,
-}: LabProps) {
-  if (process.env.NODE_ENV !== 'production' && instruments.length === 0) {
-    throw new Error('[labkit] <Lab> requires a non-empty `instruments` array');
-  }
-
-  const storeRef = useRef<LabStore | null>(null);
-  if (storeRef.current === null) {
-    storeRef.current = buildStore(
-      instruments,
-      defaultInstrument,
-      storage ?? noneAdapter,
-      storageKey ?? 'labkit',
-      mode ?? 'auto',
-    );
-  }
-  const store = storeRef.current;
+  opened,
+}: LabProps & { opened: OpenedLab }) {
+  const { store } = opened;
 
   const trials = useStore(store, (s) => s.trials);
   const savedSnapshots = useStore(store, (s) => s.savedSnapshots);
@@ -226,6 +297,16 @@ export function Lab({
 
   const ownSurface = useTiledSurface({ onFrame });
   surfaceRef.current = ownSurface;
+  const [labBody, setLabBody] = useState<HTMLDivElement | null>(null);
+  const attachOwnSurface = ownSurface.containerRef;
+  const labBodyRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      setLabBody(el);
+      if (!outerSurface) attachOwnSurface(el);
+    },
+    [outerSurface, attachOwnSurface],
+  );
+  useLabFitWarning(labBody);
   const surface = outerSurface ?? ownSurface;
   const surfaceCanvases = useMemo(
     () =>
@@ -263,8 +344,6 @@ export function Lab({
       const currentById = new Map(store.getState().trials.map((w) => [w.id, w]));
       const merged = next.map((w) => currentById.get(w.id) ?? w);
       store.setState({ trials: merged });
-      // Trigger persistence flush via a tracked action.
-      store.getState().setMode(store.getState().mode);
     };
 
     return {
@@ -296,7 +375,6 @@ export function Lab({
               : w,
           ),
         }));
-        store.getState().updateTrialView(id, record.view);
       },
       savedSnapshots,
       saveSnapshot: (trialId, name) => {
@@ -327,87 +405,88 @@ export function Lab({
 
   return (
     <LabStoreContext.Provider value={{ store }}>
-      <LabContext.Provider value={contextValue}>
-        <ThemeProvider
-          theme={interstellarTheme}
-          mode={resolvedMode}
-          className="lk-lab"
-          style={backdropStyle}
-        >
-          <LabShell
-            title={title ?? 'Labkit'}
-            mode={modeValue}
-            {...(pages ? { pages } : {})}
-            {...(path !== undefined ? { path } : {})}
-            footer={
-              hasFooterChrome ? (
-                <>
-                  {footer}
-                  <LabFooterRegion contributions={labChromeAll} />
-                </>
-              ) : (
-                footer
-              )
-            }
-            header={
-              <>
-                <LabHeader />
-                {children}
-                <LabHeaderRegion contributions={labChromeAll} />
-              </>
-            }
-          >
-            <PanelHostContext.Provider value={panelHostsRef.current}>
-              <SurfaceContext.Provider value={surface}>
-                <SurfaceCanvasContext.Provider value={surfaceCanvases}>
-                  <div
-                    className="lk-lab__body"
-                    ref={outerSurface ? undefined : ownSurface.containerRef}
-                  >
-                    {outerSurface ? null : (
-                      // Two buffers stacked around the trials, both inert —
-                      // each tile takes input from its own box. A tile's marks
-                      // annotate the instrument's DOM from over it; an opaque
-                      // renderer sits under it, so the pane can still hold a
-                      // label. The under one is first so it paints first.
-                      <>
-                        <canvas
-                          className="lk-lab__surface lk-lab__surface--under"
-                          ref={(el) => {
-                            ownUnderRef.current = el;
-                            setOwnUnder(el);
-                          }}
-                        />
-                        <canvas
-                          className="lk-lab__surface lk-lab__surface--over"
-                          ref={(el) => {
-                            ownOverRef.current = el;
-                            setOwnOver(el);
-                          }}
-                        />
-                      </>
-                    )}
-                    <LabPalette contributions={labChromeAll} />
-                    <Workspace
-                      panels={workspacePanels}
-                      ids={trials.map((w) => w.id)}
-                      resizable
-                      reorderable
-                      onReorder={(ids) => contextValue.reorderTrials(ids)}
-                      layout={layout as TrialLayout}
-                      onLayoutChange={(next) => store.getState().setLayout(next)}
-                    >
-                      {trials.map((w) => (
-                        <Trial key={w.id} id={w.id} chrome={chrome} suppress={suppress} />
-                      ))}
-                    </Workspace>
-                  </div>
-                </SurfaceCanvasContext.Provider>
-              </SurfaceContext.Provider>
-            </PanelHostContext.Provider>
-          </LabShell>
-        </ThemeProvider>
-      </LabContext.Provider>
+      <PersistenceContext.Provider value={opened.records}>
+        <AnnotationPreloadContext.Provider value={opened.marks}>
+          <LabContext.Provider value={contextValue}>
+            <ThemeProvider
+              theme={interstellarTheme}
+              mode={resolvedMode}
+              className="lk-lab"
+              style={backdropStyle}
+            >
+              <LabShell
+                title={title ?? 'Labkit'}
+                mode={modeValue}
+                {...(pages ? { pages } : {})}
+                {...(path !== undefined ? { path } : {})}
+                footer={
+                  hasFooterChrome ? (
+                    <>
+                      {footer}
+                      <LabFooterRegion contributions={labChromeAll} />
+                    </>
+                  ) : (
+                    footer
+                  )
+                }
+                header={
+                  <>
+                    <LabHeader />
+                    {children}
+                    <LabHeaderRegion contributions={labChromeAll} />
+                  </>
+                }
+              >
+                <PanelHostContext.Provider value={panelHostsRef.current}>
+                  <SurfaceContext.Provider value={surface}>
+                    <SurfaceCanvasContext.Provider value={surfaceCanvases}>
+                      <div className="lk-lab__body" ref={labBodyRef}>
+                        {outerSurface ? null : (
+                          // Two buffers stacked around the trials, both inert —
+                          // each tile takes input from its own box. A tile's marks
+                          // annotate the instrument's DOM from over it; an opaque
+                          // renderer sits under it, so the pane can still hold a
+                          // label. The under one is first so it paints first.
+                          <>
+                            <canvas
+                              className="lk-lab__surface lk-lab__surface--under"
+                              ref={(el) => {
+                                ownUnderRef.current = el;
+                                setOwnUnder(el);
+                              }}
+                            />
+                            <canvas
+                              className="lk-lab__surface lk-lab__surface--over"
+                              ref={(el) => {
+                                ownOverRef.current = el;
+                                setOwnOver(el);
+                              }}
+                            />
+                          </>
+                        )}
+                        <LabPalette contributions={labChromeAll} />
+                        <Workspace
+                          panels={workspacePanels}
+                          ids={trials.map((w) => w.id)}
+                          resizable
+                          reorderable
+                          onReorder={(ids) => contextValue.reorderTrials(ids)}
+                          layout={layout as TrialLayout}
+                          onLayoutChange={(next) => store.getState().setLayout(next)}
+                        >
+                          {trials.map((w) => (
+                            <Trial key={w.id} id={w.id} chrome={chrome} suppress={suppress} />
+                          ))}
+                        </Workspace>
+                      </div>
+                    </SurfaceCanvasContext.Provider>
+                  </SurfaceContext.Provider>
+                </PanelHostContext.Provider>
+              </LabShell>
+            </ThemeProvider>
+          </LabContext.Provider>
+        </AnnotationPreloadContext.Provider>
+      </PersistenceContext.Provider>
     </LabStoreContext.Provider>
   );
 }

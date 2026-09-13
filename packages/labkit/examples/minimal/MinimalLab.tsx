@@ -1,4 +1,4 @@
-import { Lab, localStorageAdapter } from '@weasel-js/labkit';
+import { Lab } from '@weasel-js/labkit';
 import { StubInstrument } from './StubInstrument';
 
 export function MinimalLab() {
@@ -6,7 +6,6 @@ export function MinimalLab() {
     <Lab
       instruments={[StubInstrument]}
       defaultInstrument="Stub"
-      storage={localStorageAdapter}
       storageKey="minimal-lab"
       mode="dark"
       title="Minimal Lab"

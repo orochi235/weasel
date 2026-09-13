@@ -1,9 +1,6 @@
-/* `.lk-shell` is 100vh and `.lk-shell-body` is a bounded block container, so
-   this takes `height: 100%` rather than `flex: 1` — a flex value here resolves
-   against a block parent and collapses. Everything below scrolls in its own
-   pane so the page itself never does. */
+/* Everything below scrolls in its own pane so the page itself never does. */
 .page {
-  height: 100%;
+  flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;

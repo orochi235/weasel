@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createLabStore } from './store';
 
 function store() {
-  return createLabStore({ storageKey: 'test', storage: { read: () => null, write: () => {} } });
+  return createLabStore();
 }
 
 const record = { id: 't1', instrumentName: 'X', config: {}, state: {}, view: {} };

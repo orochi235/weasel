@@ -1,5 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { createMemoryAdapter } from './adapters';
+import { openLabStore } from './openLabStore';
 import { createLabStore } from './store';
 import { as2DView, DEFAULT_VIEW } from './view';
 
@@ -41,7 +42,7 @@ describe('as2DView', () => {
 
 describe('a trial view labkit does not interpret', () => {
   it('stores and returns a view shape that is not zoom/pan', () => {
-    const store = createLabStore({ storageKey: 'view-a', storage: createMemoryAdapter() });
+    const store = createLabStore();
     store.getState().addTrial({
       id: 'w1',
       instrumentName: 'gem',
@@ -55,28 +56,32 @@ describe('a trial view labkit does not interpret', () => {
     expect(store.getState().trials[0]?.view as OrbitView).toEqual(orbit);
   });
 
-  it('round-trips that view through persistence', () => {
-    vi.useFakeTimers();
-    const mem = createMemoryAdapter();
-    const seed = createLabStore({ storageKey: 'view-b', storage: mem });
-    seed.getState().addTrial({
+  it('round-trips that view through persistence', async () => {
+    const backing = new Map<string, unknown>();
+    const seed = await openLabStore({
+      storageKey: 'view-b',
+      storage: createMemoryAdapter(backing),
+    });
+    seed.store.getState().addTrial({
       id: 'w1',
       instrumentName: 'gem',
       config: {},
       state: {},
       view: orbit,
     });
-    vi.advanceTimersByTime(500);
-    vi.useRealTimers();
+    await seed.close();
 
-    const hydrated = createLabStore({ storageKey: 'view-b', storage: mem });
-    expect(hydrated.getState().trials[0]?.view as OrbitView).toEqual(orbit);
+    const hydrated = await openLabStore({
+      storageKey: 'view-b',
+      storage: createMemoryAdapter(backing),
+    });
+    expect(hydrated.store.getState().trials[0]?.view as OrbitView).toEqual(orbit);
   });
 });
 
 describe('an unchanged write costs no new record', () => {
   it('returns the same trial object when setState returns its input', () => {
-    const store = createLabStore({ storageKey: 'identity-a', storage: createMemoryAdapter() });
+    const store = createLabStore();
     store.getState().addTrial({
       id: 'w1',
       instrumentName: 'gem',
@@ -94,7 +99,7 @@ describe('an unchanged write costs no new record', () => {
   });
 
   it('still replaces the record when the state actually changes', () => {
-    const store = createLabStore({ storageKey: 'identity-b', storage: createMemoryAdapter() });
+    const store = createLabStore();
     store.getState().addTrial({
       id: 'w1',
       instrumentName: 'gem',
@@ -110,7 +115,7 @@ describe('an unchanged write costs no new record', () => {
   });
 
   it('returns the same trial object when the view is written unchanged', () => {
-    const store = createLabStore({ storageKey: 'identity-c', storage: createMemoryAdapter() });
+    const store = createLabStore();
     store.getState().addTrial({
       id: 'w1',
       instrumentName: 'gem',

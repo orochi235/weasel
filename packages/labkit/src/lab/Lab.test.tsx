@@ -1,10 +1,9 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { createMemoryAdapter } from '../state/adapters';
-import { labDocumentKey } from '../state/document';
-import { Lab } from './Lab';
+import { Lab, type LabProps } from './Lab';
 import { LabContext, type LabContextValue } from './LabContext';
 
 const stub: Instrument = {
@@ -33,10 +32,10 @@ function CaptureLab({ children }: { children?: ReactNode }) {
   );
 }
 
-function mountLab(props: Partial<Parameters<typeof Lab>[0]> = {}) {
+function mountLab(props: Partial<Record<keyof LabProps, unknown>> = {}) {
   labRef = null;
   return render(
-    <Lab instruments={[stub, stubB]} defaultInstrument="Stub" {...props}>
+    <Lab {...({ instruments: [stub, stubB], defaultInstrument: 'Stub', ...props } as LabProps)}>
       <CaptureLab />
     </Lab>,
   );
@@ -142,9 +141,8 @@ describe('<Lab>', () => {
   // the only thing positioned to collect them off the instruments. They went
   // uncollected for months, and an instrument holding anything JSON drops
   // lost it with no error.
-  it('gives the store the serializers its instruments declare', () => {
-    vi.useFakeTimers();
-    const storage = createMemoryAdapter();
+  it('gives the store the serializers its instruments declare', async () => {
+    const backing = new Map<string, unknown>();
     const mapped: Instrument = {
       ...stub,
       name: 'Mapped',
@@ -152,15 +150,21 @@ describe('<Lab>', () => {
       serialize: (state) => ({ seen: [...(state as { seen: Set<string> }).seen] }),
       deserialize: (data) => ({ seen: new Set((data as { seen: string[] }).seen) }),
     };
+    const storage = () => createMemoryAdapter(backing);
 
-    render(
-      <Lab instruments={[mapped]} defaultInstrument="Mapped" storage={storage} storageKey="s" />,
+    const first = render(
+      <Lab instruments={[mapped]} defaultInstrument="Mapped" storage={storage()} storageKey="s" />,
     );
-    act(() => vi.advanceTimersByTime(500));
-    expect(storage.read(labDocumentKey('s')) ?? '').toContain('"seen":["a"]');
-    vi.useRealTimers();
+    await waitFor(() => expect(JSON.stringify([...backing.values()])).toContain('"seen":["a"]'));
+    first.unmount();
 
-    mountLab({ instruments: [mapped], defaultInstrument: 'Mapped', storage, storageKey: 's' });
+    mountLab({
+      instruments: [mapped],
+      defaultInstrument: 'Mapped',
+      storage: storage(),
+      storageKey: 's',
+    });
+    await waitFor(() => expect(labRef?.trials[0]).toBeDefined());
     expect((labRef?.trials[0]?.state as { seen: Set<string> }).seen).toEqual(new Set(['a']));
   });
 });

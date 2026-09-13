@@ -150,9 +150,10 @@ export interface AnnotationTarget extends AnnotationTargetInfo {
 /** Where an instrument keeps its own marks. Declaring this means labkit never
  *  writes its trial slot — for an instrument whose marks belong in a format it
  *  already owns. Both halves are called outside React; `save` is already
- *  debounced by the time it arrives. */
+ *  debounced by the time it arrives. A trial shows an empty body until `load`
+ *  settles. */
 export interface AnnotationStorage {
-  load: () => SerializedAnnotations | null | undefined;
+  load: () => Promise<SerializedAnnotations | null | undefined>;
   save: (doc: SerializedAnnotations) => void;
 }
 

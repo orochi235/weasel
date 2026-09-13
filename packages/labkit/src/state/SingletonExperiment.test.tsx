@@ -1,7 +1,7 @@
-import { act, render, renderHook } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 import { createMemoryAdapter } from './adapters';
-import { labDocumentKey } from './document';
+import { labPrefix } from './labRecords';
 import { SingletonExperimentProvider } from './SingletonExperiment';
 import { useTrialState } from './useTrialState';
 
@@ -13,31 +13,41 @@ interface State {
   zoom: number;
 }
 
-describe('SingletonExperimentProvider', () => {
-  afterEach(() => {
-    vi.useRealTimers();
-  });
+function Provider({
+  backing,
+  children,
+}: {
+  backing: Map<string, unknown>;
+  children: React.ReactNode;
+}) {
+  return (
+    <SingletonExperimentProvider<State, Config>
+      id="test"
+      initialConfig={{ width: 100, bg: '#000' }}
+      initialState={{ zoom: 1 }}
+      storage={createMemoryAdapter(backing)}
+      storageKey="test"
+      fallback={<p>loading</p>}
+    >
+      {children}
+    </SingletonExperimentProvider>
+  );
+}
 
-  it('exposes config and state via useTrialState', () => {
+describe('SingletonExperimentProvider', () => {
+  it('shows its fallback, then exposes config and state via useTrialState', async () => {
+    const backing = new Map<string, unknown>();
     const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <SingletonExperimentProvider<State, Config>
-        id="test"
-        initialConfig={{ width: 100, bg: '#000' }}
-        initialState={{ zoom: 1 }}
-        storage={createMemoryAdapter()}
-        storageKey="test"
-      >
-        {children}
-      </SingletonExperimentProvider>
+      <Provider backing={backing}>{children}</Provider>
     );
     const { result } = renderHook(() => useTrialState<State, Config>(), { wrapper });
-    expect(result.current.config).toEqual({ width: 100, bg: '#000' });
+    expect(screen.getByText('loading')).toBeInTheDocument();
+    await waitFor(() => expect(result.current?.config).toEqual({ width: 100, bg: '#000' }));
     expect(result.current.state).toEqual({ zoom: 1 });
   });
 
-  it('persists config changes to storage', () => {
-    vi.useFakeTimers();
-    const storage = createMemoryAdapter();
+  it('persists config changes to storage', async () => {
+    const backing = new Map<string, unknown>();
     const Probe = () => {
       const h = useTrialState<State, Config>();
       return (
@@ -46,32 +56,24 @@ describe('SingletonExperimentProvider', () => {
         </button>
       );
     };
-    const { getByText } = render(
-      <SingletonExperimentProvider<State, Config>
-        id="test"
-        initialConfig={{ width: 100, bg: '#000' }}
-        initialState={{ zoom: 1 }}
-        storage={storage}
-        storageKey="test"
-      >
+    render(
+      <Provider backing={backing}>
         <Probe />
-      </SingletonExperimentProvider>,
+      </Provider>,
     );
-    act(() => {
-      getByText('go').click();
-    });
-    act(() => {
-      vi.advanceTimersByTime(400);
-    });
-    const raw = storage.read(labDocumentKey('test'));
-    expect(raw).toBeTruthy();
-    expect(raw).toContain('"width":200');
+    const go = await screen.findByText('go');
+    act(() => go.click());
+    await waitFor(() =>
+      expect(backing.get(`${labPrefix('test')}trial:test`)).toMatchObject({
+        config: { width: 200 },
+      }),
+    );
   });
 
-  it('rehydrates from storage on mount', () => {
-    const storage = createMemoryAdapter();
-    // A pre-document lab, which createLabStore folds forward on hydration.
-    storage.write(
+  it('rehydrates from storage on mount', async () => {
+    const backing = new Map<string, unknown>();
+    // A pre-document lab, which opening folds forward.
+    backing.set(
       'lk:test:workspaces',
       JSON.stringify([
         {
@@ -84,18 +86,10 @@ describe('SingletonExperimentProvider', () => {
       ]),
     );
     const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <SingletonExperimentProvider<State, Config>
-        id="test"
-        initialConfig={{ width: 100, bg: '#000' }}
-        initialState={{ zoom: 1 }}
-        storage={storage}
-        storageKey="test"
-      >
-        {children}
-      </SingletonExperimentProvider>
+      <Provider backing={backing}>{children}</Provider>
     );
     const { result } = renderHook(() => useTrialState<State, Config>(), { wrapper });
-    expect(result.current.config).toEqual({ width: 999, bg: '#fff' });
+    await waitFor(() => expect(result.current?.config).toEqual({ width: 999, bg: '#fff' }));
     expect(result.current.state).toEqual({ zoom: 2 });
   });
 });

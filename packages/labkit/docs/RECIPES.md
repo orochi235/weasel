@@ -69,7 +69,8 @@ presentational, with no handlers and no state.
 `<FloatingPanel>` floats over its offset parent, snaps to the corners it is
 allowed, and can remember where it was left. Drag it from anywhere that is not a
 control; `input`, `button`, `a`, `select`, `textarea` and any `[data-no-drag]`
-element pass their pointer through instead.
+element pass their pointer through instead. It remembers its place only inside a
+`<Lab>` or a `<Persistence>`, as every `usePersistedState` value does.
 
 **Parent it to the canvas stack's overlay.** It positions against its offset
 parent, so nested inside another absolutely-positioned overlay child it would
@@ -79,7 +80,7 @@ measure that child's box rather than the canvas.
 import { FloatingPanel, Legend } from "@weasel-js/labkit";
 
 <div className="lk-canvas-stack__overlay">
-  <FloatingPanel anchor="bottom-right" storageKey="mylab.legend">
+  <FloatingPanel anchor="bottom-right" persist="legend">
     <Legend
       entries={[
         { key: "contour", label: "contour", color: "#7d7f86" },
@@ -91,12 +92,12 @@ import { FloatingPanel, Legend } from "@weasel-js/labkit";
 </div>;
 ```
 
-| `FloatingPanel` prop | Default         |                                              |
-| -------------------- | --------------- | -------------------------------------------- |
-| `anchor`             | `'bottom-left'` | corner it rests in until dragged             |
-| `snapCorners`        | all four        | corners allowed to capture it                |
-| `inset`              | `12`            | pixels in from a corner when snapped         |
-| `storageKey`         | —               | `localStorage` key; omit to forget on reload |
+| `FloatingPanel` prop | Default         |                                                  |
+| -------------------- | --------------- | ------------------------------------------------ |
+| `anchor`             | `'bottom-left'` | corner it rests in until dragged                 |
+| `snapCorners`        | all four        | corners allowed to capture it                    |
+| `inset`              | `12`            | pixels in from a corner when snapped             |
+| `persist`            | —               | name to remember its place under; omit to forget |
 
 | `Legend` entry field |          |                                     |
 | -------------------- | -------- | ----------------------------------- |
