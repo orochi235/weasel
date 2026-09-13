@@ -1,7 +1,7 @@
-// sanitize, storyId and storyNameFromExport are ports of storybook/csf (10.4.0)'s
+// sanitize, storyId and storyNameFromExport are ports of storybook/internal/csf (10.4.0)'s
 // sanitize, toId and storyNameFromExport; they must agree or links diverge.
 
-/** Lower-case; runs of punctuation and spaces become one dash. Other characters, non-ASCII letters included, survive. */
+/** Lower-case; runs of the listed separators become one dash. Everything else, non-ASCII letters included, survives. */
 export function sanitize(part: string): string {
   return part
     .toLowerCase()
@@ -36,7 +36,10 @@ export function storyNameFromExport(exportName: string): string {
     .trim();
 }
 
-/** A title for a file whose meta names none: its path under `root`, minus `.stories.tsx`. */
+/** A title for a file whose meta names none: its path under `root`, minus `.stories.tsx`.
+ *  Not Storybook's auto-title, so such a story's id differs between the two tools. */
 export function titleFromFile(file: string, root: string): string {
-  return file.replace(`${root.replace(/\/$/, '')}/`, '').replace(/\.stories\.[jt]sx?$/, '');
+  const prefix = `${root.replace(/\/$/, '')}/`;
+  const relative = file.startsWith(prefix) ? file.slice(prefix.length) : file;
+  return relative.replace(/\.stories\.[jt]sx?$/, '');
 }
