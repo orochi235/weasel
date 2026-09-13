@@ -132,7 +132,10 @@ export type DragFeedback = { ok: boolean; reason?: string };
  * is what makes the trial provide the corresponding chrome.
  */
 export interface Instrument<TS = unknown, TC = unknown, TItem = unknown> {
+  /** The id a trial record names its instrument by. */
   name: string;
+  /** What a trial of this instrument and the add-trial menu read. Default: `name`. */
+  title?: string;
   defaultConfig: () => TC;
   initialState: (config: TC) => TS;
   /** The instrument's config, declared once: values, types and controls.

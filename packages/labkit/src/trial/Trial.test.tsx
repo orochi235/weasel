@@ -202,6 +202,33 @@ describe('<TrialChrome>', () => {
     expect(screen.getByRole('region', { name: 'Trial Sprocket 7' })).toBeInTheDocument();
   });
 
+  it("reads the instrument's title over its name, and returns to it on setTitle(null)", () => {
+    const titled: Instrument = { ...stubInstrument, title: 'Stub / Default' };
+    render(
+      <ChromeHarness
+        instrument={titled}
+        chrome={[
+          {
+            id: 'rename',
+            region: 'titlebar',
+            item: { icon: Glyph, label: 'Rename', onActivate: (ctx) => ctx.setTitle('Sprocket 7') },
+          },
+          {
+            id: 'untitle',
+            region: 'titlebar',
+            item: { icon: Glyph, label: 'Untitle', onActivate: (ctx) => ctx.setTitle(null) },
+          },
+        ]}
+      />,
+    );
+    expect(screen.getByRole('region', { name: 'Trial Stub / Default' })).toBeInTheDocument();
+    expect(screen.getByText('Stub / Default')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Rename' }));
+    expect(screen.getByRole('region', { name: 'Trial Sprocket 7' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Untitle' }));
+    expect(screen.getByRole('region', { name: 'Trial Stub / Default' })).toBeInTheDocument();
+  });
+
   it('Cmd+S triggers saveSnapshot', () => {
     const saveSnapshot = vi.fn();
     render(<ChromeHarness labOverrides={{ saveSnapshot }} />);

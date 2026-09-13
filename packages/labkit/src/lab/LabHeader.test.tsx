@@ -33,6 +33,17 @@ describe('<LabHeader>', () => {
     expect(screen.getAllByLabelText(/^Trial Other$/)).toHaveLength(1);
   });
 
+  it('lists each instrument by its title where it has one', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    const titled: Instrument = { ...Other, title: 'Other / Titled' };
+    render(<Lab instruments={[Stub, titled]} defaultInstrument="Stub" />);
+    await user.click(screen.getByRole('button', { name: 'Add trial' }));
+    expect(screen.getByRole('menuitem', { name: 'Stub' })).toBeInTheDocument();
+    await user.click(screen.getByRole('menuitem', { name: 'Other / Titled' }));
+    expect(screen.getAllByLabelText(/^Trial Other \/ Titled$/)).toHaveLength(1);
+  });
+
   it('adds a trial when the button is used', async () => {
     const { default: userEvent } = await import('@testing-library/user-event');
     const user = userEvent.setup();

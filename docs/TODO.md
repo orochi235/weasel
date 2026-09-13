@@ -1219,14 +1219,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   (`.storybook/preview.tsx:275`). A `LabkitRoot` mount component was designed
   and rejected, so the answer is a different shape.
 
-- **(P3) The instrument spec has no `title`.** `TrialChromeContext` gained
-  `title` / `setTitle` — `setTitle(null)` restores the instrument name, and the
-  trial's `aria-label` follows — and `TitleBarRegion` takes
-  `placement: 'lead' | 'actions'`, so a contribution without `end` leads the
-  bar. A `title` on the instrument spec was not added; it wants
-  `packages/labkit/src/instrument/types.ts`. A title set through `setTitle`
-  already survives a reload, on `TrialRecord.title`.
-
 - **(P3) ToggleBar's selected segment is the Aqua glass ramp, not a colour of
   its own.** Asked for: move the default treatment off "the aqua" and save it
   for a theme that wants it. There is no ToggleBar colour to move — every

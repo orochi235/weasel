@@ -136,10 +136,10 @@ export interface RegionContribution<TCtx> extends ContributionBase {
 export interface TrialChromeContext extends ToolSlotContext, SidebarSlotContext {
   trialId: string;
   instrumentName: string;
-  /** What the title bar reads, which is the instrument's name until something
-   *  calls `setTitle`. */
+  /** What the title bar reads, which is the instrument's title (or, lacking
+   *  one, its name) until something calls `setTitle`. */
   title: string;
-  /** Retitle this trial; `null` restores the instrument name. Persisted with
+  /** Retitle this trial; `null` restores the instrument's title. Persisted with
    *  the trial, so a title survives a reload. */
   setTitle: (title: string | null) => void;
   isLastTrial: boolean;

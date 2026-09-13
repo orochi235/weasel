@@ -40,7 +40,7 @@ export function LabHeader() {
         <MenuButton
           aria-label="Add trial"
           label="Add trial…"
-          items={lab.instruments.map((i) => ({ value: i.name, label: i.name }))}
+          items={lab.instruments.map((i) => ({ value: i.name, label: i.title ?? i.name }))}
           onAction={(name) => lab.addTrial(name)}
         />
       )}

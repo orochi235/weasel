@@ -111,7 +111,7 @@ export function TrialChrome({
 
   const configSchema = useConfigSchema(instrument);
 
-  const title = record.title ?? record.instrumentName;
+  const title = record.title ?? instrument.title ?? instrument.name;
   const collapsedSections = record.collapsedSections ?? NO_SECTIONS;
 
   const ctx = useMemo<TrialChromeContext>(() => {
