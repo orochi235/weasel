@@ -48,6 +48,10 @@ describe('storyInstrument', () => {
     expect(instrument.stage).toBeUndefined();
   });
 
+  it('titles itself by the story’s title and name', () => {
+    expect(storyInstrument(base).title).toBe('Test/Counter / Counter');
+  });
+
   it('takes its defaults from the ready description', () => {
     expect(storyInstrument({ ...base, ready }).config?.defaults()).toEqual({ label: 'clicks' });
   });

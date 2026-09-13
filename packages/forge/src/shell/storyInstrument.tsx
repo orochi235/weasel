@@ -24,6 +24,7 @@ export function storyInstrument(options: StoryInstrumentOptions): Instrument<unk
   const descriptionKey = ready ? readyKey(ready) : null;
   return {
     name: entry.id,
+    title: `${entry.title} / ${entry.name}`,
     config,
     defaultConfig: () => config.defaults(),
     initialState: () => null,

@@ -1,8 +1,12 @@
-import { Lab, type StorageAdapter } from '@weasel-js/labkit';
+import { Lab, type LabContribution, type StorageAdapter, useLabContext } from '@weasel-js/labkit';
+import { useEffect, useMemo, useRef } from 'react';
 import type { ForgeConfig } from '../config';
 import type { Globals } from '../protocol/messages';
 import type { IndexEntry } from '../story/types';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
+import { TRIAL_MARKER } from './TrialMarker';
+import { StoryTree } from './tree/StoryTree';
+import { readRoute, useRoute } from './useRoute';
 import { useStoryRegistry } from './useStoryRegistry';
 
 export interface WorkshopProps {
@@ -19,12 +23,33 @@ const NO_GLOBALS: Globals = {};
 
 /** The story `#/<id>` names, when it is indexed; otherwise the first story. Read when the lab mounts. */
 function initialStory(index: readonly IndexEntry[], fallback: string): string {
-  const hashed = location.hash.startsWith('#/') ? decodeURIComponent(location.hash.slice(2)) : '';
-  return index.some((entry) => entry.id === hashed) ? hashed : fallback;
+  const route = readRoute();
+  return route !== null && index.some((entry) => entry.id === route) ? route : fallback;
+}
+
+/** Opens a trial of the story the route names when none is open, once per route, so closing that trial sticks. */
+function RouteOpener({ index }: { index: readonly IndexEntry[] }) {
+  const lab = useLabContext();
+  const [route] = useRoute();
+  const handled = useRef<string | null>(null);
+  useEffect(() => {
+    if (route === null || handled.current === route || !index.some((entry) => entry.id === route)) return;
+    handled.current = route;
+    if (!lab.trials.some((trial) => trial.instrumentName === route)) lab.addTrial(route);
+  }, [route, index, lab]);
+  return null;
 }
 
 export function Workshop({ index, frameUrl, config, stories = [], storageKey, storage }: WorkshopProps) {
   const registry = useStoryRegistry(index, { frameUrl });
+  const shell = config?.shell;
+  const labChrome = useMemo<readonly LabContribution[]>(
+    () => [
+      { id: 'fg-stories', region: 'sidebar', render: (ctx) => <StoryTree ctx={ctx} index={index} /> },
+      ...(shell?.labChrome ?? []),
+    ],
+    [index, shell?.labChrome],
+  );
   const first = index[0];
   if (!first) {
     return (
@@ -42,7 +67,6 @@ export function Workshop({ index, frameUrl, config, stories = [], storageKey, st
       </div>
     );
   }
-  const shell = config?.shell;
   return (
     <StoryGlobalsContext.Provider value={NO_GLOBALS}>
       <Lab
@@ -51,9 +75,13 @@ export function Workshop({ index, frameUrl, config, stories = [], storageKey, st
         defaultInstrument={initialStory(index, first.id)}
         storageKey={storageKey ?? 'weaselforge'}
         {...(storage ? { storage } : {})}
-        {...(shell?.labChrome ? { labChrome: shell.labChrome } : {})}
+        labChrome={labChrome}
+        chrome={TRIAL_MARKER}
+        addTrial={false}
         {...(shell?.controls ? { controls: shell.controls } : {})}
-      />
+      >
+        <RouteOpener index={index} />
+      </Lab>
     </StoryGlobalsContext.Provider>
   );
 }
