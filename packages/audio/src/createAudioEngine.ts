@@ -4,6 +4,7 @@ import { writeParam } from './param';
 import { createScheduler } from './scheduler';
 import { createSoundCache, type SoundHandle } from './soundCache';
 import { spatialize, type SpatialOptions, type Vec2 } from './spatialize';
+import { createTickTimer } from './tickTimer';
 import type { AudioEngineOptions, PlayOptions, VoiceHandle } from './types';
 import { createVoicePool, type VoicePool } from './voicePool';
 
@@ -97,13 +98,18 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
   };
 
   const now = (): number => ctx.currentTime * 1000;
+  const tickTimer = opts.setTimer === undefined && opts.clearTimer === undefined
+    ? createTickTimer()
+    : null;
   const scheduler = createScheduler({
     now,
     // One-shot, not repeating: the scheduler re-arms at the end of every pass,
     // so an interval would leave the previous one running and double the live
     // timer count per tick.
-    setTimer: opts.setTimer ?? ((cb, ms) => setTimeout(cb, ms)),
-    clearTimer: opts.clearTimer ?? ((h) => clearTimeout(h as ReturnType<typeof setTimeout>)),
+    setTimer: tickTimer?.setTimer ?? opts.setTimer ?? ((cb, ms) => setTimeout(cb, ms)),
+    clearTimer: tickTimer?.clearTimer
+      ?? opts.clearTimer
+      ?? ((h) => clearTimeout(h as ReturnType<typeof setTimeout>)),
     lookahead: opts.lookahead,
     interval: opts.tickInterval,
   });
@@ -399,6 +405,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       engine.stopAll();
       scheduler.stop();
       scheduler.clear();
+      tickTimer?.dispose();
       for (const tap of [...taps]) tap.dispose();
       taps.clear();
       disarmGestures();

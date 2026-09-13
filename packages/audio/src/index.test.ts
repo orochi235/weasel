@@ -10,6 +10,7 @@ describe('@weasel-js/audio public surface', () => {
     expect(typeof audio.spatialize).toBe('function');
     expect(typeof audio.createVoicePool).toBe('function');
     expect(typeof audio.createScheduler).toBe('function');
+    expect(typeof audio.createTickTimer).toBe('function');
   });
 
   it('names the option and record types a pool consumer has to write down', () => {
