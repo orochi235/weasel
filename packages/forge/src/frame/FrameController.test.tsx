@@ -6,8 +6,8 @@ import { type FromFrame, stableStringify, type ToFrame } from '../protocol/messa
 import { describeSchema } from '../protocol/schema';
 import { meta, story } from '../story/define';
 import { loadNativeModule } from '../story/native';
-import type { LoadedStory } from '../story/types';
-import { startFrame } from './FrameController';
+import type { Decorator, LoadedStory } from '../story/types';
+import { type FrameSetup, startFrame } from './FrameController';
 
 async function flush() {
   await new Promise((r) => setTimeout(r, 0));
@@ -42,7 +42,7 @@ afterEach(() => {
   for (const fn of cleanups.splice(0)) act(() => fn());
 });
 
-function start(loaded: LoadedStory) {
+function start(loaded: LoadedStory, setup?: FrameSetup) {
   const { port1, port2 } = new MessageChannel();
   const shell = openChannel<FromFrame, ToFrame>(port1);
   const frame = openChannel<ToFrame, FromFrame>(port2);
@@ -50,7 +50,7 @@ function start(loaded: LoadedStory) {
   shell.on((msg) => received.push(msg));
   const container = document.createElement('div');
   document.body.append(container);
-  const stop = startFrame({ story: loaded, channel: frame, container });
+  const stop = startFrame({ story: loaded, channel: frame, container, ...(setup ? { setup } : {}) });
   cleanups.push(() => {
     stop();
     container.remove();
@@ -121,6 +121,59 @@ describe('startFrame', () => {
     await flush();
     expect(of('setConfig')).toEqual([{ type: 'setConfig', path: 'label', value: 'renamed' }]);
     expect(screen.getByTestId('out').textContent).toBe('clicks:0');
+  });
+
+  it('replaces state on a state message and re-renders', async () => {
+    const { shell } = start(counter);
+    shell.send(init);
+    await flush();
+    shell.send({ type: 'state', state: { n: 5 } });
+    await flush();
+    expect(screen.getByTestId('out').textContent).toBe('clicks:5');
+  });
+
+  it('applies globals to the document and re-renders on init and on a globals message', async () => {
+    const [themed] = loadNativeModule(
+      {
+        default: meta({ title: 'Test/Themed' }),
+        Themed: story({ render: ({ globals }) => <p data-testid="mode">{String(globals.mode)}</p> }),
+      },
+      '/g.stories.tsx',
+      '/',
+    );
+    const applyGlobals = vi.fn();
+    const { shell } = start(themed!, { applyGlobals });
+    shell.send({ type: 'init', config: {}, state: null, globals: { mode: 'light' } });
+    await flush();
+    expect(applyGlobals).toHaveBeenLastCalledWith({ mode: 'light' }, document.documentElement);
+    expect(screen.getByTestId('mode').textContent).toBe('light');
+    shell.send({ type: 'globals', globals: { mode: 'dark' } });
+    await flush();
+    expect(applyGlobals).toHaveBeenCalledTimes(2);
+    expect(applyGlobals).toHaveBeenLastCalledWith({ mode: 'dark' }, document.documentElement);
+    expect(screen.getByTestId('mode').textContent).toBe('dark');
+  });
+
+  it('nests decorators setup outermost, then meta, then story', async () => {
+    const wrap =
+      (d: string): Decorator =>
+      (inner) => <div data-d={d}>{inner()}</div>;
+    const [decorated] = loadNativeModule(
+      {
+        default: meta({ title: 'Test/Decorated', decorators: [wrap('meta')] }),
+        Decorated: story({ decorators: [wrap('story')], render: () => <p data-testid="content">content</p> }),
+      },
+      '/d.stories.tsx',
+      '/',
+    );
+    const { shell } = start(decorated!, { decorators: [wrap('setup')] });
+    shell.send({ type: 'init', config: {}, state: null, globals: {} });
+    await flush();
+    const chain: string[] = [];
+    for (let el = screen.getByTestId('content').closest('[data-d]'); el; el = el.parentElement!.closest('[data-d]')) {
+      chain.push(el.getAttribute('data-d')!);
+    }
+    expect(chain).toEqual(['story', 'meta', 'setup']);
   });
 
   it('reports a render throw as a fault and recovers on new input', async () => {
