@@ -309,13 +309,30 @@ function releaseDate(
 }
 
 export function compareVersions(a: string, b: string): number {
-  const pa = a.split(/[.-]/);
-  const pb = b.split(/[.-]/);
+  const [coreA, preA] = splitPrerelease(a);
+  const [coreB, preB] = splitPrerelease(b);
+  const core = compareIdentifiers(coreA, coreB);
+  if (core) return core;
+  if (preA === undefined || preB === undefined) {
+    return preA === preB ? 0 : preA === undefined ? 1 : -1;
+  }
+  return compareIdentifiers(preA, preB);
+}
+
+function splitPrerelease(version: string): [string[], string[] | undefined] {
+  const dash = version.indexOf('-');
+  if (dash < 0) return [version.split('.'), undefined];
+  return [version.slice(0, dash).split('.'), version.slice(dash + 1).split('.')];
+}
+
+function compareIdentifiers(pa: string[], pb: string[]): number {
   for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    if (pa[i] === undefined) return -1;
+    if (pb[i] === undefined) return 1;
     const na = Number(pa[i]);
     const nb = Number(pb[i]);
     if (Number.isNaN(na) || Number.isNaN(nb)) {
-      const cmp = (pa[i] ?? '').localeCompare(pb[i] ?? '');
+      const cmp = pa[i].localeCompare(pb[i]);
       if (cmp) return cmp;
       continue;
     }
