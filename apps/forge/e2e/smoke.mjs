@@ -24,7 +24,12 @@ const done = (what) => console.log(`${++step}/${total} ${what}`);
 const trialSaved = (label, n) =>
   page.evaluate(
     ({ label, n }) =>
-      new Promise((resolve) => {
+      new Promise(async (resolve) => {
+        // Opening a database that does not exist yet creates it empty, and labkit's own open would then find no store.
+        if (!(await indexedDB.databases()).some((d) => d.name === 'labkit')) {
+          resolve(false);
+          return;
+        }
         const open = indexedDB.open('labkit');
         open.onerror = () => resolve(false);
         open.onsuccess = () => {
