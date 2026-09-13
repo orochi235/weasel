@@ -60,7 +60,7 @@ export default defineConfig({
             'apps/**/*.smoke.test.{ts,tsx}',
           ],
           // labkit's smoke test runs in the dedicated `labkit` project (own setup).
-          exclude: ['**/node_modules/**', '**/dist/**', '.claude/**', 'packages/labkit/**'],
+          exclude: ['**/node_modules/**', '**/dist/**', '.claude/**', 'packages/labkit/**', 'packages/forge/**'],
         },
       },
       {
@@ -75,7 +75,7 @@ export default defineConfig({
           // core runs in the `core` project above — it lived at the repo root
           // until the move into packages/, and this glob would otherwise
           // swallow its entire suite and run it twice.
-          exclude: ['packages/labkit/**', 'packages/core/**', '**/node_modules/**'],
+          exclude: ['packages/labkit/**', 'packages/forge/**', 'packages/core/**', '**/node_modules/**'],
         },
       },
       {
@@ -90,6 +90,17 @@ export default defineConfig({
           setupFiles: ['./packages/labkit/src/test-setup.ts'],
           css: true,
           include: ['packages/labkit/{src,scripts,examples}/**/*.{test,spec}.{ts,tsx}'],
+          exclude: ['**/node_modules/**'],
+        },
+      },
+      {
+        ...shared,
+        test: {
+          name: 'forge',
+          environment: 'jsdom',
+          globals: true,
+          setupFiles: ['./vitest.setup.ts'],
+          include: ['packages/forge/src/**/*.test.{ts,tsx}'],
           exclude: ['**/node_modules/**'],
         },
       },

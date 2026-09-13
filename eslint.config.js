@@ -266,4 +266,9 @@ export default [
     files: ['**/scripts/**/*.{ts,tsx,js,mjs}'],
     rules: { 'no-console': 'off' },
   },
+  {
+    /** forge's `weaselforge` CLI, where stdout is likewise the interface. */
+    files: ['packages/forge/src/cli/**'],
+    rules: { 'no-console': 'off' },
+  },
 ];

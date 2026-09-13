@@ -72,6 +72,8 @@
       "@weasel-js/labkit/weasel-ui": ["./packages/labkit/src/passthrough/weasel-ui.ts"],
       "@weasel-js/labkit/weasel-canvas": ["./packages/labkit/src/passthrough/weasel-canvas.ts"],
       "@weasel-js/labkit/*": ["./packages/labkit/src/*"],
+      "@weasel-js/forge": ["./packages/forge/src/index.ts"],
+      "@weasel-js/forge/*": ["./packages/forge/src/*"],
       "core/*": ["./packages/core/src/core/*"],
       "features/*": ["./packages/core/src/features/*"],
       "affordances/*": ["./packages/core/src/affordances/*"],
@@ -90,6 +92,6 @@
   // core silently breaks them otherwise. The Playwright suites under
   // tests/e2e, tests/perf and tests/visual drive the app over a wire and
   // don't.
-  "include": ["apps", "tests/bench", "packages/core/src", "packages/weasel-js/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/paint/src", "packages/text/src", "packages/history/src", "packages/modes/src", "packages/gestures/src", "packages/d3/src", "packages/diagram/src", "packages/labkit/src", "packages/labkit/examples/schema-lab", "packages/labkit/examples/3d-lab", "packages/audio/src", "packages/kernel3d/src"],
+  "include": ["apps", "tests/bench", "packages/core/src", "packages/weasel-js/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/paint/src", "packages/text/src", "packages/history/src", "packages/modes/src", "packages/gestures/src", "packages/d3/src", "packages/diagram/src", "packages/labkit/src", "packages/labkit/examples/schema-lab", "packages/labkit/examples/3d-lab", "packages/audio/src", "packages/kernel3d/src", "packages/forge/src"],
   "exclude": ["node_modules", "dist"]
 }

@@ -65,7 +65,8 @@ jobs:
       # and says nothing about it. Runs before the suite so an orphan surfaces
       # as its own failure rather than as a suspiciously small pass count.
       - run: npm run check:test-projects
-      - run: npx vitest run --project=core --project=weasel-ui --project=draw --project=labkit
+      - run: npm run check:forge-boundary
+      - run: npx vitest run --project=core --project=weasel-ui --project=draw --project=labkit --project=forge
       - run: npm run build
       # labkit bundles its weasel siblings into its dist; build it after them so
       # their built output is what it inlines. `@weasel-js/core` is the one it

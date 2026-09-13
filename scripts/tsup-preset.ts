@@ -19,7 +19,7 @@ export interface PackagePresetOptions {
   /** tsup entry map, relative to the package root. */
   readonly entry: Options['entry'];
   /** Extra externals beyond deps/peerDeps (e.g. 'react' for React packages). */
-  readonly external?: readonly string[];
+  readonly external?: readonly (string | RegExp)[];
 }
 
 export function packagePreset({ entry, external = [] }: PackagePresetOptions): Options {
