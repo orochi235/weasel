@@ -1,4 +1,3 @@
-import './frame.css';
 import { loadCsfModule } from '../csf/loadCsfModule';
 import { openChannel } from '../protocol/channel';
 import { type FromFrame, PORT_HANDOFF, type ToFrame } from '../protocol/messages';

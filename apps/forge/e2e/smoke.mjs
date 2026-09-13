@@ -16,32 +16,72 @@ const page = context.pages()[0] ?? (await context.newPage());
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 
-const total = persisted ? 2 : 4;
+const total = persisted ? 2 : 5;
 let step = 0;
 const done = (what) => console.log(`${++step}/${total} ${what}`);
 
-await page.goto(url);
-const frame = page.frameLocator('iframe.fg-frame-view');
-if (persisted) {
-  await frame.getByRole('button', { name: 'taps: 1' }).waitFor({ timeout: 15000 });
-  done('config and state survived a relaunch');
-} else {
-  await frame.getByRole('button', { name: 'clicks: 0' }).waitFor({ timeout: 15000 });
-  done('frame rendered the story');
-  await frame.getByRole('button').click();
-  await frame.getByRole('button', { name: 'clicks: 1' }).waitFor();
-  done('story state round-tripped');
-  await page.getByRole('textbox').first().fill('taps');
-  await frame.getByRole('button', { name: 'taps: 1' }).waitFor();
-  done('control reached the frame');
-  // labkit writes records to IndexedDB on a 300 ms debounce; closing sooner loses them.
-  await page.waitForTimeout(1000);
+/** Whether labkit's default IndexedDB store holds a trial record with this config label and story state. */
+const trialSaved = (label, n) =>
+  page.evaluate(
+    ({ label, n }) =>
+      new Promise((resolve) => {
+        const open = indexedDB.open('labkit');
+        open.onerror = () => resolve(false);
+        open.onsuccess = () => {
+          const db = open.result;
+          if (!db.objectStoreNames.contains('records')) {
+            db.close();
+            resolve(false);
+            return;
+          }
+          const store = db.transaction('records').objectStore('records');
+          const keys = store.getAllKeys();
+          const values = store.getAll();
+          values.onsuccess = () => {
+            db.close();
+            resolve(
+              keys.result.some(
+                (key, i) =>
+                  /^lk:[^:]+:trial:/.test(String(key)) &&
+                  values.result[i]?.config?.label === label &&
+                  values.result[i]?.state?.n === n,
+              ),
+            );
+          };
+          values.onerror = () => resolve(false);
+        };
+      }),
+    { label, n },
+  );
+
+try {
+  await page.goto(url);
+  const frame = page.frameLocator('iframe.fg-frame-view');
+  if (persisted) {
+    await frame.getByRole('button', { name: 'taps: 1' }).waitFor({ timeout: 15000 });
+    done('config and state survived a relaunch');
+  } else {
+    await frame.getByRole('button', { name: 'clicks: 0' }).waitFor({ timeout: 15000 });
+    done('frame rendered the story');
+    await frame.getByRole('button').click();
+    await frame.getByRole('button', { name: 'clicks: 1' }).waitFor();
+    done('story state round-tripped');
+    await page.getByRole('textbox').first().fill('taps');
+    await frame.getByRole('button', { name: 'taps: 1' }).waitFor();
+    done('control reached the frame');
+    // labkit writes records on a debounce; closing before the write lands loses them.
+    const deadline = Date.now() + 5000;
+    while (!(await trialSaved('taps', 1))) {
+      if (Date.now() > deadline) throw new Error('the trial record never reached IndexedDB with label "taps" and n = 1');
+      await page.waitForTimeout(100);
+    }
+    done('trial saved to IndexedDB');
+  }
+  await page.screenshot({ path: shot });
+  done(`screenshot written to ${shot}`);
+} finally {
+  await context.close();
+  await browser?.close();
+  if (errors.length) console.error(errors.join('\n'));
 }
-await page.screenshot({ path: shot });
-done(`screenshot written to ${shot}`);
-await context.close();
-await browser?.close();
-if (errors.length) {
-  console.error(errors.join('\n'));
-  process.exit(1);
-}
+if (errors.length) process.exit(1);
