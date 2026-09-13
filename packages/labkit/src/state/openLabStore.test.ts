@@ -195,6 +195,73 @@ describe('openLabStore — config defaults', () => {
   });
 });
 
+describe('openLabStore — config migrations', () => {
+  const stored = (config: unknown) => ({
+    trials: [trial('w1', { config })],
+    saves: [{ ...SNAPSHOT, config }],
+  });
+  const defaults = { T: () => ({ grid: { size: 20, color: '#fff' } }) };
+  const moveGridSize = (config: unknown) => {
+    const { gridSize, ...rest } = config as Record<string, unknown>;
+    if (gridSize === undefined) return config;
+    return { ...rest, grid: { ...(rest.grid as object | undefined), size: gridSize } };
+  };
+
+  it('moves a renamed value before the defaults fill the gaps', async () => {
+    const backing = new Map<string, unknown>();
+    storeLab(backing, stored({ gridSize: 40 }));
+    const { store } = await open(backing, {
+      configDefaults: defaults,
+      configMigrations: { T: moveGridSize },
+    });
+    expect(store.getState().trials[0]?.config).toEqual({ grid: { size: 40, color: '#fff' } });
+  });
+
+  it('moves the config on a saved snapshot the same way', async () => {
+    const backing = new Map<string, unknown>();
+    storeLab(backing, stored({ gridSize: 40 }));
+    const { store } = await open(backing, {
+      configDefaults: defaults,
+      configMigrations: { T: moveGridSize },
+    });
+    expect(store.getState().savedSnapshots[0]?.config).toEqual({
+      grid: { size: 40, color: '#fff' },
+    });
+  });
+
+  it('hands a deserializer the moved config', async () => {
+    const backing = new Map<string, unknown>();
+    storeLab(backing, stored({ gridSize: 40 }));
+    const seen: unknown[] = [];
+    await open(backing, {
+      configDefaults: defaults,
+      configMigrations: { T: moveGridSize },
+      serializers: {
+        T: {
+          deserialize: (state, config) => {
+            seen.push(config);
+            return state;
+          },
+        },
+      },
+    });
+    expect(seen).toEqual([{ grid: { size: 40, color: '#fff' } }]);
+  });
+
+  it('moves a trial another writer stores', async () => {
+    const backing = new Map<string, unknown>();
+    const options = { configDefaults: defaults, configMigrations: { T: moveGridSize } };
+    const mine = await open(backing, options);
+    const theirs = await open(backing, options);
+    theirs.store.getState().addTrial(trial('w2', { config: { gridSize: 7 } }));
+    await theirs.close();
+    await tick();
+    expect(mine.store.getState().trials.find((t) => t.id === 'w2')?.config).toEqual({
+      grid: { size: 7, color: '#fff' },
+    });
+  });
+});
+
 describe('openLabStore — what a change writes', () => {
   function counting(backing: Map<string, unknown>) {
     const storage = createMemoryAdapter(backing);

@@ -64,8 +64,8 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
   const initial = options.initial ?? emptyDocument(options.initialMode ?? 'auto');
 
   const store = createStore<LabStoreState & LabStoreActions>()((set, get) => ({
-    trials: hydrateTrials(initial.trials, serializers, options.configDefaults),
-    savedSnapshots: hydrateSnapshots(initial.saves, options.configDefaults),
+    trials: hydrateTrials(initial.trials, serializers, options),
+    savedSnapshots: hydrateSnapshots(initial.saves, options),
     mode: initial.mode,
     layout: initial.layout,
     undockedPanels: initial.undockedPanels,
@@ -252,35 +252,40 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
   return store;
 }
 
-function filledConfig(
-  configDefaults: Record<string, () => unknown>,
+/** How a stored config is brought up to date on the way in. */
+export type ConfigHydration = Pick<CreateLabStoreOptions, 'configDefaults' | 'configMigrations'>;
+
+function hydratedConfig(
+  hydration: ConfigHydration,
   instrumentName: string,
   config: unknown,
 ): unknown {
-  const defaults = configDefaults[instrumentName];
-  return defaults ? fillConfigDefaults(config, defaults()) : config;
+  const migrate = hydration.configMigrations?.[instrumentName];
+  const moved = migrate ? migrate(config) : config;
+  const defaults = hydration.configDefaults?.[instrumentName];
+  return defaults ? fillConfigDefaults(moved, defaults()) : moved;
 }
 
-/** Rebuild stored trials: fill each config's gaps from its instrument's
- *  defaults, then run the deserializer against the filled config. */
+/** Rebuild stored trials: migrate each config, fill its gaps from its
+ *  instrument's defaults, then run the deserializer against the result. */
 export function hydrateTrials(
   trials: SerializedTrial[],
   serializers: InstrumentSerializers,
-  configDefaults: Record<string, () => unknown> = {},
+  hydration: ConfigHydration = {},
 ): TrialRecord[] {
   return deserializeTrials(
-    trials.map((t) => ({ ...t, config: filledConfig(configDefaults, t.instrumentName, t.config) })),
+    trials.map((t) => ({ ...t, config: hydratedConfig(hydration, t.instrumentName, t.config) })),
     serializers,
   );
 }
 
-/** Fill each stored snapshot's config the way `hydrateTrials` fills a trial's. */
+/** Bring each stored snapshot's config up to date the way `hydrateTrials` does a trial's. */
 export function hydrateSnapshots(
   saves: SavedSnapshot[],
-  configDefaults: Record<string, () => unknown> = {},
+  hydration: ConfigHydration = {},
 ): SavedSnapshot[] {
   return saves.map((sn) => ({
     ...sn,
-    config: filledConfig(configDefaults, sn.instrumentName, sn.config),
+    config: hydratedConfig(hydration, sn.instrumentName, sn.config),
   }));
 }

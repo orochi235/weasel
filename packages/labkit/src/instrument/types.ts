@@ -146,6 +146,12 @@ export interface Instrument<TS = unknown, TC = unknown, TItem = unknown> {
    *  layers rather than instead of them; return `null` for canvas only. */
   render: (ctx: RenderContext<TS, TC>) => ReactNode;
   onConfigChange?: (config: TC, prev: TC, state: TS) => TS;
+  /** Moves a stored config's values to where the current schema keeps them —
+   *  `gridSize` to `grid.size` — before the defaults fill its gaps, so it
+   *  returns only what it moved and leaves the rest to them. It runs on every
+   *  read of a stored config, including one already moved, so it must hand
+   *  back a current config unchanged. */
+  migrateConfig?: (stored: unknown) => unknown;
   serialize?: (state: TS) => unknown;
   deserialize?: (data: unknown, config: TC) => TS;
   canvas?: CanvasCapability<TS, TC>;

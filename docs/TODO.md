@@ -1185,14 +1185,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   the field beside it is the likelier cause. Reproduce in a browser before
   scoping a fix.
 
-- **(P2) An instrument that renames a config key has no way to move the stored
-  value.** Nesting landed — `f.group` makes a branch, paths are dotted, and a
-  config stored before a branch existed loads because `createLabStore` fills it
-  from the instrument's defaults. Filling makes an old config *load*; it cannot
-  *move* a value, so renaming `gridSize` to `grid.size` leaves the old key
-  preserved and the new one at its default. What is missing is a per-instrument
-  `migrateConfig(stored) => TC`, run on hydration ahead of the fill.
-
 - **(P3) A config group's `.describe()` reaches `PrefsForm` and not
   `ControlPanel`.** `PropertyGroup` has no description slot, and its heading
   sits in a two-column grid with nowhere obvious to put a paragraph. Wants a
