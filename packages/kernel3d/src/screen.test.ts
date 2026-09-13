@@ -55,7 +55,7 @@ describe('rayThroughScreenPoint', () => {
   const vp = cameraAt(eye);
 
   it('shoots straight ahead from the middle of the viewport', () => {
-    const ray = rayThroughScreenPoint({ x: 200, y: 150 }, RECT, vp, eye);
+    const ray = rayThroughScreenPoint({ x: 200, y: 150 }, RECT, vp, eye)!;
     expect(ray.origin).toEqual(eye);
     expect(ray.direction[0]).toBeCloseTo(0, 6);
     expect(ray.direction[1]).toBeCloseTo(0, 6);
@@ -63,14 +63,50 @@ describe('rayThroughScreenPoint', () => {
   });
 
   it('leans right for a point right of centre', () => {
-    const ray = rayThroughScreenPoint({ x: 350, y: 150 }, RECT, vp, eye);
+    const ray = rayThroughScreenPoint({ x: 350, y: 150 }, RECT, vp, eye)!;
     expect(ray.direction[0]).toBeGreaterThan(0);
     expect(ray.direction[2]).toBeLessThan(0);
   });
 
   it('leans up for a point above centre, despite y running down the screen', () => {
-    const ray = rayThroughScreenPoint({ x: 200, y: 50 }, RECT, vp, eye);
+    const ray = rayThroughScreenPoint({ x: 200, y: 50 }, RECT, vp, eye)!;
     expect(ray.direction[1]).toBeGreaterThan(0);
+  });
+
+  it('casts no ray through a view-projection with no inverse', () => {
+    // An eye on its own target has no orientation.
+    const flat = cameraAt([0, 0, 0], [0, 0, 0]);
+    expect(rayThroughScreenPoint({ x: 350, y: 150 }, RECT, flat, [0, 0, 0])).toBeNull();
+    const zero = new Array(16).fill(0) as Mat4;
+    expect(rayThroughScreenPoint({ x: 350, y: 150 }, RECT, zero, eye)).toBeNull();
+  });
+
+  it('casts no ray through a pane with no area', () => {
+    expect(rayThroughScreenPoint({ x: 0, y: 150 }, { x: 0, y: 0, w: 0, h: 300 }, vp, eye)).toBeNull();
+  });
+
+  it('casts the same ray through a world scaled down by 1e-10', () => {
+    const k = 1e-10;
+    const tinyEye: Vec3 = [0, 0, 5 * k];
+    const tinyVp = multiply(
+      perspective(Math.PI / 4, RECT.w / RECT.h, NEAR * k, 100 * k),
+      lookAt(tinyEye, [0, 0, 0], [0, 1, 0]),
+    );
+    const unit = rayThroughScreenPoint({ x: 350, y: 50 }, RECT, vp, eye)!;
+    const tiny = rayThroughScreenPoint({ x: 350, y: 50 }, RECT, tinyVp, tinyEye)!;
+    expect(tiny).not.toBeNull();
+    for (let i = 0; i < 3; i++) expect(tiny.direction[i]).toBeCloseTo(unit.direction[i], 6);
+  });
+
+  it('casts the same ray whatever the far plane', () => {
+    const farVp = multiply(
+      perspective(Math.PI / 4, RECT.w / RECT.h, NEAR, 1e10),
+      lookAt(eye, [0, 0, 0], [0, 1, 0]),
+    );
+    const unit = rayThroughScreenPoint({ x: 350, y: 50 }, RECT, vp, eye)!;
+    const far = rayThroughScreenPoint({ x: 350, y: 50 }, RECT, farVp, eye)!;
+    expect(far).not.toBeNull();
+    for (let i = 0; i < 3; i++) expect(far.direction[i]).toBeCloseTo(unit.direction[i], 6);
   });
 });
 
@@ -85,6 +121,20 @@ describe('projectAabbToScreen', () => {
     expect(far!.x + far!.width / 2).toBeCloseTo(200, 4);
     expect(far!.y + far!.height / 2).toBeCloseTo(150, 4);
     expect(near!.width).toBeGreaterThan(far!.width);
+  });
+
+  it('projects a world scaled down by 1e-10 onto the same rectangle', () => {
+    const k = 1e-10;
+    const tinyVp = multiply(
+      perspective(Math.PI / 4, RECT.w / RECT.h, NEAR * k, 100 * k),
+      lookAt([0, 0, 3 * k], [0, 0, 0], [0, 1, 0]),
+    );
+    const tinyCube: Aabb = { min: [-0.5 * k, -0.5 * k, -0.5 * k], max: [0.5 * k, 0.5 * k, 0.5 * k] };
+    const unit = projectAabbToScreen(unitCube, cameraAt([0, 0, 3]), RECT)!;
+    const tiny = projectAabbToScreen(tinyCube, tinyVp, RECT);
+    expect(tiny).not.toBeNull();
+    expect(tiny!.x).toBeCloseTo(unit.x, 4);
+    expect(tiny!.width).toBeCloseTo(unit.width, 4);
   });
 
   it('reports null for a box entirely behind the camera', () => {

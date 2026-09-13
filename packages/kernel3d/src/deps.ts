@@ -102,7 +102,7 @@ function viewProjectionOf(viewport: Viewport3d) {
   return cameraViewProjection(viewport.camera, viewport.width / Math.max(1, viewport.height));
 }
 
-function rayAt(viewport: Viewport3d, point: { x: number; y: number }): Ray {
+function rayAt(viewport: Viewport3d, point: { x: number; y: number }): Ray | null {
   return rayThroughScreenPoint(
     point,
     rectOf(viewport),
@@ -154,6 +154,7 @@ export function createNodeAtPoint<TData, TLayer extends string>(
     const excluded = exclude ? new Set(exclude) : null;
     const vp = world.viewport();
     const ray = rayAt(vp, point);
+    if (!ray) return null;
     let best: NodeId | null = null;
     let bestT = Infinity;
     for (const node of world.scene.renderOrderNodes() as readonly Node3d<TData, TLayer>[]) {
@@ -239,6 +240,7 @@ export function createInsert(opts: {
       const hits: Vec3[] = [];
       for (const corner of corners) {
         const ray = rayAt(vp, corner);
+        if (!ray) continue;
         const t = intersectRayPlane(ray, up, 0);
         if (t !== null) hits.push(pointOnRay(ray, t));
       }
@@ -287,11 +289,20 @@ export function createPoseDescriptor<TData, TLayer extends string>(
   const upAxis = up[1] !== 0 ? 1 : up[0] !== 0 ? 0 : 2;
   const specialized = new WeakMap<object, PoseDescriptor<Pose3, Node3d<TData, TLayer>>>();
 
+  // A drag whose camera stops casting rays mid-gesture keeps moving through the
+  // last one that did, rather than snapping the node back.
+  let lastCastable: Viewport3d | null = null;
+  function castableViewport(): Viewport3d | null {
+    const vp = world.viewport();
+    const rect = rectOf(vp);
+    if (rayAt(vp, { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2 })) lastCastable = vp;
+    return lastCastable;
+  }
+
   function build(worldBox: (pose: Pose3) => Aabb): PoseDescriptor<Pose3, Node3d<TData, TLayer>> {
-    const boundsOf = (pose: Pose3) => {
-      const vp = world.viewport();
-      return projectAabbToScreen(worldBox(pose), viewProjectionOf(vp), rectOf(vp));
-    };
+    const boundsIn = (vp: Viewport3d, pose: Pose3) =>
+      projectAabbToScreen(worldBox(pose), viewProjectionOf(vp), rectOf(vp));
+    const boundsOf = (pose: Pose3) => boundsIn(world.viewport(), pose);
 
     const descriptor: PoseDescriptor<Pose3, Node3d<TData, TLayer>> = {
       forNode(node) {
@@ -328,18 +339,21 @@ export function createPoseDescriptor<TData, TLayer extends string>(
        * them into a world position is the one this dep closed over.
        */
       translate(pose, dx, dy) {
-        const vp = world.viewport();
-        const box = boundsOf(pose);
+        const vp = castableViewport();
+        if (!vp) return pose;
+        const box = boundsIn(vp, pose);
         if (!box) return pose;
         const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
         const to = { x: from.x + dx, y: from.y + dy };
         const offset = pose.position[upAxis];
 
         const ray = rayAt(vp, to);
+        if (!ray) return pose;
         const t = intersectRayPlane(ray, up, offset);
         if (t === null) return pose;
 
         const anchorRay = rayAt(vp, from);
+        if (!anchorRay) return pose;
         const anchorT = intersectRayPlane(anchorRay, up, offset);
         if (anchorT === null) return pose;
 

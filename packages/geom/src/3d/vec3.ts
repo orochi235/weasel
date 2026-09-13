@@ -6,9 +6,6 @@ export type Vec3 = readonly [number, number, number];
 /** `[x, y, z, w]`, w last — the layout three.js and glMatrix both use. */
 export type Quat = readonly [number, number, number, number];
 
-/** Below this a direction has no meaningful orientation and a matrix no inverse. */
-export const EPS3 = 1e-9;
-
 export function add(a: Vec3, b: Vec3): Vec3 {
   return [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
 }
@@ -42,10 +39,11 @@ export function len(a: Vec3): number {
   return Math.sqrt(len2(a));
 }
 
-/** The zero vector normalizes to itself rather than to `NaN`. */
+/** A vector with no length, or no finite one, normalizes to the zero vector
+ *  rather than to `NaN`. Every other vector keeps its direction, however short. */
 export function normalize(a: Vec3): Vec3 {
   const l = len(a);
-  return l < EPS3 ? [0, 0, 0] : scale(a, 1 / l);
+  return l > 0 && l < Infinity ? scale(a, 1 / l) : [0, 0, 0];
 }
 
 export function quatIdentity(): Quat {

@@ -13,6 +13,8 @@
  * We keep the pure 6-tuple f64 form here (the kernel form); the 9-element f32
  * form stays a render-layer concern. No second logical convention is created.
  */
+import { SINGULAR_RATIO } from './scalar';
+
 export type Mat3 = number[];
 
 /** The transform that leaves a point where it is. */
@@ -51,16 +53,11 @@ export function multiply(m: Mat3, n: Mat3): Mat3 {
   ];
 }
 
-/** Largest tolerated ratio between a matrix's conditioning and its scale.
- *  The determinant is an area, so it must be judged against the squared
- *  column norms — an absolute floor calls a uniform 1e-7 scale singular while
- *  waving through a large matrix whose determinant is pure cancellation. */
-const SINGULAR_RATIO = 1e-12;
-
 /** Inverse, or null when the matrix is singular, non-finite, or too
  *  ill-conditioned to invert meaningfully at its own scale. */
 export function invert(m: Mat3): Mat3 | null {
   const det = m[0] * m[3] - m[1] * m[2];
+  // The determinant is an area, so it is judged against the squared column norms.
   const norm2 = Math.max(m[0] * m[0] + m[1] * m[1], m[2] * m[2] + m[3] * m[3]);
   // Negated so a non-finite determinant falls out as singular.
   if (!(Math.abs(det) > SINGULAR_RATIO * norm2)) return null;

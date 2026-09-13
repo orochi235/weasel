@@ -1,6 +1,7 @@
 /** Rays, axis-aligned boxes, and the intersections picking is built from. */
 
-import { dot, EPS3, type Vec3 } from './vec3';
+import { SINGULAR_RATIO } from '../scalar';
+import { dot, len, type Vec3 } from './vec3';
 import { transformPoint, type Mat4 } from './mat4';
 
 export interface Ray {
@@ -22,7 +23,8 @@ export function intersectRayAabb(ray: Ray, min: Vec3, max: Vec3): number | null 
   for (let axis = 0; axis < 3; axis++) {
     const o = ray.origin[axis];
     const d = ray.direction[axis];
-    if (Math.abs(d) < EPS3) {
+    // Any other direction, however short, divides to an honest (possibly infinite) t.
+    if (d === 0) {
       if (o < min[axis] || o > max[axis]) return null;
       continue;
     }
@@ -38,10 +40,11 @@ export function intersectRayAabb(ray: Ray, min: Vec3, max: Vec3): number | null 
   return tMin < 0 ? 0 : tMin;
 }
 
-/** Plane is `dot(normal, p) === offset`. */
+/** Plane is `dot(normal, p) === offset`. Null when the ray runs parallel to the
+ *  plane to within rounding, or points away from it. */
 export function intersectRayPlane(ray: Ray, normal: Vec3, offset: number): number | null {
   const denom = dot(normal, ray.direction);
-  if (Math.abs(denom) < EPS3) return null;
+  if (!(Math.abs(denom) > SINGULAR_RATIO * len(normal) * len(ray.direction))) return null;
   const t = (offset - dot(normal, ray.origin)) / denom;
   return t < 0 ? null : t;
 }

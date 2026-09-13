@@ -1070,9 +1070,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   Open: `<image>` flip and source-rect never serialize; they live on the renderer's
   `ImageCommand`, and expressing them wants a wider `SvgImageNode` on both the
   write and the parse side. `packages/{labkit,modes,d3,paint}` never import
-  `geom` at all, and `ui` only from a story. Every 2D affine inversion now
-  goes through geom's `invert`, but `geom/3d`'s `mat4` `invert` still judges
-  singularity by an absolute `1e-9` determinant floor — the rule 2D gave up.
+  `geom` at all, and `ui` only from a story.
 
 - **(P2) Safari's `gesturestart` / `gesturechange` / `gestureend` are unhandled.** They are the second trackpad pinch channel on macOS Safari, alongside the ctrl+wheel one `viewportZoom` reads. Nothing in the repo listens for them, so Safari trackpad pinch gets whatever the wheel path synthesizes. Worth deciding deliberately rather than by omission. Note before adding a listener: `viewportZoom` now claims bare ctrl+wheel, so a `gesturechange` handler becomes a *second* channel for the same physical gesture — the double-apply `.changeset/mac-trackpad-pinch-zoom.md` just removed. Consolidate it into `makeViewportZoomAction` behind one scale-delta seam, not as a fourth listener.
 
