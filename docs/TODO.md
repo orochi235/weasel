@@ -205,45 +205,6 @@ Priority tags:
   promoted into `@weasel-js/kernel3d`. Migrating it is what would retire the
   file.
 
-- **(P2) `Eligibility.capabilities` is a dead gate.** `liveScope` short-circuits
-  the capability check on `state.allows &&`, and both production constructions of
-  `EligibilityState` omit `allows` — `dispatcher.ts`'s `assembleScopedBindings`
-  and `useContributions`'s `snapshot`. So the field `defineTool` populates from
-  every `ToolDef.capabilities` has no effect on which bindings assemble anywhere.
-  The kit's own tools are covered by accident: each *action* repeats the tag in
-  its own `eligible` rule, which is a separate gate that does fire. WeaselDraw's
-  slice tool is not — it declares `capabilities: ['edits-page']` and its action
-  carries no rule, so the path slices in a mode that forbids page edits.
-  Turning the gate on is a behavior change with consumer blast radius: bindings
-  that are live today start disappearing in restricted modes, which is correct
-  and is exactly why it wants a deliberate call. Found in the arc-3 pass on the
-  routing extraction (2026-09-13).
-
-- **(P3) A multitouch handle is stranded when the finger count changes.**
-  `gestureIdFor` keys on `multitouch-${fingers}`, and nothing ends a handle
-  whose count has moved. Two fingers down opens `multitouch-2`; a third opens
-  `multitouch-3` alongside it, and the seam's end condition (`prevSize >= 2 &&
-  held.size < 2`) never fires for the drop back to two. Both handles sit in
-  flight, only the newer is pumped, and the final lift commits both — one
-  physical pinch commits a zoom *and* a three-finger swipe, with
-  `getInFlightHandles()` yielding two overlays in between. Needs two bindings
-  at different finger counts to reach, which the kit does not ship (only
-  `pinchZoom` at `fingers: 2`), so it takes a consumer binding to see. The fix
-  is a design choice — end the old handle on a count change, or key multitouch
-  by something other than the count.
-
-- **(P3) The route-conflict reporter buckets multi-alternative key args apart.**
-  `argOf` in `reflection/registry.ts` collapses alternatives into one token
-  (`'h|H'`), and `matchKey` matches any member case-insensitively — so
-  `key: ['h','H']` and `key: 'H'` land in different buckets and their genuine
-  tie goes unreported. Same for overlapping-but-unequal key sets, for the same
-  keys listed in a different order, and for `drop`/`paste` MIME lists.
-  `routesForSpec` in the same file already emits one route per alternative,
-  "because each is separately conflictable"; the conflict-checkable row does
-  the opposite. Fixing it changes what `buildRouteRegistry` emits, which
-  ToolkitBuilder renders as one row per binding — so it is a visible change to
-  a reflection surface, not just to the warning.
-
 - **(P2) The routing package is still typed in 2D.** `@weasel-js/routing` exists
   (2026-09-13) and core consumes it, but the seam the 3D lab keeps hitting is
   unchanged: `ViewApi` has no orientation, and

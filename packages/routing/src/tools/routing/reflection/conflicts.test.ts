@@ -237,3 +237,32 @@ describe('findScopedConflicts — buckets nothing escapes', () => {
     expect(c.filter((x) => x.target === 'predicate')).toHaveLength(2);
   });
 });
+
+// `matchKey` matches any member of a key list, case-insensitively, so two specs
+// whose key sets overlap really do collide. The conflict row collapsed the
+// alternatives into one token (`'h|H'`), which bucketed them apart from a spec
+// naming a single member — `routesForSpec` in the same file already emits one
+// route per alternative "because each is separately conflictable".
+describe('findConflicts — key alternatives', () => {
+  const keyTool = (id: string, key: string | string[]) => ({
+    id, eligibility: { always: true },
+    bindings: [{ spec: { kind: 'key', key, mods: { shift: true } }, actionId: `${id}.go` }],
+  } as unknown as Tool<unknown>);
+
+  it('flags an alternative list against a single key it contains', () => {
+    const c = findConflicts([keyTool('flip', ['h', 'H']), keyTool('mine', 'H')]);
+    expect(c.map((x) => x.toolIds.sort().join(','))).toContain('flip,mine');
+  });
+
+  it('flags two lists that overlap without being equal', () => {
+    const c = findConflicts([
+      keyTool('a', ['Delete', 'Backspace']),
+      keyTool('b', ['Backspace', 'Escape']),
+    ]);
+    expect(c.map((x) => x.toolIds.sort().join(','))).toContain('a,b');
+  });
+
+  it('still says nothing for lists that do not overlap', () => {
+    expect(findConflicts([keyTool('a', ['q']), keyTool('b', ['w', 'e'])])).toEqual([]);
+  });
+});

@@ -3,7 +3,7 @@
 "@weasel-js/core": patch
 ---
 
-Fix eight latent routing faults surfaced by the extraction's correctness pass.
+Fix eleven latent routing faults surfaced by the extraction's correctness pass.
 All predate the move into `@weasel-js/routing`.
 
 - Dispatcher and dep-registry ownership are stacks rather than single slots, so
@@ -27,3 +27,16 @@ All predate the move into `@weasel-js/routing`.
 - `inFlightCursor` reports the most recently started gesture's cursor, agreeing
   with `getActiveAction`; the dispatcher breaks same-specificity hotkey ties in
   favor of the newest hold, agreeing with `ToolsApi.hotkeyEngaged`.
+- **`Eligibility.capabilities` now gates.** It never did: `liveScope`
+  short-circuits when no `allows` predicate is supplied, and none was. A tool
+  declaring `capabilities` whose action carries no `eligible` rule kept routing
+  input in a mode that forbids those tags. The dispatcher builds the predicate
+  from the `RuleCtx` it already holds — so this changes behavior only for
+  consumers that wired the modes system, which is where the declaration was
+  meant to take effect.
+- A multitouch handle is ended when the finger count changes rather than left in
+  flight, so a third finger landing mid-pinch no longer commits two gestures on
+  the final lift.
+- The route-conflict reporter buckets each key alternative separately, so
+  `key: ['h','H']` is reported as colliding with `key: 'H'`. `RegistryEntry`
+  gains an optional `argAlternatives` carrying them.

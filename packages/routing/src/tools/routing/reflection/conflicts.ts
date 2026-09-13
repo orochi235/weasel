@@ -69,10 +69,17 @@ function findConflictsKeyed(
   const entries = buildRouteRegistry(tools);
   const groups = new Map<string, RegistryEntry[]>();
   for (const entry of entries) {
-    const key = `${entry.phase}|${entry.gesture}|${entry.arg ?? ''}|${targetKey(entry)}|${canonicalModifiers(entry.modifiers)}`;
-    const bucket = groups.get(key);
-    if (bucket) bucket.push(entry);
-    else groups.set(key, [entry]);
+    // One bucket per arg the binding answers to, not one per display token.
+    // `key: ['h','H']` and `key: 'H'` really do collide — `matchKey` takes any
+    // member, case-insensitively — and joining the alternatives into `'h|H'`
+    // put them in different buckets. Same for two `drop` specs whose MIME sets
+    // overlap without being equal.
+    for (const arg of argKeysOf(entry)) {
+      const key = `${entry.phase}|${entry.gesture}|${arg}|${targetKey(entry)}|${canonicalModifiers(entry.modifiers)}`;
+      const bucket = groups.get(key);
+      if (bucket) { if (!bucket.includes(entry)) bucket.push(entry); }
+      else groups.set(key, [entry]);
+    }
   }
   const conflicts: { key: string; conflict: Conflict }[] = [];
   for (const [key, bucket] of groups) {
@@ -91,6 +98,14 @@ function findConflictsKeyed(
     });
   }
   return conflicts;
+}
+
+/** Every arg value an entry buckets under, lowercased — `matchKey` is
+ *  case-insensitive, so `'h'` and `'H'` are one arg. */
+function argKeysOf(entry: RegistryEntry): readonly string[] {
+  const alts = entry.argAlternatives;
+  if (alts && alts.length > 0) return [...new Set(alts.map((a) => a.toLowerCase()))];
+  return [(entry.arg ?? '').toLowerCase()];
 }
 
 /** Bucket key for an entry's target slot. Predicate targets all render as

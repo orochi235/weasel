@@ -28,6 +28,12 @@ export interface RegistryEntry {
    *  key name, multiTouchTap fingers). Undefined for gestures whose
    *  descriptor has no `arg`. */
   arg: string | undefined;
+  /** Every arg value this binding actually answers to, when the spec names
+   *  more than one — `key: ['Delete','Backspace']` answers to both, and
+   *  `matchKey` matches any member case-insensitively. `arg` collapses them
+   *  into one display token, which is right for a route string and wrong for
+   *  deciding whether two bindings collide. Absent when there is only one. */
+  argAlternatives?: readonly string[];
   /** Target class for hit-testing gestures. `undefined` when the descriptor
    *  has `hasTarget: false` or the spec declares no target;
    *  {@link PREDICATE_TARGET} when the spec uses a `kindOf` predicate, which
@@ -148,6 +154,7 @@ function entryFor(
     phase: phaseOf('phase' in spec ? spec.phase : undefined),
     modifiers: parseModSpec('mods' in spec ? spec.mods : undefined),
     arg: descriptor.arg ? argOf(spec, descriptor.arg.default) : undefined,
+    ...(descriptor.arg ? argAlternativesOf(spec, descriptor.arg.default) : {}),
     target: descriptor.hasTarget
       ? routeTargetForSpec('target' in spec ? spec.target : undefined)
       : undefined,
@@ -213,6 +220,20 @@ function routeArgsForSpec(
 function argOf(spec: GestureSpec, fallback: string | undefined): string | undefined {
   const args = routeArgsForSpec(spec, fallback);
   return args.length > 1 ? args.join('|') : args[0];
+}
+
+/** The alternatives a spec answers to, when there is more than one. A MIME
+ *  list is one too: `matchIngestTypes` accepts any member, so two `drop` specs
+ *  whose type sets overlap collide even though neither set contains the other. */
+function argAlternativesOf(
+  spec: GestureSpec,
+  fallback: string | undefined,
+): { argAlternatives?: readonly string[] } {
+  const types = 'types' in spec ? spec.types : undefined;
+  const alts = types?.length
+    ? types
+    : routeArgsForSpec(spec, fallback).filter((a): a is string => a !== undefined);
+  return alts.length > 1 ? { argAlternatives: alts } : {};
 }
 
 // Re-export for downstream consumers.

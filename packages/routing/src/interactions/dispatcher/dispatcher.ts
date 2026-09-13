@@ -50,6 +50,7 @@ import type { InputEvent, BindingScope, ScopedBinding } from './matcher';
 import { matchSorted, specificity } from './matcher';
 import { evaluate, describeRule, type Rule, type RuleCtx, type Condition } from '../../eligibility';
 import { resolveCursor } from '@weasel-js/cursor';
+import type { CapabilityTag } from '@weasel-js/modes';
 
 /**
  * The in-flight handle slot a pointer's gestures key into.
@@ -715,10 +716,21 @@ export function createDispatcher(opts?: {
     for (const tool of ctx.toolsById.values()) {
       if (!ordered.includes(tool)) ordered.push(tool);
     }
+    // `Eligibility.capabilities` is a tool-level gate over the same tags the
+    // `capability:` selector reads. It is the only one that fires for a tool
+    // whose action declares no `eligible` rule. A consumer with no mode system
+    // supplies no `getRuleCtx`, and then `allows` stays absent and everything
+    // is permitted — which is what every such consumer has always seen.
+    const capsCtx = ctx.getRuleCtx?.();
+    const allows = capsCtx
+      ? (tags: readonly CapabilityTag[]) =>
+          tags.every((tag) => capsCtx.allowedCapabilities.has(tag))
+      : undefined;
     const result: ScopedBinding[] = scopeBindings(ordered, {
       focusedId: ctx.activeToolId,
       heldTriggers: EMPTY_TRIGGERS,
       engagedIds: new Set(ctx.hotkeyStack),
+      ...(allows ? { allows } : {}),
     });
 
     // Actions have no owning tool — `'&'`-channel phase atoms on their
@@ -857,6 +869,20 @@ export function createDispatcher(opts?: {
         const moveCtx = buildInvocationCtx(event, {}, gestureId);
         handle.onMove(moveCtx);
         return 'handled';
+      }
+      // A hand is doing one multitouch gesture at a time, but the gesture id
+      // carries the finger count — so a finger landing or lifting mid-gesture
+      // names a different one. Nothing else ends the handle the hand has left:
+      // the seam only ends multitouch when the count drops below two, so a
+      // three-to-two transition left the three-finger handle in flight,
+      // unpumped, until the final lift committed it alongside the real one.
+      for (const [id, other] of [...inFlightHandles]) {
+        if (!id.startsWith('multitouch-') || id === gestureId) continue;
+        other.onEnd?.(buildInvocationCtx(event, {}, id), 'cancel');
+        inFlightHandles.delete(id);
+        inFlightOwners.delete(id);
+        inFlightActions.delete(id);
+        pinchStartSpreads.delete(id);
       }
       // No in-flight handle → fall through to scope assembly + match below.
       // This allows the initial multitouch event (which carries centroid/spread)

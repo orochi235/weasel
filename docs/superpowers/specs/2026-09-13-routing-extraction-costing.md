@@ -215,12 +215,9 @@ would re-export the moved symbols, none of these break. Only the two
 ## What arc 3 found
 
 The `gestures`/`history` precedent said to budget for latent faults that
-predate the move and appear in no diffstat. It was right: **eight**, all with
-concrete failure scenarios, all months old, all passed over by 10,723 green
-tests. Three more are recorded in `docs/TODO.md` rather than fixed, because
-each is a decision rather than a repair.
-
-Fixed:
+predate the move and appear in no diffstat. It was right: **eleven**, all with
+concrete failure scenarios, all months old, all passed over by 10,730 green
+tests.
 
 - **Dispatcher and dep-registry ownership were single slots.** Two canvases
   under one provider, and whichever unmounted second emptied the slot — the
@@ -251,8 +248,24 @@ Fixed:
 - **`inFlightCursor` and `getActiveAction` disagreed** about which of several
   in-flight gestures is the current one, and the dispatcher walked the hotkey
   stack from the end every other reader treats as the bottom.
+- **`Eligibility.capabilities` gated nothing.** `liveScope` short-circuits on
+  `state.allows &&`, and neither production caller supplied `allows` — so the
+  field `defineTool` fills from every `ToolDef.capabilities` had no effect on
+  which bindings assemble. The kit's own tools were covered by accident, each
+  action repeating the tag in its own `eligible` rule; a tool whose action
+  carries no rule was not. The dispatcher now builds `allows` from the `RuleCtx`
+  it already holds, and a consumer with no mode system supplies no `getRuleCtx`
+  and sees no change.
+- **A multitouch handle was stranded when the finger count changed.** The
+  gesture id carries the count, so a third finger opened a second handle beside
+  the first; only the newer was pumped, and the final lift committed both.
+- **The conflict reporter bucketed key alternatives apart.** `key: ['h','H']`
+  and `key: 'H'` really do collide, and joining the alternatives into one
+  display token put them in different buckets. Same for two `drop` specs whose
+  MIME sets overlap without being equal.
 
-The shape worth keeping: **five of the eight are a container that should have
-been a stack, or an iteration that should have run the other way.** Neither is
-visible in a diff or a type, and both survive any test that exercises one of
-whatever it is.
+The shape worth keeping: **five of the eleven are a container that should have
+been a stack, or an iteration that should have run the other way**, and two
+more are a gate whose condition was short-circuited by a value nobody supplied.
+None of the three is visible in a diff or a type, and all survive any test that
+exercises one of whatever it is — one canvas, one hold, one pointer, one mode.
