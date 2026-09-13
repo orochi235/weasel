@@ -50,9 +50,22 @@ export interface Conflict {
  *  over-reports, because registry tools take turns in the active slot and
  *  can't collide with each other — see {@link findScopedConflicts}.
  */
-export function findConflicts(
+export function findConflicts(tools: readonly Tool<unknown>[]): Conflict[] {
+  return findConflictsKeyed(tools).map((k) => k.conflict);
+}
+
+/**
+ * The same detector, keeping each conflict's bucket key.
+ *
+ * `Conflict.target` renders every predicate as the flat grammar token
+ * `'predicate'`, while the buckets key on the predicate's *identity* — so two
+ * genuinely distinct predicate collisions are indistinguishable once rendered.
+ * `findScopedConflicts` dedupes across several passes and needs the key that
+ * told them apart in the first place.
+ */
+function findConflictsKeyed(
   tools: readonly Tool<unknown>[],
-): Conflict[] {
+): { key: string; conflict: Conflict }[] {
   const entries = buildRouteRegistry(tools);
   const groups = new Map<string, RegistryEntry[]>();
   for (const entry of entries) {
@@ -61,17 +74,20 @@ export function findConflicts(
     if (bucket) bucket.push(entry);
     else groups.set(key, [entry]);
   }
-  const conflicts: Conflict[] = [];
-  for (const bucket of groups.values()) {
+  const conflicts: { key: string; conflict: Conflict }[] = [];
+  for (const [key, bucket] of groups) {
     if (bucket.length < 2) continue;
     const first = bucket[0];
     conflicts.push({
-      phase: first.phase,
-      gesture: first.gesture,
-      arg: first.arg,
-      target: first.target,
-      modifiers: first.modifiers,
-      toolIds: bucket.map((e) => e.toolId),
+      key,
+      conflict: {
+        phase: first.phase,
+        gesture: first.gesture,
+        arg: first.arg,
+        target: first.target,
+        modifiers: first.modifiers,
+        toolIds: bucket.map((e) => e.toolId),
+      },
     });
   }
   return conflicts;
@@ -154,20 +170,21 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
 
   const out: Conflict[] = [];
   const seen = new Set<string>();
-  const add = (conflicts: readonly Conflict[]): void => {
-    for (const c of conflicts) {
-      const key = `${c.phase}|${c.gesture}|${c.arg ?? ''}|${c.target ?? ''}`
-        + `|${canonicalModifiers(c.modifiers)}|${c.toolIds.join(',')}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push(c);
+  const add = (keyed: readonly { key: string; conflict: Conflict }[]): void => {
+    for (const { key, conflict } of keyed) {
+      const dedupeKey = `${key}|${conflict.toolIds.join(',')}`;
+      if (seen.has(dedupeKey)) continue;
+      seen.add(dedupeKey);
+      out.push(conflict);
     }
   };
 
-  // Self-collisions: every tool, whichever slot it lands in.
-  for (const tool of [...registry, ...(scopes.ambient ?? [])]) add(findConflicts([tool]));
+  // Self-collisions: every entry, whichever slot it lands in — actions
+  // included. Both group passes below are guarded on having more than one
+  // member, so a lone action is checked by nothing else.
+  for (const tool of [...registry, ...ambient, ...hotkeyActions]) add(findConflictsKeyed([tool]));
   // Ambient tools and ambient-scope actions are all live together.
-  if (ambient.length > 1) add(findConflicts(ambient));
+  if (ambient.length > 1) add(findConflictsKeyed(ambient));
   // Hotkey-capable tools can stack on each other. `hotkey` is declared on the
   // authored `ToolDef`, not carried onto the runtime `Tool` — `Tool.def` is
   // the reflection handle for exactly this kind of read, and it's typed
@@ -176,7 +193,7 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
     ...registry.filter((t) => (t.def as { hotkey?: unknown } | undefined)?.hotkey !== undefined),
     ...hotkeyActions,
   ];
-  if (hotkey.length > 1) add(findConflicts(hotkey));
+  if (hotkey.length > 1) add(findConflictsKeyed(hotkey));
 
   return out;
 }

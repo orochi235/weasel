@@ -163,10 +163,16 @@ export function useContributions<TOverlay = unknown>(
     if (!isDev()) return;
     if (lastConflictSigRef.current === entrySig) return;
     lastConflictSigRef.current = entrySig;
+    // An entry can be in both buckets and usually is: every tool `defineTool`
+    // builds declares `focus: true`, and an ambient one carries `always: true`
+    // on top of that. Sorting on "not focus-eligible" put ambient tools in the
+    // registry bucket, which is never compared against itself — registry tools
+    // take turns in the active slot — so ambient-vs-ambient went unreported.
     const registry: Tool<unknown, TOverlay>[] = [];
     const ambient: Tool<unknown, TOverlay>[] = [];
     for (const entry of entriesRef.current) {
-      (entry.eligibility?.focus ? registry : ambient).push(entry);
+      if (entry.eligibility?.focus) registry.push(entry);
+      if (entry.eligibility?.always || entry.eligibility?.claimed) ambient.push(entry);
     }
     reportRouteConflicts({
       registry,
@@ -177,10 +183,13 @@ export function useContributions<TOverlay = unknown>(
 
   // Memoized so consumers using the result as an effect dep don't see identity
   // churn every render — which loops infinitely when the consumer setStates
-  // from inside such an effect.
+  // from inside such an effect. `entries` is a getter for that reason: read as
+  // a property it would be captured at memo time, and a consumer that adds an
+  // entry without switching tools would get a live, hittable binding with no
+  // palette entry. The other two members already read the ref, being calls.
   return useMemo(
     () => ({
-      entries: entriesRef.current,
+      get entries() { return entriesRef.current; },
       focused,
       setFocused,
       scopedBindings,

@@ -197,3 +197,43 @@ describe('reportRouteConflicts', () => {
     expect(warn).not.toHaveBeenCalled();
   });
 });
+
+describe('findScopedConflicts — buckets nothing escapes', () => {
+  // An action with two identical default bindings is ambiguous in whatever
+  // slot it occupies. The self-check iterated the raw ambient tools only, and
+  // both group passes are guarded on having more than one member, so a lone
+  // action was checked by nothing at all.
+  it('checks a lone action against itself', () => {
+    const doubled = {
+      id: 'zoomStep', label: 'zoomStep', scope: 'hotkey',
+      defaultBinding: [
+        { kind: 'key', key: '=' },
+        { kind: 'key', key: '=', mods: {} },
+      ],
+      invoker: { timing: 'immediate', run: () => {} },
+    } as never;
+    const c = findScopedConflicts({ registry: [], ambient: [], actions: [doubled] });
+    expect(c.map((x) => x.toolIds.join(','))).toContain('zoomStep,zoomStep');
+  });
+
+  // `Conflict.target` renders every predicate as the flat token `'predicate'`,
+  // but the buckets key on the predicate's identity. Deduping the reported
+  // conflicts on the rendered token collapsed two genuinely distinct predicate
+  // collisions into one, and the second stayed silent after the first was fixed.
+  it('keeps two collisions on different predicates apart', () => {
+    // Shared target objects: predicate entries bucket by the target's own
+    // identity, so two separately-written literals are deliberately two
+    // different targets and would not collide at all.
+    const rectTarget = { kindOf: () => true };
+    const ellipseTarget = { kindOf: () => true };
+    const two = (id: string) => ({
+      id, eligibility: { always: true },
+      bindings: [
+        { spec: { kind: 'drag', target: rectTarget }, actionId: `${id}.r` },
+        { spec: { kind: 'drag', target: ellipseTarget }, actionId: `${id}.e` },
+      ],
+    } as unknown as Tool<unknown>);
+    const c = findScopedConflicts({ registry: [], ambient: [two('a'), two('b')] });
+    expect(c.filter((x) => x.target === 'predicate')).toHaveLength(2);
+  });
+});

@@ -786,18 +786,22 @@ export function createDispatcher(opts?: {
     if (event.kind === 'pointermove') {
       const gestureId = gestureIdFor(event);
       const handle = inFlightHandles.get(gestureId);
-      if (handle?.onMove) {
-        // Accumulate world-space point into drag history before building ctx.
-        const pts = dragPoints.get(gestureId);
-        if (pts) {
-          pts.push({
-            x: event.x,
-            y: event.y,
-            ...(event.pressure !== undefined ? { pressure: event.pressure } : {}),
-            ...(event.tiltX !== undefined ? { tiltX: event.tiltX } : {}),
-            ...(event.tiltY !== undefined ? { tiltY: event.tiltY } : {}),
-          });
-        }
+      if (!handle) return 'unhandled';
+      // Accumulate the world-space point whether or not this handle previews.
+      // `onEnd` is handed the same trail, so an action that only reads the
+      // finished path — and therefore declares no `onMove` — must still get
+      // every vertex rather than the press point alone.
+      const pts = dragPoints.get(gestureId);
+      if (pts) {
+        pts.push({
+          x: event.x,
+          y: event.y,
+          ...(event.pressure !== undefined ? { pressure: event.pressure } : {}),
+          ...(event.tiltX !== undefined ? { tiltX: event.tiltX } : {}),
+          ...(event.tiltY !== undefined ? { tiltY: event.tiltY } : {}),
+        });
+      }
+      if (handle.onMove) {
         const moveCtx = buildInvocationCtx(event, {}, gestureId);
         handle.onMove(moveCtx);
         return 'handled';

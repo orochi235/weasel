@@ -53,6 +53,40 @@ describe('useContributions', () => {
   });
 });
 
+// `scopedBindings()` and `overlays()` read the entry list through a ref, so
+// they are always current. `entries` was a property captured inside a memo
+// keyed only on the focused tool, so a consumer adding a tool without
+// switching tools saw a live, hittable binding with no palette entry and no
+// chrome — the "visible implies hittable" invariant inverted.
+describe('ContributionsApi.entries tracks the entry list', () => {
+  const pen: Contribution = {
+    id: 'pen',
+    eligibility: { always: true },
+    bindings: [{ spec: { kind: 'drag' }, actionId: 'pen.draw' }],
+  };
+
+  it('shows an entry added with no change of focused tool', () => {
+    const { result, rerender } = renderHook(
+      ({ entries }: { entries: Contribution[] }) => useContributions({ entries, focused: 'rect' }),
+      { wrapper, initialProps: { entries: [rect, hud] } },
+    );
+    expect(result.current.entries.map((e) => e.id)).toEqual(['rect', 'weasel-hud']);
+    rerender({ entries: [rect, hud, pen] });
+    expect(result.current.scopedBindings().some((s) => s.ownerToolId === 'pen')).toBe(true);
+    expect(result.current.entries.map((e) => e.id)).toEqual(['rect', 'weasel-hud', 'pen']);
+  });
+
+  it('keeps one API identity across that re-render', () => {
+    const { result, rerender } = renderHook(
+      ({ entries }: { entries: Contribution[] }) => useContributions({ entries, focused: 'rect' }),
+      { wrapper, initialProps: { entries: [rect, hud] } },
+    );
+    const before = result.current;
+    rerender({ entries: [rect, hud, pen] });
+    expect(result.current).toBe(before);
+  });
+});
+
 describe('route-conflict reporting sees action default bindings', () => {
   const collidingSpec = { kind: 'click', target: 'empty' } as const;
 
@@ -93,6 +127,31 @@ describe('route-conflict reporting sees action default bindings', () => {
     expect(conflict).toBeDefined();
     expect(conflict).toContain('ambient-entry');
     expect(conflict).toContain('colliding.action');
+  });
+});
+
+// Every tool `defineTool` builds declares `focus: true`, and `useTools`'
+// `declareSlot(tool, 'always')` adds `always: true` on top of it. Bucketing on
+// "not focus-eligible" therefore put every ambient tool in the registry
+// bucket, which `findScopedConflicts` never compares against itself — so the
+// whole ambient-vs-ambient collision class was reported by nothing.
+describe('conflict buckets follow declared eligibility', () => {
+  const drag = (id: string) => ({
+    id,
+    eligibility: { focus: true, always: true },
+    bindings: [{ spec: { kind: 'drag' }, actionId: `${id}.drag` }],
+  } as Contribution);
+
+  it('reports two always-on entries that also declare focus', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    renderHook(
+      () => useContributions({ entries: [drag('rotate'), drag('mySnap')], focused: 'rotate' }),
+      { wrapper },
+    );
+    const said = warn.mock.calls.flat().join('\n');
+    warn.mockRestore();
+    expect(said).toContain('rotate');
+    expect(said).toContain('mySnap');
   });
 });
 
