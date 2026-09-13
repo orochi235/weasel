@@ -251,6 +251,44 @@ describe('loadCsfModule', () => {
     expect(loadCsfModule({ default: { title: 'ui/L' }, A: {} }, FILE, ROOT)[0]?.layout).toBe('padded');
   });
 
+  it('merges project parameters under the meta’s and the story’s', () => {
+    const preview = { layout: 'centered', backgrounds: { default: 'dark', grid: true } };
+    const stories = loadCsfModule(
+      {
+        default: { title: 'ui/P', parameters: { backgrounds: { default: 'light' } } },
+        FromPreview: { render: (_args: unknown, context: { parameters: unknown }) => <p>{JSON.stringify(context.parameters)}</p> },
+        FromStory: { parameters: { layout: 'fullscreen' } },
+      },
+      FILE,
+      ROOT,
+      preview,
+    );
+    expect(stories.map((s) => s.layout)).toEqual(['centered', 'fullscreen']);
+    render(<Harness story={stories[0]!} ctx={ctxFor(stories[0]!)} />);
+    expect(JSON.parse(screen.getByText(/backgrounds/).textContent!)).toEqual({
+      layout: 'centered',
+      backgrounds: { default: 'light', grid: true },
+    });
+  });
+
+  it('applies controls.matchers from the merged parameters, a story’s own matchers replacing the project’s', () => {
+    const preview = { controls: { matchers: { color: /(background|color)$/i } } };
+    const stories = loadCsfModule(
+      {
+        default: { title: 'ui/M', args: { backgroundColor: 'red' } },
+        Matched: {},
+        Unmatched: { parameters: { controls: { matchers: { color: /^never$/ } } } },
+      },
+      FILE,
+      ROOT,
+      preview,
+    );
+    expect(stories.map((s) => (s.config.nodes as Record<string, { kind: string }>).backgroundColor?.kind)).toEqual([
+      'color',
+      'string',
+    ]);
+  });
+
   it("resolves a LabFit-shaped viewport global against the meta's options", () => {
     const VIEWPORTS = {
       wide: { name: '1280x800', styles: { width: '1280px', height: '800px' } },

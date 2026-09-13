@@ -24,6 +24,8 @@ export interface FrameSetup {
    * whichever element declares the token itself — a theme wrapper, say — or that element's own value wins.
    */
   cssVarsScope?: string;
+  /** Project-wide CSF parameters, Storybook's preview `parameters`: under each meta's and story's. */
+  parameters?: Record<string, unknown>;
 }
 
 export interface StartFrameOptions {

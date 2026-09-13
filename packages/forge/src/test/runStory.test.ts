@@ -28,6 +28,19 @@ describe('runStory', () => {
     expect(document.body.children).toHaveLength(0);
   });
 
+  it("loads a CSF story under the setup's project parameters", async () => {
+    const csf = {
+      default: { title: 'Test/Csf' },
+      Parametered: {
+        render: (_args: unknown, { parameters }: { parameters: Record<string, unknown> }) => {
+          if (parameters.project !== true) throw new Error('no project parameters');
+          return null;
+        },
+      },
+    };
+    await expect(runStory(csf, 'Parametered', FILE, ROOT, { setup: { parameters: { project: true } } })).resolves.toBeUndefined();
+  });
+
   it('names the load phase when the file has no such export', async () => {
     await expect(runStory(mod, 'Missing', FILE, ROOT)).rejects.toThrow(
       `load fault: ${FILE} has no story export "Missing"`,

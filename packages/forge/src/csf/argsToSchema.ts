@@ -90,10 +90,24 @@ function controlled(control: Control, argType: ArgType, has: boolean, value: unk
   }
 }
 
+/** `parameters.controls.matchers`: arg names that pick a control when the arg's argType names none. */
+export interface ControlMatchers {
+  color?: RegExp;
+  /** labkit has no date leaf, so a date match keeps the leaf its value infers. */
+  date?: RegExp;
+}
+
+/** Storybook's rule: a string arg with no control or options whose name matches `color` gets a color picker. */
+function matched(key: string, value: unknown, argType: ArgType | undefined, matchers: ControlMatchers): Leaf | null {
+  if (typeof value !== 'string' || argType?.control !== undefined || stringOptions(argType ?? {})) return null;
+  return matchers.color?.test(key) ? f.color(value) : null;
+}
+
 /** A labkit schema for a CSF story's args, refined by its `argTypes`. */
 export function argsToSchema(
   args: Readonly<Record<string, unknown>>,
   argTypes: Readonly<Record<string, ArgType | undefined>>,
+  matchers: ControlMatchers = {},
 ): ConfigSchema<unknown> {
   const nodes: Record<string, Leaf> = {};
   for (const key of new Set([...Object.keys(args), ...Object.keys(argTypes)])) {
@@ -104,7 +118,9 @@ export function argsToSchema(
     const argType = argTypes[key];
     const control = argType ? controlOf(argType) : false;
 
-    let node: Leaf | null = control ? controlled(control, argType ?? {}, has, value) : has ? inferred(value) : null;
+    let node: Leaf | null =
+      (has ? matched(key, value, argType, matchers) : null) ??
+      (control ? controlled(control, argType ?? {}, has, value) : has ? inferred(value) : null);
     if (!node) continue;
     if (argType && (argType.control === false || argType.table?.disable)) node = node.hidden();
     if (argType?.description) node = node.describe(argType.description);

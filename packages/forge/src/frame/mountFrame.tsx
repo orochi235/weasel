@@ -21,12 +21,17 @@ export interface MountFrameOptions {
   importers: FrameImporters;
   root: string;
   setup?: FrameSetup;
-  load?: (mod: Record<string, unknown>, file: string, root: string) => LoadedStory[];
+  load?: (mod: Record<string, unknown>, file: string, root: string, parameters?: Record<string, unknown>) => LoadedStory[];
 }
 
-/** The default `load`: a module whose default export is a forge `meta` is native, anything else is CSF. */
-export function loadStories(mod: Record<string, unknown>, file: string, root: string): LoadedStory[] {
-  return isNative(mod.default, 'meta') ? loadNativeModule(mod, file, root) : loadCsfModule(mod, file, root);
+/** The default `load`: a module whose default export is a forge `meta` is native, anything else is CSF under `parameters`. */
+export function loadStories(
+  mod: Record<string, unknown>,
+  file: string,
+  root: string,
+  parameters?: Record<string, unknown>,
+): LoadedStory[] {
+  return isNative(mod.default, 'meta') ? loadNativeModule(mod, file, root) : loadCsfModule(mod, file, root, parameters);
 }
 
 function waitForPort(): Promise<MessagePort> {
@@ -53,7 +58,7 @@ export async function mountFrame(options: MountFrameOptions): Promise<void> {
     const importer = options.importers[entry.file];
     if (!importer) throw new Error(`No importer for ${entry.file}`);
     const mod = await importer();
-    const stories = (options.load ?? loadStories)(mod, entry.file, options.root);
+    const stories = (options.load ?? loadStories)(mod, entry.file, options.root, options.setup?.parameters);
     const story = stories.find((s) => s.exportName === entry.exportName);
     if (!story) throw new Error(`${entry.file} has no story export "${entry.exportName}"`);
     startFrame({ story, channel, container: document.getElementById('root') ?? document.body, setup: options.setup });

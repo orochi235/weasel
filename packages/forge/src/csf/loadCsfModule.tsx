@@ -13,7 +13,7 @@ import type { Globals, Layout, Viewport } from '../protocol/messages';
 import { storyId, storyNameFromExport, titleFromFile } from '../story/ids';
 import type { Decorator, LoadedStory, PlayContext, StoryContext } from '../story/types';
 import { type ArgsScope, ArgsContext, appliedLocal, coverOf, type LocalArgs } from './argsContext';
-import { type ArgType, argsToSchema } from './argsToSchema';
+import { type ArgType, argsToSchema, type ControlMatchers } from './argsToSchema';
 import { isPlainObject } from './isPlainObject';
 
 type Args = Record<string, unknown>;
@@ -131,8 +131,13 @@ function Scoped({
   );
 }
 
-/** Normalizes a Component Story Format module. */
-export function loadCsfModule(mod: Record<string, unknown>, file: string, root: string): LoadedStory[] {
+/** Normalizes a Component Story Format module. `parameters` are the project's, under the meta's and each story's. */
+export function loadCsfModule(
+  mod: Record<string, unknown>,
+  file: string,
+  root: string,
+  projectParameters: Record<string, unknown> = {},
+): LoadedStory[] {
   const meta = (isPlainObject(mod.default) ? mod.default : {}) as Annotations;
   const title = meta.title ?? titleFromFile(file, root);
   const stories: LoadedStory[] = [];
@@ -148,9 +153,14 @@ export function loadCsfModule(mod: Record<string, unknown>, file: string, root: 
     const id = storyId(title, exportName);
     const name = spec.name || spec.storyName || storyNameFromExport(exportName);
     const args = { ...meta.args, ...spec.args };
-    const config = argsToSchema(args, combineParameters(meta.argTypes, spec.argTypes) as Record<string, ArgType>);
+    const parameters = combineParameters(projectParameters, meta.parameters, spec.parameters);
+    const matchers = (parameters.controls as { matchers?: ControlMatchers } | undefined)?.matchers;
+    const config = argsToSchema(
+      args,
+      combineParameters(meta.argTypes, spec.argTypes) as Record<string, ArgType>,
+      isPlainObject(matchers) ? matchers : {},
+    );
     const defaults = config.defaults() as Args;
-    const parameters = combineParameters(meta.parameters, spec.parameters);
     const storyGlobals = { ...meta.globals, ...spec.globals };
     const component = meta.component;
     const renderFn: CsfRender | undefined =

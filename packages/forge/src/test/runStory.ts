@@ -97,7 +97,7 @@ export async function runStory(
   leftover?.();
   let story: ReturnType<typeof loadStories>[number] | undefined;
   try {
-    story = loadStories(mod, file, root).find((s) => s.exportName === exportName);
+    story = loadStories(mod, file, root, setup?.parameters).find((s) => s.exportName === exportName);
   } catch (error) {
     throw phased('load', error);
   }

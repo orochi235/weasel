@@ -158,6 +158,38 @@ describe('argsToSchema', () => {
     });
   });
 
+  describe('controls.matchers', () => {
+    const matchers = { color: /(background|color)$/i, date: /Date$/i };
+    const kinds = (args: Record<string, unknown>, argTypes: Parameters<typeof argsToSchema>[1] = {}) =>
+      Object.fromEntries(
+        Object.entries(argsToSchema(args, argTypes, matchers).nodes).map(([k, n]) => [k, (n as ConfigNode<unknown>).kind]),
+      );
+
+    it('makes a string arg whose name matches `color` a color leaf, keeping its default', () => {
+      const schema = argsToSchema({ backgroundColor: '#ff0000', label: 'hi' }, {}, matchers);
+      expect(shape(schema.nodes.backgroundColor as ConfigNode<unknown>)).toEqual({ kind: 'color', default: '#ff0000' });
+      expect((schema.nodes.label as ConfigNode<unknown>).kind).toBe('string');
+    });
+
+    it('applies to an argType that names no control, and carries its annotations', () => {
+      const schema = argsToSchema({ iconColor: 'red' }, { iconColor: { description: 'Ink' } }, matchers);
+      expect(shape(schema.nodes.iconColor as ConfigNode<unknown>)).toEqual({ kind: 'color', default: 'red', description: 'Ink' });
+    });
+
+    it('leaves an arg whose argType names a control, or offers options, or is not a string', () => {
+      expect(
+        kinds(
+          { textColor: 'red', fillColor: 'red', strokeColor: 3 },
+          { textColor: { control: 'text' }, fillColor: { options: ['red', 'blue'] } },
+        ),
+      ).toEqual({ textColor: 'string', fillColor: 'enum', strokeColor: 'number' });
+    });
+
+    it('leaves a `date` match as a string, which has no date leaf in labkit', () => {
+      expect(kinds({ startDate: '2026-01-01' })).toEqual({ startDate: 'string' });
+    });
+  });
+
   it('skips an argType with no arg and no control', () => {
     expect(Object.keys(argsToSchema({}, { onInput: { table: { disable: true } } }).nodes)).toEqual([]);
   });

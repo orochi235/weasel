@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { openChannel } from '../protocol/channel';
 import { PORT_HANDOFF } from '../protocol/messages';
 import { meta, story } from '../story/define';
-import { reportImportFault, startFrame } from './FrameController';
+import { type FrameSetup, reportImportFault, startFrame } from './FrameController';
 import { mountFrame } from './mountFrame';
 
 vi.mock('../protocol/channel', () => ({ openChannel: vi.fn(() => ({ send: vi.fn(), on: vi.fn() })) }));
@@ -19,12 +19,13 @@ function handoff(origin: string, source: unknown, port: unknown = { fake: 'port'
 
 const settle = () => new Promise((r) => setTimeout(r, 0));
 
-function mount(mod: Record<string, unknown>, id: string) {
+function mount(mod: Record<string, unknown>, id: string, setup?: FrameSetup) {
   location.hash = id;
   void mountFrame({
     index: [{ id, file: FILE, exportName: id.split('--')[1] === 'one' ? 'One' : 'Two' }],
     importers: { [FILE]: async () => mod },
     root: '/repo',
+    ...(setup ? { setup } : {}),
   });
 }
 
@@ -76,6 +77,13 @@ describe('mountFrame', () => {
     const loaded = vi.mocked(startFrame).mock.calls[0]?.[0].story;
     expect([loaded?.id, loaded?.layout, loaded?.config.defaults()]).toEqual(['ui-a--one', 'padded', { label: 'x' }]);
     expect(reportImportFault).not.toHaveBeenCalled();
+  });
+
+  it("loads a CSF module under the setup's project parameters", async () => {
+    mount({ default: { title: 'ui/A' }, One: {} }, 'ui-a--one', { parameters: { layout: 'fullscreen' } });
+    handoff(location.origin, window.parent);
+    await vi.waitFor(() => expect(startFrame).toHaveBeenCalled());
+    expect(vi.mocked(startFrame).mock.calls[0]?.[0].story.layout).toBe('fullscreen');
   });
 
   it("renders into the document's #root, so app CSS for #root applies to the story's container", async () => {
