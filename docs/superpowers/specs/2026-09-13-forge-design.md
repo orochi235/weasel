@@ -152,8 +152,19 @@ wrong. Every message carries a protocol version; a mismatch is a `fault`.
 
 | Direction | Messages |
 |---|---|
-| workshop → frame | `init {storyId, config, state, globals}` · `config` · `state` · `globals` · `capture` · `play` |
-| frame → workshop | `ready {schema, layout, viewport}` · `visible {paths}` · `errors {path → messages}` · `setConfig` · `setState` · `size` · `vars` · `captured` · `played {result}` · `fault {phase, message, stack}` |
+| workshop → frame | `init {config, state, globals}` · `config` · `state` · `globals` · `vars.set` · `play` |
+| frame → workshop | `ready {schema, layout, viewport}` · `answers {configKey, hidden, errors}` · `setConfig` · `setState` · `size` · `vars` · `played` · `fault {phase, message, stack}` |
+
+A story's `state(config)` is a function, so the trial's instrument starts its
+state at `null`; a frame handed `null` computes the story's initial state and
+sends it back with `setState`. Reset works the same way.
+
+`showIf` and `validate` answers depend on the config they were asked about, and
+two trials of one story hold different configs, so the frame reports each answer
+keyed by the config it evaluated, and the workshop's rebuilt predicates look up
+the answer for the config they are handed.
+
+Annotation capture across the frame boundary is not in this arc.
 
 The trial's copy of config and state is authoritative. A control edit sends
 `config` in; a story's own `setConfig` sends a write out and the trial applies
