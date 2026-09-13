@@ -77,6 +77,9 @@ export function panWindow(w: TimeWindow, byMs: number, bounds: TimeWindow): Time
   return clampWindow({ from: w.from + byMs, to: w.to + byMs }, bounds);
 }
 
+/** Minimum gap between time ticks, in px — the ruler's and the graph grid's. */
+export const TICK_SPACING_PX = 64;
+
 /** 1, 2, 5, 10, 20, 50, … — the tick steps that read as round numbers. */
 function niceStep(roughMs: number): number {
   const mag = Math.pow(10, Math.floor(Math.log10(roughMs)));

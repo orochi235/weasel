@@ -1,10 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactElement, type WheelEvent as ReactWheelEvent } from 'react';
 import { openPointerSession, type PointerSession } from '@weasel-js/core';
 import s from './Timeline.module.css';
-import { createTimeScale, panWindow, tickTimes, toPercent, zoomWindow, type TimeWindow } from './timeScale';
-
-/** Minimum gap between ruler ticks, in px. */
-const TICK_SPACING_PX = 64;
+import { createTimeScale, panWindow, TICK_SPACING_PX, tickTimes, toPercent, zoomWindow, type TimeWindow } from './timeScale';
 
 /** One wheel notch's zoom factor. */
 const ZOOM_STEP = 0.0015;

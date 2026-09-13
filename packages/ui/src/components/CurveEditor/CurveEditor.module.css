@@ -71,3 +71,70 @@
 .hidden {
   display: none;
 }
+
+/* Focus is drawn on the mark itself: an outline on an SVG shape rings its
+   bounding box, which the nearest scroll container clips. */
+.anchor:focus-visible {
+  outline: none;
+  stroke: var(--wzl-focus-ring);
+  stroke-width: 2;
+}
+
+/* ── keyframe layer ─────────────────────────────────────────────────── */
+
+.keyframe {
+  fill: var(--curve-key-fill, var(--wzl-fg-muted));
+  cursor: grab;
+}
+
+.keyframe[aria-current='true'] { fill: var(--curve-selected, var(--wzl-accent-strong)); }
+.keyframe:focus-visible,
+.handle:focus-visible {
+  outline: none;
+  stroke: var(--wzl-focus-ring);
+  stroke-width: 2;
+}
+
+.segmentTarget:focus-visible {
+  outline: none;
+  stroke: var(--wzl-focus-ring);
+  stroke-opacity: 0.5;
+}
+
+/* The committed key holds while its ghost tracks the pointer, so a drag
+   reads as a move from somewhere to somewhere. */
+.keyframe[data-dragging='true'] { opacity: 0.4; }
+
+.keyframeGhost {
+  fill: var(--curve-selected-soft, var(--wzl-accent-soft));
+  stroke: var(--curve-selected, var(--wzl-accent-strong));
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+  pointer-events: none;
+}
+
+.segmentBand {
+  fill: var(--curve-selected-soft, var(--wzl-accent-soft));
+  pointer-events: none;
+}
+
+/* Carries focus and a name for each segment; hit testing is geometric. */
+.segmentTarget {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 8;
+  pointer-events: none;
+}
+
+.handle {
+  fill: var(--wzl-surface);
+  stroke: var(--curve-selected, var(--wzl-accent-strong));
+  stroke-width: 1;
+  cursor: grab;
+}
+
+.handleStem {
+  stroke: var(--curve-selected, var(--wzl-accent-strong));
+  stroke-width: 1;
+  pointer-events: none;
+}

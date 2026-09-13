@@ -6,7 +6,7 @@ import { Lane } from './Lane';
 import { Ruler } from './Ruler';
 import { Transport, type TransportProps } from './Transport';
 import { buildLanes, trackAtPath } from './lanes';
-import { deleteKey, insertKey, moveKey, samePath, setKeyEasing, setKeyValue, type KeySelection } from './keys';
+import { deleteKey, insertKey, moveKey, samePath, setKeyEasing, setKeys, setKeyValue, type KeySelection } from './keys';
 import type { TimeWindow } from './timeScale';
 
 export type { KeySelection } from './keys';
@@ -165,16 +165,16 @@ export function Timeline(props: TimelineProps): ReactElement {
               snapTimes={snapTimes}
               onToggleExpand={() => toggle(row.key)}
               onSelect={(keyIndex) => setSelection({ trackPath, keyIndex })}
-              onKeyInput={(keyIndex, toMs, value) => {
-                if (!onInput) return;
-                const r = moveKey(tracks, { trackPath, keyIndex }, toMs);
-                onInput(value === undefined ? r.tracks : setKeyValue(r.tracks, r.selection!, value));
+              onKeyInput={(keyIndex, toMs) => {
+                onInput?.(moveKey(tracks, { trackPath, keyIndex }, toMs).tracks);
               }}
-              onKeyCommit={(keyIndex, toMs, value) => {
+              onKeyCommit={(keyIndex, toMs) => {
                 const r = moveKey(tracks, { trackPath, keyIndex }, toMs);
-                onChange(value === undefined ? r.tracks : setKeyValue(r.tracks, r.selection!, value));
+                onChange(r.tracks);
                 setSelection(r.selection);
               }}
+              onKeysInput={(keys) => onInput?.(setKeys(tracks, trackPath, keys))}
+              onKeysCommit={(keys) => onChange(setKeys(tracks, trackPath, keys))}
               onInsert={(atMs) => {
                 const r = insertKey(tracks, trackPath, atMs);
                 onChange(r.tracks);
@@ -182,9 +182,6 @@ export function Timeline(props: TimelineProps): ReactElement {
               }}
               selectedSegment={segmentSelection && samePath(segmentSelection.trackPath, trackPath) ? segmentSelection.keyIndex : null}
               onSelectSegment={(keyIndex) => setSegmentSelection({ trackPath, keyIndex })}
-              onEasingCommit={(keyIndex, easing) => {
-                onChange(setKeyEasing(tracks, { trackPath, keyIndex }, easing));
-              }}
             />
           );
         })}

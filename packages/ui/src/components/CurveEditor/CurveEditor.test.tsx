@@ -695,3 +695,61 @@ describe('CurveEditor — pointer capture', () => {
     expect(capture).not.toHaveBeenCalled();
   });
 });
+
+describe('CurveEditor — keyboard and accessibility', () => {
+  it('makes each movable anchor focusable and names it', () => {
+    const { container } = render(
+      <CurveEditor value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.25 }, { x: 1, y: 1 }]} onInput={() => {}} width={200} height={100} />,
+    );
+    const middle = container.querySelectorAll('[data-anchor-index]')[1] as Element;
+    expect(middle.getAttribute('tabindex')).toBe('0');
+    expect(middle.getAttribute('role')).toBe('button');
+    expect(middle.getAttribute('aria-label')).toMatch(/point 2/i);
+  });
+
+  it('leaves a locked anchor out of the tab order', () => {
+    const { container } = render(
+      <CurveEditor value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.5, locked: true }, { x: 1, y: 1 }]} onInput={() => {}} width={200} height={100} />,
+    );
+    const locked = container.querySelectorAll('[data-anchor-index]')[1] as Element;
+    expect(locked.getAttribute('tabindex')).toBeNull();
+  });
+
+  it('nudges a focused anchor with the arrow keys and commits once per press', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <CurveEditor value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]} onInput={() => {}} onChange={onChange} width={200} height={100} />,
+    );
+    fireEvent.keyDown(container.querySelectorAll('[data-anchor-index]')[1], { key: 'ArrowUp' });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0][0][1].y).toBeCloseTo(0.51);
+    fireEvent.keyDown(container.querySelectorAll('[data-anchor-index]')[1], { key: 'ArrowLeft', shiftKey: true });
+    expect(onChange.mock.calls[1][0][1].x).toBeCloseTo(0.4);
+  });
+
+  it('holds a keyboard nudge to the same constraints as a drag', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]}
+        onInput={() => {}}
+        onChange={onChange}
+        endpoints="pinned-both"
+        width={200}
+        height={100}
+      />,
+    );
+    fireEvent.keyDown(container.querySelectorAll('[data-anchor-index]')[0], { key: 'ArrowUp' });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('undoes a keyboard nudge', () => {
+    const onInput = vi.fn();
+    const { container } = render(
+      <CurveEditor value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]} onInput={onInput} width={200} height={100} />,
+    );
+    fireEvent.keyDown(container.querySelectorAll('[data-anchor-index]')[1], { key: 'ArrowUp' });
+    fireEvent.keyDown(container.querySelector('svg')!, { key: 'z', metaKey: true });
+    expect(onInput.mock.calls.at(-1)![0][1].y).toBe(0.5);
+  });
+});

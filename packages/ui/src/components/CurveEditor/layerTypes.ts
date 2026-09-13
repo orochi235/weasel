@@ -109,9 +109,15 @@ export interface CurveLayer<S> {
     extra: EmptyDownArgs<S>,
   ): LayerGesture<S> | void;
 
-  /** Keyboard while the editor has focus. Top-to-bottom; call
-   *  `e.preventDefault()` to stop propagation. */
-  onKeyDown?(state: S, e: KeyboardEvent, ctx: LayerCtx): void;
+  /** Keyboard while focus is on the editor or on anything a layer rendered
+   *  into it; `e.target` says which. Top-to-bottom; `e.preventDefault()` keeps
+   *  the key from the layers below. Publish an edit with `extra.commit`. */
+  onKeyDown?(state: S, e: KeyboardEvent, ctx: LayerCtx, extra: KeyDownArgs<S>): void;
+}
+
+/** Handed to `onKeyDown` so a key press can publish a committed edit. */
+export interface KeyDownArgs<S> {
+  commit(next: S): void;
 }
 
 /** Helpers handed to `onPointerDown` and `onEmptyPointerDown` so a
