@@ -14,9 +14,10 @@ import {
   buildToolOffhandBindings,
 } from '../actions/defaults/toolOffhand';
 
-function Probe({ actionDef, enabled = true, affordanceAt, classifyTarget }: {
+function Probe({ actionDef, enabled = true, keyboard, affordanceAt, classifyTarget }: {
   actionDef: Action;
   enabled?: boolean;
+  keyboard?: boolean;
   affordanceAt?: (p: { x: number; y: number }) => import('../actions/invoker').AffordanceHit | null;
   classifyTarget?: (p: { x: number; y: number }) => import('@weasel-js/gestures').BodyClassification;
 }) {
@@ -29,6 +30,7 @@ function Probe({ actionDef, enabled = true, affordanceAt, classifyTarget }: {
     actions: registry!,
     toolsById: new Map(),
     enabled,
+    ...(keyboard !== undefined ? { keyboard } : {}),
     affordanceAt,
     classifyTarget,
   });
@@ -555,6 +557,90 @@ describe('useGestureDispatcher', () => {
       act(() => { fire(canvas, 'lostpointercapture', { pointerId: 1 }); });
       expect(endSpy).toHaveBeenCalledTimes(1);
       expect(endSpy).not.toHaveBeenCalledWith('cancel');
+    });
+
+    describe('window blur', () => {
+      const dragProbe = (keyboard?: boolean) => {
+        const endSpy = vi.fn();
+        const startSpy = vi.fn();
+        const dragAction: Action = {
+          id: 'demo.drag',
+          label: 'drag',
+          defaultBinding: { kind: 'drag' },
+          invoker: {
+            timing: 'ongoing',
+            start: () => {
+              startSpy();
+              return { onMove: () => {}, onEnd: (_c, reason) => endSpy(reason) };
+            },
+          },
+        };
+        const { container } = render(
+          <Harness>
+            <Probe
+              actionDef={dragAction}
+              classifyTarget={() => ({ body: 'empty' })}
+              {...(keyboard !== undefined ? { keyboard } : {})}
+            />
+          </Harness>,
+        );
+        return { canvas: container.querySelector('canvas')!, endSpy, startSpy };
+      };
+
+      it('cancels a drag in flight', () => {
+        const { canvas, endSpy } = dragProbe();
+        act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0, pointerId: 1, buttons: 1 }); });
+        act(() => { fire(canvas, 'pointermove', { clientX: 40, clientY: 40, pointerId: 1, buttons: 1 }); });
+        expect(endSpy).not.toHaveBeenCalled();
+
+        act(() => { window.dispatchEvent(new Event('blur')); });
+        expect(endSpy).toHaveBeenCalledTimes(1);
+        expect(endSpy).toHaveBeenCalledWith('cancel');
+
+        // The release the window eventually delivers belongs to a gesture
+        // that is already over.
+        act(() => { fire(canvas, 'pointerup', { clientX: 40, clientY: 40, pointerId: 1 }); });
+        expect(endSpy).toHaveBeenCalledTimes(1);
+      });
+
+      it('cancels a drag even when keyboard dispatch is off', () => {
+        const { canvas, endSpy } = dragProbe(false);
+        act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0, pointerId: 1, buttons: 1 }); });
+        act(() => { fire(canvas, 'pointermove', { clientX: 40, clientY: 40, pointerId: 1, buttons: 1 }); });
+        act(() => { window.dispatchEvent(new Event('blur')); });
+        expect(endSpy).toHaveBeenCalledWith('cancel');
+      });
+
+      it('drops a press that had not yet become a drag', () => {
+        const clickSpy = vi.fn();
+        const clickAction: Action = {
+          id: 'demo.click',
+          label: 'click',
+          defaultBinding: { kind: 'click' },
+          invoker: { timing: 'immediate', run: () => clickSpy() },
+        };
+        const { container } = render(
+          <Harness><Probe actionDef={clickAction} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
+        );
+        const canvas = container.querySelector('canvas')!;
+        act(() => { fire(canvas, 'pointerdown', { clientX: 10, clientY: 10, pointerId: 1, buttons: 1 }); });
+        act(() => { window.dispatchEvent(new Event('blur')); });
+        act(() => { fire(canvas, 'pointerup', { clientX: 10, clientY: 10, pointerId: 1 }); });
+        expect(clickSpy).not.toHaveBeenCalled();
+      });
+
+      it('does nothing with no pointer held', () => {
+        const { canvas, endSpy, startSpy } = dragProbe();
+        act(() => { window.dispatchEvent(new Event('blur')); });
+        expect(startSpy).not.toHaveBeenCalled();
+        expect(endSpy).not.toHaveBeenCalled();
+
+        // And the canvas still takes the next drag.
+        act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0, pointerId: 1, buttons: 1 }); });
+        act(() => { fire(canvas, 'pointermove', { clientX: 40, clientY: 40, pointerId: 1, buttons: 1 }); });
+        act(() => { fire(canvas, 'pointerup', { clientX: 40, clientY: 40, pointerId: 1 }); });
+        expect(endSpy).toHaveBeenCalledWith('commit');
+      });
     });
 
     it('refuses an ongoing invoker rather than colliding with the drag handle', () => {
