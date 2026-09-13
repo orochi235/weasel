@@ -1,6 +1,6 @@
 import './shell.css';
 import type { RenderContext } from '@weasel-js/labkit';
-import { type RefObject, useEffect, useRef, useState } from 'react';
+import { type RefObject, useContext, useEffect, useRef, useState } from 'react';
 import { type Channel, type Mismatch, openChannel } from '../protocol/channel';
 import {
   type FaultPhase,
@@ -12,18 +12,20 @@ import {
 } from '../protocol/messages';
 import type { IndexEntry } from '../story/types';
 import type { AnswerBook } from './answers';
+import { type Ready, readyKey } from './readyKey';
+import { StoryGlobalsContext } from './StoryGlobalsContext';
 
 export interface FrameViewProps {
   entry: IndexEntry;
   frameUrl: string;
   answers: AnswerBook;
-  onReady: (entry: IndexEntry, ready: Extract<FromFrame, { type: 'ready' }>) => void;
-  globals: Globals;
+  onReady: (entry: IndexEntry, ready: Ready) => void;
+  /** `readyKey` of the ready this view's instrument was built from; null while the instrument is provisional. */
+  descriptionKey: string | null;
   ctx: RenderContext<unknown, unknown>;
 }
 
 const START_TIMEOUT_MS = 10_000;
-const NOTHING = Symbol('nothing');
 
 interface Fault {
   phase: FaultPhase | null;
@@ -34,10 +36,10 @@ interface Fault {
 interface Link {
   channel: Channel<FromFrame, ToFrame>;
   timer: ReturnType<typeof setTimeout>;
-  /** What the frame holds, from `init` on; null until its `ready`. */
+  /** The key of a `ready` whose `init` waits for an instrument built from it. */
+  awaiting: string | null;
+  /** What the frame holds, from `init` on; null until then. */
   sent: { config: unknown; state: unknown; globals: Globals } | null;
-  /** The last state the frame sent, which must not be sent back to it. */
-  fromFrame: unknown;
 }
 
 function closeLink(link: RefObject<Link | null>): void {
@@ -54,35 +56,46 @@ function mismatchMessage(mismatch: Mismatch): string {
 }
 
 export function FrameView(props: FrameViewProps) {
-  const { entry, frameUrl, globals, ctx } = props;
+  const { entry, frameUrl, descriptionKey, ctx } = props;
+  const globals = useContext(StoryGlobalsContext);
   const src = `${frameUrl}#${entry.id}`;
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const link = useRef<Link | null>(null);
-  const latest = useRef(props);
-  latest.current = props;
+  const latest = useRef({ ...props, globals });
+  latest.current = { ...props, globals };
   const [fault, setFault] = useState<Fault | null>(null);
 
+  const init = (current: Link): void => {
+    const { ctx: live, globals: liveGlobals } = latest.current;
+    current.awaiting = null;
+    current.sent = { config: live.config, state: live.state, globals: liveGlobals };
+    current.channel.send({ type: 'init', ...current.sent });
+  };
+
   const receive = (current: Link, msg: FromFrame): void => {
-    const { ctx: live, answers, onReady, globals: liveGlobals } = latest.current;
+    const { ctx: live, answers, onReady } = latest.current;
     switch (msg.type) {
-      case 'ready':
+      case 'ready': {
         clearTimeout(current.timer);
         setFault(null);
         onReady(latest.current.entry, msg);
-        current.sent = { config: live.config, state: live.state, globals: liveGlobals };
-        current.channel.send({ type: 'init', ...current.sent });
+        const key = readyKey(msg);
+        if (key === latest.current.descriptionKey) init(current);
+        else current.awaiting = key;
         break;
+      }
       case 'setConfig':
         live.setConfig(msg.path, msg.value);
         break;
       case 'setState':
-        current.fromFrame = msg.state;
+        if (current.sent) current.sent.state = msg.state;
         live.setState(msg.state);
         break;
       case 'answers':
         answers.record(msg.answers);
         break;
       case 'fault':
+        clearTimeout(current.timer);
         setFault({ phase: msg.phase, message: msg.message });
         break;
     }
@@ -93,15 +106,14 @@ export function FrameView(props: FrameViewProps) {
     const target = iframeRef.current?.contentWindow;
     if (!target) return;
     const { port1, port2 } = new MessageChannel();
+    const timer = setTimeout(() => setFault({ phase: null, message: `Frame did not start: ${src}` }), START_TIMEOUT_MS);
     const channel = openChannel<FromFrame, ToFrame>(port1, {
-      onMismatch: (mismatch) => setFault({ phase: 'protocol', message: mismatchMessage(mismatch) }),
+      onMismatch: (mismatch) => {
+        clearTimeout(timer);
+        setFault({ phase: 'protocol', message: mismatchMessage(mismatch) });
+      },
     });
-    const current: Link = {
-      channel,
-      timer: setTimeout(() => setFault({ phase: null, message: `Frame did not start: ${src}` }), START_TIMEOUT_MS),
-      sent: null,
-      fromFrame: NOTHING,
-    };
+    const current: Link = { channel, timer, awaiting: null, sent: null };
     link.current = current;
     channel.on((msg) => receive(current, msg));
     target.postMessage({ type: PORT_HANDOFF }, location.origin, [port2]);
@@ -111,21 +123,32 @@ export function FrameView(props: FrameViewProps) {
 
   useEffect(() => {
     const current = link.current;
-    const sent = current?.sent;
-    if (!current || !sent) return;
+    if (!current) return;
+    if (current.awaiting !== null) {
+      if (current.awaiting === descriptionKey) init(current);
+      return;
+    }
+    const sent = current.sent;
+    if (!sent) return;
+    let input = false;
     if (ctx.config !== sent.config) {
       sent.config = ctx.config;
       current.channel.send({ type: 'config', config: ctx.config });
+      input = true;
     }
     if (ctx.state !== sent.state) {
       sent.state = ctx.state;
-      if (ctx.state !== current.fromFrame) current.channel.send({ type: 'state', state: ctx.state });
+      current.channel.send({ type: 'state', state: ctx.state });
+      input = true;
     }
     if (globals !== sent.globals) {
       sent.globals = globals;
       current.channel.send({ type: 'globals', globals });
+      input = true;
     }
-  }, [ctx.config, ctx.state, globals]);
+    // The frame retries its render on new input and faults again if it still throws.
+    if (input) setFault((shown) => (shown?.phase === 'render' ? null : shown));
+  }, [ctx.config, ctx.state, globals, descriptionKey]);
 
   return (
     <div className="fg-frame-host">

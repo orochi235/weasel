@@ -9,7 +9,7 @@ import { useStoryRegistry } from './useStoryRegistry';
 const a: IndexEntry = { id: 'x--a', title: 'X', name: 'A', exportName: 'A', file: '/x.stories.tsx' };
 const b: IndexEntry = { id: 'x--b', title: 'X', name: 'B', exportName: 'B', file: '/x.stories.tsx' };
 const index = [a, b];
-const options = { frameUrl: '/frame.html', globals: {} };
+const options = { frameUrl: '/frame.html' };
 
 const readyWith = (label: string): Extract<FromFrame, { type: 'ready' }> => ({
   type: 'ready',
@@ -47,5 +47,14 @@ describe('useStoryRegistry', () => {
     const list = result.current.instruments;
     act(() => result.current.onReady(a, readyWith('hi')));
     expect(result.current.instruments).toBe(list);
+  });
+
+  it('forgets a story that leaves the index, so its return starts provisional', () => {
+    const { result, rerender } = mount();
+    act(() => result.current.onReady(a, readyWith('hi')));
+    rerender({ entries: [b] });
+    expect(result.current.instruments.map((i) => i.name)).toEqual(['x--b']);
+    rerender({ entries: index });
+    expect(result.current.instruments[0]?.config?.defaults()).toEqual({});
   });
 });

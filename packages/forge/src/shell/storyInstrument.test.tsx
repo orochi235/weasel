@@ -1,13 +1,15 @@
-import { Lab, LabContext, type LabContextValue } from '@weasel-js/labkit';
+import { Lab, LabContext, type LabContextValue, type InstrumentList, type RenderContext } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type Channel, openChannel } from '../protocol/channel';
-import { type FromFrame, PORT_HANDOFF, stableStringify, type ToFrame } from '../protocol/messages';
+import { type FromFrame, type Globals, PORT_HANDOFF, stableStringify, type ToFrame } from '../protocol/messages';
 import { describeSchema } from '../protocol/schema';
 import type { IndexEntry } from '../story/types';
 import { createAnswerBook } from './answers';
+import { StoryGlobalsContext } from './StoryGlobalsContext';
 import { storyInstrument } from './storyInstrument';
+import { useStoryRegistry } from './useStoryRegistry';
 
 const entry: IndexEntry = {
   id: 'test-counter--counter',
@@ -25,13 +27,15 @@ const ready: Ready = {
 };
 const globals = { theme: 'dark' };
 
+// Captured before any test fakes timers, so a flush still yields to the port.
+const realSetTimeout = globalThis.setTimeout;
 async function flush() {
-  await new Promise((r) => setTimeout(r, 0));
+  await new Promise((r) => realSetTimeout(r, 0));
   await act(async () => {});
 }
 
 describe('storyInstrument', () => {
-  const base = { entry, answers: createAnswerBook(), frameUrl: '/frame.html', onReady: () => {}, globals };
+  const base = { entry, answers: createAnswerBook(), frameUrl: '/frame.html', onReady: () => {} };
 
   it('is provisional without a ready: empty defaults, null state, no stage', () => {
     const instrument = storyInstrument(base);
@@ -69,23 +73,44 @@ if (typeof globalThis.ResizeObserver === 'undefined') {
 }
 
 let lab: LabContextValue | null = null;
+let ctx: RenderContext<unknown, unknown> | null = null;
 const cleanups: (() => void)[] = [];
 afterEach(() => {
   for (const fn of cleanups.splice(0)) fn();
   vi.useRealTimers();
 });
 
-function labWith(instrumentReady: Ready | undefined, onReady = vi.fn(), answers = createAnswerBook()) {
-  const instrument = storyInstrument({ entry, ready: instrumentReady, answers, frameUrl: '/frame.html', onReady, globals });
+function captureLab() {
   return (
-    <Lab instruments={[instrument]} defaultInstrument={entry.id}>
-      <LabContext.Consumer>
-        {(value) => {
-          lab = value;
-          return null;
-        }}
-      </LabContext.Consumer>
-    </Lab>
+    <LabContext.Consumer>
+      {(value) => {
+        lab = value;
+        return null;
+      }}
+    </LabContext.Consumer>
+  );
+}
+
+function labWith(
+  instrumentReady: Ready | undefined,
+  onReady = vi.fn(),
+  answers = createAnswerBook(),
+  labGlobals: Globals = globals,
+) {
+  const instrument = storyInstrument({ entry, ready: instrumentReady, answers, frameUrl: '/frame.html', onReady });
+  const capturing = {
+    ...instrument,
+    render: (renderCtx: RenderContext<unknown, unknown>) => {
+      ctx = renderCtx;
+      return instrument.render(renderCtx);
+    },
+  };
+  return (
+    <StoryGlobalsContext.Provider value={labGlobals}>
+      <Lab instruments={[capturing]} defaultInstrument={entry.id}>
+        {captureLab()}
+      </Lab>
+    </StoryGlobalsContext.Provider>
   );
 }
 
@@ -95,6 +120,7 @@ function connect(iframe: HTMLIFrameElement) {
   fireEvent.load(iframe);
   const call = post.mock.calls.at(-1) as unknown[] | undefined;
   expect(call?.[0]).toEqual({ type: PORT_HANDOFF });
+  expect(call?.[1]).toBe(location.origin);
   const port = (call?.[2] as MessagePort[])[0] as MessagePort;
   const frame: Channel<ToFrame, FromFrame> = openChannel(port);
   const received: ToFrame[] = [];
@@ -103,15 +129,19 @@ function connect(iframe: HTMLIFrameElement) {
   return { frame, received, port };
 }
 
-function mount(onReady = vi.fn(), answers = createAnswerBook()) {
+function mountWith(instrumentReady: Ready | undefined, onReady = vi.fn(), answers = createAnswerBook()) {
   lab = null;
-  const view = render(labWith(ready, onReady, answers));
+  ctx = null;
+  const view = render(labWith(instrumentReady, onReady, answers));
   const iframe = view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement;
   return { view, iframe, onReady, answers, ...connect(iframe) };
 }
 
+const mount = (onReady = vi.fn(), answers = createAnswerBook()) => mountWith(ready, onReady, answers);
+
 const config = () => lab?.trials[0]?.config;
 const state = () => lab?.trials[0]?.state;
+const faultText = (container: HTMLElement) => container.querySelector('.fg-fault')?.textContent ?? null;
 
 describe('FrameView', () => {
   it('points the iframe at the story', () => {
@@ -128,6 +158,18 @@ describe('FrameView', () => {
     await flush();
     expect(onReady).toHaveBeenCalledWith(entry, ready);
     expect(received).toEqual([{ type: 'init', config: { label: 'clicks' }, state: null, globals }]);
+  });
+
+  it('holds init until its instrument describes the frame, then sends the real defaults', async () => {
+    const grid: Ready = { ...ready, schema: describeSchema(f.schema({ grid: f.group({ size: f.number(4) }) })) };
+    const { view, frame, received, onReady } = mountWith(undefined);
+    frame.send(grid);
+    await flush();
+    expect(onReady).toHaveBeenCalledWith(entry, grid);
+    expect(received).toEqual([]);
+    view.rerender(labWith(grid, onReady));
+    await flush();
+    expect(received).toEqual([{ type: 'init', config: { grid: { size: 4 } }, state: null, globals }]);
   });
 
   it('applies a frame setConfig to the trial and sends the config back', async () => {
@@ -161,6 +203,24 @@ describe('FrameView', () => {
     expect(received.filter((m) => m.type === 'state')).toEqual([{ type: 'state', state: null }]);
   });
 
+  it('sends the frame’s own earlier state when the trial returns to it', async () => {
+    const { frame, received } = mount();
+    frame.send(ready);
+    await flush();
+    frame.send({ type: 'setState', state: { n: 1 } });
+    await flush();
+    const a = state();
+    const b = { n: 2 };
+    act(() => ctx?.setState(b));
+    await flush();
+    act(() => ctx?.setState(a));
+    await flush();
+    expect(received.filter((m) => m.type === 'state')).toEqual([
+      { type: 'state', state: b },
+      { type: 'state', state: { n: 1 } },
+    ]);
+  });
+
   it('records answers in the story’s answer book', async () => {
     const { frame, answers } = mount();
     frame.send(ready);
@@ -185,13 +245,59 @@ describe('FrameView', () => {
     expect(view.container.querySelector('.fg-fault')).toBeNull();
   });
 
+  it('clears a render fault when new input goes to the frame, until the frame faults again', async () => {
+    const { view, frame, received } = mount();
+    frame.send(ready);
+    await flush();
+    frame.send({ type: 'fault', phase: 'render', message: 'bad config' });
+    await flush();
+    expect(faultText(view.container)).toContain('bad config');
+    act(() => ctx?.setConfig('label', 'fixed?'));
+    await flush();
+    expect(received.at(-1)).toEqual({ type: 'config', config: { label: 'fixed?' } });
+    expect(faultText(view.container)).toBeNull();
+    frame.send({ type: 'fault', phase: 'render', message: 'still bad' });
+    await flush();
+    expect(faultText(view.container)).toContain('still bad');
+  });
+
+  it('keeps an import fault when new input goes to the frame', async () => {
+    const { view, frame } = mount();
+    frame.send(ready);
+    await flush();
+    frame.send({ type: 'fault', phase: 'import', message: 'no module' });
+    await flush();
+    act(() => ctx?.setConfig('label', 'other'));
+    await flush();
+    expect(faultText(view.container)).toContain('no module');
+  });
+
   it('faults when the frame never says ready', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const { view } = mount();
     act(() => vi.advanceTimersByTime(10_000));
-    expect(view.container.querySelector('.fg-fault')?.textContent).toContain(
-      `Frame did not start: /frame.html#${entry.id}`,
-    );
+    expect(faultText(view.container)).toContain(`Frame did not start: /frame.html#${entry.id}`);
+  });
+
+  it('keeps a fault that arrived before ready past the start timeout', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const { view, frame } = mount();
+    frame.send({ type: 'fault', phase: 'import', message: 'no module' });
+    await flush();
+    act(() => vi.advanceTimersByTime(10_000));
+    const text = faultText(view.container);
+    expect(text).toContain('import');
+    expect(text).toContain('no module');
+    expect(text).not.toContain('Frame did not start');
+  });
+
+  it('keeps a protocol mismatch past the start timeout', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const { view, port } = mount();
+    port.postMessage({ v: 2, msg: ready });
+    await flush();
+    act(() => vi.advanceTimersByTime(10_000));
+    expect(faultText(view.container)).toContain('Frame speaks protocol 2');
   });
 
   it('names the protocol version a mismatched frame speaks', async () => {
@@ -207,9 +313,7 @@ describe('FrameView', () => {
     const { view, port } = mount();
     port.postMessage({ type: 'ready' });
     await flush();
-    expect(view.container.querySelector('.fg-fault')?.textContent).toContain(
-      'Frame sent a message that is not a forge envelope',
-    );
+    expect(faultText(view.container)).toContain('Frame sent a message that is not a forge envelope');
   });
 
   it('hands off a fresh port and re-sends init after the frame reloads', async () => {
@@ -222,11 +326,51 @@ describe('FrameView', () => {
     expect(again.received).toEqual([{ type: 'init', config: { label: 'clicks' }, state: null, globals }]);
   });
 
+  it('ignores the old port after the frame reloads', async () => {
+    const { iframe, frame } = mount();
+    frame.send(ready);
+    await flush();
+    const again = connect(iframe);
+    again.frame.send(ready);
+    await flush();
+    frame.send({ type: 'setConfig', path: 'label', value: 'stale' });
+    await flush();
+    expect(config()).toEqual({ label: 'clicks' });
+  });
+
   it('keeps the same iframe when the instrument is replaced', async () => {
     const { view, iframe } = mount();
     view.rerender(labWith({ ...ready, schema: describeSchema(f.schema({ label: f.string('clicks'), n: f.number(1) })) }));
     await flush();
     expect(view.container.querySelector('iframe')).toBe(iframe);
     expect(config()).toEqual({ label: 'clicks', n: 1 });
+  });
+});
+
+describe('FrameView under a story registry', () => {
+  function RegistryLab({ labGlobals, lists }: { labGlobals: Globals; lists: InstrumentList[] }) {
+    const registry = useStoryRegistry([entry], { frameUrl: '/frame.html' });
+    lists.push(registry.instruments);
+    return (
+      <StoryGlobalsContext.Provider value={labGlobals}>
+        <Lab instruments={registry.instruments} defaultInstrument={entry.id}>
+          {captureLab()}
+        </Lab>
+      </StoryGlobalsContext.Provider>
+    );
+  }
+
+  it('sends new globals to the frame without replacing the instruments', async () => {
+    const lists: InstrumentList[] = [];
+    const view = render(<RegistryLab labGlobals={globals} lists={lists} />);
+    const { frame, received } = connect(view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement);
+    frame.send(ready);
+    await flush();
+    expect(received).toEqual([{ type: 'init', config: { label: 'clicks' }, state: null, globals }]);
+    const settled = lists.at(-1);
+    view.rerender(<RegistryLab labGlobals={{ theme: 'light' }} lists={lists} />);
+    await flush();
+    expect(received.at(-1)).toEqual({ type: 'globals', globals: { theme: 'light' } });
+    expect(lists.at(-1)).toBe(settled);
   });
 });
