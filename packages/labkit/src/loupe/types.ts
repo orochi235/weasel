@@ -43,7 +43,7 @@ export interface LoupeCapability<TS = unknown, TC = unknown> {
   /** Held for a momentary peek while the loupe is off. Default `'Alt'`; `null`
    *  turns hold-to-peek off. Matched against `KeyboardEvent.key`. */
   peekKey?: string | null;
-  /** Called with the colour under the aim, wherever the surface can say. The
+  /** Called with the color under the aim, wherever the surface can say. The
    *  canvas painter reads it back; a DOM loupe has no pixels to sample. */
   onColorChange?: (hex: string) => void;
 }

@@ -4,7 +4,7 @@
 on, painted by whichever painter suits the instrument's content.
 
 The magnifier itself is not here. `@weasel-js/loupe` holds the model — aim,
-factor, mode, colour, picking — over a `LoupeSurface` it asks five questions.
+factor, mode, color, picking — over a `LoupeSurface` it asks five questions.
 This directory binds that model to a labkit trial and draws it.
 
 ## Files

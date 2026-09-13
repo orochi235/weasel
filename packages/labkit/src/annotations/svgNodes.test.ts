@@ -39,7 +39,7 @@ describe('a mark as vector', () => {
       expect(node.stroke?.cap).toBe(cmd.stroke?.cap);
       expect(node.stroke?.join).toBe(cmd.stroke?.join);
       // An arrow's head arrives filled and unstroked; the shaft is the other
-      // way round. Whichever paint the command carries is the mark colour.
+      // way round. Whichever paint the command carries is the mark color.
       const paint = node.stroke?.paint ?? node.fill;
       expect(paint).toEqual({ kind: 'solid', color: '#e5484d' });
     }
@@ -65,7 +65,7 @@ describe('a mark as vector', () => {
     );
   });
 
-  it('emits text as text, at the pose, in the mark colour', () => {
+  it('emits text as text, at the pose, in the mark color', () => {
     const m = mark('text', { title: 'missing edge' });
     const [node] = markSvgNodes(m, CONTENT);
     expect(node).toMatchObject({ kind: 'text', text: 'missing edge', x: 10, y: 12 });

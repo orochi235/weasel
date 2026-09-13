@@ -27,7 +27,7 @@ export interface PaintableMark {
 /** How a mark is drawn, as opposed to where. Resolved by the overlay from the
  *  instrument's vocabulary and the mark's own staleness. */
 export interface MarkStyle {
-  /** The status's colour, or the default. */
+  /** The status's color, or the default. */
   color?: string;
   /** A mark whose stored position no longer describes the picture. Drawn
    *  dashed rather than hidden: it still describes *something*, and dropping

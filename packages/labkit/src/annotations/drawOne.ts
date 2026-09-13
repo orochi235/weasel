@@ -12,7 +12,7 @@ export interface MarkDrawOptions {
   positionDependsOn?: readonly string[];
   /** The trial's config at the time of the draw. */
   config: unknown;
-  /** The instrument's vocabulary, for a status's colour. */
+  /** The instrument's vocabulary, for a status's color. */
   meaning?: AnnotationMeaning;
 }
 
@@ -20,7 +20,7 @@ export interface MarkDrawOptions {
  * How one mark is drawn — shared by the pane on screen and by an export.
  *
  * One function rather than two call sites building their own, because an
- * export that resolves a status colour or a stale dash differently from the
+ * export that resolves a status color or a stale dash differently from the
  * screen produces a picture nobody was looking at.
  */
 export function createMarkDrawOne(

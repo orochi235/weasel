@@ -148,7 +148,7 @@ describe('useLoupe', () => {
     expect(wheel.defaultPrevented).toBe(true);
   });
 
-  it('reports the colour under the aim', () => {
+  it('reports the color under the aim', () => {
     const onColorChange = vi.fn();
     render(
       <Harness sample={(p) => (p.x > 10 ? '#ff0000' : '#00ff00')} onColorChange={onColorChange} />,

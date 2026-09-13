@@ -23,7 +23,7 @@ const strokeOf = (cmds: ReturnType<ReturnType<typeof createMarkDrawOne>>) => {
 };
 
 describe('the draw callback marks share between the screen and an export', () => {
-  it("paints a mark in its status's colour", () => {
+  it("paints a mark in its status's color", () => {
     const drawOne = createMarkDrawOne({
       content: CONTENT,
       config: {},

@@ -102,7 +102,7 @@ describe('markCommands', () => {
 });
 
 describe('markCommands styling', () => {
-  it('takes a status colour over the default', () => {
+  it('takes a status color over the default', () => {
     const [cmd] = markCommands(mark('rect'), CONTENT, { color: '#30a46c' });
     expect((cmd as { stroke?: { paint?: { color?: string } } }).stroke?.paint?.color).toBe(
       '#30a46c',
@@ -117,7 +117,7 @@ describe('markCommands styling', () => {
     expect((stale as { stroke?: { dash?: number[] } }).stroke?.dash).toEqual([6, 4]);
   });
 
-  it("colours a text mark's glyphs too, not only the outlines", () => {
+  it("colors a text mark's glyphs too, not only the outlines", () => {
     const [cmd] = markCommands(mark('text', { title: 'x' }), CONTENT, { color: '#30a46c' });
     const runs = (cmd as { runs: { fill?: { color?: string } }[] }).runs;
     expect(runs[0]?.fill?.color).toBe('#30a46c');

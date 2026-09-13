@@ -14,7 +14,7 @@ export interface UseLoupeOptions {
   hostRef: RefObject<HTMLElement | null>;
   /** Whether the loupe is turned on. Hold-to-peek shows it regardless. */
   enabled: boolean;
-  /** Hex colour at a host point. Omitted, the loupe reports no colour — which
+  /** Hex color at a host point. Omitted, the loupe reports no color — which
    *  is the honest answer for a surface with no pixels to read. */
   sample?: (p: LoupePoint) => string | null;
 }

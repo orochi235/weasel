@@ -27,12 +27,12 @@ import { isLeafVisible } from '../config/visible';
 import type { ConfigField } from './types';
 
 /** How a panel packs its rows into the two-column property grid.
- *   - `'auto'`: narrow controls (numbers, checkboxes, dropdowns, colours) sit
+ *   - `'auto'`: narrow controls (numbers, checkboxes, dropdowns, colors) sit
  *     two per row; the ones that need the width — text, sliders, segmented
  *     toggles — span it.
  *   - `'pairs'`: every row pairs. A control that needs the full width says so
  *     itself, with `<PropertyRow span>`.
- *   - `'one-up'`: one control per row, colours excepted.
+ *   - `'one-up'`: one control per row, colors excepted.
  */
 export type ControlPack = 'auto' | 'pairs' | 'one-up';
 

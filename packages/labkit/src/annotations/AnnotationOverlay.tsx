@@ -35,7 +35,7 @@ export interface AnnotationOverlayProps {
   config: unknown;
   /** The trial's resolved tool slot. */
   activeToolId: string | null;
-  /** The instrument's vocabulary, for a status's colour. */
+  /** The instrument's vocabulary, for a status's color. */
   meaning?: AnnotationMeaning;
 }
 

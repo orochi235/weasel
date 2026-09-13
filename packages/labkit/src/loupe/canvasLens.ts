@@ -61,7 +61,7 @@ export function lensSourceRect(
 }
 
 /**
- * The colour a stack presents at a point: the topmost visible layer with
+ * The color a stack presents at a point: the topmost visible layer with
  * anything opaque there, or `null` when every layer is transparent — which is
  * the honest answer for a point showing nothing but the workspace behind.
  */
