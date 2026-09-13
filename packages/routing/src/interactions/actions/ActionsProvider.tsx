@@ -113,6 +113,26 @@ export function ActionsScope({ children }: { children: ReactNode }): ReactElemen
  * `useActionsRegistry()` or `useAction()` to participate. Mounts no input
  * listener of its own — the gesture dispatcher owns input.
  */
+/**
+ * Push `value` onto an owner stack and hand back its release.
+ *
+ * Newest wins, but the release takes out *its own* entry wherever it now sits,
+ * so a displaced owner leaving cannot disturb the one above it and the owner
+ * on top leaving uncovers the one below rather than emptying the stack. A
+ * `null` value registers nothing and releases to a no-op. Double-release safe.
+ */
+function pushOwner<T>(ref: { current: T[] }, value: T | null): () => void {
+  if (value === null) return () => {};
+  ref.current.push(value);
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    const i = ref.current.lastIndexOf(value);
+    if (i !== -1) ref.current.splice(i, 1);
+  };
+}
+
 export function ActionsProvider({ children }: { children: ReactNode }): ReactElement {
   // A stack of registrants per id, newest live. Two canvases under one provider
   // both register `viewport.zoom`; with a single slot the second displaced the
@@ -140,11 +160,16 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   // Dep registry wired via setDepRegistry — set by SceneCanvas's registrar
   // when this provider sits above the dep-registry scope (consumer root
   // <ActionsProvider>). Preferred over the context read above.
-  const wiredDepRegRef = useRef<DepRegistry | null>(null);
+  //
+  // A stack, newest live, for the same reason the registrant stacks above are:
+  // two canvases under one provider both wire themselves, and with a single
+  // slot whichever one unmounts empties it — taking the wiring away from the
+  // canvas still on screen. The dispatcher ref below is the same story.
+  const wiredDepRegRef = useRef<DepRegistry[]>([]);
 
-  // Dispatcher ref — wired from SceneCanvas via setDispatcher so that
+  // Dispatcher stack — wired from SceneCanvas via setDispatcher so that
   // begin() can delegate to beginUiOngoing.
-  const dispatcherRef = useRef<Dispatcher | null>(null);
+  const dispatcherRef = useRef<Dispatcher[]>([]);
 
   // The legacy keystroke loop that walked every action's
   // `defaultBinding: KeyBinding` and matched against keydown is gone, along
@@ -211,7 +236,7 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
         if (!a) return false;
         try {
           if (a.invoker && a.invoker.timing === 'immediate') {
-            const r = wiredDepRegRef.current ?? depRegRef.current;
+            const r = wiredDepRegRef.current.at(-1) ?? depRegRef.current;
             // Prefer the action's declared `requires` (same contract the
             // dispatcher uses — shared `buildDepsFromRequires`, including
             // the dev-mode undeclared-read guard); legacy fixed bag
@@ -243,21 +268,18 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
         };
       },
       setDispatcher: (d: Dispatcher | null) => {
-        if (d && dispatcherRef.current && dispatcherRef.current !== d && !warnedRef.current) {
+        if (d && dispatcherRef.current.length > 0 && dispatcherRef.current.at(-1) !== d
+            && !warnedRef.current) {
           warnedRef.current = true;
           warnSharedScope();
         }
-        dispatcherRef.current = d;
-        return () => { if (dispatcherRef.current === d) dispatcherRef.current = null; };
+        return pushOwner(dispatcherRef, d);
       },
-      setDepRegistry: (r: DepRegistry | null) => {
-        wiredDepRegRef.current = r;
-        return () => { if (wiredDepRegRef.current === r) wiredDepRegRef.current = null; };
-      },
+      setDepRegistry: (r: DepRegistry | null) => pushOwner(wiredDepRegRef, r),
       begin: (id: string, params?: Record<string, unknown>) => {
-        const disp = dispatcherRef.current;
+        const disp = dispatcherRef.current.at(-1) ?? null;
         if (!disp) return null;
-        const r = wiredDepRegRef.current ?? depRegRef.current;
+        const r = wiredDepRegRef.current.at(-1) ?? depRegRef.current;
         const a = liveAction(id);
         // Same resolution order as `trigger`: the action's declared `requires`
         // when it has one, the legacy fixed bag otherwise. The fixed bag has no

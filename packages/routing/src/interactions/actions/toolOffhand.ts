@@ -61,7 +61,7 @@ export function makeToolOffhandAction(bindings: BoundGesture[]): Action {
         if (!activeTool || !toolId) return {};
         activeTool.pushHotkey(toolId);
         return {
-          onEnd: () => { activeTool.popHotkey(); },
+          onEnd: () => { activeTool.popHotkey(toolId); },
         };
       },
     },

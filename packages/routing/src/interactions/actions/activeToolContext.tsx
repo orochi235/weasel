@@ -28,7 +28,13 @@ export interface ActiveToolContextValue {
   hotkeyStack: string[];
   setActive(id: string): void;
   pushHotkey(id: string): void;
-  popHotkey(): void;
+  /**
+   * Disengage a hotkey-held tool. With `id`, removes that tool's own entry
+   * wherever it now sits — holds do not have to come up in the order they went
+   * down, and popping the top would disengage a tool whose key is still held.
+   * With no id, pops the top.
+   */
+  popHotkey(id?: string): void;
 }
 
 const ActiveToolContext = createContext<ActiveToolContextValue | null>(null);
@@ -53,8 +59,13 @@ export function ActiveToolContextProvider({
   const pushHotkey = useCallback((id: string) => {
     setHotkeyStack((s) => [...s, id]);
   }, []);
-  const popHotkey = useCallback(() => {
-    setHotkeyStack((s) => (s.length === 0 ? s : s.slice(0, -1)));
+  const popHotkey = useCallback((id?: string) => {
+    setHotkeyStack((s) => {
+      if (s.length === 0) return s;
+      if (id === undefined) return s.slice(0, -1);
+      const i = s.lastIndexOf(id);
+      return i === -1 ? s : [...s.slice(0, i), ...s.slice(i + 1)];
+    });
   }, []);
 
   const value = useMemo<ActiveToolContextValue>(

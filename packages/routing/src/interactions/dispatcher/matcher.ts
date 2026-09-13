@@ -10,6 +10,7 @@ import type {
 } from '@weasel-js/gestures';
 import type { GestureBinding } from '../actions/binding';
 import type { ClaimableGesture } from '@weasel-js/gestures';
+import { isDev } from '../../devFlag';
 
 export { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase };
 export type { InputEvent, PhaseContext };
@@ -168,7 +169,7 @@ const warnedDeadClaims = new Set<string>();
 /** Dev-only. An exclusive claim that matches no binding drops the press with
  *  no diagnostic, which reads exactly like deliberate blocking. */
 function reportDeadClaim(owner: string | undefined, warn: (message: string) => void): void {
-  if (process.env.NODE_ENV === 'production') return;
+  if (!isDev()) return;
   const key = String(owner);
   if (warnedDeadClaims.has(key)) return;
   warnedDeadClaims.add(key);

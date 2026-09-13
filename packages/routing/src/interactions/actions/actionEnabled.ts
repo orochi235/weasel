@@ -6,6 +6,7 @@
  */
 import type { ActionDeps } from './invoker';
 import { ActionDisabledReason, type Action } from './action';
+import { isDev } from '../../devFlag';
 
 /**
  * @experimental
@@ -32,14 +33,14 @@ export function evaluateEnabled(
   deps?: ActionDeps,
 ): ActionEnabledResult {
   if (!action.enabled) return { enabled: true };
-  const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
+  const dev = isDev();
   const now = (typeof performance !== 'undefined' && typeof performance.now === 'function')
     ? () => performance.now()
     : () => Date.now();
-  const start = isDev ? now() : 0;
+  const start = dev ? now() : 0;
   try {
     const result = action.enabled(deps);
-    if (isDev) {
+    if (dev) {
       const elapsed = now() - start;
       if (elapsed > ENABLED_BUDGET_MS && !enabledSlowWarned.has(action.id)) {
         enabledSlowWarned.add(action.id);
@@ -52,7 +53,7 @@ export function evaluateEnabled(
     if (result === true) return { enabled: true };
     return { enabled: false, reason: result };
   } catch (e) {
-    if (isDev && !enabledThrewWarned.has(action.id)) {
+    if (dev && !enabledThrewWarned.has(action.id)) {
       enabledThrewWarned.add(action.id);
       console.warn(
         `weasel actions: enabled() for action "${action.id}" threw; treating as disabled. ` +

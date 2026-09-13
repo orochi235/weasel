@@ -56,6 +56,30 @@ describe('ActionsRegistry dispatcher ownership', () => {
     expect(slotIsWired()).toBe(true);
   });
 
+  // The other half of the same report, and the half that was never
+  // implemented: the canvas still on screen is the DISPLACED one, and the
+  // displacer's release nulls the slot out from under it. Every neighbouring
+  // registration in ActionsProvider is a stack for exactly this reason.
+  it('uncovers the displaced canvas when the displacer releases', () => {
+    const { reg, makeDispatcher, slotIsWired } = setup();
+    act(() => { reg.setDispatcher(makeDispatcher()); });
+    let releaseSecond: () => void = () => {};
+    act(() => { releaseSecond = reg.setDispatcher(makeDispatcher()); });
+    act(() => { releaseSecond(); });
+    expect(slotIsWired()).toBe(true);
+  });
+
+  it('empties the slot only once every canvas has released', () => {
+    const { reg, makeDispatcher, slotIsWired } = setup();
+    let releaseFirst: () => void = () => {};
+    let releaseSecond: () => void = () => {};
+    act(() => { releaseFirst = reg.setDispatcher(makeDispatcher()); });
+    act(() => { releaseSecond = reg.setDispatcher(makeDispatcher()); });
+    act(() => { releaseSecond(); });
+    act(() => { releaseFirst(); });
+    expect(slotIsWired()).toBe(false);
+  });
+
   it('names the collision rather than failing silently', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { reg, makeDispatcher } = setup();

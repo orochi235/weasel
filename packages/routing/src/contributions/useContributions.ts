@@ -15,6 +15,7 @@ import type { HotkeyTrigger } from './types';
 import { scopeBindings } from './assemble';
 import { liveScope } from './eligibility';
 import type { Contribution, OverlayPosition } from './types';
+import { isDev } from '../devFlag';
 
 const NO_TRIGGERS: ReadonlySet<string> = new Set<string>();
 
@@ -159,7 +160,7 @@ export function useContributions<TOverlay = unknown>(
   const lastConflictSigRef = useRef<string | null>(null);
   const entrySig = opts.entries.map((e) => e.id).join(',');
   useEffect(() => {
-    if (process.env.NODE_ENV === 'production') return;
+    if (!isDev()) return;
     if (lastConflictSigRef.current === entrySig) return;
     lastConflictSigRef.current = entrySig;
     const registry: Tool<unknown, TOverlay>[] = [];
