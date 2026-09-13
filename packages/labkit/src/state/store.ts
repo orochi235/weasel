@@ -1,9 +1,12 @@
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import { fillConfigDefaults, withValueAtPath } from '../config/path';
+import { configDefaultsOf, configMigrationsOf, serializersOf } from '../instrument/serializers';
+import type { InstrumentList } from '../instrument/types';
 import { emptyDocument } from './document';
 import { deserializeTrials, emptyUndoStack, newId } from './helpers';
 import type {
   CreateLabStoreOptions,
+  InstrumentHooks,
   InstrumentSerializers,
   LabMode,
   LabStoreState,
@@ -50,26 +53,39 @@ export interface LabStoreActions {
   undockPanel: (trialId: string, sectionId: string, as?: UndockedPanel['as']) => void;
   /** Put one section back, or — with no `sectionId` — every panel the trial owns. */
   dockPanel: (trialId: string, sectionId?: string) => void;
+  /** Replace the lab's instruments. Trials and saves of an instrument that is
+   *  new or a different object are brought up to date against it in the same
+   *  write; every other trial keeps its object. */
+  setInstruments: (instruments: InstrumentList) => void;
+  /** The per-instrument hooks in force now. Read them at use; never keep them. */
+  instrumentHooks: () => InstrumentHooks;
 }
 
 /** A lab's store: its state and its actions. How each instrument's state is
- *  serialized comes in through `CreateLabStoreOptions.serializers`. */
+ *  serialized comes in through `CreateLabStoreOptions.instruments`. */
 export type LabStore = StoreApi<LabStoreState & LabStoreActions>;
 
 /** Build a lab store holding `initial`, or an empty lab. It knows nothing
  *  about storage; `openLabStore` reads a stored lab and binds one of these to
  *  it. */
 export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
-  const serializers = options.serializers ?? {};
+  let hooks: InstrumentHooks = options.instruments
+    ? hooksOf(options.instruments)
+    : {
+        serializers: options.serializers ?? {},
+        configDefaults: options.configDefaults ?? {},
+        configMigrations: options.configMigrations ?? {},
+      };
   const initial = options.initial ?? emptyDocument(options.initialMode ?? 'auto');
 
   const store = createStore<LabStoreState & LabStoreActions>()((set, get) => ({
-    trials: hydrateTrials(initial.trials, serializers, options),
-    savedSnapshots: hydrateSnapshots(initial.saves, options),
+    trials: hydrateTrials(initial.trials, hooks.serializers, hooks),
+    savedSnapshots: hydrateSnapshots(initial.saves, hooks),
     mode: initial.mode,
     layout: initial.layout,
     undockedPanels: initial.undockedPanels,
     activeToolId: null,
+    instruments: options.instruments ?? null,
 
     addTrial: (record) => {
       set((s) => ({
@@ -172,7 +188,7 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
     saveSnapshot: (trialId, name) => {
       const trial = get().trials.find((w) => w.id === trialId);
       if (!trial) return;
-      const reg = serializers[trial.instrumentName];
+      const reg = hooks.serializers[trial.instrumentName];
       const serializedState = reg?.serialize
         ? reg.serialize(trial.state)
         : structuredClone(trial.state);
@@ -202,7 +218,7 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
         );
         return;
       }
-      const reg = serializers[snapshot.instrumentName];
+      const reg = hooks.serializers[snapshot.instrumentName];
       const restoredState = reg?.deserialize
         ? reg.deserialize(snapshot.state, snapshot.config)
         : snapshot.state;
@@ -247,9 +263,46 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
     setLayout: (layout) => {
       set({ layout });
     },
+
+    setInstruments: (instruments) => {
+      const before = get().instruments;
+      if (before === instruments) return;
+      hooks = hooksOf(instruments);
+      const previous = new Map((before ?? []).map((i) => [i.name, i]));
+      const changed = new Set(
+        instruments.filter((i) => previous.get(i.name) !== i).map((i) => i.name),
+      );
+      if (changed.size === 0) {
+        set({ instruments });
+        return;
+      }
+      set((s) => ({
+        instruments,
+        trials: s.trials.map((w) =>
+          changed.has(w.instrumentName)
+            ? { ...w, config: hydratedConfig(hooks, w.instrumentName, w.config) }
+            : w,
+        ),
+        savedSnapshots: s.savedSnapshots.map((sn) =>
+          changed.has(sn.instrumentName)
+            ? { ...sn, config: hydratedConfig(hooks, sn.instrumentName, sn.config) }
+            : sn,
+        ),
+      }));
+    },
+
+    instrumentHooks: () => hooks,
   }));
 
   return store;
+}
+
+function hooksOf(instruments: InstrumentList): InstrumentHooks {
+  return {
+    serializers: serializersOf(instruments),
+    configDefaults: configDefaultsOf(instruments),
+    configMigrations: configMigrationsOf(instruments),
+  };
 }
 
 /** How a stored config is brought up to date on the way in. */

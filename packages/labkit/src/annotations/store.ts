@@ -342,6 +342,9 @@ export function annotationsFromJSON(
   rest: Omit<AnnotationStoreOptions, 'targets' | 'restore'> = {},
 ): AnnotationsApi {
   const doc = raw as Partial<SerializedAnnotations> | null;
-  if (doc?.version !== 1 || !doc.scenes) return createAnnotationStore({ targets, ...rest });
-  return createAnnotationStore({ targets, restore: doc.scenes, ...rest });
+  const base = doc?.version !== 1 || !doc.scenes ? { targets } : { targets, restore: doc.scenes };
+  // Copied by descriptor rather than spread, so an option given as a getter stays live.
+  return createAnnotationStore(
+    Object.defineProperties(base, Object.getOwnPropertyDescriptors(rest)),
+  );
 }

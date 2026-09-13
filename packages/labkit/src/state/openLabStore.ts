@@ -28,16 +28,9 @@ import {
   UNDOCK_RECORD,
 } from './labRecords';
 import { type OwnedRecordCache, openRecords, type RecordCache } from './records';
-import {
-  type ConfigHydration,
-  createLabStore,
-  hydrateSnapshots,
-  hydrateTrials,
-  type LabStore,
-} from './store';
+import { createLabStore, hydrateSnapshots, hydrateTrials, type LabStore } from './store';
 import type {
   CreateLabStoreOptions,
-  InstrumentSerializers,
   LabDocument,
   LabMode,
   SavedSnapshot,
@@ -75,14 +68,7 @@ export async function openLabStore(options: OpenLabStoreOptions): Promise<Opened
   });
   const { doc, orders } = await readLab(options, records);
   const store = createLabStore({ ...options, initial: doc });
-  const unbind = bindLabStore(store, records, {
-    serializers: options.serializers ?? {},
-    hydration: {
-      configDefaults: options.configDefaults,
-      configMigrations: options.configMigrations,
-    },
-    orders,
-  });
+  const unbind = bindLabStore(store, records, { orders });
   return {
     store,
     records,
@@ -218,8 +204,6 @@ async function writeConfirmed(
 }
 
 interface BindOptions {
-  serializers: InstrumentSerializers;
-  hydration: ConfigHydration;
   orders: Map<string, number>;
 }
 
@@ -235,7 +219,6 @@ function persistedFieldsDiffer(a: TrialRecord, b: TrialRecord): boolean {
 
 /** Keep `store` and `records` in step, both ways. Returns the unbinding. */
 function bindLabStore(store: LabStore, records: RecordCache, options: BindOptions): () => void {
-  const { serializers, hydration } = options;
   const orderOf = new Map(options.orders);
   let applyingRemote = false;
 
@@ -246,7 +229,7 @@ function bindLabStore(store: LabStore, records: RecordCache, options: BindOption
   };
 
   const writeTrial = (trial: TrialRecord): void => {
-    const [serialized] = serializeTrials([trial], serializers);
+    const [serialized] = serializeTrials([trial], store.getState().instrumentHooks().serializers);
     records.set(trialRecord(trial.id), { ...serialized, order: orderOf.get(trial.id) });
   };
 
@@ -350,7 +333,8 @@ function bindLabStore(store: LabStore, records: RecordCache, options: BindOption
           );
           // Hydrating starts an empty undo history: the old one describes a
           // state that no longer exists.
-          const [replacement] = hydrateTrials([{ ...rest, id }], serializers, hydration);
+          const hooks = store.getState().instrumentHooks();
+          const [replacement] = hydrateTrials([{ ...rest, id }], hooks.serializers, hooks);
           if (!replacement) break;
           trials = trials.some((t) => t.id === id)
             ? trials.map((t) => (t.id === id ? replacement : t))
@@ -363,7 +347,10 @@ function bindLabStore(store: LabStore, records: RecordCache, options: BindOption
             saves = saves.filter((s) => s.id !== id);
             break;
           }
-          const [snapshot] = hydrateSnapshots([{ ...(value as SavedSnapshot), id }], hydration);
+          const [snapshot] = hydrateSnapshots(
+            [{ ...(value as SavedSnapshot), id }],
+            store.getState().instrumentHooks(),
+          );
           if (!snapshot) break;
           saves = saves.some((s) => s.id === id)
             ? saves.map((s) => (s.id === id ? snapshot : s))

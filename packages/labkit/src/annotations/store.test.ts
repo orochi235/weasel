@@ -244,4 +244,26 @@ describe('the annotation store', () => {
     expect(revived.get(id)).toEqual(store.get(id));
     expect(revived.query()).toHaveLength(1);
   });
+
+  // A trial's instrument can be replaced under a store built once, so a meaning
+  // handed over as a getter has to be read at capture, not when the store is built.
+  it('reads a meaning passed as a getter at each capture', async () => {
+    let color = '#111111';
+    const store = annotationsFromJSON(null, () => TARGETS, {
+      get meaning() {
+        return { statuses: [{ id: 'open', label: 'Open', color }] };
+      },
+    });
+    store.add(RING, { angle: 'iso', shading: 'outline' });
+    color = '#222222';
+    const { blob } = await store.capture('naive', { format: 'svg' });
+    // jsdom's Blob has no text().
+    const svg = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.readAsText(blob);
+    });
+    expect(svg).not.toContain('#111111');
+    expect(svg).toContain('#222222');
+  });
 });

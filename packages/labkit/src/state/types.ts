@@ -1,4 +1,5 @@
 import type { ConfigPath, ValueAtPath } from '../config/types';
+import type { InstrumentList } from '../instrument/types';
 import type { UndockedPanels } from './undock';
 /** A trial's undo history, as snapshots of its state either side of the
  *  present. */
@@ -79,6 +80,10 @@ export interface LabStoreState {
   /** Sidebar sections torn out of their trial. A panel here is not rendered in
    *  its trial's sidebar; the workspace renders it instead. */
   undockedPanels: UndockedPanels;
+  /** The instruments this store serializes, migrates and fills configs for.
+   *  Null for a store built without them, whose trials look their instrument
+   *  up on the lab instead. Not persisted. */
+  instruments: InstrumentList | null;
 }
 
 /** A change someone else made to one record: its new value, or `undefined`
@@ -119,18 +124,24 @@ export interface CreateLabStoreOptions {
   /** Each instrument's default config, keyed by instrument name, used to fill
    *  the gaps in a stored one. A config saved before its schema grew a branch
    *  arrives holding that branch's defaults rather than `undefined`, and keeps
-   *  whatever keys the schema has since stopped naming. `<Lab>` collects these
-   *  off its `instruments`. */
+   *  whatever keys the schema has since stopped naming. */
   configDefaults?: Record<string, () => unknown>;
   /** Each instrument's `migrateConfig`, keyed by instrument name, run on a
-   *  stored config before its defaults fill it. `<Lab>` collects these off its
-   *  `instruments`. */
+   *  stored config before its defaults fill it. */
   configMigrations?: Record<string, (stored: unknown) => unknown>;
   /** How each instrument's state survives a reload. Hydration is the first
-   *  thing `createLabStore` does, so these have to arrive with the store —
-   *  anything registered afterwards is already too late to read the document
-   *  it was built from. `<Lab>` collects them off its `instruments`. */
+   *  thing `createLabStore` does, so these have to arrive with the store. */
   serializers?: InstrumentSerializers;
+  /** The instruments to serialize, migrate and fill configs for. Given, it
+   *  supplies all three and the three fields above are ignored. */
+  instruments?: InstrumentList;
+}
+
+/** What a store does per instrument on the way in and out. */
+export interface InstrumentHooks {
+  serializers: InstrumentSerializers;
+  configDefaults: Record<string, () => unknown>;
+  configMigrations: Record<string, (stored: unknown) => unknown>;
 }
 
 /** Per-instrument serialize/deserialize hooks, keyed by instrument name. An

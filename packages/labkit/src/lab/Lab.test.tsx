@@ -1,5 +1,5 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { createMemoryAdapter } from '../state/adapters';
@@ -166,5 +166,75 @@ describe('<Lab>', () => {
     });
     await waitFor(() => expect(labRef?.trials[0]).toBeDefined());
     expect((labRef?.trials[0]?.state as { seen: Set<string> }).seen).toEqual(new Set(['a']));
+  });
+});
+
+describe('instruments that change while mounted', () => {
+  it('fills an open trial’s config before its replaced instrument renders', () => {
+    const v1: Instrument = {
+      name: 'Grow',
+      defaultConfig: () => ({ size: 1 }),
+      initialState: () => ({}),
+      render: () => null,
+    };
+    const seenByV2: Array<{ color?: string }> = [];
+    const v2: Instrument = {
+      ...v1,
+      defaultConfig: () => ({ size: 1, color: 'red' }),
+      render: ({ config }) => {
+        seenByV2.push(config as { color?: string });
+        return null;
+      },
+    };
+    const view = render(
+      <Lab instruments={[v1]} defaultInstrument="Grow">
+        <CaptureLab />
+      </Lab>,
+    );
+    view.rerender(
+      <Lab instruments={[v2]} defaultInstrument="Grow">
+        <CaptureLab />
+      </Lab>,
+    );
+    expect(labRef?.trials[0]?.config).toEqual({ size: 1, color: 'red' });
+    expect(seenByV2.length).toBeGreaterThan(0);
+    expect(seenByV2.every((c) => c.color === 'red')).toBe(true);
+  });
+
+  it('opens a trial of an instrument added after mount', () => {
+    const later: Instrument = { ...stub, name: 'Later' };
+    const view = render(
+      <Lab instruments={[stub]} defaultInstrument="Stub">
+        <CaptureLab />
+      </Lab>,
+    );
+    view.rerender(
+      <Lab instruments={[stub, later]} defaultInstrument="Stub">
+        <CaptureLab />
+      </Lab>,
+    );
+    act(() => labRef?.addTrial('Later'));
+    expect(labRef?.trials.map((t) => t.instrumentName)).toEqual(['Stub', 'Later']);
+    expect(screen.queryByText(/Unknown instrument/)).toBeNull();
+  });
+
+  it('keeps a trial’s content mounted across an instrument swap', () => {
+    let mounts = 0;
+    function Probe() {
+      useEffect(() => {
+        mounts += 1;
+      }, []);
+      return <p>probe</p>;
+    }
+    const v1: Instrument = {
+      name: 'Keep',
+      defaultConfig: () => ({}),
+      initialState: () => ({}),
+      render: () => <Probe />,
+    };
+    const v2: Instrument = { ...v1, defaultConfig: () => ({ extra: 1 }) };
+    const view = render(<Lab instruments={[v1]} defaultInstrument="Keep" />);
+    view.rerender(<Lab instruments={[v2]} defaultInstrument="Keep" />);
+    expect(mounts).toBe(1);
   });
 });

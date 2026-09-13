@@ -4,6 +4,7 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -15,7 +16,6 @@ import { LabFooterRegion, LabHeaderRegion, labContributions } from '../chrome/La
 import type { LabContribution } from '../chrome/labTypes';
 import type { TrialContribution } from '../chrome/types';
 import type { ConfigRule, ControlRenderer } from '../config/types';
-import { configDefaultsOf, configMigrationsOf, serializersOf } from '../instrument/serializers';
 import type { InstrumentList } from '../instrument/types';
 import { defaultStorage, noneAdapter } from '../state/adapters';
 import { LabStoreContext } from '../state/context';
@@ -49,6 +49,9 @@ import { useResolvedMode } from './useSystemMode';
 import { type PanelDescriptor, type TrialLayout, Workspace } from './Workspace';
 
 interface LabBaseProps {
+  /** May change while mounted. An instrument that is a different object from
+   *  the last render counts as replaced and its open trials' configs are
+   *  refilled, so hoist or memoize the list. */
   instruments: InstrumentList;
   defaultInstrument: string;
   mode?: LabMode;
@@ -120,12 +123,7 @@ function seedDefaultTrial(
 /** A lab with nothing to load renders at once. Its records hold
  *  `usePersistedState` values for the session and write nothing. */
 function openUnstoredLab({ instruments, defaultInstrument, mode }: LabProps): OpenedLab {
-  const store = createLabStore({
-    initialMode: mode ?? 'auto',
-    serializers: serializersOf(instruments),
-    configDefaults: configDefaultsOf(instruments),
-    configMigrations: configMigrationsOf(instruments),
-  });
+  const store = createLabStore({ initialMode: mode ?? 'auto', instruments });
   seedDefaultTrial(store, instruments, defaultInstrument);
   const records = createRecordCache({ storage: noneAdapter, prefix: '', writable: false });
   return { store, records, close: () => records.close(), marks: new Map() };
@@ -136,15 +134,13 @@ async function openStoredLab(
   storageKey: string,
   storage: StorageAdapter | undefined,
 ): Promise<OpenedLab> {
-  // The store reads the serializers and defaults while it is being built, so
-  // they go in with it rather than being registered onto it afterwards.
+  // The store reads the instruments' serializers and defaults while it is being
+  // built, so they go in with it rather than being pushed onto it afterwards.
   const opened = await openLabStore({
     storageKey,
     storage: storage ?? (await defaultStorage()),
     initialMode: mode ?? 'auto',
-    serializers: serializersOf(instruments),
-    configDefaults: configDefaultsOf(instruments),
-    configMigrations: configMigrationsOf(instruments),
+    instruments,
   });
   seedDefaultTrial(opened.store, instruments, defaultInstrument);
   const marks = new Map<string, unknown>();
@@ -244,6 +240,12 @@ function LabRuntime({
   opened,
 }: LabProps & { opened: OpenedLab }) {
   const { store } = opened;
+
+  // The store opened against the list <Lab> mounted with; a later list reaches
+  // it here, before paint.
+  useLayoutEffect(() => {
+    store.getState().setInstruments(instruments);
+  }, [instruments, store]);
 
   const trials = useStore(store, (s) => s.trials);
   const savedSnapshots = useStore(store, (s) => s.savedSnapshots);

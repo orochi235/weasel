@@ -45,9 +45,10 @@ export function Trial({ id, chrome, suppress }: TrialProps) {
   const lab = useLabContext();
   const storeCtx = useContext(LabStoreContext);
   if (!storeCtx) throw new Error('[labkit] <Trial> requires <LabStoreProvider>');
+  const storeInstruments = useStore(storeCtx.store, (s) => s.instruments);
   const record = useStore(storeCtx.store, (s) => s.trials.find((w) => w.id === id));
   const instrument = record
-    ? lab.instruments.find((i) => i.name === record.instrumentName)
+    ? (storeInstruments ?? lab.instruments).find((i) => i.name === record.instrumentName)
     : undefined;
   const kept = useKeptMarks(instrument?.annotations?.storage, id);
   if (!record) {
@@ -194,14 +195,19 @@ function TrialRuntime({
   // once, and an export must draw against the config the trial holds now.
   const configRef = useRef<unknown>(record.config);
   configRef.current = record.config;
+  // The instrument can be swapped under a live trial, so the capability is read at use too.
+  const capRef = useRef(annotationsCap);
+  capRef.current = annotationsCap;
   if (annotationsRef.current === null) {
     // Seeded from wherever the marks were kept: the instrument's own store if
     // it declared one, else this trial's slot.
     const kept = annotationsCap?.storage ? keptMarks : record.annotations;
     annotationsRef.current = annotationsFromJSON(kept, () => targetsRef.current(), {
-      meaning: annotationsCap?.meaning,
+      get meaning() {
+        return capRef.current?.meaning;
+      },
       config: () => configRef.current,
-      onCapture: (result) => annotationsCap?.onCapture?.(result),
+      onCapture: (result) => capRef.current?.onCapture?.(result),
     });
   }
   const annotations = annotationsRef.current;

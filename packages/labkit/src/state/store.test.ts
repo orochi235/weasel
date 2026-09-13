@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Instrument } from '../instrument/types';
 import { createLabStore } from './store';
 import type { CreateLabStoreOptions } from './types';
 
@@ -271,5 +272,60 @@ describe('setTrialSectionCollapsed', () => {
     const before = s.getState().trials[0];
     s.getState().setTrialSectionCollapsed('w1', 'settings', true);
     expect(s.getState().trials[0]).toBe(before);
+  });
+});
+
+describe('setInstruments', () => {
+  const small: Instrument = {
+    name: 'Grid',
+    defaultConfig: () => ({ size: 10 }),
+    initialState: () => ({}),
+    render: () => null,
+  };
+  const other: Instrument = { ...small, name: 'Other', defaultConfig: () => ({ n: 1 }) };
+
+  function trial(id: string, instrumentName: string, config: unknown) {
+    return { id, instrumentName, config, state: {}, view: null };
+  }
+
+  it('fills a replaced instrument’s open trials from its new defaults', () => {
+    const store = createLabStore({ instruments: [small, other] });
+    store.getState().addTrial(trial('a', 'Grid', { size: 4 }));
+    store.getState().addTrial(trial('b', 'Other', { n: 2 }));
+    const untouched = store.getState().trials[1];
+
+    const grown: Instrument = { ...small, defaultConfig: () => ({ size: 10, color: 'red' }) };
+    store.getState().setInstruments([grown, other]);
+
+    expect(store.getState().trials[0]?.config).toEqual({ size: 4, color: 'red' });
+    expect(store.getState().trials[1]).toBe(untouched);
+    expect(store.getState().instruments).toEqual([grown, other]);
+  });
+
+  it('serializes an instrument added after the store was built', () => {
+    const store = createLabStore({ instruments: [small] });
+    const mapped: Instrument = {
+      ...small,
+      name: 'Mapped',
+      serialize: (s) => ({ seen: [...(s as { seen: Set<string> }).seen] }),
+    };
+    store.getState().setInstruments([small, mapped]);
+    store.getState().addTrial({
+      id: 'm',
+      instrumentName: 'Mapped',
+      config: { size: 10 },
+      state: { seen: new Set(['a']) },
+      view: null,
+    });
+    store.getState().saveSnapshot('m', 'one');
+    expect(store.getState().savedSnapshots[0]?.state).toEqual({ seen: ['a'] });
+  });
+
+  it('is a no-op for the list it already holds', () => {
+    const list = [small];
+    const store = createLabStore({ instruments: list });
+    const before = store.getState();
+    store.getState().setInstruments(list);
+    expect(store.getState()).toBe(before);
   });
 });
