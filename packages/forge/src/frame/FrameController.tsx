@@ -123,12 +123,19 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
     }
   };
 
-  // Input from the trial commits synchronously, so a `play` that follows sees the rendered story.
-  const renderInput = () => {
+  // Input from the trial commits synchronously, so a `play` that follows sees the rendered story. A throw while
+  // applying it faults like a render would; otherwise the trial would wait on a frame that never answers.
+  const input = (apply: () => void) => {
     seq += 1;
-    if (!initialized) return;
-    resetKey += 1;
-    flushSync(render);
+    try {
+      apply();
+      if (!initialized) return;
+      resetKey += 1;
+      flushSync(render);
+    } catch (error) {
+      send(fault('render', error, seq));
+      return;
+    }
     reportVars();
   };
 
@@ -145,29 +152,33 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
   const off = channel.on((msg) => {
     switch (msg.type) {
       case 'init':
-        initialized = true;
-        config = msg.config;
-        globals = msg.globals;
-        state = msg.state;
-        if (state === null && story.initialState) {
-          state = story.initialState(config);
-          send({ type: 'setState', state });
-        }
-        setup.applyGlobals?.(globals, document.documentElement);
-        renderInput();
+        input(() => {
+          initialized = true;
+          config = msg.config;
+          globals = msg.globals;
+          state = msg.state;
+          if (state === null && story.initialState) {
+            state = story.initialState(config);
+            send({ type: 'setState', state });
+          }
+          setup.applyGlobals?.(globals, document.documentElement);
+        });
         break;
       case 'config':
-        config = msg.config;
-        renderInput();
+        input(() => {
+          config = msg.config;
+        });
         break;
       case 'state':
-        state = msg.state;
-        renderInput();
+        input(() => {
+          state = msg.state;
+        });
         break;
       case 'globals':
-        globals = msg.globals;
-        setup.applyGlobals?.(globals, document.documentElement);
-        renderInput();
+        input(() => {
+          globals = msg.globals;
+          setup.applyGlobals?.(globals, document.documentElement);
+        });
         break;
       case 'vars.set': {
         overrides.set(msg.name, msg.value);

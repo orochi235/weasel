@@ -160,6 +160,34 @@ describe('startFrame', () => {
     expect(screen.getByTestId('mode').textContent).toBe('dark');
   });
 
+  it('faults, carrying the input count, when applying globals throws on init or on a globals message', async () => {
+    const applyGlobals = vi.fn((globals: Record<string, unknown>) => {
+      if (globals.mode === 'bad') throw new Error('no such mode');
+    });
+    const { shell, of } = start(counter, { applyGlobals });
+    shell.send({ ...init, globals: { mode: 'bad' } });
+    await flush();
+    expect(of('fault')).toEqual([expect.objectContaining({ phase: 'render', message: 'no such mode', seq: 1 })]);
+    shell.send({ type: 'globals', globals: { mode: 'dark' } });
+    shell.send({ type: 'globals', globals: { mode: 'bad' } });
+    await flush();
+    expect(of('fault').at(-1)).toEqual(expect.objectContaining({ phase: 'render', message: 'no such mode', seq: 3 }));
+    expect(of('fault')[0]?.stack).toContain('no such mode');
+  });
+
+  it('faults when a story’s initialState throws on init', async () => {
+    const throwing: LoadedStory = {
+      ...counter,
+      initialState: () => {
+        throw new Error('no initial state');
+      },
+    };
+    const { shell, of } = start(throwing);
+    shell.send(init);
+    await flush();
+    expect(of('fault')).toEqual([expect.objectContaining({ phase: 'render', message: 'no initial state', seq: 1 })]);
+  });
+
   it('nests decorators setup outermost, then meta, then story', async () => {
     const wrap =
       (d: string): Decorator =>
