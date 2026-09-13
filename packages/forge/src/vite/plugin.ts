@@ -1,7 +1,7 @@
 import { globSync, readFileSync } from 'node:fs';
-import { basename, dirname, resolve } from 'node:path';
+import { basename, dirname, matchesGlob, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { Plugin, ViteDevServer } from 'vite';
+import type { Logger, Plugin, ViteDevServer } from 'vite';
 import type { IndexEntry } from '../story/types';
 import { html } from './html';
 import { indexFile } from './indexFile';
@@ -23,6 +23,7 @@ export function forge(options: ForgeOptions): Plugin[] {
   let root = process.cwd();
   let base = '/';
   let byFile: Map<string, IndexEntry[]> | null = null;
+  let logger: Logger | undefined;
 
   const glob = (): string[] => {
     const files = options.stories.flatMap((pattern) =>
@@ -32,9 +33,24 @@ export function forge(options: ForgeOptions): Plugin[] {
     );
     return [...new Set(files)];
   };
+  const matches = (file: string): boolean => {
+    const path = relative(root, file).split(sep).join('/');
+    return !path.split('/').includes('node_modules') && options.stories.some((pattern) => matchesGlob(path, pattern));
+  };
   const read = (file: string) => indexFile(readFileSync(file, 'utf8'), file, root);
+  const logError = (err: unknown) => logger?.error(`[forge] ${err instanceof Error ? err.message : String(err)}`);
+  /** A file that fails to parse stays in the map with no entries, so an edit that fixes it re-indexes it. */
   const files = (): Map<string, IndexEntry[]> => {
-    byFile ??= new Map(glob().map((file) => [file, read(file)]));
+    byFile ??= new Map(
+      glob().map((file) => {
+        try {
+          return [file, read(file)];
+        } catch (err) {
+          logError(err);
+          return [file, []];
+        }
+      }),
+    );
     return byFile;
   };
   const index = () => [...files().values()].flat();
@@ -77,7 +93,7 @@ mountFrame({
   function reindex(server: ViteDevServer, file: string, event: 'add' | 'change' | 'unlink'): void {
     const current = files();
     if (event === 'change' && !current.has(file)) return;
-    if (event === 'add' && !glob().includes(file)) return;
+    if (event === 'add' && !matches(file)) return;
     if (event === 'unlink' && !current.has(file)) return;
 
     const before = JSON.stringify(index());
@@ -87,7 +103,7 @@ mountFrame({
       try {
         current.set(file, read(file));
       } catch (err) {
-        server.config.logger.error(`[forge] ${err instanceof Error ? err.message : String(err)}`);
+        logError(err);
         return;
       }
     }
@@ -114,6 +130,7 @@ mountFrame({
       configResolved(config) {
         root = config.root;
         base = config.base;
+        logger = config.logger;
         byFile = null;
       },
       resolveId(id) {
@@ -131,7 +148,9 @@ mountFrame({
         server.middlewares.use((req, res, next) => {
           const url = req.url ?? '/';
           const path = url.split('?')[0] ?? '/';
-          const entry = req.method === 'GET' && path.startsWith(base) ? PAGES[`/${path.slice(base.length)}`] : undefined;
+          const prefix = base.endsWith('/') ? base.slice(0, -1) : base;
+          const page = path === prefix ? '/' : path.startsWith(`${prefix}/`) ? path.slice(prefix.length) : null;
+          const entry = req.method === 'GET' && page !== null ? PAGES[page] : undefined;
           if (!entry) return next();
           server.transformIndexHtml(url, html(entry)).then(
             (doc) => {

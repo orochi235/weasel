@@ -1,13 +1,18 @@
 // @vitest-environment node
-import { mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { globSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer as createHttpServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createServer, type ViteDevServer } from 'vite';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { createLogger, createServer, type InlineConfig, type ViteDevServer } from 'vite';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { IndexEntry } from '../story/types';
 import { forge } from './plugin';
+
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>();
+  return { ...actual, globSync: vi.fn(actual.globSync) };
+});
 
 const story = (title: string, ...names: string[]) =>
   `export default { title: '${title}' };\n${names.map((n) => `export const ${n} = {};`).join('\n')}\n`;
@@ -79,5 +84,76 @@ describe('forge vite plugin', () => {
     writeFileSync(join(root, 'c.stories.tsx'), story('ui/C', 'Third'));
     await expect.poll(async () => (await loadIndex()).length, { timeout: 5000, interval: 50 }).toBe(4);
     expect((await loadIndex()).at(-1)?.id).toBe('ui-c--third');
+  });
+
+  it('checks an added file against the globs without re-globbing the tree', async () => {
+    vi.mocked(globSync).mockClear();
+    writeFileSync(join(root, 'd.other.tsx'), story('ui/E', 'Unmatched'));
+    writeFileSync(join(root, 'd.stories.tsx'), story('ui/D', 'Fourth'));
+    await expect.poll(async () => (await loadIndex()).map((e) => e.id), { timeout: 5000, interval: 50 }).toContain('ui-d--fourth');
+    expect((await loadIndex()).map((e) => e.id)).not.toContain('ui-e--unmatched');
+    expect(globSync).not.toHaveBeenCalled();
+  });
+});
+
+describe('forge vite plugin, served apart from the shared fixture', () => {
+  let root: string | undefined;
+  let server: ViteDevServer | undefined;
+  let http: Server | undefined;
+
+  afterEach(async () => {
+    if (http) await new Promise((done) => http?.close(done));
+    await server?.close();
+    if (root) rmSync(root, { recursive: true, force: true });
+    http = undefined;
+    server = undefined;
+    root = undefined;
+  });
+
+  const start = async (files: Record<string, string>, config: InlineConfig = {}) => {
+    const dir = realpathSync(mkdtempSync(join(tmpdir(), 'forge-plugin-')));
+    root = dir;
+    for (const [name, code] of Object.entries(files)) writeFileSync(join(dir, name), code);
+    server = await createServer({
+      root: dir,
+      configFile: false,
+      plugins: [forge({ stories: ['*.stories.tsx'] })],
+      server: { middlewareMode: true },
+      appType: 'custom',
+      logLevel: 'silent',
+      ...config,
+    });
+    return { dir, server };
+  };
+
+  const indexOf = async (s: ViteDevServer) =>
+    ((await s.ssrLoadModule('virtual:forge/index.js')) as { default: IndexEntry[] }).default.map((e) => e.id);
+
+  it('logs and skips a story file that fails to parse at startup, and indexes it once fixed', async () => {
+    const errors: string[] = [];
+    const customLogger = createLogger('silent');
+    customLogger.error = (msg) => {
+      errors.push(msg);
+    };
+    const { dir, server: s } = await start(
+      { 'a.stories.tsx': story('ui/A', 'First'), 'bad.stories.tsx': 'export default {' },
+      { customLogger },
+    );
+    expect(await indexOf(s)).toEqual(['ui-a--first']);
+    expect(errors.join('\n')).toContain(join(dir, 'bad.stories.tsx'));
+    writeFileSync(join(dir, 'bad.stories.tsx'), story('ui/Bad', 'Fixed'));
+    await expect.poll(async () => indexOf(s), { timeout: 5000, interval: 50 }).toContain('ui-bad--fixed');
+  });
+
+  it('serves the workshop at its base with or without the trailing slash', async () => {
+    const { server: s } = await start({}, { base: '/x/' });
+    const listening = createHttpServer(s.middlewares);
+    http = listening;
+    await new Promise<void>((done) => listening.listen(0, 'localhost', done));
+    const at = (path: string) =>
+      fetch(`http://localhost:${(listening.address() as AddressInfo).port}${path}`).then((r) => (r.status === 200 ? r.text() : null));
+    expect(await at('/x')).toContain('virtual:forge/shell-entry.js');
+    expect(await at('/x/')).toContain('virtual:forge/shell-entry.js');
+    expect(await at('/x/frame.html')).toContain('virtual:forge/frame-entry.js');
   });
 });
