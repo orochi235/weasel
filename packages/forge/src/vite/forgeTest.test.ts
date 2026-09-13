@@ -1,7 +1,7 @@
 // @vitest-environment node
 import type { Plugin, ResolvedConfig, TransformResult } from 'vite';
 import { describe, expect, it } from 'vitest';
-import { forgeTest } from './plugin';
+import { forgeTest } from './forgeTest';
 
 const ROOT = '/repo';
 
@@ -24,16 +24,27 @@ export const Named = story({ name: 'With "quotes"', render: () => null });
 
 describe('forgeTest', () => {
   it('appends one test per indexed story, calling runStory on the module itself', () => {
-    const code = transformer({ stories: ['apps/**/*.stories.tsx'] })(source, `${ROOT}/apps/x/Counter.stories.tsx`);
+    const file = `${ROOT}/apps/x/Counter.stories.tsx`;
+    const code = transformer({ stories: ['apps/**/*.stories.tsx'] })(source, file);
     expect(code).toBeDefined();
     expect(code).toContain(source);
     expect(code).toContain(`import { runStory as __forge_runStory } from "@weasel-js/forge/test";`);
     expect(code?.match(/__forge_test\(/g)).toHaveLength(2);
-    expect(code).toContain(`__forge_test("Counter", `);
-    expect(code).toContain(`__forge_test(${JSON.stringify('With "quotes"')}, `);
+    expect(code).toContain(`const __forge_file = ${JSON.stringify(file)};`);
+    expect(code).toContain(`const __forge_root = "${ROOT}";`);
     expect(code).toContain(
-      `__forge_runStory(await import(/* @vite-ignore */ import.meta.url), "Named", ${JSON.stringify(`${ROOT}/apps/x/Counter.stories.tsx`)}, "${ROOT}", __forge_options)`,
+      'const __forge_run = async (exportName) => __forge_runStory(await import(/* @vite-ignore */ import.meta.url), exportName, __forge_file, __forge_root, __forge_options);',
     );
+    expect(code).toContain('__forge_test("Counter", () => __forge_run("Counter"), __forge_timeout);');
+    expect(code).toContain(`__forge_test(${JSON.stringify('With "quotes"')}, () => __forge_run("Named"), __forge_timeout);`);
+  });
+
+  it('keeps every test line short, whatever the file path', () => {
+    const file = `${ROOT}/${'deeply/'.repeat(20)}Counter.stories.tsx`;
+    const code = transformer({ stories: ['**/*.stories.tsx'] })(source, file) ?? '';
+    const tests = code.split('\n').filter((line) => line.startsWith('__forge_test('));
+    expect(tests).toHaveLength(2);
+    for (const line of tests) expect(line).not.toContain(file);
   });
 
   // vitest imports a test file with a cache-busting query, so a static self-import would evaluate it a second time.

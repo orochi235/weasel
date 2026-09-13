@@ -1,11 +1,11 @@
 import { globSync, readFileSync } from 'node:fs';
 import { basename, matchesGlob, relative, resolve, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import type { Logger, Plugin, ViteDevServer } from 'vite';
 import type { IndexEntry } from '../story/types';
 import { hoistPages, writePages } from './build';
 import { html } from './html';
 import { indexFile } from './indexFile';
+import { storybookShims } from './storybookShims';
 
 export interface ForgeOptions {
   /** Globs of story files, relative to the vite root. */
@@ -18,21 +18,7 @@ export interface ForgeOptions {
 
 const PREFIX = 'virtual:forge/';
 const MODULES = new Set(['index.js', 'importers.js', 'config.js', 'shell-entry.js', 'frame-entry.js']);
-const PREVIEW_API = /^@?storybook\/preview-api$/;
 const PAGES: Record<string, string> = { '/': 'shell-entry.js', '/index.html': 'shell-entry.js', '/frame.html': 'frame-entry.js' };
-
-/** Points `storybook/preview-api` and `@storybook/preview-api` at forge's shim. */
-export function storybookShims(): Plugin {
-  // Resolved from forge's own location, through the app's aliases, so a monorepo reaches source and an install reaches dist.
-  return {
-    name: 'weaselforge:storybook-shims',
-    enforce: 'pre',
-    resolveId(id) {
-      if (!PREVIEW_API.test(id)) return undefined;
-      return this.resolve('@weasel-js/forge/preview-api', fileURLToPath(import.meta.url), { skipSelf: true });
-    },
-  };
-}
 
 export function forge(options: ForgeOptions): Plugin[] {
   let root = process.cwd();

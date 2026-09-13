@@ -5,6 +5,14 @@ import type { FromFrame, ToFrame, Viewport } from '../protocol/messages';
 
 type Received<T extends FromFrame['type']> = Extract<FromFrame, { type: T }>;
 
+/** Prefixes `error` with the phase it came from, keeping its stack. */
+function phased(phase: string, error: unknown): Error {
+  const message = error instanceof Error ? error.message : String(error);
+  const out = new Error(`${phase} fault: ${message}`, { cause: error });
+  if (error instanceof Error && error.stack) out.stack = `${phase} fault: ${error.stack}`;
+  return out;
+}
+
 function inbox(channel: Channel<FromFrame, ToFrame>) {
   const received: FromFrame[] = [];
   let failure: Error | null = null;
@@ -39,7 +47,23 @@ function inbox(channel: Channel<FromFrame, ToFrame>) {
       poll();
     });
 
-  return { next, check, close: off };
+  /** The first fault, if one arrives by the next macrotask. */
+  const fault = (): Promise<Error | null> =>
+    new Promise((resolve) => {
+      const done = () => {
+        clearTimeout(timer);
+        wake.delete(onMessage);
+        resolve(failure);
+      };
+      const onMessage = () => {
+        if (failure) done();
+      };
+      const timer = setTimeout(done, 0);
+      wake.add(onMessage);
+      onMessage();
+    });
+
+  return { next, check, fault, close: off };
 }
 
 const settle = () =>
@@ -55,7 +79,7 @@ export interface RunStoryOptions {
 }
 
 /** Stops the story a timed-out test left mounted. */
-let leftover: (() => void) | null = null;
+let leftover: (() => unknown) | null = null;
 /** The page's size before any story resized it; a story with no viewport runs at this size. */
 let pageSize: Viewport | null = null;
 
@@ -71,8 +95,13 @@ export async function runStory(
   { setup, viewport }: RunStoryOptions = {},
 ): Promise<void> {
   leftover?.();
-  const story = loadStories(mod, file, root).find((s) => s.exportName === exportName);
-  if (!story) throw new Error(`${file} has no story export "${exportName}"`);
+  let story: ReturnType<typeof loadStories>[number] | undefined;
+  try {
+    story = loadStories(mod, file, root).find((s) => s.exportName === exportName);
+  } catch (error) {
+    throw phased('load', error);
+  }
+  if (!story) throw new Error(`load fault: ${file} has no story export "${exportName}"`);
 
   pageSize ??= { width: window.innerWidth, height: window.innerHeight };
   const size = story.viewport ?? pageSize;
@@ -87,19 +116,32 @@ export async function runStory(
   const container = document.createElement('div');
   document.body.append(container);
   let stopFrame: (() => void) | undefined;
-  const cleanup = () => {
+  /** Returns what `stopFrame` threw, having released everything else regardless. */
+  const cleanup = (): { error: unknown } | null => {
     if (leftover === cleanup) leftover = null;
-    messages.close();
-    stopFrame?.();
-    stopFrame = undefined;
-    shell.close();
-    frame.close();
-    container.remove();
+    let thrown: { error: unknown } | null = null;
+    try {
+      messages.close();
+      stopFrame?.();
+    } catch (error) {
+      thrown = { error };
+    } finally {
+      stopFrame = undefined;
+      shell.close();
+      frame.close();
+      container.remove();
+    }
+    return thrown;
   };
   leftover = cleanup;
 
+  let failure: { error: unknown } | null = null;
   try {
-    stopFrame = startFrame({ story, channel: frame, container, setup });
+    try {
+      stopFrame = startFrame({ story, channel: frame, container, setup });
+    } catch (error) {
+      throw phased('mount', error);
+    }
     await messages.next('ready');
     shell.send({ type: 'init', config: story.config.defaults(), state: null, globals: {} });
     await messages.next('answers');
@@ -108,11 +150,14 @@ export async function runStory(
     if (story.play) {
       shell.send({ type: 'play' });
       const played = await messages.next('played');
-      if (!played.ok) throw new Error(`play fault: ${played.message ?? 'failed'}`);
+      if (!played.ok) throw (await messages.fault()) ?? new Error(`play fault: ${played.message ?? 'failed'}`);
       await settle();
     }
     messages.check();
-  } finally {
-    cleanup();
+  } catch (error) {
+    failure = { error };
   }
+  const cleanupError = cleanup();
+  if (failure) throw failure.error;
+  if (cleanupError) throw phased('cleanup', cleanupError.error);
 }

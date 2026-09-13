@@ -7,7 +7,7 @@ import { playwright } from '@vitest/browser-playwright';
 import { weaselAliases } from './scripts/vite-aliases';
 import { traitSchemasPlugin } from './apps/draw/vite-plugin-trait-schemas';
 import { forgeAliases, forgeConfig, stories as forgeStories } from './apps/forge/viteShared';
-import { forgeTest } from './packages/forge/src/test/plugin';
+import { forgeTest } from './packages/forge/src/vite/forgeTest';
 import { weaselDefines } from './scripts/vite-build-info';
 
 const storybookDir = dirname(fileURLToPath(new URL('./.storybook/main.ts', import.meta.url)));

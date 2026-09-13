@@ -20,7 +20,7 @@ const PACKAGES = join(ROOT, 'packages');
 /** Paths that may name `requestAnimationFrame`, and why. */
 const ALLOWED = new Map([
   ['packages/core/src/scheduling/useVisibleRaf.ts', 'the gate itself'],
-  ['packages/forge/src/test/runStory.tsx', 'not a loop: a story test waits for one painted frame before checking faults'],
+  ['packages/forge/src/test/runStory.ts', 'not a loop: a story test waits for one painted frame before checking faults'],
 ]);
 
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'dist-examples', 'storybook-static', 'examples']);

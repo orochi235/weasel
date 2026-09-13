@@ -1,7 +1,7 @@
 import { matchesGlob, relative, resolve, sep } from 'node:path';
 import type { Plugin } from 'vite';
-import { indexFile } from '../vite/indexFile';
-import { storybookShims } from '../vite/plugin';
+import { indexFile } from './indexFile';
+import { storybookShims } from './storybookShims';
 
 export interface ForgeTestOptions {
   /** Globs of story files, relative to the vite root. Each matching file becomes a test file. */
@@ -50,13 +50,16 @@ export function forgeTest(options: ForgeTestOptions): Plugin[] {
           `import { runStory as __forge_runStory } from "@weasel-js/forge/test";`,
           `import "@weasel-js/forge/frame.css";`,
           ...(options.config ? [`import __forge_config from ${q(resolve(root, options.config))};`] : []),
+          `const __forge_file = ${q(id)};`,
+          `const __forge_root = ${q(root)};`,
+          `const __forge_timeout = ${TIMEOUT_MS};`,
           'const __forge_options = {',
           `  setup: ${options.config ? '__forge_config.frame' : 'undefined'},`,
           '  viewport: (width, height) => __forge_page.viewport(width, height),',
           '};',
+          'const __forge_run = async (exportName) => __forge_runStory(await import(/* @vite-ignore */ import.meta.url), exportName, __forge_file, __forge_root, __forge_options);',
           ...entries.map(
-            (entry) =>
-              `__forge_test(${q(entry.name)}, async () => __forge_runStory(await import(/* @vite-ignore */ import.meta.url), ${q(entry.exportName)}, ${q(id)}, ${q(root)}, __forge_options), ${TIMEOUT_MS});`,
+            (entry) => `__forge_test(${q(entry.name)}, () => __forge_run(${q(entry.exportName)}), __forge_timeout);`,
           ),
         ];
         return { code: `${code}\n${lines.join('\n')}\n`, map: null };
