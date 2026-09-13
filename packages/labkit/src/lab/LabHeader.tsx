@@ -21,13 +21,13 @@ const MODE_ITEMS = MODES.map(({ value, label, glyph }) => ({
  *  mode. Both drive `LabContext`, which carried them with no UI at all — so
  *  every consumer rebuilt these two. Rendered before a consumer's own header
  *  content, which still lands beside them. */
-export function LabHeader() {
+export function LabHeader({ addTrial = true }: { addTrial?: boolean }) {
   const lab = useLabContext();
   const only = lab.instruments.length === 1 ? lab.instruments[0] : null;
 
   return (
     <>
-      {only ? (
+      {!addTrial ? null : only ? (
         <button
           type="button"
           className="lk-lab-header__add"

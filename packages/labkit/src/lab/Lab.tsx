@@ -90,6 +90,9 @@ interface LabBaseProps {
   labChrome?: readonly LabContribution[];
   /** Built-in contribution ids to drop. Throws on an id that is not there. */
   suppress?: readonly string[];
+  /** Offer the header's add-trial control. Default `true`; a lab that opens
+   *  trials some other way passes `false`. */
+  addTrial?: boolean;
   /** Tools offered lab-wide. A trial whose instrument declares none of its own
    *  reflects and writes this slot. */
   tools?: readonly TrialTool[];
@@ -276,6 +279,7 @@ function LabRuntime({
   chrome,
   labChrome,
   suppress,
+  addTrial,
   tools,
   configRules,
   controls,
@@ -500,7 +504,7 @@ function LabRuntime({
                 }
                 header={
                   <>
-                    <LabHeader />
+                    <LabHeader {...(addTrial !== undefined ? { addTrial } : {})} />
                     {children}
                     <LabHeaderRegion contributions={labChromeAll} />
                   </>

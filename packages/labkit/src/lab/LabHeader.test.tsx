@@ -53,6 +53,17 @@ describe('<LabHeader>', () => {
     expect(screen.getAllByLabelText(/^Trial Stub$/)).toHaveLength(2);
   });
 
+  it('leaves the add-trial control out when the lab says so', () => {
+    const { unmount } = render(
+      <Lab instruments={[Stub, Other]} defaultInstrument="Stub" addTrial={false} />,
+    );
+    expect(screen.queryByRole('button', { name: /add trial/i })).toBeNull();
+    expect(screen.getByRole('radio', { name: 'Auto' })).toBeInTheDocument();
+    unmount();
+    render(<Lab instruments={[Stub]} defaultInstrument="Stub" addTrial={false} />);
+    expect(screen.queryByRole('button', { name: /add trial/i })).toBeNull();
+  });
+
   it('exposes the color mode as a three-way choice', () => {
     render(<Lab instruments={[Stub]} defaultInstrument="Stub" />);
     for (const label of ['Auto', 'Light', 'Dark']) {
