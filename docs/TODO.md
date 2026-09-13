@@ -1901,17 +1901,6 @@ one dead `const` and four stale disable directives.
 
 ## Documentation
 
-- **(P2) README pitch sweep.** Initial draft landed; the `docs/` long-form sweep was completed (all hook names and import paths match the post-extraction surface). The re-pass it was waiting on named 0.1.0 as its trigger, which the packages passed long ago — they are at 1.4.2. So it is due, and nothing gates it.
-
-- **(P2) Surface a changelog on the site.** `changeset publish` writes a
-  `CHANGELOG.md` per package on every release and nothing reads them — thirteen
-  files in the repo, none reachable from `apps/site`. A reader who wants to know
-  what moved between two versions has to read git log. Wants a decision on shape
-  before it is built: one merged view across the lockstep group (they all bump
-  together, so thirteen separate lists would repeat the same version numbers
-  thirteen times) versus per-package pages, and whether it is generated at build
-  time from the markdown or rendered by a route.
-
 - **(P3) JSDoc audit at definition sites — done; two follow-ups open.** Every
   public export of every package, `@weasel-js/ui` included, now has a JSDoc
   string at its definition site. `npm run audit:jsdoc` re-derives the claim: it
