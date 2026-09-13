@@ -18,6 +18,7 @@ function makeApi(): CanvasExtensionApi & { _layer?: RenderLayer<unknown> } {
   const api: CanvasExtensionApi & { _layer?: RenderLayer<unknown> } = {
     element: null,
     surface: null,
+    getSurfaceRect: () => ({ x: 0, y: 0, width: 0, height: 0 }),
     requestRedraw: vi.fn(),
     subscribeFrame: vi.fn(() => () => {}),
     hitTestExtras: vi.fn(() => null),
@@ -163,6 +164,7 @@ describe('attachHud', () => {
       const api: CanvasExtensionApi = {
         element: canvas,
         surface: canvas,
+        getSurfaceRect: () => ({ x: 0, y: 0, width: 0, height: 0 }),
         requestRedraw: vi.fn(),
         subscribeFrame: vi.fn(() => () => {}),
         hitTestExtras: vi.fn(() => null),

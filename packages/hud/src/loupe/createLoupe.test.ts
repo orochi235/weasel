@@ -110,29 +110,89 @@ describe('createLoupe', () => {
     expect(requestRedraw).toHaveBeenCalled();
   });
 
-  it('reports the hex color under the aim point', () => {
+  it('reports the hex color under the aim point off the frame that painted', () => {
     const hud = createHud();
-    bindHost(hud);
+    const frame = bindHost(hud);
     const el = makeElement();
+    let reads = 0;
     vi.spyOn(el, 'getContext').mockReturnValue({
       RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
       readPixels: (
         _x: number, _y: number, _w: number, _h: number, _f: number, _t: number,
         buf: Uint8Array,
       ) => {
+        reads++;
         buf[0] = 0x0a; buf[1] = 0x7b; buf[2] = 0xd5; buf[3] = 255;
       },
     } as unknown as WebGL2RenderingContext);
     const onColorChange = vi.fn();
     const loupe = createLoupe({ hud, canvas: el, source, requestRedraw: () => {}, onColorChange });
     loupe.aimAt({ x: 400, y: 300 });
+    // A read here would return the frame before the aim.
+    expect(reads).toBe(0);
+    expect(loupe.color).toBeNull();
+
+    frame();
     expect(loupe.color).toBe('#0a7bd5');
     expect(onColorChange).toHaveBeenCalledWith('#0a7bd5');
   });
 
-  it('a click in the lens picks the color the lens shows there', () => {
+  it('reads a detached pane at its own rect of the surface', () => {
+    const hud = createHud();
+    const frame = bindHost(hud);
+    const el = document.createElement('canvas');
+    el.width = 820; el.height = 400;
+    vi.spyOn(el, 'getBoundingClientRect').mockReturnValue(
+      { left: 0, top: 0, width: 820, height: 400, right: 820, bottom: 400, x: 0, y: 0, toJSON: () => ({}) } as DOMRect,
+    );
+    const reads: { x: number; y: number; w: number; h: number }[] = [];
+    vi.spyOn(el, 'getContext').mockReturnValue({
+      RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
+      readPixels: (x: number, y: number, w: number, h: number) => { reads.push({ x, y, w, h }); },
+    } as unknown as WebGL2RenderingContext);
+    vi.stubGlobal('createImageBitmap', vi.fn(() => new Promise<ImageBitmap>(() => {})));
+
+    const pane = { x: 420, y: 20, width: 380, height: 360 };
+    const loupe = createLoupe({
+      hud, canvas: el, source, requestRedraw: () => {}, region: () => pane,
+    });
+    // The aim is pane-local, the way the pane's input box measures it.
+    loupe.aimAt({ x: 300, y: 50 });
+    frame();
+    reads.length = 0;
+    loupe.pick();
+    expect(reads).toEqual([{ x: 720, y: 400 - 70 - 1, w: 1, h: 1 }]);
+
+    // A lens region near the pane's corner stops at the pane, not at the
+    // surface's edge, which is across the neighboring pane.
+    loupe.setMode('pixel');
+    loupe.aimAt({ x: 0, y: 0 });
+    reads.length = 0;
+    frame();
+    const lens = reads.find((r) => r.w > 1)!;
+    expect(lens.x).toBe(420);
+    expect(lens.y).toBe(400 - 20 - lens.h);
+
+    loupe.dispose();
+    vi.unstubAllGlobals();
+  });
+
+  it('answers no pick before a frame has landed', () => {
     const hud = createHud();
     bindHost(hud);
+    const el = makeElement();
+    // A context this loupe opened first would be one no renderer asked for:
+    // no stencil buffer, on a canvas every tenant shares.
+    const getContext = vi.spyOn(el, 'getContext');
+    const loupe = createLoupe({ hud, canvas: el, source, requestRedraw: () => {} });
+    loupe.aimAt({ x: 400, y: 300 });
+    expect(loupe.pick()).toBeNull();
+    expect(getContext).not.toHaveBeenCalled();
+  });
+
+  it('a click in the lens picks the color the lens shows there', () => {
+    const hud = createHud();
+    const frame = bindHost(hud);
     const el = makeElement();
     const reads: { x: number; y: number }[] = [];
     vi.spyOn(el, 'getContext').mockReturnValue({
@@ -151,6 +211,7 @@ describe('createLoupe', () => {
       hud, canvas: el, source, requestRedraw: () => {}, factor: 8, onPick,
     });
     loupe.aimAt({ x: 400, y: 300 });
+    frame();
     reads.length = 0;
 
     // 40 CSS px right of the lens center at 8x is 5 px right of the aim; the
@@ -164,7 +225,7 @@ describe('createLoupe', () => {
 
   it('picks at the aim point when given no point', () => {
     const hud = createHud();
-    bindHost(hud);
+    const frame = bindHost(hud);
     const el = makeElement();
     const reads: { x: number; y: number }[] = [];
     vi.spyOn(el, 'getContext').mockReturnValue({
@@ -173,6 +234,7 @@ describe('createLoupe', () => {
     } as unknown as WebGL2RenderingContext);
     const loupe = createLoupe({ hud, canvas: el, source, requestRedraw: () => {} });
     loupe.aimAt({ x: 400, y: 300 });
+    frame();
     reads.length = 0;
     loupe.pick();
     expect(reads).toEqual([{ x: 400, y: 600 - 300 - 1 }]);
