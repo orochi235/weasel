@@ -1,3 +1,14 @@
+export type {
+  BaseNode,
+  BooleanNode,
+  ColorNode,
+  CustomNode,
+  EnumNode,
+  GroupNode,
+  NumberNode,
+  StringNode,
+  ValueNode,
+} from './builder';
 export { f, isConfigBranch } from './builder';
 export { fromConfigFields } from './fromConfigField';
 export {

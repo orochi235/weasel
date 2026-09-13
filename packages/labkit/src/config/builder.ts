@@ -21,7 +21,7 @@ export function isConfigBranch(entry: ConfigEntry): entry is ConfigBranch {
 
 /** Shared chaining surface. Every method clones, so a node can be reused as a
  *  base for several leaves without one bleeding into the next. */
-abstract class BaseNode<T> implements ConfigNode<T> {
+export abstract class BaseNode<T> implements ConfigNode<T> {
   abstract readonly kind: string | null;
 
   // `default` is a reserved word in a parameter position, so the field is
@@ -89,7 +89,7 @@ abstract class BaseNode<T> implements ConfigNode<T> {
   }
 }
 
-class NumberNode extends BaseNode<number> {
+export class NumberNode extends BaseNode<number> {
   readonly kind = 'number';
 
   /** Bound the value. A number with both bounds renders as a slider. */
@@ -124,7 +124,7 @@ class NumberNode extends BaseNode<number> {
   }
 }
 
-class BooleanNode extends BaseNode<boolean> {
+export class BooleanNode extends BaseNode<boolean> {
   readonly kind = 'boolean';
 
   /** Ask for a switch. `ControlPanel` still draws a checkbox; weasel-ui's
@@ -134,7 +134,7 @@ class BooleanNode extends BaseNode<boolean> {
   }
 }
 
-class StringNode extends BaseNode<string> {
+export class StringNode extends BaseNode<string> {
   readonly kind = 'string';
 
   placeholder(placeholder: string): this {
@@ -151,11 +151,11 @@ class StringNode extends BaseNode<string> {
   }
 }
 
-class ColorNode extends BaseNode<string> {
+export class ColorNode extends BaseNode<string> {
   readonly kind = 'color';
 }
 
-class EnumNode<T extends string> extends BaseNode<T> {
+export class EnumNode<T extends string> extends BaseNode<T> {
   readonly kind = 'enum';
 
   /** Render as a segmented control rather than a select. */
@@ -171,12 +171,12 @@ class EnumNode<T extends string> extends BaseNode<T> {
 }
 
 /** A leaf whose kind the rule chain decides. */
-class ValueNode<T> extends BaseNode<T> {
+export class ValueNode<T> extends BaseNode<T> {
   readonly kind = null;
 }
 
 /** A leaf of a kind labkit does not ship a row for. */
-class CustomNode<T> extends BaseNode<T> {
+export class CustomNode<T> extends BaseNode<T> {
   constructor(
     readonly kind: string,
     defaultValue: T,
@@ -196,7 +196,7 @@ class CustomNode<T> extends BaseNode<T> {
  * one is read and written at a dotted path. Distinct from `.section()`, which
  * puts a heading over sibling leaves and leaves their paths alone.
  */
-class GroupNode<S extends ConfigShape> implements ConfigBranch<S> {
+export class GroupNode<S extends ConfigShape> implements ConfigBranch<S> {
   constructor(
     readonly children: S,
     readonly annotations: Readonly<BranchAnnotations> = {},
