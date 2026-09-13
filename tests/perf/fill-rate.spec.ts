@@ -13,9 +13,10 @@
  * question every merge into the batch program raises. Variants are compiled and
  * timed in one page, alternating, so drift moves both.
  *
- * This reports; it does not gate. See `tests/bench/README.md`.
+ * This reports; it does not gate. See `tests/perf/README.md`.
  */
 import { test, expect } from '@playwright/test';
+import { metric, rounds, startRun } from './lib/result';
 
 const W = 1200;
 const H = 900;
@@ -30,15 +31,16 @@ const H = 900;
  */
 const LAYERS = 400;
 const FRAMES = 20;
-const RUNS = 8;
 /** Samples dropped from the front — the GPU is still ramping through them. */
 const WARMUP_RUNS = 3;
+const RUNS = rounds(8, { min: WARMUP_RUNS + 1 });
 
 interface Row { run: number; variant: string; msPerFrame: number }
 
 test.setTimeout(600_000);
 
-test('fill rate: what the batch shader costs a fragment it is not for', async ({ page }) => {
+test('fill rate: what the batch shader costs a fragment it is not for', async ({ page, browser, browserName }) => {
+  const run = startRun('fill-rate', { viewport: `${W}x${H}`, layers: LAYERS, frames: FRAMES, runs: RUNS, warmupRuns: WARMUP_RUNS });
   const errors: string[] = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
@@ -333,4 +335,17 @@ void main() {
   console.log('');
 
   expect(errors, errors.join('\n')).toEqual([]);
+
+  run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
+  const stat = `min of ${(RUNS - WARMUP_RUNS) * 2} samples after ${WARMUP_RUNS} warmup runs`;
+  for (const name of byVariant.keys()) {
+    const xs = settled(name);
+    const fastest = Math.min(...xs);
+    run.item(name, {
+      perFrame: metric(fastest, 'ms', stat, xs),
+      perFragment: metric((fastest * 1e6) / (fragments * 1e6), 'ns', stat),
+      spread: metric(spread(name), '%', '(max - min) / min over the same samples'),
+    });
+  }
+  run.write();
 });

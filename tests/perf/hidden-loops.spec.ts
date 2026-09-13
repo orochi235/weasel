@@ -9,6 +9,8 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { browserFingerprint } from './lib/fingerprint';
+import { metric, startRun } from './lib/result';
 
 interface FrameCounts {
   app: number;
@@ -49,7 +51,8 @@ const instrument = () => {
   };
 };
 
-test('a demo loop stops while the page reports itself hidden', async ({ page }) => {
+test('a demo loop stops while the page reports itself hidden', async ({ page, browser, browserName }) => {
+  const run = startRun('hidden-loops', { spanMs: 1500 });
   await page.addInitScript(instrument);
   await page.goto('/#custom-shader');
   await page.waitForTimeout(800);
@@ -80,4 +83,13 @@ test('a demo loop stops while the page reports itself hidden', async ({ page }) 
   expect(resumed.app).toBeGreaterThan(30);
   // The browser never stopped: without the gate, hidden.app would track this.
   expect(hidden.browser).toBeGreaterThan(30);
+
+  run.machine(await browserFingerprint(page, browser, browserName));
+  for (const [id, s] of [['visible', visible], ['hidden', hidden], ['resumed', resumed]] as const) {
+    run.item(id, {
+      appFrames: metric(s.app, 'count', 'frames the app requested in 1500 ms'),
+      browserFrames: metric(s.browser, 'count', 'frames the browser ran in 1500 ms'),
+    });
+  }
+  run.write();
 });

@@ -12,7 +12,7 @@ import { tessellate } from 'features/paths/tessellate/tessellate';
 import { tessellateStroke } from 'features/paths/tessellate/stroke';
 // Relative: core's `renderer/` tree has no bare path mapping (nothing inside
 // core imports it by one), so there is no alias to lean on here.
-import { getMesh, _resetCacheForTests } from '../../packages/core/src/renderer/cache/cache';
+import { getMesh, _resetCacheForTests } from 'renderer/cache/cache';
 import { curvyPath, rectPath } from './fixtures';
 
 const CURVE_COUNTS = [8, 64, 512];

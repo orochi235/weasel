@@ -23,14 +23,17 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const NOT_VITEST = [
   ['tests/visual/', 'playwright — npm run test:visual'],
   ['tests/e2e/', 'playwright — npm run test:e2e:demos (helpers/ are vitest and stay in scope)'],
-  ['tests/perf/', 'playwright — npm run test:perf'],
+  ['tests/perf/', 'playwright — npm run test:perf; vitest bench — npm run perf:bench (lib/ is vitest and stays in scope)'],
   ['apps/draw/tests-e2e/', 'playwright — npm run test:e2e:draw'],
 ];
+
+/** Vitest directories inside a NOT_VITEST suite. */
+const VITEST_WITHIN = ['tests/e2e/helpers/', 'tests/perf/lib/'];
 
 const isVitestFile = (path) => {
   if (!/\.(test|spec)\.(ts|tsx|mts|mjs|js)$/.test(path)) return false;
   return !NOT_VITEST.some(
-    ([prefix]) => path.startsWith(prefix) && !path.startsWith('tests/e2e/helpers/'),
+    ([prefix]) => path.startsWith(prefix) && !VITEST_WITHIN.some((dir) => path.startsWith(dir)),
   );
 };
 
