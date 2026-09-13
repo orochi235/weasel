@@ -42,7 +42,9 @@ import { isRectPose } from 'interactions/actions/resize/autoPoseDescriptor';
 function paintsPose(pose: unknown): boolean {
   return pose === undefined || isRectPose(pose);
 }
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand, PathDrawCommand } from '../renderer';
+import type { VertexColorChannel } from '../animation/colorRegistry';
+import { countPathAnchors } from 'features/paths/anchors';
 import { textCommandFromPose } from 'features/text/textCommand';
 import type { TextPose, TextStyle } from '@weasel-js/text';
 import type { StyledRun, TextVerticalAlign } from '@weasel-js/text';
@@ -82,6 +84,13 @@ export interface NodePaintCtx {
    *  the wrapper hands such a node the caller's own ctx untouched. `null`
    *  means the node derives but has nothing to draw. */
   derivedPath?: Path | null;
+  /** A node's animated per-anchor colors: given the colors a painter would paint
+   *  on `channel`, the colors to paint instead. **Absent** when nothing animates
+   *  the node. The kit's path painters apply it; see `withColorOverrides`. */
+  vertexColors?: (
+    channel: VertexColorChannel,
+    base: readonly number[] | undefined,
+  ) => readonly number[] | undefined;
 }
 
 /**
@@ -578,6 +587,29 @@ function inkReach(
   }
 }
 
+/** Apply {@link NodePaintCtx.vertexColors} to a path painter's body — its first
+ *  command, ahead of any markers. Applied outside the paint memo, whose key
+ *  cannot see an override: `cmds` comes back as-is when nothing changes, and
+ *  otherwise as a copy, since a memoized list is not ours to edit. Colors whose
+ *  length does not match the path's anchors are dropped. */
+function withAnimatedVertexColors(cmds: DrawCommand[], ctx: NodePaintCtx | undefined): DrawCommand[] {
+  const resolve = ctx?.vertexColors;
+  const body = cmds[0];
+  if (resolve === undefined || body?.kind !== 'path') return cmds;
+  const expected = 4 * countPathAnchors(body.path);
+  const fill = body.fill ? resolve('fill', body.vertexColors) : undefined;
+  const stroke = body.stroke ? resolve('stroke', body.stroke.vertexColors) : undefined;
+  const fillChanged = fill?.length === expected && fill !== body.vertexColors;
+  const strokeChanged = stroke?.length === expected && stroke !== body.stroke?.vertexColors;
+  if (!fillChanged && !strokeChanged) return cmds;
+  const next: PathDrawCommand = {
+    ...body,
+    ...(fillChanged ? { vertexColors: fill as number[] } : {}),
+    ...(strokeChanged ? { stroke: { ...body.stroke!, vertexColors: stroke as number[] } } : {}),
+  };
+  return [next, ...cmds.slice(1)];
+}
+
 const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   id: 'kit:path',
   matches: (node) => {
@@ -588,11 +620,12 @@ const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // Memoized: a pure function of `(data, pose)`, and `pathInPoseFrame`
   // allocates on every call but the identity (`kind: 'rect'`) branch. See
   // PAINT_SLOT.
-  paint: (node, pose) => nodeMemo(node, PAINT_SLOT, pose, () => {
+  paint: (node, pose, ctx) => withAnimatedVertexColors(nodeMemo(node, PAINT_SLOT, pose, () => {
     const d = node.data as {
       path: Path;
       fill?: FillStyle | null;
       stroke?: Stroke | null;
+      vertexColors?: number[];
     };
     const projected = pathInPoseFrame(d.path, pose);
     const strokeSpec = resolveNodeStroke(d.stroke);
@@ -610,13 +643,14 @@ const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
       kind: 'path',
       path: projected,
       ...(fill ? { fill } : {}),
+      ...(fill && d.vertexColors ? { vertexColors: d.vertexColors } : {}),
       ...(stroke ? { stroke } : {}),
     };
     if (!stroke) return [cmd];
     // Markers paint after the ribbon so they sit on top of it.
     const width = resolveStrokeWidth(stroke.width ?? 1, 1);
     return [cmd, ...markerDrawCommands(projected, stroke, width, undefined)];
-  }),
+  }), ctx),
   silhouette: (node, pose) => {
     const d = node.data as { path: Path };
     return pathInPoseFrame(d.path, pose);
@@ -653,7 +687,7 @@ const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // Memoized: a pure function of `(data, pose)`, and `pathForShape` builds a
   // fresh `Uint8Array` + `Float32Array` for every ellipse, polygon and star.
   // See PAINT_SLOT.
-  paint: (node, pose) => nodeMemo(node, PAINT_SLOT, pose, () => {
+  paint: (node, pose, ctx) => withAnimatedVertexColors(nodeMemo(node, PAINT_SLOT, pose, () => {
     const d = node.data as { shape: string; fill?: FillStyle | null; stroke?: Stroke | null; sides?: number; points?: number };
     const path = pathForShape(d, pose);
     const declaredFill = resolveNodeFill(d.fill, DEFAULT_SHAPE_FILL);
@@ -666,7 +700,7 @@ const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
       ...(shapeFill ? { fill: shapeFill } : {}),
       ...(stroke ? { stroke } : {}),
     }];
-  }),
+  }), ctx),
   silhouette: (node, pose) => {
     const d = node.data as { shape: string; sides?: number; points?: number };
     return pathForShape(d, pose);
@@ -791,7 +825,7 @@ const DERIVED_PAINTER: NodeShapeEntry = {
     const path = ctx?.derivedPath;
     if (path == null) return [];
     const box = boundsOfPath(path);
-    const d = node.data as { fill?: FillStyle | null; stroke?: Stroke | null } | null;
+    const d = node.data as { fill?: FillStyle | null; stroke?: Stroke | null; vertexColors?: number[] } | null;
     const strokeSpec = resolveNodeStroke(d?.stroke);
     const declared = resolveNodeFill(d?.fill, strokeSpec === null ? DEFAULT_SHAPE_FILL : null);
     const fill = declared && resolveFillPattern(fillInPoseFrame(declared, box));
@@ -800,14 +834,15 @@ const DERIVED_PAINTER: NodeShapeEntry = {
       kind: 'path',
       path,
       ...(fill ? { fill } : {}),
+      ...(fill && d?.vertexColors ? { vertexColors: d.vertexColors } : {}),
       ...(stroke ? { stroke } : {}),
     };
-    if (!stroke) return [cmd];
+    if (!stroke) return withAnimatedVertexColors([cmd], ctx);
     // The same marker pass `kit:path` runs, and for the same reason a diagram
     // edge is a stroke like any other: an arrowhead is `markerEnd`, not
     // geometry the router appends. `ink` already reserves the reach for one.
     const width = resolveStrokeWidth(stroke.width ?? 1, 1);
-    return [cmd, ...markerDrawCommands(path, stroke, width, undefined)];
+    return withAnimatedVertexColors([cmd, ...markerDrawCommands(path, stroke, width, undefined)], ctx);
   },
   // The derived path *is* the silhouette, and it is already absolute — the
   // pose is a placeholder, so nothing here can be recovered from it. Without

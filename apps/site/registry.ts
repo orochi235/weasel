@@ -302,7 +302,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'vertex-color-animation',
     title: 'Vertex-color animation',
     category: 'Animation',
-    description: 'Three strokes colored one RGBA per anchor, each animated by one helper. `cycleVertexColors` rotates the top stroke\'s colors along its anchors for as long as it runs; with OKLCh ticked it blends neighboring hues in a perceptual space instead of RGB. `tweenVertexColors` changes every anchor of the middle stroke at once, and `staggerVertexColors` runs the same change down the bottom stroke one anchor after another. The helpers write to `animator.colorOverrides`, which `createPathLayer` reads as it paints, so no frame touches the scene. When a tween or stagger ends, the demo writes its final colors into the node so the stroke keeps them.',
+    description: 'Three strokes colored one RGBA per anchor, each animated by one helper. `cycleVertexColors` rotates the top stroke\'s colors along its anchors for as long as it runs; with OKLCh ticked it blends neighboring hues in a perceptual space instead of RGB. `tweenVertexColors` changes every anchor of the middle stroke at once, and `staggerVertexColors` runs the same change down the bottom stroke one anchor after another. The helpers write to `animator.colorOverrides`, and passing the animator to `<SceneCanvas>` paints those colors onto the scene\'s own path nodes, so no frame touches the scene. When a tween or stagger ends, the demo writes its final colors into the node so the stroke keeps them.',
     hint: 'Click tween or stagger, and again to go back. Pause the cycle or tick OKLCh.',
     load: () => import('./demos/VertexColorAnimationDemo').then((m) => m.VertexColorAnimationDemo),
     path: 'apps/site/demos/VertexColorAnimationDemo.tsx',

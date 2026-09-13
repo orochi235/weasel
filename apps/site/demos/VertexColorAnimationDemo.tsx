@@ -1,11 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   asNodeId,
   boundsOfPath,
-  createPathLayer,
   cycleVertexColors,
   pathFromD,
-  pathInWorld,
   rainbowVertexColors,
   SceneCanvas,
   solidVertexColors,
@@ -49,15 +47,6 @@ export function VertexColorAnimationDemo() {
   const animator = useAnimator();
   const [cycling, setCycling] = useState(true);
   const [oklch, setOklch] = useState(false);
-
-  // The scene slot's painter does not read `colorOverrides`; a path layer does.
-  const waves = useMemo(() => createPathLayer({
-    getNodes: () => scene.renderOrderNodes(),
-    getPath: (n) => pathInWorld(n.data.path, n.pose),
-    getStroke: (n) => n.data.stroke,
-    getStrokeVertexColors: (n) => n.data.stroke.vertexColors,
-    colorOverrides: animator.colorOverrides,
-  }), [scene, animator]);
 
   useEffect(() => {
     if (!cycling) return;
@@ -115,7 +104,6 @@ export function VertexColorAnimationDemo() {
         scene={scene}
         animator={animator}
         selectionMode="none"
-        layers={{ scene: null, waves: { layer: waves } }}
       />
     </div>
   );
