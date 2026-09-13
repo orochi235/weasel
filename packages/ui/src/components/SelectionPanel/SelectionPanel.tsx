@@ -16,13 +16,13 @@ import {
   type ToolPrefGroup,
   type ToolPrefObject,
 } from '@weasel-js/core';
-import { prefDisplayBounds } from '../Prefs/schema';
+import { prefDisplayBounds, prefUnitAccepts } from '../Prefs/schema';
 import { ColorField } from '../ColorField';
 import { FontFamilySelect } from '../FontFamilySelect';
 import { PaintInput } from '../PaintInput';
 import { InlineRange } from '../InlineRange';
 import { Input } from '../Input';
-import { NumberField } from '../NumberField';
+import { NumberField, UnitField } from '../NumberField';
 import { Select } from '../Select';
 import { Switch } from '../Switch';
 import { ToggleBar } from '../ToggleBar';
@@ -483,7 +483,20 @@ function renderBuiltin(
           </>
         );
       }
-      const field = (
+      const unit = p.unit;
+      const field = unit ? (
+        <UnitField
+          className={s.number}
+          value={mixed || stored === undefined ? NaN : display}
+          placeholder={mixed ? 'Mixed' : undefined}
+          minValue={bounds.min}
+          maxValue={bounds.max}
+          step={bounds.step}
+          accepts={prefUnitAccepts(unit)}
+          aria-label={ariaLabel}
+          onChange={(n) => setValue(unit.fromDisplay(n))}
+        />
+      ) : (
         <NumberField
           className={s.number}
           value={mixed || stored === undefined ? NaN : display}
@@ -495,16 +508,16 @@ function renderBuiltin(
           aria-label={ariaLabel}
           onChange={(n) => {
             if (Number.isNaN(n)) return;
-            setValue(p.unit ? p.unit.fromDisplay(n) : n);
+            setValue(n);
           }}
         />
       );
-      if (p.unit?.suffix === undefined) return field;
+      if (unit?.suffix === undefined) return field;
       return (
         <>
           {field}
           <span className={s.unitSuffix} aria-hidden="true">
-            {p.unit.suffix}
+            {unit.suffix}
           </span>
         </>
       );

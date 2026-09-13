@@ -466,6 +466,26 @@ describe('PrefsForm — number leaves with a display unit', () => {
     expect(onChange.mock.calls[0][1]).toBeCloseTo(Math.PI / 2);
   });
 
+  it('reads a unit typed in place of the one it shows', () => {
+    const onChange = renderRotation({}, Math.PI / 4);
+    const field = screen.getByRole('textbox', { name: 'Rotation' });
+    fireEvent.change(field, { target: { value: '0.25turn' } });
+    fireEvent.blur(field);
+    expect(onChange.mock.calls[0][1]).toBeCloseTo(Math.PI / 2);
+    fireEvent.change(field, { target: { value: '30°' } });
+    fireEvent.blur(field);
+    expect(onChange.mock.calls[1][1]).toBeCloseTo(Math.PI / 6);
+  });
+
+  it('commits nothing for a unit it does not accept', () => {
+    const onChange = renderRotation({}, Math.PI / 4);
+    const field = screen.getByRole('textbox', { name: 'Rotation' });
+    fireEvent.change(field, { target: { value: '12mm' } });
+    fireEvent.blur(field);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(field).toHaveValue('45');
+  });
+
   it('names the unit beside the field', () => {
     renderRotation({}, Math.PI / 4);
     expect(screen.getByText('°')).toBeInTheDocument();

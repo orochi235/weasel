@@ -5,7 +5,7 @@ import { ColorField } from '../ColorField';
 import { FontFamilySelect } from '../FontFamilySelect';
 import { solidColorOf } from '../paintValue';
 import { Input } from '../Input';
-import { NumberField } from '../NumberField';
+import { NumberField, UnitField } from '../NumberField';
 import { RadioGroup, Radio } from '../RadioGroup';
 import { RangeSlider } from '../RangeSlider';
 import { Select } from '../Select';
@@ -15,6 +15,7 @@ import { isBuiltinToolPref } from '@weasel-js/core';
 import {
   isPrefLeaf,
   prefDisplayBounds,
+  prefUnitAccepts,
   prefValueAtPath,
   visiblePrefSubtree,
   type PrefGroup,
@@ -230,7 +231,17 @@ function renderBuiltin(
           />
         );
       }
-      const field = (
+      const field = unit ? (
+        <UnitField
+          value={display}
+          onChange={store}
+          minValue={bounds.min}
+          maxValue={bounds.max}
+          step={bounds.step}
+          accepts={prefUnitAccepts(unit)}
+          aria-label={pref.name}
+        />
+      ) : (
         <NumberField
           value={display}
           onChange={store}

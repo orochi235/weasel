@@ -1,5 +1,6 @@
 import { describe, it, expect, expectTypeOf } from 'vitest';
-import { TOOL_PREF_KINDS, isBuiltinToolPref } from './prefs';
+import { TOOL_PREF_KINDS, isBuiltinToolPref, prefUnit } from './prefs';
+import { ANGLE_RADIANS, METRIC_MM } from 'core/units';
 import type {
   ToolPref,
   ToolPrefKind,
@@ -74,5 +75,34 @@ describe('built-in kind table', () => {
     // A leaf whose kind collides with an Object.prototype key is app-defined
     // like any other — `in` would answer true here.
     expect(isBuiltinToolPref({ ...custom, kind: 'toString' })).toBe(false);
+  });
+});
+
+describe('prefUnit', () => {
+  it('stores the base unit and shows the display unit', () => {
+    const cm = prefUnit(METRIC_MM, 'cm');
+    expect(cm.toDisplay(25)).toBe(2.5);
+    expect(cm.fromDisplay(2.5)).toBe(25);
+    expect(cm.suffix).toBe('cm');
+  });
+
+  it('rounds what it shows to the precision given, and nothing else', () => {
+    const deg = prefUnit(ANGLE_RADIANS, 'deg', { precision: 1 });
+    expect(deg.toDisplay(Math.PI / 3)).toBe(60);
+    expect(deg.toDisplay(0.001)).toBe(0.1);
+    expect(deg.fromDisplay(90)).toBeCloseTo(Math.PI / 2, 12);
+  });
+
+  it('accepts every unit in the system, scaled to the display unit, and its suffix', () => {
+    const deg = prefUnit(ANGLE_RADIANS, 'deg', { suffix: '°' });
+    expect(deg.suffix).toBe('°');
+    expect(deg.accepts?.['°']).toBe(1);
+    expect(deg.accepts?.deg).toBe(1);
+    expect(deg.accepts?.turn).toBeCloseTo(360);
+    expect(prefUnit(METRIC_MM, 'cm').accepts).toEqual({ mm: 0.1, cm: 1, m: 100, km: 100_000 });
+  });
+
+  it('throws on a display unit the system does not have', () => {
+    expect(() => prefUnit(METRIC_MM, 'ft')).toThrow(/unknown unit 'ft'/);
   });
 });

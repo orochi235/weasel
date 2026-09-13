@@ -3,18 +3,16 @@ import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { listMarkers } from 'core/strokeMarkers';
 import { dashForStrokeStyle, strokeDashStyleOf } from '@weasel-js/paint';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
-import type { ToolPrefEnumEncoding, ToolPrefGroup, ToolPrefNumberUnit } from 'tools/prefs';
-
-const RAD_TO_DEG = 180 / Math.PI;
+import { ANGLE_RADIANS } from 'core/units';
+import { prefUnit, type ToolPrefEnumEncoding, type ToolPrefGroup, type ToolPrefNumberUnit } from 'tools/prefs';
 
 /** Radians-stored / degrees-shown conversion for `pose.rotation` leaves.
  *  Display rounds to 0.1° so a canonical radian value doesn't render as
  *  a 15-digit float. */
-export const rotationDegreesUnit: ToolPrefNumberUnit = {
-  toDisplay: (rad) => Math.round(rad * RAD_TO_DEG * 10) / 10,
-  fromDisplay: (deg) => deg / RAD_TO_DEG,
+export const rotationDegreesUnit: ToolPrefNumberUnit = prefUnit(ANGLE_RADIANS, 'deg', {
+  precision: 1,
   suffix: '°',
-};
+});
 
 /** `Stroke.width` off a partly-typed stroke object, or `undefined`. */
 function strokeWidthOf(stroke: Record<string, unknown> | undefined): number | { px: number } | undefined {

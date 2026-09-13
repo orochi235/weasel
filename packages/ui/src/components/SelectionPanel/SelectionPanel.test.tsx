@@ -193,6 +193,22 @@ describe('SelectionPanel', () => {
     expect((scene.get(asNodeId('a')) as { pose: Pose }).pose.rotation).toBeCloseTo(Math.PI / 2);
   });
 
+  it('reads a unit typed into a unit leaf', () => {
+    const scene = makeScene();
+    render(
+      <SelectionPanel
+        scene={scene}
+        selection={selectionOf(['a'])}
+        properties={properties}
+        routing={routing}
+      />,
+    );
+    const rotation = screen.getByLabelText('Rotation');
+    fireEvent.change(rotation, { target: { value: '0.25turn' } });
+    fireEvent.blur(rotation);
+    expect((scene.get(asNodeId('a')) as { pose: Pose }).pose.rotation).toBeCloseTo(Math.PI / 2);
+  });
+
   // A leaf's bounds are written in the unit it stores, like its value. Passed
   // through raw they clamped typed degrees against a radian range: 90 came
   // back as 6.283 (2π), the max.

@@ -135,3 +135,34 @@ describe('parseNumber', () => {
     expect(parseNumber('abc')).toBeNaN();
   });
 });
+
+describe('parseNumber with units', () => {
+  const metricInCm = { mm: 0.1, cm: 1, m: 100, km: 100_000 };
+
+  it('scales by the unit typed, with or without a space', () => {
+    expect(parseNumber('3m', metricInCm)).toBe(300);
+    expect(parseNumber('3 m', metricInCm)).toBe(300);
+    expect(parseNumber('4', metricInCm)).toBe(4);
+  });
+
+  it('reads the longest unit name the text ends with', () => {
+    expect(parseNumber('12mm', metricInCm)).toBe(1.2);
+    expect(parseNumber('2km', metricInCm)).toBe(200_000);
+  });
+
+  it('reads a unit before a magnitude suffix', () => {
+    expect(parseNumber('2m', metricInCm)).toBe(200);
+    expect(parseNumber('2k', metricInCm)).toBe(2000);
+  });
+
+  it('matches exact case first, then any case', () => {
+    expect(parseNumber('5CM', metricInCm)).toBe(5);
+    expect(parseNumber('1M', { M: 1_000_000, m: 1 })).toBe(1_000_000);
+    expect(parseNumber('1m', { M: 1_000_000, m: 1 })).toBe(1);
+  });
+
+  it('is NaN for a unit it does not accept', () => {
+    expect(parseNumber('12ft', metricInCm)).toBeNaN();
+    expect(parseNumber('mm', metricInCm)).toBeNaN();
+  });
+});

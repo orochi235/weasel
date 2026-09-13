@@ -87,6 +87,12 @@ export const METRIC_MM: UnitSystem = {
   units: { mm: 1, cm: 10, m: 1000, km: 1_000_000 },
 };
 
+/** Angle unit system with base 'rad'. */
+export const ANGLE_RADIANS: UnitSystem = {
+  base: 'rad',
+  units: { rad: 1, deg: Math.PI / 180, turn: Math.PI * 2 },
+};
+
 /** Pixel unit system — sole unit is the base. */
 export const PIXELS: UnitSystem = {
   base: 'px',
