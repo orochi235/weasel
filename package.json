@@ -52,6 +52,7 @@
     "check:frame-loops": "node scripts/check-frame-loops.mjs",
     "check:test-projects": "node scripts/check-test-projects.mjs",
     "check:forge-boundary": "node scripts/check-forge-boundary.mjs",
+    "check:forge-stories": "node packages/forge/scripts/check-stories.ts",
     "audit:jsdoc": "node scripts/audit-jsdoc.mjs",
     "gen:bidi-tables": "node packages/bidi/scripts/gen-bidi-tables.mjs",
     "gen:font": "node packages/font/scripts/gen-font.ts",
