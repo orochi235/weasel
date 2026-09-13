@@ -92,6 +92,39 @@ describe('loadCsfModule', () => {
     expect(story?.initialState).toBeNull();
   });
 
+  it("deep-merges a story's argTypes over the meta's", () => {
+    const [story] = loadCsfModule(
+      {
+        default: { title: 'ui/Font', args: { font: 'serif' }, argTypes: { font: { control: 'select', options: ['sans', 'serif'] } } },
+        Described: { argTypes: { font: { description: 'x' } } },
+      },
+      FILE,
+      ROOT,
+    );
+    expect(story?.config.nodes.font).toMatchObject({ kind: 'enum' });
+    expect(story?.config.nodes.font?.annotations).toEqual({
+      options: [
+        { value: 'sans', label: 'sans' },
+        { value: 'serif', label: 'serif' },
+      ],
+      description: 'x',
+    });
+  });
+
+  it('passes no value for a control with no arg until config gives it one', () => {
+    const renderFn = vi.fn((_args: Record<string, unknown>) => null);
+    const [story] = loadCsfModule(
+      { default: { title: 'ui/Slider', args: { min: 0 }, argTypes: { showStops: { control: 'boolean' } } }, A: { render: renderFn } },
+      FILE,
+      ROOT,
+    );
+    if (!story) throw new Error('no story');
+    show(story);
+    expect(renderFn.mock.calls[0]?.[0]).toStrictEqual({ min: 0 });
+    show(story, ctxFor(story, { config: { ...(story.config.defaults() as Record<string, unknown>), showStops: true } }));
+    expect(renderFn.mock.calls[1]?.[0]).toStrictEqual({ min: 0, showStops: true });
+  });
+
   it('renders with config merged over the args the schema omits', () => {
     const renderFn = vi.fn((args: Record<string, unknown>) => <p>{String(args.label)}</p>);
     const onClick = () => {};

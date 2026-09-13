@@ -57,6 +57,50 @@ describe('useArgs shim', () => {
     ]);
   });
 
+  it('resets keys updateArgs wrote that have no config leaf', () => {
+    let captured: ReturnType<typeof useArgs> | undefined;
+    const [story] = loadCsfModule(
+      {
+        default: { title: 'ui/Keycaps', args: { label: 'x', separator: null, onInput: () => {} } },
+        A: {
+          render: function ReadArgs() {
+            captured = useArgs();
+            return null;
+          },
+        },
+      },
+      '/repo/Keycaps.stories.tsx',
+      '/repo',
+    );
+    if (!story) throw new Error('no story');
+    expect(Object.keys(story.config.nodes)).toEqual(['label']);
+    const setConfig = vi.fn();
+    const ctx: StoryContext = {
+      config: { label: 'changed', separator: '+', extra: 7 },
+      setConfig,
+      state: null,
+      setState: vi.fn(),
+      globals: {},
+      title: story.title,
+      name: story.name,
+    };
+    function Render() {
+      return story?.render(ctx);
+    }
+    render(<Render />);
+
+    act(() => captured?.[2]());
+    expect(setConfig.mock.calls).toEqual([
+      ['label', 'x'],
+      ['separator', null],
+      ['extra', undefined],
+    ]);
+
+    setConfig.mockClear();
+    act(() => captured?.[2](['extra', 'onInput']));
+    expect(setConfig.mock.calls).toEqual([['extra', undefined]]);
+  });
+
   it('throws outside a CSF story', () => {
     function Stray() {
       useArgs();

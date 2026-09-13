@@ -4,6 +4,7 @@ import { storyId, storyNameFromExport, titleFromFile } from '../story/ids';
 import type { Decorator, LoadedStory, PlayContext, StoryContext } from '../story/types';
 import { type ArgsScope, ArgsContext } from './argsContext';
 import { type ArgType, argsToSchema } from './argsToSchema';
+import { isPlainObject } from './isPlainObject';
 
 type Args = Record<string, unknown>;
 type CsfContext = {
@@ -38,10 +39,11 @@ interface Annotations {
 
 const LAYOUTS: readonly Layout[] = ['centered', 'padded', 'fullscreen'];
 
-const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-  !!value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype;
-
 const asArray = <T,>(value: T | T[] | undefined): T[] => (value === undefined ? [] : Array.isArray(value) ? value : [value]);
+
+/** Storybook's `deleteUndefined`, which its args store applies after every update. */
+const withoutUndefined = (args: Args): Args =>
+  Object.fromEntries(Object.entries(args).filter(([, value]) => value !== undefined));
 
 /** Storybook's `matches` from `isExportStory`. */
 const matches = (key: string, filter: string[] | RegExp) =>
@@ -102,7 +104,7 @@ export function loadCsfModule(mod: Record<string, unknown>, file: string, root: 
     const id = storyId(title, exportName);
     const name = spec.name || spec.storyName || storyNameFromExport(exportName);
     const args = { ...meta.args, ...spec.args };
-    const config = argsToSchema(args, { ...meta.argTypes, ...spec.argTypes });
+    const config = argsToSchema(args, combineParameters(meta.argTypes, spec.argTypes) as Record<string, ArgType>);
     const defaults = config.defaults() as Args;
     const parameters = combineParameters(meta.parameters, spec.parameters);
     const storyGlobals = { ...meta.globals, ...spec.globals };
@@ -111,7 +113,7 @@ export function loadCsfModule(mod: Record<string, unknown>, file: string, root: 
       spec.render ?? meta.render ?? (component ? (a) => createElement(component, a) : undefined);
 
     const csfContext = (config: unknown, globals: Globals): CsfContext => ({
-      args: { ...args, ...(config as Args) },
+      args: withoutUndefined({ ...args, ...(config as Args) }),
       globals,
       parameters,
       title,
@@ -121,6 +123,7 @@ export function loadCsfModule(mod: Record<string, unknown>, file: string, root: 
     });
     const scopeFor = (context: CsfContext, ctx: StoryContext): ArgsScope => ({
       args: context.args,
+      initialArgs: args,
       defaults,
       setConfig: ctx.setConfig,
     });

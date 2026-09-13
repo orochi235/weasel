@@ -1,5 +1,6 @@
 import { type ConfigNode, type ConfigSchema, type ConfigShape, f } from '@weasel-js/labkit/config';
 import { isValidElement } from 'react';
+import { isPlainObject } from './isPlainObject';
 
 /** A CSF `argTypes` entry, as far as forge reads it. */
 export interface ArgType {
@@ -22,9 +23,6 @@ interface Control {
   max?: number;
   step?: number;
 }
-
-const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-  !!value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype;
 
 /** Functions and React elements reach `render` in `args` but never become controls. */
 export const isControllable = (value: unknown): boolean => typeof value !== 'function' && !isValidElement(value);
@@ -63,32 +61,33 @@ function bounded(node: ReturnType<typeof f.number>, control: Control) {
 
 function controlled(control: Control, argType: ArgType, has: boolean, value: unknown): Leaf | null {
   const options = stringOptions(argType);
-  const pick = <T>(zero: T, test: (v: unknown) => boolean): T => (has && test(value) ? (value as T) : zero);
+  // Storybook passes an argTypes-only key as undefined, so the component's own default applies.
+  const def = <T>() => (has ? value : undefined) as T;
   switch (control.type) {
     case 'number': {
-      const node = bounded(f.number(pick(0, (v) => typeof v === 'number')), control);
+      const node = bounded(f.number(def()), control);
       return control.min !== undefined && control.max !== undefined ? node.input() : node;
     }
     case 'range':
     case 'slider':
-      return bounded(f.number(pick(0, (v) => typeof v === 'number')), control).slider();
+      return has ? bounded(f.number(def()), control).slider() : null;
     case 'boolean':
-      return f.boolean(pick(false, (v) => typeof v === 'boolean'));
+      return f.boolean(def());
     case 'switch':
-      return f.boolean(pick(false, (v) => typeof v === 'boolean')).toggle();
+      return f.boolean(def()).toggle();
     case 'text':
     case 'textarea':
-      return f.string(pick('', (v) => typeof v === 'string'));
+      return f.string(def());
     case 'select':
     case 'radio':
     case 'inline-radio':
     case undefined: {
       if (!options) return control.type === undefined && has ? inferred(value) : null;
-      const node = f.enum(pick(options[0] as string, (v) => typeof v === 'string'), options);
+      const node = f.enum(def<string>(), options);
       return control.type === 'radio' || control.type === 'inline-radio' ? node.radio() : node;
     }
     case 'object':
-      return f.custom('json', has ? value : null);
+      return has ? f.custom('json', value) : null;
     default:
       return has ? inferred(value) : null;
   }

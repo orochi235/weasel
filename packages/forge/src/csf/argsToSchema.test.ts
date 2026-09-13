@@ -105,17 +105,52 @@ describe('argsToSchema', () => {
     });
   });
 
-  it("gives a controlled argType with no arg its control kind's zero value", () => {
-    const schema = argsToSchema(
-      {},
-      {
-        showStops: { control: 'boolean' },
-        count: { control: { type: 'number' } },
-        label: { control: 'text' },
-        track: { control: 'inline-radio', options: ['none', 'move-nearest'] },
-      },
-    );
-    expect(schema.defaults()).toEqual({ showStops: false, count: 0, label: '', track: 'none' });
+  describe('keeps an arg exactly, whatever the control kind', () => {
+    it("keeps Powerline FlushNoGap's gap: 0 under a text control", () => {
+      expect(shape(leaf({ gap: 0 }, { gap: { control: 'text' } }, 'gap'))).toEqual({ kind: 'string', default: 0 });
+    });
+
+    it("keeps Keycaps NoSeparator's separator: null under a text control", () => {
+      expect(argsToSchema({ separator: null }, { separator: { control: 'text' } }).defaults()).toEqual({ separator: null });
+    });
+
+    it('keeps a mistyped arg under number, boolean and enum controls', () => {
+      const schema = argsToSchema(
+        { n: '4', on: 'yes', mode: 3 },
+        { n: { control: { type: 'number' } }, on: { control: 'switch' }, mode: { control: 'select', options: ['a', 'b'] } },
+      );
+      expect(schema.defaults()).toEqual({ n: '4', on: 'yes', mode: 3 });
+    });
+  });
+
+  describe('a control with no arg', () => {
+    const only = (argType: Parameters<typeof argsToSchema>[1][string]) => argsToSchema({}, { k: argType });
+
+    it.each([
+      ['radio', { control: 'radio', options: ['a', 'b'] }, 'enum'],
+      ['inline-radio', { control: 'inline-radio', options: ['a', 'b'] }, 'enum'],
+      ['select', { control: 'select', options: ['a', 'b'] }, 'enum'],
+      ['options alone', { options: ['a', 'b'] }, 'enum'],
+      ['boolean', { control: 'boolean' }, 'boolean'],
+      ['switch', { control: 'switch' }, 'boolean'],
+      ['number', { control: { type: 'number' } }, 'number'],
+      ['bounded number', { control: { type: 'number', min: 1, max: 50, step: 1 } }, 'number'],
+      ['text', { control: 'text' }, 'string'],
+      ['textarea', { control: 'textarea' }, 'string'],
+    ] as const)('%s gets a leaf defaulting to undefined', (_, argType, kind) => {
+      const schema = only(argType);
+      expect((schema.nodes.k as ConfigNode<unknown> | undefined)?.kind).toBe(kind);
+      expect(Object.hasOwn(schema.defaults() as object, 'k')).toBe(true);
+      expect((schema.defaults() as Record<string, unknown>).k).toBeUndefined();
+    });
+
+    it.each([
+      ['range', { control: { type: 'range', min: 0, max: 20, step: 0.5 } }],
+      ['slider', { control: 'slider' }],
+      ['object', { control: 'object' }],
+    ] as const)('%s is omitted', (_, argType) => {
+      expect(Object.keys(only(argType).nodes)).toEqual([]);
+    });
   });
 
   it('skips an argType with no arg and no control', () => {

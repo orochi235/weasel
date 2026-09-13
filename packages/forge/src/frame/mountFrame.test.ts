@@ -10,10 +10,10 @@ vi.mock('./FrameController', () => ({ startFrame: vi.fn(), reportImportFault: vi
 
 const FILE = '/repo/a.stories.tsx';
 
-function handoff(origin: string, source: unknown) {
+function handoff(origin: string, source: unknown, port: unknown = { fake: 'port' }) {
   const event = new MessageEvent('message', { data: { type: PORT_HANDOFF }, origin });
   Object.defineProperty(event, 'source', { value: source });
-  Object.defineProperty(event, 'ports', { value: [{ fake: 'port' }] });
+  Object.defineProperty(event, 'ports', { value: [port] });
   window.dispatchEvent(event);
 }
 
@@ -52,12 +52,21 @@ describe('mountFrame', () => {
     await vi.waitFor(() => expect(startFrame).toHaveBeenCalledTimes(1));
   });
 
-  it('takes only the first port', async () => {
+  it('takes only the first port, and stops listening once it has one', async () => {
     mount({ default: { title: 'ui/A' }, One: {} }, 'ui-a--one');
-    handoff(location.origin, window.parent);
-    handoff(location.origin, window.parent);
+    const first = { fake: 'first' };
+    handoff(location.origin, window.parent, first);
+    // Proxy: resolving an already-settled promise is a no-op, so a listener left in place changes no
+    // outcome here; whether the second handoff is read at all is what shows it was removed.
+    const read = vi.fn();
+    const second = new MessageEvent('message', { data: { type: PORT_HANDOFF }, origin: location.origin });
+    Object.defineProperty(second, 'source', { value: window.parent });
+    Object.defineProperty(second, 'ports', { get: () => (read(), [{ fake: 'second' }]) });
+    window.dispatchEvent(second);
     await vi.waitFor(() => expect(startFrame).toHaveBeenCalledTimes(1));
     expect(openChannel).toHaveBeenCalledTimes(1);
+    expect(openChannel).toHaveBeenCalledWith(first);
+    expect(read).not.toHaveBeenCalled();
   });
 
   it('loads a CSF module with the CSF loader', async () => {
