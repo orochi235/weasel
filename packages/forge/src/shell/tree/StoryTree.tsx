@@ -30,7 +30,7 @@ function ancestorsOf(entry: IndexEntry | undefined): Set<string> {
   return paths;
 }
 
-/** The indexed stories as a filterable tree; opening one opens, or reveals, its trial. */
+/** The indexed stories as a filterable tree; opening one runs it in the focused trial, or with Shift in another. */
 export function StoryTree({ ctx, index }: StoryTreeProps) {
   const headingId = useId();
   const [route, setRoute] = useRoute();
@@ -69,10 +69,11 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
     items.current.get(key)?.focus();
   };
 
-  const activate = (entry: IndexEntry, fresh: boolean): void => {
-    const open = ctx.trials.find((trial) => trial.instrumentName === entry.id);
-    if (open && !fresh) revealTrial(open.id);
-    else ctx.addTrial(entry.id);
+  const activate = (entry: IndexEntry, another: boolean): void => {
+    const focused = ctx.trials.find((trial) => trial.id === ctx.focusedTrialId);
+    if (another || !focused) ctx.addTrial(entry.id);
+    else if (focused.instrumentName === entry.id) revealTrial(focused.id);
+    else ctx.swapTrial(focused.id, entry.id);
     setRoute(entry.id);
   };
 
@@ -106,7 +107,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
       case 'Enter':
       case ' ':
         if (node.kind === 'folder') setOpen(node.path, !isOpen(node.path));
-        else activate(node.entry, event.metaKey || event.ctrlKey);
+        else activate(node.entry, event.shiftKey);
         break;
       default:
         return;
@@ -163,10 +164,10 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
           aria-current={openIds.has(entry.id) ? 'true' : undefined}
           className="fg-tree__item fg-tree__story"
           onClick={(event) => {
-            if (event.button !== 0 || event.shiftKey || event.altKey) return;
+            if (event.button !== 0 || event.metaKey || event.ctrlKey || event.altKey) return;
             event.preventDefault();
             setFocusKey(keyOf(node));
-            activate(entry, event.metaKey || event.ctrlKey);
+            activate(entry, event.shiftKey);
           }}
         >
           <span className="fg-tree__label">{entry.name}</span>

@@ -18,6 +18,14 @@ export interface LabContextValue {
   closeTrial: (id: string) => void;
   resetTrial: (id: string) => void;
   reorderTrials: (ids: readonly string[]) => void;
+  /** Put a fresh trial running `instrumentName` in trial `id`'s place, at its
+   *  size. The replacement has a new id, and takes the focus if `id` had it. */
+  swapTrial: (id: string, instrumentName: string, options?: AddTrialOptions) => void;
+  /** The trial last pointed at or focused, counting focus that moved into a
+   *  frame inside it. A trial `addTrial` or `cloneTrial` opens takes it. Falls
+   *  back to the first trial; null only when there are none. */
+  focusedTrialId: string | null;
+  focusTrial: (id: string) => void;
   savedSnapshots: SavedSnapshot[];
   saveSnapshot: (trialId: string, name?: string) => void;
   loadSnapshot: (trialId: string, snapshotId: string) => void;

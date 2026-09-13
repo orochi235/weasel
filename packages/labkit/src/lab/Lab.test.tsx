@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { type ReactNode, useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
 import type { Instrument } from '../instrument/types';
@@ -236,5 +236,83 @@ describe('instruments that change while mounted', () => {
     const view = render(<Lab instruments={[v1]} defaultInstrument="Keep" />);
     view.rerender(<Lab instruments={[v2]} defaultInstrument="Keep" />);
     expect(mounts).toBe(1);
+  });
+});
+
+describe('focused trial', () => {
+  const regions = () => screen.getAllByRole('region', { name: /trial/i });
+  const framed: Instrument = {
+    ...stub,
+    name: 'Framed',
+    render: () => <iframe title="story frame" />,
+  };
+
+  it('is the only trial until another opens, then the one that opened', () => {
+    mountLab();
+    expect(labRef?.focusedTrialId).toBe(labRef?.trials[0]?.id);
+    act(() => labRef?.addTrial('StubB'));
+    expect(labRef?.focusedTrialId).toBe(labRef?.trials[1]?.id);
+    act(() => labRef?.cloneTrial(labRef?.trials[0]?.id ?? ''));
+    expect(labRef?.focusedTrialId).toBe(labRef?.trials[1]?.id);
+    expect(labRef?.trials.map((t) => t.instrumentName)).toEqual(['Stub', 'Stub', 'StubB']);
+  });
+
+  it('moves to a trial a pointer goes down in', () => {
+    mountLab();
+    act(() => labRef?.addTrial('StubB'));
+    fireEvent.pointerDown(within(regions()[0] as HTMLElement).getByTestId('stub-content'));
+    expect(labRef?.focusedTrialId).toBe(labRef?.trials[0]?.id);
+  });
+
+  it('moves to a trial focus moves into', () => {
+    mountLab();
+    act(() => labRef?.addTrial('StubB'));
+    act(() => (regions()[0] as HTMLElement).focus());
+    expect(labRef?.focusedTrialId).toBe(labRef?.trials[0]?.id);
+  });
+
+  it('moves to a trial whose frame takes focus, which fires nothing in the lab’s document', async () => {
+    mountLab({ instruments: [framed, stubB], defaultInstrument: 'Framed' });
+    act(() => labRef?.addTrial('StubB'));
+    act(() => screen.getByTitle('story frame').focus());
+    fireEvent.blur(window);
+    await waitFor(() => expect(labRef?.focusedTrialId).toBe(labRef?.trials[0]?.id));
+  });
+
+  it('falls back to the first trial when the focused one closes', () => {
+    mountLab();
+    act(() => labRef?.addTrial('StubB'));
+    act(() => labRef?.closeTrial(labRef?.trials[1]?.id ?? ''));
+    expect(labRef?.focusedTrialId).toBe(labRef?.trials[0]?.id);
+  });
+
+  it('is marked on its trial only when there is more than one', () => {
+    mountLab();
+    expect(regions()[0]).not.toHaveAttribute('data-focused');
+    act(() => labRef?.addTrial('StubB'));
+    expect(regions()[1]).toHaveAttribute('data-focused', 'true');
+    expect(regions()[0]).not.toHaveAttribute('data-focused');
+  });
+});
+
+describe('swapTrial', () => {
+  it('runs another instrument in the trial’s place, and keeps focus on that place', () => {
+    mountLab();
+    act(() => labRef?.addTrial('Stub'));
+    const second = labRef?.trials[1]?.id;
+    act(() => labRef?.focusTrial(labRef?.trials[0]?.id ?? ''));
+    act(() => labRef?.swapTrial(labRef?.trials[0]?.id ?? '', 'StubB'));
+    expect(labRef?.trials.map((t) => t.instrumentName)).toEqual(['StubB', 'Stub']);
+    expect(labRef?.trials[1]?.id).toBe(second);
+    expect(labRef?.focusedTrialId).toBe(labRef?.trials[0]?.id);
+    expect(screen.getByTestId('stub-b-content')).toBeInTheDocument();
+  });
+
+  it('leaves focus where it was when the swapped trial did not have it', () => {
+    mountLab();
+    act(() => labRef?.addTrial('Stub'));
+    const focused = labRef?.focusedTrialId;
+    act(() => labRef?.swapTrial(labRef?.trials[0]?.id ?? '', 'StubB'));
+    expect(labRef?.focusedTrialId).toBe(focused);
   });
 });

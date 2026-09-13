@@ -90,6 +90,7 @@
 .fg-tree__filter {
   box-sizing: border-box;
   width: 100%;
+  font-size: var(--wzl-font-size);
 }
 
 .fg-tree__items,
@@ -99,7 +100,7 @@
 }
 
 .fg-tree__items {
-  font-size: var(--wzl-font-size-sm);
+  font-size: var(--wzl-font-size);
 }
 
 .fg-tree__group {

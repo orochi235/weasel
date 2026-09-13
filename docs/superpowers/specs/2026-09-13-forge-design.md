@@ -209,8 +209,9 @@ A `<Lab>` with a `storageKey` (IndexedDB), so open trials, config, snapshots and
 layout survive a reload.
 
 - **Story tree** in the lab `sidebar` region. Titles split on `/`; a filter box
-  matches names. Clicking a story opens a trial, or scrolls to and flashes the
-  one already open. Cmd-click always opens another.
+  matches names. Clicking a story runs it in the focused trial, the one last
+  pointed at or focused, or flashes that trial when it already runs the story.
+  Shift-click (or Shift+Enter) opens another trial.
 - **Routing:** `#/<storyId>` opens or reveals that story. The hash carries the
   route, not lab state.
 - **Globals** (mode, font) are lab-wide from the header toolbar. A trial can pin

@@ -44,6 +44,7 @@ import {
   closeTrial as closeTrialOp,
   reorderTrials as reorderTrialsOp,
   resetTrial as resetTrialOp,
+  swapTrial as swapTrialOp,
 } from '../trial/trialOps';
 import { useLabFitWarning } from './fitCheck';
 import { LabContext, type LabContextValue } from './LabContext';
@@ -295,6 +296,10 @@ function LabRuntime({
   }, [instruments, store]);
 
   const trials = useStore(store, (s) => s.trials);
+  const [focusPick, setFocusPick] = useState<string | null>(null);
+  const focusedTrialId = trials.some((t) => t.id === focusPick)
+    ? focusPick
+    : (trials[0]?.id ?? null);
   const savedSnapshots = useStore(store, (s) => s.savedSnapshots);
   const modeValue = useStore(store, (s) => s.mode);
   const layout = useStore(store, (s) => s.layout);
@@ -359,6 +364,39 @@ function LabRuntime({
     [outerSurface, attachOwnSurface],
   );
   useLabFitWarning(labBody);
+
+  useEffect(() => {
+    if (!labBody) return;
+    const pick = (node: unknown): void => {
+      const owned = new Set(store.getState().trials.map((t) => t.id));
+      const nearest = (from: Element | null | undefined) =>
+        from?.closest<HTMLElement>('.lk-trial[data-trial-id]') ?? null;
+      let trial =
+        typeof (node as Element | null)?.closest === 'function' ? nearest(node as Element) : null;
+      // A trial can hold a lab of its own, whose trials this lab does not own.
+      while (trial && !owned.has(trial.dataset.trialId ?? '')) trial = nearest(trial.parentElement);
+      if (trial?.dataset.trialId) setFocusPick(trial.dataset.trialId);
+    };
+    const onInput = (event: Event): void => pick(event.target);
+    // Focus moving into a frame fires nothing in this document: the window
+    // blurs, and the frame is the active element once it has.
+    let pending: ReturnType<typeof setTimeout> | undefined;
+    const doc = labBody.ownerDocument;
+    const win = doc.defaultView;
+    const onBlur = (): void => {
+      clearTimeout(pending);
+      pending = setTimeout(() => pick(doc.activeElement), 0);
+    };
+    labBody.addEventListener('pointerdown', onInput, true);
+    labBody.addEventListener('focusin', onInput, true);
+    win?.addEventListener('blur', onBlur);
+    return () => {
+      clearTimeout(pending);
+      labBody.removeEventListener('pointerdown', onInput, true);
+      labBody.removeEventListener('focusin', onInput, true);
+      win?.removeEventListener('blur', onBlur);
+    };
+  }, [labBody, store]);
   const surface = outerSurface ?? ownSurface;
   const surfaceCanvases = useMemo(
     () =>
@@ -402,17 +440,23 @@ function LabRuntime({
       const merged = next.map((w) => currentById.get(w.id) ?? w);
       store.setState({ trials: merged });
     };
+    const replaceAndFocusAdded = (next: TrialRecord[]): void => {
+      const before = new Set(store.getState().trials.map((w) => w.id));
+      replaceTrials(next);
+      const added = next.find((w) => !before.has(w.id));
+      if (added) setFocusPick(added.id);
+    };
 
     return {
       instruments,
       trials,
       addTrial: (instrumentName, options) => {
-        const next = addTrialOp(store.getState().trials, instruments, instrumentName, options);
-        replaceTrials(next);
+        replaceAndFocusAdded(
+          addTrialOp(store.getState().trials, instruments, instrumentName, options),
+        );
       },
       cloneTrial: (id) => {
-        const next = cloneTrialOp(store.getState().trials, id);
-        replaceTrials(next);
+        replaceAndFocusAdded(cloneTrialOp(store.getState().trials, id));
       },
       closeTrial: (id) => {
         const next = closeTrialOp(store.getState().trials, id);
@@ -421,6 +465,19 @@ function LabRuntime({
       reorderTrials: (ids) => {
         replaceTrials(reorderTrialsOp(store.getState().trials, ids));
       },
+      swapTrial: (id, instrumentName, options) => {
+        const current = store.getState();
+        const next = swapTrialOp(current.trials, instruments, id, instrumentName, options);
+        if (next === current.trials) return;
+        const record = next[current.trials.findIndex((w) => w.id === id)] as TrialRecord;
+        // Written before the tile registers, which is when the grid reads it.
+        const { [id]: extent, ...layoutRest } = current.layout as TrialLayout;
+        if (extent) current.setLayout({ ...layoutRest, [record.id]: extent });
+        replaceTrials(next);
+        if (focusedTrialId === id) setFocusPick(record.id);
+      },
+      focusedTrialId,
+      focusTrial: (id) => setFocusPick(id),
       resetTrial: (id) => {
         const next = resetTrialOp(store.getState().trials, id, instruments);
         const record = next.find((w) => w.id === id);
@@ -451,7 +508,16 @@ function LabRuntime({
       configRules,
       controls,
     };
-  }, [instruments, trials, savedSnapshots, modeValue, store, configRules, controls]);
+  }, [
+    instruments,
+    trials,
+    focusedTrialId,
+    savedSnapshots,
+    modeValue,
+    store,
+    configRules,
+    controls,
+  ]);
 
   // Only override the backdrop in dark, where there is one to override.
   // Setting a CSS custom property is the sanctioned use of inline style.
