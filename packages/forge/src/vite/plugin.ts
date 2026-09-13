@@ -1,5 +1,6 @@
 import { globSync, readFileSync } from 'node:fs';
-import { basename, resolve } from 'node:path';
+import { basename, dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { Plugin, ViteDevServer } from 'vite';
 import type { IndexEntry } from '../story/types';
 import { html } from './html';
@@ -105,6 +106,11 @@ mountFrame({
   return [
     {
       name: 'weaselforge',
+      config() {
+        if (options.storybookShims === false) return undefined;
+        const previewApi = resolve(dirname(fileURLToPath(import.meta.url)), '../csf/shims/preview-api.ts');
+        return { resolve: { alias: [{ find: /^@?storybook\/preview-api$/, replacement: previewApi }] } };
+      },
       configResolved(config) {
         root = config.root;
         base = config.base;
