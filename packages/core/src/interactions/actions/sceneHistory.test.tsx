@@ -9,8 +9,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { useEffect } from 'react';
 import { render, act } from '@testing-library/react';
-import { createScene } from './scene';
-import type { NodeId, Scene } from './types';
+import { createScene } from 'core/scene/scene';
+import type { NodeId, Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import {
   ActionsProvider,

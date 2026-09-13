@@ -284,7 +284,6 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
       if (shapeOf(graph) === shape.current) return;
       build();
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opts.scene, opts.reheatOnGraphChange, run, build]);
 
   return useMemo<LiveLayout>(() => ({

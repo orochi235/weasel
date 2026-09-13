@@ -164,15 +164,15 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
 
   useEffect(() => {
     mounted.current = true;
+    const { previews } = state.current;
     return () => {
       mounted.current = false;
       loop.cancel();
       // Teardown is not a decision: an unmounted run abandons its frames
       // rather than writing them.
       dropPreviewOverrides(syncState());
-      state.current.previews.clear();
+      previews.clear();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loop]);
 
   return useMemo<PoseRun>(() => ({
