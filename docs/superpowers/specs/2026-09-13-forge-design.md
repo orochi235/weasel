@@ -1,7 +1,6 @@
 # weaselforge: a component workshop built on labkit
 
-**Status: designed 2026-09-13, not built.** Nothing below exists in the tree yet.
-Delete this spec when the work merges.
+**Status: built 2026-09-13.** Retiring Storybook is the next arc (`docs/TODO.md`, forge section).
 
 For whoever implements `@weasel-js/forge`. Assumes you know labkit's lab /
 instrument / trial model and what Storybook does; nothing about the session that
@@ -136,13 +135,15 @@ through `setConfig`. `parameters.layout` → `layout`, `parameters.viewport` →
 
 ### Global setup
 
-A `forge.config.ts` with two halves, because they run in different realms:
+Two config modules, because they run in different realms. The vite plugin takes
+their paths as `frameConfig` and `shellConfig`; only frame documents import the
+first, so its CSS stays out of the workshop.
 
-- `frame`: global decorators, and what each global does to the frame (mode →
-  `applyTheme` on the frame root; font → the family/weight/width/italic
-  snapping `preview.tsx` does today).
-- `shell`: global declarations for the toolbar, chrome contributions, control
-  renderers.
+- frame config (`defineFrameConfig`): global decorators, and what each global
+  does to the frame (mode → `applyTheme` on the frame root; font → the
+  family/weight/width/italic snapping `preview.tsx` does).
+- shell config (`defineShellConfig`): global declarations for the toolbar,
+  chrome contributions, control renderers.
 
 ## The channel
 
@@ -199,8 +200,8 @@ page.
 
 **WebGL contexts** are capped per renderer process, and a same-origin iframe
 usually shares its parent's. Many canvas-heavy trials open at once could exhaust
-them, so a frame whose trial is out of view or folded unmounts; its state is
-already in the trial.
+them, so a frame whose trial is out of view should unmount; its state is already
+in the trial. **Not built** — `docs/TODO.md`, forge section.
 
 ## Workshop page
 
@@ -219,8 +220,8 @@ layout survive a reload.
   the lab's mode unless their globals say otherwise.
 - **CSS Vars panel**, ported from `.storybook/addons/css-vars/`, as a trial
   sidebar section (undockable, as labkit sections already are). The Theme tab
-  reads `@weasel-js/theme`'s token manifest directly, so the generated
-  `tokens.generated.ts` copy goes away. The Story tab's `var()` scan runs in the
+  reads `@weasel-js/theme`'s token manifest (`TOKEN_MANIFEST`) directly, so the
+  generated `tokens.generated.ts` copy goes away with Storybook's addon. The Story tab's `var()` scan runs in the
   frame and arrives as `vars`. An override is sent into that trial's frame
   rather than written to a page-wide `:root` rule.
 

@@ -1350,6 +1350,13 @@ controls. It runs beside Storybook today.
   frame report its CSS variables again. Report after a scheme-driven apply, or
   widen the observer's filter.
 
+- **(P3) forge keeps every open story's frame mounted.** Browsers cap WebGL
+  contexts per renderer process, and a same-origin iframe usually shares its
+  parent's, so many canvas-heavy trials open at once can exhaust them. Nothing in
+  `packages/forge/src/shell/FrameView.tsx` unmounts a frame whose trial is out of
+  view. Its config and state already live in the trial, so unmounting loses
+  nothing.
+
 - **(P3) The Timeline story ignores forge's Mode toolbar.**
   `packages/ui/src/components/Timeline/Timeline.stories.tsx` sets `data-wzl-mode`
   from a `theme` global, which only Storybook declares; forge declares `mode`
