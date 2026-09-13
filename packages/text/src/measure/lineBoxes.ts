@@ -45,7 +45,8 @@ export interface TextLineBoxesOpts {
    * Pass `Infinity` for a node painted by the built-in `kit:text` painter:
    * that painter deliberately does **not** forward `maxWidth` (see
    * `NodeShape.ts`), so its text does not wrap, and boxes computed with a
-   * finite width would wrap where the paint did not.
+   * finite width would wrap where the paint did not. Alignment resolves
+   * within `pose.width` either way, as that painter's does.
    */
   maxWidth?: number;
 }
@@ -60,6 +61,7 @@ export function textLineBoxes(pose: TextPose, opts: TextLineBoxesOpts = {}): Rec
   const runs = resolveRuns(toRuns(source), style);
   const laid = cachedLayoutRuns(runs, {
     maxWidth: opts.maxWidth ?? pose.width,
+    alignWidth: pose.width,
     lineHeight: style.lineHeight,
     align: style.align,
   });

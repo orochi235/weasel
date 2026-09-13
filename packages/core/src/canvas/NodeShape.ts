@@ -448,10 +448,10 @@ const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     // The pose's box height and `data.verticalAlign` travel together: the
     // height is the box the alignment resolves within. Both default to the
     // 'top' behavior — a zero offset regardless of height — so a node that
-    // names neither paints exactly where it always did. `maxWidth` (word-wrap)
-    // is deliberately NOT forwarded: kit:text has no slot for opting into
-    // wrap, and forwarding maxWidth would silently start wrapping consumers'
-    // existing text.
+    // names neither paints exactly where it always did. The pose width goes
+    // over as the alignment box, not as `maxWidth`: kit:text has no slot for
+    // opting into wrap, and forwarding maxWidth would silently start wrapping
+    // consumers' existing text.
     //
     // `runs` wins over `text` when present. It is the richer form of the same
     // content — `useTextEdit` commits both, keeping `runsToPlainText(runs)`
@@ -466,8 +466,8 @@ const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     // rather than throwing once it reaches the renderer.
     const paint = { fill: d.fill, stroke: resolveNodeStroke(d.stroke) ?? undefined };
     return d.runs && d.runs.length > 0
-      ? [textCommandFromRuns(p.x, y, d.runs, d.style, undefined, p.height, d.verticalAlign, paint)]
-      : [textCommand(p.x, y, d.text, d.style, undefined, p.height, d.verticalAlign, paint)];
+      ? [textCommandFromRuns(p.x, y, d.runs, d.style, undefined, p.height, d.verticalAlign, paint, p.width)]
+      : [textCommand(p.x, y, d.text, d.style, undefined, p.height, d.verticalAlign, paint, p.width)];
   }),
   // The pose is a *wrap box*, not a bounding box — "Away" in a 300-unit box
   // leaves most of it empty, and a pose-rect silhouette claims all of it. The
@@ -475,6 +475,7 @@ const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // lasso and clipping stop grabbing blank space. `Infinity` because `paint`
   // above deliberately does not forward `maxWidth`: this text does not wrap,
   // and boxes measured against `p.width` would wrap where the paint did not.
+  // Alignment still resolves within `p.width`, as it does in `paint`.
   //
   // `null` rather than an empty path when there are no non-blank lines: an
   // empty text node would otherwise become unpickable, and a caller reading

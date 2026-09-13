@@ -169,4 +169,12 @@ describe('caretIndexAt', () => {
     // Unwrapped, everything is on line 0 — so there is no second line to click.
     expect(caretIndexAt(0, LINE + 5, p, { maxWidth: Infinity })).toBe(5);
   });
+
+  it('aligns within the pose width when the painter does not wrap', () => {
+    // Centered 'AB' (44 wide) in the 400-wide box starts at 178; A's midpoint
+    // is 189.5.
+    const p = textPose({ style: { ...STYLE, align: 'center' } });
+    expect(caretIndexAt(188, 5, p, { maxWidth: Infinity })).toBe(0);
+    expect(caretIndexAt(191, 5, p, { maxWidth: Infinity })).toBe(1);
+  });
 });

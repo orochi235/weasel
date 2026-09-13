@@ -25,8 +25,8 @@
  * real work, unlike the pointer compare above, which is exactly why it is
  * second: an identity hit never pays for it.
  *
- * Under either, one entry per distinct `(maxWidth, lineHeight, align, outline
- * threshold)`. Position is deliberately absent: `layoutRuns` emits
+ * Under either, one entry per distinct `(maxWidth, alignWidth, lineHeight,
+ * align, outline threshold)`. Position is deliberately absent: `layoutRuns` emits
  * origin-relative geometry and `drawText` translates at upload, so a text node
  * dragged across the page keeps hitting the same entry.
  *
@@ -104,7 +104,8 @@ function outlineBucket(runs: readonly ResolvedRun[], min: number | undefined): n
 }
 
 function variantKey(runs: readonly ResolvedRun[], opts: LayoutRunsOpts): string {
-  return `${opts.maxWidth}|${opts.lineHeight}|${opts.align}|${outlineBucket(runs, opts.outlineMinSize)}`;
+  const alignWidth = opts.alignWidth ?? opts.maxWidth;
+  return `${opts.maxWidth}|${alignWidth}|${opts.lineHeight}|${opts.align}|${outlineBucket(runs, opts.outlineMinSize)}`;
 }
 
 let nextRefId = 1;

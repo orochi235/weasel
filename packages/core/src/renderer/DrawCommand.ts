@@ -108,8 +108,12 @@ export interface TextDrawCommand {
   x: number;
   y: number;
   runs: ResolvedRun[];
+  /** Wrap width. Absent never wraps. */
   maxWidth?: number;
   align?: 'left' | 'center' | 'right';
+  /** Box width `align` resolves within, from `x`. Default `maxWidth`; with
+   *  neither, `x` is the line's left edge, midpoint or right edge. */
+  width?: number;
   style: TextStyle;
   /** Box height for vertical alignment. When set with `verticalAlign`,
    *  the laid-out block shifts within `[y, y+height]`. */
