@@ -15,6 +15,7 @@ import type {
 } from '../../renderer';
 import { viewToMat3 } from '../../renderer';
 import { linePath, polylineFromPoints } from 'features/paths/builder';
+import { PATH_L, PATH_M, PATH_Z } from 'features/paths/types';
 import {
   __setImageLoaderForTests,
   _resetImageCacheForTests,
@@ -178,6 +179,33 @@ describe('useDispatcherOverlayLayer', () => {
 
     const paths = collectPaths(result.current.draw(env(dispatcher), zoomedView, DIMS));
     expect(paths[0].path).toEqual({ kind: 'rect', x: 0, y: 0, width: 200, height: 200 });
+  });
+
+  it('draws the pencil ghost as an open, unfilled run', () => {
+    const samples = [
+      { x: 0, y: 0 },
+      { x: 20, y: 5 },
+      { x: 30, y: 30 },
+      { x: 5, y: 40 },
+    ];
+    const handle: OngoingHandle = {
+      overlay: (): OngoingOverlay => ({
+        kind: 'insertPreview',
+        shape: 'pencil',
+        bounds: { x: 0, y: 0, width: 30, height: 40 },
+        extras: { samples },
+      }),
+    };
+    const dispatcher = makeDispatcher([handle]);
+    const { result } = renderHook(() => useDispatcherOverlayLayer({ dispatcher }));
+
+    const paths = collectPaths(result.current.draw(env(dispatcher), VIEW, DIMS));
+    expect(paths).toHaveLength(1);
+    const path = paths[0].path as Extract<PathDrawCommand['path'], { kind: 'polygon' }>;
+    expect(path.kind).toBe('polygon');
+    expect([...path.commands]).toEqual([PATH_M, PATH_L, PATH_L, PATH_L]);
+    expect([...path.commands]).not.toContain(PATH_Z);
+    expect(paths[0].fill).toBeUndefined();
   });
 
   describe('image insert preview', () => {
