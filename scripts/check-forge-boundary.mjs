@@ -4,7 +4,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, posix, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const SPEC = /(?:from\s+|import\s*\(\s*|import\s+)['"]([^'"]+)['"]/g;
+const SPEC = /(?:from\s+|import\s*\(\s*|import\s+|vi\.mock\(\s*|import\.meta\.glob\(\s*)['"]([^'"]+)['"]/g;
 
 /**
  * @param {{ labkitExports: string[], files: { path: string, source: string }[] }} input

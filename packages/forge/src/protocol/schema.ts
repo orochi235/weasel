@@ -1,4 +1,5 @@
 import {
+  f,
   isConfigBranch,
   resolveConfigSchema,
   schemaNodeAtPath,
@@ -108,20 +109,11 @@ function rebuildShape(shape: DescribedShape, at: string, answers: SchemaAnswers)
   return out;
 }
 
-function shapeDefaults(shape: DescribedShape): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const [key, entry] of Object.entries(shape)) {
-    out[key] = entry.branch ? shapeDefaults(entry.children) : entry.default;
-  }
-  return out;
-}
-
 export function schemaFromDescription(
   description: SchemaDescription,
   answers: SchemaAnswers,
 ): ConfigSchema<unknown> {
-  const nodes = rebuildShape(description.nodes, '', answers);
-  return { nodes, defaults: () => shapeDefaults(description.nodes) };
+  return f.schema(rebuildShape(description.nodes, '', answers)) as ConfigSchema<unknown>;
 }
 
 /** Evaluate a schema's own predicates for one config — the frame's half of `answers`. */
@@ -131,7 +123,7 @@ export function answerSchema(
 ): { hidden: string[]; errors: Record<string, string[]> } {
   const hidden: string[] = [];
   const errors: Record<string, string[]> = {};
-  const record = (config ?? {}) as Record<string, unknown>;
+  const record = config as Record<string, unknown>;
   let group: ReturnType<typeof resolveConfigSchema>['group'] | undefined;
 
   const walk = (shape: ConfigShape, at: string): void => {

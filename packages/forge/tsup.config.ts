@@ -15,7 +15,7 @@ export default defineConfig([
       external,
     }),
     // Both configs build concurrently; a full clean here can delete the CLI config's output.
-    clean: ['**/*', '!cli.js', '!cli.js.map'],
+    clean: ['**/*', '!cli.js'],
   },
   {
     entry: { cli: 'src/cli/cli.ts' },

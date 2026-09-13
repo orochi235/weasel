@@ -3,8 +3,9 @@ import { findViolations } from '../../../scripts/check-forge-boundary.mjs';
 
 const labkitExports = ['.', './config', './state', './styles.css'];
 
-// Sources are assembled so this file's own text never matches the checker's import pattern.
+// Sources are assembled so this file's own text never yields a violation when the checker scans it.
 const staticImport = (spec: string) => `import { x } from '${spec}';`;
+const mocked = (spec: string) => `vi.mock('${spec}');`;
 const typeImport = (spec: string) => `import type { S } from '${spec}';`;
 const sideEffect = (spec: string) => `import '${spec}';`;
 const dynamicImport = (spec: string) => `const m = import('${spec}');`;
@@ -36,6 +37,10 @@ describe('forge boundary check', () => {
 
   it('flags a dynamic import of an unpublished labkit subpath', () => {
     expect(check('packages/forge/src/a.ts', dynamicImport('@weasel-js/labkit/lab/Lab'))).toHaveLength(1);
+  });
+
+  it('flags a mocked module path that is not a published labkit entry', () => {
+    expect(check('packages/forge/src/a.test.ts', mocked('@weasel-js/labkit/lab/Lab'))).toHaveLength(1);
   });
 
   it('flags labkit importing forge', () => {
