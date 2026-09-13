@@ -95,3 +95,12 @@ one contributes a single rect, and a trial with nothing to draw contributes none
 No WebGL in the suite. The arithmetic is pure and tested directly; the hook is
 tested with `getBoundingClientRect` stubbed per element, because jsdom measures
 everything as zero.
+
+Which layer a tenant landed on is not testable here at all — jsdom resolves no
+`z-index`, so `Lab.surface.test.tsx` asserts source order and says in the test
+that it is a proxy. A browser settles it, and the probe has to be a **child of
+the tile's own element**: one appended to `<body>` is outside the stacking
+context the buffers sit in, so it paints over everything and reports success
+whichever buffer the tenant chose. Measured against the 3D lab with a magenta
+div inside `.td-pane` — on `'under'` the div survives, on `'over'` it reads back
+as the viewport's own background.
