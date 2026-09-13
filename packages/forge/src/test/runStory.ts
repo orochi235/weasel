@@ -72,7 +72,7 @@ const settle = () =>
   });
 
 export interface RunStoryOptions {
-  /** forge.config's `frame` half. */
+  /** The frame config (`frameConfig`). */
   setup?: FrameSetup;
   /** Resizes the page, for a story that names a viewport. Without it, stories run at whatever size the page is. */
   viewport?: (width: number, height: number) => Promise<void>;

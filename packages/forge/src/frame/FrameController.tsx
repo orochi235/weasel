@@ -15,7 +15,7 @@ import { createOverrides, resolveCssVar, scanCssVars } from './cssVars';
 import { StoryHost } from './StoryHost';
 
 export interface FrameSetup {
-  /** Wraps every story, outermost; receives the globals. From forge.config's `frame` half. */
+  /** Wraps every story, outermost; receives the globals. From the frame config (`frameConfig`). */
   decorators?: Decorator[];
   /** Applies globals to the frame document — theme mode, fonts. */
   applyGlobals?: (globals: Globals, root: HTMLElement) => void;

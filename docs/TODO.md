@@ -1384,10 +1384,10 @@ controls. It runs beside Storybook today.
 - **(P2) Two copies of `@weasel-js/theme` in a published forge install.**
   labkit's `tsup.config.ts` bundles every `@weasel-js` package except core
   (`noExternal`), so labkit's `dist` carries its own `ThemeProvider`, while
-  forge and a consumer's `forge.config.tsx` import the installed
+  forge and a consumer's frame config import the installed
   `@weasel-js/theme`. The two copies have separate React contexts: a
   `ThemeProvider` from the installed package, like the `labkitRoot` decorator in
-  `apps/forge/forge.config.tsx`, is invisible to `LabShell`'s `useThemeOptional()`,
+  `apps/forge/forge.frame.tsx`, is invisible to `LabShell`'s `useThemeOptional()`,
   which then wraps a second provider with its own mode. Each copy also keeps its
   own stylesheet; where `adoptedStyleSheets` is missing, both append a
   `<style id="wzl-themes">`. Inside the repo, aliases resolve both to source,
@@ -1419,6 +1419,21 @@ controls. It runs beside Storybook today.
   re-optimization reloads on a first visit, which
   `optimizeDeps.entries` in `apps/forge/vite.config.ts` has since removed. Close
   this if it does not come back.
+
+- **(P3) forge's CSS Vars panel can show the other mode's values after the OS
+  color scheme changes.** With the Mode global on `auto`, `followScheme`
+  (`apps/forge/mode.ts`) applies the theme again when `prefers-color-scheme`
+  flips, but that change arrives from no globals message, and the frame's
+  `MutationObserver` (`packages/forge/src/frame/FrameController.tsx`) watches only
+  `style` and `class` attributes, so the `data-wzl-mode` write never makes the
+  frame report its CSS variables again. Report after a scheme-driven apply, or
+  widen the observer's filter.
+
+- **(P3) The Timeline story ignores forge's Mode toolbar.**
+  `packages/ui/src/components/Timeline/Timeline.stories.tsx` sets `data-wzl-mode`
+  from a `theme` global, which only Storybook declares; forge declares `mode`
+  (`apps/forge/forge.shell.tsx`). Read `mode` in the story, or have forge declare
+  `theme` too.
 
 ---
 
