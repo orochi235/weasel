@@ -243,7 +243,9 @@ export function TrialChrome({
         <TrialBody
           width={record.sidebarWidth}
           onWidthChange={(w) => updateTrialSidebarWidth(trialId, w)}
-          contentClassName={instrument.canvas ? 'lk-trial__content--flush' : undefined}
+          contentClassName={
+            instrument.canvas || instrument.stage ? 'lk-trial__content--flush' : undefined
+          }
           sidebar={
             <>
               <SidebarRegion contributions={inRegion('sidebar')} ctx={ctx} />

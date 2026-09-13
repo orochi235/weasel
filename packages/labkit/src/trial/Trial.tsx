@@ -5,7 +5,9 @@ import { AnnotationTargets } from '../annotations/AnnotationTargets';
 import { AnnotationPreloadContext } from '../annotations/preload';
 import { annotationsFromJSON } from '../annotations/store';
 import type { AnnotationStorage, AnnotationTargetInfo } from '../annotations/types';
+import { CameraWheelContext, type CameraWheelSlot } from '../canvas/CameraWheelContext';
 import { CanvasStack } from '../canvas/CanvasStack';
+import { fitStage, Stage } from '../canvas/Stage';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import { applyCamera, type ViewportSize } from '../canvas/worldSpec';
 import type { TrialContribution } from '../chrome/types';
@@ -21,6 +23,7 @@ import { LabStoreContext, TrialIdProvider } from '../state/context';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
 import { as2DView, DEFAULT_VIEW } from '../state/view';
+import { resolveLabTool } from '../tools/labTool';
 import { createEventBus, type EventBus } from '../undo/eventBus';
 import { pushSnapshot, redo as undoRedo, undo as undoUndo } from '../undo/undoStack';
 import type { LoupeBindings, UndoBindings } from './TrialChrome';
@@ -119,6 +122,8 @@ function TrialRuntime({
   chrome,
   suppress,
 }: TrialRuntimeProps) {
+  const lab = useLabContext();
+  const wheelSlot = useRef<CameraWheelSlot['current']>(null);
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const loupeHostRef = useRef<HTMLDivElement | null>(null);
   const updateTrialState = useStore(store, (s) => s.updateTrialState);
@@ -163,8 +168,11 @@ function TrialRuntime({
   // A function `initialView` needs the canvas size, so `trialOps` leaves the
   // view null and the first measurement resolves it. Reset nulls it again,
   // which re-frames — so the guard is the null itself, not a "have I run" flag.
+  const stage = instrument.canvas ? undefined : instrument.stage;
   const placeView = (size: ViewportSize): void => {
-    const declared = instrument.canvas?.initialView;
+    const declared =
+      instrument.canvas?.initialView ??
+      (stage ? (stage.initialView ?? ((vp: ViewportSize) => fitStage(stage.size, vp))) : undefined);
     if (typeof declared !== 'function') return;
     if (record.view != null) return;
     setView(declared(size));
@@ -248,15 +256,14 @@ function TrialRuntime({
 
   // A trial gets its own slot when its instrument declares tools; otherwise it
   // reads the lab's. Which slot a change writes follows from the same thing.
-  // Annotation tools are a trial's own for the same reason: two trials
-  // annotating different pictures must not share one active tool.
-  const declaresTools = instrument.tools != null || instrument.annotations != null;
+  // Annotation tools always read the lab's: a tool is what the hand holds, so
+  // picking one arms it in every trial, the way artboards share a tool. They
+  // were once per trial, back when one trial compared several pictures.
+  const declaresTools = instrument.tools != null;
+  const labTool = resolveLabTool(labToolId, lab.instruments);
   const resolvedToolId = declaresTools
-    ? (record.activeToolId ??
-      instrument.tools?.initial ??
-      instrument.tools?.tools[0]?.id ??
-      (instrument.annotations ? 'select' : null))
-    : labToolId;
+    ? (record.activeToolId ?? instrument.tools?.initial ?? instrument.tools?.tools[0]?.id ?? null)
+    : labTool;
   const setActiveTool = (id: string): void => {
     if (declaresTools) setTrialTool(record.id, id);
     else setLabTool(id);
@@ -457,6 +464,21 @@ function TrialRuntime({
         <DragOverlay drag={dragDropResult.drag} />
       </div>
     );
+  } else if (stage) {
+    body = (
+      <Stage
+        size={stage.size}
+        view={view2d ?? DEFAULT_VIEW}
+        onViewChange={setView}
+        onResize={placeView}
+        minZoom={stage.minZoom}
+        maxZoom={stage.maxZoom}
+        hostRef={loupeHostRef}
+        overlay={lens}
+      >
+        {instrument.render(renderCtx)}
+      </Stage>
+    );
   } else if (lens) {
     body = (
       <div ref={loupeHostRef} className="lk-trial__loupe-host">
@@ -523,30 +545,32 @@ function TrialRuntime({
       config={record.config}
       trial={{ id: record.id, view: record.view }}
       annotations={annotations}
-      activeToolId={resolvedToolId}
+      activeToolId={labTool}
     />
   ) : null;
 
   return (
     <TrialIdProvider trialId={record.id}>
       <AnnotationsContext.Provider value={annotationsCap ? annotations : null}>
-        <TrialChrome
-          job={jobCap ? job : undefined}
-          loupe={loupeBindings}
-          trialId={record.id}
-          record={record}
-          instrument={instrument}
-          isLastTrial={isLast}
-          undoBindings={undoBindings}
-          trialChrome={extraChrome}
-          chrome={chrome}
-          suppress={suppress}
-          activeToolId={resolvedToolId}
-          setActiveTool={setActiveTool}
-        >
-          {body}
-          {annotationOverlays}
-        </TrialChrome>
+        <CameraWheelContext.Provider value={wheelSlot}>
+          <TrialChrome
+            job={jobCap ? job : undefined}
+            loupe={loupeBindings}
+            trialId={record.id}
+            record={record}
+            instrument={instrument}
+            isLastTrial={isLast}
+            undoBindings={undoBindings}
+            trialChrome={extraChrome}
+            chrome={chrome}
+            suppress={suppress}
+            activeToolId={resolvedToolId}
+            setActiveTool={setActiveTool}
+          >
+            {body}
+            {annotationOverlays}
+          </TrialChrome>
+        </CameraWheelContext.Provider>
       </AnnotationsContext.Provider>
     </TrialIdProvider>
   );

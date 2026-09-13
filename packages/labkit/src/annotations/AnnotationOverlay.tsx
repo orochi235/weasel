@@ -6,8 +6,9 @@ import {
   type View,
   WeaselProvider,
 } from '@weasel-js/core';
-import { type CSSProperties, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { type CSSProperties, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { createPortal, flushSync } from 'react-dom';
+import { CameraWheelContext } from '../canvas/CameraWheelContext';
 import type { Rect } from '../surface/rect';
 import { useSurfaceCanvas, useSurfaceOptional, useTileId } from '../surface/useSurfaceTile';
 import { createMarkDrawOne } from './drawOne';
@@ -123,10 +124,57 @@ export function AnnotationOverlay({
     [surface, tileId],
   );
 
+  // Erases the whole shared buffer when the tiles move: a tile that moved took
+  // its scissor with it, and what it painted last frame stays where it was.
+  // Each renderer on the context re-applies its viewport and scissor per frame,
+  // so resetting them here is safe.
+  // Only once this pane has painted: a bare `getContext` on a buffer no
+  // renderer has opened creates the context without the stencil buffer marks
+  // need, and every later request gets that context back.
+  const painted = useRef(false);
+  const canvasRef = useRef(canvas);
+  if (canvasRef.current !== canvas) painted.current = false;
+  canvasRef.current = canvas;
+  const unsubscribeFrame = useRef<(() => void) | null>(null);
+  const attachSceneCanvas = useCallback((api: SceneCanvasApi | null) => {
+    sceneCanvas.current = api;
+    unsubscribeFrame.current?.();
+    unsubscribeFrame.current = api
+      ? api.subscribeFrame(() => {
+          painted.current = true;
+        })
+      : null;
+  }, []);
+  useEffect(() => {
+    if (!surface) return;
+    return surface.registerClear(tileId, (size, dpr) => {
+      if (!painted.current) return;
+      const gl = canvasRef.current?.getContext('webgl2');
+      if (!gl) return;
+      gl.disable(gl.SCISSOR_TEST);
+      gl.viewport(0, 0, Math.round(size.width * dpr), Math.round(size.height * dpr));
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+    });
+  }, [surface, tileId]);
+
+  // The box is portalled out of whatever the picture sits in, so a wheel over
+  // a mark would never reach the trial's camera without being handed to it.
+  const wheelSlot = useContext(CameraWheelContext);
+  useEffect(() => {
+    if (!input || !wheelSlot) return;
+    const wheel = (e: WheelEvent): void => wheelSlot.current?.(e);
+    input.addEventListener('wheel', wheel, { passive: false });
+    return () => input.removeEventListener('wheel', wheel);
+  }, [input, wheelSlot]);
+
   useEffect(
     () =>
       surface?.registerPainter(tileId, (next) => {
-        setRect((prev) => (sameRect(prev, next) ? prev : next));
+        // Committed before the redraw is asked for: the renderer reads its
+        // position from the last render, so a redraw landing first repaints the
+        // tile where it was — after this frame's clear, which leaves a ghost.
+        flushSync(() => setRect((prev) => (sameRect(prev, next) ? prev : next)));
         // The shared buffer was cleared if it resized this frame; this pane's
         // own loop has no way to know that.
         sceneCanvas.current?.requestRedraw();
@@ -190,7 +238,7 @@ export function AnnotationOverlay({
         <WeaselProvider isolate>
           <ToolBridge toolId={annotationToolInfo(activeToolId)?.weaselTool ?? 'select'} />
           <SceneCanvas<AnnotationData, 'marks', WorldRect>
-            ref={sceneCanvas}
+            ref={attachSceneCanvas}
             scene={scene}
             width={rect.w}
             height={rect.h}

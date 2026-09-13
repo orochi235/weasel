@@ -1,3 +1,5 @@
+export type { CameraWheelSlot } from './CameraWheelContext';
+export { CameraWheelContext } from './CameraWheelContext';
 export type { CanvasStackProps } from './CanvasStack';
 export { CanvasStack } from './CanvasStack';
 export type { CanvasStackContextValue, CanvasStackSurface } from './CanvasStackContext';
@@ -5,6 +7,8 @@ export { CanvasStackContext } from './CanvasStackContext';
 export type { ZoomAtOptions } from './camera';
 export { centerOn, zoomAt } from './camera';
 export { screenToWorld, worldToScreen } from './canvasCoords';
+export type { StageProps } from './Stage';
+export { fitStage, Stage } from './Stage';
 export type { CanvasLayerDescriptor } from './useLayerScheduler';
 export type { OrbitHandlers, OrbitView, UseOrbitOptions, Vec3 } from './useOrbit';
 export {

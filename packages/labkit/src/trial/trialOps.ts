@@ -14,10 +14,12 @@ function findInstrument(instruments: InstrumentList, name: string): Instrument {
 }
 
 function initialView(instrument: Instrument): TrialRecord['view'] {
-  const declared = instrument.canvas?.initialView;
+  const stage = instrument.canvas ? undefined : instrument.stage;
+  const declared = instrument.canvas?.initialView ?? stage?.initialView;
   // A function needs the canvas size, which no trial has at creation. `null`
   // is the unplaced marker; `Trial` resolves it on the first non-empty size.
-  if (typeof declared === 'function') return null;
+  // A stage that names no view is fitted, which needs that size too.
+  if (typeof declared === 'function' || (stage && declared === undefined)) return null;
   return declared ? structuredClone(declared) : { ...DEFAULT_VIEW, pan: { ...DEFAULT_VIEW.pan } };
 }
 

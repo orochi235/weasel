@@ -1,5 +1,14 @@
-import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type CSSProperties,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { Point, ViewTransform } from '../instrument/types';
+import { CameraWheelContext } from './CameraWheelContext';
 import { CanvasStackContext } from './CanvasStackContext';
 import { screenToWorld } from './canvasCoords';
 import { type CanvasLayerDescriptor, useLayerScheduler } from './useLayerScheduler';
@@ -89,6 +98,23 @@ export function CanvasStack({
   };
 
   const handlers = usePanZoom({ view, onViewChange, minZoom, maxZoom, frame, onTap });
+  const onWheelRef = useRef(handlers.onWheel);
+  onWheelRef.current = handlers.onWheel;
+  const wheelSlot = useContext(CameraWheelContext);
+
+  // Bound by hand because React registers wheel listeners passive, where
+  // `preventDefault` is refused and the page scrolls under the zoom.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const wheel = (e: WheelEvent): void => onWheelRef.current(e, el);
+    el.addEventListener('wheel', wheel, { passive: false });
+    if (wheelSlot) wheelSlot.current = wheel;
+    return () => {
+      el.removeEventListener('wheel', wheel);
+      if (wheelSlot?.current === wheel) wheelSlot.current = null;
+    };
+  }, [wheelSlot]);
   useLayerScheduler({ layers, view, frame, canvasRefs: canvasMap, size, host: containerRef });
 
   const ctxValue = useMemo(
@@ -116,7 +142,6 @@ export function CanvasStack({
         ref={containerRef}
         className={className ? `lk-canvas-stack ${className}` : 'lk-canvas-stack'}
         style={containerStyle}
-        onWheel={handlers.onWheel}
         onPointerDown={handlers.onPointerDown}
       >
         {layers.map((layer) => (

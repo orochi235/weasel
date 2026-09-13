@@ -12,7 +12,6 @@ import {
 } from '@weasel-js/ui';
 import { ExportMenu } from '../annotations/ExportMenu';
 import { MarkList } from '../annotations/MarkList';
-import { ANNOTATION_TOOLS } from '../annotations/toolMap';
 import type { ControlRenderer } from '../config/types';
 import { ControlPanel } from '../controls/ControlPanel';
 import type { Instrument } from '../instrument/types';
@@ -82,16 +81,10 @@ export function builtinContributions(
     });
   }
 
-  // Declaring `annotations` provides the drawing palette, the way declaring
-  // `tools` provides the instrument's own; both write the same tool slot.
   // A tool id shares the contribution namespace, so a tool called `close`
-  // collides with the built-in close button and throws — and so do two tools
-  // of the same name from these two sources.
-  const tools = [
-    ...(instrument.annotations ? ANNOTATION_TOOLS : []),
-    ...(instrument.tools?.tools ?? []),
-  ];
-  for (const t of tools) {
+  // collides with the built-in close button and throws. Annotation tools are
+  // not here: the lab's rail carries them.
+  for (const t of instrument.tools?.tools ?? []) {
     out.push({
       id: t.id,
       region: 'palette',
@@ -116,7 +109,7 @@ export function builtinContributions(
 
   // Zoom acts on the view of the trial, so it is a viewport control. A trial
   // holding a non-2D view reports zoom as null and gets none of this.
-  if (instrument.canvas != null && zoom !== null) {
+  if ((instrument.canvas != null || instrument.stage != null) && zoom !== null) {
     out.push({
       id: 'zoom-out',
       region: 'viewport',
@@ -153,15 +146,17 @@ export function builtinContributions(
       id: 'scale',
       region: 'status',
       group: 'view',
-      render: () => <ScaleIndicator />,
+      render: (c) => <ScaleIndicator zoom={c.zoom ?? 1} />,
     });
-    out.push({
-      id: 'fps',
-      region: 'status',
-      group: 'view',
-      end: true,
-      render: () => <FpsMeter />,
-    });
+    if (instrument.canvas != null) {
+      out.push({
+        id: 'fps',
+        region: 'status',
+        group: 'view',
+        end: true,
+        render: () => <FpsMeter />,
+      });
+    }
   }
 
   if (instrument.annotations != null) {

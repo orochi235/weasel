@@ -726,7 +726,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
     // A window that loses focus never delivers the keyup, so without this every
     // in-flight key-held handle stays engaged until that key is pressed again.
+    // Nor can a drag trust the release it may or may not see later, so every
+    // held pointer is canceled — through its session, which reports once.
     const onWindowBlur = () => {
+      for (const p of [...held.values()]) p.session.cancel();
       for (const key of heldKeys) {
         const ev: InputEvent = {
           kind: 'key-held',
@@ -1440,8 +1443,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     if (keyboard) {
       window.addEventListener('keydown', onKeyDown);
       window.addEventListener('keyup', onKeyUp);
-      window.addEventListener('blur', onWindowBlur);
     }
+    window.addEventListener('blur', onWindowBlur);
     // Hover-cursor refresh on modifier/hotkey changes — separate listeners
     // (not folded into onKeyDown/onKeyUp) so the pump also tracks modifiers
     // when `keyboard: false` disables gesture key dispatch.
@@ -1466,8 +1469,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       if (keyboard) {
         window.removeEventListener('keydown', onKeyDown);
         window.removeEventListener('keyup', onKeyUp);
-        window.removeEventListener('blur', onWindowBlur);
       }
+      window.removeEventListener('blur', onWindowBlur);
       window.removeEventListener('keydown', scheduleHoverCursorRefresh);
       window.removeEventListener('keyup', scheduleHoverCursorRefresh);
       canvas?.removeEventListener('pointerleave', onHoverPointerLeave);

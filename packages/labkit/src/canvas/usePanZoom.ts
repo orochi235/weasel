@@ -28,7 +28,9 @@ export interface UsePanZoomOptions {
 }
 
 export interface PanZoomHandlers {
-  onWheel: (e: WheelEvent<HTMLElement>) => void;
+  /** Zoom about the pointer. `anchor` is the element the pointer position is
+   *  measured against, for an event whose `currentTarget` is some other box. */
+  onWheel: (e: WheelEvent<HTMLElement> | globalThis.WheelEvent, anchor?: Element) => void;
   onPointerDown: (e: ReactPointerEvent<HTMLElement>) => void;
   isDragging: () => boolean;
 }
@@ -68,9 +70,11 @@ export function usePanZoom({
   const initialZoomRef = useRef(isPositiveFinite(view.zoom) ? view.zoom : null);
 
   const onWheel = useCallback(
-    (e: WheelEvent<HTMLElement>) => {
+    (e: WheelEvent<HTMLElement> | globalThis.WheelEvent, anchor?: Element) => {
+      const el = anchor ?? (e.currentTarget as Element | null);
+      if (!el) return;
       e.preventDefault();
-      const rect = e.currentTarget.getBoundingClientRect();
+      const rect = el.getBoundingClientRect();
       const initialZoom = initialZoomRef.current;
       onViewChange(
         zoomAt(

@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { useStore } from 'zustand/react';
 import { AnnotationPreloadContext } from '../annotations/preload';
+import { ANNOTATION_TOOLS } from '../annotations/toolMap';
 import { LabFooterRegion, LabHeaderRegion, labContributions } from '../chrome/LabChrome';
 import type { LabContribution } from '../chrome/labTypes';
 import type { TrialContribution } from '../chrome/types';
@@ -310,9 +311,7 @@ function LabRuntime({
   const surface = outerSurface ?? ownSurface;
   const surfaceCanvases = useMemo(
     () =>
-      outerSurface
-        ? { over: outerOver, under: outerUnder }
-        : { over: ownOver, under: ownUnder },
+      outerSurface ? { over: outerOver, under: outerUnder } : { over: ownOver, under: ownUnder },
     [outerSurface, outerOver, outerUnder, ownOver, ownUnder],
   );
 
@@ -330,7 +329,13 @@ function LabRuntime({
   // Tools and lab contributions share one id namespace, so they merge once
   // here — before any region renders — and a collision throws rather than one
   // of them silently losing.
-  const labChromeAll = useMemo(() => labContributions(tools, labChrome), [tools, labChrome]);
+  // Declaring `annotations` on any instrument puts the drawing tools here, in
+  // the lab's rail: one tool is armed across every trial.
+  const annotates = instruments.some((i) => i.annotations != null);
+  const labChromeAll = useMemo(
+    () => labContributions([...(annotates ? ANNOTATION_TOOLS : []), ...(tools ?? [])], labChrome),
+    [annotates, tools, labChrome],
+  );
   const hasFooterChrome = labChromeAll.some((c) => c.region === 'footer');
 
   useEffect(() => {

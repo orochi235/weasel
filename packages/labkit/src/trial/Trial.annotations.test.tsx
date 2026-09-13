@@ -4,12 +4,13 @@
  * follow. The overlay's own geometry is covered in
  * `annotations/Annotations.overlay.test.tsx`.
  */
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { useAnnotations, useAnnotationsOptional } from '../annotations/AnnotationsContext';
 import type { AnnotationsApi } from '../annotations/types';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from '../lab/Lab';
+import { LabContext, type LabContextValue } from '../lab/LabContext';
 
 beforeAll(() => {
   HTMLCanvasElement.prototype.getContext = vi.fn(
@@ -19,9 +20,9 @@ beforeAll(() => {
 
 let api: AnnotationsApi | null = null;
 
-function Pane() {
+function Pane({ tool }: { tool: string | null }) {
   api = useAnnotations();
-  return <div data-testid="pane" data-marks={api.query().length} />;
+  return <div data-testid="pane" data-marks={api.query().length} data-tool={tool ?? ''} />;
 }
 
 function marks(): AnnotationsApi {
@@ -33,7 +34,7 @@ const annotating = defineInstrument<Record<string, never>, Record<string, never>
   name: 'Annotating',
   defaultConfig: () => ({}),
   initialState: () => ({}),
-  render: () => <Pane />,
+  render: (ctx) => <Pane tool={ctx.trial.activeToolId} />,
   annotations: {
     targets: () => [{ id: 'pane', ref: { current: null }, content: { w: 200, h: 100 } }],
   },
@@ -69,6 +70,48 @@ describe('an instrument that declares annotations', () => {
     expect(screen.getByRole('button', { name: 'Select' }).getAttribute('aria-current')).toBe(
       'true',
     );
+  });
+});
+
+let labRef: LabContextValue | null = null;
+
+function CaptureLab() {
+  return (
+    <LabContext.Consumer>
+      {(value) => {
+        if (value) labRef = value;
+        return null;
+      }}
+    </LabContext.Consumer>
+  );
+}
+
+describe('the annotation tool', () => {
+  it("is offered in the lab's rail, not in a trial's", () => {
+    render(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
+    expect(screen.getAllByRole('button', { name: 'Rectangle' })).toHaveLength(1);
+    const trial = screen.getByRole('region', { name: /trial/i });
+    expect(within(trial).queryByRole('button', { name: 'Rectangle' })).toBeNull();
+  });
+
+  it('is one tool across every trial', () => {
+    // A tool is what the hand is holding, not a property of a picture: picking
+    // Rectangle once has to arm it wherever the next mark is drawn.
+    labRef = null;
+    render(
+      <Lab instruments={[annotating]} defaultInstrument="Annotating">
+        <CaptureLab />
+      </Lab>,
+    );
+    act(() => labRef?.addTrial('Annotating'));
+    const panes = screen.getAllByTestId('pane');
+    expect(panes).toHaveLength(2);
+    for (const p of panes) expect(p.dataset.tool).toBe('select');
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Rectangle' }));
+    });
+    for (const p of screen.getAllByTestId('pane')) expect(p.dataset.tool).toBe('rect');
   });
 });
 

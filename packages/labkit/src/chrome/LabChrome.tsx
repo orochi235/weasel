@@ -2,6 +2,7 @@ import { useContext, useMemo } from 'react';
 import { useStore } from 'zustand/react';
 import { useLabContext } from '../lab/LabContext';
 import { LabStoreContext } from '../state/context';
+import { resolveLabTool } from '../tools/labTool';
 import type { TrialTool } from '../tools/types';
 import type { LabChromeContext, LabContribution, LabRegion } from './labTypes';
 import { mergeContributions } from './merge';
@@ -14,7 +15,8 @@ export function useLabChromeContext(): LabChromeContext {
   const lab = useLabContext();
   const storeCtx = useContext(LabStoreContext);
   if (!storeCtx) throw new Error('[labkit] lab chrome requires <LabStoreProvider>');
-  const activeToolId = useStore(storeCtx.store, (s) => s.activeToolId);
+  const slot = useStore(storeCtx.store, (s) => s.activeToolId);
+  const activeToolId = resolveLabTool(slot, lab.instruments);
   const setLabTool = useStore(storeCtx.store, (s) => s.setLabTool);
   return useMemo(
     () => ({ ...lab, activeToolId, setActiveTool: setLabTool }),
