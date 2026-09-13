@@ -225,6 +225,7 @@ export function TrialChrome({
   return (
     <section
       className="lk-trial"
+      data-trial-id={trialId}
       aria-label={`Trial ${title}`}
       tabIndex={-1}
       onKeyDown={handleKeyDown}
