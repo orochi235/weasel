@@ -31,15 +31,16 @@ than on the animator's tick: `requestAnimationFrame` stops entirely when nothing
 is animating, which would stall music and long cues. The timer is one-shot and
 re-armed at the end of every pass, so a pass can never overlap itself.
 
-**A hidden tab is not covered by this.** Browsers clamp `setTimeout` and
-`setInterval` to at least 1000 ms once a tab is hidden — Chrome harder still for
-timers it judges intensive — so a 100 ms lookahead books nothing on time there
-and everything scheduled during it arrives late. What does survive is the clock:
-`currentTime` keeps running, so the queue is still ordered correctly when the tab
-comes back, and the engine drops entries that came due meanwhile rather than
-firing the backlog in one pass. Driving the pass from a `MessageChannel` or a
-dedicated Worker, which are not clamped the same way, is the fix — TODO, not
-built.
+**The timer lives in a dedicated Worker.** Browsers clamp main-thread
+`setTimeout` and `setInterval` to at least 1000 ms once a tab is hidden — Chrome
+harder still for timers it judges intensive — so a 100 ms lookahead would book
+nothing on time there. The engine's default timer (`createTickTimer`) books each
+one-shot delay inside a worker built from an inline `blob:` script and runs the
+pass when the worker posts back. A `MessageChannel` alone has no delay and could
+only busy-spin. Without a `Worker` global, or when a CSP refuses the `blob:`
+worker, it falls back to `setTimeout` and a hidden tab books late again. A
+suspended context is handled apart from this: the engine drops entries that came
+due meanwhile rather than firing the backlog in one pass.
 
 ## Package
 

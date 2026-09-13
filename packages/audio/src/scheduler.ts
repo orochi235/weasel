@@ -41,8 +41,9 @@ export interface Scheduler {
  *
  * It runs on its own timer rather than on an animation frame, which stops
  * entirely when nothing is animating. The timer is one-shot: the pass re-arms
- * it at the end, so passes cannot overlap. A hidden tab clamps it to at least a
- * second, which the lookahead cannot cover — see the README.
+ * it at the end, so passes cannot overlap. A main-thread `setTimeout` is clamped
+ * to a second in a hidden tab, which the lookahead cannot cover; the engine
+ * passes `createTickTimer` instead.
  */
 export function createScheduler(opts: SchedulerOptions): Scheduler {
   const lookahead = opts.lookahead ?? 100;

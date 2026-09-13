@@ -1031,14 +1031,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   argument, which is precisely their function in the genre. Anything built here
   should let a consumer see which cue is being applied, not just hear it.
 
-- **(P2) Move the scheduler tick off the main thread.** Browsers clamp
-  `setTimeout` to at least 1000 ms in a hidden tab — Chrome harder still for
-  timers it judges intensive — so with a 100 ms lookahead a backgrounded tab
-  books nothing on time and everything scheduled during it arrives late. The
-  audio clock keeps running, which is why the events survive at all. A
-  `MessageChannel` or a dedicated Worker driving the pass is not clamped the
-  same way; the pass itself is unchanged, only what wakes it. This is the
-  smaller half of the AudioWorklet item below, and worth doing first.
 - **(P2) Pool the voice node chain.** `createVoicePool` is slot accounting and
   nothing more: the engine builds a `GainNode` and a `StereoPannerNode` per
   `play()` and disconnects them in teardown. Holding a chain per slot and

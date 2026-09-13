@@ -51,6 +51,9 @@ export interface AudioEngineOptions {
   /** Default 'oldest'. */
   steal?: StealPolicy;
   fetchFn?: typeof fetch;
+  /** One-shot timer that wakes each scheduler pass. Default: `createTickTimer()`,
+   *  a Worker-backed timer that survives a hidden tab. Injecting either half
+   *  replaces the default, and the missing half falls back to `setTimeout`'s. */
   setTimer?: (cb: () => void, ms: number) => unknown;
   clearTimer?: (handle: unknown) => void;
 }
