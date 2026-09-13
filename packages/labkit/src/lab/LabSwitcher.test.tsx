@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { currentPage, LabSwitcher } from './LabSwitcher';
 import { LabShell } from './LabShell';
+import { currentPage, LabSwitcher } from './LabSwitcher';
 
 const PAGES = [
   { href: '/corpus', label: 'Wall' },
@@ -19,8 +19,7 @@ describe('currentPage', () => {
   it('survives a query string, a trailing slash and a leftover extension', () => {
     // A dev server maps `/stats` to `stats.html` and serves both spellings, so
     // an old bookmark must still resolve to the same page.
-    for (const path of ['/stats?kind=base', '/stats/', '/stats.html',
-                        '/lab/stats.html#top']) {
+    for (const path of ['/stats?kind=base', '/stats/', '/stats.html', '/lab/stats.html#top']) {
       expect(currentPage(path, PAGES)).toBe(1);
     }
   });
@@ -34,7 +33,9 @@ describe('<LabSwitcher>', () => {
   it('shows the title and nothing else until it is opened', () => {
     render(<LabSwitcher title="corpus stats" pages={PAGES} path="/stats" />);
     expect(screen.getByRole('button', { name: /corpus stats/ })).toHaveAttribute(
-      'aria-expanded', 'false');
+      'aria-expanded',
+      'false',
+    );
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
@@ -54,8 +55,7 @@ describe('<LabSwitcher>', () => {
     render(<LabSwitcher title="corpus stats" pages={PAGES} path="/stats" />);
     open();
     expect(screen.getByRole('menuitem', { name: 'Wall' }).tagName).toBe('A');
-    expect(screen.getByRole('menuitem', { name: 'Wall' })).toHaveAttribute(
-      'href', '/corpus');
+    expect(screen.getByRole('menuitem', { name: 'Wall' })).toHaveAttribute('href', '/corpus');
   });
 
   it('closes on Escape and on a press outside it', () => {
@@ -63,7 +63,8 @@ describe('<LabSwitcher>', () => {
       <div>
         <LabSwitcher title="corpus stats" pages={PAGES} path="/stats" />
         <button type="button">elsewhere</button>
-      </div>);
+      </div>,
+    );
     open();
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('menu')).toBeNull();
@@ -84,7 +85,11 @@ describe('<LabSwitcher>', () => {
 
 describe('<LabShell> with pages', () => {
   it('turns its title into the switcher', () => {
-    render(<LabShell title="corpus stats" pages={PAGES} path="/stats">body</LabShell>);
+    render(
+      <LabShell title="corpus stats" pages={PAGES} path="/stats">
+        body
+      </LabShell>,
+    );
     expect(screen.getByRole('button', { name: /corpus stats/ })).toBeInTheDocument();
   });
 

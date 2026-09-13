@@ -12,7 +12,12 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { SurfaceContext } from '../surface/SurfaceContext';
-import { useSurfaceCanvas, useSurfaceOptional, useSurfaceTile, useTileId } from '../surface/useSurfaceTile';
+import {
+  useSurfaceCanvas,
+  useSurfaceOptional,
+  useSurfaceTile,
+  useTileId,
+} from '../surface/useSurfaceTile';
 import type { SurfaceFrame, SurfaceHandle } from '../surface/useTiledSurface';
 import { useTiledSurface } from '../surface/useTiledSurface';
 import { Lab } from './Lab';
@@ -203,7 +208,7 @@ describe('<Lab> tile round trip', () => {
 });
 
 describe('<Lab> pages', () => {
-  it('gives the title a way back to the project\'s other labs', () => {
+  it("gives the title a way back to the project's other labs", () => {
     const { getByRole } = render(
       <Lab
         instruments={[probeInstrument]}

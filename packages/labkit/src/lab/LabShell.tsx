@@ -27,8 +27,15 @@ export interface LabShellProps {
 /** Page frame for a lab: a titled header, a body, and an optional footer,
  *  themed for the resolved color mode. Presentational only — use `<Lab>` when
  *  the trial runtime is wanted too. */
-export function LabShell({ title, children, header, footer, mode = 'auto',
-                          pages, path }: LabShellProps) {
+export function LabShell({
+  title,
+  children,
+  header,
+  footer,
+  mode = 'auto',
+  pages,
+  path,
+}: LabShellProps) {
   const resolved = useResolvedMode(mode);
   const outer = useThemeOptional();
 
@@ -37,10 +44,11 @@ export function LabShell({ title, children, header, footer, mode = 'auto',
     // carries the element defaults a lab's bare markup is styled by.
     <div className="lk-root lk-shell" data-wzl-portal-host="">
       <header className="lk-shell-header">
-        {pages && pages.length > 0
-          ? <LabSwitcher title={title} pages={pages} path={path}
-                         className="lk-shell-title" />
-          : <h1 className="lk-shell-title">{title}</h1>}
+        {pages && pages.length > 0 ? (
+          <LabSwitcher title={title} pages={pages} path={path} className="lk-shell-title" />
+        ) : (
+          <h1 className="lk-shell-title">{title}</h1>
+        )}
         {header && <div className="lk-shell-header-actions">{header}</div>}
       </header>
       <main className="lk-shell-body">{children}</main>

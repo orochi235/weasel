@@ -1,11 +1,6 @@
 import { ToolButton, ToolGroup } from '../../passthrough/weasel-ui';
 import { useRovingTabIndex } from '../../primitives/useRovingTabIndex';
-import type {
-  RegionContribution,
-  ToolItem,
-  ToolSlotContext,
-  TrialChromeContext,
-} from '../types';
+import type { RegionContribution, ToolItem, ToolSlotContext, TrialChromeContext } from '../types';
 
 /** Props for `<PaletteRegion>`. */
 export interface PaletteRegionProps<TCtx extends ToolSlotContext = TrialChromeContext> {

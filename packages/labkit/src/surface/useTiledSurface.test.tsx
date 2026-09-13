@@ -315,8 +315,20 @@ describe('useTiledSurface', () => {
               surface.containerRef(el);
             }}
           >
-            <div ref={(el) => { if (!el) return; stubBox(el, 0, 0, 400, 600); surface.registerTile('a', el); }} />
-            <div ref={(el) => { if (!el) return; stubBox(el, 400, 0, 400, 600); surface.registerTile('b', el); }} />
+            <div
+              ref={(el) => {
+                if (!el) return;
+                stubBox(el, 0, 0, 400, 600);
+                surface.registerTile('a', el);
+              }}
+            />
+            <div
+              ref={(el) => {
+                if (!el) return;
+                stubBox(el, 400, 0, 400, 600);
+                surface.registerTile('b', el);
+              }}
+            />
           </div>
         );
       }
@@ -345,7 +357,12 @@ describe('useTiledSurface', () => {
       const frames: SurfaceFrame[] = [];
       let handle: SurfaceHandle | null = null;
       const { getByTestId } = render(
-        <Harness frames={frames} onHandle={(h) => { handle = h; }} />,
+        <Harness
+          frames={frames}
+          onHandle={(h) => {
+            handle = h;
+          }}
+        />,
       );
       flushFrames();
       frames.length = 0;
@@ -368,7 +385,12 @@ describe('useTiledSurface', () => {
       const frames: SurfaceFrame[] = [];
       let handle: SurfaceHandle | null = null;
       const { getByTestId } = render(
-        <Harness frames={frames} onHandle={(h) => { handle = h; }} />,
+        <Harness
+          frames={frames}
+          onHandle={(h) => {
+            handle = h;
+          }}
+        />,
       );
       flushFrames();
 
@@ -407,7 +429,12 @@ describe('useTiledSurface', () => {
       const frames: SurfaceFrame[] = [];
       let handle: SurfaceHandle | null = null;
       const { getByTestId } = render(
-        <Harness frames={frames} onHandle={(h) => { handle = h; }} />,
+        <Harness
+          frames={frames}
+          onHandle={(h) => {
+            handle = h;
+          }}
+        />,
       );
       flushFrames();
 
@@ -424,7 +451,17 @@ describe('useTiledSurface', () => {
       let call = 0;
       vi.spyOn(b, 'getBoundingClientRect').mockImplementation(() => {
         const left = stops[Math.min(call++, stops.length - 1)]!;
-        return { left, top: 0, width: 400, height: 600, right: left + 400, bottom: 600, x: left, y: 0, toJSON: () => ({}) } as DOMRect;
+        return {
+          left,
+          top: 0,
+          width: 400,
+          height: 600,
+          right: left + 400,
+          bottom: 600,
+          x: left,
+          y: 0,
+          toJSON: () => ({}),
+        } as DOMRect;
       });
 
       seen.length = 0;
@@ -442,13 +479,20 @@ describe('useTiledSurface', () => {
       const frames: SurfaceFrame[] = [];
       let handle: SurfaceHandle | null = null;
       const { getByTestId } = render(
-        <Harness frames={frames} onHandle={(h) => { handle = h; }} />,
+        <Harness
+          frames={frames}
+          onHandle={(h) => {
+            handle = h;
+          }}
+        />,
       );
       flushFrames();
 
       const clear = vi.fn();
       let off: (() => void) | undefined;
-      act(() => { off = handle?.registerClear('a', clear); });
+      act(() => {
+        off = handle?.registerClear('a', clear);
+      });
       stubBox(getByTestId('b'), 310, 0, 400, 600);
       act(() => handle?.invalidateRects());
       flushFrames();

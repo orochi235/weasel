@@ -1,8 +1,8 @@
 export { composeRects, rectsEqual } from './composeRects';
 export { toDeviceRect } from './deviceRect';
 export type { Box, Rect } from './rect';
-export { SurfaceCanvasContext, SurfaceContext } from './SurfaceContext';
 export type { SurfaceCanvases, SurfaceLayer } from './SurfaceContext';
+export { SurfaceCanvasContext, SurfaceContext } from './SurfaceContext';
 export {
   useSurface,
   useSurfaceCanvas,

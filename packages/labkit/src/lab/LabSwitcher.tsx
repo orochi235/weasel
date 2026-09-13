@@ -25,8 +25,11 @@ export interface LabSwitcherProps {
  *  to `stats.html` serves both spellings, and a bookmark from before the URLs
  *  lost their extension still resolves to the same page. */
 export function currentPage(path: string, pages: readonly LabPage[]): number {
-  const here = path.split('?')[0]!.split('#')[0]!
-    .replace(/\/$/, '').replace(/\.html$/, '');
+  const here = path
+    .split('?')[0]!
+    .split('#')[0]!
+    .replace(/\/$/, '')
+    .replace(/\.html$/, '');
   return pages.findIndex((p) => here.endsWith(p.href.replace(/\.html$/, '')));
 }
 
@@ -44,8 +47,10 @@ export function LabSwitcher({ title, pages, path, className }: LabSwitcherProps)
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const menuId = useId();
-  const here = currentPage(path ?? (typeof window === 'undefined'
-    ? '' : window.location.pathname), pages);
+  const here = currentPage(
+    path ?? (typeof window === 'undefined' ? '' : window.location.pathname),
+    pages,
+  );
 
   const close = useCallback(() => setOpen(false), []);
 

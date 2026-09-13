@@ -31,7 +31,7 @@
   &:focus-visible {
     outline: 2px solid var(--wzl-focus-ring, currentColor);
     outline-offset: 2px;
-    border-radius: var(--wzl-radius-sm, 2px);
+    border-radius: var(--wzl-radius-sm, 3px);
   }
 }
 
@@ -64,7 +64,7 @@
   // surface, the way `FloatingPanel` does.
   background: var(--wzl-surface);
   border: 1px solid var(--wzl-border);
-  border-radius: var(--wzl-radius-md, 6px);
+  border-radius: var(--wzl-radius-md, 5px);
   box-shadow: var(--wzl-shadow-md, 0 6px 20px rgb(0 0 0 / 35%));
 }
 
@@ -88,5 +88,5 @@
 // drops its current entry shifts every other one as you move between pages.
 .lk-switcher-item[aria-current='page'] {
   color: var(--wzl-text-strong, var(--wzl-text));
-  font-weight: var(--wzl-font-weight-semibold, 600);
+  font-weight: var(--wzl-font-weight-bold);
 }
