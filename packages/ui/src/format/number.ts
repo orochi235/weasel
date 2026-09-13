@@ -51,8 +51,22 @@ export function formatCompact(value: number, decimals = 0): string {
  * Reads a typed number: anything {@link parseSignedNumber} reads, plus
  * thousands commas in the `40,000` shape and a `k`/`m`/`b`/`t` suffix in either
  * case (`2.5m` is 2,500,000). Empty text is NaN rather than zero.
+ *
+ * Given `units` — a suffix mapped to the factor it scales by — a trailing unit
+ * name is read first: the longest match wins, exact case before any case, and
+ * a unit beats a magnitude suffix, so with `m` accepted `2m` is `2 * units.m`.
  */
-export function parseNumber(text: string): number {
+export function parseNumber(text: string, units?: Readonly<Record<string, number>>): number {
+  if (units) {
+    const trimmed = text.trim();
+    const name = unitSuffixOf(trimmed, units);
+    if (name !== undefined) {
+      const n = parseNumber(trimmed.slice(0, -name.length));
+      const factor = units[name]!;
+      // Divided by the reciprocal below 1: 12 * 0.1 is 1.2000000000000002, 12 / 10 is 1.2.
+      return factor < 1 ? n / (1 / factor) : n * factor;
+    }
+  }
   let t = text.trim().replace(MINUS_SIGN, '-');
   const exponent = EXPONENTS[t.slice(-1).toLowerCase()];
   if (exponent !== undefined) t = t.slice(0, -1).trimEnd();
@@ -60,6 +74,13 @@ export function parseNumber(text: string): number {
   if (!/\d/.test(t)) return Number.NaN;
   // Scaled through the exponent rather than by multiplying: 1.1 * 1000 is 1100.0000000000002.
   return Number(exponent === undefined ? t : `${t}e${exponent}`);
+}
+
+/** The longest unit name `text` ends with — exact case first, then any case. */
+function unitSuffixOf(text: string, units: Readonly<Record<string, number>>): string | undefined {
+  const names = Object.keys(units).filter((n) => n !== '').sort((a, b) => b.length - a.length);
+  const lower = text.toLowerCase();
+  return names.find((n) => text.endsWith(n)) ?? names.find((n) => lower.endsWith(n.toLowerCase()));
 }
 
 /** {@link String} with the leading ASCII hyphen swapped for {@link MINUS_SIGN}.

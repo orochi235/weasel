@@ -1289,15 +1289,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `flex: 0 0 110px` control slot. So the question is the slot, not the control —
   and jsdom cannot answer it, this needs proofing in a browser.
 
-- **(P2) No control parses a typed unit, and the conversion tables answer only
-  grid snapping.** `ToolPrefNumberUnit` (`toDisplay` / `fromDisplay` /
-  `suffix`) is honored by `SelectionPanel` and `PrefsForm` alike, value and
-  declared bounds both, through the shared `prefDisplayBounds`. What is missing
-  sits either side of it: nothing anywhere parses a typed `"12mm"`, and the
-  tables that would answer one (`UnitSystem`, `IMPERIAL_INCHES` / `METRIC_MM` /
-  `PIXELS`) belong to a separate mechanism wired only to grid snapping, whose
-  `formatUnit` has no callers. One leaf declares a unit today —
-  `pose.rotation`, radians stored, degrees shown.
+- **(P3) Typed units stop at linear factors.** `SelectionPanel` and `PrefsForm`
+  read `12mm` into a unit leaf through `UnitField`, and `prefUnit` builds the
+  leaf's unit from a `UnitSystem`. A compound value (`5ft 3in`) does not parse,
+  a unit with an offset (°C) cannot be a table entry, and `formatUnit` still
+  has no callers.
 
 - **(P2) `LabShell` is the only thing that applies labkit's style scope.**
   `.lk-root` carries the tokens, the fonts, the box-sizing reset and every

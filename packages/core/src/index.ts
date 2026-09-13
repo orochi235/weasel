@@ -25,7 +25,7 @@
  *   - Op model & history: `Op`, `createInsertOp` / `createDeleteOp` /
  *     `createTransformOp` / etc., `createHistory`, `applyOps`-style entry
  *     wired by every hook.
- *   - Units: `UnitSystem`, `UnitValue`, `IMPERIAL_INCHES`, `METRIC_MM`,
+ *   - Units: `UnitSystem`, `UnitValue`, `ANGLE_RADIANS`, `IMPERIAL_INCHES`, `METRIC_MM`,
  *     `PIXELS`, `resolveUnit`, `formatUnit`.
  *   - Adapters: `SceneAdapter`, plus narrow per-hook subsets
  *     (`MoveAdapter`, `ResizeAdapter`, `InsertAdapter`, `OrderedAdapter`,
@@ -474,6 +474,7 @@ export type { CreateChildrenLayerOpts } from './features/groups/children';
 export {
   resolveUnit,
   formatUnit,
+  ANGLE_RADIANS,
   IMPERIAL_INCHES,
   METRIC_MM,
   PIXELS,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   resolveUnit,
+  ANGLE_RADIANS,
   formatUnit,
   IMPERIAL_INCHES,
   METRIC_MM,
@@ -89,5 +90,13 @@ describe('pre-built unit systems', () => {
     expect(PIXELS.base).toBe('px');
     expect(PIXELS.units.px).toBe(1);
     expect(Object.keys(PIXELS.units)).toEqual(['px']);
+  });
+});
+
+describe('ANGLE_RADIANS', () => {
+  it('converts degrees and turns to radians', () => {
+    expect(resolveUnit({ value: 180, unit: 'deg' }, ANGLE_RADIANS)).toBeCloseTo(Math.PI);
+    expect(resolveUnit({ value: 0.5, unit: 'turn' }, ANGLE_RADIANS)).toBeCloseTo(Math.PI);
+    expect(ANGLE_RADIANS.base).toBe('rad');
   });
 });

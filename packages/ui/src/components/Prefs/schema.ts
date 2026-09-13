@@ -25,7 +25,7 @@ export type {
   ToolPrefStringControl as PrefStringControl,
 } from '@weasel-js/core';
 
-import type { ToolPrefGroup, ToolPrefLeaf, ToolPrefNumber } from '@weasel-js/core';
+import type { ToolPrefGroup, ToolPrefLeaf, ToolPrefNumber, ToolPrefNumberUnit as PrefNumberUnitType } from '@weasel-js/core';
 
 /**
  * A number leaf's bounds in the unit it is displayed in.
@@ -50,6 +50,12 @@ export function prefDisplayBounds(
     ? 1
     : Math.abs(toDisplay(p.step) - toDisplay(0)) || p.step;
   return { min: flipped ? hi : lo, max: flipped ? lo : hi, step };
+}
+
+/** What a unit leaf's field reads as typed text: its `accepts` table, and its
+ *  `suffix` as the display unit itself. */
+export function prefUnitAccepts(unit: PrefNumberUnitType): Readonly<Record<string, number>> {
+  return unit.suffix === undefined ? { ...unit.accepts } : { [unit.suffix]: 1, ...unit.accepts };
 }
 
 /** Distinguishes a leaf from a group while walking a schema tree. */

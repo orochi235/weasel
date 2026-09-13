@@ -7,6 +7,8 @@
 // boolean, string, enum, plus rendering hints — so it's a clean
 // structural subset of whatever a host app already has.
 
+import type { Unit, UnitSystem } from 'core/units';
+
 /** The value types a built-in pref leaf can hold. */
 export type ToolPrefKind =
   | 'number' | 'boolean' | 'string' | 'enum' | 'color' | 'paint' | 'object';
@@ -58,6 +60,41 @@ export interface ToolPrefNumberUnit {
   fromDisplay: (display: number) => number;
   /** Shown after the input, e.g. `'°'`. */
   suffix?: string;
+  /** Suffixes a person may type, each mapped to the factor that turns a
+   *  number in that unit into a display number: `{ mm: 0.1, cm: 1 }` for a
+   *  field showing centimeters. */
+  accepts?: Readonly<Record<string, number>>;
+}
+
+/**
+ * A display unit built from a {@link UnitSystem}: values are stored in the
+ * system's base and shown in `display`, rounded to `precision` places when
+ * given, and every unit in the system is accepted as typed text. `suffix`
+ * defaults to the unit's name and is accepted too.
+ */
+export function prefUnit(
+  system: UnitSystem,
+  display: Unit,
+  opts?: { precision?: number; suffix?: string },
+): ToolPrefNumberUnit {
+  const factor = system.units[display];
+  if (factor === undefined) {
+    const known = Object.keys(system.units).join(', ') || '(none)';
+    throw new Error(
+      `prefUnit: unknown unit '${display}' (system base: '${system.base}', known units: ${known})`,
+    );
+  }
+  const scale = opts?.precision === undefined ? undefined : 10 ** opts.precision;
+  const suffix = opts?.suffix ?? display;
+  const accepts: Record<string, number> = { [suffix]: 1 };
+  for (const [name, f] of Object.entries(system.units)) accepts[name] = f / factor;
+  return {
+    toDisplay: (stored) =>
+      scale === undefined ? stored / factor : Math.round((stored / factor) * scale) / scale,
+    fromDisplay: (shown) => shown * factor,
+    suffix,
+    accepts,
+  };
 }
 
 /** A numeric pref, optionally bounded and stepped, and optionally stored in a
