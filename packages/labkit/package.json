@@ -42,6 +42,10 @@
       "types": "./dist/controls/index.d.ts",
       "import": "./dist/controls/index.js"
     },
+    "./config": {
+      "types": "./dist/config/index.d.ts",
+      "import": "./dist/config/index.js"
+    },
     "./canvas": {
       "types": "./dist/canvas/index.d.ts",
       "import": "./dist/canvas/index.js"

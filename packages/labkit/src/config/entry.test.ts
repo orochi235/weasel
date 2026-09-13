@@ -1,0 +1,42 @@
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
+
+const IMPORT =
+  /^\s*(?:import|export)\s+(?!type\b)[^'"]*from\s+['"]([^'"]+)['"]|^\s*import\s+['"]([^'"]+)['"]/gm;
+
+function walk(file: string, seen = new Set<string>()): Set<string> {
+  if (seen.has(file)) return seen;
+  seen.add(file);
+  const source = readFileSync(file, 'utf8');
+  for (const match of source.matchAll(IMPORT)) {
+    const spec = match[1] ?? match[2];
+    if (!spec?.startsWith('.')) continue;
+    const base = resolve(dirname(file), spec);
+    const candidates = [base, `${base}.ts`, `${base}.tsx`, resolve(base, 'index.ts')];
+    const hit = candidates.find((c) => {
+      try {
+        return readFileSync(c) && true;
+      } catch {
+        return false;
+      }
+    });
+    if (hit) walk(hit, seen);
+  }
+  return seen;
+}
+
+describe('@weasel-js/labkit/config', () => {
+  it('reaches no stylesheet', () => {
+    const files = [...walk(resolve(__dirname, 'index.ts'))];
+    expect(files.filter((f) => /\.(less|css)$/.test(f))).toEqual([]);
+  });
+
+  it('is published as an entry', async () => {
+    const pkg = JSON.parse(readFileSync(resolve(__dirname, '../../package.json'), 'utf8'));
+    expect(pkg.exports['./config']).toEqual({
+      types: './dist/config/index.d.ts',
+      import: './dist/config/index.js',
+    });
+  });
+});

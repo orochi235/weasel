@@ -39,6 +39,7 @@ const entries: Record<string, string> = {
   'primitives/index': 'src/primitives/index.ts',
   'state/index': 'src/state/index.ts',
   'controls/index': 'src/controls/index.ts',
+  'config/index': 'src/config/index.ts',
   'canvas/index': 'src/canvas/index.ts',
   'layers/index': 'src/layers/index.ts',
   'loupe/index': 'src/loupe/index.ts',
