@@ -6,11 +6,18 @@
  * label reaches it, rather than by calling the resolver directly.
  */
 import { describe, it, expect } from 'vitest';
-import { polylineFromPoints } from 'features/paths/builder';
 import { createScene } from './scene';
 import { effectivePose } from './effectivePose';
-import type { Path } from '../geometry/path';
+import { PATH_L, PATH_M, type Path, type PolygonPath } from '../geometry/path';
 import type { DerivedDep, NodeId, RectPose } from './types';
+
+/** An open two-point polyline, written out because the path builder lives above `core/`. */
+const segment = (from: { x: number; y: number }, to: { x: number; y: number }): PolygonPath => ({
+  kind: 'polygon',
+  commands: new Uint8Array([PATH_M, PATH_L]),
+  coords: new Float32Array([from.x, from.y, to.x, to.y]),
+  fillRule: 'nonzero',
+});
 
 const LAYERS = [{ id: 'main' as const }];
 
@@ -43,10 +50,7 @@ function labeled() {
       routes.count++;
       const [from, to] = deps as (DerivedDep<RectPose> | undefined)[];
       if (from === undefined || to === undefined) return null;
-      return polylineFromPoints([
-        { x: from.pose.x, y: from.pose.y },
-        { x: to.pose.x, y: to.pose.y },
-      ]);
+      return segment({ x: from.pose.x, y: from.pose.y }, { x: to.pose.x, y: to.pose.y });
     },
   });
   /** Sits at the far end of the line it depends on. */
@@ -134,14 +138,14 @@ describe('a dependency carries its path', () => {
       dependsOn: ['second' as NodeId],
       derivePath: (_n, deps): Path | null =>
         (deps[0] as DerivedDep<RectPose> | undefined)?.path
-          ?? polylineFromPoints([{ x: 1, y: 1 }, { x: 2, y: 2 }]),
+          ?? segment({ x: 1, y: 1 }, { x: 2, y: 2 }),
     });
     const second = scene.add({
       id: 'second' as NodeId, kind: 'leaf', layer: 'main', pose: box(0, 0), data: {},
       dependsOn: [first],
       derivePath: (_n, deps): Path | null =>
         (deps[0] as DerivedDep<RectPose> | undefined)?.path
-          ?? polylineFromPoints([{ x: 3, y: 3 }, { x: 4, y: 4 }]),
+          ?? segment({ x: 3, y: 3 }, { x: 4, y: 4 }),
     });
     const reader = scene.add({
       kind: 'leaf', layer: 'main', pose: box(0, 0), data: {},
