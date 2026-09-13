@@ -5,6 +5,7 @@
  * need to collapse `transform=` onto leaf geometry at parse time.
  */
 
+import { invert } from '@weasel-js/geom';
 import type { Matrix } from './types';
 import { IDENTITY_MATRIX } from './types';
 
@@ -110,14 +111,6 @@ export function parseTransform(
   return result;
 }
 
-/** Inverse of a 2x3 affine, or null when it is singular. */
-export function invertMatrix(m: Matrix): Matrix | null {
-  const det = m[0] * m[3] - m[1] * m[2];
-  if (!Number.isFinite(det) || Math.abs(det) < 1e-12) return null;
-  const a = m[3] / det, b = -m[1] / det, c = -m[2] / det, d = m[0] / det;
-  return [a, b, c, d, -(a * m[4] + c * m[5]), -(b * m[4] + d * m[5])];
-}
-
 /**
  * Re-express an element's own `transform` in the frame its inherited `ctm`
  * maps into: `ctm * local * ctm⁻¹`.
@@ -126,12 +119,16 @@ export function invertMatrix(m: Matrix): Matrix | null {
  * transform has to move with it. Decomposing the raw local matrix against
  * bounds that have already been through `ctm` compares two different
  * coordinate spaces, and a rotation inside a translated `<g>` fails to
- * decompose for no reason but the offset. A singular `ctm` has no inverse
- * and collapses the geometry anyway; the local matrix passes through.
+ * decompose for no reason but the offset.
+ *
+ * `null` when `@weasel-js/geom`'s `invert` finds `ctm` singular: the geometry
+ * has collapsed through it, and the local transform has no frame to live in.
  */
-export function rebaseTransform(ctm: Matrix, local: Matrix): Matrix {
-  const inv = invertMatrix(ctm);
-  return inv ? multiply(multiply(ctm, local), inv) : local;
+export function rebaseTransform(ctm: Matrix, local: Matrix): Matrix | null {
+  const inv = invert([...ctm]);
+  if (!inv) return null;
+  const [a, b, c, d, e, f] = inv;
+  return multiply(multiply(ctm, local), [a, b, c, d, e, f]);
 }
 
 /** Try to factor `m` as "rotation by theta about (cx, cy)". Returns the

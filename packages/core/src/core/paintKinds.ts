@@ -62,8 +62,12 @@ export interface PaintBindContext {
    * from the paint's space to the frame the geometry arrives in. Paired with
    * the vertex shader's `v_world` varying this is *the* paint-space
    * convention; it is not gradient-specific.
+   *
+   * `null` when that space has no inverse — a transform or view that flattens
+   * an axis. Nothing the paint draws there means anything, so `bind` should
+   * return `null` and draw nothing.
    */
-  spaceInverse(units: GradientUnits | undefined): Mat3;
+  spaceInverse(units: GradientUnits | undefined): Mat3 | null;
   /**
    * Bake a stop ramp into the frame's ramp atlas, bind that atlas to a texture
    * unit, and return the `v` the ramp's own row sits at — every ramp in a

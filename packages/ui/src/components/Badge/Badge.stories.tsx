@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { applyToPoint, invert } from '@weasel-js/geom';
 import { Badge } from './Badge';
 import { ToggleBar as KitToggleBar } from '../ToggleBar/ToggleBar';
 import { ALL_SHAPES, SHAPES } from './shapes';
@@ -1826,13 +1827,11 @@ function OctantSplineEditor({
   const screenToViewBox = (clientX: number, clientY: number): { x: number; y: number } | null => {
     const svg = svgRef.current;
     if (!svg) return null;
-    const pt = svg.createSVGPoint();
-    pt.x = clientX;
-    pt.y = clientY;
     const ctm = svg.getScreenCTM();
-    if (!ctm) return null;
-    const local = pt.matrixTransform(ctm.inverse());
-    return { x: local.x, y: local.y };
+    const inverse = ctm && invert([ctm.a, ctm.b, ctm.c, ctm.d, ctm.e, ctm.f]);
+    if (!inverse) return null;
+    const [x, y] = applyToPoint(inverse, clientX, clientY);
+    return { x, y };
   };
 
   const onMove = (clientX: number, clientY: number) => {
