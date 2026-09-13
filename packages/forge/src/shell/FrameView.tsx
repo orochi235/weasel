@@ -40,6 +40,8 @@ interface Link {
   awaiting: string | null;
   /** What the frame holds, from `init` on; null until then. */
   sent: { config: unknown; state: unknown; globals: Globals } | null;
+  /** `init`, `config`, `state` and `globals` messages sent; a render fault's `seq` counts the same messages. */
+  inputs: number;
 }
 
 function closeLink(link: RefObject<Link | null>): void {
@@ -69,6 +71,7 @@ export function FrameView(props: FrameViewProps) {
     const { ctx: live, globals: liveGlobals } = latest.current;
     current.awaiting = null;
     current.sent = { config: live.config, state: live.state, globals: liveGlobals };
+    current.inputs += 1;
     current.channel.send({ type: 'init', ...current.sent });
   };
 
@@ -78,10 +81,10 @@ export function FrameView(props: FrameViewProps) {
       case 'ready': {
         clearTimeout(current.timer);
         setFault(null);
-        onReady(latest.current.entry, msg);
         const key = readyKey(msg);
-        if (key === latest.current.descriptionKey) init(current);
-        else current.awaiting = key;
+        current.awaiting = key;
+        onReady(latest.current.entry, msg);
+        if (current.awaiting === key && key === latest.current.descriptionKey) init(current);
         break;
       }
       case 'setConfig':
@@ -95,6 +98,8 @@ export function FrameView(props: FrameViewProps) {
         answers.record(msg.answers);
         break;
       case 'fault':
+        // A newer input is already on its way to the frame, which faults again if it still throws.
+        if (msg.phase === 'render' && msg.seq !== undefined && msg.seq < current.inputs) break;
         clearTimeout(current.timer);
         setFault({ phase: msg.phase, message: msg.message });
         break;
@@ -113,7 +118,7 @@ export function FrameView(props: FrameViewProps) {
         setFault({ phase: 'protocol', message: mismatchMessage(mismatch) });
       },
     });
-    const current: Link = { channel, timer, awaiting: null, sent: null };
+    const current: Link = { channel, timer, awaiting: null, sent: null, inputs: 0 };
     link.current = current;
     channel.on((msg) => receive(current, msg));
     target.postMessage({ type: PORT_HANDOFF }, location.origin, [port2]);
@@ -134,16 +139,19 @@ export function FrameView(props: FrameViewProps) {
     if (ctx.config !== sent.config) {
       sent.config = ctx.config;
       current.channel.send({ type: 'config', config: ctx.config });
+      current.inputs += 1;
       input = true;
     }
     if (ctx.state !== sent.state) {
       sent.state = ctx.state;
       current.channel.send({ type: 'state', state: ctx.state });
+      current.inputs += 1;
       input = true;
     }
     if (globals !== sent.globals) {
       sent.globals = globals;
       current.channel.send({ type: 'globals', globals });
+      current.inputs += 1;
       input = true;
     }
     // The frame retries its render on new input and faults again if it still throws.

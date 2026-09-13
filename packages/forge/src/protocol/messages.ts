@@ -42,7 +42,8 @@ export type FromFrame =
   | { type: 'size'; width: number; height: number }
   | { type: 'vars'; vars: CssVarReport[] }
   | { type: 'played'; ok: boolean; message?: string }
-  | { type: 'fault'; phase: FaultPhase; message: string; stack?: string };
+  /** `seq`, on a render fault only: how many `init`/`config`/`state`/`globals` messages the frame had received. */
+  | { type: 'fault'; phase: FaultPhase; message: string; stack?: string; seq?: number };
 
 export interface Envelope<M> {
   v: number;

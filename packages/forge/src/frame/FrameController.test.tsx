@@ -203,6 +203,32 @@ describe('startFrame', () => {
     vi.restoreAllMocks();
   });
 
+  it('tags a render fault with the count of inputs the render had received', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const [picky] = loadNativeModule(
+      {
+        default: meta({ title: 'Test/Picky' }),
+        Picky: story({
+          config: f.schema({ v: f.string('ok') }),
+          render: ({ config }) => {
+            if (config.v === 'A') throw new Error('bad A');
+            return <p data-testid="picky">{config.v}</p>;
+          },
+        }),
+      },
+      '/p.stories.tsx',
+      '/',
+    );
+    const { shell, of } = start(picky!);
+    shell.send({ type: 'init', config: { v: 'ok' }, state: null, globals: {} });
+    shell.send({ type: 'config', config: { v: 'A' } });
+    shell.send({ type: 'config', config: { v: 'B' } });
+    await flush();
+    expect(of('fault')).toEqual([expect.objectContaining({ phase: 'render', message: 'bad A', seq: 2 })]);
+    expect(screen.getByTestId('picky').textContent).toBe('B');
+    vi.restoreAllMocks();
+  });
+
   it('runs play and reports success', async () => {
     const play = vi.fn();
     const withPlay: LoadedStory = { ...counter, play };

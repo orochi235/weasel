@@ -153,7 +153,10 @@ wrong. Every message carries a protocol version; a mismatch is a `fault`.
 | Direction | Messages |
 |---|---|
 | workshop → frame | `init {config, state, globals}` · `config` · `state` · `globals` · `vars.set` · `play` |
-| frame → workshop | `ready {schema, layout, viewport}` · `answers {configKey, hidden, errors}` · `setConfig` · `setState` · `size` · `vars` · `played` · `fault {phase, message, stack}` |
+| frame → workshop | `ready {schema, layout, viewport}` · `answers {configKey, hidden, errors}` · `setConfig` · `setState` · `size` · `vars` · `played` · `fault {phase, message, stack, seq?}` |
+
+A render fault carries how many `init`, `config`, `state` and `globals` messages
+the frame had received, so the workshop ignores a fault older than its latest input.
 
 A story's `state(config)` is a function, so the trial's instrument starts its
 state at `null`; a frame handed `null` computes the story's initial state and

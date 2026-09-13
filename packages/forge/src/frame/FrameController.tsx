@@ -20,10 +20,14 @@ export interface StartFrameOptions {
   setup?: FrameSetup;
 }
 
-function fault(phase: FaultPhase, error: unknown): FromFrame {
-  return error instanceof Error
-    ? { type: 'fault', phase, message: error.message, ...(error.stack ? { stack: error.stack } : {}) }
-    : { type: 'fault', phase, message: String(error) };
+function fault(phase: FaultPhase, error: unknown, seq?: number): FromFrame {
+  return {
+    type: 'fault',
+    phase,
+    message: error instanceof Error ? error.message : String(error),
+    ...(error instanceof Error && error.stack ? { stack: error.stack } : {}),
+    ...(seq === undefined ? {} : { seq }),
+  };
 }
 
 /** Sends `ready`, then renders the story on `init` and keeps it in step. Returns a stop function. */
@@ -43,6 +47,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
   let globals: Globals = {};
   let answeredKey: string | null = null;
   let resetKey = 0;
+  let seq = 0;
 
   const setConfig = (path: string, value: unknown) => send({ type: 'setConfig', path, value });
   const setState = (next: unknown) => {
@@ -53,13 +58,14 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
 
   const render = () => {
     const ctx: StoryContext = { config, setConfig, state, setState, globals, title: story.title, name: story.name };
+    const at = seq;
     root.render(
       <StoryHost
         story={story}
         ctx={ctx}
         decorators={decorators}
         resetKey={resetKey}
-        onError={(error) => send(fault('render', error))}
+        onError={(error) => send(fault('render', error, at))}
       />,
     );
     const key = stableStringify(config);
@@ -71,6 +77,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
 
   // Input from the trial commits synchronously, so a `play` that follows sees the rendered story.
   const renderInput = () => {
+    seq += 1;
     if (!initialized) return;
     resetKey += 1;
     flushSync(render);

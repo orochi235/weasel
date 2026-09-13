@@ -1,6 +1,8 @@
 import { Lab, LabContext, type LabContextValue, type InstrumentList, type RenderContext } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, render } from '@testing-library/react';
+import { useState } from 'react';
+import { flushSync } from 'react-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type Channel, openChannel } from '../protocol/channel';
 import { type FromFrame, type Globals, PORT_HANDOFF, stableStringify, type ToFrame } from '../protocol/messages';
@@ -259,6 +261,38 @@ describe('FrameView', () => {
     frame.send({ type: 'fault', phase: 'render', message: 'still bad' });
     await flush();
     expect(faultText(view.container)).toContain('still bad');
+  });
+
+  it('ignores a render fault from before the latest input, and shows one from the latest', async () => {
+    const { view, frame, received } = mount();
+    frame.send(ready);
+    await flush();
+    act(() => ctx?.setConfig('label', 'one'));
+    await flush();
+    act(() => ctx?.setConfig('label', 'two'));
+    await flush();
+    expect(received.map((m) => m.type)).toEqual(['init', 'config', 'config']);
+    frame.send({ type: 'fault', phase: 'render', message: 'stale', seq: 2 });
+    await flush();
+    expect(faultText(view.container)).toBeNull();
+    frame.send({ type: 'fault', phase: 'render', message: 'current', seq: 3 });
+    await flush();
+    expect(faultText(view.container)).toContain('current');
+  });
+
+  it('sends one init when onReady synchronously builds the instrument that describes the frame', async () => {
+    function SyncReady() {
+      const [held, setHeld] = useState<Ready | undefined>(undefined);
+      return labWith(
+        held,
+        vi.fn((_entry: IndexEntry, next: Ready) => flushSync(() => setHeld(next))),
+      );
+    }
+    const view = render(<SyncReady />);
+    const { frame, received } = connect(view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement);
+    frame.send(ready);
+    await flush();
+    expect(received).toEqual([{ type: 'init', config: { label: 'clicks' }, state: null, globals }]);
   });
 
   it('keeps an import fault when new input goes to the frame', async () => {
