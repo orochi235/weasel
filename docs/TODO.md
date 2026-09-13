@@ -1737,8 +1737,8 @@ one dead `const` and four stale disable directives.
   `outlineStrokeMeshCache.ts` — would likely fix it.
 
 - **(P3) Whether the benchmarks gate CI.** Every benchmark lives in
-  `tests/perf/` and writes a result file per run; nothing gates anything, and
-  nothing is committed as a baseline. `tests/perf/README.md` argues a hard
+  `tests/perf/` and writes a result file per run; nothing gates anything. The
+  vitest microbenchmarks keep a committed baseline in `tests/perf/bench/`. `tests/perf/README.md` argues a hard
   threshold on shared runners would have to be loose enough to miss real
   regressions. The shape a gate could take instead: a PR job that runs the
   benchmarks on both revisions and posts the `npm run perf:compare` table as a

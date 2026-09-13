@@ -30,7 +30,8 @@ in one go, so point `WEASEL_PERF_OUT` at a directory there. A run whose own
 sanity checks fail writes nothing.
 
 Result files are not committed. When a number goes into a commit message or a
-doc, quote the machine it came from.
+doc, quote the machine it came from. The one exception is the vitest
+microbenchmarks' baseline, below.
 
 The shape is `weasel-perf-result/1`, and `lib/result.ts` is the only thing that
 writes it:
@@ -128,6 +129,26 @@ measures free, and a single-threaded static server invents load regressions.
 | `scene-ops.bench.ts` | `add` / `add`+`remove` / `setPose` over container-chain depth; `renderOrder()` over node count, over depth, and over layer count at 10k nodes |
 | `hit-test.bench.ts` | `hitTestArea` over node count and query-rect size, for rect poses and for 24-gon silhouettes; `aabbOfPose`; `pointInPath` over vertex count |
 | `derived-path.bench.ts` | a frame of `resolveDerivedPath` over diagram size, as it runs now (memo hit) and with the resolve-and-value-compare pass a pull-invalidation scheme would need |
+
+### The committed baseline
+
+`bench/baseline.json` and `bench/BASELINE.md` are one run of the whole suite on
+an Apple M2 Max (12 threads, Node v26.1.0), measured 2026-08-14. They are
+committed so a change can be measured against something and a reviewer can
+see numbers in a diff. They are one machine's numbers, not a threshold, and
+nothing fails when they are exceeded. `baseline.json` is vitest's own
+`--outputJson` format, not `weasel-perf-result/1`; `BASELINE.md` is rendered
+from it by `bench-report.mjs`.
+
+```sh
+npm run perf:bench -- --compare tests/perf/bench/baseline.json   # run, with a delta column against it
+npm run perf:bench:baseline                                      # re-measure, overwrite both files
+```
+
+Re-record it when a change is *meant* to move the numbers, on an idle machine,
+and say what moved in the commit message. `bench-report.mjs` stamps the
+header with the date and machine it runs on, so run it only straight after
+the measurement it describes.
 
 They run from their own config, `vitest.bench.config.ts`, not as a project in
 the root `vitest.config.ts`, so no `--project` selection and no bare

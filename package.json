@@ -63,6 +63,7 @@
     "test:e2e:demos": "playwright test --config=tests/e2e/playwright.config.ts",
     "test:perf": "playwright test --config=tests/perf/playwright.config.ts",
     "perf:bench": "node tests/perf/bench.mjs",
+    "perf:bench:baseline": "vitest bench --run --config tests/perf/vitest.bench.config.ts --outputJson tests/perf/bench/baseline.json && node tests/perf/bench-report.mjs",
     "perf:compare": "node tests/perf/compare.mjs",
     "lint": "eslint packages apps",
     "changeset": "changeset",

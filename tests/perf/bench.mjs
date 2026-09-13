@@ -28,9 +28,12 @@ try {
     ['vitest', 'bench', '--run', '--config', 'tests/perf/vitest.bench.config.ts', '--outputJson', raw, ...filters],
     { cwd: REPO_ROOT, stdio: 'inherit' },
   );
-  if (res.status !== 0) process.exit(res.status ?? 1);
-  addVitestBench(run, JSON.parse(readFileSync(raw, 'utf8')));
-  run.write({ out });
+  if (res.status !== 0) {
+    process.exitCode = res.status ?? 1;
+  } else {
+    addVitestBench(run, JSON.parse(readFileSync(raw, 'utf8')));
+    run.write({ out });
+  }
 } finally {
   rmSync(dir, { recursive: true, force: true });
 }
