@@ -212,14 +212,27 @@ Priority tags:
   `activeTool` dep. Miss either and clicks do nothing, silently. Worth either a
   helper that mounts a tool set correctly or a line in `docs/extending.md`.
 
-- **(P3) A consumer that mounts the dispatcher itself has to draw its own
-  gesture previews.** `usePreviewGhostLayer` and `useDispatcherOverlayLayer` are
-  `<SceneCanvas>`-private — neither is exported from core's barrel — so the only
-  way to the ghost and overlay channels is to read
-  `Dispatcher.getInFlightHandles()` and render the poses by hand, which is what
-  the 3D lab does in `ghosts3d.ts`. The read seam is public and sufficient; what
-  is missing is a renderer-agnostic helper between a handle and a drawn ghost.
-  Surfaced by the 3D lab.
+- **(P3) The overlay half of the preview channel is still `<SceneCanvas>`-only.**
+  The ghost half is not any more: `resolvePreviews(sources, scene)` answers which
+  ids are in flight, whose preview wins, which are roots and which are merely
+  displaced, with no renderer in it — `usePreviewGhostLayer` draws from it and so
+  does the 3D lab. `OngoingOverlay` has no equivalent: a marquee, a lasso or an
+  insert preview reaches paint only through `useDispatcherOverlayLayer`, which is
+  not exported, and its `'commands'` variant is `DrawCommand[]` — core's 2D
+  renderer vocabulary, which a foreign renderer cannot execute. Answering it is
+  the kernel doc's open "does core's selection overlay port?".
+
+- **(P3) `<Lab>`'s shared canvas cannot sit behind its trials.** It mounts at
+  `z-index: 1` with `pointer-events: none`, above the trial DOM — right for
+  annotation marks over a 2D instrument, wrong for a 3D tenant, whose tiles are
+  opaque and want the canvas *behind* them in the space their rects are measured
+  in. Today such a lab has to paint its own chrome into GL, which is why the 3D
+  lab draws its selection outline there. Named from outside by klieg, whose three
+  GL labs cannot adopt `<Lab>` for this reason.
+
+- **(P3) A lab has nowhere to put a lab-level rail.** `SidebarRegion` is
+  per-trial, so a control that belongs to the whole lab has no region and a
+  consumer hand-rolls a header beside the shell. Same source.
 
 ### Pen tool follow-ups
 
