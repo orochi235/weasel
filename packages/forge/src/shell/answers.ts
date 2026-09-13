@@ -8,26 +8,31 @@ export interface AnswerBook extends SchemaAnswers {
 
 const KEPT_CONFIGS = 50;
 
-/** Keeps the last 50 configs' answers. A config it has no answer for shows every node and reports no errors. */
+const UNANSWERED = stableStringify({ hidden: [], errors: {} });
+
+/** Keeps the last 50 configs' answers. A config it has no answer for shows every node and reports no errors.
+ *  Subscribers hear of an answer only when it differs from the one held for its config. */
 export function createAnswerBook(): AnswerBook {
-  const hiddenByConfig = new Map<string, readonly string[]>();
+  const byConfig = new Map<string, { hidden: readonly string[]; key: string }>();
   let errors: Readonly<Record<string, string[]>> = {};
   const listeners = new Set<() => void>();
 
   return {
     record(answers) {
-      hiddenByConfig.delete(answers.configKey);
-      hiddenByConfig.set(answers.configKey, answers.hidden);
-      if (hiddenByConfig.size > KEPT_CONFIGS) {
-        const oldest = hiddenByConfig.keys().next().value;
-        if (oldest !== undefined) hiddenByConfig.delete(oldest);
+      const key = stableStringify({ hidden: answers.hidden, errors: answers.errors });
+      const changed = key !== (byConfig.get(answers.configKey)?.key ?? UNANSWERED);
+      byConfig.delete(answers.configKey);
+      byConfig.set(answers.configKey, { hidden: answers.hidden, key });
+      if (byConfig.size > KEPT_CONFIGS) {
+        const oldest = byConfig.keys().next().value;
+        if (oldest !== undefined) byConfig.delete(oldest);
       }
       // The frame lists only paths with errors, so a path absent from the latest answer has none.
       errors = answers.errors;
-      for (const fn of listeners) fn();
+      if (changed) for (const fn of listeners) fn();
     },
     hidden(path, config) {
-      const hidden = hiddenByConfig.get(stableStringify(config));
+      const hidden = byConfig.get(stableStringify(config))?.hidden;
       return hidden?.some((h) => path === h || path.startsWith(`${h}.`)) ?? false;
     },
     errors: (path) => errors[path] ?? [],

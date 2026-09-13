@@ -1,9 +1,11 @@
+import { Lab } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
-import { act, renderHook } from '@testing-library/react';
+import { act, render, renderHook, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import type { FromFrame } from '../protocol/messages';
+import { type FromFrame, stableStringify } from '../protocol/messages';
 import { describeSchema } from '../protocol/schema';
 import type { IndexEntry } from '../story/types';
+import { connectFrame, flush, installResizeObserver } from './labHarness';
 import { useStoryRegistry } from './useStoryRegistry';
 
 const a: IndexEntry = { id: 'x--a', title: 'X', name: 'A', exportName: 'A', file: '/x.stories.tsx' };
@@ -56,5 +58,36 @@ describe('useStoryRegistry', () => {
     expect(result.current.instruments.map((i) => i.name)).toEqual(['x--b']);
     rerender({ entries: index });
     expect(result.current.instruments[0]?.config?.defaults()).toEqual({});
+  });
+});
+
+describe('useStoryRegistry under a lab', () => {
+  installResizeObserver();
+
+  const conditional: Extract<FromFrame, { type: 'ready' }> = {
+    type: 'ready',
+    schema: describeSchema(f.schema({ show: f.boolean(true), size: f.number(4).showIf((c) => c.show === true) })),
+    layout: 'centered',
+    viewport: null,
+  };
+
+  function RegistryLab() {
+    const registry = useStoryRegistry([a], options);
+    return <Lab instruments={registry.instruments} defaultInstrument={a.id} />;
+  }
+
+  it('follows the frame’s answers in the settings panel without other input', async () => {
+    const view = render(<RegistryLab />);
+    const { frame } = connectFrame(view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement);
+    frame.send(conditional);
+    await flush();
+    expect(screen.getByLabelText('Size')).toBeTruthy();
+    frame.send({
+      type: 'answers',
+      answers: { configKey: stableStringify({ show: true, size: 4 }), hidden: ['size'], errors: {} },
+    });
+    await flush();
+    expect(screen.queryByLabelText('Size')).toBeNull();
+    frame.close();
   });
 });

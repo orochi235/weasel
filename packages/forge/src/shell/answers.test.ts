@@ -38,13 +38,23 @@ describe('createAnswerBook', () => {
     expect(book.hidden('x', { n: 50 })).toBe(true);
   });
 
-  it('notifies subscribers of each record until they unsubscribe', () => {
+  it('notifies subscribers when a config’s answer changes, until they unsubscribe', () => {
     const book = createAnswerBook();
     const fn = vi.fn();
     const off = book.subscribe(fn);
-    book.record({ configKey: key, hidden: [], errors: {} });
+    book.record({ configKey: key, hidden: ['d'], errors: {} });
     off();
     book.record({ configKey: key, hidden: [], errors: {} });
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  it('stays quiet for an answer that shows nothing new for its config', () => {
+    const book = createAnswerBook();
+    const fn = vi.fn();
+    book.subscribe(fn);
+    book.record({ configKey: key, hidden: [], errors: {} });
+    book.record({ configKey: key, hidden: ['d'], errors: { d: ['too big'] } });
+    book.record({ configKey: key, hidden: ['d'], errors: { d: ['too big'] } });
     expect(fn).toHaveBeenCalledTimes(1);
   });
 });

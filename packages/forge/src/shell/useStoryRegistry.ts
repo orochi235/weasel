@@ -1,5 +1,5 @@
 import type { Instrument, InstrumentList } from '@weasel-js/labkit';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { stableStringify } from '../protocol/messages';
 import type { IndexEntry } from '../story/types';
 import { type AnswerBook, createAnswerBook } from './answers';
@@ -16,6 +16,7 @@ interface Built {
   entryKey: string;
   ready: Ready | undefined;
   frameUrl: string;
+  revision: number;
   instrument: Instrument<unknown, unknown>;
 }
 
@@ -25,10 +26,16 @@ interface Cache {
   list: InstrumentList;
 }
 
+const pruned = <V>(map: ReadonlyMap<string, V>, ids: Set<string>): ReadonlyMap<string, V> =>
+  [...map.keys()].every((id) => ids.has(id)) ? map : new Map([...map].filter(([id]) => ids.has(id)));
+
 /** One instrument per story in `index`. Globals reach the frames through `StoryGlobalsContext`, not through here. */
 export function useStoryRegistry(index: readonly IndexEntry[], options: { frameUrl: string }): StoryRegistry {
   const { frameUrl } = options;
   const [readies, setReadies] = useState<ReadonlyMap<string, Ready>>(() => new Map());
+  // Bumped when a story's frame answers something new. labkit's panel re-reads the answer book only when
+  // the trial's config changes, and replacing the instrument is what refills it.
+  const [revisions, setRevisions] = useState<ReadonlyMap<string, number>>(() => new Map());
 
   const onReady = useCallback((entry: IndexEntry, ready: Ready) => {
     setReadies((prev) => {
@@ -40,34 +47,56 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: { frameU
 
   useEffect(() => {
     const ids = new Set(index.map((entry) => entry.id));
-    setReadies((prev) =>
-      [...prev.keys()].every((id) => ids.has(id)) ? prev : new Map([...prev].filter(([id]) => ids.has(id))),
-    );
+    setReadies((prev) => pruned(prev, ids));
+    setRevisions((prev) => pruned(prev, ids));
   }, [index]);
 
-  const cache = useRef<Cache>({ built: new Map(), books: new Map(), list: [] });
+  const committed = useRef<Cache>({ built: new Map(), books: new Map(), list: [] });
 
-  const instruments = useMemo(() => {
-    const previous = cache.current;
+  const cache = useMemo<Cache>(() => {
+    const previous = committed.current;
     const built = new Map<string, Built>();
     const books = new Map<string, AnswerBook>();
     const list = index.map((entry) => {
       const ready = readies.get(entry.id);
+      const revision = revisions.get(entry.id) ?? 0;
       const entryKey = stableStringify(entry);
       const answers = previous.books.get(entry.id) ?? createAnswerBook();
       books.set(entry.id, answers);
       const held = previous.built.get(entry.id);
       const kept =
-        held && held.entryKey === entryKey && held.ready === ready && held.frameUrl === frameUrl
+        held &&
+        held.entryKey === entryKey &&
+        held.ready === ready &&
+        held.frameUrl === frameUrl &&
+        held.revision === revision
           ? held
-          : { entryKey, ready, frameUrl, instrument: storyInstrument({ entry, ready, answers, frameUrl, onReady }) };
+          : {
+              entryKey,
+              ready,
+              frameUrl,
+              revision,
+              instrument: storyInstrument({ entry, ready, answers, frameUrl, onReady }),
+            };
       built.set(entry.id, kept);
       return kept.instrument;
     });
     const unchanged = list.length === previous.list.length && list.every((i, n) => i === previous.list[n]);
-    cache.current = { built, books, list: unchanged ? previous.list : list };
-    return cache.current.list;
-  }, [index, readies, frameUrl, onReady]);
+    return { built, books, list: unchanged ? previous.list : list };
+  }, [index, readies, revisions, frameUrl, onReady]);
 
-  return { instruments, onReady };
+  useLayoutEffect(() => {
+    committed.current = cache;
+  }, [cache]);
+
+  useEffect(() => {
+    const offs = [...cache.books].map(([id, book]) =>
+      book.subscribe(() => setRevisions((prev) => new Map(prev).set(id, (prev.get(id) ?? 0) + 1))),
+    );
+    return () => {
+      for (const off of offs) off();
+    };
+  }, [cache.books]);
+
+  return { instruments: cache.list, onReady };
 }
