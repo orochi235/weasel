@@ -135,9 +135,8 @@ export default defineConfig({
       },
       // Runs every CSF story as a Vitest test. Requires Playwright
       // (`@playwright/test` + a browser install). Opt-in via
-      // `npm run test:stories`; not included in default `npm test`
-      // because spinning up Chromium is slow and unnecessary for most
-      // dev-loop runs. CI / pre-release should still run this.
+      // `npm run test:stories`; not in `test`, `test:unit` or CI, because it
+      // pulls Playwright and ~250 MB of browser only to prove every story mounts.
       {
         plugins: [
           react(),
@@ -155,7 +154,8 @@ export default defineConfig({
         },
       },
       // Every story — native and CSF — rendered and played through forge's frame, with the workshop's
-      // frame setup. Opt-in via `npm run test:stories:forge`.
+      // frame setup. Opt-in via `npm run test:stories:forge`; kept out of `test`, `test:unit` and CI
+      // for the same reason as `storybook` above.
       {
         plugins: [
           react(),

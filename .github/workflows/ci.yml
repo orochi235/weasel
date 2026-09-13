@@ -57,10 +57,10 @@ jobs:
       # labkit carries its own biome config + class-prefix check (its tests run
       # in the `labkit` vitest project below).
       - run: npm run lint -w @weasel-js/labkit
-      # Skip the `storybook` vitest project. `@storybook/addon-vitest` would otherwise
-      # spin up headless Chromium and render every CSF story as a browser test on every
-      # push — pulls Playwright + ~250 MB of browser, adds wall-clock time, and exists
-      # only to validate that stories can mount. Run the real test projects only.
+      # Skip the `storybook` and `forge-stories` vitest projects. Both spin up headless
+      # Chromium and render every story as a browser test on every push — pulls
+      # Playwright + ~250 MB of browser, adds wall-clock time, and exists only to
+      # validate that stories can mount. Run the real test projects only.
       # A test file no project's include glob reaches is collected by nobody
       # and says nothing about it. Runs before the suite so an orphan surfaces
       # as its own failure rather than as a suspiciously small pass count.
