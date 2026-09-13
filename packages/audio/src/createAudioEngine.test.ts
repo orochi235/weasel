@@ -265,7 +265,7 @@ describe('createAudioEngine', () => {
     expect(playing.isPlaying()).toBe(true);
   });
 
-  it('unwires the whole chain when a voice stops', async () => {
+  it('takes a stopped voice off its bus, keeping only the chain for reuse', async () => {
     const { ctx, engine, tick } = engineHarness();
     await engine.unlock();
     const sound = await engine.load('/a.wav');
@@ -276,7 +276,7 @@ describe('createAudioEngine', () => {
     voice.stop();
     expect(source.stopped).toHaveLength(1);
     expect(source.connectedTo).toEqual([]);
-    expect(panner.connectedTo).toEqual([]);
+    expect(panner.connectedTo).toEqual([gain]);
     expect(gain.connectedTo).toEqual([]);
   });
 

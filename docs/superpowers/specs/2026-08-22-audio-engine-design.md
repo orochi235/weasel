@@ -112,12 +112,13 @@ engine.stopAll(): void
 `ctx.currentTime * 1000`). It exists from v1 specifically so the timeline bridge
 can schedule accurately — see below.
 
-**The pool is slot accounting; the nodes are per play.** `createVoicePool` owns
-no audio nodes at all — it hands out numbered slots, tracks `startedAt` and gain
-for the steal policy, and returns the token of whoever it evicted. The engine
-builds a `GainNode` + `StereoPannerNode` chain per `play()` and disconnects it in
-teardown. Holding that chain per slot instead is a real optimization and is not
-implemented: TODO.
+**The pool is slot accounting; the engine reuses the chains.** `createVoicePool`
+owns no audio nodes at all — it hands out numbered slots, tracks `startedAt` and
+gain for the steal policy, and returns the token of whoever it evicted. The
+engine takes a `GainNode` + `StereoPannerNode` chain from an idle list at
+`play()` and returns it at teardown, unwired from its bus: an idle chain left on
+the bus still costs the audio thread every render quantum. The list is not
+keyed by slot, because a booked voice holds a chain before it holds a slot.
 
 What must not be pooled is the source. `AudioBufferSourceNode` is single-use by
 specification: once stopped it cannot restart, so a pooled source produces a

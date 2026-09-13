@@ -35,10 +35,10 @@ export interface VoicePool {
  * Slot bookkeeping for concurrent voices, with a steal policy for when the
  * limit is reached.
  *
- * This is pure accounting — it owns no audio nodes. The caller builds the
- * `GainNode`/`StereoPannerNode` chain and mints a fresh `AudioBufferSourceNode`
- * per play, because a source node is single-use by specification and cannot be
- * restarted once stopped. Nothing is pooled but the slot numbers.
+ * This is pure accounting — it owns no audio nodes. The engine reuses its
+ * `GainNode`/`StereoPannerNode` chains separately, and mints a fresh
+ * `AudioBufferSourceNode` per play, because a source node is single-use by
+ * specification and cannot be restarted once stopped.
  */
 export function createVoicePool(opts: VoicePoolOptions): VoicePool {
   if (!(opts.limit >= 1)) {

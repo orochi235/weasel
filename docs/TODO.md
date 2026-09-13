@@ -1012,12 +1012,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   argument, which is precisely their function in the genre. Anything built here
   should let a consumer see which cue is being applied, not just hear it.
 
-- **(P2) Pool the voice node chain.** `createVoicePool` is slot accounting and
-  nothing more: the engine builds a `GainNode` and a `StereoPannerNode` per
-  `play()` and disconnects them in teardown. Holding a chain per slot and
-  reusing it — minting only the `AudioBufferSourceNode`, which is single-use by
-  specification — is the optimization the design assumed was already there.
-  Worth measuring before building: node construction may not be the cost.
 - **(P2) Timeline audio bridge** — an `EventTrack` firing `engine.play()` with
   `when: engine.now() + (event.t - playhead)`, so the sound lands at its true
   sub-frame time instead of inheriting frame jitter. Neither package imports the
