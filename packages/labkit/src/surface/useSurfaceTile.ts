@@ -1,12 +1,13 @@
 import { useCallback, useContext } from 'react';
 import { TrialIdContext } from '../state/context';
-import { SurfaceCanvasContext, SurfaceContext } from './SurfaceContext';
+import { SurfaceCanvasContext, SurfaceContext, type SurfaceLayer } from './SurfaceContext';
 import type { SurfaceHandle } from './useTiledSurface';
 
-/** The surface's shared buffer, or null where nothing paints one. What a tile
- *  hands to `paintInto`. */
-export function useSurfaceCanvas(): HTMLCanvasElement | null {
-  return useContext(SurfaceCanvasContext);
+/** One of the surface's two shared buffers, or null where nothing paints one.
+ *  What a tile hands to `paintInto`. See {@link SurfaceLayer} for which to ask
+ *  for; the default is the one over the trial DOM. */
+export function useSurfaceCanvas(layer: SurfaceLayer = 'over'): HTMLCanvasElement | null {
+  return useContext(SurfaceCanvasContext)[layer];
 }
 
 /** The surface above, or null. Use this where a surface is genuinely optional. */

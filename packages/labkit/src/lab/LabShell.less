@@ -61,14 +61,23 @@
   }
 }
 
-// The lab's one shared drawing buffer. Over the trials, because a tile's marks
-// annotate the instrument's own DOM; under the viewport chrome, whose z-overlay
-// outranks it; and inert, because every tile takes input from its own box.
+// The lab's two shared drawing buffers, stacked around the trials: marks that
+// annotate an instrument go over its DOM, an opaque renderer goes under it so
+// the pane can still hold a label or a control. Both sit under the viewport
+// chrome, whose z-overlay outranks them, and both are inert — every tile takes
+// input from its own box.
 .lk-lab__surface {
   position: absolute;
   inset: 0;
-  z-index: 1;
   pointer-events: none;
+}
+
+.lk-lab__surface--under {
+  z-index: 0;
+}
+
+.lk-lab__surface--over {
+  z-index: 1;
 }
 
 .lk-shell-footer {

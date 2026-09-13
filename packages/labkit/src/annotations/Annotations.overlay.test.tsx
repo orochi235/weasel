@@ -53,7 +53,7 @@ function Harness({ toolId = 'rect' }: { toolId?: string }) {
 
   return (
     <SurfaceContext.Provider value={surface}>
-      <SurfaceCanvasContext.Provider value={null}>
+      <SurfaceCanvasContext.Provider value={{ over: null, under: null }}>
         <div
           data-testid="stage"
           ref={(el) => {
@@ -206,7 +206,7 @@ describe('two trials of one instrument', () => {
       handle = surface;
       return (
         <SurfaceContext.Provider value={surface}>
-          <SurfaceCanvasContext.Provider value={null}>
+          <SurfaceCanvasContext.Provider value={{ over: null, under: null }}>
             <div
               ref={(el) => {
                 if (!el) return;

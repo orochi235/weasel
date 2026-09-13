@@ -12,7 +12,7 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { SurfaceContext } from '../surface/SurfaceContext';
-import { useSurfaceOptional, useSurfaceTile, useTileId } from '../surface/useSurfaceTile';
+import { useSurfaceCanvas, useSurfaceOptional, useSurfaceTile, useTileId } from '../surface/useSurfaceTile';
 import type { SurfaceFrame, SurfaceHandle } from '../surface/useTiledSurface';
 import { useTiledSurface } from '../surface/useTiledSurface';
 import { Lab } from './Lab';
@@ -43,9 +43,21 @@ let seen: SurfaceHandle | null | 'not-rendered' = 'not-rendered';
  *  trial is scoped by it, and the trial's id is minted by the store. */
 let paneTileId = 'pane';
 
+interface SeenCanvases {
+  over: HTMLCanvasElement | null;
+  under: HTMLCanvasElement | null;
+  byDefault: HTMLCanvasElement | null;
+}
+let seenCanvases: SeenCanvases = { over: null, under: null, byDefault: null };
+
 function Probe() {
   seen = useSurfaceOptional();
   paneTileId = useTileId('pane');
+  seenCanvases = {
+    over: useSurfaceCanvas('over'),
+    under: useSurfaceCanvas('under'),
+    byDefault: useSurfaceCanvas(),
+  };
   const tile = useSurfaceTile('pane');
   return <div data-testid="pane" ref={tile} />;
 }
@@ -66,10 +78,34 @@ describe('<Lab> surface provider', () => {
     expect(typeof (seen as unknown as SurfaceHandle).registerTile).toBe('function');
   });
 
-  it('mounts one inert buffer inside the lab body', () => {
+  it('stacks an under and an over buffer inside the lab body', () => {
     const { container } = render(<Lab instruments={[probeInstrument]} defaultInstrument="Probe" />);
     const canvases = container.querySelectorAll('.lk-lab__body > canvas.lk-lab__surface');
-    expect(canvases).toHaveLength(1);
+    expect(canvases).toHaveLength(2);
+    // Source order, because the z-index that separates them is in a stylesheet
+    // jsdom does not resolve — this is a proxy for the stacking, not proof of
+    // it. The real check is a browser.
+    expect([...canvases].map((c) => c.className)).toEqual([
+      'lk-lab__surface lk-lab__surface--under',
+      'lk-lab__surface lk-lab__surface--over',
+    ]);
+  });
+
+  it('hands a tenant whichever of the two it asks for', () => {
+    const { container } = render(<Lab instruments={[probeInstrument]} defaultInstrument="Probe" />);
+    const [underEl, overEl] = [...container.querySelectorAll('canvas.lk-lab__surface')];
+    expect(seenCanvases.over).toBe(overEl);
+    expect(seenCanvases.under).toBe(underEl);
+    expect(overEl).not.toBe(underEl);
+  });
+
+  it('defaults a tenant to the buffer over the trials', () => {
+    // Every tenant predating the split wants the over one: the surface was
+    // built for marks that annotate an instrument.
+    const { container } = render(<Lab instruments={[probeInstrument]} defaultInstrument="Probe" />);
+    const [underEl, overEl] = [...container.querySelectorAll('canvas.lk-lab__surface')];
+    expect(seenCanvases.byDefault).toBe(overEl);
+    expect(seenCanvases.byDefault).not.toBe(underEl);
   });
 
   it('mounts no buffer of its own when a host already owns the surface', () => {

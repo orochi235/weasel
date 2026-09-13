@@ -9,6 +9,8 @@ import {
   useState,
 } from 'react';
 import { useStore } from 'zustand/react';
+import { LabFooterRegion, LabHeaderRegion, labContributions } from '../chrome/LabChrome';
+import type { LabContribution } from '../chrome/labTypes';
 import type { TrialContribution } from '../chrome/types';
 import type { ConfigRule, ControlRenderer } from '../config/types';
 import { configDefaultsOf, serializersOf } from '../instrument/serializers';
@@ -64,6 +66,11 @@ export interface LabProps {
   footer?: ReactNode;
   /** Contributions added to every trial's chrome, after the instrument's own. */
   chrome?: readonly TrialContribution[];
+  /** Contributions to the lab's own chrome — its header bar, its tool rail and
+   *  its footer — rather than to every trial's. Rendered after `children` and
+   *  `footer`, which stay the way a lab drops arbitrary content into those
+   *  same two boxes. */
+  labChrome?: readonly LabContribution[];
   /** Built-in contribution ids to drop. Throws on an id that is not there. */
   suppress?: readonly string[];
   /** Tools offered lab-wide. A trial whose instrument declares none of its own
@@ -141,6 +148,7 @@ export function Lab({
   path,
   footer,
   chrome,
+  labChrome,
   suppress,
   tools,
   configRules,
@@ -176,31 +184,38 @@ export function Lab({
   if (panelHostsRef.current === null) panelHostsRef.current = createPanelHostRegistry();
 
   // One shared drawing surface for the whole lab, anchored to the body — tile
-  // rects compose against it, and every tile paints into the one buffer.
+  // rects compose against it, and both buffers compose against the same rects.
   // `Workspace` invalidates rects when the grid moves something a
   // ResizeObserver cannot see. A host that already owns a surface keeps it: a
   // lab embedded in a larger shared-surface app must not open a second GL
   // tenancy, and mounts no buffer of its own.
   const outerSurface = useSurfaceOptional();
-  const outerCanvas = useSurfaceCanvas();
-  const [ownCanvas, setOwnCanvas] = useState<HTMLCanvasElement | null>(null);
-  const ownCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const outerOver = useSurfaceCanvas('over');
+  const outerUnder = useSurfaceCanvas('under');
+  const [ownOver, setOwnOver] = useState<HTMLCanvasElement | null>(null);
+  const [ownUnder, setOwnUnder] = useState<HTMLCanvasElement | null>(null);
+  const ownOverRef = useRef<HTMLCanvasElement | null>(null);
+  const ownUnderRef = useRef<HTMLCanvasElement | null>(null);
   const bufferRef = useRef({ w: 0, h: 0 });
   const surfaceRef = useRef<ReturnType<typeof useTiledSurface> | null>(null);
 
   // Sizing the buffer clears all of it, so every tile has to repaint — not
-  // only the one whose move triggered the measurement.
+  // only the one whose move triggered the measurement. Both buffers are sized
+  // together off one comparison: they are the same box, so a tenant of either
+  // is looking at the same rects, and one invalidateAll covers both.
   const onFrame = useCallback((frame: SurfaceFrame) => {
-    const c = ownCanvasRef.current;
-    if (!c) return;
+    const canvases = [ownUnderRef.current, ownOverRef.current].filter((c) => c !== null);
+    if (canvases.length === 0) return;
     const w = Math.round(frame.size.width * frame.dpr);
     const h = Math.round(frame.size.height * frame.dpr);
     if (bufferRef.current.w !== w || bufferRef.current.h !== h) {
       bufferRef.current = { w, h };
-      c.width = w;
-      c.height = h;
-      c.style.width = `${frame.size.width}px`;
-      c.style.height = `${frame.size.height}px`;
+      for (const c of canvases) {
+        c.width = w;
+        c.height = h;
+        c.style.width = `${frame.size.width}px`;
+        c.style.height = `${frame.size.height}px`;
+      }
       surfaceRef.current?.invalidateAll();
       return;
     }
@@ -212,7 +227,13 @@ export function Lab({
   const ownSurface = useTiledSurface({ onFrame });
   surfaceRef.current = ownSurface;
   const surface = outerSurface ?? ownSurface;
-  const surfaceCanvas = outerSurface ? outerCanvas : ownCanvas;
+  const surfaceCanvases = useMemo(
+    () =>
+      outerSurface
+        ? { over: outerOver, under: outerUnder }
+        : { over: ownOver, under: ownUnder },
+    [outerSurface, outerOver, outerUnder, ownOver, ownUnder],
+  );
 
   const workspacePanels = useMemo<PanelDescriptor[]>(
     () =>
@@ -224,6 +245,12 @@ export function Lab({
     [undockedPanels],
   );
   const resolvedMode = useResolvedMode(modeValue);
+
+  // Tools and lab contributions share one id namespace, so they merge once
+  // here — before any region renders — and a collision throws rather than one
+  // of them silently losing.
+  const labChromeAll = useMemo(() => labContributions(tools, labChrome), [tools, labChrome]);
+  const hasFooterChrome = labChromeAll.some((c) => c.region === 'footer');
 
   useEffect(() => {
     if (mode && mode !== store.getState().mode) {
@@ -312,34 +339,55 @@ export function Lab({
             mode={modeValue}
             {...(pages ? { pages } : {})}
             {...(path !== undefined ? { path } : {})}
-            footer={footer}
+            footer={
+              hasFooterChrome ? (
+                <>
+                  {footer}
+                  <LabFooterRegion contributions={labChromeAll} />
+                </>
+              ) : (
+                footer
+              )
+            }
             header={
               <>
                 <LabHeader />
                 {children}
+                <LabHeaderRegion contributions={labChromeAll} />
               </>
             }
           >
             <PanelHostContext.Provider value={panelHostsRef.current}>
               <SurfaceContext.Provider value={surface}>
-                <SurfaceCanvasContext.Provider value={surfaceCanvas}>
+                <SurfaceCanvasContext.Provider value={surfaceCanvases}>
                   <div
                     className="lk-lab__body"
                     ref={outerSurface ? undefined : ownSurface.containerRef}
                   >
                     {outerSurface ? null : (
-                      // Above the trials and inert: the marks a tile paints have
-                      // to sit over the instrument's own DOM, and nothing on this
-                      // buffer takes input — each tile has its own input box.
-                      <canvas
-                        className="lk-lab__surface"
-                        ref={(el) => {
-                          ownCanvasRef.current = el;
-                          setOwnCanvas(el);
-                        }}
-                      />
+                      // Two buffers stacked around the trials, both inert —
+                      // each tile takes input from its own box. A tile's marks
+                      // annotate the instrument's DOM from over it; an opaque
+                      // renderer sits under it, so the pane can still hold a
+                      // label. The under one is first so it paints first.
+                      <>
+                        <canvas
+                          className="lk-lab__surface lk-lab__surface--under"
+                          ref={(el) => {
+                            ownUnderRef.current = el;
+                            setOwnUnder(el);
+                          }}
+                        />
+                        <canvas
+                          className="lk-lab__surface lk-lab__surface--over"
+                          ref={(el) => {
+                            ownOverRef.current = el;
+                            setOwnOver(el);
+                          }}
+                        />
+                      </>
                     )}
-                    {tools ? <LabPalette tools={tools} /> : null}
+                    <LabPalette contributions={labChromeAll} />
                     <Workspace
                       panels={workspacePanels}
                       ids={trials.map((w) => w.id)}

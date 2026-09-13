@@ -74,6 +74,13 @@ one contributes a single rect, and a trial with nothing to draw contributes none
   the DOM trick that resets a 2D canvas is a no-op here. Only the context that
   drew the pixels can erase them, which is why the clear is a tenant's to
   register.
+- **There are two buffers, and the default is the wrong one for an opaque
+  tenant.** `useSurfaceCanvas()` gives you the buffer *over* the trial DOM,
+  which is what a mark annotating an instrument wants and what every tenant
+  predating the split asked for. A renderer that fills its tile buries anything
+  the pane draws, so it wants `useSurfaceCanvas('under')` and a transparent
+  pane. Both buffers share one set of tile rects — rects are measured against
+  the surface container either way — so nothing else about a tenant changes.
 - **A tile that moves without resizing** is handled twice over, and it needs
   both. `Workspace` invalidates rects off the grid's own `node.placementChanged`,
   which catches the move being *ordered*; the surface then keeps measuring until

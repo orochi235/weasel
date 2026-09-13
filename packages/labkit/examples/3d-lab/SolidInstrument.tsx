@@ -64,7 +64,9 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   const tileId = useTileId(TILE);
   const attachTile = useSurfaceTile(TILE);
   const surface = useSurface();
-  const glCanvas = useSurfaceCanvas();
+  // Under the trials: the viewport is opaque and fills its pane, so on the
+  // over-buffer it would bury anything the pane's own DOM drew.
+  const glCanvas = useSurfaceCanvas('under');
   const rendererRef = useRef<Renderer3d | null>(null);
 
   const sceneRef = useRef<SolidScene | null>(null);
@@ -304,9 +306,10 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   const activeTool = useActiveToolContext();
   const actions = useActionsRegistry();
 
-  // `select.pick` is gated on the active tool declaring `creates-selection`,
-  // and eligibility reads the tool through this dep. Without it every
-  // capability-gated action stays ineligible and a click selects nothing.
+  // What actions read to know which tool is live. Not what gates `select.pick`:
+  // an `eligible: { capability }` rule reads `RuleCtx.allowedCapabilities`,
+  // which reaches the dispatcher only through `getRuleCtx` — unset here, so
+  // every eligibility rule is skipped and the action fires regardless.
   useDepSource('activeTool', () => activeTool);
 
   // A tool's own actions ride on its definition, and `<SceneCanvas>` is what

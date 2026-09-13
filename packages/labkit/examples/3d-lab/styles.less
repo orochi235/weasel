@@ -35,8 +35,9 @@
   font-variant-numeric: tabular-nums;
 }
 
-// The shared GL buffer paints over this, so the pane is only a measured box
-// and an input target. Anything drawn in it would be hidden behind the tile.
+// The viewport paints into the under-buffer, so the pane must stay transparent
+// for it to show through — and anything drawn in the pane now lands on top of
+// the 3D, which is the point of asking for that buffer.
 .td-pane {
   flex: 1 1 auto;
   min-height: 240px;
