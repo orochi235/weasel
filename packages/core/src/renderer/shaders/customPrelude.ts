@@ -53,7 +53,8 @@ void main() {
   v_uv = a_uv;
 
   float det = u_view[0][0] * u_view[1][1] - u_view[0][1] * u_view[1][0];
-  float invDet = det != 0.0 ? 1.0 / det : 1.0;
+  // A flat view has no inverse: every fragment reads the world origin, not a plausible wrong mapping.
+  float invDet = det != 0.0 ? 1.0 / det : 0.0;
   v_world = vec2(
     ((sx - u_view[2][0]) *  u_view[1][1] + (sy - u_view[2][1]) * -u_view[0][1]) * invDet,
     ((sx - u_view[2][0]) * -u_view[1][0] + (sy - u_view[2][1]) *  u_view[0][0]) * invDet

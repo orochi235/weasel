@@ -32,7 +32,7 @@ import type { FillStyle } from '@weasel-js/paint';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap, CanvasSelectionMode, SceneSlotConfig, SelectionOverlaySlotConfig } from './Canvas';
 import { wireSceneSlotToScene, composeAlphaFor } from './sceneSlotWiring';
-import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';
+import type { CanvasExtensionApi, CanvasViewHandle, SceneCanvasApi } from './canvasExtension';
 import type { Animator } from '../animation/types';
 import { useAnimator } from '../animation/useAnimator';
 import { useViewAnimation } from 'core/viewport/useViewAnimation';
@@ -58,6 +58,7 @@ import type { SnapStrategy } from 'interactions/gestures/types';
 import { dlog } from '../debug/flag';
 import { DeviceProfileProvider, useDeviceProfile } from '../core/device/useDeviceProfile';
 import { ViewRegistryProvider, useOptionalViewRegistry } from './viewRegistry';
+import { createSceneLayerGate, type ViewLayerPaint } from './sceneLayerPaint';
 import { ViewInputsProvider, type SurfaceViewInputs, type ViewRuleInputs } from './viewInputs';
 import { CanvasView, type CanvasViewProps } from './CanvasView';
 import type { DeviceProfile } from '../core/device/types';
@@ -70,7 +71,7 @@ import { useHandTool } from 'tools/builtin/hand';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
 import { createGestureSource, createDispatcherPreviewSources } from './SceneCanvas/dispatcherGestureBounds';
-import type { PickCamera } from './SceneCanvas/useSceneSelectTool';
+import type { PickView } from './SceneCanvas/useSceneSelectTool';
 import type { GesturePreviewSource } from './gestureBounds';
 import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
 import { createPathEditingOverlayLayer } from 'features/paths/pathEditingOverlayLayer';
@@ -313,6 +314,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     | 'onBackgroundClick' // SceneCanvas synthesizes this; not a consumer prop
     | 'getIsVisible'    // SceneCanvas synthesizes this from chromeVisibility
     | 'contentVersion'  // SceneCanvas wires this to the scene's own version
+    | 'layerVisibility' | 'layerOrder' // re-declared below: they gate picking here too
   >
   & {
     /** A `Scene` (typically from `useScene`) — or a `SerializedScene`
@@ -691,9 +693,9 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     /**
      * Optional animator to bind for per-frame redraws. When supplied,
      * SceneCanvas subscribes to `animator.onTick` and requests a redraw on
-     * every active animation frame. This is the supported way to drive
-     * repaints when an animation's effect is read from a non-scene channel
-     * (e.g. a custom `drawOne` consults `animator.colorOverrides`) — scene
+     * every active animation frame, and paints `animator.colorOverrides`
+     * onto the scene's nodes: the kit's path and shape painters apply them,
+     * and a custom `drawOne` receives them as `ctx.vertexColors`. Scene
      * mutations trigger repaints automatically, but `colorOverrides` writes
      * do not.
      *
@@ -822,6 +824,27 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     alphaFor?: (id: string) => number;
 
     /**
+     * Show or hide render layers in this canvas's own view, by id — the map
+     * `<Canvas>` takes. Each scene layer paints as its own render layer, keyed
+     * `scene:<layerId>`, so `{ 'scene:guides': false }` hides one scene layer
+     * here and nowhere else.
+     *
+     * A layer hidden this way is gone from this view: it does not paint, and a
+     * click, a marquee or Cmd+A here passes over it. Another view of the same
+     * scene — a `<CanvasView>`, a second canvas, a minimap — still shows it and
+     * can still take it. It applies on top of the scene's own
+     * `LayerRecord.visible` and cannot show a layer the scene hides.
+     */
+    layerVisibility?: Record<string, boolean>;
+
+    /**
+     * Draw order for this view, by render-layer id, bottom first. A listed
+     * order is the whole list: a scene layer left out of it is neither painted
+     * nor picked here. See `CanvasProps.layerOrder`.
+     */
+    layerOrder?: string[];
+
+    /**
      * Optional per-id pointer-interactivity predicate. When supplied, ids
      * for which the predicate returns `false` are excluded from hit-test
      * results — `getNodeAtPoint` returns null for those positions.
@@ -902,6 +925,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     debug,
     modalityHud,
     alphaFor,
+    layerVisibility,
+    layerOrder,
     isPointerInteractive,
     onDoubleClick,
     chromeVisibility,
@@ -1246,6 +1271,21 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [scene, alphaFor],
   );
 
+  // What this view paints of each scene layer, judged against the stack
+  // `<Canvas>` composed and read at pick time — so a consumer slot anchored
+  // between scene layers is weighed the way paint weighs it.
+  const surfaceViewRegistry = useOptionalViewRegistry();
+  const layerPaintRef = useRef<ViewLayerPaint>({ layerVisibility, layerOrder });
+  layerPaintRef.current = { layerVisibility, layerOrder };
+  const [sceneLayerGate] = useState(createSceneLayerGate);
+  const layerIsPainted = useCallback((layerId: string): boolean => (
+    sceneLayerGate(surfaceViewRegistry?.surface()?.layers() ?? [], layerPaintRef.current)(layerId)
+  ), [surfaceViewRegistry, sceneLayerGate]);
+  // Absent when this view hides nothing, so the walk skips the gate.
+  const viewLayerGate = layerVisibility !== undefined || layerOrder !== undefined
+    ? layerIsPainted
+    : undefined;
+
   const { adapter, selectTool: internalSelect, rotateTool, pickEvery: internalPickEvery, pickBest: internalPickBest, boundsOf: internalBoundsOf } = useSceneSelectTool({
     scene,
     selection,
@@ -1257,6 +1297,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     // composed function is just the override lookup, and the source resolves
     // that once per walk instead of once per candidate.
     ...(alphaFor ? { alphaOf: composedAlphaFor } : {}),
+    ...(viewLayerGate ? { layerIsPainted: viewLayerGate } : {}),
     selectTool: selectToolWithDefaults,
     ...(insertTool ? { insertTool } : {}),
     ...(layouts ? { layouts } : {}),
@@ -1283,8 +1324,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     };
     const base = makeGetNodeAtPoint(internalPickEvery, nodeResolver);
     if (!isPointerInteractive) return base;
-    return (wx: number, wy: number, camera?: PickCamera | null) => {
-      const hit = base(wx, wy, camera);
+    return (wx: number, wy: number, view?: PickView | null) => {
+      const hit = base(wx, wy, view);
       if (hit == null) return null;
       if (isPointerInteractive(hit.id) === false) return null;
       return hit;
@@ -1567,8 +1608,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       slot as SceneSlotConfig<Node<TData, TLayer, TPose>, TPose>,
       scene,
       alphaFor,
+      animator?.colorOverrides,
     );
-  }, [mergedLayers.scene, alphaFor, scene]);
+  }, [mergedLayers.scene, alphaFor, scene, animator]);
 
   // Preview-ghost layer: renders in-flight gesture poses on top of the
   // committed scene using the scene slot's `drawOne`, from whichever view's
@@ -1589,7 +1631,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Chrome-caps hover tracking: last-hovered NodeId fed into `ChromeCtx.hover`.
   // The hook attaches its own pointermove/leave listeners on the canvas and
   // caches the topmost-id from `getNodeAtPoint` on a ref. No re-renders.
-  const surfaceViewRegistry = useOptionalViewRegistry();
 
   const getNodeAtPointRefForHover = useRef(getNodeAtPoint);
   getNodeAtPointRefForHover.current = getNodeAtPoint;
@@ -1606,7 +1647,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       const origin = target?.origin ?? canvas.getBoundingClientRect();
       const view = target?.view ?? currentViewRef.current;
       const [x, y] = clientToWorldHelper(clientX, clientY, origin, view);
-      const hit = getNodeAtPointRefForHover.current?.(x, y, view);
+      // A view judges its own layers; the surface's gate is the picker's default.
+      const reg = target?.id != null
+        ? surfaceViewRegistry?.list().find((r) => r.id === target.id)
+        : undefined;
+      const hit = getNodeAtPointRefForHover.current?.(
+        x, y, reg ? { scale: view.scale, layerIsPainted: reg.layerIsPainted } : view,
+      );
       return hit ? { id: hit.id as NodeId } : null;
     },
     enabled: chromeVisibility !== undefined,
@@ -1940,6 +1987,18 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [],
   );
 
+  // Views added through the handle rather than declared as props or children.
+  const [addedViews, setAddedViews] = useState<readonly CanvasViewProps[]>([]);
+  const addView = useCallback((props: CanvasViewProps): CanvasViewHandle => {
+    setAddedViews((list) => [...list.filter((v) => v.id !== props.id), props]);
+    return {
+      id: props.id,
+      draw: (data, outer, dims) =>
+        surfaceViewRegistry?.list().find((r) => r.id === props.id)?.layer.draw(data, outer, dims) ?? [],
+      remove: () => setAddedViews((list) => list.filter((v) => v !== props)),
+    };
+  }, [surfaceViewRegistry]);
+
   // Merge the forwarded ref with our internalCanvasRef so the dispatcher can
   // read the canvas element even when the consumer also forwards a ref.
   // The handle exposed to consumers extends the primitive's with `ingest`
@@ -1954,6 +2013,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             animateView: viewAnimation.animate,
             stopViewAnimation: viewAnimation.stop,
             isViewAnimating: viewAnimation.isAnimating,
+            addView,
           }
         : null;
       canvasApiRef.current = extended;
@@ -1961,7 +2021,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       if (typeof ref === 'function') ref(extended);
       else if (ref) (ref as React.MutableRefObject<SceneCanvasApi | null>).current = extended;
     },
-    [ref, ingestImpl, viewAnimation],
+    [ref, ingestImpl, viewAnimation, addView],
   );
 
   // What a view needs to build its own overlay-aware state. `geometry` is the
@@ -2000,6 +2060,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       modalityHud={modalityHud}
       pickBest={internalPickBest}
       contentVersion={scene.getVersion}
+      layerVisibility={layerVisibility}
+      layerOrder={layerOrder}
       {...(viewProp !== undefined ? { view: viewProp } : { defaultView })}
       onViewChange={notifyViewChange}
       shaders={shaders}
@@ -2062,6 +2124,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 dispatcher={dispatcher}
                 getActionRef={getActionRef}
                 pickEvery={internalPickEvery}
+                layerIsPainted={viewLayerGate}
+                alphaOf={alphaFor ? composedAlphaFor : undefined}
                 viewportPanEnabled={viewport?.pan ?? true}
                 viewportZoom={resolvedViewportZoom}
                 viewportPinchZoom={viewport?.pinchZoom ?? true}
@@ -2107,6 +2171,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
               {viewDescriptors?.map((v, i) => (
                 <CanvasView key={v.id} {...v} order={v.order ?? i} />
               ))}
+              {addedViews.map((v) => <CanvasView key={`added:${v.id}`} {...v} />)}
               {children}
             </ActionsProviderIfRoot>
           </PointerProviderIfRoot>
@@ -2430,6 +2495,8 @@ function StandardActionsRegistrar({
   dispatcher,
   getActionRef,
   pickEvery,
+  layerIsPainted,
+  alphaOf,
   viewportPanEnabled,
   viewportZoom,
   viewportPinchZoom,
@@ -2476,6 +2543,12 @@ function StandardActionsRegistrar({
   /** World-space picker forwarded so the `nodeAtPoint` dep source can
    *  reuse the same hit-test plumbing the tool dispatcher uses. */
   pickEvery: (worldX: number, worldY: number) => string[];
+  /** This canvas's own view gate for scene layers, published on the `view`
+   *  dep and read by the selecting actions. Absent when it hides nothing. */
+  layerIsPainted?: (layerId: string) => boolean;
+  /** The composed paint alpha, when the consumer fades anything, so a region
+   *  select passes over what is painted at zero. */
+  alphaOf?: (id: string) => number;
   /** Resolved `viewport.pan` flag — default true, false to disable. */
   viewportPanEnabled: boolean | WheelPanOptions;
   /** Resolved `viewport.zoom` setting — `true` (default Cmd+wheel zoom),
@@ -2583,6 +2656,7 @@ function StandardActionsRegistrar({
     },
     viewAnimation,
     decayLoop,
+    layerIsPainted,
   );
   useStandardActions({ selection, scene, view, history: scene.history });
 
@@ -2594,13 +2668,13 @@ function StandardActionsRegistrar({
 
   // Per-dep wiring modules under `src/canvas/deps/`. See each file for the
   // dep's contract and trade-offs.
-  useAreaSelectDepSource(scene, selection, poseDescriptor, poseComposition);
+  useAreaSelectDepSource(scene, selection, poseDescriptor, poseComposition, alphaOf);
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(layouts);
   useInsertDepSource(scene, adapter, insertNodeFactories);
   useSnapDepSource(snapPoint);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestionResolveSrc, ingestionSvg, ingestionClipboard);
-  useLassoSelectDepSource(scene, selection, poseDescriptor, poseComposition);
+  useLassoSelectDepSource(scene, selection, poseDescriptor, poseComposition, alphaOf);
   useTextEditDepSource(scene);
   useEditAnchorsDepSource(scene, selection, adapter, editAnchorsExternalState, {
     anchorEditingAllowed,

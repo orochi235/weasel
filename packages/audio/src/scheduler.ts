@@ -21,9 +21,11 @@ export interface Scheduler {
   start(): void;
   /** Stop the timer. The queue survives; `clear()` empties it. */
   stop(): void;
-  /** Book `fire` for engine time `when`. It runs on the first pass whose
-   *  lookahead window reaches it, receiving `when` so it can hand the true
-   *  time to `source.start()` rather than "now". */
+  /** Book `fire` for engine time `when`, receiving `when` so it can hand the
+   *  true time to `source.start()` rather than "now". It runs on the first
+   *  pass whose lookahead window reaches it — or, when the window already
+   *  covers it and the scheduler is running, at the end of the current task,
+   *  in time order with everything else then due. */
   schedule(when: number, fire: (when: number) => void, key?: string): void;
   /** Drop queued events with this key. A pass takes its whole batch out of the
    *  queue before firing any of it, so a callback cannot cancel a sibling that
@@ -37,7 +39,9 @@ export interface Scheduler {
 
 /**
  * Lookahead scheduler. Each pass fires everything due within `lookahead` ms,
- * in time order, handing each callback its own scheduled time.
+ * in time order, handing each callback its own scheduled time. An event
+ * scheduled inside that window does not wait up to `interval` for the next
+ * pass: the end of the current task fires what is due then.
  *
  * It runs on its own timer rather than on an animation frame, which stops
  * entirely when nothing is animating. The timer is one-shot: the pass re-arms
@@ -52,7 +56,9 @@ export function createScheduler(opts: SchedulerOptions): Scheduler {
   let running = false;
   let handle: unknown = null;
 
-  const pass = (): void => {
+  let flushQueued = false;
+
+  const fireDue = (): void => {
     const horizon = opts.now() + lookahead;
     const due: Entry[] = [];
     const rest: Entry[] = [];
@@ -66,7 +72,18 @@ export function createScheduler(opts: SchedulerOptions): Scheduler {
         console.error('@weasel-js/audio scheduler: callback threw', err);
       }
     }
+  };
+
+  const pass = (): void => {
+    fireDue();
     if (running) handle = opts.setTimer(pass, interval);
+  };
+
+  // A microtask rather than firing inside `schedule()`: everything booked in
+  // one task is fired as one batch, sorted by time, exactly as a pass would.
+  const flush = (): void => {
+    flushQueued = false;
+    if (running) fireDue();
   };
 
   return {
@@ -83,6 +100,10 @@ export function createScheduler(opts: SchedulerOptions): Scheduler {
     },
     schedule(when, fire, key) {
       queue.push({ when, fire, key });
+      if (running && !flushQueued && when <= opts.now() + lookahead) {
+        flushQueued = true;
+        queueMicrotask(flush);
+      }
     },
     cancelKey(key) {
       queue = queue.filter((e) => e.key !== key);

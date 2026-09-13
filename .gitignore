@@ -24,8 +24,8 @@ debug-storybook.log
 /*.png
 !/weasel.png
 !/weasel-transparent*.png
-# Per-run benchmark output. The committed baseline is baseline.json / BASELINE.md.
-tests/bench/results/latest.json
+# Benchmark result files (tests/perf/README.md).
+tests/perf/results/
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
 .superpowers/

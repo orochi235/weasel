@@ -29,7 +29,7 @@ import {
   computeIndicatorCommand,
 } from './minimapMath';
 import type { IndicatorStyle, MinimapFit } from './minimapMath';
-import type { SceneViewDrawOne } from './sceneViewRender';
+import type { SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';
 import type { DrawCommand } from '../renderer/DrawCommand';
 import type { View } from '../core/viewport/view';
 import type { Scene } from '../core/scene/types';
@@ -72,6 +72,11 @@ export interface MinimapCanvasProps<TData, TLayer extends string, TPose> {
    *  `alphaFor`. Pass the same function the main canvas uses so a
    *  scoping-dim treatment shows up in the minimap too. */
   alphaFor?: (id: string) => number;
+  /** Hide scene layers in the minimap, keyed `scene:<layerId>` as on
+   *  `<SceneCanvas>` — pass the main canvas's map so both show the same set. */
+  layerVisibility?: SceneViewLayers['layerVisibility'];
+  /** Paint order for the minimap, keyed as `layerVisibility`. */
+  layerOrder?: SceneViewLayers['layerOrder'];
   /** Visual tuning of the indicator stroke. */
   indicatorStyle?: IndicatorStyle;
   /** CSS class for sizing / positioning the canvas. */
@@ -92,6 +97,8 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
     height,
     drawOne,
     alphaFor,
+    layerVisibility,
+    layerOrder,
     fit = 'scene',
     poseDescriptor,
     indicatorStyle,
@@ -210,6 +217,8 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
       drawOne={drawOne}
       extraCommands={extraCommands}
       alphaFor={alphaFor}
+      layerVisibility={layerVisibility}
+      layerOrder={layerOrder}
       className={className}
       canvasRef={setCanvasRef}
     />

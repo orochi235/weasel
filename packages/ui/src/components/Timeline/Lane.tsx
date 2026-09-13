@@ -118,7 +118,7 @@ export function Lane(props: LaneProps): ReactElement {
   const times = entryTimes(row);
 
   return (
-    <div className={s.lane} data-depth={row.depth} data-mode={mode}>
+    <div className={s.lane} data-depth={row.depth} data-mode={mode} data-graph={graph ? 'true' : undefined}>
       <div className={s.laneLabel}>
         {row.kind === 'timeline' ? (
           <span

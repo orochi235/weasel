@@ -267,12 +267,12 @@ export function staggerVertexColors(
   const maxDistance = Math.max(originIndex, n - 1 - originIndex);
   const totalMs = maxDistance * perAnchorDelay + anchorMs;
 
-  const override = (_base: readonly number[], tMs: number): number[] => {
+  const colorsAt = (elapsedMs: number): number[] => {
     const out = new Array<number>(from.length);
     for (let i = 0; i < n; i++) {
       const distance = Math.abs(i - originIndex);
       const startMs = distance * perAnchorDelay;
-      const localT = Math.max(0, Math.min(1, (tMs - startMs) / anchorMs));
+      const localT = Math.max(0, Math.min(1, (elapsedMs - startMs) / anchorMs));
       const eased = easing(localT);
       const k = i * 4;
       const fSlice = [from[k], from[k + 1], from[k + 2], from[k + 3]];
@@ -286,7 +286,9 @@ export function staggerVertexColors(
     return out;
   };
 
-  animator.colorOverrides.set(id, channel, override);
+  // A plain array, not a function override: painters call those with their
+  // own clock (`performance.now()`), not time since this stagger began.
+  animator.colorOverrides.set(id, channel, colorsAt(0));
 
   return animator.tween<number>({
     from: 0,
@@ -295,7 +297,9 @@ export function staggerVertexColors(
     easing: (t) => t,
     cancelKey: cancelKeyFor(id, channel),
     interpolate: (a, b, t) => a + (b - a) * t,
-    onTick: () => {},
+    onTick: (t) => {
+      animator.colorOverrides.set(id, channel, colorsAt(t * totalMs));
+    },
     onDone: () => {
       animator.colorOverrides.clear(id, channel);
       opts.onDone?.();

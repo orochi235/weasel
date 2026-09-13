@@ -11,7 +11,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { NodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import type { RuleCtx } from 'features/chrome-caps';
-import type { PickCamera } from './SceneCanvas/useSceneSelectTool';
+import type { PickView } from './SceneCanvas/useSceneSelectTool';
 
 /**
  * The part of a chrome-caps rule context that belongs to one view. Everything
@@ -33,13 +33,14 @@ export interface ViewRuleInputs {
  */
 export interface SurfaceViewInputs
   extends Pick<UseViewHelpersOpts<unknown>, 'adapter' | 'geometry' | 'boundsOf' | 'tools'> {
-  /** Every id under a world point, bottom-first. `camera` is the view the
-   *  point was produced under — a screen-pixel pick tolerance cannot be
-   *  converted without it, and the world point does not carry it. */
-  pickEvery?: (worldX: number, worldY: number, camera?: PickCamera | null) => string[];
+  /** Every id under a world point, bottom-first. `view` is the view the
+   *  point was produced under — a screen-pixel tolerance cannot be converted
+   *  without its scale, nor a layer judged without its paint, and the world
+   *  point carries neither. */
+  pickEvery?: (worldX: number, worldY: number, view?: PickView | null) => string[];
   /** The one id a click resolves to, collapsing parent/child the way the
    *  select tool does. Falls back to `pickEvery`'s last when absent. */
-  pickBest?: (worldX: number, worldY: number, camera?: PickCamera | null) => string | null;
+  pickBest?: (worldX: number, worldY: number, view?: PickView | null) => string | null;
   /** A hit node's routing-trait kind, so `target: 'kind:text'` bindings match. */
   kindOfNode?: (id: string) => string | undefined;
   /**

@@ -48,10 +48,53 @@ describe('selectAllAction (behavior)', () => {
     expect(run(scene)).toEqual(['shown']);
   });
 
+  it('skips nodes on a locked layer, and takes them again once unlocked', () => {
+    const scene = sceneWithHiddenLayer();
+    scene.setLayerLocked('fx', true);
+    expect(run(scene)).toEqual(['shown']);
+    scene.setLayerLocked('fx', false);
+    expect(run(scene)).toEqual(['shown', 'hidden']);
+  });
+
+  it('skips a child whose container sits on a locked layer', () => {
+    const scene = sceneWithHiddenLayer();
+    const box = scene.add({ kind: 'container', id: asNodeId('box'), layer: 'base', data: { v: 3 }, pose: { x: 0 } });
+    scene.add({ kind: 'leaf', id: asNodeId('kid'), layer: 'fx', data: { v: 4 }, pose: { x: 0 }, parent: box });
+    scene.setLayerLocked('base', true);
+    expect(run(scene)).toEqual(['hidden']);
+  });
+
   it('selects nothing when every layer is hidden', () => {
     const scene = sceneWithHiddenLayer();
     scene.setLayerVisible('base', false);
     scene.setLayerVisible('fx', false);
     expect(run(scene)).toEqual([]);
+  });
+});
+
+describe('selectAllAction — the asking view', () => {
+  it('leaves out a layer the asking view does not paint, though the scene shows it', () => {
+    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>({
+      systemLayers: [{ id: 'base' as const }],
+    });
+    scene.addLayer({ id: 'fx', name: 'Effects' });
+    scene.add({ kind: 'leaf', id: asNodeId('shown'), layer: 'base', data: { v: 1 }, pose: { x: 0 } });
+    scene.add({ kind: 'leaf', id: asNodeId('elsewhere'), layer: 'fx', data: { v: 2 }, pose: { x: 0 } });
+
+    const picked: string[][] = [];
+    (selectAllAction.invoker as { run(deps: never, params: never): void }).run(
+      {
+        scene,
+        selection: { set: (ids: string[]) => picked.push(ids) },
+        view: { layerIsPainted: (layer: string) => layer !== 'fx' },
+      } as never,
+      undefined as never,
+    );
+
+    expect(picked[0]).toEqual(['shown']);
+  });
+
+  it('declares the view dep, so a routed dispatch can hand it one', () => {
+    expect(selectAllAction.requires).toContain('view');
   });
 });

@@ -64,6 +64,46 @@ describe('<Canvas> ref handle: element vs surface', () => {
   });
 });
 
+describe('<Canvas> ref handle: getSurfaceRect', () => {
+  it('attached, is the whole canvas', async () => {
+    const ref = createRef<CanvasExtensionApi>();
+    await act(async () => {
+      render(<Canvas ref={ref} width={200} height={150} layers={{}} />);
+    });
+    expect(ref.current?.getSurfaceRect()).toEqual({ x: 0, y: 0, width: 200, height: 150 });
+  });
+
+  it('detached, is the pane rect and follows a pane that moves', async () => {
+    const ref = createRef<CanvasExtensionApi>();
+    const shared = document.createElement('canvas');
+    const input = document.createElement('div');
+    document.body.append(shared, input);
+    const pane = (x: number) => (
+      <Canvas
+        ref={ref}
+        width={380}
+        height={360}
+        layers={{}}
+        paintInto={{ canvas: shared, x, y: 20 }}
+        inputElement={input}
+      />
+    );
+
+    let rerender!: (ui: React.ReactElement) => void;
+    await act(async () => { ({ rerender } = render(pane(420))); });
+    const api = ref.current!;
+    expect(api.getSurfaceRect()).toEqual({ x: 420, y: 20, width: 380, height: 360 });
+
+    // Read through the handle already held: a consumer that captured it once
+    // must still see where the next paint goes.
+    await act(async () => { rerender(pane(40)); });
+    expect(api.getSurfaceRect()).toEqual({ x: 40, y: 20, width: 380, height: 360 });
+
+    shared.remove();
+    input.remove();
+  });
+});
+
 describe('<Canvas> detached client→world', () => {
   it('measures the input element, not the canvas painted into', async () => {
     const shared = document.createElement('canvas');

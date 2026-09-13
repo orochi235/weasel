@@ -135,6 +135,49 @@ describe('pickWalk — layers', () => {
     expect(pickAt(scene, 5, 5, { layerIsPainted: () => true })).toEqual([]);
   });
 
+  it('does not pick a node on a locked layer, though it still paints', () => {
+    const scene = rectScene();
+    scene.setLayerLocked('main', true);
+    expect(pickAt(scene, 5, 5)).toEqual([]);
+    scene.setLayerLocked('main', false);
+    expect(pickAt(scene, 5, 5)).toEqual(['a']);
+  });
+
+  it('a query that samples paint can ask for locked nodes back', () => {
+    const scene = rectScene();
+    scene.setLayerLocked('main', true);
+    const ids = pickWalk<RectPose>(scenePickSource(scene), {
+      includeLocked: true,
+      hits: (_n, p) => 5 >= p.x && 5 <= p.x + p.width && 5 >= p.y && 5 <= p.y + p.height,
+      clipAdmits: () => true,
+    });
+    expect(ids).toEqual(['a']);
+  });
+
+  it("does not pick a child of a container on a locked layer", () => {
+    const scene = rectScene();
+    const box = scene.add({
+      kind: 'container', layer: 'main', id: asNodeId('box'),
+      pose: { x: 100, y: 100, width: 40, height: 40 }, data: { kind: 'group' },
+    });
+    scene.add({
+      kind: 'leaf', layer: 'top', id: asNodeId('kid'), parent: box,
+      pose: { x: 100, y: 100, width: 40, height: 40 }, data: { kind: 'rect' },
+    });
+    expect(pickAt(scene, 105, 105)).toEqual(['box', 'kid']);
+    scene.setLayerLocked('main', true);
+    expect(pickAt(scene, 105, 105)).toEqual([]);
+  });
+
+  it('a marquee does not take a node on a locked layer', () => {
+    const scene = rectScene();
+    const all = { x: -10, y: -10, width: 100, height: 100 };
+    expect(hitTestArea(scene as never, all)).toEqual(['a', 'b']);
+    scene.setLayerLocked('main', true);
+    expect(hitTestArea(scene as never, all)).toEqual([]);
+    expect(sceneToAdapter(scene).hitTestArea!(all)).toEqual([]);
+  });
+
   it('only an explicit false hides a layer', () => {
     expect(hiddenLayerIds([{ id: 'a' }, { id: 'b', visible: false }])).toEqual(new Set(['b']));
   });

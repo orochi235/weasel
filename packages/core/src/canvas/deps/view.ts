@@ -26,6 +26,7 @@ interface Wiring {
   hostSize?: () => { width: number; height: number } | null;
   animation?: ViewAnimationApi;
   decay?: DecayApi;
+  layerIsPainted?: (layerId: string) => boolean;
 }
 
 /** The slice of `useDecayLoop` the view dep republishes. */
@@ -41,16 +42,19 @@ export function useViewDepSource(
   hostSize?: () => { width: number; height: number } | null,
   animation?: ViewAnimationApi,
   decay?: DecayApi,
+  layerIsPainted?: (layerId: string) => boolean,
 ): ViewApi {
   // Every method reads through this, so the latest onViewChange / recenter /
   // runner is captured without the API object itself changing identity.
-  const wiring = useRef<Wiring>({ currentViewRef, onViewChange, recenter, hostSize, animation, decay });
-  wiring.current = { currentViewRef, onViewChange, recenter, hostSize, animation, decay };
+  const wiring = useRef<Wiring>({
+    currentViewRef, onViewChange, recenter, hostSize, animation, decay, layerIsPainted,
+  });
+  wiring.current = { currentViewRef, onViewChange, recenter, hostSize, animation, decay, layerIsPainted };
 
   // An unwired optional member must read falsy — `viewportZoomAction` branches
   // on `view.recenter`, and a forwarder is truthy — so the identity-stable API
   // is rebuilt whenever that presence set changes.
-  const shape = `${recenter ? 'r' : ''}${hostSize ? 'h' : ''}${animation ? 'a' : ''}${decay ? 'd' : ''}`;
+  const shape = `${recenter ? 'r' : ''}${hostSize ? 'h' : ''}${animation ? 'a' : ''}${decay ? 'd' : ''}${layerIsPainted ? 'l' : ''}`;
   const shapeRef = useRef<string | null>(null);
   const viewApiRef = useRef<ViewApi | null>(null);
 
@@ -79,6 +83,9 @@ export function useViewDepSource(
             decay: (config: DecayLoopConfig) => wiring.current.decay!.start(config),
             stopDecay: () => wiring.current.decay!.cancel(),
           }
+        : {}),
+      ...(layerIsPainted
+        ? { layerIsPainted: (layerId: string) => wiring.current.layerIsPainted!(layerId) }
         : {}),
     };
   }

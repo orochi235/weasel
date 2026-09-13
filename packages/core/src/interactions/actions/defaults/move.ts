@@ -68,6 +68,7 @@ import {
   type PoseDescriptor,
 } from '../resize/geometry';
 import { poseDescriptorOf } from '../poseDescriptorDep';
+import { isAnchorOrControl } from '@weasel-js/routing';
 import type { MoveBehavior, GroupTransform, GestureContext, BehaviorResult } from '../../gestures/types';
 import { moveGestureAdapter, type MoveGestureAdapter } from '../move/gestureAdapter';
 import {
@@ -620,6 +621,9 @@ export const moveAction: Action & { requires: string[] } = {
         ?? IDENTITY_POSE_COMPOSITION;
 
       if (!selection || !scene) return {};
+      // Anchors sit on the selected body, and this binding ties editAnchors' on
+      // specificity; with no mode registry to filter move out, declining is what lets it through.
+      if (isAnchorOrControl(ctx.drag?.affordance)) return {};
 
       const ids = selection.get() as NodeId[];
       if (ids.length === 0) return {};

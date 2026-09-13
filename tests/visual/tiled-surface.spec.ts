@@ -105,3 +105,25 @@ test('tiled-surface — an even-odd hole stays a hole', async ({ page }) => {
   // …and the body is the ring's fill, so the probe is not just missing the shape.
   near(px.body, [0x6b, 0x4c, 0x9a]);
 });
+
+test('tiled-surface — the right pane’s loupe reads its own pixels', async ({ page }) => {
+  await ready(page);
+  const box = (await page.getByTestId('tiled-surface').boundingBox())!;
+
+  // Pane B's 'box' node covers CSS (580,160)-(780,320) on the surface; its
+  // middle is pane-local (260,220). A readback that ignored the pane origin
+  // would read surface (260,220) instead, inside pane A.
+  await page.mouse.move(box.x + 670, box.y + 230);
+  await page.mouse.move(box.x + 680, box.y + 240);
+  await expect(page.getByTestId('loupe-color')).toHaveText('#2d5f9a');
+  await page.waitForTimeout(600);   // readback → createImageBitmap → redraw
+
+  // `LOUPE_BOUNDS` in the demo puts the lens at pane-local (10,180) 140x170,
+  // so surface (500,285) is well inside its content.
+  const px = await page.evaluate(probe({ lens: [500, 285], underAim: [680, 240] }));
+  near(px.lens, [0x2d, 0x5f, 0x9a]);
+
+  // The reported color is the pixel under the aim on the frame that landed.
+  const hex = '#' + px.underAim.slice(0, 3).map((c) => c.toString(16).padStart(2, '0')).join('');
+  await expect(page.getByTestId('loupe-color')).toHaveText(hex);
+});

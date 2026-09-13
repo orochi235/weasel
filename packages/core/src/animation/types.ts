@@ -259,8 +259,8 @@ export interface Animator {
    * pure function of the playhead; event tracks fire only on forward playback.
    */
   timeline(opts: TimelineOptions): TimelineHandle;
-  /** Per-node, per-channel color override registry consulted by the renderer's
-   *  path layer before reading consumer accessors. Used by `tweenVertexColors`,
+  /** Per-node, per-channel color override registry, painted onto scene nodes
+   *  by `<SceneCanvas animator>` and read by `createPathLayer`. Used by `tweenVertexColors`,
    *  `springVertexColors`, `cycleVertexColors`, `staggerVertexColors`. Cleared
    *  automatically on animator unmount. */
   colorOverrides: ColorOverrideRegistry;

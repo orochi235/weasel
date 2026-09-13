@@ -129,22 +129,23 @@ describe('textLineBoxes', () => {
     expect(emptyRuns[0].width).toBeCloseTo(fromText[0].width);
   });
 
-  it('wraps at the pose width by default, and not at maxWidth Infinity', () => {
+  it('wraps at the pose width only when the style declares wrap', () => {
     const text = 'AAAA BBBB AAAA';
-    const wrapped = textLineBoxes(pose({ text, width: 60, style: { fontSize: 20 } }));
-    const unwrapped = textLineBoxes(
-      pose({ text, width: 60, style: { fontSize: 20 } }),
-      { maxWidth: Infinity },
-    );
-    expect(wrapped.length).toBeGreaterThan(1);
+    const unwrapped = textLineBoxes(pose({ text, width: 60, style: { fontSize: 20 } }));
+    const wrapped = textLineBoxes(pose({ text, width: 60, style: { fontSize: 20, wrap: true } }));
     expect(unwrapped).toHaveLength(1);
+    expect(wrapped.length).toBeGreaterThan(1);
   });
 
-  it('aligns within the pose width at maxWidth Infinity', () => {
-    const opts = { maxWidth: Infinity };
-    const center = textLineBoxes(pose({ style: { fontSize: 20, align: 'center' } }), opts)[0];
-    const right = textLineBoxes(pose({ style: { fontSize: 20, align: 'right' } }), opts)[0];
+  it('aligns an unwrapped line within the pose width', () => {
+    const center = textLineBoxes(pose({ style: { fontSize: 20, align: 'center' } }))[0];
+    const right = textLineBoxes(pose({ style: { fontSize: 20, align: 'right' } }))[0];
     expect(center.x + center.width / 2).toBeCloseTo(300);
     expect(right.x + right.width).toBeCloseTo(500);
+  });
+
+  it('resolves start against the direction, as the painter does', () => {
+    const rtl = textLineBoxes(pose({ style: { fontSize: 20, align: 'start', direction: 'rtl' } }))[0];
+    expect(rtl.x + rtl.width).toBeCloseTo(500);
   });
 });

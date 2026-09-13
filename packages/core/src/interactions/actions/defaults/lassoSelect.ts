@@ -30,7 +30,7 @@
 
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '@weasel-js/routing';
-import type { LassoSelectDep } from '../depSchema';
+import type { LassoSelectDep, ViewApi } from '../depSchema';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -59,6 +59,8 @@ const MIN_VERTEX_SPACING = 2; // world-px (matches useLassoSelect default)
 
 interface LassoScratch {
   dep: LassoSelectDep;
+  /** The view the lasso started in: what it does not paint is not taken. */
+  view: ViewApi | undefined;
   vertices: Point2[];
   shiftHeld: boolean;
   /** Current pointer position — paint the live "close-line" from the last
@@ -90,7 +92,7 @@ export const lassoSelectAction: Action & { requires: string[] } = {
   label: 'Lasso Select',
   defaultBinding: { kind: 'drag', mods: { shift: 'optional' } },
   eligible: { capability: 'creates-selection' },
-  requires: ['lassoSelect'],
+  requires: ['lassoSelect', 'view'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {
@@ -99,6 +101,7 @@ export const lassoSelectAction: Action & { requires: string[] } = {
 
       const scratch: LassoScratch = {
         dep,
+        view: ctx.deps.view as ViewApi | undefined,
         vertices: [{ x: ctx.world.x, y: ctx.world.y }],
         shiftHeld: ctx.modifiers.shift,
         currentX: ctx.world.x,
@@ -133,7 +136,7 @@ export const lassoSelectAction: Action & { requires: string[] } = {
           scratch.open = false;
           if (reason === 'cancel') return;
 
-          const { dep: d, vertices, shiftHeld } = scratch;
+          const { dep: d, view, vertices, shiftHeld } = scratch;
 
           // Need at least 3 vertices for a meaningful polygon; otherwise no-op.
           if (vertices.length < 3) {
@@ -144,10 +147,10 @@ export const lassoSelectAction: Action & { requires: string[] } = {
           // Hit-test: prefer polygon test; fall back to AABB.
           let hits: string[];
           if (d.hitTestLasso) {
-            hits = d.hitTestLasso(vertices, 'centers');
+            hits = d.hitTestLasso(vertices, 'centers', view);
           } else {
             const aabb = polygonAABB(vertices);
-            hits = aabb ? d.hitTestArea(aabb) : [];
+            hits = aabb ? d.hitTestArea(aabb, view) : [];
           }
 
           if (shiftHeld) {

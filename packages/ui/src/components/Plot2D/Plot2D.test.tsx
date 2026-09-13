@@ -121,3 +121,87 @@ describe('Plot2D — pointer forwarding', () => {
     expect(coords.model.y).toBeCloseTo(0.5, 6);
   });
 });
+
+describe('Plot2D — ticks', () => {
+  const lines = (c: Element, axis: 'x' | 'y') => c.querySelectorAll(`[data-plot-element="tick"][data-axis="${axis}"]`);
+  const labels = (c: Element, axis: 'x' | 'y') =>
+    [...c.querySelectorAll(`[data-plot-element="tick-label"][data-axis="${axis}"]`)].map((el) => el.textContent);
+
+  it('draws no ticks unless asked', () => {
+    const { container } = render(<Plot2D width={200} height={100} yRange={[0, 100]} />);
+    expect(container.querySelectorAll('[data-plot-element^="tick"]').length).toBe(0);
+  });
+
+  it('labels round values that fit a 72px lane', () => {
+    const { container } = render(
+      <Plot2D width={200} height={72} yRange={[-0.095, 1.095]} yTicks={{}} />,
+    );
+    expect(labels(container, 'y')).toEqual(['0.0', '0.5', '1.0']);
+    expect(lines(container, 'y').length).toBe(3);
+  });
+
+  it('places each y tick at its value', () => {
+    const { container } = render(<Plot2D width={200} height={100} yRange={[0, 100]} yTicks={{ minSpacing: 20 }} />);
+    const ys = [...lines(container, 'y')].map((l) => Number(l.getAttribute('y1')));
+    expect(ys).toHaveLength(4);
+    [80, 60, 40, 20].forEach((y, i) => expect(ys[i]).toBeCloseTo(y, 9));
+  });
+
+  it('adds ticks as the plot grows taller', () => {
+    const short = render(<Plot2D width={200} height={72} yRange={[0, 1]} yTicks={{}} />);
+    const shortCount = lines(short.container, 'y').length;
+    short.unmount();
+    const tall = render(<Plot2D width={200} height={480} yRange={[0, 1]} yTicks={{}} />);
+    expect(lines(tall.container, 'y').length).toBeGreaterThan(shortCount);
+  });
+
+  it('hands the formatter the shared decimals and step', () => {
+    const format = vi.fn((v: number, ctx: { decimals: number; step: number }) => `${v.toFixed(ctx.decimals)}%`);
+    const { container } = render(
+      <Plot2D width={200} height={72} yRange={[-0.095, 1.095]} yTicks={{ format }} />,
+    );
+    expect(labels(container, 'y')).toEqual(['0.0%', '0.5%', '1.0%']);
+    expect(format).toHaveBeenCalledWith(0.5, { decimals: 1, step: 0.5 });
+  });
+
+  it('draws only lines when labels are off, and only labels when lines are off', () => {
+    const bare = render(<Plot2D width={200} height={100} yRange={[0, 100]} yTicks={{ labels: false }} />);
+    expect(lines(bare.container, 'y').length).toBeGreaterThan(0);
+    expect(labels(bare.container, 'y')).toEqual([]);
+    bare.unmount();
+    const text = render(<Plot2D width={200} height={100} yRange={[0, 100]} yTicks={{ lines: false }} />);
+    expect(lines(text.container, 'y').length).toBe(0);
+    expect(labels(text.container, 'y').length).toBeGreaterThan(0);
+  });
+
+  it('draws given values inside the range as given', () => {
+    const { container } = render(
+      <Plot2D width={200} height={100} xRange={[0, 10]} xTicks={{ values: [-1, 0, 2.5, 10, 11] }} />,
+    );
+    expect(labels(container, 'x')).toEqual(['0.0', '2.5', '10.0']);
+    expect([...lines(container, 'x')].map((l) => Number(l.getAttribute('x1')))).toEqual([0, 50, 200]);
+  });
+
+  it('hangs outside labels off the plot edge', () => {
+    const { container } = render(
+      <Plot2D width={200} height={100} yRange={[0, 100]} yTicks={{ minSpacing: 20, labels: 'outside' }} />,
+    );
+    const label = container.querySelector('[data-plot-element="tick-label"][data-axis="y"]')!;
+    expect(Number(label.getAttribute('x'))).toBeLessThan(0);
+    expect(label.getAttribute('text-anchor')).toBe('end');
+  });
+
+  it('holds labels gap pixels off the edge', () => {
+    const { container } = render(
+      <Plot2D width={200} height={100} yRange={[0, 100]} yTicks={{ minSpacing: 20, labels: 'outside', gap: 10 }} />,
+    );
+    const label = container.querySelector('[data-plot-element="tick-label"][data-axis="y"]')!;
+    expect(Number(label.getAttribute('x'))).toBe(-10);
+  });
+
+  it('hides tick labels from assistive technology', () => {
+    const { container } = render(<Plot2D width={200} height={100} yRange={[0, 100]} yTicks={{}} />);
+    const group = container.querySelector('[data-plot-element="tick-label"]')!.closest('g')!;
+    expect(group.getAttribute('aria-hidden')).toBe('true');
+  });
+});

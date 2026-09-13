@@ -85,8 +85,6 @@ verifies that advertised export paths exist in the tarball.
   gate can see.
 - **No devDependency pairing.** npm links workspace siblings regardless; the
   three pre-existing peers build today without one.
-- **The umbrella `weasel-js`** is private and unpublished, so its `core`
-  dependency settles nothing until the package has a name that publishes.
 
 ## What this costs consumers
 

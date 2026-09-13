@@ -12,6 +12,8 @@
  *                                              m10*x + m11*y + ty]`.
  */
 
+import { invert as invertAffine } from '@weasel-js/geom';
+
 export type Mat3 = Float32Array;
 
 function create(a: number, b: number, c: number, d: number, tx: number, ty: number): Mat3 {
@@ -55,23 +57,11 @@ function scale(m: Mat3, sx: number, sy: number): Mat3 {
   return multiply(m, s);
 }
 
-/**
- * Inverse of an affine matrix. Returns identity for a singular matrix
- * (determinant 0) — a degenerate transform collapses every point onto a
- * line, so there is no meaningful inverse and callers get an unmapped
- * space rather than NaNs propagating into a shader uniform.
- */
-function invert(m: Mat3): Mat3 {
-  const a = m[0], b = m[1];
-  const c = m[3], d = m[4];
-  const tx = m[6], ty = m[7];
-  const det = a * d - b * c;
-  if (det === 0 || !Number.isFinite(det)) return identity();
-  const ia = d / det;
-  const ib = -b / det;
-  const ic = -c / det;
-  const id = a / det;
-  return create(ia, ib, ic, id, -(ia * tx + ic * ty), -(ib * tx + id * ty));
+/** Inverse of an affine matrix, or `null` when `@weasel-js/geom`'s `invert`
+ *  finds it singular — the same rule, read through this layout. */
+function invert(m: Mat3): Mat3 | null {
+  const inv = invertAffine([m[0], m[1], m[3], m[4], m[6], m[7]]);
+  return inv && create(inv[0], inv[1], inv[2], inv[3], inv[4], inv[5]);
 }
 
 function apply(m: Mat3, x: number, y: number): [number, number] {

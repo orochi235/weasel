@@ -245,6 +245,20 @@ describe('Lane in graph mode', () => {
     expect(screen.getAllByTestId('timeline-key')).toHaveLength(2);
   });
 
+  it('labels its value axis with round values', () => {
+    const rect = Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = function tallLane() {
+      return { x: 0, y: 0, top: 0, left: 0, right: TRACK_WIDTH, bottom: 72, width: TRACK_WIDTH, height: 72, toJSON: () => {} } as DOMRect;
+    };
+    try {
+      render(<Lane {...base} mode="graph" row={laneOf(sampled)} />);
+      const labels = [...document.querySelectorAll('[data-plot-element="tick-label"][data-axis="y"]')].map((el) => el.textContent);
+      expect(labels).toEqual(['0', '5', '10']);
+    } finally {
+      Element.prototype.getBoundingClientRect = rect;
+    }
+  });
+
   it('stays a dope row for an event track', () => {
     render(<Lane {...base} mode="graph" row={laneOf(eventTrack)} />);
     expect(document.querySelector('[data-curve-element="curve"]')).not.toBeInTheDocument();

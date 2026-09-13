@@ -1,6 +1,7 @@
 /** Initial scene content for TextDemo — six text nodes covering single-line,
  *  multi-line, alignment, themed-editor styling, inline rich-text runs, and
- *  run-level decoration + tracking. */
+ *  run-level decoration + tracking. Every node declares `wrap`, so resizing
+ *  one re-wraps it. */
 import { solid } from '@weasel-js/core';
 import type { RectPose, TextPose } from '@weasel-js/core';
 
@@ -18,7 +19,7 @@ export const INITIAL_TEXT_NODES: TextNode[] = [
     height: 80,
     text: 'Click to select. Double-click to edit.\nDrag a selected node to move it.',
     fill: solid('#1c1c1c'),
-    style: { fontSize: 16 },
+    style: { fontSize: 16, wrap: true },
   },
   {
     id: 't2',
@@ -28,7 +29,7 @@ export const INITIAL_TEXT_NODES: TextNode[] = [
     height: 60,
     text: 'Center-aligned.',
     fill: solid('#3a4a8a'),
-    style: { fontSize: 20, align: 'center', fontWeight: 600 },
+    style: { fontSize: 20, align: 'center', fontWeight: 600, wrap: true },
   },
   {
     // The only scene that pins decoration geometry and tracking by pixels.
@@ -52,7 +53,7 @@ export const INITIAL_TEXT_NODES: TextNode[] = [
       { text: '.' },
     ],
     fill: solid('#1c1c1c'),
-    style: { fontSize: 16 },
+    style: { fontSize: 16, wrap: true },
   },
   {
     id: 't3',
@@ -62,7 +63,7 @@ export const INITIAL_TEXT_NODES: TextNode[] = [
     height: 40,
     text: 'Enter commits, Shift+Enter newline, Escape cancels.',
     fill: solid('#6a6a6a'),
-    style: { fontSize: 14, fontStyle: 'italic' },
+    style: { fontSize: 14, fontStyle: 'italic', wrap: true },
   },
   {
     id: 't4',
@@ -75,6 +76,7 @@ export const INITIAL_TEXT_NODES: TextNode[] = [
     style: {
       fontSize: 16,
       fontWeight: 600,
+      wrap: true,
       caretColor: '#ff00ff',
       selectionBackground: '#ffeb3b',
       selectionColor: '#000',
@@ -97,6 +99,6 @@ export const INITIAL_TEXT_NODES: TextNode[] = [
       { text: ' word.' },
     ],
     fill: solid('#1c1c1c'),
-    style: { fontSize: 16 },
+    style: { fontSize: 16, wrap: true },
   },
 ];

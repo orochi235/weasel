@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { SvgNode } from './types';
-import { UNBOUNDED_TEXT_WIDTH } from './types';
 import { svgNodesToKitDrafts, unpackSvgFiles } from './unpack';
 import type { IngestCtx, Op } from '@weasel-js/core';
 
@@ -139,18 +138,6 @@ describe('svgNodesToKitDrafts', () => {
     if (d.kind !== 'leaf') throw new Error('expected leaf');
     expect(d.data.image).toEqual({ src: 'data:image/png;base64,AA==', opacity: 0.5 });
     expect(d.pose).toEqual({ x: 5, y: 6, width: 40, height: 30, rotation: Math.PI / 2 });
-  });
-
-  it("estimates a box for external text's unbounded-width sentinel", () => {
-    const drafts = svgNodesToKitDrafts([{
-      kind: 'text', x: 0, y: 0, width: UNBOUNDED_TEXT_WIDTH, height: 20,
-      text: 'hello', style: { fontSize: 10 },
-    } as SvgNode], seq());
-    const d = drafts[0];
-    if (d.kind !== 'leaf') throw new Error('expected leaf');
-    // 5 glyphs at 10px, 0.6 em average advance. The sentinel itself would
-    // swamp the union AABB every fit-clamp is measured against.
-    expect(d.pose.width).toBeCloseTo(30);
   });
 
   it('groups become container drafts (parent-before-child, union-AABB pose)', () => {

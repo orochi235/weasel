@@ -10,7 +10,7 @@ import type { LassoSelectDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
-import { hitTestArea as hitTestAreaShared } from './hitTestArea';
+import { hitTestArea as hitTestAreaShared, regionPickOptions } from './hitTestArea';
 import type { PoseComposition } from 'features/groups/composePose';
 
 export function useLassoSelectDepSource(
@@ -18,6 +18,8 @@ export function useLassoSelectDepSource(
   selection: SelectionApi,
   descriptor?: PoseDescriptor<unknown>,
   poseComposition?: PoseComposition<unknown>,
+  /** The painted alpha the surface's layers apply, which every view shares. */
+  alphaOf?: (id: string) => number,
 ): void {
   const sceneRef = useRef(scene);
   sceneRef.current = scene;
@@ -25,14 +27,17 @@ export function useLassoSelectDepSource(
   selectionRef.current = selection;
   const descriptorRef = useRef(descriptor);
   descriptorRef.current = descriptor;
+  const alphaOfRef = useRef(alphaOf);
+  alphaOfRef.current = alphaOf;
 
   useDepSource('lassoSelect', (): LassoSelectDep => {
     const sc = sceneRef.current;
     const s = selectionRef.current;
     const d = descriptorRef.current;
+    const a = alphaOfRef.current;
     return {
-      hitTestArea: (bounds) =>
-        hitTestAreaShared(sc, bounds, poseComposition ? { poseComposition } : undefined, d),
+      hitTestArea: (bounds, view) =>
+        hitTestAreaShared(sc, bounds, regionPickOptions(view, a, poseComposition), d),
       getSelection: () => s.current as NodeId[],
       setSelection: (ids) => s.set(ids as NodeId[]),
     };

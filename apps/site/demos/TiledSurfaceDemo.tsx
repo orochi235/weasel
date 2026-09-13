@@ -1,9 +1,11 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import {
   PathBuilder, SceneCanvas, WeaselProvider, sceneFromJSON, useSelection,
 } from '@weasel-js/core';
-import type { FillStyle, Path, SerializedScene, View } from '@weasel-js/core';
+import type { FillStyle, Path, SceneCanvasApi, SerializedScene, View } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import { createLoupe } from '@weasel-js/hud';
+import { useHud, useHudContribution } from '@weasel-js/hud/react';
 
 interface NodeData { fill: FillStyle; ring?: boolean }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -15,10 +17,41 @@ const PANE_H = 360;
 
 const PANES = [
   { id: 'A', x: 20, y: 20, view: { x: 0, y: 0, scale: { x: 1, y: 1 } } as View,
-    fill: '#2d7d46', bg: '#e8f0fb' },
+    fill: '#2d7d46', bg: '#e8f0fb', loupe: false },
   { id: 'B', x: 420, y: 20, view: { x: -40, y: -30, scale: { x: 2, y: 2 } } as View,
-    fill: '#2d5f9a', bg: '#fdf3d8' },
+    fill: '#2d5f9a', bg: '#fdf3d8', loupe: true },
 ] as const;
+
+/** Pane-local, in pane B's empty lower-left corner. `tests/visual/tiled-surface.spec.ts`
+ *  probes the lens here. */
+const LOUPE_BOUNDS = { x: 10, y: 180, w: 140, h: 170 };
+
+/** A pixel-mode loupe over one pane. `region` is what keeps its readback on
+ *  this pane's pixels rather than the shared canvas's at the same offset. */
+function PaneLoupe({ api, onColor }: {
+  api: RefObject<SceneCanvasApi | null>; onColor: (hex: string) => void;
+}) {
+  const hud = useHud(api);
+  useEffect(() => {
+    const a = api.current;
+    if (!a?.surface) return;
+    const loupe = createLoupe({
+      hud,
+      canvas: a.surface,
+      ...(a.element ? { input: a.element } : {}),
+      region: a.getSurfaceRect,
+      source: [],
+      requestRedraw: () => a.requestRedraw(),
+      mode: 'pixel',
+      titlebar: false,
+      bounds: LOUPE_BOUNDS,
+      onColorChange: onColor,
+    });
+    a.requestRedraw();
+    return () => { loupe.dispose(); };
+  }, [hud, api, onColor]);
+  return null;
+}
 
 /** A rect with a rect-shaped hole, filled even-odd — so it goes through
  *  `drawPathFillStencil`, which uses stencil bit 0. The hole is what the guard
@@ -48,11 +81,13 @@ const paneScene = (fill: string): SerializedScene<NodeData, string, Pose> => ({
 } as unknown as SerializedScene<NodeData, string, Pose>);
 
 function Pane({
-  id, x, y, view, fill, bg, surface,
+  id, x, y, view, fill, bg, loupe, surface, onLoupeColor,
 }: {
   id: string; x: number; y: number; view: View; fill: string; bg: string;
-  surface: HTMLCanvasElement | null;
+  loupe: boolean; surface: HTMLCanvasElement | null; onLoupeColor: (hex: string) => void;
 }) {
+  const apiRef = useRef<SceneCanvasApi | null>(null);
+  const hudTool = useHudContribution();
   const boxRef = useRef<HTMLDivElement | null>(null);
   const [input, setInput] = useState<HTMLDivElement | null>(null);
   const [scene] = useState(() => sceneFromJSON(paneScene(fill), {}));
@@ -74,6 +109,7 @@ function Pane({
         // canvas under it respond to input, and the rest go silently dead.
         <WeaselProvider isolate>
           <SceneCanvas
+            ref={apiRef}
             width={PANE_W}
             height={PANE_H}
             scene={scene}
@@ -83,6 +119,7 @@ function Pane({
             inputElement={input}
             backgroundFill={{ color: bg }}
             defaultTools={['select']}
+            {...(loupe ? { ambient: [hudTool] } : {})}
             layers={{
               scene: {
                 // Poses are plain rects here, so both branches build their own
@@ -101,6 +138,7 @@ function Pane({
               },
             }}
           />
+          {loupe && <PaneLoupe api={apiRef} onColor={onLoupeColor} />}
         </WeaselProvider>
       )}
     </>
@@ -110,6 +148,7 @@ function Pane({
 export function TiledSurfaceDemo() {
   const surfaceRef = useRef<HTMLCanvasElement | null>(null);
   const [surface, setSurface] = useState<HTMLCanvasElement | null>(null);
+  const [color, setColor] = useState<string | null>(null);
 
   // The shared buffer is the host's to size. Each pane's renderer is handed
   // `gl` only — given the element it would resize it to its own pane.
@@ -125,11 +164,16 @@ export function TiledSurfaceDemo() {
   }, []);
 
   return (
-    <div className="ckd-tile-surface" style={{ width: SURFACE_W, height: SURFACE_H }}>
-      <canvas ref={surfaceRef} data-testid="tiled-surface" className="ckd-tile-canvas" />
-      {PANES.map((p) => (
-        <Pane key={p.id} {...p} surface={surface} />
-      ))}
-    </div>
+    <>
+      <div className="ckd-tile-surface" style={{ width: SURFACE_W, height: SURFACE_H }}>
+        <canvas ref={surfaceRef} data-testid="tiled-surface" className="ckd-tile-canvas" />
+        {PANES.map((p) => (
+          <Pane key={p.id} {...p} surface={surface} onLoupeColor={setColor} />
+        ))}
+      </div>
+      <span className="ckd-hint">
+        under the right pane&apos;s aim: <span data-testid="loupe-color">{color ?? '—'}</span>
+      </span>
+    </>
   );
 }

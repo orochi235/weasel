@@ -17,9 +17,9 @@ interface NodeOverrides {
   stroke?: ColorOverride;
 }
 
-/** Per-node, per-channel store of color overrides consulted by `createPathLayer`
- *  before falling back to the consumer's `getVertexColors` / `getStrokeVertexColors`
- *  accessor. Attached to `useAnimator` as `animator.colorOverrides`. */
+/** Per-node, per-channel store of color overrides. Attached to `useAnimator` as
+ *  `animator.colorOverrides`; painted onto scene nodes by `<SceneCanvas animator>`
+ *  and onto a `createPathLayer`'s nodes by its `colorOverrides` option. */
 export class ColorOverrideRegistry {
   private readonly map = new Map<string, NodeOverrides>();
   private _version = 0;
@@ -51,6 +51,31 @@ export class ColorOverrideRegistry {
 
   get(id: string, channel: VertexColorChannel): ColorOverride | undefined {
     return this.map.get(id)?.[channel];
+  }
+
+  /** Whether anything overrides `id`, on either channel. */
+  has(id: string): boolean {
+    return this.map.has(id);
+  }
+
+  /**
+   * The colors to paint on `id`'s `channel`, given the colors the painter would
+   * otherwise paint and the frame's timestamp. A function override needs that
+   * `base` and must return an array of its length; failing either, `base`
+   * stands.
+   */
+  resolve(
+    id: string,
+    channel: VertexColorChannel,
+    base: readonly number[] | undefined,
+    tMs: number,
+  ): readonly number[] | undefined {
+    const override = this.get(id, channel);
+    if (override === undefined) return base;
+    if (typeof override !== 'function') return override;
+    if (base === undefined) return undefined;
+    const result = override(base, tMs);
+    return result.length === base.length ? result : base;
   }
 
   version(): number {

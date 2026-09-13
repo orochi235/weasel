@@ -61,13 +61,6 @@ Priority tags:
   the declaration, or have `TargetSpec` carry the answer instead of the
   predicate.
 
-- **(P3) Interacting through a viewport.** `createViewportLayer` has no
-  hit-test re-projection, so a press inside a loupe or minimap targets the outer
-  view — it would act on whatever sits under the window on the real canvas, not
-  on what the user sees magnified. `hud.window()` claims every interior press to
-  prevent that. Wiring re-projection would let anchor placement happen *in* the
-  magnified view, which is the point of a loupe for precision work.
-
 - **[x] (P2) The render path composes world poses.** A container's pose can
   define a frame: `<SceneCanvas poseComposition={RIGID_POSE_COMPOSITION}>` makes
   `buildSceneTree` fold each node's pose into its parent's on the way down, and
@@ -112,11 +105,7 @@ Priority tags:
   batch per file). weaseldraw runs with `unpack` on. Remaining:
   (a) **embedded SVG blurs under zoom** — `imageCache` rasterizes once at
   natural size; re-rasterize at view scale (or draw from the live `Image`
-  element) if crispness matters; (b) **text box width is estimated** on the
-  unpack path — external `<text>` carries `UNBOUNDED_TEXT_WIDTH` rather than a
-  measurement, and unpack has no text-measure context, so it guesses from the
-  longest line at 0.6 em per glyph (closed 2026-08-16, along with `fontSize`
-  joining the fit-clamp); a real measure would want the atlas; (c) weaseldraw's
+  element) if crispness matters; (b) weaseldraw's
   file-menu import still uses its own app-local `svgInterop` mapping (richer:
   `wd:` tool metadata, paper size) — fold the shared walk if they drift, and
   note it now *drops* `<image>` nodes, since the app's `Obj` union is path/text
@@ -319,11 +308,25 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
   (`726f85e0`), selection is per-view (`7c202d28`). Tests:
   `packages/core/src/canvas/CanvasView.test.tsx`.
 
-- **(P3) The raw `createViewportLayer` path has no input wiring.**
-  `<CanvasView>` above is the supported answer; the older re-projection
-  prototype (`layer.reproject(outer, dims, screen)`, `viewportsAt`) still
-  renders without hit-testing, as `apps/site/registry.ts` says in its blurb.
-  Either retrofit it onto the resolver or retire it in favor of `<CanvasView>`.
+- **(P3) The raw `createViewportLayer` path still carries a re-projection
+  prototype.** Views are the input answer — `<CanvasView>`, the `views` prop,
+  `SceneCanvasApi.addView` — and `<CanvasView interactive={false}>` is the
+  paint-only viewport. `layer.reproject` and `viewportsAt` are left over from
+  before, and `apps/site/demos/ViewportLayerDemo.tsx` still hand-rolls a click
+  probe on them. Retire both and rebuild the demo on views, or keep the raw
+  layer as the paint primitive and drop only the prototype.
+
+- **(P3) Views do not nest.** A view paints and routes the surface's own stack,
+  never another view, and a loupe magnifies the canvas's camera — aimed over a
+  `<CanvasView>` panel it shows and edits the canvas's world, not the panel's.
+  Composing would mean a view's camera derived from the view under its aim, and
+  a resolver that descends rather than picking one rect.
+
+- **(P3) A bare HUD window with a passing interior cannot be moved.**
+  `hud.window({ titlebar: false, interior: 'pass' })` gives the interior away,
+  and the interior is a bare window's only move handle, so it resizes from its
+  edges but never translates. The loupe demo turns the titlebar on while
+  editing; the window itself should offer a handle instead.
 
 - **(P3) Two `meanScale` residuals under non-uniform zoom.** The hit-test half
   shipped 2026-08-12: `core/viewport/pxExtent` (`pxExtent` / `withinPxBox` /
@@ -373,23 +376,12 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
-- **(P2) The renderer's `mat3` and geom's disagree in ways that survive a
-  copy-paste between them.** The two *representations* are deliberate and both
-  files say so — geom keeps a 6-element f64 affine, `renderer/math/mat3.ts` a
-  9-element column-major `Float32Array` shaped for `uniformMatrix3fv`. Two
-  behaviors are the open question.
-
-  `invert` returns identity when the determinant is exactly zero, where geom
-  returns `null` below a conditioning ratio of `1e-12`. A near-singular matrix
-  therefore passes the renderer's test and produces entries around `1e16`,
-  which a `Float32Array` cannot hold — `gradientSpaceInverse` feeds that
-  straight to `u_worldInv`. Settling it means saying what a caller should get
-  for a collapsed transform: an unmapped space (identity), nothing (`null`),
-  or a throw.
-
-  And `translate`/`scale` share names with geom's but post-multiply an
-  existing matrix where geom's construct a fresh one, so code moved between
-  the layers compiles and misbehaves. Renaming the renderer's pair
+- **(P2) The renderer's `mat3.translate`/`scale` share names with geom's
+  and not behavior.** The two *representations* are deliberate and both files
+  say so — geom keeps a 6-element f64 affine, `renderer/math/mat3.ts` a
+  9-element column-major `Float32Array` shaped for `uniformMatrix3fv`. But the
+  renderer's pair post-multiply an existing matrix where geom's construct a
+  fresh one, so code moved between the layers compiles and misbehaves. Renaming the renderer's pair
   (`translated`, `scaledBy`) or giving geom composing forms would both close
   it.
 
@@ -400,25 +392,6 @@ Core five + Crop shipped. Remaining:
   fit per frame would rescale the whole minimap through a drag or a settle, and
   costs an O(nodes) bounds sweep every frame. Revisit only if a consumer wants
   framing that tracks a simulation.
-
-- **(P3) The loupe's colour sample is still read off an unlanded frame.** The
-  region readback now waits for a paint, but `readHex`
-  (`packages/hud/src/loupe/createLoupe.ts`) still calls `readbackRegion` inline
-  from `LoupeSurface.sample`, so `loupe.color` and `onColorChange` report the
-  frame before the aim. `pick()` cannot move — an eyedropper has to answer
-  synchronously, and at click time the last landed frame *is* what the user
-  clicked on, so that caller is already right. Only the aim-driven sample is
-  wrong, and fixing it means letting `model.color` settle a frame later.
-
-- **(P3) The loupe cannot aim at a detached pane.** `createLoupe` takes `canvas`
-  and `input` separately, so a pane's aim is measured against the pane box — but
-  `readbackRegion` still reads that aim as an offset into the *whole* drawing
-  buffer (`packages/hud/src/loupe/createLoupe.ts`). Over a `paintInto` surface
-  the two disagree by the pane's origin, so the lens shows the wrong region.
-  Fix shape: carry the target rect into the readback, which means either
-  `createLoupe` takes the pane origin or `CanvasExtensionApi` exposes the rect
-  it hands `WeaselRenderer.setTarget`. Nothing hits this yet — the
-  `tiled-surface` demo mounts no loupe.
 
 - **(P3) Sync paints do not coalesce.** `CanvasProps.syncPaint`
   (`Canvas.tsx:234-242`) promises "a synchronous paint per commit", singular,
@@ -698,7 +671,7 @@ intercepting the press that drags the body.
   comparison the seam rejects: an override mutates its buffer in place, which
   defeats reference equality but not value equality.
 
-  **Measured, and the cost is not the obstacle.** `tests/bench/derived-path.bench.ts`
+  **Measured, and the cost is not the obstacle.** `tests/perf/bench/derived-path.bench.ts`
   runs a frame of derived paths against the diagram shapes a hand-authored
   document reaches, then the same frame plus the resolve-and-compare pass a
   value check needs before it can decide to skip:
@@ -918,7 +891,7 @@ What it surfaced:
 
   **This is the whole of the cost, and it absorbs the former P1 about `setPose`
   allocating a pose object per node per frame.** That entry proposed a scalar
-  setter or an in-place write to remove the churn. Measured — `npm run bench`,
+  setter or an in-place write to remove the churn. Measured — `npm run perf:bench`,
   "per-frame pose write — one node, three paths" — minting the object is under a
   tenth of what `setPose` costs (34.4 M/s bare against 3.23 M/s through
   `setPose`), so neither remedy would have moved the number. The recording is
@@ -1016,13 +989,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   argument, which is precisely their function in the genre. Anything built here
   should let a consumer see which cue is being applied, not just hear it.
 
-- **(P2) `engine.play()` can start a voice one scheduler pass late.** `play()`
-  only queues the voice; the scheduler books it on its next pass, which runs
-  every 25 ms by default. So even `when: engine.now()` can sound up to 25 ms
-  late. The timeline booking's 100 ms default lookahead covers it, but a
-  lookahead shorter than the pass interval lands late. Booking a voice whose
-  `when` already falls inside the current lookahead window at `play()` time,
-  instead of waiting for the next pass, would close it.
 - **(P3) AudioWorklet scheduling** — immune to main-thread jank; costs a worklet
   module, cross-thread messaging and a bundling story. Revisit if jank proves
   audible.
@@ -1068,26 +1034,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   goes through the dispatcher; the loupe is the reason to want that, not a
   reason to build it first.
 
-- **(P2) The shared pick walk's view-owned gates are not reachable everywhere.**
-  `pickWalk` (2026-08-29) asks a `PickSource` five questions per candidate, two
-  of which belong to the asking view rather than the scene: what alpha it paints
-  a node at, and whether it paints a layer at all. Neither has a supplier on
-  every path, and the two gaps want one decision between them.
-
-  `useSceneSelectTool` takes a `layerIsPainted`, but `<SceneCanvas>` exposes no
-  `layerVisibility` / `layerOrder` prop to build one from — only a bare
-  `<Canvas>` consumer can pass one, so today the option is consumer-only
-  surface. Either `<SceneCanvas>` should forward those props, or the scene's own
-  `LayerRecord.visible` is the whole answer at that level and the option should
-  say so.
-
-  `adapterPickSource` supplies neither gate: a bare `SelectAdapter` has no layer
-  enumeration and no override table, so a consumer without a `Scene` gets the
-  clip chain and the paint ordering but not alpha or layer paint. Defensible —
-  there is nothing to read them from — but it is now a declared asymmetry
-  between the two sources rather than an accident, and it should be either
-  documented as permanent or closed by widening `SelectAdapter`.
-
 - **(P2) Things that look duplicated in this engine and are not.** Left from the
   2026-08-29 duplicated-cascade audit, whose findings all landed — `git log` and
   `.changeset/` are the record. This list is the other half: pairs a future audit
@@ -1118,13 +1064,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `layer.visible` through `SceneSource.isPainted`, and `toJSON` carries a user
   layer's `kind` and `name`.
 
-  Open: `LayerRecord.locked` is written in five places and read by nothing.
-  Decided 2026-09-13: the field stays and gates selection, hit-testing and
-  mutation — unbuilt. `<image>` flip and source-rect never serialize; they live on the renderer's
+  Open: `<image>` flip and source-rect never serialize; they live on the renderer's
   `ImageCommand`, and expressing them wants a wider `SvgImageNode` on both the
-  write and the parse side. `packages/{svg,hud,ui,labkit,modes,d3,paint}` never
-  import `geom` at all, and three incompatible matrix-singularity policies
-  coexist.
+  write and the parse side. `packages/{labkit,modes,d3,paint}` never import
+  `geom` at all, and `ui` only from a story. Every 2D affine inversion now
+  goes through geom's `invert`, but `geom/3d`'s `mat4` `invert` still judges
+  singularity by an absolute `1e-9` determinant floor — the rule 2D gave up.
 
 - **(P2) Safari's `gesturestart` / `gesturechange` / `gestureend` are unhandled.** They are the second trackpad pinch channel on macOS Safari, alongside the ctrl+wheel one `viewportZoom` reads. Nothing in the repo listens for them, so Safari trackpad pinch gets whatever the wheel path synthesizes. Worth deciding deliberately rather than by omission. Note before adding a listener: `viewportZoom` now claims bare ctrl+wheel, so a `gesturechange` handler becomes a *second* channel for the same physical gesture — the double-apply `.changeset/mac-trackpad-pinch-zoom.md` just removed. Consolidate it into `makeViewportZoomAction` behind one scale-delta seam, not as a fourth listener.
 
@@ -1173,13 +1118,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 
 - **(P3) `.lk-shell` is `height: 100vh`.** A lab mounted anywhere but the viewport top overflows by its own offset. Harmless on the dev page, wrong in general.
-
-- **(P3) A graph lane has no value axis you can read.** Graph mode plots each
-  numeric lane on its own `LayeredCurveEditor` with a y range derived from that
-  row's keys (`Timeline/LaneGraph.tsx`), and draws vertical grid lines at the
-  ruler's ticks, but nothing says what value a key sits at. `Plot2D`'s grid is
-  evenly spaced fractions with no labels, so it is no answer on a value axis
-  either. It needs value ticks and labels that fit a 72px lane.
 
 - **(P3) `snapToNearest` and `BandEditor`'s `snapped` are the same function.**
   `CurveEditor/snap.ts` (which `Timeline` and `createKeyframeLayer` use) and
@@ -1257,18 +1195,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) Richer text style controls** (font, size, weight pickers).
 
 ---
-
-### Unscoped alias package name
-
-- **(P2) `weasel-js` is unpublishable under that name.** npm rejects it as too
-  similar to an existing package, so `packages/weasel-js` is marked `private`
-  and `changeset publish` skips it (2026-07-26). Everything else about it is
-  live: it builds in `build:downstream`, the consumer smoke test still audits
-  that every dist entry is a shim re-exporting core, and it stays in the
-  lockstep `fixed` group so its version tracks the scoped packages. Publishing
-  is one `private` flag away once a name is settled. Options: pick a different
-  unscoped name, or decide the scoped `@weasel-js/core` is the only entry point
-  we want and delete the alias. Its README says so.
 
 ### Plugin/bundling convention
 
@@ -1379,11 +1305,11 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 ## Demos & visual regression
 
-- **(P2) The text edit overlay wraps where `kit:text` does not.** `useTextEdit`'s overlay is `white-space: pre-wrap` at `pose.width`, and `useSceneTextEdit` maps the double-click through `caretIndexAt(cx, cy, pose)`, which wraps at `pose.width` too — while `kit:text` never wraps. A `kit:text` line longer than its box reflows onto extra lines when an edit opens, and the caret can land on a line the paint never drew. `createTextLayer` does wrap, so the overlay has to know which painter it stands in for rather than switch to `pre`.
+- **(P3) The edit overlay can break a wrapped line where the canvas does not.** Under `TextStyle.wrap`, `layoutRuns` breaks only at spaces, while the overlay's `white-space: pre-wrap` follows the browser's line-breaking rules — after a hyphen, between CJK characters. Such a line reflows when an edit opens. Nothing in CSS limits break opportunities to spaces, so this is a layout change (UAX #14 in `layoutRuns`) or a DOM one (each word in a `nowrap` span).
 
-- **(P2) SVG `text-anchor` and the text box disagree.** `packages/svg/src/serialize.ts` writes `x` as the box's left edge beside `text-anchor="middle"` / `"end"`, so any other SVG reader centers or right-aligns the text on that edge. `parse.ts` reads the anchor point back into `x`, so an external file's centered text imports with its anchor as the box's left edge and `kit:text`, which aligns within the box, paints it half a box width right of where the file drew it. Weasel-to-weasel round trips are unaffected because neither side shifts. Fixing it changes the meaning of files already written.
+- **(P2) The edit overlay ignores `verticalAlign`.** `useTextEdit` places its text at the top of the pose box whatever the node's `verticalAlign`, so editing a center- or bottom-aligned `kit:text` node moves its text to the top of the box until the edit commits. The caret mapping does honor it. Needs a vertical offset computed from the overlay's own content height, re-read as typing changes it.
 
-- **(P3) No demo exercises non-modal path editing.** `enterPathEdit` / `editAnchors` only run under apps/draw's mode registry — `apps/site/demos/curveLab/RepresentationPanel.tsx:167` disables them and installs its own drag action. The `getActiveMode === undefined` fall-throughs (`SceneCanvas.tsx:1593`, `:1632`) are exercised by tests alone; a small site demo entering anchor editing with no mode registry would give both branches a live home.
+- **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have.
 
 - **(P2) Consolidate the paint demos into one "stroke and fill" demo.** `gradients`,
   `pattern-playground`, `vertex-colors` and `vertex-widths` are four cards each
@@ -1487,23 +1413,14 @@ one dead `const` and four stale disable directives.
   what the kit recommends for HUDs, inspectors and labels, so it wants numbers
   rather than an argument.
 
-- **(P2) Decide where benchmarks live and how their results are kept.** There
-  are benchmarks in the tree (`tests/perf`, the draw-cost work in
-  `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`) with no shared convention:
-  no agreed home, no format for a recorded result, no way to say whether a
-  number moved since last time, and nothing that says which ones are expected
-  to run in CI. Settle the layout — one directory or per-package, what a run
-  emits, where a baseline is stored and how it is compared — before the next
-  benchmark adds a fourth shape.
-
 - **(P3) Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one is desired. Today's barrel test asserts ops/shape-kinds/bundles parity; public exports remain uncovered.
 
 - **(P3) Last 4 React `act()` warnings in CI vitest.** The June 2026 sweep took the `ci.yml` "not wrapped in act(...)" count 200 → 4 (and killed the ~91 jsdom `getContext` stack dumps); see `vitest.setup.ts` (global `getContext` stub) and the test-side `act()` wrapping. The remaining 4 all come from `packages/core/src/canvas/SceneCanvas.tools.test.tsx`'s *"omitted defaultTools: resize is registered"* test — a SceneCanvas-internal deferred update from the resize-gesture commit that resists every test-side `act()` strategy tried (async microtask flush, `setTimeout(0)` macrotask flush, dispatching the whole down→move→up gesture inside one `act()`). A real fix has to live in SceneCanvas's update scheduling, not the test. Note: these warnings only reproduce under CI (ubuntu/worker timing), not locally — verify via the `ci.yml` log. Low value; defer.
 
 - **(P2) Per-command draw cost, for everything that is not batched solid
   geometry.** `tests/perf/draw-loop.spec.ts` sweeps commands per frame under
-  real GL (`npm run test:perf`; gates nothing, prints the unmasked GL renderer
-  so a software backend is obvious).
+  real GL (`npm run test:perf`; gates nothing, and its result file records the
+  unmasked GL renderer so a software backend is obvious).
 
   The cost turned out not to be the draw call. A warm mesh draw is ~1.8 us;
   what cost ~66 us was *writing a buffer between draws*, which the driver
@@ -1755,12 +1672,13 @@ one dead `const` and four stale disable directives.
   existing precedent, used for glyph outline widths in
   `outlineStrokeMeshCache.ts` — would likely fix it.
 
-- **(P3) Whether the benchmarks gate CI.** `tests/bench/` holds 62 vitest
-  benchmarks with a committed baseline (`tests/bench/results/`); nothing gates
-  anything. `tests/bench/README.md` argues a hard threshold on shared runners
-  would have to be loose enough to miss real regressions, and sketches the
-  shape it thinks a gate should take instead — a PR job that posts the
-  `--compare` delta as a comment and does not fail the build. Mike's call.
+- **(P3) Whether the benchmarks gate CI.** Every benchmark lives in
+  `tests/perf/` and writes a result file per run; nothing gates anything. The
+  vitest microbenchmarks keep a committed baseline in `tests/perf/bench/`. `tests/perf/README.md` argues a hard
+  threshold on shared runners would have to be loose enough to miss real
+  regressions. The shape a gate could take instead: a PR job that runs the
+  benchmarks on both revisions and posts the `npm run perf:compare` table as a
+  comment without failing the build. Mike's call.
 
 - **(P2) A clipped group costs ~10 us to enter, and the stencil is now the
   larger half.** `tests/perf/clip-cost.spec.ts` separates entry's two costs by

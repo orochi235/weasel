@@ -45,9 +45,13 @@ assignment, which is what `measuredWidth` exists to keep consistent.
 
 ## The rendering path, and its one hard requirement
 
-`createTextLayer` emits **one `TextDrawCommand` per text node**, carrying
-resolved runs and a bounding rect. Word wrap and multi-line layout happen
-*downstream* in `drawText` / `layoutRuns`, not in the layer.
+A text node lays out one way, whoever asks. `layoutTextPose` (in
+`@weasel-js/text`) is that decision: the pose width is always the box `align`
+resolves within, and the wrap width only when the style declares `wrap`
+(default `false`). The `kit:text` painter and `createTextLayer` — for text that
+is not in a scene — both emit `textCommandFromPose`, whose options are the
+same ones; `textLineBoxes`, `caretIndexAt`, `fitTextPose` and the edit overlay
+read the same property.
 
 > **The GL renderer uses MSDF text.** Font registration lives in
 > `@weasel-js/font` (`registerFont(family, variant, metricsUrl, atlasUrl)`,
@@ -68,11 +72,11 @@ is the last caller that wraps by `ctx.measureText`, and a box it sizes has to
 break where the GL path breaks.
 
 `lineBoxes.ts` answers the other measurement question: not how big is the
-text, but **where inside its box does it sit**. A text pose is a *wrap box* —
+text, but **where inside its box does it sit**. A text pose is a layout box —
 `"Away"` in a 600-unit box leaves most of the box empty — so anything treating
 the pose as the node's extent claims empty space. `textLineBoxes` returns the
-per-line rects, read straight off `cachedLayoutRuns`'s own line walk rather than
-re-measured, and honoring `align` and `verticalAlign`. The `kit:text`
+per-line rects, read straight off `layoutTextPose`'s lines rather than
+re-measured, and honoring `wrap`, `align` and `verticalAlign`. The `kit:text`
 silhouette is built from it, which is how shape-accurate picking stops a text
 box from swallowing clicks on whatever is behind it.
 
@@ -99,7 +103,10 @@ kit — is `@weasel-js/text`'s `layout/`. The atlas itself (`FontAtlas`,
 uses real DOM for IME, spellcheck, and accessibility rather than reimplementing
 a caret on canvas. `hitTest.ts` provides `pointInTextPose` and `caretIndexAt`
 to map clicks back into the run model; the caret snaps to the advance cells
-`cachedLayoutRuns` produced, so it cannot drift from the painted glyphs.
+`layoutTextPose` produced, so it cannot drift from the painted glyphs. The
+overlay is `white-space: pre-wrap` at the pose width when the style declares
+`wrap`, and `pre` otherwise, sized to its text and grown from the same edge or
+center the canvas aligns the line on.
 
 Two things a consumer building character controls needs:
 
@@ -123,6 +130,6 @@ a zoom other than 1.
   `LayoutResult`).
 - `renderLabel.ts` — the small pill-with-text used for chrome labels, with a
   pluggable `TextRenderer`. Unrelated to scene text nodes.
-- `textCommand.ts` — the draw-command shape. `textCommandFromRuns` is the
-  one builder; `createTextLayer` and the `kit:text` node painter both go
-  through it so they can't derive `align` or run resolution differently.
+- `textCommand.ts` — the draw-command builders. `textCommandFromPose` is the
+  one for a text node; `textCommand` / `textCommandFromRuns` serve text with
+  no pose (HUD labels, debug overlays).

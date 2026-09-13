@@ -23,6 +23,13 @@ and let CI run the full thing.
 Playwright suites (`test:visual`, `test:smoke:step1`) don't have native TIA
 and are small enough to run in full when needed.
 
+## Benchmarks
+
+Every benchmark lives in `tests/perf/`, writes one JSON result file per run,
+and is compared with `npm run perf:compare -- <a.json> <b.json>`. None of them
+gate CI. `tests/perf/README.md` has the runners, the result schema and how to
+add one.
+
 ## Visual regression tests
 
 The visual regression suite (`tests/visual/`) captures each demo's canvas and

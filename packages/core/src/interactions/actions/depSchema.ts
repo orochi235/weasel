@@ -72,7 +72,15 @@ export interface ViewApi {
    *  simply lands the pan without coasting. */
   decay?(config: DecayLoopConfig): void;
   stopDecay?(): void;
+  /** Whether a scene layer reaches the screen in this view — its own
+   *  `layerVisibility` / `layerOrder`, on top of the scene's `visible` flag.
+   *  Absent: this view paints every layer the scene shows. Selecting actions
+   *  pass over what the asking view does not paint. */
+  layerIsPainted?(layerId: string): boolean;
 }
+
+/** The part of the asking view a region hit-test consults. */
+export type HitTestView = Pick<ViewApi, 'layerIsPainted'>;
 
 /**
  * Adapter dep for `areaSelectAction`.
@@ -100,8 +108,12 @@ export type NodeAtPointDep = (
 /** What an area-selecting action needs: a way to ask what a region covers,
  *  and a way to read and replace the selection. */
 export interface AreaSelectDep {
-  /** Return ids of all scene nodes whose AABB overlaps `bounds`. */
-  hitTestArea(bounds: { x: number; y: number; width: number; height: number }): NodeId[];
+  /** Return ids of all scene nodes whose AABB overlaps `bounds`, skipping any
+   *  on a layer `view` — the view the gesture ran in — does not paint. */
+  hitTestArea(
+    bounds: { x: number; y: number; width: number; height: number },
+    view?: HitTestView,
+  ): NodeId[];
   /** Return the current selection id list. */
   getSelection(): NodeId[];
   /** Replace the current selection. */
@@ -198,9 +210,13 @@ export interface LassoSelectDep {
   hitTestLasso?(
     polygon: ReadonlyArray<{ x: number; y: number }>,
     mode: 'centers' | 'intersect' | 'enclosed',
+    view?: HitTestView,
   ): string[];
   /** Return ids of nodes whose AABB overlaps the given rect (fallback). */
-  hitTestArea(bounds: { x: number; y: number; width: number; height: number }): string[];
+  hitTestArea(
+    bounds: { x: number; y: number; width: number; height: number },
+    view?: HitTestView,
+  ): string[];
   /** Return the current selection id list. */
   getSelection(): string[];
   /** Replace the current selection. */

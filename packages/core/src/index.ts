@@ -306,7 +306,7 @@ export type {
   CustomLayerEntry,
   GridSlotConfig,
 } from './canvas/Canvas';
-export type { CanvasExtensionApi, SceneCanvasApi } from './canvas/canvasExtension';
+export type { CanvasExtensionApi, CanvasViewHandle, SceneCanvasApi } from './canvas/canvasExtension';
 // The in-flight gesture seam behind `CanvasHelpers.getGestureBounds()` /
 // `subscribeGestures()`. `<SceneCanvas>` wires it from its dispatcher; bare
 // `<Canvas>` consumers can supply their own.
@@ -362,7 +362,7 @@ export {
   buildSceneViewCommands,
   renderSceneToCanvas,
 } from './canvas/sceneViewRender';
-export type { SceneViewDrawOne, RenderSceneToCanvasArgs } from './canvas/sceneViewRender';
+export type { SceneViewDrawOne, RenderSceneToCanvasArgs, SceneViewLayers } from './canvas/sceneViewRender';
 export { renderSceneToPixels, planPixelRender } from './canvas/renderSceneToPixels';
 export type {
   RenderSceneToPixelsArgs,
@@ -551,6 +551,8 @@ export {
   SCRIPT_METRICS,
   layoutRuns,
   cachedLayoutRuns,
+  layoutTextPose,
+  textPoseLayoutInput,
   measureText,
   measuredWidth,
   measureTextBounds,
@@ -573,6 +575,8 @@ export type {
   TextPose,
   TextVerticalAlign,
   LayoutRunsOpts,
+  TextPoseLayout,
+  TextPoseLayoutInput,
   LaidOutRuns,
   LaidOutGroup,
   LaidOutQuad,

@@ -4,6 +4,22 @@ import type { View } from '../core/viewport/view';
 import type { IngestItem } from '@weasel-js/routing';
 import type { ViewAnimationOptions } from '../core/viewport/useViewAnimation';
 import type { PaintedCursorState } from '@weasel-js/cursor';
+import type { DrawCommand } from '../renderer';
+import type { CanvasViewProps } from './CanvasView';
+
+/**
+ * A view added through {@link SceneCanvasApi.addView}.
+ * @experimental
+ */
+export interface CanvasViewHandle {
+  readonly id: string;
+  /** Paint the view for one frame of the canvas: its layers through its own
+   *  camera, clipped to its rect. For a view added with `paint: false`, whose
+   *  host draws it; empty until the view has mounted. */
+  draw(data: unknown, outer: View, dims: Dims): DrawCommand[];
+  /** Stop painting and routing the view. */
+  remove(): void;
+}
 
 /**
  * The **base imperative ref handle** shared by the canvas components. For
@@ -38,8 +54,18 @@ export interface CanvasExtensionApi {
    *
    *  Under `paintInto` this is the caller's shared canvas, which co-tenant
    *  panes also paint into: its rect is the whole surface, not this pane's, so
-   *  read geometry off {@link element} rather than off this. */
+   *  read geometry off {@link element} rather than off this, and find this
+   *  pane's pixels on it with {@link getSurfaceRect}. */
   readonly surface: HTMLCanvasElement | null;
+  /**
+   * The rect of {@link surface} this canvas paints into, in the surface's CSS
+   * px — the rect the renderer is confined to. Under `paintInto` that is the
+   * pane's `x`/`y` and this canvas's size; otherwise the whole canvas at the
+   * origin. A point measured against {@link element} sits at
+   * `(x + px, y + py)` on the surface, which is where a readback must look.
+   * Read live: the value is the one the next paint uses.
+   */
+  getSurfaceRect(): { x: number; y: number; width: number; height: number };
   requestRedraw(): void;
   /**
    * Run `fn` after every paint, on the frame that painted — for chrome that
@@ -119,6 +145,10 @@ export interface CanvasExtensionApi {
    *  handle is always populated on `<SceneCanvas>` refs, absent on the
    *  bare-primitive handle. */
   ingest?(input: File[] | IngestItem[], point?: { x: number; y: number }): void;
+  /** Add a view to the canvas from outside React. See
+   *  {@link SceneCanvasApi.addView}; absent on the bare-primitive handle,
+   *  which hosts no views. */
+  addView?(props: CanvasViewProps): CanvasViewHandle;
 }
 
 /**
@@ -140,4 +170,14 @@ export interface SceneCanvasApi extends CanvasExtensionApi {
   /** Cancel a camera animation. The view stays where it is. */
   stopViewAnimation(): void;
   isViewAnimating(): boolean;
+  /**
+   * Add a view — the same declaration as a `<CanvasView>` child, for code
+   * outside React: chrome that opens a lens, a panel a plugin owns. Input over
+   * it resolves through its camera unless `interactive` is `false`.
+   *
+   * Pass thunks for `bounds` and `view` rather than re-adding to move it.
+   * Adding an id already present replaces that view.
+   * @experimental
+   */
+  addView(props: CanvasViewProps): CanvasViewHandle;
 }

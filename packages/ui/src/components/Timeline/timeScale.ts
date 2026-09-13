@@ -1,3 +1,5 @@
+import { niceStep } from '../Plot2D/ticks';
+
 /** A visible span of timeline time, in ms. */
 export interface TimeWindow {
   from: number;
@@ -79,14 +81,6 @@ export function panWindow(w: TimeWindow, byMs: number, bounds: TimeWindow): Time
 
 /** Minimum gap between time ticks, in px — the ruler's and the graph grid's. */
 export const TICK_SPACING_PX = 64;
-
-/** 1, 2, 5, 10, 20, 50, … — the tick steps that read as round numbers. */
-function niceStep(roughMs: number): number {
-  const mag = Math.pow(10, Math.floor(Math.log10(roughMs)));
-  const norm = roughMs / mag;
-  const step = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
-  return step * mag;
-}
 
 /** Ruler tick times inside `w`, spaced at least `minSpacingPx` apart. */
 export function tickTimes(w: TimeWindow, widthPx: number, minSpacingPx: number): number[] {

@@ -530,7 +530,18 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
    *  {@link move}, the parent never changes — only sibling order. */
   reorder(id: NodeId, index: number): void;
   setLayerVisible(layer: TLayer, visible: boolean): void;
+  /** Lock or unlock a layer. A locked layer still paints, but its nodes are
+   *  out of reach: picking and area selection pass over them, the selection
+   *  drops them, and every node mutation on them throws. Locking is never
+   *  blocked by the lock, and neither are the other layer operations. */
   setLayerLocked(layer: TLayer, locked: boolean): void;
+  /** Whether `id` sits on a locked layer or under a container that does.
+   *  A container's lock covers its whole subtree, whatever layers the
+   *  descendants are tagged to. An id not in the scene is not locked. */
+  isLocked(id: NodeId): boolean;
+  /** Run `fn` with the lock guard lifted, for a programmatic edit that has to
+   *  reach a locked node. Undo and redo never need it. */
+  unlocked<T>(fn: () => T): T;
   addLayer(spec: AddLayerSpec<TLayer>): void;
   /** Drop a user layer and every node tagged to it, as one undoable step.
    *  Removal cascades, so this also deletes nodes **on other layers** that

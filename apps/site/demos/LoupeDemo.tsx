@@ -17,7 +17,14 @@ const PAPER = '#6a6a6a';
  *  spec's aim point. */
 const RULING = { x: 400, y: 280, size: 60 };
 
-interface Empty { id: string }
+interface Block { color: string }
+type Pose = { x: number; y: number; width: number; height: number };
+
+/** Nodes to edit through the lens, clear of the ruling patch and swatches. */
+const BLOCKS = [
+  { id: 'b1', pose: { x: 150, y: 290, width: 40, height: 24 }, color: '#c77dff' },
+  { id: 'b2', pose: { x: 240, y: 286, width: 30, height: 30 }, color: '#ff9f43' },
+];
 
 /** Fine detail worth magnifying: a hairline grid, a patch of 1px rules, and
  *  colored swatches.
@@ -84,11 +91,20 @@ export function LoupeDemo() {
   const [factor, setFactor] = useState(8);
   const [color, setColor] = useState<string | null>(null);
   const [picked, setPicked] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  // Read when a loupe is built, so rebuilding for `editing` keeps these.
+  const settings = useRef({ mode, factor });
+  settings.current = { mode, factor };
 
-  // Empty — the content is `detailLayer`, not scene nodes.
-  const scene = useScene<Empty>({ items: [] });
+  const scene = useScene<Block, 'default', Pose>({
+    systemLayers: [{ id: 'default' }],
+    initial: BLOCKS.map((b) => ({
+      id: b.id as never, kind: 'leaf' as const, layer: 'default' as const,
+      pose: b.pose, data: { color: b.color },
+    })),
+  });
 
-  const source = useMemo(() => [detailLayer()], []);
+  const detail = useMemo(() => detailLayer(), []);
 
   useEffect(() => {
     const api = ref.current;
@@ -97,11 +113,19 @@ export function LoupeDemo() {
       hud,
       canvas: api.surface,
       ...(api.element ? { input: api.element } : {}),
-      source,
+      // The lens is a view on the canvas: it paints the canvas's own stack,
+      // and with `interactive` a press inside it edits what it magnifies.
+      views: api,
+      interactive: editing,
+      mode: settings.current.mode,
+      factor: settings.current.factor,
       requestRedraw: () => api.requestRedraw(),
-      // Bare lens: the demo has nowhere to put a closed loupe back, so a
-      // close box would be a dead control. Drag the interior to move it.
-      titlebar: false,
+      // A bare lens moves by its interior. An editing lens gives the interior
+      // to the scene, so it needs a titlebar to be moved by; its close box
+      // leaves edit mode.
+      titlebar: editing,
+      title: 'Editing',
+      onClose: () => setEditing(false),
       background: PAPER,
       onColorChange: setColor,
       onPick: setPicked,
@@ -109,7 +133,7 @@ export function LoupeDemo() {
     loupeRef.current = loupe;
     api.requestRedraw();
     return () => { loupe.dispose(); loupeRef.current = null; };
-  }, [hud, source]);
+  }, [hud, editing]);
 
   return (
     <div className="ckd-canvas-wrap">
@@ -133,6 +157,10 @@ export function LoupeDemo() {
             }} />
           {factor}×
         </label>
+        <label>
+          <input type="checkbox" checked={editing} onChange={(e) => setEditing(e.target.checked)} />
+          edit through the lens
+        </label>
         <span className="ckd-hint">under the aim point: {color ?? '—'}</span>
         <span className="ckd-hint">clicked: {picked ?? '—'}</span>
       </div>
@@ -145,9 +173,18 @@ export function LoupeDemo() {
         viewport={{}}
         backgroundFill={{ fill: 'solid', color: PAPER }}
         ambient={[hudTool]}
-        // Not registerLayer: extras draw after the hud's own registered
-        // layer, so the outer scene would paint over the loupe window.
-        layers={{ detail: { layer: source[0], after: 'scene' } }}
+        layers={{
+          scene: {
+            drawOne: (n, p): DrawCommand[] => [{
+              kind: 'path',
+              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+              fill: { fill: 'solid', color: n.data.color },
+            }],
+          },
+          // Not registerLayer: extras draw after the hud's own registered
+          // layer, so the outer scene would paint over the loupe window.
+          detail: { layer: detail, after: 'scene' },
+        }}
       />
     </div>
   );

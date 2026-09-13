@@ -157,8 +157,8 @@ for (const name of packageDirs) {
   perPackage.push({ pkg: name, entries: entries.length, total, undocumented });
 }
 
-// One symbol can be reachable from several barrels (`weasel-js` re-exports all
-// of `@weasel-js/core`, for one). The work list is the set of definition sites.
+// One symbol can be reachable from several barrels (`@weasel-js/labkit`
+// re-exports `@weasel-js/ui` through `./weasel-ui`, for one). The work list is the set of definition sites.
 const bySite = new Map();
 for (const r of records) {
   const key = `${r.symbol}@${r.file}:${r.line}`;
