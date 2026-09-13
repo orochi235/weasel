@@ -18,6 +18,7 @@ import type { Bounds } from '../viewport/fitViewToBounds';
 import type { ClipboardSnapshot } from './types';
 import {
   aabbIntersectsRect,
+  poseDescriptorForNode,
   translatePoseViaDescriptor,
   RECT_POSE_DESCRIPTOR,
   type PoseDescriptor,
@@ -161,9 +162,10 @@ export function arrayAdapter<TNode extends { id: string }, TPose>(
       const out: string[] = [];
       for (const o of ref.current) {
         const pose = toPose(o);
-        const hit = d.intersectsRect
-          ? d.intersectsRect(pose, rect)
-          : aabbIntersectsRect(d.getBounds(pose), rect);
+        const g = poseDescriptorForNode(d, o);
+        const hit = g.intersectsRect
+          ? g.intersectsRect(pose, rect)
+          : aabbIntersectsRect(g.getBounds(pose), rect);
         if (hit) out.push(o.id);
       }
       return out;
@@ -174,7 +176,7 @@ export function arrayAdapter<TNode extends { id: string }, TPose>(
       const out: string[] = [];
       for (const o of ref.current) {
         const pose = toPose(o);
-        const b = d.getBounds(pose);
+        const b = poseDescriptorForNode(d, o).getBounds(pose);
         const hit =
           mode === 'centers' ? polygonContainsRectCenter(polygon, b) :
           mode === 'enclosed' ? polygonContainsRect(polygon, b) :
@@ -209,7 +211,7 @@ export function arrayAdapter<TNode extends { id: string }, TPose>(
       if (ctx?.dropPoint) {
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         for (const n of src) {
-          const b = d.getBounds(toPose(n));
+          const b = poseDescriptorForNode(d, n).getBounds(toPose(n));
           if (b.x < minX) minX = b.x;
           if (b.y < minY) minY = b.y;
           if (b.x + b.width > maxX) maxX = b.x + b.width;
@@ -230,7 +232,9 @@ export function arrayAdapter<TNode extends { id: string }, TPose>(
       for (const n of src) {
         const cloned = JSON.parse(JSON.stringify(n)) as TNode;
         (cloned as { id: string }).id = nextId();
-        const translated = translatePoseViaDescriptor(toPose(cloned), dx, dy, d);
+        const translated = translatePoseViaDescriptor(
+          toPose(cloned), dx, dy, poseDescriptorForNode(d, cloned),
+        );
         out.push(fromPose(cloned, translated));
       }
       return out;

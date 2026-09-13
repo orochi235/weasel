@@ -206,6 +206,36 @@ describe('createPoseDescriptor', () => {
     expect(descriptor.supportsRotation!(pose3([0, 0, 0]))).toBe(false);
   });
 
+  it('bounds a sphere as a sphere once it can see the node', () => {
+    const scene = createSolidScene();
+    const vp = viewport();
+    const descriptor = createPoseDescriptor(() => vp);
+    // Stretched along x: as a sphere it sweeps a cube of side 2, as a box a
+    // slab a quarter as tall. Uniform scale would make the two agree.
+    const id = scene.add({
+      kind: 'leaf',
+      layer: 'solids',
+      pose: pose3([0, 0.5, 0], [2, 0.5, 0.5]),
+      data: { kind: 'sphere', color: '#4f9de0' },
+    });
+    const node = scene.get(id)!;
+
+    const seen = descriptor.forNode!(node).getBounds(node.pose);
+    expect(seen).toEqual(screenBoxOf(scene, id, vp));
+    expect(seen.height).toBeGreaterThan(descriptor.getBounds(node.pose).height);
+  });
+
+  it('leaves a box alone, specialized or not', () => {
+    const scene = createSolidScene();
+    const vp = viewport();
+    const descriptor = createPoseDescriptor(() => vp);
+    const id = idsOf(scene)[2];
+    const node = scene.get(id)!;
+
+    expect(descriptor.forNode!(node).getBounds(node.pose)).toEqual(descriptor.getBounds(node.pose));
+    expect(descriptor.getBounds(node.pose)).toEqual(screenBoxOf(scene, id, vp));
+  });
+
   it('intersects a rectangle drawn over the solid, and not one beside it', () => {
     const scene = createSolidScene();
     const vp = viewport();

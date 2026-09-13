@@ -62,7 +62,11 @@ import type {
   LayoutDragged,
   DropTarget as LayoutDropTarget,
 } from '../../../layout/types';
-import { translatePoseViaDescriptor, type PoseDescriptor } from '../resize/geometry';
+import {
+  poseDescriptorForNode,
+  translatePoseViaDescriptor,
+  type PoseDescriptor,
+} from '../resize/geometry';
 import { poseDescriptorOf } from '../poseDescriptorDep';
 import type { MoveBehavior, GroupTransform, GestureContext, BehaviorResult } from '../../gestures/types';
 import { moveGestureAdapter, type MoveGestureAdapter } from '../move/gestureAdapter';
@@ -108,8 +112,9 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
     const node = scene.get(id);
     if (!node) continue;
     const startWorld = composeWorldPose(poseAdapter, id as string, pc.compose);
-    const world = translatePoseViaDescriptor(startWorld, dx, dy, d);
-    const b = d.getBounds(world);
+    const g = poseDescriptorForNode(d, node);
+    const world = translatePoseViaDescriptor(startWorld, dx, dy, g);
+    const b = g.getBounds(world);
     dragged.push({
       id,
       arg: {
@@ -168,7 +173,7 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
     const node = scene.get(id);
     if (!node) return;
     const worldPose = composeWorldPose(poseAdapter, id as string, pc.compose);
-    const worldAABB = d.getBounds(worldPose);
+    const worldAABB = poseDescriptorForNode(d, node).getBounds(worldPose);
     if (!testInside(worldPose, worldAABB, layout)) return;
     if (layout.acceptsDrop) {
       const arg: LayoutContainer = { id: id as string, bounds: worldAABB };

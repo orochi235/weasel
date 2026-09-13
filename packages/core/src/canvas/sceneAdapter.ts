@@ -39,6 +39,7 @@ import {
 import { pathIntersectsRect } from 'features/paths/pathHitTest';
 import { pickWalk, scenePickSource } from 'canvas/pickWalk';
 import {
+  poseDescriptorForNode,
   translatePoseViaDescriptor,
   visualBoundsViaDescriptor,
   type PoseDescriptor,
@@ -220,8 +221,10 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
   const setSelection = sel?.setSelection ?? sel?.set ?? (() => {});
   const d = (options.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   const poseBounds = (p: TPose): Bounds => visualBoundsViaDescriptor(p, d);
-  const translate = (p: TPose, dx: number, dy: number): TPose =>
-    translatePoseViaDescriptor(p, dx, dy, d);
+  const translate = (p: TPose, dx: number, dy: number, node?: unknown): TPose =>
+    translatePoseViaDescriptor(
+      p, dx, dy, node === undefined ? d : poseDescriptorForNode(d, node),
+    );
 
   const composition = options.poseComposition;
   const composes = composition !== undefined && composition.closure !== 'identity';
@@ -270,8 +273,9 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       if (options.cascadeContainerPose) {
         const node = scene.get(asNodeId(id));
         if (node && node.kind === 'container') {
-          const before = d.getBounds(node.pose);
-          const after = d.getBounds(pose);
+          const g = poseDescriptorForNode(d, node);
+          const before = g.getBounds(node.pose);
+          const after = g.getBounds(pose);
           const dx = after.x - before.x;
           const dy = after.y - before.y;
           if (dx !== 0 || dy !== 0) {
@@ -288,7 +292,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
               for (const cid of descIds) {
                 const cn = scene.get(asNodeId(cid));
                 if (!cn) continue;
-                scene.setPose(asNodeId(cid), translate(cn.pose, dx, dy));
+                scene.setPose(asNodeId(cid), translate(cn.pose, dx, dy, cn));
               }
             });
             return;

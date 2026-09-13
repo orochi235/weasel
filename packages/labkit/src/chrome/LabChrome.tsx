@@ -25,10 +25,10 @@ export function useLabChromeContext(): LabChromeContext {
 }
 
 /** The lab's contributions for one region, in declaration order. */
-export function contributionsIn(
-  contributions: readonly LabContribution[],
+export function contributionsIn<TCtx = LabChromeContext>(
+  contributions: readonly LabContribution<TCtx>[],
   region: LabRegion,
-): LabContribution[] {
+): LabContribution<TCtx>[] {
   return contributions.filter((c) => c.region === region);
 }
 

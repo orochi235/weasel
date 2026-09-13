@@ -16,7 +16,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { Tool } from '../../types';
 import type { DebugSink } from '../../../debug/types';
 import { pickTopMostHit } from '../pickTopMostHit';
-import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
+import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 // Shared affordance predicates — the single source of truth for "what does
 // this affordance kind mean" (`interactions/dispatcher/predicates.ts`). The
@@ -189,7 +189,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
 
     return pickWalk<TPose>(adapterPickSource(adapter as never), {
       hits: (node, pose) => {
-        const b = d.getBounds(pose);
+        const b = poseDescriptorForNode(d, node).getBounds(pose);
         if (node.kind !== 'container') return covers(node, pose, b);
         // A container's own clip *is* its hit shape — it is picked where it
         // paints, and it paints only inside its clip. Ancestor clips are the

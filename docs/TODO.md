@@ -187,15 +187,6 @@ Priority tags:
   than being decided. One place to fix it now instead of two:
   `useDispatcherOverlayLayer`'s `'polyline'` branch.
 
-- **(P3) A `<LabShell>`-only consumer has no authoring type for chrome.**
-  `LabContribution`'s header variant hard-codes `ToolbarItem<LabChromeContext>`,
-  and `LabChromeContext` can only come from `useLabChromeContext()`, which
-  throws without `<Lab>`. The generic fallback `RegionContribution<TCtx>` types
-  `item` as `unknown`. So a consumer rendering `LabShell` bare either composes
-  `ContributionBase` and `ToolbarItem<T>` by hand — which is what
-  `apps/theme-editor`'s rail now does — or fabricates a context, which is the
-  cast this arc removed. Surfaced by migrating that rail.
-
 - **(P3) `apps/theme-editor` cannot become a `<Lab>` without being rebuilt.**
   Not a stale consumer: `<Lab>` is the trial runtime — it requires a non-empty
   `instruments` list, seeds a trial, and renders `children` into the header
@@ -222,10 +213,12 @@ Priority tags:
   drove the 3D lab's chrome through an orbit. `remapBounds` and `fromBounds`
   run the other way, and a screen rect does not name a 3D pose without a depth
   choice, so the lab throws rather than guess and every action needing them is
-  recorded as not transferring. Two separate gaps: the interchange currency is
-  `Bounds`, and the descriptor is handed a *pose* rather than the node, so it
-  cannot tell a sphere from a box. `geometryProjection` is the same family and
-  further gone — `transform(node, m: Mat3)` cannot hold a 3D transform.
+  recorded as not transferring. That depth choice is what is left here: the
+  interchange currency is `Bounds`, and picking one is a design decision, not
+  hygiene. The descriptor's other gap is closed — `forNode` hands it the node,
+  so the lab's sphere now bounds itself as a sphere. `geometryProjection` is the
+  same family and further gone — `transform(node, m: Mat3)` cannot hold a 3D
+  transform.
 
 ### Pen tool follow-ups
 

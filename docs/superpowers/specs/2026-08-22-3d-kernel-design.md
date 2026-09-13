@@ -286,8 +286,13 @@ map.
 **Where routing lives.** Every fight was a dep contract, a registration step or a
 coordinate-space bug — never binding-to-action routing. That is the case for
 extracting routing into a package beside `gestures` and `history` rather than giving
-a 3D kernel its own dispatcher, and it puts the seam at `depSchema.ts`. Nobody has
-costed it.
+a 3D kernel its own dispatcher, and it puts the seam at `depSchema.ts`.
+
+Costed 2026-09-13 in `2026-09-13-routing-extraction-costing.md`: 6,302 lines across
+31 files, three import cycles that stop the dispatcher moving without the actions
+registry and the tool types, and one hard problem — `DepSchema` is one ambient
+interface extended by declaration merging, which silently stops merging if its
+declaration moves. What is left open is the decision, not the measurement.
 
 ## Non-goals
 

@@ -3,6 +3,7 @@ export {
   aabbIntersectsRect,
   RECT_POSE_DESCRIPTOR,
   ROTATED_POSE_DESCRIPTOR,
+  poseDescriptorForNode,
   remapRotatedLeaf,
   translatePoseViaDescriptor,
   visualBoundsViaDescriptor,

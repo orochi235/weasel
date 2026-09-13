@@ -1,5 +1,5 @@
 import { worldPoseLookup } from './composePose';
-import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
+import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 
 /** @internal */
@@ -73,7 +73,7 @@ export function nestedHitTester<TNode extends { id: string }, TPose>(
       if (isGroup(o.id, o)) continue;
       const w = worldOf(o.id);
       if (!w) continue;
-      const b = d.getBounds(w);
+      const b = poseDescriptorForNode(d, o).getBounds(w);
       if (wx >= b.x && wx <= b.x + b.width && wy >= b.y && wy <= b.y + b.height) {
         return o.id;
       }

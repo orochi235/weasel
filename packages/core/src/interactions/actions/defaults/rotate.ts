@@ -40,6 +40,7 @@ import { unionAABB } from 'core/geometry/unionBounds';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { poseDescriptorOf } from '../poseDescriptorDep';
 import {
+  poseDescriptorForNode,
   translatePoseViaDescriptor,
   visualBoundsViaDescriptor,
   type PoseDescriptor,
@@ -153,16 +154,17 @@ export const rotateAction: Action & { requires: string[] } = {
       for (const id of ids) {
         const node = scene.get(id);
         if (!node) continue;
-        if (!descriptor.withRotation || descriptor.supportsRotation?.(node.pose) === false) continue;
+        const g = poseDescriptorForNode(descriptor, node);
+        if (!g.withRotation || g.supportsRotation?.(node.pose) === false) continue;
         originPoses.set(id, node.pose);
         // The pivot is a world point, so every measurement the gesture orbits
         // is taken from the world pose, not the stored one.
         const world = frame.world(id);
         originWorlds.set(id, world);
-        const b = descriptor.getBounds(world);
+        const b = g.getBounds(world);
         originCenters.set(id, { x: b.x + b.width / 2, y: b.y + b.height / 2 });
-        originRotations.set(id, descriptor.getRotation?.(world) ?? 0);
-        visual.push(visualBoundsViaDescriptor(world, descriptor));
+        originRotations.set(id, g.getRotation?.(world) ?? 0);
+        visual.push(visualBoundsViaDescriptor(world, g));
       }
 
       if (originPoses.size === 0) return {};
