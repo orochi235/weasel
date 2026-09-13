@@ -36,6 +36,8 @@ export function createPoseFeed<TData, TLayer extends string, TPose>(
 ): PoseFeed<TData, TLayer, TPose> {
   let seen: Map<NodeId, Snapshot<TData, TLayer, TPose>> | null = null;
   let seenVersion = -1;
+  let seenGeneration = -1;
+  let seenOverridden: readonly NodeId[] = EMPTY;
 
   const walk = (): {
     added: FeedNode<TData, TLayer, TPose>[];
@@ -73,15 +75,44 @@ export function createPoseFeed<TData, TLayer extends string, TPose>(
         // the snapshot map in the same pass.
         seen = new Map();
         seenVersion = scene.getVersion();
+        seenGeneration = scene.overrides.getGeneration();
+        seenOverridden = scene.overrides.ids();
         return { ...walk(), removed: EMPTY, changed: EMPTY, reset: true };
       }
 
       const version = scene.getVersion();
-      if (version === seenVersion) {
+      const generation = scene.overrides.getGeneration();
+      const committedMoved = version !== seenVersion;
+      const overridesMoved = generation !== seenGeneration;
+
+      if (!committedMoved && !overridesMoved) {
         return { added: EMPTY, removed: EMPTY, changed: EMPTY, reset: false };
       }
+
+      const base = committedMoved
+        ? walk()
+        : {
+            added: [] as FeedNode<TData, TLayer, TPose>[],
+            removed: [] as NodeId[],
+            changed: [] as FeedNode<TData, TLayer, TPose>[],
+          };
       seenVersion = version;
-      return { ...walk(), reset: false };
+
+      if (overridesMoved) {
+        const now = scene.overrides.ids();
+        const touched = new Set<NodeId>(now);
+        for (const id of seenOverridden) touched.add(id); // a cleared override moved too
+        const already = new Set(base.changed.map((n) => n.node.id));
+        for (const id of touched) {
+          if (already.has(id)) continue;
+          const node = scene.get(id);
+          if (node !== undefined) base.changed.push({ node, pose: effectivePose(scene, node) });
+        }
+        seenGeneration = generation;
+        seenOverridden = now;
+      }
+
+      return { ...base, reset: false };
     },
   };
 }

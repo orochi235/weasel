@@ -83,4 +83,113 @@ describe('createPoseFeed', () => {
     expect(delta.changed.map((n) => n.node.id)).toEqual([id]);
     expect(delta.changed[0]!.pose).toEqual(POSE);
   });
+
+  it('reports an override as changed, at the overridden pose', () => {
+    const { scene, id } = makeScene();
+    const feed = createPoseFeed(scene);
+    feed.read();
+
+    scene.overrides.set(id, { pose: { x: 99, y: 0, width: 10, height: 10 } });
+    scene.overrides.commit();
+    const delta = feed.read();
+
+    expect(delta.changed.map((n) => n.node.id)).toEqual([id]);
+    expect(delta.changed[0]!.pose).toEqual({ x: 99, y: 0, width: 10, height: 10 });
+    expect(delta.changed[0]!.node.pose).toEqual(POSE); // committed pose still reachable
+  });
+
+  it('reports a node once when both clocks moved in the same frame', () => {
+    const { scene, id } = makeScene();
+    const feed = createPoseFeed(scene);
+    feed.read();
+
+    scene.setPose(id, { x: 5, y: 5, width: 10, height: 10 });
+    scene.overrides.set(id, { pose: { x: 99, y: 0, width: 10, height: 10 } });
+    scene.overrides.commit();
+    const delta = feed.read();
+
+    expect(delta.changed).toHaveLength(1);
+    expect(delta.changed[0]!.pose).toEqual({ x: 99, y: 0, width: 10, height: 10 });
+    expect(delta.changed[0]!.node.pose).toEqual({ x: 5, y: 5, width: 10, height: 10 });
+  });
+
+  it('reports a derived node as changed when the node it depends on moves', () => {
+    // Verified empirically 2026-09-13: `kit:setPose` calls `invalidateDependents`,
+    // which drops the dependent's pose-keyed memo slot, so the next
+    // `effectivePose` recomputes to a fresh reference the walk's `!==` catches.
+    // Nothing about the derived node itself changes, so without this the feed
+    // would silently leave a connector painted at its old position.
+    const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'main' }] });
+    const a: NodeId = scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { label: 'a' } });
+    const b: NodeId = scene.add({
+      kind: 'leaf',
+      layer: 'main',
+      pose: POSE,
+      data: { label: 'b' },
+      dependsOn: [a],
+      derivePose: (_node, deps) => deps[0]?.pose ?? POSE,
+    });
+    const feed = createPoseFeed(scene);
+    feed.read();
+
+    scene.setPose(a, { x: 50, y: 50, width: 10, height: 10 });
+    const delta = feed.read();
+
+    expect(delta.changed.map((n) => n.node.id).sort()).toEqual([a, b].sort());
+    expect(delta.changed.find((n) => n.node.id === b)!.pose).toEqual({
+      x: 50, y: 50, width: 10, height: 10,
+    });
+  });
+
+  it('reports a cleared override as changed, back at the committed pose', () => {
+    const { scene, id } = makeScene();
+    const feed = createPoseFeed(scene);
+    feed.read();
+    scene.overrides.set(id, { pose: { x: 99, y: 0, width: 10, height: 10 } });
+    scene.overrides.commit();
+    feed.read();
+
+    scene.overrides.clearAll();
+    scene.overrides.commit();
+    const delta = feed.read();
+
+    expect(delta.changed.map((n) => n.node.id)).toEqual([id]);
+    expect(delta.changed[0]!.pose).toEqual(POSE);
+  });
+
+  it('does not walk the node map for an override-only frame', () => {
+    const { scene, id } = makeScene();
+    let iterations = 0;
+    // A proxy over the live map: `for…of scene.nodes` reads Symbol.iterator, so
+    // counting that read observes the walk itself, not a stand-in for it.
+    const realNodes = scene.nodes;
+    Object.defineProperty(scene, 'nodes', {
+      configurable: true,
+      get: () =>
+        new Proxy(realNodes, {
+          get(target, prop, recv) {
+            // A native Map's Symbol.iterator requires a real Map receiver, so
+            // forwarding it via `recv` (the Proxy) throws "incompatible
+            // receiver" — bind it to `target` instead of the usual forward.
+            if (prop === Symbol.iterator) {
+              iterations++;
+              return target[Symbol.iterator].bind(target);
+            }
+            return Reflect.get(target, prop, recv);
+          },
+        }),
+    });
+
+    const feed = createPoseFeed(scene);
+    feed.read();
+    const baseline = iterations;
+
+    for (let frame = 0; frame < 60; frame++) {
+      scene.overrides.set(id, { pose: { x: frame, y: 0, width: 10, height: 10 } });
+      scene.overrides.commit();
+      feed.read();
+    }
+
+    expect(iterations).toBe(baseline);
+  });
 });
