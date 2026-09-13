@@ -15,9 +15,11 @@ export interface SplitProps {
   children: ReactNode;
   /** Names the sidebar pane, and through it the seam. Default `'Sidebar'`. */
   label?: string;
-  /** Extra classes on the strip, the sidebar pane and the content pane. */
+  /** Extra classes on the strip, which always has `lk-split`. */
   className?: string;
+  /** The class on the sidebar pane. */
   sidebarClassName?: string;
+  /** The class on the content pane. */
   contentClassName?: string;
   /** The sidebar's current extent in pixels. Omit to leave it unpersisted: the
    *  seam still works, its result just does not outlive the mount. */
@@ -109,6 +111,10 @@ export function Split({
     });
     store.setHints(CONTENT_ID, { minSize: { w: contentMinWidth, h: 0 } });
   }, [store, minWidth, maxWidth, contentMinWidth]);
+
+  useEffect(() => {
+    store.setMeta(SIDEBAR_ID, { title: label });
+  }, [store, label]);
 
   useEffect(() => {
     if (width === undefined || width === widthRef.current) return;

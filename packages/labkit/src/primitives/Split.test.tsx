@@ -91,4 +91,18 @@ describe('Split', () => {
     );
     expect(screen.getByRole('separator')).toHaveAccessibleName(/stories/i);
   });
+
+  it('renames its seam when the label changes', () => {
+    const { rerender } = render(
+      <Split viewport={VIEWPORT} label="Stories" sidebar={<p>side</p>}>
+        <p>main</p>
+      </Split>,
+    );
+    rerender(
+      <Split viewport={VIEWPORT} label="Outline" sidebar={<p>side</p>}>
+        <p>main</p>
+      </Split>,
+    );
+    expect(screen.getByRole('separator')).toHaveAccessibleName(/outline/i);
+  });
 });
