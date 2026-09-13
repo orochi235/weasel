@@ -109,7 +109,7 @@ export function builtinContributions(
 
   // Zoom acts on the view of the trial, so it is a viewport control. A trial
   // holding a non-2D view reports zoom as null and gets none of this.
-  if (instrument.canvas != null && zoom !== null) {
+  if ((instrument.canvas != null || instrument.stage != null) && zoom !== null) {
     out.push({
       id: 'zoom-out',
       region: 'viewport',
@@ -146,15 +146,17 @@ export function builtinContributions(
       id: 'scale',
       region: 'status',
       group: 'view',
-      render: () => <ScaleIndicator />,
+      render: (c) => <ScaleIndicator zoom={c.zoom ?? 1} />,
     });
-    out.push({
-      id: 'fps',
-      region: 'status',
-      group: 'view',
-      end: true,
-      render: () => <FpsMeter />,
-    });
+    if (instrument.canvas != null) {
+      out.push({
+        id: 'fps',
+        region: 'status',
+        group: 'view',
+        end: true,
+        render: () => <FpsMeter />,
+      });
+    }
   }
 
   if (instrument.annotations != null) {

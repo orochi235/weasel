@@ -6,6 +6,7 @@ import { AnnotationPreloadContext } from '../annotations/preload';
 import { annotationsFromJSON } from '../annotations/store';
 import type { AnnotationStorage, AnnotationTargetInfo } from '../annotations/types';
 import { CanvasStack } from '../canvas/CanvasStack';
+import { fitStage, Stage } from '../canvas/Stage';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import { applyCamera, type ViewportSize } from '../canvas/worldSpec';
 import type { TrialContribution } from '../chrome/types';
@@ -165,8 +166,11 @@ function TrialRuntime({
   // A function `initialView` needs the canvas size, so `trialOps` leaves the
   // view null and the first measurement resolves it. Reset nulls it again,
   // which re-frames — so the guard is the null itself, not a "have I run" flag.
+  const stage = instrument.canvas ? undefined : instrument.stage;
   const placeView = (size: ViewportSize): void => {
-    const declared = instrument.canvas?.initialView;
+    const declared =
+      instrument.canvas?.initialView ??
+      (stage ? (stage.initialView ?? ((vp: ViewportSize) => fitStage(stage.size, vp))) : undefined);
     if (typeof declared !== 'function') return;
     if (record.view != null) return;
     setView(declared(size));
@@ -457,6 +461,21 @@ function TrialRuntime({
         </CanvasStack>
         <DragOverlay drag={dragDropResult.drag} />
       </div>
+    );
+  } else if (stage) {
+    body = (
+      <Stage
+        size={stage.size}
+        view={view2d ?? DEFAULT_VIEW}
+        onViewChange={setView}
+        onResize={placeView}
+        minZoom={stage.minZoom}
+        maxZoom={stage.maxZoom}
+        hostRef={loupeHostRef}
+        overlay={lens}
+      >
+        {instrument.render(renderCtx)}
+      </Stage>
     );
   } else if (lens) {
     body = (
