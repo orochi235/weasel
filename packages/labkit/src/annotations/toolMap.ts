@@ -30,9 +30,9 @@ const TOOLS: Record<string, AnnotationToolInfo> = {
   text: { weaselTool: 'text', kind: 'text' },
 };
 
-/** The palette an instrument gets for declaring `annotations`. Ids share the
- *  trial's contribution namespace with `instrument.tools`, and one tool slot
- *  holds whichever is active. */
+/** The tools a lab's rail gets when any instrument declares `annotations`.
+ *  Ids share the lab's contribution namespace with its own `tools`, and the
+ *  lab's tool slot holds whichever is active. */
 export const ANNOTATION_TOOLS: readonly TrialTool[] = [
   { id: 'select', label: 'Select', icon: SelectIcon, group: 'annotate' },
   { id: 'stroke', label: 'Freehand', icon: PencilIcon, group: 'annotate' },

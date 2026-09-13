@@ -12,7 +12,6 @@ import {
 } from '@weasel-js/ui';
 import { ExportMenu } from '../annotations/ExportMenu';
 import { MarkList } from '../annotations/MarkList';
-import { ANNOTATION_TOOLS } from '../annotations/toolMap';
 import type { ControlRenderer } from '../config/types';
 import { ControlPanel } from '../controls/ControlPanel';
 import type { Instrument } from '../instrument/types';
@@ -82,16 +81,10 @@ export function builtinContributions(
     });
   }
 
-  // Declaring `annotations` provides the drawing palette, the way declaring
-  // `tools` provides the instrument's own; both write the same tool slot.
   // A tool id shares the contribution namespace, so a tool called `close`
-  // collides with the built-in close button and throws — and so do two tools
-  // of the same name from these two sources.
-  const tools = [
-    ...(instrument.annotations ? ANNOTATION_TOOLS : []),
-    ...(instrument.tools?.tools ?? []),
-  ];
-  for (const t of tools) {
+  // collides with the built-in close button and throws. Annotation tools are
+  // not here: the lab's rail carries them.
+  for (const t of instrument.tools?.tools ?? []) {
     out.push({
       id: t.id,
       region: 'palette',

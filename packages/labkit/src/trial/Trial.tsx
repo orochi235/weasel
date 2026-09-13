@@ -21,6 +21,7 @@ import { LabStoreContext, TrialIdProvider } from '../state/context';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
 import { as2DView, DEFAULT_VIEW } from '../state/view';
+import { resolveLabTool } from '../tools/labTool';
 import { createEventBus, type EventBus } from '../undo/eventBus';
 import { pushSnapshot, redo as undoRedo, undo as undoUndo } from '../undo/undoStack';
 import type { LoupeBindings, UndoBindings } from './TrialChrome';
@@ -119,6 +120,7 @@ function TrialRuntime({
   chrome,
   suppress,
 }: TrialRuntimeProps) {
+  const lab = useLabContext();
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const loupeHostRef = useRef<HTMLDivElement | null>(null);
   const updateTrialState = useStore(store, (s) => s.updateTrialState);
@@ -248,15 +250,14 @@ function TrialRuntime({
 
   // A trial gets its own slot when its instrument declares tools; otherwise it
   // reads the lab's. Which slot a change writes follows from the same thing.
-  // Annotation tools are a trial's own for the same reason: two trials
-  // annotating different pictures must not share one active tool.
-  const declaresTools = instrument.tools != null || instrument.annotations != null;
+  // Annotation tools always read the lab's: a tool is what the hand holds, so
+  // picking one arms it in every trial, the way artboards share a tool. They
+  // were once per trial, back when one trial compared several pictures.
+  const declaresTools = instrument.tools != null;
+  const labTool = resolveLabTool(labToolId, lab.instruments);
   const resolvedToolId = declaresTools
-    ? (record.activeToolId ??
-      instrument.tools?.initial ??
-      instrument.tools?.tools[0]?.id ??
-      (instrument.annotations ? 'select' : null))
-    : labToolId;
+    ? (record.activeToolId ?? instrument.tools?.initial ?? instrument.tools?.tools[0]?.id ?? null)
+    : labTool;
   const setActiveTool = (id: string): void => {
     if (declaresTools) setTrialTool(record.id, id);
     else setLabTool(id);
@@ -523,7 +524,7 @@ function TrialRuntime({
       config={record.config}
       trial={{ id: record.id, view: record.view }}
       annotations={annotations}
-      activeToolId={resolvedToolId}
+      activeToolId={labTool}
     />
   ) : null;
 
