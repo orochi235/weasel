@@ -56,7 +56,7 @@ export async function mountFrame(options: MountFrameOptions): Promise<void> {
     const stories = (options.load ?? loadStories)(mod, entry.file, options.root);
     const story = stories.find((s) => s.exportName === entry.exportName);
     if (!story) throw new Error(`${entry.file} has no story export "${entry.exportName}"`);
-    startFrame({ story, channel, container: document.body, setup: options.setup });
+    startFrame({ story, channel, container: document.getElementById('root') ?? document.body, setup: options.setup });
   } catch (error) {
     reportImportFault(channel, error);
   }

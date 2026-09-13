@@ -78,6 +78,27 @@ describe('mountFrame', () => {
     expect(reportImportFault).not.toHaveBeenCalled();
   });
 
+  it("renders into the document's #root, so app CSS for #root applies to the story's container", async () => {
+    const appRoot = document.createElement('div');
+    appRoot.id = 'root';
+    document.body.append(appRoot);
+    try {
+      mount({ default: { title: 'ui/A' }, One: {} }, 'ui-a--one');
+      handoff(location.origin, window.parent);
+      await vi.waitFor(() => expect(startFrame).toHaveBeenCalled());
+      expect(vi.mocked(startFrame).mock.calls[0]?.[0].container).toBe(appRoot);
+    } finally {
+      appRoot.remove();
+    }
+  });
+
+  it('renders into the body when the document has no #root', async () => {
+    mount({ default: { title: 'ui/A' }, One: {} }, 'ui-a--one');
+    handoff(location.origin, window.parent);
+    await vi.waitFor(() => expect(startFrame).toHaveBeenCalled());
+    expect(vi.mocked(startFrame).mock.calls[0]?.[0].container).toBe(document.body);
+  });
+
   it('loads a native module with the native loader', async () => {
     mount({ default: meta({ title: 'ui/A' }), Two: story({ render: () => null }) }, 'ui-a--two');
     handoff(location.origin, window.parent);
