@@ -180,59 +180,19 @@ Priority tags:
   ordinary type hygiene, not a blocker. Findings in
   `docs/superpowers/specs/2026-08-22-3d-kernel-design.md`.
 
-- **(P2) One transform, applied in three places, because two options say
-  "world" and mean "client".** `classifyTarget` and `affordanceAt` were both
-  typed `(worldPoint)`; all four call sites pass `e.clientX`/`e.clientY`
-  untouched, while the same event's `InputEvent.x`/`y` go through
-  `clientToWorld`. Measured with a non-identity transform: the thunks get
-  (300, 250), the action's `ctx.world` gets (100, 100). `<SceneCanvas>` and
-  `<CanvasView>` each wrap their thunk in the very `clientToWorld` they also
-  hand the dispatcher. The types and comments now say client (2026-09-12); what
-  is left is to apply `toWorld` at the four sites and delete both wrappers —
-  behavior-identical for both consumers, since it is the same function, and
-  identity for a consumer that passes none.
-  **Corrects an earlier entry here claiming the point arrives in two different
-  spaces depending on the path. It does not; one path merely named its local
-  variable `worldPoint`.**
+- **(P3) Two overlay producers bake paint inside the action.** `slice`
+  (`interactions/actions/defaults/slice.ts`) and `@weasel-js/diagram`'s
+  `connect` both build a `PathDrawCommand` before returning, so they publish
+  `OngoingOverlay`'s `'commands'` variant and their geometry is gone at the
+  source. `resolveOverlays` passes that variant through marked `opaque` and a
+  foreign renderer skips it; recovering the two means having each action return
+  geometry and moving the styling into the layer. Both were written before
+  there was anywhere else to put the shape.
 
-- **(P3) `buildInvocationCtx` mislabels `ctx.screen`.**
-  `interactions/dispatcher/dispatcher.ts:611-627` fills `ctx.screen` and
-  `ctx.world` from the same event coordinates, which gestures documents as
-  world-space — so `ctx.screen` has never been screen-space. Same family as the
-  entry above.
-
-- **(P3) `Scene` owns a `History` it does not expose.** `scene.undo()`/`redo()`
-  work, but the kit's `undo`/`redo` *actions* resolve the `history` dep, and a
-  consumer holding only a `Scene` has nothing to register. Surfaced by the 3D lab,
-  which drives undo from its own toolbar instead.
-
-- **(P3) Mounting tools outside `<SceneCanvas>` has an unstated contract.** A
-  tool's actions ride on its definition and something must register them, and
-  capability-gated actions such as `select.pick` resolve eligibility through the
-  `activeTool` dep. Miss either and clicks do nothing, silently. Worth either a
-  helper that mounts a tool set correctly or a line in `docs/extending.md`.
-
-- **(P3) The overlay half of the preview channel is still `<SceneCanvas>`-only.**
-  The ghost half is not any more: `resolvePreviews(sources, scene)` answers which
-  ids are in flight, whose preview wins, which are roots and which are merely
-  displaced, with no renderer in it — `usePreviewGhostLayer` draws from it and so
-  does the 3D lab. `OngoingOverlay` has no equivalent: a marquee, a lasso or an
-  insert preview reaches paint only through `useDispatcherOverlayLayer`, which is
-  not exported, and its `'commands'` variant is `DrawCommand[]` — core's 2D
-  renderer vocabulary, which a foreign renderer cannot execute. Answering it is
-  the kernel doc's open "does core's selection overlay port?".
-
-- **(P3) `<Lab>`'s shared canvas cannot sit behind its trials.** It mounts at
-  `z-index: 1` with `pointer-events: none`, above the trial DOM — right for
-  annotation marks over a 2D instrument, wrong for a 3D tenant, whose tiles are
-  opaque and want the canvas *behind* them in the space their rects are measured
-  in. Today such a lab has to paint its own chrome into GL, which is why the 3D
-  lab draws its selection outline there. Named from outside by klieg, whose three
-  GL labs cannot adopt `<Lab>` for this reason.
-
-- **(P3) A lab has nowhere to put a lab-level rail.** `SidebarRegion` is
-  per-trial, so a control that belongs to the whole lab has no region and a
-  consumer hand-rolls a header beside the shell. Same source.
+- **(P3) `apps/theme-editor` still hand-rolls a lab-level rail.**
+  `PaletteLab.tsx` renders `<LabShell>` bare and hand-builds an undo/redo/reset
+  rail into its `header` prop with its own CSS module. `<Lab labChrome>` is what
+  that wants now. Its tests run in the `draw` vitest project.
 
 - **(P2) Routing is portable; the dep schema is not.** Every fight the 3D lab
   had was a dep contract, a registration step or a coordinate-space bug — never

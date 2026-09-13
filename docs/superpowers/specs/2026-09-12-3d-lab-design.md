@@ -36,14 +36,15 @@ typechecked, and no example had ever carried a test.
 
 ## The surface
 
-`<Lab>` already mounts the shared buffer, sizes it per frame and publishes it,
-so the lab takes `useSurfaceCanvas()` and calls `getContext('webgl2', {
-preserveDrawingBuffer: true })` on it. A host owning the surface above `<Lab>` is
-supported and unnecessary here.
+`<Lab>` already mounts the shared buffers, sizes them per frame and publishes
+them, so the lab takes `useSurfaceCanvas('under')` and calls `getContext('webgl2',
+{ preserveDrawingBuffer: true })` on it. A host owning the surface above `<Lab>`
+is supported and unnecessary here.
 
-The consequence to know: that buffer is `z-index: 1`, above the instrument's own
-DOM. Right for annotation marks, and the reason an opaque 3D tile has to paint
-its own chrome — see below.
+`'under'` rather than the default: there are two buffers stacked around the trial
+DOM, and an annotation mark wants the one over it while an opaque viewport wants
+the one beneath — otherwise the tile buries anything the pane draws. The lab asked
+for this split by being the first tenant on the wrong side of it.
 
 The instrument attaches `useSurfaceTile('viewport')` to its pane and registers a
 painter under the same scoped id. Tile ids are trial-scoped — `useTileId` returns
@@ -155,16 +156,21 @@ per snapshot, and GL handles do not survive that. The scene brings its own
 `History`, which is registered as the `history` dep so the kit's `undo`/`redo`
 actions drive it through the dispatcher — the same path a 2D consumer uses.
 
-## Selection chrome
+## Selection chrome and gesture chrome
 
-Drawn in GL, as screen-space line loops over the tile. Not by preference: the
-shared buffer paints above the instrument, so an outline in the pane's DOM would
-sit behind the viewport that covers it.
+Both drawn in GL, as screen-space line loops over the tile, in two tints — warm
+for what is selected, cool for what the gesture in hand is proposing.
 
-That answers the kernel doc's open question at the math level only — the geometry
-of screen-space chrome transfers, and the outline tracks the camera through an
-orbit. Whether the overlay *code* ports is a separate question this lab does not
-touch.
+The selection outline is the lab's own projected-AABB math. The gesture outlines
+are not: `resolveOverlays` is the overlay half of the in-flight channel, and it
+hands back world geometry with no renderer in it, the way `resolvePreviews` does
+for ghosts. So the marquee and the uncommitted box come off the same call
+`<SceneCanvas>` makes. That answers the kernel doc's question at the code level
+and not only the math: the overlay channel ports, except for the `'commands'`
+variant, whose two producers bake a `PathDrawCommand` inside the action.
+
+GL rather than DOM is now a choice rather than a constraint — the viewport sits on
+the under-buffer, so the pane could hold DOM chrome above it.
 
 ## Testing
 

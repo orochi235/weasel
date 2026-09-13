@@ -192,19 +192,28 @@ camera does not fit. The lab declares a `camera3d` dep of its own by augmenting
 `DepSchema`. This is the viewport-tool exception this doc predicted, and it stayed
 the only one.
 
-**Chrome transfers as geometry, not as paint.** The projected-AABB math is right and
-the outline tracks the camera. But labkit's shared buffer is `z-index: 1` — above
-the instrument's DOM — so an opaque 3D tile buries anything drawn in the pane, and
-the lab paints its own outline in GL. Whether core's overlay *code* ports is still
-untested.
+**Chrome transfers as geometry, and now as code.** The projected-AABB math was
+right and the outline tracked the camera from the start. The overlay half of the
+in-flight channel followed: `resolveOverlays` answers what a marquee, a lasso or
+an insert preview is proposing, in world geometry with no renderer in it, and the
+lab draws its marquee and its uncommitted box from the same call `<SceneCanvas>`
+uses. One variant does not port and cannot: `slice` and diagram's `connect` bake a
+`PathDrawCommand` inside the action, so the geometry is destroyed before any layer
+sees it.
+
+labkit's shared buffer is no longer the constraint either — it is two buffers now,
+stacked around the trial DOM, and an opaque tenant asks for the one underneath.
 
 ### Three things that cost the most time, none of them about dimensions
 
 **Mounting tools outside `<SceneCanvas>` is a registration contract nobody states.**
-A tool's own actions ride on its definition and something has to register them;
-`select.pick` is additionally gated on `eligible: { capability: 'creates-selection' }`,
-which resolves through the `activeTool` dep. Miss either and clicks select nothing,
-with no error — the actions are simply never eligible.
+A tool's own actions ride on its definition and something has to register them, and
+nothing does it for you. The second half of this, as first written, was wrong:
+`select.pick`'s `eligible: { capability: 'creates-selection' }` does not resolve
+through the `activeTool` dep. `checkCapability` reads `RuleCtx.allowedCapabilities`,
+which reaches the dispatcher only via `getRuleCtx` — so with `getRuleCtx` unset every
+eligibility rule is skipped and the action fires. `docs/extending.md` now states
+both halves.
 
 **`classifyTarget` says world and means client.** Re-checked at runtime on
 2026-09-12, which overturns what this section said before: the point does not
@@ -215,9 +224,11 @@ named the wrong one. `<SceneCanvas>` and `<CanvasView>` both convert inside
 their own thunk. The lab keeps `clientToWorld` identity, which collapses the two
 spaces into one and is why its deps can subtract the pane origin exactly once.
 
-**`Scene` owns a `History` and exposes no handle to it.** `undo()` and `redo()` are
+**`Scene` owned a `History` and exposed no handle to it.** `undo()` and `redo()` were
 on the scene, but the kit's `undo`/`redo` *actions* want the `history` dep, and a
-consumer has nothing to give them.
+consumer had nothing to give them. `scene.history` is that handle — a façade rather
+than the private engine, because the scene's own wrappers are what suppress
+re-recording and notify React.
 
 ### What this says about the fork
 
@@ -229,11 +240,14 @@ puts the seam at `depSchema.ts`: the mechanism is portable, the schema is 2D.
 
 ## Still open
 
-**Does core's selection overlay port?** The lab answered the geometry and not the
-painting.
-
 **Bespoke or three.js.** Untouched. The lab wrote its own picking to learn what a
 kernel would owe, and that debt turns out to be small.
+
+**Where routing lives.** Every fight was a dep contract, a registration step or a
+coordinate-space bug — never binding-to-action routing. That is the case for
+extracting routing into a package beside `gestures` and `history` rather than giving
+a 3D kernel its own dispatcher, and it puts the seam at `depSchema.ts`. Nobody has
+costed it.
 
 ## Non-goals
 
