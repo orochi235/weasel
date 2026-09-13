@@ -83,7 +83,7 @@ export type {
 // ─── Viewport: ViewTransform + helpers ──────────────────────────────────────
 export * from './core/viewport/viewTransform';
 export type { View, ZoomFactor, ZoomBound } from './core/viewport/view';
-export { viewToTransform } from './core/viewport/view';
+export { viewToTransform, normalizeView } from './core/viewport/view';
 export { meanScale } from './core/viewport/meanScale';
 export { pxExtent, scaleDelta, withinPxBox, withinPxRadius } from './core/viewport/pxExtent';
 export * from './interactions/gestures/handleDrag';
@@ -107,7 +107,7 @@ export * from './core/viewport/fitToBounds';
 export { fitViewToBounds } from './core/viewport/fitViewToBounds';
 export type { Bounds, ViewportDims, FitViewToBoundsOptions } from './core/viewport/fitViewToBounds';
 export { zoomAt } from './core/viewport/zoomAt';
-export { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from './core/viewport/zoomBounds';
+export { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM, ZOOM_FLOOR, normalizeZoom } from './core/viewport/zoomBounds';
 export type { ZoomClampOpts } from './core/viewport/zoomAt';
 export { clampView } from './core/viewport/clampView';
 export type { ClampBounds, CanvasSize } from './core/viewport/clampView';

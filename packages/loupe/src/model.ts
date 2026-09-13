@@ -1,3 +1,4 @@
+import { normalizeZoom } from '@weasel-js/core';
 import { type LoupePoint, type LoupeRect, loupeSourcePoint } from './geometry';
 
 /** How a loupe magnifies. `'vector'` re-renders the source through a zoomed-in
@@ -41,9 +42,10 @@ export interface LoupeSurface {
 export interface LoupeModelOptions {
   surface: LoupeSurface;
   mode?: LoupeMode;
-  /** Magnification. Default 8. */
+  /** Magnification. Default 8. Always positive and finite: a factor that is
+   *  not becomes `ZOOM_FLOOR`, the same rule a view's zoom follows. */
   factor?: number;
-  /** Bounds `setFactor` clamps to. Unset means unclamped. */
+  /** Bounds `setFactor` clamps to. Unset means bounded only by that rule. */
   minFactor?: number;
   maxFactor?: number;
   /** Called with the hex colour under the aim point whenever it changes. */
@@ -83,15 +85,15 @@ export interface LoupeModel {
 export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
   const { surface } = opts;
   let mode: LoupeMode = opts.mode ?? 'vector';
-  let factor = opts.factor ?? 8;
+  let factor = normalizeZoom(opts.factor ?? 8);
   let aim: LoupePoint = { x: 0, y: 0 };
   let color: string | null = null;
   let disposed = false;
   let aimUnsampled = false;
 
   const clamp = (n: number): number =>
-    Math.min(opts.maxFactor ?? Number.POSITIVE_INFINITY,
-             Math.max(opts.minFactor ?? Number.NEGATIVE_INFINITY, n));
+    normalizeZoom(Math.min(opts.maxFactor ?? Number.POSITIVE_INFINITY,
+                           Math.max(opts.minFactor ?? Number.NEGATIVE_INFINITY, n)));
 
   const sampleColor = () => {
     const hex = surface.sample(aim);

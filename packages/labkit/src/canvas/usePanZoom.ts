@@ -7,6 +7,7 @@ import {
   type WheelEvent,
 } from 'react';
 import type { ViewTransform } from '../instrument/types';
+import { normalize2DView } from '../state/view';
 import { zoomAt } from './camera';
 import { DEFAULT_FRAME, type WorldFrame } from './worldSpec';
 
@@ -58,8 +59,8 @@ export function usePanZoom({
 }: UsePanZoomOptions): PanZoomHandlers {
   const dragRef = useRef<DragState | null>(null);
   const sessionRef = useRef<PointerSession | null>(null);
-  const viewRef = useRef(view);
-  viewRef.current = view;
+  const viewRef = useRef(normalize2DView(view));
+  viewRef.current = normalize2DView(view);
   const onViewChangeRef = useRef(onViewChange);
   onViewChangeRef.current = onViewChange;
   const onTapRef = useRef(onTap);

@@ -233,3 +233,45 @@ describe('SceneCanvas view', () => {
     expect(props.width).toBe(200);
   });
 });
+
+describe('SceneCanvas view zoom invariant', () => {
+  const finitePositive = (n: number) => Number.isFinite(n) && n > 0;
+
+  it('a controlled canvas reports a zero-scale view write with the scale clamped', async () => {
+    const depsRef = { current: null as DepRegistry | null };
+    const onViewChange = vi.fn();
+    render(
+      <SceneCanvas<D, L, P>
+        scene={newScene()}
+        width={200}
+        height={150}
+        view={{ x: 0, y: 0, scale: { x: 1, y: 1 } }}
+        onViewChange={onViewChange}
+      >
+        <DepGrabber out={depsRef} />
+      </SceneCanvas>,
+    );
+    await frame();
+    act(() => { depsRef.current!.get('view')!.set({ x: 0, y: 0, scale: { x: 0, y: 0 } }); });
+    const reported = onViewChange.mock.calls.at(-1)![0] as View;
+    expect(finitePositive(reported.scale.x) && finitePositive(reported.scale.y)).toBe(true);
+  });
+
+  it('the view mirror never holds a NaN scale from a controlled prop', async () => {
+    const depsRef = { current: null as DepRegistry | null };
+    render(
+      <SceneCanvas<D, L, P>
+        scene={newScene()}
+        width={200}
+        height={150}
+        view={{ x: 0, y: 0, scale: { x: Number.NaN, y: Number.NaN } }}
+        onViewChange={() => {}}
+      >
+        <DepGrabber out={depsRef} />
+      </SceneCanvas>,
+    );
+    await frame();
+    const mirrored = depsRef.current!.get('view')!.get();
+    expect(finitePositive(mirrored.scale.x) && finitePositive(mirrored.scale.y)).toBe(true);
+  });
+});

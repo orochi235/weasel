@@ -40,7 +40,7 @@ import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
 import type { SceneToAdapterOptions } from './sceneAdapter';
 import { useDecayLoop, type PanBounds } from 'core/viewport/useDecayLoop';
 import type { WheelPanOptions } from 'interactions/actions/defaults/viewportWheelPan';
-import type { View } from 'core/viewport/view';
+import { normalizeView, type View } from 'core/viewport/view';
 import type { Node, Scene, SerializedScene } from 'core/scene/types';
 import type { NodeId } from 'core/scene/types';
 import { sceneFromJSON } from 'core/scene/scene';
@@ -1048,9 +1048,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // The mirror every HUD, pick and pinch path reads synchronously. Seeded here
   // because those reads start before the canvas's subscription lands.
   const currentViewRef = useRef<View>(
-    viewProp ?? defaultView ?? { x: 0, y: 0, scale: { x: 1, y: 1 } },
+    normalizeView(viewProp ?? defaultView ?? { x: 0, y: 0, scale: { x: 1, y: 1 } }),
   );
-  if (viewProp !== undefined) currentViewRef.current = viewProp;
+  if (viewProp !== undefined) currentViewRef.current = normalizeView(viewProp);
 
   useEffect(() => {
     const api = canvasApiRef.current;
@@ -1064,7 +1064,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const handleViewChange = useCallback((v: View) => {
     const api = canvasApiRef.current;
     if (viewProp === undefined && api) { api.setView(v); return; }
-    onViewChangeProp?.(v);
+    onViewChangeProp?.(normalizeView(v));
   }, [viewProp, onViewChangeProp]);
 
   // The camera runs on its own animator, never the `animator` prop's: that prop

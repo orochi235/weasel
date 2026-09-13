@@ -106,3 +106,28 @@ describe('<CanvasStack>', () => {
     vi.restoreAllMocks();
   });
 });
+
+describe('<CanvasStack> zoom invariant', () => {
+  it('hit-tests a view that arrived with zoom 0 to a finite world point', () => {
+    const rect = { left: 0, top: 0, width: 800, height: 600, right: 800, bottom: 600 };
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue(
+      rect as unknown as DOMRect,
+    );
+    const onHitTest = vi.fn();
+    const { container } = render(
+      <CanvasStack
+        layers={makeLayers(1)}
+        view={{ zoom: 0, pan: { x: 0, y: 0 } }}
+        onViewChange={vi.fn()}
+        onHitTest={onHitTest}
+      />,
+    );
+    const host = container.querySelector('.lk-canvas-stack');
+    if (!host) throw new Error('no stack host');
+    fireEvent.pointerDown(host, { button: 0, pointerId: 1, clientX: 500, clientY: 200 });
+    fireEvent.pointerUp(host, { pointerId: 1, clientX: 500, clientY: 200 });
+    const world = onHitTest.mock.calls.at(-1)?.[0] as { x: number; y: number };
+    expect(Number.isFinite(world.x) && Number.isFinite(world.y)).toBe(true);
+    vi.restoreAllMocks();
+  });
+});

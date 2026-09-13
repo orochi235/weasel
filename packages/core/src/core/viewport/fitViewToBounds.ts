@@ -1,5 +1,5 @@
 import type { View } from './view';
-import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from './zoomBounds';
+import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM, normalizeZoom } from './zoomBounds';
 
 /**
  * Axis-aligned rectangle in world space. Kit-wide `Bounds` shape used by
@@ -104,8 +104,8 @@ export function fitViewToBounds(
       break;
     }
   }
-  const scaleX = Math.min(maxScale, Math.max(minScale, rawX));
-  const scaleY = Math.min(maxScale, Math.max(minScale, rawY));
+  const scaleX = normalizeZoom(Math.min(maxScale, Math.max(minScale, rawX)));
+  const scaleY = normalizeZoom(Math.min(maxScale, Math.max(minScale, rawY)));
 
   // Center bounds in the viewport. With view-as-camera semantics:
   //   screenCenter = (worldCenter - view.x) * scale

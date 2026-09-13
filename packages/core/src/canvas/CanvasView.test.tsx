@@ -515,3 +515,24 @@ describe('<CanvasView> selection', () => {
     expect(reg.target.deps!().selection!.get()).toEqual(['seed']);
   });
 });
+
+describe('<CanvasView> zoom invariant', () => {
+  it('pans a camera that arrived with a zero scale without sending it to infinity', () => {
+    const panel = vi.fn();
+    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+    const { container } = render(
+      <SceneCanvas scene={scene} layers={{}} width={300} height={200}>
+        <CanvasView
+          id="panel"
+          bounds={PANEL}
+          view={() => ({ x: 0, y: 0, scale: { x: 0, y: 0 } })}
+          onViewChange={panel}
+        />
+      </SceneCanvas>,
+    );
+    wheelAt(container.querySelector('canvas')!, 150);
+    const next = panel.mock.calls.at(-1)?.[0] as View;
+    expect(Number.isFinite(next.y)).toBe(true);
+    expect(next.scale.y > 0 && Number.isFinite(next.scale.y)).toBe(true);
+  });
+});

@@ -31,7 +31,7 @@ import {
 import type { IndicatorStyle, MinimapFit } from './minimapMath';
 import type { SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';
 import type { DrawCommand } from '../renderer/DrawCommand';
-import type { View } from '../core/viewport/view';
+import { normalizeView, type View } from '../core/viewport/view';
 import type { Scene } from '../core/scene/types';
 import type { PoseDescriptor } from '../core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from '../interactions/actions/resize/autoPoseDescriptor';
@@ -90,7 +90,7 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
 ) {
   const {
     scene,
-    mainView,
+    mainView: mainViewProp,
     mainViewDims,
     onMainViewChange,
     width,
@@ -105,6 +105,7 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
     className,
     canvasRef,
   } = props;
+  const mainView = normalizeView(mainViewProp);
 
   // Subscribe to scene version so the fit view recomputes when the scene
   // mutates. `<SceneViewCanvas>` also subscribes, but it owns its own

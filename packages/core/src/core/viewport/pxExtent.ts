@@ -18,15 +18,12 @@ export interface Scale2 {
   y: number;
 }
 
-/** Guard against a degenerate axis: a zero scale would send the extent to
- *  infinity and make every point a hit. */
-const MIN_SCALE = 1e-9;
-
-/** One screen-pixel length as world-space extents, per axis. */
+/** One screen-pixel length as world-space extents, per axis. `scale` is a
+ *  view's, so neither axis is zero (see `View`). */
 export function pxExtent(px: number, scale: Scale2): { x: number; y: number } {
   return {
-    x: px / Math.max(MIN_SCALE, Math.abs(scale.x)),
-    y: px / Math.max(MIN_SCALE, Math.abs(scale.y)),
+    x: px / Math.abs(scale.x),
+    y: px / Math.abs(scale.y),
   };
 }
 
