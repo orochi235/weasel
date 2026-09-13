@@ -212,12 +212,22 @@
   white-space: nowrap;
 }
 
-.fg-css-vars__list {
+/* Held at the top while the list scrolls the aside under it. */
+.fg-css-vars__controls {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: var(--wzl-space-xs);
-  max-height: 60vh;
-  overflow: auto;
+  padding-block-end: var(--wzl-space-xs);
+  background: var(--wzl-surface);
+}
+
+.fg-css-vars__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-sm);
 }
 
 .fg-css-vars__empty {
@@ -228,14 +238,43 @@
 
 .fg-css-var {
   display: flex;
-  align-items: flex-end;
-  gap: var(--wzl-space-xs);
-  font-family: var(--wzl-font-mono);
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
-.fg-css-var__rows {
+.fg-css-var__name {
+  overflow: hidden;
+  color: var(--wzl-fg-muted);
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fg-css-var__edit {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-xs);
+}
+
+.fg-css-var__input {
+  --wzl-font-ui: var(--wzl-font-mono);
   flex: 1;
   min-width: 0;
+}
+
+/* Padding inflates a native color input past its box in Chrome. */
+.fg-css-var__swatch {
+  box-sizing: border-box;
+  flex-shrink: 0;
+  width: 18px;
+  height: 14px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: var(--wzl-radius-sm);
+  cursor: pointer;
 }
 
 .fg-globals {

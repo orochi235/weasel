@@ -1,4 +1,4 @@
-// The property-panel family, LayerStack, Select, ToggleBar and Button live in
+// The property-panel family, LayerStack, Input, Select, ToggleBar and Button live in
 // `@weasel-js/ui`; labkit re-exports them so chrome built on labkit needs no
 // direct ui dependency. Named, not `export *` — a star re-export of an external
 // package emits no binding in the bundle.
@@ -13,6 +13,7 @@ export type {
   EffectCardListItem,
   EffectCardListProps,
   EffectCardProps,
+  InputProps,
   LayerStackItem,
   LayerStackProps,
   NumberRowProps,
@@ -43,6 +44,7 @@ export {
   CurveField,
   EffectCard,
   EffectCardList,
+  Input,
   LayerStack,
   NumberRow,
   PropertyGroup,

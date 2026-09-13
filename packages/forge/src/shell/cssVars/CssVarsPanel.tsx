@@ -1,8 +1,6 @@
 import {
   Button,
-  ColorRow,
-  PropertyList,
-  TextRow,
+  Input,
   ToggleBar,
   type LabContribution,
   type ToggleBarItem,
@@ -36,15 +34,33 @@ const VarRow = memo(function VarRow({ name, value, overridden, write }: VarRowPr
   const reset = useCallback(() => write(name, null), [write, name]);
   return (
     <div className="fg-css-var" role="group" aria-label={name}>
-      <PropertyList className="fg-css-var__rows" pack="one-up" density="tight">
-        <TextRow label={name} value={value} onChange={onChange} />
-        {hex ? <ColorRow label="Color" value={hex} onChange={onChange} /> : null}
-      </PropertyList>
-      {overridden ? (
-        <Button variant="ghost" size="sm" ariaLabel={`Reset ${name}`} onClick={reset}>
-          Reset
-        </Button>
-      ) : null}
+      <span className="fg-css-var__name" title={name}>
+        {name}
+      </span>
+      <div className="fg-css-var__edit">
+        <Input
+          className="fg-css-var__input"
+          aria-label={`${name} value`}
+          value={value}
+          onChange={onChange}
+          leadingAdornment={
+            hex ? (
+              <input
+                type="color"
+                className="fg-css-var__swatch"
+                aria-label={`${name} color`}
+                value={hex}
+                onChange={(event) => onChange(event.target.value)}
+              />
+            ) : undefined
+          }
+        />
+        {overridden ? (
+          <Button variant="ghost" size="sm" ariaLabel={`Reset ${name}`} onClick={reset}>
+            Reset
+          </Button>
+        ) : null}
+      </div>
     </div>
   );
 });
@@ -82,18 +98,18 @@ export function CssVarsPanel() {
 
   return (
     <div className="fg-css-vars">
-      <ToggleBar
-        ariaLabel="Variables"
-        size="sm"
-        items={TABS}
-        value={tab}
-        onChange={(next) => {
-          if (next) setTab(next);
-        }}
-      />
-      <PropertyList pack="one-up" density="tight">
-        <TextRow label="Filter" value={filter} placeholder="Name or value" onChange={setFilter} />
-      </PropertyList>
+      <div className="fg-css-vars__controls">
+        <ToggleBar
+          ariaLabel="Variables"
+          variant="flat"
+          items={TABS}
+          value={tab}
+          onChange={(next) => {
+            if (next) setTab(next);
+          }}
+        />
+        <Input aria-label="Filter" placeholder="Filter by name or value" value={filter} onChange={setFilter} />
+      </div>
       {shown.length === 0 ? (
         <p className="fg-css-vars__empty">
           {rows.length === 0 ? 'The story’s frame has reported no variables.' : 'No variables match.'}
