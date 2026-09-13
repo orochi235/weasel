@@ -9,6 +9,8 @@ export type { ScaleIndicatorProps } from './ScaleIndicator';
 export { ScaleIndicator } from './ScaleIndicator';
 export type { SidebarProps } from './Sidebar';
 export { Sidebar } from './Sidebar';
+export type { SplitProps } from './Split';
+export { Split } from './Split';
 export type { StatusBarProps, StatusBarSectionProps } from './StatusBar';
 export { StatusBar } from './StatusBar';
 export type { ToolbarButtonProps, ToolbarGroupProps, ToolbarProps } from './Toolbar';

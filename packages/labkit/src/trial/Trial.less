@@ -96,21 +96,6 @@
     flex-shrink: 0;
   }
 
-  // The strip's own seam. windease positions and sizes it; this is only what
-  // it looks like.
-  &__panes [data-affordance-kind='resize-x'] {
-    background: var(--wzl-border);
-  }
-
-  &__panes .windease-affordance-hit:hover [data-affordance-kind='resize-x'],
-  &__panes .windease-affordance-hit:focus-visible [data-affordance-kind='resize-x'] {
-    background: var(--wzl-accent);
-  }
-
-  &__panes .windease-affordance-hit:focus-visible {
-    outline: none;
-  }
-
   &--unknown {
     display: flex;
     align-items: center;
