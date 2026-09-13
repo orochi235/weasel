@@ -25,7 +25,11 @@ import { fileURLToPath } from 'node:url';
 import alias from '@rollup/plugin-alias';
 import { rollup } from 'rollup';
 import { dts } from 'rollup-plugin-dts';
-import { weaselDtsAliases, weaselDtsPaths } from '../../../scripts/dts-aliases.ts';
+import {
+  weaselDtsAliases,
+  weaselDtsPaths,
+  workspaceDependencyClosure,
+} from '../../../scripts/dts-aliases.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const pkgRoot = resolve(here, '..'); // packages/labkit
@@ -95,7 +99,11 @@ function requireBuilt(entries: ReturnType<typeof weaselDtsAliases>): void {
 // external specifier in the output rather than being inlined.
 const DTS_EXCLUDE = ['@weasel-js/labkit', '@weasel-js/core'];
 
-const aliases = weaselDtsAliases(weaselRoot, DTS_EXCLUDE);
+// Only packages labkit's manifests reach: a package built after labkit (forge
+// depends on labkit) would otherwise be required before it can exist.
+const DTS_INCLUDE = workspaceDependencyClosure(weaselRoot, '@weasel-js/labkit');
+
+const aliases = weaselDtsAliases(weaselRoot, DTS_EXCLUDE, DTS_INCLUDE);
 
 async function main(): Promise<void> {
   requireBuilt(aliases);
@@ -118,7 +126,7 @@ async function main(): Promise<void> {
       },
       dts({
         tsconfig: resolve(pkgRoot, 'tsconfig.dts.json'),
-        compilerOptions: { paths: weaselDtsPaths(weaselRoot, DTS_EXCLUDE) },
+        compilerOptions: { paths: weaselDtsPaths(weaselRoot, DTS_EXCLUDE, DTS_INCLUDE) },
         // Don't follow into node_modules; third-party types stay external.
         respectExternal: false,
       }),
