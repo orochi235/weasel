@@ -139,4 +139,12 @@ describe('textLineBoxes', () => {
     expect(wrapped.length).toBeGreaterThan(1);
     expect(unwrapped).toHaveLength(1);
   });
+
+  it('aligns within the pose width at maxWidth Infinity', () => {
+    const opts = { maxWidth: Infinity };
+    const center = textLineBoxes(pose({ style: { fontSize: 20, align: 'center' } }), opts)[0];
+    const right = textLineBoxes(pose({ style: { fontSize: 20, align: 'right' } }), opts)[0];
+    expect(center.x + center.width / 2).toBeCloseTo(300);
+    expect(right.x + right.width).toBeCloseTo(500);
+  });
 });

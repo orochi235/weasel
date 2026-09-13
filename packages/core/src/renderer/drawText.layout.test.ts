@@ -125,6 +125,24 @@ describe('drawText and the layout it is given', () => {
   });
 });
 
+describe('drawText and the alignment box', () => {
+  it('aligns within cmd.width without wrapping at it', () => {
+    const base = bottomAlignedText() as Extract<DrawCommand, { kind: 'text' }>;
+    const cmd: DrawCommand = {
+      ...base,
+      verticalAlign: undefined,
+      align: 'right',
+      width: 400,
+      runs: [{ ...base.runs[0], text: 'AB', underline: false }],
+    };
+    r.render([cmd]);
+    const laid = captured[captured.length - 1].result;
+    // 'AB' is 44 wide in the fixture, so its right edge meets 400.
+    expect(laid.lines).toHaveLength(1);
+    expect(laid.lines[0].x0).toBeCloseTo(356, 5);
+  });
+});
+
 /** Y coordinates from every vertex buffer uploaded this frame. Text quads are
  *  stride-5 (x, y, u, v, baselineY); decoration rects are stride-2. Both put
  *  `y` second, which is all this needs. */

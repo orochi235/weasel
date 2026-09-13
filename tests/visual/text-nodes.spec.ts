@@ -30,6 +30,9 @@ const RUNS = { x0: 20, y0: 120, x1: 460, y1: 146 };
 const BOTTOM = { x0: 20, y0: 160, x1: 220, y1: 280 };
 // 'rotated' is 210×34 at (250,200), turned -15° about its center (355,217).
 const ROTATED = { x0: 240, y0: 160, x1: 475, y1: 275 };
+// 'center' and 'right' share one 440-wide box shape, one row apart.
+const CENTER = { x0: 20, y0: 296, x1: 460, y1: 326 };
+const RIGHT = { x0: 20, y0: 336, x1: 460, y1: 366 };
 
 type Box = typeof LARGE;
 
@@ -39,8 +42,17 @@ interface InkStats {
   meanY: number;
 }
 
+interface RowSpan {
+  /** Ink anywhere across the canvas width in the box's rows. */
+  ink: number;
+  /** Of that, ink left of `x0` or right of `x1`. */
+  outside: number;
+  minX: number;
+  maxX: number;
+}
+
 async function probe(page: Page) {
-  return page.evaluate(({ LARGE, BOLD, ITALIC, RUNS, BOTTOM, ROTATED }) => {
+  return page.evaluate(({ LARGE, BOLD, ITALIC, RUNS, BOTTOM, ROTATED, CENTER, RIGHT }) => {
     const c = document.querySelector<HTMLCanvasElement>('canvas')!;
     const gl = c.getContext('webgl2')!;
     const w = c.width;
@@ -71,6 +83,24 @@ async function probe(page: Page) {
       }
       return { ink, firstRow, meanY: ink ? sumY / ink : -1 };
     };
+    // Scans the whole row band, not just the box, so ink that alignment put
+    // outside the box is counted rather than clipped out of the probe.
+    const span = (box: Box): RowSpan => {
+      let ink = 0;
+      let outside = 0;
+      let minX = w;
+      let maxX = -1;
+      for (let y = box.y0; y < box.y1; y++) {
+        for (let x = 0; x < w; x++) {
+          if (!isInk(x, y)) continue;
+          ink++;
+          if (x < box.x0 || x >= box.x1) outside++;
+          minX = Math.min(minX, x);
+          maxX = Math.max(maxX, x);
+        }
+      }
+      return { ink, outside, minX, maxX };
+    };
     let red = 0;
     for (let y = RUNS.y0; y < RUNS.y1; y++) {
       for (let x = RUNS.x0; x < RUNS.x1; x++) {
@@ -92,8 +122,10 @@ async function probe(page: Page) {
       bottomLower: stats({ ...BOTTOM, y0: midY }),
       rotatedLeft: stats({ ...ROTATED, x1: midX }),
       rotatedRight: stats({ ...ROTATED, x0: midX }),
+      center: span(CENTER),
+      right: span(RIGHT),
     };
-  }, { LARGE, BOLD, ITALIC, RUNS, BOTTOM, ROTATED });
+  }, { LARGE, BOLD, ITALIC, RUNS, BOTTOM, ROTATED, CENTER, RIGHT });
 }
 
 test(`${DEMO_ID} — visual baseline`, async ({ page }) => {
@@ -106,7 +138,7 @@ test(`${DEMO_ID} — kit:text paints each node where its data says`, async ({ pa
   await captureCanvas(page, `/#${DEMO_ID}`, { settleMs: 500 });
   const s = await probe(page);
 
-  expect(s.canvas).toEqual({ w: 480, h: 300 });
+  expect(s.canvas).toEqual({ w: 480, h: 380 });
 
   for (const node of [s.large, s.bold, s.italic, s.runs]) {
     expect(node.ink).toBeGreaterThan(50);
@@ -129,4 +161,18 @@ test(`${DEMO_ID} — kit:text paints each node where its data says`, async ({ pa
   expect(s.rotatedLeft.ink).toBeGreaterThan(50);
   expect(s.rotatedRight.ink).toBeGreaterThan(50);
   expect(s.rotatedLeft.meanY - s.rotatedRight.meanY).toBeGreaterThan(8);
+
+  // `align` resolves within the pose width, not about `pose.x`. Anchored on
+  // `pose.x`, centered text straddles the box's left edge and right-aligned
+  // text ends at it.
+  expect(s.center.ink).toBeGreaterThan(50);
+  expect(s.center.outside).toBe(0);
+  const leftGap = s.center.minX - CENTER.x0;
+  const rightGap = CENTER.x1 - 1 - s.center.maxX;
+  expect(Math.abs(leftGap - rightGap)).toBeLessThan(6);
+
+  expect(s.right.ink).toBeGreaterThan(50);
+  expect(s.right.outside).toBe(0);
+  expect(RIGHT.x1 - 1 - s.right.maxX).toBeLessThan(6);
+  expect(s.right.minX).toBeGreaterThan(RIGHT.x0 + 100);
 });

@@ -4,7 +4,7 @@ import type {
 } from '@weasel-js/core';
 
 const W = 480;
-const H = 300;
+const H = 380;
 
 interface NodeData {
   text?: string;
@@ -72,6 +72,25 @@ const NODES = [
     text: 'Rotated by pose.',
     fill: solid('#7a1f5a'),
     style: { fontSize: 22, fontWeight: 600 },
+  }),
+  // The rects show the width `align` resolves within.
+  leaf('center-box', { x: 20, y: 296, width: 440, height: 30 }, {
+    shape: 'rect',
+    fill: solid('#e8eef8'),
+  }),
+  leaf('center', { x: 20, y: 296, width: 440, height: 30 }, {
+    text: 'Centered in its box.',
+    fill: INK,
+    style: { fontSize: 20, align: 'center' },
+  }),
+  leaf('right-box', { x: 20, y: 336, width: 440, height: 30 }, {
+    shape: 'rect',
+    fill: solid('#e8eef8'),
+  }),
+  leaf('right', { x: 20, y: 336, width: 440, height: 30 }, {
+    text: 'Right-aligned in its box.',
+    fill: solid('#2f6f4f'),
+    style: { fontSize: 20, align: 'right' },
   }),
 ];
 

@@ -49,7 +49,8 @@ export interface CaretIndexAtOpts {
    * Pass `Infinity` for a node painted by the built-in `kit:text` painter:
    * that painter deliberately does not forward `maxWidth`, so its text does
    * not wrap, and a caret mapped through a finite width would answer for a
-   * line break the paint never made. Mirrors `textLineBoxes`.
+   * line break the paint never made. Alignment resolves within `pose.width`
+   * either way. Mirrors `textLineBoxes`.
    */
   maxWidth?: number;
 }
@@ -78,6 +79,7 @@ export function caretIndexAt(
   const runs = resolveRuns(toRuns(source), style);
   const laid = cachedLayoutRuns(runs, {
     maxWidth: opts.maxWidth ?? pose.width,
+    alignWidth: pose.width,
     lineHeight: style.lineHeight,
     align: style.align,
   });

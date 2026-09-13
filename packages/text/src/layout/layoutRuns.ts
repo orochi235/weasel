@@ -278,7 +278,15 @@ function atlasMetrics(font: BmFont): MetricsSource {
 }
 
 export interface LayoutRunsOpts {
+  /** Wrap width. `Infinity` never wraps. */
   maxWidth: number;
+  /**
+   * Width of the box `center` / `right` resolve within, with `x = 0` its left
+   * edge. Default `maxWidth`. Separate from it so a box can align text it does
+   * not wrap. When both are infinite a line anchors on its own width instead:
+   * `x = 0` is its midpoint (`center`) or right edge (`right`).
+   */
+  alignWidth?: number;
   lineHeight: number;
   /**
    * `start` / `end` resolve against `direction`; `left` / `right` are absolute
@@ -908,7 +916,7 @@ export function layoutRuns(
   const lineBoxes: LaidOutLineBox[] = [];
   let penY = 0;
   let maxLineWidth = 0;
-  const finiteWidth = Number.isFinite(opts.maxWidth) ? opts.maxWidth : 0;
+  const alignWidth = opts.alignWidth ?? opts.maxWidth;
   for (const line of lines) {
     // Trailing whitespace hangs: CSS aligns a line on its ink, so a line that
     // happens to end in a space sits where it would without one. The space
@@ -922,15 +930,12 @@ export function layoutRuns(
     const inkWidth = line.width - hung;
     const alignShift = (() => {
       if (align === 'left') return 0;
-      // With a finite box, distribute the slack within `maxWidth` (x = 0 is
-      // the box's left edge). With no box (infinite maxWidth), anchor on the
-      // line's own width instead — x = 0 is the text's midpoint ('center')
-      // or right edge ('right'). This matches the canvas-2D `renderLabel`
-      // anchor model so point-anchored labels center on x in both backends.
-      if (!Number.isFinite(opts.maxWidth)) {
+      // The boxless anchor matches the canvas-2D `renderLabel` model, so
+      // point-anchored labels center on x in both backends.
+      if (!Number.isFinite(alignWidth)) {
         return align === 'center' ? -inkWidth / 2 : -inkWidth;
       }
-      const slack = finiteWidth - inkWidth;
+      const slack = alignWidth - inkWidth;
       return align === 'center' ? slack / 2 : slack;
     })();
     const lineX0 = alignShift;

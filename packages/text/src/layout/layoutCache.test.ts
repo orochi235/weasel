@@ -111,6 +111,13 @@ describe('cachedLayoutRuns', () => {
     expect(cachedLayoutRuns(runs, { ...OPTS, align: 'center' })).not.toBe(base);
   });
 
+  it('re-lays out when the alignment box changes, not when it restates maxWidth', () => {
+    const runs = [run('hello world')];
+    const base = cachedLayoutRuns(runs, { ...OPTS, align: 'center' });
+    expect(cachedLayoutRuns(runs, { ...OPTS, align: 'center', alignWidth: 200 })).not.toBe(base);
+    expect(cachedLayoutRuns(runs, { ...OPTS, align: 'center', alignWidth: 400 })).toBe(base);
+  });
+
   describe('the outline threshold', () => {
     // `outlineMinSize` is derived from the view zoom, so a naive key would
     // miss on every frame of a pinch. It enters `layoutRuns` through exactly

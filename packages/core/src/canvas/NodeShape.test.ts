@@ -289,6 +289,13 @@ describe('kit:text painter — rich runs', () => {
     const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
     expect(text.y).toBe(pose.y);
   });
+
+  it('aligns within the pose width without handing over a wrap width', () => {
+    const [cmd] = paintText({ text: 'hi', style: { fontSize: 16, align: 'center' } });
+    const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
+    expect(text.width).toBe(pose.width);
+    expect(text.maxWidth).toBeUndefined();
+  });
 });
 
 describe('kit:text painter — silhouette', () => {
@@ -354,6 +361,19 @@ describe('kit:text painter — silhouette', () => {
     // nothing sits on a second line.
     expect(pathContainsPoint(sil, 60, 5)).toBe(true);
     expect(pathContainsPoint(sil, 5, 30)).toBe(false);
+  });
+
+  it('follows center and right alignment within the pose width', () => {
+    const centered = findShapeSilhouette(
+      textNode({ text: 'AB', style: { fontSize: 20, align: 'center' } }), wide,
+    )!;
+    expect(pathContainsPoint(centered, 200, 5)).toBe(true);
+    expect(pathContainsPoint(centered, 5, 5)).toBe(false);
+    const right = findShapeSilhouette(
+      textNode({ text: 'AB', style: { fontSize: 20, align: 'right' } }), wide,
+    )!;
+    expect(pathContainsPoint(right, 395, 5)).toBe(true);
+    expect(pathContainsPoint(right, 5, 5)).toBe(false);
   });
 });
 

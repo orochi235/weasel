@@ -1872,7 +1872,9 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
     ? minScreen / modelScale(ctx.state.transform)
     : undefined;
 
-  const laid = cachedLayoutRuns(cmd.runs, { maxWidth, lineHeight, align, outlineMinSize });
+  const laid = cachedLayoutRuns(cmd.runs, {
+    maxWidth, alignWidth: cmd.width, lineHeight, align, outlineMinSize,
+  });
   // Decorations are checked too: text whose glyphs are all ink-free — every
   // one still awaiting a dynamic-atlas bake, say — produces no groups at all
   // while still carrying a rule that has to be drawn.

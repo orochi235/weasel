@@ -18,6 +18,7 @@ import {
 import {
   layoutRuns, _resetMissingGlyphWarningsForTests, _resetNoMetricsWarningsForTests,
 } from './layoutRuns';
+import type { LayoutRunsOpts } from './layoutRuns';
 import { resolveRuns, type ResolvedRun } from '../runs/resolveRuns';
 import { resolveTextStyle } from '../textStyle';
 
@@ -1656,5 +1657,33 @@ describe('layoutRuns — a run built without a baselineShift', () => {
       expect(Number.isFinite(q.baselineY)).toBe(true);
       expect(q.y1).toBeGreaterThan(q.y0);
     }
+  });
+});
+
+describe('layoutRuns — alignWidth', () => {
+  const at = (text: string, opts: Partial<LayoutRunsOpts>) =>
+    layoutRuns([RUN_PLAIN(text)], { maxWidth: Infinity, lineHeight: 1.2, align: 'left', ...opts });
+
+  it('aligns within alignWidth exactly as within a finite maxWidth', async () => {
+    await registerFixture('inter', [{}]);
+    for (const align of ['center', 'right'] as const) {
+      const boxed = at('AB', { align, alignWidth: 400 });
+      const wrapped = at('AB', { align, maxWidth: 400 });
+      expect(boxed.lines[0].x0).toBeCloseTo(wrapped.lines[0].x0, 10);
+    }
+    expect(at('AB', { align: 'right', alignWidth: 400 }).lines[0].x1).toBeCloseTo(400, 10);
+  });
+
+  it('does not wrap at alignWidth', async () => {
+    await registerFixture('inter', [{}]);
+    expect(at('AB AB AB', { align: 'center', alignWidth: 40 }).lines).toHaveLength(1);
+  });
+
+  it('wraps at maxWidth and aligns within alignWidth when both are given', async () => {
+    await registerFixture('inter', [{}]);
+    const out = at('AB AB', { align: 'right', maxWidth: 60, alignWidth: 400 });
+    const single = at('AB', { align: 'right', alignWidth: 400 });
+    expect(out.lines).toHaveLength(2);
+    for (const line of out.lines) expect(line.x0).toBeCloseTo(single.lines[0].x0, 10);
   });
 });

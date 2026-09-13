@@ -26,6 +26,7 @@ export function textCommandFromRuns(
   height?: number,
   verticalAlign?: TextVerticalAlign,
   paint?: TextPaint,
+  width?: number,
 ): DrawCommand {
   const resolved = resolveTextStyle(style, paint);
   return {
@@ -38,12 +39,14 @@ export function textCommandFromRuns(
     style: style ?? {},
     height,
     verticalAlign,
+    width,
   };
 }
 
 /** Build a draw command for a single unstyled string. Text is laid out with
- *  the registered font's metrics, wrapped at `maxWidth` and aligned within
- *  `height` when both are given. */
+ *  the registered font's metrics, wrapped at `maxWidth`, aligned across
+ *  `width` (default `maxWidth`) and within `height` when `verticalAlign` is
+ *  given. */
 export function textCommand(
   x: number,
   y: number,
@@ -53,6 +56,7 @@ export function textCommand(
   height?: number,
   verticalAlign?: TextVerticalAlign,
   paint?: TextPaint,
+  width?: number,
 ): DrawCommand {
-  return textCommandFromRuns(x, y, [{ text }], style, maxWidth, height, verticalAlign, paint);
+  return textCommandFromRuns(x, y, [{ text }], style, maxWidth, height, verticalAlign, paint, width);
 }
