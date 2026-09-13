@@ -2258,8 +2258,8 @@ function GestureDispatcherMounter({
   depRegistryRef.current = depRegistry;
   const getAnchorState = useMemo(() => anchorStateFrom(() => depRegistryRef.current), []);
 
-  // Build the `affordanceAt` thunk. Converts client coords → world coords
-  // internally, then delegates to `buildAffordanceAt` for handle hit-testing.
+  // Build the `affordanceAt` thunk. Takes world coords and delegates to
+  // `buildAffordanceAt` for handle hit-testing.
   const affordanceAt = useMemo(() => {
     if (!selectionRef || !boundsOf || !viewRef) return undefined;
     return buildAffordanceAt({
@@ -2283,8 +2283,8 @@ function GestureDispatcherMounter({
   }, [selectionRef, boundsOf, viewRef, getAnchorState, getIsVisibleForCanvas, viewRegistry,
       targetScale, handleHitRadius]);
 
-  // Build the `classifyTarget` thunk. Converts client coords → world coords
-  // internally using the canvas rect + view, then delegates to `buildClassifyTarget`.
+  // Build the `classifyTarget` thunk. Takes world coords and delegates to
+  // `buildClassifyTarget`.
   const classifyTarget = useMemo(() => {
     if (!selectionRef || !pickEvery || !viewRef) return undefined;
     return buildClassifyTarget(
@@ -2308,9 +2308,8 @@ function GestureDispatcherMounter({
     );
   }, [selectionRef, pickEvery, viewRef]);
 
-  // Wrap `affordanceAt` and `classifyTarget` to convert client → world coords
-  // before delegating. The canvas rect is read on every call (not cached) so
-  // it stays correct after layout changes.
+  // The canvas rect is read on every call (not cached) so it stays correct
+  // after layout changes.
   const clientToWorld = useCallback((clientX: number, clientY: number): { x: number; y: number } => {
     const canvas = canvasRef.current;
     const view = viewRef?.current;
@@ -2330,12 +2329,11 @@ function GestureDispatcherMounter({
     return world;
   }, [canvasRef, viewRef]);
 
-  const wrappedAffordanceAt = useMemo(() => {
+  const affordanceWithLayers = useMemo(() => {
     // Note this is NOT gated on `affordanceAt` being built: registered layers
     // produce affordances of their own, and a consumer with no selection
     // chrome (a canvas that is nothing but a HUD, say) still needs those.
-    return (screenPoint: { x: number; y: number }) => {
-      const worldPoint = clientToWorld(screenPoint.x, screenPoint.y);
+    return (worldPoint: { x: number; y: number }) => {
       // Registered layers first: they draw on top of the kit's own chrome, so
       // they get first refusal on the point. A hit becomes an `AffordanceHit`
       // whose kind names the layer, carrying whatever the layer's hit-test
@@ -2355,15 +2353,7 @@ function GestureDispatcherMounter({
       }
       return affordanceAt ? affordanceAt(worldPoint) : null;
     };
-  }, [affordanceAt, clientToWorld, canvasApiRef]);
-
-  const wrappedClassifyTarget = useMemo(() => {
-    if (!classifyTarget) return undefined;
-    return (screenPoint: { x: number; y: number }) => {
-      const worldPoint = clientToWorld(screenPoint.x, screenPoint.y);
-      return classifyTarget(worldPoint);
-    };
-  }, [classifyTarget, clientToWorld]);
+  }, [affordanceAt, canvasApiRef]);
 
   // Stable callback that asks the canvas to redraw. Reads via ref so the
   // identity stays stable while the underlying API binds after mount.
@@ -2399,8 +2389,8 @@ function GestureDispatcherMounter({
     toolsById,
     enabled,
     keyboard,
-    affordanceAt: wrappedAffordanceAt,
-    classifyTarget: wrappedClassifyTarget,
+    affordanceAt: affordanceWithLayers,
+    classifyTarget,
     dispatcher,
     clientToWorld,
     requestRedraw,
@@ -2591,13 +2581,7 @@ function StandardActionsRegistrar({
     viewAnimation,
     decayLoop,
   );
-  // Scene owns its own undo/redo stacks via `useScene`. `undoAction` /
-  // `redoAction` only call `history.undo()` / `history.redo()`, so the scene
-  // satisfies the runtime contract — cast through `unknown` since `Scene`'s
-  // shape is wider than the formal `History` interface (entries / goto /
-  // version / subscribe live on different methods).
-  const sceneAsHistory = scene as unknown as Parameters<typeof useStandardActions>[0]['history'];
-  useStandardActions({ selection, scene, view, history: sceneAsHistory });
+  useStandardActions({ selection, scene, view, history: scene.history });
 
   // viewport.pan / viewport.zoom are SceneCanvas-coupled (need the `view` dep
   // published just above), so they're registered here rather than in

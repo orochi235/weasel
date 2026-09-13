@@ -244,8 +244,7 @@ export function CanvasView(props: CanvasViewProps): null {
       getAnchorState,
       getIsVisible: () => helpersRef.current.getIsVisible(),
     });
-    return (screenPoint: { x: number; y: number }) => {
-      const world = clientToWorldHere(screenPoint.x, screenPoint.y);
+    return (world: { x: number; y: number }) => {
       // Registered layers draw over the kit's chrome, so they get first
       // refusal — hit-tested against this view's frame and envelope, not the
       // canvas's.
@@ -267,15 +266,15 @@ export function CanvasView(props: CanvasViewProps): null {
       }
       return inner(world);
     };
-  }, [getAnchorState, clientToWorldHere, rectNow, registry, targetScale]);
+  }, [getAnchorState, rectNow, registry, targetScale]);
 
   const classifyTarget = useMemo(() => {
     const inner = buildClassifyTarget(
       () => live.current.selection.get(),
       (wx, wy) => {
         const i = inputsRef.current;
-        // This view's camera: the point came out of `clientToWorldHere`, and a
-        // screen-pixel tolerance needs the scale that produced it.
+        // This view's camera: the dispatcher converted with `clientToWorldHere`,
+        // and a screen-pixel tolerance needs the scale that produced it.
         const camera = live.current.view;
         if (i?.pickBest) return i.pickBest(wx, wy, camera);
         const ids = i?.pickEvery?.(wx, wy, camera) ?? [];
@@ -283,9 +282,8 @@ export function CanvasView(props: CanvasViewProps): null {
       },
       (id) => inputsRef.current?.kindOfNode?.(id),
     );
-    return (screenPoint: { x: number; y: number }) =>
-      inner(clientToWorldHere(screenPoint.x, screenPoint.y));
-  }, [clientToWorldHere]);
+    return (world: { x: number; y: number }) => inner(world);
+  }, []);
 
   const registration = useMemo<ViewRegistration>(() => ({
     id,

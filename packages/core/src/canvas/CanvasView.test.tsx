@@ -442,23 +442,25 @@ describe('<CanvasView> hit-testing', () => {
     return registry.list()[0]!.target;
   }
 
+  // Both thunks take this view's own world point — the dispatcher converts
+  // with the `clientToWorld` the same registration carries.
   it('answers a resize handle for what this view has selected', () => {
-    const hit = panelTarget(['b']).affordanceAt!({ x: 140, y: 0 });
+    const hit = panelTarget(['b']).affordanceAt!({ x: 40, y: 0 });
     expect(hit?.kind).toBe('handle:top-left');
   });
 
   it('answers nothing where the surface selected but this view did not', () => {
-    expect(panelTarget(['a']).affordanceAt!({ x: 140, y: 0 })).toBeNull();
+    expect(panelTarget(['a']).affordanceAt!({ x: 40, y: 0 })).toBeNull();
   });
 
   it('classifies a body under the point in this view\'s coordinates', () => {
-    expect(panelTarget(['b']).classifyTarget!({ x: 145, y: 5 }))
+    expect(panelTarget(['b']).classifyTarget!({ x: 45, y: 5 }))
       .toMatchObject({ body: 'selected-body' });
   });
 
   // World (31, 22) is 11.2px from c's top-left corner — outside the 8px fine
   // radius, inside the 14px coarse one.
-  const NEAR_CORNER = { x: 131, y: 22 };
+  const NEAR_CORNER = { x: 31, y: 22 };
 
   it('misses a corner handle 11px away under a fine pointer', () => {
     expect(panelTarget(['c'], { coarsePointer: false }).affordanceAt!(NEAR_CORNER)).toBeNull();

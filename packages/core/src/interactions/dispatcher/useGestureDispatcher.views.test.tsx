@@ -218,3 +218,61 @@ describe('useGestureDispatcher view routing', () => {
     expect(kinds(root.seen)).toContain('pointerdown');
   });
 });
+
+type Point = { x: number; y: number };
+
+/**
+ * The hook applies the routed view's `clientToWorld` before it calls either
+ * hit-test thunk, so a consumer hit-tests in one space. The panel's camera puts
+ * its world origin at client x 100, which is what makes a miss visible: an
+ * unconverted point arrives 100 to the right of where the pointer really is.
+ */
+describe('useGestureDispatcher hit-test coordinates', () => {
+  function mountProbes() {
+    const seen: { affordance: Point[]; classify: Point[] } = { affordance: [], classify: [] };
+    const target: DispatcherViewTarget = {
+      id: 'panel',
+      dispatcher: createDispatcher(),
+      affordanceAt: (p) => { seen.affordance.push({ ...p }); return null; },
+      classifyTarget: (p) => { seen.classify.push({ ...p }); return { body: 'empty' }; },
+      clientToWorld: (x, y) => ({ x: x - PANEL_RECT.x, y }),
+    };
+    const { container } = render(
+      <DepRegistryProvider>
+        <ActiveToolContextProvider>
+          <ActionsProvider>
+            <Probe root={createDispatcher()} panel={target} />
+          </ActionsProvider>
+        </ActiveToolContextProvider>
+      </DepRegistryProvider>,
+    );
+    return { seen, canvas: container.querySelector('canvas')! };
+  }
+
+  const PANEL_WORLD = { x: 50, y: 10 };
+
+  it('hands both thunks the routed view\u2019s world point on pointerdown', () => {
+    const { seen, canvas } = mountProbes();
+    act(() => { fire(canvas, 'pointerdown', { clientX: 150, clientY: 10, pointerId: 1 }); });
+    expect(seen.affordance).toEqual([PANEL_WORLD]);
+    expect(seen.classify).toEqual([PANEL_WORLD]);
+  });
+
+  it('hands both thunks the world point on the context-menu path', () => {
+    const { seen, canvas } = mountProbes();
+    act(() => {
+      canvas.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 150, clientY: 10 }));
+    });
+    expect(seen.affordance).toEqual([PANEL_WORLD]);
+    expect(seen.classify).toEqual([PANEL_WORLD]);
+  });
+
+  it('hands the wheel path the world point too', () => {
+    const { seen, canvas } = mountProbes();
+    act(() => {
+      canvas.dispatchEvent(new WheelEvent('wheel', { bubbles: true, clientX: 150, clientY: 10, deltaY: 1 }));
+    });
+    expect(seen.affordance).toEqual([PANEL_WORLD]);
+    expect(seen.classify).toEqual([PANEL_WORLD]);
+  });
+});

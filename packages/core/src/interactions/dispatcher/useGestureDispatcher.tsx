@@ -183,13 +183,12 @@ export interface UseGestureDispatcherOptions {
    */
   keyboard?: boolean;
   /**
-   * Optional affordance classifier. Called on every pointerdown with the
-   * **client** coordinates of the pointer — this hook applies `clientToWorld`
-   * to `InputEvent.x`/`y`, never to this thunk, so a consumer working in world
-   * coordinates converts here with the same function it passes as
-   * `clientToWorld`. Returns an `AffordanceHit` when the pointer lands on a
-   * known affordance (resize handle, rotate handle, etc.) or `null` when the
-   * pointer hit open canvas.
+   * Optional affordance classifier. Called with the **world** coordinates of
+   * the pointer — this hook applies the routed view's `clientToWorld` before
+   * calling it, the same conversion that produces `InputEvent.x`/`y`, so a
+   * consumer hit-tests in one space. Returns an `AffordanceHit` when the
+   * pointer lands on a known affordance (resize handle, rotate handle, etc.)
+   * or `null` when the pointer hit open canvas.
    *
    * The hit is packed into `InputEvent.pointerdown.affordance` and flows
    * through into `InvocationCtx.drag.affordance`. Action invokers that require
@@ -200,7 +199,7 @@ export interface UseGestureDispatcherOptions {
    * that explicitly wire a classifier get affordance-gated behavior.
    * `<SceneCanvas>` wires the full chrome→dispatcher bridge.
    */
-  affordanceAt?: (clientPoint: { x: number; y: number }) => AffordanceHit | null;
+  affordanceAt?: (worldPoint: { x: number; y: number }) => AffordanceHit | null;
 
   /**
    * Optional body classifier. Called on every pointerdown with the world-space
@@ -218,9 +217,9 @@ export interface UseGestureDispatcherOptions {
    * never matches — bindings using those specs are silently skipped.
    * `<SceneCanvas>` wires this.
    *
-   * Client coordinates, on every path, for the same reason as `affordanceAt`.
+   * World coordinates, on every path, for the same reason as `affordanceAt`.
    */
-  classifyTarget?: (clientPoint: { x: number; y: number }) => BodyClassification;
+  classifyTarget?: (worldPoint: { x: number; y: number }) => BodyClassification;
 
   /**
    * Optional pre-created `Dispatcher`. When provided, this hook pumps events
@@ -757,9 +756,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       const [localX, localY] = rect
         ? clientToCanvasRect(rect, e.clientX, e.clientY)
         : [e.clientX, e.clientY];
-      const screenPoint = { x: e.clientX, y: e.clientY };
-      const affordance = target().affordanceAt?.(screenPoint) ?? undefined;
-      const body = target().classifyTarget?.(screenPoint);
+      const hitPoint = toWorld(e.clientX, e.clientY);
+      const affordance = target().affordanceAt?.(hitPoint) ?? undefined;
+      const body = target().classifyTarget?.(hitPoint);
       const ev: InputEvent = {
         kind: 'wheel',
         altKey: e.altKey,
@@ -802,15 +801,11 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       if (!canvas) return;
       routeDown(e.pointerId, e.clientX, e.clientY);
 
-      // Both thunks take the client point; `SceneCanvas` and `CanvasView` each
-      // convert with the `clientToWorld` they also pass here.
-      const clientPoint = { x: e.clientX, y: e.clientY };
-      const affordance = target().affordanceAt?.(clientPoint) ?? undefined;
-      const body = target().classifyTarget?.(clientPoint);
+      const w = toWorld(e.clientX, e.clientY);
+      const affordance = target().affordanceAt?.(w) ?? undefined;
+      const body = target().classifyTarget?.(w);
       const bodyTarget = body?.body;
       const bodyKind = body?.kind;
-
-      const w = toWorld(e.clientX, e.clientY);
       const ev: InputEvent = {
         kind: 'pointerdown',
         target: e.target,
@@ -1085,16 +1080,15 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // Idle: re-resolve. Mid-gesture the branch above already returned, so a
       // pinned pointer is never unpinned by a hover refresh.
       routeAt(null, h.clientX, h.clientY);
-      const screenPoint = { x: h.clientX, y: h.clientY };
-      const affordance = target().affordanceAt?.(screenPoint) ?? undefined;
+      const w = toWorld(h.clientX, h.clientY);
+      const affordance = target().affordanceAt?.(w) ?? undefined;
       if (affordance?.cursor) {
         applyHoverCursor(affordance.cursor);
         return;
       }
-      const hoverBody = target().classifyTarget?.(screenPoint);
+      const hoverBody = target().classifyTarget?.(w);
       const bodyTarget = hoverBody?.body;
       const bodyKind = hoverBody?.kind;
-      const w = toWorld(h.clientX, h.clientY);
       const predicted = dispatcherNow().resolveOnly(
         {
           kind: 'pointerdown',
@@ -1348,12 +1342,11 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // Suppress native menu so tools/actions own the right-click UX.
       e.preventDefault();
       routeAt(null, e.clientX, e.clientY);
-      const screenPoint = { x: e.clientX, y: e.clientY };
+      const w = toWorld(e.clientX, e.clientY);
       // A secondary button never reaches `onPointerDown`, so unlike click and
       // long-press there is no press to replay the classification from.
-      const affordance = target().affordanceAt?.(screenPoint) ?? undefined;
-      const menuBody = target().classifyTarget?.(screenPoint);
-      const w = toWorld(e.clientX, e.clientY);
+      const affordance = target().affordanceAt?.(w) ?? undefined;
+      const menuBody = target().classifyTarget?.(w);
       const ev: InputEvent = {
         kind: 'contextmenu',
         target: e.target,
