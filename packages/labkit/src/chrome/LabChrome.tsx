@@ -18,7 +18,8 @@ export function useLabChromeContext(): LabChromeContext {
   const storeCtx = useContext(LabStoreContext);
   if (!storeCtx) throw new Error('[labkit] lab chrome requires <LabStoreProvider>');
   const slot = useStore(storeCtx.store, (s) => s.activeToolId);
-  const activeToolId = resolveLabTool(slot, lab.instruments);
+  const storeInstruments = useStore(storeCtx.store, (s) => s.instruments);
+  const activeToolId = resolveLabTool(slot, storeInstruments ?? lab.instruments);
   const setLabTool = useStore(storeCtx.store, (s) => s.setLabTool);
   return useMemo(
     () => ({ ...lab, activeToolId, setActiveTool: setLabTool }),
