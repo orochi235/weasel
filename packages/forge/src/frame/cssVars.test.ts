@@ -44,7 +44,7 @@ describe('scanCssVars', () => {
 
 describe('createOverrides', () => {
   const overridesStyle = () => document.head.querySelector('style[data-fg-overrides]');
-  // A failed assertion must not leave an instance observing head: the next one's would fight it for last place forever.
+  // A failed assertion must not leave an instance observing head for the tests after it.
   const made: Overrides[] = [];
   afterEach(() => {
     for (const overrides of made.splice(0)) overrides.dispose();
@@ -102,6 +102,19 @@ describe('createOverrides', () => {
     await settle();
     expect(document.head.lastElementChild).toBe(overridesStyle());
     overrides.dispose();
+  });
+
+  it('lets two instances on one document settle after a stylesheet lands, both after it', async () => {
+    const first = create(document);
+    const second = create(document);
+    first.set('--fg-t-a', 'red');
+    second.set('--fg-t-b', 'blue');
+    const late = addStyle(':root { --fg-t-a: green; }');
+    await settle();
+    await settle();
+    const styles = [...document.head.querySelectorAll('style[data-fg-overrides]')];
+    expect(styles).toHaveLength(2);
+    expect(styles.every((style) => late.compareDocumentPosition(style) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
   });
 
   it('removes its style element on dispose', () => {

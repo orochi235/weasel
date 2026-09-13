@@ -86,8 +86,14 @@ export function createOverrides(doc: Document, scope = ':root'): Overrides {
   const style = doc.createElement('style');
   style.setAttribute('data-fg-overrides', '');
 
+  // Another instance's style counts as last place too, or two instances would take turns moving forever.
   const keepLast = () => {
-    if (style.parentNode !== doc.head || style.nextElementSibling !== null) doc.head.append(style);
+    if (style.parentNode === doc.head) {
+      let next = style.nextElementSibling;
+      while (next?.hasAttribute('data-fg-overrides')) next = next.nextElementSibling;
+      if (next === null) return;
+    }
+    doc.head.append(style);
   };
   const write = () => {
     const decls = [...values].map(([name, value]) => `  ${name}: ${value};`);
