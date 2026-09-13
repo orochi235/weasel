@@ -6,6 +6,7 @@ import type { ViewTransform } from '../instrument/types';
 import { Lab } from '../lab/Lab';
 import { SurfaceContext } from '../surface/SurfaceContext';
 import type { SurfaceHandle } from '../surface/useTiledSurface';
+import { CameraWheelContext, type CameraWheelSlot } from './CameraWheelContext';
 import { fitStage, Stage } from './Stage';
 
 beforeAll(() => {
@@ -79,6 +80,51 @@ describe('<Stage>', () => {
     if (!host) throw new Error('no stage');
     fireEvent.wheel(host, { deltaY: -200, clientX: 0, clientY: 0 });
     expect(zoomOf(content(container))).toBeGreaterThan(1);
+  });
+
+  it('zooms on a wheel handed to its camera from outside the stage', () => {
+    // What an annotation target's input box does: it is portalled out of the
+    // stage, so its wheel never bubbles here.
+    const slot: CameraWheelSlot = { current: null };
+    function Host() {
+      const [view, setView] = useState<ViewTransform>({ zoom: 1, pan: { x: 0, y: 0 } });
+      return (
+        <CameraWheelContext.Provider value={slot}>
+          <Stage size={{ width: 100, height: 100 }} view={view} onViewChange={setView}>
+            <div />
+          </Stage>
+        </CameraWheelContext.Provider>
+      );
+    }
+    const { container } = render(<Host />);
+    act(() => {
+      slot.current?.(new WheelEvent('wheel', { deltaY: -200, cancelable: true }));
+    });
+    expect(zoomOf(content(container))).toBeGreaterThan(1);
+  });
+
+  it('listens for the wheel actively, so it can keep the page from scrolling', () => {
+    // A proxy: jsdom does not enforce passive listeners, so a preventDefault in
+    // a passive one succeeds here and fails in a browser. React registers its
+    // wheel listeners passive; asserting the registration is what can fail.
+    const add = vi.spyOn(HTMLElement.prototype, 'addEventListener');
+    const { container } = render(
+      <Stage
+        size={{ width: 100, height: 100 }}
+        view={{ zoom: 1, pan: { x: 0, y: 0 } }}
+        onViewChange={() => {}}
+      >
+        <div />
+      </Stage>,
+    );
+    const host = container.querySelector('.lk-stage');
+    const wheel = add.mock.calls.filter(
+      (call, i) => call[0] === 'wheel' && add.mock.contexts[i] === host,
+    );
+    expect(wheel.map((call) => call[2])).toContainEqual(
+      expect.objectContaining({ passive: false }),
+    );
+    add.mockRestore();
   });
 
   it('tells the surface its tiles moved when the camera does', () => {

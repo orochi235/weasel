@@ -5,6 +5,7 @@ import { AnnotationTargets } from '../annotations/AnnotationTargets';
 import { AnnotationPreloadContext } from '../annotations/preload';
 import { annotationsFromJSON } from '../annotations/store';
 import type { AnnotationStorage, AnnotationTargetInfo } from '../annotations/types';
+import { CameraWheelContext, type CameraWheelSlot } from '../canvas/CameraWheelContext';
 import { CanvasStack } from '../canvas/CanvasStack';
 import { fitStage, Stage } from '../canvas/Stage';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
@@ -122,6 +123,7 @@ function TrialRuntime({
   suppress,
 }: TrialRuntimeProps) {
   const lab = useLabContext();
+  const wheelSlot = useRef<CameraWheelSlot['current']>(null);
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const loupeHostRef = useRef<HTMLDivElement | null>(null);
   const updateTrialState = useStore(store, (s) => s.updateTrialState);
@@ -550,23 +552,25 @@ function TrialRuntime({
   return (
     <TrialIdProvider trialId={record.id}>
       <AnnotationsContext.Provider value={annotationsCap ? annotations : null}>
-        <TrialChrome
-          job={jobCap ? job : undefined}
-          loupe={loupeBindings}
-          trialId={record.id}
-          record={record}
-          instrument={instrument}
-          isLastTrial={isLast}
-          undoBindings={undoBindings}
-          trialChrome={extraChrome}
-          chrome={chrome}
-          suppress={suppress}
-          activeToolId={resolvedToolId}
-          setActiveTool={setActiveTool}
-        >
-          {body}
-          {annotationOverlays}
-        </TrialChrome>
+        <CameraWheelContext.Provider value={wheelSlot}>
+          <TrialChrome
+            job={jobCap ? job : undefined}
+            loupe={loupeBindings}
+            trialId={record.id}
+            record={record}
+            instrument={instrument}
+            isLastTrial={isLast}
+            undoBindings={undoBindings}
+            trialChrome={extraChrome}
+            chrome={chrome}
+            suppress={suppress}
+            activeToolId={resolvedToolId}
+            setActiveTool={setActiveTool}
+          >
+            {body}
+            {annotationOverlays}
+          </TrialChrome>
+        </CameraWheelContext.Provider>
       </AnnotationsContext.Provider>
     </TrialIdProvider>
   );

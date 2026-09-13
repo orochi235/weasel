@@ -327,6 +327,20 @@ source edit in `packages/text` or `packages/ui` does not reach labkit's `dist` u
 whole workspace is rebuilt. A smoke test run before that reports the previous build's
 result as though it were the new one.
 
+**A bare `getContext('webgl2')` on a shared buffer can cripple every tenant of it.**
+Called on a canvas no renderer has opened yet, it creates the context with default
+attributes, and the renderer's later `getContext('webgl2', { stencil: true, … })`
+gets that same context back without a stencil buffer — every path fill then draws
+nothing, with no error anywhere. A labkit surface clear did this to every
+annotation mark. Only touch a shared context once a tenant has painted into it.
+
+**A tile repainted before its position commits leaves a ghost after a clear.**
+`<Canvas paintInto>` reads its `x`/`y` from the last render, so a surface painter
+that sets React state and then asks for a redraw can paint the tile where it *was*
+— after that frame's whole-buffer clear, which nothing then erases.
+`AnnotationOverlay` commits the rect with `flushSync` first. A GL trace of
+`scissor` against `clear` is what shows it; the screenshot only shows a stray mark.
+
 **A perf loop driven by hover events measures vsync.** A hover that changes no state does
 not dirty the surface, so the loop reports zero uploads as though the caches had absorbed
 the work, and a cache that does nothing scores the same as one that works. Count draw

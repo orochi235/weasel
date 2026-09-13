@@ -1,3 +1,5 @@
+export type { CameraWheelSlot } from './CameraWheelContext';
+export { CameraWheelContext } from './CameraWheelContext';
 export type { CanvasStackProps } from './CanvasStack';
 export { CanvasStack } from './CanvasStack';
 export type { CanvasStackContextValue, CanvasStackSurface } from './CanvasStackContext';

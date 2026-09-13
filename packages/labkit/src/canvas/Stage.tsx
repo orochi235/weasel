@@ -1,6 +1,7 @@
-import { type CSSProperties, type ReactNode, useEffect, useRef } from 'react';
+import { type CSSProperties, type ReactNode, useContext, useEffect, useRef } from 'react';
 import type { ViewTransform } from '../instrument/types';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
+import { CameraWheelContext } from './CameraWheelContext';
 import { usePanZoom } from './usePanZoom';
 import type { ViewportSize } from './worldSpec';
 
@@ -59,6 +60,23 @@ export function Stage({
   const host = useRef<HTMLDivElement | null>(null);
   const surface = useSurfaceOptional();
   const handlers = usePanZoom({ view, onViewChange, minZoom, maxZoom });
+  const onWheelRef = useRef(handlers.onWheel);
+  onWheelRef.current = handlers.onWheel;
+  const wheelSlot = useContext(CameraWheelContext);
+
+  // Bound by hand because React registers wheel listeners passive, where
+  // `preventDefault` is refused and the page scrolls under the zoom.
+  useEffect(() => {
+    const el = host.current;
+    if (!el) return;
+    const wheel = (e: WheelEvent): void => onWheelRef.current(e, el);
+    el.addEventListener('wheel', wheel, { passive: false });
+    if (wheelSlot) wheelSlot.current = wheel;
+    return () => {
+      el.removeEventListener('wheel', wheel);
+      if (wheelSlot?.current === wheel) wheelSlot.current = null;
+    };
+  }, [wheelSlot]);
 
   const onResizeRef = useRef(onResize);
   onResizeRef.current = onResize;
@@ -103,7 +121,6 @@ export function Stage({
         if (hostRef) hostRef.current = el;
       }}
       className="lk-stage"
-      onWheel={handlers.onWheel}
       onPointerDown={handlers.onPointerDown}
     >
       <div className="lk-stage__content" style={camera}>

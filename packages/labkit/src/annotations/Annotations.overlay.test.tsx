@@ -8,11 +8,12 @@
  * marks themselves are proved by `paint.test.ts` (pure) and by a screenshot.
  */
 import { act, render } from '@testing-library/react';
-import { StrictMode, useRef } from 'react';
+import { StrictMode, useMemo, useRef } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { CameraWheelContext, type CameraWheelSlot } from '../canvas/CameraWheelContext';
 import { TrialIdProvider } from '../state/context';
 import { SurfaceCanvasContext, SurfaceContext } from '../surface/SurfaceContext';
-import type { SurfaceHandle } from '../surface/useTiledSurface';
+import type { SurfaceClear, SurfaceHandle } from '../surface/useTiledSurface';
 import { useTiledSurface } from '../surface/useTiledSurface';
 import { AnnotationTargets } from './AnnotationTargets';
 import { createAnnotationStore } from './store';
@@ -38,10 +39,33 @@ beforeAll(() => {
   ) as unknown as HTMLCanvasElement['getContext'];
 });
 
-function Harness({ toolId = 'rect' }: { toolId?: string }) {
+function Harness({
+  toolId = 'rect',
+  onRegisterClear,
+  canvas = null,
+}: {
+  toolId?: string;
+  /** Told each tile a clear is registered for, and handed the clear. */
+  onRegisterClear?: (id: string, clear: SurfaceClear) => void;
+  /** The shared buffer the overlays paint into. */
+  canvas?: HTMLCanvasElement | null;
+}) {
   const a = useRef<HTMLDivElement | null>(null);
   const b = useRef<HTMLDivElement | null>(null);
-  const surface = useTiledSurface({ onFrame: () => {} });
+  const tiled = useTiledSurface({ onFrame: () => {} });
+  const surface = useMemo<SurfaceHandle>(
+    () =>
+      onRegisterClear
+        ? {
+            ...tiled,
+            registerClear: (id, clear) => {
+              onRegisterClear(id, clear);
+              return tiled.registerClear(id, clear);
+            },
+          }
+        : tiled,
+    [tiled, onRegisterClear],
+  );
   const annotations = useRef(createAnnotationStore({ targets: () => [] })).current;
 
   const capability: AnnotationsCapability = {
@@ -53,7 +77,7 @@ function Harness({ toolId = 'rect' }: { toolId?: string }) {
 
   return (
     <SurfaceContext.Provider value={surface}>
-      <SurfaceCanvasContext.Provider value={{ over: null, under: null }}>
+      <SurfaceCanvasContext.Provider value={{ over: canvas, under: null }}>
         <div
           data-testid="stage"
           ref={(el) => {
@@ -131,6 +155,61 @@ describe('<AnnotationTargets>', () => {
     for (const el of container.querySelectorAll('.lk-annotate__input')) {
       expect(el.parentElement).toBe(stage);
     }
+  });
+
+  it('hands a wheel over a target to the trial camera', () => {
+    // The input box is portalled into the surface container, so the wheel
+    // would otherwise bubble past the stage the picture sits on.
+    const wheel = vi.fn();
+    const slot: CameraWheelSlot = { current: wheel };
+    const { container } = render(
+      <CameraWheelContext.Provider value={slot}>
+        <Harness />
+      </CameraWheelContext.Provider>,
+      { wrapper: StrictMode },
+    );
+    act(() => {
+      vi.advanceTimersByTime(64);
+    });
+    const box = container.querySelector('.lk-annotate__input');
+    box?.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true }));
+    expect(wheel).toHaveBeenCalledTimes(1);
+  });
+
+  it('registers a clear for each tile, so a moved mark leaves nothing behind', () => {
+    // A proxy: jsdom has no WebGL2, so the clear itself cannot run here. Without
+    // one registered, a tile that moves leaves its last frame's marks painted
+    // where it used to be — which the surface only erases through a clear.
+    const registered = vi.fn();
+    render(<Harness onRegisterClear={registered} />, { wrapper: StrictMode });
+    act(() => {
+      vi.advanceTimersByTime(64);
+    });
+    expect(new Set(registered.mock.calls.map((call) => call[0])).size).toBe(2);
+  });
+
+  it('never opens the shared context itself when it clears', () => {
+    // A bare `getContext('webgl2')` on a buffer nobody has opened yet creates
+    // the context with default attributes, and the renderer's later request for
+    // a stencil buffer then gets that one back: every mark paints nothing, with
+    // no error anywhere. jsdom opens no context, so the call is the proxy.
+    const clears: SurfaceClear[] = [];
+    const canvas = document.createElement('canvas');
+    const { unmount } = render(
+      <Harness canvas={canvas} onRegisterClear={(_id, clear) => clears.push(clear)} />,
+      { wrapper: StrictMode },
+    );
+    act(() => {
+      vi.advanceTimersByTime(64);
+    });
+    // The prototype is already a mock file-wide, so the spy arrives holding
+    // the renderer's own attempts to open it.
+    const open = vi.spyOn(canvas, 'getContext');
+    open.mockClear();
+    for (const clear of clears) clear({ width: 800, height: 600 }, 1);
+    expect(open).not.toHaveBeenCalled();
+    // Before the frame stubs come off: the canvas's own loop cancels through them.
+    unmount();
   });
 
   it('takes its tiles back out on unmount', () => {
