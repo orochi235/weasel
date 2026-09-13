@@ -1,5 +1,87 @@
 # @weasel-js/labkit
 
+## 1.4.5
+
+### Patch Changes
+
+- 35e36b1: `--wzl-border-strong` now clears WCAG 1.4.11's 3:1 non-text contrast. It sat two
+  ramp steps off `surface` and measured 1.3–2.4:1 in every mode; it is now
+  `gray-400` in dark and `gray-500` in light, which passes against every surface.
+  
+  **Breaking:** `--wzl-border-raised` is removed. It was added for the same job, so
+  it folds into `border-strong` — replace any reference to it. Checkbox, radio,
+  slider, switch and toggle-bar edges get visibly stronger in both modes.
+- f233e30: `<Lab>` takes `pages` and `path`, forwarding both to the shell it already
+  renders. `<LabShell>` has had them all along — given two or more pages the title
+  becomes the switcher that reaches the project's other labs — but a lab built on
+  `<Lab>` had no way to pass them, so it could be reached from another lab's
+  switcher and offer no way back.
+- 39ace84: Two fixes to `<LabSwitcher>` found against a real consumer's header.
+  
+  The menu takes the opaque `--wzl-surface` instead of `--wzl-surface-raised`,
+  which is translucent by design — it is for panels that blur what sits behind
+  them, and the menu sets no backdrop-filter. Over a lab's sidebar the controls
+  behind it read straight through.
+  
+  The title no longer wraps. A consumer's header is usually a crowded flex row,
+  and the title is a click target now: left to wrap, `brick-icons corpus` breaks
+  after the hyphen and the control reads as three ragged lines with a caret
+  adrift from them.
+- eaf38e2: A shared surface now clears itself when its tiles move.
+  
+  Cloning a trial, closing one, or resizing the window left the previous layout's
+  pixels wherever the new layout does not cover: a tile that moves or shrinks
+  takes its scissor with it, and nothing paints over what it vacated. In the 3D
+  lab that read as a second viewport smeared across the gap between panels.
+  
+  `SurfaceFrame` gains `retiled` — true on any frame where the tile geometry
+  changed — and `SurfaceHandle` gains `registerClear(id, fn)`. Every registered
+  clear runs, before any painter, on such a frame. It has to be the tenant's
+  call and not the painter's, because tenants paint in sequence and the second
+  would wipe the first; and it cannot be the owner's, because labkit owns the
+  canvas and never the context. `canvas.width = <its own value>` is not a way
+  out: assigning the same value resizes nothing, so it clears nothing.
+  
+  Two smaller fixes ride along. An invalidation the owner makes from inside
+  `onFrame` — what sizing the buffer forces — was discarded by the frame loop's
+  trailing clear, so a resize could leave tiles blank until something else
+  dirtied them. And painters now see what the owner dirtied during the same
+  frame rather than a frame later.
+  
+  It also measures until the layout stops moving. `node.placementChanged` fires
+  when a move is ordered, not when it lands, and a panel whose size settles while
+  its position is still animating gives `ResizeObserver` nothing more to report —
+  so a tile painted for the rest of its life at wherever it was caught mid-flight,
+  which is why cloning a few trials left viewports sitting between their panes.
+  A measurement that finds anything moved now schedules another, and the run ends
+  on the first one that finds nothing moved.
+- 6beda78: Adds a `3d-lab` example: a WebGL viewport driven by weasel core's dispatcher,
+  actions and select tool. Run it with `npm run dev:3d` from `packages/labkit`.
+  
+  It exists to answer what a 3D kernel would owe core, and it answers the main
+  one — nothing about the dispatcher changes shape. Findings are in
+  `docs/superpowers/specs/2026-08-22-3d-kernel-design.md`.
+  
+  Two bits of infrastructure came with it, because `examples/` reached neither
+  before: the lab is in the root `tsconfig.json` include list, and the `labkit`
+  vitest project's glob now covers `examples/` as well as `src` and `scripts`.
+  
+  Dragging a solid paints a ghost. `moveAction` keeps the interim pose on its
+  handle and commits one op on drop, so the lab reads those poses off the
+  dispatcher's in-flight handles and draws them translucent over a footprint on
+  the ground plane, while the solid stays at its committed pose until the drop.
+- Updated dependencies [a2feeb0]
+- Updated dependencies [35e36b1]
+- Updated dependencies [7586835]
+- Updated dependencies [6385c68]
+- Updated dependencies [6f5ff46]
+- Updated dependencies [2e2041b]
+  - @weasel-js/core@1.4.5
+  - @weasel-js/theme@1.4.5
+  - @weasel-js/loupe@1.4.5
+  - @weasel-js/svg@1.4.5
+  - @weasel-js/ui@1.4.5
+
 ## 1.4.4
 
 ### Patch Changes

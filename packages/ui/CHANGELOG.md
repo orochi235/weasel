@@ -1,5 +1,19 @@
 # @weasel-js/ui
 
+## 1.4.5
+
+### Patch Changes
+
+- Updated dependencies [a2feeb0]
+- Updated dependencies [7586835]
+- Updated dependencies [6385c68]
+- Updated dependencies [6f5ff46]
+- Updated dependencies [2e2041b]
+  - @weasel-js/core@1.4.5
+  - @weasel-js/svg@1.4.5
+  - @weasel-js/font@1.4.5
+  - @weasel-js/modes@1.4.5
+
 ## 1.4.4
 
 ### Patch Changes
