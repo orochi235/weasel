@@ -1,5 +1,3 @@
-import type { TrialContribution } from './types';
-
 /**
  * Concatenate contribution bundles into one list, preserving order — order
  * decides how a region lays its contributions out, so it is part of the
@@ -8,10 +6,10 @@ import type { TrialContribution } from './types';
  * Throws on a duplicate id rather than dropping one: a contribution silently
  * losing to a later bundle is the failure a registry exists to prevent.
  */
-export function mergeContributions(
-  ...bundles: readonly TrialContribution[][]
-): TrialContribution[] {
-  const out: TrialContribution[] = [];
+export function mergeContributions<T extends { id: string }>(
+  ...bundles: readonly (readonly T[])[]
+): T[] {
+  const out: T[] = [];
   const seen = new Set<string>();
   for (const bundle of bundles) {
     for (const entry of bundle) {
@@ -34,10 +32,10 @@ export function mergeContributions(
  * silently suppresses nothing is the same class of bug as a duplicate id
  * silently winning.
  */
-export function suppressContributions(
-  bundle: readonly TrialContribution[],
+export function suppressContributions<T extends { id: string }>(
+  bundle: readonly T[],
   ids: readonly string[],
-): TrialContribution[] {
+): T[] {
   const present = new Set(bundle.map((c) => c.id));
   for (const id of ids) {
     if (!present.has(id)) {

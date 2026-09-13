@@ -2,7 +2,7 @@
 
 Five common extension points: custom layers, custom affordances, custom
 gesture behaviors, non-rect poses, and derived geometry — plus writing a whole
-new action when none of those fit.
+new action when none of those fit, and mounting tools in a host of your own.
 
 ## Custom layers
 
@@ -457,3 +457,56 @@ filters them out — a dev-only warning names it if that happens.
 - `delete.ts` — a minimal `timing: 'immediate'` one-shot.
 - `@weasel-js/hud`'s `src/tool.ts` — a package outside core owning its own
   input, gating three bindings on a `layer:<id>` affordance kind.
+
+## Mounting tools outside `<SceneCanvas>`
+
+For a host that runs weasel's tools in its own React tree — a lab, an embedded
+viewport, anything that owns its canvas. `<SceneCanvas>` does two things for a
+tool that have nothing to do with painting, and mounting tools yourself means
+doing both.
+
+**Register the tool's actions.** `ToolDef.actions` declares them; it does not
+register them. `<SceneCanvas>` walks its tools and registers each one as it
+mounts. Write that walk yourself:
+
+```tsx
+import { useActionsRegistry } from '@weasel-js/core';
+
+const registry = useActionsRegistry();
+useEffect(() => {
+  if (!registry) return;
+  const undo = [...toolsById.values()].flatMap((tool) =>
+    (tool.actions ?? []).map((action) => registry.register(action)),
+  );
+  return () => { for (const u of undo) u(); };
+}, [registry, toolsById]);
+```
+
+Skip it and the gesture still matches. The dispatcher finds nothing registered
+under the id the binding names, prints `weasel dispatcher: binding resolved
+actionId "select.pick" which has no registered action`, and falls through to
+the next candidate — so the press does nothing, or does whatever was behind it.
+That one warning is the whole signal; nothing throws.
+
+Registering from inside the tool hook instead does not work in general:
+`useAction` needs an `<ActionsProvider>` above the component that calls it and
+returns silently when there is none — with a console warning in a development
+build, with nothing at all in a production one. Actions ride on the definition
+so that a tool hook stays callable from anywhere.
+
+**Capability eligibility is off until you ask for it.** `select.pick` declares
+`eligible: { capability: 'creates-selection' }`. The dispatcher evaluates that
+rule only when it has a rule context to evaluate against — `getRuleCtx` on
+`useGestureDispatcher`, which answers with the capabilities the current mode
+allows. Leave it unset and every `eligible` rule is skipped and the action
+runs; `<SceneCanvas>` leaves it unset too unless it was given `getActiveMode`.
+Supply one and an action whose capability is missing from that set is dropped
+before its `enabled` gate, silently — a rule context that omits
+`creates-selection` is a click that selects nothing. The rule reads that set
+and nothing else: not the active tool, not the tool's own `capabilities` list.
+
+**Mount the providers around all of it.** `<WeaselProvider>` puts the five the
+kit expects — deps, actions, active tool, selection, pointer — in scope in one
+wrap; call the tool hooks and `useGestureDispatcher` inside it. That hook
+throws without the active-tool and dep registries, so this half of the wiring
+announces itself.

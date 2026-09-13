@@ -1,34 +1,21 @@
-import { useContext } from 'react';
-import { useStore } from 'zustand/react';
+import { labContributions, useLabChromeContext } from '../chrome/LabChrome';
+import type { LabContribution } from '../chrome/labTypes';
 import { PaletteRegion } from '../chrome/regions/PaletteRegion';
-import type { TrialChromeContext, TrialContribution } from '../chrome/types';
-import { LabStoreContext } from '../state/context';
 import type { TrialTool } from '../tools/types';
 
 /** Props for `<LabPalette>`. */
 export interface LabPaletteProps {
-  tools: readonly TrialTool[];
+  /** Tools offered lab-wide. Shorthand for one `palette` contribution each. */
+  tools?: readonly TrialTool[];
+  /** The lab's contributions; the `palette` ones are laid out here. */
+  contributions?: readonly LabContribution[];
 }
 
-/** The lab's tool strip. Writes the lab's tool slot, which every trial whose
- *  instrument declares no tools of its own resolves to. */
-export function LabPalette({ tools }: LabPaletteProps) {
-  const storeCtx = useContext(LabStoreContext);
-  if (!storeCtx) throw new Error('[labkit] LabPalette requires <LabStoreProvider>');
-  const activeToolId = useStore(storeCtx.store, (s) => s.activeToolId);
-  const setLabTool = useStore(storeCtx.store, (s) => s.setLabTool);
-
-  const contributions: TrialContribution[] = tools.map((t) => ({
-    id: t.id,
-    region: 'palette',
-    group: t.group,
-    item: { icon: t.icon, label: t.label, shortcut: t.shortcut },
-  }));
-
-  const ctx = {
-    activeToolId,
-    setActiveTool: setLabTool,
-  } as unknown as TrialChromeContext;
-
-  return <PaletteRegion contributions={contributions} ctx={ctx} />;
+/** The lab's tool rail. Writes the lab's tool slot, which every trial whose
+ *  instrument declares no tools of its own resolves to. Renders nothing when
+ *  the lab contributes no tool rail. */
+export function LabPalette({ tools, contributions }: LabPaletteProps) {
+  const ctx = useLabChromeContext();
+  const all = labContributions(tools, contributions);
+  return <PaletteRegion contributions={all.filter((c) => c.region === 'palette')} ctx={ctx} />;
 }

@@ -4,14 +4,15 @@ import type { ConfigField } from '../controls/types';
 import type { SavedSnapshot } from '../state/types';
 
 /** A named position in a trial's chrome. Content is not a region — that is
- *  the instrument. */
+ *  the instrument. The lab's own boxes are named in `LabRegion`. */
 export type TrialRegion = 'titlebar' | 'toolbar' | 'palette' | 'sidebar' | 'viewport' | 'status';
 
 /** An icon component taking a pixel size, as `@weasel-js/ui` glyphs do. */
 export type IconComponent = ComponentType<{ size?: number }>;
 
-/** A button in the trial toolbar. */
-export interface ToolbarItem {
+/** A button in a toolbar. `TCtx` is the chrome context its `onActivate` is
+ *  handed — a trial's, or the lab's for a lab-level bar. */
+export interface ToolbarItem<TCtx = TrialChromeContext> {
   icon: IconComponent;
   label: string;
   /** Shown in the tooltip. Not bound here — the trial owns its keymap. */
@@ -24,10 +25,10 @@ export interface ToolbarItem {
   pressed?: boolean;
   /** Render the label beside the glyph rather than only in the tooltip. */
   showLabel?: boolean;
-  /** Handed the trial's chrome context, so a contribution declared from the
-   *  lab can reach `ctx.saveSnapshot()` and the rest without the `render`
-   *  escape. A zero-argument handler stays valid. */
-  onActivate: (ctx: TrialChromeContext) => void;
+  /** Handed the chrome context it was declared against, so a contribution can
+   *  reach `ctx.saveSnapshot()` and the rest without the `render` escape. A
+   *  zero-argument handler stays valid. */
+  onActivate: (ctx: TCtx) => void;
 }
 
 /** A selectable tool in the palette region. */
@@ -52,12 +53,12 @@ export interface SidebarSection {
 }
 
 /** A control acting on the view of the trial, not on the trial. */
-export interface ViewportControl {
+export interface ViewportControl<TCtx = TrialChromeContext> {
   icon: IconComponent;
   label: string;
   disabled?: boolean;
   /** Handed the trial's chrome context, as `ToolbarItem.onActivate` is. */
-  onActivate: (ctx: TrialChromeContext) => void;
+  onActivate: (ctx: TCtx) => void;
 }
 
 /** A readout in the status bar. */
@@ -68,8 +69,8 @@ export interface StatusReadout {
   title?: string;
 }
 
-/** What every contribution shares. */
-interface ContributionBase {
+/** What every contribution shares, whichever chrome it is declared against. */
+export interface ContributionBase {
   id: string;
   /** Groups sort by first appearance; items sort within a group by
    *  declaration order. Contributions with no group sort after grouped ones. */
@@ -97,11 +98,32 @@ export type TrialContribution =
     });
 
 /**
+ * A tool slot a region can reflect and write. Both chrome contexts carry one:
+ * a trial's resolves to the lab's when its instrument declares no tools.
+ */
+export interface ToolSlotContext {
+  activeToolId: string | null;
+  setActiveTool: (id: string) => void;
+}
+
+/**
+ * A contribution as a region renderer sees it. A renderer checks the region
+ * name against its own and narrows `item` itself, which is what lets one
+ * renderer serve both chromes — the trial's and the lab's — without knowing
+ * which context it was handed.
+ */
+export interface RegionContribution<TCtx> extends ContributionBase {
+  region: string;
+  item?: unknown;
+  render?: (ctx: TCtx) => ReactNode;
+}
+
+/**
  * Everything a contribution can read about the trial it is being rendered
  * into. Replaces the three separate slot contexts, which each carried a
  * hand-picked subset.
  */
-export interface TrialChromeContext {
+export interface TrialChromeContext extends ToolSlotContext {
   trialId: string;
   instrumentName: string;
   /** What the title bar reads, which is the instrument's name until something
@@ -157,9 +179,4 @@ export interface TrialChromeContext {
   clone: () => void;
   reset: () => void;
   close: () => void;
-
-  /** Resolved active tool: the trial's slot, or the lab's when the trial has
-   *  none. Null when neither holds one. */
-  activeToolId: string | null;
-  setActiveTool: (id: string) => void;
 }

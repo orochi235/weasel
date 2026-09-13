@@ -1,14 +1,20 @@
 import { StatusBar } from '../../primitives/StatusBar';
-import type { TrialChromeContext, TrialContribution } from '../types';
+import type { RegionContribution, StatusReadout, TrialChromeContext } from '../types';
 
 /** Props for `<StatusRegion>`. */
-export interface StatusRegionProps {
-  contributions: readonly TrialContribution[];
-  ctx: TrialChromeContext;
+export interface StatusRegionProps<TCtx = TrialChromeContext> {
+  contributions: readonly RegionContribution<NoInfer<TCtx>>[];
+  ctx: TCtx;
+  /** Which region's readouts to lay out; the lab's footer is `footer`. */
+  region?: string;
 }
 
-/** Lays a trial's `status` contributions out as readouts. */
-export function StatusRegion({ contributions, ctx }: StatusRegionProps) {
+/** Lays a bar's readouts out. */
+export function StatusRegion<TCtx = TrialChromeContext>({
+  contributions,
+  ctx,
+  region = 'status',
+}: StatusRegionProps<TCtx>) {
   if (contributions.length === 0) return null;
   return (
     <StatusBar>
@@ -19,10 +25,11 @@ export function StatusRegion({ contributions, ctx }: StatusRegionProps) {
               {c.render(ctx)}
             </StatusBar.Section>
           );
-        if (c.region !== 'status' || !c.item) return null;
+        if (c.region !== region || !c.item) return null;
+        const item = c.item as StatusReadout;
         return (
           <StatusBar.Section key={c.id} end={c.end}>
-            <span title={c.item.title}>{c.item.text}</span>
+            <span title={item.title}>{item.text}</span>
           </StatusBar.Section>
         );
       })}

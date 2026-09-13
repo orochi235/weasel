@@ -1,24 +1,28 @@
 import type { ReactNode } from 'react';
 import { Toolbar } from '../../primitives/Toolbar';
-import type { TrialChromeContext, TrialContribution } from '../types';
+import type { RegionContribution, ToolbarItem, TrialChromeContext } from '../types';
 
 /** Props for `<ToolbarRegion>`. */
-export interface ToolbarRegionProps {
-  contributions: readonly TrialContribution[];
-  ctx: TrialChromeContext;
+export interface ToolbarRegionProps<TCtx = TrialChromeContext> {
+  contributions: readonly RegionContribution<NoInfer<TCtx>>[];
+  ctx: TCtx;
+  /** Which region's items to lay out; the lab's action bar is `header`. */
+  region?: string;
+  /** The bar's accessible name. */
+  label?: string;
 }
 
-interface Group {
+interface Group<TCtx> {
   key: string;
   end: boolean;
-  entries: TrialContribution[];
+  entries: RegionContribution<TCtx>[];
 }
 
 /** Bucket by group, preserving first-appearance order. Ungrouped
  *  contributions each become their own bucket so they stay in place. */
-function groupsOf(contributions: readonly TrialContribution[]): Group[] {
-  const groups: Group[] = [];
-  const byKey = new Map<string, Group>();
+function groupsOf<TCtx>(contributions: readonly RegionContribution<TCtx>[]): Group<TCtx>[] {
+  const groups: Group<TCtx>[] = [];
+  const byKey = new Map<string, Group<TCtx>>();
   for (const c of contributions) {
     if (c.group == null) {
       groups.push({ key: c.id, end: c.end ?? false, entries: [c] });
@@ -35,10 +39,15 @@ function groupsOf(contributions: readonly TrialContribution[]): Group[] {
   return groups;
 }
 
-function renderEntry(c: TrialContribution, ctx: TrialChromeContext): ReactNode {
+function renderEntry<TCtx>(
+  c: RegionContribution<TCtx>,
+  ctx: TCtx,
+  region: string,
+): ReactNode {
   if (c.render) return <span key={c.id}>{c.render(ctx)}</span>;
-  if (c.region !== 'toolbar' || !c.item) return null;
-  const { icon: Icon, label, shortcut, disabled, danger, showLabel, pressed, onActivate } = c.item;
+  if (c.region !== region || !c.item) return null;
+  const { icon: Icon, label, shortcut, disabled, danger, showLabel, pressed, onActivate } =
+    c.item as ToolbarItem<TCtx>;
   return (
     <Toolbar.Button
       key={c.id}
@@ -56,15 +65,20 @@ function renderEntry(c: TrialContribution, ctx: TrialChromeContext): ReactNode {
   );
 }
 
-/** Lays a trial's `toolbar` contributions out, grouped by their `group`. */
-export function ToolbarRegion({ contributions, ctx }: ToolbarRegionProps) {
+/** Lays a bar's contributions out, grouped by their `group`. */
+export function ToolbarRegion<TCtx = TrialChromeContext>({
+  contributions,
+  ctx,
+  region = 'toolbar',
+  label = 'Trial actions',
+}: ToolbarRegionProps<TCtx>) {
   if (contributions.length === 0) return null;
   const groups = groupsOf(contributions);
   return (
-    <Toolbar aria-label="Trial actions">
+    <Toolbar aria-label={label}>
       {groups.map((g) => (
         <Toolbar.Group key={g.key} end={g.end} aria-label={g.key}>
-          {g.entries.map((c) => renderEntry(c, ctx))}
+          {g.entries.map((c) => renderEntry(c, ctx, region))}
         </Toolbar.Group>
       ))}
     </Toolbar>

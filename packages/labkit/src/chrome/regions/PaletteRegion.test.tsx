@@ -1,15 +1,17 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { TrialChromeContext, TrialContribution } from '../types';
+import type { RegionContribution, ToolSlotContext } from '../types';
 import { PaletteRegion } from './PaletteRegion';
 
 const Glyph = () => <svg />;
 
-function ctxWith(activeToolId: string | null, setActiveTool = vi.fn()) {
-  return { trialId: 't1', activeToolId, setActiveTool } as unknown as TrialChromeContext;
+// The region reads a tool slot and nothing else, so the fixture is a real
+// `ToolSlotContext` rather than a faked trial.
+function ctxWith(activeToolId: string | null, setActiveTool = vi.fn()): ToolSlotContext {
+  return { activeToolId, setActiveTool };
 }
 
-function tool(id: string): TrialContribution {
+function tool(id: string): RegionContribution<ToolSlotContext> {
   return { id, region: 'palette', item: { icon: Glyph, label: id } };
 }
 
