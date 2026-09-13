@@ -50,6 +50,11 @@ interface Slots {
   byToken: Map<number, LiveVoice>;
 }
 
+interface Chain {
+  gain: GainNode;
+  panner: StereoPannerNode;
+}
+
 interface LiveVoice {
   id: number;
   slots: Slots;
@@ -59,8 +64,9 @@ interface LiveVoice {
   token: number;
   key?: string;
   source: AudioBufferSourceNode | null;
-  gainNode: GainNode;
-  panNode: StereoPannerNode;
+  /** Null once torn down, when the chain goes back to be reused: a handle
+   *  that outlives its voice must not write to another voice's nodes. */
+  chain: Chain | null;
   baseGain: number;
   spatialGain: number;
   rate: number;
@@ -126,6 +132,23 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
   const live = new Map<number, LiveVoice>();
   const taps = new Set<AnalyserTap>();
 
+  // An idle chain is kept off its bus: still wired to the destination, it costs
+  // the audio thread every render quantum whether or not anything sounds.
+  const idleChains: Chain[] = [];
+  const idleChainLimit = (opts.voiceLimit ?? 32) * busNames.length;
+  const takeChain = (bus: AudioNode, gain: number, pan: number): Chain => {
+    let chain = idleChains.pop();
+    if (!chain) {
+      chain = { gain: ctx.createGain(), panner: ctx.createStereoPanner() };
+      chain.panner.connect(chain.gain);
+    }
+    // Not a bare `.value`: a reused gain can still hold the last voice's fade.
+    writeParam(ctx, chain.gain.gain, gain);
+    chain.panner.pan.value = pan;
+    chain.gain.connect(bus);
+    return chain;
+  };
+
   let warnedLocked = false;
   const warnLocked = (): void => {
     if (warnedLocked) return;
@@ -190,11 +213,11 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
   };
 
   const applySpatial = (voice: LiveVoice): void => {
-    if (!voice.position) return;
+    if (!voice.position || !voice.chain) return;
     const s = spatialize(voice.position, listener, spatialOpts);
     voice.spatialGain = s.gain;
-    voice.panNode.pan.value = s.pan;
-    writeParam(ctx, voice.gainNode.gain, voice.baseGain * s.gain);
+    voice.chain.panner.pan.value = s.pan;
+    writeParam(ctx, voice.chain.gain.gain, voice.baseGain * s.gain);
     poolGain(voice);
   };
 
@@ -210,9 +233,11 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       voice.source.disconnect();
     }
     voice.source = null;
-    // Nothing pools the chain, so it goes when the voice does.
-    voice.panNode.disconnect();
-    voice.gainNode.disconnect();
+    if (voice.chain) {
+      voice.chain.gain.disconnect();
+      if (idleChains.length < idleChainLimit) idleChains.push(voice.chain);
+      voice.chain = null;
+    }
     live.delete(voice.id);
     if (voice.slot !== null) {
       voice.slots.byToken.delete(voice.token);
@@ -262,16 +287,10 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
         ? spatialize(playOpts.position, listener, spatialOpts)
         : { gain: 1, pan: playOpts.pan ?? 0 };
 
-      const gainNode = ctx.createGain();
-      const panNode = ctx.createStereoPanner();
-      gainNode.gain.value = baseGain * spatial.gain;
-      panNode.pan.value = spatial.pan;
-      panNode.connect(gainNode);
-      gainNode.connect(graph.node(busName));
-
       const voice: LiveVoice = {
         id, slots, slot: null, token: 0, key: playOpts.cancelKey,
-        source: null, gainNode, panNode,
+        source: null,
+        chain: takeChain(graph.node(busName), baseGain * spatial.gain, spatial.pan),
         baseGain, spatialGain: spatial.gain,
         rate: playOpts.rate ?? 1, detune: playOpts.detune ?? 0,
         position: playOpts.position,
@@ -317,7 +336,8 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
         source.loop = playOpts.loop ?? false;
         source.playbackRate.value = voice.rate;
         source.detune.value = voice.detune;
-        source.connect(panNode);
+        // Still live past the check above, so the voice still holds its chain.
+        source.connect(voice.chain!.panner);
         source.onended = () => { teardown(voice); playOpts.onDone?.(); };
         voice.source = source;
         source.start(scheduledWhen / 1000);
@@ -326,13 +346,13 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       return {
         id,
         stop(fadeMs) {
-          if (fadeMs && fadeMs > 0 && voice.source && !voice.cancelled) {
+          if (fadeMs && fadeMs > 0 && voice.source && voice.chain && !voice.cancelled) {
             // Cancelled but not torn down: the fade is what ends this voice, and
             // stopping the source now would cut the ramp scheduled a line above
             // it — which is the click `fadeMs` exists to avoid. `onended` does
             // the bookkeeping when the fade reaches the end.
             voice.cancelled = true;
-            writeParam(ctx, gainNode.gain, 0, fadeMs);
+            writeParam(ctx, voice.chain.gain.gain, 0, fadeMs);
             try { voice.source.stop(ctx.currentTime + fadeMs / 1000); } catch { /* ended */ }
             return;
           }
@@ -340,7 +360,8 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
         },
         setGain(value, rampMs) {
           voice.baseGain = value;
-          writeParam(ctx, gainNode.gain, value * voice.spatialGain, rampMs);
+          if (!voice.chain) return;
+          writeParam(ctx, voice.chain.gain.gain, value * voice.spatialGain, rampMs);
           poolGain(voice);
         },
         setRate(value) {
@@ -353,7 +374,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
         },
         setPan(value) {
           voice.position = undefined;
-          panNode.pan.value = value;
+          if (voice.chain) voice.chain.panner.pan.value = value;
         },
         setPosition(p) {
           voice.position = p;
@@ -403,6 +424,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       if (disposed) return;
       disposed = true;
       engine.stopAll();
+      idleChains.length = 0;
       scheduler.stop();
       scheduler.clear();
       tickTimer?.dispose();

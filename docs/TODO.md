@@ -1001,12 +1001,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   argument, which is precisely their function in the genre. Anything built here
   should let a consumer see which cue is being applied, not just hear it.
 
-- **(P2) Pool the voice node chain.** `createVoicePool` is slot accounting and
-  nothing more: the engine builds a `GainNode` and a `StereoPannerNode` per
-  `play()` and disconnects them in teardown. Holding a chain per slot and
-  reusing it — minting only the `AudioBufferSourceNode`, which is single-use by
-  specification — is the optimization the design assumed was already there.
-  Worth measuring before building: node construction may not be the cost.
+- **(P2) `engine.play()` can start a voice one scheduler pass late.** `play()`
+  only queues the voice; the scheduler books it on its next pass, which runs
+  every 25 ms by default. So even `when: engine.now()` can sound up to 25 ms
+  late. The timeline booking's 100 ms default lookahead covers it, but a
+  lookahead shorter than the pass interval lands late. Booking a voice whose
+  `when` already falls inside the current lookahead window at `play()` time,
+  instead of waiting for the next pass, would close it.
 - **(P3) AudioWorklet scheduling** — immune to main-thread jank; costs a worklet
   module, cross-thread messaging and a bundling story. Revisit if jank proves
   audible.
