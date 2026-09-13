@@ -264,7 +264,12 @@
   /* The subtraction is the unit and its gap at the kit's own font size, so the
      default is wrong against a much smaller or larger one — override the hook
      rather than reaching for the hashed class name. */
-  width: var(--wzl-property-readout-w, calc(5em - 24px));
+  /* The fit is the widest value in `ch`, which is one digit; the box is border-box, so its border
+     comes back on top, with half a `ch` for a glyph wider than a digit. */
+  width: max(
+    var(--wzl-property-readout-w, calc(5em - 24px)),
+    calc(var(--wzl-property-readout-fit, 0px) + 2px + 0.5ch)
+  );
   text-align: right;
   cursor: text;
   outline: none;

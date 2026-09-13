@@ -444,6 +444,22 @@ describe('<ControlPanel> suffix', () => {
   });
 });
 
+describe('<ControlPanel> format', () => {
+  it('shows a slider readout in the format the leaf declares', () => {
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(
+          f.schema({ glyphs: f.number(0).range(0, 2_000_000).format('compact') }),
+          [],
+        )}
+        config={{ glyphs: 2_000_000 }}
+        setConfig={vi.fn()}
+      />,
+    );
+    expect(screen.getByDisplayValue('2.0M')).toBeInTheDocument();
+  });
+});
+
 describe('<ControlPanel> collapsible sections', () => {
   const schema = resolveConfigSchema(
     f.schema({ showGrid: f.boolean(true), seed: f.number(0).section('Advanced') }),

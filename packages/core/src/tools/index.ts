@@ -25,6 +25,7 @@ export type {
   ToolPrefLeaf,
   ToolPrefNumberUnit,
   ToolPrefNumberControl,
+  ToolPrefNumberFormat,
   ToolPrefBooleanControl,
   ToolPrefStringControl,
   ToolPrefEnumControl,

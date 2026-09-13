@@ -1,7 +1,15 @@
-import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react';
+import {
+  type CSSProperties,
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Focusable } from 'react-aria-components';
 import { dlog } from '../../dlog';
-import { formatNumber, parseSignedNumber } from '../../format/number';
+import { formatCompact, formatNumber, parseNumber } from '../../format/number';
+import type { PrefNumberFormat } from '../Prefs/schema';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import shared from '../range.module.css';
 import s from './Properties.module.css';
@@ -285,6 +293,8 @@ export interface SliderRowProps extends PropertyMetricProps {
   onInput?: (next: number) => void;
   /** Override how the value is rendered next to the label. Defaults to `value.toString()`. */
   format?: (value: number) => ReactNode;
+  /** A named display for the value: `compact` reads `2.0M`. `format` wins when both are given. */
+  notation?: PrefNumberFormat;
   /**
    * Optional suffix rendered next to the readout. A string becomes a
    * baseline-aligned dim "word" unit (e.g. "px"); pass JSX like `<sup>°</sup>`
@@ -308,6 +318,7 @@ export function SliderRow({
   onChange,
   onInput,
   format,
+  notation,
   unit,
   layout,
   description,
@@ -325,12 +336,14 @@ export function SliderRow({
   const range = useCommitListener(commit && ((raw) => commit(Number(raw))));
   const effectiveFormat =
     format ??
-    ((n: number) =>
-      formatNumber(n, {
-        useGrouping: false,
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals,
-      }));
+    (notation === 'compact'
+      ? (n: number) => formatCompact(n, decimals)
+      : (n: number) =>
+          formatNumber(n, {
+            useGrouping: false,
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals,
+          }));
   return (
     <PropertyRow
       span={span}
@@ -392,13 +405,13 @@ function EditableReadout({ value, min, max, format, unit, onCommit }: EditableRe
   const [draft, setDraft] = useState<string | null>(null);
   const fmt = (n: number) =>
     format ? format(n) : formatNumber(n, { useGrouping: false, maximumFractionDigits: 20 });
-  const displayValue =
-    draft !== null
-      ? draft
-      : (() => {
-          const formatted = fmt(value);
-          return typeof formatted === 'string' ? formatted : String(formatted);
-        })();
+  const text = (n: number) => {
+    const formatted = fmt(n);
+    return typeof formatted === 'string' ? formatted : String(formatted);
+  };
+  const displayValue = draft !== null ? draft : text(value);
+  // The widest value the range can show, which the stylesheet widens the box to fit.
+  const fit = { '--wzl-property-readout-fit': `${Math.max(text(min).length, text(max).length)}ch` };
 
   const suffix =
     unit == null ? null : typeof unit === 'string' ? (
@@ -409,7 +422,7 @@ function EditableReadout({ value, min, max, format, unit, onCommit }: EditableRe
 
   const commit = () => {
     if (draft !== null) {
-      const n = parseSignedNumber(draft);
+      const n = parseNumber(draft);
       if (Number.isFinite(n)) onCommit(Math.min(max, Math.max(min, n)));
     }
     setDraft(null);
@@ -421,6 +434,7 @@ function EditableReadout({ value, min, max, format, unit, onCommit }: EditableRe
         type="text"
         inputMode="decimal"
         className={s.readoutInput}
+        style={fit as CSSProperties}
         value={displayValue}
         onFocus={(e) => {
           const formatted = fmt(value);

@@ -17,6 +17,7 @@ export type {
   ToolPrefLeaf as PrefLeaf,
   ToolPrefNumber as PrefNumber,
   ToolPrefNumberControl as PrefNumberControl,
+  ToolPrefNumberFormat as PrefNumberFormat,
   ToolPrefNumberUnit as PrefNumberUnit,
   ToolPrefObject as PrefObject,
   ToolPrefPaint as PrefPaint,

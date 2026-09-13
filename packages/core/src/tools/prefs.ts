@@ -40,6 +40,9 @@ interface ToolPrefBase<K extends string, Value> {
 
 /** How a schema-driven UI should present a number pref. */
 export type ToolPrefNumberControl = 'input' | 'slider';
+/** How a schema-driven UI should show a number pref's value. `compact`
+ *  abbreviates from a thousand up, as in `2.0M`. */
+export type ToolPrefNumberFormat = 'plain' | 'compact';
 /** How a schema-driven UI should present a boolean pref. */
 export type ToolPrefBooleanControl = 'checkbox' | 'switch' | 'toggle';
 /** How a schema-driven UI should present a string pref. */
@@ -64,6 +67,7 @@ export interface ToolPrefNumber extends ToolPrefBase<'number', number> {
   max?: number;
   step?: number;
   control?: ToolPrefNumberControl;
+  format?: ToolPrefNumberFormat;
   unit?: ToolPrefNumberUnit;
 }
 /** An on/off pref. */

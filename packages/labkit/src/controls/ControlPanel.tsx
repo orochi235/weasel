@@ -6,6 +6,7 @@ import {
   NumberRow,
   type PrefGroup,
   type PrefLeaf,
+  type PrefNumberFormat,
   type PropertyAlign,
   type PropertyDensity,
   PropertyGroup,
@@ -247,6 +248,7 @@ function ControlRow<TC extends Record<string, unknown>>({
       const max = extra<number>(leaf, 'max');
       const step = extra<number>(leaf, 'step');
       const suffix = extra<string>(leaf, 'suffix');
+      const notation = extra<PrefNumberFormat>(leaf, 'format');
       if (extra<string>(leaf, 'control') === 'slider' && min !== undefined && max !== undefined) {
         return (
           <SliderRow
@@ -255,6 +257,7 @@ function ControlRow<TC extends Record<string, unknown>>({
             min={min}
             max={max}
             step={step}
+            notation={notation}
             unit={suffix}
             onChange={write}
             layout={layout}
