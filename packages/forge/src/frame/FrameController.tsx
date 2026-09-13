@@ -4,6 +4,7 @@ import type { Channel } from '../protocol/channel';
 import { type FaultPhase, type FromFrame, type Globals, stableStringify, type ToFrame } from '../protocol/messages';
 import { answerSchema, describeSchema } from '../protocol/schema';
 import type { Decorator, LoadedStory, StoryContext } from '../story/types';
+import { createOverrides, scanCssVars } from './cssVars';
 import { StoryHost } from './StoryHost';
 
 export interface FrameSetup {
@@ -19,6 +20,8 @@ export interface StartFrameOptions {
   container: HTMLElement;
   setup?: FrameSetup;
 }
+
+const VARS_SETTLE_MS = 100;
 
 function fault(phase: FaultPhase, error: unknown, seq?: number): FromFrame {
   return {
@@ -48,6 +51,31 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
   let answeredKey: string | null = null;
   let resetKey = 0;
   let seq = 0;
+
+  const overrides = createOverrides(document);
+  let reported: string | null = null;
+  const reportVars = () => {
+    const vars = scanCssVars(document, overrides.has);
+    const key = JSON.stringify(vars);
+    if (key === reported) return;
+    reported = key;
+    send({ type: 'vars', vars });
+  };
+  let settleTimer: ReturnType<typeof setTimeout> | undefined;
+  const mutations =
+    typeof MutationObserver === 'undefined'
+      ? null
+      : new MutationObserver(() => {
+          clearTimeout(settleTimer);
+          settleTimer = setTimeout(reportVars, VARS_SETTLE_MS);
+        });
+  mutations?.observe(document.documentElement, {
+    subtree: true,
+    childList: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: ['style', 'class'],
+  });
 
   const setConfig = (path: string, value: unknown) => send({ type: 'setConfig', path, value });
   const setState = (next: unknown) => {
@@ -81,6 +109,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
     if (!initialized) return;
     resetKey += 1;
     flushSync(render);
+    reportVars();
   };
 
   const play = async () => {
@@ -120,6 +149,10 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
         setup.applyGlobals?.(globals, document.documentElement);
         renderInput();
         break;
+      case 'vars.set':
+        overrides.set(msg.name, msg.value);
+        if (initialized) reportVars();
+        break;
       case 'play':
         void play();
         break;
@@ -138,6 +171,9 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
   return () => {
     off();
     observer?.disconnect();
+    mutations?.disconnect();
+    clearTimeout(settleTimer);
+    overrides.dispose();
     root.unmount();
     wrapper.remove();
   };

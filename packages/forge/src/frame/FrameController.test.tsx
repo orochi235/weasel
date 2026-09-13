@@ -242,6 +242,89 @@ describe('startFrame', () => {
     expect(of('played')).toEqual([{ type: 'played', ok: true }]);
   });
 
+  describe('CSS variables', () => {
+    const [styled] = loadNativeModule(
+      {
+        default: meta({ title: 'Test/Styled' }),
+        Styled: story({ render: () => <p style={{ color: 'var(--fg-t-ink)' }}>styled</p> }),
+      },
+      '/s.stories.tsx',
+      '/',
+    );
+    const rootStyle = document.createElement('style');
+    rootStyle.textContent = ':root { --fg-t-ink: red; }';
+    const settle = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    const empty = { type: 'init', config: {}, state: null, globals: {} } as const;
+    const ink = (vars: { name: string }[] | undefined) => vars?.find((v) => v.name === '--fg-t-ink');
+
+    afterEach(() => rootStyle.remove());
+
+    it('reports the vars the rendered story uses after init', async () => {
+      document.head.append(rootStyle);
+      const { shell, of } = start(styled!);
+      shell.send(empty);
+      await flush();
+      expect(ink(of('vars').at(-1)?.vars)).toEqual({ name: '--fg-t-ink', value: 'red', overridden: false });
+    });
+
+    it('applies vars.set as an override, reports it, and drops it on a null value', async () => {
+      document.head.append(rootStyle);
+      const { shell, of } = start(styled!);
+      shell.send(empty);
+      await flush();
+      shell.send({ type: 'vars.set', name: '--fg-t-ink', value: 'blue' });
+      await flush();
+      expect(document.head.querySelector('style[data-fg-overrides]')?.textContent).toContain('--fg-t-ink: blue;');
+      expect(ink(of('vars').at(-1)?.vars)).toEqual({ name: '--fg-t-ink', value: 'blue', overridden: true });
+      shell.send({ type: 'vars.set', name: '--fg-t-ink', value: null });
+      await flush();
+      expect(ink(of('vars').at(-1)?.vars)).toEqual({ name: '--fg-t-ink', value: 'red', overridden: false });
+    });
+
+    it('does not count vars.set as render input', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const [fragile] = loadNativeModule(
+        {
+          default: meta({ title: 'Test/Fragile2' }),
+          Fragile2: story({
+            render: () => {
+              throw new Error('always');
+            },
+          }),
+        },
+        '/f.stories.tsx',
+        '/',
+      );
+      const { shell, of } = start(fragile!);
+      shell.send({ type: 'vars.set', name: '--fg-t-ink', value: 'blue' });
+      shell.send(empty);
+      await flush();
+      expect(of('fault')).toEqual([expect.objectContaining({ phase: 'render', seq: 1 })]);
+      vi.restoreAllMocks();
+    });
+
+    it('rescans once the document settles after a mutation', async () => {
+      const { shell, of } = start(styled!);
+      shell.send(empty);
+      await flush();
+      const late = document.createElement('style');
+      late.textContent = '.late { color: var(--fg-t-late); }';
+      document.head.append(late);
+      await settle(150);
+      late.remove();
+      expect(of('vars').at(-1)?.vars.map((v) => v.name)).toContain('--fg-t-late');
+    });
+
+    it('removes its override style when stopped', async () => {
+      const { shell } = start(styled!);
+      shell.send(empty);
+      shell.send({ type: 'vars.set', name: '--fg-t-ink', value: 'blue' });
+      await flush();
+      for (const fn of cleanups.splice(0)) act(() => fn());
+      expect(document.head.querySelector('style[data-fg-overrides]')).toBeNull();
+    });
+  });
+
   it('reports a throwing play', async () => {
     const withPlay: LoadedStory = {
       ...counter,
