@@ -1,6 +1,6 @@
 import { type ConfigNode, type ConfigSchema, type ConfigShape, f } from '@weasel-js/labkit/config';
-import { isValidElement } from 'react';
 import { isPlainObject } from './isPlainObject';
+import { isPortSafe } from './portSafe';
 
 /** A CSF `argTypes` entry, as far as forge reads it. */
 export interface ArgType {
@@ -23,9 +23,6 @@ interface Control {
   max?: number;
   step?: number;
 }
-
-/** Functions and React elements reach `render` in `args` but never become controls. */
-export const isControllable = (value: unknown): boolean => typeof value !== 'function' && !isValidElement(value);
 
 function controlOf(argType: ArgType): Control | false {
   const { control } = argType;
@@ -102,7 +99,8 @@ export function argsToSchema(
   for (const key of new Set([...Object.keys(args), ...Object.keys(argTypes)])) {
     const has = key in args;
     const value = args[key];
-    if (has && !isControllable(value)) continue;
+    // Functions, elements, and anything holding one reach `render` in `args`, but no control can carry them across the port.
+    if (has && !isPortSafe(value)) continue;
     const argType = argTypes[key];
     const control = argType ? controlOf(argType) : false;
 

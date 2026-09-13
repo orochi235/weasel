@@ -30,6 +30,11 @@ describe('argsToSchema', () => {
       expect(Object.keys(schema.nodes)).toEqual(['n']);
     });
 
+    it('omits object and array args that hold a function, which cannot cross the port', () => {
+      const schema = argsToSchema({ job: { done: 1, cancel: () => {} }, instruments: [{ defaults: () => ({}) }], n: 1 }, {});
+      expect(Object.keys(schema.nodes)).toEqual(['n']);
+    });
+
     it('keeps defaults exactly', () => {
       expect(argsToSchema({ step: 0.001, name: '' }, {}).defaults()).toEqual({ step: 0.001, name: '' });
     });
