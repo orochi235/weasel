@@ -72,8 +72,10 @@ labkit to stop demanding a canvas per tile. See `packages/labkit/docs/IDEAS.md`
 same answer: labkit stays backend-agnostic and owns rects, dirtiness, and
 scheduling.
 
-**Phase 2 — a 3D kernel package.** Own renderer, camera, and ray picking;
-depends on `gestures` + `history`; reuses the tool authoring model.
+**Phase 2 — a 3D kernel package that hosts a renderer rather than owning one.**
+Scene, poses, ray picking and chrome geometry; depends on `gestures` +
+`history`; reuses the tool authoring model. The consumer brings the renderer —
+see "The renderer is the consumer's" below.
 
 Its prerequisite is making the action pipeline generic over point, camera and
 box. World coordinates enter as `{x, y}` or flat scalars in `InvocationCtx`
@@ -83,16 +85,14 @@ in the pick functions, and in `@weasel-js/gestures`' pointer and click events.
 In 3D a pointer is a ray, so what replaces the world point is decided with the
 picking design, not ahead of it.
 
-The working hypothesis, being tested by the 3D lab
-(`docs/superpowers/specs/2026-09-12-3d-lab-design.md`): nothing replaces it.
-`useGestureDispatcher` takes a `clientToWorld` hook, and `<SceneCanvas>` passes
-a function that inverts the 2D view transform. A 3D host passes identity, so
-`ctx.world` carries the screen point, and each dep rebuilds the ray from the
-camera it already closes over. If that holds, `InvocationCtx` needs no point
-type parameter at all and the prerequisite shrinks to the deps.
-The open build-vs-adopt question is whether the renderer is bespoke or three.js
-wearing a weasel-shaped adapter — the labs that motivated this are already on
-three.js, which argues for adopt.
+The 3D lab (`docs/superpowers/specs/2026-09-12-3d-lab-design.md`) ran this and
+it held: nothing replaces it. `useGestureDispatcher` takes a `clientToWorld`
+hook, and `<SceneCanvas>` passes a function that inverts the 2D view transform.
+A 3D host passes identity, so `ctx.world` carries the screen point, and each dep
+rebuilds the ray from the camera it already closes over. `InvocationCtx` needs
+no point type parameter at all, and the prerequisite shrinks to the deps.
+Whether the renderer is bespoke or three.js is no longer the kernel's question
+to answer — see "The renderer is the consumer's" below.
 
 ## What "shipping tools for both" actually means
 
@@ -238,10 +238,51 @@ not `InvocationCtx`. That is the case for extracting routing into a package besi
 `gestures` and `history` rather than giving a 3D kernel its own dispatcher, and it
 puts the seam at `depSchema.ts`: the mechanism is portable, the schema is 2D.
 
+## The renderer is the consumer's (decided 2026-09-13)
+
+The kernel owns `Scene`, poses, the dep adapters, ray picking and chrome
+geometry. It does not ship a renderer, and it does not depend on three.js.
+A consumer brings its own and the kernel hands it poses.
+
+Three measurements from the lab, not preferences:
+
+- **The renderer is already a leaf.** `deps3d.ts` imports `math3d` and
+  `camera3d` and nothing from `renderer3d`; `overlays3d.ts` takes one
+  structural rect type from it. Only the host — `SolidInstrument.tsx` — draws.
+  The kernel's substance never sees a renderer.
+- **Both motivating consumers already own a `WebGLRenderer`.** klieg's tube lab
+  and precioussss's gem bench brought three.js with them. A kernel shipping a
+  second renderer means two renderers and two scene graphs in one app.
+- **labkit's surface layer exists to host a renderer it does not own.** That is
+  what `useTiledSurface`, `toDeviceRect` and the two stacked buffers are for.
+
+**The kernel's math types stay weasel's own** — immutable tuples, not three's
+mutable classes. `History.serialize()` promises a structured-clone-safe form and
+the async lab storage persists it to IDB; `structuredClone` keeps a class
+instance's data and drops its prototype without throwing, so a `Vector3` in a
+pose would return from a reload as a bare `{x, y, z}` whose first method call
+throws far from the cause. Mutability is the second hazard: history stores pose
+snapshots, and `pose.position.add(delta)` would write through the undo record.
+
+Adopting three's types buys little because interop is nearly free. `Vector3`,
+`Quaternion` and `Matrix4` all carry `fromArray`/`toArray`, and all three agree
+with our layout already — column-major matrices, `[x, y, z, w]` quaternions.
+`PoseDescriptor<Pose3>` is the only kernel signature that carries our math types
+outward; every dep speaks core's 2D `Bounds` and screen points, with the 3D math
+inside the closure.
+
+The line where adopting three stops being cheap is picking, not math.
+`Ray.intersectBox` is a direct swap for `intersectRayAabb`. `Raycaster` is not:
+it walks `Object3D`s, so using it puts three in charge of the scene graph, which
+is the one thing `Scene` owns.
+
 ## Still open
 
-**Bespoke or three.js.** Untouched. The lab wrote its own picking to learn what a
-kernel would owe, and that debt turns out to be small.
+**How a hosted renderer is handed the scene.** Decided that the consumer brings
+one; not decided what the kernel offers it. labkit's surface layer supplies the
+rect, the DPR and the scheduling, and `resolveOverlays` supplies chrome as
+geometry, so the missing piece is only the per-frame pose feed — a pull the
+renderer makes each frame, or a subscription the scene pushes.
 
 **Where routing lives.** Every fight was a dep contract, a registration step or a
 coordinate-space bug — never binding-to-action routing. That is the case for

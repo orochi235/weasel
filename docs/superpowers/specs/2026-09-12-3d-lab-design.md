@@ -196,5 +196,7 @@ widened to reach `examples/` — nothing had ever put a test there, so
   change made to accommodate the lab would destroy the measurement.
 - Renderer quality. Lighting, shadows, materials, antialiasing and batching are
   all out.
-- three.js. The build-vs-adopt question stays open; writing the picking math by
-  hand is how the lab learns what a kernel would owe.
+- three.js. Writing the picking math by hand is how the lab learns what a kernel
+  would owe. It answered the build-vs-adopt question by making it someone else's:
+  the kernel hosts a renderer rather than owning one, decided 2026-09-13 in
+  `docs/superpowers/specs/2026-08-22-3d-kernel-design.md`.
