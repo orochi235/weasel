@@ -226,6 +226,45 @@ describe('SliderRow', () => {
     expect(onChange).toHaveBeenCalledWith(55);
   });
 
+  it('shows a compact notation and reads a typed suffix back', () => {
+    const onChange = vi.fn();
+    render(
+      <SliderRow
+        label="Glyphs"
+        value={2_000_000}
+        min={0}
+        max={2_000_000}
+        step={1000}
+        notation="compact"
+        onChange={onChange}
+      />,
+    );
+    const readout = screen.getByRole('textbox');
+    expect(readout).toHaveValue('2.0M');
+    fireEvent.focus(readout);
+    fireEvent.change(readout, { target: { value: '2.5k' } });
+    fireEvent.blur(readout);
+    expect(onChange).toHaveBeenCalledWith(2500);
+  });
+
+  it('reverts an empty readout instead of committing zero', () => {
+    const onChange = vi.fn();
+    render(<SliderRow label="Op" value={10} min={0} max={100} onChange={onChange} />);
+    const readout = screen.getByRole('textbox');
+    fireEvent.focus(readout);
+    fireEvent.change(readout, { target: { value: '' } });
+    fireEvent.blur(readout);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('publishes the widest value its range can show', () => {
+    render(<SliderRow label="Op" value={5} min={0} max={200_000} onChange={() => {}} />);
+    // jsdom does no layout, so this reads the custom property the width is taken from.
+    expect(screen.getByRole('textbox').style.getPropertyValue('--wzl-property-readout-fit')).toBe(
+      '6ch',
+    );
+  });
+
   it('formats the readout when format is supplied', () => {
     render(
       <SliderRow

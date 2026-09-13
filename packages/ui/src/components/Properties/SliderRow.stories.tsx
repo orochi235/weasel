@@ -21,6 +21,7 @@ function Controlled({
   max: number;
   step?: number;
   format?: (v: number) => string;
+  notation?: 'plain' | 'compact';
   unit?: ReactNode;
   layout?: 'block' | 'inline';
 }) {
@@ -69,6 +70,25 @@ export const WithUnitSuffix: Story = {
     <div style={{ width: 280, display: 'grid', gap: 12 }}>
       <Controlled initial={12} label="Radius" min={0} max={64} unit="px" />
       <Controlled initial={45} label="Angle" min={-180} max={180} unit={<sup>°</sup>} />
+    </div>
+  ),
+};
+
+/** Large ranges: the readout widens to its widest value, and `compact`
+ *  abbreviates it. A small range keeps the default box. */
+export const LargeValues: Story = {
+  render: () => (
+    <div style={{ width: 280, display: 'grid', gap: 12 }}>
+      <Controlled initial={200_000} label="Glyphs" min={0} max={200_000} step={1000} />
+      <Controlled
+        initial={2_000_000}
+        label="Glyphs"
+        min={0}
+        max={2_000_000}
+        step={1000}
+        notation="compact"
+      />
+      <Controlled initial={40} label="Samples" min={0} max={100} />
     </div>
   ),
 };
