@@ -38,12 +38,6 @@ export function createPoseFeed<TData, TLayer extends string, TPose>(
   let seenVersion = -1;
   let seenGeneration = -1;
   let seenOverridden: readonly NodeId[] = EMPTY;
-  // `scene.roots` / `scene.layers` are mutated in place (splice), so their
-  // identity never moves — `renderOrderNodes()` is the array the kit itself
-  // documents as "cached until a structural edit", so its identity is the
-  // real signal that render order (add/remove/move/reorder/setLayer/layer
-  // edits) changed under us.
-  let seenOrder: readonly Node<TData, TLayer, TPose>[] | null = null;
 
   const walk = (): {
     added: FeedNode<TData, TLayer, TPose>[];
@@ -78,7 +72,6 @@ export function createPoseFeed<TData, TLayer extends string, TPose>(
     seenVersion = scene.getVersion();
     seenGeneration = scene.overrides.getGeneration();
     seenOverridden = scene.overrides.ids();
-    seenOrder = scene.renderOrderNodes();
     return { ...walk(), removed: EMPTY, changed: EMPTY, reset: true };
   };
 
@@ -106,22 +99,6 @@ export function createPoseFeed<TData, TLayer extends string, TPose>(
             changed: [] as FeedNode<TData, TLayer, TPose>[],
           };
       seenVersion = version;
-
-      // A structural edit that neither adds, removes, nor changes any node's
-      // tracked references (reorder; a reparent that leaves pose/data/layer
-      // untouched) moves render order with nothing for the diff above to
-      // report. `renderOrderNodes()`'s identity is the kit's own signal for
-      // that — cached until a structural edit — so an empty diff alongside a
-      // moved order means the walk missed a real change, not that there
-      // wasn't one.
-      if (
-        committedMoved
-        && base.added.length === 0 && base.removed.length === 0 && base.changed.length === 0
-        && scene.renderOrderNodes() !== seenOrder
-      ) {
-        return resetTo();
-      }
-      if (committedMoved) seenOrder = scene.renderOrderNodes();
 
       if (overridesMoved) {
         const now = scene.overrides.ids();

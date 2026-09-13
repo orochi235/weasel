@@ -193,7 +193,7 @@ describe('createPoseFeed', () => {
     expect(iterations).toBe(baseline);
   });
 
-  it('resets when render order changed without any node changing', () => {
+  it("reports nothing for a reorder — order is the host's to re-read", () => {
     const { scene, id } = makeScene();
     const second = scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { label: 'b' } });
     const feed = createPoseFeed(scene);
@@ -202,14 +202,16 @@ describe('createPoseFeed', () => {
     scene.reorder(second, 0);
     const delta = feed.read();
 
-    // The delta carries no order of its own — `added` follows `scene.nodes`,
-    // which is insertion order and does not move on a reorder. `reset` is the
-    // whole signal: it tells the host to re-read `renderOrderNodes()`.
-    expect(delta.reset).toBe(true);
-    expect([...delta.added.map((n) => n.node.id)].sort()).toEqual([id, second].sort());
+    // Nothing about either node changed, and the delta carries no sequence.
+    // A host that draws in order calls `renderOrderNodes()`, which is cached
+    // until a structural edit and so costs nothing to re-read every frame.
+    expect(delta.reset).toBe(false);
+    expect(delta.changed).toEqual([]);
+    expect(delta.removed).toEqual([]);
+    expect(scene.renderOrderNodes().map((n) => n.id)).toEqual([second, id]);
   });
 
-  it('repaints a reparented node rather than losing it', () => {
+  it('never reports a reparented node as removed', () => {
     const { scene, id } = makeScene();
     const parent: NodeId = scene.add({
       kind: 'container', layer: 'main', pose: POSE, data: { label: 'p' },
@@ -220,7 +222,11 @@ describe('createPoseFeed', () => {
     scene.move(id, parent);
     const delta = feed.read();
 
+    // The node is still live; a host told it was removed would delete a real
+    // object. Whether it also reports `changed` depends on whether the
+    // container cascade moved its effective pose, which is not this test's
+    // business.
     expect(delta.removed).not.toContain(id);
-    expect(delta.reset || delta.changed.some((n) => n.node.id === id)).toBe(true);
+    expect(scene.get(id)).toBeDefined();
   });
 });
