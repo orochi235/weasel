@@ -58,6 +58,7 @@
     "gen:bidi-tables": "node packages/bidi/scripts/gen-bidi-tables.mjs",
     "gen:font": "node packages/font/scripts/gen-font.ts",
     "test:stories": "vitest run --project=storybook",
+    "test:stories:forge": "vitest run --project=forge-stories",
     "test:watch": "vitest",
     "test:changed": "vitest run --changed",
     "test:related": "vitest related --run",

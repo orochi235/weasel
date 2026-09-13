@@ -21,6 +21,19 @@ const MODULES = new Set(['index.js', 'importers.js', 'config.js', 'shell-entry.j
 const PREVIEW_API = /^@?storybook\/preview-api$/;
 const PAGES: Record<string, string> = { '/': 'shell-entry.js', '/index.html': 'shell-entry.js', '/frame.html': 'frame-entry.js' };
 
+/** Points `storybook/preview-api` and `@storybook/preview-api` at forge's shim. */
+export function storybookShims(): Plugin {
+  // Resolved from forge's own location, through the app's aliases, so a monorepo reaches source and an install reaches dist.
+  return {
+    name: 'weaselforge:storybook-shims',
+    enforce: 'pre',
+    resolveId(id) {
+      if (!PREVIEW_API.test(id)) return undefined;
+      return this.resolve('@weasel-js/forge/preview-api', fileURLToPath(import.meta.url), { skipSelf: true });
+    },
+  };
+}
+
 export function forge(options: ForgeOptions): Plugin[] {
   let root = process.cwd();
   let base = '/';
@@ -122,18 +135,8 @@ mountFrame({ index, importers, root: ${JSON.stringify(root)}, setup: config.fram
     server.ws.send({ type: 'custom', event: 'forge:index', data: next });
   }
 
-  // Resolved from forge's own location, through the app's aliases, so a monorepo reaches source and an install reaches dist.
-  const shims: Plugin = {
-    name: 'weaselforge:storybook-shims',
-    enforce: 'pre',
-    resolveId(id) {
-      if (!PREVIEW_API.test(id)) return undefined;
-      return this.resolve('@weasel-js/forge/preview-api', fileURLToPath(import.meta.url), { skipSelf: true });
-    },
-  };
-
   return [
-    ...(options.storybookShims === false ? [] : [shims]),
+    ...(options.storybookShims === false ? [] : [storybookShims()]),
     {
       name: 'weaselforge',
       config(config, { command }) {

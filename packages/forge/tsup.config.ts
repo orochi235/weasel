@@ -12,6 +12,7 @@ export default defineConfig([
         'frame/index': 'src/frame/index.ts',
         'shell/index': 'src/shell/index.ts',
         'csf/preview-api': 'src/csf/shims/preview-api.ts',
+        'test/index': 'src/test/index.ts',
       },
       external,
     }),

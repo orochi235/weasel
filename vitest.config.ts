@@ -6,6 +6,9 @@ import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import { playwright } from '@vitest/browser-playwright';
 import { weaselAliases } from './scripts/vite-aliases';
 import { traitSchemasPlugin } from './apps/draw/vite-plugin-trait-schemas';
+import { forgeAliases, forgeConfig, stories as forgeStories } from './apps/forge/viteShared';
+import { forgeTest } from './packages/forge/src/test/plugin';
+import { weaselDefines } from './scripts/vite-build-info';
 
 const storybookDir = dirname(fileURLToPath(new URL('./.storybook/main.ts', import.meta.url)));
 
@@ -143,6 +146,27 @@ export default defineConfig({
         resolve: shared.resolve,
         test: {
           name: 'storybook',
+          browser: {
+            enabled: true,
+            provider: playwright(),
+            headless: true,
+            instances: [{ browser: 'chromium' }],
+          },
+        },
+      },
+      // Every story — native and CSF — rendered and played through forge's frame, with the workshop's
+      // frame setup. Opt-in via `npm run test:stories:forge`.
+      {
+        plugins: [
+          react(),
+          traitSchemasPlugin({ repoRoot: __dirname }),
+          forgeTest({ stories: forgeStories, config: forgeConfig }),
+        ],
+        resolve: { alias: forgeAliases(__dirname) },
+        define: weaselDefines(__dirname),
+        test: {
+          name: 'forge-stories',
+          include: forgeStories,
           browser: {
             enabled: true,
             provider: playwright(),
