@@ -24,37 +24,39 @@ const done = (what) => console.log(`${++step}/${total} ${what}`);
 const trialSaved = (label, n) =>
   page.evaluate(
     ({ label, n }) =>
-      new Promise(async (resolve) => {
-        // Opening a database that does not exist yet creates it empty, and labkit's own open would then find no store.
-        if (!(await indexedDB.databases()).some((d) => d.name === 'labkit')) {
-          resolve(false);
-          return;
-        }
-        const open = indexedDB.open('labkit');
-        open.onerror = () => resolve(false);
-        open.onsuccess = () => {
-          const db = open.result;
-          if (!db.objectStoreNames.contains('records')) {
-            db.close();
-            resolve(false);
-            return;
-          }
-          const store = db.transaction('records').objectStore('records');
-          const keys = store.getAllKeys();
-          const values = store.getAll();
-          values.onsuccess = () => {
-            db.close();
-            resolve(
-              keys.result.some(
-                (key, i) =>
-                  /^lk:[^:]+:trial:/.test(String(key)) &&
-                  values.result[i]?.config?.label === label &&
-                  values.result[i]?.state?.n === n,
-              ),
-            );
+      new Promise((resolve) => {
+        const read = () => {
+          const open = indexedDB.open('labkit');
+          open.onerror = () => resolve(false);
+          open.onsuccess = () => {
+            const db = open.result;
+            if (!db.objectStoreNames.contains('records')) {
+              db.close();
+              resolve(false);
+              return;
+            }
+            const store = db.transaction('records').objectStore('records');
+            const keys = store.getAllKeys();
+            const values = store.getAll();
+            values.onsuccess = () => {
+              db.close();
+              resolve(
+                keys.result.some(
+                  (key, i) =>
+                    /^lk:[^:]+:trial:/.test(String(key)) &&
+                    values.result[i]?.config?.label === label &&
+                    values.result[i]?.state?.n === n,
+                ),
+              );
+            };
+            values.onerror = () => resolve(false);
           };
-          values.onerror = () => resolve(false);
         };
+        // Opening a database that does not exist yet creates it empty, and labkit's own open would then find no store.
+        indexedDB.databases().then(
+          (dbs) => (dbs.some((d) => d.name === 'labkit') ? read() : resolve(false)),
+          () => resolve(false),
+        );
       }),
     { label, n },
   );
