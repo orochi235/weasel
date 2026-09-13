@@ -109,7 +109,7 @@ Three parts of a schema are functions and cannot cross:
 
 | Part | Where it runs |
 |---|---|
-| `showIf` | frame; reports the visible path set on each config change |
+| `showIf` | frame; reports the hidden paths on each config change |
 | `validate` | frame; reports errors by path |
 | `.render` (custom control) | workshop page, from a `controls` registry in the shell config — the same `controls` `<Lab>` takes |
 
@@ -147,8 +147,9 @@ A `forge.config.ts` with two halves, because they run in different realms:
 ## The channel
 
 Each trial creates a `MessageChannel` and transfers one port to its iframe on
-load, so frames cannot hear each other and there is no origin filter to get
-wrong. Every message carries a protocol version; a mismatch is a `fault`.
+load, so frames cannot hear each other. The frame accepts that handoff only from
+its parent window at its own origin, and only the first one. Every message
+carries a protocol version; a mismatch is a `fault`.
 
 | Direction | Messages |
 |---|---|
