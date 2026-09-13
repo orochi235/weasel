@@ -1,17 +1,21 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'node:path';
-import { weaselAliases } from './scripts/vite-aliases';
+import { weaselAliases } from '../../scripts/vite-aliases';
+
+const repoRoot = resolve(__dirname, '../..');
 
 // Benchmarks live in their own config, not as a project in `vitest.config.ts`,
 // so that no `--project` selection or bare `vitest run` can pull them into a
-// correctness run. `npm run bench` is the only way in.
+// correctness run. `npm run perf:bench` is the way in; it passes `--outputJson`
+// and turns that report into a result file.
 export default defineConfig({
+  root: repoRoot,
   resolve: {
-    alias: weaselAliases(__dirname, [
+    alias: weaselAliases(repoRoot, [
       {
         find: '@weasel-js/theme/tokens.css',
-        replacement: resolve(__dirname, 'packages/theme/src/generated/tokens.css'),
+        replacement: resolve(repoRoot, 'packages/theme/src/generated/tokens.css'),
       },
     ]),
   },
@@ -25,9 +29,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
     benchmark: {
-      include: ['tests/bench/**/*.bench.ts'],
+      include: ['tests/perf/bench/**/*.bench.ts'],
       reporters: ['default'],
-      outputJson: 'tests/bench/results/latest.json',
     },
   },
 });

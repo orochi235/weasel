@@ -1,7 +1,7 @@
 /**
  * Renderer draw loop: frame cost against commands per frame, under real GL.
  *
- * The `tests/bench/` suite cannot reach this — the draw loop needs a WebGL2
+ * The vitest benches in `tests/perf/bench/` cannot reach this — the draw loop needs a WebGL2
  * context, so it runs in a browser, driven by Playwright. Check what you are
  * measuring on before reading anything into a number: the spec logs the
  * unmasked GL renderer, and a software backend (SwiftShader) produces numbers
@@ -32,10 +32,11 @@
  * 500 commands, which does not exist. Timing K frames as one block and dividing
  * is immune to both, and shows a flat per-command cost from 100 to 3200.
  *
- * This reports; it does not gate. `tests/bench/README.md` explains why this
+ * This reports; it does not gate. `tests/perf/README.md` explains why this
  * repo does not put timing thresholds on shared runners.
  */
 import { test, expect } from '@playwright/test';
+import { metric, startRun } from './lib/result';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -60,7 +61,8 @@ const MEASURE_ORDER = ['solid', 'stacked', 'scene', 'rotated', 'meshes', 'stroke
 
 test.setTimeout(300_000);
 
-test('draw loop: frame cost vs commands per frame', async ({ page }) => {
+test('draw loop: frame cost vs commands per frame', async ({ page, browser, browserName }) => {
+  const run = startRun('draw-loop', { viewport: '800x600', dpr: 1, sweep: SWEEP, variants: [...VARIANTS] });
   const errors: string[] = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
@@ -241,4 +243,16 @@ test('draw loop: frame cost vs commands per frame', async ({ page }) => {
     expect(gr[gr.length - 1].perFrameMs, `${v}: more commands should cost more`)
       .toBeGreaterThan(gr[0].perFrameMs);
   }
+
+  run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
+  run.params({ gcAvailable, gradientRamps });
+  for (const r of rows) {
+    const { frames } = SWEEP.find((s) => s.n === r.n)!;
+    const stat = `mean of ${frames} frames, second of two timed blocks`;
+    run.item(`${r.variant} n=${r.n}`, {
+      perFrame: metric(r.perFrameMs, 'ms', stat),
+      perCommand: metric(r.usPerCmd, 'us', stat),
+    }, { variant: r.variant, commands: r.n });
+  }
+  run.write();
 });

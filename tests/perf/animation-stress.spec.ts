@@ -14,12 +14,15 @@
  *   - Canvas going entirely black (renderer broken / context lost).
  */
 import { test, expect } from '@playwright/test';
+import { browserFingerprint } from './lib/fingerprint';
+import { metric, startRun } from './lib/result';
 
 // Each cycle waits 280ms for animation to settle, plus drag I/O, so 100 cycles
 // take >= 30s. Give plenty of headroom so a slow run still produces signal.
 test.setTimeout(120_000);
 
-test('animation demo: 100 drag-release cycles without lag or crash', async ({ page }) => {
+test('animation demo: 100 drag-release cycles without lag or crash', async ({ page, browser, browserName }) => {
+  const run = startRun('animation-stress', { cycles: 100, settleMs: 280 });
   const consoleErrors: string[] = [];
   page.on('console', (msg) => {
     if (msg.type() === 'error') consoleErrors.push(msg.text());
@@ -107,4 +110,12 @@ test('animation demo: 100 drag-release cycles without lag or crash', async ({ pa
   // Mean cycle should stay close to the 280ms wait. Above 600ms means
   // significant lag accumulation or rAF starvation.
   expect(mean).toBeLessThan(600);
+
+  run.machine(await browserFingerprint(page, browser, browserName));
+  run.item('drag-release cycle', {
+    meanCycle: metric(mean, 'ms', 'mean of 100 cycles, each including the 280 ms settle', cycleTimes),
+    p95Cycle: metric(p95, 'ms', 'p95 of 100 cycles'),
+  });
+  run.item('canvas afterwards', { nonZeroPixels: metric(nonZeroCount, 'count', 'one readPixels of the canvas') });
+  run.write();
 });

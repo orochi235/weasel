@@ -22,9 +22,10 @@
  * That ordering is what makes a delta attributable; reading a row on its own
  * says nothing.
  *
- * This reports; it does not gate. See `tests/bench/README.md`.
+ * This reports; it does not gate. See `tests/perf/README.md`.
  */
 import { test, expect } from '@playwright/test';
+import { metric, rounds, startRun } from './lib/result';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -34,7 +35,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
  *  the one that makes the per-flush overhead the whole cost. */
 const N = 512;
 
-const RUNS = 3;
+const RUNS = rounds(3);
 
 /**
  * Each row drops one call from the row above. `drops` names what this row no
@@ -56,7 +57,8 @@ interface Cell { run: number; variant: VariantId; perFrameMs: number }
 
 test.setTimeout(1_800_000);
 
-test('flush anatomy: what a flush spends outside the draw', async ({ page }) => {
+test('flush anatomy: what a flush spends outside the draw', async ({ page, browser, browserName }) => {
+  const run = startRun('flush-anatomy', { viewport: '800x600', dpr: 1, flushesPerFrame: N, runs: RUNS });
   const errors: string[] = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
@@ -68,6 +70,7 @@ test('flush anatomy: what a flush spends outside the draw', async ({ page }) => 
   await page.exposeFunction('__flushReport', (msg: unknown) => {
     const m = msg as { type: string } & Record<string, unknown>;
     if (m.type === 'header') {
+      run.params({ gcAvailable: Boolean(m.gcAvailable) });
       console.log('');
       console.log(`Flush anatomy — 800x600, dpr 1, on ${String(m.glRenderer)}`);
       console.log(`collected between measurements: ${String(m.gcAvailable)}`);
@@ -369,4 +372,17 @@ void main() { outColor = v_color * u_color * u_alpha; }`;
   for (const { id } of VARIANTS) {
     expect(paints[id], `${id}: rendered nothing, so its cost is meaningless`).toBe(true);
   }
+
+  run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
+  let above: number | undefined;
+  for (const { id, drops } of VARIANTS) {
+    const us = perFlushUs(id);
+    const samples = cells.filter((c) => c.variant === id).map((c) => (c.perFrameMs * 1000) / N);
+    run.item(id, {
+      perFlush: metric(us, 'us', `median of ${RUNS} runs`, samples),
+      ...(above === undefined ? {} : { saves: metric(above - us, 'us', 'the row above minus this row, medians') }),
+    }, { drops });
+    above = us;
+  }
+  run.write();
 });

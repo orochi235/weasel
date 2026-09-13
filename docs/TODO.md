@@ -685,7 +685,7 @@ intercepting the press that drags the body.
   comparison the seam rejects: an override mutates its buffer in place, which
   defeats reference equality but not value equality.
 
-  **Measured, and the cost is not the obstacle.** `tests/bench/derived-path.bench.ts`
+  **Measured, and the cost is not the obstacle.** `tests/perf/bench/derived-path.bench.ts`
   runs a frame of derived paths against the diagram shapes a hand-authored
   document reaches, then the same frame plus the resolve-and-compare pass a
   value check needs before it can decide to skip:
@@ -905,7 +905,7 @@ What it surfaced:
 
   **This is the whole of the cost, and it absorbs the former P1 about `setPose`
   allocating a pose object per node per frame.** That entry proposed a scalar
-  setter or an in-place write to remove the churn. Measured — `npm run bench`,
+  setter or an in-place write to remove the churn. Measured — `npm run perf:bench`,
   "per-frame pose write — one node, three paths" — minting the object is under a
   tenth of what `setPose` costs (34.4 M/s bare against 3.23 M/s through
   `setPose`), so neither remedy would have moved the number. The recording is
@@ -1446,23 +1446,14 @@ one dead `const` and four stale disable directives.
   what the kit recommends for HUDs, inspectors and labels, so it wants numbers
   rather than an argument.
 
-- **(P2) Decide where benchmarks live and how their results are kept.** There
-  are benchmarks in the tree (`tests/perf`, the draw-cost work in
-  `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`) with no shared convention:
-  no agreed home, no format for a recorded result, no way to say whether a
-  number moved since last time, and nothing that says which ones are expected
-  to run in CI. Settle the layout — one directory or per-package, what a run
-  emits, where a baseline is stored and how it is compared — before the next
-  benchmark adds a fourth shape.
-
 - **(P3) Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one is desired. Today's barrel test asserts ops/shape-kinds/bundles parity; public exports remain uncovered.
 
 - **(P3) Last 4 React `act()` warnings in CI vitest.** The June 2026 sweep took the `ci.yml` "not wrapped in act(...)" count 200 → 4 (and killed the ~91 jsdom `getContext` stack dumps); see `vitest.setup.ts` (global `getContext` stub) and the test-side `act()` wrapping. The remaining 4 all come from `packages/core/src/canvas/SceneCanvas.tools.test.tsx`'s *"omitted defaultTools: resize is registered"* test — a SceneCanvas-internal deferred update from the resize-gesture commit that resists every test-side `act()` strategy tried (async microtask flush, `setTimeout(0)` macrotask flush, dispatching the whole down→move→up gesture inside one `act()`). A real fix has to live in SceneCanvas's update scheduling, not the test. Note: these warnings only reproduce under CI (ubuntu/worker timing), not locally — verify via the `ci.yml` log. Low value; defer.
 
 - **(P2) Per-command draw cost, for everything that is not batched solid
   geometry.** `tests/perf/draw-loop.spec.ts` sweeps commands per frame under
-  real GL (`npm run test:perf`; gates nothing, prints the unmasked GL renderer
-  so a software backend is obvious).
+  real GL (`npm run test:perf`; gates nothing, and its result file records the
+  unmasked GL renderer so a software backend is obvious).
 
   The cost turned out not to be the draw call. A warm mesh draw is ~1.8 us;
   what cost ~66 us was *writing a buffer between draws*, which the driver
@@ -1714,12 +1705,13 @@ one dead `const` and four stale disable directives.
   existing precedent, used for glyph outline widths in
   `outlineStrokeMeshCache.ts` — would likely fix it.
 
-- **(P3) Whether the benchmarks gate CI.** `tests/bench/` holds 62 vitest
-  benchmarks with a committed baseline (`tests/bench/results/`); nothing gates
-  anything. `tests/bench/README.md` argues a hard threshold on shared runners
-  would have to be loose enough to miss real regressions, and sketches the
-  shape it thinks a gate should take instead — a PR job that posts the
-  `--compare` delta as a comment and does not fail the build. Mike's call.
+- **(P3) Whether the benchmarks gate CI.** Every benchmark lives in
+  `tests/perf/` and writes a result file per run; nothing gates anything. The
+  vitest microbenchmarks keep a committed baseline in `tests/perf/bench/`. `tests/perf/README.md` argues a hard
+  threshold on shared runners would have to be loose enough to miss real
+  regressions. The shape a gate could take instead: a PR job that runs the
+  benchmarks on both revisions and posts the `npm run perf:compare` table as a
+  comment without failing the build. Mike's call.
 
 - **(P2) A clipped group costs ~10 us to enter, and the stencil is now the
   larger half.** `tests/perf/clip-cost.spec.ts` separates entry's two costs by
