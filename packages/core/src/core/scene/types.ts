@@ -1,5 +1,5 @@
 import type { Path } from '../geometry/path';
-import type { SerializedHistory } from '@weasel-js/history';
+import type { History, SerializedHistory } from '@weasel-js/history';
 
 /**
  * Axis-aligned rectangle pose with optional rotation. The canonical pose
@@ -591,6 +591,14 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   readonly overrides: PoseOverrides<TPose>;
 
   // History
+  /** The scene's undo/redo engine, in the shape `@weasel-js/history` defines —
+   *  what the kit's `undo` / `redo` actions resolve their `history` dep to, and
+   *  what a mode machine opens journals against. Mutating members route through
+   *  the scene's own wrappers, so an undo driven through this bumps
+   *  {@link Scene.getVersion} and notifies subscribers exactly as
+   *  {@link Scene.undo} does; `getVersion` / `subscribe` on it report the
+   *  engine's history version, not the scene's. */
+  readonly history: History;
   undo(): boolean;
   redo(): boolean;
   canUndo(): boolean;

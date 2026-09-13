@@ -1,4 +1,4 @@
-import { createHistory, type HistorySelection, type Journal, type SerializedHistory } from '@weasel-js/history';
+import { createHistory, type History, type HistorySelection, type Journal, type SerializedHistory } from '@weasel-js/history';
 import type { Op } from 'core/ops/types';
 import { rebuildOp as rebuildGlobalOp } from 'core/ops/registry';
 import { dwarn } from 'debug/flag';
@@ -947,6 +947,95 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     return out;
   }
 
+  // ── scene.history ──────────────────────────────────────────────────────
+  // The `History` the kit's `undo`/`redo` actions resolve their `history` dep
+  // to, and the handle a mode machine opens journals against. Handing out
+  // `history` (the engine) directly would let an action-driven undo replay ops
+  // with scene-side recording still armed and without bumping the version, so
+  // every member that mutates routes through the scene's own wrapper
+  // (`withRecordingSuppressed` + one `notify()`); reads forward to the engine.
+
+  /** Wrapped journal → the engine's own, for `resumeJournal`: the engine keys
+   *  resumability off journal identity, which a wrapper would not match. */
+  const rawJournals = new WeakMap<Journal, Journal>();
+
+  /** Same treatment as the façade: a journal drives adapter mutation itself,
+   *  so its applies/undos re-enter scene mutation methods. */
+  function wrapJournal(raw: Journal): Journal {
+    const wrapped: Journal = {
+      targetId: raw.targetId,
+      forkedAtEntryId: raw.forkedAtEntryId,
+      applyBatch(ops, label) {
+        withRecordingSuppressed(() => raw.applyBatch(ops, label));
+        notify();
+      },
+      undo() {
+        withRecordingSuppressed(() => raw.undo());
+        notify();
+      },
+      redo() {
+        withRecordingSuppressed(() => raw.redo());
+        notify();
+      },
+      canUndo: () => raw.canUndo(),
+      canRedo: () => raw.canRedo(),
+      entries: () => raw.entries(),
+      commit(label) {
+        // Flushes the session's net ops to the parent stack — no apply, but
+        // the parent's undo depth changes and listeners read that.
+        raw.commit(label);
+        notify();
+      },
+      cancel() {
+        withRecordingSuppressed(() => raw.cancel());
+        notify();
+      },
+      suspend: () => raw.suspend(),
+      isActive: () => raw.isActive(),
+    };
+    rawJournals.set(wrapped, raw);
+    return wrapped;
+  }
+
+  const sceneHistory: History = {
+    // Mutating: applied ops re-enter the scene's own mutation methods.
+    apply(op, label) {
+      withRecordingSuppressed(() => history.apply(op, label));
+      notify();
+    },
+    applyOps(ops, label) {
+      withRecordingSuppressed(() => history.applyOps(ops, label));
+      notify();
+    },
+    undo: () => { scene.undo(); },
+    redo: () => { scene.redo(); },
+    goto: (n) => { scene.jumpToHistoryIndex(n); },
+    // Stack-only: nothing applies, but what `canUndo()` answers changes.
+    clear() {
+      history.clear();
+      notify();
+    },
+    recordEntry(ops, label, opts) {
+      history.recordEntry(ops, label, opts);
+      notify();
+    },
+    restore: (snapshot) => { scene.restoreHistory(snapshot); },
+    // Reads forward to the engine, `version` included: it counts history
+    // operations, where the scene's counts every mutation.
+    canUndo: () => history.canUndo(),
+    canRedo: () => history.canRedo(),
+    undoDepth: () => history.undoDepth(),
+    redoDepth: () => history.redoDepth(),
+    entries: () => history.entries(),
+    getVersion: () => history.getVersion(),
+    subscribe: (listener) => history.subscribe(listener),
+    serialize: () => history.serialize(),
+    allForwardOps: () => history.allForwardOps(),
+    currentEntryId: () => history.currentEntryId(),
+    beginJournal: (opts) => wrapJournal(history.beginJournal(opts)),
+    resumeJournal: (journal) => history.resumeJournal(rawJournals.get(journal) ?? journal),
+  };
+
   const scene: Scene<TData, TLayer, TPose> = {
     get nodes() { return state.nodes; },
     get roots() { return state.roots; },
@@ -1275,6 +1364,8 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       selection = [...ids];
       notify();
     },
+
+    history: sceneHistory,
 
     undo() {
       if (!history.canUndo()) return false;
