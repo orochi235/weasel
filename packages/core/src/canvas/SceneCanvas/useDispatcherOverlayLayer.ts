@@ -3,7 +3,10 @@
  *
  * Paints the overlay shapes the drawing view's in-flight handles publish,
  * taken off the draw envelope so a panel shows its own gesture rather than
- * the surface's.
+ * the surface's. `resolveOverlays` does the reading — normalizing the drag,
+ * sizing the nascent shape, dropping what is degenerate — and everything left
+ * here is painting: projection into screen coordinates, the chrome-caps gate,
+ * fill/stroke policy, the anchor dot's size, and the image bitmap.
  *
  * Distinct from `usePreviewGhostLayer`, which paints displaced scene-node
  * silhouettes via `previewIds()` / `previewPose(id)`. The dispatcher
@@ -32,7 +35,7 @@ import {
   starPath,
 } from 'features/paths/builder';
 import { getImageBitmap } from 'features/images/imageCache';
-import { insertPreviewExtent } from '../insertPreviewExtent';
+import { resolveOverlays } from 'interactions/actions/resolveOverlays';
 import { gestureOverlaysFrom, isVisibleFrom } from '../drawEnvelope';
 
 /** Style knobs for the dispatcher-overlay layer's marquee + lasso paints.
@@ -89,25 +92,21 @@ export function useDispatcherOverlayLayer(args: {
         // Chrome-caps gate. Mirrors `composeAffordanceLayer` /
         // `createSelectionOverlayLayer`: pull a visibility predicate off
         // the data envelope and consult it per overlay before pushing draw
-        // commands. Absent envelope → every overlay paints.
+        // commands. Absent envelope → every overlay paints. This stays on the
+        // painting side: the predicate is a property of the view's envelope,
+        // and two views of one surface may answer differently for the same
+        // in-flight gesture.
         const isVisible = isVisibleFrom(data);
         const passes = (id: string) => (isVisible ? isVisible(id) : true);
 
-        for (const ov of gestureOverlaysFrom(data)) {
+        for (const ov of resolveOverlays(gestureOverlaysFrom(data))) {
+          if (!passes(ov.visibilityId)) continue;
+
           if (ov.kind === 'marquee') {
-            if (!passes('action.marquee')) continue;
-            // Normalize start/current → AABB, project to screen coords.
-            const wx = Math.min(ov.start.x, ov.current.x);
-            const wy = Math.min(ov.start.y, ov.current.y);
-            const ww = Math.abs(ov.current.x - ov.start.x);
-            const wh = Math.abs(ov.current.y - ov.start.y);
-            const [sx, sy] = worldToScreen(wx, wy, t);
-            const sw = ww * view.scale.x;
-            const sh = wh * view.scale.y;
-            // Skip zero-size marquees (pointerdown before first move) —
-            // matches legacy `useDragRect` overlay-emits-zero-size but the
-            // GL renderer would still issue a degenerate path call.
-            if (sw === 0 && sh === 0) continue;
+            const b = ov.bounds;
+            const [sx, sy] = worldToScreen(b.x, b.y, t);
+            const sw = b.width * view.scale.x;
+            const sh = b.height * view.scale.y;
             const cmd: PathDrawCommand = {
               kind: 'path',
               path: { kind: 'rect', x: sx, y: sy, width: sw, height: sh },
@@ -119,17 +118,7 @@ export function useDispatcherOverlayLayer(args: {
           }
 
           if (ov.kind === 'insertPreview') {
-            if (!passes('action.insert-preview')) continue;
-            // Size the preview through `insertPreviewExtent` — the same
-            // resolution the commit factory and the gesture-bounds reporter
-            // use, so all three agree on the nascent shape's extent.
-            const extent = insertPreviewExtent(ov);
-            const b = extent.bounds;
-            // Skip zero-area previews (pointerdown before the first move) for
-            // non-pencil shapes; pencil can be meaningful even at near-zero
-            // AABB (closed-loop / sub-threshold gestures — see insertAction).
-            if (b.width === 0 && b.height === 0 && ov.shape !== 'pencil') continue;
-
+            const b = ov.bounds;
             const projectPoint = (wx: number, wy: number): { x: number; y: number } => {
               const [sx, sy] = worldToScreen(wx, wy, t);
               return { x: sx, y: sy };
@@ -142,7 +131,7 @@ export function useDispatcherOverlayLayer(args: {
             const radialScale = (view.scale.x + view.scale.y) / 2;
 
             let pathCmd: PathDrawCommand['path'] | null = null;
-            const geom = extent.geometry;
+            const geom = ov.geometry;
             switch (geom.kind) {
               case 'box': {
                 const [sx, sy] = worldToScreen(b.x, b.y, t);
@@ -190,14 +179,12 @@ export function useDispatcherOverlayLayer(args: {
                   geom.rotation,
                 );
                 break;
-              case 'pencil': {
+              case 'pencil':
                 // Genuinely open: `polygonFromPoints` closes the path, and the
                 // closing edge from the last sample back to the first reads as
                 // a marquee rather than as the stroke being drawn.
-                if (geom.samples.length < 2) break;
                 pathCmd = polylineFromPoints(projectPoints(geom.samples));
                 break;
-              }
             }
 
             if (!pathCmd) continue;
@@ -215,9 +202,7 @@ export function useDispatcherOverlayLayer(args: {
             // at the AABB corner) and for center mode (dot marks the
             // growth axis). 4 CSS-px radius, same stroke color as the
             // ghost so it reads as part of the chrome.
-            // Not for a freehand stroke: the dot marks a growth axis, and a
-            // pencil has none — it just leaves a blob where the stroke began.
-            if (ov.anchorPoint && ov.shape !== 'pencil') {
+            if (ov.anchorPoint) {
               const anchorScreen = projectPoint(ov.anchorPoint.x, ov.anchorPoint.y);
               out.push({
                 kind: 'path',
@@ -234,13 +219,11 @@ export function useDispatcherOverlayLayer(args: {
           }
 
           if (ov.kind === 'lasso') {
-            if (!passes('action.lasso')) continue;
             // Project every vertex to screen coords; build a single polygon
             // path. The polygon already closes (polygonFromPoints adds Z),
             // which renders as the dashed "close-line" implicit in the
             // legacy hook's visual. Fill paints the would-be selection
             // region; stroke paints the polyline + close-line.
-            if (ov.vertices.length < 2) continue;
             const screenPts: { x: number; y: number }[] = [];
             for (const v of ov.vertices) {
               const [sx, sy] = worldToScreen(v.x, v.y, t);
@@ -257,13 +240,10 @@ export function useDispatcherOverlayLayer(args: {
           }
 
           if (ov.kind === 'commands') {
-            if (!passes('action.commands')) continue;
             // Generic escape hatch — actions emit arbitrary DrawCommands.
             // World-space (default) wraps in viewToMat3 so the commands
             // track the camera; screen-space goes through untouched.
-            if (ov.commands.length === 0) continue;
-            const space = ov.space ?? 'world';
-            if (space === 'world') {
+            if (ov.space === 'world') {
               out.push({ kind: 'group', transform: viewToMat3(view), children: [...ov.commands] });
             } else {
               for (const cmd of ov.commands) out.push(cmd);

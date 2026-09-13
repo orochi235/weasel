@@ -355,6 +355,18 @@ export type { CanvasExtensionApi, SceneCanvasApi } from './canvas/canvasExtensio
 export type { GestureSource, GesturePreviewSource } from './canvas/gestureBounds';
 export { resolvePreviews, flattenPreviews } from './interactions/actions/resolvePreviews';
 export type { PreviewNode } from './interactions/actions/resolvePreviews';
+// The overlay half of the same seam: what an in-flight gesture paints beside
+// the scene, resolved to world geometry. `'commands'` is the one variant that
+// stays in core's 2D vocabulary — see `ResolvedOverlay`.
+export { resolveOverlays } from './interactions/actions/resolveOverlays';
+export type { ResolvedOverlay, OverlayVisibilityId } from './interactions/actions/resolveOverlays';
+export { insertPreviewExtent } from './canvas/insertPreviewExtent';
+export type {
+  InsertPreviewExtent,
+  InsertPreviewGeometry,
+  InsertPreviewLike,
+  InsertPreviewOverlay,
+} from './canvas/insertPreviewExtent';
 
 // ─── External-content ingestion ──────────────────────────────────────────────
 // OS file drop / clipboard paste / file picker → content-handler registry.
