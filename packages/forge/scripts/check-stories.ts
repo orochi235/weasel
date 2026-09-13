@@ -33,9 +33,11 @@ try {
 
   const total = byFile.size;
   const width = String(total).length;
+  const pathWidth = Math.max(...[...byFile.keys()].map((file) => relative(repoRoot, file).length));
+  const countWidth = String(Math.max(...[...byFile.values()].map((entries) => entries.length))).length;
   let n = 0;
   for (const [file, entries] of byFile) {
-    const path = relative(repoRoot, file);
+    const path = relative(repoRoot, file).padEnd(pathWidth);
     const position = `${String(++n).padStart(width)}/${total}`;
     const fileFaults: string[] = [];
     let count = 0;
@@ -58,7 +60,7 @@ try {
       fileFaults.push(message(error));
     }
     if (fileFaults.length === 0) {
-      console.log(`  ${position} ${path}  ok  (${count} ${count === 1 ? 'story' : 'stories'})`);
+      console.log(`  ${position} ${path}  ok  (${String(count).padStart(countWidth)} ${count === 1 ? 'story' : 'stories'})`);
     } else {
       console.log(`  ${position} ${path}  FAIL  ${fileFaults[0]}${fileFaults.length > 1 ? ` (+${fileFaults.length - 1} more)` : ''}`);
       faults.push(...fileFaults.map((f) => `${path}: ${f}`));
