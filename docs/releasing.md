@@ -101,9 +101,6 @@ contents: it fails the release if any `exports`/`types` path promises a file tha
 
 ## Notes
 
-- `weasel-js` (the unscoped alias) is `private: true` on purpose — npm rejects
-  the name as too similar to an existing package. It still builds and versions
-  with everything else; it just never publishes. See `docs/TODO.md`.
 - The Release workflow's push trigger is path-filtered to `.changeset/*.md`, so
   a fix touching only a manifest cannot retrigger a publish. `workflow_dispatch`
   is the escape hatch.

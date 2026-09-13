@@ -160,7 +160,7 @@ export function parseChangeset(
   return { packages, level, body };
 }
 
-/** `@weasel-js/core` → `core`; `weasel-js` is already bare. */
+/** `@weasel-js/core` → `core`. */
 function unscope(name: string): string {
   return name.startsWith('@') ? name.slice(name.indexOf('/') + 1) : name;
 }

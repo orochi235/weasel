@@ -22,7 +22,6 @@
       "@weasel-js/hud",
       "@weasel-js/labkit",
       "@weasel-js/audio",
-      "weasel-js",
       "@weasel-js/cursor",
       "@weasel-js/kernel3d"
     ]

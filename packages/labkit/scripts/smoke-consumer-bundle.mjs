@@ -198,7 +198,7 @@ const thirdPartyExternals = Object.keys({
   ...pkg.dependencies,
   ...pkg.peerDependencies,
 })
-  .filter((dep) => dep !== 'weasel-js' && !bundledSiblings.has(dep))
+  .filter((dep) => !bundledSiblings.has(dep))
   .flatMap((dep) => [dep, `${dep}/*`]);
 
 const workDir = await mkdtemp(join(tmpdir(), 'labkit-smoke-'));
