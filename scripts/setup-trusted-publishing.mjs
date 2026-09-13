@@ -12,9 +12,16 @@
 // website.
 //
 // Usage:
-//   node scripts/setup-trusted-publishing.mjs --dry-run   # print what it would do
-//   node scripts/setup-trusted-publishing.mjs             # actually configure
-//   node scripts/setup-trusted-publishing.mjs --list      # show current config
+//   node scripts/setup-trusted-publishing.mjs                     # every package
+//   node scripts/setup-trusted-publishing.mjs kernel3d            # just this one
+//   node scripts/setup-trusted-publishing.mjs @weasel-js/geom d3  # or several
+//   node scripts/setup-trusted-publishing.mjs --dry-run           # print, don't call
+//   node scripts/setup-trusted-publishing.mjs --list kernel3d     # show current config
+//
+// Name packages when you are seeding one — a first publish needs exactly one
+// registration, and the full sweep is 20 more `npm trust` calls, each with its
+// own 2FA challenge and rate-limit pause. The scope is optional: `kernel3d` and
+// `@weasel-js/kernel3d` both work.
 //
 // The first call prompts for 2FA. The npm web page shown during that prompt
 // offers "skip 2FA for the next 5 minutes" — enable it, and the rest run
@@ -67,6 +74,32 @@ function npmCommand() {
   return { bin: 'npx', prefix: ['-y', 'npm@latest'], via: 'npx npm@latest (local npm predates --allow-publish)' };
 }
 
+/**
+ * The packages named on the command line, or all of them when none are.
+ *
+ * A bare `kernel3d` resolves against the scoped names, so the caller does not
+ * have to type `@weasel-js/` — but an unknown name stops the run rather than
+ * being skipped. Silently configuring nothing looks identical to success, and
+ * the thing this sets up is only noticed when a release fails weeks later.
+ */
+function selectPackages(all, named) {
+  if (named.length === 0) return all;
+  const bySuffix = new Map(all.map((name) => [name.replace(/^@[^/]+\//, ''), name]));
+  const chosen = [];
+  const unknown = [];
+  for (const name of named) {
+    const match = all.includes(name) ? name : bySuffix.get(name);
+    if (match) chosen.push(match);
+    else unknown.push(name);
+  }
+  if (unknown.length > 0) {
+    console.error(`No such publishable workspace: ${unknown.join(', ')}`);
+    console.error(`\nKnown packages:\n${all.map((n) => `  ${n}`).join('\n')}`);
+    process.exit(1);
+  }
+  return [...new Set(chosen)];
+}
+
 const argvIn = process.argv.slice(2);
 const args = new Set(argvIn);
 const dryRun = args.has('--dry-run');
@@ -75,11 +108,15 @@ const listOnly = args.has('--list');
 // it will not carry all twelve packages on its own — its real use is retrying
 // the tail after the 5-minute skip window lapsed.
 const otp = argvIn.find((a) => a.startsWith('--otp='));
-const packages = publishablePackageNames();
+const all = publishablePackageNames();
+const packages = selectPackages(all, argvIn.filter((a) => !a.startsWith('--')));
 const slug = repoSlug();
 const npmCmd = npmCommand();
 
-console.log(`${listOnly ? 'Listing' : 'Configuring'} ${packages.length} packages`);
+console.log(
+  `${listOnly ? 'Listing' : 'Configuring'} ${packages.length} of ${all.length} packages` +
+    (packages.length === all.length ? '' : `: ${packages.join(', ')}`),
+);
 console.log(`  repository: ${slug}`);
 console.log(`  workflow:   .github/workflows/${WORKFLOW}`);
 if (!listOnly) console.log('  permissions: publish');

@@ -1,12 +1,20 @@
 // Refuse to start a release when a workspace has never been published.
 //
-// npm's OIDC trusted publishing cannot create a package: the trusted publisher
-// is configured per package in npm's UI, and the UI needs the package to exist
-// first. So a first publish must come from a human with credentials, and the
-// release job's short-lived OIDC token gets `E404: PUT /<name>` instead — the
-// same status npm returns for "no such package", which is what makes it read
-// like a registry outage rather than a missing bootstrap.
+// npm's OIDC trusted publishing cannot create a package. The release job's
+// short-lived token gets `E404: PUT /<name>` — the same status npm returns for
+// "no such package", which is what makes it read like a registry outage rather
+// than a missing bootstrap. So a first publish must come from a human with
+// credentials.
 // Tracked upstream as https://github.com/npm/cli/issues/8544, open since 2025-09.
+//
+// Half of what this comment used to say is no longer true, and the half that is
+// left is the half that matters. It said trust config could not be registered
+// before the package existed, because npm's UI needs a package to configure.
+// `npm trust github <name>` does not: it registered `@weasel-js/kernel3d` on
+// 2026-09-13 while the name was still a 404, and `npm trust list` returned a
+// real config id for it. Whether an OIDC *publish* can now create the package
+// is untested, and not worth testing on a live release — a half-published
+// fixed group is what this check exists to prevent.
 //
 // The damage is that `changeset publish` is not atomic. It publishes in
 // dependency order and stops at the first failure, so a new package strands the
@@ -45,9 +53,10 @@ if (missing.length > 0) {
     ...missing.map((n) => `  npm publish -w ${n} --tag pre --provenance=false`),
     '',
     '(provenance is off because npm only attests from CI; the release job keeps it.)',
-    'Then register the trusted publisher so CI owns every publish after this one:',
+    'Then register the trusted publisher so CI owns every publish after this one —',
+    'naming the package, or it sweeps all of them with a 2FA challenge each:',
     '',
-    '  node scripts/setup-trusted-publishing.mjs',
+    ...missing.map((n) => `  node scripts/setup-trusted-publishing.mjs ${n}`),
     '',
   ];
   const report = lines.join('\n');
