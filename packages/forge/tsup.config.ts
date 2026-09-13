@@ -11,6 +11,7 @@ export default defineConfig([
         'vite/index': 'src/vite/index.ts',
         'frame/index': 'src/frame/index.ts',
         'shell/index': 'src/shell/index.ts',
+        'csf/preview-api': 'src/csf/shims/preview-api.ts',
       },
       external,
     }),

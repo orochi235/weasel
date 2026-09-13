@@ -24,6 +24,12 @@
       "types": "./dist/shell/index.d.ts",
       "import": "./dist/shell/index.js"
     },
+    "./preview-api": {
+      "types": "./dist/csf/preview-api.d.ts",
+      "import": "./dist/csf/preview-api.js"
+    },
+    "./shell.css": "./dist/shell/index.css",
+    "./frame.css": "./dist/frame/index.css",
     "./package.json": "./package.json"
   },
   "bin": {
@@ -53,6 +59,9 @@
   "dependencies": {
     "@babel/parser": "^7.29.0",
     "@weasel-js/theme": "1.4.4"
+  },
+  "devDependencies": {
+    "@babel/types": "^7.29.0"
   },
   "peerDependencies": {
     "@weasel-js/core": "1.4.4",

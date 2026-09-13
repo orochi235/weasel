@@ -69,6 +69,22 @@ describe('forge vite plugin', () => {
     return res.status === 200 ? res.text() : null;
   };
 
+  const entry = async (name: string) => (await server.pluginContainer.load(`\0virtual:forge/${name}`)) as string;
+
+  it('mounts the frame with the vite root and its own stylesheet', async () => {
+    const code = await entry('frame-entry.js');
+    expect(code).toContain(`root: ${JSON.stringify(root)}`);
+    expect(code).toContain(`import '@weasel-js/forge/frame.css';`);
+    expect(code).not.toContain('loadNativeModule');
+  });
+
+  it('mounts the workshop with a frame url under base and the story globs', async () => {
+    const code = await entry('shell-entry.js');
+    expect(code).toContain('frameUrl: "/frame.html"');
+    expect(code).toContain('stories: ["*.stories.tsx"]');
+    expect(code).toContain(`import '@weasel-js/forge/shell.css';`);
+  });
+
   it('serves the workshop and frame documents', async () => {
     expect(await request('GET', '/')).toContain('/@id/virtual:forge/shell-entry.js');
     expect(await request('GET', '/index.html')).toContain('/@id/virtual:forge/shell-entry.js');

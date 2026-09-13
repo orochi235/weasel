@@ -1,5 +1,5 @@
 import { globSync, readFileSync } from 'node:fs';
-import { basename, dirname, matchesGlob, relative, resolve, sep } from 'node:path';
+import { basename, matchesGlob, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Logger, Plugin, ViteDevServer } from 'vite';
 import type { IndexEntry } from '../story/types';
@@ -17,6 +17,7 @@ export interface ForgeOptions {
 
 const PREFIX = 'virtual:forge/';
 const MODULES = new Set(['index.js', 'importers.js', 'config.js', 'shell-entry.js', 'frame-entry.js']);
+const PREVIEW_API = /^@?storybook\/preview-api$/;
 const PAGES: Record<string, string> = { '/': 'shell-entry.js', '/index.html': 'shell-entry.js', '/frame.html': 'frame-entry.js' };
 
 export function forge(options: ForgeOptions): Plugin[] {
@@ -72,21 +73,21 @@ import '@weasel-js/forge/shell.css';
 import index from 'virtual:forge/index.js';
 import config from 'virtual:forge/config.js';
 
-const workshop = mountWorkshop({ root: document.getElementById('root'), index, config, frameUrl: 'frame.html' });
+const workshop = mountWorkshop({
+  index,
+  config,
+  frameUrl: ${JSON.stringify(`${base}frame.html`)},
+  stories: ${JSON.stringify(options.stories)},
+});
 import.meta.hot?.on('forge:index', (next) => workshop.setIndex(next));
 `,
-    'frame-entry.js': () => `import { loadNativeModule, mountFrame } from '@weasel-js/forge/frame';
+    'frame-entry.js': () => `import { mountFrame } from '@weasel-js/forge/frame';
+import '@weasel-js/forge/frame.css';
 import index from 'virtual:forge/index.js';
 import importers from 'virtual:forge/importers.js';
 import config from 'virtual:forge/config.js';
 
-mountFrame({
-  index,
-  importers,
-  root: document.getElementById('root'),
-  setup: config.frame,
-  load: (mod, file) => loadNativeModule(mod, file, ${JSON.stringify(root)}),
-});
+mountFrame({ index, importers, root: ${JSON.stringify(root)}, setup: config.frame });
 `,
   };
 
@@ -119,14 +120,20 @@ mountFrame({
     server.ws.send({ type: 'custom', event: 'forge:index', data: next });
   }
 
+  // Resolved from forge's own location, through the app's aliases, so a monorepo reaches source and an install reaches dist.
+  const shims: Plugin = {
+    name: 'weaselforge:storybook-shims',
+    enforce: 'pre',
+    resolveId(id) {
+      if (!PREVIEW_API.test(id)) return undefined;
+      return this.resolve('@weasel-js/forge/preview-api', fileURLToPath(import.meta.url), { skipSelf: true });
+    },
+  };
+
   return [
+    ...(options.storybookShims === false ? [] : [shims]),
     {
       name: 'weaselforge',
-      config() {
-        if (options.storybookShims === false) return undefined;
-        const previewApi = resolve(dirname(fileURLToPath(import.meta.url)), '../csf/shims/preview-api.ts');
-        return { resolve: { alias: [{ find: /^@?storybook\/preview-api$/, replacement: previewApi }] } };
-      },
       configResolved(config) {
         root = config.root;
         base = config.base;
