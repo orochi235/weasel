@@ -37,10 +37,22 @@ describe('createTextLayer', () => {
     expect(cmd.kind).toBe('text');
     expect(cmd.x).toBe(100);
     expect(cmd.y).toBe(200);
-    expect(cmd.maxWidth).toBe(300);
+    // No declared wrap: the width aligns, and nothing wraps.
+    expect(cmd.maxWidth).toBe(Infinity);
     expect(cmd.runs).toHaveLength(1);
     expect(cmd.runs[0].text).toBe('hello');
     expect(cmd.runs[0].fontWeight).toBe(400);
+  });
+
+  it('wraps at the pose width when the style declares wrap', () => {
+    const layer = createTextLayer<Node>({
+      getTexts: () => [{
+        id: 'n', pose: { x: 0, y: 0, width: 300, height: 50, text: 'hello', style: { wrap: true } },
+      }],
+      getPose: (n) => n.pose,
+    });
+    const [cmd] = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
+    expect((cmd as { maxWidth: number }).maxWidth).toBe(300);
   });
 
   it('emits resolved runs for a rich-text node', () => {

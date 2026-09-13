@@ -466,6 +466,9 @@ function textXml(node: SvgTextNode, registry: PaintServerRegistry, namespaces: R
   }
   const decoration = textDecorationValue(style?.underline, style?.strikethrough, style?.overline);
   if (decoration) attrs.push(`text-decoration="${decoration}"`);
+  // SVG text never wraps, so this is for weasel's own reader, beside the box
+  // width it wraps at.
+  if (style?.wrap) attrs.push('data-weasel-wrap="true"');
   // Note: `lineHeight` is NOT emitted here. The bridge layer (svgInterop)
   // lifts it into `meta.wd.attrs['line-height']`, which `metaAttrsXml`
   // below emits as `wd:line-height="..."`. There is no compat write of

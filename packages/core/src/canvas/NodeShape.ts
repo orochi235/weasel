@@ -43,8 +43,8 @@ function paintsPose(pose: unknown): boolean {
   return pose === undefined || isRectPose(pose);
 }
 import type { DrawCommand } from '../renderer';
-import { textCommand, textCommandFromRuns } from 'features/text/textCommand';
-import type { TextStyle } from '@weasel-js/text';
+import { textCommandFromPose } from 'features/text/textCommand';
+import type { TextPose, TextStyle } from '@weasel-js/text';
 import type { StyledRun, TextVerticalAlign } from '@weasel-js/text';
 import { textLineBoxes } from '@weasel-js/text';
 import type { FillStyle, Stroke } from '@weasel-js/paint';
@@ -409,6 +409,31 @@ export function _resetShapePaintersForTests(): void {
 
 // ─── Built-in painters ─────────────────────────────────────────────────
 
+/** The `data` a `kit:text` node carries. */
+interface TextNodeData {
+  text: string;
+  style?: TextStyle;
+  runs?: readonly StyledRun[];
+  fill?: FillStyle | null;
+  stroke?: Stroke | null;
+  verticalAlign?: TextVerticalAlign;
+}
+
+/** A `kit:text` node as the `TextPose` every text consumer reads. The stroke
+ *  goes through the same resolver every other node kind's does, so one
+ *  carrying no paint is dropped here rather than throwing in the renderer. */
+function textPoseOf(d: TextNodeData, p: RectPose): TextPose {
+  return {
+    x: p.x, y: p.y, width: p.width, height: p.height,
+    text: d.text,
+    runs: d.runs as StyledRun[] | undefined,
+    style: d.style,
+    fill: d.fill,
+    stroke: resolveNodeStroke(d.stroke) ?? undefined,
+    verticalAlign: d.verticalAlign,
+  };
+}
+
 const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   id: 'kit:text',
   matches: (node) => {
@@ -424,82 +449,25 @@ const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // draw, exactly as a fresh `Path` per frame defeated the mesh cache. Both
   // resolvers are pure style merging — no font reads — so `(data, pose)` is
   // the whole key. See PAINT_SLOT.
-  paint: (node, pose) => nodeMemo(node, PAINT_SLOT, pose, () => {
-    const d = node.data as {
-      text: string;
-      style?: TextStyle;
-      runs?: readonly StyledRun[];
-      fill?: FillStyle | null;
-      stroke?: Stroke | null;
-      verticalAlign?: TextVerticalAlign;
-    };
-    const p = pose;
-    // `y` is the TOP of the first line box, not a baseline: `layoutRuns`
-    // walks down from it by `common.base * scale` to reach the baseline, and
-    // `verticalAlign` aligns the laid-out block within `[y, y + height]`.
-    // This used to pass `p.y + fontSize`, which is the canvas-2D
-    // `fillText` convention and wrong here — it put the baseline nearly two
-    // ems below the box top, hung descenders outside the pose, and made the
-    // box handed to `verticalAlign` a different box from the node's own. It
-    // also disagreed with `createTextLayer` and with the DOM editing overlay
-    // (`useSceneTextEdit.getScreenPose`), both of which anchor on `pose.y` —
-    // so text jumped a full line the moment an edit was committed.
-    //
-    // The pose's box height and `data.verticalAlign` travel together: the
-    // height is the box the alignment resolves within. Both default to the
-    // 'top' behavior — a zero offset regardless of height — so a node that
-    // names neither paints exactly where it always did. The pose width goes
-    // over as the alignment box, not as `maxWidth`: kit:text has no slot for
-    // opting into wrap, and forwarding maxWidth would silently start wrapping
-    // consumers' existing text.
-    //
-    // `runs` wins over `text` when present. It is the richer form of the same
-    // content — `useTextEdit` commits both, keeping `runsToPlainText(runs)`
-    // equal to `text` — so re-flattening the string here would make the whole
-    // run algebra write-only for anything painted by the default scene layer.
-    // Empty runs are not a styling, so they fall back rather than paint
-    // nothing.
-    const y = p.y;
-    // Text reads the same `data.fill` / `data.stroke` every other node kind
-    // reads, so one set of paint controls writes all of them — and through
-    // the same resolver, so a stroke carrying no paint is dropped here too
-    // rather than throwing once it reaches the renderer.
-    const paint = { fill: d.fill, stroke: resolveNodeStroke(d.stroke) ?? undefined };
-    return d.runs && d.runs.length > 0
-      ? [textCommandFromRuns(p.x, y, d.runs, d.style, undefined, p.height, d.verticalAlign, paint, p.width)]
-      : [textCommand(p.x, y, d.text, d.style, undefined, p.height, d.verticalAlign, paint, p.width)];
-  }),
-  // The pose is a *wrap box*, not a bounding box — "Away" in a 300-unit box
+  //
+  // `y` is the top of the first line box, not a baseline — see
+  // `TextDrawCommand.y`. Wrap, alignment and run resolution are
+  // `textCommandFromPose`'s, which `createTextLayer`, picking, the caret and
+  // the edit overlay all share.
+  paint: (node, pose) => nodeMemo(node, PAINT_SLOT, pose, () => [
+    textCommandFromPose(textPoseOf(node.data as TextNodeData, pose)),
+  ]),
+  // The pose is a layout box, not a bounding box — "Away" in a 300-unit box
   // leaves most of it empty, and a pose-rect silhouette claims all of it. The
   // union of the line boxes is what the node actually covers, so picking,
-  // lasso and clipping stop grabbing blank space. `Infinity` because `paint`
-  // above deliberately does not forward `maxWidth`: this text does not wrap,
-  // and boxes measured against `p.width` would wrap where the paint did not.
-  // Alignment still resolves within `p.width`, as it does in `paint`.
+  // lasso and clipping stop grabbing blank space.
   //
   // `null` rather than an empty path when there are no non-blank lines: an
   // empty text node would otherwise become unpickable, and a caller reading
   // "no silhouette" falls back to the pose rect, which is the behavior an
   // empty box wants.
   silhouette: (node, pose) => {
-    const d = node.data as {
-      text: string;
-      style?: TextStyle;
-      runs?: readonly StyledRun[];
-      verticalAlign?: TextVerticalAlign;
-    };
-    const p = pose;
-    const boxes = textLineBoxes(
-      {
-        x: p.x, y: p.y, width: p.width, height: p.height,
-        text: d.text, runs: d.runs as StyledRun[] | undefined, style: d.style,
-        // `textLineBoxes` applies the same shift `drawText` does, so picking
-        // follows a centered or bottom-aligned block down its box instead of
-        // staying where a top-aligned one would have drawn.
-        verticalAlign: d.verticalAlign,
-      },
-      { maxWidth: Infinity },
-    );
+    const boxes = textLineBoxes(textPoseOf(node.data as TextNodeData, pose));
     if (boxes.length === 0) return null;
     return rectsToPath(boxes);
   },

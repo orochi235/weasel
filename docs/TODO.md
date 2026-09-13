@@ -1369,7 +1369,11 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 ## Demos & visual regression
 
-- **(P2) The text edit overlay wraps where `kit:text` does not.** `useTextEdit`'s overlay is `white-space: pre-wrap` at `pose.width`, and `useSceneTextEdit` maps the double-click through `caretIndexAt(cx, cy, pose)`, which wraps at `pose.width` too — while `kit:text` never wraps. A `kit:text` line longer than its box reflows onto extra lines when an edit opens, and the caret can land on a line the paint never drew. `createTextLayer` does wrap, so the overlay has to know which painter it stands in for rather than switch to `pre`.
+- **(P3) The edit overlay can break a wrapped line where the canvas does not.** Under `TextStyle.wrap`, `layoutRuns` breaks only at spaces, while the overlay's `white-space: pre-wrap` follows the browser's line-breaking rules — after a hyphen, between CJK characters. Such a line reflows when an edit opens. Nothing in CSS limits break opportunities to spaces, so this is a layout change (UAX #14 in `layoutRuns`) or a DOM one (each word in a `nowrap` span).
+
+- **(P2) The edit overlay ignores `verticalAlign`.** `useTextEdit` places its text at the top of the pose box whatever the node's `verticalAlign`, so editing a center- or bottom-aligned `kit:text` node moves its text to the top of the box until the edit commits. The caret mapping does honor it. Needs a vertical offset computed from the overlay's own content height, re-read as typing changes it.
+
+- **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have.
 
 - **(P2) SVG `text-anchor` and the text box disagree.** `packages/svg/src/serialize.ts` writes `x` as the box's left edge beside `text-anchor="middle"` / `"end"`, so any other SVG reader centers or right-aligns the text on that edge. `parse.ts` reads the anchor point back into `x`, so an external file's centered text imports with its anchor as the box's left edge and `kit:text`, which aligns within the box, paints it half a box width right of where the file drew it. Weasel-to-weasel round trips are unaffected because neither side shifts. Fixing it changes the meaning of files already written.
 

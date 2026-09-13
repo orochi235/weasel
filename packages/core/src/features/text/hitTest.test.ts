@@ -121,7 +121,7 @@ describe('caretIndexAt', () => {
   it('maps clicks on wrapped lines through their own offsets', () => {
     // 'AB AB' in a 50-wide box: 'AB ' is 52 wide with the fallback space, and
     // the next word's 44 does not fit, so the second 'AB' starts at offset 3.
-    const p = textPose({ text: 'AB AB', width: 50 });
+    const p = textPose({ text: 'AB AB', width: 50, style: { ...STYLE, wrap: true } });
     expect(caretIndexAt(0, LINE + 5, p)).toBe(3);
     expect(caretIndexAt(12, LINE + 5, p)).toBe(4);
     expect(caretIndexAt(0, 5, p)).toBe(0);
@@ -160,21 +160,20 @@ describe('caretIndexAt', () => {
     expect(caretIndexAt(999, 199, p)).toBe(5);
   });
 
-  it('reads the wrap width from opts when the painter does not wrap', () => {
-    // `kit:text` paints with `maxWidth: Infinity`; a caret mapped through the
-    // pose width would answer for a line break the paint never made.
+  it('wraps only when the style declares it', () => {
     const p = textPose({ text: 'AB AB', width: 50 });
-    expect(caretIndexAt(60, 5, p, { maxWidth: Infinity })).toBe(3);
-    expect(caretIndexAt(60, 5, p)).toBe(3);
     // Unwrapped, everything is on line 0 — so there is no second line to click.
-    expect(caretIndexAt(0, LINE + 5, p, { maxWidth: Infinity })).toBe(5);
+    expect(caretIndexAt(60, 5, p)).toBe(3);
+    expect(caretIndexAt(0, LINE + 5, p)).toBe(5);
+    const wrapped = textPose({ text: 'AB AB', width: 50, style: { ...STYLE, wrap: true } });
+    expect(caretIndexAt(0, LINE + 5, wrapped)).toBe(3);
   });
 
-  it('aligns within the pose width when the painter does not wrap', () => {
+  it('aligns within the pose width', () => {
     // Centered 'AB' (44 wide) in the 400-wide box starts at 178; A's midpoint
     // is 189.5.
     const p = textPose({ style: { ...STYLE, align: 'center' } });
-    expect(caretIndexAt(188, 5, p, { maxWidth: Infinity })).toBe(0);
-    expect(caretIndexAt(191, 5, p, { maxWidth: Infinity })).toBe(1);
+    expect(caretIndexAt(188, 5, p)).toBe(0);
+    expect(caretIndexAt(191, 5, p)).toBe(1);
   });
 });

@@ -6,8 +6,9 @@
  * Two modes:
  *
  *   - `axis: 'height'` (default): keep `pose.width`, recompute `height` as
- *     the wrapped block height plus optional vertical padding. The common
- *     case for column-layout text — chat bubbles, sticky notes, label cards.
+ *     the block height plus optional vertical padding — wrapped at the width
+ *     inside the horizontal padding when the style declares `wrap`. The
+ *     common case for column-layout text — chat bubbles, sticky notes.
  *
  *   - `axis: 'both'`: ignore wrapping; recompute both `width` (longest
  *     `\n`-split line) and `height` (line count × line height) plus padding.
@@ -19,7 +20,7 @@
  * `x` / `y` after calling.
  */
 
-import { cachedLayoutRuns, resolveRuns, toRuns, resolveTextStyle } from '@weasel-js/text';
+import { layoutTextPose } from '@weasel-js/text';
 import type { TextPose } from '@weasel-js/text';
 
 /** Options for `fitTextPose`. */
@@ -37,13 +38,9 @@ export function fitTextPose(
 ): TextPose {
   const axis = opts.axis ?? 'height';
   const { padX, padY } = resolvePadding(opts.padding);
-  const style = resolveTextStyle(pose.style);
-  const source = pose.runs && pose.runs.length > 0 ? pose.runs : pose.text;
-  const { bounds } = cachedLayoutRuns(resolveRuns(toRuns(source), style), {
-    maxWidth: axis === 'height' ? pose.width - padX * 2 : Infinity,
-    lineHeight: style.lineHeight,
-    align: style.align,
-  });
+  const { bounds } = layoutTextPose(axis === 'height'
+    ? { ...pose, width: pose.width - padX * 2 }
+    : { ...pose, style: { ...pose.style, wrap: false } }).laid;
   if (axis === 'height') return { ...pose, height: bounds.height + padY * 2 };
   return {
     ...pose,

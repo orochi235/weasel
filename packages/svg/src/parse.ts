@@ -953,6 +953,7 @@ function parseTextElement(
     (r) => Object.entries(r).some(([k, v]) => k !== 'text' && v !== undefined),
   );
   if (hasStyling) node.runs = runs;
+  if (el.getAttribute('data-weasel-wrap') === 'true') textStyle.wrap = true;
   if (Object.keys(textStyle).length > 0) node.style = textStyle;
   // `!== undefined`, not `!= null`: `null` is the document saying `fill="none"`.
   if (textPaint.fill !== undefined) node.fill = textPaint.fill;

@@ -4,7 +4,10 @@
  * here is the world→screen mapping, which is the only thing that separates
  * this helper from the raw hook on a canvas that pans or zooms.
  */
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
+import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
+import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { act, renderHook } from '@testing-library/react';
 import type { MouseEvent } from 'react';
 import { useScene } from '../../core/scene/useScene';
@@ -59,7 +62,7 @@ describe('useSceneTextEdit — view projection', () => {
     // +1 / -1 is the hook's CSS-vs-canvas rasterization nudge.
     expect(el.style.left).toBe('101px');
     expect(el.style.top).toBe('49px');
-    expect(el.style.width).toBe('200px');
+    expect(el.style.minWidth).toBe('200px');
     expect(el.style.transform).toBe('none');
   });
 
@@ -76,7 +79,7 @@ describe('useSceneTextEdit — view projection', () => {
     const { hook, container } = renderEdit({ x: 0, y: 0, scale: { x: 2, y: 2 } });
     act(() => hook.result.current.startEdit('a'));
     const el = overlayOf(container);
-    expect(el.style.width).toBe('200px');
+    expect(el.style.minWidth).toBe('200px');
     expect(el.style.minHeight).toBe('40px');
     expect(el.style.fontSize).toBe('16px');
     expect(el.style.transform).toBe('scale(2)');
@@ -380,5 +383,109 @@ describe('useSceneTextEdit — a derived pose', () => {
     const { hook, container } = renderDerived();
     act(() => hook.result.current.startEdit('label'));
     expect(overlayOf(container).style.left).toBe('301px');
+  });
+});
+
+/**
+ * The overlay and the double-click answer for the lines the canvas drew.
+ * `'AB AB AB'` at the fixture's size is 148 units, three times the 50-unit box.
+ */
+describe('useSceneTextEdit — a line longer than its box', () => {
+  const SIZE = 32;
+  const LINE = SIZE * 1.2;
+  interface LongItem {
+    id: string; x: number; y: number; width: number; height: number; text: string;
+    runs: { text: string }[];
+    style: { fontFamily: string; fontSize: number; wrap?: boolean; align?: 'left' | 'center' | 'right' };
+    verticalAlign?: 'top' | 'center' | 'bottom';
+  }
+  const long = (style: Partial<LongItem['style']> = {}): LongItem => ({
+    id: 'a', x: 100, y: 50, width: 50, height: 200, text: 'AB AB AB',
+    // Runs, because jsdom has no `innerText` to seed a plain-text overlay with.
+    runs: [{ text: 'AB AB AB' }],
+    style: { fontFamily: 'inter', fontSize: SIZE, ...style },
+  });
+
+  beforeEach(async () => {
+    document.body.innerHTML = '';
+    _resetFontRegistryForTests();
+    _resetLayoutCacheForTests();
+    const encoder = new TextEncoder();
+    global.fetch = vi.fn().mockImplementation((url: string) => (
+      url.endsWith('.json')
+        ? Promise.resolve({ ok: true, json: () => Promise.resolve(FIXTURE_FONT) })
+        : Promise.resolve({
+          ok: true,
+          blob: () => Promise.resolve(new Blob([encoder.encode('PNG')], { type: 'image/png' })),
+        })
+    )) as typeof fetch;
+    global.createImageBitmap = vi.fn().mockResolvedValue({
+      width: 512, height: 512, close: vi.fn(),
+    } as unknown as ImageBitmap);
+    await registerFont('inter', {}, '/fonts/inter.json', '/fonts/inter.png');
+    _resetLayoutCacheForTests();
+  });
+
+  function mount(item: LongItem) {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const target = document.createElement('div');
+    container.appendChild(target);
+    const hook = renderHook(() => {
+      const scene = useScene({ items: [item] });
+      return useSceneTextEdit(scene, container);
+    });
+    return { hook, container, target };
+  }
+
+  it('keeps an unwrapped line on one line in the overlay', () => {
+    const { hook, container } = mount(long());
+    act(() => hook.result.current.startEdit('a'));
+    expect(overlayOf(container).style.whiteSpace).toBe('pre');
+  });
+
+  it('wraps the overlay at the box when the style declares wrap', () => {
+    const { hook, container } = mount(long({ wrap: true }));
+    act(() => hook.result.current.startEdit('a'));
+    const el = overlayOf(container);
+    expect(el.style.whiteSpace).toBe('pre-wrap');
+    expect(el.style.width).toBe('50px');
+    // The canvas never breaks inside a word, so neither may the overlay.
+    expect(el.style.overflowWrap).toBe('normal');
+  });
+
+  it('grows an unwrapped centered overlay about the box center, as the canvas does', () => {
+    const { hook, container } = mount(long({ align: 'center' }));
+    act(() => hook.result.current.startEdit('a'));
+    const el = overlayOf(container);
+    expect(el.style.width).toBe('max-content');
+    expect(el.style.minWidth).toBe('50px');
+    // Anchored on the box center (100 + 25), plus the nudge.
+    expect(el.style.left).toBe('126px');
+    expect(el.style.transform).toBe('translateX(-50%)');
+  });
+
+  it('puts a double-click below an unwrapped line at its end, not on a line never drawn', () => {
+    const { hook, container, target } = mount(long());
+    act(() => hook.result.current.onDoubleClick({
+      target, clientX: 110, clientY: 50 + LINE + 5,
+    } as unknown as MouseEvent<HTMLElement>));
+    expect(hook.result.current.editingId).toBe('a');
+    const sel = window.getSelection()!;
+    expect(overlayOf(container).contains(sel.anchorNode)).toBe(true);
+    expect(sel.anchorOffset).toBe('AB AB AB'.length);
+  });
+
+  it('maps a double-click through the node\'s verticalAlign, as the painter does', () => {
+    // One 'AB AB' line bottom-aligned in the 200-tall box sits at y 211.6..250.
+    const item = { ...long(), text: 'AB AB', runs: [{ text: 'AB AB' }], width: 400, verticalAlign: 'bottom' as const };
+    const { hook, target } = mount(item);
+    // Between A's and B's midpoints, on that line.
+    act(() => hook.result.current.onDoubleClick({
+      target, clientX: 130, clientY: 220,
+    } as unknown as MouseEvent<HTMLElement>));
+    const sel = window.getSelection()!;
+    expect(sel.anchorNode?.nodeType).toBe(Node.TEXT_NODE);
+    expect(sel.anchorOffset).toBe(1);
   });
 });

@@ -54,6 +54,12 @@ export interface TextStyle {
   /** Multiplier applied to `fontSize`. Default 1.2. */
   lineHeight?: number;
   /**
+   * Break lines between words where they would pass the box width. Default
+   * `false`: a line runs as long as its text, and the box width only resolves
+   * `align`. A word longer than the box is never broken.
+   */
+  wrap?: boolean;
+  /**
    * Caret color used by the edit overlay. Defaults to the node's fill when
    * that fill is solid; falls back to `#000` for non-solid paints.
    */
@@ -86,6 +92,7 @@ export interface ResolvedTextStyle {
   align: TextAlign;
   direction: TextDirection;
   lineHeight: number;
+  wrap: boolean;
   /** `null` is an explicit no-fill, the way it is on every other node kind:
    *  outline-only text, painted by its stroke alone. */
   fill: FillStyle | null;
@@ -124,6 +131,7 @@ export const DEFAULT_TEXT_STYLE: ResolvedTextStyle = {
   align: 'left',
   direction: 'ltr',
   lineHeight: 1.2,
+  wrap: false,
   fill: DEFAULT_FILL,
   caretColor: paintColor(DEFAULT_FILL),
   selectionBackground: defaultSelectionBackground(paintColor(DEFAULT_FILL)),
@@ -195,6 +203,7 @@ export function resolveTextStyle(
     align: style.align ?? DEFAULT_TEXT_STYLE.align,
     direction: style.direction ?? DEFAULT_TEXT_STYLE.direction,
     lineHeight: style.lineHeight ?? DEFAULT_TEXT_STYLE.lineHeight,
+    wrap: style.wrap ?? DEFAULT_TEXT_STYLE.wrap,
     fill,
     caretColor,
     selectionBackground,
