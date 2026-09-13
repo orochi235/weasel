@@ -2,14 +2,15 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useReducer,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from 'react';
 import {
   WeaselProvider,
   createDispatcher,
+  createPoseFeed,
   useAction,
   useActionsRegistry,
   useActiveToolContext,
@@ -84,7 +85,6 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     createCamera({ distance: 14, pitch: 0.45, yaw: 0.6, target: [0, 0.5, 0] }),
   );
   const [selection, setSelection] = useState<readonly NodeId[]>([]);
-  const [sceneVersion, bumpScene] = useReducer((n: number) => n + 1, 0);
 
   const cameraRef = useRef(camera);
   cameraRef.current = camera;
@@ -94,6 +94,8 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   const originRef = useRef({ x: 0, y: 0 });
   const showChromeRef = useRef(config.showChrome);
   showChromeRef.current = config.showChrome;
+  /** One draw record per node, kept across frames and patched from the feed. */
+  const drawsRef = useRef(new Map<NodeId, SolidDraw>());
 
   const viewportSource = useCallback(
     (): Viewport3d => ({
@@ -106,9 +108,17 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   );
 
   const repaint = useCallback(() => surface.invalidate(tileId), [surface, tileId]);
-  useEffect(repaint, [repaint, camera, selection, sceneVersion]);
+  useEffect(repaint, [repaint, camera, selection]);
 
-  useEffect(() => scene.subscribe(bumpScene), [scene]);
+  // Straight from the scene to the scheduler. A React render to ask for a paint
+  // would be a render per scene change, and `surface.invalidate` already
+  // collapses a burst of these to one frame.
+  const feed = useMemo(() => createPoseFeed(scene), [scene]);
+  useEffect(() => feed.subscribe(repaint), [feed, repaint]);
+
+  // The toolbar readout is DOM, so it does need a render when the scene moves —
+  // which is not the same thing as rendering to schedule a paint, above.
+  useSyncExternalStore(scene.subscribe, scene.getVersion);
 
   // Preview poses mutate inside the handle without a React render, so the
   // dispatcher's own pump is what drives a ghost frame.
@@ -128,6 +138,19 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     });
 
     const unregister = surface.registerPainter(tileId, (rect, frame) => {
+      const draws = drawsRef.current;
+      const delta = feed.read();
+      if (delta.reset) draws.clear();
+      for (const id of delta.removed) draws.delete(id);
+      for (const entry of [...delta.added, ...delta.changed]) {
+        draws.set(entry.node.id, {
+          pose: entry.pose,
+          kind: entry.node.data.kind,
+          color: entry.node.data.color,
+          selected: false,
+        });
+      }
+
       sizeRef.current = { width: rect.w, height: rect.h };
       const paneRect = paneRef.current?.getBoundingClientRect();
       if (paneRect) originRef.current = { x: paneRect.left, y: paneRect.top };
@@ -138,13 +161,11 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
         w: Math.round(css.w * frame.dpr),
         h: Math.round(css.h * frame.dpr),
       };
-      const selected = new Set(selectionRef.current);
-      const solids: SolidDraw[] = scene.renderOrderNodes().map((node) => ({
-        pose: node.pose,
-        kind: node.data.kind,
-        color: node.data.color,
-        selected: selected.has(node.id),
-      }));
+      // Selection moves on its own clock, so it is stamped on at list time
+      // rather than stored in the retained record.
+      const selectedIds = new Set(selectionRef.current);
+      const solids: SolidDraw[] = [];
+      for (const [id, draw] of draws) solids.push({ ...draw, selected: selectedIds.has(id) });
 
       // `moveAction` declares the kit's default `previewHidesSource: true`,
       // where the ghost replaces the solid. The lab keeps the solid drawn at
@@ -200,7 +221,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       renderer.dispose();
       rendererRef.current = null;
     };
-  }, [glCanvas, surface, tileId, scene, dispatcher]);
+  }, [glCanvas, surface, tileId, scene, dispatcher, feed]);
 
   // ── Deps ───────────────────────────────────────────────────────────────
   const selectionApi = useMemo(
