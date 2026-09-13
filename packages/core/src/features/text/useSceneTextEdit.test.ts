@@ -10,6 +10,7 @@ import type { MouseEvent } from 'react';
 import { useScene } from '../../core/scene/useScene';
 import { asNodeId } from '../../core/scene/types';
 import type { View } from '../../core/viewport/view';
+import { registerMountedCanvas } from '../../canvas/mountedCanvases';
 import { useSceneTextEdit } from './useSceneTextEdit';
 
 interface TextItem {
@@ -213,6 +214,103 @@ describe('useSceneTextEdit — view thunk', () => {
       target: box, clientX: 10, clientY: 10,
     } as unknown as MouseEvent<HTMLElement>));
     expect(hook.result.current.editingId).toBe('a');
+  });
+});
+
+/**
+ * With no `view` passed, the camera comes from the kit canvas mounted inside
+ * the container — the consumer should not have to thread it through.
+ */
+describe('useSceneTextEdit — the canvas inside the container', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  function setRect(el: Element, x: number, y: number, width: number, height: number) {
+    el.getBoundingClientRect = () => ({
+      x, y, left: x, top: y, width, height, right: x + width, bottom: y + height,
+      toJSON: () => ({}),
+    }) as DOMRect;
+  }
+
+  function mount() {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const canvas = document.createElement('canvas');
+    container.appendChild(canvas);
+    const hook = renderHook(() => {
+      const scene = useScene({ items: [NODE] });
+      return useSceneTextEdit(scene, container);
+    });
+    return { hook, container, canvas };
+  }
+
+  it('reads the view from that canvas', () => {
+    const { hook, container, canvas } = mount();
+    const dispose = registerMountedCanvas({
+      element: canvas,
+      getView: () => ({ x: 20, y: 10, scale: { x: 2, y: 2 } }),
+    });
+    try {
+      act(() => hook.result.current.startEdit('a'));
+      const el = overlayOf(container);
+      // (100 - 20) * 2 = 160, (50 - 10) * 2 = 80, plus the nudge.
+      expect(el.style.left).toBe('161px');
+      expect(el.style.top).toBe('79px');
+      expect(el.style.transform).toBe('scale(2)');
+    } finally {
+      dispose();
+    }
+  });
+
+  it('projects from the canvas origin and clips the overlay to the canvas box', () => {
+    const { hook, container, canvas } = mount();
+    setRect(container, 100, 50, 800, 600);
+    setRect(canvas, 140, 80, 600, 400);
+    const dispose = registerMountedCanvas({
+      element: canvas,
+      getView: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }),
+    });
+    try {
+      act(() => hook.result.current.startEdit('a'));
+      const el = overlayOf(container);
+      const clip = el.parentElement!;
+      expect(clip).not.toBe(container);
+      expect(clip.style.overflow).toBe('clip');
+      expect([clip.style.left, clip.style.top, clip.style.width, clip.style.height])
+        .toEqual(['40px', '30px', '600px', '400px']);
+      // World (100, 50) is canvas (100, 50), container (140, 80), clip box
+      // (100, 50) — plus the nudge.
+      expect(el.style.left).toBe('101px');
+      expect(el.style.top).toBe('49px');
+    } finally {
+      dispose();
+    }
+  });
+
+  it('un-projects a double-click through the canvas it landed on', () => {
+    const { hook, container, canvas: first } = mount();
+    const second = document.createElement('canvas');
+    container.appendChild(second);
+    const disposeFirst = registerMountedCanvas({
+      element: first,
+      getView: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }),
+    });
+    const disposeSecond = registerMountedCanvas({
+      element: second,
+      getView: () => ({ x: 100, y: 50, scale: { x: 1, y: 1 } }),
+    });
+    try {
+      // Canvas-space (10, 10) is inside the node only through the second
+      // canvas's camera.
+      act(() => hook.result.current.onDoubleClick({
+        target: second, clientX: 10, clientY: 10,
+      } as unknown as MouseEvent<HTMLElement>));
+      expect(hook.result.current.editingId).toBe('a');
+    } finally {
+      disposeFirst();
+      disposeSecond();
+    }
   });
 });
 

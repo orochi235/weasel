@@ -15,9 +15,9 @@
  * (`getText` / `getStyle` / `getRuns` / `setText` / `setRuns` / `setStyle`).
  *
  * Pose component: the helper reads `(x, y, width, height)` straight off
- * the node's pose (typed `RectPose`). Pass `view` and it projects that box
- * through the viewport; omit it and world units are handed through as
- * screen pixels, which is correct only for an unpanned, unzoomed canvas.
+ * the node's pose (typed `RectPose`) and projects that box through the view
+ * of the weasel canvas mounted inside `container` — see the `view` option.
+ * The overlay is clipped to that canvas's box, where its glyphs are clipped.
  * Consumers with non-rect poses should drop down to raw `useTextEdit` and
  * supply their own `getScreenPose`.
  */
@@ -27,12 +27,13 @@ import { effectivePose } from '../../core/scene/effectivePose';
 import type { Scene } from '../../core/scene/types';
 import type { FillStyle, Stroke } from '@weasel-js/paint';
 import { clientToCanvas } from '../../core/viewport/clientToCanvas';
+import { findMountedCanvas, type MountedCanvas } from '../../canvas/mountedCanvases';
 import type { View } from '../../core/viewport/view';
 import type { RectPose } from 'core/geometry/unionBounds';
 import { caretIndexAt, pointInTextPose } from './hitTest';
 import type { StyledRun } from '@weasel-js/text';
 import type { TextPaint, TextStyle } from '@weasel-js/text';
-import { useTextEdit, type UseTextEditReturn } from './useTextEdit';
+import { useTextEdit, type TextEditClipRect, type UseTextEditReturn } from './useTextEdit';
 
 /** Shape the default projections expect `data` to satisfy. All fields
  *  optional so any object satisfies the constraint — projections fill in
@@ -70,21 +71,24 @@ export interface UseSceneTextEditOptions<TData> {
   /** Fallback fontSize when `style.fontSize` is unset. Default `16`. */
   defaultFontSize?: number;
   /**
-   * Current viewport. Supply it on a canvas that pans or zooms: the overlay
-   * is then positioned at the node's projected screen origin and CSS-scaled
+   * The view to project through. Omit it and the view is read live from the
+   * weasel canvas mounted inside `container` (the one a double-click landed
+   * on, when there are several) — which is all a canvas that pans or zooms
+   * needs. With no canvas there, the node's world box is passed through as
+   * screen pixels.
+   *
+   * The overlay is positioned at the node's projected origin and CSS-scaled
    * by the view, so every typographic metric on it — including the
    * `fontSize` / `letterSpacing` a *run* carries — stays in world units and
-   * scales together. Omit it and the node's world box is passed through as
-   * screen pixels (correct at `{x: 0, y: 0, scale: 1}`).
+   * scales together.
    *
    * The overlay takes a single scale factor, so a non-uniform view scale is
    * represented by its `scale.x`; text under `scale.x !== scale.y` will not
    * match the canvas.
    *
-   * A thunk is re-read on every projection, which is what an uncontrolled
-   * `SceneCanvas` needs — its camera lives in a ref and moves without a
-   * render, so pass the handle's `getView`. A plain `View` is the value from
-   * the render that supplied it, which is correct for a controlled consumer.
+   * Pass one to project through a camera other than the canvas's own. A
+   * thunk is re-read on every projection; a plain `View` is the value from
+   * the render that supplied it.
    */
   view?: View | (() => View);
   /**
@@ -129,6 +133,30 @@ export function useSceneTextEdit<
   sceneRef.current = scene;
   const optsRef = useRef(options);
   optsRef.current = options;
+  const containerRef = useRef(container);
+  containerRef.current = container;
+  // The last double-click's target, so the overlay projects through the
+  // canvas the edit was opened on.
+  const openedOnRef = useRef<EventTarget | null>(null);
+
+  // The canvas's box in container pixels is both the origin its view projects
+  // from and the region its glyphs are clipped to.
+  const surface = (): { canvas: MountedCanvas; box: TextEditClipRect } | null => {
+    const root = containerRef.current;
+    const canvas = root ? findMountedCanvas(root, openedOnRef.current) : null;
+    if (!root || !canvas) return null;
+    const a = canvas.element.getBoundingClientRect();
+    const b = root.getBoundingClientRect();
+    return {
+      canvas,
+      box: {
+        x: a.left - b.left - root.clientLeft + root.scrollLeft,
+        y: a.top - b.top - root.clientTop + root.scrollTop,
+        width: a.width,
+        height: a.height,
+      },
+    };
+  };
 
   const edit = useTextEdit({
     container,
@@ -159,20 +187,24 @@ export function useSceneTextEdit<
       const style = optsRef.current.getStyle
         ? optsRef.current.getStyle(node.data)
         : node.data.style;
-      const view = resolveView(optsRef.current.view);
+      const at = surface();
+      const view = resolveView(optsRef.current.view) ?? at?.canvas.getView();
       const zoom = view ? view.scale.x : 1;
+      const originX = at?.box.x ?? 0;
+      const originY = at?.box.y ?? 0;
       // Only the origin is projected. Width, height and font size stay in
       // world units and reach the screen through the overlay's own
       // `scale(zoom)` — see `TextEditScreenPose.zoom`.
       return {
-        x: view ? (pose.x - view.x) * view.scale.x : pose.x,
-        y: view ? (pose.y - view.y) * view.scale.y : pose.y,
+        x: originX + (view ? (pose.x - view.x) * view.scale.x : pose.x),
+        y: originY + (view ? (pose.y - view.y) * view.scale.y : pose.y),
         width: pose.width,
         height: pose.height,
         fontSize: style?.fontSize ?? optsRef.current.defaultFontSize ?? 16,
         zoom,
       };
     },
+    getClipRect: () => surface()?.box ?? null,
     setText: (id, text) => {
       const nid = asNodeId(id);
       const node = sceneRef.current.get(nid);
@@ -214,7 +246,9 @@ export function useSceneTextEdit<
     // `pointInTextPose` and `caretIndexAt` both work in world units, so the
     // canvas-space click has to be un-projected before either sees it.
     const [canvasX, canvasY] = clientToCanvas(canvas, e.clientX, e.clientY);
-    const view = resolveView(optsRef.current.view);
+    const root = containerRef.current;
+    const view = resolveView(optsRef.current.view)
+      ?? (root ? findMountedCanvas(root, canvas)?.getView() : undefined);
     const cx = view ? canvasX / view.scale.x + view.x : canvasX;
     const cy = view ? canvasY / view.scale.y + view.y : canvasY;
     const readText = (data: TData): string =>
@@ -242,6 +276,7 @@ export function useSceneTextEdit<
       };
       if (!pointInTextPose(cx, cy, pose)) continue;
 
+      openedOnRef.current = canvas;
       edit.startEdit(String(node.id), { caret: caretIndexAt(cx, cy, pose) });
       return;
     }

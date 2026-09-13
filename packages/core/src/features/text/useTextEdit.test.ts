@@ -28,6 +28,50 @@ function getOverlay(container: HTMLElement): HTMLDivElement | null {
   return container.querySelector('div[contenteditable="true"]');
 }
 
+describe('useTextEdit — clip rect', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  // Style proxies: whether a clip box actually clips, and refuses to scroll
+  // after a caret, is measured in tests/visual/text-edit-overlay.spec.ts.
+  it('clips the overlay to getClipRect and places it relative to that box', () => {
+    const h = makeHarness({ a: 'hi' });
+    h.opts.getScreenPose = () => ({ x: 50, y: 30, width: 200, height: 40, fontSize: 16 });
+    h.opts.getClipRect = () => ({ x: 10, y: 20, width: 300, height: 100 });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const el = getOverlay(h.container)!;
+    const clip = el.parentElement!;
+    expect(clip.parentElement).toBe(h.container);
+    expect(clip.style.overflow).toBe('clip');
+    expect(clip.style.pointerEvents).toBe('none');
+    expect([clip.style.left, clip.style.top, clip.style.width, clip.style.height])
+      .toEqual(['10px', '20px', '300px', '100px']);
+    expect(el.style.pointerEvents).toBe('auto');
+    // Pose (50, 30) in container pixels, less the box origin, plus the nudge.
+    expect(el.style.left).toBe('41px');
+    expect(el.style.top).toBe('9px');
+  });
+
+  it('clips nothing without a clip rect', () => {
+    const h = makeHarness({ a: 'hi' });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const el = getOverlay(h.container)!;
+    expect(el.parentElement!.style.overflow).toBe('visible');
+    expect(el.style.left).toBe('1px');
+  });
+
+  it('removes the clip box when the edit ends', () => {
+    const h = makeHarness({ a: 'hi' });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    act(() => result.current.cancelEdit());
+    expect(h.container.childElementCount).toBe(0);
+  });
+});
+
 describe('useTextEdit', () => {
   beforeEach(() => {
     document.body.innerHTML = '';

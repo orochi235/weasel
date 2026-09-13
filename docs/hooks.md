@@ -165,13 +165,20 @@ Escape cancels.
 
 Options: `container` (positioned ancestor for the overlay), `getText`,
 `getStyle`, `getScreenPose` (called per frame while editing), `setText`
-(caller wraps in op/undo), plus optional `getRuns` / `setRuns` for rich text —
+(caller wraps in op/undo), optional `getClipRect` (the container-pixel box the
+overlay is visible within; it clips without scrolling), plus optional
+`getRuns` / `setRuns` for rich text —
 when `getRuns` returns a non-empty array the overlay renders styled
 `<span data-run>` elements instead of plain text. Returns `{ editingId,
 startEdit(id, opts?), cancelEdit, commit, isEditing }`.
 
 The text layer should hide the node it's editing
 (`isHidden: (n) => n.id === editingId`) so the overlay isn't drawn twice.
+
+`useSceneTextEdit(scene, container, options?)` wires those callbacks against a
+scene. It projects through the view of the weasel canvas mounted inside
+`container` and clips the overlay to that canvas's box, so a canvas that pans
+or zooms needs no extra wiring; pass `options.view` only to use another camera.
 
 ### `useClipboardOps(options)`
 

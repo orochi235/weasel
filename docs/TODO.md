@@ -380,23 +380,6 @@ Core five + Crop shipped. Remaining:
   costs an O(nodes) bounds sweep every frame. Revisit only if a consumer wants
   framing that tracks a simulation.
 
-- **(P2) The text-edit overlay does not scale with the canvas, and scaling it
-  reveals a second problem.** `#text` at ~2x renders the DOM overlay at 1x font
-  size while the selection frame around it is correctly zoomed — the text sits
-  detached from the glyphs it is editing. The demo
-  (`apps/site/demos/TextDemo.tsx:38`) calls `useSceneTextEdit(scene, container)`
-  with no `options.view`, so `getScreenPose` resolves `zoom = 1`.
-
-  Passing the canvas handle's `getView` as the thunk does fix the scale —
-  measured 2026-09-07, the overlay's `transform` goes from `none` to the live
-  matrix. **But then the overlay paints outside the demo's 600×400 box**, across
-  the page around it, because at 2x a text node is already ~1150px wide. Neither
-  `overflow: hidden` nor `contain: paint` on the container clips it, though the
-  overlay is a `position: absolute` child of that container and the canvas
-  beside it clips fine. So the demo gap is not one line, and the question under
-  it belongs to the kit: whether `useTextEdit`'s overlay should clip itself to
-  the container it is handed. Reverted rather than shipped half-fixed.
-
 - **(P3) The loupe's colour sample is still read off an unlanded frame.** The
   region readback now waits for a paint, but `readHex`
   (`packages/hud/src/loupe/createLoupe.ts`) still calls `readbackRegion` inline
