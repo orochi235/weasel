@@ -249,7 +249,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   const history = createHistory(undefined, {
     selection: {
       get: () => selection,
-      set: (ids) => { selection = ids as readonly NodeId[]; notify(); },
+      set: (ids) => { selection = reachable(ids as readonly NodeId[]); notify(); },
     },
     ...(options.coalesceWindowMs !== undefined ? { coalesceWindowMs: options.coalesceWindowMs } : {}),
     ...(options.historyLimit !== undefined ? { historyLimit: options.historyLimit } : {}),
@@ -280,6 +280,13 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
    *  routing) — suppresses scene-side history recording so engine-applied
    *  ops that re-enter scene mutation methods don't record twice. */
   let suppressRecording = false;
+  /** Above zero while the lock guard is lifted: `unlocked()`, `removeLayer`,
+   *  and every replay — undo, redo, a journal stepping, a rollback — which
+   *  restores a state that was legal when it was recorded. */
+  let lockBypass = 0;
+  /** Every kit op applied since the innermost `atomically` opened, so a
+   *  refused batch can revert what it already did. Null outside one. */
+  let appliedLog: { kind: string; payload: unknown }[] | null = null;
 
   // ── Helpers ────────────────────────────────────────────────────────────
   // When `batchDepth > 0` the per-op `notify()` is coalesced: we still bump
@@ -293,6 +300,78 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   // depend on `scene.history` can wire it after construction.
   let activeJournalAccessor: (() => Journal | null) | null =
     options.getActiveJournal ?? null;
+
+  function isLockedInternal(id: NodeId): boolean {
+    if (!state.layers.some((l) => l.locked)) return false;
+    let cur = state.nodes.get(id);
+    while (cur !== undefined) {
+      if (state.layers[state.layerIndex.get(cur.layer) ?? -1]?.locked) return true;
+      cur = cur.parent === null ? undefined : state.nodes.get(cur.parent);
+    }
+    return false;
+  }
+
+  function refuseLocked(id: NodeId, verb: string): void {
+    if (lockBypass > 0 || !isLockedInternal(id)) return;
+    throw new Error(`Scene: cannot ${verb} "${id}" — it is on a locked layer`);
+  }
+
+  function refuseLockedLayer(layer: TLayer, verb: string): void {
+    if (lockBypass > 0 || !state.layers[state.layerIndex.get(layer) ?? -1]?.locked) return;
+    throw new Error(`Scene: cannot ${verb} layer "${layer}" — it is locked`);
+  }
+
+  /** The scene's selection never holds a locked node, whoever writes it. */
+  function reachable(ids: readonly NodeId[]): readonly NodeId[] {
+    if (!state.layers.some((l) => l.locked)) return ids;
+    return ids.filter((id) => !isLockedInternal(id));
+  }
+
+  function withLocksLifted<T>(fn: () => T): T {
+    lockBypass++;
+    try {
+      return fn();
+    } finally {
+      lockBypass--;
+    }
+  }
+
+  /**
+   * Run `fn` as all-or-nothing: if it throws, every kit op it applied is
+   * reverted, newest first, and the selection goes back to where it was.
+   * The log is at kit-op grain rather than per external op, because one
+   * external op can issue several scene mutations (a container move cascading
+   * to its children) and fail halfway through its own.
+   *
+   * On success the ops join an enclosing log only when `ownsEntry` says no
+   * history entry holds them: reverting ops an entry still claims would leave
+   * undo replaying a change that is no longer there.
+   */
+  function atomically<T>(fn: () => T, ownsEntry: () => boolean): T {
+    const outer = appliedLog;
+    const log: { kind: string; payload: unknown }[] = [];
+    const selectionBefore = selection;
+    appliedLog = log;
+    try {
+      const result = fn();
+      if (outer && !ownsEntry()) outer.push(...log);
+      return result;
+    } catch (err) {
+      appliedLog = null;
+      withLocksLifted(() => {
+        for (let i = log.length - 1; i >= 0; i--) {
+          const { kind, payload } = log[i];
+          registered.get(kind)!.revert(payload);
+        }
+      });
+      selection = selectionBefore;
+      if (log.length > 0) notify();
+      throw err;
+    } finally {
+      appliedLog = outer;
+    }
+  }
+
   function notify(): void {
     version++;
     if (batchDepth > 0) {
@@ -655,7 +734,10 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   });
 
   registerKitOp<{ layer: TLayer; from: boolean; to: boolean }>('kit:setLayerLocked', {
-    apply: (p) => { state.layers[requireLayerIndex(p.layer)].locked = p.to; },
+    apply: (p) => {
+      state.layers[requireLayerIndex(p.layer)].locked = p.to;
+      if (p.to) selection = reachable(selection);
+    },
     revert: (p) => { state.layers[requireLayerIndex(p.layer)].locked = p.from; },
   });
 
@@ -789,11 +871,13 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   function executeAndLog(kind: string, payload: unknown, label: string): void {
     if (suppressRecording) {
       runOp(kind, payload);
+      appliedLog?.push({ kind, payload });
       notify();
       return;
     }
     if (currentBatch) {
       runOp(kind, payload);
+      appliedLog?.push({ kind, payload });
       currentBatch.ops.push(makeOp(kind, payload));
       notify();
       return;
@@ -966,15 +1050,15 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       targetId: raw.targetId,
       forkedAtEntryId: raw.forkedAtEntryId,
       applyBatch(ops, label) {
-        withRecordingSuppressed(() => raw.applyBatch(ops, label));
+        atomically(() => withRecordingSuppressed(() => raw.applyBatch(ops, label)), () => true);
         notify();
       },
       undo() {
-        withRecordingSuppressed(() => raw.undo());
+        withLocksLifted(() => withRecordingSuppressed(() => raw.undo()));
         notify();
       },
       redo() {
-        withRecordingSuppressed(() => raw.redo());
+        withLocksLifted(() => withRecordingSuppressed(() => raw.redo()));
         notify();
       },
       canUndo: () => raw.canUndo(),
@@ -987,7 +1071,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         notify();
       },
       cancel() {
-        withRecordingSuppressed(() => raw.cancel());
+        withLocksLifted(() => withRecordingSuppressed(() => raw.cancel()));
         notify();
       },
       suspend: () => raw.suspend(),
@@ -1000,11 +1084,11 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   const sceneHistory: History = {
     // Mutating: applied ops re-enter the scene's own mutation methods.
     apply(op, label) {
-      withRecordingSuppressed(() => history.apply(op, label));
+      atomically(() => withRecordingSuppressed(() => history.apply(op, label)), () => true);
       notify();
     },
     applyOps(ops, label) {
-      withRecordingSuppressed(() => history.applyOps(ops, label));
+      atomically(() => withRecordingSuppressed(() => history.applyOps(ops, label)), () => true);
       notify();
     },
     undo: () => { scene.undo(); },
@@ -1075,6 +1159,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         throw new Error(`Scene: id collision on "${id}"`);
       }
       requireLayerIndex(spec.layer);
+      refuseLockedLayer(spec.layer, 'add to');
       const parent = spec.parent ?? null;
       if (parent !== null) {
         const p = requireNode(parent);
@@ -1082,6 +1167,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
           throw new Error(`Scene: parent "${parent}" is not a container`);
         }
         assertSubtreeLayer(spec.id, spec.layer, parent, p.layer);
+        refuseLocked(parent, 'add under');
       }
       const sibs = siblingsOf(parent);
       const index = spec.index ?? sibs.length;
@@ -1111,6 +1197,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       // Every id resolves against the pre-removal tree, so an id another one
       // cascades away is absorbed rather than being a second, failing removal.
       const { ids, removing } = removalClosure(rootIds);
+      for (const nid of ids) refuseLocked(nid, 'remove');
       // requireNode is what rejects an id that is not in the scene, and it runs
       // before anything mutates.
       const snapshot: Node<TData, TLayer, TPose>[] = ids.map((nid) => {
@@ -1138,17 +1225,21 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
     update(id, patch) {
       const node = requireNode(id);
+      refuseLocked(id, 'update');
       executeAndLog('kit:setData', { id, from: node.data, to: patch.data }, 'update');
     },
 
     setPose(id, pose) {
       const node = requireNode(id);
+      refuseLocked(id, 'set the pose of');
       executeAndLog('kit:setPose', { id, from: node.pose, to: pose }, 'setPose');
     },
 
     setLayer(id, layer) {
       requireLayerIndex(layer);
       const node = requireNode(id);
+      refuseLocked(id, 'relayer');
+      if (node.layer !== layer) refuseLockedLayer(layer, 'move nodes onto');
       if (node.parent !== null) {
         const parentNode = requireNode(node.parent);
         assertSubtreeLayer(id, layer, node.parent, parentNode.layer, 'relayer');
@@ -1162,6 +1253,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         const cur = state.nodes.get(curId);
         if (!cur) continue;
         subtree.push(curId);
+        refuseLocked(curId, 'relayer');
         if (cur.kind === 'container') {
           for (let i = cur.children.length - 1; i >= 0; i--) {
             stack.push(cur.children[i]);
@@ -1184,6 +1276,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
     setDependsOn(id, dependsOn) {
       const node = requireNode(id);
+      refuseLocked(id, 'retarget');
       if (sameDependsOn(node.dependsOn, dependsOn)) return;
       executeAndLog(
         'kit:setDependsOn',
@@ -1194,7 +1287,9 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
     move(id, parent, index) {
       const node = requireNode(id);
+      refuseLocked(id, 'move');
       if (parent !== null) {
+        refuseLocked(parent, 'move nodes into');
         const p = requireNode(parent);
         if (p.kind !== 'container') {
           throw new Error(`Scene: parent "${parent}" is not a container`);
@@ -1219,6 +1314,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
     reorder(id, index) {
       const node = requireNode(id);
+      refuseLocked(id, 'reorder');
       const sibs = siblingsOf(node.parent);
       const fromIndex = sibs.indexOf(id);
       executeAndLog('kit:move', {
@@ -1235,6 +1331,10 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       const i = requireLayerIndex(layer);
       executeAndLog('kit:setLayerLocked', { layer, from: state.layers[i].locked, to: locked }, 'setLayerLocked');
     },
+
+    isLocked: (id) => isLockedInternal(id),
+
+    unlocked: (fn) => withLocksLifted(fn),
 
     addLayer(spec) {
       if (state.layerIndex.has(spec.id)) {
@@ -1258,7 +1358,9 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       if (rec.kind !== 'user') {
         throw new Error(`Scene: cannot remove system layer "${layer}"`);
       }
-      scene.batch('removeLayer', () => {
+      // A layer operation, like the lock toggle: taking a locked layer away
+      // takes its nodes with it.
+      withLocksLifted(() => scene.batch('removeLayer', () => {
         const tagged: NodeId[] = [];
         for (const [id, node] of state.nodes) {
           if (node.layer === layer) tagged.push(id);
@@ -1266,7 +1368,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         scene.removeMany(tagged);
         const finalIndex = requireLayerIndex(layer);
         executeAndLog('kit:removeLayer', { record: rec, index: finalIndex }, 'removeLayer');
-      });
+      }));
     },
 
     renameLayer(layer, name) {
@@ -1331,14 +1433,16 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       batchDepth++;
       batchDirty = false;
       try {
-        if (journal) {
-          journal.applyBatch(ops, label);
-        } else {
-          // Native path: record the external ops themselves as one engine
-          // entry — coalescible across applyBatch calls via their own
-          // coalesceKeys — rebound to this call's adapter.
-          history.applyOps(ops.map((op) => bindOpToAdapter(op, adapter)), label);
-        }
+        atomically(() => {
+          if (journal) {
+            journal.applyBatch(ops, label);
+          } else {
+            // Native path: record the external ops themselves as one engine
+            // entry — coalescible across applyBatch calls via their own
+            // coalesceKeys — rebound to this call's adapter.
+            history.applyOps(ops.map((op) => bindOpToAdapter(op, adapter)), label);
+          }
+        }, () => true);
       } finally {
         batchDepth--;
         suppressRecording = prevSuppress;
@@ -1361,7 +1465,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     getSelection: () => selection,
 
     setSelection(ids) {
-      selection = [...ids];
+      selection = reachable([...ids]);
       notify();
     },
 
@@ -1369,14 +1473,14 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
     undo() {
       if (!history.canUndo()) return false;
-      withRecordingSuppressed(() => history.undo());
+      withLocksLifted(() => withRecordingSuppressed(() => history.undo()));
       notify();
       return true;
     },
 
     redo() {
       if (!history.canRedo()) return false;
-      withRecordingSuppressed(() => history.redo());
+      withLocksLifted(() => withRecordingSuppressed(() => history.redo()));
       notify();
       return true;
     },
@@ -1408,7 +1512,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       const total = history.undoDepth() + history.redoDepth();
       const target = Math.max(0, Math.min(total, targetIndex));
       if (target === history.undoDepth()) return false;
-      withRecordingSuppressed(() => history.goto(target));
+      withLocksLifted(() => withRecordingSuppressed(() => history.goto(target)));
       notify();
       return true;
     },
@@ -1429,10 +1533,18 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     batch(label, fn) {
       // Captured at open, not at recordEntry: by the time the batch closes
       // the selection has already moved to wherever the batch put it.
-      if (batchDepth === 0) currentBatch = { label, ops: [], selectionBefore: selection };
+      const outermost = batchDepth === 0;
+      if (outermost) currentBatch = { label, ops: [], selectionBefore: selection };
       batchDepth++;
       try {
-        return fn();
+        if (!outermost) return fn();
+        try {
+          return atomically(fn, () => (currentBatch?.ops.length ?? 0) > 0);
+        } catch (err) {
+          // Reverted already; the half-built entry must not reach history.
+          currentBatch = null;
+          throw err;
+        }
       } finally {
         batchDepth--;
         if (batchDepth === 0) {

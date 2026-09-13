@@ -268,6 +268,7 @@ export function useSceneTextEdit<
     const order = sceneRef.current.renderOrderNodes();
     for (let i = order.length - 1; i >= 0; i--) {
       const node = order[i];
+      if (sceneRef.current.isLocked(node.id)) continue;
       const text = readText(node.data);
       const at = effectivePose(sceneRef.current, node);
       const pose = {

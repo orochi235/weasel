@@ -1098,9 +1098,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `layer.visible` through `SceneSource.isPainted`, and `toJSON` carries a user
   layer's `kind` and `name`.
 
-  Open: `LayerRecord.locked` is written in five places and read by nothing.
-  Decided 2026-09-13: the field stays and gates selection, hit-testing and
-  mutation — unbuilt. `<image>` flip and source-rect never serialize; they live on the renderer's
+  Open: `<image>` flip and source-rect never serialize; they live on the renderer's
   `ImageCommand`, and expressing them wants a wider `SvgImageNode` on both the
   write and the parse side. `packages/{svg,hud,ui,labkit,modes,d3,paint}` never
   import `geom` at all, and three incompatible matrix-singularity policies

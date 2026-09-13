@@ -1124,12 +1124,13 @@ describe('applyBatch (no journal)', () => {
     expect(s.get(id)?.pose).toEqual(P2);
   });
 
-  it('a throwing op mid-batch still flushes the deferred notify', () => {
+  it('a throwing op mid-batch reverts the ops before it and still notifies', () => {
     const s = makeScene();
     const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
     let notified = 0;
     s.subscribe(() => { notified++; });
     const P2 = { x: 9, y: 9, width: 10, height: 10 };
+    // A wrong inverse on purpose: the rollback must not depend on it.
     const mutate: Op = {
       apply: (adapter) => { (adapter as typeof s).setPose(id, P2); },
       invert: () => mutate,
@@ -1138,9 +1139,10 @@ describe('applyBatch (no journal)', () => {
       apply: () => { throw new Error('boom'); },
       invert: () => boom,
     };
+    const depth = s.historyIndex();
     expect(() => s.applyBatch([mutate, boom], 'partial', s)).toThrow('boom');
-    // The first op's mutation landed and subscribers must hear about it.
-    expect(s.get(id)?.pose).toEqual(P2);
+    expect(s.get(id)?.pose).toEqual(POSE);
+    expect(s.historyIndex()).toBe(depth);
     expect(notified).toBe(1);
   });
 
