@@ -3,6 +3,7 @@ import type { DrawCommand } from '../renderer';
 import type { View } from 'core/viewport/view';
 import type { FillStyle, Stroke } from '@weasel-js/paint';
 import type { CursorSpec } from '@weasel-js/cursor';
+import type { ClaimableGesture } from '@weasel-js/gestures';
 
 /**
  * @experimental
@@ -204,16 +205,3 @@ export interface LayerHit<TScratch = unknown> extends AffordanceBinding<TScratch
   /** Which gestures an exclusive claim bars. Omitted bars all of them. */
   claimedKinds?: readonly ClaimableGesture[];
 }
-
-/**
- * Gesture kinds an affordance claim can bar, in the spec vocabulary bindings
- * are written in. `'pointer'` is one token because `pointerDown` / `click` /
- * `drag` are a single press protocol — at the event level the first two are
- * the same `kind: 'pointerdown'`, told apart only by `stage`.
- */
-export type ClaimableGesture =
-  | 'pointer'
-  | 'doubleClick'
-  | 'contextMenu'
-  | 'longPress'
-  | 'wheel';

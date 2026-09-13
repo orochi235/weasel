@@ -15,7 +15,8 @@ import {
 } from '../interactions/actions/activeToolContext';
 import { DepRegistryProvider, useDepSource } from '../interactions/actions/depRegistry';
 import { useGestureDispatcher } from '../interactions/dispatcher/useGestureDispatcher';
-import { ActionsProvider, useAction, useActionsRegistry, type Action } from '../interactions/actions/registry';
+import { ActionsProvider, useAction, useActionsRegistry } from '../interactions/actions/ActionsProvider';
+import type { Action } from '../interactions/actions/action';
 
 const rect: Contribution = {
   id: 'rect',

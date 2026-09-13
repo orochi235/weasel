@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { applyBooleanOp, type BooleanOp, type BooleansAdapter } from '../booleans/booleans';
-import type { Action } from '../registry';
-import { ActionDisabledReason } from '../registry';
+import type { Action } from '../action';
+import { ActionDisabledReason } from '../action';
 import type { ImmediateInvoker } from '../invoker';
 import type { SelectionApi } from 'core/selection/useSelection';
 import {

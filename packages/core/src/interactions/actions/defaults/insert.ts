@@ -57,11 +57,11 @@
  * dep contract thin and avoids importing `createInsertOp` into the descriptor.
  */
 
-import type { Action } from '../registry';
+import type { Action } from '../action';
 import type { InvocationCtx, OngoingHandle, BindingOpts, OngoingOverlay, DragSample } from '../invoker';
 import { resolveParams } from '../invoker';
 import type { InsertDep, InsertExtras, SnapDep } from '../depSchema';
-import type { TextEditDep } from './enterTextEdit';
+import type { TextEditDep } from '../depSchema';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { shapeKindInfo } from 'core/shapeKinds';
 import type { KitInsertShape } from 'core/shapeKinds';

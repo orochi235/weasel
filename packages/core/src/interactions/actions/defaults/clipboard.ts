@@ -2,23 +2,10 @@ import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
-import type { Action } from '../registry';
+import type { Action } from '../action';
+import type { ClipboardDep } from '../depSchema';
 import { buildDeleteOps } from './delete';
 import { requiresSelection } from './requiresSelection';
-
-/**
- * Clipboard dep — the imperative surface `useClipboardOps` returns.
- *
- * Consumers publish their live clipboard through `useDepSource('clipboard',
- * …)` from inside the `<DepRegistryProvider>` (i.e. under `<SceneCanvas>`).
- * The kit deliberately does not build one for them: `useClipboardOps` needs
- * an adapter and a selection reader that only the consumer can supply.
- */
-export interface ClipboardDep {
-  copy(): void;
-  paste(): void;
-  isEmpty(): boolean;
-}
 
 /**
  * @experimental

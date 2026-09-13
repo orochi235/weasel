@@ -3,7 +3,7 @@ import type { Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
-import type { Action } from '../registry';
+import type { Action } from '../action';
 import { requiresSelection } from './requiresSelection';
 
 // ---------------------------------------------------------------------------

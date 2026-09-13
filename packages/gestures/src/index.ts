@@ -18,6 +18,7 @@ export type {
   GestureName,
   GestureDescriptor,
   GestureArgSpec,
+  ClaimableGesture,
 } from './grammar/gestures';
 
 // Modifier helpers

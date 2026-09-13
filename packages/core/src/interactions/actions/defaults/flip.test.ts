@@ -3,7 +3,7 @@ import { flipAction } from './flip';
 import { asNodeId } from 'core/scene/types';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import type { NodeId } from 'core/scene/types';
-import type { BoundGesture } from '../registry';
+import type { BoundGesture } from '../binding';
 import { rotatedRectCorners } from '../rotate/geometry';
 
 interface Pose { x: number; y: number; width: number; height: number; rotation?: number }

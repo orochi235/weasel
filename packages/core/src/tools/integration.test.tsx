@@ -5,10 +5,10 @@ import { useTools } from './useTools';
 import { useKeybindings } from './useKeybindings';
 import { defineTool } from './defineTool';
 import { ActiveToolContextProvider, useActiveToolContext } from '../interactions/actions/activeToolContext';
-import { ActionsProvider, useActionsRegistry } from '../interactions/actions/registry';
+import { ActionsProvider, useActionsRegistry } from '../interactions/actions/ActionsProvider';
 import { DepRegistryProvider, useDepSource } from '../interactions/actions/depRegistry';
 import { useGestureDispatcher } from '../interactions/dispatcher/useGestureDispatcher';
-import type { Action } from '../interactions/actions/registry';
+import type { Action } from '../interactions/actions/action';
 import type { Tool } from './types';
 import { useRef } from 'react';
 

@@ -9,7 +9,7 @@ import {
 } from './booleans';
 import type { BooleansAdapter } from '../booleans/booleans';
 import { asNodeId } from 'core/scene/types';
-import { ActionDisabledReason } from '../registry';
+import { ActionDisabledReason } from '../action';
 import type { ImmediateInvoker } from '../invoker';
 
 function makeAdapter(selCount = 2): BooleansAdapter {

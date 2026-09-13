@@ -23,6 +23,19 @@ export type GestureName =
   | 'drop'
   | 'paste';
 
+/**
+ * Gesture kinds an affordance claim can bar, in the spec vocabulary bindings
+ * are written in. `'pointer'` is one token because `pointerDown` / `click` /
+ * `drag` are a single press protocol — at the event level the first two are
+ * the same `kind: 'pointerdown'`, told apart only by `stage`.
+ */
+export type ClaimableGesture =
+  | 'pointer'
+  | 'doubleClick'
+  | 'contextMenu'
+  | 'longPress'
+  | 'wheel';
+
 /** Declares the argument a gesture carries: what it is called, which values
  *  are legal, and what an omitted arg slot means. */
 export interface GestureArgSpec {

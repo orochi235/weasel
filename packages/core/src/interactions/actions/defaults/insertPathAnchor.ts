@@ -21,7 +21,7 @@
  * dep gains an editable-path abstraction.
  */
 
-import type { Action } from '../registry';
+import type { Action } from '../action';
 import type { ImmediateInvoker } from '../invoker';
 import type { EditAnchorsDep } from '../depSchema';
 import type { PolygonPath } from 'features/paths/types';

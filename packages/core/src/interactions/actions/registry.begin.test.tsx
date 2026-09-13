@@ -1,7 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { ActionsProvider, useActionsRegistry, type Action, type UiOngoingControl } from './registry';
+import type { UiOngoingControl } from './registry';
+import { ActionsProvider, useActionsRegistry } from './ActionsProvider';
+import type { Action } from './action';
 import { createDispatcher } from '../dispatcher/dispatcher';
 
 function wrap({ children }: { children: ReactNode }) {

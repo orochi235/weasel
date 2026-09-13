@@ -14,7 +14,7 @@
  * from in here keeps the tool hook callable from anywhere.
  */
 import { useEffect } from 'react';
-import { useActionsRegistry } from 'interactions/actions/registry';
+import { useActionsRegistry } from 'interactions/actions/ActionsProvider';
 import type { ToolsApi } from 'tools/useTools';
 
 export function useToolActions(tools: ToolsApi): void {

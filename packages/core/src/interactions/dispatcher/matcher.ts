@@ -9,7 +9,7 @@ import type {
   GestureSpec, InputEvent, ModSpec, PhaseAtom, PhaseContext, PhaseSpec, TargetSpec,
 } from '@weasel-js/gestures';
 import type { GestureBinding } from '../actions/binding';
-import type { ClaimableGesture } from '../../affordances/types';
+import type { ClaimableGesture } from '@weasel-js/gestures';
 
 export { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase };
 export type { InputEvent, PhaseContext };

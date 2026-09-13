@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createDispatcher } from './dispatcher';
-import type { Action } from '../actions/registry';
+import type { Action } from '../actions/action';
 import type { OngoingHandle, InvocationCtx } from '../actions/invoker';
 
 function makeOngoingAction(id: string, hooks: Partial<OngoingHandle> & {

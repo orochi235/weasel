@@ -1,13 +1,12 @@
 export { defineTool } from './defineTool';
 export { defineViewportTool } from './defineViewportTool';
-export type { ToolDef, ViewportToolDef, ToolKeybinding } from './routeTypes';
+export type { ToolDef, ViewportToolDef } from './routeTypes';
 export { useTools } from './useTools';
 export type { UseToolsOptions, ToolsApi } from './useTools';
 export { useKeybindings } from './useKeybindings';
 export type { UseKeybindingsOptions } from './useKeybindings';
 export type {
-  Tool, AnyTool, ToolCtx, ToolModifiers, ToolSlot,
-  HotkeyTrigger,
+  Tool, AnyTool, ToolCtx, ToolModifiers, ToolSlot, ToolKeybinding,
 } from './types';
 export { TOOL_PREF_KINDS, isBuiltinToolPref, prefUnit } from './prefs';
 export type {

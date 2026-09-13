@@ -7,7 +7,7 @@
  * Always enabled — calling it when no path is being edited is a no-op.
  */
 
-import type { Action } from '../registry';
+import type { Action } from '../action';
 import type { ImmediateInvoker } from '../invoker';
 import type { EditAnchorsDep } from '../depSchema';
 

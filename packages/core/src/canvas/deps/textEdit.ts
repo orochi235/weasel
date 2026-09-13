@@ -8,7 +8,7 @@
  */
 import { useRef } from 'react';
 import { useDepSource } from 'interactions/actions/depRegistry';
-import type { TextEditDep } from 'interactions/actions/defaults/enterTextEdit';
+import type { TextEditDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
 
 export function useTextEditDepSource(

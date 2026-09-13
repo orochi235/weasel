@@ -41,7 +41,7 @@
  * dep (`AUTO_POSE_DESCRIPTOR` when unsourced).
  */
 
-import type { Action } from '../registry';
+import type { Action } from '../action';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '../invoker';
 import { resolveParams } from '../invoker';
 import { documentPose } from 'core/scene/effectivePose';

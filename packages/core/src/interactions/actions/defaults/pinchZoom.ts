@@ -30,7 +30,7 @@
  * @see zoomAt — fixed-point zoom primitive from `core/viewport/zoomAt`.
  */
 
-import type { Action } from '../registry';
+import type { Action } from '../action';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
 import type { ViewApi } from '../depSchema';
 import { zoomAt } from 'core/viewport/zoomAt';

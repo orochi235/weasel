@@ -34,7 +34,7 @@
  * This matches the behaviour of the dissolved `useKeyboardZoomTool`.
  */
 
-import type { Action } from '../registry';
+import type { Action } from '../action';
 import type { ViewApi } from '../depSchema';
 import { zoomAt } from 'core/viewport/zoomAt';
 import { wheelZoom } from 'core/viewport/wheelHandler';

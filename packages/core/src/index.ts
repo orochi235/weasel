@@ -119,13 +119,17 @@ export { isEditableTarget, matchesKeyBinding } from './interactions/keyHelpers';
 
 // --- @experimental Actions Registry (2026-05-09) ----------------------------
 export {
-  ActionsProvider, ActionsScope, useActionsRegistry, useAction, evaluateEnabled,
-  ActionDisabledReason, actionBindings,
-} from './interactions/actions/registry';
+  ActionsProvider, ActionsScope, useActionsRegistry, useAction,
+} from './interactions/actions/ActionsProvider';
 export type {
-  Action, ActionEntry, ActionsProp, ActionsRegistry, ActionEnabledResult,
-  UiOngoingControl, BoundGesture,
+  ActionEntry, ActionsProp, ActionsRegistry, UiOngoingControl,
 } from './interactions/actions/registry';
+export { ActionDisabledReason } from './interactions/actions/action';
+export type { Action, ActionDispatch, ActionPresentation } from './interactions/actions/action';
+export { actionBindings } from './interactions/actions/binding';
+export type { BoundGesture, BindingSource } from './interactions/actions/binding';
+export { evaluateEnabled } from './interactions/actions/actionEnabled';
+export type { ActionEnabledResult } from './interactions/actions/actionEnabled';
 export { actionShortcuts, keySpecShortcut } from './interactions/actions/actionShortcuts';
 export type { ActionShortcut } from './interactions/actions/actionShortcuts';
 export { moveAction } from './interactions/actions/defaults/move';
@@ -151,7 +155,6 @@ export {
 export { editAnchorsAction } from './interactions/actions/defaults/editAnchors';
 export { lassoSelectAction } from './interactions/actions/defaults/lassoSelect';
 export { sliceAction } from './interactions/actions/defaults/slice';
-export type { SliceDep } from './interactions/actions/defaults/slice';
 export {
   pinchZoomAction,
   makePinchZoomAction,
@@ -161,9 +164,8 @@ export {
   clipboardCopyAction,
   clipboardCutAction,
 } from './interactions/actions/defaults/clipboard';
-export type { ClipboardDep } from './interactions/actions/defaults/clipboard';
 export { enterTextEditAction } from './interactions/actions/defaults/enterTextEdit';
-export type { TextEditDep } from './interactions/actions/defaults/enterTextEdit';
+export type { SliceDep, ClipboardDep, TextEditDep } from './interactions/actions/depSchema';
 export { useStandardActions, KIT_STANDARD_ACTION_IDS } from './interactions/actions/useStandardActions';
 export type { UseStandardActionsOptions } from './interactions/actions/useStandardActions';
 // Scene-backed op applier for the consumer `applyOps` commit hook — applies a
@@ -501,11 +503,11 @@ export {
   type CornerResizeScratch,
   type CustomPaintContext,
   type LayerHit,
-  type ClaimableGesture,
   type PathAnchorAffordanceOptions,
   type RotationAffordanceOptions,
   type RotationScratch,
 } from './affordances';
+export type { ClaimableGesture } from '@weasel-js/gestures';
 export type { ChromeState } from './core/selection/chromeState';
 
 // ─── chrome-caps: declarative chrome-visibility rules ──────────────────────
@@ -1319,9 +1321,9 @@ export type {
   SceneAdapterSelection,
 } from './canvas/sceneAdapter';
 export type {
-  ToolPresentation,
-} from './tools/types';
-export type { Contribution, Eligibility, EligibilityState, OverlayPosition } from './contributions';
+  Contribution, ContributionRouting, ContributionChrome, Eligibility, EligibilityState,
+  HotkeyTrigger, OverlayPosition, ToolPresentation,
+} from './contributions';
 export { liveScope, mergeContributions, scopeBindings } from './contributions';
 export type { InsertOverlayStyle } from './tools/builtin/marquee';
 export type { InsertPoint } from './interactions/gestures/types';

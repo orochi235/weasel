@@ -288,11 +288,15 @@ coordinate-space bug — never binding-to-action routing. That is the case for
 extracting routing into a package beside `gestures` and `history` rather than giving
 a 3D kernel its own dispatcher, and it puts the seam at `depSchema.ts`.
 
-Costed 2026-09-13 in `2026-09-13-routing-extraction-costing.md`: 6,302 lines across
-31 files, three import cycles that stop the dispatcher moving without the actions
-registry and the tool types, and one hard problem — `DepSchema` is one ambient
-interface extended by declaration merging, which silently stops merging if its
-declaration moves. What is left open is the decision, not the measurement.
+Costed 2026-09-13 in `2026-09-13-routing-extraction-costing.md`: 6,302 lines
+across 31 files. The cycles it costed as the blocking problem turned out to be
+one 15-file component closed by 10 value edges, and it is now gone — `Action`
+and `Contribution` each split into a routing half and a chrome half, and the
+dispatcher takes the one method it ever called. The `DepSchema` landmine the
+doc named is not real either: an augmentation aimed at a module that re-exports
+the interface, from a sibling file or a sibling package, merges through the
+alias, and the smoke test now asserts that against the published `.d.ts`.
+What is left open is the decision to move it, and the move.
 
 ## Non-goals
 

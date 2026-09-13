@@ -2,7 +2,7 @@ import { vi } from 'vitest';
 import { asNodeId } from 'core/scene/types';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
-import type { Action } from '../registry';
+import type { Action } from '../action';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '../invoker';
 
 /**

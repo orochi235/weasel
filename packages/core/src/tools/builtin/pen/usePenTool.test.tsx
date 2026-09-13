@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { usePenTool, type PenScratch } from './usePenTool';
 import type { PolygonPath } from 'features/paths/types';
-import type { Action } from 'interactions/actions/registry';
-import { ActionDisabledReason } from 'interactions/actions/registry';
+import type { Action } from 'interactions/actions/action';
+import { ActionDisabledReason } from 'interactions/actions/action';
 import type { ActionDeps, InvocationCtx, OngoingHandle } from 'interactions/actions/invoker';
 import type { ModifierState } from 'core/modifierState';
 

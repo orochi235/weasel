@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { WeaselProvider } from './WeaselProvider';
-import { useActionsRegistry, type Action } from './interactions/actions/registry';
+import { useActionsRegistry } from './interactions/actions/ActionsProvider';
+import type { Action } from './interactions/actions/action';
 import { useSelectionContext } from './features/selection/SelectionContext';
 
 /** Reports the registry identities visible at this point in the tree. */

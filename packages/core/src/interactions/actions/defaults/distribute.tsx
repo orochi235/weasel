@@ -6,8 +6,8 @@ import { translatePoseViaDescriptor, visualBoundsViaDescriptor } from '../align/
 import type { DistributeAxis, DistributeMode } from '../distribute/distribute';
 import { planDistribute } from '../distribute/plan';
 import { scenePoseFrame } from '../poseFrame';
-import type { Action } from '../registry';
-import { ActionDisabledReason } from '../registry';
+import type { Action } from '../action';
+import { ActionDisabledReason } from '../action';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { ImmediateInvoker } from '../invoker';
 import { DistributeHorizontalIcon, DistributeVerticalIcon } from './icons/distributeIcons';

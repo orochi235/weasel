@@ -22,7 +22,7 @@ import { useEffect } from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
-import { useActionsRegistry, ActionsProvider } from 'interactions/actions/registry';
+import { useActionsRegistry, ActionsProvider } from 'interactions/actions/ActionsProvider';
 
 // ---------------------------------------------------------------------------
 // Types

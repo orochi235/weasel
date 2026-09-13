@@ -7,7 +7,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createDispatcher } from './dispatcher';
 import type { DispatcherContext } from './dispatcher';
-import type { ActionsRegistry, Action } from '../actions/registry';
+import type { ActionsRegistry } from '../actions/registry';
+import type { Action } from '../actions/action';
 import type { DepRegistry } from '../actions/depRegistry';
 import type { Tool } from '../../tools/types';
 import type { InputEvent } from './matcher';

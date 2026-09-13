@@ -1,7 +1,8 @@
-import type { Action, BoundGesture } from '../registry';
+import type { Action } from '../action';
+import type { BoundGesture } from '../binding';
 import { resolveParams, type InvocationCtx, type BindingOpts } from '../invoker';
 import type { ActiveToolContextValue } from '../activeToolContext';
-import type { HotkeyTrigger } from '../../../tools/types';
+import type { HotkeyTrigger } from '../../../contributions/types';
 
 /** Canonical id of the consolidated tool-offhand action. One descriptor
  *  serves every tool; the matched binding supplies `params.toolId` to select

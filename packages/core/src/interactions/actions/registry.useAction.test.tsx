@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, render } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { ActionsProvider, useActionsRegistry, useAction, type Action } from './registry';
+import { ActionsProvider, useActionsRegistry, useAction } from './ActionsProvider';
+import type { Action } from './action';
 
 function wrap({ children }: { children: ReactNode }) {
   return <ActionsProvider>{children}</ActionsProvider>;

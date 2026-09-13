@@ -4,10 +4,9 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { History } from '@weasel-js/history';
 import type { PointerContextValue } from 'features/pointer/PointerContext';
 import type { ActiveToolContextValue } from './activeToolContext';
-// Force the side-effect import (augments DepSchema):
 import './depSchema';
 
-describe('DepSchema kit-standard augmentation', () => {
+describe('DepSchema', () => {
   it('declares selection: SelectionApi', () => {
     expectTypeOf<DepSchema['selection']>().toEqualTypeOf<SelectionApi>();
   });

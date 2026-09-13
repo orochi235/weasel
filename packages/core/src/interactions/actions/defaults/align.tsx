@@ -10,8 +10,8 @@ import {
 } from '../align/align';
 import { unionAABB } from 'core/geometry/unionBounds';
 import { scenePoseFrame } from '../poseFrame';
-import type { Action } from '../registry';
-import { ActionDisabledReason } from '../registry';
+import type { Action } from '../action';
+import { ActionDisabledReason } from '../action';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { ImmediateInvoker } from '../invoker';
 import {
