@@ -1,10 +1,17 @@
 import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/client';
 import type { Channel } from '../protocol/channel';
-import { type FaultPhase, type FromFrame, type Globals, stableStringify, type ToFrame } from '../protocol/messages';
+import {
+  type CssVarReport,
+  type FaultPhase,
+  type FromFrame,
+  type Globals,
+  stableStringify,
+  type ToFrame,
+} from '../protocol/messages';
 import { answerSchema, describeSchema } from '../protocol/schema';
 import type { Decorator, LoadedStory, StoryContext } from '../story/types';
-import { createOverrides, scanCssVars } from './cssVars';
+import { createOverrides, resolveCssVar, scanCssVars } from './cssVars';
 import { StoryHost } from './StoryHost';
 
 export interface FrameSetup {
@@ -12,6 +19,11 @@ export interface FrameSetup {
   decorators?: Decorator[];
   /** Applies globals to the frame document — theme mode, fonts. */
   applyGlobals?: (globals: Globals, root: HTMLElement) => void;
+  /**
+   * The elements a CSS variable override is declared on; `:root` by default. An override has to be declared on
+   * whichever element declares the token itself — a theme wrapper, say — or that element's own value wins.
+   */
+  cssVarsScope?: string;
 }
 
 export interface StartFrameOptions {
@@ -52,20 +64,28 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
   let resetKey = 0;
   let seq = 0;
 
-  const overrides = createOverrides(document);
+  const overrides = createOverrides(document, setup.cssVarsScope);
+  let lastVars: CssVarReport[] | null = null;
   let reported: string | null = null;
-  const reportVars = () => {
-    const vars = scanCssVars(document, overrides.has);
+  const publishVars = (vars: CssVarReport[]) => {
+    lastVars = vars;
     const key = JSON.stringify(vars);
     if (key === reported) return;
     reported = key;
     send({ type: 'vars', vars });
   };
+  const reportVars = () => publishVars(scanCssVars(document, overrides.has));
+  const ownMutation = (record: MutationRecord) =>
+    overrides.owns(record.target) ||
+    (record.type === 'childList' &&
+      [...record.addedNodes, ...record.removedNodes].length > 0 &&
+      [...record.addedNodes, ...record.removedNodes].every(overrides.owns));
   let settleTimer: ReturnType<typeof setTimeout> | undefined;
   const mutations =
     typeof MutationObserver === 'undefined'
       ? null
-      : new MutationObserver(() => {
+      : new MutationObserver((records) => {
+          if (records.every(ownMutation)) return;
           clearTimeout(settleTimer);
           settleTimer = setTimeout(reportVars, VARS_SETTLE_MS);
         });
@@ -149,10 +169,15 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
         setup.applyGlobals?.(globals, document.documentElement);
         renderInput();
         break;
-      case 'vars.set':
+      case 'vars.set': {
         overrides.set(msg.name, msg.value);
-        if (initialized) reportVars();
+        const at = lastVars?.findIndex((v) => v.name === msg.name) ?? -1;
+        if (!lastVars || at < 0) break;
+        const vars = lastVars.slice();
+        vars[at] = { name: msg.name, value: resolveCssVar(document, msg.name), overridden: overrides.has(msg.name) };
+        publishVars(vars);
         break;
+      }
       case 'play':
         void play();
         break;

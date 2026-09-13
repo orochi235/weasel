@@ -1,7 +1,15 @@
-import { ColorRow, PropertyList, TextRow, type TrialContribution, useTrialId } from '@weasel-js/labkit';
+import {
+  Button,
+  ColorRow,
+  PropertyList,
+  TextRow,
+  ToggleBar,
+  type ToggleBarItem,
+  type TrialContribution,
+  useTrialId,
+} from '@weasel-js/labkit';
 import { TOKEN_MANIFEST } from '@weasel-js/theme';
-import { Button, ToggleBar, type ToggleBarItem } from '@weasel-js/ui';
-import { useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { parsesAsColor, toHex } from './color';
 import { useCssOverrides } from './overrides';
 import { useTrialFrame } from './trialFrames';
@@ -17,11 +25,13 @@ interface VarRowProps {
   name: string;
   value: string;
   overridden: boolean;
-  onChange: (value: string | null) => void;
+  write: (name: string, value: string | null) => void;
 }
 
-function VarRow({ name, value, overridden, onChange }: VarRowProps) {
-  const hex = parsesAsColor(value) ? toHex(value) : null;
+const VarRow = memo(function VarRow({ name, value, overridden, write }: VarRowProps) {
+  const hex = useMemo(() => (parsesAsColor(value) ? toHex(value) : null), [value]);
+  const onChange = useCallback((next: string | null) => write(name, next), [write, name]);
+  const reset = useCallback(() => write(name, null), [write, name]);
   return (
     <div className="fg-css-var" role="group" aria-label={name}>
       <PropertyList className="fg-css-var__rows" pack="one-up" density="tight">
@@ -29,13 +39,13 @@ function VarRow({ name, value, overridden, onChange }: VarRowProps) {
         {hex ? <ColorRow label="Color" value={hex} onChange={onChange} /> : null}
       </PropertyList>
       {overridden ? (
-        <Button variant="ghost" size="sm" ariaLabel={`Reset ${name}`} onClick={() => onChange(null)}>
+        <Button variant="ghost" size="sm" ariaLabel={`Reset ${name}`} onClick={reset}>
           Reset
         </Button>
       ) : null}
     </div>
   );
-}
+});
 
 /** Shows and overrides the CSS variables of the trial it is rendered inside: the theme's tokens, or what its frame reports. */
 export function CssVarsPanel() {
@@ -56,13 +66,17 @@ export function CssVarsPanel() {
     .map((row) => ({ ...row, value: overrides[row.name] ?? row.value }))
     .filter((row) => !query || row.name.toLowerCase().includes(query) || row.value.toLowerCase().includes(query));
 
-  const write = (name: string, value: string | null) => {
-    setOverrides((prev) => {
-      const { [name]: _dropped, ...rest } = prev;
-      return value === null ? rest : { ...rest, [name]: value };
-    });
-    frame.send?.({ type: 'vars.set', name, value });
-  };
+  const send = frame.send;
+  const write = useCallback(
+    (name: string, value: string | null) => {
+      setOverrides((prev) => {
+        const { [name]: _dropped, ...rest } = prev;
+        return value === null ? rest : { ...rest, [name]: value };
+      });
+      send?.({ type: 'vars.set', name, value });
+    },
+    [setOverrides, send],
+  );
 
   return (
     <div className="fg-css-vars">
@@ -90,7 +104,7 @@ export function CssVarsPanel() {
               name={row.name}
               value={row.value}
               overridden={row.name in overrides}
-              onChange={(value) => write(row.name, value)}
+              write={write}
             />
           ))}
         </div>

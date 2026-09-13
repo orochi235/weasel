@@ -1,5 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { parsesAsColor, toHex } from './color';
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe('parsesAsColor', () => {
   it('asks the browser when it can', () => {
@@ -17,8 +21,19 @@ describe('parsesAsColor', () => {
     }
   });
 
-  it('uses the parser by default where the DOM has no CSS.supports', () => {
-    expect(typeof CSS === 'undefined' || typeof CSS.supports !== 'function').toBe(true);
+  it('defaults to CSS.supports for color where the DOM has it', () => {
+    const supports = vi.fn((property: string, value: string) => property === 'color' && value === 'papayawhip');
+    vi.stubGlobal('CSS', { supports });
+    expect(parsesAsColor('papayawhip')).toBe(true);
+    expect(parsesAsColor('#abc')).toBe(false);
+    expect(supports).toHaveBeenCalledWith('color', '#abc');
+  });
+
+  it('defaults to the parser where the DOM has no CSS.supports', () => {
+    vi.stubGlobal('CSS', undefined);
+    expect(parsesAsColor('#abc')).toBe(true);
+    expect(parsesAsColor('12px')).toBe(false);
+    vi.stubGlobal('CSS', {});
     expect(parsesAsColor('#abc')).toBe(true);
     expect(parsesAsColor('12px')).toBe(false);
   });

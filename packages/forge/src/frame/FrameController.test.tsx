@@ -2,12 +2,18 @@ import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { openChannel } from '../protocol/channel';
-import { type FromFrame, stableStringify, type ToFrame } from '../protocol/messages';
+import { type CssVarReport, type FromFrame, stableStringify, type ToFrame } from '../protocol/messages';
 import { describeSchema } from '../protocol/schema';
 import { meta, story } from '../story/define';
 import { loadNativeModule } from '../story/native';
 import type { Decorator, LoadedStory } from '../story/types';
+import { scanCssVars } from './cssVars';
 import { type FrameSetup, startFrame } from './FrameController';
+
+vi.mock('./cssVars', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./cssVars')>();
+  return { ...actual, scanCssVars: vi.fn(actual.scanCssVars) };
+});
 
 async function flush() {
   await new Promise((r) => setTimeout(r, 0));
@@ -255,7 +261,7 @@ describe('startFrame', () => {
     rootStyle.textContent = ':root { --fg-t-ink: red; }';
     const settle = (ms: number) => new Promise((r) => setTimeout(r, ms));
     const empty = { type: 'init', config: {}, state: null, globals: {} } as const;
-    const ink = (vars: { name: string }[] | undefined) => vars?.find((v) => v.name === '--fg-t-ink');
+    const ink = (vars: CssVarReport[] | undefined) => vars?.find((v) => v.name === '--fg-t-ink');
 
     afterEach(() => rootStyle.remove());
 
@@ -279,6 +285,36 @@ describe('startFrame', () => {
       shell.send({ type: 'vars.set', name: '--fg-t-ink', value: null });
       await flush();
       expect(ink(of('vars').at(-1)?.vars)).toEqual({ name: '--fg-t-ink', value: 'red', overridden: false });
+    });
+
+    it('answers each vars.set with the last report, flag updated, and never rescans for it', async () => {
+      document.head.append(rootStyle);
+      const { shell, of } = start(styled!);
+      shell.send(empty);
+      await flush();
+      await settle(150);
+      const before = of('vars').length;
+      vi.mocked(scanCssVars).mockClear();
+      const values = ['#111111', '#222222', '#333333', null] as const;
+      for (const value of values) {
+        shell.send({ type: 'vars.set', name: '--fg-t-ink', value });
+        await flush();
+      }
+      await settle(150);
+      expect(scanCssVars).not.toHaveBeenCalled();
+      const sent = of('vars').slice(before);
+      expect(sent.map((m) => ink(m.vars)?.overridden)).toEqual([true, true, true, false]);
+      expect(ink(sent.at(-1)?.vars)).toEqual({ name: '--fg-t-ink', value: 'red', overridden: false });
+    });
+
+    it('writes overrides under the scope the setup names', async () => {
+      const { shell } = start(styled!, { cssVarsScope: '[data-fg-t-scope]' });
+      shell.send(empty);
+      shell.send({ type: 'vars.set', name: '--fg-t-ink', value: 'blue' });
+      await flush();
+      expect(document.head.querySelector('style[data-fg-overrides]')?.textContent).toMatch(
+        /^:is\(\[data-fg-t-scope\]\):not\(#fg-overrides\) \{/,
+      );
     });
 
     it('does not count vars.set as render input', async () => {

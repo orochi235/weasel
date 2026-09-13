@@ -33,44 +33,55 @@ export function scanCssVars(doc: Document, overridden: (name: string) => boolean
   for (const el of Array.from(doc.querySelectorAll('[style]'))) collect(el.getAttribute('style') ?? '', names);
   for (const sheet of Array.from(doc.styleSheets)) walkRules(sheet, names);
 
-  const view = doc.defaultView;
-  const values = new Map<string, string>();
-  if (view) {
-    const root = view.getComputedStyle(doc.documentElement);
-    const missing: string[] = [];
-    for (const name of names) {
-      const value = root.getPropertyValue(name).trim();
-      if (value) values.set(name, value);
-      else missing.push(name);
-    }
-    for (const el of missing.length > 0 ? Array.from((doc.body ?? doc.documentElement).querySelectorAll('*')) : []) {
-      const style = view.getComputedStyle(el);
-      for (let i = missing.length - 1; i >= 0; i--) {
-        const value = style.getPropertyValue(missing[i]!).trim();
-        if (!value) continue;
-        values.set(missing[i]!, value);
-        missing.splice(i, 1);
-      }
-      if (missing.length === 0) break;
-    }
-  }
-
+  const values = resolveValues(doc, names);
   return [...names]
     .sort()
     .map((name) => ({ name, value: values.get(name) ?? '', overridden: overridden(name) }));
 }
 
+function resolveValues(doc: Document, names: Iterable<string>): Map<string, string> {
+  const view = doc.defaultView;
+  const values = new Map<string, string>();
+  if (!view) return values;
+  const root = view.getComputedStyle(doc.documentElement);
+  const missing: string[] = [];
+  for (const name of names) {
+    const value = root.getPropertyValue(name).trim();
+    if (value) values.set(name, value);
+    else missing.push(name);
+  }
+  for (const el of missing.length > 0 ? Array.from((doc.body ?? doc.documentElement).querySelectorAll('*')) : []) {
+    const style = view.getComputedStyle(el);
+    for (let i = missing.length - 1; i >= 0; i--) {
+      const value = style.getPropertyValue(missing[i]!).trim();
+      if (!value) continue;
+      values.set(missing[i]!, value);
+      missing.splice(i, 1);
+    }
+    if (missing.length === 0) break;
+  }
+  return values;
+}
+
+/** One custom property's value, resolved the way `scanCssVars` resolves each. */
+export function resolveCssVar(doc: Document, name: string): string {
+  return resolveValues(doc, [name]).get(name) ?? '';
+}
+
 export interface Overrides {
   set(name: string, value: string | null): void;
   has(name: string): boolean;
+  /** Whether `node` is the override style element or inside it. */
+  owns(node: Node): boolean;
   dispose(): void;
 }
 
 /**
- * Custom property overrides as one `:root` rule, kept last in `<head>`. Without `!important` a later rule of equal
- * specificity wins, so a stylesheet that lands after it sends the element back to the end.
+ * Custom property overrides as one rule on `scope`, kept last in `<head>`. `:not(#fg-overrides)` adds an ID's weight
+ * without `!important`, so the rule outranks a theme's attribute selectors; a stylesheet that lands after it sends
+ * the element back to the end.
  */
-export function createOverrides(doc: Document): Overrides {
+export function createOverrides(doc: Document, scope = ':root'): Overrides {
   const values = new Map<string, string>();
   const style = doc.createElement('style');
   style.setAttribute('data-fg-overrides', '');
@@ -80,7 +91,7 @@ export function createOverrides(doc: Document): Overrides {
   };
   const write = () => {
     const decls = [...values].map(([name, value]) => `  ${name}: ${value};`);
-    style.textContent = decls.length > 0 ? `:root {\n${decls.join('\n')}\n}\n` : '';
+    style.textContent = decls.length > 0 ? `:is(${scope}):not(#fg-overrides) {\n${decls.join('\n')}\n}\n` : '';
   };
 
   keepLast();
@@ -94,6 +105,7 @@ export function createOverrides(doc: Document): Overrides {
       write();
     },
     has: (name) => values.has(name),
+    owns: (node) => style.contains(node),
     dispose() {
       observer?.disconnect();
       style.remove();

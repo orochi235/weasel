@@ -62,8 +62,7 @@
   },
   "dependencies": {
     "@babel/parser": "^7.29.0",
-    "@weasel-js/theme": "1.4.4",
-    "@weasel-js/ui": "1.4.4"
+    "@weasel-js/theme": "1.4.4"
   },
   "devDependencies": {
     "@babel/types": "^7.29.0"

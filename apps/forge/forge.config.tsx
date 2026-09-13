@@ -16,5 +16,5 @@ const labkitRoot: Decorator = (story, ctx) => {
 };
 
 export default defineConfig({
-  frame: { decorators: [labkitRoot] },
+  frame: { decorators: [labkitRoot], cssVarsScope: ':is(:root, [data-wzl-theme], [data-wzl-mode])' },
 });

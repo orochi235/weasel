@@ -1,8 +1,14 @@
 import { createMemoryAdapter } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { FromFrame } from '../../protocol/messages';
+import { parsesAsColor } from './color';
+
+vi.mock('./color', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./color')>();
+  return { ...actual, parsesAsColor: vi.fn(actual.parsesAsColor) };
+});
 import { describeSchema } from '../../protocol/schema';
 import type { IndexEntry } from '../../story/types';
 import { connectFrame, flush, installResizeObserver } from '../labHarness';
@@ -59,6 +65,20 @@ describe('CssVarsPanel', () => {
     await flush();
     expect(setsOf(received).at(-1)).toEqual({ type: 'vars.set', name: '--wzl-gray-50', value: null });
     expect(token.getByRole('textbox')).toHaveValue('#f5f5f6');
+  });
+
+  it('re-renders only the row an edit changes', async () => {
+    location.hash = '#/x--a';
+    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    await openTrial('A');
+    const panel = trial('A');
+    fireEvent.change(panel.getByLabelText('Filter'), { target: { value: 'gray-' } });
+    await flush();
+    expect(panel.getAllByRole('group').length).toBeGreaterThan(2);
+    vi.mocked(parsesAsColor).mockClear();
+    fireEvent.change(row(panel, '--wzl-gray-50').getByRole('textbox'), { target: { value: '#123456' } });
+    await flush();
+    expect(vi.mocked(parsesAsColor).mock.calls.map(([value]) => value)).toEqual(['#123456']);
   });
 
   it('lists the vars the story’s frame reports, with a color input for a color', async () => {
