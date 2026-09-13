@@ -1420,7 +1420,7 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 ## Demos & visual regression
 
-- **(P2) `TEXT_PAINTER` has no pixel coverage.** Every text-bearing visual spec routes around the default text drawer (`NodeShape.ts:349`, registered at `:688`): `text`, `text-aa` and `text-decoration` go through `createTextLayer`, while `text-outlines` and `render-to-pixels` build `textCommand()` by hand. It shipped on unit tests alone. A baseline demo that paints a `data.text` node through the default drawer is the missing check.
+- **(P2) `kit:text` ignores its box for `align: 'center'` and `'right'`.** `TEXT_PAINTER` (`NodeShape.ts`) passes no `maxWidth`, so `layoutRuns` takes its point-anchor branch and centers the line on `pose.x` instead of within `pose.width` — centered text hangs half off the left of its box. `createTextLayer` forwards `pose.width` and the editing overlay sets CSS `textAlign` inside it, so a centered node jumps when an edit opens or commits. Forwarding `pose.width` as `maxWidth` would also start wrapping, which the painter avoids on purpose; alignment needs a box width separate from the wrap width. `text-nodes` sticks to left alignment until this lands, so its baseline never records the wrong position.
 
 - **(P3) No demo exercises non-modal path editing.** `enterPathEdit` / `editAnchors` only run under apps/draw's mode registry — `apps/site/demos/curveLab/RepresentationPanel.tsx:167` disables them and installs its own drag action. The `getActiveMode === undefined` fall-throughs (`SceneCanvas.tsx:1593`, `:1632`) are exercised by tests alone; a small site demo entering anchor editing with no mode registry would give both branches a live home.
 

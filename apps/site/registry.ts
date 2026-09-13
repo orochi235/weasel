@@ -157,6 +157,16 @@ const DEMO_META: DemoMeta[] = [
   },
 
   {
+    id: 'text-nodes',
+    title: 'Text nodes',
+    category: 'Text',
+    description: "A node whose data carries `text` needs no layer and no `drawOne`: the kit's built-in `kit:text` painter draws it, reading the same node data every other text path reads — `style` for size, weight and slant, `runs` over `text` when both are present, `fill` for ink, and the pose's height as the box `verticalAlign` resolves within. Rotation comes from the pose like any other node's. This is the path a scene gets by default, and the one editing commits back into.",
+    hint: 'Static scene: one node per painter feature.',
+    load: () => import('./demos/TextNodesDemo').then((m) => m.TextNodesDemo),
+    path: 'apps/site/demos/TextNodesDemo.tsx',
+  },
+
+  {
     id: 'point-snap',
     title: 'Point-snap resize',
     category: 'Tools',
