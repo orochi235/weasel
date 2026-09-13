@@ -35,6 +35,7 @@ import {
   reorderTrials as reorderTrialsOp,
   resetTrial as resetTrialOp,
 } from '../trial/trialOps';
+import { useLabFitWarning } from './fitCheck';
 import { LabContext, type LabContextValue } from './LabContext';
 import { LabHeader } from './LabHeader';
 import { LabPalette } from './LabPalette';
@@ -281,6 +282,16 @@ function LabRuntime({
 
   const ownSurface = useTiledSurface({ onFrame });
   surfaceRef.current = ownSurface;
+  const [labBody, setLabBody] = useState<HTMLDivElement | null>(null);
+  const attachOwnSurface = ownSurface.containerRef;
+  const labBodyRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      setLabBody(el);
+      if (!outerSurface) attachOwnSurface(el);
+    },
+    [outerSurface, attachOwnSurface],
+  );
+  useLabFitWarning(labBody);
   const surface = outerSurface ?? ownSurface;
   const surfaceCanvas = outerSurface ? outerCanvas : ownCanvas;
 
@@ -392,10 +403,7 @@ function LabRuntime({
                 <PanelHostContext.Provider value={panelHostsRef.current}>
                   <SurfaceContext.Provider value={surface}>
                     <SurfaceCanvasContext.Provider value={surfaceCanvas}>
-                      <div
-                        className="lk-lab__body"
-                        ref={outerSurface ? undefined : ownSurface.containerRef}
-                      >
+                      <div className="lk-lab__body" ref={labBodyRef}>
                         {outerSurface ? null : (
                           // Above the trials and inert: the marks a tile paints have
                           // to sit over the instrument's own DOM, and nothing on this
