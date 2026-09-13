@@ -10,6 +10,11 @@
 /** Base relative epsilon, sized for Float32 storage (~1 part in 1e-6). */
 export const EPS = 1e-6;
 
+/** A determinant at or below this fraction of its matrix's own scale counts as
+ *  singular. Dimensionless, so a uniformly tiny matrix still inverts while a
+ *  large one whose determinant is only rounding does not. */
+export const SINGULAR_RATIO = 1e-12;
+
 /** 2D cross (wedge) product of vectors (ax,ay) and (bx,by). */
 export function cross(ax: number, ay: number, bx: number, by: number): number {
   return ax * by - ay * bx;
