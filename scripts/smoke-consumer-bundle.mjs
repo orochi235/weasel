@@ -45,8 +45,6 @@ const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
  * and `bidi` were both missing this way.
  *
  * Order does not matter — every package is packed before anything is bundled.
- * The private `weasel-js` alias is included on purpose; the alias audit reads
- * it.
  */
 const PACKAGES = (await readdir(join(repoRoot, 'packages'), { withFileTypes: true }))
   .filter((e) => e.isDirectory() && existsSync(join(repoRoot, 'packages', e.name, 'package.json')))
@@ -248,36 +246,6 @@ console.log(
   console.log(`[smoke] declaration audit OK — ${PACKAGES.length} packages declare what they import.`);
 }
 
-// The `weasel-js` alias must stay a thin re-export of core, never a second
-// bundled copy of the kit — two copies means two React hook instances and two
-// font registries for anyone holding both names. Checked statically: esbuild
-// runs with write:false below and never executes the bundle, so a runtime
-// identity assertion would silently never fire.
-const aliasDist = join(repoRoot, 'packages', 'weasel-js', 'dist');
-try {
-  const aliasFiles = (await readdir(aliasDist)).filter((f) => f.endsWith('.js'));
-  const fat = [];
-  for (const file of aliasFiles) {
-    const text = await readFile(join(aliasDist, file), 'utf8');
-    const reexports = /from\s*['"]@weasel-js\/core(?:\/[\w-]+)?['"]/.test(text);
-    // A re-export shim is a few hundred bytes; an inlined copy is orders more.
-    if (!reexports || text.length > 4096) {
-      fat.push(`${file}  (${text.length} bytes, re-exports core: ${reexports})`);
-    }
-  }
-  if (fat.length) {
-    fail(
-      'the weasel-js alias is not a thin re-export of @weasel-js/core — it looks\n' +
-        'like it INLINED the kit, which gives anyone holding both names two copies:',
-      fat.join('\n'),
-    );
-  }
-  console.log(`[smoke] alias audit OK — weasel-js re-exports core across ${aliasFiles.length} entries.`);
-} catch (err) {
-  if (err?.code === 'ENOENT') fail(`${aliasDist} not found — run \`npm run build\` first.`);
-  throw err;
-}
-
 // ── Phase 2: pack + extract into a node_modules tree outside the repo ──────
 const workDir = await mkdtemp(join(tmpdir(), 'weasel-smoke-'));
 const tarballDir = join(workDir, 'tarballs');
@@ -307,15 +275,14 @@ for (const name of PACKAGES) {
     { cwd: pkgDir, encoding: 'utf8' },
   );
   const tarball = out.trim().split('\n').pop();
-  // Install under the package's REAL name, which is not always
-  // `@weasel-js/<dir>` — the `weasel-js` alias is unscoped.
+  // Install under the package's REAL name, not its directory name.
   const realName = JSON.parse(await readFile(join(pkgDir, 'package.json'), 'utf8')).name;
   const dest = join(nodeModules, ...realName.split('/'));
   await mkdir(dest, { recursive: true });
   // --strip-components=1 drops npm's `package/` wrapper directory.
   execFileSync('tar', ['-xzf', join(tarballDir, tarball), '-C', dest, '--strip-components=1']);
   for (const dep of Object.keys({ ...JSON.parse(await readFile(join(pkgDir, 'package.json'), 'utf8')).dependencies })) {
-    if (!dep.startsWith('@weasel-js/') && dep !== 'weasel-js') thirdPartyDeps.add(dep);
+    if (!dep.startsWith('@weasel-js/')) thirdPartyDeps.add(dep);
   }
 }
 console.log(`[smoke] packed + extracted ${PACKAGES.length} packages into a clean tree.`);
@@ -357,18 +324,10 @@ await writeFile(
     `import * as toastSub from '@weasel-js/ui/components/Toast';\n` +
     `import * as hud from '@weasel-js/hud';\n` +
     `import '@weasel-js/theme/tokens.css';\n` +
-    // The unscoped alias resolves through the same specifiers as core. Note
-    // these imports prove RESOLUTION only — esbuild runs with write:false and
-    // never executes the bundle, so a runtime `!==` assertion here would be
-    // dead code. The no-second-copy property is checked statically below.
-    `import * as alias from 'weasel-js';\n` +
-    `import { SceneCanvas as AliasCanvas } from 'weasel-js';\n` +
-    `import { SceneCanvas as CoreCanvas } from '@weasel-js/core';\n` +
-    `import { registerFont as aliasFont } from 'weasel-js/renderer';\n` +
     `import { registerFont as coreFont } from '@weasel-js/core/renderer';\n` +
     `import { registerFont as directFont } from '@weasel-js/font';\n` +
-    `void AliasCanvas; void CoreCanvas; void aliasFont; void coreFont; void directFont;\n` +
-    `const mods = { weasel, geom, booleans, history, svg, theme, ui, hud, alias,\n` +
+    `void coreFont; void directFont;\n` +
+    `const mods = { weasel, geom, booleans, history, svg, theme, ui, hud,\n` +
     `  toolPalette, prefs, callout, toastSub };\n` +
     `for (const [n, m] of Object.entries(mods)) {\n` +
     `  if (!m || typeof m !== 'object') throw new Error('empty namespace: ' + n);\n` +

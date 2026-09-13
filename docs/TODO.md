@@ -1248,18 +1248,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ---
 
-### Unscoped alias package name
-
-- **(P2) `weasel-js` is unpublishable under that name.** npm rejects it as too
-  similar to an existing package, so `packages/weasel-js` is marked `private`
-  and `changeset publish` skips it (2026-07-26). Everything else about it is
-  live: it builds in `build:downstream`, the consumer smoke test still audits
-  that every dist entry is a shim re-exporting core, and it stays in the
-  lockstep `fixed` group so its version tracks the scoped packages. Publishing
-  is one `private` flag away once a name is settled. Options: pick a different
-  unscoped name, or decide the scoped `@weasel-js/core` is the only entry point
-  we want and delete the alias. Its README says so.
-
 ### Plugin/bundling convention
 
 **v1 shipped 2026-08-10** as `Contribution[]` + `mergeContributions(...)`: a feature returns entries a consumer spreads in, instead of wiring three or four separate exports. `@weasel-js/hud`'s `useHudContribution()` is the worked example. What remains is the heavier tier.

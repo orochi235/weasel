@@ -221,9 +221,6 @@ Both specs land together as **0.7.0**. Mechanically:
   hand-edited.
 - `updateInternalDependencies: "patch"` rewrites core's pin on
   `@weasel-js/font` and hud's new pin in the same run.
-- The `weasel-js` alias package gains no `/font` entry. Its dist entries are
-  audited as shims re-exporting **core**, and it remains unpublishable under
-  that name regardless (`docs/TODO.md`, Plugins & packaging).
 
 The 0.x minor is also the right moment for §4's `_markAllFontsNotUploaded` →
 `markAllFontsNotUploaded` rename, which is technically breaking for anyone who

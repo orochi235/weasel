@@ -75,9 +75,5 @@ half-fixed; the entry carries the measurement and the kit question under it.
 Nothing is half-finished; the tree is clean and every entry touched is either
 retired or rewritten. Pick the next item from `docs/TODO.md`.
 
-One that is now sharper than it was, and needs Mike rather than code: `weasel-js`
-being unpublishable under that name (pick a different unscoped name, or delete
-the alias).
-
 Before touching `docs/TODO.md`, note that its "High-priority index" at the top is
 a hand-maintained copy of claims made further down. Fix both or fix neither.
