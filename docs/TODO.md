@@ -1323,6 +1323,105 @@ Open, from `docs/superpowers/specs/2026-05-17-d3-plugin-design.md`:
 
 ---
 
+## forge
+
+`@weasel-js/forge` is the component workshop built on labkit: each story renders
+in its own iframe ("frame"), and the workshop shows it as a lab trial with
+controls. It runs beside Storybook today.
+
+- **(P2) Retire Storybook.** Both setups still ship: `.storybook/`,
+  `packages/ui/.storybook/`, the `storybook` and `@storybook/*` dev dependencies
+  in the root `package.json`, the `storybook` vitest project behind
+  `npm run test:stories` (which `prepublishOnly` runs), and the Storybook build in
+  `.github/workflows/pages.yml`. Move `test:stories` and the Pages build onto
+  forge, delete both `.storybook` directories and the custom addons under
+  `.storybook/addons/`, uninstall the packages, and point the two remaining
+  `storybook/test` imports at forge's shims or `@testing-library`.
+
+- **(P2) forge has no accessibility panel.** Storybook runs axe through
+  `@storybook/addon-a11y` (`.storybook/main.ts`); nothing in `packages/forge`
+  checks accessibility. The story's DOM lives in the frame, so the check has to
+  run there, with the results sent to the workshop over the frame's message
+  channel.
+
+- **(P2) labkit annotations cannot capture a forge story.** A labkit annotation
+  target hands the export a `base()` picture of itself, as an SVG string, an
+  image, or a canvas (`CaptureSource` in `packages/labkit/src/annotations/types.ts`),
+  and `storyInstrument` (`packages/forge/src/shell/storyInstrument.tsx`) declares
+  no `annotations` at all. The story is DOM inside another document, so the
+  workshop cannot draw it into any of those; the frame has to produce the
+  picture and send it back.
+
+- **(P2) A CSF arg that holds a function gets no control at all.**
+  `argsToSchema` (`packages/forge/src/csf/argsToSchema.ts`) skips any arg that
+  fails `isPortSafe`, because a function cannot cross the frame's message port.
+  An object or array with one function inside loses its whole control:
+  JobProgress's `job`, Lab's `instruments`, and Powerline's `segments`, where
+  Storybook offered an object control. Send the port-safe fields as config and
+  merge the functions back in from the arg's original value inside the frame.
+
+- **(P2) Two trials of one forge story can show each other's validation
+  errors.** The answer book (`packages/forge/src/shell/answers.ts`) keeps hidden
+  paths per config but only one `errors` map per story, replaced by whichever
+  frame answered last, and `useStoryRegistry` makes one book per story. Key
+  errors by config the way `hidden` already is.
+
+- **(P2) labkit's `validate` never sees the value it validates.**
+  `NodeOptions.validate` (`packages/labkit/src/config/types.ts`) receives a
+  resolved `PrefLeaf`, which holds the schema's `default` but no current value,
+  and nothing in labkit or ui calls it. forge calls it inside the frame
+  (`packages/forge/src/protocol/schema.ts`), so its per-path errors cannot depend
+  on the config. `validate` needs the live value, or the config, passed in.
+
+- **(P2) forge titles an untitled story file differently from Storybook.**
+  `titleFromFile` (`packages/forge/src/story/ids.ts`) uses the file's path under
+  the vite root. Storybook titles it relative to its stories glob, collapses
+  `Button/Button.stories.tsx` to `Button`, and drops `index`, so the story's id
+  and link differ between the two tools. Every story file in the repo sets an
+  explicit `title` today, so nothing breaks yet; port Storybook's auto-title
+  rules the way `storyId` already ports its id rules.
+
+- **(P2) Two copies of `@weasel-js/theme` in a published forge install.**
+  labkit's `tsup.config.ts` bundles every `@weasel-js` package except core
+  (`noExternal`), so labkit's `dist` carries its own `ThemeProvider`, while
+  forge and a consumer's `forge.config.tsx` import the installed
+  `@weasel-js/theme`. The two copies have separate React contexts: a
+  `ThemeProvider` from the installed package, like the `labkitRoot` decorator in
+  `apps/forge/forge.config.tsx`, is invisible to `LabShell`'s `useThemeOptional()`,
+  which then wraps a second provider with its own mode. Each copy also keeps its
+  own stylesheet; where `adoptedStyleSheets` is missing, both append a
+  `<style id="wzl-themes">`. Inside the repo, aliases resolve both to source,
+  so this appears only against the packed packages.
+
+- **(P3) forge's built-shim resolution test never runs in CI.** The last case in
+  `packages/forge/src/csf/shims/alias.test.ts` runs only when forge's `dist`
+  exists, and `.github/workflows/ci.yml` runs vitest before `npm run build`. Run
+  it after the build step, or in the consumer smoke test.
+
+- **(P3) The workshop replaces a story's instrument for answers no trial is
+  showing.** `useStoryRegistry` (`packages/forge/src/shell/useStoryRegistry.ts`)
+  bumps a story's revision whenever its answer book changes, whichever config the
+  answer was for, so a late answer for a config no open trial holds still
+  rebuilds the instrument and costs one more config/answer round trip with the
+  frame. Bump only when the changed config is one an open trial holds.
+
+- **(P3) A forge story with a `viewport` reloads its frame once when first
+  opened.** The instrument built before the frame's `ready` message has no
+  `stage`, and the one built after it does. labkit's `Trial`
+  (`packages/labkit/src/trial/Trial.tsx`) renders stage content inside `<Stage>`
+  and other content bare, so the switch remounts `FrameView` and reloads the
+  iframe. Mount the provisional instrument under the same tree position, or learn
+  the viewport before the first instrument is built.
+
+- **(P3) An `.lk-shell-body` scroll warning seen once in forge's dev app has not
+  been reproduced.** labkit's fit check (`packages/labkit/src/lab/fitCheck.ts`)
+  reported it on one visit. It may have come from the burst of dependency
+  re-optimization reloads on a first visit, which
+  `optimizeDeps.entries` in `apps/forge/vite.config.ts` has since removed. Close
+  this if it does not come back.
+
+---
+
 ## Load cost
 
 Both apps shipped their own source as string literals so a panel could display
