@@ -83,9 +83,10 @@ interface LabBaseProps {
   /** Contributions added to every trial's chrome, after the instrument's own. */
   chrome?: readonly TrialContribution[];
   /** Contributions to the lab's own chrome — its header bar, its sidebar, its
-   *  tool rail and its footer — rather than to every trial's. Rendered after `children` and
-   *  `footer`, which stay the way a lab drops arbitrary content into those
-   *  same two boxes. */
+   *  tool rail and its footer — rather than to every trial's. Rendered after
+   *  `children` and `footer`, which stay the way a lab drops arbitrary content
+   *  into those same two boxes. Going from no sidebar contributions to some
+   *  remounts the workspace and every trial, dropping unpersisted trial state. */
   labChrome?: readonly LabContribution[];
   /** Built-in contribution ids to drop. Throws on an id that is not there. */
   suppress?: readonly string[];
@@ -208,7 +209,7 @@ function buildNebula(colors: readonly string[]): string {
   return blobs.join(', ');
 }
 
-/** The sidebar strip beside the tool rail and workspace. Its own component
+/** The strip holding the sidebar beside the tool rail and workspace. Its own component
  *  because the width is a persisted value, and `LabRuntime` renders the
  *  persistence provider it reads from. */
 function LabPanes({

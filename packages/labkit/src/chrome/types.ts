@@ -133,7 +133,7 @@ export interface RegionContribution<TCtx> extends ContributionBase {
  * into. Replaces the three separate slot contexts, which each carried a
  * hand-picked subset.
  */
-export interface TrialChromeContext extends ToolSlotContext {
+export interface TrialChromeContext extends ToolSlotContext, SidebarSlotContext {
   trialId: string;
   instrumentName: string;
   /** What the title bar reads, which is the instrument's name until something
