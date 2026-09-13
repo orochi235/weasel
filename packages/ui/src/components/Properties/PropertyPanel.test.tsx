@@ -395,36 +395,43 @@ describe('rows with no value', () => {
     expect(select.querySelectorAll('option')).toHaveLength(2);
   });
 
-  const uncontrolledWarnings = (spy: { mock: { calls: unknown[][] } }) =>
-    spy.mock.calls.filter((call) => call.some((arg) => String(arg).includes('uncontrolled')));
+  it('SelectRow names its placeholder', () => {
+    render(<SelectRow label="Mode" value={undefined} options={options} placeholder="Pick one" onChange={() => {}} />);
+    expect(screen.getByRole<HTMLSelectElement>('combobox').selectedOptions[0]?.textContent).toBe('Pick one');
+  });
 
-  it('CheckboxRow stays controlled when a value arrives', () => {
-    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const { rerender } = render(<CheckboxRow label="On" value={undefined} onChange={() => {}} />);
-    expect(screen.getByRole<HTMLInputElement>('checkbox').checked).toBe(false);
+  // React warns about a controlled/uncontrolled switch once per module, so these assert the DOM instead.
+  it('CheckboxRow clears when its value goes away, and checks when one arrives', () => {
+    const { rerender } = render(<CheckboxRow label="On" value onChange={() => {}} />);
+    const box = () => screen.getByRole<HTMLInputElement>('checkbox');
+    expect(box().checked).toBe(true);
+    rerender(<CheckboxRow label="On" value={undefined} onChange={() => {}} />);
+    expect(box().checked).toBe(false);
     rerender(<CheckboxRow label="On" value onChange={() => {}} />);
-    expect(screen.getByRole<HTMLInputElement>('checkbox').checked).toBe(true);
-    expect(uncontrolledWarnings(spy)).toEqual([]);
-    spy.mockRestore();
+    expect(box().checked).toBe(true);
   });
 
-  it('TextRow stays controlled when a value arrives', () => {
-    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const { rerender } = render(<TextRow label="Name" value={undefined} onChange={() => {}} />);
+  it('TextRow clears when its value goes away, and shows one that arrives', () => {
+    const { rerender } = render(<TextRow label="Name" value="foo" onChange={() => {}} />);
+    const field = () => screen.getByRole<HTMLInputElement>('textbox');
+    rerender(<TextRow label="Name" value={undefined} onChange={() => {}} />);
+    expect(field().value).toBe('');
+    rerender(<TextRow label="Name" value="bar" onChange={() => {}} />);
     rerender(<TextRow label="Name" value={null} onChange={() => {}} />);
-    rerender(<TextRow label="Name" value="foo" onChange={() => {}} />);
-    expect(screen.getByRole<HTMLInputElement>('textbox').value).toBe('foo');
-    expect(uncontrolledWarnings(spy)).toEqual([]);
-    spy.mockRestore();
+    expect(field().value).toBe('');
+    rerender(<TextRow label="Name" value="baz" onChange={() => {}} />);
+    expect(field().value).toBe('baz');
   });
 
-  it('NumberRow stays controlled when a value arrives', () => {
-    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const { rerender } = render(<NumberRow label="N" value={undefined} onChange={() => {}} />);
+  it('NumberRow clears when its value goes away, and shows one that arrives', () => {
+    const { rerender } = render(<NumberRow label="N" value={5} onChange={() => {}} />);
+    const field = () => screen.getByRole<HTMLInputElement>('spinbutton');
+    rerender(<NumberRow label="N" value={undefined} onChange={() => {}} />);
+    expect(field().value).toBe('');
+    rerender(<NumberRow label="N" value={6} onChange={() => {}} />);
     rerender(<NumberRow label="N" value={null} onChange={() => {}} />);
+    expect(field().value).toBe('');
     rerender(<NumberRow label="N" value={0} onChange={() => {}} />);
-    expect(screen.getByRole<HTMLInputElement>('spinbutton').value).toBe('0');
-    expect(uncontrolledWarnings(spy)).toEqual([]);
-    spy.mockRestore();
+    expect(field().value).toBe('0');
   });
 });

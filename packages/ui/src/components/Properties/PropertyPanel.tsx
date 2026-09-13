@@ -749,6 +749,8 @@ export interface SelectRowProps<T extends string> extends PropertyMetricProps {
   value: T | undefined;
   options: ReadonlyArray<PropertyOption<T>>;
   onChange: (next: T) => void;
+  /** Shown while no option is chosen. Defaults to "Choose option…". */
+  placeholder?: string;
   layout?: PropertyRowLayout;
   description?: string;
   /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
@@ -762,6 +764,7 @@ export function SelectRow<T extends string>({
   value,
   options,
   onChange,
+  placeholder = 'Choose option…',
   layout,
   description,
   span,
@@ -788,7 +791,7 @@ export function SelectRow<T extends string>({
       >
         {!chosen && (
           <option value="" disabled hidden>
-            Choose option…
+            {placeholder}
           </option>
         )}
         {options.map((opt) => (
