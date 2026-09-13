@@ -120,7 +120,7 @@ export { isEditableTarget, matchesKeyBinding } from './interactions/keyHelpers';
 // --- @experimental Actions Registry (2026-05-09) ----------------------------
 export {
   ActionsProvider, ActionsScope, useActionsRegistry, useAction,
-} from './interactions/actions/registry';
+} from './interactions/actions/ActionsProvider';
 export type {
   ActionEntry, ActionsProp, ActionsRegistry, UiOngoingControl,
 } from './interactions/actions/registry';

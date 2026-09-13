@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
-import { ActionsProvider, useAction, useActionsRegistry } from './registry';
+import { ActionsProvider, useAction, useActionsRegistry } from './ActionsProvider';
 
 // The legacy keydown loop is gone; conflict resolution now
 // surfaces via the imperative `registry.trigger(id)` path (palette / ActionBar

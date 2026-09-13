@@ -29,7 +29,7 @@ import {
   SelectionContextProviderIfRoot,
 } from './features/selection/SelectionContext';
 import { DepRegistryProvider } from './interactions/actions/depRegistry';
-import { ActionsProvider } from './interactions/actions/registry';
+import { ActionsProvider } from './interactions/actions/ActionsProvider';
 import { PointerContextProvider } from './features/pointer/PointerContext';
 
 type Wrapper = ComponentType<{ children: ReactNode }>;

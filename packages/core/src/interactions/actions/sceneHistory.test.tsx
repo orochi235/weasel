@@ -12,11 +12,8 @@ import { render, act } from '@testing-library/react';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
-import {
-  ActionsProvider,
-  useActionsRegistry,
-  type ActionsRegistry,
-} from 'interactions/actions/registry';
+import type { ActionsRegistry } from 'interactions/actions/registry';
+import { ActionsProvider, useActionsRegistry } from 'interactions/actions/ActionsProvider';
 import { DepRegistryProvider } from 'interactions/actions/depRegistry';
 import { useStandardActions } from 'interactions/actions/useStandardActions';
 import type { History } from '@weasel-js/history';

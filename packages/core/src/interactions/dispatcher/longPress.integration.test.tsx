@@ -17,7 +17,7 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useRef } from 'react';
-import { ActionsProvider, useActionsRegistry } from '../actions/registry';
+import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider';
 import type { Action } from '../actions/action';
 import { DepRegistryProvider } from '../actions/depRegistry';
 import '../actions/depSchema';

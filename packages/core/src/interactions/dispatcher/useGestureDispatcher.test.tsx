@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useRef } from 'react';
-import { ActionsProvider, useActionsRegistry } from '../actions/registry';
+import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider';
 import type { Action } from '../actions/action';
 import { DepRegistryProvider, useDepSource } from '../actions/depRegistry';
 import { ActiveToolContextProvider, useActiveToolContext, type ActiveToolContextValue } from '../actions/activeToolContext';

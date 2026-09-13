@@ -158,3 +158,14 @@ export interface ActionDispatch extends BindingSource {
  * Single registered action. v1: one binding per action.
  */
 export interface Action extends ActionDispatch, ActionPresentation {}
+
+/**
+ * @experimental
+ * The whole of an actions registry the dispatcher reads. It walks the list
+ * once per event to build its actionId lookup and never mutates it, so the
+ * routing side depends on this rather than on `ActionsRegistry`, whose
+ * register / mute / trigger surface is the React provider's.
+ */
+export interface ActionSource {
+  list(): readonly Action[];
+}

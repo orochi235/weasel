@@ -5,7 +5,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useRef } from 'react';
-import { ActionsProvider, useActionsRegistry } from '../actions/registry';
+import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider';
 import { DepRegistryProvider, useDepSource } from '../actions/depRegistry';
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
 import { useGestureDispatcher, type DispatcherViewTarget } from './useGestureDispatcher';

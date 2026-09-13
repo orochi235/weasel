@@ -36,8 +36,8 @@
  * the misconfiguration at dev time.
  */
 
-import type { ActionsRegistry } from '../actions/registry';
-import type { Action } from '../actions/action';
+
+import type { Action, ActionSource } from '../actions/action';
 import { actionBindings } from '../actions/binding';
 import type { DepRegistry } from '../actions/depRegistry';
 import type { GestureBinding } from '../actions/binding';
@@ -169,7 +169,7 @@ export function recordModeSwitch(
  *  itself stays stateless apart from in-flight gestures. */
 export interface DispatcherContext {
   /** All registered actions; the dispatcher walks `.defaultBinding` for ambient bindings. */
-  actions: ActionsRegistry;
+  actions: ActionSource;
   /** Dep sources keyed by name. */
   depRegistry: DepRegistry;
   /** Active tool's id (from ActiveToolContext). */
@@ -740,7 +740,7 @@ export function createDispatcher(opts?: {
   }
 
   /** Build an actionId → Action lookup from the registry. */
-  function buildActionMap(registry: ActionsRegistry): Map<string, Action> {
+  function buildActionMap(registry: ActionSource): Map<string, Action> {
     const map = new Map<string, Action>();
     for (const action of registry.list()) {
       map.set(action.id, action);

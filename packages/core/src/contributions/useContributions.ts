@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { RenderLayer } from 'core/layers/render';
 import type { ScopedBinding } from '../interactions/dispatcher/matcher';
 import { useActiveToolContext } from '../interactions/actions/activeToolContext';
-import { useActionsRegistry } from '../interactions/actions/registry';
+import { useActionsRegistry } from '../interactions/actions/ActionsProvider';
 import {
   buildToolOffhandBindings,
   makeToolOffhandAction,

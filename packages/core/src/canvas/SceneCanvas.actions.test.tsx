@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { useEffect } from 'react';
 import { render, act } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
-import { ActionsProvider, useActionsRegistry } from 'interactions/actions/registry';
+import { ActionsProvider, useActionsRegistry } from 'interactions/actions/ActionsProvider';
 import type { Action } from 'interactions/actions/action';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';

@@ -12,7 +12,7 @@
  */
 import { useEffect, useRef } from 'react';
 import type { Action } from './action';
-import { useActionsRegistry } from './registry';
+import { useActionsRegistry } from './ActionsProvider';
 import { useOptionalDepRegistry, type DepName, type DepSchema } from './depRegistry';
 // Type-only augmentation import: pulls in the module augmentation that adds `selection`,
 // `view`, `scene`, `history`, `pointer`, and `activeTool` keys to `DepSchema`. Without this,
