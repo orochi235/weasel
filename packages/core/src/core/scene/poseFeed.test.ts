@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createPoseFeed } from './poseFeed';
 import { createScene } from './scene';
 import type { NodeId } from './types';
@@ -228,5 +228,36 @@ describe('createPoseFeed', () => {
     // business.
     expect(delta.removed).not.toContain(id);
     expect(scene.get(id)).toBeDefined();
+  });
+
+  it('notifies on a committed change and on an override', () => {
+    const { scene, id } = makeScene();
+    const feed = createPoseFeed(scene);
+    const listener = vi.fn();
+    feed.subscribe(listener);
+
+    scene.setPose(id, { x: 1, y: 1, width: 10, height: 10 });
+    const afterCommitted = listener.mock.calls.length;
+    expect(afterCommitted).toBeGreaterThan(0);
+
+    scene.overrides.set(id, { pose: { x: 2, y: 2, width: 10, height: 10 } });
+    scene.overrides.commit();
+
+    // Both clocks reach the listener; how many times each fires is the
+    // publishing module's business, not the feed's. `overrides` publishes on
+    // the staged write and again on commit, and a host's scheduler — in
+    // labkit, `surface.invalidate` — collapses the burst into one paint.
+    expect(listener.mock.calls.length).toBeGreaterThan(afterCommitted);
+  });
+
+  it('stops notifying after unsubscribe', () => {
+    const { scene, id } = makeScene();
+    const feed = createPoseFeed(scene);
+    const listener = vi.fn();
+    feed.subscribe(listener)();
+
+    scene.setPose(id, { x: 1, y: 1, width: 10, height: 10 });
+
+    expect(listener).not.toHaveBeenCalled();
   });
 });

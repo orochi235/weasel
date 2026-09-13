@@ -39,6 +39,12 @@ export function createPoseFeed<TData, TLayer extends string, TPose>(
   let seenGeneration = -1;
   let seenOverridden: readonly NodeId[] = EMPTY;
 
+  const listeners = new Set<() => void>();
+  const notify = () => {
+    for (const fn of listeners) fn();
+  };
+  let unwire: (() => void) | null = null;
+
   const walk = (): {
     added: FeedNode<TData, TLayer, TPose>[];
     removed: NodeId[];
@@ -76,8 +82,23 @@ export function createPoseFeed<TData, TLayer extends string, TPose>(
   };
 
   return {
-    subscribe() {
-      return () => {};
+    subscribe(fn) {
+      listeners.add(fn);
+      if (unwire === null) {
+        const offScene = scene.subscribe(notify);
+        const offOverrides = scene.overrides.subscribe(notify);
+        unwire = () => {
+          offScene();
+          offOverrides();
+        };
+      }
+      return () => {
+        listeners.delete(fn);
+        if (listeners.size === 0 && unwire !== null) {
+          unwire();
+          unwire = null;
+        }
+      };
     },
     read() {
       if (seen === null) return resetTo();
