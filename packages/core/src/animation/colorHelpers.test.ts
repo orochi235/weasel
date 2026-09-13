@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAnimator } from './useAnimator';
+import type { ColorOverrideRegistry } from './colorRegistry';
 import { tweenVertexColors, springVertexColors, cycleVertexColors, staggerVertexColors } from './colorHelpers';
 
-function makeClock() {
-  let now = 0;
+function makeClock(start = 0) {
+  let now = start;
   const cbs = new Map<number, (t: number) => void>();
   let h = 1;
   return {
@@ -223,9 +224,19 @@ describe('cycleVertexColors', () => {
   });
 });
 
+// What a painter shows: `createPathLayer` calls a function-form override with
+// `performance.now()`, so a clock far from zero is the realistic case.
+function painted(
+  override: ReturnType<ColorOverrideRegistry['get']>,
+  base: readonly number[],
+  nowMs: number,
+): readonly number[] | undefined {
+  return typeof override === 'function' ? override(base, nowMs) : override;
+}
+
 describe('staggerVertexColors', () => {
   it('transitions anchors from origin outward', () => {
-    const clock = makeClock();
+    const clock = makeClock(10_000);
     const { result } = renderHook(() => useAnimator(clock));
     const from = [
       0, 0, 0, 255,
@@ -250,19 +261,23 @@ describe('staggerVertexColors', () => {
       });
     });
 
-    const fn = result.current.colorOverrides.get('p', 'stroke') as
-      (base: readonly number[], tMs: number) => number[];
+    const shown = () =>
+      painted(result.current.colorOverrides.get('p', 'stroke'), from, clock.now());
 
-    expect(fn(from, 0)).toEqual(from);
-
-    const at50 = fn(from, 50);
+    expect(shown()).toEqual(from);
+    act(() => clock.advance(0));
+    act(() => clock.advance(50));
+    const at50 = shown()!;
     // Float lerp midpoint between 0 and 255 is 127.5 (no rounding).
     expect(at50.slice(0, 4)).toEqual([127.5, 127.5, 127.5, 255]);
     expect(at50.slice(4, 8)).toEqual([0, 0, 0, 255]);
     expect(at50.slice(8, 12)).toEqual([0, 0, 0, 255]);
 
-    const at300 = fn(from, 300);
-    expect(at300).toEqual(to);
+    act(() => clock.advance(100));
+    const at150 = shown()!;
+    expect(at150.slice(0, 4)).toEqual([255, 255, 255, 255]);
+    expect(at150.slice(4, 8)).toEqual([255, 255, 255, 255]);
+    expect(at150.slice(8, 12)).toEqual([127.5, 127.5, 127.5, 255]);
   });
 
   it('fires onDone after the slowest anchor completes and clears the override', () => {
@@ -287,7 +302,7 @@ describe('staggerVertexColors', () => {
   });
 
   it('origin: "last" reverses the propagation', () => {
-    const clock = makeClock();
+    const clock = makeClock(10_000);
     const { result } = renderHook(() => useAnimator(clock));
     const from = [0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255];
     const to = [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255];
@@ -303,9 +318,9 @@ describe('staggerVertexColors', () => {
         easing: (t) => t,
       });
     });
-    const fn = result.current.colorOverrides.get('p', 'stroke') as
-      (base: readonly number[], tMs: number) => number[];
-    const at50 = fn(from, 50);
+    act(() => clock.advance(0));
+    act(() => clock.advance(50));
+    const at50 = painted(result.current.colorOverrides.get('p', 'stroke'), from, clock.now())!;
     // Float lerp midpoint between 0 and 255 is 127.5 (no rounding).
     expect(at50.slice(8, 12)).toEqual([127.5, 127.5, 127.5, 255]);
     expect(at50.slice(0, 4)).toEqual([0, 0, 0, 255]);

@@ -67,7 +67,7 @@ export interface UseSelectionOptions {
   /** When `true`, every mutator (`set`/`add`/`remove`/`toggle`/`clear`/
    *  `applyClick`) is a no-op — selection stays at whatever `initial`
    *  pinned it to. Useful for demos that exist to showcase a single
-   *  pre-selected node (e.g. the bezier-edit curve) and don't want a
+   *  pre-selected node and don't want a
    *  stray click to deselect. */
   lock?: boolean;
 }

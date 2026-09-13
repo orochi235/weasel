@@ -751,6 +751,17 @@ intercepting the press that drags the body.
 
 ## Animation
 
+- **(P2) The scene slot's painter ignores `animator.colorOverrides`.**
+  `tweenVertexColors`, `cycleVertexColors` and `staggerVertexColors` publish to
+  that registry, and only `createPathLayer` reads it: a path node painted by the
+  default `kit:path` painter shows its own `data` and never the animation. So
+  `apps/site/demos/VertexColorAnimationDemo.tsx` sets `layers.scene` to `null`
+  and paints its scene nodes through a path layer. Closing it needs the scene
+  walk to hand painters a paint context (`buildSceneTree` and `Canvas.tsx` call
+  `drawOne` without one) and `kit:path`'s memo to miss while an override is live.
+  The fill channel has a further gap: `kit:path` emits no fill `vertexColors` at
+  all.
+
 ### Timelines and rigging
 
 Design: `docs/superpowers/specs/2026-08-22-animation-timeline-rig-design.md`.

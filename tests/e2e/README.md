@@ -28,7 +28,7 @@ The hook is fully tree-shaken from consumer production builds via a call-site `p
 
 ## Add a demo
 
-1. Pick the demo's hash id (e.g. `move`, `bezier-edit`).
+1. Pick the demo's hash id (e.g. `move`, `path-anchor-edit`).
 2. Choose the smallest, most structural assertion:
    - Scene snapshot (`demo.getScene()`) — for anything mutating the scene.
    - View (`demo.getView()`) — for viewport gestures.
@@ -49,4 +49,4 @@ The fixture (`fixtures.ts`) auto-fails the test on any console/page error. Allow
 |---|---|---|
 | `move.spec.ts` | move | Selection + drag → setPose op flow, snap-to-grid. |
 | `zoom.spec.ts` | zoom | Wheel-zoom anchor invariant — the canvas-local cursor point stays under the cursor after zoom. (Caught a real regression where the dispatcher fed viewport coords instead of canvas-local coords into `zoomAt`.) |
-| `bezier-edit.spec.ts` | bezier-edit | Path serialization round-trip via the demo's `handles` probe; the Add-point button extends the path with a new cubic. Per-handle drag is not yet a supported gesture in this demo — the probe is ready for that spec once `editAnchorsAction` is wired. |
+| `path-anchor-edit.spec.ts` | path-anchor-edit | Anchor gestures in a real browser: dragging an anchor carries its handle, dragging a control handle leaves the anchors put, alt-click inserts an anchor on the curve. |
