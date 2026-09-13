@@ -7,19 +7,20 @@ describe('footstepTrack', () => {
     expect(FOOTFALLS).toEqual([0, CLIPS.run.duration / 2]);
   });
 
-  it('builds an event track that fires each footfall', () => {
-    const fired: number[] = [];
-    const track = footstepTrack((t) => fired.push(t));
+  it('builds an event track that books each footfall', () => {
+    const booked: number[] = [];
+    const track = footstepTrack((t) => { booked.push(t); });
     expect(track.kind).toBe('event');
     expect(track.events).toHaveLength(2);
-    track.events.forEach((e) => e.fire(0));
-    expect(fired).toEqual(FOOTFALLS);
+    track.events.forEach((e) => e.book?.(0));
+    expect(booked).toEqual(FOOTFALLS);
   });
 
-  it('hands the handler which contact it is and how stale the crossing is', () => {
+  it('hands the handler which contact it is and when it lands, and returns its handle', () => {
     const seen: [number, number][] = [];
-    const track = footstepTrack((t, lateBy) => seen.push([t, lateBy]));
-    track.events[1].fire(7);
-    expect(seen).toEqual([[CLIPS.run.duration / 2, 7]]);
+    const voice = { stop: () => {} };
+    const track = footstepTrack((t, when) => { seen.push([t, when]); return voice; });
+    expect(track.events[1].book?.(1234)).toBe(voice);
+    expect(seen).toEqual([[CLIPS.run.duration / 2, 1234]]);
   });
 });

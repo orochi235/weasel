@@ -24,15 +24,50 @@ export interface SampledTrack<T> {
   onTick: (value: T) => void;
 }
 
-/** A track of edge crossings. Fires only when the playhead advances forward
- *  under playback — never on `seek`. */
+/** A clock that events are booked against, reading in ms. An `AudioEngine`
+ *  from `@weasel-js/audio` is one. */
+export interface TimelineClock {
+  now(): number;
+}
+
+/** What `book` hands back so the booking can be retracted. A `VoiceHandle` from
+ *  `@weasel-js/audio` is one. */
+export interface EventBookingHandle {
+  stop(): void;
+}
+
+export interface TimelineEvent {
+  t: number;
+  /** Runs on the frame that crosses the edge, told how far behind the frame it
+   *  was crossed, in ms — never negative, and measured against `duration` on
+   *  the loop seam, where the outgoing lap's tail fires after the wrap. */
+  fire?: (lateBy: number) => void;
+  /** Runs up to `booking.lookahead` before the edge on a timeline with a
+   *  `booking`, once per crossing, with the `booking.clock` time the edge lands
+   *  at — never earlier than that clock's `now()`. A returned handle is stopped
+   *  if a pause, seek, rate change, loop change, edit or cancel invalidates the
+   *  booking before the clock reaches `when`; the event is then booked again
+   *  wherever playback next reaches it. A booking with no handle stands. */
+  book?: (when: number) => EventBookingHandle | void;
+}
+
+/** A track of edge crossings, in forward playback only — a `seek` neither
+ *  fires nor books the span it skips. */
 export interface EventTrack {
   kind: 'event';
   label?: string;
-  /** Sorted ascending by `t`. `fire` is told how far behind the frame its edge
-   *  was crossed, in ms — never negative, and measured against `duration` on
-   *  the loop seam, where the outgoing lap's tail fires after the wrap. */
-  events: { t: number; fire: (lateBy: number) => void }[];
+  /** Sorted ascending by `t`. */
+  events: TimelineEvent[];
+}
+
+export interface EventBooking {
+  clock: TimelineClock;
+  /** How far ahead of the playhead to book, in clock ms. Default 100. An event
+   *  first reached later than this — after a frame longer than it — books late. */
+  lookahead?: number;
+  /** An event first reached more than this many clock ms after its edge is
+   *  skipped instead of booked late. Default `Infinity`. */
+  maxLate?: number;
 }
 
 /** A nested timeline, evaluated at `playhead - at`. Children are NOT registered
@@ -62,6 +97,10 @@ export interface TimelineOptions extends NestedTimeline {
   autoplay?: boolean;
   onDone?: () => void;
   cancelKey?: string;
+  /** Books each event's `book` against a clock the timeline does not own, so a
+   *  consumer on that clock lands it at its true sub-frame time. The frame
+   *  clock's mapping onto it is smoothed each frame and resynced on a jump. */
+  booking?: EventBooking;
 }
 
 export interface TimelineHandle extends AnimationHandle {

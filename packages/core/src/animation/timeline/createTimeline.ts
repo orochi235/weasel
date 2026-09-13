@@ -1,6 +1,7 @@
 import type { AnimationHandle } from '../types';
+import { createBooker, firstAfter } from './booking';
 import { sampleTrack } from './sampleTrack';
-import type { EventTrack, SampledTrack, TimelineHandle, TimelineOptions, Track } from './types';
+import type { SampledTrack, TimelineHandle, TimelineOptions, Track } from './types';
 
 /** The animator's internal `register`, narrowed to what a timeline needs. */
 export type TimelineRegister = (seed: {
@@ -9,20 +10,11 @@ export type TimelineRegister = (seed: {
   /** Registers under an existing `cancelKey` without cancelling whoever holds
    *  it. A revived timeline is the same animation, not a new claim on the key. */
   keepExisting?: boolean;
-  tick: (virtualNow: number) => boolean;
+  /** `scale` is the effective time scale this frame advanced at, zero while
+   *  paused at any level. */
+  tick: (virtualNow: number, scale?: number) => boolean;
   onCancel?: () => void;
 }) => AnimationHandle;
-
-/** Index of the first event after `t`. Binary search: tracks may be long. */
-function firstAfter(events: EventTrack['events'], t: number): number {
-  let lo = 0;
-  let hi = events.length;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (events[mid].t > t) hi = mid; else lo = mid + 1;
-  }
-  return lo;
-}
 
 /** End time of a track: its last key/event, or a nested timeline's own end. */
 function trackEnd(track: Track): number {
@@ -72,6 +64,18 @@ export function createTimeline(
 
   const loopOpt = opts.loop ?? false;
   let loopsLeft = loopOpt === true ? Infinity : loopOpt === false ? 0 : loopOpt;
+  let lap = 0;
+
+  const booker = opts.booking
+    ? createBooker(opts.booking, {
+      tracks: opts.tracks,
+      duration: () => duration,
+      lapsLeft: () => loopsLeft,
+      lap: () => lap,
+      playhead: () => playhead,
+    })
+    : null;
+  let warnedUnbooked = false;
 
   // Per-sampled-track interpolator-factory caches, dropped wholesale by `edit`.
   let caches = new WeakMap<object, Map<number, (u: number) => unknown>>();
@@ -99,7 +103,11 @@ export function createTimeline(
         const end = firstAfter(track.events, to);
         for (let i = firstAfter(track.events, from); i < end; i += 1) {
           const ev = track.events[i];
-          ev.fire(to - ev.t);
+          ev.fire?.(to - ev.t);
+          if (ev.book && !booker && !warnedUnbooked) {
+            warnedUnbooked = true;
+            console.warn('timeline: an event has `book` but the timeline has no `booking` clock; it never books.');
+          }
         }
       } else if (track.kind === 'timeline') {
         fireEvents(track.timeline.tracks, from - track.at, to - track.at);
@@ -114,7 +122,7 @@ export function createTimeline(
     prevPlayhead = -Infinity;
   };
 
-  const tick = (virtualNow: number): boolean => {
+  const tick = (virtualNow: number, scale?: number): boolean => {
     lastVirtual = virtualNow;
     playhead = virtualNow + offset;
 
@@ -125,12 +133,14 @@ export function createTimeline(
         const laps = Math.floor(playhead / duration);
         offset -= laps * duration;
         playhead -= laps * duration;
+        lap += laps;
         onWrap();
       } else {
         while (playhead >= duration && loopsLeft > 0) {
           loopsLeft -= 1;
           offset -= duration;
           playhead -= duration;
+          lap += 1;
           onWrap();
         }
       }
@@ -143,6 +153,7 @@ export function createTimeline(
     applySampled(opts.tracks, playhead);
     fireEvents(opts.tracks, prevPlayhead, playhead);
     prevPlayhead = playhead;
+    booker?.tick(virtualNow, scale ?? (base.isPaused() ? 0 : base.timeScale()));
 
     if (finished && !done) { done = true; opts.onDone?.(); }
     // Re-read: `onDone` may have seeked back or extended the duration, and
@@ -154,7 +165,7 @@ export function createTimeline(
 
   // Every cancel path inside the animator routes through here, so a timeline
   // cancelled by key or by `cancelAll` is as dead as one cancelled by hand.
-  const onCancel = (): void => { cancelled = true; live = false; };
+  const onCancel = (): void => { cancelled = true; live = false; booker?.retract(); };
 
   const base = register({ id, cancelKey: opts.cancelKey, tick, onCancel });
 
@@ -168,6 +179,7 @@ export function createTimeline(
     if (cancelled || playhead >= duration) return;
     done = false;
     if (live) return;
+    booker?.rearm();
     lastVirtual = 0;
     offset = playhead;
     live = true;
@@ -183,15 +195,17 @@ export function createTimeline(
     cancel() { onCancel(); base.cancel(); },
     // Playback intent is tracked here, not read back from the entry: a revived
     // one is a fresh registration, and defaults to running at scale 1.
-    pause() { wantPaused = true; base.pause(); },
+    pause() { wantPaused = true; base.pause(); booker?.retract(); },
     resume() { wantPaused = false; base.resume(); },
     setTimeScale(s) { wantScale = s; base.setTimeScale(s); },
     timeScale: () => (live ? base.timeScale() : wantScale),
     isPaused: () => (live ? base.isPaused() : wantPaused),
     seek(t) {
+      booker?.retract();
       offset = t - lastVirtual;
       playhead = t;
       prevPlayhead = t;
+      booker?.seek();
       rearm();
     },
     time: () => playhead,
@@ -199,12 +213,14 @@ export function createTimeline(
     tracks: () => opts.tracks,
     setLoop(loop) {
       loopsLeft = loop === true ? Infinity : loop === false ? 0 : loop;
+      booker?.retract();
     },
     loop: () => (loopsLeft === Infinity ? true : loopsLeft === 0 ? false : loopsLeft),
     edit(fn) {
       fn();
       caches = new WeakMap();
       duration = tracksEnd(opts.tracks, opts.duration);
+      booker?.retract();
       rearm();
       for (const cb of subscribers) {
         try { cb(); } catch (err) { console.error('timeline: subscriber threw', err); }

@@ -47,10 +47,14 @@ export {
 } from './colorHelpers';
 export { sampleTrack } from './timeline';
 export type {
+  EventBooking,
+  EventBookingHandle,
   EventTrack,
   Keyframe,
   NestedTimeline,
   SampledTrack,
+  TimelineClock,
+  TimelineEvent,
   TimelineHandle,
   TimelineOptions,
   TimelineTrack,
