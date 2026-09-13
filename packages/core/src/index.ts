@@ -407,7 +407,7 @@ export {
   buildSceneViewCommands,
   renderSceneToCanvas,
 } from './canvas/sceneViewRender';
-export type { SceneViewDrawOne, RenderSceneToCanvasArgs } from './canvas/sceneViewRender';
+export type { SceneViewDrawOne, RenderSceneToCanvasArgs, SceneViewLayers } from './canvas/sceneViewRender';
 export { renderSceneToPixels, planPixelRender } from './canvas/renderSceneToPixels';
 export type {
   RenderSceneToPixelsArgs,

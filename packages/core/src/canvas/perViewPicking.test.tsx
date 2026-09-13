@@ -74,6 +74,6 @@ describe('pick tolerance converts against the camera the point came from', () =>
     );
 
     registry.list()[0]!.target.classifyTarget!({ x: 150, y: 10 });
-    expect(seen).toEqual([PANEL_VIEW]);
+    expect(seen).toEqual([expect.objectContaining(PANEL_VIEW)]);
   });
 });

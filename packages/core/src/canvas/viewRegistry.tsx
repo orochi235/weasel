@@ -77,6 +77,10 @@ export interface ViewRegistration {
   paint: boolean;
   /** Everything about dispatching to this view except its id. */
   target: Omit<DispatcherViewTarget, 'id'>;
+  /** Whether a scene layer reaches the screen in this view. For input that
+   *  reaches a view without a dispatch — hover — so it judges this view's
+   *  paint rather than the surface's. */
+  layerIsPainted(layerId: string): boolean;
 }
 
 /** @internal */
