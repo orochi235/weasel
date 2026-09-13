@@ -88,19 +88,77 @@ const stories = [
       );
     },
   },
+  {
+    id: 'labkit-primitives-jobprogress--determinate',
+    what: 'lab-wide Mode reaching a labkit story, and a trial pin overriding it for that trial alone',
+    // With the OS dark, `auto` starts every story dark, so light can only come from the toolbar.
+    colorScheme: 'dark',
+    check: async ({ page }) => {
+      const trial = (name) => page.getByRole('region', { name: `Trial labkit/primitives/JobProgress / ${name}`, exact: true });
+      /** Resolves once the trial's `.lk-root` is in `mode` and computes that mode's surface, not the other's. */
+      const surfaceIs = (name, mode) =>
+        trial(name)
+          .frameLocator('iframe.fg-frame-view')
+          .locator('.lk-root')
+          .first()
+          .evaluate(
+            (el, want) =>
+              new Promise((resolve, reject) => {
+                const surfaceOf = (node) => getComputedStyle(node).getPropertyValue('--wzl-surface').trim();
+                const probe = (probeMode) => {
+                  const node = document.createElement('div');
+                  node.setAttribute('data-wzl-theme', el.getAttribute('data-wzl-theme') ?? '');
+                  node.setAttribute('data-wzl-mode', probeMode);
+                  document.body.append(node);
+                  const value = surfaceOf(node);
+                  node.remove();
+                  return value;
+                };
+                const other = want === 'light' ? 'dark' : 'light';
+                const deadline = performance.now() + 5000;
+                const poll = () => {
+                  const got = { mode: el.getAttribute('data-wzl-mode'), surface: surfaceOf(el) };
+                  if (got.mode === want && got.surface !== '' && got.surface === probe(want) && got.surface !== probe(other)) resolve(got);
+                  else if (performance.now() > deadline) reject(new Error(`.lk-root is ${got.mode} with surface ${got.surface}, not ${want}`));
+                  else setTimeout(poll, 50);
+                };
+                poll();
+              }),
+            mode,
+          );
+
+      await surfaceIs('Determinate', 'dark');
+      await page.getByRole('toolbar', { name: 'Globals' }).getByLabel('Mode', { exact: true }).selectOption('light');
+      await surfaceIs('Determinate', 'light');
+
+      await page.evaluate(() => {
+        location.hash = '#/labkit-primitives-jobprogress--indeterminate';
+      });
+      await trial('Indeterminate').frameLocator('iframe.fg-frame-view').locator('.lk-root').first().waitFor({ timeout: 20000 });
+      await surfaceIs('Indeterminate', 'light');
+
+      // labkit wraps the select in its row's <label>, so the option texts join the name.
+      await trial('Determinate').getByLabel('Mode').selectOption('dark');
+      await surfaceIs('Determinate', 'dark');
+      await surfaceIs('Indeterminate', 'light');
+    },
+  },
 ];
 
 const browser = await chromium.launch({ headless: true });
 let failed = 0;
 try {
   for (const [i, story] of stories.entries()) {
-    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const context = await browser.newContext({
+      viewport: { width: 1280, height: 800 },
+      ...(story.colorScheme ? { colorScheme: story.colorScheme } : {}),
+    });
     const page = await context.newPage();
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
     try {
       await page.goto(`${origin}/#/${story.id}`);
-      const frame = page.frameLocator('iframe.fg-frame-view');
+      const frame = page.locator('iframe.fg-frame-view').first().contentFrame();
       await frame.locator(story.rendered ?? '.fg-frame > *').first().waitFor({ timeout: 20000 });
       await story.check({ page, frame });
       const faults = [
