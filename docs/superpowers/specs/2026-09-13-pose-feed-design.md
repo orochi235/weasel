@@ -66,9 +66,22 @@ state with their own `subscribe()` and `getGeneration()`.
 
 - **Overrides moved.** The changed set is `overrides.ids()`, plus the ids that
   were overridden on the previous read and no longer are. `O(changed)`.
-- **Version moved.** Walk `scene.nodes` and identity-compare against the
-  previous map. `O(n)`. Nodes are replaced rather than mutated on write
-  (`nodeMemo.ts`), so this is `!==` per entry and never a deep compare.
+- **Version moved.** Walk `scene.nodes` and reference-compare against the
+  previous snapshot. `O(n)`, three `!==` per entry, never a deep compare.
+
+  **Compare the references a node carries, not the node.** The scene mutates
+  node objects in place and swaps `pose` and `data` for new references —
+  `kit:setPose` is `node.pose = p.to` on the object already in `state.nodes`.
+  So a cached node is `===` its own future self and reports nothing, and a
+  cached node's `.pose` is already the new value. The feed snapshots
+  `{ pose, data, layer }` per id instead, which is the same key `nodeMemo`
+  uses for the same reason.
+
+  The snapshot's `pose` is the **effective** pose, not `node.pose`. A derived
+  node's pose changes when a node it depends on moves: `invalidateDependents`
+  drops its memo slot, the next `effectivePose` recomputes to a new reference,
+  and nothing about the node itself changed. Comparing the effective pose
+  catches that case and the ordinary one with a single `!==`.
 - **Both in one frame.** Union them; a node in both appears once, at its
   effective pose.
 
