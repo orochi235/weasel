@@ -192,4 +192,35 @@ describe('createPoseFeed', () => {
 
     expect(iterations).toBe(baseline);
   });
+
+  it('resets when render order changed without any node changing', () => {
+    const { scene, id } = makeScene();
+    const second = scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { label: 'b' } });
+    const feed = createPoseFeed(scene);
+    feed.read();
+
+    scene.reorder(second, 0);
+    const delta = feed.read();
+
+    // The delta carries no order of its own — `added` follows `scene.nodes`,
+    // which is insertion order and does not move on a reorder. `reset` is the
+    // whole signal: it tells the host to re-read `renderOrderNodes()`.
+    expect(delta.reset).toBe(true);
+    expect([...delta.added.map((n) => n.node.id)].sort()).toEqual([id, second].sort());
+  });
+
+  it('repaints a reparented node rather than losing it', () => {
+    const { scene, id } = makeScene();
+    const parent: NodeId = scene.add({
+      kind: 'container', layer: 'main', pose: POSE, data: { label: 'p' },
+    });
+    const feed = createPoseFeed(scene);
+    feed.read();
+
+    scene.move(id, parent);
+    const delta = feed.read();
+
+    expect(delta.removed).not.toContain(id);
+    expect(delta.reset || delta.changed.some((n) => n.node.id === id)).toBe(true);
+  });
 });
