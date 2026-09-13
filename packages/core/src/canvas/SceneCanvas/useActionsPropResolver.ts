@@ -14,11 +14,8 @@
  * gives it back.
  */
 import { useEffect, useRef } from 'react';
-import {
-  useActionsRegistry,
-  type Action,
-  type ActionsProp,
-} from 'interactions/actions/registry';
+import { useActionsRegistry, type ActionsProp } from 'interactions/actions/registry';
+import type { Action } from 'interactions/actions/action';
 
 export function useActionsPropResolver(actions: ActionsProp | undefined): void {
   const reg = useActionsRegistry();

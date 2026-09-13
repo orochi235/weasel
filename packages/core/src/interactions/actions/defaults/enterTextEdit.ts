@@ -64,7 +64,7 @@
  *    redundant — remove it in the same pass.
  */
 
-import type { Action } from '../registry';
+import type { Action } from '../action';
 import type { NodeId } from 'core/scene/types';
 
 // ---------------------------------------------------------------------------

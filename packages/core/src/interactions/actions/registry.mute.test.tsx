@@ -5,13 +5,8 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
-import {
-  ActionsProvider,
-  ActionsScope,
-  useActionsRegistry,
-  type Action,
-  type ActionsRegistry,
-} from './registry';
+import { ActionsProvider, ActionsScope, useActionsRegistry, type ActionsRegistry } from './registry';
+import type { Action } from './action';
 
 const immediate = (id: string, run: () => void = () => {}): Action => ({
   id,

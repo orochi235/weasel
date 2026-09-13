@@ -119,13 +119,17 @@ export { isEditableTarget, matchesKeyBinding } from './interactions/keyHelpers';
 
 // --- @experimental Actions Registry (2026-05-09) ----------------------------
 export {
-  ActionsProvider, ActionsScope, useActionsRegistry, useAction, evaluateEnabled,
-  ActionDisabledReason, actionBindings,
+  ActionsProvider, ActionsScope, useActionsRegistry, useAction,
 } from './interactions/actions/registry';
 export type {
-  Action, ActionEntry, ActionsProp, ActionsRegistry, ActionEnabledResult,
-  UiOngoingControl, BoundGesture,
+  ActionEntry, ActionsProp, ActionsRegistry, UiOngoingControl,
 } from './interactions/actions/registry';
+export { ActionDisabledReason } from './interactions/actions/action';
+export type { Action, ActionDispatch, ActionPresentation } from './interactions/actions/action';
+export { actionBindings } from './interactions/actions/binding';
+export type { BoundGesture, BindingSource } from './interactions/actions/binding';
+export { evaluateEnabled } from './interactions/actions/actionEnabled';
+export type { ActionEnabledResult } from './interactions/actions/actionEnabled';
 export { actionShortcuts, keySpecShortcut } from './interactions/actions/actionShortcuts';
 export type { ActionShortcut } from './interactions/actions/actionShortcuts';
 export { moveAction } from './interactions/actions/defaults/move';

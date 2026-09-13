@@ -1,11 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { useEffect, type ReactNode } from 'react';
 import { render } from '@testing-library/react';
-import {
-  ActionsProvider,
-  useActionsRegistry,
-  type Action,
-} from './registry';
+import { ActionsProvider, useActionsRegistry } from './registry';
+import type { Action } from './action';
 import { DepRegistryProvider, useDepRegistry } from './depRegistry';
 import { useStandardActions, KIT_STANDARD_ACTION_IDS } from './useStandardActions';
 import type { UseStandardActionsOptions } from './useStandardActions';

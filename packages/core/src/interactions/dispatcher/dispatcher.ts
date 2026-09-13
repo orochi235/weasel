@@ -36,7 +36,9 @@
  * the misconfiguration at dev time.
  */
 
-import { actionBindings, type Action, type ActionsRegistry } from '../actions/registry';
+import type { ActionsRegistry } from '../actions/registry';
+import type { Action } from '../actions/action';
+import { actionBindings } from '../actions/binding';
 import type { DepRegistry } from '../actions/depRegistry';
 import type { GestureBinding } from '../actions/binding';
 import type { OngoingHandle, InvocationCtx, ActionDeps, AffordanceHit, DragSample, Point2 } from '../actions/invoker';

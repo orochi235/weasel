@@ -17,7 +17,8 @@ import { useEffect, useRef } from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
-import { useActionsRegistry, type Action } from 'interactions/actions/registry';
+import { useActionsRegistry } from 'interactions/actions/registry';
+import type { Action } from 'interactions/actions/action';
 import { useDepRegistry } from 'interactions/actions/depRegistry';
 import type { InsertDep } from 'interactions/actions/depSchema';
 

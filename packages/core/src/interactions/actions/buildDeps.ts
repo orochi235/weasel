@@ -5,7 +5,7 @@
  * name against the `DepRegistry`, and (dev builds only) wraps the bag in a
  * Proxy that warns on undeclared reads.
  */
-import type { Action } from './registry';
+import type { Action } from './action';
 import type { DepRegistry } from './depRegistry';
 import type { ActionDeps } from './invoker';
 

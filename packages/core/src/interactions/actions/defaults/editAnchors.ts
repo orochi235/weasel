@@ -34,7 +34,7 @@
  * @see anchorEdits — the pure geometry these handlers drive.
  */
 
-import type { Action } from '../registry';
+import type { Action } from '../action';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
 import type { EditAnchorsDep } from '../depSchema';
 import { isAnchorOrControl } from '../../dispatcher/predicates';

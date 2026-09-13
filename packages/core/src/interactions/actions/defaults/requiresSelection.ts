@@ -1,6 +1,6 @@
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { ActionDeps } from '../invoker';
-import { ActionDisabledReason } from '../registry';
+import { ActionDisabledReason } from '../action';
 
 /**
  * Shared `enabled` predicate for selection-gated actions (reorder, duplicate,

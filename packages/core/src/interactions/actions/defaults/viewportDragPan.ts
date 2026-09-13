@@ -31,7 +31,7 @@
  * @see useHandTool — the React hook this descriptor parallels.
  */
 
-import type { Action } from '../registry';
+import type { Action } from '../action';
 import { resolveParams, type InvocationCtx, type OngoingHandle, type BindingOpts } from '../invoker';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';

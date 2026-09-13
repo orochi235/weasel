@@ -9,7 +9,7 @@
  * `exitPathEditAction` (Escape) clears edit mode.
  */
 
-import type { Action } from '../registry';
+import type { Action } from '../action';
 import type { ImmediateInvoker } from '../invoker';
 import type { EditAnchorsDep } from '../depSchema';
 import type { SelectionApi } from 'core/selection/useSelection';

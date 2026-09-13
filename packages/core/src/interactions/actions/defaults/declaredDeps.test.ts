@@ -9,7 +9,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { buildDepsFromRequires } from '../buildDeps';
 import type { DepRegistry } from '../depRegistry';
-import type { Action } from '../registry';
+import type { Action } from '../action';
 import type { ImmediateInvoker } from '../invoker';
 import { asNodeId } from 'core/scene/types';
 import { createPoseOverrides } from 'core/scene/poseOverrides';

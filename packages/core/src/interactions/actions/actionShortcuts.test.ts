@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { Action } from './registry';
+import type { Action } from './action';
 import type { GestureSpec } from '../gestures/spec';
 import { actionShortcuts, keySpecShortcut } from './actionShortcuts';
 

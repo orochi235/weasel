@@ -24,7 +24,7 @@ import type { PoseOverrides } from 'core/scene/types';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { InvocationCtx, OngoingInvoker, ImmediateInvoker } from '../invoker';
-import type { Action } from '../registry';
+import type { Action } from '../action';
 import type { ResizeAnchor } from '../../gestures/types';
 
 import {

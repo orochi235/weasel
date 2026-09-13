@@ -20,7 +20,7 @@
  * outranks `swapAxis`: a shift-wheel routed into a barred axis moves nothing.
  */
 
-import type { Action } from '../registry';
+import type { Action } from '../action';
 import type { ViewApi } from '../depSchema';
 import { wheelPan } from 'core/viewport/wheelHandler';
 

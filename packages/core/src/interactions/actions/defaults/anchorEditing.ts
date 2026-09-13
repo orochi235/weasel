@@ -29,8 +29,8 @@
  * path-edit mode. See `anchorEditing.test.ts`.
  */
 
-import type { Action } from '../registry';
-import { ActionDisabledReason } from '../registry';
+import type { Action } from '../action';
+import { ActionDisabledReason } from '../action';
 import type { ActionDeps } from '../invoker';
 import type { ImmediateInvoker, InvocationCtx, OngoingHandle } from '../invoker';
 import type { EditAnchorsDep } from '../depSchema';

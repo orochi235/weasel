@@ -14,7 +14,7 @@ import { unionAABB } from 'core/geometry/unionBounds';
 import { visualBoundsViaDescriptor } from '../align/align';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import type { RectPose } from 'core/scene/types';
-import type { Action } from '../registry';
+import type { Action } from '../action';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { requiresSelection } from './requiresSelection';
 import type { SelectionApi } from 'core/selection/useSelection';

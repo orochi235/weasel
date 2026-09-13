@@ -6,7 +6,7 @@ import { createTransformOp } from 'core/ops/transform';
 import type { PoseDescriptor } from '../resize/geometry';
 import { translatePoseViaDescriptor } from '../resize/geometry';
 import { poseDescriptorOf } from '../poseDescriptorDep';
-import type { Action } from '../registry';
+import type { Action } from '../action';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { requiresSelection } from './requiresSelection';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';

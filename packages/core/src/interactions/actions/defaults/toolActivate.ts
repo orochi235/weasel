@@ -1,4 +1,5 @@
-import type { Action, BoundGesture } from '../registry';
+import type { Action } from '../action';
+import type { BoundGesture } from '../binding';
 import type { ImmediateInvoker } from '../invoker';
 import type { ActiveToolContextValue } from '../activeToolContext';
 

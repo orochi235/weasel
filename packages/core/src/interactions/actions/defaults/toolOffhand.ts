@@ -1,4 +1,5 @@
-import type { Action, BoundGesture } from '../registry';
+import type { Action } from '../action';
+import type { BoundGesture } from '../binding';
 import { resolveParams, type InvocationCtx, type BindingOpts } from '../invoker';
 import type { ActiveToolContextValue } from '../activeToolContext';
 import type { HotkeyTrigger } from '../../../tools/types';

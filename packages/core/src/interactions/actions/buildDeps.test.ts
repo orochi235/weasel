@@ -12,7 +12,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { buildDepsFromRequires } from './buildDeps';
 import type { DepRegistry } from './depRegistry';
-import type { Action } from './registry';
+import type { Action } from './action';
 import { moveAction } from './defaults/move';
 import { resizeAction } from './defaults/resize';
 import { flipAction } from './defaults/flip';

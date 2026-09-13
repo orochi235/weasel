@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act, render } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { ActionsProvider, useActionsRegistry, type Action, type ActionsRegistry } from './registry';
+import { ActionsProvider, useActionsRegistry, type ActionsRegistry } from './registry';
+import type { Action } from './action';
 import { DepRegistryProvider, useDepSource } from './depRegistry';
 import type { GestureSpec } from '../gestures/spec';
 

@@ -1,6 +1,6 @@
 import type { NodeId } from 'core/scene/types';
-import type { Action } from '../registry';
-import { ActionDisabledReason } from '../registry';
+import type { Action } from '../action';
+import { ActionDisabledReason } from '../action';
 import type { EditAnchorsDep } from '../depSchema';
 
 /**

@@ -11,7 +11,7 @@
  * `<DepRegistryProvider>` is in scope.
  */
 import { useEffect, useRef } from 'react';
-import type { Action } from './registry';
+import type { Action } from './action';
 import { useActionsRegistry } from './registry';
 import { useOptionalDepRegistry, type DepName, type DepSchema } from './depRegistry';
 // Type-only augmentation import: pulls in the module augmentation that adds `selection`,

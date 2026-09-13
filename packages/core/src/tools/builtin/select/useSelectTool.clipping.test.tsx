@@ -27,7 +27,7 @@ import { useSelection } from 'core/selection/useSelection';
 import { useSelectTool } from './useSelectTool';
 import { rectPath } from 'features/paths/builder';
 import { asNodeId } from 'core/scene/types';
-import type { Action } from '../../../interactions/actions/registry';
+import type { Action } from '../../../interactions/actions/action';
 import type { ActionDeps } from '../../../interactions/actions/invoker';
 
 interface Item { label: string }

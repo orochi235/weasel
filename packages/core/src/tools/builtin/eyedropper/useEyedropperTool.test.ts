@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useEyedropperTool } from './useEyedropperTool';
-import type { Action } from 'interactions/actions/registry';
+import type { Action } from 'interactions/actions/action';
 import type { ActionDeps } from 'interactions/actions/invoker';
 import type { NodeId } from 'core/scene/types';
 

@@ -37,7 +37,7 @@
  * @see src/interactions/actions/resize/geometry.ts — `PoseDescriptor`.
  */
 
-import type { Action } from '../registry';
+import type { Action } from '../action';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
 import type { Scene, NodeId } from 'core/scene/types';
 import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides';

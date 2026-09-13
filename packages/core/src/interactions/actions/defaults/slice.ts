@@ -1,5 +1,5 @@
-import type { Action } from '../registry';
-import { ActionDisabledReason } from '../registry';
+import type { Action } from '../action';
+import { ActionDisabledReason } from '../action';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '../invoker';
 
 /**

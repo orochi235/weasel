@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useSelectTool } from './useSelectTool';
-import { ActionDisabledReason } from '../../../interactions/actions/registry';
-import type { Action } from '../../../interactions/actions/registry';
+import { ActionDisabledReason } from '../../../interactions/actions/action';
+import type { Action } from '../../../interactions/actions/action';
 import type { ActionDeps } from '../../../interactions/actions/invoker';
 
 type Mods = { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean };

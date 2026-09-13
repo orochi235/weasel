@@ -1,5 +1,5 @@
 import type { NodeId } from 'core/scene/types';
-import type { Action } from '../registry';
+import type { Action } from '../action';
 
 /** The slice of a scene this action reads. Structural, so a consumer store
  *  that answers these three is a valid `scene` dep without being a `Scene`. */

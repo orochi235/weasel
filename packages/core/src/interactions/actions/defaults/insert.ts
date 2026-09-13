@@ -57,7 +57,7 @@
  * dep contract thin and avoids importing `createInsertOp` into the descriptor.
  */
 
-import type { Action } from '../registry';
+import type { Action } from '../action';
 import type { InvocationCtx, OngoingHandle, BindingOpts, OngoingOverlay, DragSample } from '../invoker';
 import { resolveParams } from '../invoker';
 import type { InsertDep, InsertExtras, SnapDep } from '../depSchema';

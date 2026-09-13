@@ -21,7 +21,8 @@ import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'r
 import { dwarn } from '../debug';
 import type React from 'react';
 import type { ReactNode } from 'react';
-import { type Action, type ActionsProp } from 'interactions/actions/registry';
+import type { ActionsProp } from 'interactions/actions/registry';
+import type { Action } from 'interactions/actions/action';
 import { useStandardActions } from 'interactions/actions/useStandardActions';
 import type { DrawCommand, ShaderProgramHandle } from '../renderer';
 import { subscribeImageReady } from 'features/images/imageCache';

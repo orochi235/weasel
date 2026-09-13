@@ -1,5 +1,6 @@
 import type { Tool } from '../../types';
-import { actionBindings, type Action } from '../../../interactions/actions/registry';
+import type { Action } from '../../../interactions/actions/action';
+import { actionBindings } from '../../../interactions/actions/binding';
 import type { ParsedModifiers } from '../routeGrammar';
 import { canonicalModifiers, formatRoute } from '../routeGrammar';
 import { buildRouteRegistry, PREDICATE_TARGET, type RegistryEntry, type GestureName } from './registry';

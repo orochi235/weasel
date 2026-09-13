@@ -55,7 +55,7 @@ export interface ToolDef<TScratch = void> {
    * selection instead). `<ToolActionsMounter>` registers these from inside
    * the provider.
    */
-  actions?: import('interactions/actions/registry').Action[];
+  actions?: import('interactions/actions/action').Action[];
 
   /** Hook name as exported from the kit barrel (e.g. `'useHandTool'`).
    *  Set by built-in hooks for inspector / debugging. Consumer-authored

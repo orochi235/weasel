@@ -28,7 +28,7 @@
  * - Debug sink recording.
  */
 
-import type { Action } from '../registry';
+import type { Action } from '../action';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '../invoker';
 import type { LassoSelectDep } from '../depSchema';
 

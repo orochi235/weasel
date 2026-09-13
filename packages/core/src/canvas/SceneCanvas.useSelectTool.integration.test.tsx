@@ -34,7 +34,7 @@ import { render, act } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
-import type { ActionDisabledReason } from 'interactions/actions/registry';
+import type { ActionDisabledReason } from 'interactions/actions/action';
 
 // ---------------------------------------------------------------------------
 // Types

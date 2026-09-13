@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, type Mock } from 'vitest';
 import { reorderForwardAction, reorderBackwardAction } from './reorder';
 import { asNodeId, type NodeId } from 'core/scene/types';
-import type { BoundGesture } from '../registry';
+import type { BoundGesture } from '../binding';
 import type { ImmediateInvoker } from '../invoker';
 import type { Op } from 'core/ops/types';
 import { matchSpec } from '@weasel-js/gestures';
