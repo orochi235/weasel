@@ -13,11 +13,11 @@ import { type DrawCommand, type GroupDrawCommand } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
 import type { LayersMap } from '../Canvas';
 import type { Node, Scene } from 'core/scene/types';
-import { asNodeId } from 'core/scene/types';
 import { findShapeSilhouette } from '../NodeShape';
 import { wrapWithPoseRotation } from '../poseRotation';
 import type { Dispatcher } from 'interactions/dispatcher/dispatcher';
-import { previewSourcesFrom, previewPoseIn, previewDataIn } from '../drawEnvelope';
+import { previewSourcesFrom } from '../drawEnvelope';
+import { resolvePreviews, type PreviewNode } from 'interactions/actions/resolvePreviews';
 import { resolveDerivedPath, sceneDepLookup } from '../derivedPath';
 
 const GHOST_ALPHA = 0.85;
@@ -61,54 +61,33 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
       // Whose gesture this frame is showing belongs to the view being drawn,
       // not to the surface that built the layer.
       const sources = previewSourcesFrom(data);
-      const idSet = new Set<string>();
-      for (const source of sources) {
-        const ids = source.previewIds?.();
-        if (!ids) continue;
-        for (const id of ids) idSet.add(id);
-      }
-      if (idSet.size === 0) return [];
       const sc = sceneRef.current;
+      const roots = resolvePreviews(sources, sc);
+      if (roots.length === 0) return [];
 
       // Reads the same overrides an in-flight gesture publishes, so a derived
       // container ghosts with the clip it will actually impose.
       const depOf = sceneDepLookup(sc);
-      const previewPoseFor = (id: string): TPose | null =>
-        previewPoseIn(sources, id) as TPose | null;
-      const previewDataFor = (id: string): TData | null =>
-        previewDataIn(sources, id) as TData | null;
 
-      // Build the preview subtree rooted at `id` — mirrors buildSceneTree's
-      // structure (container groups carry a clip from their painter's
-      // silhouette) but uses preview poses (and data) instead of committed
-      // ones, so children are clipped to the previewed container shape
-      // during drag.
-      const buildSubtree = (id: string): DrawCommand[] => {
-        const node = sc.get(asNodeId(id));
-        if (!node) return [];
-        const pose = previewPoseFor(id);
-        const data = previewDataFor(id);
-        // Skip when no source emitted ANYTHING for this id — preview-data-
-        // only edits still light up here, but pure pose-less, data-less
-        // entries don't waste a draw pass.
-        if (pose == null && data == null) return [];
-        const effPose = pose ?? node.pose;
-        // Synthesize a node with the preview data so drawOne sees the
-        // in-flight values for any data fields the painter reads
-        // (path, fill, text, etc.).
-        const effNode = data == null ? node : ({ ...node, data } as typeof node);
-        const self = drawOne(effNode, effPose, view);
-        const selfRotated = wrapWithPoseRotation(self, effPose as unknown);
-        const childCommands: DrawCommand[] = [...selfRotated];
-        for (const cid of sc.childrenOf(asNodeId(id))) {
-          if (!idSet.has(cid)) continue;
-          for (const cmd of buildSubtree(cid)) childCommands.push(cmd);
+      // Mirrors buildSceneTree's structure — a container group carries a clip
+      // from its painter's silhouette — but drawn from the previewed pose and
+      // data, so children are clipped to the shape the container is taking.
+      const drawEntry = (
+        entry: PreviewNode<TData, TLayer, TPose>,
+      ): DrawCommand[] => {
+        const effNode = entry.data === entry.node.data
+          ? entry.node
+          : ({ ...entry.node, data: entry.data } as typeof entry.node);
+        const self = drawOne(effNode, entry.pose, view);
+        const children: DrawCommand[] = [...wrapWithPoseRotation(self, entry.pose as unknown)];
+        for (const child of entry.children) {
+          for (const cmd of drawEntry(child)) children.push(cmd);
         }
-        const group: GroupDrawCommand = { kind: 'group', children: childCommands };
+        const group: GroupDrawCommand = { kind: 'group', children };
         if (effNode.kind === 'container') {
           const clip = findShapeSilhouette(
             effNode as unknown as Node<unknown, string, TPose>,
-            effPose,
+            entry.pose,
             { derivedPath: resolveDerivedPath(effNode, depOf, (nid) => sc.childrenOf(nid)) },
           );
           if (clip) group.clip = clip;
@@ -116,29 +95,19 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
         return [group];
       };
 
-      const opaqueSet = new Set<string>();
-      for (const source of sources) {
-        const ids = source.previewOpaqueIds?.();
-        if (!ids) continue;
-        for (const id of ids) opaqueSet.add(id);
+      // Opaque is honored at subtree-root granularity, as it always was: a
+      // sibling reflowing into place brings its own contents with it.
+      const ghosted: DrawCommand[] = [];
+      const settled: DrawCommand[] = [];
+      for (const root of roots) {
+        const sink = root.opaque ? settled : ghosted;
+        for (const cmd of drawEntry(root)) sink.push(cmd);
       }
-
-      // Roots: previewing nodes whose parent isn't previewing — buildSubtree
-      // recurses down from each.
-      const children: DrawCommand[] = [];
-      const opaque: DrawCommand[] = [];
-      for (const id of idSet) {
-        const node = sc.get(asNodeId(id));
-        const parent = node?.parent;
-        if (parent != null && idSet.has(parent)) continue;
-        const sink = opaqueSet.has(id) ? opaque : children;
-        for (const cmd of buildSubtree(id)) sink.push(cmd);
-      }
-      if (children.length === 0 && opaque.length === 0) return [];
+      if (ghosted.length === 0 && settled.length === 0) return [];
       // World-space commands; drawLayers wraps in viewToMat3 automatically.
       const out: DrawCommand[] = [];
-      if (opaque.length > 0) out.push({ kind: 'group', children: opaque });
-      if (children.length > 0) out.push({ kind: 'group', alpha: GHOST_ALPHA, children });
+      if (settled.length > 0) out.push({ kind: 'group', children: settled });
+      if (ghosted.length > 0) out.push({ kind: 'group', alpha: GHOST_ALPHA, children: ghosted });
       return out;
     },
   }), []);

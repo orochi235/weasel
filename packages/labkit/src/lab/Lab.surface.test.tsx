@@ -165,3 +165,30 @@ describe('<Lab> tile round trip', () => {
     expect(rect).toEqual({ x: 240, y: 100, w: 320, h: 200 });
   });
 });
+
+describe('<Lab> pages', () => {
+  it('gives the title a way back to the project\'s other labs', () => {
+    const { getByRole } = render(
+      <Lab
+        instruments={[probeInstrument]}
+        defaultInstrument="Probe"
+        title="kliegsminister"
+        path="/kliegsminister"
+        pages={[
+          { href: '/kliegsminister', label: 'kliegsminister' },
+          { href: '/stats', label: 'corpus stats' },
+        ]}
+      />,
+    );
+    // A switcher, not a bare heading: the lab it came from has to be reachable.
+    expect(getByRole('button', { name: /kliegsminister/ })).toBeTruthy();
+  });
+
+  it('leaves the title a plain heading when there are no other labs', () => {
+    const { getByRole, queryByRole } = render(
+      <Lab instruments={[probeInstrument]} defaultInstrument="Probe" title="solo" />,
+    );
+    expect(getByRole('heading', { name: 'solo' })).toBeTruthy();
+    expect(queryByRole('button', { name: /solo/ })).toBeNull();
+  });
+});

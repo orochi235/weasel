@@ -4,11 +4,16 @@
  * `moveAction` writes nothing to the scene while a drag runs — it keeps the
  * interim pose on its handle and commits one op at the end. So the solid the
  * painter already draws from `node.pose` is the one that stays put, and the
- * ghost is the handle's pose read through the same `GesturePreviewSource`
- * contract `<SceneCanvas>`'s ghost layer reads.
+ * ghost is what `resolvePreviews` reads off the same handles `<SceneCanvas>`
+ * reads: whose pose is in flight, and which of several sources wins.
  */
 
-import type { GesturePreviewSource, NodeId } from '@weasel-js/core';
+import {
+  flattenPreviews,
+  resolvePreviews,
+  type GesturePreviewSource,
+  type NodeId,
+} from '@weasel-js/core';
 import type { Pose3, SolidKind, SolidScene } from './scene3d';
 
 export interface GhostDraw {
@@ -33,35 +38,20 @@ function isPose3(value: unknown): value is Pose3 {
 }
 
 /**
- * Ghosts for every in-flight handle, merged first-non-null across sources the
- * way the kit's ghost layer merges them.
+ * A ghost per previewing solid.
  *
- * An id with no node is skipped rather than treated as an error: an insert
- * previews before the node it will create exists.
+ * The kit resolves which ids are in flight and whose preview wins; the pose
+ * still arrives as `unknown`, and one from another descriptor would reach the
+ * renderer as NaN matrices rather than as an error, so it is checked here.
  */
 export function collectGhosts(
   sources: Iterable<GesturePreviewSource>,
   scene: SolidScene,
 ): GhostDraw[] {
-  const seen = new Map<NodeId, Pose3>();
-
-  for (const source of sources) {
-    const ids = source.previewIds?.();
-    if (!ids) continue;
-    for (const raw of ids) {
-      const id = raw as NodeId;
-      if (seen.has(id)) continue;
-      const pose = source.previewPose?.(raw);
-      if (!isPose3(pose)) continue;
-      seen.set(id, pose);
-    }
-  }
-
   const ghosts: GhostDraw[] = [];
-  for (const [id, pose] of seen) {
-    const node = scene.get(id);
-    if (!node) continue;
-    ghosts.push({ id, pose, kind: node.data.kind, color: node.data.color });
+  for (const entry of flattenPreviews(resolvePreviews(sources, scene))) {
+    if (!isPose3(entry.pose)) continue;
+    ghosts.push({ id: entry.id, pose: entry.pose, kind: entry.data.kind, color: entry.data.color });
   }
   return ghosts;
 }

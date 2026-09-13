@@ -10,6 +10,7 @@ export {
   useTileId,
 } from './useSurfaceTile';
 export type {
+  SurfaceClear,
   SurfaceFrame,
   SurfaceHandle,
   TilePainter,

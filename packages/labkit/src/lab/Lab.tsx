@@ -24,7 +24,7 @@ import type { LabMode, StorageAdapter, TrialRecord } from '../state/types';
 import { useOpenOnce, useWarnIgnoredChange } from '../state/useOpenOnce';
 import { SurfaceCanvasContext, SurfaceContext } from '../surface/SurfaceContext';
 import { useSurfaceCanvas, useSurfaceOptional } from '../surface/useSurfaceTile';
-import { useTiledSurface } from '../surface/useTiledSurface';
+import { type SurfaceFrame, useTiledSurface } from '../surface/useTiledSurface';
 import { interstellarTheme } from '../theme/interstellar';
 import type { TrialTool } from '../tools/types';
 import { Trial } from '../trial/Trial';
@@ -39,6 +39,7 @@ import { LabContext, type LabContextValue } from './LabContext';
 import { LabHeader } from './LabHeader';
 import { LabPalette } from './LabPalette';
 import { LabShell } from './LabShell';
+import type { LabPage } from './LabSwitcher';
 import { createPanelHostRegistry, PanelHostContext } from './panelHost';
 import { useResolvedMode } from './useSystemMode';
 import { type PanelDescriptor, type TrialLayout, Workspace } from './Workspace';
@@ -57,6 +58,12 @@ interface LabBaseProps {
    */
   nebula?: readonly string[];
   title?: string;
+  /** The project's other labs. Given two or more, the title becomes the way to
+   *  reach them — the same switcher `<LabShell>` renders, so a lab reached from
+   *  one is not a dead end. */
+  pages?: readonly LabPage[];
+  /** The path the switcher marks as open. Defaults to the current location. */
+  path?: string;
   /** Rendered in the shell's footer, below the workspace. */
   footer?: ReactNode;
   /** Contributions added to every trial's chrome, after the instrument's own. */
@@ -145,11 +152,21 @@ async function openStoredLab(
   return { ...opened, marks };
 }
 
-function LabFallback({ title, mode }: { title?: string; mode?: LabMode }) {
+function LabFallback({
+  title,
+  mode,
+  pages,
+  path,
+}: Pick<LabBaseProps, 'title' | 'mode' | 'pages' | 'path'>) {
   const resolvedMode = useResolvedMode(mode ?? 'auto');
   return (
     <ThemeProvider theme={interstellarTheme} mode={resolvedMode} className="lk-lab">
-      <LabShell title={title ?? 'Labkit'} mode={mode}>
+      <LabShell
+        title={title ?? 'Labkit'}
+        mode={mode}
+        {...(pages ? { pages } : {})}
+        {...(path !== undefined ? { path } : {})}
+      >
         {null}
       </LabShell>
     </ThemeProvider>
@@ -192,7 +209,7 @@ export function Lab(props: LabProps) {
     return props.fallback !== undefined ? (
       <>{props.fallback}</>
     ) : (
-      <LabFallback title={props.title} mode={props.mode} />
+      <LabFallback title={props.title} mode={props.mode} pages={props.pages} path={props.path} />
     );
   }
   return <LabRuntime {...props} opened={opened} />;
@@ -203,6 +220,8 @@ function LabRuntime({
   mode,
   nebula,
   title,
+  pages,
+  path,
   footer,
   chrome,
   suppress,
@@ -241,18 +260,23 @@ function LabRuntime({
 
   // Sizing the buffer clears all of it, so every tile has to repaint — not
   // only the one whose move triggered the measurement.
-  const onFrame = useCallback((frame: { size: { width: number; height: number }; dpr: number }) => {
+  const onFrame = useCallback((frame: SurfaceFrame) => {
     const c = ownCanvasRef.current;
     if (!c) return;
     const w = Math.round(frame.size.width * frame.dpr);
     const h = Math.round(frame.size.height * frame.dpr);
-    if (bufferRef.current.w === w && bufferRef.current.h === h) return;
-    bufferRef.current = { w, h };
-    c.width = w;
-    c.height = h;
-    c.style.width = `${frame.size.width}px`;
-    c.style.height = `${frame.size.height}px`;
-    surfaceRef.current?.invalidateAll();
+    if (bufferRef.current.w !== w || bufferRef.current.h !== h) {
+      bufferRef.current = { w, h };
+      c.width = w;
+      c.height = h;
+      c.style.width = `${frame.size.width}px`;
+      c.style.height = `${frame.size.height}px`;
+      surfaceRef.current?.invalidateAll();
+      return;
+    }
+    // A same-size re-tile does not go through here: assigning `width` its own
+    // value resizes nothing, so it clears nothing. The tenants clear, through
+    // `registerClear`.
   }, []);
 
   const ownSurface = useTiledSurface({ onFrame });
@@ -355,6 +379,8 @@ function LabRuntime({
               <LabShell
                 title={title ?? 'Labkit'}
                 mode={modeValue}
+                {...(pages ? { pages } : {})}
+                {...(path !== undefined ? { path } : {})}
                 footer={footer}
                 header={
                   <>

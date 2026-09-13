@@ -353,6 +353,8 @@ export type { CanvasExtensionApi, SceneCanvasApi } from './canvas/canvasExtensio
 // `subscribeGestures()`. `<SceneCanvas>` wires it from its dispatcher; bare
 // `<Canvas>` consumers can supply their own.
 export type { GestureSource, GesturePreviewSource } from './canvas/gestureBounds';
+export { resolvePreviews, flattenPreviews } from './interactions/actions/resolvePreviews';
+export type { PreviewNode } from './interactions/actions/resolvePreviews';
 
 // ─── External-content ingestion ──────────────────────────────────────────────
 // OS file drop / clipboard paste / file picker → content-handler registry.
