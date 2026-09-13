@@ -26,7 +26,7 @@ import type { Stroke } from '@weasel-js/paint';
 import type { RenderLayer } from 'core/layers/render';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
-import type { Dispatcher } from 'interactions/dispatcher/dispatcher';
+import type { Dispatcher } from '@weasel-js/routing';
 import {
   polygonFromPoints,
   polylineFromPoints,

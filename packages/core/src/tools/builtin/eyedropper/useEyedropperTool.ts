@@ -1,9 +1,9 @@
 import { useMemo, useRef, createElement } from 'react';
-import { defineTool } from '../../defineTool';
-import type { Tool } from '../../types';
-import type { HotkeyTrigger } from '../../../contributions/types';
-import type { ToolKeybinding } from '../../types';
-import type { Action } from 'interactions/actions/action';
+import { defineTool } from '../../overlayBinding';
+import type { Tool } from '../../overlayBinding';
+import type { HotkeyTrigger } from '@weasel-js/routing';
+import type { ToolKeybinding } from '@weasel-js/routing';
+import type { Action } from '@weasel-js/routing';
 import type { NodeAtPointDep } from 'interactions/actions/depSchema';
 import { EyedropperIcon } from '../../../icons';
 import { cursorFor } from '@weasel-js/cursor';

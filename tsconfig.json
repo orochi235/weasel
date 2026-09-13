@@ -46,6 +46,8 @@
       "@weasel-js/diagram": ["./packages/diagram/src/index.ts"],
       "@weasel-js/hud": ["./packages/hud/src/index.ts"],
       "@weasel-js/hud/react": ["./packages/hud/src/react/index.ts"],
+      "@weasel-js/routing": ["./packages/routing/src/index.ts"],
+      "@weasel-js/routing/react": ["./packages/routing/src/react.ts"],
       "@weasel-js/geom": ["./packages/geom/src/index.ts"],
       "@weasel-js/geom/booleans": ["./packages/geom/src/booleans/index.ts"],
       "@weasel-js/geom/*": ["./packages/geom/src/*"],

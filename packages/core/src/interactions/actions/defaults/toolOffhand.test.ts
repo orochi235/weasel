@@ -1,9 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import {
-  makeToolOffhandAction,
-  buildToolOffhandBindings,
-  TOOL_OFFHAND_ID,
-} from './toolOffhand';
+import { makeToolOffhandAction, buildToolOffhandBindings, TOOL_OFFHAND_ID } from '@weasel-js/routing';
 
 describe('makeToolOffhandAction', () => {
   it("declares scope:'hotkey' so the offhand action beats the active tool", () => {

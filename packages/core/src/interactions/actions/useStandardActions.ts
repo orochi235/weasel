@@ -11,15 +11,16 @@
  * `<DepRegistryProvider>` is in scope.
  */
 import { useEffect, useRef } from 'react';
-import type { Action } from './action';
-import { useActionsRegistry } from './ActionsProvider';
-import { useOptionalDepRegistry, type DepName, type DepSchema } from './depRegistry';
+import type { Action } from '@weasel-js/routing';
+import { useActionsRegistry } from '@weasel-js/routing/react';
+import { type DepName, type DepSchema } from '@weasel-js/routing';
+import { useOptionalDepRegistry } from '@weasel-js/routing/react';
 // Reaches depSchema.ts so tsup's per-entry dts compiler resolves `DepSchema['selection']`
 // here; `tsc --noEmit` happens to pick it up via test files, tsup does not. It MUST be
 // `import type` — a bare `import './depSchema'` makes esbuild emit a runtime import that it
 // then drops under the package's `sideEffects: false`, warning on every build.
 import type {} from './depSchema';
-import { useOptionalActiveToolContext } from './activeToolContext';
+import { useOptionalActiveToolContext } from '@weasel-js/routing/react';
 
 import { escapeAction } from './defaults/escape';
 import { cancelGestureAction } from './defaults/cancelGesture';

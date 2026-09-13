@@ -1,7 +1,7 @@
 import type { Condition } from './types';
-import type { Rule } from './rule';
-import type { RuleCtx } from './ruleCtx';
-import { evaluate, ALWAYS, NEVER } from './rule';
+import type { Rule } from '@weasel-js/routing';
+import type { RuleCtx } from '@weasel-js/routing';
+import { evaluate, ALWAYS, NEVER } from '@weasel-js/routing';
 import type { ModifierState } from '../../interactions/gestures/types';
 
 /**

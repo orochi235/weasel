@@ -2,7 +2,7 @@ import type { Op } from 'core/ops/types';
 import type { InsertAdapter, MoveAdapter, SnapTarget } from 'core/adapters/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 
-import type { ModifierState } from 'core/modifierState';
+import type { ModifierState } from '@weasel-js/routing';
 export type { ModifierState };
 
 /** Pointer position in both world and client coords. */
@@ -110,10 +110,8 @@ export type MoveBehavior<TPose> = ActionBehavior<TPose, GroupTransform, Behavior
 // ----- resize -----
 
 /** Which corner/edge of the rect stays fixed during a resize. */
-export type ResizeAnchor = {
-  x: 'min' | 'max' | 'free';
-  y: 'min' | 'max' | 'free';
-};
+import type { ResizeAnchor } from '@weasel-js/routing';
+export type { ResizeAnchor };
 
 /** Per-frame proposed resize: pose plus the anchor pinning the opposite corner. */
 export interface ResizeProposed<TPose extends Bounds> {

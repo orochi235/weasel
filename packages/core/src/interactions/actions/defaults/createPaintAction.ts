@@ -1,6 +1,6 @@
-import type { Action } from '../action';
-import type { InvocationCtx, OngoingHandle, BindingOpts } from '../invoker';
-import { ActionDisabledReason } from '../action';
+import type { Action } from '@weasel-js/routing';
+import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routing';
+import { ActionDisabledReason } from '@weasel-js/routing';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';

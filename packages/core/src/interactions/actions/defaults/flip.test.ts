@@ -3,7 +3,7 @@ import { flipAction } from './flip';
 import { asNodeId } from 'core/scene/types';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import type { NodeId } from 'core/scene/types';
-import type { BoundGesture } from '../binding';
+import type { BoundGesture } from '@weasel-js/routing';
 import { rotatedRectCorners } from '../rotate/geometry';
 
 interface Pose { x: number; y: number; width: number; height: number; rotation?: number }
@@ -68,8 +68,8 @@ function makeSelection(ids: string[]) {
 }
 
 function runFlip(deps: unknown, params?: unknown): void {
-  (flipAction.invoker as import('../invoker').ImmediateInvoker).run(
-    deps as import('../invoker').ActionDeps,
+  (flipAction.invoker as import('@weasel-js/routing').ImmediateInvoker).run(
+    deps as import('@weasel-js/routing').ActionDeps,
     params as Record<string, unknown> | undefined,
   );
 }

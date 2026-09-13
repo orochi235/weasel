@@ -1,12 +1,12 @@
 import { useCallback, useMemo, useRef } from 'react';
 import { firstPreviewPose, firstPreviewBounds, aggregatePreviewIds, toolPreviewSources } from './toolPreview';
 import type { GestureSource, GesturePreviewSource } from './gestureBounds';
-import type { OngoingOverlay } from 'interactions/actions/invoker';
+import type { OngoingOverlay } from '@weasel-js/routing';
 import { unionAABB } from 'core/geometry/unionBounds';
 import { buildChromeState, type ChromeState } from 'core/selection/chromeState';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { NodeId } from 'core/scene/types';
-import type { ToolsApi } from 'tools/useTools';
+import type { ToolsApi } from '../tools/overlayBinding';
 import type { DebugSink } from '../debug/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 

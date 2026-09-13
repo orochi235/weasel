@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { GLYPHS } from '@weasel-js/cursor';
 import { createPaintedCursorLayer } from './paintedCursorLayer';
-import { createPaintedCursorState } from './paintedCursorState';
-import type { PaintedCursor } from './paintedCursorState';
+import { createPaintedCursorState } from '@weasel-js/cursor';
+import type { PaintedCursor } from '@weasel-js/cursor';
 import type { DrawCommand, GroupDrawCommand, PathDrawCommand } from '../../renderer';
 
 const VIEW = (scale = 1) => ({ x: 0, y: 0, scale: { x: scale, y: scale } });

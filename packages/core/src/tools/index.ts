@@ -1,13 +1,11 @@
-export { defineTool } from './defineTool';
-export { defineViewportTool } from './defineViewportTool';
-export type { ToolDef, ViewportToolDef } from './routeTypes';
-export { useTools } from './useTools';
-export type { UseToolsOptions, ToolsApi } from './useTools';
+export { defineTool, defineViewportTool } from './overlayBinding';
+export type { ToolDef, ViewportToolDef } from './overlayBinding';
+export { useTools } from './overlayBinding';
+export type { UseToolsOptions, ToolsApi } from './overlayBinding';
 export { useKeybindings } from './useKeybindings';
 export type { UseKeybindingsOptions } from './useKeybindings';
-export type {
-  Tool, AnyTool, ToolCtx, ToolModifiers, ToolSlot, ToolKeybinding,
-} from './types';
+export type { Tool, AnyTool } from './overlayBinding';
+export type { ToolCtx, ToolModifiers, ToolSlot, ToolKeybinding } from '@weasel-js/routing';
 export { TOOL_PREF_KINDS, isBuiltinToolPref, prefUnit } from './prefs';
 export type {
   ToolPref,

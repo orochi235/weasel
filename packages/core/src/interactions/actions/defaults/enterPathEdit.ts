@@ -9,12 +9,12 @@
  * `exitPathEditAction` (Escape) clears edit mode.
  */
 
-import type { Action } from '../action';
-import type { ImmediateInvoker } from '../invoker';
+import type { Action } from '@weasel-js/routing';
+import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { EditAnchorsDep } from '../depSchema';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { NodeId } from 'core/scene/types';
-import { isBody } from '../../dispatcher/predicates';
+import { isBody } from '@weasel-js/routing';
 
 export const enterPathEditAction: Action & { requires: string[] } = {
   id: 'enterPathEdit',

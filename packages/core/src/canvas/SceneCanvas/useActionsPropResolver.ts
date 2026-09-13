@@ -14,9 +14,9 @@
  * gives it back.
  */
 import { useEffect, useRef } from 'react';
-import type { ActionsProp } from 'interactions/actions/registry';
-import { useActionsRegistry } from 'interactions/actions/ActionsProvider';
-import type { Action } from 'interactions/actions/action';
+import type { ActionsProp } from '@weasel-js/routing';
+import { useActionsRegistry } from '@weasel-js/routing/react';
+import type { Action } from '@weasel-js/routing';
 
 export function useActionsPropResolver(actions: ActionsProp | undefined): void {
   const reg = useActionsRegistry();

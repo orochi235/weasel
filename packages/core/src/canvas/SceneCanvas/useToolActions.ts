@@ -14,8 +14,8 @@
  * from in here keeps the tool hook callable from anywhere.
  */
 import { useEffect } from 'react';
-import { useActionsRegistry } from 'interactions/actions/ActionsProvider';
-import type { ToolsApi } from 'tools/useTools';
+import { useActionsRegistry } from '@weasel-js/routing/react';
+import type { ToolsApi } from '../../tools/overlayBinding';
 
 export function useToolActions(tools: ToolsApi): void {
   const registry = useActionsRegistry();

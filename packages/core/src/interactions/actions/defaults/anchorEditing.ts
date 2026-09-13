@@ -29,10 +29,10 @@
  * path-edit mode. See `anchorEditing.test.ts`.
  */
 
-import type { Action } from '../action';
-import { ActionDisabledReason } from '../action';
-import type { ActionDeps } from '../invoker';
-import type { ImmediateInvoker, InvocationCtx, OngoingHandle } from '../invoker';
+import type { Action } from '@weasel-js/routing';
+import { ActionDisabledReason } from '@weasel-js/routing';
+import type { ActionDeps } from '@weasel-js/routing';
+import type { ImmediateInvoker, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { EditAnchorsDep } from '../depSchema';
 import {
   anchorsInRect,

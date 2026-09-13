@@ -1,11 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, act } from '@testing-library/react';
-import {
-  DepRegistryProvider,
-  useDepSource,
-  useDepRegistry,
-  type DepRegistry,
-} from './depRegistry';
+import { DepRegistryProvider, useDepSource, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 
 function CaptureRegistry({ onRegistry }: { onRegistry: (r: DepRegistry) => void }) {
   const r = useDepRegistry();

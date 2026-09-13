@@ -21,8 +21,8 @@
  * dep gains an editable-path abstraction.
  */
 
-import type { Action } from '../action';
-import type { ImmediateInvoker } from '../invoker';
+import type { Action } from '@weasel-js/routing';
+import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { EditAnchorsDep } from '../depSchema';
 import type { PolygonPath } from 'features/paths/types';
 import { pathToAnchors, anchorsToPath, nearestSegmentT } from 'features/paths/anchors';

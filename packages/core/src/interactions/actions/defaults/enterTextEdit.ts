@@ -64,7 +64,7 @@
  *    redundant — remove it in the same pass.
  */
 
-import type { Action } from '../action';
+import type { Action } from '@weasel-js/routing';
 import type { TextEditDep } from '../depSchema';
 import type { NodeId } from 'core/scene/types';
 

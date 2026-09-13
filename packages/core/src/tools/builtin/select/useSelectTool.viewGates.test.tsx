@@ -10,8 +10,8 @@ import { arrayAdapter } from 'core/adapters/arrayAdapter';
 import { useSelection } from 'core/selection/useSelection';
 import { useSelectTool, type UseSelectToolOptions } from './useSelectTool';
 import { asNodeId } from 'core/scene/types';
-import type { Action } from '../../../interactions/actions/action';
-import type { ActionDeps } from '../../../interactions/actions/invoker';
+import type { Action } from '@weasel-js/routing';
+import type { ActionDeps } from '@weasel-js/routing';
 
 interface Rect { id: string; layer: string; x: number; y: number; width: number; height: number }
 interface Pose { x: number; y: number; width: number; height: number }

@@ -20,7 +20,7 @@
  * (default 0).
  */
 import type { ContentHandlerEntry, IngestCtx } from './contentHandlers';
-import type { IngestItem } from './ingestItems';
+import type { IngestItem } from '@weasel-js/routing';
 import { embedFilesAsImageNodes, type Measure } from './imageHandler';
 
 export const SVG_MIME = 'image/svg+xml';

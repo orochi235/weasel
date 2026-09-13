@@ -9,7 +9,7 @@ import { deleteAction } from './delete';
 import { nudgeRightAction } from './nudge';
 import { groupAction, ungroupAction } from './group';
 import { reorderForwardAction } from './reorder';
-import type { Action } from '../action';
+import type { Action } from '@weasel-js/routing';
 
 type Layer = 'base' | 'art';
 const POSE = { x: 0, y: 0, width: 10, height: 10 };

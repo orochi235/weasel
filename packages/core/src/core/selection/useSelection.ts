@@ -3,45 +3,12 @@ import type { NodeId } from 'core/scene/types';
 import { dlog } from 'debug/flag';
 
 /**
- * Selection click policy. `single` always replaces; `multi` toggles when the
- * configured extend key is held, otherwise replaces.
+ * `SelectionApi`, `SelectionMode` and `SelectionExtendKey` are declared in
+ * `@weasel-js/routing` — the `selection` dep and half the kit's actions are
+ * typed in them. Re-exported here, beside the hook that returns one.
  */
-export type SelectionMode = 'single' | 'multi';
-
-/** Modifier key used to extend the selection in `multi` mode. */
-export type SelectionExtendKey = 'shift' | 'meta' | 'ctrl';
-
-/** API returned by {@link useSelection}. */
-export interface SelectionApi {
-  /** Current selection. Re-renders trigger when this reference changes. */
-  current: readonly NodeId[];
-  /** Imperative read for use inside event callbacks (avoids stale closures). */
-  get(): NodeId[];
-  /** Replace selection. */
-  set(ids: NodeId[]): void;
-  /** Add id (multi-mode appends; single-mode replaces). */
-  add(id: NodeId): void;
-  /** Remove id from selection. */
-  remove(id: NodeId): void;
-  /** Toggle id in/out of selection. */
-  toggle(id: NodeId): void;
-  /** Clear selection. */
-  clear(): void;
-  /** True if id is selected. */
-  contains(id: NodeId): boolean;
-  /**
-   * Apply a click to the selection per the configured mode/extend key.
-   * - `single`: replaces selection with `[id]`, regardless of modifiers.
-   * - `multi`: with the extend key held, toggles `id` in/out of the selection;
-   *   otherwise replaces with `[id]`.
-   */
-  applyClick(id: NodeId, modifiers: { shift: boolean; meta: boolean; ctrl: boolean }): void;
-  /** Pre-built methods for spreading into an adapter that needs them. */
-  adapterMethods: {
-    getSelection: () => NodeId[];
-    setSelection: (ids: NodeId[]) => void;
-  };
-}
+import type { SelectionApi, SelectionMode, SelectionExtendKey } from '@weasel-js/routing';
+export type { SelectionApi, SelectionMode, SelectionExtendKey };
 
 /** Somewhere selection can live outside this hook. `Scene` satisfies it;
  *  so does any store with the same three methods. */

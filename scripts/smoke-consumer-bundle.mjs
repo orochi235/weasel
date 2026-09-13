@@ -185,7 +185,12 @@ console.log(
 // @weasel-js/labkit shipped `@weasel-js/ui` as a devDependency while
 // re-exporting it from a published subpath, and every gate stayed green.
 {
-  const IMPORTS = /^\s*(import|export)\b([\s\S]*?)from\s*['"](@weasel-js\/[^'"]+)['"]/gm;
+  // The clause may wrap across lines but never contains `;` or `*`. Without
+  // that bound the lazy scan walks out of a non-import `export` — an
+  // `export interface` with no `from` of its own — and on through thousands of
+  // characters until it hits a quoted specifier inside a JSDoc `@example`,
+  // reporting the documented import as a real one.
+  const IMPORTS = /^[ \t]*(import|export)\b([^;*]*?)from\s*['"](@weasel-js\/[^'"]+)['"]/gm;
   const problems = [];
 
   for (const name of PACKAGES) {
@@ -407,12 +412,21 @@ await writeFile(
     `type _UiSubpath = typeof import('@weasel-js/ui/components/Toast');\n` +
     // A consumer's own dep must merge into DepSchema. Declaration merging
     // targets the module where the interface is DECLARED, not one that
-    // re-exports the type — so if DepSchema's declaration ever moves out of
-    // core into a sibling package, this augmentation silently stops merging
-    // and `requires: ['smokeDep']` type-checks as an absent name with no
-    // error anywhere. `apps/draw` and the 3D lab both augment exactly like
-    // this, and both typecheck against core's SOURCE in-repo, so neither can
-    // catch it. Only a pass over the published .d.ts can.
+    // re-exports the type. DepSchema now lives in `@weasel-js/routing` and
+    // core re-exports it, so this check is load-bearing: it is what says the
+    // merge still reaches through that hop in the PUBLISHED .d.ts, where
+    // rollup-plugin-dts has flattened the chunks. When it does not, the
+    // augmentation silently stops merging and `requires: ['smokeDep']`
+    // type-checks as an absent name with no error anywhere. `apps/draw` and
+    // the 3D lab both augment exactly like this, and both typecheck against
+    // SOURCE in-repo, so neither can catch it.
+    //
+    // The declaration has to sit in routing's own barrel — the module core
+    // re-exports from — and not in a module that barrel re-exports. One hop
+    // further and TS declares a fresh interface in the shadowed alias's scope
+    // instead of merging, which surfaces as TS2536 on every `DepSchema[K]`
+    // back inside routing rather than as anything a reader would connect to
+    // an augmentation.
     `declare module '@weasel-js/core' {\n` +
     `  interface DepSchema { smokeDep?: { ping(): number } }\n` +
     `}\n` +

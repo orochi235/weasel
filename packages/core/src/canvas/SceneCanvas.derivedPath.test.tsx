@@ -19,7 +19,7 @@ import type { Path } from 'core/geometry/path';
 import { createScene } from 'core/scene/scene';
 import { linePath } from 'features/paths/builder';
 import type { GesturePreviewSource } from './gestureBounds';
-import { createPaintedCursorState } from '../features/cursor/paintedCursorState';
+import { createPaintedCursorState } from '@weasel-js/cursor';
 import { ColorOverrideRegistry } from '../animation/colorRegistry';
 import type { Animator } from '../animation/types';
 import { strokeOf } from '../util/paint';

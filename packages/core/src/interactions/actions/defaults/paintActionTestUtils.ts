@@ -2,8 +2,8 @@ import { vi } from 'vitest';
 import { asNodeId } from 'core/scene/types';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
-import type { Action } from '../action';
-import type { InvocationCtx, OngoingHandle, BindingOpts } from '../invoker';
+import type { Action } from '@weasel-js/routing';
+import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routing';
 
 /**
  * The fake scene / selection / ctx trio the four paint-action suites run

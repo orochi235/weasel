@@ -1,5 +1,5 @@
 import { describe, it, expectTypeOf } from 'vitest';
-import type { GestureBinding } from './binding';
+import type { GestureBinding } from '@weasel-js/routing';
 
 describe('GestureBinding', () => {
   it('requires spec and actionId; opts optional', () => {

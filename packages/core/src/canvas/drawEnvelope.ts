@@ -11,7 +11,7 @@
  * each reader has an "unwired" answer rather than throwing.
  */
 import type { ChromeState } from 'core/selection/chromeState';
-import type { OngoingOverlay } from 'interactions/actions/invoker';
+import type { OngoingOverlay } from '@weasel-js/routing';
 import type { GesturePreviewSource } from './gestureBounds';
 import type { CanvasViewHelpers } from './useViewHelpers';
 

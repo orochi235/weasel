@@ -33,7 +33,7 @@ export { STANDARD_SLOTS, isCustomEntry } from './layerSlots';
 export type { StandardSlotName, CustomLayerEntry } from './layerSlots';
 import type { CanvasExtensionApi } from './canvasExtension';
 import { registerMountedCanvas } from './mountedCanvases';
-import type { ToolsApi } from 'tools/useTools';
+import type { ToolsApi } from '../tools/overlayBinding';
 import { aggregatePreviewIds } from './toolPreview';
 import type { GestureSource } from './gestureBounds';
 import { useViewHelpers } from './useViewHelpers';
@@ -41,7 +41,7 @@ import { useOptionalViewRegistry } from './viewRegistry';
 import { useFrameLoop } from './useFrameLoop';
 import type { CanvasHelpers, CanvasSurfaceHelpers } from './useViewHelpers';
 
-import type { ToolCtx } from 'tools/types';
+import type { ToolCtx } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import type { Path } from 'features/paths/types';
 import { dispatchApplyBatch } from 'core/applyOps';
@@ -82,8 +82,8 @@ const alwaysVisible = (_id: string): boolean => true;
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
 import { resolveCursorTier } from '@weasel-js/cursor';
 import type { ResolvedCursor } from '@weasel-js/cursor';
-import { createPaintedCursorState } from '../features/cursor/paintedCursorState';
-import type { PaintedCursor, PaintedCursorState } from '../features/cursor/paintedCursorState';
+import { createPaintedCursorState } from '@weasel-js/cursor';
+import type { PaintedCursor, PaintedCursorState } from '@weasel-js/cursor';
 import { createPaintedCursorLayer } from '../features/cursor/paintedCursorLayer';
 
 /**
@@ -365,7 +365,7 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    *  or a config dict. Omitting a key leaves the action unbound. */
   /** Tool primitive substrate. Pointer/keyboard/wheel events are routed
    *  through `tools.dispatcher`. */
-  tools?: import('../tools/useTools').ToolsApi;
+  tools?: import('../tools/overlayBinding').ToolsApi;
 
   /** Controlled viewport. When supplied, Canvas does not own the value —
    *  the consumer must supply `onViewChange` and re-render with the new

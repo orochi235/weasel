@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import { cloneAction } from './clone';
-import type { InvocationCtx } from '../invoker';
+import type { InvocationCtx } from '@weasel-js/routing';
 import type { NodeId, AddNodeSpec } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 

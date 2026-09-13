@@ -6,10 +6,10 @@ import { translatePoseViaDescriptor, visualBoundsViaDescriptor } from '../align/
 import type { DistributeAxis, DistributeMode } from '../distribute/distribute';
 import { planDistribute } from '../distribute/plan';
 import { scenePoseFrame } from '../poseFrame';
-import type { Action } from '../action';
-import { ActionDisabledReason } from '../action';
+import type { Action } from '@weasel-js/routing';
+import { ActionDisabledReason } from '@weasel-js/routing';
 import type { SelectionApi } from 'core/selection/useSelection';
-import type { ImmediateInvoker } from '../invoker';
+import type { ImmediateInvoker } from '@weasel-js/routing';
 import { DistributeHorizontalIcon, DistributeVerticalIcon } from './icons/distributeIcons';
 
 const ID_FOR: Record<DistributeAxis, string> = { x: 'distribute.horizontal', y: 'distribute.vertical' };

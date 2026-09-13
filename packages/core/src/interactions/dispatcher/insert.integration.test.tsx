@@ -13,13 +13,13 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useRef } from 'react';
-import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider';
-import { DepRegistryProvider, useDepRegistry } from '../actions/depRegistry';
+import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
+import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
 import '../actions/depSchema'; // augments DepSchema
-import { ActiveToolContextProvider } from '../actions/activeToolContext';
-import { useGestureDispatcher } from './useGestureDispatcher';
+import { ActiveToolContextProvider } from '@weasel-js/routing/react';
+import { useGestureDispatcher } from '@weasel-js/routing/react';
 import { insertAction } from '../actions/defaults/insert';
-import { createDispatcher, type Dispatcher } from './dispatcher';
+import { createDispatcher, type Dispatcher } from '@weasel-js/routing';
 import { createGestureSource } from 'canvas/SceneCanvas/dispatcherGestureBounds';
 import { unionAABB } from 'core/geometry/unionBounds';
 import type { InsertDep } from '../actions/depSchema';
@@ -87,7 +87,7 @@ function MountDispatcher({
         })) ?? [],
       }],
     ])
-  ).current as ReadonlyMap<string, import('../../tools/types').AnyTool>;
+  ).current as ReadonlyMap<string, import('@weasel-js/routing').AnyTool>;
 
   useGestureDispatcher({
     canvasRef,

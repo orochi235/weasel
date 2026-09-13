@@ -7,17 +7,13 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useRef } from 'react';
-import { ActionsProvider, useActionsRegistry } from 'interactions/actions/ActionsProvider';
-import { DepRegistryProvider, useDepSource } from 'interactions/actions/depRegistry';
+import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
+import { DepRegistryProvider, useDepSource } from '@weasel-js/routing/react';
 import 'interactions/actions/depSchema';
-import {
-  ActiveToolContextProvider,
-  useActiveToolContext,
-  type ActiveToolContextValue,
-} from 'interactions/actions/activeToolContext';
-import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
-import { defineTool } from '../../defineTool';
-import { useTools } from '../../useTools';
+import { ActiveToolContextProvider, useActiveToolContext, type ActiveToolContextValue } from '@weasel-js/routing/react';
+import { useGestureDispatcher } from '@weasel-js/routing/react';
+import { defineTool } from '../../overlayBinding';
+import { useTools } from '../../overlayBinding';
 import { useHandTool } from './useHandTool';
 
 beforeAll(() => {

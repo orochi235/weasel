@@ -12,7 +12,7 @@
  * No-op when no `<DepRegistryProvider>` is in scope — mirrors the silent-
  * no-op contract of `useDepSource`.
  */
-import { useDepSource } from '../depRegistry';
+import { useDepSource } from '@weasel-js/routing/react';
 import type { BooleansAdapter } from './booleans';
 
 /** Publish a Boolean-ops adapter so the built-in Pathfinder actions can run.

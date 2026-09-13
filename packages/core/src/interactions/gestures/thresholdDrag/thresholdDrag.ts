@@ -1,4 +1,4 @@
-import { openPointerSession } from '../pointerSession';
+import { openPointerSession } from '@weasel-js/routing';
 
 /**
  * A drag that does not start until the pointer has moved far enough to mean

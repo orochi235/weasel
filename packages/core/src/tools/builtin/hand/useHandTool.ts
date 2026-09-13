@@ -1,6 +1,6 @@
 import { useMemo, useRef, createElement } from 'react';
-import { defineViewportTool } from '../../defineViewportTool';
-import type { Tool } from '../../types';
+import { defineViewportTool } from '../../overlayBinding';
+import type { Tool } from '../../overlayBinding';
 import { HandIcon } from '../../../icons';
 import type { View } from 'core/viewport/view';
 import type { InertiaConfig } from 'core/viewport/useDecayLoop';

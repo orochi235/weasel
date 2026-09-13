@@ -8,7 +8,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { moveAction } from './move';
-import type { InvocationCtx, OngoingHandle, OngoingInvoker } from '../invoker';
+import type { InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';

@@ -205,20 +205,17 @@ Priority tags:
   promoted into `@weasel-js/kernel3d`. Migrating it is what would retire the
   file.
 
-- **(P2) Routing has not moved into a package yet.** Every fight the 3D lab had
-  was a dep contract, a registration step or a coordinate-space bug — never
-  binding-to-action routing and never `InvocationCtx` — so a second kernel wants
-  core's dispatcher rather than one of its own, which argues for a package
-  beside `gestures` and `history`. The untangling that had to come first is
-  done (2026-09-13): `Action` and `Contribution` each split into a routing half
-  and a chrome half, the actions provider is out of the registry contract, the
-  dispatcher takes `ActionSource` instead of `ActionsRegistry`, and nothing in
-  routing, tools or contributions is in an import cycle. What is left is the
-  move itself — package scaffold, file moves, core's re-exports — plus the
-  correctness pass the `gestures`/`history` extraction says to budget for.
-  The seam is still `depSchema.ts`: `ViewApi` has no orientation, and
+- **(P2) The routing package is still typed in 2D.** `@weasel-js/routing` exists
+  (2026-09-13) and core consumes it, but the seam the 3D lab keeps hitting is
+  unchanged: `ViewApi` has no orientation, and
   `SnapDep`/`AreaSelectDep`/`NodeAtPointDep`/`InsertDep.commit` are typed in 2D
-  points and `Bounds`. Costed and measured in
+  points and `Bounds`. Ten of the 24 deps are genuine obstructions —
+  `view`, `pointer`, `snap`, `lassoSelect`, `editAnchors`, `poseDescriptor`,
+  `booleansAdapter`, `slice`, `ingestion`, `geometryProjection`. `view` is the
+  outright dead end; a `View` is `{x, y, scale}` and names no camera. The deps
+  themselves stay in core and merge into routing's `DepSchema` from outside, so
+  a second kernel can already declare its own — what it cannot do is reuse the
+  ten that assume a plane. Measured in
   `docs/superpowers/specs/2026-09-13-routing-extraction-costing.md`.
 
 - **(P3) `PoseDescriptor` only runs one way for a non-2D pose.** `getBounds`

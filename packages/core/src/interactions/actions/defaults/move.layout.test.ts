@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import type { PoseOverrides } from 'core/scene/types';
 import { moveAction } from './move';
-import type { InvocationCtx } from '../invoker';
+import type { InvocationCtx } from '@weasel-js/routing';
 import { tileGrid } from '../../../layout/strategies';
 import { createTransformOp } from 'core/ops/transform';
 import type { LayoutDep } from '../depSchema';

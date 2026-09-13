@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { lassoSelectAction } from './lassoSelect';
-import type { InvocationCtx } from '../invoker';
+import type { InvocationCtx } from '@weasel-js/routing';
 import type { LassoSelectDep } from '../depSchema';
 
 // ---------------------------------------------------------------------------

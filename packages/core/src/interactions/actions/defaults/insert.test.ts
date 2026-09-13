@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { insertAction } from './insert';
 
-import type { InvocationCtx, BindingOpts } from '../invoker';
+import type { InvocationCtx, BindingOpts } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import type { InsertDep, SnapDep } from '../depSchema';
 import { SHAPE_KINDS, shapeKindsWhere } from 'core/shapeKinds';

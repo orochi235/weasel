@@ -57,9 +57,9 @@
  * dep contract thin and avoids importing `createInsertOp` into the descriptor.
  */
 
-import type { Action } from '../action';
-import type { InvocationCtx, OngoingHandle, BindingOpts, OngoingOverlay, DragSample } from '../invoker';
-import { resolveParams } from '../invoker';
+import type { Action } from '@weasel-js/routing';
+import type { InvocationCtx, OngoingHandle, BindingOpts, OngoingOverlay, DragSample } from '@weasel-js/routing';
+import { resolveParams } from '@weasel-js/routing';
 import type { InsertDep, InsertExtras, SnapDep } from '../depSchema';
 import type { TextEditDep } from '../depSchema';
 import type { SelectionApi } from 'core/selection/useSelection';

@@ -1,15 +1,13 @@
 # Costing the routing extraction
 
-**What this is:** a measurement of what it would take to lift weasel's routing
-layer — binding-to-action dispatch — out of `@weasel-js/core` into its own
-package beside `gestures` and `history`. Measured 2026-09-13 against `main`.
+**What this is:** the costing that preceded lifting weasel's routing layer —
+binding-to-action dispatch — out of `@weasel-js/core` into `@weasel-js/routing`.
+**All three arcs are done (2026-09-13); the package exists.** What is left here
+is the measurement, kept for the parts that are still true about the boundary,
+and corrected where the work disagreed with the prediction.
 
-**Who it is for:** whoever decides whether to do it, and then whoever does.
-
-**What it answers:** `2026-08-22-3d-kernel-design.md` concluded that routing is
-portable and the dep schema is not, and recorded that nobody had costed it.
-This is that costing. It does not recommend a schedule; it says what the work
-is, which parts are cheap, and which one thing is genuinely hard.
+**Who it is for:** whoever next changes the routing boundary, or wonders why a
+type sits where it does.
 
 ## The headline
 
@@ -91,15 +89,26 @@ it from outside exactly as the two consumers already do. Far cheaper, uses a
 seam the repo has exercised twice, and needs no generic. The concrete dep
 interfaces — all 24 — stay in core, which becomes just another consumer.
 
-**The second design is the recommendation, and the landmine this doc named is
-not real.** It claimed declaration merging targets the module where an interface
-is *declared*, so an augmentation still aimed at `'@weasel-js/core'` after the
-declaration moved would silently stop merging. Measured 2026-09-13 against
-`tsc` under `moduleResolution: bundler`, in both shapes that matter — the
-interface re-exported from a sibling file, and re-exported from a sibling
-*package* — the augmentation merges through the alias and both the consumer's
-key and the built-in keys resolve. A negative control aimed at a module with no
-`DepSchema` fails with TS2339 and TS2322, so the check has teeth.
+**The second design is what shipped, and the landmine this doc called unreal is
+half real.** The claim was that declaration merging targets the module where an
+interface is *declared*, so an augmentation still aimed at `'@weasel-js/core'`
+after the declaration moved would silently stop merging. The first measurement
+said it merges fine through one re-export hop, and that much holds. What it did
+not try was two hops, which is the shape the extraction actually produces:
+consumer augments `'@weasel-js/core'`, core re-exports from `'@weasel-js/routing'`,
+and routing's barrel re-exports from a submodule where the interface is declared.
+
+At two hops TS declares a *fresh* interface in the shadowed alias's scope rather
+than merging, and the failure surfaces nowhere near the augmentation: every
+`DepSchema[K]` inside routing's own source fails with TS2536, "Type 'K' cannot be
+used to index type 'DepSchema'". Nine errors, all in files nobody had touched.
+
+**The fix is one hop: declare `DepSchema` in routing's own `index.ts`,** the
+module core re-exports from, not in a module that barrel re-exports. Consumers
+keep naming `'@weasel-js/core'` and never learn the package exists. The standing
+check is `scripts/smoke-consumer-bundle.mjs`'s `smokeDep` augmentation, which now
+guards this against the *published* `.d.ts` — the only place the flattening is
+visible.
 
 What did happen here once was narrower: `depRegistry.tsx` records a
 *self*-augmentation — core's own `declare module './depRegistry'` — dying when
@@ -196,10 +205,67 @@ would re-export the moved symbols, none of these break. Only the two
 
 **Arc 1 — untangle, inside core, no package. Done.** See above.
 
-**Arc 2 — move it.** The package scaffold, the file moves, core's re-exports,
-and retargeting the two augmentation sites. Arc 1 removed the reason this could
-not be done piecemeal, and the augmentation retarget turns out not to be
-load-bearing: the sites can keep naming `'@weasel-js/core'` and still merge.
+**Arc 2 — move it. Done (2026-09-13).** Both augmentation sites were left naming
+`'@weasel-js/core'` and merge unchanged, as predicted — but only because
+`DepSchema` is declared at the right depth; see the DepSchema section.
 
-**Arc 3 — the correctness pass.** On the `gestures`/`history` precedent, expect
-it to find real bugs that predate the move. It does not appear in any diffstat.
+**Arc 3 — the correctness pass. Done (2026-09-13).** See
+"What arc 3 found" below.
+
+## What arc 3 found
+
+The `gestures`/`history` precedent said to budget for latent faults that
+predate the move and appear in no diffstat. It was right: **eleven**, all with
+concrete failure scenarios, all months old, all passed over by 10,730 green
+tests.
+
+- **Dispatcher and dep-registry ownership were single slots.** Two canvases
+  under one provider, and whichever unmounted second emptied the slot — the
+  canvas still on screen got `null` from `begin()` for the rest of the page's
+  life. Every neighboring registration in the same file is a stack; these two
+  were not. The existing test covered only the displaced-releases direction,
+  and its own comment named the half that was never implemented.
+- **An offhand hold ended by popping the top of the hotkey stack**, not its own
+  tool. Holds do not come up in the order they went down.
+- **`reportDeadClaim` read `process.env` bare**, verbatim in the shipped chunk:
+  a `ReferenceError` out of the pointerdown listener for any consumer whose
+  runtime has no `process`.
+- **`drag.points` accumulated only while a handle declared `onMove`**, though
+  `onEnd` is handed the same trail. An action that reads the finished path and
+  previews nothing committed a one-vertex path. Adding a no-op `onMove` fixed
+  it, which is the tell.
+- **`ContributionsApi.entries` was captured in a memo keyed on the focused
+  tool** while its two siblings read the live ref — a binding live and hittable
+  with no palette entry and no chrome.
+- **The conflict reporter never compared ambient tools against each other.**
+  Every tool `defineTool` builds declares `focus: true`, so bucketing on "not
+  focus-eligible" put them all in the registry bucket, which is deliberately
+  not self-compared. A whole collision class was reported by nothing.
+- **Its cross-pass dedupe keyed on the rendered target token**, so two distinct
+  predicate collisions read as one and the second stayed silent after the first
+  was fixed. Its self-check also skipped actions entirely, and both group passes
+  are guarded on more than one member — so a lone action was checked by nothing.
+- **`inFlightCursor` and `getActiveAction` disagreed** about which of several
+  in-flight gestures is the current one, and the dispatcher walked the hotkey
+  stack from the end every other reader treats as the bottom.
+- **`Eligibility.capabilities` gated nothing.** `liveScope` short-circuits on
+  `state.allows &&`, and neither production caller supplied `allows` — so the
+  field `defineTool` fills from every `ToolDef.capabilities` had no effect on
+  which bindings assemble. The kit's own tools were covered by accident, each
+  action repeating the tag in its own `eligible` rule; a tool whose action
+  carries no rule was not. The dispatcher now builds `allows` from the `RuleCtx`
+  it already holds, and a consumer with no mode system supplies no `getRuleCtx`
+  and sees no change.
+- **A multitouch handle was stranded when the finger count changed.** The
+  gesture id carries the count, so a third finger opened a second handle beside
+  the first; only the newer was pumped, and the final lift committed both.
+- **The conflict reporter bucketed key alternatives apart.** `key: ['h','H']`
+  and `key: 'H'` really do collide, and joining the alternatives into one
+  display token put them in different buckets. Same for two `drop` specs whose
+  MIME sets overlap without being equal.
+
+The shape worth keeping: **five of the eleven are a container that should have
+been a stack, or an iteration that should have run the other way**, and two
+more are a gate whose condition was short-circuited by a value nobody supplied.
+None of the three is visible in a diff or a type, and all survive any test that
+exercises one of whatever it is — one canvas, one hold, one pointer, one mode.

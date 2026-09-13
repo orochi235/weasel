@@ -1,6 +1,6 @@
 import type { NodeId } from 'core/scene/types';
-import type { Action } from '../action';
-import { ActionDisabledReason } from '../action';
+import type { Action } from '@weasel-js/routing';
+import { ActionDisabledReason } from '@weasel-js/routing';
 import type { EditAnchorsDep } from '../depSchema';
 
 /**

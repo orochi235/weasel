@@ -13,7 +13,7 @@
  * and travel through here as such.
  */
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import type { OngoingOverlay } from 'interactions/actions/invoker';
+import type { OngoingOverlay } from '@weasel-js/routing';
 
 /**
  * A source of in-flight preview state — a tool from the tools registry, or an

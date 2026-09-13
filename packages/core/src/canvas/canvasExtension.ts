@@ -1,9 +1,9 @@
 import type { LayerHit } from '../affordances/types';
 import type { Dims, RenderLayer } from '../core/layers/render';
 import type { View } from '../core/viewport/view';
-import type { IngestItem } from '../features/ingestion/ingestItems';
+import type { IngestItem } from '@weasel-js/routing';
 import type { ViewAnimationOptions } from '../core/viewport/useViewAnimation';
-import type { PaintedCursorState } from '../features/cursor/paintedCursorState';
+import type { PaintedCursorState } from '@weasel-js/cursor';
 import type { DrawCommand } from '../renderer';
 import type { CanvasViewProps } from './CanvasView';
 

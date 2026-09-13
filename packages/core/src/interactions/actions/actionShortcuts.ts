@@ -5,8 +5,8 @@
  * to; the dispatcher reads the specs themselves.
  */
 import type { GestureSpec } from '../gestures/spec';
-import type { Action } from './action';
-import { actionBindings } from './binding';
+import type { Action } from '@weasel-js/routing';
+import { actionBindings } from '@weasel-js/routing';
 
 /** One keyboard shortcut, flattened for display. Structurally the
  *  `ShortcutInput` weasel-ui formats — kept local so core doesn't depend on

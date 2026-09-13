@@ -1,4 +1,4 @@
-import type { Action } from '../action';
+import type { Action } from '@weasel-js/routing';
 
 /**
  * @experimental

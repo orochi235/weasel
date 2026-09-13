@@ -23,3 +23,8 @@ declare module '@weasel-js/core' {
 }
 
 export {};
+
+// An augmentation that stops merging still compiles — TS just declares a fresh
+// interface and nothing names the loss. This says the key really landed.
+const _merged: import('@weasel-js/core').DepName = 'camera3d';
+void _merged;

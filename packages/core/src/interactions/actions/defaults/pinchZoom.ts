@@ -30,8 +30,8 @@
  * @see zoomAt — fixed-point zoom primitive from `core/viewport/zoomAt`.
  */
 
-import type { Action } from '../action';
-import type { InvocationCtx, OngoingHandle } from '../invoker';
+import type { Action } from '@weasel-js/routing';
+import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { ViewApi } from '../depSchema';
 import { zoomAt } from 'core/viewport/zoomAt';
 import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from 'core/viewport/zoomBounds';

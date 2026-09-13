@@ -1,7 +1,7 @@
-import type { Action } from '../action';
-import type { BoundGesture } from '../binding';
-import type { ImmediateInvoker } from '../invoker';
-import type { ActiveToolContextValue } from '../activeToolContext';
+import type { Action } from '@weasel-js/routing';
+import type { BoundGesture } from '@weasel-js/routing';
+import type { ImmediateInvoker } from '@weasel-js/routing';
+import type { ActiveToolContextValue } from '@weasel-js/routing/react';
 
 /** Canonical id of the consolidated tool-activation action. One descriptor
  *  serves every tool; the matched binding (or imperative caller) supplies

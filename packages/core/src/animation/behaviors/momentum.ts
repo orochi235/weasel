@@ -1,7 +1,7 @@
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import type { MoveBehavior, GestureContext } from 'interactions/gestures/types';
-import { scratchKey, getScratch, setScratch } from 'interactions/scratchKey';
+import { scratchKey, getScratch, setScratch } from '@weasel-js/routing';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';

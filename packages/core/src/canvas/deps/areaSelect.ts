@@ -10,7 +10,7 @@
  * triggering re-registration.
  */
 import { useRef } from 'react';
-import { useDepSource } from 'interactions/actions/depRegistry';
+import { useDepSource } from '@weasel-js/routing/react';
 import type { AreaSelectDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';

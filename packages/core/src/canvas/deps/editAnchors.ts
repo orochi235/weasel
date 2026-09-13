@@ -29,14 +29,14 @@
  * triple — this dep doesn't own preview state.
  */
 import { useCallback, useRef, useState } from 'react';
-import { useDepSource } from 'interactions/actions/depRegistry';
+import { useDepSource } from '@weasel-js/routing/react';
 import type { EditAnchorsDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId, RectPose } from 'core/scene/types';
 import { isRectPose } from 'interactions/actions/resize/autoPoseDescriptor';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Path, PolygonPath } from 'features/paths/types';
 import { pathInWorld, worldEditToStorage } from 'features/paths/pathInWorld';
-import { recordModeSwitch } from 'interactions/dispatcher/dispatcher';
+import { recordModeSwitch } from '@weasel-js/routing';
 
 interface OpsApplier {
   applyOps(ops: { apply(adapter: unknown): void }[], label?: string): void;

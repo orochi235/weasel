@@ -9,7 +9,7 @@
  * stays in sync with tool switches and hotkey engage/disengage without
  * prop plumbing.
  */
-import { useOptionalActiveToolContext } from '../interactions/actions/activeToolContext';
+import { useOptionalActiveToolContext } from '@weasel-js/routing/react';
 import { useHostAnchor } from './useHostAnchor';
 import s from './ModalityHud.module.css';
 

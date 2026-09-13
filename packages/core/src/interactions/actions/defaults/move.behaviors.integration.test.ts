@@ -3,7 +3,7 @@ import { moveAction } from './move';
 import { snapToContainer } from '../move/behaviors/snapToContainer';
 import { snapBackOrDelete } from '../move/behaviors/snapBackOrDelete';
 import { snapToGrid } from '../move/behaviors/snapToGrid';
-import type { InvocationCtx, BindingOpts, OngoingHandle, OngoingInvoker } from '../invoker';
+import type { InvocationCtx, BindingOpts, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';

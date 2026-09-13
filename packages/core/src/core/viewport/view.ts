@@ -1,31 +1,24 @@
 import type { ViewTransform } from './viewTransform';
+import type { View } from '@weasel-js/routing';
 import { normalizeZoom, warnInvalidView } from './zoomBounds';
 
 /**
- * Viewport state. `(view.x, view.y)` is the **world point currently
- * rendered at the canvas top-left**; `view.scale.x` / `view.scale.y` is
- * pixels per world unit on each axis (default `{ x: 1, y: 1 }`). So:
+ * `View` is declared in `@weasel-js/routing` — the dispatcher and every
+ * viewport action are typed in it. Re-exported here, where core's own call
+ * sites have always named it.
  *
- *   screenX = (worldX - view.x) * view.scale.x
- *   screenY = (worldY - view.y) * view.scale.y
- *   worldX  = screenX / view.scale.x + view.x
- *   worldY  = screenY / view.scale.y + view.y
+ * Core holds the invariant behind the shape: every view the kit keeps is
+ * total, so each `scale` axis is finite with a magnitude of at least
+ * `ZOOM_FLOOR` and `x` / `y` are finite. A negative axis is a flipped one
+ * (y-up), not a degenerate one, and keeps its sign. Canvases, views and
+ * animations pass what they are given through {@link normalizeView}, so
+ * screen/world conversion never divides by zero.
  *
- * Every view the kit holds is total: each `scale` axis is finite with a
- * magnitude of at least `ZOOM_FLOOR`, and `x` / `y` are finite. A negative
- * axis is a flipped one (y-up), not a degenerate one, and keeps its sign.
- * Canvases, views and animations pass what they are given through
- * {@link normalizeView}, so the conversions above never divide by zero.
- *
- * `scale` is always a 2-vector. Input convenience types
- * {@link ZoomFactor} and {@link ZoomBound} let callers pass a scalar
- * when they want both axes treated the same.
+ * `scale` is always a 2-vector. Input convenience types {@link ZoomFactor}
+ * and {@link ZoomBound} let callers pass a scalar when they want both axes
+ * treated the same.
  */
-export interface View {
-  x: number;
-  y: number;
-  scale: { x: number; y: number };
-}
+export type { View };
 
 /**
  * Input convenience for zoom primitives. A `number` is treated as a

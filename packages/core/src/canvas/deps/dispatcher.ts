@@ -9,8 +9,8 @@
  * blast radius narrow.
  */
 import { useRef } from 'react';
-import { useDepSource } from 'interactions/actions/depRegistry';
-import type { Dispatcher } from 'interactions/dispatcher/dispatcher';
+import { useDepSource } from '@weasel-js/routing/react';
+import type { Dispatcher } from '@weasel-js/routing';
 
 export function useDispatcherDepSource(dispatcher: Dispatcher): void {
   const ref = useRef(dispatcher);

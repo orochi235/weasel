@@ -3,7 +3,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
 import { createDeleteOp } from 'core/ops/delete';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
-import type { Action } from '../action';
+import type { Action } from '@weasel-js/routing';
 
 /** Host-array index of `id`: its slot among the scene roots (parent `null`)
  *  or among its parent's children. `-1` when not found. Forwarded to

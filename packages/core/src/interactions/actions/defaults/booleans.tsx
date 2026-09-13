@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { applyBooleanOp, type BooleanOp, type BooleansAdapter } from '../booleans/booleans';
-import type { Action } from '../action';
-import { ActionDisabledReason } from '../action';
-import type { ImmediateInvoker } from '../invoker';
+import type { Action } from '@weasel-js/routing';
+import { ActionDisabledReason } from '@weasel-js/routing';
+import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { SelectionApi } from 'core/selection/useSelection';
 import {
   UnionIcon,

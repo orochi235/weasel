@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import type { UiOngoingControl } from './registry';
-import { ActionsProvider, useActionsRegistry } from './ActionsProvider';
-import type { Action } from './action';
-import { createDispatcher } from '../dispatcher/dispatcher';
+import type { UiOngoingControl } from '@weasel-js/routing';
+import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
+import type { Action } from '@weasel-js/routing';
+import { createDispatcher } from '@weasel-js/routing';
 
 function wrap({ children }: { children: ReactNode }) {
   return <ActionsProvider>{children}</ActionsProvider>;
@@ -54,6 +54,30 @@ describe('ActionsRegistry dispatcher ownership', () => {
     act(() => { reg.setDispatcher(makeDispatcher()); });
     act(() => { releaseFirst(); });
     expect(slotIsWired()).toBe(true);
+  });
+
+  // The other half of the same report, and the half that was never
+  // implemented: the canvas still on screen is the DISPLACED one, and the
+  // displacer's release nulls the slot out from under it. Every neighbouring
+  // registration in ActionsProvider is a stack for exactly this reason.
+  it('uncovers the displaced canvas when the displacer releases', () => {
+    const { reg, makeDispatcher, slotIsWired } = setup();
+    act(() => { reg.setDispatcher(makeDispatcher()); });
+    let releaseSecond: () => void = () => {};
+    act(() => { releaseSecond = reg.setDispatcher(makeDispatcher()); });
+    act(() => { releaseSecond(); });
+    expect(slotIsWired()).toBe(true);
+  });
+
+  it('empties the slot only once every canvas has released', () => {
+    const { reg, makeDispatcher, slotIsWired } = setup();
+    let releaseFirst: () => void = () => {};
+    let releaseSecond: () => void = () => {};
+    act(() => { releaseFirst = reg.setDispatcher(makeDispatcher()); });
+    act(() => { releaseSecond = reg.setDispatcher(makeDispatcher()); });
+    act(() => { releaseSecond(); });
+    act(() => { releaseFirst(); });
+    expect(slotIsWired()).toBe(false);
   });
 
   it('names the collision rather than failing silently', () => {

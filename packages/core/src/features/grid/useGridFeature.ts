@@ -13,7 +13,7 @@
 import { useCallback, useRef, useState } from 'react';
 import type React from 'react';
 import { screenToWorld, type ViewTransform } from 'core/viewport/viewTransform';
-import { clientToCanvasRect } from 'core/viewport/clientToCanvas';
+import { clientToCanvasRect } from '@weasel-js/routing';
 import { pointToGridCell } from 'interactions/gestures/shared/strategies/grid';
 import type { UnitSystem, UnitValue } from 'core/units';
 import type { RenderLayer } from 'core/layers/render';

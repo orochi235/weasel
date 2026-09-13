@@ -6,7 +6,7 @@ import {
   _resetContentHandlersForTests,
   type IngestCtx,
 } from './contentHandlers';
-import type { IngestItem } from './ingestItems';
+import type { IngestItem } from '@weasel-js/routing';
 
 const png: IngestItem = { kind: 'file', mime: 'image/png', file: new File(['x'], 'a.png', { type: 'image/png' }) };
 const csv: IngestItem = { kind: 'file', mime: 'text/csv', file: new File(['x'], 'a.csv', { type: 'text/csv' }) };

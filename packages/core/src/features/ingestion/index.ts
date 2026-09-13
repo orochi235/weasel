@@ -5,13 +5,7 @@ export {
   type ContentHandlerEntry,
   type IngestCtx,
 } from './contentHandlers';
-export {
-  itemsFromDataTransfer,
-  itemsFromClipboardData,
-  itemsFromFiles,
-  INGEST_STRING_MIMES,
-  type IngestItem,
-} from './ingestItems';
+export { itemsFromDataTransfer, itemsFromClipboardData, itemsFromFiles, INGEST_STRING_MIMES, type IngestItem } from '@weasel-js/routing';
 export { kitImageHandler } from './imageHandler';
 export { kitSvgHandler, isSvgFileItem, sniffSvgText, SVG_MIME } from './svgHandler';
 export { kitWeaselJsonHandler } from './weaselJsonHandler';

@@ -32,8 +32,8 @@
  * - Debug sink recording — not available in the descriptor model.
  */
 
-import type { Action } from '../action';
-import type { InvocationCtx, OngoingHandle, OngoingOverlay } from '../invoker';
+import type { Action } from '@weasel-js/routing';
+import type { InvocationCtx, OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import type { AreaSelectDep, ViewApi } from '../depSchema';
 

@@ -1,11 +1,11 @@
 import type { NodeId } from '../../core/scene/types';
 import type { ModifierState } from '../../interactions/gestures/types';
 import type { View } from '../../core/viewport/view';
-import type { Rule } from './rule';
-import type { RuleCtx } from './ruleCtx';
+import type { Rule } from '@weasel-js/routing';
+import type { RuleCtx } from '@weasel-js/routing';
 
 export type { Rule };
-export type { RuleCtx } from './ruleCtx';
+export type { RuleCtx } from '@weasel-js/routing';
 
 /**
  * Live state read by chrome-visibility {@link Condition}s. Backward-compat

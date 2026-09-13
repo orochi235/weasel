@@ -3,8 +3,8 @@
  * Uses the same fake-dispatcher shape as `useDispatcherOverlayLayer.test.tsx`.
  */
 import { describe, it, expect } from 'vitest';
-import type { Dispatcher } from 'interactions/dispatcher/dispatcher';
-import type { OngoingHandle, OngoingOverlay } from 'interactions/actions/invoker';
+import type { Dispatcher } from '@weasel-js/routing';
+import type { OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
 import {
   createGestureSource,
   dispatcherGestureIds,

@@ -32,7 +32,7 @@ import { render, act } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
-import type { ActionDisabledReason } from 'interactions/actions/action';
+import type { ActionDisabledReason } from '@weasel-js/routing';
 import { defaultNodeRouting } from './SceneCanvas/defaultNodeRouting';
 import type { NodeRoutingEntry } from '../core/scene/NodeRouting';
 

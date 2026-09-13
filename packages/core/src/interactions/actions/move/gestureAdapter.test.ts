@@ -4,7 +4,7 @@ import { asNodeId, type NodeId } from 'core/scene/types';
 import { moveGestureAdapter } from './gestureAdapter';
 import { moveAction } from '../defaults/move';
 import { createDeleteOp } from 'core/ops/delete';
-import type { InvocationCtx } from '../invoker';
+import type { InvocationCtx } from '@weasel-js/routing';
 import type { Mat3 } from '@weasel-js/geom';
 
 interface D { color: string }

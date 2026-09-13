@@ -19,10 +19,10 @@
  * reads, and both size them through `insertPreviewExtent`, so the reported
  * bounds and the drawn preview can't disagree.
  */
-import type { Dispatcher } from 'interactions/dispatcher/dispatcher';
+import type { Dispatcher } from '@weasel-js/routing';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { GestureSource } from '../gestureBounds';
-import type { OngoingOverlay } from 'interactions/actions/invoker';
+import type { OngoingOverlay } from '@weasel-js/routing';
 import { insertPreviewExtent } from '../insertPreviewExtent';
 
 /**

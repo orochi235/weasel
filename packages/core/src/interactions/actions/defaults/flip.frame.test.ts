@@ -12,7 +12,7 @@ import {
   FRAME_FIXTURE_LOCAL,
 } from 'features/groups/frameFixture';
 import type { NodeId, RectPose, Scene } from 'core/scene/types';
-import type { ImmediateInvoker } from '../invoker';
+import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { Mat3 } from '@weasel-js/geom';
 
 const { upright, turned } = FRAME_FIXTURE_IDS;

@@ -11,7 +11,7 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
-import { ActionsProvider } from 'interactions/actions/ActionsProvider';
+import { ActionsProvider } from '@weasel-js/routing/react';
 import { createScene } from 'core/scene/scene';
 import type { View } from 'core/viewport/view';
 

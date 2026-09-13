@@ -28,8 +28,8 @@
  *   TODO: thread shift from InvocationCtx.modifiers.shift into snap logic.
  */
 
-import type { Action } from '../action';
-import type { InvocationCtx, OngoingHandle } from '../invoker';
+import type { Action } from '@weasel-js/routing';
+import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { Scene, NodeId } from 'core/scene/types';
 import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides';
 import type { Op } from 'core/ops/types';

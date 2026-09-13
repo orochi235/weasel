@@ -9,8 +9,8 @@ import {
 } from './booleans';
 import type { BooleansAdapter } from '../booleans/booleans';
 import { asNodeId } from 'core/scene/types';
-import { ActionDisabledReason } from '../action';
-import type { ImmediateInvoker } from '../invoker';
+import { ActionDisabledReason } from '@weasel-js/routing';
+import type { ImmediateInvoker } from '@weasel-js/routing';
 
 function makeAdapter(selCount = 2): BooleansAdapter {
   const ids = Array.from({ length: selCount }, (_, i) => asNodeId(String.fromCharCode(97 + i)));

@@ -19,8 +19,8 @@ import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
 import type { ClipboardIngestCtx, InsertDep, SvgIngestOptions } from 'interactions/actions/depSchema';
-import type { ActionDeps } from 'interactions/actions/invoker';
-import type { IngestItem } from './ingestItems';
+import type { ActionDeps } from '@weasel-js/routing';
+import type { IngestItem } from '@weasel-js/routing';
 
 /** Context handed to every content handler for one ingest event. */
 export interface IngestCtx {

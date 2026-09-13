@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { OngoingOverlay } from './invoker';
+import type { OngoingOverlay } from '@weasel-js/routing';
 import { resolveOverlays, type ResolvedOverlay } from './resolveOverlays';
 
 function only(overlays: OngoingOverlay[]): ResolvedOverlay | undefined {

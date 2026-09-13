@@ -1,7 +1,7 @@
-import type { Action } from '../action';
-import { ActionDisabledReason } from '../action';
-import type { ImmediateInvoker } from '../invoker';
-import type { ActiveToolContextValue } from '../activeToolContext';
+import type { Action } from '@weasel-js/routing';
+import { ActionDisabledReason } from '@weasel-js/routing';
+import type { ImmediateInvoker } from '@weasel-js/routing';
+import type { ActiveToolContextValue } from '@weasel-js/routing/react';
 
 /** Canonical id of the "Escape returns to the default tool" action. */
 export const TOOL_RESET_TO_DEFAULT_ID = 'tool.resetToDefault';

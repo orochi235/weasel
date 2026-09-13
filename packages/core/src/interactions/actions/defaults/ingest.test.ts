@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ingestAction } from './ingest';
 import { registerContentHandler, _resetContentHandlersForTests } from 'features/ingestion/contentHandlers';
-import type { IngestItem } from 'features/ingestion/ingestItems';
+import type { IngestItem } from '@weasel-js/routing';
 
 const png: IngestItem = { kind: 'file', mime: 'image/png', file: new File(['x'], 'a.png', { type: 'image/png' }) };
 
