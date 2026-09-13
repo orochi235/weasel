@@ -109,13 +109,8 @@ describe('defaultDrawOne', () => {
     expect(cmd.y).toBe(20); // POSE.y — `y` is the line-box top, not a baseline
   });
 
-  it('text branch: forwards the pose box height but not maxWidth/verticalAlign, and rendering is unchanged', () => {
-    // Snapshot-style assertion: the generic kit:text node has no data/style
-    // slot for verticalAlign yet, and forwarding maxWidth would newly
-    // word-wrap existing consumers' text — neither should be sent. `height`
-    // is forwarded (pose already carries it for the box "H" property), but
-    // with the default verticalAlign ('top') it resolves to a zero offset,
-    // so the emitted command — and thus the pixels — are unchanged.
+  it('text branch: forwards the pose box, and wraps nothing the style does not declare', () => {
+    // `height` with the default verticalAlign ('top') resolves to a zero offset.
     const cmds = defaultDrawOne(
       node({ text: 'Hello', style: { fontFamily: 'sans-serif', fontSize: 20 } }),
       POSE,
@@ -126,8 +121,9 @@ describe('defaultDrawOne', () => {
       x: 10,
       y: 20,
       align: 'left',
-      maxWidth: undefined,
-      height: POSE.height, // 40 — forwarded, but a no-op with default verticalAlign
+      maxWidth: Infinity,
+      width: POSE.width,
+      height: POSE.height,
       verticalAlign: undefined,
     });
   });

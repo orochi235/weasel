@@ -1,17 +1,14 @@
 /**
  * Where a text node's lines actually sit inside its pose box.
  *
- * A text pose is a *wrap box*, not a bounding box: `"Away"` in a 309-unit-wide
+ * A text pose is a layout box, not a bounding box: `"Away"` in a 309-unit-wide
  * box leaves most of the box empty, and anything that treats the pose as the
  * node's extent — picking, lasso, clipping, SVG export — claims that empty
  * space. `textLineBoxes` returns the per-line rectangles instead.
  *
- * The numbers come from `cachedLayoutRuns`, the same memoized walk that
- * positions the glyphs, through the same `resolveTextStyle` → `resolveRuns`
- * chain as `textCommand` — so the boxes cannot drift from what is painted. In
- * particular they honor `align` (a centered line reports its own span, not the
- * wrap width) and `verticalAlign` (the block shifts inside `[y, y + height]`
- * exactly as `drawText` shifts the quads).
+ * The numbers come from `layoutTextPose`, the layout every painter of a text
+ * pose draws, so the boxes cannot drift from what is painted — they wrap only
+ * where the style declares `wrap`, and honor `align` and `verticalAlign`.
  *
  * These are line boxes, not ink boxes: each is `fontSize * lineHeight` tall
  * from the pen's line top. Ink can escape vertically at a `lineHeight` low
@@ -21,11 +18,7 @@
  */
 
 import type { Rect } from '@weasel-js/geom';
-import { resolveTextStyle } from '../textStyle';
-import { resolveRuns } from '../runs/resolveRuns';
-import { toRuns } from '../runs';
-import { cachedLayoutRuns } from '../layout/layoutCache';
-import { verticalAlignOffset } from './verticalAlign';
+import { layoutTextPose } from '../layout/textPoseLayout';
 import type { TextPose } from '../pose';
 
 /** Options for {@link textLineBoxes}. */
@@ -36,41 +29,14 @@ export interface TextLineBoxesOpts {
   padding?: number;
   /** Keep boxes for blank lines (zero width). Default `false` — a blank line
    *  covers no area, so for hit-testing and silhouettes it is noise. Pass
-   *  `true` when the indices have to line up with the wrapped lines. */
+   *  `true` when the indices have to line up with the laid-out lines. */
   includeEmpty?: boolean;
-  /**
-   * Wrap width. Default `pose.width`, which is what `createTextLayer` passes
-   * and what `TextPose` means by its box.
-   *
-   * Pass `Infinity` for a node painted by the built-in `kit:text` painter:
-   * that painter deliberately does **not** forward `maxWidth` (see
-   * `NodeShape.ts`), so its text does not wrap, and boxes computed with a
-   * finite width would wrap where the paint did not. Alignment resolves
-   * within `pose.width` either way, as that painter's does.
-   */
-  maxWidth?: number;
 }
 
 /** Per-line rectangles for a text pose, in world units, in layout order. */
 export function textLineBoxes(pose: TextPose, opts: TextLineBoxesOpts = {}): Rect[] {
   const padding = opts.padding ?? 0;
-  const style = resolveTextStyle(pose.style);
-  // `runs` wins when non-empty, matching every painter: empty runs are not a
-  // styling, so they fall back to the plain string rather than measure nothing.
-  const source = pose.runs && pose.runs.length > 0 ? pose.runs : pose.text;
-  const runs = resolveRuns(toRuns(source), style);
-  const laid = cachedLayoutRuns(runs, {
-    maxWidth: opts.maxWidth ?? pose.width,
-    alignWidth: pose.width,
-    lineHeight: style.lineHeight,
-    align: style.align,
-  });
-  // The same translate `drawText` applies to the quads — `layoutRuns` is
-  // origin-relative, so the pose's position lands here — plus the
-  // `verticalAlign` shift, so the boxes stay on the text under every setting
-  // rather than only the default 'top'.
-  const dx = pose.x;
-  const dy = pose.y + verticalAlignOffset(pose.verticalAlign, pose.height, laid.bounds.height);
+  const { laid, x: dx, y: dy } = layoutTextPose(pose);
 
   const out: Rect[] = [];
   for (const line of laid.lines) {

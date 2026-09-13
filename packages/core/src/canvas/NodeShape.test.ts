@@ -290,11 +290,13 @@ describe('kit:text painter — rich runs', () => {
     expect(text.y).toBe(pose.y);
   });
 
-  it('aligns within the pose width without handing over a wrap width', () => {
+  it('aligns within the pose width and wraps there only when the style says so', () => {
     const [cmd] = paintText({ text: 'hi', style: { fontSize: 16, align: 'center' } });
     const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
     expect(text.width).toBe(pose.width);
-    expect(text.maxWidth).toBeUndefined();
+    expect(text.maxWidth).toBe(Infinity);
+    const [wrapped] = paintText({ text: 'hi', style: { fontSize: 16, wrap: true } });
+    expect((wrapped as Extract<DrawCommand, { kind: 'text' }>).maxWidth).toBe(pose.width);
   });
 });
 
@@ -350,17 +352,20 @@ describe('kit:text painter — silhouette', () => {
     expect(findShapeSilhouette(textNode({ text: '' }), wide)).toBeNull();
   });
 
-  it('does not wrap where the paint does not', () => {
-    // `paint` deliberately withholds `maxWidth`, so kit:text never wraps. A
-    // silhouette measured against `pose.width` would wrap and report line
-    // boxes the renderer never drew.
-    const n = textNode({ text: 'AAAA BBBB AAAA', style: { fontSize: 20 } });
+  it('wraps exactly where the paint does', () => {
     const narrow = { x: 0, y: 0, width: 40, height: 100 };
-    const sil = findShapeSilhouette({ ...node(n.data), pose: narrow }, narrow)!;
+    const text = 'AAAA BBBB AAAA';
+    const sil = findShapeSilhouette({ ...node({ text, style: { fontSize: 20 } }), pose: narrow }, narrow)!;
     // One unwrapped line: ink continues past the 40-unit pose width, and
     // nothing sits on a second line.
-    expect(pathContainsPoint(sil, 60, 5)).toBe(true);
+    expect(pathContainsPoint(sil, 100, 5)).toBe(true);
     expect(pathContainsPoint(sil, 5, 30)).toBe(false);
+    const wrapped = findShapeSilhouette(
+      { ...node({ text, style: { fontSize: 20, wrap: true } }), pose: narrow }, narrow,
+    )!;
+    // 'AAAA ' is the whole first line, about 62 wide.
+    expect(pathContainsPoint(wrapped, 100, 5)).toBe(false);
+    expect(pathContainsPoint(wrapped, 5, 30)).toBe(true);
   });
 
   it('follows center and right alignment within the pose width', () => {

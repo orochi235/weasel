@@ -1459,17 +1459,14 @@ function EditorWithSharedScene({
 
   // ── In-place text editing ─────────────────────────────────────────────────
   // The contenteditable overlay lives inside `.wd-canvas-host` (the workspace),
-  // which is the positioning context it needs. `view` is passed so the overlay
-  // tracks pan/zoom: it is placed at the node's projected screen origin and
-  // CSS-scaled by the view, keeping every metric on it — including run-level
-  // font size and tracking — in the same world units the canvas draws in.
+  // which is the positioning context it needs. It tracks pan/zoom through the
+  // canvas mounted inside that host, so no view is passed.
   //
   // `hostRef.current` is null on the first render and populated by the time
   // the ResizeObserver's first sample re-renders (which is also when the
   // canvas mounts), so the overlay always has a container before an edit can
   // start.
   const textEdit = useSceneTextEdit(scene, hostRef.current, {
-    view,
     // Clicking into the character bar must not end the edit it is editing.
     // The bar's dropdowns render in a portal under <body>, so they are not in
     // the bar's subtree and `closest` alone misses them — picking a font

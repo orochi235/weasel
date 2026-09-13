@@ -7,15 +7,13 @@
  *
  * `caretIndexAt` does the finer test: given a world-space (x, y) inside the
  * pose, returns the corresponding character offset so the consumer can place
- * the caret on click. It reads the caret stops off the same
- * `cachedLayoutRuns` result the renderer paints and `textLineBoxes` picks
- * against, so the caret cannot land on a different line — or between
- * different glyphs — than the one under the pointer.
+ * the caret on click. It reads the caret stops off `layoutTextPose`, the
+ * layout the painters draw and `textLineBoxes` picks against, so the caret
+ * cannot land on a different line — or between different glyphs — than the
+ * one under the pointer.
  */
 
-import {
-  cachedLayoutRuns, resolveRuns, resolveTextStyle, toRuns, verticalAlignOffset,
-} from '@weasel-js/text';
+import { layoutTextPose } from '@weasel-js/text';
 import type { TextPose } from '@weasel-js/text';
 
 /** Options for `pointInTextPose`. */
@@ -40,21 +38,6 @@ export function pointInTextPose(
   );
 }
 
-/** Options for `caretIndexAt`. */
-export interface CaretIndexAtOpts {
-  /**
-   * Wrap width. Default `pose.width`, which is what `createTextLayer` passes
-   * and what `TextPose` means by its box.
-   *
-   * Pass `Infinity` for a node painted by the built-in `kit:text` painter:
-   * that painter deliberately does not forward `maxWidth`, so its text does
-   * not wrap, and a caret mapped through a finite width would answer for a
-   * line break the paint never made. Alignment resolves within `pose.width`
-   * either way. Mirrors `textLineBoxes`.
-   */
-  maxWidth?: number;
-}
-
 /**
  * Map a world-space point inside `pose` to a character offset into the pose's
  * text (0..length). Clicks above the first line clamp to 0; clicks below the
@@ -66,31 +49,10 @@ export interface CaretIndexAtOpts {
  * produced) and `pose.verticalAlign`. The offset is into the runs'
  * concatenated text, which `TextPose` requires to equal `pose.text`.
  */
-export function caretIndexAt(
-  x: number,
-  y: number,
-  pose: TextPose,
-  opts: CaretIndexAtOpts = {},
-): number {
-  const style = resolveTextStyle(pose.style);
-  // `runs` wins when non-empty, matching every painter: empty runs are not a
-  // styling, so they fall back to the plain string rather than measure nothing.
-  const source = pose.runs && pose.runs.length > 0 ? pose.runs : pose.text;
-  const runs = resolveRuns(toRuns(source), style);
-  const laid = cachedLayoutRuns(runs, {
-    maxWidth: opts.maxWidth ?? pose.width,
-    alignWidth: pose.width,
-    lineHeight: style.lineHeight,
-    align: style.align,
-  });
-
+export function caretIndexAt(x: number, y: number, pose: TextPose): number {
+  const { laid, x: dx, y: dy } = layoutTextPose(pose);
   const lines = laid.lines;
   if (lines.length === 0) return 0;
-
-  // The same translate `drawText` applies to the quads — the layout is
-  // origin-relative — plus the `verticalAlign` shift.
-  const dx = pose.x;
-  const dy = pose.y + verticalAlignOffset(pose.verticalAlign, pose.height, laid.bounds.height);
 
   const last = lines[lines.length - 1];
   if (y < dy + lines[0].y0) return lines[0].cells[0]?.srcIndex ?? lines[0].srcEnd;

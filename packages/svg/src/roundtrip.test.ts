@@ -378,6 +378,23 @@ describe('round-trip', () => {
     expect(t2.fill).toBeNull();
   });
 
+  it('text wrap survives, and is absent when the style does not declare it', () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">'
+      + '<text x="10" y="20" data-weasel-width="60" data-weasel-height="40"'
+      + ' data-weasel-wrap="true">Wrapped text</text></svg>';
+    const t = parseSvg(svg).nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.style?.wrap).toBe(true);
+    const out = serializeSvg([t], { viewBox: { x: 0, y: 0, width: 200, height: 100 } });
+    expect(out).toContain('data-weasel-wrap="true"');
+
+    const plain = parseSvg(F.TEXT_PLAIN_SVG).nodes[0];
+    if (plain.kind !== 'text') throw new Error('expected text');
+    expect(plain.style?.wrap).toBeUndefined();
+    expect(serializeSvg([plain], { viewBox: { x: 0, y: 0, width: 200, height: 100 } }))
+      .not.toContain('data-weasel-wrap');
+  });
+
   it('unstroked text emits no stroke attribute at all', () => {
     const first = parseSvg(F.TEXT_PLAIN_SVG);
     const out = serializeSvg(first.nodes, { viewBox: { x: 0, y: 0, width: 200, height: 100 } });

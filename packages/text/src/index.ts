@@ -32,6 +32,8 @@ export {
   LAYOUT_CACHE_VARIANT_LIMIT,
   LAYOUT_CACHE_STRUCTURAL_LIMIT,
 } from './layout/layoutCache';
+export { layoutTextPose, textPoseLayoutInput } from './layout/textPoseLayout';
+export type { TextPoseLayout, TextPoseLayoutInput } from './layout/textPoseLayout';
 export type { BidiResolver, BidiReordering, BidiAnalysis } from './layout/bidiSeam';
 export type {
   LayoutRunsOpts,

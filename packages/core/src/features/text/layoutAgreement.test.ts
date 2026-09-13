@@ -18,8 +18,11 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
-import { cachedLayoutRuns, textLineBoxes } from '@weasel-js/text';
-import type { TextDrawCommand } from '../../renderer/DrawCommand';
+import { cachedLayoutRuns, resolveTextStyle, textLineBoxes } from '@weasel-js/text';
+import type { DrawCommand, TextDrawCommand } from '../../renderer/DrawCommand';
+import type { Node } from 'core/scene/types';
+import { findNodeShape } from '../../canvas/NodeShape';
+import { createTextLayer } from './textLayer';
 import type { TextPose } from '@weasel-js/text';
 import { caretIndexAt } from './hitTest';
 import { textCommandFromRuns } from './textCommand';
@@ -76,13 +79,13 @@ describe('the paint, the silhouette and the caret', () => {
     expect(painted()).toBe(cold);
     // `textLineBoxes` allocates its runs from the pose rather than the
     // command, and still lands on the same entry.
-    textLineBoxes(POSE, { maxWidth: POSE.width });
+    textLineBoxes(POSE);
     expect(painted()).toBe(cold);
   });
 
   it('put the line where the glyphs are', () => {
     const laid = painted();
-    const [box] = textLineBoxes(POSE, { maxWidth: POSE.width });
+    const [box] = textLineBoxes(POSE);
     expect(box.x).toBeCloseTo(POSE.x + laid.lines[0].x0, 10);
     expect(box.x + box.width).toBeCloseTo(POSE.x + laid.lines[0].x1, 10);
   });
@@ -106,9 +109,65 @@ describe('the paint, the silhouette and the caret', () => {
 
   it('agree on where the text ends', () => {
     const laid = painted();
-    const [box] = textLineBoxes(POSE, { maxWidth: POSE.width });
+    const [box] = textLineBoxes(POSE);
     const end = laid.lines[0].x1;
     expect(POSE.x + end).toBeCloseTo(box.x + box.width, 10);
     expect(caretIndexAt(POSE.x + end + 10, POSE.y + 5, POSE)).toBe(POSE.text.length);
+  });
+});
+
+/**
+ * A line longer than its box, painted by `kit:text` and by `createTextLayer`,
+ * picked through its silhouette and clicked through the caret. `'AB AB AB'`
+ * is 148 units at this size, so a 50-unit box holds one `AB` per line — if
+ * anything wraps it.
+ */
+describe('a line longer than its box', () => {
+  const LINE = SIZE * 1.2;
+  const LONG: TextPose = {
+    x: 0, y: 0, width: 50, height: 200, text: 'AB AB AB', style: STYLE,
+  };
+
+  /** Lines the renderer lays a text command out into — `drawText`'s own
+   *  options, read off the command. */
+  function drawnLines(cmd: DrawCommand): number {
+    const text = cmd as TextDrawCommand;
+    return cachedLayoutRuns(text.runs, {
+      maxWidth: text.maxWidth ?? Infinity,
+      alignWidth: text.width,
+      lineHeight: resolveTextStyle(text.style).lineHeight,
+      align: text.align ?? 'left',
+    }).lines.length;
+  }
+
+  function painterLines(pose: TextPose): number {
+    const data = { text: pose.text, style: pose.style };
+    const box = { x: pose.x, y: pose.y, width: pose.width, height: pose.height };
+    const n = { id: 'n', kind: 'leaf', layer: 'default', pose: box, data, parent: null } as unknown as Node<unknown, 'default', typeof box>;
+    const [cmd] = findNodeShape(n)!.paint(n, box);
+    return drawnLines(cmd);
+  }
+
+  function layerLines(pose: TextPose): number {
+    const layer = createTextLayer<TextPose>({ getTexts: () => [pose], getPose: (p) => p });
+    const [cmd] = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 800, height: 600 });
+    return drawnLines(cmd);
+  }
+
+  it('stays on one line everywhere when the style declares no wrap', () => {
+    expect(painterLines(LONG)).toBe(1);
+    expect(layerLines(LONG)).toBe(1);
+    expect(textLineBoxes(LONG)).toHaveLength(1);
+    // Below the only line drawn, so the caret clamps to the end rather than
+    // landing on a second line.
+    expect(caretIndexAt(0, LINE + 5, LONG)).toBe(LONG.text.length);
+  });
+
+  it('wraps at the box everywhere when the style declares it', () => {
+    const wrapped: TextPose = { ...LONG, style: { ...STYLE, wrap: true } };
+    expect(painterLines(wrapped)).toBe(3);
+    expect(layerLines(wrapped)).toBe(3);
+    expect(textLineBoxes(wrapped)).toHaveLength(3);
+    expect(caretIndexAt(0, LINE + 5, wrapped)).toBe(3);
   });
 });
