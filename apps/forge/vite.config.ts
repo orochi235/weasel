@@ -4,7 +4,7 @@ import { defineConfig } from 'vite';
 import { traitSchemasPlugin } from '../draw/vite-plugin-trait-schemas';
 import { forge } from '../../packages/forge/src/vite/index';
 import { weaselDefines } from '../../scripts/vite-build-info';
-import { forgeAliases, forgeConfig, stories } from './viteShared';
+import { forgeAliases, frameConfig, shellConfig, stories } from './viteShared';
 
 const repoRoot = resolve(__dirname, '../..');
 
@@ -14,14 +14,10 @@ export default defineConfig(({ command, isPreview }) => ({
   cacheDir: resolve(repoRoot, 'node_modules/.vite-forge'),
   resolve: { alias: forgeAliases(repoRoot) },
   define: weaselDefines(repoRoot),
-  // With the root at the repo root, vite's default scan reads every index.html in the repo and fails on other apps' virtual modules.
-  optimizeDeps: {
-    entries: [...stories, 'packages/forge/src/shell/index.ts', 'packages/forge/src/frame/index.ts', forgeConfig],
-  },
   plugins: [
     react(),
     traitSchemasPlugin({ repoRoot }),
-    forge({ stories, config: forgeConfig }),
+    forge({ stories, frameConfig, shellConfig }),
   ],
   server: { port: 5178, host: '::' },
   build: { outDir: resolve(repoRoot, 'dist-forge'), emptyOutDir: true },

@@ -175,6 +175,75 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
   });
 });
 
+describe('forge vite plugin, with a config module per realm', () => {
+  let root: string;
+  let server: ViteDevServer;
+
+  beforeAll(async () => {
+    root = realpathSync(mkdtempSync(join(tmpdir(), 'forge-config-')));
+    writeFileSync(join(root, 'a.stories.tsx'), story('ui/A', 'First'));
+    writeFileSync(join(root, 'forge.frame.ts'), `export default { parameters: { layout: 'centered' } };\n`);
+    writeFileSync(join(root, 'forge.shell.ts'), `export default { globals: {} };\n`);
+    server = await createServer({
+      root,
+      configFile: false,
+      plugins: [forge({ stories: ['*.stories.tsx'], frameConfig: 'forge.frame.ts', shellConfig: 'forge.shell.ts' })],
+      server: { middlewareMode: true },
+      appType: 'custom',
+      logLevel: 'silent',
+    });
+  });
+
+  afterAll(async () => {
+    await server?.close();
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  const entry = async (name: string) => (await server.pluginContainer.load(`\0virtual:forge/${name}`)) as string;
+  const loadDefault = async (id: string) => ((await server.ssrLoadModule(id)) as { default: unknown }).default;
+
+  it('serves each config module as its own virtual module', async () => {
+    expect(await loadDefault('virtual:forge/frame-config.js')).toEqual({ parameters: { layout: 'centered' } });
+    expect(await loadDefault('virtual:forge/shell-config.js')).toEqual({ globals: {} });
+  });
+
+  it('imports each config module only from its own entry', async () => {
+    const shell = await entry('shell-entry.js');
+    const frame = await entry('frame-entry.js');
+    expect(shell).toContain('virtual:forge/shell-config.js');
+    expect(shell).not.toContain('frame-config');
+    expect(frame).toContain('virtual:forge/frame-config.js');
+    expect(frame).not.toContain('shell-config');
+  });
+
+  it('adds the story globs, both config modules and its own entry modules to the dependency scan', () => {
+    const entries = server.config.optimizeDeps.entries as string[];
+    expect(entries).toEqual(
+      expect.arrayContaining(['*.stories.tsx', join(root, 'forge.frame.ts'), join(root, 'forge.shell.ts')]),
+    );
+    const own = entries.filter((e) => /[/\\](shell|frame)[/\\]index\.(ts|js)$/.test(e));
+    expect(own).toHaveLength(2);
+    for (const file of own) expect(existsSync(file)).toBe(true);
+  });
+
+  it('serves an empty config for a realm with no module', async () => {
+    const bare = await createServer({
+      root,
+      configFile: false,
+      plugins: [forge({ stories: ['*.stories.tsx'] })],
+      server: { middlewareMode: true },
+      appType: 'custom',
+      logLevel: 'silent',
+    });
+    try {
+      expect(((await bare.ssrLoadModule('virtual:forge/frame-config.js')) as { default: unknown }).default).toEqual({});
+      expect(((await bare.ssrLoadModule('virtual:forge/shell-config.js')) as { default: unknown }).default).toEqual({});
+    } finally {
+      await bare.close();
+    }
+  });
+});
+
 describe('forge vite plugin, built', () => {
   let root: string | undefined;
   afterEach(() => {

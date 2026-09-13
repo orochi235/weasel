@@ -1,6 +1,6 @@
 import { Lab, type LabContribution, type StorageAdapter, useLabContext } from '@weasel-js/labkit';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { ForgeConfig } from '../config';
+import type { ShellConfig } from '../config';
 import type { Globals } from '../protocol/messages';
 import type { IndexEntry } from '../story/types';
 import { CSS_VARS_SECTION } from './cssVars/CssVarsPanel';
@@ -13,7 +13,7 @@ import { useStoryRegistry } from './useStoryRegistry';
 export interface WorkshopProps {
   index: readonly IndexEntry[];
   frameUrl: string;
-  config?: ForgeConfig;
+  config?: ShellConfig;
   /** The story globs the index was built from, named when it is empty. */
   stories?: readonly string[];
   storageKey?: string;
@@ -45,7 +45,7 @@ function RouteOpener({ index }: { index: readonly IndexEntry[] }) {
 export function Workshop({ index, frameUrl, config, stories = [], storageKey, storage }: WorkshopProps) {
   const registry = useStoryRegistry(index, { frameUrl });
   const [frames] = useState(createTrialFrames);
-  const shell = config?.shell;
+  const shell = config;
   const labChrome = useMemo<readonly LabContribution[]>(
     () => [
       { id: 'fg-stories', region: 'sidebar', render: (ctx) => <StoryTree ctx={ctx} index={index} /> },

@@ -27,6 +27,7 @@ try {
   const index = (await server.ssrLoadModule('virtual:forge/index.js')).default as IndexEntry[];
   const { loadStories } = await server.ssrLoadModule('/packages/forge/src/frame/mountFrame.tsx');
   const { describeSchema } = await server.ssrLoadModule('/packages/forge/src/protocol/schema.ts');
+  const { parameters } = (await server.ssrLoadModule('virtual:forge/frame-config.js')).default as { parameters?: object };
 
   const byFile = new Map<string, IndexEntry[]>();
   for (const entry of index) byFile.set(entry.file, [...(byFile.get(entry.file) ?? []), entry]);
@@ -43,7 +44,7 @@ try {
     let count = 0;
     try {
       const mod = await server.ssrLoadModule(file);
-      const stories = loadStories(mod, file, server.config.root) as LoadedStory[];
+      const stories = loadStories(mod, file, server.config.root, parameters) as LoadedStory[];
       count = stories.length;
       for (const story of stories) {
         try {

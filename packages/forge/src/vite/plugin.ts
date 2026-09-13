@@ -1,5 +1,6 @@
-import { globSync, readFileSync } from 'node:fs';
-import { basename, matchesGlob, relative, resolve, sep } from 'node:path';
+import { existsSync, globSync, readFileSync } from 'node:fs';
+import { basename, dirname, join, matchesGlob, relative, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { Logger, Plugin, ViteDevServer } from 'vite';
 import type { IndexEntry } from '../story/types';
 import { hoistPages, writePages } from './build';
@@ -10,15 +11,31 @@ import { storybookShims } from './storybookShims';
 export interface ForgeOptions {
   /** Globs of story files, relative to the vite root. */
   stories: string[];
-  /** Path to forge.config (frame + shell halves), relative to the vite root. Optional. */
-  config?: string;
+  /** Path to the frame config module, relative to the vite root. Only frame documents import it. Optional. */
+  frameConfig?: string;
+  /** Path to the shell config module, relative to the vite root. Only the workshop page imports it. Optional. */
+  shellConfig?: string;
   /** Alias Storybook's runtime modules to forge shims (Task 13). Default true. */
   storybookShims?: boolean;
 }
 
 const PREFIX = 'virtual:forge/';
-const MODULES = new Set(['index.js', 'importers.js', 'config.js', 'shell-entry.js', 'frame-entry.js']);
+const MODULES = new Set(['index.js', 'importers.js', 'frame-config.js', 'shell-config.js', 'shell-entry.js', 'frame-entry.js']);
 const PAGES: Record<string, string> = { '/': 'shell-entry.js', '/index.html': 'shell-entry.js', '/frame.html': 'frame-entry.js' };
+
+/** forge's shell and frame entry modules: source beside this file in a checkout, the built entries in an install. */
+function ownEntries(): string[] {
+  const here = fileURLToPath(import.meta.url);
+  for (let dir = dirname(here); dir !== dirname(dir); dir = dirname(dir)) {
+    const manifest = join(dir, 'package.json');
+    if (!existsSync(manifest) || (JSON.parse(readFileSync(manifest, 'utf8')) as { name?: string }).name !== '@weasel-js/forge') {
+      continue;
+    }
+    const source = !relative(join(dir, 'src'), here).startsWith('..');
+    return ['shell', 'frame'].map((realm) => join(dir, source ? `src/${realm}/index.ts` : `dist/${realm}/index.js`));
+  }
+  return [];
+}
 
 export function forge(options: ForgeOptions): Plugin[] {
   let root = process.cwd();
@@ -56,6 +73,9 @@ export function forge(options: ForgeOptions): Plugin[] {
   };
   const index = () => [...files().values()].flat();
 
+  const configModule = (path: string | undefined) =>
+    path ? `export { default } from ${JSON.stringify(resolve(root, path))};\n` : 'export default {};\n';
+
   const modules: Record<string, () => string> = {
     'index.js': () => `export default ${JSON.stringify(index())};\n`,
     'importers.js': () => {
@@ -64,15 +84,13 @@ export function forge(options: ForgeOptions): Plugin[] {
         .map(([file]) => `  ${JSON.stringify(file)}: () => import(${JSON.stringify(file)}),`);
       return `export default {\n${lines.join('\n')}\n};\n`;
     },
-    'config.js': () =>
-      options.config
-        ? `export { default } from ${JSON.stringify(resolve(root, options.config))};\n`
-        : 'export default {};\n',
+    'frame-config.js': () => configModule(options.frameConfig),
+    'shell-config.js': () => configModule(options.shellConfig),
     'shell-entry.js': () => `import { mountWorkshop } from '@weasel-js/forge/shell';
 import '@weasel-js/labkit/styles.css';
 import '@weasel-js/forge/shell.css';
 import index from 'virtual:forge/index.js';
-import config from 'virtual:forge/config.js';
+import config from 'virtual:forge/shell-config.js';
 
 const workshop = mountWorkshop({
   index,
@@ -86,9 +104,9 @@ import.meta.hot?.on('forge:index', (next) => workshop.setIndex(next));
 import '@weasel-js/forge/frame.css';
 import index from 'virtual:forge/index.js';
 import importers from 'virtual:forge/importers.js';
-import config from 'virtual:forge/config.js';
+import setup from 'virtual:forge/frame-config.js';
 
-mountFrame({ index, importers, root: ${JSON.stringify(root)}, setup: config.frame });
+mountFrame({ index, importers, root: ${JSON.stringify(root)}, setup });
 `,
   };
 
@@ -126,9 +144,16 @@ mountFrame({ index, importers, root: ${JSON.stringify(root)}, setup: config.fram
     {
       name: 'weaselforge',
       config(config, { command }) {
-        if (command !== 'build') return undefined;
-        const input = writePages(resolve(config.root ?? process.cwd()));
-        return { build: { rolldownOptions: { input } } };
+        const at = resolve(config.root ?? process.cwd());
+        // The pages are virtual, so vite's scan finds no entry of its own to crawl for dependencies.
+        const entries = [
+          ...options.stories,
+          ...[options.frameConfig, options.shellConfig].flatMap((path) => (path ? [resolve(at, path)] : [])),
+          ...ownEntries(),
+        ];
+        const optimizeDeps = { entries };
+        if (command !== 'build') return { optimizeDeps };
+        return { optimizeDeps, build: { rolldownOptions: { input: writePages(at) } } };
       },
       generateBundle: {
         order: 'post',

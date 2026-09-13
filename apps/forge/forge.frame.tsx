@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import '@weasel-js/labkit/styles.css';
 import './frame.css';
-import { type Decorator, defineConfig } from '@weasel-js/forge';
+import { type Decorator, defineFrameConfig } from '@weasel-js/forge';
 import { interstellarTheme } from '@weasel-js/labkit';
 import { ThemeProvider } from '@weasel-js/theme/react';
 
@@ -15,6 +15,11 @@ const labkitRoot: Decorator = (story, ctx) => {
   );
 };
 
-export default defineConfig({
-  frame: { decorators: [labkitRoot], cssVarsScope: ':is(:root, [data-wzl-theme], [data-wzl-mode])' },
+export default defineFrameConfig({
+  decorators: [labkitRoot],
+  cssVarsScope: ':is(:root, [data-wzl-theme], [data-wzl-mode])',
+  parameters: {
+    layout: 'padded',
+    controls: { matchers: { color: /(background|color)$/i, date: /Date$/i } },
+  },
 });

@@ -59,15 +59,15 @@ describe('forgeTest', () => {
     expect(code).toContain('viewport: (width, height) => __forge_page.viewport(width, height)');
   });
 
-  it('hands the frame half of forge.config to every story', () => {
-    const code = transformer({ stories: ['*.stories.tsx'], config: 'forge.config.tsx' })(source, `${ROOT}/a.stories.tsx`);
-    expect(code).toContain(`import __forge_config from "${ROOT}/forge.config.tsx";`);
-    expect(code).toContain('setup: __forge_config.frame,');
+  it('hands the frame config module to every story', () => {
+    const code = transformer({ stories: ['*.stories.tsx'], frameConfig: 'forge.frame.tsx' })(source, `${ROOT}/a.stories.tsx`);
+    expect(code).toContain(`import __forge_frame_config from "${ROOT}/forge.frame.tsx";`);
+    expect(code).toContain('setup: __forge_frame_config,');
   });
 
-  it('runs stories with no setup when there is no config', () => {
+  it('runs stories with no setup when there is no frame config', () => {
     const code = transformer({ stories: ['*.stories.tsx'] })(source, `${ROOT}/a.stories.tsx`);
-    expect(code).not.toContain('__forge_config');
+    expect(code).not.toContain('__forge_frame_config');
     expect(code).toContain('setup: undefined,');
   });
 

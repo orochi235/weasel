@@ -6,8 +6,8 @@ import { storybookShims } from './storybookShims';
 export interface ForgeTestOptions {
   /** Globs of story files, relative to the vite root. Each matching file becomes a test file. */
   stories: string[];
-  /** Path to forge.config, relative to the vite root; its `frame` half wraps every story. Optional. */
-  config?: string;
+  /** Path to the frame config module, relative to the vite root; it sets up every story. Optional. */
+  frameConfig?: string;
   /** Alias Storybook's runtime modules to forge shims. Default true. */
   storybookShims?: boolean;
 }
@@ -49,12 +49,12 @@ export function forgeTest(options: ForgeTestOptions): Plugin[] {
           `import { page as __forge_page } from "vitest/browser";`,
           `import { runStory as __forge_runStory } from "@weasel-js/forge/test";`,
           `import "@weasel-js/forge/frame.css";`,
-          ...(options.config ? [`import __forge_config from ${q(resolve(root, options.config))};`] : []),
+          ...(options.frameConfig ? [`import __forge_frame_config from ${q(resolve(root, options.frameConfig))};`] : []),
           `const __forge_file = ${q(id)};`,
           `const __forge_root = ${q(root)};`,
           `const __forge_timeout = ${TIMEOUT_MS};`,
           'const __forge_options = {',
-          `  setup: ${options.config ? '__forge_config.frame' : 'undefined'},`,
+          `  setup: ${options.frameConfig ? '__forge_frame_config' : 'undefined'},`,
           '  viewport: (width, height) => __forge_page.viewport(width, height),',
           '};',
           'const __forge_run = async (exportName) => __forge_runStory(await import(/* @vite-ignore */ import.meta.url), exportName, __forge_file, __forge_root, __forge_options);',
