@@ -1164,13 +1164,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) `.lk-shell` is `height: 100vh`.** A lab mounted anywhere but the viewport top overflows by its own offset. Harmless on the dev page, wrong in general.
 
-- **(P3) A graph lane has no value axis you can read.** Graph mode plots each
-  numeric lane on its own `LayeredCurveEditor` with a y range derived from that
-  row's keys (`Timeline/LaneGraph.tsx`), and draws vertical grid lines at the
-  ruler's ticks, but nothing says what value a key sits at. `Plot2D`'s grid is
-  evenly spaced fractions with no labels, so it is no answer on a value axis
-  either. It needs value ticks and labels that fit a 72px lane.
-
 - **(P3) `snapToNearest` and `BandEditor`'s `snapped` are the same function.**
   `CurveEditor/snap.ts` (which `Timeline` and `createKeyframeLayer` use) and
   `BandEditor.tsx:134` carry the same algorithm, the same 6px radius and the

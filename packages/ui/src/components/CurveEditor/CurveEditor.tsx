@@ -13,6 +13,7 @@ import {
 import {
   type GridSettings,
   type AxesSettings,
+  type TickSettings,
 } from '../Plot2D';
 import type { InterpolationMode } from './interpolation';
 import {
@@ -28,7 +29,7 @@ import {
 } from './createFunctionLayer';
 import { LayeredCurveEditor } from './LayeredCurveEditor';
 
-export type { GridSettings, AxesSettings };
+export type { GridSettings, AxesSettings, TickSettings };
 export type {
   ControlPoint, CurveDomain, EndpointMode, AddPointMode,
   CurveSettings, FillSettings, AnchorRenderProps,
@@ -51,6 +52,8 @@ export interface CurveEditorProps {
   height: number;
   grid?: GridSettings | false | null;
   axes?: AxesSettings | false | null;
+  xTicks?: TickSettings | false | null;
+  yTicks?: TickSettings | false | null;
   curve?: CurveSettings | false | null;
   fill?: FillSettings | false | null;
   hideNonInteractive?: boolean;
@@ -79,7 +82,7 @@ export function CurveEditor(props: CurveEditorProps) {
     value, onInput, onChange,
     domain, endpoints, interpolation, constrain, addPointMode,
     minPoints, maxPoints, curve, fill, hideNonInteractive, renderAnchor,
-    width, height, xRange, yRange, grid, axes, history,
+    width, height, xRange, yRange, grid, axes, xTicks, yTicks, history,
     className, style, decorations,
   } = props;
 
@@ -174,6 +177,8 @@ export function CurveEditor(props: CurveEditorProps) {
         yRange={yRange}
         grid={grid}
         axes={axes}
+        xTicks={xTicks}
+        yTicks={yTicks}
         history={history}
         className={className}
         style={style}

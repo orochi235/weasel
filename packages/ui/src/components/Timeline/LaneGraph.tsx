@@ -112,7 +112,6 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
   };
 
   const [yLo, yHi] = valueRange(state.keys);
-  const span = win.to - win.from;
   const ticks = size.width > 0 ? tickTimes(win, size.width, TICK_SPACING_PX) : [];
 
   return (
@@ -130,13 +129,12 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
           yRange={[yLo, yHi]}
           grid={false}
           axes={false}
+          // The ruler's ticks, carried into track time.
+          xTicks={{ values: ticks.map((t) => t - offset), labels: false }}
+          // Clears a key at the track's start edge, which hangs into the gutter.
+          yTicks={{ labels: 'outside', gap: 10 }}
           history={false}
-        >
-          {ticks.map((t) => {
-            const x = span === 0 ? 0 : ((t - win.from) / span) * size.width;
-            return <line key={t} className={s.graphTick} x1={x} x2={x} y1={0} y2={size.height} />;
-          })}
-        </LayeredCurveEditor>
+        />
       ) : null}
     </div>
   );

@@ -123,9 +123,10 @@
   --curve-line-width: 1px;
 }
 
-.graphTick {
-  stroke: var(--wzl-line-subtle);
-  stroke-width: 1;
+/* A graph lane's value labels hang off the track's start edge into the label
+   column, so the lane's own label ellipsizes before it reaches them. */
+.lane[data-graph='true'] .laneLabel {
+  padding-inline-end: calc(6px + var(--wzl-timeline-value-axis-w, 32px));
 }
 
 .nestedBar {
