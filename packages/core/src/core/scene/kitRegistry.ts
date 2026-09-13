@@ -23,9 +23,12 @@ export const UNION_OF_CHILDREN = 'kit:unionOfChildren';
  * pose — the group stays where the last member left it rather than collapsing
  * to a zero box at the origin.
  *
- * Reads members as rect poses. A scene whose poses are shaped otherwise
- * registers `unionOfChildrenVia(itsDescriptor)` under {@link UNION_OF_CHILDREN};
- * the scene layer holds no descriptor of its own.
+ * Reads members as rect poses, and only as rect poses: a scene whose poses are
+ * shaped otherwise gets `null` here and its container keeps its authored pose,
+ * because this entry is registered into every scene and the scene layer holds
+ * no descriptor to read another shape with. To make such a container track its
+ * members, register `unionOfChildrenVia(itsDescriptor)` under
+ * {@link UNION_OF_CHILDREN} — the consumer's entry wins the collision.
  */
 export function unionOfChildren<TPose>(
   _node: unknown,
@@ -33,10 +36,25 @@ export function unionOfChildren<TPose>(
 ): TPose | null {
   const poses: RectPose[] = [];
   for (const d of deps) {
-    if (d !== undefined) poses.push(d.pose as unknown as RectPose);
+    if (d === undefined) continue;
+    const rect = asRectPose(d.pose);
+    if (rect === null) return null;
+    poses.push(rect);
   }
   if (poses.length === 0) return null;
-  return unionAABB(poses) as unknown as TPose;
+  const union = unionAABB(poses);
+  // Sound by the check above: every member read as a rect, so the union is one
+  // too, and a scene holding rect poses is a scene whose `TPose` is one.
+  return union === null ? null : (union as unknown as TPose);
+}
+
+/** `pose` as a rect, or `null` when it is some other shape entirely. */
+function asRectPose(pose: unknown): RectPose | null {
+  if (pose === null || typeof pose !== 'object') return null;
+  const p = pose as Partial<RectPose>;
+  const rect = typeof p.x === 'number' && typeof p.y === 'number'
+    && typeof p.width === 'number' && typeof p.height === 'number';
+  return rect ? (pose as RectPose) : null;
 }
 
 /** Merge the kit's own entries under a consumer registry. */

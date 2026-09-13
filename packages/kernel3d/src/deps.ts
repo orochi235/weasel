@@ -23,8 +23,14 @@ import type {
   SnapDep,
 } from '@weasel-js/core';
 import {
+  add,
+  dot,
   intersectRayAabb,
   intersectRayPlane,
+  len,
+  normalize,
+  quatIdentity,
+  scale as scaleBy,
   sub,
   type Aabb,
   type Ray,
@@ -109,6 +115,44 @@ function rayAt(viewport: Viewport3d, point: { x: number; y: number }): Ray | nul
     viewProjectionOf(viewport),
     cameraEye(viewport.camera),
   );
+}
+
+/**
+ * The plane through `p` that faces the camera.
+ *
+ * This is the depth choice the kit's reverse contracts need: a screen
+ * rectangle names a pose only once something says how far away it is, and the
+ * answer is "as far as it already was". Nothing resolved on this plane changes
+ * depth, and one screen pixel is the same world distance everywhere on it.
+ */
+function viewPlaneAt(camera: Camera3d, p: Vec3): { normal: Vec3; offset: number } {
+  const normal = normalize(sub(camera.target, cameraEye(camera)));
+  return { normal, offset: dot(normal, p) };
+}
+
+/** Where a screen point lands on `plane`, or `null` when it casts no ray. */
+function onPlane(
+  vp: Viewport3d,
+  plane: { normal: Vec3; offset: number },
+  point: { x: number; y: number },
+): Vec3 | null {
+  const ray = rayAt(vp, point);
+  if (!ray) return null;
+  const t = intersectRayPlane(ray, plane.normal, plane.offset);
+  return t === null ? null : pointOnRay(ray, t);
+}
+
+/** The world box containing `points`. */
+function aabbOfPoints(points: readonly Vec3[]): Aabb {
+  const min: [number, number, number] = [Infinity, Infinity, Infinity];
+  const max: [number, number, number] = [-Infinity, -Infinity, -Infinity];
+  for (const p of points) {
+    for (let i = 0; i < 3; i++) {
+      if (p[i] < min[i]) min[i] = p[i];
+      if (p[i] > max[i]) max[i] = p[i];
+    }
+  }
+  return { min, max };
 }
 
 function pointOnRay(ray: Ray, t: number): Vec3 {
@@ -278,9 +322,11 @@ export function createInsert(opts: {
  * which one this is. Unspecialized — the kit calling with only a pose in hand —
  * it answers with the default local box, which is the looser of the two.
  *
- * The contract mismatch that remains, recorded in the kernel doc: a screen
- * rectangle does not name a 3D pose without a depth, so `remapBounds` and
- * `fromBounds` have no honest answer.
+ * The two methods that run the other way — `remapBounds` and `fromBounds` —
+ * take a screen rectangle, which names a pose only once something supplies a
+ * depth. Both resolve it against the plane through the pose they were handed,
+ * facing the camera, so nothing they produce changes depth. See
+ * {@link viewPlaneAt}.
  */
 export function createPoseDescriptor<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
@@ -321,16 +367,86 @@ export function createPoseDescriptor<TData, TLayer extends string>(
         return boundsOf(pose) ?? { x: 0, y: 0, width: 0, height: 0 };
       },
 
-      remapBounds() {
-        throw new Error(
-          'kernel3d: remapBounds has no 3D answer — a screen rectangle does not name a pose without a depth.',
-        );
+      /**
+       * The src→dst screen map, applied at the pose's own depth: the node's
+       * screen anchor moves the way the rectangle does, and both ends of that
+       * move are read back off the plane through its position, so the world
+       * delta is exact rather than a scaled screen one.
+       *
+       * The scale is uniform. The rectangle names two extents and a pose has
+       * three, so there is no reading in which a screen box resizes a solid
+       * per-axis; the geometric mean is the one factor that agrees with both
+       * of the extents it does name.
+       */
+      remapBounds(pose, src, dst) {
+        const vp = castableViewport();
+        if (!vp) return pose;
+        const box = boundsIn(vp, pose);
+        if (!box) return pose;
+
+        const kx = src.width === 0 ? 1 : dst.width / src.width;
+        const ky = src.height === 0 ? 1 : dst.height / src.height;
+        const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+        const to = {
+          x: dst.x + (from.x - src.x) * kx,
+          y: dst.y + (from.y - src.y) * ky,
+        };
+
+        const plane = viewPlaneAt(vp.camera, pose.position);
+        const before = onPlane(vp, plane, from);
+        const after = onPlane(vp, plane, to);
+        if (!before || !after) return pose;
+
+        const k = Math.sqrt(Math.abs(kx * ky));
+        return {
+          ...pose,
+          position: add(pose.position, sub(after, before)),
+          scale: scaleBy(pose.scale, k),
+        };
       },
 
-      fromBounds() {
-        throw new Error(
-          'kernel3d: fromBounds has no 3D answer — a screen rectangle does not name a pose without a depth.',
+      /**
+       * The world box the rectangle covers at the template's depth, as a pose.
+       *
+       * The rectangle is flat and a box is not, so the third extent — the one
+       * no screen rectangle names — is the mean of the two it does. The result
+       * is world-axis-aligned and unrotated: the pose carries none of the
+       * template's shape, which is the contract, and it takes only its depth.
+       *
+       * Extents are written as `scale`, so this reads a pose as carrying a
+       * unit primitive — the same assumption `aabbOfPose` makes by default.
+       */
+      fromBounds(bounds, template) {
+        const vp = castableViewport();
+        if (!vp) return template;
+        const plane = viewPlaneAt(vp.camera, template.position);
+
+        const corners: Vec3[] = [];
+        for (const [x, y] of [
+          [bounds.x, bounds.y],
+          [bounds.x + bounds.width, bounds.y],
+          [bounds.x, bounds.y + bounds.height],
+          [bounds.x + bounds.width, bounds.y + bounds.height],
+        ]) {
+          const corner = onPlane(vp, plane, { x, y });
+          if (!corner) return template;
+          corners.push(corner);
+        }
+
+        const width = len(sub(corners[1]!, corners[0]!));
+        const height = len(sub(corners[2]!, corners[0]!));
+        const half = Math.sqrt(width * height) / 2;
+        const box = aabbOfPoints(
+          corners.flatMap((c) => [
+            add(c, scaleBy(plane.normal, half)),
+            sub(c, scaleBy(plane.normal, half)),
+          ]),
         );
+        return {
+          position: scaleBy(add(box.min, box.max), 0.5),
+          rotation: quatIdentity(),
+          scale: sub(box.max, box.min),
+        };
       },
 
       /**

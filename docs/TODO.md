@@ -187,24 +187,6 @@ Priority tags:
   own arc, and worth asking first whether labkit should support a lab with no
   trials at all.
 
-- **(P3) `Scene`'s kit registry carries a 2D `unionOfChildren` into every
-  scene.** `core/scene/kitRegistry.ts` registers it unconditionally, and it
-  casts twice through `as unknown as RectPose` to reach `unionAABB`. A non-rect
-  scene that opts a node into `derivePoseKey: UNION_OF_CHILDREN` gets garbage
-  rather than an error. `unionOfChildrenVia(descriptor)` shadows it under the
-  same key and is the intended escape, so the fix is to stop registering a
-  pose-shaped default rather than to add a guard. Found while promoting the 3D
-  lab's kernel material, 2026-09-13.
-
-- **(P3) The 3D lab still collects ghosts from dispatcher handles.**
-  `ghosts3d.ts` reads `dispatcher.getInFlightHandles()` because `moveAction`
-  declares `previewHidesSource: true` and the lab wants the source solid drawn.
-  `2026-09-13-pose-feed-design.md` says a `FeedNode` carries both the committed
-  and the effective pose, so the feed gets the same picture without a second
-  channel — which is why the ghost collector stayed in the lab rather than being
-  promoted into `@weasel-js/kernel3d`. Migrating it is what would retire the
-  file.
-
 - **(P2) The routing package is still typed in 2D.** `@weasel-js/routing` exists
   (2026-09-13) and core consumes it, but the seam the 3D lab keeps hitting is
   unchanged: `ViewApi` has no orientation, and
@@ -218,17 +200,12 @@ Priority tags:
   ten that assume a plane. Measured in
   `docs/superpowers/specs/2026-09-13-routing-extraction-costing.md`.
 
-- **(P3) `PoseDescriptor` only runs one way for a non-2D pose.** `getBounds`
-  and `intersectsRect` read fine as a screen-projected AABB — that is what
-  drove the 3D lab's chrome through an orbit. `remapBounds` and `fromBounds`
-  run the other way, and a screen rect does not name a 3D pose without a depth
-  choice, so the lab throws rather than guess and every action needing them is
-  recorded as not transferring. That depth choice is what is left here: the
-  interchange currency is `Bounds`, and picking one is a design decision, not
-  hygiene. The descriptor's other gap is closed — `forNode` hands it the node,
-  so the lab's sphere now bounds itself as a sphere. `geometryProjection` is the
-  same family and further gone — `transform(node, m: Mat3)` cannot hold a 3D
-  transform.
+- **(P3) `geometryProjection` cannot hold a 3D transform.** `transform(node,
+  m: Mat3)` names a plane in its signature, so a kernel with a camera has
+  nothing to implement it with. `PoseDescriptor`, which was the same complaint,
+  is closed: `forNode` hands it the node, and `remapBounds`/`fromBounds` resolve
+  a screen rectangle at the pose's own depth (2026-09-13) rather than throwing.
+  Whatever replaces `Mat3` here is the remaining piece of that family.
 
 ### Pen tool follow-ups
 

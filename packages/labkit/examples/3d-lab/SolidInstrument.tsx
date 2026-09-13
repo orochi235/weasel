@@ -44,8 +44,8 @@ import {
   type ChromeBox,
   type Viewport3d,
 } from '@weasel-js/kernel3d';
-import { collectGhosts } from './ghosts3d';
-import { createRenderer3d, type Renderer3d, type SolidDraw } from './renderer3d';
+import { applyFeedDelta, solidsToDraw, type SolidRecord } from './draws3d';
+import { createRenderer3d, type Renderer3d } from './renderer3d';
 import {
   aabbOfSolid, createSolidScene, type Pose3, type SolidNode, type SolidScene,
 } from './scene3d';
@@ -102,7 +102,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   const showChromeRef = useRef(config.showChrome);
   showChromeRef.current = config.showChrome;
   /** One draw record per node, kept across frames and patched from the feed. */
-  const drawsRef = useRef(new Map<NodeId, SolidDraw>());
+  const drawsRef = useRef(new Map<NodeId, SolidRecord>());
 
   const viewportSource = useCallback(
     (): Viewport3d => ({
@@ -127,8 +127,9 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   // which is not the same thing as rendering to schedule a paint, above.
   useSyncExternalStore(scene.subscribe, scene.getVersion);
 
-  // Preview poses mutate inside the handle without a React render, so the
-  // dispatcher's own pump is what drives a ghost frame.
+  // Overlay chrome — the marquee sweep, the uncommitted box — is read off the
+  // in-flight handles, which mutate without a React render. Ghost poses arrive
+  // through the feed instead; this is what drives a frame for the rest.
   useEffect(() => dispatcher.subscribe(repaint), [dispatcher, repaint]);
 
   // Everything the kernel needs told about this world: the scene, where the
@@ -158,17 +159,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
 
     const unregister = surface.registerPainter(tileId, (rect, frame) => {
       const draws = drawsRef.current;
-      const delta = feed.read();
-      if (delta.reset) draws.clear();
-      for (const id of delta.removed) draws.delete(id);
-      for (const entry of [...delta.added, ...delta.changed]) {
-        draws.set(entry.node.id, {
-          pose: entry.pose,
-          kind: entry.node.data.kind,
-          color: entry.node.data.color,
-          selected: false,
-        });
-      }
+      applyFeedDelta(draws, feed.read());
 
       sizeRef.current = { width: rect.w, height: rect.h };
       const paneRect = paneRef.current?.getBoundingClientRect();
@@ -180,24 +171,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
         w: Math.round(css.w * frame.dpr),
         h: Math.round(css.h * frame.dpr),
       };
-      // Selection moves on its own clock, so it is stamped on at list time
-      // rather than stored in the retained record.
-      const selectedIds = new Set(selectionRef.current);
-      const solids: SolidDraw[] = [];
-      for (const [id, draw] of draws) solids.push({ ...draw, selected: selectedIds.has(id) });
-
-      // `moveAction` declares the kit's default `previewHidesSource: true`,
-      // where the ghost replaces the solid. The lab keeps the solid drawn at
-      // its committed pose instead, so a drag shows what moved and from where.
-      for (const ghost of collectGhosts(dispatcher.getInFlightHandles(), scene)) {
-        solids.push({
-          pose: ghost.pose,
-          kind: ghost.kind,
-          color: ghost.color,
-          selected: false,
-          ghost: true,
-        });
-      }
+      const solids = solidsToDraw(draws, new Set(selectionRef.current));
 
       // The chrome is drawn here rather than in the DOM because the shared
       // buffer paints above the instrument, so anything inside the pane would

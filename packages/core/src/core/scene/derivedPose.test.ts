@@ -217,3 +217,44 @@ describe('derived pose — the merged registry', () => {
     expect(scene.registry.derivePose?.[UNION_OF_CHILDREN]).toBe(unionOfChildren);
   });
 });
+
+/**
+ * The kit's entry is registered into every scene, including one whose poses it
+ * cannot read. It has no descriptor to read another shape with, so it declines
+ * — the container keeps its authored pose rather than deriving a box of NaN.
+ */
+describe('derived pose — a scene whose poses are not rects', () => {
+  interface Pose3 { position: readonly [number, number, number] }
+  const at = (x: number, y: number, z: number): Pose3 => ({ position: [x, y, z] });
+
+  function grouped3() {
+    const scene = createScene<object, 'main', Pose3>({ systemLayers: LAYERS });
+    const g = scene.add({
+      kind: 'container', layer: 'main', pose: at(7, 7, 7), data: {},
+      dependsOn: 'children', derivePose: unionOfChildren,
+    });
+    scene.add({ kind: 'leaf', parent: g, layer: 'main', pose: at(0, 0, 0), data: {} });
+    scene.add({ kind: 'leaf', parent: g, layer: 'main', pose: at(4, 0, 2), data: {} });
+    return { scene, g };
+  }
+
+  it('leaves the container at its authored pose', () => {
+    const { scene, g } = grouped3();
+    expect(effectivePose(scene, scene.get(g)!)).toEqual(at(7, 7, 7));
+  });
+
+  it('declines rather than deriving a pose of NaN', () => {
+    const { scene, g } = grouped3();
+    const derived = unionOfChildren(scene.get(g)!, [
+      { pose: at(0, 0, 0) }, { pose: at(4, 0, 2) },
+    ]);
+    expect(derived).toBeNull();
+  });
+
+  it('still declines when only one member is shaped otherwise', () => {
+    const mixed = unionOfChildren<unknown>(null, [
+      { pose: box(0, 0) }, { pose: at(4, 0, 2) },
+    ]);
+    expect(mixed).toBeNull();
+  });
+});

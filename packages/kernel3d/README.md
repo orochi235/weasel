@@ -31,14 +31,28 @@ numbers: a 3D host passes the dispatcher an identity `clientToWorld`, so
 `ctx.world` is the screen point, and each dep rebuilds the ray itself. Tools,
 the select tool included, transfer untouched.
 
-Two things do not, and the kernel says so rather than guessing:
+One thing does not, and the kernel says so rather than guessing:
 
 - **`ViewApi` has no orientation**, so an orbit camera cannot travel through
   the kit's `view`. The kernel declares a `camera3d` dep of its own.
-- **`PoseDescriptor.remapBounds` and `fromBounds` throw.** A screen rectangle
-  does not name a 3D pose without a depth. `getBounds` and `intersectsRect` run
-  the other way and work, which is what drives selection chrome through an
-  orbit.
+
+## The depth a screen rectangle does not name
+
+`PoseDescriptor` reads `Bounds` as the screen box a solid covers. `getBounds`
+and `intersectsRect` run that way and need nothing else — they are what drive
+selection chrome through an orbit. `remapBounds` and `fromBounds` run the other
+way, and a rectangle on screen names a pose only once something says how far
+away it is.
+
+**The answer is "as far as it already was."** Both resolve the rectangle on the
+plane through the pose they were handed, facing the camera, so neither changes
+depth. Two consequences worth knowing before you build on them:
+
+- A resize scales uniformly. The rectangle names two extents and a pose has
+  three, so the factor is the geometric mean of the two it names.
+- `fromBounds` returns a world-axis-aligned, unrotated box whose third extent
+  is the mean of the two the rectangle gives it, and it reads `scale` as world
+  extents — the unit-primitive assumption `aabbOfPose` makes by default.
 
 ## The bounds seam
 
