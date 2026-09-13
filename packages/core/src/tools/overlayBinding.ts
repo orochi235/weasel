@@ -30,7 +30,7 @@ export type Overlay = RenderLayer<unknown>;
 
 export type Contribution = RoutingContribution<Overlay>;
 export type ContributionChrome = RoutingContributionChrome<Overlay>;
-export interface Tool<TScratch = unknown> extends RoutingTool<TScratch, Overlay> {}
+export type Tool<TScratch = unknown> = RoutingTool<TScratch, Overlay>;
 export type AnyTool = AnyToolOf<Overlay>;
 export type ToolDef<TScratch = void> = RoutingToolDef<TScratch, Overlay>;
 export type ViewportToolDef<TScratch = void> = RoutingViewportToolDef<TScratch, Overlay>;
