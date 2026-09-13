@@ -39,7 +39,7 @@
 import { actionBindings, type Action, type ActionsRegistry } from '../actions/registry';
 import type { DepRegistry } from '../actions/depRegistry';
 import type { GestureBinding } from '../actions/binding';
-import type { OngoingHandle, InvocationCtx, ActionDeps, AffordanceHit, DragSample } from '../actions/invoker';
+import type { OngoingHandle, InvocationCtx, ActionDeps, AffordanceHit, DragSample, Point2 } from '../actions/invoker';
 import { resolveParams } from '../actions/invoker';
 import { buildDepsFromRequires } from '../actions/buildDeps';
 import type { Tool } from '../../tools/types';
@@ -579,7 +579,6 @@ export function createDispatcher(opts?: {
   function buildUiInvocationCtx(deps: ActionDeps, params?: Record<string, unknown>): InvocationCtx {
     return {
       world: { x: 0, y: 0 },
-      screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       deps,
       ...(params !== undefined ? { params } : {}),
@@ -596,10 +595,20 @@ export function createDispatcher(opts?: {
     };
     const base: InvocationCtx = {
       world: { x: 0, y: 0 },
-      screen: { x: 0, y: 0 },
       modifiers,
       deps,
     };
+
+    // The pointer in client pixels, where the event carries it. Not every kind
+    // does, which is why `ctx.screen` is optional — filling it from the world
+    // point instead is how it came to be screen-space in name only.
+    const clientPoint = (ev: InputEvent): Point2 | undefined => {
+      const cx = (ev as { clientX?: number }).clientX;
+      const cy = (ev as { clientY?: number }).clientY;
+      return cx !== undefined && cy !== undefined ? { x: cx, y: cy } : undefined;
+    };
+    const screen = clientPoint(event);
+    if (screen) base.screen = screen;
 
     // Populate gesture-kind-specific fields.
     if (event.kind === 'key') {
@@ -609,9 +618,10 @@ export function createDispatcher(opts?: {
     } else if (event.kind === 'wheel') {
       base.wheel = { deltaX: event.deltaX, deltaY: event.deltaY, deltaZ: 0 };
     } else if (event.kind === 'pointerdown' || event.kind === 'click') {
-      const sx = event.kind === 'pointerdown' ? (event.x ?? 0) : 0;
-      const sy = event.kind === 'pointerdown' ? (event.y ?? 0) : 0;
-      base.screen = { x: sx, y: sy };
+      // A click's own world point is `worldX`/`worldY` — the release — with
+      // the press as the fallback for a consumer that wired neither.
+      const sx = event.kind === 'pointerdown' ? (event.x ?? 0) : (event.worldX ?? event.pressX ?? 0);
+      const sy = event.kind === 'pointerdown' ? (event.y ?? 0) : (event.worldY ?? event.pressY ?? 0);
       base.world = { x: sx, y: sy };
       const affordance = event.kind === 'pointerdown' ? (event.affordance as AffordanceHit | undefined) : undefined;
       base.drag = {
@@ -623,7 +633,6 @@ export function createDispatcher(opts?: {
     } else if (event.kind === 'pointermove' || event.kind === 'pointerup') {
       const cx = event.x;
       const cy = event.y;
-      base.screen = { x: cx, y: cy };
       base.world = { x: cx, y: cy };
       // Compute delta relative to drag origin if available.
       const origin = gestureId ? dragOrigins.get(gestureId) : undefined;
@@ -1176,7 +1185,6 @@ export function createDispatcher(opts?: {
   function cancelAll(reason: 'commit' | 'cancel'): void {
     const stubCtx: InvocationCtx = {
       world: { x: 0, y: 0 },
-      screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       deps: {},
     };

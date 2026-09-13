@@ -105,7 +105,17 @@ export interface DragSample extends Point2 {
  *  populated only for matching gesture kinds. */
 export interface InvocationCtx {
   world: Point2;
-  screen: Point2;
+  /**
+   * The pointer in client/screen pixels, for an action that has to place DOM
+   * at the pointer. Absent on every invocation whose event carries no client
+   * coordinates — a keystroke, a UI-driven trigger, a synthetic probe — so
+   * read it with a fallback rather than assuming a point.
+   *
+   * A view-mutating drag wants `drag.screenDelta`, not the difference of two
+   * of these: world deltas are self-referential mid-pan, and so is any delta
+   * taken across a view change.
+   */
+  screen?: Point2;
   modifiers: ModifierState;
   deps: ActionDeps;
   drag?: {
