@@ -12,11 +12,13 @@
  *   2. the layer is painted at all — scene visibility, and the asking view's
  *      `layerVisibility` / `layerOrder`
  *   3. painted alpha is above zero
- *   4. the query's own shape test
- *   5. every ancestor clip admits the query region
+ *   4. the node is not locked, unless the query asks for locked nodes
+ *   5. the query's own shape test
+ *   6. every ancestor clip admits the query region
  *
- * 2, 3 and 5 are all "the renderer did not put this on screen". A pick path
- * that skips one answers for a node the user cannot see.
+ * 2, 3 and 6 are all "the renderer did not put this on screen". A pick path
+ * that skips one answers for a node the user cannot see. 4 is the other axis:
+ * a locked node is on screen and still out of reach.
  */
 
 import type { Path } from 'features/paths/types';
@@ -64,6 +66,9 @@ export interface PickSource<TPose> {
   /** Whether this layer reaches the screen in the asking view. Omit for a
    *  source with no layers. */
   layerIsPainted?(layer: string): boolean;
+  /** Whether the node is locked — painted, but not something a pointer can
+   *  take. Omit for a source with no lock concept. */
+  isLocked?(node: PickCandidate<TPose>): boolean;
   /** The path a node computes from its dependencies' poses, or null when it
    *  derives nothing. Only a scene-backed source can answer — deriving needs
    *  the dependencies' poses — so a bare adapter omits it, and every derived
@@ -76,6 +81,9 @@ export interface PickQuery<TPose> {
   /** Default `true`. The area walks exclude containers so a marquee does not
    *  return a container and its children both. */
   includeContainers?: boolean;
+  /** Default `false`. Every selecting or editing query passes over locked
+   *  nodes; one that only samples what is painted can take them back. */
+  includeLocked?: boolean;
   /** Does this node, drawn at this pose, cover the query region? `derived`
    *  is the node's resolved path when it has one — a derived node's pose is a
    *  placeholder, so a region test that reads only the pose answers for the
@@ -121,6 +129,7 @@ export function pickWalk<TPose>(
   q: PickQuery<TPose>,
 ): string[] {
   const includeContainers = q.includeContainers ?? true;
+  const isLocked = q.includeLocked === true ? undefined : src.isLocked;
   const out: string[] = [];
 
   // Resolving a container's clip means `clipFromPose` or a silhouette build,
@@ -147,6 +156,7 @@ export function pickWalk<TPose>(
     if (node.pickable === false) continue;
     if (node.layer !== undefined && src.layerIsPainted?.(node.layer) === false) continue;
     if (src.alphaOf !== undefined && src.alphaOf(node.id) <= 0) continue;
+    if (isLocked !== undefined && isLocked(node)) continue;
 
     const pose = src.poseOf(node);
     const derived = src.derivedPathOf?.(node);
@@ -168,6 +178,30 @@ export function pickWalk<TPose>(
 // ---------------------------------------------------------------------------
 // Sources
 // ---------------------------------------------------------------------------
+
+/** Answers `Scene.isLocked` from the layer records and parent links alone,
+ *  so a partial scene stand-in works too. Null when nothing is locked, which
+ *  is what keeps the gate off the walk in the common case. */
+function lockedNodeTest(
+  scene: Pick<Scene<unknown, string, unknown>, 'layers' | 'get'>,
+): ((id: string) => boolean) | null {
+  let locked: Set<string> | null = null;
+  for (const layer of scene.layers ?? []) {
+    if (layer.locked === true) (locked ??= new Set()).add(layer.id);
+  }
+  if (locked === null) return null;
+  const lockedLayers = locked;
+  return (id) => {
+    let cur = scene.get(asNodeId(id));
+    const seen = new Set<string>();
+    while (cur !== undefined && !seen.has(cur.id)) {
+      if (lockedLayers.has(cur.layer)) return true;
+      seen.add(cur.id);
+      cur = cur.parent === null ? undefined : scene.get(cur.parent);
+    }
+    return false;
+  };
+}
 
 /** Layer ids the scene reports as hidden. Only an explicit `false` hides a
  *  layer: a partial scene stand-in that omits the flag stays pickable. */
@@ -204,6 +238,7 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
   opts: ScenePickSourceOptions<TPose> = {},
 ): PickSource<TPose> {
   const hidden = hiddenLayerIds(scene.layers);
+  const locked = lockedNodeTest(scene as never);
   const { getPose, alphaOf, layerIsPainted } = opts;
 
   // Resolved once per walk rather than once per candidate: a scene with
@@ -287,6 +322,7 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
     },
     // Absent entirely when nothing is faded, so the walk skips the gate.
     ...(readAlpha ? { alphaOf: readAlpha } : {}),
+    ...(locked ? { isLocked: (node: PickCandidate<TPose>) => locked(node.id) } : {}),
     ...(hidden.size > 0 || layerIsPainted
       ? {
         layerIsPainted: (layer: string) =>

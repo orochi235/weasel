@@ -200,6 +200,29 @@ describe('useSceneTextEdit — view thunk', () => {
     expect(hook.result.current.editingId).toBe('a');
   });
 
+  it('does not open the editor on a node whose layer is locked', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const hook = renderHook(() => {
+      const scene = useScene({ items: [NODE] });
+      return { scene, edit: useSceneTextEdit(scene, container) };
+    });
+    const canvas = document.createElement('canvas');
+    container.appendChild(canvas);
+    const click = {
+      target: canvas, clientX: 110, clientY: 60,
+    } as unknown as MouseEvent<HTMLElement>;
+
+    const { scene } = hook.result.current;
+    act(() => scene.setLayerLocked(scene.layers[0]!.id, true));
+    act(() => hook.result.current.edit.onDoubleClick(click));
+    expect(hook.result.current.edit.editingId).toBeNull();
+
+    act(() => scene.setLayerLocked(scene.layers[0]!.id, false));
+    act(() => hook.result.current.edit.onDoubleClick(click));
+    expect(hook.result.current.edit.editingId).toBe('a');
+  });
+
   it('opens the editor from a double-click whose target is not a canvas', () => {
     // Under `paintInto` the dblclick target is the caller's input box, so the
     // old `instanceof HTMLCanvasElement` gate made text editing a silent no-op

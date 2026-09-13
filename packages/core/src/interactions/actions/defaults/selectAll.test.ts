@@ -48,6 +48,22 @@ describe('selectAllAction (behavior)', () => {
     expect(run(scene)).toEqual(['shown']);
   });
 
+  it('skips nodes on a locked layer, and takes them again once unlocked', () => {
+    const scene = sceneWithHiddenLayer();
+    scene.setLayerLocked('fx', true);
+    expect(run(scene)).toEqual(['shown']);
+    scene.setLayerLocked('fx', false);
+    expect(run(scene)).toEqual(['shown', 'hidden']);
+  });
+
+  it('skips a child whose container sits on a locked layer', () => {
+    const scene = sceneWithHiddenLayer();
+    const box = scene.add({ kind: 'container', id: asNodeId('box'), layer: 'base', data: { v: 3 }, pose: { x: 0 } });
+    scene.add({ kind: 'leaf', id: asNodeId('kid'), layer: 'fx', data: { v: 4 }, pose: { x: 0 }, parent: box });
+    scene.setLayerLocked('base', true);
+    expect(run(scene)).toEqual(['hidden']);
+  });
+
   it('selects nothing when every layer is hidden', () => {
     const scene = sceneWithHiddenLayer();
     scene.setLayerVisible('base', false);
