@@ -34,6 +34,7 @@ import type { DrawCommand } from '../renderer/DrawCommand';
 import type { View } from '../core/viewport/view';
 import type { Scene } from '../core/scene/types';
 import type { PoseDescriptor } from '../core/geometry/poseDescriptor';
+import type { Animator } from '../animation/types';
 import { AUTO_POSE_DESCRIPTOR } from '../interactions/actions/resize/autoPoseDescriptor';
 
 /** Props for `<MinimapCanvas>`. */
@@ -77,6 +78,10 @@ export interface MinimapCanvasProps<TData, TLayer extends string, TPose> {
   layerVisibility?: SceneViewLayers['layerVisibility'];
   /** Paint order for the minimap, keyed as `layerVisibility`. */
   layerOrder?: SceneViewLayers['layerOrder'];
+  /** Optional animator: the minimap repaints on its ticks and paints its
+   *  `colorOverrides`. Pass the main canvas's animator so both show the same
+   *  colors. */
+  animator?: Animator;
   /** Visual tuning of the indicator stroke. */
   indicatorStyle?: IndicatorStyle;
   /** CSS class for sizing / positioning the canvas. */
@@ -99,6 +104,7 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
     alphaFor,
     layerVisibility,
     layerOrder,
+    animator,
     fit = 'scene',
     poseDescriptor,
     indicatorStyle,
@@ -219,6 +225,7 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
       alphaFor={alphaFor}
       layerVisibility={layerVisibility}
       layerOrder={layerOrder}
+      animator={animator}
       className={className}
       canvasRef={setCanvasRef}
     />
