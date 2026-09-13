@@ -56,6 +56,38 @@ const stories = [
       if (!rooted) throw new Error("the story's root has no .lk-root ancestor");
     },
   },
+  {
+    id: 'labkit-primitives-jobprogress--determinate',
+    what: 'CSS Vars override of a themed token reaching inside the ThemeProvider wrapper',
+    check: async ({ frame, page }) => {
+      const OVERRIDE = 'rgb(1, 2, 3)';
+      const fill = frame.locator('.lk-root .lk-job__fill').first();
+      await fill.waitFor();
+      const before = await fill.evaluate((el) => getComputedStyle(el).backgroundColor);
+      if (before === OVERRIDE) throw new Error(`fill already computes ${OVERRIDE}`);
+
+      const filter = page.getByLabel('Filter', { exact: true }).first();
+      if (!(await filter.isVisible())) await page.getByText('CSS Vars', { exact: true }).first().click();
+      await filter.fill('--wzl-accent');
+      const row = page.getByRole('group', { name: '--wzl-accent', exact: true }).first();
+      await row.getByRole('textbox').first().fill(OVERRIDE);
+
+      await fill.evaluate(
+        (el, want) =>
+          new Promise((resolve, reject) => {
+            const deadline = performance.now() + 5000;
+            const poll = () => {
+              const got = getComputedStyle(el).backgroundColor;
+              if (got === want) resolve(got);
+              else if (performance.now() > deadline) reject(new Error(`fill computes ${got}, not ${want}`));
+              else setTimeout(poll, 50);
+            };
+            poll();
+          }),
+        OVERRIDE,
+      );
+    },
+  },
 ];
 
 const browser = await chromium.launch({ headless: true });
