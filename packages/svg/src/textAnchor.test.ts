@@ -83,7 +83,6 @@ describe('external <text> without data-weasel-*', () => {
   function paintedLine(n: SvgTextNode): { left: number; right: number } {
     const [box] = textLineBoxes(
       { x: n.x, y: n.y, width: n.width, height: n.height, text: n.text, runs: n.runs, style: n.style },
-      { maxWidth: Infinity },
     );
     return { left: box.x, right: box.x + box.width };
   }
