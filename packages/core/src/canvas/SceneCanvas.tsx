@@ -57,6 +57,7 @@ import type { SnapStrategy } from 'interactions/gestures/types';
 import { dlog } from '../debug/flag';
 import { DeviceProfileProvider, useDeviceProfile } from '../core/device/useDeviceProfile';
 import { ViewRegistryProvider, useOptionalViewRegistry } from './viewRegistry';
+import { createSceneLayerGate, type ViewLayerPaint } from './sceneLayerPaint';
 import { ViewInputsProvider, type SurfaceViewInputs, type ViewRuleInputs } from './viewInputs';
 import { CanvasView, type CanvasViewProps } from './CanvasView';
 import type { DeviceProfile } from '../core/device/types';
@@ -69,7 +70,7 @@ import { useHandTool } from 'tools/builtin/hand';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
 import { createGestureSource, createDispatcherPreviewSources } from './SceneCanvas/dispatcherGestureBounds';
-import type { PickCamera } from './SceneCanvas/useSceneSelectTool';
+import type { PickView } from './SceneCanvas/useSceneSelectTool';
 import type { GesturePreviewSource } from './gestureBounds';
 import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
 import { createPathEditingOverlayLayer } from 'features/paths/pathEditingOverlayLayer';
@@ -312,6 +313,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     | 'onBackgroundClick' // SceneCanvas synthesizes this; not a consumer prop
     | 'getIsVisible'    // SceneCanvas synthesizes this from chromeVisibility
     | 'contentVersion'  // SceneCanvas wires this to the scene's own version
+    | 'layerVisibility' | 'layerOrder' // re-declared below: they gate picking here too
   >
   & {
     /** A `Scene` (typically from `useScene`) — or a `SerializedScene`
@@ -821,6 +823,27 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     alphaFor?: (id: string) => number;
 
     /**
+     * Show or hide render layers in this canvas's own view, by id — the map
+     * `<Canvas>` takes. Each scene layer paints as its own render layer, keyed
+     * `scene:<layerId>`, so `{ 'scene:guides': false }` hides one scene layer
+     * here and nowhere else.
+     *
+     * A layer hidden this way is gone from this view: it does not paint, and a
+     * click, a marquee or Cmd+A here passes over it. Another view of the same
+     * scene — a `<CanvasView>`, a second canvas, a minimap — still shows it and
+     * can still take it. It applies on top of the scene's own
+     * `LayerRecord.visible` and cannot show a layer the scene hides.
+     */
+    layerVisibility?: Record<string, boolean>;
+
+    /**
+     * Draw order for this view, by render-layer id, bottom first. A listed
+     * order is the whole list: a scene layer left out of it is neither painted
+     * nor picked here. See `CanvasProps.layerOrder`.
+     */
+    layerOrder?: string[];
+
+    /**
      * Optional per-id pointer-interactivity predicate. When supplied, ids
      * for which the predicate returns `false` are excluded from hit-test
      * results — `getNodeAtPoint` returns null for those positions.
@@ -901,6 +924,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     debug,
     modalityHud,
     alphaFor,
+    layerVisibility,
+    layerOrder,
     isPointerInteractive,
     onDoubleClick,
     chromeVisibility,
@@ -1245,6 +1270,21 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [scene, alphaFor],
   );
 
+  // What this view paints of each scene layer, judged against the stack
+  // `<Canvas>` composed and read at pick time — so a consumer slot anchored
+  // between scene layers is weighed the way paint weighs it.
+  const surfaceViewRegistry = useOptionalViewRegistry();
+  const layerPaintRef = useRef<ViewLayerPaint>({ layerVisibility, layerOrder });
+  layerPaintRef.current = { layerVisibility, layerOrder };
+  const [sceneLayerGate] = useState(createSceneLayerGate);
+  const layerIsPainted = useCallback((layerId: string): boolean => (
+    sceneLayerGate(surfaceViewRegistry?.surface()?.layers() ?? [], layerPaintRef.current)(layerId)
+  ), [surfaceViewRegistry, sceneLayerGate]);
+  // Absent when this view hides nothing, so the walk skips the gate.
+  const viewLayerGate = layerVisibility !== undefined || layerOrder !== undefined
+    ? layerIsPainted
+    : undefined;
+
   const { adapter, selectTool: internalSelect, rotateTool, pickEvery: internalPickEvery, pickBest: internalPickBest, boundsOf: internalBoundsOf } = useSceneSelectTool({
     scene,
     selection,
@@ -1256,6 +1296,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     // composed function is just the override lookup, and the source resolves
     // that once per walk instead of once per candidate.
     ...(alphaFor ? { alphaOf: composedAlphaFor } : {}),
+    ...(viewLayerGate ? { layerIsPainted: viewLayerGate } : {}),
     selectTool: selectToolWithDefaults,
     ...(insertTool ? { insertTool } : {}),
     ...(layouts ? { layouts } : {}),
@@ -1282,8 +1323,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     };
     const base = makeGetNodeAtPoint(internalPickEvery, nodeResolver);
     if (!isPointerInteractive) return base;
-    return (wx: number, wy: number, camera?: PickCamera | null) => {
-      const hit = base(wx, wy, camera);
+    return (wx: number, wy: number, view?: PickView | null) => {
+      const hit = base(wx, wy, view);
       if (hit == null) return null;
       if (isPointerInteractive(hit.id) === false) return null;
       return hit;
@@ -1588,7 +1629,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Chrome-caps hover tracking: last-hovered NodeId fed into `ChromeCtx.hover`.
   // The hook attaches its own pointermove/leave listeners on the canvas and
   // caches the topmost-id from `getNodeAtPoint` on a ref. No re-renders.
-  const surfaceViewRegistry = useOptionalViewRegistry();
 
   const getNodeAtPointRefForHover = useRef(getNodeAtPoint);
   getNodeAtPointRefForHover.current = getNodeAtPoint;
@@ -1605,7 +1645,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       const origin = target?.origin ?? canvas.getBoundingClientRect();
       const view = target?.view ?? currentViewRef.current;
       const [x, y] = clientToWorldHelper(clientX, clientY, origin, view);
-      const hit = getNodeAtPointRefForHover.current?.(x, y, view);
+      // A view judges its own layers; the surface's gate is the picker's default.
+      const reg = target?.id != null
+        ? surfaceViewRegistry?.list().find((r) => r.id === target.id)
+        : undefined;
+      const hit = getNodeAtPointRefForHover.current?.(
+        x, y, reg ? { scale: view.scale, layerIsPainted: reg.layerIsPainted } : view,
+      );
       return hit ? { id: hit.id as NodeId } : null;
     },
     enabled: chromeVisibility !== undefined,
@@ -2012,6 +2058,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       modalityHud={modalityHud}
       pickBest={internalPickBest}
       contentVersion={scene.getVersion}
+      layerVisibility={layerVisibility}
+      layerOrder={layerOrder}
       {...(viewProp !== undefined ? { view: viewProp } : { defaultView })}
       onViewChange={notifyViewChange}
       shaders={shaders}
@@ -2074,6 +2122,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 dispatcher={dispatcher}
                 getActionRef={getActionRef}
                 pickEvery={internalPickEvery}
+                layerIsPainted={viewLayerGate}
+                alphaOf={alphaFor ? composedAlphaFor : undefined}
                 viewportPanEnabled={viewport?.pan ?? true}
                 viewportZoom={resolvedViewportZoom}
                 viewportPinchZoom={viewport?.pinchZoom ?? true}
@@ -2443,6 +2493,8 @@ function StandardActionsRegistrar({
   dispatcher,
   getActionRef,
   pickEvery,
+  layerIsPainted,
+  alphaOf,
   viewportPanEnabled,
   viewportZoom,
   viewportPinchZoom,
@@ -2489,6 +2541,12 @@ function StandardActionsRegistrar({
   /** World-space picker forwarded so the `nodeAtPoint` dep source can
    *  reuse the same hit-test plumbing the tool dispatcher uses. */
   pickEvery: (worldX: number, worldY: number) => string[];
+  /** This canvas's own view gate for scene layers, published on the `view`
+   *  dep and read by the selecting actions. Absent when it hides nothing. */
+  layerIsPainted?: (layerId: string) => boolean;
+  /** The composed paint alpha, when the consumer fades anything, so a region
+   *  select passes over what is painted at zero. */
+  alphaOf?: (id: string) => number;
   /** Resolved `viewport.pan` flag — default true, false to disable. */
   viewportPanEnabled: boolean | WheelPanOptions;
   /** Resolved `viewport.zoom` setting — `true` (default Cmd+wheel zoom),
@@ -2596,6 +2654,7 @@ function StandardActionsRegistrar({
     },
     viewAnimation,
     decayLoop,
+    layerIsPainted,
   );
   useStandardActions({ selection, scene, view, history: scene.history });
 
@@ -2607,13 +2666,13 @@ function StandardActionsRegistrar({
 
   // Per-dep wiring modules under `src/canvas/deps/`. See each file for the
   // dep's contract and trade-offs.
-  useAreaSelectDepSource(scene, selection, poseDescriptor, poseComposition);
+  useAreaSelectDepSource(scene, selection, poseDescriptor, poseComposition, alphaOf);
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(layouts);
   useInsertDepSource(scene, adapter, insertNodeFactories);
   useSnapDepSource(snapPoint);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestionResolveSrc, ingestionSvg, ingestionClipboard);
-  useLassoSelectDepSource(scene, selection, poseDescriptor, poseComposition);
+  useLassoSelectDepSource(scene, selection, poseDescriptor, poseComposition, alphaOf);
   useTextEditDepSource(scene);
   useEditAnchorsDepSource(scene, selection, adapter, editAnchorsExternalState, {
     anchorEditingAllowed,

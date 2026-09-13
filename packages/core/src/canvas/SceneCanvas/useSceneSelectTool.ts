@@ -12,7 +12,7 @@
  */
 import { useMemo } from 'react';
 import { sceneToAdapter, type SceneToAdapterOptions } from '../sceneAdapter';
-import { pickWalk, scenePickSource } from 'canvas/pickWalk';
+import { pickWalk, scenePickSource, type ViewPickGates } from 'canvas/pickWalk';
 import { pathContainsPoint } from 'features/paths/pathHitTest';
 import { useSelectTool, type Bounds } from 'tools/builtin/select';
 import { pickTopMostHit, type PickTopMostHitAdapter } from 'tools/builtin/pickTopMostHit';
@@ -47,10 +47,11 @@ import { meanScale } from 'core/viewport/meanScale';
  */
 export const DEFAULT_PICK_TOLERANCE_PX = 4;
 
-/** The camera a pick resolves its screen-pixel tolerance against. A world
- *  point does not carry the scale it was produced under, so a caller picking
- *  for a view other than the surface's has to say which camera it means. */
-export interface PickCamera { scale: { x: number; y: number } }
+/** The view a pick is asked for. A world point carries neither the scale it
+ *  was produced under nor what that view paints, so a caller picking for a
+ *  view other than the surface's says both. A gate left out is the one this
+ *  hook was built with. */
+export interface PickView extends ViewPickGates { scale: { x: number; y: number } }
 
 export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
   scene: Scene<TData, TLayer, TPose>;
@@ -73,7 +74,7 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
    *  world units. A caller picking for another view passes that view's camera
    *  to `pickEvery` / `pickBest` instead. Omitted in tests and non-viewport
    *  hosts, where scale is 1. */
-  getView?: () => PickCamera | null;
+  getView?: () => Pick<PickView, 'scale'> | null;
   /** The asking view's painted alpha per node — its `alphaFor` times any
    *  per-node override alpha. A node the view paints at alpha 0 is not on
    *  screen, so picking must not answer for it. */
@@ -124,12 +125,12 @@ export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
    *  dispatcher's `getNodeAtPoint` returns the same node the select tool
    *  picked — drag routes keyed on `target.kind` then resolve to `'*'`
    *  (move) instead of `'empty'` (marquee). */
-  pickEvery: (worldX: number, worldY: number, camera?: PickCamera | null) => string[];
+  pickEvery: (worldX: number, worldY: number, view?: PickView | null) => string[];
   /** Single-best hit under the world point, or null. Runs `pickEvery` then
    *  collapses parent/child overlap via `pickTopMostHit` — matches the id
    *  the select tool's pointerdown classifier would settle on for a bare
    *  click. Exposed so debug HUDs can highlight the would-be selection. */
-  pickBest: (worldX: number, worldY: number, camera?: PickCamera | null) => string | null;
+  pickBest: (worldX: number, worldY: number, view?: PickView | null) => string | null;
   /** World-space AABB of `id`, or null. Same as what the selection overlay +
    *  affordance hit-test need. Exposed so SceneCanvas can pass it to the
    *  `affordanceAt` thunk without re-deriving it. */
@@ -231,7 +232,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   // `pose.rotation` directly (the kit's one rotation convention), so rotated
   // shapes pick against their rendered, rotated body without a per-demo override.
   const wiredHitBody = useMemo(() => {
-    return (wx: number, wy: number, camera?: PickCamera | null): string[] => {
+    return (wx: number, wy: number, view?: PickView | null): string[] => {
       if (pickEveryProp) {
         const r = pickEveryProp(wx, wy);
         if (r == null) return [];
@@ -242,7 +243,9 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       // `scale` also resolves a stroke's `{px}` width into world units; without
       // it a pixel width is read as a world width and the reach is wrong at
       // every zoom but 1.
-      const scale = meanScale((camera ?? getView?.())?.scale ?? { x: 1, y: 1 });
+      const scale = meanScale((view ?? getView?.())?.scale ?? { x: 1, y: 1 });
+      const viewAlpha = view?.alphaOf ?? alphaOf;
+      const viewLayers = view?.layerIsPainted ?? layerIsPainted;
       const tolerance = pickTolerancePx / scale;
       // Through the adapter, not `n.pose`: an ephemeral override is the pose
       // the renderer draws, so it has to be the one picking tests. World, not
@@ -250,8 +253,8 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       // frame, not where its own pose says.
       const src = scenePickSource<TData, TLayer, TPose>(scene, {
         getPose: (id) => adapter.getWorldPose(id),
-        ...(alphaOf ? { alphaOf } : {}),
-        ...(layerIsPainted ? { layerIsPainted } : {}),
+        ...(viewAlpha ? { alphaOf: viewAlpha } : {}),
+        ...(viewLayers ? { layerIsPainted: viewLayers } : {}),
       });
       return pickWalk<TPose>(src, {
         hits: (n, pose, derived) => {
@@ -318,8 +321,8 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   });
 
   const wiredPickBest = useMemo(() => {
-    return (wx: number, wy: number, camera?: PickCamera | null): string | null => {
-      const ids = wiredHitBody(wx, wy, camera);
+    return (wx: number, wy: number, view?: PickView | null): string | null => {
+      const ids = wiredHitBody(wx, wy, view);
       return pickTopMostHit(ids, adapter as unknown as PickTopMostHitAdapter);
     };
   }, [wiredHitBody, adapter]);

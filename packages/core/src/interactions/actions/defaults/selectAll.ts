@@ -14,29 +14,34 @@ interface SelectAllScene {
 /**
  * @experimental
  * Static descriptor for the `selectAll` Action. Selects every scene node the
- * user can see and reach — nodes on a hidden or locked layer are left out, so
- * Cmd+A then Delete cannot take content that is off screen or locked.
+ * user can see and reach — nodes on a hidden or locked layer, or on a layer
+ * the asking view does not paint, are left out, so Cmd+A then Delete cannot
+ * take content that is off screen or locked.
  */
 export const selectAllAction: Action & { requires: string[] } = {
   id: 'selectAll',
   label: 'Select All',
   defaultBinding: { kind: 'key', key: 'a', mods: { mod: true } },
   eligible: { capability: 'creates-selection' },
-  requires: ['scene', 'selection'],
+  requires: ['scene', 'selection', 'view'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
       const scene = deps.scene as SelectAllScene | undefined;
+      const view = deps.view as { layerIsPainted?(layerId: string): boolean } | undefined;
       const skipped = new Set(
         (scene?.layers ?? []).filter((l) => !l.visible || l.locked === true).map((l) => l.id),
       );
       // Scene exposes `renderOrder()` (bottom→top iterable of NodeIds), not
       // the never-implemented `listAll()`. The node walk is the same sequence
       // and carries the layer each id sits on, which the id walk cannot.
-      const all: NodeId[] = skipped.size === 0 || !scene?.renderOrderNodes
+      const filtered = skipped.size > 0 || view?.layerIsPainted !== undefined;
+      const all: NodeId[] = !filtered || !scene?.renderOrderNodes
         ? (scene?.renderOrder ? [...scene.renderOrder()] : [])
         : scene.renderOrderNodes()
-          .filter((n) => !skipped.has(n.layer) && scene.isLocked?.(n.id) !== true)
+          .filter((n) => !skipped.has(n.layer)
+            && view?.layerIsPainted?.(n.layer) !== false
+            && scene.isLocked?.(n.id) !== true)
           .map((n) => n.id);
       if (all.length === 0) return;
       (deps.selection as { set(ids: NodeId[]): void } | undefined)?.set(all);

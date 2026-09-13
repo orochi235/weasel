@@ -35,7 +35,7 @@
 import type { Action } from '../action';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay } from '../invoker';
 import type { NodeId } from 'core/scene/types';
-import type { AreaSelectDep } from '../depSchema';
+import type { AreaSelectDep, ViewApi } from '../depSchema';
 
 // ---------------------------------------------------------------------------
 // Internal scratch
@@ -43,6 +43,8 @@ import type { AreaSelectDep } from '../depSchema';
 
 interface AreaSelectScratch {
   dep: AreaSelectDep;
+  /** The view the marquee started in: what it does not paint is not taken. */
+  view: ViewApi | undefined;
   startX: number;
   startY: number;
   shiftHeld: boolean;
@@ -78,7 +80,7 @@ export const areaSelectAction: Action & { requires: string[] } = {
   activeCursor: 'crosshair',
   defaultBinding: { kind: 'drag' },
   eligible: { capability: 'creates-selection' },
-  requires: ['areaSelect', 'editAnchors'],
+  requires: ['areaSelect', 'editAnchors', 'view'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {
@@ -112,6 +114,7 @@ export const areaSelectAction: Action & { requires: string[] } = {
       // Drag start is the world point at the moment start() is called.
       const scratch: AreaSelectScratch = {
         dep,
+        view: ctx.deps.view as ViewApi | undefined,
         startX: ctx.world.x,
         startY: ctx.world.y,
         shiftHeld: ctx.modifiers.shift,
@@ -139,7 +142,7 @@ export const areaSelectAction: Action & { requires: string[] } = {
           scratch.open = false;
           if (reason === 'cancel') return;
 
-          const { dep: d, startX, startY, currentX, currentY, shiftHeld } = scratch;
+          const { dep: d, view, startX, startY, currentX, currentY, shiftHeld } = scratch;
 
           // Derive the marquee AABB from the two world-space corners.
           const x = Math.min(startX, currentX);
@@ -153,7 +156,7 @@ export const areaSelectAction: Action & { requires: string[] } = {
             return;
           }
 
-          const hits = d.hitTestArea({ x, y, width, height }) as NodeId[];
+          const hits = d.hitTestArea({ x, y, width, height }, view) as NodeId[];
 
           if (shiftHeld) {
             const current = d.getSelection();

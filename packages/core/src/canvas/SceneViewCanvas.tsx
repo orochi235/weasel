@@ -35,7 +35,7 @@ import {
 import type { Ref } from 'react';
 import { useFrameLoop } from './useFrameLoop';
 import { renderSceneToCanvas } from './sceneViewRender';
-import type { SceneViewDrawOne } from './sceneViewRender';
+import type { SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';
 import type { DrawCommand } from '../renderer/DrawCommand';
 import type { View } from '../core/viewport/view';
 import type { Scene } from '../core/scene/types';
@@ -66,6 +66,11 @@ export interface SceneViewCanvasProps<TData, TLayer extends string, TPose> {
    *  `alphaFor`. Pass the same function the main canvas uses to keep a
    *  scoping-dim treatment consistent across both. Defaults to `() => 1`. */
   alphaFor?: (id: string) => number;
+  /** Hide scene layers in this view only, keyed `scene:<layerId>` as on
+   *  `<SceneCanvas>` — pass the main canvas's map to keep the two in step. */
+  layerVisibility?: SceneViewLayers['layerVisibility'];
+  /** Paint order for this view, keyed as `layerVisibility`. */
+  layerOrder?: SceneViewLayers['layerOrder'];
   /** Optional CSS class for sizing / positioning the `<canvas>`. The kit
    *  does not emit inline styles for layout — use a class. */
   className?: string;
@@ -77,7 +82,10 @@ export interface SceneViewCanvasProps<TData, TLayer extends string, TPose> {
 function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
   props: SceneViewCanvasProps<TData, TLayer, TPose>,
 ) {
-  const { scene, view, width, height, drawOne, extraCommands, alphaFor, className, canvasRef } = props;
+  const {
+    scene, view, width, height, drawOne, extraCommands, alphaFor, layerVisibility, layerOrder,
+    className, canvasRef,
+  } = props;
 
   // Subscribe to scene version. The snapshot value isn't used directly —
   // we only need React to re-render the component when the scene mutates.
@@ -114,6 +122,8 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
       drawOne,
       extraCommands: extraCommands as DrawCommand[] | undefined,
       alphaFor,
+      layerVisibility,
+      layerOrder,
     });
     return true;
   };

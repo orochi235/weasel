@@ -215,7 +215,20 @@ export function hiddenLayerIds(
   return out;
 }
 
-export interface ScenePickSourceOptions<TPose> {
+/**
+ * The two answers a pick needs from the view it is asked for rather than from
+ * the data behind it: how that view paints a node, and whether it paints a
+ * layer at all. A scene and a bare adapter take the same pair.
+ */
+export interface ViewPickGates {
+  /** Painted alpha: the view's `alphaFor` times any per-node override alpha.
+   *  A node painted at alpha 0 cannot be hit. */
+  alphaOf?: (id: string) => number;
+  /** Whether a node's `layer` reaches the screen in the asking view. */
+  layerIsPainted?: (layer: string) => boolean;
+}
+
+export interface ScenePickSourceOptions<TPose> extends ViewPickGates {
   /** Pose lookup, when the caller holds an adapter that already resolves
    *  overrides. Defaults to `effectivePose` against the scene's own. */
   getPose?: (id: string) => TPose;
@@ -351,8 +364,13 @@ interface PickAdapter<TPose> {
  * the same back-to-front order `renderOrderNodes` produces for a single
  * layer. A flat adapter falls back to `getNodes()`, which carries no
  * parentage, so nothing clips.
+ *
+ * `gates` come from whichever view is picking, never from the adapter.
  */
-export function adapterPickSource<TPose>(adapter: PickAdapter<TPose>): PickSource<TPose> {
+export function adapterPickSource<TPose>(
+  adapter: PickAdapter<TPose>,
+  gates: ViewPickGates = {},
+): PickSource<TPose> {
   const hier = adapter as Required<Pick<PickAdapter<TPose>, 'getNode' | 'getChildren'>>;
   const hierarchical =
     typeof adapter.getChildren === 'function' && typeof adapter.getNode === 'function';
@@ -393,6 +411,8 @@ export function adapterPickSource<TPose>(adapter: PickAdapter<TPose>): PickSourc
       parents = next;
       return out;
     },
+    ...(gates.alphaOf ? { alphaOf: gates.alphaOf } : {}),
+    ...(gates.layerIsPainted ? { layerIsPainted: gates.layerIsPainted } : {}),
     poseOf: (node) => worldPose(node.id),
     parentsOf(node) {
       const chain: PickCandidate<TPose>[] = [];

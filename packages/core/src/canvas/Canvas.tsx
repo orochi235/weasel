@@ -23,6 +23,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffec
 import type React from 'react';
 import type { FillStyle } from '@weasel-js/paint';
 import { composeOrderedLayers, placeToolOverlays } from './layerOrder';
+import { sceneLayerKey } from './sceneLayerPaint';
 import {
   STANDARD_SLOTS,
   isCustomEntry,
@@ -701,9 +702,9 @@ export function buildSceneLayers<TNode extends { id: string }, TPose>(
     return [{ key: 'scene', layer: buildSceneLayer(cfg, adapter, debugSink, boundsOfFn, hideIds) }];
   }
   return sceneLayerIds.map((id) => ({
-    key: `scene:${id}`,
+    key: sceneLayerKey(id),
     layer: buildSceneLayer(cfg, adapter, debugSink, boundsOfFn, hideIds, {
-      id: `scene:${id}`,
+      id: sceneLayerKey(id),
       forLayer: id,
     }),
   }));
