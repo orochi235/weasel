@@ -267,28 +267,29 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
     setInstruments: (instruments) => {
       const before = get().instruments;
       if (before === instruments) return;
-      hooks = hooksOf(instruments);
+      const next = mergedHooks(hooks, instruments);
       const previous = new Map((before ?? []).map((i) => [i.name, i]));
       const changed = new Set(
         instruments.filter((i) => previous.get(i.name) !== i).map((i) => i.name),
       );
       if (changed.size === 0) {
+        hooks = next;
         set({ instruments });
         return;
       }
-      set((s) => ({
-        instruments,
-        trials: s.trials.map((w) =>
-          changed.has(w.instrumentName)
-            ? { ...w, config: hydratedConfig(hooks, w.instrumentName, w.config) }
-            : w,
-        ),
-        savedSnapshots: s.savedSnapshots.map((sn) =>
-          changed.has(sn.instrumentName)
-            ? { ...sn, config: hydratedConfig(hooks, sn.instrumentName, sn.config) }
-            : sn,
-        ),
-      }));
+      const s = get();
+      const trials = s.trials.map((w) =>
+        changed.has(w.instrumentName)
+          ? { ...w, config: hydratedConfig(next, w.instrumentName, w.config) }
+          : w,
+      );
+      const savedSnapshots = s.savedSnapshots.map((sn) =>
+        changed.has(sn.instrumentName)
+          ? { ...sn, config: hydratedConfig(next, sn.instrumentName, sn.config) }
+          : sn,
+      );
+      hooks = next;
+      set({ instruments, trials, savedSnapshots });
     },
 
     instrumentHooks: () => hooks,
@@ -302,6 +303,21 @@ function hooksOf(instruments: InstrumentList): InstrumentHooks {
     serializers: serializersOf(instruments),
     configDefaults: configDefaultsOf(instruments),
     configMigrations: configMigrationsOf(instruments),
+  };
+}
+
+/** Hooks for `instruments`, keeping those of any instrument no longer listed:
+ *  its trials stay open, and their state still has to round-trip. A listed
+ *  name takes its hooks wholly from the new list. */
+function mergedHooks(old: InstrumentHooks, instruments: InstrumentList): InstrumentHooks {
+  const listed = new Set(instruments.map((i) => i.name));
+  const fresh = hooksOf(instruments);
+  const unlisted = <T>(entries: Record<string, T>): Record<string, T> =>
+    Object.fromEntries(Object.entries(entries).filter(([name]) => !listed.has(name)));
+  return {
+    serializers: { ...unlisted(old.serializers), ...fresh.serializers },
+    configDefaults: { ...unlisted(old.configDefaults), ...fresh.configDefaults },
+    configMigrations: { ...unlisted(old.configMigrations), ...fresh.configMigrations },
   };
 }
 

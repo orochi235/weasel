@@ -13,7 +13,13 @@ import { applyCamera, type ViewportSize } from '../canvas/worldSpec';
 import type { TrialContribution } from '../chrome/types';
 import { DragOverlay, useDragDrop } from '../dragdrop/DragDropRuntime';
 import { Palette } from '../dragdrop/Palette';
-import type { Instrument, LayerDescriptor, PaletteItem, RenderContext } from '../instrument/types';
+import type {
+  Instrument,
+  InstrumentList,
+  LayerDescriptor,
+  PaletteItem,
+  RenderContext,
+} from '../instrument/types';
 import { useJob } from '../job/useJob';
 import { useLabContext } from '../lab/LabContext';
 import { LayerList } from '../layers/LayerList';
@@ -45,11 +51,9 @@ export function Trial({ id, chrome, suppress }: TrialProps) {
   const lab = useLabContext();
   const storeCtx = useContext(LabStoreContext);
   if (!storeCtx) throw new Error('[labkit] <Trial> requires <LabStoreProvider>');
-  const storeInstruments = useStore(storeCtx.store, (s) => s.instruments);
+  const instruments = useStore(storeCtx.store, (s) => s.instruments) ?? lab.instruments;
   const record = useStore(storeCtx.store, (s) => s.trials.find((w) => w.id === id));
-  const instrument = record
-    ? (storeInstruments ?? lab.instruments).find((i) => i.name === record.instrumentName)
-    : undefined;
+  const instrument = record ? instruments.find((i) => i.name === record.instrumentName) : undefined;
   const kept = useKeptMarks(instrument?.annotations?.storage, id);
   if (!record) {
     return <div className="lk-trial lk-trial--unknown">Trial not found: {id}</div>;
@@ -65,6 +69,7 @@ export function Trial({ id, chrome, suppress }: TrialProps) {
       keptMarks={kept.value}
       record={record}
       instrument={instrument}
+      instruments={instruments}
       store={storeCtx.store}
       isLast={lab.trials.length <= 1}
       chrome={chrome}
@@ -108,6 +113,8 @@ interface TrialRuntimeProps {
   keptMarks: unknown;
   record: TrialRecord;
   instrument: Instrument;
+  /** The lab's instruments as the store holds them now. */
+  instruments: InstrumentList;
   store: LabStore;
   isLast: boolean;
   chrome?: readonly TrialContribution[];
@@ -118,12 +125,12 @@ function TrialRuntime({
   keptMarks,
   record,
   instrument,
+  instruments,
   store,
   isLast,
   chrome,
   suppress,
 }: TrialRuntimeProps) {
-  const lab = useLabContext();
   const wheelSlot = useRef<CameraWheelSlot['current']>(null);
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const loupeHostRef = useRef<HTMLDivElement | null>(null);
@@ -203,9 +210,7 @@ function TrialRuntime({
     // it declared one, else this trial's slot.
     const kept = annotationsCap?.storage ? keptMarks : record.annotations;
     annotationsRef.current = annotationsFromJSON(kept, () => targetsRef.current(), {
-      get meaning() {
-        return capRef.current?.meaning;
-      },
+      meaning: () => capRef.current?.meaning,
       config: () => configRef.current,
       onCapture: (result) => capRef.current?.onCapture?.(result),
     });
@@ -266,7 +271,7 @@ function TrialRuntime({
   // picking one arms it in every trial, the way artboards share a tool. They
   // were once per trial, back when one trial compared several pictures.
   const declaresTools = instrument.tools != null;
-  const labTool = resolveLabTool(labToolId, lab.instruments);
+  const labTool = resolveLabTool(labToolId, instruments);
   const resolvedToolId = declaresTools
     ? (record.activeToolId ?? instrument.tools?.initial ?? instrument.tools?.tools[0]?.id ?? null)
     : labTool;

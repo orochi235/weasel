@@ -328,4 +328,49 @@ describe('setInstruments', () => {
     store.getState().setInstruments(list);
     expect(store.getState()).toBe(before);
   });
+
+  const mapped: Instrument = {
+    ...small,
+    name: 'Mapped',
+    serialize: (s) => ({ seen: [...(s as { seen: Set<string> }).seen] }),
+  };
+  const mappedTrial = {
+    id: 'm',
+    instrumentName: 'Mapped',
+    config: { size: 10 },
+    state: { seen: new Set(['a']) },
+    view: null,
+  };
+
+  it('keeps the hooks of an instrument that leaves the list while its trials remain', () => {
+    const store = createLabStore({ instruments: [mapped] });
+    store.getState().addTrial(mappedTrial);
+    store.getState().setInstruments([]);
+    store.getState().saveSnapshot('m', 'one');
+    expect(store.getState().savedSnapshots[0]?.state).toEqual({ seen: ['a'] });
+  });
+
+  it('drops the serializer of an instrument replaced by one that declares none', () => {
+    const store = createLabStore({ instruments: [mapped] });
+    store.getState().addTrial(mappedTrial);
+    store.getState().setInstruments([{ ...small, name: 'Mapped' }]);
+    store.getState().saveSnapshot('m', 'one');
+    expect(store.getState().savedSnapshots[0]?.state).toEqual({ seen: new Set(['a']) });
+  });
+
+  it('changes neither hooks nor state when a new default config throws', () => {
+    const store = createLabStore({ instruments: [small, other] });
+    store.getState().addTrial(trial('a', 'Grid', { size: 4 }));
+    const before = store.getState();
+    const hooks = store.getState().instrumentHooks();
+    const broken: Instrument = {
+      ...small,
+      defaultConfig: () => {
+        throw new Error('boom');
+      },
+    };
+    expect(() => store.getState().setInstruments([broken, mapped])).toThrow('boom');
+    expect(store.getState()).toBe(before);
+    expect(store.getState().instrumentHooks()).toBe(hooks);
+  });
 });

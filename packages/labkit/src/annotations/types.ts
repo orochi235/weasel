@@ -29,7 +29,7 @@ export interface AnnotationStatus {
   id: string;
   label: string;
   /** What a mark in this status is drawn in. Omitted, it takes the default
-   *  mark colour — a status is allowed to be a label and nothing more. */
+   *  mark color — a status is allowed to be a label and nothing more. */
   color?: string;
 }
 
@@ -164,6 +164,8 @@ export interface AnnotationsCapability<TS = unknown, TC = unknown> {
    *  is called once per trial, and its targets are that trial's own. */
   targets: (state: TS, config: TC, trial: TrialInfo) => readonly AnnotationTarget[];
   meaning?: AnnotationMeaning;
+  /** An instrument replacing this one under a live trial must pass the same
+   *  object: the trial keeps the marks it loaded from the first. */
   storage?: AnnotationStorage;
   /** Fires after every finished export, labkit's own chrome included. A
    *  notification, not an interception: a host wanting its own flow calls

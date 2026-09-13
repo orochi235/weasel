@@ -245,14 +245,10 @@ describe('the annotation store', () => {
     expect(revived.query()).toHaveLength(1);
   });
 
-  // A trial's instrument can be replaced under a store built once, so a meaning
-  // handed over as a getter has to be read at capture, not when the store is built.
-  it('reads a meaning passed as a getter at each capture', async () => {
+  it('reads a meaning passed as a thunk at each capture', async () => {
     let color = '#111111';
     const store = annotationsFromJSON(null, () => TARGETS, {
-      get meaning() {
-        return { statuses: [{ id: 'open', label: 'Open', color }] };
-      },
+      meaning: () => ({ statuses: [{ id: 'open', label: 'Open', color }] }),
     });
     store.add(RING, { angle: 'iso', shading: 'outline' });
     color = '#222222';

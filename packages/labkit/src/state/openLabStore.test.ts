@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { Instrument } from '../instrument/types';
 import { createMemoryAdapter } from './adapters';
 import { CURRENT_DOCUMENT_VERSION, labDocumentKey, quarantineKey } from './document';
 import { labStorageKey } from './helpers';
@@ -259,6 +260,41 @@ describe('openLabStore — config migrations', () => {
     expect(mine.store.getState().trials.find((t) => t.id === 'w2')?.config).toEqual({
       grid: { size: 7, color: '#fff' },
     });
+  });
+});
+
+describe('openLabStore — instruments set after opening', () => {
+  const plain: Instrument = {
+    name: 'T',
+    defaultConfig: () => ({}),
+    initialState: () => ({}),
+    render: () => null,
+  };
+  const mapped: Instrument = {
+    ...plain,
+    name: 'Mapped',
+    serialize: (s) => [...(s as Set<string>)],
+    deserialize: (data) => new Set(data as string[]),
+  };
+
+  it("writes and reads a trial through an added instrument's serializers", async () => {
+    const backing = new Map<string, unknown>();
+    const opened = await open(backing, { instruments: [plain] });
+    opened.store.getState().setInstruments([plain, mapped]);
+
+    opened.store
+      .getState()
+      .addTrial(trial('m', { instrumentName: 'Mapped', state: new Set(['a']) }));
+    await opened.records.flush();
+    expect((backing.get(`${P}trial:m`) as { state: unknown }).state).toEqual(['a']);
+
+    await createMemoryAdapter(backing).set(`${P}trial:r`, {
+      ...trial('r', { instrumentName: 'Mapped', state: ['b'] }),
+      order: 1,
+    });
+    await tick();
+    expect(opened.store.getState().trials.find((t) => t.id === 'r')?.state).toEqual(new Set(['b']));
+    await opened.close();
   });
 });
 

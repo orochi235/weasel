@@ -43,9 +43,10 @@ export interface AnnotationStoreOptions {
   targets: () => readonly AnnotationTargetInfo[];
   /** Serialized scenes from a previous `toJSON`, keyed by target. */
   restore?: Readonly<Record<string, unknown>>;
-  /** The instrument's vocabulary, so an export draws a mark in the colour its
-   *  status gives it. */
-  meaning?: AnnotationMeaning;
+  /** The instrument's vocabulary, so an export draws a mark in the color its
+   *  status gives it. A thunk is read at each capture, for a vocabulary that
+   *  changes under a store built once. */
+  meaning?: AnnotationMeaning | (() => AnnotationMeaning | undefined);
   /** The trial's live config. A getter for the same reason `targets` is: the
    *  store is built once and the config changes under it. */
   config?: () => unknown;
@@ -314,7 +315,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
             content: info.content,
             positionDependsOn: info.positionDependsOn,
             config: opts.config?.(),
-            meaning: opts.meaning,
+            meaning: typeof opts.meaning === 'function' ? opts.meaning() : opts.meaning,
           },
           base: info.base,
           onWarn: (message) => console.warn(`[labkit] capture: ${message}`),
@@ -342,9 +343,6 @@ export function annotationsFromJSON(
   rest: Omit<AnnotationStoreOptions, 'targets' | 'restore'> = {},
 ): AnnotationsApi {
   const doc = raw as Partial<SerializedAnnotations> | null;
-  const base = doc?.version !== 1 || !doc.scenes ? { targets } : { targets, restore: doc.scenes };
-  // Copied by descriptor rather than spread, so an option given as a getter stays live.
-  return createAnnotationStore(
-    Object.defineProperties(base, Object.getOwnPropertyDescriptors(rest)),
-  );
+  if (doc?.version !== 1 || !doc.scenes) return createAnnotationStore({ targets, ...rest });
+  return createAnnotationStore({ targets, restore: doc.scenes, ...rest });
 }
