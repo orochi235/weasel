@@ -55,4 +55,12 @@ const withNested = (): Track[] => ([
 
 export const Dope: StoryObj = { render: () => <Harness initial={flat()} /> };
 export const Graph: StoryObj = { render: () => <Harness initial={flat()} mode="graph" /> };
+const bezier = (): Track[] => {
+  const tracks = flat();
+  const x = tracks[0] as { keys: { t: number; value: number; easing?: unknown }[] };
+  x.keys[1] = { ...x.keys[1], easing: { bezier: [0.2, 0.9, 0.3, 1] } };
+  return tracks;
+};
+
+export const GraphBezier: StoryObj = { render: () => <Harness initial={bezier()} mode="graph" /> };
 export const Nested: StoryObj = { render: () => <Harness initial={withNested()} /> };

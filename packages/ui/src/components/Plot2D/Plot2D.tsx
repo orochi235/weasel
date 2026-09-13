@@ -49,6 +49,10 @@ export interface Plot2DProps {
   axes?: AxesSettings | false | null;
   /** Forwarded to the underlying svg. Consumer opts into focus this way. */
   tabIndex?: number;
+  /** Default `'img'`. A plot holding focusable marks must not be an image,
+   *  whose children are presentational to assistive technology. */
+  role?: string;
+  'aria-label'?: string;
   className?: string;
   style?: CSSProperties;
   /** Pointer down on the SVG. Receives both plot- and model-space coords
@@ -89,6 +93,7 @@ export const Plot2D = forwardRef<Plot2DHandle, Plot2DProps>(function Plot2D(prop
     grid,
     axes,
     tabIndex,
+    role = 'img',
     className,
     style,
     onPointerDown,
@@ -145,7 +150,8 @@ export const Plot2D = forwardRef<Plot2DHandle, Plot2DProps>(function Plot2D(prop
       width={width}
       height={height}
       viewBox={`0 0 ${width} ${height}`}
-      role="img"
+      role={role}
+      aria-label={props['aria-label']}
       tabIndex={tabIndex}
       onPointerDown={onPointerDown ? handlePointerDown : undefined}
       onKeyDown={onKeyDown}

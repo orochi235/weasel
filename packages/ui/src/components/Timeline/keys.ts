@@ -141,6 +141,15 @@ export function setKeyEasing(
   return replaceAtPath(tracks, sel.trackPath, withKeys(track, keys));
 }
 
+/** Replace a sampled track's whole key list, keeping its callbacks. */
+export function setKeys(
+  tracks: readonly Track[], trackPath: readonly number[], keys: readonly Keyframe<unknown>[],
+): Track[] {
+  const track = trackAtPath(tracks, trackPath);
+  if (track?.kind !== 'sampled') return tracks.slice();
+  return replaceAtPath(tracks, trackPath, withKeys(track, keys.slice()));
+}
+
 /** Set the selected key's value, leaving its time alone. */
 export function setKeyValue(
   tracks: readonly Track[], sel: KeySelection, value: unknown,
@@ -154,16 +163,4 @@ export function setKeyValue(
   return replaceAtPath(tracks, sel.trackPath, withKeys(track, keys));
 }
 
-/** Snap `ms` to the nearest candidate within `toleranceMs`, else return it. */
-export function snapTime(ms: number, candidates: readonly number[], toleranceMs: number): number {
-  let best = ms;
-  let bestDist = toleranceMs;
-  for (const c of candidates) {
-    const d = Math.abs(c - ms);
-    if (d <= bestDist) {
-      best = c;
-      bestDist = d;
-    }
-  }
-  return best;
-}
+export { snapToNearest as snapTime } from '../CurveEditor/snap';

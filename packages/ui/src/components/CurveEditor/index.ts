@@ -18,6 +18,17 @@ export {
 } from './createFunctionLayer';
 
 export {
+  createKeyframeLayer,
+  keyframeLayerState,
+  applyKeyframeDrag,
+  type KeyframeDrag,
+  type KeyframeLayerConfig,
+  type KeyframeLayerState,
+} from './createKeyframeLayer';
+
+export { snapToNearest } from './snap';
+
+export {
   LayeredCurveEditor,
   type LayeredCurveEditorProps,
   type LayerBinding,
@@ -31,6 +42,7 @@ export type {
   LayerGesture,
   LayerModifiers,
   EmptyDownArgs,
+  KeyDownArgs,
   ModelPoint,
   PlotPoint,
 } from './layerTypes';

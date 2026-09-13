@@ -2,6 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   LayeredCurveEditor,
+  createKeyframeLayer,
+  keyframeLayerState,
+  type KeyframeLayerState,
   createFunctionLayer,
   functionLayerState,
   type ControlPoint,
@@ -328,3 +331,33 @@ export const RimContour: StoryObj<RimContourArgs> = {
   },
 };
 
+// ─────────────────────────────────────────────────────────────────────
+// Story 3 — keyframes: value over time, eased per segment
+// ─────────────────────────────────────────────────────────────────────
+
+function KeyframesDemo() {
+  const layer = useMemo(() => createKeyframeLayer({ label: 'Opacity', xClamp: [0, 1000], yClamp: [0, 100] }), []);
+  const [state, setState] = useState<KeyframeLayerState>(() => ({
+    ...keyframeLayerState([
+      { t: 0, value: 10 },
+      { t: 350, value: 90, easing: { bezier: [0.2, 0.9, 0.3, 1] } },
+      { t: 700, value: 40, easing: 'easeInOutCubic' },
+      { t: 1000, value: 70 },
+    ]),
+    selectedSegment: 1,
+  }));
+  return (
+    <LayeredCurveEditor
+      aria-label="Opacity over time"
+      layers={[{ layer, state }]}
+      onLayerChange={(_id, next) => setState(next as KeyframeLayerState)}
+      width={480}
+      height={220}
+      xRange={[0, 1000]}
+      yRange={[0, 100]}
+      grid={{ divisions: 3 }}
+    />
+  );
+}
+
+export const Keyframes: StoryObj = { render: () => <KeyframesDemo /> };

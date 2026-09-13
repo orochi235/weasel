@@ -12,7 +12,7 @@ import { dlog } from '../../dlog';
 import s from './CurveEditor.module.css';
 import type {
   CurveLayer, LayerCtx, LayerGesture, LayerRenderCtx, ModelPoint, PlotPoint,
-  EmptyDownArgs,
+  EmptyDownArgs, KeyDownArgs,
 } from './layerTypes';
 
 // ── Public types ─────────────────────────────────────────────────────
@@ -96,6 +96,8 @@ export interface FunctionLayerConfig {
    *  sub-range of the plot (e.g. a bevel curve occupying x ∈ [0, b]
    *  while the editor's xRange is [0, halfWidth]). */
   xClamp?: readonly [number, number];
+  /** Names the curve in each anchor's accessible name. Default `'Point'`. */
+  label?: string;
 }
 
 /**
@@ -114,6 +116,11 @@ export interface FunctionLayerState {
 const SAMPLES_PER_SEGMENT = 16;
 const ANCHOR_SNAP_PX = 12;
 const CURVE_HIT_PX = 8;
+/** An arrow-key nudge, as a fraction of the range; shift takes ten. */
+const KEY_STEP_FRACTION = 0.01;
+const SHIFT_MULTIPLIER = 10;
+
+const formatCoord = (n: number): string => String(Number(n.toFixed(3)));
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
@@ -233,6 +240,14 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
           if ((locked || pinned) && cfg.hideNonInteractive) return null;
           const active = activeIndex === i;
           const isEndpoint = curveVisible && (i === 0 || i === points.length - 1);
+          const focus = !locked && !(endpoints === 'pinned-both' && pinned)
+            ? { tabIndex: 0 }
+            : {};
+          const a11y = {
+            ...focus,
+            role: 'button',
+            'aria-label': `${cfg.label ?? 'Point'} ${i + 1} at ${formatCoord(points[i].x)}, ${formatCoord(points[i].y)}`,
+          };
           if (cfg.renderAnchor) {
             const node = cfg.renderAnchor({
               point: points[i], index: i,
@@ -241,7 +256,7 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
               isPinnedEndpoint: pinned, isEndpoint,
             });
             if (node !== null && node !== undefined) {
-              return <g key={i} data-anchor-index={i}>{node}</g>;
+              return <g key={i} data-anchor-index={i} {...a11y}>{node}</g>;
             }
           }
           const anchorCls = [
@@ -264,6 +279,7 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
                 height={half * 2}
                 transform={`rotate(45 ${a.x} ${a.y})`}
                 data-anchor-index={i}
+                {...a11y}
               />
             );
           }
@@ -275,6 +291,7 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
               cy={a.y}
               r={4}
               data-anchor-index={i}
+              {...a11y}
             />
           );
         })}
@@ -296,46 +313,49 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
     return null;
   }
 
+  // ── move constraint, shared by drag and keyboard ────────────────────
+  function moveAnchor(state: FunctionLayerState, index: number, model: ModelPoint, ctx: LayerCtx): FunctionLayerState {
+    const points = state.points;
+    if (index < 0 || index >= points.length) return state;
+    const mr = ctx.modelRange;
+    const xMin = cfg.xClamp ? cfg.xClamp[0] : mr.xMin;
+    const xMax = cfg.xClamp ? cfg.xClamp[1] : mr.xMax;
+    let nx = model.x;
+    let ny = model.y;
+    const isEndpoint = index === 0 || index === points.length - 1;
+
+    if (endpoints === 'pinned-both' && isEndpoint) {
+      nx = points[index].x;
+      ny = points[index].y;
+    } else if (endpoints === 'pinned-x' && isEndpoint) {
+      nx = index === 0 ? xMin : xMax;
+    } else if (constrain === 'function' || domain === '1d') {
+      const epsilon = constrain === 'function'
+        ? (xMax - xMin) / 1000
+        : 0;
+      const left = index > 0 ? points[index - 1].x + epsilon : xMin;
+      const right = index < points.length - 1 ? points[index + 1].x - epsilon : xMax;
+      nx = Math.max(left, Math.min(right, nx));
+    }
+
+    // Always clamp x to the layer's own range (so free-mode
+    // interior anchors of a sub-range layer can't escape it).
+    // Normalize bounds for inverted ranges.
+    {
+      const lo = Math.min(xMin, xMax);
+      const hi = Math.max(xMin, xMax);
+      nx = Math.max(lo, Math.min(hi, nx));
+    }
+    const clamped = clampToModelRange({ x: nx, y: ny }, ctx);
+    const next = points.slice();
+    next[index] = { ...points[index], x: clamped.x, y: clamped.y };
+    return { ...state, points: next, activeIndex: index };
+  }
+
   // ── drag gesture ────────────────────────────────────────────────────
   function makeDragGesture(index: number): LayerGesture<FunctionLayerState> {
     return {
-      onMove(state, model, _e, ctx) {
-        const points = state.points;
-        if (index < 0 || index >= points.length) return state;
-        const mr = ctx.modelRange;
-        const xMin = cfg.xClamp ? cfg.xClamp[0] : mr.xMin;
-        const xMax = cfg.xClamp ? cfg.xClamp[1] : mr.xMax;
-        let nx = model.x;
-        let ny = model.y;
-        const isEndpoint = index === 0 || index === points.length - 1;
-
-        if (endpoints === 'pinned-both' && isEndpoint) {
-          nx = points[index].x;
-          ny = points[index].y;
-        } else if (endpoints === 'pinned-x' && isEndpoint) {
-          nx = index === 0 ? xMin : xMax;
-        } else if (constrain === 'function' || domain === '1d') {
-          const epsilon = constrain === 'function'
-            ? (xMax - xMin) / 1000
-            : 0;
-          const left = index > 0 ? points[index - 1].x + epsilon : xMin;
-          const right = index < points.length - 1 ? points[index + 1].x - epsilon : xMax;
-          nx = Math.max(left, Math.min(right, nx));
-        }
-
-        // Always clamp x to the layer's own range (so free-mode
-        // interior anchors of a sub-range layer can't escape it).
-        // Normalize bounds for inverted ranges.
-        {
-          const lo = Math.min(xMin, xMax);
-          const hi = Math.max(xMin, xMax);
-          nx = Math.max(lo, Math.min(hi, nx));
-        }
-        const clamped = clampToModelRange({ x: nx, y: ny }, ctx);
-        const next = points.slice();
-        next[index] = { ...points[index], x: clamped.x, y: clamped.y };
-        return { ...state, points: next, activeIndex: index };
-      },
+      onMove(state, model, _e, ctx) { return moveAnchor(state, index, model, ctx); },
       onCommit(state) { return { ...state, activeIndex: null }; },
       onCancel(state) { return { ...state, activeIndex: null }; },
     };
@@ -423,12 +443,44 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
     return;
   }
 
+  // ── keyboard ────────────────────────────────────────────────────────
+  function onKeyDown(
+    state: FunctionLayerState,
+    e: KeyboardEvent,
+    ctx: LayerCtx,
+    extra: KeyDownArgs<FunctionLayerState>,
+  ): void {
+    if (!interactive) return;
+    const target = e.target as Element | null;
+    if (target?.closest?.('[data-layer-id]')?.getAttribute('data-layer-id') !== id) return;
+    const el = target.closest('[data-anchor-index]');
+    if (!el) return;
+    const dx = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+    const dy = e.key === 'ArrowUp' ? 1 : e.key === 'ArrowDown' ? -1 : 0;
+    if (dx === 0 && dy === 0) return;
+    e.preventDefault();
+    const index = Number(el.getAttribute('data-anchor-index'));
+    const p = state.points[index];
+    if (!p || p.locked) return;
+    const m = ctx.modelRange;
+    const mult = e.shiftKey ? SHIFT_MULTIPLIER : 1;
+    const xSpan = cfg.xClamp ? cfg.xClamp[1] - cfg.xClamp[0] : m.xMax - m.xMin;
+    const next = moveAnchor(state, index, {
+      x: p.x + dx * Math.abs(xSpan) * KEY_STEP_FRACTION * mult,
+      y: p.y + dy * Math.abs(m.yMax - m.yMin) * KEY_STEP_FRACTION * mult,
+    }, ctx);
+    const moved = next.points[index];
+    if (moved.x === p.x && moved.y === p.y) return;
+    extra.commit({ ...next, activeIndex: null });
+  }
+
   return {
     id,
     render,
     hitTest,
     onPointerDown,
     onEmptyPointerDown,
+    onKeyDown,
   };
 }
 

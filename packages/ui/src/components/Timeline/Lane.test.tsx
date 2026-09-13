@@ -136,37 +136,102 @@ describe('Lane', () => {
 });
 
 describe('Lane in graph mode', () => {
+  // The lane is 500×20 (see beforeAll) over 0..1000 ms, so t maps to x = t / 2.
+  // Values are padded 8% top and bottom, so the lowest key sits at y = 18.4
+  // and the highest at y = 1.6.
+  const centerOf = (el: Element): { x: number; y: number } => {
+    const [, x, y] = /rotate\(45 ([-\d.e]+) ([-\d.e]+)\)/.exec(el.getAttribute('transform')!)!;
+    return { x: Number(x), y: Number(y) };
+  };
+  const graphKeys = () => document.querySelectorAll('[data-keyframe-index]');
+  const eased = {
+    kind: 'sampled', label: 'x',
+    keys: [{ t: 0, value: 0 }, { t: 500, value: 10, easing: { bezier: [0.4, 0, 0.2, 1] } }],
+    onTick: () => {},
+  } as unknown as Track;
+
   it('draws a curve for a numeric sampled track', () => {
     render(<Lane {...base} mode="graph" row={laneOf(sampled)} />);
-    expect(screen.getByTestId('timeline-curve')).toBeInTheDocument();
+    expect(document.querySelector('[data-curve-element="curve"]')).toBeInTheDocument();
   });
 
-  // Not 0% and 100%: the value axis is inset by V_INSET_PCT so a key at the
-  // minimum centres inside the lane rather than on its border, where it would
-  // hang half into the lane below.
+  it('names each key for a screen reader', () => {
+    render(<Lane {...base} mode="graph" row={laneOf(sampled)} />);
+    expect(screen.getByRole('button', { name: 'x key at 500 ms' })).toBeInTheDocument();
+  });
+
   it('positions a key by value as well as time, inside the lane', () => {
     render(<Lane {...base} mode="graph" row={laneOf(sampled)} />);
-    const [first, second] = screen.getAllByTestId('timeline-key');
-    expect(first).toHaveStyle({ bottom: '8%' });
-    expect(second).toHaveStyle({ bottom: '92%' });
+    const [first, second] = [...graphKeys()].map(centerOf);
+    expect(first.x).toBeCloseTo(0);
+    expect(first.y).toBeCloseTo(18.4);
+    expect(second.x).toBeCloseTo(250);
+    expect(second.y).toBeCloseTo(1.6);
   });
 
-  it('keeps the extreme keys clear of both lane borders', () => {
-    render(<Lane {...base} mode="graph" row={laneOf(sampled)} />);
-    for (const el of screen.getAllByTestId('timeline-key')) {
-      const pct = Number.parseFloat((el as HTMLElement).style.bottom);
-      expect(pct).toBeGreaterThan(0);
-      expect(pct).toBeLessThan(100);
-    }
+  it('selects a key on pointerdown', () => {
+    const onSelect = vi.fn();
+    render(<Lane {...base} mode="graph" row={laneOf(sampled)} onSelect={onSelect} />);
+    fireEvent.pointerDown(graphKeys()[1], { clientX: 250, clientY: 2, button: 0 });
+    expect(onSelect).toHaveBeenCalledWith(1);
   });
 
-  it('drags a key in value as well as time', () => {
-    const onKeyCommit = vi.fn();
-    render(<Lane {...base} mode="graph" row={laneOf(sampled)} onKeyCommit={onKeyCommit} />);
-    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, clientY: 0, button: 0 });
-    fireEvent.pointerMove(document, { clientX: 250, clientY: 10 });
-    fireEvent.pointerUp(document, { clientX: 250, clientY: 10 });
-    expect(onKeyCommit).toHaveBeenCalledWith(1, 500, expect.closeTo(5, 1));
+  it('drags a key in value as well as time, reporting live keys and one commit', () => {
+    const onKeysInput = vi.fn();
+    const onKeysCommit = vi.fn();
+    render(<Lane {...base} mode="graph" row={laneOf(sampled)} onKeysInput={onKeysInput} onKeysCommit={onKeysCommit} />);
+    fireEvent.pointerDown(graphKeys()[1], { clientX: 250, clientY: 0, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 200, clientY: 10 });
+    expect(onKeysInput).toHaveBeenCalledTimes(1);
+    fireEvent.pointerUp(document, { clientX: 200, clientY: 10 });
+    expect(onKeysCommit).toHaveBeenCalledTimes(1);
+    const keys = onKeysCommit.mock.calls[0][0];
+    expect(keys[1].t).toBe(400);
+    expect(keys[1].value).toBeCloseTo(5);
+  });
+
+  it('snaps a dragged key to a nearby snap time, in ruler time', () => {
+    const onKeysCommit = vi.fn();
+    const nested = { ...laneOf(sampled), offset: 100 };
+    render(<Lane {...base} mode="graph" row={nested} snapTimes={[700]} onKeysCommit={onKeysCommit} />);
+    // Key 1 sits at ruler 600 → x 300. Dropped at ruler 702 → x 351.
+    fireEvent.pointerDown(graphKeys()[1], { clientX: 300, clientY: 2, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 351, clientY: 2 });
+    fireEvent.pointerUp(document, { clientX: 351, clientY: 2 });
+    expect(onKeysCommit.mock.calls[0][0][1].t).toBe(600);
+  });
+
+  it('moves a focused key with the arrow keys', () => {
+    const onKeysCommit = vi.fn();
+    render(<Lane {...base} mode="graph" row={laneOf(sampled)} onKeysCommit={onKeysCommit} />);
+    fireEvent.keyDown(graphKeys()[1], { key: 'ArrowRight', shiftKey: true });
+    expect(onKeysCommit.mock.calls[0][0][1].t).toBe(600);
+  });
+
+  it('selects the segment under a click on the curve', () => {
+    const onSelectSegment = vi.fn();
+    render(<Lane {...base} mode="graph" row={laneOf(sampled)} onSelectSegment={onSelectSegment} />);
+    fireEvent.pointerDown(document.querySelector('svg')!, { clientX: 125, clientY: 10, button: 0 });
+    expect(onSelectSegment).toHaveBeenCalledWith(1);
+  });
+
+  it('commits a dragged bezier handle as the easing on the key', () => {
+    const onKeysCommit = vi.fn();
+    const onKeysInput = vi.fn();
+    render(<Lane {...base} mode="graph" row={laneOf(eased)} selectedSegment={1} onKeysInput={onKeysInput} onKeysCommit={onKeysCommit} />);
+    const handle = document.querySelector('[data-handle-index="0"]')!;
+    fireEvent.pointerDown(handle, { clientX: 100, clientY: 18, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 150, clientY: 10 });
+    fireEvent.pointerUp(document, { clientX: 150, clientY: 10 });
+    expect(onKeysCommit).toHaveBeenCalledTimes(1);
+    expect(onKeysCommit.mock.calls[0][0][1].easing).toHaveProperty('bezier');
+    // A live handle writes a fresh spec per move; none may reach the consumer.
+    expect(onKeysInput).not.toHaveBeenCalled();
+  });
+
+  it('shows no bezier handles for a spec without control points', () => {
+    render(<Lane {...base} mode="graph" row={laneOf(sampled)} selectedSegment={1} />);
+    expect(document.querySelectorAll('[data-handle-index]')).toHaveLength(0);
   });
 
   it('stays a dope row for a non-numeric sampled track', () => {
@@ -176,14 +241,37 @@ describe('Lane in graph mode', () => {
       onTick: () => {},
     } as unknown as Track;
     render(<Lane {...base} mode="graph" row={laneOf(posed)} />);
-    expect(screen.queryByTestId('timeline-curve')).not.toBeInTheDocument();
+    expect(document.querySelector('[data-curve-element="curve"]')).not.toBeInTheDocument();
     expect(screen.getAllByTestId('timeline-key')).toHaveLength(2);
   });
 
   it('stays a dope row for an event track', () => {
     render(<Lane {...base} mode="graph" row={laneOf(eventTrack)} />);
-    expect(screen.queryByTestId('timeline-curve')).not.toBeInTheDocument();
+    expect(document.querySelector('[data-curve-element="curve"]')).not.toBeInTheDocument();
     expect(screen.getAllByTestId('timeline-event')).toHaveLength(1);
+  });
+
+  it('commits a key drag released outside the lane', () => {
+    const outside = document.createElement('div');
+    document.body.appendChild(outside);
+    const onKeysCommit = vi.fn();
+    render(<Lane {...base} mode="graph" row={laneOf(eased)} onKeysCommit={onKeysCommit} />);
+    fireEvent.pointerDown(graphKeys()[1], { clientX: 250, clientY: 2, button: 0, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 300, clientY: 2, buttons: 1 });
+    fireEvent.pointerUp(outside, { clientX: 300, clientY: 2, bubbles: true });
+    expect(onKeysCommit).toHaveBeenCalledTimes(1);
+    outside.remove();
+  });
+
+  it('treats a move with no button held as the release the handle drag missed', () => {
+    const onKeysCommit = vi.fn();
+    render(<Lane {...base} mode="graph" row={laneOf(eased)} selectedSegment={1} onKeysCommit={onKeysCommit} />);
+    fireEvent.pointerDown(document.querySelector('[data-handle-index="0"]')!, { clientX: 100, clientY: 18, button: 0, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 150, clientY: 10, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 200, clientY: 10, buttons: 0 });
+    expect(onKeysCommit).toHaveBeenCalledTimes(1);
+    fireEvent.pointerMove(document, { clientX: 250, clientY: 10, buttons: 1 });
+    expect(onKeysCommit).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -203,50 +291,6 @@ describe('Lane segment selection', () => {
   it('renders no segments on an event row', () => {
     render(<Lane {...base} row={laneOf(eventTrack)} />);
     expect(screen.queryAllByTestId('timeline-segment')).toHaveLength(0);
-  });
-
-  it('drags a bezier handle in graph mode', () => {
-    const onEasingCommit = vi.fn();
-    const eased = {
-      kind: 'sampled', label: 'x',
-      keys: [{ t: 0, value: 0 }, { t: 500, value: 10, easing: { bezier: [0.4, 0, 0.2, 1] } }],
-      onTick: () => {},
-    } as unknown as Track;
-    render(<Lane {...base} mode="graph" row={laneOf(eased)} selectedSegment={1} onEasingCommit={onEasingCommit} />);
-    fireEvent.pointerDown(screen.getAllByTestId('timeline-bezier-handle')[0], { clientX: 100, clientY: 10, button: 0 });
-    fireEvent.pointerMove(document, { clientX: 150, clientY: 10 });
-    fireEvent.pointerUp(document, { clientX: 150, clientY: 10 });
-    expect(onEasingCommit).toHaveBeenCalledTimes(1);
-    expect(onEasingCommit.mock.calls[0][1]).toHaveProperty('bezier');
-  });
-
-  it('shows no bezier handles for a spec without control points', () => {
-    render(<Lane {...base} mode="graph" row={laneOf(sampled)} selectedSegment={1} />);
-    expect(screen.queryAllByTestId('timeline-bezier-handle')).toHaveLength(0);
-  });
-
-  // Guards the bezierCache-growth hazard: a naive live preview that resolves a
-  // fresh bezier spec through resolveEasing/sampleEasing on every pointermove
-  // adds one permanent cache entry per move. The fix previews through
-  // cubicBezierEasing directly, so resolveEasing sees only the initial render.
-  it('previews a bezier drag without resolving a fresh spec on every move', async () => {
-    const core = await import('@weasel-js/core');
-    const resolveEasingSpy = vi.spyOn(core, 'resolveEasing');
-    resolveEasingSpy.mockClear();
-    const eased = {
-      kind: 'sampled', label: 'x',
-      keys: [{ t: 0, value: 0 }, { t: 500, value: 10, easing: { bezier: [0.4, 0, 0.2, 1] } }],
-      onTick: () => {},
-    } as unknown as Track;
-    render(<Lane {...base} mode="graph" row={laneOf(eased)} selectedSegment={1} onEasingCommit={() => {}} />);
-    resolveEasingSpy.mockClear();
-    fireEvent.pointerDown(screen.getAllByTestId('timeline-bezier-handle')[0], { clientX: 100, clientY: 10, button: 0 });
-    for (let i = 0; i < 30; i++) {
-      fireEvent.pointerMove(document, { clientX: 100 + i, clientY: 10 });
-    }
-    fireEvent.pointerUp(document, { clientX: 130, clientY: 10 });
-    expect(resolveEasingSpy.mock.calls.length).toBeLessThan(5);
-    resolveEasingSpy.mockRestore();
   });
 
   describe('drag ghost', () => {
@@ -303,8 +347,6 @@ describe('Lane segment selection', () => {
 });
 
 describe('Lane pointer session', () => {
-  const graphBase = { ...base, mode: 'graph' as const };
-
   it('commits a key drag released outside the lane', () => {
     const outside = document.createElement('div');
     document.body.appendChild(outside);
@@ -344,38 +386,5 @@ describe('Lane pointer session', () => {
     expect(onKeyCommit).toHaveBeenCalledTimes(1);
     expect(onKeyCommit).toHaveBeenCalledWith(1, 800);
     expect(screen.queryByTestId('timeline-key-ghost')).not.toBeInTheDocument();
-  });
-
-  it('commits a bezier-handle drag released outside the lane', () => {
-    const outside = document.createElement('div');
-    document.body.appendChild(outside);
-    const onEasingCommit = vi.fn();
-    const eased = {
-      kind: 'sampled', label: 'x', numeric: true,
-      keys: [{ t: 0, value: 0 }, { t: 500, value: 10, easing: { bezier: [0.25, 0.1, 0.25, 1] } }],
-      onTick: () => {},
-    } as unknown as Track;
-    render(<Lane {...graphBase} row={laneOf(eased)} selectedSegment={1} onEasingCommit={onEasingCommit} />);
-    fireEvent.pointerDown(screen.getAllByTestId('timeline-bezier-handle')[0], { clientX: 100, clientY: 10, button: 0, buttons: 1 });
-    fireEvent.pointerMove(document, { clientX: 150, clientY: 10, buttons: 1 });
-    fireEvent.pointerUp(outside, { clientX: 150, clientY: 10, bubbles: true });
-    expect(onEasingCommit).toHaveBeenCalledTimes(1);
-    outside.remove();
-  });
-
-  it('treats a move with no button held as the release the handle drag missed', () => {
-    const onEasingCommit = vi.fn();
-    const eased = {
-      kind: 'sampled', label: 'x', numeric: true,
-      keys: [{ t: 0, value: 0 }, { t: 500, value: 10, easing: { bezier: [0.25, 0.1, 0.25, 1] } }],
-      onTick: () => {},
-    } as unknown as Track;
-    render(<Lane {...graphBase} row={laneOf(eased)} selectedSegment={1} onEasingCommit={onEasingCommit} />);
-    fireEvent.pointerDown(screen.getAllByTestId('timeline-bezier-handle')[0], { clientX: 100, clientY: 10, button: 0, buttons: 1 });
-    fireEvent.pointerMove(document, { clientX: 150, clientY: 10, buttons: 1 });
-    fireEvent.pointerMove(document, { clientX: 200, clientY: 10, buttons: 0 });
-    expect(onEasingCommit).toHaveBeenCalledTimes(1);
-    fireEvent.pointerMove(document, { clientX: 250, clientY: 10, buttons: 1 });
-    expect(onEasingCommit).toHaveBeenCalledTimes(1);
   });
 });

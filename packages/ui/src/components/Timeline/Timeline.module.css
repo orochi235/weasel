@@ -43,6 +43,8 @@
 }
 
 .laneLabel {
+  /* Must match `.gutter`'s width exactly, or every key sits off the ruler. */
+  box-sizing: border-box;
   flex: 0 0 var(--wzl-timeline-label-w, 120px);
   display: flex;
   align-items: center;
@@ -104,21 +106,27 @@
 
 .keyGhost { transform: translateY(-50%) rotate(45deg); }
 .eventGhost { transform: translateY(-50%); border-radius: 50%; }
-.lane[data-mode='graph'] .keyGhost { top: auto; transform: translateY(50%) rotate(45deg); }
-
-.curve {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  fill: none;
-  stroke: var(--wzl-accent-strong);
-  stroke-width: 1;
-}
 
 .lane[data-mode='graph'] { min-height: 72px; }
-.lane[data-mode='graph'] .key { top: auto; transform: translateY(50%) rotate(45deg); }
+
+/* A numeric lane in graph mode is a curve editor filling the track. */
+.graphHost {
+  position: absolute;
+  inset: 0;
+}
+
+/* Out-specifies the editor's own defaults: the lane keeps the track's ground
+   and the timeline's accent line rather than a plot's. */
+.graphHost .graph {
+  --plot-bg: transparent;
+  --curve-line: var(--wzl-accent-strong);
+  --curve-line-width: 1px;
+}
+
+.graphTick {
+  stroke: var(--wzl-line-subtle);
+  stroke-width: 1;
+}
 
 .nestedBar {
   position: absolute;
@@ -209,7 +217,7 @@
 .label { padding: 4px 6px; color: var(--wzl-fg-muted); }
 
 .body { display: flex; align-items: stretch; }
-.gutter { flex: 0 0 var(--wzl-timeline-label-w, 120px); border-right: 1px solid var(--wzl-border); }
+.gutter { box-sizing: border-box; flex: 0 0 var(--wzl-timeline-label-w, 120px); border-right: 1px solid var(--wzl-border); }
 .rulerWrap { flex: 1 1 auto; min-width: 0; }
 
 .lanes {
@@ -250,13 +258,3 @@
   border: 1px solid var(--wzl-border);
 }
 
-.bezierHandle {
-  position: absolute;
-  width: 7px;
-  height: 7px;
-  margin: -3.5px 0 0 -3.5px;
-  border-radius: 50%;
-  background: var(--wzl-surface);
-  border: 1px solid var(--wzl-accent-strong);
-  cursor: grab;
-}

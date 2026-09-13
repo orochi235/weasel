@@ -61,6 +61,9 @@ export interface LayeredCurveEditorProps {
    *  changed. Default `true`. */
   history?: boolean;
 
+  /** Accessible name for the plot, which is exposed as a group so the
+   *  focusable marks layers render inside it stay reachable. */
+  'aria-label'?: string;
   className?: string;
   style?: CSSProperties;
 
@@ -381,10 +384,24 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     // Then layers (top-to-bottom).
     for (let i = ls.length - 1; i >= 0; i--) {
       const b = ls[i];
-      b.layer.onKeyDown?.(b.state, e.nativeEvent, ctx);
-      if (e.isDefaultPrevented()) return;
+      if (!b.layer.onKeyDown) continue;
+      const preEventSnapshot = snapshot();
+      let committed: unknown = undefined;
+      b.layer.onKeyDown(b.state, e.nativeEvent, ctx, {
+        commit(next) { committed = next; onLayerChange(b.layer.id, next); },
+      });
+      if (committed !== undefined) {
+        if (historyEnabled) {
+          pastRef.current.push(preEventSnapshot);
+          futureRef.current = [];
+        }
+        onLayerCommit?.(b.layer.id, committed, b.state);
+      }
+      // The layer prevents default on the native event, which the synthetic
+      // event's `isDefaultPrevented` does not observe.
+      if (e.nativeEvent.defaultPrevented) return;
     }
-  }, [historyEnabled, undo, redo, makeCtx]);
+  }, [historyEnabled, undo, redo, makeCtx, snapshot, onLayerChange, onLayerCommit]);
 
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
 
@@ -410,6 +427,8 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
       grid={grid}
       axes={axes}
       tabIndex={historyEnabled ? 0 : undefined}
+      role="group"
+      aria-label={props['aria-label']}
       onPointerDown={onSvgPointerDown}
       onKeyDown={onSvgKeyDown}
     >
