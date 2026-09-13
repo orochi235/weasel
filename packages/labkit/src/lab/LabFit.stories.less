@@ -1,0 +1,18 @@
+// Host pages for LabFit.stories. Each is scoped by its own class, so a story
+// that mounts no fixture leaves the page untouched.
+
+// The mount every example documents: `html, body, #root { margin: 0; height: 100% }`.
+html:has(> body > .lk-fit-host--reset),
+body:has(> .lk-fit-host--reset),
+.lk-fit-host--reset {
+  margin: 0;
+  height: 100%;
+}
+
+.lk-fit-heading {
+  height: 40px;
+}
+
+.lk-fit-frame {
+  height: 560px;
+}

@@ -2,7 +2,11 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  // Fills a container of definite height. Where the container has none, the
+  // percentage drops out and the shell takes the viewport's height instead.
   height: 100vh;
+  height: 100dvh;
+  max-height: 100%;
   background: var(--wzl-surface);
 }
 
@@ -42,21 +46,23 @@
 }
 
 .lk-shell-body {
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-height: 0;
+  min-width: 0;
   overflow: auto;
   padding: var(--lk-workspace-pad);
 }
 
-// `.lk-shell-body` is a block container, so `flex: 1` here resolves to nothing
-// and the workspace's `height: 100%` collapses to zero.
 .lk-lab__body {
   display: flex;
-  height: 100%;
+  flex: 1;
   min-height: 0;
   position: relative;
 
-  > .lk-workspace {
+  > .lk-workspace,
+  > .lk-workspace-host {
     min-width: 0;
   }
 }
