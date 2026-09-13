@@ -42,7 +42,7 @@ describe('mat3', () => {
 
   it('invert: round-trips a translate+scale through apply', () => {
     const m = mat3.scale(mat3.translate(mat3.identity(), 30, -12), 2, 4);
-    const inv = mat3.invert(m);
+    const inv = mat3.invert(m)!;
     const [sx, sy] = mat3.apply(m, 7, 9);
     const [x, y] = mat3.apply(inv, sx, sy);
     expect(x).toBeCloseTo(7);
@@ -51,15 +51,17 @@ describe('mat3', () => {
 
   it('invert: composing a matrix with its inverse yields identity', () => {
     const m = mat3.scale(mat3.translate(mat3.identity(), 5, 6), 3, 3);
-    const composed = mat3.multiply(m, mat3.invert(m));
+    const composed = mat3.multiply(m, mat3.invert(m)!);
     for (const [i, want] of [[0, 1], [1, 0], [3, 0], [4, 1], [6, 0], [7, 0]] as const) {
       expect(composed[i]).toBeCloseTo(want);
     }
   });
 
-  it('invert: a singular matrix falls back to identity rather than NaN', () => {
-    const singular = mat3.scale(mat3.identity(), 0, 5);
-    const inv = mat3.invert(singular);
-    expect(Array.from(inv)).toEqual(Array.from(mat3.identity()));
+  it('invert: a singular matrix has no inverse', () => {
+    expect(mat3.invert(mat3.scale(mat3.identity(), 0, 5))).toBeNull();
+  });
+
+  it('invert: a matrix too flat for its own scale has no inverse', () => {
+    expect(mat3.invert(mat3.scale(mat3.identity(), 1e6, 1e-7))).toBeNull();
   });
 });

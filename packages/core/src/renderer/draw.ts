@@ -646,6 +646,7 @@ function drawPathFill(ctx: DrawContext, cmd: PathDrawCommand): void {
   const hasVColors = !!(cmd.vertexColors && cmd.vertexColors.length > 0);
   const solid = fill as { color: string; opacity?: number };
   const paint = batchPaint(ctx, fill, hasVColors);
+  if (paint === null) return;
 
   if (paint !== undefined && cmd.path.kind === 'rect') {
     if (paint.kind === 'ramp') pushRampRect(ctx, cmd.path, paint);
@@ -985,7 +986,8 @@ type BatchPaint =
 
 /**
  * `fill` as something a run can carry, or `undefined` for a paint no run can
- * express — a pattern, a shader, per-vertex colors.
+ * express — a pattern, a shader, per-vertex colors — and `null` for a gradient
+ * whose space has no inverse under this transform, which draws nothing.
  *
  * **All three gradients qualify, and for the same reason,** which is not that
  * their ramp position is affine in position — only a linear gradient's is. It
@@ -997,26 +999,22 @@ type BatchPaint =
  */
 function batchPaint(
   ctx: DrawContext, fill: FillStyle, hasVColors: boolean,
-): BatchPaint | undefined {
+): BatchPaint | undefined | null {
   if (hasVColors) return undefined;
   const kind = fill.fill ?? 'solid';
   if (kind === 'solid') {
     const solid = fill as { color: string; opacity?: number };
     return { kind: 'solid', color: solid.color, opacity: solid.opacity };
   }
-  if (kind === 'linear-gradient') {
-    const grad = fill as Extract<FillStyle, { fill: 'linear-gradient' }>;
-    return ramp(grad, PAINT_MODE_PLAIN, linearRampUV(ctx, grad));
+  if (kind !== 'linear-gradient' && kind !== 'radial-gradient' && kind !== 'conic-gradient') {
+    return undefined;
   }
-  if (kind === 'radial-gradient') {
-    const grad = fill as Extract<FillStyle, { fill: 'radial-gradient' }>;
-    return ramp(grad, PAINT_MODE_RADIAL, radialRampUV(ctx, grad));
-  }
-  if (kind === 'conic-gradient') {
-    const grad = fill as Extract<FillStyle, { fill: 'conic-gradient' }>;
-    return ramp(grad, PAINT_MODE_CONIC, conicRampUV(ctx, grad));
-  }
-  return undefined;
+  const grad = fill as Extract<FillStyle, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>;
+  const g = gradientMap(ctx, grad.units);
+  if (!g) return null;
+  if (grad.fill === 'linear-gradient') return ramp(grad, PAINT_MODE_PLAIN, linearRampUV(g, grad));
+  if (grad.fill === 'radial-gradient') return ramp(grad, PAINT_MODE_RADIAL, radialRampUV(g, grad));
+  return ramp(grad, PAINT_MODE_CONIC, conicRampUV(g, grad));
 }
 
 function ramp(
@@ -1035,8 +1033,9 @@ function ramp(
  * steps, and the pair have to agree: a radial gradient goes through that one
  * and a linear one through this.
  */
-function gradientMap(ctx: DrawContext, units: GradientUnits | undefined): Mat3 {
-  return mat3.multiply(gradientSpaceInverse(ctx, units), ctx.state.transform);
+function gradientMap(ctx: DrawContext, units: GradientUnits | undefined): Mat3 | null {
+  const inverse = gradientSpaceInverse(ctx, units);
+  return inverse && mat3.multiply(inverse, ctx.state.transform);
 }
 
 /**
@@ -1044,9 +1043,8 @@ function gradientMap(ctx: DrawContext, units: GradientUnits | undefined): Mat3 {
  * left for the atlas row `stageRamps` fills in.
  */
 function linearRampUV(
-  ctx: DrawContext, fill: Extract<FillStyle, { fill: 'linear-gradient' }>,
+  g: Mat3, fill: Extract<FillStyle, { fill: 'linear-gradient' }>,
 ): GradientUV {
-  const g = gradientMap(ctx, fill.units);
   const dx = fill.to.x - fill.from.x;
   const dy = fill.to.y - fill.from.y;
   const len = Math.hypot(dx, dy) || 1;
@@ -1063,9 +1061,8 @@ function linearRampUV(
 /** The gradient-space point scaled so its distance from the center *is* the
  *  ramp position, which is what makes the shader's half a `length`. */
 function radialRampUV(
-  ctx: DrawContext, fill: Extract<FillStyle, { fill: 'radial-gradient' }>,
+  g: Mat3, fill: Extract<FillStyle, { fill: 'radial-gradient' }>,
 ): GradientUV {
-  const g = gradientMap(ctx, fill.units);
   // The floor is `gradFill`'s own `max(u_gradRadius, 0.0001)`.
   const k = 1 / Math.max(fill.radius, 1e-4);
   return {
@@ -1083,9 +1080,8 @@ function radialRampUV(
  * `fract` that follows takes care of the wrap either way.
  */
 function conicRampUV(
-  ctx: DrawContext, fill: Extract<FillStyle, { fill: 'conic-gradient' }>,
+  g: Mat3, fill: Extract<FillStyle, { fill: 'conic-gradient' }>,
 ): GradientUV {
-  const g = gradientMap(ctx, fill.units);
   const cos = Math.cos(fill.angle);
   const sin = Math.sin(fill.angle);
   const dx0 = g[6] - fill.center.x;
@@ -1388,6 +1384,8 @@ function bindPathFillPattern(
     if (isDev) console.warn(`weasel: pattern TextureHandle "${tex.id}" not registered`);
     return null;
   }
+  const inverse = gradientSpaceInverse(ctx, fill.units);
+  if (!inverse) return null;
   ctx.textureCache.upload(tex.id, entry.source, 'repeat');
 
   // A path fill mesh carries a_position only, so the tile coordinate is
@@ -1398,7 +1396,7 @@ function bindPathFillPattern(
   gl.useProgram(ctx.patternFill.handle);
   setProjAndModel(ctx, ctx.patternFill);
   setColorMatrixUniforms(ctx, ctx.patternFill);
-  gl.uniformMatrix3fv(ctx.patternFill.uniform('u_worldInv')!, false, gradientSpaceInverse(ctx, fill.units));
+  gl.uniformMatrix3fv(ctx.patternFill.uniform('u_worldInv')!, false, inverse);
   const [tw, th] = textureSize(entry.source);
   const origin = fill.origin ?? { x: 0, y: 0 };
   gl.uniform2f(ctx.patternFill.uniform('u_tileOrigin')!, origin.x, origin.y);
@@ -1425,9 +1423,10 @@ function textureSize(source: HTMLImageElement | ImageBitmap): [number, number] {
  *
  * `'world'` silently degrades to screen space when no view matrix reached
  * the renderer — `render(commands)` without a view is a supported call, and
- * a missing view is not worth a thrown frame.
+ * a missing view is not worth a thrown frame. `null` when the space has no
+ * inverse; a paint measured in it draws nothing.
  */
-function gradientSpaceInverse(ctx: DrawContext, units: GradientUnits | undefined): Mat3 {
+function gradientSpaceInverse(ctx: DrawContext, units: GradientUnits | undefined): Mat3 | null {
   if (units === 'local') return mat3.invert(ctx.state.transform);
   if (units === 'world' && ctx.viewMatrix) return mat3.invert(ctx.viewMatrix);
   return mat3.identity();
@@ -1436,14 +1435,16 @@ function gradientSpaceInverse(ctx: DrawContext, units: GradientUnits | undefined
 function bindPathFillGradient(
   ctx: DrawContext,
   fill: Extract<FillStyle, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>,
-): ShaderProgram {
+): ShaderProgram | null {
+  const inverse = gradientSpaceInverse(ctx, fill.units);
+  if (!inverse) return null;
   const gl = ctx.gl;
   const row = ctx.gradRamps.upload(fill.stops);
 
   gl.useProgram(ctx.gradFill.handle);
   setProjAndModel(ctx, ctx.gradFill);
 
-  gl.uniformMatrix3fv(ctx.gradFill.uniform('u_worldInv')!, false, gradientSpaceInverse(ctx, fill.units));
+  gl.uniformMatrix3fv(ctx.gradFill.uniform('u_worldInv')!, false, inverse);
   setColorMatrixUniforms(ctx, ctx.gradFill);
 
   ctx.gradRamps.bind(0);
@@ -1665,7 +1666,9 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: StrokedPathCommand): voi
 
   // Staged, a ribbon allocates nothing and joins the fill it sits on.
   const hasVColors = !!(stroke.vertexColors && stroke.vertexColors.length > 0);
-  if (tryStageFill(ctx, mesh, batchPaint(ctx, paint, hasVColors))) return;
+  const batched = batchPaint(ctx, paint, hasVColors);
+  if (batched === null) return;
+  if (tryStageFill(ctx, mesh, batched)) return;
 
   // The VAO records the per-draw color attribute, so a vertex-colored draw
   // cannot share a persistent one with a draw that has no vertex colors.
@@ -1947,7 +1950,9 @@ function drawTextOutlineGroup(ctx: DrawContext, group: LaidOutGroup, dx: number,
  * would come out under them.
  */
 function drawOutlineMesh(ctx: DrawContext, fill: FillStyle, mesh: Mesh): void {
-  if (tryStageFill(ctx, mesh, batchPaint(ctx, fill, false))) return;
+  const paint = batchPaint(ctx, fill, false);
+  if (paint === null) return;
+  if (tryStageFill(ctx, mesh, paint)) return;
   drawPathFillByKind(ctx, fill, ctx.meshCache.uploadTransient(mesh));
 }
 

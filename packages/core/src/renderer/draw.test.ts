@@ -2167,6 +2167,23 @@ describe('gradient units — which space a gradient measures its geometry in', (
       expect(mat3.apply(new Float32Array(worldInv()), 100, 40)).toEqual([0, 0]);
     });
 
+    const worldInvUploads = (): number =>
+      recorder.calls.filter((c) => c.name === 'uniformMatrix3fv' && worldInvLocs.includes(c.args[0])).length;
+
+    it("units: 'local' under a group that flattens an axis binds no paint", () => {
+      r.render([{
+        kind: 'group',
+        transform: mat3.scale(mat3.identity(), 0, 1),
+        children: [{ kind: 'path', path: EVEN_ODD, fill: { ...RADIAL, units: 'local' } }],
+      }] as DrawCommand[]);
+      expect(worldInvUploads()).toBe(0);
+    });
+
+    it("units: 'world' under a view with no inverse binds no paint", () => {
+      evenOdd({ ...RADIAL, units: 'world' }, mat3.scale(mat3.identity(), 1e6, 1e-7));
+      expect(worldInvUploads()).toBe(0);
+    });
+
     it("units: 'world' inverts the frame's view matrix, pinning the paint to the scene", () => {
       evenOdd({ ...RADIAL, units: 'world' }, mat3.translate(mat3.identity(), 25, 75));
       // Screen (25, 75) is world origin.
@@ -2196,6 +2213,32 @@ describe('gradient units — which space a gradient measures its geometry in', (
       );
       expect(upload, 'expected the matrix to reach the gradient program').toBeDefined();
       expect(Array.from(upload!.args[2] as Float32Array)[0]).toBe(0.5);
+    });
+  });
+
+  describe('a paint whose space has no inverse', () => {
+    const LOCAL_LINEAR = {
+      fill: 'linear-gradient' as const,
+      from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, stops: STOPS, units: 'local' as const,
+    };
+
+    const drawsUnder = (transform: Float32Array): number => {
+      r.render([{
+        kind: 'group', transform, children: [{ kind: 'path', path: PATH, fill: LOCAL_LINEAR }],
+      }] as DrawCommand[]);
+      return recorder.calls.filter((c) => c.name === 'drawElements').length;
+    };
+
+    it('still draws under an invertible transform', () => {
+      expect(drawsUnder(mat3.scale(mat3.identity(), 2, 3))).toBeGreaterThan(0);
+    });
+
+    it('draws nothing under a zero scale, rather than drawing untransformed', () => {
+      expect(drawsUnder(mat3.scale(mat3.identity(), 0, 1))).toBe(0);
+    });
+
+    it('draws nothing under a transform too flat for its own scale', () => {
+      expect(drawsUnder(mat3.scale(mat3.identity(), 1e6, 1e-7))).toBe(0);
     });
   });
 });

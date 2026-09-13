@@ -135,6 +135,34 @@ describe('transform composition', () => {
     const group = r.nodes[0] as { children: SvgNode[] };
     expect((group.children[0] as SvgTextNode).rotation).toBeCloseTo(1.1, 5);
   });
+
+  const leafUnder = (groupTransform: string) => {
+    const r = parseSvg(
+      `<svg xmlns="${SVG}"><g transform="${groupTransform}">`
+      + '<rect x="0" y="0" width="100" height="100" transform="rotate(30 50 50)"/>'
+      + '</g></svg>',
+    );
+    const group = r.nodes[0] as { children: SvgNode[] };
+    return { warnings: r.warnings, leaf: group.children[0] as { rotation?: number } };
+  };
+
+  it('keeps a leaf rotation under a uniformly tiny parent scale', () => {
+    const { warnings, leaf } = leafUnder('scale(0.0000001)');
+    expect(warnings).toEqual([]);
+    expect(leaf.rotation).toBeCloseTo(Math.PI / 6, 5);
+  });
+
+  it('drops a leaf transform under a singular parent, and says so', () => {
+    const { warnings, leaf } = leafUnder('scale(0 1)');
+    expect(leaf.rotation).toBeUndefined();
+    expect(warnings).toEqual([expect.stringMatching(/singular/)]);
+  });
+
+  it('treats a large parent whose determinant is cancellation as singular', () => {
+    const { warnings, leaf } = leafUnder('matrix(1000000 1000000 1000000 1000000.0000001 0 0)');
+    expect(leaf.rotation).toBeUndefined();
+    expect(warnings).toEqual([expect.stringMatching(/singular/)]);
+  });
 });
 
 describe('stroke serialization', () => {

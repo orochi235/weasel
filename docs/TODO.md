@@ -379,23 +379,12 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
-- **(P2) The renderer's `mat3` and geom's disagree in ways that survive a
-  copy-paste between them.** The two *representations* are deliberate and both
-  files say so — geom keeps a 6-element f64 affine, `renderer/math/mat3.ts` a
-  9-element column-major `Float32Array` shaped for `uniformMatrix3fv`. Two
-  behaviors are the open question.
-
-  `invert` returns identity when the determinant is exactly zero, where geom
-  returns `null` below a conditioning ratio of `1e-12`. A near-singular matrix
-  therefore passes the renderer's test and produces entries around `1e16`,
-  which a `Float32Array` cannot hold — `gradientSpaceInverse` feeds that
-  straight to `u_worldInv`. Settling it means saying what a caller should get
-  for a collapsed transform: an unmapped space (identity), nothing (`null`),
-  or a throw.
-
-  And `translate`/`scale` share names with geom's but post-multiply an
-  existing matrix where geom's construct a fresh one, so code moved between
-  the layers compiles and misbehaves. Renaming the renderer's pair
+- **(P2) The renderer's `mat3.translate`/`scale` share names with geom's
+  and not behavior.** The two *representations* are deliberate and both files
+  say so — geom keeps a 6-element f64 affine, `renderer/math/mat3.ts` a
+  9-element column-major `Float32Array` shaped for `uniformMatrix3fv`. But the
+  renderer's pair post-multiply an existing matrix where geom's construct a
+  fresh one, so code moved between the layers compiles and misbehaves. Renaming the renderer's pair
   (`translated`, `scaledBy`) or giving geom composing forms would both close
   it.
 
@@ -1100,9 +1089,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
   Open: `<image>` flip and source-rect never serialize; they live on the renderer's
   `ImageCommand`, and expressing them wants a wider `SvgImageNode` on both the
-  write and the parse side. `packages/{svg,hud,ui,labkit,modes,d3,paint}` never
-  import `geom` at all, and three incompatible matrix-singularity policies
-  coexist.
+  write and the parse side. `packages/{labkit,modes,d3,paint}` never import
+  `geom` at all, and `ui` only from a story. Every 2D affine inversion now
+  goes through geom's `invert`, but `geom/3d`'s `mat4` `invert` still judges
+  singularity by an absolute `1e-9` determinant floor — the rule 2D gave up.
 
 - **(P2) Safari's `gesturestart` / `gesturechange` / `gestureend` are unhandled.** They are the second trackpad pinch channel on macOS Safari, alongside the ctrl+wheel one `viewportZoom` reads. Nothing in the repo listens for them, so Safari trackpad pinch gets whatever the wheel path synthesizes. Worth deciding deliberately rather than by omission. Note before adding a listener: `viewportZoom` now claims bare ctrl+wheel, so a `gesturechange` handler becomes a *second* channel for the same physical gesture — the double-apply `.changeset/mac-trackpad-pinch-zoom.md` just removed. Consolidate it into `makeViewportZoomAction` behind one scale-delta seam, not as a fourth listener.
 

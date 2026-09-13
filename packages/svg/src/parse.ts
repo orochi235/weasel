@@ -325,8 +325,10 @@ function parseElement(
     const bounds = pathAabb(path);
     const cx = bounds.x + bounds.width / 2;
     const cy = bounds.y + bounds.height / 2;
-    const angle = decomposeRotation(worldLocal, cx, cy);
-    if (angle != null) {
+    const angle = worldLocal && decomposeRotation(worldLocal, cx, cy);
+    if (!worldLocal) {
+      onWarn('leaf transform sits under a singular parent transform; dropped');
+    } else if (angle != null) {
       rotation = angle;
     } else {
       // Bake the matrix in — match legacy behavior.
@@ -780,8 +782,10 @@ function parseImageElement(
     const worldLocal = rebaseTransform(ctm, localTransform);
     const cx = node.x + node.width / 2;
     const cy = node.y + node.height / 2;
-    const angle = decomposeRotation(worldLocal, cx, cy);
-    if (angle != null) {
+    const angle = worldLocal && decomposeRotation(worldLocal, cx, cy);
+    if (!worldLocal) {
+      onWarn('<image> transform sits under a singular parent transform; dropped');
+    } else if (angle != null) {
       node.rotation = angle;
     } else {
       const rotComp = rotationComponent(worldLocal);
@@ -990,8 +994,10 @@ function parseTextElement(
     const worldLocal = rebaseTransform(ctm, localTransform);
     const cx = node.x + node.width / 2;
     const cy = node.y + node.height / 2;
-    const angle = decomposeRotation(worldLocal, cx, cy);
-    if (angle != null) {
+    const angle = worldLocal && decomposeRotation(worldLocal, cx, cy);
+    if (!worldLocal) {
+      onWarn('<text> transform sits under a singular parent transform; dropped');
+    } else if (angle != null) {
       node.rotation = angle;
     } else {
       const rotComp = rotationComponent(worldLocal);

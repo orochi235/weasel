@@ -123,6 +123,18 @@ describe('useNodeOverlayFrame', () => {
     near(frame!.toScreen({ x: 110, y: 220 }), 110, 220);
   });
 
+  it('keeps the last invertible mapping when a live view collapses an axis', () => {
+    const scene = sceneWith([{ id: 'a', pose: { x: 10, y: 20, width: 100, height: 50 } }]);
+    let view: View = { x: 5, y: 5, scale: { x: 2, y: 3 } };
+    const el = container();
+    const { result } = renderHook(() => {
+      const ref = useRef<HTMLDivElement>(el);
+      return useNodeOverlayFrame(scene, ref, 'a' as NodeId, { view: () => view });
+    });
+    view = { x: 5, y: 5, scale: { x: 0, y: 3 } };
+    near(result.current!.toLocal({ x: 10, y: 45 }), 10, 20);
+  });
+
   it('is null with no node id, an unknown id, or an unmeasured container', () => {
     const scene = sceneWith([{ id: 'a', pose: { x: 0, y: 0, width: 10, height: 10 } }]);
     expect(frameFor(scene, null)).toBeNull();
