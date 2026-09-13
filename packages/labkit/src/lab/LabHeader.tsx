@@ -48,7 +48,6 @@ export function LabHeader({ addTrial = true }: { addTrial?: boolean }) {
       <ToggleBar
         className="lk-lab-header__mode"
         ariaLabel="Color mode"
-        size="sm"
         variant="flat"
         items={MODE_ITEMS}
         value={lab.mode}
