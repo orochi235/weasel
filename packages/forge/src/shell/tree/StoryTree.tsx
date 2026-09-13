@@ -1,7 +1,7 @@
 import { type LabChromeContext, usePersistedState } from '@weasel-js/labkit';
-import { Fragment, type KeyboardEvent, type ReactNode, useId, useMemo, useRef, useState } from 'react';
+import { type FocusEvent, type KeyboardEvent, type ReactNode, useId, useMemo, useRef, useState } from 'react';
 import type { IndexEntry } from '../../story/types';
-import { revealTrial } from '../TrialMarker';
+import { revealTrial } from '../revealTrial';
 import { useRoute } from '../useRoute';
 import { buildTree, filterTree, type TreeNode } from './buildTree';
 
@@ -58,7 +58,10 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
 
   const openIds = new Set(ctx.trials.map((trial) => trial.instrumentName));
 
-  const setOpen = (path: string, open: boolean): void => setFolds((prev) => ({ ...prev, [path]: open }));
+  // A filter forces every folder open, so a toggle then would change state nobody can see.
+  const setOpen = (path: string, open: boolean): void => {
+    if (!filtering) setFolds((prev) => ({ ...prev, [path]: open }));
+  };
 
   const moveTo = (key: string | undefined): void => {
     if (key === undefined) return;
@@ -121,7 +124,10 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
         if (el) items.current.set(key, el);
         else items.current.delete(key);
       },
-      onFocus: () => setFocusKey(key),
+      // A folder item contains its children, so their focus bubbles through it.
+      onFocus: (event: FocusEvent) => {
+        if (event.target === event.currentTarget) setFocusKey(key);
+      },
     };
   };
 
@@ -130,21 +136,22 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
       if (node.kind === 'folder') {
         const open = isOpen(node.path);
         return (
-          <Fragment key={keyOf(node)}>
-            <div
-              {...itemProps(node, level)}
-              aria-expanded={open}
-              className="fg-tree__item fg-tree__folder"
-              onClick={() => setOpen(node.path, !open)}
-            >
-              {node.label}
+          <div
+            key={keyOf(node)}
+            {...itemProps(node, level)}
+            aria-expanded={open}
+            aria-label={node.label}
+            className="fg-tree__node"
+          >
+            <div className="fg-tree__item fg-tree__folder" onClick={() => setOpen(node.path, !open)}>
+              <span className="fg-tree__label">{node.label}</span>
             </div>
             {open ? (
               <div role="group" className="fg-tree__group">
                 {renderNodes(node.children, level + 1)}
               </div>
             ) : null}
-          </Fragment>
+          </div>
         );
       }
       const { entry } = node;
@@ -162,7 +169,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
             activate(entry, event.metaKey || event.ctrlKey);
           }}
         >
-          {entry.name}
+          <span className="fg-tree__label">{entry.name}</span>
         </a>
       );
     });

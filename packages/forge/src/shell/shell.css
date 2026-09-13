@@ -106,11 +106,18 @@
   padding-inline-start: var(--wzl-space-sm);
 }
 
+.fg-tree__node {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  outline: none;
+}
+
 .fg-tree__item {
   display: flex;
   align-items: center;
   gap: var(--wzl-space-xs);
-  padding: 2px var(--wzl-space-xs);
+  padding: calc(var(--wzl-space-xs) / 2) var(--wzl-space-xs);
   border-radius: var(--wzl-radius-sm);
   overflow: hidden;
   color: inherit;
@@ -119,13 +126,23 @@
   cursor: pointer;
 }
 
+/* text-overflow does not reach a flex container's anonymous text box, so the label clips itself. */
+.fg-tree__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .fg-tree__item:hover {
   background: var(--wzl-surface-hover);
 }
 
-.fg-tree__item:focus-visible {
-  outline: 2px solid var(--wzl-accent);
-  outline-offset: -2px;
+/* A folder item holds its group, so its ring goes on its own row rather than around the subtree. */
+.fg-tree__story:focus-visible,
+.fg-tree__node:focus-visible > .fg-tree__folder {
+  outline: var(--wzl-line-width) solid var(--wzl-accent);
+  outline-offset: calc(-1 * var(--wzl-line-width));
 }
 
 .fg-tree__item[aria-current='true'] {
@@ -143,7 +160,7 @@
   transform: rotate(-45deg);
 }
 
-.fg-tree__folder[aria-expanded='true']::before {
+.fg-tree__node[aria-expanded='true'] > .fg-tree__folder::before {
   transform: rotate(45deg);
 }
 
@@ -151,9 +168,9 @@
   padding-inline-start: calc(var(--wzl-space-xs) * 2 + 0.35em);
 }
 
-.fg-flash {
-  outline: 2px solid var(--wzl-accent);
-  outline-offset: -2px;
+.lk-trial.fg-flash {
+  outline: var(--wzl-line-width) solid var(--wzl-accent);
+  outline-offset: calc(-1 * var(--wzl-line-width));
   animation: fg-flash 600ms ease-out forwards;
 }
 
@@ -167,7 +184,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fg-flash {
+  .lk-trial.fg-flash {
     animation: none;
   }
 }

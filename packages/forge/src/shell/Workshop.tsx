@@ -6,7 +6,6 @@ import type { IndexEntry } from '../story/types';
 import { CSS_VARS_SECTION } from './cssVars/CssVarsPanel';
 import { createTrialFrames, TrialFramesContext } from './cssVars/trialFrames';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
-import { TRIAL_MARKER } from './TrialMarker';
 import { StoryTree } from './tree/StoryTree';
 import { readRoute, useRoute } from './useRoute';
 import { useStoryRegistry } from './useStoryRegistry';
@@ -22,7 +21,7 @@ export interface WorkshopProps {
 }
 
 const NO_GLOBALS: Globals = {};
-const TRIAL_CHROME = [...TRIAL_MARKER, CSS_VARS_SECTION];
+const TRIAL_CHROME = [CSS_VARS_SECTION];
 
 /** The story `#/<id>` names, when it is indexed; otherwise the first story. Read when the lab mounts. */
 function initialStory(index: readonly IndexEntry[], fallback: string): string {

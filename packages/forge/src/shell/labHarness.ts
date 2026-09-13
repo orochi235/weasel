@@ -32,7 +32,9 @@ export async function flush(): Promise<void> {
 export function connectFrame(iframe: HTMLIFrameElement): { frame: Channel<ToFrame, FromFrame>; received: ToFrame[] } {
   const post = vi.spyOn(iframe.contentWindow as Window, 'postMessage').mockImplementation(() => {});
   fireEvent.load(iframe);
-  const call = (post.mock.calls as unknown[][]).find((c) => (c[0] as { type?: unknown } | null)?.type === PORT_HANDOFF);
+  const call = (post.mock.calls as unknown[][])
+    .filter((c) => (c[0] as { type?: unknown } | null)?.type === PORT_HANDOFF)
+    .at(-1);
   const port = (call?.[2] as MessagePort[] | undefined)?.[0];
   if (!port) throw new Error('FrameView handed off no port');
   const frame = openChannel<ToFrame, FromFrame>(port);

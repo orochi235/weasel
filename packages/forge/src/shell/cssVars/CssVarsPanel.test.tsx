@@ -1,7 +1,7 @@
 import { createMemoryAdapter } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import type { FromFrame } from '../../protocol/messages';
 import { describeSchema } from '../../protocol/schema';
 import type { IndexEntry } from '../../story/types';
@@ -104,8 +104,6 @@ describe('CssVarsPanel', () => {
     fireEvent.change(trial('B').getByLabelText('Filter'), { target: { value: 'gray-50' } });
     expect(row(trial('B'), '--wzl-gray-50').getByRole('textbox')).toHaveValue('#f5f5f6');
 
-    // connectFrame reuses the window's postMessage spy and takes the first handoff it recorded.
-    vi.mocked(first.iframe.contentWindow!.postMessage).mockClear();
     const again = connectFrame(first.iframe);
     again.frame.send(ready);
     await flush();

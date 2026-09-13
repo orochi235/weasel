@@ -1,5 +1,5 @@
 import { createMemoryAdapter } from '@weasel-js/labkit';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { IndexEntry } from '../story/types';
 import { installResizeObserver } from './labHarness';
@@ -53,6 +53,25 @@ describe('Workshop', () => {
     await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X / B' })).toBeInTheDocument());
     expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(2);
     expect(container.querySelector('[role="tree"]')).not.toBeNull();
+  });
+
+  it('opens exactly one trial of a story clicked in the tree', async () => {
+    location.hash = '#/x--a';
+    render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    await waitFor(() => expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(1));
+    const folder = screen.getByRole('treeitem', { name: 'X' });
+    if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(within(folder).getByText('X'));
+    fireEvent.click(screen.getByRole('treeitem', { name: 'B' }));
+    await waitFor(() => expect(location.hash).toBe('#/x--b'));
+    await act(async () => {});
+    expect(screen.getAllByRole('region', { name: 'Trial X / B' })).toHaveLength(1);
+  });
+
+  it('gives a story trial with no viewport no status bar', async () => {
+    location.hash = '#/x--a';
+    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    const trial = await screen.findByRole('region', { name: 'Trial X / A' });
+    expect(trial.querySelector('.lk-status-bar')).toBeNull();
   });
 
   it('opens the first story when the hash names none that is indexed', async () => {
