@@ -39,7 +39,7 @@ import {
   type SceneSource,
   type WeaselDrawPaperSize,
 } from './svgInterop';
-import type { FillStyle, Stroke } from '@weasel-js/core';
+import type { FillStyle, Stroke, StyledRun } from '@weasel-js/core';
 import type { Obj, PathObj, TextObj } from './poseUpdate';
 
 interface WeaselDrawPose {
@@ -51,6 +51,7 @@ interface WeaselDrawData {
   text?: string;
   /** Node-level typography, the same field `kit:text` paints from. */
   style?: TextStyle;
+  runs?: StyledRun[];
   fill?: FillStyle | null;
   stroke?: Stroke | null;
 }
@@ -76,6 +77,7 @@ function leafToObj(id: string, data: WeaselDrawData, pose: WeaselDrawPose): Obj 
     };
     const style = data.style;
     if (style && Object.keys(style).length > 0) o.style = style;
+    if (data.runs && data.runs.length > 0) o.runs = data.runs;
     if (data.fill) o.fill = data.fill;
     if (data.stroke) o.stroke = data.stroke;
     if (pose.rotation) o.rotation = pose.rotation;

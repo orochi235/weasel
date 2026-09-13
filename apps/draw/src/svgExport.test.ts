@@ -11,7 +11,7 @@ import type { TextStyle } from '@weasel-js/core';
 import { svgNodesToSceneDrafts } from './svgInterop';
 import { buildWeaselClipboardText, extractWeaselClipboardFromSvg } from '@weasel-js/core';
 import { solid, strokeOf } from '@weasel-js/core';
-import type { FillStyle, Stroke } from '@weasel-js/core';
+import type { FillStyle, Stroke, StyledRun } from '@weasel-js/core';
 import {
   selectionToSvgString,
   selectionToClipboardSvgString,
@@ -27,7 +27,7 @@ function fakeScene(nodes: Record<string, {
   pose: { x: number; y: number; width: number; height: number; rotation?: number };
   data?: {
     path?: unknown; fill?: FillStyle | null; text?: string; style?: unknown;
-    stroke?: Stroke | null;
+    runs?: StyledRun[]; stroke?: Stroke | null;
   };
   children?: string[];
 }>, roots: string[]) {
@@ -106,6 +106,34 @@ describe('text export', () => {
       paint: { fill: 'solid', color: '#c0392b' },
       width: 3,
     });
+  });
+
+  it('carries run styling through export and back into import drafts', () => {
+    const runs: StyledRun[] = [
+      { text: 'Plain ' },
+      { text: 'bold', bold: true, fill: { fill: 'solid', color: '#c0392b' } },
+      { text: ' and ', italic: true, fontSize: 20, underline: true, strikethrough: true },
+      { text: '2', fontScale: 0.5, baselineShift: 0.4 },
+    ];
+    const scene = fakeScene({
+      t: {
+        kind: 'leaf',
+        pose: { x: 5, y: 6, width: 200, height: 40 },
+        data: { text: 'Plain bold and 2', style: { fontSize: 32 }, runs },
+      },
+    }, ['t']);
+
+    const parsed = parseSvg(selectionToSvgString(scene, ['t']));
+    const n = parsed.nodes[0];
+    if (n.kind !== 'text') throw new Error('expected text');
+    expect(n.runs).toEqual(runs);
+
+    let id = 0;
+    const drafts = svgNodesToSceneDrafts(parsed.nodes, () => `n${id++}`);
+    const leaf = drafts.find(
+      (d) => 'obj' in d && (d as { obj?: { tool?: string } }).obj?.tool === 'text',
+    ) as { obj: { runs?: StyledRun[] } };
+    expect(leaf.obj.runs).toEqual(runs);
   });
 
   it('does not invent a stroke for a null or absent one', () => {
