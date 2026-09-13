@@ -69,8 +69,6 @@
   it was keyed on run-array identity alone, and callers that rebuilt their runs
   each frame missed on every lookup and re-derived the tier by accident.
 
-## 2.0.0-pre.0
-
 ## 1.2.0
 
 ## 1.1.0
