@@ -559,7 +559,8 @@ export function ColorRow({
 /** Props for `<CheckboxRow>`. */
 export interface CheckboxRowProps extends PropertyMetricProps {
   label: ReactNode;
-  value: boolean;
+  /** Absent reads as unchecked. */
+  value: boolean | undefined;
   onChange: (next: boolean) => void;
   /** Label beside the box (default) or above it. */
   layout?: PropertyRowLayout;
@@ -589,7 +590,7 @@ export function CheckboxRow({
       density={density}
       align={align}
     >
-      <input type="checkbox" checked={value} onChange={(e) => onChange(e.target.checked)} />
+      <input type="checkbox" checked={value === true} onChange={(e) => onChange(e.target.checked)} />
     </PropertyRow>
   );
 }
@@ -597,7 +598,8 @@ export function CheckboxRow({
 /** Props for `<TextRow>`. */
 export interface TextRowProps extends PropertyMetricProps {
   label: ReactNode;
-  value: string;
+  /** Absent reads as an empty field. */
+  value: string | null | undefined;
   onChange: (next: string) => void;
   placeholder?: string;
   maxLength?: number;
@@ -631,7 +633,7 @@ export function TextRow({
     >
       <input
         type="text"
-        value={value}
+        value={value ?? ''}
         placeholder={placeholder}
         maxLength={maxLength}
         onChange={(e) => onChange(e.target.value)}
@@ -643,7 +645,8 @@ export function TextRow({
 /** Props for `<NumberRow>`. */
 export interface NumberRowProps extends PropertyMetricProps {
   label: ReactNode;
-  value: number;
+  /** Absent reads as an empty field. */
+  value: number | null | undefined;
   /**
    * The committed value. Given `onInput` as well, it fires on blur or Enter;
    * on its own it fires on every keystroke, which is what a row with one
@@ -700,7 +703,7 @@ export function NumberRow({
     <input
       ref={field}
       type="number"
-      value={value}
+      value={value ?? ''}
       min={min}
       max={max}
       step={step}
@@ -742,7 +745,8 @@ export interface PropertyOption<T extends string> {
 /** Props for `<SelectRow>`. */
 export interface SelectRowProps<T extends string> extends PropertyMetricProps {
   label: ReactNode;
-  value: T;
+  /** Absent, or not one of `options`, shows a placeholder rather than the first option. */
+  value: T | undefined;
   options: ReadonlyArray<PropertyOption<T>>;
   onChange: (next: T) => void;
   layout?: PropertyRowLayout;
@@ -764,6 +768,7 @@ export function SelectRow<T extends string>({
   density,
   align,
 }: SelectRowProps<T>) {
+  const chosen = options.some((opt) => opt.value === value);
   return (
     <PropertyRow
       span={span}
@@ -774,13 +779,18 @@ export function SelectRow<T extends string>({
       align={align}
     >
       <select
-        value={value}
+        value={chosen ? value : ''}
         onChange={(e) => {
           const v = e.target.value as T;
           dlog('property-panel', 'select', { label, value: v });
           onChange(v);
         }}
       >
+        {!chosen && (
+          <option value="" disabled hidden>
+            Choose option…
+          </option>
+        )}
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {/* HTML <option> only renders text; ReactNode → string coerce */}
