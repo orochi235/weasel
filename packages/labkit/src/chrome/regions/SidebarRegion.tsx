@@ -1,10 +1,17 @@
 import type { ReactNode } from 'react';
-import type { SidebarSection, TrialChromeContext, TrialContribution } from '../types';
+import type {
+  RegionContribution,
+  SidebarSection,
+  SidebarSlotContext,
+  TrialChromeContext,
+} from '../types';
 
 /** Props for `<SidebarRegion>`. */
-export interface SidebarRegionProps {
-  contributions: readonly TrialContribution[];
-  ctx: TrialChromeContext;
+export interface SidebarRegionProps<TCtx extends SidebarSlotContext = TrialChromeContext> {
+  contributions: readonly RegionContribution<NoInfer<TCtx>>[];
+  ctx: TCtx;
+  /** Which region's items to lay out. */
+  region?: string;
 }
 
 function Section({
@@ -48,17 +55,22 @@ function Section({
   );
 }
 
-/** Lays a trial's `sidebar` contributions out as titled, collapsible sections.
- *  A section the trial has torn out is not rendered here — `Trial` portals its
- *  body into the workspace instead. */
-export function SidebarRegion({ contributions, ctx }: SidebarRegionProps) {
+/** Lays `sidebar` contributions out as titled, collapsible sections — a
+ *  trial's, or the lab's. A section the trial has torn out is not rendered
+ *  here — `Trial` portals its body into the workspace instead. A context with
+ *  no `undockPanel` offers no tear-out. */
+export function SidebarRegion<TCtx extends SidebarSlotContext = TrialChromeContext>({
+  contributions,
+  ctx,
+  region = 'sidebar',
+}: SidebarRegionProps<TCtx>) {
   if (contributions.length === 0) return null;
   return (
     <>
       {contributions.map((c) => {
         if (c.render) return <div key={c.id}>{c.render(ctx)}</div>;
-        if (c.region !== 'sidebar' || !c.item) return null;
-        if (ctx.undockedPanels.includes(c.id)) return null;
+        if (c.region !== region || !c.item) return null;
+        if (ctx.undockedPanels?.includes(c.id)) return null;
         const item = c.item as SidebarSection;
         return (
           <Section
@@ -67,9 +79,9 @@ export function SidebarRegion({ contributions, ctx }: SidebarRegionProps) {
             collapsed={ctx.collapsedSections[c.id] ?? item.defaultCollapsed ?? false}
             onCollapsedChange={(next) => ctx.setSectionCollapsed(c.id, next)}
             onUndock={
-              item.undockable === false
-                ? undefined
-                : () => ctx.undockPanel(c.id, item.undockAs ?? 'tile')
+              ctx.undockPanel && item.undockable !== false
+                ? () => ctx.undockPanel?.(c.id, item.undockAs ?? 'tile')
+                : undefined
             }
           >
             {item.body}

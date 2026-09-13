@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { type ReactNode, useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
+import type { LabContribution } from '../chrome/labTypes';
 import type { TrialContribution } from '../chrome/types';
 import type { Instrument } from '../instrument/types';
 import { Lab } from './Lab';
@@ -21,6 +22,17 @@ const floater: TrialContribution = {
   id: 'floater',
   region: 'sidebar',
   item: { title: 'Floater', undockAs: 'floating', body: <p>floating panel</p> },
+};
+
+const sidebarTree: LabContribution = {
+  id: 'tree',
+  region: 'sidebar',
+  item: {
+    title: 'Stories',
+    body: Array.from({ length: 40 }, (_, i) => `Story ${i + 1}`).map((name) => (
+      <p key={name}>{name}</p>
+    )),
+  },
 };
 
 const VIEWPORTS = {
@@ -58,10 +70,11 @@ function BodyHost({ host, children }: { host: Host; children: ReactNode }) {
   return mount ? createPortal(children, mount) : null;
 }
 
-type Fixture = 'fullscreen' | 'floating' | 'wrapped' | 'framed';
+type Fixture = 'fullscreen' | 'floating' | 'wrapped' | 'framed' | 'sidebar';
 
 const HOST: Record<Fixture, Host> = {
   fullscreen: 'reset',
+  sidebar: 'reset',
   floating: 'reset',
   wrapped: 'wrapped',
   framed: 'framed',
@@ -127,6 +140,21 @@ function fitProblems(fixture: Fixture, viewport: keyof typeof VIEWPORTS): string
       );
     }
   }
+
+  if (fixture === 'sidebar') {
+    const side = document.querySelector('.lk-lab__sidebar')?.getBoundingClientRect();
+    // The host wraps the grid only once a panel is undocked.
+    const work = document
+      .querySelector('.lk-lab__main > .lk-workspace-host, .lk-lab__main > .lk-workspace')
+      ?.getBoundingClientRect();
+    if (!side) return [...problems, 'no .lk-lab__sidebar'];
+    if (!work) return [...problems, 'no workspace in .lk-lab__main'];
+    if (!(side.width > 0)) problems.push(`lab sidebar width ${side.width}`);
+    if (!(work.width > 0)) problems.push(`workspace width ${work.width}`);
+    if (work.left < side.right - 1) {
+      problems.push(`workspace left ${work.left} overlaps sidebar right ${side.right}`);
+    }
+  }
   return problems;
 }
 
@@ -140,6 +168,7 @@ function fit(fixture: Fixture, viewport: keyof typeof VIEWPORTS): Story {
           instruments={[Stub]}
           defaultInstrument="Stub"
           chrome={fixture === 'floating' ? [floater] : undefined}
+          labChrome={fixture === 'sidebar' ? [sidebarTree] : undefined}
         />
       </BodyHost>
     ),
@@ -184,3 +213,7 @@ export const WrappedNoResetNarrow = fit('wrapped', 'narrow');
 export const FramedWide = fit('framed', 'wide');
 export const FramedMedium = fit('framed', 'medium');
 export const FramedNarrow = fit('framed', 'narrow');
+
+export const SidebarWide = fit('sidebar', 'wide');
+export const SidebarMedium = fit('sidebar', 'medium');
+export const SidebarNarrow = fit('sidebar', 'narrow');

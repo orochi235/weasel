@@ -2,9 +2,10 @@ export { builtinContributions } from './builtins';
 export type { LabRegionProps } from './LabChrome';
 export {
   contributionsIn,
-  labContributions,
   LabFooterRegion,
   LabHeaderRegion,
+  LabSidebarRegion,
+  labContributions,
   toolContributions,
   useLabChromeContext,
 } from './LabChrome';
@@ -27,6 +28,7 @@ export type {
   IconComponent,
   RegionContribution,
   SidebarSection,
+  SidebarSlotContext,
   StatusReadout,
   ToolbarItem,
   ToolItem,

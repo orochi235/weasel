@@ -67,6 +67,32 @@
   }
 }
 
+.lk-lab__panes {
+  flex: 1;
+  min-width: 0;
+}
+
+.lk-lab__sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--wzl-surface);
+  border-right: 1px solid var(--wzl-border);
+}
+
+.lk-lab__main {
+  display: flex;
+  min-width: 0;
+  height: 100%;
+
+  > .lk-workspace,
+  > .lk-workspace-host {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
 // The lab's two shared drawing buffers, stacked around the trials: marks that
 // annotate an instrument go over its DOM, an opaque renderer goes under it so
 // the pane can still hold a label or a control. Both sit under the viewport

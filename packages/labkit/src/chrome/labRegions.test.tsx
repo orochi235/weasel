@@ -127,6 +127,54 @@ describe('lab-level chrome', () => {
   });
 });
 
+describe('lab sidebar region', () => {
+  const tree: LabContribution = {
+    id: 'tree',
+    region: 'sidebar',
+    item: { title: 'Stories', body: <p>story list</p> },
+  };
+
+  it('renders a section beside the workspace', () => {
+    const { container } = render(
+      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" labChrome={[tree]} />,
+    );
+    expect(screen.getByText('story list')).toBeInTheDocument();
+    expect(container.querySelector('.lk-lab__sidebar')).not.toBeNull();
+    expect(screen.getByRole('separator', { name: /lab sidebar/i })).toBeInTheDocument();
+  });
+
+  it('folds a section', () => {
+    render(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" labChrome={[tree]} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Stories' }));
+    expect(screen.queryByText('story list')).toBeNull();
+  });
+
+  it('offers no tear-out at lab level', () => {
+    render(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" labChrome={[tree]} />);
+    expect(screen.queryByRole('button', { name: 'Undock Stories' })).toBeNull();
+  });
+
+  it('hands a render contribution the lab context', () => {
+    const seen: LabChromeContext[] = [];
+    const probe: LabContribution = {
+      id: 'probe',
+      region: 'sidebar',
+      render: (ctx) => {
+        seen.push(ctx);
+        return <p>probe</p>;
+      },
+    };
+    render(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" labChrome={[probe]} />);
+    expect(screen.getByText('probe')).toBeInTheDocument();
+    expect(seen[0]?.trials).toHaveLength(1);
+  });
+
+  it('adds no strip to a lab without sidebar chrome', () => {
+    const { container } = render(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" />);
+    expect(container.querySelector('.lk-lab__panes')).toBeNull();
+  });
+});
+
 describe('lab chrome without <Lab>', () => {
   // The rail `apps/theme-editor` mounts: `<LabShell>` with no trial runtime
   // above it, so the context handed to `onActivate` is the consumer's own.

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { LabContextValue } from '../lab/LabContext';
 import type {
   ContributionBase,
+  SidebarSection,
   StatusReadout,
   ToolbarItem,
   ToolItem,
@@ -12,9 +13,9 @@ import type {
  * A named position in the lab's own chrome — a box the shell owns, outside any
  * one trial. `header` and `footer` are the shell's two bars, named as
  * `<LabShell>` names them; `palette` is the tool rail down the side of the
- * workspace.
+ * workspace; `sidebar` is a column of sections left of the tool rail.
  */
-export type LabRegion = 'header' | 'palette' | 'footer';
+export type LabRegion = 'header' | 'palette' | 'sidebar' | 'footer';
 
 /**
  * Everything a lab-level contribution can read and command: the lab's own
@@ -40,6 +41,7 @@ export type LabContribution<TCtx = LabChromeContext> =
       render?: never;
     })
   | (ContributionBase & { region: 'palette'; item: ToolItem; render?: never })
+  | (ContributionBase & { region: 'sidebar'; item: SidebarSection; render?: never })
   | (ContributionBase & { region: 'footer'; item: StatusReadout; render?: never })
   | (ContributionBase & {
       region: LabRegion;

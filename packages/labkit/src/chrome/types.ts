@@ -106,6 +106,16 @@ export interface ToolSlotContext {
   setActiveTool: (id: string) => void;
 }
 
+/** What a sidebar region reflects and writes: which sections are folded, and —
+ *  where the chrome can tear a section out — where it goes. A trial supplies
+ *  all four; a lab supplies the fold state only. */
+export interface SidebarSlotContext {
+  collapsedSections: Readonly<Record<string, boolean>>;
+  setSectionCollapsed: (key: string, collapsed: boolean) => void;
+  undockedPanels?: readonly string[];
+  undockPanel?: (sectionId: string, as?: 'tile' | 'floating') => void;
+}
+
 /**
  * A contribution as a region renderer sees it. A renderer checks the region
  * name against its own and narrows `item` itself, which is what lets one

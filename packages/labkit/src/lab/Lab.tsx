@@ -12,11 +12,17 @@ import {
 import { useStore } from 'zustand/react';
 import { AnnotationPreloadContext } from '../annotations/preload';
 import { ANNOTATION_TOOLS } from '../annotations/toolMap';
-import { LabFooterRegion, LabHeaderRegion, labContributions } from '../chrome/LabChrome';
+import {
+  LabFooterRegion,
+  LabHeaderRegion,
+  LabSidebarRegion,
+  labContributions,
+} from '../chrome/LabChrome';
 import type { LabContribution } from '../chrome/labTypes';
 import type { TrialContribution } from '../chrome/types';
 import type { ConfigRule, ControlRenderer } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
+import { Split } from '../primitives/Split';
 import { defaultStorage, noneAdapter } from '../state/adapters';
 import { LabStoreContext } from '../state/context';
 import { type OpenedLabStore, openLabStore } from '../state/openLabStore';
@@ -25,6 +31,7 @@ import { createRecordCache } from '../state/records';
 import { createLabStore, type LabStore } from '../state/store';
 import type { LabMode, StorageAdapter, TrialRecord } from '../state/types';
 import { useOpenOnce, useWarnIgnoredChange } from '../state/useOpenOnce';
+import { usePersistedState } from '../state/usePersistedState';
 import { SurfaceCanvasContext, SurfaceContext } from '../surface/SurfaceContext';
 import { useSurfaceCanvas, useSurfaceOptional } from '../surface/useSurfaceTile';
 import { type SurfaceFrame, useTiledSurface } from '../surface/useTiledSurface';
@@ -75,8 +82,8 @@ interface LabBaseProps {
   footer?: ReactNode;
   /** Contributions added to every trial's chrome, after the instrument's own. */
   chrome?: readonly TrialContribution[];
-  /** Contributions to the lab's own chrome — its header bar, its tool rail and
-   *  its footer — rather than to every trial's. Rendered after `children` and
+  /** Contributions to the lab's own chrome — its header bar, its sidebar, its
+   *  tool rail and its footer — rather than to every trial's. Rendered after `children` and
    *  `footer`, which stay the way a lab drops arbitrary content into those
    *  same two boxes. */
   labChrome?: readonly LabContribution[];
@@ -199,6 +206,41 @@ function buildNebula(colors: readonly string[]): string {
   });
   blobs.push('radial-gradient(ellipse at center, #0a0a18 0%, #02020a 100%)');
   return blobs.join(', ');
+}
+
+/** The sidebar strip beside the tool rail and workspace. Its own component
+ *  because the width is a persisted value, and `LabRuntime` renders the
+ *  persistence provider it reads from. */
+function LabPanes({
+  contributions,
+  children,
+}: {
+  contributions: readonly LabContribution[];
+  children: ReactNode;
+}) {
+  const surface = useSurfaceOptional();
+  const [sidebarWidth, setSidebarWidth] = usePersistedState<number | undefined>(
+    'lk-lab-sidebar-width',
+    undefined,
+    { scope: 'lab' },
+  );
+  return (
+    <Split
+      className="lk-lab__panes"
+      sidebarClassName="lk-lab__sidebar"
+      contentClassName="lk-lab__main"
+      label="Lab sidebar"
+      defaultWidth={260}
+      width={sidebarWidth}
+      onWidthChange={(w) => {
+        setSidebarWidth(w);
+        surface?.invalidateRects();
+      }}
+      sidebar={<LabSidebarRegion contributions={contributions} />}
+    >
+      {children}
+    </Split>
+  );
 }
 
 /** The lab runtime: opens the store, provides it, and renders one trial
@@ -341,6 +383,7 @@ function LabRuntime({
     [annotates, tools, labChrome],
   );
   const hasFooterChrome = labChromeAll.some((c) => c.region === 'footer');
+  const hasSidebarChrome = labChromeAll.some((c) => c.region === 'sidebar');
 
   useEffect(() => {
     if (mode && mode !== store.getState().mode) {
@@ -412,6 +455,22 @@ function LabRuntime({
       ? ({ ['--wzl-backdrop' as string]: buildNebula(nebula) } as CSSProperties)
       : undefined;
 
+  const workspace = (
+    <Workspace
+      panels={workspacePanels}
+      ids={trials.map((w) => w.id)}
+      resizable
+      reorderable
+      onReorder={(ids) => contextValue.reorderTrials(ids)}
+      layout={layout as TrialLayout}
+      onLayoutChange={(next) => store.getState().setLayout(next)}
+    >
+      {trials.map((w) => (
+        <Trial key={w.id} id={w.id} chrome={chrome} suppress={suppress} />
+      ))}
+    </Workspace>
+  );
+
   return (
     <LabStoreContext.Provider value={{ store }}>
       <PersistenceContext.Provider value={opened.records}>
@@ -473,20 +532,17 @@ function LabRuntime({
                             />
                           </>
                         )}
-                        <LabPalette contributions={labChromeAll} />
-                        <Workspace
-                          panels={workspacePanels}
-                          ids={trials.map((w) => w.id)}
-                          resizable
-                          reorderable
-                          onReorder={(ids) => contextValue.reorderTrials(ids)}
-                          layout={layout as TrialLayout}
-                          onLayoutChange={(next) => store.getState().setLayout(next)}
-                        >
-                          {trials.map((w) => (
-                            <Trial key={w.id} id={w.id} chrome={chrome} suppress={suppress} />
-                          ))}
-                        </Workspace>
+                        {hasSidebarChrome ? (
+                          <LabPanes contributions={labChromeAll}>
+                            <LabPalette contributions={labChromeAll} />
+                            {workspace}
+                          </LabPanes>
+                        ) : (
+                          <>
+                            <LabPalette contributions={labChromeAll} />
+                            {workspace}
+                          </>
+                        )}
                       </div>
                     </SurfaceCanvasContext.Provider>
                   </SurfaceContext.Provider>

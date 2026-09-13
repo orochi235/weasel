@@ -2,10 +2,12 @@ import { useContext, useMemo } from 'react';
 import { useStore } from 'zustand/react';
 import { useLabContext } from '../lab/LabContext';
 import { LabStoreContext } from '../state/context';
+import { usePersistedState } from '../state/usePersistedState';
 import { resolveLabTool } from '../tools/labTool';
 import type { TrialTool } from '../tools/types';
 import type { LabChromeContext, LabContribution, LabRegion } from './labTypes';
 import { mergeContributions } from './merge';
+import { SidebarRegion } from './regions/SidebarRegion';
 import { StatusRegion } from './regions/StatusRegion';
 import { ToolbarRegion } from './regions/ToolbarRegion';
 
@@ -75,6 +77,27 @@ export function LabHeaderRegion({ contributions }: LabRegionProps) {
       ctx={ctx}
     />
   );
+}
+
+/** The lab's sidebar sections. Fold state is a lab-scoped persisted value, so it
+ *  survives a reload in a stored lab and lasts the session in an unstored one. */
+export function LabSidebarRegion({ contributions }: LabRegionProps) {
+  const lab = useLabChromeContext();
+  const [collapsedSections, setFolds] = usePersistedState<Record<string, boolean>>(
+    'lk-lab-sidebar-folds',
+    {},
+    { scope: 'lab' },
+  );
+  const ctx = useMemo(
+    () => ({
+      ...lab,
+      collapsedSections,
+      setSectionCollapsed: (key: string, collapsed: boolean) =>
+        setFolds((f) => ({ ...f, [key]: collapsed })),
+    }),
+    [lab, collapsedSections, setFolds],
+  );
+  return <SidebarRegion contributions={contributionsIn(contributions, 'sidebar')} ctx={ctx} />;
 }
 
 /** The lab's readouts, in the shell footer below the workspace. */
