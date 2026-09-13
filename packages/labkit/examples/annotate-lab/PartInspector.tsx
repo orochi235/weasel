@@ -1,18 +1,21 @@
 /**
- * Two renderings of the same part, side by side, both accepting marks.
+ * One rendering of a part, accepting marks. Compare two renderings by opening
+ * a second trial: the drawing tools in the lab's rail are shared, so a tool
+ * picked once draws in either.
  *
- * The instrument owns the picture and nothing else: it declares which of its
- * elements take marks and which config keys move them, and labkit provides the
- * palette, the overlay, the store and the hook. Circle a defect on the left
- * pane, change `angle`, and `isStale` answers that the mark no longer
- * describes the picture underneath it.
+ * The instrument owns the picture and nothing else: it declares which element
+ * takes marks, which config keys move them, and how big its content is, and
+ * labkit provides the palette, the overlay, the store, the hook and the
+ * camera. Circle a defect, change `angle`, and `isStale` answers that the mark
+ * no longer describes the picture underneath it; change `shading` and it
+ * still does. Wheel or drag the empty well and the marks ride along.
  *
- * The target refs are module-scope because `targets()` is called with the
- * trial's state and config, not from inside a component — an element a
- * capability names has to be reachable from outside React.
+ * Refs are held per trial because `targets()` is called with the trial's
+ * state and config, not from inside a component, and every trial of this
+ * instrument declares the same target: one module-scope ref would hand each
+ * trial whichever pane mounted last.
  */
 import { type CaptureSource, defineInstrument, f, useAnnotations } from '@weasel-js/labkit';
-import { createRef } from 'react';
 
 interface Config {
   angle: number;
@@ -21,14 +24,24 @@ interface Config {
 }
 
 const CONTENT = { w: 260, h: 180 };
+/** The picture and its caption, which is what the stage lays out and zooms. */
+const STAGE = { width: CONTENT.w, height: CONTENT.h + 26 };
 
-const flatRef = createRef<HTMLDivElement>();
-const shadedRef = createRef<HTMLDivElement>();
+type PaneRef = { current: HTMLDivElement | null };
+const panes = new Map<string, PaneRef>();
+function paneFor(trialId: string): PaneRef {
+  let ref = panes.get(trialId);
+  if (!ref) {
+    ref = { current: null };
+    panes.set(trialId, ref);
+  }
+  return ref;
+}
 
 /** The pane's own picture, for an export to draw marks over. The instrument
  *  hands it back as markup because it *is* markup — an SVG base keeps the
  *  export vector all the way through and rasterizes once at the end. */
-const svgOf = (ref: typeof flatRef) => (): CaptureSource => ({
+const svgOf = (ref: PaneRef) => (): CaptureSource => ({
   kind: 'svg',
   markup: ref.current?.querySelector('svg')?.outerHTML ?? '',
 });
@@ -68,24 +81,16 @@ function MarkCount({ config }: { config: Config }) {
   );
 }
 
-function InspectorBody({ config }: { config: Config }) {
+function InspectorBody({ config, trialId }: { config: Config; trialId: string }) {
   return (
-    <div className="ex-panes">
-      <figure>
-        <div ref={flatRef} data-pane="flat">
-          <Part angle={config.angle} shading="flat" />
-        </div>
-        <figcaption>{config.label} — flat</figcaption>
-      </figure>
-      <figure>
-        <div ref={shadedRef} data-pane="shaded">
-          <Part angle={config.angle} shading={config.shading} />
-        </div>
-        <figcaption>
-          {config.label} — {config.shading} <MarkCount config={config} />
-        </figcaption>
-      </figure>
-    </div>
+    <figure className="ex-figure">
+      <div ref={(el) => void (paneFor(trialId).current = el)} data-pane="part">
+        <Part angle={config.angle} shading={config.shading} />
+      </div>
+      <figcaption>
+        {config.label} — {config.shading} <MarkCount config={config} />
+      </figcaption>
+    </figure>
   );
 }
 
@@ -97,9 +102,10 @@ export const PartInspector = defineInstrument<Record<string, never>, Config>({
     label: f.string('bracket-7'),
   }),
   initialState: () => ({}),
-  render: (ctx) => <InspectorBody config={ctx.config} />,
+  render: (ctx) => <InspectorBody config={ctx.config} trialId={ctx.trial.id} />,
+  stage: { size: STAGE },
   annotations: {
-    // What a mark is allowed to mean here. A status carries its own colour, so
+    // What a mark is allowed to mean here. A status carries its own color, so
     // a fixed defect stops shouting without anyone re-drawing it.
     meaning: {
       statuses: [
@@ -108,24 +114,11 @@ export const PartInspector = defineInstrument<Record<string, never>, Config>({
         { id: 'fixed', label: 'Fixed', color: '#30a46c' },
       ],
     },
-    targets: () => [
-      // `shading` moves only the right pane's picture, so only that target
-      // declares it: a mark on the left survives a change that would strand
-      // one on the right.
-      {
-        id: 'flat',
-        ref: flatRef,
-        content: CONTENT,
-        positionDependsOn: ['angle'],
-        base: svgOf(flatRef),
-      },
-      {
-        id: 'shaded',
-        ref: shadedRef,
-        content: CONTENT,
-        positionDependsOn: ['angle', 'shading'],
-        base: svgOf(shadedRef),
-      },
-    ],
+    // `shading` recolors the part without moving it, so it is not declared:
+    // a mark survives a shading change and is stranded by a new angle.
+    targets: (_state, _config, trial) => {
+      const ref = paneFor(trial.id);
+      return [{ id: 'part', ref, content: CONTENT, positionDependsOn: ['angle'], base: svgOf(ref) }];
+    },
   },
 });

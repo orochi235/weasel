@@ -1,11 +1,8 @@
-.ex-panes {
-  display: flex;
-  gap: 24px;
-  padding: 24px;
-  align-items: flex-start;
+.ex-figure {
+  margin: 0;
 }
 
-.ex-panes figcaption {
+.ex-figure figcaption {
   padding-top: 6px;
   font-size: 12px;
   opacity: 0.8;
