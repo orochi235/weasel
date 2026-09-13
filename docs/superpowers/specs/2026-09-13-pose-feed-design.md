@@ -94,6 +94,10 @@ runs on the frames where committed content changed — a commit, an undo, a past
 sibling reorder can change render order without changing any node, and two
 `!==` comparisons buy correctness more cheaply than modelling order in the delta.
 
+**The delta carries no order.** `added` and `changed` follow `scene.nodes`,
+which is insertion order. A host that cares about draw order re-reads
+`renderOrderNodes()`, and `reset` is the signal telling it to.
+
 ## What the feed is not
 
 Non-node chrome does not travel here. A marquee rect, a lasso trail and an
