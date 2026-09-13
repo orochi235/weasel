@@ -7,15 +7,12 @@
 
 import { createScene } from '@weasel-js/core';
 import type { Scene, SceneNode } from '@weasel-js/core';
-import { compose, quatIdentity, transformPoint, type Quat, type Vec3 } from './math3d';
+import { aabbAround, type Aabb } from '@weasel-js/geom/3d';
+import { aabbOfPose, pose3, type Pose3 } from '@weasel-js/kernel3d';
 
 export type SolidKind = 'box' | 'sphere';
-
-export interface Pose3 {
-  position: Vec3;
-  rotation: Quat;
-  scale: Vec3;
-}
+export type { Pose3 };
+export { pose3 };
 
 export interface SolidData {
   kind: SolidKind;
@@ -26,45 +23,24 @@ export type SolidLayer = 'solids';
 export type SolidScene = Scene<SolidData, SolidLayer, Pose3>;
 export type SolidNode = SceneNode<SolidData, SolidLayer, Pose3>;
 
-export interface Aabb {
-  min: Vec3;
-  max: Vec3;
-}
-
-export function pose3(
-  position: Vec3,
-  scale: Vec3 = [1, 1, 1],
-  rotation: Quat = quatIdentity(),
-): Pose3 {
-  return { position, rotation, scale };
-}
-
 /**
  * The world-space box a solid occupies. Both primitives are unit-sized about
  * their own origin, so scale 1 means one unit across.
  *
  * A non-uniformly scaled sphere is an ellipsoid; it is bounded by its largest
- * axis rather than fitted, which reads as a loose hit box rather than a wrong one.
+ * axis rather than fitted, which reads as a loose hit box rather than a wrong
+ * one. That it does not widen when the sphere turns is why the kernel asks for
+ * a world box rather than transforming a local one: symmetry belongs to the
+ * primitive, and a pose cannot report it.
  */
 export function aabbOfSolid(pose: Pose3, kind: SolidKind): Aabb {
   if (kind === 'sphere') {
-    const radius = 0.5 * Math.max(Math.abs(pose.scale[0]), Math.abs(pose.scale[1]), Math.abs(pose.scale[2]));
-    return {
-      min: [pose.position[0] - radius, pose.position[1] - radius, pose.position[2] - radius],
-      max: [pose.position[0] + radius, pose.position[1] + radius, pose.position[2] + radius],
-    };
+    const radius = 0.5 * Math.max(
+      Math.abs(pose.scale[0]), Math.abs(pose.scale[1]), Math.abs(pose.scale[2]),
+    );
+    return aabbAround(pose.position, radius);
   }
-
-  const model = compose(pose.position, pose.rotation, pose.scale);
-  let min: Vec3 = [Infinity, Infinity, Infinity];
-  let max: Vec3 = [-Infinity, -Infinity, -Infinity];
-  for (let i = 0; i < 8; i++) {
-    const corner: Vec3 = [i & 1 ? 0.5 : -0.5, i & 2 ? 0.5 : -0.5, i & 4 ? 0.5 : -0.5];
-    const p = transformPoint(model, corner);
-    min = [Math.min(min[0], p[0]), Math.min(min[1], p[1]), Math.min(min[2], p[2])];
-    max = [Math.max(max[0], p[0]), Math.max(max[1], p[1]), Math.max(max[2], p[2])];
-  }
-  return { min, max };
+  return aabbOfPose(pose);
 }
 
 export function createSolidScene(): SolidScene {

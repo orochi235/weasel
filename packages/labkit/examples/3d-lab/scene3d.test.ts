@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { aabbOfSolid, createSolidScene, pose3 } from './scene3d';
-import { quatFromAxisAngle, type Vec3 } from './math3d';
+import { quatFromAxisAngle, type Vec3 } from '@weasel-js/geom/3d';
 
 function expectVecClose(a: Vec3, b: Vec3, digits = 5) {
   for (let i = 0; i < 3; i++) expect(a[i]).toBeCloseTo(b[i], digits);

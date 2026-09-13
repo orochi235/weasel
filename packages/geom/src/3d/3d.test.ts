@@ -1,29 +1,26 @@
 import { describe, it, expect } from 'vitest';
 import {
   add,
-  sub,
-  scale,
-  dot,
-  cross,
-  length,
-  normalize,
   compose,
-  perspective,
-  lookAt,
-  multiply,
-  invert,
-  transformPoint,
+  cross,
+  dot,
   identity,
-  quatFromAxisAngle,
-  rayThroughScreenPoint,
   intersectRayAabb,
   intersectRayPlane,
-  projectAabbToScreen,
+  invert,
+  len,
+  lookAt,
+  multiply,
+  normalize,
+  perspective,
+  quatFromAxisAngle,
+  scale,
+  sub,
+  transformAabb,
+  transformPoint,
   type Mat4,
   type Vec3,
-} from './math3d';
-
-const RECT = { x: 0, y: 0, w: 800, h: 600 };
+} from './index';
 
 function expectVecClose(a: Vec3, b: Vec3, digits = 6) {
   for (let i = 0; i < 3; i++) expect(a[i]).toBeCloseTo(b[i], digits);
@@ -43,7 +40,7 @@ describe('vector algebra', () => {
   it('computes dot, cross and length', () => {
     expect(dot([1, 2, 3], [4, 5, 6])).toBe(32);
     expectVecClose(cross([1, 0, 0], [0, 1, 0]), [0, 0, 1]);
-    expect(length([3, 4, 0])).toBe(5);
+    expect(len([3, 4, 0])).toBe(5);
   });
 
   it('normalizes to unit length, and leaves a zero vector alone', () => {
@@ -112,31 +109,6 @@ describe('matrix arithmetic', () => {
   });
 });
 
-describe('rayThroughScreenPoint', () => {
-  it('shoots straight ahead from the middle of the viewport', () => {
-    const view = lookAt([0, 0, 5], [0, 0, 0], [0, 1, 0]);
-    const proj = perspective(Math.PI / 3, RECT.w / RECT.h, 0.1, 100);
-    const ray = rayThroughScreenPoint({ x: 400, y: 300 }, RECT, multiply(proj, view), [0, 0, 5]);
-    expectVecClose(ray.origin, [0, 0, 5], 5);
-    expectVecClose(ray.direction, [0, 0, -1], 5);
-  });
-
-  it('leans right for a point right of center', () => {
-    const view = lookAt([0, 0, 5], [0, 0, 0], [0, 1, 0]);
-    const proj = perspective(Math.PI / 3, RECT.w / RECT.h, 0.1, 100);
-    const ray = rayThroughScreenPoint({ x: 700, y: 300 }, RECT, multiply(proj, view), [0, 0, 5]);
-    expect(ray.direction[0]).toBeGreaterThan(0);
-    expect(ray.direction[2]).toBeLessThan(0);
-  });
-
-  it('leans up for a point above center, despite y running down the screen', () => {
-    const view = lookAt([0, 0, 5], [0, 0, 0], [0, 1, 0]);
-    const proj = perspective(Math.PI / 3, RECT.w / RECT.h, 0.1, 100);
-    const ray = rayThroughScreenPoint({ x: 400, y: 100 }, RECT, multiply(proj, view), [0, 0, 5]);
-    expect(ray.direction[1]).toBeGreaterThan(0);
-  });
-});
-
 describe('intersectRayAabb', () => {
   const min: Vec3 = [-1, -1, -1];
   const max: Vec3 = [1, 1, 1];
@@ -178,29 +150,23 @@ describe('intersectRayPlane', () => {
     expect(intersectRayPlane({ origin: [0, 5, 0], direction: [0, 1, 0] }, [0, 1, 0], 0)).toBeNull();
   });
 });
+describe('transformAabb', () => {
+  const unit = { min: [-0.5, -0.5, -0.5] as Vec3, max: [0.5, 0.5, 0.5] as Vec3 };
 
-describe('projectAabbToScreen', () => {
-  const viewProj = multiply(
-    perspective(Math.PI / 3, RECT.w / RECT.h, 0.1, 100),
-    lookAt([0, 0, 5], [0, 0, 0], [0, 1, 0]),
-  );
-
-  it('centers a box that sits on the view axis', () => {
-    const b = projectAabbToScreen([-1, -1, -1], [1, 1, 1], viewProj, RECT);
-    expect(b).not.toBeNull();
-    expect(b!.x + b!.width / 2).toBeCloseTo(400, 0);
-    expect(b!.y + b!.height / 2).toBeCloseTo(300, 0);
-    expect(b!.width).toBeGreaterThan(0);
-    expect(b!.height).toBeGreaterThan(0);
+  it('translates a box without changing its size', () => {
+    const box = transformAabb(compose([3, 0, -2], [0, 0, 0, 1], [1, 1, 1]), unit);
+    expect(box.min[0]).toBeCloseTo(2.5, 9);
+    expect(box.max[0]).toBeCloseTo(3.5, 9);
+    expect(box.max[2] - box.min[2]).toBeCloseTo(1, 9);
   });
 
-  it('draws a nearer box bigger than a farther one', () => {
-    const near = projectAabbToScreen([-1, -1, 0], [1, 1, 2], viewProj, RECT);
-    const far = projectAabbToScreen([-1, -1, -20], [1, 1, -18], viewProj, RECT);
-    expect(near!.width).toBeGreaterThan(far!.width);
-  });
-
-  it('returns null for a box entirely behind the camera', () => {
-    expect(projectAabbToScreen([-1, -1, 20], [1, 1, 22], viewProj, RECT)).toBeNull();
+  it('widens under rotation rather than rotating', () => {
+    const spun = transformAabb(
+      compose([0, 0, 0], quatFromAxisAngle([0, 0, 1], Math.PI / 4), [1, 1, 1]),
+      unit,
+    );
+    expect(spun.max[0]).toBeCloseTo(Math.SQRT1_2, 9);
+    expect(spun.max[1]).toBeCloseTo(Math.SQRT1_2, 9);
+    expect(spun.max[2]).toBeCloseTo(0.5, 9);
   });
 });

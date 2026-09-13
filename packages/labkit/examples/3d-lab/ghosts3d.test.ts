@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { moveAction, type GesturePreviewSource, type InvocationCtx, type NodeId } from '@weasel-js/core';
-import { createCamera } from './camera3d';
-import { createPoseDescriptor } from './deps3d';
+import { createCamera, createPoseDescriptor } from '@weasel-js/kernel3d';
 import { collectGhosts } from './ghosts3d';
-import { createSolidScene, pose3, type SolidScene } from './scene3d';
+import { aabbOfSolid, createSolidScene, pose3, type SolidScene } from './scene3d';
 
 function firstId(scene: SolidScene) {
   return scene.renderOrderNodes()[0].id;
@@ -103,7 +102,11 @@ describe('a ghost off a live move handle', () => {
     const deps = {
       selection,
       scene,
-      poseDescriptor: createPoseDescriptor(viewport as never),
+      poseDescriptor: createPoseDescriptor({
+        scene,
+        viewport,
+        bounds: (node) => aabbOfSolid(node.pose, node.data.kind),
+      }),
     } as unknown as InvocationCtx['deps'];
 
     const ctx = {

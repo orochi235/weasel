@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { OngoingHandle, OngoingOverlay } from '@weasel-js/core';
-import { collectOverlayBoxes } from './overlays3d';
+import { collectOverlayBoxes } from './overlays';
 
 /** The pane's top-left in client coordinates — what a box is measured from. */
 const ORIGIN = { x: 40, y: 20 };

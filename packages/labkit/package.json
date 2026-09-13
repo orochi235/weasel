@@ -116,6 +116,8 @@
     "react-dom": "^19.0.0"
   },
   "dependencies": {
+    "@weasel-js/geom": "1.4.4",
+    "@weasel-js/kernel3d": "1.4.4",
     "@weasel-js/loupe": "1.4.4",
     "@weasel-js/svg": "1.4.4",
     "@weasel-js/theme": "1.4.4",

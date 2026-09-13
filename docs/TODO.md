@@ -198,6 +198,24 @@ Priority tags:
   own arc, and worth asking first whether labkit should support a lab with no
   trials at all.
 
+- **(P3) `Scene`'s kit registry carries a 2D `unionOfChildren` into every
+  scene.** `core/scene/kitRegistry.ts` registers it unconditionally, and it
+  casts twice through `as unknown as RectPose` to reach `unionAABB`. A non-rect
+  scene that opts a node into `derivePoseKey: UNION_OF_CHILDREN` gets garbage
+  rather than an error. `unionOfChildrenVia(descriptor)` shadows it under the
+  same key and is the intended escape, so the fix is to stop registering a
+  pose-shaped default rather than to add a guard. Found while promoting the 3D
+  lab's kernel material, 2026-09-13.
+
+- **(P3) The 3D lab still collects ghosts from dispatcher handles.**
+  `ghosts3d.ts` reads `dispatcher.getInFlightHandles()` because `moveAction`
+  declares `previewHidesSource: true` and the lab wants the source solid drawn.
+  `2026-09-13-pose-feed-design.md` says a `FeedNode` carries both the committed
+  and the effective pose, so the feed gets the same picture without a second
+  channel — which is why the ghost collector stayed in the lab rather than being
+  promoted into `@weasel-js/kernel3d`. Migrating it is what would retire the
+  file.
+
 - **(P2) Routing has not moved into a package yet.** Every fight the 3D lab had
   was a dep contract, a registration step or a coordinate-space bug — never
   binding-to-action routing and never `InvocationCtx` — so a second kernel wants

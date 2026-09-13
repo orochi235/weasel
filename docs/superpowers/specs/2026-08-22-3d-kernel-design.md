@@ -2,8 +2,7 @@
 
 Direction doc for a weasel maintainer deciding how 3D would enter the project.
 It answers one question: **where does the boundary go?** — and phases the work
-behind it. It is not an implementation plan. Phases 0 and 1 are built; Phase 2
-is unscheduled, and a lab is being built to settle its open questions.
+behind it. It is not an implementation plan. Phases 0, 1 and 2 are built.
 
 The constraint that shapes every choice below: **2D DX must not get worse.**
 That rules out the two obvious options and picks a third.
@@ -72,27 +71,47 @@ labkit to stop demanding a canvas per tile. See `packages/labkit/docs/IDEAS.md`
 same answer: labkit stays backend-agnostic and owns rects, dirtiness, and
 scheduling.
 
-**Phase 2 — a 3D kernel package that hosts a renderer rather than owning one.**
-Scene, poses, ray picking and chrome geometry; depends on `gestures` +
-`history`; reuses the tool authoring model. The consumer brings the renderer —
-see "The renderer is the consumer's" below.
+**Phase 2 — a 3D kernel package that hosts a renderer rather than owning one.
+Built.** `packages/kernel3d`: `Pose3`, an orbit camera, ray picking, the dep
+adapters, and the screen-projected chrome geometry weasel's 2D `Bounds` speaks.
+The consumer brings the renderer. Its math — vectors, quaternions, 4x4 matrices,
+ray intersection — went into `@weasel-js/geom/3d` rather than the kernel, because
+none of it carries a camera or a scene and geom is where geometry lives.
 
-Its prerequisite is making the action pipeline generic over point, camera and
-box. World coordinates enter as `{x, y}` or flat scalars in `InvocationCtx`
-(`interactions/actions/invoker.ts`), in the dep payloads (`depSchema.ts`:
-`ViewApi`, `NodeAtPointDep`, `SnapDep`, `InsertDep.commit`, `AreaSelectDep`),
-in the pick functions, and in `@weasel-js/gestures`' pointer and click events.
-In 3D a pointer is a ray, so what replaces the world point is decided with the
-picking design, not ahead of it.
+**It is a consumer of core, not a sibling of it.** This doc originally said
+sibling, depending on `gestures` + `history` only. That was written before the
+lab, and the lab settled it the other way: the kernel reuses core's `Scene`, its
+dispatcher, its actions, `resolveOverlays` and the pose feed, and every one of
+those lives in core. Lifting `Scene` out instead is not cheap — `RectPose` is
+*declared inside* `core/scene/types.ts` and imported back by
+`geometry/unionBounds.ts` and `features/groups/composePose.ts`, so a scene
+package and core would import each other. So `kernel3d` takes core as a peer,
+the tier `svg`, `diagram` and `loupe` already occupy. Core still takes no diff,
+which is the constraint that mattered.
 
-The 3D lab (`docs/superpowers/specs/2026-09-12-3d-lab-design.md`) ran this and
-it held: nothing replaces it. `useGestureDispatcher` takes a `clientToWorld`
-hook, and `<SceneCanvas>` passes a function that inverts the 2D view transform.
-A 3D host passes identity, so `ctx.world` carries the screen point, and each dep
-rebuilds the ray from the camera it already closes over. `InvocationCtx` needs
-no point type parameter at all, and the prerequisite shrinks to the deps.
-Whether the renderer is bespoke or three.js is no longer the kernel's question
-to answer — see "The renderer is the consumer's" below.
+Its prerequisite — making the action pipeline generic over point, camera and box
+— dissolved. `useGestureDispatcher` takes a `clientToWorld` hook and a 3D host
+passes identity, so `ctx.world` carries the screen point and each dep rebuilds
+the ray from the camera it already closes over. `InvocationCtx` needs no point
+type parameter at all.
+
+Two things the promotion had to fix, neither visible at lab scale.
+`projectAabbToScreen` dropped corners behind the camera rather than clipping the
+edges, which reports a box too small for anything straddling the near plane and
+near nothing for a solid the camera is inside; it now clips all twelve edges.
+And the seam saying how big a node is asks for its *world* box, not a local box
+to transform — a sphere's box is the same under every rotation, and no transform
+of a local box reproduces that.
+
+One measurement gap closed on the way: nothing had asserted that a quaternion
+pose survives `toJSON`/`sceneFromJSON`. It does.
+
+One 2D leak in `Scene` that the "all of it is dimension-neutral" audit missed:
+`kitRegistry.ts` registers `unionOfChildren` into every scene with two blind
+`as unknown as RectPose` casts, so a 3D scene carries a registry entry that
+would produce garbage if a node opted into it via `derivePoseKey`. The escape
+hatch is real — `unionOfChildrenVia(descriptor)` shadows it under the same key —
+but the default is 2D and silent.
 
 ## What "shipping tools for both" actually means
 

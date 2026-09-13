@@ -1,7 +1,7 @@
 {
   "name": "@weasel-js/geom",
   "version": "1.4.4",
-  "description": "Pure 2D geometry kernel for @weasel-js/core: affine, box, curve, polyline. Dependency-free core; polygon booleans in the ./booleans subpath.",
+  "description": "Pure geometry kernel for @weasel-js/core: affine, box, curve, polyline in 2D. Dependency-free core; polygon booleans in the ./booleans subpath, vectors, quaternions, 4x4 matrices and ray intersection in ./3d.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
@@ -16,6 +16,10 @@
     "./booleans": {
       "import": "./dist/booleans/index.js",
       "types": "./dist/booleans/index.d.ts"
+    },
+    "./3d": {
+      "import": "./dist/3d/index.js",
+      "types": "./dist/3d/index.d.ts"
     },
     "./package.json": "./package.json"
   },

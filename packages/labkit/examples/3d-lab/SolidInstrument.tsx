@@ -27,22 +27,29 @@ import { defineInstrument } from '../../src/instrument/defineInstrument';
 import type { RenderContext } from '../../src/instrument/types';
 import { useSurface, useSurfaceCanvas, useSurfaceTile, useTileId } from '../../src/surface';
 import { toDeviceRect } from '../../src/surface/deviceRect';
-import { createCamera, type Camera3d } from './camera3d';
 import {
+  collectOverlayBoxes,
   createAreaSelect,
+  createCamera,
   createInsert,
   createNodeAtPoint,
   createPoseDescriptor,
   createSnap,
+  pose3,
   screenBoxOf,
+  useOrbitTool,
+  dollyAction,
+  orbitAction,
+  type Camera3d,
+  type ChromeBox,
   type Viewport3d,
-} from './deps3d';
+} from '@weasel-js/kernel3d';
 import { collectGhosts } from './ghosts3d';
-import { collectOverlayBoxes } from './overlays3d';
-import { createRenderer3d, type ChromeBox, type Renderer3d, type SolidDraw } from './renderer3d';
-import { createSolidScene, type Pose3, type SolidScene } from './scene3d';
-import { dollyAction, orbitAction, useBoxTool, useOrbitTool } from './tools3d';
-import './depSchemaAugmentation';
+import { createRenderer3d, type Renderer3d, type SolidDraw } from './renderer3d';
+import {
+  aabbOfSolid, createSolidScene, type Pose3, type SolidNode, type SolidScene,
+} from './scene3d';
+import { useBoxTool } from './tools3d';
 
 interface SolidState {
   /** Kept only so labkit has something to persist; the scene itself is a ref. */
@@ -124,6 +131,18 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   // dispatcher's own pump is what drives a ghost frame.
   useEffect(() => dispatcher.subscribe(repaint), [dispatcher, repaint]);
 
+  // Everything the kernel needs told about this world: the scene, where the
+  // camera is, and — because a sphere's box does not widen when it turns — how
+  // wide a solid actually is.
+  const world = useMemo(
+    () => ({
+      scene,
+      viewport: viewportSource,
+      bounds: (node: SolidNode) => aabbOfSolid(node.pose, node.data.kind),
+    }),
+    [scene, viewportSource],
+  );
+
   // ── Painting ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (!glCanvas) return;
@@ -194,7 +213,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       // draws inside the tile, so they land back at the pane's own origin.
       const chrome: ChromeBox[] = showChromeRef.current
         ? selectionRef.current
-            .map((id) => screenBoxOf(scene, id, viewport))
+            .map((id) => screenBoxOf(world, id, viewport))
             .filter((box): box is ChromeBox => box !== null)
             .map((box) => ({
               ...box,
@@ -221,7 +240,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       renderer.dispose();
       rendererRef.current = null;
     };
-  }, [glCanvas, surface, tileId, scene, dispatcher, feed]);
+  }, [glCanvas, surface, tileId, scene, dispatcher, feed, world]);
 
   // ── Deps ───────────────────────────────────────────────────────────────
   const selectionApi = useMemo(
@@ -250,16 +269,28 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     [],
   );
 
-  const nodeAtPoint = useMemo(
-    () => createNodeAtPoint(scene, viewportSource),
+  const nodeAtPoint = useMemo(() => createNodeAtPoint(world), [world]);
+  const areaSelect = useMemo(
+    () => createAreaSelect(world, selectionApi),
+    [world, selectionApi],
+  );
+  const insert = useMemo(
+    () =>
+      createInsert({
+        viewport: viewportSource,
+        mint: ({ center, width, depth }) => {
+          const height = (width + depth) / 2;
+          return scene.add({
+            kind: 'leaf',
+            layer: 'solids',
+            pose: pose3([center[0], height / 2, center[2]], [width, height, depth]),
+            data: { kind: 'box', color: '#c49a3f' },
+          });
+        },
+      }),
     [scene, viewportSource],
   );
-  const areaSelect = useMemo(
-    () => createAreaSelect(scene, viewportSource, selectionApi),
-    [scene, viewportSource, selectionApi],
-  );
-  const insert = useMemo(() => createInsert(scene, viewportSource), [scene, viewportSource]);
-  const poseDescriptor = useMemo(() => createPoseDescriptor(viewportSource), [viewportSource]);
+  const poseDescriptor = useMemo(() => createPoseDescriptor(world), [world]);
   const snap = useMemo(() => createSnap(), []);
 
   const camera3d = useMemo(
