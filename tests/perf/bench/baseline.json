@@ -1,13 +1,13 @@
 {
   "files": [
     {
-      "filepath": "/Users/mike/src/weasel/tests/bench/hit-test.bench.ts",
+      "filepath": "/Users/mike/src/weasel/tests/perf/bench/hit-test.bench.ts",
       "groups": [
         {
-          "fullName": "tests/bench/hit-test.bench.ts > hitTestArea — rect poses, node count (25% query rect)",
+          "fullName": "tests/perf/bench/hit-test.bench.ts > hitTestArea — rect poses, node count (25% query rect)",
           "benchmarks": [
             {
-              "id": "-2142652066_0_0",
+              "id": "-130764504_0_0",
               "name": "100 nodes",
               "rank": 1,
               "rme": 0.2255075416778443,
@@ -32,7 +32,7 @@
               "median": 0.003417000000013104
             },
             {
-              "id": "-2142652066_0_1",
+              "id": "-130764504_0_1",
               "name": "1000 nodes",
               "rank": 2,
               "rme": 0.34767104469533283,
@@ -57,7 +57,7 @@
               "median": 0.036166000000093845
             },
             {
-              "id": "-2142652066_0_2",
+              "id": "-130764504_0_2",
               "name": "10000 nodes",
               "rank": 3,
               "rme": 0.6403230473585175,
@@ -84,10 +84,10 @@
           ]
         },
         {
-          "fullName": "tests/bench/hit-test.bench.ts > hitTestArea — rect poses, query-rect size (1000 nodes)",
+          "fullName": "tests/perf/bench/hit-test.bench.ts > hitTestArea — rect poses, query-rect size (1000 nodes)",
           "benchmarks": [
             {
-              "id": "-2142652066_1_0",
+              "id": "-130764504_1_0",
               "name": "1% area (16 hits)",
               "rank": 2,
               "rme": 0.404533596514975,
@@ -112,7 +112,7 @@
               "median": 0.03320900000016991
             },
             {
-              "id": "-2142652066_1_1",
+              "id": "-130764504_1_1",
               "name": "25% area (289 hits)",
               "rank": 3,
               "rme": 0.3691010194326154,
@@ -137,7 +137,7 @@
               "median": 0.03600000000005821
             },
             {
-              "id": "-2142652066_1_2",
+              "id": "-130764504_1_2",
               "name": "100% area (1000 hits)",
               "rank": 1,
               "rme": 0.3739891109444021,
@@ -164,10 +164,10 @@
           ]
         },
         {
-          "fullName": "tests/bench/hit-test.bench.ts > hitTestArea — 24-gon silhouettes, node count (25% query rect)",
+          "fullName": "tests/perf/bench/hit-test.bench.ts > hitTestArea — 24-gon silhouettes, node count (25% query rect)",
           "benchmarks": [
             {
-              "id": "-2142652066_2_0",
+              "id": "-130764504_2_0",
               "name": "100 nodes",
               "rank": 1,
               "rme": 0.34551318840108675,
@@ -192,7 +192,7 @@
               "median": 0.005165999999917403
             },
             {
-              "id": "-2142652066_2_1",
+              "id": "-130764504_2_1",
               "name": "1000 nodes",
               "rank": 2,
               "rme": 0.5411280993792686,
@@ -217,7 +217,7 @@
               "median": 0.08525000000008731
             },
             {
-              "id": "-2142652066_2_2",
+              "id": "-130764504_2_2",
               "name": "10000 nodes",
               "rank": 3,
               "rme": 1.7872075845375712,
@@ -244,10 +244,10 @@
           ]
         },
         {
-          "fullName": "tests/bench/hit-test.bench.ts > hitTestArea — 24-gon silhouettes, query-rect size (1000 nodes)",
+          "fullName": "tests/perf/bench/hit-test.bench.ts > hitTestArea — 24-gon silhouettes, query-rect size (1000 nodes)",
           "benchmarks": [
             {
-              "id": "-2142652066_3_0",
+              "id": "-130764504_3_0",
               "name": "1% area (17 hits)",
               "rank": 1,
               "rme": 0.46739005669038347,
@@ -272,7 +272,7 @@
               "median": 0.07033300000057352
             },
             {
-              "id": "-2142652066_3_1",
+              "id": "-130764504_3_1",
               "name": "25% area (287 hits)",
               "rank": 2,
               "rme": 0.47167950353449467,
@@ -297,7 +297,7 @@
               "median": 0.08304200000020501
             },
             {
-              "id": "-2142652066_3_2",
+              "id": "-130764504_3_2",
               "name": "100% area (1000 hits)",
               "rank": 3,
               "rme": 0.4951622129841118,
@@ -324,10 +324,10 @@
           ]
         },
         {
-          "fullName": "tests/bench/hit-test.bench.ts > aabbOfPose — the per-node fast-reject itself",
+          "fullName": "tests/perf/bench/hit-test.bench.ts > aabbOfPose — the per-node fast-reject itself",
           "benchmarks": [
             {
-              "id": "-2142652066_4_0",
+              "id": "-130764504_4_0",
               "name": "rect pose",
               "rank": 1,
               "rme": 0.1477312660672372,
@@ -352,7 +352,7 @@
               "median": 0.00004199999966658652
             },
             {
-              "id": "-2142652066_4_1",
+              "id": "-130764504_4_1",
               "name": "4-gon pose",
               "rank": 2,
               "rme": 0.521673986234245,
@@ -377,7 +377,7 @@
               "median": 0.00029100000028847717
             },
             {
-              "id": "-2142652066_4_2",
+              "id": "-130764504_4_2",
               "name": "24-gon pose",
               "rank": 3,
               "rme": 0.5398593480775626,
@@ -402,7 +402,7 @@
               "median": 0.0010830000010173535
             },
             {
-              "id": "-2142652066_4_3",
+              "id": "-130764504_4_3",
               "name": "256-gon pose",
               "rank": 4,
               "rme": 2.2332332428752686,
@@ -429,10 +429,10 @@
           ]
         },
         {
-          "fullName": "tests/bench/hit-test.bench.ts > pointInPath — per-node kernel, by vertex count",
+          "fullName": "tests/perf/bench/hit-test.bench.ts > pointInPath — per-node kernel, by vertex count",
           "benchmarks": [
             {
-              "id": "-2142652066_5_0",
+              "id": "-130764504_5_0",
               "name": "4-gon",
               "rank": 1,
               "rme": 0.8302081290205465,
@@ -457,7 +457,7 @@
               "median": 0.00029100000028847717
             },
             {
-              "id": "-2142652066_5_1",
+              "id": "-130764504_5_1",
               "name": "24-gon",
               "rank": 2,
               "rme": 0.9832937387913141,
@@ -482,7 +482,7 @@
               "median": 0.0011249999988649506
             },
             {
-              "id": "-2142652066_5_2",
+              "id": "-130764504_5_2",
               "name": "256-gon",
               "rank": 4,
               "rme": 1.0187443552375486,
@@ -507,7 +507,7 @@
               "median": 0.01058299999931478
             },
             {
-              "id": "-2142652066_5_3",
+              "id": "-130764504_5_3",
               "name": "8 cubics (flattened per call)",
               "rank": 3,
               "rme": 0.8932945139486904,
@@ -532,7 +532,7 @@
               "median": 0.005709000000933884
             },
             {
-              "id": "-2142652066_5_4",
+              "id": "-130764504_5_4",
               "name": "64 cubics (flattened per call)",
               "rank": 5,
               "rme": 0.9722225783087006,
@@ -561,13 +561,13 @@
       ]
     },
     {
-      "filepath": "/Users/mike/src/weasel/tests/bench/scene-ops.bench.ts",
+      "filepath": "/Users/mike/src/weasel/tests/perf/bench/scene-ops.bench.ts",
       "groups": [
         {
-          "fullName": "tests/bench/scene-ops.bench.ts > scene.add — leaf, by tree depth",
+          "fullName": "tests/perf/bench/scene-ops.bench.ts > scene.add — leaf, by tree depth",
           "benchmarks": [
             {
-              "id": "932585929_0_0",
+              "id": "-1123409089_0_0",
               "name": "depth 0",
               "rank": 1,
               "rme": 4.445155676045,
@@ -592,7 +592,7 @@
               "median": 0.0004999999999881766
             },
             {
-              "id": "932585929_0_1",
+              "id": "-1123409089_0_1",
               "name": "depth 4",
               "rank": 2,
               "rme": 3.780764109926851,
@@ -617,7 +617,7 @@
               "median": 0.0004999999999881766
             },
             {
-              "id": "932585929_0_2",
+              "id": "-1123409089_0_2",
               "name": "depth 16",
               "rank": 3,
               "rme": 4.5462238946193745,
@@ -644,10 +644,10 @@
           ]
         },
         {
-          "fullName": "tests/bench/scene-ops.bench.ts > scene.add + scene.remove — round trip, by tree depth",
+          "fullName": "tests/perf/bench/scene-ops.bench.ts > scene.add + scene.remove — round trip, by tree depth",
           "benchmarks": [
             {
-              "id": "932585929_1_0",
+              "id": "-1123409089_1_0",
               "name": "depth 0",
               "rank": 1,
               "rme": 2.3117452370496827,
@@ -672,7 +672,7 @@
               "median": 0.0007499999999822649
             },
             {
-              "id": "932585929_1_1",
+              "id": "-1123409089_1_1",
               "name": "depth 4",
               "rank": 3,
               "rme": 6.877574669424008,
@@ -697,7 +697,7 @@
               "median": 0.0008329999999432403
             },
             {
-              "id": "932585929_1_2",
+              "id": "-1123409089_1_2",
               "name": "depth 16",
               "rank": 2,
               "rme": 7.2384487954073204,
@@ -724,10 +724,10 @@
           ]
         },
         {
-          "fullName": "tests/bench/scene-ops.bench.ts > scene.setPose — by tree depth",
+          "fullName": "tests/perf/bench/scene-ops.bench.ts > scene.setPose — by tree depth",
           "benchmarks": [
             {
-              "id": "932585929_2_0",
+              "id": "-1123409089_2_0",
               "name": "depth 0",
               "rank": 3,
               "rme": 17.441662838177255,
@@ -752,7 +752,7 @@
               "median": 0.00020899999992707308
             },
             {
-              "id": "932585929_2_1",
+              "id": "-1123409089_2_1",
               "name": "depth 4",
               "rank": 2,
               "rme": 10.04338927618397,
@@ -777,7 +777,7 @@
               "median": 0.00020800000004328467
             },
             {
-              "id": "932585929_2_2",
+              "id": "-1123409089_2_2",
               "name": "depth 16",
               "rank": 1,
               "rme": 2.3262904831524183,
@@ -804,10 +804,10 @@
           ]
         },
         {
-          "fullName": "tests/bench/scene-ops.bench.ts > scene.setPose — 10k-node scene, one node",
+          "fullName": "tests/perf/bench/scene-ops.bench.ts > scene.setPose — 10k-node scene, one node",
           "benchmarks": [
             {
-              "id": "932585929_3_0",
+              "id": "-1123409089_3_0",
               "name": "10000 nodes",
               "rank": 1,
               "rme": 3.068806192953542,
@@ -834,10 +834,10 @@
           ]
         },
         {
-          "fullName": "tests/bench/scene-ops.bench.ts > renderOrder — flat scene, fully drained",
+          "fullName": "tests/perf/bench/scene-ops.bench.ts > renderOrder — flat scene, fully drained",
           "benchmarks": [
             {
-              "id": "932585929_4_0",
+              "id": "-1123409089_4_0",
               "name": "100 nodes",
               "rank": 1,
               "rme": 3.439516749557935,
@@ -862,7 +862,7 @@
               "median": 0.00008299999990413198
             },
             {
-              "id": "932585929_4_1",
+              "id": "-1123409089_4_1",
               "name": "1000 nodes",
               "rank": 2,
               "rme": 1.0180074389487834,
@@ -887,7 +887,7 @@
               "median": 0.0005000000001018634
             },
             {
-              "id": "932585929_4_2",
+              "id": "-1123409089_4_2",
               "name": "10000 nodes",
               "rank": 3,
               "rme": 0.3237429108166548,
@@ -914,10 +914,10 @@
           ]
         },
         {
-          "fullName": "tests/bench/scene-ops.bench.ts > renderOrder — 10k nodes, by layer count",
+          "fullName": "tests/perf/bench/scene-ops.bench.ts > renderOrder — 10k nodes, by layer count",
           "benchmarks": [
             {
-              "id": "932585929_5_0",
+              "id": "-1123409089_5_0",
               "name": "1 layers",
               "rank": 4,
               "rme": 0.1485640255992834,
@@ -942,7 +942,7 @@
               "median": 0.004792000000634289
             },
             {
-              "id": "932585929_5_1",
+              "id": "-1123409089_5_1",
               "name": "4 layers",
               "rank": 3,
               "rme": 0.13600982285609967,
@@ -967,7 +967,7 @@
               "median": 0.004874999999628926
             },
             {
-              "id": "932585929_5_2",
+              "id": "-1123409089_5_2",
               "name": "16 layers",
               "rank": 1,
               "rme": 0.12947812626634422,
@@ -992,7 +992,7 @@
               "median": 0.004792000000634289
             },
             {
-              "id": "932585929_5_3",
+              "id": "-1123409089_5_3",
               "name": "64 layers",
               "rank": 2,
               "rme": 0.13374814875586735,
@@ -1019,10 +1019,10 @@
           ]
         },
         {
-          "fullName": "tests/bench/scene-ops.bench.ts > renderOrder — 1000 leaves under a container chain",
+          "fullName": "tests/perf/bench/scene-ops.bench.ts > renderOrder — 1000 leaves under a container chain",
           "benchmarks": [
             {
-              "id": "932585929_6_0",
+              "id": "-1123409089_6_0",
               "name": "depth 0",
               "rank": 2,
               "rme": 0.1216880332043731,
@@ -1047,7 +1047,7 @@
               "median": 0.0005000000001018634
             },
             {
-              "id": "932585929_6_1",
+              "id": "-1123409089_6_1",
               "name": "depth 4",
               "rank": 1,
               "rme": 0.1311528443089072,
@@ -1072,7 +1072,7 @@
               "median": 0.0005000000001018634
             },
             {
-              "id": "932585929_6_2",
+              "id": "-1123409089_6_2",
               "name": "depth 16",
               "rank": 3,
               "rme": 0.18166598667537734,
@@ -1099,10 +1099,10 @@
           ]
         },
         {
-          "fullName": "tests/bench/scene-ops.bench.ts > renderOrder — cached repeat vs cold rebuild (10k nodes, 4 layers)",
+          "fullName": "tests/perf/bench/scene-ops.bench.ts > renderOrder — cached repeat vs cold rebuild (10k nodes, 4 layers)",
           "benchmarks": [
             {
-              "id": "932585929_7_0",
+              "id": "-1123409089_7_0",
               "name": "drain only — cached",
               "rank": 1,
               "rme": 0.13904560607255798,
@@ -1127,7 +1127,7 @@
               "median": 0.004791999999724794
             },
             {
-              "id": "932585929_7_1",
+              "id": "-1123409089_7_1",
               "name": "layer reorder only — the invalidation",
               "rank": 2,
               "rme": 4.445350664231724,
@@ -1152,7 +1152,7 @@
               "median": 0.020375000000058208
             },
             {
-              "id": "932585929_7_2",
+              "id": "-1123409089_7_2",
               "name": "layer reorder + drain — cold walk",
               "rank": 3,
               "rme": 0.6299985851356761,
@@ -1179,10 +1179,10 @@
           ]
         },
         {
-          "fullName": "tests/bench/scene-ops.bench.ts > renderOrder → nodes vs renderOrderNodes",
+          "fullName": "tests/perf/bench/scene-ops.bench.ts > renderOrder → nodes vs renderOrderNodes",
           "benchmarks": [
             {
-              "id": "932585929_8_0",
+              "id": "-1123409089_8_0",
               "name": "100 nodes — via renderOrder + get",
               "rank": 3,
               "rme": 0.27424417299835874,
@@ -1207,7 +1207,7 @@
               "median": 0.0013340000004973263
             },
             {
-              "id": "932585929_8_1",
+              "id": "-1123409089_8_1",
               "name": "100 nodes — via renderOrderNodes",
               "rank": 1,
               "rme": 0.5289515222299872,
@@ -1232,7 +1232,7 @@
               "median": 0.00004199999966658652
             },
             {
-              "id": "932585929_8_2",
+              "id": "-1123409089_8_2",
               "name": "1000 nodes — via renderOrder + get",
               "rank": 5,
               "rme": 0.41222080945922146,
@@ -1257,7 +1257,7 @@
               "median": 0.020959000001312234
             },
             {
-              "id": "932585929_8_3",
+              "id": "-1123409089_8_3",
               "name": "1000 nodes — via renderOrderNodes",
               "rank": 2,
               "rme": 2.305109954626373,
@@ -1282,7 +1282,7 @@
               "median": 0.0002500000009604264
             },
             {
-              "id": "932585929_8_4",
+              "id": "-1123409089_8_4",
               "name": "10000 nodes — via renderOrder + get",
               "rank": 6,
               "rme": 0.7032272207937662,
@@ -1307,7 +1307,7 @@
               "median": 0.2483329999995476
             },
             {
-              "id": "932585929_8_5",
+              "id": "-1123409089_8_5",
               "name": "10000 nodes — via renderOrderNodes",
               "rank": 4,
               "rme": 0.7673459921973256,
@@ -1336,13 +1336,13 @@
       ]
     },
     {
-      "filepath": "/Users/mike/src/weasel/tests/bench/tessellate.bench.ts",
+      "filepath": "/Users/mike/src/weasel/tests/perf/bench/tessellate.bench.ts",
       "groups": [
         {
-          "fullName": "tests/bench/tessellate.bench.ts > tessellate — curve count (default tolerance 0.5)",
+          "fullName": "tests/perf/bench/tessellate.bench.ts > tessellate — curve count (default tolerance 0.5)",
           "benchmarks": [
             {
-              "id": "-619521104_0_0",
+              "id": "69142778_0_0",
               "name": "8 cubics",
               "rank": 1,
               "rme": 0.9099984344587869,
@@ -1367,7 +1367,7 @@
               "median": 0.049082999999882304
             },
             {
-              "id": "-619521104_0_1",
+              "id": "69142778_0_1",
               "name": "64 cubics",
               "rank": 2,
               "rme": 0.8748284939571513,
@@ -1392,7 +1392,7 @@
               "median": 0.1645829999997659
             },
             {
-              "id": "-619521104_0_2",
+              "id": "69142778_0_2",
               "name": "512 cubics",
               "rank": 3,
               "rme": 0.6710613817448817,
@@ -1419,10 +1419,10 @@
           ]
         },
         {
-          "fullName": "tests/bench/tessellate.bench.ts > tessellate — flatten tolerance (64 cubics)",
+          "fullName": "tests/perf/bench/tessellate.bench.ts > tessellate — flatten tolerance (64 cubics)",
           "benchmarks": [
             {
-              "id": "-619521104_1_0",
+              "id": "69142778_1_0",
               "name": "tolerance 0.05",
               "rank": 4,
               "rme": 0.8528877666204064,
@@ -1447,7 +1447,7 @@
               "median": 0.5934579999998277
             },
             {
-              "id": "-619521104_1_1",
+              "id": "69142778_1_1",
               "name": "tolerance 0.25",
               "rank": 3,
               "rme": 0.5846111942308172,
@@ -1472,7 +1472,7 @@
               "median": 0.2458329999999478
             },
             {
-              "id": "-619521104_1_2",
+              "id": "69142778_1_2",
               "name": "tolerance 0.5",
               "rank": 2,
               "rme": 0.6690221378905049,
@@ -1497,7 +1497,7 @@
               "median": 0.16433299999971496
             },
             {
-              "id": "-619521104_1_3",
+              "id": "69142778_1_3",
               "name": "tolerance 2",
               "rank": 1,
               "rme": 0.5234748645453774,
@@ -1524,10 +1524,10 @@
           ]
         },
         {
-          "fullName": "tests/bench/tessellate.bench.ts > tessellate — rect fast path",
+          "fullName": "tests/perf/bench/tessellate.bench.ts > tessellate — rect fast path",
           "benchmarks": [
             {
-              "id": "-619521104_2_0",
+              "id": "69142778_2_0",
               "name": "rect",
               "rank": 1,
               "rme": 0.39188497119942645,
@@ -1554,10 +1554,10 @@
           ]
         },
         {
-          "fullName": "tests/bench/tessellate.bench.ts > mesh cache — hit vs miss (64 cubics)",
+          "fullName": "tests/perf/bench/tessellate.bench.ts > mesh cache — hit vs miss (64 cubics)",
           "benchmarks": [
             {
-              "id": "-619521104_3_0",
+              "id": "69142778_3_0",
               "name": "getMesh hit",
               "rank": 1,
               "rme": 0.3399563010348417,
@@ -1582,7 +1582,7 @@
               "median": 0.00004199999966658652
             },
             {
-              "id": "-619521104_3_1",
+              "id": "69142778_3_1",
               "name": "getMesh miss",
               "rank": 2,
               "rme": 1.1712613284688982,
@@ -1609,10 +1609,10 @@
           ]
         },
         {
-          "fullName": "tests/bench/tessellate.bench.ts > tessellateStroke — curve count",
+          "fullName": "tests/perf/bench/tessellate.bench.ts > tessellateStroke — curve count",
           "benchmarks": [
             {
-              "id": "-619521104_4_0",
+              "id": "69142778_4_0",
               "name": "8 cubics",
               "rank": 1,
               "rme": 0.7005581894211643,
@@ -1637,7 +1637,7 @@
               "median": 0.14641699999992852
             },
             {
-              "id": "-619521104_4_1",
+              "id": "69142778_4_1",
               "name": "64 cubics",
               "rank": 2,
               "rme": 1.2369965463772643,
@@ -1662,7 +1662,7 @@
               "median": 0.46524999999928696
             },
             {
-              "id": "-619521104_4_2",
+              "id": "69142778_4_2",
               "name": "512 cubics",
               "rank": 3,
               "rme": 2.043624349920584,
@@ -1691,13 +1691,13 @@
       ]
     },
     {
-      "filepath": "/Users/mike/src/weasel/tests/bench/text-layout.bench.ts",
+      "filepath": "/Users/mike/src/weasel/tests/perf/bench/text-layout.bench.ts",
       "groups": [
         {
-          "fullName": "tests/bench/text-layout.bench.ts > layoutRuns — glyph count, one run, no wrap",
+          "fullName": "tests/perf/bench/text-layout.bench.ts > layoutRuns — glyph count, one run, no wrap",
           "benchmarks": [
             {
-              "id": "-1632624862_0_0",
+              "id": "-1758881000_0_0",
               "name": "50 glyphs",
               "rank": 1,
               "rme": 3.1572632042998343,
@@ -1722,7 +1722,7 @@
               "median": 0.011416000000053828
             },
             {
-              "id": "-1632624862_0_1",
+              "id": "-1758881000_0_1",
               "name": "500 glyphs",
               "rank": 2,
               "rme": 0.7948019805257925,
@@ -1747,7 +1747,7 @@
               "median": 0.11216699999999946
             },
             {
-              "id": "-1632624862_0_2",
+              "id": "-1758881000_0_2",
               "name": "5000 glyphs",
               "rank": 3,
               "rme": 1.374500694170673,
@@ -1774,10 +1774,10 @@
           ]
         },
         {
-          "fullName": "tests/bench/text-layout.bench.ts > layoutRuns — glyph count, one run, wrapped to 400px",
+          "fullName": "tests/perf/bench/text-layout.bench.ts > layoutRuns — glyph count, one run, wrapped to 400px",
           "benchmarks": [
             {
-              "id": "-1632624862_1_0",
+              "id": "-1758881000_1_0",
               "name": "50 glyphs",
               "rank": 1,
               "rme": 0.42148659674096517,
@@ -1802,7 +1802,7 @@
               "median": 0.01125000000001819
             },
             {
-              "id": "-1632624862_1_1",
+              "id": "-1758881000_1_1",
               "name": "500 glyphs",
               "rank": 2,
               "rme": 0.6347369567947809,
@@ -1827,7 +1827,7 @@
               "median": 0.11295849999987695
             },
             {
-              "id": "-1632624862_1_2",
+              "id": "-1758881000_1_2",
               "name": "5000 glyphs",
               "rank": 3,
               "rme": 0.8848565910650469,
@@ -1854,10 +1854,10 @@
           ]
         },
         {
-          "fullName": "tests/bench/text-layout.bench.ts > layoutRuns — run count at a fixed 1000 glyphs",
+          "fullName": "tests/perf/bench/text-layout.bench.ts > layoutRuns — run count at a fixed 1000 glyphs",
           "benchmarks": [
             {
-              "id": "-1632624862_2_0",
+              "id": "-1758881000_2_0",
               "name": "1 run",
               "rank": 1,
               "rme": 0.849638942501027,
@@ -1882,7 +1882,7 @@
               "median": 0.22545799999988958
             },
             {
-              "id": "-1632624862_2_1",
+              "id": "-1758881000_2_1",
               "name": "10 runs",
               "rank": 2,
               "rme": 1.06008707000394,
@@ -1907,7 +1907,7 @@
               "median": 0.23491699999976845
             },
             {
-              "id": "-1632624862_2_2",
+              "id": "-1758881000_2_2",
               "name": "100 runs",
               "rank": 3,
               "rme": 1.439431523424161,
@@ -1934,10 +1934,10 @@
           ]
         },
         {
-          "fullName": "tests/bench/text-layout.bench.ts > layoutCache — hit vs miss (500 glyphs, wrapped)",
+          "fullName": "tests/perf/bench/text-layout.bench.ts > layoutCache — hit vs miss (500 glyphs, wrapped)",
           "benchmarks": [
             {
-              "id": "-1632624862_3_0",
+              "id": "-1758881000_3_0",
               "name": "cachedLayoutRuns hit",
               "rank": 2,
               "rme": 0.6303179878293982,
@@ -1962,7 +1962,7 @@
               "median": 0.0001250000004802132
             },
             {
-              "id": "-1632624862_3_1",
+              "id": "-1758881000_3_1",
               "name": "cachedLayoutRuns miss",
               "rank": 3,
               "rme": 4.645610749941005,
@@ -1987,7 +1987,7 @@
               "median": 0.11304100000052131
             },
             {
-              "id": "-1632624862_3_2",
+              "id": "-1758881000_3_2",
               "name": "cachedLayoutRuns moving origin",
               "rank": 1,
               "rme": 0.38161036419724004,

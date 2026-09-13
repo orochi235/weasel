@@ -38,9 +38,10 @@
  * those rows as "sometimes stalls", never as a cost — the range matters more
  * than the median, and a single fast run does not clear one.
  *
- * This reports; it does not gate. See `tests/bench/README.md`.
+ * This reports; it does not gate. See `tests/perf/README.md`.
  */
 import { test, expect } from '@playwright/test';
+import { metric, rounds, startRun } from './lib/result';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -53,7 +54,7 @@ const N = Number(process.env.WEASEL_PERF_N ?? 512);
  *  constant, or the ladder measures fill rate instead of per-quad overhead. */
 const SIZE = Number(process.env.WEASEL_PERF_SIZE ?? 48);
 
-const RUNS = 3;
+const RUNS = rounds(3);
 
 const RAW_VARIANTS = ['churn', 'churn-uniform', 'preloaded', 'arena', 'subdata', 'uniform', 'orphan', 'ring'] as const;
 const RENDERER_VARIANTS = ['image', 'atlas', 'sprites', 'pattern'] as const;
@@ -62,7 +63,8 @@ interface Cell { run: number; group: 'raw' | 'renderer'; variant: string; perFra
 
 test.setTimeout(1_800_000);
 
-test('image quad: geometry cost per draw', async ({ page }) => {
+test('image quad: geometry cost per draw', async ({ page, browser, browserName }) => {
+  const run = startRun('image-quad', { viewport: '800x600', dpr: 1, quads: N, sizePx: SIZE, runs: RUNS });
   const errors: string[] = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
@@ -74,6 +76,7 @@ test('image quad: geometry cost per draw', async ({ page }) => {
   await page.exposeFunction('__imageReport', (msg: unknown) => {
     const m = msg as { type: string } & Record<string, unknown>;
     if (m.type === 'header') {
+      run.params({ gcAvailable: Boolean(m.gcAvailable) });
       console.log('');
       console.log(`Image quad — 800x600, dpr 1, on ${String(m.glRenderer)}`);
       console.log(`collected between measurements: ${String(m.gcAvailable)}`);
@@ -559,4 +562,17 @@ void main() { outColor = u_color; }`;
     expect(ok, `${k}: rendered nothing`).toBe(true);
   }
   expect(cells.length).toBe(total);
+
+  run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
+  const groups = [
+    ...RENDERER_VARIANTS.map((v) => ['renderer', v] as const),
+    ...RAW_VARIANTS.map((v) => ['raw', v] as const),
+  ];
+  for (const [group, variant] of groups) {
+    const samples = runs.map((r) => (at(r, group, variant) * 1000) / N);
+    run.item(`${group}/${variant}`, {
+      perQuad: metric(us(group, variant), 'us', `median of ${RUNS} runs`, samples),
+    }, { group, variant });
+  }
+  run.write();
 });

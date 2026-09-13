@@ -57,8 +57,18 @@ jobs:
           SPEC_FILTER: ${{ inputs.spec }}
         run: caffeinate -d -i npm run test:perf -- $SPEC_FILTER
 
-      # The per-command and frame-budget tables are printed, not asserted, so
-      # the log is the artifact that matters even on a pass.
+      # Each spec writes a result file (tests/perf/README.md). Two nights' worth
+      # diff with `npm run perf:compare`; the fingerprint in each says which
+      # machine and GL backend produced it.
+      - name: Upload result files
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: perf-result-files
+          path: tests/perf/results/
+          retention-days: 30
+          if-no-files-found: ignore
+
       - name: Upload traces on failure
         if: failure()
         uses: actions/upload-artifact@v7

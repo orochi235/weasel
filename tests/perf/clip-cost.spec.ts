@@ -26,9 +26,10 @@
  * `-k8` puts eight leaves under each clip instead of one. If entry is the whole
  * price, the per-group figure holds and the per-leaf figure falls by eight.
  *
- * This reports; it does not gate. See `tests/bench/README.md`.
+ * This reports; it does not gate. See `tests/perf/README.md`.
  */
 import { test, expect } from '@playwright/test';
+import { metric, rounds, startRun } from './lib/result';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -41,7 +42,7 @@ const N = 512;
 /** Leaves per group in the `-k8` variants. */
 const K = 8;
 
-const RUNS = 3;
+const RUNS = rounds(3);
 
 /** `groups` is how many clips (or color-matrix breaks) the frame contains —
  *  the divisor for a per-entry figure, where `N` is the divisor for a
@@ -63,7 +64,8 @@ interface Cell { run: number; variant: VariantId; perFrameMs: number }
 
 test.setTimeout(1_800_000);
 
-test('clip cost: stencil versus batch break', async ({ page }) => {
+test('clip cost: stencil versus batch break', async ({ page, browser, browserName }) => {
+  const run = startRun('clip-cost', { viewport: '800x600', dpr: 1, leaves: N, leavesPerClipK8: K, runs: RUNS });
   const errors: string[] = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
@@ -75,6 +77,7 @@ test('clip cost: stencil versus batch break', async ({ page }) => {
   await page.exposeFunction('__clipReport', (msg: unknown) => {
     const m = msg as { type: string } & Record<string, unknown>;
     if (m.type === 'header') {
+      run.params({ gcAvailable: Boolean(m.gcAvailable) });
       console.log('');
       console.log(`Clip cost — 800x600, dpr 1, on ${String(m.glRenderer)}`);
       console.log(`collected between measurements: ${String(m.gcAvailable)}`);
@@ -320,4 +323,18 @@ test('clip cost: stencil versus batch break', async ({ page }) => {
   // variant is not doing what its name says.
   expect(clipTotal, 'clipping a rect should cost more than not clipping it').toBeGreaterThan(0);
   expect(stencilOnly, 'clipping a gradient should cost more than not clipping it').toBeGreaterThan(0);
+
+  run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
+  for (const v of VARIANTS) {
+    const samples = runs.map((r) => at(r, v.id));
+    run.item(v.id, { perFrame: metric(ms(v.id), 'ms', `median of ${RUNS} runs`, samples) }, { groups: v.groups });
+  }
+  const derived = `median across ${RUNS} runs of the per-run delta`;
+  run.item('stencil push+pop', { perClip: metric(stencilOnly, 'us', `${derived}, grad-clipped - grad-plain`) });
+  run.item('clip entry', { perClip: metric(clipTotal, 'us', `${derived}, rect-clipped - rect-plain`) });
+  run.item('clip entry: batch break', { perClip: metric(breakShare, 'us', 'clip entry - stencil push+pop') });
+  run.item('solid-batch flush', { perFlush: metric(cmBreak, 'us', `${derived}, rect-cmbreak - grad-cmbreak, net of plain`) });
+  run.item(`clip entry at ${K} leaves`, { perClip: metric(clipEntryK8, 'us', `${derived}, rect-clipped-k8 - rect-plain`) });
+  run.item(`stencil at ${K} leaves`, { perClip: metric(stencilEntryK8, 'us', `${derived}, grad-clipped-k8 - grad-plain`) });
+  run.write();
 });
