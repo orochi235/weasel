@@ -211,3 +211,48 @@ would re-export the moved symbols, none of these break. Only the two
 
 **Arc 3 — the correctness pass. Done (2026-09-13).** See
 "What arc 3 found" below.
+
+## What arc 3 found
+
+The `gestures`/`history` precedent said to budget for latent faults that
+predate the move and appear in no diffstat. It was right: **eight**, all with
+concrete failure scenarios, all months old, all passed over by 10,723 green
+tests. Three more are recorded in `docs/TODO.md` rather than fixed, because
+each is a decision rather than a repair.
+
+Fixed:
+
+- **Dispatcher and dep-registry ownership were single slots.** Two canvases
+  under one provider, and whichever unmounted second emptied the slot — the
+  canvas still on screen got `null` from `begin()` for the rest of the page's
+  life. Every neighboring registration in the same file is a stack; these two
+  were not. The existing test covered only the displaced-releases direction,
+  and its own comment named the half that was never implemented.
+- **An offhand hold ended by popping the top of the hotkey stack**, not its own
+  tool. Holds do not come up in the order they went down.
+- **`reportDeadClaim` read `process.env` bare**, verbatim in the shipped chunk:
+  a `ReferenceError` out of the pointerdown listener for any consumer whose
+  runtime has no `process`.
+- **`drag.points` accumulated only while a handle declared `onMove`**, though
+  `onEnd` is handed the same trail. An action that reads the finished path and
+  previews nothing committed a one-vertex path. Adding a no-op `onMove` fixed
+  it, which is the tell.
+- **`ContributionsApi.entries` was captured in a memo keyed on the focused
+  tool** while its two siblings read the live ref — a binding live and hittable
+  with no palette entry and no chrome.
+- **The conflict reporter never compared ambient tools against each other.**
+  Every tool `defineTool` builds declares `focus: true`, so bucketing on "not
+  focus-eligible" put them all in the registry bucket, which is deliberately
+  not self-compared. A whole collision class was reported by nothing.
+- **Its cross-pass dedupe keyed on the rendered target token**, so two distinct
+  predicate collisions read as one and the second stayed silent after the first
+  was fixed. Its self-check also skipped actions entirely, and both group passes
+  are guarded on more than one member — so a lone action was checked by nothing.
+- **`inFlightCursor` and `getActiveAction` disagreed** about which of several
+  in-flight gestures is the current one, and the dispatcher walked the hotkey
+  stack from the end every other reader treats as the bottom.
+
+The shape worth keeping: **five of the eight are a container that should have
+been a stack, or an iteration that should have run the other way.** Neither is
+visible in a diff or a type, and both survive any test that exercises one of
+whatever it is.
