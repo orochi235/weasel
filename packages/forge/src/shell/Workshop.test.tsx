@@ -109,7 +109,10 @@ describe('Workshop', () => {
     await flush();
 
     const toolbar = screen.getByRole('toolbar', { name: 'Globals' });
-    fireEvent.change(within(toolbar).getByLabelText('Mode'), { target: { value: 'light' } });
+    act(() => {
+      fireEvent.click(within(toolbar).getByRole('button', { name: /Mode/ }));
+    });
+    fireEvent.click(within(await screen.findByRole('listbox')).getByRole('option', { name: 'Light' }));
     await flush();
     const byTrial = Object.fromEntries(
       frames.map(({ received }, i) => [container.querySelectorAll('iframe.fg-frame-view')[i]!.getAttribute('src'), received.at(-1)]),

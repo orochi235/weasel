@@ -244,6 +244,3 @@
   gap: var(--wzl-space-xs);
 }
 
-.fg-globals__select {
-  font-size: var(--wzl-font-size-sm);
-}

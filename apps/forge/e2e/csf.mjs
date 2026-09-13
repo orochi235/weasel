@@ -128,7 +128,8 @@ const stories = [
           );
 
       await surfaceIs('Determinate', 'dark');
-      await page.getByRole('toolbar', { name: 'Globals' }).getByLabel('Mode', { exact: true }).selectOption('light');
+      await page.getByRole('toolbar', { name: 'Globals' }).getByRole('button', { name: /Mode/ }).click();
+      await page.getByRole('option', { name: 'Light', exact: true }).click();
       await surfaceIs('Determinate', 'light');
 
       await page.evaluate(() => {

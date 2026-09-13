@@ -1,4 +1,4 @@
-import { usePersistedState } from '@weasel-js/labkit';
+import { Select, usePersistedState } from '@weasel-js/labkit';
 import { useCallback, useEffect, useMemo } from 'react';
 import type { Globals } from '../protocol/messages';
 import { type GlobalDeclarations, labGlobals } from './globals';
@@ -21,19 +21,14 @@ export function GlobalsToolbar({ declarations }: { declarations: GlobalDeclarati
   return (
     <div className="fg-globals" role="toolbar" aria-label="Globals">
       {Object.entries(declarations).map(([key, declaration]) => (
-        <select
+        <Select
           key={key}
-          className="fg-globals__select"
           aria-label={declaration.label}
-          value={String(values[key])}
-          onChange={(event) => set(key, event.target.value)}
-        >
-          {declaration.options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          width="fit"
+          selectedKey={String(values[key])}
+          onSelectionChange={(value) => set(key, value)}
+          options={declaration.options}
+        />
       ))}
     </div>
   );
