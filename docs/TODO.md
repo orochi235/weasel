@@ -234,6 +234,26 @@ Priority tags:
   per-trial, so a control that belongs to the whole lab has no region and a
   consumer hand-rolls a header beside the shell. Same source.
 
+- **(P2) Routing is portable; the dep schema is not.** Every fight the 3D lab
+  had was a dep contract, a registration step or a coordinate-space bug — never
+  binding-to-action routing and never `InvocationCtx`. So a second kernel wants
+  core's dispatcher, not one of its own, which argues for extracting routing
+  into a package beside `gestures` and `history` and puts the seam at
+  `depSchema.ts`: `ViewApi` has no orientation, `SnapDep`/`AreaSelectDep`/
+  `NodeAtPointDep`/`InsertDep.commit` are typed in 2D points and `Bounds`.
+  Concluded in `docs/superpowers/specs/2026-08-22-3d-kernel-design.md` and
+  recorded nowhere else until now.
+
+- **(P3) `PoseDescriptor` only runs one way for a non-2D pose.** `getBounds`
+  and `intersectsRect` read fine as a screen-projected AABB — that is what
+  drove the 3D lab's chrome through an orbit. `remapBounds` and `fromBounds`
+  run the other way, and a screen rect does not name a 3D pose without a depth
+  choice, so the lab throws rather than guess and every action needing them is
+  recorded as not transferring. Two separate gaps: the interchange currency is
+  `Bounds`, and the descriptor is handed a *pose* rather than the node, so it
+  cannot tell a sphere from a box. `geometryProjection` is the same family and
+  further gone — `transform(node, m: Mat3)` cannot hold a 3D transform.
+
 ### Pen tool follow-ups
 
 From `docs/specs/2026-05-03-pen-tool-design.md`:
