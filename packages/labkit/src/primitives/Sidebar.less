@@ -60,6 +60,13 @@
 
 .lk-sidebar-section {
   border-bottom: var(--wzl-border-w) solid var(--wzl-line-subtle);
+
+  // The last section runs to the bottom of its pane. Stopped at its content,
+  // its rule and the bare pane under it read as a second, empty zone.
+  &:last-child {
+    flex-grow: 1;
+    border-bottom: 0;
+  }
 }
 
 .lk-sidebar-section__bar {
