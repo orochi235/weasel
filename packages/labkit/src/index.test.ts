@@ -51,6 +51,13 @@ describe('public export surface', () => {
   });
 });
 
+describe('ui re-exports', () => {
+  it('carries ToggleBar and Button from the package root', () => {
+    expect(labkit).toHaveProperty('ToggleBar');
+    expect(labkit).toHaveProperty('Button');
+  });
+});
+
 describe('surface, job and orbit entry points', () => {
   it('are reachable from the package root', async () => {
     const kit = await import('./index');

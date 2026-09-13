@@ -1,8 +1,11 @@
-// The property-panel family and LayerStack live in `@weasel-js/ui` now; labkit
-// re-exports them so existing `@weasel-js/labkit` imports keep resolving. Named,
-// not `export *` — a star re-export of an external package emits no binding in
-// the bundle.
+// The property-panel family, LayerStack, ToggleBar and Button live in
+// `@weasel-js/ui`; labkit re-exports them so chrome built on labkit needs no
+// direct ui dependency. Named, not `export *` — a star re-export of an external
+// package emits no binding in the bundle.
 export type {
+  ButtonProps,
+  ButtonSize,
+  ButtonVariant,
   CheckboxRowProps,
   ColorRowProps,
   CurveFieldProps,
@@ -26,9 +29,14 @@ export type {
   SliderRowProps,
   SubpanelProps,
   TextRowProps,
+  ToggleBarItem,
+  ToggleBarProps,
+  ToggleBarSize,
+  ToggleBarVariant,
   ToggleRowProps,
 } from '@weasel-js/ui';
 export {
+  Button,
   CheckboxRow,
   ColorRow,
   CurveField,
@@ -45,6 +53,7 @@ export {
   SliderRow,
   Subpanel,
   TextRow,
+  ToggleBar,
   ToggleRow,
 } from '@weasel-js/ui';
 export type {
