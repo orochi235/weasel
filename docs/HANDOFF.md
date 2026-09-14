@@ -1,46 +1,73 @@
-# Handoff — one pose descriptor (in flight)
+# Handoff — the theme editor, phase 2 (next)
 
-**Branch:** `pose-descriptor-build`, in the worktree `/Users/mike/src/weasel-pose`.
-Nothing is pushed. Another session shares the primary checkout — stage explicit
-paths, never `git add -A`.
+**Branch:** `theme-editor`, in the worktree `.worktrees/theme-editor`, cut from
+`main` right after phase 1 merged. Nothing on `main` is pushed; run
+`git log --oneline @{u}..main` for what has not left the machine. Pushing is
+Mike's call, never yours.
 
-**The work is finished and gated** — `tsc` clean, 10,366 tests, the consumer
-smoke test, and all 51 visual baselines. `git log --oneline main..HEAD` is the
-arc; `.changeset/pose-descriptor.md` is what consumers read. The spec and plan
-are deleted, per this repo's rule that a merged plan is `git log`'s job.
+**Other sessions are in this repository**, in the primary checkout
+(`/Users/mike/src/weasel`, branch `forge-sidebar-clicks`). Stay in your
+worktree, stage explicit paths and commit with a pathspec, and never switch,
+merge or rebase their branch.
 
-## What a later session should know
+## What is done
 
-**The circle probe lives at** `packages/core/src/core/geometry/circlePose.fixture.ts`,
-and the plan's later tasks point there. `PoseDescriptor` itself moved to
-`core/geometry/poseDescriptor.ts` for the same reason: `core/` may not import
-`features/` or `interactions/`, and the adapters and the scene registry under
-`core/` need the type. The old import path re-exports, so nothing else moved.
+Phase 1 of `docs/superpowers/specs/2026-09-10-theme-engine-and-editor-design.md`
+is merged: the engine in `@weasel-js/theme/engine` (definitions, `derive` with
+issues and provenance, `bake`, axis dependencies, emitters, `toDTCG`), weasel's
+theme as `packages/theme/themes/weasel.json`, and the runtime on axis
+selections. The spec's phase 1 text was amended to match what was built; the
+changeset `.changeset/theme-engine.md` lists what broke for consumers.
 
-**`npm run lint` fails on `main`**, with two errors this branch did not cause:
-`packages/diagram/src/live.ts:287` and
-`packages/core/src/core/scene/derivedDep.test.ts:9`. A third error is yours.
+## What is next
 
-**Task 4 had to reach into `move.ts`.** Deleting `ResizePolicy.projection` broke
-move's read of it, so that one line moved to the dep a task early.
+**Build phase 2, the `#/theme` editor**, as the spec's "Phase 2 — the editor"
+describes. Mike asked for it to be implemented, not only planned. The order
+that worked for phase 1: review the phase 2 section against the tree (it was
+written before phase 1 existed, and names APIs that have since changed shape),
+correct the spec, write a plan under `docs/superpowers/plans/`, then build it
+task by task with a review after each, and finish with the gates in "Verifying"
+below plus the full suite. Delete the plan when the branch merges.
 
-## The rest of this file is the previous arc, kept for its traps
+## Decisions made in conversation that the code does not explain
 
-**Branch:** merged to `main`. Run `git log --oneline @{u}..HEAD` for what has
-not left the machine. The `#/theme` follow-up is a P2 in `docs/TODO.md`.
+**The Seeds, Components and Pins rows use weasel-ui's `TokenPanel`**, which
+exists only on `forge-sidebar-clicks`, another session's unmerged branch. Don't
+merge that branch into yours on your own; build the layers that don't need it
+first, and ask Mike when you reach it (he may merge it, or tell you to).
 
-**Another session shares this working directory.** Stage explicit paths, never
-`git add -A`, and confirm the branch before assuming it is still yours.
+**Revisit the chroma envelope before the editor shows generated ramps.**
+`sin(πt) + darkBias·t` is zero at the light end, so a ramp anchored on one brand
+color with `darkBias` 0 comes out gray at both ends (the spec's accent example
+derives `#a4a4a4` and `#383838`). weasel's accent is pinned, so nothing ships
+wrong today; the ramp editor's generated row is where it would show. That is a
+spec decision for Mike, not a silent formula change.
 
-## What this is
+**The dev server for this worktree runs on port 5187**, not 5177: the primary
+checkout's `dev:theme-editor` owns 5177, and Playwright's visual config also
+reuses 5177. `npx vite --config apps/theme-editor/vite.config.ts --port 5187 --strictPort`.
 
-Mike asked for a theme editor. What got built first is one part of it: a
-**palette lab** at `apps/theme-editor`, `#/palette`, which generates a
-categorical color set from constraints instead of anyone hand-picking hexes.
-`#/theme` is a stub — the token editing, the ramps, the semantic layer — and is
-the actual next arc. **It is designed but not built:**
-`docs/superpowers/specs/2026-09-10-theme-engine-and-editor-design.md` (engine
-first, then the editor). Next step is Mike's review of that spec, then a plan.
+## Traps from phase 1
+
+**Parallel implementers in one worktree collided.** Two agents committing at
+once swept each other's staged files into the wrong commit, and one reset
+undid another's commit. Run one implementer at a time; reviewers can run
+alongside, read-only.
+
+**`tests/visual` loads engine source through Node's own type stripping**, which
+rejects TypeScript parameter properties (`constructor(private readonly x)`),
+enums and namespaces. `tsc` and vitest accept them, so only the Playwright run
+fails, with a `SyntaxError` naming no file you'd suspect.
+
+**chrome-devtools MCP screenshots must be saved inside the workspace.** A path
+under the job's tmp directory is refused; `node_modules/.cache/` works and is
+ignored.
+
+## The palette lab — the arc before phase 1, kept for its traps
+
+The palette lab at `apps/theme-editor`, `#/palette`, generates a categorical
+color set from constraints. Its generator now lives in the engine,
+`packages/theme/src/engine/color/generate.ts`; the named crayons stay in the app.
 
 Run it with `npm run dev:theme-editor` (port 5177). Tests are in the `draw`
 vitest project: `npx vitest run --project=draw apps/theme-editor`.
