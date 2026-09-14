@@ -1,4 +1,4 @@
-import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbU8ToOklab } from '@weasel-js/core';
+import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbU8ToOklab } from '@weasel-js/paint';
 
 /** A color in OKLCH: lightness 0–1, chroma, hue in degrees. */
 export interface Lch {

@@ -1,4 +1,4 @@
-import { DEFAULT_CONSTRAINTS, type Anchor, type Constraints } from './palette/generate';
+import { DEFAULT_CONSTRAINTS, type Anchor, type Constraints } from '@weasel-js/theme/engine';
 
 export type SurfaceKey = 'dark' | 'light';
 
