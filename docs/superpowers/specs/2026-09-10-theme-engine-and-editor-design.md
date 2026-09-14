@@ -257,9 +257,9 @@ All in one pass, with the prose in a `patch` changeset:
   `selection`.
 - `defineTheme` takes a definition. `Theme` holds `axes` instead of `modes`.
   A runtime theme's `by` may leave a value out, and that selection then falls
-  through to the theme it extends: interstellar declares `backdrop` for dark
-  only and inherits weasel's `none` in light. Only a definition the engine
-  derives has to give every value.
+  through to the theme it extends: a theme declaring `backdrop` for dark only
+  inherits weasel's `none` in light. Only a definition the engine derives has
+  to give every value, which is why interstellar gives both.
 - `THEMES.<name>.modes.<mode>` becomes `THEMES.<name>.selections[<key>]`, where
   the key is `selectionKey({ mode: 'dark' })` → `'mode=dark'` (axes in
   declaration order, comma-joined).

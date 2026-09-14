@@ -45,6 +45,11 @@ export const weaselTheme: Theme = {
  * seeds, ramps, scales or semantics needs deriving first.
  */
 export function defineTheme(input: ThemeInput): Theme {
+  if (typeof input.extends === 'string') {
+    throw new Error(
+      `Theme "${input.name}" extends "${input.extends}" by name; defineTheme needs the Theme itself (e.g. weaselTheme), not a definition's name.`,
+    );
+  }
   const rules = (['seeds', 'ramps', 'scales', 'semantics'] as const).filter((k) => Object.keys(input[k] ?? {}).length > 0);
   if (rules.length > 0) {
     throw new Error(

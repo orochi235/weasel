@@ -19,6 +19,12 @@ describe('defineTheme', () => {
     expect(t.tokens.surface).toEqual({ by: 'mode', light: { type: 'unknown', value: '#eeeeee', alpha: undefined, description: undefined } });
   });
 
+  it('refuses a definition name as extends, and says to pass the Theme', () => {
+    expect(() => defineTheme({ name: 'x', extends: 'weasel' as never })).toThrow(
+      'Theme "x" extends "weasel" by name; defineTheme needs the Theme itself (e.g. weaselTheme), not a definition\'s name.',
+    );
+  });
+
   it('can opt out of the base entirely', () => {
     expect(defineTheme({ name: 'bare', extends: null }).extends).toBeNull();
   });

@@ -1,5 +1,6 @@
 {
   "name": "interstellar",
+  "extends": "weasel",
   "pins": {
     "radius-md": {
       "value": "6px",
@@ -168,6 +169,10 @@
       "by": "mode",
       "dark": {
         "value": "radial-gradient(ellipse 60% 80% at 18% 30%, rgba(150, 80, 200, 0.22), transparent 70%), radial-gradient(ellipse 55% 90% at 78% 70%, rgba(220, 100, 140, 0.18), transparent 65%), radial-gradient(ellipse 50% 70% at 50% 50%, rgba(60, 110, 200, 0.18), transparent 75%), radial-gradient(ellipse at center, #0a0a18 0%, #02020a 100%)",
+        "type": "gradient"
+      },
+      "light": {
+        "value": "none",
         "type": "gradient"
       }
     }
