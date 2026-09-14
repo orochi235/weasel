@@ -1000,7 +1000,9 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `docs/superpowers/specs/2026-09-10-theme-engine-and-editor-design.md` — first
   the engine in `@weasel-js/theme` (a layered definition format, derivation that
   fills in unpinned values, emission, weasel's theme converted onto it), then the
-  editor on top. Next step is reviewing that spec, then a plan.
+  editor on top. The spec was reviewed against the tree on 2026-09-13, and the
+  engine's plan is `docs/superpowers/plans/2026-09-13-theme-engine.md` on branch
+  `theme-engine`, not started. The editor gets its own plan once the engine lands.
 
 - **(P3) A mark can be selected in two targets at once.** `AnnotationOverlay`
   leaves `selectionMode` at weasel's default `single`, and each canvas clears

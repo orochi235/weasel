@@ -258,11 +258,11 @@ All in one pass, with the prose in a `patch` changeset:
   the key is `selectionKey({ mode: 'dark' })` → `'mode=dark'` (axes in
   declaration order, comma-joined).
 - Callers to move, as of 2026-09-13: hud `attach.ts` and `react/useHud.ts`
-  (and seven hud tests calling `resolveTheme(weaselTheme, 'dark')`); labkit
+  (and nine hud test files calling `resolveTheme(weaselTheme, 'dark')`); labkit
   `theme/interstellar.ts` and its test, `lab/Lab.tsx` (two providers) and
   `lab/LabShell.tsx`; `apps/draw/src/theme.ts` (whose `{color.x}` refs become
   `{x}`) and `apps/draw/src/main.tsx`; `apps/forge/forge.frame.tsx` (a provider
-  and an `applyTheme`). `TOKEN_MANIFEST` readers (forge's `CssVarsPanel`, the
+  and an `applyTheme`); `.storybook/preview.tsx` (a provider). `TOKEN_MANIFEST` readers (forge's `CssVarsPanel`, the
   Storybook css-vars addon) keep working unchanged.
 - `applyTheme`'s rule selector names one attribute per axis the theme declares.
   `apps/forge/fonts.ts` outranks the theme rule by repeating `[data-wzl-mode]`
