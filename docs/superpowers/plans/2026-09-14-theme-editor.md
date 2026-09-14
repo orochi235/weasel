@@ -4405,3 +4405,26 @@ Run `npx vitest run --project=weasel-ui packages/theme/src/engine/ramps.test.ts`
 - [ ] **Step 5: Run** `npx vitest run --project=weasel-ui packages/theme/src/engine/ramps.test.ts packages/theme/src/engine/derive.test.ts packages/theme/src/generated/determinism.test.ts`, `npx tsc --noEmit`, `npx eslint packages/theme/src` → clean.
 
 - [ ] **Step 6: Commit** the three paths; message `restore the anchored ramp's peak at a zero envelope`.
+
+---
+
+### Task 24: fixes from the review of Task 9 (run after Task 10)
+
+A review of `8ef718a9` found these; each was verified against the code.
+
+**Files:**
+- Modify: `apps/theme-editor/src/theme/model.ts`, `model.test.ts`, `apps/theme-editor/src/theme/rows.ts`, `rows.test.ts`, `apps/theme-editor/src/LayerRail.tsx`, `LayerRail.test.tsx`, `apps/theme-editor/src/TokenList.tsx`, `apps/theme-editor/src/ThemeEditor.module.css`
+
+- [ ] **1. The Pins row and the Pins table count the same pins.** `countTokens` counts every key of `def.pins`; `layerRows('pins')` lists only names with a token at the selection. A pin that fails at a selection (a `by` missing that value, an unknown seed) makes the rail say 89 and the table show 88, and a failing pin over a generated token shows the rule's value in the Pins table as though it were the pin. Both should count and list a pin only where it applies: `provenance[name]?.pinned || provenance[name]?.layer === 'pins'`. Put that predicate in `model.ts` as `export const pinApplies = (result: DeriveResult, name: string) => ...`, use it in both. Failing tests first: a definition with `pins: { gap: { by: 'mode', dark: { value: '4px', type: 'dimension' } } }` over weasel counts one more pin at `{ mode: 'dark' }` than at `{ mode: 'light' }` (in `model.test.ts`), and `layerRows('pins', …)` has the same length as `countTokens(…).layers.pins.count` at both selections (in `rows.test.ts`).
+
+- [ ] **2. Rail buttons are forced to 24px.** `.railItem` sets no `height`, so labkit's `:where(button) { height: var(--wzl-control-h) }` applies under `.lk-root`, and its 6px padding leaves 12px for a line of text. Add `height: auto;` to `.railItem`, and a hover state: `.railItem:hover { background: var(--wzl-surface-raised); }` (the existing `[aria-current='true']` rule stays after it, so it still wins).
+
+- [ ] **3. The rail's accessible names.** Give each rail button `aria-label={pinned > 0 ? \`${label}, ${count} tokens, ${pinned} pinned\` : \`${label}, ${count} tokens\`}`, keeping the visible spans. Update `LayerRail.test.tsx` to assert the names (`['Seeds, 0 tokens', 'Ramps, 23 tokens, 23 pinned', …]`) instead of the run-together `textContent`, and the workbench test's `getByRole('button', { name: /^Ramps/ })` still matches.
+
+- [ ] **4. Alpha shows.** In `rows.ts`, a token with `alpha` shows its value as `${value} at ${Math.round(alpha * 100)}%` (as `ruleSummary` does). Failing test first: weasel's `line-subtle` row (pins layer) reads `{fg} at 10%` — check the real pin and its alpha in `weasel.json` first and assert what it holds.
+
+- [ ] **5. Comment.** In `TokenList.tsx`, "the first is scrolled into view" becomes "the first highlighted row is scrolled into view".
+
+- [ ] **Run** `npx vitest run --project=draw apps/theme-editor/src/theme/model.test.ts apps/theme-editor/src/theme/rows.test.ts apps/theme-editor/src/LayerRail.test.tsx apps/theme-editor/src/ThemeWorkbench.test.tsx`, `npx tsc --noEmit`, `npx eslint apps/theme-editor/src` → clean.
+
+- [ ] **Commit** the eight paths; message `count and list pins where they apply, and fix the layer rail's height and names`.
