@@ -18,26 +18,29 @@ describe('toDTCG', () => {
     for (const mode of ['dark', 'light']) expect(resolveTheme(back, { mode })).toEqual(resolveTheme(t, { mode }));
   });
 
+  const valueOf = (groups: Record<string, Record<string, unknown>>, type: string, name: string) =>
+    (groups[type]?.[name] as { $value?: unknown } | undefined)?.$value;
+
   it('writes an alias as a path through its target’s type group', () => {
     const doc = toDTCG(weaselTheme);
-    expect(doc.modes.dark.color.surface.$value).toBe('{color.gray-800}');
-    expect(doc.primitives.color['gray-800']).toBeDefined();
+    expect(valueOf(doc.modes.dark, 'color', 'surface')).toBe('{color.gray-800}');
+    expect(valueOf(doc.primitives, 'color', 'gray-800')).toBeDefined();
   });
 
   it('finds an alias target’s type in the theme it extends', () => {
     const t = defineTheme({ name: 'x', pins: { edge: { value: '{space-md}', type: 'dimension' } } });
-    expect(toDTCG(t).primitives.dimension.edge.$value).toBe('{dimension.space-md}');
+    expect(valueOf(toDTCG(t).primitives, 'dimension', 'edge')).toBe('{dimension.space-md}');
   });
 
   it('leaves an alias bare when no theme in the chain has its target', () => {
     const t = defineTheme({ name: 'x', extends: null, pins: { a: { value: '{nope}', type: 'color' } } });
-    expect(toDTCG(t).primitives.color.a.$value).toBe('{nope}');
+    expect(valueOf(toDTCG(t).primitives, 'color', 'a')).toBe('{nope}');
   });
 
   it('exports a theme whose parent has an axis besides mode that the theme never varies by', () => {
     const parent = defineTheme({ name: 'dp', axes: { density: { default: 'a', values: { a: {}, b: {} } } }, pins: { gap: { by: 'density', a: '1px', b: '2px' } } });
     const kid = defineTheme({ name: 'k', extends: parent, pins: { 'radius-md': { value: '9px', type: 'dimension' } } });
-    expect(toDTCG(kid).primitives.dimension['radius-md'].$value).toBe('9px');
+    expect(valueOf(toDTCG(kid).primitives, 'dimension', 'radius-md')).toBe('9px');
   });
 
   it('refuses a theme with an axis other than mode', () => {
