@@ -8,3 +8,4 @@ export { loadDTCG } from './loadDTCG';
 export { fullSelection, selectionKey, type AxisDef, type AxisDefs, type AxisValue, type ByAxis, type Selection, type Varying } from './axes';
 export type { ThemeDefinition, PinValue, PinObject } from './definition';
 export type { RawToken, FlatTokens } from './dtcg/types';
+export type { BakedTheme } from './engine/bake';

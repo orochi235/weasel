@@ -122,6 +122,7 @@ this rule governs the consumer boundary, not kit internals.
 output doesn't match what the generator produces from the source.
 
 Token names are the definition's keys — `fg-muted` becomes `--wzl-fg-muted`, and
-a reference is written `{fg-muted}`. A value that differs per axis is written
+a reference in a pin's value is written `{fg-muted}`, while a semantic's `ref`
+names the token bare (`"ref": "gray-800"`). A value that differs per axis is written
 `{ by: 'mode', dark: …, light: … }`; an `alpha` on a reference emits
 `color-mix()` in CSS and a computed `rgba()` in JS.

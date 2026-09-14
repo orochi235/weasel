@@ -61,6 +61,33 @@ In React, `<ThemeProvider theme={acme} selection={{ mode: 'light' }}>` from
 `useTheme()` — which is how canvas and WebGL surfaces stay in sync without
 reading the DOM.
 
+## The engine
+
+`@weasel-js/theme/engine` is for authoring layered theme definitions: seeds,
+generated ramps and scales, semantic rules, components and pins. `derive`
+produces a definition's tokens for one selection, with where each came from and
+any issues; `bake` folds every selection into the tokens a runtime `Theme`
+holds; `toDTCG` writes a theme out as a DTCG document. The runtime entry never
+loads it.
+
+```ts
+import { bake, derive } from '@weasel-js/theme/engine';
+import { weaselTheme, type Theme, type ThemeDefinition } from '@weasel-js/theme';
+
+const slate: ThemeDefinition = {
+  name: 'slate',
+  axes: { mode: { default: 'dark', values: { dark: { scheme: 'dark' }, light: { scheme: 'light' } } } },
+  ramps: { slate: { kind: 'lightness', steps: ['100', '500', '900'], lightness: [0.96, 0.22] } },
+  semantics: {
+    surface: { by: 'mode', dark: { ramp: 'slate', step: '900' }, light: { ramp: 'slate', step: '100' } },
+    fg: { by: 'mode', dark: { ref: 'slate-100' }, light: { ref: 'slate-900' } },
+  },
+};
+
+const { tokens, provenance, issues } = derive(slate, { mode: 'light' });
+const theme: Theme = { ...bake(slate), extends: weaselTheme };
+```
+
 ## Editing tokens
 
 `src/generated/` is generated — never edit it. Change `themes/weasel.json`,
@@ -73,7 +100,8 @@ npm run gen:tokens -w @weasel-js/theme
 CI re-runs the generator and fails if the committed output differs.
 
 Token names are the definition's keys: `fg-muted` becomes `--wzl-fg-muted`, and
-a reference is written `{fg-muted}`.
+a reference in a pin's value is written `{fg-muted}`, while a semantic's `ref`
+names the token bare (`"ref": "gray-800"`).
 
 ## Licenses
 
