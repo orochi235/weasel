@@ -370,10 +370,19 @@
 
 /* An inline row stays on one line: the field gives up width to the label as the
    column narrows, down to a floor that still shows a value. */
-.rowInline > input:not(.readoutInput),
-.rowInline > select {
+.rowInline > input:not(.readoutInput) {
   flex: 0 1 auto;
   min-width: 4ch;
+}
+
+/* A select sized to its longest option starts wherever that width leaves it, so
+   a column of them scatters its values. Filling the row and setting the value
+   against the chevron gives them one rail. */
+.rowInline > select {
+  flex: 1 1 auto;
+  min-width: 4ch;
+  text-align: right;
+  text-align-last: right;
 }
 
 .rowInline input[type='range'] {
