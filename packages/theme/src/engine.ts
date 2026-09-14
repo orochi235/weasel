@@ -9,5 +9,6 @@ export { scale, type ScaleParams } from './engine/scales';
 export type { DeriveResult, Issue, Layer, Provenance } from './engine/types';
 export type * from './definition';
 export { cssValue, emitCss, type EmitInput } from './engine/emit/css';
+export { toDTCG, type DtcgExport } from './engine/emit/dtcg';
 export { emitManifest } from './engine/emit/manifest';
 export { emitThemes, type ThemesInput } from './engine/emit/themes';

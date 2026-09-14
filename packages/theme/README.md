@@ -52,9 +52,9 @@ accidentally incomplete. Overriding a primitive rebases every alias that
 references it — set `accent-base` and `--wzl-accent`, `--wzl-accent-hover`,
 `--wzl-focus-ring` and `--wzl-glass-tint` all follow.
 
-Themes exported from a design tool load through `loadDTCG(json)` —
-`interstellarTheme` in `@weasel-js/labkit` is a worked example, authored as a
-DTCG document and loaded at import time.
+Themes exported from a design tool load through `loadDTCG(json)`.
+`interstellarTheme` in `@weasel-js/labkit` is a worked example of the other
+path: a pins-only definition in JSON, passed to `defineTheme`.
 
 In React, `<ThemeProvider theme={acme} selection={{ mode: 'light' }}>` from
 `@weasel-js/theme/react` does the same and publishes the resolved record via
