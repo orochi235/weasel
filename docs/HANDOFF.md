@@ -32,16 +32,14 @@ below plus the full suite. Delete the plan when the branch merges.
 ## Decisions made in conversation that the code does not explain
 
 **The Seeds, Components and Pins rows use weasel-ui's `TokenPanel`**, which
-exists only on `forge-sidebar-clicks`, another session's unmerged branch. Don't
-merge that branch into yours on your own; build the layers that don't need it
-first, and ask Mike when you reach it (he may merge it, or tell you to).
+exists only on `forge-sidebar-clicks`, another session's unmerged branch. Mike
+decided 2026-09-14 to wait for it to merge: until then those layers are
+read-only lists (plan Task 18). Don't merge that branch into this one.
 
-**Revisit the chroma envelope before the editor shows generated ramps.**
-`sin(πt) + darkBias·t` is zero at the light end, so a ramp anchored on one brand
-color with `darkBias` 0 comes out gray at both ends (the spec's accent example
-derives `#a4a4a4` and `#383838`). weasel's accent is pinned, so nothing ships
-wrong today; the ramp editor's generated row is where it would show. That is a
-spec decision for Mike, not a silent formula change.
+**Answered 2026-09-14, and already in the spec's phase 1 text:** the chroma
+envelope gains `lightBias` (`sin(πt) + lightBias·(1−t) + darkBias·t`, built in
+`f9f41e2a`), and a theme's own ramps and scales shadow the pins it inherits, so
+a theme extending weasel can show its generated ramps (plan Task 7).
 
 **The dev server for this worktree runs on port 5187**, not 5177: the primary
 checkout's `dev:theme-editor` owns 5177, and Playwright's visual config also

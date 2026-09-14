@@ -2032,7 +2032,14 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
   if (!derived) {
     return (
       <LabShell title="Theme editor">
-        <p role="alert" className={styles.status}>{stored.name} does not derive: {error}</p>
+        <div role="alert" className={styles.status}>
+          <p>
+            {stored.name} does not derive: {error}
+          </p>
+          <div className={styles.statusActions}>
+            <Button size="sm" onClick={onReload}>Discard the draft and reload from disk</Button>
+          </div>
+        </div>
       </LabShell>
     );
   }
@@ -4266,6 +4273,37 @@ npm run lint
 npm run check:test-projects
 ```
 
-- [ ] **Browser**, headless, against the 5187 server after a hard reload of `http://localhost:5187/weasel/theme-editor/#/theme`: both lab modes via the header's mode buttons; the rail's buttons are not crushed by `.lk-root`'s `:where()` height; both preview panes show dark and light; a ramp slider moves the preview; Compare shows pinned beside generated; Inspect on the primary button lands on its tokens; a New theme saved as `harbor` writes `packages/theme/themes/harbor.json` and regenerates `src/generated/`. Then delete `harbor.json`, run `npm run gen:tokens -w @weasel-js/theme`, and confirm `git status` shows no generated change.
+- [ ] **Browser**, headless, against the 5187 server after a hard reload of `http://localhost:5187/weasel/theme-editor/#/theme`: both lab modes by emulating `prefers-color-scheme` (`LabShell` here has no mode buttons; clicking "Light"/"Dark" hits the page's own controls); the rail's buttons are not crushed by `.lk-root`'s `:where()` height; both preview panes show dark and light; a ramp slider moves the preview; Compare shows pinned beside generated; Inspect on the primary button lands on its tokens; a New theme saved as `harbor` writes `packages/theme/themes/harbor.json` and regenerates `src/generated/`. Then delete `harbor.json`, run `npm run gen:tokens -w @weasel-js/theme`, and confirm `git status` shows no generated change.
 - [ ] **Docs:** rewrite `docs/HANDOFF.md`'s top section for what is left (Task 18, anything the browser pass found); update `docs/TODO.md` for the theme editor; the spec's status line. The plan is deleted when the branch merges.
 - [ ] **Not here:** the full `npm test` suite is the pre-push gate, and pushing is Mike's call.
+
+---
+
+### Task 20: fixes from the review of Tasks 1–5 (run right after Task 7)
+
+A read-only review of commits `55b5524e..376a876f` found these; each was verified against the code.
+
+**Files:**
+- Modify: `packages/theme/src/engine/derive.ts`, `derive.test.ts`, `packages/theme/src/engine.ts`, `apps/theme-editor/server/themeStore.ts`, `themeStore.test.ts`, `apps/theme-editor/src/theme/model.ts`, `apps/theme-editor/src/theme/draftStorage.ts`
+- Create: `.changeset/theme-token-name-characters.md`
+
+- [ ] **1. Token and step names are limited to `[A-Za-z0-9_-]`.** Today `derive` drops a name containing a dot (`withoutDottedNames`, and the `steps` check in `settleEntry`) and nothing else, and `emitThemes` writes `'--wzl-${n}'` unescaped: a pin named `a'b` saves with no issue, regenerates, and leaves `src/generated/themes.ts` unparseable. Generalize both dot checks to `/^[A-Za-z0-9_-]+$/`, keeping the same behavior (an `invalid` issue, the entry dropped), with the message `"<name>" cannot name a token: use letters, digits, "-" and "_"`. Failing tests first, in `derive.test.ts`: a pin named `a'b` yields an `invalid` issue at `pins.a'b` and no token; a ramp step named `x y` yields an `invalid` issue at `ramps.<name>.steps`. Update any existing dot-name test that asserts the old message text. Changeset, `patch`:
+
+  ```md
+  Token and step names are limited to letters, digits, `-` and `_`. Any other name is reported as invalid and dropped, as a name containing a dot already was; a quote in a name used to reach the generated `themes.ts` unescaped.
+  ```
+
+- [ ] **2. The store refuses, before writing, a save that would break the build.** Today the file is written first, and `generateTokens` throwing is caught into `problems`, so `PUT /__theme/harbor` with `{ name: 'harbor' }` (a second root) or `extends: 'interstellar'` (a parent that does not emit) saves and makes `gen:tokens` throw on every later run. Also refuse when `derive` throws at any selection (a cycle, a dangling reference, an unknown `extends`), which breaks the build the same way. Issues still save. In `write`, after the name checks and the hash check and before `writeFileSync`, build the would-be set (every definition, this one substituted or added) and return `{ status: 'invalid', message }` when:
+  - it emits, and the emitting set does not have exactly one theme that extends nothing, or an emitting theme's `extends` names a theme that does not emit;
+  - it does not emit, and its `extends` names no known theme;
+  - `derive(definition, selection, lookup)` throws for any selection of `mergeChain(definition, lookup).axes`.
+
+  The derive loop already in `write` moves above the write and collects issues there. Failing tests first in `themeStore.test.ts`: `harbor` with no `extends` → `invalid`, `themes/harbor.json` absent; `harbor` extending `interstellar` → `invalid`; weasel with a semantic `{ ref: 'nope' }` added → `invalid`, `weasel.json` byte-identical to before. The existing "saves a definition with issues" case must still pass.
+
+- [ ] **3. `runtimeTheme` bakes each theme once.** `bake` already bakes the whole chain internally (`bakeChain`, root first) and the recursion bakes each parent again. Export `bakeChain` from `packages/theme/src/engine/bake.ts` and `engine.ts` (docstring: "`definition` and every theme it extends, baked, root first"), and build the `Theme` chain in `runtimeTheme` from its result, naming only the leaf `name`. `model.test.ts`'s `runtimeTheme` case must pass unchanged. Mention `bakeChain` in the same changeset as item 1 or its own `patch` changeset.
+
+- [ ] **4. Comments.** In `draftStorage.ts`, drop "or jsdom" from the first catch comment (the draw project's jsdom has `localStorage`) and delete the three `// As above.` comments, leaving those catch blocks with a single comment each only where one says something the first does not.
+
+- [ ] **Run** `npx vitest run --project=weasel-ui packages/theme/src/engine/derive.test.ts packages/theme/src/generated/determinism.test.ts`, `npx vitest run --project=draw apps/theme-editor/server apps/theme-editor/src/theme`, `npx tsc --noEmit`, `npx eslint packages/theme/src apps/theme-editor` → clean.
+
+- [ ] **Commit** in two commits: the engine half (items 1 and 3, with changesets) as `limit token names to safe characters and export bakeChain`, and the app half (items 2 and 4) as `refuse theme saves that would break the token build`.

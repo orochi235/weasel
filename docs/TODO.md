@@ -994,17 +994,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) Build the theme editor's `#/theme` page.** `apps/theme-editor` ships
-  only the palette lab (`#/palette`); `#/theme` is a stub. The engine under it
-  is built (`@weasel-js/theme/engine`, weasel's theme in
-  `packages/theme/themes/weasel.json`); the editor is phase 2 of
-  `docs/superpowers/specs/2026-09-10-theme-engine-and-editor-design.md` and has
-  no plan yet. Its Seeds, Components and Pins rows use weasel-ui's `TokenPanel`,
-  which is still on the unmerged `forge-sidebar-clicks` branch. Before the editor
-  shows generated ramps, revisit the chroma envelope: `sin(πt) + darkBias·t` is
-  zero at the light end, so a ramp anchored on one brand color with `darkBias` 0
-  comes out gray at both ends (the spec's accent example derives `#a4a4a4` and
-  `#383838`).
+- **(P2) Build the theme editor's `#/theme` page.** In progress on branch
+  `theme-editor` (worktree `.worktrees/theme-editor`), phase 2 of
+  `docs/superpowers/specs/2026-09-10-theme-engine-and-editor-design.md`, planned
+  in `docs/superpowers/plans/2026-09-14-theme-editor.md`. Until that branch
+  merges, `#/theme` on `main` is a stub. Its Seeds, Components and Pins layers
+  wait for weasel-ui's `TokenPanel`, still on the unmerged `forge-sidebar-clicks`
+  branch; until then they are read-only lists.
 
 - **(P3) A mark can be selected in two targets at once.** `AnnotationOverlay`
   leaves `selectionMode` at weasel's default `single`, and each canvas clears
