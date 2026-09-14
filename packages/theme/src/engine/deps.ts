@@ -43,6 +43,19 @@ function scan(v: unknown, into: Node): void {
   }
 }
 
+/** The axes that decide which steps a ramp entry declares: `by`s wrapping the entry, and anything in its `steps`. */
+function scanSteps(entry: unknown, into: Node): void {
+  if (isByAxis(entry)) {
+    into.axes.add(entry.by);
+    for (const [k, x] of Object.entries(entry)) if (k !== 'by') scanSteps(x, into);
+  } else if (typeof entry === 'object' && entry !== null) {
+    scan((entry as { steps?: unknown }).steps, into);
+  }
+}
+
+/** Node key for a ramp's step list. Token names cannot contain a dot, so it never collides with one. */
+const stepsKey = (ramp: string) => `ramps.${ramp}`;
+
 /** The non-`by` values under a possibly nested `by` object. */
 function leaves(v: unknown): unknown[] {
   return isByAxis(v) ? Object.entries(v).filter(([k]) => k !== 'by').flatMap(([, x]) => leaves(x)) : [v];
@@ -55,6 +68,9 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
   /** Step token → the ramps that declare it. */
   const stepRamps = new Map<string, Set<string>>();
   for (const [name, ramp] of Object.entries(def.ramps ?? {})) {
+    const shape = node();
+    scanSteps(ramp, shape);
+    nodes.set(stepsKey(name), shape);
     const n = node();
     scan(ramp, n);
     for (const step of declaredSteps(ramp)) {
@@ -99,11 +115,18 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
       if ('ref' in leaf) n.edges.add(leaf.ref);
       if ('from' in leaf) {
         n.edges.add(leaf.from);
-        // darker and lighter read which end of the ramp is darker.
-        if (leaf.dir !== 'away') for (const r of rampsOf(leaf.from)) for (const s of declaredSteps(def.ramps?.[r])) n.edges.add(`${r}-${s}`);
+        for (const r of rampsOf(leaf.from)) {
+          n.edges.add(stepsKey(r));
+          // darker and lighter read which end of the ramp is darker.
+          if (leaf.dir !== 'away') for (const s of declaredSteps(def.ramps?.[r])) n.edges.add(`${r}-${s}`);
+        }
       }
-      if ('step' in leaf) for (const s of leaves(leaf.step)) n.edges.add(`${leaf.ramp}-${String(s)}`);
+      if ('step' in leaf) {
+        n.edges.add(stepsKey(leaf.ramp));
+        for (const s of leaves(leaf.step)) n.edges.add(`${leaf.ramp}-${String(s)}`);
+      }
       if ('contrast' in leaf) {
+        n.edges.add(stepsKey(leaf.ramp));
         for (const a of leaf.contrast.against) n.edges.add(a);
         for (const s of declaredSteps(def.ramps?.[leaf.ramp])) n.edges.add(`${leaf.ramp}-${s}`);
       }
@@ -152,6 +175,6 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
   }
 
   const result: Record<string, AxisDependency> = {};
-  for (const name of nodes.keys()) result[name] = { own: sorted(ownSets.get(name)!), all: sorted(all.get(name)!) };
+  for (const name of nodes.keys()) if (!name.includes('.')) result[name] ={ own: sorted(ownSets.get(name)!), all: sorted(all.get(name)!) };
   return result;
 }

@@ -232,6 +232,25 @@ describe('emitCss', () => {
   });
 });
 
+describe('emitCss with a ramp whose steps vary by axis', () => {
+  it('declares an offset per axis value when every step of its ramp is pinned', () => {
+    const hex = ['#f0f0f0', '#d0d0d0', '#a0a0a0', '#707070', '#404040', '#101010'];
+    const def: ThemeDefinition = {
+      name: 'd',
+      axes: { density: { default: 'a', values: { a: {}, b: {} } } },
+      ramps: {
+        gray: { kind: 'lightness', steps: { by: 'density', a: ['1', '2', '3', '4'], b: ['1', '2', '3', '4', '5', '6'] }, lightness: [0.95, 0.2] },
+      },
+      semantics: { surface: { ramp: 'gray', step: '3' }, muted: { from: 'surface', offset: 1, dir: 'away' } },
+      pins: Object.fromEntries(hex.map((h, i) => [`gray-${i + 1}`, { value: h, type: 'color' }])),
+    };
+    const sheet = emitCss([input(def)]);
+    expect(computed(sheet, [{ density: 'a' }])['--wzl-muted']).toBe('#d0d0d0');
+    expect(computed(sheet, [{ density: 'b' }])['--wzl-muted']).toBe('#707070');
+    expect(wrong(sheet, def, [{ density: 'b' }])).toEqual([]);
+  });
+});
+
 describe('emitManifest', () => {
   it('lists the default theme’s tokens in order with resolved default values', () => {
     const text = emitManifest(input(E));

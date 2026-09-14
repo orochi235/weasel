@@ -154,6 +154,30 @@ describe('axisDependencies', () => {
     expect(nested.surface).toEqual({ own: ['mode', 'density'], all: ['mode', 'density'] });
   });
 
+  it('makes step, offset and contrast rules depend on the ramp’s steps even when every step is pinned', () => {
+    const hex = ['#f0f0f0', '#d0d0d0', '#a0a0a0', '#707070', '#404040', '#101010'];
+    const densityRamp: ThemeDefinition = {
+      name: 'dr',
+      axes: { density: { default: 'a', values: { a: {}, b: {} } } },
+      ramps: {
+        gray: { kind: 'lightness', steps: { by: 'density', a: ['1', '2', '3', '4'], b: ['1', '2', '3', '4', '5', '6'] }, lightness: [0.95, 0.2] },
+      },
+      semantics: {
+        surface: { ramp: 'gray', step: '3' },
+        muted: { from: 'surface', offset: 1, dir: 'away' },
+        deeper: { from: 'surface', offset: 1, dir: 'darker' },
+        edge: { ramp: 'gray', contrast: { min: 3, against: ['surface'] } },
+      },
+      pins: Object.fromEntries(hex.map((h, i) => [`gray-${i + 1}`, { value: h, type: 'color' }])),
+    };
+    const deps = axisDependencies(densityRamp);
+    expect(deps.surface.all).toEqual(['density']);
+    expect(deps.muted.all).toEqual(['density']);
+    expect(deps.deeper.all).toEqual(['density']);
+    expect(deps.edge.all).toEqual(['density']);
+    expect(deps['gray-1']).toEqual({ own: [], all: [] });
+  });
+
   it("reads a pinned semantic's dependencies from its pin, not the rule it replaces, through an offset that references it", () => {
     const pinned = axisDependencies({
       ...D,
