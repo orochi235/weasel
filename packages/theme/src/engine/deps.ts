@@ -1,6 +1,7 @@
 import { isByAxis } from '../axes';
 import type { SemanticRule, ThemeDefinition } from '../definition';
 import { mergeChain, type Lookup } from './merge';
+import { declaredSteps } from './steps';
 
 export interface AxisDependency {
   /** Axes this token's own entry varies on. */
@@ -47,39 +48,64 @@ function leaves(v: unknown): unknown[] {
   return isByAxis(v) ? Object.entries(v).filter(([k]) => k !== 'by').flatMap(([, x]) => leaves(x)) : [v];
 }
 
-/** Step names reachable through every branch of a possibly by-varying `steps` list. */
-function stepNames(steps: unknown): string[] {
-  const out = new Set<string>();
-  for (const branch of leaves(steps)) {
-    if (Array.isArray(branch)) for (const s of branch) if (typeof s === 'string') out.add(s);
-  }
-  return [...out];
-}
-
 export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): Record<string, AxisDependency> {
   const def = mergeChain(definition, lookup);
   const nodes = new Map<string, Node>();
 
+  /** Step token → the ramps that declare it. */
+  const stepRamps = new Map<string, Set<string>>();
   for (const [name, ramp] of Object.entries(def.ramps ?? {})) {
     const n = node();
     scan(ramp, n);
-    for (const step of stepNames(ramp.steps)) nodes.set(`${name}-${step}`, n);
+    for (const step of declaredSteps(ramp)) {
+      nodes.set(`${name}-${step}`, n);
+      stepRamps.set(`${name}-${step}`, (stepRamps.get(`${name}-${step}`) ?? new Set()).add(name));
+    }
   }
   for (const [name, s] of Object.entries(def.scales ?? {})) {
     const n = node();
     scan(s, n);
-    for (const step of stepNames(s.steps)) nodes.set(`${name}-${step}`, n);
+    for (const step of declaredSteps(s)) nodes.set(`${name}-${step}`, n);
   }
+
+  /** Every ramp a token could sit on: its own, or the ones its semantic rule leaves or pins lead to. */
+  const rampsOf = (name: string, seen = new Set<string>()): Set<string> => {
+    const out = new Set<string>(stepRamps.get(name));
+    if (seen.has(name)) return out;
+    seen.add(name);
+    const add = (from: string) => {
+      for (const r of rampsOf(from, seen)) out.add(r);
+    };
+    const rule = def.semantics?.[name];
+    for (const leaf of rule === undefined ? [] : leaves(rule)) {
+      if (typeof leaf !== 'object' || leaf === null) continue;
+      const l = leaf as SemanticRule;
+      if ('ramp' in l) out.add(l.ramp);
+      else if ('from' in l) add(l.from);
+      else if ('ref' in l) add(l.ref);
+    }
+    const pin = def.pins?.[name];
+    if (pin !== undefined) {
+      const n = node();
+      scan(pin, n);
+      for (const e of n.edges) add(e);
+    }
+    return out;
+  };
   for (const [name, rule] of Object.entries(def.semantics ?? {})) {
     const n = node();
     scan(rule, n);
     for (const leaf of leaves(rule) as SemanticRule[]) {
       if ('ref' in leaf) n.edges.add(leaf.ref);
-      if ('from' in leaf) n.edges.add(leaf.from);
+      if ('from' in leaf) {
+        n.edges.add(leaf.from);
+        // darker and lighter read which end of the ramp is darker.
+        if (leaf.dir !== 'away') for (const r of rampsOf(leaf.from)) for (const s of declaredSteps(def.ramps?.[r])) n.edges.add(`${r}-${s}`);
+      }
       if ('step' in leaf) for (const s of leaves(leaf.step)) n.edges.add(`${leaf.ramp}-${String(s)}`);
       if ('contrast' in leaf) {
         for (const a of leaf.contrast.against) n.edges.add(a);
-        for (const s of stepNames(def.ramps?.[leaf.ramp]?.steps)) n.edges.add(`${leaf.ramp}-${s}`);
+        for (const s of declaredSteps(def.ramps?.[leaf.ramp])) n.edges.add(`${leaf.ramp}-${s}`);
       }
     }
     nodes.set(name, n);

@@ -77,7 +77,7 @@ describe('bake', () => {
 
   it('orders ramp steps across every branch of by-varying steps', () => {
     const steps = { by: 'mode', dark: ['50', '800'], light: ['50', '900'] };
-    const varied = { name: 'v', axes: P.axes, ramps: { gray: { ...P.ramps!.gray, steps } } } as unknown as ThemeDefinition;
+    const varied: ThemeDefinition = { name: 'v', axes: P.axes, ramps: { gray: { ...P.ramps!.gray, steps } } };
     expect(Object.keys(bake(varied).tokens)).toEqual(['gray-50', 'gray-800', 'gray-900']);
   });
 

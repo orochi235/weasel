@@ -16,7 +16,7 @@ export type PinValue = TokenValue | PinObject;
 
 export interface LightnessRampDef {
   readonly kind: 'lightness';
-  readonly steps: readonly string[];
+  readonly steps: Varying<readonly string[]>;
   /** First and last step's OKLCH lightness. */
   readonly lightness: Varying<readonly [NumberParam, NumberParam]>;
   /** 0 walks evenly; 1 follows a smoothstep S. */
@@ -32,7 +32,7 @@ export interface LightnessRampDef {
 
 export interface CategoricalRampDef {
   readonly kind: 'categorical';
-  readonly steps: readonly string[];
+  readonly steps: Varying<readonly string[]>;
   /** Any of the palette generator's `Constraints` except `count` and `anchors`. */
   readonly gates?: Varying<Readonly<Record<string, Varying<number | string>>>>;
   readonly anchors?: readonly { readonly name: string; readonly hue: number; readonly lightness: number; readonly chroma?: number }[];
@@ -43,7 +43,7 @@ export interface CategoricalRampDef {
 export type RampDef = LightnessRampDef | CategoricalRampDef;
 
 export interface ScaleDef {
-  readonly steps: readonly string[];
+  readonly steps: Varying<readonly string[]>;
   readonly base: NumberParam;
   /** Linear: `base + step × i`. */
   readonly step?: NumberParam;

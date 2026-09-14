@@ -1,13 +1,15 @@
-import { enumerateSelections, fullSelection, isByAxis, pick, selectionKey, type AxisDefs, type Selection, type Varying } from '../axes';
+import { enumerateSelections, fullSelection, pick, selectionKey, type AxisDefs, type Selection, type Varying } from '../axes';
 import type { ThemeDefinition } from '../definition';
 import type { RawToken } from '../dtcg/types';
 import { derive } from './derive';
 import { mergeChain, type Lookup } from './merge';
+import { declaredSteps } from './steps';
 
 /**
  * A definition with every rule run: plain or `by`-varying tokens, references intact.
  * A branch `derive` could not produce is left out, so at runtime it falls through to the parent; definitions with
- * issues still bake, because the editor bakes mid-edit and the build refuses them before baking.
+ * issues still bake, because the editor bakes mid-edit and the build refuses them before baking. Cycles and dangling
+ * references still throw, as they do in `derive`.
  */
 export interface BakedTheme {
   readonly name: string;
@@ -41,17 +43,6 @@ function table(def: ThemeDefinition, axes: AxisDefs, lookup: Lookup | undefined)
     out.set(selectionKey(axes, sel), normalized);
   }
   return out;
-}
-
-/** Every step name a ramp or scale entry declares, across all its `by` branches, first seen first. */
-function declaredSteps(entry: unknown): string[] {
-  const leaves = (v: unknown): string[] => {
-    if (isByAxis(v)) return Object.entries(v).flatMap(([k, x]) => (k === 'by' ? [] : leaves(x)));
-    if (Array.isArray(v)) return v.flatMap(leaves);
-    return typeof v === 'string' ? [v] : [];
-  };
-  if (isByAxis(entry)) return Object.entries(entry).flatMap(([k, x]) => (k === 'by' ? [] : declaredSteps(x)));
-  return typeof entry === 'object' && entry !== null ? leaves((entry as { steps?: unknown }).steps) : [];
 }
 
 /** Token names in definition order: ramps, scales, semantics, components, then pins no earlier layer produces. */

@@ -104,6 +104,31 @@ describe('axisDependencies', () => {
     expect(varied['gap-md']).toEqual({ own: ['density'], all: ['density'] });
   });
 
+  it('gives step entries to a ramp whose whole entry is a by', () => {
+    const lightness = (hue: number) => ({ kind: 'lightness', steps: ['50', '800'], lightness: [0.97, 0.2], hue }) as const;
+    const varied = axisDependencies({
+      ...D,
+      ramps: { gray: { by: 'mode', dark: lightness(200), light: lightness(30) } as never },
+      semantics: { surface: { ramp: 'gray', step: '800' } },
+    });
+    expect(varied['gray-800']).toEqual({ own: ['mode'], all: ['mode'] });
+    expect(varied.surface).toEqual({ own: [], all: ['mode'] });
+  });
+
+  it('makes a darker or lighter offset depend on the ends of the ramp its reference sits on', () => {
+    const swapped = axisDependencies({
+      ...D,
+      semantics: {
+        surface: { ramp: 'gray', step: '900' },
+        deeper: { from: 'surface', offset: 1, dir: 'darker' },
+        away: { from: 'surface', offset: 1, dir: 'away' },
+      },
+      pins: { 'gray-50': { by: 'mode', dark: '#f5f5f6', light: '#000000' } },
+    });
+    expect(swapped.deeper.all).toContain('mode');
+    expect(swapped.away.all).toEqual([]);
+  });
+
   it('follows a step rule whose `step` picks a ramp step through a nested by', () => {
     const nested = axisDependencies({
       ...D,
