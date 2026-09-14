@@ -1,9 +1,11 @@
-# Handoff — the theme editor, phase 2 (built; merge is next)
+# Handoff — the theme editor, phase 2 (merged; Task 18 waits on TokenPanel)
 
-**Branch:** `theme-editor`, in the worktree `.worktrees/theme-editor`, cut from
-`main` right after phase 1 merged. Not merged and not pushed; run
-`git log --oneline main..theme-editor` for what the branch holds. Merging and
-pushing are Mike's calls, never yours.
+**Where it lives:** merged into `main` on 2026-09-14 (`be97b83b`, "Merge branch
+'theme-editor'"). Not pushed; `git log --oneline origin/main..main` lists what
+has not left the machine. Pushing is Mike's call, never yours. The worktree
+`.worktrees/theme-editor` sits on `theme-editor`, fast-forwarded to `main`, and
+can be removed. Don't leave `main` checked out in a worktree: the primary
+checkout needs it to merge its own branch.
 
 **Other sessions are in this repository**, in the primary checkout
 (`/Users/mike/src/weasel`, branch `forge-sidebar-clicks`). Stay in your
@@ -13,7 +15,7 @@ merge or rebase their branch.
 ## What is done
 
 Phase 2 of `docs/superpowers/specs/2026-09-10-theme-engine-and-editor-design.md`
-is built on this branch, following `docs/superpowers/plans/2026-09-14-theme-editor.md`:
+is merged:
 `#/theme` saves through a dev-server theme store (hash conflict check; a save
 that would break the token build is refused before anything is written), keeps
 an unsaved draft across reloads, and has the header, layer rail, a preview in
@@ -39,13 +41,17 @@ generator put the tree back exactly).
 
 ## What is next
 
-1. **The full suite** (`npm test`) has not been run; it is the gate before
-   merging or pushing.
-2. **Merge `theme-editor` into `main`** when Mike says so, deleting the plan in
-   the same change. `forge-sidebar-clicks` also edits `PaletteLab.tsx`; a
-   dry-run merge against it was clean at `6df10ccf`.
-3. **Plan Task 18**, once `forge-sidebar-clicks` reaches `main`: Seeds,
-   Components and Pins edit through `TokenPanel` instead of read-only lists.
+1. **The full suite** (`npm test`) has not been run on the merged `main`; it is
+   the gate before pushing.
+2. **Plan Task 18**, once `forge-sidebar-clicks` reaches `main`: Seeds,
+   Components and Pins edit through weasel-ui's `TokenPanel` instead of
+   read-only lists. The plan is deleted; `git show
+   2e9fa4ee:docs/superpowers/plans/2026-09-14-theme-editor.md` still has it. In
+   short: each `layerRows` row becomes a `TokenEntry` (`group` is the name up to
+   its first hyphen, as `emitManifest` groups), `onChange(name, value)` becomes
+   `setPin`, a `null` value becomes `removePin`, and a seed edits
+   `draft.seeds`. `forge-sidebar-clicks` also edits `PaletteLab.tsx`; a dry-run
+   merge against it was clean at `6df10ccf`.
 
 ## Decisions made in conversation that the code does not explain
 

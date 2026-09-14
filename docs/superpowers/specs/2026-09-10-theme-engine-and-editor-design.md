@@ -1,11 +1,8 @@
 # Theme engine and editor — design
 
-**Status: phase 1 (the engine) merged to `main`, 2026-09-14. Phase 2 (the
-editor) built on branch `theme-editor` the same day and not merged; its Seeds,
-Components and Pins layers are read-only until weasel-ui's `TokenPanel`
-merges.** Phase 2's plan is
-`docs/superpowers/plans/2026-09-14-theme-editor.md`. Delete this file when
-phase 2 merges.
+**Status: both phases merged to `main`, 2026-09-14, except phase 2's Seeds,
+Components and Pins editing, which waits for weasel-ui's `TokenPanel`: those
+layers are read-only lists until then.** Delete this file when that lands.
 
 This covers the theme editor at `apps/theme-editor` `#/theme` and the engine in
 `@weasel-js/theme` underneath it. It is written for whoever implements it. The
