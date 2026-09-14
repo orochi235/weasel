@@ -65,3 +65,16 @@ describe('lightBias', () => {
     expect(toLch(lightnessRamp({ ...base, lightBias: 0.5 }).a).C).toBeGreaterThan(0.02);
   });
 });
+
+describe('an anchor where the chroma envelope is near zero', () => {
+  const base = { steps: ['a', 'b', 'c', 'd', 'e'], lightness: [0.95, 0.3] as const, curve: 0, hue: 0, peak: 0, anchor: { e: '#2e1f7a' } };
+
+  it('keeps the middle step colored and continuous as darkBias moves off 0', () => {
+    const chroma = [0, 0.001, 0.01, 0.05].map((darkBias) => toLch(lightnessRamp({ ...base, darkBias }).c).C);
+    for (const c of chroma) {
+      expect(c).toBeGreaterThan(0.02);
+      expect(c).toBeLessThan(0.3);
+    }
+    for (let i = 1; i < chroma.length; i += 1) expect(Math.abs(chroma[i] - chroma[i - 1])).toBeLessThan(0.1);
+  });
+});

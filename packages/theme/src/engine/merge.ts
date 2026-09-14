@@ -1,16 +1,16 @@
 import { mergeAxes } from '../axes';
 import type { ThemeDefinition } from '../definition';
-import { declaredSteps } from './steps';
+import { alwaysDeclaredSteps } from './steps';
 
 export type Lookup = (name: string) => ThemeDefinition | undefined;
 
 const LAYERS = ['seeds', 'ramps', 'scales', 'semantics', 'components', 'pins'] as const;
 
-/** Steps of the ramps and scales `def` declares itself, which it generates rather than inherits pinned. */
+/** Steps of the ramps and scales `def` declares itself at every selection, which it generates rather than inherits pinned. */
 function ownSteps(def: ThemeDefinition): Set<string> {
   const names = new Set<string>();
   for (const layer of [def.ramps, def.scales]) {
-    for (const [name, entry] of Object.entries(layer ?? {})) for (const step of declaredSteps(entry)) names.add(`${name}-${step}`);
+    for (const [name, entry] of Object.entries(layer ?? {})) for (const step of alwaysDeclaredSteps(entry)) names.add(`${name}-${step}`);
   }
   return names;
 }

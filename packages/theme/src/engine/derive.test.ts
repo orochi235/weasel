@@ -399,6 +399,19 @@ describe('derive', () => {
     expect(C(biased, 'soft')).toBeGreaterThan(0.02);
     expect(C(biased, 'strong')).toBeGreaterThan(0.02);
   });
+
+  it('reports a negative peak or bias as invalid and drops the ramp', () => {
+    const { tokens, issues } = derive({
+      name: 'x',
+      ramps: { gray: { ...GRAY, chroma: { peak: -0.1, lightBias: -3, darkBias: -0.5 } } },
+    });
+    expect(issues).toEqual([
+      { kind: 'invalid', path: 'ramps.gray.chroma.peak', message: 'expected a number ≥ 0' },
+      { kind: 'invalid', path: 'ramps.gray.chroma.lightBias', message: 'expected a number ≥ 0' },
+      { kind: 'invalid', path: 'ramps.gray.chroma.darkBias', message: 'expected a number ≥ 0' },
+    ]);
+    expect(tokens['gray-50']).toBeUndefined();
+  });
 });
 
 it("generates a child's own gray over weasel's pinned one", () => {
@@ -409,4 +422,14 @@ it("generates a child's own gray over weasel's pinned one", () => {
   expect(result.tokens['gray-800'].value).toBe('#1a1c21');
   expect(result.provenance['gray-800'].pinned).toBe(false);
   expect(result.tokens['accent-base'].value).toBe(derive(weasel, { mode: 'dark' }).tokens['accent-base'].value);
+});
+
+it("does not throw where a child's by-axis ramp omits a step weasel pins", () => {
+  const themes = resolve(dirname(fileURLToPath(import.meta.url)), '../../themes');
+  const weasel = JSON.parse(readFileSync(resolve(themes, 'weasel.json'), 'utf8')) as ThemeDefinition;
+  const gray = weasel.ramps!.gray as LightnessRampDef;
+  const steps = (gray.steps as string[]).filter((s) => s !== '900');
+  const child = { name: 'c', extends: 'weasel', ramps: { gray: { by: 'mode', dark: { ...gray, steps }, light: gray } } } as unknown as ThemeDefinition;
+  const result = derive(child, { mode: 'dark' }, (n) => (n === 'weasel' ? weasel : undefined));
+  expect(result.tokens['gray-900'].value).toBe(derive(weasel, { mode: 'dark' }).tokens['gray-900'].value);
 });

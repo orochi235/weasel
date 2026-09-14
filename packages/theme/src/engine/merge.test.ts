@@ -71,3 +71,32 @@ describe('a theme that declares a ramp or scale', () => {
     expect(mergeChain({ name: 'c', extends: 'p' }, lookup).pins).toEqual(parent.pins);
   });
 });
+
+describe('a theme whose ramp steps vary by axis', () => {
+  const parent: ThemeDefinition = {
+    name: 'p',
+    axes: { mode: { default: 'dark', values: { dark: {}, light: {} } } },
+    ramps: { gray: { kind: 'lightness', steps: ['50', '900'], lightness: [0.9, 0.2] } },
+    pins: { 'gray-50': '#ffffff', 'gray-900': '#000000' },
+  };
+  const lookup = (name: string) => (name === 'p' ? parent : undefined);
+  const gray = { kind: 'lightness' as const, lightness: [0.8, 0.3] as [number, number] };
+
+  it('shadows only the pins on steps every branch declares', () => {
+    const child = {
+      name: 'c',
+      extends: 'p',
+      ramps: { gray: { by: 'mode', dark: { ...gray, steps: ['50'] }, light: { ...gray, steps: ['50', '900'] } } },
+    } as unknown as ThemeDefinition;
+    expect(mergeChain(child, lookup).pins).toEqual({ 'gray-900': '#000000' });
+  });
+
+  it('intersects a steps list that itself varies', () => {
+    const child = {
+      name: 'c',
+      extends: 'p',
+      ramps: { gray: { ...gray, steps: { by: 'mode', dark: ['50'], light: ['50', '900'] } } },
+    } as unknown as ThemeDefinition;
+    expect(mergeChain(child, lookup).pins).toEqual({ 'gray-900': '#000000' });
+  });
+});

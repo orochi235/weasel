@@ -124,7 +124,11 @@ function rampColors(name: string, r: Record<string, unknown>, steps: readonly st
     if (Array.isArray(l) && l.length === 2) lightness = [read.num(l[0], `${path}.lightness.0`), read.num(l[1], `${path}.lightness.1`)];
     else read.fail(`${path}.lightness`, 'expected two numbers');
     const chroma = read.record(r.chroma, `${path}.chroma`);
-    const peak = r.chroma === undefined ? 0 : read.num(chroma.peak, `${path}.chroma.peak`);
+    const atLeastZero = (v: number, at: string) => {
+      if (v < 0) read.fail(at, 'expected a number ≥ 0');
+      return v;
+    };
+    const peak = r.chroma === undefined ? 0 : atLeastZero(read.num(chroma.peak, `${path}.chroma.peak`), `${path}.chroma.peak`);
     const anchor: Record<string, string> = {};
     for (const [step, v] of Object.entries(read.record(r.anchor, `${path}.anchor`))) {
       if (typeof v === 'string' && HEX.test(v)) anchor[step] = v;
@@ -136,8 +140,8 @@ function rampColors(name: string, r: Record<string, unknown>, steps: readonly st
       curve: read.optNum(r.curve, `${path}.curve`, 0),
       hue: read.optNum(r.hue, `${path}.hue`, 0),
       peak,
-      lightBias: read.optNum(chroma.lightBias, `${path}.chroma.lightBias`, 0),
-      darkBias: read.optNum(chroma.darkBias, `${path}.chroma.darkBias`, 0),
+      lightBias: atLeastZero(read.optNum(chroma.lightBias, `${path}.chroma.lightBias`, 0), `${path}.chroma.lightBias`),
+      darkBias: atLeastZero(read.optNum(chroma.darkBias, `${path}.chroma.darkBias`, 0), `${path}.chroma.darkBias`),
       anchor,
     };
     return read.ok ? lightnessRamp(params) : undefined;
