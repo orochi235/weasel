@@ -4580,3 +4580,22 @@ Clicking a property row's label reaches its control again when the row has a `de
 - [ ] **Step 5: Run** the test file, `npx tsc --noEmit`, `npx eslint packages/ui/src/components/Properties` (and `packages/labkit/src/controls apps/draw/src/App.tsx` if touched) → clean. If labkit changed, also `npx vitest run --project=labkit packages/labkit/src/controls`.
 
 - [ ] **Step 6: Commit** the paths; message `point a property row's label at its control`.
+
+---
+
+### Task 30: fixes from the review of Task 13 (run after Task 29)
+
+A review of `388dbad8` found these; each was confirmed with a probe against the engine.
+
+**Files:**
+- Modify: `apps/theme-editor/src/layers/ScalesLayer.tsx`, `ScalesLayer.test.tsx`
+
+- [ ] **1. A value that is not px draws no bar, and does not break the others.** A pin can set a scale step to anything (`{space-xs}`, `1.5rem`). `Number.parseFloat('{space-xs}')` is `NaN`, `Math.max(1, …NaN)` is `NaN`, and every bar in that table gets `width: NaN%`, which the browser drops, so every bar fills its cell; `1.5rem` reads as 1.5px. Parse only `/^(-?\d*\.?\d+)px$/`; a cell whose value does not match draws no bar and is left out of `widest`. Failing test first: `spaced` with `pins: { 'space-md': '{space-xs}' }` renders a `space-sm` bar narrower than 100% (read the inline `style.width`; it is a data-driven style, not a class) and no bar in the `space-md` row.
+
+- [ ] **2. The inherited note says what owning a scale does now.** `mergeChain` drops the pins a theme inherits on the steps of a scale it declares, so "Make … this theme's own" changes values immediately (probe: a parent pin `space-sm: '1.5rem'` reads `8px` after owning). Reword the note to match `RampsLayer`'s: `<theme> inherits <scale>. Making it this theme's own generates every <scale> step here, and the pins it inherits on them stop applying.` Update the test that asserts the note.
+
+- [ ] **3. A scale's issues show in its section.** A scale that fails to derive at a selection leaves blank cells and says nothing (`base: { by: 'mode', light: 4 }` with no `dark`). Show that scale's issues under its header the way `RampsLayer` does: every view's issues whose `path` is `scales.<name>` or starts with `scales.<name>.`, de-duplicated by `describeIssue` text, in a `role="status"` element with a `ul`. Failing test first with that `base` on a fixture that has a mode axis.
+
+- [ ] **Run** `npx vitest run --project=draw apps/theme-editor/src/layers/ScalesLayer.test.tsx apps/theme-editor/src/theme/scales.test.ts`, `npx tsc --noEmit`, `npx eslint apps/theme-editor/src/layers` → clean.
+
+- [ ] **Commit** the two paths; message `keep scale bars and notes honest, and show a scale's issues`.
