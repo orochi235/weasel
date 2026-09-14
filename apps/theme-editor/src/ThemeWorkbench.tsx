@@ -1,7 +1,7 @@
 import { LabShell, ToolbarRegion, type LabContribution } from '@weasel-js/labkit';
 import { fullSelection, type Selection, type ThemeDefinition } from '@weasel-js/theme';
 import type { Lookup } from '@weasel-js/theme/engine';
-import { Button, Dialog, ExportIcon, RedoIcon, Select, UndoIcon } from '@weasel-js/ui';
+import { AddIcon, Button, Dialog, ExportIcon, Input, RedoIcon, Select, UndoIcon } from '@weasel-js/ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LayerRail } from './LayerRail';
 import { RampsLayer } from './layers/RampsLayer';
@@ -30,9 +30,16 @@ export interface WorkbenchProps {
   readonly onPick: (name: string) => void;
   readonly onSaved: (stored: StoredTheme) => void;
   readonly onReload: () => Promise<void>;
+  /** Starts a new theme by that name; answers what is wrong with the name, or null. */
+  readonly onNew: (name: string) => string | null;
 }
 
 const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+const MODE_ONLY = 'DTCG export supports a mode axis only';
+const exportProblem = (e: unknown) => {
+  const message = (e as Error).message;
+  return message.startsWith(MODE_ONLY) ? `${MODE_ONLY}.` : message;
+};
 const selectionText = (s: Selection) => Object.values(s).join(', ') || 'every selection';
 
 function IssueList({ title, issues }: { title: string; issues: readonly IssueReport[] }) {
@@ -76,7 +83,7 @@ function SaveReport({ report, onReload, onDismiss }: { report: PutResult; onRelo
   );
 }
 
-export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, onReload }: WorkbenchProps) {
+export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, onReload, onNew }: WorkbenchProps) {
   const history = useLabHistory<ThemeDefinition>(start.definition);
   const { state: draft, canUndo, canRedo } = history;
   const [saved, setSaved] = useState<ThemeDefinition>(() => (sameJson(start.definition, stored.definition) ? start.definition : stored.definition));
@@ -91,8 +98,13 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
   const [focusRamp, setFocusRamp] = useState<string | null>(null);
   const [reloadError, setReloadError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newProblem, setNewProblem] = useState<string | null>(null);
   const statusRef = useRef<HTMLDivElement>(null);
-  const dirty = draft !== saved && !sameJson(draft, saved);
+  // A theme with no file is unsaved even untouched.
+  const dirty = (draft !== saved && !sameJson(draft, saved)) || baseHash === null;
 
   // Save disables itself on click, which would drop keyboard focus to the body.
   useEffect(() => {
@@ -135,7 +147,20 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
     () => [
       { id: 'undo', group: 'history', region: 'header', item: { icon: UndoIcon, label: 'Undo', shortcut: '⌘Z', disabled: !canUndo, onActivate: (h) => h.undo() } },
       { id: 'redo', group: 'history', region: 'header', item: { icon: RedoIcon, label: 'Redo', shortcut: '⇧⌘Z', disabled: !canRedo, onActivate: (h) => h.redo() } },
-      { id: 'export', region: 'header', item: { icon: ExportIcon, label: 'Export', showLabel: true, onActivate: () => setExporting(true) } },
+      {
+        id: 'export',
+        region: 'header',
+        item: {
+          icon: ExportIcon,
+          label: 'Export',
+          showLabel: true,
+          onActivate: () => {
+            setExportError(null);
+            setExporting(true);
+          },
+        },
+      },
+      { id: 'new', region: 'header', item: { icon: AddIcon, label: 'New theme', showLabel: true, onActivate: () => setCreating(true) } },
     ],
     [canUndo, canRedo],
   );
@@ -281,11 +306,46 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
         <p>The draft as it stands, saved or not.</p>
         <div className={styles.statusActions}>
           {EXPORTS.map(({ kind, label }) => (
-            <Button key={kind} size="sm" onClick={() => download(exportFile(kind, draft, lookup))}>
+            <Button
+              key={kind}
+              size="sm"
+              onClick={() => {
+                try {
+                  download(exportFile(kind, draft, lookup));
+                  setExportError(null);
+                } catch (e) {
+                  setExportError(exportProblem(e));
+                }
+              }}
+            >
               {label}
             </Button>
           ))}
         </div>
+        {exportError && <p role="status">{exportError}</p>}
+      </Dialog>
+      <Dialog
+        isOpen={creating}
+        onOpenChange={setCreating}
+        title="New theme"
+        footer={
+          <>
+            <Button onClick={() => setCreating(false)}>Cancel</Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                const problem = onNew(newName.trim());
+                setNewProblem(problem);
+                if (!problem) setCreating(false);
+              }}
+            >
+              Create
+            </Button>
+          </>
+        }
+      >
+        <p>It extends weasel, starts from three seeds, and stays a draft until you save it into packages/theme/themes/.</p>
+        <Input label="Name" value={newName} onChange={setNewName} errorMessage={newProblem ?? undefined} isInvalid={newProblem !== null} />
       </Dialog>
     </LabShell>
   );

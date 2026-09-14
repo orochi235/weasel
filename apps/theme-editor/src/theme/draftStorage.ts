@@ -6,7 +6,8 @@ export interface StoredDraft {
   readonly baseHash: string | null;
 }
 
-const draftKey = (name: string) => `weasel.theme-editor.draft.${name}`;
+const DRAFT_PREFIX = 'weasel.theme-editor.draft.';
+const draftKey = (name: string) => `${DRAFT_PREFIX}${name}`;
 const LAST_KEY = 'weasel.theme-editor.theme';
 
 export function parseDraft(raw: string | null, name: string): StoredDraft | null {
@@ -30,6 +31,20 @@ export function loadDraft(name: string): StoredDraft | null {
   } catch {
     // No storage at all: a private window, or this app's tests under Node 26.
     return null;
+  }
+}
+
+/** Every theme with a draft in storage, so a new theme not yet saved survives a reload. */
+export function draftNames(): string[] {
+  try {
+    const names: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(DRAFT_PREFIX)) names.push(key.slice(DRAFT_PREFIX.length));
+    }
+    return names;
+  } catch {
+    return [];
   }
 }
 

@@ -3,9 +3,11 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ThemeWorkbench, type WorkbenchProps } from './ThemeWorkbench';
 import type { ThemeApi } from './theme/api';
-import { weasel } from './theme/fixtures';
+import { spaced, weasel } from './theme/fixtures';
 import { removePin, setPin } from './theme/model';
 import type { PutResult, StoredTheme } from './theme/store';
+
+vi.mock('./theme/exportFiles', async (importOriginal) => ({ ...(await importOriginal<typeof import('./theme/exportFiles')>()), download: vi.fn() }));
 
 const stored: StoredTheme = { name: 'weasel', hash: 'h1', emits: true, definition: weasel };
 const apiWith = (put: ThemeApi['put'] = vi.fn()): ThemeApi => ({ list: async () => [stored], get: async () => stored, put });
@@ -20,6 +22,7 @@ function renderBench(overrides: Partial<WorkbenchProps> = {}): WorkbenchProps {
     onPick: vi.fn(),
     onSaved: vi.fn(),
     onReload: vi.fn(async () => {}),
+    onNew: vi.fn(() => null),
     ...overrides,
   };
   render(<ThemeWorkbench {...props} />);
@@ -73,6 +76,15 @@ describe('<ThemeWorkbench>', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Export' }));
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getAllByRole('button').map((b) => b.textContent)).toEqual(expect.arrayContaining(['Emitted CSS', 'Definition', 'DTCG']));
+  });
+
+  it('says why an export fails, in the dialog', async () => {
+    const theme: StoredTheme = { name: 'spaced', hash: 'h1', emits: true, definition: spaced };
+    renderBench({ themes: [theme], stored: theme, start: { definition: spaced, baseHash: 'h1' } });
+    await userEvent.click(screen.getByRole('button', { name: 'Export' }));
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'DTCG' }));
+    expect(within(dialog).getByRole('status')).toHaveTextContent('DTCG export supports a mode axis only.');
   });
 
   it('offers to reload when the file moved on since the draft began', async () => {
