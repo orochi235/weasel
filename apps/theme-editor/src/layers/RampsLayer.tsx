@@ -192,11 +192,9 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
               {view.anyPinned && view.generatedSpread !== null && <span className={styles.metric}>generated {view.generatedSpread.toFixed(2)}×</span>}
               <span className={styles.rampActions}>
                 {!own && (
-                  <span title={`The theme then generates every ${name} step itself, and the pins it inherits on them stop applying.`}>
-                    <Button size="sm" onClick={() => onChange(setRamp(draft, lookup, name, (e) => e), `own:${name}`, `make ${name} own`)}>
-                      Make {name} this theme&apos;s own
-                    </Button>
-                  </span>
+                  <Button size="sm" onClick={() => onChange(setRamp(draft, lookup, name, (e) => e), `own:${name}`, `make ${name} own`)}>
+                    Make {name} this theme&apos;s own
+                  </Button>
                 )}
                 {(view.anyPinned || focused === name) && (
                   <Button size="sm" pressed={focused === name} onClick={() => onFocus(focused === name ? null : name)}>
@@ -213,6 +211,12 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
                 )}
               </span>
             </header>
+            {!own && (
+              <p className={styles.paramNote}>
+                {draft.name} inherits {name}. Making it this theme&apos;s own generates every {name} step here, and the pins it inherits on
+                them stop applying.
+              </p>
+            )}
             {issues.length > 0 && (
               <div role="status" className={styles.status}>
                 <ul className={styles.issues}>

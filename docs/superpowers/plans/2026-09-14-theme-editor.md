@@ -4216,7 +4216,7 @@ const create = (newName: string): string | null => {
 
 - [ ] **Step 6: ThemeWorkbench.**
   - Props gain `readonly onNew: (name: string) => string | null;` (update `renderBench` in `ThemeWorkbench.test.tsx` with `onNew: vi.fn(() => null)`).
-  - `dirty` becomes `draft !== saved || baseHash === null`: a theme with no file is unsaved even untouched.
+  - `dirty` gains `|| baseHash === null`, keeping Task 25's content comparison: `(draft !== saved && !sameJson(draft, saved)) || baseHash === null`. A theme with no file is unsaved even untouched.
   - State: `const [creating, setCreating] = useState(false); const [newName, setNewName] = useState(''); const [newProblem, setNewProblem] = useState<string | null>(null);`
   - Contribution (add `AddIcon` to the ui import): `{ id: 'new', region: 'header', item: { icon: AddIcon, label: 'New theme', showLabel: true, onActivate: () => setCreating(true) } }`.
   - Dialog (add `Input` to the ui import):

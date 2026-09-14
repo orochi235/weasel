@@ -62,6 +62,7 @@ describe('<RampsLayer>', () => {
     render(<RampsLayer draft={child} derived={deriveDraft(child, lookup, {})} lookup={lookup} highlight={[]} focused={null} onFocus={vi.fn()} onChange={onChange} />);
     const gray = screen.getByRole('region', { name: 'gray ramp' });
     expect(within(gray).queryAllByRole('slider')).toEqual([]);
+    expect(within(gray).getByText(/pins it inherits on them stop applying/)).toBeInTheDocument();
     await userEvent.click(within(gray).getByRole('button', { name: "Make gray this theme's own" }));
     expect(nextDef(onChange).ramps?.gray).toBeDefined();
   });
