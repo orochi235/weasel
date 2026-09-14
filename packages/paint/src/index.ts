@@ -21,3 +21,13 @@ export {
   dashForStrokeStyle,
   strokeDashStyleOf,
 } from './paint';
+export {
+  srgbU8ToOklab,
+  oklabToSrgbU8,
+  lerpOklab,
+  oklabToOklch,
+  oklchToOklab,
+  lerpOklch,
+  lerpColorArray,
+  type ColorSpace,
+} from './colorSpaces';
