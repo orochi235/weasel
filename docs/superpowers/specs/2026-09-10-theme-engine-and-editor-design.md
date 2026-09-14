@@ -261,7 +261,7 @@ All in one pass, with the prose in a `patch` changeset:
   inherits weasel's `none` in light. Only a definition the engine derives has
   to give every value, which is why interstellar gives both.
 - `THEMES.<name>.modes.<mode>` becomes `THEMES.<name>.selections[<key>]`, where
-  the key is `selectionKey({ mode: 'dark' })` → `'mode=dark'` (axes in
+  the key is `selectionKey(axes, { mode: 'dark' })` → `'mode=dark'` (axes in
   declaration order, comma-joined).
 - Callers to move, as of 2026-09-13: hud `attach.ts` and `react/useHud.ts`
   (and nine hud test files calling `resolveTheme(weaselTheme, 'dark')`); labkit

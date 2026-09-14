@@ -332,7 +332,7 @@ export const THEMES = {
   },
 } as const satisfies Record<string, GeneratedTheme>;
 
-/** The built-in themes as authored. The theme editor reads these. */
+/** The built-in themes as authored: their unbaked definitions. */
 export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
   "weasel": {
     "name": "weasel",

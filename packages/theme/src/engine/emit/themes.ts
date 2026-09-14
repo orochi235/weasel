@@ -74,7 +74,7 @@ export function emitThemes(themes: readonly ThemesInput[]): string {
     entries.join('\n'),
     '} as const satisfies Record<string, GeneratedTheme>;',
     '',
-    '/** The built-in themes as authored. The theme editor reads these. */',
+    '/** The built-in themes as authored: their unbaked definitions. */',
     `export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = ${JSON.stringify(sources, null, 2)};`,
     '',
     '/** The built-in themes with every rule run and references intact. This is',

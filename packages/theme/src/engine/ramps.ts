@@ -20,7 +20,10 @@ function envelopeMax(darkBias: number): number {
   return max;
 }
 
-/** Step name → hex. See the spec's "Ramps" for the walk and the envelope. */
+/**
+ * Step name → hex. Lightness walks from `lightness[0]` to `lightness[1]`, `curve` blending an even walk toward a
+ * smoothstep; chroma is `peak` scaled by the envelope `sin(πt) + darkBias·t` normalized to a maximum of 1.
+ */
 export function lightnessRamp(p: LightnessParams): Record<string, string> {
   const n = p.steps.length;
   const at = (i: number) => (n === 1 ? 0 : i / (n - 1));
