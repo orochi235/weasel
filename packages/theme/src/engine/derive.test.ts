@@ -133,14 +133,53 @@ describe('derive', () => {
     expect(tokens.p0.type).toBe('dimension');
   });
 
-  it('settles only rule parameters, leaving step names and descriptions as written', () => {
+  it('settles only rule parameters, leaving descriptions as written', () => {
     const { tokens, issues } = derive({
       name: 'x',
-      ramps: { gray: { ...GRAY, steps: ['by', '900'], description: '{seeds.nope}', describe: { by: '{seeds.nope}' } } },
+      ramps: { gray: { ...GRAY, description: '{seeds.nope}', describe: { '50': '{seeds.nope}' } } },
     });
     expect(issues).toEqual([]);
-    expect(Object.keys(tokens)).toEqual(['gray-by', 'gray-900']);
-    expect(tokens['gray-by'].description).toBe('{seeds.nope}');
+    expect(tokens['gray-50'].description).toBe('{seeds.nope}');
+  });
+
+  it('reserves "by" as a step name', () => {
+    const { tokens, issues } = derive({
+      name: 'x',
+      ramps: { gray: { ...GRAY, steps: ['by', '900'] } },
+      scales: { space: { steps: ['sm', 'by'], base: 4, step: 4 } },
+    });
+    expect(issues).toEqual([
+      { kind: 'invalid', path: 'ramps.gray.steps', message: '"by" is reserved and cannot name a step' },
+      { kind: 'invalid', path: 'scales.space.steps', message: '"by" is reserved and cannot name a step' },
+    ]);
+    expect(tokens).toEqual({});
+  });
+
+  it('exempts only the steps of this branch when a ramp fails after its steps settle', () => {
+    const def = {
+      name: 'x',
+      axes: T.axes,
+      ramps: { gray: { ...GRAY, steps: { by: 'mode', dark: ['50', '900'], light: ['50'] }, lightness: { by: 'mode', dark: [0.97, 0.16], light: 'oops' } } },
+      pins: { a: { value: '{gray-900}', type: 'color' } },
+    } as unknown as ThemeDefinition;
+    expect(derive(def).issues).toEqual([]);
+    expect(() => derive(def, { mode: 'light' })).toThrow(/gray-900/);
+  });
+
+  it('reports an untyped chain once, at its end', () => {
+    expect(derive({ name: 'x', pins: { a: '{b}', b: '{c}', c: '1px' } }).issues).toEqual([{ kind: 'untyped-pin', token: 'c' }]);
+    expect(derive({ name: 'x', semantics: { s: { ref: 'c' } }, pins: { a: '{s}', c: '1px' } }).issues).toEqual([{ kind: 'untyped-pin', token: 'c' }]);
+  });
+
+  it('does not report an untyped pin over a semantic whose rule failed', () => {
+    const { issues } = derive({ name: 'x', ramps: { gray: GRAY }, semantics: { fg: { ramp: 'gray', step: '850' } }, pins: { fg: '#000000' } });
+    expect(issues).toEqual([{ kind: 'invalid', path: 'semantics.fg', message: 'no such step on ramp "gray"' }]);
+  });
+
+  it('types through a rule that loops back through pins', () => {
+    const { tokens, issues } = derive({ name: 'x', semantics: { B: { ref: 'C' } }, pins: { A: '{B}', B: { value: '1px', type: 'dimension' }, C: '{A}' } });
+    expect(issues).toEqual([]);
+    expect([tokens.A.type, tokens.C.type]).toEqual(['dimension', 'dimension']);
   });
 
   it('reports an entry that is not an object', () => {

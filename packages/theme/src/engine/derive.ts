@@ -5,7 +5,8 @@ import { DEFAULT_CONSTRAINTS, type Anchor, type Constraints } from './color/gene
 import { mergeChain, type Lookup } from './merge';
 import { categoricalRamp, lightnessRamp } from './ramps';
 import { scale } from './scales';
-import { deriveSemantics } from './semantics';
+import { checkSemantics, deriveSemantics } from './semantics';
+import { declaredSteps } from './steps';
 import type { DeriveResult, Issue, Layer, Provenance } from './types';
 
 const SEED_REF = /^\{seeds\.([\w-]+)\}$/;
@@ -109,17 +110,6 @@ const isRecord = (x: unknown): x is Record<string, unknown> => typeof x === 'obj
 const stepNames = (x: unknown): string[] | undefined =>
   Array.isArray(x) && x.every((s) => typeof s === 'string') ? x : undefined;
 
-/** Every step name an entry could produce at any selection. */
-function declaredSteps(entry: unknown): string[] {
-  const leaves = (v: unknown): string[] => {
-    if (isByAxis(v)) return Object.entries(v).flatMap(([k, x]) => (k === 'by' ? [] : leaves(x)));
-    if (Array.isArray(v)) return v.flatMap(leaves);
-    return typeof v === 'string' ? [v] : [];
-  };
-  if (isByAxis(entry)) return Object.entries(entry).flatMap(([k, x]) => (k === 'by' ? [] : declaredSteps(x)));
-  return isRecord(entry) ? leaves(entry.steps) : [];
-}
-
 function rampColors(name: string, r: Record<string, unknown>, steps: readonly string[], ctx: SettleContext): Record<string, string> | undefined {
   const path = `ramps.${name}`;
   const read = new Reader(ctx.issues);
@@ -220,54 +210,51 @@ function checkReferences(tokens: Readonly<Record<string, RawToken>>, failed: Rea
 
 /**
  * Types every untyped token from what its reference chain ends on; a pin with nothing to go on takes the type of what the
- * rule under it reaches, which is also written into `generated`. Runs after `checkReferences`, so token chains are finite.
+ * rule under it reaches, which is also written into `generated`. Final tokens are typed before rule values are read, and
+ * again whenever a rule value typed one, so no lookup sees a half-typed chain. Runs after `checkReferences`, so chains end.
  */
-function inferTypes(tokens: Record<string, RawToken>, provenance: Record<string, Provenance>, issues: Issue[]): void {
-  // `null`: the chain ends on a name whose production failed, which is already reported.
-  const memo = new Map<string, string | null>();
-  const typeOf = (start: string): string | null => {
-    const trail: string[] = [];
-    let type: string | null = UNTYPED;
-    for (let name: string | undefined = start; name !== undefined; ) {
-      if (!has(tokens, name)) {
-        type = null;
-        break;
+function inferTypes(tokens: Record<string, RawToken>, provenance: Record<string, Provenance>, failed: ReadonlySet<string>, issues: Issue[]): void {
+  for (let changed = true; changed; ) {
+    changed = false;
+    const memo = new Map<string, string>();
+    const typeOf = (start: string): string => {
+      const trail: string[] = [];
+      let type = UNTYPED;
+      for (let name: string | undefined = start; name !== undefined && has(tokens, name); name = refName(tokens[name].value)) {
+        const known = memo.get(name);
+        if (known !== undefined) {
+          type = known;
+          break;
+        }
+        trail.push(name);
+        if (tokens[name].type !== UNTYPED) {
+          type = tokens[name].type;
+          break;
+        }
       }
-      const known = memo.get(name);
-      if (known !== undefined) {
-        type = known;
-        break;
+      for (const name of trail) {
+        if (type !== UNTYPED && tokens[name].type === UNTYPED) tokens[name] = { ...tokens[name], type };
+        memo.set(name, type);
       }
-      // A generated value's references were never cycle-checked, so a revisit reads as untyped.
-      memo.set(name, UNTYPED);
-      trail.push(name);
-      if (tokens[name].type !== UNTYPED) {
-        type = tokens[name].type;
-        break;
-      }
-      name = refName(tokens[name].value);
-    }
-    for (const name of trail.reverse()) {
+      return type;
+    };
+    for (const name of Object.keys(tokens)) typeOf(name);
+    for (const name of Object.keys(tokens)) {
       const p = provenance[name];
       const generated = p.generated;
       const target = generated?.type === UNTYPED ? refName(generated.value) : undefined;
-      const g = target === undefined ? null : typeOf(target);
-      if (generated && g !== null && g !== UNTYPED) {
-        provenance[name] = { ...p, generated: { ...generated, type: g } };
-        if (type === UNTYPED || type === null) type = g;
+      const type = target === undefined ? UNTYPED : typeOf(target);
+      if (!generated || type === UNTYPED) continue;
+      provenance[name] = { ...p, generated: { ...generated, type } };
+      if (tokens[name].type === UNTYPED) {
+        tokens[name] = { ...tokens[name], type };
+        changed = true;
       }
-      const token = tokens[name];
-      if (token.type !== UNTYPED) type = token.type;
-      else if (type !== null && type !== UNTYPED) tokens[name] = { ...token, type };
-      memo.set(name, type);
     }
-    return type;
-  };
-  for (const name of Object.keys(tokens)) {
-    if (typeOf(name) !== UNTYPED) continue;
-    const p = provenance[name];
-    // A ref semantic is untyped only when its target is, which is reported there.
-    if (p.layer === 'semantics' && p.rule === 'ref' && !p.pinned) continue;
+  }
+  for (const [name, token] of Object.entries(tokens)) {
+    // A reference is typed by what it reaches, reported there; a name whose production failed was reported then.
+    if (token.type !== UNTYPED || refName(token.value) !== undefined || failed.has(name)) continue;
     issues.push({ kind: 'untyped-pin', token: name });
   }
 }
@@ -303,8 +290,9 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
     tokens[name] = token;
     provenance[name] = { layer, rule, pinned: false };
   };
-  const failEntry = (name: string, entry: unknown) => {
-    for (const step of declaredSteps(entry)) failed.add(`${name}-${step}`);
+  /** `steps`, when they settled, are this selection's; otherwise every step the entry could declare is exempt. */
+  const failEntry = (name: string, entry: unknown, steps: readonly string[] | undefined) => {
+    for (const step of steps ?? declaredSteps(entry)) failed.add(`${name}-${step}`);
   };
 
   type SettledEntry =
@@ -334,6 +322,10 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
     }
     const steps = stepNames(r.steps);
     if (!steps && settled) issues.push({ kind: 'invalid', path: `${path}.steps`, message: 'expected a list of step names' });
+    if (steps?.includes('by')) {
+      issues.push({ kind: 'invalid', path: `${path}.steps`, message: '"by" is reserved and cannot name a step' });
+      return { ok: false, steps };
+    }
     return settled && steps ? { ok: true, r, steps } : { ok: false, steps };
   };
   const describe = (r: Record<string, unknown>, step: string) => {
@@ -348,7 +340,7 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
     if (e.steps) rampSteps[name] = e.steps;
     const colors = e.ok ? rampColors(name, e.r, e.steps, ctx) : undefined;
     if (!e.ok || !colors) {
-      failEntry(name, entry);
+      failEntry(name, entry, e.steps);
       continue;
     }
     for (const step of e.steps) {
@@ -361,7 +353,7 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
     const e = settleEntry(entry, path);
     const out = e.ok ? scaleValues(name, e.r, e.steps, issues) : undefined;
     if (!e.ok || !out) {
-      failEntry(name, entry);
+      failEntry(name, entry, e.steps);
       continue;
     }
     for (const st of e.steps) {
@@ -376,7 +368,15 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
     return isPinObject(picked.value) ? picked.value : { value: picked.value };
   };
   const semantics = def.semantics ?? {};
-  const derived = deriveSemantics(semantics, { sel, tokens, ramps: rampSteps, pinned, issues });
+  const components = def.components ?? {};
+  const component = (name: string): PinObject | undefined => {
+    const picked = has(components, name) ? pick(components[name], sel) : undefined;
+    if (!picked?.ok) return undefined;
+    return isPinObject(picked.value) ? picked.value : { value: picked.value };
+  };
+  const known = (name: string) =>
+    has(tokens, name) || failed.has(name) || has(semantics, name) || has(components, name) || has(def.pins ?? {}, name);
+  const derived = deriveSemantics(semantics, { sel, tokens, ramps: rampSteps, pinned, component, known, issues });
   for (const name of Object.keys(semantics)) {
     const d = derived.get(name);
     if (d) put(name, d.token, 'semantics', d.rule, `semantics.${name}`);
@@ -393,7 +393,7 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
     return { type: obj.type ?? prior?.type ?? UNTYPED, value: obj.value, alpha: obj.alpha, description: obj.description ?? prior?.description };
   };
 
-  for (const [name, v] of Object.entries(def.components ?? {})) {
+  for (const [name, v] of Object.entries(components)) {
     const path = `components.${name}`;
     const token = toToken(v, path, undefined);
     if (token) put(name, token, 'components', 'value', path);
@@ -414,6 +414,7 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
   }
 
   checkReferences(tokens, failed);
-  inferTypes(tokens, provenance, issues);
+  checkSemantics(semantics, sel, tokens, known, issues);
+  inferTypes(tokens, provenance, failed, issues);
   return { tokens, provenance, issues };
 }

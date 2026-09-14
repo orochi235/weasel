@@ -71,6 +71,33 @@ describe('contrast rule', () => {
     expect(issues).toContainEqual({ kind: 'contrast-unmet', token: 'mid', min: 5, against: ['top', 'surface-sunken'], picked: '400', ratio });
     expect(tokens.mid.value).toBe('{gray-400}');
   });
+
+  it('yields the best step without an issue when surfaces on both sides of the ramp still let it clear', () => {
+    const { tokens, issues } = withSemantics({
+      top: { ramp: 'gray', step: '50' },
+      mid: { ramp: 'gray', contrast: { min: 3, against: ['top', 'surface-sunken'] } },
+    });
+    expect(issues.filter((i) => i.kind === 'contrast-unmet')).toEqual([]);
+    expect(tokens.mid.value).toBe('{gray-400}');
+  });
+
+  it('measures against a component', () => {
+    const { tokens, issues } = derive(
+      { ...W, semantics: { x: { ramp: 'gray', contrast: { min: 3, against: ['tb-bg'] } } }, components: { 'tb-bg': { value: '#ffffff', type: 'color' } } },
+      { mode: 'dark' },
+    );
+    expect(issues).toEqual([]);
+    expect(tokens.x.value).toBe('{gray-400}');
+  });
+
+  it('throws on a surface nothing declares', () => {
+    expect(() => withSemantics({ x: { ramp: 'gray', contrast: { min: 3, against: ['nope'] } } })).toThrow(/nope/);
+  });
+
+  it('reports a rule with no surfaces', () => {
+    const { issues } = withSemantics({ x: { ramp: 'gray', contrast: { min: 3, against: [] } } });
+    expect(issues).toContainEqual({ kind: 'invalid', path: 'semantics.x', message: 'contrast needs at least one surface' });
+  });
 });
 
 describe('ramp direction', () => {
@@ -117,6 +144,15 @@ describe('offset rule', () => {
   it('reads darker and lighter from the ramp colors, not the step order', () => {
     expect(at('dark').tokens.deeper.value).toBe('{gray-900}');
     expect(at('dark').tokens.paler.value).toBe('{gray-700}');
+  });
+
+  it('counts from a ref semantic that points at a ramp step', () => {
+    const { tokens, issues } = derive(
+      { ...W, semantics: { s2: { ref: 'gray-200' }, m: { from: 's2', offset: 2, dir: 'darker' } } },
+      { mode: 'dark' },
+    );
+    expect(issues).toEqual([]);
+    expect(tokens.m.value).toBe('{gray-400}');
   });
 });
 
@@ -168,6 +204,24 @@ describe('check', () => {
   it('audits the pin of a semantic whose rule failed', () => {
     const { issues } = only({ fg: { ramp: 'gray', step: '850', check: { contrast: 4.5, against: ['surface'] } } }, { fg: '#25272c' });
     expect(issues).toContainEqual({ kind: 'check-failed', token: 'fg', against: 'surface', min: 4.5, ratio: contrast('#25272c', SHIPPING[8]) });
+  });
+
+  it('audits against a component', () => {
+    const { issues } = derive(
+      { ...W, semantics: { fg: { ramp: 'gray', step: '100', check: { contrast: 3, against: ['tb-bg'] } } }, components: { 'tb-bg': { value: '#ffffff', type: 'color' } } },
+      { mode: 'dark' },
+    );
+    expect(issues).toEqual([{ kind: 'check-failed', token: 'fg', against: 'tb-bg', min: 3, ratio: contrast(SHIPPING[1], '#ffffff') }]);
+  });
+
+  it('throws on a name nothing declares, but not on one that failed at this selection', () => {
+    expect(() => only({ fg: { ramp: 'gray', step: '100', check: { contrast: 3, against: ['nope'] } } })).toThrow(/nope/);
+    expect(() => only({ fg: { ramp: 'gray', step: '100', check: { contrast: 3, against: ['bad'] } }, bad: { ramp: 'gray', step: '850' } })).not.toThrow();
+  });
+
+  it('reports a check with no surfaces', () => {
+    const { issues } = only({ fg: { ramp: 'gray', step: '100', check: { contrast: 3, against: [] } } });
+    expect(issues).toEqual([{ kind: 'invalid', path: 'semantics.fg.check', message: 'check needs at least one surface' }]);
   });
 });
 

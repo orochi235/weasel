@@ -16,6 +16,10 @@ export interface SemanticContext {
   readonly ramps: Readonly<Record<string, readonly string[]>>;
   /** The pin this token gets for the selection, if one does. Rules that measure color read final colors, not generated ones. */
   readonly pinned: (name: string) => PinObject | undefined;
+  /** The component this name gets for the selection, if one does. */
+  readonly component: (name: string) => PinObject | undefined;
+  /** Whether a name is produced, or failed to be, at this selection. Any other name a rule reads is dangling. */
+  readonly known: (name: string) => boolean;
   readonly issues: Issue[];
 }
 
@@ -33,6 +37,8 @@ interface Env {
   readonly color: (value: TokenValue | undefined) => string | undefined;
   /** The ramp step a semantic ends on once its pin applies; undefined for anything else. */
   readonly positionOf: (name: string) => Position | undefined;
+  /** The ramp step a reference to `name` ends on: the step itself, or wherever its pin or rule leads. */
+  readonly positionAt: (name: string) => Position | undefined;
 }
 
 const isRecord = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
@@ -47,7 +53,6 @@ export function deriveSemantics(
   const done = new Map<string, DerivedSemantic>();
   const failed = new Set<string>();
   const inProgress = new Set<string>();
-  const picked = new Map<string, SemanticRule>();
 
   const get: Env['get'] = (name) => {
     if (done.has(name)) return done.get(name);
@@ -61,7 +66,6 @@ export function deriveSemantics(
     } else if (!isRecord(p.value)) {
       ctx.issues.push({ kind: 'invalid', path: `semantics.${name}`, message: 'expected an object' });
     } else {
-      picked.set(name, p.value);
       derived = deriveOne(name, p.value, ctx, env);
     }
     inProgress.delete(name);
@@ -76,7 +80,7 @@ export function deriveSemantics(
     const v = value.trim();
     const m = TOKEN_REF.exec(v);
     if (!m) return HEX.test(v) ? v.toLowerCase() : undefined;
-    return solid(ctx.pinned(m[1]) ?? ctx.tokens[m[1]] ?? get(m[1])?.token, depth + 1);
+    return solid(ctx.pinned(m[1]) ?? ctx.tokens[m[1]] ?? get(m[1])?.token ?? ctx.component(m[1]), depth + 1);
   };
   const solid = (t: { readonly value: TokenValue; readonly alpha?: number } | undefined, depth = 0) =>
     t && t.alpha === undefined ? color(t.value, depth) : undefined;
@@ -90,46 +94,22 @@ export function deriveSemantics(
     return undefined;
   };
 
-  const positionOf: Env['positionOf'] = (name) => {
-    if (!Object.hasOwn(rules, name)) return undefined;
-    let pin = ctx.pinned(name);
-    if (!pin) return get(name)?.position;
-    for (let depth = 0; depth <= MAX_DEPTH; depth++) {
+  const positionAt = (name: string, depth = 0): Position | undefined => {
+    if (depth > MAX_DEPTH) return undefined;
+    const step = rampStep(name);
+    if (step) return step;
+    const pin = ctx.pinned(name);
+    if (pin) {
       const target = refTarget(pin.value);
-      if (target === undefined) return undefined;
-      const step = rampStep(target);
-      if (step) return step;
-      const next = ctx.pinned(target);
-      if (!next) return Object.hasOwn(rules, target) ? get(target)?.position : undefined;
-      pin = next;
+      return target === undefined ? undefined : positionAt(target, depth + 1);
     }
-    return undefined;
+    return Object.hasOwn(rules, name) ? get(name)?.position : undefined;
   };
+  const positionOf: Env['positionOf'] = (name) => (Object.hasOwn(rules, name) ? positionAt(name) : undefined);
 
-  const env: Env = { get, color, positionOf };
+  const env: Env = { get, color, positionOf, positionAt };
 
   for (const name of Object.keys(rules)) get(name);
-
-  // Checks run once everything is derived, so a check is never a dependency.
-  for (const name of Object.keys(rules)) {
-    const check = picked.get(name)?.check;
-    const self = ctx.pinned(name) ?? done.get(name)?.token;
-    if (!check || !self) continue;
-    const hex = solid(self);
-    if (!hex) {
-      ctx.issues.push({ kind: 'invalid', path: `semantics.${name}.check`, message: `"${name}" is not a solid color` });
-      continue;
-    }
-    for (const a of check.against) {
-      const other = color(`{${a}}`);
-      if (!other) {
-        ctx.issues.push({ kind: 'invalid', path: `semantics.${name}.check`, message: `"${a}" is not a solid color` });
-        continue;
-      }
-      const ratio = contrast(hex, other);
-      if (ratio < check.contrast) ctx.issues.push({ kind: 'check-failed', token: name, against: a, min: check.contrast, ratio });
-    }
-  }
 
   return new Map(Object.keys(rules).filter((n) => done.has(n)).map((n) => [n, done.get(n)!]));
 }
@@ -149,7 +129,7 @@ function deriveOne(name: string, r: SemanticRule, ctx: SemanticContext, env: Env
 
   if ('ref' in r) {
     const type = r.type ?? ctx.tokens[r.ref]?.type ?? env.get(r.ref)?.token.type ?? 'unknown';
-    return { rule: 'ref', token: { type, value: `{${r.ref}}`, alpha: r.alpha, description } };
+    return { rule: 'ref', position: env.positionAt(r.ref), token: { type, value: `{${r.ref}}`, alpha: r.alpha, description } };
   }
 
   if ('step' in r) {
@@ -190,8 +170,10 @@ function deriveOne(name: string, r: SemanticRule, ctx: SemanticContext, env: Env
   }
 
   if ('contrast' in r) {
+    for (const a of r.contrast.against) requireKnown(name, a, ctx.known);
     const steps = ctx.ramps[r.ramp];
     if (!steps) return invalid(`no ramp "${r.ramp}"`);
+    if (r.contrast.against.length === 0) return invalid('contrast needs at least one surface');
     const colors = steps.map((s) => rampColor(r.ramp, s));
     const against = r.contrast.against.map((a) => env.color(`{${a}}`));
     if (colors.some((c) => !c) || against.some((hex) => !hex)) return invalid('contrast needs solid colors on both sides');
@@ -213,23 +195,77 @@ function deriveOne(name: string, r: SemanticRule, ctx: SemanticContext, env: Env
     for (const i of start < 0 ? [] : order.slice(start)) {
       if (worst(i) >= r.contrast.min) return atStep(name, r.ramp, i, 'contrast', description, ctx);
     }
+    // Nothing past the surfaces clears, as when they straddle the ramp: take the best step anywhere, unmet only if it fails too.
     let best = { index: order[0], ratio: worst(order[0]) };
     for (const i of order) {
       const ratio = worst(i);
       if (ratio > best.ratio) best = { index: i, ratio };
     }
-    ctx.issues.push({
-      kind: 'contrast-unmet',
-      token: name,
-      min: r.contrast.min,
-      against: [...r.contrast.against],
-      picked: steps[best.index],
-      ratio: best.ratio,
-    });
+    if (best.ratio < r.contrast.min) {
+      ctx.issues.push({
+        kind: 'contrast-unmet',
+        token: name,
+        min: r.contrast.min,
+        against: [...r.contrast.against],
+        picked: steps[best.index],
+        ratio: best.ratio,
+      });
+    }
     return atStep(name, r.ramp, best.index, 'contrast', description, ctx);
   }
 
   return invalid('unrecognized rule');
+}
+
+function requireKnown(owner: string, name: string, known: (name: string) => boolean): void {
+  if (!known(name)) throw new Error(`Semantic "${owner}" references "${name}", which is not defined`);
+}
+
+/** Audits every semantic's `check` against final tokens, so components and pins count. Run after references are checked, so every chain ends. */
+export function checkSemantics(
+  rules: Readonly<Record<string, Varying<SemanticRule>>>,
+  sel: Selection,
+  tokens: Readonly<Record<string, RawToken>>,
+  known: (name: string) => boolean,
+  issues: Issue[],
+): void {
+  const solid = (name: string): string | undefined => {
+    let t = Object.hasOwn(tokens, name) ? tokens[name] : undefined;
+    while (t && t.alpha === undefined && typeof t.value === 'string') {
+      const v = t.value.trim();
+      const m = TOKEN_REF.exec(v);
+      if (!m) return HEX.test(v) ? v.toLowerCase() : undefined;
+      t = Object.hasOwn(tokens, m[1]) ? tokens[m[1]] : undefined;
+    }
+    return undefined;
+  };
+
+  for (const name of Object.keys(rules)) {
+    const p = pick(rules[name], sel);
+    const check = p.ok && isRecord(p.value) ? (p.value as SemanticRule).check : undefined;
+    if (!check) continue;
+    for (const a of check.against) requireKnown(name, a, known);
+    if (!Object.hasOwn(tokens, name)) continue;
+    const path = `semantics.${name}.check`;
+    if (check.against.length === 0) {
+      issues.push({ kind: 'invalid', path, message: 'check needs at least one surface' });
+      continue;
+    }
+    const hex = solid(name);
+    if (!hex) {
+      issues.push({ kind: 'invalid', path, message: `"${name}" is not a solid color` });
+      continue;
+    }
+    for (const a of check.against) {
+      const other = solid(a);
+      if (!other) {
+        issues.push({ kind: 'invalid', path, message: `"${a}" is not a solid color` });
+        continue;
+      }
+      const ratio = contrast(hex, other);
+      if (ratio < check.contrast) issues.push({ kind: 'check-failed', token: name, against: a, min: check.contrast, ratio });
+    }
+  }
 }
 
 export function atStep(
