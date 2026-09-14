@@ -12,6 +12,7 @@ import type {
   ControlRenderer,
   InferConfig,
   NodeOptions,
+  SectionOption,
 } from './types';
 
 /** Whether a schema entry is a branch rather than a leaf. */
@@ -72,8 +73,9 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
   }
 
   /** Render under a named section heading. `collapsed` opens the section
-   *  folded — say it on any one of the section's leaves. */
-  section(label: string, opts: { collapsed?: boolean } = {}): this {
+   *  folded, and `layout` and `pack` lay out its rows — say each on any one of
+   *  the section's leaves. */
+  section(label: string, opts: Omit<SectionOption, 'label'> = {}): this {
     return this.opt({ section: { label, ...opts } });
   }
 
@@ -220,7 +222,7 @@ export class GroupNode<S extends ConfigShape> implements ConfigBranch<S> {
   }
 
   /** Render this whole group under a named section heading. */
-  section(label: string, opts: { collapsed?: boolean } = {}): GroupNode<S> {
+  section(label: string, opts: Omit<SectionOption, 'label'> = {}): GroupNode<S> {
     return this.with(this.annotations, { ...this.options, section: { label, ...opts } });
   }
 

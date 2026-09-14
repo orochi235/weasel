@@ -76,6 +76,10 @@ export interface SectionSpec {
    *  whether or not it was given a panel-wide `collapse`; a fold the reader
    *  has since toggled outranks it. */
   collapsed?: boolean;
+  /** Where the section's rows put their labels, over the panel's `layout`. */
+  layout?: 'block' | 'inline';
+  /** How the section packs its rows, over the panel's `pack`. */
+  pack?: 'auto' | 'pairs' | 'one-up';
 }
 
 /** A schema resolved against a set of rules: the vocabulary weasel-ui renders,
@@ -97,6 +101,10 @@ export interface ResolvedConfig {
 export interface SectionOption {
   label: string;
   collapsed?: boolean;
+  /** Where the section's rows put their labels, over the panel's `layout`. */
+  layout?: 'block' | 'inline';
+  /** How the section packs its rows, over the panel's `pack`. */
+  pack?: 'auto' | 'pairs' | 'one-up';
 }
 
 /** Per-node extras that do not belong on a `PrefLeaf`. */

@@ -36,6 +36,24 @@ import type { ConfigField } from './types';
  */
 export type ControlPack = 'auto' | 'pairs' | 'one-up';
 
+/** How the rows under one heading are laid out: the panel's, or a section's own. */
+interface Rows {
+  pack: ControlPack;
+  layout: PropertyRowLayout | undefined;
+  grid: PropertyListPack;
+}
+
+const gridOf = (pack: ControlPack): PropertyListPack =>
+  pack === 'one-up' ? 'auto-color' : 'pairs';
+
+function sectionRows(section: SectionSpec, rows: Rows): Rows {
+  return {
+    pack: section.pack ?? rows.pack,
+    layout: section.layout ?? rows.layout,
+    grid: section.pack ? gridOf(section.pack) : rows.grid,
+  };
+}
+
 export interface ControlPanelProps<TC extends Record<string, unknown>> {
   /** The instrument's resolved config schema. */
   schema?: ResolvedConfig;
@@ -106,7 +124,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
 }: ControlPanelProps<TC>) {
   const resolved = useMemo(() => schema ?? fromConfigFields(fields ?? []), [schema, fields]);
 
-  const gridPack: PropertyListPack = pack === 'one-up' ? 'auto-color' : 'pairs';
+  const gridPack = gridOf(pack);
   // A section that declares how it opens is foldable whether or not the lab
   // asked for folds — there is nothing else for the declaration to mean.
   const folds =
@@ -116,8 +134,8 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     resolved.sections.some((s) => s.collapsed !== undefined);
   const startsFolded = collapse === 'closed';
 
-  const fold = (key: string, declared?: boolean) => ({
-    pack: gridPack,
+  const fold = (key: string, declared?: boolean, grid: PropertyListPack = gridPack) => ({
+    pack: grid,
     collapsible: folds,
     defaultCollapsed: declared ?? startsFolded,
     collapsed: collapsed ? (collapsed[key] ?? declared ?? startsFolded) : undefined,
@@ -125,7 +143,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   });
 
   /** One node, which is either a group to recurse into or a row to draw. */
-  const node = (path: string): ReactNode => {
+  const node = (path: string, rows: Rows): ReactNode => {
     const found = schemaNodeAtPath(resolved.group, path);
     if (!found) return null;
     if (!isLeafVisible(resolved, path, config as Record<string, unknown>, showHidden)) return null;
@@ -139,38 +157,41 @@ export function ControlPanel<TC extends Record<string, unknown>>({
           config={config}
           setConfig={setConfig}
           renderers={renderers}
-          pack={pack}
-          layout={layout}
+          pack={rows.pack}
+          layout={rows.layout}
         />
       );
     }
     // A group with no name organizes without heading it — core's rule for an
     // empty `PrefGroup.name` — so it contributes its rows and no chrome.
-    if (found.name === '') return <Fragment key={path}>{body(found, path)}</Fragment>;
+    if (found.name === '') return <Fragment key={path}>{body(found, path, rows)}</Fragment>;
     return (
-      <PropertyGroup key={path} title={found.name} {...fold(path)}>
-        {body(found, path)}
+      <PropertyGroup key={path} title={found.name} {...fold(path, undefined, rows.grid)}>
+        {body(found, path, rows)}
       </PropertyGroup>
     );
   };
 
   /** One group's children: its loose nodes, then its sections. */
-  const body = (group: PrefGroup, at: string): ReactNode => {
+  const body = (group: PrefGroup, at: string, rows: Rows): ReactNode => {
     const sections = resolved.sections.filter((s) => s.at === at);
     const sectioned = new Set(sections.flatMap((s) => s.paths));
     const paths = Object.keys(group.children).map((key) => (at === '' ? key : `${at}.${key}`));
     return (
       <>
-        {paths.filter((p) => !sectioned.has(p)).map(node)}
-        {sections.map((section) => (
-          <PropertyGroup
-            key={sectionKey(section)}
-            title={section.label}
-            {...fold(sectionKey(section), section.collapsed)}
-          >
-            {section.paths.map(node)}
-          </PropertyGroup>
-        ))}
+        {paths.filter((p) => !sectioned.has(p)).map((p) => node(p, rows))}
+        {sections.map((section) => {
+          const inner = sectionRows(section, rows);
+          return (
+            <PropertyGroup
+              key={sectionKey(section)}
+              title={section.label}
+              {...fold(sectionKey(section), section.collapsed, inner.grid)}
+            >
+              {section.paths.map((p) => node(p, inner))}
+            </PropertyGroup>
+          );
+        })}
       </>
     );
   };
@@ -182,7 +203,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
       align={align}
       className={className ? `lk-control-panel ${className}` : 'lk-control-panel'}
     >
-      {body(resolved.group, '')}
+      {body(resolved.group, '', { pack, layout, grid: gridPack })}
     </PropertyList>
   );
 }

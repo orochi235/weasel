@@ -460,6 +460,46 @@ describe('<ControlPanel> format', () => {
   });
 });
 
+describe('<ControlPanel> section layout', () => {
+  const schema = resolveConfigSchema(
+    f.schema({
+      seed: f.number(0).section('Advanced'),
+      mode: f
+        .enum('a', [
+          { value: 'a', label: 'A' },
+          { value: 'b', label: 'B' },
+        ])
+        .label('Mode')
+        .section('Globals', { layout: 'inline', pack: 'one-up' }),
+      font: f
+        .enum('x', [{ value: 'x', label: 'X' }])
+        .label('Font')
+        .section('Globals'),
+    }),
+    [],
+  );
+  const config = { seed: 0, mode: 'a', font: 'x' };
+  // The row class comes through the CSS-module proxy, so this proves which layout the row asked for, not a rule.
+  const rowOf = (label: string) => screen.getByText(label).closest('label') as HTMLElement;
+
+  it('lays out every row in a section the way the section asks, and leaves other sections alone', () => {
+    render(<ControlPanel schema={schema} config={config} setConfig={vi.fn()} />);
+    expect(rowOf('Mode').className).toMatch(/rowInline/);
+    expect(rowOf('Font').className).toMatch(/rowInline/);
+    expect(rowOf('Seed').className).not.toMatch(/rowInline/);
+  });
+
+  it('carries a section’s layout into its resolved spec', () => {
+    expect(schema.sections.find((section) => section.label === 'Globals')).toMatchObject({
+      layout: 'inline',
+      pack: 'one-up',
+    });
+    expect(schema.sections.find((section) => section.label === 'Advanced')).not.toHaveProperty(
+      'layout',
+    );
+  });
+});
+
 describe('<ControlPanel> collapsible sections', () => {
   const schema = resolveConfigSchema(
     f.schema({ showGrid: f.boolean(true), seed: f.number(0).section('Advanced') }),
