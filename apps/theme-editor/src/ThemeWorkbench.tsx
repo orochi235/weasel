@@ -1,7 +1,7 @@
 import { LabShell, ToolbarRegion, type LabContribution } from '@weasel-js/labkit';
 import { fullSelection, type Selection, type ThemeDefinition } from '@weasel-js/theme';
 import type { Lookup } from '@weasel-js/theme/engine';
-import { Button, RedoIcon, Select, UndoIcon } from '@weasel-js/ui';
+import { Button, Dialog, ExportIcon, RedoIcon, Select, UndoIcon } from '@weasel-js/ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LayerRail } from './LayerRail';
 import { RampsLayer } from './layers/RampsLayer';
@@ -13,6 +13,7 @@ import { TokenList } from './TokenList';
 import type { ThemeApi } from './theme/api';
 import { deriveDraft, type DerivedDraft } from './theme/draft';
 import { clearDraft, persistDraft, type StoredDraft } from './theme/draftStorage';
+import { EXPORTS, download, exportFile } from './theme/exportFiles';
 import { describeIssue } from './theme/issues';
 import { documentSheets, tokensReadAt } from './theme/inspect';
 import { LAYERS, adoptGenerated, countTokens, pinApplies, runtimeTheme, type LayerId } from './theme/model';
@@ -89,6 +90,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
   const [reads, setReads] = useState<readonly string[]>([]);
   const [focusRamp, setFocusRamp] = useState<string | null>(null);
   const [reloadError, setReloadError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
   const statusRef = useRef<HTMLDivElement>(null);
   const dirty = draft !== saved && !sameJson(draft, saved);
 
@@ -133,6 +135,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
     () => [
       { id: 'undo', group: 'history', region: 'header', item: { icon: UndoIcon, label: 'Undo', shortcut: '⌘Z', disabled: !canUndo, onActivate: (h) => h.undo() } },
       { id: 'redo', group: 'history', region: 'header', item: { icon: RedoIcon, label: 'Redo', shortcut: '⇧⌘Z', disabled: !canRedo, onActivate: (h) => h.redo() } },
+      { id: 'export', region: 'header', item: { icon: ExportIcon, label: 'Export', showLabel: true, onActivate: () => setExporting(true) } },
     ],
     [canUndo, canRedo],
   );
@@ -274,6 +277,16 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
           <ThemePreview variants={previewVariants} selection={axisValues} inspecting={inspecting} onInspect={inspect} />
         </aside>
       </div>
+      <Dialog isOpen={exporting} onOpenChange={setExporting} title={`Export ${draft.name}`} footer={<Button onClick={() => setExporting(false)}>Done</Button>}>
+        <p>The draft as it stands, saved or not.</p>
+        <div className={styles.statusActions}>
+          {EXPORTS.map(({ kind, label }) => (
+            <Button key={kind} size="sm" onClick={() => download(exportFile(kind, draft, lookup))}>
+              {label}
+            </Button>
+          ))}
+        </div>
+      </Dialog>
     </LabShell>
   );
 }

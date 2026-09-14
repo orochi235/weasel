@@ -68,6 +68,13 @@ describe('<ThemeWorkbench>', () => {
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
   });
 
+  it('offers the three export formats', async () => {
+    renderBench();
+    await userEvent.click(screen.getByRole('button', { name: 'Export' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getAllByRole('button').map((b) => b.textContent)).toEqual(expect.arrayContaining(['Emitted CSS', 'Definition', 'DTCG']));
+  });
+
   it('offers to reload when the file moved on since the draft began', async () => {
     const put = vi.fn(async () => ({ status: 'conflict', hash: 'h9' }) as PutResult);
     const props = renderBench({ api: apiWith(put), start: { definition: edited, baseHash: 'h0' } });
