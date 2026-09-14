@@ -37,7 +37,7 @@
     "./package.json": "./package.json"
   },
   "bin": {
-    "weaselforge": "./dist/cli.js"
+    "weaselforge": "dist/cli.js"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
