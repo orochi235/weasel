@@ -136,6 +136,7 @@ function rampColors(name: string, r: Record<string, unknown>, steps: readonly st
       curve: read.optNum(r.curve, `${path}.curve`, 0),
       hue: read.optNum(r.hue, `${path}.hue`, 0),
       peak,
+      lightBias: read.optNum(chroma.lightBias, `${path}.chroma.lightBias`, 0),
       darkBias: read.optNum(chroma.darkBias, `${path}.chroma.darkBias`, 0),
       anchor,
     };

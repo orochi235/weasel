@@ -52,3 +52,16 @@ describe('categoricalRamp', () => {
     expect(new Set(Object.values(colors)).size).toBe(10);
   });
 });
+
+describe('lightBias', () => {
+  const base = { steps: ['a', 'b', 'c', 'd', 'e'], lightness: [0.9, 0.3] as const, curve: 0, hue: 250, peak: 0.1, darkBias: 0 };
+
+  it('leaves a ramp that omits it unchanged', () => {
+    expect(lightnessRamp({ ...base, lightBias: 0 })).toEqual(lightnessRamp(base));
+  });
+
+  it('lifts the first step off zero chroma', () => {
+    expect(toLch(lightnessRamp(base).a).C).toBeLessThan(0.005);
+    expect(toLch(lightnessRamp({ ...base, lightBias: 0.5 }).a).C).toBeGreaterThan(0.02);
+  });
+});

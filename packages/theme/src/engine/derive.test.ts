@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LightnessRampDef, ThemeDefinition } from '../definition';
+import { toLch } from './color/oklch';
 import { derive } from './derive';
 import { categoricalRamp, lightnessRamp } from './ramps';
 
@@ -366,5 +367,17 @@ describe('derive', () => {
       ramps: { swatch: { kind: 'categorical', steps, gates: { hueFloor: (40 * 12) / 360, minDistance: 0, minSurfaceDistance: 0 } } },
     });
     expect(issues).toContainEqual({ kind: 'infeasible-ramp', ramp: 'swatch' });
+  });
+
+  it('reads chroma.lightBias, so an anchored ramp keeps chroma at both ends', () => {
+    const ramp = (chroma?: LightnessRampDef['chroma']) => ({
+      name: 't',
+      ramps: { accent: { kind: 'lightness' as const, steps: ['soft', 'base', 'strong'], lightness: [0.72, 0.34] as [number, number], anchor: { base: '#0b6e8a' }, ...(chroma ? { chroma } : {}) } },
+    });
+    const C = (def: ReturnType<typeof ramp>, step: string) => toLch(String(derive(def).tokens[`accent-${step}`].value)).C;
+    expect(C(ramp(), 'soft')).toBeLessThan(0.005);
+    const biased = ramp({ peak: 0, lightBias: 1, darkBias: 1 });
+    expect(C(biased, 'soft')).toBeGreaterThan(0.02);
+    expect(C(biased, 'strong')).toBeGreaterThan(0.02);
   });
 });

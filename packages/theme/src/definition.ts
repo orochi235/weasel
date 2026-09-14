@@ -23,7 +23,7 @@ export interface LightnessRampDef {
   readonly curve?: NumberParam;
   /** Degrees. Ignored when an anchor is given. */
   readonly hue?: NumberParam;
-  readonly chroma?: Varying<{ readonly peak: NumberParam; readonly darkBias?: NumberParam }>;
+  readonly chroma?: Varying<{ readonly peak: NumberParam; readonly lightBias?: NumberParam; readonly darkBias?: NumberParam }>;
   /** Step name → exact hex (or `{seeds.name}`). The first anchor supplies hue and chroma. */
   readonly anchor?: Varying<Readonly<Record<string, Varying<string>>>>;
   readonly description?: string;
