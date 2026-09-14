@@ -163,4 +163,22 @@ describe('Workshop', () => {
     expect(iframe).not.toHaveAttribute('data-pending');
     frame.close();
   });
+
+  it('offers the configured labs in its title menu, marking this one', async () => {
+    location.hash = '#/x--a';
+    const pages = [
+      { href: '/labs/forge', label: 'weaselforge' },
+      { href: '/labs/palette', label: 'Palette lab' },
+    ];
+    render(<Workshop index={[a]} frameUrl="/frame.html" config={{ pages, path: '/labs/forge' }} storage={createMemoryAdapter()} />);
+    // The lab draws a fallback title while its store opens; the menu belongs to the mounted lab.
+    await screen.findByRole('region', { name: /^Trial / });
+    fireEvent.click(screen.getByRole('button', { name: 'weaselforge' }));
+    const items = screen.getAllByRole('menuitem');
+    expect(items.map((item) => [item.textContent, item.getAttribute('href')])).toEqual([
+      ['weaselforge', '/labs/forge'],
+      ['Palette lab', '/labs/palette'],
+    ]);
+    expect(items[0]).toHaveAttribute('aria-current', 'page');
+  });
 });

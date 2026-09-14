@@ -1,4 +1,4 @@
-import type { LabContribution } from '@weasel-js/labkit';
+import type { LabContribution, LabPage } from '@weasel-js/labkit';
 import type { ControlRenderer } from '@weasel-js/labkit/config';
 import type { FrameSetup } from './frame/FrameController';
 import type { GlobalDeclarations } from './shell/globals';
@@ -9,6 +9,10 @@ export interface ShellConfig {
   controls?: Record<string, ControlRenderer>;
   /** Globals the lab's header sets for every story, each pinnable per trial. Frames apply them with `applyGlobals`. */
   globals?: GlobalDeclarations;
+  /** The project's other labs, offered in the workshop's title menu. */
+  pages?: readonly LabPage[];
+  /** Which of `pages` the workshop is, when the URL alone cannot say, as across dev servers on different ports. */
+  path?: string;
 }
 
 /** A frame config module's default export. Only frame documents import it, so its CSS stays out of the workshop. */

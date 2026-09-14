@@ -92,6 +92,8 @@ export function Workshop({ index, frameUrl, config, stories = [], storageKey, st
           labChrome={labChrome}
           addTrial={false}
           {...(config?.controls ? { controls: config.controls } : {})}
+          {...(config?.pages ? { pages: config.pages } : {})}
+          {...(config?.path !== undefined ? { path: config.path } : {})}
         >
           <RouteOpener index={index} />
           <LabGlobals declarations={declarations} onChange={reportLabValues} />
