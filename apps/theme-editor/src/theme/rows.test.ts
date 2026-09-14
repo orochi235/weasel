@@ -1,6 +1,8 @@
+import type { ThemeDefinition } from '@weasel-js/theme';
 import { derive } from '@weasel-js/theme/engine';
 import { describe, expect, it } from 'vitest';
 import { child, lookupOf, weasel } from './fixtures';
+import { countTokens } from './model';
 import { layerRows } from './rows';
 
 const lookup = lookupOf(child);
@@ -11,6 +13,19 @@ describe('layerRows', () => {
     expect(rows).toHaveLength(89);
     expect(rows.find((r) => r.name === 'gray-800')).toMatchObject({ type: 'color', replaced: '#1a1c21' });
     expect(rows.find((r) => r.name === 'radius-md')).not.toHaveProperty('replaced');
+  });
+
+  it('lists a pin only where it applies, as the rail counts it', () => {
+    const def = { ...weasel, pins: { ...weasel.pins, gap: { by: 'mode', dark: { value: '4px', type: 'dimension' } } } } as ThemeDefinition;
+    for (const mode of ['dark', 'light']) {
+      const result = derive(def, { mode }, lookup);
+      expect(layerRows('pins', def, result)).toHaveLength(countTokens(def, result).layers.pins.count);
+    }
+  });
+
+  it('shows a pinned alpha', () => {
+    const rows = layerRows('pins', weasel, derive(weasel, { mode: 'dark' }, lookup));
+    expect(rows.find((r) => r.name === 'line-subtle')).toMatchObject({ value: '{fg} at 10%' });
   });
 
   it("lists a layer's own tokens only", () => {

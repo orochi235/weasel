@@ -1,6 +1,6 @@
 import type { ThemeDefinition } from '@weasel-js/theme';
 import type { DeriveResult } from '@weasel-js/theme/engine';
-import { ownTokenNames, type LayerId } from './model';
+import { ownTokenNames, pinApplies, type LayerId } from './model';
 
 export interface TokenRow {
   readonly name: string;
@@ -16,12 +16,16 @@ export function layerRows(layer: LayerId, def: ThemeDefinition, result: DeriveRe
   if (layer === 'seeds') {
     return Object.entries(def.seeds ?? {}).map(([name, v]) => ({ name: `seeds.${name}`, type: 'seed', value: text(v) }));
   }
-  const names = layer === 'pins' ? Object.keys(def.pins ?? {}) : ownTokenNames(def).filter((n) => result.provenance[n]?.layer === layer);
+  const names =
+    layer === 'pins'
+      ? Object.keys(def.pins ?? {}).filter((n) => pinApplies(result, n))
+      : ownTokenNames(def).filter((n) => result.provenance[n]?.layer === layer);
   return names
     .filter((name) => Object.hasOwn(result.tokens, name))
     .map((name) => {
       const token = result.tokens[name];
       const p = result.provenance[name];
-      return { name, type: token.type, value: text(token.value), ...(p.pinned && p.generated ? { replaced: text(p.generated.value) } : {}) };
+      const value = token.alpha === undefined ? text(token.value) : `${text(token.value)} at ${Math.round(token.alpha * 100)}%`;
+      return { name, type: token.type, value, ...(p.pinned && p.generated ? { replaced: text(p.generated.value) } : {}) };
     });
 }

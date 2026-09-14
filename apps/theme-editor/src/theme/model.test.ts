@@ -1,4 +1,4 @@
-import { resolveTheme } from '@weasel-js/theme';
+import { resolveTheme, type ThemeDefinition } from '@weasel-js/theme';
 import { derive } from '@weasel-js/theme/engine';
 import { describe, expect, it } from 'vitest';
 import { child, lookupOf, weasel } from './fixtures';
@@ -25,6 +25,12 @@ describe('countTokens', () => {
     expect(counts).toMatchObject({ overridden: 1, total: 2 });
     expect(counts.layers.semantics).toEqual({ count: 1, pinned: 1 });
     expect(counts.layers.pins).toEqual({ count: 2, pinned: 1 });
+  });
+
+  it('counts a pin only at a selection where it applies', () => {
+    const def = { ...weasel, pins: { ...weasel.pins, gap: { by: 'mode', dark: { value: '4px', type: 'dimension' } } } } as ThemeDefinition;
+    const at = (mode: string) => countTokens(def, derive(def, { mode }, lookup)).layers.pins.count;
+    expect(at('dark')).toBe(at('light') + 1);
   });
 });
 

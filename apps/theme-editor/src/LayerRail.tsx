@@ -11,15 +11,24 @@ export function LayerRail({ counts, selected, onSelect }: LayerRailProps) {
   return (
     <nav className={styles.rail} aria-label="Layers">
       <ul className={styles.railList}>
-        {LAYERS.map(({ id, label }) => (
-          <li key={id}>
-            <button type="button" className={styles.railItem} aria-current={id === selected ? 'true' : undefined} onClick={() => onSelect(id)}>
-              <span className={styles.railLabel}>{label}</span>
-              <span className={styles.railCount}>{counts[id].count}</span>
-              {counts[id].pinned > 0 && <span className={styles.railPinned}>{counts[id].pinned} pinned</span>}
-            </button>
-          </li>
-        ))}
+        {LAYERS.map(({ id, label }) => {
+          const { count, pinned } = counts[id];
+          return (
+            <li key={id}>
+              <button
+                type="button"
+                className={styles.railItem}
+                aria-label={pinned > 0 ? `${label}, ${count} tokens, ${pinned} pinned` : `${label}, ${count} tokens`}
+                aria-current={id === selected ? 'true' : undefined}
+                onClick={() => onSelect(id)}
+              >
+                <span className={styles.railLabel}>{label}</span>
+                <span className={styles.railCount}>{count}</span>
+                {pinned > 0 && <span className={styles.railPinned}>{pinned} pinned</span>}
+              </button>
+            </li>
+          );
+        })}
       </ul>
     </nav>
   );

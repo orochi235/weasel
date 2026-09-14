@@ -4,7 +4,7 @@ import type { TokenRow } from './theme/rows';
 
 export interface TokenListProps {
   readonly rows: readonly TokenRow[];
-  /** Tokens click-to-inspect jumped to; the first is scrolled into view. */
+  /** Tokens click-to-inspect jumped to; the first highlighted row is scrolled into view. */
   readonly highlight: readonly string[];
   readonly empty: string;
 }

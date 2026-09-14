@@ -44,7 +44,11 @@ export function ownTokenNames(def: ThemeDefinition): string[] {
   return [...names];
 }
 
-/** Each own token counts once, under the layer that produced it; the Pins row counts every pin entry, and how many override a generator. */
+/** A pin that fails at this selection (a `by` missing its value, an unknown seed) leaves no token, or leaves the rule's. */
+export const pinApplies = (result: DeriveResult, name: string): boolean =>
+  result.provenance[name]?.pinned === true || result.provenance[name]?.layer === 'pins';
+
+/** Each own token counts once, under the layer that produced it; the Pins row counts the pins that apply, and how many override a generator. */
 export function countTokens(def: ThemeDefinition, result: DeriveResult): Counts {
   const zero = () => ({ count: 0, pinned: 0 });
   const layers: Record<LayerId, Mutable<LayerCount>> = {
@@ -68,6 +72,7 @@ export function countTokens(def: ThemeDefinition, result: DeriveResult): Counts 
     }
   }
   for (const name of Object.keys(def.pins ?? {})) {
+    if (!pinApplies(result, name)) continue;
     layers.pins.count += 1;
     if (result.provenance[name]?.pinned) layers.pins.pinned += 1;
   }

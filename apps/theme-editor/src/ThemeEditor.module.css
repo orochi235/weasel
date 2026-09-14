@@ -74,6 +74,7 @@
   align-items: baseline;
   gap: 6px;
   width: 100%;
+  height: auto;
   padding: 6px 8px;
   border: 0;
   border-radius: var(--wzl-radius-md);
@@ -82,6 +83,10 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
+}
+
+.railItem:hover {
+  background: var(--wzl-surface-raised);
 }
 
 .railItem[aria-current='true'] {

@@ -18,7 +18,14 @@ describe('<LayerRail>', () => {
   it('lists the six layers in derivation order with their counts', () => {
     render(<LayerRail counts={counts} selected="ramps" onSelect={() => {}} />);
     const buttons = within(screen.getByRole('navigation', { name: 'Layers' })).getAllByRole('button');
-    expect(buttons.map((b) => b.textContent)).toEqual(['Seeds0', 'Ramps2323 pinned', 'Scales0', 'Semantics11', 'Components0', 'Pins8923 pinned']);
+    expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Seeds, 0 tokens',
+      'Ramps, 23 tokens, 23 pinned',
+      'Scales, 0 tokens',
+      'Semantics, 11 tokens',
+      'Components, 0 tokens',
+      'Pins, 89 tokens, 23 pinned',
+    ]);
     expect(buttons[1]).toHaveAttribute('aria-current', 'true');
   });
 
