@@ -9,4 +9,4 @@ panel's `layout` and `pack`. Say it on any one node in the section; the resolved
 `SectionSpec` carries both. Other sections keep the panel's.
 
 forge's Globals section in a trial's Settings now uses `{ layout: 'inline', pack:
-'one-up' }`, so each global's label and dropdown share one row.
+'pairs' }`: two globals to a row, each with its label beside its dropdown.
