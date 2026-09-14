@@ -1,14 +1,8 @@
 import { createMemoryAdapter } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import type { FromFrame } from '../../protocol/messages';
-import { parsesAsColor } from './color';
-
-vi.mock('./color', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./color')>();
-  return { ...actual, parsesAsColor: vi.fn(actual.parsesAsColor) };
-});
 import { describeSchema } from '../../protocol/schema';
 import type { IndexEntry } from '../../story/types';
 import { connectFrame, flush, installResizeObserver } from '../labHarness';
@@ -74,18 +68,15 @@ describe('CssVarsPanel', () => {
     expect(token.getByRole('textbox')).toHaveValue('#f5f5f6');
   });
 
-  it('re-renders only the row an edit changes', async () => {
+  it('files the theme’s tokens into collapsible sections, with the gray ramp as one row of swatches', async () => {
     location.hash = '#/x--a';
     render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     await openTrial('A');
-    const panel = vars();
-    fireEvent.change(panel.getByLabelText('Filter'), { target: { value: 'gray-' } });
-    await flush();
-    expect(panel.getAllByRole('group').length).toBeGreaterThan(2);
-    vi.mocked(parsesAsColor).mockClear();
-    fireEvent.change(row(panel, '--wzl-gray-50').getByRole('textbox'), { target: { value: '#123456' } });
-    await flush();
-    expect(vi.mocked(parsesAsColor).mock.calls.map(([value]) => value)).toEqual(['#123456']);
+    const color = within(vars().getByRole('region', { name: 'Color' }));
+    expect(within(color.getByRole('group', { name: 'gray' })).getAllByRole('button')).toHaveLength(10);
+    expect(vars().getByRole('region', { name: 'Motion' })).toBeInTheDocument();
+    fireEvent.click(vars().getByRole('button', { name: 'Motion' }));
+    expect(vars().queryByRole('group', { name: '--wzl-motion-fast' })).toBeNull();
   });
 
   it('lists the vars the story’s frame reports, with a color input for a color', async () => {
@@ -103,7 +94,7 @@ describe('CssVarsPanel', () => {
     });
     await flush();
     const gap = row(panel, '--gap');
-    expect(gap.getByRole('textbox')).toHaveValue('4px');
+    expect(gap.getByRole('textbox')).toHaveValue('4');
     expect(gap.queryByLabelText(/color/i)).toBeNull();
     const ink = row(panel, '--ink');
     const swatch = ink.getByLabelText(/color/i);

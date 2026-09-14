@@ -1,0 +1,133 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.section + .section {
+  border-top: var(--wzl-border-w) solid var(--wzl-line-subtle);
+}
+
+.sectionHead {
+  padding-block: var(--wzl-space-xs);
+  color: var(--wzl-fg-muted);
+  font-family: var(--wzl-font-display);
+  font-size: var(--wzl-font-size-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sectionBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-sm);
+  padding-block-end: var(--wzl-space-sm);
+}
+
+.row,
+.family {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.name {
+  overflow: hidden;
+  color: var(--wzl-fg-muted);
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edit {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-xs);
+  min-width: 0;
+}
+
+.field {
+  --wzl-font-ui: var(--wzl-font-mono);
+  flex: 1;
+  min-width: 0;
+}
+
+.number {
+  --wzl-font-ui: var(--wzl-font-mono);
+  flex: 1;
+  min-width: 0;
+}
+
+.unit {
+  color: var(--wzl-fg-muted);
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-sm);
+}
+
+/* Padding inflates a native color input past its box in Chrome. */
+.swatchInput {
+  box-sizing: border-box;
+  flex-shrink: 0;
+  width: 18px;
+  height: 14px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: var(--wzl-radius-sm);
+  cursor: pointer;
+}
+
+.chip {
+  flex-shrink: 0;
+  width: 18px;
+  height: 14px;
+  background: var(--token-color);
+  border-radius: var(--wzl-radius-sm);
+  box-shadow: inset 0 0 0 1px var(--wzl-line);
+}
+
+.curve {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  color: var(--wzl-fg);
+}
+
+.strip {
+  display: flex;
+  height: var(--wzl-control-h);
+  overflow: hidden;
+  border: var(--wzl-border-w) solid var(--wzl-line);
+  border-radius: var(--wzl-radius-sm);
+}
+
+.swatch {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  background: var(--token-color);
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.swatch[data-overridden] {
+  box-shadow: inset 0 -3px 0 var(--wzl-accent);
+}
+
+.swatch[aria-pressed='true'],
+.swatch:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: -2px;
+}

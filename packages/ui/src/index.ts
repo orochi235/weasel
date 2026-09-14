@@ -55,6 +55,7 @@ export * from './components/Plot2D';
 export * from './components/CurveEditor';
 export * from './components/PointPlotter';
 export * from './components/ColorField';
+export * from './components/TokenPanel';
 export * from './components/GradientEditor';
 export * from './components/BandEditor';
 export * from './components/Timeline';

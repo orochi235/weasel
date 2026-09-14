@@ -224,57 +224,10 @@
   background: var(--wzl-surface);
 }
 
-.fg-css-vars__list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wzl-space-sm);
-}
-
 .fg-css-vars__empty {
   margin: 0;
   color: var(--wzl-fg-muted);
   font-size: var(--wzl-font-size-sm);
-}
-
-.fg-css-var {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.fg-css-var__name {
-  overflow: hidden;
-  color: var(--wzl-fg-muted);
-  font-family: var(--wzl-font-mono);
-  font-size: var(--wzl-font-size-sm);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.fg-css-var__edit {
-  display: flex;
-  align-items: center;
-  gap: var(--wzl-space-xs);
-}
-
-.fg-css-var__input {
-  --wzl-font-ui: var(--wzl-font-mono);
-  flex: 1;
-  min-width: 0;
-}
-
-/* Padding inflates a native color input past its box in Chrome. */
-.fg-css-var__swatch {
-  box-sizing: border-box;
-  flex-shrink: 0;
-  width: 18px;
-  height: 14px;
-  padding: 0;
-  background: transparent;
-  border: 0;
-  border-radius: var(--wzl-radius-sm);
-  cursor: pointer;
 }
 
 .fg-globals {
