@@ -4451,3 +4451,104 @@ A review of `695ad747` and `a14ac65a` found these; each was verified against the
 - [ ] **Run** `npx vitest run --project=draw apps/theme-editor/src/ThemeEditor.test.tsx apps/theme-editor/src/ThemeWorkbench.test.tsx`, `npx tsc --noEmit`, `npx eslint apps/theme-editor/src` → clean.
 
 - [ ] **Commit** the five paths; message `keep a draft through a failed reload, and announce saves`.
+
+---
+
+### Task 26: a bias slider must not break a ramp without `chroma` (run after Task 25)
+
+Found driving the editor headless: on weasel's accent ramp, which has no `chroma` object, moving the Light bias slider wrote `chroma: { lightBias: 0.5 }`. `derive` requires `chroma.peak` whenever `chroma` exists, so it reported `{ kind: 'invalid', path: 'ramps.accent.chroma.peak', message: 'expected a number' }` and dropped the ramp. Its pins then applied as authored values (`provenance: { layer: 'pins', rule: 'value', pinned: false }`), and the ramps layer showed a single row labeled "Generated" holding the old pinned hexes, with no sign anything had failed. The issue only reached the list at the top of the editor.
+
+**Files:**
+- Modify: `apps/theme-editor/src/theme/ramps.ts`, `ramps.test.ts`, `apps/theme-editor/src/layers/RampsLayer.tsx`, `RampsLayer.test.tsx`
+
+- [ ] **Step 1: Failing tests.** In `ramps.test.ts`, inside `describe('writeParam')`, replace the `chroma.darkBias` expectation with `toEqual({ peak: 0, darkBias: 0.5 })`, and add:
+
+```ts
+it('keeps a ramp deriving when a bias creates its chroma', () => {
+  const edited = { ...weasel, ramps: { ...weasel.ramps!, accent: writeParam(weasel.ramps!.accent as LightnessRampDef, 'chroma.lightBias', 0.5) } };
+  const result = derive(edited, { mode: 'dark' });
+  expect(result.issues).toEqual([]);
+  expect(result.provenance['accent-soft'].pinned).toBe(true);
+});
+```
+
+(import `derive` and `type LightnessRampDef` from `@weasel-js/theme/engine`, `weasel` from `./fixtures`). In `RampsLayer.test.tsx`, add:
+
+```tsx
+it("shows a ramp's own issues inside its section, and does not call authored values generated", () => {
+  const broken = { ...weasel, ramps: { ...weasel.ramps!, accent: { ...weasel.ramps!.accent, chroma: { lightBias: 0.5 } } } } as ThemeDefinition;
+  const lookup = lookupOf(broken);
+  render(<RampsLayer draft={broken} derived={deriveDraft(broken, lookup, {})} lookup={lookup} highlight={[]} focused={null} onFocus={vi.fn()} onChange={vi.fn()} />);
+  const accent = screen.getByRole('region', { name: 'accent ramp' });
+  expect(within(accent).getByText(/ramps\.accent\.chroma\.peak: expected a number/)).toBeInTheDocument();
+  expect(within(accent).queryByRole('rowheader', { name: 'Generated' })).toBeNull();
+});
+```
+
+Run both files → the new cases FAIL.
+
+- [ ] **Step 2: Fix `writeParam`.** When `key` is under `chroma` and the entry has no `chroma`, create `{ peak: 0, [tail]: value }`. `peak` 0 is what `derive` reads for an absent `chroma`, so the ramp's colors do not move until the peak or a bias is raised (an anchored ramp takes its peak from the anchor anyway).
+
+- [ ] **Step 3: Show a ramp's issues in its section.** `RampsLayer` reads `derived.views.flatMap((v) => v.result.issues)`, keeps those whose `path` starts with `ramps.<name>` (or whose `ramp` is `<name>` for `infeasible-ramp`), de-duplicates by `describeIssue` text, and renders them under the ramp header as a `<ul className={styles.issues}>` inside a `role="status"` element. When any step of the ramp has `provenance.layer === 'pins'` (it failed to generate), the strip's first row header reads "Authored" instead of "Generated", and the Generated row is not drawn.
+
+- [ ] **Step 4: Run** both test files and `ThemeWorkbench.test.tsx` → PASS; tsc and `npx eslint apps/theme-editor/src` clean.
+
+- [ ] **Step 5: Commit** the four paths; message `keep a ramp deriving when a bias slider creates its chroma, and show its issues`.
+
+---
+
+### Task 27: `SliderRow`'s slider has no accessible name (`@weasel-js/ui`; run after Task 26)
+
+Found driving the editor headless: every range input `SliderRow` renders has an empty accessible name. `PropertyRow` wraps its label span and its children in one `<label>`, and a `<label>` labels only its first labelable descendant, which is `EditableReadout`'s number input inside the label span, so the range input after it is labeled by nothing. The input is `tabIndex={-1}` on purpose (the readout is the keyboard path), but a screen reader's browse mode and every `getByRole('slider', { name })` still reach it nameless.
+
+**Files:**
+- Modify: `packages/ui/src/components/Properties/PropertyPanel.tsx`, `packages/ui/src/components/Properties/PropertyPanel.test.tsx`
+- Create: `.changeset/ui-slider-row-name.md`
+
+- [ ] **Step 1: Failing test** — in `PropertyPanel.test.tsx`, beside the existing `SliderRow` cases:
+
+```tsx
+it("names its slider after the row's label", () => {
+  render(<SliderRow label="Opacity" value={10} min={0} max={100} onChange={() => {}} />);
+  expect(screen.getByRole('slider', { name: 'Opacity' })).toBeInTheDocument();
+});
+```
+
+Run `npx vitest run --project=weasel-ui packages/ui/src/components/Properties/PropertyPanel.test.tsx` → FAIL.
+
+- [ ] **Step 2: Fix.** Give the range input `aria-label={typeof label === 'string' ? label : undefined}`. A non-string label keeps today's behavior; say so nowhere in a comment. Check the other rows in the file that put an input after the label span (`NumberRow`, `TextRow`, `SelectRow`, `ColorRow`) with the same kind of test, one line each; fix only the ones that fail, the same way, and list them in the report.
+
+- [ ] **Step 3: Changeset**, `patch` for `@weasel-js/ui`:
+
+```md
+`SliderRow`'s slider is named after its row's label. `PropertyRow`'s `<label>` labels only the first input inside it, the numeric readout, so the range input had no accessible name.
+```
+
+(add each other row fixed in Step 2 to the sentence).
+
+- [ ] **Step 4: Run** the test file → PASS; `npx tsc --noEmit`; `npx eslint packages/ui/src/components/Properties` clean.
+
+- [ ] **Step 5: Commit** the paths; message `name SliderRow's slider after its label`.
+
+---
+
+### Task 28: the rest of the review of Task 12 (run right after Task 26)
+
+A review of `90f0cc02` confirmed Task 26's bug and found these; each was verified against the code.
+
+**Files:**
+- Modify: `apps/theme-editor/src/theme/ramps.ts`, `ramps.test.ts`, `apps/theme-editor/src/layers/RampsLayer.tsx`, `RampsLayer.test.tsx`
+
+- [ ] **1. A parameter that varies as a whole is read-only.** `readParam('lightness.0')` on `lightness: { by: 'mode', … }` returns `undefined`, so the layer draws a slider stuck at 0, and `writeParam` spreads `"0": v` into the `by` object, saving a junk branch. `readParam` returns the `by` object itself when the top-level value is one (use `isByAxis` from `@weasel-js/theme`), so the layer's existing non-number check shows it read-only. Same for `chroma: { by: … }`. `writeParam` throws on a `by` object rather than writing into it. Failing tests first in `ramps.test.ts`: `readParam` on that entry returns the `by` object for `lightness.0`, and `writeParam` throws.
+
+- [ ] **2. An inherited ramp is not made the theme's own by a slider.** `setRamp` copies an inherited ramp into the draft, and a theme's own ramps shadow the pins it inherits (Mike, 2026-09-14), so dragging Curve on `gray` in a theme extending weasel silently drops all ten `gray-*` pins. The shadowing stays; doing it by accident does not. In `RampsLayer`, when `!Object.hasOwn(draft.ramps ?? {}, name)`, render the parameters and the gates editor read-only (the non-number note, with the value), and put a `Make <name> this theme's own` button in the ramp header that calls `setRamp(draft, lookup, name, (e) => e)`. Its `title` says: `The theme then generates every <name> step itself, and the pins it inherits on them stop applying.` Failing test first in `RampsLayer.test.tsx`: for `child` (from fixtures) extending weasel, the gray section has no slider and has that button; clicking it calls `onChange` with a definition whose `ramps.gray` exists.
+
+- [ ] **3. Compare can be turned off after Adopt.** Adopt removes every pin, which hides "Compare in preview" while `focused` still names the ramp, leaving two identical preview variants and no control to leave. Show the button when `view.anyPinned || focused === name`. Failing test: render with `focused="gray"` on a draft with no gray pins; the button is present and pressed.
+
+- [ ] **4. A pin keeps each mode's color.** Pinning writes the primary view's hex into every mode. Build the pin from every view: when all views give the same hex, `{ value, type: 'color' }`; otherwise `{ by: 'mode', <mode>: { value, type: 'color' }, … }` over `derived.views`. Failing test first: a fixture ramp whose `lightness` varies by mode (so a step's hex differs between dark and light), unpinned; clicking `Pin <token>` calls `onChange` with a `by: 'mode'` pin holding both hexes.
+
+- [ ] **5. The gates editor runs the palette generator only when needed.** Each gates slider tick runs `generate` in `GatesEditor` on top of `derive`'s own runs. Run it only when `derived.views` report an `infeasible-ramp` issue for this ramp (it exists to explain unmet gates); otherwise skip it.
+
+- [ ] **Run** `npx vitest run --project=draw apps/theme-editor/src/theme/ramps.test.ts apps/theme-editor/src/layers/RampsLayer.test.tsx apps/theme-editor/src/ThemeWorkbench.test.tsx`, `npx tsc --noEmit`, `npx eslint apps/theme-editor/src` → clean.
+
+- [ ] **Commit** the four paths; message `keep ramp edits from writing into varying values or silently owning an inherited ramp`.
