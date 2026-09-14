@@ -4599,3 +4599,30 @@ A review of `388dbad8` found these; each was confirmed with a probe against the 
 - [ ] **Run** `npx vitest run --project=draw apps/theme-editor/src/layers/ScalesLayer.test.tsx apps/theme-editor/src/theme/scales.test.ts`, `npx tsc --noEmit`, `npx eslint apps/theme-editor/src/layers` → clean.
 
 - [ ] **Commit** the two paths; message `keep scale bars and notes honest, and show a scale's issues`.
+
+---
+
+### Task 31: fixes from the review of Task 14 (run after Task 16)
+
+A review of `14ebf623` found these; the three throws were confirmed with a probe against weasel.
+
+**Files:**
+- Modify: `apps/theme-editor/src/theme/semantics.ts`, `semantics.test.ts`, `apps/theme-editor/src/layers/SemanticsLayer.tsx`, `SemanticDrawer.tsx`, `SemanticsLayer.test.tsx`
+
+- [ ] **1. The drawer edits the draft, not the last draft that derived.** The drawer reads its rule from `derived.merged`, which is the last version that derived. A reference typed half-way (`gray-10`) throws a dangling reference, the workbench keeps the last good derivation, and the controlled field snaps back to `gray-100` while the draft holds `gray-10`. `SemanticsLayer` reads the rule it hands the drawer from the draft's own chain: `mergeChain(draft, lookup).semantics?.[name]` (wrapped so an `extends` cycle falls back to `derived.merged`). Rows keep using `derived` for their values. Failing test first in `SemanticsLayer.test.tsx`: open `fg`'s drawer, clear the Reference field and type `gray-10` through a controlled rerender that feeds `onChange`'s definition back in as the draft while keeping a `derived` from before (simulating the workbench's last-good fallback); the field reads `gray-10`.
+
+- [ ] **2. Against keeps what is typed.** The field joins and re-splits on every keystroke, so a trailing comma or space vanishes and two surfaces cannot be typed. Keep the raw text in local state inside `RuleFields`, write the parsed list on each change, and reset the local text only when the rule's list changes from outside (it no longer equals `parse(local)`, e.g. after undo). Failing test first: typing `surface, surface-raised` into Against ends with the field reading exactly that and the last `onRule` holding both names.
+
+- [ ] **3. A new rule never points at its own token.** `defaultRule('offset' | 'contrast', …)` uses `semantics[0]`, which is `surface` for `surface`, and derive throws `Semantic cycle at "surface"`. The drawer passes `semantics.filter((n) => n !== name)`; `defaultRule` falls back to a `step` rule when that leaves nothing to point at. Failing test first in `semantics.test.ts`: `defaultRule('offset', …, ramps, ['surface'].filter((n) => n !== 'surface'))` returns a rule whose kind is `step`, and in `SemanticsLayer.test.tsx` switching `surface`'s Rule to Offset calls `onChange` with a definition that derives without throwing.
+
+- [ ] **4. A rule varying by any axis is read as varying.** `varies` checks only `by === 'mode'`, so `{ by: 'density', … }` is taken for a Literal, shows `undefined`, and a kind change drops every branch. `varies = isByAxis(rule)`; the Editing toggle lists that axis's values from `mergeChain(draft, lookup).axes?.[rule.by]`; the checkbox reads `Varies by ${rule.by}` when varying, `Varies by mode` otherwise (offered only when the theme has a mode axis). A branch that is itself a `by` object shows a read-only note instead of fields. Failing test first with a fixture that has a density axis and a `by: 'density'` semantic.
+
+- [ ] **5. A missing branch can be added.** `branch` starts at the axis's first value even when the rule lacks it, and the Editing toggle and checkbox sit inside the block that is hidden for a missing branch, leaving no way out. Start `branch` at the first value the rule has; keep the toggle and checkbox outside that block; for a missing branch show `This rule has no <branch> branch.` and a button `Add a <branch> branch` that copies the branch currently present. Failing test first: a `by: 'mode'` rule with only `light` opens on `light`; switching to `dark` shows the button; clicking it calls `onRule` with both branches.
+
+- [ ] **6. Alpha can be cleared.** `NumberRow` ignores an empty field, so a set alpha stays. When `rule.alpha !== undefined`, render a `Clear alpha` button beside the field that writes the rule without `alpha`. Failing test first.
+
+- [ ] **7. The Contrast column does not hide what it could not measure.** A check against an rgba or `color-mix` surface gets `ratio: null` and drops out of `worst`, so a row with one passing and one unmeasurable check reads "pass"; and with mixed minimums the ratio shown is the lowest, not the one that failed. `worst` becomes `{ ratio, min, pass, unmeasured }`: the check with the smallest `ratio - min` among measured ones, `pass` true only when every measured check passes and none is unmeasured, and `unmeasured` the count of null ratios. The table cell reads `<ratio> of <min> pass|fail` plus `, <n> unmeasured` when non-zero. Failing tests first in `semantics.test.ts` for both cases.
+
+- [ ] **Run** `npx vitest run --project=draw apps/theme-editor/src/theme/semantics.test.ts apps/theme-editor/src/layers/SemanticsLayer.test.tsx`, `npx tsc --noEmit`, `npx eslint apps/theme-editor/src` → clean.
+
+- [ ] **Commit** the five paths; message `let the rule drawer edit a draft that does not derive yet, and fix six drawer edges`.
