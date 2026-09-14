@@ -1,5 +1,54 @@
 # @weasel-js/text
 
+## 1.5.0
+
+### Patch Changes
+
+- 0f374d8: `kit:text` nodes with `align: 'center'` or `'right'` now align within
+  `pose.width`. They were anchored on `pose.x`, so centered text hung half outside
+  the left edge of its box and right-aligned text ended at that edge.
+  
+  Alignment has its own width, separate from the wrap width:
+  `LayoutRunsOpts.alignWidth` and `TextDrawCommand.width`, both defaulting to
+  `maxWidth`, and a trailing `width` argument on `textCommand` /
+  `textCommandFromRuns`. The painter passes its pose width there and still does
+  not wrap. `textLineBoxes` and `caretIndexAt` align within `pose.width` even at
+  `maxWidth: Infinity`, so the silhouette and the caret follow the paint. A
+  `layoutRuns` call or text command that sets no alignment width lays out exactly
+  as before.
+- deb9e79: Text wraps only where its style says so, and everything that lays a text node
+  out now agrees. `TextStyle.wrap` (default `false`) breaks lines between words
+  at the pose width; without it a line runs as long as its text and the width
+  only resolves `align`.
+  
+  Before this, `kit:text` never wrapped while `createTextLayer`, `textLineBoxes`,
+  `caretIndexAt`, `fitTextPose` and the edit overlay all wrapped at the pose
+  width. Opening an edit on a `kit:text` line longer than its box reflowed it,
+  and a double-click could put the caret on a line the canvas never drew.
+  
+  **Breaking:**
+  
+  - `createTextLayer` and `fitTextPose` (`axis: 'height'`) no longer wrap unless
+    the style sets `wrap: true`. Add it to text that should keep wrapping.
+  - `TextLineBoxesOpts.maxWidth` and `caretIndexAt`'s `opts` argument are gone,
+    along with the `CaretIndexAtOpts` type. Both read `style.wrap`.
+  - The edit overlay is `white-space: pre` for unwrapped text, sized to its
+    content, and never breaks inside a word in either mode.
+  
+  New: `layoutTextPose` and `textPoseLayoutInput` in `@weasel-js/text`, and
+  `textCommandFromPose` in `@weasel-js/core`, which `kit:text` and
+  `createTextLayer` both emit. `textLineBoxes` and `caretIndexAt` now resolve
+  `align: 'start' | 'end'` against `direction` as the painters do, and
+  `useSceneTextEdit` maps a double-click through the node's `verticalAlign`
+  (`getVerticalAlign` for custom data), which it used to ignore. SVG export
+  writes `data-weasel-wrap="true"` and import reads it back.
+- Updated dependencies [7586835]
+- Updated dependencies [2f1ddd0]
+- Updated dependencies [aa45d32]
+  - @weasel-js/geom@1.5.0
+  - @weasel-js/font@1.5.0
+  - @weasel-js/paint@1.5.0
+
 ## 1.4.4
 
 ### Patch Changes

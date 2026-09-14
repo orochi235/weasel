@@ -1,5 +1,68 @@
 # @weasel-js/loupe
 
+## 1.5.0
+
+### Patch Changes
+
+- c758b4d: The loupe reads the pixels it is aimed at. Two fixes:
+  
+  - **Its color comes off the frame after the aim.** `loupe.color` and `onColorChange` were read at aim time, which returns the frame before the aim. They now settle on the next frame to land. `pick()` still answers immediately, and now returns `null` if no frame has landed yet. On `@weasel-js/loupe`, a `LoupeSurface` that offers `subscribeFrame` gets this deferred sampling; a surface without it is sampled at aim time, as before.
+  - **It works over a pane of a shared canvas.** `CanvasExtensionApi.getSurfaceRect()` returns the rect of `surface` the canvas paints into: the pane's rect under `paintInto`, otherwise the whole canvas. Pass it as `createLoupe`'s new `region` option. The readback then offsets the aim by the pane's origin and stays inside the pane. Before, the loupe over a `paintInto` pane magnified whatever sat at the same offset from the shared canvas's corner.
+  
+  Anything that implements `CanvasExtensionApi` by hand now has to supply `getSurfaceRect`.
+- ab90aa7: Views now clamp zoom to a positive floor. A view's zoom is always finite and at
+  least `ZOOM_FLOOR` (1e-9); a zoom of 0, a negative one, `NaN` or `Infinity`
+  becomes the floor, and a non-finite position becomes 0. Dev builds warn once
+  when that happens. A negative `View.scale` axis is still a flipped (y-up) axis
+  and keeps its sign.
+  
+  The rule lives in `normalizeZoom`, with `normalizeView` applying it to a `View`,
+  and every place a view enters the kit goes through it: `<Canvas>` and
+  `<SceneCanvas>` (the `view` and `defaultView` props, `setView`, the `view` dep),
+  `<CanvasView>` (including a thunked `view`), `<SceneViewCanvas>`,
+  `<MinimapCanvas>`, `createViewportLayer`, camera animation targets, `zoomAt`,
+  `fitViewToBounds` and `fitZoom`. In labkit, `CanvasStack`, `Stage`, `usePanZoom`,
+  `zoomAt`, `centerOn`, `ZoomControl`, a trial's zoom chrome and `as2DView` do the
+  same through the new `normalize2DView` and `withZoom`. A loupe's magnification
+  follows the same rule.
+  
+  So `screenToWorld`, `canvasCoords` and affordance hit-testing stay finite
+  without handling a zero zoom themselves. `pxExtent` no longer guards a zero
+  axis, which a view can no longer have, and labkit's `zoomAt` now treats a
+  non-finite opening zoom as the floor rather than as 1.
+- Updated dependencies [9190fc9]
+- Updated dependencies [a2feeb0]
+- Updated dependencies [3ecc1be]
+- Updated dependencies [dd48085]
+- Updated dependencies [efaf707]
+- Updated dependencies [7586835]
+- Updated dependencies [6385c68]
+- Updated dependencies [2f1ddd0]
+- Updated dependencies [ea285a2]
+- Updated dependencies [c758b4d]
+- Updated dependencies [a41a83a]
+- Updated dependencies [794b4ff]
+- Updated dependencies [b65f4df]
+- Updated dependencies [90f0bd8]
+- Updated dependencies [b5b8b69]
+- Updated dependencies [b2f2d45]
+- Updated dependencies [6f5ff46]
+- Updated dependencies [edd5b39]
+- Updated dependencies [2e2041b]
+- Updated dependencies [65806bc]
+- Updated dependencies [a614be4]
+- Updated dependencies [ef60ff6]
+- Updated dependencies [269d432]
+- Updated dependencies [486f631]
+- Updated dependencies [0f374d8]
+- Updated dependencies [d25a09d]
+- Updated dependencies [deb9e79]
+- Updated dependencies [830cf7e]
+- Updated dependencies [50d2881]
+- Updated dependencies [a5f738a]
+- Updated dependencies [ab90aa7]
+  - @weasel-js/core@1.5.0
+
 ## 1.4.4
 
 ### Patch Changes

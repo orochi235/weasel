@@ -1,5 +1,59 @@
 # @weasel-js/hud
 
+## 1.5.0
+
+### Patch Changes
+
+- efaf707: A loupe can now be edited through. `createLoupe({ views: api, interactive: true })` makes the lens a view on the canvas: a press inside it selects the node it magnifies, and a drag moves that node by the pointer travel divided by the magnification. With `views` alone the lens paints the canvas's own stack but keeps its clicks as an eyedropper; with `source` alone it is the picture it was. A lens given `views` reads back from its canvas's `getSurfaceRect()`, so over a `paintInto` pane it samples that pane without a `region`.
+  
+  Views gained what that needed. `SceneCanvasApi.addView` declares a `<CanvasView>` from outside React, and its `paint: false` hands the drawing to a host such as a HUD window. `<CanvasView view>` accepts a thunk for a camera derived from the canvas's, and `interactive={false}` makes a view paint-only. A registered layer painted over a view — a HUD window over a panel — now takes presses there instead of the view beneath, and a view no longer hit-tests registered layers it does not paint.
+  
+  `hud.window({ interior: 'pass' })` gives the interior's input to what it shows while the frame stays chrome.
+- c758b4d: The loupe reads the pixels it is aimed at. Two fixes:
+  
+  - **Its color comes off the frame after the aim.** `loupe.color` and `onColorChange` were read at aim time, which returns the frame before the aim. They now settle on the next frame to land. `pick()` still answers immediately, and now returns `null` if no frame has landed yet. On `@weasel-js/loupe`, a `LoupeSurface` that offers `subscribeFrame` gets this deferred sampling; a surface without it is sampled at aim time, as before.
+  - **It works over a pane of a shared canvas.** `CanvasExtensionApi.getSurfaceRect()` returns the rect of `surface` the canvas paints into: the pane's rect under `paintInto`, otherwise the whole canvas. Pass it as `createLoupe`'s new `region` option. The readback then offsets the aim by the pane's origin and stays inside the pane. Before, the loupe over a `paintInto` pane magnified whatever sat at the same offset from the shared canvas's corner.
+  
+  Anything that implements `CanvasExtensionApi` by hand now has to supply `getSurfaceRect`.
+- Updated dependencies [9190fc9]
+- Updated dependencies [a2feeb0]
+- Updated dependencies [3ecc1be]
+- Updated dependencies [dd48085]
+- Updated dependencies [35e36b1]
+- Updated dependencies [efaf707]
+- Updated dependencies [7586835]
+- Updated dependencies [6385c68]
+- Updated dependencies [2f1ddd0]
+- Updated dependencies [ea285a2]
+- Updated dependencies [c758b4d]
+- Updated dependencies [a41a83a]
+- Updated dependencies [794b4ff]
+- Updated dependencies [b65f4df]
+- Updated dependencies [aa45d32]
+- Updated dependencies [90f0bd8]
+- Updated dependencies [b5b8b69]
+- Updated dependencies [b2f2d45]
+- Updated dependencies [6f5ff46]
+- Updated dependencies [edd5b39]
+- Updated dependencies [2e2041b]
+- Updated dependencies [65806bc]
+- Updated dependencies [a614be4]
+- Updated dependencies [ef60ff6]
+- Updated dependencies [269d432]
+- Updated dependencies [486f631]
+- Updated dependencies [0f374d8]
+- Updated dependencies [d25a09d]
+- Updated dependencies [deb9e79]
+- Updated dependencies [830cf7e]
+- Updated dependencies [50d2881]
+- Updated dependencies [a5f738a]
+- Updated dependencies [ab90aa7]
+  - @weasel-js/core@1.5.0
+  - @weasel-js/theme@1.5.0
+  - @weasel-js/geom@1.5.0
+  - @weasel-js/loupe@1.5.0
+  - @weasel-js/font@1.5.0
+
 ## 1.4.4
 
 ### Patch Changes

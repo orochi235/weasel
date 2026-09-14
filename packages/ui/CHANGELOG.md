@@ -1,5 +1,174 @@
 # @weasel-js/ui
 
+## 1.5.0
+
+### Minor Changes
+
+- b25b09b: <!-- bump-approved: minor: maintainer — asked for 1.5.0 in the session that added the async ComboBox surface -->
+  
+  `ComboBox` can take its options from a server, and a new `useAsyncOptions` hook
+  does the fetching.
+  
+  **`useAsyncOptions({ load, debounceMs, minLength })`** returns `{ options,
+  isLoading, loadError, inputValue, onInputChange }`, shaped to spread into a
+  `ComboBox`. It debounces the query, aborts a request superseded by a later
+  keystroke, and reports a rejected load separately from an empty result. Its
+  race guard is a sequence number rather than a liveness flag: two requests from
+  adjacent keystrokes are both live, so a flag cleared by effect cleanup does not
+  stop a slower first response from overwriting a newer one. `options` holds the
+  last *resolved* list and is never emptied to mean "working", so the previous
+  rows stay on screen and stay arrowable while the next request is out.
+  
+  **`ComboBox` gains four props.** `filter` is `'contains'` (the default, and
+  today's behavior), `'none'`, or a predicate. `'none'` shows every option given —
+  what a list a server already ranked needs, since React Aria's own substring pass
+  would drop rows that do not contain the query and reorder whatever survived. It
+  also implies `allowsEmptyCollection`, because a list the kit does not filter can
+  arrive empty mid-query and the popover would otherwise close before `emptyLabel`
+  could be seen. `isLoading` marks the field pending with `aria-busy` and a
+  spinner. `loadError` shows the new `errorLabel` in place of `emptyLabel`.
+  `onCommit` fires on Enter and on click with `{ source: 'option', key }` or
+  `{ source: 'text', text }`, so a consumer that accepts custom values no longer
+  has to reassemble "the user committed something" from two callbacks and a key
+  press.
+  
+  `ComboBox` also has keyboard tests for the first time — real key presses
+  asserting that the arrows move the active option and that Enter commits it.
+
+### Patch Changes
+
+- 7256ac8: **`MenuButton`** is a button that opens a list and acts on the row chosen,
+  holding no value of its own. It sizes to its label, not its widest row.
+  
+  labkit's "Add trial…" (with more than one instrument) and "Load…" snapshot
+  controls are now `MenuButton`s rather than `Select`s held at no selection. A
+  screen reader announces them as menus, and the fixed 160px and 88px widths are
+  gone.
+- 794b4ff: A number pref can name how its value is shown. `ToolPrefNumber.format` is
+  `'plain'` or `'compact'`, and labkit sets it with
+  `f.number(0).range(0, 2_000_000).format('compact')`. A compact readout keeps a
+  value's precision below a thousand and abbreviates above it at one decimal:
+  `950`, `40.0K`, `2.0M`.
+  
+  `SliderRow` takes the same choice as `notation`, and its readout reads typed text
+  through the new `parseNumber`: thousands commas and a `k`/`m`/`b`/`t` suffix are
+  accepted, so `2.5m` commits 2,500,000. An emptied readout now reverts instead of
+  committing zero. `formatCompact` and `parseNumber` are exported beside
+  `formatNumber`.
+  
+  **A slider readout is no longer narrower than its own values.** The box was a
+  fixed width, so a six-digit value lost a digit and read as a smaller number. It
+  now widens to fit the longer of its formatted `min` and `max`, and rows whose
+  values already fit keep their width. `--wzl-property-readout-w` still sets the
+  floor.
+  
+  `NumberRow` and `PrefsForm` ignore the format: one edits through a native number
+  input that cannot display `2.0M`, and the other's sliders show no value.
+- 59bdabb: `<Timeline>`'s graph mode now runs on `LayeredCurveEditor` instead of its own
+  sampled polyline, DOM handles and drag code, so the kit has one editable-curve
+  substrate rather than two.
+  
+  **`createKeyframeLayer` is a new built-in layer.** It edits a list of
+  `Keyframe<number>`: model x is time, model y is value, and each segment is
+  drawn through the easing on the key it runs into. You can drag keys, with the
+  committed key held in place and a ghost at the target. A dragged key snaps to
+  `snapX` (hold alt to skip it) and stays inside `xClamp`/`yClamp`. Clicking the
+  curve selects a segment, and a selected cubic-bezier segment shows two
+  draggable handles. Every key, segment and handle can take focus and has an
+  accessible name. The arrow keys move whichever one has focus, and Enter or
+  Space selects it. `keyframeLayerState` and `applyKeyframeDrag` are exported
+  alongside it.
+  `createFunctionLayer` still interpolates a spline through its anchors; the two
+  layers solve different problems and do not share curve maths.
+  
+  **Keyboard edits reach the layer contract.** `CurveLayer.onKeyDown` now gets a
+  fourth argument, `{ commit }`, so a key press can publish an edit that goes
+  through `onLayerCommit` and undo like a drag does. Existing three-argument
+  implementations are unaffected. `LayeredCurveEditor` now checks the native
+  event's `defaultPrevented` to stop the key reaching lower layers. Before, it
+  read a synthetic flag that a layer's `preventDefault` never set, so every key
+  reached every layer.
+  
+  **`createFunctionLayer` anchors are focusable and named.** Each movable
+  anchor has `tabIndex={0}`, `role="button"` and an accessible name built from
+  the new `label` option (default `'Point'`). The arrow keys move a focused
+  anchor by 1% of the range, or 10% with shift, under the same constraints as a
+  drag. This applies to `CurveEditor` too.
+  
+  **`Plot2D` takes `role` and `aria-label`.** The default role stays `'img'`.
+  `LayeredCurveEditor` renders its plot as `role="group"`, because an image's
+  children are hidden from assistive technology and its marks are now
+  interactive. It also accepts `aria-label`.
+  
+  `snapToNearest` is exported; `Timeline`'s snapping uses it.
+  
+  In graph mode, a key's value is no longer clamped to the lane's current value
+  range while you drag it, so a drag can raise the maximum or lower the minimum.
+  Graph lanes draw vertical grid lines at the ruler's ticks.
+- 441304e: `Plot2D` draws ticks. `xTicks` and `yTicks` take a line at each tick and a label
+  naming it, placed inside the plot or hanging past its edge. Left to themselves the
+  ticks land on round 1, 2 or 5 steps, as many as `minSpacing` allows at the plot's
+  current size; `values` gives them explicitly. Every label in a column shares its
+  decimal places, and `format` replaces the text. `LayeredCurveEditor`,
+  `CurveEditor` and `PointPlotter` pass both props through. `niceTicks`, `niceStep`
+  and `formatTick` are exported for anything drawing its own axis.
+  
+  A timeline lane in graph mode now labels its value axis in the gutter beside the
+  track, and its time grid is drawn through the same ticks.
+- 50d2881: A number pref with a display unit now reads a unit typed into it: `0.25turn` or
+  `30°` in the rotation field stores π/2 or π/6, and `12mm` in a field showing
+  centimeters stores what 1.2cm is.
+  
+  **`prefUnit(system, displayUnit, { precision?, suffix? })`** builds a
+  `ToolPrefNumberUnit` from a `UnitSystem`, so a leaf no longer hand-writes its
+  conversion. `ToolPrefNumberUnit` gains `accepts`, the units a person may type
+  and the factor each scales by. `ANGLE_RADIANS` joins the unit tables, and
+  `rotationDegreesUnit` is built from it.
+  
+  **`parseNumber(text, units?)`** reads a trailing unit, longest name first, and
+  a unit beats a magnitude suffix: with meters accepted, `2m` is two meters.
+  
+  **`UnitField`** is a text field for a number that can carry a unit. Both
+  `SelectionPanel` and `PrefsForm` edit a unit leaf through it; a leaf with no
+  unit keeps `NumberField`.
+- 28d5111: A `SelectRow` whose value is absent or not one of its options now shows a placeholder instead of the first option ("Choose option…" unless its new `placeholder` prop names one), and `CheckboxRow`, `TextRow` and `NumberRow` stay controlled when given no value.
+- Updated dependencies [9190fc9]
+- Updated dependencies [a2feeb0]
+- Updated dependencies [3ecc1be]
+- Updated dependencies [dd48085]
+- Updated dependencies [efaf707]
+- Updated dependencies [7586835]
+- Updated dependencies [6385c68]
+- Updated dependencies [2f1ddd0]
+- Updated dependencies [ea285a2]
+- Updated dependencies [c758b4d]
+- Updated dependencies [a41a83a]
+- Updated dependencies [794b4ff]
+- Updated dependencies [b65f4df]
+- Updated dependencies [90f0bd8]
+- Updated dependencies [b5b8b69]
+- Updated dependencies [b2f2d45]
+- Updated dependencies [6f5ff46]
+- Updated dependencies [edd5b39]
+- Updated dependencies [2e2041b]
+- Updated dependencies [65806bc]
+- Updated dependencies [a614be4]
+- Updated dependencies [ef60ff6]
+- Updated dependencies [269d432]
+- Updated dependencies [486f631]
+- Updated dependencies [2adc840]
+- Updated dependencies [0f374d8]
+- Updated dependencies [d25a09d]
+- Updated dependencies [deb9e79]
+- Updated dependencies [830cf7e]
+- Updated dependencies [50d2881]
+- Updated dependencies [a5f738a]
+- Updated dependencies [ab90aa7]
+  - @weasel-js/core@1.5.0
+  - @weasel-js/svg@1.5.0
+  - @weasel-js/font@1.5.0
+  - @weasel-js/modes@1.5.0
+
 ## 1.4.4
 
 ### Patch Changes

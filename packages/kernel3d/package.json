@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/kernel3d",
-  "version": "1.4.4",
+  "version": "1.5.0",
   "description": "3D kernel for weasel: poses, orbit camera, ray picking and screen-projected chrome geometry over core's scene graph and dispatcher. Hosts a renderer rather than owning one.",
   "license": "MIT",
   "type": "module",
@@ -37,10 +37,10 @@
     "build": "tsup"
   },
   "dependencies": {
-    "@weasel-js/geom": "1.4.4"
+    "@weasel-js/geom": "1.5.0"
   },
   "peerDependencies": {
-    "@weasel-js/core": "1.4.4"
+    "@weasel-js/core": "1.5.0"
   },
   "publishConfig": {
     "access": "public",

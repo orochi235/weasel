@@ -1,5 +1,7 @@
 # @weasel-js/font
 
+## 1.5.0
+
 ## 1.4.4
 
 ### Patch Changes

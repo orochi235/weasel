@@ -1,5 +1,376 @@
 # @weasel-js/labkit
 
+## 1.5.0
+
+### Minor Changes
+
+- b25b09b: <!-- bump-approved: minor: maintainer — asked for 1.5.0 in the session that added the async ComboBox surface -->
+  
+  `ComboBox` can take its options from a server, and a new `useAsyncOptions` hook
+  does the fetching.
+  
+  **`useAsyncOptions({ load, debounceMs, minLength })`** returns `{ options,
+  isLoading, loadError, inputValue, onInputChange }`, shaped to spread into a
+  `ComboBox`. It debounces the query, aborts a request superseded by a later
+  keystroke, and reports a rejected load separately from an empty result. Its
+  race guard is a sequence number rather than a liveness flag: two requests from
+  adjacent keystrokes are both live, so a flag cleared by effect cleanup does not
+  stop a slower first response from overwriting a newer one. `options` holds the
+  last *resolved* list and is never emptied to mean "working", so the previous
+  rows stay on screen and stay arrowable while the next request is out.
+  
+  **`ComboBox` gains four props.** `filter` is `'contains'` (the default, and
+  today's behavior), `'none'`, or a predicate. `'none'` shows every option given —
+  what a list a server already ranked needs, since React Aria's own substring pass
+  would drop rows that do not contain the query and reorder whatever survived. It
+  also implies `allowsEmptyCollection`, because a list the kit does not filter can
+  arrive empty mid-query and the popover would otherwise close before `emptyLabel`
+  could be seen. `isLoading` marks the field pending with `aria-busy` and a
+  spinner. `loadError` shows the new `errorLabel` in place of `emptyLabel`.
+  `onCommit` fires on Enter and on click with `{ source: 'option', key }` or
+  `{ source: 'text', text }`, so a consumer that accepts custom values no longer
+  has to reassemble "the user committed something" from two callbacks and a key
+  press.
+  
+  `ComboBox` also has keyboard tests for the first time — real key presses
+  asserting that the arrows move the active option and that Enter commits it.
+
+### Patch Changes
+
+- 9190fc9: Follow-ups a 3D lab turned up while driving core's dispatcher over a WebGL
+  viewport. Each one is a place the kit assumed its own 2D renderer.
+  
+  **`classifyTarget` and `affordanceAt` now take the world point their types
+  promise.** Both were handed the raw client point at every dispatcher call site,
+  so `<SceneCanvas>` and `<CanvasView>` each wrapped their thunk in the same
+  `clientToWorld` they also passed the dispatcher, and a consumer hit-tested in
+  one space while reading `ctx.world` in another. The conversion happens once now,
+  where the event arrives. Behavior-identical for both kit consumers; a consumer
+  passing no `clientToWorld` sees identity. **If you pass either option to
+  `useGestureDispatcher` yourself and convert coordinates inside it, remove your
+  conversion.**
+  
+  **`InvocationCtx.screen` carries a screen point, and is optional.** It was
+  filled from the same field as `ctx.world`, so it had never been screen-space.
+  It now comes from the event's client coordinates and is absent where the event
+  carries none — a keystroke, a UI-driven trigger, a synthetic probe. A
+  view-mutating drag still wants `drag.screenDelta`. A click's `ctx.world` is the
+  click's own position rather than the origin.
+  
+  **`scene.history` publishes the `History` a `Scene` already owned.** The kit's
+  `undo`/`redo` actions resolve a `history` dep and a consumer had nothing to give
+  them, so `<SceneCanvas>` cast the Scene itself through `unknown`. It is a façade
+  rather than the private engine: mutating members route through the scene's own
+  wrappers, so an action-driven undo bumps the version and notifies subscribers.
+  
+  **`resolveOverlays` is the overlay half of the in-flight gesture channel.**
+  `resolvePreviews` already answered for the ghosts a gesture displaces; this
+  answers for the chrome it draws that is no node at all — a marquee rect, a lasso
+  trail, an insert outline — in world geometry, with every degenerate case
+  dropped. `insertPreviewExtent` is exported alongside it.
+  
+  **Every overlay variant is now geometry, and the layer owns the paint.**
+  `OngoingOverlay`'s `'commands'` variant — arbitrary `DrawCommand[]`, which only
+  core's own 2D renderer could execute — **is gone**, along with the `opaque` flag
+  on the resolved form and the `action.commands` chrome id. Its two producers
+  publish the new `'polyline'` variant instead: a run of world points plus a
+  one-word `OverlayRole` (`'cut'` for `slice`, `'connector'` for
+  `@weasel-js/diagram`'s `connect`) that a painter maps to a stroke, falling back
+  to plain chrome for a role it does not know. `useDispatcherOverlayLayer` draws
+  both exactly as they were drawn before, and
+  `DispatcherOverlayStyle.roles` is where a consumer restyles one.
+  **`ConnectActionOptions.stroke` is removed** — an action no longer names a
+  paint; use `roles: { connector: … }` on the layer's style.
+  **If you produced a `'commands'` overlay**, publish a `'polyline'` for a line,
+  or paint it from a render layer of your own.
+  
+  **labkit stacks two surface buffers around the trial DOM.** The shared buffer
+  sat over the trials, which is right for a mark annotating an instrument and
+  wrong for an opaque renderer that buries its own pane. `useSurfaceCanvas('under')`
+  asks for the lower buffer; the default is unchanged. **`SurfaceCanvasContext`
+  now carries `{ over, under }` rather than one canvas** — a consumer providing it
+  directly must update the value.
+  
+  **labkit labs get their own chrome regions.** Every region was per-trial, so a
+  lab-level control had nowhere to go and `LabPalette` existed by casting a
+  two-field object through `as unknown as TrialChromeContext`. `<Lab labChrome>`
+  takes contributions shaped exactly like a trial's, against a real lab context.
+  
+  `docs/extending.md` now states the contract for mounting tools outside
+  `<SceneCanvas>`, including the half that was written down wrong: capability
+  eligibility resolves through `RuleCtx.allowedCapabilities` and `getRuleCtx`, not
+  the `activeTool` dep.
+- bc78766: Annotation marks now behave on a moving picture. A wheel over a mark zooms the trial's camera, where it used to be swallowed by the mark's input box; a mark no longer leaves a copy of itself behind when its tile moves; and the stage and canvas stack listen for the wheel actively, so `preventDefault` keeps the page from scrolling under the zoom.
+- 35e36b1: `--wzl-border-strong` now clears WCAG 1.4.11's 3:1 non-text contrast. It sat two
+  ramp steps off `surface` and measured 1.3–2.4:1 in every mode; it is now
+  `gray-400` in dark and `gray-500` in light, which passes against every surface.
+  
+  **Breaking:** `--wzl-border-raised` is removed. It was added for the same job, so
+  it folds into `border-strong` — replace any reference to it. Checkbox, radio,
+  slider, switch and toggle-bar edges get visibly stronger in both modes.
+- cf85a67: An instrument can declare a `title`. A trial of it reads that title in its
+  title bar and `aria-label` until the trial is given one of its own, and
+  `setTitle(null)` returns to it; the header's "Add trial" menu lists instruments
+  by it too. Without a `title`, both read the instrument's `name` as before.
+- 2f1ddd0: `@weasel-js/kernel3d` is a new package: poses, an orbit camera, ray picking and screen-projected chrome geometry over core's scene graph and dispatcher. It hosts a renderer rather than owning one — a consumer brings its own and the kernel hands it poses — and it takes core as a peer, the same tier `svg`, `diagram` and `loupe` sit in.
+  
+  Core took no diff for it. `Scene` is generic over its pose and holds a `Pose3` with no adapter; a 3D host passes the dispatcher an identity `clientToWorld` so `ctx.world` stays two numbers and each dep rebuilds the ray from the camera it closes over; tools transfer untouched. The two things that do not transfer are stated rather than guessed: `ViewApi` has no orientation, so the kernel declares a `camera3d` dep of its own, and `PoseDescriptor.remapBounds`/`fromBounds` throw, because a screen rectangle does not name a 3D pose without a depth.
+  
+  `@weasel-js/geom` gains a `./3d` subpath — vectors, quaternions, 4x4 matrices, ray/AABB and ray/plane intersection, and `transformAabb`. Dependency-free like the rest of the package, and immutable tuples rather than classes, so a pose survives `structuredClone` with its methods intact because it never had any.
+  
+  Two corrections to code promoted out of the 3D lab. `projectAabbToScreen` now clips each of the box's twelve edges against the near plane instead of dropping the corners behind it; the old behaviour reported a box too small for anything straddling the near plane, and reported almost nothing for a solid the camera sits inside. And the seam that says how big a node is now asks for its world box rather than a local one to transform: a sphere's box is the same under every rotation, and no transform of a local box reproduces that.
+  
+  `sceneFromJSON`'s `options` argument is now optional. Every field in it already was, so the natural one-argument call did not compile.
+  
+  Also new: a test that a quaternion pose survives `toJSON` and `sceneFromJSON` with its rotation intact. The claim that `Scene` is dimension-neutral had only ever been run against `setPose` and undo.
+- 42400c9: `<Lab addTrial={false}>` leaves the header's "Add trial" control out, for a lab
+  that opens its trials some other way. The default is unchanged.
+- 83d7aa0: An instrument can move a stored config's values when its schema renames a key.
+  **`Instrument.migrateConfig(stored)`** runs on every stored config as a lab
+  loads — trials, saved snapshots, and records another tab writes — before the
+  instrument's defaults fill the gaps, so renaming `gridSize` to `grid.size` keeps
+  the value a user set rather than resetting it. It runs on configs already
+  moved, so it has to return a current one unchanged.
+- ffe18ef: **`LabContribution` takes its chrome context as a type parameter.** It defaults
+  to `LabChromeContext`, so a `<Lab>` call site reads exactly as it did; a
+  consumer mounting the regions under a bare `<LabShell>` now writes
+  `LabContribution<MyCtx>` instead of composing `ContributionBase` and
+  `ToolbarItem<MyCtx>` by hand or fabricating a lab context. `contributionsIn`
+  carries the same parameter.
+- f233e30: `<Lab>` takes `pages` and `path`, forwarding both to the shell it already
+  renders. `<LabShell>` has had them all along — given two or more pages the title
+  becomes the switcher that reaches the project's other labs — but a lab built on
+  `<Lab>` had no way to pass them, so it could be reached from another lab's
+  switcher and offer no way back.
+- 39ace84: Two fixes to `<LabSwitcher>` found against a real consumer's header.
+  
+  The menu takes the opaque `--wzl-surface` instead of `--wzl-surface-raised`,
+  which is translucent by design — it is for panels that blur what sits behind
+  them, and the menu sets no backdrop-filter. Over a lab's sidebar the controls
+  behind it read straight through.
+  
+  The title no longer wraps. A consumer's header is usually a crowded flex row,
+  and the title is a click target now: left to wrap, `brick-icons corpus` breaks
+  after the hyphen and the control reads as three ragged lines with a caret
+  adrift from them.
+- 95588b7: Annotation tools now live in the lab's tool rail and write the lab's tool slot, so one tool is armed across every trial. A trial whose instrument declares `annotations` no longer gets a palette or a tool slot of its own; a lab whose own `tools` reuse an annotation tool id (`select`, `rect`, …) now throws on the collision.
+- 32ed674: A lab can persist to any substrate, and two tabs of one lab no longer discard
+  each other's work.
+  
+  `StorageAdapter` is asynchronous and stores structured-clone values:
+  `get`, `list(prefix)`, `set`, `delete`, and an optional `subscribe` that reports
+  writes made by someone else. New `createIndexedDbAdapter` / `indexedDbAdapter`
+  keep binary and non-JSON state and hear other tabs through a
+  `BroadcastChannel`; the localStorage and URL-hash adapters hear them through the
+  `storage` and `hashchange` events.
+  
+  A lab is stored as one record per trial, snapshot, layout and so on, under one
+  prefix, and the newest write to a record wins — an edit to one trial in one tab
+  and to another trial in a second tab both survive. Existing labs fold forward
+  on first open; the old document is deleted only once the records read back.
+  
+  `<Lab storageKey="…">` alone now persists (to IndexedDB, falling back to
+  localStorage), shows `fallback` — by default the empty shell — while it loads,
+  and opens once under StrictMode. `usePersistedState(name, initial)` is
+  `useState` whose value survives a reload, and `<Persistence>` provides it
+  outside a lab.
+  
+  **Breaking:** custom `StorageAdapter`s must implement the async methods.
+  `createLabStore` no longer takes storage — `openLabStore` reads a stored lab.
+  `<Lab storage>` without `storageKey` is a type error, and `storage={null}` is
+  gone (omit both). `FloatingPanel`'s `storageKey` is replaced by `persist`, which
+  remembers only inside a lab or `<Persistence>`. `AnnotationStorage.load` returns
+  a promise. `SingletonExperimentProvider` renders its `fallback` until loaded.
+- 37ebba6: Exported config schemas now emit declarations. The `f.*` builder node classes (`BaseNode`, `NumberNode`, `BooleanNode`, `StringNode`, `ColorNode`, `EnumNode`, `ValueNode`, `CustomNode`, `GroupNode`) are exported as values from `@weasel-js/labkit` and `@weasel-js/labkit/config`, so a declaration can name them and a consumer can extend them.
+- ed849b7: The config builder is published as its own entry, `@weasel-js/labkit/config`: `f`, the path helpers, `resolveConfigSchema` and the rules, without the lab's components or their stylesheets.
+- 4502f91: `<Lab>` fits whatever it is mounted in without scrolling. `.lk-shell` was
+  `100vh` while `.lk-lab` was `100%`, so a lab embedded in a fixed-height box
+  spilled past it by the difference, and the page-level reset only reached a lab
+  mounted directly under `<body>`. The shell now fills a container of definite
+  height and falls back to the viewport (`100dvh`) when the container has none,
+  so a lab behind any number of wrapper elements fits the window with no
+  `html, body, #root { height: 100% }` from the host. The reset keeps only
+  body's margin. `LabShell` used standalone gets the same rule.
+  
+  `.lk-shell-body` is a flex column, so children can size with `flex: 1` rather
+  than `height: 100%`, and a workspace wrapped for floating panels shrinks in the
+  lab body like a bare one.
+  
+  In development, `<Lab>` warns once when its shell body or the page scrolls
+  because of it, naming the element that reaches furthest past the bound.
+- 2f6480d: A lab has a `sidebar` region: `labChrome` contributions with `region: 'sidebar'` render as foldable sections in a resizable column left of the tool rail. Fold state and width persist lab-wide. A lab with no sidebar contributions renders exactly as before. `SidebarRegion` is now generic over `SidebarSlotContext`, so a chrome without tear-out can host it.
+- ffffe49: `<Lab>`'s `instruments` may now change while it is mounted. An added instrument can open trials and its state serializes through its own hooks; an instrument replaced by a different object has its open trials' and saves' configs refilled from its new defaults before it renders. An instrument dropped from the list keeps its hooks, so the trials it leaves open still persist their state correctly. The store holds the list (`LabStoreState.instruments`, `setInstruments`), and a trial reads its instrument from the store alongside its record. Hoist or memoize the list: a new object each render counts as a replacement.
+  
+  `createAnnotationStore`'s `meaning` option also accepts a function, read at each capture, so a store built once can follow a capability that changes.
+- 294944f: labkit re-exports `ToggleBar` and `Button`, with their prop types, from its
+  package root alongside the property rows, so chrome built on labkit needs no
+  direct `@weasel-js/ui` dependency to use them.
+- 2ca8bf5: A page built on `<LabShell>` no longer scrolls by the body's default margin
+  
+  The host reset in `styles.css` zeroed the body margin only on a page that mounts
+  `<Lab>`. `<LabShell>` also fills the viewport, and without `.lk-lab` on the page
+  the body kept its 8px margin, so the page was 16px taller than the window. The
+  reset now applies to either.
+- 70a88b6: `Split` is the resizable two-pane strip a trial's sidebar sits in, exported from
+  `primitives` for any other box that wants one. `TrialBody` is now a thin wrapper
+  over it and renders the same DOM.
+- f28e29d: Add a `stage` capability: an instrument whose picture is DOM declares its content size, and the trial pans and zooms it through the trial's camera the way it does a canvas — wheel, drag, and the zoom controls, which now appear for either capability. The content opens centered and shrunk to fit unless `initialView` says otherwise; `fitStage` and `<Stage>` are exported for hosts building their own.
+- 6203e60: A trial's root element carries `data-trial-id`, so a lab can find a trial's DOM from outside.
+- 7256ac8: **`MenuButton`** is a button that opens a list and acts on the row chosen,
+  holding no value of its own. It sizes to its label, not its widest row.
+  
+  labkit's "Add trial…" (with more than one instrument) and "Load…" snapshot
+  controls are now `MenuButton`s rather than `Select`s held at no selection. A
+  screen reader announces them as menus, and the fixed 160px and 88px widths are
+  gone.
+- 794b4ff: A number pref can name how its value is shown. `ToolPrefNumber.format` is
+  `'plain'` or `'compact'`, and labkit sets it with
+  `f.number(0).range(0, 2_000_000).format('compact')`. A compact readout keeps a
+  value's precision below a thousand and abbreviates above it at one decimal:
+  `950`, `40.0K`, `2.0M`.
+  
+  `SliderRow` takes the same choice as `notation`, and its readout reads typed text
+  through the new `parseNumber`: thousands commas and a `k`/`m`/`b`/`t` suffix are
+  accepted, so `2.5m` commits 2,500,000. An emptied readout now reverts instead of
+  committing zero. `formatCompact` and `parseNumber` are exported beside
+  `formatNumber`.
+  
+  **A slider readout is no longer narrower than its own values.** The box was a
+  fixed width, so a six-digit value lost a digit and read as a smaller number. It
+  now widens to fit the longer of its formatted `min` and `max`, and rows whose
+  values already fit keep their width. `--wzl-property-readout-w` still sets the
+  floor.
+  
+  `NumberRow` and `PrefsForm` ignore the format: one edits through a native number
+  input that cannot display `2.0M`, and the other's sliders show no value.
+- edd5b39: `createPoseFeed(scene)` is the channel a renderer weasel does not own uses to
+  keep its objects in step with a `Scene`. It publishes `added` / `removed` /
+  `changed` with effective poses, so a retained renderer mutates only what moved
+  instead of rebuilding every node's draw record on any change.
+  
+  It reads the scene's two clocks separately. Committed edits bump
+  `Scene.getVersion()` and cost one `O(n)` walk of three reference comparisons per
+  node — the scene mutates node objects in place and swaps their `pose` and `data`
+  references, so it is those the feed snapshots. A drag lives in `Scene.overrides`,
+  which names the ids it touched and costs `O(changed)`, so the walk never runs on
+  the hot path. A `FeedNode` carries the effective pose beside the node's committed
+  one, so a host can draw both without a second channel.
+  
+  The delta carries no order: a host that draws in order re-reads
+  `renderOrderNodes()`, which is cached until a structural edit. The feed does not
+  coalesce notifications either — that is the host scheduler's job.
+  
+  The 3D lab is the first host.
+- eaf38e2: A shared surface now clears itself when its tiles move.
+  
+  Cloning a trial, closing one, or resizing the window left the previous layout's
+  pixels wherever the new layout does not cover: a tile that moves or shrinks
+  takes its scissor with it, and nothing paints over what it vacated. In the 3D
+  lab that read as a second viewport smeared across the gap between panels.
+  
+  `SurfaceFrame` gains `retiled` — true on any frame where the tile geometry
+  changed — and `SurfaceHandle` gains `registerClear(id, fn)`. Every registered
+  clear runs, before any painter, on such a frame. It has to be the tenant's
+  call and not the painter's, because tenants paint in sequence and the second
+  would wipe the first; and it cannot be the owner's, because labkit owns the
+  canvas and never the context. `canvas.width = <its own value>` is not a way
+  out: assigning the same value resizes nothing, so it clears nothing.
+  
+  Two smaller fixes ride along. An invalidation the owner makes from inside
+  `onFrame` — what sizing the buffer forces — was discarded by the frame loop's
+  trailing clear, so a resize could leave tiles blank until something else
+  dirtied them. And painters now see what the owner dirtied during the same
+  frame rather than a frame later.
+  
+  It also measures until the layout stops moving. `node.placementChanged` fires
+  when a move is ordered, not when it lands, and a panel whose size settles while
+  its position is still animating gives `ResizeObserver` nothing more to report —
+  so a tile painted for the rest of its life at wherever it was caught mid-flight,
+  which is why cloning a few trials left viewports sitting between their panes.
+  A measurement that finds anything moved now schedules another, and the run ends
+  on the first one that finds nothing moved.
+- 6beda78: Adds a `3d-lab` example: a WebGL viewport driven by weasel core's dispatcher,
+  actions and select tool. Run it with `npm run dev:3d` from `packages/labkit`.
+  
+  It exists to answer what a 3D kernel would owe core, and it answers the main
+  one — nothing about the dispatcher changes shape. Findings are in
+  `docs/superpowers/specs/2026-08-22-3d-kernel-design.md`.
+  
+  Two bits of infrastructure came with it, because `examples/` reached neither
+  before: the lab is in the root `tsconfig.json` include list, and the `labkit`
+  vitest project's glob now covers `examples/` as well as `src` and `scripts`.
+  
+  Dragging a solid paints a ghost. `moveAction` keeps the interim pose on its
+  handle and commits one op on drop, so the lab reads those poses off the
+  dispatcher's in-flight handles and draws them translucent over a footprint on
+  the ground plane, while the solid stays at its committed pose until the drop.
+- ab90aa7: Views now clamp zoom to a positive floor. A view's zoom is always finite and at
+  least `ZOOM_FLOOR` (1e-9); a zoom of 0, a negative one, `NaN` or `Infinity`
+  becomes the floor, and a non-finite position becomes 0. Dev builds warn once
+  when that happens. A negative `View.scale` axis is still a flipped (y-up) axis
+  and keeps its sign.
+  
+  The rule lives in `normalizeZoom`, with `normalizeView` applying it to a `View`,
+  and every place a view enters the kit goes through it: `<Canvas>` and
+  `<SceneCanvas>` (the `view` and `defaultView` props, `setView`, the `view` dep),
+  `<CanvasView>` (including a thunked `view`), `<SceneViewCanvas>`,
+  `<MinimapCanvas>`, `createViewportLayer`, camera animation targets, `zoomAt`,
+  `fitViewToBounds` and `fitZoom`. In labkit, `CanvasStack`, `Stage`, `usePanZoom`,
+  `zoomAt`, `centerOn`, `ZoomControl`, a trial's zoom chrome and `as2DView` do the
+  same through the new `normalize2DView` and `withZoom`. A loupe's magnification
+  follows the same rule.
+  
+  So `screenToWorld`, `canvasCoords` and affordance hit-testing stay finite
+  without handling a zero zoom themselves. `pxExtent` no longer guards a zero
+  axis, which a view can no longer have, and labkit's `zoomAt` now treats a
+  non-finite opening zoom as the floor rather than as 1.
+- Updated dependencies [9190fc9]
+- Updated dependencies [a2feeb0]
+- Updated dependencies [3ecc1be]
+- Updated dependencies [b25b09b]
+- Updated dependencies [dd48085]
+- Updated dependencies [35e36b1]
+- Updated dependencies [efaf707]
+- Updated dependencies [7586835]
+- Updated dependencies [6385c68]
+- Updated dependencies [2f1ddd0]
+- Updated dependencies [ea285a2]
+- Updated dependencies [c758b4d]
+- Updated dependencies [7256ac8]
+- Updated dependencies [a41a83a]
+- Updated dependencies [794b4ff]
+- Updated dependencies [b65f4df]
+- Updated dependencies [59bdabb]
+- Updated dependencies [aa45d32]
+- Updated dependencies [90f0bd8]
+- Updated dependencies [b5b8b69]
+- Updated dependencies [441304e]
+- Updated dependencies [b2f2d45]
+- Updated dependencies [6f5ff46]
+- Updated dependencies [edd5b39]
+- Updated dependencies [2e2041b]
+- Updated dependencies [65806bc]
+- Updated dependencies [a614be4]
+- Updated dependencies [ef60ff6]
+- Updated dependencies [269d432]
+- Updated dependencies [486f631]
+- Updated dependencies [2adc840]
+- Updated dependencies [0f374d8]
+- Updated dependencies [d25a09d]
+- Updated dependencies [deb9e79]
+- Updated dependencies [830cf7e]
+- Updated dependencies [50d2881]
+- Updated dependencies [28d5111]
+- Updated dependencies [a5f738a]
+- Updated dependencies [ab90aa7]
+  - @weasel-js/core@1.5.0
+  - @weasel-js/ui@1.5.0
+  - @weasel-js/theme@1.5.0
+  - @weasel-js/geom@1.5.0
+  - @weasel-js/kernel3d@1.5.0
+  - @weasel-js/loupe@1.5.0
+  - @weasel-js/svg@1.5.0
+
 ## 1.4.4
 
 ### Patch Changes

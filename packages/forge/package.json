@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/forge",
-  "version": "1.4.4",
+  "version": "1.5.0",
   "description": "A component workshop on labkit: stories in isolated frames, controls and state in lab trials.",
   "license": "MIT",
   "type": "module",
@@ -62,14 +62,14 @@
   },
   "dependencies": {
     "@babel/parser": "^7.29.0",
-    "@weasel-js/theme": "1.4.4"
+    "@weasel-js/theme": "1.5.0"
   },
   "devDependencies": {
     "@babel/types": "^7.29.0"
   },
   "peerDependencies": {
-    "@weasel-js/core": "1.4.4",
-    "@weasel-js/labkit": "1.4.4",
+    "@weasel-js/core": "1.5.0",
+    "@weasel-js/labkit": "1.5.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "vite": "^8.0.0",

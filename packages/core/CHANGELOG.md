@@ -1,5 +1,586 @@
 # Changelog
 
+## 1.5.0
+
+### Patch Changes
+
+- 9190fc9: Follow-ups a 3D lab turned up while driving core's dispatcher over a WebGL
+  viewport. Each one is a place the kit assumed its own 2D renderer.
+  
+  **`classifyTarget` and `affordanceAt` now take the world point their types
+  promise.** Both were handed the raw client point at every dispatcher call site,
+  so `<SceneCanvas>` and `<CanvasView>` each wrapped their thunk in the same
+  `clientToWorld` they also passed the dispatcher, and a consumer hit-tested in
+  one space while reading `ctx.world` in another. The conversion happens once now,
+  where the event arrives. Behavior-identical for both kit consumers; a consumer
+  passing no `clientToWorld` sees identity. **If you pass either option to
+  `useGestureDispatcher` yourself and convert coordinates inside it, remove your
+  conversion.**
+  
+  **`InvocationCtx.screen` carries a screen point, and is optional.** It was
+  filled from the same field as `ctx.world`, so it had never been screen-space.
+  It now comes from the event's client coordinates and is absent where the event
+  carries none — a keystroke, a UI-driven trigger, a synthetic probe. A
+  view-mutating drag still wants `drag.screenDelta`. A click's `ctx.world` is the
+  click's own position rather than the origin.
+  
+  **`scene.history` publishes the `History` a `Scene` already owned.** The kit's
+  `undo`/`redo` actions resolve a `history` dep and a consumer had nothing to give
+  them, so `<SceneCanvas>` cast the Scene itself through `unknown`. It is a façade
+  rather than the private engine: mutating members route through the scene's own
+  wrappers, so an action-driven undo bumps the version and notifies subscribers.
+  
+  **`resolveOverlays` is the overlay half of the in-flight gesture channel.**
+  `resolvePreviews` already answered for the ghosts a gesture displaces; this
+  answers for the chrome it draws that is no node at all — a marquee rect, a lasso
+  trail, an insert outline — in world geometry, with every degenerate case
+  dropped. `insertPreviewExtent` is exported alongside it.
+  
+  **Every overlay variant is now geometry, and the layer owns the paint.**
+  `OngoingOverlay`'s `'commands'` variant — arbitrary `DrawCommand[]`, which only
+  core's own 2D renderer could execute — **is gone**, along with the `opaque` flag
+  on the resolved form and the `action.commands` chrome id. Its two producers
+  publish the new `'polyline'` variant instead: a run of world points plus a
+  one-word `OverlayRole` (`'cut'` for `slice`, `'connector'` for
+  `@weasel-js/diagram`'s `connect`) that a painter maps to a stroke, falling back
+  to plain chrome for a role it does not know. `useDispatcherOverlayLayer` draws
+  both exactly as they were drawn before, and
+  `DispatcherOverlayStyle.roles` is where a consumer restyles one.
+  **`ConnectActionOptions.stroke` is removed** — an action no longer names a
+  paint; use `roles: { connector: … }` on the layer's style.
+  **If you produced a `'commands'` overlay**, publish a `'polyline'` for a line,
+  or paint it from a render layer of your own.
+  
+  **labkit stacks two surface buffers around the trial DOM.** The shared buffer
+  sat over the trials, which is right for a mark annotating an instrument and
+  wrong for an opaque renderer that buries its own pane. `useSurfaceCanvas('under')`
+  asks for the lower buffer; the default is unchanged. **`SurfaceCanvasContext`
+  now carries `{ over, under }` rather than one canvas** — a consumer providing it
+  directly must update the value.
+  
+  **labkit labs get their own chrome regions.** Every region was per-trial, so a
+  lab-level control had nowhere to go and `LabPalette` existed by casting a
+  two-field object through `as unknown as TrialChromeContext`. `<Lab labChrome>`
+  takes contributions shaped exactly like a trial's, against a real lab context.
+  
+  `docs/extending.md` now states the contract for mounting tools outside
+  `<SceneCanvas>`, including the half that was written down wrong: capability
+  eligibility resolves through `RuleCtx.allowedCapabilities` and `getRuleCtx`, not
+  the `activeTool` dep.
+- a2feeb0: The default actions now work in a scene where a container's pose is a frame.
+  Each one read a stored pose as though it were world, which is right only under
+  the identity composition every consumer ships today; under any other one a
+  selection inside a rotated container aligned to the wrong edge, orbited the
+  wrong pivot, and grew along the wrong axis.
+  
+  `resize`, `rotate`, `flip`, `align`, `distribute` and `clone` now compose the
+  poses they measure up to world, and rebase every pose they write — preview,
+  override and committed op alike — into the frame the node stores it in. An
+  action that reads world and writes world looks right for one gesture and drifts
+  on the next, so `scenePoseFrame` pairs the two directions and each action's
+  tests run against a rotated-container fixture where local and world differ.
+  
+  `align`, `distribute` and `flip` also read through `effectivePose` now, so they
+  see a gesture's in-flight override instead of the pose underneath it.
+  
+  `group` and `ungroup` re-express every member across the change of frame, so
+  neither moves anything on screen. The container takes the world envelope of its
+  members' ink (`unionAABB`, so a turned member contributes what it covers rather
+  than the box it was posed in). Its pose is derived from its members only under
+  an identity composition: anywhere else that derivation reads poses expressed in
+  the container's own frame to compute that frame, which is circular, so the
+  container keeps the authored envelope until that has its own answer.
+  
+  `useAlign` and `useDistribute` take the same seam — an optional `getParent` on
+  the adapter and an optional `composition` in the options. Both default to the
+  absolute-pose behavior they have today.
+- 3ecc1be: Dragging a path anchor now edits the anchor on a canvas with no mode registry.
+  The drag used to move the whole shape: anchors sit on the selected body, so
+  `move`'s ambient binding matched the same press as `editAnchors` and won on
+  registration order. `move` now declines a press that hit an anchor or control
+  handle, and the drag falls through to `editAnchors`. Canvases that pass
+  `getActiveMode` were unaffected, because path-edit mode already filters `move`
+  out.
+- dd48085: A window blur now cancels every pointer held on the canvas. A drag in flight
+  ends with reason `'cancel'` rather than waiting for a release that may never
+  arrive, and a press that had not yet become a drag is dropped without a click.
+- efaf707: A loupe can now be edited through. `createLoupe({ views: api, interactive: true })` makes the lens a view on the canvas: a press inside it selects the node it magnifies, and a drag moves that node by the pointer travel divided by the magnification. With `views` alone the lens paints the canvas's own stack but keeps its clicks as an eyedropper; with `source` alone it is the picture it was. A lens given `views` reads back from its canvas's `getSurfaceRect()`, so over a `paintInto` pane it samples that pane without a `region`.
+  
+  Views gained what that needed. `SceneCanvasApi.addView` declares a `<CanvasView>` from outside React, and its `paint: false` hands the drawing to a host such as a HUD window. `<CanvasView view>` accepts a thunk for a camera derived from the canvas's, and `interactive={false}` makes a view paint-only. A registered layer painted over a view — a HUD window over a panel — now takes presses there instead of the view beneath, and a view no longer hit-tests registered layers it does not paint.
+  
+  `hud.window({ interior: 'pass' })` gives the interior's input to what it shows while the frame stays chrome.
+- 7586835: `@weasel-js/geom` is now the single definition of the geometry both packages
+  were carrying, and `@weasel-js/core` imports it.
+  
+  Two of core's command-stream walks had the pen wrong after a `Z`: `boundsOfPath`
+  measured a following curve from the last point drawn rather than the subpath
+  start, and `extractPolylines` flattened one from there. Both are fixed by
+  `forEachSegment`, which now returns the pen where SVG says `Z` leaves it, and
+  which also reports the command index and stops when its visitor returns `false`
+  — the three things core's own walks needed. Ten walks, six Bernstein
+  evaluations, an even-odd ray cast and four rect-corner literals now go through
+  geom.
+  
+  `pathPoseDescriptor.remapBounds` scaled a zero-extent source axis by `0`, which
+  collapsed a flat path onto the destination origin and left a transform that
+  could not be inverted. It uses geom's `boxToBox`, which translates that axis, as
+  `scalePathToBounds` already did.
+  
+  Moved into geom so core no longer keeps a second copy: bezier flattening
+  (`flattenQuadratic` and both arc-length variants included) and `pathCrop`.
+  geom's boolean adapter picks up core's ring nesting, which pre-tests bounding
+  boxes and votes over three sample vertices where geom probed one — a hole
+  sharing a vertex with its container was misclassified.
+  
+  `rectToContour` now emits the four corners with the closing edge implicit,
+  matching what `pointInPolygon` documents and what every call site wants. The
+  repeated first vertex it used to emit is a zero-length closing segment for
+  anything that strokes the result.
+- 6385c68: A container's pose can now define a **frame**: a child's stored pose is
+  expressed in it, so rotating a container rotates its contents and moving one
+  carries them without touching their poses. Opt in with
+  `<SceneCanvas poseComposition={RIGID_POSE_COMPOSITION}>` or
+  `sceneToAdapter(scene, { poseComposition })`. Omit it and nothing changes —
+  poses stay absolute, exactly as before.
+  
+  Before this, nesting contributed a clip chain and nothing else. `getPose` was
+  documented as returning a local pose while every render walk, both pick
+  sources, all selection chrome and the clipboard treated it as world, which
+  agreed only because no consumer ever supplied a composition.
+  
+  `getPose` still returns the stored pose. `getWorldPose` on the scene adapter is
+  the composed reading, and is what picking, chrome, `getNodeAtPoint` and the
+  clipboard consume. `composeRigidPose` / `decomposeRigidPose` and the
+  `RECT_POSE_COMPOSITION` / `RIGID_POSE_COMPOSITION` strategies are exported.
+  
+  `PoseComposition` gains a required `closure` field naming the transforms it
+  represents exactly. This is a breaking change to that interface for anyone
+  constructing one by hand; nothing in the repo did. `RectPose` carries no scale
+  factor, so the strategy that ships is rigid — translate and rotate — and an
+  anisotropically scaled parent is outside what a pose can hold, since it turns a
+  rotated child into a parallelogram.
+  
+  `sceneToAdapter` throws when given both `poseComposition` and
+  `cascadeContainerPose`. The cascade translates every descendant when a
+  container moves, which is what absolute poses need and would move a framed
+  child twice.
+  
+  `useNodeOverlayFrame` read the authored pose, so an overlay ignored gesture
+  overrides and derived poses. It reads the effective pose now.
+  
+  The default actions — resize, rotate, group, clone, flip, align, distribute —
+  read the strategy as a `poseComposition` dep alongside `poseDescriptor`, and
+  `<SceneCanvas>` publishes it through the new `usePoseCompositionDepSource`.
+  A consumer wiring actions without `SceneCanvas` has to publish that dep itself;
+  without it the actions fall back to identity and write world poses into a
+  framed scene.
+  
+  Design: `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`.
+- 2f1ddd0: `@weasel-js/kernel3d` is a new package: poses, an orbit camera, ray picking and screen-projected chrome geometry over core's scene graph and dispatcher. It hosts a renderer rather than owning one — a consumer brings its own and the kernel hands it poses — and it takes core as a peer, the same tier `svg`, `diagram` and `loupe` sit in.
+  
+  Core took no diff for it. `Scene` is generic over its pose and holds a `Pose3` with no adapter; a 3D host passes the dispatcher an identity `clientToWorld` so `ctx.world` stays two numbers and each dep rebuilds the ray from the camera it closes over; tools transfer untouched. The two things that do not transfer are stated rather than guessed: `ViewApi` has no orientation, so the kernel declares a `camera3d` dep of its own, and `PoseDescriptor.remapBounds`/`fromBounds` throw, because a screen rectangle does not name a 3D pose without a depth.
+  
+  `@weasel-js/geom` gains a `./3d` subpath — vectors, quaternions, 4x4 matrices, ray/AABB and ray/plane intersection, and `transformAabb`. Dependency-free like the rest of the package, and immutable tuples rather than classes, so a pose survives `structuredClone` with its methods intact because it never had any.
+  
+  Two corrections to code promoted out of the 3D lab. `projectAabbToScreen` now clips each of the box's twelve edges against the near plane instead of dropping the corners behind it; the old behaviour reported a box too small for anything straddling the near plane, and reported almost nothing for a solid the camera sits inside. And the seam that says how big a node is now asks for its world box rather than a local one to transform: a sphere's box is the same under every rotation, and no transform of a local box reproduces that.
+  
+  `sceneFromJSON`'s `options` argument is now optional. Every field in it already was, so the natural one-argument call did not compile.
+  
+  Also new: a test that a quaternion pose survives `toJSON` and `sceneFromJSON` with its rotation intact. The claim that `Scene` is dimension-neutral had only ever been run against `setPose` and undo.
+- ea285a2: `LayerRecord.locked` now does something. A locked layer still paints, but its
+  nodes are out of reach:
+  
+  - A click, marquee, lasso, double-click text edit, the `nodeAtPoint` dep (drop
+    targets, the eyedropper) and Select All all pass over them. A pick query that
+    only samples paint can take them back with `includeLocked: true`.
+  - The scene's selection never holds one: `setSelection` drops them, and locking
+    a layer drops its nodes from the selection. Undoing the lock puts them back.
+  - Every node mutation on them throws: `add` onto the layer or under a locked
+    container, `setPose`, `update`, `remove`/`removeMany` (including a cascade
+    that reaches one), `setLayer` from or onto the layer, `setDependsOn`, `move`
+    and `reorder`. Kit actions commit through those, so delete, nudge, move,
+    resize, rotate, group, ungroup, reorder, cut and the paint actions refuse too.
+  - A lock covers a container's whole subtree, whatever layers its descendants
+    are tagged to. There is no per-node lock.
+  
+  `scene.isLocked(id)` answers the question, and `scene.unlocked(fn)` runs a
+  programmatic edit with the guard lifted. Undo and redo never need it. The
+  layer operations — the lock toggle itself, visibility, rename, reorder and
+  `removeLayer` — are not gated.
+  
+  `scene.applyBatch`, `scene.batch` and `scene.history.apply`/`applyOps` are now
+  all-or-nothing: an op that throws partway reverts everything the call already
+  applied and records no undo entry. Before, the ops ahead of the throw stayed
+  applied with no entry to undo them.
+- c758b4d: The loupe reads the pixels it is aimed at. Two fixes:
+  
+  - **Its color comes off the frame after the aim.** `loupe.color` and `onColorChange` were read at aim time, which returns the frame before the aim. They now settle on the next frame to land. `pick()` still answers immediately, and now returns `null` if no frame has landed yet. On `@weasel-js/loupe`, a `LoupeSurface` that offers `subscribeFrame` gets this deferred sampling; a surface without it is sampled at aim time, as before.
+  - **It works over a pane of a shared canvas.** `CanvasExtensionApi.getSurfaceRect()` returns the rect of `surface` the canvas paints into: the pane's rect under `paintInto`, otherwise the whole canvas. Pass it as `createLoupe`'s new `region` option. The readback then offsets the aim by the pane's origin and stays inside the pane. Before, the loupe over a `paintInto` pane magnified whatever sat at the same offset from the shared canvas's corner.
+  
+  Anything that implements `CanvasExtensionApi` by hand now has to supply `getSurfaceRect`.
+- a41a83a: `<MinimapCanvas>` takes an `animator` prop and forwards it to its `<SceneViewCanvas>`, so the minimap repaints on the animator's ticks and paints its vertex-color overrides. Pass the main canvas's animator and the minimap shows the same animated colors instead of each node's stored ones.
+- 794b4ff: A number pref can name how its value is shown. `ToolPrefNumber.format` is
+  `'plain'` or `'compact'`, and labkit sets it with
+  `f.number(0).range(0, 2_000_000).format('compact')`. A compact readout keeps a
+  value's precision below a thousand and abbreviates above it at one decimal:
+  `950`, `40.0K`, `2.0M`.
+  
+  `SliderRow` takes the same choice as `notation`, and its readout reads typed text
+  through the new `parseNumber`: thousands commas and a `k`/`m`/`b`/`t` suffix are
+  accepted, so `2.5m` commits 2,500,000. An emptied readout now reverts instead of
+  committing zero. `formatCompact` and `parseNumber` are exported beside
+  `formatNumber`.
+  
+  **A slider readout is no longer narrower than its own values.** The box was a
+  fixed width, so a six-digit value lost a digit and read as a smaller number. It
+  now widens to fit the longer of its formatted `min` and `max`, and rows whose
+  values already fit keep their width. `--wzl-property-readout-w` still sets the
+  floor.
+  
+  `NumberRow` and `PrefsForm` ignore the format: one edits through a native number
+  input that cannot display `2.0M`, and the other's sliders show no value.
+- b65f4df: `RuleCtx` carries a zoom, not a `View`.
+  
+  `zoomAtLeast` is the only selector that ever read the viewport, and one number
+  is all it needs. A host whose viewport is a camera had no `View` to hand over,
+  so it could not build a rule context at all — and a dispatcher with no
+  `getRuleCtx` skips every eligibility rule silently rather than failing.
+  
+  `RuleCtx.view: View` is now `RuleCtx.zoom?: number`, `BuildRuleCtxArgs` the
+  same, and `zoomAtLeast` declines when no zoom is reported. `viewZoom(view)` is
+  exported from `@weasel-js/core` for the 2D callers that now pass it; the legacy
+  `ChromeCtx` shape still carries a `View` and `resolveVisibility` converts.
+- 90f0bd8: Every 2D affine inversion now uses `@weasel-js/geom`'s `invert` and its singularity rule, which judges the determinant against the matrix's own scale.
+  
+  - SVG import now keeps a transform under a uniformly tiny parent scale, such as `scale(0.0000001)`. It used to call that parent singular and bake the child's rotation into the wrong space. A parent that really is singular now drops the child's transform with a warning, and so does a large parent whose determinant is only rounding. `@weasel-js/svg` now depends on `@weasel-js/geom`.
+  - A gradient or pattern measured in `units: 'local'` or `'world'` now draws nothing when that space has no inverse, for example under a group that scales an axis to zero. It used to draw as if untransformed. `mat3.invert` returns `null` for such a matrix instead of the identity, and `PaintBindContext.spaceInverse` now returns `Mat3 | null`, so a registered paint kind should return `null` from `bind` when it gets `null`. Both are type-level breaking changes.
+  - In the custom-shader vertex prelude, `v_world` now reads the world origin when the view has no inverse, instead of a scaled mapping that looked plausible and was wrong.
+  - `useNodeOverlayFrame`'s `toLocal` now keeps the last mapping that had an inverse while a live view flattens an axis. It used to hand the overlay point back unchanged.
+- b5b8b69: A layer one view hides is now gone from that view for input too, not only for
+  paint.
+  
+  - `<SceneCanvas>` documents `layerVisibility` / `layerOrder` as its own props.
+    They already reached the painter; now a click, a marquee, a lasso, Cmd+A and
+    hover in that canvas pass over a scene layer it hides (keyed
+    `scene:<layerId>`). Another view of the same scene still paints and takes it.
+    The scene's own `LayerRecord.visible` still applies underneath and cannot be
+    overridden.
+  - `<CanvasView>` (and `SceneCanvasApi.addView`) take the same two props,
+    applied after `layers` narrows the stack, for its paint and its picking. It
+    now also honors a layer's `defaultVisible`, as the surface does.
+  - `<SceneViewCanvas>`, `<MinimapCanvas>`, `renderSceneToCanvas` and
+    `buildSceneViewCommands` take `layerVisibility` / `layerOrder` keyed the same
+    way, so the main canvas's map can be passed straight to its minimap.
+  - `useSelectTool` takes `alphaOf` and `layerIsPainted`, so a consumer with an
+    adapter and no `Scene` can make faded or unpainted nodes unclickable.
+  - `ViewApi` gains an optional `layerIsPainted`; `selectAll`, `areaSelect` and
+    `lassoSelect` now require the `view` dep and pass it to
+    `AreaSelectDep.hitTestArea` / `LassoSelectDep.hitTestArea` / `hitTestLasso`
+    as a new optional last argument. A marquee or lasso on a canvas with
+    `alphaFor` also skips nodes painted at alpha 0, as a click already did.
+- b2f2d45: Let a `PoseDescriptor` see the node it is describing.
+  
+  Every method on the descriptor took a pose and nothing else, so two shapes
+  sharing a pose type — a sphere and a box both posed by position/rotation/scale —
+  were indistinguishable to it. New optional `forNode(node)` returns a descriptor
+  specialized to one node; `poseDescriptorForNode(descriptor, node)` is the
+  accessor, and returns the descriptor unchanged when it declares no
+  specialization.
+  
+  This widens API. No existing signature changed, so a descriptor that ignores the
+  node compiles and behaves exactly as before. The kit calls `forNode` from the
+  sites that already hold a node — marquee and lasso hit-testing, select-tool
+  picking, selection chrome bounds, the container-pose cascade, the minimap union,
+  `arrayAdapter`, and the move and rotate actions. Sites holding only an id keep
+  reading the unspecialized descriptor.
+- 6f5ff46: Pose geometry is supplied once. `<SceneCanvas poseDescriptor={…}>` tells every
+  built-in action, the selection chrome, picking and area select how to read and
+  rewrite this scene's poses; it defaults to `AUTO_POSE_DESCRIPTOR` (rect and
+  `Path` poses). A pose of any other shape now works end to end — before, dragging
+  one into a container wrote `NaN` into it.
+  
+  Breaking:
+  
+  - `PoseProjection` is renamed `PoseDescriptor`, and gains a required
+    `fromBounds(bounds, template)` and an optional `withRotation(pose, rotation)`.
+  - `ResizePose` and `AlignBounds` are removed; use `Bounds`.
+  - `RotateGeometry`, `AlignBoundsProjection` and `RECT_ALIGN_PROJECTION` are
+    removed.
+  - Removed options, replaced by the descriptor: `selectTool.resize.geometry` and
+    `useResizePolicy({ projection })` (use `<SceneCanvas poseDescriptor>`);
+    `UseRotateOptions.geometry` and `UseMoveOptions.translatePose` (both were
+    unread); `poseBounds` on `useSelectTool`, `arrayAdapter`, `sceneToAdapter`,
+    `MinimapCanvas` and `nestedHitTester` (use their `poseDescriptor` option);
+    `arrayAdapter`'s `intersectsRect` and `translatePose`; the selection overlay's
+    `getBounds` and `fromBounds`; the alignment behaviors' `projection`.
+  - `Canvas`'s `geometry` prop is renamed `poseDescriptor`. `SceneCanvas`'s own
+    `geometry` prop — the `pickEvery` / `boundsOf` hit-test overrides — is a
+    different prop and keeps its name.
+  - `computeFitView`'s fourth argument is a `PoseDescriptor`, not a bounds
+    function.
+  - `sceneToAdapter`'s `cascadeContainerPose` is a boolean; the cascade translates
+    through the descriptor.
+  - The kit's built-in painters only draw rect poses. A node with any other pose
+    needs its own painter.
+  - `Scene` has a read-only `registry`. For a custom pose kind,
+    `unionOfChildrenVia(descriptor)` builds the container-union function to
+    register under `UNION_OF_CHILDREN`.
+- edd5b39: `createPoseFeed(scene)` is the channel a renderer weasel does not own uses to
+  keep its objects in step with a `Scene`. It publishes `added` / `removed` /
+  `changed` with effective poses, so a retained renderer mutates only what moved
+  instead of rebuilding every node's draw record on any change.
+  
+  It reads the scene's two clocks separately. Committed edits bump
+  `Scene.getVersion()` and cost one `O(n)` walk of three reference comparisons per
+  node — the scene mutates node objects in place and swaps their `pose` and `data`
+  references, so it is those the feed snapshots. A drag lives in `Scene.overrides`,
+  which names the ids it touched and costs `O(changed)`, so the walk never runs on
+  the hot path. A `FeedNode` carries the effective pose beside the node's committed
+  one, so a host can draw both without a second channel.
+  
+  The delta carries no order: a host that draws in order re-reads
+  `renderOrderNodes()`, which is cached until a structural edit. The feed does not
+  coalesce notifications either — that is the host scheduler's job.
+  
+  The 3D lab is the first host.
+- 2e2041b: `resolvePreviews(sources, scene)` reads what an in-flight gesture is proposing,
+  with no renderer in it.
+  
+  An ongoing action publishes interim poses on its handle rather than writing them
+  to the scene, and until now `<SceneCanvas>`'s ghost layer was the only thing that
+  knew how to read them: which ids are in flight, whose preview wins when two
+  sources name the same id, which previewed nodes are roots and which are their
+  previewed children, and which are merely displaced rather than dragged. None of
+  that is about drawing. A consumer with its own renderer needed all of it and had
+  to rebuild it from `Dispatcher.getInFlightHandles()`.
+  
+  It returns the previewing subtrees as roots, each carrying the committed node
+  beside the interim pose and data; `flattenPreviews` walks them parents-first.
+  `usePreviewGhostLayer` now draws from it, and the 3D lab under
+  `packages/labkit/examples/3d-lab` reads its drag ghosts through it instead of
+  its own copy.
+  
+  The overlay channel — marquee, lasso, insert preview — is not covered: those
+  arrive as `DrawCommand[]`, which is core's own 2D renderer vocabulary.
+- 65806bc: Fix eleven latent routing faults surfaced by the extraction's correctness pass.
+  All predate the move into `@weasel-js/routing`.
+  
+  - Dispatcher and dep-registry ownership are stacks rather than single slots, so
+    with two canvases under one `<ActionsProvider>` the one still on screen keeps
+    its wiring when the other unmounts. `begin()` no longer returns `null`
+    permanently after that.
+  - An offhand hotkey hold now releases its own tool instead of whatever is on
+    top of the hold stack, so overlapping holds released out of order disengage
+    the right tool.
+  - `reportDeadClaim` no longer reads `process.env` bare. A consumer loading the
+    published ESM in a runtime with no `process` got a `ReferenceError` out of the
+    pointerdown listener on any unmatched exclusive claim.
+  - `ctx.drag.points` accumulates every pointermove vertex for actions that
+    declare no `onMove`. Such an action previously saw only the press point,
+    committing a one-vertex path.
+  - `ContributionsApi.entries` tracks the entry list rather than the entry list as
+    it stood when the focused tool last changed.
+  - The dev-only route-conflict reporter compares ambient entries against each
+    other (it never did), keeps two collisions on different predicates apart, and
+    checks a lone action against itself.
+  - `inFlightCursor` reports the most recently started gesture's cursor, agreeing
+    with `getActiveAction`; the dispatcher breaks same-specificity hotkey ties in
+    favor of the newest hold, agreeing with `ToolsApi.hotkeyEngaged`.
+  - **`Eligibility.capabilities` now gates.** It never did: `liveScope`
+    short-circuits when no `allows` predicate is supplied, and none was. A tool
+    declaring `capabilities` whose action carries no `eligible` rule kept routing
+    input in a mode that forbids those tags. The dispatcher builds the predicate
+    from the `RuleCtx` it already holds — so this changes behavior only for
+    consumers that wired the modes system, which is where the declaration was
+    meant to take effect.
+  - A multitouch handle is ended when the finger count changes rather than left in
+    flight, so a third finger landing mid-pinch no longer commits two gestures on
+    the final lift.
+  - The route-conflict reporter buckets each key alternative separately, so
+    `key: ['h','H']` is reported as colliding with `key: 'H'`. `RegistryEntry`
+    gains an optional `argAlternatives` carrying them.
+- a614be4: Extract binding-to-action routing into `@weasel-js/routing`.
+  
+  The gesture dispatcher, the action registry and invoker, tool and contribution
+  declaration, the route grammar's reflection surface, and the eligibility rule
+  algebra now live in their own package beside `@weasel-js/gestures` and
+  `@weasel-js/history`. It ships two entry points: the pure dispatcher on the main
+  entry — no React, no DOM — and the React seam that pumps browser events into it
+  behind `@weasel-js/routing/react`, with React an optional peer. A kernel that
+  drives routing itself can take the first without the second.
+  
+  `@weasel-js/core` depends on the new package and re-exports every symbol that
+  moved, so **no existing import changes**, including `@weasel-js/core/routing`.
+  A consumer that adds its own dependency still writes
+  `declare module '@weasel-js/core'`; the merge carries through core's re-export.
+  
+  `createPaintedCursorState` and its types move to `@weasel-js/cursor`, where the
+  cursor they hold is declared. `@weasel-js/core` re-exports them unchanged.
+- ef60ff6: The routing layer's types now state where the dispatch boundary runs, instead of leaving it implicit inside two large interfaces.
+  
+  `Action` splits into `ActionDispatch` — bindings, deps, invoker, scope, gates, cursors — and `ActionPresentation`: label, icon, group, shortcut. `Contribution` splits the same way into `ContributionRouting` and `ContributionChrome`. Both composed types keep every field they had, so nothing that authors an action or a contribution changes.
+  
+  New alongside them: `BindingSource`, the id-plus-`defaultBinding` shape `actionBindings` reads; and `ActionSource`, the single `list()` method the gesture dispatcher consults a registry through. `actionBindings`, `BoundGesture`, `evaluateEnabled`, `ActionEnabledResult`, `SliceDep`, `ClipboardDep` and `TextEditDep` are re-exported from the same barrel entries as before, from new homes. `ClaimableGesture` now lives in `@weasel-js/gestures` beside `GestureName`, and is still exported from `@weasel-js/core`.
+  
+  `_resetEnabledWarnsForTests` is removed. It had no callers and was never on the public barrel.
+  
+  Under this, core's import graph loses a 15-file strongly connected component spanning contributions, tools, actions, the dep schema and the dispatcher. Nothing in routing, tools or contributions is in an import cycle now.
+  
+  The consumer smoke test gained a check that a consumer's own `declare module '@weasel-js/core'` dep merges into `DepSchema` against the published declarations, and stopped reading a subpath import such as `@weasel-js/geom/booleans` as an undeclared package.
+- 269d432: Animated vertex colors now reach nodes the scene paints itself. `<SceneCanvas animator>` paints `animator.colorOverrides` — what `tweenVertexColors`, `springVertexColors`, `cycleVertexColors` and `staggerVertexColors` write — onto the scene's nodes: the built-in path, shape and derived-path painters apply them, and a custom `drawOne` receives them as the new `NodePaintCtx.vertexColors`. Before, only `createPathLayer` read the registry, so a default-painted node ignored every color animation.
+  
+  The same colors reach detached renders: `<SceneViewCanvas>` takes an `animator` prop, and `renderSceneToCanvas`, `renderSceneToPixels` and `buildSceneViewCommands` take the registry as `colorOverrides`. `ColorOverrideRegistry` gains `has(id)` and `resolve(id, channel, base, tMs)`, the one resolution `createPathLayer` and the scene walks now share.
+  
+  Path nodes also paint fill vertex colors from `data.vertexColors`, the same field `PathDrawCommand` uses.
+- 486f631: `staggerVertexColors` no longer jumps straight to its end colors. It published a function-form override that read its timestamp as time since the stagger began, but `createPathLayer` calls a function-form override with `performance.now()`, so on screen every anchor finished the moment the stagger started. The helper now publishes a plain color array on each tick, the same way `tweenVertexColors` does.
+- 0f374d8: `kit:text` nodes with `align: 'center'` or `'right'` now align within
+  `pose.width`. They were anchored on `pose.x`, so centered text hung half outside
+  the left edge of its box and right-aligned text ended at that edge.
+  
+  Alignment has its own width, separate from the wrap width:
+  `LayoutRunsOpts.alignWidth` and `TextDrawCommand.width`, both defaulting to
+  `maxWidth`, and a trailing `width` argument on `textCommand` /
+  `textCommandFromRuns`. The painter passes its pose width there and still does
+  not wrap. `textLineBoxes` and `caretIndexAt` align within `pose.width` even at
+  `maxWidth: Infinity`, so the silhouette and the caret follow the paint. A
+  `layoutRuns` call or text command that sets no alignment width lays out exactly
+  as before.
+- d25a09d: `useSceneTextEdit`'s editing overlay now follows the canvas's pan and zoom
+  without being handed a `view`. It reads the camera from the weasel canvas
+  mounted inside the `container` it is given — the canvas a double-click landed
+  on, when there are several — so the overlay's text sits on the glyphs it
+  replaces at any zoom. Passing `view` still works and still wins.
+  
+  The overlay is also clipped to that canvas's box, the same place the canvas
+  clips its glyphs. A zoomed text node used to paint its editor across the page
+  beside the canvas. Clipping the container with `overflow: hidden` was no fix:
+  the browser scrolls a `hidden` box to keep the caret in view, so typing past
+  the edge dragged the canvas sideways. The clip cannot scroll.
+  
+  `useTextEdit` gains the underlying option, `getClipRect`: a box in container
+  pixels to clip the overlay to, re-read every frame. The overlay now mounts
+  inside a clip box of its own, one level below `container`, rather than as the
+  container's direct child. With no clip rect, nothing is clipped.
+- deb9e79: Text wraps only where its style says so, and everything that lays a text node
+  out now agrees. `TextStyle.wrap` (default `false`) breaks lines between words
+  at the pose width; without it a line runs as long as its text and the width
+  only resolves `align`.
+  
+  Before this, `kit:text` never wrapped while `createTextLayer`, `textLineBoxes`,
+  `caretIndexAt`, `fitTextPose` and the edit overlay all wrapped at the pose
+  width. Opening an edit on a `kit:text` line longer than its box reflowed it,
+  and a double-click could put the caret on a line the canvas never drew.
+  
+  **Breaking:**
+  
+  - `createTextLayer` and `fitTextPose` (`axis: 'height'`) no longer wrap unless
+    the style sets `wrap: true`. Add it to text that should keep wrapping.
+  - `TextLineBoxesOpts.maxWidth` and `caretIndexAt`'s `opts` argument are gone,
+    along with the `CaretIndexAtOpts` type. Both read `style.wrap`.
+  - The edit overlay is `white-space: pre` for unwrapped text, sized to its
+    content, and never breaks inside a word in either mode.
+  
+  New: `layoutTextPose` and `textPoseLayoutInput` in `@weasel-js/text`, and
+  `textCommandFromPose` in `@weasel-js/core`, which `kit:text` and
+  `createTextLayer` both emit. `textLineBoxes` and `caretIndexAt` now resolve
+  `align: 'start' | 'end'` against `direction` as the painters do, and
+  `useSceneTextEdit` maps a double-click through the node's `verticalAlign`
+  (`getVerticalAlign` for custom data), which it used to ignore. SVG export
+  writes `data-weasel-wrap="true"` and import reads it back.
+- 830cf7e: A timeline can now book its events ahead of the frame against an outside clock,
+  so a sound lands at its true sub-frame time rather than on whichever frame
+  noticed the crossing. Pass `booking: { clock }` to `animator.timeline()` and give
+  an event a `book(when)` handler; `clock` is anything with `now()` in ms, and an
+  `AudioEngine` from `@weasel-js/audio` is one:
+  
+  ```ts
+  animator.timeline({
+    booking: { clock: engine },
+    tracks: [{ kind: 'event', events: [{ t: 500, book: (when) => engine.play(hit, { when }) }] }],
+  });
+  ```
+  
+  Each event is booked once per crossing, up to `lookahead` clock ms before its
+  edge (default 100). Returning a handle with `stop()` — a `VoiceHandle` is one —
+  lets a pause, seek, time-scale change, loop change, `edit` or cancel retract the
+  booking while the clock has not reached it; playback books it again wherever it
+  next reaches the event. A seek never books the span it skips. An event first
+  reached after its edge books at `clock.now()`, or is skipped once it is later
+  than `maxLate`. The frame clock's mapping onto the booking clock is smoothed per
+  frame, so per-frame read jitter does not reach `when`, and resynced when the two
+  jump apart.
+  
+  `TimelineEvent.fire` is now optional, since an event may only book. Reading
+  `event.fire` directly needs a check for `undefined`.
+- 50d2881: A number pref with a display unit now reads a unit typed into it: `0.25turn` or
+  `30°` in the rotation field stores π/2 or π/6, and `12mm` in a field showing
+  centimeters stores what 1.2cm is.
+  
+  **`prefUnit(system, displayUnit, { precision?, suffix? })`** builds a
+  `ToolPrefNumberUnit` from a `UnitSystem`, so a leaf no longer hand-writes its
+  conversion. `ToolPrefNumberUnit` gains `accepts`, the units a person may type
+  and the factor each scales by. `ANGLE_RADIANS` joins the unit tables, and
+  `rotationDegreesUnit` is built from it.
+  
+  **`parseNumber(text, units?)`** reads a trailing unit, longest name first, and
+  a unit beats a magnitude suffix: with meters accepted, `2m` is two meters.
+  
+  **`UnitField`** is a text field for a number that can carry a unit. Both
+  `SelectionPanel` and `PrefsForm` edit a unit leaf through it; a leaf with no
+  unit keeps `NumberField`.
+- a5f738a: Resolve a screen rectangle at a pose's own depth, and stop deriving a group's
+  bounds from poses the kit cannot read.
+  
+  `kernel3d`'s `PoseDescriptor.remapBounds` and `fromBounds` threw: a rectangle on
+  screen names a pose only once something says how far away it is. Both now
+  resolve it on the plane through the pose they were handed, facing the camera, so
+  neither changes depth. A resize scales uniformly — two screen extents cannot
+  name three — and `fromBounds` returns a world-axis-aligned box whose third
+  extent is the mean of the two the rectangle gives it.
+  
+  `core`'s `unionOfChildren`, which every scene carries under
+  `kit:unionOfChildren`, read its members as rects with no check and produced a
+  box of `NaN` in a scene posed otherwise. It now declines, and the container
+  keeps its authored pose; `unionOfChildrenVia(descriptor)` remains the way to
+  make such a container track its members.
+- ab90aa7: Views now clamp zoom to a positive floor. A view's zoom is always finite and at
+  least `ZOOM_FLOOR` (1e-9); a zoom of 0, a negative one, `NaN` or `Infinity`
+  becomes the floor, and a non-finite position becomes 0. Dev builds warn once
+  when that happens. A negative `View.scale` axis is still a flipped (y-up) axis
+  and keeps its sign.
+  
+  The rule lives in `normalizeZoom`, with `normalizeView` applying it to a `View`,
+  and every place a view enters the kit goes through it: `<Canvas>` and
+  `<SceneCanvas>` (the `view` and `defaultView` props, `setView`, the `view` dep),
+  `<CanvasView>` (including a thunked `view`), `<SceneViewCanvas>`,
+  `<MinimapCanvas>`, `createViewportLayer`, camera animation targets, `zoomAt`,
+  `fitViewToBounds` and `fitZoom`. In labkit, `CanvasStack`, `Stage`, `usePanZoom`,
+  `zoomAt`, `centerOn`, `ZoomControl`, a trial's zoom chrome and `as2DView` do the
+  same through the new `normalize2DView` and `withZoom`. A loupe's magnification
+  follows the same rule.
+  
+  So `screenToWorld`, `canvasCoords` and affordance hit-testing stay finite
+  without handling a zero zoom themselves. `pxExtent` no longer guards a zero
+  axis, which a view can no longer have, and labkit's `zoomAt` now treats a
+  non-finite opening zoom as the floor rather than as 1.
+- Updated dependencies [7586835]
+- Updated dependencies [2f1ddd0]
+- Updated dependencies [b65f4df]
+- Updated dependencies [aa45d32]
+- Updated dependencies [65806bc]
+- Updated dependencies [a614be4]
+- Updated dependencies [ef60ff6]
+- Updated dependencies [0f374d8]
+- Updated dependencies [deb9e79]
+  - @weasel-js/geom@1.5.0
+  - @weasel-js/routing@1.5.0
+  - @weasel-js/cursor@1.5.0
+  - @weasel-js/gestures@1.5.0
+  - @weasel-js/text@1.5.0
+  - @weasel-js/font@1.5.0
+  - @weasel-js/history@1.5.0
+  - @weasel-js/paint@1.5.0
+
 ## 1.4.4
 
 ### Patch Changes

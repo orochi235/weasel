@@ -1,5 +1,99 @@
 # @weasel-js/svg
 
+## 1.5.0
+
+### Patch Changes
+
+- 90f0bd8: Every 2D affine inversion now uses `@weasel-js/geom`'s `invert` and its singularity rule, which judges the determinant against the matrix's own scale.
+  
+  - SVG import now keeps a transform under a uniformly tiny parent scale, such as `scale(0.0000001)`. It used to call that parent singular and bake the child's rotation into the wrong space. A parent that really is singular now drops the child's transform with a warning, and so does a large parent whose determinant is only rounding. `@weasel-js/svg` now depends on `@weasel-js/geom`.
+  - A gradient or pattern measured in `units: 'local'` or `'world'` now draws nothing when that space has no inverse, for example under a group that scales an axis to zero. It used to draw as if untransformed. `mat3.invert` returns `null` for such a matrix instead of the identity, and `PaintBindContext.spaceInverse` now returns `Mat3 | null`, so a registered paint kind should return `null` from `bind` when it gets `null`. Both are type-level breaking changes.
+  - In the custom-shader vertex prelude, `v_world` now reads the world origin when the view has no inverse, instead of a scaled mapping that looked plausible and was wrong.
+  - `useNodeOverlayFrame`'s `toLocal` now keeps the last mapping that had an inverse while a live view flattens an axis. It used to hand the overlay point back unchanged.
+- 2adc840: `<text>` `x` now means what the SVG spec says it means: the `text-anchor`
+  point. The serializer used to write the box's left edge beside
+  `text-anchor="middle"` or `"end"`, so every other SVG reader drew centered text
+  centered on that edge and right-aligned text ending at it. It now writes the
+  box's center for `middle` and its right edge for `end` (the left edge for
+  `start`), resolving `direction="rtl"` the same way the anchor itself does, and
+  the parser converts the anchor point back to the box's left edge.
+  
+  **SVGs written by earlier versions import shifted.** Centered text in one of
+  those files now lands half its box width to the left of where it was saved, and
+  right-aligned text a whole box width to the left. Left-aligned text is
+  unaffected. There is no detection of older files.
+  
+  **External SVG text now imports with a measured width.** A `<text>` with no
+  `data-weasel-width` used to get a 99999-wide box; now that `kit:text` aligns
+  within its box, centered or right-aligned imported text landed about 50000 or
+  100000 units right of where the file drew it. The width now comes from the
+  kit's text layout with the registered fonts, falling back to an estimate from
+  the font size when no registered font can measure the text, and the box is
+  placed so the text's anchor lands where the file put it.
+  
+  **`UNBOUNDED_TEXT_WIDTH` is removed** from the package's exports. The parser no
+  longer produces it, so nothing has a sentinel left to check for.
+- deb9e79: Text wraps only where its style says so, and everything that lays a text node
+  out now agrees. `TextStyle.wrap` (default `false`) breaks lines between words
+  at the pose width; without it a line runs as long as its text and the width
+  only resolves `align`.
+  
+  Before this, `kit:text` never wrapped while `createTextLayer`, `textLineBoxes`,
+  `caretIndexAt`, `fitTextPose` and the edit overlay all wrapped at the pose
+  width. Opening an edit on a `kit:text` line longer than its box reflowed it,
+  and a double-click could put the caret on a line the canvas never drew.
+  
+  **Breaking:**
+  
+  - `createTextLayer` and `fitTextPose` (`axis: 'height'`) no longer wrap unless
+    the style sets `wrap: true`. Add it to text that should keep wrapping.
+  - `TextLineBoxesOpts.maxWidth` and `caretIndexAt`'s `opts` argument are gone,
+    along with the `CaretIndexAtOpts` type. Both read `style.wrap`.
+  - The edit overlay is `white-space: pre` for unwrapped text, sized to its
+    content, and never breaks inside a word in either mode.
+  
+  New: `layoutTextPose` and `textPoseLayoutInput` in `@weasel-js/text`, and
+  `textCommandFromPose` in `@weasel-js/core`, which `kit:text` and
+  `createTextLayer` both emit. `textLineBoxes` and `caretIndexAt` now resolve
+  `align: 'start' | 'end'` against `direction` as the painters do, and
+  `useSceneTextEdit` maps a double-click through the node's `verticalAlign`
+  (`getVerticalAlign` for custom data), which it used to ignore. SVG export
+  writes `data-weasel-wrap="true"` and import reads it back.
+- Updated dependencies [9190fc9]
+- Updated dependencies [a2feeb0]
+- Updated dependencies [3ecc1be]
+- Updated dependencies [dd48085]
+- Updated dependencies [efaf707]
+- Updated dependencies [7586835]
+- Updated dependencies [6385c68]
+- Updated dependencies [2f1ddd0]
+- Updated dependencies [ea285a2]
+- Updated dependencies [c758b4d]
+- Updated dependencies [a41a83a]
+- Updated dependencies [794b4ff]
+- Updated dependencies [b65f4df]
+- Updated dependencies [aa45d32]
+- Updated dependencies [90f0bd8]
+- Updated dependencies [b5b8b69]
+- Updated dependencies [b2f2d45]
+- Updated dependencies [6f5ff46]
+- Updated dependencies [edd5b39]
+- Updated dependencies [2e2041b]
+- Updated dependencies [65806bc]
+- Updated dependencies [a614be4]
+- Updated dependencies [ef60ff6]
+- Updated dependencies [269d432]
+- Updated dependencies [486f631]
+- Updated dependencies [0f374d8]
+- Updated dependencies [d25a09d]
+- Updated dependencies [deb9e79]
+- Updated dependencies [830cf7e]
+- Updated dependencies [50d2881]
+- Updated dependencies [a5f738a]
+- Updated dependencies [ab90aa7]
+  - @weasel-js/core@1.5.0
+  - @weasel-js/geom@1.5.0
+
 ## 1.4.4
 
 ### Patch Changes

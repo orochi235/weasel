@@ -1,5 +1,137 @@
 # @weasel-js/diagram
 
+## 1.5.0
+
+### Patch Changes
+
+- 9190fc9: Follow-ups a 3D lab turned up while driving core's dispatcher over a WebGL
+  viewport. Each one is a place the kit assumed its own 2D renderer.
+  
+  **`classifyTarget` and `affordanceAt` now take the world point their types
+  promise.** Both were handed the raw client point at every dispatcher call site,
+  so `<SceneCanvas>` and `<CanvasView>` each wrapped their thunk in the same
+  `clientToWorld` they also passed the dispatcher, and a consumer hit-tested in
+  one space while reading `ctx.world` in another. The conversion happens once now,
+  where the event arrives. Behavior-identical for both kit consumers; a consumer
+  passing no `clientToWorld` sees identity. **If you pass either option to
+  `useGestureDispatcher` yourself and convert coordinates inside it, remove your
+  conversion.**
+  
+  **`InvocationCtx.screen` carries a screen point, and is optional.** It was
+  filled from the same field as `ctx.world`, so it had never been screen-space.
+  It now comes from the event's client coordinates and is absent where the event
+  carries none — a keystroke, a UI-driven trigger, a synthetic probe. A
+  view-mutating drag still wants `drag.screenDelta`. A click's `ctx.world` is the
+  click's own position rather than the origin.
+  
+  **`scene.history` publishes the `History` a `Scene` already owned.** The kit's
+  `undo`/`redo` actions resolve a `history` dep and a consumer had nothing to give
+  them, so `<SceneCanvas>` cast the Scene itself through `unknown`. It is a façade
+  rather than the private engine: mutating members route through the scene's own
+  wrappers, so an action-driven undo bumps the version and notifies subscribers.
+  
+  **`resolveOverlays` is the overlay half of the in-flight gesture channel.**
+  `resolvePreviews` already answered for the ghosts a gesture displaces; this
+  answers for the chrome it draws that is no node at all — a marquee rect, a lasso
+  trail, an insert outline — in world geometry, with every degenerate case
+  dropped. `insertPreviewExtent` is exported alongside it.
+  
+  **Every overlay variant is now geometry, and the layer owns the paint.**
+  `OngoingOverlay`'s `'commands'` variant — arbitrary `DrawCommand[]`, which only
+  core's own 2D renderer could execute — **is gone**, along with the `opaque` flag
+  on the resolved form and the `action.commands` chrome id. Its two producers
+  publish the new `'polyline'` variant instead: a run of world points plus a
+  one-word `OverlayRole` (`'cut'` for `slice`, `'connector'` for
+  `@weasel-js/diagram`'s `connect`) that a painter maps to a stroke, falling back
+  to plain chrome for a role it does not know. `useDispatcherOverlayLayer` draws
+  both exactly as they were drawn before, and
+  `DispatcherOverlayStyle.roles` is where a consumer restyles one.
+  **`ConnectActionOptions.stroke` is removed** — an action no longer names a
+  paint; use `roles: { connector: … }` on the layer's style.
+  **If you produced a `'commands'` overlay**, publish a `'polyline'` for a line,
+  or paint it from a render layer of your own.
+  
+  **labkit stacks two surface buffers around the trial DOM.** The shared buffer
+  sat over the trials, which is right for a mark annotating an instrument and
+  wrong for an opaque renderer that buries its own pane. `useSurfaceCanvas('under')`
+  asks for the lower buffer; the default is unchanged. **`SurfaceCanvasContext`
+  now carries `{ over, under }` rather than one canvas** — a consumer providing it
+  directly must update the value.
+  
+  **labkit labs get their own chrome regions.** Every region was per-trial, so a
+  lab-level control had nowhere to go and `LabPalette` existed by casting a
+  two-field object through `as unknown as TrialChromeContext`. `<Lab labChrome>`
+  takes contributions shaped exactly like a trial's, against a real lab context.
+  
+  `docs/extending.md` now states the contract for mounting tools outside
+  `<SceneCanvas>`, including the half that was written down wrong: capability
+  eligibility resolves through `RuleCtx.allowedCapabilities` and `getRuleCtx`, not
+  the `activeTool` dep.
+- 6f5ff46: Pose geometry is supplied once. `<SceneCanvas poseDescriptor={…}>` tells every
+  built-in action, the selection chrome, picking and area select how to read and
+  rewrite this scene's poses; it defaults to `AUTO_POSE_DESCRIPTOR` (rect and
+  `Path` poses). A pose of any other shape now works end to end — before, dragging
+  one into a container wrote `NaN` into it.
+  
+  Breaking:
+  
+  - `PoseProjection` is renamed `PoseDescriptor`, and gains a required
+    `fromBounds(bounds, template)` and an optional `withRotation(pose, rotation)`.
+  - `ResizePose` and `AlignBounds` are removed; use `Bounds`.
+  - `RotateGeometry`, `AlignBoundsProjection` and `RECT_ALIGN_PROJECTION` are
+    removed.
+  - Removed options, replaced by the descriptor: `selectTool.resize.geometry` and
+    `useResizePolicy({ projection })` (use `<SceneCanvas poseDescriptor>`);
+    `UseRotateOptions.geometry` and `UseMoveOptions.translatePose` (both were
+    unread); `poseBounds` on `useSelectTool`, `arrayAdapter`, `sceneToAdapter`,
+    `MinimapCanvas` and `nestedHitTester` (use their `poseDescriptor` option);
+    `arrayAdapter`'s `intersectsRect` and `translatePose`; the selection overlay's
+    `getBounds` and `fromBounds`; the alignment behaviors' `projection`.
+  - `Canvas`'s `geometry` prop is renamed `poseDescriptor`. `SceneCanvas`'s own
+    `geometry` prop — the `pickEvery` / `boundsOf` hit-test overrides — is a
+    different prop and keeps its name.
+  - `computeFitView`'s fourth argument is a `PoseDescriptor`, not a bounds
+    function.
+  - `sceneToAdapter`'s `cascadeContainerPose` is a boolean; the cascade translates
+    through the descriptor.
+  - The kit's built-in painters only draw rect poses. A node with any other pose
+    needs its own painter.
+  - `Scene` has a read-only `registry`. For a custom pose kind,
+    `unionOfChildrenVia(descriptor)` builds the container-union function to
+    register under `UNION_OF_CHILDREN`.
+- Updated dependencies [9190fc9]
+- Updated dependencies [a2feeb0]
+- Updated dependencies [3ecc1be]
+- Updated dependencies [dd48085]
+- Updated dependencies [efaf707]
+- Updated dependencies [7586835]
+- Updated dependencies [6385c68]
+- Updated dependencies [2f1ddd0]
+- Updated dependencies [ea285a2]
+- Updated dependencies [c758b4d]
+- Updated dependencies [a41a83a]
+- Updated dependencies [794b4ff]
+- Updated dependencies [b65f4df]
+- Updated dependencies [90f0bd8]
+- Updated dependencies [b5b8b69]
+- Updated dependencies [b2f2d45]
+- Updated dependencies [6f5ff46]
+- Updated dependencies [edd5b39]
+- Updated dependencies [2e2041b]
+- Updated dependencies [65806bc]
+- Updated dependencies [a614be4]
+- Updated dependencies [ef60ff6]
+- Updated dependencies [269d432]
+- Updated dependencies [486f631]
+- Updated dependencies [0f374d8]
+- Updated dependencies [d25a09d]
+- Updated dependencies [deb9e79]
+- Updated dependencies [830cf7e]
+- Updated dependencies [50d2881]
+- Updated dependencies [a5f738a]
+- Updated dependencies [ab90aa7]
+  - @weasel-js/core@1.5.0
+
 ## 1.4.4
 
 ### Patch Changes

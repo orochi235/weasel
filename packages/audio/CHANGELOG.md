@@ -1,5 +1,60 @@
 # @weasel-js/audio
 
+## 1.5.0
+
+### Patch Changes
+
+- 8f1a07a: `engine.play()` no longer waits for the scheduler's next pass when the voice's
+  `when` is already inside the lookahead window. The voice is booked at the end of
+  the task that called `play()`, so `when: engine.now()`, or no `when` at all,
+  starts on time instead of up to one pass interval (25 ms by default) late.
+  
+  Everything played in the same task is booked together, in `when` order, the way
+  a pass books it, so which voice a full bus steals does not change. A voice
+  stopped in that same task never starts. `createScheduler` does the same for any
+  event scheduled inside its window while it is running.
+  
+  A `play()` made after the context resumes from a suspension, with a `when`
+  already in the past, now plays at once. It used to be dropped as though it had
+  come due while the context was suspended.
+- 5bdb451: The audio engine's scheduler pass is now woken from a timer inside a dedicated
+  Worker rather than a main-thread `setTimeout`. A hidden tab clamps main-thread
+  timers to at least a second, which a 100 ms lookahead cannot cover, so sounds
+  booked while the tab was away arrived late.
+  
+  `createTickTimer()` is the new wake source, exported beside `createScheduler` for
+  anyone driving a scheduler without an engine. It keeps the scheduler's one-shot
+  `setTimer`/`clearTimer` contract: each delay is booked in the worker, which posts
+  the timer's id back when it elapses. A `MessageChannel` was not enough on its
+  own, because it has no delay and could only busy-spin.
+  
+  The worker is built from an inline `blob:` script, not a separate file, because
+  `new Worker(new URL(..., import.meta.url))` survives some consumer bundlers and
+  not others (esbuild leaves the file behind). The cost is CSP: a page whose policy
+  refuses `blob:` workers gets a fallback to `setTimeout`, as does any environment
+  without `Worker`, such as SSR or a test runner. Injecting `setTimer`/`clearTimer`
+  into `createAudioEngine` still replaces the default entirely.
+- f8ed44d: The audio engine now reuses each voice's `GainNode` and `StereoPannerNode`
+  instead of building a new pair on every `play()`. Only the
+  `AudioBufferSourceNode` is still created per play, because a source can only be
+  started once.
+  
+  In headless Chromium this took the engine from 37.17 to 26.14 µs per `play()`
+  with 32 voices and 8 plays a frame, and from 30.58 to 18.71 µs at 32 plays a
+  frame. `tests/perf/audio-voice-chain.mjs` reproduces these numbers: run it with
+  `--base <ref>` to compare two revisions. How long the audio thread takes to
+  render is unchanged.
+  
+  A pair that isn't in use is disconnected from its bus. Left connected, 96 idle
+  pairs took the audio thread 166 ms to render 20 s of silence, where the same
+  graph without them took 20 ms. The engine keeps at most `voiceLimit` idle pairs
+  per bus, and creates new ones beyond that.
+  
+  A handle whose voice has ended no longer changes anything. Calling `setGain`,
+  `setPan`, `setPosition` or `stop(fadeMs)` on it used to write to that voice's
+  own disconnected nodes, which had no audible effect. Those nodes can now belong
+  to another voice, so the calls are ignored instead.
+
 ## 1.4.4
 
 ## 1.4.3
