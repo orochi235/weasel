@@ -30,19 +30,40 @@ const E: ThemeDefinition = {
 };
 
 const MODE = { mode: { default: 'dark', values: { dark: { scheme: 'dark' }, light: { scheme: 'light' } } } } as const;
+const BASE_AXES = { ...MODE, density: { default: 'comfortable', values: { comfortable: {}, compact: {} } } } as const;
 const base: ThemeDefinition = {
   name: 'base',
-  axes: MODE,
+  axes: BASE_AXES,
   semantics: { surface: { by: 'mode', dark: { ref: 'gray-900', type: 'color' }, light: { ref: 'gray-50', type: 'color' } } },
   pins: {
     'gray-50': { value: '#f5f5f5', type: 'color' },
     'gray-900': { value: '#111111', type: 'color' },
     'fg-on-accent': { value: '{gray-50}', type: 'color' },
+    // Depends on both axes only through its reference chain (mode -> pad -> gap-by-density),
+    // so a theme that overrides it with a flat literal narrows its own axis dependency.
+    gap: { by: 'density', comfortable: { value: '10px', type: 'dimension' }, compact: { value: '6px', type: 'dimension' } },
+    pad: { value: '{gap}', type: 'dimension' },
+    'pad-edge': { by: 'mode', dark: { value: '{pad}', type: 'dimension' }, light: { value: '0px', type: 'dimension' } },
   },
 };
 const child: ThemeDefinition = { name: 'child', extends: 'base', pins: { 'gray-50': { value: '#ff0000', type: 'color' } } };
-const grand: ThemeDefinition = { name: 'grand', extends: 'child', pins: { 'gray-900': { value: '#00ff00', type: 'color' } } };
-const aaa: ThemeDefinition = { name: 'aaa', axes: MODE, pins: { ...base.pins, surface: { value: '#123456', type: 'color' } } };
+const grand: ThemeDefinition = {
+  name: 'grand',
+  extends: 'child',
+  pins: { 'gray-900': { value: '#00ff00', type: 'color' }, 'pad-edge': { value: '7px', type: 'dimension' } },
+};
+// Explicit, not `{...base.pins, ...}`: aaa's own axes lack density, and spreading in base's
+// density-varying pins would make it a theme that can't derive its own tokens standalone.
+const aaa: ThemeDefinition = {
+  name: 'aaa',
+  axes: MODE,
+  pins: {
+    'gray-50': { value: '#f5f5f5', type: 'color' },
+    'gray-900': { value: '#111111', type: 'color' },
+    'fg-on-accent': { value: '{gray-50}', type: 'color' },
+    surface: { value: '#123456', type: 'color' },
+  },
+};
 
 const defs: Record<string, ThemeDefinition> = { base, child, grand, aaa };
 const lookup = (n: string) => defs[n];
@@ -89,8 +110,8 @@ function computed(sheet: string, chain: readonly Attrs[]): Record<string, string
 
 /** Every token `def` derives at the innermost element's selection that the sheet computes differently. */
 function wrong(sheet: string, def: ThemeDefinition, chain: readonly Attrs[]): string[] {
-  const { mode } = chain[chain.length - 1];
-  const { tokens } = derive(def, mode ? { mode } : {}, lookup);
+  const sel = Object.fromEntries(Object.entries(chain[chain.length - 1]).filter(([k]) => k !== 'theme'));
+  const { tokens } = derive(def, sel, lookup);
   const want = computed(`:root {\n${Object.entries(tokens).map(([n, t]) => `--wzl-${n}: ${cssValue(n, t)};`).join('\n')}\n}`, [{}]);
   const got = computed(sheet, chain);
   return Object.entries(want).filter(([p, v]) => got[p] !== v).map(([p, v]) => `${p}: got ${got[p]} want ${v}`);
@@ -159,9 +180,11 @@ describe('emitCss', () => {
     for (const sheet of sheets) {
       for (const def of all) {
         for (const mode of ['dark', 'light']) {
-          const el = { theme: def.name, mode };
-          const chains = [[el], [{}, el], ...all.map((o) => [{}, { theme: o.name, mode }, el])];
-          for (const chain of chains) failures.push(...wrong(sheet, def, chain).map((w) => `${JSON.stringify(chain)} ${w}`));
+          for (const density of ['comfortable', 'compact']) {
+            const el = { theme: def.name, mode, density };
+            const chains = [[el], [{}, el], ...all.map((o) => [{}, { theme: o.name, mode, density }, el])];
+            for (const chain of chains) failures.push(...wrong(sheet, def, chain).map((w) => `${JSON.stringify(chain)} ${w}`));
+          }
         }
       }
     }
@@ -190,6 +213,22 @@ describe('emitCss', () => {
     };
     const sheet = emitCss([input(dim)]);
     expect(computed(sheet, [{}, { mode: 'light' }, { mode: 'dim' }])['color-scheme']).toBe('normal');
+  });
+
+  it('scopes a theme lacking an axis value to the scheme of its own default value, not a reset to normal', () => {
+    const withHc: ThemeDefinition = {
+      name: 'withHc',
+      axes: { mode: { default: 'dark', values: { dark: { scheme: 'dark' }, light: { scheme: 'light' }, hc: { scheme: 'dark' } } } },
+      pins: { fg: { by: 'mode', dark: { value: '#eeeeee', type: 'color' }, light: { value: '#111111', type: 'color' }, hc: { value: '#ffffff', type: 'color' } } },
+    };
+    // No `hc`: falls back to the default's tokens for it, and should fall back to the default's scheme too.
+    const other: ThemeDefinition = {
+      name: 'other',
+      axes: { mode: { default: 'dark', values: { dark: { scheme: 'dark' }, light: { scheme: 'light' } } } },
+      pins: { fg: { by: 'mode', dark: { value: '#cccccc', type: 'color' }, light: { value: '#333333', type: 'color' } } },
+    };
+    const sheet = emitCss([input(withHc), input(other, false)]);
+    expect(computed(sheet, [{}, { theme: 'other', mode: 'hc' }])['color-scheme']).toBe('dark');
   });
 });
 

@@ -44,11 +44,14 @@ function combinations(axes: AxisDefs, set: readonly string[]): Selection[] {
   return out;
 }
 
-/** The value's scheme, or `normal` when a sibling value has one, so a nested scheme-less value resets it. */
+/** The value's scheme, or `normal` when a sibling value has one, so a nested scheme-less value resets it.
+ *  A value the theme doesn't declare at all falls back to its tokens from the theme's own default value,
+ *  so it takes that value's scheme too, rather than a blanket reset. */
 function schemeOf(axes: AxisDefs, axis: string, value: string): string | undefined {
   const def = axes[axis];
   if (!def) return undefined;
-  return def.values[value]?.scheme ?? (Object.values(def.values).some((v) => v.scheme) ? 'normal' : undefined);
+  if (!(value in def.values)) return schemeOf(axes, axis, def.default);
+  return def.values[value].scheme ?? (Object.values(def.values).some((v) => v.scheme) ? 'normal' : undefined);
 }
 
 function checkSchemes({ name, axes }: BakedTheme): void {
@@ -228,7 +231,8 @@ export function emitCss(themes: readonly EmitInput[]): string {
   for (const plan of others) {
     const invariant = plan.names.filter((n) => plan.all(n).length === 0);
     if (invariant.length > 0) {
-      // `:root` alone would tie with the default's `:root` on the root element and win on source order.
+      // `[data-wzl-theme='x']` alone already ties the default's `:root` on specificity and wins on source
+      // order, since the default emits first; `:root[...]` guards only against that emission order changing.
       lines.push(`:root[data-wzl-theme='${plan.theme}'],`, `[data-wzl-theme='${plan.theme}'] {`);
       for (const n of invariant) {
         const token = plan.value(n, {});
