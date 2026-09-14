@@ -1,4 +1,4 @@
-import { isByAxis, type Varying } from '@weasel-js/theme';
+import { isByAxis, type AxisDefs, type Varying } from '@weasel-js/theme';
 import type { SemanticRule } from '@weasel-js/theme/engine';
 import { Button, CheckboxRow, NumberRow, PropertyGroup, PropertyPanel, SelectRow, TextRow, ToggleRow } from '@weasel-js/ui';
 import { useState } from 'react';
@@ -7,11 +7,14 @@ import { RULE_KINDS, defaultRule, ruleKind, type SemanticRowView } from '../them
 
 type Ramps = Readonly<Record<string, readonly string[]>>;
 
+const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
 export interface SemanticDrawerProps {
   readonly name: string;
   readonly rule: Varying<SemanticRule>;
   readonly row: SemanticRowView;
-  readonly modes: readonly (string | undefined)[];
+  /** The draft's axes, which may be newer than the last derivation. */
+  readonly axes: AxisDefs;
   readonly ramps: Ramps;
   readonly semantics: readonly string[];
   /** Described issues this semantic's rule raised, in any mode. */
@@ -26,6 +29,27 @@ const DIRECTIONS = [
   { value: 'darker', label: 'Darker' },
   { value: 'away', label: 'Away' },
 ] as const;
+
+const parseNames = (text: string) =>
+  text
+    .split(',')
+    .map((n) => n.trim())
+    .filter(Boolean);
+
+function AgainstRow({ against, onChange }: { against: readonly string[]; onChange: (against: string[]) => void }) {
+  const [raw, setRaw] = useState(() => against.join(', '));
+  const text = sameJson(parseNames(raw), against) ? raw : against.join(', ');
+  return (
+    <TextRow
+      label="Against"
+      value={text}
+      onChange={(v) => {
+        setRaw(v);
+        onChange(parseNames(v));
+      }}
+    />
+  );
+}
 
 function RuleFields({
   rule,
@@ -44,6 +68,18 @@ function RuleFields({
       <>
         <TextRow label="Reference" value={rule.ref} onChange={(ref) => onChange({ ...rule, ref }, 'ref')} />
         <NumberRow label="Alpha" value={rule.alpha ?? null} min={0} max={1} step={0.01} onChange={(alpha) => onChange({ ...rule, alpha }, 'alpha')} />
+        {rule.alpha !== undefined && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              const { alpha: _alpha, ...opaque } = rule;
+              onChange(opaque, 'alpha');
+            }}
+          >
+            Clear alpha
+          </Button>
+        )}
       </>
     );
   }
@@ -59,24 +95,9 @@ function RuleFields({
           step={0.1}
           onChange={(min) => onChange({ ...rule, contrast: { ...rule.contrast, min } }, 'contrast.min')}
         />
-        <TextRow
-          label="Against"
-          value={rule.contrast.against.join(', ')}
-          onChange={(v) =>
-            onChange(
-              {
-                ...rule,
-                contrast: {
-                  ...rule.contrast,
-                  against: v
-                    .split(',')
-                    .map((s) => s.trim())
-                    .filter(Boolean),
-                },
-              },
-              'contrast.against',
-            )
-          }
+        <AgainstRow
+          against={rule.contrast.against}
+          onChange={(against) => onChange({ ...rule, contrast: { ...rule.contrast, against } }, 'contrast.against')}
         />
       </>
     );
@@ -120,11 +141,15 @@ function RuleFields({
   return <TextRow label="Value" value={String(rule.value)} onChange={(value) => onChange({ ...rule, value }, 'value')} />;
 }
 
-export function SemanticDrawer({ name, rule, row, modes, ramps, semantics, issues, onRule, onRevert, onClose }: SemanticDrawerProps) {
-  const modeValues = modes.filter((m): m is string => m !== undefined);
-  const varies = isByAxis(rule) && rule.by === 'mode';
-  const [branch, setBranch] = useState(modeValues[0] ?? '');
-  const current = (varies ? (rule as unknown as Record<string, unknown>)[branch] : rule) as SemanticRule | undefined;
+export function SemanticDrawer({ name, rule, row, axes, ramps, semantics, issues, onRule, onRevert, onClose }: SemanticDrawerProps) {
+  const modeValues = Object.keys(axes.mode?.values ?? {});
+  const varies = isByAxis(rule);
+  const axis = varies ? rule.by : 'mode';
+  const values = varies ? Object.keys(axes[rule.by]?.values ?? rule).filter((k) => k !== 'by') : modeValues;
+  const [branch, setBranch] = useState(() => (varies ? values.find((v) => Object.hasOwn(rule, v)) : undefined) ?? values[0] ?? '');
+  const current = (varies ? (rule as unknown as Record<string, unknown>)[branch] : rule) as Varying<SemanticRule> | undefined;
+  const others = semantics.filter((n) => n !== name);
+  const present = varies ? Object.entries(rule).find(([k]) => k !== 'by')?.[1] : undefined;
 
   const write = (next: SemanticRule, field: string) =>
     onRule(
@@ -163,20 +188,31 @@ export function SemanticDrawer({ name, rule, row, modes, ramps, semantics, issue
           </ul>
         </div>
       )}
-      {current ? (
-        <PropertyPanel title="Rule">
-          <PropertyGroup title="Kind">
-            {modeValues.length > 1 && <CheckboxRow label="Varies by mode" value={varies} onChange={setVaries} />}
-            {varies && <ToggleRow label="Editing" value={branch} options={modeValues.map((m) => ({ value: m, label: m }))} onChange={setBranch} />}
-            <SelectRow label="Rule" value={ruleKind(current)} options={RULE_KINDS} onChange={(kind) => write(defaultRule(kind, current, ramps, semantics), 'kind')} />
-          </PropertyGroup>
-          <PropertyGroup title="Fields">
-            <RuleFields rule={current} ramps={ramps} semantics={semantics} onChange={write} />
-          </PropertyGroup>
-        </PropertyPanel>
-      ) : (
-        <p className={styles.paramNote}>This rule has no {branch} branch.</p>
-      )}
+      <PropertyPanel title="Rule">
+        <PropertyGroup title="Kind">
+          {(varies || modeValues.length > 1) && <CheckboxRow label={`Varies by ${axis}`} value={varies} onChange={setVaries} />}
+          {varies && <ToggleRow label="Editing" value={branch} options={values.map((v) => ({ value: v, label: v }))} onChange={setBranch} />}
+          {current !== undefined && !isByAxis(current) && (
+            <SelectRow label="Rule" value={ruleKind(current)} options={RULE_KINDS} onChange={(kind) => write(defaultRule(kind, current, ramps, others), 'kind')} />
+          )}
+        </PropertyGroup>
+        <PropertyGroup title="Fields">
+          {current === undefined ? (
+            <>
+              <p className={styles.paramNote}>This rule has no {branch} branch.</p>
+              {present !== undefined && (
+                <Button size="sm" onClick={() => onRule({ ...(rule as object), [branch]: present } as Varying<SemanticRule>, `semantics.${name}.${branch}`)}>
+                  Add a {branch} branch
+                </Button>
+              )}
+            </>
+          ) : isByAxis(current) ? (
+            <p className={styles.paramNote}>This branch varies by {current.by}; edit it in the definition file.</p>
+          ) : (
+            <RuleFields rule={current} ramps={ramps} semantics={others} onChange={write} />
+          )}
+        </PropertyGroup>
+      </PropertyPanel>
       <div className={styles.tableScroll}>
         <table className={styles.table}>
           <thead>

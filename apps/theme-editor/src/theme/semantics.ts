@@ -21,7 +21,7 @@ export function ruleKind(rule: SemanticRule): RuleKind {
   return 'literal';
 }
 
-/** A new rule of `kind`, carrying over the type, description and check of the one it replaces. */
+/** A new rule of `kind`, carrying over the type, description and check of the one it replaces. `semantics` must not include the rule's own token. */
 export function defaultRule(
   kind: RuleKind,
   current: SemanticRule,
@@ -34,8 +34,8 @@ export function defaultRule(
     ...(current.check !== undefined ? { check: current.check } : {}),
   };
   const [ramp, steps] = Object.entries(ramps)[0] ?? ['gray', []];
-  const surface = semantics[0] ?? 'surface';
-  switch (kind) {
+  const surface = semantics[0];
+  switch (surface === undefined && (kind === 'offset' || kind === 'contrast') ? 'step' : kind) {
     case 'step':
       return { ...common, ramp, step: steps[0] ?? '' };
     case 'offset':
@@ -83,8 +83,11 @@ export interface SemanticRowView {
   /** A pin this definition holds, which it can revert; an inherited pin it cannot. */
   readonly ownPin: boolean;
   readonly cells: readonly SemanticCell[];
-  /** The lowest measured ratio, and whether every check cleared its minimum. */
-  readonly worst: { readonly ratio: number; readonly pass: boolean } | null;
+  /**
+   * The measured check closest to failing (smallest `ratio - min`; null when none was measured), passing only when every
+   * check was measured and cleared its minimum. Null when the rule asks for no contrast.
+   */
+  readonly worst: { readonly ratio: number | null; readonly min: number | null; readonly pass: boolean; readonly unmeasured: number } | null;
 }
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -117,9 +120,19 @@ export function semanticRows(draft: ThemeDefinition, merged: ThemeDefinition, vi
           checks,
         };
       });
-    const measured = cells.flatMap((c) => c.checks).filter((c): c is ContrastCheck & { ratio: number } => c.ratio !== null);
+    const all = cells.flatMap((c) => c.checks);
+    const measured = all.filter((c): c is ContrastCheck & { ratio: number } => c.ratio !== null);
+    const unmeasured = all.length - measured.length;
+    const closest = measured.reduce<(typeof measured)[number] | null>((w, c) => (w === null || c.ratio - c.min < w.ratio - w.min ? c : w), null);
     const worst =
-      measured.length === 0 ? null : { ratio: Math.min(...measured.map((c) => c.ratio)), pass: measured.every((c) => c.ratio >= c.min) };
+      all.length === 0
+        ? null
+        : {
+            ratio: closest?.ratio ?? null,
+            min: closest?.min ?? null,
+            pass: unmeasured === 0 && measured.every((c) => c.ratio >= c.min),
+            unmeasured,
+          };
     return {
       name,
       summary: ruleSummary(rule),
