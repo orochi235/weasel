@@ -78,7 +78,11 @@ function settle(v: unknown, path: string, ctx: SettleContext): Settled {
 /** Reads a settled entry, reporting every value of the wrong shape. */
 class Reader {
   ok = true;
-  constructor(private readonly issues: Issue[]) {}
+  private readonly issues: Issue[];
+
+  constructor(issues: Issue[]) {
+    this.issues = issues;
+  }
 
   fail(path: string, message: string): void {
     this.issues.push({ kind: 'invalid', path, message });
