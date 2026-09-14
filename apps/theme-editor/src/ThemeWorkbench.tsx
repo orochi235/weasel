@@ -14,7 +14,8 @@ import type { ThemeApi } from './theme/api';
 import { deriveDraft, type DerivedDraft } from './theme/draft';
 import { clearDraft, persistDraft, type StoredDraft } from './theme/draftStorage';
 import { describeIssue } from './theme/issues';
-import { LAYERS, adoptGenerated, countTokens, runtimeTheme, type LayerId } from './theme/model';
+import { documentSheets, tokensReadAt } from './theme/inspect';
+import { LAYERS, adoptGenerated, countTokens, pinApplies, runtimeTheme, type LayerId } from './theme/model';
 import { layerRows } from './theme/rows';
 import type { IssueReport, PutResult, StoredTheme } from './theme/store';
 import { useLabHistory, type LabHistory } from './useLabHistory';
@@ -83,7 +84,9 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
   const [saving, setSaving] = useState(false);
   const [layer, setLayer] = useState<LayerId>('ramps');
   const [axisValues, setAxisValues] = useState<Selection>({});
-  const [highlight] = useState<readonly string[]>([]);
+  const [highlight, setHighlight] = useState<readonly string[]>([]);
+  const [inspecting, setInspecting] = useState(false);
+  const [reads, setReads] = useState<readonly string[]>([]);
   const [focusRamp, setFocusRamp] = useState<string | null>(null);
   const [reloadError, setReloadError] = useState<string | null>(null);
   const statusRef = useRef<HTMLDivElement>(null);
@@ -173,6 +176,19 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
   };
 
   const counts = countTokens(draft, derived.primary.result);
+  // A pinned token jumps to Pins: the pin is what decides its value.
+  const layerOf = (token: string): LayerId =>
+    pinApplies(derived.primary.result, token) ? 'pins' : (derived.primary.result.provenance[token]?.layer ?? 'pins');
+  const jump = (tokens: readonly string[]) => {
+    if (tokens.length === 0) return;
+    setLayer(layerOf(tokens[0]));
+    setHighlight(tokens);
+  };
+  const inspect = (target: Element, pane: Element) => {
+    const known = tokensReadAt(target, pane, documentSheets()).filter((t) => Object.hasOwn(derived.primary.result.tokens, t));
+    setReads(known);
+    jump(known);
+  };
   const liveIssues: IssueReport[] = derived.views.flatMap((v) => v.result.issues.map((issue) => ({ selection: v.selection, issue })));
   const layerLabel = LAYERS.find((l) => l.id === layer)!.label;
   const previewVariants: readonly PreviewVariant[] = generatedTheme
@@ -238,7 +254,24 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
           {layerEditor}
         </section>
         <aside className={styles.previewColumn} aria-label="Preview">
-          <ThemePreview variants={previewVariants} selection={axisValues} />
+          <div className={styles.previewBar}>
+            <Button size="sm" pressed={inspecting} onClick={() => setInspecting((on) => !on)}>
+              Inspect
+            </Button>
+            {inspecting && reads.length === 0 && <span className={styles.metric}>Click a component to see the tokens it reads.</span>}
+            {reads.length > 0 && (
+              <ul className={styles.reads} aria-label="Tokens read">
+                {reads.map((t) => (
+                  <li key={t}>
+                    <button type="button" className={styles.linkButton} onClick={() => jump([t])}>
+                      {t}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <ThemePreview variants={previewVariants} selection={axisValues} inspecting={inspecting} onInspect={inspect} />
         </aside>
       </div>
     </LabShell>

@@ -380,3 +380,20 @@
   border: 1px solid var(--wzl-border-strong);
   border-radius: var(--wzl-radius-md);
 }
+
+.previewBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.reads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+}
