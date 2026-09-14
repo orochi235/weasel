@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { LayerRail } from './LayerRail';
 import { RampsLayer } from './layers/RampsLayer';
 import { ScalesLayer } from './layers/ScalesLayer';
+import { SemanticsLayer } from './layers/SemanticsLayer';
 import styles from './ThemeEditor.module.css';
 import { ThemePreview, type PreviewVariant } from './ThemePreview';
 import { TokenList } from './TokenList';
@@ -184,6 +185,8 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
         return <RampsLayer draft={draft} derived={derived} lookup={lookup} highlight={highlight} focused={focusRamp} onFocus={setFocusRamp} onChange={history.update} />;
       case 'scales':
         return <ScalesLayer draft={draft} derived={derived} lookup={lookup} highlight={highlight} onChange={history.update} />;
+      case 'semantics':
+        return <SemanticsLayer draft={draft} derived={derived} lookup={lookup} highlight={highlight} onChange={history.update} />;
       default:
         return <TokenList rows={layerRows(layer, draft, derived.primary.result)} highlight={highlight} empty={`${draft.name} has no ${layerLabel.toLowerCase()}.`} />;
     }

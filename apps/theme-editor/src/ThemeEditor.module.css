@@ -337,3 +337,46 @@
   border-radius: 2px;
   background: var(--wzl-fg-muted);
 }
+
+.semantics {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.selectedRow {
+  background: var(--wzl-surface-raised);
+}
+
+.swatchPair {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.swatchSmall {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1px solid var(--wzl-border);
+}
+
+.linkButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.drawer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--wzl-border-strong);
+  border-radius: var(--wzl-radius-md);
+}
