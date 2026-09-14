@@ -4428,3 +4428,26 @@ A review of `8ef718a9` found these; each was verified against the code.
 - [ ] **Run** `npx vitest run --project=draw apps/theme-editor/src/theme/model.test.ts apps/theme-editor/src/theme/rows.test.ts apps/theme-editor/src/LayerRail.test.tsx apps/theme-editor/src/ThemeWorkbench.test.tsx`, `npx tsc --noEmit`, `npx eslint apps/theme-editor/src` → clean.
 
 - [ ] **Commit** the eight paths; message `count and list pins where they apply, and fix the layer rail's height and names`.
+
+---
+
+### Task 25: fixes from the review of Tasks 10 and 24 (run after Task 12)
+
+A review of `695ad747` and `a14ac65a` found these; each was verified against the code.
+
+**Files:**
+- Modify: `apps/theme-editor/src/ThemeEditor.tsx`, `ThemeEditor.test.tsx`, `apps/theme-editor/src/ThemeWorkbench.tsx`, `ThemeWorkbench.test.tsx`, `apps/theme-editor/src/App.tsx`
+
+- [ ] **1. A failed reload must not lose the draft.** `ThemeEditor`'s `reload` calls `clearDraft` and then awaits `api.get`; when the fetch fails the rejection goes nowhere, the workbench still shows the dirty draft, its persist effect does not rerun, and a page refresh finds nothing. Fetch first, and clear the draft only once the fetch succeeded. `onReload` becomes `() => Promise<void>`; the workbench awaits it and, on rejection, shows `Couldn't reload ${stored.name} from disk: ${message}` in its status area (role `status`). Failing test first in `ThemeEditor.test.tsx`: with an api whose `list` returns a stored weasel with `hash: 'h1'` and whose `get` rejects, a workbench started from an edited draft (`put` answers `conflict`), clicking Save then "Reload from disk" shows the "Couldn't reload" message and the Save button still reads "Save, with unsaved changes". (Give `ThemeEditor` the draft through the api path it already has: if seeding a draft needs `localStorage`, which the draw project's jsdom provides, set it with `persistDraft` in the test and clear it in `afterEach`.)
+
+- [ ] **2. Saving is announced and keeps focus somewhere.** The Save button disables itself on click, so keyboard focus falls to the body, and "Saved." is a bare paragraph. Wrap the save report in one status region: a `div` with `role="status"`, `tabIndex={-1}` and a ref, rendered whenever `report` is set, and focus it in an effect whenever `report` changes. The conflict case inside it keeps its buttons. Failing test first in `ThemeWorkbench.test.tsx`: after a successful save, `document.activeElement` is the element with `role="status"` that contains "Saved.".
+
+- [ ] **3. The derive error is a status, not an alert.** Its text changes with each keystroke that breaks a reference. Change its `role="alert"` to `role="status"`. The conflict test that queries `findByRole('alert')` now finds the status region: update it to `findByRole('status')`.
+
+- [ ] **4. Dirty means different, not a different object.** `dirty` becomes `draft !== saved && !sameJson(draft, saved)` (keep `baseHash === null` if Task 17 has added it). Failing test first: starting from `{ definition: { ...weasel }, baseHash: 'h1' }` (a copy equal to disk), Save is disabled.
+
+- [ ] **5. Comment.** Delete `App.tsx`'s docstring sentence that lists the routes; `ROUTES` says it.
+
+- [ ] **Run** `npx vitest run --project=draw apps/theme-editor/src/ThemeEditor.test.tsx apps/theme-editor/src/ThemeWorkbench.test.tsx`, `npx tsc --noEmit`, `npx eslint apps/theme-editor/src` → clean.
+
+- [ ] **Commit** the five paths; message `keep a draft through a failed reload, and announce saves`.
