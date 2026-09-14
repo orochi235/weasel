@@ -1,7 +1,7 @@
 import { themeAxes, type Selection, type Theme } from '@weasel-js/theme';
 import { ThemeProvider } from '@weasel-js/theme/react';
 import { Button, Checkbox, Input, SidebarPanel, Slider, Switch, ToggleBar, type Thumb } from '@weasel-js/ui';
-import { useState, type MouseEvent } from 'react';
+import { useState, type MouseEvent, type SyntheticEvent } from 'react';
 import styles from './ThemeEditor.module.css';
 
 export interface PreviewVariant {
@@ -50,9 +50,12 @@ function Specimen({ caption }: { caption: string }) {
 
 /** Real kit components under the draft theme, one pane per mode, so an edit shows in both at once. */
 export function ThemePreview({ variants, selection, inspecting = false, onInspect }: ThemePreviewProps) {
-  const capture = (e: MouseEvent<HTMLDivElement>) => {
+  const swallow = (e: SyntheticEvent) => {
     e.preventDefault();
     e.stopPropagation();
+  };
+  const capture = (e: MouseEvent<HTMLDivElement>) => {
+    swallow(e);
     onInspect?.(e.target as Element, e.currentTarget);
   };
   return (
@@ -70,7 +73,12 @@ export function ThemePreview({ variants, selection, inspecting = false, onInspec
                   selection={mode === undefined ? selection : { ...selection, mode }}
                   className={styles.previewPane}
                 >
-                  <div className={inspecting ? styles.inspecting : undefined} onClickCapture={inspecting ? capture : undefined}>
+                  <div
+                    className={inspecting ? styles.inspecting : undefined}
+                    onPointerDownCapture={inspecting ? swallow : undefined}
+                    onMouseDownCapture={inspecting ? swallow : undefined}
+                    onClickCapture={inspecting ? capture : undefined}
+                  >
                     <Specimen caption={mode ?? 'default'} />
                   </div>
                 </ThemeProvider>
