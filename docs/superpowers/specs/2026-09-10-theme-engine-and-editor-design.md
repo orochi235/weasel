@@ -1,8 +1,10 @@
 # Theme engine and editor — design
 
-**Status: phase 1 (the engine) built on branch `theme-engine`, 2026-09-14;
-phase 2 (the editor) not started.** Phase 2 gets its own plan. Delete this file
-when phase 2 merges.
+**Status: phase 1 (the engine) merged to `main`, 2026-09-14; phase 2 (the
+editor) in progress on branch `theme-editor`, its phase 2 section reviewed
+against the merged engine the same day.** Phase 2's plan is
+`docs/superpowers/plans/2026-09-14-theme-editor.md`. Delete this file when
+phase 2 merges.
 
 This covers the theme editor at `apps/theme-editor` `#/theme` and the engine in
 `@weasel-js/theme` underneath it. It is written for whoever implements it. The
@@ -88,9 +90,14 @@ declares a token's axis dependencies; the engine derives them (below).
 - `lightness`: an OKLCH walk from `lightness[0]` to `lightness[1]`. `curve`
   blends an even walk (0) toward a smoothstep S (1), which keeps small steps at
   both ends for elevation and larger ones through the middle for text contrast.
-  Chroma follows the envelope `sin(πt) + darkBias·t` over the ramp position
-  `t` (0 at the first step, 1 at the last), scaled so its maximum is `peak`:
-  it peaks mid-ramp, and `darkBias` lifts the dark end off zero. Every step is gamut-clamped. `anchor` pins named steps to exact colors
+  Chroma follows the envelope `sin(πt) + lightBias·(1−t) + darkBias·t` over
+  the ramp position `t` (0 at the first step, 1 at the last), scaled so its
+  maximum is `peak`: it peaks mid-ramp, `lightBias` lifts the first step off
+  zero and `darkBias` the last. The names read for a ramp that walks light to
+  dark, as gray does; on one that walks the other way they swap. `lightBias`
+  defaults to 0, so a ramp that omits it is unchanged. It was added
+  2026-09-14, because an anchored brand ramp with both biases at 0 came out
+  gray at both ends. Every step is gamut-clamped. `anchor` pins named steps to exact colors
   and takes hue and chroma from them. This is the "pin the brand step, derive
   around it" case.
 - `categorical`: the palette lab's `generate()`, with its constraints under
@@ -118,7 +125,11 @@ what lets one definition produce every mode. The rule kinds:
   without changing the value. This is how a pinned semantic still gets audited.
 
 **Pins** override generated output and are the only values the editor counts
-as *overridden*. A pin on a token no generator produces is *authored* instead,
+as *overridden*. A theme that declares a ramp or scale generates its steps
+itself: pins the themes it extends hold on those steps stop applying, and its
+own pins on them still do (decided 2026-09-14, because a theme extending
+weasel otherwise inherits all 89 pins and none of its own ramps can show). A
+pin on a token no generator produces is *authored* instead,
 like interstellar's gradient backdrop. A pin is a bare value or
 `{ value, type?, description?, alpha? }`; `type` is required when nothing else
 supplies it. A pin's value may be a `{token}` reference.
@@ -282,7 +293,8 @@ All in one pass, with the prose in a `patch` changeset:
 ### Layout
 
 `#/theme`, in a `LabShell` like the palette lab. The header has the theme
-picker, the mode and density being viewed, "N of M overridden", undo/redo,
+picker, a picker for every axis the viewed theme declares other than `mode`
+(weasel declares only `mode`, so none today), "N of M overridden", undo/redo,
 Export and Save (with a dirty dot). Below it, three columns:
 
 - **Layer rail**: Seeds, Ramps, Scales, Semantics, Components, Pins, each with
@@ -290,43 +302,68 @@ Export and Save (with a dirty dot). Below it, three columns:
 - **Layer editor**: the selected layer.
 - **Preview**: real `@weasel-js/ui` components (panel, buttons, checkbox,
   slider, switch, toggle bar, a sunken field) in both modes at once, at the
-  viewed density. The preview subtree runs `applyTheme` with the draft under a
-  draft theme name; the editor's own chrome stays on the saved theme.
+  other axes' viewed values. The draft becomes a runtime `Theme` by `bake`,
+  with every theme it extends baked the same way, because `applyTheme` takes a
+  `Theme` whose `extends` is another `Theme`, not a name. The preview subtree
+  runs `applyTheme` on that under the name `draft-<name>`; the editor's own
+  chrome stays on interstellar, which `LabShell` applies.
+- **Counts** come from `derive`'s provenance at the default selection:
+  "overridden" is `pinned: true`, and M is every token the definition's own
+  layers produce.
 
 ### Layer editors
 
 - **Ramps.** Per lightness ramp: a strip of step swatches with L and ΔL rows
   and the spread, the parameters as sliders, and a pin toggle per step. When
-  steps are pinned, the generated row shows beneath the pinned one. "Adopt
-  generated" unpins a ramp, and for weasel it asks first, because it
-  re-baselines the visual tests. While a ramp is selected, the preview shows
-  pinned and generated side by side. A categorical ramp shows its set, and
-  "edit gates" opens the palette lab's constraint panel (`PropertyPanel`
-  groups, `AnchorList`, the unmet-gate report) in place. The palette lab
-  components move to shared files for this; the `#/palette` route stays.
-- **Scales.** A ladder per scale, one column per density value.
+  steps are pinned, the generated row shows beneath the pinned one; it is
+  each pinned step's `provenance.generated`, so the editor never reruns a
+  generator itself. "Adopt generated" removes the ramp's step pins, and for
+  weasel it asks first, because it re-baselines the visual tests. While a ramp
+  is selected, the preview shows pinned and generated side by side. A
+  categorical ramp shows its set, and "edit gates" opens the palette lab's
+  constraint panel (`PropertyPanel` groups, `AnchorList`, the unmet-gate
+  report) in place. The palette lab components move to shared files for this;
+  the `#/palette` route stays.
+- **Scales.** A ladder per scale, one column per value of each axis the scale
+  varies on. weasel has no scales.
 - **Semantics.** A table with swatch, token, rule in short form, resolved step
-  per mode, worst contrast with pass/fail, and pinned/revert. Selecting a row
-  opens a drawer: rule kind (step / offset / contrast / ref / literal), its
-  fields, and a per-mode table of what the rule produced, what a pin
-  overrides it with, and contrast against each checked surface.
+  per mode, worst contrast with pass/fail, and pinned/revert. Worst contrast
+  is measured only for a rule with a `contrast` or a `check`, against its
+  `against` list; every weasel semantic today is a `ref` with neither, so the
+  column is empty for weasel. Selecting a row opens a drawer: rule kind (step /
+  offset / contrast / ref / literal), its fields, and a per-mode table of what
+  the rule produced, what a pin overrides it with, and contrast against each
+  checked surface.
 - **Seeds, Components, Pins.** Rows by token type through weasel-ui's
   `TokenPanel`, which is on the unmerged `forge-sidebar-clicks` branch as of
-  2026-09-13 (`5e79d5ba`); phase 2 starts after it merges. Pins lists every
-  override with what it replaced.
+  2026-09-14 (`5e79d5ba`). These three are built last; whether to merge that
+  branch is Mike's call. weasel has no seeds or components, so Pins (89
+  entries) is the only one of the three it fills. Pins lists every override
+  with what it replaced.
 
 **Click to inspect.** Clicking a component in the preview collects the
 stylesheet rules that match it and the `var(--wzl-*)` names they read, and
-jumps the layer editor to those tokens. It reads the real CSS modules, with no
-per-component table.
+jumps the layer editor to those tokens: each token's layer comes from its
+provenance. It reads the real CSS modules, with no per-component table.
 
 ### Saving
 
+- **One generate function.** `build-tokens.ts` is a script whose work runs at
+  the top level. Its body moves into `generateTokens(definitions)` in the
+  engine, returning the three file texts or the derive problems, and both the
+  script and the plugin call it.
 - **A dev-only vite plugin** in `apps/theme-editor/vite.config.ts` serves
   `GET /__theme/list`, `GET /__theme/<name>` and `PUT /__theme/<name>` for the
   known definition files (`packages/theme/themes/*.json` and interstellar's). It
-  refuses any other path. `PUT` writes the JSON in stable key order, then runs
-  the same emit function `build-tokens` uses, and returns the validation report.
+  refuses any other path. `PUT` writes the JSON as
+  `JSON.stringify(definition, null, 2)` plus a newline, which both files
+  already round-trip byte for byte. Keys are never sorted: record order is
+  emission order. The file is written even when the definition has issues, so
+  an explicit save never loses work; `generateTokens` then rewrites
+  `src/generated/` only when every theme derives clean, as the build requires,
+  and the response carries the issues either way. interstellar is not in
+  `themes/`, so saving it writes the JSON alone; labkit loads that file
+  directly.
 - **Conflict check.** `PUT` carries the hash of the file as loaded. If disk has
   moved on (another session in this working directory, a checkout), the plugin
   answers 409 and the editor offers to reload.
