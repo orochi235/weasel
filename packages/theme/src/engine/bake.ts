@@ -1,10 +1,14 @@
-import { enumerateSelections, fullSelection, selectionKey, type AxisDefs, type Selection, type Varying } from '../axes';
+import { enumerateSelections, fullSelection, isByAxis, pick, selectionKey, type AxisDefs, type Selection, type Varying } from '../axes';
 import type { ThemeDefinition } from '../definition';
 import type { RawToken } from '../dtcg/types';
 import { derive } from './derive';
 import { mergeChain, type Lookup } from './merge';
 
-/** A definition with every rule run: plain or `by`-varying tokens, references intact. */
+/**
+ * A definition with every rule run: plain or `by`-varying tokens, references intact.
+ * A branch `derive` could not produce is left out, so at runtime it falls through to the parent; definitions with
+ * issues still bake, because the editor bakes mid-edit and the build refuses them before baking.
+ */
 export interface BakedTheme {
   readonly name: string;
   readonly extends: string | null;
@@ -39,46 +43,72 @@ function table(def: ThemeDefinition, axes: AxisDefs, lookup: Lookup | undefined)
   return out;
 }
 
-/** Every selection's names in one sequence, each new name placed after the one it follows. */
-function mergeOrder(lists: Iterable<readonly string[]>): string[] {
-  const out: string[] = [];
-  for (const list of lists) {
-    let at = -1;
-    for (const name of list) {
-      const i = out.indexOf(name);
-      if (i >= 0) at = i;
-      else out.splice(++at, 0, name);
-    }
+/** Every step name a ramp or scale entry declares, across all its `by` branches, first seen first. */
+function declaredSteps(entry: unknown): string[] {
+  const leaves = (v: unknown): string[] => {
+    if (isByAxis(v)) return Object.entries(v).flatMap(([k, x]) => (k === 'by' ? [] : leaves(x)));
+    if (Array.isArray(v)) return v.flatMap(leaves);
+    return typeof v === 'string' ? [v] : [];
+  };
+  if (isByAxis(entry)) return Object.entries(entry).flatMap(([k, x]) => (k === 'by' ? [] : declaredSteps(x)));
+  return typeof entry === 'object' && entry !== null ? leaves((entry as { steps?: unknown }).steps) : [];
+}
+
+/** Token names in definition order: ramps, scales, semantics, components, then pins no earlier layer produces. */
+function definitionOrder(def: ThemeDefinition): string[] {
+  const names = new Set<string>();
+  for (const layer of [def.ramps, def.scales]) {
+    for (const [name, entry] of Object.entries(layer ?? {})) for (const step of declaredSteps(entry)) names.add(`${name}-${step}`);
   }
-  return out;
+  for (const layer of [def.semantics, def.components, def.pins]) for (const name of Object.keys(layer ?? {})) names.add(name);
+  return [...names];
 }
 
 /** Derive `definition` at every selection and fold the results into one record of tokens with no rules left. */
 export function bake(definition: ThemeDefinition, lookup?: Lookup): BakedTheme {
-  const axes = mergeChain(definition, lookup).axes ?? {};
-  const own = table(definition, axes, lookup);
+  return bakeChain(definition, lookup).at(-1)!;
+}
+
+/** `definition` and every theme above it, baked, root first. */
+function bakeChain(definition: ThemeDefinition, lookup: Lookup | undefined): BakedTheme[] {
+  const merged = mergeChain(definition, lookup);
   const parentDef = definition.extends ? lookup?.(definition.extends) : undefined;
-  const parent = parentDef ? table(parentDef, axes, lookup) : undefined;
+  const above = parentDef ? bakeChain(parentDef, lookup) : [];
+  return [...above, bakeOver(definition, merged, above, lookup)];
+}
 
-  const at = (t: Table | undefined, sel: Selection, name: string) => t?.get(selectionKey(axes, sel))?.[name];
+function bakeOver(definition: ThemeDefinition, merged: ThemeDefinition, above: readonly BakedTheme[], lookup: Lookup | undefined): BakedTheme {
+  const axes = merged.axes ?? {};
+  const own = table(definition, axes, lookup);
 
-  const defaultKey = selectionKey(axes, {});
-  const keys = [defaultKey, ...[...own.keys()].filter((k) => k !== defaultKey)];
-  const names = mergeOrder(keys.map((k) => Object.keys(own.get(k) ?? {})));
+  const at = (sel: Selection, name: string) => own.get(selectionKey(axes, sel))?.[name];
+  /** What the runtime shows for `name` from the themes above: the nearest one whose pick succeeds. */
+  const inherited = (sel: Selection, name: string): RawToken | undefined => {
+    const full = fullSelection(axes, sel);
+    for (let i = above.length - 1; i >= 0; i--) {
+      const tokens = above[i].tokens;
+      if (!Object.hasOwn(tokens, name)) continue;
+      const picked = pick(tokens[name], full);
+      if (picked.ok) return picked.value;
+    }
+    return undefined;
+  };
+
+  const produced = new Set([...own.values()].flatMap((t) => Object.keys(t)));
+  const ordered = definitionOrder(merged).filter((n) => produced.has(n));
+  const names = [...ordered, ...[...produced].filter((n) => !ordered.includes(n))];
 
   const selections = enumerateSelections(axes);
   const tokens: Record<string, Varying<RawToken>> = {};
   for (const name of names) {
-    if (parent && selections.every((sel) => same(at(own, sel, name), at(parent, sel, name)))) continue;
+    if (selections.every((sel) => same(at(sel, name), inherited(sel, name)))) continue;
 
     const varying = Object.keys(axes).filter((axis) =>
-      selections.some((sel) =>
-        Object.keys(axes[axis].values).some((v) => !same(at(own, sel, name), at(own, { ...sel, [axis]: v }, name))),
-      ),
+      selections.some((sel) => Object.keys(axes[axis].values).some((v) => !same(at(sel, name), at({ ...sel, [axis]: v }, name)))),
     );
 
     const build = (i: number, sel: Record<string, string>): Varying<RawToken> | undefined => {
-      if (i === varying.length) return at(own, fullSelection(axes, sel), name);
+      if (i === varying.length) return at(fullSelection(axes, sel), name);
       const axis = varying[i];
       const branch: Record<string, unknown> = { by: axis };
       let any = false;

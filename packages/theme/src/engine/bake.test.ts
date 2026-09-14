@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { pick, type AxisDefs } from '../axes';
 import type { ThemeDefinition } from '../definition';
 import { bake } from './bake';
 
@@ -64,6 +65,22 @@ describe('bake', () => {
     expect(Object.keys(bake(halo).tokens)).toEqual(['gray-50', 'gray-800', 'surface', 'halo', 'line']);
   });
 
+  it('orders tokens by definition order when neighbors exist only at different selections', () => {
+    const dim = (value: string) => ({ value, type: 'dimension' });
+    const split: ThemeDefinition = {
+      name: 's',
+      axes: P.axes,
+      semantics: { a: dim('1px'), b: { by: 'mode', dark: dim('1px') }, x: { by: 'mode', light: dim('1px') }, c: dim('1px') },
+    };
+    expect(Object.keys(bake(split).tokens)).toEqual(['a', 'b', 'x', 'c']);
+  });
+
+  it('orders ramp steps across every branch of by-varying steps', () => {
+    const steps = { by: 'mode', dark: ['50', '800'], light: ['50', '900'] };
+    const varied = { name: 'v', axes: P.axes, ramps: { gray: { ...P.ramps!.gray, steps } } } as unknown as ThemeDefinition;
+    expect(Object.keys(bake(varied).tokens)).toEqual(['gray-50', 'gray-800', 'gray-900']);
+  });
+
   it('serializes to JSON and back unchanged', () => {
     expect(JSON.parse(JSON.stringify(baked))).toEqual(baked);
   });
@@ -73,5 +90,27 @@ describe('bake', () => {
     expect(child).toMatchObject({ name: 'c', extends: 'p' });
     expect(Object.keys(child.tokens)).toEqual(['gray-800']);
     expect(child.axes).toEqual(P.axes);
+  });
+
+  describe('a child that adds an axis value', () => {
+    const dim = (value: string) => ({ value, type: 'dimension' });
+    const twoModes: AxisDefs = { mode: { default: 'dark', values: { dark: {}, light: {} } } };
+    const threeModes: AxisDefs = { mode: { default: 'dark', values: { dark: {}, light: {}, hc: {} } } };
+    const parent: ThemeDefinition = { name: 'p1', axes: twoModes, semantics: { gap: { by: 'mode', dark: dim('4'), light: dim('5') } } };
+    const lookup = (n: string) => ({ p1: parent })[n];
+
+    it('keeps a token the parent has no value for at the new value, even when it equals the parent default', () => {
+      const child: ThemeDefinition = {
+        name: 'c2',
+        extends: 'p1',
+        axes: threeModes,
+        semantics: { gap: { by: 'mode', dark: dim('4'), light: dim('5'), hc: dim('4') } },
+      };
+      expect(pick(bake(child, lookup).tokens.gap, { mode: 'hc' })).toEqual({ ok: true, value: { type: 'dimension', value: '4' } });
+    });
+
+    it('bakes to no tokens when it overrides nothing, leaving the new value to fall through', () => {
+      expect(bake({ name: 'c3', extends: 'p1', axes: threeModes }, lookup).tokens).toEqual({});
+    });
   });
 });
