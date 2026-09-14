@@ -1,7 +1,9 @@
 # Theme engine and editor — design
 
-**Status: designed 2026-09-10, not built.** Nothing below exists in the tree yet.
-Delete this file when the work merges.
+**Status: designed 2026-09-10, reviewed against the tree 2026-09-13, not built.**
+Nothing below exists in the tree yet. Phase 1's plan is
+`docs/superpowers/plans/2026-09-13-theme-engine.md`; phase 2 gets its own plan
+once phase 1 lands. Delete this file when the work merges.
 
 This covers the theme editor at `apps/theme-editor` `#/theme` and the engine in
 `@weasel-js/theme` underneath it. It is written for whoever implements it. The
@@ -87,8 +89,9 @@ declares a token's axis dependencies; the engine derives them (below).
 - `lightness`: an OKLCH walk from `lightness[0]` to `lightness[1]`. `curve`
   blends an even walk (0) toward a smoothstep S (1), which keeps small steps at
   both ends for elevation and larger ones through the middle for text contrast.
-  Chroma follows an envelope peaking mid-ramp, with `darkBias` lifting the dark
-  half. Every step is gamut-clamped. `anchor` pins named steps to exact colors
+  Chroma follows the envelope `sin(πt) + darkBias·t` over the ramp position
+  `t` (0 at the first step, 1 at the last), scaled so its maximum is `peak`:
+  it peaks mid-ramp, and `darkBias` lifts the dark end off zero. Every step is gamut-clamped. `anchor` pins named steps to exact colors
   and takes hue and chroma from them. This is the "pin the brand step, derive
   around it" case.
 - `categorical`: the palette lab's `generate()`, with its constraints under
@@ -118,7 +121,7 @@ what lets one definition produce every mode. The rule kinds:
 as *overridden*. A pin on a token no generator produces is *authored* instead,
 like interstellar's gradient backdrop. A pin is a bare value or
 `{ value, type?, description?, alpha? }`; `type` is required when nothing else
-supplies it.
+supplies it. A pin's value may be a `{token}` reference.
 
 **Descriptions.** Any entry may carry `description`. Ramps and scales take
 `describe: { <step>: text }`. They reach `tokens.css` comments and
@@ -147,7 +150,10 @@ throw, as `resolveTokens` does today.
 
 **Compiling is baking.** Run `derive` for every selection and write the results
 back as pins, and you get a definition with no seeds and no rules. That is the
-runtime `Theme`. `resolveTheme`, `applyTheme`, `defineTheme` and `loadDTCG` all
+runtime `Theme`. A baked pin keeps its reference (`surface` bakes to
+`{gray-800}`, not `#181a1e`); resolving happens later, so a theme that extends
+it and overrides `gray-800` still moves `surface`. A pin whose value differs
+between selections bakes to a `by` object over the axes it depends on. `resolveTheme`, `applyTheme`, `defineTheme` and `loadDTCG` all
 work on it, and none imports a generator, so a consumer of the runtime entry
 never bundles one. `defineTheme` throws on a definition that needs derivation
 and points to `@weasel-js/theme/engine`.
@@ -161,8 +167,12 @@ conversions move down into `@weasel-js/paint`, and core re-exports them **by
 name** (a star re-export of another workspace package emits no binding; see the
 repo CLAUDE.md). theme gains a dependency on paint. The rest of the palette
 lab's math (`oklch.ts`: contrast, chroma-weighted ΔE, hue gap, gamut clamp) and
-`generate.ts` move from `apps/theme-editor/src/palette/` into the engine, with
-their tests.
+`generate.ts`'s algorithm move from `apps/theme-editor/src/palette/` into the
+engine, with their tests. The named-color sources stay in the app: `CRAYONS`,
+`crayonHex`, `crayonAnchor` and `YELLOW_ANCHOR` split out of `generate.ts` into
+`palette/crayons.ts`, beside `copicColors.ts` and `legoColors.ts`, and
+`crayons.test.ts` (which writes a preview page) stays with them. The two moved
+tests that use a crayon take its values as literals.
 
 ### Emission
 
@@ -175,7 +185,9 @@ DTCG directories and calls the engine's emitters:
   axis also appears in a block per value of it:
   `[data-wzl-theme='t'][data-wzl-<axis>='<v>'],\n[data-wzl-<axis>='<v>']`. A
   token that depends on two axes gets the compound blocks for their cross
-  product. This generalizes the existing fix for `var()` inside a custom
+  product. `:root` lists tokens in layer order (ramps, scales, semantics,
+  components, then pins that no generator produced), and in definition order
+  within a layer; a pin on a generated token does not move it. This generalizes the existing fix for `var()` inside a custom
   property resolving where the property is declared. Within a block, tokens
   whose own value varies on that axis come first, in definition order, then the
   tokens that depend on it only through a reference, which is the order today's
@@ -197,21 +209,33 @@ converted by a script built on the DTCG import:
   `by: mode` semantic with a `ref`, in mode-file order.
 - `ramps.gray` gets the lightness parameters that generate the proposed ramp
   (`#f5f6f7 #e0e1e4 #c6c8cb #a7a9ae #85888e #64676f #464a51 #2f3137 #1c1e22
-  #0c0e12`: L 0.973 → 0.163, `curve` 0.41, hue 266°, chroma peaking about
-  0.013 mid-ramp, step spread 1.79× against the shipping ramp's 3.61×). A
-  symmetric S at 0.41 lands within 0.0075 in L of every proposed step, less than
-  one 8-bit hex step. All ten steps are pinned to today's values, so nothing
+  #0c0e12`: L 0.973 → 0.163, `curve` 0.41, hue 266°, chroma `peak` 0.0116
+  with `darkBias` 0.84, step spread 1.79× against the shipping ramp's 3.61×).
+  The proposal was measured by hand, not generated; these parameters were
+  fitted to it on 2026-09-13 and land within 0.0081 in L and 0.0026 in C of
+  every step. All ten steps are pinned to today's values, so nothing
   that ships moves; the parameters exist so the editor can show the generated
   ramp beside the pinned one.
-- `ramps.accent` is anchored at `base: #2e1f7a`, `ramps.swatch` carries the
-  palette-lab gates that produced today's set, and every step of both is
-  pinned.
+- `ramps.accent` is anchored at `base: #2e1f7a`, and `ramps.swatch` carries the
+  palette lab's `DEFAULT_CONSTRAINTS` as its gates. Those gates do not reproduce
+  today's set — checked 2026-09-13, `generate(DEFAULT_CONSTRAINTS)` matches
+  none of the ten in order and three as a set; the shipping set predates the
+  lab (`502fa035`). So every step of both ramps is pinned, and the editor shows
+  generated beside pinned, as it does for gray.
+- The primitives that are references (`accent`, `line`, `surface-hover` and
+  eleven more) convert to pins holding the reference.
 
-**Gate:** the converted file emits today's `tokens.css` and `manifest.ts` byte
-for byte, held by the existing determinism test. `themes.ts` changes shape by
-design (`THEMES` keyed by selection, `THEME_SOURCES` holding definitions), so
-its gate is value equality instead: every resolved value in the new `THEMES`
-equals today's for the same mode, and `TokenName` is unchanged.
+**Gate.** The converted file emits the same *declarations* as today: for every
+block in `tokens.css`, the same selector and the same map of property to value
+and description, and for `manifest.ts` the same rows keyed by name. It does not
+emit the same bytes, because today's `:root` lists all 89 primitives before the
+11 mode tokens, and layer order puts the ramps first and authored pins last.
+Order inside a rule block changes nothing in CSS when every name is unique. The
+gate is a one-off script run in the conversion commit, and the determinism test
+holds the new bytes from then on. `themes.ts` changes shape by design (`THEMES`
+keyed by selection, `THEME_SOURCES` holding definitions), so its gate is value
+equality: every resolved value in the new `THEMES` equals today's for the same
+mode, and `TokenName` is unchanged.
 
 interstellar (`packages/labkit/src/theme/interstellar.tokens.json`) converts
 the same way to a pins-only definition and loads through `defineTheme`.
@@ -226,9 +250,25 @@ All in one pass, with the prose in a `patch` changeset:
 - `<ThemeProvider selection>` replaces `mode`, and the context value carries
   `selection`.
 - `defineTheme` takes a definition. `Theme` holds `axes` instead of `modes`.
-- Callers to move: hud (`attach.ts`, `useHud.ts`), labkit's interstellar,
-  `apps/draw/src/theme.ts` (whose `{color.x}` refs become `{x}`), and the eleven
-  `ThemeProvider` call sites.
+  A runtime theme's `by` may leave a value out, and that selection then falls
+  through to the theme it extends: interstellar declares `backdrop` for dark
+  only and inherits weasel's `none` in light. Only a definition the engine
+  derives has to give every value.
+- `THEMES.<name>.modes.<mode>` becomes `THEMES.<name>.selections[<key>]`, where
+  the key is `selectionKey({ mode: 'dark' })` → `'mode=dark'` (axes in
+  declaration order, comma-joined).
+- Callers to move, as of 2026-09-13: hud `attach.ts` and `react/useHud.ts`
+  (and seven hud tests calling `resolveTheme(weaselTheme, 'dark')`); labkit
+  `theme/interstellar.ts` and its test, `lab/Lab.tsx` (two providers) and
+  `lab/LabShell.tsx`; `apps/draw/src/theme.ts` (whose `{color.x}` refs become
+  `{x}`) and `apps/draw/src/main.tsx`; `apps/forge/forge.frame.tsx` (a provider
+  and an `applyTheme`). `TOKEN_MANIFEST` readers (forge's `CssVarsPanel`, the
+  Storybook css-vars addon) keep working unchanged.
+- `applyTheme`'s rule selector names one attribute per axis the theme declares.
+  `apps/forge/fonts.ts` outranks the theme rule by repeating `[data-wzl-mode]`
+  to reach (0,3,0); a theme with a second axis reaches (0,3,0) too, and then
+  source order decides. Nothing ships a second axis in this arc, but that rule
+  has to be revisited when one does.
 
 ## Phase 2 — the editor
 
@@ -263,8 +303,10 @@ Export and Save (with a dirty dot). Below it, three columns:
   opens a drawer: rule kind (step / offset / contrast / ref / literal), its
   fields, and a per-mode table of what the rule produced, what a pin
   overrides it with, and contrast against each checked surface.
-- **Seeds, Components, Pins.** Plain property rows. Pins lists every override
-  with what it replaced.
+- **Seeds, Components, Pins.** Rows by token type through weasel-ui's
+  `TokenPanel`, which is on the unmerged `forge-sidebar-clicks` branch as of
+  2026-09-13 (`5e79d5ba`); phase 2 starts after it merges. Pins lists every
+  override with what it replaced.
 
 **Click to inspect.** Clicking a component in the preview collects the
 stylesheet rules that match it and the `var(--wzl-*)` names they read, and
