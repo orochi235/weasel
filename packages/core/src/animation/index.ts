@@ -37,7 +37,7 @@ export {
   lerpOklab, oklabToOklch, oklchToOklab, lerpOklch,
   lerpColorArray,
   type ColorSpace,
-} from './colorSpaces';
+} from '@weasel-js/paint';
 export {
   tweenVertexColors, springVertexColors, cycleVertexColors, staggerVertexColors,
   rainbowVertexColors, solidVertexColors,

@@ -1,8 +1,9 @@
-import { resolveTheme } from './resolveTheme';
+import { fullSelection, selectionKey, type Selection } from './axes';
+import { resolveTheme, themeAxes } from './resolveTheme';
 import type { Theme } from './theme';
 
 const STYLE_ID = 'wzl-themes';
-/** `theme.name::mode` → the rule text currently published for it. Keyed by
+/** `theme.name::selection key` → the rule text currently published for it. Keyed by
  *  name because that is what the rule's selector matches on, and holding the
  *  text is what lets a redefinition under the same name replace its rule
  *  rather than be swallowed as a cache hit. */
@@ -47,27 +48,30 @@ function flushRules(): void {
 }
 
 /**
- * Apply `theme` at `mode` to `el`'s subtree.
+ * Apply `theme` at `selection` to `el`'s subtree.
  *
- * Stamps two data attributes and ensures a matching rule block exists in a
- * module-owned stylesheet. Deliberately not inline properties: the cascade
- * then does the work, per-subtree overrides are just a different theme name,
- * and no `!important` is ever needed. No-op outside a DOM.
+ * Stamps `data-wzl-theme` and one `data-wzl-<axis>` per axis, and ensures a
+ * matching rule block exists in a module-owned stylesheet. Deliberately not
+ * inline properties: the cascade then does the work, per-subtree overrides are
+ * just a different theme name, and no `!important` is ever needed. No-op
+ * outside a DOM.
  */
-export function applyTheme(el: HTMLElement, theme: Theme, mode: string): void {
+export function applyTheme(el: HTMLElement, theme: Theme, selection: Selection = {}): void {
   if (typeof document === 'undefined') return;
 
-  const key = `${theme.name}::${mode}`;
-  const resolved = resolveTheme(theme, mode);
-  const body = Object.entries(resolved)
+  const axes = themeAxes(theme);
+  const sel = fullSelection(axes, selection);
+  const key = `${theme.name}::${selectionKey(axes, sel)}`;
+  const body = Object.entries(resolveTheme(theme, sel))
     .map(([name, value]) => `${name}: ${value};`)
     .join(' ');
-  const rule = `[data-wzl-theme='${theme.name}'][data-wzl-mode='${mode}'] { ${body} }`;
+  const attrs = Object.keys(axes).map((a) => `[data-wzl-${a}='${sel[a]}']`).join('');
+  const rule = `[data-wzl-theme='${theme.name}']${attrs} { ${body} }`;
   if (emitted.get(key) !== rule) {
     emitted.set(key, rule);
     flushRules();
   }
 
   el.setAttribute('data-wzl-theme', theme.name);
-  el.setAttribute('data-wzl-mode', mode);
+  for (const a of Object.keys(axes)) el.setAttribute(`data-wzl-${a}`, sel[a]);
 }

@@ -2,51 +2,49 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { THEMES } from './themes';
+import { BAKED_THEMES, THEME_SOURCES, THEMES } from './themes';
 import { TOKEN_MANIFEST } from './manifest';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const css = readFileSync(resolve(here, 'tokens.css'), 'utf8');
 
 describe('generated themes.ts', () => {
+  const dark = THEMES.weasel.selections['mode=dark'];
+  const light = THEMES.weasel.selections['mode=light'];
+
   it('exposes both modes of the weasel theme', () => {
-    expect(Object.keys(THEMES.weasel.modes).sort()).toEqual(['dark', 'light']);
+    expect(Object.keys(THEMES.weasel.selections).sort()).toEqual(['mode=dark', 'mode=light']);
   });
 
   it('resolves aliases to literals', () => {
-    expect(THEMES.weasel.modes.dark['--wzl-surface']).toBe('#181a1e');
-    expect(THEMES.weasel.modes.light['--wzl-surface']).toBe('#f5f5f6');
+    expect(dark['--wzl-surface']).toBe('#181a1e');
+    expect(light['--wzl-surface']).toBe('#f5f5f6');
   });
 
   it('computes alpha tokens exactly instead of approximating them', () => {
-    expect(THEMES.weasel.modes.dark['--wzl-line']).toBe('rgba(230, 231, 233, 0.2)');
-    expect(THEMES.weasel.modes.light['--wzl-line']).toBe('rgba(14, 15, 18, 0.2)');
+    expect(dark['--wzl-line']).toBe('rgba(230, 231, 233, 0.2)');
+    expect(light['--wzl-line']).toBe('rgba(14, 15, 18, 0.2)');
   });
 
-  it('exposes unresolved sources so extends can rebase aliases', async () => {
-    const { THEME_SOURCES } = await import('./themes');
-    // --wzl-accent is an alias, not a literal, in the source form.
-    expect(THEME_SOURCES.weasel.primitives['accent'].value).toBe('{color.accent-base}');
-    // Mode layers carry only what differs.
-    expect(Object.keys(THEME_SOURCES.weasel.modes.dark)).toContain('surface');
-    expect(Object.keys(THEME_SOURCES.weasel.modes.dark)).not.toContain('gray-50');
+  it('exposes the definition as authored, so references survive for extends and the editor', () => {
+    expect((THEME_SOURCES.weasel.pins!.accent as { value: string }).value).toBe('{accent-base}');
+    expect(Object.keys(THEME_SOURCES.weasel.semantics!)).toContain('surface');
+    expect(BAKED_THEMES.weasel.tokens.accent).toMatchObject({ value: '{accent-base}' });
   });
 
-  it('carries the token groups labkit contributed', async () => {
-    const { THEME_SOURCES } = await import('./themes');
-    const dark = THEMES.weasel.modes.dark;
+  it('carries the token groups labkit contributed', () => {
     expect(dark['--wzl-space-md']).toBe('12px');
     expect(dark['--wzl-z-modal']).toBe('30');
     expect(dark['--wzl-swatch-fuchsia']).toBe('#f641f7');
     expect(dark['--wzl-backdrop']).toBe('none');
     // Mode-invariant: the swatch set does not flip.
-    expect(THEMES.weasel.modes.light['--wzl-swatch-fuchsia']).toBe('#f641f7');
-    expect(THEME_SOURCES.weasel.primitives['backdrop'].type).toBe('gradient');
+    expect(light['--wzl-swatch-fuchsia']).toBe('#f641f7');
+    expect((THEME_SOURCES.weasel.pins!.backdrop as { type: string }).type).toBe('gradient');
   });
 
   it('flips accent-fg per mode', () => {
-    expect(THEMES.weasel.modes.dark['--wzl-accent-fg']).toBe('#5841b8');
-    expect(THEMES.weasel.modes.light['--wzl-accent-fg']).toBe('#2e1f7a');
+    expect(dark['--wzl-accent-fg']).toBe('#5841b8');
+    expect(light['--wzl-accent-fg']).toBe('#2e1f7a');
   });
 });
 

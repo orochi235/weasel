@@ -24,7 +24,7 @@ import { useLabHistory, type LabHistory } from './useLabHistory';
 import styles from './PaletteLab.module.css';
 import { PalettePreview } from './PalettePreview';
 import { AnchorList } from './AnchorList';
-import { floorDegrees, generate, type Anchor, type Constraints } from './palette/generate';
+import { floorDegrees, generate, type Anchor, type Constraints } from '@weasel-js/theme/engine';
 
 const SURFACES: Record<SurfaceKey, string> = { dark: '#181a1e', light: '#f5f5f6' };
 

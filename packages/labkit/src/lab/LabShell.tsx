@@ -53,7 +53,7 @@ export function LabShell({ title, children, header, footer, mode = 'auto',
   return outer ? (
     shell
   ) : (
-    <ThemeProvider theme={interstellarTheme} mode={resolved}>
+    <ThemeProvider theme={interstellarTheme} selection={{ mode: resolved }}>
       {shell}
     </ThemeProvider>
   );

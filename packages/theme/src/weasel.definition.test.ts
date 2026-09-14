@@ -1,13 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { flattenTokens } from './flatten';
+import type { ThemeDefinition } from './definition';
+import { derive } from './engine/derive';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const tokensDir = resolve(here, '../../tokens/weasel');
-
-const readJson = (p: string) => JSON.parse(readFileSync(resolve(tokensDir, p), 'utf8'));
+const weasel: ThemeDefinition = JSON.parse(readFileSync(resolve(here, '../themes/weasel.json'), 'utf8'));
 
 /** The intended token vocabulary. */
 const EXPECTED_NAMES = [
@@ -40,18 +39,17 @@ const EXPECTED_NAMES = [
   'shadow',
 ].sort();
 
-describe('DTCG source', () => {
+describe('weasel theme definition', () => {
   it('declares exactly the intended token vocabulary', () => {
-    const names = new Set([
-      ...Object.keys(flattenTokens(readJson('primitives.tokens.json'))),
-      ...Object.keys(flattenTokens(readJson('modes/dark.tokens.json'))),
-    ]);
-    expect([...names].sort()).toEqual(EXPECTED_NAMES);
+    expect(Object.keys(derive(weasel, { mode: 'dark' }).tokens).sort()).toEqual(EXPECTED_NAMES);
   });
 
   it('declares the same token names in every mode', () => {
-    const dark = Object.keys(flattenTokens(readJson('modes/dark.tokens.json'))).sort();
-    const light = Object.keys(flattenTokens(readJson('modes/light.tokens.json'))).sort();
-    expect(light).toEqual(dark);
+    expect(Object.keys(derive(weasel, { mode: 'light' }).tokens).sort()).toEqual(EXPECTED_NAMES);
+  });
+
+  it('derives with no issues in any mode', () => {
+    expect(derive(weasel, { mode: 'dark' }).issues).toEqual([]);
+    expect(derive(weasel, { mode: 'light' }).issues).toEqual([]);
   });
 });

@@ -4,7 +4,7 @@ import { createHud, type Hud } from '../hud';
 import { createLoupe } from './createLoupe';
 import type { RenderLayer, View } from '@weasel-js/core';
 
-const tokens = resolveTheme(weaselTheme, 'dark');
+const tokens = resolveTheme(weaselTheme, { mode: 'dark' });
 const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const dims = { width: 800, height: 600 };
 

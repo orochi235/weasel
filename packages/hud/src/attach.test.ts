@@ -175,7 +175,7 @@ describe('attachHud', () => {
         getPaintedVersion: vi.fn(() => 0),
         paintedCursor: createPaintedCursorState(),
       };
-      const theme = { ...resolveTheme(weaselTheme, 'dark'), '--wzl-surface-raised': '#123456' };
+      const theme = { ...resolveTheme(weaselTheme, { mode: 'dark' }), '--wzl-surface-raised': '#123456' };
       attachHud(api, hud, { theme });
       hud.button({ id: 'b', x: 0, y: 0, w: 50, h: 20, label: 'x' });
       const registeredLayer = (api.registerLayer as ReturnType<typeof vi.fn>).mock.calls[0][0];
@@ -195,7 +195,7 @@ describe('attachHud', () => {
     const registeredLayer = (api.registerLayer as ReturnType<typeof vi.fn>).mock.calls[0][0];
     const cmds = registeredLayer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
     const buttonBody = cmds.find((c: { kind: string }) => c.kind === 'path') as { fill: { color: string } };
-    expect(buttonBody.fill.color).toBe(resolveTheme(weaselTheme, 'dark')['--wzl-surface-raised']);
+    expect(buttonBody.fill.color).toBe(resolveTheme(weaselTheme, { mode: 'dark' })['--wzl-surface-raised']);
   });
 
   it('draws content beneath frames, clipped to contentRect', () => {

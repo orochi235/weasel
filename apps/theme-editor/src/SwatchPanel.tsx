@@ -3,8 +3,8 @@ import styles from './PaletteLab.module.css';
 import { PinIcon } from './PinIcon';
 import { COPIC_COLORS } from './palette/copicColors';
 import { LEGO_COLORS } from './palette/legoColors';
-import { anchorFromHex, CRAYONS, crayonAnchor, crayonHex, type Anchor } from './palette/generate';
-import { toLch } from './palette/oklch';
+import { CRAYONS, crayonAnchor, crayonHex } from './palette/crayons';
+import { anchorFromHex, toLch, type Anchor } from '@weasel-js/theme/engine';
 
 export type SourceId = 'named' | 'lego' | 'copic';
 

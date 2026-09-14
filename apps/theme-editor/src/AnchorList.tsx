@@ -1,7 +1,7 @@
 import { PropertyGroup } from '@weasel-js/ui';
 
 import styles from './PaletteLab.module.css';
-import { anchorFromHex, toHexPreview, type Anchor } from './palette/generate';
+import { anchorFromHex, toHexPreview, type Anchor } from '@weasel-js/theme/engine';
 
 export interface AnchorListProps {
   anchors: readonly Anchor[];

@@ -44,7 +44,7 @@ export function attachHud(
   hud: Hud,
   options: AttachHudOptions = {},
 ): () => void {
-  const theme = options.theme ?? resolveTheme(weaselTheme, weaselTheme.defaultMode);
+  const theme = options.theme ?? resolveTheme(weaselTheme);
   if (hud.attached) {
     throw new Error('weasel-hud: this HUD is already attached to a canvas.');
   }

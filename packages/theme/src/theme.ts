@@ -1,68 +1,67 @@
-import type { FlatTokens, RawToken } from './dtcg/types';
-import { THEME_SOURCES } from './generated/themes';
-
-/** Authoring shorthand: a bare string is a literal or a `{ref}`. */
-export type TokenInput = string | number | RawToken;
-
-/** What `defineTheme` accepts: a name, the base theme to layer onto, and the
- *  token overrides, split into mode-invariant and per-mode. */
-export interface ThemeInput {
-  readonly name: string;
-  /** Base to layer onto. Defaults to `weaselTheme`; `null` opts out. */
-  readonly extends?: Theme | null;
-  readonly defaultMode?: string;
-  /** Mode-invariant overrides. */
-  readonly tokens?: Readonly<Record<string, TokenInput>>;
-  readonly modes: Readonly<Record<string, Readonly<Record<string, TokenInput>>>>;
-}
+import { isByAxis, type AxisDefs, type Varying } from './axes';
+import type { PinObject, PinValue, ThemeDefinition } from './definition';
+import type { RawToken, TokenValue } from './dtcg/types';
+import { BAKED_THEMES } from './generated/themes';
 
 /**
- * A theme: a named set of design tokens, organized into a mode-invariant layer
- * plus one layer per mode (light, dark, …), optionally extending another theme.
- * Tokens are held unresolved — aliases between them are collapsed later by
- * `resolveTheme`, so an override of a base primitive still reaches everything
- * that references it.
+ * A theme ready to resolve: its axes and its tokens, each plain or varying by
+ * axis, references intact. A `by` that leaves a value out contributes nothing
+ * for that selection, so the theme it extends supplies it.
  */
 export interface Theme {
   readonly name: string;
   readonly extends: Theme | null;
-  readonly defaultMode: string;
-  readonly tokens: FlatTokens;
-  readonly modes: Readonly<Record<string, FlatTokens>>;
+  readonly axes: AxisDefs;
+  readonly tokens: Readonly<Record<string, Varying<RawToken>>>;
 }
 
-function normalize(input: Readonly<Record<string, TokenInput>>): FlatTokens {
-  const out: FlatTokens = {};
-  for (const [name, v] of Object.entries(input)) {
-    out[name] =
-      typeof v === 'object'
-        ? v
-        : { type: 'unknown', value: v, alpha: undefined, description: undefined };
+/** What `defineTheme` accepts: a definition whose `extends` is a `Theme`, holding pins and components only. */
+export type ThemeInput = Omit<ThemeDefinition, 'extends'> & { readonly extends?: Theme | null };
+
+const isPinObject = (v: PinValue): v is PinObject =>
+  typeof v === 'object' && v !== null && !Array.isArray(v) && 'value' in v;
+
+function toRaw(v: Varying<PinValue>): Varying<RawToken> {
+  if (isByAxis(v)) {
+    const out: Record<string, unknown> = { by: v.by };
+    for (const [k, x] of Object.entries(v)) if (k !== 'by') out[k] = toRaw(x as Varying<PinValue>);
+    return out as Varying<RawToken>;
   }
-  return out;
+  const obj: PinObject = isPinObject(v) ? v : { value: v as TokenValue };
+  return { type: obj.type ?? 'unknown', value: obj.value, alpha: obj.alpha, description: obj.description };
 }
 
-/** The built-in theme, materialized from the generated source. */
+/** The built-in theme, from the baked output of themes/weasel.json. */
 export const weaselTheme: Theme = {
   name: 'weasel',
   extends: null,
-  defaultMode: 'dark',
-  tokens: THEME_SOURCES.weasel.primitives as FlatTokens,
-  modes: THEME_SOURCES.weasel.modes as Record<string, FlatTokens>,
+  axes: BAKED_THEMES.weasel.axes,
+  tokens: BAKED_THEMES.weasel.tokens,
 };
 
-/** Build a theme from authoring shorthand. Unless `extends` says otherwise the
- *  result layers onto `weaselTheme`, so a theme only needs to name what it
- *  changes. */
+/**
+ * Build a theme from pins. Unless `extends` says otherwise the result layers
+ * onto `weaselTheme`, so a theme only names what it changes. A definition with
+ * seeds, ramps, scales or semantics needs deriving first.
+ */
 export function defineTheme(input: ThemeInput): Theme {
-  const base = input.extends === undefined ? weaselTheme : input.extends;
-  const modes: Record<string, FlatTokens> = {};
-  for (const [mode, tokens] of Object.entries(input.modes)) modes[mode] = normalize(tokens);
+  if (typeof input.extends === 'string') {
+    throw new Error(
+      `Theme "${input.name}" extends "${input.extends}" by name; defineTheme needs the Theme itself (e.g. weaselTheme), not a definition's name.`,
+    );
+  }
+  const rules = (['seeds', 'ramps', 'scales', 'semantics'] as const).filter((k) => Object.keys(input[k] ?? {}).length > 0);
+  if (rules.length > 0) {
+    throw new Error(
+      `Theme "${input.name}" has ${rules.join(', ')}, which need deriving. Bake it with \`bake\` from @weasel-js/theme/engine.`,
+    );
+  }
+  const tokens: Record<string, Varying<RawToken>> = {};
+  for (const [name, v] of Object.entries({ ...input.components, ...input.pins })) tokens[name] = toRaw(v);
   return {
     name: input.name,
-    extends: base,
-    defaultMode: input.defaultMode ?? base?.defaultMode ?? 'dark',
-    tokens: normalize(input.tokens ?? {}),
-    modes,
+    extends: input.extends === undefined ? weaselTheme : input.extends,
+    axes: input.axes ?? {},
+    tokens,
   };
 }

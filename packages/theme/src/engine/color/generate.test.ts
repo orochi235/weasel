@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { crayonHex, DEFAULT_CONSTRAINTS, generate, YELLOW_ANCHOR, type Constraints } from './generate';
+import { DEFAULT_CONSTRAINTS, generate, type Anchor, type Constraints } from './generate';
 import { contrast, deltaE, hueGap } from './oklch';
 import { floorDegrees } from './generate';
+
+/** `crayonAnchor('yellow')` and `crayonHex('yellow')` from the theme editor, as of 2026-09-13. */
+const YELLOW_ANCHOR: Anchor = { name: 'yellow', hue: 110, lightness: 0.9 };
+const YELLOW_HEX = '#e7e82a';
 
 const withC = (over: Partial<Constraints>): Constraints => ({ ...DEFAULT_CONSTRAINTS, ...over });
 
@@ -138,9 +142,8 @@ describe('perceptual gates', () => {
   it('admits a vivid yellow on paper that WCAG contrast would reject', () => {
     // The point of the surface-distance gate. On white, a real yellow scores
     // about 1.2:1 by luminance and is plainly visible.
-    const yellow = crayonHex('yellow');
-    expect(contrast(yellow, '#f5f5f6')).toBeLessThan(1.6);
-    expect(deltaE(yellow, '#f5f5f6')).toBeGreaterThan(deltaE('#c1c1c1', '#f5f5f6'));
+    expect(contrast(YELLOW_HEX, '#f5f5f6')).toBeLessThan(1.6);
+    expect(deltaE(YELLOW_HEX, '#f5f5f6')).toBeGreaterThan(deltaE('#c1c1c1', '#f5f5f6'));
   });
 
   it('scales the hue floor with the set size', () => {

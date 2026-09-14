@@ -10,7 +10,7 @@ import type { HudPointerEvent, Widget } from './widget';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 
-const defaultResolved = resolveTheme(weaselTheme, 'dark');
+const defaultResolved = resolveTheme(weaselTheme, { mode: 'dark' });
 
 interface HarnessApi {
   press: ReturnType<typeof vi.fn<() => void>>;

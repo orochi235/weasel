@@ -6,7 +6,7 @@ import { DEFAULT_WINDOW_METRICS as M } from './zones';
 const ctx = {
   dims: { width: 800, height: 600 },
   defaultFont: 'D',
-  tokens: resolveTheme(weaselTheme, 'dark'),
+  tokens: resolveTheme(weaselTheme, { mode: 'dark' }),
 };
 
 const opts = { id: 'w', x: 100, y: 100, w: 200, h: 150, title: 'Loupe' };

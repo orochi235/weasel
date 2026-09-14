@@ -6,7 +6,7 @@ import type {
   SpringPresetName,
 } from './types';
 import type { VertexColorChannel } from './colorRegistry';
-import { lerpColorArray, type ColorSpace } from './colorSpaces';
+import { lerpColorArray, type ColorSpace } from '@weasel-js/paint';
 import { hslToRgb } from '../renderer/math/color';
 
 /**

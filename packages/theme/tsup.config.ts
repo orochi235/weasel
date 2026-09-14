@@ -7,7 +7,7 @@ import { packagePreset } from '../../scripts/tsup-preset';
 // to the published package root.
 export default defineConfig(
   packagePreset({
-    entry: { index: 'src/index.ts', react: 'src/react.tsx' },
+    entry: { index: 'src/index.ts', react: 'src/react.tsx', engine: 'src/engine.ts' },
     external: ['react'],
   }),
 );

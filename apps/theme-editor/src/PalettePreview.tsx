@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import styles from './PaletteLab.module.css';
 import { PinIcon } from './PinIcon';
-import type { Palette } from './palette/generate';
-import { toLch } from './palette/oklch';
+import { toLch, type Palette } from '@weasel-js/theme/engine';
 
 type Point = readonly [x: number, y: number];
 

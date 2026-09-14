@@ -271,7 +271,7 @@ const preview: Preview = {
       return (
         <ThemeProvider
           theme={interstellarTheme}
-          mode={mode}
+          selection={{ mode }}
           className="lk-root lk-sb-frame"
         >
           <Story />

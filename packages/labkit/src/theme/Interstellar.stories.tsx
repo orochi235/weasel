@@ -18,7 +18,7 @@ const meta: Meta = {
       description: {
         component:
           'The interstellar theme: deep-space cosmic gradient + starscape backdrop, glass surfaces, Oswald display type, purple accent. ' +
-          'Authored as DTCG in `src/theme/interstellar.tokens.json` and loaded with `loadDTCG`; it extends the built-in weasel theme, overriding values rather than adding tokens.',
+          'A pins-only theme definition in `src/theme/interstellar.theme.json`, loaded with `defineTheme`; it extends the built-in weasel theme, overriding values rather than adding tokens.',
       },
     },
   },

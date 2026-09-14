@@ -222,7 +222,7 @@ needs importing, and the token values arrive through the provider:
 import { interstellarTheme } from '@weasel-js/labkit';
 import { ThemeProvider } from '@weasel-js/theme/react';
 
-<ThemeProvider theme={interstellarTheme} mode="dark">…</ThemeProvider>
+<ThemeProvider theme={interstellarTheme} selection={{ mode: 'dark' }}>…</ThemeProvider>
 ```
 
 Style your own surfaces against the `--wzl-*` tokens so they follow the mode the

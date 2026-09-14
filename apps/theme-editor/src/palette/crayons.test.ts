@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { writeFileSync } from 'node:fs';
-import { CRAYONS, crayonHex } from './generate';
-import { toLch } from './oklch';
+import { CRAYONS, crayonHex } from './crayons';
+import { toLch } from '@weasel-js/theme/engine';
 
 describe('crayons', () => {
   it('every name resolves to a color at the hue and lightness it declares', () => {
