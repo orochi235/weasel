@@ -243,8 +243,9 @@ keyed by selection, `THEME_SOURCES` holding definitions), so its gate is value
 equality: every resolved value in the new `THEMES` equals today's for the same
 mode, and `TokenName` is unchanged.
 
-interstellar (`packages/labkit/src/theme/interstellar.tokens.json`) converts
-the same way to a pins-only definition and loads through `defineTheme`.
+interstellar is a pins-only definition,
+`packages/labkit/src/theme/interstellar.theme.json`, that extends weasel; the
+runtime loads it through `defineTheme` with `weaselTheme` as its parent.
 
 ### Breaking API changes
 
