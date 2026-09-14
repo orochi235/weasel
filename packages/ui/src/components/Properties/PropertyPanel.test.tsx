@@ -446,6 +446,55 @@ describe('row names', () => {
   });
 });
 
+// The help button is the first labelable element in a described row, so a <label> without `for`
+// belongs to it rather than to the control.
+describe('described rows', () => {
+  const options = [
+    { value: 'a', label: 'A' },
+    { value: 'b', label: 'B' },
+  ];
+
+  it("CheckboxRow toggles when its label's text is clicked", () => {
+    const onChange = vi.fn();
+    render(<CheckboxRow label="Visible" description="d" value={false} onChange={onChange} />);
+    fireEvent.click(screen.getByText('Visible'));
+    expect(onChange).toHaveBeenCalledWith(true);
+  });
+
+  // `label.control` is the element a click on the label activates. getByLabelText cannot stand in:
+  // it takes a label's first form control inside it and ignores `for`, so it always finds the ⓘ.
+  const controlOf = (container: HTMLElement) => container.querySelector('label')?.control;
+
+  it("TextRow's label is its field's", () => {
+    const { container } = render(<TextRow label="Name" description="d" value="foo" onChange={() => {}} />);
+    expect(controlOf(container)).toBe(screen.getByRole('textbox', { name: 'Name' }));
+  });
+
+  it("NumberRow's label is its field's", () => {
+    const { container } = render(<NumberRow label="N" description="d" value={1} onChange={() => {}} />);
+    expect(controlOf(container)).toBe(screen.getByRole('spinbutton', { name: 'N' }));
+  });
+
+  it("SelectRow's label is its select's", () => {
+    const { container } = render(
+      <SelectRow label="Mode" description="d" value="a" options={options} onChange={() => {}} />,
+    );
+    expect(controlOf(container)).toBe(screen.getByRole('combobox', { name: 'Mode' }));
+  });
+
+  it("ColorRow's label is its swatch's", () => {
+    const { container } = render(
+      <ColorRow label="Fill" description="d" value="#ffffff" onChange={() => {}} />,
+    );
+    expect(controlOf(container)).toBe(container.querySelector('input[type="color"]'));
+  });
+
+  it("names ColorRow's alpha slider after its label", () => {
+    render(<ColorRow label="Fill" description="d" value="#ffffff" alpha={0.5} onChange={() => {}} />);
+    expect(screen.getByRole('slider', { name: 'Fill opacity' })).toBeInTheDocument();
+  });
+});
+
 describe('rows with no value', () => {
   const options = [
     { value: 'a', label: 'A' },

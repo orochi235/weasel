@@ -3,6 +3,7 @@ import {
   type ReactNode,
   type RefObject,
   useEffect,
+  useId,
   useRef,
   useState,
 } from 'react';
@@ -242,8 +243,8 @@ function PropertyRowHelp({ label, description }: { label: ReactNode; description
 
 // ── Row implementations ──────────────────────────────────────────────
 
-// A row's <label> names only its first labelable descendant, which is often the
-// readout or the help button rather than the control.
+// A row's <label> text also holds the help button's ⓘ and any readout, so a control takes its
+// name from the string label, not from the <label> that `for` points at it.
 function nameOf(label: ReactNode): string | undefined {
   return typeof label === 'string' ? label : undefined;
 }
@@ -533,6 +534,7 @@ export function ColorRow({
   const alphaRange = useCommitListener(
     onAlphaInput && onAlphaChange && ((raw) => onAlphaChange(Number(raw))),
   );
+  const id = useId();
   return (
     <PropertyRow
       span={span}
@@ -542,9 +544,11 @@ export function ColorRow({
       description={description}
       density={density}
       align={align}
+      htmlFor={id}
     >
       <input
         ref={color}
+        id={id}
         type="color"
         aria-label={nameOf(label)}
         value={value}
@@ -554,6 +558,7 @@ export function ColorRow({
         <input
           ref={alphaRange}
           type="range"
+          aria-label={typeof label === 'string' ? `${label} opacity` : undefined}
           className={`${shared.range} ${shared.alpha} ${s.alpha}`}
           min={0}
           max={1}
@@ -591,6 +596,7 @@ export function CheckboxRow({
   density,
   align,
 }: CheckboxRowProps) {
+  const id = useId();
   return (
     <PropertyRow
       span={span}
@@ -600,8 +606,10 @@ export function CheckboxRow({
       description={description}
       density={density}
       align={align}
+      htmlFor={id}
     >
       <input
+        id={id}
         type="checkbox"
         aria-label={nameOf(label)}
         checked={value === true}
@@ -638,6 +646,7 @@ export function TextRow({
   density,
   align,
 }: TextRowProps) {
+  const id = useId();
   return (
     <PropertyRow
       span={span}
@@ -646,8 +655,10 @@ export function TextRow({
       description={description}
       density={density}
       align={align}
+      htmlFor={id}
     >
       <input
+        id={id}
         type="text"
         aria-label={nameOf(label)}
         value={value ?? ''}
@@ -716,9 +727,11 @@ export function NumberRow({
     const n = Number(raw);
     if (Number.isFinite(n)) onChange(n);
   }));
+  const id = useId();
   const input = (
     <input
       ref={field}
+      id={id}
       type="number"
       aria-label={nameOf(label)}
       value={value ?? ''}
@@ -742,6 +755,7 @@ export function NumberRow({
       description={description}
       density={density}
       align={align}
+      htmlFor={id}
     >
       {unit == null ? (
         input
@@ -790,6 +804,7 @@ export function SelectRow<T extends string>({
   align,
 }: SelectRowProps<T>) {
   const chosen = options.some((opt) => opt.value === value);
+  const id = useId();
   return (
     <PropertyRow
       span={span}
@@ -798,8 +813,10 @@ export function SelectRow<T extends string>({
       description={description}
       density={density}
       align={align}
+      htmlFor={id}
     >
       <select
+        id={id}
         aria-label={nameOf(label)}
         value={chosen ? value : ''}
         onChange={(e) => {
