@@ -62,3 +62,13 @@ export function pick<T>(v: Varying<T>, selection: Selection): Picked<T> {
   }
   return { ok: true, value: cur as T };
 }
+
+/** Every entry of a varying record that has a value for this selection, in record order. */
+export function pickAll<T>(record: Readonly<Record<string, Varying<T>>>, selection: Selection): Record<string, T> {
+  const out: Record<string, T> = {};
+  for (const [name, v] of Object.entries(record)) {
+    const picked = pick(v, selection);
+    if (picked.ok) out[name] = picked.value;
+  }
+  return out;
+}
