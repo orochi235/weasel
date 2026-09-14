@@ -17,3 +17,10 @@ export const lookupOf = (...defs: ThemeDefinition[]): Lookup => {
   const byName = new Map([weasel, ...defs].map((d) => [d.name, d]));
   return (name) => byName.get(name);
 };
+
+/** A root theme whose spacing scale steps differently per density. */
+export const spaced: ThemeDefinition = {
+  name: 'spaced',
+  axes: { density: { default: 'comfortable', values: { comfortable: {}, compact: {} } } },
+  scales: { space: { steps: ['xs', 'sm', 'md'], base: 4, step: { by: 'density', comfortable: 4, compact: 3 } } },
+};
