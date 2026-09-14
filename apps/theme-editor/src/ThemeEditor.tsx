@@ -50,8 +50,9 @@ export function ThemeEditor({ api }: { readonly api?: ThemeApi }) {
   const current = loaded.themes.find((t) => t.name === name) ?? loaded.themes[0];
   const draft = loadDraft(current.name);
   const reload = async () => {
+    const fresh = await loaded.api.get(current.name);
     clearDraft(current.name);
-    replace(await loaded.api.get(current.name));
+    replace(fresh);
     setGeneration((g) => g + 1);
   };
 

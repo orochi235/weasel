@@ -25,7 +25,7 @@ export interface WorkbenchProps {
   readonly start: StoredDraft;
   readonly onPick: (name: string) => void;
   readonly onSaved: (stored: StoredTheme) => void;
-  readonly onReload: () => void;
+  readonly onReload: () => Promise<void>;
 }
 
 const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
@@ -49,7 +49,7 @@ function IssueList({ title, issues }: { title: string; issues: readonly IssueRep
 function SaveReport({ report, onReload, onDismiss }: { report: PutResult; onReload: () => void; onDismiss: () => void }) {
   if (report.status === 'conflict') {
     return (
-      <div role="alert" className={styles.status}>
+      <div className={styles.status}>
         <p>
           <strong>The file changed on disk since this draft began.</strong> Saving would overwrite that change.
         </p>
@@ -60,7 +60,7 @@ function SaveReport({ report, onReload, onDismiss }: { report: PutResult; onRelo
       </div>
     );
   }
-  if (report.status === 'invalid') return <p role="alert" className={styles.status}>{report.message}</p>;
+  if (report.status === 'invalid') return <p className={styles.status}>{report.message}</p>;
   return (
     <>
       <p className={styles.status}>
@@ -83,7 +83,23 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
   const [axisValues, setAxisValues] = useState<Selection>({});
   const [highlight] = useState<readonly string[]>([]);
   const [focusRamp, setFocusRamp] = useState<string | null>(null);
-  const dirty = draft !== saved;
+  const [reloadError, setReloadError] = useState<string | null>(null);
+  const statusRef = useRef<HTMLDivElement>(null);
+  const dirty = draft !== saved && !sameJson(draft, saved);
+
+  // Save disables itself on click, which would drop keyboard focus to the body.
+  useEffect(() => {
+    if (report) statusRef.current?.focus();
+  }, [report]);
+
+  const reload = async () => {
+    setReloadError(null);
+    try {
+      await onReload();
+    } catch (e) {
+      setReloadError(`Couldn't reload ${stored.name} from disk: ${(e as Error).message}`);
+    }
+  };
 
   useEffect(() => {
     if (dirty) persistDraft({ definition: draft, baseHash });
@@ -129,9 +145,10 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
             {stored.name} does not derive: {error}
           </p>
           <div className={styles.statusActions}>
-            <Button size="sm" onClick={onReload}>Discard the draft and reload from disk</Button>
+            <Button size="sm" onClick={reload}>Discard the draft and reload from disk</Button>
           </div>
         </div>
+        {reloadError && <p role="status" className={styles.status}>{reloadError}</p>}
       </LabShell>
     );
   }
@@ -200,9 +217,14 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
       <div className={styles.workbench}>
         <LayerRail counts={counts.layers} selected={layer} onSelect={setLayer} />
         <section className={styles.editor} aria-label={`${layerLabel} layer`}>
-          {report && <SaveReport report={report} onReload={onReload} onDismiss={() => setReport(null)} />}
+          {(report || reloadError) && (
+            <div ref={statusRef} role="status" tabIndex={-1}>
+              {reloadError && <p className={styles.status}>{reloadError}</p>}
+              {report && <SaveReport report={report} onReload={reload} onDismiss={() => setReport(null)} />}
+            </div>
+          )}
           {error && (
-            <p role="alert" className={styles.status}>
+            <p role="status" className={styles.status}>
               This draft does not derive: {error}. The preview shows the last version that did.
             </p>
           )}

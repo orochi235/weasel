@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { PaletteLab } from './PaletteLab';
 import { ThemeEditor } from './ThemeEditor';
 
-/** The app holds two tools: the palette lab and the theme editor. */
 const ROUTES = ['palette', 'theme'] as const;
 type Route = (typeof ROUTES)[number];
 

@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ThemeWorkbench, type WorkbenchProps } from './ThemeWorkbench';
 import type { ThemeApi } from './theme/api';
 import { weasel } from './theme/fixtures';
+import { removePin, setPin } from './theme/model';
 import type { PutResult, StoredTheme } from './theme/store';
 
 const stored: StoredTheme = { name: 'weasel', hash: 'h1', emits: true, definition: weasel };
@@ -18,7 +19,7 @@ function renderBench(overrides: Partial<WorkbenchProps> = {}): WorkbenchProps {
     start: { definition: weasel, baseHash: 'h1' },
     onPick: vi.fn(),
     onSaved: vi.fn(),
-    onReload: vi.fn(),
+    onReload: vi.fn(async () => {}),
     ...overrides,
   };
   render(<ThemeWorkbench {...props} />);
@@ -39,6 +40,24 @@ describe('<ThemeWorkbench>', () => {
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
   });
 
+  it('reads clean once an edit brings the draft back to what is on disk', async () => {
+    // `setPin` appends, so disk holds gray-800 last, at the value the Pin button writes.
+    const onDisk = setPin(removePin(weasel, 'gray-800'), 'gray-800', { value: '#1a1c21', type: 'color' });
+    const disk: StoredTheme = { ...stored, definition: onDisk };
+    renderBench({ themes: [disk], stored: disk, start: { definition: removePin(onDisk, 'gray-800'), baseHash: 'h1' } });
+    await userEvent.click(screen.getByRole('button', { name: 'Pin gray-800' }));
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+  });
+
+  it('announces a save and moves focus to the announcement', async () => {
+    const put = vi.fn(async () => ({ status: 'saved', hash: 'h2', issues: [], regenerated: false, problems: [] }) as PutResult);
+    renderBench({ api: apiWith(put), start: { definition: edited, baseHash: 'h1' } });
+    await userEvent.click(screen.getByRole('button', { name: 'Save, with unsaved changes' }));
+    const region = (await screen.findByText(/^Saved\./)).closest('[role="status"]');
+    expect(region).not.toBeNull();
+    expect(document.activeElement).toBe(region);
+  });
+
   it('saves against the hash the draft began at, then reads clean', async () => {
     const put = vi.fn(async () => ({ status: 'saved', hash: 'h2', issues: [], regenerated: true, problems: [] }) as PutResult);
     const props = renderBench({ api: apiWith(put), start: { definition: edited, baseHash: 'h1' } });
@@ -53,9 +72,9 @@ describe('<ThemeWorkbench>', () => {
     const put = vi.fn(async () => ({ status: 'conflict', hash: 'h9' }) as PutResult);
     const props = renderBench({ api: apiWith(put), start: { definition: edited, baseHash: 'h0' } });
     await userEvent.click(screen.getByRole('button', { name: 'Save, with unsaved changes' }));
-    const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent('changed on disk');
-    await userEvent.click(within(alert).getByRole('button', { name: 'Reload from disk' }));
+    const status = await screen.findByRole('status');
+    expect(status).toHaveTextContent('changed on disk');
+    await userEvent.click(within(status).getByRole('button', { name: 'Reload from disk' }));
     expect(props.onReload).toHaveBeenCalled();
   });
 });
