@@ -110,9 +110,10 @@ what lets one definition produce every mode. The rule kinds:
   with mode). A plain mirror flip is deliberately absent: mirroring a light
   theme's darker sunken surface puts it *above* surface in dark.
 - `contrast`: starting beside the `against` surfaces and walking away from
-  them, the first step whose WCAG contrast clears `min` against every one. If no
-  step does, validation reports it; the rule never silently picks something
-  else.
+  them, the first step whose WCAG contrast clears `min` against every one.
+  Walking away from them in the other direction comes next, then the steps
+  between them, best first; the first step that clears wins. Only when no step
+  on the ramp clears does validation report it, naming the closest step.
 - `ref` (with optional `alpha`) and literals, as today.
 - Any semantic may also carry `check: { contrast, against }`, validated
   without changing the value. This is how a pinned semantic still gets audited.

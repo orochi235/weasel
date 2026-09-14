@@ -198,26 +198,23 @@ function deriveOne(name: string, r: SemanticRule, ctx: SemanticContext, env: Env
 
     // OKLCH distance picks the first direction and WCAG luminance decides passing, so they can disagree.
     const walked = [...walk(sign > 0), ...walk(sign < 0)];
-    for (const i of walked) {
+    const between = steps.map((_, i) => i).filter((i) => !walked.includes(i)).sort((a, b) => worst(b) - worst(a));
+    for (const i of [...walked, ...between]) {
       if (worst(i) >= r.contrast.min) return atStep(name, r.ramp, i, 'contrast', description, ctx);
     }
-    // Surfaces that straddle the ramp leave nothing beyond them: take the best step anywhere, unmet only if it fails too.
-    const pool = walked.length > 0 ? walked : steps.map((_, i) => (sign > 0 ? i : last - i));
-    let best = { index: pool[0], ratio: worst(pool[0]) };
-    for (const i of pool) {
+    let best = { index: sign > 0 ? 0 : last, ratio: -1 };
+    for (const i of steps.map((_, k) => (sign > 0 ? k : last - k))) {
       const ratio = worst(i);
       if (ratio > best.ratio) best = { index: i, ratio };
     }
-    if (best.ratio < r.contrast.min) {
-      ctx.issues.push({
-        kind: 'contrast-unmet',
-        token: name,
-        min: r.contrast.min,
-        against: [...r.contrast.against],
-        picked: steps[best.index],
-        ratio: best.ratio,
-      });
-    }
+    ctx.issues.push({
+      kind: 'contrast-unmet',
+      token: name,
+      min: r.contrast.min,
+      against: [...r.contrast.against],
+      picked: steps[best.index],
+      ratio: best.ratio,
+    });
     return atStep(name, r.ramp, best.index, 'contrast', description, ctx);
   }
 

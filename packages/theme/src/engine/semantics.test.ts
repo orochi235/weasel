@@ -104,7 +104,17 @@ describe('contrast rule', () => {
     expect(tokens.x.value).toBe('{gray-100}');
   });
 
-  it('reports the best step beyond the surfaces when none clears either way', () => {
+  it('takes the best step between the surfaces when nothing beyond them clears', () => {
+    const { tokens, issues } = withSemantics({
+      ink: { value: '#000000', type: 'color' },
+      paper: { value: '#cccccc', type: 'color' },
+      x: { ramp: 'gray', contrast: { min: 2, against: ['ink', 'paper'] } },
+    });
+    expect(issues.filter((i) => i.kind === 'contrast-unmet')).toEqual([]);
+    expect(tokens.x.value).toBe('{gray-400}');
+  });
+
+  it('reports the best step on the ramp when none clears', () => {
     const { tokens, issues } = lone(20);
     const ratio = contrast(tokens['gray-50'].value as string, '#6e6e6e');
     expect(issues).toEqual([{ kind: 'contrast-unmet', token: 'x', min: 20, against: ['s'], picked: '50', ratio }]);
