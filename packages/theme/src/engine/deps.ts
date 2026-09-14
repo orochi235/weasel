@@ -47,6 +47,15 @@ function leaves(v: unknown): unknown[] {
   return isByAxis(v) ? Object.entries(v).filter(([k]) => k !== 'by').flatMap(([, x]) => leaves(x)) : [v];
 }
 
+/** Step names reachable through every branch of a possibly by-varying `steps` list. */
+function stepNames(steps: unknown): string[] {
+  const out = new Set<string>();
+  for (const branch of leaves(steps)) {
+    if (Array.isArray(branch)) for (const s of branch) if (typeof s === 'string') out.add(s);
+  }
+  return [...out];
+}
+
 export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): Record<string, AxisDependency> {
   const def = mergeChain(definition, lookup);
   const nodes = new Map<string, Node>();
@@ -54,12 +63,12 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
   for (const [name, ramp] of Object.entries(def.ramps ?? {})) {
     const n = node();
     scan(ramp, n);
-    for (const step of ramp.steps) nodes.set(`${name}-${step}`, n);
+    for (const step of stepNames(ramp.steps)) nodes.set(`${name}-${step}`, n);
   }
   for (const [name, s] of Object.entries(def.scales ?? {})) {
     const n = node();
     scan(s, n);
-    for (const step of s.steps) nodes.set(`${name}-${step}`, n);
+    for (const step of stepNames(s.steps)) nodes.set(`${name}-${step}`, n);
   }
   for (const [name, rule] of Object.entries(def.semantics ?? {})) {
     const n = node();
@@ -70,7 +79,7 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
       if ('step' in leaf) for (const s of leaves(leaf.step)) n.edges.add(`${leaf.ramp}-${String(s)}`);
       if ('contrast' in leaf) {
         for (const a of leaf.contrast.against) n.edges.add(a);
-        for (const s of def.ramps?.[leaf.ramp]?.steps ?? []) n.edges.add(`${leaf.ramp}-${s}`);
+        for (const s of stepNames(def.ramps?.[leaf.ramp]?.steps)) n.edges.add(`${leaf.ramp}-${s}`);
       }
     }
     nodes.set(name, n);
@@ -95,21 +104,28 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
     return out;
   };
 
-  const memo = new Map<string, Set<string>>();
-  const allOf = (name: string, visiting: Set<string>): Set<string> => {
-    const cached = memo.get(name);
-    if (cached) return cached;
-    const n = nodes.get(name);
-    if (!n || visiting.has(name)) return new Set();
-    visiting.add(name);
-    const out = ownOf(n);
-    for (const e of n.edges) for (const a of allOf(e, visiting)) out.add(a);
-    visiting.delete(name);
-    memo.set(name, out);
-    return out;
-  };
+  const ownSets = new Map<string, Set<string>>();
+  for (const [name, n] of nodes) ownSets.set(name, ownOf(n));
+
+  // `all[n] = own[n] ∪ ⋃ all[edge]`, iterated to a fixpoint instead of walked recursively —
+  // a per-path `visiting` guard would memoize the empty answer for whichever cycle node it
+  // revisits first. This converges because every step only adds axes, which are finite.
+  const all = new Map<string, Set<string>>();
+  for (const [name, own] of ownSets) all.set(name, new Set(own));
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const [name, n] of nodes) {
+      const out = all.get(name)!;
+      for (const e of n.edges) {
+        const from = all.get(e);
+        if (!from) continue;
+        for (const a of from) if (!out.has(a)) { out.add(a); changed = true; }
+      }
+    }
+  }
 
   const result: Record<string, AxisDependency> = {};
-  for (const [name, n] of nodes) result[name] = { own: sorted(ownOf(n)), all: sorted(allOf(name, new Set())) };
+  for (const name of nodes.keys()) result[name] = { own: sorted(ownSets.get(name)!), all: sorted(all.get(name)!) };
   return result;
 }
