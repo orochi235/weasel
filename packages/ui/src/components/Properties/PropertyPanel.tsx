@@ -242,6 +242,12 @@ function PropertyRowHelp({ label, description }: { label: ReactNode; description
 
 // ── Row implementations ──────────────────────────────────────────────
 
+// A row's <label> names only its first labelable descendant, which is often the
+// readout or the help button rather than the control.
+function nameOf(label: ReactNode): string | undefined {
+  return typeof label === 'string' ? label : undefined;
+}
+
 /**
  * A ref for an input whose commit half has to come off a real listener.
  *
@@ -350,6 +356,7 @@ export function SliderRow({
       label={label}
       readout={
         <EditableReadout
+          name={nameOf(label)}
           value={value}
           min={min}
           max={max}
@@ -369,6 +376,7 @@ export function SliderRow({
       <input
         ref={range}
         type="range"
+        aria-label={nameOf(label)}
         className={shared.range}
         tabIndex={-1}
         min={min}
@@ -386,6 +394,7 @@ export function SliderRow({
 }
 
 interface EditableReadoutProps {
+  name: string | undefined;
   value: number;
   min: number;
   max: number;
@@ -399,7 +408,7 @@ interface EditableReadoutProps {
  * cancels on Escape. Clicks are stopped so the wrapping <label> doesn't
  * forward focus to the slider thumb.
  */
-function EditableReadout({ value, min, max, format, unit, onCommit }: EditableReadoutProps) {
+function EditableReadout({ name, value, min, max, format, unit, onCommit }: EditableReadoutProps) {
   // Draft is non-null only while the input is focused. Live value mirrors
   // into the input otherwise. Pattern mirrors speech-balloons Lab.tsx:893-942.
   const [draft, setDraft] = useState<string | null>(null);
@@ -432,6 +441,7 @@ function EditableReadout({ value, min, max, format, unit, onCommit }: EditableRe
     <span className={s.readoutGroup}>
       <input
         type="text"
+        aria-label={name}
         inputMode="decimal"
         className={s.readoutInput}
         style={fit as CSSProperties}
@@ -536,6 +546,7 @@ export function ColorRow({
       <input
         ref={color}
         type="color"
+        aria-label={nameOf(label)}
         value={value}
         onChange={(e) => liveColor(e.target.value)}
       />
@@ -590,7 +601,12 @@ export function CheckboxRow({
       density={density}
       align={align}
     >
-      <input type="checkbox" checked={value === true} onChange={(e) => onChange(e.target.checked)} />
+      <input
+        type="checkbox"
+        aria-label={nameOf(label)}
+        checked={value === true}
+        onChange={(e) => onChange(e.target.checked)}
+      />
     </PropertyRow>
   );
 }
@@ -633,6 +649,7 @@ export function TextRow({
     >
       <input
         type="text"
+        aria-label={nameOf(label)}
         value={value ?? ''}
         placeholder={placeholder}
         maxLength={maxLength}
@@ -703,6 +720,7 @@ export function NumberRow({
     <input
       ref={field}
       type="number"
+      aria-label={nameOf(label)}
       value={value ?? ''}
       min={min}
       max={max}
@@ -782,6 +800,7 @@ export function SelectRow<T extends string>({
       align={align}
     >
       <select
+        aria-label={nameOf(label)}
         value={chosen ? value : ''}
         onChange={(e) => {
           const v = e.target.value as T;
@@ -839,7 +858,7 @@ export function ToggleRow<T extends string>({
       density={density}
       align={align}
     >
-      <div className={s.toggle}>
+      <div className={s.toggle} role="group" aria-label={nameOf(label)}>
         {options.map((opt) => {
           const selected = opt.value === value;
           return (
@@ -847,6 +866,7 @@ export function ToggleRow<T extends string>({
               key={opt.value}
               type="button"
               aria-pressed={selected}
+              aria-label={nameOf(opt.label)}
               className={
                 selected ? `${s.toggleButton} ${s.toggleButtonSelected}` : s.toggleButton
               }

@@ -367,6 +367,85 @@ describe('ToggleRow', () => {
   });
 });
 
+describe('row names', () => {
+  const options = [
+    { value: 'a', label: 'A' },
+    { value: 'b', label: 'B' },
+  ];
+
+  it("names SliderRow's slider after its label", () => {
+    render(<SliderRow label="Opacity" value={10} min={0} max={100} onChange={() => {}} />);
+    expect(screen.getByRole('slider', { name: 'Opacity' })).toBeInTheDocument();
+  });
+
+  it("names NumberRow's field after its label", () => {
+    render(<NumberRow label="N" value={1} onChange={() => {}} />);
+    expect(screen.getByRole('spinbutton', { name: 'N' })).toBeInTheDocument();
+  });
+
+  it("names TextRow's field after its label", () => {
+    render(<TextRow label="Name" value="foo" onChange={() => {}} />);
+    expect(screen.getByRole('textbox', { name: 'Name' })).toBeInTheDocument();
+  });
+
+  it("names SelectRow's select after its label", () => {
+    render(<SelectRow label="Mode" value="a" options={options} onChange={() => {}} />);
+    expect(screen.getByRole('combobox', { name: 'Mode' })).toBeInTheDocument();
+  });
+
+  it("names ColorRow's swatch after its label", () => {
+    const { container } = render(<ColorRow label="Fill" value="#ffffff" onChange={() => {}} />);
+    expect(container.querySelector('input[type="color"]')).toHaveAccessibleName('Fill');
+  });
+
+  it("names CheckboxRow's box after its label", () => {
+    render(<CheckboxRow label="Visible" value={false} onChange={() => {}} />);
+    expect(screen.getByRole('checkbox', { name: 'Visible' })).toBeInTheDocument();
+  });
+
+  it("names ToggleRow's segments after their options", () => {
+    render(<ToggleRow label="Align" value="a" options={options} onChange={() => {}} />);
+    expect(screen.getByRole('button', { name: 'A' })).toBeInTheDocument();
+  });
+
+  it("names ToggleRow's group after its label", () => {
+    render(<ToggleRow label="Align" value="a" options={options} onChange={() => {}} />);
+    expect(screen.getByRole('group', { name: 'Align' })).toBeInTheDocument();
+  });
+
+  // The help button is labelable and comes first, so the row's <label> labels it instead.
+  describe('with a description', () => {
+    it('SliderRow', () => {
+      render(<SliderRow label="Opacity" description="d" value={10} min={0} max={100} onChange={() => {}} />);
+      expect(screen.getByRole('slider', { name: 'Opacity' })).toBeInTheDocument();
+    });
+    it('SliderRow readout', () => {
+      render(<SliderRow label="Opacity" description="d" value={10} min={0} max={100} onChange={() => {}} />);
+      expect(screen.getByRole('textbox', { name: 'Opacity' })).toBeInTheDocument();
+    });
+    it('NumberRow', () => {
+      render(<NumberRow label="N" description="d" value={1} onChange={() => {}} />);
+      expect(screen.getByRole('spinbutton', { name: 'N' })).toBeInTheDocument();
+    });
+    it('TextRow', () => {
+      render(<TextRow label="Name" description="d" value="foo" onChange={() => {}} />);
+      expect(screen.getByRole('textbox', { name: 'Name' })).toBeInTheDocument();
+    });
+    it('SelectRow', () => {
+      render(<SelectRow label="Mode" description="d" value="a" options={options} onChange={() => {}} />);
+      expect(screen.getByRole('combobox', { name: 'Mode' })).toBeInTheDocument();
+    });
+    it('ColorRow', () => {
+      const { container } = render(<ColorRow label="Fill" description="d" value="#ffffff" onChange={() => {}} />);
+      expect(container.querySelector('input[type="color"]')).toHaveAccessibleName('Fill');
+    });
+    it('CheckboxRow', () => {
+      render(<CheckboxRow label="Visible" description="d" value={false} onChange={() => {}} />);
+      expect(screen.getByRole('checkbox', { name: 'Visible' })).toBeInTheDocument();
+    });
+  });
+});
+
 describe('rows with no value', () => {
   const options = [
     { value: 'a', label: 'A' },
