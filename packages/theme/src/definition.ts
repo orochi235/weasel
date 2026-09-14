@@ -18,14 +18,14 @@ export interface LightnessRampDef {
   readonly kind: 'lightness';
   readonly steps: readonly string[];
   /** First and last step's OKLCH lightness. */
-  readonly lightness: readonly [NumberParam, NumberParam];
+  readonly lightness: Varying<readonly [NumberParam, NumberParam]>;
   /** 0 walks evenly; 1 follows a smoothstep S. */
   readonly curve?: NumberParam;
   /** Degrees. Ignored when an anchor is given. */
   readonly hue?: NumberParam;
-  readonly chroma?: { readonly peak: NumberParam; readonly darkBias?: NumberParam };
+  readonly chroma?: Varying<{ readonly peak: NumberParam; readonly darkBias?: NumberParam }>;
   /** Step name → exact hex (or `{seeds.name}`). The first anchor supplies hue and chroma. */
-  readonly anchor?: Readonly<Record<string, string>>;
+  readonly anchor?: Varying<Readonly<Record<string, Varying<string>>>>;
   readonly description?: string;
   readonly describe?: Readonly<Record<string, string>>;
 }
@@ -34,7 +34,7 @@ export interface CategoricalRampDef {
   readonly kind: 'categorical';
   readonly steps: readonly string[];
   /** Any of the palette generator's `Constraints` except `count` and `anchors`. */
-  readonly gates?: Readonly<Record<string, Varying<number | string>>>;
+  readonly gates?: Varying<Readonly<Record<string, Varying<number | string>>>>;
   readonly anchors?: readonly { readonly name: string; readonly hue: number; readonly lightness: number; readonly chroma?: number }[];
   readonly description?: string;
   readonly describe?: Readonly<Record<string, string>>;

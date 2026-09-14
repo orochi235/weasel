@@ -28,11 +28,12 @@ export function deriveSemantics(
   ctx: SemanticContext,
 ): Map<string, DerivedSemantic> {
   const done = new Map<string, DerivedSemantic>();
+  const failed = new Set<string>();
   const inProgress = new Set<string>();
 
   const get: Get = (name) => {
     if (done.has(name)) return done.get(name);
-    if (!(name in rules)) return undefined;
+    if (failed.has(name) || !Object.hasOwn(rules, name)) return undefined;
     if (inProgress.has(name)) throw new Error(`Semantic cycle at "${name}" (${[...inProgress].join(' → ')})`);
     inProgress.add(name);
     const picked = pick(rules[name], ctx.sel);
@@ -44,6 +45,7 @@ export function deriveSemantics(
     }
     inProgress.delete(name);
     if (derived) done.set(name, derived);
+    else failed.add(name);
     return derived;
   };
 
@@ -55,7 +57,6 @@ function deriveOne(name: string, r: SemanticRule, ctx: SemanticContext, get: Get
   const description = r.description;
 
   if ('value' in r) {
-    if (r.type === undefined) ctx.issues.push({ kind: 'untyped-pin', token: name });
     return { rule: 'value', token: { type: r.type ?? 'unknown', value: r.value, alpha: undefined, description } };
   }
 

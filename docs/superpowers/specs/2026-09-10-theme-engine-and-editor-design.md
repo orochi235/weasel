@@ -56,7 +56,7 @@ scales → semantics → components → pins`.
     "gray":   { "kind": "lightness", "steps": ["50","100","200","300","400","500","600","700","800","900"],
                 "hue": "{seeds.neutralHue}", "lightness": [0.973, 0.163], "curve": 0.35,
                 "chroma": { "peak": "{seeds.neutralChroma}", "darkBias": 0.2 } },
-    "accent": { "kind": "lightness", "steps": ["soft","base","strong"], "anchor": { "base": "{seeds.brand}" } },
+    "accent": { "kind": "lightness", "steps": ["soft","base","strong"], "lightness": [0.72, 0.34], "anchor": { "base": "{seeds.brand}" } },
     "swatch": { "kind": "categorical", "steps": ["fuchsia","green","sky"], "gates": { "minContrast": 3 } }
   },
   "scales": {

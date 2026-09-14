@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { ThemeDefinition } from '../definition';
+import type { LightnessRampDef, ThemeDefinition } from '../definition';
 import { derive } from './derive';
+import { categoricalRamp, lightnessRamp } from './ramps';
+
+const GRAY: LightnessRampDef = { kind: 'lightness', steps: ['50', '900'], lightness: [0.97, 0.16] };
 
 const T: ThemeDefinition = {
   name: 't',
@@ -59,6 +62,144 @@ describe('derive', () => {
 
   it('throws on a dangling reference', () => {
     expect(() => derive({ ...T, pins: { a: { value: '{nope}', type: 'color' } } })).toThrow(/nope/);
+  });
+
+  it('derives the fixture with no issues', () => {
+    expect(derive(T).issues).toEqual([]);
+  });
+
+  it('reports a semantic missing its axis value instead of throwing on what references it', () => {
+    const { tokens, issues } = derive(
+      { name: 'x', axes: T.axes, ramps: { gray: GRAY }, semantics: { surface: { ramp: 'gray', step: { by: 'mode', dark: '900' } }, line: { ref: 'surface', alpha: 0.2 } } },
+      { mode: 'light' },
+    );
+    expect(issues).toEqual([{ kind: 'missing-axis-value', path: 'semantics.surface.step', axis: 'mode', value: 'light' }]);
+    expect(tokens.line.value).toBe('{surface}');
+  });
+
+  it('reports a ramp parameter missing its axis value instead of throwing on the steps referenced', () => {
+    const { tokens, issues } = derive(
+      { name: 'x', axes: T.axes, ramps: { gray: { ...GRAY, lightness: [{ by: 'mode', dark: 0.97 }, 0.16] } }, semantics: { surface: { ramp: 'gray', step: '900' } } },
+      { mode: 'light' },
+    );
+    expect(issues).toEqual([{ kind: 'missing-axis-value', path: 'ramps.gray.lightness.0', axis: 'mode', value: 'light' }]);
+    expect(Object.keys(tokens)).toEqual(['surface']);
+  });
+
+  it('throws on a reference cycle', () => {
+    expect(() => derive({ name: 'x', pins: { a: { value: '{b}', type: 'color' }, b: { value: '{a}', type: 'color' } } })).toThrow(/cycle/);
+  });
+
+  it('checks references without resolving colors', () => {
+    const def: ThemeDefinition = {
+      name: 'x',
+      ramps: { gray: GRAY },
+      semantics: { s: { ramp: 'gray', step: '900' }, line: { ref: 's', alpha: 0.2 } },
+      pins: { 'gray-900': 'rgb(1, 2, 3)' },
+    };
+    expect(derive(def).issues).toEqual([]);
+  });
+
+  it('types a pin, component or literal from a token defined after it', () => {
+    const later = derive({ name: 'x', pins: { a: '{b}', b: { value: '1px', type: 'dimension' } } });
+    expect(later.issues).toEqual([]);
+    expect(later.tokens.a.type).toBe('dimension');
+
+    const component = derive({ name: 'x', components: { c: '{b}' }, pins: { b: { value: '1px', type: 'dimension' } } });
+    expect(component.issues).toEqual([]);
+    expect(component.tokens.c.type).toBe('dimension');
+
+    const semantic = derive({ name: 'x', ramps: { gray: GRAY }, semantics: { s: { value: '{gray-50}' }, h: { ref: 'tb' } }, components: { tb: { value: '28px', type: 'dimension' } } });
+    expect(semantic.issues).toEqual([]);
+    expect(semantic.tokens.s.type).toBe('color');
+    expect(semantic.tokens.h.type).toBe('dimension');
+  });
+
+  it('picks a by above a whole ramp parameter', () => {
+    const steps = ['50', '500', '900'];
+    const def: ThemeDefinition = {
+      name: 'x',
+      axes: T.axes,
+      ramps: {
+        gray: {
+          kind: 'lightness',
+          steps,
+          lightness: { by: 'mode', dark: [0.97, 0.16], light: [0.9, 0.2] },
+          chroma: { by: 'mode', dark: { peak: 0.1 }, light: { peak: 0 } },
+        },
+      },
+    };
+    const want = (lightness: [number, number], peak: number) =>
+      lightnessRamp({ steps, lightness, curve: 0, hue: 0, peak, darkBias: 0 })['500'];
+    const dark = derive(def);
+    const light = derive(def, { mode: 'light' });
+    expect([...dark.issues, ...light.issues]).toEqual([]);
+    expect(dark.tokens['gray-500'].value).toBe(want([0.97, 0.16], 0.1));
+    expect(light.tokens['gray-500'].value).toBe(want([0.9, 0.2], 0));
+    expect(want([0.97, 0.16], 0.1)).not.toBe(want([0.97, 0.16], 0));
+  });
+
+  it('picks a by above the whole gates without leaking its keys', () => {
+    const steps = ['a', 'b', 'c'];
+    const def: ThemeDefinition = {
+      name: 'x',
+      axes: T.axes,
+      ramps: { sw: { kind: 'categorical', steps, gates: { by: 'mode', dark: { lightnessTarget: 0.5 }, light: {} } } },
+    };
+    const { tokens, issues } = derive(def);
+    expect(issues).toEqual([]);
+    const want = categoricalRamp(steps, { lightnessTarget: 0.5 }, []).colors;
+    expect(want).not.toEqual(categoricalRamp(steps, {}, []).colors);
+    expect(steps.map((s) => tokens[`sw-${s}`].value)).toEqual(steps.map((s) => want[s]));
+  });
+
+  it('reports a by above a parameter missing its value, at its path', () => {
+    const { tokens, issues } = derive(
+      { name: 'x', axes: T.axes, ramps: { gray: { ...GRAY, lightness: { by: 'mode', dark: [0.97, 0.16] } } } },
+      { mode: 'light' },
+    );
+    expect(issues).toEqual([{ kind: 'missing-axis-value', path: 'ramps.gray.lightness', axis: 'mode', value: 'light' }]);
+    expect(tokens).toEqual({});
+  });
+
+  it('reports settled parameters of the wrong type', () => {
+    const { tokens, issues } = derive({
+      name: 'x',
+      seeds: { s: 'abc' },
+      ramps: { sw: { kind: 'categorical', steps: ['a'], gates: { minContrast: '{seeds.s}', nope: 1 } } },
+      scales: { space: { steps: ['sm'], base: '{seeds.s}', step: 4 } },
+    });
+    expect(issues).toEqual([
+      { kind: 'invalid', path: 'ramps.sw.gates.minContrast', message: 'expected a number' },
+      { kind: 'invalid', path: 'ramps.sw.gates.nope', message: 'unknown gate' },
+      { kind: 'invalid', path: 'scales.space.base', message: 'expected a number' },
+    ]);
+    expect(tokens).toEqual({});
+  });
+
+  it('reports a lightness ramp loaded without lightness instead of crashing', () => {
+    const loaded: ThemeDefinition = JSON.parse('{ "name": "x", "ramps": { "accent": { "kind": "lightness", "steps": ["base"] } } }');
+    expect(derive(loaded).issues).toEqual([{ kind: 'invalid', path: 'ramps.accent.lightness', message: 'expected two numbers' }]);
+  });
+
+  it('reports a name two entries both produce, keeping the first', () => {
+    const { tokens, provenance, issues } = derive({ name: 'x', ramps: { gray: GRAY }, semantics: { 'gray-50': { value: '#fff', type: 'color' } } });
+    expect(issues).toEqual([{ kind: 'invalid', path: 'semantics.gray-50', message: '"gray-50" is already produced by ramps.gray' }]);
+    expect(provenance['gray-50'].layer).toBe('ramps');
+    expect(tokens['gray-50'].value).not.toBe('#fff');
+  });
+
+  it('reports a seed missing its axis value once, not again where it is read', () => {
+    const { issues } = derive(
+      { name: 'x', axes: T.axes, seeds: { unit: { by: 'mode', dark: 4 } }, scales: { space: { steps: ['sm'], base: '{seeds.unit}', step: 4 } } },
+      { mode: 'light' },
+    );
+    expect(issues).toEqual([{ kind: 'missing-axis-value', path: 'seeds.unit', axis: 'mode', value: 'light' }]);
+  });
+
+  it('reports a seed nothing declares', () => {
+    const { issues } = derive({ name: 'x', scales: { space: { steps: ['sm'], base: '{seeds.unit}', step: 4 } } });
+    expect(issues).toEqual([{ kind: 'invalid', path: 'scales.space.base', message: 'unknown seed "unit"' }]);
   });
 
   it('reports a categorical ramp whose gates cannot be met', () => {

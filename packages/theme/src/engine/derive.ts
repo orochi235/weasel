@@ -1,7 +1,7 @@
-import { fullSelection, pick, type Selection, type Varying } from '../axes';
-import type { PinObject, PinValue, RampDef, ThemeDefinition } from '../definition';
-import { resolveTokens } from '../dtcg/resolve';
+import { fullSelection, isByAxis, pick, type Selection, type Varying } from '../axes';
+import type { PinObject, PinValue, ThemeDefinition } from '../definition';
 import type { RawToken, TokenValue } from '../dtcg/types';
+import { DEFAULT_CONSTRAINTS, type Anchor, type Constraints } from './color/generate';
 import { mergeChain, type Lookup } from './merge';
 import { categoricalRamp, lightnessRamp } from './ramps';
 import { scale } from './scales';
@@ -9,67 +9,241 @@ import { deriveSemantics } from './semantics';
 import type { DeriveResult, Issue, Layer, Provenance } from './types';
 
 const SEED_REF = /^\{seeds\.([\w-]+)\}$/;
-const TOKEN_REF = /^\{([^}.]+)\}$/;
+const REF = /^\{([^}]+)\}$/;
+const HEX = /^#[0-9a-f]{6}$/i;
+const UNTYPED = 'unknown';
 
-interface ParamContext {
+const has = (o: object, key: string) => Object.hasOwn(o, key);
+
+function refName(value: TokenValue): string | undefined {
+  return typeof value === 'string' ? REF.exec(value.trim())?.[1] : undefined;
+}
+
+interface SettleContext {
   readonly sel: Selection;
   readonly seeds: Readonly<Record<string, number | string>>;
+  /** Every seed the definition declares, whether or not it resolved at this selection. */
+  readonly declaredSeeds: ReadonlySet<string>;
   readonly issues: Issue[];
 }
 
-function param(v: Varying<number | string>, path: string, ctx: ParamContext): number | string | undefined {
-  const picked = pick(v, ctx.sel);
-  if (!picked.ok) {
-    ctx.issues.push({ kind: 'missing-axis-value', path, axis: picked.axis, value: picked.value });
-    return undefined;
-  }
-  const raw = picked.value;
-  const m = typeof raw === 'string' ? SEED_REF.exec(raw.trim()) : null;
-  if (!m) return raw;
-  if (!(m[1] in ctx.seeds)) {
-    ctx.issues.push({ kind: 'invalid', path, message: `unknown seed "${m[1]}"` });
-    return undefined;
-  }
-  return ctx.seeds[m[1]];
+interface Settled {
+  readonly value: unknown;
+  readonly ok: boolean;
 }
 
-function num(v: Varying<number | string> | undefined, path: string, ctx: ParamContext): number | undefined {
-  if (v === undefined) return undefined;
-  const x = param(v, path, ctx);
-  if (x === undefined || typeof x === 'number') return x;
-  ctx.issues.push({ kind: 'invalid', path, message: 'expected a number' });
+/** `v` with every `by` picked and every `{seeds.name}` replaced, at any depth. What cannot settle is left undefined and clears `ok`. */
+function settle(v: unknown, path: string, ctx: SettleContext): Settled {
+  if (isByAxis(v)) {
+    const picked = pick(v, ctx.sel);
+    if (!picked.ok) {
+      ctx.issues.push({ kind: 'missing-axis-value', path, axis: picked.axis, value: picked.value });
+      return { value: undefined, ok: false };
+    }
+    return settle(picked.value, path, ctx);
+  }
+  if (Array.isArray(v)) {
+    let ok = true;
+    const value = v.map((x, i) => {
+      const s = settle(x, `${path}.${i}`, ctx);
+      ok = s.ok && ok;
+      return s.value;
+    });
+    return { value, ok };
+  }
+  if (typeof v === 'object' && v !== null) {
+    let ok = true;
+    const value: Record<string, unknown> = {};
+    for (const [k, x] of Object.entries(v)) {
+      const s = settle(x, `${path}.${k}`, ctx);
+      ok = s.ok && ok;
+      value[k] = s.value;
+    }
+    return { value, ok };
+  }
+  if (typeof v === 'string') {
+    const m = SEED_REF.exec(v.trim());
+    if (!m) return { value: v, ok: true };
+    if (has(ctx.seeds, m[1])) return { value: ctx.seeds[m[1]], ok: true };
+    // A declared seed that did not resolve already reported its missing axis value.
+    if (!ctx.declaredSeeds.has(m[1])) ctx.issues.push({ kind: 'invalid', path, message: `unknown seed "${m[1]}"` });
+    return { value: undefined, ok: false };
+  }
+  return { value: v, ok: true };
+}
+
+/** Reads a settled entry, reporting every value of the wrong shape. */
+class Reader {
+  ok = true;
+  constructor(private readonly issues: Issue[]) {}
+
+  fail(path: string, message: string): void {
+    this.issues.push({ kind: 'invalid', path, message });
+    this.ok = false;
+  }
+
+  num(x: unknown, path: string): number {
+    if (typeof x === 'number' && Number.isFinite(x)) return x;
+    this.fail(path, 'expected a number');
+    return Number.NaN;
+  }
+
+  optNum(x: unknown, path: string, fallback: number): number;
+  optNum(x: unknown, path: string): number | undefined;
+  optNum(x: unknown, path: string, fallback?: number): number | undefined {
+    return x === undefined ? fallback : this.num(x, path);
+  }
+
+  record(x: unknown, path: string): Record<string, unknown> {
+    if (x === undefined) return {};
+    if (typeof x === 'object' && x !== null && !Array.isArray(x)) return x as Record<string, unknown>;
+    this.fail(path, 'expected an object');
+    return {};
+  }
+}
+
+const isRecord = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
+
+const stepNames = (x: unknown): string[] | undefined =>
+  Array.isArray(x) && x.every((s) => typeof s === 'string') ? x : undefined;
+
+/** Every step name an entry could produce at any selection. */
+function declaredSteps(entry: unknown): string[] {
+  const leaves = (v: unknown): string[] => {
+    if (isByAxis(v)) return Object.entries(v).flatMap(([k, x]) => (k === 'by' ? [] : leaves(x)));
+    if (Array.isArray(v)) return v.flatMap(leaves);
+    return typeof v === 'string' ? [v] : [];
+  };
+  if (isByAxis(entry)) return Object.entries(entry).flatMap(([k, x]) => (k === 'by' ? [] : declaredSteps(x)));
+  return isRecord(entry) ? leaves(entry.steps) : [];
+}
+
+function rampColors(name: string, r: Record<string, unknown>, steps: readonly string[], ctx: SettleContext): Record<string, string> | undefined {
+  const path = `ramps.${name}`;
+  const read = new Reader(ctx.issues);
+
+  if (r.kind === 'lightness') {
+    const l = r.lightness;
+    let lightness: [number, number] = [0, 0];
+    if (Array.isArray(l) && l.length === 2) lightness = [read.num(l[0], `${path}.lightness.0`), read.num(l[1], `${path}.lightness.1`)];
+    else read.fail(`${path}.lightness`, 'expected two numbers');
+    const chroma = read.record(r.chroma, `${path}.chroma`);
+    const peak = r.chroma === undefined ? 0 : read.num(chroma.peak, `${path}.chroma.peak`);
+    const anchor: Record<string, string> = {};
+    for (const [step, v] of Object.entries(read.record(r.anchor, `${path}.anchor`))) {
+      if (typeof v === 'string' && HEX.test(v)) anchor[step] = v;
+      else read.fail(`${path}.anchor.${step}`, 'expected a hex color');
+    }
+    const params = {
+      steps,
+      lightness,
+      curve: read.optNum(r.curve, `${path}.curve`, 0),
+      hue: read.optNum(r.hue, `${path}.hue`, 0),
+      peak,
+      darkBias: read.optNum(chroma.darkBias, `${path}.chroma.darkBias`, 0),
+      anchor,
+    };
+    return read.ok ? lightnessRamp(params) : undefined;
+  }
+
+  if (r.kind === 'categorical') {
+    const gates: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(read.record(r.gates, `${path}.gates`))) {
+      if (!has(DEFAULT_CONSTRAINTS, k) || k === 'count' || k === 'anchors') read.fail(`${path}.gates.${k}`, 'unknown gate');
+      else if (typeof v !== typeof DEFAULT_CONSTRAINTS[k as keyof typeof DEFAULT_CONSTRAINTS]) {
+        read.fail(`${path}.gates.${k}`, `expected a ${typeof DEFAULT_CONSTRAINTS[k as keyof typeof DEFAULT_CONSTRAINTS]}`);
+      } else gates[k] = v;
+    }
+    const anchors: Anchor[] = [];
+    const rawAnchors = r.anchors ?? [];
+    if (!Array.isArray(rawAnchors)) read.fail(`${path}.anchors`, 'expected a list');
+    else {
+      rawAnchors.forEach((a, i) => {
+        const at = `${path}.anchors.${i}`;
+        const o = read.record(a, at);
+        if (typeof o.name !== 'string') read.fail(`${at}.name`, 'expected a string');
+        anchors.push({
+          name: String(o.name),
+          hue: read.num(o.hue, `${at}.hue`),
+          lightness: read.num(o.lightness, `${at}.lightness`),
+          chroma: read.optNum(o.chroma, `${at}.chroma`),
+        });
+      });
+    }
+    if (!read.ok) return undefined;
+    const { colors, feasible } = categoricalRamp(steps, gates as Partial<Constraints>, anchors);
+    if (!feasible) ctx.issues.push({ kind: 'infeasible-ramp', ramp: name });
+    return colors;
+  }
+
+  read.fail(`${path}.kind`, 'expected "lightness" or "categorical"');
   return undefined;
 }
 
-function rampColors(name: string, ramp: RampDef, ctx: ParamContext): Record<string, string> | undefined {
-  const path = `ramps.${name}`;
-  if (ramp.kind === 'lightness') {
-    const l0 = num(ramp.lightness[0], `${path}.lightness`, ctx);
-    const l1 = num(ramp.lightness[1], `${path}.lightness`, ctx);
-    if (l0 === undefined || l1 === undefined) return undefined;
-    const anchor: Record<string, string> = {};
-    for (const [step, v] of Object.entries(ramp.anchor ?? {})) {
-      const x = param(v, `${path}.anchor.${step}`, ctx);
-      if (typeof x === 'string') anchor[step] = x;
+function scaleValues(name: string, s: Record<string, unknown>, steps: readonly string[], issues: Issue[]): { values: Record<string, string>; rule: string } | undefined {
+  const path = `scales.${name}`;
+  const read = new Reader(issues);
+  const base = read.num(s.base, `${path}.base`);
+  const step = read.optNum(s.step, `${path}.step`);
+  const ratio = read.optNum(s.ratio, `${path}.ratio`);
+  if (!read.ok) return undefined;
+  try {
+    return { values: scale(steps, { base, step, ratio }), rule: step !== undefined ? 'linear' : 'geometric' };
+  } catch (e) {
+    issues.push({ kind: 'invalid', path, message: (e as Error).message });
+    return undefined;
+  }
+}
+
+/** Every token name the merged definition can produce at some selection. */
+function declaredNames(def: ThemeDefinition): Set<string> {
+  const names = new Set<string>();
+  for (const layer of [def.ramps, def.scales]) {
+    for (const [name, entry] of Object.entries(layer ?? {})) for (const step of declaredSteps(entry)) names.add(`${name}-${step}`);
+  }
+  for (const layer of [def.semantics, def.components, def.pins]) for (const name of Object.keys(layer ?? {})) names.add(name);
+  return names;
+}
+
+/** Throws on a cycle, and on a reference to a name the definition never declares. A declared name absent at this selection has already been reported. */
+function checkReferences(tokens: Readonly<Record<string, RawToken>>, declared: ReadonlySet<string>): void {
+  const done = new Set<string>();
+  for (const start of Object.keys(tokens)) {
+    const trail: string[] = [];
+    let name: string | undefined = start;
+    while (name !== undefined && !done.has(name)) {
+      if (trail.includes(name)) throw new Error(`Reference cycle at token "${name}" (${[...trail, name].join(' → ')})`);
+      trail.push(name);
+      const target = refName(tokens[name].value);
+      if (target !== undefined && !has(tokens, target)) {
+        if (!declared.has(target)) throw new Error(`Token "${name}" references "${target}", which is not defined`);
+        name = undefined;
+      } else {
+        name = target;
+      }
     }
-    return lightnessRamp({
-      steps: ramp.steps,
-      lightness: [l0, l1],
-      curve: num(ramp.curve, `${path}.curve`, ctx) ?? 0,
-      hue: num(ramp.hue, `${path}.hue`, ctx) ?? 0,
-      peak: num(ramp.chroma?.peak, `${path}.chroma.peak`, ctx) ?? 0,
-      darkBias: num(ramp.chroma?.darkBias, `${path}.chroma.darkBias`, ctx) ?? 0,
-      anchor,
-    });
+    for (const n of trail) done.add(n);
   }
-  const gates: Record<string, number | string> = {};
-  for (const [k, v] of Object.entries(ramp.gates ?? {})) {
-    const x = param(v, `${path}.gates.${k}`, ctx);
-    if (x !== undefined) gates[k] = x;
+}
+
+/** Types every untyped token from what its reference chain ends on. Runs after `checkReferences`, so chains are finite. */
+function inferTypes(tokens: Record<string, RawToken>, provenance: Readonly<Record<string, Provenance>>, issues: Issue[]): void {
+  const typeOf = (name: string): string => {
+    if (!has(tokens, name)) return UNTYPED;
+    const token = tokens[name];
+    if (token.type !== UNTYPED) return token.type;
+    const target = refName(token.value);
+    const type = target === undefined ? UNTYPED : typeOf(target);
+    if (type !== UNTYPED) tokens[name] = { ...token, type };
+    return type;
+  };
+  for (const name of Object.keys(tokens)) {
+    if (typeOf(name) !== UNTYPED) continue;
+    const p = provenance[name];
+    // A ref semantic is untyped only when its target is, which is reported there.
+    if (p.layer === 'semantics' && p.rule === 'ref' && !p.pinned) continue;
+    issues.push({ kind: 'untyped-pin', token: name });
   }
-  const { colors, feasible } = categoricalRamp(ramp.steps, gates, ramp.anchors ?? []);
-  if (!feasible) ctx.issues.push({ kind: 'infeasible-ramp', ramp: name });
-  return colors;
 }
 
 const isPinObject = (v: PinValue): v is PinObject =>
@@ -86,37 +260,55 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
     if (picked.ok) seeds[k] = picked.value;
     else issues.push({ kind: 'missing-axis-value', path: `seeds.${k}`, axis: picked.axis, value: picked.value });
   }
-  const ctx: ParamContext = { sel, seeds, issues };
+  const ctx: SettleContext = { sel, seeds, declaredSeeds: new Set(Object.keys(def.seeds ?? {})), issues };
 
   const tokens: Record<string, RawToken> = {};
   const provenance: Record<string, Provenance> = {};
-  const put = (name: string, token: RawToken, layer: Layer, rule: string) => {
+  const producer = new Map<string, string>();
+  const put = (name: string, token: RawToken, layer: Layer, rule: string, path: string) => {
+    const earlier = producer.get(name);
+    if (earlier !== undefined) {
+      issues.push({ kind: 'invalid', path, message: `"${name}" is already produced by ${earlier}` });
+      return;
+    }
+    producer.set(name, path);
     tokens[name] = token;
     provenance[name] = { layer, rule, pinned: false };
   };
 
+  const settleEntry = (entry: unknown, path: string) => {
+    const settled = settle(entry, path, ctx);
+    const r = isRecord(settled.value) ? settled.value : undefined;
+    const steps = stepNames(r?.steps);
+    if (r && !steps && settled.ok) issues.push({ kind: 'invalid', path: `${path}.steps`, message: 'expected a list of step names' });
+    return { r, steps, ok: settled.ok && r !== undefined && steps !== undefined };
+  };
+  const describe = (r: Record<string, unknown>, step: string) => {
+    const d = isRecord(r.describe) ? r.describe[step] : undefined;
+    return typeof d === 'string' ? d : undefined;
+  };
+
   const rampSteps: Record<string, readonly string[]> = {};
-  for (const [name, ramp] of Object.entries(def.ramps ?? {})) {
-    rampSteps[name] = ramp.steps;
-    const colors = rampColors(name, ramp, ctx);
+  for (const [name, entry] of Object.entries(def.ramps ?? {})) {
+    const path = `ramps.${name}`;
+    const { r, steps, ok } = settleEntry(entry, path);
+    if (steps) rampSteps[name] = steps;
+    if (!ok) continue;
+    const colors = rampColors(name, r!, steps!, ctx);
     if (!colors) continue;
-    for (const step of ramp.steps) {
-      put(`${name}-${step}`, { type: 'color', value: colors[step], alpha: undefined, description: ramp.describe?.[step] }, 'ramps', ramp.kind);
+    for (const step of steps!) {
+      put(`${name}-${step}`, { type: 'color', value: colors[step], alpha: undefined, description: describe(r!, step) }, 'ramps', String(r!.kind), path);
     }
   }
 
-  for (const [name, s] of Object.entries(def.scales ?? {})) {
-    const base = num(s.base, `scales.${name}.base`, ctx);
-    const step = num(s.step, `scales.${name}.step`, ctx);
-    const ratio = num(s.ratio, `scales.${name}.ratio`, ctx);
-    if (base === undefined) continue;
-    try {
-      const values = scale(s.steps, { base, step, ratio });
-      for (const st of s.steps) {
-        put(`${name}-${st}`, { type: 'dimension', value: values[st], alpha: undefined, description: s.describe?.[st] }, 'scales', step !== undefined ? 'linear' : 'geometric');
-      }
-    } catch (e) {
-      issues.push({ kind: 'invalid', path: `scales.${name}`, message: (e as Error).message });
+  for (const [name, entry] of Object.entries(def.scales ?? {})) {
+    const path = `scales.${name}`;
+    const { r, steps, ok } = settleEntry(entry, path);
+    if (!ok) continue;
+    const out = scaleValues(name, r!, steps!, issues);
+    if (!out) continue;
+    for (const st of steps!) {
+      put(`${name}-${st}`, { type: 'dimension', value: out.values[st], alpha: undefined, description: describe(r!, st) }, 'scales', out.rule, path);
     }
   }
 
@@ -127,33 +319,28 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
     return isPinObject(picked.value) ? picked.value.value : picked.value;
   };
   for (const [name, d] of deriveSemantics(def.semantics ?? {}, { sel, tokens, ramps: rampSteps, pinned, issues })) {
-    put(name, d.token, 'semantics', d.rule);
+    put(name, d.token, 'semantics', d.rule, `semantics.${name}`);
   }
 
-  const refType = (value: TokenValue): string | undefined => {
-    const m = typeof value === 'string' ? TOKEN_REF.exec(value.trim()) : null;
-    return m ? tokens[m[1]]?.type : undefined;
-  };
-  const toToken = (name: string, v: Varying<PinValue>, path: string, prior: RawToken | undefined): RawToken | undefined => {
+  const toToken = (v: Varying<PinValue>, path: string, prior: RawToken | undefined): RawToken | undefined => {
     const picked = pick(v, sel);
     if (!picked.ok) {
       issues.push({ kind: 'missing-axis-value', path, axis: picked.axis, value: picked.value });
       return undefined;
     }
     const obj: PinObject = isPinObject(picked.value) ? picked.value : { value: picked.value };
-    const type = obj.type ?? prior?.type ?? refType(obj.value);
-    if (type === undefined) issues.push({ kind: 'untyped-pin', token: name });
-    return { type: type ?? 'unknown', value: obj.value, alpha: obj.alpha, description: obj.description ?? prior?.description };
+    return { type: obj.type ?? prior?.type ?? UNTYPED, value: obj.value, alpha: obj.alpha, description: obj.description ?? prior?.description };
   };
 
   for (const [name, v] of Object.entries(def.components ?? {})) {
-    const token = toToken(name, v, `components.${name}`, undefined);
-    if (token) put(name, token, 'components', 'value');
+    const path = `components.${name}`;
+    const token = toToken(v, path, undefined);
+    if (token) put(name, token, 'components', 'value', path);
   }
 
   for (const [name, v] of Object.entries(def.pins ?? {})) {
-    const prior = tokens[name];
-    const token = toToken(name, v, `pins.${name}`, prior);
+    const prior = has(tokens, name) ? tokens[name] : undefined;
+    const token = toToken(v, `pins.${name}`, prior);
     if (!token) continue;
     tokens[name] = token;
     provenance[name] = prior
@@ -161,6 +348,7 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
       : { layer: 'pins', rule: 'value', pinned: false };
   }
 
-  resolveTokens(tokens);
+  checkReferences(tokens, declaredNames(def));
+  inferTypes(tokens, provenance, issues);
   return { tokens, provenance, issues };
 }
