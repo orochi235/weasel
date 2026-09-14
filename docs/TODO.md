@@ -1327,12 +1327,13 @@ controls. It runs beside Storybook today.
   iframe. Mount the provisional instrument under the same tree position, or learn
   the viewport before the first instrument is built.
 
-- **(P3) An `.lk-shell-body` scroll warning seen once in forge's dev app has not
-  been reproduced.** labkit's fit check (`packages/labkit/src/lab/fitCheck.ts`)
-  reported it on one visit. It may have come from the burst of dependency
-  re-optimization reloads on a first visit, which
-  `optimizeDeps.entries` in `apps/forge/vite.config.ts` has since removed. Close
-  this if it does not come back.
+- **(P3) forge's lab scrolls sideways with two trials open beside the aside.**
+  labkit's fit check (`packages/labkit/src/lab/fitCheck.ts`) warns that
+  `.lk-shell-body` scrolls: a pane inside a trial's `lk-trial__panes` split
+  reaches 68px past it on x. Reproduced on 2026-09-13 in the dev app at a
+  1718px-wide viewport with the story sidebar, two trials and the CSS Vars
+  aside open. Which pane overflows, and why the trial split does not clamp to
+  its tile, is not yet known.
 
 - **(P3) forge's CSS Vars panel can show the other mode's values after the OS
   color scheme changes.** With the Mode global on `auto`, `followScheme`
