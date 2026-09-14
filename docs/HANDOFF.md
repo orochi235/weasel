@@ -1,9 +1,9 @@
-# Handoff — the theme editor, phase 2 (next)
+# Handoff — the theme editor, phase 2 (built; merge is next)
 
 **Branch:** `theme-editor`, in the worktree `.worktrees/theme-editor`, cut from
-`main` right after phase 1 merged. Nothing on `main` is pushed; run
-`git log --oneline @{u}..main` for what has not left the machine. Pushing is
-Mike's call, never yours.
+`main` right after phase 1 merged. Not merged and not pushed; run
+`git log --oneline main..theme-editor` for what the branch holds. Merging and
+pushing are Mike's calls, never yours.
 
 **Other sessions are in this repository**, in the primary checkout
 (`/Users/mike/src/weasel`, branch `forge-sidebar-clicks`). Stay in your
@@ -12,22 +12,40 @@ merge or rebase their branch.
 
 ## What is done
 
-Phase 1 of `docs/superpowers/specs/2026-09-10-theme-engine-and-editor-design.md`
-is merged: the engine in `@weasel-js/theme/engine` (definitions, `derive` with
-issues and provenance, `bake`, axis dependencies, emitters, `toDTCG`), weasel's
-theme as `packages/theme/themes/weasel.json`, and the runtime on axis
-selections. The spec's phase 1 text was amended to match what was built; the
-changeset `.changeset/theme-engine.md` lists what broke for consumers.
+Phase 2 of `docs/superpowers/specs/2026-09-10-theme-engine-and-editor-design.md`
+is built on this branch, following `docs/superpowers/plans/2026-09-14-theme-editor.md`:
+`#/theme` saves through a dev-server theme store (hash conflict check; a save
+that would break the token build is refused before anything is written), keeps
+an unsaved draft across reloads, and has the header, layer rail, a preview in
+both modes, Ramps / Scales / Semantics editors, click to inspect, Export (CSS,
+definition, DTCG) and New theme. Reviews and headless browser passes along the
+way fixed engine edges (`lightBias`, own ramps shadowing inherited pins, token
+name characters, three ramp edge cases) and two `@weasel-js/ui` defects
+(segmented bar height inside labkit; property rows' names and label clicks).
+Each carries a `patch` changeset.
+
+Verified 2026-09-14 at `a2b36ad7`: `npx tsc --noEmit` clean; `npx vitest run
+--project=draw apps/theme-editor` 125/125; `npx vitest run --project=weasel-ui
+packages/theme packages/ui/src/components/Properties
+packages/ui/src/components/ToggleBar` 352/352; `npm run lint`, `check:bumps`
+and `check:test-projects` clean. In a headless browser (emulating
+`prefers-color-scheme`, since `LabShell` here has no mode buttons): both modes,
+a ramp slider and Compare, an inherited ramp staying read-only, Inspect
+landing on the clicked button's tokens without moving the preview's slider,
+typing a half-finished reference in the rule drawer, all three exports matching
+the repo files byte for byte, and a New theme `harbor` saved into
+`packages/theme/themes/` with `tokens.css` regenerated (then removed; the
+generator put the tree back exactly).
 
 ## What is next
 
-**Build phase 2, the `#/theme` editor**, as the spec's "Phase 2 — the editor"
-describes. Mike asked for it to be implemented, not only planned. The order
-that worked for phase 1: review the phase 2 section against the tree (it was
-written before phase 1 existed, and names APIs that have since changed shape),
-correct the spec, write a plan under `docs/superpowers/plans/`, then build it
-task by task with a review after each, and finish with the gates in "Verifying"
-below plus the full suite. Delete the plan when the branch merges.
+1. **The full suite** (`npm test`) has not been run; it is the gate before
+   merging or pushing.
+2. **Merge `theme-editor` into `main`** when Mike says so, deleting the plan in
+   the same change. `forge-sidebar-clicks` also edits `PaletteLab.tsx`; a
+   dry-run merge against it was clean at `6df10ccf`.
+3. **Plan Task 18**, once `forge-sidebar-clicks` reaches `main`: Seeds,
+   Components and Pins edit through `TokenPanel` instead of read-only lists.
 
 ## Decisions made in conversation that the code does not explain
 

@@ -994,13 +994,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) Build the theme editor's `#/theme` page.** In progress on branch
-  `theme-editor` (worktree `.worktrees/theme-editor`), phase 2 of
-  `docs/superpowers/specs/2026-09-10-theme-engine-and-editor-design.md`, planned
-  in `docs/superpowers/plans/2026-09-14-theme-editor.md`. Until that branch
-  merges, `#/theme` on `main` is a stub. Its Seeds, Components and Pins layers
-  wait for weasel-ui's `TokenPanel`, still on the unmerged `forge-sidebar-clicks`
-  branch; until then they are read-only lists.
+- **(P2) Merge the theme editor's `#/theme` page.** Built on branch
+  `theme-editor` (worktree `.worktrees/theme-editor`) as phase 2 of
+  `docs/superpowers/specs/2026-09-10-theme-engine-and-editor-design.md`; not
+  merged, so `#/theme` on `main` is still a stub. Left once it merges: its Seeds,
+  Components and Pins layers are read-only lists until weasel-ui's `TokenPanel`,
+  on the unmerged `forge-sidebar-clicks` branch, reaches `main`; and whether an
+  anchor should set a ramp's chroma peak directly is open (`docs/HANDOFF.md`).
 
 - **(P3) A mark can be selected in two targets at once.** `AnnotationOverlay`
   leaves `selectionMode` at weasel's default `single`, and each canvas clears

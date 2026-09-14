@@ -1,8 +1,9 @@
 # Theme engine and editor — design
 
-**Status: phase 1 (the engine) merged to `main`, 2026-09-14; phase 2 (the
-editor) in progress on branch `theme-editor`, its phase 2 section reviewed
-against the merged engine the same day.** Phase 2's plan is
+**Status: phase 1 (the engine) merged to `main`, 2026-09-14. Phase 2 (the
+editor) built on branch `theme-editor` the same day and not merged; its Seeds,
+Components and Pins layers are read-only until weasel-ui's `TokenPanel`
+merges.** Phase 2's plan is
 `docs/superpowers/plans/2026-09-14-theme-editor.md`. Delete this file when
 phase 2 merges.
 

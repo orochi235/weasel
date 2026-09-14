@@ -1,5 +1,7 @@
 # Theme editor (phase 2) Implementation Plan
 
+**Status, 2026-09-14: every task is built and committed on `theme-editor` except Task 18, which is blocked on `TokenPanel`. The checkboxes were not ticked as tasks landed; `git log main..theme-editor` is the record.**
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build the `#/theme` editor in `apps/theme-editor` on the merged theme engine, as `docs/superpowers/specs/2026-09-10-theme-engine-and-editor-design.md` "Phase 2 — the editor" describes.
