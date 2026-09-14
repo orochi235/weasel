@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { TOOL_PREF_KINDS, type ToolPrefKind } from '@weasel-js/core';
 import type { PrefLeaf } from '@weasel-js/ui';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -68,9 +68,12 @@ describe('<ControlPanel> select', () => {
       },
     ];
     render(<ControlPanel fields={fields} config={{ wave: 'sine' }} setConfig={setConfig} />);
-    const sel = screen.getByLabelText('Wave') as HTMLSelectElement;
-    expect(sel.tagName).toBe('SELECT');
-    fireEvent.change(sel, { target: { value: 'square' } });
+    const trigger = screen.getByRole('button', { name: /Wave/ });
+    expect(trigger).toHaveTextContent('Sine');
+    act(() => {
+      fireEvent.click(trigger);
+    });
+    fireEvent.click(within(screen.getByRole('listbox')).getByRole('option', { name: 'Square' }));
     expect(setConfig).toHaveBeenCalledWith('wave', 'square');
   });
 });

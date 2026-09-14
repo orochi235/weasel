@@ -375,6 +375,15 @@
   min-width: 4ch;
 }
 
+/* A property row's select is weasel-ui's, bare. Inline, it fills the space beside
+   its label and sets its value against the chevron, like the native one below. */
+.rowInline > .select {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 4ch;
+  --wzl-select-align: right;
+}
+
 /* A select sized to its longest option starts wherever that width leaves it, so
    a column of them scatters its values. Filling the row and setting the value
    against the chevron gives them one rail. */

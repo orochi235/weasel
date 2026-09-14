@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -325,6 +325,17 @@ describe('NumberRow', () => {
   });
 });
 
+/** A select row's trigger, which opens its listbox. */
+const trigger = (label: string) => screen.getByRole('button', { name: new RegExp(label) });
+
+/** Opens a select row and chooses an option, the way a person does. */
+function pick(label: string, option: string) {
+  act(() => {
+    fireEvent.click(trigger(label));
+  });
+  fireEvent.click(within(screen.getByRole('listbox')).getByRole('option', { name: option }));
+}
+
 describe('SelectRow', () => {
   it('emits the selected option', () => {
     const onChange = vi.fn();
@@ -339,7 +350,8 @@ describe('SelectRow', () => {
         onChange={onChange}
       />,
     );
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'b' } });
+    expect(screen.queryByRole('combobox')).toBeNull();
+    pick('Mode', 'B');
     expect(onChange).toHaveBeenCalledWith('b');
   });
 });
@@ -376,28 +388,25 @@ describe('rows with no value', () => {
   it('SelectRow shows a placeholder, not the first option, and choosing the first option fires', () => {
     const onChange = vi.fn();
     render(<SelectRow label="Mode" value={undefined} options={options} onChange={onChange} />);
-    const select = screen.getByRole<HTMLSelectElement>('combobox');
-    expect(select.value).toBe('');
-    expect(select.selectedOptions[0]?.textContent).toBe('Choose option…');
-    fireEvent.change(select, { target: { value: 'a' } });
+    expect(trigger('Mode')).toHaveTextContent('Choose option…');
+    pick('Mode', options[0]!.label as string);
     expect(onChange).toHaveBeenCalledWith('a');
   });
 
   it('SelectRow shows the placeholder for a value that is not an option', () => {
     render(<SelectRow label="Mode" value="z" options={options} onChange={() => {}} />);
-    expect(screen.getByRole<HTMLSelectElement>('combobox').value).toBe('');
+    expect(trigger('Mode')).toHaveTextContent('Choose option…');
   });
 
   it('SelectRow renders a present value with no placeholder', () => {
     render(<SelectRow label="Mode" value="b" options={options} onChange={() => {}} />);
-    const select = screen.getByRole<HTMLSelectElement>('combobox');
-    expect(select.value).toBe('b');
-    expect(select.querySelectorAll('option')).toHaveLength(2);
+    expect(trigger('Mode')).toHaveTextContent(options[1]!.label as string);
+    expect(trigger('Mode')).not.toHaveTextContent('Choose option…');
   });
 
   it('SelectRow names its placeholder', () => {
     render(<SelectRow label="Mode" value={undefined} options={options} placeholder="Pick one" onChange={() => {}} />);
-    expect(screen.getByRole<HTMLSelectElement>('combobox').selectedOptions[0]?.textContent).toBe('Pick one');
+    expect(trigger('Mode')).toHaveTextContent('Pick one');
   });
 
   // React warns about a controlled/uncontrolled switch once per module, so these assert the DOM instead.

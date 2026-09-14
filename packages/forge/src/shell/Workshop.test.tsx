@@ -105,7 +105,10 @@ describe('Workshop', () => {
     for (const { received } of frames) expect(received).toEqual([expect.objectContaining({ type: 'init', globals: { mode: 'auto' } })]);
 
     const trialB = screen.getByRole('region', { name: 'Trial X / B' });
-    fireEvent.change(within(trialB).getByLabelText('Mode'), { target: { value: 'dark' } });
+    act(() => {
+      fireEvent.click(within(trialB).getByRole('button', { name: /Mode/ }));
+    });
+    fireEvent.click(within(await screen.findByRole('listbox')).getByRole('option', { name: 'Dark' }));
     await flush();
 
     const toolbar = screen.getByRole('toolbar', { name: 'Globals' });

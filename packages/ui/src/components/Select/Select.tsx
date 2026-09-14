@@ -54,6 +54,8 @@ export type SelectProps<T extends Key = string> = Omit<RACSelectProps<object>, '
    * toolbar's slack nor changes width as the selection moves.
    */
   width?: 'fill' | 'fit';
+  /** `'bare'` drops the box, for a select set in a row of other chrome such as a property row. */
+  variant?: 'field' | 'bare';
   className?: string;
 } & OverlayPortalProps;
 
@@ -77,6 +79,7 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
     defaultSelectedKey,
     onSelectionChange,
     width = 'fill',
+    variant = 'field',
     className,
     portalContainer,
     ...rest
@@ -90,7 +93,7 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
       selectedKey={selectedKey}
       defaultSelectedKey={defaultSelectedKey}
       onSelectionChange={onSelectionChange ? (k) => onSelectionChange(k as T) : undefined}
-      className={[s.field, width === 'fit' && s.fit, fieldClasses.root, className]
+      className={[s.field, width === 'fit' && s.fit, variant === 'bare' && s.bare, fieldClasses.root, className]
         .filter(Boolean)
         .join(' ')}
     >
