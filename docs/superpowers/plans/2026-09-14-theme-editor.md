@@ -4372,3 +4372,36 @@ Run `npx vitest run --project=draw apps/theme-editor/src/ThemePreview.test.tsx`:
 - [ ] **Step 3: Run** the test file → PASS; tsc and `npx eslint apps/theme-editor/src/ThemePreview.tsx` clean.
 
 - [ ] **Step 4: Commit** the two files; message `stop inspect presses from reaching the preview's components`.
+
+---
+
+### Task 23: take the anchor floor back out (engine; run after Task 9)
+
+Task 21's item 2 was wrong, and this plan is where it came from. A review of `56cad3a5` found that `peak = a.C · max / Math.max(e, 0.1 · max)` changes the common case, not only the edge: an anchor on an end step with that end's bias at 0 has `e = 0`, where the phase 1 guard kept `peak = a.C`, and the floor now makes it `10 · a.C`. Steps `50…900`, `lightness [0.97, 0.2]`, both biases 0, anchor `#1f2328` on `900`: step `500` went from `#777c82` (C 0.011) to `#4a7ebc` (C 0.111). A gray ramp anchored on its darkest step became a blue one. `weasel.json` is unaffected (its only anchor is mid-ramp).
+
+The singularity the floor was meant to remove is real but narrower than the fix: only while a bias on the anchor's end is small and non-zero does the peak explode. Whether an anchor should set the peak directly (`peak = a.C` at any position, which removes the singularity and changes anchors placed off the envelope's peak) is a design decision for Mike and is not made here.
+
+**Files:**
+- Modify: `packages/theme/src/engine/ramps.ts`, `packages/theme/src/engine/ramps.test.ts`, `.changeset/theme-ramp-edge-cases.md`
+
+- [ ] **Step 1: Failing test** — append to `ramps.test.ts`:
+
+```ts
+it('keeps a low-chroma ramp low-chroma when its anchor sits on an end with that bias at 0', () => {
+  const steps = ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900'];
+  const ramp = lightnessRamp({ steps, lightness: [0.97, 0.2], curve: 0, hue: 0, peak: 0, darkBias: 0, anchor: { '900': '#1f2328' } });
+  expect(toLch(ramp['500']).C).toBeLessThan(0.02);
+});
+```
+
+Run `npx vitest run --project=weasel-ui packages/theme/src/engine/ramps.test.ts` → the new case FAILS (C ≈ 0.111).
+
+- [ ] **Step 2: Restore the guard.** In `lightnessRamp`, go back to phase 1's anchor peak — `peak = e > 1e-6 ? (a.C * max) / e : a.C` — and delete `ANCHOR_FLOOR`. Keep the `0.4` cap on the chroma passed to `toHex`: it cannot bind for an in-gamut color, and it is what stops a very small non-zero bias from producing grays instead of gamut-clipped color.
+
+- [ ] **Step 3: Adjust Task 21's continuity test** to what the restored guard guarantees, and nothing more: for `darkBias` in `[0.001, 0.01, 0.05]` the middle step's chroma stays between 0.02 and 0.3 (no gray band). Drop the bias-0 value and the "never jumps more than 0.1" clause; the jump off 0 is the open design question above. Print the four measured values in your report.
+
+- [ ] **Step 4: Correct the changeset.** In `.changeset/theme-ramp-edge-cases.md`, replace the anchor clause with: "an anchor on a step where the chroma envelope is near zero no longer turns the ramp's other steps gray while a bias moves off 0 (the ramp's chroma still rises steeply there)", and replace "instead of producing `NaN` colors" with "instead of producing `NaN` colors or flipping the hue".
+
+- [ ] **Step 5: Run** `npx vitest run --project=weasel-ui packages/theme/src/engine/ramps.test.ts packages/theme/src/engine/derive.test.ts packages/theme/src/generated/determinism.test.ts`, `npx tsc --noEmit`, `npx eslint packages/theme/src` → clean.
+
+- [ ] **Step 6: Commit** the three paths; message `restore the anchored ramp's peak at a zero envelope`.
