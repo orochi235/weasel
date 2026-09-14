@@ -15,8 +15,6 @@ export interface LightnessParams {
 
 // Above anything sRGB holds, so the gamut clamp in toHex decides.
 const MAX_CHROMA = 0.4;
-// An anchor's envelope counts as at least this fraction of the maximum, so its peak stays finite and continuous near a zero.
-const ANCHOR_FLOOR = 0.1;
 
 const smoothstep = (t: number) => t * t * (3 - 2 * t);
 const envelope = (t: number, lightBias: number, darkBias: number) => Math.sin(Math.PI * t) + lightBias * (1 - t) + darkBias * t;
@@ -43,7 +41,7 @@ export function lightnessRamp(p: LightnessParams): Record<string, string> {
     const a = toLch(p.anchor![p.steps[anchorIndex]]);
     const e = envelope(at(anchorIndex), lightBias, p.darkBias);
     hue = a.H;
-    peak = (a.C * max) / Math.max(e, ANCHOR_FLOOR * max);
+    peak = e > 1e-6 ? (a.C * max) / e : a.C;
   }
 
   const out: Record<string, string> = {};

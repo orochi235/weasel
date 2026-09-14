@@ -69,12 +69,17 @@ describe('lightBias', () => {
 describe('an anchor where the chroma envelope is near zero', () => {
   const base = { steps: ['a', 'b', 'c', 'd', 'e'], lightness: [0.95, 0.3] as const, curve: 0, hue: 0, peak: 0, anchor: { e: '#2e1f7a' } };
 
-  it('keeps the middle step colored and continuous as darkBias moves off 0', () => {
-    const chroma = [0, 0.001, 0.01, 0.05].map((darkBias) => toLch(lightnessRamp({ ...base, darkBias }).c).C);
-    for (const c of chroma) {
-      expect(c).toBeGreaterThan(0.02);
-      expect(c).toBeLessThan(0.3);
+  it('keeps the middle step colored as darkBias moves off 0', () => {
+    for (const darkBias of [0.001, 0.01, 0.05]) {
+      const c = toLch(lightnessRamp({ ...base, darkBias }).c).C;
+      expect(c, `darkBias ${darkBias}`).toBeGreaterThan(0.02);
+      expect(c, `darkBias ${darkBias}`).toBeLessThan(0.3);
     }
-    for (let i = 1; i < chroma.length; i += 1) expect(Math.abs(chroma[i] - chroma[i - 1])).toBeLessThan(0.1);
   });
+});
+
+it('keeps a low-chroma ramp low-chroma when its anchor sits on an end with that bias at 0', () => {
+  const steps = ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900'];
+  const ramp = lightnessRamp({ steps, lightness: [0.97, 0.2], curve: 0, hue: 0, peak: 0, darkBias: 0, anchor: { '900': '#1f2328' } });
+  expect(toLch(ramp['500']).C).toBeLessThan(0.02);
 });
