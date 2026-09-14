@@ -81,6 +81,36 @@ describe('contrast rule', () => {
     expect(tokens.mid.value).toBe('{gray-400}');
   });
 
+  const lone = (min: number, pins: ThemeDefinition['pins'] = {}) =>
+    derive({
+      name: 'lone',
+      ramps: { gray: { kind: 'lightness', steps: STEPS, lightness: [0.98, 0.1] } },
+      semantics: { s: { value: '#6e6e6e', type: 'color' }, x: { ramp: 'gray', contrast: { min, against: ['s'] } } },
+      pins,
+    });
+
+  it('walks away from the surfaces the other way when nothing clears the first way', () => {
+    const { tokens, issues } = lone(4.3);
+    expect(contrast(tokens['gray-900'].value as string, '#6e6e6e')).toBeLessThan(4.3);
+    expect(issues).toEqual([]);
+    expect(tokens.x.value).toBe('{gray-50}');
+  });
+
+  it('takes the first step that clears walking the other way, not the best one', () => {
+    const STARK = ['#ffffff', '#f0f0f0', '#c8c8c8', '#a0a0a0', '#888888', '#555555', '#404040', '#282828', '#141414', '#000000'];
+    const { tokens, issues } = lone(4.3, Object.fromEntries(STEPS.map((s, i) => [`gray-${s}`, STARK[i]])));
+    expect(contrast('#000000', '#6e6e6e')).toBeLessThan(4.3);
+    expect(issues).toEqual([]);
+    expect(tokens.x.value).toBe('{gray-100}');
+  });
+
+  it('reports the best step beyond the surfaces when none clears either way', () => {
+    const { tokens, issues } = lone(20);
+    const ratio = contrast(tokens['gray-50'].value as string, '#6e6e6e');
+    expect(issues).toEqual([{ kind: 'contrast-unmet', token: 'x', min: 20, against: ['s'], picked: '50', ratio }]);
+    expect(tokens.x.value).toBe('{gray-50}');
+  });
+
   it('measures against a component', () => {
     const { tokens, issues } = derive(
       { ...W, semantics: { x: { ramp: 'gray', contrast: { min: 3, against: ['tb-bg'] } } }, components: { 'tb-bg': { value: '#ffffff', type: 'color' } } },
@@ -217,6 +247,11 @@ describe('check', () => {
   it('throws on a name nothing declares, but not on one that failed at this selection', () => {
     expect(() => only({ fg: { ramp: 'gray', step: '100', check: { contrast: 3, against: ['nope'] } } })).toThrow(/nope/);
     expect(() => only({ fg: { ramp: 'gray', step: '100', check: { contrast: 3, against: ['bad'] } }, bad: { ramp: 'gray', step: '850' } })).not.toThrow();
+  });
+
+  it('leaves a surface whose production failed to that failure', () => {
+    const { issues } = only({ fg: { ramp: 'gray', step: '100', check: { contrast: 3, against: ['bad'] } }, bad: { ramp: 'gray', step: '850' } });
+    expect(issues).toEqual([{ kind: 'invalid', path: 'semantics.bad', message: 'no such step on ramp "gray"' }]);
   });
 
   it('reports a check with no surfaces', () => {

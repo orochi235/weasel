@@ -18,7 +18,7 @@ export interface SemanticContext {
   readonly pinned: (name: string) => PinObject | undefined;
   /** The component this name gets for the selection, if one does. */
   readonly component: (name: string) => PinObject | undefined;
-  /** Whether a name is produced, or failed to be, at this selection. Any other name a rule reads is dangling. */
+  /** Whether a name is produced, or failed to be, at this selection. An `against` name that is neither is dangling. */
   readonly known: (name: string) => boolean;
   readonly issues: Issue[];
 }
@@ -185,19 +185,26 @@ function deriveOne(name: string, r: SemanticRule, ctx: SemanticContext, env: Env
     const meanL = surfaces.reduce((sum, l) => sum + l, 0) / surfaces.length;
     const last = steps.length - 1;
     const sign = Math.abs(L[last] - meanL) >= Math.abs(L[0] - meanL) ? 1 : -1;
-    const order = steps.map((_, i) => (sign > 0 ? i : last - i));
-    const past = (sign === darker)
-      ? (l: number) => l < Math.min(...surfaces)
-      : (l: number) => l > Math.max(...surfaces);
+    const lo = Math.min(...surfaces);
+    const hi = Math.max(...surfaces);
     const worst = (i: number) => Math.min(...against.map((hex) => contrast(colors[i]!, hex!)));
+    /** From the first step past every surface toward one ramp end, to that end. */
+    const walk = (toLast: boolean) => {
+      const order = steps.map((_, i) => (toLast ? i : last - i));
+      const past = toLast === (darker > 0) ? (l: number) => l < lo : (l: number) => l > hi;
+      const start = order.findIndex((i) => past(L[i]));
+      return start < 0 ? [] : order.slice(start);
+    };
 
-    const start = order.findIndex((i) => past(L[i]));
-    for (const i of start < 0 ? [] : order.slice(start)) {
+    // OKLCH distance picks the first direction and WCAG luminance decides passing, so they can disagree.
+    const walked = [...walk(sign > 0), ...walk(sign < 0)];
+    for (const i of walked) {
       if (worst(i) >= r.contrast.min) return atStep(name, r.ramp, i, 'contrast', description, ctx);
     }
-    // Nothing past the surfaces clears, as when they straddle the ramp: take the best step anywhere, unmet only if it fails too.
-    let best = { index: order[0], ratio: worst(order[0]) };
-    for (const i of order) {
+    // Surfaces that straddle the ramp leave nothing beyond them: take the best step anywhere, unmet only if it fails too.
+    const pool = walked.length > 0 ? walked : steps.map((_, i) => (sign > 0 ? i : last - i));
+    let best = { index: pool[0], ratio: worst(pool[0]) };
+    for (const i of pool) {
       const ratio = worst(i);
       if (ratio > best.ratio) best = { index: i, ratio };
     }
@@ -229,15 +236,17 @@ export function checkSemantics(
   known: (name: string) => boolean,
   issues: Issue[],
 ): void {
-  const solid = (name: string): string | undefined => {
-    let t = Object.hasOwn(tokens, name) ? tokens[name] : undefined;
-    while (t && t.alpha === undefined && typeof t.value === 'string') {
+  /** A name's final solid color as hex; null when its chain reaches a name whose production failed, which was reported then. */
+  const solid = (name: string): string | null | undefined => {
+    for (let n = name; ; ) {
+      if (!Object.hasOwn(tokens, n)) return null;
+      const t = tokens[n];
+      if (t.alpha !== undefined || typeof t.value !== 'string') return undefined;
       const v = t.value.trim();
       const m = TOKEN_REF.exec(v);
       if (!m) return HEX.test(v) ? v.toLowerCase() : undefined;
-      t = Object.hasOwn(tokens, m[1]) ? tokens[m[1]] : undefined;
+      n = m[1];
     }
-    return undefined;
   };
 
   for (const name of Object.keys(rules)) {
@@ -252,12 +261,14 @@ export function checkSemantics(
       continue;
     }
     const hex = solid(name);
+    if (hex === null) continue;
     if (!hex) {
       issues.push({ kind: 'invalid', path, message: `"${name}" is not a solid color` });
       continue;
     }
     for (const a of check.against) {
       const other = solid(a);
+      if (other === null) continue;
       if (!other) {
         issues.push({ kind: 'invalid', path, message: `"${a}" is not a solid color` });
         continue;
