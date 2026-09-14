@@ -1,0 +1,56 @@
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.previewVariant {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.previewLabel {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--wzl-fg-muted);
+}
+
+.previewModes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 8px;
+}
+
+.previewPane {
+  background: var(--wzl-surface);
+  color: var(--wzl-fg);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+  padding: 8px;
+}
+
+.inspecting {
+  cursor: crosshair;
+}
+
+.specimenBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px;
+}
+
+.specimenRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sunken {
+  background: var(--wzl-surface-sunken);
+  border-radius: var(--wzl-radius-md);
+  padding: 8px;
+}
