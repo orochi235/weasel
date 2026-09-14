@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONSTRAINTS } from './color/generate';
-import { hueGap, toLch } from './color/oklch';
+import { chromaCap, hueGap, toLch } from './color/oklch';
 import { categoricalRamp, lightnessRamp } from './ramps';
 
 const STEPS = ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900'];
@@ -18,11 +18,22 @@ describe('lightnessRamp', () => {
     });
   });
 
-  it('walks lightness monotonically and stays in gamut', () => {
+  it('walks lightness monotonically', () => {
     const ramp = lightnessRamp(GRAY);
     const ls = STEPS.map((s) => toLch(ramp[s]).L);
     for (let i = 1; i < ls.length; i += 1) expect(ls[i]).toBeLessThan(ls[i - 1]);
-    for (const s of STEPS) expect(ramp[s]).toMatch(/^#[0-9a-f]{6}$/);
+  });
+
+  it('clamps an out-of-gamut step’s chroma at its lightness and hue, keeping the hue', () => {
+    for (const hue of [30, 140, 266]) {
+      const ramp = lightnessRamp({ steps: STEPS, lightness: [0.95, 0.25], curve: 0, hue, peak: 0.3, darkBias: 0 });
+      for (const s of STEPS) {
+        const { L, C, H } = toLch(ramp[s]);
+        if (C < 0.02) continue;
+        expect(hueGap(H, hue), `hue at ${hue}/${s}`).toBeLessThan(3);
+        expect(C, `chroma at ${hue}/${s}`).toBeLessThanOrEqual(chromaCap(L, hue) + 0.02);
+      }
+    }
   });
 
   it('emits an anchored step exactly and takes its hue from the anchor', () => {
