@@ -16,7 +16,7 @@ export function hexToRgb(hex: string): [number, number, number] {
 
 /**
  * OKLCH → `#rrggbb`. Over-saturated requests come back at the gamut boundary:
- * core's `oklabToSrgbU8` clips chroma at constant lightness, which is what lets
+ * paint's `oklabToSrgbU8` clips chroma at constant lightness, which is what lets
  * `chromaCap` below find a hue's ceiling by asking for far more than exists.
  */
 export function toHex(L: number, C: number, H: number): string {
