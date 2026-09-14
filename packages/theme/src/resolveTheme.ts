@@ -1,4 +1,4 @@
-import { fullSelection, pickAll, type AxisDefs, type Selection } from './axes';
+import { fullSelection, mergeAxes, pickAll, type AxisDefs, type Selection } from './axes';
 import { resolveTokens } from './dtcg/resolve';
 import type { FlatTokens } from './dtcg/types';
 import type { TokenName } from './generated/themes';
@@ -15,9 +15,9 @@ export function themeChain(theme: Theme): Theme[] {
   return out;
 }
 
-/** Every axis the chain declares; a descendant's definition of an axis wins. */
+/** Every axis the chain declares. An axis declared more than once keeps every value; a descendant's value entries and default win. */
 export function themeAxes(theme: Theme): AxisDefs {
-  return Object.assign({}, ...themeChain(theme).map((t) => t.axes));
+  return themeChain(theme).reduce<AxisDefs>((axes, t) => mergeAxes(axes, t.axes), {});
 }
 
 /**

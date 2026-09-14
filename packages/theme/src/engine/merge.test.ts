@@ -29,6 +29,17 @@ describe('mergeChain', () => {
     expect(m.axes).toEqual(base.axes);
   });
 
+  it('keeps the union of an axis both declare, the child’s values and default winning', () => {
+    const child: ThemeDefinition = {
+      name: 'child',
+      extends: 'base',
+      axes: { mode: { default: 'dim', values: { dark: { scheme: 'dark' }, dim: {} } } },
+    };
+    expect(mergeChain(child, lookup).axes).toEqual({
+      mode: { default: 'dim', values: { dark: { scheme: 'dark' }, light: {}, dim: {} } },
+    });
+  });
+
   it('throws on an unknown parent and on a cycle', () => {
     expect(() => mergeChain({ name: 'c', extends: 'nope' }, lookup)).toThrow(/nope/);
     const loop: Record<string, ThemeDefinition> = { a: { name: 'a', extends: 'b' }, b: { name: 'b', extends: 'a' } };

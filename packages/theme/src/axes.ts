@@ -38,6 +38,15 @@ export function fullSelection(axes: AxisDefs, selection: Selection = {}): Select
   return out;
 }
 
+/** A child's axes over its parent's: an axis both declare keeps both sets of values, the child's entries and default winning. */
+export function mergeAxes(parent: AxisDefs, child: AxisDefs): AxisDefs {
+  const out: Record<string, AxisDef> = { ...parent };
+  for (const [name, def] of Object.entries(child)) {
+    out[name] = { ...def, values: { ...parent[name]?.values, ...def.values } };
+  }
+  return out;
+}
+
 export function enumerateSelections(axes: AxisDefs): Selection[] {
   let out: Record<string, string>[] = [{}];
   for (const [name, def] of Object.entries(axes)) {

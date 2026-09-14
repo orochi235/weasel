@@ -15,6 +15,12 @@ describe('loadDTCG', () => {
     expect(resolveTheme(theme, { mode: 'dark' })['--wzl-surface']).toBe('#000000');
   });
 
+  it('falls through to the base theme’s other modes when the document declares one', () => {
+    const theme = loadDTCG({ name: 'one', modes: { dark: { color: { $type: 'color', accent: { $value: '#ff0000' } } } } });
+    expect(resolveTheme(theme, { mode: 'light' })['--wzl-surface']).toBe('#f5f5f6');
+    expect(resolveTheme(theme, { mode: 'dark' })['--wzl-accent']).toBe('#ff0000');
+  });
+
   it('throws on a document with no name', () => {
     expect(() => loadDTCG({ primitives: {}, modes: {} })).toThrow(/name/i);
   });

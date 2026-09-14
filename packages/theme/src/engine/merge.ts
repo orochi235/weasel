@@ -1,3 +1,4 @@
+import { mergeAxes } from '../axes';
 import type { ThemeDefinition } from '../definition';
 
 export type Lookup = (name: string) => ThemeDefinition | undefined;
@@ -13,5 +14,6 @@ export function mergeChain(def: ThemeDefinition, lookup?: Lookup, seen: Readonly
   const parent = mergeChain(parentDef, lookup, new Set([...seen, def.name]));
   const out: Record<string, unknown> = { ...def };
   for (const layer of LAYERS) out[layer] = { ...(parent[layer] ?? {}), ...(def[layer] ?? {}) };
+  out.axes = mergeAxes(parent.axes ?? {}, def.axes ?? {});
   return out as unknown as ThemeDefinition;
 }

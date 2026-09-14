@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveTheme } from './resolveTheme';
+import { resolveTheme, themeAxes } from './resolveTheme';
 import { defineTheme, weaselTheme } from './theme';
 
 describe('resolveTheme', () => {
@@ -27,6 +27,13 @@ describe('resolveTheme', () => {
     const acme = defineTheme({ name: 'acme', pins: { backdrop: { by: 'mode', dark: 'url(x.png)' } } });
     expect(resolveTheme(acme, { mode: 'dark' })['--wzl-backdrop']).toBe('url(x.png)');
     expect(resolveTheme(acme, { mode: 'light' })['--wzl-backdrop']).toBe('none');
+  });
+
+  it('keeps the parent’s values of an axis the child redeclares with fewer', () => {
+    const dim = defineTheme({ name: 'dim', axes: { mode: { default: 'dim', values: { dim: {} } } }, pins: { surface: { by: 'mode', dim: '#333333' } } });
+    expect(themeAxes(dim).mode).toEqual({ default: 'dim', values: { dark: { scheme: 'dark' }, light: { scheme: 'light' }, dim: {} } });
+    expect(resolveTheme(dim, { mode: 'light' })['--wzl-surface']).toBe('#f5f5f6');
+    expect(resolveTheme(dim, { mode: 'dark' })['--wzl-surface']).toBe('#181a1e');
   });
 
   it('falls back to the default for an unknown axis value', () => {
