@@ -32,9 +32,37 @@ describe('<ScalesLayer>', () => {
     render(<ScalesLayer draft={roomy} derived={deriveDraft(roomy, lookup, {})} lookup={lookup} highlight={[]} onChange={onChange} />);
     const space = screen.getByRole('region', { name: 'space scale' });
     expect(within(space).queryAllByRole('slider')).toEqual([]);
-    expect(within(space).getByText(/roomy inherits space/)).toBeInTheDocument();
+    expect(
+      within(space).getByText(
+        "roomy inherits space. Making it this theme's own generates every space step here, and the pins it inherits on them stop applying.",
+      ),
+    ).toBeInTheDocument();
     await userEvent.click(within(space).getByRole('button', { name: "Make space this theme's own" }));
     expect((onChange.mock.calls[0][0] as ThemeDefinition).scales?.space).toEqual(spaced.scales!.space);
+  });
+
+  it('draws no bar for a value that is not px, and scales the rest without it', () => {
+    const pinned: ThemeDefinition = { ...spaced, pins: { 'space-md': '{space-xs}' } };
+    const lookup = lookupOf(pinned);
+    render(<ScalesLayer draft={pinned} derived={deriveDraft(pinned, lookup, {})} lookup={lookup} highlight={[]} onChange={vi.fn()} />);
+    const space = screen.getByRole('region', { name: 'space scale' });
+    const bars = (step: string) =>
+      [...within(space).getByText(`space-${step}`).closest('tr')!.querySelectorAll<HTMLElement>('[class*="ladderBar"]')].map((b) => b.style.width);
+    expect(bars('sm')).toEqual(['100%', '87.5%']);
+    expect(bars('md')).toEqual([]);
+  });
+
+  it("lists a scale's issues in its section", () => {
+    const moded: ThemeDefinition = {
+      name: 'moded',
+      axes: { mode: { default: 'light', values: { light: {}, dark: {} } } },
+      scales: { space: { steps: ['xs', 'sm'], base: { by: 'mode', light: 4 }, step: 4 } },
+    };
+    const lookup = lookupOf(moded);
+    render(<ScalesLayer draft={moded} derived={deriveDraft(moded, lookup, {})} lookup={lookup} highlight={[]} onChange={vi.fn()} />);
+    const space = screen.getByRole('region', { name: 'space scale' });
+    const status = within(space).getByRole('status');
+    expect(within(status).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['scales.space.base has no value for mode=dark']);
   });
 
   it('says so when the theme has no scales', () => {
