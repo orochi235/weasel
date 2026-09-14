@@ -50,6 +50,35 @@
   color: var(--wzl-fg-subtle);
 }
 
+/* A request is out: the rows on screen are the previous query's, so mark them
+   stale rather than clearing the list out from under the arrow keys. */
+.frame:has(input[aria-busy='true'])::after {
+  content: '';
+  align-self: center;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-right: 4px;
+  border: 1.5px solid var(--wzl-fg-subtle);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .frame:has(input[aria-busy='true'])::after {
+    animation: none;
+    border-top-color: var(--wzl-fg-subtle);
+    opacity: 0.5;
+  }
+}
+
 .openButton {
   display: inline-flex;
   align-items: center;
@@ -116,6 +145,12 @@
 .empty {
   padding: 6px 8px;
   color: var(--wzl-fg-subtle);
+  font-size: var(--wzl-font-size-sm);
+}
+
+.error {
+  padding: 6px 8px;
+  color: var(--wzl-danger);
   font-size: var(--wzl-font-size-sm);
 }
 
