@@ -18,6 +18,13 @@ import {
 
 type Dir = 'ltr' | 'rtl' | 'auto';
 
+/**
+ * Twice the 5s default. These walk ~490k cases and land near enough to the
+ * default that a busy box fails them on the clock rather than on a rule, which
+ * reads as a regression in whatever else was running.
+ */
+const CONFORMANCE_TIMEOUT = 10_000;
+
 /** First few failures only: 490k cases can fail in bulk from one bad rule. */
 function report(failures: string[], total: number): void {
   if (failures.length === 0) return;
@@ -27,7 +34,7 @@ function report(failures: string[], total: number): void {
   );
 }
 
-describe('BidiCharacterTest.txt', () => {
+describe('BidiCharacterTest.txt', { timeout: CONFORMANCE_TIMEOUT }, () => {
   const cases = loadBidiCharacterTest();
 
   it('parses the whole file', () => {
@@ -81,7 +88,7 @@ describe('BidiCharacterTest.txt', () => {
   });
 });
 
-describe('BidiTest.txt', () => {
+describe('BidiTest.txt', { timeout: CONFORMANCE_TIMEOUT }, () => {
   const cases = loadBidiTest();
   const DIRS: Array<[number, Dir]> = [[AUTO_LTR, 'auto'], [LTR, 'ltr'], [RTL, 'rtl']];
 

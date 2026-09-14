@@ -62,6 +62,8 @@ export { paintGradientTrack } from './paintGradientTrack';
 export type { GradientTrackOpts } from './paintGradientTrack';
 export { oklchToHex, chromaAt } from './color/oklch';
 export type { ChromaCurve, ChromaCurvePoint } from './color/oklch';
+export { useAsyncOptions } from './useAsyncOptions';
+export type { AsyncOption, AsyncOptionsResult, UseAsyncOptionsProps } from './useAsyncOptions';
 export { useReorderDragList } from './useReorderDragList';
 export { useRovingTabIndex } from './useRovingTabIndex';
 export type { RovingItem, RovingTabIndex, UseRovingTabIndexOptions } from './useRovingTabIndex';
