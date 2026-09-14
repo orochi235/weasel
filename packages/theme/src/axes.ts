@@ -15,7 +15,10 @@ export type AxisDefs = Readonly<Record<string, AxisDef>>;
 export type Selection = Readonly<Record<string, string>>;
 
 /** `{ by: 'mode', dark: …, light: … }`: a value that differs per axis value. */
-export type ByAxis<T> = { readonly by: string } & { readonly [axisValue: string]: Varying<T> | string };
+export interface ByAxis<T> {
+  readonly by: string;
+  readonly [axisValue: string]: Varying<T> | string;
+}
 
 export type Varying<T> = T | ByAxis<T>;
 

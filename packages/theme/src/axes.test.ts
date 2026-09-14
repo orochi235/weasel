@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { enumerateSelections, fullSelection, isByAxis, pick, selectionKey, type AxisDefs } from './axes';
+import type { LightnessRampDef, ThemeDefinition } from './definition';
 
 const AXES: AxisDefs = {
   mode: { default: 'dark', values: { dark: { scheme: 'dark' }, light: { scheme: 'light' } } },
@@ -35,6 +36,38 @@ describe('axes', () => {
   it('reports a missing value instead of throwing', () => {
     expect(pick({ by: 'mode', dark: 1 }, fullSelection(AXES, { mode: 'light' }))).toEqual({
       ok: false, axis: 'mode', value: 'light',
+    });
+  });
+
+  it('accepts a by nested inside a by in a typed ramp literal', () => {
+    const ramp: LightnessRampDef = {
+      kind: 'lightness',
+      steps: ['50', '100'],
+      lightness: [0.9, 0.2],
+      chroma: { peak: { by: 'mode', dark: { by: 'density', comfortable: 0.01, compact: 0.02 }, light: 0.03 } },
+    };
+    expect(pick(ramp.chroma!.peak, fullSelection(AXES, { mode: 'dark', density: 'compact' }))).toEqual({
+      ok: true, value: 0.02,
+    });
+  });
+
+  it('accepts a by nested inside a by in a typed theme definition', () => {
+    const def: ThemeDefinition = {
+      name: 'test',
+      semantics: {
+        fg: {
+          by: 'mode',
+          dark: {
+            by: 'density',
+            comfortable: { ramp: 'gray', step: '900' },
+            compact: { ramp: 'gray', step: '800' },
+          },
+          light: { ramp: 'gray', step: '100' },
+        },
+      },
+    };
+    expect(pick(def.semantics!.fg, fullSelection(AXES, { mode: 'dark', density: 'compact' }))).toEqual({
+      ok: true, value: { ramp: 'gray', step: '800' },
     });
   });
 });
