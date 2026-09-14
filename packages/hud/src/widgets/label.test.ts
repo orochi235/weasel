@@ -3,7 +3,7 @@ import { createLabel } from './label';
 import type { TextDrawCommand } from '@weasel-js/core/renderer';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 
-const DEFAULT_RESOLVED_TOKENS = resolveTheme(weaselTheme, 'dark');
+const DEFAULT_RESOLVED_TOKENS = resolveTheme(weaselTheme, { mode: 'dark' });
 
 describe('label widget', () => {
   it('uses sensible defaults for fontSize when omitted', () => {

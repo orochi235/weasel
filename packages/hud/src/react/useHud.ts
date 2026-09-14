@@ -32,7 +32,7 @@ export function useHud(
   // record is what keeps HUD chrome in step with a mode switch.
   const provided = useThemeOptional();
   const theme = useMemo(
-    () => provided?.resolved ?? resolveTheme(weaselTheme, weaselTheme.defaultMode),
+    () => provided?.resolved ?? resolveTheme(weaselTheme),
     [provided],
   );
 

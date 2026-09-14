@@ -19,7 +19,7 @@ if (typeof document !== 'undefined' && !document.getElementById('fg-google-fonts
 
 function LabkitRoot({ picked, children }: { picked: unknown; children: ReactNode }) {
   return (
-    <ThemeProvider theme={interstellarTheme} mode={useResolvedMode(picked)} className="lk-root">
+    <ThemeProvider theme={interstellarTheme} selection={{ mode: useResolvedMode(picked) }} className="lk-root">
       {children}
     </ThemeProvider>
   );
@@ -31,7 +31,7 @@ const labkitRoot: Decorator = (story, ctx) =>
 const FONT_STYLE_ID = 'fg-font-globals';
 
 const applyGlobals = followScheme((globals, root, mode) => {
-  applyTheme(root, weaselTheme, mode);
+  applyTheme(root, weaselTheme, { mode });
   const doc = root.ownerDocument;
   let style = doc.getElementById(FONT_STYLE_ID);
   if (!style) {

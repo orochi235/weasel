@@ -4,8 +4,8 @@ import { interstellarTheme } from './interstellar';
 
 describe('interstellarTheme', () => {
   it('extends weasel and resolves both modes', () => {
-    const dark = resolveTheme(interstellarTheme, 'dark');
-    const light = resolveTheme(interstellarTheme, 'light');
+    const dark = resolveTheme(interstellarTheme, { mode: 'dark' });
+    const light = resolveTheme(interstellarTheme, { mode: 'light' });
 
     // Values carried over verbatim from the retired Less.
     expect(dark['--wzl-surface']).toBe('#0a0a14');
@@ -24,7 +24,7 @@ describe('interstellarTheme', () => {
   });
 
   it('carries the cosmic backdrop in dark and drops it in light', () => {
-    expect(resolveTheme(interstellarTheme, 'dark')['--wzl-backdrop']).toContain('radial-gradient');
-    expect(resolveTheme(interstellarTheme, 'light')['--wzl-backdrop']).toBe('none');
+    expect(resolveTheme(interstellarTheme, { mode: 'dark' })['--wzl-backdrop']).toContain('radial-gradient');
+    expect(resolveTheme(interstellarTheme, { mode: 'light' })['--wzl-backdrop']).toBe('none');
   });
 });

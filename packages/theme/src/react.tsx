@@ -1,13 +1,14 @@
 import React, { createContext, useContext, useMemo, useRef, useLayoutEffect } from 'react';
 import { applyTheme } from './applyTheme';
-import { resolveTheme, type ResolvedTheme } from './resolveTheme';
+import { fullSelection, selectionKey, type Selection } from './axes';
+import { resolveTheme, themeAxes, type ResolvedTheme } from './resolveTheme';
 import { weaselTheme, type Theme } from './theme';
 
-/** What `<ThemeProvider>` publishes: the theme, the mode in force, and the
+/** What `<ThemeProvider>` publishes: the theme, the full selection in force, and the
  *  fully resolved token record for that pair. */
 export interface ThemeContextValue {
   readonly theme: Theme;
-  readonly mode: string;
+  readonly selection: Selection;
   readonly resolved: ResolvedTheme;
 }
 
@@ -16,7 +17,8 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 /** Props for `<ThemeProvider>`. */
 export interface ThemeProviderProps {
   readonly theme?: Theme;
-  readonly mode?: string;
+  /** Axis values, e.g. `{ mode: 'light' }`. A missing axis takes its default. */
+  readonly selection?: Selection;
   /** Applied to the wrapper element, so it can be the layout element too. */
   readonly className?: string;
   readonly style?: React.CSSProperties;
@@ -35,32 +37,31 @@ export interface ThemeProviderProps {
  */
 export function ThemeProvider({
   theme = weaselTheme,
-  mode,
+  selection,
   className,
   style,
   children,
 }: ThemeProviderProps): React.ReactElement {
   const ref = useRef<HTMLDivElement>(null);
-  const effectiveMode = mode ?? theme.defaultMode;
+  const axes = themeAxes(theme);
+  const full = fullSelection(axes, selection);
+  // Keyed on the selection's content: callers pass a fresh object every render.
+  const key = selectionKey(axes, full);
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ theme, mode: effectiveMode, resolved: resolveTheme(theme, effectiveMode) }),
-    [theme, effectiveMode],
+    () => ({ theme, selection: full, resolved: resolveTheme(theme, full) }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [theme, key],
   );
 
   useLayoutEffect(() => {
-    if (ref.current) applyTheme(ref.current, theme, effectiveMode);
-  }, [theme, effectiveMode]);
+    if (ref.current) applyTheme(ref.current, theme, value.selection);
+  }, [theme, value]);
 
+  const attrs = Object.fromEntries(Object.keys(axes).map((a) => [`data-wzl-${a}`, full[a]]));
   return (
     <ThemeContext.Provider value={value}>
-      <div
-        ref={ref}
-        className={className}
-        style={style}
-        data-wzl-theme={theme.name}
-        data-wzl-mode={effectiveMode}
-      >
+      <div ref={ref} className={className} style={style} data-wzl-theme={theme.name} {...attrs}>
         {children}
       </div>
     </ThemeContext.Provider>

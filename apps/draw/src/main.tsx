@@ -80,7 +80,7 @@ function Root() {
   return (
     <ColorModeProvider>
       {(mode) => (
-        <ThemeProvider theme={drawTheme} mode={mode}>
+        <ThemeProvider theme={drawTheme} selection={{ mode }}>
           <Suspense fallback={null}>{surface}</Suspense>
         </ThemeProvider>
       )}

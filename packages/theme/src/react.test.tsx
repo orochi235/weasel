@@ -5,14 +5,14 @@ import { ThemeProvider, useTheme } from './react';
 import { defineTheme } from './theme';
 
 function Probe(): React.ReactElement {
-  const { resolved, mode, theme } = useTheme();
-  return <span data-testid="p">{`${theme.name}/${mode}/${resolved['--wzl-surface']}`}</span>;
+  const { resolved, selection, theme } = useTheme();
+  return <span data-testid="p">{`${theme.name}/${selection.mode}/${resolved['--wzl-surface']}`}</span>;
 }
 
 describe('ThemeProvider', () => {
   it('provides the resolved theme to descendants', () => {
     render(
-      <ThemeProvider mode="light">
+      <ThemeProvider selection={{ mode: 'light' }}>
         <Probe />
       </ThemeProvider>,
     );
@@ -21,7 +21,7 @@ describe('ThemeProvider', () => {
 
   it('applies to its own wrapper element', () => {
     const { container } = render(
-      <ThemeProvider mode="light">
+      <ThemeProvider selection={{ mode: 'light' }}>
         <span />
       </ThemeProvider>,
     );
@@ -30,9 +30,9 @@ describe('ThemeProvider', () => {
   });
 
   it('carries a custom theme through', () => {
-    const acme = defineTheme({ name: 'acme', tokens: { surface: '#123456' }, modes: {} });
+    const acme = defineTheme({ name: 'acme', pins: { surface: '#123456' } });
     render(
-      <ThemeProvider theme={acme} mode="dark">
+      <ThemeProvider theme={acme} selection={{ mode: 'dark' }}>
         <Probe />
       </ThemeProvider>,
     );

@@ -116,16 +116,12 @@ this rule governs the consumer boundary, not kit internals.
 
 ## Design tokens
 
-`--wzl-*` tokens are generated. Edit `packages/theme/tokens/<theme>/*.json`
-(DTCG) and run `npm run gen:tokens -w @weasel-js/theme`; never edit
+`--wzl-*` tokens are generated. Edit `packages/theme/themes/<theme>.json`
+(a theme definition) and run `npm run gen:tokens -w @weasel-js/theme`; never edit
 `packages/theme/src/generated/`. A determinism test fails CI if the committed
 output doesn't match what the generator produces from the source.
 
-Token names are flat leaf keys inside `$type` groups — `color.fg-muted` becomes
-`--wzl-fg-muted`. The type group carries `$type` and contributes nothing to the
-name, because `--wzl-accent` and `--wzl-accent-base` are both real tokens and
-DTCG forbids a token that is also a group.
-
-Two things DTCG can't express are namespaced `$extensions`: alpha-over-alias
-(`com.weasel.alpha`, which emits `color-mix()` in CSS and a computed `rgba()` in
-JS) and modes (sibling token sets under `modes/`).
+Token names are the definition's keys — `fg-muted` becomes `--wzl-fg-muted`, and
+a reference is written `{fg-muted}`. A value that differs per axis is written
+`{ by: 'mode', dark: …, light: … }`; an `alpha` on a reference emits
+`color-mix()` in CSS and a computed `rgba()` in JS.

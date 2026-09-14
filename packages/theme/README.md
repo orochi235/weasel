@@ -1,7 +1,7 @@
 # @weasel-js/theme
 
-Design tokens shared by weasel-ui and weasel-hud — generated from a DTCG
-source into CSS custom properties plus a parallel TS export.
+Design tokens shared by weasel-ui and weasel-hud — generated from a theme
+definition into CSS custom properties plus a parallel TS export.
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
 scene-graph canvas kit for React. See the
@@ -38,11 +38,13 @@ import { defineTheme, applyTheme } from '@weasel-js/theme';
 
 const acme = defineTheme({
   name: 'acme',
-  tokens: { 'accent-base': '#ff3366' },   // aliases rebase onto it
-  modes: { light: { surface: '#fffdf8' } },
+  pins: {
+    'accent-base': '#ff3366',                    // aliases rebase onto it
+    surface: { by: 'mode', light: '#fffdf8' },   // dark keeps the base's
+  },
 });
 
-applyTheme(document.documentElement, acme, 'light');
+applyTheme(document.documentElement, acme, { mode: 'light' });
 ```
 
 `extends` defaults to the built-in theme, so a partial theme can never be
@@ -54,14 +56,14 @@ Themes exported from a design tool load through `loadDTCG(json)` —
 `interstellarTheme` in `@weasel-js/labkit` is a worked example, authored as a
 DTCG document and loaded at import time.
 
-In React, `<ThemeProvider theme={acme} mode="light">` from
+In React, `<ThemeProvider theme={acme} selection={{ mode: 'light' }}>` from
 `@weasel-js/theme/react` does the same and publishes the resolved record via
 `useTheme()` — which is how canvas and WebGL surfaces stay in sync without
 reading the DOM.
 
 ## Editing tokens
 
-`src/generated/` is generated — never edit it. Change `tokens/weasel/*.json`,
+`src/generated/` is generated — never edit it. Change `themes/weasel.json`,
 then:
 
 ```sh
@@ -70,10 +72,8 @@ npm run gen:tokens -w @weasel-js/theme
 
 CI re-runs the generator and fails if the committed output differs.
 
-Token names are flat leaf keys inside `$type` groups: `color.fg-muted` becomes
-`--wzl-fg-muted`. The group carries `$type` and contributes nothing to the name,
-because `--wzl-accent` and `--wzl-accent-base` are both real tokens and DTCG
-forbids a token that is also a group.
+Token names are the definition's keys: `fg-muted` becomes `--wzl-fg-muted`, and
+a reference is written `{fg-muted}`.
 
 ## Licenses
 

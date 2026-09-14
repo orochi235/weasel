@@ -178,7 +178,7 @@ function LabFallback({
 }: Pick<LabBaseProps, 'title' | 'mode' | 'pages' | 'path'>) {
   const resolvedMode = useResolvedMode(mode ?? 'auto');
   return (
-    <ThemeProvider theme={interstellarTheme} mode={resolvedMode} className="lk-lab">
+    <ThemeProvider theme={interstellarTheme} selection={{ mode: resolvedMode }} className="lk-lab">
       <LabShell
         title={title ?? 'Labkit'}
         mode={mode}
@@ -483,7 +483,7 @@ function LabRuntime({
           <LabContext.Provider value={contextValue}>
             <ThemeProvider
               theme={interstellarTheme}
-              mode={resolvedMode}
+              selection={{ mode: resolvedMode }}
               className="lk-lab"
               style={backdropStyle}
             >

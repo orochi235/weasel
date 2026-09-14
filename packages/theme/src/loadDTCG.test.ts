@@ -11,8 +11,8 @@ describe('loadDTCG', () => {
       modes: { dark: { color: { $type: 'color', surface: { $value: '#000000' } } } },
     });
     expect(theme.name).toBe('acme');
-    expect(resolveTheme(theme, 'dark')['--wzl-accent']).toBe('#ff0000');
-    expect(resolveTheme(theme, 'dark')['--wzl-surface']).toBe('#000000');
+    expect(resolveTheme(theme, { mode: 'dark' })['--wzl-accent']).toBe('#ff0000');
+    expect(resolveTheme(theme, { mode: 'dark' })['--wzl-surface']).toBe('#000000');
   });
 
   it('throws on a document with no name', () => {
