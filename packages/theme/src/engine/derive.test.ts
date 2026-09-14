@@ -86,6 +86,77 @@ describe('derive', () => {
     expect(Object.keys(tokens)).toEqual(['surface']);
   });
 
+  it('throws on a reference that dangles only at this selection', () => {
+    const def = {
+      name: 'x',
+      axes: T.axes,
+      ramps: { gray: { ...GRAY, steps: { by: 'mode', dark: ['50', '900'], light: ['50'] } } },
+      pins: { a: { value: '{gray-900}', type: 'color' } },
+    } as unknown as ThemeDefinition;
+    expect(derive(def).issues).toEqual([]);
+    expect(() => derive(def, { mode: 'light' })).toThrow(/gray-900/);
+  });
+
+  it('does not report a pin untyped when what it references is already reported missing', () => {
+    const { issues } = derive(
+      {
+        name: 'x',
+        axes: T.axes,
+        ramps: { gray: GRAY },
+        semantics: { surface: { ramp: 'gray', step: { by: 'mode', dark: '900' } } },
+        components: { c: { by: 'mode', dark: '1px' } },
+        pins: { p: '{surface}', q: '{c}' },
+      },
+      { mode: 'light' },
+    );
+    expect(issues).toEqual([
+      { kind: 'missing-axis-value', path: 'semantics.surface.step', axis: 'mode', value: 'light' },
+      { kind: 'missing-axis-value', path: 'components.c', axis: 'mode', value: 'light' },
+    ]);
+  });
+
+  it('types a pin over a ref semantic from what the ref reaches, and records that type as generated', () => {
+    const over = (pin: string) =>
+      derive({ name: 'x', semantics: { h: { ref: 'tb' } }, components: { tb: { value: '28px', type: 'dimension' } }, pins: { h: pin } });
+    const literal = over('30px');
+    expect(literal.issues).toEqual([]);
+    expect(literal.tokens.h.type).toBe('dimension');
+    expect(literal.provenance.h.generated?.type).toBe('dimension');
+    expect(over('{tb}').provenance.h.generated?.type).toBe('dimension');
+  });
+
+  it('types a long chain of references', () => {
+    const pins: Record<string, string> = { p5000: '1px' };
+    for (let i = 0; i < 5000; i++) pins[`p${i}`] = `{p${i + 1}}`;
+    const { tokens, issues } = derive({ name: 'x', pins: { ...pins, p5000: { value: '1px', type: 'dimension' } } });
+    expect(issues).toEqual([]);
+    expect(tokens.p0.type).toBe('dimension');
+  });
+
+  it('settles only rule parameters, leaving step names and descriptions as written', () => {
+    const { tokens, issues } = derive({
+      name: 'x',
+      ramps: { gray: { ...GRAY, steps: ['by', '900'], description: '{seeds.nope}', describe: { by: '{seeds.nope}' } } },
+    });
+    expect(issues).toEqual([]);
+    expect(Object.keys(tokens)).toEqual(['gray-by', 'gray-900']);
+    expect(tokens['gray-by'].description).toBe('{seeds.nope}');
+  });
+
+  it('reports an entry that is not an object', () => {
+    const loaded: ThemeDefinition = JSON.parse(
+      '{ "name": "x", "ramps": { "gray": null, "blue": 5 }, "scales": { "space": "abc" }, "semantics": { "s": null } }',
+    );
+    const { tokens, issues } = derive(loaded);
+    expect(issues).toEqual([
+      { kind: 'invalid', path: 'ramps.gray', message: 'expected an object' },
+      { kind: 'invalid', path: 'ramps.blue', message: 'expected an object' },
+      { kind: 'invalid', path: 'scales.space', message: 'expected an object' },
+      { kind: 'invalid', path: 'semantics.s', message: 'expected an object' },
+    ]);
+    expect(tokens).toEqual({});
+  });
+
   it('throws on a reference cycle', () => {
     expect(() => derive({ name: 'x', pins: { a: { value: '{b}', type: 'color' }, b: { value: '{a}', type: 'color' } } })).toThrow(/cycle/);
   });
