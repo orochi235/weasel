@@ -41,6 +41,17 @@ envelope gains `lightBias` (`sin(πt) + lightBias·(1−t) + darkBias·t`, built
 `f9f41e2a`), and a theme's own ramps and scales shadow the pins it inherits, so
 a theme extending weasel can show its generated ramps (plan Task 7).
 
+**Open for Mike: should an anchor set a ramp's chroma peak directly?** Today
+an anchor sets `peak = anchor C · max / e`, where `e` is the envelope at the
+anchor's position, so the envelope passes through the anchor's chroma. With an
+anchor on an end step and that end's bias at exactly 0, `e = 0` and phase 1's
+guard falls back to `peak = anchor C`; as the bias moves off 0, `e` is tiny and
+the peak jumps to gamut-clipped color. A 0.1 floor on `e` was tried and taken
+back out (plan Tasks 21, 23): it turned a gray ramp anchored on its darkest step
+blue. `peak = anchor C` at every position removes the jump, and changes any
+anchor placed away from the envelope's peak. weasel's only anchor is mid-ramp,
+so neither choice moves what ships.
+
 **The dev server for this worktree runs on port 5187**, not 5177: the primary
 checkout's `dev:theme-editor` owns 5177, and Playwright's visual config also
 reuses 5177. `npx vite --config apps/theme-editor/vite.config.ts --port 5187 --strictPort`.
