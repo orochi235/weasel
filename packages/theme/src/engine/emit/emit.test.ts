@@ -268,4 +268,17 @@ describe('emitThemes', () => {
     expect(text).toContain('export const BAKED_THEMES');
     expect(text).toMatch(/export type TokenName =\n {2}\| '--wzl-gap'/);
   });
+
+  it('takes a selection a child’s by leaves out from the parent, as resolveTheme does', () => {
+    const parent: ThemeDefinition = { name: 'p', axes: MODE, pins: { backdrop: { value: 'none', type: 'gradient' } } };
+    const kid: ThemeDefinition = { name: 'k', extends: 'p', pins: { backdrop: { by: 'mode', dark: { value: 'url(a.png)', type: 'gradient' } } } };
+    const l = (n: string) => ({ p: parent, k: kid })[n];
+    const text = emitThemes([parent, kid].map((definition) => ({ definition, baked: bake(definition, l) })));
+    const selection = (key: string) => {
+      const from = text.indexOf(`'${key}': {`, text.indexOf('"k": {'));
+      return text.slice(from, text.indexOf('},', from));
+    };
+    expect(selection('mode=dark')).toContain(`'--wzl-backdrop': "url(a.png)"`);
+    expect(selection('mode=light')).toContain(`'--wzl-backdrop': "none"`);
+  });
 });

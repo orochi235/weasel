@@ -1,6 +1,7 @@
-import { enumerateSelections, pickAll, selectionKey } from '../../axes';
+import { enumerateSelections, pickAll, selectionKey, type Selection } from '../../axes';
 import type { ThemeDefinition } from '../../definition';
 import { resolveTokens } from '../../dtcg/resolve';
+import type { FlatTokens } from '../../dtcg/types';
 import type { BakedTheme } from '../bake';
 
 export interface ThemesInput {
@@ -8,11 +9,16 @@ export interface ThemesInput {
   readonly baked: BakedTheme;
 }
 
-/** A child's baked tokens over its parent's, so every selection resolves completely. */
-function flatten(baked: BakedTheme, byName: ReadonlyMap<string, BakedTheme>): BakedTheme['tokens'] {
+/** `baked` and every theme above it, root first. */
+function chainOf(baked: BakedTheme, byName: ReadonlyMap<string, BakedTheme>): BakedTheme[] {
   const parent = baked.extends ? byName.get(baked.extends) : undefined;
   if (baked.extends && !parent) throw new Error(`Theme "${baked.name}" extends "${baked.extends}", which is not in themes/`);
-  return { ...(parent ? flatten(parent, byName) : {}), ...baked.tokens };
+  return [...(parent ? chainOf(parent, byName) : []), baked];
+}
+
+/** Each token from the nearest theme in the chain that has it at `sel`, as `resolveTheme` merges them. */
+function tokensAt(chain: readonly BakedTheme[], sel: Selection): FlatTokens {
+  return Object.assign({}, ...chain.map((t) => pickAll(t.tokens, sel)));
 }
 
 export function emitThemes(themes: readonly ThemesInput[]): string {
@@ -20,9 +26,9 @@ export function emitThemes(themes: readonly ThemesInput[]): string {
   const names = new Set<string>();
 
   const entries = themes.map(({ baked }) => {
-    const tokens = flatten(baked, byName);
+    const chain = chainOf(baked, byName);
     const selections = enumerateSelections(baked.axes).map((sel) => {
-      const resolved = resolveTokens(pickAll(tokens, sel));
+      const resolved = resolveTokens(tokensAt(chain, sel));
       for (const n of Object.keys(resolved)) names.add(`--wzl-${n}`);
       const body = Object.entries(resolved).map(([n, v]) => `        '--wzl-${n}': ${JSON.stringify(v)},`).join('\n');
       return `      '${selectionKey(baked.axes, sel)}': {\n${body}\n      },`;
