@@ -3,7 +3,7 @@ import type { ThemeDefinition } from '../definition';
 
 export type Lookup = (name: string) => ThemeDefinition | undefined;
 
-const LAYERS = ['axes', 'seeds', 'ramps', 'scales', 'semantics', 'components', 'pins'] as const;
+const LAYERS = ['seeds', 'ramps', 'scales', 'semantics', 'components', 'pins'] as const;
 
 /** The definition with its whole `extends` chain folded in, child entries winning. */
 export function mergeChain(def: ThemeDefinition, lookup?: Lookup, seen: ReadonlySet<string> = new Set()): ThemeDefinition {

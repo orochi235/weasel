@@ -53,7 +53,7 @@ function scanSteps(entry: unknown, into: Node): void {
   }
 }
 
-/** Node key for a ramp's step list. Token names cannot contain a dot, so it never collides with one. */
+/** Node key for a ramp's step list. `derive` rejects a token name containing a dot, so it never collides with one. */
 const stepsKey = (ramp: string) => `ramps.${ramp}`;
 
 /** The non-`by` values under a possibly nested `by` object. */
@@ -175,6 +175,6 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
   }
 
   const result: Record<string, AxisDependency> = {};
-  for (const name of nodes.keys()) if (!name.includes('.')) result[name] ={ own: sorted(ownSets.get(name)!), all: sorted(all.get(name)!) };
+  for (const name of nodes.keys()) if (!name.includes('.')) result[name] = { own: sorted(ownSets.get(name)!), all: sorted(all.get(name)!) };
   return result;
 }

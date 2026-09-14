@@ -266,11 +266,27 @@ function inferTypes(tokens: Record<string, RawToken>, provenance: Record<string,
 const isPinObject = (v: PinValue): v is PinObject =>
   typeof v === 'object' && v !== null && !Array.isArray(v) && 'value' in v;
 
+const NAMED_LAYERS = ['ramps', 'scales', 'semantics', 'components', 'pins'] as const;
+const DOTTED = (name: string) => `"${name}" cannot name a token: a reference reads a dot as a group`;
+
+function withoutDottedNames(def: ThemeDefinition, issues: Issue[]): ThemeDefinition {
+  let out = def;
+  for (const layer of NAMED_LAYERS) {
+    const entries = def[layer];
+    if (!entries || !Object.keys(entries).some((n) => n.includes('.'))) continue;
+    for (const n of Object.keys(entries)) {
+      if (n.includes('.')) issues.push({ kind: 'invalid', path: `${layer}.${n}`, message: DOTTED(n) });
+    }
+    out = { ...out, [layer]: Object.fromEntries(Object.entries(entries).filter(([n]) => !n.includes('.'))) };
+  }
+  return out;
+}
+
 /** Derive every token of `definition` for one selection. Unmet rules are reported in `issues`; cycles and dangling references throw. */
 export function derive(definition: ThemeDefinition, selection: Selection = {}, lookup?: Lookup): DeriveResult {
-  const def = mergeChain(definition, lookup);
-  const sel = fullSelection(def.axes ?? {}, selection);
   const issues: Issue[] = [];
+  const def = withoutDottedNames(mergeChain(definition, lookup), issues);
+  const sel = fullSelection(def.axes ?? {}, selection);
   const seeds: Record<string, number | string> = {};
   for (const [k, v] of Object.entries(def.seeds ?? {})) {
     const picked = pick(v, sel);
@@ -328,6 +344,11 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
     if (!steps && settled) issues.push({ kind: 'invalid', path: `${path}.steps`, message: 'expected a list of step names' });
     if (steps?.includes('by')) {
       issues.push({ kind: 'invalid', path: `${path}.steps`, message: '"by" is reserved and cannot name a step' });
+      return { ok: false, steps };
+    }
+    const dotted = steps?.find((s) => s.includes('.'));
+    if (dotted !== undefined) {
+      issues.push({ kind: 'invalid', path: `${path}.steps`, message: DOTTED(dotted) });
       return { ok: false, steps };
     }
     return settled && steps ? { ok: true, r, steps } : { ok: false, steps };

@@ -299,6 +299,20 @@ describe('derive', () => {
     expect(tokens['gray-50'].value).not.toBe('#fff');
   });
 
+  it('reports a token name containing a dot and produces nothing under it', () => {
+    const { tokens, issues } = derive({
+      name: 'x',
+      ramps: { 'g.r': GRAY },
+      scales: { space: { steps: ['a.b'], base: 4, step: 4 } },
+      semantics: { 's.x': { value: '#ffffff', type: 'color' } },
+      components: { 'c.x': { value: '1px', type: 'dimension' } },
+      pins: { 'p.x': { value: '2px', type: 'dimension' } },
+    });
+    expect(Object.keys(tokens).filter((n) => n.includes('.'))).toEqual([]);
+    const paths = issues.filter((i) => i.kind === 'invalid').map((i) => (i as { path: string }).path);
+    expect(paths).toEqual(expect.arrayContaining(['ramps.g.r', 'scales.space.steps', 'semantics.s.x', 'components.c.x', 'pins.p.x']));
+  });
+
   it('reports a seed missing its axis value once, not again where it is read', () => {
     const { issues } = derive(
       { name: 'x', axes: T.axes, seeds: { unit: { by: 'mode', dark: 4 } }, scales: { space: { steps: ['sm'], base: '{seeds.unit}', step: 4 } } },
