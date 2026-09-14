@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { LightnessRampDef, ThemeDefinition } from '../definition';
 import { toLch } from './color/oklch';
@@ -380,4 +383,14 @@ describe('derive', () => {
     expect(C(biased, 'soft')).toBeGreaterThan(0.02);
     expect(C(biased, 'strong')).toBeGreaterThan(0.02);
   });
+});
+
+it("generates a child's own gray over weasel's pinned one", () => {
+  const themes = resolve(dirname(fileURLToPath(import.meta.url)), '../../themes');
+  const weasel = JSON.parse(readFileSync(resolve(themes, 'weasel.json'), 'utf8')) as ThemeDefinition;
+  const child: ThemeDefinition = { name: 'c', extends: 'weasel', ramps: { gray: weasel.ramps!.gray } };
+  const result = derive(child, { mode: 'dark' }, (n) => (n === 'weasel' ? weasel : undefined));
+  expect(result.tokens['gray-800'].value).toBe('#1a1c21');
+  expect(result.provenance['gray-800'].pinned).toBe(false);
+  expect(result.tokens['accent-base'].value).toBe(derive(weasel, { mode: 'dark' }).tokens['accent-base'].value);
 });
