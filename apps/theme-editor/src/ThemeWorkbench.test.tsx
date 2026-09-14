@@ -1,0 +1,61 @@
+import { cleanup, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ThemeWorkbench, type WorkbenchProps } from './ThemeWorkbench';
+import type { ThemeApi } from './theme/api';
+import { weasel } from './theme/fixtures';
+import type { PutResult, StoredTheme } from './theme/store';
+
+const stored: StoredTheme = { name: 'weasel', hash: 'h1', emits: true, definition: weasel };
+const apiWith = (put: ThemeApi['put'] = vi.fn()): ThemeApi => ({ list: async () => [stored], get: async () => stored, put });
+const edited = { ...weasel, description: 'edited' };
+
+function renderBench(overrides: Partial<WorkbenchProps> = {}): WorkbenchProps {
+  const props: WorkbenchProps = {
+    api: apiWith(),
+    themes: [stored],
+    stored,
+    start: { definition: weasel, baseHash: 'h1' },
+    onPick: vi.fn(),
+    onSaved: vi.fn(),
+    onReload: vi.fn(),
+    ...overrides,
+  };
+  render(<ThemeWorkbench {...props} />);
+  return props;
+}
+
+describe('<ThemeWorkbench>', () => {
+  afterEach(cleanup);
+
+  it('reports how many own tokens a pin overrides, and each layer in the rail', () => {
+    renderBench();
+    expect(screen.getByText('23 of 100 overridden')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Ramps/ })).toHaveTextContent('23 pinned');
+  });
+
+  it('holds Save until the draft differs from what is on disk', () => {
+    renderBench();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+  });
+
+  it('saves against the hash the draft began at, then reads clean', async () => {
+    const put = vi.fn(async () => ({ status: 'saved', hash: 'h2', issues: [], regenerated: true, problems: [] }) as PutResult);
+    const props = renderBench({ api: apiWith(put), start: { definition: edited, baseHash: 'h1' } });
+    await userEvent.click(screen.getByRole('button', { name: 'Save, with unsaved changes' }));
+    expect(put).toHaveBeenCalledWith('weasel', edited, 'h1');
+    expect(await screen.findByText(/^Saved\./)).toBeInTheDocument();
+    expect(props.onSaved).toHaveBeenCalledWith({ ...stored, hash: 'h2', definition: edited });
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+  });
+
+  it('offers to reload when the file moved on since the draft began', async () => {
+    const put = vi.fn(async () => ({ status: 'conflict', hash: 'h9' }) as PutResult);
+    const props = renderBench({ api: apiWith(put), start: { definition: edited, baseHash: 'h0' } });
+    await userEvent.click(screen.getByRole('button', { name: 'Save, with unsaved changes' }));
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('changed on disk');
+    await userEvent.click(within(alert).getByRole('button', { name: 'Reload from disk' }));
+    expect(props.onReload).toHaveBeenCalled();
+  });
+});
