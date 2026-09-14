@@ -227,7 +227,9 @@ converted by a script built on the DTCG import:
 - `ramps.gray` gets the lightness parameters that generate the proposed ramp
   (`#f5f6f7 #e0e1e4 #c6c8cb #a7a9ae #85888e #64676f #464a51 #2f3137 #1c1e22
   #0c0e12`: L 0.973 → 0.163, `curve` 0.41, hue 266°, chroma `peak` 0.0116
-  with `darkBias` 0.84, step spread 1.79× against the shipping ramp's 3.61×).
+  with `darkBias` 0.84, step spread 1.75× against the shipping ramp's 3.61×,
+  each the largest step in L over the smallest, measured from the engine
+  2026-09-14).
   The proposal was measured by hand, not generated; these parameters were
   fitted to it on 2026-09-13 and land within 0.0081 in L and 0.0026 in C of
   every step. All ten steps are pinned to today's values, so nothing
