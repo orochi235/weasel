@@ -61,4 +61,22 @@ describe('check', () => {
     expect(tokens.border.value).toBe('{gray-700}');
     expect(issues.flatMap((i) => (i.kind === 'check-failed' ? [i.token] : []))).toEqual(['border']);
   });
+
+  const failedChecks = (pins: Record<string, string>) =>
+    derive({ ...W, pins: { ...W.pins, ...pins } }, { mode: 'dark' }).issues.flatMap((i) => (i.kind === 'check-failed' ? [i.token] : []));
+
+  it('audits the pinned value when the rule passes and the pin fails', () => {
+    expect(failedChecks({ fg: '#25272c' })).toEqual(['fg', 'border']);
+  });
+
+  it('reports nothing when the rule fails and the pin passes', () => {
+    expect(failedChecks({ border: '#9ea1a8' })).toEqual([]);
+  });
+});
+
+describe('alpha pins', () => {
+  it('are not solid colors to measure contrast against', () => {
+    const { issues } = derive({ ...W, pins: { ...W.pins, surface: { value: '#181a1e', alpha: 0.5 } } }, { mode: 'dark' });
+    expect(issues).toContainEqual({ kind: 'invalid', path: 'semantics.border-strong', message: 'contrast needs solid colors on both sides' });
+  });
 });

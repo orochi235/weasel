@@ -1,5 +1,5 @@
 import { pick, type Selection, type Varying } from '../axes';
-import type { SemanticRule } from '../definition';
+import type { PinObject, SemanticRule } from '../definition';
 import type { RawToken, TokenValue } from '../dtcg/types';
 import { contrast, toLch } from './color/oklch';
 import type { Issue } from './types';
@@ -13,8 +13,8 @@ export interface SemanticContext {
   readonly tokens: Readonly<Record<string, RawToken>>;
   /** Ramp name → its steps, in order. */
   readonly ramps: Readonly<Record<string, readonly string[]>>;
-  /** The value a pin will give this token for the selection, if one does. Rules that measure color read final colors, not generated ones. */
-  readonly pinned: (name: string) => TokenValue | undefined;
+  /** The pin this token gets for the selection, if one does. Rules that measure color read final colors, not generated ones. */
+  readonly pinned: (name: string) => PinObject | undefined;
   readonly issues: Issue[];
 }
 
@@ -49,7 +49,7 @@ export function deriveSemantics(
       derived = deriveOne(name, picked.value, ctx, get, color);
       const check = picked.value.check;
       if (derived && check) {
-        const self = color(derived.token.value);
+        const self = solid(ctx.pinned(name) ?? derived.token);
         for (const a of check.against) {
           const other = color(`{${a}}`);
           if (!self || !other) {
@@ -67,17 +67,16 @@ export function deriveSemantics(
     return derived;
   };
 
-  /** A token's final solid color as hex, following references; undefined for anything else. */
+  /** A value's final solid color as hex, following references through pins; undefined for anything else. */
   const color = (value: TokenValue | undefined, depth = 0): string | undefined => {
     if (typeof value !== 'string' || depth > 32) return undefined;
     const v = value.trim();
     const m = TOKEN_REF.exec(v);
     if (!m) return HEX.test(v) ? v.toLowerCase() : undefined;
-    const ref = m[1];
-    const token = ctx.tokens[ref] ?? get(ref)?.token;
-    if (token?.alpha !== undefined) return undefined;
-    return color(ctx.pinned(ref) ?? token?.value, depth + 1);
+    return solid(ctx.pinned(m[1]) ?? ctx.tokens[m[1]] ?? get(m[1])?.token, depth + 1);
   };
+  const solid = (t: { readonly value: TokenValue; readonly alpha?: number } | undefined, depth = 0) =>
+    t && t.alpha === undefined ? color(t.value, depth) : undefined;
 
   for (const name of Object.keys(rules)) get(name);
   return new Map(Object.keys(rules).filter((n) => done.has(n)).map((n) => [n, done.get(n)!]));

@@ -312,11 +312,11 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
     }
   }
 
-  const pinned = (name: string): TokenValue | undefined => {
+  const pinned = (name: string): PinObject | undefined => {
     const v = def.pins?.[name];
     const picked = v === undefined ? undefined : pick(v, sel);
     if (!picked?.ok) return undefined;
-    return isPinObject(picked.value) ? picked.value.value : picked.value;
+    return isPinObject(picked.value) ? picked.value : { value: picked.value };
   };
   for (const [name, d] of deriveSemantics(def.semantics ?? {}, { sel, tokens, ramps: rampSteps, pinned, issues })) {
     put(name, d.token, 'semantics', d.rule, `semantics.${name}`);
