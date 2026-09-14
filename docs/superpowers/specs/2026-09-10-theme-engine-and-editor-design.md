@@ -179,10 +179,16 @@ tests that use a crayon take its values as literals.
 `scripts/build-tokens.ts` reads `packages/theme/themes/*.json` instead of the
 DTCG directories and calls the engine's emitters:
 
-- **`tokens.css`.** The default theme gets `:root`; every other theme gets only
-  `[data-wzl-theme]` blocks, so two themes never fight over `:root`. A token
-  with no axis dependencies appears in `:root` only. A token that depends on one
-  axis also appears in a block per value of it:
+- **`tokens.css`.** The default theme gets `:root`. Every other theme gets only
+  `[data-wzl-theme]` blocks, holding each token whose value, or whose value
+  with every reference followed, differs from the default theme's at some
+  selection. Each such token is declared on the union of both themes' axes for
+  it, and every theme, the default included, redeclares under its own name any
+  token another theme changes, so a nested theme resets. An element must carry
+  the theme attribute and every axis attribute its tokens depend on;
+  `applyTheme` stamps all of them. A token with no axis dependencies appears
+  in `:root` only. A token that depends on one axis also appears in a block
+  per value of it:
   `[data-wzl-theme='t'][data-wzl-<axis>='<v>'],\n[data-wzl-<axis>='<v>']`. A
   token that depends on two axes gets the compound blocks for their cross
   product. `:root` lists tokens in layer order (ramps, scales, semantics,
