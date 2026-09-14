@@ -365,18 +365,26 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
     }
   }
 
+  /** `obj` with a whole-value `{seeds.name}` replaced by the seed; undefined when the seed has no value here. Reports an undeclared seed when given a path. */
+  const seeded = (obj: PinObject, path?: string): PinObject | undefined => {
+    const m = typeof obj.value === 'string' ? SEED_REF.exec(obj.value.trim()) : null;
+    if (!m) return obj;
+    if (has(seeds, m[1])) return { ...obj, value: seeds[m[1]] };
+    if (path !== undefined && !ctx.declaredSeeds.has(m[1])) issues.push({ kind: 'invalid', path, message: `unknown seed "${m[1]}"` });
+    return undefined;
+  };
   const pinned = (name: string): PinObject | undefined => {
     const v = def.pins?.[name];
     const picked = v === undefined ? undefined : pick(v, sel);
     if (!picked?.ok) return undefined;
-    return isPinObject(picked.value) ? picked.value : { value: picked.value };
+    return seeded(isPinObject(picked.value) ? picked.value : { value: picked.value });
   };
   const semantics = def.semantics ?? {};
   const components = def.components ?? {};
   const component = (name: string): PinObject | undefined => {
     const picked = has(components, name) ? pick(components[name], sel) : undefined;
     if (!picked?.ok) return undefined;
-    return isPinObject(picked.value) ? picked.value : { value: picked.value };
+    return seeded(isPinObject(picked.value) ? picked.value : { value: picked.value });
   };
   const known = (name: string) =>
     has(tokens, name) || failed.has(name) || has(semantics, name) || has(components, name) || has(def.pins ?? {}, name);
@@ -393,7 +401,8 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
       issues.push({ kind: 'missing-axis-value', path, axis: picked.axis, value: picked.value });
       return undefined;
     }
-    const obj: PinObject = isPinObject(picked.value) ? picked.value : { value: picked.value };
+    const obj = seeded(isPinObject(picked.value) ? picked.value : { value: picked.value }, path);
+    if (!obj) return undefined;
     return { type: obj.type ?? prior?.type ?? UNTYPED, value: obj.value, alpha: obj.alpha, description: obj.description ?? prior?.description };
   };
 

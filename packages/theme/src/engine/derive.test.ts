@@ -312,6 +312,39 @@ describe('derive', () => {
     expect(issues).toEqual([{ kind: 'invalid', path: 'scales.space.base', message: 'unknown seed "unit"' }]);
   });
 
+  it('resolves a whole-value seed reference in a pin or a component, per selection', () => {
+    const def: ThemeDefinition = {
+      name: 'x',
+      axes: T.axes,
+      seeds: { brand: '#112233', bg: { by: 'mode', dark: '#000000', light: '#ffffff' } },
+      components: { chip: { value: '{seeds.brand}', type: 'color' } },
+      pins: { brand: '{seeds.brand}', ground: { value: '{seeds.bg}', type: 'color' } },
+    };
+    const dark = derive(def);
+    expect(dark.issues).toEqual([{ kind: 'untyped-pin', token: 'brand' }]);
+    expect(dark.tokens.brand.value).toBe('#112233');
+    expect(dark.tokens.chip.value).toBe('#112233');
+    expect(derive(def, { mode: 'light' }).tokens.ground.value).toBe('#ffffff');
+  });
+
+  it('measures contrast against a pin that names a seed', () => {
+    const { tokens, issues } = derive({
+      name: 'x',
+      seeds: { bg: '#000000' },
+      ramps: { gray: GRAY },
+      semantics: { fg: { ramp: 'gray', contrast: { min: 4.5, against: ['ground'] } } },
+      pins: { ground: { value: '{seeds.bg}', type: 'color' } },
+    });
+    expect(issues).toEqual([]);
+    expect(tokens.fg.value).toBe('{gray-50}');
+  });
+
+  it('reports a seed nothing declares in a pin', () => {
+    const { tokens, issues } = derive({ name: 'x', pins: { brand: { value: '{seeds.nope}', type: 'color' } } });
+    expect(issues).toEqual([{ kind: 'invalid', path: 'pins.brand', message: 'unknown seed "nope"' }]);
+    expect(tokens.brand).toBeUndefined();
+  });
+
   it('reports a categorical ramp whose gates cannot be met', () => {
     const steps = Array.from({ length: 12 }, (_, i) => `c${i}`);
     const { issues } = derive({
