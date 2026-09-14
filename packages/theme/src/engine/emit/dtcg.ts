@@ -1,9 +1,11 @@
 import { isByAxis, type Varying } from '../../axes';
-import { ALPHA_EXT, type RawToken } from '../../dtcg/types';
+import { ALPHA_EXT, type RawToken, type TokenValue } from '../../dtcg/types';
 import { themeAxes } from '../../resolveTheme';
 import type { Theme } from '../../theme';
 
 type Group = Record<string, unknown> & { $type: string };
+
+const REF = /^\{([^}.]+)\}$/;
 
 export interface DtcgExport {
   readonly name: string;
@@ -21,13 +23,28 @@ const modeOnly = (theme: string, what: string) => new Error(`DTCG export support
  */
 export function toDTCG(theme: Theme): DtcgExport {
   const axes = themeAxes(theme);
-  const extraAxes = Object.keys(axes).filter((a) => a !== 'mode');
-  if (extraAxes.length > 0) throw modeOnly(`"${theme.name}"`, `also varies by ${extraAxes.join(', ')}`);
+
+  /** The type of the nearest token named `name` in the chain; undefined when no theme has one. */
+  const typeOf = (name: string): string | undefined => {
+    for (let t: Theme | null = theme; t; t = t.extends) {
+      if (!Object.hasOwn(t.tokens, name)) continue;
+      let v: unknown = t.tokens[name];
+      while (isByAxis(v)) v = Object.entries(v).find(([k]) => k !== 'by')?.[1];
+      if (v !== undefined) return (v as RawToken).type;
+    }
+    return undefined;
+  };
+  /** `{name}` → `{type.name}`, the path a DTCG tool resolves. */
+  const alias = (value: TokenValue): TokenValue => {
+    const target = typeof value === 'string' ? REF.exec(value.trim())?.[1] : undefined;
+    const type = target === undefined ? undefined : typeOf(target);
+    return type === undefined ? value : `{${type}.${target}}`;
+  };
 
   const put = (into: Record<string, Group>, name: string, t: RawToken) => {
     into[t.type] ??= { $type: t.type };
     into[t.type][name] = {
-      $value: t.value,
+      $value: alias(t.value),
       ...(t.description ? { $description: t.description } : {}),
       ...(t.alpha !== undefined ? { $extensions: { [ALPHA_EXT]: t.alpha } } : {}),
     };
