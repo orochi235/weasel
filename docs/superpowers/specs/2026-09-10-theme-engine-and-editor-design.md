@@ -1,9 +1,8 @@
 # Theme engine and editor — design
 
-**Status: designed 2026-09-10, reviewed against the tree 2026-09-13, not built.**
-Nothing below exists in the tree yet. Phase 1's plan is
-`docs/superpowers/plans/2026-09-13-theme-engine.md`; phase 2 gets its own plan
-once phase 1 lands. Delete this file when the work merges.
+**Status: phase 1 (the engine) built on branch `theme-engine`, 2026-09-14;
+phase 2 (the editor) not started.** Phase 2 gets its own plan. Delete this file
+when phase 2 merges.
 
 This covers the theme editor at `apps/theme-editor` `#/theme` and the engine in
 `@weasel-js/theme` underneath it. It is written for whoever implements it. The
