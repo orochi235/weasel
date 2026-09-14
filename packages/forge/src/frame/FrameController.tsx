@@ -59,6 +59,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
   const decorators = setup.decorators ?? [];
 
   let initialized = false;
+  let rendered = false;
   let config: unknown;
   let state: unknown = null;
   let globals: Globals = {};
@@ -137,6 +138,10 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
     } catch (error) {
       send(fault('render', error, seq));
       return;
+    }
+    if (!rendered) {
+      rendered = true;
+      send({ type: 'rendered' });
     }
     reportVars();
   };

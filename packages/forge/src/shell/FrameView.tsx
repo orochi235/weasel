@@ -78,6 +78,8 @@ export function FrameView(props: FrameViewProps) {
   const latest = useRef({ ...props, globals, overrides });
   latest.current = { ...props, globals, overrides };
   const [fault, setFault] = useState<Fault | null>(null);
+  // A loaded document stays hidden until its story has rendered, so a new trial never shows the blank page.
+  const [pending, setPending] = useState(true);
 
   const init = (current: Link): void => {
     const { ctx: live, globals: liveGlobals } = latest.current;
@@ -102,6 +104,9 @@ export function FrameView(props: FrameViewProps) {
         if (current.awaiting === key && key === latest.current.descriptionKey) init(current);
         break;
       }
+      case 'rendered':
+        setPending(false);
+        break;
       case 'setConfig':
         // The pins belong to the trial; a story cannot see them, so it cannot set them either.
         if (!isGlobalsPath(msg.path)) live.setConfig(msg.path, msg.value);
@@ -127,6 +132,7 @@ export function FrameView(props: FrameViewProps) {
 
   const onLoad = (): void => {
     closeLink(link);
+    setPending(true);
     const target = iframeRef.current?.contentWindow;
     if (!target) return;
     const { port1, port2 } = new MessageChannel();
@@ -187,6 +193,7 @@ export function FrameView(props: FrameViewProps) {
         src={src}
         title={`${entry.title} / ${entry.name}`}
         onLoad={onLoad}
+        data-pending={pending && !fault ? '' : undefined}
       />
       {fault ? (
         <div className="fg-fault" role="alert">

@@ -129,4 +129,35 @@ describe('Workshop', () => {
     const { container } = render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     expect(await frameSrc(container)).toBe('/frame.html#x--a');
   });
+
+  it('keeps a story frame hidden until the frame reports its first render, so a new trial shows no blank page', async () => {
+    location.hash = '#/x--a';
+    const { container } = render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    await frameSrc(container);
+    const iframe = container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement;
+    expect(iframe).toHaveAttribute('data-pending');
+    const { frame } = connectFrame(iframe);
+    frame.send({ type: 'ready', schema: describeSchema(f.schema({})), layout: 'centered', viewport: null });
+    await flush();
+    expect(iframe).toHaveAttribute('data-pending');
+    frame.send({ type: 'rendered' });
+    await flush();
+    expect(iframe).not.toHaveAttribute('data-pending');
+
+    connectFrame(iframe);
+    expect(iframe).toHaveAttribute('data-pending');
+    frame.close();
+  });
+
+  it('shows a frame that faults before it renders', async () => {
+    location.hash = '#/x--a';
+    const { container } = render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    await frameSrc(container);
+    const iframe = container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement;
+    const { frame } = connectFrame(iframe);
+    frame.send({ type: 'fault', phase: 'import', message: 'no such module' });
+    await flush();
+    expect(iframe).not.toHaveAttribute('data-pending');
+    frame.close();
+  });
 });
