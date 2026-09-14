@@ -4333,3 +4333,42 @@ A read-only review of `f9f41e2a` and `045998fa` found three edge cases, each con
 - [ ] **Run** `npx vitest run --project=weasel-ui packages/theme/src/engine/merge.test.ts packages/theme/src/engine/ramps.test.ts packages/theme/src/engine/derive.test.ts packages/theme/src/generated/determinism.test.ts packages/theme/src/engine/bake.test.ts`, `npx tsc --noEmit`, `npx eslint packages/theme/src` → clean.
 
 - [ ] **Commit** the eight paths; message `fix three lightness ramp edge cases in shadowing, anchoring and bias validation`.
+
+---
+
+### Task 22: inspecting must not operate the preview (run after Task 21)
+
+A review of `d11f945d` found the Slider still moves while inspecting: it starts a drag on `pointerdown`, and `ThemePreview` captures only `click`. Checkbox, Switch and ToggleBar are blocked correctly (React Aria's toggle changes state from the input's `change` event, which `preventDefault` on the click cancels; ToggleBar uses `onClick`). A click that does not drag also focuses the thumb, and the arrow keys then move it.
+
+**Files:**
+- Modify: `apps/theme-editor/src/ThemePreview.tsx`, `apps/theme-editor/src/ThemePreview.test.tsx`
+
+- [ ] **Step 1: Failing tests** — append inside the `describe` of `ThemePreview.test.tsx` (import `createEvent, fireEvent` from `@testing-library/react`):
+
+```tsx
+it('while inspecting, a click leaves the components as they were', async () => {
+  render(<ThemePreview variants={[{ label: 'Draft', theme }]} selection={{}} inspecting onInspect={() => {}} />);
+  const checkbox = screen.getAllByRole('checkbox', { name: 'Checkbox' })[0];
+  await userEvent.click(checkbox);
+  expect(checkbox).toBeChecked();
+});
+
+// A proxy: jsdom cannot drag the Slider, so this asserts the press never reaches it.
+it('while inspecting, a press is stopped before any component sees it', () => {
+  render(<ThemePreview variants={[{ label: 'Draft', theme }]} selection={{}} inspecting onInspect={() => {}} />);
+  const thumb = screen.getAllByRole('slider', { name: 'Slider' })[0];
+  for (const make of [createEvent.pointerDown, createEvent.mouseDown]) {
+    const event = make(thumb);
+    fireEvent(thumb, event);
+    expect(event.defaultPrevented).toBe(true);
+  }
+});
+```
+
+Run `npx vitest run --project=draw apps/theme-editor/src/ThemePreview.test.tsx`: the second case FAILS (the first may already pass, for the reason above; keep it as the guard).
+
+- [ ] **Step 2: Fix.** In `ThemePreview.tsx`, give the capture div `onPointerDownCapture` and `onMouseDownCapture` while inspecting, each calling a `swallow` that does `e.preventDefault(); e.stopPropagation();` (preventing `mousedown` is what keeps focus off the thumb), alongside the existing `onClickCapture`.
+
+- [ ] **Step 3: Run** the test file → PASS; tsc and `npx eslint apps/theme-editor/src/ThemePreview.tsx` clean.
+
+- [ ] **Step 4: Commit** the two files; message `stop inspect presses from reaching the preview's components`.
