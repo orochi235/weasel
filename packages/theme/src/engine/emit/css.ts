@@ -69,13 +69,14 @@ function combineAxes(own: AxisDefs, other: AxisDefs): AxisDefs {
 
 /** A theme as the runtime sees it: each token from the nearest theme in its `extends` chain that has it at a selection. */
 class Resolved {
+  readonly axes: AxisDefs;
   readonly names: readonly string[];
+  private readonly chain: readonly BakedTheme[];
   private readonly memo = new Map<string, Map<string, string>>();
 
-  constructor(
-    readonly axes: AxisDefs,
-    private readonly chain: readonly BakedTheme[],
-  ) {
+  constructor(axes: AxisDefs, chain: readonly BakedTheme[]) {
+    this.axes = axes;
+    this.chain = chain;
     this.names = [...new Set([...chain].reverse().flatMap((t) => Object.keys(t.tokens)))];
   }
 
