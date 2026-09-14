@@ -17,6 +17,7 @@ import styles from '../ThemeEditor.module.css';
 import { ConstraintsPanel, type SetConstraint } from '../palette/ConstraintsPanel';
 import { unmetGates } from '../palette/unmetGates';
 import type { DerivedDraft } from '../theme/draft';
+import { describeIssue } from '../theme/issues';
 import { adoptGenerated, removePin, setPin, setRamp } from '../theme/model';
 import { rampView, readParam, writeParam, type StepView } from '../theme/ramps';
 
@@ -129,6 +130,14 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
   // weasel's own ramps feed every surface the visual baselines record.
   const requestAdopt = (ramp: string) => (draft.name === 'weasel' ? setConfirming(ramp) : adopt(ramp));
   const ownPin = (token: string) => Object.hasOwn(draft.pins ?? {}, token);
+  const allIssues = derived.views.flatMap((v) => v.result.issues);
+  const issuesOf = (name: string) => {
+    const prefix = `ramps.${name}`;
+    const own = allIssues.filter((i) =>
+      i.kind === 'infeasible-ramp' ? i.ramp === name : 'path' in i && (i.path === prefix || i.path.startsWith(`${prefix}.`)),
+    );
+    return [...new Set(own.map(describeIssue))];
+  };
   const togglePin = (s: StepView) =>
     s.pinned
       ? onChange(removePin(draft, s.token), `pin:${s.token}`, `unpin ${s.token}`)
@@ -139,6 +148,8 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
       {ramps.map(([name, entry]) => {
         const view = rampView(name, entry, derived.primary.result, derived.primary.resolved);
         const lit = (token: string) => highlight.includes(token);
+        const issues = issuesOf(name);
+        const authored = view.steps.some((s) => derived.primary.result.provenance[s.token]?.layer === 'pins');
         return (
           <section key={name} className={focused === name ? `${styles.ramp} ${styles.rampFocused}` : styles.ramp} aria-label={`${name} ramp`}>
             <header className={styles.rampHeader}>
@@ -162,18 +173,27 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
                 )}
               </span>
             </header>
+            {issues.length > 0 && (
+              <div role="status" className={styles.status}>
+                <ul className={styles.issues}>
+                  {issues.map((text) => (
+                    <li key={text}>{text}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className={styles.tableScroll}>
               <table className={styles.strip}>
                 <tbody>
                   <tr>
-                    <th scope="row">{view.anyPinned ? 'Pinned' : 'Generated'}</th>
+                    <th scope="row">{authored ? 'Authored' : view.anyPinned ? 'Pinned' : 'Generated'}</th>
                     {view.steps.map((s) => (
                       <td key={s.step} className={lit(s.token) ? styles.highlight : undefined} data-highlight={lit(s.token) || undefined}>
                         <Swatch hex={s.hex} caption={s.step} />
                       </td>
                     ))}
                   </tr>
-                  {view.anyPinned && (
+                  {view.anyPinned && !authored && (
                     <tr>
                       <th scope="row">Generated</th>
                       {view.steps.map((s) => (

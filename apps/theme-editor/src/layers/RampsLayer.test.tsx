@@ -45,4 +45,13 @@ describe('<RampsLayer>', () => {
     expect(screen.getByText('Min contrast')).toBeInTheDocument();
     expect(screen.queryByText('Colors')).toBeNull();
   });
+
+  it("shows a ramp's own issues inside its section, and does not call authored values generated", () => {
+    const broken = { ...weasel, ramps: { ...weasel.ramps!, accent: { ...weasel.ramps!.accent, chroma: { lightBias: 0.5 } } } } as unknown as ThemeDefinition;
+    const lookup = lookupOf(broken);
+    render(<RampsLayer draft={broken} derived={deriveDraft(broken, lookup, {})} lookup={lookup} highlight={[]} focused={null} onFocus={vi.fn()} onChange={vi.fn()} />);
+    const accent = screen.getByRole('region', { name: 'accent ramp' });
+    expect(within(accent).getByText(/ramps\.accent\.chroma\.peak: expected a number/)).toBeInTheDocument();
+    expect(within(accent).queryByRole('rowheader', { name: 'Generated' })).toBeNull();
+  });
 });

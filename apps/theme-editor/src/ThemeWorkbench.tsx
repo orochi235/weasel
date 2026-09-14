@@ -218,7 +218,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
         <LayerRail counts={counts.layers} selected={layer} onSelect={setLayer} />
         <section className={styles.editor} aria-label={`${layerLabel} layer`}>
           {(report || reloadError) && (
-            <div ref={statusRef} role="status" tabIndex={-1}>
+            <div ref={statusRef} role="status" tabIndex={-1} className={styles.statusStack}>
               {reloadError && <p className={styles.status}>{reloadError}</p>}
               {report && <SaveReport report={report} onReload={reload} onDismiss={() => setReport(null)} />}
             </div>

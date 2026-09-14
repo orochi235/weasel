@@ -1,3 +1,4 @@
+import { derive, type LightnessRampDef } from '@weasel-js/theme/engine';
 import { describe, expect, it } from 'vitest';
 import { deriveDraft } from './draft';
 import { lookupOf, weasel } from './fixtures';
@@ -25,7 +26,14 @@ describe('writeParam', () => {
 
   it('writes into the lightness pair and into chroma, creating it', () => {
     expect(writeParam(entry, 'lightness.1', 0.3).lightness).toEqual([0.9, 0.3]);
-    expect(writeParam(entry, 'chroma.darkBias', 0.5).chroma).toEqual({ darkBias: 0.5 });
+    expect(writeParam(entry, 'chroma.darkBias', 0.5).chroma).toEqual({ peak: 0, darkBias: 0.5 });
     expect(readParam(writeParam(entry, 'curve', 0.4), 'curve')).toBe(0.4);
+  });
+
+  it('keeps a ramp deriving when a bias creates its chroma', () => {
+    const edited = { ...weasel, ramps: { ...weasel.ramps!, accent: writeParam(weasel.ramps!.accent as LightnessRampDef, 'chroma.lightBias', 0.5) } };
+    const result = derive(edited, { mode: 'dark' });
+    expect(result.issues).toEqual([]);
+    expect(result.provenance['accent-soft'].pinned).toBe(true);
   });
 });

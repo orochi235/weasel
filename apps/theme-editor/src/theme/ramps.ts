@@ -76,5 +76,7 @@ export function writeParam(entry: LightnessRampDef, key: string, value: number):
     next[Number(tail)] = value;
     return { ...entry, [head]: next } as LightnessRampDef;
   }
-  return { ...entry, [head]: { ...(top as object | undefined), [tail]: value } } as LightnessRampDef;
+  // derive requires `peak` whenever `chroma` exists, and reads an absent `chroma` as peak 0.
+  const base = top === undefined && head === 'chroma' ? { peak: 0 } : (top as object | undefined);
+  return { ...entry, [head]: { ...base, [tail]: value } } as LightnessRampDef;
 }

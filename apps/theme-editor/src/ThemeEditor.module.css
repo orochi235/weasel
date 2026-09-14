@@ -203,6 +203,12 @@
   background: var(--wzl-surface-raised);
 }
 
+.statusStack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .statusTitle {
   margin: 0 0 4px;
   font-weight: 600;
