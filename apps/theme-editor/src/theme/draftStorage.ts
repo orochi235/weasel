@@ -28,7 +28,7 @@ export function loadDraft(name: string): StoredDraft | null {
   try {
     return parseDraft(localStorage.getItem(draftKey(name)), name);
   } catch {
-    // No storage at all: a private window, or jsdom.
+    // No storage at all: a private window.
     return null;
   }
 }
@@ -44,9 +44,7 @@ export function persistDraft(draft: StoredDraft): void {
 export function clearDraft(name: string): void {
   try {
     localStorage.removeItem(draftKey(name));
-  } catch {
-    // As above.
-  }
+  } catch {}
 }
 
 export function loadLastTheme(): string | null {
@@ -60,7 +58,5 @@ export function loadLastTheme(): string | null {
 export function persistLastTheme(name: string): void {
   try {
     localStorage.setItem(LAST_KEY, name);
-  } catch {
-    // As above.
-  }
+  } catch {}
 }

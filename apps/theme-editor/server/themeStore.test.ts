@@ -78,6 +78,24 @@ describe('theme store', () => {
     expect(store.write('harbor', harbor, null).status).toBe('conflict');
   });
 
+  it('refuses a second emitting theme that extends nothing, and writes nothing', () => {
+    expect(store.write('harbor', { name: 'harbor' }, null)).toMatchObject({ status: 'invalid' });
+    expect(existsSync(at('themes/harbor.json'))).toBe(false);
+  });
+
+  it('refuses an emitting theme that extends a theme which does not emit', () => {
+    expect(store.write('harbor', { name: 'harbor', extends: 'interstellar' }, null)).toMatchObject({ status: 'invalid' });
+    expect(existsSync(at('themes/harbor.json'))).toBe(false);
+  });
+
+  it('refuses a definition derive cannot run, and leaves the file alone', () => {
+    const before = readFileSync(at('themes/weasel.json'), 'utf8');
+    const weasel = store.read('weasel')!;
+    const broken = { ...weasel.definition, semantics: { ...weasel.definition.semantics, dangling: { ref: 'nope' } } };
+    expect(store.write('weasel', broken, weasel.hash)).toMatchObject({ status: 'invalid' });
+    expect(readFileSync(at('themes/weasel.json'), 'utf8')).toBe(before);
+  });
+
   it('refuses a name that is not a theme name, or that the definition does not carry', () => {
     expect(store.write('../evil', { name: '../evil' }, null)).toMatchObject({ status: 'invalid' });
     expect(store.write('harbor', { name: 'other' }, null)).toMatchObject({ status: 'invalid' });

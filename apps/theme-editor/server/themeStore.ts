@@ -46,9 +46,9 @@ export function createThemeStore(options: ThemeStoreOptions): ThemeStore {
     });
   };
 
-  const regenerate = (all: readonly Entry[]): { regenerated: boolean; problems: string[] } => {
+  const regenerate = (emitting: readonly ThemeDefinition[]): { regenerated: boolean; problems: string[] } => {
     try {
-      const result = generateTokens(all.filter((e) => e.theme.emits).map((e) => e.theme.definition));
+      const result = generateTokens(emitting);
       if (!result.ok) return { regenerated: false, problems: [...result.problems] };
       mkdirSync(options.generatedDir, { recursive: true });
       for (const [file, text] of Object.entries(result.files)) {
@@ -75,22 +75,37 @@ export function createThemeStore(options: ThemeStoreOptions): ThemeStore {
       const current = existsSync(file) ? hashOf(readFileSync(file, 'utf8')) : null;
       if (current !== baseHash) return { status: 'conflict', hash: current };
 
-      const text = serializeDefinition(definition);
-      writeFileSync(file, text);
-
-      const all = entries();
-      const byName = new Map(all.map((e) => [e.theme.name, e.theme.definition]));
+      const others = entries()
+        .filter((e) => e.theme.name !== name)
+        .map((e) => ({ definition: e.theme.definition, emits: e.theme.emits }));
+      const set = [...others, { definition, emits }];
+      const byName = new Map(set.map((t) => [t.definition.name, t.definition]));
       const lookup = (n: string) => byName.get(n);
+      const emitting = set.filter((t) => t.emits).map((t) => t.definition);
+
+      if (emits) {
+        const roots = emitting.filter((d) => !d.extends);
+        if (roots.length !== 1) {
+          return { status: 'invalid', message: `the themes that emit need exactly one that extends nothing; saving would leave ${roots.length}` };
+        }
+        const orphan = emitting.find((d) => d.extends && !emitting.some((p) => p.name === d.extends));
+        if (orphan) return { status: 'invalid', message: `"${orphan.name}" extends "${orphan.extends}", which is not a theme that emits` };
+      } else if (definition.extends && !byName.has(definition.extends)) {
+        return { status: 'invalid', message: `"${name}" extends "${definition.extends}", which is not a known theme` };
+      }
+
       const issues: IssueReport[] = [];
       try {
         for (const selection of enumerateSelections(mergeChain(definition, lookup).axes ?? {})) {
           for (const issue of derive(definition, selection, lookup).issues) issues.push({ selection, issue });
         }
       } catch (e) {
-        issues.push({ selection: {}, issue: { kind: 'invalid', path: name, message: (e as Error).message } });
+        return { status: 'invalid', message: (e as Error).message };
       }
 
-      const generated = emits ? regenerate(all) : { regenerated: false, problems: [] };
+      const text = serializeDefinition(definition);
+      writeFileSync(file, text);
+      const generated = emits ? regenerate(emitting) : { regenerated: false, problems: [] };
       return { status: 'saved', hash: hashOf(text), issues, ...generated };
     },
   };
