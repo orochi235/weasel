@@ -16,7 +16,15 @@ export type Issue =
   | { readonly kind: 'missing-axis-value'; readonly path: string; readonly axis: string; readonly value: string }
   | { readonly kind: 'untyped-pin'; readonly token: string }
   | { readonly kind: 'infeasible-ramp'; readonly ramp: string }
-  | { readonly kind: 'contrast-unmet'; readonly token: string; readonly min: number; readonly against: readonly string[] }
+  | {
+      readonly kind: 'contrast-unmet';
+      readonly token: string;
+      readonly min: number;
+      readonly against: readonly string[];
+      /** The step used anyway: the one with the best worst-case ratio across the whole ramp. */
+      readonly picked: string;
+      readonly ratio: number;
+    }
   | { readonly kind: 'check-failed'; readonly token: string; readonly against: string; readonly min: number; readonly ratio: number }
   | { readonly kind: 'invalid'; readonly path: string; readonly message: string };
 

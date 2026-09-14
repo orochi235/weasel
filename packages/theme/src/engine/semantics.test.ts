@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ThemeDefinition } from '../definition';
+import { contrast } from './color/oklch';
 import { derive } from './derive';
 
 const STEPS = ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900'];
@@ -38,12 +39,76 @@ describe('contrast rule', () => {
       { ...W, semantics: { ...W.semantics, 'border-strong': { ramp: 'gray', contrast: { min: 30, against: ['surface'] } } } },
       { mode: 'dark' },
     );
-    expect(issues).toContainEqual({ kind: 'contrast-unmet', token: 'border-strong', min: 30, against: ['surface'] });
-    expect(tokens['border-strong'].value).toMatch(/^\{gray-\d+\}$/);
+    expect(issues).toContainEqual({
+      kind: 'contrast-unmet', token: 'border-strong', min: 30, against: ['surface'], picked: '50', ratio: contrast(SHIPPING[0], SHIPPING[8]),
+    });
+    expect(tokens['border-strong'].value).toBe('{gray-50}');
+  });
+
+  const withSemantics = (semantics: ThemeDefinition['semantics'], pins: ThemeDefinition['pins'] = {}) =>
+    derive({ ...W, semantics: { ...W.semantics, ...semantics }, pins: { ...W.pins, ...pins } }, { mode: 'dark' });
+
+  it('starts past a surface off the ramp by lightness, not at a ramp end', () => {
+    const { tokens } = withSemantics({
+      accent: { value: '#3778b7', type: 'color' },
+      x: { ramp: 'gray', contrast: { min: 3, against: ['accent'] } },
+    });
+    expect(tokens.x.value).toBe('{gray-100}');
+  });
+
+  it('starts past a pinned surface, wherever the pin puts it', () => {
+    const rule = { 'border-strong': { ramp: 'gray', contrast: { min: 3, against: ['surface'] } } } as const;
+    expect(withSemantics(rule, { surface: '{gray-200}' }).tokens['border-strong'].value).toBe('{gray-500}');
+    expect(withSemantics(rule, { surface: '#ffffff' }).tokens['border-strong'].value).toBe('{gray-400}');
+  });
+
+  it('reports surfaces on both sides of the ramp and yields the best step of all', () => {
+    const { tokens, issues } = withSemantics({
+      top: { ramp: 'gray', step: '50' },
+      mid: { ramp: 'gray', contrast: { min: 5, against: ['top', 'surface-sunken'] } },
+    });
+    const ratio = Math.min(contrast(SHIPPING[4], SHIPPING[0]), contrast(SHIPPING[4], SHIPPING[9]));
+    expect(issues).toContainEqual({ kind: 'contrast-unmet', token: 'mid', min: 5, against: ['top', 'surface-sunken'], picked: '400', ratio });
+    expect(tokens.mid.value).toBe('{gray-400}');
+  });
+});
+
+describe('ramp direction', () => {
+  const unreadable = (message: string, names: string[]) => names.map((n) => ({ kind: 'invalid', path: `semantics.${n}`, message }));
+  const rules = {
+    dk: { from: 'surface', offset: 1, dir: 'darker' },
+    lt: { from: 'surface', offset: 1, dir: 'lighter' },
+    bs: { ramp: 'gray', contrast: { min: 3, against: ['surface'] } },
+  } as const;
+
+  const run = (pins: ThemeDefinition['pins']) =>
+    derive({ ...W, semantics: { surface: W.semantics!.surface, ...rules }, pins: { ...W.pins, ...pins } }, { mode: 'dark' });
+  const message = 'cannot tell which end of ramp "gray" is darker';
+
+  it('is reported, not guessed, when the ramp ends are equally light', () => {
+    const { tokens, issues } = run({ 'gray-50': '#777777', 'gray-900': '#777777' });
+    expect(issues).toEqual(unreadable(message, ['dk', 'lt', 'bs']));
+    expect(Object.keys(tokens).filter((n) => n in rules)).toEqual([]);
+  });
+
+  it('is reported, not guessed, when a ramp end is not a solid color', () => {
+    const { tokens, issues } = run({ 'gray-900': { value: '#0e0f12', alpha: 0.5 } });
+    expect(issues).toEqual([
+      ...unreadable(message, ['dk', 'lt']),
+      ...unreadable('contrast needs solid colors on both sides', ['bs']),
+    ]);
+    expect(Object.keys(tokens).filter((n) => n in rules)).toEqual([]);
   });
 });
 
 describe('offset rule', () => {
+  it('counts from where a pin puts its reference', () => {
+    const rule = { 'fg-muted': { from: 'surface', offset: 5, dir: 'away' } } as const;
+    const pinned = (pin: string) => derive({ ...W, semantics: { surface: W.semantics!.surface, ...rule }, pins: { ...W.pins, surface: pin } }, { mode: 'dark' });
+    expect(pinned('{gray-200}').tokens['fg-muted'].value).toBe('{gray-700}');
+    expect(pinned('#ffffff').issues).toEqual([{ kind: 'invalid', path: 'semantics.fg-muted', message: '"surface" does not end on a ramp step' }]);
+  });
+
   it('goes away from the reference toward the far end, so it flips with the mode', () => {
     expect(at('dark').tokens['fg-muted'].value).toBe('{gray-300}');
     expect(at('light').tokens['fg-muted'].value).toBe('{gray-500}');
@@ -71,6 +136,38 @@ describe('check', () => {
 
   it('reports nothing when the rule fails and the pin passes', () => {
     expect(failedChecks({ border: '#9ea1a8' })).toEqual([]);
+  });
+
+  const only = (semantics: ThemeDefinition['semantics'], pins: ThemeDefinition['pins'] = {}) =>
+    derive({ ...W, semantics: { surface: W.semantics!.surface, ...semantics }, pins: { ...W.pins, ...pins } }, { mode: 'dark' });
+
+  it('is never a dependency, so checking against what reads you is no cycle', () => {
+    const fg = only({
+      'accent-fg': { ramp: 'gray', contrast: { min: 4.5, against: ['accent-bg'] } },
+      'accent-bg': { ramp: 'gray', step: '700', check: { contrast: 4.5, against: ['accent-fg'] } },
+    });
+    expect(fg.issues).toEqual([]);
+    const offset = only({
+      'accent-bg': { ramp: 'gray', step: '700', check: { contrast: 4.5, against: ['on-accent'] } },
+      'on-accent': { from: 'accent-bg', offset: 5, dir: 'away' },
+    });
+    expect(offset.tokens['on-accent'].value).toBe('{gray-200}');
+    expect(only({ z: { ramp: 'gray', step: '400', check: { contrast: 3, against: ['z'] } } }).issues).toEqual([
+      { kind: 'check-failed', token: 'z', against: 'z', min: 3, ratio: 1 },
+    ]);
+  });
+
+  it('names the semantic when its own pin is not solid', () => {
+    const { issues } = only(
+      { fg: { ramp: 'gray', step: '100', check: { contrast: 4.5, against: ['surface'] } } },
+      { fg: { value: '#ffffff', alpha: 0.5 } },
+    );
+    expect(issues).toEqual([{ kind: 'invalid', path: 'semantics.fg.check', message: '"fg" is not a solid color' }]);
+  });
+
+  it('audits the pin of a semantic whose rule failed', () => {
+    const { issues } = only({ fg: { ramp: 'gray', step: '850', check: { contrast: 4.5, against: ['surface'] } } }, { fg: '#25272c' });
+    expect(issues).toContainEqual({ kind: 'check-failed', token: 'fg', against: 'surface', min: 4.5, ratio: contrast('#25272c', SHIPPING[8]) });
   });
 });
 
