@@ -4552,3 +4552,31 @@ A review of `90f0cc02` confirmed Task 26's bug and found these; each was verifie
 - [ ] **Run** `npx vitest run --project=draw apps/theme-editor/src/theme/ramps.test.ts apps/theme-editor/src/layers/RampsLayer.test.tsx apps/theme-editor/src/ThemeWorkbench.test.tsx`, `npx tsc --noEmit`, `npx eslint apps/theme-editor/src` → clean.
 
 - [ ] **Commit** the four paths; message `keep ramp edits from writing into varying values or silently owning an inherited ramp`.
+
+---
+
+### Task 29: a described property row's label must reach its control (`@weasel-js/ui`; run after Task 13)
+
+Found by Task 27's implementer: `PropertyRow` wraps its label span and the control in one `<label>` with no `for`, and a `<label>` without `for` belongs to its first labelable descendant. In a row with a `description` that is the ⓘ help button, so clicking the label text of a described `CheckboxRow` does not toggle it (confirmed with a throwaway test; the same test passes without a description), and the same click on a described `TextRow`, `NumberRow`, `SelectRow` or `ColorRow` does not reach the field. The palette constraint panel's rows carry descriptions, so the theme editor has this. Task 27 gave each control an `aria-label`, which fixes the name but not the click.
+
+**Approach.** Keep the wrapping `<label>` and give it a `for`: each row generates an id with `useId`, passes it to `PropertyRow` as `htmlFor` (the prop already exists), and puts it on its control. `for` overrides the first-descendant rule, the help button already cancels its own click, the row's markup and CSS do not change (`.row:has(> input[type='range'])` and the inline-layout selectors still match), and Task 27's `aria-label` keeps winning the accessible name over the label's text, which includes the ⓘ and the readout. Leave `SliderRow` alone: `EditableReadout` deliberately keeps label clicks from focusing the `tabIndex={-1}` range input. `ToggleRow`'s segments are buttons, not one labelable control; leave it.
+
+**Files:**
+- Modify: `packages/ui/src/components/Properties/PropertyPanel.tsx`, `PropertyPanel.test.tsx`
+- Create: `.changeset/ui-property-row-label-for.md`
+
+- [ ] **Step 1: Failing tests** — in `PropertyPanel.test.tsx`, a `describe('described rows')` block. For `CheckboxRow` with a `description`: clicking its label text toggles it (`onChange` called with `true`). For each of `TextRow`, `NumberRow`, `SelectRow`, `ColorRow` with a `description`: `screen.getByLabelText(/^<Label>/)` is the row's control (compare with the element found by role), where today it returns the help button. And `ColorRow` with `alpha` has a slider named `<Label> opacity`. Run `npx vitest run --project=weasel-ui packages/ui/src/components/Properties/PropertyPanel.test.tsx` → these FAIL.
+
+- [ ] **Step 2: Fix.** In `CheckboxRow`, `TextRow`, `NumberRow`, `SelectRow` and `ColorRow`: `const id = useId();`, `htmlFor={id}` on `PropertyRow`, `id={id}` on the control (for `SelectRow`, on the element the label should activate — read how it renders first; if it is a React Aria component whose focusable element is not the one taking `id`, use its own `id` prop and check the test). `ColorRow`'s alpha range input gets `aria-label={typeof label === 'string' ? \`${label} opacity\` : undefined}`. Update the comment above `nameOf` so it stays true (it now describes the name only; the click is handled by `for`).
+
+- [ ] **Step 3: Check direct users.** `packages/labkit/src/controls/ControlPanel.tsx:365` renders `<PropertyRow label={label} description={description}>` with its own child, and `apps/draw/src/App.tsx:548-562` renders three `PropertyRow`s. For each, read the child: where it is a single native control, give it an id and pass `htmlFor`; where it is not, leave it and list it in the report.
+
+- [ ] **Step 4: Changeset**, `patch` for `@weasel-js/ui` (and `@weasel-js/labkit` too if Step 3 changed it):
+
+```md
+Clicking a property row's label reaches its control again when the row has a `description`. `PropertyRow`'s `<label>` had no `for`, so it belonged to the first labelable element inside it, the ⓘ help button; `CheckboxRow`, `TextRow`, `NumberRow`, `SelectRow` and `ColorRow` now point it at their control. `ColorRow`'s opacity slider is named `<label> opacity`. A direct `PropertyRow` with a `description` should pass `htmlFor` for the same reason.
+```
+
+- [ ] **Step 5: Run** the test file, `npx tsc --noEmit`, `npx eslint packages/ui/src/components/Properties` (and `packages/labkit/src/controls apps/draw/src/App.tsx` if touched) → clean. If labkit changed, also `npx vitest run --project=labkit packages/labkit/src/controls`.
+
+- [ ] **Step 6: Commit** the paths; message `point a property row's label at its control`.
