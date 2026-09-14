@@ -255,6 +255,7 @@ export type { LayerListProps, LayerTreeNode } from './layers';
 export { LayerList } from './layers';
 export * from './loupe';
 export * from './primitives';
+export { SPECIMEN_SECTIONS, Specimen } from './specimen/Specimen';
 export {
   createIndexedDbAdapter,
   createMemoryAdapter,
