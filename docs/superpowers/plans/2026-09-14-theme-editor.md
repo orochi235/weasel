@@ -4307,3 +4307,29 @@ A read-only review of commits `55b5524e..376a876f` found these; each was verifie
 - [ ] **Run** `npx vitest run --project=weasel-ui packages/theme/src/engine/derive.test.ts packages/theme/src/generated/determinism.test.ts`, `npx vitest run --project=draw apps/theme-editor/server apps/theme-editor/src/theme`, `npx tsc --noEmit`, `npx eslint packages/theme/src apps/theme-editor` → clean.
 
 - [ ] **Commit** in two commits: the engine half (items 1 and 3, with changesets) as `limit token names to safe characters and export bakeChain`, and the app half (items 2 and 4) as `refuse theme saves that would break the token build`.
+
+---
+
+### Task 21: fixes from the review of Tasks 6–7 (engine; run after Task 8)
+
+A read-only review of `f9f41e2a` and `045998fa` found three edge cases, each confirmed with a probe; none affects `weasel.json`.
+
+**Files:**
+- Modify: `packages/theme/src/engine/merge.ts`, `merge.test.ts`, `packages/theme/src/engine/steps.ts`, `packages/theme/src/engine/ramps.ts`, `ramps.test.ts`, `packages/theme/src/engine/derive.ts`, `derive.test.ts`
+- Create: `.changeset/theme-ramp-edge-cases.md`
+
+- [ ] **1. Shadow only the steps a theme declares at every selection.** `ownSteps` in `merge.ts` uses `declaredSteps`, the union across `by` branches. A child whose `ramps.gray` is `{ by: 'mode', dark: { ...gray, steps without '900' }, light: gray }` shadows weasel's `gray-900` pin in dark too, where the child produces no `gray-900`, so `derive(child, { mode: 'dark' })` throws `Token "surface-sunken" references "gray-900", which is not defined` while the runtime CSS still falls through to weasel's pin. `mergeChain` knows no selection, so shadow the intersection instead: add `alwaysDeclaredSteps(entry)` to `steps.ts` (a `by` object intersects its branches; an entry reads its `steps`, which may itself vary), and use it in `ownSteps`. Where a branch omits a step, the inherited pin then applies at every selection, which is consistent between `derive` and emission. Failing test first in `merge.test.ts` (the example above, asserting `mergeChain(child).pins` keeps `gray-900` and drops `gray-50`) and in `derive.test.ts` (`derive(child, { mode: 'dark' })` does not throw).
+
+- [ ] **2. An anchor's peak must not explode near a zero envelope.** `lightnessRamp` sets `peak = a.C · max / e`, guarded only at `e ≤ 1e-6`, where it switches to `a.C`. With 5 steps, `lightness: [0.95, 0.3]`, an anchor on the last step `#2e1f7a` and `lightBias` 0: `darkBias` 0 gives chroma 0.10–0.14 mid-ramp, 0.001 and 0.01 give pure grays (`#bababa`, `#878787`, `#595959`), 0.05 jumps to 0.27. Replace the guard with a floor: `peak = a.C · max / Math.max(e, ANCHOR_FLOOR · max)`, `ANCHOR_FLOOR = 0.1`, and pass `toHex` a chroma no larger than `0.4` (above anything sRGB holds, so the gamut clamp decides). This makes the peak continuous in both biases. Failing test first in `ramps.test.ts`: for `darkBias` in `[0, 0.001, 0.01, 0.05]` on that ramp, the middle step's chroma stays between 0.02 and 0.3 and never jumps more than 0.1 between neighboring bias values. Check that weasel's accent (anchor mid-ramp) and the determinism test are unchanged.
+
+- [ ] **3. Negative biases are invalid.** `lightBias: -3, darkBias: -3` makes `envelopeMax` 0 and every step `#NaNNaNNaN`; `-0.5` gives negative chroma, turning hue 250 orange. In `rampColors`, report `{ kind: 'invalid', path: '<ramp>.chroma.lightBias', message: 'expected a number ≥ 0' }` (same for `darkBias` and `peak`) and fail the ramp as the other readers do. Failing test first in `derive.test.ts`.
+
+- [ ] **Changeset**, `patch`:
+
+  ```md
+  Three lightness ramp edge cases: a theme whose ramp steps vary by axis now shadows only the inherited pins on steps it declares in every branch, so `derive` no longer throws where a branch omits one; an anchor on a step where the chroma envelope is near zero no longer sends the ramp gray or suddenly vivid as a bias moves off 0; and a negative `peak`, `lightBias` or `darkBias` is reported as invalid instead of producing `NaN` colors.
+  ```
+
+- [ ] **Run** `npx vitest run --project=weasel-ui packages/theme/src/engine/merge.test.ts packages/theme/src/engine/ramps.test.ts packages/theme/src/engine/derive.test.ts packages/theme/src/generated/determinism.test.ts packages/theme/src/engine/bake.test.ts`, `npx tsc --noEmit`, `npx eslint packages/theme/src` → clean.
+
+- [ ] **Commit** the eight paths; message `fix three lightness ramp edge cases in shadowing, anchoring and bias validation`.
