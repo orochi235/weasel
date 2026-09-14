@@ -28,7 +28,7 @@ export function loadDraft(name: string): StoredDraft | null {
   try {
     return parseDraft(localStorage.getItem(draftKey(name)), name);
   } catch {
-    // No storage at all: a private window.
+    // No storage at all: a private window, or this app's tests under Node 26.
     return null;
   }
 }

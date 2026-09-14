@@ -176,8 +176,12 @@ and the orphaned buttons then made every source tab look like it held the same
 colors. A hard reload is the only thing that settles it, and *the browser is not
 evidence* until you have done one.
 
-**This project's jsdom provides `window` but no `localStorage` at all.** A test
-that reaches for storage asserts a stub, nothing more. `presets.ts` splits
+**This project's jsdom provides `window` but no `localStorage` at all.** Under
+Node 26 the `draw` vitest project reads `window.localStorage` as undefined and
+prints "localStorage is not available because --localstorage-file was not
+provided", so `persistDraft` and friends silently store nothing (seen
+2026-09-14). A test that reaches for storage asserts a stub, nothing more:
+`ThemeEditor.test.tsx` swaps in an in-memory one with `vi.stubGlobal`. `presets.ts` splits
 parsing from storage for exactly this reason.
 
 **`Callout` from `@weasel-js/ui` is a React Aria popover, not an inline banner.**
