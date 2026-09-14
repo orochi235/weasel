@@ -268,17 +268,20 @@ const isPinObject = (v: PinValue): v is PinObject =>
   typeof v === 'object' && v !== null && !Array.isArray(v) && 'value' in v;
 
 const NAMED_LAYERS = ['ramps', 'scales', 'semantics', 'components', 'pins'] as const;
-const DOTTED = (name: string) => `"${name}" cannot name a token: a reference reads a dot as a group`;
+/** A reference reads a dot as a group, and a name reaches CSS custom properties and the generated module unescaped. */
+const SAFE_NAME = /^[A-Za-z0-9_-]+$/;
+const isSafeName = (name: string) => SAFE_NAME.test(name);
+const UNSAFE = (name: string) => `"${name}" cannot name a token: use letters, digits, "-" and "_"`;
 
-function withoutDottedNames(def: ThemeDefinition, issues: Issue[]): ThemeDefinition {
+function withoutUnsafeNames(def: ThemeDefinition, issues: Issue[]): ThemeDefinition {
   let out = def;
   for (const layer of NAMED_LAYERS) {
     const entries = def[layer];
-    if (!entries || !Object.keys(entries).some((n) => n.includes('.'))) continue;
+    if (!entries || Object.keys(entries).every(isSafeName)) continue;
     for (const n of Object.keys(entries)) {
-      if (n.includes('.')) issues.push({ kind: 'invalid', path: `${layer}.${n}`, message: DOTTED(n) });
+      if (!isSafeName(n)) issues.push({ kind: 'invalid', path: `${layer}.${n}`, message: UNSAFE(n) });
     }
-    out = { ...out, [layer]: Object.fromEntries(Object.entries(entries).filter(([n]) => !n.includes('.'))) };
+    out = { ...out, [layer]: Object.fromEntries(Object.entries(entries).filter(([n]) => isSafeName(n))) };
   }
   return out;
 }
@@ -286,7 +289,7 @@ function withoutDottedNames(def: ThemeDefinition, issues: Issue[]): ThemeDefinit
 /** Derive every token of `definition` for one selection. Unmet rules are reported in `issues`; cycles and dangling references throw. */
 export function derive(definition: ThemeDefinition, selection: Selection = {}, lookup?: Lookup): DeriveResult {
   const issues: Issue[] = [];
-  const def = withoutDottedNames(mergeChain(definition, lookup), issues);
+  const def = withoutUnsafeNames(mergeChain(definition, lookup), issues);
   const sel = fullSelection(def.axes ?? {}, selection);
   const seeds: Record<string, number | string> = {};
   for (const [k, v] of Object.entries(def.seeds ?? {})) {
@@ -347,9 +350,9 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
       issues.push({ kind: 'invalid', path: `${path}.steps`, message: '"by" is reserved and cannot name a step' });
       return { ok: false, steps };
     }
-    const dotted = steps?.find((s) => s.includes('.'));
-    if (dotted !== undefined) {
-      issues.push({ kind: 'invalid', path: `${path}.steps`, message: DOTTED(dotted) });
+    const unsafe = steps?.find((s) => !isSafeName(s));
+    if (unsafe !== undefined) {
+      issues.push({ kind: 'invalid', path: `${path}.steps`, message: UNSAFE(unsafe) });
       return { ok: false, steps };
     }
     return settled && steps ? { ok: true, r, steps } : { ok: false, steps };

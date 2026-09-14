@@ -317,6 +317,22 @@ describe('derive', () => {
     expect(paths).toEqual(expect.arrayContaining(['ramps.g.r', 'scales.space.steps', 'semantics.s.x', 'components.c.x', 'pins.p.x']));
   });
 
+  it('reports a token name with a character a CSS variable or the generated module cannot carry', () => {
+    const { tokens, issues } = derive({ name: 'x', pins: { "a'b": { value: '2px', type: 'dimension' } } });
+    expect(issues).toEqual([
+      { kind: 'invalid', path: "pins.a'b", message: `"a'b" cannot name a token: use letters, digits, "-" and "_"` },
+    ]);
+    expect(tokens).toEqual({});
+  });
+
+  it('reports a step name with a character a token name cannot carry', () => {
+    const { tokens, issues } = derive({ name: 'x', ramps: { gray: { ...GRAY, steps: ['x y', '900'] } } });
+    expect(issues).toEqual([
+      { kind: 'invalid', path: 'ramps.gray.steps', message: `"x y" cannot name a token: use letters, digits, "-" and "_"` },
+    ]);
+    expect(tokens).toEqual({});
+  });
+
   it('reports a seed missing its axis value once, not again where it is read', () => {
     const { issues } = derive(
       { name: 'x', axes: T.axes, seeds: { unit: { by: 'mode', dark: 4 } }, scales: { space: { steps: ['sm'], base: '{seeds.unit}', step: 4 } } },

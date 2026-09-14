@@ -1,6 +1,6 @@
 import { isByAxis, type PinValue, type Theme, type ThemeDefinition, type Varying } from '@weasel-js/theme';
 import {
-  bake,
+  bakeChain,
   declaredSteps,
   mergeChain,
   type DeriveResult,
@@ -76,9 +76,11 @@ export function countTokens(def: ThemeDefinition, result: DeriveResult): Counts 
 
 /** The draft as the runtime takes it, every theme it extends baked the same way. `name` scopes the rule `applyTheme` writes. */
 export function runtimeTheme(def: ThemeDefinition, lookup: Lookup, name: string = def.name): Theme {
-  const baked = bake(def, lookup);
-  const parent = def.extends ? lookup(def.extends) : undefined;
-  return { name, extends: parent ? runtimeTheme(parent, lookup) : null, axes: baked.axes, tokens: baked.tokens };
+  const chain = bakeChain(def, lookup);
+  return chain.reduce<Theme | null>(
+    (parent, baked, i) => ({ name: i === chain.length - 1 ? name : baked.name, extends: parent, axes: baked.axes, tokens: baked.tokens }),
+    null,
+  )!;
 }
 
 function withEntry<T>(record: Readonly<Record<string, T>> | undefined, key: string, value: T): Record<string, T> {
