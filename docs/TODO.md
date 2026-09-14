@@ -994,17 +994,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) Build the theme editor's `#/theme` page.** `apps/theme-editor` ships
-  only the palette lab (`#/palette`); `#/theme` is a stub. The engine under it
-  is built (`@weasel-js/theme/engine`, weasel's theme in
-  `packages/theme/themes/weasel.json`); the editor is phase 2 of
-  `docs/superpowers/specs/2026-09-10-theme-engine-and-editor-design.md` and has
-  no plan yet. Its Seeds, Components and Pins rows use weasel-ui's `TokenPanel`,
-  which is still on the unmerged `forge-sidebar-clicks` branch. Before the editor
-  shows generated ramps, revisit the chroma envelope: `sin(πt) + darkBias·t` is
-  zero at the light end, so a ramp anchored on one brand color with `darkBias` 0
-  comes out gray at both ends (the spec's accent example derives `#a4a4a4` and
-  `#383838`).
+- **(P2) Merge the theme editor's `#/theme` page.** Built on branch
+  `theme-editor` (worktree `.worktrees/theme-editor`) as phase 2 of
+  `docs/superpowers/specs/2026-09-10-theme-engine-and-editor-design.md`; not
+  merged, so `#/theme` on `main` is still a stub. Left once it merges: its Seeds,
+  Components and Pins layers are read-only lists until weasel-ui's `TokenPanel`,
+  on the unmerged `forge-sidebar-clicks` branch, reaches `main`; and whether an
+  anchor should set a ramp's chroma peak directly is open (`docs/HANDOFF.md`).
 
 - **(P3) A mark can be selected in two targets at once.** `AnnotationOverlay`
   leaves `selectionMode` at weasel's default `single`, and each canvas clears

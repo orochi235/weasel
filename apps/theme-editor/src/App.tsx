@@ -1,12 +1,7 @@
 import { useEffect, useState } from 'react';
 import { PaletteLab } from './PaletteLab';
-import styles from './PaletteLab.module.css';
+import { ThemeEditor } from './ThemeEditor';
 
-/**
- * The app holds more than one tool. The palette lab is the built one; the
- * theme editor proper — token editing, the ramps, the semantic layer — is the
- * other half and is not here yet.
- */
 const ROUTES = ['palette', 'theme'] as const;
 type Route = (typeof ROUTES)[number];
 
@@ -30,19 +25,6 @@ export function App() {
     }
   }, [route]);
 
-  if (route === 'theme') {
-    return (
-      <div className={styles.stub}>
-        <h1>Theme editor</h1>
-        <p>
-          Not built yet. This is where the token set itself gets edited — the neutral ramp, the
-          semantic assignments, the scales — with the palette lab supplying the categorical colors.
-        </p>
-        <p>
-          <a href="#/palette">Go to the palette lab</a>
-        </p>
-      </div>
-    );
-  }
+  if (route === 'theme') return <ThemeEditor />;
   return <PaletteLab />;
 }

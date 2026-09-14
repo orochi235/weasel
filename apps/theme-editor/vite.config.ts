@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'node:path';
 import { weaselAliases } from '../../scripts/vite-aliases';
 import { weaselDefines } from '../../scripts/vite-build-info';
+import { themeStorePlugin } from './server/themeStorePlugin';
 
 const repoRoot = resolve(__dirname, '../..');
 
@@ -47,7 +48,15 @@ export default defineConfig({
       },
     ]),
   },
-  plugins: [react(), themeFonts(repoRoot)],
+  plugins: [
+    react(),
+    themeFonts(repoRoot),
+    themeStorePlugin({
+      themesDir: resolve(repoRoot, 'packages/theme/themes'),
+      extraFiles: [resolve(repoRoot, 'packages/labkit/src/theme/interstellar.theme.json')],
+      generatedDir: resolve(repoRoot, 'packages/theme/src/generated'),
+    }),
+  ],
   server: { port: 5177, host: '::' },
   define: weaselDefines(repoRoot),
   build: { outDir: resolve(repoRoot, 'dist-theme-editor'), emptyOutDir: true },

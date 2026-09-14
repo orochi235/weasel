@@ -1,5 +1,9 @@
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { LightnessRampDef, ThemeDefinition } from '../definition';
+import { toLch } from './color/oklch';
 import { derive } from './derive';
 import { categoricalRamp, lightnessRamp } from './ramps';
 
@@ -313,6 +317,22 @@ describe('derive', () => {
     expect(paths).toEqual(expect.arrayContaining(['ramps.g.r', 'scales.space.steps', 'semantics.s.x', 'components.c.x', 'pins.p.x']));
   });
 
+  it('reports a token name with a character a CSS variable or the generated module cannot carry', () => {
+    const { tokens, issues } = derive({ name: 'x', pins: { "a'b": { value: '2px', type: 'dimension' } } });
+    expect(issues).toEqual([
+      { kind: 'invalid', path: "pins.a'b", message: `"a'b" cannot name a token: use letters, digits, "-" and "_"` },
+    ]);
+    expect(tokens).toEqual({});
+  });
+
+  it('reports a step name with a character a token name cannot carry', () => {
+    const { tokens, issues } = derive({ name: 'x', ramps: { gray: { ...GRAY, steps: ['x y', '900'] } } });
+    expect(issues).toEqual([
+      { kind: 'invalid', path: 'ramps.gray.steps', message: `"x y" cannot name a token: use letters, digits, "-" and "_"` },
+    ]);
+    expect(tokens).toEqual({});
+  });
+
   it('reports a seed missing its axis value once, not again where it is read', () => {
     const { issues } = derive(
       { name: 'x', axes: T.axes, seeds: { unit: { by: 'mode', dark: 4 } }, scales: { space: { steps: ['sm'], base: '{seeds.unit}', step: 4 } } },
@@ -367,4 +387,49 @@ describe('derive', () => {
     });
     expect(issues).toContainEqual({ kind: 'infeasible-ramp', ramp: 'swatch' });
   });
+
+  it('reads chroma.lightBias, so an anchored ramp keeps chroma at both ends', () => {
+    const ramp = (chroma?: LightnessRampDef['chroma']) => ({
+      name: 't',
+      ramps: { accent: { kind: 'lightness' as const, steps: ['soft', 'base', 'strong'], lightness: [0.72, 0.34] as [number, number], anchor: { base: '#0b6e8a' }, ...(chroma ? { chroma } : {}) } },
+    });
+    const C = (def: ReturnType<typeof ramp>, step: string) => toLch(String(derive(def).tokens[`accent-${step}`].value)).C;
+    expect(C(ramp(), 'soft')).toBeLessThan(0.005);
+    const biased = ramp({ peak: 0, lightBias: 1, darkBias: 1 });
+    expect(C(biased, 'soft')).toBeGreaterThan(0.02);
+    expect(C(biased, 'strong')).toBeGreaterThan(0.02);
+  });
+
+  it('reports a negative peak or bias as invalid and drops the ramp', () => {
+    const { tokens, issues } = derive({
+      name: 'x',
+      ramps: { gray: { ...GRAY, chroma: { peak: -0.1, lightBias: -3, darkBias: -0.5 } } },
+    });
+    expect(issues).toEqual([
+      { kind: 'invalid', path: 'ramps.gray.chroma.peak', message: 'expected a number ≥ 0' },
+      { kind: 'invalid', path: 'ramps.gray.chroma.lightBias', message: 'expected a number ≥ 0' },
+      { kind: 'invalid', path: 'ramps.gray.chroma.darkBias', message: 'expected a number ≥ 0' },
+    ]);
+    expect(tokens['gray-50']).toBeUndefined();
+  });
+});
+
+it("generates a child's own gray over weasel's pinned one", () => {
+  const themes = resolve(dirname(fileURLToPath(import.meta.url)), '../../themes');
+  const weasel = JSON.parse(readFileSync(resolve(themes, 'weasel.json'), 'utf8')) as ThemeDefinition;
+  const child: ThemeDefinition = { name: 'c', extends: 'weasel', ramps: { gray: weasel.ramps!.gray } };
+  const result = derive(child, { mode: 'dark' }, (n) => (n === 'weasel' ? weasel : undefined));
+  expect(result.tokens['gray-800'].value).toBe('#1a1c21');
+  expect(result.provenance['gray-800'].pinned).toBe(false);
+  expect(result.tokens['accent-base'].value).toBe(derive(weasel, { mode: 'dark' }).tokens['accent-base'].value);
+});
+
+it("does not throw where a child's by-axis ramp omits a step weasel pins", () => {
+  const themes = resolve(dirname(fileURLToPath(import.meta.url)), '../../themes');
+  const weasel = JSON.parse(readFileSync(resolve(themes, 'weasel.json'), 'utf8')) as ThemeDefinition;
+  const gray = weasel.ramps!.gray as LightnessRampDef;
+  const steps = (gray.steps as string[]).filter((s) => s !== '900');
+  const child = { name: 'c', extends: 'weasel', ramps: { gray: { by: 'mode', dark: { ...gray, steps }, light: gray } } } as unknown as ThemeDefinition;
+  const result = derive(child, { mode: 'dark' }, (n) => (n === 'weasel' ? weasel : undefined));
+  expect(result.tokens['gray-900'].value).toBe(derive(weasel, { mode: 'dark' }).tokens['gray-900'].value);
 });

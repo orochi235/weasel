@@ -1,9 +1,19 @@
 import { mergeAxes } from '../axes';
 import type { ThemeDefinition } from '../definition';
+import { alwaysDeclaredSteps } from './steps';
 
 export type Lookup = (name: string) => ThemeDefinition | undefined;
 
 const LAYERS = ['seeds', 'ramps', 'scales', 'semantics', 'components', 'pins'] as const;
+
+/** Steps of the ramps and scales `def` declares itself at every selection, which it generates rather than inherits pinned. */
+function ownSteps(def: ThemeDefinition): Set<string> {
+  const names = new Set<string>();
+  for (const layer of [def.ramps, def.scales]) {
+    for (const [name, entry] of Object.entries(layer ?? {})) for (const step of alwaysDeclaredSteps(entry)) names.add(`${name}-${step}`);
+  }
+  return names;
+}
 
 /** The definition with its whole `extends` chain folded in, child entries winning. */
 export function mergeChain(def: ThemeDefinition, lookup?: Lookup, seen: ReadonlySet<string> = new Set()): ThemeDefinition {
@@ -14,6 +24,9 @@ export function mergeChain(def: ThemeDefinition, lookup?: Lookup, seen: Readonly
   const parent = mergeChain(parentDef, lookup, new Set([...seen, def.name]));
   const out: Record<string, unknown> = { ...def };
   for (const layer of LAYERS) out[layer] = { ...(parent[layer] ?? {}), ...(def[layer] ?? {}) };
+  const shadowed = ownSteps(def);
+  const inherited = Object.entries(parent.pins ?? {}).filter(([name]) => !shadowed.has(name));
+  out.pins = { ...Object.fromEntries(inherited), ...(def.pins ?? {}) };
   out.axes = mergeAxes(parent.axes ?? {}, def.axes ?? {});
   return out as unknown as ThemeDefinition;
 }

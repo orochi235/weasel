@@ -592,24 +592,3 @@
   text-overflow: ellipsis;
 }
 
-.stub {
-  max-width: 60ch;
-  margin: 0 auto;
-  padding: calc(var(--wzl-space-lg) * 3) var(--wzl-space-lg);
-  color: var(--wzl-fg);
-}
-
-.stub h1 {
-  font-family: var(--wzl-font-display);
-  font-size: var(--wzl-font-size-xl);
-  margin: 0 0 var(--wzl-space-md);
-}
-
-.stub p {
-  color: var(--wzl-fg-muted);
-  line-height: var(--wzl-leading);
-}
-
-.stub a {
-  color: var(--wzl-accent-fg);
-}

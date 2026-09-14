@@ -60,8 +60,8 @@ export function bake(definition: ThemeDefinition, lookup?: Lookup): BakedTheme {
   return bakeChain(definition, lookup).at(-1)!;
 }
 
-/** `definition` and every theme above it, baked, root first. */
-function bakeChain(definition: ThemeDefinition, lookup: Lookup | undefined): BakedTheme[] {
+/** `definition` and every theme it extends, baked, root first. */
+export function bakeChain(definition: ThemeDefinition, lookup?: Lookup): BakedTheme[] {
   const merged = mergeChain(definition, lookup);
   const parentDef = definition.extends ? lookup?.(definition.extends) : undefined;
   const above = parentDef ? bakeChain(parentDef, lookup) : [];

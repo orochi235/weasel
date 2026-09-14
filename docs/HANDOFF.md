@@ -1,46 +1,100 @@
-# Handoff — one pose descriptor (in flight)
+# Handoff — the theme editor, phase 2 (built; merge is next)
 
-**Branch:** `pose-descriptor-build`, in the worktree `/Users/mike/src/weasel-pose`.
-Nothing is pushed. Another session shares the primary checkout — stage explicit
-paths, never `git add -A`.
+**Branch:** `theme-editor`, in the worktree `.worktrees/theme-editor`, cut from
+`main` right after phase 1 merged. Not merged and not pushed; run
+`git log --oneline main..theme-editor` for what the branch holds. Merging and
+pushing are Mike's calls, never yours.
 
-**The work is finished and gated** — `tsc` clean, 10,366 tests, the consumer
-smoke test, and all 51 visual baselines. `git log --oneline main..HEAD` is the
-arc; `.changeset/pose-descriptor.md` is what consumers read. The spec and plan
-are deleted, per this repo's rule that a merged plan is `git log`'s job.
+**Other sessions are in this repository**, in the primary checkout
+(`/Users/mike/src/weasel`, branch `forge-sidebar-clicks`). Stay in your
+worktree, stage explicit paths and commit with a pathspec, and never switch,
+merge or rebase their branch.
 
-## What a later session should know
+## What is done
 
-**The circle probe lives at** `packages/core/src/core/geometry/circlePose.fixture.ts`,
-and the plan's later tasks point there. `PoseDescriptor` itself moved to
-`core/geometry/poseDescriptor.ts` for the same reason: `core/` may not import
-`features/` or `interactions/`, and the adapters and the scene registry under
-`core/` need the type. The old import path re-exports, so nothing else moved.
+Phase 2 of `docs/superpowers/specs/2026-09-10-theme-engine-and-editor-design.md`
+is built on this branch, following `docs/superpowers/plans/2026-09-14-theme-editor.md`:
+`#/theme` saves through a dev-server theme store (hash conflict check; a save
+that would break the token build is refused before anything is written), keeps
+an unsaved draft across reloads, and has the header, layer rail, a preview in
+both modes, Ramps / Scales / Semantics editors, click to inspect, Export (CSS,
+definition, DTCG) and New theme. Reviews and headless browser passes along the
+way fixed engine edges (`lightBias`, own ramps shadowing inherited pins, token
+name characters, three ramp edge cases) and two `@weasel-js/ui` defects
+(segmented bar height inside labkit; property rows' names and label clicks).
+Each carries a `patch` changeset.
 
-**`npm run lint` fails on `main`**, with two errors this branch did not cause:
-`packages/diagram/src/live.ts:287` and
-`packages/core/src/core/scene/derivedDep.test.ts:9`. A third error is yours.
+Verified 2026-09-14 at `a2b36ad7`: `npx tsc --noEmit` clean; `npx vitest run
+--project=draw apps/theme-editor` 125/125; `npx vitest run --project=weasel-ui
+packages/theme packages/ui/src/components/Properties
+packages/ui/src/components/ToggleBar` 352/352; `npm run lint`, `check:bumps`
+and `check:test-projects` clean. In a headless browser (emulating
+`prefers-color-scheme`, since `LabShell` here has no mode buttons): both modes,
+a ramp slider and Compare, an inherited ramp staying read-only, Inspect
+landing on the clicked button's tokens without moving the preview's slider,
+typing a half-finished reference in the rule drawer, all three exports matching
+the repo files byte for byte, and a New theme `harbor` saved into
+`packages/theme/themes/` with `tokens.css` regenerated (then removed; the
+generator put the tree back exactly).
 
-**Task 4 had to reach into `move.ts`.** Deleting `ResizePolicy.projection` broke
-move's read of it, so that one line moved to the dep a task early.
+## What is next
 
-## The rest of this file is the previous arc, kept for its traps
+1. **The full suite** (`npm test`) has not been run; it is the gate before
+   merging or pushing.
+2. **Merge `theme-editor` into `main`** when Mike says so, deleting the plan in
+   the same change. `forge-sidebar-clicks` also edits `PaletteLab.tsx`; a
+   dry-run merge against it was clean at `6df10ccf`.
+3. **Plan Task 18**, once `forge-sidebar-clicks` reaches `main`: Seeds,
+   Components and Pins edit through `TokenPanel` instead of read-only lists.
 
-**Branch:** merged to `main`. Run `git log --oneline @{u}..HEAD` for what has
-not left the machine. The `#/theme` follow-up is a P2 in `docs/TODO.md`.
+## Decisions made in conversation that the code does not explain
 
-**Another session shares this working directory.** Stage explicit paths, never
-`git add -A`, and confirm the branch before assuming it is still yours.
+**The Seeds, Components and Pins rows use weasel-ui's `TokenPanel`**, which
+exists only on `forge-sidebar-clicks`, another session's unmerged branch. Mike
+decided 2026-09-14 to wait for it to merge: until then those layers are
+read-only lists (plan Task 18). Don't merge that branch into this one.
 
-## What this is
+**Answered 2026-09-14, and already in the spec's phase 1 text:** the chroma
+envelope gains `lightBias` (`sin(πt) + lightBias·(1−t) + darkBias·t`, built in
+`f9f41e2a`), and a theme's own ramps and scales shadow the pins it inherits, so
+a theme extending weasel can show its generated ramps (plan Task 7).
 
-Mike asked for a theme editor. What got built first is one part of it: a
-**palette lab** at `apps/theme-editor`, `#/palette`, which generates a
-categorical color set from constraints instead of anyone hand-picking hexes.
-`#/theme` is a stub — the token editing, the ramps, the semantic layer — and is
-the actual next arc. **It is designed but not built:**
-`docs/superpowers/specs/2026-09-10-theme-engine-and-editor-design.md` (engine
-first, then the editor). Next step is Mike's review of that spec, then a plan.
+**Open for Mike: should an anchor set a ramp's chroma peak directly?** Today
+an anchor sets `peak = anchor C · max / e`, where `e` is the envelope at the
+anchor's position, so the envelope passes through the anchor's chroma. With an
+anchor on an end step and that end's bias at exactly 0, `e = 0` and phase 1's
+guard falls back to `peak = anchor C`; as the bias moves off 0, `e` is tiny and
+the peak jumps to gamut-clipped color. A 0.1 floor on `e` was tried and taken
+back out (plan Tasks 21, 23): it turned a gray ramp anchored on its darkest step
+blue. `peak = anchor C` at every position removes the jump, and changes any
+anchor placed away from the envelope's peak. weasel's only anchor is mid-ramp,
+so neither choice moves what ships.
+
+**The dev server for this worktree runs on port 5187**, not 5177: the primary
+checkout's `dev:theme-editor` owns 5177, and Playwright's visual config also
+reuses 5177. `npx vite --config apps/theme-editor/vite.config.ts --port 5187 --strictPort`.
+
+## Traps from phase 1
+
+**Parallel implementers in one worktree collided.** Two agents committing at
+once swept each other's staged files into the wrong commit, and one reset
+undid another's commit. Run one implementer at a time; reviewers can run
+alongside, read-only.
+
+**`tests/visual` loads engine source through Node's own type stripping**, which
+rejects TypeScript parameter properties (`constructor(private readonly x)`),
+enums and namespaces. `tsc` and vitest accept them, so only the Playwright run
+fails, with a `SyntaxError` naming no file you'd suspect.
+
+**chrome-devtools MCP screenshots must be saved inside the workspace.** A path
+under the job's tmp directory is refused; `node_modules/.cache/` works and is
+ignored.
+
+## The palette lab — the arc before phase 1, kept for its traps
+
+The palette lab at `apps/theme-editor`, `#/palette`, generates a categorical
+color set from constraints. Its generator now lives in the engine,
+`packages/theme/src/engine/color/generate.ts`; the named crayons stay in the app.
 
 Run it with `npm run dev:theme-editor` (port 5177). Tests are in the `draw`
 vitest project: `npx vitest run --project=draw apps/theme-editor`.
@@ -140,8 +194,12 @@ and the orphaned buttons then made every source tab look like it held the same
 colors. A hard reload is the only thing that settles it, and *the browser is not
 evidence* until you have done one.
 
-**This project's jsdom provides `window` but no `localStorage` at all.** A test
-that reaches for storage asserts a stub, nothing more. `presets.ts` splits
+**This project's jsdom provides `window` but no `localStorage` at all.** Under
+Node 26 the `draw` vitest project reads `window.localStorage` as undefined and
+prints "localStorage is not available because --localstorage-file was not
+provided", so `persistDraft` and friends silently store nothing (seen
+2026-09-14). A test that reaches for storage asserts a stub, nothing more:
+`ThemeEditor.test.tsx` swaps in an in-memory one with `vi.stubGlobal`. `presets.ts` splits
 parsing from storage for exactly this reason.
 
 **`Callout` from `@weasel-js/ui` is a React Aria popover, not an inline banner.**

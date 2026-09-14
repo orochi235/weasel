@@ -1,0 +1,399 @@
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.previewVariant {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.previewLabel {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--wzl-fg-muted);
+}
+
+.previewModes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 8px;
+}
+
+.previewPane {
+  background: var(--wzl-surface);
+  color: var(--wzl-fg);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+  padding: 8px;
+}
+
+.inspecting {
+  cursor: crosshair;
+}
+
+.specimenBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px;
+}
+
+.specimenRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sunken {
+  background: var(--wzl-surface-sunken);
+  border-radius: var(--wzl-radius-md);
+  padding: 8px;
+}
+
+.rail {
+  border-right: 1px solid var(--wzl-border);
+  overflow-y: auto;
+}
+
+.railList {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.railItem {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  width: 100%;
+  height: auto;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--wzl-radius-md);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.railItem:hover {
+  background: var(--wzl-surface-raised);
+}
+
+.railItem[aria-current='true'] {
+  background: var(--wzl-surface-raised);
+}
+
+.railLabel {
+  flex: 1;
+}
+
+.railCount,
+.railPinned {
+  font-variant-numeric: tabular-nums;
+  color: var(--wzl-fg-muted);
+  font-size: 12px;
+}
+
+.empty {
+  color: var(--wzl-fg-muted);
+}
+
+.tableScroll {
+  overflow-x: auto;
+}
+
+.table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12px;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--wzl-border);
+  white-space: nowrap;
+}
+
+.highlight {
+  background: var(--wzl-surface-raised);
+  outline: 1px solid var(--wzl-border-strong);
+}
+
+/* `.lk-shell-body` is a block container, so the workbench takes its height rather than flexing. */
+.workbench {
+  display: grid;
+  grid-template-columns: 11rem minmax(0, 1fr) minmax(18rem, 30rem);
+  height: 100%;
+  min-height: 0;
+}
+
+.editor {
+  overflow: auto;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.previewColumn {
+  overflow: auto;
+  padding: 12px;
+  border-left: 1px solid var(--wzl-border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (max-width: 900px) {
+  .workbench {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .rail {
+    border-right: 0;
+    border-bottom: 1px solid var(--wzl-border);
+  }
+
+  .previewColumn {
+    border-left: 0;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.overridden {
+  font-variant-numeric: tabular-nums;
+  color: var(--wzl-fg-muted);
+  font-size: 12px;
+}
+
+.dirtyDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+  background: var(--wzl-surface-raised);
+}
+
+.statusStack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.statusTitle {
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+
+.statusActions {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.issues {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.loading {
+  padding: 16px;
+  color: var(--wzl-fg-muted);
+}
+
+.ramps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ramp {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+}
+
+.rampFocused {
+  border-color: var(--wzl-border-strong);
+}
+
+.rampHeader {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rampTitle {
+  margin: 0;
+  font-size: 14px;
+}
+
+.rampActions {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+
+.metric {
+  color: var(--wzl-fg-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.strip {
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.strip th {
+  text-align: left;
+  padding-right: 8px;
+  color: var(--wzl-fg-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.strip td {
+  padding: 2px 3px;
+  text-align: center;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.swatchCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.swatch {
+  display: block;
+  width: 44px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid var(--wzl-border);
+}
+
+.hex {
+  font-size: 10px;
+}
+
+.paramNote {
+  margin: 0;
+  font-size: 12px;
+  color: var(--wzl-fg-muted);
+}
+
+.gates {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ladderCell {
+  min-width: 8rem;
+}
+
+.ladderBar {
+  display: block;
+  height: 4px;
+  margin-top: 2px;
+  border-radius: 2px;
+  background: var(--wzl-fg-muted);
+}
+
+.semantics {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.selectedRow {
+  background: var(--wzl-surface-raised);
+}
+
+.swatchPair {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.swatchSmall {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1px solid var(--wzl-border);
+}
+
+.linkButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.drawer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--wzl-border-strong);
+  border-radius: var(--wzl-radius-md);
+}
+
+.previewBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.reads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+}
