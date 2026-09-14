@@ -4,6 +4,7 @@ import type { Lookup } from '@weasel-js/theme/engine';
 import { Button, RedoIcon, Select, UndoIcon } from '@weasel-js/ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LayerRail } from './LayerRail';
+import { RampsLayer } from './layers/RampsLayer';
 import styles from './ThemeEditor.module.css';
 import { ThemePreview, type PreviewVariant } from './ThemePreview';
 import { TokenList } from './TokenList';
@@ -11,7 +12,7 @@ import type { ThemeApi } from './theme/api';
 import { deriveDraft, type DerivedDraft } from './theme/draft';
 import { clearDraft, persistDraft, type StoredDraft } from './theme/draftStorage';
 import { describeIssue } from './theme/issues';
-import { LAYERS, countTokens, type LayerId } from './theme/model';
+import { LAYERS, adoptGenerated, countTokens, runtimeTheme, type LayerId } from './theme/model';
 import { layerRows } from './theme/rows';
 import type { IssueReport, PutResult, StoredTheme } from './theme/store';
 import { useLabHistory, type LabHistory } from './useLabHistory';
@@ -81,6 +82,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
   const [layer, setLayer] = useState<LayerId>('ramps');
   const [axisValues, setAxisValues] = useState<Selection>({});
   const [highlight] = useState<readonly string[]>([]);
+  const [focusRamp, setFocusRamp] = useState<string | null>(null);
   const dirty = draft !== saved;
 
   useEffect(() => {
@@ -112,6 +114,11 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
       { id: 'redo', group: 'history', region: 'header', item: { icon: RedoIcon, label: 'Redo', shortcut: '⇧⌘Z', disabled: !canRedo, onActivate: (h) => h.redo() } },
     ],
     [canUndo, canRedo],
+  );
+
+  const generatedTheme = useMemo(
+    () => (focusRamp === null ? null : runtimeTheme(adoptGenerated(draft, lookup, focusRamp), lookup, `draft-${draft.name}-generated`)),
+    [focusRamp, draft, lookup],
   );
 
   if (!derived) {
@@ -149,10 +156,14 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
   const counts = countTokens(draft, derived.primary.result);
   const liveIssues: IssueReport[] = derived.views.flatMap((v) => v.result.issues.map((issue) => ({ selection: v.selection, issue })));
   const layerLabel = LAYERS.find((l) => l.id === layer)!.label;
-  const previewVariants: readonly PreviewVariant[] = [{ label: 'Draft', theme: derived.theme }];
+  const previewVariants: readonly PreviewVariant[] = generatedTheme
+    ? [{ label: 'Pinned', theme: derived.theme }, { label: `Generated ${focusRamp}`, theme: generatedTheme }]
+    : [{ label: 'Draft', theme: derived.theme }];
 
   const layerEditor = (() => {
     switch (layer) {
+      case 'ramps':
+        return <RampsLayer draft={draft} derived={derived} lookup={lookup} highlight={highlight} focused={focusRamp} onFocus={setFocusRamp} onChange={history.update} />;
       default:
         return <TokenList rows={layerRows(layer, draft, derived.primary.result)} highlight={highlight} empty={`${draft.name} has no ${layerLabel.toLowerCase()}.`} />;
     }

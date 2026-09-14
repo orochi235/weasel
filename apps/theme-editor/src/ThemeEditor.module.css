@@ -223,3 +223,99 @@
   padding: 16px;
   color: var(--wzl-fg-muted);
 }
+
+.ramps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ramp {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+}
+
+.rampFocused {
+  border-color: var(--wzl-border-strong);
+}
+
+.rampHeader {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rampTitle {
+  margin: 0;
+  font-size: 14px;
+}
+
+.rampActions {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+
+.metric {
+  color: var(--wzl-fg-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.strip {
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.strip th {
+  text-align: left;
+  padding-right: 8px;
+  color: var(--wzl-fg-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.strip td {
+  padding: 2px 3px;
+  text-align: center;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.swatchCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.swatch {
+  display: block;
+  width: 44px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid var(--wzl-border);
+}
+
+.hex {
+  font-size: 10px;
+}
+
+.paramNote {
+  margin: 0;
+  font-size: 12px;
+  color: var(--wzl-fg-muted);
+}
+
+.gates {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
