@@ -37,3 +37,22 @@ describe('writeParam', () => {
     expect(result.provenance['accent-soft'].pinned).toBe(true);
   });
 });
+
+describe('a parameter that varies as a whole', () => {
+  const varying = {
+    kind: 'lightness',
+    steps: ['a', 'b'],
+    lightness: { by: 'mode', dark: [0.3, 0.5], light: [0.8, 0.6] },
+    chroma: { by: 'mode', dark: { peak: 0.1 }, light: { peak: 0.05 } },
+  } as unknown as LightnessRampDef;
+
+  it('reads as its by object', () => {
+    expect(readParam(varying, 'lightness.0')).toBe(varying.lightness);
+    expect(readParam(varying, 'chroma.peak')).toBe(varying.chroma);
+  });
+
+  it('is not written into', () => {
+    expect(() => writeParam(varying, 'lightness.0', 0.4)).toThrow();
+    expect(() => writeParam(varying, 'chroma.peak', 0.2)).toThrow();
+  });
+});

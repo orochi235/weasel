@@ -1,4 +1,4 @@
-import type { ResolvedTheme } from '@weasel-js/theme';
+import { isByAxis, type ResolvedTheme } from '@weasel-js/theme';
 import { declaredSteps, toLch, type DeriveResult, type LightnessRampDef, type RampDef } from '@weasel-js/theme/engine';
 
 export interface StepView {
@@ -63,14 +63,15 @@ export function rampView(name: string, entry: RampDef, result: DeriveResult, res
 export function readParam(entry: LightnessRampDef, key: string): unknown {
   const [head, tail] = key.split('.');
   const top = (entry as unknown as Record<string, unknown>)[head];
-  if (tail === undefined) return top;
+  if (tail === undefined || isByAxis(top)) return top;
   return top && typeof top === 'object' ? (top as Record<string, unknown>)[tail] : undefined;
 }
 
 export function writeParam(entry: LightnessRampDef, key: string, value: number): LightnessRampDef {
   const [head, tail] = key.split('.');
-  if (tail === undefined) return { ...entry, [head]: value };
   const top = (entry as unknown as Record<string, unknown>)[head];
+  if (isByAxis(top)) throw new Error(`${head} varies by ${top.by}; write each branch instead`);
+  if (tail === undefined) return { ...entry, [head]: value };
   if (Array.isArray(top)) {
     const next = [...top];
     next[Number(tail)] = value;

@@ -3,7 +3,8 @@ import userEvent from '@testing-library/user-event';
 import type { ThemeDefinition } from '@weasel-js/theme';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { deriveDraft } from '../theme/draft';
-import { lookupOf, weasel } from '../theme/fixtures';
+import { child, lookupOf, weasel } from '../theme/fixtures';
+import { adoptGenerated } from '../theme/model';
 import { RampsLayer, type RampsLayerProps } from './RampsLayer';
 
 function renderRamps(): RampsLayerProps & { onChange: ReturnType<typeof vi.fn> } {
@@ -53,5 +54,40 @@ describe('<RampsLayer>', () => {
     const accent = screen.getByRole('region', { name: 'accent ramp' });
     expect(within(accent).getByText(/ramps\.accent\.chroma\.peak: expected a number/)).toBeInTheDocument();
     expect(within(accent).queryByRole('rowheader', { name: 'Generated' })).toBeNull();
+  });
+
+  it("keeps an inherited ramp read-only until it is made the theme's own", async () => {
+    const lookup = lookupOf(child);
+    const onChange = vi.fn();
+    render(<RampsLayer draft={child} derived={deriveDraft(child, lookup, {})} lookup={lookup} highlight={[]} focused={null} onFocus={vi.fn()} onChange={onChange} />);
+    const gray = screen.getByRole('region', { name: 'gray ramp' });
+    expect(within(gray).queryAllByRole('slider')).toEqual([]);
+    await userEvent.click(within(gray).getByRole('button', { name: "Make gray this theme's own" }));
+    expect(nextDef(onChange).ramps?.gray).toBeDefined();
+  });
+
+  it('keeps Compare in preview on a focused ramp with no pins left', () => {
+    const lookup = lookupOf();
+    const adopted = adoptGenerated(weasel, lookup, 'gray');
+    render(<RampsLayer draft={adopted} derived={deriveDraft(adopted, lookup, {})} lookup={lookup} highlight={[]} focused="gray" onFocus={vi.fn()} onChange={vi.fn()} />);
+    const button = within(screen.getByRole('region', { name: 'gray ramp' })).getByRole('button', { name: 'Compare in preview' });
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it("pins each mode's own color", async () => {
+    const tint = { kind: 'lightness', steps: ['a', 'b'], lightness: { by: 'mode', dark: [0.3, 0.5], light: [0.8, 0.6] }, hue: 200, chroma: { peak: 0.05 } };
+    const draft = { ...weasel, ramps: { ...weasel.ramps!, tint } } as unknown as ThemeDefinition;
+    const lookup = lookupOf(draft);
+    const derived = deriveDraft(draft, lookup, {});
+    const onChange = vi.fn();
+    render(<RampsLayer draft={draft} derived={derived} lookup={lookup} highlight={[]} focused={null} onFocus={vi.fn()} onChange={onChange} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Pin tint-a' }));
+    const hexIn = (mode: string) => derived.views.find((v) => v.mode === mode)!.result.tokens['tint-a'].value;
+    expect(hexIn('dark')).not.toBe(hexIn('light'));
+    expect(nextDef(onChange).pins?.['tint-a']).toEqual({
+      by: 'mode',
+      dark: { value: hexIn('dark'), type: 'color' },
+      light: { value: hexIn('light'), type: 'color' },
+    });
   });
 });

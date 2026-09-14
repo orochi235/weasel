@@ -1,4 +1,4 @@
-import { isByAxis, type ThemeDefinition } from '@weasel-js/theme';
+import { isByAxis, type PinValue, type ThemeDefinition, type Varying } from '@weasel-js/theme';
 import {
   DEFAULT_CONSTRAINTS,
   declaredSteps,
@@ -16,7 +16,7 @@ import { PinIcon } from '../PinIcon';
 import styles from '../ThemeEditor.module.css';
 import { ConstraintsPanel, type SetConstraint } from '../palette/ConstraintsPanel';
 import { unmetGates } from '../palette/unmetGates';
-import type { DerivedDraft } from '../theme/draft';
+import type { DerivedDraft, ModeView } from '../theme/draft';
 import { describeIssue } from '../theme/issues';
 import { adoptGenerated, removePin, setPin, setRamp } from '../theme/model';
 import { rampView, readParam, writeParam, type StepView } from '../theme/ramps';
@@ -54,14 +54,25 @@ function Swatch({ hex, caption }: { hex: string; caption?: string }) {
 
 type Edit = RampsLayerProps['onChange'];
 
-function LightnessParams({ name, entry, draft, lookup, onChange }: { name: string; entry: LightnessRampDef; draft: ThemeDefinition; lookup: Lookup; onChange: Edit }) {
+interface EditorProps<T> {
+  readonly name: string;
+  readonly entry: T;
+  readonly draft: ThemeDefinition;
+  readonly lookup: Lookup;
+  readonly onChange: Edit;
+  /** The ramp is inherited: editing it would make it the theme's own. */
+  readonly readOnly: boolean;
+}
+
+function LightnessParams({ name, entry, draft, lookup, onChange, readOnly }: EditorProps<LightnessRampDef>) {
   const anchored = entry.anchor !== undefined;
   return (
     <PropertyPanel title={`${name} parameters`}>
       <PropertyGroup title="Walk">
         {PARAMS.filter((p) => !(anchored && (p.key === 'hue' || p.key === 'chroma.peak'))).map((p) => {
           const raw = readParam(entry, p.key);
-          if (raw !== undefined && typeof raw !== 'number') {
+          if (readOnly && raw === undefined) return null;
+          if (readOnly || (raw !== undefined && typeof raw !== 'number')) {
             return (
               <p key={p.key} className={styles.paramNote}>
                 {p.label}: <code>{JSON.stringify(raw)}</code>
@@ -72,7 +83,7 @@ function LightnessParams({ name, entry, draft, lookup, onChange }: { name: strin
             <SliderRow
               key={p.key}
               label={p.label}
-              value={raw ?? 0}
+              value={(raw as number | undefined) ?? 0}
               min={p.min}
               max={p.max}
               step={p.step}
@@ -87,26 +98,39 @@ function LightnessParams({ name, entry, draft, lookup, onChange }: { name: strin
   );
 }
 
-function GatesEditor({ name, entry, draft, lookup, onChange }: { name: string; entry: CategoricalRampDef; draft: ThemeDefinition; lookup: Lookup; onChange: Edit }) {
+function GatesEditor({ name, entry, draft, lookup, onChange, readOnly, infeasible }: EditorProps<CategoricalRampDef> & { readonly infeasible: boolean }) {
   const c = useMemo<Constraints>(() => {
     const gates = isByAxis(entry.gates) ? {} : Object.fromEntries(Object.entries(entry.gates ?? {}).filter(([, v]) => !isByAxis(v)));
     return { ...DEFAULT_CONSTRAINTS, ...gates, count: declaredSteps(entry).length, anchors: entry.anchors ?? [] } as Constraints;
   }, [entry]);
-  const palette = useMemo(() => generate(c), [c]);
+  // Only to explain which gates are unmet; derive has already run the generator.
+  const palette = useMemo(() => (infeasible && !readOnly ? generate(c) : null), [c, infeasible, readOnly]);
   if (isByAxis(entry.gates)) {
     return <p className={styles.paramNote}>{name}&apos;s gates vary by {entry.gates.by}; edit them in the definition file.</p>;
+  }
+  if (readOnly) {
+    const values: [string, unknown][] = [...Object.entries(entry.gates ?? {}), ...(entry.anchors ? [['anchors', entry.anchors] as [string, unknown]] : [])];
+    return (
+      <div className={styles.gates}>
+        {values.map(([key, value]) => (
+          <p key={key} className={styles.paramNote}>
+            {key}: <code>{JSON.stringify(value)}</code>
+          </p>
+        ))}
+      </div>
+    );
   }
   const edit = (update: (e: CategoricalRampDef) => CategoricalRampDef, key: string) =>
     onChange(setRamp(draft, lookup, name, (e) => update(e as CategoricalRampDef) as RampDef), key);
   const setGate: SetConstraint = (key, value) => edit((e) => ({ ...e, gates: { ...(e.gates as object | undefined), [key]: value } as CategoricalRampDef['gates'] }),`ramps.${name}.gates.${String(key)}`);
-  const unmet = palette.feasible ? [] : unmetGates(c, palette.stats);
+  const unmet = palette && !palette.feasible ? unmetGates(c, palette.stats) : [];
   return (
     <div className={styles.gates}>
       <PropertyPanel title={`${name} gates`}>
         <ConstraintsPanel c={c} onSet={setGate} fixedCount />
         <AnchorList anchors={c.anchors} onChange={(anchors) => edit((e) => ({ ...e, anchors }), `ramps.${name}.anchors`)} />
       </PropertyPanel>
-      {!palette.feasible && (
+      {infeasible && (
         <p role="status" className={styles.status}>
           <strong>No arrangement satisfies these gates.</strong> {unmet.join('; ') || 'Loosen a gate.'}
         </p>
@@ -138,10 +162,17 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
     );
     return [...new Set(own.map(describeIssue))];
   };
+  const hexIn = (v: ModeView, s: StepView) =>
+    (v.resolved as Readonly<Record<string, string>>)[`--wzl-${s.token}`] ?? String(v.result.tokens[s.token]?.value ?? s.hex);
+  const pinOf = (s: StepView): Varying<PinValue> => {
+    const byMode = derived.views.map((v) => [v.mode, hexIn(v, s)] as const);
+    if (byMode.some(([mode]) => mode === undefined) || byMode.every(([, hex]) => hex === byMode[0][1])) return { value: s.hex, type: 'color' };
+    return { by: 'mode', ...Object.fromEntries(byMode.map(([mode, hex]) => [mode, { value: hex, type: 'color' }])) } as Varying<PinValue>;
+  };
   const togglePin = (s: StepView) =>
     s.pinned
       ? onChange(removePin(draft, s.token), `pin:${s.token}`, `unpin ${s.token}`)
-      : onChange(setPin(draft, s.token, { value: s.hex, type: 'color' }), `pin:${s.token}`, `pin ${s.token}`);
+      : onChange(setPin(draft, s.token, pinOf(s)), `pin:${s.token}`, `pin ${s.token}`);
 
   return (
     <div ref={ref} className={styles.ramps}>
@@ -150,6 +181,8 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
         const lit = (token: string) => highlight.includes(token);
         const issues = issuesOf(name);
         const authored = view.steps.some((s) => derived.primary.result.provenance[s.token]?.layer === 'pins');
+        const own = Object.hasOwn(draft.ramps ?? {}, name);
+        const infeasible = allIssues.some((i) => i.kind === 'infeasible-ramp' && i.ramp === name);
         return (
           <section key={name} className={focused === name ? `${styles.ramp} ${styles.rampFocused}` : styles.ramp} aria-label={`${name} ramp`}>
             <header className={styles.rampHeader}>
@@ -158,7 +191,14 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
               {view.spread !== null && <span className={styles.metric}>spread {view.spread.toFixed(2)}×</span>}
               {view.anyPinned && view.generatedSpread !== null && <span className={styles.metric}>generated {view.generatedSpread.toFixed(2)}×</span>}
               <span className={styles.rampActions}>
-                {view.anyPinned && (
+                {!own && (
+                  <span title={`The theme then generates every ${name} step itself, and the pins it inherits on them stop applying.`}>
+                    <Button size="sm" onClick={() => onChange(setRamp(draft, lookup, name, (e) => e), `own:${name}`, `make ${name} own`)}>
+                      Make {name} this theme&apos;s own
+                    </Button>
+                  </span>
+                )}
+                {(view.anyPinned || focused === name) && (
                   <Button size="sm" pressed={focused === name} onClick={() => onFocus(focused === name ? null : name)}>
                     Compare in preview
                   </Button>
@@ -168,7 +208,7 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
                 </Button>
                 {entry.kind === 'categorical' && (
                   <Button size="sm" pressed={editingGates === name} onClick={() => setEditingGates(editingGates === name ? null : name)}>
-                    Edit gates
+                    {own ? 'Edit gates' : 'Show gates'}
                   </Button>
                 )}
               </span>
@@ -239,8 +279,10 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
                 </tbody>
               </table>
             </div>
-            {entry.kind === 'lightness' && <LightnessParams name={name} entry={entry} draft={draft} lookup={lookup} onChange={onChange} />}
-            {entry.kind === 'categorical' && editingGates === name && <GatesEditor name={name} entry={entry} draft={draft} lookup={lookup} onChange={onChange} />}
+            {entry.kind === 'lightness' && <LightnessParams name={name} entry={entry} draft={draft} lookup={lookup} onChange={onChange} readOnly={!own} />}
+            {entry.kind === 'categorical' && editingGates === name && (
+              <GatesEditor name={name} entry={entry} draft={draft} lookup={lookup} onChange={onChange} readOnly={!own} infeasible={infeasible} />
+            )}
           </section>
         );
       })}
