@@ -344,6 +344,18 @@ a:hover { text-decoration: underline; }
   background: var(--ckd-surface-2);
 }
 
+.ckd-page-error {
+  padding: 16px;
+  border: 1px solid var(--wzl-danger);
+  border-radius: 4px;
+  background: var(--ckd-surface-2);
+}
+
+.ckd-page-error pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 /* ---------- Code panel ---------- */
 .ckd-code-panel {
   border: 1px solid var(--ckd-border-2);
