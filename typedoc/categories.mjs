@@ -54,6 +54,17 @@ export const RULES = [
   ['packages/history/src', 'History'],
   ['packages/paint/src', 'Paint & fills'],
   ['packages/text/src', 'Text'],
+
+  // Routing moved out of core; each part keeps the category its core directory had.
+  ['packages/routing/src/interactions/actions', 'Selection & actions'],
+  ['packages/routing/src/interactions', 'Tools & gestures'],
+  ['packages/routing/src/tools', 'Tools & gestures'],
+  ['packages/routing/src/viewport', 'Viewport'],
+  ['packages/routing/src/contributions', 'Extension points'],
+  ['packages/routing/src/eligibility', 'Extension points'],
+  ['packages/routing/src/ingestion', 'Extension points'],
+  ['packages/routing/src/index', 'Selection & actions'],
+  ['packages/routing/src/vocabulary', 'Tools & gestures'],
 ];
 
 /**
@@ -64,4 +75,16 @@ export const RULES = [
  */
 export const OVERRIDES = {
   VERSION: 'Extension points',
+
+  // packages/routing/src/vocabulary.ts gathers types from several core directories.
+  View: 'Viewport',
+  Bounds: 'Viewport',
+  NodeId: 'Scene',
+  SelectionApi: 'Selection & actions',
+  SelectionMode: 'Selection & actions',
+  SelectionExtendKey: 'Selection & actions',
+  DebugSink: 'Extension points',
+  HandleKind: 'Extension points',
+  HitShape: 'Extension points',
+  DeviceProfile: 'Extension points',
 };
