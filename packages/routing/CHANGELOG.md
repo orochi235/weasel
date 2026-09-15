@@ -1,5 +1,14 @@
 # @weasel-js/routing
 
+## 1.5.1
+
+### Patch Changes
+
+- @weasel-js/cursor@1.5.1
+  - @weasel-js/gestures@1.5.1
+  - @weasel-js/history@1.5.1
+  - @weasel-js/modes@1.5.1
+
 ## 1.5.0
 
 ### Patch Changes

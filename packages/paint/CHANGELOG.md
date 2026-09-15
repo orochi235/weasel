@@ -1,5 +1,11 @@
 # @weasel-js/paint
 
+## 1.5.1
+
+### Patch Changes
+
+- f644eac: The sRGB ↔ OKLab/OKLCH conversions (`srgbU8ToOklab`, `oklabToOklch`, `lerpOklch` and the rest) now live in `@weasel-js/paint`. `@weasel-js/core` still exports every one of them, so no import changes.
+
 ## 1.5.0
 
 ## 1.4.4

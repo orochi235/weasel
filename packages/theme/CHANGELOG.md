@@ -1,5 +1,31 @@
 # @weasel-js/theme
 
+## 1.5.1
+
+### Patch Changes
+
+- a39a885: Themes are now authored as layered definitions and built by an engine, published as `@weasel-js/theme/engine`: seeds, generated ramps and scales, semantic rules (a step, an offset from another semantic, the first step that clears a contrast target, a reference), components and pins, any of which can vary by axis. `derive` produces a theme's tokens for one selection with provenance and validation issues, and `bake` folds every selection into a runtime `Theme`. weasel's own theme is `themes/weasel.json`, every value pinned, and emits the same CSS declarations as before. `toDTCG` in `@weasel-js/theme/engine` writes a theme back out as a DTCG document, with aliases written as paths through their type group (`{color.gray-800}`) so DTCG tools resolve them. A pin or component whose whole value is `{seeds.name}` takes that seed's value. labkit's interstellar theme is now `interstellar.theme.json`, a definition extending weasel.
+  
+  **Breaking.** A theme varies by *axes* rather than modes, and `mode` is one axis:
+  
+  - `resolveTheme(theme, selection?)` and `applyTheme(el, theme, selection?)` take `{ mode: 'light' }` instead of `'light'`; a missing axis takes its default. `applyTheme` stamps one `data-wzl-<axis>` attribute per axis.
+  - `<ThemeProvider selection={{ mode }}>` replaces `mode`, and `useTheme()` returns `selection` instead of `mode`.
+  - `Theme` holds `axes` and `tokens` (each token plain or `{ by: 'mode', dark, light }`) instead of `defaultMode`, `tokens` and `modes`. Read an axis default with `themeAxes(theme).mode.default`.
+  - `defineTheme` takes `{ name, extends?, axes?, components?, pins? }`, where a pin or component is a value or `{ value, type, alpha, description }` and references are written `{token}` (not `{color.token}`). It throws on a definition with rules; bake those with the engine. `extends` is a `Theme`: passing a definition's name (`'weasel'`) throws and says to pass the `Theme`.
+  - A theme that redeclares an axis its parent declares keeps the parent's values: the child's entries for a shared value and the child's default win, and a value only the parent has still resolves through the parent. A DTCG document with only a `dark` mode now resolves `light` from the theme it extends.
+  - `THEMES.<name>.modes.<mode>` is now `THEMES.<name>.selections['mode=<mode>']`. `THEME_SOURCES` holds definitions, `BAKED_THEMES` is new, and `TokenInput` and `ThemeSource` are removed.
+  - `GeneratedTheme.defaultMode` is replaced by `axes`.
+  - `tokens.css`'s `:root` declarations and `TOKEN_MANIFEST`'s rows are in layer order — ramps, scales, semantics, components, then other pins. The values are unchanged, but token browsers list them in the new order.
+- 55b5524: `@weasel-js/theme/engine` exports `generateTokens(definitions)`, which returns `tokens.css`, `themes.ts` and `manifest.ts` for a set of theme definitions, or the derive problems that stop them; the package's `gen:tokens` script now calls it. The engine also exports `declaredSteps(entry)`, every step a ramp or scale entry can declare, and the runtime entry exports `isByAxis`.
+- 045998f: A theme that declares a ramp or scale now generates those steps itself: pins held on them by the themes it extends no longer apply, while its own pins still do. Previously a theme extending weasel inherited weasel's pins on every gray, accent and swatch step, so none of its own ramps could show. A theme that redeclares a ramp and relied on the parent's pins must pin those steps itself.
+- 56cad3a: Three lightness ramp edge cases: a theme whose ramp steps vary by axis now shadows only the inherited pins on steps it declares in every branch, so `derive` no longer throws where a branch omits one; an anchor on a step where the chroma envelope is near zero no longer turns the ramp's other steps gray while a bias moves off 0 (the ramp's chroma still rises steeply there); and a negative `peak`, `lightBias` or `darkBias` is reported as invalid instead of producing `NaN` colors or flipping the hue.
+- f9f41e2: A lightness ramp's `chroma` takes `lightBias`, which lifts the first step's chroma off zero as `darkBias` lifts the last: the envelope is now `sin(πt) + lightBias·(1−t) + darkBias·t`. It defaults to 0, so existing ramps are unchanged. Without it, a ramp anchored on one brand color with `darkBias` 0 came out gray at both ends.
+- fa56d1e: Token and step names are limited to letters, digits, `-` and `_`. Any other name is reported as invalid and dropped, as a name containing a dot already was; a quote in a name used to reach the generated `themes.ts` unescaped.
+  
+  `@weasel-js/theme/engine` also exports `bakeChain(definition, lookup)`: the definition and every theme it extends, baked, root first.
+- Updated dependencies [f644eac]
+  - @weasel-js/paint@1.5.1
+
 ## 1.5.0
 
 ### Patch Changes
