@@ -33,7 +33,9 @@ describe('interstellarTheme', () => {
   });
 
   it('carries the cosmic backdrop in dark and drops it in light', () => {
-    expect(resolveTheme(interstellarTheme, { mode: 'dark' })['--wzl-backdrop']).toContain('radial-gradient');
+    expect(resolveTheme(interstellarTheme, { mode: 'dark' })['--wzl-backdrop']).toContain(
+      'radial-gradient',
+    );
     expect(resolveTheme(interstellarTheme, { mode: 'light' })['--wzl-backdrop']).toBe('none');
   });
 });
