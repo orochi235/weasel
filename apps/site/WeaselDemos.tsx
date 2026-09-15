@@ -1,5 +1,7 @@
 import { Suspense, lazy, useEffect, useRef, useState, type RefObject } from 'react';
 import { CATEGORIES, DEMOS, DEMOS_BY_ID, type DemoEntry, type DemoSourceTab } from './registry';
+import { sessionStore } from './chunkReload';
+import { PageBoundary } from './PageBoundary';
 
 // All three are lazy so the entry bundle carries only the nav: `Releases`
 // pulls in `virtual:changelogs` (every published changelog entry), and
@@ -123,11 +125,13 @@ export function WeaselDemos() {
       </aside>
 
       <main className="ckd-main">
-        {active ? <DemoView entry={active} key={active.id} /> : null}
-        <Suspense fallback={null}>
-          {!active && activeId === RELEASES_ID ? <Releases /> : null}
-          {!active && activeId === WHATS_NEW_ID ? <WhatsNew onSelect={setActiveId} /> : null}
-        </Suspense>
+        <PageBoundary key={activeId} reload={() => window.location.reload()} store={sessionStore()}>
+          {active ? <DemoView entry={active} key={active.id} /> : null}
+          <Suspense fallback={null}>
+            {!active && activeId === RELEASES_ID ? <Releases /> : null}
+            {!active && activeId === WHATS_NEW_ID ? <WhatsNew onSelect={setActiveId} /> : null}
+          </Suspense>
+        </PageBoundary>
       </main>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />

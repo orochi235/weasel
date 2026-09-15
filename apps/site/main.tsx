@@ -4,6 +4,14 @@ import { registerFont } from '@weasel-js/core/renderer';
 import { WeaselDemos } from './WeaselDemos';
 import { ActionsProvider } from '@weasel-js/core';
 import { SelectionContextProvider } from '@weasel-js/core';
+import { reloadOnce, sessionStore } from './chunkReload';
+
+// A tab opened before a deploy preloads chunks that no longer exist. Left unhandled, the import rejects into PageBoundary.
+window.addEventListener('vite:preloadError', (event) => {
+  if (!reloadOnce(sessionStore(), Date.now())) return;
+  event.preventDefault();
+  window.location.reload();
+});
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Missing #root element');
