@@ -1,5 +1,18 @@
 # @weasel-js/ui
 
+## 1.5.1
+
+### Patch Changes
+
+- c7545c4: Clicking a property row's label reaches its control again when the row has a `description`. `PropertyRow`'s `<label>` had no `for`, so it belonged to the first labelable element inside it, the ⓘ help button; `CheckboxRow`, `TextRow`, `NumberRow`, `SelectRow` and `ColorRow` now point it at their control. `ColorRow`'s opacity slider is named `<label> opacity`. A direct `PropertyRow` with a `description` should pass `htmlFor` for the same reason.
+- 15b5eca: `ToggleBar`, `ActionsBar` and `OptionsBar` segments now take their height from the bar. Inside a labkit page, labkit's default button height used to win instead, so a `size="sm"` bar drew 24px segments in a 17px track and clipped their labels.
+- 0c46089: Every property row's control is named after the row's label: `SliderRow`'s slider and readout, and the fields in `NumberRow`, `TextRow`, `SelectRow`, `ColorRow` and `CheckboxRow`. `ToggleRow`'s segments are named after their options, inside a group named after the row. `PropertyRow`'s `<label>` labels only the first input inside it. On a slider row that is the numeric readout, on any row with a `description` it is the ⓘ help button, and on a toggle row it is the first segment. So the range input had no name, a described row's control lost its name, and a toggle's first segment took the row's name.
+- Updated dependencies [f644eac]
+  - @weasel-js/core@1.5.1
+  - @weasel-js/svg@1.5.1
+  - @weasel-js/font@1.5.1
+  - @weasel-js/modes@1.5.1
+
 ## 1.5.0
 
 ### Minor Changes

@@ -1,5 +1,26 @@
 # @weasel-js/forge
 
+## 1.5.1
+
+### Patch Changes
+
+- b9d1145: Drop the `./` from the `weaselforge` bin path, so publishing stops warning.
+  
+  npm normalizes `./dist/cli.js` to `dist/cli.js` and reports it as
+  `"bin[weaselforge]" script name dist/cli.js was invalid and removed`. Nothing
+  was removed — the published manifest has always carried a working bin — but the
+  wording reads as a broken CLI, which is worth not printing on every release.
+- Updated dependencies [f644eac]
+- Updated dependencies [a39a885]
+- Updated dependencies [55b5524]
+- Updated dependencies [045998f]
+- Updated dependencies [56cad3a]
+- Updated dependencies [f9f41e2]
+- Updated dependencies [fa56d1e]
+  - @weasel-js/core@1.5.1
+  - @weasel-js/theme@1.5.1
+  - @weasel-js/labkit@1.5.1
+
 ## 1.5.0
 
 ### Patch Changes
