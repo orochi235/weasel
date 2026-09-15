@@ -29,6 +29,31 @@ describe('categoryOf', () => {
     );
   });
 
+  it('categorizes the routing package by where each part lived in core', () => {
+    expect(categoryOf(abs('packages/routing/src/interactions/actions/action.ts'), 'Action')).toBe(
+      'Selection & actions',
+    );
+    expect(
+      categoryOf(abs('packages/routing/src/interactions/dispatcher/dispatcher.ts'), 'createDispatcher'),
+    ).toBe('Tools & gestures');
+    expect(categoryOf(abs('packages/routing/src/viewport/clientToCanvas.ts'), 'clientToCanvas')).toBe(
+      'Viewport',
+    );
+    expect(categoryOf(abs('packages/routing/src/eligibility/rule.ts'), 'evaluate')).toBe(
+      'Extension points',
+    );
+    expect(categoryOf(abs('packages/routing/src/index.ts'), 'DepSchema')).toBe('Selection & actions');
+  });
+
+  it("files routing's shared vocabulary by each type's subject", () => {
+    const vocabulary = abs('packages/routing/src/vocabulary.ts');
+    expect(categoryOf(vocabulary, 'ModifierState')).toBe('Tools & gestures');
+    expect(categoryOf(vocabulary, 'View')).toBe('Viewport');
+    expect(categoryOf(vocabulary, 'SelectionMode')).toBe('Selection & actions');
+    expect(categoryOf(vocabulary, 'NodeId')).toBe('Scene');
+    expect(categoryOf(vocabulary, 'DebugSink')).toBe('Extension points');
+  });
+
   it('lets a name override beat every path rule', () => {
     expect(categoryOf(abs('packages/core/src/core/viewport/anything.ts'), 'VERSION')).toBe(
       'Extension points',
