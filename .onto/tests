@@ -1,0 +1,7 @@
+run: npm test
+setup: npm ci
+needs: node_modules
+
+# 24 is Active LTS and what release, pages, visual and perf all pin; ci.yml also
+# tests 22, the floor `engines` promises. `.nvmrc` carries the target.
+use: nvm
