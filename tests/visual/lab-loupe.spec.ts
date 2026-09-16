@@ -115,7 +115,8 @@ test(`${DEMO_ID} — the lens takes no pointer events`, async ({ page }) => {
 test(`${DEMO_ID} — the DOM lens re-renders the instrument bigger`, async ({ page }) => {
   await openLab(page);
 
-  await page.locator('.ckd-lab-frame select').first().selectOption({ label: 'Written detail' });
+  await page.getByRole('button', { name: 'Add trial' }).click();
+  await page.getByRole('menuitem', { name: 'Written detail' }).click();
   const trial = page.locator('.lk-trial').filter({ hasText: 'Written detail' }).first();
   await trial.getByRole('button', { name: 'Loupe' }).click();
   const host = await trial.locator('.lk-trial__loupe-host').boundingBox();

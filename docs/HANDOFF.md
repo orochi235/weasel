@@ -1,4 +1,4 @@
-# Handoff — the theme editor, phase 2 (merged; Task 18 unblocked, not built)
+# Handoff — the theme editor, phase 2 (merged; Task 18 built)
 
 **Where it lives:** merged into `main` on 2026-09-14 (`be97b83b`, "Merge branch
 'theme-editor'") and pushed; `origin/main` carries it as of 2026-09-15. The
@@ -38,34 +38,37 @@ the repo files byte for byte, and a New theme `harbor` saved into
 `packages/theme/themes/` with `tokens.css` regenerated (then removed; the
 generator put the tree back exactly).
 
+**Seeds, Components and Pins edit through weasel-ui's `TokenPanel`** as of
+`272ab0d6`: `layerEntries` (`theme/entries.ts`) builds the `TokenEntry` rows and
+`TokenLayer.tsx` writes them back, a value through `setPin` and a Reset through
+`removePin`, with a seed editing `draft.seeds` instead. `TokenList.tsx` and
+`theme/rows.ts` were its only consumers and are deleted. Two things worth
+knowing: an entry carries the value a pin writes back, so a pinned alpha reads
+`{fg}` rather than the list's `{fg} at 10%` and the alpha rides on the pin; and
+a pins-layer entry is always `overridden`, because the pin is itself the
+override Reset drops.
+
+**`tests/visual/lab-loupe.spec.ts` drives the instrument picker as a menu**, and
+the Visual Regression failure that stood on `main` before the merge is gone. The
+spec drove `.ckd-lab-frame select` with `selectOption`; `<Lab>` renders no native
+`<select>` anywhere, because with more than one instrument `LabHeader` renders a
+weasel-ui `MenuButton` — a button named `Add trial` opening `menuitem`s titled by
+instrument. Verified 2026-09-15: all 4 tests in the file pass.
+
 ## What is next
 
 1. **The full suite** (`npm test`) has not been run end to end on the merged
    `main`; it is the gate before pushing. After the `forge-sidebar-clicks` merge
    the `weasel-ui` (3941), `labkit` (1058) and `draw` (499) projects pass and
    `npx tsc --noEmit` is clean; `core` and the Playwright suites are what remain.
-2. **Plan Task 18 is built** (2026-09-15). Seeds, Components and Pins edit through
-   weasel-ui's `TokenPanel`: `layerEntries` (`theme/entries.ts`) builds the
-   `TokenEntry` rows and `TokenLayer.tsx` writes them back, a value through
-   `setPin` and a Reset through `removePin`, with a seed editing `draft.seeds`
-   instead. `TokenList.tsx` and `theme/rows.ts` were its only consumers and are
-   deleted. Two things worth knowing: an entry carries the value a pin writes
-   back, so a pinned alpha reads `{fg}` rather than the list's `{fg} at 10%` and
-   the alpha rides on the pin; and a pins-layer entry is always `overridden`,
-   because the pin is itself the override Reset drops.
-3. **`tests/visual/lab-loupe.spec.ts:118` needs a browser to settle.** It drives
-   `.ckd-lab-frame select` with `selectOption`, and that exact line was already
-   the Visual Regression failure on `main` before the merge. `SelectRow` now
-   renders weasel-ui's `Select` — a button, not a `select` — so the selector
-   cannot match a row that comes from one. The fix is to open the trigger and
-   click the option, as `SemanticsLayer.test.tsx` now does.
+   The one Playwright failure that was known to stand — `lab-loupe` — is fixed,
+   so nothing is expected to be red, but nothing has run it either.
 
 ## Decisions made in conversation that the code does not explain
 
 **The Seeds, Components and Pins rows use weasel-ui's `TokenPanel`.** Mike
 decided 2026-09-14 to wait for it rather than build those layers twice. It
-merged to `main` on 2026-09-15, so the wait is over and only the wiring is left
-(plan Task 18).
+merged to `main` on 2026-09-15, and the wiring landed the same day in `272ab0d6`.
 
 **Answered 2026-09-14, and already in the spec's phase 1 text:** the chroma
 envelope gains `lightBias` (`sin(πt) + lightBias·(1−t) + darkBias·t`, built in
