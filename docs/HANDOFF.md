@@ -218,6 +218,16 @@ provided", so `persistDraft` and friends silently store nothing (seen
 `ThemeEditor.test.tsx` swaps in an in-memory one with `vi.stubGlobal`. `presets.ts` splits
 parsing from storage for exactly this reason.
 
+Measured 2026-09-16: **Node 26 is not the problem — a loaded box is.** `npm test`
+on Node 26 passes 1050 files / 11576 tests, the same counts two fleet nodes get
+on Node 24. An earlier local run failed 7 tests (four in `ThemeEditor.test.tsx`,
+two in `SemanticsLayer.test.tsx`, one in labkit's `Specimen.test.tsx`) as six 5s
+timeouts and a missing `listbox` role, while another repository's vitest had the
+CPU; it took 712.90s against 149.66s for the clean run and 63.76s on the fastest
+node. The config sets no `testTimeout` and no `maxWorkers`, so the suite alone
+drives this 12-core machine to load ~50 against a 5000ms default — anything else
+running turns that into timeouts that read as failures.
+
 **`Callout` from `@weasel-js/ui` is a React Aria popover, not an inline banner.**
 Rendered inline with no trigger it never opens and renders *nothing*, silently.
 There is no kit component for an inline status message.
