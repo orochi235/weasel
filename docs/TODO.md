@@ -994,13 +994,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) Edit the theme editor's Seeds, Components and Pins through `TokenPanel`.**
-  They are still read-only lists in `#/theme`, but the blocker is gone: weasel-ui's
-  `TokenPanel` reached `main` on 2026-09-15 with `forge-sidebar-clicks`. Each
-  `layerRows` row becomes a `TokenEntry` (`group` is the name up to its first
-  hyphen, as `emitManifest` groups), `onChange(name, value)` becomes `setPin`, a
-  `null` value becomes `removePin`, and a seed edits `draft.seeds`. Also open:
-  whether an anchor should set a ramp's chroma peak directly.
+- **(P2) Whether an anchor should set a ramp's chroma peak directly.** Today an
+  anchor sets `peak = anchor C · max / e`, with `e` the envelope at the anchor's
+  position, so an anchor on an end step whose bias is near 0 leaves `e` tiny and
+  sends the peak to gamut-clipped color. `peak = anchor C` removes the jump and
+  changes any anchor placed away from the envelope's peak. weasel's only anchor is
+  mid-ramp, so neither choice moves what ships. `docs/HANDOFF.md` has the history,
+  including the 0.1 floor that was tried and taken back out.
 
 - **(P3) A mark can be selected in two targets at once.** `AnnotationOverlay`
   leaves `selectionMode` at weasel's default `single`, and each canvas clears

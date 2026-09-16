@@ -1,5 +1,6 @@
 import { hexToRgba } from './color';
 import type { FlatTokens, ResolvedTokenMap, TokenValue } from './types';
+import { serializeTokenValue } from './value';
 
 /** `{color.gray-100}` → `gray-100`. The type group is dropped, per the naming rule. */
 const REF = /^\{([^}]+)\}$/;
@@ -11,24 +12,6 @@ function refTarget(value: TokenValue): string | null {
   const path = m[1];
   const dot = path.indexOf('.');
   return dot === -1 ? path : path.slice(dot + 1);
-}
-
-/**
- * Quote family names containing whitespace; leave everything else bare.
- * Generic keywords (`sans-serif`) and hyphen-prefixed identifiers
- * (`-apple-system`) break if quoted, and neither contains a space.
- */
-function fontStack(value: readonly (string | number)[]): string {
-  return value.map((f) => (typeof f === 'string' && /\s/.test(f) ? `'${f}'` : String(f))).join(', ');
-}
-
-function serialize(type: string, value: TokenValue): string {
-  if (Array.isArray(value)) {
-    if (type === 'cubicBezier') return `cubic-bezier(${value.join(', ')})`;
-    if (type === 'fontFamily') return fontStack(value);
-    return value.join(', ');
-  }
-  return String(value);
 }
 
 /**
@@ -56,7 +39,7 @@ export function resolveTokens(tokens: FlatTokens): ResolvedTokenMap {
     const target = refTarget(token.value);
     let value: string;
     if (target === null) {
-      value = serialize(token.type, token.value);
+      value = serializeTokenValue(token.type, token.value);
     } else if (!tokens[target]) {
       throw new Error(`Token "${name}" references "${target}", which is not defined`);
     } else {

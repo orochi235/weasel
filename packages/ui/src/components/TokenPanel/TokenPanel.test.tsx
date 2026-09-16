@@ -137,4 +137,14 @@ describe('TokenPanel', () => {
     );
     expect(vi.mocked(toHex).mock.calls.map(([value]) => value)).toEqual(['#123456']);
   });
+
+  // A proxy: jsdom resolves no CSS, and the module proxy answers to any key, so this
+  // shows the prop reaches the class list — not that a rule lays the row out. The
+  // layout is checked by measuring a row in a browser.
+  it('asks for the tight layout when density says so', () => {
+    const { container, rerender } = render(<TokenPanel tokens={tokens} onChange={() => {}} />);
+    expect(container.firstElementChild?.className).not.toMatch(/tight/);
+    rerender(<TokenPanel tokens={tokens} onChange={() => {}} density="tight" />);
+    expect(container.firstElementChild?.className).toMatch(/tight/);
+  });
 });

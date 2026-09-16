@@ -131,3 +131,57 @@
   outline: 2px solid var(--wzl-focus-ring);
   outline-offset: -2px;
 }
+
+/* Tight: a token to a line, with the names on a fixed rail so the values read
+   down the panel as a column. A stacked row spends its height on the name and
+   lets the field take the whole width, which a set of ninety cannot afford. */
+.tight .sectionBody {
+  gap: 2px;
+  padding-block-end: var(--wzl-space-xs);
+}
+
+.tight .row {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--wzl-space-xs);
+}
+
+.tight .row > .name {
+  flex: 0 0 11rem;
+}
+
+.tight .edit {
+  flex: 1 1 auto;
+}
+
+.tight .field,
+.tight .number {
+  flex: 0 1 16rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.tight .unit {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Grid rather than a row, so a picked swatch's editor still spans the full width. */
+.tight .family {
+  display: grid;
+  grid-template-columns: 11rem minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--wzl-space-xs);
+  row-gap: 2px;
+}
+
+.tight .family > .row {
+  grid-column: 1 / -1;
+}
+
+.tight .strip {
+  height: 16px;
+}
+
+.tight .curve {
+  width: 16px;
+  height: 16px;
+}

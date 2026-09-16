@@ -9,7 +9,7 @@ import { ScalesLayer } from './layers/ScalesLayer';
 import { SemanticsLayer } from './layers/SemanticsLayer';
 import styles from './ThemeEditor.module.css';
 import { ThemePreview, type PreviewVariant } from './ThemePreview';
-import { TokenList } from './TokenList';
+import { TokenLayer } from './TokenLayer';
 import type { ThemeApi } from './theme/api';
 import { deriveDraft, type DerivedDraft } from './theme/draft';
 import { clearDraft, persistDraft, type StoredDraft } from './theme/draftStorage';
@@ -17,7 +17,6 @@ import { EXPORTS, download, exportFile } from './theme/exportFiles';
 import { describeIssue } from './theme/issues';
 import { documentSheets, tokensReadAt } from './theme/inspect';
 import { LAYERS, adoptGenerated, countTokens, pinApplies, runtimeTheme, type LayerId } from './theme/model';
-import { layerRows } from './theme/rows';
 import type { IssueReport, PutResult, StoredTheme } from './theme/store';
 import { useLabHistory, type LabHistory } from './useLabHistory';
 
@@ -232,7 +231,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
       case 'semantics':
         return <SemanticsLayer draft={draft} derived={derived} lookup={lookup} highlight={highlight} onChange={history.update} />;
       default:
-        return <TokenList rows={layerRows(layer, draft, derived.primary.result)} highlight={highlight} empty={`${draft.name} has no ${layerLabel.toLowerCase()}.`} />;
+        return <TokenLayer layer={layer} draft={draft} result={derived.primary.result} highlight={highlight} onChange={history.update} />;
     }
   })();
 

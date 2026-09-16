@@ -29,6 +29,13 @@ export interface TokenPanelProps {
   categorize?: (token: TokenEntry) => TokenCategory;
   /** The fewest colors sharing a group that draw as one row of swatches. Default 3. */
   familySize?: number;
+  /**
+   * Row layout. `tight` puts a token on one line — name, control, Reset — with the
+   * names on a fixed rail so the values read down the panel as a column, and caps
+   * the field rather than letting it span the panel. Default `normal` stacks the
+   * control under its name.
+   */
+  density?: 'tight' | 'normal';
   className?: string;
 }
 
@@ -236,6 +243,7 @@ export function TokenPanel({
   onCollapsedChange,
   categorize = tokenCategory,
   familySize = 3,
+  density = 'normal',
   className,
 }: TokenPanelProps) {
   const [ownCollapsed, setOwnCollapsed] = useState<Partial<Record<TokenCategory, boolean>>>({});
@@ -250,7 +258,7 @@ export function TokenPanel({
   }, [tokens, categorize]);
 
   return (
-    <div className={className ? `${s.panel} ${className}` : s.panel}>
+    <div className={[s.panel, density === 'tight' && s.tight, className].filter(Boolean).join(' ')}>
       {TOKEN_CATEGORIES.map(({ id, title }) => {
         const inSection = byCategory.get(id);
         if (!inSection) return null;

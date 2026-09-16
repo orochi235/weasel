@@ -44,13 +44,15 @@ generator put the tree back exactly).
    `main`; it is the gate before pushing. After the `forge-sidebar-clicks` merge
    the `weasel-ui` (3941), `labkit` (1058) and `draw` (499) projects pass and
    `npx tsc --noEmit` is clean; `core` and the Playwright suites are what remain.
-2. **Plan Task 18** is unblocked. `forge-sidebar-clicks` merged into `main` on
-   2026-09-15 (`9cf91f60`), so weasel-ui's `TokenPanel` is in the tree and Seeds,
-   Components and Pins can stop being read-only lists. The plan is deleted; `git
-   show 2e9fa4ee:docs/superpowers/plans/2026-09-14-theme-editor.md` still has it.
-   In short: each `layerRows` row becomes a `TokenEntry` (`group` is the name up
-   to its first hyphen, as `emitManifest` groups), `onChange(name, value)` becomes
-   `setPin`, a `null` value becomes `removePin`, and a seed edits `draft.seeds`.
+2. **Plan Task 18 is built** (2026-09-15). Seeds, Components and Pins edit through
+   weasel-ui's `TokenPanel`: `layerEntries` (`theme/entries.ts`) builds the
+   `TokenEntry` rows and `TokenLayer.tsx` writes them back, a value through
+   `setPin` and a Reset through `removePin`, with a seed editing `draft.seeds`
+   instead. `TokenList.tsx` and `theme/rows.ts` were its only consumers and are
+   deleted. Two things worth knowing: an entry carries the value a pin writes
+   back, so a pinned alpha reads `{fg}` rather than the list's `{fg} at 10%` and
+   the alpha rides on the pin; and a pins-layer entry is always `overridden`,
+   because the pin is itself the override Reset drops.
 3. **`tests/visual/lab-loupe.spec.ts:118` needs a browser to settle.** It drives
    `.ckd-lab-frame select` with `selectOption`, and that exact line was already
    the Visual Regression failure on `main` before the merge. `SelectRow` now

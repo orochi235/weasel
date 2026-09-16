@@ -1,9 +1,9 @@
 # Theme engine and editor — design
 
-**Status: both phases merged to `main`, 2026-09-14, except phase 2's Seeds,
-Components and Pins editing: those layers are still read-only lists. The
-`TokenPanel` they need reached `main` on 2026-09-15, so that work is unblocked.**
-Delete this file when it lands.
+**Status: fully built. Both phases merged to `main` on 2026-09-14, and phase 2's
+last piece — Seeds, Components and Pins editing through weasel-ui's `TokenPanel`
+rather than read-only lists — landed 2026-09-15.** This file asks to be deleted
+now that nothing in it is outstanding.
 
 This covers the theme editor at `apps/theme-editor` `#/theme` and the engine in
 `@weasel-js/theme` underneath it. It is written for whoever implements it. The
