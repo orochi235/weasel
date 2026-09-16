@@ -1,11 +1,10 @@
 # Handoff — the theme editor, phase 2 (merged; Task 18 waits on TokenPanel)
 
 **Where it lives:** merged into `main` on 2026-09-14 (`be97b83b`, "Merge branch
-'theme-editor'"). Not pushed; `git log --oneline origin/main..main` lists what
-has not left the machine. Pushing is Mike's call, never yours. The worktree
-`.worktrees/theme-editor` sits on `theme-editor`, fast-forwarded to `main`, and
-can be removed. Don't leave `main` checked out in a worktree: the primary
-checkout needs it to merge its own branch.
+'theme-editor'") and pushed; `origin/main` carries it as of 2026-09-15. The
+worktree `.worktrees/theme-editor` currently sits on `main` itself, which is the
+state this line warns against: the primary checkout needs `main` to merge its own
+branch, so move this worktree off it or remove it.
 
 **Other sessions are in this repository**, in the primary checkout
 (`/Users/mike/src/weasel`, branch `forge-sidebar-clicks`). Stay in your
