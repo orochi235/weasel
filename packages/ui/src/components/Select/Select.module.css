@@ -41,10 +41,24 @@
 .value {
   flex: 1;
   min-width: 0;
-  text-align: left;
+  text-align: var(--wzl-select-align, left);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* `variant='bare'`: no box. The focus ring moves to an outline, since there is no border to recolor. */
+.bare .trigger {
+  padding: 0;
+  background: transparent;
+  border-color: transparent;
+}
+
+.bare .trigger[data-focus-visible] {
+  border-color: transparent;
+  box-shadow: none;
+  outline: 1px solid var(--wzl-focus-ring);
+  outline-offset: 2px;
 }
 
 .value[data-placeholder] {

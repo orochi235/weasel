@@ -63,6 +63,6 @@ export function withGlobals(schema: ConfigSchema<unknown>, declarations: GlobalD
     ]),
   );
   // An empty group name contributes rows without a heading of its own, under the section's.
-  const group = f.group(leaves).label('').section('Globals');
+  const group = f.group(leaves).label('').section('Globals', { layout: 'inline', pack: 'pairs' });
   return f.schema({ ...schema.nodes, [GLOBALS_KEY]: group }) as ConfigSchema<unknown>;
 }

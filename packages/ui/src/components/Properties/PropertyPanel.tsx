@@ -14,6 +14,7 @@ import type { PrefNumberFormat } from '../Prefs/schema';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import shared from '../range.module.css';
 import s from './Properties.module.css';
+import { Select } from '../Select';
 
 /**
  * How much room a container gives its rows — gaps, padding, and field height,
@@ -815,28 +816,19 @@ export function SelectRow<T extends string>({
       align={align}
       htmlFor={id}
     >
-      <select
-        id={id}
+      <Select<T>
+        className={s.select}
+        variant="bare"
+        triggerId={id}
         aria-label={nameOf(label)}
-        value={chosen ? value : ''}
-        onChange={(e) => {
-          const v = e.target.value as T;
+        placeholder={placeholder}
+        selectedKey={chosen ? value : null}
+        options={options}
+        onSelectionChange={(v) => {
           dlog('property-panel', 'select', { label, value: v });
           onChange(v);
         }}
-      >
-        {!chosen && (
-          <option value="" disabled hidden>
-            {placeholder}
-          </option>
-        )}
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {/* HTML <option> only renders text; ReactNode → string coerce */}
-            {opt.label as string}
-          </option>
-        ))}
-      </select>
+      />
     </PropertyRow>
   );
 }

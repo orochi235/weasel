@@ -108,6 +108,25 @@ export function resetTrial(
   return [...trials.slice(0, idx), reset, ...trials.slice(idx + 1)];
 }
 
+/** Put a fresh trial running `instrumentName` where trial `id` is. It gets a
+ *  new id, since the history, snapshots and marks keyed by the old one belong
+ *  to what that trial was running, but keeps the width its sidebar was
+ *  dragged to. */
+export function swapTrial(
+  trials: TrialRecord[],
+  instruments: InstrumentList,
+  id: string,
+  instrumentName: string,
+  options: AddTrialOptions = {},
+): TrialRecord[] {
+  const idx = trials.findIndex((w) => w.id === id);
+  const current = trials[idx];
+  if (!current) return trials;
+  const [record] = addTrial([], instruments, instrumentName, options) as [TrialRecord];
+  if (current.sidebarWidth !== undefined) record.sidebarWidth = current.sidebarWidth;
+  return [...trials.slice(0, idx), record, ...trials.slice(idx + 1)];
+}
+
 /**
  * Reorder to match `ids`. Ids the list doesn't mention keep their relative
  * order at the end, and ids it names that no longer exist are dropped — a

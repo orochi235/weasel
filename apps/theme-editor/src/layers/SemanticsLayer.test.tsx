@@ -17,6 +17,14 @@ function renderSemantics(def: ThemeDefinition) {
 const firstDef = (fn: ReturnType<typeof vi.fn>) => fn.mock.calls[0][0] as ThemeDefinition;
 const lastDef = (fn: ReturnType<typeof vi.fn>) => fn.mock.calls.at(-1)![0] as ThemeDefinition;
 
+/** The Rule row is a weasel-ui `Select`, so it opens a listbox rather than being a
+ *  native select. Its trigger is named "<current rule> Rule", hence the pattern. */
+const ruleTrigger = () => screen.queryByRole('button', { name: /Rule$/ });
+async function pickRule(option: string) {
+  await userEvent.click(ruleTrigger()!);
+  await userEvent.click(within(screen.getByRole('listbox')).getByRole('option', { name: option }));
+}
+
 /** Feeds each edit back in as the draft and, as the workbench does, keeps the last derivation that did not throw. */
 function renderEditing(start: ThemeDefinition) {
   const onChange = vi.fn();
@@ -122,7 +130,7 @@ describe('<SemanticsLayer>', () => {
   it("starts a new rule that does not point at its own token", async () => {
     const onChange = renderSemantics(weasel);
     await userEvent.click(screen.getByRole('button', { name: 'surface' }));
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Rule' }), 'offset');
+    await pickRule('Offset');
     const next = firstDef(onChange);
     expect(() => deriveDraft(next, lookupOf(next), {})).not.toThrow();
   });
@@ -142,7 +150,7 @@ describe('<SemanticsLayer>', () => {
     expect(screen.getByRole('textbox', { name: 'Reference' })).toHaveValue('gray-300');
     await userEvent.click(within(screen.getByRole('group', { name: 'Editing' })).getByRole('button', { name: 'compact' }));
     expect(screen.getByRole('textbox', { name: 'Reference' })).toHaveValue('gray-400');
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Rule' }), 'step');
+    await pickRule('Step');
     expect(firstDef(onChange).semantics!['fg-muted']).toMatchObject({
       by: 'density',
       comfortable: { ref: 'gray-300' },
@@ -160,7 +168,7 @@ describe('<SemanticsLayer>', () => {
     );
     await userEvent.click(screen.getByRole('button', { name: 'fg-muted' }));
     expect(screen.getByText('This branch varies by mode; edit it in the definition file.')).toBeInTheDocument();
-    expect(screen.queryByRole('combobox', { name: 'Rule' })).toBeNull();
+    expect(ruleTrigger()).toBeNull();
   });
 
   it('opens on a branch the rule has, and adds a missing one', async () => {

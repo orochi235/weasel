@@ -1,4 +1,5 @@
 import { LabShell, ToolbarRegion, type LabContribution } from '@weasel-js/labkit';
+import { LABS, PALETTE_LAB } from '../../shared/labs';
 import {
   PropertyPanel,
   RedoIcon,
@@ -96,6 +97,8 @@ export function PaletteLab() {
   return (
     <LabShell
       title="Palette lab"
+      pages={LABS}
+      path={PALETTE_LAB.href}
       header={
         <ToolbarRegion region="header" label="Lab actions" contributions={rail} ctx={history} />
       }

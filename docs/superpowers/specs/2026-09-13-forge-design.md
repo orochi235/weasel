@@ -209,8 +209,9 @@ A `<Lab>` with a `storageKey` (IndexedDB), so open trials, config, snapshots and
 layout survive a reload.
 
 - **Story tree** in the lab `sidebar` region. Titles split on `/`; a filter box
-  matches names. Clicking a story opens a trial, or scrolls to and flashes the
-  one already open. Cmd-click always opens another.
+  matches names. Clicking a story runs it in the focused trial, the one last
+  pointed at or focused, or flashes that trial when it already runs the story.
+  Shift-click (or Shift+Enter) opens another trial.
 - **Routing:** `#/<storyId>` opens or reveals that story. The hash carries the
   route, not lab state.
 - **Globals** (mode, font) are lab-wide from the header toolbar. A trial can pin
@@ -218,8 +219,8 @@ layout survive a reload.
   pinned value gets undo, snapshots and persistence through labkit's own config
   path. The lab's Auto/Light/Dark buttons theme the chrome only; stories follow
   the lab's mode unless their globals say otherwise.
-- **CSS Vars panel**, ported from `.storybook/addons/css-vars/`, as a trial
-  sidebar section (undockable, as labkit sections already are). The Theme tab
+- **CSS Vars panel**, ported from `.storybook/addons/css-vars/`, in the lab's
+  aside on the right. It shows the focused trial, and names it. The Theme tab
   reads `@weasel-js/theme`'s token manifest (`TOKEN_MANIFEST`) directly, so the
   generated `tokens.generated.ts` copy goes away with Storybook's addon. The Story tab's `var()` scan runs in the
   frame and arrives as `vars`. An override is sent into that trial's frame

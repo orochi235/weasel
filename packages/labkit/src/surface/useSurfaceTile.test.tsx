@@ -11,7 +11,7 @@ function fakeHandle(): SurfaceHandle {
     invalidateRects: vi.fn(),
     registerTile: vi.fn(),
     registerClear: vi.fn(() => () => {}),
-  registerPainter: vi.fn(() => () => {}),
+    registerPainter: vi.fn(() => () => {}),
     containerRef: vi.fn(),
     getContainer: vi.fn(() => null),
   };

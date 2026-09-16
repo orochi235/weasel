@@ -2,6 +2,7 @@ export { builtinContributions } from './builtins';
 export type { LabRegionProps } from './LabChrome';
 export {
   contributionsIn,
+  LabAsideRegion,
   LabFooterRegion,
   LabHeaderRegion,
   LabSidebarRegion,

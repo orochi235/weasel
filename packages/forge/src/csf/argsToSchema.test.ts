@@ -197,4 +197,38 @@ describe('argsToSchema', () => {
   it('omits a function arg even when its argType names a control', () => {
     expect(Object.keys(argsToSchema({ onClick: () => {} }, { onClick: { control: false } }).nodes)).toEqual([]);
   });
+
+  describe('conditional controls', () => {
+    const args = { showGrid: false, gridDivisions: 3, mode: 'a' };
+    const shownWhen = (argTypes: Parameters<typeof argsToSchema>[1], key: string, config: Record<string, unknown>) => {
+      const node = argsToSchema(args, argTypes).nodes[key] as ConfigNode<unknown>;
+      return node.options.showIf ? node.options.showIf(config) : true;
+    };
+
+    it('shows a control only while the arg its `if` names is truthy', () => {
+      const argTypes = { gridDivisions: { control: 'number', if: { arg: 'showGrid' } } } as const;
+      expect(shownWhen(argTypes, 'gridDivisions', { showGrid: false })).toBe(false);
+      expect(shownWhen(argTypes, 'gridDivisions', { showGrid: true })).toBe(true);
+    });
+
+    it('honors truthy: false, exists, eq and neq', () => {
+      const at = (condition: Record<string, unknown>, config: Record<string, unknown>) =>
+        shownWhen({ gridDivisions: { control: 'number', if: { arg: 'mode', ...condition } } }, 'gridDivisions', config);
+      expect(at({ truthy: false }, { mode: '' })).toBe(true);
+      expect(at({ truthy: false }, { mode: 'a' })).toBe(false);
+      expect(at({ exists: true }, { mode: 'a' })).toBe(true);
+      expect(at({ exists: true }, {})).toBe(false);
+      expect(at({ exists: false }, {})).toBe(true);
+      expect(at({ eq: 'b' }, { mode: 'b' })).toBe(true);
+      expect(at({ eq: 'b' }, { mode: 'a' })).toBe(false);
+      expect(at({ neq: 'b' }, { mode: 'a' })).toBe(true);
+      expect(at({ neq: 'b' }, { mode: 'b' })).toBe(false);
+    });
+
+    it('ignores a condition on a global, which a story’s config does not hold', () => {
+      const node = argsToSchema(args, { gridDivisions: { control: 'number', if: { global: 'theme', eq: 'dark' } } }).nodes
+        .gridDivisions as ConfigNode<unknown>;
+      expect(node.options.showIf).toBeUndefined();
+    });
+  });
 });

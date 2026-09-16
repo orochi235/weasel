@@ -54,6 +54,14 @@ export type SelectProps<T extends Key = string> = Omit<RACSelectProps<object>, '
    * toolbar's slack nor changes width as the selection moves.
    */
   width?: 'fill' | 'fit';
+  /** `'bare'` drops the box, for a select set in a row of other chrome such as a property row. */
+  variant?: 'field' | 'bare';
+  /**
+   * Id for the trigger button. React Aria puts a plain `id` on the wrapper,
+   * which is not labelable, so an outer `<label for>` needs this to reach a
+   * control the label can actually own.
+   */
+  triggerId?: string;
   className?: string;
 } & OverlayPortalProps;
 
@@ -77,6 +85,8 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
     defaultSelectedKey,
     onSelectionChange,
     width = 'fill',
+    variant = 'field',
+    triggerId,
     className,
     portalContainer,
     ...rest
@@ -90,13 +100,13 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
       selectedKey={selectedKey}
       defaultSelectedKey={defaultSelectedKey}
       onSelectionChange={onSelectionChange ? (k) => onSelectionChange(k as T) : undefined}
-      className={[s.field, width === 'fit' && s.fit, fieldClasses.root, className]
+      className={[s.field, width === 'fit' && s.fit, variant === 'bare' && s.bare, fieldClasses.root, className]
         .filter(Boolean)
         .join(' ')}
     >
       {anchor}
       {label !== undefined && <Label className={fieldClasses.label}>{label}</Label>}
-      <RACButton className={s.trigger}>
+      <RACButton id={triggerId} className={s.trigger}>
         <SelectValue className={s.value}>
           {({ defaultChildren, isPlaceholder }) =>
             isPlaceholder ? (placeholder ?? defaultChildren) : defaultChildren

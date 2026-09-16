@@ -67,7 +67,7 @@ const meta: Meta<typeof Interactive> = {
       options: ['click-curve', 'click-empty', 'never'],
     },
     showGrid: { control: 'boolean' },
-    gridDivisions: { control: { type: 'number', min: 1, max: 20, step: 1 } },
+    gridDivisions: { control: { type: 'number', min: 1, max: 20, step: 1 }, if: { arg: 'showGrid' } },
     showAxes: { control: 'boolean' },
     fillSide: {
       control: 'inline-radio',

@@ -36,6 +36,8 @@ export type ToFrame =
 
 export type FromFrame =
   | { type: 'ready'; schema: SchemaDescription; layout: Layout; viewport: Viewport | null }
+  /** Sent once, when the story's first render after `init` has committed. */
+  | { type: 'rendered' }
   | { type: 'answers'; answers: ConfigAnswers }
   | { type: 'setConfig'; path: string; value: unknown }
   | { type: 'setState'; state: unknown }

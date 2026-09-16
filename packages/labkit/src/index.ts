@@ -1,4 +1,4 @@
-// The property-panel family, LayerStack, ToggleBar and Button live in
+// The property-panel family, LayerStack, Input, Select, TokenPanel, ToggleBar and Button live in
 // `@weasel-js/ui`; labkit re-exports them so chrome built on labkit needs no
 // direct ui dependency. Named, not `export *` — a star re-export of an external
 // package emits no binding in the bundle.
@@ -13,6 +13,7 @@ export type {
   EffectCardListItem,
   EffectCardListProps,
   EffectCardProps,
+  InputProps,
   LayerStackItem,
   LayerStackProps,
   NumberRowProps,
@@ -25,6 +26,7 @@ export type {
   PropertyRowProps,
   PropertyRowVariant,
   PropertySpanProps,
+  SelectProps,
   SelectRowProps,
   SliderRowProps,
   SubpanelProps,
@@ -34,6 +36,9 @@ export type {
   ToggleBarSize,
   ToggleBarVariant,
   ToggleRowProps,
+  TokenCategory,
+  TokenEntry,
+  TokenPanelProps,
 } from '@weasel-js/ui';
 export {
   Button,
@@ -42,6 +47,8 @@ export {
   CurveField,
   EffectCard,
   EffectCardList,
+  Input,
+  inferTokenType,
   LayerStack,
   NumberRow,
   PropertyGroup,
@@ -49,12 +56,14 @@ export {
   PropertyPanel,
   PropertyRow,
   PropertySpan,
+  Select,
   SelectRow,
   SliderRow,
   Subpanel,
   TextRow,
   ToggleBar,
   ToggleRow,
+  TokenPanel,
 } from '@weasel-js/ui';
 export type {
   Annotation,
@@ -246,6 +255,7 @@ export type { LayerListProps, LayerTreeNode } from './layers';
 export { LayerList } from './layers';
 export * from './loupe';
 export * from './primitives';
+export { SPECIMEN_SECTIONS, Specimen } from './specimen/Specimen';
 export {
   createIndexedDbAdapter,
   createMemoryAdapter,

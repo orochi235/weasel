@@ -2,6 +2,14 @@ import { type ConfigNode, type ConfigSchema, type ConfigShape, f } from '@weasel
 import { isPlainObject } from './isPlainObject';
 import { isPortSafe } from './portSafe';
 
+/** Storybook's conditional control: shown only while an arg, or a global, meets the test. */
+export type ArgCondition = ({ arg: string } | { global: string }) & {
+  truthy?: boolean;
+  exists?: boolean;
+  eq?: unknown;
+  neq?: unknown;
+};
+
 /** A CSF `argTypes` entry, as far as forge reads it. */
 export interface ArgType {
   name?: string;
@@ -9,12 +17,14 @@ export interface ArgType {
   control?: string | false | { type?: string; min?: number; max?: number; step?: number };
   options?: readonly unknown[];
   table?: { disable?: boolean };
+  if?: ArgCondition;
 }
 
 interface Leaf extends ConfigNode<unknown> {
   hidden(): Leaf;
   describe(description: string): Leaf;
   label(name: string): Leaf;
+  showIf(predicate: (config: Record<string, unknown>) => boolean): Leaf;
 }
 
 interface Control {
@@ -90,6 +100,19 @@ function controlled(control: Control, argType: ArgType, has: boolean, value: unk
   }
 }
 
+/** The config predicate for an `if`; null for a condition on a global, which a story's config does not hold. */
+function conditionOf(condition: ArgCondition): ((config: Record<string, unknown>) => boolean) | null {
+  if (!('arg' in condition)) return null;
+  const { arg } = condition;
+  return (config) => {
+    const value = config[arg];
+    if (condition.exists !== undefined) return (value !== undefined) === condition.exists;
+    if ('eq' in condition) return Object.is(value, condition.eq);
+    if ('neq' in condition) return !Object.is(value, condition.neq);
+    return Boolean(value) === (condition.truthy ?? true);
+  };
+}
+
 /** `parameters.controls.matchers`: arg names that pick a control when the arg's argType names none. */
 export interface ControlMatchers {
   color?: RegExp;
@@ -125,6 +148,8 @@ export function argsToSchema(
     if (argType && (argType.control === false || argType.table?.disable)) node = node.hidden();
     if (argType?.description) node = node.describe(argType.description);
     if (argType?.name) node = node.label(argType.name);
+    const shownWhen = argType?.if ? conditionOf(argType.if) : null;
+    if (shownWhen) node = node.showIf(shownWhen);
     nodes[key] = node;
   }
   return f.schema(nodes as ConfigShape);

@@ -40,6 +40,7 @@ function Harness({ storage }: { storage: StorageAdapter }) {
 }
 
 const trialsOf = (e: IndexEntry) => screen.queryAllByRole('region', { name: `Trial ${e.title} / ${e.name}` });
+const allTrials = () => screen.queryAllByRole('region', { name: /^Trial / });
 
 async function mount(storage: StorageAdapter = createMemoryAdapter()) {
   const view = render(<Harness storage={storage} />);
@@ -117,18 +118,19 @@ describe('StoryTree', () => {
     expect(item(second.treeEl, 'Kit')).toHaveAttribute('aria-expanded', 'true');
   });
 
-  it('opens a trial of a story when it is clicked, and sets the route', async () => {
+  it('runs a clicked story in the focused trial, and sets the route', async () => {
     await mount();
     openFolder('Kit');
     openFolder('Button');
-    expect(trialsOf(ghost)).toHaveLength(0);
     fireEvent.click(screen.getByRole('treeitem', { name: 'Ghost' }));
     await waitFor(() => expect(trialsOf(ghost)).toHaveLength(1));
+    expect(trialsOf(slider)).toHaveLength(0);
+    expect(allTrials()).toHaveLength(1);
     expect(location.hash).toBe(`#/${ghost.id}`);
     expect(screen.getByRole('treeitem', { name: 'Ghost' })).toHaveAttribute('aria-current', 'true');
   });
 
-  it('reveals the open trial instead of opening another on a second click', async () => {
+  it('reveals the focused trial when it already runs the clicked story', async () => {
     const scroll = vi.fn();
     Element.prototype.scrollIntoView = scroll;
     await mount();
@@ -155,14 +157,38 @@ describe('StoryTree', () => {
     expect(trial).not.toHaveClass('fg-flash');
   });
 
-  it('opens another trial on a cmd- or ctrl-click', async () => {
+  it('opens another trial on a shift-click, which later clicks then run in', async () => {
     await mount();
     openFolder('Kit');
     openFolder('Slider');
-    fireEvent.click(screen.getByRole('treeitem', { name: 'Default' }), { metaKey: true });
+    openFolder('Button');
+    fireEvent.click(screen.getByRole('treeitem', { name: 'Default' }), { shiftKey: true });
     await waitFor(() => expect(trialsOf(slider)).toHaveLength(2));
-    fireEvent.click(screen.getByRole('treeitem', { name: 'Default' }), { ctrlKey: true });
-    await waitFor(() => expect(trialsOf(slider)).toHaveLength(3));
+    fireEvent.click(screen.getByRole('treeitem', { name: 'Ghost' }));
+    await waitFor(() => expect(trialsOf(ghost)).toHaveLength(1));
+    expect(trialsOf(slider)).toHaveLength(1);
+  });
+
+  it('runs a clicked story in the trial last pointed at', async () => {
+    await mount();
+    openFolder('Kit');
+    openFolder('Button');
+    fireEvent.click(screen.getByRole('treeitem', { name: 'Ghost' }), { shiftKey: true });
+    await waitFor(() => expect(trialsOf(ghost)).toHaveLength(1));
+    fireEvent.pointerDown(trialsOf(slider)[0] as HTMLElement);
+    fireEvent.click(screen.getByRole('treeitem', { name: 'Primary' }));
+    await waitFor(() => expect(trialsOf(primary)).toHaveLength(1));
+    expect(trialsOf(slider)).toHaveLength(0);
+    expect(trialsOf(ghost)).toHaveLength(1);
+  });
+
+  it('leaves a cmd- or ctrl-click to the browser', async () => {
+    await mount();
+    openFolder('Kit');
+    openFolder('Button');
+    expect(fireEvent.click(screen.getByRole('treeitem', { name: 'Ghost' }), { metaKey: true })).toBe(true);
+    expect(fireEvent.click(screen.getByRole('treeitem', { name: 'Ghost' }), { ctrlKey: true })).toBe(true);
+    expect(trialsOf(ghost)).toHaveLength(0);
   });
 
   describe('keyboard', () => {
@@ -239,6 +265,16 @@ describe('StoryTree', () => {
       act(() => primaryItem.focus());
       fireEvent.keyDown(primaryItem, { key: ' ' });
       await waitFor(() => expect(trialsOf(primary)).toHaveLength(1));
+    });
+
+    it('opens another trial with Shift+Enter', async () => {
+      const { treeEl } = await mount();
+      openFolder('Kit');
+      openFolder('Slider');
+      const defaultItem = item(treeEl, 'Default');
+      act(() => defaultItem.focus());
+      fireEvent.keyDown(defaultItem, { key: 'Enter', shiftKey: true });
+      await waitFor(() => expect(trialsOf(slider)).toHaveLength(2));
     });
   });
 

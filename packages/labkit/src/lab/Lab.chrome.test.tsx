@@ -62,4 +62,20 @@ describe('<Lab> chrome', () => {
     render(<Lab title="T" instruments={[withChrome]} defaultInstrument="Bare" />);
     expect(screen.getByText('ready')).toBeInTheDocument();
   });
+
+  it('renders an aside contribution in its own pane, after the workspace', () => {
+    render(
+      <Lab
+        title="T"
+        instruments={[bare]}
+        defaultInstrument="Bare"
+        labChrome={[{ id: 'notes', region: 'aside', item: { title: 'Notes', body: <p>jot</p> } }]}
+      />,
+    );
+    const body = screen.getByText('jot');
+    const trial = screen.getByRole('region', { name: /trial/i });
+    expect(body.closest('.lk-lab__aside')).not.toBeNull();
+    expect(trial.compareDocumentPosition(body) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole('separator', { name: /Lab aside/ })).toBeInTheDocument();
+  });
 });

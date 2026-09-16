@@ -226,6 +226,7 @@ export function TrialChrome({
     <section
       className="lk-trial"
       data-trial-id={trialId}
+      data-focused={lab.trials.length > 1 && lab.focusedTrialId === trialId ? 'true' : undefined}
       aria-label={`Trial ${title}`}
       tabIndex={-1}
       onKeyDown={handleKeyDown}

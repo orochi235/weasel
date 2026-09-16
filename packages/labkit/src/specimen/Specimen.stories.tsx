@@ -1,0 +1,13 @@
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Specimen } from './Specimen';
+
+const meta: Meta<typeof Specimen> = {
+  title: 'labkit/Specimen',
+  component: Specimen,
+  parameters: { layout: 'fullscreen' },
+};
+export default meta;
+
+type Story = StoryObj<typeof Specimen>;
+
+export const Everything: Story = {};

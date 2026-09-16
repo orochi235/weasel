@@ -105,11 +105,17 @@ describe('Workshop', () => {
     for (const { received } of frames) expect(received).toEqual([expect.objectContaining({ type: 'init', globals: { mode: 'auto' } })]);
 
     const trialB = screen.getByRole('region', { name: 'Trial X / B' });
-    fireEvent.change(within(trialB).getByLabelText('Mode'), { target: { value: 'dark' } });
+    act(() => {
+      fireEvent.click(within(trialB).getByRole('button', { name: /Mode/ }));
+    });
+    fireEvent.click(within(await screen.findByRole('listbox')).getByRole('option', { name: 'Dark' }));
     await flush();
 
     const toolbar = screen.getByRole('toolbar', { name: 'Globals' });
-    fireEvent.change(within(toolbar).getByLabelText('Mode'), { target: { value: 'light' } });
+    act(() => {
+      fireEvent.click(within(toolbar).getByRole('button', { name: /Mode/ }));
+    });
+    fireEvent.click(within(await screen.findByRole('listbox')).getByRole('option', { name: 'Light' }));
     await flush();
     const byTrial = Object.fromEntries(
       frames.map(({ received }, i) => [container.querySelectorAll('iframe.fg-frame-view')[i]!.getAttribute('src'), received.at(-1)]),
@@ -125,5 +131,54 @@ describe('Workshop', () => {
     location.hash = '#/nope';
     const { container } = render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     expect(await frameSrc(container)).toBe('/frame.html#x--a');
+  });
+
+  it('keeps a story frame hidden until the frame reports its first render, so a new trial shows no blank page', async () => {
+    location.hash = '#/x--a';
+    const { container } = render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    await frameSrc(container);
+    const iframe = container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement;
+    expect(iframe).toHaveAttribute('data-pending');
+    const { frame } = connectFrame(iframe);
+    frame.send({ type: 'ready', schema: describeSchema(f.schema({})), layout: 'centered', viewport: null });
+    await flush();
+    expect(iframe).toHaveAttribute('data-pending');
+    frame.send({ type: 'rendered' });
+    await flush();
+    expect(iframe).not.toHaveAttribute('data-pending');
+
+    connectFrame(iframe);
+    expect(iframe).toHaveAttribute('data-pending');
+    frame.close();
+  });
+
+  it('shows a frame that faults before it renders', async () => {
+    location.hash = '#/x--a';
+    const { container } = render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    await frameSrc(container);
+    const iframe = container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement;
+    const { frame } = connectFrame(iframe);
+    frame.send({ type: 'fault', phase: 'import', message: 'no such module' });
+    await flush();
+    expect(iframe).not.toHaveAttribute('data-pending');
+    frame.close();
+  });
+
+  it('offers the configured labs in its title menu, marking this one', async () => {
+    location.hash = '#/x--a';
+    const pages = [
+      { href: '/labs/forge', label: 'weaselforge' },
+      { href: '/labs/palette', label: 'Palette lab' },
+    ];
+    render(<Workshop index={[a]} frameUrl="/frame.html" config={{ pages, path: '/labs/forge' }} storage={createMemoryAdapter()} />);
+    // The lab draws a fallback title while its store opens; the menu belongs to the mounted lab.
+    await screen.findByRole('region', { name: /^Trial / });
+    fireEvent.click(screen.getByRole('button', { name: 'weaselforge' }));
+    const items = screen.getAllByRole('menuitem');
+    expect(items.map((item) => [item.textContent, item.getAttribute('href')])).toEqual([
+      ['weaselforge', '/labs/forge'],
+      ['Palette lab', '/labs/palette'],
+    ]);
+    expect(items[0]).toHaveAttribute('aria-current', 'page');
   });
 });

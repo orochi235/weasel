@@ -68,7 +68,7 @@ describe('withGlobals', () => {
     expect(Object.keys(out.nodes)).toEqual(['label', '$globals']);
     expect(out.defaults()).toEqual({ label: 'hi', $globals: { mode: 'lab', font: 'lab' } });
     const group = out.nodes.$globals as ConfigBranch;
-    expect(group.options.section).toEqual({ label: 'Globals' });
+    expect(group.options.section).toEqual({ label: 'Globals', layout: 'inline', pack: 'pairs' });
     const mode = group.children.mode as ConfigNode<string>;
     expect(mode.kind).toBe('enum');
     expect(mode.annotations.name).toBe('Mode');

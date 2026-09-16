@@ -34,6 +34,18 @@
   width: 100%;
   height: 100%;
   border: 0;
+  transition: opacity var(--wzl-motion-fast) var(--wzl-ease-out-cubic);
+}
+
+.fg-frame-view[data-pending] {
+  visibility: hidden;
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fg-frame-view {
+    transition: none;
+  }
 }
 
 .fg-fault {
@@ -90,6 +102,7 @@
 .fg-tree__filter {
   box-sizing: border-box;
   width: 100%;
+  font-size: var(--wzl-font-size);
 }
 
 .fg-tree__items,
@@ -99,7 +112,7 @@
 }
 
 .fg-tree__items {
-  font-size: var(--wzl-font-size-sm);
+  font-size: var(--wzl-font-size);
 }
 
 .fg-tree__group {
@@ -195,12 +208,32 @@
   gap: var(--wzl-space-xs);
 }
 
-.fg-css-vars__list {
+.fg-css-vars-focus {
   display: flex;
   flex-direction: column;
   gap: var(--wzl-space-xs);
-  max-height: 60vh;
-  overflow: auto;
+  min-width: 0;
+}
+
+.fg-css-vars__trial {
+  margin: 0;
+  overflow: hidden;
+  color: var(--wzl-fg-muted);
+  font-size: var(--wzl-font-size-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Held at the top while the list scrolls the aside under it. */
+.fg-css-vars__controls {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-xs);
+  padding-block-end: var(--wzl-space-xs);
+  background: var(--wzl-surface);
 }
 
 .fg-css-vars__empty {
@@ -209,24 +242,9 @@
   font-size: var(--wzl-font-size-sm);
 }
 
-.fg-css-var {
-  display: flex;
-  align-items: flex-end;
-  gap: var(--wzl-space-xs);
-  font-family: var(--wzl-font-mono);
-}
-
-.fg-css-var__rows {
-  flex: 1;
-  min-width: 0;
-}
-
 .fg-globals {
   display: flex;
   align-items: center;
   gap: var(--wzl-space-xs);
 }
 
-.fg-globals__select {
-  font-size: var(--wzl-font-size-sm);
-}

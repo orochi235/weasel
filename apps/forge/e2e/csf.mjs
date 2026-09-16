@@ -128,7 +128,8 @@ const stories = [
           );
 
       await surfaceIs('Determinate', 'dark');
-      await page.getByRole('toolbar', { name: 'Globals' }).getByLabel('Mode', { exact: true }).selectOption('light');
+      await page.getByRole('toolbar', { name: 'Globals' }).getByRole('button', { name: /Mode/ }).click();
+      await page.getByRole('option', { name: 'Light', exact: true }).click();
       await surfaceIs('Determinate', 'light');
 
       await page.evaluate(() => {
@@ -137,8 +138,8 @@ const stories = [
       await trial('Indeterminate').frameLocator('iframe.fg-frame-view').locator('.lk-root').first().waitFor({ timeout: 20000 });
       await surfaceIs('Indeterminate', 'light');
 
-      // labkit wraps the select in its row's <label>, so the option texts join the name.
-      await trial('Determinate').getByLabel('Mode').selectOption('dark');
+      await trial('Determinate').getByRole('button', { name: /Mode/ }).click();
+      await page.getByRole('option', { name: 'Dark', exact: true }).click();
       await surfaceIs('Determinate', 'dark');
       await surfaceIs('Indeterminate', 'light');
     },

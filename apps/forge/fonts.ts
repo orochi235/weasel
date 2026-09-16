@@ -67,12 +67,19 @@ export const FONT_GLOBALS: GlobalDeclarations = {
 const nearest = (value: number, supported: number[]): number =>
   supported.reduce((closest, v) => (Math.abs(v - value) < Math.abs(closest - value) ? v : closest), supported[0]!);
 
-/** The `:root` rule for the font globals, each snapped to what the chosen font ships. */
+/** The rules for the font globals, each snapped to what the chosen font ships. weasel's components read their
+ *  family from the font tokens, and form controls do not inherit one, so both are pointed at the choice too. */
 export function fontRule(globals: StoryContext['globals']): string {
   const font = FONTS[String(globals.fontFamily ?? 'oswald')] ?? FONTS.oswald!;
   const weight = nearest(Number(globals.fontWeight ?? 500), font.weights);
   const requestedStretch = String(globals.fontStretch ?? 'normal');
   const stretch = font.stretches.includes(requestedStretch) ? requestedStretch : 'normal';
   const italic = globals.fontStyle === 'italic' && font.italics.includes(true);
-  return `:root { font-family: ${font.family}; font-weight: ${weight}; font-stretch: ${stretch}; font-style: ${italic ? 'italic' : 'normal'}; }`;
+  const family = font.family;
+  return [
+    `:root { font-family: ${family}; font-weight: ${weight}; font-stretch: ${stretch}; font-style: ${italic ? 'italic' : 'normal'}; }`,
+    // applyTheme declares the tokens at [data-wzl-theme][data-wzl-mode], on the root and on any nested themed box.
+    ` :root:root:root, [data-wzl-theme][data-wzl-mode][data-wzl-mode] { --wzl-font-ui: ${family}; --wzl-font-display: ${family}; --wzl-font-body: ${family}; }`,
+    ' :where(button, input, select, textarea) { font: inherit; }',
+  ].join('');
 }

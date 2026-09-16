@@ -39,10 +39,22 @@
 .lk-shell-header-actions {
   margin-left: auto;
   display: flex;
-  // A flex container reports its first item's baseline, so this is what
-  // carries the row's baseline up to the header.
-  align-items: baseline;
+  // Every control here runs at the one control height and shares a middle.
+  // The row still hands the header its first item's baseline, which is what
+  // lines the controls' labels up with the title.
+  align-items: center;
   gap: var(--wzl-space-sm);
+}
+
+// A toolbar dropped into the header is a run of header controls, not a strip of
+// its own: it takes the header's control height rather than the compact one
+// trial toolbars use, and none of the strip's box.
+.lk-shell-header-actions .lk-toolbar {
+  --wzl-control-h: inherit;
+  min-height: 0;
+  padding: 0;
+  background: none;
+  border: 0;
 }
 
 .lk-shell-body {
@@ -79,6 +91,15 @@
   overflow-y: auto;
   background: var(--wzl-surface);
   border-right: 1px solid var(--wzl-border);
+}
+
+.lk-lab__aside {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--wzl-surface);
+  border-left: 1px solid var(--wzl-border);
 }
 
 .lk-lab__main {

@@ -1,0 +1,95 @@
+.lk-specimen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-lg);
+  padding: var(--wzl-space-lg);
+  background: var(--wzl-surface);
+  color: var(--wzl-fg);
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size);
+}
+
+.lk-specimen__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-sm);
+}
+
+.lk-specimen__heading {
+  margin: 0;
+  padding-block-end: var(--wzl-space-xs);
+  border-bottom: var(--wzl-border-w) solid var(--wzl-line-subtle);
+  color: var(--wzl-fg-muted);
+  font-family: var(--wzl-font-display);
+  font-size: var(--wzl-font-size-sm);
+  font-weight: var(--wzl-font-weight-normal);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lk-specimen__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--wzl-space-md);
+  align-items: start;
+}
+
+.lk-specimen__cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-xs);
+  min-width: 0;
+}
+
+.lk-specimen__label {
+  color: var(--wzl-fg-subtle);
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-xs);
+}
+
+.lk-specimen__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wzl-space-sm);
+}
+
+.lk-specimen__cell--wide {
+  grid-column: 1 / -1;
+}
+
+.lk-specimen__box {
+  position: relative;
+  display: flex;
+  height: 160px;
+  overflow: hidden;
+  border: var(--wzl-border-w) solid var(--wzl-line-subtle);
+  border-radius: var(--wzl-radius-sm);
+}
+
+.lk-specimen__box-main {
+  flex: 1;
+  min-width: 0;
+  padding: var(--wzl-space-sm);
+}
+
+.lk-specimen__pad {
+  padding: var(--wzl-space-xs) var(--wzl-space-sm);
+}
+
+.lk-specimen__pane {
+  flex: none;
+  width: var(--lk-specimen-pane-w);
+  padding: var(--wzl-space-sm);
+}
+
+.lk-specimen__timeline {
+  height: 180px;
+}
+
+.lk-specimen__floating-host {
+  position: relative;
+  height: 160px;
+  border: var(--wzl-border-w) solid var(--wzl-line-subtle);
+  border-radius: var(--wzl-radius-sm);
+}

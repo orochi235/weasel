@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import type { TrialRecord } from '../state/types';
-import { addTrial, cloneTrial, closeTrial, reorderTrials, resetTrial } from './trialOps';
+import { addTrial, cloneTrial, closeTrial, reorderTrials, resetTrial, swapTrial } from './trialOps';
 
 interface CounterState {
   count: number;
@@ -234,5 +234,44 @@ describe('a size-aware initial view', () => {
   it('leaves the view unplaced, because the canvas has no size yet', () => {
     const [trial] = addTrial([], [sized], 'Sized');
     expect(trial?.view).toBeNull();
+  });
+});
+
+describe('swapTrial', () => {
+  const instruments = [counter, subjectInstrument];
+  const three = (): TrialRecord[] =>
+    addTrial(
+      addTrial(addTrial([], instruments, 'Counter'), instruments, 'Counter'),
+      instruments,
+      'Counter',
+    );
+
+  it('puts a fresh trial of the other instrument in the same place', () => {
+    const trials = three();
+    const target = trials[1] as TrialRecord;
+    const next = swapTrial(trials, instruments, target.id, 'Subject', {
+      config: { subject: 'moon' },
+    });
+    expect(next).toHaveLength(3);
+    expect(next[0]).toBe(trials[0]);
+    expect(next[2]).toBe(trials[2]);
+    const swapped = next[1] as TrialRecord;
+    expect(swapped.id).not.toBe(target.id);
+    expect(swapped.instrumentName).toBe('Subject');
+    expect(swapped.config).toEqual({ subject: 'moon', zoom: 1 });
+    expect(swapped.state).toEqual({ label: 'MOON' });
+    expect(swapped.configSeed).toEqual({ subject: 'moon' });
+    expect(swapped.undoStack).toEqual({ past: [], future: [] });
+  });
+
+  it('keeps the width the trial’s sidebar was dragged to', () => {
+    const trials = three().map((t, i) => (i === 1 ? { ...t, sidebarWidth: 312 } : t));
+    const next = swapTrial(trials, instruments, (trials[1] as TrialRecord).id, 'Subject');
+    expect(next[1]?.sidebarWidth).toBe(312);
+  });
+
+  it('returns the list untouched for an id it does not hold', () => {
+    const trials = three();
+    expect(swapTrial(trials, instruments, 'nope', 'Subject')).toBe(trials);
   });
 });

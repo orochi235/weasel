@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -325,6 +325,20 @@ describe('NumberRow', () => {
   });
 });
 
+/** A select row's trigger, which opens its listbox. Its accessible name is the
+ *  value then the label ("A Mode"), and a described row's ⓘ is "About <label>",
+ *  so the label alone matches both. */
+const trigger = (label: string) =>
+  screen.getByRole('button', { name: new RegExp(`(?<!About )${label}`) });
+
+/** Opens a select row and chooses an option, the way a person does. */
+function pick(label: string, option: string) {
+  act(() => {
+    fireEvent.click(trigger(label));
+  });
+  fireEvent.click(within(screen.getByRole('listbox')).getByRole('option', { name: option }));
+}
+
 describe('SelectRow', () => {
   it('emits the selected option', () => {
     const onChange = vi.fn();
@@ -339,7 +353,8 @@ describe('SelectRow', () => {
         onChange={onChange}
       />,
     );
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'b' } });
+    expect(screen.queryByRole('combobox')).toBeNull();
+    pick('Mode', 'B');
     expect(onChange).toHaveBeenCalledWith('b');
   });
 });
@@ -388,9 +403,9 @@ describe('row names', () => {
     expect(screen.getByRole('textbox', { name: 'Name' })).toBeInTheDocument();
   });
 
-  it("names SelectRow's select after its label", () => {
+  it("names SelectRow's trigger after its label", () => {
     render(<SelectRow label="Mode" value="a" options={options} onChange={() => {}} />);
-    expect(screen.getByRole('combobox', { name: 'Mode' })).toBeInTheDocument();
+    expect(trigger('Mode')).toBeInTheDocument();
   });
 
   it("names ColorRow's swatch after its label", () => {
@@ -433,7 +448,7 @@ describe('row names', () => {
     });
     it('SelectRow', () => {
       render(<SelectRow label="Mode" description="d" value="a" options={options} onChange={() => {}} />);
-      expect(screen.getByRole('combobox', { name: 'Mode' })).toBeInTheDocument();
+      expect(trigger('Mode')).toBeInTheDocument();
     });
     it('ColorRow', () => {
       const { container } = render(<ColorRow label="Fill" description="d" value="#ffffff" onChange={() => {}} />);
@@ -475,11 +490,11 @@ describe('described rows', () => {
     expect(controlOf(container)).toBe(screen.getByRole('spinbutton', { name: 'N' }));
   });
 
-  it("SelectRow's label is its select's", () => {
+  it("SelectRow's label is its trigger's", () => {
     const { container } = render(
       <SelectRow label="Mode" description="d" value="a" options={options} onChange={() => {}} />,
     );
-    expect(controlOf(container)).toBe(screen.getByRole('combobox', { name: 'Mode' }));
+    expect(controlOf(container)).toBe(trigger('Mode'));
   });
 
   it("ColorRow's label is its swatch's", () => {
@@ -504,28 +519,25 @@ describe('rows with no value', () => {
   it('SelectRow shows a placeholder, not the first option, and choosing the first option fires', () => {
     const onChange = vi.fn();
     render(<SelectRow label="Mode" value={undefined} options={options} onChange={onChange} />);
-    const select = screen.getByRole<HTMLSelectElement>('combobox');
-    expect(select.value).toBe('');
-    expect(select.selectedOptions[0]?.textContent).toBe('Choose option…');
-    fireEvent.change(select, { target: { value: 'a' } });
+    expect(trigger('Mode')).toHaveTextContent('Choose option…');
+    pick('Mode', options[0]!.label as string);
     expect(onChange).toHaveBeenCalledWith('a');
   });
 
   it('SelectRow shows the placeholder for a value that is not an option', () => {
     render(<SelectRow label="Mode" value="z" options={options} onChange={() => {}} />);
-    expect(screen.getByRole<HTMLSelectElement>('combobox').value).toBe('');
+    expect(trigger('Mode')).toHaveTextContent('Choose option…');
   });
 
   it('SelectRow renders a present value with no placeholder', () => {
     render(<SelectRow label="Mode" value="b" options={options} onChange={() => {}} />);
-    const select = screen.getByRole<HTMLSelectElement>('combobox');
-    expect(select.value).toBe('b');
-    expect(select.querySelectorAll('option')).toHaveLength(2);
+    expect(trigger('Mode')).toHaveTextContent(options[1]!.label as string);
+    expect(trigger('Mode')).not.toHaveTextContent('Choose option…');
   });
 
   it('SelectRow names its placeholder', () => {
     render(<SelectRow label="Mode" value={undefined} options={options} placeholder="Pick one" onChange={() => {}} />);
-    expect(screen.getByRole<HTMLSelectElement>('combobox').selectedOptions[0]?.textContent).toBe('Pick one');
+    expect(trigger('Mode')).toHaveTextContent('Pick one');
   });
 
   // React warns about a controlled/uncontrolled switch once per module, so these assert the DOM instead.

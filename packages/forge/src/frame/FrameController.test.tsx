@@ -77,6 +77,20 @@ describe('startFrame', () => {
     expect(received[0]).toMatchObject({ type: 'ready', schema: describeSchema(counter.config) });
   });
 
+  it('says it has rendered once, after init commits its first render, and not before', async () => {
+    const { shell, of, received } = start(counter);
+    await flush();
+    expect(of('rendered')).toEqual([]);
+    shell.send(init);
+    await flush();
+    expect(screen.getByTestId('out').textContent).toBe('clicks:0');
+    expect(of('rendered')).toEqual([{ type: 'rendered' }]);
+    expect(received.findIndex((m) => m.type === 'rendered')).toBeGreaterThan(received.findIndex((m) => m.type === 'ready'));
+    shell.send({ type: 'config', config: { label: 'again', gated: 1 } });
+    await flush();
+    expect(of('rendered')).toHaveLength(1);
+  });
+
   it('renders on init and seeds state when the trial has none', async () => {
     const { shell, of } = start(counter);
     shell.send(init);

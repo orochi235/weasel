@@ -76,6 +76,8 @@ function resolveShape(shape: ConfigShape, at: string, name: string, sink: Sink):
       if (section.collapsed !== undefined) {
         spec.collapsed = (spec.collapsed ?? false) || section.collapsed;
       }
+      if (section.layout !== undefined && spec.layout === undefined) spec.layout = section.layout;
+      if (section.pack !== undefined && spec.pack === undefined) spec.pack = section.pack;
     }
     if (predicate) sink.showIf.set(path, predicate);
     if (!isConfigBranch(entry) && entry.options.render) sink.renderers[path] = entry.options.render;
