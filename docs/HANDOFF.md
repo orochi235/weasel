@@ -1,4 +1,4 @@
-# Handoff — the theme editor, phase 2 (merged; Task 18 waits on TokenPanel)
+# Handoff — the theme editor, phase 2 (merged; Task 18 unblocked, not built)
 
 **Where it lives:** merged into `main` on 2026-09-14 (`be97b83b`, "Merge branch
 'theme-editor'") and pushed; `origin/main` carries it as of 2026-09-15. The
@@ -40,24 +40,30 @@ generator put the tree back exactly).
 
 ## What is next
 
-1. **The full suite** (`npm test`) has not been run on the merged `main`; it is
-   the gate before pushing.
-2. **Plan Task 18**, once `forge-sidebar-clicks` reaches `main`: Seeds,
-   Components and Pins edit through weasel-ui's `TokenPanel` instead of
-   read-only lists. The plan is deleted; `git show
-   2e9fa4ee:docs/superpowers/plans/2026-09-14-theme-editor.md` still has it. In
-   short: each `layerRows` row becomes a `TokenEntry` (`group` is the name up to
-   its first hyphen, as `emitManifest` groups), `onChange(name, value)` becomes
-   `setPin`, a `null` value becomes `removePin`, and a seed edits
-   `draft.seeds`. `forge-sidebar-clicks` also edits `PaletteLab.tsx`; a dry-run
-   merge against it was clean at `6df10ccf`.
+1. **The full suite** (`npm test`) has not been run end to end on the merged
+   `main`; it is the gate before pushing. After the `forge-sidebar-clicks` merge
+   the `weasel-ui` (3941), `labkit` (1058) and `draw` (499) projects pass and
+   `npx tsc --noEmit` is clean; `core` and the Playwright suites are what remain.
+2. **Plan Task 18** is unblocked. `forge-sidebar-clicks` merged into `main` on
+   2026-09-15 (`9cf91f60`), so weasel-ui's `TokenPanel` is in the tree and Seeds,
+   Components and Pins can stop being read-only lists. The plan is deleted; `git
+   show 2e9fa4ee:docs/superpowers/plans/2026-09-14-theme-editor.md` still has it.
+   In short: each `layerRows` row becomes a `TokenEntry` (`group` is the name up
+   to its first hyphen, as `emitManifest` groups), `onChange(name, value)` becomes
+   `setPin`, a `null` value becomes `removePin`, and a seed edits `draft.seeds`.
+3. **`tests/visual/lab-loupe.spec.ts:118` needs a browser to settle.** It drives
+   `.ckd-lab-frame select` with `selectOption`, and that exact line was already
+   the Visual Regression failure on `main` before the merge. `SelectRow` now
+   renders weasel-ui's `Select` — a button, not a `select` — so the selector
+   cannot match a row that comes from one. The fix is to open the trigger and
+   click the option, as `SemanticsLayer.test.tsx` now does.
 
 ## Decisions made in conversation that the code does not explain
 
-**The Seeds, Components and Pins rows use weasel-ui's `TokenPanel`**, which
-exists only on `forge-sidebar-clicks`, another session's unmerged branch. Mike
-decided 2026-09-14 to wait for it to merge: until then those layers are
-read-only lists (plan Task 18). Don't merge that branch into this one.
+**The Seeds, Components and Pins rows use weasel-ui's `TokenPanel`.** Mike
+decided 2026-09-14 to wait for it rather than build those layers twice. It
+merged to `main` on 2026-09-15, so the wait is over and only the wiring is left
+(plan Task 18).
 
 **Answered 2026-09-14, and already in the spec's phase 1 text:** the chroma
 envelope gains `lightBias` (`sin(πt) + lightBias·(1−t) + darkBias·t`, built in
