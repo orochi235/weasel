@@ -999,8 +999,18 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   position, so an anchor on an end step whose bias is near 0 leaves `e` tiny and
   sends the peak to gamut-clipped color. `peak = anchor C` removes the jump and
   changes any anchor placed away from the envelope's peak. weasel's only anchor is
-  mid-ramp, so neither choice moves what ships. `docs/HANDOFF.md` has the history,
-  including the 0.1 floor that was tried and taken back out.
+  mid-ramp, so neither choice moves what ships. A 0.1 floor on `e` was tried and
+  taken back out: it turned a gray ramp anchored on its darkest step blue.
+
+- **(P2) `hexToRgba` in `packages/theme` throws on any non-hex value**, so the alpha
+  extension only works when the token it points at is a hex literal. Point it at
+  `interstellar`'s `rgba(...)` and it dies.
+
+- **(P3) 47 `--wzl-*` properties are read in live source and declared by no theme.**
+  Some are deliberate container-override hooks (`--wzl-prop-*`, `--wzl-field-h`);
+  the rest is rot from the original May token vocabulary (`--wzl-text`,
+  `--wzl-panel-bg`, `--wzl-button-fill*`) that `packages/ui` never finished
+  migrating. Nothing checks for either case.
 
 - **(P3) A mark can be selected in two targets at once.** `AnnotationOverlay`
   leaves `selectionMode` at weasel's default `single`, and each canvas clears

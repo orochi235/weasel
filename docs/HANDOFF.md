@@ -1,94 +1,7 @@
-# Handoff — the theme editor, phase 2 (merged; Task 18 built)
+# Retained from completed work — the theme editor and palette lab
 
-**Where it lives:** merged into `main` on 2026-09-14 (`be97b83b`, "Merge branch
-'theme-editor'") and pushed; `origin/main` carries it as of 2026-09-15. The
-worktree `.worktrees/theme-editor` currently sits on `main` itself, which is the
-state this line warns against: the primary checkout needs `main` to merge its own
-branch, so move this worktree off it or remove it.
-
-**Other sessions are in this repository**, in the primary checkout
-(`/Users/mike/src/weasel`, branch `forge-sidebar-clicks`). Stay in your
-worktree, stage explicit paths and commit with a pathspec, and never switch,
-merge or rebase their branch.
-
-## What is done
-
-Phase 2 of `docs/superpowers/specs/2026-09-10-theme-engine-and-editor-design.md`
-is merged:
-`#/theme` saves through a dev-server theme store (hash conflict check; a save
-that would break the token build is refused before anything is written), keeps
-an unsaved draft across reloads, and has the header, layer rail, a preview in
-both modes, Ramps / Scales / Semantics editors, click to inspect, Export (CSS,
-definition, DTCG) and New theme. Reviews and headless browser passes along the
-way fixed engine edges (`lightBias`, own ramps shadowing inherited pins, token
-name characters, three ramp edge cases) and two `@weasel-js/ui` defects
-(segmented bar height inside labkit; property rows' names and label clicks).
-Each carries a `patch` changeset.
-
-Verified 2026-09-14 at `a2b36ad7`: `npx tsc --noEmit` clean; `npx vitest run
---project=draw apps/theme-editor` 125/125; `npx vitest run --project=weasel-ui
-packages/theme packages/ui/src/components/Properties
-packages/ui/src/components/ToggleBar` 352/352; `npm run lint`, `check:bumps`
-and `check:test-projects` clean. In a headless browser (emulating
-`prefers-color-scheme`, since `LabShell` here has no mode buttons): both modes,
-a ramp slider and Compare, an inherited ramp staying read-only, Inspect
-landing on the clicked button's tokens without moving the preview's slider,
-typing a half-finished reference in the rule drawer, all three exports matching
-the repo files byte for byte, and a New theme `harbor` saved into
-`packages/theme/themes/` with `tokens.css` regenerated (then removed; the
-generator put the tree back exactly).
-
-**Seeds, Components and Pins edit through weasel-ui's `TokenPanel`** as of
-`272ab0d6`: `layerEntries` (`theme/entries.ts`) builds the `TokenEntry` rows and
-`TokenLayer.tsx` writes them back, a value through `setPin` and a Reset through
-`removePin`, with a seed editing `draft.seeds` instead. `TokenList.tsx` and
-`theme/rows.ts` were its only consumers and are deleted. Two things worth
-knowing: an entry carries the value a pin writes back, so a pinned alpha reads
-`{fg}` rather than the list's `{fg} at 10%` and the alpha rides on the pin; and
-a pins-layer entry is always `overridden`, because the pin is itself the
-override Reset drops.
-
-**`tests/visual/lab-loupe.spec.ts` drives the instrument picker as a menu**, and
-the Visual Regression failure that stood on `main` before the merge is gone. The
-spec drove `.ckd-lab-frame select` with `selectOption`; `<Lab>` renders no native
-`<select>` anywhere, because with more than one instrument `LabHeader` renders a
-weasel-ui `MenuButton` — a button named `Add trial` opening `menuitem`s titled by
-instrument. Verified 2026-09-15: all 4 tests in the file pass.
-
-## What is next
-
-1. **The full suite** (`npm test`) has not been run end to end on the merged
-   `main`; it is the gate before pushing. After the `forge-sidebar-clicks` merge
-   the `weasel-ui` (3941), `labkit` (1058) and `draw` (499) projects pass and
-   `npx tsc --noEmit` is clean; `core` and the Playwright suites are what remain.
-   The one Playwright failure that was known to stand — `lab-loupe` — is fixed,
-   so nothing is expected to be red, but nothing has run it either.
-
-## Decisions made in conversation that the code does not explain
-
-**The Seeds, Components and Pins rows use weasel-ui's `TokenPanel`.** Mike
-decided 2026-09-14 to wait for it rather than build those layers twice. It
-merged to `main` on 2026-09-15, and the wiring landed the same day in `272ab0d6`.
-
-**Answered 2026-09-14, and already in the spec's phase 1 text:** the chroma
-envelope gains `lightBias` (`sin(πt) + lightBias·(1−t) + darkBias·t`, built in
-`f9f41e2a`), and a theme's own ramps and scales shadow the pins it inherits, so
-a theme extending weasel can show its generated ramps (plan Task 7).
-
-**Open for Mike: should an anchor set a ramp's chroma peak directly?** Today
-an anchor sets `peak = anchor C · max / e`, where `e` is the envelope at the
-anchor's position, so the envelope passes through the anchor's chroma. With an
-anchor on an end step and that end's bias at exactly 0, `e = 0` and phase 1's
-guard falls back to `peak = anchor C`; as the bias moves off 0, `e` is tiny and
-the peak jumps to gamut-clipped color. A 0.1 floor on `e` was tried and taken
-back out (plan Tasks 21, 23): it turned a gray ramp anchored on its darkest step
-blue. `peak = anchor C` at every position removes the jump, and changes any
-anchor placed away from the envelope's peak. weasel's only anchor is mid-ramp,
-so neither choice moves what ships.
-
-**The dev server for this worktree runs on port 5187**, not 5177: the primary
-checkout's `dev:theme-editor` owns 5177, and Playwright's visual config also
-reuses 5177. `npx vite --config apps/theme-editor/vite.config.ts --port 5187 --strictPort`.
+Both phases of `docs/superpowers/specs/2026-09-10-theme-engine-and-editor-design.md` are merged.
+These notes are kept because nothing else records them. Do not read them as open work.
 
 ## Traps from phase 1
 
@@ -128,7 +41,8 @@ That was the answer to "how far should this stop being about weasel" — configu
 prefix, a universal semantic vocabulary, and weasel's component tokens
 (`tb-height`, `slider-thumb-mix`, `prop-*`) as a separate layer another project
 omits. The portable artifact is the *emitted CSS*, not a runtime dependency,
-which is what keeps the engine in-scope. None of this is built.
+which is what keeps the engine in-scope. The `components` layer is built; the
+configurable prefix is not, and the spec names it as the next arc.
 
 **Derivation fills in what you have not decided; it does not replace authoring.**
 Mike's read — that full derivation is aspirational — is correct and the design
@@ -190,18 +104,6 @@ visual-baseline event. The proposal, at 1.81× step spread against the shipping
 ramp's 3.6× (ΔL 0.043 → 0.154, dark end crushed so 700/800/900 read as one field):
 `#f5f6f7 #e0e1e4 #c6c8cb #a7a9ae #85888e #64676f #464a51 #2f3137 #1c1e22 #0c0e12`.
 
-## Open
-
-**47 `--wzl-*` properties are read in live source and declared by no theme.**
-Some are deliberate container-override hooks (`--wzl-prop-*`, `--wzl-field-h`);
-the rest is rot from the original May token vocabulary (`--wzl-text`,
-`--wzl-panel-bg`, `--wzl-button-fill*`) that `packages/ui` never finished
-migrating. Nothing checks for either case.
-
-**`hexToRgba` in `packages/theme` throws on any non-hex value**, so the alpha
-extension only works when the token it points at is a hex literal. Point it at
-`interstellar`'s `rgba(...)` and it dies. Verified with a probe.
-
 ## Traps this work hit
 
 **The dev server executes stale modules while serving fresh ones.** Twice. It
@@ -261,9 +163,6 @@ npm run dev:theme-editor                           # port 5177, #/palette
 collected by no project.
 
 # Retained from completed work — the draw-coalescing arc
-
-**Branch:** `main`. Everything is committed and unpushed; run
-`git log --oneline @{u}..HEAD` to see what has not left the machine.
 
 ## Where it stands
 
