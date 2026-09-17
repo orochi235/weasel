@@ -13,7 +13,7 @@ import { parseColor, rgbaToHex } from '@weasel-js/core';
 export type ParsedColor =
   | { kind: 'none' }
   | { kind: 'solid'; color: string; alpha: number }
-  | { kind: 'ref'; id: string };
+  | { kind: 'ref'; id: string; fallback?: { color: string; alpha: number } };
 
 /**
  * Parse an SVG paint string. Returns `null` for inputs we don't recognize
@@ -31,9 +31,23 @@ export function parsePaintAttr(raw: string | null | undefined): ParsedColor | nu
   if (s === 'currentColor' || s === 'currentcolor') {
     return { kind: 'solid', color: '#000000', alpha: 1 };
   }
-  // url(#id) reference.
-  const urlMatch = /^url\(\s*#([^)\s]+)\s*\)/.exec(s);
-  if (urlMatch) return { kind: 'ref', id: urlMatch[1] };
+  // url(#id) reference, optionally followed by the fallback paint SVG's own
+  // grammar allows — what a renderer takes when it cannot resolve the
+  // reference. A mesh gradient or any other paint outside this package's
+  // vocabulary arrives that way.
+  const urlMatch = /^url\(\s*#([^)\s]+)\s*\)(.*)$/.exec(s);
+  if (urlMatch) {
+    const out: ParsedColor = { kind: 'ref', id: urlMatch[1] };
+    const rest = urlMatch[2].trim();
+    if (rest !== '' && rest !== 'none') {
+      const fallback = parsePaintAttr(rest);
+      if (fallback?.kind === 'solid') {
+        (out as { fallback?: { color: string; alpha: number } }).fallback =
+          { color: fallback.color, alpha: fallback.alpha };
+      }
+    }
+    return out;
+  }
   // Everything else — hex, rgb()/rgba(), hsl()/hsla(), and named colors —
   // goes through the kit's CSS parser. It throws on unrecognized input;
   // we translate that into the `null` the caller expects.

@@ -17,7 +17,35 @@ import { serializePathD } from './path-serializer';
 /** Collected gradient definitions, keyed by element id. */
 export type GradientTable = Map<string, FillStyle>;
 
-const GRADIENT_TAGS = new Set(['lineargradient', 'radialgradient']);
+/**
+ * The namespace weasel's own paint servers are written in, and the prefix they
+ * are written under. A conic gradient has no SVG element to target — SVG has
+ * `linearGradient` and `radialGradient` and nothing else — so it goes out as a
+ * foreign-namespaced def that this package reads back and every other renderer
+ * skips in favor of the paint fallback color beside the reference.
+ *
+ * A registered paint kind's own `toSvg` may use this prefix too: the root
+ * declares it whenever any paint in the document lacks a native SVG form.
+ */
+export const WEASEL_NS = 'urn:weasel-js:svg';
+export const WEASEL_NS_PREFIX = 'wzl';
+
+/** `true` when SVG has a paint server for this kind, so the reference needs no
+ *  fallback color and the root needs no foreign namespace. */
+function hasNativeSvgForm(paint: FillStyle): boolean {
+  const kind = paint.fill ?? 'solid';
+  return kind === 'solid' || kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'pattern';
+}
+
+/** The local name of a tag, prefix stripped. */
+function localName(tag: string): string {
+  const i = tag.indexOf(':');
+  return (i < 0 ? tag : tag.slice(i + 1)).toLowerCase();
+}
+
+const GRADIENT_TAGS = new Set([
+  'lineargradient', 'radialgradient', 'conicgradient', `${WEASEL_NS_PREFIX}:conicgradient`,
+]);
 
 const XLINK_NS = 'http://www.w3.org/1999/xlink';
 
@@ -26,9 +54,12 @@ export function collectGradients(svg: Element, onWarn?: (m: string) => void): Gr
   const out: GradientTable = new Map();
   const elements = collectElementsByTag(svg, GRADIENT_TAGS);
   for (const [id, el] of elements) {
-    const paint = el.tagName.toLowerCase() === 'lineargradient'
+    const tag = localName(el.tagName);
+    const paint = tag === 'lineargradient'
       ? readLinearGradient(el, elements, onWarn)
-      : readRadialGradient(el, elements, onWarn);
+      : tag === 'conicgradient'
+        ? readConicGradient(el, elements, onWarn)
+        : readRadialGradient(el, elements, onWarn);
     if (paint) out.set(id, paint);
   }
   warnUnsupportedDefsChildren(svg, onWarn);
@@ -45,7 +76,8 @@ function warnUnsupportedDefsChildren(svg: Element, onWarn?: (m: string) => void)
     for (let i = 0; i < root.children.length; i++) {
       const child = root.children[i];
       const tag = child.tagName.toLowerCase();
-      if (GRADIENT_TAGS.has(tag) || tag === 'pattern' || tag === 'marker') continue;
+      if (GRADIENT_TAGS.has(tag) || GRADIENT_TAGS.has(localName(tag))) continue;
+      if (tag === 'pattern' || tag === 'marker') continue;
       onWarn(`unsupported <defs> child: <${child.tagName}>`);
     }
   }
@@ -186,6 +218,22 @@ function readRadialGradient(
   };
 }
 
+function readConicGradient(
+  el: Element, elements: ElementTable, onWarn?: (m: string) => void,
+): FillStyle | null {
+  warnGradientTransform(el, elements, onWarn);
+  return {
+    fill: 'conic-gradient',
+    center: {
+      x: num(inheritedAttr(el, elements, 'cx'), 0.5),
+      y: num(inheritedAttr(el, elements, 'cy'), 0.5),
+    },
+    angle: num(inheritedAttr(el, elements, 'angle'), 0),
+    stops: inheritedStops(el, elements, onWarn),
+    units: readGradientUnits(el, elements),
+  };
+}
+
 /**
  * Pre-pass that assigns stable serialization ids to the paint servers —
  * gradients and patterns — used by any leaf in the tree. We key on object
@@ -213,6 +261,25 @@ export class PaintServerRegistry {
     this.byPaint.set(paint, id);
     this.order.push(paint);
     return id;
+  }
+
+  /**
+   * The `fill` / `stroke` attribute value referencing this paint server: a
+   * `url(#id)` reference, plus the fallback paint SVG's own grammar allows
+   * after one for any kind SVG cannot express. A renderer that cannot resolve
+   * the reference takes the fallback instead of dropping the fill, which is
+   * the difference between a flat shape and a vanished one.
+   */
+  ref(paint: FillStyle): string {
+    const id = this.register(paint);
+    if (hasNativeSvgForm(paint)) return `url(#${id})`;
+    return `url(#${id}) ${paintFallback(paint)}`;
+  }
+
+  /** Whether any registered paint serializes outside SVG's own vocabulary, so
+   *  the root has to declare {@link WEASEL_NS}. */
+  usesPrivateNamespace(): boolean {
+    return this.order.some((paint) => !hasNativeSvgForm(paint));
   }
 
   /** The `<defs>` id for a marker key — the key itself, minting nothing.
@@ -292,6 +359,15 @@ function gradientXml(id: string, paint: FillStyle): string {
       `x2="${trimNumber(paint.to.x)}" y2="${trimNumber(paint.to.y)}">${stops}</linearGradient>`
     );
   }
+  if (paint.fill === 'conic-gradient') {
+    const stops = paint.stops.map(stopXml).join('');
+    const P = WEASEL_NS_PREFIX;
+    return (
+      `<${P}:conicGradient id="${id}" gradientUnits="${gradientUnitsAttr(paint.units)}" ` +
+      `cx="${trimNumber(paint.center.x)}" cy="${trimNumber(paint.center.y)}" ` +
+      `angle="${trimNumber(paint.angle)}">${stops}</${P}:conicGradient>`
+    );
+  }
   if (paint.fill === 'radial-gradient') {
     const stops = paint.stops.map(stopXml).join('');
     return (
@@ -301,6 +377,20 @@ function gradientXml(id: string, paint: FillStyle): string {
     );
   }
   return '';
+}
+
+/**
+ * The color a renderer that cannot resolve the reference should paint. `none`
+ * when the paint has no single color to name — nothing painted is at least
+ * honest, where an invented black is not.
+ */
+function paintFallback(paint: FillStyle): string {
+  const color = getPaintKind(paint.fill)?.colorOf(paint);
+  if (!color) return 'none';
+  // Whoever reads the fallback is by definition an older renderer, so the
+  // packed alpha comes off rather than riding out as an 8-digit hex.
+  const packed = /^#([0-9a-f]{6})[0-9a-f]{2}$/i.exec(color);
+  return packed ? `#${packed[1].toLowerCase()}` : color;
 }
 
 function stopXml(s: GradStop): string {

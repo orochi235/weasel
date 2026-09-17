@@ -473,6 +473,15 @@ function readPaint(
   if (parsed.kind === 'ref') {
     const paint = gradients.get(parsed.id);
     if (!paint) {
+      // A fallback color beside the reference is the author saying what to
+      // paint when it cannot be resolved, so taking it is the documented
+      // behavior rather than a recovery — nothing to warn about.
+      if (parsed.fallback) {
+        const flat: SvgPaint = { kind: 'solid', color: parsed.fallback.color };
+        const a = opacity ?? (parsed.fallback.alpha < 1 ? parsed.fallback.alpha : undefined);
+        if (a != null) (flat as { opacity?: number }).opacity = a;
+        return flat;
+      }
       onWarn(`${attr} references unknown gradient #${parsed.id}`);
       return { kind: 'solid', color: defaultColor };
     }
@@ -1053,6 +1062,7 @@ function readTspanRun(
     } else if (parsed?.kind === 'ref') {
       const paint = gradients.get(parsed.id);
       if (paint) run.fill = paint;
+      else if (parsed.fallback) run.fill = { fill: 'solid', color: parsed.fallback.color };
     }
   }
   // Own attributes only — see `ownStrokeStyle`.
@@ -1130,6 +1140,9 @@ function readTextPaint(
     } else if (parsed?.kind === 'ref') {
       const paint = gradients.get(parsed.id);
       if (paint) out.fill = paint;
+      else if (parsed.fallback) {
+        out.fill = { fill: 'solid', color: parsed.fallback.color } as FillStyle;
+      }
     } else if (parsed?.kind === 'none') {
       out.fill = null;
     }

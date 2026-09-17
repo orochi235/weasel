@@ -14,7 +14,7 @@ import type {
 import { IDENTITY_MATRIX } from './types';
 import { serializePathD } from './path-serializer';
 import { formatMatrix, multiply, trimNumber } from './transform';
-import { PaintServerRegistry } from './gradients';
+import { PaintServerRegistry, WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
 import { anchorOffset } from './textAnchor';
 
 /**
@@ -31,6 +31,12 @@ export function serializeSvg(nodes: SvgNode[], opts: SerializeOptions = {}): str
   const namespaces = opts.namespaces ?? {};
 
   const rootAttrs: string[] = [`xmlns="http://www.w3.org/2000/svg"`];
+  // Declared before the caller's namespaces and only when something needs it,
+  // so a document of ordinary paints carries no trace of it. The paint pre-pass
+  // above has already seen every paint, so this answer is final.
+  if (registry.usesPrivateNamespace() && namespaces[WEASEL_NS_PREFIX] == null) {
+    rootAttrs.push(`xmlns:${WEASEL_NS_PREFIX}="${WEASEL_NS}"`);
+  }
   for (const [prefix, uri] of Object.entries(namespaces)) {
     rootAttrs.push(`xmlns:${prefix}="${escapeAttr(uri)}"`);
   }
@@ -273,8 +279,7 @@ function paintAttrs(
     return out;
   }
   // gradient
-  const id = registry.register(paint.paint);
-  return [`${name}="url(#${id})"`];
+  return [`${name}="${registry.ref(paint.paint)}"`];
 }
 
 /**
@@ -313,7 +318,7 @@ function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServerRegist
       attrs.push(`stroke-opacity="${trimNumber(paint.opacity)}"`);
     }
   } else {
-    attrs.push(`stroke="url(#${registry.register(paint)})"`);
+    attrs.push(`stroke="${registry.ref(paint)}"`);
   }
   attrs.push(...strokeWidthAttrs(width));
   if (stroke.cap) attrs.push(`stroke-linecap="${stroke.cap}"`);
@@ -486,8 +491,7 @@ function textXml(node: SvgTextNode, registry: PaintServerRegistry, namespaces: R
         attrs.push(`fill-opacity="${trimNumber(node.fill.opacity)}"`);
       }
     } else {
-      const id = registry.register(node.fill);
-      attrs.push(`fill="url(#${id})"`);
+      attrs.push(`fill="${registry.ref(node.fill)}"`);
     }
   }
   for (const a of coreStrokeAttrs(node.stroke, registry)) attrs.push(a);
@@ -547,8 +551,7 @@ function runXml(run: import('@weasel-js/core').StyledRun, registry: PaintServerR
     if ('color' in run.fill) {
       attrs.push(`fill="${run.fill.color}"`);
     } else {
-      const id = registry.register(run.fill);
-      attrs.push(`fill="url(#${id})"`);
+      attrs.push(`fill="${registry.ref(run.fill)}"`);
     }
   }
   for (const a of coreStrokeAttrs(run.stroke, registry)) attrs.push(a);

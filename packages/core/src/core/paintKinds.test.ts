@@ -180,7 +180,10 @@ describe('paint-kind registry', () => {
       fill: { kind: 'gradient', paint: WASH },
     } as unknown as SvgNode;
     const out = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 10, height: 10 } });
-    const ref = /fill="url\(#([^)]+)\)"/.exec(out);
+    // The fallback color after the reference is `@weasel-js/svg`'s doing, for
+    // renderers that cannot resolve a kind it invented; the id is what matters
+    // here.
+    const ref = /fill="url\(#([^)\s]+)\)[^"]*"/.exec(out);
     expect(ref).not.toBeNull();
     expect(out).toContain(`<linearGradient id="${ref![1]}"><stop offset="0" stop-color="#ff00ff"/></linearGradient>`);
   });

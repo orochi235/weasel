@@ -40,6 +40,32 @@ answer, and the alternative is unrepresentable anyway (see above). It only
 shows up on foreign SVG that sets decoration on a group and cancels it on a
 child.
 
+## Paints SVG cannot express
+
+SVG has `<linearGradient>`, `<radialGradient>` and `<pattern>` and nothing
+else, so a conic gradient — or any paint kind a consumer registers — has no
+element to serialize into. Both go out as a def in weasel's own namespace,
+declared on the root as `xmlns:wzl="urn:weasel-js:svg"` only when a document
+holds such a paint:
+
+```xml
+<defs><wzl:conicGradient id="grad0" gradientUnits="objectBoundingBox"
+  cx="0.5" cy="0.5" angle="0.25"><stop offset="0" stop-color="#ff0000"/>
+  <stop offset="1" stop-color="#0000ff"/></wzl:conicGradient></defs>
+<path fill="url(#grad0) #ff0000" d="…"/>
+```
+
+The color after the reference is SVG's own paint fallback: this package reads
+the def back and reproduces the paint exactly, every other renderer skips the
+def it does not know and paints that flat color instead. A registered kind's
+`toSvg` gets the same treatment, with the fallback taken from its `colorOf` —
+or `none` when the kind has no single color, so an unresolvable reference
+paints nothing rather than something arbitrary.
+
+That cuts both ways on import: a `fill="url(#mesh1) #c04a3f"` from Inkscape,
+whose mesh gradients this package does not model, imports as flat `#c04a3f`
+rather than as a dropped fill.
+
 ## Raster images
 
 `<image>` parses to an `SvgImageNode` holding the `href` verbatim — an

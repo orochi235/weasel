@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { parseSvg } from './parse';
 import { serializeSvg } from './serialize';
+import { asPaint, registerPaintKind } from '@weasel-js/core';
 import type { SvgNode } from './types';
 
 function gradientOf(svg: string, index = 0): Record<string, unknown> {
@@ -102,25 +103,52 @@ describe('gradient collection', () => {
 });
 
 describe('gradient serialization', () => {
-  const conicRect: SvgNode[] = [{
-    kind: 'path',
-    path: { kind: 'rect', x: 0, y: 0, width: 100, height: 50 },
-    fill: {
-      kind: 'gradient',
-      paint: {
-        fill: 'conic-gradient',
-        center: { x: 0.5, y: 0.5 },
-        angle: 0,
-        stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }],
-        units: 'bounds',
-      },
-    },
-  }];
+  // Conic gradients, which SVG cannot express either, are covered in
+  // conic.test.ts; this is the kind the kit knows nothing about.
+  function meshRect(): SvgNode[] {
+    return [{
+      kind: 'path',
+      path: { kind: 'rect', x: 0, y: 0, width: 100, height: 50 },
+      fill: { kind: 'gradient', paint: asPaint({ fill: 'mesh-gradient' }) },
+    }];
+  }
 
-  it('warns rather than silently emitting a dangling url(#…) for a conic gradient', () => {
-    const warnings: string[] = [];
-    const svg = serializeSvg(conicRect, { onWarn: (m) => warnings.push(m) });
-    expect(warnings.join(' ')).toContain('conic-gradient');
-    expect(svg).not.toContain('<conicGradient');
+  it('warns about a kind with no vector form of its own', () => {
+    const dispose = registerPaintKind({
+      id: 'mesh-gradient',
+      label: 'Mesh',
+      seed: (color) => asPaint({ fill: 'mesh-gradient', color }),
+      colorOf: () => undefined,
+    });
+    try {
+      const warnings: string[] = [];
+      const svg = serializeSvg(meshRect(), { onWarn: (m) => warnings.push(m) });
+      expect(warnings.join(' ')).toContain('mesh-gradient');
+      // No def is written, so the reference resolves to nothing — the `none`
+      // fallback is what stops that from painting an unpredictable shape.
+      expect(svg).toContain('fill="url(#grad0) none"');
+    } finally {
+      dispose();
+    }
+  });
+
+  it('writes a registered kind\'s own def and a fallback from its color', () => {
+    const dispose = registerPaintKind({
+      id: 'mesh-gradient',
+      label: 'Mesh',
+      seed: (color) => asPaint({ fill: 'mesh-gradient', color }),
+      colorOf: () => '#c04a3f',
+      toSvg: (id) => `<wzl:meshGradient id="${id}"/>`,
+    });
+    try {
+      const warnings: string[] = [];
+      const svg = serializeSvg(meshRect(), { onWarn: (m) => warnings.push(m) });
+      expect(warnings).toEqual([]);
+      expect(svg).toContain('xmlns:wzl="urn:weasel-js:svg"');
+      expect(svg).toContain('<wzl:meshGradient id="grad0"/>');
+      expect(svg).toContain('fill="url(#grad0) #c04a3f"');
+    } finally {
+      dispose();
+    }
   });
 });

@@ -114,7 +114,15 @@ export interface PaintKindEntry {
   inPoseFrame?(fill: FillStyle, box: FillPoseBox): FillStyle;
   /** The inverse. Required whenever `inPoseFrame` is supplied. */
   toBoundsFrame?(fill: FillStyle, box: FillPoseBox): FillStyle;
-  /** The `<defs>` entry backing a `url(#id)` reference. */
+  /**
+   * The `<defs>` entry backing a `url(#id)` reference.
+   *
+   * SVG has paint servers for two gradients and a pattern and nothing else, so
+   * a kind beyond those has no element to target: write a foreign-namespaced
+   * one under the `wzl:` prefix `@weasel-js/svg` declares on the root whenever
+   * a document holds such a paint. That package emits the fallback color
+   * beside the reference on its own, from `colorOf`.
+   */
   toSvg?(id: string, fill: FillStyle): string;
 }
 
@@ -196,9 +204,9 @@ export function registerPaintKind(entry: PaintKindEntry): () => void {
       'resize; supply both or neither.',
     );
   }
-  // Re-registering a built-in id is how a consumer closes a gap the kit leaves
-  // — conic gradients still serialize as nothing — so disposing that override
-  // puts the built-in back rather than deleting the kind.
+  // Re-registering a built-in id is how a consumer closes a gap the kit leaves,
+  // so disposing that override puts the built-in back rather than deleting the
+  // kind.
   const displaced = KINDS.get(entry.id);
   KINDS.set(entry.id, entry);
   // `NodeShape`'s paint slot memoizes per node and resolves a fill's frame
