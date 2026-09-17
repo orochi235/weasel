@@ -41,10 +41,6 @@ export function Transport(props: TransportProps): ReactElement {
         {paused ? <PlayIcon size={14} /> : <PauseIcon size={14} />}
       </button>
 
-      <span className={s.time} data-testid="timeline-time">
-        {seconds(playhead)} / {seconds(duration)}
-      </span>
-
       <button
         type="button"
         role="switch"
@@ -69,6 +65,10 @@ export function Transport(props: TransportProps): ReactElement {
         />
         <span className={s.rateReadout}>{rate}x</span>
       </div>
+
+      <span className={s.time} data-testid="timeline-time">
+        {seconds(playhead)} / {seconds(duration)}
+      </span>
     </div>
   );
 }

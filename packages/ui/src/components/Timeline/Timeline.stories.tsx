@@ -1,7 +1,8 @@
-import { useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { Track } from '@weasel-js/core';
+import { useAnimator, type Track, type TimelineHandle } from '@weasel-js/core';
 import { Timeline } from './Timeline';
+import { AnimatedTimeline } from './AnimatedTimeline';
 
 const meta: Meta<typeof Timeline> = {
   title: 'weasel-ui/Timeline',
@@ -64,3 +65,28 @@ const bezier = (): Track[] => {
 
 export const GraphBezier: StoryObj = { render: () => <Harness initial={bezier()} mode="graph" /> };
 export const Nested: StoryObj = { render: () => <Harness initial={withNested()} /> };
+
+/** The transport bound to a running timeline: play/pause, loop, rate and a
+ *  live playhead. The other stories render `<Transport>` with inert defaults. */
+function LiveHarness(): ReactElement {
+  const animator = useAnimator();
+  const [handle, setHandle] = useState<TimelineHandle | null>(null);
+  const tracks = useRef(flat());
+  useEffect(() => {
+    const tl = animator.timeline({ tracks: tracks.current, loop: true });
+    setHandle(tl);
+    return () => tl.cancel();
+  }, [animator]);
+  return (
+    <div style={{ height: 240, width: 640 }}>
+      {handle ? (
+        <AnimatedTimeline
+          handle={handle}
+          renderKeyEditor={({ key }) => <span>value: {String(key.value)}</span>}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+export const Live: StoryObj = { render: () => <LiveHarness /> };

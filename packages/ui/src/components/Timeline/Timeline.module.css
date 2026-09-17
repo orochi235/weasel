@@ -188,7 +188,15 @@
   background: transparent;
 }
 
-.time { font-variant-numeric: tabular-nums; color: var(--wzl-fg-muted); }
+/* Last in the row, and growing leftward into the slack `margin-inline-start`
+   leaves it: the playhead rewrites this every frame and gains a digit at 10s,
+   so anything laid out after it would vibrate. */
+.time {
+  margin-inline-start: auto;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  color: var(--wzl-fg-muted);
+}
 .rate { display: inline-flex; align-items: center; gap: 6px; color: var(--wzl-fg-muted); }
 .rateSlider { width: 88px; }
 
