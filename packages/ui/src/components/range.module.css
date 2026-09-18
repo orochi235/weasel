@@ -72,11 +72,11 @@
 /* Alpha variant: a fainter track, used where the row already carries a colour
    swatch and the slider must not compete with it. */
 .alpha::-webkit-slider-runnable-track {
-  background: color-mix(in srgb, var(--wzl-accent) 10%, transparent);
+  background: var(--wzl-range-track-bg, color-mix(in srgb, var(--wzl-accent) 10%, transparent));
 }
 
 .alpha::-moz-range-track {
-  background: color-mix(in srgb, var(--wzl-accent) 10%, transparent);
+  background: var(--wzl-range-track-bg, color-mix(in srgb, var(--wzl-accent) 10%, transparent));
 }
 
 /* A dead alpha track keeps its groove but loses its thumb, so the affordance
