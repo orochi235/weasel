@@ -630,8 +630,8 @@ const DEMO_META: DemoMeta[] = [
     title: 'Auto controls',
     category: 'labkit',
     description:
-      'A control the reader is not pinning. `Columns` and `Gap` declare `.auto(fn)`, so while they are unpinned the instrument reads what their resolver computed from `Width` — drag Width and both follow, and the ghosted sliders draw the numbers they resolved to rather than the values underneath. Pin one and it stops following, at whatever it was showing. `Caption` declares no resolver, so auto there means absent: the instrument reads `undefined` and draws nothing. `Tint` is `.manual()` — its value goes straight into a fill that cannot take `undefined`, so it never offers the state at all.',
-    hint: 'Drag Width and watch Columns and Gap track it. Shift-click a row — or click the dot beside its label — to pin or unpin it; the handle stays where it was. Tint has no dot.',
+      'A control the reader is not pinning. `Columns` and `Gap` declare `.auto(fn)`, so while they are unpinned the instrument reads what their resolver computed from `Width` — drag Width and both follow, and the ghosted sliders draw the numbers they resolved to rather than the values underneath. Pin one and it stops following, at whatever it was showing. `Caption` declares no resolver, so auto there means absent: the instrument reads `undefined` and draws nothing. `Width` and `Tint` are `.manual()` — one is what the others divide by and the other goes straight into a fill, so neither has anything sensible to do with `undefined` and neither offers the state at all.',
+    hint: 'Drag Width and watch Columns and Gap track it. Shift-click a row — or click the dot beside its label — to pin or unpin it; the handle stays where it was. Width and Tint have no dot.',
     load: () => import('./demos/AutoControlsDemo').then((m) => m.AutoControlsDemo),
     path: 'apps/site/demos/AutoControlsDemo.tsx',
   },
