@@ -9,8 +9,10 @@ import { TitleBarRegion } from '../chrome/regions/TitleBarRegion';
 import { ToolbarRegion } from '../chrome/regions/ToolbarRegion';
 import { ViewportRegion } from '../chrome/regions/ViewportRegion';
 import type { TrialChromeContext, TrialContribution, TrialRegion } from '../chrome/types';
-import { hasConfigPath, schemaNodeAtPath, withValueAtPath } from '../config/path';
+import { applyConfigWrite, resolveAutoConfig } from '../config/autoConfig';
+import { hasConfigPath, schemaNodeAtPath } from '../config/path';
 import { useConfigSchema } from '../config/useConfigSchema';
+import { useResolvedConfig } from '../config/useResolvedConfig';
 import type { Instrument } from '../instrument/types';
 import type { JobHandle } from '../job/types';
 import { useLabContext } from '../lab/LabContext';
@@ -110,6 +112,9 @@ export function TrialChrome({
   const view2d = as2DView(record.view);
 
   const configSchema = useConfigSchema(instrument);
+  // What the instrument is looking at right now. The panel reads `record.config`
+  // — the pinned values — but anything instrument-facing gets the resolved one.
+  const { config: resolvedConfig } = useResolvedConfig(configSchema, record.config, record.auto);
 
   const title = record.title ?? instrument.title ?? instrument.name;
   const collapsedSections = record.collapsedSections ?? NO_SECTIONS;
@@ -149,8 +154,9 @@ export function TrialChrome({
         }
         updateTrialConfig(trialId, path, value);
         if (instrument.onConfigChange) {
-          const nextConfig = withValueAtPath(prevConfig, path, value);
-          const nextState = instrument.onConfigChange(nextConfig, prevConfig, record.state);
+          const next = applyConfigWrite(prevConfig, record.auto ?? [], path, value);
+          const nextConfig = resolveAutoConfig(configSchema, next.config, new Set(next.autoPaths));
+          const nextState = instrument.onConfigChange(nextConfig, resolvedConfig, record.state);
           updateTrialState(trialId, nextState as never);
         }
       },
@@ -184,6 +190,7 @@ export function TrialChrome({
     activeToolId,
     setActiveTool,
     configSchema,
+    resolvedConfig,
     undockedIds,
     undockPanelAction,
     dockPanelAction,

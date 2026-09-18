@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { auto } from '../config/auto';
 import { f } from '../config/builder';
 import type { ConfigRule, ControlRenderer } from '../config/types';
 import { defineInstrument } from '../instrument/defineInstrument';
@@ -148,5 +149,51 @@ describe('a nested config value, end to end', () => {
       showGrid: true,
       grid: { size: 20, color: '#ffffff' },
     });
+  });
+});
+
+describe('a config written as auto', () => {
+  const unpinnable = () => {
+    const seen: { config: unknown; prev: unknown }[] = [];
+    const instrument = defineInstrument({
+      name: 'Unpinnable',
+      config: f.schema({
+        width: f.number(432),
+        gap: f.number(12).auto((c) => (c.width as number) / 24),
+      }),
+      initialState: () => ({ gap: 12 }),
+      onConfigChange: (config, prev, state) => {
+        seen.push({ config, prev });
+        return { ...state, gap: (config as { gap: number }).gap };
+      },
+      chrome: [
+        {
+          id: 'unpin-gap',
+          region: 'toolbar' as const,
+          render: (ctx) => (
+            <button type="button" onClick={() => ctx.setConfig('gap', auto)}>
+              unpin gap
+            </button>
+          ),
+        },
+      ],
+      render: (ctx) => <output>{String((ctx.state as { gap: number }).gap)}</output>,
+    });
+    return { instrument, seen };
+  };
+
+  it('hands onConfigChange the resolved config, never the sentinel', () => {
+    const { instrument, seen } = unpinnable();
+    render(<Lab instruments={[instrument]} defaultInstrument="Unpinnable" />);
+    fireEvent.click(screen.getByText('unpin gap'));
+    expect(seen.at(-1)?.config).toEqual({ width: 432, gap: 18 });
+    expect(seen.at(-1)?.prev).toEqual({ width: 432, gap: 12 });
+  });
+
+  it('keeps the state that write derived free of the sentinel', () => {
+    const { instrument } = unpinnable();
+    render(<Lab instruments={[instrument]} defaultInstrument="Unpinnable" />);
+    fireEvent.click(screen.getByText('unpin gap'));
+    expect(screen.getByText('18')).toBeInTheDocument();
   });
 });

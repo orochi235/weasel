@@ -1,6 +1,6 @@
 import { createStore, type StoreApi } from 'zustand/vanilla';
-import { isAuto } from '../config/auto';
-import { fillConfigDefaults, withValueAtPath } from '../config/path';
+import { applyConfigWrite } from '../config/autoConfig';
+import { fillConfigDefaults } from '../config/path';
 import {
   configDefaultsOf,
   configMigrationsOf,
@@ -127,15 +127,11 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
         trials: s.trials.map((w) => {
           if (w.id !== id) return w;
           const was = w.auto ?? [];
-          if (isAuto(value)) {
-            // The sentinel is never stored: it becomes membership in the set,
-            // and the pinned value at the path is left exactly where it is.
-            if (was.includes(path)) return w;
-            return { ...w, auto: [...was, path] };
-          }
-          const config = withValueAtPath(w.config, path, value);
-          if (!was.includes(path)) return { ...w, config };
-          return { ...w, config, auto: was.filter((p) => p !== path) };
+          // The sentinel is never stored: it becomes membership in `auto`, and
+          // the pinned value at the path is left exactly where it is.
+          const next = applyConfigWrite(w.config, was, path, value);
+          if (next.config === w.config && next.autoPaths === was) return w;
+          return { ...w, config: next.config, auto: next.autoPaths };
         }),
       }));
     },

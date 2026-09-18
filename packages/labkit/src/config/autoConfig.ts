@@ -1,4 +1,5 @@
 import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/ui';
+import { isAuto } from './auto';
 import { withValueAtPath } from './path';
 import type { ResolvedConfig } from './types';
 
@@ -131,4 +132,26 @@ function dropAtPath(config: Record<string, unknown>, path: string): Record<strin
   const child = config[head];
   if (!isRecord(child)) return config;
   return { ...config, [head]: dropAtPath(child, rest.join('.')) };
+}
+
+/**
+ * What writing `value` at `path` makes of a trial's raw config and its set of
+ * unpinned paths. `auto` pins nothing and joins the set; any other value is
+ * written and leaves it. Both the store and the chrome go through this, so
+ * they cannot disagree about what a write meant.
+ */
+export function applyConfigWrite<TC>(
+  config: TC,
+  autoPaths: readonly string[],
+  path: string,
+  value: unknown,
+): { config: TC; autoPaths: readonly string[] } {
+  if (isAuto(value)) {
+    if (autoPaths.includes(path)) return { config, autoPaths };
+    return { config, autoPaths: [...autoPaths, path] };
+  }
+  return {
+    config: withValueAtPath(config, path, value),
+    autoPaths: autoPaths.includes(path) ? autoPaths.filter((p) => p !== path) : autoPaths,
+  };
 }
