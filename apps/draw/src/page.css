@@ -1,0 +1,16 @@
+/* The document itself, for the app's own page only. Anything imported by a
+   story reaches Storybook's shared preview, where these would lock scrolling
+   on every story loaded after it. */
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--wzl-surface-sunken);
+  color: var(--wzl-fg);
+  font-family: var(--wzl-font-ui, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+  font-weight: var(--wzl-font-weight-normal, 400);
+  overflow: hidden;
+}
