@@ -116,21 +116,16 @@ const RAW = {
     [0.84, 0],
     [1, 0],
   ]),
-  'pulse-train':
-    [0.18, 0.5, 0.82]
-      .map((c) =>
-        polyOn(onWave, [
-          [c - 0.07, 0],
-          [c - 0.07, 1],
-          [c + 0.07, 1],
-          [c + 0.07, 0],
-        ]),
-      )
-      .join('') +
-    polyOn(onWave, [
-      [0, 0],
-      [1, 0],
+  'pulse-train': polyOn(onWave, [
+    [0, 0],
+    ...[0.18, 0.5, 0.82].flatMap((c) => [
+      [c - 0.07, 0],
+      [c - 0.07, 1],
+      [c + 0.07, 1],
+      [c + 0.07, 0],
     ]),
+    [1, 0],
+  ]),
   damped: trace((t) => onWave(t, Math.exp(-2.4 * t) * Math.cos(2 * Math.PI * 1.6 * t)), 14),
   chirp: trace((t) => onWave(t, 0.92 * Math.sin(Math.PI * (0.8 + 4.2 * t) * t * 2)), 20),
   beat: trace((t) => onWave(t, 0.92 * Math.sin(Math.PI * t) * Math.sin(2 * Math.PI * 4 * t)), 24),

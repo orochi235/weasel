@@ -2,7 +2,7 @@ import { Icon, type IconProps } from './Icon';
 
 export { Icon, isFillable } from './Icon';
 export type { IconProps } from './Icon';
-export { ICON_FILLS, ICON_PATHS } from './paths';
+export { ICON_FILLS, ICON_GROUPS, ICON_PATHS } from './paths';
 export type { FillableIconName, IconName } from './paths';
 
 // Tool glyphs live in @weasel-js/core because core needs them for

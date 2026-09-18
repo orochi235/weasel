@@ -30,3 +30,11 @@
   background: var(--wzl-surface);
   color: var(--wzl-fg);
 }
+
+.groupHeading {
+  margin: 0;
+  padding: 24px 24px 0;
+  font-size: var(--wzl-font-size-lg);
+  font-weight: 600;
+  color: var(--wzl-fg);
+}

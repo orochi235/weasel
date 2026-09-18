@@ -2,7 +2,7 @@ import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { Icon } from './Icon';
 import { isFillable } from './Icon';
-import { ICON_FILLS, ICON_PATHS, type IconName } from './paths';
+import { ICON_FILLS, ICON_GROUPS, ICON_PATHS, type IconName } from './paths';
 
 const NAMES = Object.keys(ICON_PATHS) as IconName[];
 
@@ -33,6 +33,11 @@ describe('icon set', () => {
     for (const name of NAMES) {
       expect(ICON_PATHS[name], name).not.toMatch(/"[a-z-]+=/);
     }
+  });
+
+  it('files every glyph under exactly one group', () => {
+    const grouped = ICON_GROUPS.flatMap((g) => g.names);
+    expect([...grouped].sort()).toEqual([...NAMES].sort());
   });
 
   it('names a glyph for every fill', () => {

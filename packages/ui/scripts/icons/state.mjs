@@ -78,7 +78,7 @@ const sparkle =
     .join('') +
   'Z';
 
-export const STATE = {
+const STATE = {
   // transport
   play: `<path d="${playTri}"/>`,
   pause: `<path d="M7.8 5.2v9.6M12.2 5.2v9.6"/>`,
@@ -101,7 +101,6 @@ export const STATE = {
     <path d="M11.4 7.6h3.4M11.4 10h3.4M11.4 12.4h1.8" stroke-width="1"/>`,
 
   // collection
-  filter: `<path d="M3.4 4.6h13.2L11.8 11v5.4L8.2 14.8V11z"/>`,
   search: `<circle cx="9" cy="9" r="5.4"/><path d="M12.82 12.82 16.9 16.9"/>`,
 
   // Magnified pixels, not an empty lens: `zoomOut` is this silhouette with one
@@ -185,14 +184,26 @@ export const STATE = {
   'mode-auto': `<path d="${sparkle}"/>`,
 };
 
-export const STATE_ORDER = [
-  'play', 'pause', 'stop', 'step',
-  'crosshair', 'fullscreen', 'compare', 'filter',
-  'search', 'layers', 'lock', 'unlock',
-  'visible', 'hidden', 'pin', 'link',
-  'collapse', 'expand', 'chevron', 'tune',
-  'grid', 'snap', 'measure', 'randomize',
-  'refresh', 'info', 'warning', 'error',
-  'busy',
-  'mode-light', 'mode-dark', 'mode-auto',
-];
+const SPLIT = {
+  playback: ['play', 'pause', 'stop', 'step'],
+  status: [
+    'lock', 'unlock', 'visible', 'hidden', 'pin',
+    'info', 'warning', 'error', 'busy',
+    'mode-light', 'mode-dark', 'mode-auto',
+  ],
+  instrument: [
+    'crosshair', 'fullscreen', 'compare', 'search', 'loupe',
+    'layers', 'link', 'collapse', 'expand', 'chevron',
+    'tune', 'grid', 'snap', 'measure', 'randomize', 'refresh',
+  ],
+};
+
+const listed = Object.values(SPLIT).flat();
+const unlisted = Object.keys(STATE).filter((k) => !listed.includes(k));
+if (unlisted.length || listed.length !== Object.keys(STATE).length)
+  throw new Error(`state.mjs: every glyph needs exactly one subset (unlisted: ${unlisted})`);
+
+const pick = (keys) => Object.fromEntries(keys.map((k) => [k, STATE[k]]));
+export const PLAYBACK = pick(SPLIT.playback);
+export const STATUS = pick(SPLIT.status);
+export const INSTRUMENT = pick(SPLIT.instrument);

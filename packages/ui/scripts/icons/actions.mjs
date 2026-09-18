@@ -1,4 +1,4 @@
-import { chevron, onCircle, BASE } from './base.mjs';
+import { chevron, BASE } from './base.mjs';
 
 // ── delete ───────────────────────────────────────────────────────────────
 const canBody = `M5.2 5.8v9.6A1.6 1.6 0 0 0 6.8 17h6.4a1.6 1.6 0 0 0 1.6-1.6V5.8`;
@@ -14,18 +14,8 @@ const sortArrow = `M15.3 5.4v9.4`;
 const undoPath = `M4.4 8.4h6.8a3.6 3.6 0 0 1 0 7.2H8.6`;
 const redoPath = `M15.6 8.4H8.8a3.6 3.6 0 0 0 0 7.2H11.4`;
 
-// ── zoom-out ─────────────────────────────────────────────────────────────
-const zHandle = onCircle(9, 9, 5.4, -45);
-
-// ── fit ──────────────────────────────────────────────────────────────────
-const fitCorners = [
-  `M3.2 7.2V4.4A1.2 1.2 0 0 1 4.4 3.2h2.8`,
-  `M12.8 3.2h2.8A1.2 1.2 0 0 1 16.8 4.4v2.8`,
-  `M16.8 12.8v2.8a1.2 1.2 0 0 1-1.2 1.2h-2.8`,
-  `M7.2 16.8H4.4a1.2 1.2 0 0 1-1.2-1.2v-2.8`,
-].join('');
-
 export const ACTIONS = {
+  filter: `<path d="M3.4 4.6h13.2L11.8 11v5.4L8.2 14.8V11z"/>`,
   add: `<path d="M10 4.9v10.2M4.9 10h10.2"/>`,
 
   remove: `<path d="M4.9 10h10.2"/>`,
@@ -48,15 +38,6 @@ export const ACTIONS = {
     <path d="${redoPath}"/>
     <path d="${chevron([15.6, 8.4], [1, 0], 2.7, 40)}"/>`,
 
-  'zoom-out': `
-    <circle cx="9" cy="9" r="5.4"/>
-    <path d="M${zHandle[0]} ${zHandle[1]} 16.9 16.9"/>
-    <path d="M6.7 9h4.6"/>`,
-
-  fit: `
-    <path d="${fitCorners}"/>
-    <rect x="7.4" y="8.2" width="5.2" height="3.6" rx="0.8" stroke-width="1"/>`,
-
   // Export keeps the tray-and-arrow; snapshot takes the camera. One word was
   // doing both jobs and the tray reads as download, not "capture this state".
   export: BASE.save,
@@ -68,6 +49,6 @@ export const ACTIONS = {
 
 export const ACTIONS_ORDER = [
   'add', 'remove', 'delete', 'sort',
-  'undo', 'redo', 'zoom-out', 'fit',
-  'export', 'snapshot',
+  'undo', 'redo',
+  'export', 'snapshot', 'filter',
 ];

@@ -74,6 +74,14 @@ const panHeads = [
 // Handle departs the rim at exactly -45° so it meets the circle.
 const zHandle = onCircle(9, 9, 5.4, -45);
 
+// ── fit ──────────────────────────────────────────────────────────────────
+const fitCorners = [
+  `M3.2 7.2V4.4A1.2 1.2 0 0 1 4.4 3.2h2.8`,
+  `M12.8 3.2h2.8A1.2 1.2 0 0 1 16.8 4.4v2.8`,
+  `M16.8 12.8v2.8a1.2 1.2 0 0 1-1.2 1.2h-2.8`,
+  `M7.2 16.8H4.4a1.2 1.2 0 0 1-1.2-1.2v-2.8`,
+].join('');
+
 export const BASE = {
   attrs:
     'fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"',
@@ -103,10 +111,19 @@ export const BASE = {
     <path d="M${zHandle[0]} ${zHandle[1]} 16.9 16.9"/>
     <path d="M9 6.7v4.6M6.7 9h4.6"/>`,
 
+  'zoom-out': `
+    <circle cx="9" cy="9" r="5.4"/>
+    <path d="M${zHandle[0]} ${zHandle[1]} 16.9 16.9"/>
+    <path d="M6.7 9h4.6"/>`,
+
+  fit: `
+    <path d="${fitCorners}"/>
+    <rect x="7.4" y="8.2" width="5.2" height="3.6" rx="0.8" stroke-width="1"/>`,
+
   pan: `
     <path d="${panShafts}"/>
     <path d="${panHeads}"/>
     <circle cx="10" cy="10" r="${HUB}"/>`,
 };
 
-export const BASE_ORDER = ['clone', 'reset', 'close', 'save', 'zoom', 'pan'];
+export const BASE_ORDER = ['clone', 'reset', 'close', 'save', 'zoom', 'zoom-out', 'fit', 'pan'];

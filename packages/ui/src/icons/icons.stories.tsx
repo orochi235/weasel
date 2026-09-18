@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Icon } from './Icon';
-import { ICON_PATHS, type IconName } from './paths';
+import { ICON_GROUPS } from './paths';
 import {
   SelectIcon, LassoIcon, RectIcon, EllipseIcon, ImageIcon, EyedropperIcon,
   LineIcon, ArrowIcon, PolygonIcon, StarIcon, PencilIcon, TextIcon, PenIcon,
@@ -10,8 +10,6 @@ import s from './icons.stories.module.css';
 
 const meta: Meta = { title: 'weasel-ui/icons/Gallery' };
 export default meta;
-
-const NAMES = Object.keys(ICON_PATHS) as IconName[];
 
 /**
  * The tool glyphs, which live in `@weasel-js/core` because core needs them for
@@ -40,14 +38,21 @@ function ToolSheet({ size, proof }: { size: number; proof?: boolean }) {
 
 function Sheet({ size, proof }: { size: number; proof?: boolean }) {
   return (
-    <div className={proof ? `${s.sheet} ${s.proof}` : s.sheet}>
-      {NAMES.map((n) => (
-        <figure key={n}>
-          <Icon name={n} size={size} label={n} />
-          <figcaption>{n}</figcaption>
-        </figure>
+    <>
+      {ICON_GROUPS.map(({ label, names }) => (
+        <section key={label}>
+          <h2 className={s.groupHeading}>{label}</h2>
+          <div className={proof ? `${s.sheet} ${s.proof}` : s.sheet}>
+            {names.map((n) => (
+              <figure key={n}>
+                <Icon name={n} size={size} label={n} />
+                <figcaption>{n}</figcaption>
+              </figure>
+            ))}
+          </div>
+        </section>
       ))}
-    </div>
+    </>
   );
 }
 
