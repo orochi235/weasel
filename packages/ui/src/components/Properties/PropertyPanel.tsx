@@ -11,6 +11,7 @@ import { Focusable } from 'react-aria-components';
 import { dlog } from '../../dlog';
 import { formatCompact, formatNumber, parseNumber } from '../../format/number';
 import type { PrefNumberFormat } from '../Prefs/schema';
+import { PinDot } from './PinDot';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import shared from '../range.module.css';
 import s from './Properties.module.css';
@@ -174,6 +175,15 @@ export interface PropertyRowProps extends PropertyMetricProps {
   children: ReactNode;
   htmlFor?: string;
   className?: string;
+  /** The row is auto: its value is not pinned and the owner computes it. Draws
+   *  the control ghosted and colorless. */
+  auto?: boolean;
+  /** Given, the row carries a pin dot that toggles `auto`. Omitted, the row can
+   *  show an auto state but not change it. */
+  onAutoChange?: (next: boolean) => void;
+  /** Marks the row's element for a panel-level gesture handler. `PropertyRow`
+   *  does not spread unknown props, so this is declared rather than inherited. */
+  'data-auto-path'?: string;
 }
 
 /** The label-plus-control frame every typed row below is built from. Use it
@@ -190,6 +200,9 @@ export function PropertyRow({
   className,
   density,
   align,
+  auto,
+  onAutoChange,
+  'data-auto-path': autoPath,
 }: PropertyRowProps) {
   const variantClass = variant === 'color' ? s.rowColor : variant === 'checkbox' ? s.rowCheckbox : '';
   // Each variant already lays out one way; a class is only needed for the
@@ -200,15 +213,16 @@ export function PropertyRow({
   const layoutClass =
     resolved === intrinsic ? '' : resolved === 'inline' ? s.rowInline : s.rowBlock;
   const cls = propertyMetricClass(
-    [s.row, variantClass, layoutClass, span && s.span].filter(Boolean).join(' '),
+    [s.row, variantClass, layoutClass, span && s.span, auto && s.rowAuto].filter(Boolean).join(' '),
     { density, align },
     className,
   );
   return (
-    <label className={cls} htmlFor={htmlFor}>
+    <label className={cls} htmlFor={htmlFor} data-auto-path={autoPath}>
       <span className={s.rowLabel}>
         {label}
         {description ? <PropertyRowHelp label={label} description={description} /> : null}
+        {onAutoChange ? <PinDot auto={auto ?? false} label={label} onChange={onAutoChange} /> : null}
         {readout != null && <em className={s.readout}>{readout}</em>}
       </span>
       {children}
@@ -313,6 +327,12 @@ export interface SliderRowProps extends PropertyMetricProps {
   description?: string;
   /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
   span?: boolean;
+  /** The row is auto — see `<PropertyRow auto>`. */
+  auto?: boolean;
+  /** Toggles `auto` from a pin dot — see `<PropertyRow onAutoChange>`. */
+  onAutoChange?: (next: boolean) => void;
+  /** Marks the row for a panel-level gesture handler — see `<PropertyRow data-auto-path>`. */
+  'data-auto-path'?: string;
 }
 
 /** A bounded number edited by dragging, with a live readout whose precision
@@ -333,6 +353,9 @@ export function SliderRow({
   span,
   density,
   align,
+  auto,
+  onAutoChange,
+  'data-auto-path': autoPath,
 }: SliderRowProps) {
   // Default readout precision tracks `step`: integer steps → 0 decimals,
   // 0.1 → 1 decimal, 0.05/0.02/0.01 → 2 decimals, 0.005 → 3, etc. Callers
@@ -374,6 +397,9 @@ export function SliderRow({
       description={description}
       density={density}
       align={align}
+      auto={auto}
+      onAutoChange={onAutoChange}
+      data-auto-path={autoPath}
     >
       <input
         ref={range}
@@ -510,6 +536,12 @@ export interface ColorRowProps extends PropertyMetricProps {
   description?: string;
   /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
   span?: boolean;
+  /** The row is auto — see `<PropertyRow auto>`. */
+  auto?: boolean;
+  /** Toggles `auto` from a pin dot — see `<PropertyRow onAutoChange>`. */
+  onAutoChange?: (next: boolean) => void;
+  /** Marks the row for a panel-level gesture handler — see `<PropertyRow data-auto-path>`. */
+  'data-auto-path'?: string;
 }
 
 /** A color swatch, optionally with an alpha slider beneath it. */
@@ -527,6 +559,9 @@ export function ColorRow({
   span,
   density,
   align,
+  auto,
+  onAutoChange,
+  'data-auto-path': autoPath,
 }: ColorRowProps) {
   const showAlpha = alpha != null;
   const liveColor = onInput ?? onChange;
@@ -545,6 +580,9 @@ export function ColorRow({
       description={description}
       density={density}
       align={align}
+      auto={auto}
+      onAutoChange={onAutoChange}
+      data-auto-path={autoPath}
       htmlFor={id}
     >
       <input
@@ -584,6 +622,12 @@ export interface CheckboxRowProps extends PropertyMetricProps {
   description?: string;
   /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
   span?: boolean;
+  /** The row is auto — see `<PropertyRow auto>`. */
+  auto?: boolean;
+  /** Toggles `auto` from a pin dot — see `<PropertyRow onAutoChange>`. */
+  onAutoChange?: (next: boolean) => void;
+  /** Marks the row for a panel-level gesture handler — see `<PropertyRow data-auto-path>`. */
+  'data-auto-path'?: string;
 }
 
 /** A boolean checkbox. */
@@ -596,6 +640,9 @@ export function CheckboxRow({
   description,
   density,
   align,
+  auto,
+  onAutoChange,
+  'data-auto-path': autoPath,
 }: CheckboxRowProps) {
   const id = useId();
   return (
@@ -607,6 +654,9 @@ export function CheckboxRow({
       description={description}
       density={density}
       align={align}
+      auto={auto}
+      onAutoChange={onAutoChange}
+      data-auto-path={autoPath}
       htmlFor={id}
     >
       <input
@@ -632,6 +682,12 @@ export interface TextRowProps extends PropertyMetricProps {
   description?: string;
   /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
   span?: boolean;
+  /** The row is auto — see `<PropertyRow auto>`. */
+  auto?: boolean;
+  /** Toggles `auto` from a pin dot — see `<PropertyRow onAutoChange>`. */
+  onAutoChange?: (next: boolean) => void;
+  /** Marks the row for a panel-level gesture handler — see `<PropertyRow data-auto-path>`. */
+  'data-auto-path'?: string;
 }
 
 /** A single-line text input. */
@@ -646,6 +702,9 @@ export function TextRow({
   span,
   density,
   align,
+  auto,
+  onAutoChange,
+  'data-auto-path': autoPath,
 }: TextRowProps) {
   const id = useId();
   return (
@@ -656,6 +715,9 @@ export function TextRow({
       description={description}
       density={density}
       align={align}
+      auto={auto}
+      onAutoChange={onAutoChange}
+      data-auto-path={autoPath}
       htmlFor={id}
     >
       <input
@@ -702,6 +764,12 @@ export interface NumberRowProps extends PropertyMetricProps {
   description?: string;
   /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
   span?: boolean;
+  /** The row is auto — see `<PropertyRow auto>`. */
+  auto?: boolean;
+  /** Toggles `auto` from a pin dot — see `<PropertyRow onAutoChange>`. */
+  onAutoChange?: (next: boolean) => void;
+  /** Marks the row for a panel-level gesture handler — see `<PropertyRow data-auto-path>`. */
+  'data-auto-path'?: string;
 }
 
 /** A number typed directly. Reach for `<SliderRow>` when the range matters
@@ -721,6 +789,9 @@ export function NumberRow({
   span,
   density,
   align,
+  auto,
+  onAutoChange,
+  'data-auto-path': autoPath,
 }: NumberRowProps) {
   const live = onInput ?? onChange;
   const field = useCommitListener(onInput && ((raw) => {
@@ -756,6 +827,9 @@ export function NumberRow({
       description={description}
       density={density}
       align={align}
+      auto={auto}
+      onAutoChange={onAutoChange}
+      data-auto-path={autoPath}
       htmlFor={id}
     >
       {unit == null ? (
@@ -788,6 +862,12 @@ export interface SelectRowProps<T extends string> extends PropertyMetricProps {
   description?: string;
   /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
   span?: boolean;
+  /** The row is auto — see `<PropertyRow auto>`. */
+  auto?: boolean;
+  /** Toggles `auto` from a pin dot — see `<PropertyRow onAutoChange>`. */
+  onAutoChange?: (next: boolean) => void;
+  /** Marks the row for a panel-level gesture handler — see `<PropertyRow data-auto-path>`. */
+  'data-auto-path'?: string;
 }
 
 /** A dropdown over a fixed set of choices. Prefer `<ToggleRow>` when there
@@ -803,6 +883,9 @@ export function SelectRow<T extends string>({
   span,
   density,
   align,
+  auto,
+  onAutoChange,
+  'data-auto-path': autoPath,
 }: SelectRowProps<T>) {
   const chosen = options.some((opt) => opt.value === value);
   const id = useId();
@@ -814,6 +897,9 @@ export function SelectRow<T extends string>({
       description={description}
       density={density}
       align={align}
+      auto={auto}
+      onAutoChange={onAutoChange}
+      data-auto-path={autoPath}
       htmlFor={id}
     >
       <Select<T>
@@ -843,6 +929,12 @@ export interface ToggleRowProps<T extends string> extends PropertyMetricProps {
   description?: string;
   /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
   span?: boolean;
+  /** The row is auto — see `<PropertyRow auto>`. */
+  auto?: boolean;
+  /** Toggles `auto` from a pin dot — see `<PropertyRow onAutoChange>`. */
+  onAutoChange?: (next: boolean) => void;
+  /** Marks the row for a panel-level gesture handler — see `<PropertyRow data-auto-path>`. */
+  'data-auto-path'?: string;
 }
 
 /** A segmented control: the same choice as a select, with every option
@@ -857,6 +949,9 @@ export function ToggleRow<T extends string>({
   span,
   density,
   align,
+  auto,
+  onAutoChange,
+  'data-auto-path': autoPath,
 }: ToggleRowProps<T>) {
   return (
     <PropertyRow
@@ -866,6 +961,9 @@ export function ToggleRow<T extends string>({
       description={description}
       density={density}
       align={align}
+      auto={auto}
+      onAutoChange={onAutoChange}
+      data-auto-path={autoPath}
     >
       <div className={s.toggle} role="group" aria-label={nameOf(label)}>
         {options.map((opt) => {

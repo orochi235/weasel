@@ -575,3 +575,139 @@ describe('rows with no value', () => {
     expect(field().value).toBe('0');
   });
 });
+
+describe('auto rows', () => {
+  it('marks an auto row and renders its dot only when it can be toggled', () => {
+    const { rerender, container } = render(
+      <PropertyRow label="Gap" auto onAutoChange={() => {}}>
+        <input />
+      </PropertyRow>,
+    );
+    expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
+    expect(screen.getByRole('button', { name: /Gap/ })).toBeInTheDocument();
+
+    rerender(
+      <PropertyRow label="Gap" auto>
+        <input />
+      </PropertyRow>,
+    );
+    expect(screen.queryByRole('button', { name: /Gap/ })).toBeNull();
+  });
+
+  it('shows the readout a caller gives an auto row', () => {
+    render(
+      <PropertyRow label="Gap" auto readout="auto · 18 px" onAutoChange={() => {}}>
+        <input />
+      </PropertyRow>,
+    );
+    expect(screen.getByText('auto · 18 px')).toBeInTheDocument();
+  });
+
+  it('puts the dot before the readout, so live text stays last in the row', () => {
+    const { container } = render(
+      <PropertyRow label="Gap" auto readout="auto · 18 px" onAutoChange={() => {}}>
+        <input />
+      </PropertyRow>,
+    );
+    const kids = [...(container.querySelector('label > span')?.children ?? [])];
+    const dot = kids.findIndex((el) => el.tagName === 'BUTTON');
+    const readout = kids.findIndex((el) => el.tagName === 'EM');
+    expect(dot).toBeGreaterThanOrEqual(0);
+    expect(dot).toBeLessThan(readout);
+  });
+
+  it('puts data-auto-path on the row element for a panel-level gesture handler', () => {
+    const { container } = render(
+      <PropertyRow label="Gap" data-auto-path="grid.gap" onAutoChange={() => {}}>
+        <input />
+      </PropertyRow>,
+    );
+    expect(container.querySelector('label')?.getAttribute('data-auto-path')).toBe('grid.gap');
+  });
+
+  it('SliderRow forwards auto and onAutoChange', () => {
+    const { container } = render(
+      <SliderRow
+        label="Gap"
+        value={12}
+        min={0}
+        max={48}
+        onChange={() => {}}
+        auto
+        onAutoChange={() => {}}
+      />,
+    );
+    expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
+    expect(screen.getByRole('button', { name: /Gap/ })).toBeInTheDocument();
+  });
+
+  it('NumberRow forwards auto and onAutoChange', () => {
+    const { container } = render(
+      <NumberRow label="Count" value={3} onChange={() => {}} auto onAutoChange={() => {}} />,
+    );
+    expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
+    expect(screen.getByRole('button', { name: /Count/ })).toBeInTheDocument();
+  });
+
+  it('SelectRow forwards auto and onAutoChange', () => {
+    const { container } = render(
+      <SelectRow
+        label="Mode"
+        value="a"
+        options={[
+          { value: 'a', label: 'A' },
+          { value: 'b', label: 'B' },
+        ]}
+        onChange={() => {}}
+        auto
+        onAutoChange={() => {}}
+      />,
+    );
+    expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
+    // The Select's own trigger is a button named "Mode" too, so the dot is
+    // matched by its full name rather than by the label alone.
+    expect(screen.getByRole('button', { name: 'Mode: auto' })).toBeInTheDocument();
+  });
+
+  it('ToggleRow forwards auto and onAutoChange', () => {
+    const { container } = render(
+      <ToggleRow
+        label="Fit"
+        value="a"
+        options={[
+          { value: 'a', label: 'A' },
+          { value: 'b', label: 'B' },
+        ]}
+        onChange={() => {}}
+        auto
+        onAutoChange={() => {}}
+      />,
+    );
+    expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
+    expect(screen.getByRole('button', { name: /Fit/ })).toBeInTheDocument();
+  });
+
+  it('CheckboxRow forwards auto and onAutoChange', () => {
+    const { container } = render(
+      <CheckboxRow label="Snap" value={true} onChange={() => {}} auto onAutoChange={() => {}} />,
+    );
+    expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
+    expect(screen.getByRole('button', { name: /Snap/ })).toBeInTheDocument();
+  });
+
+  it('ColorRow forwards auto and onAutoChange', () => {
+    const { container } = render(
+      <ColorRow label="Fill" value="#ff0000" onChange={() => {}} auto onAutoChange={() => {}} />,
+    );
+    expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
+    expect(screen.getByRole('button', { name: /Fill/ })).toBeInTheDocument();
+  });
+
+  it('TextRow forwards auto and onAutoChange', () => {
+    const { container } = render(
+      <TextRow label="Name" value="foo" onChange={() => {}} auto onAutoChange={() => {}} />,
+    );
+    expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
+    expect(screen.getByRole('button', { name: /Name/ })).toBeInTheDocument();
+  });
+});
