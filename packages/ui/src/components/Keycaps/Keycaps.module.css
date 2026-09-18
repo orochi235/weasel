@@ -1,4 +1,9 @@
 /* Keystroke "key cap" styling — each modifier and key in its own bordered chip. */
+.keys,
+.key {
+  --key-h: 18px;
+}
+
 .keys {
   display: inline-flex;
   gap: 3px;
@@ -18,6 +23,11 @@
 }
 
 .sep {
+  /* A key's height, so the glyph centers on the keys rather than riding the
+     row's bottom edge. */
+  display: inline-flex;
+  align-items: center;
+  height: var(--key-h);
   color: var(--wzl-fg-muted);
   font-size: var(--wzl-font-size-sm);
   line-height: 1;
@@ -28,7 +38,7 @@
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  height: 18px;
+  height: var(--key-h);
   padding: 0 4px;
   /* Light face, slightly-darker-than-face border, dark glyph — reads as
      a real keycap rather than a recessed slot in the panel. */
@@ -51,7 +61,7 @@
 /* Default chip is square — letters, digits, and single glyphs (⎋ ⌫ ↑ etc.)
    sit in a uniform key-cap box. */
 .key[data-kind='square'] {
-  width: 18px;
+  width: var(--key-h);
   padding: 0;
 }
 
