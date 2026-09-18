@@ -103,6 +103,11 @@ function resolveEntry(
       ? group
       : { ...group, description: entry.annotations.description };
   }
+  if (entry.options.manual && entry.options.unpinned) {
+    throw new Error(
+      `[labkit] "${path}" is both .manual() and .initial(auto) — a field that can never be auto cannot start auto`,
+    );
+  }
   const seed: LeafPatch = defined({
     ...entry.annotations,
     ...(entry.kind === null ? {} : { kind: entry.kind }),

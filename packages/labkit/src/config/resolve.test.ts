@@ -1,5 +1,6 @@
 import type { PrefGroup } from '@weasel-js/ui';
 import { describe, expect, it } from 'vitest';
+import { auto } from './auto';
 import { f } from './builder';
 import { resolveConfigSchema } from './resolve';
 import { titleCase } from './rules';
@@ -206,5 +207,11 @@ describe('resolveConfigSchema / nested groups', () => {
       [],
     );
     expect(r.sections).toEqual([{ at: '', label: 'Advanced', paths: ['grid'] }]);
+  });
+
+  it('rejects a leaf that is both manual and starts auto', () => {
+    const schema = f.schema({ seed: f.number(1).manual().initial(auto) });
+    expect(() => resolveConfigSchema(schema)).toThrow(/seed/);
+    expect(() => resolveConfigSchema(schema)).toThrow(/manual/);
   });
 });
