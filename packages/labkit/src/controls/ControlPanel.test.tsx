@@ -70,7 +70,7 @@ describe('<ControlPanel> select', () => {
       },
     ];
     render(<ControlPanel fields={fields} config={{ wave: 'sine' }} setConfig={setConfig} />);
-    const trigger = screen.getByRole('button', { name: /Wave/ });
+    const trigger = screen.getByRole('button', { name: 'Sine Wave' });
     expect(trigger).toHaveTextContent('Sine');
     act(() => {
       fireEvent.click(trigger);
@@ -658,6 +658,17 @@ describe('<ControlPanel> nested groups', () => {
 });
 
 describe('<ControlPanel> auto', () => {
+  it('renders a pin dot whether or not it was given a set of auto paths', () => {
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(f.schema({ gap: f.number(12).range(0, 48) }), [])}
+        config={{ gap: 12 }}
+        setConfig={() => {}}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Pin Gap' })).toBeInTheDocument();
+  });
+
   it("reads the resolver for an auto row's readout", () => {
     render(
       <ControlPanel

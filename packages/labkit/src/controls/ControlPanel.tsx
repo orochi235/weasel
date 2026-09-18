@@ -100,9 +100,8 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> {
    *  dotted path when the section sits inside one — or a group's own path. */
   onCollapse?: (key: string, collapsed: boolean) => void;
   /** Dotted paths currently unpinned. A row in this set draws ghosted and its
-   *  dot reads as auto. Omitted altogether, no row takes a dot and the
-   *  shift-click gesture is inert: nothing would normalize the sentinel a
-   *  toggle writes. */
+   *  dot reads as auto. Omitted, every row still takes a dot and still writes
+   *  the sentinel; no row reads back as auto until the owner tracks the set. */
   auto?: ReadonlySet<string>;
   /** Draw leaves marked `hidden`. */
   showHidden?: boolean;
@@ -284,7 +283,7 @@ function ControlRow<TC extends Record<string, unknown>>({
   const value = valueAtPath(config, path) ?? fallback;
 
   const isAutoRow = auto?.has(path) ?? false;
-  const canAuto = auto !== undefined && !extra<boolean>(leaf, 'manual');
+  const canAuto = !extra<boolean>(leaf, 'manual');
   const resolver = extra<(c: Record<string, unknown>) => unknown>(leaf, 'autoResolve');
   const setAuto = (next: boolean): void => write(next ? autoValue : value);
   const onAutoChange = canAuto ? setAuto : undefined;

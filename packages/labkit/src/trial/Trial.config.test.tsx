@@ -29,23 +29,21 @@ const legacyInstrument = defineInstrument({
 describe('a trial renders its instrument config', () => {
   it('renders a builder schema into the settings sidebar', () => {
     render(<Lab instruments={[schemaInstrument]} defaultInstrument="Schema" />);
-    expect(screen.getByLabelText('Show grid', { selector: 'input' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Show grid')).toBeInTheDocument();
     expect(screen.getByText('Grid spacing')).toBeInTheDocument();
   });
 
   it('renders a legacy ConfigField list through the same path', () => {
     render(<Lab instruments={[legacyInstrument]} defaultInstrument="Legacy" />);
-    expect(screen.getByLabelText('Show grid', { selector: 'input' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Show grid')).toBeInTheDocument();
   });
 
   it('writes a config change back to the trial', () => {
     render(<Lab instruments={[schemaInstrument]} defaultInstrument="Schema" />);
-    const checkbox = screen.getByLabelText('Show grid', { selector: 'input' }) as HTMLInputElement;
+    const checkbox = screen.getByLabelText('Show grid') as HTMLInputElement;
     expect(checkbox.checked).toBe(true);
     fireEvent.click(checkbox);
-    expect(
-      (screen.getByLabelText('Show grid', { selector: 'input' }) as HTMLInputElement).checked,
-    ).toBe(false);
+    expect((screen.getByLabelText('Show grid') as HTMLInputElement).checked).toBe(false);
   });
 });
 
@@ -59,10 +57,7 @@ describe('lab-wide config seams', () => {
     });
     const colorByName: ConfigRule = (ctx) => (ctx.key.endsWith('Color') ? { kind: 'color' } : null);
     render(<Lab instruments={[inst]} defaultInstrument="Ruled" configRules={[colorByName]} />);
-    expect(screen.getByLabelText('Tint color', { selector: 'input' })).toHaveAttribute(
-      'type',
-      'color',
-    );
+    expect(screen.getByLabelText('Tint color')).toHaveAttribute('type', 'color');
   });
 
   it('without the rule the same leaf falls back to a text input', () => {
@@ -73,10 +68,7 @@ describe('lab-wide config seams', () => {
       render: () => null,
     });
     render(<Lab instruments={[inst]} defaultInstrument="Unruled" />);
-    expect(screen.getByLabelText('Tint color', { selector: 'input' })).toHaveAttribute(
-      'type',
-      'text',
-    );
+    expect(screen.getByLabelText('Tint color')).toHaveAttribute('type', 'text');
   });
 
   it('supplies a lab-wide control for a kind labkit does not ship', () => {
@@ -141,7 +133,7 @@ describe('a nested config value, end to end', () => {
     const { instrument } = nestedInstrument();
     render(<Lab instruments={[instrument]} defaultInstrument="Nested" />);
     expect(screen.getByText('20')).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Cell size', { selector: 'input' }), {
+    fireEvent.change(screen.getByLabelText('Cell size'), {
       target: { value: '40' },
     });
     expect(screen.getByText('40')).toBeInTheDocument();
@@ -150,7 +142,7 @@ describe('a nested config value, end to end', () => {
   it('hands onConfigChange the whole tree, with the sibling branch intact', () => {
     const { instrument, seen } = nestedInstrument();
     render(<Lab instruments={[instrument]} defaultInstrument="Nested" />);
-    fireEvent.change(screen.getByLabelText('Cell size', { selector: 'input' }), {
+    fireEvent.change(screen.getByLabelText('Cell size'), {
       target: { value: '40' },
     });
     expect(seen.at(-1)?.config).toEqual({
