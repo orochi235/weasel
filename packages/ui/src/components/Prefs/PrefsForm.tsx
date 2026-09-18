@@ -32,6 +32,10 @@ export interface PrefRenderContext {
   /** Current value — `values` at `path`, falling back to `pref.default`. */
   value: unknown;
   setValue: (value: unknown) => void;
+  /** Whether this leaf is currently auto — not pinned, computed by the owner. */
+  auto: boolean;
+  /** Toggle this leaf's auto state. */
+  setAuto: (next: boolean) => void;
 }
 
 /**
@@ -135,6 +139,9 @@ function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref: PrefLe
     pref,
     value: stored !== undefined ? stored : pref.default,
     setValue: (v) => ctx.onChange(path, v),
+    // A prefs form pins every leaf: it has no computed state to hand back.
+    auto: false,
+    setAuto: () => {},
   };
 
   const custom = ctx.renderers?.[pref.kind];
@@ -363,6 +370,10 @@ function renderBuiltin(
                   const base = held ?? p.fromScalar?.(value) ?? {};
                   setValue({ ...base, [key]: v });
                 },
+                // A field is not pinned on its own — it shares the state of
+                // the object leaf it hangs off.
+                auto: ctx.auto,
+                setAuto: ctx.setAuto,
               }, held)}
             </label>,
           );

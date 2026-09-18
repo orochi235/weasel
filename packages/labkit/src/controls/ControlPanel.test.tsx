@@ -669,6 +669,28 @@ describe('<ControlPanel> auto', () => {
     expect(screen.getByRole('button', { name: 'Pin Gap' })).toBeInTheDocument();
   });
 
+  it('hands a custom renderer the auto state and a working toggle', async () => {
+    const setConfig = vi.fn();
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(f.schema({ gap: f.number(12).range(0, 48) }), [])}
+        config={{ gap: 12 }}
+        auto={new Set(['gap'])}
+        setConfig={setConfig}
+        renderers={{
+          gap: (ctx) => (
+            <button type="button" onClick={() => ctx.setAuto(false)}>
+              {ctx.auto ? 'is auto' : 'is pinned'}
+            </button>
+          ),
+        }}
+      />,
+    );
+    const control = screen.getByRole('button', { name: 'is auto' });
+    await userEvent.click(control);
+    expect(setConfig).toHaveBeenCalledWith('gap', 12);
+  });
+
   it("reads the resolver for an auto row's readout", () => {
     render(
       <ControlPanel
