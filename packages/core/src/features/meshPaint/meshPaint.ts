@@ -17,6 +17,8 @@
  */
 
 import { registerPaintKind, asPaint, type PaintBindContext, type PaintProgram } from '../../core/paintKinds';
+import { resolveColor, rgbaToHex } from '../../renderer/math/color';
+import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbU8ToOklab } from '@weasel-js/paint';
 import { registerProgram } from '../../renderer/shaders/registerProgram';
 import type { ColorSpace, FillStyle, GradientUnits } from '@weasel-js/paint';
 import type { FillPoseBox } from '../../core/fillInPoseFrame';
@@ -60,10 +62,27 @@ function asMesh(fill: FillStyle): MeshGradientFill {
   return fill as unknown as MeshGradientFill;
 }
 
-/** A one-patch square covering the unit box, with `color` at one corner and a
- *  lighter and darker reading of it at the others — a mesh seeded from a solid
- *  has to show *something* curved, or switching kind looks like nothing
- *  happened. */
+/**
+ * `color` moved in OKLCh — lightness, chroma and hue by the given deltas, with
+ * its alpha kept. The seed's corners come from one color, and they have to
+ * differ enough to read as a mesh rather than as a flat fill.
+ */
+function shifted(color: string, dL: number, cScale: number, dHueDeg: number): string {
+  const [r, g, b, a] = resolveColor(color);
+  const [L, A, B] = srgbU8ToOklab(r * 255, g * 255, b * 255);
+  const [, C, h] = oklabToOklch(L, A, B);
+  const [nL, nA, nB] = oklchToOklab(
+    Math.min(1, Math.max(0, L + dL)),
+    Math.max(0, C * cScale),
+    h + (dHueDeg * Math.PI) / 180,
+  );
+  const [nr, ng, nb] = oklabToSrgbU8(nL, nA, nB);
+  return rgbaToHex([nr / 255, ng / 255, nb / 255, a]);
+}
+
+/** A one-patch square covering the unit box, its four corners four readings of
+ *  `color` — a mesh seeded from a solid has to show *something* curved, or
+ *  switching kind looks like nothing happened. */
 export function seedMeshPatch(color: string): MeshGradientFill {
   const corners: MeshPoint[] = [
     { x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 },
@@ -82,10 +101,17 @@ export function seedMeshPatch(color: string): MeshGradientFill {
       { x: a.x + (2 * (b.x - a.x)) / 3 + nx, y: a.y + (2 * (b.y - a.y)) / 3 + ny },
     );
   }
-  const base = color.slice(0, 7);
   return {
     fill: MESH_GRADIENT_KIND,
-    patches: [{ points, colors: [color, base, color, base] }],
+    patches: [{
+      points,
+      colors: [
+        color,
+        shifted(color, 0.14, 0.85, 0),
+        shifted(color, -0.06, 1.1, 38),
+        shifted(color, -0.16, 1.0, -22),
+      ],
+    }],
     units: 'bounds',
   };
 }

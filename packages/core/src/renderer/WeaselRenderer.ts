@@ -322,7 +322,16 @@ export class WeaselRenderer {
     const vertSrc = src.vert === '' ? CUSTOM_VERT_SRC : src.vert;
     const fragSrc = src.frag;
     const program = new ShaderProgram(this.gl, vertSrc, fragSrc);
-    program.lookupUniforms([...CUSTOM_KIT_UNIFORMS, ...extractUniformNames(fragSrc)]);
+    // Both stages, not just the fragment one: a program supplying its own
+    // vertex shader declares its own vertex uniforms there, and a name with no
+    // location is written through `null` — which GL accepts silently, so the
+    // uniform keeps its zero default and the geometry collapses with no error
+    // anywhere. Duplicates across the two sources are harmless.
+    program.lookupUniforms([
+      ...CUSTOM_KIT_UNIFORMS,
+      ...extractUniformNames(vertSrc),
+      ...extractUniformNames(fragSrc),
+    ]);
     program.lookupAttributes(CUSTOM_ATTRIBUTES);
     const previous = this.programRegistry.get(handle.id);
     if (previous) this.gl.deleteProgram(previous.handle);
