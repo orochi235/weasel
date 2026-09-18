@@ -3,7 +3,8 @@ import { Focusable } from 'react-aria-components';
 import { Checkbox } from '../Checkbox';
 import { ColorField } from '../ColorField';
 import { FontFamilySelect } from '../FontFamilySelect';
-import { solidColorOf } from '../paintValue';
+import { isPaint } from '../paintValue';
+import { PaintField } from '../PaintField';
 import { Input } from '../Input';
 import { NumberField, UnitField } from '../NumberField';
 import { RadioGroup, Radio } from '../RadioGroup';
@@ -11,7 +12,7 @@ import { RangeSlider } from '../RangeSlider';
 import { Select } from '../Select';
 import { Switch } from '../Switch';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
-import { isBuiltinToolPref } from '@weasel-js/core';
+import { isBuiltinToolPref, type FillStyle } from '@weasel-js/core';
 import {
   isPrefLeaf,
   prefDisplayBounds,
@@ -322,16 +323,14 @@ function renderBuiltin(
       );
     }
     case 'paint': {
-      // A whole `FillStyle`. A gradient or pattern has no single color to
-      // show, so the field goes blank rather than claiming one, and an edit
-      // writes a whole solid union member rather than grafting a `color` key
-      // onto the gradient.
-      const solid = solidColorOf(value) ?? solidColorOf(pref.default);
+      // A whole `FillStyle`, edited as one: `PaintField` puts the kind bar and
+      // the stop editor in a popover, so the control column holds a swatch and
+      // a gradient survives being touched.
+      const held = isPaint(value) ? value : isPaint(pref.default) ? pref.default : null;
       return (
-        <ColorField
-          value={solid}
-          alpha={pref.alpha}
-          onChange={(color) => setValue({ fill: 'solid', color })}
+        <PaintField
+          value={held as FillStyle | null}
+          onChange={setValue}
           aria-label={pref.name}
         />
       );

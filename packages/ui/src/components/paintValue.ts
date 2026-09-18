@@ -5,6 +5,16 @@
 // string back over it. These helpers are what keep a control honest about the
 // shape it is holding.
 
+/** Whether a value is a `FillStyle` at all: an object naming a kind, or one
+ *  carrying a color, which is the solid member with its optional tag left off.
+ *  A pref's stored value is `unknown`, so this is what stands between a paint
+ *  control and a string someone saved there. */
+export function isPaint(value: unknown): value is { fill?: string; color?: string } {
+  if (typeof value !== 'object' || value === null) return false;
+  const paint = value as { fill?: unknown; color?: unknown };
+  return typeof paint.fill === 'string' || typeof paint.color === 'string';
+}
+
 /** The color of a solid paint, or `undefined` for anything else — including a
  *  value that isn't a paint at all. `fill` is optional on the solid member of
  *  the union, so the tag alone can't decide it. */
