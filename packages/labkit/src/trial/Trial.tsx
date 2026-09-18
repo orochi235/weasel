@@ -11,6 +11,8 @@ import { fitStage, Stage } from '../canvas/Stage';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import { applyCamera, type ViewportSize } from '../canvas/worldSpec';
 import type { TrialContribution } from '../chrome/types';
+import { useConfigSchema } from '../config/useConfigSchema';
+import { useResolvedConfig } from '../config/useResolvedConfig';
 import { DragOverlay, useDragDrop } from '../dragdrop/DragDropRuntime';
 import { Palette } from '../dragdrop/Palette';
 import type {
@@ -143,6 +145,11 @@ function TrialRuntime({
   const setLabTool = useStore(store, (s) => s.setLabTool);
   const setTrialTool = useStore(store, (s) => s.setTrialTool);
 
+  // Everything below reads `config`; `record.config` is the panel's view, and
+  // reaches it through `record` on `TrialChrome`.
+  const schema = useConfigSchema(instrument);
+  const { config } = useResolvedConfig(schema, record.config, record.auto);
+
   const busRef = useRef<EventBus | null>(null);
   if (busRef.current === null) busRef.current = createEventBus();
   const bus = busRef.current;
@@ -193,15 +200,15 @@ function TrialRuntime({
   const targetsRef = useRef<() => readonly AnnotationTargetInfo[]>(() => []);
   targetsRef.current = () =>
     annotationsCap
-      ? annotationsCap.targets(record.state, record.config, { id: record.id, view: record.view })
+      ? annotationsCap.targets(record.state, config, { id: record.id, view: record.view })
       : [];
 
   // One store for the trial's lifetime.
   const annotationsRef = useRef<ReturnType<typeof annotationsFromJSON> | null>(null);
   // Read through refs for the same reason `targets` is: the store is built
   // once, and an export must draw against the config the trial holds now.
-  const configRef = useRef<unknown>(record.config);
-  configRef.current = record.config;
+  const configRef = useRef<unknown>(config);
+  configRef.current = config;
   // The instrument can be swapped under a live trial, so the capability is read at use too.
   const capRef = useRef(annotationsCap);
   capRef.current = annotationsCap;
@@ -289,14 +296,14 @@ function TrialRuntime({
   // this — with a runner that yields nothing and is never started.
   const job = useJob({
     capability: jobCap ?? { run: async function* () {}, onItem: (_i, st) => st },
-    config: record.config,
+    config: config,
     state: record.state,
     setState: (next) => updateTrialState(record.id, next as never),
   });
 
   const renderCtx: RenderContext<unknown, unknown> = {
     state: record.state,
-    config: record.config,
+    config: config,
     setState: (next) => {
       snapshotIfNeeded('state.change');
       updateTrialState(record.id, next);
@@ -365,8 +372,8 @@ function TrialRuntime({
   const loupeCap = useMemo(() => {
     const declared = instrument.loupe;
     if (declared == null) return null;
-    return resolveLoupe(typeof declared === 'function' ? declared(record.config) : declared);
-  }, [instrument.loupe, record.config]);
+    return resolveLoupe(typeof declared === 'function' ? declared(config) : declared);
+  }, [instrument.loupe, config]);
   const loupeBindings: LoupeBindings | undefined = loupeCap
     ? { on: loupeOn, toggle: () => setLoupeOn((v) => !v) }
     : undefined;
@@ -384,10 +391,10 @@ function TrialRuntime({
         // Camera applied here, so a layer draws in world coordinates. `zoom`
         // stays in the args for line widths, which must not scale with it.
         applyCamera(ctx, view, frame);
-        layer.draw(ctx, { state: record.state, config: record.config, zoom: view.zoom });
+        layer.draw(ctx, { state: record.state, config: config, zoom: view.zoom });
       },
     }));
-  }, [instrument.canvas, record.state, record.config, layerVisibility, layerOrder]);
+  }, [instrument.canvas, record.state, config, layerVisibility, layerOrder]);
 
   const layerDescriptors: LayerDescriptor[] = useMemo(() => {
     if (!instrument.layers) return [];
@@ -400,7 +407,7 @@ function TrialRuntime({
     view: view2d ?? DEFAULT_VIEW,
     worldSpec: instrument.canvas?.worldSpec,
     state: record.state,
-    config: record.config,
+    config: config,
     setState: (next) => {
       snapshotIfNeeded('canvas.itemAdded');
       updateTrialState(record.id, next as never);
@@ -414,8 +421,8 @@ function TrialRuntime({
   const paletteItems: PaletteItem[] = useMemo(() => {
     if (!instrument.dragDrop) return [];
     const p = instrument.dragDrop.palette;
-    return typeof p === 'function' ? p(record.state, record.config) : p;
-  }, [instrument.dragDrop, record.state, record.config]);
+    return typeof p === 'function' ? p(record.state, config) : p;
+  }, [instrument.dragDrop, record.state, config]);
 
   const layersWithFeedback: CanvasLayerDescriptor[] = useMemo(() => {
     if (!dragDropResult.drag?.feedback) return canvasLayers;
@@ -449,7 +456,7 @@ function TrialRuntime({
       capability={loupeCap}
       enabled={loupeOn}
       state={record.state}
-      config={record.config}
+      config={config}
       view={view2d ?? DEFAULT_VIEW}
       worldSpec={instrument.canvas?.worldSpec}
       hostRef={loupeHostRef}
@@ -553,7 +560,7 @@ function TrialRuntime({
     <AnnotationTargets
       capability={annotationsCap}
       state={record.state}
-      config={record.config}
+      config={config}
       trial={{ id: record.id, view: record.view }}
       annotations={annotations}
       activeToolId={labTool}

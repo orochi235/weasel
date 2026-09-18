@@ -1,7 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { auto } from '../config/auto';
+import { f } from '../config/builder';
 import { defineInstrument } from '../instrument/defineInstrument';
+import type { Instrument } from '../instrument/types';
 import { Lab } from '../lab/Lab';
 
 interface St {
@@ -71,6 +74,33 @@ describe('an instrument that draws', () => {
       expect.anything(),
       expect.objectContaining({ zoom: 2, state: { n: 7 } }),
     );
+  });
+});
+
+describe('an auto config path', () => {
+  it('draws with the resolved value while the panel still reads the pinned one', async () => {
+    const draw = vi.fn();
+    const instrument = defineInstrument({
+      name: 'Auto',
+      config: f.schema({
+        gap: f
+          .number(12)
+          .auto(() => 18)
+          .range(0, 48)
+          .initial(auto),
+      }),
+      initialState: () => ({ n: 0 }),
+      render: () => null,
+      canvas: { layers: [{ id: 'main', draw }] },
+    });
+    render(<Lab instruments={[instrument as Instrument]} defaultInstrument="Auto" />);
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+
+    expect(draw).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ config: { gap: 18 } }),
+    );
+    expect(screen.getByRole('slider', { name: 'Gap' })).toHaveValue('12');
   });
 });
 
