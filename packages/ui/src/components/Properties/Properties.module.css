@@ -269,6 +269,19 @@
   transition: opacity var(--wzl-motion-fast) var(--wzl-ease-out-cubic);
 }
 
+/* A 7px dot is too small to hit reliably. The halo stops 1px short of the label
+   row's 6px gap, so it never takes a click meant for a neighbor. */
+.pin {
+  position: relative;
+}
+
+.pin::before {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+}
+
 .row:hover .pin,
 .row:focus-within .pin,
 .pin:focus-visible,

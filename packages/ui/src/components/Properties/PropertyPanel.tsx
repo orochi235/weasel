@@ -174,6 +174,11 @@ export interface PropertyRowProps extends PropertyMetricProps {
   span?: boolean;
   children: ReactNode;
   htmlFor?: string;
+  /** The control is a group of several (a segmented toggle), not one element.
+   *  The row then renders as a `<div>`: a `<label>` hands a click on its text to
+   *  its first control, which in a group means selecting the first option. Each
+   *  member has to carry its own name. */
+  group?: boolean;
   className?: string;
   /** The row is auto: its value is not pinned and the owner computes it. Draws
    *  the control ghosted and colorless. */
@@ -197,6 +202,7 @@ export function PropertyRow({
   span,
   children,
   htmlFor,
+  group,
   className,
   density,
   align,
@@ -217,14 +223,22 @@ export function PropertyRow({
     { density, align },
     className,
   );
-  return (
+  const head = (
+    <span className={s.rowLabel}>
+      {label}
+      {description ? <PropertyRowHelp label={label} description={description} /> : null}
+      {onAutoChange ? <PinDot auto={auto ?? false} label={label} onChange={onAutoChange} /> : null}
+      {readout != null && <em className={s.readout}>{readout}</em>}
+    </span>
+  );
+  return group ? (
+    <div className={cls} data-auto-path={autoPath}>
+      {head}
+      {children}
+    </div>
+  ) : (
     <label className={cls} htmlFor={htmlFor} data-auto-path={autoPath}>
-      <span className={s.rowLabel}>
-        {label}
-        {description ? <PropertyRowHelp label={label} description={description} /> : null}
-        {onAutoChange ? <PinDot auto={auto ?? false} label={label} onChange={onAutoChange} /> : null}
-        {readout != null && <em className={s.readout}>{readout}</em>}
-      </span>
+      {head}
       {children}
     </label>
   );
@@ -987,6 +1001,7 @@ export function ToggleRow<T extends string>({
 }: ToggleRowProps<T>) {
   return (
     <PropertyRow
+      group
       span={span}
       label={label}
       readout={readout}

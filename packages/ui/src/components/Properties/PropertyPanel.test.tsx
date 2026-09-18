@@ -380,6 +380,25 @@ describe('ToggleRow', () => {
     fireEvent.click(right);
     expect(onChange).toHaveBeenCalledWith('right');
   });
+
+  // A <label> forwards a click on its text to its first control, which here is
+  // the first option — so a near-miss on the pin dot selected an option.
+  it('selects nothing when its label text is clicked', () => {
+    const onChange = vi.fn();
+    render(
+      <ToggleRow
+        label="Align"
+        value="right"
+        options={[
+          { value: 'left', label: 'L' },
+          { value: 'right', label: 'R' },
+        ]}
+        onChange={onChange}
+      />,
+    );
+    fireEvent.click(screen.getByText('Align'));
+    expect(onChange).not.toHaveBeenCalled();
+  });
 });
 
 describe('row names', () => {
@@ -700,7 +719,7 @@ describe('auto rows', () => {
         onAutoChange={() => {}}
       />,
     );
-    expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
+    expect((container.firstElementChild as HTMLElement | null)?.className).toMatch(/rowAuto/);
     expect(screen.getByRole('button', { name: 'Pin Fit' })).toBeInTheDocument();
   });
 
