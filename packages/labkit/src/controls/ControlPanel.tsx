@@ -280,19 +280,23 @@ function ControlRow<TC extends Record<string, unknown>>({
 }: ControlRowProps<TC>) {
   const write = (value: unknown): void => setConfig(path, value);
   const fallback = extra<unknown>(leaf, 'default');
-  const value = valueAtPath(config, path) ?? fallback;
+  const pinned = valueAtPath(config, path) ?? fallback;
 
   const isAutoRow = auto?.has(path) ?? false;
   const canAuto = !extra<boolean>(leaf, 'manual');
   const resolver = extra<(c: Record<string, unknown>) => unknown>(leaf, 'autoResolve');
+  const resolvedValue =
+    isAutoRow && resolver ? resolver(config as Record<string, unknown>) : undefined;
+  // An auto row draws what the resolver decided, not the value underneath it —
+  // a handle sitting at the pinned number while the readout says something else
+  // reads as a rendering bug. Pinning then keeps what you were looking at.
+  const value = resolvedValue ?? pinned;
   const setAuto = (next: boolean): void => write(next ? autoValue : value);
   const onAutoChange = canAuto ? setAuto : undefined;
-  // What an auto row reads instead of its number: the resolver's value where
-  // there is one, and the bare word where there is not.
   const autoReadout = isAutoRow
-    ? resolver
-      ? `auto · ${String(resolver(config as Record<string, unknown>))}`
-      : 'auto'
+    ? resolvedValue === undefined
+      ? 'auto'
+      : `auto · ${String(resolvedValue)}`
     : undefined;
   const autoProps = { auto: isAutoRow, onAutoChange, 'data-auto-path': canAuto ? path : undefined };
 

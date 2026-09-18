@@ -78,7 +78,7 @@ describe('an instrument that draws', () => {
 });
 
 describe('an auto config path', () => {
-  it('draws with the resolved value while the panel still reads the pinned one', async () => {
+  it('draws with the resolved value, which is what the panel shows too', async () => {
     const draw = vi.fn();
     const instrument = defineInstrument({
       name: 'Auto',
@@ -100,7 +100,9 @@ describe('an auto config path', () => {
       expect.anything(),
       expect.objectContaining({ config: { gap: 18 } }),
     );
-    expect(screen.getByRole('slider', { name: 'Gap' })).toHaveValue('12');
+    // The panel is handed the raw config, but a ghosted control draws what the
+    // resolver decided — a handle at 12 under a readout saying 18 reads as a bug.
+    expect(screen.getByRole('slider', { name: 'Gap' })).toHaveValue('18');
   });
 });
 

@@ -218,8 +218,8 @@ describe('a config written as auto', () => {
     const { container } = render(<Lab instruments={[instrument]} defaultInstrument="Ghosted" />);
     expect(screen.getByRole('button', { name: /Gap/ })).toHaveAttribute('aria-pressed', 'false');
     expect(screen.getByRole('button', { name: /Width/ })).toHaveAttribute('aria-pressed', 'true');
-    // The panel draws the raw config, so the ghosted control still sits at the
-    // value un-pinning it writes back.
-    expect((container.querySelector('input[type=range]') as HTMLInputElement).value).toBe('12');
+    // 432 / 24. A ghosted control draws what the resolver decided rather than
+    // the pinned 12 underneath it, and un-pinning writes back what it drew.
+    expect((container.querySelector('input[type=range]') as HTMLInputElement).value).toBe('18');
   });
 });

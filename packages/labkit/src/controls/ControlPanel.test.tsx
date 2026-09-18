@@ -763,6 +763,48 @@ describe('<ControlPanel> auto', () => {
     expect(screen.queryByRole('button', { name: /Seed/ })).toBeNull();
   });
 
+  it('draws an auto control at the resolved value, not the value underneath it', () => {
+    const { container } = render(
+      <ControlPanel
+        schema={resolveConfigSchema(
+          f.schema({
+            gap: f
+              .number(12)
+              .range(0, 48)
+              .auto(() => 18),
+          }),
+          [],
+        )}
+        config={{ gap: 12 }}
+        auto={new Set(['gap'])}
+        setConfig={() => {}}
+      />,
+    );
+    expect(container.querySelector('input[type=range]')).toHaveValue('18');
+  });
+
+  it('pins at the value it was drawing, not the stale one underneath', async () => {
+    const setConfig = vi.fn();
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(
+          f.schema({
+            gap: f
+              .number(12)
+              .range(0, 48)
+              .auto(() => 18),
+          }),
+          [],
+        )}
+        config={{ gap: 12 }}
+        auto={new Set(['gap'])}
+        setConfig={setConfig}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Pin Gap' }));
+    expect(setConfig).toHaveBeenCalledWith('gap', 18);
+  });
+
   // Every kind, because the panel wraps some rows before rendering them and a
   // wrapper that drops the auto props leaves that kind silently unghosted.
   it.each([
