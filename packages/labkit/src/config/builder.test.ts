@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { auto } from './auto';
 import { f } from './builder';
 import type { ConfigOf, ConfigPath, ValueAtPath } from './types';
 
@@ -152,5 +153,36 @@ describe('builder / nested types', () => {
     const path: ConfigPath<Config> = 'grid.size';
     const value: ValueAtPath<Config, 'grid.size'> = 40;
     expect([size, path, value]).toEqual([20, 'grid.size', 40]);
+  });
+});
+
+describe('auto on a node', () => {
+  it('attaches a resolver without changing the default', () => {
+    const n = f.number(12).auto((c) => (c.width as number) / 24);
+    expect(n.default).toBe(12);
+    expect(n.options.autoResolve?.({ width: 432 })).toBe(18);
+  });
+
+  it('.initial(auto) marks the node as starting unpinned', () => {
+    expect(f.number(3).initial(auto).options.unpinned).toBe(true);
+    expect(f.number(3).options.unpinned).toBeUndefined();
+  });
+
+  it('.manual() opts the node out of ever being auto', () => {
+    expect(f.number(1).manual().options.manual).toBe(true);
+  });
+
+  it('clones rather than mutating, like every other chaining method', () => {
+    const base = f.number(3);
+    const unpinned = base.initial(auto);
+    expect(base.options.unpinned).toBeUndefined();
+    expect(unpinned).not.toBe(base);
+  });
+
+  it('keeps the subclass, so kind-specific methods still chain after', () => {
+    const n = f.number(3).initial(auto).range(0, 10).suffix('px');
+    expect(n.annotations.min).toBe(0);
+    expect(n.annotations.suffix).toBe('px');
+    expect(n.options.unpinned).toBe(true);
   });
 });

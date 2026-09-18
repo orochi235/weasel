@@ -1,4 +1,5 @@
 import type { PrefLeaf, PrefNumberFormat } from '@weasel-js/ui';
+import { type Auto, isAuto } from './auto';
 import type {
   Annotations,
   BranchAnnotations,
@@ -88,6 +89,30 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
   /** Draw this one row yourself, keeping the kind, default and validation. */
   render(renderer: ControlRenderer): this {
     return this.opt({ render: renderer });
+  }
+
+  /**
+   * Compute this leaf's value while it is auto, instead of leaving it
+   * `undefined`. The resolver is given the config with every other auto path
+   * already resolved.
+   */
+  auto(resolve: (config: Record<string, unknown>) => T): this {
+    return this.opt({ autoResolve: resolve as (c: Record<string, unknown>) => unknown });
+  }
+
+  /**
+   * Start this leaf auto rather than pinned at its default. Takes `auto` and
+   * nothing else — the constructor argument already declares the value, and a
+   * second way to say it would fight with the first.
+   */
+  initial(value: Auto): this {
+    if (!isAuto(value)) throw new Error('[labkit] .initial() takes `auto` and nothing else');
+    return this.opt({ unpinned: true });
+  }
+
+  /** Never auto. The row takes no pin dot and ignores the gesture. */
+  manual(): this {
+    return this.opt({ manual: true });
   }
 }
 

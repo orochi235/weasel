@@ -111,6 +111,16 @@ export interface SectionOption {
 export interface NodeOptions extends BranchOptions {
   render?: ControlRenderer;
   validate?: (leaf: PrefLeaf) => string[];
+  /** Computes this leaf's value while it is auto. Attaching one is what lets
+   *  the ghosted control draw a real value and keeps the instrument off
+   *  `?? compute()`. */
+  autoResolve?: (config: Record<string, unknown>) => unknown;
+  /** The leaf starts auto rather than pinned at its default. Set by
+   *  `.initial(auto)`. */
+  unpinned?: boolean;
+  /** The leaf can never be auto: the row takes no pin dot and ignores the
+   *  gesture. For a value the instrument cannot receive as `undefined`. */
+  manual?: boolean;
 }
 
 /** What a branch can say about itself, beyond its children. */
