@@ -730,3 +730,66 @@ describe('<ControlPanel> auto', () => {
     expect(screen.queryByRole('button', { name: /Seed/ })).toBeNull();
   });
 });
+
+describe('<ControlPanel> shift-click', () => {
+  const panel = (props = {}) =>
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(f.schema({ gap: f.number(12).range(0, 48) }), [])}
+        config={{ gap: 12 }}
+        auto={new Set()}
+        setConfig={() => {}}
+        {...props}
+      />,
+    );
+
+  it('toggles a row on shift-pointerdown and suppresses the control it landed on', () => {
+    const setConfig = vi.fn();
+    const { container } = panel({ setConfig });
+    const track = container.querySelector('input[type=range]') as HTMLInputElement;
+    const ev = new PointerEvent('pointerdown', { bubbles: true, cancelable: true, shiftKey: true });
+    track.dispatchEvent(ev);
+
+    expect(setConfig).toHaveBeenCalledWith('gap', auto);
+    // A PROXY, not the real claim. jsdom synthesizes neither a label's click
+    // retargeting nor a range input's drag, so "the slider did not move" cannot
+    // fail here. What is assertable is that the default was suppressed; the
+    // browser half is covered by the story.
+    expect(ev.defaultPrevented).toBe(true);
+  });
+
+  it('leaves an ordinary pointerdown alone', () => {
+    const setConfig = vi.fn();
+    const { container } = panel({ setConfig });
+    container
+      .querySelector('input[type=range]')
+      ?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
+    expect(setConfig).not.toHaveBeenCalled();
+  });
+
+  it('ignores shift-pointerdown on a manual row', () => {
+    const setConfig = vi.fn();
+    const { container } = panel({
+      schema: resolveConfigSchema(f.schema({ seed: f.number(1).manual().range(0, 8) }), []),
+      config: { seed: 1 },
+      setConfig,
+    });
+    container
+      .querySelector('input')
+      ?.dispatchEvent(
+        new PointerEvent('pointerdown', { bubbles: true, cancelable: true, shiftKey: true }),
+      );
+    expect(setConfig).not.toHaveBeenCalled();
+  });
+
+  it('pins a shift-clicked auto row back at its stored value', () => {
+    const setConfig = vi.fn();
+    const { container } = panel({ config: { gap: 24 }, auto: new Set(['gap']), setConfig });
+    container
+      .querySelector('input[type=range]')
+      ?.dispatchEvent(
+        new PointerEvent('pointerdown', { bubbles: true, cancelable: true, shiftKey: true }),
+      );
+    expect(setConfig).toHaveBeenCalledWith('gap', 24);
+  });
+});
