@@ -4,16 +4,18 @@ import { describe, expect, it, vi } from 'vitest';
 import { PinDot } from './PinDot';
 
 describe('PinDot', () => {
-  it('reports its state through aria-pressed', () => {
+  it('reports its state through aria-pressed, pressed meaning pinned', () => {
     const { rerender } = render(<PinDot auto={false} label="Gap" onChange={() => {}} />);
-    expect(screen.getByRole('button')).toHaveAttribute('aria-pressed', 'false');
-    rerender(<PinDot auto label="Gap" onChange={() => {}} />);
     expect(screen.getByRole('button')).toHaveAttribute('aria-pressed', 'true');
+    rerender(<PinDot auto label="Gap" onChange={() => {}} />);
+    expect(screen.getByRole('button')).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('names itself after the row, so a screen reader says which field', () => {
-    render(<PinDot auto={false} label="Gap" onChange={() => {}} />);
-    expect(screen.getByRole('button', { name: /Gap/ })).toBeInTheDocument();
+  it('keeps one name across both states, so voice control has a stable target', () => {
+    const { rerender } = render(<PinDot auto={false} label="Gap" onChange={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Pin Gap' })).toBeInTheDocument();
+    rerender(<PinDot auto label="Gap" onChange={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Pin Gap' })).toBeInTheDocument();
   });
 
   it('toggles on click and on Enter', async () => {

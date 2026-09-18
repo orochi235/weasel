@@ -584,14 +584,14 @@ describe('auto rows', () => {
       </PropertyRow>,
     );
     expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
-    expect(screen.getByRole('button', { name: /Gap/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Pin Gap' })).toBeInTheDocument();
 
     rerender(
       <PropertyRow label="Gap" auto>
         <input />
       </PropertyRow>,
     );
-    expect(screen.queryByRole('button', { name: /Gap/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Pin Gap' })).toBeNull();
   });
 
   it('shows the readout a caller gives an auto row', () => {
@@ -638,7 +638,7 @@ describe('auto rows', () => {
       />,
     );
     expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
-    expect(screen.getByRole('button', { name: /Gap/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Pin Gap' })).toBeInTheDocument();
   });
 
   it('NumberRow forwards auto and onAutoChange', () => {
@@ -646,7 +646,7 @@ describe('auto rows', () => {
       <NumberRow label="Count" value={3} onChange={() => {}} auto onAutoChange={() => {}} />,
     );
     expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
-    expect(screen.getByRole('button', { name: /Count/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Pin Count' })).toBeInTheDocument();
   });
 
   it('SelectRow forwards auto and onAutoChange', () => {
@@ -666,7 +666,7 @@ describe('auto rows', () => {
     expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
     // The Select's own trigger is a button named "Mode" too, so the dot is
     // matched by its full name rather than by the label alone.
-    expect(screen.getByRole('button', { name: 'Mode: auto' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Pin Mode' })).toBeInTheDocument();
   });
 
   it('ToggleRow forwards auto and onAutoChange', () => {
@@ -684,7 +684,7 @@ describe('auto rows', () => {
       />,
     );
     expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
-    expect(screen.getByRole('button', { name: /Fit/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Pin Fit' })).toBeInTheDocument();
   });
 
   it('CheckboxRow forwards auto and onAutoChange', () => {
@@ -692,7 +692,7 @@ describe('auto rows', () => {
       <CheckboxRow label="Snap" value={true} onChange={() => {}} auto onAutoChange={() => {}} />,
     );
     expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
-    expect(screen.getByRole('button', { name: /Snap/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Pin Snap' })).toBeInTheDocument();
   });
 
   it('ColorRow forwards auto and onAutoChange', () => {
@@ -700,7 +700,7 @@ describe('auto rows', () => {
       <ColorRow label="Fill" value="#ff0000" onChange={() => {}} auto onAutoChange={() => {}} />,
     );
     expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
-    expect(screen.getByRole('button', { name: /Fill/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Pin Fill' })).toBeInTheDocument();
   });
 
   it('TextRow forwards auto and onAutoChange', () => {
@@ -708,6 +708,6 @@ describe('auto rows', () => {
       <TextRow label="Name" value="foo" onChange={() => {}} auto onAutoChange={() => {}} />,
     );
     expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
-    expect(screen.getByRole('button', { name: /Name/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Pin Name' })).toBeInTheDocument();
   });
 });

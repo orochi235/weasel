@@ -23,8 +23,11 @@ export function PinDot({ auto, label, onChange }: PinDotProps) {
     <button
       type="button"
       className={auto ? `${s.pin} ${s.pinAuto}` : s.pin}
-      aria-pressed={auto}
-      aria-label={`${name}: ${auto ? 'auto' : 'pinned'}`}
+      // The name stays put and `aria-pressed` carries the state, so a voice
+      // control user has something stable to say. Pressed means pinned, to
+      // match the name.
+      aria-pressed={!auto}
+      aria-label={`Pin ${name}`}
       onClick={(e) => {
         // The wrapping <label> would otherwise actuate the row's control.
         e.preventDefault();
