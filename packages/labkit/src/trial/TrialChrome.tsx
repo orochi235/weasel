@@ -114,7 +114,11 @@ export function TrialChrome({
   const configSchema = useConfigSchema(instrument);
   // What the instrument is looking at right now. The panel reads `record.config`
   // — the pinned values — but anything instrument-facing gets the resolved one.
-  const { config: resolvedConfig } = useResolvedConfig(configSchema, record.config, record.auto);
+  const { config: resolvedConfig, auto } = useResolvedConfig(
+    configSchema,
+    record.config,
+    record.auto,
+  );
 
   const title = record.title ?? instrument.title ?? instrument.name;
   const collapsedSections = record.collapsedSections ?? NO_SECTIONS;
@@ -141,6 +145,7 @@ export function TrialChrome({
       configSchema,
       configFields: instrument.config ? [] : (instrument.configSchema?.() ?? []),
       config: record.config,
+      auto,
       setConfig: (path, value) => {
         const prevConfig = record.config as Record<string, unknown>;
         if (
@@ -191,6 +196,7 @@ export function TrialChrome({
     setActiveTool,
     configSchema,
     resolvedConfig,
+    auto,
     undockedIds,
     undockPanelAction,
     dockPanelAction,

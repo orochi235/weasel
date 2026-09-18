@@ -189,6 +189,7 @@ export function builtinContributions(
           <ControlPanel
             schema={ctx.configSchema}
             config={ctx.config as Record<string, unknown>}
+            auto={ctx.auto}
             setConfig={(key, value) => ctx.setConfig(String(key), value)}
             renderers={controls}
             collapsed={groupFolds(ctx.collapsedSections, 'settings')}

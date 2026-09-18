@@ -165,6 +165,9 @@ export interface TrialChromeContext extends ToolSlotContext, SidebarSlotContext 
    *  `config`, since a builder schema has no `ConfigField[]` form. */
   configFields: ConfigField[];
   config: unknown;
+  /** The trial's unpinned paths. `config` stays raw, so a control drawn from
+   *  it sits at the value un-pinning writes back. */
+  auto: ReadonlySet<string>;
   setConfig: (key: string, value: unknown) => void;
 
   /** Which of this trial's collapsible sections are folded. A sidebar

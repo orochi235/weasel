@@ -29,21 +29,23 @@ const legacyInstrument = defineInstrument({
 describe('a trial renders its instrument config', () => {
   it('renders a builder schema into the settings sidebar', () => {
     render(<Lab instruments={[schemaInstrument]} defaultInstrument="Schema" />);
-    expect(screen.getByLabelText('Show grid')).toBeInTheDocument();
+    expect(screen.getByLabelText('Show grid', { selector: 'input' })).toBeInTheDocument();
     expect(screen.getByText('Grid spacing')).toBeInTheDocument();
   });
 
   it('renders a legacy ConfigField list through the same path', () => {
     render(<Lab instruments={[legacyInstrument]} defaultInstrument="Legacy" />);
-    expect(screen.getByLabelText('Show grid')).toBeInTheDocument();
+    expect(screen.getByLabelText('Show grid', { selector: 'input' })).toBeInTheDocument();
   });
 
   it('writes a config change back to the trial', () => {
     render(<Lab instruments={[schemaInstrument]} defaultInstrument="Schema" />);
-    const checkbox = screen.getByLabelText('Show grid') as HTMLInputElement;
+    const checkbox = screen.getByLabelText('Show grid', { selector: 'input' }) as HTMLInputElement;
     expect(checkbox.checked).toBe(true);
     fireEvent.click(checkbox);
-    expect((screen.getByLabelText('Show grid') as HTMLInputElement).checked).toBe(false);
+    expect(
+      (screen.getByLabelText('Show grid', { selector: 'input' }) as HTMLInputElement).checked,
+    ).toBe(false);
   });
 });
 
@@ -57,7 +59,10 @@ describe('lab-wide config seams', () => {
     });
     const colorByName: ConfigRule = (ctx) => (ctx.key.endsWith('Color') ? { kind: 'color' } : null);
     render(<Lab instruments={[inst]} defaultInstrument="Ruled" configRules={[colorByName]} />);
-    expect(screen.getByLabelText('Tint color')).toHaveAttribute('type', 'color');
+    expect(screen.getByLabelText('Tint color', { selector: 'input' })).toHaveAttribute(
+      'type',
+      'color',
+    );
   });
 
   it('without the rule the same leaf falls back to a text input', () => {
@@ -68,7 +73,10 @@ describe('lab-wide config seams', () => {
       render: () => null,
     });
     render(<Lab instruments={[inst]} defaultInstrument="Unruled" />);
-    expect(screen.getByLabelText('Tint color')).toHaveAttribute('type', 'text');
+    expect(screen.getByLabelText('Tint color', { selector: 'input' })).toHaveAttribute(
+      'type',
+      'text',
+    );
   });
 
   it('supplies a lab-wide control for a kind labkit does not ship', () => {
@@ -133,14 +141,18 @@ describe('a nested config value, end to end', () => {
     const { instrument } = nestedInstrument();
     render(<Lab instruments={[instrument]} defaultInstrument="Nested" />);
     expect(screen.getByText('20')).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Cell size'), { target: { value: '40' } });
+    fireEvent.change(screen.getByLabelText('Cell size', { selector: 'input' }), {
+      target: { value: '40' },
+    });
     expect(screen.getByText('40')).toBeInTheDocument();
   });
 
   it('hands onConfigChange the whole tree, with the sibling branch intact', () => {
     const { instrument, seen } = nestedInstrument();
     render(<Lab instruments={[instrument]} defaultInstrument="Nested" />);
-    fireEvent.change(screen.getByLabelText('Cell size'), { target: { value: '40' } });
+    fireEvent.change(screen.getByLabelText('Cell size', { selector: 'input' }), {
+      target: { value: '40' },
+    });
     expect(seen.at(-1)?.config).toEqual({
       showGrid: true,
       grid: { size: 40, color: '#ffffff' },
@@ -195,5 +207,27 @@ describe('a config written as auto', () => {
     render(<Lab instruments={[instrument]} defaultInstrument="Unpinnable" />);
     fireEvent.click(screen.getByText('unpin gap'));
     expect(screen.getByText('18')).toBeInTheDocument();
+  });
+
+  it("shows the trial's unpinned path in the settings panel", () => {
+    const instrument = defineInstrument({
+      name: 'Ghosted',
+      config: f.schema({
+        width: f.number(432),
+        gap: f
+          .number(12)
+          .initial(auto)
+          .auto((c) => (c.width as number) / 24)
+          .range(0, 48),
+      }),
+      initialState: () => ({}),
+      render: () => null,
+    });
+    const { container } = render(<Lab instruments={[instrument]} defaultInstrument="Ghosted" />);
+    expect(screen.getByRole('button', { name: /Gap/ })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: /Width/ })).toHaveAttribute('aria-pressed', 'true');
+    // The panel draws the raw config, so the ghosted control still sits at the
+    // value un-pinning it writes back.
+    expect((container.querySelector('input[type=range]') as HTMLInputElement).value).toBe('12');
   });
 });

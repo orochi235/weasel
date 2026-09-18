@@ -28,6 +28,7 @@ const ctx: TrialChromeContext = {
   configFields: [],
   configSchema: fromConfigFields([]),
   config: {},
+  auto: new Set<string>(),
   setConfig: () => {},
   savedSnapshots: [],
   saveSnapshot: () => {},
