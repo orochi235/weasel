@@ -99,6 +99,43 @@ A stored config missing something its schema has since gained — a whole nested
 group included — is filled from the instrument's defaults as it loads, so
 growing a schema never strands a saved trial or a snapshot.
 
+### Auto
+
+A field can be **auto**: nobody is pinning it, and the instrument decides what
+it should be. Shift-click a row in the settings panel, or click the pin dot
+beside its label, and the control draws ghosted at whatever the value resolved
+to. Shift-click again — or just grab the control — and it pins back at the
+value it was holding all along.
+
+`auto` is a value, so it goes wherever a config value goes:
+
+```ts
+import { auto, f } from '@weasel-js/labkit';
+
+const config = f.schema({
+  width: f.number(432),
+  gap: f.number(12).auto((c) => (c.width as number) / 24),
+  cols: f.number(3).initial(auto),
+  seed: f.number(1).manual(),
+});
+
+setConfig('gap', auto);
+addTrial('demo', { gap: auto });
+```
+
+`.auto(fn)` attaches a resolver: the instrument reads the computed value rather
+than writing `?? compute()` itself, and the ghosted control has a real number to
+draw. Without one, an auto field simply reads `undefined`. `.initial(auto)`
+opens the field auto instead of pinned at its default. **`.manual()` is the one
+worth knowing about** — it opts a field out entirely, no dot and no gesture,
+which is what you want for a value the instrument cannot receive as `undefined`,
+like a color going straight to a uniform.
+
+Nothing stores the sentinel. It is normalized at every boundary into the
+trial's set of unpinned paths, and the pinned value stays in the config
+underneath, so un-pinning loses nothing and Reset returns the trial to the auto
+fields it opened on.
+
 ## Capabilities
 
 A capability is a field on the instrument. Declaring it is what makes the trial
