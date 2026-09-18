@@ -763,6 +763,31 @@ describe('<ControlPanel> auto', () => {
     expect(screen.queryByRole('button', { name: /Seed/ })).toBeNull();
   });
 
+  it('reports what the instrument reads when a resolver depends on another auto path', () => {
+    // `width` is auto with no resolver, so the instrument sees `undefined` and
+    // `gap` resolves from that. Re-running gap's resolver against the raw
+    // config would instead read the pinned 640 and report a number nobody got.
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(
+          f.schema({
+            width: f.number(640),
+            gap: f
+              .number(12)
+              .range(0, 48)
+              .auto((c) => (c.width === undefined ? -1 : (c.width as number) / 64)),
+          }),
+          [],
+        )}
+        config={{ width: 640, gap: 12 }}
+        auto={new Set(['width', 'gap'])}
+        setConfig={() => {}}
+      />,
+    );
+    expect(screen.getByText('auto · -1')).toBeInTheDocument();
+    expect(screen.queryByText('auto · 10')).toBeNull();
+  });
+
   it('draws an auto control at the resolved value, not the value underneath it', () => {
     const { container } = render(
       <ControlPanel

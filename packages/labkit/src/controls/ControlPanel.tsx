@@ -21,6 +21,7 @@ import {
 } from '@weasel-js/ui';
 import { Fragment, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { auto as autoValue } from '../config/auto';
+import { resolveAutoConfig } from '../config/autoConfig';
 import { fromConfigFields } from '../config/fromConfigField';
 import { schemaNodeAtPath, valueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig, SectionSpec } from '../config/types';
@@ -130,6 +131,14 @@ export function ControlPanel<TC extends Record<string, unknown>>({
 }: ControlPanelProps<TC>) {
   const resolved = useMemo(() => schema ?? fromConfigFields(fields ?? []), [schema, fields]);
 
+  // What the instrument is reading. A row draws and reports from this rather
+  // than calling its own resolver against the raw config, which would disagree
+  // with the instrument whenever a resolver depends on another auto path.
+  const shown = useMemo(
+    () => (auto && auto.size > 0 ? resolveAutoConfig(resolved, config, auto) : config),
+    [resolved, config, auto],
+  );
+
   const listRef = useRef<HTMLDivElement>(null);
   const toggles = useRef(new Map<string, () => void>());
   // Capture phase, because `PropertyRow` is a <label>: a bubbled handler runs
@@ -183,6 +192,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
           leaf={found}
           resolved={resolved}
           config={config}
+          shown={shown}
           setConfig={setConfig}
           renderers={renderers}
           pack={rows.pack}
@@ -252,6 +262,8 @@ interface ControlRowProps<TC extends Record<string, unknown>> {
   leaf: PrefLeaf;
   resolved: ResolvedConfig;
   config: TC;
+  /** `config` with every auto path resolved -- what the instrument reads. */
+  shown: TC;
   setConfig: (path: string, value: unknown) => void;
   renderers?: Record<string, ControlRenderer>;
   pack: ControlPack;
@@ -271,6 +283,7 @@ function ControlRow<TC extends Record<string, unknown>>({
   leaf,
   resolved,
   config,
+  shown,
   setConfig,
   renderers,
   pack,
@@ -284,9 +297,10 @@ function ControlRow<TC extends Record<string, unknown>>({
 
   const isAutoRow = auto?.has(path) ?? false;
   const canAuto = !extra<boolean>(leaf, 'manual');
-  const resolver = extra<(c: Record<string, unknown>) => unknown>(leaf, 'autoResolve');
-  const resolvedValue =
-    isAutoRow && resolver ? resolver(config as Record<string, unknown>) : undefined;
+  // Read out of the resolved config rather than re-running this leaf's own
+  // resolver, so the row reports the value the instrument actually got — the
+  // two diverge as soon as a resolver reads another auto path.
+  const resolvedValue = isAutoRow ? valueAtPath(shown, path) : undefined;
   // An auto row draws what the resolver decided, not the value underneath it —
   // a handle sitting at the pinned number while the readout says something else
   // reads as a rendering bug. Pinning then keeps what you were looking at.
