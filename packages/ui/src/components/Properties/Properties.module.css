@@ -999,8 +999,16 @@
    native select; the element selector covers a raw one passed to a bare row. */
 .rowAuto select,
 .rowAuto .select,
-.rowAuto input[type='number'],
-.rowAuto input[type='text'] {
+.rowAuto input[type='number'] {
+  border-style: dashed;
+  color: var(--wzl-fg-subtle);
+  font-style: italic;
+}
+
+/* `.row` is named alongside `.rowAuto` to reach (0,3,1) and tie with
+   `.row input[type='text']:not(.readoutInput)`, which sets the color and the
+   solid border this has to replace; the tie falls this way on source order. */
+.row.rowAuto input[type='text'] {
   border-style: dashed;
   color: var(--wzl-fg-subtle);
   font-style: italic;
