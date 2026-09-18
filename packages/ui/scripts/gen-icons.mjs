@@ -17,6 +17,7 @@ import { PAINT } from './icons/paint.mjs';
 import { LAYOUT } from './icons/layout.mjs';
 import { ARCS } from './icons/arcs.mjs';
 import { CURVES } from './icons/curves.mjs';
+import { SHAPES } from './icons/shapes.mjs';
 
 // `save` split: the tray-and-arrow reads as download, so it carries `export`,
 // and capturing a trial's state gets its own camera.
@@ -30,6 +31,7 @@ const GROUPS = [
   ['Workspace layout', LAYOUT],
   ['Arc profiles', ARCS],
   ['Curves', CURVES],
+  ['Shapes', SHAPES],
 ];
 
 // A digit has no upper case, so `star-4` has to drop the dash rather than try to
