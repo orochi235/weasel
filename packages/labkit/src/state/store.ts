@@ -131,7 +131,10 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
           // the pinned value at the path is left exactly where it is.
           const next = applyConfigWrite(w.config, was, path, value);
           if (next.config === w.config && next.autoPaths === was) return w;
-          return { ...w, config: next.config, auto: next.autoPaths };
+          const { auto: _was, ...kept } = w;
+          const record: TrialRecord = { ...kept, config: next.config };
+          if (next.autoPaths.length > 0) record.auto = next.autoPaths;
+          return record;
         }),
       }));
     },

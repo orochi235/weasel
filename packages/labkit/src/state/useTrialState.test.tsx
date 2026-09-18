@@ -172,7 +172,7 @@ describe('auto paths', () => {
     store.getState().updateTrialConfig('w1', 'gap', auto);
     store.getState().updateTrialConfig('w1', 'gap', 30);
     const rec = store.getState().trials[0];
-    expect(rec?.auto ?? []).toEqual([]);
+    expect(rec?.auto).toBeUndefined();
     expect((rec?.config as { gap: number }).gap).toBe(30);
   });
 

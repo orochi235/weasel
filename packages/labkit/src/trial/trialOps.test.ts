@@ -136,6 +136,14 @@ describe('addTrial', () => {
     expect(out[0]?.configSeed).not.toHaveProperty('gap');
   });
 
+  it('keeps a seed value that is an object but not a config branch', () => {
+    const when = new Date('2020-01-01T00:00:00Z');
+    const out = addTrial([], instruments, 'Counter', {
+      config: { at: when } as unknown as Partial<CounterConfig>,
+    });
+    expect((out[0]?.config as { at: unknown }).at).toBe(when);
+  });
+
   it('honors auto at a nested seed path', () => {
     const out = addTrial([], instruments, 'Schemed', { config: { grid: { size: auto } } });
     expect(out[0]?.auto).toContain('grid.size');

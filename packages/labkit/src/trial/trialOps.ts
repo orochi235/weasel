@@ -1,7 +1,7 @@
 import { isAuto } from '../config/auto';
 import { autoPathsOf } from '../config/autoConfig';
-import { fillConfigDefaults } from '../config/path';
-import { resolveConfigSchema } from '../config/resolve';
+import { fillConfigDefaults, isRecord } from '../config/path';
+import { unruledConfigSchema } from '../instrument/serializers';
 import type { Instrument, InstrumentList } from '../instrument/types';
 import { newId } from '../state/helpers';
 import type { TrialRecord } from '../state/types';
@@ -52,7 +52,7 @@ function splitAutoSeed(
     const path = at === '' ? key : `${at}.${key}`;
     if (isAuto(value)) {
       autoPaths.push(path);
-    } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+    } else if (isRecord(value)) {
       const inner = splitAutoSeed(value as Record<string, unknown>, path);
       config[key] = inner.config;
       autoPaths.push(...inner.autoPaths);
@@ -63,11 +63,10 @@ function splitAutoSeed(
   return { config, autoPaths };
 }
 
-/** The paths an instrument's own schema declares as starting auto. Rules are
- *  lab-scoped and a trial is composed outside any lab, but no rule can reach
- *  the auto annotations, so resolving without them answers the same. */
+/** The paths an instrument's own schema declares as starting auto. */
 function schemaAutoPaths(instrument: Instrument): string[] {
-  return instrument.config ? autoPathsOf(resolveConfigSchema(instrument.config, [])) : [];
+  const schema = unruledConfigSchema(instrument);
+  return schema ? autoPathsOf(schema) : [];
 }
 
 /** Append a new trial running `instrumentName`, at that instrument's default

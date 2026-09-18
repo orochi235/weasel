@@ -1,21 +1,30 @@
 import { resolveConfigSchema } from '../config/resolve';
 import type { ResolvedConfig } from '../config/types';
 import type { InstrumentSerializers } from '../state/types';
-import type { InstrumentList } from './types';
+import type { Instrument, InstrumentList } from './types';
 
 /**
- * Each instrument's resolved config schema, keyed by name — what the store
- * reads a leaf's auto annotations off.
- *
- * Resolved without the lab's rules, which the store has no access to. No rule
- * can reach `autoResolve`, `unpinned` or `manual`, so for this purpose the two
- * resolutions agree; anything reading the rendered leaves wants
- * `useConfigSchema` instead.
+ * One instrument's config schema, resolved without the lab's rules — which
+ * neither the store nor a trial composed outside a lab has access to. No rule
+ * can reach `autoResolve`, `unpinned` or `manual`, so for reading those the
+ * two resolutions agree; anything reading the rendered leaves wants
+ * `useConfigSchema` instead. `undefined` for a legacy `configSchema()`
+ * instrument, which declares no auto annotations at all.
  */
+export function unruledConfigSchema(
+  // biome-ignore lint/suspicious/noExplicitAny: instruments are stored contravariantly; see InstrumentList
+  instrument: Instrument<any, any, any>,
+): ResolvedConfig | undefined {
+  return instrument.config ? resolveConfigSchema(instrument.config, []) : undefined;
+}
+
+/** Each instrument's unruled config schema, keyed by name — what the store
+ *  reads a leaf's auto annotations off. */
 export function configSchemasOf(instruments: InstrumentList): Record<string, ResolvedConfig> {
   const out: Record<string, ResolvedConfig> = {};
   for (const instrument of instruments) {
-    if (instrument.config) out[instrument.name] = resolveConfigSchema(instrument.config, []);
+    const schema = unruledConfigSchema(instrument);
+    if (schema) out[instrument.name] = schema;
   }
   return out;
 }

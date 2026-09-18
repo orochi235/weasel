@@ -296,14 +296,14 @@ function TrialRuntime({
   // this — with a runner that yields nothing and is never started.
   const job = useJob({
     capability: jobCap ?? { run: async function* () {}, onItem: (_i, st) => st },
-    config: config,
+    config,
     state: record.state,
     setState: (next) => updateTrialState(record.id, next as never),
   });
 
   const renderCtx: RenderContext<unknown, unknown> = {
     state: record.state,
-    config: config,
+    config,
     setState: (next) => {
       snapshotIfNeeded('state.change');
       updateTrialState(record.id, next);
@@ -391,7 +391,7 @@ function TrialRuntime({
         // Camera applied here, so a layer draws in world coordinates. `zoom`
         // stays in the args for line widths, which must not scale with it.
         applyCamera(ctx, view, frame);
-        layer.draw(ctx, { state: record.state, config: config, zoom: view.zoom });
+        layer.draw(ctx, { state: record.state, config, zoom: view.zoom });
       },
     }));
   }, [instrument.canvas, record.state, config, layerVisibility, layerOrder]);
@@ -407,7 +407,7 @@ function TrialRuntime({
     view: view2d ?? DEFAULT_VIEW,
     worldSpec: instrument.canvas?.worldSpec,
     state: record.state,
-    config: config,
+    config,
     setState: (next) => {
       snapshotIfNeeded('canvas.itemAdded');
       updateTrialState(record.id, next as never);

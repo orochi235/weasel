@@ -1,6 +1,6 @@
 import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/ui';
 import { isAuto } from './auto';
-import { withValueAtPath } from './path';
+import { isRecord, withValueAtPath } from './path';
 import type { ResolvedConfig } from './types';
 
 type Resolver = (config: Record<string, unknown>) => unknown;
@@ -114,10 +114,6 @@ function demand(
       return Reflect.getOwnPropertyDescriptor(read(), key);
     },
   });
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /** A copy of `config` with the dotted path removed, copying every record on
