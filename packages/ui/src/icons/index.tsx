@@ -1,9 +1,9 @@
 import { Icon, type IconProps } from './Icon';
 
-export { Icon } from './Icon';
+export { Icon, isFillable } from './Icon';
 export type { IconProps } from './Icon';
-export { ICON_PATHS } from './paths';
-export type { IconName } from './paths';
+export { ICON_FILLS, ICON_PATHS } from './paths';
+export type { FillableIconName, IconName } from './paths';
 
 // Tool glyphs live in @weasel-js/core because core needs them for
 // `Tool.presentation.icon` defaults and cannot depend on this package.

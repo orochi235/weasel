@@ -90,3 +90,13 @@ export const ICON_PATHS = {
 
 /** Every glyph name in the set. */
 export type IconName = keyof typeof ICON_PATHS;
+
+/** The region a glyph encloses, for `<Icon filled>`. A shape fills its own
+ *  outline; a plotted curve fills down to the frame's baseline, reaching the outer
+ *  edge of the stroke rather than stopping at the path's own endpoint. Only the
+ *  glyphs where an enclosed region means something have an entry. */
+export const ICON_FILLS = {
+} as const;
+
+/** The glyphs `<Icon filled>` can shade. */
+export type FillableIconName = keyof typeof ICON_FILLS;
