@@ -1014,6 +1014,13 @@
   font-style: italic;
 }
 
+/* The swatch keeps its color — that IS the value — so only its frame carries
+   the state. `.rowColor` is named to beat `.rowColor input[type='color']`,
+   which sets `border: 0`. */
+.rowColor.rowAuto input[type='color'] {
+  border: 1px dashed var(--wzl-fg-subtle);
+}
+
 /* `.row` is named alongside `.rowAuto` to reach (0,3,1) and tie with
    `.row input[type='text']:not(.readoutInput)`, which sets the color and the
    solid border this has to replace; the tie falls this way on source order. */
