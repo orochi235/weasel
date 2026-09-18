@@ -471,6 +471,9 @@ function DebouncedTextRow({
   span,
   description,
   readout,
+  auto,
+  onAutoChange,
+  'data-auto-path': autoPath,
 }: {
   leaf: PrefLeaf;
   label: string;
@@ -480,6 +483,9 @@ function DebouncedTextRow({
   span?: boolean;
   description?: string;
   readout?: ReactNode;
+  auto?: boolean;
+  onAutoChange?: (next: boolean) => void;
+  'data-auto-path'?: string;
 }) {
   const debounceMs = extra<number>(leaf, 'debounceMs') ?? 150;
   const [local, setLocal] = useState(value);
@@ -507,6 +513,9 @@ function DebouncedTextRow({
       layout={layout}
       span={span}
       description={description}
+      auto={auto}
+      onAutoChange={onAutoChange}
+      data-auto-path={autoPath}
       value={local}
       placeholder={extra<string>(leaf, 'placeholder')}
       maxLength={extra<number>(leaf, 'maxLength')}

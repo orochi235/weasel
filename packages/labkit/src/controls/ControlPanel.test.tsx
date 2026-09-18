@@ -762,6 +762,31 @@ describe('<ControlPanel> auto', () => {
     );
     expect(screen.queryByRole('button', { name: /Seed/ })).toBeNull();
   });
+
+  // Every kind, because the panel wraps some rows before rendering them and a
+  // wrapper that drops the auto props leaves that kind silently unghosted.
+  it.each([
+    ['number', f.number(3).range(0, 8)],
+    ['slider', f.number(3).range(0, 8).slider()],
+    ['boolean', f.boolean(true)],
+    ['enum', f.enum('a', ['a', 'b'])],
+    ['radio', f.enum('a', ['a', 'b']).radio()],
+    ['string', f.string('hi')],
+    ['color', f.color('#3a86ff')],
+  ])('marks a %s row auto and gives it a dot and a path', (_kind, node) => {
+    const { container } = render(
+      <ControlPanel
+        schema={resolveConfigSchema(f.schema({ thing: node.label('Thing') }), [])}
+        config={{ thing: node.default }}
+        auto={new Set(['thing'])}
+        setConfig={() => {}}
+      />,
+    );
+    const row = container.querySelector('[data-auto-path="thing"]');
+    expect(row).not.toBeNull();
+    expect(row?.className).toMatch(/rowAuto/);
+    expect(screen.getByRole('button', { name: 'Pin Thing' })).toBeInTheDocument();
+  });
 });
 
 describe('<ControlPanel> shift-click', () => {
