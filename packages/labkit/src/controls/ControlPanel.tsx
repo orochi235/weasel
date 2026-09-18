@@ -272,6 +272,18 @@ interface ControlRowProps<TC extends Record<string, unknown>> {
   toggles: Map<string, () => void>;
 }
 
+/** Whether this leaf draws as a slider, mirroring the condition the `number`
+ *  arm below branches on. A slider is the one control whose value cannot be
+ *  read off the control itself. */
+function isSliderLeaf(leaf: PrefLeaf): boolean {
+  return (
+    leaf.kind === 'number' &&
+    extra<string>(leaf, 'control') === 'slider' &&
+    extra<number>(leaf, 'min') !== undefined &&
+    extra<number>(leaf, 'max') !== undefined
+  );
+}
+
 /** Reads a labkit-only extra off a leaf. `PrefLeaf` has no field for these,
  *  and extra keys survive the resolve pass at runtime. */
 function extra<T>(leaf: PrefLeaf, key: string): T | undefined {
@@ -307,11 +319,15 @@ function ControlRow<TC extends Record<string, unknown>>({
   const value = resolvedValue ?? pinned;
   const setAuto = (next: boolean): void => write(next ? autoValue : value);
   const onAutoChange = canAuto ? setAuto : undefined;
-  const autoReadout = isAutoRow
-    ? resolvedValue === undefined
+  // A slider's handle is a position, not a number, so the readout is the only
+  // place its resolved value can be read. Every other control renders its own
+  // value, and repeating it there says it twice and wraps the narrow slot.
+  const readsItsOwnValue = !isSliderLeaf(leaf);
+  const autoReadout = !isAutoRow
+    ? undefined
+    : resolvedValue === undefined || readsItsOwnValue
       ? 'auto'
-      : `auto · ${String(resolvedValue)}`
-    : undefined;
+      : `auto · ${String(resolvedValue)}`;
   const autoProps = { auto: isAutoRow, onAutoChange, 'data-auto-path': canAuto ? path : undefined };
 
   useEffect(() => {

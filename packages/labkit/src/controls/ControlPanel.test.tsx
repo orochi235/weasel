@@ -788,6 +788,25 @@ describe('<ControlPanel> auto', () => {
     expect(screen.queryByText('auto · 10')).toBeNull();
   });
 
+  it('does not repeat a resolved value the control itself already shows', () => {
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(
+          f.schema({ caption: f.string('typed').auto(() => 'eight across') }),
+          [],
+        )}
+        config={{ caption: 'typed' }}
+        auto={new Set(['caption'])}
+        setConfig={() => {}}
+      />,
+    );
+    // The field below the readout is already showing it, and the readout slot
+    // is one narrow column — a long string wraps it onto two lines.
+    expect(screen.getByText('auto')).toBeInTheDocument();
+    expect(screen.queryByText(/auto · /)).toBeNull();
+    expect(screen.getByDisplayValue('eight across')).toBeInTheDocument();
+  });
+
   it('draws an auto control at the resolved value, not the value underneath it', () => {
     const { container } = render(
       <ControlPanel
