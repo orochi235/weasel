@@ -15,6 +15,7 @@ import { ACTIONS } from './icons/actions.mjs';
 import { STATE } from './icons/state.mjs';
 import { PAINT } from './icons/paint.mjs';
 import { LAYOUT } from './icons/layout.mjs';
+import { ARCS } from './icons/arcs.mjs';
 
 // `save` split: the tray-and-arrow reads as download, so it carries `export`,
 // and capturing a trial's state gets its own camera.
@@ -26,6 +27,7 @@ const GROUPS = [
   ['State and instrument', STATE],
   ['Stroke cap, join, align and dash', PAINT],
   ['Workspace layout', LAYOUT],
+  ['Arc profiles', ARCS],
 ];
 
 // A digit has no upper case, so `star-4` has to drop the dash rather than try to

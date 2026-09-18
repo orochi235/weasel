@@ -86,6 +86,26 @@ export const ICON_PATHS = {
   layoutRows: `<rect x="3.4" y="3.4" width="13.2" height="3.4" rx="1" fill="currentColor" stroke="none"/><rect x="3.4" y="8.3" width="13.2" height="3.4" rx="1" fill="currentColor" stroke="none"/><rect x="3.4" y="13.2" width="13.2" height="3.4" rx="1" fill="currentColor" stroke="none"/>`,
   layoutColumns: `<rect x="3.4" y="3.4" width="3.4" height="13.2" rx="1" fill="currentColor" stroke="none"/><rect x="8.3" y="3.4" width="3.4" height="13.2" rx="1" fill="currentColor" stroke="none"/><rect x="13.2" y="3.4" width="3.4" height="13.2" rx="1" fill="currentColor" stroke="none"/>`,
   layoutGrid: `<rect x="3.4" y="3.4" width="3.4" height="3.4" rx="1" fill="currentColor" stroke="none"/><rect x="8.3" y="3.4" width="3.4" height="3.4" rx="1" fill="currentColor" stroke="none"/><rect x="13.2" y="3.4" width="3.4" height="3.4" rx="1" fill="currentColor" stroke="none"/><rect x="3.4" y="8.3" width="3.4" height="3.4" rx="1" fill="currentColor" stroke="none"/><rect x="8.3" y="8.3" width="3.4" height="3.4" rx="1" fill="currentColor" stroke="none"/><rect x="13.2" y="8.3" width="3.4" height="3.4" rx="1" fill="currentColor" stroke="none"/><rect x="3.4" y="13.2" width="3.4" height="3.4" rx="1" fill="currentColor" stroke="none"/><rect x="8.3" y="13.2" width="3.4" height="3.4" rx="1" fill="currentColor" stroke="none"/><rect x="13.2" y="13.2" width="3.4" height="3.4" rx="1" fill="currentColor" stroke="none"/>`,
+
+  // Arc profiles
+  arcStraight: `<path d="M2.6 15H17.4"/>`,
+  arcParabola: `<path d="M2.6 15Q10 -5 17.4 15"/>`,
+  arcCircle: `<path d="M2.6 15A7.4 7.4 0 0 1 17.4 15"/>`,
+  arcSine: `<path d="M2.6 10C3.83 7.38 5.07 5 6.3 5C7.53 5 8.77 7.38 10 10C11.23 12.62 12.47 15 13.7 15C14.93 15 16.17 12.62 17.4 10"/>`,
+  arcBump: `<path d="M2.6 15C3.83 15 5.07 11.87 6.3 9.38C7.53 6.88 8.77 5 10 5C11.23 5 12.47 6.88 13.7 9.38C14.93 11.87 16.17 15 17.4 15"/>`,
+  arcPlateau: `<path d="M2.6 15V8.6A3.6 3.6 0 0 1 6.2 5H13.8A3.6 3.6 0 0 1 17.4 8.6V15"/>`,
+  arcBell: `<path d="M2.6 15C3.42 14.87 4.24 14.6 5.07 13.65C5.89 12.7 6.71 10.87 7.53 8.87C8.36 6.86 9.18 5 10 5C10.82 5 11.64 6.86 12.47 8.87C13.29 10.87 14.11 12.7 14.93 13.65C15.76 14.6 16.58 14.87 17.4 15"/>`,
+  arcEllipse: `<path d="M2.6 15A7.4 10 0 0 1 17.4 15"/>`,
+  arcLob: `<path d="M2.6 15C3.78 -0.6 10.74 4.2 17.4 15"/>`,
+  arcDive: `<path d="M2.6 15C9.26 4.2 16.22 -0.6 17.4 15"/>`,
+  arcTriangle: `<path d="M2.6 10L6.3 5L13.7 15L17.4 10"/>`,
+  arcSquare: `<path d="M2.6 10L2.6 5L10 5L10 15L17.4 15L17.4 10"/>`,
+  arcSawtooth: `<path d="M2.6 10L10 5L10 15L17.4 10"/>`,
+  arcStair: `<path d="M2.6 10L4.97 10L4.97 5L8.82 5L8.82 10L11.18 10L11.18 15L15.03 15L15.03 10L17.4 10"/>`,
+  arcZigzag: `<path d="M2.6 10L4.45 5L8.15 15L10 10L11.85 5L15.55 15L17.4 10"/>`,
+  arcRipple: `<path d="M2.6 10C3.22 7.38 3.83 5 4.45 5C5.07 5 5.68 7.38 6.3 10C6.92 12.62 7.53 15 8.15 15C8.77 15 9.38 12.62 10 10C10.62 7.38 11.23 5 11.85 5C12.47 5 13.08 7.38 13.7 10C14.32 12.62 14.93 15 15.55 15C16.17 15 16.78 12.62 17.4 10"/>`,
+  arcHop: `<path d="M2.6 15Q6.3 -5 10 15M10 15Q13.7 4 17.4 15"/>`,
+  arcCusp: `<path d="M2.6 15Q7.34 12.8 10 5Q12.66 12.8 17.4 15"/>`,
 } as const;
 
 /** Every glyph name in the set. */
@@ -96,6 +116,24 @@ export type IconName = keyof typeof ICON_PATHS;
  *  edge of the stroke rather than stopping at the path's own endpoint. Only the
  *  glyphs where an enclosed region means something have an entry. */
 export const ICON_FILLS = {
+  arcStraight: `<path d="M1.85 15L2.6 15H17.4L18.15 15L18.15 15.75L1.85 15.75Z" fill="currentColor" stroke="none"/>`,
+  arcParabola: `<path d="M2.31 15.69L2.6 15Q10 -5 17.4 15L17.69 15.69L17.69 15.75L2.31 15.75Z" fill="currentColor" stroke="none"/>`,
+  arcCircle: `<path d="M2.52 15.75L2.6 15A7.4 7.4 0 0 1 17.4 15L17.48 15.75L17.48 15.75L2.52 15.75Z" fill="currentColor" stroke="none"/>`,
+  arcSine: `<path d="M2.28 10.68L2.6 10C3.83 7.38 5.07 5 6.3 5C7.53 5 8.77 7.38 10 10C11.23 12.62 12.47 15 13.7 15C14.93 15 16.17 12.62 17.4 10L17.72 9.32L17.72 15.75L2.28 15.75Z" fill="currentColor" stroke="none"/>`,
+  arcBump: `<path d="M1.87 15.18L2.6 15C3.83 15 5.07 11.87 6.3 9.38C7.53 6.88 8.77 5 10 5C11.23 5 12.47 6.88 13.7 9.38C14.93 11.87 16.17 15 17.4 15L18.13 15.18L18.13 15.75L1.87 15.75Z" fill="currentColor" stroke="none"/>`,
+  arcPlateau: `<path d="M2.6 15.75L2.6 15V8.6A3.6 3.6 0 0 1 6.2 5H13.8A3.6 3.6 0 0 1 17.4 8.6V15L17.4 15.75L17.4 15.75L2.6 15.75Z" fill="currentColor" stroke="none"/>`,
+  arcBell: `<path d="M1.86 15.13L2.6 15C3.42 14.87 4.24 14.6 5.07 13.65C5.89 12.7 6.71 10.87 7.53 8.87C8.36 6.86 9.18 5 10 5C10.82 5 11.64 6.86 12.47 8.87C13.29 10.87 14.11 12.7 14.93 13.65C15.76 14.6 16.58 14.87 17.4 15L18.14 15.13L18.14 15.75L1.86 15.75Z" fill="currentColor" stroke="none"/>`,
+  arcEllipse: `<path d="M2.54 15.75L2.6 15A7.4 10 0 0 1 17.4 15L17.46 15.75L17.46 15.75L2.54 15.75Z" fill="currentColor" stroke="none"/>`,
+  arcLob: `<path d="M2.5 15.74L2.6 15C3.78 -0.6 10.74 4.2 17.4 15L17.81 15.63L17.81 15.75L2.5 15.75Z" fill="currentColor" stroke="none"/>`,
+  arcDive: `<path d="M2.19 15.63L2.6 15C9.26 4.2 16.22 -0.6 17.4 15L17.5 15.74L17.5 15.75L2.19 15.75Z" fill="currentColor" stroke="none"/>`,
+  arcTriangle: `<path d="M2.15 10.6L2.6 10L6.3 5L13.7 15L17.4 10L17.85 9.4L17.85 15.75L2.15 15.75Z" fill="currentColor" stroke="none"/>`,
+  arcSquare: `<path d="M2.6 10.75L2.6 10L2.6 5L10 5L10 15L17.4 15L17.4 10L17.4 9.25L17.4 15.75L2.6 15.75Z" fill="currentColor" stroke="none"/>`,
+  arcSawtooth: `<path d="M1.98 10.42L2.6 10L10 5L10 15L17.4 10L18.02 9.58L18.02 15.75L1.98 15.75Z" fill="currentColor" stroke="none"/>`,
+  arcStair: `<path d="M1.85 10L2.6 10L4.97 10L4.97 5L8.82 5L8.82 10L11.18 10L11.18 15L15.03 15L15.03 10L17.4 10L18.15 10L18.15 15.75L1.85 15.75Z" fill="currentColor" stroke="none"/>`,
+  arcZigzag: `<path d="M2.34 10.7L2.6 10L4.45 5L8.15 15L10 10L11.85 5L15.55 15L17.4 10L17.66 9.3L17.66 15.75L2.34 15.75Z" fill="currentColor" stroke="none"/>`,
+  arcRipple: `<path d="M2.43 10.73L2.6 10C3.22 7.38 3.83 5 4.45 5C5.07 5 5.68 7.38 6.3 10C6.92 12.62 7.53 15 8.15 15C8.77 15 9.38 12.62 10 10C10.62 7.38 11.23 5 11.85 5C12.47 5 13.08 7.38 13.7 10C14.32 12.62 14.93 15 15.55 15C16.17 15 16.78 12.62 17.4 10L17.57 9.27L17.57 15.75L2.43 15.75Z" fill="currentColor" stroke="none"/>`,
+  arcHop: `<path d="M2.45 15.73L2.6 15Q6.3 -5 10 15L10.15 15.73L10.15 15.75L2.45 15.75ZM9.74 15.7L10 15Q13.7 4 17.4 15L17.66 15.7L17.66 15.75L9.74 15.75Z" fill="currentColor" stroke="none"/>`,
+  arcCusp: `<path d="M1.94 15.35L2.6 15Q7.34 12.8 10 5Q12.66 12.8 17.4 15L18.06 15.35L18.06 15.75L1.94 15.75Z" fill="currentColor" stroke="none"/>`,
 } as const;
 
 /** The glyphs `<Icon filled>` can shade. */
