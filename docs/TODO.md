@@ -994,6 +994,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
+- **(P2) A saved snapshot does not carry a trial's auto paths.** `SavedSnapshot`
+  holds `config` and `state` but not `TrialRecord.auto`, so restoring one lays a
+  saved config over whatever the trial currently has unpinned: a field the
+  snapshot pinned comes back auto, and the resolver overwrites the saved value.
+  `addTrial` and `resetTrial` both compute the set (schema `.initial(auto)` ∪
+  the seed's, via `autoPathsOf` and `autoSeed`), so the snapshot needs the same
+  field and `loadSnapshot` needs to restore it. Deliberately left out of the
+  auto-controls arc, which never specified snapshot behavior.
+
 - **(P2) Whether an anchor should set a ramp's chroma peak directly.** Today an
   anchor sets `peak = anchor C · max / e`, with `e` the envelope at the anchor's
   position, so an anchor on an end step whose bias is near 0 leaves `e` tiny and
