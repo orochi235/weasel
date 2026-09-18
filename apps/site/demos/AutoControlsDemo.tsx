@@ -6,6 +6,26 @@ import 'windease/styles.css';
 
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Math.round(n)));
 
+const WORDS = [
+  'no',
+  'one',
+  'two',
+  'three',
+  'four',
+  'five',
+  'six',
+  'seven',
+  'eight',
+  'nine',
+  'ten',
+  'eleven',
+  'twelve',
+  'thirteen',
+  'fourteen',
+  'fifteen',
+  'sixteen',
+];
+
 const grid = defineInstrument({
   name: 'Grid',
   config: f.schema({
@@ -30,9 +50,15 @@ const grid = defineInstrument({
       .initial(auto)
       .label('Gap'),
 
-    // No resolver, so auto here means absent: the instrument reads `undefined`
-    // and draws no caption at all.
-    caption: f.string('six across').placeholder('caption…').label('Caption'),
+    // Reads `cols`, which is usually auto itself — resolution is demand-driven,
+    // so the column count resolves first and the caption counts what was drawn
+    // rather than a number that was true when someone typed it.
+    caption: f
+      .string('six across')
+      .auto((c) => `${WORDS[c.cols as number] ?? String(c.cols)} across`)
+      .initial(auto)
+      .placeholder('caption…')
+      .label('Caption'),
 
     // Straight into a fill, which cannot take `undefined` — so it is never auto
     // and takes no pin dot.
@@ -60,7 +86,6 @@ const grid = defineInstrument({
           for (let i = 0; i < cols; i++) {
             ctx.fillRect(i * (cell + gap), 0, Math.max(cell, 1), 180);
           }
-          // Absent rather than empty: an auto caption has no value to draw.
           if (caption) {
             ctx.fillStyle = '#1f2430';
             ctx.font = '14px system-ui, sans-serif';
