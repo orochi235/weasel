@@ -232,37 +232,59 @@ describe('PrefsForm — union-valued leaves', () => {
     return onChange;
   };
 
-  it('renders a paint leaf as a color control instead of the no-renderer placeholder', () => {
+  /** The paint editor lives in a popover, so reaching a control inside it
+   *  means opening the field first. */
+  const openPaint = (name: string): void => {
+    fireEvent.click(screen.getByRole('button', { name }));
+  };
+
+  it('renders a paint leaf as a paint field instead of the no-renderer placeholder', () => {
     renderUnion({ appearance: { fill: { fill: 'solid', color: '#ff0000ff' } } });
-    expect(screen.getByLabelText('Fill', { selector: 'input[type="color"]' })).toHaveValue('#ff0000');
+    expect(screen.getByRole('button', { name: 'Fill' })).toHaveTextContent('Solid');
     expect(screen.queryByText('(paint: no renderer)')).toBeNull();
   });
 
-  it('writes a whole solid paint rather than a bare color', () => {
+  it('edits a gradient as a gradient rather than flattening it to a solid', () => {
     const onChange = renderUnion({
       appearance: {
         fill: {
           fill: 'linear-gradient',
           from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
-          stops: [{ offset: 0, color: '#000' }],
+          stops: [{ offset: 0, color: '#000000ff' }, { offset: 1, color: '#ffffffff' }],
         },
       },
     });
+    openPaint('Fill');
+    const stop = screen.getByLabelText('Stop 1 at 0%');
+    fireEvent.input(stop, { target: { value: '#112233' } });
+    fireEvent.blur(stop);
+    expect(onChange).toHaveBeenCalledWith('appearance.fill', expect.objectContaining({
+      fill: 'linear-gradient',
+      from: { x: 0, y: 0 },
+      to: { x: 1, y: 0 },
+      stops: [{ offset: 0, color: '#112233ff' }, { offset: 1, color: '#ffffffff' }],
+    }));
+  });
+
+  it('writes a whole solid paint rather than a bare color', () => {
+    const onChange = renderUnion({ appearance: { fill: { fill: 'solid', color: '#000000ff' } } });
+    openPaint('Fill');
     const input = screen.getByLabelText('Fill', { selector: 'input[type="color"]' });
     fireEvent.input(input, { target: { value: '#112233' } });
     fireEvent.blur(input);
-    expect(onChange).toHaveBeenCalledWith('appearance.fill', { fill: 'solid', color: '#112233' });
+    expect(onChange).toHaveBeenCalledWith('appearance.fill', { fill: 'solid', color: '#112233ff' });
   });
 
   it('commits the whole object when one of its fields is edited', () => {
     const onChange = renderUnion({
       appearance: { stroke: { paint: { color: '#000000ff' }, width: 6, dash: [4, 2] } },
     });
+    openPaint('Stroke color');
     const input = screen.getByLabelText('Stroke color', { selector: 'input[type="color"]' });
     fireEvent.input(input, { target: { value: '#445566' } });
     fireEvent.blur(input);
     expect(onChange).toHaveBeenCalledWith('appearance.stroke', {
-      paint: { fill: 'solid', color: '#445566' },
+      paint: { fill: 'solid', color: '#445566ff' },
       width: 6,
       dash: [4, 2],
     });
@@ -270,11 +292,12 @@ describe('PrefsForm — union-valued leaves', () => {
 
   it('lifts a scalar value before applying a field to it', () => {
     const onChange = renderUnion({ appearance: { stroke: '#ff0000ff' } });
+    openPaint('Stroke color');
     const input = screen.getByLabelText('Stroke color', { selector: 'input[type="color"]' });
     fireEvent.input(input, { target: { value: '#445566' } });
     fireEvent.blur(input);
     expect(onChange).toHaveBeenCalledWith('appearance.stroke', {
-      paint: { fill: 'solid', color: '#445566' },
+      paint: { fill: 'solid', color: '#445566ff' },
     });
   });
 });

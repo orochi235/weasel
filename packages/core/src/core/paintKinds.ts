@@ -14,7 +14,7 @@
  */
 
 import type {
-  FillStyle, GradientFill, GradientKind, GradientUnits, GradStop, TilePatternSpec,
+  ColorSpace, FillStyle, GradientFill, GradientKind, GradientUnits, GradStop, TilePatternSpec,
 } from '@weasel-js/paint';
 import { gradientForBounds } from './gradient';
 import { bumpNodeMemoGeneration } from './scene/nodeMemo';
@@ -73,8 +73,12 @@ export interface PaintBindContext {
    * unit, and return the `v` the ramp's own row sits at — every ramp in a
    * frame shares one texture, so a paint must sample at the returned `v` and
    * not at a constant.
+   *
+   * `space` is the blend the stops are baked through, defaulting to `'rgb'`.
+   * It is part of the atlas key, so the same stops under two spaces take two
+   * rows rather than colliding.
    */
-  bindRamp(stops: GradStop[], unit: number): number;
+  bindRamp(stops: GradStop[], unit: number, space?: ColorSpace): number;
 }
 
 /**

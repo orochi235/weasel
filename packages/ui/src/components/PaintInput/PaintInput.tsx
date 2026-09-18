@@ -12,6 +12,7 @@ import { Icon } from '../../icons/Icon';
 import { ICON_PATHS, type IconName } from '../../icons/paths';
 import { ColorField } from '../ColorField';
 import { GradientEditor } from '../GradientEditor';
+import { MeshEditor, isMeshPaint } from '../MeshEditor';
 import { PatternPicker, type PatternFill } from '../PatternPicker';
 import { ToggleBar, type ToggleBarItem } from '../ToggleBar';
 import s from './PaintInput.module.css';
@@ -188,6 +189,9 @@ export function PaintInput(props: PaintInputProps): ReactElement {
     }
     if (isPattern(value)) {
       return <PatternPicker value={value} color={currentColor()} onChange={onChange} />;
+    }
+    if (isMeshPaint(value)) {
+      return <MeshEditor value={value} onInput={onInput} onChange={onChange} />;
     }
     return (
       <ColorField

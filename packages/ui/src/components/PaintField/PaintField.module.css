@@ -1,0 +1,70 @@
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  inline-size: 100%;
+  min-inline-size: 0;
+  padding: 1px 6px 1px 1px;
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  background: var(--wzl-surface);
+  color: var(--wzl-fg);
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size-sm);
+  cursor: pointer;
+}
+
+.trigger[data-unset] {
+  opacity: 0.6;
+}
+
+.trigger[data-focus-visible] {
+  outline: none;
+  border-color: var(--wzl-focus-ring);
+  box-shadow: 0 0 0 1px var(--wzl-focus-ring);
+}
+
+.swatch {
+  inline-size: 26px;
+  block-size: 18px;
+  flex: 0 0 auto;
+  border-radius: calc(var(--wzl-radius-sm) - 1px);
+  /* Checker under the paint, so a translucent one reads as translucent. */
+  background-color: var(--wzl-surface-raised);
+  box-shadow: inset 0 0 0 1px var(--wzl-border);
+}
+
+/* No paint to show: the checker stands in rather than an invented color. */
+.swatch[data-empty],
+.trigger[data-mixed] .swatch {
+  background: repeating-conic-gradient(
+      var(--wzl-border) 0% 25%,
+      var(--wzl-surface) 0% 50%
+    )
+    50% / 8px 8px;
+}
+
+.label {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: start;
+}
+
+.popover {
+  outline: none;
+}
+
+.body {
+  inline-size: 240px;
+  padding: 8px;
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+  background: var(--wzl-surface-raised);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.3);
+  outline: none;
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size);
+}

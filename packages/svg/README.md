@@ -66,6 +66,23 @@ That cuts both ways on import: a `fill="url(#mesh1) #c04a3f"` from Inkscape,
 whose mesh gradients this package does not model, imports as flat `#c04a3f`
 rather than as a dropped fill.
 
+### A gradient's blend space
+
+A gradient's `interpolate` — `'oklab'` or `'oklch'` — has no SVG spelling
+either: `color-interpolation` carries `sRGB` and `linearRGB` only. It goes out
+as `wzl:interpolate` on the gradient's *own* element, which stays
+`<linearGradient>` or `<radialGradient>`:
+
+```xml
+<linearGradient id="grad0" gradientUnits="objectBoundingBox"
+  x1="0" y1="0" x2="1" y2="0" wzl:interpolate="oklch">…</linearGradient>
+```
+
+No fallback color rides along, because a foreign renderer still paints the
+gradient — it just blends the stops in sRGB, which moves the midpoint rather
+than losing the paint. A space this package does not know is dropped on import
+rather than carried through.
+
 ## Raster images
 
 `<image>` parses to an `SvgImageNode` holding the `href` verbatim — an

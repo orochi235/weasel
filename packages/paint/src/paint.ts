@@ -16,6 +16,7 @@
  */
 
 import type { TextureHandle } from './texture';
+import type { ColorSpace } from './colorSpaces';
 
 /**
  * Color/texture strategy for fills (and, via `Stroke.paint`, strokes).
@@ -30,6 +31,12 @@ import type { TextureHandle } from './texture';
  * `createTilePattern()`. A handle is a session-scoped registry key, so a
  * paint carrying one cannot be persisted or exported; prefer the spec.
  *
+ * `interpolate` on a gradient names the space its stops blend through, and
+ * defaults to `'rgb'` — the channel-wise sRGB lerp every other vector format
+ * means by a gradient. `'oklab'` spaces the blend perceptually; `'oklch'`
+ * additionally travels around the hue wheel, so red to blue stays saturated
+ * instead of passing through a muddy purple. Alpha is linear in every space.
+ *
  * `units` on a pattern names the space the tile's origin and scale live in,
  * not the space of any geometry (a pattern has none). Under `'bounds'` the
  * tile anchors to the painted node's box, so the pattern travels with the
@@ -40,9 +47,9 @@ import type { TextureHandle } from './texture';
 export type FillStyle =
   | { fill?: 'solid'; color: string; opacity?: number }
   | { fill: 'pattern'; pattern: TextureHandle | TilePatternSpec; units?: GradientUnits; origin?: { x: number; y: number }; opacity?: number }
-  | { fill: 'linear-gradient'; from: { x: number; y: number }; to: { x: number; y: number }; stops: GradStop[]; units?: GradientUnits; opacity?: number }
-  | { fill: 'radial-gradient'; center: { x: number; y: number }; radius: number; stops: GradStop[]; units?: GradientUnits; opacity?: number }
-  | { fill: 'conic-gradient'; center: { x: number; y: number }; angle: number; stops: GradStop[]; units?: GradientUnits; opacity?: number };
+  | { fill: 'linear-gradient'; from: { x: number; y: number }; to: { x: number; y: number }; stops: GradStop[]; units?: GradientUnits; interpolate?: ColorSpace; opacity?: number }
+  | { fill: 'radial-gradient'; center: { x: number; y: number }; radius: number; stops: GradStop[]; units?: GradientUnits; interpolate?: ColorSpace; opacity?: number }
+  | { fill: 'conic-gradient'; center: { x: number; y: number }; angle: number; stops: GradStop[]; units?: GradientUnits; interpolate?: ColorSpace; opacity?: number };
 
 /**
  * Which coordinate space a gradient's geometry (`from`/`to`, `center`,

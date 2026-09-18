@@ -18,7 +18,7 @@ import { cursorFor } from '@weasel-js/cursor';
  *  array to `insertAction`, which forwards it as the `pencil` insert
  *  extras' `samples`. A consumer that wants pressure-driven
  *  `Stroke.vertexWidths` reads it off the samples in its own `insert` dep
- *  (`useDepSource('insert', …)`) — see `apps/site/demos/VertexWidthsDemo.tsx`.
+ *  (`useDepSource('insert', …)`) — see `apps/site/demos/StrokeAndFillDemo.tsx`.
  */
 export interface PencilPoint {
   x: number;

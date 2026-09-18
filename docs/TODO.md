@@ -406,6 +406,27 @@ Core five + Crop shipped. Remaining:
   which is the same trade as the entry above.
 
 
+- **(P2) A registered paint kind with no `Editor` is flattened to a solid by
+  `PaintInput`.** The body falls through its built-in branches to a `ColorField`
+  whose `onChange` writes `{ fill: 'solid', color }`, so opening the control on a
+  consumer's kind and touching it destroys the paint — the same defect the
+  `PrefsForm` paint leaf had, one layer up. The kit's own kinds are all covered
+  now (`mesh-gradient` was the last one), which is exactly why nothing fails:
+  only a consumer hits it. The fix is a branch that refuses to edit a paint it
+  has no editor for rather than editing it wrongly.
+
+- **(P3) Mesh gradients have no on-canvas handles.** `MeshEditor` edits corner
+  colors and the blend space; a patch's twelve control points are only reachable
+  by writing the paint by hand, which is where gradients were before
+  `GradientHandles`. `SceneGradientHandles` is the shape to copy — it already
+  resolves the bounds frame and commits through the `setFill` action.
+
+- **(P3) A mesh paint bakes at a fixed 256 texels.** Enough for a smooth field at
+  shape size, but a mesh filling a poster is resolution-bound in a way the three
+  gradients are not (their ramp is 1-D, so 256 covers any size). The bake is
+  keyed by paint identity in a `WeakMap`, so a size-aware bake would need the
+  draw scale in the key — `packages/core/src/features/meshPaint/bake.ts`.
+
 - **(P3) Pattern fills: what the tile picker left open.** The texture half of
   fill-mode expansion shipped 2026-08-12 — patterns tile, carry a serializable
   `TilePatternSpec`, round-trip through SVG `<pattern>`, and have a picker in
@@ -423,10 +444,12 @@ Core five + Crop shipped. Remaining:
   - **Tile rotation / skew.** SVG has `patternTransform`; the paint has only an
     origin. Rotating a hatch is the obvious first ask.
 
-  Also unresolved from the gradient half: `gradientXml` returns `''` for conic,
-  which SVG cannot express at all. It now warns through
-  `SerializeOptions.onWarn` rather than vanishing silently, but still exports
-  as nothing rather than as an approximation.
+  The gradient half's own gap is closed: a conic gradient serializes as a
+  `<wzl:conicGradient>` def in `urn:weasel-js:svg` and reads back losslessly,
+  and every reference to a paint SVG cannot express carries SVG's own paint
+  fallback color so an unresolvable one paints flat. See
+  `docs/proposals/2026-09-17-paint-kinds-beyond-svg.md` for what a richer kind
+  writes inside that envelope.
 
 - **(P3) Promote `ShaderDrawCommand` past `@experimental`.** Three uses now exercise it (plasma / ripple / voronoi panels), which is enough to have validated the surface. Open questions before stabilization: (a) array uniform binding shape — currently consumers must pass per-slot keys (`u_ripples[0]`, `u_ripples[1]`, …); should the kit accept a flat `Float32Array` and split it? (b) hot-reload story for `registerProgram` re-registration; (c) how to expose the renderer's program registry without leaking internals (`shaders` prop is the seam, but consumers writing custom RenderLayers may want more).
 
@@ -1139,14 +1162,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   endpoint (10px) and `createKeyframeLayer`'s key (9px) are all 45°-rotated
   squares sized independently.
 
-- **(P2) A `paint` leaf in `PrefsForm` edits through `ColorField`, so a gradient
-  degrades to a solid.** `SelectionPanel` renders the same leaf through
-  `PaintInput`, which edits a whole `FillStyle`; `PrefsForm` reads the color out
-  and writes a solid back, so opening the control on a gradient and touching it
-  loses the stops with no warning. Swapping in `PaintInput` is the obvious fix
-  and does not fit: it puts a six-segment kind bar and a gradient editor into a
-  `flex: 0 0 110px` control slot. So the question is the slot, not the control —
-  and jsdom cannot answer it, this needs proofing in a browser.
 
 - **(P3) Typed units stop at linear factors.** `SelectionPanel` and `PrefsForm`
   read `12mm` into a unit leaf through `UnitField`, and `prefUnit` builds the
@@ -1435,13 +1450,12 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have.
 
-- **(P2) Consolidate the paint demos into one "stroke and fill" demo.** `gradients`,
-  `pattern-playground`, `vertex-colors` and `vertex-widths` are four cards each
-  showing one corner of the same subject. The pieces a combined demo should be
-  built on now exist — `PaintInput` edits a whole `FillStyle` and
-  `SceneGradientHandles` puts the geometry on the artwork — so this is no
-  longer blocked on the kit. Rethink the scope before splitting the work: it is
-  a redesign, not a merge of four files.
+- **(P3) `stroke-and-fill` has no visual baseline.** The demo that replaced
+  `gradients`, `pattern-playground`, `vertex-colors` and `vertex-widths` carries
+  `tests/visual/stroke-and-fill.spec.ts`, but its baseline PNG was never
+  captured — a missing baseline auto-writes and passes, so the spec asserts
+  nothing until someone runs it once and commits
+  `tests/visual/baselines/stroke-and-fill.png`.
 
 - **(P3) Demo coverage gap: HUD widget gallery.** `@weasel-js/hud` ships five widgets (`button`, `rect`, `text`, `image`, `label`) but only `button` is demo'd (`apps/site/demos/HudDemo.tsx`) — a single "HUD widget gallery" demo card would cover the other four. Brainstorm scope before writing it. (The former `@weasel-js/ui` `CommandPalette`/`PropertiesPanel` half of this item was dropped — those are app-local components in `apps/draw/src/ui/`, not `@weasel-js/ui` exports, so there's no kit-export demo gap.)
 

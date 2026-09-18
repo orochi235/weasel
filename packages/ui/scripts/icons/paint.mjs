@@ -183,6 +183,51 @@ const crosshatch = (mid, axis) =>
     .map((o) => stripe(mid + o - HATCH_W / 2, mid + o + HATCH_W / 2, axis))
     .join('');
 
+// Four cells of a 2x2 patch grid, divided by two CURVED seams rather than
+// straight ones — a mesh's whole claim over the other gradients is that its
+// color field bends, and a straight cross would draw a four-square swatch that
+// says nothing the linear glyph does not.
+//
+// Both seams pass through one crossing point, and each is built as two cubics
+// that START or END there rather than as one curve cut in half by eye: four
+// cells sharing a vertex leave a visible notch if the vertex is four slightly
+// different points. Tangents at the crossing are axis-aligned so the two
+// halves of a seam continue into each other instead of kinking.
+const MESH_CROSS = [11.6, 8.6];
+const bias = 0.55;
+const cubic = (p0, c1, c2, p3) => ({ p0, c1, c2, p3 });
+const seg = ({ c1, c2, p3 }) =>
+  `C${n(c1[0])} ${n(c1[1])} ${n(c2[0])} ${n(c2[1])} ${n(p3[0])} ${n(p3[1])}`;
+const rev = ({ p0, c1, c2, p3 }) => cubic(p3, c2, c1, p0);
+const at = (p) => `${n(p[0])} ${n(p[1])}`;
+
+const [CX, CY] = MESH_CROSS;
+const seamTop = cubic(
+  [10, BOX], [10, BOX + (CY - BOX) * bias], [CX, CY - (CY - BOX) * bias], [CX, CY],
+);
+const seamBottom = cubic(
+  [CX, CY], [CX, CY + (BOX_END - CY) * bias], [10, BOX_END - (BOX_END - CY) * bias], [10, BOX_END],
+);
+const seamLeft = cubic(
+  [BOX, 10], [BOX + (CX - BOX) * bias, 10], [CX - (CX - BOX) * bias, CY], [CX, CY],
+);
+const seamRight = cubic(
+  [CX, CY], [CX + (BOX_END - CX) * bias, CY], [BOX_END - (BOX_END - CX) * bias, 10], [BOX_END, 10],
+);
+
+const meshCells = [
+  // Top-left: down the top edge, along the top seam, back along the left one.
+  `M${at([BOX, BOX])}L${at([10, BOX])}${seg(seamTop)}${seg(rev(seamLeft))}L${at([BOX, BOX])}Z`,
+  // Top-right.
+  `M${at([10, BOX])}L${at([BOX_END, BOX])}L${at([BOX_END, 10])}`
+    + `${seg(rev(seamRight))}${seg(rev(seamTop))}Z`,
+  // Bottom-right.
+  `M${at([CX, CY])}${seg(seamRight)}L${at([BOX_END, BOX_END])}L${at([10, BOX_END])}`
+    + `${seg(rev(seamBottom))}Z`,
+  // Bottom-left.
+  `M${at([CX, CY])}${seg(seamBottom)}L${at([BOX, BOX_END])}L${at([BOX, 10])}${seg(seamLeft)}Z`,
+].map((d, i) => step(d, RAMP[i])).join('');
+
 export const PAINT = {
   ...category,
 
@@ -209,6 +254,7 @@ export const PAINT = {
   'paint-linear': linearBands,
   'paint-radial': radialRings,
   'paint-conic': conicWedges,
+  'paint-mesh': meshCells,
   // Crosshatch rather than a one-way hatch: a single diagonal run is the
   // universal "none / not applicable" strike, which is the one thing this
   // glyph must not say.

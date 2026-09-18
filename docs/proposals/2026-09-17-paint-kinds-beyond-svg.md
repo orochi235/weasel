@@ -1,7 +1,10 @@
 # Paint kinds beyond SVG
 
-Status: research. Nothing built here beyond the serialization mechanism described
-under "The gap this closed"; the paint model itself is undecided.
+Status: built. The question this document asked — which of the three options a
+richer paint should serialize into — was answered by option 1, and the
+`mesh-gradient` kind now ships on it: Coons and tensor patches, PDF's shading
+types 6 and 7, registered through `registerPaintKind` and written as
+`<wzl:meshGradient>`. What follows is why that shape and not the others.
 
 For someone extending weasel's paint kinds, or choosing a serialization format for
 scenes whose paints SVG cannot express. It answers: what SVG can and cannot carry,
@@ -135,10 +138,42 @@ function shadings in one family, Cairo speaking types 4 through 7 already, and P
 export near-lossless. Adopting SVG's abandoned element instead buys Inkscape
 compatibility and stops at Coons.
 
+## What the mesh kind does with all this
+
+`mesh-gradient` takes option 1 and PDF's taxonomy, and it goes through
+`registerPaintKind` rather than into the renderer's own branch list — so every
+slot it uses, a consumer's kind can use too. Three things fell out of building
+it that this document did not predict:
+
+**A patch stores all twelve of its points, and sixteen for a tensor patch.** SVG's
+implicit edge sharing saves bytes and buys a reader a way to be subtly wrong; the
+def writes each patch whole and the reader infers nothing.
+
+**A paint answers "what color is this fragment", which is the inverse of what a
+patch computes.** Inverting a bicubic per fragment is Newton iteration, so the
+kind subdivides forward into a 256-texel bake — the same thing every renderer
+that draws these does — and the shader reads the bake. That is also why the kind
+needs no clipping of its own: it is a texture lookup like a pattern, so it
+composes with every fill the renderer already draws.
+
+**The bake is where the blend space is paid for.** Corner colors interpolate
+through `interpolate`, and a mesh blends in two directions at once, so an sRGB
+blend's muddy middle covers area rather than a line.
+
 ## Open
 
-- Whether weasel wants paint kinds richer than its five at all.
 - Whether the `bind` slot's single compiled program per kind is enough for a
-  function-based paint, or whether such a kind needs to compile per fill.
-- What a private-namespace `<defs>` element costs the scene-serialization path in
-  `docs/scene-serialization.md`, which is JSON and does not have this problem.
+  function-based paint (PDF's type 1, with a type 4 function — a shader in the
+  file), or whether such a kind needs to compile per fill. The mesh kind did not
+  answer this: it compiles once and varies only its texture.
+- On-canvas handles for a patch's control points. The kind is editable by color
+  today (`MeshEditor`); its geometry is not, the way a gradient's was not before
+  `GradientHandles`.
+- Gouraud triangle meshes (types 4 and 5) as a second kind, or as a patch whose
+  edges are straight. The bake path already rasterizes triangles.
+
+The JSON path costs nothing, and that is settled: `Scene.toJSON` copies a node's
+`data` through untouched, so a paint of any kind round-trips as long as its
+payload is JSON — no functions, no class instances, the same constraint every
+node's data already carries. Only the SVG side needs a slot and a namespace,
+which is why `toSvg` exists and its JSON counterpart does not.
