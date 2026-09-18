@@ -21,6 +21,7 @@ export * from './components/ActionsBar';
 export * from './components/ToolOptionsBar';
 export * from './components/PaintInput';
 export * from './components/PaintField';
+export * from './components/MeshEditor';
 export * from './components/PatternPicker';
 export * from './components/Powerline';
 export * from './components/Prefs';

@@ -111,7 +111,10 @@ export function sampleGradientStops(
  */
 export function withGradientKind(fill: GradientFill, kind: GradientKind): GradientFill {
   if (fill.fill === kind) return fill;
-  const common = { stops: fill.stops, units: fill.units, opacity: fill.opacity };
+  const common = {
+    stops: fill.stops, units: fill.units,
+    interpolate: fill.interpolate, opacity: fill.opacity,
+  };
   const { center, radius, angle } = gradientGeometry(fill);
 
   if (kind === 'linear-gradient') {

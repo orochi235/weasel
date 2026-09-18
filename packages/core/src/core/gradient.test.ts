@@ -265,6 +265,16 @@ describe('interpolation space', () => {
     }
   });
 
+  it('survives a kind switch, which rebuilds the paint field by field', () => {
+    const linear: GradientFill = {
+      fill: 'linear-gradient',
+      from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+      stops: RB, units: 'bounds', interpolate: 'oklch',
+    };
+    expect(withGradientKind(linear, 'radial-gradient').interpolate).toBe('oklch');
+    expect(withGradientKind(linear, 'conic-gradient').interpolate).toBe('oklch');
+  });
+
   it('returns the endpoint colors unchanged in every space', () => {
     for (const space of ['rgb', 'oklab', 'oklch'] as const) {
       expect(sampleGradientStops(RB, 0, space)).toBe('#ff0000');

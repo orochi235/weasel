@@ -406,6 +406,27 @@ Core five + Crop shipped. Remaining:
   which is the same trade as the entry above.
 
 
+- **(P2) A registered paint kind with no `Editor` is flattened to a solid by
+  `PaintInput`.** The body falls through its built-in branches to a `ColorField`
+  whose `onChange` writes `{ fill: 'solid', color }`, so opening the control on a
+  consumer's kind and touching it destroys the paint — the same defect the
+  `PrefsForm` paint leaf had, one layer up. The kit's own kinds are all covered
+  now (`mesh-gradient` was the last one), which is exactly why nothing fails:
+  only a consumer hits it. The fix is a branch that refuses to edit a paint it
+  has no editor for rather than editing it wrongly.
+
+- **(P3) Mesh gradients have no on-canvas handles.** `MeshEditor` edits corner
+  colors and the blend space; a patch's twelve control points are only reachable
+  by writing the paint by hand, which is where gradients were before
+  `GradientHandles`. `SceneGradientHandles` is the shape to copy — it already
+  resolves the bounds frame and commits through the `setFill` action.
+
+- **(P3) A mesh paint bakes at a fixed 256 texels.** Enough for a smooth field at
+  shape size, but a mesh filling a poster is resolution-bound in a way the three
+  gradients are not (their ramp is 1-D, so 256 covers any size). The bake is
+  keyed by paint identity in a `WeakMap`, so a size-aware bake would need the
+  draw scale in the key — `packages/core/src/features/meshPaint/bake.ts`.
+
 - **(P3) Pattern fills: what the tile picker left open.** The texture half of
   fill-mode expansion shipped 2026-08-12 — patterns tile, carry a serializable
   `TilePatternSpec`, round-trip through SVG `<pattern>`, and have a picker in

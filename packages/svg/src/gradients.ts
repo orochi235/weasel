@@ -78,6 +78,7 @@ function localName(tag: string): string {
 
 const GRADIENT_TAGS = new Set([
   'lineargradient', 'radialgradient', 'conicgradient', `${WEASEL_NS_PREFIX}:conicgradient`,
+  'meshgradient', `${WEASEL_NS_PREFIX}:meshgradient`,
 ]);
 
 const XLINK_NS = 'http://www.w3.org/1999/xlink';
@@ -92,7 +93,9 @@ export function collectGradients(svg: Element, onWarn?: (m: string) => void): Gr
       ? readLinearGradient(el, elements, onWarn)
       : tag === 'conicgradient'
         ? readConicGradient(el, elements, onWarn)
-        : readRadialGradient(el, elements, onWarn);
+        : tag === 'meshgradient'
+          ? readMeshGradient(el, onWarn)
+          : readRadialGradient(el, elements, onWarn);
     if (paint) out.set(id, paint);
   }
   warnUnsupportedDefsChildren(svg, onWarn);
@@ -268,6 +271,46 @@ function readConicGradient(
     units: readGradientUnits(el, elements),
     interpolate: readInterpolate(el, elements),
   };
+}
+
+/**
+ * A `<wzl:meshGradient>` back into the `mesh-gradient` paint core registers.
+ *
+ * Every patch carries all twelve (or sixteen) of its points, so nothing here
+ * infers a shared edge — the trap that makes SVG's own abandoned
+ * `<meshgradient>` hard to read correctly. A patch whose attributes do not
+ * parse is dropped with a warning rather than guessed at: a mesh missing a
+ * patch is visibly wrong, where a mesh holding an invented one is not.
+ */
+function readMeshGradient(el: Element, onWarn?: (m: string) => void): FillStyle | null {
+  const patches: { points: { x: number; y: number }[]; colors: string[] }[] = [];
+  for (let i = 0; i < el.children.length; i++) {
+    const child = el.children[i];
+    if (localName(child.tagName) !== 'patch') continue;
+    const points = (child.getAttribute('points') ?? '').trim().split(/\s+/)
+      .filter(Boolean)
+      .map((pair) => {
+        const [x, y] = pair.split(',').map(Number);
+        return { x, y };
+      });
+    const colors = (child.getAttribute('colors') ?? '').trim().split(/\s+/).filter(Boolean);
+    const sane = (points.length === 12 || points.length === 16)
+      && points.every((p) => Number.isFinite(p.x) && Number.isFinite(p.y))
+      && colors.length === 4;
+    if (!sane) {
+      onWarn?.(`<${WEASEL_NS_PREFIX}:patch> with ${points.length} points and ${colors.length} colors — dropped`);
+      continue;
+    }
+    patches.push({ points, colors });
+  }
+  if (patches.length === 0) return null;
+  const space = el.getAttribute('interpolate') ?? el.getAttributeNS(WEASEL_NS, 'interpolate');
+  return {
+    fill: 'mesh-gradient',
+    patches,
+    units: el.getAttribute('gradientUnits') === 'objectBoundingBox' ? 'bounds' : 'world',
+    ...(space === 'oklab' || space === 'oklch' ? { interpolate: space } : {}),
+  } as unknown as FillStyle;
 }
 
 /**

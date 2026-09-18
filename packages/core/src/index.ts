@@ -598,6 +598,31 @@ export type {
 // ─── Tile / pattern fills ───────────────────────────────────────────────────
 export { createTilePattern } from './features/patterns';
 export type { TilePatternOpts } from './features/patterns';
+
+// ─── Mesh gradients: PDF shading types 6 and 7 ──────────────────────────────
+// Importing the module registers the kind, so the kind bar and the renderer
+// both see it without a consumer opting in.
+export {
+  MESH_GRADIENT_KIND,
+  MESH_BAKE_SIZE,
+  bakeMesh,
+  cornerWeights,
+  evalPatch,
+  isMeshGradientFill,
+  isTensorPatch,
+  isValidPatch,
+  meshBounds,
+  meshGradientXml,
+  patchBounds,
+  patchCorner,
+  seedMeshPatch,
+} from './features/meshPaint';
+export type {
+  BakedMesh,
+  MeshGradientFill,
+  MeshPatch,
+  MeshPoint,
+} from './features/meshPaint';
 export {
   resolvePatternSpec,
   resolveFillPattern,
