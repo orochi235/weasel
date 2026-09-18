@@ -211,25 +211,25 @@ describe('resolveConfigSchema / nested groups', () => {
 
   it('rejects a leaf that is both manual and starts auto', () => {
     const schema = f.schema({ seed: f.number(1).manual().initial(auto) });
-    expect(() => resolveConfigSchema(schema)).toThrow(/seed/);
-    expect(() => resolveConfigSchema(schema)).toThrow(/manual/);
+    expect(() => resolveConfigSchema(schema, [])).toThrow(/seed/);
+    expect(() => resolveConfigSchema(schema, [])).toThrow(/manual/);
   });
 
   it('carries autoResolve, unpinned and manual onto the resolved leaf', () => {
-    const resolved = resolveConfigSchema(
+    const r = resolveConfigSchema(
       f.schema({
         gap: f.number(12).auto(() => 18),
         cols: f.number(3).initial(auto),
         seed: f.number(1).manual(),
         plain: f.number(0),
       }),
+      [],
     );
-    const leaf = (k: string) => resolved.group.children[k] as unknown as Record<string, unknown>;
-    expect(typeof leaf('gap').autoResolve).toBe('function');
-    expect(leaf('cols').unpinned).toBe(true);
-    expect(leaf('seed').manual).toBe(true);
-    expect(leaf('plain').autoResolve).toBeUndefined();
-    expect(leaf('plain').unpinned).toBeUndefined();
-    expect(leaf('plain').manual).toBeUndefined();
+    expect(typeof leafAt(r, 'gap').autoResolve).toBe('function');
+    expect(leafAt(r, 'cols').unpinned).toBe(true);
+    expect(leafAt(r, 'seed').manual).toBe(true);
+    expect(leafAt(r, 'plain').autoResolve).toBeUndefined();
+    expect(leafAt(r, 'plain').unpinned).toBeUndefined();
+    expect(leafAt(r, 'plain').manual).toBeUndefined();
   });
 });

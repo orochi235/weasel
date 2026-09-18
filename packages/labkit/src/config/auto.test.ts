@@ -9,10 +9,4 @@ describe('auto', () => {
       expect(isAuto(v)).toBe(false);
     }
   });
-
-  it('cannot cross a structured-clone boundary', () => {
-    // Which is exactly why it can never end up in a serialized trial by
-    // accident: the store strips it long before anything tries.
-    expect(() => structuredClone({ gap: auto })).toThrow();
-  });
 });

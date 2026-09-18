@@ -185,4 +185,10 @@ describe('auto on a node', () => {
     expect(n.annotations.suffix).toBe('px');
     expect(n.options.unpinned).toBe(true);
   });
+
+  it('rejects anything but the sentinel, for a caller TypeScript is not checking', () => {
+    const n = f.number(3) as unknown as { initial: (value: unknown) => unknown };
+    expect(() => n.initial(5)).toThrow(/takes `auto`/);
+    expect(() => n.initial(Symbol('auto'))).toThrow(/takes `auto`/);
+  });
 });

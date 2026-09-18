@@ -119,8 +119,8 @@ function resolveEntry(
     default: entry.default,
     // Extra keys survive onto the leaf at runtime; `ControlPanel` reads them
     // back with its `extra<T>` helper, the same as `min`, `step` and the rest.
-    ...(autoResolve ? { autoResolve } : {}),
-    ...(unpinned ? { unpinned } : {}),
-    ...(manual ? { manual } : {}),
+    ...(autoResolve === undefined ? {} : { autoResolve }),
+    ...(unpinned === undefined ? {} : { unpinned }),
+    ...(manual === undefined ? {} : { manual }),
   } as PrefLeaf;
 }
