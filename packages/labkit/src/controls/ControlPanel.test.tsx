@@ -686,7 +686,7 @@ describe('<ControlPanel> auto', () => {
         setConfig={() => {}}
       />,
     );
-    expect(screen.getByDisplayValue('auto · 18')).toBeInTheDocument();
+    expect(screen.getByText('auto · 18')).toBeInTheDocument();
   });
 
   it('reads "auto" alone for a path with no resolver', () => {
@@ -698,7 +698,7 @@ describe('<ControlPanel> auto', () => {
         setConfig={() => {}}
       />,
     );
-    expect(screen.getByDisplayValue('auto')).toBeInTheDocument();
+    expect(screen.getByText('auto')).toBeInTheDocument();
   });
 
   it('writes the sentinel when the dot turns a row auto', async () => {

@@ -315,6 +315,12 @@ export interface SliderRowProps extends PropertyMetricProps {
   onInput?: (next: number) => void;
   /** Override how the value is rendered next to the label. Defaults to `value.toString()`. */
   format?: (value: number) => ReactNode;
+  /**
+   * Static text in place of the editable readout. Use it when the row is not
+   * showing a number a caller could type back — an auto row's `auto · 18`, say,
+   * which an editable field would seed a draft with and then fail to parse.
+   */
+  readout?: ReactNode;
   /** A named display for the value: `compact` reads `2.0M`. `format` wins when both are given. */
   notation?: PrefNumberFormat;
   /**
@@ -346,6 +352,7 @@ export function SliderRow({
   onChange,
   onInput,
   format,
+  readout,
   notation,
   unit,
   layout,
@@ -380,18 +387,20 @@ export function SliderRow({
       span={span}
       label={label}
       readout={
-        <EditableReadout
-          name={nameOf(label)}
-          value={value}
-          min={min}
-          max={max}
-          format={effectiveFormat}
-          unit={unit}
-          onCommit={(next) => {
-            live(next);
-            commit?.(next);
-          }}
-        />
+        readout ?? (
+          <EditableReadout
+            name={nameOf(label)}
+            value={value}
+            min={min}
+            max={max}
+            format={effectiveFormat}
+            unit={unit}
+            onCommit={(next) => {
+              live(next);
+              commit?.(next);
+            }}
+          />
+        )
       }
       layout={layout}
       description={description}
@@ -534,6 +543,8 @@ export interface ColorRowProps extends PropertyMetricProps {
   /** Label beside the swatch (default) or above it. */
   layout?: PropertyRowLayout;
   description?: string;
+  /** Right-aligned readout shown next to the label — see `<PropertyRow readout>`. */
+  readout?: ReactNode;
   /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
   span?: boolean;
   /** The row is auto — see `<PropertyRow auto>`. */
@@ -547,6 +558,7 @@ export interface ColorRowProps extends PropertyMetricProps {
 /** A color swatch, optionally with an alpha slider beneath it. */
 export function ColorRow({
   label,
+  readout,
   value,
   onChange,
   onInput,
@@ -575,6 +587,7 @@ export function ColorRow({
     <PropertyRow
       span={span}
       label={label}
+      readout={readout}
       variant="color"
       layout={layout}
       description={description}
@@ -620,6 +633,8 @@ export interface CheckboxRowProps extends PropertyMetricProps {
   /** Label beside the box (default) or above it. */
   layout?: PropertyRowLayout;
   description?: string;
+  /** Right-aligned readout shown next to the label — see `<PropertyRow readout>`. */
+  readout?: ReactNode;
   /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
   span?: boolean;
   /** The row is auto — see `<PropertyRow auto>`. */
@@ -633,6 +648,7 @@ export interface CheckboxRowProps extends PropertyMetricProps {
 /** A boolean checkbox. */
 export function CheckboxRow({
   label,
+  readout,
   value,
   onChange,
   layout,
@@ -649,6 +665,7 @@ export function CheckboxRow({
     <PropertyRow
       span={span}
       label={label}
+      readout={readout}
       variant="checkbox"
       layout={layout}
       description={description}
@@ -680,6 +697,8 @@ export interface TextRowProps extends PropertyMetricProps {
   maxLength?: number;
   layout?: PropertyRowLayout;
   description?: string;
+  /** Right-aligned readout shown next to the label — see `<PropertyRow readout>`. */
+  readout?: ReactNode;
   /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
   span?: boolean;
   /** The row is auto — see `<PropertyRow auto>`. */
@@ -693,6 +712,7 @@ export interface TextRowProps extends PropertyMetricProps {
 /** A single-line text input. */
 export function TextRow({
   label,
+  readout,
   value,
   onChange,
   placeholder,
@@ -711,6 +731,7 @@ export function TextRow({
     <PropertyRow
       span={span}
       label={label}
+      readout={readout}
       layout={layout}
       description={description}
       density={density}
@@ -762,6 +783,8 @@ export interface NumberRowProps extends PropertyMetricProps {
   unit?: ReactNode;
   layout?: PropertyRowLayout;
   description?: string;
+  /** Right-aligned readout shown next to the label — see `<PropertyRow readout>`. */
+  readout?: ReactNode;
   /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
   span?: boolean;
   /** The row is auto — see `<PropertyRow auto>`. */
@@ -776,6 +799,7 @@ export interface NumberRowProps extends PropertyMetricProps {
  *  more than the exact value. */
 export function NumberRow({
   label,
+  readout,
   value,
   onChange,
   onInput,
@@ -823,6 +847,7 @@ export function NumberRow({
     <PropertyRow
       span={span}
       label={label}
+      readout={readout}
       layout={layout}
       description={description}
       density={density}
@@ -860,6 +885,8 @@ export interface SelectRowProps<T extends string> extends PropertyMetricProps {
   placeholder?: string;
   layout?: PropertyRowLayout;
   description?: string;
+  /** Right-aligned readout shown next to the label — see `<PropertyRow readout>`. */
+  readout?: ReactNode;
   /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
   span?: boolean;
   /** The row is auto — see `<PropertyRow auto>`. */
@@ -874,6 +901,7 @@ export interface SelectRowProps<T extends string> extends PropertyMetricProps {
  *  are only two or three and they should all stay visible. */
 export function SelectRow<T extends string>({
   label,
+  readout,
   value,
   options,
   onChange,
@@ -893,6 +921,7 @@ export function SelectRow<T extends string>({
     <PropertyRow
       span={span}
       label={label}
+      readout={readout}
       layout={layout}
       description={description}
       density={density}
@@ -927,6 +956,8 @@ export interface ToggleRowProps<T extends string> extends PropertyMetricProps {
   onChange: (next: T) => void;
   layout?: PropertyRowLayout;
   description?: string;
+  /** Right-aligned readout shown next to the label — see `<PropertyRow readout>`. */
+  readout?: ReactNode;
   /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
   span?: boolean;
   /** The row is auto — see `<PropertyRow auto>`. */
@@ -941,6 +972,7 @@ export interface ToggleRowProps<T extends string> extends PropertyMetricProps {
  *  visible at once. */
 export function ToggleRow<T extends string>({
   label,
+  readout,
   value,
   options,
   onChange,
@@ -957,6 +989,7 @@ export function ToggleRow<T extends string>({
     <PropertyRow
       span={span}
       label={label}
+      readout={readout}
       layout={layout}
       description={description}
       density={density}

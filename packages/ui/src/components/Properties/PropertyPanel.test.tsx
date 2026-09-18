@@ -728,3 +728,73 @@ describe('auto rows', () => {
     expect(screen.getByRole('button', { name: 'Pin Name' })).toBeInTheDocument();
   });
 });
+
+describe('auto readouts', () => {
+  const READOUT = 'auto · 18 px';
+
+  it('SliderRow shows a static readout, not an editable field, when given one', () => {
+    render(
+      <SliderRow
+        label="Gap"
+        value={12}
+        min={0}
+        max={48}
+        onChange={() => {}}
+        readout={READOUT}
+        auto
+        onAutoChange={() => {}}
+      />,
+    );
+    expect(screen.getByText(READOUT)).toBeInTheDocument();
+    expect(screen.queryByDisplayValue(READOUT)).toBeNull();
+    expect(screen.queryByRole('textbox')).toBeNull();
+  });
+
+  it('NumberRow shows its auto readout', () => {
+    render(<NumberRow label="Count" value={3} onChange={() => {}} readout={READOUT} auto />);
+    expect(screen.getByText(READOUT)).toBeInTheDocument();
+  });
+
+  it('SelectRow shows its auto readout', () => {
+    render(
+      <SelectRow
+        label="Mode"
+        value="a"
+        options={[{ value: 'a', label: 'A' }]}
+        onChange={() => {}}
+        readout={READOUT}
+        auto
+      />,
+    );
+    expect(screen.getByText(READOUT)).toBeInTheDocument();
+  });
+
+  it('ToggleRow shows its auto readout', () => {
+    render(
+      <ToggleRow
+        label="Fit"
+        value="a"
+        options={[{ value: 'a', label: 'A' }]}
+        onChange={() => {}}
+        readout={READOUT}
+        auto
+      />,
+    );
+    expect(screen.getByText(READOUT)).toBeInTheDocument();
+  });
+
+  it('CheckboxRow shows its auto readout', () => {
+    render(<CheckboxRow label="Snap" value onChange={() => {}} readout={READOUT} auto />);
+    expect(screen.getByText(READOUT)).toBeInTheDocument();
+  });
+
+  it('ColorRow shows its auto readout', () => {
+    render(<ColorRow label="Fill" value="#ff0000" onChange={() => {}} readout={READOUT} auto />);
+    expect(screen.getByText(READOUT)).toBeInTheDocument();
+  });
+
+  it('TextRow shows its auto readout', () => {
+    render(<TextRow label="Name" value="foo" onChange={() => {}} readout={READOUT} auto />);
+    expect(screen.getByText(READOUT)).toBeInTheDocument();
+  });
+});

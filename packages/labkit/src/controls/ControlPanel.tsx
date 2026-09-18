@@ -339,7 +339,7 @@ function ControlRow<TC extends Record<string, unknown>>({
             notation={notation}
             unit={suffix}
             onChange={write}
-            format={autoReadout === undefined ? undefined : () => autoReadout}
+            readout={autoReadout}
             layout={layout}
             span={wide}
             description={description}
@@ -361,6 +361,7 @@ function ControlRow<TC extends Record<string, unknown>>({
           step={step}
           unit={suffix}
           onChange={(n) => write(Math.min(hi, Math.max(lo, n)))}
+          readout={autoReadout}
           layout={layout}
           description={description}
           {...autoProps}
@@ -373,6 +374,7 @@ function ControlRow<TC extends Record<string, unknown>>({
           label={label}
           value={read<boolean>()}
           onChange={write}
+          readout={autoReadout}
           layout={layout}
           description={description}
           {...autoProps}
@@ -388,6 +390,7 @@ function ControlRow<TC extends Record<string, unknown>>({
           value={read<string>()}
           options={options}
           onChange={write}
+          readout={autoReadout}
           layout={layout}
           span={segmented && wide}
           description={description}
@@ -402,6 +405,7 @@ function ControlRow<TC extends Record<string, unknown>>({
           label={label}
           value={read<string>()}
           write={write}
+          readout={autoReadout}
           layout={layout}
           span={wide}
           description={description}
@@ -414,6 +418,7 @@ function ControlRow<TC extends Record<string, unknown>>({
           label={label}
           value={read<string>()}
           onChange={write}
+          readout={autoReadout}
           layout={layout}
           description={description}
           {...autoProps}
@@ -465,6 +470,7 @@ function DebouncedTextRow({
   layout,
   span,
   description,
+  readout,
 }: {
   leaf: PrefLeaf;
   label: string;
@@ -473,6 +479,7 @@ function DebouncedTextRow({
   layout?: PropertyRowLayout;
   span?: boolean;
   description?: string;
+  readout?: ReactNode;
 }) {
   const debounceMs = extra<number>(leaf, 'debounceMs') ?? 150;
   const [local, setLocal] = useState(value);
@@ -496,6 +503,7 @@ function DebouncedTextRow({
   return (
     <TextRow
       label={label}
+      readout={readout}
       layout={layout}
       span={span}
       description={description}
