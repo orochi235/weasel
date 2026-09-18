@@ -140,5 +140,9 @@ compatibility and stops at Coons.
 - Whether weasel wants paint kinds richer than its five at all.
 - Whether the `bind` slot's single compiled program per kind is enough for a
   function-based paint, or whether such a kind needs to compile per fill.
-- What a private-namespace `<defs>` element costs the scene-serialization path in
-  `docs/scene-serialization.md`, which is JSON and does not have this problem.
+
+The JSON path costs nothing, and that is settled: `Scene.toJSON` copies a node's
+`data` through untouched, so a paint of any kind round-trips as long as its
+payload is JSON — no functions, no class instances, the same constraint every
+node's data already carries. Only the SVG side needs a slot and a namespace,
+which is why `toSvg` exists and its JSON counterpart does not.

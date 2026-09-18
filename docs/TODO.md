@@ -423,10 +423,12 @@ Core five + Crop shipped. Remaining:
   - **Tile rotation / skew.** SVG has `patternTransform`; the paint has only an
     origin. Rotating a hatch is the obvious first ask.
 
-  Also unresolved from the gradient half: `gradientXml` returns `''` for conic,
-  which SVG cannot express at all. It now warns through
-  `SerializeOptions.onWarn` rather than vanishing silently, but still exports
-  as nothing rather than as an approximation.
+  The gradient half's own gap is closed: a conic gradient serializes as a
+  `<wzl:conicGradient>` def in `urn:weasel-js:svg` and reads back losslessly,
+  and every reference to a paint SVG cannot express carries SVG's own paint
+  fallback color so an unresolvable one paints flat. See
+  `docs/proposals/2026-09-17-paint-kinds-beyond-svg.md` for what a richer kind
+  writes inside that envelope.
 
 - **(P3) Promote `ShaderDrawCommand` past `@experimental`.** Three uses now exercise it (plasma / ripple / voronoi panels), which is enough to have validated the surface. Open questions before stabilization: (a) array uniform binding shape — currently consumers must pass per-slot keys (`u_ripples[0]`, `u_ripples[1]`, …); should the kit accept a flat `Float32Array` and split it? (b) hot-reload story for `registerProgram` re-registration; (c) how to expose the renderer's program registry without leaking internals (`shaders` prop is the seam, but consumers writing custom RenderLayers may want more).
 
