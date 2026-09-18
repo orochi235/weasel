@@ -17,7 +17,12 @@ at every boundary, so nothing stores or serializes it, and the last pinned
 value stays where it is: un-pinning is lossless, and Reset returns a trial to
 the auto paths it opened on.
 
-This adds API and changes nothing existing. Property rows in `@weasel-js/ui`
-take `auto` and `onAutoChange`; a `Select`'s trigger and an alpha range read
-new color and border hooks that default to what they already rendered; a
-control renderer's argument gains two fields.
+This adds API. Property rows in `@weasel-js/ui` take `auto` and `onAutoChange`;
+a `Select`'s trigger and an alpha range read new color and border hooks that
+default to what they already rendered; a control renderer's argument gains two
+fields.
+
+One thing to know before upgrading: a control panel row now contains a second
+button, the pin dot, named `Pin <label>`. A test querying a row's own control
+loosely — `getByRole('button', { name: /Gap/ })` — will start matching both.
+Match the control's exact accessible name, or exclude a name beginning `Pin `.
