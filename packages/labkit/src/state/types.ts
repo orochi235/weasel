@@ -32,6 +32,11 @@ export interface TrialRecord<TS = unknown, TC = unknown, TV = unknown> {
    *  defaults. Kept so Reset restores the trial's own subject rather than the
    *  bare defaults. */
   configSeed?: Partial<TC>;
+  /** Dotted paths the trial's seed config opened as auto. Kept beside
+   *  `configSeed`, which cannot carry them: the sentinel is stripped on the way
+   *  in, so Reset would otherwise have no way back to the state the trial
+   *  opened in. Absent means none. */
+  autoSeed?: readonly string[];
   /** Dotted paths this trial has unpinned. The value at such a path stays in
    *  `config` — it is what the field pins back to — but the instrument reads
    *  the resolver's value, or `undefined`, instead. Absent means none. */

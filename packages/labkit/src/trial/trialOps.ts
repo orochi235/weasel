@@ -93,6 +93,7 @@ export function addTrial(
     undoStack: { past: [], future: [] },
   };
   if (options.config) record.configSeed = seeded.config;
+  if (seeded.autoPaths.length > 0) record.autoSeed = seeded.autoPaths;
   if (autoPaths.length > 0) record.auto = autoPaths;
   return [...trials, record];
 }
@@ -135,12 +136,15 @@ export function resetTrial(
   const instrument = findInstrument(instruments, current.instrumentName);
   const config = seedConfig(instrument.defaultConfig(), current.configSeed);
   const state = instrument.initialState(config);
+  const autoPaths = [...new Set([...schemaAutoPaths(instrument), ...(current.autoSeed ?? [])])];
+  const { auto: _unpinnedNow, ...kept } = current;
   const reset: TrialRecord = {
-    ...current,
+    ...kept,
     config,
     state,
     view: initialView(instrument),
   };
+  if (autoPaths.length > 0) reset.auto = autoPaths;
   return [...trials.slice(0, idx), reset, ...trials.slice(idx + 1)];
 }
 

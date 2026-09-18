@@ -131,6 +131,7 @@ describe('addTrial', () => {
   it('honors auto in a seed config and keeps the sentinel out of the record', () => {
     const out = addTrial([], instruments, 'Schemed', { config: { gap: auto } });
     expect(out[0]?.auto).toContain('gap');
+    expect(out[0]?.autoSeed).toEqual(['gap']);
     expect((out[0]?.config as { gap: number }).gap).toBe(12);
     expect(out[0]?.configSeed).not.toHaveProperty('gap');
   });
@@ -224,6 +225,20 @@ describe('resetTrial', () => {
     expect(reset[0]?.config).toEqual({ subject: 'one', zoom: 1 });
     expect(reset[0]?.state).toEqual({ label: 'ONE' });
     expect(reset[1]?.config).toEqual({ subject: 'two', zoom: 1 });
+  });
+
+  it('un-pins the paths the trial opened auto again, from schema and from seed', () => {
+    const arr = addTrial([], instruments, 'Schemed', { config: { gap: auto } });
+    head(arr).auto = [];
+    const reset = resetTrial(arr, head(arr).id, instruments);
+    expect([...(reset[0]?.auto ?? [])].sort()).toEqual(['cols', 'gap']);
+  });
+
+  it('pins a path the user un-pinned that the trial did not open on', () => {
+    const arr = addTrial([], instruments, 'Schemed');
+    head(arr).auto = ['cols', 'grid.size'];
+    const reset = resetTrial(arr, head(arr).id, instruments);
+    expect(reset[0]?.auto).toEqual(['cols']);
   });
 });
 
