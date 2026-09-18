@@ -113,5 +113,14 @@ function resolveEntry(
     ...(entry.kind === null ? {} : { kind: entry.kind }),
   });
   const patch = applyRules(seed, { key, path, default: entry.default }, sink.chain);
-  return { ...patch, default: entry.default } as PrefLeaf;
+  const { autoResolve, unpinned, manual } = entry.options;
+  return {
+    ...patch,
+    default: entry.default,
+    // Extra keys survive onto the leaf at runtime; `ControlPanel` reads them
+    // back with its `extra<T>` helper, the same as `min`, `step` and the rest.
+    ...(autoResolve ? { autoResolve } : {}),
+    ...(unpinned ? { unpinned } : {}),
+    ...(manual ? { manual } : {}),
+  } as PrefLeaf;
 }

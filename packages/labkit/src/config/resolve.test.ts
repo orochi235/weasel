@@ -214,4 +214,22 @@ describe('resolveConfigSchema / nested groups', () => {
     expect(() => resolveConfigSchema(schema)).toThrow(/seed/);
     expect(() => resolveConfigSchema(schema)).toThrow(/manual/);
   });
+
+  it('carries autoResolve, unpinned and manual onto the resolved leaf', () => {
+    const resolved = resolveConfigSchema(
+      f.schema({
+        gap: f.number(12).auto(() => 18),
+        cols: f.number(3).initial(auto),
+        seed: f.number(1).manual(),
+        plain: f.number(0),
+      }),
+    );
+    const leaf = (k: string) => resolved.group.children[k] as unknown as Record<string, unknown>;
+    expect(typeof leaf('gap').autoResolve).toBe('function');
+    expect(leaf('cols').unpinned).toBe(true);
+    expect(leaf('seed').manual).toBe(true);
+    expect(leaf('plain').autoResolve).toBeUndefined();
+    expect(leaf('plain').unpinned).toBeUndefined();
+    expect(leaf('plain').manual).toBeUndefined();
+  });
 });
