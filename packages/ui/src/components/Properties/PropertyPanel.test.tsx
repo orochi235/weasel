@@ -610,7 +610,7 @@ describe('auto rows', () => {
       </PropertyRow>,
     );
     const kids = [...(container.querySelector('label > span')?.children ?? [])];
-    const dot = kids.findIndex((el) => el.tagName === 'BUTTON');
+    const dot = kids.findIndex((el) => el.getAttribute('aria-label') === 'Pin Gap');
     const readout = kids.findIndex((el) => el.tagName === 'EM');
     expect(dot).toBeGreaterThanOrEqual(0);
     expect(dot).toBeLessThan(readout);
@@ -623,6 +623,23 @@ describe('auto rows', () => {
       </PropertyRow>,
     );
     expect(container.querySelector('label')?.getAttribute('data-auto-path')).toBe('grid.gap');
+  });
+
+  it('leaves a row label naming its control, not the pin dot beside it', () => {
+    const { container } = render(
+      <SliderRow
+        label="Gap"
+        value={12}
+        min={0}
+        max={48}
+        onChange={() => {}}
+        auto
+        onAutoChange={() => {}}
+      />,
+    );
+    const label = container.querySelector('label') as HTMLLabelElement;
+    expect(label.control).not.toBe(screen.getByRole('button', { name: 'Pin Gap' }));
+    expect(label.control).toHaveAttribute('aria-label', 'Gap');
   });
 
   it('SliderRow forwards auto and onAutoChange', () => {

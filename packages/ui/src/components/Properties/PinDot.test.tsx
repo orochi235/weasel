@@ -18,7 +18,7 @@ describe('PinDot', () => {
     expect(screen.getByRole('button', { name: 'Pin Gap' })).toBeInTheDocument();
   });
 
-  it('toggles on click and on Enter', async () => {
+  it('toggles on click, on Enter and on Space', async () => {
     const onChange = vi.fn();
     render(<PinDot auto={false} label="Gap" onChange={onChange} />);
     await userEvent.click(screen.getByRole('button'));
@@ -27,6 +27,21 @@ describe('PinDot', () => {
     screen.getByRole('button').focus();
     await userEvent.keyboard('{Enter}');
     expect(onChange).toHaveBeenCalledWith(true);
+    onChange.mockClear();
+    await userEvent.keyboard(' ');
+    expect(onChange).toHaveBeenCalledWith(true);
+  });
+
+  it('is not a labelable element, so a row label cannot land on it', () => {
+    const { container } = render(<PinDot auto={false} label="Gap" onChange={() => {}} />);
+    expect(container.querySelector('button')).toBeNull();
+  });
+
+  it('suppresses the scroll a Space keypress would otherwise cause', () => {
+    render(<PinDot auto={false} label="Gap" onChange={() => {}} />);
+    const ev = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+    screen.getByRole('button').dispatchEvent(ev);
+    expect(ev.defaultPrevented).toBe(true);
   });
 
   it('suppresses the default that would actuate the row label it sits inside', () => {

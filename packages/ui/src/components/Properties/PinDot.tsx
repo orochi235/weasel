@@ -4,7 +4,7 @@ import s from './Properties.module.css';
 export interface PinDotProps {
   /** Whether the row is currently auto. */
   auto: boolean;
-  /** The row's label, used to name the button. */
+  /** The row's label, used to name the control. */
   label: ReactNode;
   onChange: (next: boolean) => void;
 }
@@ -19,20 +19,29 @@ export interface PinDotProps {
  */
 export function PinDot({ auto, label, onChange }: PinDotProps) {
   const name = typeof label === 'string' ? label : 'this setting';
+  const toggle = (e: { preventDefault: () => void; stopPropagation: () => void }) => {
+    // The wrapping <label> would otherwise actuate the row's control.
+    e.preventDefault();
+    e.stopPropagation();
+    onChange(!auto);
+  };
   return (
-    <button
-      type="button"
+    // A span, not a button: a <button> is a labelable element, so inside the
+    // row's <label> it would take the row's name off the actual control.
+    <span
+      role="button"
+      tabIndex={0}
       className={auto ? `${s.pin} ${s.pinAuto}` : s.pin}
       // The name stays put and `aria-pressed` carries the state, so a voice
       // control user has something stable to say. Pressed means pinned, to
       // match the name.
       aria-pressed={!auto}
       aria-label={`Pin ${name}`}
-      onClick={(e) => {
-        // The wrapping <label> would otherwise actuate the row's control.
-        e.preventDefault();
-        e.stopPropagation();
-        onChange(!auto);
+      onClick={toggle}
+      onKeyDown={(e) => {
+        // A native button gives Enter and Space for free; a span gives neither,
+        // and Space would scroll the panel.
+        if (e.key === 'Enter' || e.key === ' ') toggle(e);
       }}
       onMouseDown={(e) => e.stopPropagation()}
     />

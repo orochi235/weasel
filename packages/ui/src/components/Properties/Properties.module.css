@@ -251,9 +251,10 @@
 /* The pinned/auto affordance. Invisible at rest so a panel of thirty rows is
    not thirty dots; revealed by the row, and permanent once the row is auto.
    Every box dimension is stated for the same reason `.help` states them — a
-   host's zero-specificity bare-button defaults would otherwise size it. */
+   host's zero-specificity bare-element defaults would otherwise size it. */
 .pin {
   flex: 0 0 auto;
+  display: inline-block;
   width: 7px;
   height: 7px;
   padding: 0;
