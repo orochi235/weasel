@@ -1,4 +1,7 @@
+import { isAuto } from '../config/auto';
+import { autoPathsOf } from '../config/autoConfig';
 import { fillConfigDefaults } from '../config/path';
+import { resolveConfigSchema } from '../config/resolve';
 import type { Instrument, InstrumentList } from '../instrument/types';
 import { newId } from '../state/helpers';
 import type { TrialRecord } from '../state/types';
@@ -37,6 +40,36 @@ function seedConfig<TC>(defaults: TC, seed: Partial<TC> | undefined): TC {
   return seed ? fillConfigDefaults(seed, defaults) : defaults;
 }
 
+/** Splits a seed config into its ordinary values and the dotted paths it wrote
+ *  as `auto`, so the sentinel never reaches the record. */
+function splitAutoSeed(
+  seed: Record<string, unknown> | undefined,
+  at = '',
+): { config: Record<string, unknown>; autoPaths: string[] } {
+  const config: Record<string, unknown> = {};
+  const autoPaths: string[] = [];
+  for (const [key, value] of Object.entries(seed ?? {})) {
+    const path = at === '' ? key : `${at}.${key}`;
+    if (isAuto(value)) {
+      autoPaths.push(path);
+    } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      const inner = splitAutoSeed(value as Record<string, unknown>, path);
+      config[key] = inner.config;
+      autoPaths.push(...inner.autoPaths);
+    } else {
+      config[key] = value;
+    }
+  }
+  return { config, autoPaths };
+}
+
+/** The paths an instrument's own schema declares as starting auto. Rules are
+ *  lab-scoped and a trial is composed outside any lab, but no rule can reach
+ *  the auto annotations, so resolving without them answers the same. */
+function schemaAutoPaths(instrument: Instrument): string[] {
+  return instrument.config ? autoPathsOf(resolveConfigSchema(instrument.config, [])) : [];
+}
+
 /** Append a new trial running `instrumentName`, at that instrument's default
  *  config — with `options.config` written over it — and the initial state
  *  that config produces. */
@@ -47,7 +80,9 @@ export function addTrial(
   options: AddTrialOptions = {},
 ): TrialRecord[] {
   const instrument = findInstrument(instruments, instrumentName);
-  const config = seedConfig(instrument.defaultConfig(), options.config);
+  const seeded = splitAutoSeed(options.config as Record<string, unknown> | undefined);
+  const autoPaths = [...new Set([...schemaAutoPaths(instrument), ...seeded.autoPaths])];
+  const config = seedConfig(instrument.defaultConfig(), seeded.config);
   const state = instrument.initialState(config);
   const record: TrialRecord = {
     id: newId(),
@@ -57,7 +92,8 @@ export function addTrial(
     view: initialView(instrument),
     undoStack: { past: [], future: [] },
   };
-  if (options.config) record.configSeed = options.config;
+  if (options.config) record.configSeed = seeded.config;
+  if (autoPaths.length > 0) record.auto = autoPaths;
   return [...trials, record];
 }
 

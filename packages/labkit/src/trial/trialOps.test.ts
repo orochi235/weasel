@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { auto } from '../config/auto';
+import { f } from '../config/builder';
+import { defineInstrument } from '../instrument/defineInstrument';
 import type { Instrument } from '../instrument/types';
 import type { TrialRecord } from '../state/types';
 import { addTrial, cloneTrial, closeTrial, reorderTrials, resetTrial, swapTrial } from './trialOps';
@@ -38,10 +41,22 @@ const subjectInstrument: Instrument<{ label: string }, SubjectConfig> = {
   render: () => null,
 };
 
+const schemaInstrument = defineInstrument({
+  name: 'Schemed',
+  config: f.schema({
+    cols: f.number(3).initial(auto),
+    gap: f.number(12),
+    grid: f.group({ size: f.number(4) }),
+  }),
+  initialState: () => ({}),
+  render: () => null,
+});
+
 const instruments: Instrument[] = [
   counter as Instrument,
   counterWithCanvas as Instrument,
   subjectInstrument as Instrument,
+  schemaInstrument as Instrument,
 ];
 
 function head<T>(arr: T[]): T {
@@ -106,6 +121,29 @@ describe('addTrial', () => {
   it('ignores a seed key whose value is undefined', () => {
     const out = addTrial([], instruments, 'Subject', { config: { subject: undefined } });
     expect(out[0]?.config).toEqual({ subject: 'none', zoom: 1 });
+  });
+
+  it('opens a trial with the schema-declared auto paths already unpinned', () => {
+    const out = addTrial([], instruments, 'Schemed');
+    expect(out[0]?.auto).toEqual(['cols']);
+  });
+
+  it('honors auto in a seed config and keeps the sentinel out of the record', () => {
+    const out = addTrial([], instruments, 'Schemed', { config: { gap: auto } });
+    expect(out[0]?.auto).toContain('gap');
+    expect((out[0]?.config as { gap: number }).gap).toBe(12);
+    expect(out[0]?.configSeed).not.toHaveProperty('gap');
+  });
+
+  it('honors auto at a nested seed path', () => {
+    const out = addTrial([], instruments, 'Schemed', { config: { grid: { size: auto } } });
+    expect(out[0]?.auto).toContain('grid.size');
+    expect((out[0]?.config as { grid: { size: number } }).grid.size).toBe(4);
+  });
+
+  it('leaves a trial with no auto field when nothing is unpinned', () => {
+    const out = addTrial([], instruments, 'Counter');
+    expect(out[0]?.auto).toBeUndefined();
   });
 });
 
