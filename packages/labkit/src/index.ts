@@ -166,6 +166,8 @@ export {
   zoomAt,
 } from './canvas';
 export * from './chrome';
+export { type Auto, auto, isAuto } from './config/auto';
+export { autoPathsOf, resolveAutoConfig } from './config/autoConfig';
 export {
   BaseNode,
   BooleanNode,
@@ -214,6 +216,7 @@ export type {
   ValueAtPath,
 } from './config/types';
 export { useConfigSchema } from './config/useConfigSchema';
+export { useResolvedConfig } from './config/useResolvedConfig';
 export { isLeafVisible } from './config/visible';
 export { ControlPanel } from './controls/ControlPanel';
 export type {
