@@ -958,3 +958,50 @@
   border: 1px dashed var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
 }
+
+/* An auto row: the value is not pinned, so the control draws as a ghost of
+   itself and gives up its color. Accent is redefined as a custom property on
+   the row rather than overridden rule by rule, so every descendant that reads
+   it — the range track and thumb, the checkbox's `accent-color`, the readout —
+   goes muted together. */
+.rowAuto {
+  --wzl-accent: var(--wzl-fg-subtle);
+  --wzl-accent-hover: var(--wzl-fg-subtle);
+  /* `range.module.css` paints the track from this hook, so the dashes have to
+     be set here rather than on the element, whose background sits behind it. */
+  --wzl-range-track-bg: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--wzl-fg-subtle) 45%, transparent) 0 4px,
+    transparent 4px 7px
+  );
+}
+
+.rowAuto > .rowLabel {
+  color: var(--wzl-fg-subtle);
+}
+
+.rowAuto .readout {
+  font-style: italic;
+  color: var(--wzl-fg-subtle);
+}
+
+.rowAuto input[type='range']::-webkit-slider-thumb {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--wzl-fg-subtle);
+}
+
+.rowAuto input[type='range']::-moz-range-thumb {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--wzl-fg-subtle);
+}
+
+/* `.select` is the kit `<Select>`, which renders a button rather than a
+   native select; the element selector covers a raw one passed to a bare row. */
+.rowAuto select,
+.rowAuto .select,
+.rowAuto input[type='number'],
+.rowAuto input[type='text'] {
+  border-style: dashed;
+  color: var(--wzl-fg-subtle);
+  font-style: italic;
+}
