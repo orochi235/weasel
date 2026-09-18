@@ -88,7 +88,23 @@ describe('the mesh-gradient kind', () => {
     // Twelve points, so a reader never has to infer a shared edge.
     const points = /points="([^"]+)"/.exec(xml)![1].split(' ');
     expect(points).toHaveLength(12);
-    expect(xml).toContain('colors="#ff0000ff #ff0000 #ff0000ff #ff0000"');
+    const colors = /colors="([^"]+)"/.exec(xml)![1].split(' ');
+    expect(colors).toHaveLength(4);
+    expect(colors[0]).toBe('#ff0000ff');
+  });
+
+  it('seeds four corners that differ, so switching kind is visible', () => {
+    const seeded = entry().seed('#0fb5a8ff') as unknown as MeshGradientFill;
+    const colors = seeded.patches[0].colors;
+    expect(colors[0]).toBe('#0fb5a8ff');
+    expect(new Set(colors).size).toBe(4);
+  });
+
+  it('keeps a translucent seed translucent through the OKLCh shift', () => {
+    const seeded = entry().seed('#0fb5a880') as unknown as MeshGradientFill;
+    for (const c of seeded.patches[0].colors) {
+      expect(c).toMatch(/^#[0-9a-f]{6}80$/);
+    }
   });
 
   it('names a non-default blend space in the def', () => {

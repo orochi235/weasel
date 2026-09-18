@@ -242,6 +242,17 @@ re-balances into something that parses and then dies at runtime with
 `SyntaxError: Expected a semicolon` from an `eval` frame, naming no file. Write
 GLSL comments with no backticks at all.
 
+**A uniform with no location is written through `null`, and GL says nothing.**
+`gl.uniform*(null, …)` is a legal no-op, so the uniform keeps its zero default —
+a zeroed `u_model` collapses every vertex to a point and the draw produces no
+fragments at all. `WeaselRenderer.registerProgram` used to scan only the
+*fragment* source for uniform names, so a registered program supplying its own
+vertex shader got no location for anything it declared there; the mesh paint
+bound, baked, drew, and painted nothing, with 31 green unit tests behind it.
+The recorder cannot catch this — it answers every `getUniformLocation` — so the
+test asserts the renderer *asked* for the name, and the browser is what proves
+the pixels. Both stages are scanned now.
+
 **A shader variant a compiler can fold measures nothing.** `fill-rate.spec.ts`
 gated its glyph math on `mix(..., u_color.a * 0.0)`, which folds to zero — so
 every line feeding that arm was dead and the variant timed the same shader as

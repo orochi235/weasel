@@ -237,6 +237,30 @@ describe('dispose', () => {
     expect(names.filter((n) => n === 'deleteProgram').length).toBe(7);
   });
 
+  it('looks up a uniform the program declares in its own vertex shader', () => {
+    const rec = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
+    const vert = `#version 300 es
+in vec2 a_position;
+uniform mat3 u_model;
+uniform mat3 u_ownMatrix;
+void main() { gl_Position = vec4((u_ownMatrix * u_model * vec3(a_position, 1.0)).xy, 0.0, 1.0); }
+`;
+    rec.reset();
+    r.registerProgram(registerProgram('vert-uniform-prog', vert, MINIMAL_FRAG));
+
+    // A proxy: the recorder answers every `getUniformLocation`, so this cannot
+    // prove a location exists — only that the renderer asked for these names.
+    // That is the defect, though: a name never looked up is written through
+    // `null`, which GL accepts in silence while the uniform keeps its zero
+    // default, and a zeroed `u_model` collapses the geometry to a point.
+    const asked = rec.calls
+      .filter((c) => c.name === 'getUniformLocation')
+      .map((c) => c.args[1]);
+    expect(asked).toContain('u_model');
+    expect(asked).toContain('u_ownMatrix');
+  });
+
   it('deletes the program it replaces when a handle is re-registered', () => {
     const rec = makeGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });

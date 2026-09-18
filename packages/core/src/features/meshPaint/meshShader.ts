@@ -44,7 +44,7 @@ uniform float u_opacity;
 uniform float u_alpha;
 out vec4 outColor;
 void main() {
-  vec2 t = (v_world - u_meshOrigin) / max(u_meshSize, vec2(0.0001));
+  vec2 t =(v_world - u_meshOrigin) / max(u_meshSize, vec2(0.0001));
   if (t.x < 0.0 || t.x > 1.0 || t.y < 0.0 || t.y > 1.0) {
     outColor = vec4(0.0);
     return;
