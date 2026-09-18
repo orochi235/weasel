@@ -1,4 +1,5 @@
 import { createStore, type StoreApi } from 'zustand/vanilla';
+import { isAuto } from '../config/auto';
 import { fillConfigDefaults, withValueAtPath } from '../config/path';
 import { configDefaultsOf, configMigrationsOf, serializersOf } from '../instrument/serializers';
 import type { InstrumentList } from '../instrument/types';
@@ -117,9 +118,19 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
 
     updateTrialConfig: (id, path, value) => {
       set((s) => ({
-        trials: s.trials.map((w) =>
-          w.id === id ? { ...w, config: withValueAtPath(w.config, path, value) } : w,
-        ),
+        trials: s.trials.map((w) => {
+          if (w.id !== id) return w;
+          const was = w.auto ?? [];
+          if (isAuto(value)) {
+            // The sentinel is never stored: it becomes membership in the set,
+            // and the pinned value at the path is left exactly where it is.
+            if (was.includes(path)) return w;
+            return { ...w, auto: [...was, path] };
+          }
+          const config = withValueAtPath(w.config, path, value);
+          if (!was.includes(path)) return { ...w, config };
+          return { ...w, config, auto: was.filter((p) => p !== path) };
+        }),
       }));
     },
 

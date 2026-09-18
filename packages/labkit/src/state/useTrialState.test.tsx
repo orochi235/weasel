@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
+import { auto } from '../config/auto';
 import { LabStoreProvider, TrialIdProvider } from './context';
 import { createLabStore } from './store';
 import { useTrialState } from './useTrialState';
@@ -97,5 +98,35 @@ describe('useTrialState', () => {
 
   it('throws when used outside LabStoreProvider', () => {
     expect(() => renderHook(() => useTrialState())).toThrow('[labkit]');
+  });
+});
+
+describe('auto paths', () => {
+  it('records a path written as auto instead of storing the sentinel', () => {
+    const { store } = makeWrapper('w1');
+    store.getState().updateTrialConfig('w1', 'gap', 24);
+    store.getState().updateTrialConfig('w1', 'gap', auto);
+    const rec = store.getState().trials[0];
+    expect(rec?.auto).toEqual(['gap']);
+    // The last pinned value survives, so un-pinning is lossless.
+    expect((rec?.config as { gap: number }).gap).toBe(24);
+    expect(JSON.stringify(rec?.config)).not.toContain('Symbol');
+  });
+
+  it('pins again when a real value is written to an auto path', () => {
+    const { store } = makeWrapper('w1');
+    store.getState().updateTrialConfig('w1', 'gap', auto);
+    store.getState().updateTrialConfig('w1', 'gap', 30);
+    const rec = store.getState().trials[0];
+    expect(rec?.auto ?? []).toEqual([]);
+    expect((rec?.config as { gap: number }).gap).toBe(30);
+  });
+
+  it('does not allocate a new record when the path is already auto', () => {
+    const { store } = makeWrapper('w1');
+    store.getState().updateTrialConfig('w1', 'gap', auto);
+    const first = store.getState().trials[0];
+    store.getState().updateTrialConfig('w1', 'gap', auto);
+    expect(store.getState().trials[0]).toBe(first);
   });
 });

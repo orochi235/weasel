@@ -31,6 +31,10 @@ export interface TrialRecord<TS = unknown, TC = unknown, TV = unknown> {
    *  defaults. Kept so Reset restores the trial's own subject rather than the
    *  bare defaults. */
   configSeed?: Partial<TC>;
+  /** Dotted paths this trial has unpinned. The value at such a path stays in
+   *  `config` — it is what the field pins back to — but the instrument reads
+   *  the resolver's value, or `undefined`, instead. Absent means none. */
+  auto?: readonly string[];
   /** This trial's own tool slot. Undefined means it reads the lab's. */
   activeToolId?: string | null;
   /** The extent the trial's sidebar was last dragged to, in pixels. Undefined
