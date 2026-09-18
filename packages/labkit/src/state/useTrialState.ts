@@ -1,5 +1,6 @@
 import { useContext } from 'react';
 import { useStore } from 'zustand/react';
+import { useResolvedConfig } from '../config/useResolvedConfig';
 import { LabStoreContext, TrialIdContext } from './context';
 import type { TrialStateHandle } from './types';
 
@@ -19,10 +20,17 @@ export function useTrialState<TS = unknown, TC = unknown>(): TrialStateHandle<TS
 
   const updateTrialState = useStore(ctx.store, (s) => s.updateTrialState);
   const updateTrialConfig = useStore(ctx.store, (s) => s.updateTrialConfig);
+  // The store's own copy, not `useConfigSchema`: that reads `LabContext`, and
+  // this hook only has the store's.
+  const instrumentHooks = useStore(ctx.store, (s) => s.instrumentHooks);
+  const schema = instrumentHooks().configSchemas[record.instrumentName];
+  const { config, auto } = useResolvedConfig<TC>(schema, record.config as TC, record.auto);
 
   return {
     state: record.state as TS,
-    config: record.config as TC,
+    config,
+    raw: record.config as TC,
+    auto,
     setState: (next) => updateTrialState(trialId, next as Parameters<typeof updateTrialState>[1]),
     setConfig: (path, value) => updateTrialConfig(trialId, path, value),
   };

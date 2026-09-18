@@ -1,5 +1,24 @@
+import { resolveConfigSchema } from '../config/resolve';
+import type { ResolvedConfig } from '../config/types';
 import type { InstrumentSerializers } from '../state/types';
 import type { InstrumentList } from './types';
+
+/**
+ * Each instrument's resolved config schema, keyed by name — what the store
+ * reads a leaf's auto annotations off.
+ *
+ * Resolved without the lab's rules, which the store has no access to. No rule
+ * can reach `autoResolve`, `unpinned` or `manual`, so for this purpose the two
+ * resolutions agree; anything reading the rendered leaves wants
+ * `useConfigSchema` instead.
+ */
+export function configSchemasOf(instruments: InstrumentList): Record<string, ResolvedConfig> {
+  const out: Record<string, ResolvedConfig> = {};
+  for (const instrument of instruments) {
+    if (instrument.config) out[instrument.name] = resolveConfigSchema(instrument.config, []);
+  }
+  return out;
+}
 
 /**
  * Each instrument's default config, keyed by name — what `createLabStore`

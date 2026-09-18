@@ -2,6 +2,9 @@ import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
 import { auto } from '../config/auto';
+import { f } from '../config/builder';
+import { defineInstrument } from '../instrument/defineInstrument';
+import type { Instrument } from '../instrument/types';
 import { LabStoreProvider, TrialIdProvider } from './context';
 import { createLabStore } from './store';
 import { useTrialState } from './useTrialState';
@@ -101,7 +104,59 @@ describe('useTrialState', () => {
   });
 });
 
+const autoInstrument = defineInstrument({
+  name: 'Auto',
+  config: f.schema({
+    width: f.number(432),
+    gap: f.number(12).auto((c) => (c.width as number) / 24),
+  }),
+  initialState: () => ({ count: 0 }),
+  render: () => null,
+});
+
+function makeAutoWrapper(trialId: string) {
+  const store = createLabStore({ instruments: [autoInstrument as Instrument] });
+  store.getState().addTrial({
+    id: trialId,
+    instrumentName: 'Auto',
+    config: autoInstrument.defaultConfig(),
+    state: { count: 0 },
+    view: { zoom: 1, pan: { x: 0, y: 0 } },
+  });
+  return {
+    store,
+    wrapper: ({ children }: { children: ReactNode }) => (
+      <LabStoreProvider store={store}>
+        <TrialIdProvider trialId={trialId}>{children}</TrialIdProvider>
+      </LabStoreProvider>
+    ),
+  };
+}
+
 describe('auto paths', () => {
+  it('hands the instrument the resolved config and the raw one separately', () => {
+    const { store, wrapper } = makeAutoWrapper('w1');
+    const { result } = renderHook(
+      () => useTrialState<{ count: number }, { width: number; gap: number }>(),
+      { wrapper },
+    );
+    act(() => store.getState().updateTrialConfig('w1', 'gap', auto));
+    expect(result.current.config.gap).toBe(18);
+    expect(result.current.raw.gap).toBe(12);
+    expect([...result.current.auto]).toEqual(['gap']);
+  });
+
+  it('leaves a pinned config untouched', () => {
+    const { wrapper } = makeAutoWrapper('w1');
+    const { result } = renderHook(
+      () => useTrialState<{ count: number }, { width: number; gap: number }>(),
+      { wrapper },
+    );
+    expect(result.current.config.gap).toBe(12);
+    expect(result.current.config).toBe(result.current.raw);
+    expect([...result.current.auto]).toEqual([]);
+  });
+
   it('records a path written as auto instead of storing the sentinel', () => {
     const { store } = makeWrapper('w1');
     store.getState().updateTrialConfig('w1', 'gap', 24);

@@ -1,4 +1,5 @@
-import type { ConfigPath, ValueAtPath } from '../config/types';
+import type { Auto } from '../config/auto';
+import type { ConfigPath, ResolvedConfig, ValueAtPath } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
 import type { UndockedPanels } from './undock';
 /** A trial's undo history, as snapshots of its state either side of the
@@ -115,9 +116,14 @@ export interface TrialStateHandle<TS, TC> {
   state: TS;
   setState: (next: TS | ((prev: TS) => TS)) => void;
   config: TC;
+  /** The config as stored, before any auto path is resolved. What the control
+   *  panel renders, so a ghosted control sits at the value it pins back to. */
+  raw: TC;
+  /** Dotted paths this trial has unpinned. */
+  auto: ReadonlySet<string>;
   /** Write one config value, by dotted path — `'grid.size'` for a leaf under
    *  an `f.group`, `'cellSize'` for one at the root. */
-  setConfig: <P extends ConfigPath<TC> & string>(path: P, value: ValueAtPath<TC, P>) => void;
+  setConfig: <P extends ConfigPath<TC> & string>(path: P, value: ValueAtPath<TC, P> | Auto) => void;
 }
 
 /** Options for `createLabStore`, which knows nothing about storage. */
@@ -133,6 +139,10 @@ export interface CreateLabStoreOptions {
   /** Each instrument's `migrateConfig`, keyed by instrument name, run on a
    *  stored config before its defaults fill it. */
   configMigrations?: Record<string, (stored: unknown) => unknown>;
+  /** Each instrument's resolved config schema, keyed by instrument name. What
+   *  a trial's auto paths are read against, away from the lab that would
+   *  otherwise supply the rules. */
+  configSchemas?: Record<string, ResolvedConfig>;
   /** How each instrument's state survives a reload. Hydration is the first
    *  thing `createLabStore` does, so these have to arrive with the store. */
   serializers?: InstrumentSerializers;
@@ -146,6 +156,7 @@ export interface InstrumentHooks {
   serializers: InstrumentSerializers;
   configDefaults: Record<string, () => unknown>;
   configMigrations: Record<string, (stored: unknown) => unknown>;
+  configSchemas: Record<string, ResolvedConfig>;
 }
 
 /** Per-instrument serialize/deserialize hooks, keyed by instrument name. An

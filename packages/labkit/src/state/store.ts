@@ -1,7 +1,12 @@
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import { isAuto } from '../config/auto';
 import { fillConfigDefaults, withValueAtPath } from '../config/path';
-import { configDefaultsOf, configMigrationsOf, serializersOf } from '../instrument/serializers';
+import {
+  configDefaultsOf,
+  configMigrationsOf,
+  configSchemasOf,
+  serializersOf,
+} from '../instrument/serializers';
 import type { InstrumentList } from '../instrument/types';
 import { emptyDocument } from './document';
 import { deserializeTrials, emptyUndoStack, newId } from './helpers';
@@ -76,6 +81,7 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
         serializers: options.serializers ?? {},
         configDefaults: options.configDefaults ?? {},
         configMigrations: options.configMigrations ?? {},
+        configSchemas: options.configSchemas ?? {},
       };
   const initial = options.initial ?? emptyDocument(options.initialMode ?? 'auto');
 
@@ -313,6 +319,7 @@ function hooksOf(instruments: InstrumentList): InstrumentHooks {
   return {
     serializers: serializersOf(instruments),
     configDefaults: configDefaultsOf(instruments),
+    configSchemas: configSchemasOf(instruments),
     configMigrations: configMigrationsOf(instruments),
   };
 }
@@ -328,6 +335,7 @@ function mergedHooks(old: InstrumentHooks, instruments: InstrumentList): Instrum
   return {
     serializers: { ...unlisted(old.serializers), ...fresh.serializers },
     configDefaults: { ...unlisted(old.configDefaults), ...fresh.configDefaults },
+    configSchemas: { ...unlisted(old.configSchemas), ...fresh.configSchemas },
     configMigrations: { ...unlisted(old.configMigrations), ...fresh.configMigrations },
   };
 }
