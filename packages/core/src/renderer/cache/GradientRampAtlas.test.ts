@@ -301,3 +301,27 @@ describe('ramp / editor agreement', () => {
     );
   });
 });
+
+describe('the interpolation space is part of a row identity', () => {
+  it('bakes different texels for the same stops under a different space', () => {
+    const rgb = buildGradientRamp(RED_BLUE, 'rgb');
+    const lch = buildGradientRamp(RED_BLUE, 'oklch');
+    expect(Array.from(lch.slice(0, 4))).toEqual(Array.from(rgb.slice(0, 4)));
+    expect(Array.from(lch.slice(512, 516))).not.toEqual(Array.from(rgb.slice(512, 516)));
+  });
+
+  it('gives the same stops under two spaces two rows, not one', () => {
+    const { gl } = makeGLRecorder();
+    const atlas = new GradientRampAtlas(gl);
+    const rgbRow = atlas.upload(RED_BLUE, 'rgb');
+    const lchRow = atlas.upload(RED_BLUE, 'oklch');
+    expect(lchRow).not.toBe(rgbRow);
+    expect(atlas.upload(RED_BLUE, 'oklch')).toBe(lchRow);
+  });
+
+  it('defaults to rgb, so an unnamed space hits the row rgb already took', () => {
+    const { gl } = makeGLRecorder();
+    const atlas = new GradientRampAtlas(gl);
+    expect(atlas.upload(RED_BLUE)).toBe(atlas.upload(RED_BLUE, 'rgb'));
+  });
+});

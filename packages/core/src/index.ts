@@ -613,6 +613,7 @@ export {
 } from '@weasel-js/paint';
 export { resolveStrokeWidth } from './features/paths/tessellate/stroke';
 export type {
+  ColorSpace,
   FillStyle,
   GradStop,
   GradientFill,

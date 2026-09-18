@@ -2,6 +2,7 @@ import { useCallback, type ReactElement } from 'react';
 import {
   sampleGradientStops,
   withGradientKind,
+  type ColorSpace,
   type GradStop,
   type GradientFill,
   type GradientKind,
@@ -16,6 +17,12 @@ const KINDS: readonly ToggleBarItem<GradientKind>[] = [
   { value: 'linear-gradient', label: 'Linear' },
   { value: 'radial-gradient', label: 'Radial' },
   { value: 'conic-gradient', label: 'Conic' },
+];
+
+const SPACES: readonly ToggleBarItem<ColorSpace>[] = [
+  { value: 'rgb', label: 'sRGB' },
+  { value: 'oklab', label: 'OKLab' },
+  { value: 'oklch', label: 'OKLCh' },
 ];
 
 /** Fewer than two stops is not a gradient any renderer can ramp between. */
@@ -40,6 +47,9 @@ export interface GradientEditorProps {
   /** Show the linear / radial / conic switch. Default true; turn it off
    *  when the surrounding UI already owns the kind. */
   kindSwitch?: boolean;
+  /** Show the sRGB / OKLab / OKLCh switch, which writes `interpolate`.
+   *  Default true. */
+  spaceSwitch?: boolean;
   className?: string;
 }
 
@@ -59,8 +69,9 @@ type StopThumb = Thumb & { color: string };
  * Rendering sorts a copy.
  */
 export function GradientEditor(props: GradientEditorProps): ReactElement {
-  const { value, onInput, onChange, kindSwitch = true, className } = props;
+  const { value, onInput, onChange, kindSwitch = true, spaceSwitch = true, className } = props;
   const stops = value.stops;
+  const space = value.interpolate ?? 'rgb';
 
   const withStops = useCallback(
     (next: GradStop[]): GradientFill => ({ ...value, stops: next }),
@@ -103,13 +114,25 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
         readoutPlacement="none"
         onInput={(next) => onInput?.(withStops(applyThumbs(next)))}
         onChange={(next) => onChange(withStops(applyThumbs(next)))}
-        onAddThumb={(at) => ({ value: at, color: sampleGradientStops(stops, at) })}
+        onAddThumb={(at) => ({ value: at, color: sampleGradientStops(stops, at, space) })}
         onRemoveThumb={() => stops.length > MIN_STOPS}
         renderTrack={paintGradientTrack({
-          gradient: (t) => sampleGradientStops(stops, t),
-          samples: 32,
+          gradient: (t) => sampleGradientStops(stops, t, space),
+          // The track lerps between samples in sRGB whatever the gradient does,
+          // so a hue arc needs more of them to not read as a straight line.
+          samples: space === 'rgb' ? 32 : 64,
         })}
       />
+
+      {spaceSwitch && (
+        <ToggleBar<ColorSpace>
+          items={SPACES}
+          value={space}
+          size="sm"
+          ariaLabel="Blend space"
+          onChange={(next) => next && onChange({ ...value, interpolate: next })}
+        />
+      )}
 
       <div className={s.swatches}>
         {ordered.map(({ stop, index }) => (

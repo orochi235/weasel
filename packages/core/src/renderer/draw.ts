@@ -1,4 +1,4 @@
-import type { Stroke, FillStyle, GradientUnits, GradStop } from '@weasel-js/paint';
+import type { ColorSpace, Stroke, FillStyle, GradientUnits, GradStop } from '@weasel-js/paint';
 import type { Path } from '@weasel-js/core';
 import { getPaintKind } from 'core/paintKinds';
 import type { PaintBindContext } from 'core/paintKinds';
@@ -917,9 +917,9 @@ function stageGlyphs(
  * after.
  */
 function stageRamps(
-  ctx: DrawContext, stops: GradStop[], vertices: number,
+  ctx: DrawContext, stops: GradStop[], space: ColorSpace, vertices: number,
 ): { staged: StagedBatchState; slot: number; rowV: number } {
-  if (ctx.gradRamps.wouldReshape(stops)) flushBatch(ctx);
+  if (ctx.gradRamps.wouldReshape(stops, space)) flushBatch(ctx);
   if (ctx.batchState !== undefined
       && (!stagedStateIsLive(ctx, ctx.batchState) || slotForRamps(ctx.batchState) < 0)) {
     flushBatch(ctx);
@@ -931,7 +931,7 @@ function stageRamps(
     staged.textures.push({ kind: 'ramps' });
     slot = staged.textures.length;
   }
-  return { staged, slot, rowV: ctx.gradRamps.rowV(ctx.gradRamps.upload(stops)) };
+  return { staged, slot, rowV: ctx.gradRamps.rowV(ctx.gradRamps.upload(stops, space)) };
 }
 
 /** Alpha a batched paint's vertices carry: its own opacity, and the group's
@@ -977,7 +977,7 @@ function pushMesh(
 type BatchPaint =
   | { kind: 'solid'; color: string; opacity?: number }
   | {
-      kind: 'ramp'; stops: GradStop[]; opacity?: number;
+      kind: 'ramp'; stops: GradStop[]; space: ColorSpace; opacity?: number;
       /** `PAINT_MODE_PLAIN` for a linear gradient, whose ramp position a vertex
        *  carries outright; `PAINT_MODE_RADIAL` / `PAINT_MODE_CONIC` otherwise. */
       mode: number;
@@ -1018,9 +1018,13 @@ function batchPaint(
 }
 
 function ramp(
-  fill: { stops: GradStop[]; opacity?: number }, mode: number, uv: GradientUV,
+  fill: { stops: GradStop[]; interpolate?: ColorSpace; opacity?: number },
+  mode: number, uv: GradientUV,
 ): BatchPaint {
-  return { kind: 'ramp', stops: fill.stops, opacity: fill.opacity, mode, uv };
+  return {
+    kind: 'ramp', stops: fill.stops, space: fill.interpolate ?? 'rgb',
+    opacity: fill.opacity, mode, uv,
+  };
 }
 
 /**
@@ -1118,7 +1122,7 @@ function pushRampRect(
   rect: { x: number; y: number; width: number; height: number },
   paint: Extract<BatchPaint, { kind: 'ramp' }>,
 ): void {
-  const { staged, slot, rowV } = stageRamps(ctx, paint.stops, 4);
+  const { staged, slot, rowV } = stageRamps(ctx, paint.stops, paint.space, 4);
   const { uv, post } = rampVertices(paint, rowV);
   // White vertices, so the ramp texel passes through as its own color and the
   // alpha channel carries what `u_opacity` and `u_alpha` used to.
@@ -1131,7 +1135,7 @@ function pushRampRect(
 function pushRampMesh(
   ctx: DrawContext, mesh: Mesh, paint: Extract<BatchPaint, { kind: 'ramp' }>,
 ): void {
-  const { staged, slot, rowV } = stageRamps(ctx, paint.stops, mesh.vertices.length >> 1);
+  const { staged, slot, rowV } = stageRamps(ctx, paint.stops, paint.space, mesh.vertices.length >> 1);
   const { uv, post } = rampVertices(paint, rowV);
   ctx.drawBatch.pushGradientMesh(
     mesh, ctx.state.transform,
@@ -1339,8 +1343,8 @@ function paintBindContext(ctx: DrawContext): PaintBindContext {
     program: (id) => ctx.ensureProgram?.(id) ?? ctx.programRegistry.get(id) ?? null,
     setProjAndModel: (prog) => setProjAndModel(ctx, prog),
     spaceInverse: (units) => gradientSpaceInverse(ctx, units),
-    bindRamp: (stops, unit) => {
-      const row = ctx.gradRamps.upload(stops);
+    bindRamp: (stops, unit, space) => {
+      const row = ctx.gradRamps.upload(stops, space);
       ctx.gradRamps.bind(unit);
       return ctx.gradRamps.rowV(row);
     },
@@ -1439,7 +1443,7 @@ function bindPathFillGradient(
   const inverse = gradientSpaceInverse(ctx, fill.units);
   if (!inverse) return null;
   const gl = ctx.gl;
-  const row = ctx.gradRamps.upload(fill.stops);
+  const row = ctx.gradRamps.upload(fill.stops, fill.interpolate ?? 'rgb');
 
   gl.useProgram(ctx.gradFill.handle);
   setProjAndModel(ctx, ctx.gradFill);

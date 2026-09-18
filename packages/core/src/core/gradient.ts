@@ -8,7 +8,8 @@
  */
 
 import { resolveColor, rgbaToHex } from '../renderer/math/color';
-import type { FillStyle, GradStop, GradientFill, GradientKind } from '@weasel-js/paint';
+import { lerpColorArray } from '@weasel-js/paint';
+import type { ColorSpace, FillStyle, GradStop, GradientFill, GradientKind } from '@weasel-js/paint';
 
 /** A stop with its color already parsed to 0..1 RGBA. */
 export interface ResolvedGradientStop {
@@ -42,16 +43,19 @@ export function resolveGradientStops(stops: readonly GradStop[]): ResolvedGradie
 
 /**
  * RGBA (0..1) at position `t` along resolved stops: flat extension past
- * either end, linear interpolation between neighbors, alpha included.
+ * either end, interpolation between neighbors in `space`, alpha included.
  *
  * The single definition of what a stop list means. The GL ramp texture bakes
  * this at 256 positions and an editor calls it per pixel of a track; a second
  * implementation is a gradient that paints differently from its own swatch.
  *
+ * `space` is a gradient's `interpolate`. Alpha is linear in every space —
+ * only the color channels travel through OKLab or OKLCh.
+ *
  * Returns transparent black for an empty list.
  */
 export function sampleResolvedStops(
-  stops: readonly ResolvedGradientStop[], t: number,
+  stops: readonly ResolvedGradientStop[], t: number, space: ColorSpace = 'rgb',
 ): readonly [number, number, number, number] {
   if (stops.length === 0) return TRANSPARENT;
   const first = stops[0];
@@ -67,12 +71,8 @@ export function sampleResolvedStops(
     // Coincident stops are a hard color break: take the later one.
     if (span <= 0) return hi.rgba;
     const f = (t - lo.offset) / span;
-    return [
-      lo.rgba[0] + (hi.rgba[0] - lo.rgba[0]) * f,
-      lo.rgba[1] + (hi.rgba[1] - lo.rgba[1]) * f,
-      lo.rgba[2] + (hi.rgba[2] - lo.rgba[2]) * f,
-      lo.rgba[3] + (hi.rgba[3] - lo.rgba[3]) * f,
-    ];
+    const [r, g, b, a] = lerpColorArray(lo.rgba, hi.rgba, f, space);
+    return [r, g, b, a];
   }
   return last.rgba;
 }
@@ -86,9 +86,11 @@ const TRANSPARENT: readonly [number, number, number, number] = [0, 0, 0, 0];
  *
  * Returns transparent black for an empty list.
  */
-export function sampleGradientStops(stops: readonly GradStop[], t: number): string {
+export function sampleGradientStops(
+  stops: readonly GradStop[], t: number, space: ColorSpace = 'rgb',
+): string {
   if (stops.length === 0) return 'rgba(0,0,0,0)';
-  return rgbaToHex(sampleResolvedStops(resolveGradientStops(stops), t));
+  return rgbaToHex(sampleResolvedStops(resolveGradientStops(stops), t, space));
 }
 
 /**

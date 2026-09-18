@@ -92,4 +92,33 @@ describe('GradientEditor', () => {
       { offset: 0, color: '#00ff00ff' },
     ]);
   });
+
+  describe('the interpolation space', () => {
+    it('commits the space the reader picked, geometry and stops intact', () => {
+      const onChange = vi.fn();
+      render(<GradientEditor value={LINEAR} onChange={onChange} />);
+      fireEvent.click(screen.getByRole('radio', { name: 'OKLCh' }));
+
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(onChange.mock.calls[0][0]).toMatchObject({
+        fill: 'linear-gradient',
+        from: { x: 0, y: 0 },
+        to: { x: 100, y: 0 },
+        units: 'local',
+        interpolate: 'oklch',
+        stops: LINEAR.stops,
+      });
+    });
+
+    it('shows sRGB as the state of a gradient that named no space', () => {
+      render(<GradientEditor value={LINEAR} onChange={() => {}} />);
+      expect(screen.getByRole('radio', { name: 'sRGB' })).toBeChecked();
+    });
+
+    it('hides the switch when the surrounding UI owns it', () => {
+      render(<GradientEditor value={LINEAR} onChange={() => {}} spaceSwitch={false} />);
+      expect(screen.queryByRole('radio', { name: 'OKLCh' })).not.toBeInTheDocument();
+    });
+
+  });
 });

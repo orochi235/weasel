@@ -6,6 +6,8 @@ import {
   gradientGeometry,
   gradientForBounds,
 } from './gradient';
+import { srgbU8ToOklab, oklabToOklch } from '@weasel-js/paint';
+import { resolveColor } from '../renderer/math/color';
 import type { GradStop, GradientFill } from '@weasel-js/paint';
 
 const BW: GradStop[] = [
@@ -220,5 +222,53 @@ describe('isGradientFill', () => {
     expect(isGradientFill({ fill: 'solid', color: '#f00' })).toBe(false);
     expect(isGradientFill(null)).toBe(false);
     expect(isGradientFill(undefined)).toBe(false);
+  });
+});
+
+describe('interpolation space', () => {
+  const RB: GradStop[] = [
+    { offset: 0, color: '#ff0000' },
+    { offset: 1, color: '#0000ff' },
+  ];
+
+  const chromaOf = (c: readonly number[]): number => {
+    const lab = srgbU8ToOklab(c[0] * 255, c[1] * 255, c[2] * 255);
+    return oklabToOklch(lab[0], lab[1], lab[2])[1];
+  };
+
+  it('defaults to rgb, which is what every existing caller gets', () => {
+    expect(sampleGradientStops(RB, 0.5)).toBe(sampleGradientStops(RB, 0.5, 'rgb'));
+    expect(sampleGradientStops(RB, 0.5)).toBe('#800080');
+  });
+
+  it('keeps chroma through the midpoint in oklch, where rgb loses it', () => {
+    const rgbMid = resolveColor(sampleGradientStops(RB, 0.5, 'rgb'));
+    const lchMid = resolveColor(sampleGradientStops(RB, 0.5, 'oklch'));
+    expect(chromaOf(lchMid)).toBeGreaterThan(chromaOf(rgbMid) * 1.2);
+  });
+
+  it('puts black-to-white halfway by OKLab lightness, which sRGB overshoots', () => {
+    const lightnessOf = (c: readonly number[]): number =>
+      srgbU8ToOklab(c[0] * 255, c[1] * 255, c[2] * 255)[0];
+    expect(lightnessOf(resolveColor(sampleGradientStops(BW, 0.5, 'oklab')))).toBeCloseTo(0.5, 2);
+    expect(lightnessOf(resolveColor(sampleGradientStops(BW, 0.5, 'rgb')))).toBeGreaterThan(0.55);
+  });
+
+  it('interpolates alpha linearly whatever the space', () => {
+    const fade: GradStop[] = [
+      { offset: 0, color: 'rgba(255,0,0,1)' },
+      { offset: 1, color: 'rgba(0,0,255,0)' },
+    ];
+    for (const space of ['rgb', 'oklab', 'oklch'] as const) {
+      const mid = resolveColor(sampleGradientStops(fade, 0.5, space));
+      expect(mid[3]).toBeCloseTo(0.5, 2);
+    }
+  });
+
+  it('returns the endpoint colors unchanged in every space', () => {
+    for (const space of ['rgb', 'oklab', 'oklch'] as const) {
+      expect(sampleGradientStops(RB, 0, space)).toBe('#ff0000');
+      expect(sampleGradientStops(RB, 1, space)).toBe('#0000ff');
+    }
   });
 });

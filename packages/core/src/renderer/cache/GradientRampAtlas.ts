@@ -12,7 +12,7 @@
  * shader applies premultiplication before writing outColor.
  */
 
-import type { GradStop } from '@weasel-js/paint';
+import type { ColorSpace, GradStop } from '@weasel-js/paint';
 import { resolveGradientStops, sampleResolvedStops } from '../../core/gradient';
 
 /** Texels across one ramp — the resolution a gradient is sampled at. */
@@ -34,14 +34,15 @@ const INITIAL_ROWS = 16;
 export const RAMP_ATLAS_MAX_ROWS = 1024;
 
 /** Bake gradient stops into a 256-entry RGBA lookup strip, which the shader
- *  samples instead of evaluating stops per fragment. */
-export function buildGradientRamp(stops: GradStop[]): Uint8ClampedArray {
+ *  samples instead of evaluating stops per fragment. `space` is the gradient's
+ *  `interpolate` — the ramp is where a non-sRGB blend is paid for, once. */
+export function buildGradientRamp(stops: GradStop[], space: ColorSpace = 'rgb'): Uint8ClampedArray {
   const data = new Uint8ClampedArray(RAMP_WIDTH * 4);
   if (stops.length === 0) return data;
 
   const resolved = resolveGradientStops(stops);
   for (let i = 0; i < RAMP_WIDTH; i++) {
-    const [r, g, b, a] = sampleResolvedStops(resolved, i / (RAMP_WIDTH - 1));
+    const [r, g, b, a] = sampleResolvedStops(resolved, i / (RAMP_WIDTH - 1), space);
     data[i * 4]     = r * 255;
     data[i * 4 + 1] = g * 255;
     data[i * 4 + 2] = b * 255;
@@ -49,6 +50,12 @@ export function buildGradientRamp(stops: GradStop[]): Uint8ClampedArray {
   }
 
   return data;
+}
+
+/** The row identity. Two gradients with the same stops and different
+ *  `interpolate` bake to different texels, so the space is part of the key. */
+function rampKey(stops: GradStop[], space: ColorSpace): string {
+  return `${space}|${JSON.stringify(stops)}`;
 }
 
 export class GradientRampAtlas {
@@ -80,8 +87,8 @@ export class GradientRampAtlas {
    * its draw past this call may hold a row across another `upload` without
    * arranging to be flushed first.
    */
-  upload(stops: GradStop[]): number {
-    const key = JSON.stringify(stops);
+  upload(stops: GradStop[], space: ColorSpace = 'rgb'): number {
+    const key = rampKey(stops, space);
     this.totalQueries++;
     const existing = this.rowByKey.get(key);
     if (existing !== undefined) {
@@ -92,7 +99,7 @@ export class GradientRampAtlas {
     }
 
     const row = this.claimRow();
-    this.writeRow(row, buildGradientRamp(stops));
+    this.writeRow(row, buildGradientRamp(stops, space));
     this.rowByKey.set(key, row);
     return row;
   }
@@ -105,10 +112,10 @@ export class GradientRampAtlas {
    * Anything holding a row past this call asks first and gets itself out of
    * the way, because neither can be undone once it has happened.
    */
-  wouldReshape(stops: GradStop[]): boolean {
+  wouldReshape(stops: GradStop[], space: ColorSpace = 'rgb'): boolean {
     // An atlas holding nothing has no row to move, so its first growth is free.
     if (this.rowByKey.size === 0) return false;
-    return !this.rowByKey.has(JSON.stringify(stops))
+    return !this.rowByKey.has(rampKey(stops, space))
       && this.rowByKey.size >= this.rows;
   }
 

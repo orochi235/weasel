@@ -37,6 +37,39 @@ function hasNativeSvgForm(paint: FillStyle): boolean {
   return kind === 'solid' || kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'pattern';
 }
 
+/**
+ * The spaces `interpolate` can name, as SVG spells them. SVG's own
+ * `color-interpolation` carries `sRGB` and `linearRGB` only, so anything
+ * perceptual goes out as a namespaced attribute a foreign renderer ignores —
+ * which leaves it interpolating in sRGB. That is a shifted midpoint rather
+ * than a lost paint, so these gradients keep their native element and take no
+ * fallback color.
+ */
+const INTERPOLATE_SPACES = new Set(['rgb', 'oklab', 'oklch']);
+
+/** The `wzl:interpolate` attribute a gradient needs, or `''` for the sRGB
+ *  default every other renderer already assumes. */
+function interpolateAttr(space: string | undefined): string {
+  if (!space || space === 'rgb') return '';
+  return ` ${WEASEL_NS_PREFIX}:interpolate="${space}"`;
+}
+
+/** `interpolate` off a gradient element, or `undefined` — for the field's
+ *  absence and for a space this package does not model alike. */
+function readInterpolate(el: Element, elements: ElementTable): 'oklab' | 'oklch' | undefined {
+  const raw = inheritedAttr(el, elements, `${WEASEL_NS_PREFIX}:interpolate`)
+    ?? el.getAttributeNS(WEASEL_NS, 'interpolate');
+  if (raw === 'oklab' || raw === 'oklch') return raw;
+  return undefined;
+}
+
+/** Whether any gradient in the document names a space SVG cannot, so the root
+ *  has to declare the namespace the attribute is written in. */
+function usesInterpolateAttr(paint: FillStyle): boolean {
+  const space = (paint as { interpolate?: string }).interpolate;
+  return space != null && space !== 'rgb' && INTERPOLATE_SPACES.has(space);
+}
+
 /** The local name of a tag, prefix stripped. */
 function localName(tag: string): string {
   const i = tag.indexOf(':');
@@ -199,6 +232,7 @@ function readLinearGradient(
     },
     stops: inheritedStops(el, elements, onWarn),
     units: readGradientUnits(el, elements),
+    interpolate: readInterpolate(el, elements),
   };
 }
 
@@ -215,6 +249,7 @@ function readRadialGradient(
     radius: num(inheritedAttr(el, elements, 'r'), 0.5),
     stops: inheritedStops(el, elements, onWarn),
     units: readGradientUnits(el, elements),
+    interpolate: readInterpolate(el, elements),
   };
 }
 
@@ -231,6 +266,7 @@ function readConicGradient(
     angle: num(inheritedAttr(el, elements, 'angle'), 0),
     stops: inheritedStops(el, elements, onWarn),
     units: readGradientUnits(el, elements),
+    interpolate: readInterpolate(el, elements),
   };
 }
 
@@ -279,7 +315,7 @@ export class PaintServerRegistry {
   /** Whether any registered paint serializes outside SVG's own vocabulary, so
    *  the root has to declare {@link WEASEL_NS}. */
   usesPrivateNamespace(): boolean {
-    return this.order.some((paint) => !hasNativeSvgForm(paint));
+    return this.order.some((paint) => !hasNativeSvgForm(paint) || usesInterpolateAttr(paint));
   }
 
   /** The `<defs>` id for a marker key — the key itself, minting nothing.
@@ -356,7 +392,8 @@ function gradientXml(id: string, paint: FillStyle): string {
     return (
       `<linearGradient id="${id}" gradientUnits="${gradientUnitsAttr(paint.units)}" ` +
       `x1="${trimNumber(paint.from.x)}" y1="${trimNumber(paint.from.y)}" ` +
-      `x2="${trimNumber(paint.to.x)}" y2="${trimNumber(paint.to.y)}">${stops}</linearGradient>`
+      `x2="${trimNumber(paint.to.x)}" y2="${trimNumber(paint.to.y)}"` +
+      `${interpolateAttr(paint.interpolate)}>${stops}</linearGradient>`
     );
   }
   if (paint.fill === 'conic-gradient') {
@@ -365,7 +402,8 @@ function gradientXml(id: string, paint: FillStyle): string {
     return (
       `<${P}:conicGradient id="${id}" gradientUnits="${gradientUnitsAttr(paint.units)}" ` +
       `cx="${trimNumber(paint.center.x)}" cy="${trimNumber(paint.center.y)}" ` +
-      `angle="${trimNumber(paint.angle)}">${stops}</${P}:conicGradient>`
+      `angle="${trimNumber(paint.angle)}"` +
+      `${interpolateAttr(paint.interpolate)}>${stops}</${P}:conicGradient>`
     );
   }
   if (paint.fill === 'radial-gradient') {
@@ -373,7 +411,8 @@ function gradientXml(id: string, paint: FillStyle): string {
     return (
       `<radialGradient id="${id}" gradientUnits="${gradientUnitsAttr(paint.units)}" ` +
       `cx="${trimNumber(paint.center.x)}" cy="${trimNumber(paint.center.y)}" ` +
-      `r="${trimNumber(paint.radius)}">${stops}</radialGradient>`
+      `r="${trimNumber(paint.radius)}"` +
+      `${interpolateAttr(paint.interpolate)}>${stops}</radialGradient>`
     );
   }
   return '';
