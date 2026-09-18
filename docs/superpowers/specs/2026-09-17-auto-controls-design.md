@@ -10,12 +10,14 @@ input. An auto row is still operable; grabbing its control pins it.
 
 ## Schema surface
 
-Every leaf is autoable with no annotation. Three new builder calls, all on
-`BaseNode`:
+Every leaf is autoable with no annotation. `auto` is a value in the
+vocabulary, exported beside `f`, and two new builder calls sit on `BaseNode`:
 
 ```ts
+import { auto, f } from '@weasel-js/labkit';
+
 gap:   f.number(12).auto((c) => c.width / 24),   // pinned at 12; ghosts to 18 when auto
-cols:  f.number(3).unpin(),                      // starts auto → instrument sees undefined
+cols:  f.number(3).initial(auto),                // starts auto - instrument sees undefined
 seed:  f.number(1).manual(),                     // never auto; gesture inert, no dot
 label: f.string('Hi'),                           // autoable, nothing declared
 ```
@@ -23,18 +25,40 @@ label: f.string('Hi'),                           // autoable, nothing declared
 - **`.auto(resolve)`** attaches a resolver, `(config) => T`. Purely additive:
   it gives the ghost a real value to draw and means the instrument reads a
   value rather than writing `?? compute()`.
-- **`.unpin()`** starts the field auto. Independent of whether a resolver
-  exists.
+- **`.initial(auto)`** starts the field auto. Independent of whether a resolver
+  exists. It takes `auto` and nothing else - typed so `.initial(5)` is a
+  compile error, because `f.number(3)` already declares the value and two
+  defaults would fight.
 - **`.manual()`** opts the field out. The row takes no dot and ignores the
   gesture. This is what makes autoable-by-default safe for a value the
-  instrument cannot receive as `undefined` — a color going straight to a
+  instrument cannot receive as `undefined` - a color going straight to a
   uniform.
 
-`.unpin()` and `.manual()` together is a schema error, caught by `validate`.
+`.initial(auto)` on a `.manual()` field is a schema error, caught by
+`validate`.
 
 Carried on `NodeOptions` as `auto?: (config) => unknown`, `unpinned?: boolean`,
 `manual?: boolean`, and surfaced on the resolved leaf so `ControlPanel` can
 read them the way it reads the other labkit-only extras (`extra<T>(leaf, key)`).
+
+## `auto` as a value
+
+`auto` is a unique symbol. It is accepted anywhere a config value is written,
+and normalized into the auto-path set on the way in - it is never what gets
+stored:
+
+```ts
+addTrial({ configSeed: { cols: auto } });
+setConfig('gap', auto);
+```
+
+So there is no parallel write API for the auto state: one way to write a
+field, the same as any other value. Writing a real value to an auto path pins
+it, which is also what grabbing a ghosted control does.
+
+Because the sentinel is normalized away at the boundary, the stored config
+keeps its last pinned value and a serialized trial contains no sentinel. The
+type of `setConfig` widens to `ValueAtPath<TC, P> | typeof auto`.
 
 ## Where the auto state lives
 
@@ -57,10 +81,10 @@ auto field may read another. A cycle throws at resolve time naming the path;
 it is a schema bug, not a runtime condition to recover from.
 
 `useTrialState` returns the resolved config as `config` — the instrument never
-sees the raw one. It also returns `auto: ReadonlySet<string>`, `raw: TC`, and
-`setAuto(path, on)`, which `Trial` passes down to `ControlPanel`. The panel
-renders from `raw` so a ghosted slider sits at its last pinned position when
-there is no resolver.
+sees the raw one. It also returns `auto: ReadonlySet<string>` and `raw: TC`,
+which `Trial` passes down to `ControlPanel`. The panel renders from `raw`, so a
+ghosted slider sits at its last pinned position when there is no resolver, and
+toggles by writing `setConfig(path, auto)` or `setConfig(path, raw[path])`.
 
 ## Gesture
 
@@ -102,8 +126,9 @@ the look. The dot renders only when `onAutoChange` is given, so existing
 ## Testing
 
 Unit (jsdom): `resolveAutoConfig` across resolver / no-resolver / nested paths /
-cycle; `.unpin()` + `.manual()` rejected by `validate`; `setAuto` round-trip
-preserving the pinned value; serialization through `TrialRecord`.
+cycle; `.initial(auto)` + `.manual()` rejected by `validate`; `setConfig(path,
+auto)` round-tripping without losing the pinned value; the sentinel absent from
+the serialized `TrialRecord`.
 
 The gesture is **not** honestly testable in jsdom: `preventDefault` on a label
 has no consequence there, so a test asserting "the slider did not move" passes
