@@ -1,7 +1,9 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { TOOL_PREF_KINDS, type ToolPrefKind } from '@weasel-js/core';
 import type { PrefLeaf } from '@weasel-js/ui';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { auto } from '../config/auto';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
 import type { ResolvedConfig } from '../config/types';
@@ -652,5 +654,79 @@ describe('<ControlPanel> nested groups', () => {
       />,
     );
     expect(screen.getByText('size:44')).toBeInTheDocument();
+  });
+});
+
+describe('<ControlPanel> auto', () => {
+  it("reads the resolver for an auto row's readout", () => {
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(
+          f.schema({
+            gap: f
+              .number(12)
+              .auto(() => 18)
+              .range(0, 48),
+          }),
+          [],
+        )}
+        config={{ gap: 12 }}
+        auto={new Set(['gap'])}
+        setConfig={() => {}}
+      />,
+    );
+    expect(screen.getByDisplayValue('auto · 18')).toBeInTheDocument();
+  });
+
+  it('reads "auto" alone for a path with no resolver', () => {
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(f.schema({ cols: f.number(3).range(0, 8) }), [])}
+        config={{ cols: 3 }}
+        auto={new Set(['cols'])}
+        setConfig={() => {}}
+      />,
+    );
+    expect(screen.getByDisplayValue('auto')).toBeInTheDocument();
+  });
+
+  it('writes the sentinel when the dot turns a row auto', async () => {
+    const setConfig = vi.fn();
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(f.schema({ gap: f.number(12).range(0, 48) }), [])}
+        config={{ gap: 12 }}
+        auto={new Set()}
+        setConfig={setConfig}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: /Gap/ }));
+    expect(setConfig).toHaveBeenCalledWith('gap', auto);
+  });
+
+  it('writes the pinned value back when the dot un-autos a row', async () => {
+    const setConfig = vi.fn();
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(f.schema({ gap: f.number(12).range(0, 48) }), [])}
+        config={{ gap: 24 }}
+        auto={new Set(['gap'])}
+        setConfig={setConfig}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: /Gap/ }));
+    expect(setConfig).toHaveBeenCalledWith('gap', 24);
+  });
+
+  it('gives a manual row no dot', () => {
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(f.schema({ seed: f.number(1).manual().range(0, 8) }), [])}
+        config={{ seed: 1 }}
+        auto={new Set()}
+        setConfig={() => {}}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: /Seed/ })).toBeNull();
   });
 });

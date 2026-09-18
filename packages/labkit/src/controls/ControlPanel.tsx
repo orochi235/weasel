@@ -20,6 +20,7 @@ import {
   ToggleRow,
 } from '@weasel-js/ui';
 import { Fragment, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { auto as autoValue } from '../config/auto';
 import { fromConfigFields } from '../config/fromConfigField';
 import { schemaNodeAtPath, valueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig, SectionSpec } from '../config/types';
@@ -98,6 +99,11 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> {
   /** A fold moved. The key is a section's label — prefixed by its group's
    *  dotted path when the section sits inside one — or a group's own path. */
   onCollapse?: (key: string, collapsed: boolean) => void;
+  /** Dotted paths currently unpinned. A row in this set draws ghosted and its
+   *  dot reads as auto. Omitted altogether, no row takes a dot and the
+   *  shift-click gesture is inert: nothing would normalize the sentinel a
+   *  toggle writes. */
+  auto?: ReadonlySet<string>;
   /** Draw leaves marked `hidden`. */
   showHidden?: boolean;
   className?: string;
@@ -119,10 +125,33 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   collapse,
   collapsed,
   onCollapse,
+  auto,
   showHidden = false,
   className,
 }: ControlPanelProps<TC>) {
   const resolved = useMemo(() => schema ?? fromConfigFields(fields ?? []), [schema, fields]);
+
+  const listRef = useRef<HTMLDivElement>(null);
+  const toggles = useRef(new Map<string, () => void>());
+  // Capture phase, because `PropertyRow` is a <label>: a bubbled handler runs
+  // after the browser has already begun a range drag or a native control's
+  // activation, so the shift-click moves the very value it was meant to unpin.
+  useEffect(() => {
+    const host = listRef.current;
+    if (!host) return;
+    const onDown = (e: PointerEvent) => {
+      if (!e.shiftKey) return;
+      const row = (e.target as HTMLElement | null)?.closest('[data-auto-path]');
+      const path = row?.getAttribute('data-auto-path');
+      const toggle = path ? toggles.current.get(path) : undefined;
+      if (!toggle) return;
+      e.preventDefault();
+      e.stopPropagation();
+      toggle();
+    };
+    host.addEventListener('pointerdown', onDown, true);
+    return () => host.removeEventListener('pointerdown', onDown, true);
+  }, []);
 
   const gridPack = gridOf(pack);
   // A section that declares how it opens is foldable whether or not the lab
@@ -159,6 +188,8 @@ export function ControlPanel<TC extends Record<string, unknown>>({
           renderers={renderers}
           pack={rows.pack}
           layout={rows.layout}
+          auto={auto}
+          toggles={toggles.current}
         />
       );
     }
@@ -197,14 +228,16 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   };
 
   return (
-    <PropertyList
-      pack={gridPack}
-      density={density}
-      align={align}
-      className={className ? `lk-control-panel ${className}` : 'lk-control-panel'}
-    >
-      {body(resolved.group, '', { pack, layout, grid: gridPack })}
-    </PropertyList>
+    <div ref={listRef}>
+      <PropertyList
+        pack={gridPack}
+        density={density}
+        align={align}
+        className={className ? `lk-control-panel ${className}` : 'lk-control-panel'}
+      >
+        {body(resolved.group, '', { pack, layout, grid: gridPack })}
+      </PropertyList>
+    </div>
   );
 }
 
@@ -224,6 +257,8 @@ interface ControlRowProps<TC extends Record<string, unknown>> {
   renderers?: Record<string, ControlRenderer>;
   pack: ControlPack;
   layout?: PropertyRowLayout;
+  auto?: ReadonlySet<string>;
+  toggles: Map<string, () => void>;
 }
 
 /** Reads a labkit-only extra off a leaf. `PrefLeaf` has no field for these,
@@ -241,10 +276,34 @@ function ControlRow<TC extends Record<string, unknown>>({
   renderers,
   pack,
   layout,
+  auto,
+  toggles,
 }: ControlRowProps<TC>) {
   const write = (value: unknown): void => setConfig(path, value);
   const fallback = extra<unknown>(leaf, 'default');
   const value = valueAtPath(config, path) ?? fallback;
+
+  const isAutoRow = auto?.has(path) ?? false;
+  const canAuto = auto !== undefined && !extra<boolean>(leaf, 'manual');
+  const resolver = extra<(c: Record<string, unknown>) => unknown>(leaf, 'autoResolve');
+  const setAuto = (next: boolean): void => write(next ? autoValue : value);
+  const onAutoChange = canAuto ? setAuto : undefined;
+  // What an auto row reads instead of its number: the resolver's value where
+  // there is one, and the bare word where there is not.
+  const autoReadout = isAutoRow
+    ? resolver
+      ? `auto · ${String(resolver(config as Record<string, unknown>))}`
+      : 'auto'
+    : undefined;
+  const autoProps = { auto: isAutoRow, onAutoChange, 'data-auto-path': canAuto ? path : undefined };
+
+  useEffect(() => {
+    if (!canAuto) return;
+    toggles.set(path, () => setAuto(!isAutoRow));
+    return () => {
+      toggles.delete(path);
+    };
+  });
 
   // Most specific wins, and within a tier the lab's entry beats the
   // instrument's: controls[path] -> node .render -> controls[kind] -> built-in.
@@ -281,9 +340,11 @@ function ControlRow<TC extends Record<string, unknown>>({
             notation={notation}
             unit={suffix}
             onChange={write}
+            format={autoReadout === undefined ? undefined : () => autoReadout}
             layout={layout}
             span={wide}
             description={description}
+            {...autoProps}
           />
         );
       }
@@ -303,6 +364,7 @@ function ControlRow<TC extends Record<string, unknown>>({
           onChange={(n) => write(Math.min(hi, Math.max(lo, n)))}
           layout={layout}
           description={description}
+          {...autoProps}
         />
       );
     }
@@ -314,6 +376,7 @@ function ControlRow<TC extends Record<string, unknown>>({
           onChange={write}
           layout={layout}
           description={description}
+          {...autoProps}
         />
       );
     case 'enum': {
@@ -329,6 +392,7 @@ function ControlRow<TC extends Record<string, unknown>>({
           layout={layout}
           span={segmented && wide}
           description={description}
+          {...autoProps}
         />
       );
     }
@@ -342,6 +406,7 @@ function ControlRow<TC extends Record<string, unknown>>({
           layout={layout}
           span={wide}
           description={description}
+          {...autoProps}
         />
       );
     case 'color':
@@ -352,6 +417,7 @@ function ControlRow<TC extends Record<string, unknown>>({
           onChange={write}
           layout={layout}
           description={description}
+          {...autoProps}
         />
       );
     case 'paint':
