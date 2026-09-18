@@ -1132,14 +1132,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   endpoint (10px) and `createKeyframeLayer`'s key (9px) are all 45°-rotated
   squares sized independently.
 
-- **(P2) A `paint` leaf in `PrefsForm` edits through `ColorField`, so a gradient
-  degrades to a solid.** `SelectionPanel` renders the same leaf through
-  `PaintInput`, which edits a whole `FillStyle`; `PrefsForm` reads the color out
-  and writes a solid back, so opening the control on a gradient and touching it
-  loses the stops with no warning. Swapping in `PaintInput` is the obvious fix
-  and does not fit: it puts a six-segment kind bar and a gradient editor into a
-  `flex: 0 0 110px` control slot. So the question is the slot, not the control —
-  and jsdom cannot answer it, this needs proofing in a browser.
 
 - **(P3) Typed units stop at linear factors.** `SelectionPanel` and `PrefsForm`
   read `12mm` into a unit leaf through `UnitField`, and `prefUnit` builds the
@@ -1428,13 +1420,12 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have.
 
-- **(P2) Consolidate the paint demos into one "stroke and fill" demo.** `gradients`,
-  `pattern-playground`, `vertex-colors` and `vertex-widths` are four cards each
-  showing one corner of the same subject. The pieces a combined demo should be
-  built on now exist — `PaintInput` edits a whole `FillStyle` and
-  `SceneGradientHandles` puts the geometry on the artwork — so this is no
-  longer blocked on the kit. Rethink the scope before splitting the work: it is
-  a redesign, not a merge of four files.
+- **(P3) `stroke-and-fill` has no visual baseline.** The demo that replaced
+  `gradients`, `pattern-playground`, `vertex-colors` and `vertex-widths` carries
+  `tests/visual/stroke-and-fill.spec.ts`, but its baseline PNG was never
+  captured — a missing baseline auto-writes and passes, so the spec asserts
+  nothing until someone runs it once and commits
+  `tests/visual/baselines/stroke-and-fill.png`.
 
 - **(P3) Demo coverage gap: HUD widget gallery.** `@weasel-js/hud` ships five widgets (`button`, `rect`, `text`, `image`, `label`) but only `button` is demo'd (`apps/site/demos/HudDemo.tsx`) — a single "HUD widget gallery" demo card would cover the other four. Brainstorm scope before writing it. (The former `@weasel-js/ui` `CommandPalette`/`PropertiesPanel` half of this item was dropped — those are app-local components in `apps/draw/src/ui/`, not `@weasel-js/ui` exports, so there's no kit-export demo gap.)
 

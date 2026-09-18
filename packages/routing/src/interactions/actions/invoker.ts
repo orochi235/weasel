@@ -89,7 +89,7 @@ export interface AffordanceHit {
  * The stylus fields are absent for mouse/touch on browsers that don't report
  * them, and for synthetic events. Consumers that want pressure-driven output
  * (e.g. `Stroke.vertexWidths` from a pencil stroke) read them off the samples
- * their `insert` dep receives — see `apps/site/demos/VertexWidthsDemo.tsx`.
+ * their `insert` dep receives — see `apps/site/demos/StrokeAndFillDemo.tsx`.
  */
 export interface DragSample extends Point2 {
   /** 0..1. Mouse/touch report 0.5 while a button is held, per the spec. */
