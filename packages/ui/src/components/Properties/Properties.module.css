@@ -974,6 +974,10 @@
     color-mix(in srgb, var(--wzl-fg-subtle) 45%, transparent) 0 4px,
     transparent 4px 7px
   );
+  /* Same reason: the kit `<Select>`'s visible box is its trigger, and the class
+     a row hands it lands on the wrapper above that. */
+  --wzl-select-fg: var(--wzl-fg-subtle);
+  --wzl-select-border: 1px dashed var(--wzl-fg-subtle);
 }
 
 .rowAuto > .rowLabel {
@@ -998,10 +1002,15 @@
 /* `.select` is the kit `<Select>`, which renders a button rather than a
    native select; the element selector covers a raw one passed to a bare row. */
 .rowAuto select,
-.rowAuto .select,
 .rowAuto input[type='number'] {
   border-style: dashed;
   color: var(--wzl-fg-subtle);
+  font-style: italic;
+}
+
+/* The kit `<Select>` takes its color and border from the hooks above; only the
+   inherited font-style is the wrapper's to set. */
+.rowAuto .select {
   font-style: italic;
 }
 
