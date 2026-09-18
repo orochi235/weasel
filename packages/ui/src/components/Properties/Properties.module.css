@@ -248,6 +248,49 @@
   color: var(--wzl-fg);
 }
 
+/* The pinned/auto affordance. Invisible at rest so a panel of thirty rows is
+   not thirty dots; revealed by the row, and permanent once the row is auto.
+   Every box dimension is stated for the same reason `.help` states them — a
+   host's zero-specificity bare-button defaults would otherwise size it. */
+.pin {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--wzl-accent);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--wzl-motion-fast) var(--wzl-ease-out-cubic);
+}
+
+.row:hover .pin,
+.row:focus-within .pin,
+.pin:focus-visible,
+.pinAuto {
+  opacity: 1;
+}
+
+.pinAuto {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.2px var(--wzl-fg-subtle);
+}
+
+.pin:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pin {
+    transition: none;
+  }
+}
+
 /* Single always-rendered <input> styled to read as a text label until focused. */
 .readoutInput {
   font: inherit;
