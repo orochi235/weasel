@@ -191,7 +191,7 @@ export function objToSvgNode(o: Obj): SvgNode {
       text: o.text,
     };
     if (o.runs && o.runs.length > 0) node.runs = o.runs;
-    if (o.fill) node.fill = o.fill;
+    if (o.fill !== undefined) node.fill = o.fill;
     if (o.stroke) node.stroke = o.stroke;
     // Start the WeaselDraw attr bag with `tool: 'text'`; lineHeight (if any)
     // joins the same bag.
@@ -262,7 +262,7 @@ function svgLeafToObj(
       text: n.text,
     };
     if (n.runs && n.runs.length > 0) o.runs = n.runs;
-    if (n.fill) o.fill = n.fill;
+    if (n.fill !== undefined) o.fill = n.fill;
     if (n.stroke) o.stroke = n.stroke;
     if (n.rotation) o.rotation = n.rotation;
     // Reconstitute the full TextStyle from weasel-svg's style + the

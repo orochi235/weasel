@@ -508,11 +508,15 @@ Core five + Crop shipped. Remaining:
   a re-import reads back top-aligned. The pair `data-weasel-width` /
   `data-weasel-height` already occupy is where it belongs.
 
-- **(P3) `apps/draw` cannot author unfilled text.** `TextObj.fill` is
-  `FillStyle | undefined`, so WeaselDraw's own model has no way to say "no
-  fill" for a text object, and its SVG interop drops the value in both
-  directions. The engine and `@weasel-js/svg` carry it now; the no-fill chip in
-  the character panel is app work.
+- **(P3) The character strip has no "no fill" chip.** WeaselDraw's text
+  objects carry `fill: null` through its SVG export and import, and the
+  sidebar's Fill leaf already offers None for a text node. What is missing is
+  a None chip beside the strip's Color field, and it needs a decision first:
+  the strip is range-scoped, but a run cannot be unfilled (`StyledRun.fill`
+  is `FillStyle`, no `null`). Either the chip unfills the whole node (and has
+  to clear run fills, which reach text outside the selection), or runs gain
+  `fill: null` through `resolveRuns`, the DOM overlay, the range algebra and
+  `@weasel-js/svg`'s `<tspan>` output.
 
 - **(P2) Cross-browser overlay alignment.** `placeOverlay` uses an empirical `(+1, -1)` CSS-px nudge to compensate for canvas/CSS rasterization disagreement. Works on the dev setup; not universally correct across browsers/fonts/DPRs. A self-correcting probe was attempted and rejected.
 

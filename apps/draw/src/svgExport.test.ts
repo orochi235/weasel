@@ -85,6 +85,25 @@ describe('text export', () => {
     expect(n.stroke).toEqual({ paint: { fill: 'solid', color: '#c0392b' }, width: 3 });
   });
 
+  it('keeps unfilled text unfilled through scene → SVG → parse → import drafts', () => {
+    const scene = fakeScene({
+      t: {
+        kind: 'leaf',
+        pose: { x: 5, y: 6, width: 120, height: 40 },
+        data: { text: 'Hi', style: { fontSize: 32 }, fill: null, stroke: strokeOf('#c0392b', 3) },
+      },
+    }, ['t']);
+
+    const svg = selectionToSvgString(scene, ['t']);
+    expect(svg).toMatch(/<text[^>]*fill="none"/);
+    let n = 0;
+    const drafts = svgNodesToSceneDrafts(parseSvg(svg).nodes, () => `n${n++}`);
+    const leaf = drafts.find(
+      (d) => 'obj' in d && (d as { obj?: { tool?: string } }).obj?.tool === 'text',
+    ) as { obj: { fill?: FillStyle | null } };
+    expect(leaf.obj.fill).toBeNull();
+  });
+
   it('survives the whole loop: scene → SVG → parse → import drafts', () => {
     const scene = fakeScene({
       t: {

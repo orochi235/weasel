@@ -915,7 +915,7 @@ function Toolbar({
                 const data: WeaselDrawData = o.tool === 'text'
                   ? {
                       text: o.text,
-                      fill: o.fill ?? solid('#000000'),
+                      fill: o.fill === undefined ? solid('#000000') : o.fill,
                       ...(o.stroke ? { stroke: o.stroke } : {}),
                       ...(o.style ? { style: o.style } : {}),
                       ...(o.runs ? { runs: o.runs } : {}),

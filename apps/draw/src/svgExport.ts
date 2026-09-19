@@ -78,7 +78,7 @@ function leafToObj(id: string, data: WeaselDrawData, pose: WeaselDrawPose): Obj 
     const style = data.style;
     if (style && Object.keys(style).length > 0) o.style = style;
     if (data.runs && data.runs.length > 0) o.runs = data.runs;
-    if (data.fill) o.fill = data.fill;
+    if (data.fill !== undefined) o.fill = data.fill;
     if (data.stroke) o.stroke = data.stroke;
     if (pose.rotation) o.rotation = pose.rotation;
     return o;
