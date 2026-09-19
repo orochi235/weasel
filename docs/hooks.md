@@ -223,7 +223,9 @@ not routed by the dispatcher — you own the pointer events.
   reducer over `View`: bare wheel pans, shift+wheel pans horizontally,
   Cmd/Ctrl+wheel zooms under the pointer. `wheelPan` / `wheelZoom` are its
   halves, and `viewport.wheelPan` / `viewport.zoom` are the wired form.
-- `useViewAnimation(view, animator?)` — animated view changes, on the kit animator
+- `useViewAnimation(view, animator?)` — animated view changes, on the kit animator.
+  `useViewAnimationOn(view, animator)` is the same on an animator you own, and
+  builds none of its own.
 - `useVelocityTracker()`, `useDecayLoop(config)` — inertial-pan building
   blocks.
 - `usePinchGesture(...)` — raw two-finger pinch, below `viewport.pinchZoom`.

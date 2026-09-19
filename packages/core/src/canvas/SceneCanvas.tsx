@@ -35,7 +35,7 @@ import { wireSceneSlotToScene, composeAlphaFor } from './sceneSlotWiring';
 import type { CanvasExtensionApi, CanvasViewHandle, SceneCanvasApi } from './canvasExtension';
 import type { Animator } from '../animation/types';
 import { useAnimator } from '../animation/useAnimator';
-import { useViewAnimation } from 'core/viewport/useViewAnimation';
+import { useViewAnimationOn } from 'core/viewport/useViewAnimation';
 import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
 import type { SceneToAdapterOptions } from './sceneAdapter';
 import { useDecayLoop, type PanBounds } from 'core/viewport/useDecayLoop';
@@ -1076,7 +1076,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     () => ({ get: () => currentViewRef.current, set: handleViewChange }),
     [handleViewChange],
   );
-  const viewAnimation = useViewAnimation(viewChannel, cameraAnimator);
+  const viewAnimation = useViewAnimationOn(viewChannel, cameraAnimator);
 
   // Never writes back to the canvas — `handleViewChange` would recurse. Every
   // `Canvas.setView` lands here on both branches, so it is also the runner's
