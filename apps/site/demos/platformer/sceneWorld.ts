@@ -76,7 +76,7 @@ export function tileNodes(level: Level): WorldNodeSpec[] {
       } else if (t === QUESTION) {
         out.push(leaf(id, 'tiles', { x, y, width: TILE, height: TILE }, { shape: 'rect', fill: solid(COLORS.question) }));
         out.push(leaf(`${id}:mark`, 'tiles',
-          { x: x + TILE / 2, y, width: TILE, height: TILE },
+          { x, y, width: TILE, height: TILE },
           {
             text: '?',
             style: { fontFamily: 'sans-serif', fontSize: QUESTION_FONT, align: 'center' },

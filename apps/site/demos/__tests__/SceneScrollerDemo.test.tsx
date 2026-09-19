@@ -75,6 +75,17 @@ describe('SceneScrollerDemo', () => {
     spy.mockRestore();
   });
 
+  it('centers each question mark on its block', () => {
+    // A text node aligns inside its pose box, so the mark shares the block's box.
+    const nodes = tileNodes(WORLD);
+    const marks = nodes.filter((n) => String(n.id).endsWith(':mark'));
+    expect(marks.length).toBeGreaterThan(0);
+    for (const mark of marks) {
+      const block = nodes.find((n) => n.id === String(mark.id).slice(0, -':mark'.length))!;
+      expect(mark.pose).toEqual(block.pose);
+    }
+  });
+
   it('builds the level out of scene nodes rather than draw commands', () => {
     // The point of the demo: the world is in the tree, not in a layer closure.
     expect(tileNodes(WORLD).length).toBeGreaterThan(100);
