@@ -7,7 +7,7 @@
  * navigator.userAgent`, and jsdom's `platform` is the empty string — not
  * nullish — so the whole suite otherwise runs as non-Mac).
  */
-import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 
 vi.hoisted(() => {
   Object.defineProperty(globalThis.navigator, 'platform', {
@@ -20,7 +20,7 @@ vi.hoisted(() => {
   });
 });
 
-import { render, act, waitFor, cleanup } from '@testing-library/react';
+import { render, act, cleanup } from '@testing-library/react';
 import { Profiler, useState } from 'react';
 import { useAnimator } from '../animation/useAnimator';
 import type { Animator } from '../animation/types';
@@ -52,7 +52,16 @@ beforeAll(() => {
   Object.defineProperty(HTMLCanvasElement.prototype, 'clientHeight', { value: 200, configurable: true });
 });
 
-afterEach(() => { cleanup(); });
+// The camera's frame clock and its `performance.now()` seed share one virtual
+// clock, so a glide finishes in a known number of frames however loaded the
+// machine is. Timers stay real: nothing here waits on one.
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'performance'] });
+});
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 function makeScene(): Scene<D, L, P> {
   const s = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
@@ -66,7 +75,14 @@ function makeScene(): Scene<D, L, P> {
 // repaints (and re-registrations) on its own.
 const ANIMATED = { animatedZoom: { ms: 40 } } as const;
 
-const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
+const FRAME_MS = 16;
+const frame = () => vi.advanceTimersByTimeAsync(FRAME_MS).then(() => undefined);
+/** Runs frames until `done` holds, failing after `max` — a bound in frames, not
+ *  wall-clock time, so it measures the glide rather than the machine. */
+const settle = async (done: () => boolean, max = 200) => {
+  for (let i = 0; i < max && !done(); i++) await act(async () => { await frame(); });
+  expect(done()).toBe(true);
+};
 
 const HOME: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
@@ -83,7 +99,7 @@ describe('SceneCanvas camera handle', () => {
     expect(ref.current!.getView()).toEqual(HOME);
     expect(ref.current!.isViewAnimating()).toBe(true);
 
-    await waitFor(() => { expect(ref.current!.isViewAnimating()).toBe(false); });
+    await settle(() => !ref.current!.isViewAnimating());
     expect(ref.current!.getView().scale.x).toBeCloseTo(4, 6);
     expect(ref.current!.getView().x).toBeCloseTo(100, 6);
   });
@@ -131,7 +147,7 @@ describe('SceneCanvas camera handle', () => {
 
     const before = commits;
     act(() => { ref.current!.animateView({ x: 60, y: 0, scale: { x: 2, y: 2 } }, { ms: 40 }); });
-    await waitFor(() => { expect(ref.current!.isViewAnimating()).toBe(false); });
+    await settle(() => !ref.current!.isViewAnimating());
 
     expect(commits).toBe(before);
     expect(ref.current!.getView().x).toBeCloseTo(60, 6);
@@ -155,7 +171,7 @@ describe('SceneCanvas camera handle', () => {
     // not strand a zoom half-finished.
     act(() => { out.current!.cancelAll(); });
 
-    await waitFor(() => { expect(ref.current!.isViewAnimating()).toBe(false); });
+    await settle(() => !ref.current!.isViewAnimating());
     expect(ref.current!.getView().x).toBeCloseTo(60, 6);
     expect(ref.current!.getView().scale.x).toBeCloseTo(2, 6);
   });
@@ -189,7 +205,7 @@ describe('SceneCanvas camera handle on a controlled canvas', () => {
     act(() => { ref.current!.animateView({ x: 400, y: 0, scale: { x: 4, y: 4 } }, { ms: 40 }); });
     expect(ref.current!.isViewAnimating()).toBe(true);
 
-    await waitFor(() => { expect(ref.current!.isViewAnimating()).toBe(false); });
+    await settle(() => !ref.current!.isViewAnimating());
     expect(ref.current!.getView().x).toBeCloseTo(400, 6);
     expect(ref.current!.getView().scale.x).toBeCloseTo(4, 6);
   });
@@ -265,7 +281,7 @@ describe('viewport.animatedZoom at the keyboard (mac branch)', () => {
     expect(ref.current!.getView().scale.x).toBe(1);
     expect(ref.current!.isViewAnimating()).toBe(true);
 
-    await waitFor(() => { expect(ref.current!.isViewAnimating()).toBe(false); });
+    await settle(() => !ref.current!.isViewAnimating());
     expect(ref.current!.getView().scale.x).toBeCloseTo(1.25, 6);
   });
 
@@ -287,7 +303,8 @@ describe('viewport.animatedZoom at the keyboard (mac branch)', () => {
     act(() => { fireKey('=', { metaKey: true }); });
     expect(interpolator).toHaveBeenCalledOnce();
 
-    await waitFor(() => { expect(onDone).toHaveBeenCalledOnce(); });
+    await settle(() => onDone.mock.calls.length > 0);
+    expect(onDone).toHaveBeenCalledOnce();
     expect(ref.current!.getView().scale.x).toBeCloseTo(1.25, 6);
   });
 
@@ -297,7 +314,7 @@ describe('viewport.animatedZoom at the keyboard (mac branch)', () => {
     await act(async () => { await frame(); });
 
     act(() => { fireKey('=', { metaKey: true }); fireKey('=', { metaKey: true }); fireKey('=', { metaKey: true }); });
-    await waitFor(() => { expect(ref.current!.isViewAnimating()).toBe(false); });
+    await settle(() => !ref.current!.isViewAnimating());
 
     expect(ref.current!.getView().scale.x).toBeCloseTo(Math.pow(1.25, 3), 6);
   });
@@ -311,7 +328,7 @@ describe('viewport.animatedZoom at the keyboard (mac branch)', () => {
     act(() => { fireKey('0', { metaKey: true }); });
     expect(ref.current!.getView().scale.x).toBe(3);
 
-    await waitFor(() => { expect(ref.current!.isViewAnimating()).toBe(false); });
+    await settle(() => !ref.current!.isViewAnimating());
     const home = ref.current!.getView();
     expect(home.x).toBeCloseTo(0, 6);
     expect(home.y).toBeCloseTo(0, 6);
@@ -334,7 +351,7 @@ describe('viewport.animatedZoom at the keyboard (mac branch)', () => {
     act(() => { fireKey('=', { metaKey: true }); });
     const samples: View[] = [];
     const stop = ref.current!.subscribeView((v) => { samples.push(v); });
-    await waitFor(() => { expect(ref.current!.isViewAnimating()).toBe(false); });
+    await settle(() => !ref.current!.isViewAnimating());
     stop();
 
     expect(samples.length).toBeGreaterThanOrEqual(1);

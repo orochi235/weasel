@@ -55,7 +55,8 @@ export interface ViewAnimationApi {
 
 /**
  * Animate the viewport `View`. Runs on the kit's {@link Animator} — pass one to
- * share a canvas's animator, or omit it and the hook makes its own.
+ * share a canvas's animator, or omit it and the hook makes its own. A caller
+ * that always has one should use {@link useViewAnimationOn}, which builds none.
  *
  * Every animation from one instance registers under that instance's cancel key,
  * so starting one cancels whatever *it* had in flight, and each starts from the
@@ -64,11 +65,17 @@ export interface ViewAnimationApi {
  */
 export function useViewAnimation(view: ViewChannel, animator?: Animator): ViewAnimationApi {
   const own = useAnimator();
+  return useViewAnimationOn(view, animator ?? own);
+}
+
+/** {@link useViewAnimation} on an animator the caller owns. Constructs no
+ *  animator of its own, so the camera runs on exactly the one passed. */
+export function useViewAnimationOn(view: ViewChannel, animator: Animator): ViewAnimationApi {
   const key = `${VIEW_ANIMATION_KEY}:${useId()}`;
   const viewRef = useRef(view);
   viewRef.current = view;
-  const animatorRef = useRef<Animator>(animator ?? own);
-  animatorRef.current = animator ?? own;
+  const animatorRef = useRef<Animator>(animator);
+  animatorRef.current = animator;
   const targetRef = useRef<View | null>(null);
   const writingRef = useRef(false);
 

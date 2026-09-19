@@ -271,16 +271,6 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
 
 ## Viewport
 
-- **(P3) `useViewAnimation` builds an animator it never uses.** The hook calls
-  `useAnimator()` unconditionally so it can fall back to its own animator when
-  the caller passes none — hooks cannot be conditional — so `<SceneCanvas>`,
-  which always passes `cameraAnimator`, constructs a second idle `Animator` per
-  canvas. It registers nothing and its rAF loop never starts, so the cost is one
-  object plus a no-op unmount effect, but it is dead weight and it makes
-  "SceneCanvas runs the camera on its own animator" untestable by swapping the
-  argument: `useViewAnimation(channel, undefined)` behaves identically. Fixing
-  it wants either a positional-animator variant or a `useAnimatorOrNull` seam.
-
 - **(P3) A controlled consumer's own `setState` cannot interrupt a glide.**
   Every view write that goes through the canvas cancels the camera runner, via
   the `onViewChange` it fires on both branches. A consumer who owns `view` in
@@ -1459,34 +1449,6 @@ one dead `const` and four stale disable directives.
 ---
 
 ## Release-gate & build hygiene
-
-- **(P2) View-animation tests flake under a loaded parallel run.** Two full
-  `npm test` runs on 2026-08-25 failed with *different* sets — first
-  `apps/site/demos/__tests__/SceneScrollerDemo.test.tsx` (1 test, since fixed),
-  then `packages/core/src/canvas/SceneCanvas.animatedZoom.test.tsx` (9 of its
-  14). Each file passes on its own; only the 733-file parallel run trips them.
-
-  The cause is real timers over a real animation. `animatedZoom` starts a 40ms
-  rAF glide and then `await waitFor(() => expect(isViewAnimating()).toBe(false))`,
-  which polls on `checkRealTimersCallback` with `waitFor`'s default 1s budget.
-  Under full load rAF is starved, the glide has not settled inside that budget,
-  and the assertion reports `expected true to be false` — a timeout wearing an
-  equality message. The file took 10.4s in the failing run.
-
-  The fix is to stop racing wall-clock: drive the glide with fake timers and a
-  controllable rAF so completion is deterministic. Raising the `waitFor` timeout
-  only widens the window the machine has to beat. `SceneScrollerDemo.test.tsx`
-  is the worked example — note that jsdom builds `requestAnimationFrame` on
-  `setInterval`, so faking intervals while still awaiting a real frame hangs.
-
-  A third run, on an unrelated branch, hit the same 9 and then passed clean on
-  re-run — so it is the harness, not any one change.
-
-  `packages/core/src/core/stylus/usePointerStylus.test.tsx` ("throttles updates
-  by maxFps") joined the set on 2026-08-26: it read the post-throttle pressure
-  0.9 where it expects the throttle to have held 0.1, then passed alone in
-  648ms. Same cause, and the same fix reaches it — the throttle is timed off
-  `performance.now()` against real elapsed time.
 
 - **(P2) Benchmark HUD text against a transparent DOM overlay.** Two ways to
   put text over the canvas: `@weasel-js/hud` draws it as canvas commands, or a

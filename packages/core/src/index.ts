@@ -233,7 +233,7 @@ export { useDecayLoop } from './core/viewport/useDecayLoop';
 export type { DecayLoopConfig, PanBounds, InertiaConfig } from './core/viewport/useDecayLoop';
 export { usePinchGesture } from './core/viewport/usePinchGesture';
 export { interpolateView } from './core/viewport/interpolateView';
-export { useViewAnimation, VIEW_ANIMATION_KEY } from './core/viewport/useViewAnimation';
+export { useViewAnimation, useViewAnimationOn, VIEW_ANIMATION_KEY } from './core/viewport/useViewAnimation';
 
 // ─── Tools: dispatcher, registry, declarative routing, built-ins ────────────
 export * from './tools';
