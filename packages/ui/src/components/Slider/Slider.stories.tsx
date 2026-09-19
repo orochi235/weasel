@@ -130,6 +130,50 @@ export const EvenStrictStops: Story = {
   render: (args) => <Wrapper {...args} initial={[{ value: 1 }]} />,
 };
 
+/** Strict snapping on a linear track: the detents sit where their values fall,
+ *  which crowds a geometric list — `spacing: 'even'` is the answer to that. */
+export const StrictStopsLinearSpacing: Story = {
+  args: { ...EvenMagneticStops.args, spacing: 'linear', snap: 'strict' },
+  render: (args) => <Wrapper {...args} initial={[{ value: 1 }]} />,
+};
+
+const MIX_STOPS = [
+  { value: 0, label: 'None' },
+  { value: 0.25 },
+  { value: 0.5, label: 'Half' },
+  { value: 0.75 },
+  { value: 1, label: 'Full' },
+];
+
+/** Labels are per stop: a stop with no label of its own still marks the track
+ *  and still attracts. */
+export const LabeledAndBareStops: Story = {
+  args: { step: 0.01, stops: MIX_STOPS, readoutPlacement: 'none' },
+  render: (args) => <Wrapper {...args} initial={[{ value: 0.32 }]} />,
+};
+
+/** `stopLabels: 'ends'` keeps the extent of the range readable without a label
+ *  under every mark. The end labels sit inside the track so a wide one cannot
+ *  spill past the control. */
+export const EndStopLabelsOnly: Story = {
+  args: { ...EvenMagneticStops.args, stopLabels: 'ends' },
+  render: (args) => <Wrapper {...args} initial={[{ value: 1.3 }]} />,
+};
+
+/** `stopLabels: 'none'` drops the row, leaving the marks to speak for
+ *  themselves — what a tight control row wants. */
+export const NoStopLabels: Story = {
+  args: { ...EvenMagneticStops.args, stopLabels: 'none' },
+  render: (args) => <Wrapper {...args} initial={[{ value: 1.3 }]} />,
+};
+
+/** Labels under a multi-thumb track. A label highlights while a thumb rests on
+ *  its stop. */
+export const LabeledStopsWithTwoThumbs: Story = {
+  args: { ...EvenMagneticStops.args, constraint: 'ordered', readoutPlacement: 'none' },
+  render: (args) => <Wrapper {...args} initial={[{ value: 0.5 }, { value: 2 }]} />,
+};
+
 /** A press on bare track sends the nearest thumb there and keeps dragging.
  *  Off by default, since on a multi-thumb editor it would yank a stop the
  *  user was not aiming at. */
