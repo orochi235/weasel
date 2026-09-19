@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { SvgNode } from './types';
 import { svgNodesToKitDrafts, unpackSvgFiles } from './unpack';
-import type { IngestCtx, Op } from '@weasel-js/core';
+import { getMarker, _resetMarkersForTests, type IngestCtx, type Op } from '@weasel-js/core';
 
 const rectNode = (x: number, y: number, w: number, h: number, extra: Record<string, unknown> = {}): SvgNode => ({
   kind: 'path',
@@ -362,5 +362,19 @@ describe('unpackSvgFiles', () => {
     await unpackSvgFiles([asFile('this is not svg', 'junk.svg'), asFile(SVG)], c);
     expect(batches).toHaveLength(1);
     expect(warn).toHaveBeenCalled();
+  });
+});
+
+describe('unpackSvgFiles — document markers', () => {
+  it('registers a marker the file defines, under the key its stroke names', async () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+      + '<defs><marker id="head" refX="3" refY="2" orient="auto"><path d="M0 0 L3 2 L0 4 Z"/></marker></defs>'
+      + '<path d="M10 10 L90 10" stroke="#000" marker-end="url(#head)"/></svg>';
+    const { c, batches } = ctx();
+    await unpackSvgFiles([new File([svg], 'a.svg', { type: 'image/svg+xml' })], c);
+    const key = (batches[0].ops[0].data.stroke as { markerEnd: string }).markerEnd;
+    expect(key).toMatch(/^head-/);
+    expect(getMarker(key)).toBeDefined();
+    _resetMarkersForTests();
   });
 });

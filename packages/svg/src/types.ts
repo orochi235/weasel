@@ -11,7 +11,9 @@
  * single `matrix(a b c d e f)` on the `<g>`.
  */
 
-import type { Path, FillStyle, Stroke, StyledRun, TextStyle, TextVerticalAlign } from '@weasel-js/core';
+import type {
+  Path, FillStyle, MarkerEntry, Stroke, StyledRun, TextStyle, TextVerticalAlign,
+} from '@weasel-js/core';
 
 /**
  * Opaque pass-through bag for namespaced XML content.
@@ -258,6 +260,13 @@ export interface ParseResult {
   height?: number;
   /** Text content of the first `<title>` child of `<svg>`, when present. */
   title?: string;
+  /**
+   * An entry for each document `<marker>` a stroke references under a key the
+   * marker registry does not know, keyed as the strokes in `nodes` now name
+   * them. Nothing draws them until they are registered (`registerMarker`),
+   * which `unpackSvgFiles` does.
+   */
+  markers?: MarkerEntry[];
 }
 
 /** Options for {@link serializeSvg}. */

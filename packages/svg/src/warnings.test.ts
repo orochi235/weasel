@@ -57,10 +57,19 @@ describe('warnings', () => {
     expect(warnings).toEqual([]);
   });
 
-  it('warns once for a marker key it has no entry for', () => {
-    const { warnings } = parseSvg(
+  it('reads a document marker the kit has no key for without a warning', () => {
+    const { warnings, markers } = parseSvg(
       '<svg xmlns="http://www.w3.org/2000/svg">' +
       '<defs><marker id="weird"><path d="M0 0 L-3 0"/></marker></defs>' +
+      '<line x1="0" y1="0" x2="10" y2="0" stroke="#000" marker-end="url(#weird)"/></svg>',
+    );
+    expect(warnings).toEqual([]);
+    expect(markers).toHaveLength(1);
+  });
+
+  it('warns once for a marker neither the kit nor the document defines', () => {
+    const { warnings } = parseSvg(
+      '<svg xmlns="http://www.w3.org/2000/svg">' +
       '<line x1="0" y1="0" x2="10" y2="0" stroke="#000" marker-end="url(#weird)"/></svg>',
     );
     expect(warnings).toHaveLength(1);
