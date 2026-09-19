@@ -205,6 +205,9 @@ export function useSceneTextEdit<
         height: pose.height,
         fontSize: style?.fontSize ?? optsRef.current.defaultFontSize ?? 16,
         zoom,
+        verticalAlign: optsRef.current.getVerticalAlign
+          ? optsRef.current.getVerticalAlign(node.data)
+          : node.data.verticalAlign,
       };
     },
     getClipRect: () => surface()?.box ?? null,

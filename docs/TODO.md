@@ -1392,7 +1392,7 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 - **(P3) The edit overlay can break a wrapped line where the canvas does not.** Under `TextStyle.wrap`, `layoutRuns` breaks only at spaces, while the overlay's `white-space: pre-wrap` follows the browser's line-breaking rules — after a hyphen, between CJK characters. Such a line reflows when an edit opens. Nothing in CSS limits break opportunities to spaces, so this is a layout change (UAX #14 in `layoutRuns`) or a DOM one (each word in a `nowrap` span).
 
-- **(P2) The edit overlay ignores `verticalAlign`.** `useTextEdit` places its text at the top of the pose box whatever the node's `verticalAlign`, so editing a center- or bottom-aligned `kit:text` node moves its text to the top of the box until the edit commits. The caret mapping does honor it. Needs a vertical offset computed from the overlay's own content height, re-read as typing changes it.
+- **(P3) Run the bottom-aligned edit-overlay visual check.** `tests/visual/text-edit-overlay.spec.ts`'s "a bottom-aligned node keeps its text on the box bottom while typing" was written without a browser and has never run. The overlay's `verticalAlign` placement is otherwise covered only by jsdom proxies (stubbed `offsetHeight`), so run it once and fix whichever side is wrong.
 
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have.
 

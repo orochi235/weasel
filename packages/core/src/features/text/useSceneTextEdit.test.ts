@@ -84,6 +84,20 @@ describe('useSceneTextEdit — view projection', () => {
     expect(el.style.fontSize).toBe('16px');
     expect(el.style.transform).toBe('scale(2)');
   });
+
+  it("carries the node's verticalAlign onto the overlay's pose", () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const hook = renderHook(() => {
+      const scene = useScene({ items: [{ ...NODE, verticalAlign: 'bottom' as const }] });
+      return useSceneTextEdit(scene, container);
+    });
+    act(() => hook.result.current.startEdit('a'));
+    const el = overlayOf(container);
+    // jsdom measures the content as 0 tall, so the whole 40px box is slack.
+    expect(el.style.minHeight).toBe('');
+    expect(el.style.top).toBe('89px');
+  });
 });
 
 /**
