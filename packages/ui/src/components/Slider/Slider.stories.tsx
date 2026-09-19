@@ -33,6 +33,9 @@ const meta: Meta<typeof Slider> = {
     allowShiftAll: { control: 'boolean' },
     showStops: { control: 'boolean' },
     trackClick: { control: 'inline-radio', options: ['none', 'move-nearest'] },
+    snap: { control: 'inline-radio', options: ['magnetic', 'strict'] },
+    spacing: { control: 'inline-radio', options: ['linear', 'even'] },
+    stopLabels: { control: 'inline-radio', options: ['all', 'ends', 'none'] },
     ariaLabel: { control: 'text' },
     stops: { table: { disable: true } },
     thumbs: { table: { disable: true } },
@@ -102,6 +105,29 @@ export const SlimWithReadoutsBelow: Story = {
 export const StopsWithoutMarks: Story = {
   args: { step: 0.01, stops: [0, 0.25, 0.5, 0.75, 1], showStops: false, readoutPlacement: 'below-thumb' },
   render: (args) => <Wrapper {...args} initial={[{ value: 0.32 }]} />,
+};
+
+const RATE_STOPS = [0.25, 0.5, 1, 2, 4].map(r => ({ value: r, label: `${r}×` }));
+
+/** Evenly spaced, labeled rate stops that attract without confining: the
+ *  thumb can rest at 1.3× between them. */
+export const EvenMagneticStops: Story = {
+  args: {
+    min: 0.25,
+    max: 4,
+    step: 0.05,
+    stops: RATE_STOPS,
+    spacing: 'even',
+    trackClick: 'move-nearest',
+    readoutPlacement: 'inline-after',
+  },
+  render: (args) => <Wrapper {...args} initial={[{ value: 1.3 }]} />,
+};
+
+/** The same stops as detents: every drag and press lands on one. */
+export const EvenStrictStops: Story = {
+  args: { ...EvenMagneticStops.args, snap: 'strict' },
+  render: (args) => <Wrapper {...args} initial={[{ value: 1 }]} />,
 };
 
 /** A press on bare track sends the nearest thumb there and keeps dragging.

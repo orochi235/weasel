@@ -150,10 +150,20 @@
   background: var(--rp-tick-color, var(--wzl-border-strong));
 }
 
+/* The labels hang below the track out of flow, so the row reserves their
+ * height and anything after it — the below-thumb readouts — clears them.
+ * Padding, not margin: a margin would collapse into whatever follows. */
+.withStopLabels .row {
+  padding-bottom: calc(var(--wzl-space-xs) + var(--wzl-font-size-xs) * var(--wzl-leading-tight));
+}
+
 .stopLabels {
-  position: relative;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + var(--wzl-space-xs));
   height: calc(var(--wzl-font-size-xs) * var(--wzl-leading-tight));
-  margin-top: var(--wzl-space-xs);
+  pointer-events: none;
 }
 
 .stopLabel {

@@ -844,9 +844,121 @@ describe('Slider stop labels', () => {
     expect(labelsOf(container).map(l => l.dataset.edge)).toEqual(['start', undefined, 'end']);
   });
 
+  // jsdom has no layout, so this asserts the proxy: inside the track, the row
+  // shares its width rather than the track-plus-readout row's.
+  it('hangs the labels off the track so an inline readout cannot shift them', () => {
+    const { container } = render(
+      <Slider min={0} max={100} stops={STOPS} readoutPlacement="inline-after" thumbs={[{ value: 10 }]} onInput={() => {}} />,
+    );
+    const track = container.querySelector('[role="slider"]')!.parentElement!;
+    expect(track.querySelector('[data-slider-stop-labels]')).not.toBeNull();
+  });
+
   it('keeps the labels out of the accessibility tree', () => {
     const { container } = render(<Slider min={0} max={100} stops={STOPS} thumbs={[{ value: 10 }]} onInput={() => {}} />);
     expect(container.querySelector('[data-slider-stop-labels]')!.getAttribute('aria-hidden')).toBe('true');
+  });
+});
+
+describe('Slider even spacing', () => {
+  const RATES = [0.25, 0.5, 1, 2, 4];
+  const renderEven = (props: Partial<Parameters<typeof Slider>[0]> = {}) => {
+    const onInput = vi.fn();
+    const { container } = render(
+      <Slider min={0} max={10} stops={RATES} spacing="even" thumbs={[{ value: 1 }]} onInput={onInput} {...props} />,
+    );
+    const thumb = container.querySelector('[role="slider"]') as HTMLElement;
+    stubRect(thumb.parentElement as HTMLElement, { left: 0, width: 200 });
+    return { container, thumb, onInput };
+  };
+  const last = (fn: ReturnType<typeof vi.fn>) => fn.mock.calls.at(-1)![0][0].value;
+
+  it('spaces stops evenly however their values are distributed', () => {
+    const { container } = renderEven();
+    const ticks = Array.from(container.querySelectorAll<HTMLElement>('[data-slider-tick]'));
+    expect(ticks.map(t => t.dataset.fraction)).toEqual(['0', '0.25', '0.5', '0.75', '1']);
+  });
+
+  it('places a value between two stops proportionally within their span', () => {
+    const { thumb } = renderEven({ thumbs: [{ value: 1.5 }] });
+    expect(thumb.style.left).toBe('62.5%');
+  });
+
+  it('runs the track from the first stop to the last', () => {
+    const { thumb } = renderEven();
+    expect(thumb.getAttribute('aria-valuemin')).toBe('0.25');
+    expect(thumb.getAttribute('aria-valuemax')).toBe('4');
+  });
+
+  it('lets a drag rest between stops', () => {
+    const { thumb, onInput } = renderEven();
+    fireEvent.pointerDown(thumb, { clientX: 100, clientY: 12, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 125, clientY: 12 });
+    expect(last(onInput)).toBeCloseTo(1.5, 5);
+  });
+
+  it('attracts a drag by track distance, not value distance', () => {
+    const { thumb, onInput } = renderEven();
+    fireEvent.pointerDown(thumb, { clientX: 100, clientY: 12, button: 0 });
+    // 144px is 6px short of the 2× stop, but 0.24 away from it in value — a
+    // tolerance measured in value units would miss it.
+    fireEvent.pointerMove(document, { clientX: 144, clientY: 12 });
+    expect(last(onInput)).toBe(2);
+  });
+
+  it('moves every thumb the same track distance on a shift-drag', () => {
+    const { container, onInput } = renderEven({ allowShiftAll: true, thumbs: [{ value: 0.5 }, { value: 2 }] });
+    const thumbs = container.querySelectorAll<HTMLElement>('[role="slider"]');
+    fireEvent.pointerDown(thumbs[0], { clientX: 50, clientY: 12, button: 0, shiftKey: true });
+    fireEvent.pointerMove(document, { clientX: 100, clientY: 12 });
+    const next = onInput.mock.calls.at(-1)![0];
+    expect(next.map((t: { value: number }) => t.value)).toEqual([1, 4]);
+  });
+
+  it('falls back to linear spacing with fewer than two stops', () => {
+    const { thumb } = renderEven({ stops: [5], thumbs: [{ value: 2.5 }] });
+    expect(thumb.style.left).toBe('25%');
+  });
+});
+
+describe('Slider strict snapping', () => {
+  const renderStrict = (props: Partial<Parameters<typeof Slider>[0]> = {}) => {
+    const onInput = vi.fn();
+    const { container } = render(
+      <Slider min={0} max={100} stops={[0, 25, 50, 75, 100]} snap="strict" thumbs={[{ value: 0 }]} onInput={onInput} {...props} />,
+    );
+    const thumb = container.querySelector('[role="slider"]') as HTMLElement;
+    stubRect(thumb.parentElement as HTMLElement, { left: 0, width: 200 });
+    return { container, thumb, onInput };
+  };
+  const last = (fn: ReturnType<typeof vi.fn>) => fn.mock.calls.at(-1)![0][0].value;
+
+  it('lands a drag on the nearest stop however far it is', () => {
+    const { thumb, onInput } = renderStrict();
+    fireEvent.pointerDown(thumb, { clientX: 0, clientY: 12, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 70, clientY: 12 });
+    expect(last(onInput)).toBe(25);
+  });
+
+  it('lands a track press on the nearest stop', () => {
+    const { container, onInput } = renderStrict({ trackClick: 'move-nearest' });
+    const track = container.querySelector('[data-slider-ticks]')!.parentElement as HTMLElement;
+    fireEvent.pointerDown(track, { clientX: 130, clientY: 12, button: 0 });
+    expect(last(onInput)).toBe(75);
+  });
+
+  it('ignores step between stops', () => {
+    const { thumb, onInput } = renderStrict({ step: 1 });
+    fireEvent.pointerDown(thumb, { clientX: 0, clientY: 12, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 70, clientY: 12 });
+    expect(last(onInput)).toBe(25);
+  });
+
+  it('is free movement when there are no stops', () => {
+    const { thumb, onInput } = renderStrict({ stops: undefined });
+    fireEvent.pointerDown(thumb, { clientX: 0, clientY: 12, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 70, clientY: 12 });
+    expect(last(onInput)).toBe(35);
   });
 });
 
