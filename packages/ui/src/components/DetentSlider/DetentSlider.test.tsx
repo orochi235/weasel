@@ -26,7 +26,7 @@ function renderRate(props: Partial<Parameters<typeof DetentSlider<number>>[0]> =
 }
 
 const ticks = (c: HTMLElement) => Array.from(c.querySelectorAll<HTMLElement>('[data-slider-tick]'));
-const labels = (c: HTMLElement) => Array.from(c.querySelectorAll<HTMLElement>('[data-detent-label]'));
+const labels = (c: HTMLElement) => Array.from(c.querySelectorAll<HTMLElement>('[data-slider-stop-label]'));
 
 describe('DetentSlider spacing', () => {
   // The whole point: 0.25/0.5/1/2/4 is geometric, so a linear value track would
@@ -88,7 +88,7 @@ describe('DetentSlider labels', () => {
   // the tree would have a screen reader read every detent on focus.
   it('keeps the labels out of the accessibility tree', () => {
     const { container } = renderRate();
-    expect(container.querySelector('[data-detent-labels]')!.getAttribute('aria-hidden')).toBe('true');
+    expect(container.querySelector('[data-slider-stop-labels]')!.getAttribute('aria-hidden')).toBe('true');
   });
 });
 

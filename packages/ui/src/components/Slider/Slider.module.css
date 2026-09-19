@@ -149,3 +149,35 @@
   border-radius: var(--wzl-radius-pill);
   background: var(--rp-tick-color, var(--wzl-border-strong));
 }
+
+.stopLabels {
+  position: relative;
+  height: calc(var(--wzl-font-size-xs) * var(--wzl-leading-tight));
+  margin-top: var(--wzl-space-xs);
+}
+
+.stopLabel {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size-xs);
+  line-height: var(--wzl-leading-tight);
+  font-variant-numeric: tabular-nums;
+  color: var(--wzl-fg-subtle);
+}
+
+/* The end labels are pinned inside the track rather than centered on it, so a
+ * wide one can't spill past the control and misalign whatever sits beside it. */
+.stopLabel[data-edge="start"] {
+  transform: none;
+}
+
+.stopLabel[data-edge="end"] {
+  transform: translateX(-100%);
+}
+
+.stopLabel[data-selected] {
+  color: var(--wzl-fg);
+  font-weight: var(--wzl-font-weight-medium);
+}

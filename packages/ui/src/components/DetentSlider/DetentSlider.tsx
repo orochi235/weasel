@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactElement, type ReactNode } from 'react';
-import { Slider, type Thumb } from '../Slider/Slider';
+import { Slider, type SliderStop, type Thumb } from '../Slider/Slider';
 import s from './DetentSlider.module.css';
 
 /** What a detent can carry. Narrowed so identity comparison and React keys
@@ -89,7 +89,6 @@ function plainText(label: ReactNode, fallback: DetentValue): string {
 export function DetentSlider<V extends DetentValue = number>(props: DetentSliderProps<V>): ReactElement {
   const { value, onChange, onCommit, formatLabel, ariaLabel, className } = props;
   const items = normalize(props.items);
-  const labelMode = props.labels ?? 'all';
   const index = resolveIndex(items, value);
   const lastIndex = Math.max(0, items.length - 1);
 
@@ -129,10 +128,7 @@ export function DetentSlider<V extends DetentValue = number>(props: DetentSlider
     { value: index, valueText: current.ariaLabel ?? plainText(labelOf(current, index), current.value) },
   ];
 
-  const shown =
-    labelMode === 'ends'
-      ? [...new Set([0, lastIndex])]
-      : items.map((_, i) => i);
+  const stops: SliderStop[] = items.map((item, i) => ({ value: i, label: labelOf(item, i) }));
 
   return (
     <div className={className ? `${s.root} ${className}` : s.root}>
@@ -141,7 +137,8 @@ export function DetentSlider<V extends DetentValue = number>(props: DetentSlider
         min={0}
         max={lastIndex}
         step={1}
-        stops={items.map((_, i) => i)}
+        stops={stops}
+        stopLabels={props.labels ?? 'all'}
         trackClick="move-nearest"
         trackHeight={props.trackHeight ?? 8}
         ariaLabel={ariaLabel}
@@ -149,23 +146,6 @@ export function DetentSlider<V extends DetentValue = number>(props: DetentSlider
         onInput={handleInput}
         onChange={handleCommit}
       />
-      {labelMode !== 'none' && (
-        <div className={s.labels} data-detent-labels aria-hidden="true">
-          {shown.map(i => (
-            <span
-              key={items[i].value}
-              className={s.label}
-              data-detent-label
-              data-index={i}
-              data-selected={i === index ? 'true' : undefined}
-              data-edge={i === 0 ? 'start' : i === lastIndex ? 'end' : undefined}
-              style={{ left: `${(lastIndex === 0 ? 0 : i / lastIndex) * 100}%` }}
-            >
-              {labelOf(items[i], i)}
-            </span>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
