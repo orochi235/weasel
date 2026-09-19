@@ -661,15 +661,6 @@ intercepting the press that drags the body.
   its own placeholder pose. Closing it means giving the adapter surface a
   dependency read, which is a bigger decision than picking.
 
-- **(P3) `documentPose` skips only the node's *own* override.** Its
-  dependencies still resolve through `effectivePose`, so a derived node's
-  "document" pose moves while something it derives from is being dragged. The
-  minimap is the reader that cares — it frames on `documentPose` precisely so a
-  drag does not thrash the framing, and that guarantee holds only in a scene
-  with no derived poses. Either `documentPose` needs to resolve its whole
-  dependency chain override-free, or the two readers that want that have to say
-  so. Found while routing `sceneLeafBounds` through it.
-
 - **(P2) Value-compare the resolved poses in `resolveDerivedPath`.**
   Invalidation is pushed by the scene today, which is closed only under the
   triggers someone enumerated — the arc's reviews found three rounds of misses

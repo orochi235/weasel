@@ -7,7 +7,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { createScene } from './scene';
-import { effectivePose } from './effectivePose';
+import { documentPose, effectivePose } from './effectivePose';
 import { PATH_L, PATH_M, type Path, type PolygonPath } from '../geometry/path';
 import type { DerivedDep, NodeId, RectPose } from './types';
 
@@ -157,5 +157,16 @@ describe('a dependency carries its path', () => {
       },
     });
     expect(poseOf(scene, reader)).toEqual(box(1, 1, 1, 1));
+  });
+});
+
+describe('a document read of a path-derived pose', () => {
+  it('holds still while the edge it reads is being dragged', () => {
+    const { scene, b, label } = labeled();
+    const l = label();
+    scene.overrides.set(b, { pose: box(300, 50) });
+    expect(poseOf(scene, l)).toEqual(box(300, 50, 4, 4));
+    expect(documentPose(scene, scene.get(l)!)).toEqual(box(100, 0, 4, 4));
+    expect(poseOf(scene, l)).toEqual(box(300, 50, 4, 4));
   });
 });

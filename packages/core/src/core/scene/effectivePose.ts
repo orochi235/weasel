@@ -13,7 +13,22 @@ import { dropPoseKeyedMemoSlots, nodeMemo } from './nodeMemo';
 import type { Path } from '../geometry/path';
 import type { DerivedDep, Node, NodeId, PoseOverrides } from './types';
 
-const SLOT = 'kit:derivedPose';
+/**
+ * Which pose a resolution answers: `effective` honors overrides all the way
+ * down the dependency chain, `document` ignores them all the way down. Each
+ * reading memoizes in its own slots — the memo key is the node and its
+ * authored pose, which is the same for both.
+ */
+type Reading = 'effective' | 'document';
+
+const POSE_SLOT: Record<Reading, string> = {
+  effective: 'kit:derivedPose',
+  document: 'kit:derivedPose:document',
+};
+const PATH_SLOT: Record<Reading, string | undefined> = {
+  effective: undefined,
+  document: 'kit:derivedPath:document',
+};
 
 /** The subset of a node this module reads. Structural so a `Node` satisfies
  *  it without importing the full generic shape. */
@@ -66,6 +81,14 @@ export function derivedPose<TPose>(
   source: PoseSource<TPose>,
   node: PosedNode<TPose>,
 ): TPose | null {
+  return derivedPoseIn(source, node, 'effective');
+}
+
+function derivedPoseIn<TPose>(
+  source: PoseSource<TPose>,
+  node: PosedNode<TPose>,
+  reading: Reading,
+): TPose | null {
   const derive = node.derivePose;
   if (derive === undefined) return null;
   const ids = dependencyIdsOf(node, source.childrenOf);
@@ -79,8 +102,8 @@ export function derivedPose<TPose>(
   try {
     // Keyed on the authored pose, which is what `dropPoseKeyedMemoSlots`
     // clears — the same push-invalidation the derived path rides on.
-    const value = nodeMemo(node, SLOT, node.pose, () =>
-      derive(node as never, ids.map((id) => derivedDepOf(source, id))),
+    const value = nodeMemo(node, POSE_SLOT[reading], node.pose, () =>
+      derive(node as never, ids.map((id) => depIn(source, id, reading))),
     );
     if (cycleHits !== hitsBefore) dropPoseKeyedMemoSlots(node);
     return value;
@@ -102,35 +125,59 @@ export function derivedDepOf<TPose>(
   source: PoseSource<TPose>,
   id: NodeId,
 ): DerivedDep<TPose> | undefined {
+  return depIn(source, id, 'effective');
+}
+
+function depIn<TPose>(
+  source: PoseSource<TPose>,
+  id: NodeId,
+  reading: Reading,
+): DerivedDep<TPose> | undefined {
   const node = source.get(id);
   if (node === undefined) return undefined;
   return {
     node: node as unknown as Node<unknown, string, TPose>,
-    pose: effectivePose(source, node),
+    pose: poseIn(source, node, reading),
     get path(): Path | null {
       return resolveDerivedPath(
         node,
-        (depId) => derivedDepOf(source, depId),
+        (depId) => depIn(source, depId, reading),
         (depId) => source.childrenOf(depId),
+        PATH_SLOT[reading],
       );
     },
   };
 }
 
+function poseIn<TPose>(
+  source: PoseSource<TPose>,
+  node: PosedNode<TPose>,
+  reading: Reading,
+): TPose {
+  if (reading === 'effective') {
+    const override = source.overrides.get(node.id)?.pose;
+    if (override !== undefined) return override;
+  }
+  return derivedPoseIn(source, node, reading) ?? node.pose;
+}
+
 /**
  * The pose the *document* says `node` is at: derived when it derives, else
- * authored. `effectivePose` minus the override step.
+ * authored. `effectivePose` minus the override step, at every link of the
+ * dependency chain — a derived node's document pose holds still while
+ * something it derives from is being dragged.
  *
  * For a reader that must not see an in-flight gesture — an action capturing
- * the `from` of a transform op, a placement computed against a sibling. A
- * derived pose belongs here and an override does not: derivation is what the
- * document means, an override is what one gesture is currently showing.
+ * the `from` of a transform op, a placement computed against a sibling, the
+ * minimap's framing. A derived pose belongs here and an override does not:
+ * derivation is what the document means, an override is what one gesture is
+ * currently showing.
  */
 export function documentPose<TPose>(
   source: PoseSource<TPose>,
   node: PosedNode<TPose>,
 ): TPose {
-  return derivedPose(source, node) ?? node.pose;
+  return poseIn(source, node, 'document');
 }
 
 /**
@@ -143,7 +190,5 @@ export function effectivePose<TPose>(
   source: PoseSource<TPose>,
   node: PosedNode<TPose>,
 ): TPose {
-  const override = source.overrides.get(node.id)?.pose;
-  if (override !== undefined) return override;
-  return derivedPose(source, node) ?? node.pose;
+  return poseIn(source, node, 'effective');
 }
