@@ -225,9 +225,7 @@ Priority tags:
 
 ### Pen tool follow-ups
 
-From `docs/specs/2026-05-03-pen-tool-design.md`:
-
-- **(P3) Snap-to-existing-anchors** (cross-path anchor snapping). Clicking near an existing path's anchor would coalesce. Useful for stitching paths. (Only a generic grid `snapPoint` exists today, not anchor magnetism.)
+- **(P3) Close a pen path onto another path's endpoint.** The pen snaps a placed anchor onto any existing anchor and can pick up an open path's end, but finishing on a *different* open path's endpoint only lands an anchor there — it does not join the two paths into one node.
 
 ### Cursor package follow-ups
 

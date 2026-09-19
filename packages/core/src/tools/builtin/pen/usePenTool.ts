@@ -109,6 +109,10 @@ export interface UsePenToolOptions<TPose> {
    *  Measured as a screen-space circle, so it stays round under non-uniform
    *  zoom; aligns with `useSelectTool.handleHitRadius`. */
   closeHitRadius?: number;
+  /** Screen-px radius within which a placed anchor lands exactly on an
+   *  existing path's anchor. Default `8`; `0` turns it off. Takes precedence
+   *  over `snapPoint`, which applies only when no anchor is in range. */
+  anchorSnapRadius?: number;
   /** Optional point snapper applied to every world-space coordinate the
    *  pen records or previews — anchor positions (corner clicks, smooth-
    *  drag base point), the rubber-band cursor, and the outgoing-handle
@@ -221,7 +225,7 @@ function mirrorHandle(
 export function usePenTool<TPose>(
   options: UsePenToolOptions<TPose>,
 ): Tool<PenScratch> {
-  const { wrapPath, adapter, autoSelect = true, autoCommitOnClose = true, closeHitRadius = 8, snapPoint } = options;
+  const { wrapPath, adapter, autoSelect = true, autoCommitOnClose = true, closeHitRadius = 8, anchorSnapRadius = 8, snapPoint } = options;
 
   // Persistent scratch: single ref reused across gestures so multi-click
   // state survives the dispatcher's per-gesture initScratch contract.
@@ -230,8 +234,8 @@ export function usePenTool<TPose>(
 
   // Latest options stashed so handlers see fresh values without rebuilding
   // the Tool record (which would lose scratch identity in the dispatcher).
-  const optsRef = useRef({ wrapPath, adapter, autoSelect, autoCommitOnClose, closeHitRadius, snapPoint });
-  optsRef.current = { wrapPath, adapter, autoSelect, autoCommitOnClose, closeHitRadius, snapPoint };
+  const optsRef = useRef({ wrapPath, adapter, autoSelect, autoCommitOnClose, closeHitRadius, anchorSnapRadius, snapPoint });
+  optsRef.current = { wrapPath, adapter, autoSelect, autoCommitOnClose, closeHitRadius, anchorSnapRadius, snapPoint };
 
   // Scratch is a mutable ref (so click-by-click state survives the
   // dispatcher's per-gesture initScratch contract). Mutations alone don't
@@ -315,6 +319,17 @@ export function usePenTool<TPose>(
     return fn ? fn({ x, y }) : { x, y };
   }, []);
 
+  /** Where an anchor pressed at `(x, y)` lands: on an existing path's anchor
+   *  when one is within `anchorSnapRadius`, else wherever `snapPoint` puts it. */
+  const placeAt = useCallback((deps: ActionDeps, x: number, y: number): { x: number; y: number } => {
+    const radius = optsRef.current.anchorSnapRadius;
+    if (radius > 0) {
+      const hit = nearestPathAnchor(pathsNear(deps, x, y, radius), { x, y }, radius, viewScale(deps));
+      if (hit) return { x: hit.x, y: hit.y };
+    }
+    return snap(x, y);
+  }, [snap]);
+
   /** Is a world point within the close-hit radius of `(ax, ay)`? Measured as a
    *  screen-space circle, so the zone stays round under non-uniform zoom. */
   const withinCloseRadius = useCallback(
@@ -355,7 +370,7 @@ export function usePenTool<TPose>(
               forceRenderRef.current();
               return;
             }
-            const { x: wx, y: wy } = snap(p.pressX, p.pressY);
+            const { x: wx, y: wy } = placeAt(deps, p.pressX, p.pressY);
             const scratch = s();
 
             // Close-on-first-anchor (>= 3 anchors). With `autoCommitOnClose`
@@ -439,7 +454,7 @@ export function usePenTool<TPose>(
             // that end's own handle rather than placing a new anchor on it.
             const pickedUp = pickUpEndpoint(ctx.deps, origin.x, origin.y);
             if (!pickedUp) {
-              const { x: ax, y: ay } = snap(origin.x, origin.y);
+              const { x: ax, y: ay } = placeAt(ctx.deps, origin.x, origin.y);
               if (!scratch.current) scratch.current = { anchors: [], closed: false };
               scratch.current.anchors.push({ x: ax, y: ay });
             }
@@ -528,7 +543,7 @@ export function usePenTool<TPose>(
         },
       },
     ];
-  }, [commit, snap, withinCloseRadius, pickUpEndpoint]);
+  }, [commit, placeAt, withinCloseRadius, pickUpEndpoint]);
 
   return useMemo(() => {
     return defineTool<PenScratch>({

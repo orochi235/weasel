@@ -41,6 +41,7 @@ function setup(over: {
   autoSelect?: boolean;
   autoCommitOnClose?: boolean;
   closeHitRadius?: number;
+  anchorSnapRadius?: number;
   snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
   /** Uniform view scale, to exercise the zoom-relative close-hit radius. */
   scale?: number;
@@ -648,6 +649,63 @@ describe('usePenTool', () => {
       p.escape();
       p.click(101, 0);
       expect(p.scratch.current!.anchors).toHaveLength(2);
+    });
+  });
+
+  describe('snapping to existing anchors', () => {
+    const poly = (d: string) => pathFromD(d) as PolygonPath;
+    const paths = { n1: poly('M 0 0 L 100 0 L 100 100 Z'), n2: poly('M 300 0 L 400 0 L 500 0') };
+
+    it('a click near an existing anchor lands exactly on it', () => {
+      const p = setup({ paths });
+      p.click(-50, -50);
+      p.click(103, 96);
+      expect(p.scratch.current!.anchors[1]).toEqual({ x: 100, y: 100 });
+    });
+
+    it('snaps to interior anchors too, and starts a new path on one from idle', () => {
+      const p = setup({ paths });
+      p.click(402, 3);
+      expect(p.scratch.current!.anchors).toEqual([{ x: 400, y: 0 }]);
+      expect(p.scratch.continuing).toBeNull();
+    });
+
+    it('snaps the smooth-anchor base point at drag start', () => {
+      const p = setup({ paths });
+      p.click(-50, -50);
+      p.drag({ x: 97, y: 2 }, { x: 150, y: 50 });
+      expect(p.scratch.current!.anchors[1]).toMatchObject({ x: 100, y: 0 });
+    });
+
+    it('beats grid snapping, which still applies away from anchors', () => {
+      const grid = (q: { x: number; y: number }) => ({ x: Math.round(q.x / 30) * 30, y: Math.round(q.y / 30) * 30 });
+      const p = setup({ paths, snapPoint: grid });
+      p.click(-50, -50);
+      p.click(96, 104);
+      expect(p.scratch.current!.anchors[1]).toEqual({ x: 100, y: 100 });
+      // 6px off an anchor at 1x: outside the default radius, so the grid wins.
+      p.click(206, 0);
+      expect(p.scratch.current!.anchors[2]).toEqual({ x: 210, y: 0 });
+    });
+
+    it('measures the radius in screen px', () => {
+      const p = setup({ paths, scale: 4 });
+      p.click(-50, -50);
+      p.click(103, 100);
+      expect(p.scratch.current!.anchors[1]).toEqual({ x: 103, y: 100 });
+      p.click(101, 100);
+      expect(p.scratch.current!.anchors[2]).toEqual({ x: 100, y: 100 });
+    });
+
+    it('anchorSnapRadius sets the radius; 0 turns snapping off', () => {
+      const wide = setup({ paths, anchorSnapRadius: 20 });
+      wide.click(-50, -50);
+      wide.click(115, 100);
+      expect(wide.scratch.current!.anchors[1]).toEqual({ x: 100, y: 100 });
+      const off = setup({ paths, anchorSnapRadius: 0 });
+      off.click(-50, -50);
+      off.click(101, 100);
+      expect(off.scratch.current!.anchors[1]).toEqual({ x: 101, y: 100 });
     });
   });
 });
