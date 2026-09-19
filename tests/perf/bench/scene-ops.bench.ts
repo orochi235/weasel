@@ -78,7 +78,7 @@ describe('scene.setPose — by tree depth', () => {
  * `docs/TODO.md` carried a P1 saying the fresh pose object `setPose` demands
  * per node per frame was the GC bill, and proposed a scalar setter or an
  * in-place write to remove it. The bare-allocation row is what settles that:
- * minting the object is a rounding error next to recording the step, so
+ * minting the object is a rounding error next to what `setPose` costs, so
  * neither remedy would have moved the number. The override row is the write
  * that actually costs nothing — `PoseOverrides` is set once and mutated in
  * place, and `commit()` drops the pose-keyed memo slots the reference key can
@@ -104,6 +104,16 @@ describe('per-frame pose write — one node, three paths', () => {
   const sink: { x: number; y: number; width: number; height: number }[] = [];
   bench('the pose object alone', () => {
     sink[0] = { x: i++, y: 0, width: 3, height: 4 };
+  }, FIXED);
+});
+
+describe('per-frame pose write — setPose, untracked', () => {
+  // The document write a simulation makes: same `setPose`, nothing recorded.
+  const scene = emptyScene(60);
+  const id = scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { n: 0 } });
+  let i = 0;
+  bench('setPose inside untracked — records nothing', () => {
+    scene.untracked(() => scene.setPose(id, { x: i++, y: 0, width: 3, height: 4 }));
   }, FIXED);
 });
 

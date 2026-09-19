@@ -37,6 +37,11 @@ at the top: the one that used to live there drifted to listing 21 of 41 P2s, thr
 of them P3s, because nothing recomputes a hand-maintained copy. `grep '(P2)'` is
 the index.
 
+**Weight the last open items in a mostly-done section above their P-number.**
+When a section is mostly landed work kept as context for a few open entries,
+finishing those lets the whole section be deleted, so rank them ahead of
+same-priority work elsewhere when recommending what to pick up.
+
 ## Plans
 
 A plan is scaffolding for work in flight. **When the work merges, delete the

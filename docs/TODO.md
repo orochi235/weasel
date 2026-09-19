@@ -696,8 +696,7 @@ What it surfaced:
   so a toolbar outside two canvases has nothing to say which one it drives.
   That wants a focused-canvas concept — which canvas an ambient `<ActionBar>`,
   keybinding or palette targets — and the registry keyed per canvas beneath it.
-  Worth doing when a consumer wants two canvases under one toolbar; isolation
-  covers two canvases that simply coexist.
+  Isolation covers only two canvases that simply coexist.
 
 - **No tiled-content layer primitive exists** (the P3 under Tiling) — the run
   cycle and the parallax bands are second sites wanting it.
@@ -720,111 +719,13 @@ painters, the camera as the canvas `view`, and the shared fixed-step loop
 extracted to `platformer/world.ts` so both demos run the identical simulation.
 The bypass twin keeps its bypass; this one shows the engine.
 
-Measured against it (Chrome, 120 Hz display, DevTools tracing on — the absolute
-milliseconds are inflated by the tracing, the ratios are the signal):
-
-| | immediate | scene graph |
-|---|---|---|
-| frames committed / s | 109 | 76 |
-| main-thread busy / s, immediate = 1.00× | 1.00× | **1.27×** |
-| main-thread busy / committed frame | 6.31 ms | **11.57 ms** |
-| major GC over the window | 57 ms | **549 ms** |
-
-Unloaded, both peg the 120 Hz display and neither drops a frame. The costs only
-separate under load — which is the honest read: the retained tree is affordable
-here, and it is not free. That load was never written down, so the table below
-is a different, recorded measurement rather than a fifth column here.
-
-Re-measured after the frame-loop arc, same machine and browser: both demos with
-the run started and no player input, ten-second windows, DevTools tracing on.
-"main" is the tree before the arc, "frame loop" after. Busy is the sum of
-renderer-main `RunTask`; the scene twin's frame count is its own readout, the
-immediate twin's a `requestAnimationFrame` counter. The scene-graph "frame loop"
-column shows two runs, which is the run-to-run spread.
-
-| | immediate, main | immediate, frame loop | scene graph, main | scene graph, frame loop |
-|---|---|---|---|---|
-| frames / s | 120 | 120 | 120 | 120 |
-| main-thread busy / s, busy seconds per wall second | 0.19× | **0.11×** | 0.47× | **0.35–0.38×** |
-| busy / committed frame | 1.58 ms | **0.89 ms** | 3.94 ms | **2.88–3.21 ms** |
-| major GC over 10 s | 0 ms | 2 ms | 10 ms | 4–10 ms |
-| `CanvasInner` setState / s | 118 | **0** | 120 | 100–110 |
-
-The last row counts `CanvasInner`'s own state writes, not React commits: both
-demos commit at roughly 5 Hz besides, from the readout interval in
-`SideScrollerDemo.tsx:110-125`, which is what the React Profiler will show.
-
-Both twins hold 120 Hz at this load, so the frame rate says nothing and busy per
-frame is the number that moves. The immediate twin drops 44%, and `118 → 0` is
-firm for structural rather than statistical reasons: that twin renders an empty
-scene at a constant view and the branch never touched it, so those writes were
-`CanvasInner`'s per-paint `setState` and they are gone by construction.
-
-The scene twin drops 18–27% — its two runs spread 2.88–3.21 ms, about 11%, at
-n=1 per configuration — and effectively all of that is the demo's own switch to
-`setView` on the handle. With the camera left in `useState`, the frame loop alone
-measured 3.86 ms/frame against main's 3.94: a 0.08 ms difference inside a 0.33 ms
-spread, which is no measurable timing difference at all. Read the mechanism
-instead of the number — a consumer calling `setState` every frame pays for that
-render whatever the canvas does underneath it, so decoupling paint from render
-cannot show up until the consumer stops.
-
-Major GC did not move, as expected — per-frame pose allocation belongs to the
-ephemeral-pose-overrides arc.
-
 What it surfaced:
 
-- **(P1) A per-frame camera costs a React render per frame — landed
-  2026-08-25.** The canvas paints from its own animation frame
-  (`packages/core/src/canvas/useFrameLoop.ts`) and the view lives in a ref with
-  `getView` / `setView` / `subscribeView` / `subscribeFrame` on the canvas
-  handle, so a camera driven through `setView` costs no render. The second table
-  above is what it bought. Design:
-  `docs/superpowers/specs/2026-08-24-frame-loop-decoupling-design.md`, Part 1.
-
-- **(P1) `SceneCanvas` commits on every scene mutation, even when the host opted
-  out — closed 2026-09-05.** Those were the ~100–110 commits/s in the table
-  above. The scene subscription now calls `requestRedraw()` instead of
-  committing, so the twin pays no render per frame write.
-  `apps/site/demos/__tests__/SceneScrollerDemo.test.tsx` asserts it: the demo
-  writes 27 poses a frame and the Profiler counts no commit.
-
-- **(P2) A 60 Hz loop has no non-recording way to write.** Every mutation is an
-  undo entry; `scene.batch` reduces a frame to one entry, which is still 120 per
-  second. The only real escape is `getActiveJournal` plus periodic `cancel()`,
-  and that journal's inner history is itself unbounded. The demo caps
-  `historyLimit` at 60 and calls that a workaround, not an answer.
-
-  **This is the whole of the cost, and it absorbs the former P1 about `setPose`
-  allocating a pose object per node per frame.** That entry proposed a scalar
-  setter or an in-place write to remove the churn. Measured — `npm run perf:bench`,
-  "per-frame pose write — one node, three paths" — minting the object is under a
-  tenth of what `setPose` costs (34.4 M/s bare against 3.23 M/s through
-  `setPose`), so neither remedy would have moved the number. The recording is
-  the bill.
-
-  The in-place write the entry asked for also already exists for the ephemeral
-  case: `PoseOverrides` is set once and mutated per frame, and `commit()` drops
-  the pose-keyed memo slots that the reference key cannot see
-  (`nodeMemo.dropPoseKeyedMemoSlots`). It measures 11.2 M/s, 3.5× `setPose`,
-  and allocates nothing per frame. What has no answer is a write to the
-  *document* pose that does not record — and it cannot simply mutate in place
-  either, because `kit:setPose` keeps `from` and `to` in history and recycling
-  those objects rewrites entries that already happened.
-
-  `apps/site/demos/platformer/sceneWorld.ts` writes ~27 document poses at 120 Hz
-  through `setPose`, which is the retained twin's whole thesis, so it pays this
-  deliberately.
-
-- **[x] (P2) The scene tree can be a transform hierarchy.** Pose composition is
-  rigid — translate and rotate — so a rig built from those is expressible as
-  parenting rather than resolved to world matrices and flattened onto
-  independent bone nodes. What stays flattened is a rig using `scaleX`/`scaleY`
-  separately: an anisotropically scaled parent turns a rotated child into a
-  parallelogram, which `{x, y, width, height, rotation}` cannot hold. Measured
-  over 50,000 random parent/child pairs; the table is in
-  `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`. Converting the
-  platformer's eleven bones to parenting is not done.
+- **(P2) Convert the platformer's eleven bones to parenting.** The rig is
+  still resolved to world matrices and flattened onto independent bone nodes
+  every frame, though the scene tree now composes rigid poses as a transform
+  hierarchy. Only a rig scaling `scaleX`/`scaleY` separately must stay
+  flattened: see `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`.
 
 - **(P3) View-bounds culling is opt-in and stops short of the painter.** The
   scene slot's `cull` option (`layers={{ scene: { cull: true } }}`, on in the

@@ -155,8 +155,8 @@ const OFFSCREEN: RectPose = { x: -1e5, y: -1e5, width: 0, height: 0 };
 /**
  * Push one frame of simulation state onto the scene. Every write goes through
  * `setPose`/`update`, so this is the retained tree carrying a moving world —
- * the caller wraps it in `scene.batch` to keep it to one history entry and one
- * notify.
+ * the caller wraps it in `scene.untracked`, which applies it without recording
+ * and notifies once.
  */
 export function syncScene(scene: Scene<WorldData, WorldLayer, RectPose>, g: GameRefs): void {
   // Coins spin by narrowing: the ellipse collapses to a line at the quarter

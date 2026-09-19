@@ -117,3 +117,18 @@ describe('coalesce anchoring', () => {
     expect(t.v).toBe(0);
   });
 });
+
+describe('seal', () => {
+  it('starts a fresh entry even when the next one could coalesce', () => {
+    const t = { v: 0 };
+    const h = createHistory(t, { coalesceWindowMs: 500, now: () => 1000 });
+
+    h.applyOps([setOp(t, 0, 1, 'k')], 'e1');
+    h.seal();
+    h.applyOps([setOp(t, 1, 2, 'k')], 'e2');
+
+    expect(h.entries().undo.map((e) => e.label)).toEqual(['e1', 'e2']);
+    h.undo();
+    expect(t.v).toBe(1);
+  });
+});
