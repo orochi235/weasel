@@ -1005,7 +1005,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     //      same match walk pointerdown takes), when it declares
     //      `Action.cursor` — e.g. `viewport.dragPan` → 'grab' over empty
     //      canvas when pan would win the drag.
-    //   3. No override — clear the inline style so the active tool's
+    //   3. Otherwise the action a click here would route to, when it
+    //      declares one — e.g. Alt over a path segment in path-edit mode.
+    //   4. No override — clear the inline style so the active tool's
     //      React-managed `Tool.cursor` (the implicit base) shows through.
     //
     // Mid-gesture the pump stands down; the tool-cursor pipeline
@@ -1092,24 +1094,26 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       const hoverBody = target().classifyTarget?.(w);
       const bodyTarget = hoverBody?.body;
       const bodyKind = hoverBody?.kind;
-      const predicted = dispatcherNow().resolveOnly(
-        {
-          kind: 'pointerdown',
-          x: w.x,
-          y: w.y,
-          clientX: h.clientX,
-          clientY: h.clientY,
-          altKey: h.altKey,
-          ctrlKey: h.ctrlKey,
-          metaKey: h.metaKey,
-          shiftKey: h.shiftKey,
-          ...(affordance !== undefined ? { affordance } : {}),
-          ...(bodyTarget !== undefined ? { bodyTarget } : {}),
-          ...(bodyKind !== undefined ? { bodyKind } : {}),
-        },
-        ctxNow(),
-      );
-      applyHoverCursor(predicted?.action.cursor ?? null);
+      const where = {
+        altKey: h.altKey,
+        ctrlKey: h.ctrlKey,
+        metaKey: h.metaKey,
+        shiftKey: h.shiftKey,
+        ...(affordance !== undefined ? { affordance } : {}),
+        ...(bodyTarget !== undefined ? { bodyTarget } : {}),
+        ...(bodyKind !== undefined ? { bodyKind } : {}),
+      };
+      const ctx = ctxNow();
+      const dragCursor = dispatcherNow().resolveOnly(
+        { kind: 'pointerdown', x: w.x, y: w.y, clientX: h.clientX, clientY: h.clientY, ...where },
+        ctx,
+      )?.action.cursor;
+      // A drag's hint first; failing that, what a click here would do.
+      const cursor = dragCursor ?? dispatcherNow().resolveOnly(
+        { kind: 'click', worldX: w.x, worldY: w.y, pressX: w.x, pressY: w.y, ...where },
+        ctx,
+      )?.action.cursor;
+      applyHoverCursor(cursor ?? null);
     }
     /** Modifier/hotkey changes re-route the predicted drag without pointer
      *  movement. Refresh after a tick so the key event's React state

@@ -19,9 +19,9 @@
  * axes: `previewPose` only for pose-as-polygon, `previewPose +
  * previewData` for data.path.
  *
- * `applyEdit(id, worldPath, label)` commits in the correct storage shape.
- * Pose-as-polygon writes via `scene.setPose`; data.path writes a batched
- * setPose (new bounds) + scene.update({data}) (re-aligned local path) so
+ * `applyEdit(id, worldPath, label)` commits in the correct storage shape,
+ * as one undoable batch. Pose-as-polygon is a `transform` op; data.path is
+ * a `transform` (new bounds) plus a `setData` (re-aligned local path), so
  * the kit's render invariant (`pathInWorld(stored, pose) === world`) is
  * preserved.
  *
@@ -37,9 +37,12 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { Path, PolygonPath } from 'features/paths/types';
 import { pathInWorld, worldEditToStorage } from 'features/paths/pathInWorld';
 import { recordModeSwitch } from '@weasel-js/routing';
+import type { Op } from 'core/ops/types';
+import { createTransformOp } from 'core/ops/transform';
+import { createSetDataOp } from 'core/ops/setData';
 
 interface OpsApplier {
-  applyOps(ops: { apply(adapter: unknown): void }[], label?: string): void;
+  applyOps(ops: Op[], label?: string): void;
 }
 
 /** Optional shared state for the edit-mode `editingId`. Pass when the
@@ -222,29 +225,20 @@ export function useEditAnchorsDepSource(
         const storage = classifyStorage(node as { pose: unknown; data: unknown });
         if (!storage) return;
         if (storage.kind === 'pose') {
-          ad.applyOps(
-            [{ apply: (a: unknown) => (a as { setPose: (id: string, p: unknown) => void }).setPose(id, wp) }],
-            label,
-          );
-        } else {
-          // Edited path arrives in world coords (rotation baked in by
-          // resolveEditablePathOf); invert it back to the unrotated stored
-          // shape so `pose.rotation` is preserved and edits round-trip.
-          const { pose: newPose, path: aligned } = worldEditToStorage(storage.pose, wp);
-          const newData = { ...(node.data as object), path: aligned };
-          ad.applyOps(
-            [
-              {
-                apply: (a: unknown) => {
-                  const ad2 = a as { setPose: (id: string, p: unknown) => void };
-                  ad2.setPose(id, newPose);
-                  sceneRef.current.update(id as NodeId, { data: newData as never });
-                },
-              },
-            ],
-            label,
-          );
+          ad.applyOps([createTransformOp({ id, from: node.pose, to: wp, label })], label);
+          return;
         }
+        // Edited path arrives in world coords (rotation baked in by
+        // resolveEditablePathOf); invert it back to the unrotated stored
+        // shape so `pose.rotation` is preserved and edits round-trip.
+        const { pose: newPose, path: aligned } = worldEditToStorage(storage.pose, wp);
+        ad.applyOps(
+          [
+            createTransformOp({ id, from: node.pose, to: newPose, label }),
+            createSetDataOp({ id, from: node.data, to: { ...(node.data as object), path: aligned }, label }),
+          ],
+          label,
+        );
       },
     };
   });

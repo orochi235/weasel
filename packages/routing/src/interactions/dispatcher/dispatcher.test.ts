@@ -1050,3 +1050,62 @@ describe('invocation coordinates', () => {
     expect(ctx.world).toEqual({ x: 3, y: 4 });
   });
 });
+
+describe('enabled() sees where the event landed', () => {
+  const noMods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
+  const click = { kind: 'click', worldX: 3, worldY: 4, pressX: 1, pressY: 2, ...noMods } as unknown as InputEvent;
+
+  it('hands a click’s world point to the gate', () => {
+    const enabled = vi.fn().mockReturnValue(true);
+    const action: Action = { ...immediateAction('probe', 'x'), defaultBinding: { kind: 'click' }, enabled };
+    createDispatcher().handleInput(click, makeCtx({ actions: makeRegistry([action]) }));
+    expect(enabled.mock.calls[0][1]).toEqual({ x: 3, y: 4 });
+  });
+
+  it('hands a press its world point', () => {
+    const enabled = vi.fn().mockReturnValue(true);
+    const action: Action = { ...ongoingAction('probe', { kind: 'drag' }), enabled };
+    createDispatcher().handleInput(
+      { kind: 'pointerdown', x: 50, y: 60, ...noMods } as unknown as InputEvent,
+      makeCtx({ actions: makeRegistry([action]) }),
+    );
+    expect(enabled.mock.calls[0][1]).toEqual({ x: 50, y: 60 });
+  });
+
+  it('passes no point for an event that has none', () => {
+    const enabled = vi.fn().mockReturnValue(true);
+    const action: Action = { ...immediateAction('probe', 'a'), enabled };
+    createDispatcher().handleInput(keyAEvent, makeCtx({ actions: makeRegistry([action]) }));
+    expect(enabled.mock.calls[0][1]).toBeUndefined();
+  });
+
+  it('falls through to the next binding when the gate refuses that point', () => {
+    const near = vi.fn();
+    const far = vi.fn();
+    const onlyNearOrigin: Action = {
+      id: 'near',
+      label: 'near',
+      defaultBinding: { kind: 'click', mods: { alt: true } },
+      enabled: (_deps, at) => (at && Math.hypot(at.x, at.y) < 2 ? true : 'not-applicable'),
+      invoker: { timing: 'immediate', run: near },
+    };
+    const fallback: Action = {
+      id: 'far',
+      label: 'far',
+      defaultBinding: { kind: 'click', mods: { alt: true } },
+      invoker: { timing: 'immediate', run: far },
+    };
+    const ctx = makeCtx({ actions: makeRegistry([onlyNearOrigin, fallback]) });
+    const altClick = (x: number, y: number) =>
+      ({ kind: 'click', worldX: x, worldY: y, ...noMods, altKey: true }) as unknown as InputEvent;
+    const dispatcher = createDispatcher();
+    dispatcher.handleInput(altClick(3, 4), ctx);
+    expect(near).not.toHaveBeenCalled();
+    expect(far).toHaveBeenCalledOnce();
+    dispatcher.handleInput(altClick(1, 0), ctx);
+    expect(near).toHaveBeenCalledOnce();
+    // Prediction runs the same gate at the same point.
+    expect(dispatcher.resolveOnly(altClick(3, 4), ctx)?.actionId).toBe('far');
+    expect(dispatcher.resolveOnly(altClick(1, 0), ctx)?.actionId).toBe('near');
+  });
+});

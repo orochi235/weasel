@@ -1,93 +1,87 @@
 /**
- * `insertPathAnchorAction` — alt-click on a path body (while in
- * path-edit mode) inserts a new anchor at the nearest point on the
- * curve. Companion to enter/exitPathEdit; mirrors the Figma /
- * Illustrator convention.
+ * `insertPathAnchorAction` — Alt+click on a segment of the path being
+ * edited inserts a new anchor there, without changing the path's shape.
  *
- * Trigger: `{ kind: 'click', mods: { alt: true } }`. Runtime gates:
- *   - `editingId` must be set (a polygon must be in edit mode).
- *   - The clicked node id must equal `editingId` — alt-clicking some
- *     other selected polygon doesn't insert into the active one.
- *   - The polygon's nearest point to the click must be within an
- *     insertion-slop radius (default 16px in world units).
+ * Alt+click because plain click already belongs to `selectAnchorAction`
+ * (select an anchor, or clear the anchor selection on a miss), and
+ * Alt+Shift+click to `cutPathAtAnchorAction`.
  *
- * When all gates pass, the cubic segment under the click is split via
- * de Casteljau at the parameter `t`. The new path is committed with
- * `createTransformOp` so it goes through the standard undo stack.
- *
- * Limitations: works only for nodes where `pose.kind === 'polygon'`
- * (the same constraint editAnchorsAction has today). Nodes that store
- * the polygon on `data.path` will be supported when the editAnchors
- * dep gains an editable-path abstraction.
+ * The segment test lives in `enabled`, which the dispatcher hands the
+ * event's world point: a click off every segment (or on an anchor) reports
+ * not-applicable, so the dispatcher falls through to whatever else the
+ * click could mean, and the hover pump shows `cursor` only where a click
+ * would insert.
  */
 
-import type { Action } from '@weasel-js/routing';
-import type { ImmediateInvoker } from '@weasel-js/routing';
-import type { EditAnchorsDep } from '../depSchema';
+import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
+import { ActionDisabledReason } from '@weasel-js/routing';
+import type { CursorSpec } from '@weasel-js/cursor';
+import type { EditAnchorsDep, ViewApi } from '../depSchema';
 import type { PolygonPath } from 'features/paths/types';
-import { pathToAnchors, anchorsToPath, nearestSegmentT } from 'features/paths/anchors';
-import { cubicPointAt, splitCubicAtT } from 'features/paths/cubicMath';
+import { pathToAnchors } from 'features/paths/anchors';
+import {
+  editAnchorSet,
+  insertAnchorOnSegment,
+  segmentAt,
+  type AnchorSet,
+  type SegmentHit,
+} from 'features/paths/anchorEdits';
 
-// World-unit slop. If the click is farther than this from the nearest
-// curve point, the action no-ops — the user probably wasn't trying to
-// insert on this path.
-const INSERT_SLOP_PX = 16;
+/** Screen-px reach of a segment, and the radius around each anchor that
+ *  stays the anchor's. Matches the path-anchor affordance's default hit
+ *  radius, so the two regions meet without a gap. */
+const SEGMENT_HIT_PX = 8;
+
+const INSERT_CURSOR: CursorSpec = { glyph: 'pen', fallback: 'crosshair' };
+
+function segmentUnder(
+  deps: ActionDeps | undefined,
+  x: number,
+  y: number,
+): { dep: EditAnchorsDep; hit: SegmentHit } | null {
+  const dep = deps?.editAnchors as EditAnchorsDep | undefined;
+  if (!dep?.editingId) return null;
+  const path = dep.getEditablePath(dep.editingId) as PolygonPath | null | undefined;
+  if (!path || path.kind !== 'polygon') return null;
+  const scale = (deps?.view as ViewApi | undefined)?.get().scale;
+  const hit = segmentAt(pathToAnchors(path) as AnchorSet, x, y, {
+    tolerancePx: SEGMENT_HIT_PX,
+    ...(scale ? { scale } : {}),
+  });
+  return hit ? { dep, hit } : null;
+}
 
 export const insertPathAnchorAction: Action & { requires: string[] } = {
   id: 'insertPathAnchor',
   label: 'Insert anchor',
   defaultBinding: { kind: 'click', mods: { alt: true } },
+  cursor: INSERT_CURSOR,
   eligible: { capability: 'edits-anchors' },
-  requires: ['editAnchors'],
+  requires: ['editAnchors', 'view'],
   invoker: {
     timing: 'immediate',
     run(deps, params) {
-      const dep = deps.editAnchors as EditAnchorsDep | undefined;
-      if (!dep) return;
-      const editingId = dep.editingId;
-      if (!editingId) return;
       const wx = params?.worldX as number | undefined;
       const wy = params?.worldY as number | undefined;
       if (typeof wx !== 'number' || typeof wy !== 'number') return;
-
-      const worldPath = dep.getEditablePath(editingId) as PolygonPath | undefined;
-      if (!worldPath || worldPath.kind !== 'polygon') return;
-      const polygon = worldPath;
-
-      const decoded = pathToAnchors(polygon);
-      const hit = nearestSegmentT(decoded.anchors, wx, wy);
-      if (!hit) return;
-
-      // Slop check against the actual closest curve point at `t`.
-      const sub = decoded.anchors[hit.sub];
-      const a = sub[hit.segIdx];
-      const b = sub[hit.segIdx + 1];
-      const p0 = a;
-      const p1 = a.outHandle ?? a;
-      const p2 = b.inHandle ?? b;
-      const p3 = b;
-      const t = hit.t;
-      const { x: px, y: py } = cubicPointAt(p0, p1, p2, p3, t);
-      const dx = wx - px;
-      const dy = wy - py;
-      if (dx * dx + dy * dy > INSERT_SLOP_PX * INSERT_SLOP_PX) return;
-
-      // Split the cubic at `t`. The two new control quartets give us
-      // updated handles for the existing anchors and a fresh anchor with
-      // its own in/out handles.
-      const { left, right } = splitCubicAtT(p0, p1, p2, p3, t);
-      a.outHandle = { x: left[1].x, y: left[1].y };
-      b.inHandle = { x: right[2].x, y: right[2].y };
-      sub.splice(hit.segIdx + 1, 0, {
-        x: left[3].x,
-        y: left[3].y,
-        inHandle: { x: left[2].x, y: left[2].y },
-        outHandle: { x: right[1].x, y: right[1].y },
+      const under = segmentUnder(deps, wx, wy);
+      if (!under) return;
+      const { dep, hit } = under;
+      const path = dep.getEditablePath(dep.editingId) as PolygonPath;
+      let inserted = -1;
+      const next = editAnchorSet(path, (set) => {
+        inserted = insertAnchorOnSegment(set, hit);
+        return inserted !== -1;
       });
-
-      const newPath = anchorsToPath(decoded.anchors, decoded.closed);
-      dep.applyEdit(editingId, newPath, 'Insert anchor');
+      if (!next) return;
+      dep.applyEdit(dep.editingId, next, 'Insert anchor');
+      dep.setSelectedAnchors([inserted]);
     },
   } as ImmediateInvoker,
-  enabled: () => true,
+  enabled: (deps, at) => {
+    const dep = deps?.editAnchors as EditAnchorsDep | undefined;
+    if (!dep?.editingId) return ActionDisabledReason.NotApplicable;
+    if (at && !segmentUnder(deps, at.x, at.y)) return ActionDisabledReason.NotApplicable;
+    return true;
+  },
 };

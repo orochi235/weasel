@@ -99,8 +99,15 @@ export interface ActionDispatch extends BindingSource {
    * synthesize it from the surrounding `DepRegistry` so predicates can
    * inspect selection / scene / etc. Predicates that don't need deps just
    * ignore the arg.
+   *
+   * `at` is the world point of the event being routed, when it has one — a
+   * click, a press, a long-press. An action that only applies somewhere
+   * (on a path segment, say) refuses other points here, so the dispatcher
+   * falls through to the next binding and hover prediction shows the
+   * action's `cursor` only where it would act. Palettes and keystrokes
+   * pass no point; treat absent as "anywhere".
    */
-  enabled?: (deps?: ActionDeps) => true | ActionDisabledReason;
+  enabled?: (deps?: ActionDeps, at?: { x: number; y: number }) => true | ActionDisabledReason;
   /**
    * Declarative eligibility rule, evaluated against the current
    * `RuleCtx` by the dispatcher before invoking `start()`. Omitted =
@@ -118,11 +125,11 @@ export interface ActionDispatch extends BindingSource {
     | import('../../eligibility').Condition;
   /**
    * CSS cursor shown while the pointer hovers a spot where this action
-   * would win the drag. The hover-cursor pump (in `useGestureDispatcher`)
-   * runs `Dispatcher.resolveOnly` on each idle pointermove — the same
-   * match walk a real pointerdown takes — and applies the winning
-   * action's `cursor`, so the hint and the actual click target stay in
-   * sync by construction. Omitted = no override (the active tool's
+   * would win the drag — or, when the drag's winner declares no cursor,
+   * the click. The hover-cursor pump (in `useGestureDispatcher`) runs
+   * `Dispatcher.resolveOnly` on each idle pointermove — the same match
+   * walk a real press takes — and applies the winning action's `cursor`,
+   * so the hint and the actual target stay in sync by construction. Omitted = no override (the active tool's
    * `Tool.cursor` shows). Affordance hits are resolved earlier in the
    * pump via `AffordanceRegion.cursor` and never reach this field.
    *

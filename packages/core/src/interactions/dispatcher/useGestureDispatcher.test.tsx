@@ -335,6 +335,31 @@ describe('useGestureDispatcher', () => {
       act(() => { fire(canvas, 'pointermove', { clientX: 40, clientY: 40 }); });
       expect(canvas.style.cursor).toBe('');
     });
+
+    const altClickAction: Action = {
+      id: 'probe.altClick',
+      label: 'alt click',
+      defaultBinding: { kind: 'click', mods: { alt: true } },
+      cursor: 'copy',
+      enabled: (_deps, at) => (at === undefined || at.x < 20 ? true : 'not-applicable'),
+      invoker: { timing: 'immediate', run: () => {} },
+    };
+
+    it('shows a click action\u2019s cursor where no drag would claim the press', () => {
+      const { container } = render(<Harness><Probe actionDef={altClickAction} /></Harness>);
+      const canvas = container.querySelector('canvas')!;
+      act(() => { fire(canvas, 'pointermove', { clientX: 10, clientY: 10, altKey: true }); });
+      expect(canvas.style.cursor).toBe('copy');
+      act(() => { fire(canvas, 'pointermove', { clientX: 10, clientY: 10 }); });
+      expect(canvas.style.cursor).toBe('');
+    });
+
+    it('asks the click action\u2019s gate about the hovered point', () => {
+      const { container } = render(<Harness><Probe actionDef={altClickAction} /></Harness>);
+      const canvas = container.querySelector('canvas')!;
+      act(() => { fire(canvas, 'pointermove', { clientX: 40, clientY: 10, altKey: true }); });
+      expect(canvas.style.cursor).toBe('');
+    });
   });
 
   describe('pointerDown bindings', () => {

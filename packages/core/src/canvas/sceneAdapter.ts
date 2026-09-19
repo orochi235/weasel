@@ -96,6 +96,8 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
       setSelection(ids: string[]): void;
       insertNode(node: Node<TData, TLayer, TPose>, index?: number): void;
       removeNode(id: string): void;
+      /** Replace a node's `data` — what a `setData` op writes through. */
+      setData(id: string, data: TData): void;
       getRemovalClosure(ids: readonly string[]): string[];
       applyOps(ops: Op[], label?: string): void;
       snapshotSelection(ids: string[]): ClipboardSnapshot;
@@ -372,6 +374,9 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     },
     removeNode(id: string) {
       scene.remove(asNodeId(id));
+    },
+    setData(id: string, data: TData) {
+      scene.update(asNodeId(id), { data });
     },
     getRemovalClosure(ids: readonly string[]): string[] {
       return [...scene.removalClosure(ids.map(asNodeId))];
