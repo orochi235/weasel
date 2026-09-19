@@ -1,11 +1,4 @@
-/**
- * Maps a domain value onto its position along the track, and back.
- *
- * Deliberately narrow — two functions over an explicit `[min, max]` — rather
- * than a general scale type for the package. `Plot2D`, `CurveEditor` and
- * `@weasel-js/core` each already use "scale" or "domain" to mean something
- * else; generalizing is a job for a second consumer that needs one.
- */
+/** Maps a domain value onto its position along the track, and back. */
 export interface BandScale {
   /** Domain → position in [0,1]. Must be monotonic increasing. */
   toUnit(value: number, min: number, max: number): number;

@@ -163,4 +163,4 @@ export function setKeyValue(
   return replaceAtPath(tracks, sel.trackPath, withKeys(track, keys));
 }
 
-export { snapToNearest as snapTime } from '../CurveEditor/snap';
+export { snapToNearest as snapTime } from '../../snap';

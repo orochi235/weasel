@@ -406,15 +406,6 @@ Core five + Crop shipped. Remaining:
   which is the same trade as the entry above.
 
 
-- **(P2) A registered paint kind with no `Editor` is flattened to a solid by
-  `PaintInput`.** The body falls through its built-in branches to a `ColorField`
-  whose `onChange` writes `{ fill: 'solid', color }`, so opening the control on a
-  consumer's kind and touching it destroys the paint — the same defect the
-  `PrefsForm` paint leaf had, one layer up. The kit's own kinds are all covered
-  now (`mesh-gradient` was the last one), which is exactly why nothing fails:
-  only a consumer hits it. The fix is a branch that refuses to edit a paint it
-  has no editor for rather than editing it wrongly.
-
 - **(P3) Mesh gradients have no on-canvas handles.** `MeshEditor` edits corner
   colors and the blend space; a patch's twelve control points are only reachable
   by writing the paint by hand, which is where gradients were before
@@ -1152,16 +1143,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) `.lk-shell` is `height: 100vh`.** A lab mounted anywhere but the viewport top overflows by its own offset. Harmless on the dev page, wrong in general.
 
-- **(P3) `snapToNearest` and `BandEditor`'s `snapped` are the same function.**
-  `CurveEditor/snap.ts` (which `Timeline` and `createKeyframeLayer` use) and
-  `BandEditor.tsx:134` carry the same algorithm, the same 6px radius and the
-  same alt-to-defeat convention. `BandEditor/scale.ts:1`
-  declines to generalize on the grounds that doing so "is a job for a second
-  consumer that needs one", which is reasoning this repo bans. Relatedly there
-  is no `--wzl-handle-*` token: Timeline's dope-sheet `.key` (9px), CurveEditor's
-  endpoint (10px) and `createKeyframeLayer`'s key (9px) are all 45°-rotated
-  squares sized independently.
-
+- **(P3) There is no `--wzl-handle-*` token.** Timeline's dope-sheet `.key`
+  (9px), CurveEditor's endpoint (10px) and `createKeyframeLayer`'s key (9px)
+  are all 45°-rotated squares sized independently. A CSS token only reaches the
+  first: `createKeyframeLayer` sizes its diamond with SVG `x`/`y`/`width`/`height`
+  attributes from `KEY_HALF`, which its hit test also reads, so sharing a token
+  means moving that geometry into CSS (SVG2 geometry properties) or reading the
+  token back in JS.
 
 - **(P3) Typed units stop at linear factors.** `SelectionPanel` and `PrefsForm`
   read `12mm` into a unit leaf through `UnitField`, and `prefUnit` builds the
@@ -1186,13 +1174,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   and `Button.variant_primary` is the same drawing. The panel's bars already sit
   outside it via the `flat` variant. Doing this generally is a theme decision
   about the glass, not a component change.
-
-- **(P3) The `-24px` in the property readout's width is still a magic number.**
-  `.readoutInput` now takes `var(--wzl-property-readout-w, calc(5em - 24px))`
-  (`Properties.module.css`), so a consumer at a very different base font has a
-  hook instead of a hashed class name — but the default still bakes in the unit
-  and its gap at the kit's own size. Expressing it in `em`, or measuring the
-  unit, would make the default right everywhere rather than overridable.
 
 ### Align/distribute/flip follow-ups
 
@@ -1384,12 +1365,6 @@ controls. It runs beside Storybook today.
   `packages/forge/src/shell/FrameView.tsx` unmounts a frame whose trial is out of
   view. Its config and state already live in the trial, so unmounting loses
   nothing.
-
-- **(P3) The Timeline story ignores forge's Mode toolbar.**
-  `packages/ui/src/components/Timeline/Timeline.stories.tsx` sets `data-wzl-mode`
-  from a `theme` global, which only Storybook declares; forge declares `mode`
-  (`apps/forge/forge.shell.tsx`). Read `mode` in the story, or have forge declare
-  `theme` too.
 
 ---
 

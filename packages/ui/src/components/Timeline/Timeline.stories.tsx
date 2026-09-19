@@ -7,15 +7,19 @@ import { AnimatedTimeline } from './AnimatedTimeline';
 const meta: Meta<typeof Timeline> = {
   title: 'weasel-ui/Timeline',
   component: Timeline,
-  // Storybook's `theme` global sets `data-theme`, which nothing in
-  // tokens.css reads (`applyTheme` writes `data-wzl-mode`) — without this,
-  // a URL-driven "both themes" check verifies the `:root` dark default twice.
+  // tokens.css keys off `data-wzl-mode`. forge's `mode` global is applied to
+  // the frame root already, but Storybook's `theme` global only sets
+  // `data-theme`, which nothing reads — so an explicit pick from either is
+  // restated here, and `auto` is left to the root.
   decorators: [
-    (Story, context) => (
-      <div data-wzl-mode={context.globals.theme === 'light' ? 'light' : 'dark'}>
-        <Story />
-      </div>
-    ),
+    (Story, context) => {
+      const picked = context.globals.mode ?? context.globals.theme;
+      return (
+        <div data-wzl-mode={picked === 'light' || picked === 'dark' ? picked : undefined}>
+          <Story />
+        </div>
+      );
+    },
   ],
 };
 export default meta;

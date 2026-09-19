@@ -194,4 +194,32 @@ describe('PaintInput — a registered kind', () => {
     expect(screen.getByTestId('custom-linear')).toBeInTheDocument();
     expect(screen.queryByLabelText('Stop 1 at 0%')).toBeNull();
   });
+
+  it('refuses to edit a kind it has no editor for rather than flattening it to a solid', () => {
+    disposers.push(registerPaintKind({
+      id: 'noise',
+      label: 'Noise',
+      seed: (color) => asPaint({ fill: 'noise', color }),
+      colorOf: (paint) => (paint as unknown as { color?: string }).color,
+    }));
+    const onChange = vi.fn();
+    const onInput = vi.fn();
+    const { container } = render(
+      <PaintInput
+        value={asPaint({ fill: 'noise', color: '#112233ff' })}
+        onInput={onInput}
+        onChange={onChange}
+      />,
+    );
+
+    const body = container.querySelector('[role="radiogroup"]')?.nextElementSibling;
+    for (const input of container.querySelectorAll('input:not([type="radio"])')) {
+      fireEvent.input(input, { target: { value: '#ff0000' } });
+      fireEvent.change(input, { target: { value: '#ff0000' } });
+    }
+    if (body) fireEvent.click(body);
+    expect(onInput).not.toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
+    expect(body).toHaveTextContent('Noise');
+  });
 });
