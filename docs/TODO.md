@@ -235,17 +235,11 @@ From `docs/specs/2026-05-03-pen-tool-design.md`:
 All four arcs of `docs/superpowers/specs/2026-09-03-cursor-system-design.md`
 have shipped. What remains:
 
-- **(P3) Clicking a path segment doesn't add a point.** In path-edit mode you
-  can drag the points a path already has, and their bezier handles, but there
-  is no way to put a new one partway along a curve — you cannot click a segment
-  between two points and split it there. Every editor has this; weasel doesn't.
-
-  Two things to know before starting. The geometry is the work: splitting a
-  straight segment is trivial, splitting a cubic means de Casteljau at the
-  parameter nearest the click. And the cursor for it has to be `Action.cursor`
-  — a modifier-gated cursor has no other home, because neither `affordanceAt`
-  nor `RenderLayer.hitTest` is handed the event, so an affordance region and a
-  layer claim both cannot see whether a key is down.
+- **(P3) Inserting an anchor borrows the pen tool's cursor.** Alt over a
+  segment in path-edit mode shows `{ glyph: 'pen' }`, the same glyph as the pen
+  tool, because there is no pen-with-a-plus glyph. Drawing one needs proofing
+  at 1× and 2× like the rest of the set (see "Drawing icons" in CLAUDE.md).
+  The cursor is declared in `insertPathAnchor.ts`.
 - **(P3) The `bucket` glyph is parked.** Three attempts failed to read at 24px —
   a tapered pail with a spout is a pencil silhouette, and the handle that would
   fix it wants a sketch rather than another guess. Nothing is blocked: no fill

@@ -167,40 +167,101 @@ export function countPathAnchors(path: Path): number {
   return n;
 }
 
-/** Sample every segment in `anchors` (a decoded path) and return the
- *  closest (subpathIndex, segmentIndex, t) to the world point (wx, wy).
- *  Uses cubic-bezier de Casteljau sampling (segments without bezier
- *  handles are treated as straight lines via p1 = p0, p2 = p3). Returns
- *  `null` only when there are no segments to sample. Used by alt-click
- *  "insert anchor on path" gestures in the pen tool and the path-edit
- *  mode action; lives in `features/paths` so both share one implementation. */
+/** The segment `(sub, segIdx)` as its two end anchors, or null when it
+ *  doesn't exist. `segIdx === sub.length - 1` names a closed subpath's
+ *  closing segment, which runs from the last anchor back to the first. */
+export function segmentEnds(
+  anchors: readonly PenAnchor[][],
+  closed: readonly boolean[] | undefined,
+  sub: number,
+  segIdx: number,
+): { a: PenAnchor; b: PenAnchor } | null {
+  const s = anchors[sub];
+  if (!s || segIdx < 0) return null;
+  if (segIdx + 1 < s.length) return { a: s[segIdx], b: s[segIdx + 1] };
+  if (closed?.[sub] && s.length > 1 && segIdx === s.length - 1) return { a: s[segIdx], b: s[0] };
+  return null;
+}
+
+/** Whether the segment from `a` to `b` is a straight line (no handles). */
+export function isStraightSegment(a: PenAnchor, b: PenAnchor): boolean {
+  return a.outHandle == null && b.inHandle == null;
+}
+
+const COARSE_SAMPLES = 32;
+const REFINE_STEPS = 48;
+const GOLDEN = (Math.sqrt(5) - 1) / 2;
+
+/** Nearest parameter on one segment to `(x, y)`, with its squared distance.
+ *  A straight segment is parameterized by arc length (`t` is the fraction of
+ *  the way from `a` to `b`), matching how {@link insertAnchorOnSegment}
+ *  splits one. */
+function nearestOnSegment(a: PenAnchor, b: PenAnchor, x: number, y: number): { t: number; d2: number } {
+  if (isStraightSegment(a, b)) {
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len2 = dx * dx + dy * dy;
+    const t = len2 === 0 ? 0 : Math.min(1, Math.max(0, ((x - a.x) * dx + (y - a.y) * dy) / len2));
+    const ex = a.x + dx * t - x;
+    const ey = a.y + dy * t - y;
+    return { t, d2: ex * ex + ey * ey };
+  }
+  const p1 = a.outHandle ?? a;
+  const p2 = b.inHandle ?? b;
+  const d2At = (t: number): number => {
+    const q = cubicPointAt(a, p1, p2, b, t);
+    return (q.x - x) ** 2 + (q.y - y) ** 2;
+  };
+  let bestT = 0;
+  let bestD2 = Infinity;
+  for (let k = 0; k <= COARSE_SAMPLES; k++) {
+    const t = k / COARSE_SAMPLES;
+    const d2 = d2At(t);
+    if (d2 < bestD2) { bestD2 = d2; bestT = t; }
+  }
+  // Golden-section search over the bracket either side of the best sample.
+  let lo = Math.max(0, bestT - 1 / COARSE_SAMPLES);
+  let hi = Math.min(1, bestT + 1 / COARSE_SAMPLES);
+  let m1 = hi - GOLDEN * (hi - lo);
+  let m2 = lo + GOLDEN * (hi - lo);
+  let f1 = d2At(m1);
+  let f2 = d2At(m2);
+  for (let i = 0; i < REFINE_STEPS; i++) {
+    if (f1 < f2) {
+      hi = m2; m2 = m1; f2 = f1;
+      m1 = hi - GOLDEN * (hi - lo); f1 = d2At(m1);
+    } else {
+      lo = m1; m1 = m2; f1 = f2;
+      m2 = lo + GOLDEN * (hi - lo); f2 = d2At(m2);
+    }
+  }
+  const t = (lo + hi) / 2;
+  const d2 = d2At(t);
+  return d2 < bestD2 ? { t, d2 } : { t: bestT, d2: bestD2 };
+}
+
+/** The segment of a decoded path nearest `(wx, wy)`, and the parameter `t`
+ *  on it closest to that point. Pass `closed` (from `pathToAnchors`) to
+ *  include each closed subpath's closing segment, reported as
+ *  `segIdx === sub.length - 1`. `t` spans `[0, 1]`, endpoints included.
+ *  Returns `null` only when there are no segments. */
 export function nearestSegmentT(
   anchors: PenAnchor[][],
   wx: number,
   wy: number,
+  closed?: readonly boolean[],
 ): { sub: number; segIdx: number; t: number } | null {
-  const SAMPLES = 32;
   let bestD2 = Infinity;
   let best: { sub: number; segIdx: number; t: number } | null = null;
   for (let s = 0; s < anchors.length; s++) {
-    const sub = anchors[s];
-    for (let i = 0; i + 1 < sub.length; i++) {
-      const a = sub[i];
-      const b = sub[i + 1];
-      const p0 = a;
-      const p1 = a.outHandle ?? a;
-      const p2 = b.inHandle ?? b;
-      const p3 = b;
-      for (let k = 1; k < SAMPLES; k++) {
-        const t = k / SAMPLES;
-        const q = cubicPointAt(p0, p1, p2, p3, t);
-        const dx = q.x - wx;
-        const dy = q.y - wy;
-        const d2 = dx * dx + dy * dy;
-        if (d2 < bestD2) {
-          bestD2 = d2;
-          best = { sub: s, segIdx: i, t };
-        }
+    const segCount = anchors[s].length - (closed?.[s] ? 0 : 1);
+    for (let i = 0; i < segCount; i++) {
+      const ends = segmentEnds(anchors, closed, s, i);
+      if (!ends) continue;
+      const hit = nearestOnSegment(ends.a, ends.b, wx, wy);
+      if (hit.d2 < bestD2) {
+        bestD2 = hit.d2;
+        best = { sub: s, segIdx: i, t: hit.t };
       }
     }
   }

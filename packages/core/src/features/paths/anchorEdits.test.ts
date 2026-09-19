@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { PathBuilder } from './builder';
-import { pathToAnchors, anchorsToPath } from './anchors';
+import { pathToAnchors, anchorsToPath, nearestSegmentT } from './anchors';
+import { cubicPointAt } from './cubicMath';
+import { PATH_L, PATH_M, PATH_Z } from './types';
 import { enumerateAnchors } from 'interactions/actions/edit-anchors/geometry';
 import {
   anchorAt,
@@ -13,6 +15,7 @@ import {
   locateAnchor,
   moveHandleTo,
   openSubpathAt,
+  segmentAt,
   translateAnchorBy,
   type AnchorSet,
 } from './anchorEdits';
@@ -154,9 +157,115 @@ describe('insertAnchorOnSegment', () => {
     expect(flat).toBe(firstSubLen + 1);
   });
 
+  it('splits a straight segment linearly, leaving every segment straight', () => {
+    const set = decode(triangle());
+    insertAnchorOnSegment(set, { sub: 0, segIdx: 0, t: 0.25 });
+    const inserted = anchorAt(set, 1)!;
+    expect(inserted).toEqual({ x: 2.5, y: 0 });
+    expect(anchorAt(set, 0)!.outHandle).toBeUndefined();
+    expect(anchorAt(set, 2)!.inHandle).toBeUndefined();
+    const path = anchorsToPath(set.anchors, set.closed);
+    expect([...path.commands].filter((c) => c !== PATH_M && c !== PATH_L && c !== PATH_Z)).toEqual([]);
+  });
+
+  it('splits the closing segment of a closed subpath, appending the anchor', () => {
+    const set = decode(triangle());
+    // Segment 2 runs from the last anchor (10,10) back to the first (0,0).
+    const flat = insertAnchorOnSegment(set, { sub: 0, segIdx: 2, t: 0.5 });
+    expect(flat).toBe(3);
+    expect(anchorAt(set, 3)).toEqual({ x: 5, y: 5 });
+    expect(set.closed[0]).toBe(true);
+  });
+
+  it('does not treat an open subpath as having a closing segment', () => {
+    const set = decode(compound());
+    expect(insertAnchorOnSegment(set, { sub: 1, segIdx: 2, t: 0.5 })).toBe(-1);
+  });
+
+  it('splits a cubic without changing the curve', () => {
+    const set = decode(curve());
+    const [a, b] = set.anchors[0];
+    const p0 = { x: a.x, y: a.y }, p1 = { ...a.outHandle! }, p2 = { ...b.inHandle! }, p3 = { x: b.x, y: b.y };
+    const t = 0.37;
+    insertAnchorOnSegment(set, { sub: 0, segIdx: 0, t });
+    const [l0, mid, r3] = set.anchors[0];
+    let worst = 0;
+    for (let i = 0; i <= 200; i++) {
+      const u = i / 200;
+      const want = cubicPointAt(p0, p1, p2, p3, u);
+      const got = u <= t
+        ? cubicPointAt(l0, l0.outHandle!, mid.inHandle!, mid, u / t)
+        : cubicPointAt(mid, mid.outHandle!, r3.inHandle!, r3, (u - t) / (1 - t));
+      worst = Math.max(worst, Math.hypot(got.x - want.x, got.y - want.y));
+    }
+    expect(worst).toBeLessThan(1e-9);
+  });
+
   it('returns -1 for a segment that does not exist', () => {
     expect(insertAnchorOnSegment(decode(triangle()), { sub: 0, segIdx: 9, t: 0.5 })).toBe(-1);
     expect(insertAnchorOnSegment(decode(triangle()), { sub: 7, segIdx: 0, t: 0.5 })).toBe(-1);
+  });
+});
+
+describe('nearestSegmentT', () => {
+  /** Squared distance from (x, y) to the cubic, brute-forced on a fine grid. */
+  function bruteNearest(p0: P, p1: P, p2: P, p3: P, x: number, y: number): number {
+    let best = Infinity;
+    for (let i = 0; i <= 100_000; i++) {
+      const q = cubicPointAt(p0, p1, p2, p3, i / 100_000);
+      best = Math.min(best, (q.x - x) ** 2 + (q.y - y) ** 2);
+    }
+    return Math.sqrt(best);
+  }
+  type P = { x: number; y: number };
+
+  it('finds the true nearest parameter on a cubic, not a sample', () => {
+    const set = decode(curve());
+    const [a, b] = set.anchors[0];
+    for (const [x, y] of [[3.1, -1.7], [7.3, -4.2], [5, 1], [0.4, -2.9]]) {
+      const hit = nearestSegmentT(set.anchors, x, y)!;
+      expect(hit.segIdx).toBe(0);
+      const q = cubicPointAt(a, a.outHandle!, b.inHandle!, b, hit.t);
+      const d = Math.hypot(q.x - x, q.y - y);
+      expect(d).toBeLessThan(bruteNearest(a, a.outHandle!, b.inHandle!, b, x, y) + 1e-6);
+    }
+  });
+
+  it('projects exactly onto a straight segment', () => {
+    const hit = nearestSegmentT(decode(triangle()).anchors, 3.7, 2)!;
+    expect(hit.segIdx).toBe(0);
+    expect(hit.t).toBeCloseTo(0.37, 12);
+  });
+
+  it('includes the closing segment when told which subpaths are closed', () => {
+    const set = decode(triangle());
+    // (4, 5) sits 0.7 from the closing diagonal and 5 from anything else.
+    const hit = nearestSegmentT(set.anchors, 4, 5, set.closed)!;
+    expect(hit.segIdx).toBe(2);
+    expect(hit.t).toBeCloseTo(0.55, 12);
+  });
+});
+
+describe('segmentAt', () => {
+  it('hits a segment within the screen tolerance and reports the split point', () => {
+    const hit = segmentAt(decode(triangle()), 5, 0.5, { tolerancePx: 1 })!;
+    expect(hit).toMatchObject({ sub: 0, segIdx: 0, x: 5, y: 0 });
+    expect(hit.t).toBeCloseTo(0.5, 12);
+  });
+
+  it('misses beyond the tolerance', () => {
+    expect(segmentAt(decode(triangle()), 5, 1.5, { tolerancePx: 1 })).toBeNull();
+  });
+
+  it('measures the tolerance on screen, per axis', () => {
+    // At 4x vertical zoom 0.5 world units is 2px — outside a 1px tolerance.
+    expect(segmentAt(decode(triangle()), 5, 0.5, { tolerancePx: 1, scale: { x: 1, y: 4 } })).toBeNull();
+    // Horizontal zoom leaves a vertical offset alone.
+    expect(segmentAt(decode(triangle()), 5, 0.5, { tolerancePx: 1, scale: { x: 4, y: 1 } })).not.toBeNull();
+  });
+
+  it('leaves a press on an existing anchor alone', () => {
+    expect(segmentAt(decode(triangle()), 0.5, 0.2, { tolerancePx: 1 })).toBeNull();
   });
 });
 

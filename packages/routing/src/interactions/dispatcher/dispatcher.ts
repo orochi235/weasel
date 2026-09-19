@@ -499,6 +499,24 @@ function modifiersOf(e: {
   return { alt: e.altKey, ctrl: e.ctrlKey, meta: e.metaKey, shift: e.shiftKey };
 }
 
+/** The world point an event landed on, for `Action.enabled`'s position
+ *  argument. Undefined for events with no position (keys, drops, pastes). */
+function worldPointOf(event: InputEvent): { x: number; y: number } | undefined {
+  switch (event.kind) {
+    case 'pointerdown':
+    case 'longpress':
+      return event.x !== undefined && event.y !== undefined ? { x: event.x, y: event.y } : undefined;
+    case 'click':
+    case 'doubleclick':
+    case 'contextmenu':
+      return event.worldX !== undefined && event.worldY !== undefined
+        ? { x: event.worldX, y: event.worldY }
+        : undefined;
+    default:
+      return undefined;
+  }
+}
+
 /** Build a dispatcher. `getAction` overrides how action ids are resolved;
  *  by default the `DispatcherContext`'s registry is used. */
 export function createDispatcher(opts?: {
@@ -968,7 +986,7 @@ export function createDispatcher(opts?: {
       const deps = buildDepsFromRequires(action, ctx.depRegistry);
 
       if (action.enabled) {
-        const result = action.enabled(deps);
+        const result = action.enabled(deps, worldPointOf(event));
         if (result !== true) {
           traceCandidates.push({ actionId: action.id, scope: match.scope, enabledResult: String(result) });
           // Fall through to the next-best match.
@@ -1171,7 +1189,7 @@ export function createDispatcher(opts?: {
           verdict = { kind: 'ineligible', reason: describeEligible(action.eligible) };
         } else {
           const disabled = action.enabled
-            ? action.enabled(buildDepsFromRequires(action, ctx.depRegistry))
+            ? action.enabled(buildDepsFromRequires(action, ctx.depRegistry), worldPointOf(event))
             : true;
           if (disabled !== true) {
             verdict = { kind: 'disabled', reason: String(disabled) };

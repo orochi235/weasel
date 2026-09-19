@@ -39,9 +39,11 @@ export {
   locateAnchor,
   moveHandleTo,
   openSubpathAt,
+  segmentAt,
   translateAnchorBy,
   type AnchorRect,
   type AnchorSet,
+  type SegmentHit,
 } from './anchorEdits';
 export { splitCubicAtT, fitCubicThroughDeletion, type Point } from './cubicMath';
 export { pointInPath, strokeHitTest, type PointInPathOptions, type StrokeHitTestOptions } from './hitTest';

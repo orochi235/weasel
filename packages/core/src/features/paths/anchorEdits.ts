@@ -23,8 +23,17 @@
  * that test is the tripwire.
  */
 
-import { fitCubicThroughDeletion, splitCubicAtT } from './cubicMath';
-import { pathToAnchors, anchorsToPath, isAnchorSmooth, type PenAnchor } from './anchors';
+import { cubicPointAt, fitCubicThroughDeletion, splitCubicAtT } from './cubicMath';
+import {
+  pathToAnchors,
+  anchorsToPath,
+  isAnchorSmooth,
+  isStraightSegment,
+  nearestSegmentT,
+  segmentEnds,
+  type PenAnchor,
+} from './anchors';
+import { withinPxRadius, type Scale2 } from 'core/viewport/pxExtent';
 import type { PolygonPath } from './types';
 
 /** Subpath-major anchor model — the decoded form of a `PolygonPath`. */
@@ -163,7 +172,11 @@ export function moveHandleTo(
 
 /**
  * Split the segment `(sub, segIdx) → (sub, segIdx + 1)` at parameter `t`,
- * inserting a new anchor there. The de Casteljau split preserves the
+ * inserting a new anchor there. On a closed subpath `segIdx` may also name
+ * the closing segment (`sub.length - 1`); its new anchor is appended.
+ *
+ * A straight segment splits linearly and stays straight — the new anchor
+ * has no handles. A curved one splits by de Casteljau, which preserves the
  * curve exactly: the two halves trace the original path.
  *
  * Returns the new anchor's flat index, or -1 when the segment doesn't
@@ -173,22 +186,79 @@ export function insertAnchorOnSegment(
   set: AnchorSet,
   args: { sub: number; segIdx: number; t: number },
 ): number {
-  const sub = set.anchors[args.sub];
-  if (!sub) return -1;
-  const a = sub[args.segIdx];
-  const b = sub[args.segIdx + 1];
-  if (!a || !b) return -1;
+  const ends = segmentEnds(set.anchors, set.closed, args.sub, args.segIdx);
+  if (!ends) return -1;
+  const { a, b } = ends;
+  const at = args.segIdx + 1;
+  if (isStraightSegment(a, b)) {
+    set.anchors[args.sub].splice(at, 0, {
+      x: a.x + (b.x - a.x) * args.t,
+      y: a.y + (b.y - a.y) * args.t,
+    });
+    return flatAnchorIndex(set, args.sub, at);
+  }
   const p0 = a, p1 = a.outHandle ?? a, p2 = b.inHandle ?? b, p3 = b;
   const { left, right } = splitCubicAtT(p0, p1, p2, p3, args.t);
   a.outHandle = { x: left[1].x, y: left[1].y };
   b.inHandle = { x: right[2].x, y: right[2].y };
-  sub.splice(args.segIdx + 1, 0, {
+  set.anchors[args.sub].splice(at, 0, {
     x: left[3].x,
     y: left[3].y,
     inHandle: { x: left[2].x, y: left[2].y },
     outHandle: { x: right[1].x, y: right[1].y },
   });
-  return flatAnchorIndex(set, args.sub, args.segIdx + 1);
+  return flatAnchorIndex(set, args.sub, at);
+}
+
+/** A point on a segment, as {@link segmentAt} reports it. */
+export interface SegmentHit {
+  sub: number;
+  segIdx: number;
+  /** Parameter on the segment — what {@link insertAnchorOnSegment} takes. */
+  t: number;
+  /** The point on the path at `t`, in the set's own space. */
+  x: number;
+  y: number;
+}
+
+/**
+ * The segment point under `(x, y)`, when it lies within `tolerancePx` of
+ * the path on screen and no nearer than that to either of the segment's
+ * own anchors — a press on an anchor is about the anchor, not the segment
+ * beside it.
+ *
+ * `scale` is the view's, so the tolerance holds per axis under
+ * non-uniform zoom. The search runs in screen-scaled space: scaling is
+ * affine, so the curve's parameterization, and therefore `t`, carries
+ * straight back to world space.
+ */
+export function segmentAt(
+  set: AnchorSet,
+  x: number,
+  y: number,
+  opts: { tolerancePx: number; scale?: Scale2 },
+): SegmentHit | null {
+  const scale = opts.scale ?? { x: 1, y: 1 };
+  const onScreen = (p: { x: number; y: number }) => ({ x: p.x * scale.x, y: p.y * scale.y });
+  const screenAnchors = set.anchors.map((sub) => sub.map((a) => ({
+    ...onScreen(a),
+    ...(a.inHandle ? { inHandle: onScreen(a.inHandle) } : {}),
+    ...(a.outHandle ? { outHandle: onScreen(a.outHandle) } : {}),
+  })));
+  const hit = nearestSegmentT(screenAnchors, x * scale.x, y * scale.y, set.closed);
+  if (!hit) return null;
+  const ends = segmentEnds(set.anchors, set.closed, hit.sub, hit.segIdx)!;
+  const point = pointOnSegment(ends.a, ends.b, hit.t);
+  const tol = opts.tolerancePx;
+  if (!withinPxRadius(point.x - x, point.y - y, tol, scale)) return null;
+  if (withinPxRadius(point.x - ends.a.x, point.y - ends.a.y, tol, scale)) return null;
+  if (withinPxRadius(point.x - ends.b.x, point.y - ends.b.y, tol, scale)) return null;
+  return { sub: hit.sub, segIdx: hit.segIdx, t: hit.t, x: point.x, y: point.y };
+}
+
+function pointOnSegment(a: PenAnchor, b: PenAnchor, t: number): { x: number; y: number } {
+  if (isStraightSegment(a, b)) return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+  return cubicPointAt(a, a.outHandle ?? a, b.inHandle ?? b, b, t);
 }
 
 /**
