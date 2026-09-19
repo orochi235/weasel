@@ -1325,11 +1325,6 @@ controls. It runs beside Storybook today.
   `<style id="wzl-themes">`. Inside the repo, aliases resolve both to source,
   so this appears only against the packed packages.
 
-- **(P3) forge's built-shim resolution test never runs in CI.** The last case in
-  `packages/forge/src/csf/shims/alias.test.ts` runs only when forge's `dist`
-  exists, and `.github/workflows/ci.yml` runs vitest before `npm run build`. Run
-  it after the build step, or in the consumer smoke test.
-
 - **(P3) The workshop replaces a story's instrument for answers no trial is
   showing.** `useStoryRegistry` (`packages/forge/src/shell/useStoryRegistry.ts`)
   bumps a story's revision whenever its answer book changes, whichever config the

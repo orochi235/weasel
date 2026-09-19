@@ -72,6 +72,12 @@ jobs:
       # their built output is what it inlines. `@weasel-js/core` is the one it
       # does not inline — it is an exact peer, resolved at the consumer.
       - run: npm run build -w @weasel-js/labkit
+      # The suite above runs before any dist exists, so it skips forge's check
+      # that the built plugin resolves the published Storybook shim. Rerun that
+      # file now; FORGE_BUILT makes a missing dist a failure rather than a skip.
+      - run: npx vitest run --project=forge packages/forge/src/csf/shims/alias.test.ts
+        env:
+          FORGE_BUILT: '1'
       # Every path a publishable package advertises in `main`/`module`/`types`/
       # `exports` must actually be in its tarball. See scripts/check-publish-manifests.mjs.
       - run: npm run check:manifests
