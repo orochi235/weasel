@@ -680,16 +680,13 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 - [x] **Timeline primitive and hierarchical rig — landed 2026-08-22.**
   `animator.timeline(opts)` (`packages/core/src/animation/timeline/`) registers
   in the animator's table, with sampled / event / nested tracks. The rig
-  (`packages/core/src/animation/rig/`) ships `blendPoses`, `resolveSkeleton` and
-  `IDENTITY_JOINT`; animating one is a `SampledTrack<Pose>`. Demos:
+  (`packages/core/src/animation/rig/`) ships `blendPoses`, `resolveSkeleton`,
+  `IDENTITY_JOINT`, and `useRig` / `bindRig`, which drive bound scene nodes
+  through pose overrides; animating one is a `SampledTrack<Pose>`. Demos:
   `apps/site/demos/TimelineDemo.tsx`, `RigDemo.tsx`.
 
   The follow-ups below are what is left.
 
-- **(P2) No dep binds a rig to scene nodes.** The design named a `useRig` dep
-  following the `insert` pattern; it was never built, so `RigDemo.tsx` calls
-  `resolveSkeleton` directly and draws from the result. Every consumer animating
-  a rig into a scene re-does that wiring by hand.
 - **(P3) Inverse kinematics** — a solver that writes poses. Composes with the rig
   above and needs nothing here changed.
 - **(P3) Skinning** — per-vertex bone weights deforming path geometry. The
@@ -723,10 +720,6 @@ What it surfaced:
   keybinding or palette targets — and the registry keyed per canvas beneath it.
   Worth doing when a consumer wants two canvases under one toolbar; isolation
   covers two canvases that simply coexist.
-
-- **(P2) No key-state poll.** `key-held` gives edges; the dispatcher's held set
-  tracks claims rather than physical keys and is not exported. Every character
-  controller will rewrite `platformer/useInput.ts`'s reconstruction.
 
 - **No tiled-content layer primitive exists** (the P3 under Tiling) — the run
   cycle and the parallax bands are second sites wanting it.

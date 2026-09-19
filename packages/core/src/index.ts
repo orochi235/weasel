@@ -116,6 +116,11 @@ export type { SceneNodeClientRectOpts, NodeClientRect } from './core/viewport/sc
 export * from './core/viewport/useAutoCenter';
 // ─── Keybindings: low-level key → action wiring ─────────────────────────────
 export { isEditableTarget, matchesKeyBinding } from '@weasel-js/routing';
+// ─── Key-state poll: which physical keys are down right now ────────────────
+export { createKeyState } from './input/keyState';
+export type { KeyState, KeyStateAttachOptions, KeyModifiers } from './input/keyState';
+export { useKeyState } from './input/useKeyState';
+export type { UseKeyStateOptions } from './input/useKeyState';
 
 // --- @experimental Actions Registry (2026-05-09) ----------------------------
 export { ActionsProvider, ActionsScope, useActionsRegistry, useAction } from '@weasel-js/routing/react';
