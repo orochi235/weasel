@@ -10,14 +10,12 @@ import {
   useAnimator,
   useScene,
 } from '@weasel-js/core';
-import type { Dims, DrawCommand, Effect, LayerGroup, RenderLayer, TimelineHandle, View } from '@weasel-js/core';
-import { createAudioEngine } from '@weasel-js/audio';
-import type { AudioEngine, SoundHandle, VoiceHandle } from '@weasel-js/audio';
+import type { Dims, DrawCommand, Effect, LayerGroup, RenderLayer, View } from '@weasel-js/core';
 import { CAM_SCALE, cameraView, followCamera, worldToScreen } from './platformer/camera';
 import { WORLD } from './platformer/worldLevel';
 import { COLORS, drawBackdrop, drawCallouts, drawCoins, drawEnding, drawEnemies, drawGoal, drawPlayer, drawTiles } from './platformer/skin';
 import { flagY } from './platformer/flagpole';
-import { BODY_H, BODY_W, MOVE_SPEED } from './platformer/physics';
+import { BODY_H, BODY_W } from './platformer/physics';
 import { resolvePose } from './platformer/animState';
 import { createEnemies, ENEMY_H, ENEMY_W } from './platformer/entities';
 import {
@@ -28,13 +26,10 @@ import {
   SHAKE_DURATION,
   SHAKE_MAGNITUDE,
   type GameRefs,
-  type WorldHooks,
 } from './platformer/world';
 import { PLAYER_SKELETON } from './platformer/skeleton';
 import { usePlatformerInput } from './platformer/useInput';
-import { registerSounds, type SoundName } from './platformer/sfx';
-import { CLIPS } from './platformer/clips';
-import { footstepTrack } from './platformer/footsteps';
+import { usePlatformerAudio } from './platformer/usePlatformerAudio';
 
 const W = 720;
 const H = 405;
@@ -42,10 +37,6 @@ const DIMS: Dims = { width: W, height: H };
 /** The canvas view never moves — every layer projects through the camera ref
  *  itself, which keeps the whole game loop out of React state. */
 const IDENTITY_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-/** A footfall pair spanning a time-scale change is still accelerating, not
- *  steady — the gap would measure speed change, not scheduling jitter. */
-const JITTER_SCALE_TOLERANCE = 0.02;
-
 /** The concussion blur's envelope, in ms, and the radius it peaks at. Rise and
  *  fall rather than a step: a blur that snaps on reads as a dropped frame. */
 const BONK_BLUR = { rise: 120, hold: 260, fall: 200, radius: 6 };
@@ -86,10 +77,6 @@ function SideScrollerDemoInner() {
     setNonce((n) => n + 1);
   };
 
-  const audio = useRef<{ engine: AudioEngine; sounds: Record<SoundName, SoundHandle>; bed: VoiceHandle | null } | null>(null);
-  const [audioState, setAudioState] = useState<'off' | 'suspended' | 'running'>('off');
-  const [musicOn, setMusicOn] = useState(true);
-
   // The debug layer's `draw` runs outside React, so the checkbox mirrors its
   // state into a ref rather than closing over `showBoxes` directly.
   const [showBoxes, setShowBoxes] = useState(false);
@@ -115,14 +102,7 @@ function SideScrollerDemoInner() {
     },
   }], []);
 
-  // The run cycle's own timeline — its playhead is what books footsteps, not
-  // the fixed-step loop. `runScale` is what the loop writes and the footstep
-  // handler reads back to know the interval a given tick implies.
-  /** Frames left before the music stops; -1 once it has. */
-  const cutMusicIn = useRef(-1);
-  const runCycle = useRef<TimelineHandle | null>(null);
-  const runScale = useRef(1);
-  const stepStats = useRef({ count: 0, lastAt: 0, lastScale: 1, spread: 0 });
+  const sound = usePlatformerAudio(animator, pulseBlur);
 
   // Readouts refresh at 5 Hz, not per frame — polling here keeps the panel
   // itself from becoming part of the load it's measuring.
@@ -131,133 +111,10 @@ function SideScrollerDemoInner() {
 
   useEffect(() => {
     const id = window.setInterval(() => {
-      setStats({
-        frame: frameMs.current,
-        voices: audio.current?.engine.activeVoices() ?? 0,
-        steps: stepStats.current.count,
-        spread: stepStats.current.spread,
-      });
+      setStats({ frame: frameMs.current, ...sound.stats() });
     }, 200);
     return () => window.clearInterval(id);
   }, []);
-
-  // Built on the unlock gesture, not at mount: jsdom has no AudioContext, and a
-  // context created before a gesture starts suspended anyway.
-  const enableAudio = () => {
-    if (typeof AudioContext === 'undefined') return;
-    if (!audio.current) {
-      const engine = createAudioEngine({ buses: ['sfx', 'music'], voiceLimit: 24 });
-      audio.current = { engine, sounds: registerSounds(engine), bed: null };
-    }
-    const { engine } = audio.current;
-    void engine.unlock().then(() => {
-      setAudioState(engine.state() === 'running' ? 'running' : 'suspended');
-      if (!audio.current!.bed) {
-        engine.bus('music').mute(!musicOn);
-        audio.current!.bed = engine.play(audio.current!.sounds.bed, { bus: 'music', loop: true, gain: 0.5 });
-      }
-    });
-  };
-
-  /** The bed is the only sound that runs on its own — everything else is a
-   *  one-shot that stops when you do — so it gets a switch of its own. */
-  const toggleMusic = () => {
-    const next = !musicOn;
-    audio.current?.engine.bus('music').mute(!next);
-    setMusicOn(next);
-  };
-
-  useEffect(() => () => {
-    audio.current?.engine.dispose();
-    audio.current = null;
-  }, []);
-
-  useEffect(() => {
-    const handle = animator.timeline({
-      loop: true,
-      autoplay: true,
-      // Steps book against the engine's clock once there is one. Before the
-      // unlock gesture nothing sounds, and the timeline resyncs when it swaps.
-      booking: { clock: { now: () => audio.current?.engine.now() ?? performance.now() } },
-      tracks: [
-        footstepTrack((_authoredT, when) => {
-          const a = audio.current;
-          const s = stepStats.current;
-          const scale = runScale.current;
-          s.count++;
-          if (!a || a.engine.state() !== 'running') {
-            s.lastAt = 0;
-            return;
-          }
-          // While the player is still accelerating, the scale at this footfall
-          // differs from the one recorded at the last — skip those pairs so the
-          // spread reflects steady-state scheduling, not a changing run speed.
-          if (s.lastAt && Math.abs(scale - s.lastScale) <= JITTER_SCALE_TOLERANCE) {
-            const expected = (CLIPS.run.duration / 2) / Math.max(scale, 0.01);
-            s.spread = Math.max(s.spread, Math.abs(when - s.lastAt - expected));
-          }
-          const prev = { lastAt: s.lastAt, lastScale: s.lastScale };
-          s.lastAt = when;
-          s.lastScale = scale;
-          const voice = a.engine.play(a.sounds.step, { bus: 'sfx', gain: 0.35, when });
-          // A jump or a change of run speed retracts a step that has not
-          // sounded; it is booked again wherever the cycle next reaches it.
-          return {
-            stop: () => {
-              voice.stop();
-              s.count--;
-              Object.assign(s, prev);
-            },
-          };
-        }),
-      ],
-      duration: CLIPS.run.duration,
-    });
-    runCycle.current = handle;
-    handle.pause();
-    return () => {
-      handle.cancel();
-      runCycle.current = null;
-    };
-  }, [animator]);
-
-  const fire = (name: SoundName, gain = 0.8) => {
-    const a = audio.current;
-    if (!a || a.engine.state() !== 'running') return;
-    a.engine.play(a.sounds[name], { bus: 'sfx', gain });
-  };
-
-  /** For sounds with a place in the world — the engine spatializes against the
-   *  listener set from the player each frame. */
-  const fireAt = (name: SoundName, position: { x: number; y: number }, gain = 0.8) => {
-    const a = audio.current;
-    if (!a || a.engine.state() !== 'running') return;
-    a.engine.play(a.sounds[name], { bus: 'sfx', gain, position });
-  };
-
-  /** A hit drops the music under the hurt sound and brings it back. */
-  const duckMusic = () => {
-    const a = audio.current;
-    if (!a) return;
-    a.engine.bus('music').setGain(0.15, 60);
-    window.setTimeout(() => a.engine.bus('music').setGain(0.5, 400), 260);
-  };
-
-  // Rebuilt every render so the callbacks it forwards are never stale; the
-  // loop reads it through the ref, which `advanceWorld` calls per fixed step.
-  const hooks = useRef<WorldHooks>(null!);
-  hooks.current = {
-    sound: fire,
-    soundAt: (name, at, gain) => fireAt(name, at, gain),
-    duck: duckMusic,
-    bonk: pulseBlur,
-    flagImpact: () => {
-      fire('hurt', 0.9);
-      pulseBlur();
-      // Cut the bed a couple of frames later, so the thwack lands into silence.
-      cutMusicIn.current = 2;
-    },
-  };
 
   const layers = useMemo(() => {
     // A bonk's shake jitters every screen-space layer identically by nudging
@@ -406,42 +263,13 @@ function SideScrollerDemoInner() {
       // clamped to the spawn point with the level scrolled off to one side.
       const g = game.current;
       g.camera = followCamera(g.camera, g.player.body, DIMS, WORLD, frame);
-      audio.current?.engine.setListener({ x: g.player.body.x, y: g.player.body.y });
+      sound.beginFrame(g);
 
-      // Simulation halts on pause and once the run is decided; the run cycle's
-      // own registration is paused here too, or it keeps firing footsteps
-      // after death since the animator ticks it independently of this loop.
-      if (g.outcome !== 'playing') stepEnding(g, frame, hooks.current);
-
-      if (cutMusicIn.current >= 0 && cutMusicIn.current-- === 0) {
-        audio.current?.bed?.stop(40);
-      }
-
-      if (!running || g.outcome !== 'playing') {
-        const cycle = runCycle.current;
-        if (cycle && !cycle.isPaused()) cycle.pause();
-        return;
-      }
-
-      advanceWorld(
-        g,
-        frame,
-        input,
-        hooks.current,
-      );
-
-      const grounded = g.player.body.onGround;
-      const speed = Math.abs(g.player.body.vx);
-      const cycle = runCycle.current;
-      if (cycle) {
-        if (grounded && speed > 1) {
-          runScale.current = Math.max(speed / MOVE_SPEED, 0.2);
-          cycle.setTimeScale(runScale.current);
-          if (cycle.isPaused()) cycle.resume();
-        } else if (!cycle.isPaused()) {
-          cycle.pause();
-        }
-      }
+      // Simulation halts on pause and once the run is decided.
+      if (g.outcome !== 'playing') stepEnding(g, frame, sound.hooks.current);
+      const simulating = running && g.outcome === 'playing';
+      if (simulating) advanceWorld(g, frame, input, sound.hooks.current);
+      sound.endFrame(g, simulating);
     });
   }, [animator, running, input]);
 
@@ -454,17 +282,7 @@ function SideScrollerDemoInner() {
       y: g.player.body.y - 40,
     }));
     g.enemies = [...g.enemies, ...createEnemies(extra)];
-    const a = audio.current;
-    if (a && a.engine.state() === 'running') {
-      extra.forEach((p, i) =>
-        a.engine.play(a.sounds.stomp, {
-          bus: 'sfx',
-          gain: 0.2,
-          position: p,
-          when: a.engine.now() + i * 15,
-        }),
-      );
-    }
+    sound.swarm(extra);
   };
 
   return (
@@ -481,11 +299,11 @@ function SideScrollerDemoInner() {
         <button className="ckd-btn ckd-btn--text" onClick={() => setRunning((r) => !r)}>
           {running ? 'click to pause' : 'click to start'}
         </button>
-        <button className="ckd-btn" onClick={enableAudio} disabled={audioState === 'running'}>
-          {audioState === 'running' ? 'audio on' : 'enable audio'}
+        <button className="ckd-btn" onClick={sound.enableAudio} disabled={sound.audioState === 'running'}>
+          {sound.audioState === 'running' ? 'audio on' : 'enable audio'}
         </button>
-        <button className="ckd-btn" onClick={toggleMusic} aria-pressed={musicOn}>
-          {musicOn ? 'music off' : 'music on'}
+        <button className="ckd-btn" onClick={sound.toggleMusic} aria-pressed={sound.musicOn}>
+          {sound.musicOn ? 'music off' : 'music on'}
         </button>
         <button className="ckd-btn" onClick={restart}>restart</button>
         <span className="ckd-readout">zoom {CAM_SCALE}x</span>
