@@ -58,7 +58,7 @@ export function usePointerStylus(
   const [state, setState] = useState<PointerStylusState>(IDLE);
   // Track the last commit time to throttle. A ref avoids re-creating the
   // listener every render and avoids stale-closure read of an outer `let`.
-  const lastCommit = useRef(0);
+  const lastCommit = useRef(-Infinity);
   const optsRef = useRef({ maxFps, stylusOnly });
   optsRef.current = { maxFps, stylusOnly };
 

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { usePointerStylus } from './usePointerStylus';
 
@@ -30,18 +30,40 @@ describe('usePointerStylus', () => {
     expect(result.current.pointerType).toBe('pen');
   });
 
-  it('throttles updates by maxFps', () => {
-    const { result } = renderHook(() => usePointerStylus(undefined, { maxFps: 30 }));
-    act(() => {
-      dispatchMove(window, { pointerType: 'pen', pressure: 0.1 });
+  describe('on a controlled clock', () => {
+    // The throttle reads `performance.now()`; on the wall clock a loaded run can
+    // let 1/30 s pass between two back-to-back dispatches.
+    beforeEach(() => { vi.useFakeTimers({ toFake: ['performance'] }); });
+    afterEach(() => { vi.useRealTimers(); });
+
+    it('throttles updates by maxFps', () => {
+      const { result } = renderHook(() => usePointerStylus(undefined, { maxFps: 30 }));
+      act(() => {
+        dispatchMove(window, { pointerType: 'pen', pressure: 0.1 });
+      });
+      expect(result.current.pressure).toBeCloseTo(0.1);
+
+      vi.advanceTimersByTime(20);
+      act(() => {
+        dispatchMove(window, { pointerType: 'pen', pressure: 0.9 });
+      });
+      expect(result.current.pressure).toBeCloseTo(0.1);
+
+      vi.advanceTimersByTime(14);
+      act(() => {
+        dispatchMove(window, { pointerType: 'pen', pressure: 0.7 });
+      });
+      expect(result.current.pressure).toBeCloseTo(0.7);
     });
-    const after1 = result.current.pressure;
-    expect(after1).toBeCloseTo(0.1);
-    // A second move immediately after should be dropped (< 1/30s gap).
-    act(() => {
-      dispatchMove(window, { pointerType: 'pen', pressure: 0.9 });
+
+    it('commits the first move even when the clock reads zero', () => {
+      const { result } = renderHook(() => usePointerStylus(undefined, { maxFps: 30 }));
+      expect(performance.now()).toBe(0);
+      act(() => {
+        dispatchMove(window, { pointerType: 'pen', pressure: 0.3 });
+      });
+      expect(result.current.pressure).toBeCloseTo(0.3);
     });
-    expect(result.current.pressure).toBeCloseTo(0.1); // unchanged
   });
 
   it('stylusOnly: ignores non-pen events', () => {
