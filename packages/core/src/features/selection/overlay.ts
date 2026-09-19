@@ -553,7 +553,7 @@ function rotationHandleCommands(
   const headB = arrowHead(endBX, endBY, tangentBX, tangentBY);
   const headFill: FillStyle = handles.fill;
   // Build transform: translate(scx, scy) [* rotate(rotation)].
-  let transform = mat3.translate(mat3.identity(), scx, scy);
+  let transform = mat3.translated(mat3.identity(), scx, scy);
   if (rotation !== 0) {
     const c = Math.cos(rotation);
     const s = Math.sin(rotation);

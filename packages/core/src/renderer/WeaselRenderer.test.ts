@@ -162,7 +162,7 @@ describe('WeaselRenderer.render — frame isolation', () => {
     for (let i = 0; i < 8; i++) {
       cmd = {
         kind: 'group',
-        transform: mat3.translate(mat3.identity(), 10, 0),
+        transform: mat3.translated(mat3.identity(), 10, 0),
         clip: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
         children: [cmd],
       };

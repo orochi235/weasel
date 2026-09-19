@@ -47,12 +47,15 @@ function multiply(out: Mat3, m: Mat3): Mat3 {
   );
 }
 
-function translate(m: Mat3, tx: number, ty: number): Mat3 {
+/** `m · T(tx, ty)`: composes onto `m`, where `@weasel-js/geom`'s `translate`
+ *  constructs a fresh matrix. */
+function translated(m: Mat3, tx: number, ty: number): Mat3 {
   const t = create(1, 0, 0, 1, tx, ty);
   return multiply(m, t);
 }
 
-function scale(m: Mat3, sx: number, sy: number): Mat3 {
+/** `m · S(sx, sy)`: composes onto `m`, where geom's `scale` constructs one. */
+function scaled(m: Mat3, sx: number, sy: number): Mat3 {
   const s = create(sx, 0, 0, sy, 0, 0);
   return multiply(m, s);
 }
@@ -104,8 +107,8 @@ function meanScaleOf(m: Mat3): number {
 export const mat3 = {
   identity,
   multiply,
-  translate,
-  scale,
+  translated,
+  scaled,
   invert,
   apply,
   screenToClip,

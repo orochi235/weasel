@@ -369,15 +369,6 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
-- **(P2) The renderer's `mat3.translate`/`scale` share names with geom's
-  and not behavior.** The two *representations* are deliberate and both files
-  say so — geom keeps a 6-element f64 affine, `renderer/math/mat3.ts` a
-  9-element column-major `Float32Array` shaped for `uniformMatrix3fv`. But the
-  renderer's pair post-multiply an existing matrix where geom's construct a
-  fresh one, so code moved between the layers compiles and misbehaves. Renaming the renderer's pair
-  (`translated`, `scaledBy`) or giving geom composing forms would both close
-  it.
-
 - **(P3) A minimap's framing ignores pose overrides.** `<SceneViewCanvas>` and
   `<MinimapCanvas>` paint override poses as of 2026-08-25, but `computeFitView`
   still derives framing from document poses, so a node overridden outside the

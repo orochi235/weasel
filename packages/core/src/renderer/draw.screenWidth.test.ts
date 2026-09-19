@@ -66,7 +66,7 @@ describe('renderer — screen-pixel stroke widths', () => {
     recorder.reset();
     r.render([{
       kind: 'group',
-      transform: mat3.scale(mat3.identity(), s, s),
+      transform: mat3.scaled(mat3.identity(), s, s),
       children: [{ kind: 'path', path: horizontalLine(), stroke }],
     } as DrawCommand]);
     return ribbonHeight(recorder);
@@ -88,10 +88,10 @@ describe('renderer — screen-pixel stroke widths', () => {
     recorder.reset();
     r.render([{
       kind: 'group',
-      transform: mat3.scale(mat3.identity(), 2, 2),
+      transform: mat3.scaled(mat3.identity(), 2, 2),
       children: [{
         kind: 'group',
-        transform: mat3.scale(mat3.identity(), 3, 3),
+        transform: mat3.scaled(mat3.identity(), 3, 3),
         children: [{ kind: 'path', path: horizontalLine(), stroke: { width: { px: 12 }, align: 'inner', paint } }],
       }],
     } as DrawCommand]);
@@ -105,7 +105,7 @@ describe('renderer — screen-pixel stroke widths', () => {
       recorder.reset();
       r.render([{
         kind: 'group',
-        transform: mat3.scale(mat3.identity(), s, s),
+        transform: mat3.scaled(mat3.identity(), s, s),
         children: [{ kind: 'path', path, stroke }],
       } as DrawCommand]);
       return ribbonHeight(recorder);
