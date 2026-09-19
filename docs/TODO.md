@@ -675,59 +675,24 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 
 ### Side-scroller demo — landed
 
-`apps/site/demos/SideScrollerDemo.tsx`, with its game logic in
-`apps/site/demos/platformer/`. Built as a load test on the timeline and audio
-arcs, not a showcase: it changes animation state every few frames, fires
-overlapping one-shots continuously, and never lets the clock idle. Its HUD
-carries the instrument readouts — frame time, active voices, footstep count,
-steady-state jitter — plus a collision-box overlay and a swarm button that pushes
-the voice pool past its limit.
-
-A platformer in `apps/site/demos/` is a deliberate exception to the terse,
-single-purpose demo convention — an exception, not a precedent.
+`apps/site/demos/SceneScrollerDemo.tsx`, with its game logic in
+`apps/site/demos/platformer/`. A load test on the timeline, audio and scene-graph
+arcs rather than a showcase: 254 leaf nodes drawn by the built-in painters, the
+camera as the canvas `view`, animation state changing every few frames and
+one-shots overlapping continuously. Its HUD carries the instrument readouts, a
+collision-box overlay, and a swarm button that pushes the voice pool past its
+limit. A platformer in `apps/site/demos/` is a deliberate exception to the
+terse, single-purpose demo convention: an exception, not a precedent.
 
 What it surfaced:
 
-- **(P3) One actions registry still routes input to one canvas.**
-  `<WeaselProvider isolate>` gives each canvas its own scope, which is what both
-  demos wanted and what they now use, and a second canvas claiming a shared
-  registry says so instead of failing silently. What is still unbuilt is
-  canvases genuinely *sharing* a registry: `setDispatcher` holds one dispatcher,
-  so a toolbar outside two canvases has nothing to say which one it drives.
-  That wants a focused-canvas concept — which canvas an ambient `<ActionBar>`,
-  keybinding or palette targets — and the registry keyed per canvas beneath it.
-  Isolation covers only two canvases that simply coexist.
-
-- **No tiled-content layer primitive exists** (the P3 under Tiling) — the run
-  cycle and the parallax bands are second sites wanting it.
-
-- **Tune two placeholder constants in the browser.** `DEAD_ZONE_X` in
-  `apps/site/demos/platformer/camera.ts` sits at 28 (vs `DEAD_ZONE_Y` at 20),
-  and `STEP_SCHEDULE_BUDGET_MS` in `SideScrollerDemo.tsx` at 16 — one frame,
-  picked rather than measured. Both want a value chosen on feel: the budget
-  trades constant footstep latency against how long a frame has to run before a
-  step falls back to playing immediately. A dead-zone camera settles at exactly
-  `DEAD_ZONE_X` from a stationary target, so `platformerCamera.test.ts` asserts
-  that invariant rather than a fixed distance — changing either constant does
-  not break a test.
-
-### Side-scroller (scene graph) — landed
-
-`apps/site/demos/SceneScrollerDemo.tsx` plus `platformer/sceneWorld.ts`. The same
-platformer built on the retained tree: 254 leaf nodes drawn by the built-in
-painters, the camera as the canvas `view`, and the shared fixed-step loop
-extracted to `platformer/world.ts` so both demos run the identical simulation.
-The bypass twin keeps its bypass; this one shows the engine.
-
-What it surfaced:
-
-- **(P2) Bring the scene-graph twin to parity, then delete the immediate-mode
-  one.** `SideScrollerDemo` is the timeline and audio load test, which is the
-  only reason it may bypass the scene graph. Port what the scene twin lacks —
-  the audio engine and `platformer/sfx.ts`, footsteps as an `EventTrack` booked
-  against the audio clock, the voice-count and jitter readouts, and the
-  collision overlay — then delete `SideScrollerDemo.tsx`, its test and registry
-  entry, and the "Side-scroller demo — landed" section above.
+- **(P2) A `LayerGroup` member named `scene` matches nothing once the slot
+  splits.** A scene with declared layers draws as one canvas layer per scene
+  layer (`scene:<layerId>`), so a group listing `scene` silently groups nothing
+  from it; slot anchoring (`before: 'scene'`) resolves the same name fine. The
+  demo names `scene:tiles`, `scene:entities` and `scene:player` by hand. Either
+  `scene` should expand to the whole split slot in a group, or a member that
+  matches no layer should warn.
 
 - **(P2) Convert the platformer's eleven bones to parenting.** The rig is
   still resolved to world matrices and flattened onto independent bone nodes
@@ -735,16 +700,35 @@ What it surfaced:
   hierarchy. Only a rig scaling `scaleX`/`scaleY` separately must stay
   flattened: see `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`.
 
+- **(P3) One actions registry still routes input to one canvas.**
+  `<WeaselProvider isolate>` gives each canvas its own scope, and a second
+  canvas claiming a shared registry says so instead of failing silently. What
+  is still unbuilt is canvases genuinely *sharing* a registry: `setDispatcher`
+  holds one dispatcher, so a toolbar outside two canvases has nothing to say
+  which one it drives. That wants a focused-canvas concept — which canvas an
+  ambient `<ActionBar>`, keybinding or palette targets — and the registry keyed
+  per canvas beneath it. Isolation covers only two canvases that simply coexist.
+
 - **(P3) View-bounds culling is opt-in and stops short of the painter.** The
-  scene slot's `cull` option (`layers={{ scene: { cull: true } }}`, on in the
-  side-scroller demo) drops commands outside the view via `cullDrawCommands`,
-  but only after every node's `drawOne` has run, so an off-screen node still
-  pays its painter. It is opt-in because it makes the scene layer's
-  world-space output view-dependent, which a cache keyed without `view` would
-  serve under the wrong camera. `<SceneViewCanvas>` / `<MinimapCanvas>`
-  (`sceneViewRender.ts`) do not cull at all. Text and shader commands are never
-  culled — nothing bounds them cheaply. The demo's frame time with culling on
-  has not been measured in a browser.
+  scene slot's `cull` option (`layers={{ scene: { cull: true } }}`, on in this
+  demo) drops commands outside the view via `cullDrawCommands`, but only after
+  every node's `drawOne` has run, so an off-screen node still pays its painter.
+  It is opt-in because it makes the scene layer's world-space output
+  view-dependent, which a cache keyed without `view` would serve under the
+  wrong camera. `<SceneViewCanvas>` / `<MinimapCanvas>` (`sceneViewRender.ts`)
+  do not cull at all. Text and shader commands are never culled — nothing
+  bounds them cheaply. The demo's frame time with culling on has not been
+  measured in a browser.
+
+- **No tiled-content layer primitive exists** (the P3 under Tiling) — the run
+  cycle and the parallax bands are second sites wanting it.
+
+- **Tune `DEAD_ZONE_X` in the browser.** It sits at 28 in
+  `apps/site/demos/platformer/camera.ts` (vs `DEAD_ZONE_Y` at 20), picked
+  rather than chosen on feel. A dead-zone camera settles at exactly
+  `DEAD_ZONE_X` from a stationary target, so `platformerCamera.test.ts` asserts
+  that invariant rather than a fixed distance — changing it does not break a
+  test.
 
 Two predictions the demo **disproved**, recorded so they are not re-raised: the
 sprite-sheet gap closed independently (`ImageDrawCommand.source` / `flipX` /
@@ -774,7 +758,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   no weasel dependencies: lookahead scheduling on its own one-shot timer, voices
   with handles and `cancelKey`, buses with gain/mute/solo, `spatialize()`, and
   analyser taps with `bands(n)`. Registered in `build:leaves` and the `fixed`
-  group. Consumed by `AudioDemo`, `SideScrollerDemo` and `platformer/sfx.ts`.
+  group. Consumed by `AudioDemo`, `SceneScrollerDemo` and `platformer/sfx.ts`.
 
   Its plan file has every box unchecked too; the CHANGELOG and registry are the
   record. The follow-ups below are what is left.

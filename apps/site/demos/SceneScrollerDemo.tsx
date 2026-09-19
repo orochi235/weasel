@@ -103,6 +103,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
   const sound = usePlatformerAudio(animator, () => {
     bonkAt.current = performance.now();
   });
+  const { hooks, beginFrame, endFrame, stats: soundStats } = sound;
 
   // The world is the three parallax bands and the scene, consecutive in the
   // stack below, so a knock blurs them as one buffer and leaves the HUD sharp.
@@ -131,11 +132,11 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
   const writes = useRef(0);
   useEffect(() => {
     const id = window.setInterval(
-      () => setStats({ frame: frameMs.current, nodes: scene.nodes.size, writes: writes.current, ...sound.stats() }),
+      () => setStats({ frame: frameMs.current, nodes: scene.nodes.size, writes: writes.current, ...soundStats() }),
       200,
     );
     return () => window.clearInterval(id);
-  }, [scene]);
+  }, [scene, soundStats]);
 
   useEffect(() => animator.keepAlive(), [animator]);
 
@@ -149,12 +150,12 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
 
       const g = game.current;
       g.camera = followCamera(g.camera, g.player.body, DIMS, WORLD, frame);
-      sound.beginFrame(g);
+      beginFrame(g);
 
-      if (g.outcome !== 'playing') stepEnding(g, frame, sound.hooks.current);
+      if (g.outcome !== 'playing') stepEnding(g, frame, hooks.current);
       const simulating = running && g.outcome === 'playing';
-      if (simulating) advanceWorld(g, frame, input, sound.hooks.current);
-      sound.endFrame(g, simulating);
+      if (simulating) advanceWorld(g, frame, input, hooks.current);
+      endFrame(g, simulating);
 
       // A simulation step is not an edit, so it records nothing: one notify
       // and one repaint per frame, however many nodes moved.
@@ -174,7 +175,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
           }
         : v);
     });
-  }, [animator, running, input, scene]);
+  }, [animator, running, input, scene, hooks, beginFrame, endFrame]);
 
   const layers = useMemo(() => {
     const band = (name: 'far' | 'mid' | 'near', pan: number): RenderLayer<unknown> =>
@@ -329,10 +330,10 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
         <span className="ckd-readout">steady-state jitter {stats.spread.toFixed(1)} ms</span>
       </div>
       <div className="ckd-hint">
-        The same platformer as the side-scroller load test, built the way the
-        engine intends: every tile, coin, enemy and bone is a scene node, and the
-        camera is the canvas view rather than a projection each layer applies
-        itself. Arrow keys or WASD to move, space to jump.
+        A platformer built as a load test for the animation timeline, the audio
+        engine and the scene graph: every tile, coin, enemy and bone is a scene
+        node, and the camera is the canvas view. Arrow keys or WASD to move,
+        space to jump.
       </div>
     </div>
   );

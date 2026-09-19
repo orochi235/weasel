@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Animator, TimelineHandle } from '@weasel-js/core';
 import { createAudioEngine } from '@weasel-js/audio';
 import type { AudioEngine, SoundHandle, VoiceHandle } from '@weasel-js/audio';
@@ -32,7 +32,9 @@ export interface PlatformerAudio {
   endFrame: (g: GameRefs, simulating: boolean) => void;
   /** One stomp per point, staggered, so a crowd arriving is audible. */
   swarm: (points: readonly { x: number; y: number }[]) => void;
-  /** Readouts, polled rather than rendered per frame. */
+  /** Readouts, polled rather than rendered per frame. `hooks`, `beginFrame`,
+   *  `endFrame`, `swarm` and `stats` keep their identity across renders, so a
+   *  frame loop can list them as dependencies without resubscribing. */
   stats: () => { voices: number; steps: number; spread: number };
 }
 
@@ -171,14 +173,14 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
     },
   };
 
-  const beginFrame = (g: GameRefs) => {
+  const beginFrame = useCallback((g: GameRefs) => {
     audio.current?.engine.setListener({ x: g.player.body.x, y: g.player.body.y });
     if (cutMusicIn.current >= 0 && cutMusicIn.current-- === 0) {
       audio.current?.bed?.stop(40);
     }
-  };
+  }, []);
 
-  const endFrame = (g: GameRefs, simulating: boolean) => {
+  const endFrame = useCallback((g: GameRefs, simulating: boolean) => {
     const cycle = runCycle.current;
     if (!cycle) return;
     const speed = Math.abs(g.player.body.vx);
@@ -191,9 +193,9 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
       // be stopped here or footsteps keep firing after a pause or a death.
       cycle.pause();
     }
-  };
+  }, []);
 
-  const swarm = (points: readonly { x: number; y: number }[]) => {
+  const swarm = useCallback((points: readonly { x: number; y: number }[]) => {
     const a = audio.current;
     if (!a || a.engine.state() !== 'running') return;
     points.forEach((p, i) =>
@@ -204,13 +206,13 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
         when: a.engine.now() + i * 15,
       }),
     );
-  };
+  }, []);
 
-  const stats = () => ({
+  const stats = useCallback(() => ({
     voices: audio.current?.engine.activeVoices() ?? 0,
     steps: stepStats.current.count,
     spread: stepStats.current.spread,
-  });
+  }), []);
 
   return { hooks, audioState, musicOn, enableAudio, toggleMusic, beginFrame, endFrame, swarm, stats };
 }
