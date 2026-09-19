@@ -616,6 +616,15 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   canUndo(): boolean;
   canRedo(): boolean;
   batch<T>(label: string, fn: () => T): T;
+  /** Run `fn` with every mutation applied but none recorded — for writes
+   *  that are not edits, such as a simulation stepping poses each frame.
+   *  Undo and redo move between recorded states and never restore an
+   *  untracked write; the next recorded change starts from whatever the
+   *  untracked writes left, so undoing it lands there. A `batch` inside
+   *  records nothing; inside a `batch`, these writes stay out of its entry.
+   *  Notifies once, reverts `fn`'s writes if it throws, and throws on
+   *  `applyBatch` and `history.apply` / `applyOps`, which exist to record. */
+  untracked<T>(fn: () => T): T;
   /** Read-only snapshot of every history entry currently reachable from
    *  the present state. Oldest applied first, then redoable entries in
    *  the order they'd be re-applied. Each entry id is stable. */

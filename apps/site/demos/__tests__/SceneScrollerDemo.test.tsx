@@ -25,6 +25,21 @@ vi.mock('../platformer/skin', async (importOriginal) => {
   };
 });
 
+// The demo keeps its scene to itself; capture it to read the history.
+const scenes: { historyEntries(): readonly unknown[] }[] = [];
+
+vi.mock('@weasel-js/core', async (importOriginal) => {
+  const real = await importOriginal<typeof import('@weasel-js/core')>();
+  return {
+    ...real,
+    useScene: ((...args: Parameters<typeof real.useScene>) => {
+      const scene = real.useScene(...args);
+      scenes.push(scene);
+      return scene;
+    }) as typeof real.useScene,
+  };
+});
+
 // Without a context that answers like WebGL2 the paint bails before any layer
 // draws, and `paintedViews` would stay empty for the wrong reason.
 beforeAll(() => {
@@ -40,6 +55,7 @@ beforeAll(() => {
 afterEach(() => {
   vi.useRealTimers();
   paintedViews.length = 0;
+  scenes.length = 0;
 });
 
 // jsdom drives rAF off a setInterval, so faking intervals puts the frame clock
@@ -74,6 +90,17 @@ describe('SceneScrollerDemo', () => {
     }
     expect(spy).not.toHaveBeenCalled();
     spy.mockRestore();
+  });
+
+  it('writes its frames without recording history', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    const { container } = render(<SceneScrollerDemo />);
+    fireEvent.focus(container.querySelector('canvas')!);
+    const paintsBefore = paintedViews.length;
+    for (let i = 0; i < 6; i++) await virtualFrame();
+
+    expect(paintedViews.length - paintsBefore).toBeGreaterThanOrEqual(6);
+    expect(scenes.at(-1)!.historyEntries()).toHaveLength(0);
   });
 
   it('starts the run when the canvas takes focus, but not the toolbar', () => {

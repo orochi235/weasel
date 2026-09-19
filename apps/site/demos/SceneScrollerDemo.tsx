@@ -66,9 +66,6 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
       ],
       [],
     ),
-    // A frame is one batch, so this is a second of undo — enough to be a real
-    // history, short enough that a running game can't grow it without bound.
-    historyLimit: 60,
     // The loop rewrites poses every frame; re-rendering this component for
     // each of those writes would undo the point of the imperative camera.
     subscribe: false,
@@ -118,9 +115,9 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
         );
       }
 
-      // One batch per frame: one history entry, one notify, one repaint —
-      // regardless of how many nodes moved.
-      scene.batch('frame', () => syncScene(scene, g));
+      // A simulation step is not an edit, so it records nothing: one notify
+      // and one repaint per frame, however many nodes moved.
+      scene.untracked(() => syncScene(scene, g));
       writes.current++;
 
       // The camera is the canvas view, so scene nodes and the parallax bands
@@ -200,7 +197,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
       })),
     );
     g.enemies = [...g.enemies, ...extra];
-    scene.batch('swarm', () => {
+    scene.untracked(() => {
       entityNodes([], extra)
         .filter((n) => String(n.id).startsWith('enemy:'))
         .forEach((n, i) => {

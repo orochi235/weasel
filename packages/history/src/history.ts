@@ -122,6 +122,11 @@ export interface History {
   /** Monotonic counter bumped on every push/undo/redo/clear/coalesce.
    *  Cheap to read; callers use it as a React dep to detect changes. */
   getVersion(): number;
+  /** End the current coalescing run: the next entry is pushed fresh even if
+   *  its keys match the top entry and it lands inside the window. For a
+   *  caller that changed state the stack does not know about, so an entry
+   *  coalesced across that change would undo past it. */
+  seal(): void;
   /** Subscribe to history changes. Fires after every push/undo/redo/
    *  clear/coalesce. Returns an unsubscribe fn. */
   subscribe(listener: () => void): () => void;
@@ -436,6 +441,9 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       stepForward(entry);
       undoStack.push(entry);
       bump();
+    },
+    seal() {
+      coalesceAnchorVersion = -1;
     },
     canUndo: () => undoStack.length > 0,
     canRedo: () => redoStack.length > 0,

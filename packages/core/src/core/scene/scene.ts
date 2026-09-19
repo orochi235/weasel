@@ -280,6 +280,9 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
    *  routing) — suppresses scene-side history recording so engine-applied
    *  ops that re-enter scene mutation methods don't record twice. */
   let suppressRecording = false;
+  /** Above zero inside `scene.untracked`, where the APIs that exist to
+   *  record refuse rather than record. */
+  let untrackedDepth = 0;
   /** Above zero while the lock guard is lifted: `unlocked()`, `removeLayer`,
    *  and every replay — undo, redo, a journal stepping, a rollback — which
    *  restores a state that was legal when it was recorded. */
@@ -309,6 +312,10 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       cur = cur.parent === null ? undefined : state.nodes.get(cur.parent);
     }
     return false;
+  }
+
+  function refuseUntracked(verb: string): void {
+    if (untrackedDepth > 0) throw new Error(`Scene: cannot ${verb} inside untracked() — it records`);
   }
 
   function refuseLocked(id: NodeId, verb: string): void {
@@ -1084,10 +1091,12 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   const sceneHistory: History = {
     // Mutating: applied ops re-enter the scene's own mutation methods.
     apply(op, label) {
+      refuseUntracked('history.apply');
       atomically(() => withRecordingSuppressed(() => history.apply(op, label)), () => true);
       notify();
     },
     applyOps(ops, label) {
+      refuseUntracked('history.applyOps');
       atomically(() => withRecordingSuppressed(() => history.applyOps(ops, label)), () => true);
       notify();
     },
@@ -1115,6 +1124,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     subscribe: (listener) => history.subscribe(listener),
     serialize: () => history.serialize(),
     allForwardOps: () => history.allForwardOps(),
+    seal: () => history.seal(),
     currentEntryId: () => history.currentEntryId(),
     beginJournal: (opts) => wrapJournal(history.beginJournal(opts)),
     resumeJournal: (journal) => history.resumeJournal(rawJournals.get(journal) ?? journal),
@@ -1419,6 +1429,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     },
 
     applyBatch(ops, label, adapter) {
+      refuseUntracked('applyBatch');
       const journal: Journal | null = (activeJournalAccessor ?? (() => null))();
       // Either route drives mutations from a history engine (the journal's
       // inner history, or the scene's own), so scene-side recording is
@@ -1564,6 +1575,26 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
             batchDirty = false;
             for (const listener of listeners) listener();
           }
+        }
+      }
+    },
+
+    untracked(fn) {
+      const prevSuppress = suppressRecording;
+      const versionBefore = version;
+      suppressRecording = true;
+      untrackedDepth++;
+      batchDepth++;
+      try {
+        return atomically(fn, () => false);
+      } finally {
+        batchDepth--;
+        untrackedDepth--;
+        suppressRecording = prevSuppress;
+        if (version !== versionBefore) history.seal();
+        if (batchDepth === 0 && batchDirty) {
+          batchDirty = false;
+          for (const listener of listeners) listener();
         }
       }
     },
