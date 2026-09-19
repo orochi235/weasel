@@ -1,24 +1,27 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  asNodeId,
   blendPoses,
   easeInOutSine,
   mat3,
-  PATH_L,
-  PATH_M,
+  RECT_POSE_DESCRIPTOR,
   resolveSkeleton,
+  rigidRigApply,
   SceneCanvas,
-  textCommandFromRuns,
+  solid,
   useAnimator,
+  useRig,
   useScene,
 } from '@weasel-js/core';
 import type {
-  DrawCommand,
-  Mat3,
+  FillStyle,
+  NodeId,
   Pose,
-  RenderLayer,
+  RectPose,
+  RigApply,
   SampledTrack,
   Skeleton,
-  TimelineHandle,
+  TextStyle,
 } from '@weasel-js/core';
 
 const W = 600, H = 340;
@@ -30,6 +33,8 @@ const BONES: { name: string; parent: string | null; x: number; y: number; rotati
   { name: 'thigh', parent: 'pelvis', x: 0, y: 0, rotation: 2.6, length: 65 },
   { name: 'shin', parent: 'thigh', x: 65, y: 0, rotation: 0.5, length: 60 },
 ];
+const BONE_WIDTH = 5;
+const JOINT_SIZE = 8;
 
 const skeletonAt = (rootX: number): Skeleton => ({
   joints: BONES.map((b) => ({
@@ -44,9 +49,6 @@ const skeletonAt = (rootX: number): Skeleton => ({
     },
   })),
 });
-
-const BY_SLIDER = skeletonAt(160);
-const BY_TRACK = skeletonAt(430);
 
 const POSE_A: Pose = {
   torso: { rotation: -0.15 },
@@ -63,55 +65,110 @@ const POSE_B: Pose = {
   shin: { rotation: 0.6 },
 };
 
-function drawFigure(skeleton: Skeleton, pose: Pose, color: string, labels: boolean): DrawCommand[] {
-  const world = resolveSkeleton(skeleton, pose);
-  const cmds: DrawCommand[] = [];
-  for (const bone of BONES) {
-    const m = world.get(bone.name) as Mat3;
-    // A bone runs from its joint's origin along the joint's local +x.
-    const [ox, oy] = mat3.apply(m, 0, 0);
-    const [tx, ty] = mat3.apply(m, bone.length, 0);
-    cmds.push({
-      kind: 'path',
-      path: {
-        kind: 'polygon',
-        commands: new Uint8Array([PATH_M, PATH_L]),
-        coords: new Float32Array([ox, oy, tx, ty]),
-        fillRule: 'nonzero',
-      },
-      stroke: { paint: { color }, width: 5 },
-    });
-    cmds.push({
-      kind: 'path',
-      path: { kind: 'rect', x: ox - 4, y: oy - 4, width: 8, height: 8 },
-      fill: { color: '#f0e4cc' },
-    });
-    if (labels) {
-      cmds.push(textCommandFromRuns(
-        ox + 8, oy - 6,
-        [{ text: bone.name, fill: { fill: 'solid', color: '#a89878' } }],
-        { fontFamily: 'sans-serif', fontSize: 10 },
-      ));
-    }
-  }
-  return cmds;
+type Layer = 'bones' | 'joints' | 'labels';
+type Data = { shape: 'rect'; fill: FillStyle } | { text: string; style: TextStyle; fill: FillStyle };
+interface NodeSpec { id: NodeId; kind: 'leaf'; layer: Layer; pose: RectPose; data: Data }
+
+const LABEL_STYLE: TextStyle = { fontFamily: 'sans-serif', fontSize: 10 };
+const CAPTION_STYLE: TextStyle = { fontFamily: 'sans-serif', fontSize: 12 };
+
+interface Figure {
+  skeleton: Skeleton;
+  nodes: NodeSpec[];
+  bindings: Record<string, NodeId[]>;
 }
 
+/**
+ * The figure's nodes, laid over its bind pose — where an editor would have the
+ * author place them. Each bone is a rect running from its joint along the
+ * joint's +x, with a marker on the joint and a label beside it.
+ */
+function figure(prefix: string, rootX: number, color: string): Figure {
+  const skeleton = skeletonAt(rootX);
+  const rest = resolveSkeleton(skeleton, {});
+  const nodes: NodeSpec[] = [];
+  const bindings: Record<string, NodeId[]> = {};
+  for (const bone of BONES) {
+    const m = rest.get(bone.name)!;
+    const [ox, oy] = mat3.apply(m, 0, 0);
+    const [tx, ty] = mat3.apply(m, bone.length, 0);
+    const ids = ['bone', 'joint', 'label'].map((k) => asNodeId(`${prefix}:${k}:${bone.name}`));
+    nodes.push(
+      {
+        id: ids[0], kind: 'leaf', layer: 'bones',
+        pose: {
+          x: (ox + tx) / 2 - bone.length / 2, y: (oy + ty) / 2 - BONE_WIDTH / 2,
+          width: bone.length, height: BONE_WIDTH, rotation: Math.atan2(ty - oy, tx - ox),
+        },
+        data: { shape: 'rect', fill: solid(color) },
+      },
+      {
+        id: ids[1], kind: 'leaf', layer: 'joints',
+        pose: { x: ox - JOINT_SIZE / 2, y: oy - JOINT_SIZE / 2, width: JOINT_SIZE, height: JOINT_SIZE },
+        data: { shape: 'rect', fill: solid('#f0e4cc') },
+      },
+      {
+        id: ids[2], kind: 'leaf', layer: 'labels',
+        pose: { x: ox + 8, y: oy - 14, width: 60, height: 12 },
+        data: { text: bone.name, style: LABEL_STYLE, fill: solid('#a89878') },
+      },
+    );
+    bindings[bone.name] = ids;
+  }
+  return { skeleton, nodes, bindings };
+}
+
+const BY_SLIDER = figure('slider', 160, '#7fb069');
+const BY_TRACK = figure('track', 430, '#d4a574');
+
+const caption = (id: string, x: number, text: string, color: string): NodeSpec => ({
+  id: asNodeId(id), kind: 'leaf', layer: 'labels',
+  pose: { x, y: 292, width: 220, height: 14 },
+  data: { text, style: CAPTION_STYLE, fill: solid(color) },
+});
+
+const INITIAL: NodeSpec[] = [
+  ...BY_SLIDER.nodes,
+  ...BY_TRACK.nodes,
+  caption('caption:slider', 60, 'blendPoses by hand', '#7fb069'),
+  caption('caption:track', 330, 'SampledTrack<Pose>.interpolate', '#d4a574'),
+];
+
+// Bones and joint markers ride their joints rigidly; labels follow the joint
+// but stay upright, which is the one thing here the default apply does not do.
+const rigid = rigidRigApply(RECT_POSE_DESCRIPTOR);
+const APPLY: RigApply<RectPose> = (world, ctx) => {
+  if (!ctx.node.includes(':label:')) return rigid(world, ctx);
+  const [x, y] = mat3.apply(world, 0, 0);
+  return { ...ctx.rest, x: x + 8, y: y - 14 };
+};
+
 export function RigDemo() {
-  const scene = useScene<{ id: string }>({ items: [] });
+  const scene = useScene<Data, Layer, RectPose>({
+    systemLayers: [{ id: 'bones' }, { id: 'joints' }, { id: 'labels' }],
+    initial: useMemo(() => INITIAL, []),
+  });
   const animator = useAnimator();
   const [blend, setBlend] = useState(0);
   const [labels, setLabels] = useState(true);
   const [playing, setPlaying] = useState(false);
-  const trackPose = useRef<Pose>(POSE_A);
   // The `u` the track's interpolate was last handed, expressed against A→B so
   // the return leg reads as a blend factor rather than as its own segment.
   const trackBlend = useRef(0);
   const [shownTrackBlend, setShownTrackBlend] = useState(0);
 
-  const handle = useRef<TimelineHandle | null>(null);
+  const sliderRig = useRig({ scene, skeleton: BY_SLIDER.skeleton, bindings: BY_SLIDER.bindings, apply: APPLY });
+  const trackRig = useRig({ scene, skeleton: BY_TRACK.skeleton, bindings: BY_TRACK.bindings, apply: APPLY });
+
   useEffect(() => {
-    if (!playing) return;
+    sliderRig.pose(blendPoses([POSE_A, POSE_B], [1 - blend, blend]));
+  }, [sliderRig, blend]);
+
+  useEffect(() => {
+    if (!playing) {
+      trackRig.pose(POSE_A);
+      return;
+    }
     const track: SampledTrack<Pose> = {
       kind: 'sampled', label: 'pose',
       keys: [
@@ -123,38 +180,15 @@ export function RigDemo() {
         trackBlend.current = a === POSE_A ? u : 1 - u;
         return blendPoses([a, b], [1 - u, u]);
       },
-      onTick: (p) => { trackPose.current = p; },
+      onTick: (p) => trackRig.pose(p),
     };
     const tl = animator.timeline({ tracks: [track], loop: true });
-    handle.current = tl;
-    return () => { tl.cancel(); handle.current = null; };
-  }, [animator, playing]);
+    return () => tl.cancel();
+  }, [animator, playing, trackRig]);
 
-  // The canvas repaints off `animator.onTick`, so the loop has to keep running
-  // even when nothing is animating — otherwise the slider moves the pose with
-  // nothing redrawing it.
-  useEffect(() => animator.keepAlive(), [animator]);
   useEffect(() => animator.onTick(() => setShownTrackBlend(trackBlend.current)), [animator]);
 
-  const sliderPose = blendPoses([POSE_A, POSE_B], [1 - blend, blend]);
-
-  const figures: RenderLayer<unknown> = {
-    id: 'figures', label: 'Figures',
-    draw: () => [
-      ...drawFigure(BY_SLIDER, sliderPose, '#7fb069', labels),
-      ...drawFigure(BY_TRACK, trackPose.current, '#d4a574', labels),
-      textCommandFromRuns(
-        60, 300,
-        [{ text: 'blendPoses by hand', fill: { fill: 'solid', color: '#7fb069' } }],
-        { fontFamily: 'sans-serif', fontSize: 12 },
-      ),
-      textCommandFromRuns(
-        330, 300,
-        [{ text: 'SampledTrack<Pose>.interpolate', fill: { fill: 'solid', color: '#d4a574' } }],
-        { fontFamily: 'sans-serif', fontSize: 12 },
-      ),
-    ],
-  };
+  useEffect(() => scene.setLayerVisible('labels', labels), [scene, labels]);
 
   return (
     <div className="ckd-demo">
@@ -170,11 +204,11 @@ export function RigDemo() {
         <button className="ckd-btn" onClick={() => setPlaying((p) => !p)}>
           {playing ? 'stop track' : 'play track'}
         </button>
-        <span className="ckd-readout">track u {shownTrackBlend.toFixed(2)}</span>
         <label className="ckd-field">
           <input type="checkbox" checked={labels} onChange={(e) => setLabels(e.target.checked)} />
           joint labels
         </label>
+        <span className="ckd-readout">track u {shownTrackBlend.toFixed(2)}</span>
       </div>
       <SceneCanvas
         width={W}
@@ -183,14 +217,13 @@ export function RigDemo() {
         scene={scene}
         selectionMode="none"
         animator={animator}
-        layers={{
-          figures: { layer: figures, before: 'scene' },
-          selectionOverlay: null,
-        }}
+        layers={{ selectionOverlay: null }}
       />
       <div className="ckd-hint">
-        Both figures are the same six-joint skeleton resolved by
-        <code> resolveSkeleton</code>. The green one is posed by
+        Both figures are the same six-joint skeleton, bound to scene nodes by
+        <code> useRig</code>: each bone, joint marker and label is a node that rides its
+        joint through the scene&apos;s pose overrides, so a frame costs no undo entry. The
+        green one is posed by
         <code> blendPoses([A, B], [1 - t, t])</code> called directly from the slider; the
         orange one is posed by a <code>SampledTrack&lt;Pose&gt;</code> whose
         <code> interpolate</code> is that same call. Set the slider to the track&apos;s
