@@ -19,10 +19,6 @@
  *   call site. A future phase may introduce a `SceneApi` alias once the common
  *   subset stabilises.
  *
- * - **`pointer`**: `PointerContextValue` is marked `@experimental` upstream.
- *   Registered here as-is; if the contract changes, update this import and
- *   the augmentation below.
- *
  * @see docs/superpowers/specs/2026-05-16-registry-unification-design.md
  */
 
@@ -34,7 +30,6 @@ import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { InsertAdapter } from 'core/adapters/types';
 import type { History } from '@weasel-js/history';
-import type { PointerContextValue } from 'features/pointer/PointerContext';
 import type { ActiveToolContextValue } from '@weasel-js/routing/react';
 import type {
   PointSnapBehavior,
@@ -474,13 +469,6 @@ declare module '@weasel-js/routing' {
     scene: Scene<unknown, string, unknown>;
     /** Undo/redo history bound to the current scene. */
     history: History;
-    /**
-     * Canvas pointer position in world space.
-     *
-     * Exposes `pointerRef` (mutable live ref) and `getDropPoint()` thunk.
-     * Marked `@experimental` in the source.
-     */
-    pointer: PointerContextValue;
     /** Currently active tool id + hotkey-hold stack. */
     activeTool: ActiveToolContextValue;
     /**

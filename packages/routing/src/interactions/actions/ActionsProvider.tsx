@@ -250,7 +250,6 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
                     scene: r.get('scene' as DepName),
                     history: r.get('history' as DepName),
                     view: r.get('view' as DepName),
-                    pointer: r.get('pointer' as DepName),
                     activeTool: r.get('activeTool' as DepName),
                     booleansAdapter: r.get('booleansAdapter' as DepName),
                   };
@@ -295,7 +294,6 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
                 scene: r.get('scene' as DepName),
                 history: r.get('history' as DepName),
                 view: r.get('view' as DepName),
-                pointer: r.get('pointer' as DepName),
                 activeTool: r.get('activeTool' as DepName),
                 booleansAdapter: r.get('booleansAdapter' as DepName),
               };

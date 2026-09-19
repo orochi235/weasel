@@ -149,7 +149,6 @@ The schema is `DepSchema` in
 | `scene` | the scene tree: structural reads + undoable mutations |
 | `history` | undo/redo bound to the current scene |
 | `view` | camera position + scale |
-| `pointer` | canvas pointer position in world space |
 | `activeTool` | active tool id + the hotkey-hold stack |
 | `applyOps` | optional consumer commit hook — when present, ops route through consumer history as one entry instead of `scene.applyBatch` |
 

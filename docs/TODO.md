@@ -185,9 +185,9 @@ Priority tags:
   the type does not free it). `view` is not an obstruction but the design —
   viewport deps are per-kernel, and `kernel3d` declares `camera3d`.
   `editAnchors` and `booleansAdapter` are 2D *features* — anchor editing and
-  path booleans — that a 3D kernel simply does not declare. The remaining six —
-  `pointer`, `snap`, `lassoSelect`, `poseDescriptor`, `slice`, `ingestion` —
-  are satisfiable as typed, because every coordinate in them is a screen point
+  path booleans — that a 3D kernel simply does not declare. The remaining five —
+  `snap`, `lassoSelect`, `poseDescriptor`, `slice`, `ingestion` — are
+  satisfiable as typed (the tenth, `pointer`, has since been removed), because every coordinate in them is a screen point
   under the identity `clientToWorld` a 3D host passes. Re-measured 2026-09-13,
   dep by dep.
 
@@ -199,12 +199,6 @@ Priority tags:
   `Point2` is orientation-free, and none of `dispatcher.ts`, `matcher.ts`,
   `invoker.ts`, `action.ts`, `buildDeps.ts` or `depRegistry.tsx` names a 2D type
   at all.
-
-- **(P3) Nothing declares the `pointer` dep.** No `requires:` anywhere in
-  `packages/` or `apps/` names it; it survives in the two legacy fixed bags in
-  `ActionsProvider.tsx` and is registered unconditionally by
-  `useStandardActions`. Removing it is a public-API change, so it wants its own
-  decision. Found while re-measuring the dep schema, 2026-09-13.
 
 - **(P3) `geometryProjection` cannot hold a 3D transform.** `transform(node,
   m: Mat3)` names a plane in its signature, so a kernel with a camera has

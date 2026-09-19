@@ -91,8 +91,6 @@ export interface UseStandardActionsOptions {
   scene?: DepSchema['scene'];
   /** Undo/redo history bound to the current scene. */
   history?: DepSchema['history'];
-  /** Canvas pointer position in world space. */
-  pointer?: DepSchema['pointer'];
   /** Currently active tool id + hotkey-hold stack. */
   activeTool?: DepSchema['activeTool'];
   /**
@@ -217,7 +215,7 @@ export function useStandardActions(opts: UseStandardActionsOptions): void {
     const r = depRegRef.current;
     if (!r) return;
     const unregisters: Array<() => void> = [];
-    const keys = ['selection', 'view', 'scene', 'history', 'pointer'] as const;
+    const keys = ['selection', 'view', 'scene', 'history'] as const;
     for (const key of keys) {
       unregisters.push(
         r.register(key as DepName, () => optsRef.current[key] as DepSchema[DepName]),

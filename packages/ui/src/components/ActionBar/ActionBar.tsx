@@ -79,7 +79,6 @@ export function ActionBar(props: ActionBarProps) {
         scene: depReg.get('scene'),
         history: depReg.get('history'),
         view: depReg.get('view'),
-        pointer: depReg.get('pointer'),
         activeTool: depReg.get('activeTool'),
         booleansAdapter: depReg.get('booleansAdapter'),
       }

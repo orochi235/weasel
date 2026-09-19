@@ -2,7 +2,6 @@ import { describe, it, expectTypeOf } from 'vitest';
 import type { DepSchema } from '@weasel-js/routing';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { History } from '@weasel-js/history';
-import type { PointerContextValue } from 'features/pointer/PointerContext';
 import type { ActiveToolContextValue } from '@weasel-js/routing/react';
 import './depSchema';
 
@@ -21,10 +20,6 @@ describe('DepSchema', () => {
 
   it('declares history: History', () => {
     expectTypeOf<DepSchema['history']>().toEqualTypeOf<History>();
-  });
-
-  it('declares pointer: PointerContextValue', () => {
-    expectTypeOf<DepSchema['pointer']>().toEqualTypeOf<PointerContextValue>();
   });
 
   it('declares activeTool: ActiveToolContextValue', () => {
