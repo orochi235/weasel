@@ -670,15 +670,6 @@ intercepting the press that drags the body.
   dependency chain override-free, or the two readers that want that have to say
   so. Found while routing `sceneLeafBounds` through it.
 
-- **(P3) The move action captures origin poses raw.** One reader is left taking
-  `node.pose` instead of `effectivePose`: the `startPoses` walk in
-  `interactions/actions/defaults/move.ts`, which snapshots each dragged id and
-  every descendant at drag start. A derived-pose child inside a dragged
-  container would be captured at its placeholder and preview from there. Not a
-  one-line change like the others were — origin capture is what every behavior
-  and the commit delta measure against, so it wants a test that drags a
-  container holding a derived child before it moves.
-
 - **(P2) Value-compare the resolved poses in `resolveDerivedPath`.**
   Invalidation is pushed by the scene today, which is closed only under the
   triggers someone enumerated — the arc's reviews found three rounds of misses
