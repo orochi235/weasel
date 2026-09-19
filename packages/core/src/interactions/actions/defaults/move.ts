@@ -44,7 +44,7 @@
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
-import { documentPose } from 'core/scene/effectivePose';
+import { documentPose, effectivePose } from 'core/scene/effectivePose';
 import type { Scene, NodeId } from 'core/scene/types';
 import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides';
 import { asNodeId } from 'core/scene/types';
@@ -322,25 +322,27 @@ function translateCommitOps(
   const m: Mat3 = [1, 0, 0, 1, dx, dy];
   const ops: Op[] = [];
   for (const id of ids) {
-    const origin = scratch.startPoses.get(id);
-    if (origin === undefined) continue;
+    if (!scratch.startPoses.has(id)) continue;
+    const node = scratch.scene.get(id);
+    if (!node) continue;
+    // The authored pose, not the captured one: a derived node's captured pose
+    // is its derivation, and writing that back would lose the placeholder undo
+    // restores.
+    const authored = node.pose;
     ops.push(createTransformOp<unknown>({
       id: id as string,
-      from: origin,
-      to: translatePoseViaDescriptor(origin, dx, dy, scratch.projection),
+      from: authored,
+      to: translatePoseViaDescriptor(authored, dx, dy, scratch.projection),
       label: 'Move',
     }));
     if (scratch.geometryProjection) {
-      const node = scratch.scene.get(id);
-      if (node) {
-        const dataOp = geometryDataOp(
-          scratch.geometryProjection,
-          { id: id as string, data: node.data, pose: origin },
-          m,
-          'Move',
-        );
-        if (dataOp) ops.push(dataOp);
-      }
+      const dataOp = geometryDataOp(
+        scratch.geometryProjection,
+        { id: id as string, data: node.data, pose: authored },
+        m,
+        'Move',
+      );
+      if (dataOp) ops.push(dataOp);
     }
   }
   return ops;
@@ -639,7 +641,7 @@ export const moveAction: Action & { requires: string[] } = {
       for (const id of ids) {
         const node = scene.get(id);
         if (!node) continue;
-        startPoses.set(id, node.pose);
+        startPoses.set(id, effectivePose(scene, node));
         seen.add(id);
         queue.push(id);
       }
@@ -650,7 +652,7 @@ export const moveAction: Action & { requires: string[] } = {
           seen.add(childId);
           const childNode = scene.get(childId);
           if (!childNode) continue;
-          startPoses.set(childId, childNode.pose);
+          startPoses.set(childId, effectivePose(scene, childNode));
           cascadeIds.push(childId);
           queue.push(childId);
         }

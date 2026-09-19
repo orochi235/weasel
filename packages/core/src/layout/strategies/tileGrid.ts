@@ -34,6 +34,16 @@ export interface TileGridOptions<TPose> {
     cellRect: { x: number; y: number; width: number; height: number },
     dragged: TPose,
   ): TPose;
+  /** Optional: the point that decides which cell a child occupies — a child
+   *  occupies the cell containing it. Default reads `x`/`y` plus half of
+   *  `width`/`height` when the pose has them, which is the center of a
+   *  `RectPose` and the point itself for a point pose. */
+  centerOf?(pose: TPose): { x: number; y: number };
+}
+
+function defaultCenterOf(pose: unknown): { x: number; y: number } {
+  const p = pose as { x?: number; y?: number; width?: number; height?: number };
+  return { x: (p.x ?? 0) + (p.width ?? 0) / 2, y: (p.y ?? 0) + (p.height ?? 0) / 2 };
 }
 
 function cellRectAt(
@@ -58,9 +68,15 @@ function sortedChildIds<TPose>(children: ReadonlyArray<LayoutChild<TPose>>): str
   return children.map((c) => c.id).sort();
 }
 
-/** Layout strategy that arranges children into a fixed grid of cells, one
- *  child per cell. A drag reflows the others to make room, and the container
- *  holds at most `cols × rows` children. */
+/**
+ * Layout strategy that arranges children into a fixed grid of cells, one
+ * child per cell, and the container holds at most `cols × rows` children.
+ *
+ * A child occupies the cell its pose sits in (see `centerOf`). A drag from
+ * inside the container swaps with the child in the cell it lands on; a drop
+ * from outside is offered only the free cells, so it lands in the nearest
+ * free one and a full grid rejects it.
+ */
 export function tileGrid<TPose>(
   opts: TileGridOptions<TPose>,
 ): LayoutStrategy<TPose> {
@@ -75,8 +91,25 @@ export function tileGrid<TPose>(
       return { ...(dragged as object), ...cell } as TPose;
     });
 
+  const centerOf = opts.centerOf ?? defaultCenterOf;
+
   function cellPose(bounds: ContainerBounds, col: number, row: number, basis: TPose): TPose {
     return cellToPose(cellRectAt(bounds, cols, rows, gap, col, row), basis);
+  }
+
+  /** The cell index (`row * cols + col`) `pose` sits in, or `null` when it
+   *  sits in a gap or outside the grid. */
+  function cellIndexOf(bounds: ContainerBounds, pose: TPose): number | null {
+    const p = centerOf(pose);
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const r = cellRectAt(bounds, cols, rows, gap, col, row);
+        if (p.x >= r.x && p.x < r.x + r.width && p.y >= r.y && p.y < r.y + r.height) {
+          return row * cols + col;
+        }
+      }
+    }
+    return null;
   }
 
   /**
@@ -90,29 +123,25 @@ export function tileGrid<TPose>(
     children: ReadonlyArray<LayoutChild<TPose>>,
     dragged: LayoutDragged<TPose>,
     target: DropTarget<TPose> | null,
-  ): { occupant: string; newPose: TPose } | null {
+  ): { occupant: string; from: TPose; newPose: TPose } | null {
     if (target === null) return null;
     if (dragged.sourceContainerId !== container.id) return null;
     const meta = target.meta as TileMeta;
-    // Derive occupant by cell index from the current visual layout (sorted
-    // ids include the dragged child, since the cell index corresponds to
-    // pre-drop positions). If the cell currently holds the dragged itself,
-    // no swap is needed.
-    const ids = sortedChildIds(children);
     const idx = meta.row * cols + meta.col;
-    const occupant = ids[idx] ?? null;
-    if (occupant === null || occupant === dragged.id) return null;
-    // The occupant takes the dragged child's old cell. Find that cell by
-    // locating the dragged id in the same sorted-children index space.
-    const draggedIdx = ids.indexOf(dragged.id);
-    const draggedCol = draggedIdx % cols;
-    const draggedRow = Math.floor(draggedIdx / cols);
-    const oldCellRect = cellRectAt(container.bounds, cols, rows, gap, draggedCol, draggedRow);
-    // Use the occupant's own pose as the basis so any non-rect fields
-    // (rotation, domain metadata) are preserved.
-    const occupantChild = children.find((c) => c.id === occupant);
-    const basis = occupantChild ? occupantChild.pose : dragged.originPose;
-    return { occupant, newPose: cellToPose(oldCellRect, basis) };
+    const occupant = children.find(
+      (c) => c.id !== dragged.id && cellIndexOf(container.bounds, c.pose) === idx,
+    );
+    if (occupant === undefined) return null;
+    // The occupant takes the cell the dragged child is leaving — where the
+    // container state says it is now, which an earlier placement of the same
+    // drop may have moved it to.
+    const self = children.find((c) => c.id === dragged.id);
+    const fromIdx = cellIndexOf(container.bounds, self ? self.pose : dragged.originPose);
+    if (fromIdx === null || fromIdx === idx) return null;
+    const oldCellRect = cellRectAt(
+      container.bounds, cols, rows, gap, fromIdx % cols, Math.floor(fromIdx / cols),
+    );
+    return { occupant: occupant.id, from: occupant.pose, newPose: cellToPose(oldCellRect, occupant.pose) };
   }
 
   return {
@@ -132,10 +161,21 @@ export function tileGrid<TPose>(
       return out;
     },
 
-    getDropTargets(container, _children, dragged) {
+    getDropTargets(container, children, dragged) {
+      // A drag from inside may land on an occupied cell and swap; one from
+      // outside has nobody to swap with, so occupied cells are not offered.
+      const occupied = new Set<number>();
+      if (dragged.sourceContainerId !== container.id) {
+        for (const c of children) {
+          if (c.id === dragged.id) continue;
+          const idx = cellIndexOf(container.bounds, c.pose);
+          if (idx !== null) occupied.add(idx);
+        }
+      }
       const out: DropTarget<TPose>[] = [];
       for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
+          if (occupied.has(row * cols + col)) continue;
           const cellRect = cellRectAt(container.bounds, cols, rows, gap, col, row);
           out.push({
             pose: cellToPose(cellRect, dragged.pose),
@@ -153,10 +193,6 @@ export function tileGrid<TPose>(
       if (swap !== null) {
         out.set(swap.occupant, swap.newPose);
       }
-      // (Cross-container occupancy: spec leaves this as deferral —
-      // for v1, dropping onto an occupied cell of a different container
-      // displaces the occupant only when same-container. Cross-container
-      // collisions fall back to free-space drop semantics from the gesture.)
       return out;
     },
 
@@ -171,11 +207,10 @@ export function tileGrid<TPose>(
         droppedPose = cellToPose(meta.cellRect, dragged.pose);
         const swap = computeSwap(container, children, dragged, target);
         if (swap !== null) {
-          const layoutBefore = this.childPoses(container, children);
           ops.push(
             createTransformOp<TPose>({
               id: swap.occupant,
-              from: layoutBefore.get(swap.occupant)!,
+              from: swap.from,
               to: swap.newPose,
               label: 'Tile swap',
             }),

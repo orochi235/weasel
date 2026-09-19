@@ -362,6 +362,38 @@ describe('the scene slot carries a derived container clip', () => {
   });
 });
 
+describe('the scene slot derives against its own toPose', () => {
+  /** Paints every node 7 lower than the scene stores it. */
+  const lowered = (n: Node<Data, 'main', RectPose>): RectPose => ({ ...n.pose, y: n.pose.y + 7 });
+
+  it('hands derivePath the dependency poses the slot paints them at', () => {
+    const { scene, edge } = makeEdgeScene();
+    const spy = spyDrawOne();
+    const slot = wireSceneSlotToScene({ drawOne: spy, toPose: lowered }, scene);
+    const node = scene.get(edge)!;
+    slot.drawOne(node, lowered(node), VIEW);
+    expect(spy.mock.calls[0][3]?.derivedPath).toEqual(linePath({ x: 0, y: 7 }, { x: 100, y: 7 }));
+  });
+
+  it('derives the clip the same way', () => {
+    const { scene, edge } = makeEdgeScene();
+    const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne, toPose: lowered }, scene);
+    expect(slot.derivedPathOf!(scene.get(edge)!, pose(0)))
+      .toEqual(linePath({ x: 0, y: 7 }, { x: 100, y: 7 }));
+  });
+
+  it('does not share a cached path with a reader that does not use it', () => {
+    // The derived-path memo is keyed on the node and its pose, neither of
+    // which a toPose changes — so the two readings need separate entries.
+    const { scene, edge } = makeEdgeScene();
+    const node = scene.get(edge)!;
+    const plain = resolveDerivedPath(node, sceneDepLookup(scene), (id) => scene.childrenOf(id));
+    const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne, toPose: lowered }, scene);
+    expect(slot.derivedPathOf!(node, pose(0))).toEqual(linePath({ x: 0, y: 7 }, { x: 100, y: 7 }));
+    expect(resolveDerivedPath(node, sceneDepLookup(scene), (id) => scene.childrenOf(id))).toBe(plain);
+  });
+});
+
 describe('picking a derived node', () => {
   /** The edge runs (0,0) → (100,0); its own pose is a 10×10 placeholder at
    *  the origin, which is why the pose AABB cannot answer for it. */

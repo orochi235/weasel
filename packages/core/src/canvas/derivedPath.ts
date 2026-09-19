@@ -7,6 +7,7 @@
  * `effectivePose` has to be able to reach it.
  */
 import type { DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
+import type { Path } from 'core/geometry/path';
 import { derivedDepOf } from 'core/scene/effectivePose';
 import { resolveDerivedPath } from 'core/scene/derivedPath';
 import type { SceneViewDrawOne } from './NodeShape';
@@ -21,12 +22,53 @@ export { resolveDerivedPath } from 'core/scene/derivedPath';
  * `Scene` stores absolute poses and the render walks hand `getPose` straight to
  * `drawOne`, composing nothing, so this has to read exactly what the render
  * adapters read: a derived edge is drawn from these coordinates and must meet
- * the nodes it connects.
+ * the nodes it connects. A slot's `toPose` replaces that read, so `toPose`
+ * replaces it here too.
  */
 export function sceneDepLookup<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
+  toPose?: (node: Node<TData, TLayer, TPose>) => TPose,
 ): (id: NodeId) => DerivedDep<TPose> | undefined {
-  return (id) => derivedDepOf(scene, id);
+  if (toPose === undefined) return (id) => derivedDepOf(scene, id);
+  const slot = memoSlotFor(toPose);
+  const childrenOf = (id: NodeId): readonly NodeId[] => scene.childrenOf(id);
+  const lookup = (id: NodeId): DerivedDep<TPose> | undefined => {
+    const node = scene.get(id);
+    if (node === undefined) return undefined;
+    return {
+      node: node as unknown as Node<unknown, string, TPose>,
+      pose: toPose(node),
+      get path(): Path | null {
+        return resolveDerivedPath(node, lookup, childrenOf, slot);
+      },
+    };
+  };
+  return lookup;
+}
+
+/** `(node) => the path it derives`, read through {@link sceneDepLookup}. */
+export function sceneDerivedPathOf<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  toPose?: (node: Node<TData, TLayer, TPose>) => TPose,
+): (node: Node<TData, TLayer, TPose>) => Path | null {
+  const depOf = sceneDepLookup(scene, toPose);
+  const slot = toPose === undefined ? undefined : memoSlotFor(toPose);
+  const childrenOf = (id: NodeId): readonly NodeId[] => scene.childrenOf(id);
+  return (node) => resolveDerivedPath(node, depOf, childrenOf, slot);
+}
+
+const toPoseSlots = new WeakMap<object, string>();
+let nextToPoseSlot = 0;
+
+/** One memo slot per `toPose`: two slots painting one scene at different
+ *  poses must not serve each other's paths. */
+function memoSlotFor(toPose: object): string {
+  let slot = toPoseSlots.get(toPose);
+  if (slot === undefined) {
+    slot = `kit:derivedPath:toPose:${nextToPoseSlot++}`;
+    toPoseSlots.set(toPose, slot);
+  }
+  return slot;
 }
 
 /**
@@ -41,18 +83,11 @@ export function sceneDepLookup<TData, TLayer extends string, TPose>(
 export function withDerivedPaths<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   drawOne: SceneViewDrawOne<TData, TLayer, TPose>,
+  toPose?: (node: Node<TData, TLayer, TPose>) => TPose,
 ): SceneViewDrawOne<TData, TLayer, TPose> {
-  const depOf = sceneDepLookup(scene);
-  const childrenOf = (id: NodeId): readonly NodeId[] => scene.childrenOf(id);
+  const derivedPathOf = sceneDerivedPathOf(scene, toPose);
   return (node, pose, view, ctx) => {
     if (node.dependsOn === undefined) return drawOne(node, pose, view, ctx);
-    return drawOne(node, pose, view, {
-      ...ctx,
-      derivedPath: resolveDerivedPath(
-        node as Node<TData, TLayer, TPose>,
-        depOf,
-        childrenOf,
-      ),
-    });
+    return drawOne(node, pose, view, { ...ctx, derivedPath: derivedPathOf(node) });
   };
 }

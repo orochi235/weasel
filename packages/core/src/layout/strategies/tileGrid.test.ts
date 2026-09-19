@@ -248,4 +248,62 @@ describe('tileGrid', () => {
     });
     expect(layout.snap.pickTarget(targets, { x: 25, y: 25 })).toBeNull();
   });
+
+  describe('occupancy', () => {
+    const cell = (x: number, y = 0): P => ({ x, y, width: 50, height: 100 });
+    const colOf = (t: { meta?: unknown } | null) => (t?.meta as { col: number } | undefined)?.col;
+    const incoming = (id: string, pose: P) => ({
+      id, originPose: pose, pose, sourceContainerId: 'OTHER',
+    });
+
+    it('a cross-container drop is offered only the free cells', () => {
+      const layout = tileGrid<P>({ cols: 2, rows: 1 });
+      const targets = layout.getDropTargets(container, [{ id: 'a', pose: cell(0) }], incoming('d', cell(0)));
+      expect(targets.map(colOf)).toEqual([1]);
+    });
+
+    it('a cross-container drop aimed at an occupied cell lands in the nearest free one', () => {
+      const layout = tileGrid<P>({ cols: 2, rows: 1 });
+      const targets = layout.getDropTargets(container, [{ id: 'a', pose: cell(0) }], incoming('d', cell(0)));
+      expect(colOf(layout.snap.pickTarget(targets, { x: 25, y: 50 }))).toBe(1);
+    });
+
+    it('a second child of one drop does not land in the cell the first took', () => {
+      // The drop pipeline hands each placement the state the previous produced:
+      // here 'x' already sits in cell 0, and 'y' probes the same point.
+      const layout = tileGrid<P>({ cols: 2, rows: 1 });
+      const afterFirst = [{ id: 'x', pose: cell(0) }];
+      const targets = layout.getDropTargets(container, afterFirst, incoming('y', cell(0)));
+      expect(colOf(layout.snap.pickTarget(targets, { x: 10, y: 50 }))).toBe(1);
+    });
+
+    it('a full grid offers a cross-container drop nothing', () => {
+      const layout = tileGrid<P>({ cols: 2, rows: 1 });
+      const children = [{ id: 'a', pose: cell(0) }, { id: 'b', pose: cell(50) }];
+      const targets = layout.getDropTargets(container, children, incoming('d', cell(0)));
+      expect(layout.snap.pickTarget(targets, { x: 25, y: 50 })).toBeNull();
+    });
+
+    it('a same-container drag still offers occupied cells, to swap with', () => {
+      const layout = tileGrid<P>({ cols: 2, rows: 1 });
+      const children = [{ id: 'a', pose: cell(0) }, { id: 'b', pose: cell(50) }];
+      const targets = layout.getDropTargets(container, children, {
+        id: 'a', originPose: cell(0), pose: cell(50), sourceContainerId: 'C',
+      });
+      expect(targets.map(colOf)).toEqual([0, 1]);
+    });
+
+    it('swaps with whoever sits in the cell, not whoever sorts into it', () => {
+      // 'a' and 'b' were swapped by an earlier drop, so id order no longer
+      // says where either one is.
+      const layout = tileGrid<P>({ cols: 2, rows: 1 });
+      const children = [{ id: 'a', pose: cell(50) }, { id: 'b', pose: cell(0) }];
+      const dragged = { id: 'a', originPose: cell(50), pose: cell(0), sourceContainerId: 'C' };
+      const targets = layout.getDropTargets(container, children, dragged);
+      const cell0 = targets.find((t) => colOf(t) === 0)!;
+      const reflow = layout.reflowPoses(container, children, dragged, cell0);
+      expect(reflow.get('b')).toEqual(cell(50));
+    });
+  });
 });
+

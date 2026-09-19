@@ -642,24 +642,6 @@ intercepting the press that drags the body.
   its own placeholder pose. Closing it means giving the adapter surface a
   dependency read, which is a bigger decision than picking.
 
-- **(P3) `documentPose` skips only the node's *own* override.** Its
-  dependencies still resolve through `effectivePose`, so a derived node's
-  "document" pose moves while something it derives from is being dragged. The
-  minimap is the reader that cares — it frames on `documentPose` precisely so a
-  drag does not thrash the framing, and that guarantee holds only in a scene
-  with no derived poses. Either `documentPose` needs to resolve its whole
-  dependency chain override-free, or the two readers that want that have to say
-  so. Found while routing `sceneLeafBounds` through it.
-
-- **(P3) The move action captures origin poses raw.** One reader is left taking
-  `node.pose` instead of `effectivePose`: the `startPoses` walk in
-  `interactions/actions/defaults/move.ts`, which snapshots each dragged id and
-  every descendant at drag start. A derived-pose child inside a dragged
-  container would be captured at its placeholder and preview from there. Not a
-  one-line change like the others were — origin capture is what every behavior
-  and the commit delta measure against, so it wants a test that drags a
-  container holding a derived child before it moves.
-
 - **(P2) Value-compare the resolved poses in `resolveDerivedPath`.**
   Invalidation is pushed by the scene today, which is closed only under the
   triggers someone enumerated — the arc's reviews found three rounds of misses
@@ -689,11 +671,6 @@ intercepting the press that drags the body.
   compare is not closed over any of those. Deciding this means deciding what a
   derivation is allowed to read, not just how a pose is compared.
 
-- **(P3) `scenePoseLookup` does not honor `SceneSlotConfig.toPose`**, which
-  `buildSceneLayer` shims onto the live adapter's `getPose`. A consumer using it
-  would paint dependencies at poses `derivePath` never saw. (It does now resolve
-  overrides and derived poses — it is `effectivePose` against the scene.)
-
 - **(P3) `Scene<TData, TLayer, TPose>` is contravariant in `TPose`** via
   `clipFromPose` and `derivePath`, so no concretely-typed scene satisfies the
   action-facing `Scene<unknown, string, unknown>`. Pre-dates `derivePath` —
@@ -710,7 +687,7 @@ intercepting the press that drags the body.
 ### Container layout strategies (deferred from `docs/specs/2026-05-03-container-layout-strategies-design.md`)
 
 - **(P3) Reparent-on-layout-drop lives in `moveAction`, not the strategies' `commitDrop`** (which are pose-only). If a strategy ever needs container-specific reparent semantics, revisit whether `commitDrop` should own it.
-- **(P3) `tileGrid` lets two children snap into the same cell.** `cellAt` returns whichever cell contains the probe point, and `computeSwap` displaces an occupant only on a same-container drag — so a multi-select drop whose children probe into one cell stacks them there, and a cross-container drop onto an occupied cell overlaps it. Occupancy-aware target enumeration is the fix; the drop pipeline already hands each placement the container state the previous one produced.
+- **(P3) `tileGrid.childPoses` still arranges by sorted id.** Drops, swaps and occupancy go by where a child's pose sits, but the resting arrangement assigns cells in id order — so the source reflow that runs when a child leaves a grid re-sorts the leftovers and undoes any earlier swap among them. Either `childPoses` compacts in current cell order, or the grid keeps an explicit cell assignment.
 - **(P3) Z-order walk doesn't cross non-container ancestors.** Open question: when a deep layout container is BELOW (in z) a shallow layout container that shares the dragged point, today the deepest wins — debate whether real z-order across the whole tree (flat painter's order) should win instead.
 - **(P3) Tile-grid overflow policy.** Children beyond `cols * rows` are skipped from `childPoses`. Scroll, grow-grid, and rejection are the three policies worth designing between.
 - **(P3) Strategy-aware drop regions.** A layout could expose `dropRegion(container) → Bounds` extending beyond visible bounds for forgiveness (e.g. row layouts catching pointers slightly past the row's end).

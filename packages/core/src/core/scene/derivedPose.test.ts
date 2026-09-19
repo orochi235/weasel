@@ -106,6 +106,30 @@ describe('derived pose — precedence', () => {
     expect(documentPose(scene, scene.get(g)!)).toEqual(box(0, 0, 100, 50));
   });
 
+  it('documentPose ignores an override on a dependency being dragged', () => {
+    const { scene, g, b } = grouped();
+    scene.overrides.set(b, { pose: box(290, 40) });
+    expect(documentPose(scene, scene.get(g)!)).toEqual(box(0, 0, 100, 50));
+  });
+
+  it('documentPose ignores an override anywhere down the dependency chain', () => {
+    const { scene, g, b } = grouped();
+    const outer = scene.add({
+      kind: 'container', layer: 'main', pose: box(0, 0, 0, 0), data: {},
+      dependsOn: [g], derivePose: unionOfChildren,
+    });
+    scene.overrides.set(b, { pose: box(290, 40) });
+    expect(documentPose(scene, scene.get(outer)!)).toEqual(box(0, 0, 100, 50));
+  });
+
+  it('documentPose and effectivePose do not serve each other a cached answer', () => {
+    const { scene, g, b } = grouped();
+    scene.overrides.set(b, { pose: box(290, 40) });
+    expect(poseOf(scene, g)).toEqual(box(0, 0, 300, 50));
+    expect(documentPose(scene, scene.get(g)!)).toEqual(box(0, 0, 100, 50));
+    expect(poseOf(scene, g)).toEqual(box(0, 0, 300, 50));
+  });
+
   it('a node with no derivePose is unaffected', () => {
     const { scene, a } = grouped();
     expect(poseOf(scene, a)).toEqual(box(0, 0));

@@ -9,7 +9,7 @@
  */
 import type { SceneSlotConfig } from './Canvas';
 import type { Node, NodeId, Scene } from 'core/scene/types';
-import { withDerivedPaths, resolveDerivedPath, sceneDepLookup } from './derivedPath';
+import { withDerivedPaths, sceneDerivedPathOf } from './derivedPath';
 import { withColorOverrides } from './colorOverrides';
 import type { ColorOverrideRegistry } from '../animation/colorRegistry';
 
@@ -35,12 +35,12 @@ export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
   alphaFor?: (id: string) => number,
   colorOverrides?: ColorOverrideRegistry,
 ): SceneSlotConfig<Node<TData, TLayer, TPose>, TPose> {
-  const depOf = sceneDepLookup(scene);
-  const derived = withDerivedPaths(scene, slot.drawOne);
+  const derived = withDerivedPaths(scene, slot.drawOne, slot.toPose);
+  const derivedPathOf = sceneDerivedPathOf(scene, slot.toPose);
   return {
     ...slot,
     drawOne: colorOverrides ? withColorOverrides(colorOverrides, derived) : derived,
-    derivedPathOf: (node) => resolveDerivedPath(node, depOf, (id) => scene.childrenOf(id)),
+    derivedPathOf,
     alphaFor: composeAlphaFor(scene, alphaFor),
   };
 }
