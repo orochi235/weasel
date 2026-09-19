@@ -1141,7 +1141,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 
-- **(P3) `.lk-shell` is `height: 100vh`.** A lab mounted anywhere but the viewport top overflows by its own offset. Harmless on the dev page, wrong in general.
+- **(P3) `.lk-shell` falls back to the viewport's height.** It is `height:
+  100dvh; max-height: 100%` (`packages/labkit/src/lab/LabShell.less`), so a
+  container of definite height caps it. Under an ancestor with no definite
+  height, a shell mounted below other page content still takes the whole
+  viewport and overflows by its offset. Plain `height: 100%` fixes that case
+  and breaks another: `LabFit.stories`' `WrappedNoReset*` cases, a host that
+  never set `html, body, #root { height: 100% }`, then size the lab to its
+  content. So this is a choice between the two mounts, not a CSS fix; the
+  storybook browser project is what checks either one.
 
 - **(P3) `snapToNearest` and `BandEditor`'s `snapped` are the same function.**
   `CurveEditor/snap.ts` (which `Timeline` and `createKeyframeLayer` use) and
