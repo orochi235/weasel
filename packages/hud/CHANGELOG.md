@@ -1,5 +1,57 @@
 # @weasel-js/hud
 
+## 1.5.1
+
+### Patch Changes
+
+- a39a885: Themes are now authored as layered definitions and built by an engine, published as `@weasel-js/theme/engine`: seeds, generated ramps and scales, semantic rules (a step, an offset from another semantic, the first step that clears a contrast target, a reference), components and pins, any of which can vary by axis. `derive` produces a theme's tokens for one selection with provenance and validation issues, and `bake` folds every selection into a runtime `Theme`. weasel's own theme is `themes/weasel.json`, every value pinned, and emits the same CSS declarations as before. `toDTCG` in `@weasel-js/theme/engine` writes a theme back out as a DTCG document, with aliases written as paths through their type group (`{color.gray-800}`) so DTCG tools resolve them. A pin or component whose whole value is `{seeds.name}` takes that seed's value. labkit's interstellar theme is now `interstellar.theme.json`, a definition extending weasel.
+  
+  **Breaking.** A theme varies by *axes* rather than modes, and `mode` is one axis:
+  
+  - `resolveTheme(theme, selection?)` and `applyTheme(el, theme, selection?)` take `{ mode: 'light' }` instead of `'light'`; a missing axis takes its default. `applyTheme` stamps one `data-wzl-<axis>` attribute per axis.
+  - `<ThemeProvider selection={{ mode }}>` replaces `mode`, and `useTheme()` returns `selection` instead of `mode`.
+  - `Theme` holds `axes` and `tokens` (each token plain or `{ by: 'mode', dark, light }`) instead of `defaultMode`, `tokens` and `modes`. Read an axis default with `themeAxes(theme).mode.default`.
+  - `defineTheme` takes `{ name, extends?, axes?, components?, pins? }`, where a pin or component is a value or `{ value, type, alpha, description }` and references are written `{token}` (not `{color.token}`). It throws on a definition with rules; bake those with the engine. `extends` is a `Theme`: passing a definition's name (`'weasel'`) throws and says to pass the `Theme`.
+  - A theme that redeclares an axis its parent declares keeps the parent's values: the child's entries for a shared value and the child's default win, and a value only the parent has still resolves through the parent. A DTCG document with only a `dark` mode now resolves `light` from the theme it extends.
+  - `THEMES.<name>.modes.<mode>` is now `THEMES.<name>.selections['mode=<mode>']`. `THEME_SOURCES` holds definitions, `BAKED_THEMES` is new, and `TokenInput` and `ThemeSource` are removed.
+  - `GeneratedTheme.defaultMode` is replaced by `axes`.
+  - `tokens.css`'s `:root` declarations and `TOKEN_MANIFEST`'s rows are in layer order — ramps, scales, semantics, components, then other pins. The values are unchanged, but token browsers list them in the new order.
+- Updated dependencies [f644eac]
+- Updated dependencies [b984947]
+- Updated dependencies [72fde09]
+- Updated dependencies [e9051ac]
+- Updated dependencies [626bace]
+- Updated dependencies [f4049be]
+- Updated dependencies [86be3eb]
+- Updated dependencies [51372f1]
+- Updated dependencies [2a63f31]
+- Updated dependencies [66e0e10]
+- Updated dependencies [8b79c20]
+- Updated dependencies [f663199]
+- Updated dependencies [a7519a1]
+- Updated dependencies [187593e]
+- Updated dependencies [08a3aec]
+- Updated dependencies [f9feecc]
+- Updated dependencies [c0fa540]
+- Updated dependencies [21ce23e]
+- Updated dependencies [dda4172]
+- Updated dependencies [a39a885]
+- Updated dependencies [55b5524]
+- Updated dependencies [045998f]
+- Updated dependencies [56cad3a]
+- Updated dependencies [f9f41e2]
+- Updated dependencies [fa56d1e]
+- Updated dependencies [272ab0d]
+- Updated dependencies [ff17dd7]
+- Updated dependencies [29f6ed0]
+- Updated dependencies [fb6d8e5]
+- Updated dependencies [ca7c737]
+  - @weasel-js/core@1.5.1
+  - @weasel-js/theme@1.5.1
+  - @weasel-js/loupe@1.5.1
+  - @weasel-js/font@1.5.1
+  - @weasel-js/geom@1.5.1
+
 ## 1.5.0
 
 ### Patch Changes

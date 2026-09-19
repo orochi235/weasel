@@ -1,5 +1,179 @@
 # Changelog
 
+## 1.5.1
+
+### Patch Changes
+
+- f644eac: The sRGB ↔ OKLab/OKLCH conversions (`srgbU8ToOklab`, `oklabToOklch`, `lerpOklch` and the rest) now live in `@weasel-js/paint`. `@weasel-js/core` still exports every one of them, so no import changes.
+- b984947: A `<SceneCanvas>` scene slot with its own `toPose` now derives paths from the poses that `toPose` paints dependencies at. Before, `derivePath` was handed the scene's poses while the nodes it connects were painted through `toPose`, so a derived edge could miss its endpoints. The clip a derived container imposes follows the same rule. No API change.
+- 72fde09: `documentPose` now ignores pose overrides along a derived node's whole dependency chain, not just on the node itself. Before, a derived node's document pose moved while something it derives from was being dragged, which let the minimap's framing follow a drag in any scene with derived poses. `effectivePose` is unchanged. Behavior change, no API change.
+- e9051ac: New `effectiveRangeStyle(range, style, paint?)` reports what is actually rendering across a text range: the range's styling (from `styleAtRange` or `useTextEdit`'s `rangeStyle`) resolved against the node's own `TextStyle` and paint, the way the canvas resolves runs. A node-level flag reads as on across the whole range, a run's override wins over the node's value, and with a `null` range it reports the node alone. Additive: `styleAtRange` and `rangeStyle` still report the runs alone, unchanged.
+- 626bace: A gradient now names the space its stops blend through. `interpolate` on any of
+  the three gradient kinds takes `'rgb'` (the default, and what every other vector
+  format means by a gradient), `'oklab'`, or `'oklch'` — which travels around the
+  hue wheel, so red to blue stays saturated instead of passing through a muddy
+  purple. Alpha is linear in every space.
+  
+  The blend is paid for once, in the 256-texel ramp the shader samples, so a
+  perceptual gradient costs a batched frame nothing over an sRGB one. The space is
+  part of the ramp atlas key: the same stops under two spaces take two rows.
+  
+  `sampleGradientStops` and `sampleResolvedStops` take the space as a third
+  argument, `bindRamp` as an optional third, and `GradientEditor` grows an
+  sRGB / OKLab / OKLCh switch (`spaceSwitch={false}` hides it). `@weasel-js/svg`
+  writes `wzl:interpolate` on the gradient's own element and reads it back; a
+  renderer that ignores it still paints the gradient, in sRGB.
+- f4049be: Poll which keys are down. `useKeyState()` (or `createKeyState()` plus
+  `attach(target)` outside React) tracks physical keys by `KeyboardEvent.code`,
+  independently of which bindings claim them: `isDown(code)`, `isKeyDown(key)`,
+  `codes()`, `modifiers()`, and `take(code)`, which hands out each fresh press
+  once — autorepeat is not a press. Everything is released when the keyups can no
+  longer arrive: the window blurs, the document hides, focus leaves an element
+  target, or Meta is released (macOS sends no keyup for a key let go while Cmd is
+  held). Modifier keys are reconciled against the flags every key event carries,
+  so a modifier released in another window does not stick. `preventDefault`
+  names the codes whose browser default is blocked, so a game's Space and arrows
+  stop scrolling the page.
+  
+  This adds API and changes nothing existing.
+- 86be3eb: A sixth paint kind: `mesh-gradient`, PDF's shading types 6 and 7. A mesh is a
+  set of curved quadrilateral patches, each carrying a color at every corner, so
+  its color field bends where the three gradients can only run straight. Twelve
+  control points make a Coons patch and sixteen a tensor patch, which is the only
+  difference between them.
+  
+  It is registered through `registerPaintKind` rather than built into the
+  renderer, so every slot it uses is one a consumer's own kind can use. The paint
+  is rasterized once into a 256-texel bake the shader samples — forward, the way
+  every renderer that draws these works, because a paint has to answer "what color
+  is this fragment" and inverting a bicubic per fragment does not. Corner colors
+  blend through `interpolate`, as a gradient's stops do.
+  
+  `@weasel-js/svg` writes it as `<wzl:meshGradient>` with every patch's points in
+  full — not SVG's abandoned `<meshgradient>`, whose implicit edge sharing gives a
+  reader a way to be quietly wrong — and reads it back. A renderer that skips the
+  def paints the fallback color beside the reference.
+  
+  `MeshEditor` in `@weasel-js/ui` edits the corner colors and the blend space, and
+  `PaintInput` renders it: before this, a mesh in that control fell through to the
+  color field, which wrote a solid back over it.
+- 51372f1: Dragging a container that holds a derived-pose child no longer shows that child jumping to its authored placeholder for the length of the drag. The move action now captures each dragged node and descendant at the pose it is painted at (`effectivePose`), and commits the authored pose translated by the drag, so undo restores the placeholder exactly. No API change.
+- 2a63f31: Alt+clicking a segment of the path being edited now inserts an anchor where you clicked, and the pen cursor shows while Alt is held over a segment. A straight segment stays straight; a curve is split without changing its shape. The closing edge of a closed path can be split too, the new anchor becomes the selected one, and the click has to land within 8 screen pixels of the path — so the reach no longer changes with zoom. Before this, the split only worked on curves: a straight edge came back as a curve, and the closing edge could not be split at all.
+  
+  Every anchor edit (drag, nudge, delete, cut, insert) can now be undone. Before, `SceneCanvas` recorded these edits as operations with no inverse, and undoing one threw an error.
+  
+  Additive: `Action.enabled` gets a second, optional argument — the world point of the click or press being routed. When it returns disabled for that point, the dispatcher tries the next binding, and the hover cursor is not shown there. The hover cursor now also comes from the action a click would run, when the action a drag would run has no cursor. `nearestSegmentT` gets an optional `closed` argument and returns an exact parameter instead of the nearest of 32 samples. `segmentAt` is new. The `SceneCanvas` adapter gains `setData`.
+- 66e0e10: The pen tool snaps to existing anchors. An anchor placed within
+  `anchorSnapRadius` screen pixels (default 8) of any existing path's anchor
+  lands exactly on it, which makes stitching paths end to end precise. Anchor
+  snapping takes precedence over `snapPoint`, which still applies away from
+  anchors; `anchorSnapRadius: 0` turns it off.
+  
+  This is additive: `usePenTool` gains the `anchorSnapRadius` option.
+- 8b79c20: The pen tool continues an existing open path. With nothing drawn, pressing an
+  open path's first or last anchor picks that path up; the clicks that follow
+  extend it from that end (a first-anchor pick-up prepends and keeps the path's
+  direction), and finishing — Enter, ⌘-click, double-click, or clicking the far
+  end to close it — writes the result back to the same node as one undoable
+  edit rather than making a new node. Dragging from the endpoint pulls that
+  anchor's own handle. The pick-up radius is `closeHitRadius`, in screen pixels.
+  
+  This is additive. The pen now reads existing paths through the `areaSelect`
+  and `editAnchors` deps, which `<SceneCanvas>` already publishes; a host
+  without them gets the old behavior. `PenScratch` gains a `continuing` field.
+- f663199: A `{ px }` stroke width no longer re-tessellates its ribbon on every frame of a
+  zoom. The width is now resolved against the zoom snapped to a fine grid, so
+  consecutive frames share a cached ribbon and a zoom no longer evicts the path's
+  other cached stroke styles. The drawn width stays within 1/8 of a screen pixel
+  of the width asked for. No API change.
+- a7519a1: Remove the `pointer` dep. **Breaking:** `DepSchema` no longer has a `pointer`
+  entry, `useStandardActions` no longer takes a `pointer` option, and the fixed
+  deps bag handed to an action that declares no `requires` no longer carries it.
+  
+  Nothing in the kit declared or read it, and `<SceneCanvas>` never supplied a
+  value, so an action reading `deps.pointer` was already getting `undefined`. An
+  action that wants the pointer reads it from its invocation context
+  (`ctx.world`), and code outside an action can still use `usePointerContext()`,
+  which is unchanged.
+- 187593e: Remove `useRotateTool` and the `'rotate'` built-in tool id. **Breaking:**
+  `'rotate'` is no longer a `BuiltinToolId`, so `defaultTools={['rotate', …]}`
+  and `tools={{ rotate: true }}` no longer typecheck, and the `standard` bundle
+  and the default tier no longer list it.
+  
+  Rotation itself is unchanged. It has run through `rotateAction`, bound by the
+  select tool on the rotation handle, since the affordance hit-test was
+  consolidated; the tool contributed no bindings and its overlay painted
+  nothing. Drop the id from any tool list, and delete a `useRotateTool` mount
+  outright. `selectTool={{ rotate: false }}` still turns rotation off.
+- 08a3aec: The renderer's `mat3.translate` and `mat3.scale` are renamed `mat3.translated`
+  and `mat3.scaled`. They compose onto the matrix you pass (`m · T`, `m · S`),
+  where `@weasel-js/geom`'s `translate` and `scale` build a fresh matrix, so the
+  shared names let code moved between the two compile and then misbehave.
+  
+  This is a breaking change for anyone calling `mat3.translate` or `mat3.scale`
+  from `@weasel-js/core`: rename the call; the behavior is unchanged.
+- f9feecc: The scene slot can skip what the view cannot see. Pass
+  `layers={{ scene: { drawOne: defaultDrawOne, cull: true } }}` to
+  `<SceneCanvas>` (or `cull: true` on a `<Canvas>` scene slot) and commands that
+  cannot reach the view are dropped before they reach the renderer, so an
+  off-screen node no longer costs tessellation, upload or a draw.
+  
+  The cull is conservative: paths are bounded by their control points plus the
+  farthest their stroke can reach, rotated content by the box around its
+  corners, and text, custom shaders and anything under an effect are always
+  kept. It is off by default because it makes the scene layer's output depend on
+  the view, which matters only if you cache or re-display that output under a
+  different camera.
+  
+  The same pass is exported as `cullDrawCommands(cmds, transform, rect)` for
+  custom layers. This adds API; nothing existing changes.
+- c0fa540: `usePointerStylus` no longer drops the first pointer move when it arrives within
+  `1000 / maxFps` ms of the page's time origin. The throttle measured that first
+  move against a last-commit time of zero rather than "never". A bug fix; nothing
+  else about the throttle changes.
+- 21ce23e: The text-edit overlay now honors `verticalAlign`. `TextEditScreenPose` gains an optional `verticalAlign`, and `useSceneTextEdit` fills it from the node (`data.verticalAlign`, or `getVerticalAlign`), so editing a center- or bottom-aligned text node keeps its text where the canvas drew it instead of jumping to the top of the box. The overlay re-measures its own height as you type, so added lines grow a bottom-aligned node upward. Additive: a pose without `verticalAlign` places exactly as before.
+- ff17dd7: `tileGrid` no longer lets two children land in one cell. A drop from outside the container is offered only the free cells, so it lands in the nearest free one, a multi-select drop fills distinct cells, and a full grid rejects the drop. A drag within the container still swaps with the child in the cell it lands on, and the swap now finds that child by where it sits rather than by id order, so it keeps working after an earlier swap. The new optional `centerOf` option says which point of a pose decides its cell; the default suits rect and point poses. Behavior change, additive API.
+- 29f6ed0: Bind a rig to scene nodes. `useRig({ scene, skeleton, bindings })` (or
+  `bindRig` outside React) maps joint names to the node or nodes that ride them;
+  `rig.pose(pose, root?)` resolves the skeleton and moves every bound node
+  through the scene's pose overrides, so a per-frame write records no history and
+  bumps no version. Each node keeps the offset from its joint that it has at the
+  bind pose, so nodes are authored in place over the rest skeleton. `apply` is
+  the one part that knows the pose shape: the default, `rigidRigApply(descriptor)`,
+  carries a node's center and rotation with its joint through any pose
+  descriptor, mirrored roots included; supply your own to size nodes from joint
+  scale or to treat some nodes differently. `rig.bake()` writes the current frame
+  into the document as one undo entry, `rig.release()` drops the overrides, and
+  `rig.world()` returns the last resolved joint transforms.
+  
+  This adds API and changes nothing existing.
+- fb6d8e5: A registered shader program supplying its own vertex shader now gets locations
+  for the uniforms it declares there. `WeaselRenderer.registerProgram` scanned
+  only the fragment source, so every vertex uniform was written through a `null`
+  location — which GL accepts in silence, leaving the uniform at its zero
+  default. A zeroed `u_model` collapses every vertex to a point, so the program
+  bound, drew, and painted nothing at all, with no error anywhere.
+  
+  This is what the `mesh-gradient` paint hit: it is the first thing in the kit to
+  reach the custom-program path with a vertex stage of its own.
+- ca7c737: Add `useViewAnimationOn(view, animator)`: `useViewAnimation` on an animator the
+  caller owns, without the idle fallback animator `useViewAnimation` has to build
+  because a hook cannot be called conditionally. `<SceneCanvas>` now uses it, so
+  each canvas constructs one camera animator instead of two. Additive;
+  `useViewAnimation` is unchanged.
+- Updated dependencies [f644eac]
+- Updated dependencies [626bace]
+- Updated dependencies [2a63f31]
+- Updated dependencies [a7519a1]
+  - @weasel-js/paint@1.5.1
+  - @weasel-js/routing@1.5.1
+  - @weasel-js/text@1.5.1
+  - @weasel-js/cursor@1.5.1
+  - @weasel-js/font@1.5.1
+  - @weasel-js/geom@1.5.1
+  - @weasel-js/gestures@1.5.1
+  - @weasel-js/history@1.5.1
+
 ## 1.5.0
 
 ### Patch Changes

@@ -1,5 +1,33 @@
 # @weasel-js/diagram
 
+## 1.5.1
+
+### Patch Changes
+
+- Updated dependencies [f644eac]
+- Updated dependencies [b984947]
+- Updated dependencies [72fde09]
+- Updated dependencies [e9051ac]
+- Updated dependencies [626bace]
+- Updated dependencies [f4049be]
+- Updated dependencies [86be3eb]
+- Updated dependencies [51372f1]
+- Updated dependencies [2a63f31]
+- Updated dependencies [66e0e10]
+- Updated dependencies [8b79c20]
+- Updated dependencies [f663199]
+- Updated dependencies [a7519a1]
+- Updated dependencies [187593e]
+- Updated dependencies [08a3aec]
+- Updated dependencies [f9feecc]
+- Updated dependencies [c0fa540]
+- Updated dependencies [21ce23e]
+- Updated dependencies [ff17dd7]
+- Updated dependencies [29f6ed0]
+- Updated dependencies [fb6d8e5]
+- Updated dependencies [ca7c737]
+  - @weasel-js/core@1.5.1
+
 ## 1.5.0
 
 ### Patch Changes
