@@ -53,8 +53,7 @@ describe('useArgs with values that cannot cross the port', () => {
   const load = (annotations: Args) =>
     loadCsfModule(
       { default: { title: 'ui/Button', args: { n: 1, label: 'x', onClick: original } }, A: annotations },
-      '/repo/Button.stories.tsx',
-      '/repo',
+      'Auto',
     )[0] as LoadedStory;
 
   it('sends cloneable values and keeps the rest in the frame', () => {
@@ -125,8 +124,7 @@ describe('useArgs with values that cannot cross the port', () => {
           },
         },
       },
-      '/repo/Button.stories.tsx',
-      '/repo',
+      'Auto',
     )[0] as LoadedStory;
     const { sent } = mount(story);
     act(() => captured?.[1]({ showStops: true, extra: 7 }));
@@ -321,8 +319,7 @@ describe('useArgs shim', () => {
         default: { title: 'ui/Slider', args: { thumbCount: 3, label: 'x', onInput: () => {} } },
         Playground: { args: { label: 'y' }, render: renderFn },
       },
-      '/repo/Slider.stories.tsx',
-      '/repo',
+      'Auto',
     )[0];
 
   it('reads the story args and writes each patched key through setConfig', () => {
@@ -379,8 +376,7 @@ describe('useArgs shim', () => {
           },
         },
       },
-      '/repo/Keycaps.stories.tsx',
-      '/repo',
+      'Auto',
     );
     if (!story) throw new Error('no story');
     expect(Object.keys(story.config.nodes)).toEqual(['label']);

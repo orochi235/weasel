@@ -22,9 +22,8 @@ const settle = () => new Promise((r) => setTimeout(r, 0));
 function mount(mod: Record<string, unknown>, id: string, setup?: FrameSetup) {
   location.hash = id;
   void mountFrame({
-    index: [{ id, file: FILE, exportName: id.split('--')[1] === 'one' ? 'One' : 'Two' }],
+    index: [{ id, title: 'ui/A', file: FILE, exportName: id.split('--')[1] === 'one' ? 'One' : 'Two' }],
     importers: { [FILE]: async () => mod },
-    root: '/repo',
     ...(setup ? { setup } : {}),
   });
 }
@@ -76,6 +75,14 @@ describe('mountFrame', () => {
     await vi.waitFor(() => expect(startFrame).toHaveBeenCalled());
     const loaded = vi.mocked(startFrame).mock.calls[0]?.[0].story;
     expect([loaded?.id, loaded?.layout, loaded?.config.defaults()]).toEqual(['ui-a--one', 'padded', { label: 'x' }]);
+    expect(reportImportFault).not.toHaveBeenCalled();
+  });
+
+  it("titles a module whose meta names none with its index entry's title", async () => {
+    mount({ default: {}, One: {} }, 'ui-a--one');
+    handoff(location.origin, window.parent);
+    await vi.waitFor(() => expect(startFrame).toHaveBeenCalled());
+    expect(vi.mocked(startFrame).mock.calls[0]?.[0].story.id).toBe('ui-a--one');
     expect(reportImportFault).not.toHaveBeenCalled();
   });
 

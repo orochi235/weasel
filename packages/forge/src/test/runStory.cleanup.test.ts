@@ -42,13 +42,13 @@ describe('runStory faults outside the frame', () => {
     vi.mocked(startFrame).mockImplementationOnce(() => {
       throw new Error('no root');
     });
-    await expect(runStory(mod, 'Plain', FILE, '/repo')).rejects.toThrow('mount fault: no root');
+    await expect(runStory(mod, 'Plain', FILE, 'Auto')).rejects.toThrow('mount fault: no root');
     expect(document.body.children).toHaveLength(0);
   });
 
   it('reports a failing stop when the story itself passed, having still removed the container', async () => {
     await stopThrows();
-    const error = await runStory(mod, 'Plain', FILE, '/repo').catch((e: unknown) => e);
+    const error = await runStory(mod, 'Plain', FILE, 'Auto').catch((e: unknown) => e);
     expect((error as Error).message).toBe('cleanup fault: stop broke');
     expect((error as Error).cause).toBeInstanceOf(Error);
     expect(document.body.children).toHaveLength(0);
@@ -56,7 +56,7 @@ describe('runStory faults outside the frame', () => {
 
   it('throws the story’s own failure over a failing stop', async () => {
     await stopThrows();
-    await expect(runStory(mod, 'Failing', FILE, '/repo')).rejects.toThrow('play fault: play broke');
+    await expect(runStory(mod, 'Failing', FILE, 'Auto')).rejects.toThrow('play fault: play broke');
     expect(document.body.children).toHaveLength(0);
   });
 });

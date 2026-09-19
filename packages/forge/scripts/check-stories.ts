@@ -4,6 +4,7 @@ import { createServer } from 'vite';
 
 interface IndexEntry {
   id: string;
+  title: string;
   file: string;
   exportName: string;
 }
@@ -27,6 +28,8 @@ try {
   const index = (await server.ssrLoadModule('virtual:forge/index.js')).default as IndexEntry[];
   const { loadStories } = await server.ssrLoadModule('/packages/forge/src/frame/mountFrame.tsx');
   const { describeSchema } = await server.ssrLoadModule('/packages/forge/src/protocol/schema.ts');
+  const { autoTitle } = await server.ssrLoadModule('/packages/forge/src/vite/autoTitle.ts');
+  const { stories: globs } = await server.ssrLoadModule('/apps/forge/viteShared.ts');
   const { parameters } = (await server.ssrLoadModule('virtual:forge/frame-config.js')).default as { parameters?: object };
 
   const byFile = new Map<string, IndexEntry[]>();
@@ -44,7 +47,7 @@ try {
     let count = 0;
     try {
       const mod = await server.ssrLoadModule(file);
-      const stories = loadStories(mod, file, server.config.root, parameters) as LoadedStory[];
+      const stories = loadStories(mod, autoTitle(file, server.config.root, globs), parameters) as LoadedStory[];
       count = stories.length;
       for (const story of stories) {
         try {

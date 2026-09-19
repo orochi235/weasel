@@ -39,8 +39,7 @@ const counter = loadNativeModule(
       ),
     }),
   },
-  '/x.stories.tsx',
-  '/',
+  'Test/Auto',
 )[0]!;
 
 const cleanups: (() => void)[] = [];
@@ -158,8 +157,7 @@ describe('startFrame', () => {
         default: meta({ title: 'Test/Themed' }),
         Themed: story({ render: ({ globals }) => <p data-testid="mode">{String(globals.mode)}</p> }),
       },
-      '/g.stories.tsx',
-      '/',
+      'Test/Auto',
     );
     const applyGlobals = vi.fn();
     const { shell } = start(themed!, { applyGlobals });
@@ -211,8 +209,7 @@ describe('startFrame', () => {
         default: meta({ title: 'Test/Decorated', decorators: [wrap('meta')] }),
         Decorated: story({ decorators: [wrap('story')], render: () => <p data-testid="content">content</p> }),
       },
-      '/d.stories.tsx',
-      '/',
+      'Test/Auto',
     );
     const { shell } = start(decorated!, { decorators: [wrap('setup')] });
     shell.send({ type: 'init', config: {}, state: null, globals: {} });
@@ -237,8 +234,7 @@ describe('startFrame', () => {
           },
         }),
       },
-      '/y.stories.tsx',
-      '/',
+      'Test/Auto',
     );
     const { shell, of } = start(fragile!);
     shell.send({ type: 'init', config: { ok: false }, state: null, globals: {} });
@@ -264,8 +260,7 @@ describe('startFrame', () => {
           },
         }),
       },
-      '/p.stories.tsx',
-      '/',
+      'Test/Auto',
     );
     const { shell, of } = start(picky!);
     shell.send({ type: 'init', config: { v: 'ok' }, state: null, globals: {} });
@@ -296,8 +291,7 @@ describe('startFrame', () => {
         default: meta({ title: 'Test/Styled' }),
         Styled: story({ render: () => <p style={{ color: 'var(--fg-t-ink)' }}>styled</p> }),
       },
-      '/s.stories.tsx',
-      '/',
+      'Test/Auto',
     );
     const rootStyle = document.createElement('style');
     rootStyle.textContent = ':root { --fg-t-ink: red; }';
@@ -370,8 +364,7 @@ describe('startFrame', () => {
             },
           }),
         },
-        '/f.stories.tsx',
-        '/',
+        'Test/Auto',
       );
       const { shell, of } = start(fragile!);
       shell.send({ type: 'vars.set', name: '--fg-t-ink', value: 'blue' });

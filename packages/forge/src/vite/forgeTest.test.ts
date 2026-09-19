@@ -31,9 +31,9 @@ describe('forgeTest', () => {
     expect(code).toContain(`import { runStory as __forge_runStory } from "@weasel-js/forge/test";`);
     expect(code?.match(/__forge_test\(/g)).toHaveLength(2);
     expect(code).toContain(`const __forge_file = ${JSON.stringify(file)};`);
-    expect(code).toContain(`const __forge_root = "${ROOT}";`);
+    expect(code).toContain('const __forge_title = "x/Counter";');
     expect(code).toContain(
-      'const __forge_run = async (exportName) => __forge_runStory(await import(/* @vite-ignore */ import.meta.url), exportName, __forge_file, __forge_root, __forge_options);',
+      'const __forge_run = async (exportName) => __forge_runStory(await import(/* @vite-ignore */ import.meta.url), exportName, __forge_file, __forge_title, __forge_options);',
     );
     expect(code).toContain('__forge_test("Counter", () => __forge_run("Counter"), __forge_timeout);');
     expect(code).toContain(`__forge_test(${JSON.stringify('With "quotes"')}, () => __forge_run("Named"), __forge_timeout);`);

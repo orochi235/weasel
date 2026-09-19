@@ -4,8 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { LoadedStory, StoryContext } from '../story/types';
 import { loadCsfModule } from './loadCsfModule';
 
-const FILE = '/repo/packages/ui/src/Button.stories.tsx';
-const ROOT = '/repo';
+const AUTO_TITLE = 'ui/Auto';
 
 const ctxFor = (story: LoadedStory, patch: Partial<StoryContext> = {}): StoryContext => ({
   config: story.config.defaults(),
@@ -54,8 +53,7 @@ describe('loadCsfModule', () => {
         notAStory: 42,
         __namedExportsOrder: ['Primary', 'Named', 'Legacy'],
       },
-      FILE,
-      ROOT,
+      AUTO_TITLE,
     );
     expect(stories.map((s) => [s.id, s.name, s.exportName])).toEqual([
       ['ui-button--primary', 'Primary', 'Primary'],
@@ -65,13 +63,13 @@ describe('loadCsfModule', () => {
   });
 
   it('honors includeStories as a list', () => {
-    const stories = loadCsfModule({ default: { title: 'ui/B', includeStories: ['Two'] }, One: {}, Two: {} }, FILE, ROOT);
+    const stories = loadCsfModule({ default: { title: 'ui/B', includeStories: ['Two'] }, One: {}, Two: {} }, AUTO_TITLE);
     expect(stories.map((s) => s.exportName)).toEqual(['Two']);
   });
 
-  it('titles a story from its path when the meta names none', () => {
-    const [only] = loadCsfModule({ default: {}, A: {} }, FILE, ROOT);
-    expect(only?.title).toBe('packages/ui/src/Button');
+  it('titles its stories with the auto title when the meta names none', () => {
+    const [only] = loadCsfModule({ default: {}, A: {} }, AUTO_TITLE);
+    expect(only?.title).toBe('ui/Auto');
   });
 
   it('builds config from merged args and argTypes', () => {
@@ -84,8 +82,7 @@ describe('loadCsfModule', () => {
         },
         Pair: { args: { constraint: 'ordered' }, argTypes: { max: { control: false } } },
       },
-      FILE,
-      ROOT,
+      AUTO_TITLE,
     );
     expect(story?.config.defaults()).toEqual({ min: 0, max: 1, constraint: 'ordered' });
     expect(story?.config.nodes.max?.annotations).toEqual({ hidden: true });
@@ -98,8 +95,7 @@ describe('loadCsfModule', () => {
         default: { title: 'ui/Font', args: { font: 'serif' }, argTypes: { font: { control: 'select', options: ['sans', 'serif'] } } },
         Described: { argTypes: { font: { description: 'x' } } },
       },
-      FILE,
-      ROOT,
+      AUTO_TITLE,
     );
     expect(story?.config.nodes.font).toMatchObject({ kind: 'enum' });
     expect(story?.config.nodes.font?.annotations).toEqual({
@@ -115,8 +111,7 @@ describe('loadCsfModule', () => {
     const renderFn = vi.fn((_args: Record<string, unknown>) => null);
     const [story] = loadCsfModule(
       { default: { title: 'ui/Slider', args: { min: 0 }, argTypes: { showStops: { control: 'boolean' } } }, A: { render: renderFn } },
-      FILE,
-      ROOT,
+      AUTO_TITLE,
     );
     if (!story) throw new Error('no story');
     show(story);
@@ -130,8 +125,7 @@ describe('loadCsfModule', () => {
     const onClick = () => {};
     const [story] = loadCsfModule(
       { default: { title: 'ui/Button', args: { label: 'from args', onClick } }, Primary: { render: renderFn } },
-      FILE,
-      ROOT,
+      AUTO_TITLE,
     );
     if (!story) throw new Error('no story');
     show(story, ctxFor(story, { config: { label: 'from config' }, globals: { theme: 'dark' } }));
@@ -153,8 +147,7 @@ describe('loadCsfModule', () => {
     const cancel = () => {};
     const [story] = loadCsfModule(
       { default: { title: 'ui/Job', args: { job: { done: 1, cancel } } }, A: { render: renderFn } },
-      FILE,
-      ROOT,
+      AUTO_TITLE,
     );
     if (!story) throw new Error('no story');
     expect(story.config.defaults()).toEqual({ job: { done: 1 } });
@@ -163,14 +156,14 @@ describe('loadCsfModule', () => {
   });
 
   it("renders the meta's component with args when neither story nor meta has a render", () => {
-    const [story] = loadCsfModule({ default: { title: 'ui/Button', component: Button }, Primary: { args: { label: 'Go' } } }, FILE, ROOT);
+    const [story] = loadCsfModule({ default: { title: 'ui/Button', component: Button }, Primary: { args: { label: 'Go' } } }, AUTO_TITLE);
     if (!story) throw new Error('no story');
     show(story);
     expect(screen.getByRole('button', { name: 'Go' })).toBeInTheDocument();
   });
 
   it('renders nothing, without throwing, when there is no render and no component', () => {
-    const [story] = loadCsfModule({ default: { title: 'ui/Empty' }, Bare: {} }, FILE, ROOT);
+    const [story] = loadCsfModule({ default: { title: 'ui/Empty' }, Bare: {} }, AUTO_TITLE);
     if (!story) throw new Error('no story');
     const { container } = show(story);
     expect(container).toBeEmptyDOMElement();
@@ -181,7 +174,7 @@ describe('loadCsfModule', () => {
       storyName: 'Hoisted story',
       args: { label: 'Hoisted' },
     });
-    const [story] = loadCsfModule({ default: { title: 'ui/Button' }, Hoisted }, FILE, ROOT);
+    const [story] = loadCsfModule({ default: { title: 'ui/Button' }, Hoisted }, AUTO_TITLE);
     if (!story) throw new Error('no story');
     expect(story.name).toBe('Hoisted story');
     show(story);
@@ -202,8 +195,7 @@ describe('loadCsfModule', () => {
         default: { title: 'ui/Button', decorators: [tag('meta1'), tag('meta2')], render: () => <span>story</span> },
         Primary: { decorators: [tag('story1'), tag('story2')] },
       },
-      FILE,
-      ROOT,
+      AUTO_TITLE,
     );
     if (!story) throw new Error('no story');
     show(story);
@@ -222,8 +214,7 @@ describe('loadCsfModule', () => {
     };
     const [story] = loadCsfModule(
       { default: { title: 'ui/Button', component: Button, args: { label: 'Hi' } }, Primary: { decorators: decorator } },
-      FILE,
-      ROOT,
+      AUTO_TITLE,
     );
     if (!story) throw new Error('no story');
     show(story);
@@ -241,8 +232,7 @@ describe('loadCsfModule', () => {
         },
         Primary: { args: { label: 'one' } },
       },
-      FILE,
-      ROOT,
+      AUTO_TITLE,
     );
     if (!story) throw new Error('no story');
     const view = show(story);
@@ -258,11 +248,10 @@ describe('loadCsfModule', () => {
         FromMeta: {},
         FromStory: { parameters: { layout: 'centered' } },
       },
-      FILE,
-      ROOT,
+      AUTO_TITLE,
     );
     expect(stories.map((s) => s.layout)).toEqual(['fullscreen', 'centered']);
-    expect(loadCsfModule({ default: { title: 'ui/L' }, A: {} }, FILE, ROOT)[0]?.layout).toBe('padded');
+    expect(loadCsfModule({ default: { title: 'ui/L' }, A: {} }, AUTO_TITLE)[0]?.layout).toBe('padded');
   });
 
   it('merges project parameters under the meta’s and the story’s', () => {
@@ -273,8 +262,7 @@ describe('loadCsfModule', () => {
         FromPreview: { render: (_args: unknown, context: { parameters: unknown }) => <p>{JSON.stringify(context.parameters)}</p> },
         FromStory: { parameters: { layout: 'fullscreen' } },
       },
-      FILE,
-      ROOT,
+      AUTO_TITLE,
       preview,
     );
     expect(stories.map((s) => s.layout)).toEqual(['centered', 'fullscreen']);
@@ -293,8 +281,7 @@ describe('loadCsfModule', () => {
         Matched: {},
         Unmatched: { parameters: { controls: { matchers: { color: /^never$/ } } } },
       },
-      FILE,
-      ROOT,
+      AUTO_TITLE,
       preview,
     );
     expect(stories.map((s) => (s.config.nodes as Record<string, { kind: string }>).backgroundColor?.kind)).toEqual([
@@ -315,8 +302,7 @@ describe('loadCsfModule', () => {
         Unknown: { globals: { viewport: { value: 'tablet' } } },
         None: {},
       },
-      FILE,
-      ROOT,
+      AUTO_TITLE,
     );
     expect(stories.map((s) => s.viewport)).toEqual([{ width: 1280, height: 800 }, null, null]);
   });
@@ -330,8 +316,7 @@ describe('loadCsfModule', () => {
     const order: string[] = [];
     const [story] = loadCsfModule(
       { default: { title: 'ui/Button', args: { label: 'a', onClick: () => {} } }, Primary: { play } },
-      FILE,
-      ROOT,
+      AUTO_TITLE,
     );
     const canvasElement = document.createElement('div');
     await story?.play?.({ canvasElement, config: { label: 'b' }, globals: { theme: 'light' } });
@@ -344,6 +329,6 @@ describe('loadCsfModule', () => {
   });
 
   it('has no play when the story and meta have none', () => {
-    expect(loadCsfModule({ default: { title: 'ui/B' }, A: {} }, FILE, ROOT)[0]?.play).toBeNull();
+    expect(loadCsfModule({ default: { title: 'ui/B' }, A: {} }, AUTO_TITLE)[0]?.play).toBeNull();
   });
 });

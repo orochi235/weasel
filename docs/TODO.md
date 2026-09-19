@@ -1313,14 +1313,6 @@ controls. It runs beside Storybook today.
   (`packages/forge/src/protocol/schema.ts`), so its per-path errors cannot depend
   on the config. `validate` needs the live value, or the config, passed in.
 
-- **(P2) forge titles an untitled story file differently from Storybook.**
-  `titleFromFile` (`packages/forge/src/story/ids.ts`) uses the file's path under
-  the vite root. Storybook titles it relative to its stories glob, collapses
-  `Button/Button.stories.tsx` to `Button`, and drops `index`, so the story's id
-  and link differ between the two tools. Every story file in the repo sets an
-  explicit `title` today, so nothing breaks yet; port Storybook's auto-title
-  rules the way `storyId` already ports its id rules.
-
 - **(P2) Two copies of `@weasel-js/theme` in a published forge install.**
   labkit's `tsup.config.ts` bundles every `@weasel-js` package except core
   (`noExternal`), so labkit's `dist` carries its own `ThemeProvider`, while

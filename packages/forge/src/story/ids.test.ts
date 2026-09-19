@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sanitize, storyId, storyNameFromExport, titleFromFile } from './ids';
+import { sanitize, storyId, storyNameFromExport } from './ids';
 
 // Expected values were produced by storybook/internal/csf 10.4.0 itself.
 describe('story ids', () => {
@@ -31,9 +31,5 @@ describe('story ids', () => {
     ['kebab-case', 'Kebab Case'],
   ])('names export %j as Storybook does', (input, expected) => {
     expect(storyNameFromExport(input)).toBe(expected);
-  });
-
-  it('titles a file from its path under the root', () => {
-    expect(titleFromFile('/repo/src/Button.stories.tsx', '/repo/')).toBe('src/Button');
   });
 });

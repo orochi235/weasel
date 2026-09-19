@@ -1,21 +1,21 @@
 import { type ParserPlugin, parse } from '@babel/parser';
 import type * as t from '@babel/types';
-import { storyId, storyNameFromExport, titleFromFile } from '../story/ids';
+import { storyId, storyNameFromExport } from '../story/ids';
 import type { IndexEntry } from '../story/types';
 
 type Bindings = Map<string, t.Node>;
 
-/** The stories `code` declares, in source order, without running it. `file` is absolute. */
-export function indexFile(code: string, file: string, root: string): IndexEntry[] {
+/** The stories `code` declares, in source order, without running it. `file` is absolute; `autoTitle` titles a meta that names none. */
+export function indexFile(code: string, file: string, autoTitle: string): IndexEntry[] {
   try {
     const plugins: ParserPlugin[] = ['typescript', 'decorators-legacy', ...(/\.[jt]sx$/.test(file) ? (['jsx'] as const) : [])];
-    return indexProgram(parse(code, { sourceType: 'module', plugins }).program, file, root);
+    return indexProgram(parse(code, { sourceType: 'module', plugins }).program, file, autoTitle);
   } catch (err) {
     throw new Error(`${file}: ${err instanceof Error ? err.message : String(err)}`, { cause: err });
   }
 }
 
-function indexProgram(program: t.Program, file: string, root: string): IndexEntry[] {
+function indexProgram(program: t.Program, file: string, autoTitle: string): IndexEntry[] {
   const bindings: Bindings = new Map();
   const wrappers = new Set<string>();
   for (const stmt of program.body) {
@@ -56,7 +56,7 @@ function indexProgram(program: t.Program, file: string, root: string): IndexEntr
   if (!metaNode && !program.body.some(isDefaultExport)) return [];
 
   const meta = objectOf(metaNode, bindings, wrappers);
-  const title = stringProp(meta, 'title') ?? titleFromFile(file, root);
+  const title = stringProp(meta, 'title') ?? autoTitle;
   const include = storyFilter(meta, 'includeStories');
   const exclude = storyFilter(meta, 'excludeStories');
 

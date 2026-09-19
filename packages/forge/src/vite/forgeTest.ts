@@ -1,5 +1,6 @@
 import { matchesGlob, relative, resolve, sep } from 'node:path';
 import type { Plugin } from 'vite';
+import { autoTitle } from './autoTitle';
 import { indexFile } from './indexFile';
 import { storybookShims } from './storybookShims';
 
@@ -38,7 +39,8 @@ export function forgeTest(options: ForgeTestOptions): Plugin[] {
       },
       transform(code, id) {
         if (!matches(id)) return undefined;
-        const entries = indexFile(code, id, root);
+        const title = autoTitle(id, root, options.stories);
+        const entries = indexFile(code, id, title);
         if (entries.length === 0) return undefined;
         const q = (value: string) => JSON.stringify(value);
         // The module comes from its own URL at test time: vitest imports a test file with a cache-busting query,
@@ -51,13 +53,13 @@ export function forgeTest(options: ForgeTestOptions): Plugin[] {
           `import "@weasel-js/forge/frame.css";`,
           ...(options.frameConfig ? [`import __forge_frame_config from ${q(resolve(root, options.frameConfig))};`] : []),
           `const __forge_file = ${q(id)};`,
-          `const __forge_root = ${q(root)};`,
+          `const __forge_title = ${q(title)};`,
           `const __forge_timeout = ${TIMEOUT_MS};`,
           'const __forge_options = {',
           `  setup: ${options.frameConfig ? '__forge_frame_config' : 'undefined'},`,
           '  viewport: (width, height) => __forge_page.viewport(width, height),',
           '};',
-          'const __forge_run = async (exportName) => __forge_runStory(await import(/* @vite-ignore */ import.meta.url), exportName, __forge_file, __forge_root, __forge_options);',
+          'const __forge_run = async (exportName) => __forge_runStory(await import(/* @vite-ignore */ import.meta.url), exportName, __forge_file, __forge_title, __forge_options);',
           ...entries.map(
             (entry) => `__forge_test(${q(entry.name)}, () => __forge_run(${q(entry.exportName)}), __forge_timeout);`,
           ),
