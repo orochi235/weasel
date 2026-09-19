@@ -130,7 +130,6 @@ describe('RegistryProbe', () => {
     const expectedByToolId: Readonly<Record<string, string>> = {
       select: 'useSelectTool',
       hand: 'useHandTool',
-      rotate: 'useRotateTool',
       rect: 'useRectTool',
       ellipse: 'useEllipseTool',
       line: 'useLineTool',

@@ -138,16 +138,6 @@ Priority tags:
   result is known while the default can still be suppressed, and a paste no
   binding wanted stays the page's.
 
-- **(P3) The ambient rotate-tool mount is near-vestigial.** Left standing when
-  the two affordance hit-test mechanisms were consolidated onto
-  `hitAffordanceRegions` (2026-08-01): the rotate tool now has no bindings, and
-  its overlay paints nothing unless a consumer opts into a visible ring.
-  Removing it means dropping `'rotate'` from `BuiltinToolId` / `BUNDLE_TOOLS`
-  and unexporting `useRotateTool` — a public-API change, so it wants its own
-  decision. **Now decidable by inspection** (2026-08-10): one registry holds
-  every entry with its declared eligibility, so "contributes no bindings and no
-  overlay" is a property you can read off the assembled set rather than infer.
-
 - **(P3) `EligibilityState.heldTriggers` is unexercised in production.**
   `Eligibility.offhand` names a trigger key and `liveScope` resolves it, but
   nothing populates `heldTriggers` — `tool.offhand`'s invoker still reports

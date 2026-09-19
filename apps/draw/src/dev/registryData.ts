@@ -113,7 +113,7 @@ export interface ToolEntry {
   declaredRoutes: readonly DeclaredRoute[];
   /** Where the tool currently sits in the mounted SceneCanvas. `registry`
    *  covers the regular active/hotkey slots; `ambient` is the always-on
-   *  slot (resize / rotate / wheel-zoom). */
+   *  slot. */
   slot: 'registry' | 'ambient';
   /** Glyphs for the tool-switch keybinding (`ToolDef.keybinding`). Distinct
    *  from gesture shortcuts inside the tool. */
@@ -294,7 +294,7 @@ export interface OpKindEntry { kind: 'opKind'; id: string; label: string }
 
 
 /** Mounting slot for a tool — `registry` covers active/hotkey routing,
- *  `ambient` is the always-on slot (resize / rotate / wheel-zoom). */
+ *  `ambient` is the always-on slot. */
 export const TOOL_SLOTS: readonly ToolEntry['slot'][] = ['registry', 'ambient'];
 
 export interface SlotEntry { kind: 'slot'; id: ToolEntry['slot']; label: string }

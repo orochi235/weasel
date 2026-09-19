@@ -103,9 +103,8 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
         // Catalog view: the distinct route signatures this tool contributes.
         const routes = [...new Set(declaredRoutes.map((r) => r.route))];
         // Read the Tool, not the def: a hook can attach an overlay to the
-        // returned Tool rather than declaring it (`useRotateTool` does — it's
-        // an overlay-only ambient tool), and reading the def alone reported
-        // "emits no overlay" for exactly the tools that are nothing but one.
+        // returned Tool rather than declaring it, and reading the def alone
+        // reports "emits no overlay" for an overlay-only ambient tool.
         const surface = summarizeSurface(t as Parameters<typeof summarizeSurface>[0]);
         return {
           kind: 'tool',

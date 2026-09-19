@@ -16,14 +16,12 @@ import { pickWalk, scenePickSource, type ViewPickGates } from 'canvas/pickWalk';
 import { pathContainsPoint } from 'features/paths/pathHitTest';
 import { useSelectTool, type Bounds } from 'tools/builtin/select';
 import { pickTopMostHit, type PickTopMostHitAdapter } from 'tools/builtin/pickTopMostHit';
-import { useRotateTool } from 'tools/builtin/rotate';
 import type { Node, Scene, NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { UseMoveOptions } from 'interactions/actions/move/options';
 import type { UseResizeOptions } from 'interactions/actions/resize/options';
-import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
 import { snap as snapBehavior } from 'interactions/gestures/shared/snap';
 import {
@@ -87,9 +85,7 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
   selectTool?: {
     move?: UseMoveOptions<TPose>;
     resize?: UseResizeOptions<TPose>;
-    rotate?: UseRotateOptions<TPose> | false;
     snap?: SnapStrategy<TPose>;
-    handleHitRadius?: number;
     /** Override the body-pick used on click/pointerdown. Alt-aware: receives
      *  the live alt state + current selection so consumers can implement
      *  alt-cycling through an overlapping stack. Default: top-most hit
@@ -119,7 +115,6 @@ export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
     getSelection: () => string[];
   };
   selectTool: ReturnType<typeof useSelectTool<Node<TData, TLayer, TPose>, TPose>>;
-  rotateTool: ReturnType<typeof useRotateTool<Node<TData, TLayer, TPose>, TPose>>;
   /** Hit-test resolved with the caller's `geometry.pickEvery` (or the
    *  pose-walk default). Forward this to `<Canvas pickEvery={...}>` so the
    *  dispatcher's `getNodeAtPoint` returns the same node the select tool
@@ -155,9 +150,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   const shapePicking = (geometry?.picking ?? 'shape') === 'shape';
   const pickTolerancePx = geometry?.pickTolerancePx ?? DEFAULT_PICK_TOLERANCE_PX;
   const moveOptions = opts?.move;
-  const rotateOptions = opts?.rotate;
   const snap = opts?.snap;
-  const handleHitRadius = opts?.handleHitRadius;
   const commitInsert = insertTool?.create;
   const insertLayer = insertTool?.layer;
 
@@ -309,16 +302,6 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     ...(opts?.extendClickLocked ? { extendClickLocked: opts.extendClickLocked } : {}),
   });
 
-  const rotateTool = useRotateTool<Node<TData, TLayer, TPose>, TPose>(adapter, {
-    ...(rotateOptions ? { rotate: rotateOptions } : {}),
-    ...(handleHitRadius !== undefined ? { handleHitRadius } : {}),
-    // rotationHandleDistance default lives inside useRotateTool — only forward
-    // if a caller passes one. Today there's no path for callers to provide
-    // this through SceneCanvas; leave to a follow-up.
-    boundsOf: wiredBoundsOf,
-    getSelection: () => [...selection.current],
-    getNode: (id) => scene.get(asNodeId(id)) ?? null,
-  });
 
   const wiredPickBest = useMemo(() => {
     return (wx: number, wy: number, view?: PickView | null): string | null => {
@@ -330,7 +313,6 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   return {
     adapter: adapter as UseSceneSelectToolReturn<TData, TLayer, TPose>['adapter'],
     selectTool,
-    rotateTool,
     pickEvery: wiredHitBody,
     pickBest: wiredPickBest,
     boundsOf: wiredBoundsOf,

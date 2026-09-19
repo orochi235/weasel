@@ -9,7 +9,6 @@ import * as Builtin from './index';
 const HOOK_NAMES = [
   'useSelectTool',
   'useHandTool',
-  'useRotateTool',
   'useRectTool',
   'useEllipseTool',
   'useLineTool',

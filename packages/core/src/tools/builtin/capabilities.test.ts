@@ -35,7 +35,6 @@ describe('built-in tool capabilities', () => {
     ['pencil', () => builtins.usePencilTool(), ['creates-paths']],
     ['text', () => builtins.useTextTool(), ['creates-text']],
     ['eyedropper', () => builtins.useEyedropperTool({} as never), ['samples-color']],
-    ['rotate', () => builtins.useRotateTool({} as never, {}), ['transforms-selection']],
   ];
 
   for (const [name, hook, expected] of cases) {

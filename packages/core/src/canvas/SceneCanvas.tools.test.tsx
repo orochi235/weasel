@@ -250,7 +250,7 @@ describe('SceneCanvas tools prop patch form', () => {
   }
 
   it('{ pen: true } pulls in the built-in pen even when not in the default tier', () => {
-    // Default tier (no defaultTools / toolBundle prop, no viewport): ['select', 'rotate'].
+    // Default tier (no defaultTools / toolBundle prop, no viewport): ['select'].
     // 'pen' is in 'exhaustive' only.
     const get = emptyHarness({ pen: true });
     expect(get()!.registry).toHaveProperty('pen');

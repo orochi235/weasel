@@ -116,7 +116,7 @@ export interface UseSelectToolOptions<TPose> {
 }
 
 /** Intersection of the move + area-select adapter interfaces.
- *  Resize / rotate adapters moved to `useResizeTool` / `useRotateTool`. */
+ *  Resize and rotate run through `resizeAction` / `rotateAction`. */
 export type SelectAdapter<TNode extends { id: string }, TPose> =
   MoveAdapter<TNode, TPose>
   & AreaSelectAdapter;

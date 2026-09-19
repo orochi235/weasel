@@ -7,7 +7,6 @@ import {
   useScene,
   useSelection,
   useSelectTool,
-  useRotateTool,
   useTools,
   pointSnapToGrid,
   ROTATED_POSE_DESCRIPTOR,
@@ -34,13 +33,6 @@ function PointSnapDemoInner() {
 
   const adapter = useSceneAdapter(scene, { selection });
 
-  const boundsOf = (id: string) => {
-    const n = scene.get(asNodeId(id));
-    if (!n) return null;
-    const p = n.pose as Rect;
-    return { x: p.x, y: p.y, width: p.width, height: p.height, rotation: p.rotation };
-  };
-
   const select = useSelectTool(adapter, { leafPicking: 'silhouette' });
   // Point snapping is dispatcher-driven via the `resizePolicy` dep — see
   // `ResizePolicyBridge` below, mounted as a child of `<SceneCanvas>` so
@@ -52,15 +44,9 @@ function PointSnapDemoInner() {
     });
     return null;
   }
-  const rotateTool = useRotateTool(adapter, {
-    boundsOf,
-    getSelection: () => [...selection.current],
-    getNode: (id) => scene.get(asNodeId(id)) ?? null,
-  });
   const tools = useTools({
     active: 'select',
     registry: { select },
-    ambient: [rotateTool],
   });
 
   const canvasRef = useRef<SceneCanvasApi | null>(null);

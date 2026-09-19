@@ -267,7 +267,7 @@ export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
 
 /** Built-in tool ids that aren't shape tools — the ones with no entry in
  *  the `core/shapeKinds` table. */
-const NON_SHAPE_BUILTIN_TOOLS = ['select', 'rotate', 'hand'] as const;
+const NON_SHAPE_BUILTIN_TOOLS = ['select', 'hand'] as const;
 
 /** Built-in tool ids SceneCanvas knows how to mount when no `tools` prop
  *  is supplied. Pass a subset via `defaultTools` to slim the registered set. */
@@ -289,7 +289,7 @@ export const BUNDLE_TOOLS: Record<ToolBundle, readonly BuiltinToolId[]> = {
   // No `pencil`: freehand is a specialist instrument, not part of the
   // everyday shape-drawing set. It stays in `exhaustive`, which means
   // everything.
-  standard: ['select', 'rotate', 'hand', 'rect', 'ellipse', 'line'],
+  standard: ['select', 'hand', 'rect', 'ellipse', 'line'],
   exhaustive: [...NON_SHAPE_BUILTIN_TOOLS, ...KIT_SHAPE_KINDS],
 };
 
@@ -524,7 +524,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  into the built-in registry on top of whatever `defaultTools` /
      *  `toolBundle` already selected.
      *    - `true` pulls in the built-in for this id (`'pen'`, `'lasso'`,
-     *      `'rotate'`, …) even when it's outside the active tier — useful
+     *      `'hand'`, …) even when it's outside the active tier — useful
      *      for `toolBundle: 'minimal'` + `tools={{ pen: true }}`. Unknown
      *      built-in ids warn in dev and are ignored.
      *    - `AnyTool` adds a new id or replaces an existing one
@@ -574,8 +574,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /**
      * Named preset for the built-in tool set: `'minimal'` (select + hand),
-     * `'standard'` (select + rotate + hand + rect + ellipse +
-     * line + pencil), or `'exhaustive'` (every built-in including polygon,
+     * `'standard'` (select + hand + rect + ellipse + line), or `'exhaustive'` (every built-in including polygon,
      * star, lasso, text, clone). When set, defines the starting set;
      * `defaultTools` (if also passed) overrides it. Ignored when the
      * consumer supplies their own `tools` prop.
@@ -584,7 +583,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /**
      * Which built-in tools SceneCanvas registers in its internal `useTools`.
-     * Default: `['select', 'rotate']` (plus `'hand'` when the
+     * Default: `['select']` (plus `'hand'` when the
      * `viewport` feature is on). Pass a smaller array to slim — e.g.
      * `['select']` for move-only. Wins over `toolBundle` when both are
      * passed. Ignored when the consumer supplies their own `tools` prop.
@@ -1286,7 +1285,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ? layerIsPainted
     : undefined;
 
-  const { adapter, selectTool: internalSelect, rotateTool, pickEvery: internalPickEvery, pickBest: internalPickBest, boundsOf: internalBoundsOf } = useSceneSelectTool({
+  const { adapter, selectTool: internalSelect, pickEvery: internalPickEvery, pickBest: internalPickBest, boundsOf: internalBoundsOf } = useSceneSelectTool({
     scene,
     selection,
     poseDescriptor: descriptor as PoseDescriptor<TPose>,
@@ -1360,14 +1359,14 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const viewportAmbient: AnyTool[] = [];
 
   // Resolve which built-ins to mount. Precedence: explicit `defaultTools` >
-  // `toolBundle` preset > legacy default (select/rotate, plus hand
+  // `toolBundle` preset > legacy default (select, plus hand
   // when viewport is engaged).
   const baseRequestedTools: readonly BuiltinToolId[] =
     defaultTools
     ?? (toolBundle ? BUNDLE_TOOLS[toolBundle] : null)
     ?? (viewportRegistered
-      ? ['select', 'rotate', 'hand']
-      : ['select', 'rotate']);
+      ? ['select', 'hand']
+      : ['select']);
 
   // Patch-form `tools` extras with value `true` widen the requested set
   // ("pull in this built-in even if it's not in the active tier"). Computed
@@ -1401,24 +1400,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // (lasso mode, clone-selection) thread through `toolOptions`.
   const shapeTools = useBuiltinShapeTools({ scene, adapter, options: toolOptions });
 
-  // WHY ambient (not registry) for rotate: rotate is affordance-driven — no
-  // foreground activation, no hotkey — so the active slot is wrong for it and
-  // ambient is what's left. Resize doesn't get a tool at all; it runs entirely
-  // through the dispatcher-side `resizeAction` + `resizePolicy` dep.
-  //
-  // The reason this comment used to give — that `getActiveOverlays()` is what
-  // routes a tool's `hitTest`, so rotate had to be in one of those slots — was
-  // describing a pipeline (`__setHitTestContext`) that no longer exists.
-  // Nothing hit-tests tool overlays now; `buildAffordanceAt` owns the rotation
-  // affordance directly. What the ambient mount still buys is the overlay's
-  // *paint* slot, which for rotate draws nothing by default (`paint: null` —
-  // the cursor change is the only cue). Left in place because `useRotateTool`
-  // is public and consumers can give the ring a visible paint, but see the
-  // TODO entry: the mount is close to vestigial.
-  const builtinAmbient: AnyTool[] = [];
-  if (wants('rotate')) builtinAmbient.push(rotateTool);
-
-  const mergedAmbient = [...viewportAmbient, ...builtinAmbient, ...(ambient ?? [])];
+  const mergedAmbient = [...viewportAmbient, ...(ambient ?? [])];
 
   const internalRegistry: Record<string, AnyTool> = {};
   if (wants('select')) internalRegistry.select = internalSelect;
