@@ -22,6 +22,23 @@ import type { Mesh } from './mesh';
  */
 export const STROKE_CONFIGS_PER_PATH = 8;
 
+/** Screen-pixel bound on how far a quantized `{ px }` ribbon's width may
+ *  drift from the width asked for: each edge moves at most half of it. */
+const PX_WIDTH_TOLERANCE = 1 / 8;
+
+/**
+ * `scale` snapped to a log-spaced grid, for resolving a `{ px }` width against.
+ * Resolving against the raw scale gives a continuous zoom a new cache key every
+ * frame. The grid is fine enough that the resolved ribbon stays within
+ * `PX_WIDTH_TOLERANCE` screen pixels of `px`, so it is coarser for thin
+ * strokes, and powers of two land on it exactly.
+ */
+export function quantizeStrokeScale(px: number, scale: number): number {
+  if (!(px > 0) || !(scale > 0) || !Number.isFinite(scale)) return scale;
+  const stepsPerOctave = Math.ceil(Math.LN2 / (2 * Math.log1p(PX_WIDTH_TOLERANCE / px)));
+  return 2 ** (Math.round(Math.log2(scale) * stepsPerOctave) / stepsPerOctave);
+}
+
 interface StrokeEntry {
   readonly mesh: Mesh;
   /** Compared by reference — long enough that stringifying it per frame would

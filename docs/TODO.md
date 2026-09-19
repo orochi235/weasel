@@ -1787,20 +1787,6 @@ one dead `const` and four stale disable directives.
   renderer has no concept of today. Nobody has measured whether dispatch
   alone costs enough to justify that. Measure before building.
 
-- **(P3) A `{px}` stroke width thrashes the stroke mesh cache during a
-  zoom.** `strokeMeshCache.ts` clears a path's entire config map once it
-  exceeds `STROKE_CONFIGS_PER_PATH` (8) distinct configurations
-  (`byConfig.clear()`, around line 70) — the degradation this section
-  already documents for a dragged width slider. A `{ px }` width is resolved
-  to a world-unit number against the accumulated transform scale before it
-  reaches the cache key (`withResolvedStrokeWidth` in
-  `packages/core/src/renderer/draw.ts`), so a continuous zoom gesture produces
-  a distinct number on nearly every frame: every lookup misses, and every 8
-  frames evicts that path's sibling configurations too. Quantizing the
-  resolved width before it hits the cache key — `quantizeEmWidth` is the
-  existing precedent, used for glyph outline widths in
-  `outlineStrokeMeshCache.ts` — would likely fix it.
-
 - **(P3) Whether the benchmarks gate CI.** Every benchmark lives in
   `tests/perf/` and writes a result file per run; nothing gates anything. The
   vitest microbenchmarks keep a committed baseline in `tests/perf/bench/`. `tests/perf/README.md` argues a hard
