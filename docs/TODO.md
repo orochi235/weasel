@@ -516,21 +516,6 @@ Core five + Crop shipped. Remaining:
 
 - **(P2) Cross-browser overlay alignment.** `placeOverlay` uses an empirical `(+1, -1)` CSS-px nudge to compensate for canvas/CSS rasterization disagreement. Works on the dev setup; not universally correct across browsers/fonts/DPRs. A self-correcting probe was attempted and rejected.
 
-- **(P3) `rangeStyle` reports the runs alone; consumers merge the node style.**
-  The toggle half of this is resolved: `patchForToggle` in `useTextEdit` reads
-  `nodeHasFlag` as well as the range, so Cmd+B inside a `fontWeight: 700` node
-  clears bold rather than adding it, and the un-set rewrite is reachable from
-  the bar and from a collapsed caret rather than only from the keyboard over a
-  range. What remains is the display half: `styleAtRange` still reports the
-  runs alone, so every consumer that wants "what is actually rendering" merges
-  the node style itself (draw's `effectiveRangeStyle`). Decide whether that
-  merge belongs in the kit — and if so, whether `rangeStyle` should carry it
-  or a second reader should.
-
-  Unchanged and deliberate: a node at `fontWeight: 900` stays declined
-  (`applied: false`) — `run.bold` is exactly 700, so pushing the weight onto
-  the runs would lighten the text that was not edited.
-
 - **(P3) Per-character tracking in the DOM overlay is CSS-approximate.**
   `letterSpacing` is applied per code point rather than per grapheme cluster,
   matching CSS rather than the GL path's cluster walk. Visible only on text

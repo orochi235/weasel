@@ -131,17 +131,13 @@ import { enableMachineFontOutlines, disableMachineFontOutlines } from './fonts';
 // clamps to the same numbers as a backstop.
 const RIGHT_SIDEBAR_MIN = PREFS.children.ui.children.rightSidebarWidth.min;
 const RIGHT_SIDEBAR_MAX = PREFS.children.ui.children.rightSidebarWidth.max;
-import {
-  CharacterOptions,
-  TextEditDepPublisher,
-  effectiveRangeStyle,
-} from './ui/CharacterOptions';
+import { CharacterOptions, TextEditDepPublisher } from './ui/CharacterOptions';
 import { DispatchTracePanel } from './dev/DispatchTracePanel';
 import { lookupShortcutByToolId } from './dev/keybindingsView';
 import { useColorContext } from './tools/colorContext';
 import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
 import { OpacityHud } from './opacityScrub/OpacityHud';
-import { useSceneAdapter } from '@weasel-js/core';
+import { useSceneAdapter, effectiveRangeStyle } from '@weasel-js/core';
 import { sliceAction } from '@weasel-js/core';
 import type { SerializedHistory } from '@weasel-js/history';
 import { serializeReplacer, reviveSnapshot, clipboardJsonReviver, nodeSpecsFromSnapshot } from './persistence';
