@@ -1,5 +1,5 @@
 import { useVisibleRaf } from '@weasel-js/core';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { composeRects, rectsEqual } from './composeRects';
 import type { Box, Rect } from './rect';
 
@@ -235,14 +235,26 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
     };
   }, [schedule, frameLoop]);
 
-  return {
-    invalidate,
-    invalidateAll,
-    invalidateRects,
-    registerTile,
-    registerClear,
-    registerPainter,
-    containerRef,
-    getContainer,
-  };
+  return useMemo(
+    () => ({
+      invalidate,
+      invalidateAll,
+      invalidateRects,
+      registerTile,
+      registerClear,
+      registerPainter,
+      containerRef,
+      getContainer,
+    }),
+    [
+      invalidate,
+      invalidateAll,
+      invalidateRects,
+      registerTile,
+      registerClear,
+      registerPainter,
+      containerRef,
+      getContainer,
+    ],
+  );
 }

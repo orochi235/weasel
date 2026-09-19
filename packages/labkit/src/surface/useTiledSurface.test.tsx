@@ -1,4 +1,4 @@
-import { act, render } from '@testing-library/react';
+import { act, render, renderHook } from '@testing-library/react';
 import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SurfaceFrame, SurfaceHandle } from './useTiledSurface';
@@ -504,5 +504,16 @@ describe('useTiledSurface', () => {
       flushFrames();
       expect(clear).toHaveBeenCalledTimes(1);
     });
+  });
+});
+
+describe('useTiledSurface handle identity', () => {
+  it('returns the same handle across renders', () => {
+    // A new handle per render reaches useSurfaceTile through context as a new
+    // ref callback, which unregisters and re-registers every tile and retiles.
+    const { result, rerender } = renderHook(() => useTiledSurface({ onFrame: () => {} }));
+    const first = result.current;
+    rerender();
+    expect(result.current).toBe(first);
   });
 });
