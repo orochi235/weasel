@@ -789,6 +789,67 @@ describe('Slider stop marks', () => {
   });
 });
 
+describe('Slider stop labels', () => {
+  const labelsOf = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll<HTMLElement>('[data-slider-stop-label]'));
+  const STOPS = [{ value: 0, label: 'off' }, { value: 25, label: 'low' }, 50, { value: 100, label: 'max' }];
+
+  it('labels the stops that carry one', () => {
+    const { container } = render(<Slider min={0} max={100} stops={STOPS} thumbs={[{ value: 10 }]} onInput={() => {}} />);
+    expect(labelsOf(container).map(l => l.textContent)).toEqual(['off', 'low', 'max']);
+    expect(labelsOf(container).map(l => l.style.left)).toEqual(['0%', '25%', '100%']);
+  });
+
+  it('draws no label row for bare stops', () => {
+    const { container } = render(<Slider min={0} max={100} stops={[0, 50, 100]} thumbs={[{ value: 10 }]} onInput={() => {}} />);
+    expect(container.querySelector('[data-slider-stop-labels]')).toBeNull();
+  });
+
+  it('attracts a drag to a labeled stop like a bare one', () => {
+    const onInput = vi.fn();
+    const { container } = render(<Slider min={0} max={100} stops={STOPS} thumbs={[{ value: 10 }]} onInput={onInput} />);
+    const thumb = container.querySelector('[role="slider"]') as HTMLElement;
+    stubRect(thumb.parentElement as HTMLElement, { left: 0, width: 200 });
+    fireEvent.pointerDown(thumb, { clientX: 20, clientY: 12, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 48, clientY: 12 });
+    expect(onInput.mock.calls.at(-1)![0][0].value).toBe(25);
+  });
+
+  it('labels only the ends when asked', () => {
+    const { container } = render(
+      <Slider min={0} max={100} stops={STOPS} stopLabels="ends" thumbs={[{ value: 10 }]} onInput={() => {}} />,
+    );
+    expect(labelsOf(container).map(l => l.textContent)).toEqual(['off', 'max']);
+  });
+
+  it('drops the label row when asked', () => {
+    const { container } = render(
+      <Slider min={0} max={100} stops={STOPS} stopLabels="none" thumbs={[{ value: 10 }]} onInput={() => {}} />,
+    );
+    expect(labelsOf(container)).toHaveLength(0);
+  });
+
+  it('keeps the labels when the marks are hidden', () => {
+    const { container } = render(
+      <Slider min={0} max={100} stops={STOPS} showStops={false} thumbs={[{ value: 10 }]} onInput={() => {}} />,
+    );
+    expect(labelsOf(container)).toHaveLength(3);
+  });
+
+  it('marks the labels a thumb rests on and the two ends', () => {
+    const { container } = render(
+      <Slider min={0} max={100} stops={STOPS} thumbs={[{ value: 25 }, { value: 100 }]} onInput={() => {}} />,
+    );
+    expect(labelsOf(container).map(l => l.dataset.selected)).toEqual([undefined, 'true', 'true']);
+    expect(labelsOf(container).map(l => l.dataset.edge)).toEqual(['start', undefined, 'end']);
+  });
+
+  it('keeps the labels out of the accessibility tree', () => {
+    const { container } = render(<Slider min={0} max={100} stops={STOPS} thumbs={[{ value: 10 }]} onInput={() => {}} />);
+    expect(container.querySelector('[data-slider-stop-labels]')!.getAttribute('aria-hidden')).toBe('true');
+  });
+});
+
 describe('Slider value text', () => {
   it('publishes a thumb valueText as aria-valuetext', () => {
     const { container } = render(

@@ -59,6 +59,12 @@ export type TrackCtx = {
   valueToFraction: (v: number) => number;
 };
 
+/** A {@link Slider} stop that carries a label, drawn under the track at the stop. */
+export type SliderStop = {
+  value: number;
+  label?: ReactNode;
+};
+
 /**
  * Props for {@link Slider}.
  *
@@ -69,6 +75,8 @@ export type TrackCtx = {
  * on it, and the arrow keys move stop to stop. `step` still quantizes the
  * values between them. Each one is drawn on the track as a mark; pass
  * `showStops: false` for a track whose own paint already reads as the stops.
+ * A stop given as a {@link SliderStop} with a `label` gets that label drawn
+ * under it; `stopLabels` narrows the row to the two ends or turns it off.
  *
  * `trackClick: 'move-nearest'` makes a press on bare track send the closest
  * thumb there and continue as a drag. It is off by default because on a
@@ -88,8 +96,9 @@ export type SliderProps<T extends Thumb = Thumb> = {
   min: number;
   max: number;
   step?: number;
-  stops?: number[];
+  stops?: readonly (number | SliderStop)[];
   showStops?: boolean;
+  stopLabels?: 'all' | 'ends' | 'none';
   trackClick?: 'none' | 'move-nearest';
   constraint?: 'free' | 'ordered';
   onAddThumb?: (atValue: number) => T | null;
@@ -122,10 +131,18 @@ const STOP_SNAP_PX = 8;
  *  and capture would retarget pointerup and kill the click on it. */
 const NO_CAPTURE = { capture: false } as const;
 
-/** The stops that are actually reachable: inside the range, deduped, ascending. */
-function usableStops(stops: number[] | undefined, min: number, max: number): number[] {
+/** The stops that are actually reachable: inside the range, deduped, ascending.
+ *  A duplicate keeps the first label given for its value. */
+function usableStops(stops: SliderProps['stops'], min: number, max: number): SliderStop[] {
   if (!stops || stops.length === 0) return [];
-  return [...new Set(stops.filter(v => v >= min && v <= max))].sort((a, b) => a - b);
+  const byValue = new Map<number, SliderStop>();
+  for (const stop of stops) {
+    const s = typeof stop === 'number' ? { value: stop } : stop;
+    if (s.value < min || s.value > max) continue;
+    const seen = byValue.get(s.value);
+    if (!seen || (seen.label === undefined && s.label !== undefined)) byValue.set(s.value, s);
+  }
+  return [...byValue.values()].sort((a, b) => a.value - b.value);
 }
 
 /** Pull `v` onto the nearest stop within `tolerance`, or leave it where it is. */
@@ -201,7 +218,8 @@ function defaultReadout(thumb: Thumb): string {
 export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactElement {
   const { thumbs, onInput, onChange, min, max, step, constraint, trackHeight, density, ariaLabel, className } = props;
 
-  const stops = usableStops(props.stops, min, max);
+  const stopList = usableStops(props.stops, min, max);
+  const stops = stopList.map(stop => stop.value);
 
   const trackRef = useRef<HTMLDivElement | null>(null);
   // In-flight thumb buffer during a drag; null when not dragging.
@@ -474,6 +492,30 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
   if (trackHeight !== undefined) rootVars['--rp-track-height'] = `${trackHeight}px`;
   const rootClass = [s.root, slim && s.slim, className].filter(Boolean).join(' ');
 
+  const labelMode = props.stopLabels ?? 'all';
+  const lastStop = stopList.length - 1;
+  const labeledStops = labelMode === 'none'
+    ? []
+    : stopList
+        .map((stop, i) => ({ stop, i }))
+        .filter(({ stop, i }) => stop.label !== undefined && (labelMode === 'all' || i === 0 || i === lastStop));
+  const stopLabelRow = labeledStops.length > 0 && (
+    <div className={s.stopLabels} data-slider-stop-labels aria-hidden="true">
+      {labeledStops.map(({ stop, i }) => (
+        <span
+          key={stop.value}
+          className={s.stopLabel}
+          data-slider-stop-label
+          data-selected={thumbs.some(t => t.value === stop.value) ? 'true' : undefined}
+          data-edge={i === 0 ? 'start' : i === lastStop ? 'end' : undefined}
+          style={{ left: `${valueToFraction(stop.value) * 100}%` }}
+        >
+          {stop.label}
+        </span>
+      ))}
+    </div>
+  );
+
   return (
     <div
       className={rootClass}
@@ -539,6 +581,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
         </span>
       )}
       </div>
+      {stopLabelRow}
       {placement === 'below-thumb' && (
         <div className={s.readoutsBelow}>
           {thumbs.map((t, i) => (
