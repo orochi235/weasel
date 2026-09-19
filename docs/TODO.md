@@ -1005,16 +1005,21 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   changes any anchor placed away from the envelope's peak. weasel's only anchor is
   mid-ramp, so neither choice moves what ships. A 0.1 floor on `e` was tried and
   taken back out: it turned a gray ramp anchored on its darkest step blue.
+  `lightnessRamp` (`packages/theme/src/engine/ramps.ts`) already falls back to
+  `peak = anchor C` when `e ≤ 1e-6`, so today the behavior is discontinuous: a
+  ten-step ramp anchored on `#1f2328` at its last step has a mid-ramp chroma of
+  0.011 at `darkBias` 0 and 0.176 at 0.001 — gray to saturated blue for a
+  slider nudge. Either answer should also say what a second anchor does: only
+  the first anchored step, in step order, sets the hue and peak, so anchoring
+  `#ff0000` and `#0000ff` on one ramp pins the blue step inside a red ramp.
 
-- **(P2) `hexToRgba` in `packages/theme` throws on any non-hex value**, so the alpha
-  extension only works when the token it points at is a hex literal. Point it at
-  `interstellar`'s `rgba(...)` and it dies.
-
-- **(P3) 47 `--wzl-*` properties are read in live source and declared by no theme.**
-  Some are deliberate container-override hooks (`--wzl-prop-*`, `--wzl-field-h`);
-  the rest is rot from the original May token vocabulary (`--wzl-text`,
-  `--wzl-panel-bg`, `--wzl-button-fill*`) that `packages/ui` never finished
-  migrating. Nothing checks for either case.
+- **(P3) The lab switcher's migrated tokens have not been looked at in a browser.**
+  `packages/labkit/src/lab/LabSwitcher.less` read seven `--wzl-*` names no theme
+  declares, so its menu items inherited the title's 20px and its hover changed
+  nothing. They now read `--wzl-font-size`, `--wzl-fg`, `--wzl-accent` on hover,
+  `--wzl-z-overlay`, and a `--wzl-shadow`-colored shadow (as does `Workspace.less`'s
+  floating panel). Check the open menu in both interstellar modes.
+  `npm run check:token-reads` now keeps undeclared reads out.
 
 - **(P3) A mark can be selected in two targets at once.** `AnnotationOverlay`
   leaves `selectionMode` at weasel's default `single`, and each canvas clears

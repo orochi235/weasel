@@ -45,6 +45,9 @@ jobs:
       # Every kit frame loop runs behind `useVisibleRaf`; a bare
       # requestAnimationFrame is how that stops being true.
       - run: npm run check:frame-loops
+      # Every `var(--wzl-*)` names a theme token or a declared override hook;
+      # a read of a name nothing declares drops its declaration silently.
+      - run: npm run check:token-reads
       - run: npm run typecheck
       # Two things (eslint.config.js). The scoped no-restricted-imports blocks
       # guard one-way dependency arrows — core/ ← features/, and the leaf purity

@@ -134,8 +134,7 @@
   flex-wrap: wrap;
   gap: 4px;
 }
-/* Sunken (not --wzl-bg) so the chip reads as a token against the gray-800
-   detail panel — --wzl-bg aliases --wzl-surface, which is the panel color. */
+/* Sunken, not --wzl-surface, so the chip reads against the panel. */
 .tag { background: var(--wzl-surface-sunken); padding: 2px 8px; border-radius: 3px; margin-right: 4px; font-size: 13px; }
 .routeBadge { display: inline-flex; align-items: center; gap: 2px; margin-right: 6px; }
 

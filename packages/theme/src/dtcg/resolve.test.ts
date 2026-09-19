@@ -17,6 +17,17 @@ describe('resolveTokens', () => {
     expect(out.line).toBe('rgba(230, 231, 233, 0.2)');
   });
 
+  it('applies the alpha extension to a non-hex target instead of throwing', () => {
+    const out = resolveTokens({
+      scrim: t('rgba(20, 20, 36, 0.55)'),
+      named: t('rebeccapurple'),
+      a: t('{color.scrim}', { alpha: 0.5 }),
+      b: t('{color.named}', { alpha: 0.5 }),
+    });
+    expect(out.a).toBe('rgba(20, 20, 36, 0.275)');
+    expect(out.b).toBe('color-mix(in srgb, rebeccapurple 50%, transparent)');
+  });
+
   it('serializes a font family list as a CSS font stack', () => {
     const out = resolveTokens({
       'font-ui': { type: 'fontFamily', value: ['Oswald', 'Arial Narrow', 'sans-serif'], alpha: undefined, description: undefined },

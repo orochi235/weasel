@@ -929,7 +929,7 @@
 }
 
 .cardRemove:hover {
-  color: var(--wzl-danger-fg, var(--wzl-danger));
+  color: var(--wzl-danger);
   border-color: color-mix(in srgb, var(--wzl-danger) 40%, transparent);
   background: color-mix(in srgb, var(--wzl-danger) 8%, transparent);
 }
