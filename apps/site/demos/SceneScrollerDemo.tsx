@@ -4,6 +4,7 @@ import {
   WeaselProvider,
   blur,
   createParallaxLayer,
+  createSlew,
   defaultDrawOne,
   rectPath,
   textCommandFromRuns,
@@ -43,18 +44,10 @@ const W = 720;
 const H = 405;
 const DIMS: Dims = { width: W, height: H };
 
-/** The concussion blur's envelope, in ms, and the radius it peaks at. Rise and
- *  fall rather than a step: a blur that snaps on reads as a dropped frame. */
-const BONK_BLUR = { rise: 120, hold: 260, fall: 200, radius: 6 };
-
-/** Peak radius `hold` ms after the knock, nothing before it or long after. */
-function bonkBlurRadius(since: number): number {
-  const { rise, hold, fall, radius } = BONK_BLUR;
-  if (since < 0 || since > rise + hold + fall) return 0;
-  if (since < rise) return radius * (since / rise);
-  const out = since - rise - hold;
-  return out <= 0 ? radius : radius * (1 - out / fall);
-}
+/** The concussion blur, in px of radius. Each knock adds `perHit` and the
+ *  total clears at a fixed rate, so one knock is gone in `clearSeconds` and
+ *  knocks landing before it clears stack, up to `max`. */
+const BONK_BLUR = { perHit: 6, clearSeconds: 6, riseSeconds: 0.12, max: 18 };
 
 export function SceneScrollerDemo() {
   const [run, setRun] = useState(0);
@@ -97,11 +90,15 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
   const canvas = useRef<SceneCanvasApi | null>(null);
   const initialView = useMemo(() => cameraView(game.current.camera, DIMS), []);
 
-  // When the last head knock landed. A ref, not state: the group's effects
-  // thunk is re-read on every frame the canvas paints, so the fade costs no render.
-  const bonkAt = useRef(-Infinity);
+  // `impact` is what the knocks have added and not yet cleared; `blur` follows
+  // it with a short rise so a knock doesn't snap on. Both are stepped by the
+  // frame loop and read by the group's effects thunk, so the blur costs no render.
+  const { impact, blur: blurRadius } = useMemo(() => ({
+    impact: createSlew({ fall: BONK_BLUR.perHit / BONK_BLUR.clearSeconds }),
+    blur: createSlew({ rise: BONK_BLUR.perHit / BONK_BLUR.riseSeconds }),
+  }), []);
   const sound = usePlatformerAudio(animator, () => {
-    bonkAt.current = performance.now();
+    impact.value = Math.min(impact.value + BONK_BLUR.perHit, BONK_BLUR.max);
   });
   const { hooks, beginFrame, endFrame, stats: soundStats } = sound;
 
@@ -113,11 +110,10 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
     id: 'world',
     layers: ['backdrop-far', 'backdrop-mid', 'backdrop-near', 'scene:tiles', 'scene:entities', 'scene:player'],
     effects: (): Effect[] => {
-      const radius = bonkBlurRadius(performance.now() - bonkAt.current);
       // No passes between knocks, so the offscreen buffer is never allocated.
-      return radius > 0 ? blur({ radius }) : [];
+      return blurRadius.value > 0 ? blur({ radius: blurRadius.value }) : [];
     },
-  }], []);
+  }], [blurRadius]);
 
   // The debug layer's `draw` runs outside React, so the checkbox mirrors its
   // state into a ref rather than closing over `showBoxes` directly.
@@ -151,6 +147,9 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
       const g = game.current;
       g.camera = followCamera(g.camera, g.player.body, DIMS, WORLD, frame);
       beginFrame(g);
+      impact.step(frame);
+      blurRadius.target = impact.value;
+      blurRadius.step(frame);
 
       if (g.outcome !== 'playing') stepEnding(g, frame, hooks.current);
       const simulating = running && g.outcome === 'playing';
@@ -175,7 +174,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
           }
         : v);
     });
-  }, [animator, running, input, scene, hooks, beginFrame, endFrame]);
+  }, [animator, running, input, scene, hooks, beginFrame, endFrame, impact, blurRadius]);
 
   const layers = useMemo(() => {
     const band = (name: 'far' | 'mid' | 'near', pan: number): RenderLayer<unknown> =>
