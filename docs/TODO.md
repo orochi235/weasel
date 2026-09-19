@@ -1373,12 +1373,6 @@ controls. It runs beside Storybook today.
   view. Its config and state already live in the trial, so unmounting loses
   nothing.
 
-- **(P3) The Timeline story ignores forge's Mode toolbar.**
-  `packages/ui/src/components/Timeline/Timeline.stories.tsx` sets `data-wzl-mode`
-  from a `theme` global, which only Storybook declares; forge declares `mode`
-  (`apps/forge/forge.shell.tsx`). Read `mode` in the story, or have forge declare
-  `theme` too.
-
 ---
 
 ## Load cost
