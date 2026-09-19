@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react';
 import { openPointerSession, type PointerSession } from '@weasel-js/core';
 import s from './Slider.module.css';
 import { formatNumber } from '../../format/number';
@@ -78,6 +78,14 @@ export type SliderStop = {
  * A stop given as a {@link SliderStop} with a `label` gets that label drawn
  * under it; `stopLabels` narrows the row to the two ends or turns it off.
  *
+ * `snap: 'strict'` makes every stop a detent the thumb must rest on: drags and
+ * track presses land on the nearest one, and `step` no longer applies.
+ * `spacing: 'even'` places the stops at equal intervals, runs the track from
+ * the first stop to the last, and maps values linearly within each gap — so a
+ * geometric list (0.25/0.5/1/2/4) gets usable room for every stop instead of
+ * four crowded into the first fifth. Both need stops; with fewer than two,
+ * `'even'` falls back to linear.
+ *
  * `trackClick: 'move-nearest'` makes a press on bare track send the closest
  * thumb there and continue as a drag. It is off by default because on a
  * multi-thumb editor a stray click would yank a stop the user was not aiming
@@ -99,6 +107,8 @@ export type SliderProps<T extends Thumb = Thumb> = {
   stops?: readonly (number | SliderStop)[];
   showStops?: boolean;
   stopLabels?: 'all' | 'ends' | 'none';
+  snap?: 'magnetic' | 'strict';
+  spacing?: 'linear' | 'even';
   trackClick?: 'none' | 'move-nearest';
   constraint?: 'free' | 'ordered';
   onAddThumb?: (atValue: number) => T | null;
@@ -115,7 +125,7 @@ export type SliderProps<T extends Thumb = Thumb> = {
   className?: string;
 };
 
-function snap(v: number, step: number | undefined, min: number): number {
+function quantize(v: number, step: number | undefined, min: number): number {
   if (step === undefined || step <= 0) return v;
   return Math.round((v - min) / step) * step + min;
 }
@@ -145,12 +155,15 @@ function usableStops(stops: SliderProps['stops'], min: number, max: number): Sli
   return [...byValue.values()].sort((a, b) => a.value - b.value);
 }
 
-/** Pull `v` onto the nearest stop within `tolerance`, or leave it where it is. */
-function attract(v: number, stops: number[], tolerance: number): number {
+/** The stop nearest `v` along the track, or `v` itself when none lies within
+ *  `tolerance` (a track fraction). Measured on the track rather than in value
+ *  units so evenly spaced stops attract over the same distance. */
+function attract(v: number, stops: number[], tolerance: number, toFraction: (v: number) => number): number {
+  const f = toFraction(v);
   let best = v;
   let bestGap = tolerance;
   for (const stop of stops) {
-    const gap = Math.abs(stop - v);
+    const gap = Math.abs(toFraction(stop) - f);
     if (gap <= bestGap) {
       best = stop;
       bestGap = gap;
@@ -216,10 +229,14 @@ function defaultReadout(thumb: Thumb): string {
  * in-flight state to buffer.
  */
 export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactElement {
-  const { thumbs, onInput, onChange, min, max, step, constraint, trackHeight, density, ariaLabel, className } = props;
+  const { thumbs, onInput, onChange, step, constraint, trackHeight, density, ariaLabel, className } = props;
 
-  const stopList = usableStops(props.stops, min, max);
-  const stops = stopList.map(stop => stop.value);
+  const stopList = useMemo(() => usableStops(props.stops, props.min, props.max), [props.stops, props.min, props.max]);
+  const stops = useMemo(() => stopList.map(stop => stop.value), [stopList]);
+  const even = props.spacing === 'even' && stops.length >= 2;
+  const strict = props.snap === 'strict' && stops.length > 0;
+  const min = even ? stops[0] : props.min;
+  const max = even ? stops[stops.length - 1] : props.max;
 
   const trackRef = useRef<HTMLDivElement | null>(null);
   // In-flight thumb buffer during a drag; null when not dragging.
@@ -229,13 +246,38 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
 
   const valueToFraction = useCallback(
-    (v: number): number => (max === min ? 0 : clamp((v - min) / (max - min), 0, 1)),
-    [min, max],
+    (v: number): number => {
+      if (max === min) return 0;
+      if (!even) return clamp((v - min) / (max - min), 0, 1);
+      const gaps = stops.length - 1;
+      const x = clamp(v, min, max);
+      let i = 0;
+      while (i < gaps - 1 && x > stops[i + 1]) i++;
+      return (i + (x - stops[i]) / (stops[i + 1] - stops[i])) / gaps;
+    },
+    [min, max, even, stops],
   );
 
   const fractionToValue = useCallback(
-    (f: number): number => min + clamp(f, 0, 1) * (max - min),
-    [min, max],
+    (f: number): number => {
+      const c = clamp(f, 0, 1);
+      if (!even) return min + c * (max - min);
+      const gaps = stops.length - 1;
+      const i = Math.min(gaps - 1, Math.floor(c * gaps));
+      return stops[i] + (c * gaps - i) * (stops[i + 1] - stops[i]);
+    },
+    [min, max, even, stops],
+  );
+
+  /** The value a pointer at track fraction `f` chooses, before bounds. */
+  const valueAt = useCallback(
+    (f: number, trackWidth: number): number => {
+      const v = fractionToValue(f);
+      if (strict) return attract(v, stops, Infinity, valueToFraction);
+      const q = clamp(quantize(v, step, min), min, max);
+      return stops.length > 0 ? attract(q, stops, STOP_SNAP_PX / trackWidth, valueToFraction) : q;
+    },
+    [fractionToValue, valueToFraction, strict, stops, step, min, max],
   );
 
   // `seed` replaces the thumb list the drag starts from. A track press moves a
@@ -253,11 +295,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
         const buffer = dragBufferRef.current;
         if (!track || !buffer) return;
         const rect = track.getBoundingClientRect();
-        const f = clamp((ev.clientX - rect.left) / rect.width, 0, 1);
-        let v = fractionToValue(f);
-        v = snap(v, step, min);
-        v = clamp(v, min, max);
-        if (stops.length > 0) v = attract(v, stops, (STOP_SNAP_PX / rect.width) * (max - min));
+        let v = valueAt((ev.clientX - rect.left) / rect.width, rect.width);
 
         const [bLo, bHi] = resolveBounds(buffer[index], { thumbs: buffer, index }, min, max);
         v = clamp(v, bLo, bHi);
@@ -306,7 +344,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
 
       sessionRef.current = openPointerSession(origin, down, { onMove, onEnd, onCancel }, NO_CAPTURE);
     },
-    [thumbs, onInput, onChange, fractionToValue, min, max, step, stops, constraint, props],
+    [thumbs, onInput, onChange, valueAt, min, max, step, constraint, props],
   );
 
   const beginShiftAllDrag = useCallback(
@@ -322,8 +360,19 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
         if (!track || !buffer) return;
         const rect = track.getBoundingClientRect();
         const dxFraction = (ev.clientX - anchorX) / rect.width;
+        // Evenly spaced gaps span different amounts of value, so equal value
+        // offsets would pull the thumbs apart; move them by track distance.
+        if (even) {
+          const starts = startValues.map(valueToFraction);
+          const df = clamp(dxFraction, -Math.min(...starts), 1 - Math.max(...starts));
+          for (let i = 0; i < buffer.length; i++) {
+            buffer[i] = { ...buffer[i], value: fractionToValue(starts[i] + df) };
+          }
+          onInput(buffer.map(t => ({ ...t })));
+          return;
+        }
         let dValue = dxFraction * (max - min);
-        dValue = snap(dValue, step, 0);
+        dValue = quantize(dValue, step, 0);
 
         // Clamp delta so no thumb leaves [min, max] (per-thumb bounds intentionally
         // not enforced — matches the experiment's hue-band shift-translate semantics).
@@ -355,7 +404,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
 
       sessionRef.current = openPointerSession(origin, down, { onMove, onEnd, onCancel }, NO_CAPTURE);
     },
-    [thumbs, onInput, onChange, min, max, step],
+    [thumbs, onInput, onChange, min, max, step, even, valueToFraction, fractionToValue],
   );
 
   const onThumbPointerDown = (index: number) => (e: ReactPointerEvent) => {
@@ -395,11 +444,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
     const track = trackRef.current;
     if (!track) return;
     const rect = track.getBoundingClientRect();
-    const f = clamp((e.clientX - rect.left) / rect.width, 0, 1);
-    let v = fractionToValue(f);
-    v = snap(v, step, min);
-    v = clamp(v, min, max);
-    if (stops.length > 0) v = attract(v, stops, (STOP_SNAP_PX / rect.width) * (max - min));
+    const v = valueAt((e.clientX - rect.left) / rect.width, rect.width);
 
     if (props.onAddThumb) {
       const created = props.onAddThumb(v);
@@ -470,7 +515,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
     else if (stops.length > 0) {
       v = stepStops(stops, next[index].value, stopDelta > 0 ? 1 : -1, Math.abs(stopDelta));
     } else {
-      v = snap(next[index].value + delta, step, min);
+      v = quantize(next[index].value + delta, step, min);
     }
     v = clamp(v, lo, hi);
     if (constraint === 'ordered') v = clampOrdered(v, next, index, lo, hi, step);
@@ -490,7 +535,6 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
   }
   // An explicit trackHeight wins: a caller who named a number meant it.
   if (trackHeight !== undefined) rootVars['--rp-track-height'] = `${trackHeight}px`;
-  const rootClass = [s.root, slim && s.slim, className].filter(Boolean).join(' ');
 
   const labelMode = props.stopLabels ?? 'all';
   const lastStop = stopList.length - 1;
@@ -499,6 +543,8 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
     : stopList
         .map((stop, i) => ({ stop, i }))
         .filter(({ stop, i }) => stop.label !== undefined && (labelMode === 'all' || i === 0 || i === lastStop));
+  // Inside the track so it shares the track's width, not the row's — an inline
+  // readout beside the track would otherwise shift every label off its stop.
   const stopLabelRow = labeledStops.length > 0 && (
     <div className={s.stopLabels} data-slider-stop-labels aria-hidden="true">
       {labeledStops.map(({ stop, i }) => (
@@ -515,6 +561,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
       ))}
     </div>
   );
+  const rootClass = [s.root, slim && s.slim, stopLabelRow && s.withStopLabels, className].filter(Boolean).join(' ');
 
   return (
     <div
@@ -547,6 +594,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
             })}
           </div>
         )}
+        {stopLabelRow}
         {thumbs.map((thumb, i) => {
           const isNotched = thumb.shape === 'notched';
           const customRender = typeof thumb.shape === 'object' && thumb.shape !== null ? thumb.shape.render : null;
@@ -581,7 +629,6 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
         </span>
       )}
       </div>
-      {stopLabelRow}
       {placement === 'below-thumb' && (
         <div className={s.readoutsBelow}>
           {thumbs.map((t, i) => (

@@ -74,17 +74,16 @@ function plainText(label: ReactNode, fallback: DetentValue): string {
  * Slider over a fixed list of values: one detent per value, evenly spaced, the
  * thumb resting on one of them.
  *
- * This is the shape to reach for when a numeric option has a small set of
- * allowed values along a line — playback rate, zoom step, stroke weight — in
- * place of a dropdown, which hides the ordering and the extent of the range
- * behind a click.
+ * This is the shape to reach for when an option has a small set of allowed
+ * values along a line — playback rate, zoom step, quality — in place of a
+ * dropdown, which hides the ordering and the extent of the range behind a
+ * click. The values need only be ordered, not numeric.
  *
- * The track addresses the *index* of `items`, not the value, which is what
- * makes the detents evenly spaced no matter how the values are distributed:
- * a geometric rate list (0.25/0.5/1/2/4) laid out linearly would crowd four
- * of its five detents into the first fifth of the track and leave the most
- * used one nearly unhittable. Since the index is meaningless to a screen
- * reader, the value is published as `aria-valuetext`.
+ * It is a strict {@link Slider} over the *index* of `items`, which keeps the
+ * detents evenly spaced however the values are distributed. Since the index is
+ * meaningless to a screen reader, the value is published as `aria-valuetext`.
+ * For numbers that may also rest between the detents, use `Slider` directly
+ * with `spacing="even"` and magnetic stops.
  */
 export function DetentSlider<V extends DetentValue = number>(props: DetentSliderProps<V>): ReactElement {
   const { value, onChange, onCommit, formatLabel, ariaLabel, className } = props;
@@ -104,10 +103,8 @@ export function DetentSlider<V extends DetentValue = number>(props: DetentSlider
     liveRef.current = index;
   }, [index]);
 
-  const at = (raw: number): number => Math.max(0, Math.min(lastIndex, Math.round(raw)));
-
   const handleInput = (next: Thumb[]) => {
-    const i = at(next[0].value);
+    const i = next[0].value;
     if (i === liveRef.current) return;
     liveRef.current = i;
     changedRef.current = true;
@@ -117,7 +114,7 @@ export function DetentSlider<V extends DetentValue = number>(props: DetentSlider
   const handleCommit = (next: Thumb[]) => {
     if (!changedRef.current) return;
     changedRef.current = false;
-    const i = at(next[0].value);
+    const i = next[0].value;
     onCommit?.(items[i].value, i);
   };
 
@@ -136,8 +133,8 @@ export function DetentSlider<V extends DetentValue = number>(props: DetentSlider
         className={s.slider}
         min={0}
         max={lastIndex}
-        step={1}
         stops={stops}
+        snap="strict"
         stopLabels={props.labels ?? 'all'}
         trackClick="move-nearest"
         trackHeight={props.trackHeight ?? 8}
