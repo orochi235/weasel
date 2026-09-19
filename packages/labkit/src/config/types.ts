@@ -110,7 +110,8 @@ export interface SectionOption {
 /** Per-node extras that do not belong on a `PrefLeaf`. */
 export interface NodeOptions extends BranchOptions {
   render?: ControlRenderer;
-  validate?: (leaf: PrefLeaf) => string[];
+  /** Errors for this leaf under `config`, the instrument's whole config. */
+  validate?: (leaf: PrefLeaf, config: Record<string, unknown>) => string[];
   /** Computes this leaf's value while it is auto. Attaching one is what lets
    *  the ghosted control draw a real value and keeps the instrument off
    *  `?? compute()`. */

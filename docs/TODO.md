@@ -1308,19 +1308,6 @@ controls. It runs beside Storybook today.
   Storybook offered an object control. Send the port-safe fields as config and
   merge the functions back in from the arg's original value inside the frame.
 
-- **(P2) Two trials of one forge story can show each other's validation
-  errors.** The answer book (`packages/forge/src/shell/answers.ts`) keeps hidden
-  paths per config but only one `errors` map per story, replaced by whichever
-  frame answered last, and `useStoryRegistry` makes one book per story. Key
-  errors by config the way `hidden` already is.
-
-- **(P2) labkit's `validate` never sees the value it validates.**
-  `NodeOptions.validate` (`packages/labkit/src/config/types.ts`) receives a
-  resolved `PrefLeaf`, which holds the schema's `default` but no current value,
-  and nothing in labkit or ui calls it. forge calls it inside the frame
-  (`packages/forge/src/protocol/schema.ts`), so its per-path errors cannot depend
-  on the config. `validate` needs the live value, or the config, passed in.
-
 - **(P2) forge titles an untitled story file differently from Storybook.**
   `titleFromFile` (`packages/forge/src/story/ids.ts`) uses the file's path under
   the vite root. Storybook titles it relative to its stories glob, collapses

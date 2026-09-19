@@ -48,8 +48,7 @@ export interface SchemaDescription {
 /** Answers the workshop has for the rebuilt schema's predicates. */
 export interface SchemaAnswers {
   hidden(path: string, config: unknown): boolean;
-  /** The latest answer for the path: `validate` is handed a `PrefLeaf`, which carries no config. */
-  errors(path: string): string[];
+  errors(path: string, config: unknown): string[];
 }
 
 const joinPath = (at: string, key: string): string => (at === '' ? key : `${at}.${key}`);
@@ -101,7 +100,7 @@ function rebuildShape(shape: DescribedShape, at: string, answers: SchemaAnswers)
         kind: entry.kind,
         default: entry.default,
         annotations: entry.annotations,
-        options: entry.validated ? { ...options, validate: () => answers.errors(path) } : options,
+        options: entry.validated ? { ...options, validate: (_leaf, config) => answers.errors(path, config) } : options,
       };
       out[key] = node;
     }
@@ -139,7 +138,7 @@ export function answerSchema(
       group ??= resolveConfigSchema(schema).group;
       const leaf = schemaNodeAtPath(group, path);
       if (!leaf || 'children' in leaf) continue;
-      const found = validate(leaf);
+      const found = validate(leaf, record);
       if (found.length > 0) errors[path] = found;
     }
   };

@@ -56,20 +56,24 @@ describe('schema descriptions', () => {
 
   it('answers validate in the frame and serves it to the rebuilt leaf', () => {
     const schema = f.schema({
-      blob: f.custom('json', { a: 1 }, (leaf) => (leaf.kind === 'json' ? ['bad blob'] : [])),
+      blob: f.custom('json', { a: 1 }, (leaf, config) =>
+        leaf.kind === 'json' && (config.blob as { a: number }).a > 1 ? ['bad blob'] : [],
+      ),
     });
-    const { errors } = answerSchema(schema, schema.defaults());
+    expect(answerSchema(schema, schema.defaults()).errors).toEqual({});
+    const config = { blob: { a: 2 } };
+    const { errors } = answerSchema(schema, config);
     expect(errors).toEqual({ blob: ['bad blob'] });
 
     const d = describeSchema(schema);
     expect(d.nodes.blob).toMatchObject({ validated: true });
     const rebuilt = schemaFromDescription(d, {
       hidden: () => false,
-      errors: (path) => errors[path] ?? [],
+      errors: (path, c) => (c === config ? (errors[path] ?? []) : []),
     });
     const leaf = rebuilt.nodes.blob;
     const validate = 'children' in leaf ? undefined : leaf.options.validate;
-    expect(validate?.({ kind: 'json', name: 'Blob', description: '', default: {} } as never)).toEqual([
+    expect(validate?.({ kind: 'json', name: 'Blob', description: '', default: {} } as never, config)).toEqual([
       'bad blob',
     ]);
   });

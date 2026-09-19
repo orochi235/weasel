@@ -9,7 +9,7 @@ describe('createAnswerBook', () => {
   it('shows every node and reports no errors before any answer', () => {
     const book = createAnswerBook();
     expect(book.hidden('d', config)).toBe(false);
-    expect(book.errors('d')).toEqual([]);
+    expect(book.errors('d', config)).toEqual([]);
   });
 
   it('hides a recorded path and everything beneath it, for that config only', () => {
@@ -28,12 +28,14 @@ describe('createAnswerBook', () => {
     expect(book.hidden('d', { ...config, $globals: { mode: 'dark' } })).toBe(true);
   });
 
-  it('keeps the latest errors per path', () => {
+  it('keeps each config’s errors apart, so one trial never shows another’s', () => {
     const book = createAnswerBook();
+    const other = { d: 1 };
     book.record({ configKey: key, hidden: [], errors: { d: ['too big'] } });
-    expect(book.errors('d')).toEqual(['too big']);
-    book.record({ configKey: stableStringify({ d: 1 }), hidden: [], errors: {} });
-    expect(book.errors('d')).toEqual([]);
+    book.record({ configKey: stableStringify(other), hidden: [], errors: {} });
+    expect(book.errors('d', config)).toEqual(['too big']);
+    expect(book.errors('d', { ...config, $globals: { mode: 'dark' } })).toEqual(['too big']);
+    expect(book.errors('d', other)).toEqual([]);
   });
 
   it('forgets the oldest config past 50', () => {
