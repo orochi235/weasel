@@ -1092,10 +1092,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `layer.visible` through `SceneSource.isPainted`, and `toJSON` carries a user
   layer's `kind` and `name`.
 
-  Open: `<image>` flip and source-rect never serialize; they live on the renderer's
-  `ImageCommand`, and expressing them wants a wider `SvgImageNode` on both the
-  write and the parse side. `packages/{labkit,modes,d3,paint}` never import
-  `geom` at all, and `ui` only from a story.
+  Open: `packages/{labkit,modes,d3,paint}` never import `geom` at all, and `ui`
+  only from a story. And `SvgImageNode` now carries a source rect and flips
+  through SVG, but `kit:image`'s `data.image` has no field for either, so
+  `svgNodesToKitDrafts` drops them on the way into a scene.
 
 - **(P2) Safari's `gesturestart` / `gesturechange` / `gestureend` are unhandled.** They are the second trackpad pinch channel on macOS Safari, alongside the ctrl+wheel one `viewportZoom` reads. Nothing in the repo listens for them, so Safari trackpad pinch gets whatever the wheel path synthesizes. Worth deciding deliberately rather than by omission. Note before adding a listener: `viewportZoom` now claims bare ctrl+wheel, so a `gesturechange` handler becomes a *second* channel for the same physical gesture — the double-apply `.changeset/mac-trackpad-pinch-zoom.md` just removed. Consolidate it into `makeViewportZoomAction` behind one scale-delta seam, not as a fourth listener.
 

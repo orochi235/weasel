@@ -191,6 +191,12 @@ export interface SvgTextNode {
  * a reference and only resolves when something downstream loads it.
  *
  * SVG's `preserveAspectRatio` is not modeled; the box is taken literally.
+ *
+ * With a `source` rect or a flip, the element is written as a `<g
+ * data-weasel-image>` holding a nested `<svg>` viewport at the box, whose
+ * `viewBox` is the source window over a unit-square `<image>` — plain SVG 1.1,
+ * which any reader crops and mirrors the same way, and which `parseSvg` reads
+ * back as one image node.
  */
 export interface SvgImageNode {
   kind: 'image';
@@ -199,6 +205,15 @@ export interface SvgImageNode {
   y: number;
   width: number;
   height: number;
+  /** The part of the bitmap drawn into the box, as fractions of the bitmap's
+   *  width and height from its top-left. Omitted draws the whole bitmap.
+   *  Fractions rather than bitmap pixels because this package never decodes
+   *  the image, so it cannot know its size. */
+  source?: { x: number; y: number; width: number; height: number };
+  /** Mirror the drawn region within the box, as `ImageDrawCommand` does. The
+   *  box does not move. */
+  flipX?: boolean;
+  flipY?: boolean;
   /** Element-level opacity (`opacity="..."`), 0..1. */
   opacity?: number;
   /** Element-level rotation in **radians**, pivoting around the unrotated

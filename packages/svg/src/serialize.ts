@@ -187,29 +187,48 @@ function nodeXml(node: SvgNode, registry: PaintServerRegistry, namespaces: Recor
  * Emit an `<image>`. `preserveAspectRatio="none"` is unconditional: the node
  * carries a literal box and nothing else, so letting a viewer letterbox it
  * would place the pixels somewhere the model never said.
+ *
+ * A source rect or a flip takes the cropped form described on `SvgImageNode`.
+ * The nested `<svg>` cannot carry the rotation itself — SVG 1.1 gives it no
+ * `transform` — so the rotation, opacity and meta go on the wrapping `<g>`.
  */
 function imageXml(node: SvgImageNode, namespaces: Record<string, string>): string {
-  const attrs: string[] = [
-    `href="${escapeAttr(node.href)}"`,
-    `x="${trimNumber(node.x)}"`,
-    `y="${trimNumber(node.y)}"`,
-    `width="${trimNumber(node.width)}"`,
-    `height="${trimNumber(node.height)}"`,
-    `preserveAspectRatio="none"`,
-  ];
+  const box = `x="${trimNumber(node.x)}" y="${trimNumber(node.y)}"`
+    + ` width="${trimNumber(node.width)}" height="${trimNumber(node.height)}"`;
+  const outer: string[] = [];
   if (node.opacity != null && node.opacity !== 1) {
-    attrs.push(`opacity="${trimNumber(node.opacity)}"`);
+    outer.push(`opacity="${trimNumber(node.opacity)}"`);
   }
   if (node.rotation != null && node.rotation !== 0) {
     const cx = node.x + node.width / 2;
     const cy = node.y + node.height / 2;
     const deg = (node.rotation * 180) / Math.PI;
-    attrs.push(`transform="rotate(${trimNumber(deg)} ${trimNumber(cx)} ${trimNumber(cy)})"`);
+    outer.push(`transform="rotate(${trimNumber(deg)} ${trimNumber(cx)} ${trimNumber(cy)})"`);
   }
   const metaAttrs = metaAttrsXml(node.meta, namespaces);
   const metaEls = metaElementsXml(node.meta, namespaces);
-  if (metaEls) return `<image ${attrs.join(' ')}${metaAttrs}>${metaEls}</image>`;
-  return `<image ${attrs.join(' ')}${metaAttrs}/>`;
+  const href = `href="${escapeAttr(node.href)}"`;
+
+  if (!node.source && !node.flipX && !node.flipY) {
+    const attrs = [href, box, 'preserveAspectRatio="none"', ...outer].join(' ');
+    if (metaEls) return `<image ${attrs}${metaAttrs}>${metaEls}</image>`;
+    return `<image ${attrs}${metaAttrs}/>`;
+  }
+
+  const src = node.source ?? { x: 0, y: 0, width: 1, height: 1 };
+  const viewBox = [src.x, src.y, src.width, src.height].map(trimNumber).join(' ');
+  // A mirror about the source window's center, so the flipped image still
+  // fills exactly the window the viewport shows.
+  const flip = node.flipX || node.flipY
+    ? ` transform="matrix(${node.flipX ? -1 : 1} 0 0 ${node.flipY ? -1 : 1}`
+      + ` ${trimNumber(node.flipX ? 2 * src.x + src.width : 0)}`
+      + ` ${trimNumber(node.flipY ? 2 * src.y + src.height : 0)})"`
+    : '';
+  const head = ['<g data-weasel-image="true"', ...outer].join(' ');
+  return `${head}${metaAttrs}>`
+    + `<svg ${box} viewBox="${viewBox}" preserveAspectRatio="none">`
+    + `<image ${href} x="0" y="0" width="1" height="1" preserveAspectRatio="none"${flip}/>`
+    + `</svg>${metaEls}</g>`;
 }
 
 function groupXml(node: SvgGroupNode, registry: PaintServerRegistry, namespaces: Record<string, string>): string {

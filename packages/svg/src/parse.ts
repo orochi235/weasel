@@ -264,6 +264,14 @@ function parseElement(
 ): SvgNode | SvgNode[] | null {
   const tag = el.tagName.toLowerCase();
   if (IGNORED_TAGS.has(tag)) return null;
+  if (tag === 'g' && el.hasAttribute('data-weasel-image')) {
+    const image = parseCroppedImage(el, ctm, onWarn);
+    if (image) {
+      const meta = collectElementMeta(el, uriToPrefix);
+      if (meta) image.meta = meta;
+      return image;
+    }
+  }
   if (tag === 'g') {
     const local = parseTransform(el.getAttribute('transform'), onWarn);
     const childCtm = multiply(ctm, local);
@@ -753,22 +761,47 @@ function parseImageElement(
   ctm: Matrix,
   onWarn: (m: string) => void,
 ): SvgImageNode | null {
-  const href = el.getAttribute('href')
-    ?? el.getAttributeNS(XLINK_NS, 'href')
-    ?? el.getAttribute('xlink:href');
+  const href = imageHref(el);
   if (!href) {
     onWarn('<image> without href; dropped');
     return null;
   }
+  const node = imageNodeAt(el, el, href, ctm, onWarn);
+  if (el.hasAttribute('preserveAspectRatio')
+    && el.getAttribute('preserveAspectRatio') !== 'none') {
+    onWarn('<image> preserveAspectRatio is not modeled; the box is taken literally');
+  }
+  return node;
+}
+
+function imageHref(el: Element): string | null {
+  return el.getAttribute('href')
+    ?? el.getAttributeNS(XLINK_NS, 'href')
+    ?? el.getAttribute('xlink:href');
+}
+
+/**
+ * The image node whose box is `boxEl`'s `x` / `y` / `width` / `height` and
+ * whose rotation and opacity are `ownerEl`'s. The two are one element for a
+ * plain `<image>`, and the viewport and its wrapping `<g>` for the cropped
+ * form `serialize.ts` writes.
+ */
+function imageNodeAt(
+  boxEl: Element,
+  ownerEl: Element,
+  href: string,
+  ctm: Matrix,
+  onWarn: (m: string) => void,
+): SvgImageNode {
   const num = (raw: string | null, fallback: number): number => {
     if (raw == null) return fallback;
     const n = parseFloat(raw);
     return Number.isFinite(n) ? n : fallback;
   };
-  const rawX = num(el.getAttribute('x'), 0);
-  const rawY = num(el.getAttribute('y'), 0);
-  const rawW = num(el.getAttribute('width'), 0);
-  const rawH = num(el.getAttribute('height'), 0);
+  const rawX = num(boxEl.getAttribute('x'), 0);
+  const rawY = num(boxEl.getAttribute('y'), 0);
+  const rawW = num(boxEl.getAttribute('width'), 0);
+  const rawH = num(boxEl.getAttribute('height'), 0);
   // Map both corners through the inherited CTM and take their AABB, so
   // translate / scale / flip land on the box. A rotation in the *inherited*
   // transform inflates it; the element's own transform is decomposed below.
@@ -784,9 +817,9 @@ function parseImageElement(
     width: Math.abs(x1 - x0),
     height: Math.abs(y1 - y0),
   };
-  const opacity = readOpacityAttr(el, 'opacity');
+  const opacity = readOpacityAttr(ownerEl, 'opacity');
   if (opacity != null) node.opacity = opacity;
-  const localTransform = parseTransform(el.getAttribute('transform'), onWarn);
+  const localTransform = parseTransform(ownerEl.getAttribute('transform'), onWarn);
   if (!isIdentity(localTransform)) {
     const worldLocal = rebaseTransform(ctm, localTransform);
     const cx = node.x + node.width / 2;
@@ -803,10 +836,32 @@ function parseImageElement(
       }
     }
   }
-  if (el.hasAttribute('preserveAspectRatio')
-    && el.getAttribute('preserveAspectRatio') !== 'none') {
-    onWarn('<image> preserveAspectRatio is not modeled; the box is taken literally');
+  return node;
+}
+
+/**
+ * Read back the cropped image form `serialize.ts` writes for a source rect or
+ * a flip: `<g data-weasel-image>` → `<svg viewBox>` → unit-square `<image>`.
+ * `null` when the group does not have that shape, so the caller parses it as
+ * an ordinary group.
+ */
+function parseCroppedImage(
+  g: Element,
+  ctm: Matrix,
+  onWarn: (m: string) => void,
+): SvgImageNode | null {
+  const viewport = [...g.children].find((c) => c.tagName.toLowerCase() === 'svg');
+  const img = viewport && [...viewport.children].find((c) => c.tagName.toLowerCase() === 'image');
+  const href = img && imageHref(img);
+  const source = viewport && parseViewBoxAttr(viewport.getAttribute('viewBox'));
+  if (!img || !href || !source) return null;
+  const node = imageNodeAt(viewport, g, href, ctm, onWarn);
+  if (source.x !== 0 || source.y !== 0 || source.width !== 1 || source.height !== 1) {
+    node.source = source;
   }
+  const flip = parseTransform(img.getAttribute('transform'), onWarn);
+  if (flip[0] < 0) node.flipX = true;
+  if (flip[3] < 0) node.flipY = true;
   return node;
 }
 
