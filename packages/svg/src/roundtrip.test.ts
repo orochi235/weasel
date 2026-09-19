@@ -1083,3 +1083,30 @@ describe('text direction', () => {
     expect(resolveAlign(back.style?.align as never, 'rtl')).toBe('right');
   });
 });
+
+describe('text vertical alignment', () => {
+  const VIEW = { viewBox: { x: 0, y: 0, width: 200, height: 100 } };
+  const text = (verticalAlign?: 'top' | 'center' | 'bottom'): SvgNode => ({
+    kind: 'text', x: 10, y: 20, width: 100, height: 60, text: 'Mid',
+    ...(verticalAlign ? { verticalAlign } : {}),
+  });
+
+  it.each(['center', 'bottom'] as const)('round-trips %s', (va) => {
+    const out = serializeSvg([text(va)], VIEW);
+    expect(out).toContain(`data-weasel-vertical-align="${va}"`);
+    const back = parseSvg(out).nodes[0];
+    if (back.kind !== 'text') throw new Error('expected text');
+    expect(back.verticalAlign).toBe(va);
+    expect(back.y).toBe(20);
+  });
+
+  it('writes nothing for top or an absent alignment, and reads either back as absent', () => {
+    for (const node of [text('top'), text()]) {
+      const out = serializeSvg([node], VIEW);
+      expect(out).not.toContain('data-weasel-vertical-align');
+      const back = parseSvg(out).nodes[0];
+      if (back.kind !== 'text') throw new Error('expected text');
+      expect(back.verticalAlign).toBeUndefined();
+    }
+  });
+});

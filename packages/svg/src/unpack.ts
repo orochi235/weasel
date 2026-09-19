@@ -208,6 +208,7 @@ export function svgNodesToKitDrafts(
         data: {
           text: n.text,
           ...(n.style ? { style: n.style } : {}),
+          ...(n.verticalAlign ? { verticalAlign: n.verticalAlign } : {}),
           ...(n.runs ? { runs: n.runs.map((r) => runInBoxFrame(r, box)) } : {}),
           // `!== undefined`, not a truthiness test: `null` is the document
           // saying `fill="none"`, and absent takes the painter's default.

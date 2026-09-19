@@ -990,6 +990,8 @@ function parseTextElement(
   );
   if (hasStyling) node.runs = runs;
   if (el.getAttribute('data-weasel-wrap') === 'true') textStyle.wrap = true;
+  const va = el.getAttribute('data-weasel-vertical-align');
+  if (va === 'center' || va === 'bottom') node.verticalAlign = va;
   if (Object.keys(textStyle).length > 0) node.style = textStyle;
   // `!== undefined`, not `!= null`: `null` is the document saying `fill="none"`.
   if (textPaint.fill !== undefined) node.fill = textPaint.fill;

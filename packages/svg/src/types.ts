@@ -11,7 +11,7 @@
  * single `matrix(a b c d e f)` on the `<g>`.
  */
 
-import type { Path, FillStyle, Stroke, StyledRun, TextStyle } from '@weasel-js/core';
+import type { Path, FillStyle, Stroke, StyledRun, TextStyle, TextVerticalAlign } from '@weasel-js/core';
 
 /**
  * Opaque pass-through bag for namespaced XML content.
@@ -159,6 +159,10 @@ export interface SvgTextNode {
   runs?: StyledRun[];
   /** Node-wide typography. Defaults applied at render time via `resolveTextStyle`. */
   style?: TextStyle;
+  /** Where the laid-out text sits inside the box — `kit:text`'s
+   *  `data.verticalAlign`. SVG text has no box to align in, so this rides in
+   *  `data-weasel-vertical-align` and other readers draw the text top-aligned. */
+  verticalAlign?: TextVerticalAlign;
   /**
    * Node-wide glyph paint, the `FillStyle` / `Stroke` a kit text node holds
    * in `data.fill` / `data.stroke`. Not `SvgPaint`, which is the path

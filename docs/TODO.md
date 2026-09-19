@@ -510,13 +510,6 @@ Core five + Crop shipped. Remaining:
   this *easier*: reading font bytes gives access to both tables directly
   instead of to whichever one Chrome chose to expose. Recorded 2026-07-31.
 
-- **(P3) A `kit:text` node's `verticalAlign` does not survive SVG.**
-  `data.verticalAlign` landed 2026-09-08 — the painter forwards it and
-  `textLineBoxes` shifts the silhouette to match — but `SvgTextNode` has no
-  field for it and `serialize.ts` writes no attribute, so an export drops it and
-  a re-import reads back top-aligned. The pair `data-weasel-width` /
-  `data-weasel-height` already occupy is where it belongs.
-
 - **(P3) `apps/draw` cannot author unfilled text.** `TextObj.fill` is
   `FillStyle | undefined`, so WeaselDraw's own model has no way to say "no
   fill" for a text object, and its SVG interop drops the value in both

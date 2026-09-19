@@ -87,6 +87,15 @@ describe('svgNodesToKitDrafts', () => {
     expect(d.pose).toEqual({ x: 5, y: 6, width: 100, height: 20 });
   });
 
+  it("carries a text node's verticalAlign onto the leaf, where kit:text reads it", () => {
+    const drafts = svgNodesToKitDrafts([{
+      kind: 'text', x: 0, y: 0, width: 100, height: 60, text: 'hi', verticalAlign: 'center',
+    } as SvgNode], seq());
+    const d = drafts[0];
+    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    expect(d.data.verticalAlign).toBe('center');
+  });
+
   it("carries a text node's fill, stroke and runs onto the leaf", () => {
     const drafts = svgNodesToKitDrafts([{
       kind: 'text', x: 5, y: 6, width: 100, height: 20,
