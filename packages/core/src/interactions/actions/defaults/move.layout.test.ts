@@ -395,7 +395,7 @@ describe('moveAction layout reflow', () => {
         a: { x: 0, y: 0, width: 50, height: 100 },
         b: { x: 50, y: 0, width: 50, height: 100 },
         D: { x: 200, y: 0, width: 100, height: 100 },
-        d1: { x: 0, y: 0, width: 50, height: 100 },
+        d1: { x: 50, y: 0, width: 50, height: 100 },
       },
       { C: null, a: 'C', b: 'C', D: null, d1: 'D' },
       { C: ['a', 'b'], D: ['d1'] },
@@ -418,7 +418,7 @@ describe('moveAction layout reflow', () => {
 
   it('lands a drop into a NESTED destination at the correct world position', () => {
     // Outer O at world {100,0} (no layout). Destination D nested under O at
-    // LOCAL {50,0} → world {150,0}, holding d1 (local {0,0}). Source C at world
+    // LOCAL {50,0} → world {150,0}, holding d1 in cell 1 (local {50,0}). Source C at world
     // {0,0} holds a (local {0,0}). Dragging a into D's cell 0 (world {150,0})
     // must reparent a → D and write a's pose LOCAL to D ({0,0}), guarding the
     // rebase direction (D's world origin ≠ its local pose).
@@ -426,7 +426,7 @@ describe('moveAction layout reflow', () => {
       {
         O: { x: 100, y: 0, width: 200, height: 100 },
         D: { x: 50, y: 0, width: 100, height: 100 },
-        d1: { x: 0, y: 0, width: 50, height: 100 },
+        d1: { x: 50, y: 0, width: 50, height: 100 },
         C: { x: 0, y: 0, width: 100, height: 100 },
         a: { x: 0, y: 0, width: 50, height: 100 },
       },
@@ -458,7 +458,7 @@ describe('moveAction layout reflow', () => {
     // Absolute-pose scene (mirrors the kit's base scene + layoutDemo): every
     // node stores WORLD coords; containers are grouping-only with no transform.
     // Source container C at world {40,40} holds child `a` stored at WORLD
-    // {40,40}; destination D at world {200,0} holds d1 at WORLD {200,0}.
+    // {40,40}; destination D at world {200,0} holds d1 at WORLD {250,0}.
     // Dragging a into D's cell 0 (world {200,0}) must commit a's pose AS the
     // world cell origin {200,0} — NOT rebased to local {0,0} under D — because
     // with no poseComposition dep the kit defaults to IDENTITY composition.
@@ -468,7 +468,7 @@ describe('moveAction layout reflow', () => {
         a: { x: 40, y: 40, width: 50, height: 100 },
         b: { x: 90, y: 40, width: 50, height: 100 },
         D: { x: 200, y: 0, width: 100, height: 100 },
-        d1: { x: 200, y: 0, width: 50, height: 100 },
+        d1: { x: 250, y: 0, width: 50, height: 100 },
       },
       { C: null, a: 'C', b: 'C', D: null, d1: 'D' },
       { C: ['a', 'b'], D: ['d1'] },
@@ -702,6 +702,60 @@ describe('moveAction multi-select layout drop', () => {
     // b overshoots D1's cells, so it snaps to the nearest — cell 1.
     const dropB = ops.find((o) => o.name === 'transform' && o.args?.id === 'b');
     expect(dropB!.args?.to).toMatchObject({ x: 50, y: 0 });
+  });
+
+  it('does not stack two children whose probes land in one cell', () => {
+    // D's cells are 100 wide and a, b are 40 wide side by side, so both probe
+    // into D's first cell.
+    const scene = makeScene(
+      {
+        a: { x: 0, y: 0, width: 40, height: 100 },
+        b: { x: 40, y: 0, width: 40, height: 100 },
+        D: { x: 200, y: 0, width: 200, height: 100 },
+      },
+      { a: null, b: null, D: null },
+      { D: [] },
+      ['a', 'b', 'D'],
+    );
+    const layouts = { D: tileGrid<P>({ cols: 2, rows: 1 }) };
+    const invoker = moveAction.invoker;
+    if (!invoker || invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const handle = invoker.start(makeCtx(scene, ['a', 'b'], undefined, layouts));
+    const drag = { start: { x: 40, y: 50 }, current: { x: 240, y: 50 }, delta: { x: 200, y: 0 } };
+    handle.onMove!(makeCtx(scene, ['a', 'b'], drag, layouts) as InvocationCtx);
+    handle.onEnd!(makeCtx(scene, ['a', 'b'], drag, layouts) as InvocationCtx, 'commit');
+
+    const ops = scene.appliedBatches[0].ops;
+    const dropA = ops.find((o) => o.name === 'transform' && o.args?.id === 'a');
+    const dropB = ops.find((o) => o.name === 'transform' && o.args?.id === 'b');
+    expect(dropA!.args?.to).toMatchObject({ x: 0, y: 0 });
+    expect(dropB!.args?.to).toMatchObject({ x: 100, y: 0 });
+  });
+
+  it('does not drop a child from outside onto an occupied cell', () => {
+    const scene = makeScene(
+      {
+        a: { x: 0, y: 0, width: 40, height: 100 },
+        D: { x: 200, y: 0, width: 200, height: 100 },
+        d1: { x: 0, y: 0, width: 100, height: 100 },
+      },
+      { a: null, D: null, d1: 'D' },
+      { D: ['d1'] },
+      ['a', 'D'],
+    );
+    const layouts = { D: tileGrid<P>({ cols: 2, rows: 1 }) };
+    const invoker = moveAction.invoker;
+    if (!invoker || invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const handle = invoker.start(makeCtx(scene, ['a'], undefined, layouts));
+    // a's center {20,50} → {220,50}: inside d1's cell.
+    const drag = { start: { x: 20, y: 50 }, current: { x: 220, y: 50 }, delta: { x: 200, y: 0 } };
+    handle.onMove!(makeCtx(scene, ['a'], drag, layouts) as InvocationCtx);
+    handle.onEnd!(makeCtx(scene, ['a'], drag, layouts) as InvocationCtx, 'commit');
+
+    const ops = scene.appliedBatches[0].ops;
+    expect(ops.find((o) => o.name === 'transform' && o.args?.id === 'a')!.args?.to)
+      .toMatchObject({ x: 100, y: 0 });
+    expect(ops.some((o) => o.args?.id === 'd1')).toBe(false);
   });
 
   it('rejects the container for the whole selection when acceptsDrop refuses one member', () => {

@@ -57,13 +57,13 @@ describe('LayoutDemo', () => {
       canvas.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 65, clientY: 95, pointerId: 1 }));
     });
 
-    // Drag f1 from its center (65,95) into G's top-left cell. G is at
-    // (210,40,180,180); a 2×2 grid → 90×90 cells; the top-left cell centers on
-    // (255,85). The first pointermove crosses the 4px drag threshold (forwards
+    // Drag f1 from its center (65,95) into G's top-right cell — g1 holds the
+    // top-left one. G is at (210,40,180,180); a 2×2 grid → 90×90 cells; the
+    // top-right cell centers on (345,85). The first pointermove crosses the 4px drag threshold (forwards
     // the buffered pointerdown → move.start); the threshold-crossing move
     // carries the world delta the layout pass + commit act on. Dropping f1's
-    // center inside G's top-left cell makes the tileGrid strategy snap f1 to the
-    // cell origin (210,40) and the commit reparents f1 under G.
+    // center inside G's top-right cell makes the tileGrid strategy snap f1 to
+    // the cell origin (300,40) and the commit reparents f1 under G.
     act(() => {
       canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 65, clientY: 95, pointerId: 1 }));
     });
@@ -71,20 +71,20 @@ describe('LayoutDemo', () => {
       canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 75, clientY: 95, pointerId: 1 }));
     });
     act(() => {
-      canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 255, clientY: 85, pointerId: 1 }));
+      canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 345, clientY: 85, pointerId: 1 }));
     });
     act(() => {
-      canvas.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 255, clientY: 85, pointerId: 1 }));
+      canvas.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 345, clientY: 85, pointerId: 1 }));
     });
 
     const f1After = row(container, 'f1');
 
     // f1 reparented into G (the commit's reparent op).
     expect(f1After.parent).toBe('G');
-    // f1's committed pose is the tileGrid cell origin (210,40) — proof the
+    // f1's committed pose is the tileGrid cell origin (300,40) — proof the
     // destination strategy reflowed the dragged child. A non-layout translate
-    // would have produced (240,70); the grid snap is layout-specific.
-    expect(f1After.text).toBe('f1:210,40');
+    // would have produced (330,70); the grid snap is layout-specific.
+    expect(f1After.text).toBe('f1:300,40');
     expect(f1After.text).not.toBe(f1Before.text);
   });
 });
