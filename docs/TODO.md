@@ -228,7 +228,6 @@ Priority tags:
 From `docs/specs/2026-05-03-pen-tool-design.md`:
 
 - **(P3) Snap-to-existing-anchors** (cross-path anchor snapping). Clicking near an existing path's anchor would coalesce. Useful for stitching paths. (Only a generic grid `snapPoint` exists today, not anchor magnetism.)
-- **(P3) Continue an existing path's open endpoint.** Click an existing open path's first/last anchor to pick it up and append. No extend-from-endpoint path exists today.
 
 ### Cursor package follow-ups
 

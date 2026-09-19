@@ -5,11 +5,13 @@ import type { ToolPrefGroup } from '../../prefs';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
-import type { ViewApi } from 'interactions/actions/depSchema';
-import { withinPxRadius } from 'core/viewport/pxExtent';
+import type { AreaSelectDep, EditAnchorsDep, ViewApi } from 'interactions/actions/depSchema';
+import { pxExtent, withinPxRadius } from 'core/viewport/pxExtent';
 import { PenIcon } from '../../../icons';
 import { PathBuilder } from 'features/paths/builder';
 import type { PolygonPath } from 'features/paths/types';
+import { anchorsToPath, pathToAnchors } from 'features/paths/anchors';
+import { nearestPathAnchor, reverseAnchors } from 'features/paths/nearestAnchor';
 import { constrainTo45 } from '../../../util/constrainTo45';
 import { cursorFor } from '@weasel-js/cursor';
 
@@ -42,9 +44,11 @@ export interface PenSubpath {
  * so click-by-click state survives gesture boundaries and the preview layer
  * can read the same object.
  *
- * ## The pen creates paths and nothing else
+ * ## The pen draws paths; it does not reshape them
  *
- * Reshaping an existing path is anchor editing: double-click a path to
+ * It draws new nodes, and extends an existing node's open subpath from one
+ * of its ends (see `continuing`). Reshaping an existing path is anchor
+ * editing: double-click a path to
  * enter edit mode, then use the `editAnchors` / `insertPathAnchor` /
  * `nudgeAnchors` / `deleteAnchors` / `marqueeAnchors` / `cutPathAtAnchor`
  * Actions.
@@ -64,6 +68,23 @@ export interface PenScratch {
   cursor: { x: number; y: number } | null;
   draggingHandleAt: number | null;
   closeHintActive: boolean;
+  /** Set while the pen is extending an existing node's open subpath rather
+   *  than drawing a new node. `current` then starts as that subpath (turned
+   *  around when it was picked up by its first anchor), and the commit
+   *  writes back into the node. */
+  continuing: PenContinuation | null;
+}
+
+/** Which existing subpath the pen picked up, and the node's path as it was. */
+export interface PenContinuation {
+  id: string;
+  /** Index of the picked-up subpath within `original`. */
+  sub: number;
+  /** True when it was picked up by its first anchor, so `current` runs
+   *  backwards and is turned around again on commit. */
+  reversed: boolean;
+  /** The node's path in world coords at pick-up. */
+  original: PolygonPath;
 }
 
 /** Options for `usePenTool`: how a finished path becomes a pose, where it is
@@ -111,6 +132,7 @@ function freshScratch(): PenScratch {
     cursor: null,
     draggingHandleAt: null,
     closeHintActive: false,
+    continuing: null,
   };
 }
 
@@ -120,6 +142,7 @@ function resetScratch(s: PenScratch): void {
   s.cursor = null;
   s.draggingHandleAt = null;
   s.closeHintActive = false;
+  s.continuing = null;
 }
 
 /** Total anchors across finished subpaths plus the in-progress one. */
@@ -226,8 +249,38 @@ export function usePenTool<TPose>(
   // re-render with new options is visible without rebuilding the actions
   // (which would lose the scratch identity `penPreviewLayer` reads through
   // `Tool.initScratch`).
-  const commit = useCallback((s: PenScratch): void => {
+
+  /** Write the pen's subpaths back into the node it picked up: the first
+   *  replaces the subpath it continued, any later ones are appended. Skips
+   *  the write when nothing changed, so an empty pick-up leaves no undo
+   *  entry. */
+  const commitContinuation = useCallback(
+    (s: PenScratch, trailing: PenSubpath | null, edit: EditAnchorsDep | undefined): void => {
+      const cont = s.continuing!;
+      const drawn = [...s.finishedSubpaths, ...(trailing ? [trailing] : [])];
+      if (!edit || drawn.length === 0) return;
+      const { anchors: added, closed: addedClosed } = pathToAnchors(buildPath(drawn, null));
+      if (cont.reversed) added[0] = reverseAnchors(added[0]);
+      const set = pathToAnchors(cont.original);
+      set.anchors.splice(cont.sub, 1, added[0]);
+      set.closed.splice(cont.sub, 1, addedClosed[0]);
+      set.anchors.push(...added.slice(1));
+      set.closed.push(...addedClosed.slice(1));
+      const next: PolygonPath = { ...anchorsToPath(set.anchors, set.closed), fillRule: cont.original.fillRule };
+      if (samePath(next, cont.original)) return;
+      edit.applyEdit(cont.id, next, 'Continue path');
+      if (optsRef.current.autoSelect) optsRef.current.adapter.setSelection([cont.id]);
+    },
+    [],
+  );
+
+  const commit = useCallback((s: PenScratch, deps: ActionDeps): void => {
     const trailing = s.current && s.current.anchors.length > 0 ? s.current : null;
+    if (s.continuing) {
+      commitContinuation(s, trailing, deps.editAnchors as EditAnchorsDep | undefined);
+      resetScratch(s);
+      return;
+    }
     if (s.finishedSubpaths.length === 0 && !trailing) return;
     const allClosed =
       s.finishedSubpaths.every((sp) => sp.closed) &&
@@ -237,6 +290,24 @@ export function usePenTool<TPose>(
     const id = optsRef.current.adapter.addNode(pose);
     if (optsRef.current.autoSelect) optsRef.current.adapter.setSelection([id]);
     resetScratch(s);
+  }, [commitContinuation]);
+
+  /** From idle, a press on an open subpath's end anchor picks that subpath
+   *  up: it becomes `current`, turned so the pressed end is last. Returns
+   *  whether it did. */
+  const pickUpEndpoint = useCallback((deps: ActionDeps, wx: number, wy: number): boolean => {
+    const scratch = scratchRef.current!;
+    if (scratch.current || scratch.finishedSubpaths.length > 0) return false;
+    const radius = optsRef.current.closeHitRadius;
+    const scale = viewScale(deps);
+    const hit = nearestPathAnchor(pathsNear(deps, wx, wy, radius), { x: wx, y: wy }, radius, scale, (h) => h.end !== null);
+    if (!hit) return false;
+    const original = (deps.editAnchors as EditAnchorsDep).getEditablePath(hit.id) as PolygonPath;
+    const picked = pathToAnchors(original).anchors[hit.sub];
+    const reversed = hit.end === 'first' && picked.length > 1;
+    scratch.current = { anchors: reversed ? reverseAnchors(picked) : picked, closed: false };
+    scratch.continuing = { id: hit.id, sub: hit.sub, reversed, original };
+    return true;
   }, []);
 
   const snap = useCallback((x: number, y: number): { x: number; y: number } => {
@@ -248,9 +319,7 @@ export function usePenTool<TPose>(
    *  screen-space circle, so the zone stays round under non-uniform zoom. */
   const withinCloseRadius = useCallback(
     (deps: ActionDeps, ax: number, ay: number, wx: number, wy: number): boolean => {
-      const view = (deps.view as ViewApi | undefined)?.get();
-      const scale = view?.scale ?? { x: 1, y: 1 };
-      return withinPxRadius(ax - wx, ay - wy, optsRef.current.closeHitRadius, scale);
+      return withinPxRadius(ax - wx, ay - wy, optsRef.current.closeHitRadius, viewScale(deps));
     },
     [],
   );
@@ -272,7 +341,7 @@ export function usePenTool<TPose>(
         id: 'pen.placeAnchor',
         label: 'Pen — place anchor',
         eligible: { capability: 'creates-paths' },
-        requires: ['view'],
+        requires: ['view', 'areaSelect', 'editAnchors'],
         invoker: {
           timing: 'immediate' as const,
           run: (deps, params) => {
@@ -282,6 +351,10 @@ export function usePenTool<TPose>(
             // drag threshold, and an anchor should land where you put the
             // pointer down. Snapping happens here rather than at press time
             // so the snapped value is what the geometry records.
+            if (pickUpEndpoint(deps, p.pressX, p.pressY)) {
+              forceRenderRef.current();
+              return;
+            }
             const { x: wx, y: wy } = snap(p.pressX, p.pressY);
             const scratch = s();
 
@@ -297,7 +370,7 @@ export function usePenTool<TPose>(
                 scratch.finishedSubpaths.push(scratch.current);
                 scratch.current = null;
                 scratch.closeHintActive = false;
-                if (optsRef.current.autoCommitOnClose) commit(scratch);
+                if (optsRef.current.autoCommitOnClose) commit(scratch, deps);
                 forceRenderRef.current();
                 return;
               }
@@ -315,13 +388,14 @@ export function usePenTool<TPose>(
         id: 'pen.finishOpen',
         label: 'Pen — finish open path',
         eligible: { capability: 'creates-paths' },
+        requires: ['editAnchors'],
         // Needs an actual path to commit. Declining also lets the gesture
         // fall through: a ⌘-click with fewer than two anchors reaches the
         // plain-click binding and places an anchor instead.
         enabled: () => (anchorCount(s()) >= 2 ? true : ActionDisabledReason.NotApplicable),
         invoker: {
           timing: 'immediate' as const,
-          run: (_deps, params) => {
+          run: (deps, params) => {
             const scratch = s();
             const p = params as { viaDoubleClick?: boolean } | undefined;
 
@@ -341,7 +415,7 @@ export function usePenTool<TPose>(
               if (scratch.current.anchors.length === 0) scratch.current = null;
             }
 
-            commit(scratch);
+            commit(scratch, deps);
             forceRenderRef.current();
           },
         },
@@ -351,6 +425,7 @@ export function usePenTool<TPose>(
         id: 'pen.dragHandle',
         label: 'Pen — drag out a bezier handle',
         eligible: { capability: 'creates-paths' },
+        requires: ['view', 'areaSelect', 'editAnchors'],
         invoker: {
           timing: 'ongoing' as const,
           start: (ctx: InvocationCtx) => {
@@ -360,13 +435,18 @@ export function usePenTool<TPose>(
             // anchor lands where the user pressed rather than where the
             // threshold happened to be crossed.
             const origin = ctx.drag?.start ?? ctx.world;
-            const { x: ax, y: ay } = snap(origin.x, origin.y);
-            if (!scratch.current) scratch.current = { anchors: [], closed: false };
-            scratch.current.anchors.push({ x: ax, y: ay });
-            scratch.draggingHandleAt = scratch.current.anchors.length - 1;
+            // Dragging from an open path's end picks the path up and pulls
+            // that end's own handle rather than placing a new anchor on it.
+            const pickedUp = pickUpEndpoint(ctx.deps, origin.x, origin.y);
+            if (!pickedUp) {
+              const { x: ax, y: ay } = snap(origin.x, origin.y);
+              if (!scratch.current) scratch.current = { anchors: [], closed: false };
+              scratch.current.anchors.push({ x: ax, y: ay });
+            }
+            scratch.draggingHandleAt = scratch.current!.anchors.length - 1;
             applyOutHandle(scratch, ctx.world, ctx.modifiers.shift, optsRef.current.snapPoint);
             if (ctx.modifiers.alt) {
-              scratch.current.anchors[scratch.draggingHandleAt].altBroken = true;
+              scratch.current!.anchors[scratch.draggingHandleAt].altBroken = true;
             }
             forceRenderRef.current();
 
@@ -383,10 +463,13 @@ export function usePenTool<TPose>(
               onEnd: (endCtx: InvocationCtx, reason: 'commit' | 'cancel') => {
                 const se = s();
                 if (reason === 'cancel') {
-                  // `start` appended the anchor; a cancel (pointercancel is
-                  // the reachable one — Escape and a tool switch both reset
-                  // the whole scratch first) has to take it back out.
-                  if (se.current && se.draggingHandleAt === se.current.anchors.length - 1) {
+                  // `start` appended the anchor (or picked a path up); a
+                  // cancel (pointercancel is the reachable one — Escape and a
+                  // tool switch both reset the whole scratch first) has to
+                  // take it back out.
+                  if (pickedUp) {
+                    resetScratch(se);
+                  } else if (se.current && se.draggingHandleAt === se.current.anchors.length - 1) {
                     se.current.anchors.pop();
                     if (se.current.anchors.length === 0) se.current = null;
                   }
@@ -412,11 +495,12 @@ export function usePenTool<TPose>(
         id: 'pen.finish',
         label: 'Pen — finish path',
         eligible: { capability: 'creates-paths' },
+        requires: ['editAnchors'],
         enabled: () => (anchorCount(s()) > 0 ? true : ActionDisabledReason.NotApplicable),
         invoker: {
           timing: 'immediate' as const,
-          run: () => {
-            commit(s());
+          run: (deps) => {
+            commit(s(), deps);
             forceRenderRef.current();
           },
         },
@@ -444,7 +528,7 @@ export function usePenTool<TPose>(
         },
       },
     ];
-  }, [commit, snap, withinCloseRadius]);
+  }, [commit, snap, withinCloseRadius, pickUpEndpoint]);
 
   return useMemo(() => {
     return defineTool<PenScratch>({
@@ -535,4 +619,38 @@ function applyOutHandle<S extends PenScratch>(
     dy = c.dy;
   }
   anchor.outHandle = { x: anchor.x + dx, y: anchor.y + dy };
+}
+
+function viewScale(deps: ActionDeps): { x: number; y: number } {
+  return (deps.view as ViewApi | undefined)?.get().scale ?? { x: 1, y: 1 };
+}
+
+/** Existing editable paths, world coords, with ink within `px` screen
+ *  pixels of `(wx, wy)` — front-to-back, as the area query returns them.
+ *  Empty when the host publishes no `areaSelect` or `editAnchors` dep. */
+function pathsNear(
+  deps: ActionDeps,
+  wx: number,
+  wy: number,
+  px: number,
+): Array<{ id: string; path: PolygonPath }> {
+  const area = deps.areaSelect as AreaSelectDep | undefined;
+  const edit = deps.editAnchors as EditAnchorsDep | undefined;
+  if (!area || !edit) return [];
+  const view = deps.view as ViewApi | undefined;
+  const e = pxExtent(px, viewScale(deps));
+  const ids = area.hitTestArea({ x: wx - e.x, y: wy - e.y, width: 2 * e.x, height: 2 * e.y }, view);
+  const out: Array<{ id: string; path: PolygonPath }> = [];
+  for (const id of ids) {
+    const path = edit.getEditablePath(id) as PolygonPath | null;
+    if (path?.kind === 'polygon') out.push({ id, path });
+  }
+  return out;
+}
+
+function samePath(a: PolygonPath, b: PolygonPath): boolean {
+  if (a.commands.length !== b.commands.length || a.coords.length !== b.coords.length) return false;
+  for (let i = 0; i < a.commands.length; i++) if (a.commands[i] !== b.commands[i]) return false;
+  for (let i = 0; i < a.coords.length; i++) if (a.coords[i] !== b.coords[i]) return false;
+  return true;
 }
