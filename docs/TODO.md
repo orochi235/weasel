@@ -1008,15 +1008,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) A saved snapshot does not carry a trial's auto paths.** `SavedSnapshot`
-  holds `config` and `state` but not `TrialRecord.auto`, so restoring one lays a
-  saved config over whatever the trial currently has unpinned: a field the
-  snapshot pinned comes back auto, and the resolver overwrites the saved value.
-  `addTrial` and `resetTrial` both compute the set (schema `.initial(auto)` ∪
-  the seed's, via `autoPathsOf` and `autoSeed`), so the snapshot needs the same
-  field and `loadSnapshot` needs to restore it. Deliberately left out of the
-  auto-controls arc, which never specified snapshot behavior.
-
 - **(P2) Whether an anchor should set a ramp's chroma peak directly.** Today an
   anchor sets `peak = anchor C · max / e`, with `e` the envelope at the anchor's
   position, so an anchor on an end step whose bias is near 0 leaves `e` tiny and
@@ -1141,7 +1132,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 
-- **(P3) `.lk-shell` is `height: 100vh`.** A lab mounted anywhere but the viewport top overflows by its own offset. Harmless on the dev page, wrong in general.
+- **(P3) `.lk-shell` falls back to the viewport's height.** It is `height:
+  100dvh; max-height: 100%` (`packages/labkit/src/lab/LabShell.less`), so a
+  container of definite height caps it. Under an ancestor with no definite
+  height, a shell mounted below other page content still takes the whole
+  viewport and overflows by its offset. Plain `height: 100%` fixes that case
+  and breaks another: `LabFit.stories`' `WrappedNoReset*` cases, a host that
+  never set `html, body, #root { height: 100% }`, then size the lab to its
+  content. So this is a choice between the two mounts, not a CSS fix; the
+  storybook browser project is what checks either one.
 
 - **(P3) There is no `--wzl-handle-*` token.** Timeline's dope-sheet `.key`
   (9px), CurveEditor's endpoint (10px) and `createKeyframeLayer`'s key (9px)
