@@ -37,6 +37,34 @@ function setup(initialView: ViewTransform, options?: Partial<UsePanZoomOptions>)
 }
 
 describe('usePanZoom', () => {
+  it('stacks two wheel events that land before a re-render', () => {
+    const { wheel } = setup({ zoom: 1, pan: { x: 0, y: 0 } });
+    const once = wheel(-100).zoom;
+
+    const views: ViewTransform[] = [];
+    const { result } = renderHook(() =>
+      usePanZoom({ view: { zoom: 1, pan: { x: 0, y: 0 } }, onViewChange: (v) => views.push(v) }),
+    );
+    act(() => {
+      result.current.onWheel(wheelEvent(-100));
+      result.current.onWheel(wheelEvent(-100));
+    });
+    expect(views[1].zoom).toBeCloseTo(once * once, 10);
+  });
+
+  it('lets the view prop win at the next render', () => {
+    const views: ViewTransform[] = [];
+    const { result, rerender } = renderHook(
+      (props: { view: ViewTransform }) =>
+        usePanZoom({ view: props.view, onViewChange: (v) => views.push(v) }),
+      { initialProps: { view: { zoom: 1, pan: { x: 0, y: 0 } } } },
+    );
+    act(() => result.current.onWheel(wheelEvent(-100)));
+    rerender({ view: { zoom: 2, pan: { x: 0, y: 0 } } });
+    act(() => result.current.onWheel(wheelEvent(0)));
+    expect(views[1].zoom).toBeCloseTo(2, 10);
+  });
+
   it('does not collapse a canvas opening far outside the default range on the first wheel event', () => {
     const { wheel } = setup({ zoom: 1600, pan: { x: 0, y: 0 } });
     const next = wheel(-1); // zoom in slightly

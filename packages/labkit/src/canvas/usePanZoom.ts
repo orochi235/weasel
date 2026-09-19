@@ -70,6 +70,13 @@ export function usePanZoom({
   // view unreachable behind it.
   const initialZoomRef = useRef(isPositiveFinite(view.zoom) ? view.zoom : null);
 
+  // Written ahead of the render so a second event inside one commit steps
+  // from this one; the render-time assignment above still lets the prop win.
+  const commit = useCallback((next: ViewTransform) => {
+    viewRef.current = normalize2DView(next);
+    onViewChangeRef.current(next);
+  }, []);
+
   const onWheel = useCallback(
     (e: WheelEvent<HTMLElement> | globalThis.WheelEvent, anchor?: Element) => {
       const el = anchor ?? (e.currentTarget as Element | null);
@@ -77,7 +84,7 @@ export function usePanZoom({
       e.preventDefault();
       const rect = el.getBoundingClientRect();
       const initialZoom = initialZoomRef.current;
-      onViewChange(
+      commit(
         zoomAt(
           viewRef.current,
           Math.exp(-e.deltaY * 0.001),
@@ -90,7 +97,7 @@ export function usePanZoom({
         ),
       );
     },
-    [onViewChange, minZoom, maxZoom, frame],
+    [commit, minZoom, maxZoom, frame],
   );
 
   const clearDrag = useCallback(() => {
@@ -114,7 +121,7 @@ export function usePanZoom({
           const dy = ev.clientY - drag.startScreenY;
           if (!drag.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
           drag.moved = true;
-          onViewChangeRef.current({
+          commit({
             zoom: viewRef.current.zoom,
             pan: { x: drag.startPan.x + dx, y: drag.startPan.y + dy },
           });
@@ -129,7 +136,7 @@ export function usePanZoom({
         onCancel: clearDrag,
       });
     },
-    [clearDrag],
+    [clearDrag, commit],
   );
 
   useEffect(() => () => sessionRef.current?.cancel(), []);

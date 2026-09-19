@@ -721,6 +721,14 @@ The bypass twin keeps its bypass; this one shows the engine.
 
 What it surfaced:
 
+- **(P2) Bring the scene-graph twin to parity, then delete the immediate-mode
+  one.** `SideScrollerDemo` is the timeline and audio load test, which is the
+  only reason it may bypass the scene graph. Port what the scene twin lacks —
+  the audio engine and `platformer/sfx.ts`, footsteps as an `EventTrack` booked
+  against the audio clock, the voice-count and jitter readouts, and the
+  collision overlay — then delete `SideScrollerDemo.tsx`, its test and registry
+  entry, and the "Side-scroller demo — landed" section above.
+
 - **(P2) Convert the platformer's eleven bones to parenting.** The rig is
   still resolved to world matrices and flattened onto independent bone nodes
   every frame, though the scene tree now composes rigid poses as a transform
