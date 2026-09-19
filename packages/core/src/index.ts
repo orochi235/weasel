@@ -1212,6 +1212,10 @@ export { blur, vignette, registerEffect } from './renderer';
 // into the renderer subpath.
 export { viewToMat3 } from './renderer';
 
+// Drops the commands that cannot reach a screen rectangle — what the scene
+// slot's `cull` option runs, for a custom layer to run over its own output.
+export { cullDrawCommands, type CullRect } from './renderer';
+
 // The renderer's 3x3 matrix namespace — the 9-element column-major form
 // `resolveSkeleton` hands back, distinct from `@weasel-js/geom`'s 6-element
 // affine `Mat3`.

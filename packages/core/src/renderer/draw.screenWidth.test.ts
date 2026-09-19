@@ -14,7 +14,7 @@ import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import { mat3 } from './math/mat3';
-import { _resetStrokeMeshCacheForTests } from './cache/strokeMeshCache';
+import { _resetStrokeMeshCacheForTests, STROKE_CONFIGS_PER_PATH } from './cache/strokeMeshCache';
 
 const M = 0, L = 1;
 
@@ -66,7 +66,7 @@ describe('renderer — screen-pixel stroke widths', () => {
     recorder.reset();
     r.render([{
       kind: 'group',
-      transform: mat3.scale(mat3.identity(), s, s),
+      transform: mat3.scaled(mat3.identity(), s, s),
       children: [{ kind: 'path', path: horizontalLine(), stroke }],
     } as DrawCommand]);
     return ribbonHeight(recorder);
@@ -88,11 +88,11 @@ describe('renderer — screen-pixel stroke widths', () => {
     recorder.reset();
     r.render([{
       kind: 'group',
-      transform: mat3.scale(mat3.identity(), 2, 2),
+      transform: mat3.scaled(mat3.identity(), 2, 2),
       children: [{
         kind: 'group',
-        transform: mat3.scale(mat3.identity(), 3, 3),
-        children: [{ kind: 'path', path: horizontalLine(), stroke: { width: { px: 12 }, align: 'inner', paint } }],
+        transform: mat3.scaled(mat3.identity(), 4, 4),
+        children: [{ kind: 'path', path: horizontalLine(), stroke: { width: { px: 16 }, align: 'inner', paint } }],
       }],
     } as DrawCommand]);
     expect(ribbonHeight(recorder)).toBeCloseTo(4, 3);
@@ -105,7 +105,7 @@ describe('renderer — screen-pixel stroke widths', () => {
       recorder.reset();
       r.render([{
         kind: 'group',
-        transform: mat3.scale(mat3.identity(), s, s),
+        transform: mat3.scaled(mat3.identity(), s, s),
         children: [{ kind: 'path', path, stroke }],
       } as DrawCommand]);
       return ribbonHeight(recorder);
@@ -113,5 +113,34 @@ describe('renderer — screen-pixel stroke widths', () => {
     expect(frame(1)).toBeCloseTo(16, 3);
     expect(frame(4)).toBeCloseTo(4, 3);
     expect(frame(1)).toBeCloseTo(16, 3);
+  });
+
+  // A continuous zoom resolved a { px } width to a new number every frame, so
+  // every lookup missed and each 8th distinct width evicted the path's others.
+  it.each([1, 2])('keeps a %ipx ribbon under the per-path cap through an octave of zoom', (px) => {
+    const path = horizontalLine();
+    const stroke: Stroke = { width: { px }, align: 'inner', paint };
+    // A cache hit uploads nothing, so a frame without a ribbon upload is
+    // drawing the last one uploaded — the sweep is monotone. A mesh uploads
+    // twice (transient, then persistent), so distinct widths count the keys.
+    const keys = new Set<number>();
+    let worldWidth = NaN;
+    const frames = 240;
+    for (let i = 0; i <= frames; i++) {
+      const s = 2 ** (i / frames);
+      recorder.reset();
+      r.render([{
+        kind: 'group',
+        transform: mat3.scaled(mat3.identity(), s, s),
+        children: [{ kind: 'path', path, stroke }],
+      } as DrawCommand]);
+      const height = ribbonHeight(recorder);
+      if (height > 0) {
+        worldWidth = height / 2;
+        keys.add(worldWidth);
+      }
+      expect(Math.abs(worldWidth * s - px)).toBeLessThanOrEqual(1 / 8);
+    }
+    expect(keys.size).toBeLessThan(STROKE_CONFIGS_PER_PATH);
   });
 });

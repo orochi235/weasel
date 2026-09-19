@@ -41,7 +41,7 @@ import { verticalAlignOffset, cachedLayoutRuns } from '@weasel-js/text';
 import type { Mesh } from './cache/mesh';
 import { outlineMesh } from './cache/outlineMeshCache';
 import { outlineStrokeMesh, quantizeEmWidth } from './cache/outlineStrokeMeshCache';
-import { strokeMesh } from './cache/strokeMeshCache';
+import { strokeMesh, quantizeStrokeScale } from './cache/strokeMeshCache';
 import { DrawBatch, type GradientUV } from './drawBatch';
 import {
   BATCH_TEXTURE_SLOTS, PAINT_MODE_PLAIN, PAINT_MODE_RADIAL, PAINT_MODE_CONIC,
@@ -1638,12 +1638,13 @@ function drawPathFillStencil(ctx: DrawContext, fill: FillStyle, handle: GLMeshHa
 }
 
 /** `cmd` with a `{ px }` stroke width resolved against the accumulated
- *  transform, so everything downstream — the ribbon cache key included — sees
+ *  transform's quantized scale, so everything downstream — the ribbon cache key included — sees
  *  a world-unit number. */
 function withResolvedStrokeWidth(ctx: DrawContext, cmd: StrokedPathCommand): StrokedPathCommand {
   const stroke = cmd.stroke;
   if (typeof stroke.width !== 'object') return cmd;
-  const width = resolveStrokeWidth(stroke.width, mat3.meanScaleOf(ctx.state.transform));
+  const scale = quantizeStrokeScale(stroke.width.px, mat3.meanScaleOf(ctx.state.transform));
+  const width = resolveStrokeWidth(stroke.width, scale);
   return { ...cmd, stroke: { ...stroke, width } };
 }
 

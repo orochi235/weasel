@@ -7,23 +7,30 @@ describe('mat3', () => {
     expect(Array.from(m)).toEqual([1, 0, 0, 0, 1, 0, 0, 0, 1]);
   });
 
-  it('translate(10, 20) applied to (0, 0) yields (10, 20)', () => {
-    const m = mat3.translate(mat3.identity(), 10, 20);
+  it('translated(10, 20) applied to (0, 0) yields (10, 20)', () => {
+    const m = mat3.translated(mat3.identity(), 10, 20);
     const [x, y] = mat3.apply(m, 0, 0);
     expect(x).toBe(10);
     expect(y).toBe(20);
   });
 
-  it('scale(2, 3) applied to (5, 5) yields (10, 15)', () => {
-    const m = mat3.scale(mat3.identity(), 2, 3);
+  it('scaled(2, 3) applied to (5, 5) yields (10, 15)', () => {
+    const m = mat3.scaled(mat3.identity(), 2, 3);
     const [x, y] = mat3.apply(m, 5, 5);
     expect(x).toBe(10);
     expect(y).toBe(15);
   });
 
+  it('names its post-multiplying pair apart from geom\'s constructors', () => {
+    expect(Object.keys(mat3)).not.toContain('translate');
+    expect(Object.keys(mat3)).not.toContain('scale');
+    const m = mat3.translated(mat3.scaled(mat3.identity(), 2, 2), 3, 4);
+    expect(mat3.apply(m, 0, 0)).toEqual([6, 8]);
+  });
+
   it('multiply: translate then scale composes correctly', () => {
-    const t = mat3.translate(mat3.identity(), 10, 20);
-    const s = mat3.scale(mat3.identity(), 2, 2);
+    const t = mat3.translated(mat3.identity(), 10, 20);
+    const s = mat3.scaled(mat3.identity(), 2, 2);
     const composed = mat3.multiply(t, s);
     const [x, y] = mat3.apply(composed, 1, 1);
     expect(x).toBe(12);
@@ -41,7 +48,7 @@ describe('mat3', () => {
   });
 
   it('invert: round-trips a translate+scale through apply', () => {
-    const m = mat3.scale(mat3.translate(mat3.identity(), 30, -12), 2, 4);
+    const m = mat3.scaled(mat3.translated(mat3.identity(), 30, -12), 2, 4);
     const inv = mat3.invert(m)!;
     const [sx, sy] = mat3.apply(m, 7, 9);
     const [x, y] = mat3.apply(inv, sx, sy);
@@ -50,7 +57,7 @@ describe('mat3', () => {
   });
 
   it('invert: composing a matrix with its inverse yields identity', () => {
-    const m = mat3.scale(mat3.translate(mat3.identity(), 5, 6), 3, 3);
+    const m = mat3.scaled(mat3.translated(mat3.identity(), 5, 6), 3, 3);
     const composed = mat3.multiply(m, mat3.invert(m)!);
     for (const [i, want] of [[0, 1], [1, 0], [3, 0], [4, 1], [6, 0], [7, 0]] as const) {
       expect(composed[i]).toBeCloseTo(want);
@@ -58,10 +65,10 @@ describe('mat3', () => {
   });
 
   it('invert: a singular matrix has no inverse', () => {
-    expect(mat3.invert(mat3.scale(mat3.identity(), 0, 5))).toBeNull();
+    expect(mat3.invert(mat3.scaled(mat3.identity(), 0, 5))).toBeNull();
   });
 
   it('invert: a matrix too flat for its own scale has no inverse', () => {
-    expect(mat3.invert(mat3.scale(mat3.identity(), 1e6, 1e-7))).toBeNull();
+    expect(mat3.invert(mat3.scaled(mat3.identity(), 1e6, 1e-7))).toBeNull();
   });
 });

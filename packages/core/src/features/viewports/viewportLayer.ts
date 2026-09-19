@@ -156,7 +156,7 @@ export function createViewportLayer<TData, TSource = TData>(
       for (const layer of sourceAt()) {
         for (const c of drawOneLayer(layer, innerData, v, innerDims)) children.push(c);
       }
-      const transform: Mat3 = mat3.translate(mat3.identity(), b.x, b.y);
+      const transform: Mat3 = mat3.translated(mat3.identity(), b.x, b.y);
       const group: GroupDrawCommand = {
         kind: 'group',
         transform,

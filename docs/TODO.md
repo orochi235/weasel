@@ -359,15 +359,6 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
-- **(P2) The renderer's `mat3.translate`/`scale` share names with geom's
-  and not behavior.** The two *representations* are deliberate and both files
-  say so — geom keeps a 6-element f64 affine, `renderer/math/mat3.ts` a
-  9-element column-major `Float32Array` shaped for `uniformMatrix3fv`. But the
-  renderer's pair post-multiply an existing matrix where geom's construct a
-  fresh one, so code moved between the layers compiles and misbehaves. Renaming the renderer's pair
-  (`translated`, `scaledBy`) or giving geom composing forms would both close
-  it.
-
 - **(P3) A minimap's framing ignores pose overrides.** `<SceneViewCanvas>` and
   `<MinimapCanvas>` paint override poses as of 2026-08-25, but `computeFitView`
   still derives framing from document poses, so a node overridden outside the
@@ -878,10 +869,16 @@ What it surfaced:
   `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`. Converting the
   platformer's eleven bones to parenting is not done.
 
-- **(P3) No view-bounds culling.** All 254 nodes paint every frame regardless of
-  the viewport; the immediate twin windows tiles to visible rows and columns.
-  `renderOrder()` plus the view bounds is enough to close this, and it is the
-  one place the immediate version is structurally ahead.
+- **(P3) View-bounds culling is opt-in and stops short of the painter.** The
+  scene slot's `cull` option (`layers={{ scene: { cull: true } }}`, on in the
+  side-scroller demo) drops commands outside the view via `cullDrawCommands`,
+  but only after every node's `drawOne` has run, so an off-screen node still
+  pays its painter. It is opt-in because it makes the scene layer's
+  world-space output view-dependent, which a cache keyed without `view` would
+  serve under the wrong camera. `<SceneViewCanvas>` / `<MinimapCanvas>`
+  (`sceneViewRender.ts`) do not cull at all. Text and shader commands are never
+  culled — nothing bounds them cheaply. The demo's frame time with culling on
+  has not been measured in a browser.
 
 Two predictions the demo **disproved**, recorded so they are not re-raised: the
 sprite-sheet gap closed independently (`ImageDrawCommand.source` / `flipX` /
@@ -1653,20 +1650,6 @@ one dead `const` and four stale disable directives.
   would need render-to-texture per layer plus compositing, which the
   renderer has no concept of today. Nobody has measured whether dispatch
   alone costs enough to justify that. Measure before building.
-
-- **(P3) A `{px}` stroke width thrashes the stroke mesh cache during a
-  zoom.** `strokeMeshCache.ts` clears a path's entire config map once it
-  exceeds `STROKE_CONFIGS_PER_PATH` (8) distinct configurations
-  (`byConfig.clear()`, around line 70) — the degradation this section
-  already documents for a dragged width slider. A `{ px }` width is resolved
-  to a world-unit number against the accumulated transform scale before it
-  reaches the cache key (`withResolvedStrokeWidth` in
-  `packages/core/src/renderer/draw.ts`), so a continuous zoom gesture produces
-  a distinct number on nearly every frame: every lookup misses, and every 8
-  frames evicts that path's sibling configurations too. Quantizing the
-  resolved width before it hits the cache key — `quantizeEmWidth` is the
-  existing precedent, used for glyph outline widths in
-  `outlineStrokeMeshCache.ts` — would likely fix it.
 
 - **(P3) Whether the benchmarks gate CI.** Every benchmark lives in
   `tests/perf/` and writes a result file per run; nothing gates anything. The

@@ -11,7 +11,7 @@ describe('GroupState', () => {
 
   it('push() composes transform and multiplies alpha', () => {
     const s = new GroupState();
-    s.push({ transform: mat3.translate(mat3.identity(), 10, 20), alpha: 0.5 });
+    s.push({ transform: mat3.translated(mat3.identity(), 10, 20), alpha: 0.5 });
     const [x, y] = mat3.apply(s.transform, 0, 0);
     expect(x).toBe(10);
     expect(y).toBe(20);
@@ -20,8 +20,8 @@ describe('GroupState', () => {
 
   it('nested push composes both levels', () => {
     const s = new GroupState();
-    s.push({ transform: mat3.translate(mat3.identity(), 10, 0), alpha: 0.5 });
-    s.push({ transform: mat3.translate(mat3.identity(), 0, 20), alpha: 0.5 });
+    s.push({ transform: mat3.translated(mat3.identity(), 10, 0), alpha: 0.5 });
+    s.push({ transform: mat3.translated(mat3.identity(), 0, 20), alpha: 0.5 });
     const [x, y] = mat3.apply(s.transform, 0, 0);
     expect(x).toBe(10);
     expect(y).toBe(20);
@@ -31,7 +31,7 @@ describe('GroupState', () => {
   it('pop() restores previous transform and alpha', () => {
     const s = new GroupState();
     const before = Array.from(s.transform);
-    s.push({ transform: mat3.translate(mat3.identity(), 10, 20), alpha: 0.5 });
+    s.push({ transform: mat3.translated(mat3.identity(), 10, 20), alpha: 0.5 });
     s.pop();
     expect(Array.from(s.transform)).toEqual(before);
     expect(s.alpha).toBe(1);
@@ -43,7 +43,7 @@ describe('GroupState', () => {
     expect(Array.from(s.transform)).toEqual(Array.from(mat3.identity()));
     expect(s.alpha).toBe(0.5);
     s.pop();
-    s.push({ transform: mat3.translate(mat3.identity(), 5, 5) });
+    s.push({ transform: mat3.translated(mat3.identity(), 5, 5) });
     expect(s.alpha).toBe(1);
   });
 
@@ -89,7 +89,7 @@ describe('GroupState — colorMatrix', () => {
 
   it('reset() drops every pushed frame', () => {
     const s = new GroupState();
-    s.push({ transform: mat3.translate(mat3.identity(), 10, 20), alpha: 0.5 });
+    s.push({ transform: mat3.translated(mat3.identity(), 10, 20), alpha: 0.5 });
     s.push({ alpha: 0.5, colorMatrix: new Float32Array([-1,0,0,0,1, 0,1,0,0,0, 0,0,1,0,0, 0,0,0,1,0]) });
     s.reset();
     expect(Array.from(s.transform)).toEqual(Array.from(mat3.identity()));

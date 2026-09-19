@@ -149,11 +149,11 @@ describe('WeaselRenderer.render — kind: group', () => {
   it('walks nested draw-groups recursively', () => {
     const cmd: DrawCommand = {
       kind: 'group',
-      transform: mat3.translate(mat3.identity(), 10, 0),
+      transform: mat3.translated(mat3.identity(), 10, 0),
       children: [
         {
           kind: 'group',
-          transform: mat3.translate(mat3.identity(), 0, 20),
+          transform: mat3.translated(mat3.identity(), 0, 20),
           children: [],
         },
       ],
@@ -2065,7 +2065,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
     const shifted = (fill: unknown, view?: Float32Array): void => {
       r.render([{
         kind: 'group',
-        transform: mat3.translate(mat3.identity(), 100, 40),
+        transform: mat3.translated(mat3.identity(), 100, 40),
         children: [{ kind: 'path', path: PATH, fill }],
       }] as DrawCommand[], view);
     };
@@ -2089,9 +2089,9 @@ describe('gradient units — which space a gradient measures its geometry in', (
     it("units: 'world' measures the scene, so panning the view moves the ramp", () => {
       r.render([{
         kind: 'group',
-        transform: mat3.scale(mat3.translate(mat3.identity(), 100, 40), 2, 2),
+        transform: mat3.scaled(mat3.translated(mat3.identity(), 100, 40), 2, 2),
         children: [{ kind: 'path', path: PATH, fill: { ...LINEAR, units: 'world' } }],
-      }] as DrawCommand[], mat3.translate(mat3.identity(), 25, 75));
+      }] as DrawCommand[], mat3.translated(mat3.identity(), 25, 75));
       // World x 75..95: the shape's own 0..10 doubled and moved to 100..120,
       // less the view's 25.
       expect(stagedUV().uv.map(([u]) => u)).toEqual([7.5, 9.5, 9.5, 7.5]);
@@ -2160,7 +2160,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
     it("units: 'local' inverts the enclosing transform, so the paint rides the geometry", () => {
       r.render([{
         kind: 'group',
-        transform: mat3.translate(mat3.identity(), 100, 40),
+        transform: mat3.translated(mat3.identity(), 100, 40),
         children: [{ kind: 'path', path: EVEN_ODD, fill: { ...RADIAL, units: 'local' } }],
       }] as DrawCommand[]);
       // A fragment at screen (100, 40) is the group's local origin.
@@ -2173,19 +2173,19 @@ describe('gradient units — which space a gradient measures its geometry in', (
     it("units: 'local' under a group that flattens an axis binds no paint", () => {
       r.render([{
         kind: 'group',
-        transform: mat3.scale(mat3.identity(), 0, 1),
+        transform: mat3.scaled(mat3.identity(), 0, 1),
         children: [{ kind: 'path', path: EVEN_ODD, fill: { ...RADIAL, units: 'local' } }],
       }] as DrawCommand[]);
       expect(worldInvUploads()).toBe(0);
     });
 
     it("units: 'world' under a view with no inverse binds no paint", () => {
-      evenOdd({ ...RADIAL, units: 'world' }, mat3.scale(mat3.identity(), 1e6, 1e-7));
+      evenOdd({ ...RADIAL, units: 'world' }, mat3.scaled(mat3.identity(), 1e6, 1e-7));
       expect(worldInvUploads()).toBe(0);
     });
 
     it("units: 'world' inverts the frame's view matrix, pinning the paint to the scene", () => {
-      evenOdd({ ...RADIAL, units: 'world' }, mat3.translate(mat3.identity(), 25, 75));
+      evenOdd({ ...RADIAL, units: 'world' }, mat3.translated(mat3.identity(), 25, 75));
       // Screen (25, 75) is world origin.
       expect(mat3.apply(new Float32Array(worldInv()), 25, 75)).toEqual([0, 0]);
     });
@@ -2230,15 +2230,15 @@ describe('gradient units — which space a gradient measures its geometry in', (
     };
 
     it('still draws under an invertible transform', () => {
-      expect(drawsUnder(mat3.scale(mat3.identity(), 2, 3))).toBeGreaterThan(0);
+      expect(drawsUnder(mat3.scaled(mat3.identity(), 2, 3))).toBeGreaterThan(0);
     });
 
     it('draws nothing under a zero scale, rather than drawing untransformed', () => {
-      expect(drawsUnder(mat3.scale(mat3.identity(), 0, 1))).toBe(0);
+      expect(drawsUnder(mat3.scaled(mat3.identity(), 0, 1))).toBe(0);
     });
 
     it('draws nothing under a transform too flat for its own scale', () => {
-      expect(drawsUnder(mat3.scale(mat3.identity(), 1e6, 1e-7))).toBe(0);
+      expect(drawsUnder(mat3.scaled(mat3.identity(), 1e6, 1e-7))).toBe(0);
     });
   });
 });
