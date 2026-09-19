@@ -1175,13 +1175,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   outside it via the `flat` variant. Doing this generally is a theme decision
   about the glass, not a component change.
 
-- **(P3) The `-24px` in the property readout's width is still a magic number.**
-  `.readoutInput` now takes `var(--wzl-property-readout-w, calc(5em - 24px))`
-  (`Properties.module.css`), so a consumer at a very different base font has a
-  hook instead of a hashed class name — but the default still bakes in the unit
-  and its gap at the kit's own size. Expressing it in `em`, or measuring the
-  unit, would make the default right everywhere rather than overridable.
-
 ### Align/distribute/flip follow-ups
 
 - **(P3) Cursor-relative align** (e.g. align to mouse position rather than union).

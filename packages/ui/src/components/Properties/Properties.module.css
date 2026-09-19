@@ -318,13 +318,10 @@
   border-radius: var(--wzl-radius-sm);
   padding: 1px 0;
   margin: 0;
-  /* The subtraction is the unit and its gap at the kit's own font size, so the
-     default is wrong against a much smaller or larger one — override the hook
-     rather than reaching for the hashed class name. */
   /* The fit is the widest value in `ch`, which is one digit; the box is border-box, so its border
      comes back on top, with half a `ch` for a glyph wider than a digit. */
   width: max(
-    var(--wzl-property-readout-w, calc(5em - 24px)),
+    var(--wzl-property-readout-w, 2.8em),
     calc(var(--wzl-property-readout-fit, 0px) + 2px + 0.5ch)
   );
   text-align: right;
