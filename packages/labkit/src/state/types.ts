@@ -70,6 +70,10 @@ export interface SavedSnapshot {
   instrumentName: string;
   config: unknown;
   state: unknown;
+  /** The trial's `auto` paths when saved; empty means every field was pinned.
+   *  Absent on a snapshot saved before snapshots carried them, which loads
+   *  over the trial's current set rather than guessing one. */
+  auto?: readonly string[];
   savedAt: number;
 }
 

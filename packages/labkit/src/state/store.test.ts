@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { auto } from '../config/auto';
 import type { Instrument } from '../instrument/types';
 import { createLabStore } from './store';
 import type { CreateLabStoreOptions } from './types';
@@ -161,6 +162,70 @@ describe('save/load/delete snapshots', () => {
     const snapId = s.getState().savedSnapshots[0]?.id ?? '';
     s.getState().loadSnapshot(snapId, 'w1');
     expect((s.getState().trials[0]?.state as { n: number }).n).toBe(5);
+  });
+
+  it('loadSnapshot restores the auto paths the trial had when saved', () => {
+    const s = makeStore();
+    s.getState().addTrial({
+      id: 'w1',
+      instrumentName: 'T',
+      config: { x: 1, y: 2 },
+      state: {},
+      view: { zoom: 1, pan: { x: 0, y: 0 } },
+      auto: ['x'],
+    });
+    s.getState().saveSnapshot('w1', 'snap1');
+    expect(s.getState().savedSnapshots[0]?.auto).toEqual(['x']);
+    const snapId = s.getState().savedSnapshots[0]?.id ?? '';
+
+    const w = s.getState().trials[0];
+    s.getState().addTrial({ ...(w as NonNullable<typeof w>), id: 'w2', auto: ['y'] });
+    s.getState().loadSnapshot(snapId, 'w2');
+    expect(s.getState().trials[1]?.auto).toEqual(['x']);
+  });
+
+  it('a snapshot saved with nothing auto pins every field on load', () => {
+    const s = makeStore();
+    s.getState().addTrial({
+      id: 'w1',
+      instrumentName: 'T',
+      config: { x: 1 },
+      state: {},
+      view: { zoom: 1, pan: { x: 0, y: 0 } },
+    });
+    s.getState().saveSnapshot('w1', 'snap1');
+    expect(s.getState().savedSnapshots[0]?.auto).toEqual([]);
+    const snapId = s.getState().savedSnapshots[0]?.id ?? '';
+    s.getState().updateTrialConfig('w1', 'x', auto);
+    expect(s.getState().trials[0]?.auto).toEqual(['x']);
+    s.getState().loadSnapshot(snapId, 'w1');
+    expect(s.getState().trials[0]?.auto).toBeUndefined();
+  });
+
+  it("a snapshot saved before snapshots carried auto paths leaves the trial's own", () => {
+    const snap = {
+      id: 'old',
+      name: 'old',
+      trialId: 'w1',
+      instrumentName: 'T',
+      config: { x: 7 },
+      state: {},
+      savedAt: 1,
+    };
+    const s = makeStore({
+      initial: { version: 1, trials: [], saves: [snap], mode: 'auto' } as never,
+    });
+    s.getState().addTrial({
+      id: 'w1',
+      instrumentName: 'T',
+      config: { x: 1 },
+      state: {},
+      view: { zoom: 1, pan: { x: 0, y: 0 } },
+      auto: ['x'],
+    });
+    s.getState().loadSnapshot('old', 'w1');
+    expect(s.getState().trials[0]?.config).toEqual({ x: 7 });
+    expect(s.getState().trials[0]?.auto).toEqual(['x']);
   });
 
   it('loadSnapshot blocks cross-instrument load', () => {

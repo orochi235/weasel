@@ -218,6 +218,7 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
         instrumentName: trial.instrumentName,
         config: clonedConfig,
         state: serializedState,
+        auto: [...(trial.auto ?? [])],
         savedAt,
       };
       set((s) => ({ savedSnapshots: [...s.savedSnapshots, snapshot] }));
@@ -239,9 +240,14 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
         ? reg.deserialize(snapshot.state, snapshot.config)
         : snapshot.state;
       set((s) => ({
-        trials: s.trials.map((w) =>
-          w.id === trialId ? { ...w, state: restoredState, config: snapshot.config } : w,
-        ),
+        trials: s.trials.map((w) => {
+          if (w.id !== trialId) return w;
+          const loaded: TrialRecord = { ...w, state: restoredState, config: snapshot.config };
+          if (snapshot.auto === undefined) return loaded;
+          delete loaded.auto;
+          if (snapshot.auto.length > 0) loaded.auto = [...snapshot.auto];
+          return loaded;
+        }),
       }));
     },
 
