@@ -92,13 +92,8 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
           clearTimeout(settleTimer);
           settleTimer = setTimeout(reportVars, VARS_SETTLE_MS);
         });
-  mutations?.observe(document.documentElement, {
-    subtree: true,
-    childList: true,
-    characterData: true,
-    attributes: true,
-    attributeFilter: ['style', 'class'],
-  });
+  // Every attribute, not just style and class: a stylesheet can select on any of them, `[data-wzl-mode]` included.
+  mutations?.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true });
 
   const setConfig = (path: string, value: unknown) => send({ type: 'setConfig', path, value });
   const setState = (next: unknown) => {

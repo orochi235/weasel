@@ -1349,15 +1349,6 @@ controls. It runs beside Storybook today.
   aside open. Which pane overflows, and why the trial split does not clamp to
   its tile, is not yet known.
 
-- **(P3) forge's CSS Vars panel can show the other mode's values after the OS
-  color scheme changes.** With the Mode global on `auto`, `followScheme`
-  (`apps/forge/mode.ts`) applies the theme again when `prefers-color-scheme`
-  flips, but that change arrives from no globals message, and the frame's
-  `MutationObserver` (`packages/forge/src/frame/FrameController.tsx`) watches only
-  `style` and `class` attributes, so the `data-wzl-mode` write never makes the
-  frame report its CSS variables again. Report after a scheme-driven apply, or
-  widen the observer's filter.
-
 - **(P3) forge keeps every open story's frame mounted.** Browsers cap WebGL
   contexts per renderer process, and a same-origin iframe usually shares its
   parent's, so many canvas-heavy trials open at once can exhaust them. Nothing in
