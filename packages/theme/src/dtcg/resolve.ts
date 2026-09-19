@@ -1,4 +1,4 @@
-import { hexToRgba } from './color';
+import { withAlpha } from './color';
 import type { FlatTokens, ResolvedTokenMap, TokenValue } from './types';
 import { serializeTokenValue } from './value';
 
@@ -46,7 +46,7 @@ export function resolveTokens(tokens: FlatTokens): ResolvedTokenMap {
       value = resolveOne(target);
     }
 
-    if (token.alpha !== undefined) value = hexToRgba(value, token.alpha);
+    if (token.alpha !== undefined) value = withAlpha(value, token.alpha);
 
     inProgress.delete(name);
     out[name] = value;

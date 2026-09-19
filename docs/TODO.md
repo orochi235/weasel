@@ -1034,10 +1034,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   mid-ramp, so neither choice moves what ships. A 0.1 floor on `e` was tried and
   taken back out: it turned a gray ramp anchored on its darkest step blue.
 
-- **(P2) `hexToRgba` in `packages/theme` throws on any non-hex value**, so the alpha
-  extension only works when the token it points at is a hex literal. Point it at
-  `interstellar`'s `rgba(...)` and it dies.
-
 - **(P3) 47 `--wzl-*` properties are read in live source and declared by no theme.**
   Some are deliberate container-override hooks (`--wzl-prop-*`, `--wzl-field-h`);
   the rest is rot from the original May token vocabulary (`--wzl-text`,
