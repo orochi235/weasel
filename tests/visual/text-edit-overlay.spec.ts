@@ -237,3 +237,32 @@ test('text-edit overlay — an unwrapped line longer than its box keeps the line
   expect(typing).toBe(drawn);
   expect(reopened).toBe(drawn);
 });
+
+test('text-edit overlay — a bottom-aligned node keeps its text on the box bottom while typing', async ({ page }) => {
+  await page.goto('/#text-nodes');
+  await page.waitForSelector('.ckd-canvas');
+  // The MSDF atlas loads async.
+  await page.waitForTimeout(500);
+  const c = await canvasRect(page);
+
+  const rect = () => page.evaluate(() => {
+    const r = document.querySelector('[contenteditable="true"]')!.getBoundingClientRect();
+    return { top: r.top, bottom: r.bottom };
+  });
+
+  await page.mouse.dblclick(c.left + 40, c.top + 269);
+  await page.waitForSelector('[contenteditable="true"]');
+  await frames(page);
+  const opened = await rect();
+  await page.keyboard.press('Meta+ArrowDown');
+  await page.keyboard.press('Shift+Enter');
+  await page.keyboard.type('More');
+  await frames(page);
+  const grown = await rect();
+
+  // The overlay carries a 1px CSS-vs-canvas rasterization nudge.
+  expect(Math.abs(opened.bottom - (c.top + BOTTOM.y1))).toBeLessThanOrEqual(2);
+  expect(Math.abs(grown.bottom - (c.top + BOTTOM.y1))).toBeLessThanOrEqual(2);
+  // A third line grew the overlay upward, not down past the box.
+  expect(grown.top).toBeLessThan(opened.top - 10);
+});

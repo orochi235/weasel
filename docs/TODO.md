@@ -473,28 +473,17 @@ Core five + Crop shipped. Remaining:
   this *easier*: reading font bytes gives access to both tables directly
   instead of to whichever one Chrome chose to expose. Recorded 2026-07-31.
 
-- **(P3) `apps/draw` cannot author unfilled text.** `TextObj.fill` is
-  `FillStyle | undefined`, so WeaselDraw's own model has no way to say "no
-  fill" for a text object, and its SVG interop drops the value in both
-  directions. The engine and `@weasel-js/svg` carry it now; the no-fill chip in
-  the character panel is app work.
+- **(P3) The character strip has no "no fill" chip.** WeaselDraw's text
+  objects carry `fill: null` through its SVG export and import, and the
+  sidebar's Fill leaf already offers None for a text node. What is missing is
+  a None chip beside the strip's Color field, and it needs a decision first:
+  the strip is range-scoped, but a run cannot be unfilled (`StyledRun.fill`
+  is `FillStyle`, no `null`). Either the chip unfills the whole node (and has
+  to clear run fills, which reach text outside the selection), or runs gain
+  `fill: null` through `resolveRuns`, the DOM overlay, the range algebra and
+  `@weasel-js/svg`'s `<tspan>` output.
 
 - **(P2) Cross-browser overlay alignment.** `placeOverlay` uses an empirical `(+1, -1)` CSS-px nudge to compensate for canvas/CSS rasterization disagreement. Works on the dev setup; not universally correct across browsers/fonts/DPRs. A self-correcting probe was attempted and rejected.
-
-- **(P3) `rangeStyle` reports the runs alone; consumers merge the node style.**
-  The toggle half of this is resolved: `patchForToggle` in `useTextEdit` reads
-  `nodeHasFlag` as well as the range, so Cmd+B inside a `fontWeight: 700` node
-  clears bold rather than adding it, and the un-set rewrite is reachable from
-  the bar and from a collapsed caret rather than only from the keyboard over a
-  range. What remains is the display half: `styleAtRange` still reports the
-  runs alone, so every consumer that wants "what is actually rendering" merges
-  the node style itself (draw's `effectiveRangeStyle`). Decide whether that
-  merge belongs in the kit — and if so, whether `rangeStyle` should carry it
-  or a second reader should.
-
-  Unchanged and deliberate: a node at `fontWeight: 900` stays declined
-  (`applied: false`) — `run.bold` is exactly 700, so pushing the weight onto
-  the runs would lighten the text that was not edited.
 
 - **(P3) Per-character tracking in the DOM overlay is CSS-approximate.**
   `letterSpacing` is applied per code point rather than per grapheme cluster,
@@ -1329,7 +1318,7 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 - **(P3) The edit overlay can break a wrapped line where the canvas does not.** Under `TextStyle.wrap`, `layoutRuns` breaks only at spaces, while the overlay's `white-space: pre-wrap` follows the browser's line-breaking rules — after a hyphen, between CJK characters. Such a line reflows when an edit opens. Nothing in CSS limits break opportunities to spaces, so this is a layout change (UAX #14 in `layoutRuns`) or a DOM one (each word in a `nowrap` span).
 
-- **(P2) The edit overlay ignores `verticalAlign`.** `useTextEdit` places its text at the top of the pose box whatever the node's `verticalAlign`, so editing a center- or bottom-aligned `kit:text` node moves its text to the top of the box until the edit commits. The caret mapping does honor it. Needs a vertical offset computed from the overlay's own content height, re-read as typing changes it.
+- **(P3) Run the bottom-aligned edit-overlay visual check.** `tests/visual/text-edit-overlay.spec.ts`'s "a bottom-aligned node keeps its text on the box bottom while typing" was written without a browser and has never run. The overlay's `verticalAlign` placement is otherwise covered only by jsdom proxies (stubbed `offsetHeight`), so run it once and fix whichever side is wrong.
 
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have.
 

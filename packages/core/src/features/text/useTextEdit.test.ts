@@ -1,6 +1,6 @@
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { useTextEdit } from './useTextEdit';
+import { overlayTop, useTextEdit } from './useTextEdit';
 import type { UseTextEditOptions } from './useTextEdit';
 import type { StyledRun } from '@weasel-js/text';
 import { MIXED } from './runs/rangeStyle';
@@ -27,6 +27,79 @@ function makeHarness(initial: Record<string, string>) {
 function getOverlay(container: HTMLElement): HTMLDivElement | null {
   return container.querySelector('div[contenteditable="true"]');
 }
+
+describe('overlayTop', () => {
+  const pose = { x: 0, y: 100, width: 200, height: 90, fontSize: 16 };
+
+  it('sits at the pose top, less the nudge, when top-aligned or unaligned', () => {
+    expect(overlayTop(pose, 30)).toBe(99);
+    expect(overlayTop({ ...pose, verticalAlign: 'top' }, 30)).toBe(99);
+  });
+
+  it('shifts by half the slack when centered and all of it at the bottom', () => {
+    expect(overlayTop({ ...pose, verticalAlign: 'center' }, 30)).toBe(129);
+    expect(overlayTop({ ...pose, verticalAlign: 'bottom' }, 30)).toBe(159);
+  });
+
+  it('rises above the box when the content overflows it, as the canvas does', () => {
+    expect(overlayTop({ ...pose, verticalAlign: 'bottom' }, 120)).toBe(69);
+  });
+
+  it('scales the pre-scale slack by the zoom but not the nudge', () => {
+    expect(overlayTop({ ...pose, verticalAlign: 'bottom', zoom: 2 }, 30)).toBe(219);
+  });
+});
+
+describe('useTextEdit — verticalAlign', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  /** jsdom lays nothing out, so the overlay's content height is stubbed. */
+  function stubContentHeight(el: HTMLElement, read: () => number) {
+    Object.defineProperty(el, 'offsetHeight', { configurable: true, get: read });
+  }
+
+  it('leaves a top-aligned overlay filling its box', () => {
+    const h = makeHarness({ a: 'hi' });
+    h.opts.getScreenPose = () => ({
+      x: 0, y: 100, width: 200, height: 90, fontSize: 16, verticalAlign: 'top',
+    });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const el = getOverlay(h.container)!;
+    expect(el.style.top).toBe('99px');
+    expect(el.style.minHeight).toBe('90px');
+  });
+
+  // Proxy: what is asserted is that the overlay re-reads its height on
+  // `input` and places from it. Whether that height is the text's real line
+  // box is layout, which only a browser has.
+  it('re-measures its content on input and moves a bottom-aligned overlay up', () => {
+    const h = makeHarness({ a: 'hi' });
+    h.opts.getScreenPose = () => ({
+      x: 0, y: 100, width: 200, height: 90, fontSize: 16, verticalAlign: 'bottom',
+    });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    let height = 0;
+    const origCreate = document.createElement.bind(document);
+    const spy = vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+      const el = origCreate(tag);
+      if (tag === 'div') stubContentHeight(el, () => height);
+      return el;
+    });
+    height = 30;
+    act(() => result.current.startEdit('a'));
+    spy.mockRestore();
+    const el = getOverlay(h.container)!;
+    expect(el.style.minHeight).toBe('');
+    expect(el.style.top).toBe('159px');
+
+    height = 60;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(el.style.top).toBe('129px');
+  });
+});
 
 describe('useTextEdit — clip rect', () => {
   beforeEach(() => {

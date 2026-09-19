@@ -13,7 +13,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useVisibleRaf } from '../../scheduling/useVisibleRaf';
 import type { ResolvedTextStyle, TextStyle } from '@weasel-js/text';
 import { fontString, resolveAlign, resolveTextStyle } from '@weasel-js/text';
-import type { TextPaint } from '@weasel-js/text';
+import type { TextPaint, TextVerticalAlign } from '@weasel-js/text';
+import { verticalAlignOffset } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
 import { runsToPlainText } from '@weasel-js/text';
 import { runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset } from './domRuns';
@@ -338,6 +339,12 @@ export interface TextEditScreenPose {
   fontSize: number;
   /** Effective on-screen line height multiplier (defaults to style.lineHeight). */
   lineHeight?: number;
+  /**
+   * Where the text sits within `height`, as the canvas places it. `'center'`
+   * and `'bottom'` size the overlay to its own content and offset it by the
+   * slack, re-measured as typing changes the line count. Default `'top'`.
+   */
+  verticalAlign?: TextVerticalAlign;
   /**
    * CSS scale applied to the overlay (`transform: scale(zoom)`, anchored at
    * its top-left). Every other size on this pose, and every typographic
@@ -871,6 +878,9 @@ export function useTextEdit(
 
     overlay.addEventListener('keydown', onKeyDown);
     overlay.addEventListener('blur', onBlur);
+    // Typing can change the line count; re-placing here rather than on the
+    // next frame keeps a center/bottom-aligned overlay from jumping a frame late.
+    overlay.addEventListener('input', place);
     overlay.addEventListener('beforeinput', onBeforeInput);
     document.addEventListener('pointerdown', onPointerDownOutside, true);
     // `selectionchange` only exists on the document — there is no per-element
@@ -891,6 +901,7 @@ export function useTextEdit(
       tickRef.current = () => {};
       overlay.removeEventListener('keydown', onKeyDown);
       overlay.removeEventListener('blur', onBlur);
+      overlay.removeEventListener('input', place);
       overlay.removeEventListener('beforeinput', onBeforeInput);
       document.removeEventListener('pointerdown', onPointerDownOutside, true);
       document.removeEventListener('selectionchange', syncSelection);
@@ -1005,6 +1016,17 @@ function installSelectionStyle(
 
 const ALIGN_ANCHOR = { left: 0, center: 0.5, right: 1 } as const;
 
+/**
+ * The overlay's `top`, in container pixels, for content `contentHeight` tall
+ * (pre-scale, like the rest of `pose`): the pose's top, shifted by the same
+ * `verticalAlign` slack the canvas applies, less the 1px rasterization nudge.
+ * @internal
+ */
+export function overlayTop(pose: TextEditScreenPose, contentHeight: number): number {
+  const slack = verticalAlignOffset(pose.verticalAlign, pose.height, contentHeight);
+  return pose.y + slack * (pose.zoom ?? 1) - 1;
+}
+
 function placeOverlay(
   el: HTMLDivElement,
   clipBox: HTMLDivElement,
@@ -1035,12 +1057,16 @@ function placeOverlay(
   // own width.
   const anchor = style.wrap ? 0 : ALIGN_ANCHOR[resolveAlign(style.align, style.direction)];
   el.style.left = `${pose.x + pose.width * (pose.zoom ?? 1) * anchor + 1 - (clip?.x ?? 0)}px`;
-  el.style.top = `${pose.y - 1 - (clip?.y ?? 0)}px`;
   el.style.width = style.wrap ? `${pose.width}px` : 'max-content';
   el.style.minWidth = style.wrap ? '' : `${pose.width}px`;
-  el.style.minHeight = `${pose.height}px`;
   el.style.fontSize = `${pose.fontSize}px`;
   el.style.lineHeight = String(pose.lineHeight ?? style.lineHeight);
+  // A top-aligned overlay fills its box, so a click anywhere in it lands in
+  // the editor. Any other alignment needs the content's own height, which a
+  // min-height would mask; `offsetHeight` is pre-transform, in pose units.
+  const aligned = pose.verticalAlign !== undefined && pose.verticalAlign !== 'top';
+  el.style.minHeight = aligned ? '' : `${pose.height}px`;
+  el.style.top = `${overlayTop(pose, aligned ? el.offsetHeight : pose.height) - (clip?.y ?? 0)}px`;
   // A declared `zoom` means every size on the pose is pre-scale and the
   // overlay carries the view scale as a transform. Anchored at the top-left so
   // `left`/`top` stay screen pixels — including the +1/-1 nudge above, which

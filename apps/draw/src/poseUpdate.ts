@@ -41,8 +41,9 @@ export interface TextObj extends BaseObj {
   /** Inline styling over `text`; `runsToPlainText(runs) === text`. */
   runs?: StyledRun[];
   /** Glyph paint. Not part of `style` — a text node paints from the same
-   *  `data.fill` / `data.stroke` every other node kind paints from. */
-  fill?: FillStyle;
+   *  `data.fill` / `data.stroke` every other node kind paints from. `null`
+   *  is unfilled (SVG `fill="none"`); absent takes the painter's black. */
+  fill?: FillStyle | null;
   stroke?: Stroke;
 }
 
