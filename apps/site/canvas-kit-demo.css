@@ -462,16 +462,8 @@ a:hover { text-decoration: underline; }
    Components live in @weasel-js/ui; we re-skin their CSS variables
    here to match the dark demo chrome. */
 :root {
-  --wzl-text: var(--ckd-text);
-  --wzl-text-muted: var(--ckd-faint);
-  --wzl-panel-bg: var(--ckd-surface);
-  --wzl-panel-border: var(--ckd-border-2);
-  --wzl-input-bg: var(--ckd-surface-2);
   --wzl-accent: var(--ckd-accent-dim);
   --wzl-danger: #c64a3a;
-  /* Newer semantic tokens consumed by SelectionPanel / ColorField /
-     NumberField / Input / Select / Switch — not covered by the
-     deprecated-alias names above. */
   --wzl-surface: var(--ckd-surface);
   --wzl-surface-raised: color-mix(in srgb, var(--ckd-surface) 88%, white);
   --wzl-border: var(--ckd-border-2);

@@ -51,6 +51,7 @@
     "test:smoke:registry": "node scripts/smoke-registry-install.mjs",
     "check:bumps": "node scripts/check-changeset-bumps.mjs",
     "check:frame-loops": "node scripts/check-frame-loops.mjs",
+    "check:token-reads": "tsx scripts/check-token-reads.ts",
     "check:test-projects": "node scripts/check-test-projects.mjs",
     "check:forge-boundary": "node scripts/check-forge-boundary.mjs",
     "check:forge-stories": "node packages/forge/scripts/check-stories.ts",

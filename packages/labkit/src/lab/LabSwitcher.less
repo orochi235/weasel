@@ -6,7 +6,7 @@
 .lk-switcher-title {
   margin: 0;
   font-size: var(--wzl-font-size-xl);
-  line-height: var(--wzl-line-height-tight, 1.2);
+  line-height: var(--wzl-leading-snug);
 }
 
 .lk-switcher-trigger {
@@ -26,7 +26,7 @@
   // hyphen and the control becomes three ragged lines with a caret adrift.
   white-space: nowrap;
 
-  &:hover { color: var(--wzl-text-accent, var(--wzl-text)); }
+  &:hover { color: var(--wzl-accent); }
 
   &:focus-visible {
     outline: 2px solid var(--wzl-focus-ring, currentColor);
@@ -54,7 +54,7 @@
   position: absolute;
   top: calc(100% + var(--wzl-space-xs));
   left: 0;
-  z-index: var(--wzl-z-popover, 60);
+  z-index: var(--wzl-z-overlay);
   min-width: max(100%, 11rem);
   display: flex;
   flex-direction: column;
@@ -65,14 +65,14 @@
   background: var(--wzl-surface);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-md, 5px);
-  box-shadow: var(--wzl-shadow-md, 0 6px 20px rgb(0 0 0 / 35%));
+  box-shadow: 0 6px 20px var(--wzl-shadow);
 }
 
 .lk-switcher-item {
   padding: var(--wzl-space-xs) var(--wzl-space-sm);
   border-radius: var(--wzl-radius-sm, 3px);
-  color: var(--wzl-text);
-  font-size: var(--wzl-font-size-md);
+  color: var(--wzl-fg);
+  font-size: var(--wzl-font-size);
   text-decoration: none;
   white-space: nowrap;
 
@@ -87,6 +87,6 @@
 // The open page stays in the list rather than being filtered out: a menu that
 // drops its current entry shifts every other one as you move between pages.
 .lk-switcher-item[aria-current='page'] {
-  color: var(--wzl-text-strong, var(--wzl-text));
+  color: var(--wzl-fg);
   font-weight: var(--wzl-font-weight-bold);
 }

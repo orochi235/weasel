@@ -1041,11 +1041,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   the first anchored step, in step order, sets the hue and peak, so anchoring
   `#ff0000` and `#0000ff` on one ramp pins the blue step inside a red ramp.
 
-- **(P3) 47 `--wzl-*` properties are read in live source and declared by no theme.**
-  Some are deliberate container-override hooks (`--wzl-prop-*`, `--wzl-field-h`);
-  the rest is rot from the original May token vocabulary (`--wzl-text`,
-  `--wzl-panel-bg`, `--wzl-button-fill*`) that `packages/ui` never finished
-  migrating. Nothing checks for either case.
+- **(P3) The lab switcher's migrated tokens have not been looked at in a browser.**
+  `packages/labkit/src/lab/LabSwitcher.less` read seven `--wzl-*` names no theme
+  declares, so its menu items inherited the title's 20px and its hover changed
+  nothing. They now read `--wzl-font-size`, `--wzl-fg`, `--wzl-accent` on hover,
+  `--wzl-z-overlay`, and a `--wzl-shadow`-colored shadow (as does `Workspace.less`'s
+  floating panel). Check the open menu in both interstellar modes.
+  `npm run check:token-reads` now keeps undeclared reads out.
 
 - **(P3) A mark can be selected in two targets at once.** `AnnotationOverlay`
   leaves `selectionMode` at weasel's default `single`, and each canvas clears

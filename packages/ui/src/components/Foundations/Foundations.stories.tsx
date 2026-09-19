@@ -315,14 +315,6 @@ const COLOR_TOKEN_GROUPS: ColorGroup[] = [
     title: 'Glass',
     tokens: ['--wzl-glass-tint'],
   },
-  {
-    title: 'Deprecated aliases',
-    tokens: [
-      '--wzl-text', '--wzl-text-muted', '--wzl-bg', '--wzl-muted',
-      '--wzl-panel-bg', '--wzl-panel-border', '--wzl-input-bg',
-      '--wzl-button-fill', '--wzl-button-fill-hover', '--wzl-button-fill-pressed', '--wzl-button-text',
-    ],
-  },
 ];
 
 function rgbToHex(rgb: string): string {
