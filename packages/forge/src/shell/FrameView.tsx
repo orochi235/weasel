@@ -30,6 +30,27 @@ export interface FrameViewProps {
 }
 
 const START_TIMEOUT_MS = 10_000;
+/** How far past the viewport a frame stays mounted, so a small scroll back does not reload it. */
+const IN_VIEW_MARGIN = '50%';
+
+/** Whether `ref`'s element is near the viewport; true where the browser cannot say. */
+function useInView(ref: RefObject<Element | null>): boolean {
+  const [inView, setInView] = useState(true);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const last = entries.at(-1);
+        if (last) setInView(last.isIntersecting);
+      },
+      { rootMargin: IN_VIEW_MARGIN },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ref]);
+  return inView;
+}
 
 interface Fault {
   phase: FaultPhase | null;
@@ -74,6 +95,10 @@ export function FrameView(props: FrameViewProps) {
   const [overrides] = useCssOverrides();
   const src = `${frameUrl}#${entry.id}`;
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const hostRef = useRef<HTMLDivElement>(null);
+  // A trial out of view drops its frame, and with it any WebGL contexts the story held; the config and state
+  // live in the trial, so a return reloads the frame and `init` carries them back.
+  const inView = useInView(hostRef);
   const link = useRef<Link | null>(null);
   const latest = useRef({ ...props, globals, overrides });
   latest.current = { ...props, globals, overrides };
@@ -152,6 +177,13 @@ export function FrameView(props: FrameViewProps) {
 
   useEffect(() => () => closeLink(link), []);
 
+  useEffect(() => {
+    if (inView) return;
+    closeLink(link);
+    setPending(true);
+    setFault(null);
+  }, [inView]);
+
   useEffect(() => answers.hold(ctx.config), [answers, ctx.config]);
 
   useEffect(() => {
@@ -188,15 +220,17 @@ export function FrameView(props: FrameViewProps) {
   }, [ctx.config, ctx.state, globals, descriptionKey]);
 
   return (
-    <div className="fg-frame-host">
-      <iframe
-        ref={iframeRef}
-        className="fg-frame-view"
-        src={src}
-        title={`${entry.title} / ${entry.name}`}
-        onLoad={onLoad}
-        data-pending={pending && !fault ? '' : undefined}
-      />
+    <div ref={hostRef} className="fg-frame-host">
+      {inView ? (
+        <iframe
+          ref={iframeRef}
+          className="fg-frame-view"
+          src={src}
+          title={`${entry.title} / ${entry.name}`}
+          onLoad={onLoad}
+          data-pending={pending && !fault ? '' : undefined}
+        />
+      ) : null}
       {fault ? (
         <div className="fg-fault" role="alert">
           {fault.phase ? <span className="fg-fault__phase">{fault.phase}</span> : null}

@@ -1349,12 +1349,13 @@ controls. It runs beside Storybook today.
   aside open. Which pane overflows, and why the trial split does not clamp to
   its tile, is not yet known.
 
-- **(P3) forge keeps every open story's frame mounted.** Browsers cap WebGL
-  contexts per renderer process, and a same-origin iframe usually shares its
-  parent's, so many canvas-heavy trials open at once can exhaust them. Nothing in
-  `packages/forge/src/shell/FrameView.tsx` unmounts a frame whose trial is out of
-  view. Its config and state already live in the trial, so unmounting loses
-  nothing.
+- **(P3) Check forge's out-of-view frame unmounting in a browser.** `FrameView`
+  (`packages/forge/src/shell/FrameView.tsx`) drops a trial's iframe once its host
+  is more than half a viewport outside the viewport (`IntersectionObserver`,
+  `rootMargin: '50%'`) and reloads it on return. Tested only against a stubbed
+  observer: confirm in the dev app that scrolling a trial away and back reloads
+  its story with the trial's config and state, and that the margin keeps a small
+  scroll from reloading it.
 
 - **(P3) The Timeline story ignores forge's Mode toolbar.**
   `packages/ui/src/components/Timeline/Timeline.stories.tsx` sets `data-wzl-mode`
